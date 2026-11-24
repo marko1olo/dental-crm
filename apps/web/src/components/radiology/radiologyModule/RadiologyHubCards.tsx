@@ -21,7 +21,7 @@ export function RadiologyHubCards({
 				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between">
 					<div>
 						<div className="flex items-center justify-between mb-2">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Направление на исследование</span>
+							<span className="text-xs font-semibold text-[var(--muted)]">Направление на исследование</span>
 							<FileText className="w-4 h-4 text-[var(--teal)]" />
 						</div>
 						<h4 className="text-sm font-bold text-[var(--ink)] mb-1">Официальное направление на КЛКТ</h4>
@@ -43,7 +43,7 @@ export function RadiologyHubCards({
 				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between">
 					<div>
 						<div className="flex items-center justify-between mb-2">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">3D Планирование (MPR)</span>
+							<span className="text-xs font-semibold text-[var(--muted)]">3D Планирование (MPR)</span>
 							<Box className="w-4 h-4 text-blue-500" />
 						</div>
 						<h4 className="text-sm font-bold text-[var(--ink)] mb-1">Томография и имплантация</h4>
@@ -60,7 +60,7 @@ export function RadiologyHubCards({
 				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between">
 					<div>
 						<div className="flex items-center justify-between mb-2">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Прицельные снимки & 2D</span>
+							<span className="text-xs font-semibold text-[var(--muted)]">Прицельные снимки & 2D</span>
 							<Layers className="w-4 h-4 text-emerald-500" />
 						</div>
 						<h4 className="text-sm font-bold text-[var(--ink)] mb-1">Прицельные снимки</h4>
@@ -82,7 +82,7 @@ export function RadiologyHubCards({
 				<div className="p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between">
 					<div>
 						<div className="flex items-center justify-between mb-2">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Консультация у кресла</span>
+							<span className="text-xs font-semibold text-[var(--muted)]">Консультация у кресла</span>
 							<SplitSquareHorizontal className="w-4 h-4 text-[#00C853]" />
 						</div>
 						<h4 className="text-sm font-bold text-[var(--ink)] mb-1">Сплит-сравнение и 8 дисциплин</h4>

@@ -80,22 +80,21 @@ export const CANONICAL_IRRIGATION_SOLUTIONS = [
 	"Стерильный физраствор / вода",
 ] as const;
 
-/** Машинные NiTi-системы */
+/** Машинные NiTi-системы (клинические категории по Мандатам 8x, 8ap) */
 export const NITI_SYSTEM_OPTIONS = [
-	"WaveOne Gold / ProTaper Next (Dentsply)",
-	"ProTaper Ultimate (Dentsply Sirona)",
-	"Mtwo / Reciproc Blue (VDW)",
-	"SOCO SC / SC PRO",
-	"Ручные K-Files (Maillefer)",
+	"Машинная NiTi ротационная система",
+	"Реципрокная NiTi система",
+	"Ротационные файлы для распломбирования",
+	"Ручные K-Files (стандарт ISO)",
 ] as const;
 
 /** Силеры и герметики */
 export const CURATED_SEALERS = [
-	"AH Plus (эпоксидный герметик)",
-	"TotalFill BC Sealer (биокерамика)",
-	"BioRoot RCS (биокерамика)",
-	"CeraSeal (биокерамика)",
-	"Каласепт (Ca(OH)2 водорастворимый)",
+	"Эпоксидный полимерный силер",
+	"Биокерамический силер",
+	"Биокерамический силер инжекторный",
+	"Лечебная паста гидроксида кальция Ca(OH)2",
+	"Резорбируемый герметик (молочный прикус)",
 ] as const;
 
 export const CURATED_ISO_MAF_OPTIONS = [
@@ -161,7 +160,7 @@ export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[
 	return defaultCanals.map((c, idx) => {
 		const rawLen = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
 		const safeLen = Number.isFinite(rawLen) && rawLen > 0 ? rawLen : getAnatomicalWorkingLength(toothNumber, c.canalName);
-		const rawMaf = c.masterApicalFile || "#25";
+		const rawMaf = c.masterApicalFile || (isDeciduous ? "ISO 25" : "#25");
 		const mafMatch = rawMaf.match(/(#\d+)/);
 		const masterApicalFile: string = (mafMatch && mafMatch[1]) ? mafMatch[1] : rawMaf;
 		return {
@@ -169,9 +168,9 @@ export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[
 			name: c.canalName,
 			workingLengthMm: Math.max(minWl, Math.min(35, Math.round(safeLen * 2) / 2)),
 			masterApicalFile,
-			taper: c.taper?.includes(".06") ? ".06" : ".04",
-			obturationType: "gutta_sealer",
-			sealer: "AH Plus",
+			taper: isDeciduous ? ".02" : (c.taper?.includes(".06") ? ".06" : ".04"),
+			obturationType: isDeciduous ? "temp_caoh2" : "gutta_sealer",
+			sealer: isDeciduous ? "Резорбируемый герметик" : "Эпоксидный полимерный силер",
 			isObliterated: Boolean(c.isObliterated),
 			apexLocatorReading: c.apexLocatorReading || "0.0 (Apex)",
 			referencePoint: c.referencePoint || "Бугор зуба",
@@ -195,32 +194,32 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 	pulpitis_1visit: {
 		id: "pulpitis_1visit",
 		title: "Пульпит (1 визит)",
-		description: "Витальная экстирпация, NiTi обработка, 3D обтурация гуттаперча + AH Plus",
+		description: "Витальная экстирпация, NiTi обработка, 3D обтурация гуттаперча + эпоксидный силер",
 		stageStamp: "COMPLETED",
-		defaultSealer: "AH Plus (эпоксидный герметик)",
-		obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
+		defaultSealer: "Эпоксидный полимерный силер",
+		obturationTechnique: "Гуттаперча + эпоксидный полимерный силер латерально",
 		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
-		rotarySystem: "WaveOne Gold / ProTaper Next",
+		rotarySystem: "Машинная NiTi ротационная система",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
-			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + эпоксидный полимерный силер`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПУЛЬПИТ В 1 ВИЗИТ]\n` +
 				`S: Жалобы на острые температурные и самопроизвольные приступообразные боли в зубе #${activeTooth}.\n` +
 				`O: Проведена проводниковая/инфильтрационная анестезия. Изоляция коффердамом. Раскрытие полости зуба #${activeTooth}, витальная экстирпация пульпы.\n` +
-				`Механическая обработка каналов машинной NiTi-системой (ProTaper / WaveOne Gold):\n${canalsReport}\n` +
+				`Механическая обработка каналов машинной NiTi-системой:\n${canalsReport}\n` +
 				`Ирригация: медикаментозная обработка NaOCl 3% с УЗ-активацией и EDTA 17%, высушивание стерильными бумажными штифтами.\n` +
 				`A: Острый очаговый/диффузный пульпит зуба #${activeTooth} (K04.0).\n` +
-				`P: Постоянная трёхмерная обтурация каналов гуттаперчей с AH Plus методом латеральной компакции до физиологического апекса. Рентген-контроль: каналы гомогенно обтурированы до верхушки корня. Герметичная реставрация.`;
+				`P: Постоянная трёхмерная обтурация каналов гуттаперчей с эпоксидным полимерным силером методом латеральной компакции до физиологического апекса. Рентген-контроль: каналы гомогенно обтурированы до верхушки корня. Герметичная реставрация.`;
 		},
 	},
 	periodontitis_temp: {
 		id: "periodontitis_temp",
 		title: "Периодонтит (Ca(OH)2)",
-		description: "Дезинфекция, временная обтурация гидроксидом кальция Calcept на 10–14 дней",
+		description: "Дезинфекция, временная обтурация гидроксидом кальция Ca(OH)2 на 10–14 дней",
 		stageStamp: "TEMP_CAOH2",
-		defaultSealer: "Каласепт (Ca(OH)2 водорастворимый)",
-		obturationTechnique: "Временная обтурация Ca(OH)2 (Каласепт)",
+		defaultSealer: "Лечебная паста гидроксида кальция Ca(OH)2",
+		obturationTechnique: "Временная обтурация пастой Ca(OH)2",
 		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
-		rotarySystem: "WaveOne Gold / ProTaper Next",
+		rotarySystem: "Машинная NiTi ротационная система",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
 			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, временная паста Ca(OH)2`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 1-Й ВИЗИТ]\n` +
@@ -229,27 +228,27 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 				`Инструментальная обработка каналов машинной NiTi-системой:\n${canalsReport}\n` +
 				`Ирригация: обильная обработка NaOCl 3% с УЗ-активацией и EDTA 17%, высушивание бумажными штифтами.\n` +
 				`A: Хронический апикальный периодонтит зуба #${activeTooth} (K04.5).\n` +
-				`P: Временная обтурация корневых каналов лечебной пастой гидроксида кальция Ca(OH)2 (Каласепт) на 10–14 дней. Герметичная временная пломба. Назначен 2-й визит.`;
+				`P: Временная обтурация корневых каналов лечебной пастой гидроксида кальция Ca(OH)2 на 10–14 дней. Герметичная временная пломба. Назначен 2-й визит.`;
 		},
 	},
 	periodontitis_permanent_ahplus: {
 		id: "periodontitis_permanent_ahplus",
-		title: "Периодонтит (AH Plus / 2 визит)",
-		description: "Второй визит: удаление Ca(OH)2, повторная ирригация, постоянная 3D обтурация гуттаперча + AH Plus",
+		title: "Периодонтит (эпоксидный силер / 2 визит)",
+		description: "Второй визит: удаление Ca(OH)2, повторная ирригация, постоянная 3D обтурация гуттаперча + эпоксидный силер",
 		stageStamp: "COMPLETED",
-		defaultSealer: "AH Plus (эпоксидный герметик)",
-		obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
+		defaultSealer: "Эпоксидный полимерный силер",
+		obturationTechnique: "Гуттаперча + эпоксидный полимерный силер латерально",
 		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
-		rotarySystem: "WaveOne Gold / ProTaper Next",
+		rotarySystem: "Машинная NiTi ротационная система",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
-			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + эпоксидный полимерный силер`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 2-Й ВИЗИТ (ПОСТОЯННАЯ ОБТУРАЦИЯ)]\n` +
 				`S: Повторное посещение по поводу периодонтита зуба #${activeTooth}. Жалоб на боли при накусывании нет, временная повязка сохранена.\n` +
 				`O: Проведена изоляция коффердамом. Снятие временной пломбы, эвакуация гидроксида кальция Ca(OH)2 из каналов.\n` +
 				`Ирригация: обильное промывание NaOCl 3% с УЗ-активацией, экспозиция EDTA 17%, промывание дистиллированной водой, высушивание бумажными штифтами.\n` +
 				`Каналы сухие, отделяемого нет, перкуссия безболезненная:\n${canalsReport}\n` +
 				`A: Хронический апикальный периодонтит зуба #${activeTooth} в стадии стихания (K04.5).\n` +
-				`P: Постоянная трёхмерная обтурация каналов гуттаперчей с AH Plus методом латеральной компакции. Рентген-контроль: каналы гомогенно обтурированы до верхушки корня (Apex 0.0). Подготовка под постоянную реставрацию.`;
+				`P: Постоянная трёхмерная обтурация каналов гуттаперчей с эпоксидным полимерным силером методом латеральной компакции. Рентген-контроль: каналы гомогенно обтурированы до верхушки корня (Apex 0.0). Подготовка под постоянную реставрацию.`;
 		},
 	},
 	retreatment_unsealing: {
@@ -257,19 +256,19 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 		title: "Распломбировка каналов",
 		description: "Удаление гуттаперчи / резорцина / извлечение штифта, антисептическая ревизия",
 		stageStamp: "TEMP_CAOH2",
-		defaultSealer: "Metapex (Ca(OH)2 с йодоформом)",
+		defaultSealer: "Лечебная паста Ca(OH)2 с йодоформом",
 		obturationTechnique: "Временная паста Ca(OH)2 с йодоформом",
 		irrigation: "Хлоргексидин 2% + EDTA 17% (УЗ-активация)",
-		rotarySystem: "D-RaCe / ProTaper Retreatment",
+		rotarySystem: "Ротационные файлы для распломбирования",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
 			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: распломбирован на всю глубину, WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — РАСПЛОМБИРОВКА И РЕТРИТМЕНТ]\n` +
 				`S: Направление на повторное эндодонтическое лечение зуба #${activeTooth} в связи с деструктивным процессом у верхушки корня.\n` +
-				`O: Анестезия, коффердам. Снятие старой реставрации, распломбировка каналов эндосольвентом и ретритмент-файлами D-RaCe.\n` +
+				`O: Анестезия, коффердам. Снятие старой реставрации, распломбировка каналов эндосольвентом и ротационными файлами для распломбирования.\n` +
 				`Ревизия корневых каналов:\n${canalsReport}\n` +
 				`Ирригация: 2% раствор Хлоргексидина, 17% EDTA с ультразвуковой активацией.\n` +
 				`A: Хронический гранулирующий периодонтит / несостоятельность ранее пломбированных каналов зуба #${activeTooth} (K04.5).\n` +
-				`P: Внутриканальное введение антисептической пасты Ca(OH)2 с йодоформом (Metapex). Герметичная повязка. Контрольный осмотр через 14 дней.`;
+				`P: Внутриканальное введение антисептической пасты Ca(OH)2 с йодоформом. Герметичная повязка. Контрольный осмотр через 14 дней.`;
 		},
 	},
 };
@@ -277,6 +276,7 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 export function sanitizeCanalsForSubmission(
 	inputCanals: EndoCanalData[], activeTooth: number, stageStamp: EndoStageStamp, getAnatomicalWl: (tooth: number, canal?: string) => number,
 ): EndoCanalData[] {
+	const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
 	return inputCanals.map((c) => {
 		let safeWl: number | string = c.workingLengthMm;
 		if (c.isObliterated) {
@@ -288,19 +288,26 @@ export function sanitizeCanalsForSubmission(
 				num = fallbackWl;
 			}
 			// Валидация строго в физиологическом диапазоне (от 5 мм для молочных зубов 51-85, от 10 мм для постоянных 11-48) с шагом 0.5 мм без NaN
-			const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
 			const minWl = isDeciduous ? 5 : 10;
 			safeWl = Math.max(minWl, Math.min(35, Math.round(num * 2) / 2));
 		}
+
+		const safeObt = isDeciduous
+			? "Резорбируемая паста (гидроксид кальция / цинкоксидэвгенол)"
+			: (stageStamp === "TEMP_CAOH2" ? "Временная обтурация пастой Ca(OH)2" : "Гуттаперча + эпоксидный полимерный силер латерально");
+		const safeSealer = isDeciduous
+			? "Резорбируемый герметик"
+			: (stageStamp === "TEMP_CAOH2" ? "Лечебная паста гидроксида кальция Ca(OH)2" : "Эпоксидный полимерный силер");
 
 		return {
 			...c,
 			isObliterated: Boolean(c.isObliterated),
 			workingLengthMm: safeWl,
-			masterApicalFile: c.masterApicalFile || "#25.04",
-			taper: c.taper || ".04 (Конусность 4%)",
+			masterApicalFile: c.masterApicalFile || (isDeciduous ? "ISO 25 (#25 красный)" : "#25.04"),
+			taper: c.taper || (isDeciduous ? ".02 (Стандартная 2%)" : ".04 (Конусность 4%)"),
 			referencePoint: c.referencePoint || "Бугор зуба",
-			obturationTechnique: c.obturationTechnique || (stageStamp === "TEMP_CAOH2" ? "Временная обтурация Ca(OH)2 (Каласепт)" : "Гуттаперча + Силер (AH Plus) латерально"),
+			obturationTechnique: c.obturationTechnique || safeObt,
+			sealer: c.sealer || safeSealer,
 		};
 	});
 }

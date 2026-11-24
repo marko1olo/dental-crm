@@ -208,6 +208,7 @@ export async function processSettlementAndBomStage(
 						patientId: resolvedPatientId,
 						patientName: patientName || "Пациент",
 						depositAmountRub: overpaymentRub,
+						depositAmountKopecks: BigInt(overpaymentKopecks),
 						taggedTargetType: "patient_deposit",
 						taggedTargetName: `Авансовый депозит по приему ${effectiveVisitId}`,
 						allocationStatus: "unallocated",

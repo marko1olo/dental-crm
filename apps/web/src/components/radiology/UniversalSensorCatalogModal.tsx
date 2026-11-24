@@ -232,8 +232,10 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 									<div className="flex items-center gap-2 self-end sm:self-center shrink-0">
 										<button
 											type="button"
-											onClick={(e) => handleTestConnection(sensor, e)}
-											disabled={isTesting}
+											onClick={(e) => {
+												if (isTesting) return;
+												handleTestConnection(sensor, e);
+											}}
 											className="min-h-[32px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 											title="Проверить отклик сенсора"
 											data-testid={`btn-test-sensor-${sensor.id}`}

@@ -32,7 +32,7 @@ export const ENDO_SINGLE_CANAL_PREP_BOM_SEED: DefaultBomProcedureSeed = {
 			criticalThreshold: 5,
 		},
 		{
-			name: "Эндолубрикант водорастворимый RC-Prep",
+			name: "Эндолубрикант водорастворимый с ЭДТА",
 			category: "endo",
 			unit: "мл",
 			quantityToDeduct: 0.5,
@@ -41,7 +41,7 @@ export const ENDO_SINGLE_CANAL_PREP_BOM_SEED: DefaultBomProcedureSeed = {
 			criticalThreshold: 5,
 		},
 		{
-			name: "Машинный Ni-Ti ротационный файл ProTaper / WaveOne",
+			name: "Машинный Ni-Ti ротационный файл",
 			category: "endo",
 			unit: "шт.",
 			quantityToDeduct: 1,

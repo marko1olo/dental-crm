@@ -117,13 +117,14 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 
 			{ctrl.isCtSelectorOpen && (
 				<Suspense fallback={null}>
-					<CtSelectorModal isOpen={ctrl.isCtSelectorOpen} onClose={() => ctrl.setIsCtSelectorOpen(false)} patientId={patientId} patientName={patientName} studies={filmstripStudies} />
+					<CtSelectorModal key={patientId ?? "ct-selector"} isOpen={ctrl.isCtSelectorOpen} onClose={() => ctrl.setIsCtSelectorOpen(false)} patientId={patientId} patientName={patientName} studies={filmstripStudies} />
 				</Suspense>
 			)}
 
 			{ctrl.isCbctStudioOpen && (
 				<Suspense fallback={null}>
 					<CbctMprImplantStudioModal
+						key={studyId ?? patientId ?? "cbct-studio"}
 						isOpen={ctrl.isCbctStudioOpen}
 						onClose={() => ctrl.setIsCbctStudioOpen(false)}
 						patientId={patientId || undefined}

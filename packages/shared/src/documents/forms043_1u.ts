@@ -252,13 +252,54 @@ export function calculateBoltonIndex(
 	};
 }
 
+/** Расчет индекса Снагиной (Snagina index) */
+export interface SnaginaIndexResult {
+	jaw: "maxilla" | "mandible";
+	sumIncisorsMm: number; // Сумма мезиодистальных диаметров 4 постоянных резцов
+	apicalBaseWidthMm: number; // Ширина апикального базиса челюсти
+	ratioPercent: number; // (sumIncisors / apicalBaseWidth) * 100%
+	normPercent: number; // Норма: 61.4% для ВЧ, 63.8% для НЧ
+	discrepancyType: "normal" | "narrowed_base" | "widened_base";
+	interpretation: string;
+}
+
+export function calculateSnaginaIndex(
+	sumIncisorsMm: number,
+	apicalBaseWidthMm: number,
+	jaw: "maxilla" | "mandible" = "maxilla",
+): SnaginaIndexResult {
+	const norm = jaw === "maxilla" ? 61.4 : 63.8;
+	const ratio = apicalBaseWidthMm > 0 ? Number(((sumIncisorsMm / apicalBaseWidthMm) * 100).toFixed(1)) : 0;
+
+	let discrepancyType: SnaginaIndexResult["discrepancyType"] = "normal";
+	let interpretation = `Индекс Снагиной (${jaw === "maxilla" ? "ВЧ" : "НЧ"}): ${ratio}% — норма (норма ${norm}%). Апикальный базис гармоничен размерам резцов.`;
+
+	if (ratio > norm + 1.5) {
+		discrepancyType = "narrowed_base";
+		interpretation = `Индекс Снагиной (${jaw === "maxilla" ? "ВЧ" : "НЧ"}): ${ratio}% > нормы ${norm}%. Сужение апикального базиса (дефицит базиса по отношению к ширине резцов).`;
+	} else if (ratio < norm - 1.5 && ratio > 0) {
+		discrepancyType = "widened_base";
+		interpretation = `Индекс Снагиной (${jaw === "maxilla" ? "ВЧ" : "НЧ"}): ${ratio}% < нормы ${norm}%. Расширение апикального базиса челюсти.`;
+	}
+
+	return {
+		jaw,
+		sumIncisorsMm: Number(sumIncisorsMm.toFixed(1)),
+		apicalBaseWidthMm: Number(apicalBaseWidthMm.toFixed(1)),
+		ratioPercent: ratio,
+		normPercent: norm,
+		discrepancyType,
+		interpretation,
+	};
+}
+
 /** План ортодонтического аппаратурного лечения */
 export const orthodonticAppliancePlanSchema = z.object({
 	applianceType: z.enum([
 		"metal_braces_standard", // Металлическая лигатурная брекет-система
-		"metal_braces_self_ligating", // Металлическая самолигирующая (Damon Q2 / SmartClip)
+		"metal_braces_self_ligating", // Металлическая самолигирующая (паз .022 / .018, пропись Roth / MBT / Damon)
 		"ceramic_braces_aesthetic", // Эстетическая керамическая / сапфировая брекет-система
-		"lingual_braces", // Лингвальная брекет-система (Incognito / WIN)
+		"lingual_braces", // Лингвальная брекет-система (язычная пропись)
 		"clear_aligners", // Элайнеры прозрачные (серия кап с аттачментами)
 		"rapid_palatal_expander_haas", // Аппарат Хааса / Марко Роса (несъемный нёбный расширитель)
 		"functional_twin_block", // Функциональный двучелюстной аппарат Твин-Блок

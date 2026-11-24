@@ -38,8 +38,8 @@ export const SignatureLegalAndConflicts: React.FC<SignatureLegalAndConflictsProp
 			</div>
 
 			{conflicts.length > 0 && (
-				<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-3" data-testid="clinical-conflict-alert">
-					<AlertTriangle size={20} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+				<div className="p-4 rounded-2xl bg-[var(--warning-soft)] border border-[var(--warning)]/30 text-[var(--ink)] text-xs flex items-start gap-3" data-testid="clinical-conflict-alert">
+					<AlertTriangle size={20} className="shrink-0 text-[var(--warning)] mt-0.5" />
 					<div className="space-y-1.5 flex-1">
 						<div className="font-bold text-sm">Клиническое предупреждение: взаимоисключающие манипуляции</div>
 						<div className="space-y-1">
@@ -49,7 +49,7 @@ export const SignatureLegalAndConflicts: React.FC<SignatureLegalAndConflictsProp
 								</div>
 							))}
 						</div>
-						<div className="text-[11px] text-amber-700/90 dark:text-amber-300/90 font-semibold pt-1 border-t border-amber-500/20">
+						<div className="text-[11px] text-[var(--ink-muted)] font-semibold pt-1 border-t border-[var(--warning)]/20">
 							Внимание: в плане назначены взаимоисключающие манипуляции. Врач вправе утвердить план под личную клиническую ответственность.
 						</div>
 					</div>
@@ -67,7 +67,7 @@ export const SignatureLegalAndConflicts: React.FC<SignatureLegalAndConflictsProp
 			</label>
 
 			{errorText && (
-				<div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-medium">
+				<div className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger)]/30 text-[var(--danger)] text-xs font-medium">
 					<AlertCircle size={14} className="shrink-0" />
 					<span>{errorText}</span>
 				</div>

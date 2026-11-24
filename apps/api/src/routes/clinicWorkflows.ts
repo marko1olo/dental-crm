@@ -5,6 +5,7 @@ import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { clinicWorkflows } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 const createWorkflowSchema = z.object({
 	name: z.string().min(1).max(255),
@@ -63,6 +64,14 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * (settings.write permission required, default trigger to "manual" if omitted/falsy).
 	 */
 	app.post("/api/clinic/workflows", async (request: FastifyRequest, reply: FastifyReply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
 		const organizationId = await requireResolvedOrganizationId(request, reply);
 		if (!organizationId) return;
 
@@ -108,6 +117,10 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 			});
 		}
 
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		return reply.status(201).send({ workflow: serializeWorkflow(created) });
 	});
 
@@ -117,6 +130,14 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 	 * (settings.write permission required).
 	 */
 	app.post("/api/clinic/workflows/:id/toggle", async (request: FastifyRequest, reply: FastifyReply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
 		const organizationId = await requireResolvedOrganizationId(request, reply);
 		if (!organizationId) return;
 
@@ -173,6 +194,10 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 				error: "WorkflowNotFound",
 				message: "Сценарий автоматизации не найден.",
 			});
+		}
+
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		return reply.status(200).send({ workflow: serializeWorkflow(updated) });

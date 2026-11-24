@@ -107,7 +107,12 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		const body = request.body || {};
 
 		if (channel === "vk") {
-			const res = await handleVkWebhook(body, organizationId);
+			const incomingSecret =
+				(typeof body.secret === "string" ? body.secret : null) ||
+				(typeof request.headers["x-vk-secret"] === "string" ? request.headers["x-vk-secret"] : null) ||
+				(typeof request.headers["x-dente-webhook-secret"] === "string" ? request.headers["x-dente-webhook-secret"] : null) ||
+				((request.query as Record<string, string> | undefined)?.secret ?? null);
+			const res = await handleVkWebhook(body, organizationId, incomingSecret);
 			return reply.code(res.statusCode).send(res.payload);
 		}
 
@@ -132,7 +137,17 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		}
 
 		if (channel === "max") {
-			const res = await handleMaxWebhook(body, organizationId);
+			const incomingSecret =
+				(typeof body.secret === "string" ? body.secret : null) ||
+				(typeof body.token === "string" ? body.token : null) ||
+				(typeof request.headers["x-max-secret"] === "string" ? request.headers["x-max-secret"] : null) ||
+				(typeof request.headers["x-dente-webhook-secret"] === "string" ? request.headers["x-dente-webhook-secret"] : null) ||
+				(typeof request.headers.authorization === "string" ? request.headers.authorization.replace(/^Bearer\s+/i, "") : null) ||
+				((request.query as Record<string, string> | undefined)?.secret ?? null);
+			const res = await handleMaxWebhook(body, organizationId, incomingSecret);
+			if (res.statusCode && res.statusCode !== 200) {
+				return reply.code(res.statusCode).send(res);
+			}
 			return reply.code(200).send(res);
 		}
 

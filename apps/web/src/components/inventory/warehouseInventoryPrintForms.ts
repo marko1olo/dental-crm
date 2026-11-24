@@ -5,6 +5,7 @@ import { numberToRussianWordsKopecks } from "./audit/warehouseAuditMath.js";
 
 export {
 	exportInventoryToCsv,
+	exportDiscrepanciesCsv,
 	exportInv19DiscrepanciesToCsv,
 } from "./audit/warehouseAuditCsvExport.js";
 

@@ -1,8 +1,10 @@
-import { randomUUID } from "node:crypto";
-import { and, eq, ilike } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
+import { and, eq, ilike, isNotNull, or } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	communicationEvents,
+	denteTelegramChatLinks,
+	messengerInboundEvents,
 	patients,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
@@ -52,40 +54,101 @@ export class BotOutboundDelivery {
 
 		// Фаза 1: Разрешение / создание карты пациента в транзакции БД
 		const patientResolution = await withTenantCtx(params.organizationId, async (tx) => {
+			const isPhoneChannel = params.channel === "whatsapp";
 			const phoneDigits = params.senderId.replace(/\D/g, "");
 			let patientId: string | null = null;
 			let patientName = `Пациент ${params.channel.toUpperCase()}`;
 
-			const existingPatients = await tx
-				.select({ id: patients.id, fullName: patients.fullName })
-				.from(patients)
+			// 1.1. Проверяем messengerInboundEvents на наличие подтвержденной связки с patientId
+			const [inboundWithPatient] = await tx
+				.select({ patientId: messengerInboundEvents.patientId })
+				.from(messengerInboundEvents)
 				.where(
 					and(
-						eq(patients.organizationId, params.organizationId),
-						phoneDigits.length >= 10
-							? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
-							: ilike(patients.notes, `%${params.channel}:${params.senderId}%`),
+						eq(messengerInboundEvents.organizationId, params.organizationId),
+						eq(messengerInboundEvents.channel, params.channel === "max" ? "max" : params.channel),
+						eq(messengerInboundEvents.externalChatId, params.senderId),
+						isNotNull(messengerInboundEvents.patientId),
 					),
 				)
 				.limit(1);
 
-			if (existingPatients.length > 0 && existingPatients[0]) {
-				patientId = existingPatients[0].id;
-				patientName = existingPatients[0].fullName;
-			} else {
-				const [created] = await tx
-					.insert(patients)
-					.values({
-						organizationId: params.organizationId,
-						fullName: `${params.channel.toUpperCase()} Пациент (${params.senderId.slice(-4)})`,
-						phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
-						notes: `Создан для диалога ${params.channel.toUpperCase()}:${params.senderId}`,
-						status: "active",
-					})
-					.returning({ id: patients.id, fullName: patients.fullName });
-				if (created) {
-					patientId = created.id;
-					patientName = created.fullName;
+			let resolvedPatientId: string | null = inboundWithPatient?.patientId ?? null;
+
+			// 1.2. Для Telegram проверяем подтвержденные связки в denteTelegramChatLinks
+			if (!resolvedPatientId && params.channel === "telegram") {
+				const chatFingerprint = createHash("sha256").update(params.senderId).digest("hex");
+				const [link] = await tx
+					.select({ subjectId: denteTelegramChatLinks.subjectId })
+					.from(denteTelegramChatLinks)
+					.where(
+						and(
+							eq(denteTelegramChatLinks.organizationId, params.organizationId),
+							or(
+								eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
+								eq(denteTelegramChatLinks.chatTransportRef, params.senderId),
+							),
+							eq(denteTelegramChatLinks.status, "active"),
+							eq(denteTelegramChatLinks.subjectType, "patient"),
+						),
+					)
+					.limit(1);
+				if (link?.subjectId) {
+					resolvedPatientId = link.subjectId;
+				}
+			}
+
+			// 1.3. Если найден resolvedPatientId — верифицируем принадлежность клинике
+			if (resolvedPatientId) {
+				const [matched] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, params.organizationId),
+							eq(patients.id, resolvedPatientId),
+						),
+					)
+					.limit(1);
+				if (matched) {
+					patientId = matched.id;
+					patientName = matched.fullName;
+				}
+			}
+
+			// 1.4. Если связки нет: поиск по телефону разрешен ТОЛЬКО для WhatsApp. Для остальных — по тегу notes.
+			if (!patientId) {
+				const existingPatients = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, params.organizationId),
+							isPhoneChannel && phoneDigits.length >= 10
+								? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
+								: ilike(patients.notes, `%${params.channel}:${params.senderId}%`),
+						),
+					)
+					.limit(1);
+
+				if (existingPatients.length > 0 && existingPatients[0]) {
+					patientId = existingPatients[0].id;
+					patientName = existingPatients[0].fullName;
+				} else {
+					const [created] = await tx
+						.insert(patients)
+						.values({
+							organizationId: params.organizationId,
+							fullName: `${params.channel.toUpperCase()} Пациент (${params.senderId.slice(-4)})`,
+							phone: isPhoneChannel && phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
+							notes: `Создан для диалога ${params.channel.toUpperCase()}:${params.senderId}`,
+							status: "active",
+						})
+						.returning({ id: patients.id, fullName: patients.fullName });
+					if (created) {
+						patientId = created.id;
+						patientName = created.fullName;
+					}
 				}
 			}
 

@@ -37,7 +37,7 @@ export const StageFooterPrimaryActions: React.FC<StageFooterPrimaryActionsProps>
 			) : flags.isAction1WriteOff ? (
 				<button
 					type="button"
-					onClick={() => onExecuteWriteOffStage!(stage)}
+					onClick={() => onExecuteWriteOffStage?.(stage)}
 					className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 rounded-xl text-[13px] font-medium text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 					title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 					data-testid={`stage-${stage.stageNumber}-writeoff-btn`}
@@ -51,7 +51,7 @@ export const StageFooterPrimaryActions: React.FC<StageFooterPrimaryActionsProps>
 			{flags.isAction2Pay ? (
 				<button
 					type="button"
-					onClick={() => onPayStage!(stage)}
+					onClick={() => onPayStage?.(stage)}
 					className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 rounded-xl text-[13px] font-semibold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:brightness-95 border border-[var(--teal)]/30 shadow-2xs cursor-pointer transition-all flex items-center justify-center gap-1.5 shrink-0 touch-manipulation active:scale-[0.98]"
 					title={`Сформировать счёт в кассу за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
 					data-testid={`stage-${stage.stageNumber}-pay-btn`}
@@ -62,7 +62,7 @@ export const StageFooterPrimaryActions: React.FC<StageFooterPrimaryActionsProps>
 			) : flags.isAction2Estimate ? (
 				<button
 					type="button"
-					onClick={() => onExportStageEstimate!(stage)}
+					onClick={() => onExportStageEstimate?.(stage)}
 					className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 rounded-xl text-[13px] font-medium text-[var(--ink,#0f172a)] bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 					title={`Печать сметы и спецификации по этапу №${stage.stageNumber}`}
 					data-testid={`stage-${stage.stageNumber}-estimate-btn`}
@@ -73,7 +73,7 @@ export const StageFooterPrimaryActions: React.FC<StageFooterPrimaryActionsProps>
 			) : flags.isAction2WriteOff ? (
 				<button
 					type="button"
-					onClick={() => onExecuteWriteOffStage!(stage)}
+					onClick={() => onExecuteWriteOffStage?.(stage)}
 					className="secondary-button dente-btn dente-btn-secondary h-9 min-h-[36px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] px-3.5 rounded-xl text-[13px] font-medium text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors flex items-center justify-center gap-1.5 shrink-0 touch-manipulation shadow-2xs"
 					title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 					data-testid={`stage-${stage.stageNumber}-writeoff-btn`}

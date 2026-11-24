@@ -6,7 +6,7 @@ import {
 	type WarehouseInventoryAuditDocument,
 	generateInventoryAuditStatementHtml,
 	generateInventoryDiscrepancyStatementHtml,
-	generateTorg16ActFromInventory,
+	generateAuditWriteoffActFromInventory,
 	generateWarehouseWriteoffActHtml,
 } from "../warehouseInventoryEngine.js";
 
@@ -55,8 +55,8 @@ describe("Official Russian Print Forms Generation (HTML)", () => {
 	});
 
 	it("Формирует акт списания материалов клиники со списанием просроченных ТМЦ", () => {
-		const torg16 = generateTorg16ActFromInventory(sampleDoc);
-		const html = generateWarehouseWriteoffActHtml(torg16);
+		const act = generateAuditWriteoffActFromInventory(sampleDoc);
+		const html = generateWarehouseWriteoffActHtml(act);
 		assert.ok(html.includes("Акт списания материалов клиники"));
 		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ КЛИНИКИ"));
 		assert.ok(html.includes("Причина списания:"));

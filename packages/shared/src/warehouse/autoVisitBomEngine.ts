@@ -3,10 +3,10 @@
  *
  * Wave 134+ / Red Team Mandate 8e, 8k, 8n, 8s, 8v:
  * 1. Background BOM Deduction:
- *    When a doctor completes a visit, consumables linked to rendered 804n services
+ *    When a doctor completes a visit, consumables linked to rendered medical services
  *    automatically deduct in the background without nurse/doctor clerical clicking.
  * 2. Soft Overdraft (Mandates 8e, 8n, 8s):
- *    Stock shortages NEVER block patient care, visit completion, or saving Form 043/u.
+ *    Stock shortages NEVER block patient care, visit completion, or saving the medical card.
  *    Negative stock balance is recorded with administrative replenishment warnings.
  * 3. 1-Click Class B Waste Disposal (СанПиН 2.1.3684-21):
  *    Used anesthetic carpules, needles, and sharps are automatically tracked and
@@ -282,7 +282,7 @@ export function executeAutoVisitBomDeduction(
 		plannedConsumables,
 		input.currentStockMap ?? {},
 		{
-			allowOverdraft: input.allowOverdraft !== false,
+			allowOverdraft: true, // МАНДАТ 8v/8aa: клиническое автосписание визита безусловно уходит в мягкий овердрафт без блокировки врача
 			overdraftMessagePrefix: "Складской овердрафт",
 			overdraftMessageSuffix: "Накладная в пути. Лечение не блокируется.",
 		},
@@ -291,7 +291,7 @@ export function executeAutoVisitBomDeduction(
 	// Class B medical waste recognition
 	const classBWaste = calculateClassBWasteFromItems(deduction.deductedItems);
 
-	// Statutory Form 043/u & SanPiN A4 Act formatting
+	// Statutory Medical Card & SanPiN A4 Act formatting
 	const statutoryActText = formatConsumablesWriteOffA4Report(
 		{
 			visitId: input.visitId,

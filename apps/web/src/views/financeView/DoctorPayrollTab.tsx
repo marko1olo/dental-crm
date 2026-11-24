@@ -20,6 +20,8 @@ export function DoctorPayrollTab({
 		setPeriodEnd,
 		effectiveServices,
 		isLoading,
+		fetchError,
+		retryFetch,
 		calculationResult,
 		handleExportCsv,
 		handlePrintPayslip,
@@ -44,6 +46,22 @@ export function DoctorPayrollTab({
 				onExportCsv={handleExportCsv}
 				onPrintPayslip={handlePrintPayslip}
 			/>
+
+			{fetchError && (
+				<div className="p-3.5 rounded-xl border border-[var(--danger,#ef4444)]/30 bg-[var(--danger-soft,rgba(239,68,68,0.08))] text-[var(--ink)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+					<div className="flex items-center gap-2">
+						<span className="text-[var(--danger,#ef4444)] font-bold">⚠️</span>
+						<span>{fetchError}</span>
+					</div>
+					<button
+						type="button"
+						onClick={retryFetch}
+						className="h-8 px-3 rounded-lg text-xs font-medium bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] shrink-0 transition-colors"
+					>
+						Повторить загрузку начислений
+					</button>
+				</div>
+			)}
 
 			<PayrollStatCards result={calculationResult} />
 

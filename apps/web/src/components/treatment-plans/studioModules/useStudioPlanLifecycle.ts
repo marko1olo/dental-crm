@@ -186,8 +186,8 @@ export function useStudioPlanLifecycle({
 						const phaseMap = new Map<number, TreatmentPlanItem[]>();
 						for (const it of activePlan.items) {
 							const phase = it.phase || 1;
-							if (!phaseMap.has(phase)) phaseMap.set(phase, []);
-							phaseMap.get(phase)!.push({
+							const phaseList = phaseMap.get(phase) ?? [];
+							phaseList.push({
 								id: it.id || `plan-item-${phase}-${Date.now()}`,
 								toothNumber: it.toothNumber,
 								priceId: it.priceId || undefined,
@@ -202,6 +202,7 @@ export function useStudioPlanLifecycle({
 								stageKind: phase === 1 ? "stage_1_therapy" : phase === 2 ? "stage_2_surgery" : "stage_3_orthopedics",
 								isCompleted: Boolean(it.isCompleted),
 							});
+							phaseMap.set(phase, phaseList);
 						}
 
 						const hydrated: TreatmentPlanStage[] = [];
@@ -576,15 +577,17 @@ export function useStudioPlanLifecycle({
 						(!isSynthetic ? it.id : null) ||
 						null;
 
-					const unitPriceRub =
-						it.unitPriceRub ?? (it.quantity > 0 ? it.priceRub / it.quantity : it.priceRub) ?? 0;
-					const unitPriceKopecks =
+					const quantity = it.quantity > 0 ? it.quantity : 1;
+					const totalItemKopecks =
 						typeof it.amountKopecks === "bigint"
 							? Number(it.amountKopecks)
 							: typeof it.amountKopecks === "number" && it.amountKopecks > 0
 								? Math.round(it.amountKopecks)
-								: rublesToKopecks(unitPriceRub);
-					const quantity = it.quantity || 1;
+								: rublesToKopecks(it.priceRub ?? 0);
+					const unitPriceKopecks =
+						typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
+							? rublesToKopecks(it.unitPriceRub)
+							: Math.round(totalItemKopecks / quantity);
 					const discountRub = it.discountRub || 0;
 					const discountKopecks = rublesToKopecks(discountRub);
 					const totalPriceKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);

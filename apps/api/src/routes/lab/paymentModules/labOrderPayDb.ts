@@ -77,7 +77,11 @@ export async function executeLabOrderPayment(
 				? Number(order.labCostKopecks)
 				: order.labCostRub != null && Number(order.labCostRub) > 0
 					? rubToKopecks(Number(order.labCostRub))
-					: 0;
+					: order.priceKopecks != null && Number(order.priceKopecks) > 0
+						? Number(order.priceKopecks)
+						: order.priceRub != null && Number(order.priceRub) > 0
+							? rubToKopecks(Number(order.priceRub))
+							: 0;
 
 		if (orderCostKopecks <= 0 || amountToPayKopecks > orderCostKopecks) {
 			return { kind: "amount_exceeds_cost" as const, maxAllowedKopecks: orderCostKopecks };
@@ -118,7 +122,9 @@ export async function executeLabOrderPayment(
 				amountRub: amountToPayRub,
 				amountKopecks: amountToPayKopecks,
 				balanceBeforeRub: targetBox.balanceRub,
+				balanceBeforeKopecks: BigInt(currentBalanceKopecks),
 				balanceAfterRub,
+				balanceAfterKopecks: BigInt(balanceAfterKopecks),
 				reasonId: reason11?.id ?? null,
 				reasonCode: 11,
 				reasonText: `Оплата услуг зуботехнической лаборатории по заказу ЛО-${order.secureToken.slice(0, 8).toUpperCase()}${input.notes ? ` (${input.notes})` : ""}`,

@@ -9,58 +9,62 @@ export const CONSUMABLE_NOTE_MAX_LENGTH = 200;
 /**
  * Zod schema for creating a consumable link (Price list service <-> Inventory item BOM recipe).
  */
-export const consumableLinkCreateSchema = z.object({
-	serviceId: z
-		.string({
-			required_error: "Необходимо указать услугу из прейскуранта",
-			invalid_type_error: "Необходимо указать услугу из прейскуранта",
-		})
-		.min(1, { message: "Необходимо указать услугу из прейскуранта" }),
-	inventoryItemId: z
-		.string({
-			required_error: "Необходимо указать расходный материал со склада",
-			invalid_type_error: "Необходимо указать расходный материал со склада",
-		})
-		.min(1, { message: "Необходимо указать расходный материал со склада" }),
-	quantity: z
-		.number({
-			required_error: "Укажите количество материала на процедуру",
-			invalid_type_error: "Количество материала должно быть числом",
-		})
-		.finite({ message: "Количество должно быть конечным числом" })
-		.positive({ message: "Количество должно быть больше 0" })
-		.max(9999, { message: "Количество не может превышать 9999" }),
-	note: z
-		.string()
-		.max(CONSUMABLE_NOTE_MAX_LENGTH, {
-			message: `Примечание не может превышать ${CONSUMABLE_NOTE_MAX_LENGTH} символов`,
-		})
-		.nullable()
-		.optional(),
-});
+export const consumableLinkCreateSchema = z
+	.object({
+		serviceId: z
+			.string({
+				required_error: "Необходимо указать услугу из прейскуранта",
+				invalid_type_error: "Необходимо указать услугу из прейскуранта",
+			})
+			.min(1, { message: "Необходимо указать услугу из прейскуранта" }),
+		inventoryItemId: z
+			.string({
+				required_error: "Необходимо указать расходный материал со склада",
+				invalid_type_error: "Необходимо указать расходный материал со склада",
+			})
+			.min(1, { message: "Необходимо указать расходный материал со склада" }),
+		quantity: z
+			.number({
+				required_error: "Укажите количество материала на процедуру",
+				invalid_type_error: "Количество материала должно быть числом",
+			})
+			.finite({ message: "Количество должно быть конечным числом" })
+			.positive({ message: "Количество должно быть больше 0" })
+			.max(9999, { message: "Количество не может превышать 9999" }),
+		note: z
+			.string()
+			.max(CONSUMABLE_NOTE_MAX_LENGTH, {
+				message: `Примечание не может превышать ${CONSUMABLE_NOTE_MAX_LENGTH} символов`,
+			})
+			.nullable()
+			.optional(),
+	})
+	.strict();
 
 export type ConsumableLinkCreate = z.infer<typeof consumableLinkCreateSchema>;
 
 /**
  * Zod schema for updating a consumable recipe link.
  */
-export const consumableLinkUpdateSchema = z.object({
-	quantity: z
-		.number({
-			invalid_type_error: "Количество материала должно быть числом",
-		})
-		.finite({ message: "Количество должно быть конечным числом" })
-		.positive({ message: "Количество должно быть больше 0" })
-		.max(9999, { message: "Количество не может превышать 9999" })
-		.optional(),
-	note: z
-		.string()
-		.max(CONSUMABLE_NOTE_MAX_LENGTH, {
-			message: `Примечание не может превышать ${CONSUMABLE_NOTE_MAX_LENGTH} символов`,
-		})
-		.nullable()
-		.optional(),
-});
+export const consumableLinkUpdateSchema = z
+	.object({
+		quantity: z
+			.number({
+				invalid_type_error: "Количество материала должно быть числом",
+			})
+			.finite({ message: "Количество должно быть конечным числом" })
+			.positive({ message: "Количество должно быть больше 0" })
+			.max(9999, { message: "Количество не может превышать 9999" })
+			.optional(),
+		note: z
+			.string()
+			.max(CONSUMABLE_NOTE_MAX_LENGTH, {
+				message: `Примечание не может превышать ${CONSUMABLE_NOTE_MAX_LENGTH} символов`,
+			})
+			.nullable()
+			.optional(),
+	})
+	.strict();
 
 export type ConsumableLinkUpdate = z.infer<typeof consumableLinkUpdateSchema>;
 
@@ -180,57 +184,65 @@ export type StockDeductionResult = z.infer<typeof stockDeductionResultSchema>;
 /**
  * Batch stock deduction request for visits or tooth procedures.
  */
-export const visitStockDeductionRequestSchema = z.object({
-	visitId: z.string().min(1, { message: "Укажите ID приёма" }),
-	userId: z.string().nullable().optional(),
-	transactionType: z
-		.enum(["auto_deduct", "manual_writeoff"])
-		.default("auto_deduct")
-		.optional(),
-	clientMutationId: z.string().nullable().optional(),
-	services: z
-		.array(
-			z.object({
-				serviceId: z.string().min(1),
-				quantity: z.number().positive().default(1).optional(),
-			}),
-		)
-		.optional(),
-	items: z
-		.array(
-			z.object({
-				inventoryItemId: z.string().min(1),
-				quantity: z.number().positive(),
-				reason: z.string().nullable().optional(),
-			}),
-		)
-		.optional(),
-	carpulesCount: z.number().nonnegative().optional(),
-	drugName: z.string().optional(),
-	paperJournalAcknowledged: z.boolean().default(true).optional(),
-	allowOverdraft: z.boolean().default(true).optional(),
-	allowSoftOverdraft: z.boolean().default(true).optional(),
-});
+export const visitStockDeductionRequestSchema = z
+	.object({
+		visitId: z.string().min(1, { message: "Укажите ID приёма" }),
+		userId: z.string().nullable().optional(),
+		transactionType: z
+			.enum(["auto_deduct", "manual_writeoff"])
+			.default("auto_deduct")
+			.optional(),
+		clientMutationId: z.string().nullable().optional(),
+		services: z
+			.array(
+				z
+					.object({
+						serviceId: z.string().min(1),
+						quantity: z.number().positive().default(1).optional(),
+					})
+					.strict(),
+			)
+			.optional(),
+		items: z
+			.array(
+				z
+					.object({
+						inventoryItemId: z.string().min(1),
+						quantity: z.number().positive(),
+						reason: z.string().nullable().optional(),
+					})
+					.strict(),
+			)
+			.optional(),
+		carpulesCount: z.number().nonnegative().optional(),
+		drugName: z.string().optional(),
+		paperJournalAcknowledged: z.boolean().default(true).optional(),
+		allowOverdraft: z.boolean().default(true).optional(),
+		allowSoftOverdraft: z.boolean().default(true).optional(),
+	})
+	.strict();
 
 export type VisitStockDeductionRequest = z.infer<
 	typeof visitStockDeductionRequestSchema
 >;
 
-export const toothTreatmentStockDeductionRequestSchema = z.object({
-	treatmentItemId: z.string().min(1, { message: "Укажите ID позиции лечения" }),
-	serviceId: z.string().min(1, { message: "Укажите ID услуги" }),
-	toothNumber: z.number().int().min(11).max(85).nullable().optional(),
-	quantity: z.number().positive().default(1).optional(),
-	visitId: z.string().nullable().optional(),
-	userId: z.string().nullable().optional(),
-	transactionType: z
-		.enum(["auto_deduct", "manual_writeoff"])
-		.default("auto_deduct")
-		.optional(),
-	allowOverdraft: z.boolean().default(true).optional(),
-	allowSoftOverdraft: z.boolean().default(true).optional(),
-	clientMutationId: z.string().nullable().optional(),
-});
+export const toothTreatmentStockDeductionRequestSchema = z
+	.object({
+		treatmentItemId: z.string().min(1, { message: "Укажите ID позиции лечения" }),
+		serviceId: z.string().min(1, { message: "Укажите ID услуги" }),
+		toothNumber: z.number().int().min(11).max(85).nullable().optional(),
+		quantity: z.number().positive().default(1).optional(),
+		visitId: z.string().nullable().optional(),
+		userId: z.string().nullable().optional(),
+		transactionType: z
+			.enum(["auto_deduct", "manual_writeoff"])
+			.default("auto_deduct")
+			.optional(),
+		allowOverdraft: z.boolean().default(true).optional(),
+		allowSoftOverdraft: z.boolean().default(true).optional(),
+		clientMutationId: z.string().nullable().optional(),
+	})
+	.strict();
 
 export type ToothTreatmentStockDeductionRequest = z.infer<
 	typeof toothTreatmentStockDeductionRequestSchema
@@ -239,14 +251,18 @@ export type ToothTreatmentStockDeductionRequest = z.infer<
 /**
  * Inventory stock availability check schemas.
  */
-export const stockAvailabilityItemRequestSchema = z.object({
-	serviceId: z.string().min(1),
-	quantity: z.number().positive().default(1),
-});
+export const stockAvailabilityItemRequestSchema = z
+	.object({
+		serviceId: z.string().min(1),
+		quantity: z.number().positive().default(1),
+	})
+	.strict();
 
-export const stockAvailabilityCheckRequestSchema = z.object({
-	items: z.array(stockAvailabilityItemRequestSchema).min(1),
-});
+export const stockAvailabilityCheckRequestSchema = z
+	.object({
+		items: z.array(stockAvailabilityItemRequestSchema).min(1),
+	})
+	.strict();
 
 export type StockAvailabilityCheckRequest = z.infer<
 	typeof stockAvailabilityCheckRequestSchema

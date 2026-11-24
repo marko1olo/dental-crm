@@ -12,8 +12,8 @@ import { WarehousePackageButtons } from "./WarehousePackageButtons.js";
 import { WarehousePackageResultAlert } from "./WarehousePackageResultAlert.js";
 import {
 	type ClinicalPackageId,
-	handleOneClickPackageWriteOff,
-	type OneClickPackageWriteOffResult,
+	handlePackageWriteOff,
+	type PackageWriteOffResult,
 } from "./warehousePackageWriteOffEngine.js";
 
 export interface WarehousePackageWriteOffBarProps {
@@ -26,7 +26,7 @@ export interface WarehousePackageWriteOffBarProps {
 	readonly visitId?: string | undefined;
 	readonly cabinetId?: string | undefined;
 	readonly allowSoftOverdraft?: boolean | undefined;
-	readonly onWriteOffComplete?: ((result: OneClickPackageWriteOffResult) => void) | undefined;
+	readonly onWriteOffComplete?: ((result: PackageWriteOffResult) => void) | undefined;
 	readonly onToast?: ((message: string, type: "success" | "warning" | "info" | "error") => void) | undefined;
 	readonly fetchFn?: typeof fetch | undefined;
 	readonly className?: string | undefined;
@@ -50,14 +50,14 @@ export const WarehousePackageWriteOffBar: React.FC<WarehousePackageWriteOffBarPr
 	compact = false,
 }) => {
 	const [submittingPackageId, setSubmittingPackageId] = useState<string | null>(null);
-	const [lastResult, setLastResult] = useState<OneClickPackageWriteOffResult | null>(null);
+	const [lastResult, setLastResult] = useState<PackageWriteOffResult | null>(null);
 
 	const handlePackageClick = async (packageId: ClinicalPackageId) => {
 		if (submittingPackageId) return;
 		setSubmittingPackageId(packageId);
 
 		try {
-			const result = await handleOneClickPackageWriteOff({
+			const result = await handlePackageWriteOff({
 				packageId,
 				warehouseItems,
 				currentStockMap,

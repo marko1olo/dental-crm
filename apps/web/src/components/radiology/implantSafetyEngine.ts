@@ -581,8 +581,10 @@ export function buildImplantProstheticSuite(
 	clinicalRationale = "",
 ): ImplantProstheticSuiteResult {
 	const brand = implantSpec.brand;
-	const healingAbutment: HealingAbutmentSpec = (STANDARD_HEALING_ABUTMENTS[brand] ?? STANDARD_HEALING_ABUTMENTS.osstem)!;
-	const abutment: AbutmentSpec = (STANDARD_PROSTHETIC_ABUTMENTS[brand] ?? STANDARD_PROSTHETIC_ABUTMENTS.osstem)!;
+	const healingAbutment: HealingAbutmentSpec =
+		STANDARD_HEALING_ABUTMENTS[brand] ?? STANDARD_HEALING_ABUTMENTS.osstem;
+	const abutment: AbutmentSpec =
+		STANDARD_PROSTHETIC_ABUTMENTS[brand] ?? STANDARD_PROSTHETIC_ABUTMENTS.osstem;
 
 	const implantPriceKopecks = implantSpec.priceKopecks;
 	const healingAbutmentPriceKopecks = healingAbutment.priceKopecks;

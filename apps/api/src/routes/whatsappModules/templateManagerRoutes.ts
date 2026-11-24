@@ -12,7 +12,9 @@ import { db } from "../../db/client.js";
 import {
 	communicationTemplates,
 	denteWhatsappBotConfigs,
+	idempotencyKeys,
 } from "../../db/schema.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import type { WhatsAppTemplateDefinition } from "./types.js";
 
 export const DEFAULT_APPROVED_TEMPLATES: WhatsAppTemplateDefinition[] = [
@@ -54,6 +56,24 @@ export const DEFAULT_APPROVED_TEMPLATES: WhatsAppTemplateDefinition[] = [
 	},
 ];
 
+export const templateSyncIdempotencyOptionsWithOrgIdContext = {
+	schema: {
+		description:
+			"WhatsApp templates catalog synchronization with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				"organizationid": { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+};
+
+export const templateSyncRouteOptions = templateSyncIdempotencyOptionsWithOrgIdContext;
+
 /**
  * Registers WhatsApp template synchronization and management routes.
  */
@@ -63,9 +83,61 @@ export async function registerTemplateManagerRoutes(
 	/**
 	 * Синхронизация каталога шаблонов Meta WABA (HSM).
 	 */
-	app.post("/api/whatsapp/templates/sync", async (request, reply) => {
+	app.post("/api/whatsapp/templates/sync", templateSyncIdempotencyOptionsWithOrgIdContext, async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const rawIdemKey = extractIdempotencyKey(request);
+		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
+		if (idempotencyKey) {
+			if (!isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен быть валидным UUID",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
+		if (idempotencyKey) {
+			const [existingRecord] = await db
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						code: "IdempotencyConflict",
+						message: "Синхронизация шаблонов уже обрабатывается",
+					});
+				}
+			}
+
+			await db
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "in_flight",
+					lockedAt: new Date(),
+				})
+				.onConflictDoNothing();
+		}
 
 		const [config] = await db
 			.select()
@@ -106,12 +178,34 @@ export async function registerTemplateManagerRoutes(
 
 		const mergedTemplates = Array.from(templateMap.values());
 
-		return {
+		const responsePayload = {
 			ok: true,
 			data: mergedTemplates,
 			count: mergedTemplates.length,
 			syncedAt: new Date().toISOString(),
 			wabaConnected: Boolean(config?.isActive),
 		};
+
+		if (idempotencyKey) {
+			await db
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					responseBody: responsePayload,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: responsePayload,
+						responseCode: 200,
+					},
+				});
+		}
+
+		return reply.code(200).send(responsePayload);
 	});
 }

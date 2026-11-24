@@ -41,7 +41,7 @@ import {
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { WarehouseItemsTable } from "../components/inventory/WarehouseStockTable";
-import { generateFormM11Html } from "../components/inventory/writeoff/clinicalWriteoffPrintForms";
+import { generateMaterialWaybillHtml } from "../components/inventory/writeoff/clinicalWriteoffPrintForms";
 import {
 	createSampleDentalWaybill,
 	reconcileOverdraftOnReceipt,
@@ -321,15 +321,14 @@ describe("Warehouse & Dental Lab Inquisitor Audit (Mandates 8k, 8n, 8s)", () => 
 		});
 	});
 
-	describe("7. Накладные М-11 и приёмка ТМЦ (acceptanceWaybills & Form M-11)", () => {
-		it("генерация типовой межотраслевой формы М-11 создает юридически корректный документ", () => {
+	describe("7. Накладные перемещения и приёмка ТМЦ (acceptanceWaybills & MaterialWaybill)", () => {
+		it("генерация канонической накладной перемещения материалов создает корректный документ", () => {
 			const sampleDoc: any = {
 				actNumber: "СПИС-2026-0042",
 				actDate: "2026-09-24",
-				clinicName: "ООО «ДЕНТЕ» Стоматология",
-				doctorName: "Д-р Воронов А.В.",
-				doctorPosition: "Врач-стоматолог терапевт",
-				statutoryFormType: "M11" as const,
+				cabinetNameRu: "Кабинет №1",
+				doctorFullName: "Д-р Воронов А.В.",
+				doctorSpecialty: "Врач-стоматолог терапевт",
 				totals: {
 					totalStandardCostKopecks: 95000,
 					totalActualCostKopecks: 95000,
@@ -359,8 +358,8 @@ describe("Warehouse & Dental Lab Inquisitor Audit (Mandates 8k, 8n, 8s)", () => 
 				],
 			};
 
-			const html = generateFormM11Html(sampleDoc);
-			assert.ok(html.includes("ТРЕБОВАНИЕ НА ВЫДАЧУ МАТЕРИАЛОВ"), "Наименование ТРЕБОВАНИЕ НА ВЫДАЧУ МАТЕРИАЛОВ должно присутствовать");
+			const html = generateMaterialWaybillHtml(sampleDoc);
+			assert.ok(html.includes("НАКЛАДНАЯ ПРИХОДА И ПЕРЕМЕЩЕНИЯ МАТЕРИАЛОВ"), "Наименование накладной должно присутствовать");
 			assert.ok(html.includes("Артикаин 1:100 000"), "Позиция номенклатуры должна быть в таблице");
 			assert.ok(html.includes("950.00"), "Сумма накладной должна быть в документе");
 		});

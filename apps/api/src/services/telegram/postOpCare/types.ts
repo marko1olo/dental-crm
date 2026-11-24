@@ -87,6 +87,7 @@ export type HandlePostOpCallbackResult = {
 	handled: boolean;
 	screen?: TriageScreenResult | undefined;
 	isEmergency?: boolean | undefined;
+	deliveryError?: boolean | undefined;
 };
 
 export type SymptomTriageEvaluationResult = {

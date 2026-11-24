@@ -26,9 +26,9 @@ export function RadiologyQuickFiltersHorizontal({
 			data-testid="radiology-quick-filters-panel"
 			className={`radiology-quick-filters-horizontal flex items-center gap-2 px-2.5 py-1 bg-[#0b1320] border border-[#1e293b] rounded-lg text-xs select-none h-9 min-h-[34px] max-h-[36px] overflow-x-auto whitespace-nowrap ${className}`}
 		>
-			<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 shrink-0">
+			<span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1 shrink-0">
 				<Sliders size={12} className="text-[#00C853]" />
-				ФИЛЬТРЫ:
+				Фильтры:
 			</span>
 
 			{FILTER_ITEMS.map((item) => (
@@ -43,7 +43,6 @@ export function RadiologyQuickFiltersHorizontal({
 						type="checkbox"
 						checked={filterState[item.key]}
 						onChange={() => onToggle(item.key)}
-						disabled={disabled}
 						className={`w-3.5 h-3.5 ${item.accent} cursor-pointer`}
 						data-testid={`quick-filter-${item.testId}`}
 					/>
@@ -53,12 +52,14 @@ export function RadiologyQuickFiltersHorizontal({
 
 			<button
 				type="button"
-				onClick={onReset}
-				disabled={disabled || !isAnyActive}
+				onClick={() => {
+					if (!isAnyActive) return;
+					onReset();
+				}}
 				className={`px-2 py-0.5 h-7 rounded text-[11px] font-semibold border transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
 					isAnyActive
 						? "bg-[#1e293b] hover:bg-[#334155] border-[#475569] text-slate-200"
-						: "bg-[#0f172a] border-[#1e293b] text-slate-500 cursor-not-allowed"
+						: "bg-[#0f172a] border-[#1e293b] text-slate-500 opacity-60"
 				}`}
 				data-testid="quick-filter-reset"
 				title="Сбросить фильтры (0)"

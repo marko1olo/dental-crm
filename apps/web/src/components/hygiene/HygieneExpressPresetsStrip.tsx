@@ -268,9 +268,9 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 						data-testid="hygiene-preset-pro-hygiene"
 					>
 						<div className="flex items-center justify-between gap-1 font-semibold">
-							<span className="truncate">Комплекс гигиены (УЗ + Air-Flow)</span>
+							<span className="truncate">Комплекс гигиены (УЗ + воздушно-абразивная обработка)</span>
 						</div>
-						<span className="text-[10px] text-[var(--muted)] truncate">A16.07.051 • Снятие отложений и Air-Flow</span>
+						<span className="text-[10px] text-[var(--muted)] truncate">A16.07.051 • Снятие отложений и порошковая полировка</span>
 					</button>
 
 					<button

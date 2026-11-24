@@ -35,6 +35,7 @@ import {
 	odontogramStatusMutationSchema,
 	parseClinicalDataFromNotes,
 } from "./types.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 interface ExtendedRequestIdentity extends RequestIdentity {
 	clinicalRole?: string | null;
@@ -745,12 +746,30 @@ export function registerStatusRoutes(app: FastifyInstance) {
 	app.get("/api/patients/:patientId/odontogram", getToothStatesHandler);
 	app.get("/api/odontogram/patient/:patientId", getToothStatesHandler);
 
-	const postToothStateMutationHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"odontogram status mutation",
-		);
+	const postToothStateMutationHandler = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+		preResolvedOrgId?: string,
+		preExtractedIdempotencyKey?: string | null,
+	) => {
+		const idempotencyKey =
+			preExtractedIdempotencyKey !== undefined
+				? preExtractedIdempotencyKey
+				: extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
+		const organizationId =
+			preResolvedOrgId ??
+			(await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"odontogram status mutation",
+			));
 		if (!organizationId) return;
 
 		const parsed = odontogramStatusMutationSchema.safeParse(request.body);
@@ -790,6 +809,10 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			},
 		);
 
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		return reply.send({
 			success: true,
 			states: inserted,
@@ -798,11 +821,50 @@ export function registerStatusRoutes(app: FastifyInstance) {
 	};
 
 	// 1. Unified Canonical Routes: POST /api/odontogram/status & POST /api/odontogram/tooth-state
-	app.post("/api/odontogram/status", postToothStateMutationHandler);
-	app.post("/api/odontogram/tooth-state", postToothStateMutationHandler);
+	app.post("/api/odontogram/status", async (request, reply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"odontogram status mutation",
+		);
+		if (!organizationId) return;
+		return postToothStateMutationHandler(request, reply, organizationId, idempotencyKey);
+	});
+
+	app.post("/api/odontogram/tooth-state", async (request, reply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"odontogram tooth-state mutation",
+		);
+		if (!organizationId) return;
+		return postToothStateMutationHandler(request, reply, organizationId, idempotencyKey);
+	});
 
 	// 2. Patient-scoped Route: POST /api/patients/:patientId/odontogram/status
 	app.post("/api/patients/:patientId/odontogram/status", async (request, reply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -850,6 +912,10 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			},
 		);
 
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		return reply.send({
 			success: true,
 			states: inserted,
@@ -861,6 +927,14 @@ export function registerStatusRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/patients/:patientId/tooth-states/batch",
 		async (request, reply) => {
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+				});
+			}
+
 			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
@@ -920,6 +994,9 @@ export function registerStatusRoutes(app: FastifyInstance) {
 						payload: { patientId, states: allInserted },
 					});
 				});
+				if (idempotencyKey) {
+					reply.header("Idempotency-Key", idempotencyKey);
+				}
 				return reply.send({ success: true, states: allInserted });
 			}
 
@@ -945,6 +1022,9 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					payload: { patientId, states: inserted },
 				});
 			});
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 			return reply.send({ success: true, states: inserted });
 		},
 	);

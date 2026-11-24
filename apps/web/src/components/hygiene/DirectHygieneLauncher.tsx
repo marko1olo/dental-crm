@@ -81,6 +81,7 @@ export const DirectHygieneLauncher: React.FC = () => {
 	const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
 	return (
 		<HygieneStudioModal
+			key={customPatientId || search?.get("patientId") || "hygiene-modal"}
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientId={customPatientId || search?.get("patientId") || undefined}

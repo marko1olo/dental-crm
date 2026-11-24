@@ -111,7 +111,9 @@ export interface WarehouseWriteoffLineItem {
 	readonly defectDescriptionRu: string;
 }
 
-/** @deprecated Use WarehouseWriteoffLineItem */
+export type AuditWriteoffLineItem = WarehouseWriteoffLineItem;
+
+/** @deprecated Use AuditWriteoffLineItem or WarehouseWriteoffLineItem */
 export type Torg16WriteoffLineItem = WarehouseWriteoffLineItem;
 
 export interface WarehouseWriteoffAct {
@@ -132,7 +134,9 @@ export interface WarehouseWriteoffAct {
 	readonly totalCostRubles: number;
 }
 
-/** @deprecated Use WarehouseWriteoffAct */
+export type WarehouseAuditWriteoffAct = WarehouseWriteoffAct;
+
+/** @deprecated Use WarehouseAuditWriteoffAct or WarehouseWriteoffAct */
 export type WarehouseTorg16WriteoffAct = WarehouseWriteoffAct;
 
 export type InventoryAuditStatement = WarehouseInventoryAuditDocument;

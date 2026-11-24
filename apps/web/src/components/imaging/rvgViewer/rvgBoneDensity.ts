@@ -34,7 +34,9 @@ export function calculateBoneDensityProfile(
 		try {
 			ctx = canvas.getContext("2d", { willReadFrequently: true });
 			if (ctx) imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-		} catch {}
+		} catch (error) {
+			console.error("[rvgBoneDensity] Canvas getImageData failed:", error);
+		}
 	}
 
 	const samples: HuProfileSample[] = [];

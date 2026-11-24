@@ -32,7 +32,9 @@ export const ImplantRidgeMorphometryCard: React.FC<ImplantRidgeMorphometryCardPr
 				window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 					detail: { soap: { statusLocalis: edited043Text, treatmentDescription: "", diagnosisIcd10: "K08.1", diagnosisTooth: String(edentulousTooth) }, immediate: true, mode: "smart_append" },
 				}));
-			} catch {}
+			} catch (error) {
+				console.error("[ImplantRidgeMorphometryCard] Failed to dispatch SOAP protocol event:", error);
+			}
 		}
 	};
 

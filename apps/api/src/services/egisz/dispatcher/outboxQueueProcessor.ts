@@ -29,6 +29,9 @@ import { syncPendingStatuses } from "./statusSyncer.js";
 import { processOutboxRow } from "./outboxRowSender.js";
 import { resolveN3HealthConfig } from "../../../routes/egisz/n3/n3Config.js";
 import { calculateEgiszRetryDelayMs } from "./egiszGatewayClient.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
+
+const logger = createApiLogger("egiszOutboxDispatcher");
 
 export class EgiszOutboxDispatcher {
 	private readonly client: OiisGatewayClient;
@@ -60,8 +63,11 @@ export class EgiszOutboxDispatcher {
 					timeoutMs: n3Res.config.timeoutMs,
 				});
 			}
-		} catch {
-			// Fallback к дефолтному клиенту
+		} catch (err: unknown) {
+			logger.warn(
+				{ err: safeLogError(err), organizationId },
+				"Failed to resolve N3Health config for org, falling back to default OiisGatewayClient",
+			);
 		}
 		return this.client;
 	}

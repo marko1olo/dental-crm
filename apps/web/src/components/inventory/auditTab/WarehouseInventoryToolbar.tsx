@@ -8,11 +8,16 @@ export interface WarehouseInventoryToolbarProps {
 	readonly discrepancyOnly: boolean;
 	readonly onToggleDiscrepancy: () => void;
 	readonly totals: InventoryAuditTotals;
-	readonly onReconcileAllMatch: () => void; readonly onConfirmShiftActuals: () => void;
-	readonly onPrintStockCountSheet?: () => void; readonly onPrintDiscrepancySheet?: () => void;
+	readonly onReconcileAllMatch: () => void;
+	readonly onConfirmShiftActuals: () => void;
+	readonly onPrintStockCountSheet?: () => void;
+	readonly onPrintDiscrepancySheet?: () => void;
 	readonly onPrintWriteoffAct?: () => void;
-	readonly onPrintInv3?: () => void; readonly onPrintInv19?: () => void; readonly onPrintTorg16?: () => void;
-	readonly onApplyAuditDoc: () => void; readonly isApplying: boolean;
+	readonly onPrintInv3?: () => void;
+	readonly onPrintInv19?: () => void;
+	readonly onPrintTorg16?: () => void;
+	readonly onApplyAuditDoc: () => void;
+	readonly isApplying: boolean;
 }
 
 export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps> = (props) => {
@@ -74,7 +79,7 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 					type="button"
 					onClick={printStockCount}
 					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
-					data-testid="btn-print-inv3"
+					data-testid="btn-print-stock-count"
 					title="Печать описи фактических остатков"
 				>
 					<Printer size={13} className="text-[var(--muted)] shrink-0" /><span>Опись остатков</span>
@@ -84,7 +89,7 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 					type="button"
 					onClick={printDiscrepancy}
 					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
-					data-testid="btn-print-inv19"
+					data-testid="btn-print-discrepancy"
 					title="Печать сличительной ведомости расхождений"
 				>
 					<Printer size={13} className="text-[var(--muted)] shrink-0" /><span>Сличительная ведомость</span>
@@ -95,7 +100,7 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 						type="button"
 						onClick={printWriteoff}
 						className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
-						data-testid="btn-print-torg16"
+						data-testid="btn-print-writeoff"
 						title="Сформировать акт списания недостач и боя"
 					>
 						<PackageX size={13} className="text-[var(--muted)] shrink-0" /><span>Акт списания</span>
@@ -116,6 +121,135 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 					<Check size={14} />
 					<span>{isApplying ? "Сохранение..." : "Утвердить опись"}</span>
 				</button>
+			</div>
+		</div>
+	);
+};
+
+export interface WarehouseAuditToolbarProps {
+	readonly searchQuery: string;
+	readonly onSearchChange: (q: string) => void;
+	readonly filterTab: "all" | "discrepancies" | "expired" | "risk";
+	readonly onFilterTabChange: (tab: "all" | "discrepancies" | "expired" | "risk") => void;
+	readonly totalItemsCount: number;
+	readonly totals: InventoryAuditTotals;
+	readonly sortOrder: "default" | "fefo" | "discrepancy" | "name";
+	readonly onSortOrderChange: (order: "default" | "fefo" | "discrepancy" | "name") => void;
+	readonly onAutofillFactByBook: () => void;
+	readonly onCreateWriteoffAct?: () => void;
+	readonly onCreateAuditWriteoffAct?: () => void;
+	readonly onCreateTorg16?: () => void;
+}
+
+export const WarehouseAuditToolbar: React.FC<WarehouseAuditToolbarProps> = ({
+	searchQuery, onSearchChange, filterTab, onFilterTabChange, totalItemsCount,
+	totals, sortOrder, onSortOrderChange, onAutofillFactByBook, onCreateWriteoffAct, onCreateAuditWriteoffAct, onCreateTorg16,
+}) => {
+	const handleWriteoff = onCreateWriteoffAct ?? onCreateAuditWriteoffAct ?? onCreateTorg16;
+
+	return (
+		<div className="h-9 min-h-[36px] px-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl flex items-center justify-between gap-2 shrink-0 flex-wrap">
+			<div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-0">
+				<div className="dente-search-wrap relative w-64 max-w-xs shrink-0">
+					<Search size={14} className="dente-search-icon" />
+					<input
+						type="text"
+						className="dente-search-input"
+						placeholder="Поиск по названию, артикулу, LOT..."
+						value={searchQuery}
+						onChange={(e) => onSearchChange(e.target.value)}
+						data-testid="audit-modal-search-input"
+					/>
+					{searchQuery && (
+						<button
+							type="button"
+							className="dente-search-clear"
+							onClick={() => onSearchChange("")}
+							aria-label="Очистить поиск"
+						>
+							<X size={12} />
+						</button>
+					)}
+				</div>
+
+				<div className="p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] flex items-center gap-1" role="tablist">
+					<button
+						type="button"
+						role="tab"
+						aria-selected={filterTab === "all"}
+						className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${filterTab === "all" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
+						onClick={() => onFilterTabChange("all")}
+					>
+						Все ({totalItemsCount})
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={filterTab === "discrepancies"}
+						className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${filterTab === "discrepancies" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
+						onClick={() => onFilterTabChange("discrepancies")}
+					>
+						Расхождения ({totals.surplusItemsCount + totals.shortageItemsCount})
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={filterTab === "expired"}
+						className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${filterTab === "expired" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
+						onClick={() => onFilterTabChange("expired")}
+					>
+						Просрочено ({totals.expiredItemsCount})
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={filterTab === "risk"}
+						className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${filterTab === "risk" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}
+						onClick={() => onFilterTabChange("risk")}
+					>
+						Риск &lt;60д ({totals.warningItemsCount})
+					</button>
+				</div>
+
+				<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)] font-medium">
+					<span>Сортировка:</span>
+					<select
+						value={sortOrder}
+						onChange={(e) => onSortOrderChange(e.target.value as "default" | "fefo" | "discrepancy" | "name")}
+						className="h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
+					>
+						<option value="default">По умолчанию</option>
+						<option value="fefo">Сначала истекающие (FEFO)</option>
+						<option value="discrepancy">По сумме расхождения</option>
+						<option value="name">По наименованию</option>
+					</select>
+				</div>
+			</div>
+
+			<div className="flex items-center gap-2 shrink-0">
+				<button
+					type="button"
+					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs transition-colors"
+					onClick={onAutofillFactByBook}
+					title="Приравнять фактическое количество к учетному (все совпадают с учётом)"
+					data-testid="btn-match-all-book-quantities"
+				>
+					<CheckCircle2 size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<span>✓ Все совпадают с учётом</span>
+				</button>
+
+				{totals.expiredItemsCount > 0 && (
+					<button
+						type="button"
+						className="h-8 min-h-[32px] px-2.5 rounded-xl text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-[var(--danger-soft)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs transition-colors"
+						onClick={handleWriteoff}
+						title="Сформировать акт списания просроченных материалов"
+						data-testid="btn-create-audit-writeoff"
+					>
+						<PackageX size={13} />
+						<span>Акт списания просрочки ({totals.expiredItemsCount})</span>
+					</button>
+				)}
 			</div>
 		</div>
 	);

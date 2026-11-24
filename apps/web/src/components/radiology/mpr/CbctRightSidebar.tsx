@@ -61,7 +61,7 @@ export const CbctRightSidebar: React.FC<CbctRightSidebarProps> = (props) => {
 	return (
 		<aside className="w-72 bg-[var(--paper-strong)] border-l border-[var(--line)] flex flex-col p-3 gap-3 overflow-y-auto select-none flex-shrink-0 z-20">
 			<div className="flex items-center justify-between">
-				<h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">
+				<h3 className="text-xs font-semibold text-[var(--text)]">
 					Клинический анализ
 				</h3>
 				<button

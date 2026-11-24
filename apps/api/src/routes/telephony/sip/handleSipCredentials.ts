@@ -16,6 +16,14 @@ export async function handleSipCredentials(
 	const orgId = await requireResolvedOrganizationId(request, reply, "provision sip credentials");
 	if (!orgId) return;
 
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.code(403).send({
+			error: "Forbidden",
+			message: "Tenant context mismatch for SIP credentials",
+		});
+	}
+
 	const body = (request.body || {}) as { extension?: string; staffFullName?: string };
 	const identity = getRequestIdentity(request);
 	const credentials = TelephonyGatewayService.generateWebRtcSipCredentials({

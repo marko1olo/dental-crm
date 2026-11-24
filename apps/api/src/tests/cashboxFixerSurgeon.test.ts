@@ -15,7 +15,11 @@ import Fastify from "fastify";
 import type { Kopecks } from "@dental/shared";
 import { multiplyKopecks, multiplyKopecksFractional } from "@dental/shared";
 import * as schema from "../db/schema.js";
+import { registerCashboxPaymentRoutes } from "../routes/cashbox/cashboxPaymentRoutes.js";
+import { registerCashboxRefundRoutes } from "../routes/cashbox/cashboxRefundRoutes.js";
+import { registerCashTransferRoutes } from "../routes/cashbox/cashboxShiftModules/cashTransferRoutes.js";
 import { registerFiscalReceiptRoutes } from "../routes/fiscal/receiptRoutes/index.js";
+import { registerSbpRoutes } from "../routes/sbp/sbpRouteHandlers.js";
 import { sberbankPayBodySchema } from "../routes/sberbankRoutes/types.js";
 import { Fiscal54FzService } from "../services/billing/fiscal54fzService.js";
 import { FiscalQueueRetryWorker } from "../services/hardware/index.js";
@@ -202,5 +206,293 @@ describe("Cashbox & Payments Fixer Surgeon Suite (Domain 1)", () => {
 	it("5. Orphan table cashLedger is completely removed from database schema exports", () => {
 		const schemaExports = schema as Record<string, unknown>;
 		assert.equal(schemaExports.cashLedger, undefined);
+	});
+
+	it("6. POST /api/cashbox/payments enforces mandatory UUID Idempotency-Key", async () => {
+		const app = Fastify();
+		await registerCashboxPaymentRoutes(app);
+		await app.ready();
+
+		try {
+			// 6a. Missing Idempotency-Key
+			const resMissing = await app.inject({
+				method: "POST",
+				url: "/api/cashbox/payments",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					patientId: "00000000-0000-7000-8000-000000000001",
+					amountKopecks: 100000,
+					method: "cash",
+				},
+			});
+			assert.equal(resMissing.statusCode, 400);
+			const jsonMissing = resMissing.json();
+			assert.equal(jsonMissing.error, "IdempotencyKeyRequired");
+
+			// 6b. Non-UUID Idempotency-Key
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: "/api/cashbox/payments",
+				headers: {
+					"idempotency-key": "not-a-valid-uuid",
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					patientId: "00000000-0000-7000-8000-000000000001",
+					amountKopecks: 100000,
+					method: "cash",
+				},
+			});
+			assert.equal(resInvalid.statusCode, 400);
+			const jsonInvalid = resInvalid.json();
+			assert.equal(jsonInvalid.error, "ValidationError");
+		} finally {
+			await app.close();
+		}
+	});
+
+	it("7. POST /api/cash/refund enforces mandatory UUID Idempotency-Key", async () => {
+		const app = Fastify();
+		await registerCashboxRefundRoutes(app);
+		await app.ready();
+
+		try {
+			// 7a. Missing Idempotency-Key
+			const resMissing = await app.inject({
+				method: "POST",
+				url: "/api/cash/refund",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					amountRub: 500,
+					reasonText: "Отказ от процедуры",
+				},
+			});
+			assert.equal(resMissing.statusCode, 400);
+			const jsonMissing = resMissing.json();
+			assert.equal(jsonMissing.error, "IdempotencyKeyRequired");
+
+			// 7b. Non-UUID Idempotency-Key
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: "/api/cash/refund",
+				headers: {
+					"idempotency-key": "invalid-refund-idempotency-key",
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					amountRub: 500,
+					reasonText: "Отказ от процедуры",
+				},
+			});
+			assert.equal(resInvalid.statusCode, 400);
+			const jsonInvalid = resInvalid.json();
+			assert.equal(jsonInvalid.error, "ValidationError");
+		} finally {
+			await app.close();
+		}
+	});
+
+	it("8. POST /api/fiscal/refund enforces mandatory UUID Idempotency-Key", async () => {
+		const app = Fastify();
+		await registerFiscalReceiptRoutes(app);
+		await app.ready();
+
+		try {
+			// 8a. Missing Idempotency-Key
+			const resMissing = await app.inject({
+				method: "POST",
+				url: "/api/fiscal/refund",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					patientId: "00000000-0000-7000-8000-000000000001",
+					totalRefundKopecks: 100000,
+					refundCashKopecks: 100000,
+					refundElectronicKopecks: 0,
+					refundPrepaidKopecks: 0,
+					items: [
+						{
+							name: "Консультация",
+							priceKopecks: 100000,
+							quantity: 1,
+							amountKopecks: 100000,
+							vatRate: "vat_none",
+						},
+					],
+				},
+			});
+			assert.equal(resMissing.statusCode, 400);
+
+			// 8b. Non-UUID Idempotency-Key
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: "/api/fiscal/refund",
+				headers: {
+					"idempotency-key": "invalid-fiscal-refund-key",
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					patientId: "00000000-0000-7000-8000-000000000001",
+					totalRefundKopecks: 100000,
+					refundCashKopecks: 100000,
+					refundElectronicKopecks: 0,
+					refundPrepaidKopecks: 0,
+					items: [
+						{
+							name: "Консультация",
+							priceKopecks: 100000,
+							quantity: 1,
+							amountKopecks: 100000,
+							vatRate: "vat_none",
+						},
+					],
+				},
+			});
+			assert.equal(resInvalid.statusCode, 400);
+			const jsonInvalid = resInvalid.json();
+			assert.equal(jsonInvalid.error, "ValidationError");
+		} finally {
+			await app.close();
+		}
+	});
+
+	it("9. POST /api/cash/cash-withdrawal enforces mandatory UUID Idempotency-Key", async () => {
+		const app = Fastify();
+		registerCashTransferRoutes(app);
+		await app.ready();
+
+		try {
+			// 9a. Missing Idempotency-Key
+			const resMissing = await app.inject({
+				method: "POST",
+				url: "/api/cash/cash-withdrawal",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					amountRub: 2000,
+					reasonText: "Инкассация выручки",
+				},
+			});
+			assert.equal(resMissing.statusCode, 400);
+			const jsonMissing = resMissing.json();
+			assert.equal(jsonMissing.error, "IdempotencyKeyRequired");
+
+			// 9b. Non-UUID Idempotency-Key
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: "/api/cash/cash-withdrawal",
+				headers: {
+					"idempotency-key": "malformed-withdrawal-key",
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					amountRub: 2000,
+					reasonText: "Инкассация выручки",
+				},
+			});
+			assert.equal(resInvalid.statusCode, 400);
+			const jsonInvalid = resInvalid.json();
+			assert.equal(jsonInvalid.error, "ValidationError");
+		} finally {
+			await app.close();
+		}
+	});
+
+	it("10. POST /api/sbp/create-qr enforces mandatory UUID Idempotency-Key and tenant context", async () => {
+		const app = Fastify();
+		registerSbpRoutes(app);
+		await app.ready();
+
+		try {
+			// 10a. Missing Idempotency-Key
+			const resMissing = await app.inject({
+				method: "POST",
+				url: "/api/sbp/create-qr",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					operationId: "10000000-0000-0000-0000-000000000001",
+					bankMemberId: "100000000111",
+					amountKopecks: 500000,
+					currency: "RUB",
+					ttlSeconds: 600,
+				},
+			});
+			assert.equal(resMissing.statusCode, 400);
+			const jsonMissing = resMissing.json();
+			assert.equal(jsonMissing.error, "IdempotencyKeyRequired");
+
+			// 10b. Non-UUID Idempotency-Key
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: "/api/sbp/create-qr",
+				headers: {
+					"idempotency-key": "not-a-valid-sbp-qr-uuid",
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					operationId: "10000000-0000-0000-0000-000000000001",
+					bankMemberId: "100000000111",
+					amountKopecks: 500000,
+					currency: "RUB",
+					ttlSeconds: 600,
+				},
+			});
+			assert.equal(resInvalid.statusCode, 400);
+			const jsonInvalid = resInvalid.json();
+			assert.equal(jsonInvalid.error, "ValidationError");
+
+			// 10c. Valid UUID Idempotency-Key generates QR and echoes header
+			const validKey = "00000000-0000-7000-8000-000000000555";
+			const resValid = await app.inject({
+				method: "POST",
+				url: "/api/sbp/create-qr",
+				headers: {
+					"idempotency-key": validKey,
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					organizationid: "00000000-0000-7000-8000-000000000099",
+				},
+				payload: {
+					operationId: "10000000-0000-0000-0000-000000000001",
+					bankMemberId: "100000000111",
+					amountKopecks: 500000,
+					currency: "RUB",
+					ttlSeconds: 600,
+				},
+			});
+			assert.equal(resValid.statusCode, 201);
+			assert.equal(resValid.headers["idempotency-key"], validKey);
+			const jsonValid = resValid.json();
+			assert.equal(jsonValid.success, true);
+			assert.equal(jsonValid.amountKopecks, 500000);
+			assert.ok(jsonValid.payloadUrl?.includes("qr.nspk.ru"));
+		} finally {
+			await app.close();
+		}
 	});
 });

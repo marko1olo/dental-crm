@@ -9,6 +9,7 @@ export interface WarehouseAuditFooterProps {
 	readonly commission: readonly WarehouseInventoryCommissionMember[];
 	readonly status: WarehouseInventoryStatus;
 	readonly onExportCsv: () => void;
+	readonly onExportDiscrepanciesCsv?: () => void;
 	readonly onExportInv19Csv: () => void;
 	readonly onExport1C: () => void;
 	readonly onSave: () => void;
@@ -22,6 +23,7 @@ export const WarehouseAuditFooter: React.FC<WarehouseAuditFooterProps> = ({
 	commission,
 	status,
 	onExportCsv,
+	onExportDiscrepanciesCsv,
 	onExportInv19Csv,
 	onExport1C,
 	onSave,
@@ -56,7 +58,7 @@ export const WarehouseAuditFooter: React.FC<WarehouseAuditFooterProps> = ({
 				<button
 					type="button"
 					className="warehouse-btn warehouse-btn-secondary"
-					onClick={onExportInv19Csv}
+					onClick={onExportDiscrepanciesCsv ?? onExportInv19Csv}
 					title="Выгрузить сличительную ведомость расхождений в CSV"
 				>
 					<FileSpreadsheet size={14} />

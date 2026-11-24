@@ -28,7 +28,7 @@ export function EndoStudioToolbar(props: EndoStudioToolbarProps) {
 					data-testid="btn-endo-obturation-norm"
 					onClick={props.onApplyOneClickObturationNorm}
 					className="btn-endo-obturation-norm secondary-button min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer shrink-0"
-					title="Мгновенно обтурировать каналы анатомической нормой: длина по FDI, МАФ 25.04, AH Plus, NaOCl 3%, латеральная компакция"
+					title="Мгновенно обтурировать каналы анатомической нормой: длина по FDI, МАФ 25.04, эпоксидный силер / резорбируемая паста, NaOCl 3%"
 				>
 					<Check size={14} className="stroke-[2.5] text-[var(--primary)] shrink-0" />
 					<span className="hidden sm:inline">Каналы запломбированы (физиологическая норма)</span>
@@ -53,7 +53,7 @@ export function EndoStudioToolbar(props: EndoStudioToolbarProps) {
 					onClick={() => props.onApplyCanonicalProtocol("periodontitis_permanent_ahplus")}
 					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 				>
-					Периодонтит (AH Plus)
+					Периодонтит (эпоксидный)
 				</button>
 				<button
 					type="button"

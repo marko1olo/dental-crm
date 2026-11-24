@@ -131,8 +131,11 @@ export async function applyCashBoxFiscalReceipt(
 			shiftId: activeShift?.id ?? null,
 			operationType: "income",
 			amountRub,
+			amountKopecks: totalInflowKop,
 			balanceBeforeRub: balanceBefore,
+			balanceBeforeKopecks: BigInt(balanceBeforeKop),
 			balanceAfterRub: balanceAfter,
+			balanceAfterKopecks: BigInt(balanceAfterKop),
 			reasonText:
 				data.totalKopecks === 0
 					? "Акт гарантийного обслуживания / списания услуг (скидка 100%, 0.00 ₽)"
@@ -202,8 +205,11 @@ export async function applyCashBoxFiscalReceipt(
 			shiftId: activeShift?.id ?? null,
 			operationType: "income",
 			amountRub,
+			amountKopecks: cashKop,
 			balanceBeforeRub: balanceBefore,
+			balanceBeforeKopecks: BigInt(balanceBeforeKop),
 			balanceAfterRub: balanceAfter,
+			balanceAfterKopecks: BigInt(balanceAfterKop),
 			reasonText: `Фискальный чек 54-ФЗ (наличные) №${printResult.fiscalDocumentNumber || "б/н"}`,
 			operatorName: data.cashierFullName || null,
 			patientId: validPatientId,
@@ -261,8 +267,11 @@ export async function applyCashBoxFiscalReceipt(
 			shiftId: activeShift?.id ?? null,
 			operationType: "income",
 			amountRub,
+			amountKopecks: electronicKop,
 			balanceBeforeRub: balanceBefore,
+			balanceBeforeKopecks: BigInt(balanceBeforeKop),
 			balanceAfterRub: balanceAfter,
+			balanceAfterKopecks: BigInt(balanceAfterKop),
 			reasonText:
 				data.totalKopecks === 0
 					? "Акт гарантийного обслуживания / списания услуг (скидка 100%, 0.00 ₽)"

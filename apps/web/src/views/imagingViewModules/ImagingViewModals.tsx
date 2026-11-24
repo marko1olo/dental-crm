@@ -54,6 +54,7 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 		<>
 			{isRvgCaptureOpen && (
 				<DirectRvgCaptureModal
+					key={activePatient?.id ?? "rvg-capture"}
 					isOpen={Boolean(isRvgCaptureOpen)}
 					onClose={() => setIsRvgCaptureOpen?.(false)}
 					patientId={activePatient?.id}
@@ -80,6 +81,7 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 			{isCbctStudioOpen && (
 				<Suspense fallback={<div className="p-4 text-xs text-[var(--muted)]">Загрузка 3D КТ...</div>}>
 					<CbctMprImplantStudioModal
+						key={selectedImagingStudy?.id ?? activePatient?.id ?? "cbct-studio"}
 						isOpen={isCbctStudioOpen}
 						onClose={() => setIsCbctStudioOpen(false)}
 						study={selectedImagingStudy}
@@ -92,6 +94,7 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 
 			{isCtSelectorOpen && (
 				<CtSelectorModal
+					key={activePatient?.id ?? "ct-selector"}
 					isOpen={true}
 					onClose={() => setIsCtSelectorOpen(false)}
 					patientId={activePatient?.id}

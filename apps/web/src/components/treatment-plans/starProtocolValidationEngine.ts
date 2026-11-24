@@ -184,7 +184,11 @@ export function validateTreatmentPlanStarProtocols(
 	const checks: StarProtocolRuleCheck[] = [];
 
 	const codesPresent = new Set(allItems.map((i) => (i.code804n || i.serviceCode || "").trim().toUpperCase()));
-	const hasCTDiagnostics = codesPresent.has("A06.07.012") || codesPresent.has("A06.07.004") || codesPresent.has("A06.07.003");
+	const hasCTDiagnostics =
+		codesPresent.has("A06.07.013") ||
+		codesPresent.has("A06.07.012") ||
+		codesPresent.has("A06.07.004") ||
+		codesPresent.has("A06.07.003");
 
 	// 1. Проверка формата кодов
 	for (const it of allItems) {
@@ -237,10 +241,10 @@ export function validateTreatmentPlanStarProtocols(
 			toothNumber: undefined,
 			ruleDescriptionRu: "Наличие компьютерной томографии 3D КЛКТ перед инвазивным лечением",
 			status: "pass",
-			messageRu: "3D КЛКТ диагностика челюстно-лицевой области (A06.07.012 / A06.07.004) включена в план",
+			messageRu: "3D КЛКТ диагностика челюстно-лицевой области (A06.07.013 / A06.07.012 / A06.07.004) включена в план",
 			normativeRefRu: "Клинические рекомендации СтАР «Диагностика в стоматологии»",
-			serviceCatalogCodesRelated: ["A06.07.012", "A06.07.004"],
-			order804nCodesRelated: ["A06.07.012", "A06.07.004"],
+			serviceCatalogCodesRelated: ["A06.07.013", "A06.07.012", "A06.07.004"],
+			order804nCodesRelated: ["A06.07.013", "A06.07.012", "A06.07.004"],
 		});
 	}
 

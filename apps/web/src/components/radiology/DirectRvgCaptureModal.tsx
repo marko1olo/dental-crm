@@ -92,8 +92,8 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 					onPrintReport={() => {
 						try {
 							window.print();
-						} catch {
-							// quiet fallback
+						} catch (error) {
+							console.error("[DirectRvgCaptureModal] Failed to execute window.print:", error);
 						}
 					}}
 				/>

@@ -39,7 +39,7 @@ export const CtStudyHeader: React.FC<Props> = ({
 		<div className="flex items-start justify-between gap-3">
 			<div className="space-y-1">
 				<div className="flex items-center gap-2 flex-wrap">
-					<span className="px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+					<span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 						{modality || "КЛКТ 3D"}
 					</span>
 					{isAutoBound ? (

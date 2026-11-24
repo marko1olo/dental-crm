@@ -271,8 +271,8 @@ export async function fetchDoctorPayrollDataset(params: {
 			appointmentId: visits.appointmentId,
 		})
 		.from(payments)
-		.innerJoin(visits, eq(payments.visitId, visits.id))
-		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.innerJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, orgId)))
+		.innerJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
@@ -296,8 +296,8 @@ export async function fetchDoctorPayrollDataset(params: {
 			note: payments.note,
 		})
 		.from(payments)
-		.innerJoin(visits, eq(payments.visitId, visits.id))
-		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.innerJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, orgId)))
+		.innerJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
@@ -438,7 +438,13 @@ export async function fetchDoctorPayrollDataset(params: {
 				order804nCode: serviceCatalogItems.order804nCode,
 			})
 			.from(treatmentItems)
-			.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
+			.leftJoin(
+				serviceCatalogItems,
+				and(
+					eq(treatmentItems.serviceId, serviceCatalogItems.id),
+					eq(serviceCatalogItems.organizationId, orgId),
+				),
+			)
 			.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.visitId, visitIds)))
 		: [];
 

@@ -13,6 +13,7 @@ import { getRequestIdentity, requireOrganizationId } from "../../security/identi
 import { canonicalizeCdaXml, egiszRemdPackageSchema, type EgiszRemdPackage } from "../../services/cda/index.js";
 import { createDemonstrationGostSignature } from "@dental/shared/cda";
 import { isValidUuid } from "@dental/shared";
+import { extractIdempotencyKey } from "../../utils/httpIdempotency.js";
 import { generateDentalCdaXml } from "../../services/egiszCdaGenerator.js";
 import { assembleVisitCdaParams } from "../egisz/visitCda/buildVisitCdaParams.js";
 import { fetchDiaryRow, fetchVisitRow, resolveDoctorFromAppointmentOrDiary } from "../egisz/visitCda/fetchVisitCdaData.js";
@@ -233,6 +234,14 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 	});
 
 	app.post("/api/egisz/send", async (request, reply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
 		if (!(await requireClinicalMutationAccess(request, reply, "egisz send"))) return;
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
@@ -340,6 +349,10 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 			actorUserId: identity.userId || undefined,
 		});
 
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		return reply.status(200).send({
 			success: true,
 			logId: enqueueRes.logId,
@@ -349,6 +362,14 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 	});
 
 	app.post("/api/egisz/packages", async (request, reply) => {
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
 		if (!(await requireClinicalMutationAccess(request, reply, "egisz package submit"))) return;
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
@@ -403,6 +424,9 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 
 		if (!result.success && result.status === "Rejected") {
 			return reply.status(422).send({ error: "InvalidSnils", message: "Некорректный СНИЛС пациента в метаданных пакета ЕГИСЗ.", issues: result.flkErrors });
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 		return reply.status(200).send(result);
 	});

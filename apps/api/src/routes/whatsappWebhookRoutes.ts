@@ -145,8 +145,11 @@ export async function registerWhatsappWebhookRoutes(
 				if (config) {
 					isMatched = true;
 				}
-			} catch {
-				// DB connection offline
+			} catch (err: unknown) {
+				request.log.error(
+					{ err },
+					"Database query failed while validating WhatsApp webhook verify token",
+				);
 			}
 		}
 

@@ -20,7 +20,12 @@ export function buildVisiographyVisitsList(
 	const groups = new Map<string, ImagingStudy[]>();
 	for (const s of studies) {
 		const d = s.studyDate || s.capturedAt?.slice(0, 10) || "2026-10-03";
-		(groups.get(d) || groups.set(d, []).get(d)!).push(s);
+		let list = groups.get(d);
+		if (!list) {
+			list = [];
+			groups.set(d, list);
+		}
+		list.push(s);
 	}
 	return Array.from(groups.entries()).map(([d, stList]) => {
 		const leadStudy = stList[0];

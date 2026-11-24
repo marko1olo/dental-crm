@@ -25,6 +25,7 @@ import {
 import { resolveOrAutoCreatePatientForDicom } from "./dicomPatientAutoBinder.js";
 import { getPacsTenantStorageDir, toNormalizedRelativePacsStoragePath } from "../imaging/localPacsSanitizer.js";
 import { wsBroker } from "../websocketBroker.js";
+import { dicomIngestLogger } from "./ingest/dicomIngestLogger.js";
 
 export interface VatechTagMetadata {
 	patientId: string | null;
@@ -209,7 +210,9 @@ export class VatechDirectBridgeService {
 		}
 
 		// Выполняем начальное сканирование уже существующих файлов в каталоге
-		this.scanDirectoryRecursively(candidateDir).catch(() => {});
+		this.scanDirectoryRecursively(candidateDir).catch((err) => {
+			dicomIngestLogger.error("Vatech initial directory scan error", err, { candidateDir });
+		});
 	}
 
 	/**
@@ -267,8 +270,8 @@ export class VatechDirectBridgeService {
 					}
 				}
 			}
-		} catch {
-			// Каталог недоступен
+		} catch (err) {
+			dicomIngestLogger.warn("Vatech directory scan inaccessible", err, { dirPath });
 		}
 		return count;
 	}
@@ -353,8 +356,10 @@ export class VatechDirectBridgeService {
 			// Размер стабилен! Приступаем к инжесту
 			this.processedFiles.add(filePath);
 			await this.processStableFile(filePath, stats.size);
-		} catch {
+		} catch (err) {
+			this.processedFiles.delete(filePath);
 			this.totalErrors++;
+			dicomIngestLogger.error("Failed to process Vatech DICOM file", err, { filePath, lastSize, retryCount });
 		}
 	}
 

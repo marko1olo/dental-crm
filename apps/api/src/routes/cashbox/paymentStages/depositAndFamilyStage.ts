@@ -89,6 +89,7 @@ export async function processDepositAndFamilyStage(
 				patientId: resolvedPatientId,
 				patientName: patientRow?.fullName || patientName,
 				depositAmountRub: kopecksToNumericString(Number(totalKopecks)),
+				depositAmountKopecks: BigInt(totalKopecks),
 				taggedTargetType: "patient_deposit",
 				taggedTargetName: body.note?.trim() || "Внесение авансового депозита",
 				allocationStatus: "unallocated",
@@ -320,7 +321,9 @@ export async function processDepositAndFamilyStage(
 
 			let advanceTotalKop = 0n;
 			for (const adv of advanceRows) {
-				advanceTotalKop += BigInt(parseKopecks(adv.depositAmountRub ?? 0));
+				advanceTotalKop += (adv.depositAmountKopecks != null && adv.depositAmountKopecks > 0n
+					? adv.depositAmountKopecks
+					: BigInt(parseKopecks(adv.depositAmountRub ?? 0)));
 			}
 
 			// Расчёт фактического сальдо лицевого счета (переплата / авансы по леджеру)
@@ -383,12 +386,18 @@ export async function processDepositAndFamilyStage(
 			let remainingToDeductKop = requiredDepositKopecks;
 			for (const adv of advanceRows) {
 				if (remainingToDeductKop <= 0n) break;
-				const advKop = BigInt(parseKopecks(adv.depositAmountRub ?? 0));
+				const advKop = adv.depositAmountKopecks != null && adv.depositAmountKopecks > 0n
+					? adv.depositAmountKopecks
+					: BigInt(parseKopecks(adv.depositAmountRub ?? 0));
 				if (advKop <= remainingToDeductKop) {
 					remainingToDeductKop -= advKop;
 					await tx
 						.update(advanceDepositTaggings)
-						.set({ allocationStatus: "spent" })
+						.set({
+							allocationStatus: "spent",
+							depositAmountKopecks: 0n,
+							depositAmountRub: "0.00",
+						})
 						.where(
 							and(
 								eq(advanceDepositTaggings.id, adv.id),
@@ -400,7 +409,10 @@ export async function processDepositAndFamilyStage(
 					remainingToDeductKop = 0n;
 					await tx
 						.update(advanceDepositTaggings)
-						.set({ depositAmountRub: kopecksToNumericString(Number(nextAdvKop)) })
+						.set({
+							depositAmountRub: kopecksToNumericString(Number(nextAdvKop)),
+							depositAmountKopecks: BigInt(nextAdvKop),
+						})
 						.where(
 							and(
 								eq(advanceDepositTaggings.id, adv.id),
@@ -417,6 +429,7 @@ export async function processDepositAndFamilyStage(
 					patientId: resolvedPatientId,
 					patientName: patientRow?.fullName || "Пациент клиники",
 					depositAmountRub: kopecksToNumericString(Number(remainingToDeductKop)),
+					depositAmountKopecks: 0n,
 					taggedTargetType: "treatment_plan",
 					taggedTargetName: `Зачёт аванса по леджеру (счёт ${body.invoiceId || "б/н"})`,
 					allocationStatus: "spent",

@@ -189,8 +189,7 @@ export const CbctNerveTracingHud: React.FC<CbctNerveTracingHudProps> = ({
 				<button
 					type="button"
 					onClick={onResetNerve}
-					disabled={nervePoints.length === 0}
-					className="h-7 px-2.5 rounded bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700/60 text-zinc-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+					className="h-7 px-2.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
 					style={{ whiteSpace: "nowrap" }}
 					title="Сбросить трассировку канала"
 					data-testid="cbct-nerve-hud-reset-btn"

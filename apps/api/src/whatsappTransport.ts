@@ -117,7 +117,11 @@ export function readWhatsappCredentials(config: {
 	if (OmnichannelTokenVault.isEncrypted(accessToken) && config.organizationId) {
 		try {
 			accessToken = OmnichannelTokenVault.decrypt(accessToken, config.organizationId);
-		} catch {
+		} catch (err: unknown) {
+			console.error(
+				`[readWhatsappCredentials] Failed to decrypt WhatsApp access token for org ${config.organizationId}:`,
+				err,
+			);
 			// fallback to raw value if decryption fails
 		}
 	}

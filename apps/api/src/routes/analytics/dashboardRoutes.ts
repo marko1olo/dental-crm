@@ -6,6 +6,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	patients,
@@ -142,16 +143,17 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			 * состояния в схеме нет (есть только `approvedAt`), поэтому иначе воронка
 			 * перестала бы слушаться переключателя периода.
 			 */
-			const planCounts = await db
-				.select({
-					status: treatmentPlans.status,
-					count: sql<number>`count(*)::int`,
-				})
-				.from(treatmentPlans)
-				.where(
-					withDate(treatmentPlans.organizationId, treatmentPlans.createdAt),
-				)
-				.groupBy(treatmentPlans.status);
+			const data = await withTenantCtx(orgId, async () => {
+				const planCounts = await db
+					.select({
+						status: treatmentPlans.status,
+						count: sql<number>`count(*)::int`,
+					})
+					.from(treatmentPlans)
+					.where(
+						withDate(treatmentPlans.organizationId, treatmentPlans.createdAt),
+					)
+					.groupBy(treatmentPlans.status);
 
 			/*
 			 * Ветви — из перечисления базы, подписи и цвета — из `Record` по нему,
@@ -218,7 +220,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
 						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
 						inArray(payments.status, ["paid", "refunded"]),
-						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 					),
 				);
 
@@ -234,7 +236,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
 						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
 						eq(payments.status, "paid"),
-						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 					),
 				);
 
@@ -242,16 +244,16 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			const [repeatPayingPatientRow] = await db
 				.select({ count: sql<number>`count(distinct ${payments.patientId})` })
 				.from(payments)
-				.innerJoin(patients, eq(payments.patientId, patients.id))
+				.innerJoin(patients, and(eq(payments.patientId, patients.id), eq(patients.organizationId, orgId)))
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
 						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
 						eq(payments.status, "paid"),
-						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 						startDate
-							? sql`(${patients.createdAt} < ${startDate} or exists (select 1 from appointments a where a.patient_id = ${payments.patientId} and a.starts_at < ${startDate}))`
+							? sql`(${patients.createdAt} < ${startDate} or exists (select 1 from appointments a where a.patient_id = ${payments.patientId} and a.organization_id = ${orgId} and a.starts_at < ${startDate}))`
 							: sql`false`,
 					),
 				);
@@ -429,53 +431,54 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					: 0;
 			const avgChk = kopecksToRubles(avgCheckKopecks);
 
-			const data = {
-				kpis: {
-					totalPatients: totalRegisteredPatients,
-					totalRevenue: kopecksToRubles(totalRevenueKopecks),
-					totalRevenueKopecks,
-					cashRevenue: kopecksToRubles(cashKopecks),
-					cashKopecks,
-					cardRevenue: kopecksToRubles(cardKopecks),
-					cardKopecks,
-					cashlessRevenue: kopecksToRubles(cashlessKopecks),
-					cashlessKopecks,
-					advanceRevenue: kopecksToRubles(advanceKopecks),
-					advanceKopecks,
-					sbpRevenue: kopecksToRubles(sbpKopecks),
-					sbpKopecks,
-					bankTransferRevenue: kopecksToRubles(bankTransferKopecks),
-					bankTransferKopecks,
-					insuranceRevenue: kopecksToRubles(insuranceKopecks),
-					insuranceKopecks,
-					bonusRevenue: 0,
-					totalAppointments: Number(apptCountRow?.count ?? 0),
-					avgRevenuePerPatient: avgChk,
-					averageCheck: avgChk,
-					averageCheckKopecks: avgCheckKopecks,
-					primaryPatientsCount: primaryCount,
-					repeatPatientsCount: repeatCount,
-					chairOccupancyRatePercent: chairOccupancyRate,
-				},
-				cohortLtvJson,
-				planFunnelJson,
-				chairUtilizationJson,
-				doctorProfitabilityJson,
-				tierAcceptance,
-				noShowHeatmap,
-				// Явный признак пустого периода, чтобы интерфейс отличал "нет данных"
-				// от "все показатели равны нулю".
-				isEmpty:
-					!cohortLtvJson.length &&
-					!planFunnelJson.length &&
-					!chairUtilizationJson.length &&
-					!doctorProfitabilityJson.length &&
-					totalPlansCount === 0 &&
-					noShowHeatmap.totalCancelled === 0 &&
-					noShowHeatmap.totalNoShow === 0 &&
-					Number(revenueRow?.totalKopecks ?? 0) === 0 &&
-					Number(apptCountRow?.count ?? 0) === 0,
-			};
+				return {
+					kpis: {
+						totalPatients: totalRegisteredPatients,
+						totalRevenue: kopecksToRubles(totalRevenueKopecks),
+						totalRevenueKopecks,
+						cashRevenue: kopecksToRubles(cashKopecks),
+						cashKopecks,
+						cardRevenue: kopecksToRubles(cardKopecks),
+						cardKopecks,
+						cashlessRevenue: kopecksToRubles(cashlessKopecks),
+						cashlessKopecks,
+						advanceRevenue: kopecksToRubles(advanceKopecks),
+						advanceKopecks,
+						sbpRevenue: kopecksToRubles(sbpKopecks),
+						sbpKopecks,
+						bankTransferRevenue: kopecksToRubles(bankTransferKopecks),
+						bankTransferKopecks,
+						insuranceRevenue: kopecksToRubles(insuranceKopecks),
+						insuranceKopecks,
+						bonusRevenue: 0,
+						totalAppointments: Number(apptCountRow?.count ?? 0),
+						avgRevenuePerPatient: avgChk,
+						averageCheck: avgChk,
+						averageCheckKopecks: avgCheckKopecks,
+						primaryPatientsCount: primaryCount,
+						repeatPatientsCount: repeatCount,
+						chairOccupancyRatePercent: chairOccupancyRate,
+					},
+					cohortLtvJson,
+					planFunnelJson,
+					chairUtilizationJson,
+					doctorProfitabilityJson,
+					tierAcceptance,
+					noShowHeatmap,
+					// Явный признак пустого периода, чтобы интерфейс отличал "нет данных"
+					// от "все показатели равны нулю".
+					isEmpty:
+						!cohortLtvJson.length &&
+						!planFunnelJson.length &&
+						!chairUtilizationJson.length &&
+						!doctorProfitabilityJson.length &&
+						totalPlansCount === 0 &&
+						noShowHeatmap.totalCancelled === 0 &&
+						noShowHeatmap.totalNoShow === 0 &&
+						Number(revenueRow?.totalKopecks ?? 0) === 0 &&
+						Number(apptCountRow?.count ?? 0) === 0,
+				};
+			});
 
 			return { success: true, data };
 		} catch (e) {

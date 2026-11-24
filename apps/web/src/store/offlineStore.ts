@@ -108,7 +108,10 @@ export const useOfflineStore = create<OfflineStore>((set, get) => ({
 				metrics,
 			});
 		} catch (err) {
-			// silent fallback
+			console.error("[offlineStore] refreshQueue failed:", err);
+			set({
+				lastSyncError: "Ошибка локального хранилища IndexedDB",
+			});
 		}
 	},
 

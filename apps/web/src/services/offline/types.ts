@@ -56,6 +56,7 @@ export interface OfflineMutation<T = unknown> {
 	entityType: MutationEntityType;
 	entityId: string;
 	action: MutationAction;
+	endpoint?: string | undefined;
 	payload: T;
 	timestamp: string; // ISO 8601 with milliseconds (e.g. 2026-08-23T08:30:00.123Z)
 	timestampMs: number;
@@ -84,6 +85,7 @@ export interface EnqueueMutationInput<T = unknown> {
 	entityType: MutationEntityType;
 	entityId: string;
 	action?: MutationAction | undefined;
+	endpoint?: string | undefined;
 	payload: T;
 	timestamp?: string | undefined;
 	organizationId?: string | undefined;

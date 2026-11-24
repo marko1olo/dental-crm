@@ -1,7 +1,9 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	seedBaseline804nServicesInDb,
 } from "../../db/pricelistQuery.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	handleCreateCatalogItem,
 	handleDeactivateCatalogItem,
@@ -16,6 +18,12 @@ import {
 	serviceCatalogCreateNotFoundMessage,
 	serviceCatalogCreateValidationMessage,
 } from "./types.js";
+
+const seedCatalogBaselineSchema = z
+	.object({
+		replace: z.boolean().optional(),
+	})
+	.strict();
 
 /**
  * registerServiceCatalogRoutes — Прозрачный фасад обратной совместимости для /api/settings/catalog.
@@ -55,8 +63,29 @@ export function registerServiceCatalogRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/catalog-seed-baseline", async (request, reply) => {
 		const orgId = await requireCatalogMutationAccess(request, reply);
 		if (!orgId) return;
-		const body = (request.body as { replace?: boolean } | null) || {};
-		const replace = Boolean(body.replace);
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
+		const parsedBody = seedCatalogBaselineSchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Некорректные параметры наполнения каталога.",
+				details: parsedBody.error.errors,
+			};
+		}
+		const replace = Boolean(parsedBody.data.replace);
 		try {
 			const result = await seedBaseline804nServicesInDb(orgId, { replace });
 			reply.code(200);

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	CLEANING_PROTOCOLS,
 	HOME_CARE_PLANS,
@@ -46,11 +47,13 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 	const [dynamicPreviousOhiS, setDynamicPreviousOhiS] = useState<{ ohi_s: number; date?: string } | number | null>(null);
 
 	useEffect(() => {
-		if (!patientId?.trim() || previousOhiS !== undefined) return;
+		const cleanPatientId = patientId?.trim();
+		if (!cleanPatientId || previousOhiS !== undefined) return;
+		const targetPatientId = cleanPatientId;
 		let isCancelled = false;
 		async function loadLatest() {
 			try {
-				const res = await fetch(`/api/patients/${encodeURIComponent(patientId!)}/hygiene-indices/latest`, {
+				const res = await fetch(`/api/patients/${encodeURIComponent(targetPatientId)}/hygiene-indices/latest`, {
 					headers: getDenteAuthHeaders(),
 				});
 				if (!res.ok) return;
@@ -125,9 +128,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 			if (visitId?.trim()) {
 				try {
-					const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-						? crypto.randomUUID()
-						: `idemp-hygiene-${Date.now()}`;
+					const idempotencyKey = generateUuidV7();
 					const res = await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
 						method: "POST",
 						headers: getDenteAuthHeaders({

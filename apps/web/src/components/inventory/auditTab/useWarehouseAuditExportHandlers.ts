@@ -2,10 +2,13 @@ import { useCallback } from "react";
 import { formatKopecksToRub } from "@dental/shared";
 import {
 	type WarehouseInventoryAuditDocument,
+	type WarehouseAuditWriteoffAct,
 	type WarehouseTorg16WriteoffAct,
+	exportDiscrepanciesCsv,
 	exportInv19DiscrepanciesToCsv,
 	exportInventoryTo1C,
 	exportInventoryToCsv,
+	generateAuditWriteoffActFromInventory,
 	generateTorg16ActFromInventory,
 	validateInventoryAuditDraft,
 } from "../warehouseInventoryEngine.js";
@@ -14,6 +17,7 @@ export function useWarehouseAuditExportHandlers({
 	currentDocument,
 	onDocumentSaved,
 	onApplyAudit,
+	onAuditWriteoffGenerated,
 	onTorg16Generated,
 	setStatus,
 	showToast,
@@ -21,6 +25,7 @@ export function useWarehouseAuditExportHandlers({
 	currentDocument: WarehouseInventoryAuditDocument;
 	onDocumentSaved?: ((doc: WarehouseInventoryAuditDocument) => void) | undefined;
 	onApplyAudit?: ((doc: WarehouseInventoryAuditDocument) => void | Promise<void>) | undefined;
+	onAuditWriteoffGenerated?: ((act: WarehouseAuditWriteoffAct) => void) | undefined;
 	onTorg16Generated?: ((act: WarehouseTorg16WriteoffAct) => void) | undefined;
 	setStatus: (status: "reconciliation" | "approved" | "applied") => void;
 	showToast: (msg: string) => void;
@@ -49,8 +54,8 @@ export function useWarehouseAuditExportHandlers({
 		showToast("Опись экспортирована в формате CSV (Excel UTF-8 BOM).");
 	}, [currentDocument, showToast]);
 
-	const handleExportInv19Csv = useCallback(() => {
-		const csv = exportInv19DiscrepanciesToCsv(currentDocument);
+	const handleExportDiscrepanciesCsv = useCallback(() => {
+		const csv = exportDiscrepanciesCsv(currentDocument);
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
@@ -60,6 +65,8 @@ export function useWarehouseAuditExportHandlers({
 		URL.revokeObjectURL(url);
 		showToast("Сличительная ведомость расхождений выгружена в CSV.");
 	}, [currentDocument, showToast]);
+
+	const handleExportInv19Csv = handleExportDiscrepanciesCsv;
 
 	const handleExport1C = useCallback(() => {
 		const xml = exportInventoryTo1C(currentDocument);
@@ -73,11 +80,17 @@ export function useWarehouseAuditExportHandlers({
 		showToast("Документ инвентаризации выгружен в формате XML CommerceML.");
 	}, [currentDocument, showToast]);
 
-	const handleCreateTorg16 = useCallback(() => {
-		const act = generateTorg16ActFromInventory(currentDocument);
-		onTorg16Generated?.(act);
+	const handleCreateAuditWriteoffAct = useCallback(() => {
+		const act = generateAuditWriteoffActFromInventory(currentDocument);
+		if (onAuditWriteoffGenerated) {
+			onAuditWriteoffGenerated(act);
+		} else if (onTorg16Generated) {
+			onTorg16Generated(act);
+		}
 		showToast(`Сформирован акт списания материалов № ${act.actNumber} на сумму ${formatKopecksToRub(act.totalCostKopecks)}`);
-	}, [currentDocument, onTorg16Generated, showToast]);
+	}, [currentDocument, onAuditWriteoffGenerated, onTorg16Generated, showToast]);
+
+	const handleCreateTorg16 = handleCreateAuditWriteoffAct;
 
 	const handleSave = useCallback(() => {
 		const validation = validateInventoryAuditDraft(currentDocument);
@@ -107,8 +120,10 @@ export function useWarehouseAuditExportHandlers({
 	return {
 		handlePrintDocument,
 		handleExportCsv,
+		handleExportDiscrepanciesCsv,
 		handleExportInv19Csv,
 		handleExport1C,
+		handleCreateAuditWriteoffAct,
 		handleCreateTorg16,
 		handleSave,
 		handleApply,

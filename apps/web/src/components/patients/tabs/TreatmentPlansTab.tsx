@@ -25,6 +25,7 @@ import {
 	RefreshCw,
 	AlertCircle,
 } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import type { AnyTreatmentPlanItem } from "../plansList/treatmentPlansListTypes";
 import { TreatmentPlansList } from "../TreatmentPlansList";
@@ -63,7 +64,7 @@ export interface TreatmentPlansTabProps {
 	plans?: PatientTreatmentPlanDto[] | undefined;
 	tiers?: TreatmentTierOption[] | undefined;
 	onOpenPlanPresenter?: ((planId?: string | undefined, tierId?: TierCategory | undefined) => void) | undefined;
-	onSendToCheckout?: ((tierId: string, amountRub: number) => void) | undefined;
+	onSendToCheckout?: ((tierId: string, amountRub: number, amountKopecks?: number | undefined) => void) | undefined;
 	onPrintPlan?: ((isDraft: boolean) => void) | undefined;
 	className?: string | undefined;
 }
@@ -184,10 +185,10 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 		if (fetchError && loadedPlans.length === 0) {
 			return (
 				<div
-					className={`treatment-plans-tab flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/20 ${className}`}
+					className={`treatment-plans-tab flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-[var(--danger)]/30 bg-[var(--danger-soft)] ${className}`}
 					data-testid="treatment-plans-tab-error"
 				>
-					<div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+					<div className="w-12 h-12 rounded-2xl bg-[var(--danger-soft)] text-[var(--danger)] flex items-center justify-center mb-3">
 						<AlertCircle className="w-6 h-6" />
 					</div>
 					<h3 className="text-sm font-bold text-[var(--ink)] mb-1">
@@ -281,7 +282,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 									data-testid="btn-open-doctor-discounts"
 									title="Скидка врача от 0% до 100%"
 								>
-									<Percent className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+									<Percent className="w-3.5 h-3.5 text-[var(--success)]" />
 									<span>
 										{doctorDiscountPercent > 0 ? `Скидка ${doctorDiscountPercent}%` : "Скидка врача"}
 									</span>
@@ -326,7 +327,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 										{discountedTotalRub.toLocaleString("ru-RU")} ₽
 									</strong>
 									{doctorDiscountPercent > 0 && (
-										<span className="ml-2 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+										<span className="ml-2 text-[11px] font-bold text-[var(--success)]">
 											(-{doctorDiscountPercent}%)
 										</span>
 									)}
@@ -370,7 +371,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 								{onSendToCheckout && (
 									<button
 										type="button"
-										onClick={() => onSendToCheckout(selectedTier, discountedTotalRub)}
+										onClick={() => onSendToCheckout(selectedTier, discountedTotalRub, rublesToKopecks(discountedTotalRub))}
 										className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 transition-all cursor-pointer"
 										data-testid="btn-send-to-checkout"
 										title="Передать смету в кассу для формирования чека"

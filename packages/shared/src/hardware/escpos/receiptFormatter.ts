@@ -10,6 +10,7 @@
  */
 
 import { EscPosBufferBuilder } from "./byteCommands.js";
+import { formatKopecksToRubles, kopecksToRubles } from "../../money.js";
 import type {
 	EscPosAppointmentTicketPayload,
 	EscPosFiscalReceiptItem,
@@ -285,7 +286,7 @@ export function buildEscPosSbpPaymentBuffer(payload: EscPosSbpPaymentPayload): U
 	builder.separator("-");
 
 	// 3. Exact Total in Rubles & Kopecks
-	const rubles = (payload.totalKopecks / 100).toFixed(2);
+	const rubles = formatKopecksToRubles(payload.totalKopecks);
 	builder.align("right");
 	builder.doubleBoth(true);
 	builder.line(`К ОПЛАТЕ: ${rubles} ₽`);
@@ -338,9 +339,9 @@ export function buildEscPosSbpPaymentBuffer(payload: EscPosSbpPaymentPayload): U
 export function buildEscPosKopeckReceiptBuffer(payload: EscPosKopeckReceiptPayload): Uint8Array {
 	const convertedItems: EscPosFiscalReceiptItem[] = payload.items.map((item) => ({
 		name: item.name,
-		priceRub: item.priceKopecks / 100,
+		priceRub: kopecksToRubles(item.priceKopecks),
 		quantity: item.quantity,
-		amountRub: item.amountKopecks / 100,
+		amountRub: kopecksToRubles(item.amountKopecks),
 		medicalServiceCode804n: item.medicalServiceCode804n,
 		markingCode: item.markingCode,
 	}));
@@ -356,11 +357,11 @@ export function buildEscPosKopeckReceiptBuffer(payload: EscPosKopeckReceiptPaylo
 		customerContact: payload.customerContact,
 		operationType: payload.operationType,
 		items: convertedItems,
-		totalRub: payload.totalKopecks / 100,
-		cashRub: payload.cashKopecks !== undefined ? payload.cashKopecks / 100 : undefined,
-		electronicRub: payload.electronicKopecks !== undefined ? payload.electronicKopecks / 100 : undefined,
-		sbpRub: payload.sbpKopecks !== undefined ? payload.sbpKopecks / 100 : undefined,
-		prepaidRub: payload.prepaidKopecks !== undefined ? payload.prepaidKopecks / 100 : undefined,
+		totalRub: kopecksToRubles(payload.totalKopecks),
+		cashRub: payload.cashKopecks !== undefined ? kopecksToRubles(payload.cashKopecks) : undefined,
+		electronicRub: payload.electronicKopecks !== undefined ? kopecksToRubles(payload.electronicKopecks) : undefined,
+		sbpRub: payload.sbpKopecks !== undefined ? kopecksToRubles(payload.sbpKopecks) : undefined,
+		prepaidRub: payload.prepaidKopecks !== undefined ? kopecksToRubles(payload.prepaidKopecks) : undefined,
 		fnSerial: payload.fnSerial,
 		fiscalDocNum: payload.fiscalDocNum,
 		fiscalSign: payload.fiscalSign,

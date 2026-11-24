@@ -1,8 +1,8 @@
 import { kopecksToRubles } from "@dental/shared";
 import type {
-	Torg16WriteoffLineItem,
+	AuditWriteoffLineItem,
+	WarehouseAuditWriteoffAct,
 	WarehouseInventoryAuditDocument,
-	WarehouseTorg16WriteoffAct,
 } from "./warehouseAuditTypes.js";
 
 export function validateInventoryAuditDraft(doc: Partial<WarehouseInventoryAuditDocument>): {
@@ -47,10 +47,10 @@ export function validateInventoryAuditDraft(doc: Partial<WarehouseInventoryAudit
 	return { isValid: errors.length === 0, errors, warnings };
 }
 
-export function generateTorg16ActFromInventory(
+export function generateAuditWriteoffActFromInventory(
 	doc: WarehouseInventoryAuditDocument,
 	customReason?: string,
-): WarehouseTorg16WriteoffAct {
+): WarehouseAuditWriteoffAct {
 	const expiredLines = doc.items.filter(
 		(it) => it.isWriteoffRequired || it.fefoStatus === "expired" || it.daysUntilExpiration <= 0,
 	);
@@ -58,7 +58,7 @@ export function generateTorg16ActFromInventory(
 	let totalQuantity = 0;
 	let totalCostKopecks = 0;
 
-	const items: Torg16WriteoffLineItem[] = expiredLines.map((it) => {
+	const items: AuditWriteoffLineItem[] = expiredLines.map((it) => {
 		const qty = it.actualQuantity > 0 ? it.actualQuantity : it.bookQuantity;
 		const lineCost = Math.round(qty * it.unitCostKopecks);
 		totalQuantity += qty;
@@ -84,3 +84,5 @@ export function generateTorg16ActFromInventory(
 		totalCostRubles: kopecksToRubles(totalCostKopecks),
 	};
 }
+
+export const generateTorg16ActFromInventory = generateAuditWriteoffActFromInventory;

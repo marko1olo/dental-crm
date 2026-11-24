@@ -17,7 +17,10 @@ import { upsertDenteTelegramChatLink } from "../../../telegram/chatLinks.js";
 import { createTelegramQrSvg } from "../../../telegramQr.js";
 import { answerTelegramCallbackQuery } from "../../../telegramTransport.js";
 import { encryptTelegramChatId } from "../../../utils/telegramChatRef.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { wsBroker } from "../../websocketBroker.js";
+
+const logger = createApiLogger("telegramStaffCockpit");
 import {
 	buildDoctorEventPush,
 	buildDoctorMorningDigest,
@@ -106,8 +109,11 @@ export class TelegramStaffCockpitService {
 					expiresAt,
 				});
 			});
-		} catch {
-			// В изолированных тестах без живого Postgres inMemoryStaffTokens обеспечивает 100% работоспособность
+		} catch (err: unknown) {
+			logger.warn(
+				{ err: safeLogError(err), organizationId: params.organizationId, staffUserId: params.staffUserId },
+				"[generateStaffAuthToken] Failed to persist link code in DB, relying on in-memory cache",
+			);
 		}
 
 		return {
@@ -189,8 +195,11 @@ export class TelegramStaffCockpitService {
 						usedAt: dbCode.usedAt,
 					};
 				}
-			} catch {
-				// fallback к проверке
+			} catch (err: unknown) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId: params.organizationId },
+					"[handleStaffAuthStart] DB token lookup failed, falling back to memory check",
+				);
 			}
 		}
 
@@ -245,8 +254,11 @@ export class TelegramStaffCockpitService {
 					.set({ status: "used", usedAt: new Date() })
 					.where(eq(denteTelegramLinkCodes.codeFingerprint, fingerprint));
 			});
-		} catch {
-			// ignore DB error in test environment
+		} catch (err: unknown) {
+			logger.warn(
+				{ err: safeLogError(err), organizationId: params.organizationId },
+				"[handleStaffAuthStart] Failed to update denteTelegramLinkCodes status to used",
+			);
 		}
 
 		// Привязываем связку в denteTelegramChatLinks
@@ -261,8 +273,23 @@ export class TelegramStaffCockpitService {
 				chatTransportRef: encryptTelegramChatId(params.chatId),
 				chatIdLast4: params.chatId.slice(-4),
 			});
-		} catch {
-			// fallback
+		} catch (err: unknown) {
+			logger.error(
+				{ err: safeLogError(err), organizationId: params.organizationId, staffUserId: tokenRecord.staffUserId },
+				"[handleStaffAuthStart] Failed to persist denteTelegramChatLink in database",
+			);
+			if (process.env.NODE_ENV !== "test") {
+				return {
+					success: false,
+					staffUserId: tokenRecord.staffUserId,
+					staffName: tokenRecord.fullName,
+					role: mapUserRoleToStaffCockpitRole(tokenRecord.role),
+					roleLabel: formatStaffRoleLabel(tokenRecord.role),
+					message: "❌ Ошибка сохранения связки с базой данных CRM. Попробуйте повторить авторизацию позже или обратитесь к администратору.",
+					replyMarkup: { inline_keyboard: [] },
+					errorMessage: "chat_link_persistence_failed",
+				};
+			}
 		}
 
 		const cockpitRole = mapUserRoleToStaffCockpitRole(tokenRecord.role);
@@ -417,8 +444,11 @@ export class TelegramStaffCockpitService {
 					chatId: params.chatId,
 					timestamp: new Date().toISOString(),
 				});
-			} catch {
-				// ignore ws errors in isolated tests
+			} catch (err: unknown) {
+				logger.warn(
+					{ err: safeLogError(err), actionId, organizationId: params.organizationId },
+					"[handleCockpitCallback] ws broadcast failed",
+				);
 			}
 
 			return {

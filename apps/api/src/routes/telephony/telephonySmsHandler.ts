@@ -115,7 +115,12 @@ export async function telephonySmsWebhookHandler(
 								lastContactedAt: new Date(),
 								notes: `Входящее SMS: ${messageText}`,
 							})
-							.where(eq(crmLeads.id, existingLead[0].id));
+							.where(
+								and(
+									eq(crmLeads.id, existingLead[0].id),
+									eq(crmLeads.organizationId, orgId),
+								),
+							);
 					} else {
 						await tx.insert(crmLeads).values({
 							organizationId: orgId,

@@ -98,7 +98,7 @@ export async function assistantPayrollReport(
 			clinicalStage: appointments.clinicalStage,
 		})
 		.from(appointments)
-		.leftJoin(users, eq(appointments.assistantUserId, users.id))
+		.leftJoin(users, and(eq(appointments.assistantUserId, users.id), eq(users.organizationId, scope.organizationId)))
 		.where(
 			and(
 				eq(appointments.organizationId, scope.organizationId),
@@ -197,7 +197,10 @@ export async function assistantPayrollReport(
 			.from(treatmentItems)
 			.leftJoin(
 				serviceCatalogItems,
-				eq(treatmentItems.serviceId, serviceCatalogItems.id),
+				and(
+					eq(treatmentItems.serviceId, serviceCatalogItems.id),
+					eq(serviceCatalogItems.organizationId, scope.organizationId),
+				),
 			)
 			.where(
 				and(

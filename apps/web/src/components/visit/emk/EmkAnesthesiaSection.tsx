@@ -80,9 +80,10 @@ export function EmkAnesthesiaSection({
 	};
 
 	const handleAntishockEmergency = async () => {
+		useUiSurfaceStore.getState().openPrimaryModal("emergency_rescue");
 		try {
 			const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
-			fetch("/api/inventory/quick-writeoff-emergency-antishock", {
+			const res = await fetch("/api/inventory/quick-writeoff-emergency-antishock", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -94,12 +95,17 @@ export function EmkAnesthesiaSection({
 					notes: "Экстренное списание укладки «Антишок»",
 					...(idempotencyKey ? { idempotencyKey } : {}),
 				}),
-			}).catch(() => {});
-			showToast("Экстренная укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
-		} catch {
-			showToast("Экстренная укладка «Антишок» списана", "info", 3000);
+			});
+			if (res.ok) {
+				showToast("Экстренная укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
+			} else {
+				console.error("[EmkAnesthesiaSection] Emergency antishock write-off failed with status:", res.status);
+				showToast("Списание укладки не зафиксировано на сервере, зафиксируйте вручную", "error", 6000);
+			}
+		} catch (err) {
+			console.error("[EmkAnesthesiaSection] Emergency antishock network error:", err);
+			showToast("Списание укладки не зафиксировано на сервере, зафиксируйте вручную", "error", 6000);
 		}
-		useUiSurfaceStore.getState().openPrimaryModal("emergency_rescue");
 	};
 
 	return (

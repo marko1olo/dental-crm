@@ -171,7 +171,7 @@ export async function financialExecutiveSummary(
 				inArray(payments.status, ["paid", "refunded"]),
 				gte(paymentTimestamp, scope.from),
 				lte(paymentTimestamp, scope.to),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -250,7 +250,7 @@ export async function financialExecutiveSummary(
 				inArray(payments.status, ["paid"]),
 				gte(paymentTimestamp, scope.from),
 				lte(paymentTimestamp, scope.to),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 

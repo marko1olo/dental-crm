@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { installmentContracts, patients, payments, treatmentPlans, users } from "../../db/schema.js";
-import { calculateCuratorMetrics } from "@dental/shared";
+import { calculateCuratorMetrics, kopecksToRubles } from "@dental/shared";
 import { buildCuratorQueueItem } from "./curatorQueueBuilder.js";
 import type { CuratorStaffUser } from "./curatorTypes.js";
 
@@ -31,7 +31,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 			patientAdminProfile: patients.administrativeProfile,
 		})
 		.from(treatmentPlans)
-		.innerJoin(patients, eq(treatmentPlans.patientId, patients.id))
+		.innerJoin(patients, and(eq(treatmentPlans.patientId, patients.id), eq(patients.organizationId, orgId)))
 		.where(eq(treatmentPlans.organizationId, orgId));
 
 	// PLN-05 [SEV-1]: Учет оплат строго по planId / treatmentPlanId, ликвидация заражения планов старыми оплатами пациента.
@@ -39,7 +39,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const directPlanPayments = await db
 		.select({
 			planId: payments.documentId,
-			totalPaid: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)), 0)::bigint`,
 		})
 		.from(payments)
 		.where(
@@ -55,7 +55,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const installmentPlanPayments = await db
 		.select({
 			planId: installmentContracts.treatmentPlanId,
-			totalPaid: sql<number>`coalesce(sum(${installmentContracts.paidAmountRub}), 0)`,
+			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(${installmentContracts.paidAmountKopecks}, round(${installmentContracts.paidAmountRub} * 100)::bigint)), 0)::bigint`,
 		})
 		.from(installmentContracts)
 		.where(
@@ -66,16 +66,21 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 		)
 		.groupBy(installmentContracts.treatmentPlanId);
 
-	const planPaymentMap = new Map<string, number>();
+	const planPaymentKopecksMap = new Map<string, number>();
 	for (const p of directPlanPayments) {
 		if (p.planId) {
-			planPaymentMap.set(p.planId, (planPaymentMap.get(p.planId) || 0) + Number(p.totalPaid));
+			planPaymentKopecksMap.set(p.planId, (planPaymentKopecksMap.get(p.planId) || 0) + Number(p.totalPaidKopecks));
 		}
 	}
 	for (const p of installmentPlanPayments) {
 		if (p.planId) {
-			planPaymentMap.set(p.planId, (planPaymentMap.get(p.planId) || 0) + Number(p.totalPaid));
+			planPaymentKopecksMap.set(p.planId, (planPaymentKopecksMap.get(p.planId) || 0) + Number(p.totalPaidKopecks));
 		}
+	}
+
+	const planPaymentMap = new Map<string, number>();
+	for (const [planId, kop] of planPaymentKopecksMap) {
+		planPaymentMap.set(planId, kopecksToRubles(kop));
 	}
 
 	const doctorMap = new Map(staffList.map((u) => [u.id, u.fullName]));

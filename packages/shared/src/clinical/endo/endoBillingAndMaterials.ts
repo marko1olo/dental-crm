@@ -174,13 +174,13 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	// ─── РАСХОДНЫЕ МАТЕРИАЛЫ СКЛАДА (ЧЕСТНОЕ СПИСАНИЕ) ─────────────────────────
 	const materials: EndoMaterialConsumableEstimate[] = [];
 
-	// 1. Машинный NiTi файл ProTaper / WaveOne (ресурс инструмента: 1 файл = 4 канала, мягкое списание Мандат 8aa)
+	// 1. Машинный NiTi файл (ресурс инструмента: 1 файл = 4 канала, мягкое списание Мандат 8aa)
 	const nitiFraction = Math.round((canalCount / 4) * 100) / 100;
 	const nitiCostKopecks = BigInt(Math.round(rublesToKopecks(650) * nitiFraction));
 	const nitiRub = kopecksToRubles(nitiCostKopecks);
 	materials.push({
 		itemId: "mat-niti-rotary-file",
-		itemName: "NiTi ротационный машинный файл (ProTaper / WaveOne)",
+		itemName: "Машинная NiTi ротационная система",
 		category: "rotary_file",
 		unit: "шт",
 		quantity: nitiFraction,
@@ -210,7 +210,7 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	const edtaRub = kopecksToRubles(edtaCostKopecks);
 	materials.push({
 		itemId: "mat-endo-edta-17",
-		itemName: "Раствор ЭДТА 17% для удаления смазанного слоя (ЭндоЖи №2)",
+		itemName: "Раствор ЭДТА 17% для удаления смазанного слоя",
 		category: "disinfectant",
 		unit: "ml",
 		quantity: edtaMl,
@@ -219,74 +219,108 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		notes: `Хемомеханическая обработка ${canalCount} ${getCanalPluralRu(canalCount)}`,
 	});
 
-	// 4. Материалы обтурации в зависимости от этапа
+	// 4. Материалы обтурации в зависимости от этапа и прикуса (молочный vs постоянный)
+	const quadrant = Math.floor(toothNumber / 10);
+	const isPrimary = quadrant >= 5 && quadrant <= 8;
+
 	if (stage === "COMPLETED") {
-		// Гуттаперчевые конусные штифты (3 шт на каждый канал)
-		const guttaQty = 3 * canalCount;
-		const guttaCostKopecks = BigInt(rublesToKopecks(15) * guttaQty);
-		const guttaRub = kopecksToRubles(guttaCostKopecks);
-		materials.push({
-			itemId: "mat-gutta-percha",
-			itemName: "Гуттаперчевые конусные штифты (0.04 / 0.06)",
-			category: "gutta_percha",
-			unit: "шт",
-			quantity: guttaQty,
-			costPriceRub: guttaRub, // 45 ₽ за 3 шт
-			costPriceKopecks: guttaCostKopecks,
-			notes: `Трехмерная обтурация ${canalCount} ${getCanalPluralRu(canalCount)}`,
-		});
-
-		// Бумажные штифты/пины абсорбирующие для высушивания (4 шт на каждый канал)
-		const paperPointsQty = 4 * canalCount;
-		const paperCostKopecks = BigInt(rublesToKopecks(8) * paperPointsQty);
-		const paperRub = kopecksToRubles(paperCostKopecks);
-		materials.push({
-			itemId: "mat-paper-points",
-			itemName: "Бумажные штифты/пины абсорбирующие (Paper Points)",
-			category: "paper_points",
-			unit: "шт",
-			quantity: paperPointsQty,
-			costPriceRub: paperRub,
-			costPriceKopecks: paperCostKopecks,
-			notes: `Высушивание ${canalCount} ${getCanalPluralRu(canalCount)} перед обтурацией`,
-		});
-
-		// Силер (AH Plus или BioRoot RCS)
-		const isBioceramic =
-			sealer.toLowerCase().includes("bioroot") ||
-			sealer.toLowerCase().includes("биокерамик") ||
-			obturationTechnique.toLowerCase().includes("биокерамик");
-
-		if (isBioceramic) {
+		if (isPrimary) {
+			// Молочные зубы 51–85: КАТЕГОРИЧЕСКИЙ ЗАПРЕТ ГУТТАПЕРЧИ (Мандат 8bj / DEF-ENDO-02)
+			// Списание резорбируемой пасты (гидроксид кальция / цинкоксидэвгенол)
+			const paperPointsQty = 2 * canalCount;
+			const paperCostKopecks = BigInt(rublesToKopecks(8) * paperPointsQty);
+			const paperRub = kopecksToRubles(paperCostKopecks);
 			materials.push({
-				itemId: "mat-endo-sealer-bioroot",
-				itemName: "Биокерамический силер BioRoot RCS (Septodont)",
-				category: "sealer",
+				itemId: "mat-paper-points",
+				itemName: "Бумажные штифты/пины абсорбирующие",
+				category: "paper_points",
+				unit: "шт",
+				quantity: paperPointsQty,
+				costPriceRub: paperRub,
+				costPriceKopecks: paperCostKopecks,
+				notes: `Высушивание ${canalCount} ${getCanalPluralRu(canalCount)} перед обтурацией`,
+			});
+
+			const pasteCostKopecks = BigInt(rublesToKopecks(150) * canalCount);
+			const pasteRub = kopecksToRubles(pasteCostKopecks);
+			materials.push({
+				itemId: "mat-resorbable-paste",
+				itemName: "Резорбируемая паста для корневых каналов молочных зубов",
+				category: "calcium",
 				unit: "доза",
-				quantity: 1,
-				costPriceRub: 850,
-				costPriceKopecks: 85000n,
-				notes: "Биокерамическая обтурация каналов",
+				quantity: canalCount,
+				costPriceRub: pasteRub,
+				costPriceKopecks: pasteCostKopecks,
+				notes: `Обтурация молочного зуба #${toothNumber} резорбируемой пастой (защита зачатка постоянного зуба)`,
 			});
 		} else {
+			// Постоянный прикус: гуттаперчевые конусные штифты (3 шт на каждый канал)
+			const guttaQty = 3 * canalCount;
+			const guttaCostKopecks = BigInt(rublesToKopecks(15) * guttaQty);
+			const guttaRub = kopecksToRubles(guttaCostKopecks);
 			materials.push({
-				itemId: "mat-endo-sealer-ahplus",
-				itemName: "Эпоксидный силер для постоянной обтурации (AH Plus)",
-				category: "sealer",
-				unit: "доза",
-				quantity: 1,
-				costPriceRub: 420,
-				costPriceKopecks: 42000n,
-				notes: "Постоянная обтурация каналов",
+				itemId: "mat-gutta-percha",
+				itemName: "Гуттаперчевые конусные штифты (0.04 / 0.06)",
+				category: "gutta_percha",
+				unit: "шт",
+				quantity: guttaQty,
+				costPriceRub: guttaRub, // 45 ₽ за 3 шт
+				costPriceKopecks: guttaCostKopecks,
+				notes: `Трехмерная обтурация ${canalCount} ${getCanalPluralRu(canalCount)}`,
 			});
+
+			// Бумажные штифты/пины абсорбирующие для высушивания (4 шт на каждый канал)
+			const paperPointsQty = 4 * canalCount;
+			const paperCostKopecks = BigInt(rublesToKopecks(8) * paperPointsQty);
+			const paperRub = kopecksToRubles(paperCostKopecks);
+			materials.push({
+				itemId: "mat-paper-points",
+				itemName: "Бумажные штифты/пины абсорбирующие (Paper Points)",
+				category: "paper_points",
+				unit: "шт",
+				quantity: paperPointsQty,
+				costPriceRub: paperRub,
+				costPriceKopecks: paperCostKopecks,
+				notes: `Высушивание ${canalCount} ${getCanalPluralRu(canalCount)} перед обтурацией`,
+			});
+
+			// Силер (эпоксидный или биокерамический)
+			const isBioceramic =
+				sealer.toLowerCase().includes("bioroot") ||
+				sealer.toLowerCase().includes("биокерамик") ||
+				obturationTechnique.toLowerCase().includes("биокерамик");
+
+			if (isBioceramic) {
+				materials.push({
+					itemId: "mat-endo-sealer-bioroot",
+					itemName: "Биокерамический силер",
+					category: "sealer",
+					unit: "доза",
+					quantity: 1,
+					costPriceRub: 850,
+					costPriceKopecks: 85000n,
+					notes: "Биокерамическая обтурация каналов",
+				});
+			} else {
+				materials.push({
+					itemId: "mat-endo-sealer-ahplus",
+					itemName: "Эпоксидный полимерный силер",
+					category: "sealer",
+					unit: "доза",
+					quantity: 1,
+					costPriceRub: 420,
+					costPriceKopecks: 42000n,
+					notes: "Постоянная обтурация каналов",
+				});
+			}
 		}
 	} else if (stage === "TEMP_CAOH2") {
-		// Гидроксид кальция (Calasept / Metapex) — 1 доза на каждый канал
+		// Гидроксид кальция — 1 доза на каждый канал
 		const calciumCostKopecks = BigInt(rublesToKopecks(180) * canalCount);
 		const calciumRub = kopecksToRubles(calciumCostKopecks);
 		materials.push({
 			itemId: "mat-calcium-calasept",
-			itemName: "Гидроксид кальция паста рентгеноконтрастная Calasept / Metapex",
+			itemName: "Лечебная паста гидроксида кальция Ca(OH)2",
 			category: "calcium",
 			unit: "доза",
 			quantity: canalCount,
@@ -295,10 +329,10 @@ export function calculateEndoBillingAndMaterialsEstimate(
 			notes: `Временная дезинфекция ${canalCount} ${getCanalPluralRu(canalCount)}`,
 		});
 
-		// Герметичная временная повязка (Дентин-паста / Септопак)
+		// Герметичная временная повязка
 		materials.push({
 			itemId: "mat-dentin-paste",
-			itemName: "Временная герметичная повязка (Дентин-паста / Септопак)",
+			itemName: "Временная герметичная повязка",
 			category: "bandage",
 			unit: "доза",
 			quantity: 1,

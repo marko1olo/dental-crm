@@ -61,6 +61,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		return saved ? kopecksToRubles(rublesToKopecks(Number(saved) || 0)) : 0;
 	});
 	const [serverCashBoxBalanceRub, setServerCashBoxBalanceRub] = useState<number | null>(null);
+	const [isLocalBalanceFallback, setIsLocalBalanceFallback] = useState<boolean>(false);
 
 	const fetchServerCashBoxBalance = useCallback(async () => {
 		try {
@@ -76,11 +77,16 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 					const parsed = Number(deskBox.balanceRub);
 					if (Number.isFinite(parsed)) {
 						setServerCashBoxBalanceRub(parsed);
+						setIsLocalBalanceFallback(false);
 					}
 				}
+			} else {
+				console.warn("[useFinanceCashShift] Server cashbox returned non-ok status:", res.status);
+				setIsLocalBalanceFallback(true);
 			}
-		} catch {
-			// fallback to local calculation
+		} catch (err) {
+			console.warn("[useFinanceCashShift] Failed to fetch server cashbox balance, falling back to local calculation:", err);
+			setIsLocalBalanceFallback(true);
 		}
 	}, []);
 
@@ -267,6 +273,8 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		handleCloseShift,
 		handleOpenShift,
 		handlePrintXReport,
+		isLocalBalanceFallback,
+		isServerBalanceOffline: isLocalBalanceFallback,
 		isShiftOpen,
 		sbpSumRub,
 		shiftNumber,

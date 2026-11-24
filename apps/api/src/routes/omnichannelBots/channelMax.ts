@@ -1,13 +1,51 @@
+import { eq } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { denteMaxBotConfigs } from "../../db/schema.js";
 import { omnichannelBotEngine } from "../../services/bots/OmnichannelBotEngine.js";
 import type { BotInboundMessage } from "../../services/bots/types.js";
+import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
 /**
  * Обработка входящих событий корпоративного мессенджера MAX (VK Max) — Национальный корпоративный мессенджер.
+ * Защищена обязательной проверкой токена/секрета через timingSafeSecretEqual.
  */
 export async function handleMaxWebhook(
 	body: Record<string, unknown>,
 	organizationId: string,
-): Promise<{ ok: boolean }> {
+	incomingSecret?: string | null,
+): Promise<{ ok: boolean; error?: string; statusCode?: number }> {
+	const secretFromPayload =
+		typeof body.secret === "string"
+			? body.secret
+			: typeof body.token === "string"
+				? body.token
+				: null;
+	const candidateSecret = incomingSecret ?? secretFromPayload;
+
+	const [cfg] = await db
+		.select({
+			maxBotToken: denteMaxBotConfigs.maxBotToken,
+			tokenSecretRef: denteMaxBotConfigs.tokenSecretRef,
+		})
+		.from(denteMaxBotConfigs)
+		.where(eq(denteMaxBotConfigs.organizationId, organizationId))
+		.limit(1);
+
+	const configuredSecret =
+		cfg?.tokenSecretRef?.trim() ||
+		cfg?.maxBotToken?.trim() ||
+		process.env.MAX_WEBHOOK_SECRET?.trim() ||
+		process.env.DENTE_WEBHOOK_SECRET?.trim() ||
+		null;
+
+	if (!configuredSecret || !candidateSecret || !timingSafeSecretEqual(candidateSecret, configuredSecret)) {
+		return {
+			ok: false,
+			statusCode: 403,
+			error: "Forbidden: invalid or missing MAX webhook secret",
+		};
+	}
+
 	const inbound: BotInboundMessage = {
 		channel: "max",
 		organizationId,
@@ -22,5 +60,6 @@ export async function handleMaxWebhook(
 	};
 
 	await omnichannelBotEngine.dispatchInboundMessage(inbound);
-	return { ok: true };
+	return { ok: true, statusCode: 200 };
 }
+

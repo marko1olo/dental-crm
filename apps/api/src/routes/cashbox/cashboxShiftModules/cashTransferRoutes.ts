@@ -13,7 +13,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToNumericString, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
@@ -52,12 +52,22 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 		const rawKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
 		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : Array.isArray(rawKey) ? rawKey[0]?.trim() : undefined;
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		if (!idempotencyKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message: "Для проведения операции внесения обязателен заголовок Idempotency-Key (UUIDv7).",
+			});
+		}
+		const baseKey = idempotencyKey.includes("#") ? idempotencyKey.split("#")[0] : idempotencyKey;
+		if (!isValidUuid(baseKey || "")) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
 			});
 		}
+
+		reply.header("Idempotency-Key", idempotencyKey);
+		reply.header("X-Idempotency-Key", idempotencyKey);
 
 		const parsed = cashIntroductionBodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -204,11 +214,12 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		}
 		if (result.isReplay) {
 			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
 		}
 
 		const response: CashIntroductionResponseBody = {
 			success: true,
-			message: `Служебное внесение ${amountRub.toFixed(2)} ₽ успешно проведено.`,
+			message: `Служебное внесение ${kopecksToNumericString(rublesToKopecks(amountRub))} ₽ успешно проведено.`,
 			operation: result.operation,
 			cashBox: result.cashBox,
 		};
@@ -216,11 +227,25 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		return reply.send(response);
 	};
 
-	app.post("/api/cash/cash-introduction", handleCashIntroduction);
-	app.post("/api/fiscal/cash-in", handleCashIntroduction);
-	app.post("/api/finance/cash-in", handleCashIntroduction);
-	app.post("/api/cashbox/operations/in", handleCashIntroduction);
-	app.post("/api/billing/cash/in", handleCashIntroduction);
+	const cashTransferRouteOptions = {
+		schema: {
+			description:
+				"Cash transfer with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/cash/cash-introduction", cashTransferRouteOptions, handleCashIntroduction);
+	app.post("/api/fiscal/cash-in", cashTransferRouteOptions, handleCashIntroduction);
+	app.post("/api/finance/cash-in", cashTransferRouteOptions, handleCashIntroduction);
+	app.post("/api/cashbox/operations/in", cashTransferRouteOptions, handleCashIntroduction);
+	app.post("/api/billing/cash/in", cashTransferRouteOptions, handleCashIntroduction);
 
 	/**
 	 * 2. POST /api/cash/cash-withdrawal & POST /api/fiscal/cash-out
@@ -237,12 +262,22 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 		const rawKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
 		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : Array.isArray(rawKey) ? rawKey[0]?.trim() : undefined;
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		if (!idempotencyKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message: "Для проведения операции изъятия обязателен заголовок Idempotency-Key (UUIDv7).",
+			});
+		}
+		const baseKey = idempotencyKey.includes("#") ? idempotencyKey.split("#")[0] : idempotencyKey;
+		if (!isValidUuid(baseKey || "")) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
 			});
 		}
+
+		reply.header("Idempotency-Key", idempotencyKey);
+		reply.header("X-Idempotency-Key", idempotencyKey);
 
 		const parsed = cashWithdrawalBodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -391,7 +426,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		if (result.kind === "insufficient_funds") {
 			return reply.code(400).send({
 				error: "InsufficientFunds",
-				message: `Недостаточно средств в кассе для изъятия. Доступно: ${result.balanceBefore.toFixed(2)} ₽, запрошено: ${result.requestedAmount.toFixed(2)} ₽.`,
+				message: `Недостаточно средств в кассе для изъятия. Доступно: ${kopecksToNumericString(rublesToKopecks(result.balanceBefore))} ₽, запрошено: ${kopecksToNumericString(rublesToKopecks(result.requestedAmount))} ₽.`,
 			});
 		}
 
@@ -407,30 +442,17 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		}
 		if (result.isReplay) {
 			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
 		}
 
 		const response: CashWithdrawalResponseBody = {
 			success: true,
-			message: `Инкассация ${amountRub.toFixed(2)} ₽ успешно завершена.`,
+			message: `Инкассация ${kopecksToNumericString(rublesToKopecks(amountRub))} ₽ успешно завершена.`,
 			operation: result.operation,
 			cashBox: result.cashBox,
 		};
 
 		return reply.send(response);
-	};
-
-	const cashTransferRouteOptions = {
-		schema: {
-			description:
-				"Cash transfer with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-				},
-			},
-		},
 	};
 
 	app.post("/api/cash/cash-withdrawal", cashTransferRouteOptions, async (request, reply) => {

@@ -16,6 +16,14 @@ export async function handleListMissedCalls(
 	const orgId = await requireResolvedOrganizationId(request, reply, "list missed calls");
 	if (!orgId) return;
 
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.code(403).send({
+			error: "Forbidden",
+			message: "Tenant context mismatch for missed calls",
+		});
+	}
+
 	const limit = Math.min(100, Math.max(1, Math.floor(Number(request.query.limit) || 20)));
 	const page = Math.max(1, Math.floor(Number(request.query.page) || 1));
 	const offset = (page - 1) * limit;

@@ -234,7 +234,7 @@ export function downloadSnapshotLocally(imageDataUri: string, filename = "mpr_sn
 
 export function buildForm043ProtocolText(payload: ClinicalSnapshotPayload): string {
 	const lines: string[] = [];
-	lines.push("--- ПРОТОКОЛ ЛУЧЕВОГО ОБСЛЕДОВАНИЯ И 3D-ПЛАНИРОВАНИЯ (ФОРМА № 043/У) ---");
+	lines.push("--- ПРОТОКОЛ ЛУЧЕВОГО ОБСЛЕДОВАНИЯ И 3D-ПЛАНИРОВАНИЯ ---");
 	const dateStr = payload.capturedAt ? new Date(payload.capturedAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU");
 	lines.push(`Дата и время: ${dateStr}`);
 
@@ -303,7 +303,7 @@ export function buildForm043ProtocolText(payload: ClinicalSnapshotPayload): stri
 
 	if (payload.aiProtocolLog) lines.push(`Заключение ИИ-анализа: ${payload.aiProtocolLog}`);
 	if (payload.clinicalNote) lines.push(`Клинические примечания врача: ${payload.clinicalNote}`);
-	lines.push("Снимок и протокол прикреплены к электронной медицинской карте 043/у.");
+	lines.push("Снимок и протокол прикреплены к электронной медицинской карте (ЭМК).");
 	return lines.join("\n");
 }
 
@@ -333,7 +333,9 @@ export async function exportSnapshotToClinicalRecord(
 	}
 
 	try {
-		const summaryTitle = tooth ? `Снимок зуба ${tooth} — Form 043/u` : "Рентгенологический снимок — Form 043/u";
+		const summaryTitle = tooth
+			? `Снимок зуба ${tooth} — Протокол лучевого исследования`
+			: "Рентгенологический снимок — Протокол лучевого исследования";
 		const res = await fetch("/api/imaging/studies", {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({

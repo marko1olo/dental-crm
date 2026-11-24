@@ -7,6 +7,7 @@
 
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { rublesToKopecks } from "@dental/shared";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -15,6 +16,20 @@ import {
 	extractIdempotencyKey,
 	isValidUuid,
 } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+
+export const expressImportBodySchema = z
+	.object({
+		phase: z.enum(["preview", "commit"]).optional(),
+		confirm: z.boolean().optional(),
+		dryRun: z.boolean().optional(),
+		entityKind: z.enum(["patients", "price_list"]).optional(),
+		sourceName: z.string().optional(),
+		rawText: z.string().optional(),
+		rows: z.array(z.record(z.string(), z.unknown())).optional(),
+	})
+	.strict();
+
+export type ExpressImportBody = z.infer<typeof expressImportBodySchema>;
 
 export async function registerExpressImportRoutes(app: FastifyInstance) {
 	/**
@@ -30,7 +45,16 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 		);
 		if (!context) return reply;
 
-		const body = (request.body as Record<string, any>) ?? {};
+		const parseResult = expressImportBodySchema.safeParse(request.body ?? {});
+		if (!parseResult.success) {
+			return reply.code(400).send({
+				error: "MigrationValidationError",
+				message: "Некорректные параметры тела запроса импорта данных.",
+				details: parseResult.error.errors,
+			});
+		}
+		const body = parseResult.data;
+
 		const phase =
 			body.phase === "commit" && (body.confirm === true || body.dryRun === false)
 				? "commit"
@@ -40,7 +64,7 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 		const sourceName =
 			typeof body.sourceName === "string" ? body.sourceName : "express_import.csv";
 
-		let rawRows: Array<Record<string, any>> = [];
+		let rawRows: Array<Record<string, unknown>> = [];
 		if (Array.isArray(body.rows) && body.rows.length > 0) {
 			rawRows = body.rows;
 		} else if (
@@ -64,7 +88,7 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 					const parts = lines[i]!
 						.split(delimiter)
 						.map((p: string) => p.trim().replace(/^["']|["']$/g, ""));
-					const row: Record<string, any> = {};
+					const row: Record<string, string> = {};
 					for (let j = 0; j < header.length; j++) {
 						row[header[j] || `col_${j}`] = parts[j] ?? "";
 					}
@@ -158,11 +182,16 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 		}
 
 		const idempotencyKey = extractIdempotencyKey(request);
-		if (phase === "commit" && idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
-			});
+		if (phase === "commit") {
+			if (!idempotencyKey || !isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Для фазы фиксации импорта (commit) обязателен валидный заголовок Idempotency-Key (UUID/UUIDv7).",
+				});
+			}
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		let importedRows = 0;
@@ -245,10 +274,6 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 				}
 			});
 			importedRows = catalogRowsToInsert.length;
-		}
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		return {

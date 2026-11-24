@@ -408,7 +408,8 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		const actorUserId = getRequestIdentity(request).userId;
 		const now = new Date();
 
-		// Нормализация каналов с сохранением флага облитерации, апекслокатора и инструментов (Мандаты 8e, 8n)
+		// Нормализация каналов с сохранением флага облитерации, апекслокатора и клинической защитой молочного прикуса 51–85 (Мандаты 8e, 8n, 8bj)
+		const isDeciduous = toothNumber >= 51 && toothNumber <= 85;
 		const sanitizedCanals = parsed.data.canals.map((c) => {
 			const isObliterated = Boolean(c.isObliterated);
 			let workingLength: number;
@@ -424,7 +425,6 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					workingLength = 0;
 				} else {
 					// Валидация строго в физиологическом диапазоне (от 5 мм для молочных зубов 51-85, от 10 мм для постоянных 11-48) с шагом 0.5 мм
-					const isDeciduous = toothNumber >= 51 && toothNumber <= 85;
 					const minWl = isDeciduous ? 5 : 10;
 					const clamped = Math.max(minWl, Math.min(35, Math.round(parsedWl * 2) / 2));
 					workingLength = clamped;
@@ -434,13 +434,32 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			const rawApex = (c.apexLocatorReading || parsed.data.apexLocator || "0.0 (Apex)").trim();
 			const apexLocatorReading = rawApex || "0.0 (Apex)";
 
+			// Клиническая защита молочных зубов 51–85: категорический запрет постоянной гуттаперчи
+			const defaultCone = isDeciduous ? "Резорбируемая паста" : "Гуттаперча 0.04";
+			const rawMasterCone = c.masterCone || defaultCone;
+			const safeMasterCone = isDeciduous && /гуттаперч|gutta/i.test(rawMasterCone)
+				? "Резорбируемая паста"
+				: rawMasterCone;
+
+			const rawObt = c.obturationTechnique || (isDeciduous ? "Резорбируемая паста (гидроксид кальция / цинкоксидэвгенол)" : "Гуттаперча + эпоксидный полимерный силер");
+			const safeObt = isDeciduous && /гуттаперч|gutta|латеральн|вертикальн/i.test(rawObt)
+				? "Резорбируемая паста (гидроксид кальция / цинкоксидэвгенол)"
+				: rawObt;
+
+			const rawSealer = c.sealer || (isDeciduous ? "Резорбируемый герметик" : "Эпоксидный полимерный силер");
+			const safeSealer = isDeciduous && /ah\s*plus|bioroot|adseal|sealapex|эпоксид/i.test(rawSealer)
+				? "Резорбируемый герметик"
+				: rawSealer;
+
 			return {
 				...c,
 				isObliterated,
 				workingLengthMm: workingLength,
 				apexLocatorReading,
 				masterFile: c.masterFile || c.masterApicalFile || "#25.04",
-				masterCone: c.masterCone || "Гуттаперча 0.04",
+				masterCone: safeMasterCone,
+				obturationTechnique: safeObt,
+				sealer: safeSealer,
 				referencePoint: c.referencePoint || "Бугор зуба",
 			};
 		});

@@ -29,7 +29,7 @@ export function exportInventoryToCsv(doc: WarehouseInventoryAuditDocument): stri
 	return `\uFEFF${[header, ...rows].join("\r\n")}`;
 }
 
-export function exportInv19DiscrepanciesToCsv(doc: WarehouseInventoryAuditDocument): string {
+export function exportDiscrepanciesCsv(doc: WarehouseInventoryAuditDocument): string {
 	const discrepancies = doc.items.filter((it) => it.discrepancyType !== "match");
 	const header = [
 		"№", "Артикул", "Наименование ТМЦ", "Партия (LOT)", "Срок годности",
@@ -53,3 +53,5 @@ export function exportInv19DiscrepanciesToCsv(doc: WarehouseInventoryAuditDocume
 
 	return `\uFEFF${[header, ...rows].join("\r\n")}`;
 }
+
+export const exportInv19DiscrepanciesToCsv = exportDiscrepanciesCsv;

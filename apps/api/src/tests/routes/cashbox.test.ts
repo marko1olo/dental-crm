@@ -130,7 +130,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const introRes = await app.inject({
 				method: "POST",
 				url: "/api/cash/cash-introduction",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					cashBoxId: mainBox.id,
 					amountRub: 10000,
@@ -146,7 +149,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const withRes = await app.inject({
 				method: "POST",
 				url: "/api/cash/cash-withdrawal",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					cashBoxId: mainBox.id,
 					amountRub: 3000,
@@ -161,7 +167,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const withFailRes = await app.inject({
 				method: "POST",
 				url: "/api/cash/cash-withdrawal",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					cashBoxId: mainBox.id,
 					amountRub: 100000,
@@ -259,7 +268,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			await app.inject({
 				method: "POST",
 				url: "/api/cash/cash-introduction",
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					cashBoxId: accountBox.id,
 					amountRub: 10000,

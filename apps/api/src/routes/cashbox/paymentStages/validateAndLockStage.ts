@@ -16,6 +16,7 @@ import {
 	validateLuhn16Certificate,
 } from "@dental/shared";
 import { familyGroups, patientInvoices, patients, payments } from "../../../db/schema.js";
+import { isValidUuid } from "../../../utils/httpIdempotency.js";
 import { normalizePatientAdministrativeProfile } from "../../../utils/patientAdministrativeProfile.js";
 import { cashboxPaymentRequestSchema } from "../cashboxSchemas.js";
 import type {
@@ -63,6 +64,22 @@ export function validatePaymentInput(
 					error: "IdempotencyKeyRequired",
 					message:
 						"Для проведения кассового платежа обязателен заголовок Idempotency-Key или поле clientMutationId (Мандат 8zp/8bo).",
+				},
+			},
+		};
+	}
+
+	const baseMutationId = effectiveMutationId.includes("#")
+		? effectiveMutationId.split("#")[0]
+		: effectiveMutationId;
+	if (!isValidUuid(baseMutationId || "")) {
+		return {
+			outcome: {
+				statusCode: 400,
+				body: {
+					error: "ValidationError",
+					message:
+						"Идентификатор мутации Idempotency-Key/clientMutationId должен содержать валидный UUID/UUIDv7.",
 				},
 			},
 		};

@@ -29,6 +29,9 @@ export interface ExecutiveKpis {
 	readonly doctorPayrollKopecks?: number;
 	readonly doctorPayrollRub?: number;
 	readonly doctorPayrollFormatted?: string;
+	readonly cashDoctorPayrollExpensesKopecks?: number;
+	readonly cashDoctorPayrollExpensesRub?: number;
+	readonly cashDoctorPayrollExpensesFormatted?: string;
 	readonly doctorNetIncomeKopecks?: number;
 	readonly doctorNetIncomeRub?: number;
 	readonly doctorNetIncomeFormatted?: string;
@@ -98,6 +101,7 @@ export interface CalculateExecutiveKpisParams {
 	readonly netMarginPercent?: number;
 	readonly paymentBreakdown?: ExecutivePaymentBreakdown;
 	readonly doctorPayrollKopecks?: number;
+	readonly cashDoctorPayrollExpensesKopecks?: number;
 	readonly doctorNetIncomeKopecks?: number;
 	readonly materialsCostKopecks?: number;
 	readonly labCostKopecks?: number;

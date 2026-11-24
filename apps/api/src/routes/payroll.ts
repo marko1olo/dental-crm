@@ -837,9 +837,36 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		}
 	};
 
-	const reopenSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-		const payoutAccess = await requirePayoutAccess(request, reply);
+	const reopenSettlementHandler = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+		preResolvedPayoutAccess?: NonNullable<Awaited<ReturnType<typeof requirePayoutAccess>>>,
+		preExtractedIdempotencyKey?: string | null,
+	) => {
+		const rawKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+		const idempotencyKey =
+			preExtractedIdempotencyKey !== undefined
+				? preExtractedIdempotencyKey
+				: typeof rawKey === "string"
+					? rawKey.trim()
+					: null;
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+
+		const payoutAccess = preResolvedPayoutAccess ?? (await requirePayoutAccess(request, reply));
 		if (!payoutAccess) return;
+		const orgId = payoutAccess.organizationId;
+		if (!orgId) {
+			return reply.code(403).send({
+				error: "TenantContextRequired",
+				message: "Требуется контекст организации",
+			});
+		}
+
 		if (payoutAccess.scope !== "all") {
 			return reply.code(403).send({
 				error: "PermissionDenied",
@@ -858,7 +885,6 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			});
 		}
 		const body = parsed.data;
-		const orgId = payoutAccess.organizationId;
 		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId ?? undefined);
 		if (!resolvedDocId) {
 			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
@@ -866,16 +892,165 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
 			? body.periodStart.slice(0, 7)
 			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
-		await reopenSettlementPeriodInDb(orgId, resolvedDocId, periodKey);
-		return reply.send({ ok: true, isFinalized: false });
+
+		if (idempotencyKey) {
+			const checkResult = await withTenantCtx(orgId, async (tx) => {
+				const [existingRecord] = await tx
+					.select()
+					.from(idempotencyKeys)
+					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						return {
+							action: "replay" as const,
+							code: existingRecord.responseCode || 200,
+							body: existingRecord.responseBody,
+						};
+					}
+					if (existingRecord.status === "in_flight") {
+						return {
+							action: "conflict" as const,
+						};
+					}
+				}
+
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "in_flight",
+						lockedAt: new Date(),
+					})
+					.onConflictDoNothing();
+
+				return { action: "proceed" as const };
+			});
+
+			if (checkResult.action === "replay") {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				reply.header("Idempotency-Key", idempotencyKey);
+				return reply.code(checkResult.code).send(checkResult.body);
+			}
+
+			if (checkResult.action === "conflict") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					message: "Операция переоткрытия расчетного периода с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
+
+		try {
+			await reopenSettlementPeriodInDb(orgId, resolvedDocId, periodKey);
+			const responsePayload = { ok: true, isFinalized: false };
+
+			if (idempotencyKey) {
+				await withTenantCtx(orgId, async (tx) => {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: responsePayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: responsePayload,
+								responseCode: 200,
+							},
+						});
+				});
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
+			return reply.send(responsePayload);
+		} catch (error) {
+			if (idempotencyKey) {
+				await withTenantCtx(orgId, async (tx) => {
+					await tx
+						.delete(idempotencyKeys)
+						.where(
+							and(
+								eq(idempotencyKeys.clinicId, orgId),
+								eq(idempotencyKeys.key, idempotencyKey),
+								eq(idempotencyKeys.status, "in_flight"),
+							),
+						);
+				}).catch(() => {});
+			}
+			throw error;
+		}
 	};
 
 	app.post("/api/v1/payroll/close-settlement", closeSettlementHandler);
 	app.post("/api/payroll/close-settlement", closeSettlementHandler);
 	app.post("/api/doctor/close-settlement-period", closeSettlementHandler);
-	app.post("/api/v1/payroll/reopen-settlement", reopenSettlementHandler);
-	app.post("/api/payroll/reopen-settlement", reopenSettlementHandler);
-	app.post("/api/doctor/settlement-period/reopen", reopenSettlementHandler);
+
+	// door-validation: none — валидация тела запроса делегирована в канонический reopenSettlementHandler (reopenSettlementSchema.safeParse)
+	app.post("/api/v1/payroll/reopen-settlement", async (request, reply) => {
+		const rawKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : null;
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+		const organizationId = payoutAccess.organizationId;
+		if (!organizationId) {
+			return reply.code(403).send({ error: "TenantContextRequired", message: "Требуется контекст организации" });
+		}
+		return reopenSettlementHandler(request, reply, payoutAccess, idempotencyKey);
+	});
+
+	// door-validation: none — валидация тела запроса делегирована в канонический reopenSettlementHandler (reopenSettlementSchema.safeParse)
+	app.post("/api/payroll/reopen-settlement", async (request, reply) => {
+		const rawKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : null;
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+		const organizationId = payoutAccess.organizationId;
+		if (!organizationId) {
+			return reply.code(403).send({ error: "TenantContextRequired", message: "Требуется контекст организации" });
+		}
+		return reopenSettlementHandler(request, reply, payoutAccess, idempotencyKey);
+	});
+
+	// door-validation: none — валидация тела запроса делегирована в канонический reopenSettlementHandler (reopenSettlementSchema.safeParse)
+	app.post("/api/doctor/settlement-period/reopen", async (request, reply) => {
+		const rawKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : null;
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
+			});
+		}
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+		const organizationId = payoutAccess.organizationId;
+		if (!organizationId) {
+			return reply.code(403).send({ error: "TenantContextRequired", message: "Требуется контекст организации" });
+		}
+		return reopenSettlementHandler(request, reply, payoutAccess, idempotencyKey);
+	});
 
 	// Мобильный кошелек начислений врача (SSOT)
 	app.get("/api/doctor/my-earnings", handleGetDoctorMyEarnings);

@@ -1,5 +1,6 @@
 import { denteQueryClient } from "../../../lib/queryClient.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
+import { useOfflineStore } from "../../../store/offlineStore.js";
 import { type AutoVisitBomDeductionResult, kopecksToRubles } from "@dental/shared";
 import type { PerformAutoVisitBomDeductionOptions } from "./bomDeductionTypes.js";
 import type { DeductionValidationSummary } from "./bomDeductionValidator.js";
@@ -45,12 +46,14 @@ export function syncAutoBomDeduction(
 				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
 				skipNetworkSync: true, // Защита от двойного списания: сетевой вызов выполняется строго 1 раз через авто-BOM эндпоинт ниже
 			},
-		).catch(() => {});
+		).catch((err) => {
+			console.warn("[autoBomDeduction] Local deductStock error:", err);
+		});
 
 		void denteQueryClient.invalidateQueries({ queryKey: ["inventory"] });
 		void denteQueryClient.invalidateQueries({ queryKey: ["warehouse"] });
-	} catch {
-		// Non-blocking local store update
+	} catch (err) {
+		console.warn("[autoBomDeduction] Failed to perform local store deduction:", err);
 	}
 
 	if (options.organizationId && options.fetchFn) {
@@ -101,25 +104,38 @@ export function syncAutoBomDeduction(
 					? `/api/inventory/${options.organizationId}/overdraft-alert`
 					: `/api/inventory/overdraft-alert`;
 
+				const alertPayload = {
+					visitId: options.visitId,
+					visitNumber: options.visitNumber,
+					chairId: options.chairId,
+					cabinetId: options.cabinetId,
+					message: validation.overdraftNotice,
+					items: (validation.overdraftItems || []).map((i: OverdraftValidationItem) => ({
+						itemId: i.inventoryItemId,
+						itemName: i.itemName,
+						deficitQty: i.deficitQty,
+					})),
+				};
+
 				options.fetchFn(alertEndpoint, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						visitId: options.visitId,
-						visitNumber: options.visitNumber,
-						chairId: options.chairId,
-						cabinetId: options.cabinetId,
-						message: validation.overdraftNotice,
-						items: (validation.overdraftItems || []).map((i: OverdraftValidationItem) => ({
-							itemId: i.inventoryItemId,
-							itemName: i.itemName,
-							deficitQty: i.deficitQty,
-						})),
-					}),
-				}).catch(() => {});
+					body: JSON.stringify(alertPayload),
+				}).catch((err) => {
+					console.warn("[autoBomDeduction] Failed to send overdraft alert to server, enqueuing to offlineStore:", err);
+					void useOfflineStore.getState().enqueue({
+						entityType: "inventory",
+						entityId: options.visitId,
+						organizationId: options.organizationId,
+						action: "create",
+						payload: alertPayload,
+					}).catch((enqueueErr) => {
+						console.error("[autoBomDeduction] Failed to enqueue overdraft alert to offlineStore:", enqueueErr);
+					});
+				});
 			}
-		} catch {
-			// Never block clinical hot path on background network issues
+		} catch (err) {
+			console.warn("[autoBomDeduction] Background network synchronization exception:", err);
 		}
 	}
 }

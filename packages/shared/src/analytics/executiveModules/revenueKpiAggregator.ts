@@ -41,18 +41,11 @@ export function calculateExecutiveKpisSummary(
 		? params.netMarginPercent
 		: (rev.revKop > 0 ? Number(((netProfitKop / rev.revKop) * 100).toFixed(1)) : 0.0);
 
-	const materialsKop = params.materialsCostKopecks !== undefined && typeof params.materialsCostKopecks === "number"
-		? Math.max(0, Math.round(params.materialsCostKopecks))
-		: 0;
-	const labKop = params.labCostKopecks !== undefined && typeof params.labCostKopecks === "number"
-		? Math.max(0, Math.round(params.labCostKopecks))
-		: 0;
-	const docPayrollKop = params.doctorPayrollKopecks !== undefined && typeof params.doctorPayrollKopecks === "number"
-		? Math.max(0, Math.round(params.doctorPayrollKopecks))
-		: 0;
-	const docNetIncomeKop = params.doctorNetIncomeKopecks !== undefined && typeof params.doctorNetIncomeKopecks === "number"
-		? Math.max(0, Math.round(params.doctorNetIncomeKopecks))
-		: Math.max(0, docPayrollKop);
+	const materialsKop = typeof params.materialsCostKopecks === "number" ? Math.max(0, Math.round(params.materialsCostKopecks)) : 0;
+	const labKop = typeof params.labCostKopecks === "number" ? Math.max(0, Math.round(params.labCostKopecks)) : 0;
+	const docPayrollKop = typeof params.doctorPayrollKopecks === "number" ? Math.max(0, Math.round(params.doctorPayrollKopecks)) : 0;
+	const docNetIncomeKop = typeof params.doctorNetIncomeKopecks === "number" ? Math.max(0, Math.round(params.doctorNetIncomeKopecks)) : Math.max(0, docPayrollKop);
+	const cashPayrollKop = typeof params.cashDoctorPayrollExpensesKopecks === "number" ? Math.max(0, Math.round(params.cashDoctorPayrollExpensesKopecks)) : undefined;
 
 	return {
 		period: params.period,
@@ -116,5 +109,10 @@ export function calculateExecutiveKpisSummary(
 		totalLeadsCount: unit.leads,
 		totalSanitationCount: unit.sanCount,
 		...(params.paymentBreakdown !== undefined ? { paymentBreakdown: params.paymentBreakdown } : {}),
+		...(cashPayrollKop !== undefined ? {
+			cashDoctorPayrollExpensesKopecks: cashPayrollKop,
+			cashDoctorPayrollExpensesRub: kopecksToRubles(cashPayrollKop),
+			cashDoctorPayrollExpensesFormatted: formatKopecksRu(cashPayrollKop),
+		} : {}),
 	};
 }

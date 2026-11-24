@@ -64,10 +64,15 @@ export async function processCashboxLedgerStage(
 					const seeded = await ensureOrganizationCashBoxes(spTx, orgId);
 					boxes = seeded.boxes;
 				});
-			} catch {
-				// Mock or already seeded in another context
+			} catch (err) {
+				ctx.logger?.error({ err, orgId }, "[cashboxLedgerStage] Failed to ensure cash boxes");
 			}
 		}
+	}
+
+	if (boxes.length === 0) {
+		ctx.logger?.error({ orgId }, "[cashboxLedgerStage] Cashbox ledger unavailable: no cash boxes found for organization");
+		throw new Error("CASHBOX_LEDGER_UNAVAILABLE");
 	}
 
 	const cashDeskBox =

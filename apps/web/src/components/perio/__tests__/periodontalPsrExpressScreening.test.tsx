@@ -45,7 +45,7 @@ describe("Periodontal WHO Express Screening (PSR) & Hygiene SSOT", () => {
 		assert.equal(summary.maxPsrCode, 2);
 		assert.equal(summary.icd10Code, "K05.1");
 		assert.ok(summary.hygienePlanRu.includes("ультразвуковое"));
-		assert.ok(summary.hygienePlanRu.includes("Air-Flow"));
+		assert.ok(summary.hygienePlanRu.includes("воздушно-абразивная обработка"));
 		assert.equal(summary.requiresDetailedCharting, false);
 	});
 

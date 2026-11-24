@@ -136,21 +136,21 @@ export function ChairsideCanalRow({
 					<span className="text-[var(--muted)] font-medium">Силер:</span>
 					<button
 						type="button"
-						onClick={() => onUpdate(c.id, { obturationType: "gutta_sealer", sealer: "AH Plus" })}
+						onClick={() => onUpdate(c.id, { obturationType: "gutta_sealer", sealer: "Эпоксидный полимерный силер" })}
 						className={`chip-obturation-gutta-${c.name} ${c.name === "MB1" ? `chip-obturation-gutta-MB` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.obturationType === "gutta_sealer" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 					>
-						AH Plus
+						Эпоксидный
 					</button>
 					<button
 						type="button"
-						onClick={() => onUpdate(c.id, { obturationType: "bioceramic", sealer: "BioRoot" })}
+						onClick={() => onUpdate(c.id, { obturationType: "bioceramic", sealer: "Биокерамический силер" })}
 						className={`chip-obturation-bio-${c.name} ${c.name === "MB1" ? `chip-obturation-bio-MB` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.obturationType === "bioceramic" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 					>
 						Биокерамика
 					</button>
 					<button
 						type="button"
-						onClick={() => onUpdate(c.id, { obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)" })}
+						onClick={() => onUpdate(c.id, { obturationType: "temp_caoh2", sealer: "Лечебная паста гидроксида кальция Ca(OH)2" })}
 						className={`chip-obturation-caoh2-${c.name} ${c.name === "MB1" ? `chip-obturation-caoh2-MB` : ""} min-h-[44px] sm:min-h-[24px] px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md text-xs sm:text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center justify-center ${c.obturationType === "temp_caoh2" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 					>
 						Ca(OH)2

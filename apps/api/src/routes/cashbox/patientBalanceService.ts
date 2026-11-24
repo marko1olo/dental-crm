@@ -131,7 +131,11 @@ export class PatientBalanceService {
 			);
 
 		const personalAdvanceKopecks = sumKopecks(
-			advanceRows.map((row) => parseKopecks(row.depositAmountRub)),
+			advanceRows.map((row) =>
+				row.depositAmountKopecks != null && row.depositAmountKopecks > 0n
+					? Number(row.depositAmountKopecks)
+					: parseKopecks(row.depositAmountRub)
+			),
 		);
 
 		// 2. Расчет доступного семейного баланса
@@ -305,6 +309,7 @@ export class PatientBalanceService {
 				patientId,
 				patientName: patient.fullName || "Пациент клиники",
 				depositAmountRub: kopecksToNumericString(amountKopecks),
+				depositAmountKopecks: BigInt(amountKopecks),
 				taggedTargetType: "deposit",
 				taggedTargetName: "Аванс на лечение",
 				allocationStatus: "unallocated",
@@ -495,18 +500,28 @@ export class PatientBalanceService {
 			let debitAcc = canDebitPersonal;
 			for (const row of advanceRows) {
 				if (debitAcc <= 0) break;
-				const rowKop = parseKopecks(row.depositAmountRub);
+				const rowKop =
+					row.depositAmountKopecks != null && row.depositAmountKopecks > 0n
+						? Number(row.depositAmountKopecks)
+						: parseKopecks(row.depositAmountRub);
 				if (rowKop <= debitAcc) {
 					await tx
 						.update(advanceDepositTaggings)
-						.set({ allocationStatus: "spent" })
+						.set({
+							allocationStatus: "spent",
+							depositAmountKopecks: 0n,
+							depositAmountRub: "0.00",
+						})
 						.where(and(eq(advanceDepositTaggings.id, row.id), eq(advanceDepositTaggings.organizationId, organizationId)));
 					debitAcc -= rowKop;
 				} else {
 					const remainingRowKop = rowKop - debitAcc;
 					await tx
 						.update(advanceDepositTaggings)
-						.set({ depositAmountRub: kopecksToNumericString(remainingRowKop) })
+						.set({
+							depositAmountRub: kopecksToNumericString(remainingRowKop),
+							depositAmountKopecks: BigInt(remainingRowKop),
+						})
 						.where(and(eq(advanceDepositTaggings.id, row.id), eq(advanceDepositTaggings.organizationId, organizationId)));
 					debitAcc = 0;
 				}
@@ -792,18 +807,28 @@ export class PatientBalanceService {
 		let refundAcc = amountKopecks;
 		for (const row of advanceRows) {
 			if (refundAcc <= 0) break;
-			const rowKop = parseKopecks(row.depositAmountRub);
+			const rowKop =
+				row.depositAmountKopecks != null && row.depositAmountKopecks > 0n
+					? Number(row.depositAmountKopecks)
+					: parseKopecks(row.depositAmountRub);
 			if (rowKop <= refundAcc) {
 				await tx
 					.update(advanceDepositTaggings)
-					.set({ allocationStatus: "spent" })
+					.set({
+						allocationStatus: "spent",
+						depositAmountKopecks: 0n,
+						depositAmountRub: "0.00",
+					})
 					.where(and(eq(advanceDepositTaggings.id, row.id), eq(advanceDepositTaggings.organizationId, organizationId)));
 				refundAcc -= rowKop;
 			} else {
 				const remainingRowKop = rowKop - refundAcc;
 				await tx
 					.update(advanceDepositTaggings)
-					.set({ depositAmountRub: kopecksToNumericString(remainingRowKop) })
+					.set({
+						depositAmountRub: kopecksToNumericString(remainingRowKop),
+						depositAmountKopecks: BigInt(remainingRowKop),
+					})
 					.where(and(eq(advanceDepositTaggings.id, row.id), eq(advanceDepositTaggings.organizationId, organizationId)));
 				refundAcc = 0;
 			}

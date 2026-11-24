@@ -10,6 +10,8 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { handleVkWebhook } from "../routes/omnichannelBots/channelVk.js";
+import { handleMaxWebhook } from "../routes/omnichannelBots/channelMax.js";
 import { resolveAllTelegramOutboxRuntimes } from "../routes/telegram/telegramOutboxScope.js";
 import { handleWebhookGetHandshake } from "../security/webhookAuth.js";
 import { TelegramVoiceIntakeService } from "../services/telegram/TelegramVoiceIntakeService.js";
@@ -125,5 +127,82 @@ describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 
 		assert.ok(res);
 		assert.ok(res.patientName);
+	});
+
+	// =========================================================================
+	// 6. VK & MAX WEBHOOK AUTHENTICATION (TIMING SAFE SECRET CHECK)
+	// =========================================================================
+	it("rejects VK webhook when secret is missing or mismatched", async () => {
+		process.env.VK_WEBHOOK_SECRET = "vk_secret_abc123";
+		try {
+			const resNoSecret = await handleVkWebhook(
+				{ type: "message_new" },
+				"00000000-0000-0000-0000-000000000001",
+				null,
+			);
+			assert.equal(resNoSecret.statusCode, 403, "VK webhook без секрета должен возвращать 403");
+
+			const resWrongSecret = await handleVkWebhook(
+				{ type: "message_new", secret: "wrong_secret" },
+				"00000000-0000-0000-0000-000000000001",
+				"wrong_secret",
+			);
+			assert.equal(resWrongSecret.statusCode, 403, "VK webhook с неверным секретом должен возвращать 403");
+		} finally {
+			delete process.env.VK_WEBHOOK_SECRET;
+		}
+	});
+
+	it("accepts VK webhook when secret matches", async () => {
+		process.env.VK_WEBHOOK_SECRET = "vk_secret_valid_999";
+		try {
+			const res = await handleVkWebhook(
+				{ type: "message_new", secret: "vk_secret_valid_999" },
+				"00000000-0000-0000-0000-000000000001",
+				"vk_secret_valid_999",
+			);
+			assert.equal(res.statusCode, 200, "VK webhook с верным секретом должен возвращать 200");
+			assert.equal(res.payload, "ok");
+		} finally {
+			delete process.env.VK_WEBHOOK_SECRET;
+		}
+	});
+
+	it("rejects MAX webhook when secret is missing or mismatched", async () => {
+		process.env.MAX_WEBHOOK_SECRET = "max_secret_xyz789";
+		try {
+			const resNoSecret = await handleMaxWebhook(
+				{ text: "test" },
+				"00000000-0000-0000-0000-000000000001",
+				null,
+			);
+			assert.equal(resNoSecret.statusCode, 403, "MAX webhook без секрета должен возвращать 403");
+			assert.equal(resNoSecret.ok, false);
+
+			const resWrongSecret = await handleMaxWebhook(
+				{ text: "test", token: "wrong_max_token" },
+				"00000000-0000-0000-0000-000000000001",
+				"wrong_max_token",
+			);
+			assert.equal(resWrongSecret.statusCode, 403, "MAX webhook с неверным секретом должен возвращать 403");
+			assert.equal(resWrongSecret.ok, false);
+		} finally {
+			delete process.env.MAX_WEBHOOK_SECRET;
+		}
+	});
+
+	it("accepts MAX webhook when secret matches", async () => {
+		process.env.MAX_WEBHOOK_SECRET = "max_secret_valid_777";
+		try {
+			const res = await handleMaxWebhook(
+				{ text: "test", token: "max_secret_valid_777" },
+				"00000000-0000-0000-0000-000000000001",
+				"max_secret_valid_777",
+			);
+			assert.equal(res.statusCode, 200, "MAX webhook с верным секретом должен возвращать 200");
+			assert.equal(res.ok, true);
+		} finally {
+			delete process.env.MAX_WEBHOOK_SECRET;
+		}
 	});
 });

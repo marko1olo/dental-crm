@@ -9,14 +9,14 @@ export const HYGIENE_BOM_LINKS: readonly ConsumableItemLink[] = [
 	{
 		id: "def-link-hyg-powder", service804nCode: "A16.07.051",
 		serviceTitle: "Комплексная профессиональная гигиена полости рта",
-		inventoryItemId: "mat-airflow-powder", itemName: "Порошок для воздушно-абразивной полировки AirFlow (саше 25 г)",
+		inventoryItemId: "mat-airflow-powder", itemName: "Порошок для воздушно-абразивной полировки (глицин, саше 25 г)",
 		category: "hygiene_paste", unit: "pack", quantityPerService: 1, isMandatory: true,
-		costPriceKopecks: 65000, notes: "Air-Flow полировка",
+		costPriceKopecks: 65000, notes: "Воздушно-абразивная полировка",
 	},
 	{
 		id: "def-link-hyg-paste", service804nCode: "A16.07.051",
 		serviceTitle: "Комплексная профессиональная гигиена полости рта",
-		inventoryItemId: "mat-prophy-paste", itemName: "Паста полировочная абразивная Cleanic",
+		inventoryItemId: "mat-prophy-paste", itemName: "Паста полировочная абразивная для профгигиены",
 		category: "hygiene_paste", unit: "dose", quantityPerService: 1, isMandatory: true,
 		costPriceKopecks: 12000, notes: "Финишная полировка эмали",
 	},
@@ -30,7 +30,7 @@ export const HYGIENE_BOM_LINKS: readonly ConsumableItemLink[] = [
 	{
 		id: "def-link-hyg-optragate", service804nCode: "A16.07.051",
 		serviceTitle: "Комплексная профессиональная гигиена полости рта",
-		inventoryItemId: "mat-optragate", itemName: "Роторасширитель эластичный OptraGate",
+		inventoryItemId: "mat-optragate", itemName: "Роторасширитель эластичный одноразовый",
 		category: "rubber_dam", unit: "шт", quantityPerService: 1, isMandatory: true,
 		costPriceKopecks: 18500, notes: "Изоляция губ и щек",
 	},
@@ -81,12 +81,12 @@ export const HYGIENE_BOM_LINKS: readonly ConsumableItemLink[] = [
 	{ id: "def-link-cur-needle", service804nCode: "A16.07.039", serviceTitle: "Закрытый кюретаж при заболеваниях пародонта в области зуба", inventoryItemId: "mat-disposable-needle-short", itemName: "Игла инъекционная стерильная 30G", category: "other", unit: "шт", quantityPerService: 1, isMandatory: true, costPriceKopecks: 1800, notes: "Стерильная игла" },
 	{ id: "def-link-cur-metrogyl", service804nCode: "A16.07.039", serviceTitle: "Закрытый кюретаж при заболеваниях пародонта в области зуба", inventoryItemId: "mat-metrogyl-denta", itemName: "Гель стоматологический Метрогил Дента", category: "other", unit: "dose", quantityPerService: 1, isMandatory: true, costPriceKopecks: 6500, notes: "Антибактериальная обработка кармана" },
 	{ id: "def-link-cur-septopack", service804nCode: "A16.07.039", serviceTitle: "Закрытый кюретаж при заболеваниях пародонта в области зуба", inventoryItemId: "mat-septopack", itemName: "Повязка пародонтальная защитная Септопак", category: "other", unit: "dose", quantityPerService: 1, isMandatory: false, costPriceKopecks: 12000, notes: "Защита раневой поверхности" },
-	// Ультразвуковой скейлинг и Vector-терапия (A22.07.002 / A16.07.020)
-	{ id: "def-link-us-optragate", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление наддесневых и поддесневых зубных отложений", inventoryItemId: "mat-optragate", itemName: "Роторасширитель эластичный OptraGate", category: "rubber_dam", unit: "шт", quantityPerService: 1, isMandatory: true, costPriceKopecks: 18500, notes: "Изоляция" },
-	{ id: "def-link-us-paste", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление наддесневых и поддесневых зубных отложений", inventoryItemId: "mat-prophy-paste", itemName: "Паста полировочная абразивная Cleanic", category: "hygiene_paste", unit: "dose", quantityPerService: 1, isMandatory: true, costPriceKopecks: 12000, notes: "Финишная полировка" },
+	// Ультразвуковой скейлинг и ультразвуковая полировка корней (A22.07.002 / A16.07.020)
+	{ id: "def-link-us-optragate", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление наддесневых и поддесневых зубных отложений", inventoryItemId: "mat-optragate", itemName: "Роторасширитель эластичный одноразовый", category: "rubber_dam", unit: "шт", quantityPerService: 1, isMandatory: true, costPriceKopecks: 18500, notes: "Изоляция" },
+	{ id: "def-link-us-paste", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление наддесневых и поддесневых зубных отложений", inventoryItemId: "mat-prophy-paste", itemName: "Паста полировочная абразивная для профгигиены", category: "hygiene_paste", unit: "dose", quantityPerService: 1, isMandatory: true, costPriceKopecks: 12000, notes: "Финишная полировка" },
 	{ id: "def-link-us-scaler-tip", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление наддесневых и поддесневых зубных отложений", inventoryItemId: "mat-scaler-tip", itemName: "Насадка ультразвуковая скейлинговая стерильная", category: "bur", unit: "шт", quantityPerService: 1, isMandatory: true, costPriceKopecks: 5000, notes: "УЗ-дебридмент" },
-	{ id: "def-link-vec-polish", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление отложений аппаратом Vector", inventoryItemId: "mat-vector-fluid-polish", itemName: "Суспензия полировочная Vector Polish с гидроксиапатитом", category: "hygiene_paste", unit: "dose", quantityPerService: 1, isMandatory: false, costPriceKopecks: 45000, notes: "Vector полировка корня" },
-	{ id: "def-link-vec-chlorhex", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковое удаление отложений аппаратом Vector", inventoryItemId: "mat-chlorhexidine-005", itemName: "Раствор хлоргексидина биглюконата 0.05% (50 мл)", category: "other", unit: "dose", quantityPerService: 1, isMandatory: true, costPriceKopecks: 2500, notes: "Антисептическая ирригация" },
+	{ id: "def-link-vec-polish", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковая полировка корней и обработка пародонтальных карманов", inventoryItemId: "mat-vector-fluid-polish", itemName: "Суспензия полировочная для корней с гидроксиапатитом", category: "hygiene_paste", unit: "dose", quantityPerService: 1, isMandatory: false, costPriceKopecks: 45000, notes: "Ультразвуковая полировка корня" },
+	{ id: "def-link-vec-chlorhex", service804nCode: "A22.07.002", serviceTitle: "Ультразвуковая полировка корней и обработка пародонтальных карманов", inventoryItemId: "mat-chlorhexidine-005", itemName: "Раствор хлоргексидина биглюконата 0.05% (50 мл)", category: "other", unit: "dose", quantityPerService: 1, isMandatory: true, costPriceKopecks: 2500, notes: "Антисептическая ирригация" },
 ];
 
 export const PERIODONTOLOGY_BOM_LINKS: readonly ConsumableItemLink[] = HYGIENE_BOM_LINKS.slice(10);

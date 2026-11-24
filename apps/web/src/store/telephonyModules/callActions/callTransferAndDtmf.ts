@@ -96,9 +96,18 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 						notes: activeCall.patientName ? `Пациент: ${activeCall.patientName}` : undefined,
 					}),
 				})
-					.then(() => fetchCallHistoryAction(set, get))
-					.catch(() => {});
-			} catch {}
+					.then(async (res) => {
+						if (!res.ok) {
+							logger.warn(`[callTransferAndDtmf] /api/telephony/calls/end returned HTTP ${res.status}`);
+						}
+						await fetchCallHistoryAction(set, get);
+					})
+					.catch((err: unknown) => {
+						logger.warn("[callTransferAndDtmf] Failed to notify backend of call end:", err);
+					});
+			} catch (err: unknown) {
+				logger.warn("[callTransferAndDtmf] Unexpected error initiating call end request:", err);
+			}
 		},
 
 		recordCallOutcome: (outcome: NonNullable<CallHistoryItem["outcome"]>, note?: string) => {

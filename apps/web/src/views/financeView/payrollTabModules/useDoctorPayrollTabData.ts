@@ -27,6 +27,8 @@ export interface UseDoctorPayrollTabDataReturn {
 	readonly activeDoctor: PayrollDoctorOption;
 	readonly effectiveServices: readonly DoctorCompletedServiceItem[];
 	readonly isLoading: boolean;
+	readonly fetchError: string | null;
+	readonly retryFetch: () => void;
 	readonly calculationResult: DoctorPayrollResult;
 	readonly handleExportCsv: () => void;
 	readonly handlePrintPayslip: () => void;
@@ -59,7 +61,9 @@ export function useDoctorPayrollTabData({
 					setSelectedDoctorId((prev) => (prev && mapped.some((m) => m.id === prev) ? prev : mapped[0]?.id ?? ""));
 				}
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.error("[useDoctorPayrollTabData] Failed to load doctors:", err);
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -86,6 +90,10 @@ export function useDoctorPayrollTabData({
 
 	const [apiServices, setApiServices] = useState<DoctorCompletedServiceItem[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [fetchError, setFetchError] = useState<string | null>(null);
+	const [fetchTrigger, setFetchTrigger] = useState<number>(0);
+
+	const retryFetch = () => setFetchTrigger((prev) => prev + 1);
 
 	const activeDoctor: PayrollDoctorOption = useMemo(() => {
 		if (doctors.length === 0) return EMPTY_DOCTOR;
@@ -100,6 +108,7 @@ export function useDoctorPayrollTabData({
 		}
 		let isCancelled = false;
 		setIsLoading(true);
+		setFetchError(null);
 
 		fetchDoctorEarningsWithStatusApi({
 			doctorId: activeDoctor.id,
@@ -114,14 +123,19 @@ export function useDoctorPayrollTabData({
 				if (!isCancelled) {
 					setApiServices(res.services);
 					setIsLoading(false);
+					setFetchError(null);
 				}
 			})
-			.catch(() => {
-				if (!isCancelled) setIsLoading(false);
+			.catch((err) => {
+				console.error("[useDoctorPayrollTabData] Failed to load doctor earnings:", err);
+				if (!isCancelled) {
+					setIsLoading(false);
+					setFetchError("Не удалось загрузить начисления врача из базы данных");
+				}
 			});
 
 		return () => { isCancelled = true; };
-	}, [services, activeDoctor.id, periodStart, periodEnd]);
+	}, [services, activeDoctor.id, periodStart, periodEnd, fetchTrigger]);
 
 	const effectiveServices = useMemo(
 		() => (services && services.length > 0 ? services : apiServices),
@@ -153,6 +167,8 @@ export function useDoctorPayrollTabData({
 		activeDoctor,
 		effectiveServices,
 		isLoading,
+		fetchError,
+		retryFetch,
 		calculationResult,
 		handleExportCsv,
 		handlePrintPayslip,

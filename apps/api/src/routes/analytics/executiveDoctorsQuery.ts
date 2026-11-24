@@ -59,8 +59,8 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
 		})
 		.from(treatmentItems)
-		.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
-		.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
+		.leftJoin(serviceCatalogItems, and(eq(treatmentItems.serviceId, serviceCatalogItems.id), eq(serviceCatalogItems.organizationId, orgId)))
+		.leftJoin(visits, and(eq(treatmentItems.visitId, visits.id), eq(visits.organizationId, orgId)))
 		.where(
 			and(
 				eq(treatmentItems.organizationId, orgId),
@@ -127,7 +127,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
 		})
 		.from(appointments)
-		.leftJoin(users, eq(appointments.doctorUserId, users.id))
+		.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
 		.where(
 			and(
 				eq(appointments.organizationId, orgId),
@@ -239,11 +239,24 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			patientInvoices,
 			and(
 				eq(payments.documentId, patientInvoices.id),
+				eq(patientInvoices.organizationId, orgId),
 				sql`${payments.visitId} is null`,
 			),
 		)
-		.leftJoin(visits, eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id))
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.leftJoin(
+			visits,
+			and(
+				eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+				eq(visits.organizationId, orgId),
+			),
+		)
+		.leftJoin(
+			appointments,
+			and(
+				eq(visits.appointmentId, appointments.id),
+				eq(appointments.organizationId, orgId),
+			),
+		)
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
@@ -347,8 +360,8 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			revenueKopecks: procRevenueExpr,
 		})
 		.from(treatmentItems)
-		.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
-		.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
+		.leftJoin(serviceCatalogItems, and(eq(treatmentItems.serviceId, serviceCatalogItems.id), eq(serviceCatalogItems.organizationId, orgId)))
+		.leftJoin(visits, and(eq(treatmentItems.visitId, visits.id), eq(visits.organizationId, orgId)))
 		.where(
 			and(
 				eq(treatmentItems.organizationId, orgId),

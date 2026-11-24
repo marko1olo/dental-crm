@@ -9,6 +9,7 @@ import type React from "react";
 import { createPortal } from "react-dom";
 import type {
 	WarehouseInventoryAuditDocument,
+	WarehouseAuditWriteoffAct,
 	WarehouseTorg16WriteoffAct,
 } from "./warehouseInventoryEngine.js";
 import { WarehouseAuditCategoryBar } from "./auditTab/WarehouseAuditCategoryBar.js";
@@ -25,6 +26,7 @@ export interface WarehouseInventoryAuditModalProps {
 	readonly initialDocument?: WarehouseInventoryAuditDocument | undefined;
 	readonly onDocumentSaved?: ((doc: WarehouseInventoryAuditDocument) => void) | undefined;
 	readonly onApplyAudit?: ((doc: WarehouseInventoryAuditDocument) => void | Promise<void>) | undefined;
+	readonly onAuditWriteoffGenerated?: ((act: WarehouseAuditWriteoffAct) => void) | undefined;
 	readonly onTorg16Generated?: ((act: WarehouseTorg16WriteoffAct) => void) | undefined;
 }
 
@@ -36,6 +38,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 	initialDocument,
 	onDocumentSaved,
 	onApplyAudit,
+	onAuditWriteoffGenerated,
 	onTorg16Generated,
 }) => {
 	const state = useWarehouseAuditState({
@@ -43,6 +46,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		initialDocument,
 		onDocumentSaved,
 		onApplyAudit,
+		onAuditWriteoffGenerated,
 		onTorg16Generated,
 	});
 
@@ -80,7 +84,8 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 					sortOrder={state.sortOrder}
 					onSortOrderChange={state.setSortOrder}
 					onAutofillFactByBook={state.handleAutofillFactByBook}
-					onCreateWriteoffAct={state.handleCreateTorg16}
+					onCreateWriteoffAct={state.handleCreateAuditWriteoffAct}
+					onCreateAuditWriteoffAct={state.handleCreateAuditWriteoffAct}
 					onCreateTorg16={state.handleCreateTorg16}
 				/>
 
@@ -96,6 +101,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 					commission={state.commission}
 					status={state.status}
 					onExportCsv={state.handleExportCsv}
+					onExportDiscrepanciesCsv={state.handleExportDiscrepanciesCsv}
 					onExportInv19Csv={state.handleExportInv19Csv}
 					onExport1C={state.handleExport1C}
 					onSave={state.handleSave}

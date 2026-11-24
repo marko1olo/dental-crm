@@ -13,6 +13,7 @@ import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	type PresetName,
 	type WorkspaceFeatureFlags,
@@ -279,6 +280,17 @@ export async function updateWorkspaceProfileHandler(
 		if (!organizationId)
 			return reply.code(401).send({ error: "Unauthorized" });
 
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		/*
 		 * Order (AUTH-first DoD, same as diary/preset):
 		 *   1) auth → 401
@@ -377,6 +389,17 @@ export async function applyWorkspacePresetHandler(
 		const organizationId = await resolveOrganizationId(req);
 		if (!organizationId)
 			return reply.code(401).send({ error: "Unauthorized" });
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		const presetName = req.params.name as PresetName;
 		const flags =

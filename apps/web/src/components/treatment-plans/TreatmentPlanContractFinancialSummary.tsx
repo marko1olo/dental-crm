@@ -40,7 +40,7 @@ export const TreatmentPlanContractFinancialSummary: React.FC<TreatmentPlanContra
 
 				<div className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] print:bg-white print:border-slate-300 shadow-2xs space-y-1">
 					<span className="text-[var(--muted)] print:text-slate-500 block text-[10.5px]">Скидка {discountPercent > 0 ? `(${discountPercent}%)` : ""} + Баллы:</span>
-					<div className="text-base font-mono font-bold text-emerald-600 dark:text-emerald-400 print:text-emerald-700">-{(discountTotalRub + bonusPointsDeductedRub).toLocaleString("ru-RU")} ₽</div>
+					<div className="text-base font-mono font-bold text-[var(--success)] print:text-emerald-700">-{(discountTotalRub + bonusPointsDeductedRub).toLocaleString("ru-RU")} ₽</div>
 					<div className="text-[9.5px] text-[var(--muted)] print:text-slate-400">{bonusPointsDeductedRub > 0 ? `В т.ч. списано бонусов: ${bonusPointsDeductedRub} ₽` : "Персональная скидка пациента"}</div>
 				</div>
 

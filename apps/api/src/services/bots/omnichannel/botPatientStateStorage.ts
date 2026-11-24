@@ -1,8 +1,10 @@
-import { and, eq, ilike } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, eq, ilike, isNotNull, or } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	communicationEvents,
 	crmLeads,
+	denteTelegramChatLinks,
 	messengerInboundEvents,
 	patients,
 } from "../../../db/schema.js";
@@ -54,40 +56,117 @@ export class BotPatientStateStorage {
 				}
 
 				// 2. Связка с пациентом клиники
+				// ВАЖНО: Поиск по номеру телефона (patients.phone) разрешен ТОЛЬКО для канала WhatsApp (msg.channel === "whatsapp").
+				// Для каналов telegram, vk, max числовой senderId — это ID пользователя в соцсети, а НЕ номер телефона!
+				const isPhoneChannel = msg.channel === "whatsapp";
 				const phoneDigits = msg.senderId.replace(/\D/g, "");
-				const existingPatients = await tx
-					.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
-					.from(patients)
+
+				// Шаг 2.1: Проверяем, есть ли уже привязанный patientId в messengerInboundEvents для этого чата
+				const [existingInboundWithPatient] = await tx
+					.select({ patientId: messengerInboundEvents.patientId })
+					.from(messengerInboundEvents)
 					.where(
 						and(
-							eq(patients.organizationId, msg.organizationId),
-							phoneDigits.length >= 10
-								? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
-								: ilike(patients.notes, `%${msg.channel}:${msg.senderId}%`),
+							eq(messengerInboundEvents.organizationId, msg.organizationId),
+							eq(messengerInboundEvents.channel, msg.channel === "max" ? "max" : msg.channel),
+							eq(messengerInboundEvents.externalChatId, msg.senderId),
+							isNotNull(messengerInboundEvents.patientId),
 						),
 					)
 					.limit(1);
 
-				if (existingPatients.length > 0 && existingPatients[0]) {
-					savedPatientId = existingPatients[0].id;
-					savedPatientName = existingPatients[0].fullName;
-				} else {
-					const [created] = await tx
-						.insert(patients)
-						.values({
-							organizationId: msg.organizationId,
-							fullName:
-								msg.senderName ||
-								`${msg.channel.toUpperCase()} Пациент (${msg.senderId.slice(-4)})`,
-							phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
-							notes: `Создан ботом ${msg.channel.toUpperCase()}. Чат: ${msg.channel}:${msg.senderId}`,
-							status: "active",
-						})
-						.returning({ id: patients.id, fullName: patients.fullName });
-					if (created) {
-						savedPatientId = created.id;
-						savedPatientName = created.fullName;
+				let resolvedPatientId: string | null = existingInboundWithPatient?.patientId ?? null;
+
+				// Шаг 2.2: Для Telegram проверяем подтвержденные связки в denteTelegramChatLinks
+				if (!resolvedPatientId && msg.channel === "telegram") {
+					const chatFingerprint = createHash("sha256").update(msg.senderId).digest("hex");
+					const [link] = await tx
+						.select({ subjectId: denteTelegramChatLinks.subjectId })
+						.from(denteTelegramChatLinks)
+						.where(
+							and(
+								eq(denteTelegramChatLinks.organizationId, msg.organizationId),
+								or(
+									eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
+									eq(denteTelegramChatLinks.chatTransportRef, msg.senderId),
+								),
+								eq(denteTelegramChatLinks.status, "active"),
+								eq(denteTelegramChatLinks.subjectType, "patient"),
+							),
+						)
+						.limit(1);
+					if (link?.subjectId) {
+						resolvedPatientId = link.subjectId;
 					}
+				}
+
+				// Шаг 2.3: Если найден resolvedPatientId — загружаем существующего пациента
+				if (resolvedPatientId) {
+					const [matchedPatient] = await tx
+						.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, msg.organizationId),
+								eq(patients.id, resolvedPatientId),
+							),
+						)
+						.limit(1);
+					if (matchedPatient) {
+						savedPatientId = matchedPatient.id;
+						savedPatientName = matchedPatient.fullName;
+					}
+				}
+
+				// Шаг 2.4: Если не найден по связкам — для WhatsApp ищем по телефону, для остальных — по тегу в notes
+				if (!savedPatientId) {
+					const existingPatients = await tx
+						.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, msg.organizationId),
+								isPhoneChannel && phoneDigits.length >= 10
+									? ilike(patients.phone, `%${phoneDigits.slice(-10)}%`)
+									: ilike(patients.notes, `%${msg.channel}:${msg.senderId}%`),
+							),
+						)
+						.limit(1);
+
+					if (existingPatients.length > 0 && existingPatients[0]) {
+						savedPatientId = existingPatients[0].id;
+						savedPatientName = existingPatients[0].fullName;
+					} else {
+						const [created] = await tx
+							.insert(patients)
+							.values({
+								organizationId: msg.organizationId,
+								fullName:
+									msg.senderName ||
+									`${msg.channel.toUpperCase()} Пациент (${msg.senderId.slice(-4)})`,
+								phone: isPhoneChannel && phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
+								notes: `Создан ботом ${msg.channel.toUpperCase()}. Чат: ${msg.channel}:${msg.senderId}`,
+								status: "active",
+							})
+							.returning({ id: patients.id, fullName: patients.fullName });
+						if (created) {
+							savedPatientId = created.id;
+							savedPatientName = created.fullName;
+						}
+					}
+				}
+
+				// Если событие было вставлено, связываем его с найденным/созданным пациентом
+				if (savedPatientId && inserted.length > 0 && inserted[0]?.id) {
+					await tx
+						.update(messengerInboundEvents)
+						.set({ patientId: savedPatientId })
+						.where(
+							and(
+								eq(messengerInboundEvents.id, inserted[0].id),
+								eq(messengerInboundEvents.organizationId, msg.organizationId),
+							),
+						);
 				}
 
 				// 3. Создание / обновление входящего лида в crmLeads
@@ -110,13 +189,18 @@ export class BotPatientStateStorage {
 								lastContactedAt: new Date(),
 								notes: `Сообщение в ${msg.channel.toUpperCase()}: ${msg.text || msg.payload || ""}`,
 							})
-							.where(eq(crmLeads.id, existingLead[0].id));
+							.where(
+								and(
+									eq(crmLeads.id, existingLead[0].id),
+									eq(crmLeads.organizationId, msg.organizationId),
+								),
+							);
 					} else {
 						await tx.insert(crmLeads).values({
 							organizationId: msg.organizationId,
 							name: savedPatientName,
 							patientName: savedPatientName,
-							phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
+							phone: isPhoneChannel && phoneDigits.length >= 10 ? `+${phoneDigits}` : null,
 							source: `bot_${msg.channel}`,
 							status: "new",
 							notes: `Диалог ${msg.channel.toUpperCase()}:${msg.senderId}: ${msg.text || msg.payload || ""}`,

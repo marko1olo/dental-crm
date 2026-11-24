@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 
 export function registerTelegramAccountQrRoutes(app: FastifyInstance) {
@@ -12,8 +13,10 @@ export function registerTelegramAccountQrRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const userId = (request.headers["x-user-id"] as string) || null;
-		const clinicId = (request.headers["x-clinic-id"] as string) || null;
+		const identity = getRequestIdentity(request);
+		const userId = identity.userId || null;
+		const headerClinicId = request.headers["x-clinic-id"];
+		const clinicId = (typeof headerClinicId === "string" ? headerClinicId : Array.isArray(headerClinicId) ? headerClinicId[0] : null) || null;
 
 		const qr = await TelegramAccountService.requestQr({
 			organizationId: orgId,
@@ -52,8 +55,10 @@ export function registerTelegramAccountQrRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const userId = (request.headers["x-user-id"] as string) || null;
-		const clinicId = (request.headers["x-clinic-id"] as string) || null;
+		const identity = getRequestIdentity(request);
+		const userId = identity.userId || null;
+		const headerClinicId = request.headers["x-clinic-id"];
+		const clinicId = (typeof headerClinicId === "string" ? headerClinicId : Array.isArray(headerClinicId) ? headerClinicId[0] : null) || null;
 
 		const result = await TelegramAccountService.confirmQr({
 			organizationId: orgId,

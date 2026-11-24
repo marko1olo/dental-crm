@@ -37,6 +37,10 @@ import {
 	procedureSpecificConsentPayloadSchema,
 	personalDataProcessingConsentPayloadSchema,
 	medicalInterventionRefusalPayloadSchema,
+	consumableLinkCreateSchema,
+	consumableLinkUpdateSchema,
+	visitStockDeductionRequestSchema,
+	toothTreatmentStockDeductionRequestSchema,
 } from "@dental/shared";
 import { db } from "../db/client.js";
 import {
@@ -48,6 +52,8 @@ import {
 	periodontogramSnapshots,
 	toothStates,
 	toothStateHistory,
+	auditEvents,
+	serviceCatalogItems,
 } from "../db/schema.js";
 import { idempotencyKeys } from "../db/schema/idempotency.js";
 import {
@@ -56,6 +62,20 @@ import {
 	patchSitesPayloadSchema,
 } from "../services/periodontogramService.js";
 import { registerClinicProfileRoutes } from "../routes/settings/clinicProfileRoutes.js";
+import { registerStaffSettingsRoutes } from "../routes/settings/staffSettingsRoutes.js";
+import { registerServiceCatalogRoutes } from "../routes/settings/serviceCatalogRoutes.js";
+import { workspaceProfileRoutes } from "../routes/workspaceProfileRoutes/index.js";
+import { registerPricelistRoutes } from "../routes/pricelist/routeHandlers.js";
+import { registerExpressImportRoutes, expressImportBodySchema } from "../routes/migrationRoutes/expressImportRoutes.js";
+import {
+	updateStaffMemberProfileSchema,
+	updateStaffCredentialsSchema,
+	updateDoctorCommissionSchema,
+	createServiceCatalogItemSchema,
+	updateServiceCatalogItemSchema,
+} from "../routes/settings/types.js";
+import { workspaceProfileBodySchema } from "../routes/workspaceProfileRoutes/types.js";
+import { priceListIngestionRequestSchema } from "../services/ai/pricelistIngest/types.js";
 import { registerVisitPerioRoutes } from "../routes/visits/visitPerioRoutes.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
@@ -95,15 +115,13 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 		}
 
 		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.delete(serviceCatalogItems).where(eq(serviceCatalogItems.organizationId, ORG_ID));
 			await tx.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID));
 			await tx.delete(periodontogramSnapshots).where(eq(periodontogramSnapshots.organizationId, ORG_ID));
 			await tx.delete(toothStateHistory).where(eq(toothStateHistory.organizationId, ORG_ID));
 			await tx.delete(toothStates).where(eq(toothStates.organizationId, ORG_ID));
 			await tx.delete(visits).where(eq(visits.organizationId, ORG_ID));
 			await tx.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await tx.delete(users).where(eq(users.organizationId, ORG_ID));
-			await tx.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await tx.delete(organizations).where(eq(organizations.id, ORG_ID));
 
 			await tx.insert(organizations).values({
 				id: ORG_ID,
@@ -157,6 +175,11 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 		app = await createTenantTestApp();
 		registerClinicProfileRoutes(app);
 		registerVisitPerioRoutes(app);
+		registerStaffSettingsRoutes(app);
+		registerServiceCatalogRoutes(app);
+		await workspaceProfileRoutes(app);
+		await registerPricelistRoutes(app);
+		await registerExpressImportRoutes(app);
 
 		const secret = authTokenSecret();
 		tokenAdmin = signToken(
@@ -182,6 +205,21 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 	after(async () => {
 		if (app) {
 			await app.close();
+		}
+		if (dbAvailable) {
+			try {
+				await withFixtureTenant(ORG_ID, async (tx) => {
+					await tx.delete(serviceCatalogItems).where(eq(serviceCatalogItems.organizationId, ORG_ID));
+					await tx.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID));
+					await tx.delete(periodontogramSnapshots).where(eq(periodontogramSnapshots.organizationId, ORG_ID));
+					await tx.delete(toothStateHistory).where(eq(toothStateHistory.organizationId, ORG_ID));
+					await tx.delete(toothStates).where(eq(toothStates.organizationId, ORG_ID));
+					await tx.delete(visits).where(eq(visits.organizationId, ORG_ID));
+					await tx.delete(patients).where(eq(patients.organizationId, ORG_ID));
+				});
+			} catch {
+				// ignore after cleanup errors
+			}
 		}
 	});
 
@@ -357,6 +395,94 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 			__leak: 1,
 		});
 		assert.equal(patchSitesExtraRes.success, false, "patchSitesPayloadSchema must reject extra envelope fields");
+
+		// 1e. Consumables & BOM schemas .strict()
+		const consumableLinkRes = consumableLinkCreateSchema.safeParse({
+			serviceId: fixtureUuid("srv", 1),
+			inventoryItemId: fixtureUuid("inv", 1),
+			quantity: 1,
+			__extraneousJunk: true,
+		});
+		assert.equal(consumableLinkRes.success, false, "consumableLinkCreateSchema must reject extra fields");
+
+		const consumableUpdateRes = consumableLinkUpdateSchema.safeParse({
+			quantity: 2,
+			__extraneousJunk: true,
+		});
+		assert.equal(consumableUpdateRes.success, false, "consumableLinkUpdateSchema must reject extra fields");
+
+		const visitDeductionRes = visitStockDeductionRequestSchema.safeParse({
+			visitId: fixtureUuid("vis", 1),
+			services: [
+				{
+					serviceId: fixtureUuid("srv", 1),
+					quantity: 1,
+					__extraServiceField: 1,
+				},
+			],
+			__extraneousJunk: true,
+		});
+		assert.equal(visitDeductionRes.success, false, "visitStockDeductionRequestSchema must reject extra fields");
+
+		const toothDeductionRes = toothTreatmentStockDeductionRequestSchema.safeParse({
+			treatmentItemId: fixtureUuid("item", 1),
+			serviceId: fixtureUuid("srv", 1),
+			__extraneousJunk: true,
+		});
+		assert.equal(toothDeductionRes.success, false, "toothTreatmentStockDeductionRequestSchema must reject extra fields");
+
+		// 1f. Settings, Staff & Catalog schemas .strict()
+		const staffProfileRes = updateStaffMemberProfileSchema.safeParse({
+			fullName: "Тестовый Доктор",
+			__extraneousJunk: 123,
+		});
+		assert.equal(staffProfileRes.success, false, "updateStaffMemberProfileSchema must reject extra fields");
+
+		const staffCredsRes = updateStaffCredentialsSchema.safeParse({
+			email: "doc@test.local",
+			__extraneousJunk: 123,
+		});
+		assert.equal(staffCredsRes.success, false, "updateStaffCredentialsSchema must reject extra fields");
+
+		const doctorCommRes = updateDoctorCommissionSchema.safeParse({
+			commissionPct: 35,
+			__extraneousJunk: 123,
+		});
+		assert.equal(doctorCommRes.success, false, "updateDoctorCommissionSchema must reject extra fields");
+
+		const catalogCreateRes = createServiceCatalogItemSchema.safeParse({
+			title: "Консультация",
+			category: "therapy",
+			specialty: "universal",
+			basePriceRub: 2000,
+			durationMinutes: 30,
+			__extraneousJunk: 123,
+		});
+		assert.equal(catalogCreateRes.success, false, "createServiceCatalogItemSchema must reject extra fields");
+
+		const catalogUpdateRes = updateServiceCatalogItemSchema.safeParse({
+			title: "Новая цена",
+			__extraneousJunk: 123,
+		});
+		assert.equal(catalogUpdateRes.success, false, "updateServiceCatalogItemSchema must reject extra fields");
+
+		const workspaceProfileRes = workspaceProfileBodySchema.safeParse({
+			hasAssistants: true,
+			__nonExistentFeatureFlag: true,
+		});
+		assert.equal(workspaceProfileRes.success, false, "workspaceProfileBodySchema must reject extra fields");
+
+		const pricelistIngestRes = priceListIngestionRequestSchema.safeParse({
+			rawContent: "А16.07.002 Лечение кариеса 3500",
+			__extraneousJunk: true,
+		});
+		assert.equal(pricelistIngestRes.success, false, "priceListIngestionRequestSchema must reject extra fields");
+
+		const expressImportRes = expressImportBodySchema.safeParse({
+			phase: "preview",
+			__extraneousJunk: true,
+		});
+		assert.equal(expressImportRes.success, false, "expressImportBodySchema must reject extra fields");
 	});
 
 	// ─── 2. CLINIC PROFILE ROUTES IDEMPOTENCY & BRANCH VALIDATION (DEF-SETT-01, DEF-SETT-02) ─
@@ -477,5 +603,296 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 		const replayJson = JSON.parse(resReplay.body);
 		assert.equal(replayJson.success, true);
 		assert.deepEqual(replayJson.visitId, firstJson.visitId);
+	});
+
+	// ─── 4. STAFF SETTINGS ROUTES IDEMPOTENCY & STRICT VALIDATION ────────────────
+	it("4. staffSettingsRoutes requires valid UUID Idempotency-Key and seals mutations", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		// 4a. Невалидный UUID в Idempotency-Key -> 400
+		const resInvalidIdem = await app.inject({
+			method: "PUT",
+			url: `/api/settings/staff/${DOCTOR_ID}`,
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": "bad-uuid",
+			},
+			payload: {
+				fullName: "Доктор Обновленный",
+			},
+		});
+		assert.equal(resInvalidIdem.statusCode, 400);
+
+		// 4b. Посторонние поля отвергаются схемой .strict() -> 400
+		const resStrict = await app.inject({
+			method: "PUT",
+			url: `/api/settings/staff/${DOCTOR_ID}`,
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+			},
+			payload: {
+				fullName: "Доктор Обновленный",
+				__extraneousLeak: true,
+			},
+		});
+		assert.equal(resStrict.statusCode, 400);
+
+		// 4c. Валидный вызов с Idempotency-Key -> 200 и возврат заголовка
+		const validKey = fixtureUuid("staffIdem", 401);
+		const resValid = await app.inject({
+			method: "PUT",
+			url: `/api/settings/staff/${DOCTOR_ID}`,
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": validKey,
+			},
+			payload: {
+				fullName: "Врач Хирург Валидный",
+			},
+		});
+		assert.equal(resValid.statusCode, 200);
+		assert.equal(resValid.headers["idempotency-key"], validKey);
+	});
+
+	// ─── 5. SERVICE CATALOG BASELINE SEEDING IDEMPOTENCY & STRICT VALIDATION ─────
+	it("5. catalog-seed-baseline requires valid UUID Idempotency-Key and seals body", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		// 5a. Невалидный UUID в Idempotency-Key -> 400
+		const resInvalidIdem = await app.inject({
+			method: "POST",
+			url: "/api/settings/catalog-seed-baseline",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": "not-valid",
+			},
+			payload: {
+				replace: false,
+			},
+		});
+		assert.equal(resInvalidIdem.statusCode, 400);
+
+		// 5b. Посторонние поля в теле отвергаются .strict()
+		const resStrict = await app.inject({
+			method: "POST",
+			url: "/api/settings/catalog-seed-baseline",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+			},
+			payload: {
+				replace: false,
+				__extraneousJunk: 123,
+			},
+		});
+		assert.equal(resStrict.statusCode, 400);
+
+		// 5c. Валидный вызов с Idempotency-Key
+		const validKey = fixtureUuid("seedIdem", 501);
+		const resValid = await app.inject({
+			method: "POST",
+			url: "/api/settings/catalog-seed-baseline",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": validKey,
+			},
+			payload: {
+				replace: false,
+			},
+		});
+		assert.equal(resValid.statusCode, 200);
+		assert.equal(resValid.headers["idempotency-key"], validKey);
+		const json = JSON.parse(resValid.body);
+		assert.equal(json.success, true);
+	});
+
+	// ─── 6. WORKSPACE PROFILE ROUTES IDEMPOTENCY & STRICT VALIDATION ─────────────
+	it("6. workspace profile PATCH requires valid UUID Idempotency-Key and seals feature flags", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		// 6a. Невалидный UUID в Idempotency-Key -> 400
+		const resInvalidIdem = await app.inject({
+			method: "PATCH",
+			url: "/api/workspace/profile",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": "invalid-uuid",
+			},
+			payload: {
+				hasDentalLab: true,
+			},
+		});
+		assert.equal(resInvalidIdem.statusCode, 400);
+
+		// 6b. Неизвестные флаги отвергаются .strict()
+		const resStrict = await app.inject({
+			method: "PATCH",
+			url: "/api/workspace/profile",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+			},
+			payload: {
+				hasDentalLab: true,
+				__fakeFeatureFlag: true,
+			},
+		});
+		assert.equal(resStrict.statusCode, 400);
+
+		// 6c. Валидный PATCH с Idempotency-Key
+		const validKey = fixtureUuid("wsIdem", 601);
+		const resValid = await app.inject({
+			method: "PATCH",
+			url: "/api/workspace/profile",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": validKey,
+			},
+			payload: {
+				hasDentalLab: true,
+			},
+		});
+		assert.equal(resValid.statusCode, 200);
+		assert.equal(resValid.headers["idempotency-key"], validKey);
+		const json = JSON.parse(resValid.body);
+		assert.equal(json.ok, true);
+		assert.equal(json.hasDentalLab, true);
+	});
+
+	// ─── 7. PRICELIST INGEST IDEMPOTENCY REPLAY ──────────────────────────────────
+	it("7. pricelist ingest enforces Idempotency-Key, handles replay, and seals body", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		// 7a. Невалидный UUID в Idempotency-Key -> 400
+		const resInvalidIdem = await app.inject({
+			method: "POST",
+			url: "/api/pricelist/ingest",
+			headers: {
+				"x-dente-staff-token": tokenDoctor,
+				"idempotency-key": "invalid-key",
+			},
+			payload: {
+				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+			},
+		});
+		assert.equal(resInvalidIdem.statusCode, 400);
+
+		// 7b. Посторонние поля отвергаются .strict()
+		const resStrict = await app.inject({
+			method: "POST",
+			url: "/api/pricelist/ingest",
+			headers: {
+				"x-dente-staff-token": tokenDoctor,
+			},
+			payload: {
+				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+				__extraneousLeak: 123,
+			},
+		});
+		assert.equal(resStrict.statusCode, 400);
+
+		// 7c. Первичное выполнение с валидным ключом
+		const ingestKey = fixtureUuid("ingestIdem", 701);
+		const resFirst = await app.inject({
+			method: "POST",
+			url: "/api/pricelist/ingest",
+			headers: {
+				"x-dente-staff-token": tokenDoctor,
+				"idempotency-key": ingestKey,
+			},
+			payload: {
+				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+			},
+		});
+		assert.equal(resFirst.statusCode, 200);
+		assert.equal(resFirst.headers["idempotency-key"], ingestKey);
+		const firstJson = JSON.parse(resFirst.body);
+		assert.equal(firstJson.success, true);
+
+		// 7d. Повторный вызов с тем же Idempotency-Key возвращает replay без дублирования
+		const resReplay = await app.inject({
+			method: "POST",
+			url: "/api/pricelist/ingest",
+			headers: {
+				"x-dente-staff-token": tokenDoctor,
+				"idempotency-key": ingestKey,
+			},
+			payload: {
+				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+			},
+		});
+		assert.equal(resReplay.statusCode, 200);
+		const replayedHeader = resReplay.headers["idempotency-replayed"] || resReplay.headers["x-idempotency-replayed"];
+		assert.equal(replayedHeader, "true");
+	});
+
+	// ─── 8. MIGRATION EXPRESS IMPORT IDEMPOTENCY & COMMIT GUARD ─────────────────
+	it("8. migration express import enforces Idempotency-Key on commit and seals body", async (t) => {
+		if (!dbAvailable) return t.skip();
+
+		// 8a. Preview phase без ключа допустима
+		const resPreview = await app.inject({
+			method: "POST",
+			url: "/api/migration/import",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+			},
+			payload: {
+				phase: "preview",
+				rawText: "ФИО,Телефон\nИванов Иван, +79991112233",
+			},
+		});
+		assert.equal(resPreview.statusCode, 200);
+		const prevJson = JSON.parse(resPreview.body);
+		assert.equal(prevJson.phase, "preview");
+
+		// 8b. Commit phase без Idempotency-Key отвергается -> 400
+		const resCommitNoKey = await app.inject({
+			method: "POST",
+			url: "/api/migration/import",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+			},
+			payload: {
+				phase: "commit",
+				confirm: true,
+				rawText: "ФИО,Телефон\nИванов Иван, +79991112233",
+			},
+		});
+		assert.equal(resCommitNoKey.statusCode, 400);
+
+		// 8c. Неизвестные поля в теле отвергаются .strict()
+		const resStrict = await app.inject({
+			method: "POST",
+			url: "/api/migration/import",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+			},
+			payload: {
+				phase: "preview",
+				rawText: "ФИО,Телефон\nИванов Иван, +79991112233",
+				__extraneousLeak: 1,
+			},
+		});
+		assert.equal(resStrict.statusCode, 400);
+
+		// 8d. Commit phase с валидным Idempotency-Key -> 200
+		const validKey = fixtureUuid("migrIdem", 801);
+		const resCommit = await app.inject({
+			method: "POST",
+			url: "/api/migration/import",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": validKey,
+			},
+			payload: {
+				phase: "commit",
+				confirm: true,
+				rawText: "ФИО,Телефон\nПетров Петр, +79992223344",
+			},
+		});
+		assert.equal(resCommit.statusCode, 200);
+		assert.equal(resCommit.headers["idempotency-key"], validKey);
+		const commitJson = JSON.parse(resCommit.body);
+		assert.equal(commitJson.phase, "commit");
+		assert.equal(commitJson.importedRows, 1);
 	});
 });

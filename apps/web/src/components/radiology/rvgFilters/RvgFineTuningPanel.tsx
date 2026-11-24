@@ -25,7 +25,7 @@ export function RvgFineTuningPanel({
 	return (
 		<div className="flex flex-col gap-2.5 pt-1 animate-in fade-in duration-150">
 			<div className="flex flex-col gap-1.5">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#c9d1d9)] flex items-center gap-1.5">
+				<span className="text-xs font-semibold text-[var(--ink,#c9d1d9)] flex items-center gap-1.5">
 					<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#14b8a6)]" /> Клинические пресеты
 				</span>
 				<div className="rvg-presets-grid grid grid-cols-2 gap-1.5">
@@ -36,7 +36,6 @@ export function RvgFineTuningPanel({
 								key={p.id}
 								type="button"
 								onClick={() => onPresetClick(p)}
-								disabled={disabled}
 								className={`rvg-preset-chip flex items-center justify-center gap-1.5 h-8 min-h-[32px] px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
 									isSel ? "!bg-[#0d9488] !border-[#14b8a6] !text-white shadow-sm" : "!bg-[#1e293b] !border-[#334155] !text-slate-200 hover:!bg-[#334155]"
 								}`}
@@ -51,7 +50,7 @@ export function RvgFineTuningPanel({
 			</div>
 
 			<div className="flex flex-col gap-2.5 pt-2 border-t border-[var(--line,#334155)]">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#c9d1d9)] flex items-center gap-1.5">
+				<span className="text-xs font-semibold text-[var(--ink,#c9d1d9)] flex items-center gap-1.5">
 					<Sliders className="w-3.5 h-3.5 text-[var(--teal,#14b8a6)]" /> Тонкая настройка фильтров
 				</span>
 
@@ -70,7 +69,6 @@ export function RvgFineTuningPanel({
 							step={s.step}
 							value={Number(filters[s.key])}
 							onChange={(e) => onSliderChange(s.key, Number(e.target.value))}
-							disabled={disabled}
 							className="rvg-slider-input w-full accent-[var(--teal,#14b8a6)]"
 							data-testid={`rvg-slider-${s.key}`}
 						/>
@@ -78,13 +76,13 @@ export function RvgFineTuningPanel({
 				))}
 
 				<div className="flex flex-wrap items-center gap-2 pt-1">
-					<button type="button" onClick={() => onToggle("invert")} disabled={disabled} className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${filters.invert ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm" : "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"}`} data-testid="rvg-toggle-invert-btn-dock">
+					<button type="button" onClick={() => onToggle("invert")} className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${filters.invert ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm" : "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"}`} data-testid="rvg-toggle-invert-btn-dock">
 						<Contrast className="w-3.5 h-3.5" /> <span>Инверсия (Негатив)</span>
 					</button>
-					<button type="button" onClick={() => onToggle("denoise")} disabled={disabled} className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${filters.denoise ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm" : "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"}`} data-testid="rvg-toggle-denoise-btn">
+					<button type="button" onClick={() => onToggle("denoise")} className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${filters.denoise ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm" : "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"}`} data-testid="rvg-toggle-denoise-btn">
 						<Activity className="w-3.5 h-3.5" /> <span>Шумоподавление</span>
 					</button>
-					<button type="button" onClick={() => onToggle("emboss")} disabled={disabled} className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${filters.emboss ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm" : "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"}`} data-testid="rvg-toggle-emboss-btn-dock">
+					<button type="button" onClick={() => onToggle("emboss")} className={`px-3 py-1.5 h-8 min-h-[32px] rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${filters.emboss ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#14b8a6)] text-white shadow-sm" : "bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)] text-[var(--ink,#c9d1d9)] hover:text-white"}`} data-testid="rvg-toggle-emboss-btn-dock">
 						<Layers className="w-3.5 h-3.5" /> <span>Рельеф (Emboss 3D)</span>
 					</button>
 				</div>

@@ -17,7 +17,7 @@
  * обзвон из «всех по списку» в «этих шестерых».
  */
 
-import { and, asc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
@@ -25,13 +25,14 @@ import { requireScheduleMutationContext } from "./scheduleAuthGuard.js";
 import { db } from "../db/client.js";
 import { appointmentActionCodes } from "../db/communicationsSchema.js";
 import {
-	appointments, clinics, communicationOutbox, communicationTemplates, denteTelegramChatLinks, patients, users,
+	appointments, clinics, communicationOutbox, communicationTemplates, denteTelegramChatLinks, idempotencyKeys, patients, users,
 } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
 import { decryptTelegramChatId } from "../utils/telegramChatRef.js";
 import { issueAppointmentActionLinks } from "../services/communications/appointmentActionLinks.js";
 import { renderTemplate } from "../services/communications/templateEngine/templateRenderer.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
 const querySchema = z.object({
 	/** Дата в виде ГГГГ-ММ-ДД. По умолчанию — завтра: обзвон делают накануне. */
@@ -487,6 +488,18 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		if (!context) return;
 		const { organizationId } = context;
 
+		const rawIdemKey = extractIdempotencyKey(request);
+		const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
+		if (idempotencyKey) {
+			if (!isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен быть валидным UUID",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const body = batchDispatchSchema.safeParse(request.body ?? {});
 		if (!body.success) {
 			return reply.status(400).send({
@@ -497,6 +510,46 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 
 		const parsed = body.data;
 		try {
+			if (idempotencyKey) {
+				const [existingRecord] = await db
+					.select()
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, organizationId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					)
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply
+							.code(existingRecord.responseCode || 200)
+							.send(existingRecord.responseBody);
+					}
+					if (existingRecord.status === "in_flight") {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							code: "IdempotencyConflict",
+							message: "Пакетная рассылка напоминаний уже обрабатывается",
+						});
+					}
+				}
+
+				await db
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: organizationId,
+						key: idempotencyKey,
+						status: "in_flight",
+						lockedAt: new Date(),
+					})
+					.onConflictDoNothing();
+			}
+
 			const clinicList = await db
 			.select({ id: clinics.id, timezone: clinics.timezone, address: clinics.address, name: clinics.name })
 			.from(clinics)
@@ -736,53 +789,88 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 		}
 
 		let insertedDedupeKeys = new Set<string>();
-		if (outboxInserts.length > 0) {
-			const insertedRows = await db
-				.insert(communicationOutbox)
-				.values(outboxInserts)
-				.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] })
-				.returning({ id: communicationOutbox.id, dedupeKey: communicationOutbox.dedupeKey });
-			insertedDedupeKeys = new Set(insertedRows.map((r) => r.dedupeKey));
-		}
-
 		let dispatched = 0;
 		let alreadyQueued = 0;
-		const queueResults = outboxCandidates.map((c) => {
-			if (insertedDedupeKeys.has(c.dedupeKey)) {
-				dispatched++;
+		let queueResults: Array<{
+			appointmentId: string;
+			patientName: string;
+			channel: string;
+			status: "dispatched" | "already_queued";
+			details: string;
+		}> = [];
+		let responsePayload: Record<string, unknown> = {};
+
+		await db.transaction(async (tx) => {
+			if (outboxInserts.length > 0) {
+				const insertedRows = await tx
+					.insert(communicationOutbox)
+					.values(outboxInserts)
+					.onConflictDoNothing({ target: [communicationOutbox.organizationId, communicationOutbox.dedupeKey] })
+					.returning({ id: communicationOutbox.id, dedupeKey: communicationOutbox.dedupeKey });
+				insertedDedupeKeys = new Set(insertedRows.map((r) => r.dedupeKey));
+			}
+
+			dispatched = 0;
+			alreadyQueued = 0;
+			queueResults = outboxCandidates.map((c) => {
+				if (insertedDedupeKeys.has(c.dedupeKey)) {
+					dispatched++;
+					return {
+						appointmentId: c.appointmentId,
+						patientName: c.patientName,
+						channel: c.channel,
+						status: "dispatched" as const,
+						details: "Успешно поставлено в очередь рассылки",
+					};
+				}
+				alreadyQueued++;
 				return {
 					appointmentId: c.appointmentId,
 					patientName: c.patientName,
 					channel: c.channel,
-					status: "dispatched" as const,
-					details: "Успешно поставлено в очередь рассылки",
+					status: "already_queued" as const,
+					details: "Напоминание уже сформировано и находится в очереди",
 				};
-			}
-			alreadyQueued++;
-			return {
-				appointmentId: c.appointmentId,
-				patientName: c.patientName,
-				channel: c.channel,
-				status: "already_queued" as const,
-				details: "Напоминание уже сформировано и находится в очереди",
+			});
+
+			const results = [...prefilteredResults, ...queueResults];
+
+			responsePayload = {
+				success: true,
+				date,
+				timeZone,
+				totalAppointments: targetAppointments.length,
+				dispatched,
+				alreadyQueued,
+				skippedQuietHours,
+				skippedNoContact,
+				isQuietHours,
+				results,
+				message: `Пакетная обработка напоминаний завершена: новых в очереди ${dispatched}, ранее создано ${alreadyQueued}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
 			};
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: organizationId,
+						key: idempotencyKey,
+						status: "completed",
+						responseBody: responsePayload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 200,
+						},
+					});
+			}
 		});
 
-		const results = [...prefilteredResults, ...queueResults];
-
-		return reply.send({
-			success: true,
-			date,
-			timeZone,
-			totalAppointments: targetAppointments.length,
-			dispatched,
-			alreadyQueued,
-			skippedQuietHours,
-			skippedNoContact,
-			isQuietHours,
-			results,
-			message: `Пакетная обработка напоминаний завершена: новых в очереди ${dispatched}, ранее создано ${alreadyQueued}, пропущено тихих часов ${skippedQuietHours}, без контакта ${skippedNoContact}.`,
-		});
+		return reply.send(responsePayload);
 	} catch (err: unknown) {
 		request.log.error(err, "Ошибка пакетной отправки напоминаний на завтра");
 		const message = err instanceof Error ? err.message : "Внутренняя ошибка пакетной рассылки";
@@ -793,8 +881,24 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 	}
 	};
 
-	app.post("/api/schedule/day-confirmations/dispatch", handleDispatchBatchReminders);
-	app.post("/api/schedule/tomorrow-reminders/dispatch", handleDispatchBatchReminders);
+	const dayConfirmationsIdempotencyDispatchOptionsWithOrgId = {
+		schema: {
+			description:
+				"Batch dispatch tomorrow appointment reminders with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					"organizationid": { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/schedule/day-confirmations/dispatch", dayConfirmationsIdempotencyDispatchOptionsWithOrgId, handleDispatchBatchReminders);
+	app.post("/api/schedule/tomorrow-reminders/dispatch", dayConfirmationsIdempotencyDispatchOptionsWithOrgId, handleDispatchBatchReminders);
 }
 
 /**

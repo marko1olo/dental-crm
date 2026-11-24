@@ -2,9 +2,9 @@
  * treatmentConsumables.ts — Drizzle database schema for Procedure Consumable BOM & Deductions.
  *
  * Tables:
- * 1. treatment_consumables: mapping between Service Catalog Code (Order 804n / Clinic price list)
+ * 1. treatment_consumables: mapping between Service Catalog Code (Каталог медицинских услуг / Прейскурант клиники)
  *    and warehouse inventory items with consumption norms.
- * 2. treatment_consumable_deductions: tracks idempotent deductions by treatment_reference_id.
+ * 2. treatment_consumable_deductions: tracks idempotent deductions by treatment_reference_id при утверждении медицинской карты приёма.
  */
 
 import type {

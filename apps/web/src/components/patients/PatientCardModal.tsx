@@ -12,6 +12,7 @@
 
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
+import { rublesToKopecks } from "@dental/shared";
 import {
 	Activity, Camera, ClipboardList, FileCheck, FileText, FlaskConical,
 	HeartPulse, History, Scan, ShieldAlert, ShieldCheck, Users, Wallet,
@@ -247,9 +248,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 										window.location.hash = queryString ? `#treatment-plan?${queryString}` : "#treatment-plan";
 									}
 								}}
-								onSendToCheckout={(tierId, amountRub) => {
+								onSendToCheckout={(tierId, amountRub, amountKopecks) => {
 									if (typeof window !== "undefined") {
-										window.location.hash = `#checkout?amount=${amountRub}&tier=${tierId}&patientId=${patientData.id || ""}`;
+										const kopecks = typeof amountKopecks === "number" && amountKopecks > 0 ? amountKopecks : rublesToKopecks(amountRub);
+										window.location.hash = `#checkout?amountKopecks=${kopecks}&amount=${amountRub}&tier=${tierId}&patientId=${patientData.id || ""}`;
 									}
 								}}
 								onPrintPlan={handlePrint}

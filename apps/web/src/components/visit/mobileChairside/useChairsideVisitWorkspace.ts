@@ -215,8 +215,8 @@ export function useChairsideVisitWorkspace({
             toothNumber: toothCode,
             toothCode,
           });
-        } catch {
-          // ignore
+        } catch (err) {
+          console.error("[useChairsideVisitWorkspace] Failed to sync billing item to visit store:", err);
         }
       }
 
@@ -310,8 +310,8 @@ export function useChairsideVisitWorkspace({
             toothNumber,
             toothCode: toothNumber,
           });
-        } catch {
-          // ignore
+        } catch (err) {
+          console.error("[useChairsideVisitWorkspace] Failed to add stage service to visit store:", err);
         }
 
         window.dispatchEvent(
@@ -498,6 +498,7 @@ export function useChairsideVisitWorkspace({
     setBillingItems((prev) => [...prev, newItem]);
 
     // Mandate 8e & 8bm: Directly synchronize into global visit store
+    let addSuccess = true;
     try {
       useVisitStore.getState().addCompletedService({
         serviceId,
@@ -510,31 +511,41 @@ export function useChairsideVisitWorkspace({
         toothNumber: item.toothCode,
         toothCode: item.toothCode,
       });
-    } catch {
-      // ignore
+    } catch (err) {
+      addSuccess = false;
+      console.error("[useChairsideVisitWorkspace] Failed to add completed service to visit store:", err);
     }
 
     if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("dente-add-billing-item", {
-          detail: {
-            item: {
-              id: serviceId,
-              code804n: item.code804n,
-              title: item.title,
-              name: item.title,
-              quantity: 1,
-              unitPriceRub: item.priceRub,
-              priceRub: item.priceRub,
-              priceKopecks,
-              discountRub: 0,
-              toothNumber: item.toothCode,
+      try {
+        window.dispatchEvent(
+          new CustomEvent("dente-add-billing-item", {
+            detail: {
+              item: {
+                id: serviceId,
+                code804n: item.code804n,
+                title: item.title,
+                name: item.title,
+                quantity: 1,
+                unitPriceRub: item.priceRub,
+                priceRub: item.priceRub,
+                priceKopecks,
+                discountRub: 0,
+                toothNumber: item.toothCode,
+              },
             },
-          },
-        }),
-      );
+          }),
+        );
+      } catch (err) {
+        console.error("[useChairsideVisitWorkspace] Failed to dispatch billing event:", err);
+      }
     }
-    showToast(`Добавлено в чек: ${item.title}`, "success");
+
+    if (addSuccess) {
+      showToast(`Добавлено в чек: ${item.title}`, "success");
+    } else {
+      showToast("Ошибка добавления услуги в визит", "error");
+    }
   };
 
   const removeBillingItem = (id: string) => {
@@ -544,8 +555,8 @@ export function useChairsideVisitWorkspace({
       useVisitStore.getState().setCompletedServices((prev) =>
         prev.filter((it) => (it.serviceId ? it.serviceId !== id : true))
       );
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("[useChairsideVisitWorkspace] Failed to remove service from visit store:", err);
     }
   };
 

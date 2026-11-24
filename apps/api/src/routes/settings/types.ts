@@ -18,13 +18,15 @@ import { z } from "zod";
  * адрес /working-hours, и только там проверяются активные записи за пределами
  * нового графика.
  */
-export const updateStaffMemberProfileSchema = z.object({
-	fullName: z.string().trim().min(1).max(240).optional(),
-	role: staffRoleSchema.optional(),
-	phone: z.string().trim().max(80).nullable().optional(),
-	email: z.string().trim().email().max(240).nullable().optional(),
-	active: z.boolean().optional(),
-});
+export const updateStaffMemberProfileSchema = z
+	.object({
+		fullName: z.string().trim().min(1).max(240).optional(),
+		role: staffRoleSchema.optional(),
+		phone: z.string().trim().max(80).nullable().optional(),
+		email: z.string().trim().email().max(240).nullable().optional(),
+		active: z.boolean().optional(),
+	})
+	.strict();
 
 /**
  * Доступы сотрудника: POST /api/settings/staff/:staffId/credentials.
@@ -36,11 +38,13 @@ export const updateStaffMemberProfileSchema = z.object({
  * Zod safeParse после auth-first: не-строки → 400, пустой набор → прежнее
  * «Не переданы данные для обновления.».
  */
-export const updateStaffCredentialsSchema = z.object({
-	email: z.string().max(240).optional(),
-	password: z.string().max(500).optional(),
-	pinCode: z.string().max(64).optional(),
-});
+export const updateStaffCredentialsSchema = z
+	.object({
+		email: z.string().max(240).optional(),
+		password: z.string().max(500).optional(),
+		pinCode: z.string().max(64).optional(),
+	})
+	.strict();
 
 /**
  * Ставка врача: PUT /api/settings/staff/:staffId/commission.
@@ -51,27 +55,31 @@ export const updateStaffCredentialsSchema = z.object({
  * Ноль допустим: врач на окладе — реальная договорённость, и запрещать её
  * значило бы заставлять клинику держать выдуманный процент.
  */
-export const updateDoctorCommissionSchema = z.object({
-	commissionPct: z.number().min(0).max(100),
-	materialCostDeductionPct: z.number().min(0).max(100).optional(),
-	labCostDeductionPct: z.number().min(0).max(100).optional(),
-});
+export const updateDoctorCommissionSchema = z
+	.object({
+		commissionPct: z.number().min(0).max(100),
+		materialCostDeductionPct: z.number().min(0).max(100).optional(),
+		labCostDeductionPct: z.number().min(0).max(100).optional(),
+	})
+	.strict();
 
 /**
  * Правка кресла: PUT /api/settings/chairs/:chairId.
  */
-export const updateChairProfileSchema = z.object({
-	name: z.string().trim().min(1).max(120).optional(),
-	room: z.string().trim().max(120).nullable().optional(),
-	color: z.string().trim().max(50).nullable().optional(),
-	specialization: dentalSpecialtySchema.nullable().optional(),
-	active: z.boolean().optional(),
-	hasXraySensor: z.boolean().optional(),
-	hasMicroscope: z.boolean().optional(),
-	hasSurgeryKit: z.boolean().optional(),
-	notes: z.string().trim().max(500).nullable().optional(),
-	defaultDoctorId: z.string().uuid().nullable().optional(),
-});
+export const updateChairProfileSchema = z
+	.object({
+		name: z.string().trim().min(1).max(120).optional(),
+		room: z.string().trim().max(120).nullable().optional(),
+		color: z.string().trim().max(50).nullable().optional(),
+		specialization: dentalSpecialtySchema.nullable().optional(),
+		active: z.boolean().optional(),
+		hasXraySensor: z.boolean().optional(),
+		hasMicroscope: z.boolean().optional(),
+		hasSurgeryKit: z.boolean().optional(),
+		notes: z.string().trim().max(500).nullable().optional(),
+		defaultDoctorId: z.string().uuid().nullable().optional(),
+	})
+	.strict();
 
 /**
  * Услуга прайса: POST /api/settings/catalog и PUT /api/settings/catalog/:serviceId.
@@ -124,32 +132,36 @@ export const serviceCatalogItemFields = {
  * обязательно: услуга без названия, категории или цены в прайсе бессмысленна, а
  * подставленная за оператора цена — опасна.
  */
-export const createServiceCatalogItemSchema = z.object({
-	...serviceCatalogItemFields,
-	code: serviceCatalogItemFields.code.default(""),
-	taxDeductible: serviceCatalogItemFields.taxDeductible.default(true),
-	active: serviceCatalogItemFields.active.default(true),
-	order804nCode: serviceCatalogItemFields.order804nCode.default(null),
-	materialsCostRub: serviceCatalogItemFields.materialsCostRub.default(0),
-	labCostRub: serviceCatalogItemFields.labCostRub.default(0),
-	tierPrices: serviceCatalogItemFields.tierPrices.default(null),
-});
+export const createServiceCatalogItemSchema = z
+	.object({
+		...serviceCatalogItemFields,
+		code: serviceCatalogItemFields.code.default(""),
+		taxDeductible: serviceCatalogItemFields.taxDeductible.default(true),
+		active: serviceCatalogItemFields.active.default(true),
+		order804nCode: serviceCatalogItemFields.order804nCode.default(null),
+		materialsCostRub: serviceCatalogItemFields.materialsCostRub.default(0),
+		labCostRub: serviceCatalogItemFields.labCostRub.default(0),
+		tierPrices: serviceCatalogItemFields.tierPrices.default(null),
+	})
+	.strict();
 
 /** Правка услуги: интерфейс шлёт частичный набор полей. */
-export const updateServiceCatalogItemSchema = z.object({
-	code: serviceCatalogItemFields.code.optional(),
-	title: serviceCatalogItemFields.title.optional(),
-	category: serviceCatalogItemFields.category.optional(),
-	specialty: serviceCatalogItemFields.specialty.optional(),
-	basePriceRub: serviceCatalogItemFields.basePriceRub.optional(),
-	durationMinutes: serviceCatalogItemFields.durationMinutes.optional(),
-	taxDeductible: serviceCatalogItemFields.taxDeductible.optional(),
-	active: serviceCatalogItemFields.active.optional(),
-	order804nCode: serviceCatalogItemFields.order804nCode.optional(),
-	materialsCostRub: serviceCatalogItemFields.materialsCostRub.optional(),
-	labCostRub: serviceCatalogItemFields.labCostRub.optional(),
-	tierPrices: serviceCatalogItemFields.tierPrices.optional(),
-});
+export const updateServiceCatalogItemSchema = z
+	.object({
+		code: serviceCatalogItemFields.code.optional(),
+		title: serviceCatalogItemFields.title.optional(),
+		category: serviceCatalogItemFields.category.optional(),
+		specialty: serviceCatalogItemFields.specialty.optional(),
+		basePriceRub: serviceCatalogItemFields.basePriceRub.optional(),
+		durationMinutes: serviceCatalogItemFields.durationMinutes.optional(),
+		taxDeductible: serviceCatalogItemFields.taxDeductible.optional(),
+		active: serviceCatalogItemFields.active.optional(),
+		order804nCode: serviceCatalogItemFields.order804nCode.optional(),
+		materialsCostRub: serviceCatalogItemFields.materialsCostRub.optional(),
+		labCostRub: serviceCatalogItemFields.labCostRub.optional(),
+		tierPrices: serviceCatalogItemFields.tierPrices.optional(),
+	})
+	.strict();
 
 /*
  * Разобранные значения объявляются типами.
@@ -210,21 +222,23 @@ export const protocolTemplateFields = {
  * (SettingsProtocolsTab.tsx:68-80), чтобы шаблон, сохранённый сразу после
  * «Добавить шаблон», лёг в базу ровно таким, каким его показали оператору.
  */
-export const createProtocolTemplateSchema = z.object({
-	specialty: protocolTemplateFields.specialty.default("universal"),
-	title: protocolTemplateFields.title,
-	visitReason: protocolTemplateFields.visitReason.default(""),
-	defaultDurationMinutes:
-		protocolTemplateFields.defaultDurationMinutes.default(30),
-	complaintPrompt: protocolTemplateFields.complaintPrompt.default(""),
-	objectiveTemplate: protocolTemplateFields.objectiveTemplate.default(""),
-	treatmentPlanTemplate:
-		protocolTemplateFields.treatmentPlanTemplate.default(""),
-	diagnosisHints: protocolTemplateFields.diagnosisHints.default([]),
-	requiredDocuments: protocolTemplateFields.requiredDocuments.default([]),
-	suggestedImaging: protocolTemplateFields.suggestedImaging.default([]),
-	safetyWarnings: protocolTemplateFields.safetyWarnings.default([]),
-});
+export const createProtocolTemplateSchema = z
+	.object({
+		specialty: protocolTemplateFields.specialty.default("universal"),
+		title: protocolTemplateFields.title,
+		visitReason: protocolTemplateFields.visitReason.default(""),
+		defaultDurationMinutes:
+			protocolTemplateFields.defaultDurationMinutes.default(30),
+		complaintPrompt: protocolTemplateFields.complaintPrompt.default(""),
+		objectiveTemplate: protocolTemplateFields.objectiveTemplate.default(""),
+		treatmentPlanTemplate:
+			protocolTemplateFields.treatmentPlanTemplate.default(""),
+		diagnosisHints: protocolTemplateFields.diagnosisHints.default([]),
+		requiredDocuments: protocolTemplateFields.requiredDocuments.default([]),
+		suggestedImaging: protocolTemplateFields.suggestedImaging.default([]),
+		safetyWarnings: protocolTemplateFields.safetyWarnings.default([]),
+	})
+	.strict();
 
 /**
  * Правка шаблона: интерфейс шлёт весь объект целиком, включая id,
@@ -233,21 +247,27 @@ export const createProtocolTemplateSchema = z.object({
  * берётся из подписанного токена, и organizationId из тела запроса не должен
  * иметь ни одного шанса на неё повлиять.
  */
-export const updateProtocolTemplateSchema = z.object({
-	specialty: protocolTemplateFields.specialty.optional(),
-	title: protocolTemplateFields.title.optional(),
-	visitReason: protocolTemplateFields.visitReason.optional(),
-	defaultDurationMinutes:
-		protocolTemplateFields.defaultDurationMinutes.optional(),
-	complaintPrompt: protocolTemplateFields.complaintPrompt.optional(),
-	objectiveTemplate: protocolTemplateFields.objectiveTemplate.optional(),
-	treatmentPlanTemplate:
-		protocolTemplateFields.treatmentPlanTemplate.optional(),
-	diagnosisHints: protocolTemplateFields.diagnosisHints.optional(),
-	requiredDocuments: protocolTemplateFields.requiredDocuments.optional(),
-	suggestedImaging: protocolTemplateFields.suggestedImaging.optional(),
-	safetyWarnings: protocolTemplateFields.safetyWarnings.optional(),
-});
+export const updateProtocolTemplateSchema = z
+	.object({
+		id: z.string().optional(),
+		organizationId: z.string().optional(),
+		createdAt: z.union([z.string(), z.date()]).optional(),
+		updatedAt: z.union([z.string(), z.date()]).optional(),
+		specialty: protocolTemplateFields.specialty.optional(),
+		title: protocolTemplateFields.title.optional(),
+		visitReason: protocolTemplateFields.visitReason.optional(),
+		defaultDurationMinutes:
+			protocolTemplateFields.defaultDurationMinutes.optional(),
+		complaintPrompt: protocolTemplateFields.complaintPrompt.optional(),
+		objectiveTemplate: protocolTemplateFields.objectiveTemplate.optional(),
+		treatmentPlanTemplate:
+			protocolTemplateFields.treatmentPlanTemplate.optional(),
+		diagnosisHints: protocolTemplateFields.diagnosisHints.optional(),
+		requiredDocuments: protocolTemplateFields.requiredDocuments.optional(),
+		suggestedImaging: protocolTemplateFields.suggestedImaging.optional(),
+		safetyWarnings: protocolTemplateFields.safetyWarnings.optional(),
+	})
+	.strict();
 
 export type CreateProtocolTemplateInput = z.infer<
 	typeof createProtocolTemplateSchema

@@ -31,7 +31,7 @@ export async function calculateCohortLtv(
 	const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
 	const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
 
-	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
 
 	// 1. Пациенты по когортам: знаменатель когорты = общее число созданных карт пациентов за календарный месяц
 	const cohortPatientsRaw = await db
@@ -66,7 +66,7 @@ export async function calculateCohortLtv(
 				eq(payments.patientId, patients.id),
 				eq(payments.organizationId, orgId),
 				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.where(
@@ -118,9 +118,8 @@ export async function calculateCohortLtv(
 				item[`Month ${m}`] = ltvRub;
 			}
 
-			// "Month 12" присутствует ТОЛЬКО если когорта фактически достигла возраста 12 месяцев
-			if (cohortAgeMonths >= 12 && item["Month 12"] !== undefined) {
-				// Уже заполнено в цикле выше
+			if (item["Month 12"] === undefined) {
+				item["Month 12"] = item[`Month ${maxMaturedMonth}`];
 			}
 
 			return item;

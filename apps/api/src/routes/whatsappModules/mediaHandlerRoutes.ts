@@ -9,11 +9,12 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { attachments } from "../../db/schema.js";
+import { attachments, patients } from "../../db/schema.js";
 import { UPLOADS_DIR } from "../fileModules/common.js";
 import {
 	ALLOWED_WHATSAPP_MEDIA_TYPES,
@@ -92,6 +93,22 @@ export async function registerMediaHandlerRoutes(
 		}
 
 		const { patientId, fileName, mimeType, base64Data, caption } = parsed.data;
+
+		// BOLA / IDOR защита: проверка принадлежности пациента текущей клинике
+		const [patient] = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
+
+		if (!patient) {
+			reply.code(404);
+			return {
+				error: "PatientNotFound",
+				message: "Пациент не найден в данной организации.",
+			};
+		}
+
 		const buffer = Buffer.from(base64Data, "base64");
 
 		if (buffer.length > MAX_WHATSAPP_MEDIA_SIZE_BYTES) {

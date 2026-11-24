@@ -35,34 +35,38 @@ export const priceListSuggestedActionSchema = z.enum([
 ]);
 export type PriceListSuggestedAction = z.infer<typeof priceListSuggestedActionSchema>;
 
-export const ingestedPriceProposalSchema = z.object({
-	id: z.string(),
-	sourceLineNumber: z.number().int().positive(),
-	rawLine: z.string(),
-	cleanedTitle: z.string(),
-	code804n: z.string(),
-	statutoryTitle804n: z.string(),
-	category: z.string(),
-	specialty: z.string(),
-	priceRub: z.number().nonnegative(),
-	priceKopecks: z.number().int().nonnegative(),
-	confidence: z.number().min(0).max(1),
-	confidenceKind: priceListConfidenceKindSchema,
-	matchedExistingServiceId: z.string().nullable().optional(),
-	matchedExistingTitle: z.string().nullable().optional(),
-	matchedExistingPriceRub: z.number().nullable().optional(),
-	suggestedAction: priceListSuggestedActionSchema,
-	isApproved: z.boolean().default(true),
-});
+export const ingestedPriceProposalSchema = z
+	.object({
+		id: z.string(),
+		sourceLineNumber: z.number().int().positive(),
+		rawLine: z.string(),
+		cleanedTitle: z.string(),
+		code804n: z.string(),
+		statutoryTitle804n: z.string(),
+		category: z.string(),
+		specialty: z.string(),
+		priceRub: z.number().nonnegative(),
+		priceKopecks: z.number().int().nonnegative(),
+		confidence: z.number().min(0).max(1),
+		confidenceKind: priceListConfidenceKindSchema,
+		matchedExistingServiceId: z.string().nullable().optional(),
+		matchedExistingTitle: z.string().nullable().optional(),
+		matchedExistingPriceRub: z.number().nullable().optional(),
+		suggestedAction: priceListSuggestedActionSchema,
+		isApproved: z.boolean().default(true),
+	})
+	.strict();
 export type IngestedPriceProposal = z.infer<typeof ingestedPriceProposalSchema>;
 
-export const priceListIngestionRequestSchema = z.object({
-	rawContent: z.string().min(1, "Передайте текст или содержимое файла прейскуранта"),
-	sourceType: priceListIngestSourceTypeSchema.default("text"),
-	filename: z.string().optional(),
-	commit: z.boolean().default(false),
-	approvedItems: z.array(ingestedPriceProposalSchema).optional(),
-});
+export const priceListIngestionRequestSchema = z
+	.object({
+		rawContent: z.string().min(1, "Передайте текст или содержимое файла прейскуранта"),
+		sourceType: priceListIngestSourceTypeSchema.default("text"),
+		filename: z.string().optional(),
+		commit: z.boolean().default(false),
+		approvedItems: z.array(ingestedPriceProposalSchema).optional(),
+	})
+	.strict();
 export type PriceListIngestionRequest = z.infer<typeof priceListIngestionRequestSchema>;
 
 export const priceListIngestionStatsSchema = z.object({

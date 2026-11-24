@@ -290,13 +290,13 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 			assert.equal(result.priceRub, 4200);
 			assert.match(result.title, /36/);
 			if (capturedInvoiceEvent) {
-				assert.equal(capturedInvoiceEvent.services[0].code, "A06.07.012");
+				assert.equal(capturedInvoiceEvent.services[0].code, STATUTORY_CBCT_804N.code804n);
 				assert.equal(capturedInvoiceEvent.services[0].priceRub, 4200);
 			}
 		});
 
-		it("addCbctServiceToTreatmentPlan creates Diagnostic stage item with A06.07.012", async () => {
-			const { addCbctServiceToTreatmentPlan } = await import("../ctImplantIntegrationBridge");
+		it("addCbctServiceToTreatmentPlan creates Diagnostic stage item with A06.07.013", async () => {
+			const { addCbctServiceToTreatmentPlan, STATUTORY_CBCT_804N } = await import("../ctImplantIntegrationBridge");
 			let capturedPlanEvent: any = null;
 			const handler = (e: Event) => {
 				capturedPlanEvent = (e as CustomEvent).detail;
@@ -306,12 +306,12 @@ describe("Wave 28 Domain 2 — CT Implant Engine Integration Bridge", () => {
 			const planItem = addCbctServiceToTreatmentPlan({ toothFdi: 21 });
 			window.removeEventListener("dente-add-treatment-plan-item", handler);
 
-			assert.equal(planItem.code804n, "A06.07.012");
+			assert.equal(planItem.code804n, STATUTORY_CBCT_804N.code804n);
 			assert.equal(planItem.category, "Диагностика");
 			assert.equal(planItem.stageKind, "stage_1_therapy");
 			assert.equal(planItem.phase, 1);
 			if (capturedPlanEvent) {
-				assert.equal(capturedPlanEvent.item.code804n, "A06.07.012");
+				assert.equal(capturedPlanEvent.item.code804n, STATUTORY_CBCT_804N.code804n);
 			}
 		});
 	});

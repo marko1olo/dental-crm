@@ -1,10 +1,10 @@
 import type {
 	ClinicalWriteoffPackage,
-	OneClickPackageWriteOffDeductedItem,
+	PackageWriteOffDeductedItem,
 } from "./packageWriteoffTypes.js";
 
 export interface PackageDeductionComputation {
-	readonly deductedItems: readonly OneClickPackageWriteOffDeductedItem[];
+	readonly deductedItems: readonly PackageWriteOffDeductedItem[];
 	readonly overdraftItems: ReadonlyArray<{
 		nameRu: string;
 		requestedQty: number;
@@ -20,7 +20,7 @@ export function calculatePackageDeductions(
 	multiplier: number,
 	stockMap: Map<string, number>,
 ): PackageDeductionComputation {
-	const deductedItems: OneClickPackageWriteOffDeductedItem[] = [];
+	const deductedItems: PackageWriteOffDeductedItem[] = [];
 	const overdraftItems: Array<{
 		nameRu: string;
 		requestedQty: number;

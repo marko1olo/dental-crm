@@ -448,7 +448,7 @@ export async function queryExecutiveKpiAndFunnel(
 				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
 				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -476,7 +476,7 @@ export async function queryExecutiveKpiAndFunnel(
 				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
 				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -504,7 +504,7 @@ export async function queryExecutiveKpiAndFunnel(
 	};
 
 	// 6. Расходы клиники и управленческий P&L (COGS, OPEX, Чистая прибыль)
-	const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, 0)::bigint`;
+	const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, round(coalesce(${cashOperations.amountRub}, 0) * 100)::bigint, 0)::bigint`;
 	const cashExpenseRows = await db
 		.select({
 			reasonCode: cashOperations.reasonCode,
@@ -665,7 +665,7 @@ export async function queryExecutiveKpiAndFunnel(
 			and(
 				eq(payments.organizationId, orgId),
 				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -689,7 +689,7 @@ export async function queryExecutiveKpiAndFunnel(
 				gte(patients.createdAt, startDate),
 				lte(patients.createdAt, range.endDate),
 				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -707,7 +707,7 @@ export async function queryExecutiveKpiAndFunnel(
 				lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, range.endDate),
 				lt(patients.createdAt, startDate),
 				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		);
 
@@ -743,7 +743,8 @@ export async function queryExecutiveKpiAndFunnel(
 		opexKopecks: totalOpexKopecks,
 		netMarginPercent,
 		paymentBreakdown,
-		doctorPayrollKopecks: cashPayrollExpensesKopecks,
+		doctorPayrollKopecks: effectiveDoctorPayrollKopecks,
+		cashDoctorPayrollExpensesKopecks: cashPayrollExpensesKopecks,
 		materialsCostKopecks: directMaterialsCostKopecks,
 		labCostKopecks: directLabCostKopecks,
 	});

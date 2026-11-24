@@ -59,7 +59,7 @@ describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {
 		const firstCurettage = curettageServices[0];
 		assert.ok(firstCurettage);
 		assert.strictEqual(firstCurettage.toothNumber, 46);
-		assert.strictEqual(firstCurettage.serviceCode, "A16.07.011");
+		assert.strictEqual(firstCurettage.serviceCode, "A16.07.039");
 		assert.strictEqual(firstCurettage.priceKopecks, 180000);
 	});
 });

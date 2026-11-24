@@ -88,6 +88,7 @@ export async function applyCashBoxFiscalRefund(
 			.update(cashBoxes)
 			.set({
 				balanceRub: sql`round((${cashBoxes.balanceRub} - ${amountRub})::numeric, 2)`,
+				balanceKopecks: sql`${cashBoxes.balanceKopecks} - ${cashKop}::bigint`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -121,8 +122,11 @@ export async function applyCashBoxFiscalRefund(
 			shiftId: activeShift?.id ?? null,
 			operationType: "expense",
 			amountRub,
+			amountKopecks: cashKop,
 			balanceBeforeRub: kopecksToRub(balanceBeforeKop),
+			balanceBeforeKopecks: BigInt(balanceBeforeKop),
 			balanceAfterRub: kopecksToRub(balanceAfterKop),
+			balanceAfterKopecks: BigInt(balanceAfterKop),
 			reasonText: `Возврат по кассовому чеку №${printResult.fiscalDocumentNumber || data.originalReceiptNumber || "б/н"}`,
 			operatorName: data.cashierFullName || null,
 			patientId: validPatientId,
@@ -146,6 +150,7 @@ export async function applyCashBoxFiscalRefund(
 			.update(cashBoxes)
 			.set({
 				balanceRub: sql`round((${cashBoxes.balanceRub} - ${amountRub})::numeric, 2)`,
+				balanceKopecks: sql`${cashBoxes.balanceKopecks} - ${electronicKop}::bigint`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -179,8 +184,11 @@ export async function applyCashBoxFiscalRefund(
 			shiftId: activeShift?.id ?? null,
 			operationType: "expense",
 			amountRub,
+			amountKopecks: electronicKop,
 			balanceBeforeRub: kopecksToRub(balanceBeforeKop),
+			balanceBeforeKopecks: BigInt(balanceBeforeKop),
 			balanceAfterRub: kopecksToRub(balanceAfterKop),
+			balanceAfterKopecks: BigInt(balanceAfterKop),
 			reasonText: `Возврат по кассовому чеку (безналичные) №${printResult.fiscalDocumentNumber || data.originalReceiptNumber || "б/н"}`,
 			operatorName: data.cashierFullName || null,
 			patientId: validPatientId,
@@ -259,6 +267,32 @@ export async function handleFiscalRefund(
 	const effectiveMutationId =
 		rawData.clientMutationId?.trim() || headerIdempotencyKey?.trim() || undefined;
 
+	if (!effectiveMutationId) {
+		return reply.status(400).send({
+			error: "IdempotencyKeyRequired",
+			message:
+				"Для проведения возврата чека обязателен заголовок Idempotency-Key (UUIDv7).",
+		});
+	}
+
+	const baseKey = effectiveMutationId.includes("#")
+		? effectiveMutationId.split("#")[0]
+		: effectiveMutationId;
+	if (
+		!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+			baseKey || "",
+		)
+	) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message:
+				"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+
+	reply.header("Idempotency-Key", effectiveMutationId);
+	reply.header("X-Idempotency-Key", effectiveMutationId);
+
 	const data = {
 		...rawData,
 		clientMutationId: effectiveMutationId,
@@ -309,6 +343,8 @@ export async function handleFiscalRefund(
 
 				const refundKopecksMatch = Number(storedPayload["totalKopecks"]) === data.totalRefundKopecks;
 				if (verification.isValid && refundKopecksMatch) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
 					return reply.status(200).send({
 						success: true,
 						replayed: true,

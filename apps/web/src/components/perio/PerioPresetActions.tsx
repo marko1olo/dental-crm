@@ -58,7 +58,7 @@ export const PerioPresetActions: React.FC<PerioPresetActionsProps> = React.memo(
 					className={secondaryPresetClass}
 				>
 					<span data-testid="psr-hygiene-preset-btn" className="flex items-center gap-1.5">
-						<Sparkles className="w-4 h-4 shrink-0" /> Профгигиена AirFlow + УЗ
+						<Sparkles className="w-4 h-4 shrink-0" /> Профгигиена УЗ + порошковая полировка
 					</span>
 				</button>
 				<button

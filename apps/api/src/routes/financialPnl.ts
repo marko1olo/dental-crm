@@ -16,7 +16,7 @@ import {
 import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../accessGuard.js";
+import { requireExecutiveAccess } from "./analytics/executiveAccessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
@@ -55,7 +55,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 	 * GET /api/reports/pnl — Управленческий отчет о прибылях и убытках (P&L)
 	 */
 	app.get("/api/reports/pnl", async (req: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(req, reply, "financial pnl read");
+		const orgId = await requireExecutiveAccess(req, reply);
 		if (!orgId) return;
 
 		const parsed = pnlQuerySchema.safeParse(req.query);

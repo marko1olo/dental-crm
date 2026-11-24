@@ -29,7 +29,7 @@ export interface ClinicalWriteoffPackage {
 	readonly items: readonly ClinicalWriteoffPackageItem[];
 }
 
-export interface OneClickPackageWriteOffOptions {
+export interface PackageWriteOffOptions {
 	readonly packageId: ClinicalPackageId | string;
 	readonly quantityMultiplier?: number | undefined;
 	readonly cabinetId?: string | undefined;
@@ -45,7 +45,7 @@ export interface OneClickPackageWriteOffOptions {
 	readonly fetchFn?: typeof fetch | undefined;
 }
 
-export interface OneClickPackageWriteOffDeductedItem {
+export interface PackageWriteOffDeductedItem {
 	readonly id: string;
 	readonly sku: string;
 	readonly nameRu: string;
@@ -57,7 +57,7 @@ export interface OneClickPackageWriteOffDeductedItem {
 	readonly deficitQty: number;
 }
 
-export interface OneClickPackageWriteOffResult {
+export interface PackageWriteOffResult {
 	readonly success: boolean;
 	readonly packageId: string;
 	readonly packageTitle: string;
@@ -74,7 +74,16 @@ export interface OneClickPackageWriteOffResult {
 		availableQty: number;
 		deficitQty: number;
 	}>;
-	readonly deductedItems: readonly OneClickPackageWriteOffDeductedItem[];
+	readonly deductedItems: readonly PackageWriteOffDeductedItem[];
 	readonly toastMessage: string;
 	readonly toastType: "success" | "warning" | "error";
 }
+
+/** @deprecated Имя содержит сленг «OneClick». Используйте канонический PackageWriteOffOptions */
+export type OneClickPackageWriteOffOptions = PackageWriteOffOptions;
+
+/** @deprecated Имя содержит сленг «OneClick». Используйте канонический PackageWriteOffDeductedItem */
+export type OneClickPackageWriteOffDeductedItem = PackageWriteOffDeductedItem;
+
+/** @deprecated Имя содержит сленг «OneClick». Используйте канонический PackageWriteOffResult */
+export type OneClickPackageWriteOffResult = PackageWriteOffResult;

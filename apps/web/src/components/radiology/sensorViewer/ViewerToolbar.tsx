@@ -331,8 +331,10 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				{/* 1-Click High-Res PNG Export with 5 mm Scale */}
 				<button
 					type="button"
-					onClick={handleExportImage}
-					disabled={isExporting}
+					onClick={() => {
+						if (isExporting) return;
+						handleExportImage();
+					}}
 					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-slate-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
 					data-testid="btn-sensor-export-png"
 					title="Экспортировать снимок с калибровочной шкалой 5 мм и метаданными клиники (PNG)"

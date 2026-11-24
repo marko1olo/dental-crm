@@ -24,6 +24,9 @@ import {
 	generateEndoProtocol043,
 	getAnatomicalWorkingLength,
 	getDefaultCanalsForTooth,
+	getAnatomicalRootCanalCount,
+	TOOTH_CANAL_ANATOMY_MAP,
+	calculateEndoBillingAndMaterialsEstimate,
 	MAF_ISO_OPTIONS,
 	OBTURATION_PERMANENT_PRESET,
 	OBTURATION_TECHNIQUE_OPTIONS,
@@ -45,16 +48,15 @@ import {
 } from "./endoProtocolEngine.js";
 
 describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
-	test("Первичное эндо: ProTaper Gold, NaOCl+EDTA УЗ, Metapex/Calcept 7–14 дней", () => {
+	test("Первичное эндо: машинная NiTi система, NaOCl+EDTA УЗ, лечебная паста Ca(OH)2 7–14 дней", () => {
 		const canals = getDefaultCanalsForTooth(16);
 		const result = applyPrimaryEndoProtocol(canals, 16);
 
 		assert.equal(result.canals.length, 4);
-		assert.match(result.rotarySystem, /ProTaper Gold/i);
-		assert.match(result.rotarySystem, /SX.*S1.*S2.*F1.*F2/i);
+		assert.match(result.rotarySystem, /никель-титанов.*ротационн.*систем|Crown-Down/i);
 		assert.match(result.irrigation, /3%\s*NaOCl/i);
 		assert.match(result.irrigation, /17%\s*EDTA/i);
-		assert.match(result.radiologyControl, /Metapex|Calcept/i);
+		assert.match(result.radiologyControl, /гидроксид.*кальци|Ca\(OH\)2/i);
 		assert.match(result.radiologyControl, /7[–-]14/);
 
 		const protocolText = generateEndoProtocol043({
@@ -66,21 +68,21 @@ describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
 		});
 
 		assert.match(protocolText, /Протокол эндодонтического лечения|ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ/i);
-		assert.match(protocolText, /ProTaper Gold/);
+		assert.match(protocolText, /никель-титанов.*ротационн.*систем/i);
 		assert.match(protocolText, /3% NaOCl/);
 		assert.match(protocolText, /17% EDTA/);
 		// Mandatory 8d: NO emojis in protocol text!
 		assert.doesNotMatch(protocolText, /[\u{1F300}-\u{1F9FF}]/u);
 	});
 
-	test("Повторное эндо (перелечивание): распломбировка гуттаперчи D-RaCe/Retreatment, ревизия устьев, Metapex/Calcept", () => {
+	test("Повторное эндо (перелечивание): распломбировка гуттаперчи ротационными файлами, ревизия устьев, Ca(OH)2", () => {
 		const canals = getDefaultCanalsForTooth(36);
 		const result = applyRetreatmentEndoProtocol(canals, 36);
 
 		assert.equal(result.canals.length, 3);
-		assert.match(result.rotarySystem, /D-RaCe|Retreatment/i);
+		assert.match(result.rotarySystem, /ротационн.*файл.*для распломбирования|ревизия/i);
 		assert.match(result.rotarySystem, /ревизия/i);
-		assert.match(result.radiologyControl, /Metapex|Calcept/i);
+		assert.match(result.radiologyControl, /гидроксид.*кальци|Ca\(OH\)2/i);
 
 		const protocolText = generateEndoProtocol043({
 			toothNumber: 36,
@@ -90,18 +92,18 @@ describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
 			radiologyControl: result.radiologyControl,
 		});
 
-		assert.match(protocolText, /D-RaCe|Retreatment/);
+		assert.match(protocolText, /ротационн.*файл.*для распломбирования/);
 		assert.match(protocolText, /ревизия устьев/);
 		assert.doesNotMatch(protocolText, /[\u{1F300}-\u{1F9FF}]/u);
 	});
 
-	test("Обтурация каналов: постоянная пломбировка методом латеральной компакции / горячей гуттаперчи (GuttaCore/System B) + AH Plus", () => {
+	test("Обтурация каналов: постоянная пломбировка методом латеральной компакции / вертикальной конденсации с эпоксидным силером", () => {
 		const canals = getDefaultCanalsForTooth(46);
 		const result = applyObturationPermanentProtocol(canals, 46);
 
 		assert.equal(result.canals.length, 3);
-		assert.match(result.canals[0]!.obturationTechnique, /латеральная компакция|горячая гуттаперча|GuttaCore|System B/i);
-		assert.match(result.canals[0]!.sealer!, /AH Plus/i);
+		assert.match(result.canals[0]!.obturationTechnique, /латеральная компакция|вертикальная конденсация/i);
+		assert.match(result.canals[0]!.sealer!, /эпоксидн.*силер/i);
 		assert.match(result.radiologyControl, /физиологического апекса/i);
 		assert.match(result.radiologyControl, /без выведения за верхушку/i);
 
@@ -113,7 +115,7 @@ describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
 			radiologyControl: result.radiologyControl,
 		});
 
-		assert.match(protocolText, /AH Plus/);
+		assert.match(protocolText, /эпоксидн.*силер/i);
 		assert.match(protocolText, /физиологического апекса/);
 		assert.doesNotMatch(protocolText, /[\u{1F300}-\u{1F9FF}]/u);
 	});

@@ -2,17 +2,27 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 6px;
-	height: 34px;
-	min-height: 32px;
+	gap: 8px;
+	height: 36px;
+	min-height: 36px;
 	padding: 0 14px;
-	border-radius: 12px;
-	font-size: 0.8125rem;
-	font-weight: 600;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 500;
 	cursor: pointer;
 	transition: all 0.15s ease;
 	border: 1px solid transparent;
 	white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+	.warehouse-btn {
+		height: 44px;
+		min-height: 44px;
+		padding: 0 16px;
+		font-size: 1rem;
+		border-radius: 12px;
+	}
 }
 .warehouse-btn-primary {
 	background: var(--primary, #0d9488);

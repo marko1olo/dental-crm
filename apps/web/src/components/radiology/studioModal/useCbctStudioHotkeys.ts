@@ -31,7 +31,11 @@ export function useCbctStudioHotkeys({
 	const handleToggleUnsharp = useCallback(() => {
 		state.setIsUnsharpActive((prev) => {
 			const next = !prev;
-			try { getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0); } catch { /* safe */ }
+			try {
+				getSharedCbctGlContext().setSharpenAmount(next ? 0.6 : 0.0);
+			} catch (error) {
+				console.error("[useCbctStudioHotkeys] Failed to set sharpen amount on CBCT GL context:", error);
+			}
 			showToast(next ? "Резкость трабекул: ВКЛ (SHARP ON)" : "Резкость: Исходный воксел (RAW VOXEL)", "info");
 			return next;
 		});
@@ -45,9 +49,10 @@ export function useCbctStudioHotkeys({
 		onRestoreMaximize: () => state.setMaximizedViewport(null),
 		onToggleMaximize: () => onToggleMaximize(state.activeViewport),
 		onScrollSlice: (direction, step) => {
-			if (!state.volume) return;
+			const vol = state.volume;
+			if (!vol) return;
 			const delta = (direction === "next" ? 1 : -1) * step;
-			state.setCrosshairMm((prev) => ({ ...prev, z: prev.z + delta * state.volume!.spacingMm.z }));
+			state.setCrosshairMm((prev) => ({ ...prev, z: prev.z + delta * vol.spacingMm.z }));
 		},
 		onZoom: (direction) => {
 			state.setTransforms((prev) => ({

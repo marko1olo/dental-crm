@@ -22,22 +22,22 @@ export const CtStudySpecsGrid: React.FC<Props> = ({
 	return (
 		<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs">
 			<div>
-				<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Томограф</span>
+				<span className="block text-[var(--muted)] text-xs font-medium">Томограф</span>
 				<strong className="truncate block font-semibold text-[var(--ink)]">{manufacturer || "Стандартный DICOM"}</strong>
 			</div>
 			<div>
-				<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Кол-во срезов</span>
+				<span className="block text-[var(--muted)] text-xs font-medium">Кол-во срезов</span>
 				<strong className="block font-semibold text-[var(--ink)] flex items-center gap-1">
 					<Layers className="w-3 h-3 text-[var(--muted)]" />
 					{sliceCount || "—"}
 				</strong>
 			</div>
 			<div>
-				<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Размер кадра</span>
+				<span className="block text-[var(--muted)] text-xs font-medium">Размер кадра</span>
 				<strong className="block font-semibold text-[var(--ink)]">{dimensions || "—"}</strong>
 			</div>
 			<div>
-				<span className="block text-[var(--muted)] text-xs uppercase tracking-wide font-medium">Размер вокселя</span>
+				<span className="block text-[var(--muted)] text-xs font-medium">Размер вокселя</span>
 				<strong className="block font-semibold text-[var(--ink)]">{voxelSpacing || "—"}</strong>
 			</div>
 		</div>

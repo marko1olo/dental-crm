@@ -58,6 +58,7 @@ export function ImagingAuxiliaryModals({
 					}
 				>
 					<CbctMprImplantStudioModal
+						key={selectedImagingStudy?.id ?? activePatient?.id ?? "panoramic-studio"}
 						isOpen={isPanoramicWindowOpen}
 						onClose={() => setIsPanoramicWindowOpen(false)}
 						study={selectedImagingStudy ? convertImagingStudyToRadiologyStudy(selectedImagingStudy) : undefined}
@@ -79,6 +80,7 @@ export function ImagingAuxiliaryModals({
 						onClick={(e) => e.stopPropagation()}
 					>
 						<RadiologyModule
+							key={activePatient?.id ?? "radiology-module"}
 							patient={activePatient ? {
 								id: activePatient.id ?? null,
 								fullName: activePatient.fullName || activePatient.name || null,
@@ -97,6 +99,7 @@ export function ImagingAuxiliaryModals({
 			)}
 
 			<ImagingExportModal
+				key={selectedImagingStudy?.id ?? activePatient?.id ?? "imaging-export"}
 				isOpen={isExportModalOpen}
 				onClose={() => setIsExportModalOpen(false)}
 				study={selectedImagingStudy}
@@ -115,6 +118,7 @@ export function ImagingAuxiliaryModals({
 			/>
 
 			<RadiologyConsultationSplit
+				key={selectedImagingStudy?.id ?? activePatient?.id ?? "consultation-split"}
 				isOpen={Boolean(isComparisonOpen)}
 				asModal={true}
 				onClose={() => setIsComparisonOpen?.(false)}

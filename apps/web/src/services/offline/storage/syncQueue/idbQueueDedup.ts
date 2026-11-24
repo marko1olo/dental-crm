@@ -21,6 +21,7 @@ export function createMutationEnvelope<T>(input: EnqueueMutationInput<T>): Offli
 		entityType: input.entityType,
 		entityId: input.entityId,
 		action: input.action || "update",
+		endpoint: input.endpoint,
 		payload: input.payload,
 		timestamp,
 		timestampMs,

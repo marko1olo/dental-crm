@@ -72,7 +72,7 @@ export function useHygieneCalculations() {
 		const avg = count > 0 ? Math.round((totalScore / count) * 10) / 10 : 0;
 		let evaluation: "excellent" | "good" | "moderate" | "poor" = "excellent";
 		let ratingText = "Отличная гигиена (налет отсутствует)";
-		let badgeClass = "border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300";
+		let badgeClass = "bg-[var(--success-soft,rgba(16,185,129,0.15))] text-[var(--success,#10b981)] border border-[var(--success,#10b981)]/30";
 
 		if (avg === 0) {
 			evaluation = "excellent";
@@ -80,15 +80,15 @@ export function useHygieneCalculations() {
 		} else if (avg <= 0.9) {
 			evaluation = "good";
 			ratingText = "Хорошая гигиена (тонкая пленка)";
-			badgeClass = "border-teal-500/30 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300";
+			badgeClass = "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30";
 		} else if (avg <= 1.9) {
 			evaluation = "moderate";
 			ratingText = "Удовлетворительная (умеренный налет)";
-			badgeClass = "border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300";
+			badgeClass = "bg-[var(--warning-soft,rgba(245,158,11,0.2))] text-[var(--warning,#d97706)] border border-[var(--warning,#d97706)]/30";
 		} else {
 			evaluation = "poor";
 			ratingText = "Плохая гигиена (обильные отложения)";
-			badgeClass = "border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300";
+			badgeClass = "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/40";
 		}
 		return { score: avg, ratingText, evaluation, badgeClass, isOptimal: avg === 0 };
 	}, [silnessScores]);

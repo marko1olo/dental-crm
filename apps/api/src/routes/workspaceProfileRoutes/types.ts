@@ -28,7 +28,38 @@ export type WorkspacePresetBody = z.infer<typeof workspacePresetBodySchema>;
  * Empty object / null/undefined → {} (no-op partial is valid).
  * Unknown keys and wrong types still filtered by workspaceFlagsFromStorage.
  */
-export const workspaceProfileBodySchema = z.object({}).passthrough();
+export const workspaceProfileBodySchema = z
+	.object({
+		hasAssistants: z.boolean().optional(),
+		hasMultipleChairs: z.boolean().optional(),
+		hasDentalLab: z.boolean().optional(),
+		hasInsuranceCoPay: z.boolean().optional(),
+		hasInstallments: z.boolean().optional(),
+		hasOrthodontics: z.boolean().optional(),
+		hasTasks: z.boolean().optional(),
+		hasReclamations: z.boolean().optional(),
+		hasPediatricMode: z.boolean().optional(),
+		isOmniRole: z.boolean().optional(),
+		workspacePreset: z.string().optional(),
+		onboardingCompleted: z.boolean().optional(),
+		hasPayrollModule: z.boolean().optional(),
+		hasMarketingModule: z.boolean().optional(),
+		hasAnalyticsModule: z.boolean().optional(),
+		hasInventoryModule: z.boolean().optional(),
+		aiEnableTreatmentPlan: z.boolean().optional(),
+		aiEnableRecommendations: z.boolean().optional(),
+		aiEnableDocuments: z.boolean().optional(),
+		hasGnathology: z.boolean().optional(),
+		hasCsoScanner: z.boolean().optional(),
+		hasLeadsKanban: z.boolean().optional(),
+		hasOmnichannel: z.boolean().optional(),
+		hasEngineeringStatus: z.boolean().optional(),
+		hasClinicalRules: z.boolean().optional(),
+		hasReferralModule: z.boolean().optional(),
+		hasBpmWorkflows: z.boolean().optional(),
+		numberOfDoctors: z.number().int().nonnegative().optional(),
+	})
+	.strict();
 
 export type WorkspaceProfileBody = z.infer<typeof workspaceProfileBodySchema>;
 

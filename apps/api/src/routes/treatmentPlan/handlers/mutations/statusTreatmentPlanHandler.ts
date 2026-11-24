@@ -79,6 +79,15 @@ export async function createInvoiceForApprovedPlan(
 		.limit(1);
 
 	if (existingInvoice) {
+		if (existingInvoice.totalPriceKopecks === 0n && (existingInvoice.totalAmountRub > 0 || Number(existingInvoice.totalRub || 0) > 0)) {
+			const recoveredKop = BigInt(rublesToKopecks(existingInvoice.totalAmountRub ?? Number(existingInvoice.totalRub || 0)));
+			await tx
+				.update(patientInvoices)
+				.set({ totalPriceKopecks: recoveredKop })
+				.where(and(eq(patientInvoices.id, existingInvoice.id), eq(patientInvoices.organizationId, organizationId)));
+			existingInvoice.totalPriceKopecks = recoveredKop;
+		}
+
 		const existingItems = await tx
 			.select()
 			.from(invoiceItems)

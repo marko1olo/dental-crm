@@ -197,9 +197,9 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					appointmentEndsAt: appointments.endsAt,
 				})
 				.from(visits)
-				.innerJoin(patients, eq(visits.patientId, patients.id))
-				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-				.leftJoin(users, eq(appointments.doctorUserId, users.id))
+				.innerJoin(patients, and(eq(visits.patientId, patients.id), eq(patients.organizationId, orgId)))
+				.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
+				.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
 				.where(
 					and(
 						eq(visits.organizationId, orgId),
@@ -242,7 +242,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 								doctorSpecialties: users.specialties,
 							})
 							.from(appointments)
-							.leftJoin(users, eq(appointments.doctorUserId, users.id))
+							.leftJoin(users, and(eq(appointments.doctorUserId, users.id), eq(users.organizationId, orgId)))
 							.where(
 								and(
 									eq(appointments.organizationId, orgId),

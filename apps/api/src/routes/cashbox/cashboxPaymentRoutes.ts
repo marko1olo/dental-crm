@@ -11,6 +11,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	cashBoxes,
 	cashExpenseReasons,
@@ -258,15 +259,32 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const rawKey =
-			request.headers["idempotency-key"] ??
-			request.headers["x-idempotency-key"];
-		const headerIdemp = typeof rawKey === "string" ? rawKey : undefined;
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (!idempotencyKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Заголовок Idempotency-Key обязателен для проведения кассового платежа (Мандат 8bo).",
+			});
+		}
+		const baseKey = idempotencyKey.includes("#")
+			? idempotencyKey.split("#")[0]
+			: idempotencyKey;
+		if (!isValidUuid(baseKey || "")) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+
+		reply.header("Idempotency-Key", idempotencyKey);
+		reply.header("X-Idempotency-Key", idempotencyKey);
 
 		const result = await processCashboxPayment(
 			orgId,
 			request.body,
-			headerIdemp,
+			idempotencyKey,
 			request.log,
 		);
 		if (

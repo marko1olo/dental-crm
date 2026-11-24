@@ -85,8 +85,11 @@ async function resolveOptimalPostVisitChannel(
 			if (normalizeWhatsappRecipient(p.phone)) return "whatsapp";
 			if (normalizeRussianMsisdn(p.phone)) return "sms";
 		}
-	} catch {
-		// fallback
+	} catch (err: unknown) {
+		logger.warn(
+			{ err: safeLogError(err), organizationId, patientId },
+			"Failed to resolve optimal post-visit channel, falling back to telegram",
+		);
 	}
 	return "telegram";
 }
@@ -563,21 +566,40 @@ export class TelegramPostOpCarePipeline {
 		}
 
 		// In-Place редактирование сообщения в Telegram
+		let deliveryError = false;
 		if (messageId && botToken && chatId) {
-			await editTelegramMessageText({
-				botToken,
-				chatId,
-				messageId,
-				text: targetScreen.text,
-				replyMarkup: targetScreen.replyMarkup,
-			}).catch(async () => {
-				await sendTelegramTextMessage({
+			try {
+				await editTelegramMessageText({
 					botToken,
 					chatId,
+					messageId,
 					text: targetScreen.text,
 					replyMarkup: targetScreen.replyMarkup,
-				}).catch(() => {});
-			});
+				});
+			} catch (editErr: unknown) {
+				logger.warn(
+					{ err: safeLogError(editErr), chatId, messageId },
+					"[handlePostOpCallback] editTelegramMessageText failed, falling back to sendTelegramTextMessage",
+				);
+				try {
+					await sendTelegramTextMessage({
+						botToken,
+						chatId,
+						text: targetScreen.text,
+						replyMarkup: targetScreen.replyMarkup,
+					});
+				} catch (sendErr: unknown) {
+					deliveryError = true;
+					logger.error(
+						{ err: safeLogError(sendErr), chatId, messageId },
+						"[handlePostOpCallback] Failed to deliver post-op care triage message to Telegram",
+					);
+				}
+			}
+		}
+
+		if (deliveryError) {
+			return { handled: false, deliveryError: true, screen: targetScreen, isEmergency };
 		}
 
 		return { handled: true, screen: targetScreen, isEmergency };

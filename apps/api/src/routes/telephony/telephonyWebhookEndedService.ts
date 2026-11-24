@@ -208,7 +208,12 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 						...(nextDuration !== null ? { durationSeconds: nextDuration } : {}),
 						status: "completed",
 					})
-					.where(eq(communicationEvents.id, existingRow.id));
+					.where(
+						and(
+							eq(communicationEvents.id, existingRow.id),
+							eq(communicationEvents.organizationId, p.resolvedOrgId),
+						),
+					);
 			});
 			return { success: true, duplicate: true, updated: true };
 		}

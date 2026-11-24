@@ -303,14 +303,15 @@ export const TAPER_OPTIONS = [
 /** Быстрые пресеты длин каналов для ввода в 1 клик */
 export const QUICK_LENGTH_PRESETS = [19, 20, 21, 21.5, 22, 22.5, 23, 24] as const;
 
-/** Клинические силеры для постоянной и временной обтурации каналов (Мандаты 8e, 8k) */
+/** Клинические силеры для постоянной и временной обтурации каналов (Мандаты 8e, 8k, 8x, 8ap) */
 export const ENDO_SEALER_OPTIONS = [
-	"AH Plus (Dentsply, эпоксидный)",
-	"BioRoot RCS (Septodont, биокерамика)",
-	"TotalFill BC Sealer (FKG, биокерамика)",
-	"Adseal (Meta Biomed, эпоксидный)",
-	"Sealapex (Kerr, полимерный)",
-	"Metapex / Calasept (Ca(OH)2 временный)",
+	"Эпоксидный полимерный силер",
+	"Биокерамический силер",
+	"Биокерамический силер инжекторный",
+	"Эпоксидный силер двухкомпонентный",
+	"Полимерный силер на основе Ca(OH)2",
+	"Лечебная паста гидроксида кальция Ca(OH)2",
+	"Резорбируемый герметик (молочный прикус)",
 ] as const;
 
 // ─── АНАТОМИЧЕСКАЯ РАБОЧАЯ ДЛИНА ПО FDI ──────────────────────────────────────
@@ -414,7 +415,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 		];
 	}
@@ -437,7 +438,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 					workingLengthMm: 12.0,
 					masterApicalFile: "ISO 25 (#25 красный)",
 					taper: ".02 (Стандартная 2%)",
-					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+					obturationTechnique: "Паста резорбируемая (гидроксид кальция / цинкоксидэвгенол)",
 				},
 				{
 					id: `canal-${toothNumber}-db`,
@@ -446,7 +447,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 					workingLengthMm: 11.5,
 					masterApicalFile: "ISO 20 (#20 жёлтый)",
 					taper: ".02 (Стандартная 2%)",
-					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+					obturationTechnique: "Паста резорбируемая (гидроксид кальция / цинкоксидэвгенол)",
 				},
 				{
 					id: `canal-${toothNumber}-p`,
@@ -455,7 +456,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 					workingLengthMm: 12.5,
 					masterApicalFile: "ISO 25 (#25 красный)",
 					taper: ".04 (Конусность 4%)",
-					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+					obturationTechnique: "Паста резорбируемая (гидроксид кальция / цинкоксидэвгенол)",
 				},
 			];
 		}
@@ -470,7 +471,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 					workingLengthMm: 12.0,
 					masterApicalFile: "ISO 25 (#25 красный)",
 					taper: ".02 (Стандартная 2%)",
-					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+					obturationTechnique: "Паста резорбируемая (гидроксид кальция / цинкоксидэвгенол)",
 				},
 				{
 					id: `canal-${toothNumber}-d`,
@@ -479,7 +480,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 					workingLengthMm: 12.5,
 					masterApicalFile: "ISO 25 (#25 красный)",
 					taper: ".04 (Конусность 4%)",
-					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+					obturationTechnique: "Паста резорбируемая (гидроксид кальция / цинкоксидэвгенол)",
 				},
 			];
 		}
@@ -496,7 +497,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: isCanine ? 14.0 : 12.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".02 (Стандартная 2%)",
-				obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+				obturationTechnique: "Паста резорбируемая (гидроксид кальция / цинкоксидэвгенол)",
 			},
 		];
 	}
@@ -511,7 +512,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-mb2`,
@@ -520,7 +521,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 20.0,
 				masterApicalFile: "ISO 20 (#20 жёлтый)",
 				taper: ".04 (Конусность 4%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-db`,
@@ -529,7 +530,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 20.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-p`,
@@ -538,7 +539,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 22.0,
 				masterApicalFile: "ISO 30 (#30 синий)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 		];
 	}
@@ -553,7 +554,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-db`,
@@ -562,7 +563,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 20.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-p`,
@@ -571,7 +572,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 22.0,
 				masterApicalFile: "ISO 30 (#30 синий)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 		];
 	}
@@ -586,7 +587,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.5,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-ml`,
@@ -595,7 +596,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-d`,
@@ -604,7 +605,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 22.0,
 				masterApicalFile: "ISO 30 (#30 синий)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 		];
 	}
@@ -619,7 +620,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.5,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 			{
 				id: `canal-${toothNumber}-p`,
@@ -628,7 +629,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 21.0,
 				masterApicalFile: "ISO 25 (#25 красный)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 		];
 	}
@@ -643,7 +644,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 22.0,
 				masterApicalFile: "ISO 30 (#30 синий)",
 				taper: ".06 (Конусность 6%)",
-				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 			},
 		];
 	}
@@ -662,7 +663,7 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				? "ISO 35 (#35 зелёный)"
 				: "ISO 30 (#30 синий)",
 			taper: ".06 (Конусность 6%)",
-			obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+			obturationTechnique: "Гуттаперча + эпоксидный полимерный силер",
 		},
 	];
 }
@@ -693,7 +694,7 @@ export const TOOTH_CANAL_ANATOMY_MAP: Readonly<Record<number, ToothCanalConfig>>
 	13: { fdiNumber: 13, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Клык верхней челюсти справа (1 мощный длинный корень, 1 широкий канал)" },
 	14: { fdiNumber: 14, defaultCanals: 2, isPrimary: false, isMultiRooted: true, commonVariations: ["standard"], descriptionRu: "Первый премоляр верхней челюсти справа (2 корня/канала: щечный и небный в 85-90%)" },
 	15: { fdiNumber: 15, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Второй премоляр верхней челюсти справа (преимущественно 1 корень и 1 канал)" },
-	16: { fdiNumber: 16, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти справа (3 корня, 3-4 канала: МБ1, МБ2 в 65-80%, ДБ, Н)" },
+	16: { fdiNumber: 16, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти справа (3 корня, 3-4 канала по Wheeler/Hess: МБ1, МБ2 в 70-90%, ДБ, Н)" },
 	17: { fdiNumber: 17, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Второй моляр верхней челюсти справа (3 корня, 3-4 канала: МБ1, МБ2, ДБ, Н)" },
 	18: { fdiNumber: 18, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["c_shaped"], descriptionRu: "Третий моляр верхней челюсти справа (вариативная анатомия, стандартно 3 канала)" },
 
@@ -703,7 +704,7 @@ export const TOOTH_CANAL_ANATOMY_MAP: Readonly<Record<number, ToothCanalConfig>>
 	23: { fdiNumber: 23, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Клык верхней челюсти слева (1 длинный корень, 1 канал)" },
 	24: { fdiNumber: 24, defaultCanals: 2, isPrimary: false, isMultiRooted: true, commonVariations: ["standard"], descriptionRu: "Первый премоляр верхней челюсти слева (2 корня/канала: щечный и небный)" },
 	25: { fdiNumber: 25, defaultCanals: 1, isPrimary: false, isMultiRooted: false, commonVariations: ["standard"], descriptionRu: "Второй премоляр верхней челюсти слева (1 корень, 1 канал)" },
-	26: { fdiNumber: 26, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти слева (3 корня, 3-4 канала: МБ1, МБ2, ДБ, Н)" },
+	26: { fdiNumber: 26, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Первый моляр верхней челюсти слева (3 корня, 3-4 канала по Wheeler/Hess: МБ1, МБ2 в 70-90%, ДБ, Н)" },
 	27: { fdiNumber: 27, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["MB2"], descriptionRu: "Второй моляр верхней челюсти слева (3 корня, 3-4 канала: МБ1, МБ2, ДБ, Н)" },
 	28: { fdiNumber: 28, defaultCanals: 3, isPrimary: false, isMultiRooted: true, commonVariations: ["c_shaped"], descriptionRu: "Третий моляр верхней челюсти слева (вариативная анатомия, стандартно 3 канала)" },
 
@@ -784,6 +785,7 @@ export function getAnatomicalRootCanalCount(
 		return 1;
 	}
 	if (pos === 5) return 1;
+	// Моляры постоянного прикуса по умолчанию имеют 3 канала (с возможной вариацией MB2 до 4 каналов)
 	if (pos >= 6) return 3;
 	return 1;
 }

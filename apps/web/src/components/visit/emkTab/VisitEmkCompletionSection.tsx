@@ -139,7 +139,7 @@ export function VisitEmkCompletionSection({
 				</div>
 			)}
 
-			{/* Нижний командный бар: Сохранение и Завершение (Мандаты 8e, 8n) */}
+			{/* Нижний командный бар: Сохранение и Завершение (Мандаты 8e, 8n, 8am) */}
 			<div className="mt-4 pt-3 border-t border-[var(--line)] flex flex-wrap items-center justify-end gap-2.5">
 				{isSignedVisit &&
 					(isRevisingVisitNote ? (
@@ -150,7 +150,7 @@ export function VisitEmkCompletionSection({
 							<button
 								type="button"
 								onClick={() => setIsRevisingVisitNote(false)}
-								className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-all cursor-pointer"
+								className="h-8 px-2.5 rounded-md text-xs font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-all cursor-pointer inline-flex items-center justify-center shrink-0"
 								data-testid="btn-cancel-revision"
 							>
 								Отмена
@@ -160,13 +160,13 @@ export function VisitEmkCompletionSection({
 								onClick={handleSaveVisitNote}
 								disabled={false}
 								aria-busy={isDraftAccepting}
-								className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--warning)] hover:opacity-90 text-white border border-[var(--warning)]/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+								className="h-8 px-2.5 rounded-md text-xs font-medium bg-[var(--warning)] hover:opacity-90 text-white border border-[var(--warning)]/30 transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-xs shrink-0"
 								data-testid="btn-save-revision-note"
 							>
 								{isDraftAccepting ? (
-									<Loader2 size={15} className="shrink-0 animate-spin" />
+									<Loader2 size={14} className="shrink-0 animate-spin" />
 								) : (
-									<FileCheck size={15} />
+									<FileCheck size={14} className="shrink-0" />
 								)}
 								<span>Сохранить («Исправленному верить»)</span>
 							</button>
@@ -175,10 +175,10 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => setIsRevisingVisitNote(true)}
-							className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--warning)]/10 hover:bg-[var(--warning)]/20 text-[var(--ink)] border border-[var(--warning)]/30 transition-all cursor-pointer flex items-center gap-1.5"
+							className="h-8 px-2.5 rounded-md text-xs font-medium bg-[var(--warning)]/10 hover:bg-[var(--warning)]/20 text-[var(--ink)] border border-[var(--warning)]/30 transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0"
 							data-testid="btn-begin-revision-note"
 						>
-							<FileCheck size={15} />
+							<FileCheck size={14} className="shrink-0" />
 							<span>Внести исправление («Исправленному верить»)</span>
 						</button>
 					))}
@@ -188,7 +188,7 @@ export function VisitEmkCompletionSection({
 					onClick={handleSaveVisitNote}
 					disabled={false}
 					aria-busy={isDraftAccepting}
-					className="secondary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+					className="secondary-button h-9 px-3.5 rounded-lg text-sm font-medium border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer inline-flex items-center justify-center gap-2 shadow-2xs shrink-0"
 					data-testid="btn-save-visit-note"
 				>
 					{isDraftAccepting ? (
@@ -204,7 +204,7 @@ export function VisitEmkCompletionSection({
 					onClick={handleCompleteVisitAndGenerateReceipt}
 					disabled={isCompletingVisit}
 					aria-busy={isCompletingVisit}
-					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+					className="primary-button h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--primary)] hover:opacity-90 text-white transition-all cursor-pointer inline-flex items-center justify-center gap-2 shadow-sm shrink-0"
 					data-testid="btn-complete-visit-emk"
 				>
 					{isCompletingVisit ? (
@@ -219,7 +219,7 @@ export function VisitEmkCompletionSection({
 					<button
 						type="button"
 						onClick={() => setIsSbpQrModalOpen(true)}
-						className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success)]/40 hover:bg-[var(--success-soft)] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+						className="h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success)]/40 hover:bg-[var(--success-soft)] transition-all cursor-pointer inline-flex items-center justify-center gap-2 shadow-xs shrink-0"
 						data-testid="btn-reopen-sbp-qr"
 						title="Показать чек и QR-код СБП для оплаты"
 					>
@@ -245,7 +245,7 @@ export function VisitEmkCompletionSection({
 									window.dispatchEvent(new CustomEvent("dente:navigate-to-finance"));
 								}
 							}}
-							className="mobile-bottom-cta-primary min-h-[48px] h-12"
+							className="mobile-bottom-cta-primary min-h-[44px] h-11 px-4 rounded-xl text-base font-medium"
 							data-testid="btn-mobile-goto-cashbox"
 						>
 							<span>Перейти в кассу (Счёт №{completionResult.receiptNumber || completionResult.invoiceId})</span>
@@ -287,7 +287,7 @@ export function VisitEmkCompletionSection({
 							<button
 								type="button"
 								onClick={() => setActiveEmkTab("objectiveStatus")}
-								className="mobile-bottom-cta-next min-h-[48px] h-12"
+								className="mobile-bottom-cta-next min-h-[44px] h-11 px-4 rounded-xl text-base font-medium"
 								data-testid="btn-mobile-next-step"
 							>
 								<span>Далее: Осмотр и статус</span>
@@ -301,7 +301,7 @@ export function VisitEmkCompletionSection({
 							<button
 								type="button"
 								onClick={() => setActiveEmkTab("diagnosis")}
-								className="mobile-bottom-cta-next min-h-[48px] h-12"
+								className="mobile-bottom-cta-next min-h-[44px] h-11 px-4 rounded-xl text-base font-medium"
 								data-testid="btn-mobile-next-step"
 							>
 								<span>Далее: Диагноз (МКБ-10)</span>
@@ -313,7 +313,7 @@ export function VisitEmkCompletionSection({
 							<button
 								type="button"
 								onClick={() => setActiveEmkTab("treatmentPlan")}
-								className="mobile-bottom-cta-next min-h-[48px] h-12"
+								className="mobile-bottom-cta-next min-h-[44px] h-11 px-4 rounded-xl text-base font-medium"
 								data-testid="btn-mobile-next-step"
 							>
 								<span>Далее: Лечение и протокол</span>
@@ -330,7 +330,7 @@ export function VisitEmkCompletionSection({
 								onClick={handleCompleteVisitAndGenerateReceipt}
 								disabled={isCompletingVisit}
 								aria-busy={isCompletingVisit}
-								className="mobile-bottom-cta-primary min-h-[48px] h-12"
+								className="mobile-bottom-cta-primary min-h-[44px] h-11 px-4 rounded-xl text-base font-medium"
 								data-testid="btn-mobile-primary-complete"
 							>
 								{isCompletingVisit ? (

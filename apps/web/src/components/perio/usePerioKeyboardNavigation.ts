@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/perio/usePerioKeyboardNavigation.ts
  *
- * Клинический хук клавиатурной навигации и быстрого зондирования пародонта (Florida Probe):
+ * Клинический хук клавиатурной навигации и быстрого зондирования пародонта (канонический анатомический обход):
  * - Клавиши 1..9, 10..15 мм (двузначный таймер ввода)
  * - Пробел: переключение кровоточивости (BOP)
  * - Tab / Shift+Tab: обход поверхностей зуба (DB, B, MB, DL, L, ML)
@@ -55,7 +55,7 @@ export function usePerioKeyboardNavigation({
 			return { ...t, [selectedSiteKey]: { ...site, probingDepthMm: depth, calMm: calculateClinicalAttachmentLevel(depth, site.gingivalMarginMm || 0) } };
 		}));
 
-		// Анатомический обход дуги Florida Probe: непрерывный проход по всей челюсти
+		// Канонический непрерывный анатомический обход зубной дуги: непрерывный проход по всей челюсти
 		if (probingSequence.length > 0) {
 			const currIdx = probingSequence.findIndex((s) => s.toothNumber === selectedToothNum && s.siteKey === selectedSiteKey);
 			if (currIdx >= 0 && currIdx < probingSequence.length - 1) {

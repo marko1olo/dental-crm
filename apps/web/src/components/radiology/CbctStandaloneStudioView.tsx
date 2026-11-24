@@ -1,9 +1,9 @@
 import React from "react";
 import { CbctMprImplantStudioModal } from "./CbctMprImplantStudioModal";
-import type { CbctStandaloneStudioViewProps } from "./standaloneStudio/types";
+import type { CbctStandaloneStudioViewProps, StudioMode } from "./mpr/cbctStudioTypes";
 import type { ImagingStudy } from "../imaging/types";
 
-export * from "./standaloneStudio/types";
+export type { CbctStandaloneStudioViewProps, StudioMode };
 
 export const CbctStandaloneStudioView: React.FC<CbctStandaloneStudioViewProps> = (props) => {
 	const initialStudy: ImagingStudy | undefined = props.studyId

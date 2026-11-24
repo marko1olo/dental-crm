@@ -1,16 +1,16 @@
 import { showToast } from "../../GlobalToast.js";
 import type {
-	OneClickPackageWriteOffOptions,
-	OneClickPackageWriteOffResult,
+	PackageWriteOffOptions,
+	PackageWriteOffResult,
 } from "./packageWriteoffTypes.js";
 import { CLINICAL_WRITEOFF_PACKAGES } from "./packageWriteoffPresets.js";
 import { calculatePackageDeductions } from "./packageWriteoffDeductionCalculator.js";
 
 let packageWriteOffActSeq = 0;
 
-export async function handleOneClickPackageWriteOff(
-	options: OneClickPackageWriteOffOptions,
-): Promise<OneClickPackageWriteOffResult> {
+export async function handlePackageWriteOff(
+	options: PackageWriteOffOptions,
+): Promise<PackageWriteOffResult> {
 	const pkg =
 		CLINICAL_WRITEOFF_PACKAGES.find((p) => p.id === options.packageId) ??
 		CLINICAL_WRITEOFF_PACKAGES[0]!;
@@ -73,3 +73,6 @@ export async function handleOneClickPackageWriteOff(
 		toastMessage, toastType,
 	};
 }
+
+/** @deprecated Имя содержит сленг «OneClick». Используйте канонический handlePackageWriteOff */
+export const handleOneClickPackageWriteOff = handlePackageWriteOff;

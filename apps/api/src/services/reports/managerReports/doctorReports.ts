@@ -45,7 +45,7 @@ export async function doctorPerformance(
 	scope: ReportScope,
 ): Promise<DoctorPerformanceReport> {
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
+	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
 	// Устранение декартова произведения при сплит-чеках и множественных позициях счетов:
 	// первичная агрегация оплат по визиту в изолированном подзапросе
 	const visitPaymentsSubquery = db
@@ -58,6 +58,7 @@ export async function doctorPerformance(
 			patientInvoices,
 			and(
 				eq(payments.documentId, patientInvoices.id),
+				eq(patientInvoices.organizationId, scope.organizationId),
 				sql`${payments.visitId} is null`,
 			),
 		)
@@ -67,7 +68,7 @@ export async function doctorPerformance(
 				inArray(payments.status, ["paid", "refunded"]),
 				gte(paymentTimestamp, scope.from),
 				lte(paymentTimestamp, scope.to),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.groupBy(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`)
@@ -79,8 +80,8 @@ export async function doctorPerformance(
 			revenueKopecks: sql<string>`coalesce(sum(${visitPaymentsSubquery.revenueKopecks}), 0)::bigint`,
 		})
 		.from(visitPaymentsSubquery)
-		.leftJoin(visits, eq(visitPaymentsSubquery.visitId, visits.id))
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.leftJoin(visits, and(eq(visitPaymentsSubquery.visitId, visits.id), eq(visits.organizationId, scope.organizationId)))
+		.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, scope.organizationId)))
 		.groupBy(appointments.doctorUserId);
 
 	const appointmentRows = await db

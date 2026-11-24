@@ -115,7 +115,7 @@ function rowToExpenseRecord(row: typeof cashOperations.$inferSelect): ExpenseRec
 		organizationId: row.organizationId,
 		clinicId: meta.clinicId ?? null,
 		category,
-		amountKopecks: rublesToKopecks(row.amountRub),
+		amountKopecks: row.amountKopecks != null ? Number(row.amountKopecks) : rublesToKopecks(row.amountRub),
 		expenseDate: dateStr,
 		description: row.reasonText,
 		vendorName: meta.vendorName ?? null,
@@ -274,8 +274,11 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 					cashBoxId: targetBox.id,
 					operationType: "expense",
 					amountRub,
+					amountKopecks: expenseKop,
 					balanceBeforeRub: balanceBefore,
+					balanceBeforeKopecks: BigInt(balanceBeforeKop),
 					balanceAfterRub: balanceAfter,
+					balanceAfterKopecks: BigInt(balanceAfterKop),
 					reasonId: reason?.id ?? null,
 					reasonCode: reason?.code ?? reasonCode,
 					reasonText: data.description ?? reason?.name ?? data.category,
@@ -418,7 +421,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				.limit(1);
 
 			if (box) {
-				const refundKop = rubToKopecks(op.amountRub);
+				const refundKop = op.amountKopecks != null ? Number(op.amountKopecks) : rubToKopecks(op.amountRub);
 				const restoredKop = (box.balanceKopecks ?? rubToKopecks(box.balanceRub)) + refundKop;
 				const restoredBalance = kopecksToRub(restoredKop);
 				await tx

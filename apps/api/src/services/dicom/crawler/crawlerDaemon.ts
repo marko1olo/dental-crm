@@ -38,6 +38,7 @@ import {
 	processArchiveCandidate as processArchive,
 	processFolderCandidate as processFolder,
 } from "./ingestPipeline.js";
+import { dicomIngestLogger } from "../ingest/dicomIngestLogger.js";
 
 export class DicomCrawlerDaemon extends EventEmitter {
 	private config: DicomCrawlerDaemonConfig;
@@ -266,8 +267,10 @@ export class DicomCrawlerDaemon extends EventEmitter {
 			} else if (st.isDirectory()) {
 				await this.processFolderCandidate(targetPath, orgId);
 			}
-		} catch {
-			// игнорируем временные сбои доступа
+		} catch (err) {
+			const errMsg = `DICOM Crawler failed to process candidate ${targetPath}: ${String(err)}`;
+			this.errors.push(errMsg);
+			dicomIngestLogger.error("DICOM Crawler failed to process candidate", err, { targetPath });
 		}
 	}
 

@@ -9,6 +9,7 @@ import {
 	type WarehouseInventoryAuditDocument,
 	type WarehouseInventoryCommissionMember,
 	type WarehouseInventoryStatus,
+	type WarehouseAuditWriteoffAct,
 	type WarehouseTorg16WriteoffAct,
 	calculateInventoryAuditTotals,
 	computeAuditLineItem,
@@ -26,6 +27,7 @@ export interface UseWarehouseAuditStateProps {
 	readonly initialDocument?: WarehouseInventoryAuditDocument | undefined;
 	readonly onDocumentSaved?: ((doc: WarehouseInventoryAuditDocument) => void) | undefined;
 	readonly onApplyAudit?: ((doc: WarehouseInventoryAuditDocument) => void | Promise<void>) | undefined;
+	readonly onAuditWriteoffGenerated?: ((act: WarehouseAuditWriteoffAct) => void) | undefined;
 	readonly onTorg16Generated?: ((act: WarehouseTorg16WriteoffAct) => void) | undefined;
 }
 
@@ -34,6 +36,7 @@ export function useWarehouseAuditState({
 	initialDocument,
 	onDocumentSaved,
 	onApplyAudit,
+	onAuditWriteoffGenerated,
 	onTorg16Generated,
 }: UseWarehouseAuditStateProps) {
 	const [docNumber, setDocNumber] = useState<string>(
@@ -101,9 +104,10 @@ export function useWarehouseAuditState({
 	]);
 
 	const {
-		handlePrintDocument, handleExportCsv, handleExportInv19Csv, handleExport1C, handleCreateTorg16, handleSave, handleApply,
+		handlePrintDocument, handleExportCsv, handleExportDiscrepanciesCsv, handleExportInv19Csv, handleExport1C,
+		handleCreateAuditWriteoffAct, handleCreateTorg16, handleSave, handleApply,
 	} = useWarehouseAuditExportHandlers({
-		currentDocument, onDocumentSaved, onApplyAudit, onTorg16Generated, setStatus, showToast,
+		currentDocument, onDocumentSaved, onApplyAudit, onAuditWriteoffGenerated, onTorg16Generated, setStatus, showToast,
 	});
 
 	return {
@@ -111,6 +115,7 @@ export function useWarehouseAuditState({
 		items, searchQuery, setSearchQuery, filterTab, setFilterTab, categoryFilter, setCategoryFilter,
 		sortOrder, setSortOrder, toastMessage, totals, categoryCounts, currentDocument, filteredItems,
 		handleQuantityChange, handleAutofillFactByBook, handlePrintDocument, handleExportCsv,
-		handleExportInv19Csv, handleExport1C, handleCreateTorg16, handleSave, handleApply,
+		handleExportDiscrepanciesCsv, handleExportInv19Csv, handleExport1C, handleCreateAuditWriteoffAct,
+		handleCreateTorg16, handleSave, handleApply,
 	};
 }

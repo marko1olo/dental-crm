@@ -13,6 +13,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	cashOperations,
@@ -227,12 +228,27 @@ export async function calculateDoctorProfitability(
 			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
 		})
 		.from(payments)
-		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
+		.leftJoin(
+			patientInvoices,
+			and(
+				eq(payments.documentId, patientInvoices.id),
+				eq(patientInvoices.organizationId, orgId),
+			),
+		)
 		.leftJoin(
 			visits,
-			eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+			and(
+				eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
+				eq(visits.organizationId, orgId),
+			),
 		)
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.leftJoin(
+			appointments,
+			and(
+				eq(visits.appointmentId, appointments.id),
+				eq(appointments.organizationId, orgId),
+			),
+		)
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
@@ -276,8 +292,8 @@ export async function calculateDoctorProfitability(
 			servicesCount: sql<number>`count(*)::int`,
 		})
 		.from(treatmentItems)
-		.innerJoin(visits, eq(treatmentItems.visitId, visits.id))
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.innerJoin(visits, and(eq(treatmentItems.visitId, visits.id), eq(visits.organizationId, orgId)))
+		.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
 		.where(withDateFilter(orgId, treatmentItems.organizationId, visits.createdAt, startDate))
 		.groupBy(sql`coalesce(${treatmentItems.plannedDoctorUserId}, ${appointments.doctorUserId})`);
 	const docServicesMap = new Map(
@@ -380,8 +396,8 @@ export async function calculateDoctorProfitability(
 			materialsCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)`,
 		})
 		.from(inventoryTransactions)
-		.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.innerJoin(visits, and(eq(inventoryTransactions.visitId, visits.id), eq(visits.organizationId, orgId)))
+		.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
 		.where(
 			and(
 				eq(inventoryTransactions.organizationId, orgId),
@@ -617,81 +633,85 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 			}
 
-			const chairData = await calculateChairUtilization(orgId, startDate, now);
-			const doctorProfitability = await calculateDoctorProfitability(orgId, startDate);
+			const data = await withTenantCtx(orgId, async () => {
+				const chairData = await calculateChairUtilization(orgId, startDate, now);
+				const doctorProfitability = await calculateDoctorProfitability(orgId, startDate);
 
-			// [ANL-04] Честный график и себестоимость кресел без хардкода (Мандаты 8n, 8wy)
-			const [orgRow] = await db
-				.select({ clinicSchedule: organizations.clinicSchedule })
-				.from(organizations)
-				.where(eq(organizations.id, orgId));
-			const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule);
+				// [ANL-04] Честный график и себестоимость кресел без хардкода (Мандаты 8n, 8wy)
+				const [orgRow] = await db
+					.select({ clinicSchedule: organizations.clinicSchedule })
+					.from(organizations)
+					.where(eq(organizations.id, orgId));
+				const clinicScheduleSpec = resolveClinicScheduleWorkHours(orgRow?.clinicSchedule);
 
-			const hoursPerDay = Math.max(
-				4,
-				Math.min(
-					24,
-					Math.round(
-						(clinicScheduleSpec.workdayEndMinutes - clinicScheduleSpec.workdayStartMinutes) / 60,
-					) || 8,
-				),
-			);
-			const daysPerWeek = Math.max(1, Math.min(7, clinicScheduleSpec.workingDays.size || 5));
-			const workingDaysPerMonth = Math.min(31, Math.max(1, Math.round((daysPerWeek * 52) / 12)));
-			const activeChairsCount = Math.max(1, chairData.chairUtilizationJson.length);
-
-			// [ANL-04] Чтение фактических расходов клиники по строгим реляционным категориям (PostgreSQL 18 SSOT):
-			// 1) metadata->>'category' (rent, utilities, salaries, marketing, etc.)
-			// 2) reasonCode регламентированного справочника (100: аренда, 1: ФОТ, 10/7: коммуналка/связь, 6: маркетинг, 4: санпин)
-			const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, 0)::bigint`;
-			const [actualExpenses] = await db
-				.select({
-					rentKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'rent' or ${cashOperations.reasonCode} = 100 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
-					utilitiesKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'utilities' or ${cashOperations.reasonCode} in (7, 10) then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
-					payrollKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('salaries', 'payroll') or ${cashOperations.reasonCode} = 1 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
-					depreciationKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('equipment_lease', 'depreciation') then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
-					sanpinKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('sanpin', 'sterilization') or ${cashOperations.reasonCode} = 4 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
-					marketingKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'marketing' or ${cashOperations.reasonCode} = 6 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
-				})
-				.from(cashOperations)
-				.where(
-					and(
-						eq(cashOperations.organizationId, orgId),
-						eq(cashOperations.operationType, "expense"),
-						startDate ? gte(cashOperations.createdAt, startDate) : gte(cashOperations.createdAt, new Date(now.getFullYear(), now.getMonth(), 1)),
+				const hoursPerDay = Math.max(
+					4,
+					Math.min(
+						24,
+						Math.round(
+							(clinicScheduleSpec.workdayEndMinutes - clinicScheduleSpec.workdayStartMinutes) / 60,
+						) || 8,
 					),
 				);
+				const daysPerWeek = Math.max(1, Math.min(7, clinicScheduleSpec.workingDays.size || 5));
+				const workingDaysPerMonth = Math.min(31, Math.max(1, Math.round((daysPerWeek * 52) / 12)));
+				const activeChairsCount = Math.max(1, chairData.chairUtilizationJson.length);
 
-			const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : kopecksToRubles(Number(actualExpenses?.rentKopecks || 0));
-			const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : kopecksToRubles(Number(actualExpenses?.utilitiesKopecks || 0));
-			const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : kopecksToRubles(Number(actualExpenses?.payrollKopecks || 0));
-			const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : kopecksToRubles(Number(actualExpenses?.depreciationKopecks || 0));
-			const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : kopecksToRubles(Number(actualExpenses?.sanpinKopecks || 0));
-			const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : kopecksToRubles(Number(actualExpenses?.marketingKopecks || 0));
+				// [ANL-04] Чтение фактических расходов клиники по строгим реляционным категориям (PostgreSQL 18 SSOT):
+				// 1) metadata->>'category' (rent, utilities, salaries, marketing, etc.)
+				// 2) reasonCode регламентированного справочника (100: аренда, 1: ФОТ, 10/7: коммуналка/связь, 6: маркетинг, 4: санпин)
+				const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, round(coalesce(${cashOperations.amountRub}, 0) * 100)::bigint, 0)::bigint`;
+				const [actualExpenses] = await db
+					.select({
+						rentKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'rent' or ${cashOperations.reasonCode} = 100 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+						utilitiesKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'utilities' or ${cashOperations.reasonCode} in (7, 10) then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+						payrollKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('salaries', 'payroll') or ${cashOperations.reasonCode} = 1 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+						depreciationKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('equipment_lease', 'depreciation') then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+						sanpinKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('sanpin', 'sterilization') or ${cashOperations.reasonCode} = 4 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+						marketingKopecks: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'marketing' or ${cashOperations.reasonCode} = 6 then ${cashOperationKopExpr} else 0 end), 0)::bigint`,
+					})
+					.from(cashOperations)
+					.where(
+						and(
+							eq(cashOperations.organizationId, orgId),
+							eq(cashOperations.operationType, "expense"),
+							startDate ? gte(cashOperations.createdAt, startDate) : gte(cashOperations.createdAt, new Date(now.getFullYear(), now.getMonth(), 1)),
+						),
+					);
 
-			const hourlyEconomics = calculateChairHourlyCost({
-				activeChairsCount,
-				workingDaysPerMonth,
-				workingHoursPerDay: hoursPerDay,
-				chairUtilizationRate: Math.max(0, (chairData.chairOccupancyRate || 0) / 100),
-				monthlyRentRub: rentRub,
-				monthlyUtilitiesRub: utilitiesRub,
-				monthlyAdministrativePayrollRub: payrollRub,
-				monthlyEquipmentDepreciationRub: depreciationRub,
-				monthlySanpinSterilizationRub: sanpinRub,
-				monthlyMarketingAndOtherRub: marketingRub,
-			});
+				const rentRub = query.monthlyRentRub !== undefined ? Math.max(0, Number(query.monthlyRentRub)) : kopecksToRubles(Number(actualExpenses?.rentKopecks || 0));
+				const utilitiesRub = query.monthlyUtilitiesRub !== undefined ? Math.max(0, Number(query.monthlyUtilitiesRub)) : kopecksToRubles(Number(actualExpenses?.utilitiesKopecks || 0));
+				const payrollRub = query.monthlyAdministrativePayrollRub !== undefined ? Math.max(0, Number(query.monthlyAdministrativePayrollRub)) : kopecksToRubles(Number(actualExpenses?.payrollKopecks || 0));
+				const depreciationRub = query.monthlyEquipmentDepreciationRub !== undefined ? Math.max(0, Number(query.monthlyEquipmentDepreciationRub)) : kopecksToRubles(Number(actualExpenses?.depreciationKopecks || 0));
+				const sanpinRub = query.monthlySanpinSterilizationRub !== undefined ? Math.max(0, Number(query.monthlySanpinSterilizationRub)) : kopecksToRubles(Number(actualExpenses?.sanpinKopecks || 0));
+				const marketingRub = query.monthlyMarketingAndOtherRub !== undefined ? Math.max(0, Number(query.monthlyMarketingAndOtherRub)) : kopecksToRubles(Number(actualExpenses?.marketingKopecks || 0));
 
-			return {
-				success: true,
-				data: {
+				const hourlyEconomics = calculateChairHourlyCost({
+					activeChairsCount,
+					workingDaysPerMonth,
+					workingHoursPerDay: hoursPerDay,
+					chairUtilizationRate: Math.max(0, (chairData.chairOccupancyRate || 0) / 100),
+					monthlyRentRub: rentRub,
+					monthlyUtilitiesRub: utilitiesRub,
+					monthlyAdministrativePayrollRub: payrollRub,
+					monthlyEquipmentDepreciationRub: depreciationRub,
+					monthlySanpinSterilizationRub: sanpinRub,
+					monthlyMarketingAndOtherRub: marketingRub,
+				});
+
+				return {
 					chairUtilizationJson: chairData.chairUtilizationJson,
 					chairOccupancyRatePercent: chairData.chairOccupancyRate,
 					doctorProfitabilityJson: doctorProfitability,
 					chairHourlyCostRub: hourlyEconomics.hourlyCostRealOccupiedRub,
 					chairHourlyNominalCostRub: hourlyEconomics.hourlyCostNominalRub,
 					chairHourlyCostKopecks: hourlyEconomics.hourlyCostRealOccupiedKopecks,
-				},
+				};
+			});
+
+			return {
+				success: true,
+				data,
 			};
 		} catch (e) {
 			request.log.error({ err: e }, "Не удалось рассчитать загрузку кресел");

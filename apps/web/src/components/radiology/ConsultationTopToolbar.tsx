@@ -90,10 +90,10 @@ export const ConsultationTopToolbar: React.FC<ConsultationTopToolbarProps> = ({
 		>
 			{/* Left: Brand Badge, Mode Switcher, Telemetry & Active Viewport Switcher */}
 			<div className="flex items-center gap-2">
-				<span className="px-2 py-0.5 rounded font-black text-[11px] bg-[#00C853] text-[#022c15] uppercase tracking-wider flex items-center gap-1 shrink-0">
+				<span className="px-2 py-0.5 rounded font-bold text-[11px] bg-[#00C853] text-[#022c15] flex items-center gap-1 shrink-0">
 					<SplitSquareHorizontal size={13} />
 					<span>
-						{isAtlasMode ? "КОНСУЛЬТАЦИЯ · АТЛАС" : "КЛИНИЧЕСКИЙ СПЛИТ «ДО / ПОСЛЕ»"}
+						{isAtlasMode ? "Консультация · Атлас" : "Клинический сплит «До / После»"}
 					</span>
 				</span>
 

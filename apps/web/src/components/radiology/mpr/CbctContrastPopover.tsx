@@ -90,7 +90,7 @@ export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
 
 			{/* Клинические базовые пресеты */}
 			<div className="flex flex-col gap-1">
-				<span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+				<span className="text-[10px] font-semibold text-zinc-400">
 					Клинические пресеты
 				</span>
 				<div className="grid grid-cols-2 gap-1">
@@ -132,7 +132,7 @@ export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
 			{/* Толщина среза (MPR / Slab) */}
 			{onChangeSlabThicknessMm && (
 				<div className="flex flex-col gap-1">
-					<div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+					<div className="flex justify-between items-center text-[10px] font-semibold text-zinc-400">
 						<span>Толщина среза (MPR / Slab)</span>
 						<span className="font-mono text-cyan-300">
 							{slabThicknessMm} мм
@@ -165,7 +165,7 @@ export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
 			{/* Слой ОПТГ панорамы */}
 			{onChangePanoThicknessMm && (
 				<div className="flex flex-col gap-1">
-					<div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+					<div className="flex justify-between items-center text-[10px] font-semibold text-zinc-400">
 						<span>Слой ОПТГ (Focal Trough)</span>
 						<span className="font-mono text-purple-300">
 							{(panoThicknessMm ?? 1.0).toFixed(1)} мм
@@ -193,7 +193,7 @@ export const CbctContrastPopover: React.FC<CbctContrastPopoverProps> = ({
 			{/* Режим рендеринга среза */}
 			{onChangeSlabMode && (
 				<div className="flex flex-col gap-1">
-					<span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+					<span className="text-[10px] font-semibold text-zinc-400">
 						Режим рендеринга среза
 					</span>
 					<div className="grid grid-cols-3 gap-1">

@@ -1,9 +1,9 @@
 import React from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import type { OneClickPackageWriteOffResult } from "./warehousePackageWriteOffEngine.js";
+import type { PackageWriteOffResult } from "./warehousePackageWriteOffEngine.js";
 
 export interface WarehousePackageResultAlertProps {
-	readonly lastResult: OneClickPackageWriteOffResult | null;
+	readonly lastResult: PackageWriteOffResult | null;
 	readonly compact?: boolean | undefined;
 }
 

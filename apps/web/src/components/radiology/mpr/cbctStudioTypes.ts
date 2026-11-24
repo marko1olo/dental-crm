@@ -139,6 +139,16 @@ export interface CbctMprImplantStudioModalProps {
 	readonly initialNervePoints?: readonly Point3D[] | undefined;
 }
 
+export interface CbctStandaloneStudioViewProps {
+	readonly studyId?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly initialMode?: StudioMode | undefined;
+	readonly initialStudioMode?: StudioMode | undefined;
+	readonly autoLoadDemo?: boolean | undefined;
+	readonly onClose?: (() => void) | undefined;
+}
+
 export function getDefaultViewportTransforms(): Record<CbctViewportType, ViewportTransform> {
 	return {
 		axial: { ...DEFAULT_VIEWPORT_TRANSFORM },

@@ -15,7 +15,7 @@ describe("8. Prophy Protocol & PSR Screening Invariants (Mandates 8e, 8k)", () =
 	it("pro_hygiene_express generates clinical hygiene protocol", () => {
 		const prophyDiary = generatePsrDiaryProtocol("pro_hygiene_express");
 		assert.ok(prophyDiary.includes("Профгигиена полости рта: УЗ-скейлинг"));
-		assert.ok(prophyDiary.includes("Air-Flow порошком на основе глицина"));
+		assert.ok(prophyDiary.includes("воздушно-абразивная обработка порошком на основе глицина"));
 		assert.ok(prophyDiary.includes("полировка абразивной пастой"));
 		assert.ok(prophyDiary.includes("глубокое фторирование эмали"));
 	});

@@ -247,7 +247,7 @@ const HardwareStudioStandaloneView = React.lazy(() =>
 	})),
 );
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
-import type { StudioMode } from "./components/radiology/standaloneStudio/types";
+import type { StudioMode } from "./components/radiology/mpr/cbctStudioTypes";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —

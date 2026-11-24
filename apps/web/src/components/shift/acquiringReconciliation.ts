@@ -3,7 +3,11 @@
  * Canonical implementation consolidated in shift domain.
  */
 
-import { kopecksToRub } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRub, rublesToKopecks } from "@dental/shared";
+
+export function formatRubles(rub: number): string {
+	return kopecksToNumericString(rublesToKopecks(rub));
+}
 
 export interface AcquiringTerminalTransaction {
 	readonly id: string;
@@ -114,7 +118,7 @@ export function reconcileAcquiringWithKkt(
 				diffKopecks: diffKop,
 				explanationRu: isAmountSame
 					? "Сумма по терминалу и кассовый чек совпадают копейка в копейку"
-					: `Расхождение суммы: терминал ${t.amountRub.toFixed(2)} ₽, касса ${match.electronicAmountRub.toFixed(2)} ₽`,
+					: `Расхождение суммы: терминал ${formatRubles(t.amountRub)} ₽, касса ${formatRubles(match.electronicAmountRub)} ₽`,
 				suggestedActionRu: isAmountSame
 					? "Действий не требуется. Сверка успешна."
 					: "Проверить частичную оплату или провести чек коррекции на разницу.",
@@ -200,7 +204,7 @@ export function reconcileAcquiringWithKkt(
 
 	const summaryTitleRu = isExactMatch
 		? "Сверка сошлась на 100% (Расхождений 0.00 ₽ — точно в копейку)"
-		: `Обнаружены расхождения: терминал ${kopecksToRub(totalTerminalKop).toFixed(2)} ₽ vs касса ${kopecksToRub(totalKktKop).toFixed(2)} ₽ (разница ${(kopecksToRub(Math.abs(totalDiffKop))).toFixed(2)} ₽)`;
+		: `Обнаружены расхождения: терминал ${formatRubles(kopecksToRub(totalTerminalKop))} ₽ vs касса ${formatRubles(kopecksToRub(totalKktKop))} ₽ (разница ${formatRubles(kopecksToRub(Math.abs(totalDiffKop)))} ₽)`;
 
 	return {
 		totalTerminalRub: kopecksToRub(totalTerminalKop),
@@ -235,11 +239,11 @@ export function exportAcquiringReconciliationToCsv(report: AcquiringReconciliati
 
 		const rrn = item.terminalTx?.rrn || "";
 		const card = item.terminalTx ? `${item.terminalTx.panMasked} (${item.terminalTx.paymentType})` : "";
-		const termRub = (item.terminalAmountRub || 0).toFixed(2).replace(".", ",");
+		const termRub = formatRubles(item.terminalAmountRub || 0).replace(".", ",");
 		const fdNum = item.kktRecord?.fiscalDocNumber || "";
 		const fpd = item.kktRecord?.fiscalSign || "";
-		const kktRub = (item.kktAmountRub || 0).toFixed(2).replace(".", ",");
-		const diffRub = (item.diffRub || 0).toFixed(2).replace(".", ",");
+		const kktRub = formatRubles(item.kktAmountRub || 0).replace(".", ",");
+		const diffRub = formatRubles(item.diffRub || 0).replace(".", ",");
 		const expl = (item.explanationRu || "").replace(/[;\n]/g, " ");
 		const act = (item.suggestedActionRu || "").replace(/[;\n]/g, " ");
 
@@ -291,10 +295,10 @@ export function generateAcquiringReconciliationPrintHtml(
 				<td style="padding: 6px 8px;"><span style="color: ${badgeColor}; font-weight: bold;">${badgeText}</span></td>
 				<td style="padding: 6px 8px; font-family: monospace;">${item.terminalTx?.rrn || "—"}</td>
 				<td style="padding: 6px 8px;">${item.terminalTx?.panMasked || "—"}</td>
-				<td style="padding: 6px 8px; text-align: right; font-weight: bold;">${item.terminalAmountRub.toFixed(2)} ₽</td>
+				<td style="padding: 6px 8px; text-align: right; font-weight: bold;">${formatRubles(item.terminalAmountRub)} ₽</td>
 				<td style="padding: 6px 8px; font-family: monospace;">${item.kktRecord ? `ФД №${item.kktRecord.fiscalDocNumber}` : "—"}</td>
-				<td style="padding: 6px 8px; text-align: right; font-weight: bold;">${item.kktAmountRub.toFixed(2)} ₽</td>
-				<td style="padding: 6px 8px; text-align: right; font-weight: bold; color: ${item.diffRub === 0 ? "#059669" : "#dc2626"};">${item.diffRub.toFixed(2)} ₽</td>
+				<td style="padding: 6px 8px; text-align: right; font-weight: bold;">${formatRubles(item.kktAmountRub)} ₽</td>
+				<td style="padding: 6px 8px; text-align: right; font-weight: bold; color: ${item.diffRub === 0 ? "#059669" : "#dc2626"};">${formatRubles(item.diffRub)} ₽</td>
 				<td style="padding: 6px 8px; color: #4b5563;">${item.explanationRu}</td>
 			</tr>
 		`;

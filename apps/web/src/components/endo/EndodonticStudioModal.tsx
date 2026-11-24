@@ -156,7 +156,11 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					if (payload.clinicalData.radiologyControl) setRadiologyControl(payload.clinicalData.radiologyControl);
 					if (payload.clinicalData.stageStamp) setStageStamp(payload.clinicalData.stageStamp);
 				}
-			}).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingFromDb(false); });
+			})
+			.catch((err) => {
+				console.error("[EndoStudioModal] Ошибка загрузки эндодонтических данных:", err);
+			})
+			.finally(() => { if (!cancelled) setIsLoadingFromDb(false); });
 		return () => { cancelled = true; };
 	}, [props.isOpen, props.patientId, activeTooth, props.initialCanals]);
 
@@ -202,10 +206,20 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const addCanal = useCallback(() => {
 		const nextNum = canals.length + 1;
 		const canalName = `К${nextNum}`;
+		const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
 		setCanals((prev) => [...prev, {
-			id: `canal-${activeTooth}-k${nextNum}`, canalName, referencePoint: "Бугор зуба",
-			workingLengthMm: getAnatomicalWorkingLength(activeTooth, canalName), masterApicalFile: "#25.04", taper: ".04 (Конусность 4%)",
-			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально", sealer: "AH Plus (эпоксидный герметик)",
+			id: `canal-${activeTooth}-k${nextNum}`,
+			canalName,
+			referencePoint: "Бугор зуба",
+			workingLengthMm: getAnatomicalWorkingLength(activeTooth, canalName),
+			masterApicalFile: isDeciduous ? "ISO 25 (#25 красный)" : "#25.04",
+			taper: isDeciduous ? ".02 (Стандартная 2%)" : ".04 (Конусность 4%)",
+			obturationTechnique: isDeciduous
+				? "Резорбируемая паста (гидроксид кальция / цинкоксидэвгенол)"
+				: "Гуттаперча + эпоксидный полимерный силер латерально",
+			sealer: isDeciduous
+				? "Резорбируемый герметик"
+				: "Эпоксидный полимерный силер",
 		}]);
 	}, [activeTooth, canals.length]);
 
@@ -220,13 +234,20 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		setStageStamp(proto.stageStamp);
 		setIrrigation(proto.irrigation);
 		setRotarySystem(proto.rotarySystem);
+		const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
 		setCanals((prev) => prev.map((c) => {
 			const numWl = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
 			const validWl = Number.isFinite(numWl) && numWl > 0 ? numWl : getAnatomicalWorkingLength(activeTooth, c.canalName);
 			return {
-				...c, isObliterated: false,
+				...c,
+				isObliterated: false,
 				workingLengthMm: validWl,
-				obturationTechnique: proto.obturationTechnique, sealer: proto.defaultSealer,
+				obturationTechnique: isDeciduous
+					? "Резорбируемая паста (гидроксид кальция / цинкоксидэвгенол)"
+					: proto.obturationTechnique,
+				sealer: isDeciduous
+					? "Резорбируемый герметик"
+					: proto.defaultSealer,
 			};
 		}));
 		showToast(`Применён протокол: ${proto.title}`, "info", 1800);
@@ -246,19 +267,29 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			...c,
 			isObliterated: false,
 			workingLengthMm: Math.max(minWl, Math.min(35, Math.round((Number(c.workingLengthMm) || getAnatomicalWorkingLength(activeTooth, c.canalName)) * 2) / 2)),
-			masterApicalFile: "#25.04",
-			taper: ".04 (Конусность 4%)",
-			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
-			sealer: "AH Plus (эпоксидный герметик)",
+			masterApicalFile: isDeciduous ? "ISO 25 (#25 красный)" : "#25.04",
+			taper: isDeciduous ? ".02 (Стандартная 2%)" : ".04 (Конусность 4%)",
+			obturationTechnique: isDeciduous
+				? "Резорбируемая паста (гидроксид кальция / цинкоксидэвгенол)"
+				: "Гуттаперча + эпоксидный полимерный силер латерально",
+			sealer: isDeciduous
+				? "Резорбируемый герметик"
+				: "Эпоксидный полимерный силер",
 			apexLocatorReading: "0.0 (Apex)",
 			referencePoint: c.referencePoint || "Бугор зуба",
 		}));
 		setCanals(updated);
 		setStageStamp("COMPLETED");
 		setIrrigation("NaOCl 3% + EDTA 17% (УЗ-активация)");
-		setRotarySystem("WaveOne Gold / ProTaper Next (Dentsply)");
+		setRotarySystem("Машинная NiTi ротационная система");
 		setActiveProtocolId("pulpitis_1visit");
-		showToast(`Каналы зуба #${activeTooth} запломбированы (физиологическая норма)!`, "success", 2000);
+		showToast(
+			isDeciduous
+				? `Каналы молочного зуба #${activeTooth} обтурированы резорбируемой пастой (норма)!`
+				: `Каналы зуба #${activeTooth} запломбированы (физиологическая норма)!`,
+			"success",
+			2000,
+		);
 	}, [activeTooth]);
 
 	const applyAllCanalsApex00 = useCallback(() => {
@@ -353,7 +384,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					treatmentPlan: updatedPlan,
 				};
 			});
-		} catch { /* safe */ }
+		} catch (err) {
+			console.warn("[EndoStudioModal] Не удалось обновить дневник визита:", err);
+		}
 
 		try {
 			if (costEstimate.services.length > 0) {
@@ -390,7 +423,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					}));
 				}
 			}
-		} catch { /* soft */ }
+		} catch (err) {
+			console.warn("[EndoStudioModal] Ошибка применения услуг эндодонтии к визиту/счету:", err);
+		}
 
 		// Сквозная связка протокола каналов со списанием расходных материалов на складе по мягкому овердрафту (Soft Negative Stock, Мандат 8aa)
 		const materialsEstimate = calculateEndoBillingAndMaterialsEstimate({
@@ -422,7 +457,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					},
 				}));
 			}
-		} catch { /* soft */ }
+		} catch (err) {
+			console.warn("[EndoStudioModal] Ошибка отправки складского события списания:", err);
+		}
 
 		const origin = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null"
 			? window.location.origin
@@ -447,7 +484,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 						unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0,
 					})),
 					allowOverdraft: true,
-					reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+					reason: `Автоматическое списание эндодонтических материалов для зуба #${activeTooth} (Soft Negative Stock)`,
 					notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
 				}),
 			})

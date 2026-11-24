@@ -150,4 +150,19 @@ describe("Financial P&L API Routes", () => {
 		assert.ok(res1.json().data);
 		assert.ok(res2.json().data);
 	});
+
+	it("strictly blocks non-executive staff (e.g. nurse, receptionist) with 403 Forbidden", async () => {
+		const app = await buildTestApp();
+		const headers = createStaffHeaders(TEST_ORG_ID, "usr-nurse-1", "nurse");
+
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/reports/pnl?from=2026-08-01&to=2026-08-31",
+			headers,
+		});
+
+		assert.equal(res.statusCode, 403);
+		const json = res.json();
+		assert.equal(json.error, "PermissionDenied");
+	});
 });

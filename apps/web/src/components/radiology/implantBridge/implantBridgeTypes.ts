@@ -83,6 +83,8 @@ export interface AddCbctToFinanceParams {
 	readonly patientId?: string | undefined;
 	readonly toothFdi?: number | undefined;
 	readonly priceRub?: number | undefined;
+	readonly priceKopecks?: number | undefined;
+	readonly amountKopecks?: bigint | undefined;
 	readonly doctorName?: string | undefined;
 }
 
@@ -97,8 +99,15 @@ export interface AddCbctSurgicalToFinanceParams {
 }
 
 export interface SurgicalFinanceExportResult {
-	readonly services: ReadonlyArray<{ code: string; title: string; priceRub: number }>;
+	readonly services: ReadonlyArray<{
+		code: string;
+		title: string;
+		priceRub: number;
+		priceKopecks?: number;
+		amountKopecks?: bigint;
+	}>;
 	readonly totalRub: number;
+	readonly totalKopecks?: bigint;
 }
 
 export const BRAND_LABELS: Record<ImplantBrandKey, string> = {
@@ -124,7 +133,7 @@ export function getImplantBrandTitle(brand: ImplantBrandKey): string {
 }
 
 export const STATUTORY_CBCT_804N = {
-	code804n: "A06.07.012",
+	code804n: "A06.07.013",
 	statutoryTitle804n: "Компьютерная томография челюстно-лицевой области",
 	commercialTitle: "3D Компьютерная томография (КЛКТ) челюстно-лицевой области (обе челюсти)",
 	category: "radiology",

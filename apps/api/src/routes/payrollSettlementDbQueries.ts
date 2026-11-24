@@ -45,7 +45,12 @@ export interface SettlementPeriodCloseParams {
 	readonly rkoNumber?: string | undefined;
 }
 
-export async function resolveDoctorUserUuid(orgId: string, doctorIdOrSolo: string, fallbackUserId?: string | null): Promise<string | null> {
+export async function resolveDoctorUserUuid(
+	orgId: string,
+	doctorIdOrSolo: string,
+	fallbackUserId?: string | null,
+	logger?: FastifyBaseLogger | undefined,
+): Promise<string | null> {
 	const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorIdOrSolo);
 	const targetId = (isUuid && doctorIdOrSolo !== "solo-doctor")
 		? doctorIdOrSolo
@@ -69,8 +74,13 @@ export async function resolveDoctorUserUuid(orgId: string, doctorIdOrSolo: strin
 				.limit(1);
 		});
 		return docUser[0]?.id ?? null;
-	} catch {
-		return null;
+	} catch (err) {
+		if (logger) {
+			logger.error({ err, orgId, targetId }, "[resolveDoctorUserUuid] DB query failed");
+		} else {
+			console.error("[resolveDoctorUserUuid] DB query failed:", { err, orgId, targetId });
+		}
+		throw err;
 	}
 }
 
@@ -385,6 +395,23 @@ export async function closeSettlementPeriodInDb(
 
 export async function reopenSettlementPeriodInDb(orgId: string, doctorId: string, periodKey: string) {
 	return await withTenantCtx(orgId, async (tx) => {
+		// Защита от гонок и параллельного переоткрытия: атомарная блокировка FOR UPDATE (Мандат 8bo)
+		const existingStatements = await tx
+			.select()
+			.from(doctorPayrollStatements)
+			.where(
+				and(
+					eq(doctorPayrollStatements.organizationId, orgId),
+					eq(doctorPayrollStatements.doctorId, doctorId),
+					eq(doctorPayrollStatements.period, periodKey),
+				),
+			)
+			.for("update");
+
+		if (existingStatements.length === 0) {
+			return null;
+		}
+
 		const updated = await tx
 			.update(doctorPayrollStatements)
 			.set({
@@ -426,6 +453,13 @@ export async function reopenSettlementPeriodInDb(orgId: string, doctorId: string
 				: rublesToKopecks(Number(op.amountRub || 0));
 
 			if (opKop > 0) {
+				// Блокируем кассу для атомарного возврата баланса
+				await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update");
+
 				// Возвращаем баланс в кассу
 				await tx
 					.update(cashBoxes)

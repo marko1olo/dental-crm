@@ -10,6 +10,14 @@ export async function handleSipStatus(
 	if (!context) return;
 	const orgId = context.organizationId;
 
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.code(403).send({
+			error: "Forbidden",
+			message: "Tenant context mismatch for SIP status",
+		});
+	}
+
 	const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
 	return reply.status(200).send({ success: true, status });
 }
@@ -24,6 +32,14 @@ export async function handleSipFailover(
 	const context = await requireClinicalMutationContext(request, reply, "set telephony failover");
 	if (!context) return;
 	const orgId = context.organizationId;
+
+	const rawOrgId = request.params?.organizationId;
+	if (rawOrgId && rawOrgId !== orgId) {
+		return reply.code(403).send({
+			error: "Forbidden",
+			message: "Tenant context mismatch for SIP failover",
+		});
+	}
 
 	const body = (request.body || {}) as { forceCloudFallback?: boolean };
 	const force = Boolean(body.forceCloudFallback);

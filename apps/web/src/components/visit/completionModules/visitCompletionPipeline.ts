@@ -17,6 +17,7 @@
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
+import { useOfflineStore } from "../../../store/offlineStore";
 import type { AutoVisitBomDeductionResult, Dashboard } from "@dental/shared";
 import {
 	useVisitStore,
@@ -175,8 +176,8 @@ export async function executeDraftAutosave(
 		}).catch((err) => {
 			logger.warn("[visitCompletionPipeline] Мягкое фоновое автосохранение:", err);
 		});
-	} catch {
-		// Не блокируем завершение при сетевой задержке
+	} catch (err) {
+		logger.warn("[visitCompletionPipeline] executeDraftAutosave failed:", err);
 	}
 }
 
@@ -197,6 +198,12 @@ export async function executeVisitCompletionEndpoint(
 ): Promise<void> {
 	if (!isUuid(ctx.effectiveVisitId)) return;
 
+	const payload = {
+		diary: ctx.effectiveDiary,
+		doctorSummary: ctx.effectiveDiary?.treatmentDescription || null,
+		status: "completed",
+	};
+
 	try {
 		await fetchWithHandling(
 			`/api/v1/visits/${ctx.effectiveVisitId}/complete`,
@@ -207,13 +214,10 @@ export async function executeVisitCompletionEndpoint(
 					"Idempotency-Key": `complete-visit-${ctx.effectiveVisitId}`,
 					...getDenteAuthHeaders(),
 				},
-				body: JSON.stringify({
-					diary: ctx.effectiveDiary,
-					doctorSummary: ctx.effectiveDiary?.treatmentDescription || null,
-					status: "completed",
-				}),
+				body: JSON.stringify(payload),
 			},
-		).catch(async () => {
+		).catch(async (primaryErr) => {
+			logger.warn("[visitCompletionPipeline] Primary complete failed, trying fallback:", primaryErr);
 			await fetchWithHandling(
 				`/api/visits/${ctx.effectiveVisitId}/complete`,
 				{
@@ -228,12 +232,28 @@ export async function executeVisitCompletionEndpoint(
 						status: "completed",
 					}),
 				},
-			).catch((err) => {
-				logger.warn("[visitCompletionPipeline] Завершение через /api/visits/complete:", err);
+			).catch((fallbackErr) => {
+				logger.warn("[visitCompletionPipeline] Fallback completion failed, enqueuing to offlineStore:", fallbackErr);
+				void useOfflineStore.getState().enqueue({
+					entityType: "visit",
+					entityId: ctx.effectiveVisitId,
+					action: "update",
+					payload,
+				}).catch((enqueueErr) => {
+					logger.error("[visitCompletionPipeline] Failed to enqueue visit completion to offlineStore:", enqueueErr);
+				});
 			});
 		});
-	} catch {
-		// Мягкий режим: сбой сети не блокирует работу врача
+	} catch (err) {
+		logger.warn("[visitCompletionPipeline] executeVisitCompletionEndpoint exception, enqueuing to offlineStore:", err);
+		void useOfflineStore.getState().enqueue({
+			entityType: "visit",
+			entityId: ctx.effectiveVisitId,
+			action: "update",
+			payload,
+		}).catch((enqueueErr) => {
+			logger.error("[visitCompletionPipeline] Failed to enqueue visit completion to offlineStore:", enqueueErr);
+		});
 	}
 }
 
@@ -256,7 +276,10 @@ export async function executeDiaryLockUponVisitCompletion(
 			headers: {
 				...getDenteAuthHeaders(),
 			},
-		}).catch(() => null);
+		}).catch((err) => {
+			logger.warn("[visitCompletionPipeline] Failed to lookup diary for visit:", err);
+			return null;
+		});
 
 		if (lookupRes && typeof lookupRes === "object" && "diary" in lookupRes) {
 			const diary = (lookupRes as { diary?: { id?: string | null; isLocked?: boolean | null } | null }).diary;
@@ -290,7 +313,10 @@ export async function executeDiaryLockUponVisitCompletion(
 					treatmentDescription: ctx.effectiveDiary.treatmentDescription || "Проведен осмотр, санация / консультация.",
 					status: "signed",
 				}),
-			}).catch(() => null);
+			}).catch((err) => {
+				logger.warn("[visitCompletionPipeline] Failed to create diary upon visit completion:", err);
+				return null;
+			});
 
 			if (createRes && typeof createRes === "object" && "diary" in createRes) {
 				const created = (createRes as { diary?: { id?: string | null; isLocked?: boolean | null } | null }).diary;

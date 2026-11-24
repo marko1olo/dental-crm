@@ -35,7 +35,7 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 				data-testid={`stage-${stage.stageNumber}-book-slot-btn`}
 				role="menuitem"
 			>
-				<CalendarPlus size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<CalendarPlus size={14} className="text-[var(--teal)] shrink-0" />
 				<span>Записать на этот этап</span>
 			</button>
 
@@ -44,7 +44,7 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 					type="button"
 					onClick={() => {
 						onClose();
-						onExecuteWriteOffStage!(stage);
+						onExecuteWriteOffStage?.(stage);
 					}}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
 					title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
@@ -61,14 +61,14 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 					type="button"
 					onClick={() => {
 						onClose();
-						onPayStage!(stage);
+						onPayStage?.(stage);
 					}}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
+					className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--success)] hover:bg-[var(--success-soft)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
 					title={`Принять оплату за этап №${stage.stageNumber} (${(stage.totalRub || 0).toLocaleString("ru-RU")} ₽)`}
 					data-testid={`stage-${stage.stageNumber}-pay-menu-btn`}
 					role="menuitem"
 				>
-					<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<CreditCard size={14} className="text-[var(--success)] shrink-0" />
 					<span>Создать счёт из этапа</span>
 				</button>
 			)}
@@ -78,7 +78,7 @@ export const StageFooterAccountingActions: React.FC<StageFooterAccountingActions
 					type="button"
 					onClick={() => {
 						onClose();
-						onExportStageEstimate!(stage);
+						onExportStageEstimate?.(stage);
 					}}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"
 					title="Печать или экспорт сметы по данному этапу"

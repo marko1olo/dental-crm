@@ -272,6 +272,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			/>
 
 			<HygieneStudioModal
+				key={patientId || "hygiene-studio"}
 				isOpen={isStudioOpen}
 				onClose={() => setIsStudioOpen(false)}
 				patientId={patientId}

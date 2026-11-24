@@ -214,7 +214,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						limit: query.limit,
 						offset: query.offset,
 					});
-				} catch {
+				} catch (err: unknown) {
+					request.log.warn(
+						{ err, organizationId: resolvedOrgId },
+						"[agentSessionRoutes] DB listSessionsFromDb failed, falling back to memory store",
+					);
 					const memSessions = getMemorySessions(resolvedOrgId, query);
 					return reply.code(200).send({
 						sessions: memSessions,
@@ -261,7 +265,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					});
 
 					return reply.code(201).send({ ok: true, data: session, ...session });
-				} catch {
+				} catch (err: unknown) {
+					request.log.error(
+						{ err, organizationId: resolvedOrgId, sessionId },
+						"[agentSessionRoutes] DB createSessionInDb failed, persisting to memory store fallback",
+					);
 					const now = new Date();
 					const memSession: MemorySession = {
 						id: sessionId,
@@ -298,8 +306,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					if (session) {
 						return reply.code(200).send({ data: session, ...session });
 					}
-				} catch {
-					// Fallback lookup
+				} catch (err: unknown) {
+					request.log.warn(
+						{ err, organizationId: resolvedOrgId, id },
+						"[agentSessionRoutes] DB getSessionFromDb failed, checking memory fallback",
+					);
 				}
 
 				const memSession = fallbackSessions.get(id);
@@ -339,8 +350,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					if (updated) {
 						return reply.code(200).send({ data: updated, ...updated });
 					}
-				} catch {
-					// Fallback update
+				} catch (err: unknown) {
+					request.log.warn(
+						{ err, organizationId: resolvedOrgId, id },
+						"[agentSessionRoutes] DB updateSessionInDb failed, checking memory fallback",
+					);
 				}
 
 				const memSession = fallbackSessions.get(id);
@@ -374,8 +388,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				let dbDeleted = false;
 				try {
 					dbDeleted = await deleteSessionFromDb(id, resolvedOrgId);
-				} catch {
-					// Continue to fallback check
+				} catch (err: unknown) {
+					request.log.warn(
+						{ err, organizationId: resolvedOrgId, id },
+						"[agentSessionRoutes] DB deleteSessionFromDb failed, checking memory fallback",
+					);
 				}
 
 				const memExisted = fallbackSessions.has(id);
@@ -420,7 +437,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						data: messages,
 						total: messages.length,
 					});
-				} catch {
+				} catch (err: unknown) {
+					request.log.warn(
+						{ err, organizationId: resolvedOrgId, id },
+						"[agentSessionRoutes] DB getMessagesFromDb failed, falling back to memory store",
+					);
 					const memMsgs = (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit);
 					return reply.code(200).send({
 						sessionId: id,
@@ -468,7 +489,11 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					});
 
 					return reply.code(201).send({ ok: true, data: message, ...message });
-				} catch {
+				} catch (err: unknown) {
+					request.log.error(
+						{ err, organizationId: resolvedOrgId, id },
+						"[agentSessionRoutes] DB addMessageToDb failed, appending to memory fallback",
+					);
 					const now = new Date();
 					const msgId = ensureValidUuid();
 					const memMsg: MemoryMessage = {

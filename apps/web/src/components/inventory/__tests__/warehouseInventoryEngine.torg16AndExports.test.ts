@@ -4,10 +4,10 @@ import {
 	DEFAULT_COMMISSION_MEMBERS,
 	DEFAULT_INVENTORY_ITEMS_PRESET,
 	type WarehouseInventoryAuditDocument,
-	exportInv19DiscrepanciesToCsv,
+	exportDiscrepanciesCsv,
 	exportInventoryTo1C,
 	exportInventoryToCsv,
-	generateTorg16ActFromInventory,
+	generateAuditWriteoffActFromInventory,
 } from "../warehouseInventoryEngine.js";
 
 const sampleDoc: WarehouseInventoryAuditDocument = {
@@ -31,24 +31,24 @@ const sampleDoc: WarehouseInventoryAuditDocument = {
 	organizationInn: "7701987654",
 };
 
-describe("TORG-16 Write-Off Act Generation for Expired Lots", () => {
+describe("Audit Write-Off Act Generation for Expired Lots", () => {
 	it("Автоматически извлекает просроченные партии в унифицированный акт списания", () => {
-		const torg16 = generateTorg16ActFromInventory(sampleDoc);
-		assert.ok(torg16.actNumber.includes("ТОРГ-16") || torg16.actNumber.includes("АКТ-СПИС"));
-		assert.ok(torg16.items.length >= 2);
+		const act = generateAuditWriteoffActFromInventory(sampleDoc);
+		assert.ok(act.actNumber.includes("АКТ-СПИС"));
+		assert.ok(act.items.length >= 2);
 
-		for (const item of torg16.items) {
+		for (const item of act.items) {
 			assert.ok(item.totalCostKopecks > 0);
 			assert.ok(item.defectDescriptionRu.includes("Истек срок годности"));
 		}
 
 		assert.equal(
-			torg16.totalCostKopecks,
-			torg16.items.reduce((sum, it) => sum + it.totalCostKopecks, 0),
+			act.totalCostKopecks,
+			act.items.reduce((sum, it) => sum + it.totalCostKopecks, 0),
 		);
 		assert.equal(
-			torg16.totalQuantity,
-			torg16.items.reduce((sum, it) => sum + it.quantity, 0),
+			act.totalQuantity,
+			act.items.reduce((sum, it) => sum + it.quantity, 0),
 		);
 	});
 });
@@ -62,8 +62,8 @@ describe("CSV & 1C CommerceML Exports", () => {
 		assert.ok(csv.includes("Септанест с адреналином"));
 	});
 
-	it("Экспортирует сличительную ведомость ИНВ-19 в CSV (только расхождения)", () => {
-		const csv = exportInv19DiscrepanciesToCsv(sampleDoc);
+	it("Экспортирует сличительную ведомость в CSV (только расхождения)", () => {
+		const csv = exportDiscrepanciesCsv(sampleDoc);
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("Излишек (кол-во);Излишек (руб);Недостача (кол-во);Недостача (руб)"));
 		assert.ok(csv.includes("Filtek"));

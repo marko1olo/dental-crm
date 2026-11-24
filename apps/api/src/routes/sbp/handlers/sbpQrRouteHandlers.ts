@@ -1,6 +1,8 @@
 import { generateSbpDynamicQrSchema } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { withTenantCtx } from "../../../db/rls.js";
+import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import {
 	generateSbpDynamicQrService,
 	verifySbpPayloadService,
@@ -16,8 +18,32 @@ export async function handleGenerateQr(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<void> {
-	const orgId = await requireResolvedOrganizationId(request, reply);
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"generate SBP dynamic QR",
+	);
+	if (reply.sent) return;
 	if (!orgId) return;
+
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (!idempotencyKey) {
+		return reply.code(400).send({
+			error: "IdempotencyKeyRequired",
+			message:
+				"Для генерации динамического QR-кода СБП обязателен заголовок Idempotency-Key (UUIDv7).",
+		});
+	}
+	const baseKey = idempotencyKey.includes("#")
+		? idempotencyKey.split("#")[0]
+		: idempotencyKey;
+	if (!isValidUuid(baseKey || "")) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message:
+				"Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+		});
+	}
 
 	const parsed = generateSbpDynamicQrSchema.safeParse(request.body);
 	if (!parsed.success) {
@@ -28,7 +54,13 @@ export async function handleGenerateQr(
 		});
 	}
 
-	const response = generateSbpDynamicQrService(parsed.data);
+	const response = await withTenantCtx(orgId, async (_tx) => {
+		return generateSbpDynamicQrService(parsed.data);
+	});
+
+	reply.header("Idempotency-Key", idempotencyKey);
+	reply.header("X-Idempotency-Key", idempotencyKey);
+
 	return reply.code(201).send(response);
 }
 

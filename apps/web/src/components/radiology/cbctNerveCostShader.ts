@@ -400,7 +400,8 @@ export function computeCostFieldWebGL2(
 
 	try {
 		// Компиляция вершинного шейдера
-		const vs = gl.createShader(gl.VERTEX_SHADER)!;
+		const vs = gl.createShader(gl.VERTEX_SHADER);
+		if (!vs) return null;
 		gl.shaderSource(vs, GLSL_VATECH_COST_VERTEX_SHADER);
 		gl.compileShader(vs);
 		if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
@@ -409,7 +410,11 @@ export function computeCostFieldWebGL2(
 		}
 
 		// Компиляция фрагментного шейдера
-		const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
+		const fs = gl.createShader(gl.FRAGMENT_SHADER);
+		if (!fs) {
+			gl.deleteShader(vs);
+			return null;
+		}
 		gl.shaderSource(fs, GLSL_VATECH_COST_FRAGMENT_SHADER);
 		gl.compileShader(fs);
 		if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
@@ -418,7 +423,12 @@ export function computeCostFieldWebGL2(
 			return null;
 		}
 
-		const program = gl.createProgram()!;
+		const program = gl.createProgram();
+		if (!program) {
+			gl.deleteShader(vs);
+			gl.deleteShader(fs);
+			return null;
+		}
 		gl.attachShader(program, vs);
 		gl.attachShader(program, fs);
 		gl.linkProgram(program);
@@ -432,7 +442,13 @@ export function computeCostFieldWebGL2(
 		gl["useProgram"](program);
 
 		// Создание 3D текстуры для объёма КЛКТ (R16I)
-		const volTex = gl.createTexture()!;
+		const volTex = gl.createTexture();
+		if (!volTex) {
+			gl.deleteShader(vs);
+			gl.deleteShader(fs);
+			gl.deleteProgram(program);
+			return null;
+		}
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_3D, volTex);
 		gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -494,10 +510,25 @@ export function computeCostFieldWebGL2(
 		const targetFormat = extFloat ? gl.RGBA32F : gl.RGBA;
 		const targetType = extFloat ? gl.FLOAT : gl.UNSIGNED_BYTE;
 
-		const fbo = gl.createFramebuffer()!;
+		const fbo = gl.createFramebuffer();
+		if (!fbo) {
+			gl.deleteTexture(volTex);
+			gl.deleteShader(vs);
+			gl.deleteShader(fs);
+			gl.deleteProgram(program);
+			return null;
+		}
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
 
-		const outTex = gl.createTexture()!;
+		const outTex = gl.createTexture();
+		if (!outTex) {
+			gl.deleteFramebuffer(fbo);
+			gl.deleteTexture(volTex);
+			gl.deleteShader(vs);
+			gl.deleteShader(fs);
+			gl.deleteProgram(program);
+			return null;
+		}
 		gl.bindTexture(gl.TEXTURE_2D, outTex);
 		gl.texImage2D(
 			gl.TEXTURE_2D,
@@ -523,7 +554,16 @@ export function computeCostFieldWebGL2(
 		gl.viewport(0, 0, rw, rh * rd);
 
 		// Создание dummy VAO для отрисовки без буферов
-		const vao = gl.createVertexArray()!;
+		const vao = gl.createVertexArray();
+		if (!vao) {
+			gl.deleteTexture(outTex);
+			gl.deleteFramebuffer(fbo);
+			gl.deleteTexture(volTex);
+			gl.deleteShader(vs);
+			gl.deleteShader(fs);
+			gl.deleteProgram(program);
+			return null;
+		}
 		gl.bindVertexArray(vao);
 
 		// Отрисовка полноэкранного квада
@@ -536,14 +576,14 @@ export function computeCostFieldWebGL2(
 			gl.readPixels(0, 0, rw, rh * rd, gl.RGBA, gl.FLOAT, rawPixels);
 			// Канал R содержит итоговую стоимость cost = huPenalty / velocity
 			for (let i = 0; i < totalVoxels; i++) {
-				costField[i] = rawPixels[i * 4]!;
+				costField[i] = rawPixels[i * 4] ?? 0;
 			}
 		} else {
 			// Fallback: распаковка из RGBA8 если расширение float отсутствует
 			const rawPixels = new Uint8Array(rw * (rh * rd) * 4);
 			gl.readPixels(0, 0, rw, rh * rd, gl.RGBA, gl.UNSIGNED_BYTE, rawPixels);
 			for (let i = 0; i < totalVoxels; i++) {
-				costField[i] = (rawPixels[i * 4]! / 255.0) * 20.0;
+				costField[i] = ((rawPixels[i * 4] ?? 0) / 255.0) * 20.0;
 			}
 		}
 
@@ -623,7 +663,7 @@ export function benchmarkCostField(
 	iterations = 3,
 ): BenchmarkCostFieldReport {
 	let cpuTotal = 0;
-	let cpuResult!: GpuCostFieldResult;
+	let cpuResult: GpuCostFieldResult | null = null;
 	for (let i = 0; i < iterations; i++) {
 		const r = computeCostFieldCpu(volumeHU, params);
 		cpuTotal += r.executionTimeMs;
@@ -632,7 +672,7 @@ export function benchmarkCostField(
 	const cpuAvg = Number((cpuTotal / iterations).toFixed(2));
 
 	let accTotal = 0;
-	let accResult!: GpuCostFieldResult;
+	let accResult: GpuCostFieldResult | null = null;
 	for (let i = 0; i < iterations; i++) {
 		const r = computeCostFieldAccelerated(volumeHU, params);
 		accTotal += r.executionTimeMs;
@@ -641,8 +681,9 @@ export function benchmarkCostField(
 	const accAvg = Number((accTotal / iterations).toFixed(2));
 
 	let maxDelta = 0;
-	for (let i = 0; i < cpuResult.costField.length; i++) {
-		const d = Math.abs(cpuResult.costField[i]! - accResult.costField[i]!);
+	const count = cpuResult ? cpuResult.costField.length : 0;
+	for (let i = 0; i < count; i++) {
+		const d = Math.abs((cpuResult?.costField[i] ?? 0) - (accResult?.costField[i] ?? 0));
 		if (d > maxDelta) maxDelta = d;
 	}
 
@@ -650,7 +691,7 @@ export function benchmarkCostField(
 		cpuTimeMs: cpuAvg,
 		acceleratedTimeMs: accAvg,
 		speedupFactor: Number((cpuAvg / Math.max(0.01, accAvg)).toFixed(2)),
-		backendUsed: accResult.backend,
+		backendUsed: accResult?.backend ?? "cpu-simd",
 		voxelCount:
 			params.roiDimensions.width *
 			params.roiDimensions.height *

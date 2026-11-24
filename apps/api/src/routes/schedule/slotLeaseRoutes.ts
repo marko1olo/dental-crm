@@ -18,6 +18,7 @@ import { z } from "zod";
 import { db } from "../../db/client.js";
 import { appointments, idempotencyKeys, scheduleSlotLeases } from "../../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	requireClinicOrganizationId,
 	requireScheduleMutationContext,
@@ -102,6 +103,18 @@ export async function handleAcquireSlotLease(
 	const orgId = await resolveOrganizationId(request, reply);
 	if (!orgId) return reply;
 
+	const rawIdemKey = extractIdempotencyKey(request);
+	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен быть валидным UUID",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const {
 		chairId,
 		doctorUserId,
@@ -129,6 +142,52 @@ export async function handleAcquireSlotLease(
 	const identity = getRequestIdentity(request);
 
 	return await db.transaction(async (tx) => {
+		if (idempotencyKey) {
+			if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
+				);
+			}
+
+			const [existingRecord] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						code: "IdempotencyConflict",
+						message: "Запрос на удержание слота уже обрабатывается",
+					});
+				}
+			}
+
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "in_flight",
+					lockedAt: new Date(),
+				})
+				.onConflictDoNothing();
+		}
+
 		// 1. Атомарно удаляем протухшие лизы организации
 		await tx
 			.delete(scheduleSlotLeases)
@@ -225,13 +284,35 @@ export async function handleAcquireSlotLease(
 					})
 					.where(eq(scheduleSlotLeases.id, activeLease.id));
 
-				return reply.code(200).send({
+				const renewPayload = {
 					success: true,
 					leaseToken: activeLease.leaseToken,
 					expiresAt: newExpiresAt.toISOString(),
 					remainingSeconds: durationSeconds,
 					renewed: true,
-				});
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							responseBody: renewPayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: renewPayload,
+								responseCode: 200,
+							},
+						});
+				}
+
+				return reply.code(200).send(renewPayload);
 			}
 
 			// Чужой активный лиз -> 409 Conflict
@@ -266,12 +347,34 @@ export async function handleAcquireSlotLease(
 			expiresAt,
 		});
 
-		return reply.code(201).send({
+		const createPayload = {
 			success: true,
 			leaseToken,
 			expiresAt: expiresAt.toISOString(),
 			remainingSeconds: durationSeconds,
-		});
+		};
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					responseBody: createPayload,
+					responseCode: 201,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: createPayload,
+						responseCode: 201,
+					},
+				});
+		}
+
+		return reply.code(201).send(createPayload);
 	});
 }
 
@@ -291,10 +394,17 @@ export async function handleReleaseSlotLease(
 	const orgId = await resolveOrganizationId(request, reply);
 	if (!orgId) return reply;
 
-	const rawIdemKey =
-		(request.headers["idempotency-key"] as string | undefined) ??
-		(request.headers["x-idempotency-key"] as string | undefined);
+	const rawIdemKey = extractIdempotencyKey(request);
 	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен быть валидным UUID",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const identity = getRequestIdentity(request);
 	const clientSessionId =
@@ -459,9 +569,67 @@ export async function handleHeartbeatSlotLease(
 	const orgId = await resolveOrganizationId(request, reply);
 	if (!orgId) return reply;
 
+	const rawIdemKey = extractIdempotencyKey(request);
+	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен быть валидным UUID",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const extensionSeconds = parsed.data.extensionSeconds ?? 60;
 
 	return await db.transaction(async (tx) => {
+		if (idempotencyKey) {
+			if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
+				);
+			}
+
+			const [existingRecord] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(
+					and(
+						eq(idempotencyKeys.clinicId, orgId),
+						eq(idempotencyKeys.key, idempotencyKey),
+					),
+				)
+				.limit(1);
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply
+						.code(existingRecord.responseCode || 200)
+						.send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						code: "IdempotencyConflict",
+						message: "Запрос на продление слота уже обрабатывается",
+					});
+				}
+			}
+
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "in_flight",
+					lockedAt: new Date(),
+				})
+				.onConflictDoNothing();
+		}
+
 		const [lease] = await tx
 			.select()
 			.from(scheduleSlotLeases)
@@ -488,26 +656,65 @@ export async function handleHeartbeatSlotLease(
 			.set({ expiresAt: newExpiresAt })
 			.where(eq(scheduleSlotLeases.id, lease.id));
 
-		return reply.code(200).send({
+		const heartbeatPayload = {
 			success: true,
 			expiresAt: newExpiresAt.toISOString(),
 			remainingSeconds: extensionSeconds,
-		});
+		};
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					responseBody: heartbeatPayload,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: heartbeatPayload,
+						responseCode: 200,
+					},
+				});
+		}
+
+		return reply.code(200).send(heartbeatPayload);
 	});
 }
+
+export const slotLeaseIdempotencyMutationOptionsWithOrgIdContext = {
+	schema: {
+		description:
+			"Schedule slot lease protocol mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				"organizationid": { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+};
+
+export const slotLeaseMutationRouteOptions = slotLeaseIdempotencyMutationOptionsWithOrgIdContext;
 
 /**
  * Регистрация Fastify-маршрутов Slot Lease Protocol.
  */
 export async function registerSlotLeaseRoutes(app: FastifyInstance) {
 	// Канонические маршруты
-	app.post("/api/schedule/leases/acquire", handleAcquireSlotLease);
-	app.post("/api/schedule/leases/release", handleReleaseSlotLease);
-	app.post("/api/schedule/leases/heartbeat", handleHeartbeatSlotLease);
+	app.post("/api/schedule/leases/acquire", slotLeaseIdempotencyMutationOptionsWithOrgIdContext, handleAcquireSlotLease);
+	app.post("/api/schedule/leases/release", slotLeaseIdempotencyMutationOptionsWithOrgIdContext, handleReleaseSlotLease);
+	app.post("/api/schedule/leases/heartbeat", slotLeaseIdempotencyMutationOptionsWithOrgIdContext, handleHeartbeatSlotLease);
 
 	// Alias v1
-	app.post("/api/v1/schedule/leases/acquire", handleAcquireSlotLease);
-	app.post("/api/v1/schedule/leases/release", handleReleaseSlotLease);
-	app.post("/api/v1/schedule/leases/heartbeat", handleHeartbeatSlotLease);
-
+	app.post("/api/v1/schedule/leases/acquire", slotLeaseIdempotencyMutationOptionsWithOrgIdContext, handleAcquireSlotLease);
+	app.post("/api/v1/schedule/leases/release", slotLeaseIdempotencyMutationOptionsWithOrgIdContext, handleReleaseSlotLease);
+	app.post("/api/v1/schedule/leases/heartbeat", slotLeaseIdempotencyMutationOptionsWithOrgIdContext, handleHeartbeatSlotLease);
 }

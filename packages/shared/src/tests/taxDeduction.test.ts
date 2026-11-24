@@ -516,13 +516,13 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		assert.equal(schedule.stage1AdvanceTherapyKopecks, 3703703);
 		assert.equal(schedule.stage1AdvanceTherapyRub, 37037.03);
 
-		// Stage 2: 40% of 12345677 = 4938270.8 -> 4938271 kopecks (49 382.71 ₽)
-		assert.equal(schedule.stage2SurgeryImplantKopecks, 4938271);
-		assert.equal(schedule.stage2SurgeryImplantRub, 49382.71);
+		// Stage 2: 40% of 12345677 = 4938270.8 -> trunc to 4938270 kopecks (49 382.70 ₽)
+		assert.equal(schedule.stage2SurgeryImplantKopecks, 4938270);
+		assert.equal(schedule.stage2SurgeryImplantRub, 49382.70);
 
-		// Stage 3: remaining kopecks = 12345677 - 3703703 - 4938271 = 3703703 kopecks (37 037.03 ₽)
-		assert.equal(schedule.stage3OrthopedicsKopecks, 3703703);
-		assert.equal(schedule.stage3OrthopedicsRub, 37037.03);
+		// Stage 3: remaining kopecks = 12345677 - 3703703 - 4938270 = 3703704 kopecks (37 037.04 ₽)
+		assert.equal(schedule.stage3OrthopedicsKopecks, 3703704);
+		assert.equal(schedule.stage3OrthopedicsRub, 37037.04);
 
 		// Perfect kopecks balance verification
 		assert.equal(schedule.isBalanced, true);

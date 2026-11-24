@@ -14,7 +14,7 @@ export const ENDO_TWO_CANAL_OBTURATING_BOM_SEED: DefaultBomProcedureSeed = {
 	durationMinutes: 35,
 	materials: [
 		{
-			name: "Эпоксидный силер для постоянной обтурации AH Plus (Dentsply)",
+			name: "Эпоксидный полимерный силер для постоянной обтурации",
 			category: "endo",
 			unit: "г",
 			quantityToDeduct: 0.2,

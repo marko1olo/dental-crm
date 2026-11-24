@@ -28,6 +28,7 @@ import {
 	requirePermission,
 } from "../../security/permissions.js";
 import { hashCredential } from "../../utils/cryptoHelper.js";
+import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	parseSettingsPayload,
 	requireSettingsAccess,
@@ -69,6 +70,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/staff", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const input = parseSettingsPayload(createStaffMemberSchema, request.body);
 		if (!input) {
 			reply.code(400);
@@ -97,6 +111,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		async (request, reply) => {
 			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				};
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const params = request.params as { staffId?: string };
 			if (!params.staffId) {
 				reply.code(400);
@@ -177,6 +204,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		async (request, reply) => {
 			const orgId = await requireSettingsMutationAccess(request, reply);
 			if (!orgId) return;
+
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				reply.code(400);
+				return {
+					error: "SettingsValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				};
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const params = request.params as { staffId?: string };
 			if (!params.staffId) {
 				reply.code(400);
@@ -231,6 +271,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/staff/:staffId", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const params = request.params as { staffId?: string };
 		if (!params.staffId) {
 			reply.code(400);
@@ -358,6 +411,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/staff/:staffId/commission", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const params = request.params as { staffId?: string };
 		if (!params.staffId) {
 			reply.code(400);
@@ -482,6 +548,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/staff/:staffId/authority", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		if (!getRequestIdentity(request).verified) {
 			reply.code(401);
 			return {
@@ -571,6 +650,19 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/role-matrix", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			};
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const raw = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
 		const incomingMatrix = (raw.matrix && typeof raw.matrix === "object" ? raw.matrix : raw) as Record<string, Record<string, string>>;
 

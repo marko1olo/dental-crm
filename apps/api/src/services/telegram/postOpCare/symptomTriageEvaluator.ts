@@ -119,7 +119,9 @@ export async function evaluatePostOpSymptomCallback(
 						workflowCode: "HIGH_BITE_ADJUSTMENT",
 					});
 				}
-			}).catch(() => {});
+			}).catch((err: unknown) => {
+				console.error("[symptomTriageEvaluator] Failed to record high bite triage communication task:", err);
+			});
 		}
 
 		targetScreen = getTherapyHighBiteScreen();
@@ -155,7 +157,9 @@ export async function evaluatePostOpSymptomCallback(
 						workflowCode: "POST_THERAPY_PAIN_ALERT",
 					});
 				}
-			}).catch(() => {});
+			}).catch((err: unknown) => {
+				console.error("[symptomTriageEvaluator] Failed to record post-therapy pain triage communication task:", err);
+			});
 		}
 
 		targetScreen = getTherapyPainScreen();

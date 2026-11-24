@@ -64,7 +64,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 	});
 
 	it("1. STATUTORY_CBCT_804N conforms to statutory Order 804n specifications", () => {
-		assert.strictEqual(STATUTORY_CBCT_804N.code804n, "A06.07.012");
+		assert.strictEqual(STATUTORY_CBCT_804N.code804n, "A06.07.013");
 		assert.strictEqual(
 			STATUTORY_CBCT_804N.statutoryTitle804n,
 			"Компьютерная томография челюстно-лицевой области",
@@ -90,19 +90,19 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 				patientId: "PAT-001",
 			});
 
-			assert.strictEqual(res.code, "A06.07.012");
+			assert.strictEqual(res.code, "A06.07.013");
 			assert.ok(res.title.includes("Компьютерная томография челюстно-лицевой области"));
 			assert.ok(res.title.includes("область зуба #46"));
 			assert.strictEqual(res.priceRub, 3800);
 
 			// Проверка useVisitStore
 			const visitNoteForm = useVisitStore.getState().visitNoteForm;
-			assert.ok(visitNoteForm.treatmentPlan.includes("A06.07.012"));
+			assert.ok(visitNoteForm.treatmentPlan.includes("A06.07.013"));
 			assert.ok(normalizeSpaces(visitNoteForm.treatmentPlan).includes("3 800 ₽"));
 
 			// Проверка useDocumentStore
 			const docState = useDocumentStore.getState();
-			assert.ok(docState.completedActServicesSummary.includes("A06.07.012"));
+			assert.ok(docState.completedActServicesSummary.includes("A06.07.013"));
 			assert.strictEqual(docState.completedActTotalRub, "3800");
 
 			// Проверка CustomEvent
@@ -112,7 +112,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 			assert.strictEqual(detail.toothNumber, 46);
 			assert.strictEqual(detail.source, "cbct_studio");
 			assert.strictEqual(detail.services.length, 1);
-			assert.strictEqual(detail.services[0].code, "A06.07.012");
+			assert.strictEqual(detail.services[0].code, "A06.07.013");
 			assert.strictEqual(detail.services[0].priceRub, 3800);
 		} finally {
 			window.removeEventListener("dente-add-services-to-invoice", handler);
@@ -144,7 +144,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 				toothFdi: 16,
 			});
 
-			assert.strictEqual(item.code804n, "A06.07.012");
+			assert.strictEqual(item.code804n, "A06.07.013");
 			assert.strictEqual(item.phase, 1);
 			assert.strictEqual(item.stageKind, "stage_1_therapy");
 			assert.strictEqual(item.priceRub, 3800);
@@ -153,11 +153,11 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 			// Проверка сохранения в localStorage
 			const persisted = loadPersistedCustomPlanItems("PAT-TEST-99");
 			assert.strictEqual(persisted.length, 1);
-			assert.strictEqual(persisted[0]?.code804n, "A06.07.012");
+			assert.strictEqual(persisted[0]?.code804n, "A06.07.013");
 
 			// Проверка useDocumentStore
 			const docState = useDocumentStore.getState();
-			assert.ok(docState.treatmentPlanStages.includes("A06.07.012"));
+			assert.ok(docState.treatmentPlanStages.includes("A06.07.013"));
 			assert.strictEqual(docState.treatmentPlanEstimatedTotalRub, "3800");
 
 			// Проверка CustomEvent
@@ -166,7 +166,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 			const detail = (capturedPlanEvent as any).detail;
 			assert.strictEqual(detail.toothNumber, 16);
 			assert.strictEqual(detail.patientId, "PAT-TEST-99");
-			assert.strictEqual(detail.item.code804n, "A06.07.012");
+			assert.strictEqual(detail.item.code804n, "A06.07.013");
 		} finally {
 			window.removeEventListener("dente-add-treatment-plan-item", handler);
 		}
@@ -186,14 +186,14 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 				doctorName: "Д-р Смирнов К.С.",
 			});
 
-			assert.strictEqual(res.actService.code, "A06.07.012");
-			assert.strictEqual(res.planItem.code804n, "A06.07.012");
+			assert.strictEqual(res.actService.code, "A06.07.013");
+			assert.strictEqual(res.planItem.code804n, "A06.07.013");
 
 			// Toast оповещение
 			assert.ok(toastDetail !== null);
 			const td = toastDetail as unknown as { text: string; type: string };
 			assert.strictEqual(td.type, "success");
-			assert.ok(td.text.includes("A06.07.012"));
+			assert.ok(td.text.includes("A06.07.013"));
 			assert.ok(normalizeSpaces(td.text).includes("3 800 ₽"));
 
 			// Счета и акт
@@ -205,7 +205,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 		}
 	});
 
-	it("6. Star Protocol validation: implant without CT produces defect, with A06.07.012 passes CT check", () => {
+	it("6. Star Protocol validation: implant without CT produces defect, with A06.07.013 passes CT check", () => {
 		const implantItem: TreatmentPlanItem = {
 			id: "plan-implant-46",
 			toothNumber: 46,
@@ -243,7 +243,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 		assert.ok(missingCTCheck !== undefined, "Должно быть предупреждение об отсутствии 3D КЛКТ");
 		assert.strictEqual(missingCTCheck?.status, "warning");
 
-		// Вариант 2: Добавляем КЛКТ услугу (A06.07.012) через наш мост
+		// Вариант 2: Добавляем КЛКТ услугу (A06.07.013) через наш мост
 		const cbctItem = addCbctServiceToTreatmentPlan({ toothFdi: 46 });
 		const stageWithCT: TreatmentPlanStage = {
 			stageNumber: 1,
@@ -256,7 +256,7 @@ describe("CBCT-Finance Bridge & Star Protocol Integration Suite", () => {
 			totalKopecks: 380000,
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
-			order804nCodes: ["A06.07.012"],
+			order804nCodes: ["A06.07.013"],
 			status: "completed",
 		};
 

@@ -14,9 +14,23 @@ export {
  * Registers all SBP routes on Fastify instance.
  */
 export function registerSbpRoutes(app: FastifyInstance): void {
-	app.post("/api/billing/sbp/generate-qr", handleGenerateQr);
-	app.post("/api/sbp/generate-qr", handleGenerateQr);
-	app.post("/api/sbp/create-qr", handleGenerateQr);
+	const sbpQrRouteOptions = {
+		schema: {
+			description:
+				"SBP dynamic QR generation with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+		},
+	};
+
+	app.post("/api/billing/sbp/generate-qr", sbpQrRouteOptions, handleGenerateQr);
+	app.post("/api/sbp/generate-qr", sbpQrRouteOptions, handleGenerateQr);
+	app.post("/api/sbp/create-qr", sbpQrRouteOptions, handleGenerateQr);
 
 	app.post("/api/billing/sbp/verify-payload", handleVerifyPayload);
 	app.post("/api/sbp/verify-payload", handleVerifyPayload);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
+import { showToast } from "../../GlobalToast";
 import {
 	generateSoapFromOdontogramFinding,
 	generateSoapFromOdontogramStates,
@@ -32,7 +33,6 @@ export function useOdontogramHydration({
 	useEffect(() => {
 		if (!patientId || lastHydratedPatientRef.current === patientId) return;
 		const previousPatientId = lastHydratedPatientRef.current;
-		lastHydratedPatientRef.current = patientId;
 		if (previousPatientId !== null && previousPatientId !== patientId) {
 			useVisitStore.getState().resetVisitToothState();
 			useVisitStore.getState().setCompletedServices([]);
@@ -98,18 +98,35 @@ export function useOdontogramHydration({
 			syncStateMap(storedTeeth);
 			lastHydratedPatientRef.current = patientId;
 		} else {
+			let fetchSucceeded = false;
 			const controller = new AbortController();
 			fetch(`/api/patients/${patientId}/tooth-states`, { headers: getDenteAuthHeaders(), signal: controller.signal })
 				.then(async (res) => {
-					if (!res.ok) return;
+					if (!res.ok) {
+						console.error("[useOdontogramHydration] Failed to fetch tooth states, status:", res.status);
+						showToast("Не удалось загрузить зубную формулу пациента", "error");
+						return;
+					}
 					const data = (await res.json().catch(() => null)) as { success?: boolean; states?: ToothData[] } | null;
-					if (data?.success && Array.isArray(data.states) && data.states.length > 0) {
-						saveStoredTeethData(patientId, data.states);
-						syncStateMap(data.states);
+					if (data?.success && Array.isArray(data.states)) {
+						if (data.states.length > 0) {
+							saveStoredTeethData(patientId, data.states);
+							syncStateMap(data.states);
+						}
+						fetchSucceeded = true;
 					}
 				})
-				.catch(() => {})
-				.finally(() => { lastHydratedPatientRef.current = patientId; });
+				.catch((err) => {
+					if (err?.name !== "AbortError") {
+						console.error("[useOdontogramHydration] Error fetching tooth states:", err);
+						showToast("Не удалось загрузить зубную формулу пациента", "error");
+					}
+				})
+				.finally(() => {
+					if (fetchSucceeded) {
+						lastHydratedPatientRef.current = patientId;
+					}
+				});
 			return () => { controller.abort(); };
 		}
 	}, [patientId, visitNoteFormRef, updateVisitNoteFieldRef]);

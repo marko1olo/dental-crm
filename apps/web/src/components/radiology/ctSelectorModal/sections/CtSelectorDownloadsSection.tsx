@@ -23,7 +23,7 @@ export const CtSelectorDownloadsSection: React.FC<CtSelectorDownloadsSectionProp
 			<div className="flex items-center justify-between gap-3 flex-wrap">
 				<div className="flex items-center gap-2">
 					<FolderDown className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-					<h3 className="text-xs font-bold text-[var(--ink)] m-0 uppercase tracking-wider">
+					<h3 className="text-xs font-semibold text-[var(--ink)] m-0">
 						Свежие КТ из папки «Загрузки»
 					</h3>
 					<span className="text-[11px] text-[var(--muted)]">

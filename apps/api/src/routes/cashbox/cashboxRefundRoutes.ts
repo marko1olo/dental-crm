@@ -9,6 +9,7 @@ import { kopecksToNumericString, kopecksToRub, normalizePaymentMethod, rublesToK
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	advanceDepositTaggings,
 	cashBoxes,
@@ -72,6 +73,20 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 					"Для проведения возврата обязателен заголовок Idempotency-Key или поле clientMutationId.",
 			});
 		}
+
+		const baseMutationId = effectiveMutationId.includes("#")
+			? effectiveMutationId.split("#")[0]
+			: effectiveMutationId;
+		if (!isValidUuid(baseMutationId || "")) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+			});
+		}
+
+		reply.header("Idempotency-Key", effectiveMutationId);
+		reply.header("X-Idempotency-Key", effectiveMutationId);
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			await tx.execute(
@@ -436,6 +451,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 								patientId: effectivePatientId,
 								patientName,
 								depositAmountRub: kopecksToNumericString(refundKop),
+								depositAmountKopecks: BigInt(refundKop),
 								taggedTargetType: "family_wallet_refund",
 								taggedTargetName: `Возврат средств на семейный кошелек (${linkedInvoice?.id || linkedPayment?.id || "б/н"})`,
 								allocationStatus: "unallocated",
@@ -448,6 +464,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 							patientId: effectivePatientId,
 							patientName,
 							depositAmountRub: kopecksToNumericString(refundKop),
+							depositAmountKopecks: BigInt(refundKop),
 							taggedTargetType: "deposit_refund",
 							taggedTargetName: `Возврат средств на авансовый депозит (${linkedInvoice?.id || linkedPayment?.id || "б/н"})`,
 							allocationStatus: "unallocated",
@@ -601,6 +618,8 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 		});
 
 		if (result.kind === "replay") {
+			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
 			return reply.send({
 				success: true,
 				isReplay: true,

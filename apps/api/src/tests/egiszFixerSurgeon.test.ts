@@ -22,6 +22,9 @@ import { N3EventLogClient } from "@dental/shared";
 import { n3ConfigHeadersSchema } from "../routes/egisz/n3HealthRoutes.js";
 import { outboxHeadersSchema } from "../routes/egisz/outbox/outboxActionHandlers.js";
 import registerEgiszRoutes from "../routes/egisz.js";
+import { registerStatusRoutes } from "../routes/odontogram/statusRoutes.js";
+import registerPayrollRoutes from "../routes/payroll.js";
+import { registerClinicWorkflowsRoutes } from "../routes/clinicWorkflows.js";
 import { resetAuthSecretCacheForTests } from "../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER } from "../security/identity.js";
 import { signToken } from "../utils/cryptoHelper.js";
@@ -125,6 +128,9 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 
 		app = Fastify({ logger: false });
 		await registerEgiszRoutes(app);
+		await registerStatusRoutes(app);
+		await registerPayrollRoutes(app);
+		await registerClinicWorkflowsRoutes(app);
 		await app.ready();
 
 		// Seed minimal test records into real PG18 for BOLA testing
@@ -443,6 +449,100 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 			});
 			assert.equal(res.status, 200);
 			assert.equal(res.json?.ok, true);
+		});
+	});
+
+	describe("4. Fixer Surgeon Idempotency & Tenant Isolation Gate (Mandates 8bo, 8ar, 8e)", () => {
+		test("POST /api/odontogram/tooth-state rejects invalid idempotency-key with 400", async () => {
+			const res = await inject("POST", "/api/odontogram/tooth-state", {
+				token: clinicTokenMine,
+				extraHeaders: {
+					"idempotency-key": "not-a-valid-uuid",
+				},
+				body: {
+					patientId: testPatientId,
+					toothNumber: 16,
+					state: "Caries",
+				},
+			});
+			assert.equal(res.status, 400);
+			assert.equal(res.json?.error, "ValidationError");
+		});
+
+		test("POST /api/odontogram/status rejects invalid idempotency-key with 400", async () => {
+			const res = await inject("POST", "/api/odontogram/status", {
+				token: clinicTokenMine,
+				extraHeaders: {
+					"idempotency-key": "not-a-valid-uuid",
+				},
+				body: {
+					patientId: testPatientId,
+					toothNumber: 26,
+					state: "Healthy",
+				},
+			});
+			assert.equal(res.status, 400);
+			assert.equal(res.json?.error, "ValidationError");
+		});
+
+		test("POST /api/doctor/settlement-period/reopen rejects invalid idempotency-key with 400", async () => {
+			const res = await inject("POST", "/api/doctor/settlement-period/reopen", {
+				token: clinicTokenMine,
+				extraHeaders: {
+					"idempotency-key": "not-a-valid-uuid",
+				},
+				body: {
+					doctorId: testDoctorId,
+					periodStart: "2026-11-01T00:00:00Z",
+					periodEnd: "2026-11-30T23:59:59Z",
+				},
+			});
+			assert.equal(res.status, 400);
+			assert.equal(res.json?.error, "ValidationError");
+		});
+
+		test("POST /api/egisz/send rejects invalid idempotency-key with 400", async () => {
+			const res = await inject("POST", "/api/egisz/send", {
+				token: clinicTokenMine,
+				extraHeaders: {
+					"idempotency-key": "not-a-valid-uuid",
+				},
+				body: {
+					patientId: testPatientId,
+					visitId: testVisitId,
+				},
+			});
+			assert.equal(res.status, 400);
+			assert.equal(res.json?.error, "ValidationError");
+		});
+
+		test("POST /api/clinic/workflows rejects invalid idempotency-key with 400", async () => {
+			const res = await inject("POST", "/api/clinic/workflows", {
+				token: clinicTokenMine,
+				extraHeaders: {
+					"idempotency-key": "not-a-valid-uuid",
+				},
+				body: {
+					name: "SMS Recall Workflow",
+					definition: { action: "send_sms" },
+				},
+			});
+			assert.equal(res.status, 400);
+			assert.equal(res.json?.error, "ValidationError");
+		});
+
+		test("POST /api/clinic/workflows/:id/toggle rejects invalid idempotency-key with 400", async () => {
+			const res = await inject("POST", "/api/clinic/workflows/wf-test-id/toggle", {
+				token: clinicTokenMine,
+				extraHeaders: {
+					"idempotency-key": "not-a-valid-uuid",
+				},
+				body: {
+					active: true,
+				},
+			});
+			assert.equal(res.status, 400);
+			assert.equal(res.json?.error, "ValidationError");
 		});
 	});
 });
