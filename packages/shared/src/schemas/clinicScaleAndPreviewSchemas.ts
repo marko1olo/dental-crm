@@ -11,6 +11,8 @@ import { isDateLikeString } from "../datetime/index.js";
 import { appointmentInvoiceItemSchema } from "../schedule/appointmentSchemas.js";
 
 export const updateClinicProfileSchema = z.object({
+	branchId: z.string().uuid().nullable().optional(),
+	clinicId: z.string().uuid().nullable().optional(),
 	clinicName: z.string().trim().min(1).max(240).optional(),
 	legalName: z.string().trim().max(240).nullable().optional(),
 	inn: z
@@ -61,7 +63,7 @@ export const updateClinicProfileSchema = z.object({
 	egiszAutonomousMode: z.boolean().optional(),
 	logoUrl: z.string().trim().max(2000).nullable().optional(),
 	stampUrl: z.string().trim().max(2000).nullable().optional(),
-});
+}).strict();
 
 export type UpdateClinicProfileInput = z.infer<
 	typeof updateClinicProfileSchema
@@ -76,13 +78,13 @@ export const createStaffMemberSchema = z.object({
 	snils: z.string().trim().max(30).nullable().optional(),
 	inn: z.string().trim().max(30).nullable().optional(),
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
-});
+}).strict();
 
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberSchema>;
 
 export const updateStaffWorkingHoursSchema = z.object({
 	workingHours: staffWorkingHoursSchema,
-});
+}).strict();
 
 export type UpdateStaffWorkingHoursInput = z.infer<
 	typeof updateStaffWorkingHoursSchema
@@ -108,7 +110,7 @@ export const updateStaffAuthorityGrantsSchema = z.object({
 	canSignMedicalRecords: z.boolean().optional(),
 	canManageMoney: z.boolean().optional(),
 	canManageImports: z.boolean().optional(),
-});
+}).strict();
 
 export type UpdateStaffAuthorityGrantsInput = z.infer<
 	typeof updateStaffAuthorityGrantsSchema
@@ -126,7 +128,7 @@ export type StaffAuthorityState = z.infer<typeof staffAuthorityStateSchema>;
 
 export const updateChairWorkingHoursSchema = z.object({
 	workingHours: staffWorkingHoursSchema,
-});
+}).strict();
 
 export type UpdateChairWorkingHoursInput = z.infer<
 	typeof updateChairWorkingHoursSchema
@@ -144,7 +146,7 @@ export const createChairSchema = z.object({
 	notes: z.string().trim().max(500).nullable().optional(),
 	defaultDoctorId: z.string().uuid().nullable().optional(),
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
-});
+}).strict();
 
 export type CreateChairInput = z.infer<typeof createChairSchema>;
 

@@ -61,7 +61,7 @@ export const DicomQuickAccessActions: React.FC<DicomQuickAccessActionsProps> = (
 				<button
 					type="button"
 					onClick={onToggleFindingsDrawer}
-					className="h-8 px-2.5 rounded-lg border border-slate-700 bg-slate-800 text-teal-300 hover:bg-slate-700 text-[13px] font-medium cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+					className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--primary)] hover:bg-[var(--paper)] text-[13px] font-medium cursor-pointer inline-flex items-center gap-1.5 transition-colors"
 					title="Показать / скрыть панель находок ИИ"
 				>
 					<Sparkles size={13} />
@@ -75,22 +75,22 @@ export const DicomQuickAccessActions: React.FC<DicomQuickAccessActionsProps> = (
 					onClick={onNormaClick}
 					className={`h-8 px-3 rounded-lg border text-[13px] font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors ${
 						isNormaApplied
-							? "border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
-							: "border-emerald-500/40 bg-emerald-950/80 text-emerald-400 hover:bg-emerald-900/60"
+							? "border-[var(--success-soft)] bg-[var(--success-soft)] text-[var(--success)]"
+							: "border-[var(--primary-soft)] bg-[var(--primary-soft)] text-[var(--primary)] hover:bg-[var(--paper-soft)]"
 					}`}
 					title="Внести заключение «Рентген-норма» в дневник приёма"
 				>
-					<Zap size={13} className="text-emerald-400" />
+					<Zap size={13} className="text-[var(--primary)]" />
 					<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 				</button>
 			)}
-			<div className="text-xs text-teal-300 font-bold font-mono px-2 py-1 rounded bg-slate-800/80 border border-slate-700">
-				{patientName ? patientName.toUpperCase() : "PID2026-CLINIC"}
+			<div className="text-xs text-[var(--ink)] font-medium font-mono px-2.5 py-1 rounded-md bg-[var(--paper-soft)] border border-[var(--line)]">
+				{patientName || "Пациент"}
 			</div>
 			<button
 				type="button"
 				onClick={onToggleFullscreen}
-				className="h-8 w-8 rounded-lg flex items-center justify-center border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700 cursor-pointer transition-colors"
+				className="h-8 w-8 rounded-lg flex items-center justify-center border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] cursor-pointer transition-colors"
 				title="Полноэкранный режим (F11)"
 			>
 				{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -99,7 +99,7 @@ export const DicomQuickAccessActions: React.FC<DicomQuickAccessActionsProps> = (
 				<button
 					type="button"
 					onClick={onClose}
-					className="h-8 w-8 rounded-lg flex items-center justify-center border-none bg-transparent text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 cursor-pointer transition-colors"
+					className="h-8 w-8 rounded-lg flex items-center justify-center border-none bg-transparent text-[var(--ink-muted)] hover:text-[var(--danger)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 					title="Закрыть (Esc)"
 				>
 					<X size={17} />

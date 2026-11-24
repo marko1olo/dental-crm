@@ -43,7 +43,7 @@ export const batchUpdateLeadStageSchema = z.object({
 	toStage: leadStatusEnum,
 	reason: z.string().optional(),
 	assignedDoctorId: z.string().uuid().optional().nullable(),
-});
+}).strict();
 
 export type BatchUpdateLeadStageInput = z.infer<typeof batchUpdateLeadStageSchema>;
 
@@ -55,7 +55,7 @@ export const patchLeadStageSchema = z.object({
 	assignedDoctorId: z.string().uuid().optional().nullable(),
 	reason: z.string().optional().nullable(),
 	dropReason: z.string().optional().nullable(),
-});
+}).strict();
 
 export type PatchLeadStageInput = z.infer<typeof patchLeadStageSchema>;
 
@@ -68,6 +68,6 @@ export const leadStageHistoryEntrySchema = z.object({
 	changedByUserId: z.string().uuid().nullable().optional(),
 	durationSeconds: z.number().int().nonnegative().nullable().optional(),
 	createdAt: z.union([z.string().datetime(), z.date()]),
-});
+}).strict();
 
 export type LeadStageHistoryEntry = z.infer<typeof leadStageHistoryEntrySchema>;

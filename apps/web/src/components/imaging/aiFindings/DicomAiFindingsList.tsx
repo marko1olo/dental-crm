@@ -31,7 +31,7 @@ export const DicomAiFindingsList: React.FC<Props> = ({
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-			<div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink-muted, #94a3b8)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+			<div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink-muted, #94a3b8)" }}>
 				Предлагаемые изменения в формулу:
 			</div>
 			{plan.groups.map((group) => {

@@ -52,20 +52,20 @@ export function ClinicalXrayProtocolPanel({
 			</div>
 
 			<div className="sa-panel-body">
-				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 flex items-center justify-between gap-2.5">
+				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-2.5">
 					<div className="min-w-0 flex-1">
 						<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<FileText size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<FileText size={13} className="text-[var(--primary)] shrink-0" />
 							<span>Перенос данных в карту</span>
 						</div>
 						<div className="text-[11px] text-[var(--muted)] truncate">В зубную формулу и дневник приёма медицинской карты</div>
 					</div>
 					<button
 						type="button"
-						className={`h-7 px-2.5 text-xs font-semibold rounded-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+						className={`h-8 px-3 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
 							isApplied
-								? "bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 cursor-default"
-								: "bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-strong,#0f766e)] text-white shadow-2xs"
+								? "bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success)]/30 cursor-default"
+								: "bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-2xs"
 						}`}
 						disabled={isApplying || isApplied}
 						onClick={handleApplyFindings}
@@ -84,13 +84,13 @@ export function ClinicalXrayProtocolPanel({
 
 				{updates.length > 0 && (
 					<div className="sa-findings-list mt-3 flex flex-col gap-1.5">
-						<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
+						<span className="text-[11px] font-semibold text-[var(--ink-muted)]">
 							Детализация по зубам ({updates.length})
 						</span>
 						<div className="flex flex-col gap-1 max-h-[160px] overflow-y-auto">
 							{updates.map((u, i) => (
 								<div key={`${u.code}-${i}`} className="px-2 py-1 rounded bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs">
-									<span className="font-mono font-bold text-teal-600 dark:text-teal-400">Зуб #{u.code}</span>
+									<span className="font-mono font-bold text-[var(--primary)]">Зуб #{u.code}</span>
 									<span className="text-[var(--ink)] text-right truncate max-w-[200px]" title={u.diagnosisOrFinding}>
 										{u.diagnosisOrFinding}
 									</span>

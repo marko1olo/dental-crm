@@ -168,7 +168,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2" data-testid="card-pos-panel">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
-							<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<CreditCard className="w-4 h-4 text-[var(--primary)]" />
 							<span>Оплата банковской картой через POS-терминал</span>
 						</span>
 						<span className="text-sm font-bold font-mono text-[var(--ink)]">{formatRubles(effectiveTotalRub)}</span>
@@ -199,7 +199,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 				<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="installment-tender-panel">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<ShieldCheck className="w-4 h-4 text-[var(--primary)]" />
 							<span className="text-xs font-bold text-[var(--ink)]">Беспроцентная рассрочка 0% для пациента</span>
 						</div>
 						<span className="text-xs font-bold text-[var(--success-ink)]">0 ₽ переплаты</span>
@@ -218,7 +218,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 									onClick={() => setInstallmentMonths(m)}
 									className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
 										installmentMonths === m
-											? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
+											? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
 											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
@@ -232,7 +232,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs">
 						<span className="text-[var(--muted)]">Банки-партнёры: Т-Банк, Сбербанк, ОТП</span>
-						<span className="text-xs font-semibold text-[var(--teal,#0d9488)]">Одобрение онлайн за 2 минуты</span>
+						<span className="text-xs font-semibold text-[var(--primary)]">Одобрение онлайн за 2 минуты</span>
 					</div>
 				</div>
 			)}
@@ -274,7 +274,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5" data-testid="certificate-tender-panel">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
-							<Gift className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<Gift className="w-4 h-4 text-[var(--primary)]" />
 							<span>Оплата подарочным сертификатом клиники</span>
 						</span>
 						<span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">

@@ -4,8 +4,11 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, eq, or, sql } from "drizzle-orm";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../../accessGuard.js";
 import { requireOrganizationId } from "../../../security/identity.js";
+import { db } from "../../../db/client.js";
+import { egiszOutbox } from "../../../db/schema.js";
 import { N3EventLogClient, N3FhirTerminologyClient } from "@dental/shared";
 import { resolveN3HealthConfig } from "./n3Config.js";
 import { eventLogReexportBodySchema } from "./n3Schemas.js";
@@ -17,6 +20,26 @@ export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 		if (!orgId) return;
 		const { idDocumentMis } = request.params as { idDocumentMis: string };
 		if (!idDocumentMis) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр idDocumentMis обязателен." });
+
+		const [doc] = await db
+			.select({ id: egiszOutbox.id })
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.organizationId, orgId),
+					or(
+						sql`${egiszOutbox.documentId}::text = ${idDocumentMis}`,
+						sql`${egiszOutbox.id}::text = ${idDocumentMis}`,
+						sql`${egiszOutbox.dedupeKey} LIKE ${`${idDocumentMis}%`}`,
+						eq(egiszOutbox.remdDocumentId, idDocumentMis),
+					),
+				),
+			)
+			.limit(1);
+
+		if (!doc) {
+			return reply.status(404).send({ success: false, ok: false, error: "Document not found or access denied" });
+		}
 
 		const { config } = await resolveN3HealthConfig(orgId);
 		if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
@@ -32,6 +55,27 @@ export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 
 		const parsed = eventLogReexportBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметры idDocumentMis и queue обязательны." });
+
+		const [doc] = await db
+			.select({ id: egiszOutbox.id })
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.organizationId, orgId),
+					or(
+						sql`${egiszOutbox.documentId}::text = ${parsed.data.idDocumentMis}`,
+						sql`${egiszOutbox.id}::text = ${parsed.data.idDocumentMis}`,
+						sql`${egiszOutbox.dedupeKey} LIKE ${`${parsed.data.idDocumentMis}%`}`,
+						eq(egiszOutbox.remdDocumentId, parsed.data.idDocumentMis),
+					),
+				),
+			)
+			.limit(1);
+
+		if (!doc) {
+			return reply.status(404).send({ success: false, ok: false, error: "Document not found or access denied" });
+		}
+
 		const { config } = await resolveN3HealthConfig(orgId);
 		if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
 		const client = new N3EventLogClient(config);

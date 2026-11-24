@@ -107,7 +107,7 @@ export const photoVideoConsentPayloadSchema = z.object({
 	anonymizationRequired: z.literal(true),
 	revocationChannel: z.string().trim().min(1).max(240),
 	scopeNotes: z.string().trim().max(800).nullable().optional(),
-});
+}).strict();
 
 export type PhotoVideoConsentPayload = z.infer<
 	typeof photoVideoConsentPayloadSchema
@@ -160,7 +160,7 @@ export const xrayCbctReferralPayloadSchema = z.object({
 	requestedBy: z.string().trim().min(1).max(200),
 	recipientClinic: z.string().trim().max(240).nullable().optional(),
 	dueDate: z.string().trim().max(80).nullable().optional(),
-});
+}).strict();
 
 export type XrayCbctReferralPayload = z.infer<
 	typeof xrayCbctReferralPayloadSchema
@@ -186,7 +186,7 @@ export const medicalDocumentReleaseReceiptPayloadSchema = z.object({
 	accessExpiresAt: z.string().trim().max(80).nullable().optional(),
 	deliveryProtectionNote: z.string().trim().min(1).max(500),
 	thirdPartyDataChecked: z.literal(true),
-});
+}).strict();
 
 export type MedicalDocumentReleaseReceiptPayload = z.infer<
 	typeof medicalDocumentReleaseReceiptPayloadSchema
@@ -208,7 +208,7 @@ export const medicalRecordExtractPayloadSchema = z.object({
 	issuedAt: documentDateLikeStringSchema,
 	preparedFromSignedMedicalRecords: z.literal(true),
 	thirdPartyDataChecked: z.literal(true),
-});
+}).strict();
 
 export type MedicalRecordExtractPayload = z.infer<
 	typeof medicalRecordExtractPayloadSchema
@@ -226,7 +226,7 @@ export const structuredAnamnesisSchema = z.object({
 	pregnancyStatus: z.string().trim().max(240).nullable().optional(),
 	pastDentalHistory: z.string().trim().max(2000).nullable().optional(),
 	generalHealthNotes: z.string().trim().max(2000).nullable().optional(),
-});
+}).strict();
 
 export type StructuredAnamnesis = z.infer<typeof structuredAnamnesisSchema>;
 
@@ -240,7 +240,7 @@ export const dentalMedicalCard043uOrganizationSchema = z.object({
 	licenseNumber: z.string().trim().max(64).nullable(),
 	licenseIssueDate: z.string().trim().max(32).nullable(),
 	licenseAuthority: z.string().trim().max(240).nullable(),
-});
+}).strict();
 
 export type DentalMedicalCard043uOrganization = z.infer<
 	typeof dentalMedicalCard043uOrganizationSchema
@@ -255,7 +255,7 @@ export const dentalMedicalCard043uPatientSchema = z.object({
 	documentSeriesNumber: z.string().trim().max(64).nullable(),
 	snils: z.string().trim().max(32).nullable(),
 	medicalCardNumber: z.string().trim().max(64).nullable(),
-});
+}).strict();
 
 export type DentalMedicalCard043uPatient = z.infer<
 	typeof dentalMedicalCard043uPatientSchema
@@ -265,7 +265,7 @@ export const dentalMedicalCard043uDoctorSchema = z.object({
 	fullName: z.string().trim().min(1).max(160),
 	specialty: z.string().trim().max(120).nullable(),
 	position: z.string().trim().max(120).nullable(),
-});
+}).strict();
 
 export type DentalMedicalCard043uDoctor = z.infer<
 	typeof dentalMedicalCard043uDoctorSchema
@@ -300,7 +300,7 @@ export const dentalMedicalCard043uPayloadSchema = z.object({
 	content: z.string().trim().max(16000).nullable().optional(),
 	lockedAt: z.string().trim().max(64).nullable().optional(),
 	contentHash: z.string().trim().max(128).nullable().optional(),
-});
+}).strict();
 
 export type DentalMedicalCard043uPayload = z.infer<
 	typeof dentalMedicalCard043uPayloadSchema
@@ -342,7 +342,7 @@ export const medicalRecordCopyRequestPayloadSchema = z.object({
 	includeDicomSourceData: z.boolean(),
 	identityVerified: z.literal(true),
 	thirdPartyDataExclusionAcknowledged: z.literal(true),
-});
+}).strict();
 
 export type MedicalRecordCopyRequestPayload = z.infer<
 	typeof medicalRecordCopyRequestPayloadSchema
@@ -398,7 +398,7 @@ export const postVisitRecommendationsPayloadSchema = z.object({
 	patientReceivedPrintedCopy: z.literal(true),
 	patientUnderstandsUrgentSigns: z.literal(true),
 	safeForTelegramSending: z.literal(true),
-});
+}).strict();
 
 export type PostVisitRecommendationsPayload = z.infer<
 	typeof postVisitRecommendationsPayloadSchema
@@ -424,7 +424,7 @@ export const treatmentPlanPayloadSchema = z.object({
 				 * весь план целиком.
 				 */
 				estimatedAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
-			}),
+			}).strict(),
 		)
 		.min(1)
 		.max(24),
@@ -444,7 +444,7 @@ export const treatmentPlanPayloadSchema = z.object({
 	patientFriendlyExplanation: z.string().trim().max(4000).nullable().optional(),
 	patientHygieneAdvice: z.string().trim().max(4000).nullable().optional(),
 	customHygieneTextOverride: z.string().trim().max(4000).nullable().optional(),
-});
+}).strict();
 
 export type TreatmentPlanPayload = z.infer<typeof treatmentPlanPayloadSchema>;
 
@@ -475,7 +475,7 @@ export const treatmentPlanAcceptancePayloadSchema = z.object({
 				plannedTiming: z.string().trim().min(1).max(180),
 				/* Принятый план обязан повторять суммы предложенного — до копейки. */
 				estimatedAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
-			}),
+			}).strict(),
 		)
 		.min(1)
 		.max(20),
@@ -497,7 +497,7 @@ export const treatmentPlanAcceptancePayloadSchema = z.object({
 	patientUnderstandsAlternatives: z.literal(true),
 	patientUnderstandsCostMayChange: z.literal(true),
 	revisionRequiresNewApproval: z.literal(true),
-});
+}).strict();
 
 export type TreatmentPlanAcceptancePayload = z.infer<
 	typeof treatmentPlanAcceptancePayloadSchema

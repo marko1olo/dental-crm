@@ -91,7 +91,7 @@ export function FinanceModalsHost({
 			/>
 
 			<CashRegisterStudioModal
-				key={s.effectiveBillingSummary?.invoiceId || docPat?.id || "cashbox-studio"}
+				key={s.pendingCheckout?.invoiceId || docPat?.id || "cashbox-studio"}
 				isOpen={s.isCashboxOpen}
 				onClose={() => s.setIsCashboxOpen(false)}
 				mode="studio"
@@ -127,7 +127,7 @@ export function FinanceModalsHost({
 
 			{s.isSplitPaymentOpen && (
 				<CashRegisterStudioModal
-					key={s.effectiveBillingSummary?.invoiceId || effPat?.id || "cashbox-split"}
+					key={s.pendingCheckout?.invoiceId || effPat?.id || "cashbox-split"}
 					isOpen={s.isSplitPaymentOpen}
 					onClose={() => s.setIsSplitPaymentOpen(false)}
 					mode="checkout"

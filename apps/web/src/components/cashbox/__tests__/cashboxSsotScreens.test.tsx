@@ -63,10 +63,10 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 			assert.ok(html.includes("Чек с фискализацией"), "Must have fiscalization toggle");
 			assert.ok(html.includes("Печать на кассе"), "Must have print receipt option");
 
-			// 4. Exactly ONE Primary CTA button in var(--teal)
+			// 4. Exactly ONE Primary CTA button in var(--primary)
 			assert.ok(html.includes("data-testid=\"btn-confirm-checkout-payment\""), "Must have confirm payment CTA");
 			assert.ok(html.includes("Принять оплату"), "CTA text must be 'Принять оплату'");
-			assert.ok(html.includes("var(--teal"), "CTA must use var(--teal)");
+			assert.ok(html.includes("var(--primary") || html.includes("var(--teal"), "CTA must use var(--primary)");
 
 			// 5. Mandate 8e: Non-blocking, zero disabled buttons
 			assert.ok(!html.includes("disabled=\"\"") || !html.includes("disabled "), "Primary CTA must not be disabled by secondary fields");

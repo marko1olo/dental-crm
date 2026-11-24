@@ -45,7 +45,7 @@ export const DicomQuickAccessBar: React.FC<DicomQuickAccessBarProps> = ({
 			id="dicom-mpr-toolbar"
 			data-testid="dicom-toolbox-ribbon"
 			data-tour="imaging-filter"
-			className="overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x shrink-0 px-2 flex items-center justify-between gap-2 select-none flex-nowrap whitespace-nowrap bg-[#090d16] border-b border-slate-800 text-slate-100 h-10 min-h-[40px]"
+			className="overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden touch-pan-x shrink-0 px-2 flex items-center justify-between gap-2 select-none flex-nowrap whitespace-nowrap bg-[var(--paper)] border-b border-[var(--line)] text-[var(--ink)] h-10 min-h-[40px]"
 		>
 			<DicomQuickAccessTabs activeTab={activeTab} onTabChange={onTabChange} />
 

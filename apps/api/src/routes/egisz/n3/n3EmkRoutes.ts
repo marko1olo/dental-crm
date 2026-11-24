@@ -4,8 +4,12 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, eq, or, sql } from "drizzle-orm";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
 import { requireOrganizationId } from "../../../security/identity.js";
+import { db } from "../../../db/client.js";
+import { egiszOutbox, patients } from "../../../db/schema.js";
+import { appendEgiszAuditLog } from "../../../services/egisz/EgiszAuditService.js";
 import {
 	buildEmkAddDocumentSoapXml,
 	buildEmkCloseCaseSoapXml,
@@ -28,6 +32,28 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 		if (!parsed.success) {
 			return reply.status(400).send({ ok: false, error: "ValidationError", message: "Некорректные параметры документа.", issues: parsed.error.issues });
 		}
+
+		// IDOR / Tenant Guard: проверка принадлежности пациента текущей клинике
+		const [patient] = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					sql`${patients.id}::text = ${parsed.data.patient.idPatientMis}`,
+				),
+			)
+			.limit(1);
+
+		if (!patient) {
+			return reply.status(404).send({
+				ok: false,
+				success: false,
+				error: "PatientNotFound",
+				message: "Пациент не найден или не принадлежит текущей организации.",
+			});
+		}
+
 		const { config } = await resolveN3HealthConfig(orgId);
 		if (!config) {
 			return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
@@ -50,6 +76,36 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 
 		const parsed = emkSendDocumentBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Некорректные параметры SendDocument." });
+
+		// IDOR / Outbox Guard: проверка владения документом через egiszOutbox
+		const [existingDoc] = await db
+			.select({
+				id: egiszOutbox.id,
+				patientId: egiszOutbox.patientId,
+			})
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.organizationId, orgId),
+					or(
+						sql`${egiszOutbox.documentId}::text = ${parsed.data.idDocumentMis}`,
+						sql`${egiszOutbox.id}::text = ${parsed.data.idDocumentMis}`,
+						sql`${egiszOutbox.dedupeKey} LIKE ${`${parsed.data.idDocumentMis}%`}`,
+						eq(egiszOutbox.remdDocumentId, parsed.data.idDocumentMis),
+					),
+				),
+			)
+			.limit(1);
+
+		if (!existingDoc) {
+			return reply.status(404).send({
+				ok: false,
+				success: false,
+				error: "Document not found or access denied",
+				message: "Документ не найден или не принадлежит текущей организации.",
+			});
+		}
+
 		const { config } = await resolveN3HealthConfig(orgId);
 		if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
 
@@ -60,6 +116,25 @@ export function registerN3EmkRoutes(app: FastifyInstance): void {
 		}
 		const gateway = new N3HealthVipnetGateway(config);
 		const result = await gateway.emkSendDocument(payload);
+
+		// Единая Дверь: фиксация исходящей отправки документа в криптографическом аудит-логе
+		await appendEgiszAuditLog(db, {
+			organizationId: orgId,
+			eventType: "N3_EMK_DOCUMENT_SENT",
+			entityType: "egisz_outbox",
+			entityId: existingDoc.id,
+			patientId: existingDoc.patientId,
+			actorUserId: (request.user as { id?: string } | undefined)?.id ?? null,
+			payload: {
+				idDocumentMis: parsed.data.idDocumentMis,
+				idCaseMis: parsed.data.idCaseMis,
+				targetSystem: parsed.data.targetSystem,
+				success: result.success,
+				idDocumentGlobal: result.idDocumentGlobal,
+				httpStatusCode: result.httpStatusCode,
+			},
+		});
+
 		return reply.status(result.success ? 200 : 502).send({ ok: result.success, httpStatusCode: result.httpStatusCode, idDocumentGlobal: result.idDocumentGlobal, faultString: result.faultString });
 	});
 

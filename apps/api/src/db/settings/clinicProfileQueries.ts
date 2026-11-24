@@ -737,8 +737,7 @@ export async function updateClinicProfileInDb(
 		if (input.timezone !== undefined) clinicUpdateData.timezone = input.timezone;
 
 		if (Object.keys(clinicUpdateData).length > 0) {
-			const targetId = (input as { branchId?: string; clinicId?: string }).branchId ||
-				(input as { branchId?: string; clinicId?: string }).clinicId;
+			const targetId = input.branchId || input.clinicId;
 			const query = targetId
 				? and(eq(schema.clinics.id, targetId), eq(schema.clinics.organizationId, organizationId))
 				: eq(schema.clinics.organizationId, organizationId);

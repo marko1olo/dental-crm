@@ -43,22 +43,23 @@ const __dirname = path.dirname(__filename);
 
 describe("Minzdrav Order 804n Statutory Registry Decomposition Suite", () => {
 	it("1. Behavioral Conservation: exact count and identity between facade and registry", () => {
-		assert.equal(ORDER_804N_STATUTORY_REGISTRY.length, 74, "Registry must contain statutory services");
-		assert.equal(FACADE_REGISTRY.length, 74, "Facade must export statutory services");
+		assert.equal(ORDER_804N_STATUTORY_REGISTRY.length, 75, "Registry must contain statutory services");
+		assert.equal(FACADE_REGISTRY.length, 75, "Facade must export statutory services");
 		assert.deepEqual(FACADE_REGISTRY, ORDER_804N_STATUTORY_REGISTRY, "Facade and decomposed registry must be 100% identical");
+		assert.ok(ORDER_804N_STATUTORY_REGISTRY.some((s) => s.code === "A16.07.039"), "Must include A16.07.039 closed curettage");
 	});
 
 	it("2. Layer 1 Catalog Partitioning: exact subcatalog sizes and completeness", () => {
-		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_BASE_CATALOG.length, 33, "Base therapeutic catalog has 33 items");
+		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_BASE_CATALOG.length, 34, "Base therapeutic catalog has 34 items");
 		assert.equal(PEDIATRIC_804N_CATALOG.length, 10, "Pediatric catalog has 10 items");
-		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length, 43, "Combined therapeutic catalog has 43 items");
+		assert.equal(THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length, 44, "Combined therapeutic catalog has 44 items");
 
 		assert.equal(SURGICAL_AND_ORTHO_804N_CATALOG.length, 31, "Combined surgical & ortho catalog has 31 items");
 
 		assert.equal(
 			THERAPEUTIC_AND_DIAGNOSTIC_804N_CATALOG.length + SURGICAL_AND_ORTHO_804N_CATALOG.length,
-			74,
-			"Sum of modular catalogs must equal 74",
+			75,
+			"Sum of modular catalogs must equal 75",
 		);
 	});
 

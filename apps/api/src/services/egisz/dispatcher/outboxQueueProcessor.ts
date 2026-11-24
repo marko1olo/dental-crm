@@ -26,7 +26,6 @@ import type {
 } from "./types.js";
 import { getReceiptByOutboxId, getReceiptByVisitId } from "./receiptManager.js";
 import { syncPendingStatuses } from "./statusSyncer.js";
-import { processLegacyPendingLogs } from "./legacyLogsProcessor.js";
 import { processOutboxRow } from "./outboxRowSender.js";
 import { resolveN3HealthConfig } from "../../../routes/egisz/n3/n3Config.js";
 import { calculateEgiszRetryDelayMs } from "./egiszGatewayClient.js";
@@ -302,9 +301,6 @@ export class EgiszOutboxDispatcher {
 			}
 			result.results.push(rowRes.resultItem);
 		}
-
-		// 2. Backward compatibility: also process pending items in egisz_logs that do not have an outbox row
-		await processLegacyPendingLogs(this.client, result, organizationId, limit);
 
 		return result;
 	}
