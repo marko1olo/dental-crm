@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { Camera, Check, CheckCircle, RefreshCw, Upload, Smartphone, AlertCircle, ChevronRight } from "lucide-react";
 import { compressChairsidePhotoToBlobUrl } from "../chairsidePhotoCompressor";
 import { showToast } from "../../GlobalToast";
+import { logger } from "../../../utils/logger";
 
 export interface MobilePhotoSlot {
 	id: string;
@@ -29,7 +31,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 		if (tokenFromUrl) return tokenFromUrl;
 		const hash = window.location.hash;
 		const hashMatch = hash.match(/token=([a-f0-9]+)/i);
-		if (hashMatch) return hashMatch[1]!;
+		if (hashMatch?.[1]) return hashMatch[1];
 		const searchParams = new URLSearchParams(window.location.search);
 		return searchParams.get("token") || searchParams.get("photoBridgeToken") || "";
 	});
@@ -75,8 +77,9 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				slots: receivedSlots,
 			});
 
-			if (receivedSlots && receivedSlots.length > 0 && receivedSlots[0]) {
-				setSelectedSlotId((prev) => (receivedSlots.some((s) => s.id === prev) ? prev : receivedSlots[0]!.id));
+			const firstSlot = receivedSlots?.[0];
+			if (receivedSlots && receivedSlots.length > 0 && firstSlot) {
+				setSelectedSlotId((prev) => (receivedSlots.some((s) => s.id === prev) ? prev : firstSlot.id));
 			}
 
 			if (Array.isArray(data.uploadedPhotos)) {
@@ -87,7 +90,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				setUploadedSlots(map);
 			}
 		} catch (err: unknown) {
-			console.warn("[MobilePhotoUploadPage] Session fetch failed:", err);
+			logger.warn("[MobilePhotoUploadPage] Session fetch failed", err);
 			const msg = err instanceof Error ? err.message : String(err);
 			setError(msg || "Сессия не найдена или срок действия истек.");
 		} finally {
@@ -141,6 +144,9 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 
 			const uploadRes = await fetch(`/api/photo-bridge/upload/${token}?slotId=${selectedSlotId}`, {
 				method: "POST",
+				headers: {
+					"Idempotency-Key": generateUuidV7(),
+				},
 				body: fd,
 			});
 
@@ -169,7 +175,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				setSelectedSlotId(remainingSlots[0].id);
 			}
 		} catch (err: unknown) {
-			console.error("[MobilePhotoUploadPage] Upload failed:", err);
+			logger.error("[MobilePhotoUploadPage] Upload failed", err);
 			const errMsg = err instanceof Error ? err.message : "Не удалось загрузить снимок.";
 			showToast(errMsg || "Не удалось загрузить снимок.", "error");
 		} finally {
@@ -191,7 +197,13 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 
 	const effectiveSlots = sessionData?.slots && sessionData.slots.length > 0 ? sessionData.slots : CHAIRSIDE_MOBILE_SLOTS;
 	const totalSlotsCount = effectiveSlots.length;
-	const activeSlot = effectiveSlots.find((s) => s.id === selectedSlotId) || effectiveSlots[0]!;
+	const fallbackSlot: MobilePhotoSlot = {
+		id: "portrait_smile",
+		titleRu: "Улыбка и пропорции лица",
+		shortLabelRu: "Улыбка",
+		instructionRu: "Естественная широкая улыбка анфас",
+	};
+	const activeSlot = effectiveSlots.find((s) => s.id === selectedSlotId) ?? effectiveSlots[0] ?? fallbackSlot;
 	const uploadedCount = Object.keys(uploadedSlots).length;
 
 	if (isLoadingSession) {

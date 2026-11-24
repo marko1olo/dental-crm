@@ -20,6 +20,7 @@ import { createApiLogger, safeLogError } from "../observability/logger.js";
 const logger = createApiLogger("medicalAuditTrail");
 import {
 	auditEvents,
+	clinicalAuditLogs,
 	treatmentPlans,
 	users,
 	visitDiaries,
@@ -106,60 +107,105 @@ export async function getPatientActiveDiagnosisFromDb(
 
 		return null;
 	} catch (err) {
-		// В автономном/тестовом окружении без живого PostgreSQL не роняем аудит
+		logger.warn(
+			{ err: safeLogError(err), organizationId, patientId },
+			"Не удалось получить активный диагноз пациента для записи аудита",
+		);
 		return null;
 	}
 }
 
 /**
  * Записывает факт доступа к медицинской карте / диагнозу в защищенный журнал аудита (152-ФЗ).
- * SSOT: Запись сохраняется в единую таблицу audit_events (Мандат 8bf / DEF-SEC-05).
+ * Пишет согласованно в единую таблицу audit_events и в структурированный clinical_audit_logs.
  */
 export async function recordMedicalRecordAccessAudit(
 	input: MedicalAccessAuditInput,
 ): Promise<void> {
 	const auditId = randomUUID();
 	const eventAction = input.action ?? "VIEW_DIAGNOSIS";
-	const diagnosisText = input.diagnosis ?? "Медицинская карта (ЭМК / 043-у)";
+	const diagnosisText = input.diagnosis ?? "Медицинская карта пациента";
+	const eventType = input.eventType ?? "DIAGNOSIS_ACCESS";
 
 	try {
 		const UUID_SHAPE =
 			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 		const validActorUuid =
 			input.actorUserId && UUID_SHAPE.test(input.actorUserId) ? input.actorUserId : null;
+		const validPatientUuid =
+			input.patientId && UUID_SHAPE.test(input.patientId) ? input.patientId : null;
 
 		let validActorUserId: string | null = null;
+		let resolvedActorLogin: string | null = input.actorLogin ?? null;
 		if (validActorUuid) {
 			const [existingUser] = await db
-				.select({ id: users.id })
+				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
-				.where(eq(users.id, validActorUuid))
+				.where(
+					and(
+						eq(users.id, validActorUuid),
+						eq(users.organizationId, input.organizationId),
+					),
+				)
 				.limit(1);
 			if (existingUser) {
 				validActorUserId = existingUser.id;
+				if (!resolvedActorLogin) {
+					resolvedActorLogin = existingUser.fullName ?? null;
+				}
 			}
 		}
 
-		await db.insert(auditEvents).values({
-			id: auditId,
-			organizationId: input.organizationId,
-			actorUserId: validActorUserId,
-			entityType: "patient_diagnosis",
-			entityId: input.patientId ?? "unknown",
-			action: eventAction,
-			reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${input.actorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
+		await db.transaction(async (tx) => {
+			await tx.insert(auditEvents).values({
+				id: auditId,
+				organizationId: input.organizationId,
+				actorUserId: validActorUserId,
+				entityType: "patient_diagnosis",
+				entityId: input.patientId ?? "unknown",
+				action: eventAction,
+				reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${resolvedActorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
+			});
+
+			await tx.insert(clinicalAuditLogs).values({
+				id: auditId,
+				organizationId: input.organizationId,
+				patientId: validPatientUuid,
+				actorUserId: validActorUserId,
+				userId: validActorUserId,
+				actorLogin: resolvedActorLogin,
+				eventType,
+				action: eventAction,
+				resourceType: "patient_diagnosis",
+				entityType: "patient_diagnosis",
+				entityId: input.patientId ?? "unknown",
+				ipAddress: input.ipAddress ?? null,
+				userAgent: input.userAgent ?? null,
+				meta: {
+					diagnosis: diagnosisText,
+					actorRole: input.actorRole ?? null,
+					...(input.metadata ?? {}),
+				},
+			});
 		});
 	} catch (error) {
 		// Аварийный канал протоколирования: запись аудита не должна ронять клинический прием,
-		// но отказ должен быть зафиксирован в структурированном логгере
+		// но отказ должен быть зафиксирован с полным содержимым события
 		logger.error(
 			{
 				err: safeLogError(error),
-				organizationId: input.organizationId,
-				patientId: input.patientId,
-				actorUserId: input.actorUserId,
+				emergencyRecord: {
+					auditId,
+					organizationId: input.organizationId,
+					patientId: input.patientId ?? null,
+					actorUserId: input.actorUserId ?? null,
+					action: eventAction,
+					diagnosis: diagnosisText,
+					ipAddress: input.ipAddress ?? null,
+					userAgent: input.userAgent ?? null,
+				},
 			},
-			"Не удалось сохранить аудит-запись 152-ФЗ",
+			"[medicalAuditTrail] ОТКАЗ ЗАПИСИ 152-ФЗ: событие аудита подлежит восстановлению",
 		);
 	}
 }
@@ -198,14 +244,9 @@ export async function auditMedicalAccessFromRequest(
 	const userAgent =
 		typeof userAgentHeader === "string" ? userAgentHeader : null;
 
-	const userRoleHeader = request.headers["x-user-role"];
 	const actorUserId = identity.userId ?? authReq.user?.id ?? null;
 	const actorLogin = identity.fullName ?? authReq.user?.fullName ?? null;
-	const actorRole =
-		identity.role ??
-		authReq.user?.role ??
-		(typeof userRoleHeader === "string" ? userRoleHeader : null) ??
-		null;
+	const actorRole = identity.role ?? authReq.user?.role ?? null;
 
 	// Если диагноз не передан явно, ищем активный диагноз пациента в базе
 	let diagnosis = options.diagnosis ?? null;
@@ -242,28 +283,73 @@ export async function getMedicalAccessAuditTrailFromDb(
 	},
 ): Promise<MedicalAuditRecord[]> {
 	const limit = Math.min(Math.max(options?.limit ?? 50, 1), 200);
-	const conditions = [
+	const clinicalConditions = [
+		eq(clinicalAuditLogs.organizationId, organizationId),
+		eq(clinicalAuditLogs.entityType, "patient_diagnosis"),
+	];
+	if (options?.patientId) {
+		clinicalConditions.push(eq(clinicalAuditLogs.entityId, options.patientId));
+	}
+	if (options?.actorUserId) {
+		clinicalConditions.push(eq(clinicalAuditLogs.actorUserId, options.actorUserId));
+	}
+
+	const clinicalRows = await db
+		.select()
+		.from(clinicalAuditLogs)
+		.where(and(...clinicalConditions))
+		.orderBy(desc(clinicalAuditLogs.createdAt))
+		.limit(limit);
+
+	const eventConditions = [
 		eq(auditEvents.organizationId, organizationId),
 		eq(auditEvents.entityType, "patient_diagnosis"),
 	];
-
 	if (options?.patientId) {
-		conditions.push(eq(auditEvents.entityId, options.patientId));
+		eventConditions.push(eq(auditEvents.entityId, options.patientId));
 	}
 	if (options?.actorUserId) {
-		conditions.push(eq(auditEvents.actorUserId, options.actorUserId));
+		eventConditions.push(eq(auditEvents.actorUserId, options.actorUserId));
 	}
 
-	const rows = await db
+	const eventRows = await db
 		.select()
 		.from(auditEvents)
-		.where(and(...conditions))
+		.where(and(...eventConditions))
 		.orderBy(desc(auditEvents.createdAt))
 		.limit(limit);
 
-	return rows.map((row) => {
+	const mergedById = new Map<string, MedicalAuditRecord>();
+
+	for (const row of clinicalRows) {
+		const metaObj =
+			row.meta && typeof row.meta === "object"
+				? (row.meta as Record<string, unknown>)
+				: null;
+		const diagFromMeta =
+			typeof metaObj?.diagnosis === "string" ? metaObj.diagnosis : null;
+		mergedById.set(row.id, {
+			id: row.id,
+			organizationId: row.organizationId,
+			patientId: row.patientId ?? row.entityId,
+			actorUserId: row.actorUserId,
+			actorLogin: row.actorLogin,
+			action: row.action,
+			eventType: row.eventType,
+			diagnosis: diagFromMeta,
+			ipAddress: row.ipAddress,
+			userAgent: row.userAgent,
+			createdAt:
+				row.createdAt instanceof Date
+					? row.createdAt.toISOString()
+					: String(row.createdAt),
+		});
+	}
+
+	for (const row of eventRows) {
+		if (mergedById.has(row.id)) continue;
 		const match = row.reason?.match(/диагноз «([^»]+)»/);
-		return {
+		mergedById.set(row.id, {
 			id: row.id,
 			organizationId: row.organizationId,
 			patientId: row.entityId,
@@ -278,6 +364,10 @@ export async function getMedicalAccessAuditTrailFromDb(
 				row.createdAt instanceof Date
 					? row.createdAt.toISOString()
 					: String(row.createdAt),
-		};
-	});
+		});
+	}
+
+	return Array.from(mergedById.values())
+		.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+		.slice(0, limit);
 }

@@ -121,8 +121,8 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	const quickTemplates = useMemo(() => {
 		const profile = dashboard?.clinicSettings?.profile;
 		return buildQuickTemplates({
-			clinicName: profile?.clinicName || dashboard?.clinicName || "клинику DENTE",
-			clinicAddress: profile?.address || "г. Москва, ул. Клиническая, 10",
+			clinicName: profile?.clinicName || dashboard?.clinicName || "стоматологии",
+			clinicAddress: profile?.address || "Адрес клиники",
 			clinicPhone: profile?.phone ?? undefined,
 			effectiveName,
 			upcomingAppointment,
@@ -218,21 +218,31 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	const handleSendMessage = async () => {
 		const text = inputText.trim();
 		if (!text) {
-			const preset =
-				"Здравствуйте! Напоминаем о вашей записи на приём в клинику ДЕНТЕ. Если у вас возникли вопросы, пожалуйста, сообщите нам.";
-			setInputText(preset);
-			textareaRef.current?.focus();
-			showToast("Подставлен стандартный шаблон напоминания. Нажмите Enter или «Отправить»", "info");
+			const reminderTmpl = quickTemplates.find((t) => t.id === "appt_reminder") ?? quickTemplates[0];
+			if (reminderTmpl) {
+				setInputText(reminderTmpl.buildText());
+				textareaRef.current?.focus();
+				showToast("Подставлен шаблон быстрого ответа. Нажмите Enter или «Отправить»", "info");
+			} else {
+				const profile = dashboard?.clinicSettings?.profile;
+				const clinicName = profile?.clinicName || dashboard?.clinicName;
+				const clinicSuffix = clinicName ? ` в клинику ${clinicName}` : "";
+				const preset = `Здравствуйте! Напоминаем о вашей записи на приём${clinicSuffix}. Если у вас возникли вопросы, пожалуйста, сообщите нам.`;
+				setInputText(preset);
+				textareaRef.current?.focus();
+				showToast("Подставлен шаблон напоминания. Нажмите Enter или «Отправить»", "info");
+			}
 			return;
 		}
 		await dispatchMessage(text);
 	};
 
 	const handleLaunchWhatsAppNative = () => {
-		const clinicName = dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName || "DENTE";
+		const clinicName = dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName || "";
+		const clinicSuffix = clinicName ? ` ${clinicName}` : "";
 		const text =
 			inputText.trim() ||
-			`Здравствуйте, ${effectiveName}! Вас приветствует стоматология ${clinicName}.`;
+			`Здравствуйте, ${effectiveName}! Вас приветствует стоматология${clinicSuffix}.`;
 		openWhatsAppChat(effectivePhone, text);
 		showToast(`Открыт диалог в WhatsApp (${effectiveName})`, "info");
 	};

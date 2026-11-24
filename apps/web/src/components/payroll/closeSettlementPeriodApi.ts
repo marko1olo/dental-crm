@@ -77,11 +77,15 @@ export async function reopenSettlementPeriodApi(
 	doctorId: string,
 	periodStart: string,
 	periodEnd: string,
+	optionalIdempotencyKey?: string,
 ): Promise<{ ok: boolean; isFinalized: boolean }> {
+	const idempotencyKey = optionalIdempotencyKey || generateUuidV7();
 	const res = await fetch("/api/doctor/settlement-period/reopen", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
+			"Idempotency-Key": idempotencyKey,
+			"X-Idempotency-Key": idempotencyKey,
 		},
 		body: JSON.stringify({ doctorId, periodStart, periodEnd }),
 	});

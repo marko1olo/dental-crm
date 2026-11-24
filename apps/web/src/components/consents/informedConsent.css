@@ -20,3 +20,35 @@
 	color: var(--teal);
 	border-color: var(--muted);
 }
+
+.consent-close-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink-muted);
+	cursor: pointer;
+}
+
+.consent-close-btn:hover {
+	color: var(--ink);
+	background: var(--paper-soft);
+}
+
+@media (max-width: 640px) {
+	.consent-document-sheet {
+		padding: 12px;
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	.consent-close-btn {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}

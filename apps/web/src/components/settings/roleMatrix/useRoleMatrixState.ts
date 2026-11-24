@@ -2,7 +2,7 @@
  * apps/web/src/components/settings/roleMatrix/useRoleMatrixState.ts
  * State hook for RBAC Role Matrix (Mandates 8b, 8e, 8n). Strictly <= 120 lines ceiling.
  */
-import { type GranularStaffRole, GRANULAR_ROLE_MATRIX, PERMISSION_DEFINITIONS } from "@dental/shared";
+import { type GranularStaffRole, GRANULAR_ROLE_MATRIX, PERMISSION_DEFINITIONS, generateUuidV7 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
@@ -14,7 +14,7 @@ const STORAGE_KEY = "dente_custom_role_matrix";
 const syncMatrix = async (matrix: Record<string, RolePermissionsMap>): Promise<boolean> => {
 	if (typeof fetch === "undefined") return true;
 	try {
-		const res = await fetch("/api/settings/role-matrix", { method: "PUT", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ matrix }) });
+		const res = await fetch("/api/settings/role-matrix", { method: "PUT", headers: getDenteAuthHeaders({ "Content-Type": "application/json", "Idempotency-Key": generateUuidV7() }), body: JSON.stringify({ matrix }) });
 		if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { message?: string }).message || `Ошибка сервера (${res.status})`);
 		return true;
 	} catch (e: unknown) {

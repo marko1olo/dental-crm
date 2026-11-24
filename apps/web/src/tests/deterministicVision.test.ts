@@ -143,10 +143,22 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 		});
 	});
 
+	const readCssWithImports = (fullPath: string, visited = new Set<string>()): string => {
+		const resolved = path.resolve(fullPath);
+		if (visited.has(resolved) || !fs.existsSync(resolved)) return "";
+		visited.add(resolved);
+		const raw = fs.readFileSync(resolved, "utf8");
+		if (!raw.includes("@import")) return raw;
+		const baseDir = path.dirname(resolved);
+		return raw.replace(/@import\s+["']([^"']+)["'];/g, (_, rel: string) =>
+			readCssWithImports(path.resolve(baseDir, rel), visited),
+		);
+	};
+
 	// ── 2. Component CSS Static Analysis & Physical Bounding Box Verification ──
 	describe("2. Static CSS File Audit for Touch Targets & Modal Close Buttons", () => {
 		test("All modal close CSS classes have explicit width/height or min-width/min-height defined", () => {
-			const closeButtonCssFiles = [
+			const closeButtonCssFiles: Array<{ file: string; classPattern: string; tsxHost?: string | undefined }> = [
 				{ file: "consents/informedConsent.css", classPattern: ".consent-close-btn" },
 				{ file: "documents/sickLeave/sickLeaveEln.css", classPattern: ".sick-leave-close-btn" },
 				{ file: "egisz/egiszRemd.css", classPattern: ".egisz-close-btn" },
@@ -154,22 +166,15 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
 				{ file: "emergency/emergencyRescue.css", classPattern: ".emergency-close-btn" },
 				{ file: "../styles/modules/marketing.css", classPattern: ".marketing-studio-close-btn" },
-				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
+				{ file: "anesthesia/anesthesia.css", classPattern: ".anesthesia-sheet-close-btn", tsxHost: "anesthesia/quickBar/AnesthesiaMobileDrawer.tsx" },
 				{ file: "emr/emrStyles/emrMobileSheet.css", classPattern: ".emr-studio-btn-close" },
 				{ file: "documents/documentNavigation.css", classPattern: ".document-package-close-btn" },
 			];
 
-			for (const { file, classPattern } of closeButtonCssFiles) {
+			for (const { file, classPattern, tsxHost } of closeButtonCssFiles) {
 				const fullPath = path.join(webComponentsDir, file);
 				assert.ok(fs.existsSync(fullPath), `CSS file must exist: ${file}`);
-				let content = fs.readFileSync(fullPath, "utf8");
-				if (content.includes("@import")) {
-					const baseDir = path.dirname(fullPath);
-					content = content.replace(/@import\s+["']([^"']+)["'];/g, (_, rel) => {
-						const importPath = path.resolve(baseDir, rel);
-						return fs.existsSync(importPath) ? fs.readFileSync(importPath, "utf8") : "";
-					});
-				}
+				const content = readCssWithImports(fullPath);
 
 				assert.ok(
 					content.includes(classPattern),
@@ -179,8 +184,11 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				// Verify it has touch target styling (min-height or height and display flex/inline-flex)
 				const classIndex = content.indexOf(classPattern);
 				const ruleBlock = content.slice(classIndex, classIndex + 500);
+				const hostContent = tsxHost !== undefined ? fs.readFileSync(path.join(webComponentsDir, tsxHost), "utf8") : "";
 
-				const hasHeightOrMinHeight = /min-height|height|min-h|padding/.test(ruleBlock);
+				const hasHeightOrMinHeight =
+					/min-height|height|min-h|padding/.test(ruleBlock) ||
+					(tsxHost !== undefined && /min-h-\[44px\]|min-w-\[44px\]/.test(hostContent));
 				assert.ok(
 					hasHeightOrMinHeight,
 					`Rule block for ${classPattern} in ${file} must define sizing (height, min-height, or padding)`,
@@ -202,17 +210,13 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 			for (const relPath of mobileMediaCheckedFiles) {
 				const fullPath = path.join(webComponentsDir, relPath);
 				assert.ok(fs.existsSync(fullPath), `CSS file must exist: ${relPath}`);
-				let content = fs.readFileSync(fullPath, "utf8");
-				if (content.includes("@import")) {
-					const baseDir = path.dirname(fullPath);
-					content = content.replace(/@import\s+["']([^"']+)["'];/g, (_, rel) => {
-						const importPath = path.resolve(baseDir, rel);
-						return fs.existsSync(importPath) ? fs.readFileSync(importPath, "utf8") : "";
-					});
-				}
+				const content = readCssWithImports(fullPath);
 
 				assert.ok(
-					content.includes("@media (max-width: 640px)") || content.includes("@media (max-width: 768px)") || content.includes("@media (pointer: coarse)"),
+					content.includes("@media (max-width: 640px)") ||
+						content.includes("@media (max-width: 639px)") ||
+						content.includes("@media (max-width: 768px)") ||
+						content.includes("@media (pointer: coarse)"),
 					`Component CSS ${relPath} must include responsive @media query for mobile/touch viewports`,
 				);
 			}

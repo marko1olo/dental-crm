@@ -99,6 +99,7 @@ export interface OrthopedicEconomicsCalculation {
 	readonly ztlCostRub: number;
 	readonly ztlCostKopecks: bigint;
 	readonly materialsCostRub: number;
+	readonly materialsCostKopecks: bigint;
 	readonly netMarginRub: number;
 	readonly netMarginKopecks: bigint;
 	readonly marginPercent: number;
@@ -330,6 +331,7 @@ export function calculateOrthopedicEconomics(presetId: string, count: number = 1
 		ztlCostRub,
 		ztlCostKopecks,
 		materialsCostRub,
+		materialsCostKopecks,
 		netMarginRub,
 		netMarginKopecks,
 		marginPercent,

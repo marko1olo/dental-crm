@@ -33,33 +33,6 @@ export const auditEvents: AuditEvent[] = [
 	},
 ];
 
-
-function _recordImportBatch(input: {
-	sourceName: string;
-	totalRows: number;
-	importedRows: number;
-	skippedRows: number;
-	warningRows: number;
-	blockedRows: number;
-}): ImportBatch {
-	const batch: ImportBatch = {
-		id: randomUUID(),
-		organizationId,
-		sourceName: input.sourceName,
-		status: input.skippedRows > 0 ? "completed_with_skips" : "completed",
-		totalRows: input.totalRows,
-		importedRows: input.importedRows,
-		skippedRows: input.skippedRows,
-		warningRows: input.warningRows,
-		blockedRows: input.blockedRows,
-		createdAt: new Date().toISOString(),
-	};
-	importBatches.unshift(batch);
-	persistMutableState();
-	return batch;
-}
-
-
 export function recordAuditEvent(input: {
 	organizationId?: string | null | undefined;
 	actorUserId?: string | null | undefined;

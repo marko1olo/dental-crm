@@ -11,7 +11,7 @@ import {
 	type PayrollServiceOrder,
 	calculateDoctorPayrollSummary,
 } from "./payrollCatalogData";
-import { rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import {
 	printDoctorPayslip,
 	copyPayslipToClipboard,
@@ -93,9 +93,14 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 		setFeedbackMsg("Оформление аванса в кассе клиники...");
 		if (!isDemo) {
 			try {
+				const idempotencyKey = generateUuidV7();
 				const res = await fetch("/api/expenses", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						"X-Idempotency-Key": idempotencyKey,
+					},
 					body: JSON.stringify({
 						category: "salaries",
 						amountKopecks: rublesToKopecks(advanceIncrement),
@@ -133,7 +138,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 	return (
 		<div className="flex flex-col gap-4">
 			{feedbackMsg && (
-				<div className="p-2.5 rounded-xl border text-xs font-semibold bg-[var(--teal)]/15 border-[var(--teal)]/30 text-[var(--teal)]">
+				<div className="p-2.5 rounded-xl border text-xs font-semibold bg-[var(--primary)]/15 border-[var(--primary)]/30 text-[var(--primary)]">
 					{feedbackMsg}
 				</div>
 			)}
@@ -149,7 +154,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 								key={doc.id}
 								type="button"
 								onClick={() => onSelectDoctor(doc.id)}
-								className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--teal)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}
+								className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}
 							>
 								<span className="w-5 h-5 rounded-full bg-black/15 flex items-center justify-center text-[10px]">{doc.initials}</span>
 								<span>{doc.name}</span>
@@ -169,7 +174,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 
 			<div className="payroll-studio-hero">
 				<div>
-					<div className="text-xs font-bold text-[var(--teal)]">Начислено врачу по ставке</div>
+					<div className="text-xs font-bold text-[var(--primary)]">Начислено врачу по ставке</div>
 					<div className="payroll-studio-hero-accrued mt-0.5">{rub(summary.doctorAccruedKopecks)}</div>
 					<div className="text-[11px] text-[var(--muted)] mt-1">{doctor.payoutModel === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? doctor.commissionPercent}% от чистой базы`}{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}</div>
 				</div>
@@ -185,15 +190,15 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 						<div className="flex items-center gap-2">
 							<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
 							<span className="text-[var(--muted)]">{shiftsCount} смен × 4 000 ₽ = {rub(summary.chairRentalKopecks)}</span>
-							<button type="button" onClick={() => setShiftsCount((s) => Math.max(0, s - 1))} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">-</button>
-							<span className="font-bold">{shiftsCount}</span>
-							<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">+</button>
+							<button type="button" onClick={() => setShiftsCount((s) => Math.max(0, s - 1))} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Уменьшить количество смен">-</button>
+							<span className="font-bold px-1">{shiftsCount}</span>
+							<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Увеличить количество смен">+</button>
 						</div>
 					) : (
 						<div className="flex items-center gap-2">
 							<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
 							{[20, 25, 30, 35, 40].map((pct) => (
-								<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? doctor.commissionPercent ?? 25) === pct ? "bg-[var(--teal)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
+								<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? doctor.commissionPercent ?? 25) === pct ? "bg-[var(--primary)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
 							))}
 						</div>
 					)}
@@ -228,7 +233,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 										<td><div className="truncate max-w-[200px]">{ord.serviceNameRu}</div><span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] text-[var(--muted)]">{ord.categoryLabelRu}</span></td>
 										<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td><td className="text-right text-[var(--danger)]">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
 										<td className="text-right text-[var(--warning)]">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td><td className="text-right font-medium">{rub(netBase)}</td>
-										<td className="text-right font-bold text-[var(--teal)]">{rub(fee)}</td>
+										<td className="text-right font-bold text-[var(--primary)]">{rub(fee)}</td>
 									</tr>
 								);
 							})
@@ -245,7 +250,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 						const { netBase, fee } = calculateOrderNetAndFee(ord, doctor, customPercent);
 						return (
 							<div key={ord.id} className="payroll-studio-mobile-card">
-								<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div><span className="font-bold text-xs text-[var(--teal)]">{rub(fee)}</span></div>
+								<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div><span className="font-bold text-xs text-[var(--primary)]">{rub(fee)}</span></div>
 								<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]"><span>Чек: {rub(ord.grossKopecks)}</span><span>{ord.labCostKopecks > 0 ? `ЗТЛ: −${rub(ord.labCostKopecks)}` : "Без ЗТЛ"}</span><span className="font-medium text-[var(--ink)]">База: {rub(netBase)}</span></div>
 							</div>
 						);

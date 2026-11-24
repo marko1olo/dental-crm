@@ -246,7 +246,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">Ведомость начисления зарплаты</h2>
-								<button type="button" onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))} className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${payoutStatus === "paid_rko" ? "bg-[var(--teal)]/20 text-[var(--teal)] border border-[var(--teal)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"}`} title="Нажмите для переключения статуса выплаты">
+								<button type="button" onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))} className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${payoutStatus === "paid_rko" ? "bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"}`} title="Нажмите для переключения статуса выплаты">
 									{payoutStatus === "paid_rko" ? <Check className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}<span>{payoutStatus === "paid_rko" ? "Выплачено (РКО)" : "Начислено"}</span>
 								</button>
 							</div>
@@ -268,14 +268,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					</div>
 					<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0">
 						{(["shift", "current_month", "previous_month"] as const).map((preset) => (
-							<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--teal)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>{preset === "shift" ? "Смена" : preset === "current_month" ? "Месяц" : "Прошлый"}</button>
+							<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--primary)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>{preset === "shift" ? "Смена" : preset === "current_month" ? "Месяц" : "Прошлый"}</button>
 						))}
 					</div>
 				</div>
 
 				<div className="payroll-studio-body">
 					{feedbackMsg && (
-						<div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${feedbackMsg.startsWith("Ошибка") ? "bg-[var(--danger-soft)] border-[var(--danger)]/30 text-[var(--danger)]" : "bg-[var(--teal)]/15 border-[var(--teal)]/30 text-[var(--teal)]"}`} role="alert">
+						<div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${feedbackMsg.startsWith("Ошибка") ? "bg-[var(--danger-soft)] border-[var(--danger)]/30 text-[var(--danger)]" : "bg-[var(--primary)]/15 border-[var(--primary)]/30 text-[var(--primary)]"}`} role="alert">
 							<div className="flex items-center gap-2">
 								{feedbackMsg.startsWith("Ошибка") ? <X className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
 								<span>{feedbackMsg}</span>
@@ -293,7 +293,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка клиники (касса)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.gross)}</span></div>
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Затраты на ЗТЛ</span><span className="payroll-studio-kpi-value text-[var(--danger)]">− {rub(clinicTotals.lab)}</span></div>
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Чистая база (Net Base)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.netBase)}</span></div>
-								<div className="payroll-studio-kpi-card bg-[var(--teal)]/10 border-[var(--teal)]/30"><span className="payroll-studio-kpi-label text-[var(--teal)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--teal)]">{rub(clinicTotals.payout)}</span></div>
+								<div className="payroll-studio-kpi-card bg-[var(--primary)]/10 border-[var(--primary)]/30"><span className="payroll-studio-kpi-label text-[var(--primary)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--primary)]">{rub(clinicTotals.payout)}</span></div>
 							</div>
 
 							<div className="hidden sm:block payroll-studio-table-container">
@@ -311,7 +311,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 													<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
 													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td><td className="text-right text-[var(--danger)]">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
 													<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td><td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
-													<td className="text-right font-bold text-[var(--teal)]">{rub(docSummary.payoutKopecks)}</td>
+													<td className="text-right font-bold text-[var(--primary)]">{rub(docSummary.payoutKopecks)}</td>
 													<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
 												</tr>
 											))
@@ -326,7 +326,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								) : (
 									allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
 										<div key={doctor.id} className="payroll-studio-mobile-card">
-											<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div><div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div></div><span className="font-bold text-sm text-[var(--teal)]">{rub(docSummary.payoutKopecks)}</span></div>
+											<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div><div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div></div><span className="font-bold text-sm text-[var(--primary)]">{rub(docSummary.payoutKopecks)}</span></div>
 											<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]"><span>Выручка: {rub(docSummary.totalGrossKopecks)}</span><span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button></div>
 										</div>
 									))
@@ -378,9 +378,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 											effectiveClosedPeriods.map((period) => (
 												<tr key={period.id}>
 													<td className="font-semibold text-[var(--ink)]">{period.periodLabelRu}</td><td className="text-[var(--muted)]">{period.dateClosedIso}</td>
-													<td className="font-medium">{period.doctorName}</td><td className="font-mono text-xs text-[var(--teal)]">{period.rkoReceiptNumber.replace(/^РКО-/, "Чек №")}</td>
+													<td className="font-medium">{period.doctorName}</td><td className="font-mono text-xs text-[var(--primary)]">{period.rkoReceiptNumber.replace(/^РКО-/, "Чек №")}</td>
 													<td className="text-right">{rub(period.grossKopecks)}</td><td className="text-right text-[var(--danger)]">− {rub(period.labCostKopecks)}</td>
-													<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td><td className="text-right font-bold text-[var(--teal)]">{rub(period.payoutKopecks)}</td>
+													<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td><td className="text-right font-bold text-[var(--primary)]">{rub(period.payoutKopecks)}</td>
 													<td className="text-center"><button type="button" onClick={() => handlePrintPayslip()} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Листок</button></td>
 												</tr>
 											))

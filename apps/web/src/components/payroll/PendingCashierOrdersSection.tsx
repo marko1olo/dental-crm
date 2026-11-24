@@ -23,7 +23,7 @@ export const PendingCashierOrdersSection: React.FC<PendingCashierOrdersSectionPr
 		<div className="flex flex-col gap-2.5 pt-3 border-t border-[var(--line)]" data-testid="payroll-pending-cashier-orders">
 			<div className="flex items-center justify-between flex-wrap gap-2">
 				<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-					<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+					<span className="w-2 h-2 rounded-full bg-[var(--warning)] shrink-0" />
 					<span>Выполненные приёмы, ожидающие оплаты в кассе ({pendingOrders.length})</span>
 				</div>
 				<span className="text-[11px] text-[var(--muted)]">
@@ -72,7 +72,7 @@ export const PendingCashierOrdersSection: React.FC<PendingCashierOrdersSectionPr
 									{ord.materialCostKopecks > 0 ? rub(ord.materialCostKopecks) : "—"}
 								</td>
 								<td className="text-center">
-									<span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+									<span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning)]/30">
 										Ожидает оплаты в кассе
 									</span>
 								</td>
@@ -84,19 +84,19 @@ export const PendingCashierOrdersSection: React.FC<PendingCashierOrdersSectionPr
 
 			<div className="sm:hidden flex flex-col gap-2">
 				{pendingOrders.map((ord) => (
-					<div key={ord.id} className="payroll-studio-mobile-card border-dashed border-amber-500/30">
+					<div key={ord.id} className="payroll-studio-mobile-card border-dashed border-[var(--warning)]/30">
 						<div className="payroll-studio-mobile-card-row">
 							<div>
 								<div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div>
 								<div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div>
 							</div>
-							<span className="font-bold text-xs text-amber-600 dark:text-amber-400">
+							<span className="font-bold text-xs text-[var(--warning-ink)]">
 								{rub(ord.grossKopecks)}
 							</span>
 						</div>
 						<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]">
 							<span>{ord.dateIso} • {ord.categoryLabelRu}</span>
-							<span className="text-[10px] font-medium text-amber-700 dark:text-amber-400">В кассу →</span>
+							<span className="text-[10px] font-medium text-[var(--warning-ink)]">В кассу →</span>
 						</div>
 					</div>
 				))}

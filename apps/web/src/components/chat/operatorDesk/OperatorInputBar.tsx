@@ -1,10 +1,12 @@
 import React from "react";
 import { RefreshCw, Send, Shield } from "lucide-react";
+import { showToast } from "../../GlobalToast";
 
 export interface OperatorInputBarProps {
 	inputText: string;
 	isSending: boolean;
 	operatorName: string;
+	clinicName?: string | undefined;
 	onInputChange: (value: string) => void;
 	onOperatorNameChange: (value: string) => void;
 	onSendMessage: () => void;
@@ -14,6 +16,7 @@ export function OperatorInputBar({
 	inputText,
 	isSending,
 	operatorName,
+	clinicName,
 	onInputChange,
 	onOperatorNameChange,
 	onSendMessage,
@@ -21,9 +24,7 @@ export function OperatorInputBar({
 	const handleSend = () => {
 		if (isSending) return;
 		if (!inputText.trim()) {
-			onInputChange(
-				"Здравствуйте! Напоминаем о вашей записи на консультацию в клинику ДЕНТЕ. Если возникли вопросы или нужно скорректировать время — напишите нам.",
-			);
+			showToast("Введите сообщение или выберите шаблон", "info");
 			return;
 		}
 		onSendMessage();

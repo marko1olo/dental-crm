@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { QrCode, Smartphone, CheckCircle, Copy, Clock, X, ExternalLink, RefreshCw, AlertCircle } from "lucide-react";
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { logger } from "../../utils/logger";
 import { getPresetById } from "./photoGridPresets";
 
 export interface ChairsidePhotoQrBridgeModalProps {
@@ -75,6 +76,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				},
 				body: JSON.stringify({
 					patientId,
@@ -94,7 +96,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 			setExpiresAt(data.expiresAt);
 			setSecondsLeft(Math.max(0, Math.floor((data.expiresAt - Date.now()) / 1000)));
 		} catch (err: unknown) {
-			console.error("[ChairsidePhotoQrBridge] Session creation failed:", err);
+			logger.warn("[ChairsidePhotoQrBridge] Session creation failed", err);
 			const msg = err instanceof Error ? err.message : String(err);
 			setError(msg || "Не удалось создать QR-сессию. Проверьте подключение к серверу.");
 		} finally {
@@ -138,7 +140,9 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 
 		const pollSession = async () => {
 			try {
-				const res = await fetch(`/api/photo-bridge/poll/${token}`);
+				const res = await fetch(`/api/photo-bridge/poll/${token}`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
 				if (!res.ok) return;
 				const data = await res.json();
 				if (Array.isArray(data.photos) && data.photos.length > 0) {
@@ -155,8 +159,8 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 						showToast(`Принят снимок со смартфона врача (${newItems.length} шт.)`, "success", 3000);
 					}
 				}
-			} catch {
-				// Ошибки сети поллинга гасим мягко
+			} catch (pollErr: unknown) {
+				logger.warn("[ChairsidePhotoQrBridge] Polling request failed", pollErr);
 			}
 		};
 
@@ -181,7 +185,15 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 
 	const handleCloseAndTerminate = async () => {
 		if (token) {
-			void fetch(`/api/photo-bridge/session/${token}`, { method: "DELETE" }).catch(() => {});
+			void fetch(`/api/photo-bridge/session/${token}`, {
+				method: "DELETE",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Idempotency-Key": generateUuidV7(),
+				},
+			}).catch((err: unknown) => {
+				logger.warn("[photo-bridge] Failed to close session cleanly", err);
+			});
 		}
 		onClose();
 	};

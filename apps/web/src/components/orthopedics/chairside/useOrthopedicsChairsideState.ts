@@ -39,7 +39,7 @@ export function useOrthopedicsChairsideState({
 	const [ztlCostRub, setZtlCostRub] = useState<number>(initialEcon.ztlCostRub);
 	const [ztlCostKopecks, setZtlCostKopecks] = useState<bigint>(initialEcon.ztlCostKopecks);
 	const [materialsCostRub, setMaterialsCostRub] = useState<number>(initialEcon.materialsCostRub);
-	const [materialsCostKopecks, setMaterialsCostKopecks] = useState<bigint>(initialEcon.materialsCostKopecks ?? 0n);
+	const [materialsCostKopecks, setMaterialsCostKopecks] = useState<bigint>(initialEcon.materialsCostKopecks);
 	const [netMarginRub, setNetMarginRub] = useState<number>(initialEcon.netMarginRub);
 	const [netMarginKopecks, setNetMarginKopecks] = useState<bigint>(initialEcon.netMarginKopecks);
 	const [marginPercent, setMarginPercent] = useState<number>(initialEcon.marginPercent);
@@ -70,7 +70,7 @@ export function useOrthopedicsChairsideState({
 		setZtlCostRub(econ.ztlCostRub);
 		setZtlCostKopecks(econ.ztlCostKopecks);
 		setMaterialsCostRub(econ.materialsCostRub);
-		setMaterialsCostKopecks(econ.materialsCostKopecks ?? 0n);
+		setMaterialsCostKopecks(econ.materialsCostKopecks);
 		setNetMarginRub(econ.netMarginRub);
 		setNetMarginKopecks(econ.netMarginKopecks);
 		setMarginPercent(econ.marginPercent);
