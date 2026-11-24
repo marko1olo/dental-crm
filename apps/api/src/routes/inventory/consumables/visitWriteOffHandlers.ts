@@ -15,6 +15,9 @@ import { TreatmentConsumablesService } from "../../../services/treatmentConsumab
 import {
 	alertsQuerySchema,
 	emergencyWriteoffSchema,
+	quickWriteoffCarpulesSchema,
+	quickWriteoffEmergencyAntishockSchema,
+	quickWriteoffVisitBundleSchema,
 	stockAvailabilityCheckRequestSchema,
 	treatmentConsumableDeductionRequestSchema,
 	visitStockDeductionRequestSchema,
@@ -279,7 +282,14 @@ export async function registerVisitWriteOffHandlers(
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const body = request.body ?? {};
+		const parsedBody = quickWriteoffCarpulesSchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+		const body = parsedBody.data;
 		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 				organizationId,
@@ -321,7 +331,14 @@ export async function registerVisitWriteOffHandlers(
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const body = request.body ?? {};
+		const parsedBody = quickWriteoffVisitBundleSchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+		const body = parsedBody.data;
 		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 				organizationId,
@@ -357,7 +374,14 @@ export async function registerVisitWriteOffHandlers(
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const body = request.body ?? {};
+		const parsedBody = quickWriteoffEmergencyAntishockSchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+		const body = parsedBody.data;
 		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
 				organizationId,

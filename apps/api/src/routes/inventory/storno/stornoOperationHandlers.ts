@@ -5,6 +5,7 @@
 
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	inventoryItems,
@@ -226,6 +227,8 @@ export async function handleStornoRequest(
 							currentQty: String(m.quantity),
 							criticalThreshold: "0",
 							unitCostRub: "0",
+							unitCostKopecks: 0n,
+							pricePerUnitKopecks: 0n,
 						})
 						.returning();
 					targetItem = created;
@@ -275,6 +278,11 @@ export async function handleStornoRequest(
 					.limit(1)
 					.for("update");
 
+				const itemUnitCostKopecks =
+					targetItem.unitCostKopecks ??
+					targetItem.pricePerUnitKopecks ??
+					BigInt(rublesToKopecks(Number(targetItem.unitCostRub ?? targetItem.pricePerUnit ?? 0)));
+
 				if (existingBatch) {
 					const currentBatchRemaining = Number(existingBatch.remainingQty ?? 0);
 					const newBatchRemaining = Number((currentBatchRemaining + m.quantity).toFixed(3));
@@ -304,6 +312,7 @@ export async function handleStornoRequest(
 							initialQty: String(m.quantity),
 							remainingQty: String(m.quantity),
 							purchasePricePerUnit: targetItem.unitCostRub ?? targetItem.pricePerUnit ?? "0",
+							purchasePricePerUnitKopecks: itemUnitCostKopecks,
 							status: "active",
 						})
 						.returning();
@@ -320,6 +329,7 @@ export async function handleStornoRequest(
 					quantityChanged: String(m.quantity),
 					qty: String(m.quantity),
 					unitCostRub: targetItem.unitCostRub ?? targetItem.pricePerUnit ?? "0",
+					unitCostKopecks: itemUnitCostKopecks,
 					transactionType: "storno",
 					isOverdraft: false,
 					notes: buildStornoJournalNote({

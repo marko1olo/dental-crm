@@ -32,7 +32,7 @@ export const listLinksQuerySchema = z.object({
 	inventoryItemId: z.string().optional(),
 	page: z.coerce.number().int().min(1).default(1).optional(),
 	pageSize: z.coerce.number().int().min(1).max(100).default(50).optional(),
-});
+}).strict();
 
 export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;
 
@@ -42,7 +42,7 @@ export type ListLinksQuery = z.infer<typeof listLinksQuerySchema>;
 export const linkOptionsQuerySchema = z.object({
 	q: z.string().optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(30).optional(),
-});
+}).strict();
 
 export type LinkOptionsQuery = z.infer<typeof linkOptionsQuerySchema>;
 
@@ -51,7 +51,7 @@ export type LinkOptionsQuery = z.infer<typeof linkOptionsQuerySchema>;
  */
 export const alertsQuerySchema = z.object({
 	expiringWithinDays: z.coerce.number().int().min(1).max(365).default(30).optional(),
-});
+}).strict();
 
 export type AlertsQuery = z.infer<typeof alertsQuerySchema>;
 
@@ -65,13 +65,35 @@ export const emergencyWriteoffSchema = z.object({
 				inventoryItemId: z.string().min(1, "Идентификатор материала обязателен"),
 				quantity: z.number().positive("Количество должно быть больше 0"),
 				reason: z.string().nullable().optional(),
-			}),
+			}).strict(),
 		)
 		.min(1, { message: "Список позиций для списания не может быть пустым" }),
 	visitId: z.string().nullable().optional(),
 	userId: z.string().nullable().optional(),
 	notes: z.string().nullable().optional(),
-});
+}).strict();
+
+export const quickWriteoffCarpulesSchema = z.object({
+	carpulesCount: z.number().finite().positive().optional(),
+	drugName: z.string().optional(),
+	visitId: z.string().nullable().optional(),
+	userId: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
+}).strict();
+
+export const quickWriteoffVisitBundleSchema = z.object({
+	visitType: z.enum(["therapy", "surgery", "implant", "sinus_gbr"]).optional(),
+	visitId: z.string().nullable().optional(),
+	userId: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
+}).strict();
+
+export const quickWriteoffEmergencyAntishockSchema = z.object({
+	visitId: z.string().nullable().optional(),
+	userId: z.string().nullable().optional(),
+	scenarioId: z.string().nullable().optional(),
+	notes: z.string().nullable().optional(),
+}).strict();
 
 export type EmergencyWriteoffRequest = z.infer<typeof emergencyWriteoffSchema>;
 

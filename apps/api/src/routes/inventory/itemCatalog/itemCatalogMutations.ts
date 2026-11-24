@@ -66,16 +66,19 @@ export const handleCreateInventoryItem = async (
 		});
 	}
 
-	let effectiveCostRub = 0;
-	if (purchasePriceKopecks !== undefined) {
-		effectiveCostRub = kopecksToRubles(purchasePriceKopecks);
-	} else if (unitPriceKopecks !== undefined) {
-		effectiveCostRub = kopecksToRubles(unitPriceKopecks);
-	} else if (purchasePricePerUnit !== undefined) {
-		effectiveCostRub = purchasePricePerUnit;
-	} else if (unitCostRub !== undefined) {
-		effectiveCostRub = unitCostRub;
-	}
+	const effectiveCostKopecks = Math.max(
+		0,
+		Math.round(
+			purchasePriceKopecks ??
+				unitPriceKopecks ??
+				(purchasePricePerUnit !== undefined
+					? rublesToKopecks(purchasePricePerUnit)
+					: unitCostRub !== undefined
+						? rublesToKopecks(unitCostRub)
+						: 0),
+		),
+	);
+	const effectiveCostRub = kopecksToRubles(effectiveCostKopecks);
 
 	const stockQtyStr = String(Math.max(0, stockQuantity));
 	const critThresholdStr = String(Math.max(0, criticalThreshold));
@@ -97,6 +100,8 @@ export const handleCreateInventoryItem = async (
 				minQty: critThresholdStr,
 				unitCostRub: unitCostStr,
 				pricePerUnit: unitCostStr,
+				unitCostKopecks: BigInt(effectiveCostKopecks),
+				pricePerUnitKopecks: BigInt(effectiveCostKopecks),
 				stockQuantity: stockQtyStr,
 				currentQty: stockQtyStr,
 				packageMultiplier: multStr,
@@ -117,9 +122,12 @@ export const handleCreateInventoryItem = async (
 				"Позиция склада не создана: сервер не сохранил запись. Проверьте название и повторите; если снова не выйдет — сообщите администратору клиники.",
 		});
 
-	const computedKopecks = rublesToKopecks(
-		Number(created.unitCostRub ?? created.pricePerUnit ?? 0),
-	);
+	const computedKopecks =
+		created.unitCostKopecks != null
+			? Number(created.unitCostKopecks)
+			: created.pricePerUnitKopecks != null
+				? Number(created.pricePerUnitKopecks)
+				: rublesToKopecks(Number(created.unitCostRub ?? created.pricePerUnit ?? 0));
 	return {
 		...created,
 		purchasePriceKopecks: computedKopecks,
@@ -174,19 +182,26 @@ export const handleUpdateInventoryItem = async (
 		return reply.status(404).send({ error: "Item not found" });
 	}
 
-	let effectiveCostRub: number | undefined;
-	if (purchasePriceKopecks !== undefined) {
-		effectiveCostRub = kopecksToRubles(purchasePriceKopecks);
-	} else if (unitPriceKopecks !== undefined) {
-		effectiveCostRub = kopecksToRubles(unitPriceKopecks);
-	} else if (purchasePricePerUnit !== undefined) {
-		effectiveCostRub = purchasePricePerUnit;
-	} else if (unitCostRub !== undefined) {
-		effectiveCostRub = unitCostRub;
-	}
+	const hasCostInput =
+		purchasePriceKopecks !== undefined ||
+		unitPriceKopecks !== undefined ||
+		purchasePricePerUnit !== undefined ||
+		unitCostRub !== undefined;
+	const effectiveCostKopecks = Math.max(
+		0,
+		Math.round(
+			purchasePriceKopecks ??
+				unitPriceKopecks ??
+				(purchasePricePerUnit !== undefined
+					? rublesToKopecks(purchasePricePerUnit)
+					: unitCostRub !== undefined
+						? rublesToKopecks(unitCostRub)
+						: 0),
+		),
+	);
 
 	const critStr = String(Math.max(0, criticalThreshold));
-	const costStr = effectiveCostRub !== undefined ? String(Math.max(0, effectiveCostRub)) : "0";
+	const costStr = hasCostInput ? String(kopecksToRubles(effectiveCostKopecks)) : "0";
 
 	const updated = await withTenantCtx(organizationId, async (tx) => {
 		const [existing] = await tx
@@ -207,6 +222,8 @@ export const handleUpdateInventoryItem = async (
 			minQty: critStr,
 			unitCostRub: costStr,
 			pricePerUnit: costStr,
+			unitCostKopecks: BigInt(effectiveCostKopecks),
+			pricePerUnitKopecks: BigInt(effectiveCostKopecks),
 			sku: sku?.trim() || null,
 			barcode: barcode?.trim() || null,
 			lotNumber: lotNumber?.trim() || null,
@@ -255,9 +272,12 @@ export const handleUpdateInventoryItem = async (
 				"Позиция склада не сохранена: сервер не записал изменения. Проверьте данные и повторите; если снова не выйдет — сообщите администратору клиники.",
 		});
 
-	const computedKopecks = rublesToKopecks(
-		Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0),
-	);
+	const computedKopecks =
+		updated.unitCostKopecks != null
+			? Number(updated.unitCostKopecks)
+			: updated.pricePerUnitKopecks != null
+				? Number(updated.pricePerUnitKopecks)
+				: rublesToKopecks(Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0));
 	return {
 		...updated,
 		purchasePriceKopecks: computedKopecks,
@@ -309,21 +329,33 @@ export const handlePatchInventoryItem = async (
 		patchData.minQty = crit;
 	}
 	if (data.purchasePriceKopecks !== undefined) {
-		const cost = String(Math.max(0, kopecksToRubles(data.purchasePriceKopecks)));
+		const kop = Math.max(0, Math.round(data.purchasePriceKopecks));
+		const cost = String(kopecksToRubles(kop));
 		patchData.unitCostRub = cost;
 		patchData.pricePerUnit = cost;
+		patchData.unitCostKopecks = BigInt(kop);
+		patchData.pricePerUnitKopecks = BigInt(kop);
 	} else if (data.unitPriceKopecks !== undefined) {
-		const cost = String(Math.max(0, kopecksToRubles(data.unitPriceKopecks)));
+		const kop = Math.max(0, Math.round(data.unitPriceKopecks));
+		const cost = String(kopecksToRubles(kop));
 		patchData.unitCostRub = cost;
 		patchData.pricePerUnit = cost;
+		patchData.unitCostKopecks = BigInt(kop);
+		patchData.pricePerUnitKopecks = BigInt(kop);
 	} else if (data.purchasePricePerUnit !== undefined) {
-		const cost = String(Math.max(0, data.purchasePricePerUnit));
+		const kop = Math.max(0, rublesToKopecks(data.purchasePricePerUnit));
+		const cost = String(kopecksToRubles(kop));
 		patchData.unitCostRub = cost;
 		patchData.pricePerUnit = cost;
+		patchData.unitCostKopecks = BigInt(kop);
+		patchData.pricePerUnitKopecks = BigInt(kop);
 	} else if (data.unitCostRub !== undefined) {
-		const cost = String(Math.max(0, data.unitCostRub));
+		const kop = Math.max(0, rublesToKopecks(data.unitCostRub));
+		const cost = String(kopecksToRubles(kop));
 		patchData.unitCostRub = cost;
 		patchData.pricePerUnit = cost;
+		patchData.unitCostKopecks = BigInt(kop);
+		patchData.pricePerUnitKopecks = BigInt(kop);
 	}
 	if (data.stockQuantity !== undefined) {
 		patchData.stockQuantity = String(data.stockQuantity);
@@ -389,9 +421,12 @@ export const handlePatchInventoryItem = async (
 		});
 	}
 
-	const computedKopecks = rublesToKopecks(
-		Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0),
-	);
+	const computedKopecks =
+		updated.unitCostKopecks != null
+			? Number(updated.unitCostKopecks)
+			: updated.pricePerUnitKopecks != null
+				? Number(updated.pricePerUnitKopecks)
+				: rublesToKopecks(Number(updated.unitCostRub ?? updated.pricePerUnit ?? 0));
 	return {
 		...updated,
 		purchasePriceKopecks: computedKopecks,

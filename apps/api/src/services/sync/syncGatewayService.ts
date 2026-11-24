@@ -19,7 +19,6 @@ export {
 	SYNC_MAX_RETRIES,
 	SYNC_RETRY_BACKOFF_BASE_MS,
 	SYNC_STREAM_CHUNK_SIZE,
-	SYNC_TABLE_DDL,
 	buildOdontogramVector,
 	parseTeethFromPayload,
 	performFieldLevelCrdtMerge,

@@ -125,7 +125,7 @@ export async function runZtlLookAheadScan(options?: {
 					dueDate: labOrders.dueDate,
 					doctorName: labOrders.doctorName,
 					clinicalNotes: labOrders.clinicalNotes,
-					priceRub: labOrders.priceRub,
+					priceKopecks: labOrders.priceKopecks,
 				})
 				.from(labOrders)
 				.where(

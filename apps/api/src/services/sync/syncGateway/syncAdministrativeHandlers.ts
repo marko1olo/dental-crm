@@ -4,8 +4,10 @@ import {
 	type MutationVector,
 	type SyncMutationEnvelope,
 	type SyncMutationStatus,
+	assertIntegerKopecks,
+	kopecksToNumericString,
 	kopecksToRubles,
-	rublesToKopecks,
+	parseKopecks,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
@@ -68,22 +70,23 @@ export class SyncAdministrativeHandlers {
 		let amountKopecks: bigint | null = null;
 		if (payload.amountKopecks !== undefined && payload.amountKopecks !== null) {
 			try {
-				amountKopecks = BigInt(String(payload.amountKopecks));
+				const rawKopecks = BigInt(String(payload.amountKopecks));
+				assertIntegerKopecks(rawKopecks);
+				amountKopecks = rawKopecks;
 			} catch {
 				amountKopecks = null;
 			}
 		}
 
-		let amountRub: number;
-		if (amountKopecks !== null) {
-			amountRub =
-				payload.amountRub !== undefined && payload.amountRub !== null
-					? Number(payload.amountRub)
-					: kopecksToRubles(amountKopecks);
-		} else {
-			amountRub = Number(payload.amountRub ?? 0);
-			amountKopecks = BigInt(rublesToKopecks(amountRub));
+		if (amountKopecks === null) {
+			const fallbackRub =
+				typeof payload.amountRub === "number" || typeof payload.amountRub === "string"
+					? payload.amountRub
+					: 0;
+			amountKopecks = BigInt(parseKopecks(fallbackRub));
 		}
+
+		const amountRub = kopecksToRubles(amountKopecks);
 
 		if (!isValidUuid(payload.patientId)) {
 			throw new Error(
@@ -163,30 +166,34 @@ export class SyncAdministrativeHandlers {
 		}
 
 		let totalPriceKopecks: bigint | null = null;
-		if (payload.totalPriceKopecks !== undefined && payload.totalPriceKopecks !== null) {
+		const rawKopecksInput =
+			payload.totalPriceKopecks !== undefined && payload.totalPriceKopecks !== null
+				? payload.totalPriceKopecks
+				: payload.amountKopecks !== undefined && payload.amountKopecks !== null
+					? payload.amountKopecks
+					: null;
+		if (rawKopecksInput !== null) {
 			try {
-				totalPriceKopecks = BigInt(String(payload.totalPriceKopecks));
-			} catch {
-				totalPriceKopecks = null;
-			}
-		} else if (payload.amountKopecks !== undefined && payload.amountKopecks !== null) {
-			try {
-				totalPriceKopecks = BigInt(String(payload.amountKopecks));
+				const rawKopecks = BigInt(String(rawKopecksInput));
+				assertIntegerKopecks(rawKopecks);
+				totalPriceKopecks = rawKopecks;
 			} catch {
 				totalPriceKopecks = null;
 			}
 		}
 
-		let totalAmountRub: number;
-		if (totalPriceKopecks !== null) {
-			totalAmountRub =
-				payload.totalAmountRub !== undefined && payload.totalAmountRub !== null
-					? Number(payload.totalAmountRub)
-					: kopecksToRubles(totalPriceKopecks);
-		} else {
-			totalAmountRub = Number(payload.totalAmountRub ?? payload.totalRub ?? 0);
-			totalPriceKopecks = BigInt(rublesToKopecks(totalAmountRub));
+		if (totalPriceKopecks === null) {
+			const fallbackRub =
+				typeof payload.totalAmountRub === "number" || typeof payload.totalAmountRub === "string"
+					? payload.totalAmountRub
+					: typeof payload.totalRub === "number" || typeof payload.totalRub === "string"
+						? payload.totalRub
+						: 0;
+			totalPriceKopecks = BigInt(parseKopecks(fallbackRub));
 		}
+
+		const totalAmountRub = kopecksToRubles(totalPriceKopecks);
+		const totalRub = kopecksToNumericString(totalPriceKopecks);
 
 		const patientId = String(payload.patientId);
 		const treatmentPlanId = isValidUuid(payload.treatmentPlanId)
@@ -220,7 +227,7 @@ export class SyncAdministrativeHandlers {
 				.set({
 					totalPriceKopecks,
 					totalAmountRub,
-					totalRub: String(totalAmountRub),
+					totalRub,
 					status: status ?? existingInvoice.status,
 					isSynced: true,
 				})
@@ -248,7 +255,7 @@ export class SyncAdministrativeHandlers {
 				visitId,
 				totalAmountRub,
 				totalPriceKopecks,
-				totalRub: String(totalAmountRub),
+				totalRub,
 				status,
 				isSynced: true,
 			})

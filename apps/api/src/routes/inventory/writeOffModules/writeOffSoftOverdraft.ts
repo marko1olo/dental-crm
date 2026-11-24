@@ -21,7 +21,7 @@ export const softOverdraftDeductSchema = z.object({
 	reason: z.string().optional(),
 	visitId: z.string().nullable().optional(),
 	organizationId: z.string().optional(),
-});
+}).strict();
 
 async function resolveOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Promise<string | null> {
 	const resolved = await requireResolvedStaffOrAdminOrganizationId(req, rep, tag);
@@ -101,6 +101,8 @@ export async function registerSoftOverdraftRoutes(server: FastifyInstance): Prom
 							currentQty: "0",
 							criticalThreshold: "0",
 							unitCostRub: "0",
+							unitCostKopecks: 0n,
+							pricePerUnitKopecks: 0n,
 						})
 						.returning({ id: inventoryItems.id });
 					if (created) itemId = created.id;

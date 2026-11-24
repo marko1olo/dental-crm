@@ -55,6 +55,7 @@ export const registerBodySchema = z
 		phone: z.string().trim().optional(),
 		withDemoData: z.boolean().optional().default(false),
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		if (data.password.length < 6) {
 			ctx.addIssue({
@@ -71,6 +72,7 @@ export const loginBodySchema = z
 		email: z.string().trim().optional(),
 		password: z.string().min(1),
 	})
+	.strict()
 	.refine(
 		(data) => !!(data.identifier?.trim() || data.email?.trim()),
 		{
@@ -86,7 +88,7 @@ export const loginBodySchema = z
 export const clinicLoginBodySchema = z.object({
 	email: z.string().min(1),
 	password: z.string().min(1),
-});
+}).strict();
 
 /**
  * PIN-разблокировка: POST /api/auth/staff/unlock.
@@ -98,7 +100,7 @@ export const staffUnlockBodySchema = z.object({
 		.union([z.string(), z.number()])
 		.transform((value) => String(value))
 		.refine((value) => value.length > 0, { message: "required" }),
-});
+}).strict();
 
 export const clinicLoginValidationMessage = "Введите логин и пароль клиники.";
 export const staffUnlockValidationMessage =
@@ -118,6 +120,7 @@ export const clinicSetPasswordBodySchema = z
 			.transform((value) => String(value))
 			.optional(),
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		if (data.newPassword.length < 8) {
 			ctx.addIssue({
@@ -140,7 +143,7 @@ export const staffSetPinBodySchema = z.object({
 		.union([z.string(), z.number()])
 		.transform((value) => String(value))
 		.optional(),
-});
+}).strict();
 
 /**
  * First-run setup: public route; bare cast + destructure number email -> 500.
@@ -154,6 +157,7 @@ export const setupInitBodySchema = z
 		ownerName: z.string().min(1).optional(),
 		ownerPin: authPinSchema.optional(),
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		if (data.password.length < 8) {
 			ctx.addIssue({
@@ -167,7 +171,7 @@ export const setupInitBodySchema = z
 export const createInviteBodySchema = z.object({
 	email: z.string().trim().min(1),
 	role: z.string().min(1),
-});
+}).strict();
 
 export const acceptInviteBodySchema = z
 	.object({
@@ -176,6 +180,7 @@ export const acceptInviteBodySchema = z
 		password: z.string().min(1),
 		pinCode: authPinSchema,
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		if (data.password.length < 8) {
 			ctx.addIssue({
@@ -191,6 +196,7 @@ export const updatePasswordBodySchema = z
 		oldPassword: z.string().min(1),
 		newPassword: z.string().min(1),
 	})
+	.strict()
 	.superRefine((data, ctx) => {
 		if (data.newPassword.length < 8) {
 			ctx.addIssue({
@@ -207,7 +213,7 @@ export const updatePinBodySchema = z.object({
 		.transform((value) => String(value))
 		.refine((value) => value.length > 0, { message: "required" }),
 	newPin: authPinSchema,
-});
+}).strict();
 
 export type AuthPayloadSchema<T> = {
 	safeParse: (

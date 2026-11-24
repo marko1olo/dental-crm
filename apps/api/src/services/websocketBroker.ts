@@ -130,6 +130,7 @@ export type ClientConn = {
 	branchId?: string | undefined;
 	patientId?: string | undefined;
 	userId?: string | undefined;
+	role?: string | undefined;
 	isClinical?: boolean | undefined;
 	isPatient?: boolean | undefined;
 	presence?: StaffPresenceInfo | undefined;
@@ -137,6 +138,16 @@ export type ClientConn = {
 };
 
 const clients = new Set<ClientConn>();
+
+function isStrictSecrecyClient(client: ClientConn): boolean {
+	return (
+		client.isPatient === true ||
+		!client.role ||
+		client.role === "marketer" ||
+		client.role === "marketing" ||
+		client.role === "patient"
+	);
+}
 const PRESENCE_TTL_MS = 45_000;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -173,9 +184,11 @@ export const wsBroker = {
 		}
 
 		let isClinical = false;
+		let normalizedClientRole: string | undefined = patientFlag ? "patient" : undefined;
 		if (typeof clinicalParam === "boolean") {
 			isClinical = clinicalParam;
 		} else if (typeof clinicalParam === "string") {
+			normalizedClientRole = clinicalParam.trim().toLowerCase() || normalizedClientRole;
 			isClinical = evaluateClinicalAccess(clinicalParam).hasClinicalAccess;
 		}
 		const conn: ClientConn = {
@@ -184,6 +197,7 @@ export const wsBroker = {
 			branchId: branch ? branch : undefined,
 			patientId: patientId ? patientId : undefined,
 			userId: user ? user : undefined,
+			role: normalizedClientRole,
 			isClinical,
 			isPatient: patientFlag,
 			isAlive: true,
@@ -304,6 +318,7 @@ export const wsBroker = {
 		const rawData = JSON.stringify(message);
 		const isClinical = isClinicalWsEvent(message);
 		let sanitizedData: string | null = null;
+		let strictSanitizedData: string | null = null;
 		for (const client of clients) {
 			if (client.ws.readyState !== 1) {
 				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
@@ -334,11 +349,20 @@ export const wsBroker = {
 					if (isClinical) {
 						continue;
 					}
-					if (!sanitizedData) {
-						sanitizedData = JSON.stringify(stripDiagnosisPayload(message));
+					let payloadToSend: string;
+					if (isStrictSecrecyClient(client)) {
+						if (!strictSanitizedData) {
+							strictSanitizedData = JSON.stringify(stripDiagnosisPayload(message, { strict: true }));
+						}
+						payloadToSend = strictSanitizedData;
+					} else {
+						if (!sanitizedData) {
+							sanitizedData = JSON.stringify(stripDiagnosisPayload(message, { strict: false }));
+						}
+						payloadToSend = sanitizedData;
 					}
 					try {
-						client.ws.send(sanitizedData, (err) => {
+						client.ws.send(payloadToSend, (err) => {
 							if (err) clients.delete(client);
 						});
 					} catch {
@@ -359,6 +383,7 @@ export const wsBroker = {
 		const isClinical = isClinicalWsEvent(message);
 		const rawData = JSON.stringify(message);
 		let sanitizedData: string | null = null;
+		let strictSanitizedData: string | null = null;
 
 		for (const client of clients) {
 			if (client.ws.readyState !== 1) {
@@ -384,11 +409,20 @@ export const wsBroker = {
 					if (isClinical) {
 						continue;
 					}
-					if (!sanitizedData) {
-						sanitizedData = JSON.stringify(stripDiagnosisPayload(message));
+					let payloadToSend: string;
+					if (isStrictSecrecyClient(client)) {
+						if (!strictSanitizedData) {
+							strictSanitizedData = JSON.stringify(stripDiagnosisPayload(message, { strict: true }));
+						}
+						payloadToSend = strictSanitizedData;
+					} else {
+						if (!sanitizedData) {
+							sanitizedData = JSON.stringify(stripDiagnosisPayload(message, { strict: false }));
+						}
+						payloadToSend = sanitizedData;
 					}
 					try {
-						client.ws.send(sanitizedData, (err) => {
+						client.ws.send(payloadToSend, (err) => {
 							if (err) clients.delete(client);
 						});
 					} catch {

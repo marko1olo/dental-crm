@@ -1,6 +1,5 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	auditEvents,
@@ -209,16 +208,20 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			const body = parsed.data;
 
 			if (isOrgAdmin && identity.organizationId) {
-				const [target] = await db
-					.select({ id: users.id })
-					.from(users)
-					.where(
-						and(
-							eq(users.id, body.userId),
-							eq(users.organizationId, identity.organizationId),
-						),
-					)
-					.limit(1);
+				const orgId = identity.organizationId;
+				const target = await withTenantCtx(orgId, async (tx) => {
+					const [row] = await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, body.userId),
+								eq(users.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					return row ?? null;
+				});
 				if (!target) {
 					return reply.code(404).send({
 						error: "UserNotFound",
@@ -340,11 +343,24 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 				);
 			}
 
-			const [user] = await db
-				.select()
-				.from(users)
-				.where(and(...userConditions))
-				.limit(1);
+			const user = payload.organizationId
+				? await withTenantCtx(payload.organizationId as string, async (tx) => {
+						const [found] = await tx
+							.select()
+							.from(users)
+							.where(and(...userConditions))
+							.limit(1);
+						return found ?? null;
+					})
+				: (
+						await readUnderBypass((tx) =>
+							tx
+								.select()
+								.from(users)
+								.where(and(...userConditions))
+								.limit(1),
+						)
+					).row ?? null;
 			if (!user?.passwordHash)
 				return reply.code(401).send({
 					error: "AuthError",
@@ -358,15 +374,17 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const newPasswordHash = await hashCredential(newPassword);
-			await db
-				.update(users)
-				.set({ passwordHash: newPasswordHash })
-				.where(
-					and(
-						eq(users.id, user.id),
-						eq(users.organizationId, user.organizationId),
-					),
-				);
+			await withTenantCtx(user.organizationId, async (tx) => {
+				await tx
+					.update(users)
+					.set({ passwordHash: newPasswordHash })
+					.where(
+						and(
+							eq(users.id, user.id),
+							eq(users.organizationId, user.organizationId),
+						),
+					);
+			});
 
 			return reply.send({ ok: true, message: "Пароль успешно изменен." });
 		},
@@ -412,11 +430,24 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 				);
 			}
 
-			const [user] = await db
-				.select()
-				.from(users)
-				.where(and(...userConditions))
-				.limit(1);
+			const user = payload.organizationId
+				? await withTenantCtx(payload.organizationId as string, async (tx) => {
+						const [found] = await tx
+							.select()
+							.from(users)
+							.where(and(...userConditions))
+							.limit(1);
+						return found ?? null;
+					})
+				: (
+						await readUnderBypass((tx) =>
+							tx
+								.select()
+								.from(users)
+								.where(and(...userConditions))
+								.limit(1),
+						)
+					).row ?? null;
 			if (!user?.pinCodeHash)
 				return reply.code(401).send({
 					error: "AuthError",
@@ -430,15 +461,17 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 			}
 
 			const newPinHash = await hashCredential(newPin);
-			await db
-				.update(users)
-				.set({ pinCodeHash: newPinHash })
-				.where(
-					and(
-						eq(users.id, user.id),
-						eq(users.organizationId, user.organizationId),
-					),
-				);
+			await withTenantCtx(user.organizationId, async (tx) => {
+				await tx
+					.update(users)
+					.set({ pinCodeHash: newPinHash })
+					.where(
+						and(
+							eq(users.id, user.id),
+							eq(users.organizationId, user.organizationId),
+						),
+					);
+			});
 
 			return reply.send({ ok: true, message: "PIN-код успешно изменен." });
 		},

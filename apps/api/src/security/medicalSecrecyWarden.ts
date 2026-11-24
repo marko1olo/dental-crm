@@ -167,10 +167,10 @@ export interface ClinicalAccessEvaluation {
 export function evaluateClinicalAccess(
 	rawRole: string | null | undefined,
 	extra?: {
-		clinicalRole?: string | null;
-		canSignMedicalRecords?: boolean;
-		specialties?: string[] | null;
-	},
+		clinicalRole?: string | null | undefined;
+		canSignMedicalRecords?: boolean | undefined;
+		specialties?: string[] | null | undefined;
+	} | undefined,
 ): ClinicalAccessEvaluation {
 	if (!rawRole || typeof rawRole !== "string") {
 		return {
@@ -423,16 +423,122 @@ export const CLINICAL_DIAGNOSTIC_PATTERNS: readonly RegExp[] = [
 	/остеомиелит\S*/gi,
 	/флегмон\S*/gi,
 	/ночные\s+боли\S*/gi,
+	// Коды МКБ-10 и упоминания номеров зубов
+	/\b(?:K0[0-9]|B1[5-9]|B2[0-4]|C\d{2}|D[0-4]\d)(?:\.\d{1,2})?\b/gi,
+	/(?:зуб[а-я]*|tooth)\s*#?\s*(?:[1-4][1-8]|[5-8][1-5]|\d{1,2})/gi,
+	// Клинические стоматологические диагнозы и вмешательства
+	/пульпит\S*/gi,
+	/кариес\S*/gi,
+	/экстирпац\S*/gi,
+	/препарирован\S*/gi,
+	/депульп\S*/gi,
+	/периодонтит\S*/gi,
+	/пародонтит\S*/gi,
+	/гингивит\S*/gi,
+	/периостит\S*/gi,
+	/альвеолит\S*/gi,
+	/стоматит\S*/gi,
+	/кист[аеыу]\S*/gi,
+	/гранул[её]м\S*/gi,
+	/перикоронит\S*/gi,
+	/периимплантит\S*/gi,
+	/резекц\S*/gi,
+	/синус[_-]?лифтинг\S*/gi,
+	/абсцесс\S*/gi,
+	/ультракаин\S*/gi,
+	/артикаин\S*/gi,
+	/лидокаин\S*/gi,
+	/острая\s+боль\S*/gi,
 ];
 
-export function sanitizeClinicalString(str: string): string {
+const STRICT_EXTRA_CLINICAL_PATTERNS: readonly RegExp[] = [
+	/анестези\S*/gi,
+	/имплантат\S*/gi,
+	/имплантаци\S*/gi,
+	/диагноз\S*/gi,
+];
+
+export const STRICT_NON_OPERATIONAL_PATTERNS: readonly RegExp[] = [
+	...CLINICAL_DIAGNOSTIC_PATTERNS,
+	...STRICT_EXTRA_CLINICAL_PATTERNS,
+];
+
+const CLINICAL_SEARCH_NOSOLOGY_PATTERNS: readonly RegExp[] = [
+	...STRICT_NON_OPERATIONAL_PATTERNS,
+	/\b(?:МКБ|ICD)\b/gi,
+	/анамнез\S*/gi,
+	/одонтограмм\S*/gi,
+];
+
+const OPERATIONAL_SERVICE_LABEL_KEYS: ReadonlySet<string> = new Set([
+	"title",
+	"servicename",
+	"service_name",
+	"itemname",
+	"item_name",
+	"procedurename",
+	"procedure_name",
+	"categoryname",
+	"category_name",
+	"reason",
+]);
+
+const ROUTINE_CARIES_PATTERN_SOURCE = "кариес\\S*";
+const TOOTH_NUMBER_PATTERN_SOURCE = "(?:зуб[а-я]*|tooth)";
+
+export interface ClinicalSanitizeOptions {
+	strict?: boolean | undefined;
+	operationalContext?: boolean | undefined;
+	preserveRoutineServiceTitle?: boolean | undefined;
+}
+
+function isStrictSecrecyRequest(request: FastifyRequest): boolean {
+	const identity = getRequestIdentity(request);
+	const rawRole = identity.role ?? request.user?.role ?? null;
+	const normalizedRole = rawRole ? rawRole.trim().toLowerCase() : null;
+	if (!normalizedRole || normalizedRole === "marketer" || normalizedRole === "marketing") {
+		return true;
+	}
+	const urlPath = (request.url || "").split("?")[0] ?? "";
+	return urlPath.startsWith("/api/export/patients") || urlPath.startsWith("/api/export/leads");
+}
+
+function isOperationalBillingOrScheduleRequest(request: FastifyRequest): boolean {
+	const urlPath = (request.url || "").split("?")[0] ?? "";
+	return (
+		urlPath.startsWith("/api/pricelist") ||
+		urlPath.startsWith("/api/services") ||
+		urlPath.startsWith("/api/invoices") ||
+		urlPath.startsWith("/api/payments") ||
+		urlPath.startsWith("/api/fiscal") ||
+		urlPath.startsWith("/api/contracts") ||
+		urlPath.startsWith("/api/appointments") ||
+		urlPath.startsWith("/api/schedule") ||
+		urlPath.startsWith("/api/export/pricelist")
+	);
+}
+
+export function sanitizeClinicalString(str: string, options?: ClinicalSanitizeOptions): string {
 	let result = str;
-	for (const pattern of CLINICAL_DIAGNOSTIC_PATTERNS) {
+	const patterns = options?.strict
+		? STRICT_NON_OPERATIONAL_PATTERNS
+		: CLINICAL_DIAGNOSTIC_PATTERNS;
+
+	for (const pattern of patterns) {
+		if (
+			options?.preserveRoutineServiceTitle &&
+			!options.strict &&
+			(pattern.source === ROUTINE_CARIES_PATTERN_SOURCE ||
+				pattern.source.includes(TOOTH_NUMBER_PATTERN_SOURCE))
+		) {
+			continue;
+		}
 		result = result.replace(pattern, "[Сведения защищены 152-ФЗ]");
 	}
-	// Схлопываем подряд идущие или разделенные пунктуацией/союзами маркеры в единый чистый маркер
+	// Схлопываем подряд идущие или разделенные пунктуацией/союзами маркеры в единый чистый маркер,
+	// не затрагивая внешние разделители (например запятые CSV).
 	result = result.replace(
-		/(?:\[Сведения защищены 152-ФЗ\](?:\s*[,;–—\-]?\s*|\s+(?:и|в|на|от|под|с|со)\s+)?)+/gi,
+		/\[Сведения защищены 152-ФЗ\](?:(?:\s*[,;–—\-]\s*|\s+(?:и|в|на|от|под|с|со)\s+|\s+)\[Сведения защищены 152-ФЗ\])+/gi,
 		"[Сведения защищены 152-ФЗ]",
 	);
 	return result;
@@ -445,11 +551,11 @@ export function sanitizeClinicalString(str: string): string {
 export function isClinicalSearchQuery(query: string): boolean {
 	const normalized = query.trim();
 	if (!normalized) return false;
-	// Проверка на коды МКБ-10 (например K02, K04.0, B20, C00-D48)
-	if (/^[A-Z][0-9]{2}(?:\.[0-9]{1,2})?$/i.test(normalized)) {
+	// Проверка на коды МКБ-10 (например K02, K04.0, B20, C00-D48) как изолированно, так и в составе строки
+	if (/\b[A-Z][0-9]{2}(?:\.[0-9]{1,2})?\b/i.test(normalized)) {
 		return true;
 	}
-	for (const pattern of CLINICAL_DIAGNOSTIC_PATTERNS) {
+	for (const pattern of CLINICAL_SEARCH_NOSOLOGY_PATTERNS) {
 		pattern.lastIndex = 0;
 		if (pattern.test(normalized)) {
 			pattern.lastIndex = 0;
@@ -463,21 +569,33 @@ export function isClinicalSearchQuery(query: string): boolean {
 /**
  * Рекурсивно вырезает все поля медицинской тайны из объекта, массива или полезной нагрузки.
  */
-export function stripDiagnosisPayload<T>(payload: T): T {
-	return stripDiagnosisValue(payload) as T;
+export function stripDiagnosisPayload<T>(payload: T, options?: ClinicalSanitizeOptions): T {
+	return stripDiagnosisValue(payload, options) as T;
 }
 
-function stripDiagnosisValue(payload: unknown): unknown {
+function stripDiagnosisValue(
+	payload: unknown,
+	options?: ClinicalSanitizeOptions,
+	currentKey?: string,
+): unknown {
 	if (payload === null || payload === undefined) {
 		return payload;
 	}
 
 	if (Array.isArray(payload)) {
-		return payload.map((item) => stripDiagnosisValue(item));
+		return payload.map((item) => stripDiagnosisValue(item, options, currentKey));
 	}
 
 	if (typeof payload === "string") {
-		return sanitizeClinicalString(payload);
+		const preserveRoutineServiceTitle =
+			Boolean(options?.operationalContext) &&
+			!options?.strict &&
+			currentKey !== undefined &&
+			OPERATIONAL_SERVICE_LABEL_KEYS.has(currentKey);
+		return sanitizeClinicalString(payload, {
+			...options,
+			preserveRoutineServiceTitle,
+		});
 	}
 
 	if (typeof payload === "object") {
@@ -499,7 +617,7 @@ function stripDiagnosisValue(payload: unknown): unknown {
 				// ФИЗИЧЕСКОЕ ИСКЛЮЧЕНИЕ: ключ просто не попадает в итоговый объект
 				continue;
 			}
-			result[key] = stripDiagnosisValue(value);
+			result[key] = stripDiagnosisValue(value, options, lowerKey);
 		}
 		return result;
 	}
@@ -519,10 +637,13 @@ export function hasForbiddenClinicalKeyInJson(jsonStr: string): boolean {
 /**
  * Безопасно усекает поля из JSON-строки.
  */
-export function stripDiagnosisJsonString(jsonStr: string): string {
+export function stripDiagnosisJsonString(
+	jsonStr: string,
+	options?: ClinicalSanitizeOptions,
+): string {
 	try {
 		const parsed = JSON.parse(jsonStr);
-		const stripped = stripDiagnosisPayload(parsed);
+		const stripped = stripDiagnosisPayload(parsed, options);
 		return JSON.stringify(stripped);
 	} catch {
 		return jsonStr;
@@ -536,7 +657,11 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 	// Хук 1: preSerialization — перехватывает JS-объект до его сериализации
 	app.addHook("preSerialization", async (request, _reply, payload) => {
 		if (shouldStripMedicalData(request)) {
-			return stripDiagnosisPayload(payload);
+			const options: ClinicalSanitizeOptions = {
+				strict: isStrictSecrecyRequest(request),
+				operationalContext: isOperationalBillingOrScheduleRequest(request),
+			};
+			return stripDiagnosisPayload(payload, options);
 		}
 		return payload;
 	});
@@ -547,6 +672,11 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 			return payload;
 		}
 
+		const options: ClinicalSanitizeOptions = {
+			strict: isStrictSecrecyRequest(request),
+			operationalContext: isOperationalBillingOrScheduleRequest(request),
+		};
+
 		// 1. Обработка строковых полезных нагрузок (JSON, CSV, XML, plain text)
 		if (typeof payload === "string") {
 			const rawContentType = reply.getHeader("content-type");
@@ -554,11 +684,16 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 				typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
 
 			if (contentType.includes("application/json")) {
-				if (hasForbiddenClinicalKeyInJson(payload)) {
-					const stripped = stripDiagnosisJsonString(payload);
-					return sanitizeClinicalString(stripped);
+				try {
+					const parsed = JSON.parse(payload);
+					return JSON.stringify(stripDiagnosisPayload(parsed, options));
+				} catch {
+					if (hasForbiddenClinicalKeyInJson(payload)) {
+						const stripped = stripDiagnosisJsonString(payload, options);
+						return sanitizeClinicalString(stripped, options);
+					}
+					return sanitizeClinicalString(payload, options);
 				}
-				return sanitizeClinicalString(payload);
 			}
 
 			// Экспорты CSV, XML, текстовые выгрузки
@@ -570,7 +705,7 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 				contentType.includes("plain");
 
 			if (isTextOrExport) {
-				return sanitizeClinicalString(payload);
+				return sanitizeClinicalString(payload, options);
 			}
 		}
 
@@ -589,7 +724,7 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 
 			if (isTextOrExport) {
 				const decoded = payload.toString("utf-8");
-				const sanitized = sanitizeClinicalString(decoded);
+				const sanitized = sanitizeClinicalString(decoded, options);
 				return Buffer.from(sanitized, "utf-8");
 			}
 		}

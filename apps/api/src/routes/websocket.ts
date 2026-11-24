@@ -252,7 +252,11 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 							? payload.branchId.trim()
 							: undefined;
 
-					const evalResult = evaluateClinicalAccess(identity.role);
+					const evalResult = evaluateClinicalAccess(identity.role, {
+						clinicalRole: identity.clinicalRole,
+						canSignMedicalRecords: identity.canSignMedicalRecords,
+						specialties: identity.specialties,
+					});
 					isClinical = evalResult.hasClinicalAccess;
 				}
 
@@ -267,7 +271,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 					socket,
 					verifiedOrgId,
 					verifiedPatientId,
-					isClinical,
+					isClinical ? true : (isPatientSocket ? "patient" : role),
 					branchId,
 					verifiedUserId,
 					isPatientSocket,

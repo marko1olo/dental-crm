@@ -142,7 +142,14 @@ export function loadAdditionalServerEnv(): string[] {
 			appendUnseenEnvFiles(queue, seen, explicitEnvFiles());
 		} catch (error) {
 			// Keep startup non-blocking: a broken optional env import must not stop local development.
-			console.warn(`[env] Failed to load optional env file ${filePath}`, error);
+			process.stderr.write(
+				`${JSON.stringify({
+					level: "warn",
+					module: "env",
+					message: `[env] Failed to load optional env file ${filePath}`,
+					error: error instanceof Error ? error.message : String(error),
+				})}\n`,
+			);
 		}
 	}
 	return getLoadedServerEnvFiles();

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { users } from "../../db/schema.js";
 import {
 	DEMO_ADMIN_ID,
@@ -12,7 +12,7 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 } from "../../services/demo/deepDemoSeeder.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "./tokenHelpers.js";
+import { readUnderBypass, TOKEN_SECRET } from "./tokenHelpers.js";
 
 function parseDemoStaffPayload(
 	staffToken: string | null | undefined,
@@ -81,17 +81,21 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 			}
 			let activeUser: ActiveUserSummary | null = null;
 			if (staffPayload?.userId && clinicPayload?.organizationId) {
-				const [user] = await db
-					.select({ id: users.id, fullName: users.fullName, role: users.role })
-					.from(users)
-					.where(
-						and(
-							eq(users.id, staffPayload.userId as string),
-							eq(users.isActive, true),
-						),
-					)
-					.limit(1);
-				activeUser = user ?? null;
+				const clinicOrgId = clinicPayload.organizationId as string;
+				activeUser = await withTenantCtx(clinicOrgId, async (tx) => {
+					const [user] = await tx
+						.select({ id: users.id, fullName: users.fullName, role: users.role })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, staffPayload.userId as string),
+								eq(users.organizationId, clinicOrgId),
+								eq(users.isActive, true),
+							),
+						)
+						.limit(1);
+					return user ?? null;
+				});
 			}
 
 			return reply.send({
@@ -120,22 +124,50 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 					.code(401)
 					.send({ error: "AuthRequired", message: "Требуется авторизация." });
 
-			const [user] = await db
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					role: users.role,
-					email: users.email,
-					organizationId: users.organizationId,
-					isActive: users.isActive,
-					yandexCalendarId: users.yandexCalendarId,
-					yandexCalendarToken: users.yandexCalendarToken,
-				})
-				.from(users)
-				.where(
-					and(eq(users.id, payload.userId as string), eq(users.isActive, true)),
-				)
-				.limit(1);
+			const user = payload.organizationId
+				? await withTenantCtx(payload.organizationId as string, async (tx) => {
+						const [found] = await tx
+							.select({
+								id: users.id,
+								fullName: users.fullName,
+								role: users.role,
+								email: users.email,
+								organizationId: users.organizationId,
+								isActive: users.isActive,
+								yandexCalendarId: users.yandexCalendarId,
+								yandexCalendarToken: users.yandexCalendarToken,
+							})
+							.from(users)
+							.where(
+								and(
+									eq(users.id, payload.userId as string),
+									eq(users.organizationId, payload.organizationId as string),
+									eq(users.isActive, true),
+								),
+							)
+							.limit(1);
+						return found ?? null;
+					})
+				: (
+						await readUnderBypass((tx) =>
+							tx
+								.select({
+									id: users.id,
+									fullName: users.fullName,
+									role: users.role,
+									email: users.email,
+									organizationId: users.organizationId,
+									isActive: users.isActive,
+									yandexCalendarId: users.yandexCalendarId,
+									yandexCalendarToken: users.yandexCalendarToken,
+								})
+								.from(users)
+								.where(
+									and(eq(users.id, payload.userId as string), eq(users.isActive, true)),
+								)
+								.limit(1),
+						)
+					).row ?? null;
 
 			if (!user) {
 				if (staffToken && staffToken.startsWith("demo-showcase-staff-token")) {

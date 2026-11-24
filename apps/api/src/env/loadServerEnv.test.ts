@@ -129,7 +129,7 @@ describe("loadAdditionalServerEnv", () => {
 		const errorEnvPath = path.join(TEST_DIR, "errorDir.env");
 		fs.mkdirSync(errorEnvPath);
 
-		const warnMock = mock.method(console, "warn", () => {});
+		const stderrMock = mock.method(process.stderr, "write", () => true);
 
 		process.env.DENTAL_ENV_FILE = errorEnvPath;
 
@@ -142,15 +142,17 @@ describe("loadAdditionalServerEnv", () => {
 		);
 
 		assert.ok(
-			warnMock.mock.calls.length > 0,
-			"Console warn should be called",
+			stderrMock.mock.calls.length > 0,
+			"Structured stderr warning should be emitted",
 		);
-		const firstWarn = warnMock.mock.calls[0];
-		assert.ok(firstWarn);
+		const firstCall = stderrMock.mock.calls[0];
+		assert.ok(firstCall);
+		const rawChunk = String(firstCall.arguments[0]);
+		const parsed = JSON.parse(rawChunk) as { level?: string; module?: string; message?: string };
+		assert.strictEqual(parsed.level, "warn");
+		assert.strictEqual(parsed.module, "env");
 		assert.ok(
-			firstWarn.arguments[0].includes(
-				"[env] Failed to load optional env file",
-			),
+			parsed.message?.includes("[env] Failed to load optional env file"),
 		);
 	});
 

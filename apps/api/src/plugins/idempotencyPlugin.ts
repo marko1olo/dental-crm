@@ -98,6 +98,7 @@ export const DEFAULT_IDEMPOTENCY_EXEMPT_PATHS: RegExp[] = [
 	/^\/api\/sbp\/webhook$/,
 	/^\/api\/billing\/sbp\/webhook$/,
 	/^\/api\/fiscal\/validate$/,
+	/^\/api\/sync\/(?:gateway|push|pull|mesh\/exchange)$/,
 ];
 
 export type { IdempotencyPluginOptions as PluginOptions };

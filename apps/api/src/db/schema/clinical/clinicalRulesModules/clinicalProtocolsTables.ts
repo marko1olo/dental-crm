@@ -171,11 +171,11 @@ export const labOrders = pgTable(
 		attachedImageUrl: text("attached_image_url"),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
 		/** Цена для пациента в копейках (Мандат 8bm) */
-		priceKopecks: bigint("price_kopecks", { mode: "number" }),
+		priceKopecks: bigint("price_kopecks", { mode: "number" }).notNull().default(0),
 		/** Себестоимость работы зуботехнической лаборатории (удерживается из зарплатной базы врача) */
 		labCostRub: numeric("lab_cost_rub", { precision: 12, scale: 2, mode: "number" }),
 		/** Себестоимость работы зуботехнической лаборатории в копейках (Мандат 8bm) */
-		labCostKopecks: bigint("lab_cost_kopecks", { mode: "number" }),
+		labCostKopecks: bigint("lab_cost_kopecks", { mode: "number" }).notNull().default(0),
 		/** Гарантийная переделка (относится на клинику, 0 вычетов с врача) */
 		isWarranty: boolean("is_warranty").notNull().default(false),
 		/** Ответственность по гарантии: clinic_warranty | lab_defect | patient_fault */
@@ -256,7 +256,7 @@ export const labItems = pgTable(
 		tiBaseHeightMm: numeric("ti_base_height_mm", { precision: 4, scale: 2 }),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2 }),
 		/** Стоимость реставрации в копейках (Мандат 8bm) */
-		priceKopecks: bigint("price_kopecks", { mode: "number" }),
+		priceKopecks: bigint("price_kopecks", { mode: "number" }).notNull().default(0),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

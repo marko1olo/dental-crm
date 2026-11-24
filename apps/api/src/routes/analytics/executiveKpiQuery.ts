@@ -552,7 +552,6 @@ export async function queryExecutiveKpiAndFunnel(
 	const [labOrdersRow] = await db
 		.select({
 			totalCostKopecks: sql<number>`coalesce(sum(coalesce(${labOrders.labCostKopecks}, 0)), 0)::bigint`,
-			totalRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 		})
 		.from(labOrders)
 		.where(
@@ -568,7 +567,7 @@ export async function queryExecutiveKpiAndFunnel(
 	// [P&L / Метод начисления]: прямые затраты на лабораторию и материалы формируются
 	// строго по факту нарядов ЗТЛ и списаний со склада за период (Мандаты 8ap & 8bm),
 	// исключая смешивание с кассовым ДДС (cashLabExpensesKopecks / cashMaterialsExpensesKopecks).
-	const directLabCostKopecks = Number(labOrdersRow?.totalCostKopecks || rublesToKopecks(Number(labOrdersRow?.totalRub || 0)));
+	const directLabCostKopecks = Number(labOrdersRow?.totalCostKopecks ?? 0);
 
 	const [materialsUsageRow] = await db
 		.select({

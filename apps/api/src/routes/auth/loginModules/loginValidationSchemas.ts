@@ -33,6 +33,6 @@ export const staffSwitchRoleSchema = z.object({
 	] as const),
 	targetUserId: z.string().optional(),
 	pinCode: z.string().trim().min(1).max(16).optional(),
-});
+}).strict();
 
 export type StaffSwitchRoleBody = z.infer<typeof staffSwitchRoleSchema>;

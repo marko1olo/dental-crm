@@ -13,13 +13,13 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { withSuperuserBypass } from "../../db/rls.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	syncEntityVectors,
 	syncIdempotencyRecords,
 } from "../../db/schema.js";
 import { RouteSyncQueueManager } from "./syncQueueManager.js";
-import type { SyncMutationEntityKind } from "@dental/shared";
+import { syncMutationEntityKindSchema } from "@dental/shared";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -33,18 +33,7 @@ const listDlqQuerySchema = z.object({
 });
 
 const vectorAuditQuerySchema = z.object({
-	entityKind: z
-		.enum([
-			"patient",
-			"appointment",
-			"visit",
-			"visit_diary",
-			"payment",
-			"odontogram_state",
-			"treatment_plan",
-			"clinical_task",
-		])
-		.optional(),
+	entityKind: syncMutationEntityKindSchema.optional(),
 	entityId: z.string().min(1).optional(),
 	limit: z.coerce.number().int().min(1).max(200).optional(),
 	offset: z.coerce.number().int().min(0).optional(),
@@ -120,7 +109,7 @@ export class SyncAdministrativeHandlers {
 		});
 
 		// Also fetch recent rejected idempotency records for complete audit
-		const rejectedRecords = await withSuperuserBypass(async (tx) => {
+		const rejectedRecords = await withTenantCtx(orgId, async (tx) => {
 			return await tx
 				.select()
 				.from(syncIdempotencyRecords)
@@ -223,10 +212,10 @@ export class SyncAdministrativeHandlers {
 		const entityKind = queryParsed.success ? queryParsed.data.entityKind : undefined;
 		const entityId = queryParsed.success ? queryParsed.data.entityId : undefined;
 
-		const vectors = await withSuperuserBypass(async (tx) => {
+		const vectors = await withTenantCtx(orgId, async (tx) => {
 			const conditions = [eq(syncEntityVectors.organizationId, orgId)];
 			if (entityKind) {
-				conditions.push(eq(syncEntityVectors.entityKind, entityKind as SyncMutationEntityKind));
+				conditions.push(eq(syncEntityVectors.entityKind, entityKind));
 			}
 			if (entityId) {
 				conditions.push(eq(syncEntityVectors.entityId, entityId));

@@ -6,8 +6,7 @@
  */
 
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { withSuperuserBypass } from "../../db/rls.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	type SystemBackgroundJob,
 	systemBackgroundJobs,
@@ -103,7 +102,7 @@ export class RouteSyncQueueManager {
 	): Promise<OrganizationSyncQueueHealth> {
 		const memoryBuffer = GatewayQueueManager.getQueueStats(organizationId);
 
-		return await withSuperuserBypass(async (tx) => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			const jobCounts = await tx
 				.select({
 					status: systemBackgroundJobs.status,

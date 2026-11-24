@@ -239,11 +239,10 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				amountRub: e.amountKopecks != null ? kopecksToRubles(Number(e.amountKopecks)) : e.amountRub,
 			}));
 
-			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostKopecks / labCostRub), не проведенных через кассовую операцию
+			// 3a. Учитываем фактическую себестоимость заказов ЗТЛ (labCostKopecks), не проведенных через кассовую операцию
 			const unpaidLabOrders = await tx
 				.select({
 					labCostKopecks: labOrders.labCostKopecks,
-					labCostRub: labOrders.labCostRub,
 				})
 				.from(labOrders)
 				.where(
@@ -259,11 +258,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 
 			let unpaidLabKop = 0;
 			for (const row of unpaidLabOrders) {
-				if (row.labCostKopecks != null) {
-					unpaidLabKop += Number(row.labCostKopecks);
-				} else if (row.labCostRub != null) {
-					unpaidLabKop += rublesToKopecks(row.labCostRub);
-				}
+				unpaidLabKop += Number(row.labCostKopecks ?? 0);
 			}
 
 			if (unpaidLabKop > 0) {

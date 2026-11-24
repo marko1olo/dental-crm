@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import { staffRoleSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	organizations,
@@ -98,13 +97,16 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 			const tokenUuid = crypto.randomUUID();
 			const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-			await db.insert(userInvitations).values({
-				organizationId: staffPayload.organizationId as string,
-				email: email.toLowerCase().trim(),
-				role: parsedRole.data,
-				inviteToken: tokenUuid,
-				expiresAt,
-				status: "pending",
+			const invOrgId = staffPayload.organizationId as string;
+			await withTenantCtx(invOrgId, async (tx) => {
+				await tx.insert(userInvitations).values({
+					organizationId: invOrgId,
+					email: email.toLowerCase().trim(),
+					role: parsedRole.data,
+					inviteToken: tokenUuid,
+					expiresAt,
+					status: "pending",
+				});
 			});
 
 			return reply.send({

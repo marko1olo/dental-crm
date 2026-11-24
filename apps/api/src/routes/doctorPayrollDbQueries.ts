@@ -467,7 +467,6 @@ export async function fetchDoctorPayrollDataset(params: {
 			appointmentId: labOrders.appointmentId,
 			treatmentPlanId: labOrders.treatmentPlanId,
 			labCostKopecks: labOrders.labCostKopecks,
-			labCostRub: labOrders.labCostRub,
 			completedAt: labOrders.completedAt,
 			createdAt: labOrders.createdAt,
 		})
@@ -545,9 +544,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		toothFdi: lo.toothFdi,
 		appointmentId: lo.appointmentId,
 		treatmentPlanId: lo.treatmentPlanId,
-		remainingCostKop: lo.labCostKopecks != null
-			? Number(lo.labCostKopecks)
-			: (lo.labCostRub != null ? rublesToKopecks(lo.labCostRub) : 0),
+		remainingCostKop: Number(lo.labCostKopecks ?? 0),
 	}));
 
 	// Списание материалов (только списываемые на пациента, без общеклинических накладных)

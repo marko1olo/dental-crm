@@ -1,6 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { organizations, protocolTemplates, dentalSpecialty } from "../db/schema.js";
+import { createApiLogger } from "../observability/logger.js";
+
+const templatesLogger = createApiLogger("seedTemplates");
 
 const BUILT_IN_TEMPLATES: Array<{
 	title: string;
@@ -470,7 +473,7 @@ export async function ensureClinicalTemplatesSeeded(
 		(t) => !existingTitles.has(t.title),
 	);
 	if (toInsert.length === 0) {
-		console.log("[Templates] All built-in templates already seeded.");
+		templatesLogger.info("[Templates] All built-in templates already seeded.");
 		return;
 	}
 
@@ -491,7 +494,7 @@ export async function ensureClinicalTemplatesSeeded(
 			updatedAt: new Date(),
 		});
 	}
-	console.log(
+	templatesLogger.info(
 		`[Templates] Seeded ${toInsert.length} built-in clinical templates.`,
 	);
 }

@@ -5,7 +5,6 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
-	idempotencyKeys,
 	inventoryItems,
 	inventorySupplierInvoices,
 	inventorySupplierInvoiceItems,
@@ -71,29 +70,7 @@ export const handleAcceptanceWaybillRequest = async (
 
 	try {
 		const result = await withTenantCtx(targetOrgId, async (tx) => {
-			// Идемпотентность складских операций (Мандаты 8e, 8n, 8s, 8bo):
-			// 1. Канонический реестр idempotency_keys
-			if (idempotencyKey) {
-				const [existingRecord] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, targetOrgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingRecord?.responseBody) {
-					return {
-						...(existingRecord.responseBody as Record<string, unknown>),
-						alreadyProcessed: true,
-					};
-				}
-			}
-
-			// 2. Дедупликация по номеру накладной и поставщику
+			// Дедупликация по номеру накладной и поставщику (идемпотентность HTTP обеспечивается idempotencyPlugin)
 			let existingInvoice: Array<typeof inventorySupplierInvoices.$inferSelect> = [];
 			if (data.waybillNumber && data.supplierName) {
 				existingInvoice = await tx
@@ -259,6 +236,8 @@ export const handleAcceptanceWaybillRequest = async (
 							criticalThreshold: "5",
 							unitCostRub: String(effectivePricePerUnitRub),
 							pricePerUnit: String(effectivePricePerUnitRub),
+							unitCostKopecks: BigInt(effectiveUnitPriceKopecks),
+							pricePerUnitKopecks: BigInt(effectiveUnitPriceKopecks),
 							lotNumber: item.batchNumber || item.lotNumber || null,
 							expirationDate:
 								normalizeDateToIso(item.expirationDate) ||
@@ -312,6 +291,7 @@ export const handleAcceptanceWaybillRequest = async (
 						initialQty: String(effectiveReceivedQty),
 						remainingQty: String(remainingInBatch),
 						purchasePricePerUnit: String(effectivePricePerUnitRub),
+						purchasePricePerUnitKopecks: BigInt(effectiveUnitPriceKopecks),
 						status: isDepletedByDeficit ? "depleted" : "active",
 						barcode: item.barcode?.trim() || null,
 					})
@@ -334,6 +314,8 @@ export const handleAcceptanceWaybillRequest = async (
 						packageMultiplier: String(multiplier),
 						unitCostRub: String(effectivePricePerUnitRub),
 						pricePerUnit: String(effectivePricePerUnitRub),
+						unitCostKopecks: BigInt(effectiveUnitPriceKopecks),
+						pricePerUnitKopecks: BigInt(effectiveUnitPriceKopecks),
 						...(shouldUpdateCardDate ? { expirationDate } : {}),
 						...(item.barcode ? { barcode: item.barcode.trim() } : {}),
 						...(item.sku ? { sku: item.sku.trim() } : {}),
@@ -357,6 +339,7 @@ export const handleAcceptanceWaybillRequest = async (
 					quantityChanged: String(effectiveReceivedQty),
 					qty: String(effectiveReceivedQty),
 					unitCostRub: String(effectivePricePerUnitRub),
+					unitCostKopecks: BigInt(effectiveUnitPriceKopecks),
 					transactionType: "receipt",
 					isOverdraft: false,
 					notes: `Накладная №${data.waybillNumber} от ${data.supplierName}${data.supplierInn ? ` (ИНН ${data.supplierInn})` : ""} • Партия ${batchNumber} [FEFO]`,
@@ -452,19 +435,6 @@ export const handleAcceptanceWaybillRequest = async (
 				overdraftResolvedCount,
 				items: processedItems,
 			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: targetOrgId,
-						key: idempotencyKey,
-						status: "completed",
-						responseBody: { ...responsePayload } as Record<string, unknown>,
-						responseCode: 201,
-					})
-					.onConflictDoNothing();
-			}
 
 			return responsePayload;
 		});

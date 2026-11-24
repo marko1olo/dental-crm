@@ -68,14 +68,14 @@ export async function registerExportRoutes(app: FastifyInstance) {
 			try {
 				const dbPatients = await getPatientsFromDb(orgId);
 				// Аппаратная очистка от медицинской тайны
-				const sanitizedPatients = stripDiagnosisPayload(dbPatients);
+				const sanitizedPatients = stripDiagnosisPayload(dbPatients, { strict: true });
 
 				const format = (request.query?.format || "json").toLowerCase();
 				if (format === "csv") {
 					const headers = "id,fullName,phone,birthDate,status,notes,balanceRub\n";
 					const rows = sanitizedPatients
 						.map((p) => {
-							const notesSanitized = p.notes ? sanitizeClinicalString(p.notes) : "";
+							const notesSanitized = p.notes ? sanitizeClinicalString(p.notes, { strict: true }) : "";
 							return [
 								escapeCsvField(p.id),
 								escapeCsvField(p.fullName),
@@ -103,7 +103,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 						phone: p.phone,
 						birthDate: p.birthDate,
 						status: p.status,
-						notes: p.notes ? sanitizeClinicalString(p.notes) : null,
+						notes: p.notes ? sanitizeClinicalString(p.notes, { strict: true }) : null,
 						balanceRub: p.balanceRub ?? 0,
 						balanceKopecks: rublesToKopecks(p.balanceRub ?? 0),
 					})),
@@ -142,7 +142,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 					const headers = "id,name,phone,source,status,notes,expectedRevenue\n";
 					const rows = leads
 						.map((lead) => {
-							const notesClean = lead.notes ? sanitizeClinicalString(lead.notes) : "";
+							const notesClean = lead.notes ? sanitizeClinicalString(lead.notes, { strict: true }) : "";
 							return [
 								escapeCsvField(lead.id),
 								escapeCsvField(lead.name),
@@ -170,7 +170,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 						phone: lead.phone,
 						source: lead.source,
 						status: lead.status,
-						notes: lead.notes ? sanitizeClinicalString(lead.notes) : null,
+						notes: lead.notes ? sanitizeClinicalString(lead.notes, { strict: true }) : null,
 						expectedRevenue: lead.expectedRevenue,
 						createdAt: lead.createdAt,
 					})),

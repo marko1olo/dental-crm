@@ -305,7 +305,6 @@ export async function calculateDoctorProfitability(
 			doctorId: labOrders.doctorId,
 			labOrdersCount: sql<number>`count(*)::int`,
 			labOrdersCostKopecks: sql<number>`coalesce(sum(coalesce(${labOrders.labCostKopecks}, 0)), 0)::bigint`,
-			labOrdersCostRub: sql<number>`coalesce(sum(coalesce(${labOrders.labCostRub}, 0)), 0)`,
 		})
 		.from(labOrders)
 		.where(
@@ -322,7 +321,7 @@ export async function calculateDoctorProfitability(
 	const docLabCostKopecksMap = new Map(
 		docLabRes.map((l) => [
 			l.doctorId ?? "unassigned",
-			Number(l.labOrdersCostKopecks || rublesToKopecks(Number(l.labOrdersCostRub || 0))),
+			Number(l.labOrdersCostKopecks ?? 0),
 		]),
 	);
 

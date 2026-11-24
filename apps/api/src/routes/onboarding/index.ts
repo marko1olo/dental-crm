@@ -10,23 +10,54 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	auditEvents,
 	chairs,
 	clinics,
 	organizations,
-	patients,
 	serviceCatalogItems,
 } from "../../db/schema.js";
 import {
 	importPatientsStream,
 	importPricelistStream,
 } from "../../services/import/streamingDataImporter.js";
+
+const onboardingCompleteBodySchema = z.object({
+	profile: z.object({
+		clinicName: z.string().optional(),
+		phone: z.string().optional(),
+		timezone: z.string().optional(),
+		mode: z.string().optional(),
+	}).strict().optional(),
+	chairs: z.array(
+		z.object({
+			id: z.string().optional(),
+			name: z.string(),
+			specialty: z.string().optional(),
+			isDefault: z.boolean().optional(),
+		}).strict(),
+	).optional(),
+	schedule: z.object({
+		workdayStart: z.string().optional(),
+		workdayEnd: z.string().optional(),
+		workingDays: z.array(z.number().int()).optional(),
+		defaultVisitMinutes: z.number().int().positive().optional(),
+	}).strict().optional(),
+	preset: z.string().optional(),
+}).strict();
+
+const onboardingImportBodySchema = z.object({
+	type: z.enum(["patients", "pricelist"]).optional(),
+	fileBase64: z.string().optional(),
+	rawText: z.string().optional(),
+	filename: z.string().optional(),
+}).strict();
 
 export async function registerOnboardingRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -38,27 +69,39 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 		if (!context) return;
 		const { organizationId } = context;
 
-		const [org] = await db
-			.select()
-			.from(organizations)
-			.where(eq(organizations.id, organizationId))
-			.limit(1);
+		const { org, clinic, chairsCount, servicesCount } = await withTenantCtx(
+			organizationId,
+			async (tx) => {
+				const [orgRow] = await tx
+					.select()
+					.from(organizations)
+					.where(eq(organizations.id, organizationId))
+					.limit(1);
 
-		const [clinic] = await db
-			.select()
-			.from(clinics)
-			.where(eq(clinics.organizationId, organizationId))
-			.limit(1);
+				const [clinicRow] = await tx
+					.select()
+					.from(clinics)
+					.where(eq(clinics.organizationId, organizationId))
+					.limit(1);
 
-		const chairsList = await db
-			.select({ id: chairs.id })
-			.from(chairs)
-			.where(eq(chairs.organizationId, organizationId));
+				const chairsList = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(eq(chairs.organizationId, organizationId));
 
-		const servicesList = await db
-			.select({ id: serviceCatalogItems.id })
-			.from(serviceCatalogItems)
-			.where(eq(serviceCatalogItems.organizationId, organizationId));
+				const servicesList = await tx
+					.select({ id: serviceCatalogItems.id })
+					.from(serviceCatalogItems)
+					.where(eq(serviceCatalogItems.organizationId, organizationId));
+
+				return {
+					org: orgRow,
+					clinic: clinicRow,
+					chairsCount: chairsList.length,
+					servicesCount: servicesList.length,
+				};
+			},
+		);
 
 		const flags =
 			(org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
@@ -70,8 +113,8 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 			clinicName: clinic?.name || org?.name || "Стоматологический кабинет",
 			phone: clinic?.phone || "",
 			timezone: clinic?.timezone || "Europe/Moscow",
-			chairsCount: chairsList.length,
-			servicesCount: servicesList.length,
+			chairsCount,
+			servicesCount,
 		};
 	});
 
@@ -84,27 +127,15 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 		if (!context) return;
 		const { organizationId } = context;
 
-		const body = (request.body ?? {}) as {
-			profile?: {
-				clinicName?: string;
-				phone?: string;
-				timezone?: string;
-				mode?: string;
-			};
-			chairs?: Array<{
-				id?: string;
-				name: string;
-				specialty?: string;
-				isDefault?: boolean;
-			}>;
-			schedule?: {
-				workdayStart?: string;
-				workdayEnd?: string;
-				workingDays?: number[];
-				defaultVisitMinutes?: number;
-			};
-			preset?: string;
-		};
+		const parsed = onboardingCompleteBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры быстрого запуска клиники.",
+				issues: parsed.error.issues,
+			});
+		}
+		const body = parsed.data;
 
 		const clinicName = body.profile?.clinicName?.trim() || "Стоматологический кабинет";
 		const phone = body.profile?.phone?.trim() || "";
@@ -112,7 +143,7 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 		const mode = body.preset || body.profile?.mode || "solo_doctor";
 		const now = new Date();
 
-		await db.transaction(async (tx) => {
+		await withTenantCtx(organizationId, async (tx) => {
 			// 1. Update organization & clinic profile
 			const [currentOrg] = await tx
 				.select()
@@ -235,26 +266,29 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 		if (!context) return;
 		const { organizationId } = context;
 
-		const [org] = await db
-			.select({ flags: organizations.workspaceFeatureFlags })
-			.from(organizations)
-			.where(eq(organizations.id, organizationId))
-			.limit(1);
-
-		const existingFlags =
-			(org?.flags as Record<string, unknown> | null) ?? {};
-
 		const now = new Date();
-		await db
-			.update(organizations)
-			.set({
-				workspaceFeatureFlags: {
-					...existingFlags,
-					onboardingCompleted: true,
-				},
-				updatedAt: now,
-			})
-			.where(eq(organizations.id, organizationId));
+		await withTenantCtx(organizationId, async (tx) => {
+			const [org] = await tx
+				.select({ flags: organizations.workspaceFeatureFlags })
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.for("update")
+				.limit(1);
+
+			const existingFlags =
+				(org?.flags as Record<string, unknown> | null) ?? {};
+
+			await tx
+				.update(organizations)
+				.set({
+					workspaceFeatureFlags: {
+						...existingFlags,
+						onboardingCompleted: true,
+					},
+					updatedAt: now,
+				})
+				.where(eq(organizations.id, organizationId));
+		});
 
 		return {
 			success: true,
@@ -271,12 +305,15 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 		if (!context) return;
 		const { organizationId } = context;
 
-		const body = (request.body ?? {}) as {
-			type?: "patients" | "pricelist";
-			fileBase64?: string;
-			rawText?: string;
-			filename?: string;
-		};
+		const parsed = onboardingImportBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры загрузки импорта.",
+				issues: parsed.error.issues,
+			});
+		}
+		const body = parsed.data;
 
 		const importType = body.type || "patients";
 		const filename = body.filename || (importType === "patients" ? "patients.csv" : "pricelist.csv");
@@ -321,12 +358,15 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 		if (!context) return;
 		const { organizationId } = context;
 
-		const body = (request.body ?? {}) as {
-			type?: "patients" | "pricelist";
-			fileBase64?: string;
-			rawText?: string;
-			filename?: string;
-		};
+		const parsed = onboardingImportBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры применения импорта.",
+				issues: parsed.error.issues,
+			});
+		}
+		const body = parsed.data;
 
 		const importType = body.type || "patients";
 		const filename = body.filename || (importType === "patients" ? "patients.csv" : "pricelist.csv");
