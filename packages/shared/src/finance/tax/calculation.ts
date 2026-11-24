@@ -16,7 +16,15 @@ import type {
 	TaxDeductionYearSummary,
 } from "./types.js";
 import { resolveTaxDeductionCategoryShared } from "./classification.js";
-import { kopecksToRub, rubToKopecks } from "../../fiscal/kopecksArithmetic.js";
+import {
+	kopecksToRub,
+	kopecksToRubles,
+	parseKopecks,
+	rublesToKopecks,
+	rubToKopecks,
+	percentageOfKopecks,
+	type Kopecks,
+} from "../../money.js";
 
 /**
  * Safely extracts the tax calendar year from an ISO date string (YYYY-MM-DD...)
@@ -406,18 +414,24 @@ export function amountToWordsRu(kopecks: number): string {
  * BigInt-safe ruble to kopecks converter.
  */
 export function rubToKopecksBigInt(rub: number | string): bigint {
-	const numeric = typeof rub === "string" ? Number.parseFloat(rub) : rub;
-	if (!Number.isFinite(numeric)) {
+	if (typeof rub === "string") {
+		try {
+			return BigInt(parseKopecks(rub));
+		} catch {
+			return 0n;
+		}
+	}
+	if (!Number.isFinite(rub)) {
 		return 0n;
 	}
-	return BigInt(Math.round(numeric * 100));
+	return BigInt(rublesToKopecks(rub));
 }
 
 /**
  * BigInt-safe kopecks to rubles converter.
  */
 export function kopecksBigIntToRub(kopecks: bigint): number {
-	return Number(kopecks) / 100;
+	return kopecksToRubles(kopecks);
 }
 
 /**
@@ -457,23 +471,23 @@ export function calculateExactTaxSplitKopecks(
 
 	return {
 		code01Kopecks: code01Kop,
-		code01Rub: Number(code01Kop) / 100,
+		code01Rub: kopecksToRubles(code01Kop),
 		code02Kopecks: code02Kop,
-		code02Rub: Number(code02Kop) / 100,
+		code02Rub: kopecksToRubles(code02Kop),
 		totalKopecks: totalKop,
-		totalRub: Number(totalKop) / 100,
+		totalRub: kopecksToRubles(totalKop),
 		code01StatutoryLimitKopecks: limitKop,
 		code01StatutoryLimitRub: statutoryLimitRub,
 		code01EligibleKopecks: code01EligibleKop,
-		code01EligibleRub: Number(code01EligibleKop) / 100,
+		code01EligibleRub: kopecksToRubles(code01EligibleKop),
 		code01Refund13Kopecks: code01Refund13Kop,
-		code01Refund13Rub: Number(code01Refund13Kop) / 100,
+		code01Refund13Rub: kopecksToRubles(code01Refund13Kop),
 		code02Refund13Kopecks: code02Refund13Kop,
-		code02Refund13Rub: Number(code02Refund13Kop) / 100,
+		code02Refund13Rub: kopecksToRubles(code02Refund13Kop),
 		refund13Kopecks: refund13Kop,
-		refund13Rub: Number(refund13Kop) / 100,
+		refund13Rub: kopecksToRubles(refund13Kop),
 		refund15Kopecks: refund15Kop,
-		refund15Rub: Number(refund15Kop) / 100,
+		refund15Rub: kopecksToRubles(refund15Kop),
 		isCode01Capped,
 		receiptsCount,
 	};
@@ -598,8 +612,8 @@ export function calculateStaged304030Schedule(
 		};
 	}
 
-	const stage1Kopecks = Math.round(totalKopecks * 0.3);
-	const stage2Kopecks = Math.round(totalKopecks * 0.4);
+	const stage1Kopecks = percentageOfKopecks(totalKopecks as Kopecks, 3000);
+	const stage2Kopecks = percentageOfKopecks(totalKopecks as Kopecks, 4000);
 	const stage3Kopecks = totalKopecks - stage1Kopecks - stage2Kopecks;
 
 	return {
