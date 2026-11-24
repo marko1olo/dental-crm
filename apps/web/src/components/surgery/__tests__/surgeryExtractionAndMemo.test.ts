@@ -48,7 +48,7 @@ describe("Surgery Extraction Presets & Post-Op Patient Memo", () => {
 			hemostasis: ["alvogyl", "tampon"],
 		});
 		assert.ok(text.includes("зуба FDI #36"));
-		assert.ok(text.includes("Альвожил"));
+		assert.ok(text.includes("антисептический йодоформный компресс"));
 		assert.ok(text.includes("давящий марлевый тампон на 20 минут"));
 	});
 
