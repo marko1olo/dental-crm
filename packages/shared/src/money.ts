@@ -326,6 +326,28 @@ export function calculatePercentDiscountKopecks(
 }
 
 /**
+ * Вычисляет процент скидки в виде форматированной строки (например, "15.00" или "0.00")
+ * по валовой сумме и размеру скидки в копейках, предотвращая потерю точности IEEE-754 float.
+ */
+export function formatDiscountPercent(
+	grossKopecks: number | bigint,
+	discountKopecks: number | bigint,
+): string {
+	const gross = typeof grossKopecks === "bigint" ? Number(grossKopecks) : grossKopecks;
+	const disc = typeof discountKopecks === "bigint" ? Number(discountKopecks) : discountKopecks;
+	if (!Number.isFinite(gross) || gross <= 0 || !Number.isFinite(disc) || disc <= 0) {
+		return "0.00";
+	}
+	const safeGross = Math.max(0, gross);
+	const safeDisc = Math.min(safeGross, Math.max(0, disc));
+	const bp = Math.round((safeDisc * 10_000) / safeGross);
+	const clampedBp = Math.min(10_000, Math.max(0, bp));
+	const whole = Math.floor(clampedBp / 100);
+	const fraction = clampedBp % 100;
+	return `${whole}.${fraction.toString().padStart(2, "0")}`;
+}
+
+/**
  * Делит сумму на `parts` частей так, что их сумма РАВНА исходной.
  *
  * Нужно для рассрочки: 100.00 на 3 платежа — это 33.34 + 33.33 + 33.33, а не

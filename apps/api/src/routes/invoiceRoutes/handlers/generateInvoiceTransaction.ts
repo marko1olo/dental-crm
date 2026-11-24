@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
-	basisPointsFromPercent,
+	formatDiscountPercent,
 	kopecksToRubles,
 	rublesToKopecks,
 	type validatePlanToInvoice,
@@ -104,7 +104,7 @@ export async function executeGenerateInvoiceTransaction(params: {
 			treatmentPlanId: data.planId ?? null,
 			totalRub: String(totalNetRub),
 			totalAmountRub: totalNetRub,
-			totalPriceKopecks: BigInt(rublesToKopecks(totalNetRub)),
+			totalPriceKopecks: BigInt(validationReport.effectiveInvoiceNetKopecks),
 			status: "draft",
 			issuedAt: new Date(),
 		});
@@ -141,10 +141,7 @@ export async function executeGenerateInvoiceTransaction(params: {
 				const discountKop = Number.isFinite(Number(it.effectiveDiscountKopecks)) ? Math.max(0, Math.round(Number(it.effectiveDiscountKopecks))) : 0;
 				const safeGrossKop = Math.max(0, grossKop);
 				const safeDiscountKop = Math.min(safeGrossKop, discountKop);
-				const PERCENT_SCALE = 100;
-				const discountPercentRaw = safeGrossKop > 0 ? (safeDiscountKop * PERCENT_SCALE) / safeGrossKop : 0;
-				const discountBasisPoints = basisPointsFromPercent(discountPercentRaw);
-				const discountPct = Math.min(100, Math.max(0, kopecksToRubles(discountBasisPoints)));
+				const discountPercentStr = formatDiscountPercent(safeGrossKop, safeDiscountKop);
 
 				return {
 					organizationId: orgId,
@@ -153,7 +150,7 @@ export async function executeGenerateInvoiceTransaction(params: {
 					name: it.nameRu,
 					quantity: String(it.quantity),
 					unitPriceKopecks: unitPriceKop,
-					discountPercent: discountPct.toFixed(2),
+					discountPercent: discountPercentStr,
 					totalPriceKopecks: Number.isFinite(Number(it.effectiveLineNetKopecks)) ? Math.max(0, Math.round(Number(it.effectiveLineNetKopecks))) : Math.max(0, safeGrossKop - safeDiscountKop),
 					serviceCode: it.code804n ?? matchingCatalog?.code ?? null,
 					toothCode: it.toothNumber ? String(it.toothNumber) : null,

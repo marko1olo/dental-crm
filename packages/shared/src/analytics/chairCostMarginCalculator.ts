@@ -40,7 +40,7 @@ export const clinicOverheadInputSchema = z.object({
 	monthlySanpinSterilizationRub: z.number().nonnegative().default(60_000),
 	/** Маркетинг, реклама, телефония, налоги УСН/патент */
 	monthlyMarketingAndOtherRub: z.number().nonnegative().default(150_000),
-});
+}).strict();
 export type ClinicOverheadInput = z.infer<typeof clinicOverheadInputSchema>;
 
 export const procedureEconomicsInputSchema = z.object({
@@ -68,7 +68,7 @@ export const procedureEconomicsInputSchema = z.object({
 	assistantFeeRub: z.number().nonnegative().default(400),
 	/** Ставка эквайринга по картам / СБП (0.015 = 1.5%) */
 	acquiringRate: z.number().min(0).max(0.05).default(0.015),
-});
+}).strict();
 export type ProcedureEconomicsInput = z.infer<typeof procedureEconomicsInputSchema>;
 
 // ─── 2. РЕЗУЛЬТАТЫ КАЛЬКУЛЯЦИИ ────────────────────────────────────────────────

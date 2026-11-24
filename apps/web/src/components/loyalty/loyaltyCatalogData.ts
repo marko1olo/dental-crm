@@ -79,23 +79,63 @@ export interface TierProgressionResult {
 	readonly currentTier: LoyaltyTierDefinition; readonly nextTier: LoyaltyTierDefinition | null; readonly lifetimeSpentKop: number; readonly lifetimeSpentRub: number; readonly progressPercent: number; readonly remainingToNextTierKop: number; readonly remainingToNextTierRub: number;
 }
 
+function computeProgressPercentage(numerator: number, denominator: number): number {
+	if (denominator <= 0) return 100;
+	const ratio = Math.max(0, Math.min(1, numerator / denominator));
+	return Math.round(ratio * 100);
+}
+
 export function calculateTierProgression(lifetimeSpentKop: number, isFamilyGroup = false): TierProgressionResult {
 	if (isFamilyGroup) {
 		const familyTier = getTierDefinition("family");
-		return { currentTier: familyTier, nextTier: getTierDefinition("platinum"), lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: Math.min(100, Math.round((lifetimeSpentKop / 40000000) * 100)), remainingToNextTierKop: Math.max(0, 40000000 - lifetimeSpentKop), remainingToNextTierRub: kopecksToRubles(Math.max(0, 40000000 - lifetimeSpentKop)) };
+		const remainingKop = Math.max(0, 40000000 - lifetimeSpentKop);
+		return {
+			currentTier: familyTier,
+			nextTier: getTierDefinition("platinum"),
+			lifetimeSpentKop,
+			lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop),
+			progressPercent: computeProgressPercentage(lifetimeSpentKop, 40000000),
+			remainingToNextTierKop: remainingKop,
+			remainingToNextTierRub: kopecksToRubles(remainingKop),
+		};
 	}
 	const [silver, gold, platinum] = [getTierDefinition("silver"), getTierDefinition("gold"), getTierDefinition("platinum")];
 	if (lifetimeSpentKop >= platinum.minLifetimeSpentKop) {
-		return { currentTier: platinum, nextTier: null, lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: 100, remainingToNextTierKop: 0, remainingToNextTierRub: 0 };
+		return {
+			currentTier: platinum,
+			nextTier: null,
+			lifetimeSpentKop,
+			lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop),
+			progressPercent: 100,
+			remainingToNextTierKop: 0,
+			remainingToNextTierRub: 0,
+		};
 	}
 	if (lifetimeSpentKop >= gold.minLifetimeSpentKop) {
 		const span = platinum.minLifetimeSpentKop - gold.minLifetimeSpentKop;
-		const pct = Math.min(100, Math.round(((lifetimeSpentKop - gold.minLifetimeSpentKop) / span) * 100));
-		return { currentTier: gold, nextTier: platinum, lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: pct, remainingToNextTierKop: platinum.minLifetimeSpentKop - lifetimeSpentKop, remainingToNextTierRub: kopecksToRubles(platinum.minLifetimeSpentKop - lifetimeSpentKop) };
+		const progress = lifetimeSpentKop - gold.minLifetimeSpentKop;
+		const remainingKop = platinum.minLifetimeSpentKop - lifetimeSpentKop;
+		return {
+			currentTier: gold,
+			nextTier: platinum,
+			lifetimeSpentKop,
+			lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop),
+			progressPercent: computeProgressPercentage(progress, span),
+			remainingToNextTierKop: remainingKop,
+			remainingToNextTierRub: kopecksToRubles(remainingKop),
+		};
 	}
 	const span = gold.minLifetimeSpentKop;
-	const pct = span > 0 ? Math.min(100, Math.round((lifetimeSpentKop / span) * 100)) : 100;
-	return { currentTier: silver, nextTier: gold, lifetimeSpentKop, lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop), progressPercent: pct, remainingToNextTierKop: gold.minLifetimeSpentKop - lifetimeSpentKop, remainingToNextTierRub: kopecksToRubles(gold.minLifetimeSpentKop - lifetimeSpentKop) };
+	const remainingKop = gold.minLifetimeSpentKop - lifetimeSpentKop;
+	return {
+		currentTier: silver,
+		nextTier: gold,
+		lifetimeSpentKop,
+		lifetimeSpentRub: kopecksToRubles(lifetimeSpentKop),
+		progressPercent: computeProgressPercentage(lifetimeSpentKop, span),
+		remainingToNextTierKop: remainingKop,
+		remainingToNextTierRub: kopecksToRubles(remainingKop),
+	};
 }
 
 export interface CashboxFiscalSplitResult {

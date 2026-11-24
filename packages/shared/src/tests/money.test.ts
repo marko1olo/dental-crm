@@ -9,6 +9,7 @@ import {
 	percentageOfKopecks,
 	basisPointsFromPercent,
 	calculatePercentDiscountKopecks,
+	formatDiscountPercent,
 	RU_MONEY_MINUS,
 	RU_MONEY_NBSP,
 	rublesToKopecks,
@@ -139,6 +140,15 @@ describe("percentageOfKopecks", () => {
 		assert.strictEqual(calculatePercentDiscountKopecks(100000n, 15), 15000);
 		assert.strictEqual(calculatePercentDiscountKopecks(0, 10), 0);
 		assert.strictEqual(calculatePercentDiscountKopecks(100000, 0), 0);
+	});
+
+	test("formatDiscountPercent форматирует процент скидки в строку с 2 знаками без float-дрейфа", () => {
+		assert.strictEqual(formatDiscountPercent(100000, 15000), "15.00");
+		assert.strictEqual(formatDiscountPercent(100000n, 12500n), "12.50");
+		assert.strictEqual(formatDiscountPercent(100000, 0), "0.00");
+		assert.strictEqual(formatDiscountPercent(0, 5000), "0.00");
+		assert.strictEqual(formatDiscountPercent(50000, 50000), "100.00");
+		assert.strictEqual(formatDiscountPercent(50000, 60000), "100.00");
 	});
 });
 
