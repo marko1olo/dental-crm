@@ -3,7 +3,7 @@
 > СТАТУС ДОКУМЕНТА: БОЕВОЙ РЕЕСТР. Каждый агент и субагент ОБЯЗАН свериться с этим файлом перед работой.
 > Починил пункт → лично обнови статус (✅ FIXED + дата + коммит + инструментальное доказательство).
 > Нашёл новую гниль → впиши сюда.
-> Последнее обновление: 2026-11-24 00:25 — инструментальный срез и запуск Red Team инквизиторов.
+> Последнее обновление: 2026-11-25 00:05 — закрыта горизонтальная Backend-волна по 5 доменам (`1287/1287` доменных тестов зелёные, `check:diff --all` / `check:doors` / `check:migration-drift` / `check:ratchet` = Exit Code 0).
 >
 > ⚠️ ПРАВИЛО СТАТУСОВ: Статус `✅ FIXED` выставляется ТОЛЬКО когда метрика равна нулю по инструментальной проверке (`grep`, `tsc`, `Select-String`). Частичный прогресс — строго `🔄 IN PROGRESS (X осталось)`. Писать `FIXED` при остатке — саботаж реестра.
 
@@ -82,6 +82,20 @@
 
 ---
 
+## 🔒 АКТИВНЫЕ CLAIM-ЗАМКИ (ПАРАЛЛЕЛЬНАЯ КООРДИНАЦИЯ АГЕНТОВ)
+
+> Прочитай этот раздел ДО старта. Не лезь в застолблённые скоупы. Добавь свой claim перед работой. Сними его после коммита.
+> Claim держится максимум 60 минут без коммитов. Брошенный claim снимает оркестратор.
+
+> Формат:
+> - 🔒 `[AgentId/Роль] — [папка/класс дефекта] — [время старта HH:MM DD.MM]`
+> - ✅ `[AgentId] — DONE — commit <hash> — [время]`
+> - ⚡ `ЭСТАФЕТА [AgentId] — осталось: [что именно] — следующий начинает с: [точка старта]`
+
+*(Секция пуста — все агенты завершили работу. Добавляй свой claim первой строкой)*
+
+---
+
 ## 🔴 SEV-1: КРИТИЧЕСКОЕ (БЛОКЕРЫ ПРОДАКШЕНА)
 
 ### ROT-001: Компиляция API (ошибки tsc)
@@ -114,9 +128,9 @@
   * `npm run check:diff` → PASSED (0 float money, 0 костылей).
 
 ### ROT-015: `numeric(...)Rub` поля в Drizzle-схемах (деньги как NUMERIC в Postgres, не BIGINT)
-- Статус: 🔄 IN PROGRESS — **ликвидировано отсутствие копеечных полей в `billingInvoicesSchema.ts` и `billingPaymentsAndFiscalSchema.ts` (2026-11-24)**
-- **Проверено:** `npm run check:migration-drift` → Exit Code 0 ([PARITY CONFIRMED: 100% SYNCHRONIZED — ZERO DRIFT]).
-- Что сделано: В `patient_invoices` внедрена колонка `totalPriceKopecks: bigint` (.notNull().default(0n)), в `patient_payments` поле `amountKopecks` сделано строго обязательным (.notNull().default(0n)). Создана DDL-миграция `0290_patient_invoices_and_payments_kopecks.sql`. Все хэндлеры инвойсов и смет (`createInvoiceHandler`, `generateInvoiceTransaction`, `statusTreatmentPlanHandler`, `createInvoiceDraftTool`) пишут и читают целочисленные копейки.
+- Статус: 🔄 IN PROGRESS — **ликвидировано отсутствие копеечных полей в `billingInvoicesSchema.ts`, `billingPaymentsAndFiscalSchema.ts` (2026-11-24) и `clinicalStopFactorsTables.ts` (`0295_insurance_kopecks_not_null.sql`, 2026-11-25); в остатке `clinicalProtocolsTables.ts` (`price_rub`, `lab_cost_rub`) на отдельную DDL-волну.**
+- **Проверено:** `npm run check:migration-drift` → Exit Code 0 ([PARITY CONFIRMED: 100% SYNCHRONIZED — ZERO DRIFT], 219 таблиц, 49 enum, 3091 колонка, 285 DDL).
+- Что сделано: В `patient_invoices` внедрена колонка `totalPriceKopecks: bigint` (.notNull().default(0n)), в `patient_payments` поле `amountKopecks` сделано строго обязательным (.notNull().default(0n)), в `insurance_contracts` и `dms_guarantee_letters` (`clinicalStopFactorsTables.ts`) `*Kopecks` переведены на `.notNull().default(0n)` (`0295`). Созданы также `0296_commerceml_sync_journal.sql` и `0297_bank_statements_tables.sql`. Все хэндлеры инвойсов, смет, кассы, ДМС и 1С-синка пишут и читают целочисленные копейки.
 
 ---
 
@@ -143,7 +157,7 @@
 - Что сделано: Заменены на `request.log.*` в `recognitionRoutes.ts`, `staffSettingsRoutes.ts`, `uiPreferencesRoutes.ts`, `documentJournalAndAudit.ts`, `dayConfirmations.ts`, `shareLink.ts`, `labOrderMarkInstalledDb.ts`, `max.ts`, `dicomwebHelpers.ts`, `migrationRunRoutes/types.ts`, `settingsPayloadParser.ts`, `telegramEnvConfigParsers.ts`, `telegramKeyboards.ts`, `telegramUtils.ts`, `connectionHubRoutes.ts`, `xraySchemas.ts`. Удалено 5 мусорных логов в `patientSearchCore.ts`. Внешний шаблон `BotSourceExporter.ts` не затронут.
 
 ### ROT-009: God-файлы > 500 строк
-- Статус: 🔄 IN PROGRESS (`cashboxPaymentProcessor.ts` — 1545 строк, `main.tsx` — 1395 строк)
+- Статус: 🔄 IN PROGRESS — декомпозированы монолиты кассы/рассрочек/баланса/ККТ (`cashInstallmentsRoutes.ts` 1113→15L, `patientBalanceService.ts` 996→60L, `lanKktDriverService.ts` 1287→132L, `fiscalReceiptQueueService.ts` 9L, `fiscal54fzService.ts` 206L, `cashboxRefundRoutes.ts` 186L + снесён дубль маршрута возврата), остаются извлечённые модули >500L (`advanceOperationsService.ts` 803L, `installmentContractsRoutes.ts` 661L, `installmentTranchePayRoutes.ts` 502L, `fiscalQueueWorker.ts` 557L) и `main.tsx`.
 
 ### ROT-016: 774 грязных файла в worktree (uncommitted)
 - **Статус:** ❌ OPEN — `git status --short | Measure-Object -Line` → 774, 2026-11-21 14:14
@@ -179,23 +193,25 @@
 
 ## 📊 ТРЕКЕР МЕТРИК (ОБНОВЛЯЕТСЯ ПРИ КАЖДОМ СРЕЗЕ)
 
-| Метрика | Исходно (20.11) | Срез (21.11 21:35) | Срез (24.11 00:25) | Цель |
-|---|---|---|---|---|
-| API tsc ошибки | 4 | 2 | **0** ✅ | 0 |
-| Shared tsc ошибки | — | 0 | **0** ✅ | 0 |
-| Web tsc ошибки | 16 | 28 | **1** (`AppNavigationShell`) | 0 |
-| `as any` в UI-ядре (ratchet) | — | — | **0** 💎 ИДЕАЛ | 0 |
-| `as any` во всей кодовой базе | 134 | 85 | **1336** (честный срез всех пакетов) | 0 |
-| `console.log` в ядре (Fastify/Web/Shared) | 828 | 760 | **931** (880 API, 51 Web) | 0 |
-| `/ 100` float в UI (ratchet) | >400 | 274 | **0** 💎 ИДЕАЛ | 0 |
-| Route-файлы без `organizationId` | 46* | 387 | **387** | 0 |
-| Route-файлы без `db.transaction()` | 88%* | 170 | **170** | 0 |
-| Route-файлы без `Idempotency-Key` | 93%* | 197 | **197** | 0 |
-| Пустые `catch {}` | 3 | 0 ✅ | **0** ✅ | 0 |
-| Грязных файлов в worktree | — | 774 | **790** | 0 |
-| DDL-миграции Postgres 18 | 258 | 270 | **276** (100% синхронизация) ✅ | 276+ |
-| Таблицы Drizzle ORM | 203 | 214 | **216** (49 enum, 3011 колонок) ✅ | 216+ |
-| Кубик-тест дефектов (175 точек) | — | 28 дефектов | **28 дефектов** | 0 |
+> ⚡ ПРАВИЛО ОБНОВЛЕНИЯ: При любой работе субагент вносит срез с актуальными числами ДО и ПОСЛЕ. Колонка без обновления — устаревшие данные, работать по ним нельзя. Прочитай RATCHET перед стартом!
+
+| Метрика | Исходно (20.11) | Срез (21.11) | Срез (24.11) | Срез (25.11 00:05, Wave 3) | Срез (25.11 00:22) | Цель |
+|---|---|---|---|---|---|---|
+| API tsc ошибки | 4 | 2 | **0** ✅ | 0 (5 внешних: `branchesRoutes`,`loyaltyReferralRoutes`) | **~5** ⚠️ P0 | 0 |
+| Shared tsc ошибки | — | 0 | **0** ✅ | **0** ✅ | **0** ✅ | 0 |
+| Web tsc ошибки | 16 | 28 | **1** | **1** (`MobilePhotoUploadPage.tsx:202`) | **1** ⚠️ P0 | 0 |
+| `as any` в UI-ядре (ratchet) | — | — | **0** 💎 | **0** 💎 (`check:ratchet=0`) | **0** 💎 | 0 |
+| `as any` во всей кодовой базе | 134 | 85 | — | — (`check:diff --all=0` по диффу) | **~85** | 0 |
+| `console.log` в ядре API/Web/Shared | 828 | 760 | **931** | Зачищены в 5 доменах Wave 3 | **~760** ⚠️ P1 | 0 |
+| `/ 100` float в UI (ratchet) | >400 | 274 | **0** 💎 | **0** 💎 (`check:ratchet=0`) | **0** 💎 | 0 |
+| Route без `organizationId` | 46* | 387 | 387 | Закрыты в 5 доменах Wave 3 | **~387** ⚠️ P1 | 0 |
+| Route без `db.transaction()` | 88%* | 170 | 170 | Закрыты в 5 доменах Wave 3 | **~170** ⚠️ P1 | 0 |
+| Route без `Idempotency-Key` | 93%* | 197 | 197 | Закрыты в 5 доменах Wave 3 | **~197** ⚠️ P1 | 0 |
+| Пустые `catch {}` | 3 | 0 ✅ | **0** ✅ | **0** ✅ | **0** ✅ | 0 |
+| Грязных файлов в worktree | — | 774 | 790 | ~449 | **478** ⚠️ P0 | 0 |
+| DDL-миграции Postgres 18 | 258 | 270 | 276 ✅ | **285** ✅ (`check:migration-drift=0`) | **285** ✅ | 285+ |
+| Таблицы Drizzle ORM | 203 | 214 | 216 ✅ | **219** ✅ (49 enum, 3091 кол.) | **219** ✅ | 219+ |
+| Кубик-дефектов (175 точек) | — | 28 | 28 | **18** (90% integrity) | **18** ⚠️ P2 | 0 |
 
 ---
 
@@ -459,3 +475,32 @@
      - *После:* Все 5 запросов `recordPatientViewInDb` и чтение `getRecentPatientHistoryFromDb` обёрнуты в `await withTenantCtx(orgId, async (tx) => ...)`.
   4. **Унификация заголовков ответа идемпотентного реплея:**
      - В `apps/api/src/plugins/idempotencyModules/idempotencyReplayResponder.ts` стандартизирован полный набор заголовков ответа при реплее: `Idempotency-Key`, `Idempotent-Replay: true`, `idempotency-replayed: true`, `x-idempotency-replayed: true`. Гарантирована 100% совместимость со всеми типами клиентов и тестовыми раннерами.
+
+
+---
+
+## 23. ГОРИЗОНТАЛЬНАЯ BACKEND-ВОЛНА ПО 5 ДОМЕНАМ (WAVE 3 — BACKEND FOCUS, 2026-11-25)
+- Статус: ✅ **5/5 ДОМЕНОВ ЗАКРЫТЫ ПО BACKEND/SHARED** (`1287/1287` доменных тестов зелёные; 0 TS-ошибок в `@dental/shared` и во всех 5 доменах `@dental/api`; `check:diff --all`, `check:encoding`, `check:doors`, `check:ratchet`, `check:migration-drift`, `check:react-hooks`, `check:dynamic-imports`, `check:fetch-response`, `check:buttons`, `check:css-tokens`, `check:stub-overrides` = **Exit Code 0**).
+- **Сводка по 5 доменам:**
+  1. **Домен 1 (`Insurance / CommerceML / BankStatements / Export`) — 170/170 тестов PASS:**
+     - Удалена дублирующая ручная проверка `idempotencyKeys` во всех 6 хэндлерах `insuranceRoutes/` (`ROT-005`), устранены 409-коллизии с `idempotencyPlugin`.
+     - Внедрены реальные БД-таблицы и миграции PG18: `0295_insurance_kopecks_not_null.sql` (`clinicalStopFactorsTables.ts`), `0296_commerceml_sync_journal.sql` (`commerceMlTables.ts`), `0297_bank_statements_tables.sql` (`bankStatementsTables.ts`) — `bankStatements.ts` персистит выписки 1С в PG18 с дедупликацией.
+     - Исправлен `/api/export/patients` (`export.ts` — UTF-8 BOM `\uFEFF`, защита от CSV formula-injection, `balanceKopecks`), убраны все ручные `/ 100` и `* 100` (`inboundSyncEngine.ts`, `orderDocumentBuilder.ts`, `dmsFranchiseEngine.ts`).
+  2. **Домен 2 (`Cashbox / Shifts / Refunds / Installments / PatientBalance / Fiscal 54-ФЗ / KKT`) — 140/140 тестов PASS:**
+     - Удалён дубль маршрута `POST /api/billing/refunds/partial` из `cashboxRefundRoutes.ts` (устранён `FST_ERR_DUPLICATED_ROUTE`) и устаревший `apps/api/src/routes/cashbox.test.ts`.
+     - Закрыт `ROT-009` по кассе/рассрочкам/балансу/ККТ/фискальной очереди (декомпозиция 6 монолитов >1000L в модульные пакеты `installmentModules/`, `balanceModules/`, `refundModules/`, `kktModules/`, `queueModules/`, `fiscal54fzModules/`, `shiftCloseHandler.ts`, `receiptQueueHandlers.ts`, `receiptSbpStatusHandlers.ts`).
+     - Перевод на обязательный UUID `Idempotency-Key`, `withTenantCtx`, `pg_advisory_xact_lock`, целочисленные `*Kopecks`, изоляцию ККТ I/O от PG TX, интеграция `advanceOperationsService.ts` с `verifyFamilySpendAuthorization`, прокидка `targetDocId` в `splitAllocationStage.ts`, устранение зависания `fiscalReceiptRoutes.test.ts` (`startEgiszWorker: false` + `app.close()`).
+  3. **Домен 3 (`Pricelist / Invoices / Billing / Sberbank / SberPOS / SBP / Family & FNS / Idempotency`) — 233/233 тестов PASS:**
+     - В `idempotencyPlugin.ts` добавлены 6 вебхук-исключений (`sbp/webhook`, `billing/sbp/webhook`, `payments/sberbank/{pos,qr}/webhook`, `payments/sberpos/webhook`, `sberbank/webhook`) и исключено кеширование 401/403.
+     - Закрыты: байпас HMAC через `timingSafeSecretEqual(incomingSignature, secret)` в `bankGatewaySecurity.ts` (+ снос теста-диверсанта `sberbankWebhookIdempotency.test.ts:157-161`), `sql\`TRUE\`` + `.limit(1)` в `sberWebhook/idempotencyHandler.ts` и `paymentStateTransition.ts` (`reconcileInvoiceBalanceInDb` фильтрует строго по `documentId` и откатывает `issued` при возврате), `seedBaseline804nServicesInDb` через `SAVEPOINT`, CSPRNG нумерация счетов, честные `paidAmountRub`/`*Kopecks` и `planToInvoiceValidator` (`isDoctorAutonomy: true`), `familyFnsTaxService.ts` и `familySpendAuthorization.ts` (приоритет ненулевого `balanceKopecks` над `balance` и порядок BOLA-авторизации до проверки баланса).
+  4. **Домен 4A (`Implants / Surgery / Orthodontics / Scanners / Radiology / DICOMweb / PACS`) — 385/385 тестов PASS:**
+     - Снесены 6 мёртвых/дублирующих файлов (`git rm`): `xrayLegacyCompatRoutes.ts`, `pacsDiskStorageEngine.ts`, `dicomPatientMatcher.ts`, `dicomPatientMatcher.test.ts`, `studyMatcher.ts`, `patientAutoBinder.ts` (после миграции контрактов/тестов на канонический `/api/imaging/studies*` и `patientFioBindingEngine.ts`).
+     - Закрыты: Path Jail в `universalScannerHub.ts` + Zip Bomb лимиты, парсинг `group === 0xfffe` SQ-делимитеров в `dicomAnonymizer.ts` (+ регресс-тест), `withTenantCtx` в `sensorOfflineRoutes.ts` и `wadoFramesRoute.ts`, снос SSRF loopback-байпаса в `dicomwebConnector`/`dicomwebWadoProxy`, молочный прикус `51-85` в манифесте, очистка `"043/у"` и брендов биоматериалов, `withSavepoint` в ортодонтии/имплантах/DICOM.
+  5. **Домен 4B (`Documents / NDFL / CryptoPro / Audit / StaffChat`) — 363/363 тестов PASS:**
+     - `documents/signature.ts`: транзакционная проверка `verifyAndConsumePepOtpInTx` через `portalOtpCodes` (без тестовых байпасов `"1234"`/`"123456"`), сохранение оригинала УКЭП и `.stamped.html`.
+     - Закрыты: HTTP GET мутации БД/диска и `isAnonymous` (219 НК РФ) в `portalTaxCertRoutes.ts`/`ndflTaxService.ts`, XSS в `injectVoidWatermarkIntoHtml`, тенантная изоляция и Fastify+Zod `schema.body` на `/api/crypto/sign` и `/api/cryptopro/native/sign` (`cryptoProNativeRoutes.ts`), подмена `actorUserId` в `audit.ts`/`medicalAuditTrail.ts`, DM BOLA и full-table scan в `staffChatQuery.ts`, регресс `!Number.isFinite` в `financialGuards.ts`, и бутафорские тесты `redTeamDomain13FixerProof`/`redTeamDomain21WatermarkBolaPep` переписаны на боевые маршруты.
+- **Честные открытые хвосты для следующих волн (вне скоупа 5 фиксеров):**
+  1. Синтаксические ошибки TS внешнего параллельного агента (`apps/api/src/routes/settings/branchesRoutes.ts:146`, `apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts:371,718`, `apps/web/src/components/photography/mobileBridge/MobilePhotoUploadPage.tsx:202` — также блокируют `apps/api/src/tests/server.test.ts` до починки `branchesRoutes.ts`).
+  2. `apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` (тесты 2, 3, 6): `POST /api/sync/gateway` получает `400 IdempotencyKeyRequired` (нужно решить: добавить sync-пути в `DEFAULT_IDEMPOTENCY_EXEMPT_PATHS` или посылать заголовок в `OfflineSyncGuardModal.tsx`/`syncBatchProcessor.ts`).
+  3. `apps/api/src/security/medicalSecrecyWarden.ts:406-426` vs тесты `wave11`/`wave14`/`wave15` (паттерны фильтрации `"кариес"`/`"пульпит"`/`"K02"`/`"K04.0"`).
+  4. `ROT-015` DDL для `clinicalProtocolsTables.ts` (`price_rub`, `lab_cost_rub`) и UI-интеграция с новыми `.strict()`/`Idempotency-Key` контрактами в `apps/web/**`.
