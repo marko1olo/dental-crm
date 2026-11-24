@@ -276,7 +276,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
         className="p-8 flex flex-col items-center justify-center gap-3 text-center min-h-[350px]"
         data-testid="schedule-view-loading"
       >
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--teal,#0d9488)] border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin" />
         <p className="text-sm font-medium text-[var(--muted)]">
           Подготовка расписания...
         </p>

@@ -3,6 +3,7 @@ import {
 	type Dashboard,
 	type DentalSpecialty,
 	dentalSpecialtySchema,
+	generateUuidV7,
 } from "@dental/shared";
 import { useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../../AppConstants";
@@ -217,10 +218,7 @@ export function useAppointmentMutations({
 		setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
 		try {
 			if (!appointmentMutationIdRef.current) {
-				appointmentMutationIdRef.current =
-					typeof crypto !== "undefined" && "randomUUID" in crypto
-						? crypto.randomUUID()
-						: `appointment-${Date.now()}`;
+				appointmentMutationIdRef.current = generateUuidV7();
 			}
 			const mutationId = appointmentMutationIdRef.current;
 			const response = await fetchWithHandling(`/api/appointments/${appointmentId}`, {
@@ -434,10 +432,7 @@ export function useAppointmentMutations({
 		);
 		try {
 			if (!appointmentMutationIdRef.current) {
-				appointmentMutationIdRef.current =
-					typeof crypto !== "undefined" && "randomUUID" in crypto
-						? crypto.randomUUID()
-						: `appointment-${Date.now()}`;
+				appointmentMutationIdRef.current = generateUuidV7();
 			}
 			const mutationId = appointmentMutationIdRef.current;
 			const response = await fetchWithHandling("/api/appointments", {
