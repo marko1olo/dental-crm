@@ -5,6 +5,7 @@ import {
 	calibrateClockSkew,
 	computePayloadHash,
 	createCompositeIdempotencyKey,
+	generateUuidV7,
 } from "@dental/shared";
 import { logger } from "../../../utils/logger";
 import { nowIsoWithMs, updateOfflineMutationStatus } from "./syncStorageBridge";
@@ -56,12 +57,13 @@ export async function processBatchWithRetry(params: BatchProcessOptions): Promis
 		emit("slow_drain", { elapsedMs: 3000, batchSize: batch.length, message: "Идет сохранение... (3 сек) — продолжайте работу" });
 	}, 3000);
 
+	const batchIdempotencyKey = generateUuidV7();
 	try {
 		for (let attempt = 0; attempt <= maxRetries; attempt++) {
 			try {
 				if (!fetchImpl) throw new Error("Fetch implementation is not available in environment");
 				const res = await fetchImpl(gatewayUrl, {
-					method: "POST", headers: { "Content-Type": "application/json", "x-dente-sync-client": clientId, ...headers },
+					method: "POST", headers: { "Content-Type": "application/json", "x-dente-sync-client": clientId, "Idempotency-Key": batchIdempotencyKey, ...headers },
 					body: JSON.stringify({ syncBatchId: envelopes[0]?.mutationId, clientId, sentAt: nowIsoWithMs(), mutations: envelopes }),
 				});
 				if (!res.ok) {

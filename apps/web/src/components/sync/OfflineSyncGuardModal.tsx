@@ -36,11 +36,12 @@ import {
 	type CrdtSyncEngineStatus,
 	type CrdtSyncSummary,
 	crdtSyncEngine,
+	generateUuidV7,
 	type SyncPushBatchRequest,
 	type SyncPushBatchResponse,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import { OfflineMutationQueueViewer } from "./OfflineMutationQueueViewer";
 
 export interface OfflineSyncGuardModalProps {
@@ -104,7 +105,10 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			const gatewayFn = customGatewayPushFn || (async (batch: SyncPushBatchRequest): Promise<SyncPushBatchResponse> => {
 				const response = await fetch("/api/sync/gateway", {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify(batch),
 				});
 

@@ -10,7 +10,7 @@
  * Provides resilient optimistic queueing of created, rescheduled, and updated appointments.
  */
 
-import type { AppointmentStatus } from "@dental/shared";
+import { type AppointmentStatus, generateUuidV7 } from "@dental/shared";
 import {
 	enqueueOfflineMutation,
 	getPendingOfflineMutations,
@@ -50,23 +50,19 @@ export interface QueuedAppointmentMutation {
 // In-memory optimistic schedule cache keyed by YYYY-MM-DD
 const scheduleDateCache = new Map<string, OfflineAppointmentItem[]>();
 
-function getCryptoRandomString(length: number): string {
-	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-		const bytes = new Uint8Array(length);
-		crypto.getRandomValues(bytes);
-		return Array.from(bytes, (b) => (b % 36).toString(36)).join("");
-	}
-	const time = Date.now();
-	return ((time ^ (time >> 3)) % 10000000).toString(36);
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveValidSyncUuid(candidate?: string | null, fallback?: string | null): string {
+	if (candidate && UUID_REGEX.test(candidate)) return candidate;
+	if (fallback && UUID_REGEX.test(fallback)) return fallback;
+	return generateUuidV7();
 }
 
 /**
- * Generates collision-resistant unique client reference ID for offline appointments.
+ * Generates collision-resistant unique client reference ID (UUIDv7) for offline appointments.
  */
 export function generateOfflineAppointmentId(): string {
-	const rand = getCryptoRandomString(7);
-	const time = Date.now().toString(36);
-	return `off_apt_${time}_${rand}`;
+	return generateUuidV7();
 }
 
 /**
@@ -234,6 +230,7 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 	try {
 		return await syncAppointmentQueue(async (mutation) => {
 		const appt = mutation.appointment;
+		const clientMutationId = resolveValidSyncUuid(appt.clientReferenceId, mutation.id);
 		let url = "/api/appointments";
 		let method = "POST";
 		let body: Record<string, unknown> = {};
@@ -248,7 +245,7 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 				startsAt: appt.startTime,
 				endsAt: appt.endTime,
 				reason: appt.notes || "Приём (офлайн)",
-				clientMutationId: appt.clientReferenceId || mutation.id,
+				clientMutationId,
 			};
 		} else if (mutation.action === "UPDATE_APPOINTMENT") {
 			url = `/api/appointments/${encodeURIComponent(appt.id)}`;
@@ -260,14 +257,14 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 				reason: appt.notes,
 				chairId: appt.chairId,
 				doctorUserId: appt.doctorId,
-				clientMutationId: mutation.id,
+				clientMutationId,
 			};
 		} else if (mutation.action === "CANCEL_APPOINTMENT") {
 			url = `/api/appointments/${encodeURIComponent(appt.id)}/status`;
 			method = "PATCH";
 			body = {
 				status: "cancelled",
-				clientMutationId: mutation.id,
+				clientMutationId,
 			};
 		}
 
@@ -275,7 +272,7 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 			method,
 			headers: getDenteAuthHeaders({
 				"Content-Type": "application/json",
-				"Idempotency-Key": appt.clientReferenceId || mutation.id,
+				"Idempotency-Key": clientMutationId,
 			}),
 			body: JSON.stringify(body),
 		});

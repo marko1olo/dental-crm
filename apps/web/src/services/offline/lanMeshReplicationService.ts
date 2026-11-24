@@ -24,6 +24,7 @@ import {
 	determineSyncTierMode,
 	incrementVectorClock,
 	mergeVectorClocks,
+	generateUuidV7,
 	processMeshSyncExchange,
 	vectorClockToString,
 } from "@dental/shared";
@@ -280,6 +281,7 @@ export class LanMeshReplicationService {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 					"x-dente-mesh-sender": this.nodeId,
 					"x-dente-mesh-role": this.nodeRole,
 				},

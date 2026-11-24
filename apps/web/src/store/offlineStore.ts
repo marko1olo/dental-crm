@@ -29,6 +29,7 @@ import {
 	updateOfflineMutationStatus,
 } from "../utils/offlineMutationQueue";
 import { OfflineSyncService } from "../services/offline/offlineSyncService";
+import { logger } from "../utils/logger";
 
 export interface OfflineStore {
 	networkState: NetworkState;
@@ -108,7 +109,9 @@ export const useOfflineStore = create<OfflineStore>((set, get) => ({
 				metrics,
 			});
 		} catch (err) {
-			console.error("[offlineStore] refreshQueue failed:", err);
+			logger.error("[offlineStore] refreshQueue failed", {
+				error: err instanceof Error ? err.message : String(err),
+			});
 			set({
 				lastSyncError: "Ошибка локального хранилища IndexedDB",
 			});
@@ -191,7 +194,12 @@ export const useOfflineStore = create<OfflineStore>((set, get) => ({
 					const firstError = drainResult.errors[0];
 					const errText =
 						firstError?.error ||
-						(firstError as unknown as { message?: string })?.message ||
+						(firstError &&
+						typeof firstError === "object" &&
+						"message" in firstError &&
+						typeof firstError.message === "string"
+							? firstError.message
+							: undefined) ||
 						"Sync gateway batch drain failed";
 					throw new Error(errText);
 				}
