@@ -5,6 +5,7 @@
  */
 
 import type { DoctorCompletedServiceItem, DoctorPayrollStornoLineItem } from "./payrollTypes.js";
+import { basisPointsFromPercent, formatKopecksToRub, percentageOfKopecks, toExactKopecks } from "../../money.js";
 
 export function createServiceStornoItem(
 	item: DoctorCompletedServiceItem,
@@ -21,8 +22,8 @@ export function createServiceStornoItem(
 	if (isFullyRefunded) {
 		const reason = item.refundReasonRu ?? "Полный возврат пациенту";
 		const netBaseIfPaid = Math.max(0, actualPaidKop - itemLabCost - itemMaterialCost);
-		const stornoComm = Math.round((netBaseIfPaid * itemCommissionPercent) / 100);
-		const stornoRub = (stornoComm / 100).toLocaleString("ru-RU");
+		const stornoComm = percentageOfKopecks(toExactKopecks(netBaseIfPaid), basisPointsFromPercent(itemCommissionPercent));
+		const stornoRub = formatKopecksToRub(stornoComm);
 
 		return {
 			id: `storno-srv-${item.id}`,
@@ -33,13 +34,13 @@ export function createServiceStornoItem(
 			reasonRu: reason,
 			refundedGrossKop: actualPaidKop,
 			stornoCommissionKop: stornoComm,
-			labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
+			labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub})`,
 		};
 	}
 
 	const reason = item.refundReasonRu ?? "Частичный возврат пациенту";
-	const partialStornoComm = Math.round((refundKop * itemCommissionPercent) / 100);
-	const stornoRub = (partialStornoComm / 100).toLocaleString("ru-RU");
+	const partialStornoComm = percentageOfKopecks(toExactKopecks(refundKop), basisPointsFromPercent(itemCommissionPercent));
+	const stornoRub = formatKopecksToRub(partialStornoComm);
 
 	return {
 		id: `storno-partial-${item.id}`,
@@ -50,6 +51,6 @@ export function createServiceStornoItem(
 		reasonRu: reason,
 		refundedGrossKop: refundKop,
 		stornoCommissionKop: partialStornoComm,
-		labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub} ₽)`,
+		labelRu: `Сторно комиссии: Возврат по чеку №${receiptNum} (-${stornoRub})`,
 	};
 }
