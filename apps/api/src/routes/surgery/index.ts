@@ -299,14 +299,143 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			}
 
 			// Фиксация в счете/смете пациента (Мандат 8wy, 8bm, SSOT)
-			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 0;
-			const unitPriceRub = input.services?.[0]?.priceRub ?? normPrice;
-			const teethMultiplier = targetTeeth.length > 1 ? targetTeeth.length : 1;
-			const unitPriceKopecks = BigInt(rublesToKopecks(unitPriceRub));
-			const operationPriceKopecks = unitPriceKopecks * BigInt(teethMultiplier);
+			const candidateServices: Array<{
+				code: string;
+				nameRu: string;
+				priceRub: number;
+				quantity: number;
+				toothNumber?: number | undefined;
+				isPrimary?: boolean | undefined;
+			}> = [];
+
+			const incomingServices =
+				input.services && input.services.length > 0
+					? input.services
+					: input.services804n && input.services804n.length > 0
+						? input.services804n
+						: null;
+
+			if (incomingServices && incomingServices.length > 0) {
+				for (const s of incomingServices) {
+					candidateServices.push({
+						code: s.code,
+						nameRu: s.nameRu ?? s.name ?? norm?.title ?? "Хирургическая манипуляция",
+						priceRub:
+							s.priceRub ??
+							s.suggestedPriceRub ??
+							(s.priceKopecks != null
+								? typeof s.priceKopecks === "bigint"
+									? Number(s.priceKopecks) / 100
+									: s.priceKopecks / 100
+								: 0),
+						quantity: s.quantity && s.quantity > 0 ? s.quantity : 1,
+						toothNumber: s.toothNumber ?? undefined,
+						isPrimary: s.isPrimary,
+					});
+				}
+			} else {
+				const fallbackCatalog =
+					norm?.order804nServices && norm.order804nServices.length > 0
+						? norm.order804nServices
+						: norm?.catalogServices && norm.catalogServices.length > 0
+							? norm.catalogServices
+							: [];
+
+				if (fallbackCatalog.length > 0) {
+					for (const s of fallbackCatalog) {
+						candidateServices.push({
+							code: s.code,
+							nameRu: s.nameRu ?? s.name ?? norm?.title ?? "Хирургическая манипуляция",
+							priceRub:
+								s.priceRub ??
+								s.suggestedPriceRub ??
+								(s.priceKopecks != null
+									? typeof s.priceKopecks === "bigint"
+										? Number(s.priceKopecks) / 100
+										: s.priceKopecks / 100
+									: 0),
+							quantity: s.quantity && s.quantity > 0 ? s.quantity : 1,
+							toothNumber: s.toothNumber ?? undefined,
+							isPrimary: s.isPrimary,
+						});
+					}
+				} else {
+					const defaultPriceRub =
+						norm?.order804nServices?.[0]?.priceRub ??
+						norm?.catalogServices?.[0]?.priceRub ??
+						3500;
+					candidateServices.push({
+						code: norm?.code804n ?? "A16.07.001",
+						nameRu: norm?.title ?? "Амбулаторная хирургическая операция",
+						priceRub: defaultPriceRub,
+						quantity: 1,
+						isPrimary: true,
+					});
+				}
+			}
+
+			interface SurgeryTreatmentItemToInsert {
+				toothCode: string | null;
+				title: string;
+				priceRub: number;
+				unitPriceRub: number;
+				priceKopecks: bigint;
+				unitPriceKopecks: bigint;
+				quantity: string;
+				notes: string;
+			}
+
+			const itemsToInsert: SurgeryTreatmentItemToInsert[] = [];
+			let operationPriceKopecks = 0n;
+
+			for (let idx = 0; idx < candidateServices.length; idx++) {
+				const srv = candidateServices[idx];
+				if (!srv) continue;
+				const srvUnitPriceKopecks = BigInt(rublesToKopecks(srv.priceRub));
+				const srvUnitPriceRub = kopecksToRubles(srvUnitPriceKopecks);
+				const isPrimaryOp = srv.isPrimary ?? idx === 0;
+
+				if (targetTeeth.length > 0 && isPrimaryOp && !srv.toothNumber) {
+					for (const currentToothNum of targetTeeth) {
+						const qty = srv.quantity > 0 ? srv.quantity : 1;
+						const linePriceKopecks = srvUnitPriceKopecks * BigInt(qty);
+						operationPriceKopecks += linePriceKopecks;
+						itemsToInsert.push({
+							toothCode: String(currentToothNum),
+							title: `${srv.nameRu} (Зуб FDI #${currentToothNum})`,
+							priceRub: kopecksToRubles(linePriceKopecks),
+							unitPriceRub: srvUnitPriceRub,
+							priceKopecks: linePriceKopecks,
+							unitPriceKopecks: srvUnitPriceKopecks,
+							quantity: String(qty),
+							notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}. Код услуги: ${srv.code}.`,
+						});
+					}
+				} else {
+					const assignedTooth =
+						srv.toothNumber != null
+							? String(srv.toothNumber)
+							: targetTeeth.length === 1
+								? String(targetTeeth[0])
+								: null;
+					const qty = srv.quantity > 0 ? srv.quantity : 1;
+					const linePriceKopecks = srvUnitPriceKopecks * BigInt(qty);
+					operationPriceKopecks += linePriceKopecks;
+					const toothSuffix = assignedTooth ? ` (Зуб FDI #${assignedTooth})` : "";
+					itemsToInsert.push({
+						toothCode: assignedTooth,
+						title: `${srv.nameRu}${toothSuffix}`,
+						priceRub: kopecksToRubles(linePriceKopecks),
+						unitPriceRub: srvUnitPriceRub,
+						priceKopecks: linePriceKopecks,
+						unitPriceKopecks: srvUnitPriceKopecks,
+						quantity: String(qty),
+						notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}. Код услуги: ${srv.code}.`,
+					});
+				}
+			}
+
 			const operationPriceRub = kopecksToRubles(operationPriceKopecks);
-			const unitPriceRubClean = kopecksToRubles(unitPriceKopecks);
-			const baseServiceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
 
 			let linkedInvoiceId: string | null = null;
 			if (targetVisitId) {
@@ -349,39 +478,21 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				linkedInvoiceId = newInvoice?.id ?? null;
 			}
 
-			if (targetTeeth.length > 0) {
-				for (const currentToothNum of targetTeeth) {
-					await tx.insert(treatmentItems).values({
-						organizationId: orgId,
-						patientId: targetPatientId,
-						visitId: targetVisitId ?? null,
-						invoiceId: linkedInvoiceId ?? null,
-						toothCode: String(currentToothNum),
-						title: `${baseServiceTitle} (Зуб FDI #${currentToothNum})`,
-						priceRub: unitPriceRubClean,
-						unitPriceRub: unitPriceRubClean,
-						priceKopecks: unitPriceKopecks,
-						unitPriceKopecks: unitPriceKopecks,
-						quantity: "1",
-						status: "completed",
-						notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
-					});
-				}
-			} else {
+			for (const item of itemsToInsert) {
 				await tx.insert(treatmentItems).values({
 					organizationId: orgId,
 					patientId: targetPatientId,
 					visitId: targetVisitId ?? null,
 					invoiceId: linkedInvoiceId ?? null,
-					toothCode: null,
-					title: baseServiceTitle,
-					priceRub: unitPriceRubClean,
-					unitPriceRub: unitPriceRubClean,
-					priceKopecks: unitPriceKopecks,
-					unitPriceKopecks: unitPriceKopecks,
-					quantity: "1",
+					toothCode: item.toothCode,
+					title: item.title,
+					priceRub: item.priceRub,
+					unitPriceRub: item.unitPriceRub,
+					priceKopecks: item.priceKopecks,
+					unitPriceKopecks: item.unitPriceKopecks,
+					quantity: item.quantity,
 					status: "completed",
-					notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
+					notes: item.notes,
 				});
 			}
 
