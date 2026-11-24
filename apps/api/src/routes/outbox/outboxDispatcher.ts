@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	communicationOutbox,
 	communicationSettings,
@@ -48,22 +48,24 @@ export async function insertTemplate(params: {
 	variables: string[];
 	isActive: boolean;
 }) {
-	const [created] = await db
-		.insert(communicationTemplates)
-		.values({
-			organizationId: params.organizationId,
-			clinicId: params.clinicId ?? null,
-			title: params.title,
-			channel: params.channel,
-			intent: params.intent,
-			audienceRole: params.audienceRole,
-			body: params.body,
-			variablesJson: JSON.stringify(params.variables),
-			isActive: params.isActive,
-		})
-		.returning();
+	return withTenantCtx(params.organizationId, async (tx) => {
+		const [created] = await tx
+			.insert(communicationTemplates)
+			.values({
+				organizationId: params.organizationId,
+				clinicId: params.clinicId ?? null,
+				title: params.title,
+				channel: params.channel,
+				intent: params.intent,
+				audienceRole: params.audienceRole,
+				body: params.body,
+				variablesJson: JSON.stringify(params.variables),
+				isActive: params.isActive,
+			})
+			.returning();
 
-	return created;
+		return created;
+	});
 }
 
 export async function updateTemplateRow(params: {
@@ -78,40 +80,44 @@ export async function updateTemplateRow(params: {
 	isActive: boolean;
 	clinicId?: string | null;
 }) {
-	const [updated] = await db
-		.update(communicationTemplates)
-		.set({
-			title: params.title,
-			channel: params.channel,
-			intent: params.intent,
-			audienceRole: params.audienceRole,
-			body: params.body,
-			variablesJson: JSON.stringify(params.variables),
-			isActive: params.isActive,
-			clinicId: params.clinicId,
-		})
-		.where(
-			and(
-				eq(communicationTemplates.id, params.templateId),
-				eq(communicationTemplates.organizationId, params.organizationId),
-			),
-		)
-		.returning();
+	return withTenantCtx(params.organizationId, async (tx) => {
+		const [updated] = await tx
+			.update(communicationTemplates)
+			.set({
+				title: params.title,
+				channel: params.channel,
+				intent: params.intent,
+				audienceRole: params.audienceRole,
+				body: params.body,
+				variablesJson: JSON.stringify(params.variables),
+				isActive: params.isActive,
+				clinicId: params.clinicId,
+			})
+			.where(
+				and(
+					eq(communicationTemplates.id, params.templateId),
+					eq(communicationTemplates.organizationId, params.organizationId),
+				),
+			)
+			.returning();
 
-	return updated ?? null;
+		return updated ?? null;
+	});
 }
 
 export async function saveSettingsRow(
 	organizationId: string,
 	next: Record<string, unknown>,
 ) {
-	await db
-		.insert(communicationSettings)
-		.values({ organizationId, ...next })
-		.onConflictDoUpdate({
-			target: communicationSettings.organizationId,
-			set: { ...next, updatedAt: new Date() },
-		});
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.insert(communicationSettings)
+			.values({ organizationId, ...next })
+			.onConflictDoUpdate({
+				target: communicationSettings.organizationId,
+				set: { ...next, updatedAt: new Date() },
+			});
+	});
 }
 
 export async function upsertPatientConsents(params: {
@@ -139,24 +145,26 @@ export async function upsertPatientConsents(params: {
 		decidedAt: now,
 	}));
 
-	await db
-		.insert(patientCommunicationConsents)
-		.values(valuesToInsert)
-		.onConflictDoUpdate({
-			target: [
-				patientCommunicationConsents.organizationId,
-				patientCommunicationConsents.patientId,
-				patientCommunicationConsents.channel,
-				patientCommunicationConsents.scope,
-			],
-			set: {
-				state: sql`EXCLUDED.state`,
-				source: sql`EXCLUDED.source`,
-				evidence: sql`EXCLUDED.evidence`,
-				decidedAt: now,
-				updatedAt: now,
-			},
-		});
+	await withTenantCtx(params.organizationId, async (tx) => {
+		await tx
+			.insert(patientCommunicationConsents)
+			.values(valuesToInsert)
+			.onConflictDoUpdate({
+				target: [
+					patientCommunicationConsents.organizationId,
+					patientCommunicationConsents.patientId,
+					patientCommunicationConsents.channel,
+					patientCommunicationConsents.scope,
+				],
+				set: {
+					state: sql`EXCLUDED.state`,
+					source: sql`EXCLUDED.source`,
+					evidence: sql`EXCLUDED.evidence`,
+					decidedAt: now,
+					updatedAt: now,
+				},
+			});
+	});
 
 	return params.entries.length;
 }

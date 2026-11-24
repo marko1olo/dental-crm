@@ -55,18 +55,18 @@ export const templateCreateSchema = z.object({
 	isActive: z.boolean().default(true),
 	/** Разрешить медицинские переменные — только для канала с согласием. */
 	allowPhi: z.boolean().default(false),
-});
+}).strict();
 
 export const templateUpdateSchema = templateCreateSchema.partial().extend({
 	allowPhi: z.boolean().default(false),
-});
+}).strict();
 
 export const previewSchema = z.object({
 	body: z.string().min(1).max(20_000),
 	channel: channelSchema.default("sms"),
 	values: z.record(z.union([z.string(), z.number()])).default({}),
 	allowPhi: z.boolean().default(false),
-});
+}).strict();
 
 export const enqueueSchema = z.object({
 	patientId: z.string().uuid().nullable().optional(),
@@ -86,7 +86,7 @@ export const enqueueSchema = z.object({
 	 * смысла сообщения — повторное нажатие кнопки не отправит второе сообщение.
 	 */
 	dedupeKey: z.string().trim().min(4).max(200).optional(),
-});
+}).strict();
 
 export const settingsSchema = z.object({
 	timezone: z.string().trim().min(1).max(64).optional(),
@@ -111,7 +111,7 @@ export const settingsSchema = z.object({
 		.min(5)
 		.max(1440)
 		.optional(),
-});
+}).strict();
 
 export const consentUpdateSchema = z.object({
 	entries: z
@@ -122,11 +122,11 @@ export const consentUpdateSchema = z.object({
 				state: z.enum(["granted", "revoked"]),
 				source: z.string().trim().min(1).max(64).default("staff"),
 				evidence: z.string().trim().max(500).nullable().optional(),
-			}),
+			}).strict(),
 		)
 		.min(1)
 		.max(32),
-});
+}).strict();
 
 /**
  * Условия отбора получателей рассылки. Закрытый набор признаков: «гибкий
@@ -155,11 +155,11 @@ export const campaignCreateSchema = z.object({
 	criteria: audienceCriteriaSchema.default({}),
 	clinicId: z.string().uuid().nullable().optional(),
 	scheduledAt: z.string().datetime({ offset: true }).nullable().optional(),
-});
+}).strict();
 
 export const dispatchBodySchema = z.object({
 	batchSize: z.unknown().optional(),
-});
+}).strict();
 
 export const outboxQuerySchema = z.object({
 	status: outboxStatusSchema.optional(),
@@ -170,7 +170,7 @@ export const outboxQuerySchema = z.object({
 	to: z.string().datetime({ offset: true }).optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50),
 	offset: z.coerce.number().int().min(0).max(100_000).default(0),
-});
+}).strict();
 
 export type Channel = z.infer<typeof channelSchema>;
 export type DeliverableChannel = z.infer<typeof deliverableChannelSchema>;

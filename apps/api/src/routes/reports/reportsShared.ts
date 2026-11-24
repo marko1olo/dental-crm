@@ -35,7 +35,7 @@ export const periodQuerySchema = z.object({
 	workingDaysPerWeek: z.coerce.number().int().min(1).max(7).optional(),
 	limit: z.coerce.number().int().min(1).max(500).optional(),
 	minDebtRub: z.coerce.number().int().min(1).max(10_000_000).optional(),
-});
+}).strict();
 
 export type PeriodQuery = z.infer<typeof periodQuerySchema>;
 

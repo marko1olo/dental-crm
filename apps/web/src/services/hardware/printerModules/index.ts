@@ -346,7 +346,7 @@ export class HardwarePrinter {
 					};
 				}
 			} catch (btErr) {
-				console.warn("[HardwarePrinter] Bluetooth bank slip print error:", btErr);
+				logger.warn("[HardwarePrinter] Bluetooth bank slip print error:", btErr);
 			}
 		}
 
