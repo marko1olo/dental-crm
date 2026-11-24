@@ -225,4 +225,21 @@ describe("4. Canonical Pediatric Dentition Modal Ergonomics & Autonomy (Mandates
 		const html = renderToString(createElement(DirectPediatricLauncher));
 		assert.ok(typeof html === "string");
 	});
+
+	it("accepts patientId, patientName, patientPhone, doctorName, clinicName (Mandates 8bn, 8zq)", () => {
+		const html = renderToString(
+			createElement(PediatricMixedDentitionModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "patient-pediatric-777",
+				patientName: "Артём Ковалёв",
+				patientPhone: "+7 (999) 111-22-33",
+				doctorName: "Д-р Смирнова",
+				clinicName: "Клиника DENTE",
+				initialAge: 6.5,
+			}),
+		);
+		assert.ok(html.includes("Готово"));
+		assert.ok(html.includes("Детский и сменный прикус"));
+	});
 });

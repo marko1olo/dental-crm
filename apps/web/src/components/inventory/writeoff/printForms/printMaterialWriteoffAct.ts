@@ -78,6 +78,3 @@ export function generateMaterialWriteoffActHtml(
 	</div>
 </body></html>`;
 }
-
-// Алиас для обратной совместимости вызовов
-export const generateAct0504230Html = generateMaterialWriteoffActHtml;

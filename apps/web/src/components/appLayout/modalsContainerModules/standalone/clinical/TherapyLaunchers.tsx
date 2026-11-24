@@ -19,7 +19,6 @@ import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
 import type { ToothData } from "../../../../odontogram/ToothChart";
-import { PediatricMixedDentitionModal } from "../../../../odontogram/PediatricMixedDentitionModal";
 import { DirectWarrantyLauncher } from "../../../../warranty/DirectWarrantyLauncher";
 import { useVisitStore } from "../../../../../store/visitStore";
 import { mapVisitUiStateToToothDataState } from "../../../../../store/visit/odontogramSlice";
@@ -103,14 +102,6 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		);
 	}
 
-	if (hasUrlToken(["pediatric", "children", "pedodontics"]) && !hasUrlToken(["diploma", "bravery"])) {
-		return (
-			<PediatricMixedDentitionModal
-				isOpen={true}
-				onClose={() => clearUrlTokens(["pediatric", "children", "pedodontics"], ["pediatric", "children"])}
-			/>
-		);
-	}
 
 	if (hasUrlToken(["warranty-passport", "warranty_passport", "warranty-studio", "warranty"])) {
 		return <DirectWarrantyLauncher />;

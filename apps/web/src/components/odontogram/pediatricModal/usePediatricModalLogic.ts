@@ -25,11 +25,11 @@ import {
 export interface UsePediatricModalLogicProps {
 	isOpen: boolean;
 	onClose: () => void;
-	teethData?: ToothData[];
-	onApplyAgeArch?: (teethNumbers: number[]) => void;
-	onUpdateToothResorption?: (toothNumber: number, resorptionStage: ResorptionStagePercent) => void;
-	onBatchUpdateResorption?: (updates: { toothNumber: number; resorptionStage: ResorptionStagePercent }[]) => void;
-	initialAge?: number;
+	teethData?: ToothData[] | undefined;
+	onApplyAgeArch?: ((teethNumbers: number[]) => void) | undefined;
+	onUpdateToothResorption?: ((toothNumber: number, resorptionStage: ResorptionStagePercent) => void) | undefined;
+	onBatchUpdateResorption?: ((updates: { toothNumber: number; resorptionStage: ResorptionStagePercent }[]) => void) | undefined;
+	initialAge?: number | undefined;
 }
 
 export function usePediatricModalLogic({

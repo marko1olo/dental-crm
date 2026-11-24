@@ -467,8 +467,13 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 			{isPediatricModalOpen && (
 				<React.Suspense fallback={null}>
 					<PediatricMixedDentitionModal
+						key={activePatient?.id ?? "pediatric-dentition-layer"}
 						isOpen={isPediatricModalOpen}
 						onClose={() => setIsPediatricModalOpen(false)}
+						patientId={activePatient?.id ?? (patientId || undefined)}
+						patientName={activePatient?.fullName || activePatient?.name || undefined}
+						patientPhone={activePatient?.phone ?? undefined}
+						doctorName={activeDoctor?.fullName || activeDoctor?.name || undefined}
 						teethData={teethData}
 						initialAge={
 							activePatient?.birthDate

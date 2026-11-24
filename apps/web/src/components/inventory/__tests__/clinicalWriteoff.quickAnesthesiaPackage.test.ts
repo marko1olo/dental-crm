@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createQuickAnesthesiaPackageWriteoffDocument } from "../writeoff/clinicalWriteoffQuickDocuments.js";
 import { validateWriteoffDocument } from "../writeoff/clinicalWriteoffEngine.js";
-import { generateAct0504230Html } from "../writeoff/clinicalWriteoffPrintForms.js";
+import { generateMaterialWriteoffActHtml } from "../writeoff/clinicalWriteoffPrintForms.js";
 
 describe("Single-Signatory Quick Anesthesia Package Writeoff", () => {
 	it("createQuickAnesthesiaPackageWriteoffDocument формирует стандартный пакет анестезии", () => {
@@ -26,8 +26,8 @@ describe("Single-Signatory Quick Anesthesia Package Writeoff", () => {
 		assert.ok(validation.isValid, `Валидация: ${validation.errors.join(", ")}`);
 		assert.equal(validation.errors.length, 0);
 
-		const html0504230 = generateAct0504230Html(doc);
-		assert.ok(html0504230.includes("СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО)"));
-		assert.ok(!html0504230.includes("ПРЕДСЕДАТЕЛЬ КОМИССИИ"));
+		const html = generateMaterialWriteoffActHtml(doc);
+		assert.ok(html.includes("СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО)"));
+		assert.ok(!html.includes("ПРЕДСЕДАТЕЛЬ КОМИССИИ"));
 	});
 });

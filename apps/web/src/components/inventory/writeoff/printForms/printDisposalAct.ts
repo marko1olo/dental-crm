@@ -69,6 +69,3 @@ export function generateDisposalActHtml(
 	</div>
 </body></html>`;
 }
-
-// Алиас для обратной совместимости вызовов
-export const generateTorg16Html = generateDisposalActHtml;

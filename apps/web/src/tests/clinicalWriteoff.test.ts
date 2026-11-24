@@ -25,9 +25,9 @@ import {
 	calculateLineCostKopecks,
 	exportClinicalWriteoffToCsv,
 	findBestBatchFefo,
-	generateAct0504230Html,
+	generateMaterialWriteoffActHtml,
 	generateMaterialWaybillHtml,
-	generateTorg16Html,
+	generateDisposalActHtml,
 	getClinicalMaterialById,
 	getDaysUntilExpiration,
 	getDiscrepancyReason,
@@ -663,8 +663,8 @@ describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () 
 		status: "confirmed",
 	};
 
-	it("generateAct0504230Html формирует официальный Акт о списании материалов клиники", () => {
-		const html = generateAct0504230Html(sampleDoc);
+	it("generateMaterialWriteoffActHtml формирует официальный Акт о списании материалов клиники", () => {
+		const html = generateMaterialWriteoffActHtml(sampleDoc);
 
 		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("АКТ-СПИС-2026/08-101"));
@@ -684,8 +684,8 @@ describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () 
 		assert.ok(html.includes("405.00"));
 	});
 
-	it("generateTorg16Html формирует Акт о списании материалов клиники", () => {
-		const html = generateTorg16Html(sampleDoc);
+	it("generateDisposalActHtml формирует Акт о списании материалов клиники", () => {
+		const html = generateDisposalActHtml(sampleDoc);
 
 		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Нанокомпозит Filtek Ultimate"));

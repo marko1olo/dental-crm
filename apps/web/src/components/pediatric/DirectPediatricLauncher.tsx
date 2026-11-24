@@ -16,6 +16,15 @@ interface DiplomaLauncherDetails {
 	readonly clinicName?: string | undefined;
 }
 
+interface PediatricLauncherDetails {
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientAgeYears?: number | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
+}
+
 export const DirectPediatricLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
@@ -43,6 +52,19 @@ export const DirectPediatricLauncher: React.FC = () => {
 		);
 	});
 
+	const [pediatricDetails, setPediatricDetails] = useState<PediatricLauncherDetails>(() => {
+		if (typeof window === "undefined") return {};
+		const p = new URLSearchParams(window.location.search);
+		return {
+			patientName: p.get("patientName") || p.get("name") || undefined,
+			patientId: p.get("patientId") || p.get("id") || undefined,
+			patientPhone: p.get("patientPhone") || p.get("phone") || undefined,
+			patientAgeYears: p.get("age") ? Number(p.get("age")) : undefined,
+			doctorName: p.get("doctorName") || p.get("doctor") || undefined,
+			clinicName: p.get("clinicName") || undefined,
+		};
+	});
+
 	const [diplomaDetails, setDiplomaDetails] = useState<DiplomaLauncherDetails>(() => {
 		if (typeof window === "undefined") return {};
 		const p = new URLSearchParams(window.location.search);
@@ -56,7 +78,20 @@ export const DirectPediatricLauncher: React.FC = () => {
 	});
 
 	useEffect(() => {
-		const handleOpen = () => setIsOpen(true);
+		const handleOpen = (e?: Event) => {
+			const detail = (e as CustomEvent<PediatricLauncherDetails> | undefined)?.detail;
+			if (detail && typeof detail === "object") {
+				setPediatricDetails((prev) => ({
+					patientName: detail.patientName ?? prev.patientName,
+					patientId: detail.patientId ?? prev.patientId,
+					patientPhone: detail.patientPhone ?? prev.patientPhone,
+					patientAgeYears: detail.patientAgeYears ?? prev.patientAgeYears,
+					doctorName: detail.doctorName ?? prev.doctorName,
+					clinicName: detail.clinicName ?? prev.clinicName,
+				}));
+			}
+			setIsOpen(true);
+		};
 		const handleOpenDiploma = (e?: Event) => {
 			const detail = (e as CustomEvent<DiplomaLauncherDetails> | undefined)?.detail;
 			if (detail && typeof detail === "object") {
@@ -96,6 +131,15 @@ export const DirectPediatricLauncher: React.FC = () => {
 				s.includes("pediatric") ||
 				s.includes("children")
 			) {
+				const p = new URLSearchParams(window.location.search);
+				setPediatricDetails((prev) => ({
+					patientName: p.get("patientName") || p.get("name") || prev.patientName,
+					patientId: p.get("patientId") || p.get("id") || prev.patientId,
+					patientPhone: p.get("patientPhone") || p.get("phone") || prev.patientPhone,
+					patientAgeYears: p.get("age") ? Number(p.get("age")) : prev.patientAgeYears,
+					doctorName: p.get("doctorName") || p.get("doctor") || prev.doctorName,
+					clinicName: p.get("clinicName") || prev.clinicName,
+				}));
 				setIsOpen(true);
 			}
 		};
@@ -135,9 +179,15 @@ export const DirectPediatricLauncher: React.FC = () => {
 	return (
 		<>
 			<PediatricMixedDentitionModal
+				key={pediatricDetails.patientId || pediatricDetails.patientName || "pediatric-dentition-modal"}
 				isOpen={isOpen}
 				onClose={handleClose}
-				initialAge={6.5}
+				initialAge={pediatricDetails.patientAgeYears ?? 6.5}
+				patientId={pediatricDetails.patientId}
+				patientName={pediatricDetails.patientName}
+				patientPhone={pediatricDetails.patientPhone}
+				doctorName={pediatricDetails.doctorName}
+				clinicName={pediatricDetails.clinicName}
 			/>
 			<PediatricBraveryDiplomaModal
 				key={diplomaDetails.patientId || diplomaDetails.patientName || "pediatric-direct-diploma"}

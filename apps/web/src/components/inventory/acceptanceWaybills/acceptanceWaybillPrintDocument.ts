@@ -78,5 +78,4 @@ th { background: #f0f0f0; border: 1px solid #000; padding: 4px; font-weight: bol
 }
 
 export const generateWaybillPrintHtml = generateAcceptanceWaybillHtml;
-export const generateTorg12Html = generateAcceptanceWaybillHtml;
 

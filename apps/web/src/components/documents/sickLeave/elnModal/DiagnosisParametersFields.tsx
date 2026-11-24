@@ -1,7 +1,7 @@
 import React from "react";
 import { Stethoscope } from "lucide-react";
-import { IncapacityReasonCode, INCAPACITY_REASON_CODES } from "../sickLeaveElnPresets";
-import type { SickLeaveFormState, IncapacityRegimeType } from "../sickLeaveElnEngine";
+import { IncapacityReasonCode, INCAPACITY_REASON_CODES, type IncapacityRegimeType } from "../sickLeaveElnPresets";
+import type { SickLeaveFormState } from "../sickLeaveElnEngine";
 
 interface Props {
 	formState: SickLeaveFormState;
