@@ -88,14 +88,14 @@ export const EXTRACTION_COMPLEXITY_OPTIONS = [
 	{ id: "atraumatic" as const, nameRu: "Атравматичное удаление (люксатор)", labelRu: "Атравматичное удаление (люксатор)", shortBadge: "Атравматичное", descriptionRu: "Бережная экстракция люксатором с сохранением костных стенок лунки", code: EXTRACTION_SURGICAL_CODES.ATRAUMATIC, code804n: EXTRACTION_SURGICAL_CODES.ATRAUMATIC, priceRub: 4500 },
 	{ id: "complex" as const, nameRu: "Сложное удаление (сепарация корней)", labelRu: "Сложное удаление (сепарация корней)", shortBadge: "Сложное", descriptionRu: "Многокорневой зуб, разъединение корней бором Lindemann", code: EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION, code804n: EXTRACTION_SURGICAL_CODES.COMPLEX_SEPARATION, priceRub: 5500 },
 	{ id: "impacted_dystopic" as const, nameRu: "Атипичное удаление (8-ка / дистопия)", labelRu: "Атипичное удаление (8-ка / дистопия)", shortBadge: "Атипичное 8-ка", descriptionRu: "Ретинированный зуб мудрости, трепанация кортикальной пластинки", code: EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC, code804n: EXTRACTION_SURGICAL_CODES.IMPACTED_DYSTOPIC, priceRub: 8500 },
-	{ id: "socket_preservation" as const, nameRu: "Консервация лунки (коллагеновый конус)", labelRu: "Консервация лунки (коллагеновый конус)", shortBadge: "Консервация лунки", descriptionRu: "Атравматичное удаление с внесением конуса Parasorb Cone и ушиванием раны", code: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION, code804n: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION, priceRub: 6000 },
-	{ id: "alveolitis" as const, nameRu: "Лечение альвеолита (кюретаж лунки)", labelRu: "Лечение альвеолита (кюретаж лунки)", shortBadge: "Альвеолит", descriptionRu: "Ревизия, механический кюретаж лунки и антисептический компресс Alveogyl", code: EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE, code804n: EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE, priceRub: 2500 },
+	{ id: "socket_preservation" as const, nameRu: "Консервация лунки (коллагеновый конус)", labelRu: "Консервация лунки (коллагеновый конус)", shortBadge: "Консервация лунки", descriptionRu: "Атравматичное удаление с внесением гемостатического коллагенового конуса и ушиванием раны", code: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION, code804n: EXTRACTION_SURGICAL_CODES.SOCKET_PRESERVATION, priceRub: 6000 },
+	{ id: "alveolitis" as const, nameRu: "Лечение альвеолита (кюретаж лунки)", labelRu: "Лечение альвеолита (кюретаж лунки)", shortBadge: "Альвеолит", descriptionRu: "Ревизия, механический кюретаж лунки и антисептический компресс", code: EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE, code804n: EXTRACTION_SURGICAL_CODES.ALVEOLITIS_CURETTAGE, priceRub: 2500 },
 ] as const;
 
 export const SURGICAL_HEMOSTASIS_OPTIONS = [
 	{ id: "alvogyl" as const, nameRu: "Альвожил (паста/губка)", shortBadge: "Альвожил", descriptionRu: "Антисептический компресс с йодоформом в лунку" },
 	{ id: "hemostatic_sponge" as const, nameRu: "Гемостатическая губка", shortBadge: "Губка", descriptionRu: "Коллагеновая губка для надежного гемостаза" },
-	{ id: "vicryl_suture" as const, nameRu: "Шов Викрил 4-0", shortBadge: "Викрил 4-0", descriptionRu: "Сближение краев лунки узловыми швами" },
+	{ id: "vicryl_suture" as const, nameRu: "Шовный материал (ПГА / полиглактин) 4-0", shortBadge: "ПГА 4-0", descriptionRu: "Сближение краев лунки узловыми швами" },
 	{ id: "tampon" as const, nameRu: "Давящий марлевый тампон", shortBadge: "Тампон", descriptionRu: "Механическое сдавление марлевым шариком 20 минут" },
 ] as const;
 
@@ -107,13 +107,13 @@ export const SURGICAL_ANESTHETICS = [
 export const SURGERY_ANESTHETICS = SURGICAL_ANESTHETICS;
 
 export const DENTAL_IMPLANTATION_NORM_TEXT = "Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен слизисто-надкостничный лоскут. Препарирование ложа фрезами с охлаждением физраствором. Установлен дентальный имплантат, первичная торк-стабильность 35 Н·см. Установлен формирователь десны / винт-заглушка. Ушивание раны шовным материалом ПГА 4-0. Гемостаз полный. Рекомендации даны.";
-export const SIMPLE_EXTRACTION_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Круговая связка зуба отслоена. Люксация элеватором и щипцами. Атравматичная тракция зуба из альвеолы. Тщательный кюретаж лунки острой ложкой, удаление грануляций. Антисептическая обработка 0.05% хлоргексидином. Местный гемостаз: гемостатическая губка Альвостаз. Наложены узловые швы Викрил 4-0. Гемостаз полный. Рекомендации даны.";
-export const COMPLEX_EXTRACTION_NORM_TEXT = "Инфильтрационная и проводниковая анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл. Разрез слизистой, отслоен лоскут. Сепарация корней бором Lindemann с водяным охлаждением. Атравматичная люксация фрагментов корней элеватором. Тщательный кюретаж лунки, ревизия. Местный гемостаз губкой Альвожил. Рана ушита швами Викрил 4-0. Давящий марлевый тампон. Гемостаз полный. Рекомендации даны.";
-export const ATYPICAL_EXTRACTION_NORM_TEXT = "Проводниковая торусальная и инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл. Разрез слизистой в ретромолярной области, выкраивание лоскута. Трепанация кортикальной пластинки, сепарация коронки твердосплавным бором Lindemann с охлаждением физраствором. Атравматичное извлечение фрагментов. Тщательный кюретаж лунки. Лунка заполнена губкой Альвожил. Рана ушита узловыми швами Викрил 4-0. Гемостаз полный. Рекомендации даны.";
-export const SINUS_LIFT_GBR_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл. Трапециевидный разрез в боковом отделе верхней челюсти, скелетирование передне-латеральной стенки пазухи. Формирование латерального окна пьезотомом. Аккуратная элевация мембраны Шнайдера без перфораций. В субантральное пространство внесен костный графт Geistlich Bio-Oss (0.5 г). Окно перекрыто резорбируемой коллагеновой мембраной Geistlich Bio-Gide (16×22 мм), фиксировано титановыми пинами. Рана послойно ушита шовным материалом Викрил 4-0. Гемостаз полный. Рекомендации даны.";
-export const CLOSED_SINUS_LIFT_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа с недоходом до дна пазухи 1 мм. Трансальвеолярная элевация дна синуса остеотомами Саммерса. Проба Вальсальвы отрицательная. Внесение графта Bio-Oss 0.5 г. Установка имплантата с первичной стабильностью 35 Н·см. Ушивание раны Викрил 4-0 без натяжения. Гемостаз полный. Рекомендации даны.";
+export const SIMPLE_EXTRACTION_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Круговая связка зуба отслоена. Люксация элеватором и щипцами. Атравматичная тракция зуба из альвеолы. Тщательный кюретаж лунки острой ложкой, удаление грануляций. Антисептическая обработка 0.05% хлоргексидином. Местный гемостаз: гемостатическая коллагеновая губка. Наложены узловые швы ПГА 4-0. Гемостаз полный. Рекомендации даны.";
+export const COMPLEX_EXTRACTION_NORM_TEXT = "Инфильтрационная и проводниковая анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл. Разрез слизистой, отслоен лоскут. Сепарация корней бором Lindemann с водяным охлаждением. Атравматичная люксация фрагментов корней элеватором. Тщательный кюретаж лунки, ревизия. Местный гемостаз гемостатической губкой. Рана ушита швами ПГА 4-0. Давящий марлевый тампон. Гемостаз полный. Рекомендации даны.";
+export const ATYPICAL_EXTRACTION_NORM_TEXT = "Проводниковая торусальная и инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл. Разрез слизистой в ретромолярной области, выкраивание лоскута. Трепанация кортикальной пластинки, сепарация коронки твердосплавным бором Lindemann с охлаждением физраствором. Атравматичное извлечение фрагментов. Тщательный кюретаж лунки. Лунка заполнена гемостатической губкой. Рана ушита узловыми швами ПГА 4-0. Гемостаз полный. Рекомендации даны.";
+export const SINUS_LIFT_GBR_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл. Трапециевидный разрез в боковом отделе верхней челюсти, скелетирование передне-латеральной стенки пазухи. Формирование латерального окна пьезотомом. Аккуратная элевация мембраны Шнайдера без перфораций. В субантральное пространство внесен ксеногенный костный гранулят (0.5 г). Окно перекрыто резорбируемой коллагеновой мембраной (16×22 мм), фиксировано титановыми микропинами. Рана послойно ушита шовным материалом ПГА 4-0. Гемостаз полный. Рекомендации даны.";
+export const CLOSED_SINUS_LIFT_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа с недоходом до дна пазухи 1 мм. Трансальвеолярная элевация дна синуса остеотомами Саммерса. Проба Вальсальвы отрицательная. Внесение остеопластического ксеноматериала 0.5 г. Установка имплантата с первичной стабильностью 35 Н·см. Ушивание раны ПГА 4-0 без натяжения. Гемостаз полный. Рекомендации даны.";
 export const PERIOSTOTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез слизистой и надкостницы длиной 2 см по переходной складке в проекции корня причинного зуба до кости. Эвакуация гнойного экссудата. Промывание 0.05% хлоргексидином. В рану введен перчаточный резиновый ленточный дренаж-выпускник. Гемостаз полный. Назначена антибиотикотерапия. Контрольный осмотр и смена дренажа завтра.";
-export const APICOECTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки корня, отслоен лоскут. Трепанация кортикальной пластинки шаровидным бором. Резекция верхушки корня на 3 мм под углом 90°. Цистэктомия очага. Ретроградное пломбирование МТА (ProRoot). Контроль гемостаза. Ушивание раны узловыми швами Монофиламент 5-0. Рекомендации даны.";
+export const APICOECTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки корня, отслоен лоскут. Трепанация кортикальной пластинки шаровидным бором. Резекция верхушки корня на 3 мм под углом 90°. Цистэктомия очага. Ретроградное пломбирование цементом МТА (минерал триоксид агрегат). Контроль гемостаза. Ушивание раны узловыми швами Монофиламент 5-0. Рекомендации даны.";
 export const PERICORONITIS_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Иссечение воспаленного слизистого капюшона над коронкой ретинированного зуба скальпелем. Промывание антисептиками (хлоргексидин 0.05%), йодоформная турунда. Гемостаз полный. Рекомендации даны.";
 export const ANKYLOS_SURGERY_SPEC: SurgeryImplantSystemSpec = {
 	id: "ankylos",
@@ -206,15 +206,27 @@ export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = DEF
 		expirationDate: item.expirationDate || "2029-12-31",
 	};
 });
-export const SURGERY_GRAFT_CATALOG = [{ id: "graft-bio-oss-05", name: "Geistlich Bio-Oss гранулят 0.5 г", unitPriceRub: 8500 }, { id: "graft-bio-oss-10", name: "Geistlich Bio-Oss гранулят 1.0 г", unitPriceRub: 14200 }, { id: "graft-cerabone-05", name: "Botiss Cerabone гранулят 0.5 г", unitPriceRub: 7800 }] as const;
-export const SURGERY_MEMBRANE_CATALOG = [{ id: "memb-bio-gide-1622", name: "Geistlich Bio-Gide резорбируемая 16×22 мм", unitPriceRub: 9800 }, { id: "memb-bio-gide-2525", name: "Geistlich Bio-Gide резорбируемая 25×25 мм", unitPriceRub: 15400 }, { id: "memb-jason-1520", name: "Botiss Jason нативная перикардиальная 15×20 мм", unitPriceRub: 11200 }] as const;
-export const SURGERY_SUTURE_CATALOG = [{ id: "sut-vicryl-40", name: "Ethicon Викрил 4-0 (полиглактин 910)", unitPriceRub: 950 }, { id: "sut-prolene-40", name: "Ethicon Пролен 4-0 (полипропилен)", unitPriceRub: 1150 }, { id: "sut-mono-50", name: "Монофиламент ПГА-РАПИД 5-0", unitPriceRub: 850 }] as const;
+export const SURGERY_GRAFT_CATALOG = [
+	{ id: "graft-xeno-05", name: "Ксеногенный костный гранулят 0.5 г", unitPriceRub: 8500 },
+	{ id: "graft-xeno-10", name: "Ксеногенный костный гранулят 1.0 г", unitPriceRub: 14200 },
+	{ id: "graft-allo-05", name: "Аллогенный костный матрикс 0.5 г", unitPriceRub: 7800 },
+] as const;
+export const SURGERY_MEMBRANE_CATALOG = [
+	{ id: "memb-collagen-1622", name: "Коллагеновая резорбируемая мембрана 16×22 мм", unitPriceRub: 9800 },
+	{ id: "memb-collagen-2525", name: "Коллагеновая резорбируемая мембрана 25×25 мм", unitPriceRub: 15400 },
+	{ id: "memb-pericard-1520", name: "Нативная перикардиальная мембрана 15×20 мм", unitPriceRub: 11200 },
+] as const;
+export const SURGERY_SUTURE_CATALOG = [
+	{ id: "sut-pga-40", name: "Плетеный синтетический шовный материал (ПГА / полиглактин) 4-0", unitPriceRub: 950 },
+	{ id: "sut-mono-40", name: "Монофиламентный шовный материал (полипропилен) 4-0", unitPriceRub: 1150 },
+	{ id: "sut-mono-50", name: "Монофиламентный шовный материал 5-0", unitPriceRub: 850 },
+] as const;
 
 export const SURGERY_SCENARIOS: Record<SurgeryScenarioType, SurgeryScenarioDefinition> = {
 	extraction: {
 		id: "scen-extraction", type: "extraction", titleRu: "Удаление зуба", subtitleRu: "Простое, сложное с разъединением корней или атипичное",
 		defaultToothFdi: 36, icd10: "K08.8", icd10Label: "Другие уточненные изменения зубов и опорного аппарата", serviceCode: "A16.07.001", serviceNameRu: "Удаление постоянного зуба (простое / сложное)", defaultPriceRub: 4500, defaultProtocolRu: SIMPLE_EXTRACTION_NORM_TEXT, defaultRecommendationsRu: "Марлевый тампон сплюнуть через 20 минут. Не полоскать рот 24 часа. При болях — Нимесил 1 пак. Исключить горячее, баню и нагрузки на 3 дня.",
-		standardMaterials: [{ id: "mat-art-1", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false }, { id: "mat-sponge-1", name: "Губка гемостатическая Альвостаз / Альвожиль", unit: "шт.", quantity: 1, isWarehouseCritical: false }, { id: "mat-sut-1", name: "Шовный материал Ethicon Викрил 4-0", unit: "шт.", quantity: 1, isWarehouseCritical: false }],
+		standardMaterials: [{ id: "mat-art-1", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false }, { id: "mat-sponge-1", name: "Губка гемостатическая антисептическая / коллагеновая", unit: "шт.", quantity: 1, isWarehouseCritical: false }, { id: "mat-sut-1", name: "Шовный материал рассасывающийся ПГА 4-0", unit: "шт.", quantity: 1, isWarehouseCritical: false }],
 	},
 	resection_periostotomy: {
 		id: "scen-resection", type: "resection_periostotomy", titleRu: "Резекция / Периостотомия", subtitleRu: "Периостотомия при периостите, резекция верхушки корня (апико)",
@@ -224,12 +236,12 @@ export const SURGERY_SCENARIOS: Record<SurgeryScenarioType, SurgeryScenarioDefin
 	sinus_gbr: {
 		id: "scen-sinus-gbr", type: "sinus_gbr", titleRu: "Синус-лифтинг & НКР", subtitleRu: "Субантральная костная пластика, барьерная мембрана, пины",
 		defaultToothFdi: 16, icd10: "K08.2", icd10Label: "Атрофия беззубого альвеолярного края", serviceCode: "A16.07.041", serviceNameRu: "Синус-лифтинг открытый (субантральная аугментация) и НКР", defaultPriceRub: 35000, defaultProtocolRu: SINUS_LIFT_GBR_NORM_TEXT, defaultRecommendationsRu: "Не сморкаться 14 дней. Капли в нос сосудосуживающие (Тизин / Отривин). Антибиотикотерапия 7 дней. Контрольный осмотр на 3 и 7 сутки.",
-		standardMaterials: [{ id: "mat-art-3", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 2, isWarehouseCritical: false }, { id: "mat-graft-1", name: "Костный графт Geistlich Bio-Oss 0.5 г", unit: "упак.", quantity: 1, isWarehouseCritical: true }, { id: "mat-memb-1", name: "Мембрана Geistlich Bio-Gide 16×22 мм", unit: "шт.", quantity: 1, isWarehouseCritical: true }, { id: "mat-pins-1", name: "Титановые пины костные Bone-Fix", unit: "шт.", quantity: 4, isWarehouseCritical: false }],
+		standardMaterials: [{ id: "mat-art-3", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 2, isWarehouseCritical: false }, { id: "mat-graft-1", name: "Ксеногенный костный гранулят 0.5 г", unit: "упак.", quantity: 1, isWarehouseCritical: true }, { id: "mat-memb-1", name: "Коллагеновая резорбируемая мембрана 16×22 мм", unit: "шт.", quantity: 1, isWarehouseCritical: true }, { id: "mat-pins-1", name: "Титановые микропины для фиксации мембран", unit: "шт.", quantity: 4, isWarehouseCritical: false }],
 	},
 	implant: {
 		id: "scen-implant", type: "implant", titleRu: "Дентальная имплантация", subtitleRu: "Установка дентального имплантата с паспортом изделия",
 		defaultToothFdi: 46, icd10: "K08.1", icd10Label: "Потеря зубов вследствие удаления или травмы", serviceCode: "A16.07.054", serviceNameRu: "Операция установки дентального имплантата", defaultPriceRub: 45000, defaultProtocolRu: DENTAL_IMPLANTATION_NORM_TEXT, defaultRecommendationsRu: "Холод на щеку 15 минут каждые 2 часа в первый день. Ванночки с 0.05% хлоргексидином со 2 дня. Щадящая диета 14 дней. Осмотр через 7 дней.",
-		standardMaterials: [{ id: "mat-art-4", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false }, { id: "mat-imp-1", name: "Дентальный имплантат титановый (Osstem)", unit: "шт.", quantity: 1, isWarehouseCritical: true }, { id: "mat-cap-1", name: "Формирователь десны (ФДМ)", unit: "шт.", quantity: 1, isWarehouseCritical: false }, { id: "mat-sut-2", name: "Шовный материал Ethicon Викрил 4-0", unit: "шт.", quantity: 1, isWarehouseCritical: false }],
+		standardMaterials: [{ id: "mat-art-4", name: "Анестетик Артикаин 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false }, { id: "mat-imp-1", name: "Дентальный имплантат титановый внутрикостный", unit: "шт.", quantity: 1, isWarehouseCritical: true }, { id: "mat-cap-1", name: "Формирователь десны (ФДМ)", unit: "шт.", quantity: 1, isWarehouseCritical: false }, { id: "mat-sut-2", name: "Шовный материал рассасывающийся ПГА 4-0", unit: "шт.", quantity: 1, isWarehouseCritical: false }],
 	},
 };
 
@@ -315,6 +327,10 @@ export interface SurgeryFinancialBreakdown {
 	readonly netDoctorIncomeKopecks: bigint | number;
 }
 
+export const CANONICAL_SURGERY_BASE_KIT_COST_RUB = 1550;
+export const CANONICAL_EXTRACTION_CONSUMABLES_COST_RUB = 1200;
+export const CANONICAL_RESECTION_CONSUMABLES_COST_RUB = 1400;
+
 export function calculateSurgeryFinancials(params: {
 	scenario: SurgeryScenarioType;
 	implantBrand?: string;
@@ -328,9 +344,18 @@ export function calculateSurgeryFinancials(params: {
 		const sys = getImplantSystemById(params.implantBrand || "Osstem");
 		const implantCostRub = sys.unitCostRub || 12500;
 		const implantCostKopecks = sys.implantCostKopecks ? Number(sys.implantCostKopecks) : rublesToKopecks(implantCostRub);
-		const suture = SURGERY_SUTURE_CATALOG.find((s) => s.name === params.sutureName);
+		const suture = SURGERY_SUTURE_CATALOG.find((s) =>
+			s.name === params.sutureName ||
+			(params.sutureName && (
+				s.id === params.sutureName ||
+				params.sutureName.toLowerCase().includes("prolene") ||
+				params.sutureName.toLowerCase().includes("викрил") ||
+				params.sutureName.toLowerCase().includes("пга") ||
+				params.sutureName.toLowerCase().includes("монофиламент")
+			))
+		);
 		const sutureCost = suture?.unitPriceRub ?? 950;
-		const baseKitCost = 1550;
+		const baseKitCost = CANONICAL_SURGERY_BASE_KIT_COST_RUB;
 		const consumablesCostRub = sutureCost + baseKitCost;
 		const consumablesCostKopecks = rublesToKopecks(consumablesCostRub);
 		const operationPriceKopecks = rublesToKopecks(priceRub);
@@ -350,14 +375,39 @@ export function calculateSurgeryFinancials(params: {
 			netDoctorIncomeKopecks: doctorGrossMarginKopecks,
 		};
 	}
-	let consumablesCostRub = 1200;
+	let consumablesCostRub = CANONICAL_EXTRACTION_CONSUMABLES_COST_RUB;
 	if (params.scenario === "sinus_gbr") {
-		const graft = SURGERY_GRAFT_CATALOG.find((g) => g.name === params.graftName) || SURGERY_GRAFT_CATALOG[0];
-		const membrane = SURGERY_MEMBRANE_CATALOG.find((m) => m.name === params.membraneName) || SURGERY_MEMBRANE_CATALOG[0];
-		const suture = SURGERY_SUTURE_CATALOG.find((s) => s.name === params.sutureName);
-		consumablesCostRub = (graft?.unitPriceRub ?? 8500) + (membrane?.unitPriceRub ?? 9800) + (suture?.unitPriceRub ?? 950) + 1500;
+		const graft = SURGERY_GRAFT_CATALOG.find((g) =>
+			g.name === params.graftName ||
+			(params.graftName && (
+				g.id === params.graftName ||
+				params.graftName.toLowerCase().includes("bio-oss") ||
+				params.graftName.toLowerCase().includes("ксено")
+			))
+		) || SURGERY_GRAFT_CATALOG[0];
+
+		const membrane = SURGERY_MEMBRANE_CATALOG.find((m) =>
+			m.name === params.membraneName ||
+			(params.membraneName && (
+				m.id === params.membraneName ||
+				params.membraneName.toLowerCase().includes("bio-gide") ||
+				params.membraneName.toLowerCase().includes("коллаген")
+			))
+		) || SURGERY_MEMBRANE_CATALOG[0];
+
+		const suture = SURGERY_SUTURE_CATALOG.find((s) =>
+			s.name === params.sutureName ||
+			(params.sutureName && (
+				s.id === params.sutureName ||
+				params.sutureName.toLowerCase().includes("prolene") ||
+				params.sutureName.toLowerCase().includes("викрил") ||
+				params.sutureName.toLowerCase().includes("пга") ||
+				params.sutureName.toLowerCase().includes("монофиламент")
+			))
+		);
+		consumablesCostRub = (graft?.unitPriceRub ?? 8500) + (membrane?.unitPriceRub ?? 9800) + (suture?.unitPriceRub ?? 950) + CANONICAL_SURGERY_BASE_KIT_COST_RUB;
 	} else if (params.scenario === "resection_periostotomy") {
-		consumablesCostRub = 1400;
+		consumablesCostRub = CANONICAL_RESECTION_CONSUMABLES_COST_RUB;
 	}
 	const operationPriceKopecks = rublesToKopecks(priceRub);
 	const consumablesCostKopecks = rublesToKopecks(consumablesCostRub);
@@ -402,7 +452,7 @@ export function buildStandardExtractionProtocolText(params: {
 	const toothStr = params.toothFdi ? `зуба FDI #${params.toothFdi}` : "зуба";
 	const complexity = params.complexity ?? "simple";
 	const hemo = params.hemostasis ?? ["alvogyl", "tampon"];
-	const suture = params.sutureMaterial || "Викрил 4-0";
+	const suture = params.sutureMaterial || "ПГА 4-0";
 	const hemoParts: string[] = [];
 	if (hemo.includes("alvogyl")) hemoParts.push("в лунку внесен антисептический компресс Альвожил");
 	if (hemo.includes("hemostatic_sponge")) hemoParts.push("лунка заполнена рассасывающейся гемостатической коллагеновой губкой");
@@ -433,7 +483,7 @@ export function buildStandardImplantationProtocolText(params: StandardImplantati
 	const densityStr = params.boneDensity ? ` Плотность кости по Misch: ${params.boneDensity}.` : "";
 	const lotSnStr = params.lotNumber || params.serialNumber ? ` LOT: ${params.lotNumber || "—"}, SN: ${params.serialNumber || "—"}.` : "";
 	const capStr = params.capType === "plug" ? "Установлен винт-заглушка (двухэтапный протокол с ушиванием наглухо)." : "Установлен формирователь десны (ФДМ).";
-	const suture = params.sutureMaterial || "Prolene 4-0";
+	const suture = params.sutureMaterial || "Монофиламент 4-0";
 	const xrayStr = params.postOpXray !== false ? " Выполнен контрольный прицельный радиовизиографический снимок: положение имплантата правильное, субкрестально 0.5 мм." : "";
 	return `Инфильтрационная анестезия Артикаин 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка в области ${toothStr}, отслоен слизисто-надкостничный лоскут. Препарирование ложа фрезами по хирургическому протоколу ${brand} с обильным охлаждением стерильным 0.9% NaCl (800 об/мин). Установлен дентальный имплантат ${brand}${model} Ø ${dia} × ${len} мм.${densityStr}${lotSnStr} Первичная торк-стабильность ${torque} Н·см, RFA стабильность ISQ ${isq} (высокая первичная фиксация). ${capStr} Мобилизация лоскута, наложены узловые швы ${suture} без натяжения. Гемостаз полный.${xrayStr} Рекомендации выданы.`;
 }
@@ -500,7 +550,7 @@ export function getExtractionSurgicalServices(params: {
 	}
 
 	if (comp === "complex" || comp === "impacted_dystopic" || comp === "socket_preservation" || hemo.includes("vicryl_suture")) {
-		const sutName = params.sutureMaterial || "Викрил 4-0";
+		const sutName = params.sutureMaterial || "ПГА 4-0";
 		items.push({
 			code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL,
 			nameRu: `Наложение шва на слизистую оболочку рта (${sutName})`,
@@ -589,8 +639,8 @@ export function getSinusGbrSurgicalServices(params: { isClosedSinus: boolean; to
 	items.push(
 		{
 			code: EXTRACTION_SURGICAL_CODES.SUTURE_VICRYL,
-			nameRu: "Шов ПГА/Викрил 4-0",
-			name: "Шов ПГА/Викрил 4-0",
+			nameRu: "Шовный материал ПГА 4-0",
+			name: "Шовный материал ПГА 4-0",
 			priceRub: 1500,
 			priceKopecks: 150000n,
 			quantity: 1,
