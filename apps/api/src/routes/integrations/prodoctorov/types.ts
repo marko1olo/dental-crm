@@ -134,6 +134,39 @@ export const webhookPayloadSchema = z
 
 export type WebhookPayload = z.infer<typeof webhookPayloadSchema>;
 
+export const medflexSettingsUpdateSchema = z
+	.object({
+		id: z.string().uuid().optional(),
+		organizationId: z.string().uuid().optional(),
+		clinicExternalId: z.string().trim().min(1).max(120).optional(),
+		apiKey: z.string().max(500).optional(),
+		webhookSecret: z.string().max(500).optional(),
+		isActive: z.boolean().optional(),
+		autoConfirmBookings: z.boolean().optional(),
+		defaultChairId: z.string().uuid().or(z.literal("")).nullable().optional(),
+		createdAt: z.union([z.string(), z.date()]).optional(),
+		updatedAt: z.union([z.string(), z.date()]).optional(),
+	})
+	.strict();
+
+export type MedflexSettingsUpdateBody = z.infer<typeof medflexSettingsUpdateSchema>;
+
+export const medflexDoctorMappingItemSchema = z
+	.object({
+		staffId: z.string().uuid(),
+		externalDoctorId: z.string().trim().max(120),
+		isSyncEnabled: z.boolean().optional(),
+	})
+	.strict();
+
+export const medflexDoctorMappingsBodySchema = z
+	.object({
+		mappings: z.array(medflexDoctorMappingItemSchema).max(500),
+	})
+	.strict();
+
+export type MedflexDoctorMappingsBody = z.infer<typeof medflexDoctorMappingsBodySchema>;
+
 export interface ProdoctorovSlotItem {
 	startsAt: string;
 	endsAt: string;

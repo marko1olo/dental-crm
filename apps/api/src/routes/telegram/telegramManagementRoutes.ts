@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	createDenteTelegramLinkCodeSchema, denteTelegramChatLinkPublicSchema,
 	denteTelegramChatLinkStatusSchema, denteTelegramLinkCodeStatusSchema,
@@ -573,41 +574,54 @@ export function registerTelegramBillingRoutes(
 			const runtimeResult = resolveTelegramRuntimeContext(effectiveRequestedOrgId);
 			const organizationId = runtimeResult.ok
 				? runtimeResult.context.organizationId
-				: (effectiveRequestedOrgId || "default");
+				: effectiveRequestedOrgId;
+			if (!organizationId) {
+				return reply.code(400).send({
+					error: "TelegramBillingOrganizationRequired",
+					message: "Не удалось определить организацию для биллинга Telegram-бота.",
+				});
+			}
 
 			const usage = TelegramBotBillingService.getBillingUsage(organizationId);
 			return usage;
 		},
 	);
 
+	const telegramBillingChangePlanSchema = z
+		.object({
+			planId: z.string().trim().min(1),
+			organizationId: z.string().trim().min(1).optional(),
+		})
+		.strict();
+
+	const isValidTelegramBotSaasTierId = (
+		value: string,
+	): value is TelegramBotSaasTierId =>
+		Object.prototype.hasOwnProperty.call(TELEGRAM_BOT_SAAS_TIERS, value);
+
 	// 3. Смена тарифного плана клиники
-	app.post<{
-		Body: {
-			planId: TelegramBotSaasTierId;
-			organizationId?: string;
-		};
-	}>(
+	app.post(
 		"/api/telegram/billing/change-plan",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
-			const body = request.body;
-			if (!body || typeof body !== "object") {
+			const parsedBody = telegramBillingChangePlanSchema.safeParse(request.body);
+			if (!parsedBody.success) {
 				return reply.code(400).send({
 					error: "TelegramBillingInvalidInput",
-					message: "Необходимо передать тело запроса с параметром planId.",
+					message: "Необходимо передать корректное тело запроса с параметром planId.",
 				});
 			}
 
-			const targetPlanId = body.planId;
-			if (!targetPlanId || !TELEGRAM_BOT_SAAS_TIERS[targetPlanId]) {
+			const targetPlanId = parsedBody.data.planId;
+			if (!isValidTelegramBotSaasTierId(targetPlanId)) {
 				return reply.code(400).send({
 					error: "TelegramBillingInvalidPlan",
-					message: `Недопустимый тарифный план '${String(targetPlanId)}'. Доступны: free, pro, enterprise.`,
+					message: `Недопустимый тарифный план '${targetPlanId}'. Доступны: free, pro, enterprise.`,
 				});
 			}
 
 			const identity = getRequestIdentity(request);
-			const requestedOrgId = body.organizationId?.trim();
+			const requestedOrgId = parsedBody.data.organizationId;
 			if (
 				identity.verified &&
 				identity.organizationId &&
@@ -626,7 +640,13 @@ export function registerTelegramBillingRoutes(
 			const runtimeResult = resolveTelegramRuntimeContext(effectiveRequestedOrgId);
 			const organizationId = runtimeResult.ok
 				? runtimeResult.context.organizationId
-				: (effectiveRequestedOrgId || "default");
+				: effectiveRequestedOrgId;
+			if (!organizationId) {
+				return reply.code(400).send({
+					error: "TelegramBillingOrganizationRequired",
+					message: "Не удалось определить организацию для смены тарифа Telegram-бота.",
+				});
+			}
 
 			const updated = TelegramBotBillingService.changePlan({
 				organizationId,

@@ -9,6 +9,7 @@ import crypto from "node:crypto";
 import { isDemoEntityId, isDemoOrganizationId } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import { patients, users } from "../../db/schema.js";
 
 const UUID_REGEX =
@@ -44,7 +45,7 @@ export function isPerioDemoContext(
 }
 
 export async function ensurePerioPatientExists(
-	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	orgId: string,
 	patientId: string,
 	rawPatientId?: string | null,

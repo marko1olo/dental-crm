@@ -267,7 +267,7 @@ export const createDenteTelegramLinkCodeSchema = z.object({
 	botConfigId: z.string().trim().min(1).max(160).optional(),
 	ttlMinutes: z.number().int().min(5).max(1440).optional(),
 	createdByUserId: z.string().uuid().nullable().optional(),
-});
+}).strict();
 
 export type CreateDenteTelegramLinkCodeInput = z.infer<
 	typeof createDenteTelegramLinkCodeSchema

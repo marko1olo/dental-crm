@@ -99,7 +99,7 @@ export const createBactericidalEquipmentDtoSchema = z.object({
 	lastLampReplacementDate: z.string().optional().nullable(),
 	isCommissioned: z.boolean().default(true),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateBactericidalEquipmentDto = z.input<typeof createBactericidalEquipmentDtoSchema>;
 
 export const bactericidalLogEntrySchema = z.object({
@@ -131,7 +131,7 @@ export const createBactericidalLogEntryDtoSchema = z.object({
 	operatingMode: bactericidalOperatingModeSchema.default("continuous_presence"),
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateBactericidalLogEntryDto = z.input<typeof createBactericidalLogEntryDtoSchema>;
 
 // ─── 4. Журнал генеральных уборок и текущей дезинфекции ──────────────────────
@@ -232,7 +232,7 @@ export const createEmergencyBiohazardLogDtoSchema = z.object({
 	actSanPiNNumber: z.string().trim().max(100).optional().nullable(),
 	responsibleDoctorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateEmergencyBiohazardLogDto = z.input<typeof createEmergencyBiohazardLogDtoSchema>;
 
 // ─── 7. Журнал температурного режима и влажности (Приказ 706н) ─────────────────

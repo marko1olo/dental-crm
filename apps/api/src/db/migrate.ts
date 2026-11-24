@@ -166,12 +166,12 @@ export async function runMigrations(
 		// Scenario 1: Fresh Database -> Fast Baseline Init
 		if (isFreshDb && canonicalBaseline && options.mode !== "incremental") {
 			modeUsed = "baseline-fast";
-			console.log(
-				`[migrate:dual-mode] Обнаружена чистая БД. Применяем единый канонический baseline (${CANONICAL_BASELINE_FILE})...`,
+			process.stdout.write(
+				`[migrate:dual-mode] Обнаружена чистая БД. Применяем единый канонический baseline (${CANONICAL_BASELINE_FILE})...\n`,
 			);
 
 			if (options.dryRun) {
-				console.log(`[migrate] будет применён fast-baseline: ${CANONICAL_BASELINE_FILE}`);
+				process.stdout.write(`[migrate] будет применён fast-baseline: ${CANONICAL_BASELINE_FILE}\n`);
 				return {
 					totalFiles: migrations.length,
 					applied: 1,
@@ -207,7 +207,7 @@ export async function runMigrations(
 
 				await client.query("COMMIT;");
 				applied += 1;
-				console.log(`[migrate:dual-mode] Канонический baseline успешно применён.`);
+				process.stdout.write("[migrate:dual-mode] Канонический baseline успешно применён.\n");
 			} catch (error) {
 				await client.query("ROLLBACK;");
 				throw error;
@@ -215,8 +215,8 @@ export async function runMigrations(
 		} else if (hasExistingHistory && canonicalBaseline && !ledger.has(CANONICAL_BASELINE_FILE)) {
 			// Scenario 2: Existing Database -> Mark canonical baseline as covered
 			modeUsed = "existing-compatible";
-			console.log(
-				`[migrate:dual-mode] Обнаружена существующая БД (${ledger.size} миграций). Канонический baseline (${CANONICAL_BASELINE_FILE}) синхронизирован со схемой.`,
+			process.stdout.write(
+				`[migrate:dual-mode] Обнаружена существующая БД (${ledger.size} миграций). Канонический baseline (${CANONICAL_BASELINE_FILE}) синхронизирован со схемой.\n`,
 			);
 			if (!options.dryRun && !options.baseline) {
 				await client.query(
@@ -239,16 +239,16 @@ export async function runMigrations(
 				skipped += 1;
 				if (known !== migration.checksum) {
 					changed += 1;
-					console.warn(
+					process.stderr.write(
 						`[migrate] ИЗМЕНЁН ПОСЛЕ ПРИМЕНЕНИЯ: ${migration.name}. ` +
-							"Правка применённой миграции не догоняет базу — заведите новый файл.",
+							"Правка применённой миграции не догоняет базу — заведите новый файл.\n",
 					);
 				}
 				continue;
 			}
 
 			if (options.dryRun) {
-				console.log(`[migrate] будет применён: ${migration.name}`);
+				process.stdout.write(`[migrate] будет применён: ${migration.name}\n`);
 				applied += 1;
 				continue;
 			}
@@ -274,7 +274,7 @@ export async function runMigrations(
 					[migration.name, migration.checksum],
 				);
 				applied += 1;
-				console.log(`[migrate] применён (no-tx): ${migration.name}`);
+				process.stdout.write(`[migrate] применён (no-tx): ${migration.name}\n`);
 			} else {
 				await client.query("BEGIN;");
 				try {
@@ -287,7 +287,7 @@ export async function runMigrations(
 					);
 					await client.query("COMMIT;");
 					applied += 1;
-					console.log(`[migrate] применён: ${migration.name}`);
+					process.stdout.write(`[migrate] применён: ${migration.name}\n`);
 				} catch (error) {
 					await client.query("ROLLBACK;");
 					throw error;
@@ -297,8 +297,8 @@ export async function runMigrations(
 
 		const durationMs = Date.now() - startTime;
 		const verb = options.dryRun ? "к применению" : options.baseline ? "отмечено" : "применено";
-		console.log(
-			`[migrate] Готово. Всего файлов: ${migrations.length}, ${verb}: ${applied}, уже было: ${skipped} (${(durationMs / 1000).toFixed(2)}s).`,
+		process.stdout.write(
+			`[migrate] Готово. Всего файлов: ${migrations.length}, ${verb}: ${applied}, уже было: ${skipped} (${(durationMs / 1000).toFixed(2)}s).\n`,
 		);
 
 		return {

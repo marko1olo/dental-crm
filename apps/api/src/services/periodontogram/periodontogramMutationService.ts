@@ -9,6 +9,7 @@
 import { SEPA_PERMANENT_TEETH } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
 	patients,
 	periodontogramSnapshots,
@@ -39,28 +40,31 @@ export async function createDraftWithInitialTeeth(
 	recordedByUserId: string | null,
 	visitId?: string | null,
 	rawPatientId?: string | null,
-	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
+	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
 ) {
 	const validUserId = await resolveExistingPerioUserId(orgId, recordedByUserId);
-	const existingStates = await executor
-		.select({
-			toothNumber: toothStates.toothNumber,
-			state: toothStates.state,
-		})
-		.from(toothStates)
-		.where(
-			and(
-				eq(toothStates.organizationId, orgId),
-				eq(toothStates.patientId, patientId),
-			),
-		);
 
-	const statesMap = new Map<number, string>();
-	for (const row of existingStates) {
-		statesMap.set(row.toothNumber, row.state);
-	}
+	const executeDraftCreation = async (
+		tx: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	) => {
+		const existingStates = await tx
+			.select({
+				toothNumber: toothStates.toothNumber,
+				state: toothStates.state,
+			})
+			.from(toothStates)
+			.where(
+				and(
+					eq(toothStates.organizationId, orgId),
+					eq(toothStates.patientId, patientId),
+				),
+			);
 
-	const executeDraftCreation = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
+		const statesMap = new Map<number, string>();
+		for (const row of existingStates) {
+			statesMap.set(row.toothNumber, row.state);
+		}
+
 		await ensurePerioPatientExists(tx, orgId, patientId, rawPatientId);
 		const [newDraft] = await tx
 			.insert(periodontogramSnapshots)
@@ -110,10 +114,10 @@ export async function createDraftWithInitialTeeth(
 		};
 	};
 
-	if ("transaction" in executor && typeof executor.transaction === "function") {
-		return await executor.transaction(executeDraftCreation);
+	if (executor === db) {
+		return await withTenantCtx(orgId, async (tx) => await executeDraftCreation(tx));
 	}
-	return await executeDraftCreation(executor as Parameters<Parameters<typeof db.transaction>[0]>[0]);
+	return await executeDraftCreation(executor);
 }
 
 /**
@@ -139,7 +143,7 @@ export async function upsertPatientFullPeriodontogram({
 			recordedByUserId,
 		);
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(orgId, async (tx) => {
 			// Проверяем существование пациента в базе данных (Мандаты 8z / 8wy)
 			const [existingPatient] = await tx
 				.select({ id: patients.id })

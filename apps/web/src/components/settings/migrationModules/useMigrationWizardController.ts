@@ -322,7 +322,6 @@ export function useMigrationWizardController() {
 					body: JSON.stringify({
 						dryRun,
 						sourceSystem: "legacy",
-						columnMap,
 					}),
 				});
 				const result = await readResponse<{

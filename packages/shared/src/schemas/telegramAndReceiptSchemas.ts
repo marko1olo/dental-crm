@@ -282,7 +282,7 @@ export const patientIntakeQuestionnairePayloadSchema = z.object({
 	emergencyContact: z.string().trim().max(240).nullable().optional(),
 	additionalNotes: z.string().trim().max(800).nullable().optional(),
 	accuracyConfirmed: z.literal(true),
-});
+}).strict();
 
 export type PatientIntakeQuestionnairePayload = z.infer<
 	typeof patientIntakeQuestionnairePayloadSchema
@@ -315,7 +315,7 @@ export const paidMedicalServicesContractPayloadSchema = z.object({
 	patientReceivedPriceAndServiceList: z.literal(true),
 	patientUnderstandsPaidBasis: z.literal(true),
 	changesRequireWrittenAgreement: z.literal(true),
-});
+}).strict();
 
 export type PaidMedicalServicesContractPayload = z.infer<
 	typeof paidMedicalServicesContractPayloadSchema
@@ -348,7 +348,7 @@ export const completedWorksActPayloadSchema = z.object({
 	finalServiceScopeConfirmed: z.literal(true),
 	fiscalReceiptsVerified: z.literal(true),
 	patientAcceptedWorks: z.literal(true),
-});
+}).strict();
 
 export type CompletedWorksActPayload = z.infer<
 	typeof completedWorksActPayloadSchema
@@ -472,6 +472,7 @@ export const paymentReceiptPayloadSchema = z
 		payerIdentityVerified: z.literal(true),
 		receiptDoesNotReplaceFiscalReceipt: z.literal(true),
 	})
+	.strict()
 	.superRefine((value, context) => {
 		if (
 			new Set(value.selectedPaymentIds).size !== value.selectedPaymentIds.length

@@ -30,7 +30,12 @@ import {
 	requireClinicalReadContext,
 } from "../../../security/tenantContext.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
-import { slotsQuerySchema, webhookPayloadSchema } from "./types.js";
+import {
+	medflexDoctorMappingsBodySchema,
+	medflexSettingsUpdateSchema,
+	slotsQuerySchema,
+	webhookPayloadSchema,
+} from "./types.js";
 
 /**
  * GET /api/integrations/prodoctorov/pricelist.xml (и MedFlex алиас без параметра)
@@ -374,16 +379,25 @@ export async function handleUpdateSettings(
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const body = req.body as Record<string, unknown>;
+	const parsedBody = medflexSettingsUpdateSchema.safeParse(req.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: parsedBody.error.issues[0]?.message ?? "Некорректные параметры настроек МедФлекс.",
+		});
+	}
+	const body = parsedBody.data;
 
 	return await withTenantCtx(organizationId, async (tx) => {
+		const normalizedChairId =
+			body.defaultChairId === "" ? null : body.defaultChairId;
 		const patch: Parameters<typeof updateMedflexSettings>[2] = {
-			...(typeof body.clinicExternalId === "string" ? { clinicExternalId: body.clinicExternalId } : {}),
-			...(typeof body.apiKey === "string" ? { apiKey: body.apiKey } : {}),
-			...(typeof body.webhookSecret === "string" ? { webhookSecret: body.webhookSecret } : {}),
-			...(typeof body.isActive === "boolean" ? { isActive: body.isActive } : {}),
-			...(typeof body.autoConfirmBookings === "boolean" ? { autoConfirmBookings: body.autoConfirmBookings } : {}),
-			...(body.defaultChairId === null || typeof body.defaultChairId === "string" ? { defaultChairId: body.defaultChairId } : {}),
+			...(body.clinicExternalId !== undefined ? { clinicExternalId: body.clinicExternalId } : {}),
+			...(body.apiKey !== undefined ? { apiKey: body.apiKey } : {}),
+			...(body.webhookSecret !== undefined ? { webhookSecret: body.webhookSecret } : {}),
+			...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
+			...(body.autoConfirmBookings !== undefined ? { autoConfirmBookings: body.autoConfirmBookings } : {}),
+			...(normalizedChairId !== undefined ? { defaultChairId: normalizedChairId } : {}),
 		};
 
 		const updated = await updateMedflexSettings(tx, organizationId, patch);
@@ -395,9 +409,27 @@ export async function handleUpdateSettings(
  * POST /api/integrations/medflex/settings/generate-secret
  */
 export async function handleGenerateSecret(
-	_req: FastifyRequest,
+	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
+	const context = await requireClinicalMutationContext(
+		req,
+		reply,
+		"medflex generate secret",
+	);
+	if (!context) return reply;
+
+	const idempotencyKey = extractIdempotencyKey(req);
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+		});
+	}
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const newSecret = generateSecureWebhookSecret();
 	return reply.send({ success: true, secret: newSecret });
 }
@@ -449,22 +481,19 @@ export async function handleSaveDoctorMappings(
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const body = req.body as {
-		mappings?: Array<{
-			staffId: string;
-			externalDoctorId: string;
-			isSyncEnabled?: boolean;
-		}>;
-	};
-
-	if (!body?.mappings || !Array.isArray(body.mappings)) {
+	const parsedBody = medflexDoctorMappingsBodySchema.safeParse(req.body);
+	if (!parsedBody.success) {
 		return reply.status(400).send({
 			error: "InvalidPayload",
-			message: "Ожидается массив mappings",
+			message: parsedBody.error.issues[0]?.message ?? "Ожидается корректный массив mappings",
 		});
 	}
 
-	const mappings = body.mappings;
+	const mappings = parsedBody.data.mappings.map((m) => ({
+		staffId: m.staffId,
+		externalDoctorId: m.externalDoctorId,
+		...(m.isSyncEnabled !== undefined ? { isSyncEnabled: m.isSyncEnabled } : {}),
+	}));
 	return await withTenantCtx(organizationId, async (tx) => {
 		const result = await saveMedflexDoctorMappings(tx, organizationId, mappings);
 		return reply.send({ success: true, ...result });

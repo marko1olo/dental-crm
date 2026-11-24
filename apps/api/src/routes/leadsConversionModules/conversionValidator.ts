@@ -15,7 +15,7 @@ export const convertLeadSchema = z.object({
 	comment: z.string().optional().nullable(),
 	consentMedical: z.boolean().optional().nullable(),
 	consentMarketing: z.boolean().optional().nullable(),
-});
+}).strict();
 
 export type ConvertLeadPayload = z.infer<typeof convertLeadSchema>;
 

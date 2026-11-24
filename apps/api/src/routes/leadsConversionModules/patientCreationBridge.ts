@@ -8,6 +8,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { normalizePhone } from "@dental/shared";
 import { z } from "zod";
 import type { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { crmLeads, patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
@@ -17,7 +18,7 @@ import { broadcastLeadConversion, recordLeadStageTransition } from "./leadStageT
 import { saveLeadCommunicationConsents } from "./leadConsentBridge.js";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type DbExecutor = typeof db | DbTransaction;
+export type DbExecutor = TenantDb | typeof db | DbTransaction;
 
 export async function resolveOrCreatePatientFromLead(
 	tx: DbExecutor,
@@ -87,9 +88,9 @@ export async function createPatientFromLead(params: {
 	reply: FastifyReply;
 	req?: FastifyRequest;
 }) {
-	const { db, wsBroker, organizationId, leadId, reply, req } = params;
+	const { wsBroker, organizationId, leadId, reply, req } = params;
 
-	const result = await db.transaction(async (tx) => {
+	const result = await withTenantCtx(organizationId, async (tx) => {
 		const [lead] = await tx
 			.select()
 			.from(crmLeads)

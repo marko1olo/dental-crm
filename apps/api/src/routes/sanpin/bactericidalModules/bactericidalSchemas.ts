@@ -15,7 +15,7 @@ export const bactericidalAutopilotBodySchema = z
 		equipmentId: z.string().optional(),
 		notes: z.string().optional(),
 	})
-	.passthrough();
+	.strict();
 
 export type BactericidalAutopilotBody = z.infer<typeof bactericidalAutopilotBodySchema>;
 
@@ -25,7 +25,7 @@ export const morningShiftBodySchema = z
 		equipmentId: z.string().optional(),
 		notes: z.string().optional(),
 	})
-	.passthrough();
+	.strict();
 
 export type MorningShiftBody = z.infer<typeof morningShiftBodySchema>;
 
@@ -36,7 +36,7 @@ export const eveningShiftBodySchema = z
 		equipmentId: z.string().optional(),
 		notes: z.string().optional(),
 	})
-	.passthrough();
+	.strict();
 
 export type EveningShiftBody = z.infer<typeof eveningShiftBodySchema>;
 
@@ -49,7 +49,7 @@ export const updateBactericidalEquipmentBodySchema = z
 		serialNumber: z.string().optional(),
 		maxLampHours: z.number().optional(),
 	})
-	.passthrough();
+	.strict();
 
 export type UpdateBactericidalEquipmentBody = z.infer<typeof updateBactericidalEquipmentBodySchema>;
 

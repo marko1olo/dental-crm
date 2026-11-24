@@ -274,15 +274,38 @@ test("E2E CLI execution: --json produces valid parseable JSON report", () => {
 
 test("E2E CLI execution: --strict with defects returns Exit Code 1", () => {
 	const scriptPath = path.resolve("scripts/dice-audit.mjs");
-	// Запускаем аудит дверей, где заведомо есть мутации без заголовка Idempotency-Key
-	const res = spawnSync("node", [scriptPath, "--list", "doors", "--samples", "5", "--strict"], {
-		encoding: "utf8",
-	});
-	assert.equal(res.status, 1, "При обнаружении дефектов с --strict CLI ОБЯЗАН завершаться с Exit Code 1");
-	assert.ok(
-		res.stdout.includes("ВЕРДИКТ") || res.stdout.includes("РЕЙТИНГ") || res.stderr.includes("ШЛЮЗ"),
-		"Вывод обязан содержать результат проверки или манифест отказа",
-	);
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-strict-defects-"));
+	try {
+		const routesDir = path.join(tmpDir, "apps/api/src/routes");
+		mkdirSync(routesDir, { recursive: true });
+		writeFileSync(
+			path.join(routesDir, "brokenMutationRoute.ts"),
+			[
+				'import type { FastifyInstance } from "fastify";',
+				"export async function brokenMutationRoutes(app: FastifyInstance) {",
+				'  app.post("/api/broken/pay", async (req, reply) => {',
+				'    await db.insert("payments").values({ amount: req.body });',
+				'    await db.update("invoices").set({ status: "paid" });',
+				"    return reply.send({ ok: true });",
+				"  });",
+				"}",
+			].join("\n"),
+			"utf8",
+		);
+
+		const res = spawnSync(
+			"node",
+			[scriptPath, "--root", tmpDir, "--list", "doors", "--samples", "5", "--strict"],
+			{ encoding: "utf8" },
+		);
+		assert.equal(res.status, 1, "При обнаружении дефектов с --strict CLI ОБЯЗАН завершаться с Exit Code 1");
+		assert.ok(
+			res.stdout.includes("ВЕРДИКТ") || res.stdout.includes("РЕЙТИНГ") || res.stderr.includes("ШЛЮЗ"),
+			"Вывод обязан содержать результат проверки или манифест отказа",
+		);
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
 });
 
 test("E2E CLI execution: without --strict returns Exit Code 0 even with warnings", () => {

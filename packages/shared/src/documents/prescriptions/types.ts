@@ -61,7 +61,7 @@ export const prescriptionDrugItemSchema = z.object({
 		"preferential_somatic",
 		"other",
 	]).default("nsaid"),
-});
+}).strict();
 export type PrescriptionDrugItem = z.infer<typeof prescriptionDrugItemSchema>;
 
 /** Реквизиты штампа медицинской организации */
@@ -73,7 +73,7 @@ export const prescriptionClinicStampSchema = z.object({
 	clinicInn: z.string().trim().max(16).nullable().optional(),
 	medicalLicenseNumber: z.string().trim().max(64).nullable().optional(),
 	medicalLicenseDate: z.string().trim().max(32).nullable().optional(),
-});
+}).strict();
 export type PrescriptionClinicStamp = z.infer<typeof prescriptionClinicStampSchema>;
 
 /** Электронная подпись врача (УКЭП) */
@@ -91,7 +91,7 @@ export const prescriptionDoctorUkepSchema = z.object({
 	signatureAlgorithm: z.string().trim().max(64).default("ГОСТ Р 34.10-2012 (256 бит)"),
 	egiszDocumentId: z.string().trim().max(64).nullable().optional(),
 	qrVerificationUrl: z.string().trim().max(256).nullable().optional(),
-});
+}).strict();
 export type PrescriptionDoctorUkep = z.infer<typeof prescriptionDoctorUkepSchema>;
 
 /** Реквизиты льготы (для формы 148-1/у-04(л)) */
@@ -103,7 +103,7 @@ export const prescriptionPreferentialDetailsSchema = z.object({
 	patientOmsPolicy: z.string().trim().min(16).max(20), // 16-значный полис ОМС
 	fundingSource: z.enum(["federal", "regional", "municipal"]).default("federal"),
 	medicalCardNumber: z.string().trim().min(1).max(64),
-});
+}).strict();
 export type PrescriptionPreferentialDetails = z.infer<typeof prescriptionPreferentialDetailsSchema>;
 
 /** Универсальный структурированный Payload рецептурного бланка (Формы 107-1/у, 148-1/у-88, 148-1/у-04(л)) */
@@ -131,7 +131,7 @@ export const form107_1uPayloadSchema = z.object({
 	notes: z.string().trim().max(500).nullable().optional(),
 	ukepSignature: prescriptionDoctorUkepSchema.nullable().optional(),
 	withStampAndSignature: z.boolean().default(true).optional(),
-});
+}).strict();
 export type Form107_1uPayload = z.infer<typeof form107_1uPayloadSchema>;
 
 /** Payload рецептурного бланка строгой отчетности № 148-1/у-88 (ПКУ) */
@@ -185,7 +185,7 @@ export const form148_1u04lPayloadSchema = z.object({
 	diagnosisIcd10Code: z.string().trim().max(32).nullable().optional(),
 	notes: z.string().trim().max(500).nullable().optional(),
 	ukepSignature: prescriptionDoctorUkepSchema.nullable().optional(),
-});
+}).strict();
 export type Form148_1u04lPayload = z.infer<typeof form148_1u04lPayloadSchema>;
 
 /**

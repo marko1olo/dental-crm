@@ -193,45 +193,55 @@ export function failFromPhaseError(
 	return fail(reply, 422, "MigrationFailed", message);
 }
 
-export const mapRequestSchema = z.object({
-	entityKind: migrationEntityKindSchema.optional(),
-	vendorProfile: z.string().max(60).optional(),
-	allowLlm: z.boolean().default(true),
-	mappingOverrides: z
-		.array(
-			z.object({
-				sourceColumn: z.string().min(1),
-				targetField: migrationTargetFieldSchema,
-			}),
-		)
-		.default([]),
-});
+export const mapRequestSchema = z
+	.object({
+		entityKind: migrationEntityKindSchema.optional(),
+		vendorProfile: z.string().max(60).optional(),
+		allowLlm: z.boolean().default(true),
+		mappingOverrides: z
+			.array(
+				z
+					.object({
+						sourceColumn: z.string().min(1),
+						targetField: migrationTargetFieldSchema,
+					})
+					.strict(),
+			)
+			.default([]),
+	})
+	.strict();
 export type MapRequest = z.infer<typeof mapRequestSchema>;
 
-export const discoverRequestSchema = z.object({
-	/**
-	 * Корни обхода. Пусто — берутся диски и домашний каталог. Указывать корень
-	 * стоит всегда, когда он известен: обход всего диска занимает десятки секунд.
-	 */
-	roots: z.array(z.string().min(1).max(400)).max(10).default([]),
-	maxDepth: z.number().int().min(1).max(10).default(6),
-	timeBudgetMs: z.number().int().min(1000).max(180_000).default(45_000),
-});
+export const discoverRequestSchema = z
+	.object({
+		/**
+		 * Корни обхода. Пусто — берутся диски и домашний каталог. Указывать корень
+		 * стоит всегда, когда он известен: обход всего диска занимает десятки секунд.
+		 */
+		roots: z.array(z.string().min(1).max(400)).max(10).default([]),
+		maxDepth: z.number().int().min(1).max(10).default(6),
+		timeBudgetMs: z.number().int().min(1000).max(180_000).default(45_000),
+	})
+	.strict();
 export type DiscoverRequest = z.infer<typeof discoverRequestSchema>;
 
-export const dicomInspectSchema = z.object({
-	filePath: z.string().min(1).max(600),
-});
+export const dicomInspectSchema = z
+	.object({
+		filePath: z.string().min(1).max(600),
+	})
+	.strict();
 export type DicomInspectRequest = z.infer<typeof dicomInspectSchema>;
 
-export const executeRequestSchema = z.object({
-	/**
-	 * Значение по умолчанию true не случайно: перенос чужой базы начинается с
-	 * сухого прогона. Запись в боевые таблицы требует явного dryRun: false.
-	 */
-	dryRun: z.boolean().default(true),
-	sourceSystem: z.string().min(1).max(60).default("legacy"),
-});
+export const executeRequestSchema = z
+	.object({
+		/**
+		 * Значение по умолчанию true не случайно: перенос чужой базы начинается с
+		 * сухого прогона. Запись в боевые таблицы требует явного dryRun: false.
+		 */
+		dryRun: z.boolean().default(true),
+		sourceSystem: z.string().min(1).max(60).default("legacy"),
+	})
+	.strict();
 export type ExecuteRequest = z.infer<typeof executeRequestSchema>;
 
 /** Ответ о состоянии прогона. Один формат для всех опросов. */

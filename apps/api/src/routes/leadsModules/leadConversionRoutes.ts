@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -28,6 +29,12 @@ export async function registerLeadConversionRoutes(app: FastifyInstance): Promis
 		}
 
 		const { id } = req.params as { id: string };
+		if (!z.string().uuid().safeParse(id).success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор обращения.",
+			});
+		}
 		const convertParsed = convertLeadSchema.safeParse(req.body);
 		if (!convertParsed.success) {
 			return reply.code(400).send({
@@ -64,6 +71,12 @@ export async function registerLeadConversionRoutes(app: FastifyInstance): Promis
 		}
 
 		const { id } = req.params as { id: string };
+		if (!z.string().uuid().safeParse(id).success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор обращения.",
+			});
+		}
 		return await createPatientFromLead({
 			db,
 			wsBroker,

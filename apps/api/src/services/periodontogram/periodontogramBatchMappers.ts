@@ -8,6 +8,7 @@
 
 import { sql } from "drizzle-orm";
 import type { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -69,7 +70,7 @@ export interface UpsertPatientFullPeriodontogramParams {
 }
 
 export async function upsertSingleSiteRecord(
-	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	snapshotId: string,
 	toothId: string | null,
 	toothNumber: number,
@@ -129,7 +130,7 @@ export async function upsertSingleSiteRecord(
  * Атомарный пакетный upsert сайтов зондирования (до 192 точек за 1 SQL-запрос).
  */
 export async function batchUpsertSites(
-	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	snapshotId: string,
 	sites: SiteItemInput[],
 	toothIdMap?: Map<number, string>,
@@ -195,7 +196,7 @@ export async function batchUpsertSites(
  * Атомарный пакетный update параметров зубов (до 32 зубов за 1 SQL-запрос).
  */
 export async function batchUpsertTeeth(
-	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	snapshotId: string,
 	teeth: PatchToothInput[],
 ): Promise<Array<typeof periodontogramTeeth.$inferSelect>> {

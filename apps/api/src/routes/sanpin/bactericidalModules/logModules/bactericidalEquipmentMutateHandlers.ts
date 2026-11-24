@@ -1,12 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { bactericidalEquipments } from "../../../../db/schema.js";
 import {
 	createBactericidalEquipmentDtoSchema,
-	type UpdateBactericidalEquipmentBody,
+	updateBactericidalEquipmentBodySchema,
 } from "../bactericidalSchemas.js";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function handleCreateBactericidalEquipment(
 	req: FastifyRequest,
@@ -28,26 +30,28 @@ export async function handleCreateBactericidalEquipment(
 	}
 	const data = parsed.data;
 
-	const [created] = await db
-		.insert(bactericidalEquipments)
-		.values({
-			organizationId,
-			roomName: data.roomName,
-			roomVolumeM3: String(data.roomVolumeM3),
-			roomAreaM2: data.roomAreaM2 ? String(data.roomAreaM2) : null,
-			deviceBrand: data.deviceBrand,
-			serialNumber: data.serialNumber,
-			deviceType: data.deviceType,
-			lampType: data.lampType,
-			lampCount: data.lampCount,
-			maxLampHours: data.maxLampHours,
-			totalOperatingHours: String(data.totalOperatingHours || 0),
-			lampStatus: "normal",
-			lastLampReplacementDate: data.lastLampReplacementDate ?? null,
-			isCommissioned: data.isCommissioned ?? true,
-			notes: data.notes ?? null,
-		})
-		.returning();
+	const [created] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.insert(bactericidalEquipments)
+			.values({
+				organizationId,
+				roomName: data.roomName,
+				roomVolumeM3: String(data.roomVolumeM3),
+				roomAreaM2: data.roomAreaM2 ? String(data.roomAreaM2) : null,
+				deviceBrand: data.deviceBrand,
+				serialNumber: data.serialNumber,
+				deviceType: data.deviceType,
+				lampType: data.lampType,
+				lampCount: data.lampCount,
+				maxLampHours: data.maxLampHours,
+				totalOperatingHours: String(data.totalOperatingHours || 0),
+				lampStatus: "normal",
+				lastLampReplacementDate: data.lastLampReplacementDate ?? null,
+				isCommissioned: data.isCommissioned ?? true,
+				notes: data.notes ?? null,
+			})
+			.returning(),
+	);
 
 	return reply.code(201).send(created);
 }
@@ -64,16 +68,60 @@ export async function handleUpdateBactericidalEquipment(
 	if (!organizationId) return;
 
 	const { id } = req.params;
-	const body = (req.body as UpdateBactericidalEquipmentBody) || {};
+	if (!UUID_PATTERN.test(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор оборудования (ожидается формат UUID).",
+		});
+	}
+
+	const parsedBody = updateBactericidalEquipmentBodySchema.safeParse(req.body ?? {});
+	if (!parsedBody.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: parsedBody.error.issues[0]?.message ?? "Некорректные параметры обновления оборудования.",
+		});
+	}
+	const body = parsedBody.data;
 
 	if (body.action === "replace_lamps") {
 		const today = new Date().toISOString().slice(0, 10);
-		const [updated] = await db
+		const [updated] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.update(bactericidalEquipments)
+				.set({
+					totalOperatingHours: "0.00",
+					lastLampReplacementDate: today,
+					lampStatus: "normal",
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(bactericidalEquipments.id, id),
+						eq(bactericidalEquipments.organizationId, organizationId),
+					),
+				)
+				.returning(),
+		);
+
+		if (!updated) {
+			return reply.code(404).send({
+				error: "EquipmentNotFound",
+				message: "Бактерицидное оборудование не найдено.",
+			});
+		}
+		return reply.send(updated);
+	}
+
+	const [updated] = await withTenantCtx(organizationId, async (tx) =>
+		tx
 			.update(bactericidalEquipments)
 			.set({
-				totalOperatingHours: "0.00",
-				lastLampReplacementDate: today,
-				lampStatus: "normal",
+				...(body.roomName ? { roomName: body.roomName } : {}),
+				...(body.roomVolumeM3 ? { roomVolumeM3: String(body.roomVolumeM3) } : {}),
+				...(body.deviceBrand ? { deviceBrand: body.deviceBrand } : {}),
+				...(body.serialNumber ? { serialNumber: body.serialNumber } : {}),
+				...(body.maxLampHours ? { maxLampHours: body.maxLampHours } : {}),
 				updatedAt: new Date(),
 			})
 			.where(
@@ -82,30 +130,16 @@ export async function handleUpdateBactericidalEquipment(
 					eq(bactericidalEquipments.organizationId, organizationId),
 				),
 			)
-			.returning();
+			.returning(),
+	);
 
-		return updated;
+	if (!updated) {
+		return reply.code(404).send({
+			error: "EquipmentNotFound",
+			message: "Бактерицидное оборудование не найдено.",
+		});
 	}
-
-	const [updated] = await db
-		.update(bactericidalEquipments)
-		.set({
-			...(body.roomName ? { roomName: body.roomName } : {}),
-			...(body.roomVolumeM3 ? { roomVolumeM3: String(body.roomVolumeM3) } : {}),
-			...(body.deviceBrand ? { deviceBrand: body.deviceBrand } : {}),
-			...(body.serialNumber ? { serialNumber: body.serialNumber } : {}),
-			...(body.maxLampHours ? { maxLampHours: body.maxLampHours } : {}),
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(bactericidalEquipments.id, id),
-				eq(bactericidalEquipments.organizationId, organizationId),
-			),
-		)
-		.returning();
-
-	return updated;
+	return reply.send(updated);
 }
 
 export async function handleDeleteBactericidalEquipment(
@@ -120,18 +154,35 @@ export async function handleDeleteBactericidalEquipment(
 	if (!organizationId) return;
 
 	const { id } = req.params;
-	await db
-		.update(bactericidalEquipments)
-		.set({
-			status: "decommissioned",
-			isCommissioned: false,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(bactericidalEquipments.id, id),
-				eq(bactericidalEquipments.organizationId, organizationId),
-			),
-		);
-	return { success: true, id, status: "decommissioned" };
+	if (!UUID_PATTERN.test(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор оборудования (ожидается формат UUID).",
+		});
+	}
+
+	const [deleted] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.update(bactericidalEquipments)
+			.set({
+				status: "decommissioned",
+				isCommissioned: false,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(bactericidalEquipments.id, id),
+					eq(bactericidalEquipments.organizationId, organizationId),
+				),
+			)
+			.returning({ id: bactericidalEquipments.id }),
+	);
+
+	if (!deleted) {
+		return reply.code(404).send({
+			error: "EquipmentNotFound",
+			message: "Бактерицидное оборудование не найдено.",
+		});
+	}
+	return { success: true, id: deleted.id, status: "decommissioned" };
 }

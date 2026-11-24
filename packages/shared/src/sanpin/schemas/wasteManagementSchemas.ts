@@ -51,5 +51,5 @@ export const createMedicalWasteLogDtoSchema = z.object({
 	transferActNumber: z.string().trim().max(100).optional().nullable(),
 	responsibleStaffId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateMedicalWasteLogDto = z.input<typeof createMedicalWasteLogDtoSchema>;

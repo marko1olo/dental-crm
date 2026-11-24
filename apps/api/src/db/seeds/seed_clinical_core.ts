@@ -407,17 +407,19 @@ export async function seedClinicalCore(): Promise<{
 if (process.argv[1] && process.argv[1].includes("seed_clinical_core")) {
 	seedClinicalCore()
 		.then((result) => {
-			console.log("[SEED SUCCESS] Клинический контур успешно засеян в PostgreSQL:");
-			console.log(` - Зубов/челюстей: ${result.teethCount}`);
-			console.log(` - Дефектов зубного ряда: ${result.defectsCount}`);
-			console.log(` - Категорий МКБ-10: ${result.mkbCount}`);
-			console.log(` - Рубрик шаблонов 043/у: ${result.templateCategoriesCount}`);
-			console.log(` - Клинических шаблонов 043/у: ${result.templatesCount}`);
+			process.stdout.write("[SEED SUCCESS] Клинический контур успешно засеян в PostgreSQL:\n");
+			process.stdout.write(` - Зубов/челюстей: ${result.teethCount}\n`);
+			process.stdout.write(` - Дефектов зубного ряда: ${result.defectsCount}\n`);
+			process.stdout.write(` - Категорий МКБ-10: ${result.mkbCount}\n`);
+			process.stdout.write(` - Рубрик шаблонов 043/у: ${result.templateCategoriesCount}\n`);
+			process.stdout.write(` - Клинических шаблонов 043/у: ${result.templatesCount}\n`);
 			return pool.end();
 		})
 		.then(() => process.exit(0))
 		.catch((err) => {
-			console.error("[SEED ERROR] Ошибка сидинга клинического контура:", err);
+			process.stderr.write(
+				`[SEED ERROR] Ошибка сидинга клинического контура: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
+			);
 			process.exit(1);
 		});
 }

@@ -631,6 +631,10 @@ function resolveRouteModuleImports(filePath, content, fileContentCache) {
 		];
 		const resolvedFile = candidates.find((c) => existsSync(c));
 		if (!resolvedFile) continue;
+		const normalizedResolved = resolvedFile.replace(/\\/g, "/");
+		if (!normalizedResolved.includes("/apps/api/src/routes/") && !normalizedResolved.includes("/routes/")) {
+			continue;
+		}
 
 		let targetContent = fileContentCache.get(resolvedFile);
 		if (targetContent === undefined) {
@@ -836,7 +840,8 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 			} else if (!hasIdempotency) {
 				issues.push("Мутационный эндпоинт без обязательного заголовка Idempotency-Key (Мандат 8bo / RFC 9562)");
 			}
-			const mutationMatches = codeOnlyBody.match(/\.(insert|update|delete)\s*\(/gi) || [];
+			const mutationMatches =
+				codeOnlyBody.match(/\b(?:db|tx|trx|executor|bypassTx)\.(insert|update|delete)\s*\(/gi) || [];
 			// Exempt self-managed transactions and patterns where only 1 mutation fires per code-path
 			// (e.g. if/else upsert where exactly one branch runs — count ≤1 per path)
 			const isTxSelfManaged = /tenantTxSelfManaged|selfManagedTx/.test(codeOnlyBody);

@@ -14,6 +14,7 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { loadAdditionalServerEnv } from "../../env/loadServerEnv.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { db, pool } from "../client.js";
 import { clinics, organizations } from "../schema/auth.js";
 import {
@@ -195,24 +196,29 @@ export async function ensureOrganizationExpenseReasons(
 /**
  * Главная процедура сидирования кассовых счетов и статей расходов.
  */
+const logger = createApiLogger("seedCashAndReasons");
+
 export async function seedCashAndReasons(targetOrgId?: string) {
-	console.log("=== [SEED] Starting Cash Boxes & Expense Reasons Seeding ===");
+	logger.info("=== [SEED] Starting Cash Boxes & Expense Reasons Seeding ===");
 
 	const orgs = targetOrgId
 		? await db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(eq(organizations.id, targetOrgId))
 		: await db.select({ id: organizations.id, name: organizations.name }).from(organizations);
 
 	if (orgs.length === 0) {
-		console.log("[SEED] No organizations found to seed cash accounts.");
+		logger.info("[SEED] No organizations found to seed cash accounts.");
 		return;
 	}
 
 	for (const org of orgs) {
-		console.log(`[SEED] Seeding Organization: ${org.name} (${org.id})`);
+		logger.info({ orgId: org.id, orgName: org.name }, `[SEED] Seeding Organization: ${org.name} (${org.id})`);
 
 		await db.transaction(async (tx) => {
 			const boxesResult = await ensureOrganizationCashBoxes(tx, org.id);
-			console.log(`  -> Main Cash boxes: ${boxesResult.existingCount} existed, ${boxesResult.createdCount} created.`);
+			logger.info(
+				{ existingCount: boxesResult.existingCount, createdCount: boxesResult.createdCount },
+				`Main Cash boxes: ${boxesResult.existingCount} existed, ${boxesResult.createdCount} created.`,
+			);
 
 			// Tier 3 Multi-Clinic Network check: seed dedicated branch cash desks if multiple clinics exist
 			const orgClinics = await tx
@@ -228,18 +234,26 @@ export async function seedCashAndReasons(targetOrgId?: string) {
 						branch.id,
 						branch.name,
 					);
-					console.log(
-						`  -> Branch cash boxes for "${branch.name}": ${branchBoxes.existingCount} existed, ${branchBoxes.createdCount} created.`,
+					logger.info(
+						{
+							branchName: branch.name,
+							existingCount: branchBoxes.existingCount,
+							createdCount: branchBoxes.createdCount,
+						},
+						`Branch cash boxes for "${branch.name}": ${branchBoxes.existingCount} existed, ${branchBoxes.createdCount} created.`,
 					);
 				}
 			}
 
 			const reasonsResult = await ensureOrganizationExpenseReasons(tx, org.id);
-			console.log(`  -> Expense reasons: ${reasonsResult.existingCount} existed, ${reasonsResult.createdCount} created.`);
+			logger.info(
+				{ existingCount: reasonsResult.existingCount, createdCount: reasonsResult.createdCount },
+				`Expense reasons: ${reasonsResult.existingCount} existed, ${reasonsResult.createdCount} created.`,
+			);
 		});
 	}
 
-	console.log("=== [SEED] Successfully completed Cash Boxes & Expense Reasons Seeding ===");
+	logger.info("=== [SEED] Successfully completed Cash Boxes & Expense Reasons Seeding ===");
 }
 
 // Self-executing runner if script is invoked directly
@@ -247,7 +261,7 @@ if (process.argv[1]?.endsWith("seed_cash_and_reasons.ts") || process.argv[1]?.en
 	seedCashAndReasons()
 		.then(() => pool.end())
 		.catch((err) => {
-			console.error("[SEED ERROR]", err);
+			process.stderr.write(`[SEED ERROR] ${safeLogError(err)}\n`);
 			pool.end().finally(() => process.exit(1));
 		});
 }

@@ -52,7 +52,7 @@ interface SmokeResult {
 export async function runSmokeSchema(connectionString?: string): Promise<boolean> {
 	const connStr = connectionString || process.env.DATABASE_URL;
 	if (!connStr) {
-		console.error("FATAL: DATABASE_URL is not set.");
+		process.stderr.write("FATAL: DATABASE_URL is not set.\n");
 		process.exit(1);
 	}
 
@@ -60,14 +60,14 @@ export async function runSmokeSchema(connectionString?: string): Promise<boolean
 	const client = await pool.connect();
 	const results: SmokeResult[] = [];
 
-	console.log("================================================================================");
-	console.log("          DENTE CRM: POSTGRESQL 18 SCHEMA HARDENING & BASELINE SMOKE            ");
-	console.log("================================================================================\n");
+	process.stdout.write("================================================================================\n");
+	process.stdout.write("          DENTE CRM: POSTGRESQL 18 SCHEMA HARDENING & BASELINE SMOKE            \n");
+	process.stdout.write("================================================================================\n\n");
 
 	try {
 		// 1. Database Version Check
 		const versionRes = await client.query<{ version: string }>("SELECT version();");
-		console.log(`Database Engine: ${versionRes.rows[0]?.version ?? "unknown"}`);
+		process.stdout.write(`Database Engine: ${versionRes.rows[0]?.version ?? "unknown"}\n`);
 
 		// 2. Count declared schema tables and enums
 		const declaredTables = new Set<string>();
@@ -89,8 +89,8 @@ export async function runSmokeSchema(connectionString?: string): Promise<boolean
 			}
 		}
 
-		console.log(`Declared Drizzle Tables: ${declaredTables.size}`);
-		console.log(`Declared Drizzle Enums: ${declaredEnums.size}\n`);
+		process.stdout.write(`Declared Drizzle Tables: ${declaredTables.size}\n`);
+		process.stdout.write(`Declared Drizzle Enums: ${declaredEnums.size}\n\n`);
 
 		// 3. Verify Table Materialization in PostgreSQL
 		const dbTablesRes = await client.query<{ table_name: string }>(`
@@ -208,21 +208,21 @@ export async function runSmokeSchema(connectionString?: string): Promise<boolean
 		});
 
 		// 8. Output Formatted Report
-		console.log("--------------------------------------------------------------------------------");
+		process.stdout.write("--------------------------------------------------------------------------------\n");
 		let allPass = true;
 		for (const r of results) {
 			const badge = r.status === "PASS" ? "[PASS]" : "[FAIL]";
-			console.log(`${badge.padEnd(8)} ${r.name}`);
-			console.log(`         ${r.detail}`);
+			process.stdout.write(`${badge.padEnd(8)} ${r.name}\n`);
+			process.stdout.write(`         ${r.detail}\n`);
 			if (r.status === "FAIL") allPass = false;
 		}
-		console.log("--------------------------------------------------------------------------------\n");
+		process.stdout.write("--------------------------------------------------------------------------------\n\n");
 
 		if (allPass) {
-			console.log(">>> ALL POSTGRESQL 18 SCHEMA SMOKE CHECKS PASSED (EXIT CODE 0) <<<\n");
+			process.stdout.write(">>> ALL POSTGRESQL 18 SCHEMA SMOKE CHECKS PASSED (EXIT CODE 0) <<<\n\n");
 			return true;
 		} else {
-			console.error(">>> SCHEMA SMOKE CHECKS FAILED <<<\n");
+			process.stderr.write(">>> SCHEMA SMOKE CHECKS FAILED <<<\n\n");
 			return false;
 		}
 	} finally {
@@ -239,7 +239,9 @@ if (isMain) {
 			process.exit(passed ? 0 : 1);
 		})
 		.catch((err) => {
-			console.error("Smoke check error:", err);
+			process.stderr.write(
+				`Smoke check error: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
+			);
 			process.exit(1);
 		});
 }

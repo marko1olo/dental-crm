@@ -308,13 +308,15 @@ export async function seedAll49DocumentTemplates(): Promise<{
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
 	seedAll49DocumentTemplates()
 		.then((res) => {
-			console.log(
-				`УСПЕХ: Сидировано категорий: ${res.categoriesCount}, переменных: ${res.variablesCount}, бланков: ${res.templatesCount}`,
+			process.stdout.write(
+				`УСПЕХ: Сидировано категорий: ${res.categoriesCount}, переменных: ${res.variablesCount}, бланков: ${res.templatesCount}\n`,
 			);
 			process.exit(0);
 		})
 		.catch((err) => {
-			console.error("ОШИБКА сидирования шаблонов:", err);
+			process.stderr.write(
+				`ОШИБКА сидирования шаблонов: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
+			);
 			process.exit(1);
 		});
 }

@@ -367,5 +367,24 @@ describe("MedFlex & ProDoctorov Integration Suite (Mandates 8e, 8n, Red Team)", 
 			res.statusCode === 401 || res.statusCode === 403,
 			`Expected 401/403 without auth or clinicExternalId, got ${res.statusCode}`,
 		);
+
+		const genSecretRes = await app.inject({
+			method: "POST",
+			url: "/api/integrations/medflex/settings/generate-secret",
+		});
+		assert.ok(
+			genSecretRes.statusCode === 401 || genSecretRes.statusCode === 403,
+			`Expected 401/403 on generate-secret without auth, got ${genSecretRes.statusCode}`,
+		);
+
+		const updateSettingsRes = await app.inject({
+			method: "PUT",
+			url: "/api/integrations/medflex/settings",
+			payload: { isActive: true },
+		});
+		assert.ok(
+			updateSettingsRes.statusCode === 401 || updateSettingsRes.statusCode === 403,
+			`Expected 401/403 on update-settings without auth, got ${updateSettingsRes.statusCode}`,
+		);
 	});
 });
