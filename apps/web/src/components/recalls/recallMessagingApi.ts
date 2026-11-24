@@ -1,4 +1,4 @@
-import type { PatientRecallRecord } from "./recallCycleCatalog";
+import type { PatientRecallRecord } from "./recallRecordTypes";
 import type { RecallInviteRequest, RecallInviteResponse } from "@dental/shared/recalls";
 import {
 	checkNotificationSpamCollision,

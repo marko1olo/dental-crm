@@ -1,5 +1,5 @@
 import type { PatientRecallItem, RecallChannelType } from "./recallRecordTypes";
-import { extractFirstName } from "./recallSmsAndMessaging";
+import { extractFirstName } from "./recallMessageFormatters";
 
 export function buildRecallMessageContent(
 	candidate: PatientRecallItem,

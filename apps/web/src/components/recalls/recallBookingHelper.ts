@@ -2,7 +2,7 @@ import type {
 	QuickBookingSlotInfo,
 	QuickBookingStageService,
 } from "../schedule/QuickBookingDrawerTypes";
-import type { PatientRecallRecord } from "./recallCycleCatalog";
+import type { PatientRecallRecord } from "./recallRecordTypes";
 
 /**
  * Прейскурант услуг клиники для плановых контрольных приёмов и профессиональной гигиены.

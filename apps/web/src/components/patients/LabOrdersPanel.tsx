@@ -1,7 +1,6 @@
 import React from "react";
 import { AlertCircle, FlaskConical, Loader2, Plus, RefreshCw } from "lucide-react";
 import { DentalLabOrdersView } from "../lab/DentalLabOrdersView";
-import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
 import { LabTrackingDrawer } from "../lab/LabTrackingDrawer";
 import { useLabOrdersPanelLogic } from "./useLabOrdersPanelLogic";
 import { LabOrderCardItem } from "./LabOrderCardItem";
@@ -195,26 +194,6 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 						/>
 					))}
 				</div>
-			)}
-
-			{/* Живое монтирование модального окна создания/редактирования наряда ЗТЛ */}
-			{logic.isOrderModalOpen && (
-				<DentalLabStudioModal
-					key={logic.selectedOrderForEdit?.id ? `edit-${logic.selectedOrderForEdit.id}` : `new-${patientId ?? "patient"}`}
-					isOpen={logic.isOrderModalOpen}
-					onClose={() => {
-						logic.setIsOrderModalOpen(false);
-						logic.setSelectedOrderForEdit(null);
-					}}
-					patientId={patientId ?? undefined}
-					initialTab={logic.modalInitialTab}
-					editingOrder={logic.selectedOrderForEdit ?? undefined}
-					onOrderSaved={() => {
-						logic.setIsOrderModalOpen(false);
-						logic.setSelectedOrderForEdit(null);
-						void logic.fetchOrders();
-					}}
-				/>
 			)}
 
 			{/* Живое монтирование шторки отслеживания этапов ЗТЛ */}

@@ -129,6 +129,45 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 		recommendedSegment: "ortho_therapy",
 		createdAt: "2026-08-01T12:00:00.000Z",
 	},
+	{
+		id: "promo-checkup-ct",
+		title: "Первичный чекап + КТ за 1 900 ₽",
+		badge: "Для новых",
+		status: "active",
+		category: "Диагностика",
+		discountText: "1 900 ₽ (вместо 4 500 ₽)",
+		promoCode: "CHECKUP19",
+		validUntil: "Бессрочно",
+		minInvoiceRub: 1900,
+		minInvoiceKopecks: 190000,
+		description:
+			"Диагностика врача-стоматолога с фотопротоколом, 3D КЛКТ обеих челюстей и планом лечения.",
+		conditions: [
+			"Действует только для первичных пациентов клиники",
+			"Включает заключение рентгенолога",
+		],
+		stats: {
+			reach: 0,
+			delivered: 0,
+			deliveredPercent: 0,
+			visits: 0,
+			conversionPercent: 0,
+			revenueRub: 0,
+			budgetSpentRub: 0,
+			revenueKopecks: 0,
+			budgetSpentKopecks: 0,
+			romiPercent: 0,
+		},
+		templates: {
+			sms: "{Имя}, чекап зубов + 3D КТ всего за {Скидка} в «{Клиника}». Код: {Промокод}. Запись: {Ссылка}",
+			whatsapp:
+				"Здравствуйте, {Имя}!\n\nПриглашаем на чекап в клинику *{Клиника}*: консультация + 3D КЛКТ за *{Скидка}* по коду *{Промокод}*.\nЗапись: {Ссылка}",
+			telegram:
+				"{Имя}, чекап и 3D КТ за *{Скидка}* в *{Клиника}*!\nПромокод: `{Промокод}`.\nЗапись: {Ссылка}",
+		},
+		recommendedSegment: "no_visit_6m",
+		createdAt: "2026-07-20T11:00:00.000Z",
+	},
 ];
 
 export async function readOrSeedOrganizationPromos(orgId: string): Promise<{

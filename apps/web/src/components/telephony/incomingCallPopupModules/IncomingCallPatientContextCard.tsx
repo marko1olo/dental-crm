@@ -32,7 +32,7 @@ export function IncomingCallPatientContextCard({
 			{/* Two-Line Concurrency Secondary Call Banner (Anti-Matryoshka) */}
 			{secondaryLine?.call && secondaryLine.state === "ringing" && (
 				<div
-					className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 w-full"
+					className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning-soft)] text-xs text-[var(--warning,#b45309)] w-full"
 					data-testid="incoming-secondary-line-banner"
 				>
 					<div className="flex items-center gap-1.5 min-w-0">
@@ -46,7 +46,7 @@ export function IncomingCallPatientContextCard({
 					<button
 						type="button"
 						onClick={() => handleSwitchAndAnswerSecondaryLine("expanded")}
-						className="px-2.5 py-1 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer shadow-xs min-h-[32px]"
+						className="px-2.5 py-1 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer shadow-xs min-h-[32px] max-sm:min-h-[44px]"
 						data-testid="answer-secondary-line-btn"
 						title={`Ответить со 2-й линии с удержанием Линии ${activeLineId}`}
 					>
@@ -57,7 +57,7 @@ export function IncomingCallPatientContextCard({
 
 			{secondaryLine?.call && secondaryLine.state === "held" && (
 				<div
-					className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-slate-500/10 border border-slate-500/20 text-xs text-[var(--muted,#64748b)] w-full"
+					className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink-muted)] w-full"
 					data-testid="secondary-line-held-banner"
 				>
 					<div className="flex items-center gap-1.5 min-w-0">
@@ -68,7 +68,7 @@ export function IncomingCallPatientContextCard({
 					<button
 						type="button"
 						onClick={handleResumeSecondaryLine}
-						className="px-2 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer min-h-[32px]"
+						className="px-2 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--paper-subtle,#e2e8f0)] text-[var(--ink,#0f172a)] text-[11px] font-bold shrink-0 transition-all active:scale-95 cursor-pointer min-h-[32px] max-sm:min-h-[44px]"
 						data-testid="resume-secondary-line-btn"
 						title={`Вернуться к Линии ${secondaryLine.lineId}`}
 					>

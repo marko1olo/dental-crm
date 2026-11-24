@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import {
 	readDenteClinicToken,
@@ -51,6 +52,17 @@ export interface Lead {
 		fullName: string;
 	} | null | undefined;
 	dropReason?: string | null | undefined;
+	utmSource?: string | null | undefined;
+	utmMedium?: string | null | undefined;
+	utmCampaign?: string | null | undefined;
+	utmContent?: string | null | undefined;
+	utmTerm?: string | null | undefined;
+	utm_source?: string | null | undefined;
+	utm_medium?: string | null | undefined;
+	utm_campaign?: string | null | undefined;
+	utm_content?: string | null | undefined;
+	utm_term?: string | null | undefined;
+	metadata?: Record<string, unknown> | null | undefined;
 }
 
 export interface ConvertLeadToAppointmentPayload {
@@ -163,10 +175,7 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
 }
 
 function generateIdempotencyKey(): string {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-		return crypto.randomUUID();
-	}
-	return `idem-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+	return generateUuidV7();
 }
 
 export const useLeadsStore = create<LeadsState>((set, get) => ({

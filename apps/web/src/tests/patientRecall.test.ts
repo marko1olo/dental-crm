@@ -39,7 +39,7 @@ import {
 	generateWhatsAppRecallMessage,
 	interpolateRecallTemplate,
 	sanitizePhoneNumber,
-} from "../components/recalls/recallTemplates";
+} from "../components/recalls/patientRecallEngine";
 
 describe("Patient Recall & Prophylaxis Engine - Clinical Risk Stratification", () => {
 	it("catalog contains all 6 mandatory risk-stratified clinical prophylaxis cycles", () => {

@@ -54,8 +54,8 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.select({
 			category: serviceCatalogItems.category,
 			specialty: serviceCatalogItems.specialty,
-			revenueKopecks: sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, round(${treatmentItems.priceRub} * 100)::bigint)), 0)::bigint`,
-			revenueRub: sql<number>`coalesce(sum(${treatmentItems.priceRub}), 0)`,
+			revenueKopecks: sql<number>`coalesce(sum(coalesce(nullif(${treatmentItems.priceKopecks}, 0), round(${treatmentItems.priceRub} * 100)::bigint) * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`,
+			revenueRub: sql<number>`coalesce(sum(coalesce(${treatmentItems.priceRub}, 0) * coalesce(${treatmentItems.quantity}, 1)), 0)`,
 			visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
 			patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
 		})
@@ -229,10 +229,11 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	// Платежи врача группируются строго по времени проведения платежа coalesce(payments.paidAt, payments.createdAt),
 	// а не отсекаются по дате appointments.startsAt.
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
+	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
 	const doctorRevenueSubquery = db
 		.select({
 			doctorUserId: appointments.doctorUserId,
-			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint) when ${payments.status} = 'refunded' then -abs(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)) else 0 end), 0)::bigint`.as("revenue_kopecks"),
+			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`.as("revenue_kopecks"),
 		})
 		.from(payments)
 		.leftJoin(
@@ -337,13 +338,13 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		});
 
 	// 4. Топ процедур по выручке и популярности
-	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, round(${treatmentItems.priceRub} * 100)::bigint)), 0)::bigint`;
+	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(nullif(${treatmentItems.priceKopecks}, 0), round(${treatmentItems.priceRub} * 100)::bigint) * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`;
 	const procedureStats = await db
 		.select({
 			id: treatmentItems.serviceId,
 			name: treatmentItems.title,
 			category: sql<string>`coalesce(${serviceCatalogItems.category}::text, 'therapy')`,
-			count: sql<number>`count(*)::int`,
+			count: sql<number>`coalesce(sum(coalesce(${treatmentItems.quantity}, 1)), 0)::int`,
 			revenueKopecks: procRevenueExpr,
 		})
 		.from(treatmentItems)

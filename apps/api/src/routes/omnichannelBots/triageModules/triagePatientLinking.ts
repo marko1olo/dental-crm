@@ -1,10 +1,13 @@
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
-import { messengerInboundEvents, patients } from "../../../db/schema.js";
+import { denteTelegramChatLinks, messengerInboundEvents, patients } from "../../../db/schema.js";
 import type { BotChannel } from "../../../services/bots/types.js";
 
 /**
  * Привязка активного чата к существующей или новой карте пациента.
+ * Связывание выполняется строго через профильные таблицы (messenger_inbound_events, dente_telegram_chat_links),
+ * полностью исключая загрязнение медицинского поля patients.notes техническими маркерами ботов (Мандат 8ap).
  */
 export async function handleLinkPatient(
 	orgId: string,
@@ -23,7 +26,7 @@ export async function handleLinkPatient(
 
 	if (patientId) {
 		const [existing] = await db
-			.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone, notes: patients.notes })
+			.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
 			.from(patients)
 			.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
 			.limit(1);
@@ -32,25 +35,7 @@ export async function handleLinkPatient(
 			return { ok: false, statusCode: 404, error: "PatientNotFound", message: "Пациент не найден." };
 		}
 		targetPatient = existing;
-
-		// Дописываем маркер мессенджера в notes если ещё нет
-		const marker = `${channel}:${senderId}`;
-		if (!existing.notes || !existing.notes.includes(marker)) {
-			await db
-				.update(patients)
-				.set({
-					notes: existing.notes ? `${existing.notes} • ${marker}` : marker,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(patients.organizationId, orgId),
-						eq(patients.id, existing.id),
-					),
-				);
-		}
 	} else if (createNew && createNew.fullName.trim()) {
-		const marker = `${channel}:${senderId}`;
 		const [created] = await db
 			.insert(patients)
 			.values({
@@ -58,7 +43,7 @@ export async function handleLinkPatient(
 				fullName: createNew.fullName.trim(),
 				phone: createNew.phone?.trim() || null,
 				status: "active",
-				notes: `Создан из чата оператора (${marker})`,
+				notes: null,
 			})
 			.returning({ id: patients.id, fullName: patients.fullName, phone: patients.phone });
 
@@ -86,6 +71,46 @@ export async function handleLinkPatient(
 				eq(messengerInboundEvents.externalChatId, senderId),
 			),
 		);
+
+	// Если канал Telegram, сохраняем привязку в dente_telegram_chat_links
+	if (channel === "telegram") {
+		const chatFingerprint = createHash("sha256").update(senderId).digest("hex");
+		const [existingLink] = await db
+			.select({ id: denteTelegramChatLinks.id })
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					eq(denteTelegramChatLinks.organizationId, orgId),
+					eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
+				),
+			)
+			.limit(1);
+
+		if (existingLink) {
+			await db
+				.update(denteTelegramChatLinks)
+				.set({
+					subjectType: "patient",
+					subjectId: targetPatient.id,
+					chatTransportRef: senderId,
+					status: "active",
+					lastUpdateAt: new Date(),
+				})
+				.where(eq(denteTelegramChatLinks.id, existingLink.id));
+		} else {
+			await db
+				.insert(denteTelegramChatLinks)
+				.values({
+					organizationId: orgId,
+					botConfigId: "default",
+					subjectType: "patient",
+					subjectId: targetPatient.id,
+					chatFingerprint,
+					chatTransportRef: senderId,
+					status: "active",
+				});
+		}
+	}
 
 	return {
 		ok: true,

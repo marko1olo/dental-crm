@@ -15,6 +15,7 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { doctorCommissions, pricelistDoctorPayrolls, users } from "../db/schema.js";
 import {
+	basisPointsFromPercent,
 	calculateDoctorCommissionKopecks,
 	calculateDoctorPeriodPayroll,
 	kopecksToRubles,
@@ -289,7 +290,7 @@ export async function handleGetDoctorMyEarnings(
 				: Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks))
 			: 0;
 		const earnedItemKop = effectivePaidKop > 0
-			? percentageOfKopecks(netBaseItemKop as Kopecks, Math.round(itemCommPercent * 100))
+			? percentageOfKopecks(netBaseItemKop as Kopecks, basisPointsFromPercent(itemCommPercent))
 			: 0;
 
 		appt.grossRevenueKop += ord.grossKopecks;
@@ -374,7 +375,7 @@ export async function handleGetDoctorMyEarnings(
 				: Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks))
 			: 0;
 		const earned = effectivePaidKop > 0
-			? percentageOfKopecks(netBase as Kopecks, Math.round(itemCommPercent * 100))
+			? percentageOfKopecks(netBase as Kopecks, basisPointsFromPercent(itemCommPercent))
 			: 0;
 
 		cat.grossRevenueKop += ord.grossKopecks;

@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireResolvedStaffOrAdminOrganizationId,
+	resolveOrganizationId,
 } from "../../accessGuard.js";
 import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
 
@@ -19,7 +20,7 @@ export function registerTelegramBotConnectionRoutes(app: FastifyInstance) {
 			webhookUrl: z.string().trim().url().optional().nullable(),
 			clinicId: z.string().uuid().optional().nullable(),
 			botConfigId: z.string().trim().optional(),
-		});
+		}).strict();
 
 		const parsed = bodySchema.safeParse(request.body);
 		if (!parsed.success) {

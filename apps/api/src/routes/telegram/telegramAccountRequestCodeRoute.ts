@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 
 export function registerTelegramAccountRequestCodeRoute(app: FastifyInstance) {
@@ -14,7 +15,7 @@ export function registerTelegramAccountRequestCodeRoute(app: FastifyInstance) {
 
 		const schema = z.object({
 			phone: z.string().trim().min(5, "Укажите номер телефона"),
-		});
+		}).strict();
 
 		const parsed = schema.safeParse(request.body);
 		if (!parsed.success) {
@@ -25,8 +26,9 @@ export function registerTelegramAccountRequestCodeRoute(app: FastifyInstance) {
 			});
 		}
 
-		const userId = (request.headers["x-user-id"] as string) || null;
-		const clinicId = (request.headers["x-clinic-id"] as string) || null;
+		const identity = getRequestIdentity(request);
+		const userId = identity.verified ? identity.userId : null;
+		const clinicId = identity.verified ? identity.organizationId : null;
 
 		const result = await TelegramAccountService.requestCode({
 			organizationId: orgId,
@@ -48,7 +50,6 @@ export function registerTelegramAccountRequestCodeRoute(app: FastifyInstance) {
 			phoneCodeHash: result.phoneCodeHash,
 			timeoutSeconds: result.timeoutSeconds,
 			formattedPhone: result.formattedPhone,
-			testCode: result.testCode,
 			message: `Код подтверждения отправлен на номер ${result.formattedPhone}.`,
 		});
 	});

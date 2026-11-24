@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { denteClinicalReadHeaders, denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData, Canonical5LabStatus } from "../lab/labMath";
@@ -145,19 +146,39 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	const handleOpenCreateOrder = () => {
 		setSelectedOrderForEdit(null);
 		setModalInitialTab("main");
-		setIsOrderModalOpen(true);
+		useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+			patientId,
+			initialTab: "new_order",
+			onOrderSaved: () => void fetchOrders(),
+		});
 	};
 
 	const handleOpenEditOrder = (order: LabOrder) => {
-		setSelectedOrderForEdit(labOrderToDentalLabOrderData(order));
+		const labData = labOrderToDentalLabOrderData(order);
+		setSelectedOrderForEdit(labData);
 		setModalInitialTab("main");
-		setIsOrderModalOpen(true);
+		useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+			orderId: order.id,
+			patientId: order.patientId,
+			initialOrder: labData,
+			editingOrder: labData,
+			initialTab: "new_order",
+			onOrderSaved: () => void fetchOrders(),
+		});
 	};
 
 	const handleOpenPrintOrder = (order: LabOrder) => {
-		setSelectedOrderForEdit(labOrderToDentalLabOrderData(order));
+		const labData = labOrderToDentalLabOrderData(order);
+		setSelectedOrderForEdit(labData);
 		setModalInitialTab("print");
-		setIsOrderModalOpen(true);
+		useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+			orderId: order.id,
+			patientId: order.patientId,
+			initialOrder: labData,
+			editingOrder: labData,
+			initialTab: "print_blank",
+			onOrderSaved: () => void fetchOrders(),
+		});
 	};
 
 	const handleOpenTrackingDrawer = (order: LabOrder) => {

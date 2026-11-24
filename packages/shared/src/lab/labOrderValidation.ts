@@ -343,7 +343,7 @@ export function buildComprehensiveClinicalNotes(params: BuildLabOrderPayloadPara
 	} = params;
 
 	const parts = [
-		isWarrantyRework ? "ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 РУБ ДЛЯ ПАЦИЕНТА)" : null,
+		isWarrantyRework ? "Гарантийная переделка (0 ₽ для пациента)" : null,
 		reworkReason ? `Причина рекламации: ${reworkReason}` : null,
 		originalOrderNumber ? `Исходный наряд ЗТЛ: № ${originalOrderNumber}` : null,
 		patientChartNumber ? `№ Медкарты: ${patientChartNumber}` : null,

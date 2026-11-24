@@ -3,7 +3,11 @@
  * Compliance with Order of the FNS of Russia № ЕА-7-11/824@ and Art. 219 of the Tax Code of the RF
  */
 
-import { parseKopecks } from "../../money.js";
+import {
+	formatKopecksToRubles,
+	kopecksToRubles,
+	parseKopecks,
+} from "../../money.js";
 import { extractTaxYearFromDate } from "../../finance/tax/calculation.js";
 import {
 	validateRussianInn,
@@ -36,7 +40,7 @@ export function cleanDigits(str?: string | null): string {
 
 /** Перевод целых копеек в рубли (число с плавающей точкой) для вывода */
 export function rublesFromKopecks(kopecks: number): number {
-	return kopecks / 100;
+	return kopecksToRubles(kopecks);
 }
 
 /** Форматирование даты в стандартный вид ФНС РФ: ДД.ММ.ГГГГ */
@@ -252,7 +256,7 @@ export function validateFnsFiscalReceiptsChecksums(
 			code1DiscrepancyKopecks = Math.abs(calculatedCode1Kopecks - declaredCode1Kopecks);
 			if (code1DiscrepancyKopecks > 0) {
 				errors.push(
-					`Расхождение контрольной суммы по коду 1: сумма фискальных чеков (${(calculatedCode1Kopecks / 100).toFixed(2)} ₽) не совпадает с заявленной суммой расходов (${(declaredCode1Kopecks / 100).toFixed(2)} ₽). Расхождение: ${(code1DiscrepancyKopecks / 100).toFixed(2)} ₽.`,
+					`Расхождение контрольной суммы по коду 1: сумма фискальных чеков (${formatKopecksToRubles(calculatedCode1Kopecks)} ₽) не совпадает с заявленной суммой расходов (${formatKopecksToRubles(declaredCode1Kopecks)} ₽). Расхождение: ${formatKopecksToRubles(code1DiscrepancyKopecks)} ₽.`,
 				);
 			}
 		}
@@ -261,7 +265,7 @@ export function validateFnsFiscalReceiptsChecksums(
 			code2DiscrepancyKopecks = Math.abs(calculatedCode2Kopecks - declaredCode2Kopecks);
 			if (code2DiscrepancyKopecks > 0) {
 				errors.push(
-					`Расхождение контрольной суммы по коду 2 (дорогостоящее лечение): сумма фискальных чеков (${(calculatedCode2Kopecks / 100).toFixed(2)} ₽) не совпадает с заявленной суммой расходов (${(declaredCode2Kopecks / 100).toFixed(2)} ₽). Расхождение: ${(code2DiscrepancyKopecks / 100).toFixed(2)} ₽.`,
+					`Расхождение контрольной суммы по коду 2 (дорогостоящее лечение): сумма фискальных чеков (${formatKopecksToRubles(calculatedCode2Kopecks)} ₽) не совпадает с заявленной суммой расходов (${formatKopecksToRubles(declaredCode2Kopecks)} ₽). Расхождение: ${formatKopecksToRubles(code2DiscrepancyKopecks)} ₽.`,
 				);
 			}
 		}

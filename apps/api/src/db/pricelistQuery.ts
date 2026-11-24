@@ -36,6 +36,7 @@ import {
 	type DentalSpecialty,
 	type ServiceCatalogItem,
 	type ServiceCategory,
+	basisPointsFromPercent,
 	kopecksToRubles,
 	rublesToKopecks,
 	serviceCatalogItemSchema,
@@ -648,25 +649,33 @@ export function computeRepricedAmount(
 	fixedRubChange?: number,
 	roundMode?: PriceRoundingRule,
 ): number {
-	let price = currentPriceRub;
+	let currentPriceKopecks = rublesToKopecks(Math.max(0, currentPriceRub));
+
 	if (percentChange !== undefined && Number.isFinite(percentChange)) {
-		price = price * (1 + percentChange / 100);
+		const bp = basisPointsFromPercent(Math.abs(percentChange));
+		const deltaKopecks = Math.round((currentPriceKopecks * bp) / 10_000);
+		currentPriceKopecks = percentChange >= 0
+			? currentPriceKopecks + deltaKopecks
+			: Math.max(0, currentPriceKopecks - deltaKopecks);
 	}
+
 	if (fixedRubChange !== undefined && Number.isFinite(fixedRubChange)) {
-		price = price + fixedRubChange;
+		const deltaKopecks = rublesToKopecks(Math.abs(fixedRubChange));
+		currentPriceKopecks = fixedRubChange >= 0
+			? currentPriceKopecks + deltaKopecks
+			: Math.max(0, currentPriceKopecks - deltaKopecks);
 	}
-	price = Math.max(0, price);
 
 	switch (roundMode) {
 		case "round_10":
-			return Math.round(price / 10) * 10;
+			return kopecksToRubles(Math.round(currentPriceKopecks / 1000) * 1000);
 		case "round_50":
-			return Math.round(price / 50) * 50;
+			return kopecksToRubles(Math.round(currentPriceKopecks / 5000) * 5000);
 		case "round_100":
-			return Math.round(price / 100) * 100;
+			return kopecksToRubles(Math.round(currentPriceKopecks / 10000) * 10000);
 		case "none":
 		default:
-			return kopecksToRubles(rublesToKopecks(price));
+			return kopecksToRubles(currentPriceKopecks);
 	}
 }
 

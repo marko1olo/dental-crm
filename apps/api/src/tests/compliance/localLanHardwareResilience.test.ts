@@ -159,6 +159,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 
@@ -178,6 +179,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 			payload: {
 				host: "127.0.0.1",
@@ -202,8 +204,10 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000103",
 			},
 			payload: {
+				clientMutationId: "00000000-0000-7000-8000-000000000103",
 				patientId: PATIENT_A_ID,
 				operationType: "income",
 				customerContact: "+79261234567",
@@ -256,6 +260,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 		assert.equal(queueRes.statusCode, 200);
@@ -269,6 +274,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 
@@ -286,6 +292,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 		assert.equal(startRes.statusCode, 200);
@@ -297,6 +304,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 		assert.equal(stopRes.statusCode, 200);
@@ -316,8 +324,10 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000103",
 			},
 			payload: {
+				clientMutationId: "00000000-0000-7000-8000-000000000103",
 				patientId: PATIENT_A_ID,
 				kind: "cbct",
 				title: "КЛКТ верхней и нижней челюсти 3D",
@@ -369,6 +379,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 
@@ -396,6 +407,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 			payload: { studyId },
 		});
@@ -412,6 +424,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 		});
 		assert.equal(statusRes.statusCode, 200);
@@ -429,6 +442,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 			payload: {
 				extension: "204",
@@ -478,6 +492,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 			payload: {
 				event: "Ringing",
@@ -503,6 +518,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 			payload: { forceCloudFallback: true },
 		});
@@ -539,6 +555,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": "00000000-0000-7000-8000-000000000104",
 			},
 			payload: { forceCloudFallback: false },
 		});

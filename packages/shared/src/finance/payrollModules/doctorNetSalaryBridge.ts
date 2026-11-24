@@ -4,7 +4,11 @@
  * Mandates 8b, 8bf: SSOT consolidation into payrollModules, zero orphaned logic.
  */
 
-import type { Kopecks } from "../../money.js";
+import {
+	type Kopecks,
+	formatKopecksRu,
+	rublesToKopecks,
+} from "../../money.js";
 import {
 	type DentalSpecialtyCategory,
 	isGeneralClinicOverheadConsumable,
@@ -102,7 +106,8 @@ export type DoctorT51LabItem = DoctorPayslipLabItem;
 export type DoctorT51PrintPayload = DoctorPayslipPrintPayload;
 
 function formatMoney(rub: number): string {
-	return rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
+	if (!Number.isFinite(rub)) return "0,00 ₽";
+	return formatKopecksRu(rublesToKopecks(rub));
 }
 
 function renderVisitsSectionHtml(visits: readonly DoctorPayslipVisitItem[] = []): string {

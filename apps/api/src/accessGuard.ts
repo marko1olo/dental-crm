@@ -23,6 +23,17 @@ import {
 
 export { namedDevelopmentModeActive, unguardedBypassAllowed };
 
+export function isDemoShowcaseMode(): boolean {
+	if (!namedDevelopmentModeActive() && process.env.NODE_ENV === "production") {
+		return false;
+	}
+	return (
+		unguardedBypassAllowed("DENTE_ALLOW_DEMO_LOGIN") ||
+		process.env.DENTE_DEMO_MODE === "1" ||
+		process.env.DENTE_DEMO_SHOWCASE === "true"
+	);
+}
+
 function clinicalMutationsUnguardedAllowed(): boolean {
 	return unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS");
 }
@@ -32,6 +43,9 @@ function clinicalReadsUnguardedAllowed(): boolean {
 }
 
 function isDemoShowcaseTokenRequest(request: FastifyRequest): boolean {
+	if (!isDemoShowcaseMode()) {
+		return false;
+	}
 	const clinicHeader = request.headers["x-dente-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader)
 		? clinicHeader[0]
@@ -296,43 +310,10 @@ async function _requireResolvedStaffUserId(
 	return userId;
 }
 
-/**
- * Контекст защищённого обработчика: и гейт пройден, и арендатор определён.
- *
- * ЗАЧЕМ: requireClinicalReadAccess/requireClinicalMutationAccess возвращают
- * boolean (пройден ли гейт), а organizationId приходит из другого источника —
- * подписанного токена. Их легко перепутать: в routes/analytics.ts результат
- * гейта присвоили переменной orgId, дальше проверили `typeof orgId !== "string"`
- * — условие всегда истинно, и дашборд молча отдавал пустой ответ. Компилятор
- * такое не ловит: сравнение typeof у boolean легально.
- *
- * Эти две функции соединяют оба шага и возвращают либо готовый организационный
- * идентификатор, либо null (ответ клиенту уже отправлен). Перепутать нечего:
- * возвращается ровно то, что нужно обработчику.
- */
-export async function requireClinicalReadContext(
-	request: FastifyRequest,
-	reply: FastifyReply,
-	protectedArea = "clinical read",
-): Promise<{ organizationId: string } | null> {
-	if (!(await requireClinicalReadAccess(request, reply, protectedArea)))
-		return null;
-	const organizationId = await requireVerifiedOrganizationId(request, reply);
-	if (!organizationId) return null;
-	return { organizationId };
-}
-
-export async function requireClinicalMutationContext(
-	request: FastifyRequest,
-	reply: FastifyReply,
-	protectedArea = "clinical mutation",
-): Promise<{ organizationId: string } | null> {
-	if (!(await requireClinicalMutationAccess(request, reply, protectedArea)))
-		return null;
-	const organizationId = await requireVerifiedOrganizationId(request, reply);
-	if (!organizationId) return null;
-	return { organizationId };
-}
+export {
+	requireClinicalReadContext,
+	requireClinicalMutationContext,
+} from "./security/tenantContext.js";
 
 /**
  * requireNonDoctorAccess — allows any authenticated non-doctor (admin, staff)

@@ -79,7 +79,7 @@ export class TelephonyAudioStreamManager {
 				}
 			};
 
-			if (typeof window !== "undefined") {
+			if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
 				window.addEventListener("beforeunload", this.handleBeforeUnload);
 			}
 
@@ -707,7 +707,7 @@ export class TelephonyAudioStreamManager {
 			} catch {}
 			this.audioLockChannel = null;
 		}
-		if (typeof window !== "undefined") {
+		if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
 			window.removeEventListener("beforeunload", this.handleBeforeUnload);
 		}
 	}

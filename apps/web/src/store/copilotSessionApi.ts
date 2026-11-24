@@ -7,6 +7,7 @@
  */
 
 import { readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
+import { showToast } from "../components/GlobalToast";
 import type { CopilotThread, AiMemoryFact } from "./copilotStore";
 
 export function generateSessionUuid(): string {
@@ -78,7 +79,8 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 			};
 			return thread;
 		});
-	} catch {
+	} catch (err) {
+		console.error("fetchRemoteSessions failed:", err);
 		return null;
 	}
 }
@@ -97,8 +99,15 @@ export async function createRemoteSession(payload: {
 			headers: getAuthHeaders(),
 			body: JSON.stringify(payload),
 		});
-		return res.ok;
-	} catch {
+		if (!res.ok) {
+			console.error(`createRemoteSession HTTP ${res.status}`);
+			showToast("Не удалось сохранить сессию ассистента на сервере", "error");
+			return false;
+		}
+		return true;
+	} catch (err) {
+		console.error("createRemoteSession failed:", err);
+		showToast("Не удалось создать сессию ассистента на сервере", "error");
 		return false;
 	}
 }
@@ -115,8 +124,15 @@ export async function updateRemoteSession(id: string, patch: {
 			headers: getAuthHeaders(),
 			body: JSON.stringify(patch),
 		});
-		return res.ok;
-	} catch {
+		if (!res.ok) {
+			console.error(`updateRemoteSession HTTP ${res.status}`);
+			showToast("Не удалось обновить сессию ассистента на сервере", "error");
+			return false;
+		}
+		return true;
+	} catch (err) {
+		console.error("updateRemoteSession failed:", err);
+		showToast("Не удалось обновить сессию ассистента на сервере", "error");
 		return false;
 	}
 }
@@ -128,8 +144,15 @@ export async function deleteRemoteSession(id: string): Promise<boolean> {
 			method: "DELETE",
 			headers: getAuthHeaders(),
 		});
-		return res.ok;
-	} catch {
+		if (!res.ok) {
+			console.error(`deleteRemoteSession HTTP ${res.status}`);
+			showToast("Не удалось удалить сессию ассистента на сервере", "error");
+			return false;
+		}
+		return true;
+	} catch (err) {
+		console.error("deleteRemoteSession failed:", err);
+		showToast("Не удалось удалить сессию ассистента на сервере", "error");
 		return false;
 	}
 }
@@ -144,7 +167,8 @@ export async function fetchRemoteMessages(sessionId: string): Promise<unknown[] 
 		if (!res.ok) return null;
 		const data = await res.json();
 		return Array.isArray(data?.messages) ? data.messages : [];
-	} catch {
+	} catch (err) {
+		console.error("fetchRemoteMessages failed:", err);
 		return null;
 	}
 }
@@ -161,8 +185,15 @@ export async function appendRemoteMessage(sessionId: string, message: {
 			headers: getAuthHeaders(),
 			body: JSON.stringify(message),
 		});
-		return res.ok;
-	} catch {
+		if (!res.ok) {
+			console.error(`appendRemoteMessage HTTP ${res.status}`);
+			showToast("Не удалось сохранить сообщение в историю сессии", "error");
+			return false;
+		}
+		return true;
+	} catch (err) {
+		console.error("appendRemoteMessage failed:", err);
+		showToast("Не удалось сохранить сообщение в историю сессии", "error");
 		return false;
 	}
 }
@@ -176,7 +207,8 @@ export async function fetchRemoteMemoryFacts(): Promise<AiMemoryFact[] | null> {
 		if (!res.ok) return null;
 		const data = await res.json();
 		return Array.isArray(data?.memoryFacts) ? data.memoryFacts : null;
-	} catch {
+	} catch (err) {
+		console.error("fetchRemoteMemoryFacts failed:", err);
 		return null;
 	}
 }
@@ -188,8 +220,15 @@ export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promis
 			headers: getAuthHeaders(),
 			body: JSON.stringify({ memoryFacts }),
 		});
-		return res.ok;
-	} catch {
+		if (!res.ok) {
+			console.error(`saveRemoteMemoryFacts HTTP ${res.status}`);
+			showToast("Не удалось сохранить клиническую память на сервере", "error");
+			return false;
+		}
+		return true;
+	} catch (err) {
+		console.error("saveRemoteMemoryFacts failed:", err);
+		showToast("Не удалось сохранить клиническую память на сервере", "error");
 		return false;
 	}
 }
@@ -203,7 +242,8 @@ export async function fetchRemoteSettings(): Promise<Record<string, unknown> | n
 		if (!res.ok) return null;
 		const data = (await res.json()) as { ok?: boolean; settings?: Record<string, unknown> };
 		return (data?.settings && typeof data.settings === "object") ? data.settings : null;
-	} catch {
+	} catch (err) {
+		console.error("fetchRemoteSettings failed:", err);
 		return null;
 	}
 }
@@ -215,8 +255,15 @@ export async function saveRemoteSettings(settings: Record<string, unknown>): Pro
 			headers: getAuthHeaders(),
 			body: JSON.stringify({ settings }),
 		});
-		return res.ok;
-	} catch {
+		if (!res.ok) {
+			console.error(`saveRemoteSettings HTTP ${res.status}`);
+			showToast("Не удалось сохранить настройки ассистента на сервере", "error");
+			return false;
+		}
+		return true;
+	} catch (err) {
+		console.error("saveRemoteSettings failed:", err);
+		showToast("Не удалось сохранить настройки ассистента на сервере", "error");
 		return false;
 	}
 }

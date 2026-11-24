@@ -4,7 +4,6 @@
  */
 
 import { and, eq, lt, ne, sql } from "drizzle-orm";
-import type { FastifyRequest } from "fastify";
 import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db, type TenantDb } from "../../../db/client.js";
 import {
@@ -117,40 +116,6 @@ export function escapeXml(unsafe: string | null | undefined): string {
 		.replace(/'/g, "&apos;");
 }
 
-export async function resolveOrganizationId(
-	request: FastifyRequest,
-	bodyOrgId?: string | null,
-): Promise<string> {
-	if (bodyOrgId && typeof bodyOrgId === "string" && bodyOrgId.trim()) {
-		return bodyOrgId.trim();
-	}
-	const query = request.query as Record<string, unknown> | undefined;
-	if (
-		typeof query?.organizationId === "string" &&
-		query.organizationId.trim()
-	) {
-		return query.organizationId.trim();
-	}
-	const headerOrg = request.headers["x-organization-id"];
-	if (typeof headerOrg === "string" && headerOrg.trim()) {
-		return headerOrg.trim();
-	}
-	const params = request.params as Record<string, unknown> | undefined;
-	if (typeof params?.organizationId === "string" && params.organizationId.trim()) {
-		return params.organizationId.trim();
-	}
-	if (typeof params?.clinicExternalId === "string" && params.clinicExternalId.trim()) {
-		const integration = await findIntegrationByClinicExternalId(db, params.clinicExternalId.trim());
-		if (integration?.organizationId) {
-			return integration.organizationId;
-		}
-	}
-
-	const error = new Error("Отсутствует обязательный контекст организации (organizationId или clinicExternalId). Укажите идентификатор клиники в параметрах или заголовках.");
-	(error as Error & { statusCode?: number; code?: string }).statusCode = 400;
-	(error as Error & { statusCode?: number; code?: string }).code = "MissingOrganizationContext";
-	throw error;
-}
 
 export async function syncProdoctorovExportStatus(
 	tx: TenantDb,

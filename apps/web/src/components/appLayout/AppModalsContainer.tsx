@@ -33,6 +33,7 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 	const isEffectiveEmergencyOpen = Boolean(bridge.isEmergencyRescueOpen || isEmergencyFromStore);
 	const isPayrollFromStore = primaryModal?.id === "doctor_payroll" || primaryModal?.id === "payroll";
 	const isLabFromStore = primaryModal?.id === "lab_order" || primaryModal?.id === "dental_lab" || primaryModal?.id === "lab" || primaryModal?.id === "lab_hub";
+	const isEffectiveLabOpen = Boolean(bridge.isGlobalLabCreateOrderOpen || isLabFromStore);
 	const isDicomFromStore = primaryModal?.id === "dicom_viewer";
 
 	return (
@@ -61,16 +62,28 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				/>
 			)}
 
-			{isLabFromStore && (() => {
-				const labPayload = primaryModal?.payload && typeof primaryModal.payload === "object"
+			{isEffectiveLabOpen && (() => {
+				const labPayload = (primaryModal?.payload && typeof primaryModal.payload === "object"
 					? (primaryModal.payload as Partial<DentalLabStudioModalProps>)
-					: null;
-				const labKey = labPayload?.patientId ?? labPayload?.initialOrder?.id ?? primaryModal.id;
+					: null) || (bridge.labCreateOrderContext ? {
+						patientName: bridge.labCreateOrderContext.patientName,
+						patientId: bridge.labCreateOrderContext.patientId,
+						initialToothFdi: bridge.labCreateOrderContext.toothNumber || "21",
+						treatmentPlanId: bridge.labCreateOrderContext.treatmentPlanId,
+						stageNumber: bridge.labCreateOrderContext.stageNumber,
+						stageTitle: bridge.labCreateOrderContext.stageTitle,
+						initialTeeth: bridge.labCreateOrderContext.initialTeeth,
+					} : null);
+				const labOrderId = (primaryModal?.payload as Record<string, unknown> | undefined)?.orderId as string | undefined;
+				const labKey = labOrderId || labPayload?.patientId || labPayload?.initialOrder?.id || "new";
 				return (
 					<DentalLabStudioModal
 						key={labKey}
 						isOpen={true}
-						onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
+						onClose={() => {
+							bridge.setIsGlobalLabCreateOrderOpen(false);
+							if (primaryModal?.id) useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id);
+						}}
 						{...(labPayload ?? {})}
 					/>
 				);
@@ -93,9 +106,6 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 			/>
 
 			<AdministrativeModalsSubcontainer
-				isGlobalLabCreateOrderOpen={bridge.isGlobalLabCreateOrderOpen}
-				setIsGlobalLabCreateOrderOpen={bridge.setIsGlobalLabCreateOrderOpen}
-				labCreateOrderContext={bridge.labCreateOrderContext}
 				isGlobalLoyaltyOpen={isEffectiveLoyaltyOpen}
 				setIsGlobalLoyaltyOpen={(open) => {
 					bridge.setIsGlobalLoyaltyOpen(open);

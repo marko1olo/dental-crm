@@ -2,7 +2,7 @@
  * Расчёт дебиторки и переплат пациентов в точных копейках без float drift.
  */
 
-import { sumKopecks } from "@dental/shared";
+import { kopecksToRubles, sumKopecks } from "@dental/shared";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import {
@@ -38,7 +38,7 @@ import type {
  * только целое число копеек и на нецелом бросает `MoneyPrecisionError`.
  */
 function rubToKopeckText(kopecks: Kopecks): string {
-	return rublesFromKopecks(kopecks).toLocaleString("ru-RU", {
+	return kopecksToRubles(kopecks).toLocaleString("ru-RU", {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	});

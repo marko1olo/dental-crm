@@ -19,8 +19,9 @@ import {
 	createDenteTelegramLinkCode, denteTelegramOutboxDeliveryReceipts,
 	getDenteTelegramBotSettings, renderDenteTelegramMessagePreview,
 	revokeDenteTelegramChatLink as revokeLegacyInMemoryTelegramChatLink,
-	updateDenteTelegramBotSettings,
+	updateDenteTelegramBotSettings, applyLoadedTelegramBotSettings,
 } from "./telegramCanonicalStore.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import {
 	TelegramBotBillingService,
 	TELEGRAM_BOT_SAAS_TIERS,
@@ -50,6 +51,8 @@ import {
 	hydrateTelegramDomainState,
 	resolveTelegramOutboxRuntimeScopeFromQuery,
 	resolveTelegramRuntimeContext,
+	persistTelegramBotSettingsToDatabase,
+	loadTelegramBotSettingsFromDatabase,
 } from "./telegramRuntimeContext.js";
 import {
 	deliverTelegramOutboxParts,
@@ -66,7 +69,18 @@ export function registerTelegramSettingsRoutes(
 	app.get(
 		"/api/settings/telegram",
 		telegramControlPlaneRouteOptions,
-		async () => await buildStatus(),
+		async (request) => {
+			const identity = getRequestIdentity(request);
+			if (identity.organizationId) {
+				const loaded = await loadTelegramBotSettingsFromDatabase(
+					identity.organizationId,
+				);
+				if (loaded) {
+					applyLoadedTelegramBotSettings(loaded);
+				}
+			}
+			return await buildStatus();
+		},
 	);
 
 	app.put(
@@ -94,7 +108,8 @@ export function registerTelegramSettingsRoutes(
 			}
 			const input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
 			try {
-				updateDenteTelegramBotSettings(input);
+				const updated = updateDenteTelegramBotSettings(input);
+				await persistTelegramBotSettingsToDatabase(updated);
 			} catch (settingsError) {
 				return reply.code(400).send({
 					error: "TelegramSettingsValidationFailed",

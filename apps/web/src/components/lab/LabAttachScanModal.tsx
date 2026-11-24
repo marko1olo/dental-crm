@@ -18,7 +18,7 @@ export function LabAttachHeader({
 	return (
 		<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]">
 			<div className="flex items-center gap-2.5 min-w-0">
-				<div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border bg-teal-500/10 border-teal-500/25 text-teal-600 dark:text-teal-400">
+				<div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border bg-[var(--primary)]/10 border-[var(--primary)]/25 text-[var(--primary)]">
 					<Box className="w-4 h-4" />
 				</div>
 				<div className="min-w-0">
@@ -70,7 +70,7 @@ export function LabAttachFooter({
 			<button
 				type="submit"
 				aria-busy={isSubmitting}
-				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg font-bold text-xs text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+				className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-lg font-medium text-xs text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
 				data-testid="lab-attach-scan-submit-btn"
 			>
 				{isSubmitting ? (
@@ -109,7 +109,7 @@ export function LabAttachPathInput({
 			>
 				<span>Путь к файлу скана или URL:</span>
 				{fileSizeInfo && (
-					<span className="text-[11px] font-mono text-teal-600 dark:text-teal-400 font-bold">
+					<span className="text-[11px] font-mono text-[var(--primary)] font-bold">
 						Размер: {fileSizeInfo}
 					</span>
 				)}
@@ -122,7 +122,7 @@ export function LabAttachPathInput({
 					value={filePath}
 					onChange={(e) => setFilePath(e.target.value)}
 					placeholder="https://... или выберите файл через «Обзор...»"
-					className="flex-1 h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-teal-500 focus:outline-none font-mono"
+					className="flex-1 h-9 min-h-[36px] max-sm:min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-[var(--primary)] focus:outline-none font-mono"
 					data-testid="lab-attach-scan-path-input"
 				/>
 				<button

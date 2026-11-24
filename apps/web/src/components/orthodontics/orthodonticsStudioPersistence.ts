@@ -6,6 +6,7 @@
  */
 
 import type { OrthoProtocolState } from "./orthodonticsCatalogData";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 
 export interface SaveOrthoProtocolOptions {
@@ -62,10 +63,6 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 		return true;
 	}
 
-	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-		? crypto.randomUUID()
-		: `ortho-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
 	const effectiveTreatmentPlanId = treatmentPlanId ?? protocol.treatmentPlanId;
 	const anbAngle = protocol.trgValues?.anb ?? undefined;
 	const bitePayload = {
@@ -97,7 +94,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				selectedElasticId: protocol.selectedElasticId,
 				selectedActionIds: protocol.selectedActionIds,
 				...bitePayload,
-			}, idempotencyKey);
+			}, generateUuidV7());
 		} else if (protocol.applianceCategory === "plate") {
 			await postOrthoEndpoint(`/api/orthodontics/${patientId}/stages/advance`, {
 				nextStage: Math.max(1, protocol.currentMonth || 1),
@@ -110,7 +107,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				selectedElasticId: protocol.selectedElasticId,
 				selectedActionIds: protocol.selectedActionIds,
 				...bitePayload,
-			}, idempotencyKey);
+			}, generateUuidV7());
 		} else {
 			const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
 				niti: "NiTi",
@@ -146,7 +143,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				selectedElasticId: protocol.selectedElasticId,
 				selectedActionIds: protocol.selectedActionIds,
 				...bitePayload,
-			}, `${idempotencyKey}-wire-both`);
+			}, generateUuidV7());
 
 			await postOrthoEndpoint(`/api/orthodontics/${patientId}/ligatures-activate`, {
 				powerChain: protocol.selectedActionIds.includes("power_chain"),
@@ -154,7 +151,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 				note: "Активация лигатур",
 				visitId,
 				soapSummary,
-			}, `${idempotencyKey}-ligatures`);
+			}, generateUuidV7());
 		}
 
 		// DEF-ORTHO-04: Сохранение протокола в ЭМК через API визита
@@ -164,7 +161,7 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 					method: "PUT",
 					headers: {
 						"Content-Type": "application/json",
-						"Idempotency-Key": `${idempotencyKey}-autosave`,
+						"Idempotency-Key": generateUuidV7(),
 					},
 					body: JSON.stringify({
 						visitId,

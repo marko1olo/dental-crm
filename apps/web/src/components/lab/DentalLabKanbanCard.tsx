@@ -83,7 +83,7 @@ export function KanbanCardHeader({ order }: KanbanCardHeaderProps) {
 			)}
 
 			{order.isPartialDelivery && (
-				<div style={{ marginTop: "3px", fontSize: "10.5px", color: "var(--teal, #0d9488)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+				<div style={{ marginTop: "3px", fontSize: "10.5px", color: "var(--primary)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
 					<CheckCircle2 size={11} />
 					<span className="truncate">
 						Частичная поставка: готовы [{order.deliveredTeeth?.join(", ") || order.selectedTeeth?.join(", ") || "—"}]
@@ -121,7 +121,7 @@ export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment 
 		<>
 			<div className="ztl-card-work-type min-w-0" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px", marginTop: "3px" }}>
 				<span style={{ fontWeight: 600 }}>{preset.shortNameRu}</span>
-				<span style={{ background: "var(--teal-surface, rgba(13, 148, 136, 0.1))", color: "var(--teal, #0d9488)", border: "1px solid var(--teal-soft, rgba(13, 148, 136, 0.3))", padding: "1px 5px", borderRadius: "4px", fontWeight: 700, fontSize: "10.5px" }} data-testid={`ztl-card-shade-${order.id}`}>
+				<span style={{ background: "var(--primary-soft, rgba(13, 148, 136, 0.1))", color: "var(--primary)", border: "1px solid var(--primary-line, rgba(13, 148, 136, 0.3))", padding: "1px 5px", borderRadius: "4px", fontWeight: 700, fontSize: "10.5px" }} data-testid={`ztl-card-shade-${order.id}`}>
 					VITA: {order.shadeCode}
 				</span>
 				{order.translucency && (
@@ -158,7 +158,7 @@ export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment 
 			</div>
 
 			<div className="ztl-card-price-row flex items-center justify-between gap-2">
-				<span style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined} className="shrink-0">
+				<span style={order.isWarrantyRework ? { color: "var(--success, #10b981)", fontWeight: 700 } : undefined} className="shrink-0">
 					{order.isWarrantyRework
 						? "0 ₽ (Гарантия)"
 						: `${(order.financials?.patientPriceTotalRub ?? order.priceRub ?? 0).toLocaleString("ru-RU")} ₽`}
@@ -232,12 +232,12 @@ export function KanbanCardActions({
 
 			<button
 				type="button"
-				className={`secondary-button dente-btn-secondary ztl-btn-card-action flex-1 px-1.5 text-[11px] font-semibold min-h-[44px] sm:min-h-[30px] border border-[var(--line)] hover:border-teal-600/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-teal-700 dark:hover:text-teal-300 transition-colors inline-flex items-center justify-center gap-1.5 rounded-lg ${columnId === "installed_completed" ? "font-bold text-emerald-600 dark:text-emerald-400" : ""}`}
+				className={`secondary-button dente-btn-secondary ztl-btn-card-action flex-1 px-1.5 text-[11px] font-semibold min-h-[44px] sm:min-h-[30px] border border-[var(--line)] hover:border-[var(--primary)]/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--primary)] transition-colors inline-flex items-center justify-center gap-1.5 rounded-lg ${columnId === "installed_completed" ? "font-bold text-emerald-600 dark:text-emerald-400" : ""}`}
 				onClick={(e) => { e.stopPropagation(); columnId === "installed_completed" ? onInspectOrder(order) : onAdvanceStage(order); }}
 				title={advanceTitle}
 				data-testid={`ztl-card-status-${order.id}`}
 			>
-				<AdvanceIcon size={13} className="shrink-0 text-teal-600 dark:text-teal-400" /><span>{advanceLabel}</span>
+				<AdvanceIcon size={13} className="shrink-0 text-[var(--primary)]" /><span>{advanceLabel}</span>
 			</button>
 
 			<div style={{ position: "relative", flexShrink: 0 }}>

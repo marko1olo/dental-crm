@@ -56,28 +56,44 @@ export async function registerFiscalReceiptRoutes(
 		},
 	};
 
+	const fiscalTelemetryOptions = {
+		schema: {
+			description:
+				"Fiscal telemetry and query endpoint with organizationId isolation",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					"organizationid": { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+	};
+
 	// SBP status query & manual confirmation
 	app.get("/api/fiscal/sbp-status", handleSbpStatus);
-	app.post("/api/fiscal/sbp-status", fiscalMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+	app.post("/api/fiscal/sbp-status", fiscalTelemetryOptions, async (request, reply) => {
+		// Telemetry & query: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleSbpStatus(request, reply);
 	});
 	app.get("/api/payments/status", handleSbpStatus);
-	app.post("/api/payments/status", fiscalMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+	app.post("/api/payments/status", fiscalTelemetryOptions, async (request, reply) => {
+		// Telemetry & query: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleSbpStatus(request, reply);
 	});
 
 	// Pre-flight validator
-	app.post("/api/fiscal/validate", fiscalMutationOptions, async (request, reply) => {
-		// Pre-flight validator: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+	app.post("/api/fiscal/validate", fiscalTelemetryOptions, async (request, reply) => {
+		// Pre-flight validator: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleFiscalValidate(request, reply);
 	});
 
 	// Hardware telemetry & connection ping
 	app.get("/api/fiscal/devices/status", handleKktDeviceStatus);
-	app.post("/api/fiscal/devices/test-connection", fiscalMutationOptions, async (request, reply) => {
-		// Hardware ping: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+	app.post("/api/fiscal/devices/test-connection", fiscalTelemetryOptions, async (request, reply) => {
+		// Hardware ping: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleKktTestConnection(request, reply);
 	});
 
@@ -133,12 +149,12 @@ export async function registerFiscalReceiptRoutes(
 		// Queue retry-all: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleFiscalQueueRetryAll(request, reply);
 	});
-	app.post("/api/fiscal/queue/auto-retry/start", fiscalMutationOptions, async (request, reply) => {
-		// Auto-retry loop: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+	app.post("/api/fiscal/queue/auto-retry/start", fiscalTelemetryOptions, async (request, reply) => {
+		// Auto-retry loop: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleFiscalQueueAutoRetryStart(request, reply);
 	});
-	app.post("/api/fiscal/queue/auto-retry/stop", fiscalMutationOptions, async (request, reply) => {
-		// Auto-retry loop: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
+	app.post("/api/fiscal/queue/auto-retry/stop", fiscalTelemetryOptions, async (request, reply) => {
+		// Auto-retry loop: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleFiscalQueueAutoRetryStop(request, reply);
 	});
 }

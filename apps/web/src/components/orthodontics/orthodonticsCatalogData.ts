@@ -90,10 +90,10 @@ export interface ArchwireAlloyDef {
 }
 
 export const ARCHWIRE_ALLOYS_SSOT: ArchwireAlloyDef[] = [
-	{ key: "niti", label: "NiTi Термоактивный", shortRu: "NiTi", description: "Никель-титан с памятью формы для первичного нивелирования и деротации", colorToken: "var(--teal)" },
-	{ key: "cuniti", label: "CuNiTi (Медь-Никель-Титан)", shortRu: "CuNiTi", description: "Сплав с добавлением меди, выражает торк при температуре полости рта", colorToken: "var(--accent-glow, #38bdf8)" },
-	{ key: "ss", label: "Сталь SS (Stainless Steel)", shortRu: "Сталь SS", description: "Жесткая медицинская сталь для закрытия экстракционных промежутков и тяг", colorToken: "var(--ink-muted, #94a3b8)" },
-	{ key: "tma", label: "ТМА (Титан-Молибден)", shortRu: "ТМА", description: "Бета-титановый сплав для ювелирной детализации и индивидуальных изгибов", colorToken: "var(--warning-ink, #f59e0b)" },
+	{ key: "niti", label: "NiTi Термоактивный", shortRu: "NiTi", description: "Никель-титан с памятью формы для первичного нивелирования и деротации", colorToken: "var(--primary)" },
+	{ key: "cuniti", label: "CuNiTi (Медь-Никель-Титан)", shortRu: "CuNiTi", description: "Сплав с добавлением меди, выражает торк при температуре полости рта", colorToken: "var(--primary)" },
+	{ key: "ss", label: "Сталь SS (Stainless Steel)", shortRu: "Сталь SS", description: "Жесткая медицинская сталь для закрытия экстракционных промежутков и тяг", colorToken: "var(--ink-muted)" },
+	{ key: "tma", label: "ТМА (Титан-Молибден)", shortRu: "ТМА", description: "Бета-титановый сплав для ювелирной детализации и индивидуальных изгибов", colorToken: "var(--warning)" },
 ];
 
 export interface ArchwireSectionDef {

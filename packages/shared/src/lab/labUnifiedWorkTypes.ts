@@ -3,6 +3,8 @@
  * Точный расчет себестоимости в копейках (BIGINT) с вычетом из базы сдельной оплаты врача.
  */
 
+import { calculatePercentDiscountKopecks } from "../money.js";
+
 export * from "./labUnifiedWorkTypesData.js";
 
 /**
@@ -30,7 +32,7 @@ export function calculateLabWageDeductionKopecks(params: {
 	}
 	const base = Math.max(0, params.patientPriceKopecks - params.labCostKopecks);
 	const docPct = Math.max(0, Math.min(100, params.doctorSharePercent));
-	const wage = Math.round((base * docPct) / 100);
+	const wage = calculatePercentDiscountKopecks(base, docPct);
 	const margin = base - wage;
 	return {
 		doctorWageBaseKopecks: base,

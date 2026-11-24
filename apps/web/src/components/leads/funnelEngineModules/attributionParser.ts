@@ -83,14 +83,42 @@ export function extractLeadAttribution(
 	const sourceRaw = (lead.source || "").trim();
 	const channelKey = normalizeMarketingChannel(sourceRaw);
 	const channelLabel = getMarketingChannelLabel(channelKey);
+
+	// Мандат 8ap (Реляционная истина): читаем реляционные поля и метаданные лида, а не клинические заметки
+	const meta = lead.metadata;
+	const metaUtm =
+		meta && typeof meta === "object" && "utm" in meta && typeof meta.utm === "object" && meta.utm !== null
+			? (meta.utm as Record<string, unknown>)
+			: null;
+
+	const relSource =
+		lead.utmSource ??
+		lead.utm_source ??
+		(typeof metaUtm?.utm_source === "string" ? metaUtm.utm_source : typeof metaUtm?.source === "string" ? metaUtm.source : null);
+	const relMedium =
+		lead.utmMedium ??
+		lead.utm_medium ??
+		(typeof metaUtm?.utm_medium === "string" ? metaUtm.utm_medium : typeof metaUtm?.medium === "string" ? metaUtm.medium : null);
+	const relCampaign =
+		lead.utmCampaign ??
+		lead.utm_campaign ??
+		(typeof metaUtm?.utm_campaign === "string" ? metaUtm.utm_campaign : typeof metaUtm?.campaign === "string" ? metaUtm.campaign : null);
+	const relContent =
+		lead.utmContent ??
+		lead.utm_content ??
+		(typeof metaUtm?.utm_content === "string" ? metaUtm.utm_content : typeof metaUtm?.content === "string" ? metaUtm.content : null);
+	const relTerm =
+		lead.utmTerm ??
+		lead.utm_term ??
+		(typeof metaUtm?.utm_term === "string" ? metaUtm.utm_term : typeof metaUtm?.term === "string" ? metaUtm.term : null);
+
 	const utmFromSource = parseUtmParameters(sourceRaw);
-	const utmFromNotes = parseUtmParameters(lead.notes || "");
 	const utm: LeadUtmParameters = {
-		utm_source: utmFromSource.utm_source || utmFromNotes.utm_source || null,
-		utm_medium: utmFromSource.utm_medium || utmFromNotes.utm_medium || null,
-		utm_campaign: utmFromSource.utm_campaign || utmFromNotes.utm_campaign || null,
-		utm_content: utmFromSource.utm_content || utmFromNotes.utm_content || null,
-		utm_term: utmFromSource.utm_term || utmFromNotes.utm_term || null,
+		utm_source: relSource || utmFromSource.utm_source || null,
+		utm_medium: relMedium || utmFromSource.utm_medium || null,
+		utm_campaign: relCampaign || utmFromSource.utm_campaign || null,
+		utm_content: relContent || utmFromSource.utm_content || null,
+		utm_term: relTerm || utmFromSource.utm_term || null,
 	};
 	const hasUtmTags = Boolean(
 		utm.utm_source ||

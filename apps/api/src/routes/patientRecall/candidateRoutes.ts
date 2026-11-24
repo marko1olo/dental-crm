@@ -27,6 +27,7 @@ export function registerCandidateRoutes(app: FastifyInstance) {
 
 		const options: RecallOptions = {
 			...(parsed.data.minMonths !== undefined ? { minMonths: parsed.data.minMonths } : {}),
+			...(parsed.data.minDays !== undefined ? { minDays: parsed.data.minDays } : {}),
 			...(parsed.data.limit !== undefined ? { limit: parsed.data.limit } : {}),
 			...(parsed.data.includeNeverArrived !== undefined ? { includeNeverArrived: parsed.data.includeNeverArrived } : {}),
 			...(parsed.data.band !== undefined ? { band: parsed.data.band } : {}),

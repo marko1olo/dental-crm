@@ -1,7 +1,9 @@
 import {
 	calculateChairHourlyCost,
 	calculateDoctorPeriodPayroll,
+	calculatePercentDiscountKopecks,
 	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -26,7 +28,7 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
-import { fetchDoctorPayrollDataset } from "../doctorPayrollDbQueries.js";
+import { fetchDoctorPayrollDataset, normalizeClinicalCategory } from "../doctorPayrollDbQueries.js";
 import {
 	calculateWorkingMinutesInPeriod,
 	resolveClinicScheduleWorkHours,
@@ -249,10 +251,16 @@ export async function calculateDoctorProfitability(
 	);
 
 	const allDocs = await db
-		.select({ id: users.id, fullName: users.fullName })
+		.select({ id: users.id, fullName: users.fullName, specialties: users.specialties })
 		.from(users)
 		.where(eq(users.organizationId, orgId));
 	const docMap = new Map(allDocs.map((d) => [d.id, d.fullName]));
+	const docSpecialtyMap = new Map(
+		allDocs.map((d) => {
+			const spec = Array.isArray(d.specialties) && d.specialties.length > 0 ? String(d.specialties[0]) : null;
+			return [d.id, normalizeClinicalCategory(null, spec)];
+		}),
+	);
 
 	// 2b. Выработка врачей по каталогу услуг и сданным нарядам ЗТЛ
 	const docServicesRes = await db
@@ -414,10 +422,12 @@ export async function calculateDoctorProfitability(
 					const commissionRate = commMap.get(docId) ?? 25;
 					const docName = docMap.get(docId) || "Врач";
 
+					const specialtyId = docSpecialtyMap.get(docId) ?? "therapy";
+
 					const payrollResult = calculateDoctorPeriodPayroll({
 						doctorId: docId,
 						doctorName: docName,
-						specialtyId: "therapy",
+						specialtyId,
 						periodStartIso: fromStr,
 						periodEndIso: toStr,
 						services: dataset.completedServices,
@@ -434,12 +444,13 @@ export async function calculateDoctorProfitability(
 				} catch {
 					// Fallback на оперативный расчет по ставке врача от чистой базы выручки (выручка минус ЗТЛ и материалы)
 					const docProf = docProfRes.find((p) => p.doctorId === docId);
-					const docRevenue = kopecksToRubles(Number(docProf?.revenueKopecks || 0));
-					const docLab = docLabCostMap.get(docId) || 0;
-					const docMat = docMaterialsMap.get(docId) || 0;
-					const netBase = Math.max(0, docRevenue - docLab - docMat);
-					const rate = (commMap.get(docId) ?? 25) / 100;
-					operativePayrollMap.set(docId, Math.round(netBase * rate));
+					const docRevenueKopecks = Number(docProf?.revenueKopecks || 0);
+					const docLabKopecks = rublesToKopecks(docLabCostMap.get(docId) || 0);
+					const docMatKopecks = rublesToKopecks(docMaterialsMap.get(docId) || 0);
+					const netBaseKopecks = Math.max(0, docRevenueKopecks - docLabKopecks - docMatKopecks);
+					const commissionPct = commMap.get(docId) ?? 25;
+					const fallbackPayoutKopecks = calculatePercentDiscountKopecks(netBaseKopecks, commissionPct);
+					operativePayrollMap.set(docId, kopecksToRubles(fallbackPayoutKopecks));
 				}
 			}),
 		);

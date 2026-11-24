@@ -75,10 +75,10 @@ export function IncomingCallTransferPanel({
 			<button
 				type="button"
 				onClick={onToggleTransferPanel}
-				className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--teal)] transition-all flex items-center justify-between cursor-pointer"
+				className="w-full min-h-[40px] px-3 py-2 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--primary)] transition-all flex items-center justify-between cursor-pointer"
 			>
 				<div className="flex items-center gap-2">
-					<PhoneForwarded size={15} className="text-[var(--teal)]" />
+					<PhoneForwarded size={15} className="text-[var(--primary)]" />
 					<span>{showTransferPanel ? "Скрыть перевод" : "Перевод на врача"}</span>
 				</div>
 				<ChevronDown size={16} className={`transition-transform duration-200 ${showTransferPanel ? "rotate-180" : ""}`} />
@@ -91,7 +91,7 @@ export function IncomingCallTransferPanel({
 							type="button"
 							onClick={() => onSelectTransferType("blind")}
 							className={`flex-1 min-h-[40px] py-1 px-2 rounded-md font-bold text-xs transition-all ${
-								transferType === "blind" ? "bg-[var(--teal)] text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								transferType === "blind" ? "bg-[var(--primary)] text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							Прямой перевод
@@ -100,7 +100,7 @@ export function IncomingCallTransferPanel({
 							type="button"
 							onClick={() => onSelectTransferType("attended")}
 							className={`flex-1 min-h-[40px] py-1 px-2 rounded-md font-bold text-xs transition-all ${
-								transferType === "attended" ? "bg-[var(--teal)] text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								transferType === "attended" ? "bg-[var(--primary)] text-white" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 							}`}
 						>
 							С консультацией
@@ -113,7 +113,7 @@ export function IncomingCallTransferPanel({
 								key={item.ext}
 								type="button"
 								onClick={() => onStartTransfer(item.ext, transferType)}
-								className="min-h-[40px] p-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] font-bold text-xs text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer truncate"
+								className="min-h-[40px] p-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--line,#e2e8f0)] font-bold text-xs text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer truncate"
 								title={`Перевести вызов на ${item.label}`}
 							>
 								<div className="font-mono text-xs font-bold leading-tight">{item.ext}</div>
@@ -150,7 +150,7 @@ export function IncomingCallOutcomePanel({
 				className="w-full min-h-[40px] px-3 py-2 flex items-center justify-between text-[11px] font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
 			>
 				<span className="font-semibold text-xs flex items-center gap-1.5">
-					<History size={13} className="text-[var(--teal)]" />
+					<History size={13} className="text-[var(--primary)]" />
 					Фиксация исхода звонка
 				</span>
 				<ChevronDown size={14} className={`transition-transform duration-200 ${showOutcomePanel ? "rotate-180" : ""}`} />
@@ -162,7 +162,7 @@ export function IncomingCallOutcomePanel({
 							key={item.action}
 							type="button"
 							onClick={() => onRecordOutcome(item.action)}
-							className="min-h-[40px] px-2 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer"
+							className="min-h-[40px] px-2 py-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--paper-soft)] border border-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer"
 						>
 							{item.label}
 						</button>

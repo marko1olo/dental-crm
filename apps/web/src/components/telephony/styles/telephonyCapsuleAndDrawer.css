@@ -25,7 +25,7 @@
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px var(--primary-soft, rgba(14, 165, 233, 0.2));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
 	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -44,7 +44,7 @@
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--teal-soft, rgba(13, 148, 136, 0.18));
+	box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.25), 0 0 20px 2px var(--primary-soft, rgba(14, 165, 233, 0.18));
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
 	animation: dnt-badge-drop 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -87,7 +87,7 @@
 	background: var(--paper-strong, var(--paper, #ffffff));
 	color: var(--ink, #0f172a);
 	border-left: 1px solid var(--line-strong, var(--line, #e2e8f0));
-	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
+	box-shadow: -12px 0 36px -4px rgba(0, 0, 0, 0.3), 0 0 24px 2px var(--primary-soft, rgba(14, 165, 233, 0.15));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;

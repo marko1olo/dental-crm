@@ -33,6 +33,4 @@ export function rubToKopecks(rub: number): bigint {
  * Преобразование целочисленных копеек в рубли
  * SSOT: использует канонический kopecksToRubles из @dental/shared
  */
-export function kopecksToRub(kopecks: bigint | number): number {
-	return kopecksToRubles(kopecks);
-}
+export const kopecksToRub = kopecksToRubles;

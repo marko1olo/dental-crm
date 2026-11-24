@@ -84,8 +84,8 @@ export interface TelephonyCallTypeConfig {
 export const TELEPHONY_CALL_TYPES: Record<TelephonyCallType, TelephonyCallTypeConfig> = {
 	incoming_answered: {
 		id: "incoming_answered", label: "Входящий принятый", shortLabel: "Входящий",
-		badgeClass: "bg-[var(--teal-soft,#0d94881a)] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/20",
-		dotClass: "bg-[var(--teal,#0d9488)]", isMissed: false, isIncoming: true,
+		badgeClass: "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]/20",
+		dotClass: "bg-[var(--primary)]", isMissed: false, isIncoming: true,
 	},
 	incoming_missed: {
 		id: "incoming_missed", label: "Входящий пропущенный", shortLabel: "Пропущен",
@@ -95,7 +95,7 @@ export const TELEPHONY_CALL_TYPES: Record<TelephonyCallType, TelephonyCallTypeCo
 	outgoing_success: {
 		id: "outgoing_success", label: "Исходящий успешный", shortLabel: "Исходящий",
 		badgeClass: "bg-[var(--paper-secondary,#f1f5f9)] text-[var(--ink-secondary,#475569)] border-[var(--line,#e2e8f0)]",
-		dotClass: "bg-[var(--teal,#0d9488)]", isMissed: false, isIncoming: false,
+		dotClass: "bg-[var(--primary)]", isMissed: false, isIncoming: false,
 	},
 	outgoing_missed: {
 		id: "outgoing_missed", label: "Исходящий неотвеченный", shortLabel: "Не отвечен",

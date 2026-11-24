@@ -1,6 +1,7 @@
 import {
 	type ClinicalToothRow,
 	kopecksToNumericString,
+	kopecksToRubles,
 	parseKopecks,
 } from "@dental/shared";
 
@@ -22,7 +23,7 @@ export function escapeHtml(value: string | null | undefined) {
  * второй способ считать деньги. Арифметика остаётся в @dental/shared.
  */
 export function rublesFromKopecks(kopecks: number): number {
-	return Number(kopecksToNumericString(kopecks));
+	return kopecksToRubles(kopecks);
 }
 
 /**

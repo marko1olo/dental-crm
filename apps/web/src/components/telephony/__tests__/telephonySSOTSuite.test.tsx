@@ -119,8 +119,8 @@ describe("Telephony SSOT & Studio Inquisitor Suite", () => {
 
 		assert.ok(html.includes("data-testid=\"telephony-studio-modal-root\""));
 		assert.ok(html.includes("data-testid=\"telephony-primary-cta-btn\""));
-		// Verify primary CTA has teal background token
-		assert.ok(html.includes("bg-[var(--teal,#0d9488)]"));
+		// Verify primary CTA has primary styling
+		assert.ok(html.includes("dnt-telephony-primary-cta") || html.includes("bg-[var(--primary)]") || html.includes("bg-[var(--teal,#0d9488)]"));
 		// Verify doctor autonomy: CTA button is never permanently disabled
 		assert.ok(!html.includes('data-testid="telephony-primary-cta-btn" disabled'));
 

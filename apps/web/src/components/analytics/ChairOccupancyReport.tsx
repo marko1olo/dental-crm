@@ -224,7 +224,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					<button
 						type="button"
 						onClick={() => fetchChairs(activePeriod)}
-						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
 						title="Обновить загрузку"
 					>
 						<RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -233,7 +233,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					<button
 						type="button"
 						onClick={onPrint || (() => window.print())}
-						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<Printer size={14} aria-hidden="true" />
 						<span>Печать отчёта</span>

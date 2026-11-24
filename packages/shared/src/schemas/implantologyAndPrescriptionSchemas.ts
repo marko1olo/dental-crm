@@ -56,7 +56,10 @@ export const createImplantInstallationSchema = z.object({
 	invoiceId: z.string().uuid().optional().nullable(),
 	torqueCurveSamples: z.array(torqueCurveSampleSchema).default([]),
 	notes: z.string().trim().max(1000).optional().nullable(),
-});
+	teeth: z.array(permanentToothNumberFdiSchema).optional(),
+	idempotencyKey: z.string().optional().nullable(),
+	clientMutationId: z.string().optional().nullable(),
+}).strict();
 
 export type CreateImplantInstallationInput = z.infer<
 	typeof createImplantInstallationSchema
@@ -71,7 +74,9 @@ export const recordIsqMeasurementSchema = z.object({
 	isqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
 	smartpegCode: z.string().trim().max(40).optional().nullable(),
 	notes: z.string().trim().max(1000).optional().nullable(),
-});
+	idempotencyKey: z.string().optional().nullable(),
+	clientMutationId: z.string().optional().nullable(),
+}).strict();
 
 export type RecordIsqMeasurementInput = z.infer<
 	typeof recordIsqMeasurementSchema
@@ -243,7 +248,7 @@ export const createAutoclaveDailyTestSchema = z.object({
 	colorChangeVerified: z.boolean().default(true),
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 
 export type CreateAutoclaveDailyTestInput = z.infer<
 	typeof createAutoclaveDailyTestSchema
@@ -449,7 +454,7 @@ export const prescriptionItemInputSchema = z.object({
 	mealRelation: z
 		.enum(["before_meal", "with_meal", "after_meal", "independent"])
 		.default("after_meal"),
-});
+}).strict();
 
 export type PrescriptionItemInput = z.infer<typeof prescriptionItemInputSchema>;
 
@@ -465,7 +470,7 @@ export const checkInteractionsRequestSchema = z.object({
 	patientAgeYears: z.number().int().min(0).max(130).default(35),
 	isPregnant: z.boolean().default(false),
 	isLactating: z.boolean().default(false),
-});
+}).strict();
 
 export type CheckInteractionsRequest = z.infer<typeof checkInteractionsRequestSchema>;
 
@@ -486,7 +491,7 @@ export const interactionConflictItemSchema = z.object({
 	clinicalRisk: z.string(),
 	mechanism: z.string(),
 	actionRequired: z.string(),
-});
+}).strict();
 
 export type InteractionConflictItem = z.infer<typeof interactionConflictItemSchema>;
 
@@ -498,7 +503,7 @@ export const checkInteractionsResponseSchema = z.object({
 	conflicts: z.array(interactionConflictItemSchema),
 	suggestedModifications: z.array(z.string()),
 	evaluatedAt: z.string(),
-});
+}).strict();
 
 export type CheckInteractionsResponse = z.infer<typeof checkInteractionsResponseSchema>;
 
@@ -525,4 +530,4 @@ export const createPrescription107RequestSchema = z.object({
 		.nullable(),
 	items: z.array(prescriptionItemInputSchema).min(1).max(3),
 	currentMedications: z.array(z.string()).default([]),
-});
+}).strict();

@@ -15,11 +15,13 @@ export function registerTelegramBotTokenRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const bodySchema = z.object({
-			token: z.string().trim().min(5, "Токен бота обязателен"),
-			webhookUrl: z.string().trim().url().optional().nullable(),
-			clinicId: z.string().uuid().optional().nullable(),
-		});
+		const bodySchema = z
+			.object({
+				token: z.string().trim().min(5, "Токен бота обязателен"),
+				webhookUrl: z.string().trim().url().optional().nullable(),
+				clinicId: z.string().uuid().optional().nullable(),
+			})
+			.strict();
 
 		const parsed = bodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -79,7 +81,9 @@ export function registerTelegramBotTokenRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "telegram bot test");
 		if (!orgId) return;
 
-		const bodySchema = z.object({ token: z.string().trim().optional() });
+		const bodySchema = z
+			.object({ token: z.string().trim().optional() })
+			.strict();
 		const parsed = bodySchema.safeParse(request.body || {});
 
 		const res = await TelegramBotHostingService.testBotConnection({

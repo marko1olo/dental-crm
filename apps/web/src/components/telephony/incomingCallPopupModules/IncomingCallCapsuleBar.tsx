@@ -26,8 +26,8 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 		>
 			<div className="flex items-center gap-1.5 min-w-0 shrink-0">
 				<span className="relative flex h-2.5 w-2.5 ml-0.5 shrink-0">
-					<span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCallAnswered ? "bg-teal-400" : "bg-emerald-400"}`} />
-					<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isCallAnswered ? "bg-teal-500" : "bg-emerald-500"}`} />
+					<span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCallAnswered ? "bg-[var(--primary)]" : "bg-emerald-400"}`} />
+					<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isCallAnswered ? "bg-[var(--primary)]" : "bg-emerald-500"}`} />
 				</span>
 				<div className="flex items-center gap-1 min-w-0 shrink-0">
 					<span className="text-xs font-black text-[var(--ink,#0f172a)] truncate max-w-[110px] sm:max-w-[200px] whitespace-nowrap" title={callerName}>
@@ -45,13 +45,13 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 				)}
 			</div>
 			{!isCallAnswered && (
-				<span className="font-mono text-[11px] font-bold text-[var(--teal,#0d9488)] hidden sm:inline-flex items-center gap-0.5 bg-[var(--paper-soft)] px-1.5 py-0.5 rounded-lg border border-[var(--line)] shrink-0">
+				<span className="font-mono text-[11px] font-bold text-[var(--primary)] hidden sm:inline-flex items-center gap-0.5 bg-[var(--paper-soft)] px-1.5 py-0.5 rounded-lg border border-[var(--line)] shrink-0">
 					<Clock size={11} />{formatDurationTimer(elapsedSeconds)}
 				</span>
 			)}
 			<div className="flex items-center gap-1 shrink-0">
 				{secondaryLine?.call && secondaryLine.state === "ringing" && (
-					<button type="button" onClick={() => handleSwitchAndAnswerSecondaryLine("capsule")} className="px-2 py-1 rounded-full bg-amber-500 text-white text-[11px] font-bold inline-flex items-center gap-1 min-h-[32px] cursor-pointer" data-testid="capsule-switch-secondary-line-btn">
+					<button type="button" onClick={() => handleSwitchAndAnswerSecondaryLine("capsule")} className="px-2 py-1 rounded-full bg-[var(--warning,#f59e0b)] text-white text-[11px] font-bold inline-flex items-center gap-1 min-h-[32px] cursor-pointer" data-testid="capsule-switch-secondary-line-btn">
 						<PhoneCall size={12} /><span>Л{secondaryLine.lineId}: Ответить</span>
 					</button>
 				)}
@@ -79,7 +79,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 					</button>
 				)}
 				<button type="button" onClick={handleToggleCardDrawer} className="px-2 sm:px-2.5 py-1 rounded-full bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] text-[var(--ink)] text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 min-h-[32px] cursor-pointer" title="Открыть карточку пациента" data-testid="capsule-open-card-btn">
-					<UserCheck size={12} className="text-[var(--teal)]" />
+					<UserCheck size={12} className="text-[var(--primary)]" />
 					<span className="hidden sm:inline">Открыть карту</span>
 					<span className="sm:hidden">Карта</span>
 				</button>

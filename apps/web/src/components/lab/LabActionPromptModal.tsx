@@ -21,7 +21,7 @@ export function LabPromptHeader({
 			<div className="flex items-center gap-2.5 min-w-0">
 				{icon && (
 					<div
-						className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${isDanger ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400" : "bg-teal-500/10 border-teal-500/25 text-teal-600 dark:text-teal-400"}`}
+						className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${isDanger ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400" : "bg-[var(--primary)]/10 border-[var(--primary)]/25 text-[var(--primary)]"}`}
 					>
 						{icon}
 					</div>
@@ -120,7 +120,7 @@ export function LabPromptInput({
 					}}
 					rows={4}
 					placeholder={placeholder}
-					className="w-full p-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-teal-500 focus:outline-none resize-y leading-relaxed"
+					className="w-full p-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-[var(--primary)] focus:outline-none resize-y leading-relaxed"
 				/>
 			) : (
 				<input
@@ -138,7 +138,7 @@ export function LabPromptInput({
 						}
 					}}
 					placeholder={placeholder}
-					className="w-full h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+					className="w-full h-9 min-h-[36px] max-sm:min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
 				/>
 			)}
 
@@ -155,7 +155,7 @@ export function LabPromptInput({
 							onChange("");
 							inputRef.current?.focus();
 						}}
-						className="text-teal-600 hover:text-teal-700 dark:text-teal-400 cursor-pointer font-medium"
+						className="text-[var(--primary)] hover:text-[var(--primary-hover)] cursor-pointer font-medium max-sm:min-h-[44px] inline-flex items-center"
 					>
 						Очистить
 					</button>
@@ -261,13 +261,13 @@ export function LabActionPromptModal({
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 min-h-[32px] px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] font-medium text-xs transition-colors cursor-pointer"
+							className="h-9 min-h-[36px] max-sm:min-h-[44px] px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium text-xs transition-colors cursor-pointer"
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
-							className={`h-8 min-h-[32px] px-3.5 rounded-lg font-bold text-xs text-white shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5 ${isDanger ? "bg-rose-600 hover:bg-rose-700 active:bg-rose-800" : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800"}`}
+							className={`h-9 min-h-[36px] max-sm:min-h-[44px] px-3.5 rounded-lg font-medium text-xs text-white shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 ${isDanger ? "bg-[var(--danger,#e11d48)] hover:bg-rose-700 active:bg-rose-800" : "bg-[var(--primary)] hover:bg-[var(--primary-hover)]"}`}
 						>
 							{state.submitLabel || "Сохранить"}
 						</button>

@@ -29,6 +29,7 @@ const logger = createApiLogger("doctorPerformanceService");
 export async function doctorPerformance(
 	scope: ReportScope,
 ): Promise<DoctorPerformanceReport> {
+	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
 	const revenueRows = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
@@ -45,8 +46,8 @@ export async function doctorPerformance(
 			and(
 				eq(payments.organizationId, scope.organizationId),
 				inArray(payments.status, ["paid", "refunded"]),
-				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to),
+				gte(paymentTimestamp, scope.from),
+				lte(paymentTimestamp, scope.to),
 				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)

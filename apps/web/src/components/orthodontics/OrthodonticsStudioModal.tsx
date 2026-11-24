@@ -20,6 +20,7 @@ import { SAMPLE_TRG_CEPHALOGRAM_URL } from "./CephalometricCanvas";
 import { OrthodonticsTabsContent } from "./OrthodonticsTabsContent";
 import { useOrthodonticsStudioHydration } from "./useOrthodonticsStudioHydration";
 import { saveOrthodonticProtocolToApi } from "./orthodonticsStudioPersistence";
+import type { CephalometricSavedStudy } from "./cephalometricPersistence";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { showToast } from "../GlobalToast";
@@ -90,7 +91,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	}, [isOpen, initialProtocol]);
 
 	// Честная гидратация данных пациента из базы PostgreSQL 18 и ТРГ-синхронизация
-	useOrthodonticsStudioHydration(patientId, setProtocol);
+	const { cephStudy, setCephStudy } = useOrthodonticsStudioHydration(patientId, setProtocol);
 
 	const skeletalClassInfo = useMemo(() => {
 		const anbVal = protocol.trgValues?.anb ?? 2.1;

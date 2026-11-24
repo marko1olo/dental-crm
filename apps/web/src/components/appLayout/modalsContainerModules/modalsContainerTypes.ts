@@ -72,9 +72,9 @@ export interface LoyaltyModalContext {
 }
 
 export interface AdministrativeModalsSubcontainerProps {
-	isGlobalLabCreateOrderOpen: boolean;
-	setIsGlobalLabCreateOrderOpen: (open: boolean) => void;
-	labCreateOrderContext: LabCreateOrderContext | null;
+	isGlobalLabCreateOrderOpen?: boolean | undefined;
+	setIsGlobalLabCreateOrderOpen?: ((open: boolean) => void) | undefined;
+	labCreateOrderContext?: LabCreateOrderContext | null | undefined;
 	isGlobalLoyaltyOpen?: boolean | undefined;
 	setIsGlobalLoyaltyOpen?: ((open: boolean) => void) | undefined;
 	loyaltyModalContext?: LoyaltyModalContext | null | undefined;

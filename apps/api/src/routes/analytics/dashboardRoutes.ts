@@ -196,7 +196,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			// 2) Распаковка комбинированных сплит-чеков ('split') по тендерам (касса, карты, СБП, аванс, ДМС)
 			// 3) Строгая сходимость сумм всех тендеров с totalKopecks
 			// 4) Прямое чтение целочисленных копеек coalesce(amountKopecks, round(amountRub * 100))
-			const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+			const paymentKopExpr = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
 			const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
 			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 			const methodText = sql`${payments.method}::text`;

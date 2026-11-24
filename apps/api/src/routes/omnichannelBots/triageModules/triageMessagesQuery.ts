@@ -1,7 +1,9 @@
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import {
 	communicationEvents,
+	denteTelegramChatLinks,
 	messengerInboundEvents,
 	patients,
 } from "../../../db/schema.js";
@@ -44,29 +46,59 @@ export async function fetchInboxMessages(
 		.limit(100);
 
 	// 2. Ищем пациента для получения исходящих ответов.
-	// Телефон в БД хранится в формате «+7 903 555-44-33», поэтому сравниваем
-	// по нормализованным цифрам (та же нормализация, что в fetchInboxConversations),
-	// иначе тред диалога всегда пуст: подстрока «9035554433» в форматированном
-	// телефоне не встречается.
+	// Связывание выполняется строго через messenger_inbound_events или dente_telegram_chat_links,
+	// без поиска по техническим маркерам в клинических заметках patients.notes (Мандат 8ap).
+	const inboundsWithPatient = inbounds.filter((ib) => ib.patientId);
+	let resolvedPatientId = inboundsWithPatient[0]?.patientId ?? null;
+
+	if (!resolvedPatientId && channel === "telegram") {
+		const chatFingerprint = createHash("sha256").update(senderId).digest("hex");
+		const [link] = await db
+			.select({ subjectId: denteTelegramChatLinks.subjectId })
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					eq(denteTelegramChatLinks.organizationId, orgId),
+					or(
+						eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
+						eq(denteTelegramChatLinks.chatTransportRef, senderId),
+					),
+					eq(denteTelegramChatLinks.status, "active"),
+				),
+			)
+			.limit(1);
+		if (link) {
+			resolvedPatientId = link.subjectId;
+		}
+	}
+
 	const phoneDigits = senderId.replace(/\D/g, "");
 	const national10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
-	const matchedPatients = await db
-		.select()
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, orgId),
-				national10
-					? or(
-							eq(patients.phone, senderId),
-							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
-						)
-					: ilike(patients.notes, `%${channel}:${senderId}%`),
-			),
-		)
-		.limit(1);
 
-	const patient = matchedPatients[0] || null;
+	let patient: (typeof patients.$inferSelect) | null = null;
+	if (resolvedPatientId) {
+		const [matched] = await db
+			.select()
+			.from(patients)
+			.where(and(eq(patients.organizationId, orgId), eq(patients.id, resolvedPatientId)))
+			.limit(1);
+		patient = matched || null;
+	} else if (national10) {
+		const [matched] = await db
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					or(
+						eq(patients.phone, senderId),
+						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
+					),
+				),
+			)
+			.limit(1);
+		patient = matched || null;
+	}
 
 	let outbounds: (typeof communicationEvents.$inferSelect)[] = [];
 	if (patient) {

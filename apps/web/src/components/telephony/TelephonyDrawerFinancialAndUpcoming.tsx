@@ -27,7 +27,7 @@ export function TelephonyDrawerFinancialAndUpcoming({
 			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 				<div className="flex items-center justify-between">
 					<span className="font-semibold text-xs text-[var(--muted)] flex items-center gap-1.5">
-						<CreditCard size={12} className="text-[var(--teal)]" />Финансовый статус:
+						<CreditCard size={12} className="text-[var(--primary)]" />Финансовый статус:
 					</span>
 					{hasDms && (
 						<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-1">
@@ -51,19 +51,19 @@ export function TelephonyDrawerFinancialAndUpcoming({
 
 			{/* Upcoming Appointment */}
 			{upcomingAppointment && (
-				<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] space-y-2">
+				<div className="p-3.5 rounded-xl bg-[var(--primary-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="font-semibold text-xs text-[var(--teal)] flex items-center gap-1.5">
+						<span className="font-semibold text-xs text-[var(--primary)] flex items-center gap-1.5">
 							<CalendarCheck size={13} />Предстоящий приём:
 						</span>
 						<div className="flex items-center gap-1">
-							<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal)] text-white">
+							<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary)] text-white">
 								{upcomingAppointment.isToday ? "Сегодня" : upcomingAppointment.isTomorrow ? "Завтра" : upcomingAppointment.formattedDate}
 							</span>
-							<button type="button" onClick={onSendWhatsApp} className="min-h-[32px] min-w-[32px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs" title="Отправить подтверждение в WhatsApp">
+							<button type="button" onClick={onSendWhatsApp} className="min-h-[32px] min-w-[32px] max-sm:min-h-[44px] max-sm:min-w-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs" title="Отправить подтверждение в WhatsApp">
 								<Send size={13} />
 							</button>
-							<button type="button" onClick={onCopySms} className="min-h-[32px] min-w-[32px] rounded-lg bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer shadow-xs" title="Скопировать SMS">
+							<button type="button" onClick={onCopySms} className="min-h-[32px] min-w-[32px] max-sm:min-h-[44px] max-sm:min-w-[44px] rounded-lg bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer shadow-xs" title="Скопировать SMS">
 								<Copy size={13} />
 							</button>
 						</div>
@@ -79,7 +79,7 @@ export function TelephonyDrawerFinancialAndUpcoming({
 			{lastVisitSummary && (
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1">
 					<span className="font-semibold text-[11px] text-[var(--muted)] flex items-center gap-1">
-						<Clock size={11} className="text-[var(--teal)]" />Предыдущий визит:
+						<Clock size={11} className="text-[var(--primary)]" />Предыдущий визит:
 					</span>
 					<div className="text-xs text-[var(--ink)]">
 						<span className="font-semibold">{lastVisitSummary.formattedLastVisit}</span>

@@ -20,8 +20,8 @@ export interface CopilotSurgeryPassportData {
 	lotNumber?: string;
 	osteointegrationMonths?: number;
 	isApplied?: boolean;
-	amountKopecks?: number;
-	materialsCostKopecks?: number;
+	amountKopecks?: bigint;
+	materialsCostKopecks?: bigint;
 }
 
 export interface CopilotSurgeryPassportCardProps {

@@ -1,4 +1,4 @@
-import type { PatientRecallRecord, RecallContactStatus } from "./recallCycleCatalog";
+import type { PatientRecallRecord, RecallContactStatus } from "./recallRecordTypes";
 import { RECALL_CYCLE_CATALOG } from "./recallsCatalogData";
 import { addCalendarMonthsSafe, addDaysSafe, addWeeksSafe, calculateDaysOverdue, formatIsoDateOnly, resolveUrgencyStatus } from "./recallDateMath";
 import { evaluateMultiRecallChannels, shouldResetRecallTimer, type ClinicalProcedureIdentifier, type PatientClinicalStatusInput } from "./recallClinicalTriggers";

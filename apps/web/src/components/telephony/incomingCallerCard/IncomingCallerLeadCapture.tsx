@@ -20,7 +20,7 @@ export const IncomingCallerLeadCapture: React.FC<IncomingCallerLeadCaptureProps>
 
 	return (
 		<div
-			className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--teal-soft)] space-y-2.5 shadow-xs"
+			className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line)] space-y-2.5 shadow-xs"
 			data-testid="telephony-lead-capture-card"
 		>
 			<div className="flex items-center justify-between gap-1 flex-wrap">
@@ -53,7 +53,7 @@ export const IncomingCallerLeadCapture: React.FC<IncomingCallerLeadCaptureProps>
 				{callAttribution.utmSummary && (
 					<div className="flex items-start justify-between gap-1">
 						<span className="shrink-0">UTM-метки:</span>
-						<span className="font-mono text-[10px] text-[var(--teal)] text-right break-all">
+						<span className="font-mono text-[10px] text-[var(--primary)] text-right break-all">
 							{callAttribution.utmSummary}
 						</span>
 					</div>
@@ -65,7 +65,7 @@ export const IncomingCallerLeadCapture: React.FC<IncomingCallerLeadCaptureProps>
 					type="button"
 					onClick={onCaptureLead}
 					aria-busy={isCapturingLead}
-					className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+					className="w-full h-9 min-h-[36px] max-sm:min-h-[44px] px-3.5 py-1.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 					data-testid="drawer-action-capture-lead"
 					title="Захват звонящего в лиды с автоматической разметкой рекламного канала"
 				>

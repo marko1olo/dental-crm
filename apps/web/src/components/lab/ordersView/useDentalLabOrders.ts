@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import type { DentalLabOrderData } from "../labMath";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { useLabOrdersData } from "./hooks/useLabOrdersData";
@@ -24,7 +25,13 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 		onOpenOrderFromEvent: (draft) => {
 			modals.setSelectedOrderForEdit(draft);
 			modals.setModalInitialTab("main");
-			modals.setIsOrderDrawerOpen(true);
+			useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+				orderId: draft.id,
+				initialOrder: draft,
+				editingOrder: draft,
+				initialTab: "new_order",
+				onOrderSaved: () => void data.fetchOrders(),
+			});
 		},
 	});
 	const filtering = useLabOrdersFiltering(data.orders);
@@ -67,10 +74,43 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 		handleBatchStatusChange: actions.handleBatchStatusChange,
 		handleOpenReadyInClinicPrompt: modals.handleOpenReadyInClinicPrompt,
 		copyPortalLink: actions.copyPortalLink,
-		handleOpenNewOrder: () => { modals.setSelectedOrderForEdit(null); modals.setModalInitialTab("main"); modals.setIsOrderDrawerOpen(true); },
-		handleOpenOrderDrawer: () => { modals.setSelectedOrderForEdit(null); modals.setIsOrderDrawerOpen(true); },
-		handleOpenEditOrder: (o: DentalLabOrderData) => { modals.setSelectedOrderForEdit(o); modals.setModalInitialTab("main"); modals.setIsOrderDrawerOpen(true); },
-		handleOpenPrintOrder: (o: DentalLabOrderData) => { modals.setSelectedOrderForEdit(o); modals.setModalInitialTab("print"); modals.setIsWorkOrderModalOpen(true); },
+		handleOpenNewOrder: () => {
+			modals.setSelectedOrderForEdit(null);
+			modals.setModalInitialTab("main");
+			useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+				initialTab: "new_order",
+				onOrderSaved: () => void data.fetchOrders(),
+			});
+		},
+		handleOpenOrderDrawer: () => {
+			modals.setSelectedOrderForEdit(null);
+			useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+				initialTab: "new_order",
+				onOrderSaved: () => void data.fetchOrders(),
+			});
+		},
+		handleOpenEditOrder: (o: DentalLabOrderData) => {
+			modals.setSelectedOrderForEdit(o);
+			modals.setModalInitialTab("main");
+			useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+				orderId: o.id,
+				initialOrder: o,
+				editingOrder: o,
+				initialTab: "new_order",
+				onOrderSaved: () => void data.fetchOrders(),
+			});
+		},
+		handleOpenPrintOrder: (o: DentalLabOrderData) => {
+			modals.setSelectedOrderForEdit(o);
+			modals.setModalInitialTab("print");
+			useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+				orderId: o.id,
+				initialOrder: o,
+				editingOrder: o,
+				initialTab: "print_blank",
+				onOrderSaved: () => void data.fetchOrders(),
+			});
+		},
 		handleOpenTracking: (o: DentalLabOrderData) => { modals.setSelectedOrderForTracking(o); modals.setIsTrackingDrawerOpen(true); },
 		handlePayFromCashbox: actions.handlePayFromCashbox,
 		handleMarkInstalled: actions.handleMarkInstalled,
@@ -110,9 +150,15 @@ export function useDentalLabOrders({ initialOrders, onOrdersChanged }: UseDental
 			}));
 		},
 		handleCreateOrderFromPriceMatrix: (item: LabPriceMatrixItem) => {
-			modals.setSelectedOrderForEdit({ patientId: "", patientName: "", material: item.material, constructionType: item.id, priceRub: item.suggestedCostRub, clinicalNotes: item.specialInstructions || "" });
+			const draft = { patientId: "", patientName: "", material: item.material, constructionType: item.id, priceRub: item.suggestedCostRub, clinicalNotes: item.specialInstructions || "" };
+			modals.setSelectedOrderForEdit(draft);
 			modals.setModalInitialTab("main");
-			modals.setIsOrderDrawerOpen(true);
+			useUiSurfaceStore.getState().openPrimaryModal("lab_order", {
+				initialOrder: draft,
+				editingOrder: draft,
+				initialTab: "new_order",
+				onOrderSaved: () => void data.fetchOrders(),
+			});
 		},
 	};
 }

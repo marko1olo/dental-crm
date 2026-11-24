@@ -4,7 +4,6 @@ import { MobileLabOrdersTimeline } from "./mobile/MobileLabOrdersTimeline";
 import type { DentalLabOrdersViewProps } from "./ordersView/types";
 import { useDentalLabOrders } from "./ordersView/useDentalLabOrders";
 import { DentalLabOrdersMainContent } from "./ordersView/DentalLabOrdersMainContent";
-import { DentalLabStudioModal } from "./DentalLabStudioModal";
 import { DentalLabPriceMatrixModal } from "./DentalLabPriceMatrixModal";
 import { IntraoralScan3DViewerModal } from "../radiology/IntraoralScan3DViewerModal";
 import { LabTrackingDrawer } from "./LabTrackingDrawer";
@@ -68,32 +67,6 @@ export function DentalLabOrdersView({
 			) : (
 				<DentalLabOrdersMainContent logic={logic} />
 			)}
-
-			{/* Модалки и шторки монтируются строго один раз (Канонический SSOT) */}
-			<DentalLabStudioModal
-				key={logic.selectedOrderForEdit?.id ? `edit-${logic.selectedOrderForEdit.id}` : "new-lab-order"}
-				isOpen={Boolean(logic.isOrderDrawerOpen || logic.isWorkOrderModalOpen || logic.isHubModalOpen)}
-				onClose={() => {
-					logic.setIsHubModalOpen(false);
-					logic.setIsOrderDrawerOpen(false);
-					logic.setIsWorkOrderModalOpen(false);
-				}}
-				initialOrder={logic.isHubModalOpen ? null : logic.selectedOrderForEdit}
-				editingOrder={logic.isHubModalOpen ? null : logic.selectedOrderForEdit}
-				treatmentPlanId={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.treatmentPlanId ?? undefined)}
-				stageNumber={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.stageNumber ?? undefined)}
-				stageTitle={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.stageTitle ?? undefined)}
-				stageId={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.stageId ?? undefined)}
-				patientId={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.patientId ?? undefined)}
-				patientName={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.patientName ?? undefined)}
-				doctorId={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.doctorId ?? undefined)}
-				doctorName={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.doctorName ?? undefined)}
-				currentToothNumber={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.toothFdi ?? undefined)}
-				initialToothFdi={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.toothFdi ?? undefined)}
-				initialTeeth={logic.isHubModalOpen ? undefined : (logic.selectedOrderForEdit?.selectedTeeth ?? logic.selectedOrderForEdit?.teeth ?? undefined)}
-				onSaveOrder={() => void logic.fetchOrders()}
-				onOrderSaved={() => void logic.fetchOrders()}
-			/>
 
 			<DentalLabPriceMatrixModal
 				isOpen={logic.isPriceMatrixModalOpen}

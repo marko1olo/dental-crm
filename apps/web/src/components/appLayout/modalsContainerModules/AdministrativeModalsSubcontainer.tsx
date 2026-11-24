@@ -1,5 +1,4 @@
 import React from "react";
-import { DentalLabStudioModal } from "../../lab/DentalLabStudioModal";
 import { DoctorPrivacyShield } from "../../auth/DoctorPrivacyShield";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
 import type { StaffUser } from "../../auth/staffPinPad/staffPinPadTypes";
@@ -12,9 +11,6 @@ const LoyaltyStudioModal = React.lazy(() =>
 );
 
 export function AdministrativeModalsSubcontainer({
-	isGlobalLabCreateOrderOpen,
-	setIsGlobalLabCreateOrderOpen,
-	labCreateOrderContext,
 	isGlobalLoyaltyOpen,
 	setIsGlobalLoyaltyOpen,
 	loyaltyModalContext,
@@ -27,24 +23,6 @@ export function AdministrativeModalsSubcontainer({
 }: AdministrativeModalsSubcontainerProps) {
 	return (
 		<>
-			{isGlobalLabCreateOrderOpen && (
-				<DentalLabStudioModal
-					key={labCreateOrderContext?.patientId ? `global-lab-${labCreateOrderContext.patientId}` : "new_global_order"}
-					isOpen={isGlobalLabCreateOrderOpen}
-					onClose={() => setIsGlobalLabCreateOrderOpen(false)}
-					onOrderCreated={() => setIsGlobalLabCreateOrderOpen(false)}
-					patientName={
-						labCreateOrderContext?.patientName || "Пациент"
-					}
-					patientId={labCreateOrderContext?.patientId || ""}
-					doctorName={
-						(typeof activeStaffUser?.name === "string" && activeStaffUser.name) ||
-						(typeof activeStaffUser?.fullName === "string" && activeStaffUser.fullName) ||
-						"Лечащий врач"
-					}
-					initialToothFdi={labCreateOrderContext?.toothNumber || "21"}
-				/>
-			)}
 			{/* Честность: бонусы списываются только конкретному пациенту из контекста.
 			    Без patientId модалка не открывается — никаких подставных карт и ФИО. */}
 			{isGlobalLoyaltyOpen && loyaltyModalContext?.patientId && (

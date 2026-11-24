@@ -38,11 +38,11 @@ export interface CanonicalKanbanColumnDef {
 }
 
 export const CANONICAL_5_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	{ id: "sent_to_lab", title: "1. Слепок / Скан (Отправлен в ЗТЛ)", shortTitle: "Слепок/Скан", icon: <Layers size={16} />, colorHex: "#3b82f6" },
-	{ id: "in_progress", title: "2. В работе у техника (ЗТЛ)", shortTitle: "В работе ЗТЛ", icon: <Calendar size={16} />, colorHex: "#8b5cf6" },
-	{ id: "fitting_scheduled", title: "3. На примерку (каркас/модель)", shortTitle: "На примерку", icon: <FileText size={16} />, colorHex: "#f59e0b" },
-	{ id: "ready_in_clinic", title: "4. Готовая работа в клинике", shortTitle: "Готово в клинике", icon: <Truck size={16} />, colorHex: "#0d9488" },
-	{ id: "installed_completed", title: "5. Зафиксировано во рту / Сдано", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "#10b981" },
+	{ id: "sent_to_lab", title: "1. Слепок / Скан (Отправлен в ЗТЛ)", shortTitle: "Слепок/Скан", icon: <Layers size={16} />, colorHex: "var(--info, #3b82f6)" },
+	{ id: "in_progress", title: "2. В работе у техника (ЗТЛ)", shortTitle: "В работе ЗТЛ", icon: <Calendar size={16} />, colorHex: "var(--accent, #8b5cf6)" },
+	{ id: "fitting_scheduled", title: "3. На примерку (каркас/модель)", shortTitle: "На примерку", icon: <FileText size={16} />, colorHex: "var(--warning, #f59e0b)" },
+	{ id: "ready_in_clinic", title: "4. Готовая работа в клинике", shortTitle: "Готово в клинике", icon: <Truck size={16} />, colorHex: "var(--primary)" },
+	{ id: "installed_completed", title: "5. Зафиксировано во рту / Сдано", shortTitle: "Сдано", icon: <CheckCircle2 size={16} />, colorHex: "var(--success, #10b981)" },
 ] as const;
 
 export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [

@@ -17,6 +17,7 @@
  */
 
 import { z } from "zod";
+import { formatKopecksToRubles } from "../money.js";
 
 // ============================================================================
 // 1. SCHEMAS: MORNING DOCTOR BRIEFING
@@ -592,11 +593,11 @@ export function generatePreAppointmentSummary(
   }
 
   // Financial pre-brief text
-  const balanceRub = (f.balanceKopecks / 100).toFixed(2);
-  const planRub = (f.openTreatmentPlanAmountKopecks / 100).toFixed(2);
+  const balanceRub = formatKopecksToRubles(f.balanceKopecks);
+  const planRub = formatKopecksToRubles(f.openTreatmentPlanAmountKopecks);
   let financialBrief = `Баланс пациента: ${balanceRub} руб.`;
   if (f.balanceKopecks < 0) {
-    financialBrief += ` (ЗАДОЛЖЕННОСТЬ: ${Math.abs(f.balanceKopecks / 100).toFixed(2)} руб.)`;
+    financialBrief += ` (ЗАДОЛЖЕННОСТЬ: ${formatKopecksToRubles(Math.abs(f.balanceKopecks))} руб.)`;
   } else if (f.balanceKopecks > 0) {
     financialBrief += ` (АВАНС: ${balanceRub} руб.)`;
   }

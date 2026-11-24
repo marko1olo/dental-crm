@@ -10,7 +10,7 @@ export {
 	type RecallScriptObjection,
 	type RecallInvitationTemplate,
 	type RecallCallingScript,
-} from "./recallTemplates";
+} from "./recallInvitationTemplates";
 
 export { DirectRecallLauncher } from "./DirectRecallLauncher";
 

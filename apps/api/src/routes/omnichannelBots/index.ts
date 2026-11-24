@@ -24,6 +24,7 @@ import {
 	handleLinkPatient,
 } from "./triageAndBooking.js";
 import { handleWebhookGetHandshake } from "../../security/webhookAuth.js";
+import { bookAppointmentBodySchema } from "./schemas.js";
 
 export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -270,28 +271,36 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 */
 	app.post<{
 		Params: { senderId: string };
-		Body: {
-			channel: BotChannel;
-			patientId: string;
-			doctorUserId?: string;
-			startsAt: string;
-			endsAt: string;
-			reason?: string;
-			sendConfirmationToChat?: boolean;
-			operatorName?: string;
-		};
 	}>("/api/bots/chats/:senderId/book-appointment", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots book appointment");
 		if (!orgId) return;
 
-		const { senderId } = request.params;
-		if (!request.body) {
+		const rawIdempotencyKey = (request.headers["idempotency-key"] ||
+			request.headers["x-idempotency-key"]) as string | undefined;
+		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : "";
+		if (
+			idempotencyKey &&
+			!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idempotencyKey)
+		) {
 			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Не заполнены параметры записи на приём.",
+				error: "InvalidIdempotencyKey",
+				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
 			});
 		}
-		const res = await handleBookAppointment(orgId, senderId, request.body);
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
+		const parsed = bookAppointmentBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message || "Не заполнены параметры записи на приём.",
+			});
+		}
+
+		const { senderId } = request.params;
+		const res = await handleBookAppointment(orgId, senderId, parsed.data);
 		if (!res.ok) {
 			return reply.code(res.statusCode || 400).send({ error: res.error, message: res.message });
 		}

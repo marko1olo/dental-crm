@@ -60,13 +60,13 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			assert.ok(content.includes("3. Печатный бланк"), "Tab 3 title must be present");
 		});
 
-		it("1.3. Enforces Doctor Autonomy (Mandate 8e) & Single Primary CTA #0d9488 (Mandate 8am)", () => {
+		it("1.3. Enforces Doctor Autonomy (Mandate 8e) & Single Primary CTA (Mandate 8am)", () => {
 			const content =
 				fs.readFileSync(studioPath, "utf-8") +
 				fs.readFileSync(path.resolve(labDir, "DentalLabCreateOrderSection.tsx"), "utf-8");
 			assert.ok(content.includes('data-testid="submit-lab-order-button"'), "Must have submit button");
 			assert.ok(content.includes("✓ Создать заказ-наряд"), "Must feature action caption");
-			assert.ok(content.includes("var(--teal"), "Primary CTA must use teal #0d9488");
+			assert.ok(content.includes("var(--primary)"), "Primary CTA must use semantic token var(--primary)");
 			// Zero disabled lockouts
 			assert.ok(!content.includes("disabled={!"), "Button must never be blocked by disabled attribute");
 			assert.ok(!content.includes("disabled={true}"), "Button must never be permanently disabled");

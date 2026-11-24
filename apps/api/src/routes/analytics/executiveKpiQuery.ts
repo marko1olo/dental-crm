@@ -16,6 +16,7 @@ import {
 	cashOperations,
 	chairs,
 	crmLeads,
+	doctorPayrollStatements,
 	inventoryTransactions,
 	labOrders,
 	organizations,
@@ -432,7 +433,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа, исключая аннулированные счета)
 	// (Мандат 8bm: прямое суммирование копеек без float-дрейфа)
-	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopExpr = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
 	const [paymentsSummary] = await db
 		.select({
 			paidRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} else 0 end), 0)::bigint`,
@@ -452,7 +453,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const paidKopecks = Number(paymentsSummary?.paidRevenueKopecks || 0);
 	const refundedKopecks = Number(paymentsSummary?.refundedRevenueKopecks || 0);
-	const totalRevenueKopecks = Math.max(0, paidKopecks - refundedKopecks);
+	const totalRevenueKopecks = paidKopecks - refundedKopecks;
 	const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
 	// 5b. Честное распределение по способам оплат (Касса наличные / Карты и ДМС / СБП QR / Депозиты)
@@ -502,7 +503,7 @@ export async function queryExecutiveKpiAndFunnel(
 	};
 
 	// 6. Расходы клиники и управленческий P&L (COGS, OPEX, Чистая прибыль)
-	const cashOperationKopExpr = sql`coalesce(${cashOperations.amountKopecks}, round(${cashOperations.amountRub} * 100)::bigint)`;
+	const cashOperationKopExpr = sql`coalesce(nullif(${cashOperations.amountKopecks}, 0), round(${cashOperations.amountRub} * 100)::bigint)`;
 	const cashExpenseRows = await db
 		.select({
 			reasonCode: cashOperations.reasonCode,
@@ -583,10 +584,35 @@ export async function queryExecutiveKpiAndFunnel(
 
 	const directMaterialsCostKopecks = rublesToKopecks(Number(materialsUsageRow?.totalCostRub || 0));
 
+	// Начисленная зарплата врачей по ведомостям doctorPayrollStatements (метод начисления P&L)
+	// с фолбэком на кассовые операции по статье заработной платы при отсутствии начисленных ведомостей (Мандат 8ap)
+	const [accruedPayrollRow] = await db
+		.select({
+			totalPayrollKopecks: sql<number>`coalesce(sum(coalesce(nullif(${doctorPayrollStatements.totalAccruedKopecks}, 0), ${doctorPayrollStatements.netPayoutKopecks})), 0)::bigint`,
+		})
+		.from(doctorPayrollStatements)
+		.where(
+			and(
+				eq(doctorPayrollStatements.organizationId, orgId),
+				gte(
+					doctorPayrollStatements.period,
+					sql`to_char(${startDate}::date, 'YYYY-MM')`,
+				),
+				lte(
+					doctorPayrollStatements.period,
+					sql`to_char(${range.endDate}::date, 'YYYY-MM')`,
+				),
+			),
+		);
+
+	const accruedPayrollKopecks = Number(accruedPayrollRow?.totalPayrollKopecks || 0);
+	const effectiveDoctorPayrollKopecks =
+		accruedPayrollKopecks > 0 ? accruedPayrollKopecks : cashPayrollExpensesKopecks;
+
 	const totalCogsKopecks =
 		directLabCostKopecks +
 		directMaterialsCostKopecks +
-		cashPayrollExpensesKopecks;
+		effectiveDoctorPayrollKopecks;
 
 	const totalMarketingSpendKopecks = cashMarketingExpensesKopecks;
 	const totalOpexKopecks =

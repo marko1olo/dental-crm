@@ -8,6 +8,14 @@ import type {
 import type { ClinicalTaskCallType } from "@dental/shared";
 import type { RecallChannelType, RecallUrgencyLevel } from "./recallFilterTypes";
 
+export type {
+	ClinicalRecallTriggerType,
+	RecallChannel,
+	RecallContactStatus,
+	RecallCycleType,
+	RecallUrgencyStatus,
+};
+export * from "./recallCycleTypes";
 export * from "./recallFilterTypes";
 export * from "./recallMetricsTypes";
 export * from "./recallTaskCallClassifier";

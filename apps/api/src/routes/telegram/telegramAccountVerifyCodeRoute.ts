@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 
 export function registerTelegramAccountVerifyCodeRoute(app: FastifyInstance) {
@@ -16,7 +17,7 @@ export function registerTelegramAccountVerifyCodeRoute(app: FastifyInstance) {
 			phone: z.string().trim().min(5, "Укажите номер телефона"),
 			phoneCodeHash: z.string().trim().min(1, "phoneCodeHash обязателен"),
 			code: z.string().trim().min(3, "Укажите код из Telegram"),
-		});
+		}).strict();
 
 		const parsed = schema.safeParse(request.body);
 		if (!parsed.success) {
@@ -27,8 +28,9 @@ export function registerTelegramAccountVerifyCodeRoute(app: FastifyInstance) {
 			});
 		}
 
-		const userId = (request.headers["x-user-id"] as string) || null;
-		const clinicId = (request.headers["x-clinic-id"] as string) || null;
+		const identity = getRequestIdentity(request);
+		const userId = identity.verified ? identity.userId : null;
+		const clinicId = identity.verified ? identity.organizationId : null;
 
 		const result = await TelegramAccountService.verifyCode({
 			organizationId: orgId,

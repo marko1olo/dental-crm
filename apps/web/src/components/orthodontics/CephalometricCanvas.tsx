@@ -56,21 +56,21 @@ export interface CephalometricCanvasProps {
 }
 
 const LANDMARK_COLORS: Record<string, string> = {
-	S: "#38bdf8",
-	N: "#38bdf8",
-	Or: "#38bdf8",
-	Po: "#38bdf8",
-	ANS: "#38bdf8",
-	PNS: "#38bdf8",
-	A: "#38bdf8",
-	B: "#38bdf8",
-	Pog: "#38bdf8",
-	Gn: "#38bdf8",
-	Me: "#38bdf8",
-	Go: "#38bdf8",
-	Ba: "#38bdf8",
-	Ar: "#38bdf8",
-	Pt: "#38bdf8",
+	S: "var(--primary)",
+	N: "var(--primary)",
+	Or: "var(--primary)",
+	Po: "var(--primary)",
+	ANS: "var(--primary)",
+	PNS: "var(--primary)",
+	A: "var(--primary)",
+	B: "var(--primary)",
+	Pog: "var(--primary)",
+	Gn: "var(--primary)",
+	Me: "var(--primary)",
+	Go: "var(--primary)",
+	Ba: "var(--primary)",
+	Ar: "var(--primary)",
+	Pt: "var(--primary)",
 	Prn: "#f43f5e",
 	Ls: "#f43f5e",
 	Li: "#f43f5e",
@@ -443,7 +443,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 								{pS && pN && (
 									<line
 										x1={pS.x} y1={pS.y} x2={pN.x} y2={pN.y}
-										stroke="#38bdf8" strokeWidth="2"
+										stroke="var(--primary)" strokeWidth="2"
 									/>
 								)}
 
@@ -543,7 +543,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 							{Object.entries(landmarks).map(([key, pt]) => {
 								if (!pt) return null;
 								const isActive = key === activeTargetKey || key === draggingKey;
-								const color = LANDMARK_COLORS[key] || "#38bdf8";
+								const color = LANDMARK_COLORS[key] || "var(--primary)";
 
 								return (
 									<g
@@ -614,7 +614,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 									y1={calibPoint1.y}
 									x2={calibPoint2.x}
 									y2={calibPoint2.y}
-									stroke="#38bdf8"
+									stroke="var(--primary)"
 									strokeWidth="2.5"
 									strokeDasharray="6 3"
 								/>
@@ -626,11 +626,11 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 										height="20"
 										rx="5"
 										fill="rgba(15, 23, 42, 0.9)"
-										stroke="#38bdf8"
+										stroke="var(--primary)"
 										strokeWidth="1"
 									/>
 									<text
-										fill="#38bdf8"
+										fill="var(--primary)"
 										fontSize="11"
 										fontWeight="bold"
 										textAnchor="middle"
@@ -651,9 +651,9 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 									}}
 								>
 									<circle r="18" fill="transparent" />
-									<circle r="7" fill="#38bdf8" stroke="#ffffff" strokeWidth="2.5" />
-									<line x1="-12" y1="0" x2="12" y2="0" stroke="#38bdf8" strokeWidth="1.5" />
-									<line x1="0" y1="-12" x2="0" y2="12" stroke="#38bdf8" strokeWidth="1.5" />
+									<circle r="7" fill="var(--primary)" stroke="#ffffff" strokeWidth="2.5" />
+									<line x1="-12" y1="0" x2="12" y2="0" stroke="var(--primary)" strokeWidth="1.5" />
+									<line x1="0" y1="-12" x2="0" y2="12" stroke="var(--primary)" strokeWidth="1.5" />
 								</g>
 								{/* Точка 2 */}
 								<g
@@ -666,9 +666,9 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 									}}
 								>
 									<circle r="18" fill="transparent" />
-									<circle r="7" fill="#38bdf8" stroke="#ffffff" strokeWidth="2.5" />
-									<line x1="-12" y1="0" x2="12" y2="0" stroke="#38bdf8" strokeWidth="1.5" />
-									<line x1="0" y1="-12" x2="0" y2="12" stroke="#38bdf8" strokeWidth="1.5" />
+									<circle r="7" fill="var(--primary)" stroke="#ffffff" strokeWidth="2.5" />
+									<line x1="-12" y1="0" x2="12" y2="0" stroke="var(--primary)" strokeWidth="1.5" />
+									<line x1="0" y1="-12" x2="0" y2="12" stroke="var(--primary)" strokeWidth="1.5" />
 								</g>
 							</g>
 						)}

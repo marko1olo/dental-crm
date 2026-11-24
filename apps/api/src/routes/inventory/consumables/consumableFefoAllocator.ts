@@ -3,7 +3,12 @@
  * write-off cost calculation in integer kopecks, and Mandate 8e soft-overdraft response builders.
  */
 
-import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
+import {
+	formatKopecksToRubles,
+	kopecksToNumericString,
+	parseKopecks,
+	rublesToKopecks,
+} from "@dental/shared";
 import { InsufficientStockError } from "../../../services/treatmentConsumablesService.js";
 import type {
 	FefoAllocatedBatchSlice,
@@ -18,9 +23,15 @@ import type {
  */
 export function rubToKopecks(rub: number | string | null | undefined): number {
 	if (rub === null || rub === undefined || rub === "") return 0;
-	const parsed = typeof rub === "number" ? rub : Number(String(rub).trim().replace(",", "."));
-	if (!Number.isFinite(parsed) || parsed < 0) return 0;
-	return rublesToKopecks(parsed);
+	if (typeof rub === "string") {
+		try {
+			return parseKopecks(rub);
+		} catch {
+			return 0;
+		}
+	}
+	if (!Number.isFinite(rub) || rub < 0) return 0;
+	return rublesToKopecks(rub);
 }
 
 /**
@@ -28,7 +39,7 @@ export function rubToKopecks(rub: number | string | null | undefined): number {
  */
 export function kopecksToRubString(kopecks: number): string {
 	if (!Number.isFinite(kopecks)) return "0.00";
-	return formatKopecksToRubles(kopecks);
+	return kopecksToNumericString(BigInt(Math.round(kopecks)));
 }
 
 /**

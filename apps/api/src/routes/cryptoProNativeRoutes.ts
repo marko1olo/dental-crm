@@ -10,9 +10,9 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-} from "../accessGuard.js";
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../security/tenantContext.js";
 import {
 	CryptoProCertInfo,
 	CryptoProCliError,
@@ -62,10 +62,15 @@ export interface TenantCryptoContext {
 
 /**
  * Извлекает мультитенантный контекст текущей клиники и врача для изоляции сертификатов.
+ * ЗАЩИТА: isBypass ВСЕГДА false. Сертификаты чужих клиник и врачей никогда не утекают.
  */
-export async function getTenantCryptoContext(request: FastifyRequest): Promise<TenantCryptoContext> {
+export async function getTenantCryptoContext(
+	request: FastifyRequest,
+	explicitOrgId?: string,
+): Promise<TenantCryptoContext> {
 	const identity = getRequestIdentity(request);
-	if (!identity.organizationId) {
+	const targetOrgId = explicitOrgId ?? identity.organizationId;
+	if (!targetOrgId) {
 		return {
 			organizationId: null,
 			clinicInn: null,
@@ -74,7 +79,7 @@ export async function getTenantCryptoContext(request: FastifyRequest): Promise<T
 			clinicLegalName: null,
 			allowedDoctorNames: identity.fullName ? [identity.fullName.trim().toLowerCase()] : [],
 			allowedSnils: [],
-			isBypass: true,
+			isBypass: false,
 		};
 	}
 
@@ -90,7 +95,7 @@ export async function getTenantCryptoContext(request: FastifyRequest): Promise<T
 	}
 
 	try {
-		const settings = await getClinicSettingsFromDb(identity.organizationId);
+		const settings = await getClinicSettingsFromDb(targetOrgId);
 		if (settings?.profile) {
 			clinicInn = settings.profile.inn?.trim() || null;
 			clinicOgrn = settings.profile.ogrn?.trim() || null;
@@ -109,7 +114,7 @@ export async function getTenantCryptoContext(request: FastifyRequest): Promise<T
 	}
 
 	return {
-		organizationId: identity.organizationId,
+		organizationId: targetOrgId,
 		clinicInn,
 		clinicOgrn,
 		clinicName,
@@ -269,33 +274,13 @@ export function mapCryptoErrorToHttpStatus(err: unknown): {
 	};
 }
 
-// ─── Access Guard Helper ───────────────────────────────────────────────────
-
-async function checkCryptoAccess(
-	request: FastifyRequest,
-	reply: FastifyReply,
-	mode: "read" | "mutation",
-	areaName: string,
-): Promise<boolean> {
-	const identity = getRequestIdentity(request);
-	// 1. Авторизованный сотрудник клиники (врач, главный врач, управляющий, администратор)
-	if (identity.organizationId && identity.userId) {
-		return true;
-	}
-
-	// 2. Доступ по секрету администратора или dev-режиму
-	if (mode === "read") {
-		return requireClinicalReadAccess(request, reply, areaName);
-	}
-	return requireClinicalMutationAccess(request, reply, areaName);
-}
 
 // ─── Route Registration ─────────────────────────────────────────────────────
 
 export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	const handleStatus = async (request: FastifyRequest, reply: FastifyReply) => {
-		const allowed = await checkCryptoAccess(request, reply, "read", "crypto status");
-		if (!allowed) return;
+		const context = await requireClinicalReadContext(request, reply, "crypto status");
+		if (!context) return;
 
 		const status = await getCryptoProCliStatus();
 		return reply.send({
@@ -316,8 +301,8 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	app.get("/api/cryptopro/native/status", handleStatus);
 
 	const handleCertificates = async (request: FastifyRequest, reply: FastifyReply) => {
-		const allowed = await checkCryptoAccess(request, reply, "read", "crypto certificates");
-		if (!allowed) return;
+		const context = await requireClinicalReadContext(request, reply, "crypto certificates");
+		if (!context) return;
 
 		const installed = await isCryptoProInstalled();
 		if (!installed) {
@@ -332,7 +317,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 
 		try {
 			const certs = await listInstalledCertificates();
-			const tenantContext = await getTenantCryptoContext(request);
+			const tenantContext = await getTenantCryptoContext(request, context.organizationId);
 			const filteredCerts = certs.filter((c) => isCertificateAllowedForTenant(c, tenantContext));
 
 			return reply.send({
@@ -361,8 +346,8 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	app.get("/api/cryptopro/native/certificates", handleCertificates);
 
 	const handleCertificateByThumbprint = async (request: FastifyRequest<{ Params: { thumbprint: string } }>, reply: FastifyReply) => {
-		const allowed = await checkCryptoAccess(request, reply, "read", "crypto certificate details");
-		if (!allowed) return;
+		const context = await requireClinicalReadContext(request, reply, "crypto certificate details");
+		if (!context) return;
 
 		const paramCheck = thumbprintParamSchema.safeParse(request.params);
 		if (!paramCheck.success) {
@@ -405,7 +390,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const tenantContext = await getTenantCryptoContext(request);
+			const tenantContext = await getTenantCryptoContext(request, context.organizationId);
 			if (!isCertificateAllowedForTenant(cert, tenantContext)) {
 				return reply.status(403).send({
 					success: false,
@@ -446,11 +431,11 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	app.get<{ Params: { thumbprint: string } }>("/api/cryptopro/native/certificates/:thumbprint", handleCertificateByThumbprint);
 
 	const handleSign = async (request: FastifyRequest, reply: FastifyReply) => {
-		const allowed = await checkCryptoAccess(request, reply, "mutation", "crypto sign");
-		if (!allowed) return;
+		const context = await requireClinicalMutationContext(request, reply, "crypto sign");
+		if (!context) return;
 
-		const tenantContext = await getTenantCryptoContext(request);
-		const organizationId = tenantContext.organizationId;
+		const organizationId = context.organizationId;
+		const tenantContext = await getTenantCryptoContext(request, organizationId);
 		if (!organizationId && !tenantContext.isBypass) {
 			return reply.status(403).send({
 				success: false,
@@ -542,7 +527,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const tenantContext = await getTenantCryptoContext(request);
+			const tenantContext = await getTenantCryptoContext(request, organizationId);
 			if (!isCertificateAllowedForTenant(cert, tenantContext)) {
 				return reply.status(403).send({
 					success: false,

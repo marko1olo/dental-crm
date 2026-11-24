@@ -5,11 +5,9 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -84,38 +82,6 @@ export async function batchPatchLabOrdersHandler(request: FastifyRequest, reply:
 
 	try {
 		const batchResult = await withTenantCtx(orgId, async (tx) => {
-			if (idempotencyKey) {
-				const [existingKey] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.for("update");
-
-				if (existingKey) {
-					if (existingKey.status === "completed") {
-						return {
-							kind: "replayed" as const,
-							responseCode: existingKey.responseCode,
-							responseBody: existingKey.responseBody,
-						};
-					}
-					if (existingKey.status === "in_flight") {
-						return { kind: "conflict_in_flight" as const };
-					}
-				} else {
-					await tx.insert(idempotencyKeys).values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "in_flight",
-					});
-				}
-			}
-
 			const updatedOrders: Array<typeof labOrders.$inferSelect> = [];
 			const skippedOrders: Array<{ id: string; reason: string }> = [];
 
@@ -150,35 +116,8 @@ export async function batchPatchLabOrdersHandler(request: FastifyRequest, reply:
 				skipped: skippedOrders,
 			};
 
-			if (idempotencyKey) {
-				await tx
-					.update(idempotencyKeys)
-					.set({
-						status: "completed",
-						responseCode: 200,
-						responseBody: payload,
-					})
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					);
-			}
-
 			return { kind: "ok" as const, updatedOrders, payload };
 		});
-
-		if (batchResult.kind === "replayed") {
-			return reply.code(batchResult.responseCode).send(batchResult.responseBody);
-		}
-
-		if (batchResult.kind === "conflict_in_flight") {
-			return reply.code(409).send({
-				error: "ConflictInFlight",
-				message: "Пакетный запрос с данным Idempotency-Key уже выполняется.",
-			});
-		}
 
 		for (const order of batchResult.updatedOrders) {
 			wsBroker.broadcastToOrganization(orgId, {

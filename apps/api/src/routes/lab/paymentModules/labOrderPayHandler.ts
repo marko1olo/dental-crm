@@ -93,8 +93,7 @@ export async function labOrderPayHandler(
 		reply.header("idempotency-replayed", "true");
 	}
 
-	return reply.send({
-		success: true,
+	const payloadData = {
 		message: `Оплата наряда ЗТЛ на сумму ${result.operation.amountRub} ₽ успешно проведена по статье 11.`,
 		cashOperation: {
 			...result.operation,
@@ -102,5 +101,11 @@ export async function labOrderPayHandler(
 		},
 		labOrder: result.labOrder,
 		amountKopecks: result.amountKopecks,
+	};
+
+	return reply.send({
+		success: true,
+		data: payloadData,
+		...payloadData,
 	});
 }

@@ -20,15 +20,19 @@ import {
 describe("Surgery Extraction Presets & Post-Op Patient Memo", () => {
 	it("1. Mandate 8e: 804n Extraction codes & 1-click complexity presets", () => {
 		assert.equal(EXTRACTION_804N_CODES.SIMPLE, "A16.07.001");
-		assert.equal(EXTRACTION_804N_CODES.COMPLEX_SEPARATION, "A16.07.001.001");
-		assert.equal(EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC, "A16.07.001.002");
-		assert.equal(EXTRACTION_804N_CODES.CURETTAGE, "A16.07.026");
+		assert.equal(EXTRACTION_804N_CODES.ATRAUMATIC, "A16.07.001.001");
+		assert.equal(EXTRACTION_804N_CODES.COMPLEX_SEPARATION, "A16.07.001.002");
+		assert.equal(EXTRACTION_804N_CODES.IMPACTED_DYSTOPIC, "A16.07.024");
+		assert.equal(EXTRACTION_804N_CODES.CURETTAGE, "A16.07.013");
 		assert.equal(EXTRACTION_804N_CODES.SUTURE_VICRYL, "A16.07.097");
 
-		assert.equal(EXTRACTION_COMPLEXITY_OPTIONS.length, 3);
+		assert.equal(EXTRACTION_COMPLEXITY_OPTIONS.length, 6);
 		assert.ok(EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "simple"));
+		assert.ok(EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "atraumatic"));
 		assert.ok(EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "complex"));
 		assert.ok(EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "impacted_dystopic"));
+		assert.ok(EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "socket_preservation"));
+		assert.ok(EXTRACTION_COMPLEXITY_OPTIONS.find((o) => o.id === "alveolitis"));
 	});
 
 	it("2. Mandate 8e: 1-click hemostasis options & protocol generation", () => {

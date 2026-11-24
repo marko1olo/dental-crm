@@ -48,7 +48,7 @@ export const SurgeryHubFooter: React.FC<SurgeryHubFooterProps> = ({
 					<span className="hidden sm:inline">Печать документа</span>
 					<span className="sm:hidden">Печать</span>
 				</button>
-				{/* СТРОГО ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА #0d9488 */}
+				{/* СТРОГО ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА var(--primary) (Мандат 8d/8al/8am) */}
 				<button
 					type="button"
 					onClick={onSave}

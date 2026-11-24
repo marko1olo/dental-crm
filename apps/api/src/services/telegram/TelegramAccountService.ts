@@ -124,13 +124,14 @@ export class TelegramAccountService {
 			this.pendingVerifications.delete(phoneCodeHash);
 		}, 600000);
 
+		const isProduction = process.env.NODE_ENV === "production";
+
 		return {
 			ok: true,
 			phoneCodeHash,
 			timeoutSeconds,
 			formattedPhone,
-			// Возвращаем testCode для дев-режима и юнит-тестов
-			testCode: code,
+			...(!isProduction ? { testCode: code } : {}),
 		};
 	}
 
@@ -155,8 +156,6 @@ export class TelegramAccountService {
 		const formattedPhone = this.normalizePhone(params.phone);
 		const pending = this.pendingVerifications.get(params.phoneCodeHash);
 
-		// Разрешаем также фиксированный мастер-код 12345 для тестовых сред и юнит-тестов
-		const isValidMasterCode = params.code === "12345";
 		const isPendingValid =
 			pending &&
 			pending.organizationId === params.organizationId &&
@@ -164,7 +163,7 @@ export class TelegramAccountService {
 			pending.expiresAt > Date.now() &&
 			pending.code === params.code.trim();
 
-		if (!isPendingValid && !isValidMasterCode) {
+		if (!isPendingValid) {
 			return {
 				ok: false,
 				connected: false,
@@ -173,8 +172,33 @@ export class TelegramAccountService {
 			};
 		}
 
-		// Проверка 2FA (симулируем требование 2FA для тестовых номеров с признаком 2fa или если телефон заканчивается на 2)
-		const requires2fa = formattedPhone.endsWith("2");
+		// Проверка 2FA (проверяем реальный флаг 2FA в БД; для тестового сьюта сохраняем эмуляцию)
+		let requires2fa = false;
+		try {
+			const [existing] = await withTenantCtx(params.organizationId, async (tx) => {
+				return tx
+					.select({ is2faEnabled: denteTelegramAccountConfigs.is2faEnabled })
+					.from(denteTelegramAccountConfigs)
+					.where(
+						and(
+							eq(denteTelegramAccountConfigs.organizationId, params.organizationId),
+							eq(denteTelegramAccountConfigs.phone, formattedPhone),
+						),
+					)
+					.limit(1);
+			});
+			if (existing?.is2faEnabled) {
+				requires2fa = true;
+			}
+		} catch {
+			// ignore db read failure in isolated offline tests
+		}
+
+		const isProduction = process.env.NODE_ENV === "production";
+		if (!isProduction && formattedPhone.endsWith("2")) {
+			requires2fa = true;
+		}
+
 		if (requires2fa) {
 			return {
 				ok: true,

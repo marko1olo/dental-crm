@@ -1,5 +1,6 @@
-import type { PatientRecallRecord, RecallCycleType, RecallTemplateVariables } from "./recallCycleCatalog";
-import { RECALL_CYCLE_CATALOG } from "./recallCycleCatalog";
+import type { PatientRecallRecord, RecallTemplateVariables } from "./recallRecordTypes";
+import type { RecallCycleType } from "./recallCycleTypes";
+import { RECALL_CYCLE_CATALOG } from "./recallsCatalogData";
 import { generate1ClickBookingLink, extractFirstName, interpolateRecallTemplate } from "./recallMessageFormatters";
 
 export const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {

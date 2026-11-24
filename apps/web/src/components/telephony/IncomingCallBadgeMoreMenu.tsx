@@ -37,11 +37,11 @@ export function BadgeMenuBookingActions({
 					type="button"
 					onClick={() => { onCaptureLead(); onClose(); }}
 					aria-busy={isCapturingLead}
-					className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
+					className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--primary-soft)] hover:opacity-90 text-[var(--primary)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--line)] mb-1"
 					data-testid="badge-action-capture-lead"
 					title={`Захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
 				>
-					<UserPlus size={14} className="text-[var(--teal)] shrink-0" />
+					<UserPlus size={14} className="text-[var(--primary)] shrink-0" />
 					<span className="truncate">
 						{currentCall?.isLeadCaptured ? "Лид захвачен" : isCapturingLead ? "Захват лида..." : `В лиды: ${callAttribution.channelLabel}`}
 					</span>
@@ -63,7 +63,7 @@ export function BadgeMenuBookingActions({
 				onClick={() => { onQuickBook("tomorrow"); onClose(); }}
 				className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer"
 			>
-				<Calendar size={13} className="text-[var(--teal)]" />
+				<Calendar size={13} className="text-[var(--primary)]" />
 				<span>Запись на завтра ({tomorrowTime})</span>
 			</button>
 
@@ -121,7 +121,7 @@ export function BadgeMenuTelephonyActions({
 
 			{isCallAnswered && (
 				<button type="button" onClick={() => { onToggleTransferPanel(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
-					<PhoneForwarded size={13} className="text-[var(--teal)]" /><span>Перевод на врача</span>
+					<PhoneForwarded size={13} className="text-[var(--primary)]" /><span>Перевод на врача</span>
 				</button>
 			)}
 
@@ -132,17 +132,17 @@ export function BadgeMenuTelephonyActions({
 			)}
 
 			<button type="button" onClick={() => { onToggleMute(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
-				{isMuted ? <Volume2 size={13} className="text-[var(--teal)]" /> : <VolumeX size={13} className="text-rose-500" />}
+				{isMuted ? <Volume2 size={13} className="text-[var(--primary)]" /> : <VolumeX size={13} className="text-rose-500" />}
 				<span>{isMuted ? "Включить звук звонка" : "Заглушить звук звонка"}</span>
 			</button>
 
 			<button type="button" onClick={() => { onToggleDnd(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
-				{isDndActive ? <Bell size={13} className="text-[var(--teal)]" /> : <BellOff size={13} className="text-rose-500" />}
+				{isDndActive ? <Bell size={13} className="text-[var(--primary)]" /> : <BellOff size={13} className="text-rose-500" />}
 				<span>{isDndActive ? "Выключить режим DND" : "Включить «Не беспокоить» (DND)"}</span>
 			</button>
 
 			<button type="button" onClick={() => { onToggleOutcomePanel(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
-				<Check size={13} className="text-[var(--teal)]" /><span>Фиксация исхода</span>
+				<Check size={13} className="text-[var(--primary)]" /><span>Фиксация исхода</span>
 			</button>
 
 			{onRecordOutcome && (
@@ -159,7 +159,7 @@ export function BadgeMenuTelephonyActions({
 
 			<div className="my-1 border-t border-[var(--line,#e2e8f0)]" />
 
-			<button type="button" onClick={() => { onOpenFullPatientView(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--teal)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
+			<button type="button" onClick={() => { onOpenFullPatientView(); onClose(); }} className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--primary)] font-medium flex items-center gap-2 transition-colors cursor-pointer">
 				<ExternalLink size={13} /><span>Открыть в общем списке</span>
 			</button>
 		</>

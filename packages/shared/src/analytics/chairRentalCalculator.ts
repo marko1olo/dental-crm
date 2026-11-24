@@ -12,7 +12,11 @@
  */
 
 import { z } from "zod";
-import { kopecksToRub } from "../fiscal/kopecksArithmetic.js";
+import {
+	calculatePercentDiscountKopecks,
+	kopecksToRub,
+	kopecksToRubles,
+} from "../money.js";
 
 export const chairRentalModelSchema = z.enum(["hourly", "per_shift", "revenue_percent", "fixed_monthly"]);
 export type ChairRentalModel = z.infer<typeof chairRentalModelSchema>;
@@ -137,7 +141,7 @@ export function calculateChairRentalEconomics(params: ChairRentalParams): ChairR
 		}
 		case "revenue_percent": {
 			const percent = Math.min(100, Math.max(0, params.landlordPercent || 0));
-			rentExpenseKopecks = Math.round((grossKopecks * percent) / 100);
+			rentExpenseKopecks = calculatePercentDiscountKopecks(grossKopecks, percent);
 			break;
 		}
 		case "fixed_monthly": {
@@ -159,7 +163,7 @@ export function calculateChairRentalEconomics(params: ChairRentalParams): ChairR
 		? Number(((netProfitKopecks / grossKopecks) * 100).toFixed(1))
 		: 0;
 
-	const effectiveHourlyIncomeRub = Number(((netProfitKopecks / 100) / hours).toFixed(2));
+	const effectiveHourlyIncomeRub = Number((kopecksToRubles(netProfitKopecks) / hours).toFixed(2));
 
 	return {
 		model: params.model,

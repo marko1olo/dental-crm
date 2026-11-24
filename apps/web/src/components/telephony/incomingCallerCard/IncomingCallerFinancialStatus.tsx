@@ -19,7 +19,7 @@ export const IncomingCallerFinancialStatus: React.FC<IncomingCallerFinancialStat
 		<div className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-2">
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-xs text-[var(--muted,#64748b)] flex items-center gap-1.5">
-					<CreditCard size={12} className="text-[var(--teal)]" />
+					<CreditCard size={12} className="text-[var(--primary)]" />
 					Финансовый статус:
 				</span>
 				{hasDms && (

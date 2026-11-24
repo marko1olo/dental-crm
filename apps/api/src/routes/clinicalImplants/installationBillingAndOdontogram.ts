@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles, parseKopecks } from "@dental/shared";
+import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles, parseKopecks, toExactKopecks } from "@dental/shared";
 import type { z } from "zod";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import {
@@ -181,17 +181,18 @@ export async function linkBillingAndOdontogram(
 		linkedInvoiceId = newInvoice?.id ?? null;
 	}
 
-	// Строгая запись позиции в invoiceItems с точными копейками (Мандат 8bm)
+	// Строгая запись позиции в invoiceItems с точными копейками без float-конверсии (Мандат 8bm)
 	if (linkedInvoiceId) {
+		const safeItemKopecks = toExactKopecks(operationPriceKopecks);
 		await tx.insert(invoiceItems).values({
 			organizationId: orgId,
 			invoiceId: linkedInvoiceId,
 			priceListItemId: input.catalogItemId ?? null,
 			name: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
 			quantity: "1",
-			unitPriceKopecks: Number(operationPriceKopecks),
+			unitPriceKopecks: safeItemKopecks,
 			discountPercent: "0",
-			totalPriceKopecks: Number(operationPriceKopecks),
+			totalPriceKopecks: safeItemKopecks,
 			serviceCode: "A16.07.054",
 			toothCode: String(input.toothNumberFdi),
 		});

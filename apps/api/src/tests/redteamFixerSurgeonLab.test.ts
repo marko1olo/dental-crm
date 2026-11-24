@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { buildLabOrderApiPayload } from "@dental/shared";
+import { buildLabOrderApiPayload, generateUuidV7 } from "@dental/shared";
 import { db } from "../db/client.js";
 import { withFixtureTenant, fixtureUuid, purgeFixtureOrganizations, isDatabaseUnavailable } from "./support/fixtureOrganizations.js";
 import { createTenantTestApp } from "./support/tenantTestApp.js";
@@ -131,6 +131,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				patientId: PATIENT_ID,
@@ -177,6 +178,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				patientId: PATIENT_ID,
@@ -198,6 +200,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				isWarranty: true,
@@ -230,7 +233,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 	test("ДЕФЕКТ 3: Idempotency-Key дедупликация и воспроизведение ответа без TOCTOU гонки", async (t) => {
 		if (!databaseReady) return t.skip("Database is unavailable");
 
-		const testKey = fixtureUuid(NAMESPACE, 99);
+		const testKey = generateUuidV7();
 		const payload = {
 			patientId: PATIENT_ID,
 			doctorId: DOCTOR_ID,
@@ -252,7 +255,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			payload,
 		});
 
-		assert.equal(res1.statusCode, 201);
+		assert.equal(res1.statusCode, 201, `Expected 201, got ${res1.statusCode}: ${res1.body}`);
 		const body1 = JSON.parse(res1.body);
 		assert.ok(body1.id);
 
@@ -327,6 +330,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				patientId: PATIENT_ID,
@@ -365,6 +369,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				stage: "warranty_rework",
@@ -400,5 +405,89 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		const exports = labQueryModule as Record<string, unknown>;
 		assert.equal(exports.updateLabOrderStatusByToken, undefined, "updateLabOrderStatusByToken must be deleted");
 		assert.equal(exports.updateLabOrderStatusByClinic, undefined, "updateLabOrderStatusByClinic must be deleted");
+	});
+
+	test("ДЕФЕКТ 5: Отказ в создании наряда без врача (400 DoctorRequired, запрет тихого .limit(1))", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				// doctorId не передан и doctorName не передан
+				toothFdi: 16,
+				material: "zirconia",
+				priceRub: 10000,
+			},
+		});
+
+		// При авторизованном staffToken текущий пользователь DOCTOR_ID автоматически подхватывается как fallbackDoctorId.
+		// Чтобы проверить честный отказ, шлем запрос без токена врача (или с несуществующим врачом):
+		const invalidDocId = fixtureUuid(NAMESPACE, 77);
+		const resNoDoctor = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				doctorId: invalidDocId,
+				toothFdi: 16,
+				material: "zirconia",
+				priceRub: 10000,
+			},
+		});
+
+		assert.equal(resNoDoctor.statusCode, 400);
+		const json = JSON.parse(resNoDoctor.body);
+		assert.equal(json.error, "DoctorRequired");
+	});
+
+	test("ДЕФЕКТ 4: Блокировка кассовой выплаты при нулевой себестоимости наряда (400 AmountExceedsCost)", async (t) => {
+		if (!databaseReady) return t.skip("Database is unavailable");
+
+		// Создаем наряд с нулевой себестоимостью
+		const zeroCostOrderId = fixtureUuid(NAMESPACE, 78);
+		await withFixtureTenant(ORGANIZATION_ID, async () => {
+			await db.insert(labOrders).values({
+				id: zeroCostOrderId,
+				organizationId: ORGANIZATION_ID,
+				patientId: PATIENT_ID,
+				doctorId: DOCTOR_ID,
+				orderNumber: "ЗТЛ-ZERO-001",
+				secureToken: "token-zero-order-001",
+				status: "received",
+				priceRub: 15000,
+				priceKopecks: 1500000,
+				labCostRub: 0,
+				labCostKopecks: 0,
+			}).onConflictDoNothing();
+		});
+
+		const payRes = await app.inject({
+			method: "POST",
+			url: `/api/lab-orders/${zeroCostOrderId}/pay`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+				"Idempotency-Key": generateUuidV7(),
+			},
+			payload: {
+				amountKopecks: 500000, // 5000 руб
+			},
+		});
+
+		assert.equal(payRes.statusCode, 400);
+		const json = JSON.parse(payRes.body);
+		assert.equal(json.error, "AmountExceedsCost");
 	});
 });

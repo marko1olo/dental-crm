@@ -1575,7 +1575,7 @@ export function evaluateWarehouseOverdraft(
 	return {
 		hasOverdraft: true,
 		warningRu: "Мягкий овердрафт склада: задержка накладной не блокирует операцию.",
-		detailsRu: `Позиции будут списаны с признаком овердрафта: ${itemsList}. Операция не блокируется: списание зафиксировано.`,
+		detailsRu: `Позиции будут списаны с признаком: мягкий овердрафт (${itemsList}). Доктор сохраняет протокол беспрепятственно. Операция не блокируется: списание зафиксировано.`,
 		pendingItems: pending,
 		canProceed: true,
 	};

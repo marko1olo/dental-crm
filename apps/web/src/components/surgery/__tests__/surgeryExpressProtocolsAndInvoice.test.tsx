@@ -51,7 +51,7 @@ describe("Surgery Chairside 1-Click Express Protocols & Invoice Dispatch (Mandat
 		const customServices = getExtractionSurgicalServices({ complexity: "complex", toothFdi: 48 });
 		const services = dispatchSurgicalServicesToInvoice({ toothFdi: 48, customServices });
 		assert.ok(services.length >= 3, "Complex extraction must provide at least 3 billable services");
-		assert.ok(services.some((s) => s.code === "A16.07.001.001"), "Must include primary extraction code");
+		assert.ok(services.some((s) => s.code === "A16.07.001.002"), "Must include primary extraction code");
 
 		if (capturedEvent) {
 			assert.equal((capturedEvent as any).detail.toothFdi, 48);

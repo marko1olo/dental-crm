@@ -5,8 +5,8 @@
  * Брекеты, элайнеры, фотопротокол, ТРГ и клинический дневник SOAP.
  */
 
-import React, { useState } from "react";
-import { Check, Layers, ArrowRight, Copy, BookOpen, Camera, Activity } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Check, Layers, ArrowRight, Copy, BookOpen, Camera, Activity, UploadCloud } from "lucide-react";
 import { isSlotMatching } from "@dental/shared";
 import {
 	ARCHWIRE_ALLOYS_SSOT, ARCHWIRE_SECTIONS_SSOT, ELASTICS_CATALOG,
@@ -16,9 +16,10 @@ import {
 } from "./orthodonticsCatalogData";
 import { AlignerCaseTracker } from "./AlignerCaseTracker";
 import { BiteClassificationCard } from "./BiteClassificationCard";
-import { CephalometricCanvas, SAMPLE_TRG_CEPHALOGRAM_URL, type PointCoord } from "./CephalometricCanvas";
+import { CephalometricCanvas, type PointCoord } from "./CephalometricCanvas";
 import { calculateCephalometrics } from "./cephalometricMath";
 import { OrthodonticTimeline } from "./OrthodonticTimeline";
+import type { CephalometricSavedStudy } from "./cephalometricPersistence";
 
 export interface OrthodonticsTabsContentProps {
 	readonly activeTab: "brackets" | "aligners" | "photo_trg" | "diary";
@@ -36,6 +37,8 @@ export interface OrthodonticsTabsContentProps {
 	readonly onOpenPhotoModal: () => void;
 	readonly onOpenCephModal: () => void;
 	readonly totalSetupCostKopecks?: bigint | undefined;
+	readonly cephStudy?: CephalometricSavedStudy | null | undefined;
+	readonly onUpdateCephStudy?: ((study: CephalometricSavedStudy) => void) | undefined;
 }
 
 export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = ({
@@ -54,26 +57,21 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 	onOpenPhotoModal,
 	onOpenCephModal,
 	totalSetupCostKopecks,
+	cephStudy,
+	onUpdateCephStudy,
 }) => {
 	const [showTracingPreview, setShowTracingPreview] = useState<boolean>(false);
-	const [sampleCephLandmarks, setSampleCephLandmarks] = useState<Record<string, PointCoord>>({
-		S: { x: 480, y: 310 },
-		N: { x: 740, y: 290 },
-		A: { x: 730, y: 520 },
-		B: { x: 710, y: 640 },
-		Pog: { x: 720, y: 720 },
-		Gn: { x: 710, y: 750 },
-		Me: { x: 690, y: 770 },
-		Go: { x: 440, y: 650 },
-		Ba: { x: 380, y: 460 },
-		Pt: { x: 550, y: 420 },
-		Or: { x: 670, y: 370 },
-		Po: { x: 430, y: 390 },
-		U1t: { x: 735, y: 590 },
-		U1a: { x: 710, y: 510 },
-		L1t: { x: 725, y: 605 },
-		L1a: { x: 705, y: 690 },
-	});
+
+	const activeLandmarks: Record<string, PointCoord> = useMemo(() => {
+		if (!cephStudy?.landmarks) return {};
+		const res: Record<string, PointCoord> = {};
+		for (const [k, v] of Object.entries(cephStudy.landmarks)) {
+			if (v && typeof v.x === "number" && typeof v.y === "number") {
+				res[k] = { x: v.x, y: v.y };
+			}
+		}
+		return res;
+	}, [cephStudy?.landmarks]);
 
 	const renderJawCard = (title: string, isUpper: boolean) => {
 		const currentAlloy = isUpper ? protocol.upperAlloy : protocol.lowerAlloy;
@@ -307,35 +305,67 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 							</button>
 						</div>
 						{showTracingPreview && (
-							<CephalometricCanvas
-								imageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}
-								landmarks={sampleCephLandmarks}
-								onLandmarkChange={(id, pt) => {
-									const updated = { ...sampleCephLandmarks, [id]: pt };
-									setSampleCephLandmarks(updated);
-									// DEF-ORTHO-SEV2-03: Реактивный пересчет углов ТРГ и синхронизация с карточками
-									const result = calculateCephalometrics(updated, 0.15);
-									const newTrg: Record<string, number> = {};
-									for (const m of result.measurements) {
-										if (typeof m.value === "number") {
-											if (m.id === "SNA") newTrg.sna = m.value;
-											if (m.id === "SNB") newTrg.snb = m.value;
-											if (m.id === "ANB") newTrg.anb = m.value;
-											if (m.id === "1-NA-Angle") newTrg.u1_na = m.value;
-											if (m.id === "1-NB-Angle") newTrg.l1_nb = m.value;
-											if (m.id === "FMA") newTrg.fma = m.value;
+							cephStudy?.imageUrl ? (
+								<CephalometricCanvas
+									imageUrl={cephStudy.imageUrl}
+									landmarks={activeLandmarks}
+									scaleMmPerPixel={cephStudy.scaleMmPerPixel || 0.15}
+									onLandmarkChange={(id, pt) => {
+										const updated = { ...activeLandmarks, [id]: pt };
+										const scale = cephStudy.scaleMmPerPixel || 0.15;
+										// DEF-ORTHO-SEV2-03: Реактивный пересчет углов ТРГ и синхронизация с карточками
+										const result = calculateCephalometrics(updated, scale);
+										const newTrg: Record<string, number> = {};
+										for (const m of result.measurements) {
+											if (typeof m.value === "number") {
+												if (m.id === "SNA") newTrg.sna = m.value;
+												if (m.id === "SNB") newTrg.snb = m.value;
+												if (m.id === "ANB") newTrg.anb = m.value;
+												if (m.id === "1-NA-Angle") newTrg.u1_na = m.value;
+												if (m.id === "1-NB-Angle") newTrg.l1_nb = m.value;
+												if (m.id === "FMA") newTrg.fma = m.value;
+											}
 										}
-									}
-									setProtocol((prev) => ({
-										...prev,
-										trgValues: {
-											...(prev.trgValues || {}),
-											...newTrg,
-										},
-									}));
-								}}
-								className="min-h-[420px] rounded-xl border border-[var(--line)]"
-							/>
+										setProtocol((prev) => ({
+											...prev,
+											trgValues: {
+												...(prev.trgValues || {}),
+												...newTrg,
+											},
+										}));
+										if (onUpdateCephStudy && cephStudy) {
+											onUpdateCephStudy({
+												...cephStudy,
+												landmarks: updated,
+											});
+										}
+									}}
+									className="min-h-[420px] rounded-xl border border-[var(--line)]"
+								/>
+							) : (
+								<div
+									data-testid="ceph-tracing-empty-state"
+									className="py-10 px-4 flex flex-col items-center justify-center text-center gap-3 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/50"
+								>
+									<Activity className="w-10 h-10 text-[var(--ink-muted)] stroke-[1.5]" />
+									<div className="flex flex-col gap-1 max-w-sm">
+										<span className="text-sm font-semibold text-[var(--ink)]">
+											Снимок ТРГ ещё не загружен
+										</span>
+										<p className="text-xs text-[var(--ink-muted)] leading-relaxed">
+											Для интерактивной трассировки и расчета углов требуется боковая телерентгенограмма пациента.
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={onOpenCephModal}
+										className="px-3 py-2 text-xs font-semibold rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs min-h-[36px]"
+									>
+										<UploadCloud className="w-4 h-4" />
+										<span>Загрузить снимок ТРГ</span>
+									</button>
+								</div>
+							)
 						)}
 					</div>
 				</div>

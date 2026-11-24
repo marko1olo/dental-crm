@@ -248,7 +248,7 @@ export function generateDoctorPayslipHtml(
 	<title>Расчётный листок — ${row.doctorName}</title>
 	<style>
 		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 24px; color: #1e293b; font-size: 13px; line-height: 1.5; }
-		.header { border-bottom: 2px solid #0d9488; padding-bottom: 12px; margin-bottom: 16px; }
+		.header { border-bottom: 2px solid var(--primary, #0d9488); padding-bottom: 12px; margin-bottom: 16px; }
 		h1 { font-size: 18px; margin: 0 0 4px 0; color: #0f172a; }
 		.subtitle { font-size: 12px; color: #64748b; }
 		table { width: 100%; border-collapse: collapse; margin-top: 16px; }
@@ -256,7 +256,7 @@ export function generateDoctorPayslipHtml(
 		th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 12px; }
 		.text-right { text-align: right; }
 		.font-bold { font-weight: 700; }
-		.total-row { background: #f0fdfa; font-weight: 700; color: #0f766e; }
+		.total-row { background: var(--success-soft, #f0fdfa); font-weight: 700; color: var(--primary-strong, #0f766e); }
 		.footer { margin-top: 32px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 16px; }
 		@media print { body { margin: 0; } }
 	</style>

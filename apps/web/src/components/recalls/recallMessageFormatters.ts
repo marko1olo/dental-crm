@@ -1,4 +1,5 @@
-import type { PatientRecallRecord, RecallCycleType, RecallTemplateVariables } from "./recallCycleCatalog";
+import type { PatientRecallRecord, RecallTemplateVariables } from "./recallRecordTypes";
+import type { RecallCycleType } from "./recallCycleTypes";
 import { cleanPhoneDigits } from "../../utils/formatters";
 
 export function extractFirstName(fullName: string): string {

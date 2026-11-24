@@ -4,9 +4,15 @@
  * Честная гидратация данных пациента ортодонтической студии из PostgreSQL 18 и ТРГ-синхронизация.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createDefaultOrthoProtocolState, type AngleClass, type OrthoProtocolState, type VerticalBite } from "./orthodonticsCatalogData";
 import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
+import type { CephalometricSavedStudy } from "./cephalometricPersistence";
+
+export interface OrthodonticsHydrationResult {
+	cephStudy: CephalometricSavedStudy | null;
+	setCephStudy: React.Dispatch<React.SetStateAction<CephalometricSavedStudy | null>>;
+}
 
 export interface RawCephMeasurement {
 	id?: string;
@@ -40,16 +46,23 @@ export function parseCephMeasurementsArray(
 export function useOrthodonticsStudioHydration(
 	patientId: string | undefined,
 	setProtocol: React.Dispatch<React.SetStateAction<OrthoProtocolState>>,
-): void {
+	onCephStudyLoaded?: ((study: CephalometricSavedStudy | null) => void) | undefined,
+): OrthodonticsHydrationResult {
+	const [cephStudy, setCephStudy] = useState<CephalometricSavedStudy | null>(null);
+
 	// 1. Честная гидратация данных пациента из базы PostgreSQL 18 (Zero-Leak Draft: Mandates 8d/8zq, 8bn)
 	useEffect(() => {
 		if (!patientId) {
 			setProtocol(createDefaultOrthoProtocolState());
+			setCephStudy(null);
+			onCephStudyLoaded?.(null);
 			return;
 		}
 
 		// Немедленный сброс черновика при смене patientId во избежание утечки чужих клинических данных
 		setProtocol(createDefaultOrthoProtocolState());
+		setCephStudy(null);
+		onCephStudyLoaded?.(null);
 		let isCancelled = false;
 
 		const fetchProgress = async () => {
@@ -144,42 +157,38 @@ export function useOrthodonticsStudioHydration(
 				});
 				if (res.ok) {
 					const data = (await res.json()) as {
-						study?: {
-							analysis?: {
-								sna?: number;
-								snb?: number;
-								anb?: number;
-								u1NaDeg?: number;
-								l1NbDeg?: number;
-								fmaDeg?: number;
-								measurements?: RawCephMeasurement[];
-							};
-						};
+						study?: CephalometricSavedStudy;
 					};
-					if (!isCancelled && data?.study?.analysis) {
-						const ca = data.study.analysis;
-						const extracted: Record<string, number> = {};
-
-						if (Array.isArray(ca.measurements)) {
-							Object.assign(extracted, parseCephMeasurementsArray(ca.measurements));
+					if (!isCancelled) {
+						if (data?.study) {
+							setCephStudy(data.study);
+							onCephStudyLoaded?.(data.study);
 						}
+						if (data?.study?.analysis) {
+							const ca = data.study.analysis;
+							const extracted: Record<string, number> = {};
 
-						// Сохранение обратной совместимости на случай плоских свойств
-						if (typeof ca.sna === "number") extracted.sna = ca.sna;
-						if (typeof ca.snb === "number") extracted.snb = ca.snb;
-						if (typeof ca.anb === "number") extracted.anb = ca.anb;
-						if (typeof ca.u1NaDeg === "number") extracted.u1_na = ca.u1NaDeg;
-						if (typeof ca.l1NbDeg === "number") extracted.l1_nb = ca.l1NbDeg;
-						if (typeof ca.fmaDeg === "number") extracted.fma = ca.fmaDeg;
+							if (Array.isArray(ca.measurements)) {
+								Object.assign(extracted, parseCephMeasurementsArray(ca.measurements));
+							}
 
-						if (Object.keys(extracted).length > 0) {
-							setProtocol((prev) => ({
-								...prev,
-								trgValues: {
-									...(prev.trgValues || {}),
-									...extracted,
-								},
-							}));
+							// Сохранение обратной совместимости на случай плоских свойств
+							if (typeof (ca as { sna?: number }).sna === "number") extracted.sna = (ca as { sna: number }).sna;
+							if (typeof (ca as { snb?: number }).snb === "number") extracted.snb = (ca as { snb: number }).snb;
+							if (typeof (ca as { anb?: number }).anb === "number") extracted.anb = (ca as { anb: number }).anb;
+							if (typeof (ca as { u1NaDeg?: number }).u1NaDeg === "number") extracted.u1_na = (ca as { u1NaDeg: number }).u1NaDeg;
+							if (typeof (ca as { l1NbDeg?: number }).l1NbDeg === "number") extracted.l1_nb = (ca as { l1NbDeg: number }).l1NbDeg;
+							if (typeof (ca as { fmaDeg?: number }).fmaDeg === "number") extracted.fma = (ca as { fmaDeg: number }).fmaDeg;
+
+							if (Object.keys(extracted).length > 0) {
+								setProtocol((prev) => ({
+									...prev,
+									trgValues: {
+										...(prev.trgValues || {}),
+										...extracted,
+									},
+								}));
+							}
 						}
 					}
 				}
@@ -215,6 +224,8 @@ export function useOrthodonticsStudioHydration(
 		}>(patientId);
 
 		if (cachedStudy) {
+			setCephStudy(cachedStudy as unknown as CephalometricSavedStudy);
+			onCephStudyLoaded?.(cachedStudy as unknown as CephalometricSavedStudy);
 			const mList = cachedStudy.measurements || cachedStudy.analysis?.measurements;
 			if (Array.isArray(mList) && mList.length > 0) {
 				const vals = parseCephMeasurementsArray(mList);
@@ -234,23 +245,15 @@ export function useOrthodonticsStudioHydration(
 			}
 
 			if (msg.type === "CEPH_STUDY_CACHED" || msg.type === "CEPH_ANALYSIS_UPDATED") {
-				const study = msg.payload as {
-					patientId?: string;
-					measurements?: RawCephMeasurement[];
-					analysis?: {
-						sna?: number;
-						snb?: number;
-						anb?: number;
-						u1NaDeg?: number;
-						l1NbDeg?: number;
-						fmaDeg?: number;
-						measurements?: RawCephMeasurement[];
-					};
-				};
+				const study = msg.payload as CephalometricSavedStudy | undefined;
 				if (study?.patientId && study.patientId !== patientId) {
 					return;
 				}
-				const mList = study?.measurements || study?.analysis?.measurements;
+				if (study) {
+					setCephStudy(study);
+					onCephStudyLoaded?.(study);
+				}
+				const mList = study?.measurements || (study?.analysis && "measurements" in study.analysis ? (study.analysis as { measurements?: RawCephMeasurement[] }).measurements : undefined);
 				if (Array.isArray(mList) && mList.length > 0) {
 					const vals = parseCephMeasurementsArray(mList);
 					if (Object.keys(vals).length > 0) {
@@ -274,11 +277,18 @@ export function useOrthodonticsStudioHydration(
 						},
 					}));
 				}
+			} else if (msg.type === "CEPH_STUDY_CLEARED") {
+				if (!msg.patientId || msg.patientId === patientId) {
+					setCephStudy(null);
+					onCephStudyLoaded?.(null);
+				}
 			}
 		});
 
 		return () => {
 			unsubscribe();
 		};
-	}, [patientId, setProtocol]);
+	}, [patientId, setProtocol, onCephStudyLoaded]);
+
+	return { cephStudy, setCephStudy };
 }

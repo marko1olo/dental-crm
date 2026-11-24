@@ -21,6 +21,7 @@ export const recallTypeSchema = z.enum([
 	"caries_control",     // Контрольный кариес-мониторинг детей (180 дней)
 	"perio_maintenance",  // Пародонтологический поддерживающий визит (90 дней)
 	"prosthetic_check",   // Контрольный осмотр ортопедических конструкций (180 дней)
+	"surgical_suture_removal", // Контрольный осмотр и снятие швов после хирургии (7–10 дней)
 	"other",
 ]);
 export type RecallType = z.infer<typeof recallTypeSchema>;
@@ -58,6 +59,7 @@ export const DEFAULT_RECALL_INTERVALS_DAYS: Record<RecallType, number> = {
 	caries_control: 180,
 	perio_maintenance: 90,
 	prosthetic_check: 180,
+	surgical_suture_removal: 7,
 	other: 180,
 };
 
@@ -71,6 +73,7 @@ export const RECALL_TYPE_LABELS_RU: Record<RecallType, string> = {
 	caries_control: "Контрольный осмотр и кариес-мониторинг",
 	perio_maintenance: "Пародонтологический поддерживающий визит",
 	prosthetic_check: "Контроль состояния ортопедических конструкций",
+	surgical_suture_removal: "Контрольный осмотр и снятие швов",
 	other: "Профилактический визит",
 };
 
@@ -135,6 +138,9 @@ export function formatRecallMessage(
 			break;
 		case "perio_maintenance":
 			specificAdvice = "Поддерживающая пародонтальная терапия защищает опорные ткани зубов.";
+			break;
+		case "surgical_suture_removal":
+			specificAdvice = "После хирургического вмешательства необходим контрольный осмотр врача и своевременное снятие швов (7–10 дней).";
 			break;
 		default:
 			specificAdvice = "Рекомендуем запланировать визит для сохранения здоровья полости рта.";

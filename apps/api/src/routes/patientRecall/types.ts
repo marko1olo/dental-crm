@@ -26,7 +26,8 @@ export {
 };
 
 export const listQuerySchema = z.object({
-	minMonths: z.coerce.number().int().min(1).max(60).optional(),
+	minMonths: z.coerce.number().int().min(0).max(60).optional(),
+	minDays: z.coerce.number().int().min(0).max(1800).optional(),
 	limit: z.coerce.number().int().min(1).max(1000).optional(),
 	band: recallBandSchema.optional(),
 	filterBand: recallBandSchema.optional(),

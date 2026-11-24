@@ -90,23 +90,36 @@ function normalizeRecallStatus(
 ): "due_now" | "contacted" | "scheduled" | "declined" | undefined {
 	if (!rawStatus) return undefined;
 	const s = rawStatus.toLowerCase();
-	if (s === "scheduled" || s === "completed") return "scheduled";
-	if (s === "contacted" || s === "reached" || s === "invited") return "contacted";
-	if (s === "declined" || s === "cancelled") return "declined";
-	if (s === "due_now" || s === "pending" || s === "not_called") return "due_now";
+	if (s === "scheduled" || s === "completed" || s === "contacted_scheduled" || s === "done") return "scheduled";
+	if (s === "contacted" || s === "reached" || s === "invited" || s === "contacted_no_answer") return "contacted";
+	if (s === "declined" || s === "cancelled" || s === "contacted_declined") return "declined";
+	if (s === "due_now" || s === "pending" || s === "not_called" || s === "snoozed" || s === "needs_review") return "due_now";
 	return undefined;
+}
+
+function daysBetween(from: Date, to: Date): number {
+	const diffMs = to.getTime() - from.getTime();
+	return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 }
 
 function bandFor(
 	monthsSince: number | null,
 	hadAnyAppointment: boolean,
 	intervalMonths = 6,
+	daysSince?: number | null,
+	intervalDays?: number,
 ): RecallBand | null {
 	if (monthsSince === null) {
 		// Ни одного завершённого приёма. Интересен только тот, кто записывался:
 		// карточка, заведённая по звонку и брошенная, — это не «потерянный
 		// пациент», а незавершённое обращение.
 		return hadAnyAppointment ? "never_arrived" : null;
+	}
+	if (intervalDays !== undefined && daysSince !== undefined && daysSince !== null) {
+		if (daysSince >= intervalDays * 4) return "probably_lost";
+		if (daysSince >= intervalDays * 2) return "overdue";
+		if (daysSince >= intervalDays) return "due";
+		return null;
 	}
 	if (monthsSince >= 24) return "probably_lost";
 	if (monthsSince >= Math.max(12, intervalMonths * 2)) return "overdue";
@@ -117,6 +130,7 @@ function bandFor(
 export type RecallOptions = {
 	/** С какого срока считать, что пора звать. По умолчанию — полгода. */
 	readonly minMonths?: number;
+	readonly minDays?: number;
 	readonly limit?: number;
 	/** Включать ли тех, кто ни разу не дошёл. */
 	readonly includeNeverArrived?: boolean;
@@ -129,7 +143,11 @@ export async function findRecallCandidates(
 	organizationId: string,
 	options: RecallOptions = {},
 ): Promise<RecallReport> {
-	const minMonths = Math.max(1, Math.min(60, options.minMonths ?? 1));
+	const minDays = options.minDays !== undefined
+		? Math.max(0, Math.min(1800, options.minDays))
+		: options.minMonths !== undefined
+			? Math.max(0, Math.min(60, options.minMonths)) * 30
+			: 7;
 	const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 	const includeNeverArrived = options.includeNeverArrived ?? true;
 	const targetBand = options.band ?? options.filterBand;
@@ -238,7 +256,7 @@ export async function findRecallCandidates(
 					sql`${lastCompleted} IS NULL`,
 					lte(
 						lastCompleted,
-						sql`now() - (${minMonths} || ' months')::interval`,
+						sql`now() - (${minDays} || ' days')::interval`,
 					),
 				),
 			),
@@ -293,6 +311,7 @@ export async function findRecallCandidates(
 	for (const row of rows) {
 		const lastAt = row.lastCompletedAt ? new Date(row.lastCompletedAt) : null;
 		const monthsSince = lastAt ? monthsBetween(lastAt, now) : null;
+		const daysSince = lastAt ? daysBetween(lastAt, now) : null;
 
 		const hasImplants = Number(row.implantCount) > 0;
 		const doctorSpecialty = row.lastDoctorId ? (doctorSpecialtyById.get(row.lastDoctorId) ?? null) : null;
@@ -308,6 +327,12 @@ export async function findRecallCandidates(
 			}
 		}
 
+		const isSurgical =
+			doctorSpecialty === "surgeon" ||
+			mkb.startsWith("K01") ||
+			mkb.startsWith("K10") ||
+			mkb.startsWith("K09") ||
+			/удален|резекц|хирург|синус|шв[ыа]|пластик|костн.*пластик|экстракц|surgery|extraction|suture/i.test(row.lastReason ?? "");
 		const isOrtho = doctorSpecialty === "orthodontist" || mkb.startsWith("K07");
 		const isEndo = mkb.startsWith("K04");
 		const isPerio = doctorSpecialty === "periodontist" || mkb.startsWith("K05");
@@ -315,12 +340,19 @@ export async function findRecallCandidates(
 
 		let cohortType: RecallCohort = "hygiene_therapy";
 		let suggestedIntervalMonths = 6;
+		let suggestedIntervalDays: number | undefined;
 		let clinicalReason = "";
 
 		if (monthsSince === null) {
 			cohortType = "general";
 			suggestedIntervalMonths = 6;
 			clinicalReason = BAND_LABELS.never_arrived;
+		} else if ((isSurgical || hasImplants) && daysSince !== null && daysSince <= 30) {
+			cohortType = "surgical_suture_removal";
+			suggestedIntervalDays = 7;
+			suggestedIntervalMonths = 0;
+			clinicalReason =
+				"Контрольный осмотр после хирургического вмешательства и снятие швов (7–10 дней).";
 		} else if (isPediatric) {
 			cohortType = "general";
 			suggestedIntervalMonths = 3;
@@ -367,7 +399,7 @@ export async function findRecallCandidates(
 				"Плановая профессиональная гигиена полости рта и профилактический осмотр (6 мес).";
 		}
 
-		const band = bandFor(monthsSince, Number(row.totalAppointments) > 0, suggestedIntervalMonths);
+		const band = bandFor(monthsSince, Number(row.totalAppointments) > 0, suggestedIntervalMonths, daysSince, suggestedIntervalDays);
 		if (!band) continue;
 		if (band === "never_arrived" && !includeNeverArrived) continue;
 
@@ -383,10 +415,12 @@ export async function findRecallCandidates(
 			email: row.email,
 			lastCompletedAt: lastAt ? lastAt.toISOString() : null,
 			monthsSinceLastVisit: monthsSince,
+			daysSinceLastVisit: daysSince,
 			band,
 			reason: clinicalReason,
 			cohortType,
 			suggestedIntervalMonths,
+			suggestedIntervalDays,
 			status: savedStatus ?? "due_now",
 			notes: row.lastRecallNotes ?? null,
 			lastContactChannel: row.lastRecallChannel ?? null,
@@ -394,17 +428,19 @@ export async function findRecallCandidates(
 			attendingDoctorName: row.lastDoctorId
 				? (doctorById.get(row.lastDoctorId) ?? null)
 				: null,
-			lastProcedureCategory: isPediatric
-				? "pediatric"
-				: hasImplants
-					? "implant"
-					: isEndo
-						? "endodontic"
-						: isPerio
-							? "periodontal"
-							: isOrtho
-								? "orthodontics"
-								: "hygiene_therapy",
+			lastProcedureCategory: (isSurgical || (hasImplants && daysSince !== null && daysSince <= 30))
+				? "surgery"
+				: isPediatric
+					? "pediatric"
+					: hasImplants
+						? "implant"
+						: isEndo
+							? "endodontic"
+							: isPerio
+								? "periodontal"
+								: isOrtho
+									? "orthodontics"
+									: "hygiene_therapy",
 		});
 	}
 

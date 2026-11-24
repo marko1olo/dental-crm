@@ -312,7 +312,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, { headers: denteClinicalReadHeaders() });
 				if (!res.ok) return;
 				const data = await res.json();
-				const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.orders) ? data.orders : []));
+				const payload = data?.data ?? data;
+				const list = Array.isArray(payload) ? payload : (Array.isArray(data?.orders) ? data.orders : []);
 				if (Array.isArray(list) && list.length > 0 && !isCancelled) {
 					setOrders((list as Array<Record<string, unknown>>).map((item, idx: number) => {
 						const itemMaterialId = String(item.materialId || item.workTypeId || "zirconia_multilayer");
@@ -471,7 +472,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			const res = await fetch(endpoint, reqOpts);
 			if (res.ok) {
 				const responseData = await res.json().catch(() => null);
-				const realId = responseData?.order?.id || responseData?.id;
+				const payload = responseData?.data ?? responseData;
+				const realId = payload?.id || responseData?.order?.id || responseData?.id;
 				const effectiveSavedId = String(realId || newEntry.id);
 				if (realId) setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
 				if (typeof window !== "undefined") {

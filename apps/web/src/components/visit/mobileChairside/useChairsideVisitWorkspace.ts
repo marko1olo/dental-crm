@@ -56,16 +56,21 @@ export function useChairsideVisitWorkspace({
       triggerHaptic("success");
       setRecognizedVoiceSnippet(transcript);
       const step = currentStepRef.current;
-      const form = visitNoteFormRef.current;
+      const form = visitNoteFormRef.current as Record<string, unknown> | null | undefined;
 
       let baseline = "";
       if (dictationBaselineRef.current && dictationBaselineRef.current.step === step) {
         baseline = dictationBaselineRef.current.text;
       } else {
-        if (step === "complaints") baseline = typeof form?.complaint === "string" ? form.complaint : "";
-        else if (step === "exam") baseline = typeof form?.objectiveStatus === "string" ? form.objectiveStatus : "";
-        else if (step === "diagnosis") baseline = typeof form?.diagnosis === "string" ? form.diagnosis : "";
-        else if (step === "treatment") baseline = typeof form?.treatmentPlan === "string" ? form.treatmentPlan : "";
+        const complaintVal = form?.complaint;
+        const objectiveVal = form?.objectiveStatus;
+        const diagnosisVal = form?.diagnosis;
+        const treatmentVal = form?.treatmentPlan;
+
+        if (step === "complaints") baseline = typeof complaintVal === "string" ? complaintVal : "";
+        else if (step === "exam") baseline = typeof objectiveVal === "string" ? objectiveVal : "";
+        else if (step === "diagnosis") baseline = typeof diagnosisVal === "string" ? diagnosisVal : "";
+        else if (step === "treatment") baseline = typeof treatmentVal === "string" ? treatmentVal : "";
         dictationBaselineRef.current = { step, text: baseline };
       }
 
@@ -271,20 +276,25 @@ export function useChairsideVisitWorkspace({
         updateVisitNoteField("treatmentPlan", currentPlan ? `${currentPlan}\n\n${stageDiaryText}` : stageDiaryText);
       }
 
-      const newItems: MobileChairsideBillingItem[] = items.map((it: PlanStageItem, idx: number) => ({
-        id: `stage-item-${Date.now()}-${idx}`,
-        code804n: it.serviceCode || it.code804n || (typeof it["code"] === "string" ? it["code"] : "") || "A16.07.002",
-        title: it.name || it.title || "Услуга плана",
-        priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
-        quantity: Number(it.quantity || 1),
-        toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
-      }));
+      const newItems: MobileChairsideBillingItem[] = items.map((it: PlanStageItem, idx: number) => {
+        const rawCode = it.serviceCode || it.code804n || (typeof it["code"] === "string" ? String(it["code"]) : "") || "A16.07.002";
+        const code804n: string = String(rawCode);
+        return {
+          id: `stage-item-${Date.now()}-${idx}`,
+          code804n,
+          title: it.name || it.title || "Услуга плана",
+          priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
+          quantity: Number(it.quantity || 1),
+          toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
+        };
+      });
       setBillingItems((prev) => [...prev, ...newItems]);
 
       for (const it of items) {
         const serviceId = `stage-${Date.now()}-${it.id || it.serviceCode || "srv"}`;
         const priceRub = Number(it.price || it.priceRub || it.unitPriceRub || 0);
-        const code804n = it.serviceCode || it.code804n || (typeof it["code"] === "string" ? it["code"] : "") || "A16.07.002";
+        const rawCode = it.serviceCode || it.code804n || (typeof it["code"] === "string" ? String(it["code"]) : "") || "A16.07.002";
+        const code804n: string = String(rawCode);
         const title = it.name || it.title || "Услуга плана";
         const toothNumber = it.toothNumber ? String(it.toothNumber) : undefined;
 

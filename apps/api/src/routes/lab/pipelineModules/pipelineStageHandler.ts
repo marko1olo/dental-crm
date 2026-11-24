@@ -145,6 +145,7 @@ export async function handleUpdatePipelineStage(request: FastifyRequest<{ Params
 
 	return reply.send({
 		success: true,
+		data: result.updated,
 		stage,
 		stageDefinition: stageDef,
 		order: result.updated,

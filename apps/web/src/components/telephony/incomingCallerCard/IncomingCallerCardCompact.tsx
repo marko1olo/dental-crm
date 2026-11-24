@@ -80,7 +80,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 							</span>
 						)}
 					</div>
-					<div className="flex items-center gap-2 text-xs font-mono text-[var(--teal,#0d9488)] font-bold mt-0.5">
+					<div className="flex items-center gap-2 text-xs font-mono text-[var(--primary)] font-bold mt-0.5">
 						<span>{formattedPhone}</span>
 					</div>
 				</div>
@@ -93,7 +93,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 					<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col justify-between gap-1 shadow-xs">
 						<div className="flex items-center justify-between gap-1">
 							<span className="text-[10px] font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
-								<Wallet size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<Wallet size={11} className="text-[var(--primary)] shrink-0" />
 								Баланс
 							</span>
 							{hasDms && (
@@ -122,12 +122,12 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 						<span className="text-[10px] font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
 							{upcomingAppointment ? (
 								<>
-									<Calendar size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<Calendar size={11} className="text-[var(--primary)] shrink-0" />
 									Запись
 								</>
 							) : (
 								<>
-									<Clock size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<Clock size={11} className="text-[var(--primary)] shrink-0" />
 									Визит
 								</>
 							)}
@@ -138,14 +138,14 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 								title={`Лечащий врач: ${doctor}`}
 								data-testid="incoming-caller-doctor"
 							>
-								<User size={10} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<User size={10} className="text-[var(--primary)] shrink-0" />
 								<span className="truncate max-w-[120px] sm:max-w-[180px]">{doctor}</span>
 							</span>
 						)}
 					</div>
 					<div className="pt-0.5 text-xs font-semibold text-[var(--ink,#0f172a)]">
 						{upcomingAppointment ? (
-							<span className="text-[var(--teal,#0d9488)] font-bold">
+							<span className="text-[var(--primary)] font-bold">
 								{upcomingAppointment.isToday
 									? "Сегодня"
 									: upcomingAppointment.isTomorrow
@@ -168,16 +168,16 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 			{/* Active Treatment Plan Tile */}
 			{activeTreatmentPlan && activeTreatmentPlan.hasActivePlan && (
 				<div
-					className="p-2.5 rounded-xl border border-[var(--teal-soft)] bg-[var(--teal-surface)] flex items-center justify-between gap-2 shadow-xs"
+					className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--primary-soft)] flex items-center justify-between gap-2 shadow-xs"
 					data-testid="incoming-call-active-plan-badge"
 				>
 					<div className="flex items-center gap-1.5 min-w-0">
 						<Sparkles size={13} className="text-amber-500 shrink-0" />
-						<span className="text-xs font-bold text-[var(--teal,#0d9488)] truncate">
+						<span className="text-xs font-bold text-[var(--primary)] truncate">
 							{activeTreatmentPlan.planTitle}
 						</span>
 					</div>
-					<span className="text-[11px] font-bold text-[var(--teal,#0d9488)] font-mono shrink-0">
+					<span className="text-[11px] font-bold text-[var(--primary)] font-mono shrink-0">
 						{activeTreatmentPlan.progressPercent}% выполнено
 					</span>
 				</div>

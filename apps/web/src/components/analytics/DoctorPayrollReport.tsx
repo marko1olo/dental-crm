@@ -209,7 +209,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					<button
 						type="button"
 						onClick={() => fetchPayroll(activePeriod)}
-						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
 						title="Обновить ведомость"
 					>
 						<RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -218,7 +218,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					<button
 						type="button"
 						onClick={handleExport}
-						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 						title="Экспорт в CSV"
 					>
 						<Download size={14} aria-hidden="true" />
@@ -228,7 +228,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					<button
 						type="button"
 						onClick={onPrint || (() => window.print())}
-						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<Printer size={14} aria-hidden="true" />
 						<span className="hidden sm:inline">Печать</span>
@@ -238,7 +238,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						type="button"
 						onClick={() => setIsStudioOpen(true)}
 						data-testid="payroll-open-studio-cta"
-						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+						className="primary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
 					>
 						<Calculator size={14} aria-hidden="true" />
 						<span className="hidden sm:inline">Расчетная ведомость</span>

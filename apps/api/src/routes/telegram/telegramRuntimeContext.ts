@@ -64,6 +64,8 @@ export {
 export {
 	hydrateTelegramDomainState,
 	persistTelegramChatLinkToDatabase,
+	persistTelegramBotSettingsToDatabase,
+	loadTelegramBotSettingsFromDatabase,
 } from "./telegramDbSync.js";
 
 export {

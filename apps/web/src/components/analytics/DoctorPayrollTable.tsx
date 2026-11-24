@@ -119,7 +119,7 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 							<button
 								type="button"
 								onClick={onOpenStudio}
-								className="primary-button mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer"
+								className="primary-button mt-1 min-h-[44px] px-3 py-2 rounded-xl bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer"
 							>
 								Открыть ведомость
 							</button>

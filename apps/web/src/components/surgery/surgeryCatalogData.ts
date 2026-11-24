@@ -308,11 +308,11 @@ export interface SurgeryFinancialBreakdown {
 	readonly consumablesCostRub: number;
 	readonly doctorGrossMarginRub: number;
 	readonly netDoctorIncomeRub: number;
-	readonly operationPriceKopecks: number;
-	readonly implantCostKopecks: number;
-	readonly consumablesCostKopecks: number;
-	readonly doctorGrossMarginKopecks: number;
-	readonly netDoctorIncomeKopecks: number;
+	readonly operationPriceKopecks: bigint | number;
+	readonly implantCostKopecks: bigint | number;
+	readonly consumablesCostKopecks: bigint | number;
+	readonly doctorGrossMarginKopecks: bigint | number;
+	readonly netDoctorIncomeKopecks: bigint | number;
 }
 
 export function calculateSurgeryFinancials(params: {

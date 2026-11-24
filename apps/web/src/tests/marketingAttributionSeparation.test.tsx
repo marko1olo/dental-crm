@@ -10,8 +10,8 @@ import { OnlineBookingConversionPanel } from "../components/analytics/OnlineBook
 import { MarketingAttributionDashboard } from "../components/analytics/MarketingAttributionDashboard.js";
 import { PatientCreationModal } from "../components/patients/patientCreation/index.js";
 import { LeadConvertModal } from "../components/leads/LeadConvertModal.js";
-import { validateRecallInviteSafety } from "../components/recalls/recallSmsAndMessaging.js";
-import type { PatientRecallRecord } from "../components/recalls/recallCycleCatalog.js";
+import { validateRecallInviteSafety } from "../components/recalls/recallMessagingApi.js";
+import type { PatientRecallRecord } from "../components/recalls/recallRecordTypes.js";
 import { AppLogicProvider } from "../contexts/AppLogicContext.js";
 
 // Mock AppLogicContext for isolated testing

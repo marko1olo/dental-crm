@@ -24,8 +24,11 @@ import { processProdoctorovBookingWebhook } from "./prodoctorovBookingService.js
 import {
 	calculateAvailableSlots,
 	generatePricelistXml,
-	resolveOrganizationId,
 } from "./prodoctorovSlotsSync.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../../../security/tenantContext.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import { slotsQuerySchema, webhookPayloadSchema } from "./types.js";
 
@@ -36,7 +39,28 @@ export async function handlePricelistXml(
 	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
-	const organizationId = await resolveOrganizationId(req);
+	const query = req.query as { clinicExternalId?: string } | undefined;
+	if (query?.clinicExternalId) {
+		const integration = await findIntegrationByClinicExternalId(db, query.clinicExternalId);
+		if (!integration || !integration.isActive) {
+			return reply.status(404).send({
+				error: "ClinicIntegrationNotFound",
+				message: `Интеграция для клиники с внешним кодом '${query.clinicExternalId}' не найдена или неактивна`,
+			});
+		}
+		return await withTenantCtx(integration.organizationId, async (tx) => {
+			const xml = await generatePricelistXml(tx, integration.organizationId);
+			return reply
+				.header("Content-Type", "application/xml; charset=utf-8")
+				.header("X-ProDoctorov-Feed", "dental-804n")
+				.header("Cache-Control", "public, max-age=300")
+				.send(xml);
+		});
+	}
+
+	const context = await requireClinicalReadContext(req, reply, "prodoctorov pricelist");
+	if (!context) return reply;
+	const { organizationId } = context;
 
 	return await withTenantCtx(organizationId, async (tx) => {
 		const xml = await generatePricelistXml(tx, organizationId);
@@ -100,10 +124,28 @@ export async function handleSlots(
 		});
 	}
 
-	const organizationId = await resolveOrganizationId(
-		req,
-		queryParsed.data.organizationId,
-	);
+	const rawQuery = req.query as { clinicExternalId?: string } | undefined;
+	if (rawQuery?.clinicExternalId) {
+		const integration = await findIntegrationByClinicExternalId(db, rawQuery.clinicExternalId);
+		if (!integration || !integration.isActive) {
+			return reply.status(404).send({
+				error: "ClinicIntegrationNotFound",
+				message: `Интеграция для клиники с внешним кодом '${rawQuery.clinicExternalId}' не найдена или неактивна`,
+			});
+		}
+		return await withTenantCtx(integration.organizationId, async (tx) => {
+			const slotsData = await calculateAvailableSlots(
+				tx,
+				integration.organizationId,
+				queryParsed.data,
+			);
+			return reply.send(slotsData);
+		});
+	}
+
+	const context = await requireClinicalReadContext(req, reply, "prodoctorov slots");
+	if (!context) return reply;
+	const { organizationId } = context;
 
 	return await withTenantCtx(organizationId, async (tx) => {
 		const slotsData = await calculateAvailableSlots(
@@ -181,10 +223,34 @@ export async function handleWebhook(
 	}
 
 	const payload = parsedPayload.data;
-	const organizationId = await resolveOrganizationId(
-		req,
-		payload.organizationId,
-	);
+	const rawPayload = req.body as { clinicExternalId?: string } | undefined;
+	const clinicExternalId = rawPayload?.clinicExternalId;
+	if (clinicExternalId) {
+		const integration = await findIntegrationByClinicExternalId(db, clinicExternalId);
+		if (!integration || !integration.isActive) {
+			return reply.status(404).send({
+				error: "ClinicIntegrationNotFound",
+				message: `Интеграция для клиники с внешним кодом '${clinicExternalId}' не найдена или неактивна`,
+			});
+		}
+		return await withTenantCtx(integration.organizationId, async (tx) => {
+			const result = await processProdoctorovBookingWebhook(
+				tx,
+				req,
+				payload,
+				integration.organizationId,
+				{
+					autoConfirmBookings: integration.autoConfirmBookings,
+					defaultChairId: integration.defaultChairId,
+				},
+			);
+			return reply.status(result.statusCode).send(result.body);
+		});
+	}
+
+	const context = await requireClinicalMutationContext(req, reply, "prodoctorov webhook");
+	if (!context) return reply;
+	const { organizationId } = context;
 
 	return await withTenantCtx(organizationId, async (tx) => {
 		const result = await processProdoctorovBookingWebhook(
@@ -268,7 +334,14 @@ export async function handleGetSettings(
 	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
-	const organizationId = await resolveOrganizationId(req);
+	const context = await requireClinicalMutationContext(
+		req,
+		reply,
+		"medflex settings",
+	);
+	if (!context) return reply;
+	const { organizationId } = context;
+
 	return await withTenantCtx(organizationId, async (tx) => {
 		const settings = await getOrCreateMedflexSettings(tx, organizationId);
 		return reply.send({ success: true, settings });
@@ -282,7 +355,14 @@ export async function handleUpdateSettings(
 	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
-	const organizationId = await resolveOrganizationId(req);
+	const context = await requireClinicalMutationContext(
+		req,
+		reply,
+		"medflex update settings",
+	);
+	if (!context) return reply;
+	const { organizationId } = context;
+
 	const idempotencyKey = extractIdempotencyKey(req);
 	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 		return reply.status(400).send({
@@ -329,7 +409,14 @@ export async function handleGetDoctorMappings(
 	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
-	const organizationId = await resolveOrganizationId(req);
+	const context = await requireClinicalMutationContext(
+		req,
+		reply,
+		"medflex doctor mappings",
+	);
+	if (!context) return reply;
+	const { organizationId } = context;
+
 	return await withTenantCtx(organizationId, async (tx) => {
 		const mappings = await getMedflexDoctorMappings(tx, organizationId);
 		return reply.send({ success: true, mappings });
@@ -343,7 +430,14 @@ export async function handleSaveDoctorMappings(
 	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
-	const organizationId = await resolveOrganizationId(req);
+	const context = await requireClinicalMutationContext(
+		req,
+		reply,
+		"medflex save doctor mappings",
+	);
+	if (!context) return reply;
+	const { organizationId } = context;
+
 	const idempotencyKey = extractIdempotencyKey(req);
 	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 		return reply.status(400).send({
@@ -384,7 +478,14 @@ export async function handleGetWebhookLogs(
 	req: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<FastifyReply> {
-	const organizationId = await resolveOrganizationId(req);
+	const context = await requireClinicalMutationContext(
+		req,
+		reply,
+		"medflex webhook logs",
+	);
+	if (!context) return reply;
+	const { organizationId } = context;
+
 	const query = req.query as { limit?: string };
 	const limit = query?.limit ? Number.parseInt(query.limit, 10) : 20;
 

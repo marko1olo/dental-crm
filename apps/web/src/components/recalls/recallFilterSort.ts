@@ -1,4 +1,5 @@
-import type { PatientRecallRecord, RecallFilterOptions } from "./recallCycleCatalog";
+import type { PatientRecallRecord } from "./recallRecordTypes";
+import type { RecallFilterOptions } from "./recallFilterTypes";
 import { toCanonicalRecallStatus } from "./recallCycleTypes";
 import { resolveCandidateTriggerType } from "./recallClinicalTriggers";
 import { isDateInPeriod, isPatientEligibleForRecall } from "./recallProfile";

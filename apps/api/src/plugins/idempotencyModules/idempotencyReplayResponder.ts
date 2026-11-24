@@ -46,8 +46,12 @@ export function sendReplay(
 	responseBody: unknown,
 ): FastifyReply {
 	reply.header("X-Idempotency-Key", idempotencyKey);
+	reply.header("Idempotency-Key", idempotencyKey);
 	reply.header("X-Idempotency-Status", "replayed");
 	reply.header("X-Cache-Lookup", "HIT");
+	reply.header("idempotency-replayed", "true");
+	reply.header("x-idempotency-replayed", "true");
+	reply.header("Idempotent-Replay", "true");
 
 	let replayedStatus = statusCode || 200;
 	let replayedBody: unknown = responseBody;

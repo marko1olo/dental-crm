@@ -36,7 +36,7 @@ export const IncomingCallerCardFull: React.FC<FullProps> = ({
 						<IncomingCallerStatusBadge isKnownPatient={isKnownPatient} resolvedCategory={resolvedCategory} />
 					</div>
 					<div className="flex items-center gap-2 mt-0.5 flex-wrap">
-						<span className="font-mono font-bold text-xs text-[var(--teal)]">{formattedPhone}</span>
+						<span className="font-mono font-bold text-xs text-[var(--primary)]">{formattedPhone}</span>
 						{onCopyPhone && (
 							<button type="button" onClick={onCopyPhone} className="text-[10px] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center gap-0.5 cursor-pointer underline">
 								<Copy size={11} /> копировать
@@ -63,13 +63,13 @@ export const IncomingCallerCardFull: React.FC<FullProps> = ({
 			<IncomingCallerFinancialStatus financialSummary={financialSummary} isKnownPatient={isKnownPatient} hasDebt={hasDebt} hasDms={hasDms} />
 
 			{upcomingAppointment && (
-				<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] space-y-2">
+				<div className="p-3.5 rounded-xl bg-[var(--primary-soft)] border border-[var(--line)] space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="font-semibold text-xs text-[var(--teal)] flex items-center gap-1.5">
+						<span className="font-semibold text-xs text-[var(--primary)] flex items-center gap-1.5">
 							<CalendarCheck size={13} /> Предстоящий приём:
 						</span>
 						<div className="flex items-center gap-1">
-							<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal)] text-white">
+							<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary)] text-white">
 								{upcomingAppointment.isToday ? "Сегодня" : upcomingAppointment.isTomorrow ? "Завтра" : upcomingAppointment.formattedDate}
 							</span>
 							{onSendWhatsApp && (
@@ -94,7 +94,7 @@ export const IncomingCallerCardFull: React.FC<FullProps> = ({
 			{lastVisitSummary && (
 				<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-1">
 					<span className="font-semibold text-[11px] text-[var(--muted,#64748b)] flex items-center gap-1">
-						<Clock size={11} className="text-[var(--teal)]" /> Предыдущий визит:
+						<Clock size={11} className="text-[var(--primary)]" /> Предыдущий визит:
 					</span>
 					<div className="text-xs text-[var(--ink,#0f172a)]">
 						<span className="font-semibold">{lastVisitSummary.formattedLastVisit}</span>

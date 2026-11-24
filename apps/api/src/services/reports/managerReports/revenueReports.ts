@@ -46,7 +46,7 @@ export async function revenueTimeline(
 				? sql`date_trunc('week', ${localPaidAt})`
 				: sql`date_trunc('day', ${localPaidAt})`;
 
-	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
 
 	const rows = await db
 		.select({

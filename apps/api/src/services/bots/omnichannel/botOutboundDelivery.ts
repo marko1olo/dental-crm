@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, ilike } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
@@ -19,6 +20,7 @@ export interface SendOperatorMessageParams {
 	senderId: string;
 	message: string;
 	operatorName?: string | undefined;
+	idempotencyKey?: string | undefined;
 }
 
 export interface SendOperatorMessageResult {
@@ -110,7 +112,7 @@ export class BotOutboundDelivery {
 					recipientAddress: params.senderId,
 					subject: null,
 					body: trimmed,
-					idempotencyKey: null,
+					idempotencyKey: params.idempotencyKey?.trim() || randomUUID(),
 				},
 				credentials,
 			);

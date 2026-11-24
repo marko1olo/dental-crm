@@ -107,7 +107,7 @@
 }
 
 .copilot-stenographer-status-dot--ready {
-  background: var(--primary);
+  background: var(--teal);
 }
 
 @keyframes pulse-dot {

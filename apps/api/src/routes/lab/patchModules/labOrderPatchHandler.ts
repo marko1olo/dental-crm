@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { computePayloadHash, isValidUuid } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -44,7 +45,7 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 	const rawIdempotencyKey = request.headers["idempotency-key"];
 	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : null;
 	if (idempotencyKey) {
-		if (!UUID_REGEX.test(idempotencyKey)) {
+		if (!isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный заголовок Idempotency-Key (ожидается UUID).",
@@ -80,10 +81,10 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 					.for("update");
 
 				if (existingKey) {
-					if (existingKey.status === "completed") {
+					if (existingKey.status === "completed" && existingKey.responseBody) {
 						return {
 							kind: "replayed" as const,
-							responseCode: existingKey.responseCode,
+							responseCode: existingKey.responseCode || 200,
 							responseBody: existingKey.responseBody,
 						};
 					}
@@ -95,20 +96,27 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 						clinicId: orgId,
 						key: idempotencyKey,
 						status: "in_flight",
+						payloadHash: computePayloadHash(request.body ?? {}),
 					});
 				}
 			}
 
 			const patchRes = await executeLabOrderPatchTx(tx, orgId, id, body, targetStatus);
 
-			if (patchRes.kind === "ok") {
+			if (patchRes.kind === "ok" && patchRes.updated) {
 				if (idempotencyKey) {
+					const responseBody = {
+						success: true,
+						data: patchRes.updated,
+						order: patchRes.updated,
+						...(patchRes.satelliteOrder ? { satelliteOrder: patchRes.satelliteOrder } : {}),
+					};
 					await tx
 						.update(idempotencyKeys)
 						.set({
 							status: "completed",
 							responseCode: 200,
-							responseBody: { success: true, order: patchRes.updated },
+							responseBody: responseBody as Record<string, unknown>,
 						})
 						.where(
 							and(
@@ -132,13 +140,16 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 		});
 
 		if (result.kind === "replayed") {
+			reply.header("Idempotency-Key", idempotencyKey);
+			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
 			return reply.code(result.responseCode).send(result.responseBody);
 		}
 
 		if (result.kind === "conflict_in_flight") {
-			return reply.code(409).send({
-				error: "ConflictInFlight",
-				message: "Запрос с данным Idempotency-Key уже выполняется.",
+			return reply.code(409).header("Retry-After", "1").send({
+				error: "Conflict",
+				message: "Операция обновления наряда ЗТЛ с данным Idempotency-Key уже выполняется.",
 			});
 		}
 
@@ -176,6 +187,7 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 
 		return reply.send({
 			success: true,
+			data: updated,
 			order: updated,
 			...(result.satelliteOrder ? { satelliteOrder: result.satelliteOrder } : {}),
 		});

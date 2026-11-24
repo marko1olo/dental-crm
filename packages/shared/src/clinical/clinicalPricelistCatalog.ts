@@ -11,6 +11,11 @@
  * - Mandate 8b: Exact Math & Accounting to the kopeck
  */
 
+import {
+	calculatePercentDiscountKopecks,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "../money.js";
 import { STOMX_THERAPY_PROCEDURES } from "./clinicalPricelistTherapyData.js";
 import { STOMX_SURGERY_PROCEDURES } from "./clinicalPricelistSurgeryData.js";
 import { STOMX_ORTHOPEDICS_PROCEDURES } from "./clinicalPricelistOrthopedicsData.js";
@@ -235,13 +240,13 @@ export function createEstimateItemFromClinicalProcedure(
 	const priceRub = options.customPriceRub !== undefined
 		? Math.max(0, options.customPriceRub)
 		: procedure.price;
-	const priceKopecks = Math.round(priceRub * 100);
+	const priceKopecks = rublesToKopecks(priceRub);
 
-	// Total calculation strictly in kopecks (Mandate 8b)
+	// Total calculation strictly in kopecks (Mandate 8b & 8bm)
 	const rawKopecks = priceKopecks * quantity;
-	const discountKopecks = Math.round(rawKopecks * (discountPercent / 100));
+	const discountKopecks = calculatePercentDiscountKopecks(rawKopecks, discountPercent);
 	const totalKopecks = Math.max(0, rawKopecks - discountKopecks);
-	const totalRub = totalKopecks / 100;
+	const totalRub = kopecksToRubles(totalKopecks);
 
 	return {
 		procedureId: procedure.id,

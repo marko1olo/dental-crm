@@ -90,7 +90,7 @@ export function LiveCallAudioVisualizer({
 					{isMuted ? (
 						<MicOff size={13} className="text-[var(--danger)]" />
 					) : (
-						<Mic size={13} className="text-[var(--teal,#0d9488)]" />
+						<Mic size={13} className="text-[var(--primary)]" />
 					)}
 					<span className="font-medium">
 						{isMuted ? "Микрофон выкл." : "Звук разговора"}
@@ -126,8 +126,8 @@ export function LiveCallAudioVisualizer({
 								isMuted
 									? "bg-[var(--line-strong,#94a3b8)] opacity-40"
 									: isPeak
-									? "bg-[var(--teal,#0d9488)] shadow-[0_0_6px_rgba(13,148,136,0.4)]"
-									: "bg-[var(--teal,#0d9488)]/70"
+									? "bg-[var(--primary)] shadow-xs"
+									: "bg-[var(--primary)]/70"
 							}`}
 						/>
 					);
@@ -137,7 +137,7 @@ export function LiveCallAudioVisualizer({
 			{/* Volume Indicators */}
 			<div className="flex items-center justify-between gap-2 text-[10px] text-[var(--ink-muted)] font-mono pt-0.5 border-t border-[var(--line-subtle,#f1f5f9)]">
 				<div className="flex items-center gap-1">
-					<Activity size={10} className="text-[var(--teal,#0d9488)]" />
+					<Activity size={10} className="text-[var(--primary)]" />
 					<span>Вход: {isMuted ? "0%" : `${Math.round(stats.inputLevel * 100)}%`}</span>
 				</div>
 				<div className="flex items-center gap-1">

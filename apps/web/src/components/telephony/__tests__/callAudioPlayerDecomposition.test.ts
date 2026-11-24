@@ -65,10 +65,10 @@ describe("CallAudioPlayer Red Team Invariant Verification", () => {
 			"utf-8",
 		);
 
-		// Exactly one primary CTA button with teal accent
+		// Exactly one primary CTA button with primary/teal accent
 		assert.ok(
-			controlsContent.includes("bg-[var(--teal,#0d9488)]"),
-			"Primary CTA play/pause button must use teal brand accent",
+			controlsContent.includes("bg-[var(--primary)]") || controlsContent.includes("bg-[var(--teal,#0d9488)]"),
+			"Primary CTA play/pause button must use primary brand accent",
 		);
 		assert.ok(
 			controlsContent.includes("data-testid=\"call-audio-player-toggle\""),

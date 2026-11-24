@@ -157,6 +157,7 @@ export async function updateLabItemTx(
 			computedPriceKopecks != null ? kopecksToNumericString(computedPriceKopecks) : null;
 	}
 
+
 	const [updatedItem] = await tx
 		.update(labItems)
 		.set(updatePayload)

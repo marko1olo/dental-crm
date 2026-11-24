@@ -19,21 +19,21 @@ export async function handleBookAppointment(
 	orgId: string,
 	senderId: string,
 	options: {
-		channel?: BotChannel;
+		channel?: BotChannel | undefined;
 		patientId: string;
-		doctorUserId?: string;
+		doctorUserId?: string | undefined;
 		startsAt: string;
 		endsAt: string;
-		reason?: string;
-		sendConfirmationToChat?: boolean;
-		operatorName?: string;
+		reason?: string | undefined;
+		sendConfirmationToChat?: boolean | undefined;
+		operatorName?: string | undefined;
 	},
 ): Promise<{
 	ok: boolean;
-	statusCode?: number;
-	error?: string;
-	message?: string;
-	appointmentId?: string;
+	statusCode?: number | undefined;
+	error?: string | undefined;
+	message?: string | undefined;
+	appointmentId?: string | undefined;
 }> {
 	const {
 		channel = "telegram",

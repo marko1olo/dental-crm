@@ -107,7 +107,7 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 					.set({
 						status: "completed",
 						responseCode: 201,
-						responseBody: insertRes.order as Record<string, unknown>,
+						responseBody: { success: true, data: insertRes.order, ...insertRes.order } as Record<string, unknown>,
 					})
 					.where(
 						and(
@@ -176,5 +176,9 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 	});
 
 	reply.code(201);
-	return savedOrder;
+	return reply.send({
+		success: true,
+		data: savedOrder,
+		...savedOrder,
+	});
 }

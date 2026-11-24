@@ -5,7 +5,12 @@
  * Zero floating-point drifts (Mandate 8b, Mandate 8i).
  */
 
-import { rublesToKopecks, kopecksToRubles } from "../money.js";
+import {
+	formatCurrency,
+	formatKopecksRu,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "../money.js";
 
 export { calculateCashChange, type CashChangeResult } from "../fiscal/index.js";
 
@@ -90,9 +95,9 @@ export function formatDisplayCurrency(
 ): string {
 	const { showKopecks = false, suffix = " ₽" } = options;
 	const clean = Number.isFinite(amountRub) ? amountRub : 0;
-	const formatted = clean.toLocaleString("ru-RU", {
-		minimumFractionDigits: showKopecks ? 2 : 0,
-		maximumFractionDigits: showKopecks ? 2 : 0,
-	});
-	return `${formatted}${suffix}`;
+	if (!showKopecks && suffix === " ₽") {
+		return formatCurrency(clean);
+	}
+	const kopecks = rublesToKopecks(clean);
+	return formatKopecksRu(kopecks);
 }

@@ -68,7 +68,7 @@ export const TelephonyCallList: React.FC<TelephonyCallListProps> = ({
 						placeholder="Поиск по номеру или ФИО..."
 						data-testid="telephony-search-input"
 						style={{ paddingLeft: "2.35rem" }}
-						className="w-full pr-3 h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:outline-hidden focus:ring-1 focus:ring-[var(--teal,#0d9488)] transition-all"
+						className="w-full pr-3 h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)] transition-all"
 					/>
 				</div>
 
@@ -80,7 +80,7 @@ export const TelephonyCallList: React.FC<TelephonyCallListProps> = ({
 							onClick={() => onFilterChange(tab.id)}
 							className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-all shrink-0 ${
 								activeFilter === tab.id
-									? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)]"
+									? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary)]"
 									: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-secondary)] hover:bg-[var(--paper-secondary)]"
 							}`}
 						>
@@ -108,7 +108,7 @@ export const TelephonyCallList: React.FC<TelephonyCallListProps> = ({
 								data-testid={`call-item-${call.id}`}
 								className={`w-full text-left p-3 rounded-xl transition-all flex items-start gap-3 border ${
 									isSelected
-										? "bg-[var(--paper-secondary)] border-[var(--teal,#0d9488)]/50 ring-1 ring-[var(--teal,#0d9488)]/30 text-[var(--ink)]"
+										? "bg-[var(--paper-secondary)] border-[var(--primary)]/50 ring-1 ring-[var(--primary)]/30 text-[var(--ink)]"
 										: "bg-[var(--paper-strong)] border-[var(--line)] hover:bg-[var(--paper-secondary)]/70 text-[var(--ink)]"
 								}`}
 							>
@@ -116,7 +116,7 @@ export const TelephonyCallList: React.FC<TelephonyCallListProps> = ({
 									{typeCfg.isMissed ? (
 										<PhoneMissed className="w-3.5 h-3.5 text-[var(--danger,#ef4444)]" />
 									) : typeCfg.isIncoming ? (
-										<PhoneIncoming className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+										<PhoneIncoming className="w-3.5 h-3.5 text-[var(--primary)]" />
 									) : (
 										<PhoneOutgoing className="w-3.5 h-3.5 text-[var(--ink-secondary)]" />
 									)}

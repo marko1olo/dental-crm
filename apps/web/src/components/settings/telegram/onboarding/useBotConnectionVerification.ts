@@ -50,9 +50,19 @@ export function useBotConnectionVerification({
 
 		try {
 			if (activeChannel === "telegram") {
+				const headers: Record<string, string> = { "Content-Type": "application/json" };
+				if (typeof window !== "undefined") {
+					const token = localStorage.getItem("dente_token") || localStorage.getItem("token");
+					if (token) headers.Authorization = `Bearer ${token}`;
+					const orgId = localStorage.getItem("dente_organization_id");
+					if (orgId) headers["x-organization-id"] = orgId;
+					const clinicToken = localStorage.getItem("dente_clinic_token");
+					if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
+				}
+
 				const response = await fetch("/api/telegram/bot/verify", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers,
 					body: JSON.stringify({ token: trimmed }),
 				});
 				const data = (await response.json().catch(() => ({}))) as {

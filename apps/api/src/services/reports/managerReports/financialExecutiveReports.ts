@@ -137,7 +137,7 @@ export async function financialExecutiveSummary(
 	// 1. [ANL-02] Честные платежи за период (чистый приход минус возвраты строго по времени оплаты)
 	// Распаковка комбинированных сплит-чеков ('split') по тендерам без искажения ДДС
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)`;
+	const paymentKopExpr = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(${payments.amountRub} * 100)::bigint)`;
 	const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 
 	const [paymentTotals] = await db

@@ -26,6 +26,7 @@ export const recallCohortSchema = z.enum([
 	"orthodontic_retention",
 	"periodontal",
 	"endodontic",
+	"surgical_suture_removal",
 	"general",
 ]);
 export type RecallCohort = z.infer<typeof recallCohortSchema>;
@@ -60,11 +61,14 @@ export const recallCandidateSchema = z.object({
 		.nullable(),
 	/** Полных месяцев с последнего визита. null для never_arrived. */
 	monthsSinceLastVisit: z.number().int().nonnegative().nullable(),
+	/** Дней с последнего визита (для краткосрочных циклов: хирургия 7–10 дней). */
+	daysSinceLastVisit: z.number().int().nonnegative().nullable().optional(),
 	band: recallBandSchema,
 	/** Человекочитаемая причина, почему пациент в списке. */
 	reason: z.string(),
 	cohortType: recallCohortSchema.optional(),
-	suggestedIntervalMonths: z.number().int().positive().optional(),
+	suggestedIntervalMonths: z.number().int().nonnegative().optional(),
+	suggestedIntervalDays: z.number().int().positive().optional(),
 	status: recallCandidateStatusSchema.optional(),
 	notes: z.string().nullable().optional(),
 	lastContactChannel: z.string().nullable().optional(),

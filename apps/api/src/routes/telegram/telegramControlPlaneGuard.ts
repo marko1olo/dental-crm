@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { unguardedBypassAllowed } from "../../accessGuard.js";
+import { isDemoShowcaseMode, unguardedBypassAllowed } from "../../accessGuard.js";
+import { getRequestIdentity, ADMIN_ROLES } from "../../security/identity.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
 export const telegramSecretHeader = "x-telegram-bot-api-secret-token";
@@ -22,11 +23,22 @@ export async function requireTelegramControlPlaneAccess(
 	const clinicHeader = request.headers["x-dente-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
 	if (
+		isDemoShowcaseMode() &&
 		typeof clinicToken === "string" &&
 		(clinicToken.startsWith("demo-showcase-") || clinicToken.startsWith("demo-token-"))
 	) {
 		return;
 	}
+
+	const identity = getRequestIdentity(request);
+	if (
+		identity.verified &&
+		identity.organizationId &&
+		(identity.role ? (ADMIN_ROLES as readonly string[]).includes(identity.role) || identity.role === "doctor" : true)
+	) {
+		return;
+	}
+
 	const adminSecret = configuredTelegramAdminSecret();
 	if (!adminSecret) {
 		if (isExplicitlyUnguardedControlPlaneAllowed()) {
