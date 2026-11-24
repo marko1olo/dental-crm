@@ -1,5 +1,5 @@
 import React from "react";
-import { kopecksToRubles, formatKopecksToRubles } from "@dental/shared";
+import { kopecksToRubles, formatKopecksToRubles, kopecksToNumericString, rublesToKopecks } from "@dental/shared";
 import type { FiscalReceipt54FzResult } from "../fiscalReceiptEngine.js";
 
 export interface ReceiptPrintPaymentsProps {
@@ -99,7 +99,7 @@ export const ReceiptPrintPayments: React.FC<ReceiptPrintPaymentsProps> = ({ rece
 					receipt.vat20Rub !== undefined && receipt.vat20Rub > 0 && (
 						<div className="flex justify-between text-xs font-bold pt-1 border-t border-dotted border-[var(--border,#cbd5e1)]">
 							<span>В Т.Ч. СУММА НДС 20%:</span>
-							<span className="font-mono">{receipt.vat20Rub.toFixed(2)} ₽</span>
+							<span className="font-mono">{kopecksToNumericString(rublesToKopecks(receipt.vat20Rub))} ₽</span>
 						</div>
 					)
 				)}

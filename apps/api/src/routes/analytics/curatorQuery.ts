@@ -39,7 +39,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const directPlanPayments = await db
 		.select({
 			planId: payments.documentId,
-			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)), 0)::bigint`,
+			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
 		})
 		.from(payments)
 		.where(
@@ -55,7 +55,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const installmentPlanPayments = await db
 		.select({
 			planId: installmentContracts.treatmentPlanId,
-			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(${installmentContracts.paidAmountKopecks}, round(${installmentContracts.paidAmountRub} * 100)::bigint)), 0)::bigint`,
+			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${installmentContracts.paidAmountKopecks}, 0), round(coalesce(${installmentContracts.paidAmountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
 		})
 		.from(installmentContracts)
 		.where(

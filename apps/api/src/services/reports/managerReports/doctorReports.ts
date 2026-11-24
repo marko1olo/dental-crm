@@ -45,7 +45,7 @@ export async function doctorPerformance(
 	scope: ReportScope,
 ): Promise<DoctorPerformanceReport> {
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
+	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
 	// Устранение декартова произведения при сплит-чеках и множественных позициях счетов:
 	// первичная агрегация оплат по визиту в изолированном подзапросе
 	const visitPaymentsSubquery = db

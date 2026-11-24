@@ -333,15 +333,15 @@ export function generateAcquiringReconciliationPrintHtml(
 	<div class="kpi-box">
 		<div class="kpi-card">
 			<div class="kpi-label">Реестр эквайринга</div>
-			<div class="kpi-value">${report.totalTerminalRub.toFixed(2)} ₽</div>
+			<div class="kpi-value">${formatRubles(report.totalTerminalRub)} ₽</div>
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Чеки безналичной оплаты</div>
-			<div class="kpi-value">${report.totalKktRub.toFixed(2)} ₽</div>
+			<div class="kpi-value">${formatRubles(report.totalKktRub)} ₽</div>
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Расхождение</div>
-			<div class="kpi-value" style="color: ${report.isExactMatch ? "#059669" : "#dc2626"};">${report.totalDiffRub.toFixed(2)} ₽</div>
+			<div class="kpi-value" style="color: ${report.isExactMatch ? "#059669" : "#dc2626"};">${formatRubles(report.totalDiffRub)} ₽</div>
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Статус баланса</div>
