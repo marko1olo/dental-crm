@@ -1,6 +1,6 @@
 # AGENTS.md — Clinic MVP / DENTE Dental CRM (.agents Router)
 
-> 🏛️ SSOT: Все 41 мандат и DoD в [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md). Конституция: [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md). Навигация: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md).
+> 🏛️ SSOT: Все 46 мандатов (8e–8bq) и DoD в [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md). Конституция + Claim Protocol + P0→P3 очередь: [`.agents/THE_HAMMER_MASTER_PROMPT.md §XL–XLV`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md). Навигация: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md).
 
 ## 🚨 ПРОТОКОЛ ЗАЗЕМЛЕНИЯ (ЗАКОН №0):
 1. Старт субагента: Обязательный `read_file` на [THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и профильный стандарт чанками по 800 строк до конца.
@@ -36,3 +36,42 @@
     - Звено А (Барьер нового говна): `check:diff` (в прекоммите и в любое время `in-flight`) — 0 костылей (`as any`, `!`, `// @ts-ignore`, `catch {}`, `window.alert`, `/ 100`, моки в пропсах). Блокировка намертво!
     - Звено Б (Истребление старого говна): `check:ratchet` (потолки снижаются монотонно; статус честно отражает остаток долга: «⚠️ НЕ НАСРАНО, НО N КОСЯКОВ ЖДУТ ЗАЧИСТКИ»), `check:doors` (0 клонов модалок, 100% Zod дверей API), правило бойскаута.
     - Звено В (Превентивная архитектурная мудрость): `audit:dice` (Монте-Карло срез 175 точек), Failure Manifestos (`docs/quality/FAILURE_MANIFESTOS.md`) для каждого шлюза со стеганием агентов. Оркестратор НЕ верит регуляркам: регулярный Нейросетевой Red Team аудит по 3 Вопросам Жирняка (Система, Единая Дверь, Закон vs говносрал) через субагента-инквизитора (`TypeName: "self"`, `Model: "inherit"`). Презумпция брака 100%! Запрет косметических припарок!
+
+## ⚡ ОПЕРАЦИОННЫЙ ПРОТОКОЛ РОЯ (Claim, P0→P3, Worktree, ДО/ПОСЛЕ)
+
+> Полная спецификация — в [THE_HAMMER_MASTER_PROMPT.md §XL–XLV](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md). Здесь — операционная выдержка для быстрого старта субагента.
+
+### Приоритетная очередь — читать перед стартом:
+- **P0 БЛОКЕР:** `tsc` ошибки в `@dental/web`, незакоммиченный worktree → стоп, сначала сюда.
+- **P1 ГНИЛЬ:** route без `organizationId` (387+), без `db.transaction()` (170+), `console.log` (760+) → системный риск.
+- **P2 ДОЛГ:** `as any` (85, двойной счётчик!), кубик-дефекты (18-19 из 175) → берём после P0.
+- **P3 ПЛАНОВОЕ:** DDL-сквош, мусор `scripts/` → только при чистых P0+P1.
+
+### Claim Protocol (обязателен при работе роя):
+```
+# Старт → строка в SYSTEMIC_ROT_RATCHET.md §АКТИВНЫЕ CLAIM-ЗАМКИ:
+🔒 [AgentId] — [скоуп: файл/папка] — [HH:MM DD.MM]
+# Готово → снять:
+✅ [AgentId] — DONE — commit <hash> — [метрика ДО → ПОСЛЕ]
+# Брошен >60 мин — снимает оркестратор.
+```
+
+### Закон чистого worktree:
+1. `git status --short` при старте — знай чужие файлы.
+2. `git add <file>` **пофайлово** — тотальный запрет `git add .`.
+3. Отчёт «готово» без коммита незакоммиченного скоупа = **БРАК**.
+
+### Мандат замера ДО/ПОСЛЕ:
+```powershell
+# ДО: оба счётчика
+npm run typecheck -w @dental/web 2>&1 | Select-String "error TS" | Measure-Object -Line
+rg "as any|as unknown as" apps/ --count-matches
+# ПОСЛЕ: оба должны идти ТОЛЬКО вниз. Иначе — САБОТАЖ.
+```
+> Отчёт без пары цифр ДО/ПОСЛЕ — не принимается. Половина замера не считается.
+
+### Закон закрытого цикла (Scout → Fixer):
+- Scout: `rg/fd/ast-grep` → Fact Dossier `[ФАЙЛ:СТРОКА]`. Read-Only, код не трогать.
+- Эстафета 1:1 Verbatim: оркестратор передаёт досье без купюр.
+- Fixer: мутирует только SSOT, `git rm` дубликаты, запрет клонов (`*V2`, `*New`).
+- `[ПРОВЕРЕНО: ЧИСТО]` — неприкосновенно.
