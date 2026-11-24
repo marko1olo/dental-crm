@@ -142,13 +142,15 @@ export function parseUniqueDicomSlices(buffers: Buffer[]): Map<string, ParsedSli
 	return uniqueInstancesMap;
 }
 
+export type SanpinDoseMetadataInput = Partial<DicomIngestMetadata> & Pick<DicomIngestMetadata, "studyInstanceUid" | "sopInstanceUid" | "modalityKind">;
+
 /**
  * Регистрация дозовой нагрузки исследования в официальном листе радиационного контроля (СанПиН 2.6.1.1192-03)
  */
 export async function recordSanpinRadiationDose(
 	organizationId: string,
 	patientId: string,
-	metadata: DicomIngestMetadata,
+	metadata: SanpinDoseMetadataInput,
 	_doctorId?: string | null,
 	executor: DbExecutor = db,
 ): Promise<void> {
@@ -271,7 +273,7 @@ export async function recordSanpinRadiationDose(
 					.update(schema.generatedDocuments)
 					.set({
 						payloadJson: JSON.stringify(updatedPayload),
-						totalAmountRub: "0.00",
+						totalAmountRub: 0,
 						taxYear: reportingYear,
 					})
 					.where(eq(schema.generatedDocuments.id, targetDoc.id));
@@ -302,7 +304,7 @@ export async function recordSanpinRadiationDose(
 				status: "draft",
 				title: `Лист учета дозовых нагрузок (${reportingYear} г.) — ${patient.fullName}`,
 				taxYear: reportingYear,
-				totalAmountRub: "0.00",
+				totalAmountRub: 0,
 				payloadJson: JSON.stringify(newPayload),
 			});
 		}
@@ -364,7 +366,7 @@ export async function recordStudySanpinDose(
 		? (typeof study.capturedAt === "string" ? study.capturedAt.slice(0, 10) : study.capturedAt.toISOString().slice(0, 10))
 		: new Date().toISOString().slice(0, 10);
 
-	const metadata: DicomIngestMetadata = {
+	const metadata: SanpinDoseMetadataInput = {
 		studyInstanceUid: study.dicomStudyUid || `study-${study.id}`,
 		sopInstanceUid: `sop-${study.id}`,
 		studyDate: dateStr.replace(/-/g, ""),
