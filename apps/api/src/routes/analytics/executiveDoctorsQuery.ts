@@ -8,7 +8,7 @@ import {
 	kopecksToRubles,
 } from "@dental/shared";
 import { and, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	organizations,
@@ -49,8 +49,9 @@ export async function queryExecutiveDepartmentsAndDoctors(
 ): Promise<ExecutiveDepartmentsAndDoctorsResult> {
 	const effectiveEndDate = endDate ?? new Date();
 
-	// 1. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems
-	const departmentRows = await db
+	return withTenantCtx(orgId, async (tx) => {
+		// 1. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems
+		const departmentRows = await tx
 		.select({
 			category: serviceCatalogItems.category,
 			specialty: serviceCatalogItems.specialty,
@@ -105,7 +106,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	}
 
 	// 1b. Честный целевой расчет плана отделений: из настроек клиники или по рабочим часам врачей
-	const [org] = await db
+	const [org] = await tx
 		.select({
 			clinicSchedule: organizations.clinicSchedule,
 		})
@@ -120,7 +121,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		{};
 
 	// Занятые минуты по специализациям врачей
-	const doctorAppointments = await db
+	const doctorAppointments = await tx
 		.select({
 			role: users.role,
 			specialties: users.specialties,

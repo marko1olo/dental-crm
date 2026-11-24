@@ -210,24 +210,26 @@ export async function cancelQueuedMessage(
 	organizationId: string,
 	outboxId: string,
 ) {
-	const [cancelled] = await db
-		.update(communicationOutbox)
-		.set({
-			status: "cancelled",
-			lockedAt: null,
-			lockedBy: null,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(communicationOutbox.id, outboxId),
-				eq(communicationOutbox.organizationId, organizationId),
-				inArray(communicationOutbox.status, ["queued", "sending"]),
-			),
-		)
-		.returning({ id: communicationOutbox.id });
+	return withTenantCtx(organizationId, async (tx) => {
+		const [cancelled] = await tx
+			.update(communicationOutbox)
+			.set({
+				status: "cancelled",
+				lockedAt: null,
+				lockedBy: null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(communicationOutbox.id, outboxId),
+					eq(communicationOutbox.organizationId, organizationId),
+					inArray(communicationOutbox.status, ["queued", "sending"]),
+				),
+			)
+			.returning({ id: communicationOutbox.id });
 
-	return cancelled ?? null;
+		return cancelled ?? null;
+	});
 }
 
 export async function retryQueuedMessage(
@@ -235,30 +237,32 @@ export async function retryQueuedMessage(
 	outboxId: string,
 ) {
 	const now = new Date();
-	const [restored] = await db
-		.update(communicationOutbox)
-		.set({
-			status: "queued",
-			attempts: 0,
-			nextAttemptAt: now,
-			lockedAt: null,
-			lockedBy: null,
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(communicationOutbox.id, outboxId),
-				eq(communicationOutbox.organizationId, organizationId),
-				inArray(communicationOutbox.status, [
-					"failed",
-					"cancelled",
-					"suppressed",
-				]),
-			),
-		)
-		.returning({ id: communicationOutbox.id });
+	return withTenantCtx(organizationId, async (tx) => {
+		const [restored] = await tx
+			.update(communicationOutbox)
+			.set({
+				status: "queued",
+				attempts: 0,
+				nextAttemptAt: now,
+				lockedAt: null,
+				lockedBy: null,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(communicationOutbox.id, outboxId),
+					eq(communicationOutbox.organizationId, organizationId),
+					inArray(communicationOutbox.status, [
+						"failed",
+						"cancelled",
+						"suppressed",
+					]),
+				),
+			)
+			.returning({ id: communicationOutbox.id });
 
-	return restored ?? null;
+		return restored ?? null;
+	});
 }
 
 export async function dispatchOutboxBatch(

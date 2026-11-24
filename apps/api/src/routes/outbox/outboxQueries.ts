@@ -1,6 +1,5 @@
-import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { and, desc, eq, gte, lte, type SQL, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
 import {
 	communicationOutbox,
@@ -8,58 +7,65 @@ import {
 	patientCommunicationConsents,
 	patients,
 } from "../../db/schema.js";
+import { createApiLogger } from "../../observability/logger.js";
 import { parseAudienceCriteria } from "../../services/communications/campaigns.js";
 import { resolveCommunicationSettings } from "../../services/communications/dispatcher.js";
 import { type OutboxQuery, parseVariables } from "./types.js";
 
-export async function fetchTemplateList(organizationId: string) {
-	let rows = await db
-		.select()
-		.from(communicationTemplates)
-		.where(eq(communicationTemplates.organizationId, organizationId));
+const logger = createApiLogger("outboxQueries");
 
-	if (rows.length === 0) {
-		try {
-			await db.insert(communicationTemplates).values([
-				{
-					organizationId,
-					title: "Подтверждение приёма (WhatsApp)",
-					channel: "whatsapp",
-					intent: "appointment_confirmation",
-					audienceRole: "patient",
-					body: "Здравствуйте, {patient_name}! Напоминаем о записи в клинику {clinic_name} {appointment_date} в {appointment_time}. Пожалуйста, подтвердите визит.",
-					variablesJson: JSON.stringify(["patient_name", "clinic_name", "appointment_date", "appointment_time"]),
-					isActive: true,
-				},
-				{
-					organizationId,
-					title: "Рекомендации после лечения (Telegram)",
-					channel: "telegram",
-					intent: "post_visit_instruction",
-					audienceRole: "patient",
-					body: "Здравствуйте, {patient_name}! Благодарим за визит в {clinic_name}. Соблюдайте рекомендации лечащего врача. При вопросах звоните: {clinic_phone}.",
-					variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
-					isActive: true,
-				},
-				{
-					organizationId,
-					title: "Приглашение на профосмотр (SMS)",
-					channel: "sms",
-					intent: "recall",
-					audienceRole: "patient",
-					body: "{patient_name}, прошло 6 мес. с вашего осмотра в {clinic_name}. Запишитесь на плановую профгигиену: {clinic_phone}",
-					variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
-					isActive: true,
-				},
-			]);
-			rows = await db
-				.select()
-				.from(communicationTemplates)
-				.where(eq(communicationTemplates.organizationId, organizationId));
-		} catch {
-			// safe fallback
+export async function fetchTemplateList(organizationId: string) {
+	const rows = await withTenantCtx(organizationId, async (tx) => {
+		let found = await tx
+			.select()
+			.from(communicationTemplates)
+			.where(eq(communicationTemplates.organizationId, organizationId));
+
+		if (found.length === 0) {
+			try {
+				await tx.insert(communicationTemplates).values([
+					{
+						organizationId,
+						title: "Подтверждение приёма (WhatsApp)",
+						channel: "whatsapp",
+						intent: "appointment_confirmation",
+						audienceRole: "patient",
+						body: "Здравствуйте, {patient_name}! Напоминаем о записи в клинику {clinic_name} {appointment_date} в {appointment_time}. Пожалуйста, подтвердите визит.",
+						variablesJson: JSON.stringify(["patient_name", "clinic_name", "appointment_date", "appointment_time"]),
+						isActive: true,
+					},
+					{
+						organizationId,
+						title: "Рекомендации после лечения (Telegram)",
+						channel: "telegram",
+						intent: "post_visit_instruction",
+						audienceRole: "patient",
+						body: "Здравствуйте, {patient_name}! Благодарим за визит в {clinic_name}. Соблюдайте рекомендации лечащего врача. При вопросах звоните: {clinic_phone}.",
+						variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
+						isActive: true,
+					},
+					{
+						organizationId,
+						title: "Приглашение на профосмотр (SMS)",
+						channel: "sms",
+						intent: "recall",
+						audienceRole: "patient",
+						body: "{patient_name}, прошло 6 мес. с вашего осмотра в {clinic_name}. Запишитесь на плановую профгигиену: {clinic_phone}",
+						variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
+						isActive: true,
+					},
+				]);
+				found = await tx
+					.select()
+					.from(communicationTemplates)
+					.where(eq(communicationTemplates.organizationId, organizationId));
+			} catch (err) {
+				logger.warn({ err, organizationId }, "Не удалось засеять стартовые шаблоны сообщений");
+			}
 		}
-	}
+
+		return found;
+	});
 
 	return rows.map((row) => ({
 		id: row.id,
@@ -79,34 +85,38 @@ export async function fetchTemplateById(
 	organizationId: string,
 	templateId: string,
 ) {
-	const [existing] = await db
-		.select()
-		.from(communicationTemplates)
-		.where(
-			and(
-				eq(communicationTemplates.id, templateId),
-				eq(communicationTemplates.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	return withTenantCtx(organizationId, async (tx) => {
+		const [existing] = await tx
+			.select()
+			.from(communicationTemplates)
+			.where(
+				and(
+					eq(communicationTemplates.id, templateId),
+					eq(communicationTemplates.organizationId, organizationId),
+				),
+			)
+			.limit(1);
 
-	return existing ?? null;
+		return existing ?? null;
+	});
 }
 
 export async function fetchActiveReminderTemplate(organizationId: string) {
-	const [reminderTemplate] = await db
-		.select({ id: communicationTemplates.id })
-		.from(communicationTemplates)
-		.where(
-			and(
-				eq(communicationTemplates.organizationId, organizationId),
-				eq(communicationTemplates.intent, "appointment_confirmation"),
-				eq(communicationTemplates.isActive, true),
-			),
-		)
-		.limit(1);
+	return withTenantCtx(organizationId, async (tx) => {
+		const [reminderTemplate] = await tx
+			.select({ id: communicationTemplates.id })
+			.from(communicationTemplates)
+			.where(
+				and(
+					eq(communicationTemplates.organizationId, organizationId),
+					eq(communicationTemplates.intent, "appointment_confirmation"),
+					eq(communicationTemplates.isActive, true),
+				),
+			)
+			.limit(1);
 
-	return reminderTemplate ?? null;
+		return reminderTemplate ?? null;
+	});
 }
 
 export async function fetchSettings(organizationId: string) {
@@ -117,30 +127,34 @@ export async function fetchPatientConsents(
 	organizationId: string,
 	patientId: string,
 ) {
-	return db
-		.select()
-		.from(patientCommunicationConsents)
-		.where(
-			and(
-				eq(patientCommunicationConsents.organizationId, organizationId),
-				eq(patientCommunicationConsents.patientId, patientId),
+	return withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select()
+			.from(patientCommunicationConsents)
+			.where(
+				and(
+					eq(patientCommunicationConsents.organizationId, organizationId),
+					eq(patientCommunicationConsents.patientId, patientId),
+				),
 			),
-		);
+	);
 }
 
 export async function findPatientById(
 	organizationId: string,
 	patientId: string,
 ) {
-	const [patient] = await db
-		.select({ id: patients.id })
-		.from(patients)
-		.where(
-			and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)),
-		)
-		.limit(1);
+	return withTenantCtx(organizationId, async (tx) => {
+		const [patient] = await tx
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)),
+			)
+			.limit(1);
 
-	return patient ?? null;
+		return patient ?? null;
+	});
 }
 
 export async function fetchOutboxJournal(
@@ -169,23 +183,25 @@ export async function fetchOutboxJournal(
 
 	const where = and(...filters);
 
-	const [rows, summary] = await Promise.all([
-		db
-			.select()
-			.from(communicationOutbox)
-			.where(where)
-			.orderBy(desc(communicationOutbox.createdAt))
-			.limit(query.limit)
-			.offset(query.offset),
-		db
-			.select({
-				status: communicationOutbox.status,
-				total: sql<number>`count(*)::int`,
-			})
-			.from(communicationOutbox)
-			.where(eq(communicationOutbox.organizationId, organizationId))
-			.groupBy(communicationOutbox.status),
-	]);
+	const [rows, summary] = await withTenantCtx(organizationId, async (tx) =>
+		Promise.all([
+			tx
+				.select()
+				.from(communicationOutbox)
+				.where(where)
+				.orderBy(desc(communicationOutbox.createdAt))
+				.limit(query.limit)
+				.offset(query.offset),
+			tx
+				.select({
+					status: communicationOutbox.status,
+					total: sql<number>`count(*)::int`,
+				})
+				.from(communicationOutbox)
+				.where(eq(communicationOutbox.organizationId, organizationId))
+				.groupBy(communicationOutbox.status),
+		]),
+	);
 
 	return {
 		items: rows,
@@ -198,12 +214,14 @@ export async function fetchOutboxJournal(
 }
 
 export async function fetchCampaignsList(organizationId: string) {
-	const rows = await db
-		.select()
-		.from(communicationCampaigns)
-		.where(eq(communicationCampaigns.organizationId, organizationId))
-		.orderBy(desc(communicationCampaigns.createdAt))
-		.limit(100);
+	const rows = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select()
+			.from(communicationCampaigns)
+			.where(eq(communicationCampaigns.organizationId, organizationId))
+			.orderBy(desc(communicationCampaigns.createdAt))
+			.limit(100),
+	);
 
 	return rows.map((row) => ({
 		id: row.id,
@@ -231,19 +249,21 @@ export async function queueBacklog(
 	organizationId: string,
 ): Promise<{ waiting: number; oldestWaitingAt: Date | null }> {
 	const now = new Date();
-	const [row] = await db
-		.select({
-			waiting: sql<number>`count(*)::int`,
-			oldest: sql<Date | null>`min(${communicationOutbox.scheduledAt})`,
-		})
-		.from(communicationOutbox)
-		.where(
-			and(
-				eq(communicationOutbox.organizationId, organizationId),
-				eq(communicationOutbox.status, "queued"),
-				lte(communicationOutbox.scheduledAt, now),
+	const [row] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({
+				waiting: sql<number>`count(*)::int`,
+				oldest: sql<Date | null>`min(${communicationOutbox.scheduledAt})`,
+			})
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, organizationId),
+					eq(communicationOutbox.status, "queued"),
+					lte(communicationOutbox.scheduledAt, now),
+				),
 			),
-		);
+	);
 
 	return {
 		waiting: Number(row?.waiting ?? 0),

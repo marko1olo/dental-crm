@@ -3,6 +3,7 @@ import {
 	type CuratorPatientQueueItem,
 	type PatientAdministrativeProfile,
 	evaluatePatientUrgency,
+	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
 import type { CuratorStaffUser } from "./curatorTypes.js";
@@ -11,6 +12,8 @@ export interface RawCuratorPlanRecord {
 	readonly id: string;
 	readonly name: string | null;
 	readonly status: string | null;
+	readonly totalPriceKopecks?: bigint | number | string | null | undefined;
+	readonly planDiscountKopecks?: bigint | number | string | null | undefined;
 	readonly totalPriceRub: number | string | null;
 	readonly totalPrice: number | string | null;
 	readonly createdAt: Date;
@@ -41,7 +44,12 @@ export function buildCuratorQueueItem(
 			: doctorMap.get(curatorId) || defaultCurator?.fullName || "Куратор клиники")
 		: "Не назначен";
 
-	const planPrice = Number(plan.totalPriceRub || plan.totalPrice || 0);
+	const totalPriceKopecksNum =
+		plan.totalPriceKopecks != null ? Number(plan.totalPriceKopecks) : 0;
+	const planPrice =
+		totalPriceKopecksNum > 0
+			? kopecksToRubles(totalPriceKopecksNum)
+			: Number(plan.totalPriceRub || plan.totalPrice || 0);
 	// PLN-05 [SEV-1]: Учет оплат строго по plan.id (treatmentPlanId) — ноль заражения чужими платежами из истории пациента
 	const paid = paymentMap.get(plan.id) || 0;
 	const planPaid = Math.min(planPrice, paid);

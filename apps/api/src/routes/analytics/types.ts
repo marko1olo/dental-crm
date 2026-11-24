@@ -60,7 +60,7 @@ export const rebookingConversionBodySchema = z.object({
 	creditedRole: z.enum(["doctor", "administrator"]).optional(),
 	appointmentDate: z.string().optional(),
 	isSoloDoctor: z.boolean().optional(),
-});
+}).strict();
 
 export type RebookingConversionBody = z.infer<typeof rebookingConversionBodySchema>;
 

@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { kopecksToRubles, sumKopecks, toExactKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patients, payments } from "../../db/schema.js";
 import {
 	clinicTimeZone,
@@ -33,49 +33,50 @@ export async function calculateCohortLtv(
 
 	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
 
-	// 1. Пациенты по когортам: знаменатель когорты = общее число созданных карт пациентов за календарный месяц
-	const cohortPatientsRaw = await db
-		.select({
-			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
-			patientCount: sql<number>`count(distinct ${patients.id})::int`,
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, orgId),
-				gte(patients.createdAt, ltvStartDate),
-			),
-		)
-		.groupBy(cohortMonthBucket)
-		.orderBy(cohortMonthBucket);
-
-	// 2. Платежи пациентов когорт с группировкой по возрасту (в месяцах от создания карты до оплаты)
-	// Month offset 0 = Month 1 (первые 30 дней), offset 1 = Month 2, ..., offset 11 = Month 12
+	// 1. Пациенты по когортам & 2. Платежи пациентов когорт под RLS-контекстом клиники
 	const monthOffsetExpr = sql<number>`greatest(0, (date_part('year', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})) * 12 + date_part('month', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})))::int)`;
 
-	const cohortPaymentsRaw = await db
-		.select({
-			cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
-			monthOffset: monthOffsetExpr,
-			netKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`,
-		})
-		.from(patients)
-		.innerJoin(
-			payments,
-			and(
-				eq(payments.patientId, patients.id),
-				eq(payments.organizationId, orgId),
-				inArray(payments.status, ["paid", "refunded"]),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
-			),
-		)
-		.where(
-			and(
-				eq(patients.organizationId, orgId),
-				gte(patients.createdAt, ltvStartDate),
-			),
-		)
-		.groupBy(cohortMonthBucket, monthOffsetExpr);
+	const [cohortPatientsRaw, cohortPaymentsRaw] = await withTenantCtx(orgId, async (tx) =>
+		Promise.all([
+			tx
+				.select({
+					cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
+					patientCount: sql<number>`count(distinct ${patients.id})::int`,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						gte(patients.createdAt, ltvStartDate),
+					),
+				)
+				.groupBy(cohortMonthBucket)
+				.orderBy(cohortMonthBucket),
+			tx
+				.select({
+					cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
+					monthOffset: monthOffsetExpr,
+					netKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`,
+				})
+				.from(patients)
+				.innerJoin(
+					payments,
+					and(
+						eq(payments.patientId, patients.id),
+						eq(payments.organizationId, orgId),
+						inArray(payments.status, ["paid", "refunded"]),
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
+					),
+				)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						gte(patients.createdAt, ltvStartDate),
+					),
+				)
+				.groupBy(cohortMonthBucket, monthOffsetExpr),
+		]),
+	);
 
 	const paymentsMap = new Map<string, number>();
 	for (const row of cohortPaymentsRaw) {

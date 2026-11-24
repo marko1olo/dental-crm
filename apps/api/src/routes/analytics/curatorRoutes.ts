@@ -42,15 +42,6 @@ export async function registerCuratorRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "update curator stage");
 		if (!orgId) return;
 
-		const rawIdempotencyKey =
-			(request.headers?.["idempotency-key"] as string | undefined) ??
-			(request.headers?.["x-idempotency-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-				: undefined);
-		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
-
 		const parseResult = updateCuratorStagePayloadSchema.safeParse(request.body);
 		if (!parseResult.success) {
 			return reply.code(400).send({
@@ -64,26 +55,8 @@ export async function registerCuratorRoutes(app: FastifyInstance) {
 		const body = parseResult.data;
 
 		try {
-			const result = await persistCuratorStageInDb(orgId, body, idempotencyKey);
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
-			}
-			if (result.replayed) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply.code(200).send({
-					success: true,
-					message: "Этап воронки куратора обновлен",
-				});
-			}
+			const result = await persistCuratorStageInDb(orgId, body);
 			if (!result.success) {
-				if (result.error === "ConflictInFlight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						success: false,
-						error: "Conflict",
-						message: "Операция обновления этапа куратора с данным Idempotency-Key уже выполняется.",
-					});
-				}
 				return reply.code(404).send({
 					success: false,
 					error: result.error || "NotFound",

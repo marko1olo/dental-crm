@@ -21,7 +21,7 @@ import {
 	isDatabaseUnavailable,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
-import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
+import { createIdempotentTenantTestApp, createTenantTestApp } from "../support/tenantTestApp.js";
 
 const FIXTURE = "pediatricRoutes";
 const ORG_ID = fixtureUuid(FIXTURE, 1);

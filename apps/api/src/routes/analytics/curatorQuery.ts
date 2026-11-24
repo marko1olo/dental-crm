@@ -1,70 +1,84 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { installmentContracts, patients, payments, treatmentPlans, users } from "../../db/schema.js";
 import { calculateCuratorMetrics, kopecksToRubles } from "@dental/shared";
 import { buildCuratorQueueItem } from "./curatorQueueBuilder.js";
 import type { CuratorStaffUser } from "./curatorTypes.js";
 
 export async function fetchCuratorAnalyticsPayload(orgId: string) {
-	const staffList = await db
-		.select({ id: users.id, fullName: users.fullName, role: users.role })
-		.from(users)
-		.where(eq(users.organizationId, orgId));
+	const { staffList, plans, directPlanPayments, installmentPlanPayments } = await withTenantCtx(
+		orgId,
+		async (tx) => {
+			const staffRows = await tx
+				.select({ id: users.id, fullName: users.fullName, role: users.role })
+				.from(users)
+				.where(eq(users.organizationId, orgId));
+
+			const planRows = await tx
+				.select({
+					id: treatmentPlans.id,
+					name: treatmentPlans.name,
+					status: treatmentPlans.status,
+					totalPriceKopecks: treatmentPlans.totalPriceKopecks,
+					planDiscountKopecks: treatmentPlans.planDiscountKopecks,
+					totalPriceRub: treatmentPlans.totalPriceRub,
+					totalPrice: treatmentPlans.totalPrice,
+					createdAt: treatmentPlans.createdAt,
+					patientId: treatmentPlans.patientId,
+					doctorId: treatmentPlans.doctorId,
+					patientFullName: patients.fullName,
+					patientPhone: patients.phone,
+					patientEmail: patients.email,
+					patientAdminProfile: patients.administrativeProfile,
+				})
+				.from(treatmentPlans)
+				.innerJoin(patients, and(eq(treatmentPlans.patientId, patients.id), eq(patients.organizationId, orgId)))
+				.where(eq(treatmentPlans.organizationId, orgId));
+
+			// PLN-05 [SEV-1]: Учет оплат строго по planId / treatmentPlanId, ликвидация заражения планов старыми оплатами пациента.
+			// 1. Прямые оплаты, привязанные к плану лечения (documentId = treatment_plans.id)
+			const directRows = await tx
+				.select({
+					planId: payments.documentId,
+					totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
+				})
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.status, "paid"),
+						sql`${payments.documentId} is not null`,
+					),
+				)
+				.groupBy(payments.documentId);
+
+			// 2. Оплаты по договорам рассрочки данного плана лечения
+			const installmentRows = await tx
+				.select({
+					planId: installmentContracts.treatmentPlanId,
+					totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${installmentContracts.paidAmountKopecks}, 0), round(coalesce(${installmentContracts.paidAmountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
+				})
+				.from(installmentContracts)
+				.where(
+					and(
+						eq(installmentContracts.organizationId, orgId),
+						sql`${installmentContracts.treatmentPlanId} is not null`,
+					),
+				)
+				.groupBy(installmentContracts.treatmentPlanId);
+
+			return {
+				staffList: staffRows,
+				plans: planRows,
+				directPlanPayments: directRows,
+				installmentPlanPayments: installmentRows,
+			};
+		},
+	);
 
 	const curatorUsers: CuratorStaffUser[] = staffList
 		.filter((u) => ["curator", "administrator", "manager", "admin", "owner"].includes(u.role))
 		.map((u) => ({ id: u.id, fullName: u.fullName, role: u.role }));
-
-	const plans = await db
-		.select({
-			id: treatmentPlans.id,
-			name: treatmentPlans.name,
-			status: treatmentPlans.status,
-			totalPriceRub: treatmentPlans.totalPriceRub,
-			totalPrice: treatmentPlans.totalPrice,
-			createdAt: treatmentPlans.createdAt,
-			patientId: treatmentPlans.patientId,
-			doctorId: treatmentPlans.doctorId,
-			patientFullName: patients.fullName,
-			patientPhone: patients.phone,
-			patientEmail: patients.email,
-			patientAdminProfile: patients.administrativeProfile,
-		})
-		.from(treatmentPlans)
-		.innerJoin(patients, and(eq(treatmentPlans.patientId, patients.id), eq(patients.organizationId, orgId)))
-		.where(eq(treatmentPlans.organizationId, orgId));
-
-	// PLN-05 [SEV-1]: Учет оплат строго по planId / treatmentPlanId, ликвидация заражения планов старыми оплатами пациента.
-	// 1. Прямые оплаты, привязанные к плану лечения (documentId = treatment_plans.id)
-	const directPlanPayments = await db
-		.select({
-			planId: payments.documentId,
-			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
-		})
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, orgId),
-				eq(payments.status, "paid"),
-				sql`${payments.documentId} is not null`,
-			),
-		)
-		.groupBy(payments.documentId);
-
-	// 2. Оплаты по договорам рассрочки данного плана лечения
-	const installmentPlanPayments = await db
-		.select({
-			planId: installmentContracts.treatmentPlanId,
-			totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${installmentContracts.paidAmountKopecks}, 0), round(coalesce(${installmentContracts.paidAmountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
-		})
-		.from(installmentContracts)
-		.where(
-			and(
-				eq(installmentContracts.organizationId, orgId),
-				sql`${installmentContracts.treatmentPlanId} is not null`,
-			),
-		)
-		.groupBy(installmentContracts.treatmentPlanId);
 
 	const planPaymentKopecksMap = new Map<string, number>();
 	for (const p of directPlanPayments) {

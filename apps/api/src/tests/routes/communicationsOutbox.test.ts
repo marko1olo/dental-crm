@@ -12,6 +12,8 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
@@ -31,7 +33,16 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const ORG_ID = "dce70000-0000-4000-8000-000000000001";
 const PATIENT_ID = "dce70000-0000-4000-8000-000000000002";
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const ADMIN_USER_ID = "dce70000-0000-4000-8000-000000000003";
+const SECRET = authTokenSecret();
+const ORG_HEADERS = {
+	"x-dente-clinic-token": signToken({ organizationId: ORG_ID }, SECRET, 3600),
+	"x-dente-staff-token": signToken(
+		{ userId: ADMIN_USER_ID, organizationId: ORG_ID, role: "owner" },
+		SECRET,
+		3600,
+	),
+};
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
