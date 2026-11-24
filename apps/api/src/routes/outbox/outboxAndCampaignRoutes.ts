@@ -32,6 +32,22 @@ import {
 	validationError,
 } from "./types.js";
 
+const outboxMutationOptions = {
+	schema: {
+		description:
+			"Communications outbox mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				"organizationid": { type: "string" },
+				"x-organization-id": { type: "string" },
+			},
+		},
+	},
+};
+
 export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 	// ─── Очередь и журнал ─────────────────────────────────────────────────────
 
@@ -52,7 +68,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 		return fetchOutboxJournal(context.organizationId, parsed.data);
 	});
 
-	app.post("/api/communications/outbox", async (request, reply) => {
+	app.post("/api/communications/outbox", outboxMutationOptions, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -147,6 +163,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/communications/outbox/:outboxId/cancel",
+		outboxMutationOptions,
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,
@@ -178,6 +195,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/communications/outbox/:outboxId/retry",
+		outboxMutationOptions,
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,
@@ -208,7 +226,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.post("/api/communications/outbox/dispatch", async (request, reply) => {
+	app.post("/api/communications/outbox/dispatch", outboxMutationOptions, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -230,7 +248,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 		return { report };
 	});
 
-	app.post("/api/communications/reminders/run", async (request, reply) => {
+	app.post("/api/communications/reminders/run", outboxMutationOptions, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -262,7 +280,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 		return { campaigns };
 	});
 
-	app.post("/api/communications/campaigns", async (request, reply) => {
+	app.post("/api/communications/campaigns", outboxMutationOptions, async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
@@ -334,6 +352,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/communications/campaigns/:campaignId/launch",
+		outboxMutationOptions,
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,
@@ -366,6 +385,7 @@ export async function registerOutboxAndCampaignRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/communications/campaigns/:campaignId/cancel",
+		outboxMutationOptions,
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(
 				request,

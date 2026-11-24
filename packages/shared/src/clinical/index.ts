@@ -48,7 +48,7 @@ export * from "./dentalFormulaSsot.js";
 export * from "./dentalFormulaSurfaces.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./pediatricDentition.js";
-export * from "./pediatric/constants.js";
+export * from "./pediatric/index.js";
 export * from "./playbooks/index.js";
 export * from "./smartClinicalPlaybooksEngine.js";
 export {
