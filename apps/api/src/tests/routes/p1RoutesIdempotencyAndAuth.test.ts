@@ -236,4 +236,42 @@ describe("P1 Routes Idempotency, Validation & Identity Hardening Suite", () => {
 			TelegramAccountService.verify2fa = originalVerify2fa;
 		}
 	});
+
+	it("4. External ProDoctorov/MedFlex and Telegram webhooks are exempt from Idempotency-Key requirement", async () => {
+		const webhookPaths = [
+			"/api/integrations/prodoctorov/webhook",
+			"/api/integrations/prodoctorov/clinic-123/webhook",
+			"/api/integrations/prodoctorov/webhook/booking",
+			"/api/integrations/prodoctorov/clinic-123/webhook/booking",
+			"/api/integrations/medflex/webhook",
+			"/api/integrations/medflex/clinic-456/webhook/booking",
+			"/api/telegram/webhook",
+			"/api/telegram/webhook/bot-secret",
+			"/api/telegram/webhook/clinic-1/bot-2",
+			"/api/telegram/webhook/token/opaque-token-123",
+		];
+		const webhookApp = await createIdempotentTenantTestApp();
+		try {
+			for (const url of webhookPaths) {
+				webhookApp.post(url, async () => ({ ok: true, url }));
+			}
+			await webhookApp.ready();
+
+			for (const url of webhookPaths) {
+				const res = await webhookApp.inject({
+					method: "POST",
+					url,
+					headers: { "content-type": "application/json" },
+					payload: { update_id: 1 },
+				});
+				assert.equal(
+					res.statusCode,
+					200,
+					`Webhook ${url} must bypass Idempotency-Key check, got ${res.statusCode}: ${res.body}`,
+				);
+			}
+		} finally {
+			await webhookApp.close();
+		}
+	});
 });

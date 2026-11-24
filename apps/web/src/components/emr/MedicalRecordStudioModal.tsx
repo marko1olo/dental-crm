@@ -17,7 +17,9 @@ import { useAppStore } from "../../store/appStore";
 import { clientLogger } from "../../services/logging/clientLogger";
 import type {
 	MedicalRecordData, ClinicalVisitDiaryEntry, ClinicalPassportData, ClinicalAnamnesisData,
+	RecordTabType, ExtendedMedicalRecordInitialData, MedicalRecordStudioModalProps,
 } from "./types/recordDataTypes";
+export type { RecordTabType, ExtendedMedicalRecordInitialData, MedicalRecordStudioModalProps };
 import {
 	DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites, applyMedicalCardPhysiologicalNorm,
 } from "./medicalCardCatalogData";
@@ -40,35 +42,25 @@ import { RecordDiariesTab } from "./record/tabs/RecordDiariesTab";
 import { RecordEpicrisisTab } from "./record/tabs/RecordEpicrisisTab";
 import "./emrStudioStyles.css";
 
-export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
-
-export type ExtendedMedicalRecordInitialData = Partial<Omit<MedicalRecordData, "passport">> & {
-	readonly passport?: Partial<ClinicalPassportData> | undefined;
-	readonly isLocked?: boolean | undefined;
-	readonly status?: string | undefined;
-};
-
-export interface MedicalRecordStudioModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly initialData?: ExtendedMedicalRecordInitialData | undefined;
-	readonly onSave?: ((updated: MedicalRecordData) => void | Promise<void>) | undefined;
-	readonly readOnly?: boolean | undefined;
-	readonly onOpenProtocolGenerator?: (() => void) | undefined;
-	readonly isLocked?: boolean | undefined;
-	readonly isDraft?: boolean | undefined;
-	readonly status?: string | undefined;
-	readonly initialTab?: RecordTabType | undefined;
-	readonly visitId?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly activeTooth?: number | string | null | undefined;
-}
-
 const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ className?: string }> }> = [
 	{ id: "overview", label: "Обзор и печать A4", icon: FileText }, { id: "passport", label: "1. Паспортная часть", icon: User },
 	{ id: "anamnesis", label: "2. Жалобы и Анамнез", icon: HeartPulse }, { id: "odontogram", label: "3. Зубная формула", icon: Activity },
 	{ id: "diaries", label: "4. Дневники визитов", icon: Calendar }, { id: "epicrisis", label: "5. Эпикриз и наблюдение", icon: Award },
 ];
+
+function mergeRecordSections(base: MedicalRecordData, overlay?: ExtendedMedicalRecordInitialData | Partial<MedicalRecordData> | null): MedicalRecordData {
+	if (!overlay) return base;
+	return {
+		...base,
+		...overlay,
+		clinic: { ...base.clinic, ...(overlay.clinic || {}) },
+		passport: { ...base.passport, ...(overlay.passport || {}) },
+		anamnesis: { ...base.anamnesis, ...(overlay.anamnesis || {}) },
+		dentalStatus: { ...base.dentalStatus, ...(overlay.dentalStatus || {}) },
+		visitDiaries: overlay.visitDiaries?.length ? overlay.visitDiaries : base.visitDiaries,
+		epicrisis: { ...base.epicrisis, ...(overlay.epicrisis || {}) },
+	};
+}
 
 export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> = React.memo(
 	function MedicalRecordStudioModal({
@@ -106,17 +98,8 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					} catch { /* ignore fallback draft parse error */ }
 				}
 			}
-			return {
-				...DEFAULT_MEDICAL_CARD_DATA,
-				...draft,
-				...initialData,
-				clinic: { ...DEFAULT_MEDICAL_CARD_DATA.clinic, ...resolvedClinic, ...(draft?.clinic || {}), ...(initialData?.clinic || {}) },
-				passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, ...(draft?.passport || {}), ...(initialData?.passport || {}) },
-				anamnesis: { ...DEFAULT_MEDICAL_CARD_DATA.anamnesis, ...(draft?.anamnesis || {}), ...(initialData?.anamnesis || {}) },
-				dentalStatus: { ...DEFAULT_MEDICAL_CARD_DATA.dentalStatus, ...(draft?.dentalStatus || {}), ...(initialData?.dentalStatus || {}) },
-				visitDiaries: (initialData?.visitDiaries?.length ? initialData.visitDiaries : draft?.visitDiaries) || DEFAULT_MEDICAL_CARD_DATA.visitDiaries,
-				epicrisis: { ...DEFAULT_MEDICAL_CARD_DATA.epicrisis, ...(draft?.epicrisis || {}), ...(initialData?.epicrisis || {}) },
-			};
+			const base = mergeRecordSections(DEFAULT_MEDICAL_CARD_DATA, { clinic: resolvedClinic });
+			return mergeRecordSections(mergeRecordSections(base, draft), initialData);
 		}, [initialData, resolvedClinic, patientId]);
 
 		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
@@ -126,24 +109,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			if (!patientId) return;
 			let cancelled = false;
 			void loadOfflineDraft<Partial<MedicalRecordData>>(`draft:emk:${patientId}`).then((idbDraft) => {
-				if (cancelled || !idbDraft?.data) return;
-				setFormData((prev) => {
-					const d = idbDraft.data;
-					return {
-						...prev,
-						...d,
-						clinic: { ...prev.clinic, ...(d.clinic || {}) },
-						passport: { ...prev.passport, ...(d.passport || {}) },
-						anamnesis: { ...prev.anamnesis, ...(d.anamnesis || {}) },
-						dentalStatus: { ...prev.dentalStatus, ...(d.dentalStatus || {}) },
-						visitDiaries: d.visitDiaries?.length ? d.visitDiaries : prev.visitDiaries,
-						epicrisis: { ...prev.epicrisis, ...(d.epicrisis || {}) },
-					};
-				});
+				if (!cancelled && idbDraft?.data) setFormData((prev) => mergeRecordSections(prev, idbDraft.data));
 			});
-			return () => {
-				cancelled = true;
-			};
+			return () => { cancelled = true; };
 		}, [patientId]);
 
 		// Zero-Leak Draft (Мандаты 8zq/8bn): Сброс и гидратация formData при смене patientId
@@ -209,19 +177,12 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			return () => document.removeEventListener("mousedown", handleClickOutside);
 		}, [isMoreMenuOpen]);
 
-		const resetDraft = useCallback(() => {
-			setFormData(buildInitialFormData());
-		}, [buildInitialFormData]);
+		const resetDraft = useCallback(() => setFormData(buildInitialFormData()), [buildInitialFormData]);
 
-		// Zero-Leak Draft (Мандаты 8zq/8bn): сброс локального состояния черновика при unmount
-		useEffect(() => {
-			return () => {
-				resetDraft();
-			};
-		}, [resetDraft]);
+		// Zero-Leak Draft (Мандаты 8zq/8bn): сброс локального состояния черновика при unmount и закрытии
+		useEffect(() => resetDraft, [resetDraft]);
 
 		const handleClose = useCallback(() => {
-			// Zero-Leak Draft (Мандат 8zq): при закрытии сбрасываем локальное состояние черновика
 			resetDraft();
 			onClose();
 		}, [resetDraft, onClose]);
@@ -236,25 +197,14 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const { handlePrint, handleExportXml, handleExportJson, handleCopyText } = useRecordExports({ formData, effectiveIsDraft, setCopiedToast });
 		const { isSaving, handleSaveForm } = useMedicalRecordSave({ formData, onSave, visitId, patientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft });
 
-		const handleApplyNorm = useCallback(() => {
-			setFormData((prev) => { const updated = applyMedicalCardPhysiologicalNorm(prev); onSave?.(updated); return updated; });
+		const applyFormUpdate = useCallback((updater: (prev: MedicalRecordData) => MedicalRecordData) => {
+			setFormData((prev) => { const updated = updater(prev); onSave?.(updated); return updated; });
 		}, [onSave]);
-
-		const handleUpdatePassport = useCallback((patch: Partial<ClinicalPassportData>) => {
-			setFormData((prev) => { const updated = { ...prev, passport: { ...prev.passport, ...patch } }; onSave?.(updated); return updated; });
-		}, [onSave]);
-
-		const handleUpdateAnamnesis = useCallback((patch: Partial<ClinicalAnamnesisData>) => {
-			setFormData((prev) => { const updated = { ...prev, anamnesis: { ...prev.anamnesis, ...patch } }; onSave?.(updated); return updated; });
-		}, [onSave]);
-
-		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => {
-			setFormData((prev) => { const updated = { ...prev, visitDiaries: [newDiary, ...prev.visitDiaries] }; onSave?.(updated); return updated; });
-		}, [onSave]);
-
-		const handleDeleteDiary = useCallback((index: number) => {
-			setFormData((prev) => { const updated = { ...prev, visitDiaries: prev.visitDiaries.filter((_, i) => i !== index) }; onSave?.(updated); return updated; });
-		}, [onSave]);
+		const handleApplyNorm = useCallback(() => applyFormUpdate(applyMedicalCardPhysiologicalNorm), [applyFormUpdate]);
+		const handleUpdatePassport = useCallback((patch: Partial<ClinicalPassportData>) => applyFormUpdate((p) => ({ ...p, passport: { ...p.passport, ...patch } })), [applyFormUpdate]);
+		const handleUpdateAnamnesis = useCallback((patch: Partial<ClinicalAnamnesisData>) => applyFormUpdate((p) => ({ ...p, anamnesis: { ...p.anamnesis, ...patch } })), [applyFormUpdate]);
+		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => applyFormUpdate((p) => ({ ...p, visitDiaries: [newDiary, ...p.visitDiaries] })), [applyFormUpdate]);
+		const handleDeleteDiary = useCallback((index: number) => applyFormUpdate((p) => ({ ...p, visitDiaries: p.visitDiaries.filter((_, i) => i !== index) })), [applyFormUpdate]);
 
 		if (!isOpen) return null;
 
@@ -279,14 +229,8 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		const modalElement = (
 			<div
-				className="emr-studio-backdrop"
-				role="dialog"
-				aria-modal="true"
-				onClick={(e) => {
-					if (e.target === e.currentTarget) {
-						handleClose();
-					}
-				}}
+				className="emr-studio-backdrop" role="dialog" aria-modal="true"
+				onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
 			>
 				<div
 					className="emr-studio-modal emr-studio-window"
