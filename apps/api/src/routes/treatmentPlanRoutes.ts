@@ -43,11 +43,11 @@ function checkHasRoute(server: unknown, method: string, url: string): boolean {
 
 export const dropoutPreventionRunBodySchema = z.object({
 	minDays: z.coerce.number().int().min(1).optional().default(14),
-});
+}).strict();
 
 export const dropoutRecallBodySchema = z.object({
 	notes: z.string().trim().optional(),
-});
+}).strict();
 
 export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	// 0a. GET /api/treatment-plans/:id — Получение плана лечения по ID со связями

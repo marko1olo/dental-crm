@@ -7,7 +7,7 @@ export const signTreatmentPlanPepSchema = z.object({
 	code: z.string().trim().optional(),
 	signerName: z.string().trim().optional(),
 	signatureBase64: z.string().trim().optional(),
-});
+}).strict();
 
 export interface ActivePepOtp {
 	code: string;

@@ -1,18 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { computePayloadHash } from "@dental/shared";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents, treatmentItems, treatmentPlans } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { cancelRejectedPlanTierLedgerItems } from "./handlers/mutations/planLedgerSync.js";
 import {
 	createInvoiceForApprovedPlan,
 	type CreatedInvoiceSummary,
 } from "./handlers/mutations/statusTreatmentPlanHandler.js";
-import type { PipelineStage } from "./pipelineTypes.js";
 
 export const stageTransitionSchema = z.object({
 	targetStage: z
@@ -26,47 +22,13 @@ export const stageTransitionSchema = z.object({
 		.optional(),
 	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected"]).optional(),
 	reason: z.string().max(255).optional(),
-});
+}).strict();
 
 export async function handleStageTransition(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
 ) {
-	const rawIdempotencyKey =
-		(request.headers?.["idempotency-key"] as string | undefined) ??
-		(request.headers?.["x-idempotency-key"] as string | undefined) ??
-		(request.body && typeof request.body === "object"
-			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-			: undefined);
-	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
-
-	if (idempotencyKey) {
-		reply.header("Idempotency-Key", idempotencyKey);
-
-		// Дедупликация по таблице idempotency_keys (Мандаты 8d, 8bo, 8zp)
-		const [existingRecord] = await db
-			.select()
-			.from(idempotencyKeys)
-			.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
-			.limit(1);
-
-		if (existingRecord) {
-			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-			}
-			if (existingRecord.status === "in_flight") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Операция перемещения плана лечения с данным Idempotency-Key уже выполняется.",
-				});
-			}
-		}
-	}
-
 	const { id } = request.params;
 	const parsed = stageTransitionSchema.safeParse(request.body);
 	if (!parsed.success) {
@@ -201,27 +163,6 @@ export async function handleStageTransition(
 			invoice,
 			createdInvoice: invoice,
 		};
-
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: organizationId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: responsePayload,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: responsePayload,
-						responseCode: 200,
-					},
-				});
-		}
 
 		return { responsePayload, plan, invoice, targetStatus, now, patientId: existing.patientId };
 	});

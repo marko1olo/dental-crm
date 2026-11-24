@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db, type TenantDb } from "../../../../db/client.js";
+import { z } from "zod";
+import { type TenantDb, withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	invoiceItems,
@@ -17,6 +18,11 @@ import { formatInvoiceNumber } from "../../../invoiceRoutes/invoiceCalculationHe
 import { calculateEffectivePlanDiscount } from "../treatmentPlanTotalsCalculator.js";
 import { cancelRejectedPlanTierLedgerItems } from "./planLedgerSync.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
+
+const approveTreatmentPlanBodySchema = z.object({
+	selectedTier: z.string().trim().optional(),
+	alternativeTier: z.string().trim().optional(),
+}).strict();
 
 /**
  * statusTreatmentPlanHandler.ts — Утверждение, смена статуса и жизненный цикл плана лечения.
@@ -153,7 +159,7 @@ export async function createInvoiceForApprovedPlan(
 		formatInvoiceNumber("invoice", patientId) ||
 		`СЧ-${now.getFullYear()}-${invoiceId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
-	let totalAmountRub = 0;
+	let totalAmountKopecks = 0;
 	const returnedItems: CreatedInvoiceSummary["items"] = [];
 	const itemsToInsert: Array<typeof invoiceItems.$inferInsert> = [];
 
@@ -250,7 +256,7 @@ export async function createInvoiceForApprovedPlan(
 			});
 		}
 
-		totalAmountRub = kopecksToRubles(targetFinalTotalKopecks);
+		totalAmountKopecks = targetFinalTotalKopecks;
 	} else {
 		const rawTotalRub = Number(planTotalPriceRub || 0);
 		const baseTotalKopecks = params.totalPriceKopecks != null
@@ -265,7 +271,8 @@ export async function createInvoiceForApprovedPlan(
 		});
 
 		const finalTotalKopecks = effectiveDiscount.finalTotalKopecks;
-		totalAmountRub = kopecksToRubles(finalTotalKopecks);
+		totalAmountKopecks = finalTotalKopecks;
+		const totalAmountRub = kopecksToRubles(finalTotalKopecks);
 		const itemId = randomUUID();
 		const discountPercent = baseTotalKopecks > 0
 			? Math.min(100, Math.round((effectiveDiscount.discountKopecks / baseTotalKopecks) * 100))
@@ -292,7 +299,6 @@ export async function createInvoiceForApprovedPlan(
 		});
 	}
 
-	const totalAmountKopecks = rublesToKopecks(totalAmountRub);
 	const finalTotalAmountRub = kopecksToRubles(totalAmountKopecks);
 	const totalRubText = formatKopecksToRubles(totalAmountKopecks);
 
@@ -337,26 +343,20 @@ export async function handleApproveTreatmentPlan(
 	organizationId: string,
 ) {
 	const { id } = request.params;
-	const rawBody = (request.body && typeof request.body === "object") ? (request.body as Record<string, unknown>) : {};
-	const selectedTier = (typeof rawBody.selectedTier === "string" && rawBody.selectedTier.trim())
-		|| (typeof rawBody.alternativeTier === "string" && rawBody.alternativeTier.trim())
-		|| "optimum";
-
-	const [existing] = await db
-		.select()
-		.from(treatmentPlans)
-		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
-		.limit(1);
-
-	if (!existing) {
-		return reply.code(404).send({
-			error: "TreatmentPlanNotFound",
-			message: "План лечения не найден.",
+	const parsed = approveTreatmentPlanBodySchema.safeParse(request.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры утверждения плана лечения.",
+			issues: parsed.error.issues,
 		});
 	}
+	const selectedTier =
+		(parsed.data.selectedTier && parsed.data.selectedTier.length > 0 ? parsed.data.selectedTier : undefined)
+		|| (parsed.data.alternativeTier && parsed.data.alternativeTier.length > 0 ? parsed.data.alternativeTier : undefined)
+		|| "optimum";
 
-	const { approvedPlan, createdInvoice } = await db.transaction(async (tx) => {
-		let invoice: CreatedInvoiceSummary | null = null;
+	const approveResult = await withTenantCtx(organizationId, async (tx) => {
 		const [planToLock] = await tx
 			.select()
 			.from(treatmentPlans)
@@ -365,9 +365,10 @@ export async function handleApproveTreatmentPlan(
 			.limit(1);
 
 		if (!planToLock) {
-			return { approvedPlan: null, createdInvoice: null };
+			return { notFound: true as const, approvedPlan: null, createdInvoice: null };
 		}
 
+		let invoice: CreatedInvoiceSummary | null = null;
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
@@ -389,7 +390,7 @@ export async function handleApproveTreatmentPlan(
 				.where(
 					and(
 						eq(treatmentItems.organizationId, organizationId),
-						eq(treatmentItems.patientId, existing.patientId),
+						eq(treatmentItems.patientId, planToLock.patientId),
 						eq(treatmentItems.status, "proposed"),
 						or(
 							eq(treatmentItems.treatmentPlanId, id),
@@ -401,15 +402,15 @@ export async function handleApproveTreatmentPlan(
 			// SEV-2.4: Аннулируем позиции отвергнутых альтернативных тарифов в той же группе планов
 			await cancelRejectedPlanTierLedgerItems(tx, {
 				organizationId,
-				patientId: existing.patientId,
+				patientId: planToLock.patientId,
 				approvedPlanId: id,
-				planGroupId: existing.planGroupId,
+				planGroupId: planToLock.planGroupId,
 			});
 
 			// DEF-PLAN-01: Создаем реальный счет/наряд в БД при утверждении плана
 			invoice = await createInvoiceForApprovedPlan(tx, {
 				organizationId,
-				patientId: existing.patientId,
+				patientId: planToLock.patientId,
 				planId: id,
 				planName: updated.name || "Комплексный план лечения",
 				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice,
@@ -431,8 +432,17 @@ export async function handleApproveTreatmentPlan(
 			});
 		}
 
-		return { approvedPlan: updated, createdInvoice: invoice };
+		return { notFound: false as const, approvedPlan: updated, createdInvoice: invoice, patientId: planToLock.patientId };
 	});
+
+	if (approveResult.notFound) {
+		return reply.code(404).send({
+			error: "TreatmentPlanNotFound",
+			message: "План лечения не найден.",
+		});
+	}
+
+	const { approvedPlan, createdInvoice, patientId } = approveResult;
 
 	if (!approvedPlan) {
 		return reply.code(500).send({
@@ -448,7 +458,7 @@ export async function handleApproveTreatmentPlan(
 				payload: {
 					invoiceId: createdInvoice.id,
 					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId: existing.patientId,
+					patientId,
 					patientName: createdInvoice.patientName,
 					totalAmountRub: createdInvoice.totalAmountRub,
 					status: "draft",
@@ -482,24 +492,10 @@ export async function handleUpdateTreatmentPlanStatus(
 		});
 	}
 	const status = parsed.data.status;
-
-	const [existing] = await db
-		.select()
-		.from(treatmentPlans)
-		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
-		.limit(1);
-
-	if (!existing) {
-		return reply.code(404).send({
-			error: "TreatmentPlanNotFound",
-			message: "План лечения не найден.",
-		});
-	}
-
 	const isApproved = status.toLowerCase() === "approved";
 	const selectedTier = parsed.data.selectedTier || parsed.data.alternativeTier;
 
-	const { updatedPlan, createdInvoice } = await db.transaction(async (tx) => {
+	const statusResult = await withTenantCtx(organizationId, async (tx) => {
 		let invoice: CreatedInvoiceSummary | null = null;
 		const [planToLock] = await tx
 			.select()
@@ -509,7 +505,7 @@ export async function handleUpdateTreatmentPlanStatus(
 			.limit(1);
 
 		if (!planToLock) {
-			return { updatedPlan: null, createdInvoice: null };
+			return { notFound: true as const, updatedPlan: null, createdInvoice: null };
 		}
 
 		const [updated] = await tx
@@ -533,7 +529,7 @@ export async function handleUpdateTreatmentPlanStatus(
 				.where(
 					and(
 						eq(treatmentItems.organizationId, organizationId),
-						eq(treatmentItems.patientId, existing.patientId),
+						eq(treatmentItems.patientId, planToLock.patientId),
 						eq(treatmentItems.status, "proposed"),
 						or(
 							eq(treatmentItems.treatmentPlanId, id),
@@ -544,14 +540,14 @@ export async function handleUpdateTreatmentPlanStatus(
 
 			await cancelRejectedPlanTierLedgerItems(tx, {
 				organizationId,
-				patientId: existing.patientId,
+				patientId: planToLock.patientId,
 				approvedPlanId: id,
-				planGroupId: existing.planGroupId,
+				planGroupId: planToLock.planGroupId,
 			});
 
 			invoice = await createInvoiceForApprovedPlan(tx, {
 				organizationId,
-				patientId: existing.patientId,
+				patientId: planToLock.patientId,
 				planId: id,
 				planName: updated.name || "Комплексный план лечения",
 				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice,
@@ -575,8 +571,17 @@ export async function handleUpdateTreatmentPlanStatus(
 			});
 		}
 
-		return { updatedPlan: updated, createdInvoice: invoice };
+		return { notFound: false as const, updatedPlan: updated, createdInvoice: invoice, patientId: planToLock.patientId };
 	});
+
+	if (statusResult.notFound) {
+		return reply.code(404).send({
+			error: "TreatmentPlanNotFound",
+			message: "План лечения не найден.",
+		});
+	}
+
+	const { updatedPlan, createdInvoice, patientId } = statusResult;
 
 	if (!updatedPlan) {
 		return reply.code(500).send({
@@ -592,7 +597,7 @@ export async function handleUpdateTreatmentPlanStatus(
 				payload: {
 					invoiceId: createdInvoice.id,
 					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId: existing.patientId,
+					patientId,
 					patientName: createdInvoice.patientName,
 					totalAmountRub: createdInvoice.totalAmountRub,
 					status: "draft",

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { treatmentPlanStages, treatmentPlans } from "../../../../db/schema.js";
 import { updateTreatmentPlanStageSchema } from "./schemas.js";
 
@@ -23,24 +23,21 @@ export async function handleUpdateTreatmentPlanStage(
 		});
 	}
 
-	const [plan] = await db
-		.select({ id: treatmentPlans.id, name: treatmentPlans.name })
-		.from(treatmentPlans)
-		.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
-		.limit(1);
-
-	if (!plan) {
-		return reply.code(404).send({
-			error: "TreatmentPlanNotFound",
-			message: "План лечения не найден.",
-		});
-	}
-
 	const data = parsed.data;
 	const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stageId);
 	const stageOrderNumber = Number.parseInt(stageId, 10);
 
-	const updateResult = await db.transaction(async (tx) => {
+	const updateResult = await withTenantCtx(organizationId, async (tx) => {
+		const [plan] = await tx
+			.select({ id: treatmentPlans.id, name: treatmentPlans.name })
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.limit(1);
+
+		if (!plan) {
+			return { kind: "plan_not_found" as const };
+		}
+
 		const stageCondition = isUuid
 			? and(
 					eq(treatmentPlanStages.id, stageId),
@@ -56,12 +53,12 @@ export async function handleUpdateTreatmentPlanStage(
 				: null;
 
 		if (!stageCondition) {
-			return null;
+			return { kind: "stage_not_found" as const };
 		}
 
 		const [targetStage] = await tx.select().from(treatmentPlanStages).where(stageCondition).limit(1);
 		if (!targetStage) {
-			return null;
+			return { kind: "stage_not_found" as const };
 		}
 
 		const isCompleted = data.isCompleted ?? (data.status === "completed");
@@ -78,10 +75,17 @@ export async function handleUpdateTreatmentPlanStage(
 			.where(eq(treatmentPlanStages.id, targetStage.id))
 			.returning();
 
-		return updatedStage;
+		return updatedStage ? { kind: "ok" as const, stage: updatedStage } : { kind: "stage_not_found" as const };
 	});
 
-	if (!updateResult) {
+	if (updateResult.kind === "plan_not_found") {
+		return reply.code(404).send({
+			error: "TreatmentPlanNotFound",
+			message: "План лечения не найден.",
+		});
+	}
+
+	if (updateResult.kind === "stage_not_found") {
 		return reply.code(404).send({
 			error: "StageNotFound",
 			message: "Этап плана лечения не найден.",
@@ -90,6 +94,6 @@ export async function handleUpdateTreatmentPlanStage(
 
 	return reply.code(200).send({
 		success: true,
-		stage: updateResult,
+		stage: updateResult.stage,
 	});
 }

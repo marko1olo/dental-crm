@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	treatmentPlanItemsNew,
@@ -31,7 +31,7 @@ export async function handleUpdateTreatmentPlan(
 
 	const data = parsed.data;
 
-	const updatedPlan = await db.transaction(async (tx) => {
+	const updatedPlan = await withTenantCtx(organizationId, async (tx) => {
 		const [existing] = await tx
 			.select()
 			.from(treatmentPlans)

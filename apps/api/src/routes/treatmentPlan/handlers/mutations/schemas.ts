@@ -20,7 +20,7 @@ export const createTreatmentPlanItemSchema = z.object({
 	isBundle: z.boolean().default(false),
 	isAuto: z.boolean().optional(),
 	doctorId: z.string().uuid().optional().nullable(),
-});
+}).strict();
 
 export const createTreatmentPlanSchema = z.object({
 	id: z.string().uuid().optional().nullable(),
@@ -28,6 +28,7 @@ export const createTreatmentPlanSchema = z.object({
 	doctorId: z.string().uuid().optional().nullable(),
 	name: z.string().trim().min(1).default("План комплексного лечения"),
 	title: z.string().trim().optional().default(""),
+	notes: z.string().trim().max(5000).optional().nullable(),
 	diagnosisIcd10: z.string().trim().max(50).optional().nullable(),
 	diagnosisTitle: z.string().trim().max(500).optional().nullable(),
 	totalPriceRub: z.number().nonnegative().optional(),
@@ -56,25 +57,25 @@ export const createTreatmentPlanSchema = z.object({
 				stageName: z.string().trim().min(1),
 				completionPercentage: z.number().int().min(0).max(100).default(0),
 				items: z.array(createTreatmentPlanItemSchema).optional().default([]),
-			}),
+			}).strict(),
 		)
 		.optional()
 		.default([]),
-});
+}).strict();
 
 export const updateTreatmentPlanStageSchema = z.object({
 	status: z.enum(["planned", "in_progress", "completed", "agreed", "declined"]).optional(),
 	completionPercentage: z.number().int().min(0).max(100).optional(),
 	stageName: z.string().trim().optional(),
 	isCompleted: z.boolean().optional(),
-});
+}).strict();
 
 export const listTreatmentPlansQuerySchema = z.object({
 	patientId: z.string().uuid().optional(),
 	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected"]).optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(50),
 	offset: z.coerce.number().int().min(0).default(0),
-});
+}).strict();
 
 export const updateTreatmentPlanSchema = z.object({
 	name: z.string().trim().min(1).optional(),
@@ -94,10 +95,10 @@ export const updateTreatmentPlanSchema = z.object({
 	curatorFunnelStage: z.string().trim().nullable().optional(),
 	curatorNextContactDate: z.string().trim().nullable().optional(),
 	curatorNotes: z.string().trim().nullable().optional(),
-});
+}).strict();
 
 export const updateTreatmentPlanStatusSchema = z.object({
 	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected"]).default("Approved"),
 	selectedTier: z.string().optional(),
 	alternativeTier: z.string().optional(),
-});
+}).strict();

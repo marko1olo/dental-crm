@@ -1,8 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { rublesToKopecks, kopecksToRubles, computePayloadHash } from "@dental/shared";
+import { rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
 import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
@@ -10,7 +9,6 @@ import {
 	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
-import { idempotencyKeys } from "../../../../db/schema/idempotency.js";
 import { debtNumericText, rublesFromKopecks } from "../../../../money/patientDebt.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import {
@@ -72,38 +70,6 @@ export async function handleUpsertPatientTreatmentPlan(
 	}
 	if (!(await ensurePatientInOrganization(patientId, organizationId))) {
 		return reply.code(404).send({ error: "PatientNotFound" });
-	}
-
-	const rawIdempotencyKey = request.headers["idempotency-key"];
-	const idempotencyKey =
-		typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-			? rawIdempotencyKey.trim()
-			: null;
-
-	if (idempotencyKey) {
-		const [existingKey] = await db
-			.select()
-			.from(idempotencyKeys)
-			.where(
-				and(
-					eq(idempotencyKeys.clinicId, organizationId),
-					eq(idempotencyKeys.key, idempotencyKey),
-				),
-			)
-			.limit(1);
-
-		if (existingKey) {
-			if (existingKey.status === "completed" && existingKey.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				return reply.code(existingKey.responseCode ?? 200).send(existingKey.responseBody);
-			}
-			if (existingKey.status === "in_flight") {
-				return reply.code(409).send({
-					error: "Conflict",
-					message: "Операция сохранения плана лечения уже обрабатывается, повторите запрос через несколько секунд.",
-				});
-			}
-		}
 	}
 
 	const parsed = treatmentPlanUpsertSchema.safeParse(request.body);
@@ -518,32 +484,6 @@ export async function handleUpsertPatientTreatmentPlan(
 				totalPrice: numeric(rublesFromKopecks(totalPriceKopecks)),
 				plan: savedPlan ?? null,
 			};
-
-			// DEF-03 / Мандат 8bo: Запись ключа идемпотентности строго ВНУТРИ единой ACID-транзакции tx
-			if (idempotencyKey) {
-				try {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: organizationId,
-							key: idempotencyKey,
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody,
-							responseCode: 200,
-							status: "completed",
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								responseBody,
-								responseCode: 200,
-								status: "completed",
-							},
-						});
-				} catch (idempErr) {
-					request.log.warn({ err: idempErr }, "Не удалось сохранить ключ идемпотентности сохранения плана лечения");
-				}
-			}
 
 			return {
 				savedPlanId,

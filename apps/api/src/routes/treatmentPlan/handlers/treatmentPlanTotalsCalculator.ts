@@ -1,4 +1,5 @@
 import {
+	basisPointsFromPercent,
 	sumKopecks,
 	rublesToKopecks,
 	kopecksToRubles,
@@ -159,7 +160,7 @@ export function calculateEffectivePlanDiscount(params: {
 		discountKopecks = Math.min(baseTotalKopecks, Number(planDiscountKopecks));
 	} else if (planDiscountPercent > 0) {
 		const clampedPercent = Math.min(100, Math.max(0, planDiscountPercent));
-		const basisPoints = Math.round(clampedPercent * 100);
+		const basisPoints = basisPointsFromPercent(clampedPercent);
 		discountKopecks = percentageOfKopecks(toExactKopecks(baseTotalKopecks), basisPoints);
 	} else if (planDiscountRub > 0) {
 		discountKopecks = Math.min(baseTotalKopecks, rublesToKopecks(planDiscountRub));

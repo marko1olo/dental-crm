@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	auditEvents,
 	patients,
@@ -43,22 +43,31 @@ export async function handleSignTreatmentPlanPep(
 	}
 
 	const data = parsed.data;
-	const [plan] = await db
-		.select()
-		.from(treatmentPlans)
-		.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
-		.limit(1);
+	const initialData = await withTenantCtx(organizationId, async (tx) => {
+		const [planRow] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.limit(1);
 
-	if (!plan) {
+		if (!planRow) {
+			return null;
+		}
+
+		const [patientRow] = await tx
+			.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+			.from(patients)
+			.where(and(eq(patients.id, planRow.patientId), eq(patients.organizationId, organizationId)))
+			.limit(1);
+
+		return { plan: planRow, patient: patientRow ?? null };
+	});
+
+	if (!initialData) {
 		return reply.code(404).send({ error: "TreatmentPlanNotFound", message: "План лечения не найден." });
 	}
 
-	const [patient] = await db
-		.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
-		.from(patients)
-		.where(and(eq(patients.id, plan.patientId), eq(patients.organizationId, organizationId)))
-		.limit(1);
-
+	const { plan, patient } = initialData;
 	const patientFullName = data.signerName || patient?.fullName || "Пациент";
 	const targetPhone = data.phone || patient?.phone || "";
 
@@ -73,26 +82,29 @@ export async function handleSignTreatmentPlanPep(
 		});
 	}
 
-	const [items, stages] = await Promise.all([
-		db
-			.select()
-			.from(treatmentPlanItemsNew)
-			.where(
-				and(
-					eq(treatmentPlanItemsNew.planId, planId),
-					eq(treatmentPlanItemsNew.organizationId, organizationId),
+	const { items, stages } = await withTenantCtx(organizationId, async (tx) => {
+		const [loadedItems, loadedStages] = await Promise.all([
+			tx
+				.select()
+				.from(treatmentPlanItemsNew)
+				.where(
+					and(
+						eq(treatmentPlanItemsNew.planId, planId),
+						eq(treatmentPlanItemsNew.organizationId, organizationId),
+					),
 				),
-			),
-		db
-			.select()
-			.from(treatmentPlanStages)
-			.where(
-				and(
-					eq(treatmentPlanStages.planId, planId),
-					eq(treatmentPlanStages.organizationId, organizationId),
+			tx
+				.select()
+				.from(treatmentPlanStages)
+				.where(
+					and(
+						eq(treatmentPlanStages.planId, planId),
+						eq(treatmentPlanStages.organizationId, organizationId),
+					),
 				),
-			),
-	]);
+		]);
+		return { items: loadedItems, stages: loadedStages };
+	});
 
 	// Юридическая чистота ПЭП 63-ФЗ: полный канонический снимок сметы, позиций и этапов
 	const canonicalPlanSnapshot = {
@@ -145,7 +157,8 @@ export async function handleSignTreatmentPlanPep(
 	};
 
 	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
-	const { signedPlan, createdInvoice } = await db.transaction(
+	const { signedPlan, createdInvoice } = await withTenantCtx(
+		organizationId,
 		async (tx): Promise<{ signedPlan: typeof treatmentPlans.$inferSelect | undefined; createdInvoice: CreatedInvoiceSummary | null }> => {
 		const [planToLock] = await tx
 			.select()

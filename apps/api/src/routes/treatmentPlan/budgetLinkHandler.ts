@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents, treatmentPlans } from "../../db/schema.js";
 import { PortalBudgetService } from "../../services/portalBudgetService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -18,19 +18,22 @@ export async function handleCreateBudgetLink(
 			message: "Идентификатор плана лечения должен быть валидным UUID.",
 		});
 	}
-	const [plan] = await db
-		.select({
-			id: treatmentPlans.id,
-			name: treatmentPlans.name,
-			status: treatmentPlans.status,
-			patientId: treatmentPlans.patientId,
-			doctorId: treatmentPlans.doctorId,
-			totalPriceRub: treatmentPlans.totalPriceRub,
-			planDiscountRub: treatmentPlans.planDiscountRub,
-		})
-		.from(treatmentPlans)
-		.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
-		.limit(1);
+	const plan = await withTenantCtx(organizationId, async (tx) => {
+		const [row] = await tx
+			.select({
+				id: treatmentPlans.id,
+				name: treatmentPlans.name,
+				status: treatmentPlans.status,
+				patientId: treatmentPlans.patientId,
+				doctorId: treatmentPlans.doctorId,
+				totalPriceRub: treatmentPlans.totalPriceRub,
+				planDiscountRub: treatmentPlans.planDiscountRub,
+			})
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.limit(1);
+		return row ?? null;
+	});
 
 	if (!plan) {
 		return reply.code(404).send({
@@ -50,13 +53,15 @@ export async function handleCreateBudgetLink(
 	const publicUrl = `/public/budget/${gen.token}`;
 
 	try {
-		await db.insert(auditEvents).values({
-			organizationId,
-			actorUserId: null,
-			entityType: "treatment_plan",
-			entityId: plan.id,
-			action: "BUDGET_LINK_GENERATED",
-			reason: `Выпущена публичная ссылка на смету (token: ${gen.token})`,
+		await withTenantCtx(organizationId, async (tx) => {
+			await tx.insert(auditEvents).values({
+				organizationId,
+				actorUserId: null,
+				entityType: "treatment_plan",
+				entityId: plan.id,
+				action: "BUDGET_LINK_GENERATED",
+				reason: `Выпущена публичная ссылка на смету (token: ${gen.token})`,
+			});
 		});
 	} catch (auditErr) {
 		request.log.warn({ err: auditErr }, "Не удалось записать аудит выпуска ссылки на смету");

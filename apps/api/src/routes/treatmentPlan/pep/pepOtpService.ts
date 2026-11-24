@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { communicationOutbox } from "../../../db/schema.js";
 import { portalOtpCodes } from "../../../db/schema/auth.js";
 import { hashCredential, verifyCredential } from "../../../utils/cryptoHelper.js";
@@ -24,7 +24,7 @@ export async function handleOtpRequest(
 			const codeHash = await hashCredential(generatedCode);
 			const now = new Date();
 
-			await db.transaction(async (tx) => {
+			await withTenantCtx(organizationId, async (tx) => {
 				// Погасить старые неиспользованные коды пациента
 				await tx
 					.update(portalOtpCodes)
@@ -88,14 +88,6 @@ export async function handleOtpRequest(
 	});
 }
 
-function isTestExecutionEnvironment(): boolean {
-	return (
-		process.env.NODE_ENV === "test" ||
-		Boolean(process.env.NODE_TEST_CONTEXT) ||
-		Boolean(process.env.VITEST)
-	);
-}
-
 export async function verifyOtpCode(
 	planId: string,
 	code?: string,
@@ -105,17 +97,11 @@ export async function verifyOtpCode(
 	if (!code) return false;
 	const enteredCode = code.trim();
 
-	// Mandate 8af (Test isolation): Изолированный тестовый OTP-провайдер для автоматических тестов
-	if (isTestExecutionEnvironment() && enteredCode === "123456") {
-		activeOtpCache.delete(planId);
-		return true;
-	}
-
 	// 1. Проверка в PostgreSQL 18 (portal_otp_codes)
 	if (organizationId && patientId) {
-		try {
-			const now = new Date();
-			const [candidate] = await db
+		const now = new Date();
+		const isMatched = await withTenantCtx(organizationId, async (tx) => {
+			const [candidate] = await tx
 				.select({ id: portalOtpCodes.id, codeHash: portalOtpCodes.codeHash })
 				.from(portalOtpCodes)
 				.where(
@@ -130,19 +116,20 @@ export async function verifyOtpCode(
 				.orderBy(desc(portalOtpCodes.createdAt))
 				.limit(1);
 
-			if (candidate) {
-				const isMatch = await verifyCredential(enteredCode, candidate.codeHash);
-				if (isMatch) {
-					await db
-						.update(portalOtpCodes)
-						.set({ consumedAt: now })
-						.where(eq(portalOtpCodes.id, candidate.id));
-					activeOtpCache.delete(planId);
-					return true;
-				}
-			}
-		} catch (dbErr) {
-			// fallback to in-memory check
+			if (!candidate) return false;
+			const isMatch = await verifyCredential(enteredCode, candidate.codeHash);
+			if (!isMatch) return false;
+
+			await tx
+				.update(portalOtpCodes)
+				.set({ consumedAt: now })
+				.where(eq(portalOtpCodes.id, candidate.id));
+			return true;
+		});
+
+		if (isMatched) {
+			activeOtpCache.delete(planId);
+			return true;
 		}
 	}
 
