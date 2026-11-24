@@ -1,11 +1,11 @@
 import { and, eq, gte, inArray, lte, sql, type Column } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
@@ -32,6 +32,13 @@ import {
 	calculateNoShowHeatmap,
 } from "./utilizationRoutes.js";
 
+const dashboardQuerySchema = z
+	.object({
+		range: z.string().trim().min(1).max(32).optional(),
+		branchId: z.string().uuid().optional(),
+	})
+	.strict();
+
 export async function registerDashboardRoutes(app: FastifyInstance) {
 	app.get("/api/analytics/dashboard", async (request, reply) => {
 		// БЫЛО: `const orgId = await requireClinicalReadAccess(...)` — этот guard
@@ -56,8 +63,19 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		const queryParse = dashboardQuerySchema.safeParse(request.query ?? {});
+		if (!queryParse.success) {
+			return reply.code(400).send({
+				success: false,
+				error: "ValidationError",
+				message:
+					queryParse.error.issues.map((i) => i.message).join(", ") ||
+					"Некорректные параметры запроса дашборда аналитики",
+			});
+		}
+
 		try {
-			const { range, branchId } = request.query as { range?: string; branchId?: string };
+			const { range, branchId } = queryParse.data;
 			const timeZone = await clinicTimeZone(orgId);
 			let startDate: Date | undefined;
 
@@ -143,8 +161,14 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			 * состояния в схеме нет (есть только `approvedAt`), поэтому иначе воронка
 			 * перестала бы слушаться переключателя периода.
 			 */
-			const data = await withTenantCtx(orgId, async () => {
-				const planCounts = await db
+			// 4. Cohort LTV — payments grouped by patient creation month (строгий учет таймзоны клиники)
+			const { cohortLtvJson, cohortZone } = await calculateCohortLtv(
+				orgId,
+				now,
+			);
+
+			const data = await withTenantCtx(orgId, async (tx) => {
+				const planCounts = await tx
 					.select({
 						status: treatmentPlans.status,
 						count: sql<number>`count(*)::int`,
@@ -182,13 +206,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			const { chairUtilizationJson, chairOccupancyRate } =
 				await calculateChairUtilization(orgId, startDate, now, branchId);
 
-			// 4. Cohort LTV — payments grouped by patient creation month (строгий учет таймзоны клиники)
-			const { cohortLtvJson, cohortZone } = await calculateCohortLtv(
-				orgId,
-				now,
-			);
-
-			const [patientCountRow] = await db
+			const [patientCountRow] = await tx
 				.select({ count: sql<number>`count(*)` })
 				.from(patients)
 				.where(withDate(patients.organizationId, patients.createdAt));
@@ -202,7 +220,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
 			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
 			const methodText = sql`${payments.method}::text`;
-			const [revenueRow] = await db
+			const [revenueRow] = await tx
 				.select({
 					totalKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${absPaymentKopExpr} else 0 end)::bigint, 0)`,
 					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
@@ -227,7 +245,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			// Средний чек считается на ПЛАТИВШИХ пациентов. Раньше делили выручку
 			// периода на число пациентов, ЗАРЕГИСТРИРОВАННЫХ в этом периоде: при
 			// 10 новых пациентах и выручке со старых средний чек улетал в космос.
-			const [payingPatientRow] = await db
+			const [payingPatientRow] = await tx
 				.select({ count: sql<number>`count(distinct ${payments.patientId})` })
 				.from(payments)
 				.where(
@@ -241,7 +259,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				);
 
 			// [DEF-ANL-02] Честный подсчет повторных плативших пациентов: платившие пациенты, у которых patients.createdAt < startDate либо первый визит был до startDate
-			const [repeatPayingPatientRow] = await db
+			const [repeatPayingPatientRow] = await tx
 				.select({ count: sql<number>`count(distinct ${payments.patientId})` })
 				.from(payments)
 				.innerJoin(patients, and(eq(payments.patientId, patients.id), eq(patients.organizationId, orgId)))
@@ -258,13 +276,13 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const [apptCountRow] = await db
+			const [apptCountRow] = await tx
 				.select({ count: sql<number>`count(*)` })
 				.from(appointments)
 				.where(withDate(appointments.organizationId, appointments.startsAt));
 
 			// 5. 3-Tier Treatment Plan Acceptance Rate & Primary Consultation Conversion
-			const allPlans = await db
+			const allPlans = await tx
 				.select({
 					id: treatmentPlans.id,
 					name: treatmentPlans.name,
@@ -281,7 +299,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 
 			// [ANL-05] Первичный приём: по явному маркеру консультации/первички в причине,
 			// либо по отсутствию у пациента завершенных приемов в прошлом (без ложного "or reason is null").
-			const [consultationApptRow] = await db
+			const [consultationApptRow] = await tx
 				.select({
 					count: sql<number>`count(*)::int`,
 				})

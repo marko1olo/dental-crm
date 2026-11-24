@@ -213,7 +213,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	const departments = calculateDepartmentBreakdown(rawDepartments);
 
 	// 2. Активные врачи за период
-	const [activeDocsRow] = await db
+	const [activeDocsRow] = await tx
 		.select({ count: sql<number>`count(distinct ${appointments.doctorUserId})::int` })
 		.from(appointments)
 		.where(
@@ -230,7 +230,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	// а не отсекаются по дате appointments.startsAt.
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
 	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
-	const doctorRevenueSubquery = db
+	const doctorRevenueSubquery = tx
 		.select({
 			doctorUserId: appointments.doctorUserId,
 			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`.as("revenue_kopecks"),
@@ -270,7 +270,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.groupBy(appointments.doctorUserId)
 		.as("dr");
 
-	const doctorAppointmentsSubquery = db
+	const doctorAppointmentsSubquery = tx
 		.select({
 			doctorUserId: appointments.doctorUserId,
 			appointmentsCount: sql<number>`count(distinct ${appointments.id})::int`.as("appointments_count"),
@@ -289,7 +289,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.as("da");
 
 	const doctorRevenueExpr = sql<number>`coalesce(${doctorRevenueSubquery.revenueKopecks}, 0)::bigint`;
-	const doctorStats = await db
+	const doctorStats = await tx
 		.select({
 			doctorUserId: users.id,
 			fullName: users.fullName,
@@ -352,7 +352,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 
 	// 4. Топ процедур по выручке и популярности
 	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, 0)::bigint * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`;
-	const procedureStats = await db
+	const procedureStats = await tx
 		.select({
 			id: treatmentItems.serviceId,
 			name: treatmentItems.title,
@@ -403,10 +403,11 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		};
 	});
 
-	return {
-		departments,
-		activeDoctorsCount: Number(activeDocsRow?.count || 0),
-		topDoctors,
-		topProcedures,
-	};
+		return {
+			departments,
+			activeDoctorsCount: Number(activeDocsRow?.count || 0),
+			topDoctors,
+			topProcedures,
+		};
+	});
 }
