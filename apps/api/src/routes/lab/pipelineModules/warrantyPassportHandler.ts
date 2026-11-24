@@ -160,7 +160,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 
 		const baseDate = orderWithDetails.completedAt ?? orderWithDetails.createdAt;
 		const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
-		const formattedOrderNum = orderWithDetails.orderNumber && (orderWithDetails.orderNumber.startsWith("ЗТЛ-") || orderWithDetails.orderNumber.startsWith("ЛО-"))
+		const formattedOrderNum = orderWithDetails.orderNumber && (orderWithDetails.orderNumber.startsWith("ЛАБ-") || orderWithDetails.orderNumber.startsWith("ЗТЛ-") || orderWithDetails.orderNumber.startsWith("ЛО-"))
 			? orderWithDetails.orderNumber
 			: (orderWithDetails.orderNumber ? `ЛО-${baseYear}-${orderWithDetails.orderNumber}` : `ЗТЛ-${baseYear}-${orderWithDetails.id.slice(0, 6).toUpperCase()}`);
 		const batchCode = result.realBatchNumber || formattedOrderNum;

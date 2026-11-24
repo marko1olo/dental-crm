@@ -264,7 +264,7 @@ export async function insertLabOrderInDb(
 	const shortId = secureToken.replace(/-/g, "").slice(0, 4).toUpperCase();
 	const effectiveOrderNumber = data.orderNumber && data.orderNumber.trim()
 		? data.orderNumber.trim()
-		: `ЗТЛ-${yy}${mm}-${shortId}`;
+		: `ЛАБ-${yy}${mm}-${shortId}`;
 
 	const [createdOrder] = await tx
 		.insert(labOrders)

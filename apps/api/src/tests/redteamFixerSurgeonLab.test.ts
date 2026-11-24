@@ -22,7 +22,6 @@ import { organizations, users, patients, labOrders, labItems, appointments } fro
 import { registerLabRoutes } from "../routes/lab/index.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";
-import { idempotencyPlugin } from "../plugins/idempotencyPlugin.js";
 import * as labQueryModule from "../db/labQuery.js";
 
 const NAMESPACE = "redteamFixerLab";
@@ -43,6 +42,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		try {
 			await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
 				await tx.execute(sql`UPDATE lab_orders SET parent_lab_order_id = NULL WHERE organization_id::text = ${ORGANIZATION_ID}::text`);
+				await tx.execute(sql`DELETE FROM idempotency_keys WHERE clinic_id::text = ${ORGANIZATION_ID}::text`);
 			}).catch(() => {});
 			await purgeFixtureOrganizations([ORGANIZATION_ID]);
 		} catch (error) {
@@ -116,7 +116,6 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		);
 
 		app = createTenantTestApp();
-		await app.register(idempotencyPlugin);
 		await registerLabRoutes(app);
 		await app.ready();
 	});
@@ -127,6 +126,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		try {
 			await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
 				await tx.execute(sql`UPDATE lab_orders SET parent_lab_order_id = NULL WHERE organization_id::text = ${ORGANIZATION_ID}::text`);
+				await tx.execute(sql`DELETE FROM idempotency_keys WHERE clinic_id::text = ${ORGANIZATION_ID}::text`);
 			}).catch(() => {});
 			await purgeFixtureOrganizations([ORGANIZATION_ID]);
 		} catch {
