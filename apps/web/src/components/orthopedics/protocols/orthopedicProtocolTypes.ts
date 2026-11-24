@@ -15,7 +15,7 @@ export interface OrthopedicConsumableItem {
 	readonly defaultCostRub?: number;
 }
 
-export interface Order804nServiceItem {
+export interface OrthopedicServiceItem {
 	readonly code: string;
 	readonly nameRu: string;
 	readonly stageKind: "stage_3_orthopedics";
@@ -23,6 +23,12 @@ export interface Order804nServiceItem {
 	readonly priceRub?: number;
 	readonly toothNumber?: number;
 }
+
+/**
+ * Обратная совместимость (Мандат 8x):
+ * В коде и UI используется OrthopedicServiceItem, Order804nServiceItem сохранен как алиас.
+ */
+export type Order804nServiceItem = OrthopedicServiceItem;
 
 export interface OrthopedicProtocolPreset {
 	readonly id: string;
@@ -35,6 +41,8 @@ export interface OrthopedicProtocolPreset {
 	readonly objective: string;
 	readonly treatment: string;
 	readonly recommendations: string;
+	readonly clinicalServices?: readonly OrthopedicServiceItem[] | undefined;
+	readonly services?: readonly OrthopedicServiceItem[] | undefined;
 	readonly order804nServices: readonly Order804nServiceItem[];
 	readonly warehouseBundleType?:
 		| "orthopedics_prep"
@@ -71,7 +79,7 @@ export interface ApplyOrthopedicProtocolParams {
 	protocol: OrthopedicProtocolPreset;
 	options?: FormatOrthopedicProtocolOptions;
 	onSuccess?: ((summary: string) => void) | undefined;
-	onAddToInvoice?: ((services: readonly Order804nServiceItem[]) => void) | undefined;
+	onAddToInvoice?: ((services: readonly OrthopedicServiceItem[]) => void) | undefined;
 	copyToClipboard?: boolean;
 	showNotification?: boolean;
 }

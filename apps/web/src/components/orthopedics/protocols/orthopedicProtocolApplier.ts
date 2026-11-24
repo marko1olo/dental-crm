@@ -1,7 +1,7 @@
 import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useVisitStore } from "../../../store/visitStore.js";
-import type { ApplyOrthopedicProtocolParams, Order804nServiceItem } from "./orthopedicProtocolTypes.js";
+import type { ApplyOrthopedicProtocolParams, OrthopedicServiceItem, Order804nServiceItem } from "./orthopedicProtocolTypes.js";
 import { formatOrthopedicProtocolStatement } from "./orthopedicProtocolFormatter.js";
 
 function dispatchOrthopedicEvents(
@@ -12,6 +12,7 @@ function dispatchOrthopedicEvents(
 ) {
 	if (typeof window === "undefined") return;
 	try {
+		const protocolServices = protocol.clinicalServices ?? protocol.services ?? protocol.order804nServices;
 		window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 			detail: {
 				soap: {
@@ -29,9 +30,9 @@ function dispatchOrthopedicEvents(
 		}
 		const primaryTooth = teethNumbers.length > 0 ? teethNumbers[0] : undefined;
 		window.dispatchEvent(new CustomEvent("dente-estimate-stage-add", {
-			detail: { stageKind: "stage_3_orthopedics", toothFdi: primaryTooth, teethFdi: teethNumbers, protocolId: protocol.id, services: protocol.order804nServices },
+			detail: { stageKind: "stage_3_orthopedics", toothFdi: primaryTooth, teethFdi: teethNumbers, protocolId: protocol.id, services: protocolServices },
 		}));
-		const invoiceServices = protocol.order804nServices.map((s) => {
+		const invoiceServices = protocolServices.map((s) => {
 			const priceRub = s.priceRub ?? s.suggestedPriceRub ?? 0;
 			const priceKopecks = rublesToKopecks(priceRub);
 			return {
@@ -69,7 +70,7 @@ function dispatchOrthopedicEvents(
 export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolParams): {
 	summary: string;
 	teethNumbers: number[];
-	services: readonly Order804nServiceItem[];
+	services: readonly OrthopedicServiceItem[];
 	formatted: ReturnType<typeof formatOrthopedicProtocolStatement>;
 } {
 	const { protocol, options } = params;
@@ -79,9 +80,11 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 
 	dispatchOrthopedicEvents(formatted, protocol, teethNumbers, options);
 
+	const protocolServices = protocol.clinicalServices ?? protocol.services ?? protocol.order804nServices;
+
 	if (params.onAddToInvoice) {
 		try {
-			params.onAddToInvoice(protocol.order804nServices);
+			params.onAddToInvoice(protocolServices);
 		} catch (err) {
 			console.warn("Failed to add orthopedic services to invoice", err);
 		}
@@ -119,5 +122,5 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 	}
 	params.onSuccess?.(formatted.summaryLine);
 
-	return { summary: formatted.summaryLine, teethNumbers, services: protocol.order804nServices, formatted };
+	return { summary: formatted.summaryLine, teethNumbers, services: protocolServices, formatted };
 }

@@ -1,23 +1,45 @@
 import React from "react";
 import { DollarSign, Calendar } from "lucide-react";
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 
 export interface ZtlSoloEconomicsCardProps {
-	readonly grossPriceRub: number;
-	readonly ztlCostRub: number;
-	readonly materialsCostRub: number;
-	readonly netMarginRub: number;
+	readonly grossPriceRub?: number | undefined;
+	readonly grossPriceKopecks?: bigint | undefined;
+	readonly ztlCostRub?: number | undefined;
+	readonly ztlCostKopecks?: bigint | undefined;
+	readonly materialsCostRub?: number | undefined;
+	readonly materialsCostKopecks?: bigint | undefined;
+	readonly netMarginRub?: number | undefined;
+	readonly netMarginKopecks?: bigint | undefined;
 	readonly marginPercent: number;
 	readonly dueDate?: string | undefined;
 }
 
 export function ZtlSoloEconomicsCard({
 	grossPriceRub,
+	grossPriceKopecks,
 	ztlCostRub,
+	ztlCostKopecks,
 	materialsCostRub,
+	materialsCostKopecks,
 	netMarginRub,
+	netMarginKopecks,
 	marginPercent,
 	dueDate,
 }: ZtlSoloEconomicsCardProps) {
+	const effectiveGrossKopecks = grossPriceKopecks !== undefined
+		? grossPriceKopecks
+		: BigInt(rublesToKopecks(grossPriceRub ?? 0));
+	const effectiveZtlKopecks = ztlCostKopecks !== undefined
+		? ztlCostKopecks
+		: BigInt(rublesToKopecks(ztlCostRub ?? 0));
+	const effectiveMaterialsKopecks = materialsCostKopecks !== undefined
+		? materialsCostKopecks
+		: BigInt(rublesToKopecks(materialsCostRub ?? 0));
+	const effectiveNetMarginKopecks = netMarginKopecks !== undefined
+		? netMarginKopecks
+		: BigInt(rublesToKopecks(netMarginRub ?? 0));
+
 	return (
 		<div className="mb-2.5 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] min-w-0 overflow-hidden" data-testid="solo-economics-section">
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -38,19 +60,19 @@ export function ZtlSoloEconomicsCard({
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
 					<span className="text-[10px] text-[var(--ink-muted)] truncate min-w-0">Пациент (выручка)</span>
 					<span className="text-xs font-bold text-[var(--ink)] font-mono truncate min-w-0">
-						{grossPriceRub.toLocaleString("ru-RU")} ₽
+						{formatKopecksToRub(effectiveGrossKopecks)}
 					</span>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
 					<span className="text-[10px] text-[var(--ink-muted)] truncate min-w-0">Лаборатория (ЗТЛ)</span>
 					<span className="text-xs font-bold text-[var(--ink)] font-mono truncate min-w-0">
-						- {ztlCostRub.toLocaleString("ru-RU")} ₽
+						- {formatKopecksToRub(effectiveZtlKopecks)}
 					</span>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
 					<span className="text-[10px] text-[var(--ink-muted)] truncate min-w-0">Расходные материалы</span>
 					<span className="text-xs font-bold text-[var(--ink-muted)] font-mono truncate min-w-0">
-						- {materialsCostRub.toLocaleString("ru-RU")} ₽
+						- {formatKopecksToRub(effectiveMaterialsKopecks)}
 					</span>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--primary)]/10 border border-[var(--primary)]/30 flex flex-col justify-between min-h-[46px] min-w-0 overflow-hidden">
@@ -61,7 +83,7 @@ export function ZtlSoloEconomicsCard({
 						</span>
 					</div>
 					<span className="text-xs font-bold text-[var(--primary)] font-mono truncate min-w-0">
-						+{netMarginRub.toLocaleString("ru-RU")} ₽
+						+{formatKopecksToRub(effectiveNetMarginKopecks)}
 					</span>
 				</div>
 			</div>

@@ -39,16 +39,16 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 			assert.strictEqual(getCanalCountForTooth("24"), 2);
 		});
 
-		it("should resolve 3-canal permanent molars (17-18, 27-28, 36-38, 46-48)", () => {
-			const molars = ["17", "18", "27", "28", "36", "37", "38", "46", "47", "48"];
+		it("should resolve 3-canal permanent molars baseline (16-18, 26-28, 36-38, 46-48)", () => {
+			const molars = ["16", "17", "18", "26", "27", "28", "36", "37", "38", "46", "47", "48"];
 			for (const tooth of molars) {
 				assert.strictEqual(getCanalCountForTooth(tooth), 3);
 			}
 		});
 
-		it("should resolve 4-canal upper first molars by Wheeler/Hess with MB2 (16, 26)", () => {
-			assert.strictEqual(getCanalCountForTooth("16"), 4);
-			assert.strictEqual(getCanalCountForTooth("26"), 4);
+		it("should resolve 4-canal upper first molars by Wheeler/Hess with explicit MB2 override (16, 26)", () => {
+			assert.strictEqual(getCanalCountForTooth("16", 4), 4);
+			assert.strictEqual(getCanalCountForTooth("26", 4), 4);
 		});
 
 		it("should respect custom canal overrides (e.g. 4-canal molar MB2)", () => {
@@ -244,6 +244,7 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 		it("should generate fully compliant EMR protocol, 804n codes, and estimate for Pulpitis (K04.0)", () => {
 			const result = generateEmrAutopilotPlan({
 				toothNumber: "16",
+				customCanalCount: 4,
 				icd10Code: "K04.0",
 				surfaces: ["occlusal", "mesial"],
 				doctorFullName: "Иванов Иван Иванович",
@@ -328,7 +329,7 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 		it("should batch process all pathological teeth in odontogram and aggregate 804n estimate", () => {
 			const odontogramTeeth: FdiToothRecord[] = [
 				{ toothNumber: 11, statusCode: "caries_initial", surfaces: ["vestibular"], mobility: "none", furcationInvolvement: "none" },
-				{ toothNumber: 16, statusCode: "pulpitis_acute", surfaces: ["occlusal", "mesial"], mobility: "none", furcationInvolvement: "none" },
+				{ toothNumber: 16, statusCode: "pulpitis_acute", surfaces: ["occlusal", "mesial"], rootCanalsCount: 4, mobility: "none", furcationInvolvement: "none" },
 				{ toothNumber: 24, statusCode: "periodontitis_chronic", surfaces: ["occlusal"], mobility: "none", furcationInvolvement: "none" },
 				{ toothNumber: 36, statusCode: "caries_profunda", surfaces: ["occlusal", "distal"], mobility: "none", furcationInvolvement: "none" },
 				{ toothNumber: 48, statusCode: "root_remnant", surfaces: [], mobility: "none", furcationInvolvement: "none" },

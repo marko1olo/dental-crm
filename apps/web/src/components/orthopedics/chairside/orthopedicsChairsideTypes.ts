@@ -1,5 +1,7 @@
 import type { LinkedChairsideLabOrderInfo } from "../OrthopedicsChairsideLabOrderBanner";
-import type { Order804nServiceItem } from "../orthopedicProtocols";
+import type { OrthopedicServiceItem, Order804nServiceItem } from "../orthopedicProtocols";
+
+export type { OrthopedicServiceItem };
 
 export interface OrthopedicsChairsidePanelProps {
 	readonly patientId?: string | undefined;
@@ -14,7 +16,7 @@ export interface OrthopedicsChairsidePanelProps {
 	readonly onConfirmFitting?: ((orderId?: string) => void) | undefined;
 	readonly onToothSelect?: ((tooth: number) => void) | undefined;
 	readonly onOpenLabOrder?: (() => void) | undefined;
-	readonly onAddToInvoice?: ((services: readonly Order804nServiceItem[]) => void) | undefined;
+	readonly onAddToInvoice?: ((services: readonly OrthopedicServiceItem[]) => void) | undefined;
 	readonly isLocked?: boolean;
 	readonly className?: string;
 }

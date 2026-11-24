@@ -17,9 +17,13 @@ export interface OrthopedicsZtlSelectorsProps {
 	readonly hasAntagonists?: boolean | undefined;
 	readonly onToggleAntagonists?: ((hasAntagonists: boolean) => void) | undefined;
 	readonly grossPriceRub?: number | undefined;
+	readonly grossPriceKopecks?: bigint | undefined;
 	readonly ztlCostRub?: number | undefined;
+	readonly ztlCostKopecks?: bigint | undefined;
 	readonly materialsCostRub?: number | undefined;
+	readonly materialsCostKopecks?: bigint | undefined;
 	readonly netMarginRub?: number | undefined;
+	readonly netMarginKopecks?: bigint | undefined;
 	readonly marginPercent?: number | undefined;
 	readonly dueDate?: string | undefined;
 	readonly onChangeDueDate?: ((date: string) => void) | undefined;

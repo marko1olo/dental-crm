@@ -25,9 +25,13 @@ export function OrthopedicsZtlSelectors({
 	hasAntagonists = true,
 	onToggleAntagonists,
 	grossPriceRub = 24000,
+	grossPriceKopecks,
 	ztlCostRub = 7500,
+	ztlCostKopecks,
 	materialsCostRub = 1200,
+	materialsCostKopecks,
 	netMarginRub = 15300,
+	netMarginKopecks,
 	marginPercent = 64,
 	dueDate,
 	onChangeDueDate,
@@ -87,9 +91,13 @@ export function OrthopedicsZtlSelectors({
 			/>
 			<ZtlSoloEconomicsCard
 				grossPriceRub={grossPriceRub}
+				grossPriceKopecks={grossPriceKopecks}
 				ztlCostRub={ztlCostRub}
+				ztlCostKopecks={ztlCostKopecks}
 				materialsCostRub={materialsCostRub}
+				materialsCostKopecks={materialsCostKopecks}
 				netMarginRub={netMarginRub}
+				netMarginKopecks={netMarginKopecks}
 				marginPercent={marginPercent}
 				dueDate={dueDate}
 			/>
