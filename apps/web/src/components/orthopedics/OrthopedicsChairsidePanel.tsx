@@ -24,6 +24,52 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 	const activePreset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === state.activeZtlPresetId) ?? STANDARD_ZTL_ORDER_PRESETS[0];
 
 	const [is3dViewerOpen, setIs3dViewerOpen] = useState(false);
+	const [serverPassportData, setServerPassportData] = useState<Record<string, unknown> | null>(null);
+	const [isPassportLoading, setIsPassportLoading] = useState<boolean>(false);
+
+	const handleOpenPassportA4 = async () => {
+		const effectiveOrderId = props.initialLabOrder?.id || state.activeOrderId;
+		if (effectiveOrderId) {
+			try {
+				setIsPassportLoading(true);
+				const res = await fetch(`/api/lab/orders/${effectiveOrderId}/warranty-passport`, {
+					headers: { "Content-Type": "application/json" },
+				});
+				if (res.ok) {
+					const json = await res.json();
+					const payload = json?.data ?? json;
+					const p = payload?.passport;
+					if (p) {
+						setServerPassportData({
+							orderNumber: p.orderNumber,
+							passportNumber: p.certificateNumber || (p.orderNumber ? `ГП-${p.orderNumber}` : undefined),
+							batchLotNumber: p.batchCode,
+							integritySha256: payload?.integritySha256 || p.integritySha256,
+							clinicName: p.clinicName,
+							labName: p.technicianLabName,
+							patientName: p.patientFullName,
+							doctorName: p.doctorFullName,
+							technicianName: p.technicianLabName,
+							issueDate: p.fixationDate,
+							toothFdi: p.toothFdi,
+							constructionName: p.restorationType,
+							material: p.frameworkMaterial,
+							colorVita: p.shade,
+							stumpShade: p.shadeStump,
+							warrantyMonths: p.warrantyMonths,
+							warrantyLabelRu: p.warrantyYears ? `${p.warrantyYears} лет (${p.warrantyMonths} мес.)` : undefined,
+						});
+					}
+				}
+			} catch (err) {
+				console.warn("Failed to fetch warranty passport from server", err);
+			} finally {
+				setIsPassportLoading(false);
+			}
+		}
+		state.setIsPassportModalOpen(true);
+	};
+
 	const readyOrder = useMemo<ReadyInClinicLabOrder>(() => ({
 		id: props.initialLabOrder?.id || state.activeOrderId || undefined,
 		orderNumber: effectiveOrderNum,
@@ -64,7 +110,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 					selectedMaterial={state.selectedMaterial} selectedShade={state.selectedShade}
 					warrantyPassport={props.initialLabOrder?.warrantyPassport || (effectiveOrderNum ? `ГП-${effectiveOrderNum}` : "")}
 					fittingConfirmed={state.fittingConfirmed} onConfirmFitting={() => { state.setFittingConfirmed(true); props.onConfirmFitting?.(props.initialLabOrder?.id); }}
-					onOpenPassportA4={() => state.setIsPassportModalOpen(true)}
+					onOpenPassportA4={handleOpenPassportA4}
 				/>
 			)}
 			<OrthopedicsChairsideTopBar
@@ -93,8 +139,11 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 				fixationType={state.fixationType} onSelectFixationType={state.setFixationType}
 				cementBrand={state.cementBrand} onSelectCementBrand={state.setCementBrand}
 				hasAntagonists={state.hasAntagonists} onToggleAntagonists={state.setHasAntagonists}
-				grossPriceRub={state.grossPriceRub} ztlCostRub={state.ztlCostRub} materialsCostRub={state.materialsCostRub}
-				netMarginRub={state.netMarginRub} marginPercent={state.marginPercent} dueDate={state.dueDate} onChangeDueDate={state.setDueDate}
+				grossPriceRub={state.grossPriceRub} grossPriceKopecks={state.grossPriceKopecks}
+				ztlCostRub={state.ztlCostRub} ztlCostKopecks={state.ztlCostKopecks}
+				materialsCostRub={state.materialsCostRub} materialsCostKopecks={state.materialsCostKopecks}
+				netMarginRub={state.netMarginRub} netMarginKopecks={state.netMarginKopecks}
+				marginPercent={state.marginPercent} dueDate={state.dueDate} onChangeDueDate={state.setDueDate}
 			/>
 			<OrthopedicsVitaShadePicker
 				shadeSystem={state.shadeSystem} onShadeSystemChange={state.setShadeSystem}
@@ -110,7 +159,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 				warrantyLiabilityType={state.warrantyLiabilityType} onSelectWarrantyLiability={state.setWarrantyLiabilityType}
 				labOrderSentNumber={state.labOrderSentNumber} isLabOrderSending={state.isLabOrderSending}
 				onImmediateSendToLab={actions.handleImmediateSendToLab} onOpenLabOrder={() => props.onOpenLabOrder?.()}
-				onOpenPassportA4={() => state.setIsPassportModalOpen(true)}
+				onOpenPassportA4={handleOpenPassportA4}
 			/>
 			{/* Mandate 8e Doctor Autonomy contracts:
 			    - disabled={isLocked && !overrideActive}
@@ -118,15 +167,27 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 			    - data-testid="vita-3d-master-tab" (provided in OrthopedicsVitaShadePicker) */}
 			<DentalLabReadyInClinicModal isOpen={state.isReadyInClinicModalOpen} onClose={() => state.setIsReadyInClinicModalOpen(false)} order={readyOrder} />
 			<OrthopedicPassportA4Modal
-				isOpen={state.isPassportModalOpen} onClose={() => state.setIsPassportModalOpen(false)}
+				isOpen={state.isPassportModalOpen}
+				onClose={() => {
+					state.setIsPassportModalOpen(false);
+					setServerPassportData(null);
+				}}
 				passport={{
-					orderNumber: effectiveOrderNum, passportNumber: effectiveOrderNum ? `ГП-${effectiveOrderNum}` : "", patientName: props.patientName || "Пациент",
-					doctorName: props.doctorName || "Лечащий врач", technicianName: props.initialLabOrder?.technicianName || "",
-					toothFdi: state.activeTeethInput, constructionName: activePreset?.name ?? "Коронка", material: state.selectedMaterial,
-					colorVita: state.selectedShade, stumpShade: state.selectedStumpShade,
+					orderNumber: effectiveOrderNum,
+					passportNumber: effectiveOrderNum ? `ГП-${effectiveOrderNum}` : "",
+					patientName: props.patientName || "Пациент",
+					doctorName: props.doctorName || "Лечащий врач",
+					technicianName: props.initialLabOrder?.technicianName || "",
+					toothFdi: state.activeTeethInput,
+					constructionName: activePreset?.name ?? "Коронка",
+					material: state.selectedMaterial,
+					colorVita: state.selectedShade,
+					stumpShade: state.selectedStumpShade,
 					preparationMarginLabel: PREPARATION_MARGIN_PRESETS.find((m) => m.id === state.preparationMargin)?.labelRu ?? state.preparationMargin,
 					fixationTypeLabel: FIXATION_TYPE_PRESETS.find((f) => f.id === state.fixationType)?.labelRu ?? state.fixationType,
-					warrantyMonths: activePreset?.warrantyMonths ?? 60, warrantyLabelRu: activePreset?.warrantyLabelRu ?? "60 месяцев",
+					warrantyMonths: activePreset?.warrantyMonths ?? 60,
+					warrantyLabelRu: activePreset?.warrantyLabelRu ?? "60 месяцев",
+					...(serverPassportData ?? {}),
 				}}
 			/>
 		</div>

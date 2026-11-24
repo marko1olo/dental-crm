@@ -44,16 +44,20 @@
 	margin: 0;
 }
 
-.marketing-modal-close-btn {
+.marketing-modal-close-btn,
+.marketing-studio-close-btn {
 	border: none;
 	background: transparent;
 	color: var(--muted);
 	cursor: pointer;
 	padding: 4px;
 	border-radius: 6px;
+	min-height: 44px;
+	min-width: 44px;
 }
 
-.marketing-modal-close-btn:hover {
+.marketing-modal-close-btn:hover,
+.marketing-studio-close-btn:hover {
 	color: var(--ink);
 	background: var(--paper-soft);
 }

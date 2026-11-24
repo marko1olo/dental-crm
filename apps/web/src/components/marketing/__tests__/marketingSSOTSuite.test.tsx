@@ -140,8 +140,15 @@ test("2.3. MarketingView in 'promos' tab contains exactly ONE Primary CTA in Hea
 });
 
 test("2.4. Apple HIG Mobile ergonomics and 0px horizontal drift verified in CSS", () => {
-	const cssPath = path.join(marketingDir, "marketing.css");
-	const css = fs.readFileSync(cssPath, "utf8");
+	const cssPath = path.join(webSrcDir, "styles/modules/marketing.css");
+	let css = fs.readFileSync(cssPath, "utf8");
+	if (css.includes("@import")) {
+		const baseDir = path.dirname(cssPath);
+		css = css.replace(/@import\s+["']([^"']+)["'];/g, (_, rel) => {
+			const importPath = path.resolve(baseDir, rel);
+			return fs.existsSync(importPath) ? fs.readFileSync(importPath, "utf8") : "";
+		});
+	}
 
 	assert.ok(css.includes("overflow-x: clip"), "Must prevent horizontal scroll drift (0px drift)");
 	assert.ok(css.includes("min-height: 44px") || css.includes("min-height: 52px"), "Must adhere to Apple HIG >= 44px touch targets");
