@@ -362,6 +362,31 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 				onToggleAspiration={() => setIsAspirationNegative((v) => !v)}
 				onApplyAnesthesia={applyAnesthesiaAction}
 			/>
+
+			{/* Полноэкранная Студия анестезии (Keyed Remount Мандат 8bn) */}
+			<AnesthesiaStudioModal
+				key={props.patientId || props.visitId || "anesthesia-studio"}
+				isOpen={isStudioOpen}
+				onClose={() => setIsStudioOpen(false)}
+				patientId={props.patientId}
+				visitId={props.visitId}
+				targetToothNumberFdi={props.targetToothNumberFdi}
+				patientWeightKg={props.patientWeightKg}
+				patientAgeYears={props.patientAgeYears}
+				hasCardiovascularRisk={props.hasCardiovascularRisk}
+				hasHypertension={props.hasHypertension}
+				hasCardiacArrhythmia={props.hasCardiacArrhythmia}
+				hasIschemicHeartDisease={props.hasIschemicHeartDisease}
+				hasMyocardialInfarctionHistory={props.hasMyocardialInfarctionHistory}
+				takesBetaBlockers={props.takesBetaBlockers}
+				hasSulfiteAllergy={props.hasSulfiteAllergy}
+				hasBronchialAsthma={props.hasBronchialAsthma}
+				isPregnantOrLactating={props.isPregnantOrLactating}
+				hasLidocaineAllergy={props.hasLidocaineAllergy}
+				hasArticaineAllergy={props.hasArticaineAllergy}
+				onApplyAnesthesia={props.onApplyAnesthesia}
+				onDisposalCarpules={props.onDisposalCarpules}
+			/>
 		</div>
 	);
 }

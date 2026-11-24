@@ -29,19 +29,22 @@ export type { MobileChairsideStep, MobileChairsideBillingItem, MobileChairsideVi
 export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspaceProps> = (props) => {
   const {
     activePatient, activeAppointment, visitNoteForm = {}, updateVisitNoteField,
-    handlePrintForm043uFast, handleOpenPrescription, handleOpenLabOrder, onOpenWarrantyModal,
+    handlePrintMedicalCardFast, handlePrintForm043uFast, handleOpenPrescription, handleOpenLabOrder, onOpenWarrantyModal,
     consolidatedAllergyChip, patientAge, toothStateByCode = {}, setToothState,
     onClose, testId = "mobile-chairside-workspace", loadedTreatmentPlan,
   } = props;
 
   const ws = useChairsideVisitWorkspace(props);
+  const onPrintMedicalCard = handlePrintMedicalCardFast ?? handlePrintForm043uFast;
 
   return (
     <div className="mobile-chairside-container" data-testid={testId}>
       {/* Red Team Anamnesis & Allergy Anchors: mobile-chairside-allergy-clean allergy-clean-badge */}
       <ChairsidePatientQuickBar
         activePatient={activePatient} activeAppointment={activeAppointment} patientAge={patientAge ?? null}
-        consolidatedAllergyChip={consolidatedAllergyChip ?? null} handlePrintForm043uFast={handlePrintForm043uFast}
+        consolidatedAllergyChip={consolidatedAllergyChip ?? null}
+        handlePrintMedicalCardFast={onPrintMedicalCard}
+        handlePrintForm043uFast={onPrintMedicalCard}
         handleOpenPrescription={handleOpenPrescription}
         handleOpenLabOrder={handleOpenLabOrder} onOpenWarrantyModal={onOpenWarrantyModal}
         onOpenDiarySheet={() => ws.setIsDiarySheetOpen(true)} onClose={onClose}

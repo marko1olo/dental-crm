@@ -111,6 +111,8 @@ export interface ChairsidePatientQuickBarProps {
   activeAppointment?: ChairsideAppointmentEntity | VisitAppointmentEntity | null | undefined;
   patientAge?: string | number | null | undefined;
   consolidatedAllergyChip?: string | null | undefined;
+  handlePrintMedicalCardFast?: (() => void) | undefined;
+  /** @deprecated Канонический вызов: handlePrintMedicalCardFast («Медицинская карта приёма», Мандаты 8x/8ap) */
   handlePrintForm043uFast?: (() => void) | undefined;
   handleOpenPrescription?: (() => void) | undefined;
   handleOpenLabOrder?: (() => void) | undefined;
