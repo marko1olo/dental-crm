@@ -27,15 +27,13 @@
    - Деньги: строго суффикс `Kopecks` (`amountKopecks: bigint` / `priceKopecks: integer`). Запрещены вычисления рублей в UI (`/ 100`). Форматирование через `money.ts`.
    - Конверт API: безопасный анпакер `const payload = json?.data ?? json;`.
    - Идемпотентность и ACID: мутации несут заголовок `Idempotency-Key` (UUIDv7). Мутации 2+ таблиц — строго внутри `await db.transaction(async tx => ...)`. Запрещен глобальный `db` внутри транзакции!
-10. Мандат 8ar/8as (Одонтограмма Wheeler 2.5D и MODBL):
-   - Изоляция поверхностей: кариес на окклюзии никогда не стирает медиальную пломбу.
-   - Wheeler-пропорции (резцы 48px, клыки 54px, премоляры 60px, моляры 68px), молочные зубы 51–85 с анатомической резорбцией.
-   - Реактивный SVG 120 FPS без Canvas-физики и без тяжелого ре-рендера всей челюсти.
-11. Мандат 8v/8e (Soft Negative Stock, Сплит-Касса и 100% Скидки): Склад: тихое списание по BOM, при нехватке — мягкий овердрафт (`< 0`) без алертов у кресла. Касса: сплиты сходятся до копейки, скидки до 100% без паролей, 0 ИНН физлиц в чеке.
+10. Мандат 8ar/8as (Одонтограмма Wheeler 2.5D и MODBL): Изоляция поверхностей. Wheeler-пропорции (резцы 48px, клыки 54px, моляры 68px), молочные зубы 51–85. Реактивный SVG 120 FPS. → полное: [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md)
+11. Мандат 8v/8e (Soft Negative Stock, Сплит-Касса и 100% Скидки): Склад: тихое списание по BOM, мягкий овердрафт (`< 0`). Касса: сплиты до копейки, скидки до 100%, 0 ИНН физлиц. → полное: [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)
 12. Мандат 8bq (Храповик, Кубик, Failure Manifestos и Трёхзвенная Цепь):
-    - Звено А (Барьер нового говна): `check:diff` (в прекоммите и в любое время `in-flight`) — 0 костылей (`as any`, `!`, `// @ts-ignore`, `catch {}`, `window.alert`, `/ 100`, моки в пропсах). Блокировка намертво!
-    - Звено Б (Истребление старого говна): `check:ratchet` (потолки снижаются монотонно; статус честно отражает остаток долга: «⚠️ НЕ НАСРАНО, НО N КОСЯКОВ ЖДУТ ЗАЧИСТКИ»), `check:doors` (0 клонов модалок, 100% Zod дверей API), правило бойскаута.
-    - Звено В (Превентивная архитектурная мудрость): `audit:dice` (Монте-Карло срез 175 точек), Failure Manifestos (`docs/quality/FAILURE_MANIFESTOS.md`) для каждого шлюза со стеганием агентов. Оркестратор НЕ верит регуляркам: регулярный Нейросетевой Red Team аудит по 3 Вопросам Жирняка (Система, Единая Дверь, Закон vs говносрал) через субагента-инквизитора (`TypeName: "self"`, `Model: "inherit"`). Презумпция брака 100%! Запрет косметических припарок!
+    - Звено А: `check:diff` — 0 костылей (`as any`, `!`, `// @ts-ignore`, `catch {}`, `window.alert`, `/ 100`). Блокировка намертво!
+    - Звено Б: `check:ratchet` (потолки монотонно вниз), `check:doors` (0 клонов модалок, 100% Zod дверей API).
+    - Звено В: `audit:dice` (175 точек), Failure Manifestos, Red Team субагент-инквизитор. Презумпция брака 100%!
+    → полное: [`SYSTEMIC_ROT_RATCHET.md`](file:///C:/Clinic_MVP/dental-crm/SYSTEMIC_ROT_RATCHET.md) + [`docs/quality/FAILURE_MANIFESTOS.md`](file:///C:/Clinic_MVP/dental-crm/docs/quality/FAILURE_MANIFESTOS.md)
 
 ## ⚡ ОПЕРАЦИОННЫЙ ПРОТОКОЛ РОЯ (Claim, P0→P3, Worktree, ДО/ПОСЛЕ)
 
