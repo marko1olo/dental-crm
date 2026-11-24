@@ -25,10 +25,10 @@ export function DentalLabTranslucencyPicker({
 						type="button"
 						onClick={() => setTranslucency(t.id)}
 						data-testid={`translucency-${t.id}`}
-						className={`min-h-[30px] rounded-lg border text-[11px] font-bold shadow-2xs transition ${
+						className={`min-h-[30px] max-sm:min-h-[44px] max-sm:min-w-[44px] rounded-lg border text-[11px] font-bold shadow-2xs transition ${
 							translucency === t.id
-								? "border-teal-600 bg-teal-600 text-white"
-								: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
+								? "border-[var(--primary)] bg-[var(--primary)] text-white"
+								: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--primary)]"
 						}`}
 					>
 						{t.label}

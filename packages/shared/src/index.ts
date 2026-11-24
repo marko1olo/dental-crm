@@ -289,6 +289,12 @@ export * from "./types/pricing.js";
 export * from "./staff/index.js";
 export * from "./anesthesia/index.js";
 export * from "./lab/index.js";
+export {
+	calculateWarrantyTerms,
+	generateProstheticWarrantyPassport,
+	type ProstheticWarrantyPassport,
+	type WarrantyTermsResult,
+} from "./lab/index.js";
 export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
 export * from "./ai/index.js";

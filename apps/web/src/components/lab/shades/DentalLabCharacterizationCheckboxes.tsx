@@ -24,7 +24,7 @@ export function DentalLabCharacterizationCheckboxes({
 					type="checkbox"
 					checked={Boolean(mamelons)}
 					onChange={(e) => onMamelonsChange?.(e.target.checked)}
-					className="w-4 h-4 accent-teal-600 rounded"
+					className="w-4 h-4 accent-[var(--primary)] rounded"
 					data-testid="mamelons-checkbox"
 				/>
 				<span className="font-semibold text-[11px]">Мамелоны края</span>
@@ -34,7 +34,7 @@ export function DentalLabCharacterizationCheckboxes({
 					type="checkbox"
 					checked={Boolean(calcifications)}
 					onChange={(e) => onCalcificationsChange?.(e.target.checked)}
-					className="w-4 h-4 accent-teal-600 rounded"
+					className="w-4 h-4 accent-[var(--primary)] rounded"
 					data-testid="calcifications-checkbox"
 				/>
 				<span className="font-semibold text-[11px]">Кальцификаты</span>
@@ -45,7 +45,7 @@ export function DentalLabCharacterizationCheckboxes({
 						type="checkbox"
 						checked={Boolean(opalescence)}
 						onChange={(e) => onOpalescenceChange(e.target.checked)}
-						className="w-4 h-4 accent-teal-600 rounded"
+						className="w-4 h-4 accent-[var(--primary)] rounded"
 						data-testid="opalescence-checkbox"
 					/>
 					<span className="font-semibold text-[11px]">Опалесценция</span>

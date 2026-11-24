@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { generateProstheticWarrantyPassport, generateUuidV7, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
+import { calculateWarrantyTerms, generateProstheticWarrantyPassport, generateUuidV7, LAB_WORK_TYPE_LABELS_RU } from "@dental/shared";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
@@ -173,6 +173,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 		const frameworkMaterial = primaryItem?.material || orderWithDetails.material || "Конструкционный стоматологический материал";
 		const shade = primaryItem?.shadeFinal || orderWithDetails.colorVita || "По прейскуранту";
 		const shadeStump = primaryItem?.shadeStump || null;
+		const generalTerms = calculateWarrantyTerms(frameworkMaterial, restorationType);
 
 		const itemsPayload = items.length > 0
 			? items.map((it) => {
@@ -182,6 +183,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 					const workType = it.restorationType
 						? (LAB_WORK_TYPE_LABELS_RU[it.restorationType as keyof typeof LAB_WORK_TYPE_LABELS_RU] || it.restorationType)
 						: restorationType;
+					const itTerms = calculateWarrantyTerms(matVal, workType);
 					return {
 						id: it.id || generateUuidV7(),
 						name: workType,
@@ -201,8 +203,8 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 						restorationType: workType,
 						laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
 						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-						warrantyMonths: 24,
-						serviceLifeMonths: 60,
+						warrantyMonths: itTerms.warrantyMonths,
+						serviceLifeMonths: itTerms.serviceLifeMonths,
 					};
 				})
 			: [
@@ -225,15 +227,15 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 						restorationType,
 						laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
 						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-						warrantyMonths: 24,
-						serviceLifeMonths: 60,
+						warrantyMonths: generalTerms.warrantyMonths,
+						serviceLifeMonths: generalTerms.serviceLifeMonths,
 					},
 				];
 
 		const fixationDateIso = formatLocalDateToYmd(orderWithDetails.completedAt ?? orderWithDetails.createdAt);
 		const fixationDateObj = new Date(fixationDateIso);
 		const expirationDateObj = new Date(fixationDateObj.getTime());
-		expirationDateObj.setFullYear(expirationDateObj.getFullYear() + 2);
+		expirationDateObj.setMonth(expirationDateObj.getMonth() + generalTerms.warrantyMonths);
 		const nextRecallDateObj = new Date(fixationDateObj.getTime() + 180 * 24 * 60 * 60 * 1000);
 
 		const integrityHashPayload = JSON.stringify({
@@ -259,7 +261,8 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			frameworkMaterial,
 			shade,
 			shadeStump,
-			warrantyYears: 2,
+			warrantyYears: generalTerms.warrantyYears,
+			warrantyMonths: generalTerms.warrantyMonths,
 			fixationDate: fixationDateIso,
 			isDraft,
 			...(isDraft ? { draftNotice: "[ЧЕРНОВИК: изделие находится на этапе производства/примерки]" } : {}),
@@ -299,8 +302,8 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 							certificateNumber,
 							status: "active",
 							itemsJson: itemsPayload,
-							warrantyMonths: 24,
-							serviceLifeMonths: 60,
+							warrantyMonths: generalTerms.warrantyMonths,
+							serviceLifeMonths: generalTerms.serviceLifeMonths,
 							issuedAt: fixationDateObj,
 							expiresAt: expirationDateObj,
 							nextRecallDate: nextRecallDateObj,
@@ -314,8 +317,8 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 							set: {
 								status: "active",
 								itemsJson: itemsPayload,
-								warrantyMonths: 24,
-								serviceLifeMonths: 60,
+								warrantyMonths: generalTerms.warrantyMonths,
+								serviceLifeMonths: generalTerms.serviceLifeMonths,
 								expiresAt: expirationDateObj,
 								nextRecallDate: nextRecallDateObj,
 								integritySha256,

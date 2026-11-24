@@ -26,6 +26,7 @@ import {
 	mapTo5StageLabStatus,
 	FORM_ZTL_1_METADATA,
 	generateProstheticWarrantyPassport,
+	calculateWarrantyTerms,
 	prostheticWarrantyPassportSchema,
 	CANONICAL_PG_LAB_STATUSES,
 	canonicalPgLabStatusSchema,
@@ -342,6 +343,44 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 				warrantyYears: 15,
 			});
 		});
+	});
+
+	test("calculateWarrantyTerms correctly differentiates terms across all clinical materials", () => {
+		// All-on-4 / All-on-6 / titanium beam
+		const allOn4 = calculateWarrantyTerms("Титановая балка", "all_on_4");
+		assert.equal(allOn4.warrantyMonths, 120);
+		assert.equal(allOn4.warrantyYears, 10);
+		assert.equal(allOn4.serviceLifeMonths, 180);
+
+		// Zirconia (ZrO2)
+		const zro2 = calculateWarrantyTerms("Диоксид циркония Multi-Layer", "Коронка анатомическая");
+		assert.equal(zro2.warrantyMonths, 60);
+		assert.equal(zro2.warrantyYears, 5);
+		assert.equal(zro2.serviceLifeMonths, 120);
+
+		// E.max / Lithium disilicate / Veneers
+		const emax = calculateWarrantyTerms("IPS e.max Press (дисиликат лития)", "Керамический винир");
+		assert.equal(emax.warrantyMonths, 36);
+		assert.equal(emax.warrantyYears, 3);
+		assert.equal(emax.serviceLifeMonths, 84);
+
+		// PFM / Co-Cr
+		const pfm = calculateWarrantyTerms("Металлокерамика Co-Cr (КХС)", "Мостовидный протез");
+		assert.equal(pfm.warrantyMonths, 24);
+		assert.equal(pfm.warrantyYears, 2);
+		assert.equal(pfm.serviceLifeMonths, 60);
+
+		// PMMA / Temporary
+		const pmma = calculateWarrantyTerms("Временный полимер PMMA CAD/CAM", "Провизорная коронка");
+		assert.equal(pmma.warrantyMonths, 6);
+		assert.equal(pmma.warrantyYears, 1);
+		assert.equal(pmma.serviceLifeMonths, 12);
+
+		// Default
+		const def = calculateWarrantyTerms("Неизвестный материал", "Нестандартная конструкция");
+		assert.equal(def.warrantyMonths, 24);
+		assert.equal(def.warrantyYears, 2);
+		assert.equal(def.serviceLifeMonths, 60);
 	});
 
 	test("CANONICAL_PG_LAB_STATUSES and bidirectional stage-status mappers satisfy Postgres 0231 CHECK constraint", () => {

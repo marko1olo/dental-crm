@@ -42,13 +42,15 @@ describe("1. Orthopedic Work Types Catalog (Каталог ортопедиче�
 	});
 });
 
-describe("2. 4 Clean Clinical Statuses (4 понятных клинических статуса)", () => {
-	test("Содержит ровно 4 клинических статуса без заводского блоата", () => {
-		assert.equal(LAB_WORKFLOW_STATUS_ORDER.length, 4);
+describe("2. Clean Clinical Statuses (Понятные клинические статусы)", () => {
+	test("Содержит 6 клинических статусов без заводского блоата", () => {
+		assert.equal(LAB_WORKFLOW_STATUS_ORDER.length, 6);
 		assert.deepEqual(LAB_WORKFLOW_STATUS_ORDER, [
 			"draft",
 			"sent_to_lab",
+			"in_progress",
 			"fitting_scheduled",
+			"ready_in_clinic",
 			"installed_completed",
 		]);
 
@@ -65,17 +67,21 @@ describe("2. 4 Clean Clinical Statuses (4 понятных клинически�
 		}
 	});
 
-	test("canAdvanceLabStage корректно проверяет допустимость перехода между 4 статусами", () => {
+	test("canAdvanceLabStage корректно проверяет допустимость перехода между статусами", () => {
 		assert.equal(canAdvanceLabStage("draft", "sent_to_lab"), true);
-		assert.equal(canAdvanceLabStage("sent_to_lab", "fitting_scheduled"), true);
-		assert.equal(canAdvanceLabStage("fitting_scheduled", "installed_completed"), true);
+		assert.equal(canAdvanceLabStage("sent_to_lab", "in_progress"), true);
+		assert.equal(canAdvanceLabStage("in_progress", "fitting_scheduled"), true);
+		assert.equal(canAdvanceLabStage("fitting_scheduled", "ready_in_clinic"), true);
+		assert.equal(canAdvanceLabStage("ready_in_clinic", "installed_completed"), true);
 		assert.equal(canAdvanceLabStage("fitting_scheduled", "sent_to_lab"), true);
 	});
 
 	test("getNextLabProductionStage возвращает следующий клинический статус или null для финального", () => {
 		assert.equal(getNextLabProductionStage("draft"), "sent_to_lab");
-		assert.equal(getNextLabProductionStage("sent_to_lab"), "fitting_scheduled");
-		assert.equal(getNextLabProductionStage("fitting_scheduled"), "installed_completed");
+		assert.equal(getNextLabProductionStage("sent_to_lab"), "in_progress");
+		assert.equal(getNextLabProductionStage("in_progress"), "fitting_scheduled");
+		assert.equal(getNextLabProductionStage("fitting_scheduled"), "ready_in_clinic");
+		assert.equal(getNextLabProductionStage("ready_in_clinic"), "installed_completed");
 		assert.equal(getNextLabProductionStage("installed_completed"), null);
 	});
 });

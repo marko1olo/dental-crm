@@ -59,13 +59,13 @@ export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProp
 					<div className="text-[11px] text-[var(--ink-muted)] break-words">{matMeta.titleRu} • Оттенок Vita: <strong className="text-[var(--ink)]">{ord.shadeCode}</strong></div>
 				</div>
 				<div className="text-left sm:text-right shrink-0">
-					<span className="font-bold text-[11px] bg-[var(--teal-surface)] text-[var(--teal)] px-2 py-0.5 rounded-lg border border-[var(--teal)]/30">
+					<span className="font-bold text-[11px] bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)] px-2 py-0.5 rounded-lg border border-[var(--primary)]/30">
 						Зубы FDI: {Array.isArray(ord.teeth) && ord.teeth.filter((t) => typeof t === "number" && !isNaN(t) && t > 0).length > 0 ? ord.teeth.filter((t) => typeof t === "number" && !isNaN(t) && t > 0).join(", ") : "—"}
 					</span>
 				</div>
 			</div>
 			<div className="grid grid-cols-5 gap-1 pt-0.5">
-				{CANONICAL_LAB_STAGES.map((st) => (<div key={st.id} title={st.labelRu} className={`h-1.5 rounded-full transition-all ${st.id === ord.stage ? "bg-[var(--teal)] ring-1 ring-[var(--teal)]" : st.stepNumber <= stageMeta.stepNumber ? "bg-[var(--teal)]/70" : "bg-[var(--line)]"}`} />))}
+				{CANONICAL_LAB_STAGES.map((st) => (<div key={st.id} title={st.labelRu} className={`h-1.5 rounded-full transition-all ${st.id === ord.stage ? "bg-[var(--primary)] ring-1 ring-[var(--primary)]" : st.stepNumber <= stageMeta.stepNumber ? "bg-[var(--primary)]/70" : "bg-[var(--line)]"}`} />))}
 			</div>
 			<div className="flex items-center justify-between pt-1.5 border-t border-[var(--line)] flex-wrap gap-2 text-xs">
 				<div className="flex items-center gap-2.5">
@@ -77,7 +77,7 @@ export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProp
 					<button type="button" data-testid={`call-patient-btn-${ord.id}`} onClick={() => onCallPatient(ord)} className="dental-lab-action-btn" title="Связаться с пациентом / примерка"><span>Примерка</span></button>
 					<button type="button" data-testid={`view-3d-scan-btn-${ord.id}`} onClick={() => onView3DScan?.(ord)} className="dental-lab-action-btn" title="Просмотр 3D оптического скана (STL/PLY)"><span>3D скан</span></button>
 					<button type="button" data-testid={`print-order-btn-${ord.id}`} onClick={() => onPrintOrder(ord)} className="dental-lab-action-btn" title="Распечатать бланк заказ-наряда"><span>Бланк</span></button>
-					{ord.stage !== "seated" && (<button type="button" data-testid={`advance-stage-btn-${ord.id}`} onClick={() => onAdvanceStage(ord.id)} className="dental-lab-action-btn font-bold text-[var(--teal)] border-[var(--teal)]/40"><span>Этап →</span></button>)}
+					{ord.stage !== "seated" && (<button type="button" data-testid={`advance-stage-btn-${ord.id}`} onClick={() => onAdvanceStage(ord.id)} className="dental-lab-action-btn font-bold text-[var(--primary)] border-[var(--primary)]/40"><span>Этап →</span></button>)}
 				</div>
 			</div>
 		</article>

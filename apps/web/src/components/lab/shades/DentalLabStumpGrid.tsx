@@ -61,7 +61,7 @@ export function DentalLabStumpGrid({
 							}
 							className={`min-h-[48px] p-2 text-left rounded-lg border text-xs transition-all flex items-center justify-between gap-2 cursor-pointer ${
 								isSelected
-									? "bg-teal-500/15 border-teal-600 font-bold text-teal-800 dark:text-teal-200 ring-2 ring-teal-500/30 shadow-xs"
+									? "bg-[var(--primary-soft,rgba(13,148,136,0.15))] border-[var(--primary)] font-bold text-[var(--primary)] ring-2 ring-[var(--primary)]/30 shadow-xs"
 									: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 						>
@@ -81,7 +81,7 @@ export function DentalLabStumpGrid({
 								</div>
 							</div>
 							{isSelected && (
-								<Check size={14} className="text-teal-600 shrink-0" />
+								<Check size={14} className="text-[var(--primary)] shrink-0" />
 							)}
 						</button>
 					);

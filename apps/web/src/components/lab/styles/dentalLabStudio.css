@@ -1,10 +1,10 @@
 /* apps/web/src/components/lab/styles/dentalLabStudio.css — SSOT ЗТЛ (Мандаты 8b: 280-400 строк, 8e, 8am, 8ze) */
 
 :root {
-	--lab-teal: #0d9488;
-	--lab-teal-hover: #0f766e;
-	--lab-teal-surface: rgba(13, 148, 136, 0.12);
-	--lab-teal-border: rgba(13, 148, 136, 0.28);
+	--lab-teal: var(--primary);
+	--lab-teal-hover: var(--primary-hover);
+	--lab-teal-surface: var(--primary-soft, rgba(13, 148, 136, 0.12));
+	--lab-teal-border: var(--primary-soft, rgba(13, 148, 136, 0.28));
 	--lab-amber: #f59e0b;
 	--lab-amber-surface: rgba(245, 158, 11, 0.12);
 	--lab-amber-border: rgba(245, 158, 11, 0.3);
@@ -162,7 +162,7 @@
 	background: var(--lab-teal);
 	border-color: var(--lab-teal);
 	color: #ffffff;
-	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+	box-shadow: 0 2px 4px var(--primary-soft, rgba(13, 148, 136, 0.3));
 }
 
 .dental-lab-shades-scroll {
@@ -220,7 +220,7 @@
 	justify-content: center;
 	gap: 6px;
 	cursor: pointer;
-	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+	box-shadow: 0 4px 12px var(--primary-soft, rgba(13, 148, 136, 0.25));
 	transition: background 0.15s ease, transform 0.1s ease;
 	outline: none;
 	padding: 6px 10px;

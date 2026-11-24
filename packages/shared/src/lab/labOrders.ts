@@ -970,6 +970,107 @@ export const FORM_ZTL_1_METADATA = {
 	warrantyGostRu: "2 года гарантии (ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Рекомендации СтАР)",
 } as const;
 
+// ─── DYNAMIC WARRANTY TERMS CALCULATION (MANDATE 8X, 8E & GOST) ──────────────
+
+export interface WarrantyTermsResult {
+	warrantyMonths: number;
+	serviceLifeMonths: number;
+	warrantyYears: number;
+}
+
+/**
+ * Расчет гарантийного срока и срока службы ортопедической конструкции по типу материала и реставрации.
+ * - All-on-4 / балочные конструкции на имплантатах: 120 мес (10 лет), срок службы 180 мес.
+ * - Диоксид циркония (ZrO2): 60 мес (5 лет), срок службы 120 мес.
+ * - E.max / прессованная стеклокерамика / виниры / вкладки: 36 мес (3 года), срок службы 84 мес.
+ * - Металлокерамика Co-Cr / КХС: 24 мес (2 года), срок службы 60 мес.
+ * - Съемные бюгельные и пластиночные протезы: 24 мес (2 года), срок службы 60 мес.
+ * - PMMA / провизорные / временные: 6 мес, срок службы 12 мес.
+ * - По умолчанию (ГОСТ Р 51087-97 / СтАР): 24 мес (2 года), срок службы 60 мес.
+ */
+export function calculateWarrantyTerms(
+	material?: string | null | undefined,
+	restorationType?: string | null | undefined,
+): WarrantyTermsResult {
+	const mat = (material ?? "").toLowerCase();
+	const rest = (restorationType ?? "").toLowerCase();
+
+	// 1. All-on-4 / All-on-6 / балочные конструкции
+	if (
+		rest.includes("all_on") ||
+		rest.includes("all-on") ||
+		rest.includes("балочн") ||
+		rest.includes("beam") ||
+		mat.includes("all-on") ||
+		(mat.includes("титан") && rest.includes("имплант"))
+	) {
+		return { warrantyMonths: 120, serviceLifeMonths: 180, warrantyYears: 10 };
+	}
+
+	// 2. Временные / PMMA / провизорные коронки
+	if (
+		mat.includes("pmma") ||
+		mat.includes("временн") ||
+		mat.includes("провизорн") ||
+		mat.includes("temporary") ||
+		rest.includes("pmma") ||
+		rest.includes("временн") ||
+		rest.includes("temporary")
+	) {
+		return { warrantyMonths: 6, serviceLifeMonths: 12, warrantyYears: 1 };
+	}
+
+	// 3. Диоксид циркония (ZrO2, Prettau, Multi-layer)
+	if (
+		mat.includes("zirconia") ||
+		mat.includes("циркони") ||
+		mat.includes("zro2") ||
+		mat.includes("prettau")
+	) {
+		return { warrantyMonths: 60, serviceLifeMonths: 120, warrantyYears: 5 };
+	}
+
+	// 4. E.max / дисиликат лития / стеклокерамика / виниры / накладки / вкладки
+	if (
+		mat.includes("emax") ||
+		mat.includes("e.max") ||
+		mat.includes("дисиликат") ||
+		mat.includes("стеклокерамик") ||
+		mat.includes("полевошпат") ||
+		rest.includes("veneer") ||
+		rest.includes("винир") ||
+		rest.includes("inlay") ||
+		rest.includes("onlay") ||
+		rest.includes("вкладк")
+	) {
+		return { warrantyMonths: 36, serviceLifeMonths: 84, warrantyYears: 3 };
+	}
+
+	// 5. Металлокерамика Co-Cr / КХС / PFM
+	if (
+		mat.includes("pfm") ||
+		mat.includes("металлокерамик") ||
+		mat.includes("cocr") ||
+		mat.includes("кхс") ||
+		mat.includes("noritake")
+	) {
+		return { warrantyMonths: 24, serviceLifeMonths: 60, warrantyYears: 2 };
+	}
+
+	// 6. Съемные протезы (бюгельные, акриловые, нейлоновые)
+	if (
+		rest.includes("denture") ||
+		rest.includes("протез") ||
+		rest.includes("бюгел") ||
+		rest.includes("clasp")
+	) {
+		return { warrantyMonths: 24, serviceLifeMonths: 60, warrantyYears: 2 };
+	}
+
+	// Базовый гарантийный срок
+	return { warrantyMonths: 24, serviceLifeMonths: 60, warrantyYears: 2 };
+}
+
 // ─── PROSTHETIC WARRANTY PASSPORT & STAR PRINT BLANK ─────────────────────────
 
 export const prostheticWarrantyPassportSchema = z.object({
@@ -986,6 +1087,7 @@ export const prostheticWarrantyPassportSchema = z.object({
 	shadeStump: z.string().optional().nullable(),
 	cementationProtocol: z.string().min(1),
 	warrantyYears: z.number().int().min(1).max(10).default(2),
+	warrantyMonths: z.number().int().min(1).max(120).optional(),
 	fixationDate: z.string(), // YYYY-MM-DD
 	expirationDate: z.string(), // YYYY-MM-DD
 	gostStandard: z.string().default("ГОСТ Р 51087-97 / Стандарты СтАР"),
@@ -1011,6 +1113,7 @@ export function generateProstheticWarrantyPassport(params: {
 	shadeStump?: string | null | undefined;
 	cementationProtocol?: string | undefined;
 	warrantyYears?: number | undefined;
+	warrantyMonths?: number | undefined;
 	fixationDate?: string | undefined;
 	isDraft?: boolean | undefined;
 	draftNotice?: string | undefined;
@@ -1018,9 +1121,11 @@ export function generateProstheticWarrantyPassport(params: {
 	integritySha256?: string | undefined;
 }): ProstheticWarrantyPassport {
 	const fixation = params.fixationDate ? new Date(params.fixationDate) : new Date();
-	const years = params.warrantyYears ?? 2;
+	const derivedTerms = calculateWarrantyTerms(params.frameworkMaterial, params.restorationType);
+	const months = params.warrantyMonths ?? (params.warrantyYears !== undefined ? params.warrantyYears * 12 : derivedTerms.warrantyMonths);
+	const years = params.warrantyYears ?? derivedTerms.warrantyYears;
 	const expiration = new Date(fixation.getTime());
-	expiration.setFullYear(expiration.getFullYear() + years);
+	expiration.setMonth(expiration.getMonth() + months);
 
 	const batchCode =
 		params.batchCode ||
@@ -1040,6 +1145,7 @@ export function generateProstheticWarrantyPassport(params: {
 		shadeStump: params.shadeStump ?? null,
 		cementationProtocol: params.cementationProtocol || "Адгезивный протокол двойного отверждения (композитный цемент)",
 		warrantyYears: years,
+		...(months !== undefined ? { warrantyMonths: months } : {}),
 		fixationDate: fixation.toISOString().slice(0, 10),
 		expirationDate: expiration.toISOString().slice(0, 10),
 		gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",

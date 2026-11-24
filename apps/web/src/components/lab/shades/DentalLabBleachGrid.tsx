@@ -34,7 +34,7 @@ export function DentalLabBleachGrid({
 								}
 								className={`min-h-[44px] sm:min-h-[48px] min-w-[56px] sm:min-w-[64px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 									isSelected
-										? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+										? "bg-[var(--primary)] text-white ring-2 ring-[var(--primary)] ring-offset-1 shadow-2xs font-extrabold"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 								}`}
 								data-testid={`vita-shade-${shade}`}
@@ -76,7 +76,7 @@ export function DentalLabBleachGrid({
 								}
 								className={`min-h-[44px] sm:min-h-[48px] min-w-[56px] sm:min-w-[64px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 									isSelected
-										? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+										? "bg-[var(--primary)] text-white ring-2 ring-[var(--primary)] ring-offset-1 shadow-2xs font-extrabold"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 								}`}
 								data-testid={`vita-shade-${shade}`}

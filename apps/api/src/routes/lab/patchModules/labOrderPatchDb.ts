@@ -122,7 +122,12 @@ export async function executeLabOrderPatchTx(
 		const originalItems = await tx
 			.select()
 			.from(labItems)
-			.where(eq(labItems.labOrderId, currentOrder.id));
+			.where(
+				and(
+					eq(labItems.labOrderId, currentOrder.id),
+					eq(labItems.organizationId, orgId),
+				),
+			);
 
 		if (originalItems.length > 0) {
 			await tx.insert(labItems).values(

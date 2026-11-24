@@ -12,7 +12,7 @@
  */
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { buildLabOrderApiPayload, generateUuidV7 } from "@dental/shared";
 import { db } from "../db/client.js";
@@ -22,6 +22,7 @@ import { organizations, users, patients, labOrders, labItems, appointments } fro
 import { registerLabRoutes } from "../routes/lab/index.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";
+import { idempotencyPlugin } from "../plugins/idempotencyPlugin.js";
 import * as labQueryModule from "../db/labQuery.js";
 
 const NAMESPACE = "redteamFixerLab";
@@ -32,7 +33,7 @@ const PARENT_ORDER_ID = fixtureUuid(NAMESPACE, 4);
 const FITTING_APPT_ID = fixtureUuid(NAMESPACE, 5);
 const LAB_ID = fixtureUuid(NAMESPACE, 6);
 
-describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { concurrency: 1 }, () => {
+describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { concurrency: false }, () => {
 	let app: FastifyInstance;
 	let staffToken = "";
 	let databaseReady = true;
@@ -40,6 +41,9 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 	before(async () => {
 		process.env.NODE_ENV = "test";
 		try {
+			await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+				await tx.execute(sql`UPDATE lab_orders SET parent_lab_order_id = NULL WHERE organization_id::text = ${ORGANIZATION_ID}::text`);
+			}).catch(() => {});
 			await purgeFixtureOrganizations([ORGANIZATION_ID]);
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -47,8 +51,8 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			return;
 		}
 
-		await withFixtureTenant(ORGANIZATION_ID, async () => {
-			await db
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx
 				.insert(organizations)
 				.values({
 					id: ORGANIZATION_ID,
@@ -56,7 +60,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 				})
 				.onConflictDoNothing();
 
-			await db
+			await tx
 				.insert(users)
 				.values({
 					id: DOCTOR_ID,
@@ -66,7 +70,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 				})
 				.onConflictDoNothing();
 
-			await db
+			await tx
 				.insert(patients)
 				.values({
 					id: PATIENT_ID,
@@ -77,7 +81,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 				.onConflictDoNothing();
 
 			const now = new Date();
-			await db
+			await tx
 				.insert(appointments)
 				.values({
 					id: FITTING_APPT_ID,
@@ -90,7 +94,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 				})
 				.onConflictDoNothing();
 
-			await db
+			await tx
 				.insert(labOrders)
 				.values({
 					id: PARENT_ORDER_ID,
@@ -112,6 +116,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		);
 
 		app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await registerLabRoutes(app);
 		await app.ready();
 	});
@@ -119,7 +124,14 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 	after(async () => {
 		await app?.close();
 		if (!databaseReady) return;
-		await purgeFixtureOrganizations([ORGANIZATION_ID]);
+		try {
+			await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+				await tx.execute(sql`UPDATE lab_orders SET parent_lab_order_id = NULL WHERE organization_id::text = ${ORGANIZATION_ID}::text`);
+			}).catch(() => {});
+			await purgeFixtureOrganizations([ORGANIZATION_ID]);
+		} catch {
+			// ignore cleanup error
+		}
 	});
 
 	test("ДЕФЕКТ 1: POST /api/clinical/lab-orders сохраняет все гарантийные поля и связи в БД", async (t) => {
@@ -153,11 +165,13 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		const created = JSON.parse(res.body);
 		assert.ok(created.id, "Expected created order id");
 
-		// Проверяем прямое состояние в базе данных (PG18)
-		const [inDb] = await db
-			.select()
-			.from(labOrders)
-			.where(and(eq(labOrders.id, created.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		// Проверяем прямое состояние в базе данных (PG18 с RLS-контекстом тенанта)
+		const [inDb] = await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			return tx
+				.select()
+				.from(labOrders)
+				.where(and(eq(labOrders.id, created.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		});
 
 		assert.ok(inDb, "Order should exist in DB");
 		assert.equal(inDb.isWarranty, true, "isWarranty should be true in DB");
@@ -214,11 +228,13 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 
 		assert.equal(putRes.statusCode, 200, `Expected 200, got ${putRes.statusCode}: ${putRes.body}`);
 
-		// Проверяем в базе данных
-		const [updatedInDb] = await db
-			.select()
-			.from(labOrders)
-			.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		// Проверяем в базе данных (PG18 с RLS-контекстом тенанта)
+		const [updatedInDb] = await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			return tx
+				.select()
+				.from(labOrders)
+				.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		});
 
 		assert.ok(updatedInDb);
 		assert.equal(updatedInDb.isWarranty, true, "PUT must set is_warranty = true in DB");
@@ -271,7 +287,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 			payload,
 		});
 
-		assert.equal(res2.statusCode, 201);
+		assert.equal(res2.statusCode, 201, `Expected 201 on replay, got ${res2.statusCode}: ${res2.body}`);
 		assert.equal(res2.headers["idempotency-replayed"], "true");
 		const body2 = JSON.parse(res2.body);
 		assert.equal(body2.id, body1.id, "Replayed order must return identical order id");
@@ -354,10 +370,12 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		const order = JSON.parse(createRes.body);
 
 		// Проверяем, что lab_items создана с ценой 18000 руб (1800000 копеек)
-		const itemsBefore = await db
-			.select()
-			.from(labItems)
-			.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, ORGANIZATION_ID)));
+		const itemsBefore = await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			return tx
+				.select()
+				.from(labItems)
+				.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, ORGANIZATION_ID)));
+		});
 
 		assert.ok(itemsBefore.length > 0, "lab_items must be created");
 		assert.equal(Number(itemsBefore[0]?.priceKopecks), 1800000);
@@ -381,18 +399,22 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		assert.equal(patchRes.statusCode, 200, `Expected 200, got ${patchRes.statusCode}: ${patchRes.body}`);
 
 		// Проверяем, что в lab_orders цена обнулилась
-		const [orderAfter] = await db
-			.select()
-			.from(labOrders)
-			.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		const [orderAfter] = await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			return tx
+				.select()
+				.from(labOrders)
+				.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, ORGANIZATION_ID)));
+		});
 		assert.equal(orderAfter?.isWarranty, true);
 		assert.equal(Number(orderAfter?.priceKopecks), 0);
 
 		// Проверяем [ДЕФЕКТ 6]: в lab_items цена также гарантированно обнулилась!
-		const itemsAfter = await db
-			.select()
-			.from(labItems)
-			.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, ORGANIZATION_ID)));
+		const itemsAfter = await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			return tx
+				.select()
+				.from(labItems)
+				.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, ORGANIZATION_ID)));
+		});
 
 		assert.ok(itemsAfter.length > 0);
 		for (const item of itemsAfter) {

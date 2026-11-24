@@ -30,7 +30,7 @@ export function DentalLabClassicalGrid({
 						data-testid="vita-group-btn-all"
 						className={`min-h-[44px] sm:min-h-[32px] px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center justify-center border ${
 							selectedGroupFilter === null
-								? "bg-[rgba(13,148,136,0.12)] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-2xs"
+								? "bg-[var(--primary-soft,rgba(13,148,136,0.12))] border-[var(--primary)] text-[var(--primary)] font-bold shadow-2xs"
 								: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 						}`}
 					>
@@ -46,9 +46,9 @@ export function DentalLabClassicalGrid({
 								data-testid={`vita-group-btn-${grp.id}`}
 								aria-label={`Группа ${grp.id}`}
 								title={`Группа ${grp.id}: ${grp.shades.join(", ")}`}
-								className={`min-h-[44px] sm:min-h-[32px] min-w-[40px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer inline-flex items-center justify-center border ${
+								className={`min-h-[44px] sm:min-h-[32px] min-w-[40px] max-sm:min-w-[44px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer inline-flex items-center justify-center border ${
 									isSelectedGroup
-										? "bg-[rgba(13,148,136,0.12)] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-extrabold ring-1 ring-[var(--teal,#0d9488)] shadow-2xs"
+										? "bg-[var(--primary-soft,rgba(13,148,136,0.12))] border-[var(--primary)] text-[var(--primary)] font-extrabold ring-1 ring-[var(--primary)] shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 								}`}
 							>
@@ -92,7 +92,7 @@ export function DentalLabClassicalGrid({
 									}
 									className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 										isSelected
-											? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+											? "bg-[var(--primary)] text-white ring-2 ring-[var(--primary)] ring-offset-1 shadow-2xs font-extrabold"
 											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 									}`}
 									data-testid={`vita-shade-${shade}`}
@@ -136,7 +136,7 @@ export function DentalLabClassicalGrid({
 								}
 								className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 									isSelected
-										? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+										? "bg-[var(--primary)] text-white ring-2 ring-[var(--primary)] ring-offset-1 shadow-2xs font-extrabold"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 								}`}
 								data-testid={`vita-shade-${shade}`}

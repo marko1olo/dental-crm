@@ -27,7 +27,7 @@ export function DentalLabShadeHeader({
 			<div className="flex items-center gap-2 flex-wrap min-w-0">
 				<ToothShadeGuide
 					size={16}
-					className="text-teal-600 dark:text-teal-400 shrink-0"
+					className="text-[var(--primary)] shrink-0"
 				/>
 				<span className="text-xs font-bold text-[var(--ink,#0f172a)] shrink-0">
 					Шкала VITA:
@@ -87,7 +87,7 @@ export function DentalLabShadeHeader({
 				<span className="text-xs text-[var(--muted,#64748b)] font-medium">
 					Выбранный оттенок:
 				</span>
-				<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[var(--teal,#0d9488)] text-white shadow-xs inline-flex items-center gap-1.5">
+				<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[var(--primary)] text-white shadow-xs inline-flex items-center gap-1.5">
 					{currentSwatch && (
 						<span
 							className="w-2.5 h-2.5 rounded-full border border-white/60 shrink-0"

@@ -66,9 +66,9 @@ export const DentalLabStratificationSection: React.FC<
 							key={b.mode}
 							type="button"
 							onClick={() => applyPreset(b.mode)}
-							className="min-h-[28px] px-2 py-0.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)] font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition"
+							className="min-h-[28px] max-sm:min-h-[44px] max-sm:min-w-[44px] px-2 py-0.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--primary)] font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition"
 						>
-							<b.icon size={11} className="text-teal-600 dark:text-teal-400" />
+							<b.icon size={11} className="text-[var(--primary)]" />
 							<span>{b.label}</span>
 						</button>
 					))}
