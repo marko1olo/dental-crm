@@ -560,7 +560,7 @@ export function validatePlanToInvoice(
 	// 2. Разрешены скидки до 100% и бесплатные услуги (0 руб. к списанию) на гарантию, профосмотры и персонал
 	// 3. Строго блокируются только математические ошибки (цена < 0 или скидка > 100%)
 	const hasUnresolvedArchivedOrMissing =
-		payload.adminOverrideAuthorized !== true &&
+		!(payload.isDoctorAutonomy || payload.adminOverrideAuthorized) &&
 		validatedItems.some(
 			(i) => (i.isArchived || !i.isFoundInCatalog) && i.selectedResolution !== "REPLACE_WITH_804N_ANALOGUE",
 		);

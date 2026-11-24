@@ -3,7 +3,7 @@
  * Wave 130 & Mandate 8b (<= 120 lines).
  */
 
-import { kopecksToRub } from "../../fiscal/kopecksArithmetic.js";
+import { kopecksToNumericString } from "../../money.js";
 import {
 	bankStatementRegistrySchema, type BankStatementRegistry, CLIENT_BANK_ENCODING,
 	CLIENT_BANK_EXCHANGE_VERSION, DEFAULT_PAYMENT_KIND, DEFAULT_PAYMENT_PRIORITY,
@@ -11,15 +11,15 @@ import {
 } from "./exportTypes.js";
 
 export function formatAmount1C(kopecks: number): string {
-	return kopecksToRub(Math.round(kopecks)).toFixed(2);
+	return kopecksToNumericString(Math.round(kopecks));
 }
 
 export function formatRublesRu(kopecks: number): string {
-	const rubPart = Math.floor(Math.abs(kopecks) / 100);
-	const kopPart = Math.abs(kopecks) % 100;
-	const formattedRub = rubPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+	const absNumeric = kopecksToNumericString(Math.abs(Math.round(kopecks)));
+	const [rubPart = "0", kopPart = "00"] = absNumeric.split(".");
+	const formattedRub = rubPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 	const sign = kopecks < 0 ? "-" : "";
-	return `${sign}${formattedRub},${kopPart.toString().padStart(2, "0")} руб.`;
+	return `${sign}${formattedRub},${kopPart} руб.`;
 }
 
 export function format1CDate(dateInput: string | Date): string {

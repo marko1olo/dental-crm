@@ -22,7 +22,7 @@ export const redeemPointsBodySchema = z.object({
 	allowFullCoverage: z.boolean().optional().default(true),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Списание баллов в счет оплаты лечения"),
-});
+}).strict();
 
 export type RedeemPointsBody = z.infer<typeof redeemPointsBodySchema>;
 
@@ -31,7 +31,7 @@ export const manualAccrueBodySchema = z.object({
 	amountPoints: z.number().positive().finite().multipleOf(0.01),
 	description: z.string().min(1),
 	expiresInDays: z.number().int().positive().optional().default(180),
-});
+}).strict();
 
 export type ManualAccrueBody = z.infer<typeof manualAccrueBodySchema>;
 
@@ -44,7 +44,7 @@ export const accrueCashbackBodySchema = z.object({
 	pointRateRub: z.number().positive().finite().multipleOf(0.01).optional().default(1.0),
 	description: z.string().optional().default("Кэшбэк за оплату стоматологических услуг"),
 	expiresInDays: z.number().int().positive().optional().default(180),
-});
+}).strict();
 
 export type AccrueCashbackBody = z.infer<typeof accrueCashbackBodySchema>;
 
@@ -53,7 +53,7 @@ export const familyDebitBodySchema = z.object({
 	targetPatientId: z.string().uuid(),
 	pointsToDebit: z.number().positive().finite().multipleOf(0.01),
 	description: z.string().default("Списание из семейного кошелька"),
-});
+}).strict();
 
 export type FamilyDebitBody = z.infer<typeof familyDebitBodySchema>;
 
@@ -63,7 +63,7 @@ export const referralRegisterBodySchema = z.object({
 	invitedPatientPhone: z.string().optional(),
 	rewardRub: z.number().positive().finite().multipleOf(0.01).default(1000),
 	note: z.string().optional(),
-});
+}).strict();
 
 export type ReferralRegisterBody = z.infer<typeof referralRegisterBodySchema>;
 
@@ -75,7 +75,7 @@ export const holdPointsBodySchema = z.object({
 	allowFullCoverage: z.boolean().optional().default(true),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Холдирование баллов для кассового чека"),
-});
+}).strict();
 
 export type HoldPointsBody = z.infer<typeof holdPointsBodySchema>;
 
@@ -83,20 +83,20 @@ export const confirmHoldBodySchema = z.object({
 	holdId: z.string().uuid(),
 	paymentId: z.string().uuid().optional().nullable(),
 	clientMutationId: z.string().optional(),
-});
+}).strict();
 
 export type ConfirmHoldBody = z.infer<typeof confirmHoldBodySchema>;
 
 export const releaseHoldBodySchema = z.object({
 	holdId: z.string().uuid(),
 	reason: z.string().default("Отмена фискализации чека"),
-});
+}).strict();
 
 export type ReleaseHoldBody = z.infer<typeof releaseHoldBodySchema>;
 
 export const processExpiredBodySchema = z.object({
 	asOfDate: z.string().datetime().optional(),
-});
+}).strict();
 
 export type ProcessExpiredBody = z.infer<typeof processExpiredBodySchema>;
 
@@ -110,7 +110,7 @@ export const issueCertificateSchema = z.object({
 	nominalKopecks: z.number().int().positive().optional(),
 	expiresInDays: z.number().int().positive().optional().default(365),
 	notes: z.string().optional().nullable(),
-});
+}).strict();
 
 export const issueCertificateBodySchema = issueCertificateSchema;
 export type IssueCertificateBody = z.infer<typeof issueCertificateSchema>;
@@ -123,7 +123,7 @@ export const redeemCertificateSchema = z.object({
 	amountKopecks: z.number().int().positive().optional(),
 	patientId: z.string().uuid().optional().nullable(),
 	description: z.string().optional(),
-});
+}).strict();
 
 export const redeemCertificateBodySchema = redeemCertificateSchema;
 export type RedeemCertificateBody = z.infer<typeof redeemCertificateSchema>;

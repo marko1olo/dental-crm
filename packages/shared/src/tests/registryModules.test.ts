@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { escapeCsvCell, formatClinicalDateRu, sanitizeRegistryString } from "../insurance/registryModules/registrySanitizer.js";
 import { validateRegistryData, assertValidRegistryData } from "../insurance/registryModules/registryValidator.js";
 import { buildDmsRegistryData, filterRegistryRecordsByPeriod, groupRecordsByPatient } from "../insurance/registryModules/registryAggregator.js";
+import { generateDmsRegistryA4Html } from "../insurance/registryModules/registryHtmlBuilder.js";
 import type { DmsRegistryData, DmsRegistryRecord } from "../insurance/registryModules/registryTypes.js";
 
 describe("Registry Modules Isolated Unit Tests (registryModules/)", () => {
@@ -105,5 +106,27 @@ describe("Registry Modules Isolated Unit Tests (registryModules/)", () => {
 		const grouped = groupRecordsByPatient([recEarly, recLate]);
 		const key = `${sampleRecord.patientFullName.trim()}|${sampleRecord.policyNumber.trim()}`;
 		assert.equal(grouped.get(key)?.length, 2);
+	});
+
+	it("Security: neutralizes CSV formula injection and escapes serviceDate XSS in A4 HTML", () => {
+		assert.equal(escapeCsvCell("=CMD('calc')"), "'=CMD('calc')");
+		assert.equal(escapeCsvCell("+SUM(A1:A2)"), "'+SUM(A1:A2)");
+		assert.equal(escapeCsvCell("@HYPERLINK"), "'@HYPERLINK");
+		assert.equal(escapeCsvCell("-cmd"), "'-cmd");
+		assert.equal(escapeCsvCell(-1500), "-1500");
+		assert.equal(escapeCsvCell("-1500.50"), "-1500.50");
+
+		const xssData: DmsRegistryData = {
+			...sampleRegistry,
+			records: [
+				{
+					...sampleRecord,
+					serviceDate: '2026-08-15<script>alert(1)</script>',
+				},
+			],
+		};
+		const html = generateDmsRegistryA4Html(xssData);
+		assert.equal(html.includes("<script>alert(1)</script>"), false);
+		assert.ok(html.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
 	});
 });

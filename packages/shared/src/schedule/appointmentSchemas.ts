@@ -123,6 +123,8 @@ export const appointmentInvoiceItemSchema = z
 	.object({
 		id: z.string().optional(),
 		serviceId: z.string().optional(),
+		serviceCode: z.string().optional(),
+		code804n: z.string().optional(),
 		code: z.string().optional(),
 		name: z.string().optional(),
 		title: z.string().optional(),
@@ -130,10 +132,13 @@ export const appointmentInvoiceItemSchema = z
 		quantity: z.number().positive().optional().default(1),
 		priceRub: z.number().nonnegative().optional(),
 		price: z.number().nonnegative().optional(),
+		priceKopecks: z.union([z.number().int().nonnegative(), z.bigint()]).optional(),
 		amountRub: z.number().nonnegative().optional(),
 		amountKopecks: z.union([z.number().int().nonnegative(), z.bigint()]).optional(),
 		toothNumber: z.union([z.number().int().min(11).max(85), z.string()]).nullable().optional(),
 		tooth: z.union([z.number().int().min(11).max(85), z.string()]).nullable().optional(),
+		teethNumbers: z.array(z.number().int().min(11).max(85)).optional(),
+		toothCode: z.string().optional(),
 		discountPercent: z.number().min(0).max(100).optional(),
 		discountRub: z.number().nonnegative().optional(),
 		comment: z.string().optional(),
@@ -141,8 +146,11 @@ export const appointmentInvoiceItemSchema = z
 		stageId: z.string().optional(),
 		stageNumber: z.number().optional(),
 		completed: z.boolean().optional(),
+		labOrderId: z.string().optional(),
+		labCostRub: z.number().nonnegative().optional(),
+		labCostKopecks: z.number().int().nonnegative().optional(),
 	})
-	.passthrough();
+	.strict();
 export type AppointmentInvoiceItem = z.infer<typeof appointmentInvoiceItemSchema>;
 
 export const createAppointmentSchema = z
@@ -161,8 +169,12 @@ export const createAppointmentSchema = z
 		status: appointmentStatusSchema.default("planned"),
 		startsAt: z.string().trim().min(1),
 		endsAt: z.string().trim().min(1),
+		startTime: z.string().trim().min(1).optional(),
+		endTime: z.string().trim().min(1).optional(),
 		reason: z.string().trim().max(500).nullable().optional(),
+		notes: z.string().trim().max(500).nullable().optional(),
 		comment: z.string().trim().max(1000).nullable().optional(),
+		comments: z.string().trim().max(1000).nullable().optional(),
 		parentAppointmentId: z.string().uuid().nullable().optional(),
 		stageIndex: z.number().int().min(1).nullable().optional(),
 		clinicalStage: z.string().trim().max(100).nullable().optional(),
@@ -194,6 +206,7 @@ export const createAppointmentSchema = z
 		invoiceItems: z.array(appointmentInvoiceItemSchema).optional(),
 		completedServices: z.array(appointmentInvoiceItemSchema).optional(),
 	})
+	.strict()
 	.superRefine((value, context) => {
 		const startsAt = parseStrictAppointmentDateTimeMs(value.startsAt);
 		const endsAt = parseStrictAppointmentDateTimeMs(value.endsAt);
@@ -239,8 +252,12 @@ export const updateAppointmentSchema = z
 		status: appointmentStatusSchema.optional(),
 		startsAt: z.string().trim().min(1).optional(),
 		endsAt: z.string().trim().min(1).optional(),
+		startTime: z.string().trim().min(1).optional(),
+		endTime: z.string().trim().min(1).optional(),
 		reason: z.string().trim().max(500).nullable().optional(),
+		notes: z.string().trim().max(500).nullable().optional(),
 		comment: z.string().trim().max(1000).nullable().optional(),
+		comments: z.string().trim().max(1000).nullable().optional(),
 		parentAppointmentId: z.string().uuid().nullable().optional(),
 		stageIndex: z.number().int().min(1).nullable().optional(),
 		clinicalStage: z.string().trim().max(100).nullable().optional(),
@@ -273,6 +290,7 @@ export const updateAppointmentSchema = z
 		invoiceItems: z.array(appointmentInvoiceItemSchema).optional(),
 		completedServices: z.array(appointmentInvoiceItemSchema).optional(),
 	})
+	.strict()
 	.superRefine((value, context) => {
 		const startsAt =
 			value.startsAt !== undefined

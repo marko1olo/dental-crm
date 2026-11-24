@@ -7,6 +7,7 @@
 
 import type { StomxProcedureItem, StomxPricelistCategory } from "./clinicalPricelistTypes.js";
 import { getStomxCategoryTitle } from "./clinicalPricelistCategories.js";
+import { rublesToKopecks } from "../money.js";
 
 function p(
 	id: number | string,
@@ -29,7 +30,7 @@ function p(
 		category,
 		categoryName: getStomxCategoryTitle(category),
 		price,
-		priceKopecks: Math.round(price * 100),
+		priceKopecks: rublesToKopecks(price),
 		durationMinutes,
 		requireTooth,
 		warrantyMonths,

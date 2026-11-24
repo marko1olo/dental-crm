@@ -1,4 +1,5 @@
 import { escapeXml } from "../../cda/c14n.js";
+import { formatDiscountPercent } from "../../money.js";
 import { formatKopToRub, reqVal, computeCommerceMlSha256 } from "./xmlUtils.js";
 import {
 	OneCCommerceMlPackage, OneCRetailSaleItem, OneCPaymentBreakdownItem,
@@ -13,7 +14,8 @@ function renderRetailSalesItemsCommerceMl(items: readonly OneCRetailSaleItem[]):
 		const unitCode = it.unitCode || DEFAULT_OKEI_PIECE_CODE;
 		const unitName = it.unitName || DEFAULT_OKEI_PIECE_NAME;
 		const fullName = `${it.name}${it.toothNumber ? ` (Зуб ${it.toothNumber})` : ""}`;
-		const discountPercent = it.priceKopecks > 0 ? Math.round((it.discountKopecks / it.priceKopecks) * 100) : 0;
+		const lineGrossKop = it.priceKopecks * it.quantity;
+		const discountPercent = Math.round(Number(formatDiscountPercent(lineGrossKop, it.discountKopecks)));
 		return `\t\t\t\t<Товар>
 \t\t\t\t\t<Ид>${escapeXml(it.id)}</Ид>
 \t\t\t\t\t<Артикул>${escapeXml(it.code804n || it.id)}</Артикул>

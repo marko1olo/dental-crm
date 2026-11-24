@@ -18,7 +18,7 @@ import {
 } from "../fiscal/ffd12Types.js";
 import { kopecksToNumericString, kopecksToRub } from "../fiscal/kopecksArithmetic.js";
 import { type CanonicalTenderType, normalizeTenderType } from "../fiscal/tenderTypes.js";
-import { percentageOfKopecks, toExactKopecks } from "../money.js";
+import { basisPointsFromPercent, percentageOfKopecks, toExactKopecks } from "../money.js";
 import { generatePartialRefundOperationNumber } from "../utils/idGenerators.js";
 
 export type PartialRefundPaymentMethod =
@@ -277,7 +277,7 @@ export function calculatePartialRefund(
 		}
 
 		const baseForClawbackKop = Math.max(0, itemRefundKop - materialAdjKop);
-		const clawbackKop = percentageOfKopecks(toExactKopecks(baseForClawbackKop), Math.round(docPct * 100));
+		const clawbackKop = percentageOfKopecks(toExactKopecks(baseForClawbackKop), basisPointsFromPercent(docPct));
 
 		// Aggregate doctor clawback
 		const existingDoc = doctorClawbackMap.get(docId) ?? {

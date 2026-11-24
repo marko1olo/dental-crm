@@ -85,7 +85,7 @@ export const recallCreateSchema = z.object({
 	assignedProfessionalId: z.string().uuid().optional().nullable(),
 	linkedTreatmentId: z.string().uuid().optional().nullable(),
 	linkedTreatmentCategoryKey: z.string().max(80).optional().nullable(),
-});
+}).strict();
 export type RecallCreate = z.infer<typeof recallCreateSchema>;
 
 export const recallUpdateSchema = z.object({
@@ -95,13 +95,13 @@ export const recallUpdateSchema = z.object({
 	reasonNote: z.string().max(500).optional().nullable(),
 	priority: recallPrioritySchema.optional(),
 	assignedProfessionalId: z.string().uuid().optional().nullable(),
-});
+}).strict();
 export type RecallUpdate = z.infer<typeof recallUpdateSchema>;
 
 export const recallSnoozeSchema = z.object({
 	months: z.number().int().min(1).max(24),
 	reasonNote: z.string().max(500).optional().nullable(),
-});
+}).strict();
 export type RecallSnooze = z.infer<typeof recallSnoozeSchema>;
 
 export const recallAttemptSchema = z.object({
@@ -109,7 +109,7 @@ export const recallAttemptSchema = z.object({
 	outcome: recallOutcomeSchema,
 	note: z.string().max(1000).optional().nullable(),
 	linkedAppointmentId: z.string().uuid().optional().nullable(),
-});
+}).strict();
 export type RecallAttempt = z.infer<typeof recallAttemptSchema>;
 
 // --- Multi-Channel Cascade Escalation Contracts ---
@@ -120,7 +120,7 @@ export const cascadeStepSchema = z.object({
 	delayHoursAfterPrevious: z.number().min(0),
 	templateKey: z.string(),
 	description: z.string().optional(),
-});
+}).strict();
 export type CascadeStep = z.infer<typeof cascadeStepSchema>;
 
 export const channelCascadeConfigSchema = z.object({
@@ -131,7 +131,7 @@ export const channelCascadeConfigSchema = z.object({
 	quietHoursStartMinute: z.number().int().min(0).max(1439).default(1260), // 21:00
 	quietHoursEndMinute: z.number().int().min(0).max(1439).default(540),   // 09:00
 	stopOnAnyResponse: z.boolean().default(true),
-});
+}).strict();
 export type ChannelCascadeConfig = z.infer<typeof channelCascadeConfigSchema>;
 
 export const plannedDispatchStepSchema = z.object({
@@ -140,7 +140,7 @@ export const plannedDispatchStepSchema = z.object({
 	scheduledAt: z.string().datetime(),
 	templateKey: z.string(),
 	status: z.enum(["pending", "dispatched", "skipped", "failed"]),
-});
+}).strict();
 export type PlannedDispatchStep = z.infer<typeof plannedDispatchStepSchema>;
 
 // --- Pure Domain Calculation Routines ---

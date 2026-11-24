@@ -75,7 +75,7 @@ export const recallCandidateSchema = z.object({
 	attendingDoctorId: z.string().uuid().nullable().optional(),
 	attendingDoctorName: z.string().nullable().optional(),
 	lastProcedureCategory: z.string().nullable().optional(),
-});
+}).strict();
 export type RecallCandidate = z.infer<typeof recallCandidateSchema>;
 
 /**
@@ -87,7 +87,7 @@ export const recallReportSchema = z.object({
 	/** Сколько активных пациентов просмотрено. */
 	examinedPatients: z.number().int().nonnegative(),
 	note: z.string(),
-});
+}).strict();
 export type RecallReport = z.infer<typeof recallReportSchema>;
 
 /**
@@ -98,7 +98,7 @@ export const recallInviteSchema = z.object({
 	channel: z.string().min(2).max(30),
 	/** Текст готовит вызывающий: подстановка переменных уже выполнена. */
 	body: z.string().trim().min(5).max(2000),
-});
+}).strict();
 export type RecallInviteRequest = z.infer<typeof recallInviteSchema>;
 
 /**
@@ -109,5 +109,5 @@ export const recallInviteResultSchema = z.object({
 	outboxId: z.string().optional(),
 	duplicate: z.boolean().optional(),
 	message: z.string(),
-});
+}).strict();
 export type RecallInviteResponse = z.infer<typeof recallInviteResultSchema>;

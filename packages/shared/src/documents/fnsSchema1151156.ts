@@ -141,7 +141,7 @@ export const fnsFullNameSchema = z.object({
 	family: z.string().min(1, "Фамилия обязательна"),
 	given: z.string().min(1, "Имя обязательно"),
 	patronymic: z.string().optional().nullable(),
-});
+}).strict();
 
 export const fnsIdentityDocumentSchema = z.object({
 	docTypeCode: z.string().default("21"),
@@ -149,13 +149,14 @@ export const fnsIdentityDocumentSchema = z.object({
 	issueDate: z.string().optional().nullable(),
 	issuedBy: z.string().optional().nullable(),
 	subdivisionCode: z.string().optional().nullable(),
-});
+}).strict();
 
 export const fnsClinicSchema = z.object({
 	inn: z.string().min(10).max(12),
 	kpp: z.string().optional().nullable(),
 	ogrn: z.string().min(13).max(15),
 	name: z.string().default("ООО СТОМАТОЛОГИЯ ДЕНТЕ"),
+	organizationName: z.string().optional().nullable(),
 	isIndividualEntrepreneur: z.boolean().optional(),
 	ipFullName: fnsFullNameSchema.optional().nullable(),
 	license: z
@@ -164,12 +165,13 @@ export const fnsClinicSchema = z.object({
 			date: z.string(),
 			issuer: z.string().optional().nullable(),
 		})
+		.strict()
 		.optional()
 		.nullable(),
 	directorName: z.string().optional().nullable(),
 	directorSnils: z.string().optional().nullable(),
 	phone: z.string().optional().nullable(),
-});
+}).strict();
 
 export const fnsPersonSchema = z.object({
 	fullName: fnsFullNameSchema,
@@ -177,30 +179,32 @@ export const fnsPersonSchema = z.object({
 	snils: z.string().optional().nullable(),
 	birthDate: z.string().min(1, "Дата рождения обязательна"),
 	identityDocument: fnsIdentityDocumentSchema.optional().nullable(),
-});
+}).strict();
 
 export const fnsPatientSchema = z.object({
 	patientKinshipCode: z.enum(["1", "2", "3", "4", "5"]).default("1"),
+	kinshipCode: z.enum(["1", "2", "3", "4", "5"]).optional().nullable(),
 	fullName: fnsFullNameSchema.optional().nullable(),
 	inn: z.string().optional().nullable(),
 	snils: z.string().optional().nullable(),
 	birthDate: z.string().optional().nullable(),
 	identityDocument: fnsIdentityDocumentSchema.optional().nullable(),
-});
+}).strict();
 
 export const fnsExpensesSchema = z.object({
 	code1AmountRub: z.number().nonnegative().optional().nullable(),
 	code2AmountRub: z.number().nonnegative().optional().nullable(),
 	code1AmountKopecks: z.number().int().nonnegative().optional().nullable(),
 	code2AmountKopecks: z.number().int().nonnegative().optional().nullable(),
-});
+	totalAmountKopecks: z.number().int().nonnegative().optional().nullable(),
+}).strict();
 
 export const fnsSignatorySchema = z.object({
 	signatoryRole: z.enum(["1", "2"]).default("1"), // 1 = Руководитель/ИП, 2 = Уполномоченный представитель
 	fullName: fnsFullNameSchema,
 	snils: z.string().optional().nullable(),
 	powerOfAttorneyNumber: z.string().optional().nullable(),
-});
+}).strict();
 
 export const fnsFiscalReceiptItemSchema = z.object({
 	id: z.string(),
@@ -211,10 +215,11 @@ export const fnsFiscalReceiptItemSchema = z.object({
 	deductionCode: z.enum(["1", "2"]),
 	amountRub: z.number().positive(),
 	amountKopecks: z.number().int().positive().optional().nullable(),
-});
+}).strict();
 
 export const fnsTaxPayloadSchema = z.object({
 	documentNumber: z.string().min(1, "Номер справки обязателен"),
+	certificateNumber: z.string().min(1).optional().nullable(),
 	documentDate: z.union([z.string(), z.date()]),
 	taxYear: z.union([z.number(), z.string()]),
 	taxInspectionCode: z.string().length(4).default("7701"),
@@ -227,8 +232,17 @@ export const fnsTaxPayloadSchema = z.object({
 	patient: fnsPatientSchema,
 	expenses: fnsExpensesSchema,
 	signatory: fnsSignatorySchema.optional().nullable(),
+	signer: z
+		.object({
+			signerType: z.enum(["1", "2"]).optional(),
+			fullName: fnsFullNameSchema,
+			snils: z.string().optional().nullable(),
+		})
+		.strict()
+		.optional()
+		.nullable(),
 	receipts: z.array(fnsFiscalReceiptItemSchema).optional().nullable(),
-});
+}).strict();
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * ТИПЫ ДЛЯ TYPESCRIPT

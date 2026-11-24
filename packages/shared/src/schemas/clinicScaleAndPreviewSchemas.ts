@@ -212,10 +212,12 @@ export const createPaymentSchema = z
 			),
 		visitId: z.string().uuid().nullable().optional(),
 		documentId: z.string().uuid().nullable().optional(),
+		invoiceId: z.string().uuid().nullable().optional(),
 		serviceId: z.string().uuid().nullable().optional(),
 		catalogItemId: z.string().uuid().nullable().optional(),
 		discountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		discountPercent: z.number().min(0).max(100).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).nullable().optional(),
+		amountKopecks: z.number().int().nonnegative().nullable().optional(),
 		amountRub: nonNegativeMoneyRubSchema,
 		method: z
 			.union([
@@ -290,6 +292,7 @@ export const createPaymentSchema = z
 		receiptTypeAlias: z.string().trim().max(120).nullable().optional(),
 		cashFlowCategory: z.string().trim().max(120).nullable().optional(),
 	})
+	.strict()
 	.superRefine((input, context) => {
 		const fiscalReceiptIssuedAt = input.fiscalReceiptIssuedAt?.trim();
 		if (fiscalReceiptIssuedAt && !isDateLikeString(fiscalReceiptIssuedAt)) {
@@ -348,7 +351,7 @@ export const completeCommunicationTaskSchema = z.object({
 	actorUserId: z.string().uuid().optional().nullable(),
 	outcome: communicationTaskOutcomeSchema.optional(),
 	note: z.string().trim().min(1).max(1000).optional(),
-});
+}).strict();
 
 export type CompleteCommunicationTaskInput = z.infer<
 	typeof completeCommunicationTaskSchema
@@ -370,7 +373,7 @@ export const createImagingStudySchema = z.object({
 	effectiveDoseMsv: z.number().nullable().optional(),
 	capturedAt: z.string().optional(),
 	aiSummary: z.string().trim().max(2000).nullable().optional(),
-});
+}).strict();
 
 export type CreateImagingStudyInput = z.infer<typeof createImagingStudySchema>;
 
@@ -378,7 +381,7 @@ export const imagingImportPreviewRequestSchema = z.object({
 	sourceName: z.string().trim().min(1).max(160).default("imaging_manifest"),
 	sourceKind: imagingSourceKindSchema.default("folder_watch"),
 	rawText: z.string().trim().min(1).max(120000),
-});
+}).strict();
 
 export type ImagingImportPreviewRequest = z.infer<
 	typeof imagingImportPreviewRequestSchema
@@ -440,7 +443,7 @@ export const imagingFolderScanRequestSchema = z.object({
 	maxFiles: z.number().int().positive().max(5000).default(500),
 	maxFolders: z.number().int().positive().max(3000).default(900),
 	maxEntriesPerFolder: z.number().int().positive().max(10000).default(2000),
-});
+}).strict();
 
 export type ImagingFolderScanRequest = z.infer<
 	typeof imagingFolderScanRequestSchema
@@ -580,7 +583,7 @@ export const dicomSeriesPreviewRequestSchema = z.object({
 	sourceName: z.string().min(1).default("dicom_series_manifest"),
 	sourceKind: imagingSourceKindSchema.default("dicom_file"),
 	rawText: z.string().min(1),
-});
+}).strict();
 
 export type DicomSeriesPreviewRequest = z.infer<
 	typeof dicomSeriesPreviewRequestSchema

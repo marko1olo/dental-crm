@@ -5,6 +5,7 @@
  * and exact kopeck price normalization.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "../../money.js";
 import type {
 	ColumnMappingConfig,
 	PriceParseResult,
@@ -134,8 +135,8 @@ export function normalizePricelistPrice(raw: unknown): PriceParseResult {
 		};
 	}
 
-	const priceKopecks = Math.round(num * 100);
-	const priceRub = Math.round(num * 100) / 100;
+	const priceKopecks = rublesToKopecks(num);
+	const priceRub = kopecksToRubles(priceKopecks);
 
 	return {
 		success: true,

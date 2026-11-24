@@ -3,6 +3,7 @@
  * Wave 130 & Mandate 8b (<= 120 lines). Exact integer kopecks arithmetic.
  */
 
+import { basisPointsFromPercent, percentageOfKopecks } from "../../money.js";
 import {
 	ACQUIRING_PROVIDER_NAMES_RU, acquirerReconciliationSchema, acquirerStatementItemSchema,
 	type AcquirerStatementItem, type MatchedTransactionRecord, paymentEntrySchema,
@@ -52,9 +53,9 @@ export function reconcileAcquiringTransactions(
 			usedStatementIds.add(match.id);
 			let expFee = match.feeKopecks;
 			if (payment.expectedFeeKopecks != null) expFee = payment.expectedFeeKopecks;
-			else if (payment.expectedFeeRatePercent != null) expFee = Math.round((payment.amountKopecks * payment.expectedFeeRatePercent) / 100);
-			else if (options?.defaultFeeRatePercent != null) expFee = Math.round((payment.amountKopecks * options.defaultFeeRatePercent) / 100);
-			else if (match.feeRatePercent != null) expFee = Math.round((payment.amountKopecks * match.feeRatePercent) / 100);
+			else if (payment.expectedFeeRatePercent != null) expFee = percentageOfKopecks(payment.amountKopecks, basisPointsFromPercent(payment.expectedFeeRatePercent));
+			else if (options?.defaultFeeRatePercent != null) expFee = percentageOfKopecks(payment.amountKopecks, basisPointsFromPercent(options.defaultFeeRatePercent));
+			else if (match.feeRatePercent != null) expFee = percentageOfKopecks(payment.amountKopecks, basisPointsFromPercent(match.feeRatePercent));
 
 			const feeDiff = match.feeKopecks - expFee;
 			matchedRecords.push({
@@ -92,7 +93,7 @@ export function reconcileAcquiringTransactions(
 		reconciliationDate: options?.reconciliationDate || format1CDate(now),
 		periodFrom: options?.periodFrom || (firstPayment ? format1CDate(firstPayment.date) : format1CDate(now)),
 		periodTo: options?.periodTo || (lastPayment ? format1CDate(lastPayment.date) : format1CDate(now)),
-		acquirerName: options?.acquirerName || (firstPayment?.acquirerName ? ACQUIRING_PROVIDER_NAMES_RU[firstPayment.acquirerName] : "ПАО Сбербанк"),
+		acquirerName: options?.acquirerName || (firstPayment?.acquirerName ? ACQUIRING_PROVIDER_NAMES_RU[firstPayment.acquirerName] : ""),
 		status: isBalanced ? "balanced" : "discrepancies_found",
 		summary: {
 			systemCount: validPayments.length, systemTotalKopecks, acquirerCount: validStatements.length,

@@ -427,7 +427,7 @@ export const clinicalRuleEvaluationInputSchema = z.object({
 	serviceIds: z.array(z.string()).min(1),
 	completedServiceIds: z.array(z.string()).default([]),
 	enforceBlockers: z.boolean().default(false).optional(),
-});
+}).strict();
 
 export type ClinicalRuleEvaluationInput = z.infer<
 	typeof clinicalRuleEvaluationInputSchema
@@ -464,7 +464,7 @@ export const createClinicalRuleBaseSchema = z.object({
 	warningText: z.string().trim().min(1).max(700),
 	patientText: z.string().trim().min(1).max(700),
 	active: z.boolean().default(true),
-});
+}).strict();
 
 export const createClinicalRuleSchema =
 	createClinicalRuleBaseSchema.superRefine((input, context) => {
@@ -499,7 +499,8 @@ export const updateClinicalRuleSchema = createClinicalRuleBaseSchema
 	.partial()
 	.extend({
 		id: z.string(),
-	});
+	})
+	.strict();
 
 export type UpdateClinicalRuleInput = z.infer<typeof updateClinicalRuleSchema>;
 

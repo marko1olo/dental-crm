@@ -15,7 +15,14 @@
 
 import { z } from "zod";
 import type { Kopecks } from "../money.js";
-import { formatKopecksRu, formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "../money.js";
+import {
+	calculatePercentDiscountKopecks,
+	formatDiscountPercent,
+	formatKopecksRu,
+	formatKopecksToRub,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "../money.js";
 import { STANDARD_DMS_EXCLUDED_804N_SERVICES } from "./guaranteeModules/guaranteeMatcher.js";
 import {
 	type DmsGuaranteeLetter,
@@ -720,7 +727,7 @@ export function calculateDmsGuaranteeSplit(
 
 		let candidateCoveredKop = Math.max(
 			0,
-			Math.round((lineTotalKop * pct) / 100) - franchiseDeductionKop,
+			calculatePercentDiscountKopecks(lineTotalKop, pct) - franchiseDeductionKop,
 		);
 
 		// 7. Ограничение лимитом письма
@@ -755,7 +762,7 @@ export function calculateDmsGuaranteeSplit(
 			} else {
 				if (isUrgentCare) {
 					// При острой боли исчерпание лимита не блокирует экстренную помощь
-					candidateCoveredKop = Math.round((lineTotalKop * pct) / 100);
+					candidateCoveredKop = calculatePercentDiscountKopecks(lineTotalKop, pct);
 					status = "full_dms";
 					splitReason = "Экстренная помощь (острая боль) при исчерпанном лимите ГП. Требуется досылка гарантийного письма ДМС";
 				} else {
@@ -779,7 +786,7 @@ export function calculateDmsGuaranteeSplit(
 		totalCoveredKop += candidateCoveredKop;
 		totalCoPayKop += itemCoPayKop;
 
-		const effPct = lineTotalKop > 0 ? Math.round((candidateCoveredKop / lineTotalKop) * 100) : 0;
+		const effPct = Math.round(Number(formatDiscountPercent(lineTotalKop, candidateCoveredKop)));
 
 		lineResults.push({
 			serviceId: it.serviceId,

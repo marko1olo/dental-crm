@@ -25,7 +25,9 @@
 
 import {
 	type Kopecks,
+	calculatePercentDiscountKopecks,
 	formatKopecksRu,
+	kopecksToNumericString,
 	parseKopecks,
 	rublesToKopecks,
 	sumKopecks,
@@ -162,7 +164,7 @@ export function evaluateInstallmentStatus(
 	updatedSchedule: InternalInstallmentScheduleItem[];
 } {
 	const currentMs = new Date(currentDateIso).getTime();
-	const todayDateStr = currentDateIso.split("T")[0]!;
+	const todayDateStr = currentDateIso.split("T")[0] ?? currentDateIso.slice(0, 10);
 
 	let paidAmountKopecks = 0 as Kopecks;
 	let totalAmountKopecks = 0 as Kopecks;
@@ -178,7 +180,7 @@ export function evaluateInstallmentStatus(
 
 		const remainingItemKop = Math.max(0, item.amountKopecks - item.paidKopecks) as Kopecks;
 		const dueMs = new Date(item.dueDateIso).getTime();
-		const dueDateStr = item.dueDateIso.split("T")[0]!;
+		const dueDateStr = item.dueDateIso.split("T")[0] ?? item.dueDateIso.slice(0, 10);
 
 		let itemStatus: InstallmentItemStatus = item.status;
 
@@ -285,7 +287,10 @@ export function recordInstallmentPayment(
 		throw new Error("Все платежи по данному договору рассрочки уже оплачены 100%");
 	}
 
-	const targetItem = input.plan.schedule[targetItemIndex]!;
+	const targetItem = input.plan.schedule[targetItemIndex];
+	if (!targetItem) {
+		throw new Error("Все платежи по данному договору рассрочки уже оплачены 100%");
+	}
 	const payAmountKop = (input.paidAmountKopecks !== undefined && input.paidAmountKopecks > 0)
 		? input.paidAmountKopecks
 		: (targetItem.amountKopecks - targetItem.paidKopecks) as Kopecks;
@@ -309,7 +314,7 @@ export function recordInstallmentPayment(
 	const tag1214 = isLastPayment ? 4 : 2;
 	const tag1214NameRu = isLastPayment ? "Полный расчет" : "Аванс / Взнос по рассрочке";
 
-	const qrPayload = `t=${currentIso.replace(/[-:]/g, "").slice(0, 15)}&s=${(payAmountKop / 100).toFixed(2)}&fn=999907890001&i=${docNum}&fp=${fpd}&n=1`;
+	const qrPayload = `t=${currentIso.replace(/[-:]/g, "").slice(0, 15)}&s=${kopecksToNumericString(payAmountKop)}&fn=999907890001&i=${docNum}&fp=${fpd}&n=1`;
 
 	const updatedSchedule = input.plan.schedule.map((item, idx) => {
 		if (idx === targetItemIndex) {
@@ -496,7 +501,7 @@ export function createDefaultInternalInstallmentsPreset(
 ): InstallmentPlan {
 	const cfg = TREATMENT_INSTALLMENT_PRESETS[presetType];
 	const totalKop = rublesToKopecks(cfg.totalRubles);
-	const downPaymentKop = Math.round((totalKop * cfg.downPaymentPercent) / 100) as Kopecks;
+	const downPaymentKop = calculatePercentDiscountKopecks(totalKop, cfg.downPaymentPercent) as Kopecks;
 
 	const schedule = generateInstallmentSchedule({
 		totalAmountKopecks: totalKop,
@@ -508,7 +513,8 @@ export function createDefaultInternalInstallmentsPreset(
 
 	const evalResult = evaluateInstallmentStatus(schedule, startDateIso);
 
-	const monthlyPaymentKop = schedule.length > 1 ? schedule[1]!.amountKopecks : (0 as Kopecks);
+	const secondInstallment = schedule[1];
+	const monthlyPaymentKop = secondInstallment ? secondInstallment.amountKopecks : (0 as Kopecks);
 	const contractNumber = generateInstallmentContractNumber(patientId, startDateIso, 1);
 
 	return {

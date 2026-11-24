@@ -15,7 +15,7 @@ export const dmsRegistryClinicInfoSchema = z.object({
 	bankCorrAccount: z.string().optional(),
 	chiefDoctorNameRu: z.string().min(1, { message: "ФИО главного врача обязательно" }),
 	chiefAccountantNameRu: z.string().min(1, { message: "ФИО главного бухгалтера обязательно" }),
-});
+}).strict();
 
 export const dmsRegistryInsuranceCompanyInfoSchema = z.object({
 	companyId: z.string().min(1),
@@ -24,7 +24,7 @@ export const dmsRegistryInsuranceCompanyInfoSchema = z.object({
 	kpp: z.string().optional(),
 	contractNumber: z.string().min(1, { message: "Номер договора обязателен" }),
 	contractDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Дата договора должна быть в формате YYYY-MM-DD" }),
-});
+}).strict();
 
 export const dmsRegistryRecordSchema = z.object({
 	recordId: z.string().min(1),
@@ -50,7 +50,7 @@ export const dmsRegistryRecordSchema = z.object({
 	franchisePercent: z.number().int().min(0).max(100),
 	patientPaidKopecks: z.number().int().nonnegative(),
 	insurerClaimKopecks: z.number().int().nonnegative(),
-});
+}).strict();
 
 export const dmsRegistryDataSchema = z.object({
 	registryNumber: z.string().min(1, { message: "Номер реестра обязателен" }),
@@ -60,4 +60,4 @@ export const dmsRegistryDataSchema = z.object({
 	clinic: dmsRegistryClinicInfoSchema,
 	insuranceCompany: dmsRegistryInsuranceCompanyInfoSchema,
 	records: z.array(dmsRegistryRecordSchema),
-});
+}).strict();

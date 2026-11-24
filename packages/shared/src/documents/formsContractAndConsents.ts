@@ -7,7 +7,8 @@ import {
 	WARRANTY_POLICY_PRESETS,
 	type ProcedureSpecificConsentProcedure,
 } from "../legal/legalContractsAndConsents.js";
-import { integerToRussianWords } from "../sanpin/sanpinRegistryEngine.js";
+import { kopecksToRubles, rublesToKopecks } from "../money.js";
+import { kopecksToWordsRu } from "../moneyWordsRu.js";
 import {
 	DEFAULT_CLINIC_LICENSE_NUMBER,
 	DEFAULT_CLINIC_LICENSE_DATE,
@@ -38,7 +39,7 @@ function escapeHtml(str: unknown): string {
 }
 
 function formatRublesWithKopecks(amountRub: number): string {
-	return (Number(amountRub) || 0)
+	return kopecksToRubles(rublesToKopecks(Number(amountRub) || 0))
 		.toLocaleString("ru-RU", {
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
@@ -47,26 +48,7 @@ function formatRublesWithKopecks(amountRub: number): string {
 }
 
 function convertAmountToRussianWords(amount: number): string {
-	const n = Math.max(0, Math.floor(amount));
-	const kopecks = Math.round((Math.abs(amount) - n) * 100);
-	const words = integerToRussianWords(n);
-	const capitalized = words.charAt(0).toUpperCase() + words.slice(1);
-
-	// Склонение рублей
-	let rubWord = "рублей";
-	const mod10 = n % 10;
-	const mod100 = n % 100;
-	if (mod10 === 1 && mod100 !== 11) rubWord = "рубль";
-	else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) rubWord = "рубля";
-
-	// Склонение копеек
-	let kopWord = "копеек";
-	const kMod10 = kopecks % 10;
-	const kMod100 = kopecks % 100;
-	if (kMod10 === 1 && kMod100 !== 11) kopWord = "копейка";
-	else if (kMod10 >= 2 && kMod10 <= 4 && (kMod100 < 10 || kMod100 >= 20)) kopWord = "копейки";
-
-	return `${capitalized} ${rubWord} ${String(kopecks).padStart(2, "0")} ${kopWord}`;
+	return kopecksToWordsRu(rublesToKopecks(Math.max(0, Number(amount) || 0)));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,10 +96,14 @@ export const paidServiceContract736PayloadSchema = z.object({
 });
 export type PaidServiceContract736Payload = z.infer<typeof paidServiceContract736PayloadSchema>;
 
+export type PaidServiceContract736RenderInput = Partial<PaidServiceContract736Payload> & {
+	estimatedTotalAmountRub?: number | null | undefined;
+};
+
 /**
  * Рендерер Договора на оказание платных медицинских услуг по Постановлению Правительства РФ № 736
  */
-export function renderPaidServiceContract736Html(payload: PaidServiceContract736Payload | any): string {
+export function renderPaidServiceContract736Html(payload: PaidServiceContract736RenderInput): string {
 	const contractNum = payload.contractNumber || "ДОГ-2026/043";
 	const contractDate = payload.contractDate || new Date().toISOString().slice(0, 10);
 	const clinicName = payload.clinicLegalName || 'ООО "Денте Клиник"';
@@ -310,10 +296,14 @@ export const actOfCompletedWorksPayloadSchema = z.object({
 });
 export type ActOfCompletedWorksPayload = z.infer<typeof actOfCompletedWorksPayloadSchema>;
 
+export type ActOfCompletedWorksRenderInput = Partial<Omit<ActOfCompletedWorksPayload, "items">> & {
+	items?: readonly Partial<ActOfCompletedWorksItem>[] | undefined;
+};
+
 /**
  * Рендерер Акта выполненных работ по Номенклатуре медицинских услуг (Приказ № 804н)
  */
-export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayload | any): string {
+export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksRenderInput): string {
 	const actNum = payload.actNumber || "АКТ-2026/043";
 	const actDate = payload.actDate || new Date().toISOString().slice(0, 10);
 	const contractNum = payload.contractNumber || "ДОГ-2026/043";
@@ -329,7 +319,7 @@ export function renderActOfCompletedWorksHtml(payload: ActOfCompletedWorksPayloa
 	const doctorName = payload.attendingDoctorFullName?.trim() || "_________________________";
 	const doctorSpecialty = payload.attendingDoctorSpecialty || "Врач-стоматолог";
 
-	const items: ActOfCompletedWorksItem[] = payload.items || [];
+	const items: readonly Partial<ActOfCompletedWorksItem>[] = payload.items || [];
 	let computedTotal = 0;
 
 	const tableRows = items.map((item, idx) => {

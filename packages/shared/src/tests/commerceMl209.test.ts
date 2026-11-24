@@ -34,7 +34,6 @@ import {
 	ENTERPRISEDATA_XMLNS,
 	TAX_EXEMPTION_ARTICLE_149_RU,
 	computeCommerceMlSha256,
-	createRealisticShiftExportPackage,
 	generateCommerceMl209PackageXml,
 	generateCommerceMl209Xml,
 	generateEnterpriseData113Xml,
@@ -43,6 +42,7 @@ import {
 	generateRetailSalesCsv,
 	validatePackageIntegrity,
 } from "../finance/commerceMl209.js";
+import { createRealisticShiftExportPackage } from "./fixtures/commerceMlFixtures.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
 
 describe("CommerceML 2.09 & 1C Statutory Integration Engine", () => {

@@ -3,7 +3,9 @@
  * Compliant with Mandate 8b (< 300 lines).
  */
 
+import { escapeXml } from "../../cda/c14n.js";
 import { kopecksToNumericString, kopecksToRubles, rublesToKopecks } from "../../money.js";
+import { escapeCsvCell } from "../registryModules/registrySanitizer.js";
 import type { DmsGuaranteeLetter } from "../guaranteeModules/guaranteeTypes.js";
 import type { DmsSplitLineResult } from "../../schemas/dmsSplitAndScalePresetSchemas.js";
 
@@ -78,12 +80,6 @@ export interface DmsStatutoryRegistry {
 	readonly grandTotalDmsKopecks: number;
 	readonly grandTotalPatientKopecks: number;
 }
-
-// Re-export isolated test fixtures & mocks for test suite backward compatibility
-export {
-	DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,
-	SAMPLE_DMS_GUARANTEE_LETTERS,
-} from "../../tests/fixtures/dmsMockFixtures.js";
 
 export function calculateRegistryTotals(
 	records: readonly DmsRegistryServiceRecord[],
@@ -160,7 +156,7 @@ export function buildDmsReconciliationRegistry(params: {
 		totalDmsClaimedRubles: kopecksToRubles(dmsKop),
 		totalPatientCoPaymentRubles: kopecksToRubles(patKop),
 		totalServicesCount: items.length,
-		totalPatientsCount: new Set(items.map((i) => i.patientFullName)).size || 1,
+		totalPatientsCount: new Set(items.map((i) => i.patientFullName).filter(Boolean)).size,
 	};
 }
 
@@ -176,7 +172,7 @@ export function exportDmsRegistryToCsv(registry: {
 	const fallbackRegNum = `РЕЕСТР-${todayIso.replace(/-/g, "")}`;
 	const items = registry.splitResults || registry.items || [];
 	const lines = [
-		`# Реестр счетов ДМС;${registry.registryNumber || fallbackRegNum}`,
+		`# Реестр счетов ДМС;${escapeCsvCell(registry.registryNumber || fallbackRegNum)}`,
 		`№ п/п;Дата услуги;Ф.И.О. пациента;Номер полиса;Номер гарантийного письма;Код услуги;Наименование;Сумма;Покрыто ДМС;Доплата пациента`,
 	];
 
@@ -188,11 +184,24 @@ export function exportDmsRegistryToCsv(registry: {
 		const sCode = l?.serviceCode || item.serviceCode804n || item.serviceCode || "";
 		const sName = l?.serviceName || item.serviceName || "";
 		lines.push(
-			`${idx + 1};${item.serviceDate || item.visitDate || todayIso};${item.patientFullName || ""};${item.policyNumber || ""};${item.guaranteeLetterNumber || item.letterNumber || "—"};${sCode};${sName};${total};${dms};${patient}`,
+			[
+				idx + 1,
+				escapeCsvCell(item.serviceDate || item.visitDate || todayIso),
+				escapeCsvCell(item.patientFullName || ""),
+				escapeCsvCell(item.policyNumber || ""),
+				escapeCsvCell(item.guaranteeLetterNumber || item.letterNumber || "—"),
+				escapeCsvCell(sCode),
+				escapeCsvCell(sName),
+				escapeCsvCell(total),
+				escapeCsvCell(dms),
+				escapeCsvCell(patient),
+			].join(";"),
 		);
 	});
 
-	lines.push(`ИТОГО ПО РЕЕСТРУ;;;;;;;${registry.totalRegistryAmountRubles ?? 0};${registry.totalDmsClaimedRubles ?? 0};${registry.totalPatientCoPaymentRubles ?? 0}`);
+	lines.push(
+		`ИТОГО ПО РЕЕСТРУ;;;;;;;${escapeCsvCell(registry.totalRegistryAmountRubles ?? 0)};${escapeCsvCell(registry.totalDmsClaimedRubles ?? 0)};${escapeCsvCell(registry.totalPatientCoPaymentRubles ?? 0)}`,
+	);
 	return `\uFEFF${lines.join("\r\n")}`;
 }
 
@@ -212,10 +221,10 @@ export function exportRegistryToCsv(
 ): string {
 	if (Array.isArray(recordsOrRegistry)) {
 		const records = recordsOrRegistry;
-		const info = clinicInfo || { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701984210" };
+		const info = clinicInfo || { name: "", inn: "" };
 		const insName = insurerName || "Все компании";
-		const pStr = periodStr || "2026";
-		const esc = (v: unknown) => v == null ? '""' : `"${String(v).replace(/"/g, '""')}"`;
+		const pStr = periodStr || String(new Date().getFullYear());
+		const esc = (v: unknown) => (v == null ? '""' : escapeCsvCell(typeof v === "number" ? v : String(v)));
 		const headers = [
 			`# Реестр оказанных услуг по ДМС;${esc(info.name)};ИНН: ${esc(info.inn)}`,
 			`# Страховая компания: ${esc(insName)};Период: ${esc(pStr)}`,
@@ -257,14 +266,22 @@ export function exportRegistryToCsv(
 	};
 	if ("visitServices" in reg && reg.visitServices) {
 		const lines = [
-			`# Реестр оказанных услуг по ДМС;${reg.registryNumber || "РЕЕСТР-001"}`,
+			`# Реестр оказанных услуг по ДМС;${escapeCsvCell(reg.registryNumber || "РЕЕСТР-001")}`,
 			`# Без НДС (пп. 2 п. 2 ст. 149 НК РФ)`,
 			`№;Пациент;Код;Услуга;Сумма`,
 		];
-		for (const s of reg.visitServices) {
+		reg.visitServices.forEach((s, idx) => {
 			const total = s.totalBillKopecks ? kopecksToNumericString(s.totalBillKopecks) : kopecksToNumericString(rublesToKopecks(s.totalPriceRub || 0));
-			lines.push(`1;${s.patientFullName};${s.serviceCode804n || s.serviceCode || ""};${s.serviceName};${total}`);
-		}
+			lines.push(
+				[
+					idx + 1,
+					escapeCsvCell(s.patientFullName),
+					escapeCsvCell(s.serviceCode804n || s.serviceCode || ""),
+					escapeCsvCell(s.serviceName),
+					escapeCsvCell(total),
+				].join(";"),
+			);
+		});
 		return `\uFEFF${lines.join("\r\n")}`;
 	}
 
@@ -319,7 +336,7 @@ export function generateDmsPreAuthRequest(params: DmsPreAuthRequestParams): {
 		requestNumber: `ПРЕ-АВТ-${(params.insurerId || "DMS").toUpperCase()}-${Date.now().toString().slice(-4)}`,
 		totalRequestedKopecks: totKop,
 		status: "approved",
-		printableHtml: `<div>${params.patient?.fullName || ""} ${params.diagnosisMkb10?.code || ""} ${reqServices.map((s) => s.code804n).join(", ")}</div>`,
+		printableHtml: `<div>${escapeXml(params.patient?.fullName || "")} ${escapeXml(params.diagnosisMkb10?.code || "")} ${reqServices.map((s) => escapeXml(s.code804n || "")).join(", ")}</div>`,
 	};
 }
 

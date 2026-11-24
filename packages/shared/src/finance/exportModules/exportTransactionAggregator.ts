@@ -3,6 +3,7 @@
  * Wave 130 & Mandate 8b (<= 120 lines). Exact integer kopecks arithmetic.
  */
 
+import { basisPointsFromPercent, percentageOfKopecks } from "../../money.js";
 import {
 	type BankStatementOrder,
 	type BankStatementRegistry,
@@ -63,7 +64,9 @@ export function aggregateTransactionsByPeriod(
 		if (options?.dateTo && p.date > options.dateTo) continue;
 
 		totalGrossKopecks += p.amountKopecks;
-		const feeKop = p.expectedFeeKopecks ?? Math.round((p.amountKopecks * (p.expectedFeeRatePercent ?? 0)) / 100);
+		const feeKop =
+			p.expectedFeeKopecks ??
+			percentageOfKopecks(p.amountKopecks, basisPointsFromPercent(p.expectedFeeRatePercent ?? 0));
 		totalExpectedFeeKopecks += feeKop;
 		count++;
 	}

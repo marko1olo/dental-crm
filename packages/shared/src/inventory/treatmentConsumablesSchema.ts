@@ -42,7 +42,7 @@ export const treatmentConsumableLinkCreateSchema = z.object({
 		)
 		.nullable()
 		.optional(),
-});
+}).strict();
 
 export type TreatmentConsumableLinkCreate = z.infer<
 	typeof treatmentConsumableLinkCreateSchema
@@ -67,7 +67,7 @@ export const treatmentConsumableLinkUpdateSchema = z.object({
 		)
 		.nullable()
 		.optional(),
-});
+}).strict();
 
 export type TreatmentConsumableLinkUpdate = z.infer<
 	typeof treatmentConsumableLinkUpdateSchema
@@ -116,7 +116,7 @@ export const listTreatmentConsumablesQuerySchema = z.object({
 	search: z.string().optional(),
 	page: z.coerce.number().int().min(1).default(1).optional(),
 	pageSize: z.coerce.number().int().min(1).max(200).default(50).optional(),
-});
+}).strict();
 
 export type ListTreatmentConsumablesQuery = z.infer<
 	typeof listTreatmentConsumablesQuerySchema
@@ -128,7 +128,7 @@ export type ListTreatmentConsumablesQuery = z.infer<
 export const treatmentDeductionItemSchema = z.object({
 	catalogItemCode: z.string().min(1, "Код услуги обязателен"),
 	count: z.number().int().positive("Количество оказанных услуг должно быть > 0").default(1),
-});
+}).strict();
 
 export type TreatmentDeductionItem = z.infer<
 	typeof treatmentDeductionItemSchema
@@ -158,7 +158,7 @@ export const treatmentConsumableDeductionRequestSchema = z.object({
 	doctor_id: z.string().nullable().optional(),
 	clamp_at_zero: z.boolean().default(false).optional(),
 	notes: z.string().nullable().optional(),
-});
+}).strict();
 
 export type TreatmentConsumableDeductionRequest = z.infer<
 	typeof treatmentConsumableDeductionRequestSchema

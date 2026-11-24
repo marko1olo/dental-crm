@@ -63,7 +63,7 @@ export function matchClinicExpensesWithBankOrders(
 				clinicExpenseId: ce.id,
 				bankOrderId: match.id,
 				amountKopecks: match.amountKopecks,
-				supplierName: match.recipientName || ce.supplierName || "Поставщик",
+				supplierName: match.recipientName || ce.supplierName || "",
 				date: match.date,
 				isExactMatch: diff === 0,
 				discrepancyKopecks: diff,

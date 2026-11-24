@@ -21,7 +21,7 @@ import {
 	sumKopecks,
 	formatKopecksRu,
 } from "../money.js";
-import { integerToRussianWords } from "../sanpin/sanpinRegistryEngine.js";
+import { kopecksToWordsRu } from "../moneyWordsRu.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. POLICY TYPES & SCHEMAS
@@ -157,9 +157,9 @@ export interface SupplementaryAgreementDraft {
  */
 export function renderSupplementaryAgreementHtml(draft: SupplementaryAgreementDraft): string {
 	const deltaFormatted = formatKopecksRu(Math.abs(draft.deltaKopecks) as Kopecks);
-	const deltaWords = integerToRussianWords(Math.round(Math.abs(draft.deltaKopecks) / 100));
+	const deltaWords = kopecksToWordsRu(Math.abs(draft.deltaKopecks));
 	const newTotalFormatted = formatKopecksRu(draft.newPlanTotalKopecks);
-	const newTotalWords = integerToRussianWords(Math.round(draft.newPlanTotalKopecks / 100));
+	const newTotalWords = kopecksToWordsRu(draft.newPlanTotalKopecks);
 
 	const itemsHtml = draft.modifiedItems
 		.map(
@@ -227,8 +227,8 @@ export function renderSupplementaryAgreementHtml(draft: SupplementaryAgreementDr
 
 	<div class="totals">
 		<div><strong>Прежняя согласованная стоимость плана:</strong> ${formatKopecksRu(draft.previousPlanTotalKopecks)}</div>
-		<div><strong>Скорректированная общая стоимость плана:</strong> ${newTotalFormatted} (${newTotalWords} рублей 00 коп.)</div>
-		<div><strong>Дельта изменения стоимости:</strong> ${draft.deltaKopecks >= 0 ? "+" : ""}${deltaFormatted} (${deltaWords} рублей)</div>
+		<div><strong>Скорректированная общая стоимость плана:</strong> ${newTotalFormatted} (${newTotalWords})</div>
+		<div><strong>Дельта изменения стоимости:</strong> ${draft.deltaKopecks >= 0 ? "+" : ""}${deltaFormatted} (${deltaWords})</div>
 		${
 			draft.clinicAbsorptionKopecks > 0
 				? `<div style="color:#059669;font-weight:600;margin-top:4px;">Гарантийная скидка/абсорбция клиникой в рамках фиксации цен: ${formatKopecksRu(draft.clinicAbsorptionKopecks)}</div>`

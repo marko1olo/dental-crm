@@ -15,7 +15,7 @@ import { isServiceCodeApprovedByLetter } from "./dmsServiceNomenclature.js";
 // ============================================================================
 
 export function formatRubKopecks(rub: number): string {
-	return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(rub || 0));
+	return formatKopecksToRub(rublesToKopecks(Number(rub || 0)));
 }
 
 export { formatKopecksToRub };

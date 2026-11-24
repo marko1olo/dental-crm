@@ -17,7 +17,7 @@
  */
 
 import { z } from "zod";
-import { formatKopecksToRubles } from "../money.js";
+import { formatKopecksToRubles, kopecksToRubles } from "../money.js";
 
 // ============================================================================
 // 1. SCHEMAS: MORNING DOCTOR BRIEFING
@@ -342,8 +342,9 @@ export function generateMorningDoctorBriefing(
     `Всего приёмов: ${totalAppointments} (подтверждено: ${confirmedAppointments}, отмен/неявок: ${cancelledOrNoShow})`
   );
   lines.push(`Первичных пациентов: ${primaryPatientsCount}`);
-  const rublesEst = (totalEstimatedRevenueKopecks / 100).toLocaleString("ru-RU", {
+  const rublesEst = kopecksToRubles(totalEstimatedRevenueKopecks).toLocaleString("ru-RU", {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
   lines.push(`Ожидаемая выручка по смете: ${rublesEst} руб.`);
 

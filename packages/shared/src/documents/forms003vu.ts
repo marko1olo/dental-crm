@@ -18,7 +18,7 @@ export const medicalExtractTreatmentStageSchema = z.object({
 	performedIntervention: z.string().trim().min(1).max(2000), // Описание процедуры и материалов
 	anesthesiaUsed: z.string().trim().max(300).nullable().optional(),
 	attendingDoctorFullName: z.string().trim().min(1).max(160),
-});
+}).strict();
 export type MedicalExtractTreatmentStage = z.infer<typeof medicalExtractTreatmentStageSchema>;
 
 /** Полный структурированный Payload формы № 003-В/у (Выписка) */
@@ -68,7 +68,7 @@ export const medicalCardExtract003vuPayloadSchema = z.object({
 	attendingDoctorFullName: z.string().trim().min(1).max(160),
 	attendingDoctorSpecialty: z.string().trim().max(120).default("Врач-стоматолог"),
 	headOfDepartmentFullName: z.string().trim().max(160).default("Главный врач клиники"),
-});
+}).strict();
 export type MedicalCardExtract003vuPayload = z.infer<typeof medicalCardExtract003vuPayloadSchema>;
 
 /** Алиас уставной амбулаторной стоматологической выписки из карты 043/у */

@@ -299,7 +299,7 @@ export const patientInsightSchema = z.object({
 	clinicalFlags: z.array(z.string()),
 	adminFlags: z.array(z.string()),
 	lastActivityAt: z.string().nullable(),
-});
+}).strict();
 
 export type PatientInsight = z.infer<typeof patientInsightSchema>;
 
@@ -320,8 +320,9 @@ export const createPatientSchema = z.object({
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
+	snils: z.string().trim().max(32).nullable().optional(),
 	allowDuplicate: z.boolean().optional(),
-});
+}).strict();
 
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 
@@ -339,7 +340,8 @@ export const updatePatientSchema = z.object({
 	familyGroupId: z.string().uuid().nullable().optional(),
 	clinicalSafetyProfile: z.record(z.unknown()).nullable().optional(),
 	administrativeProfile: patientAdministrativeProfileBaseSchema.partial().nullable().optional(),
-});
+	snils: z.string().trim().max(32).nullable().optional(),
+}).strict();
 
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 

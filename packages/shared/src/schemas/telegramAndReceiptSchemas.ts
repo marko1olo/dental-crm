@@ -222,12 +222,18 @@ export const visitCloseChecklistSchema = z.object({
 
 export type VisitCloseChecklist = z.infer<typeof visitCloseChecklistSchema>;
 
-export const hygieneIndicesSchema = z.object({
-	ohi_s: z.number(),
-	debris: z.number().optional(),
-	calculus: z.number().optional(),
-	date: z.string().optional(),
-}).passthrough();
+export const hygieneIndicesSchema = z
+	.object({
+		ohi_s: z.number(),
+		debris: z.number().optional(),
+		calculus: z.number().optional(),
+		date: z.string().optional(),
+		plaqueIndexSilnessLoe: z.number().optional(),
+		approximalPlaqueIndexApi: z.number().optional(),
+		bleedingOnProbingPercent: z.number().optional(),
+		idempotencyKey: z.string().optional(),
+	})
+	.strict();
 
 export type HygieneIndices = z.infer<typeof hygieneIndicesSchema>;
 
@@ -362,14 +368,16 @@ export const treatmentCostEstimatePayloadSchema = z.object({
 	 */
 	serviceLines: z
 		.array(
-			z.object({
-				serviceName: z.string().trim().min(1).max(300),
-				toothOrArea: z.string().trim().max(160).nullable().optional(),
-				quantity: z.number().int().positive().max(999),
-				unitPriceRub: nonNegativeMoneyRubSchema,
-				discountRub: nonNegativeMoneyRubSchema,
-				totalRub: nonNegativeMoneyRubSchema,
-			}),
+			z
+				.object({
+					serviceName: z.string().trim().min(1).max(300),
+					toothOrArea: z.string().trim().max(160).nullable().optional(),
+					quantity: z.number().int().positive().max(999),
+					unitPriceRub: nonNegativeMoneyRubSchema,
+					discountRub: nonNegativeMoneyRubSchema,
+					totalRub: nonNegativeMoneyRubSchema,
+				})
+				.strict(),
 		)
 		.min(1)
 		.max(80),
@@ -385,7 +393,7 @@ export const treatmentCostEstimatePayloadSchema = z.object({
 	serviceScopeMatchesTreatmentPlan: z.literal(true),
 	estimateDoesNotReplaceContractOrFiscalReceipt: z.literal(true),
 	changesRequireUpdatedEstimate: z.literal(true),
-});
+}).strict();
 
 export type TreatmentCostEstimatePayload = z.infer<
 	typeof treatmentCostEstimatePayloadSchema
@@ -401,14 +409,16 @@ export const paymentInvoicePayloadSchema = z.object({
 	/* Строки счёта проверяются тем же кодом, что и строки сметы, — с копейками. */
 	serviceLines: z
 		.array(
-			z.object({
-				serviceName: z.string().trim().min(1).max(300),
-				toothOrArea: z.string().trim().max(160).nullable().optional(),
-				quantity: z.number().int().positive().max(999),
-				unitPriceRub: nonNegativeMoneyRubSchema,
-				discountRub: nonNegativeMoneyRubSchema,
-				totalRub: nonNegativeMoneyRubSchema,
-			}),
+			z
+				.object({
+					serviceName: z.string().trim().min(1).max(300),
+					toothOrArea: z.string().trim().max(160).nullable().optional(),
+					quantity: z.number().int().positive().max(999),
+					unitPriceRub: nonNegativeMoneyRubSchema,
+					discountRub: nonNegativeMoneyRubSchema,
+					totalRub: nonNegativeMoneyRubSchema,
+				})
+				.strict(),
 		)
 		.min(1)
 		.max(60),
@@ -422,7 +432,7 @@ export const paymentInvoicePayloadSchema = z.object({
 	clinicRequisitesVerified: z.literal(true),
 	serviceScopeConfirmed: z.literal(true),
 	payerInformedInvoiceIsNotFiscalReceipt: z.literal(true),
-});
+}).strict();
 
 export type PaymentInvoicePayload = z.infer<typeof paymentInvoicePayloadSchema>;
 

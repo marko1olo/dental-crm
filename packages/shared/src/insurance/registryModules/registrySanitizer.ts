@@ -3,11 +3,19 @@
  */
 export function escapeCsvCell(value: string | number | undefined | null): string {
 	if (value === undefined || value === null) return "";
-	const str = String(value);
-	if (str.includes(";") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
-		return `"${str.replace(/"/g, '""')}"`;
+	if (typeof value === "number") {
+		return Number.isFinite(value) ? String(value) : "";
 	}
-	return str;
+	const raw = String(value);
+	// Neutralize spreadsheet formula injection (=, +, @, leading tab/CR, or non-numeric leading -)
+	const safe =
+		/^[\t\r]*[=+@]/.test(raw) || /^[\t\r]*-(?!\d+(?:[.,]\d+)?$)/.test(raw)
+			? `'${raw}`
+			: raw;
+	if (safe.includes(";") || safe.includes('"') || safe.includes("\n") || safe.includes("\r")) {
+		return `"${safe.replace(/"/g, '""')}"`;
+	}
+	return safe;
 }
 
 /**

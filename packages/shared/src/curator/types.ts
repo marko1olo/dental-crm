@@ -140,7 +140,7 @@ export const curatorPatientQueueItemSchema = z.object({
 	attentionFlags: z.array(curatorAttentionFlagSchema).default([]),
 	notes: z.string().nullable().optional(),
 	nextContactDate: z.string().nullable().optional(),
-});
+}).strict();
 export type CuratorPatientQueueItem = z.infer<typeof curatorPatientQueueItemSchema>;
 
 /**
@@ -239,7 +239,7 @@ export const curatorPlanAssignmentPayloadSchema = z.object({
 	customCommissionPercent: z.number().min(0).max(100).nullable().optional(),
 	notes: z.string().max(1000).nullable().optional(),
 	nextContactDate: z.string().nullable().optional(),
-});
+}).strict();
 export type CuratorPlanAssignmentPayload = z.infer<typeof curatorPlanAssignmentPayloadSchema>;
 
 /**
@@ -251,5 +251,5 @@ export const updateCuratorStagePayloadSchema = z.object({
 	treatmentPlanId: z.string().nullable().optional(),
 	notes: z.string().nullable().optional(),
 	curatorId: z.string().nullable().optional(),
-});
+}).strict();
 export type UpdateCuratorStagePayload = z.infer<typeof updateCuratorStagePayloadSchema>;

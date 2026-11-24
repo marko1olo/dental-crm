@@ -5,6 +5,7 @@
  */
 
 import type { ServiceCatalogItem } from "../../index.js";
+import { rublesToKopecks } from "../../money.js";
 import {
 	normalizeDoctorSpecialtyName,
 	normalizeServiceCategoryName,
@@ -99,7 +100,7 @@ export function crossReferenceTabularRow(
 			(e) => (e.code || "").trim().toUpperCase() === normCode,
 		);
 		if (matchByCode) {
-			const existingKopecks = Math.round((matchByCode.basePriceRub ?? 0) * 100);
+			const existingKopecks = rublesToKopecks(matchByCode.basePriceRub ?? 0);
 			const isSamePrice = existingKopecks === priceKopecks;
 			return {
 				action: isSamePrice ? "identical" : "update_existing",
@@ -115,7 +116,7 @@ export function crossReferenceTabularRow(
 		(e) => normalizeTitleForComparison(e.title) === normTitle,
 	);
 	if (matchByTitle) {
-		const existingKopecks = Math.round((matchByTitle.basePriceRub ?? 0) * 100);
+		const existingKopecks = rublesToKopecks(matchByTitle.basePriceRub ?? 0);
 		const isSamePrice = existingKopecks === priceKopecks;
 		return {
 			action: isSamePrice ? "identical" : "update_existing",
@@ -142,7 +143,7 @@ export function crossReferenceTabularRow(
 		}
 
 		if (bestMatch) {
-			const existingKopecks = Math.round((bestMatch.basePriceRub ?? 0) * 100);
+			const existingKopecks = rublesToKopecks(bestMatch.basePriceRub ?? 0);
 			const isSamePrice = existingKopecks === priceKopecks;
 			return {
 				action: isSamePrice ? "identical" : "update_existing",

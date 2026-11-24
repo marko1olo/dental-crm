@@ -87,7 +87,7 @@ export const archwireChangePayloadSchema = z.object({
 	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
 	isWireChange: z.boolean().default(true),
 	note: z.string().max(300).optional(),
-	visitId: z.string().optional(),
+	visitId: z.string().uuid().optional(),
 	soapSummary: z.string().optional(),
 	applianceId: z.string().optional(),
 	applianceName: z.string().optional(),

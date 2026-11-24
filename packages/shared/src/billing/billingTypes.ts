@@ -112,4 +112,4 @@ export const cashRegisterCheckoutSchema = z.object({
 	clinicLegalName: z.string().min(1),
 	note: z.string().optional(),
 	timestampIso: z.string(),
-});
+}).strict();

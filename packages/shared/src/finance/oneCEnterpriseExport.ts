@@ -43,7 +43,7 @@ export const oneCLineItemSchema = z.object({
 	totalKopecks: z.number().int().nonnegative(),
 	vatRate: z.string().default("Без НДС"),
 	vatAmountKopecks: z.number().int().default(0),
-});
+}).strict();
 export type OneCLineItem = z.input<typeof oneCLineItemSchema>;
 
 export const oneCPartyInfoSchema = z.object({
@@ -60,7 +60,7 @@ export const oneCPartyInfoSchema = z.object({
 	bankBik: z.string().max(9).optional().nullable(),
 	bankName: z.string().max(255).optional().nullable(),
 	bankCorrAccount: z.string().max(20).optional().nullable(),
-});
+}).strict();
 export type OneCPartyInfo = z.input<typeof oneCPartyInfoSchema>;
 
 export const oneCDocumentParamsSchema = z.object({
@@ -77,7 +77,7 @@ export const oneCDocumentParamsSchema = z.object({
 	contractDate: z.string().optional().nullable(),
 	attendingDoctorName: z.string().optional().nullable(),
 	comment: z.string().max(1000).optional().nullable(),
-});
+}).strict();
 export type OneCDocumentParams = z.input<typeof oneCDocumentParamsSchema>;
 
 export const oneCExportParamsSchema = z.object({
@@ -85,7 +85,7 @@ export const oneCExportParamsSchema = z.object({
 	generatedAt: z.string().datetime(),
 	clinic: oneCPartyInfoSchema,
 	documents: z.array(oneCDocumentParamsSchema).min(1),
-});
+}).strict();
 export type OneCExportParams = z.input<typeof oneCExportParamsSchema>;
 
 /**

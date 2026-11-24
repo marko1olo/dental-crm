@@ -528,9 +528,9 @@ export function allocateGlobalDiscountCents(
 	const itemRemainders: ItemRemainder[] = [];
 
 	for (let i = 0; i < items.length; i++) {
-		const item = items[i]!;
-		if (item.amountCents <= 0n) {
-			result.set(item.id, 0n);
+		const item = items[i];
+		if (!item || item.amountCents <= 0n) {
+			if (item) result.set(item.id, 0n);
 			continue;
 		}
 		const share = (effectiveDiscount * item.amountCents) / totalAmountCents;
@@ -560,7 +560,8 @@ export function allocateGlobalDiscountCents(
 		});
 
 		for (let i = 0; i < itemRemainders.length && remainder > 0n; i++) {
-			const candidate = itemRemainders[i]!;
+			const candidate = itemRemainders[i];
+			if (!candidate) continue;
 			const currentShare = result.get(candidate.id) ?? 0n;
 			if (currentShare < candidate.amountCents) {
 				result.set(candidate.id, currentShare + 1n);

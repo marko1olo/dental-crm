@@ -11,11 +11,18 @@ const UTF8_BOM = "\uFEFF";
 
 function escapeCsvField(val: string | number | null | undefined, delimiter: string): string {
 	if (val == null) return "";
-	const str = String(val).trim();
-	if (str.includes(delimiter) || str.includes('"') || str.includes("\n") || str.includes("\r")) {
-		return `"${str.replace(/"/g, '""')}"`;
+	if (typeof val === "number") {
+		return Number.isFinite(val) ? String(val) : "";
 	}
-	return str;
+	const raw = String(val).trim();
+	const safe =
+		/^[\t\r]*[=+@]/.test(raw) || /^[\t\r]*-(?!\d+(?:[.,]\d+)?$)/.test(raw)
+			? `'${raw}`
+			: raw;
+	if (safe.includes(delimiter) || safe.includes('"') || safe.includes("\n") || safe.includes("\r")) {
+		return `"${safe.replace(/"/g, '""')}"`;
+	}
+	return safe;
 }
 
 export function exportOrdersToCsv(orders: BankStatementOrder[], delimiter = ";"): string {

@@ -4,6 +4,7 @@ import {
 	isSomaticSafetyFieldOrRisk,
 	mergeSomaticSafetyField,
 } from "../crdt.js";
+import { kopecksToRubles, rublesToKopecks } from "../../money.js";
 import { computePayloadHash, createCompositeIdempotencyKey, generateUuidV7 } from "../hashing.js";
 import {
 	type ConflictResolutionStrategy,
@@ -122,13 +123,13 @@ export function createInvoiceTransferEvent(params: {
 			const itemKop =
 				item.priceKopecks !== undefined
 					? item.priceKopecks
-					: Math.round(item.priceRub * 100);
+					: rublesToKopecks(item.priceRub);
 			const qty = item.quantity || 1;
-			const discountKop = item.discountRub ? Math.round(item.discountRub * 100) : 0;
+			const discountKop = item.discountRub ? rublesToKopecks(item.discountRub) : 0;
 			sumKop += Math.max(0, itemKop * qty - discountKop);
 		}
 		calculatedKopecks = sumKop;
-		calculatedRub = sumKop / 100;
+		calculatedRub = kopecksToRubles(sumKop);
 	}
 
 	const event: LanInvoiceTransferEvent = {

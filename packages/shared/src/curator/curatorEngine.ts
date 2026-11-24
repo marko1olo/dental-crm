@@ -5,7 +5,14 @@
  * Полная точность: расчет денег ведется до копейки без плавающей точки.
  */
 
-import { parseKopecks } from "../money.js";
+import {
+	addKopecks,
+	calculatePercentDiscountKopecks,
+	kopecksToRubles,
+	parseKopecks,
+	rublesToKopecks,
+	toExactKopecks,
+} from "../money.js";
 import {
 	type CuratorAttentionFlag,
 	type CuratorCommissionRule,
@@ -52,9 +59,9 @@ export function calculateCuratorCommission(
 		}
 	}
 
-	// Точный расчет в копейках: (копейки * процент) / 100
-	const commissionKopecks = Math.round((sanitizedKopecks * ratePercent) / 100);
-	const commissionRub = commissionKopecks / 100;
+	// Точный расчет в копейках: базисные пункты процента через calculatePercentDiscountKopecks
+	const commissionKopecks = calculatePercentDiscountKopecks(sanitizedKopecks, ratePercent);
+	const commissionRub = kopecksToRubles(commissionKopecks);
 
 	return {
 		effectiveRatePercent: ratePercent,
@@ -210,7 +217,7 @@ export function calculateCuratorMetrics(
 	const stagesBreakdown: CuratorStageStats[] = CURATOR_STAGE_DEFINITIONS.map((def, idx) => {
 		const bucket = stageMap.get(def.stage) ?? { count: 0, totalKopecks: 0, totalDays: 0 };
 		const count = bucket.count;
-		const totalRub = bucket.totalKopecks / 100;
+		const totalRub = kopecksToRubles(bucket.totalKopecks);
 		const avgDays = count > 0 ? Math.round((bucket.totalDays / count) * 10) / 10 : 0;
 
 		const currentReached = reachedCounts[idx] ?? 0;
@@ -245,9 +252,9 @@ export function calculateCuratorMetrics(
 		curatorFullName: curatorFullName || "Все кураторы",
 		totalAssignedPatients,
 		totalPlansCount,
-		totalPlansSumRub: totalPlansSumKopecks / 100,
+		totalPlansSumRub: kopecksToRubles(totalPlansSumKopecks),
 		totalPlansSumKopecks,
-		totalCollectedRevenueRub: totalCollectedRevenueKopecks / 100,
+		totalCollectedRevenueRub: kopecksToRubles(totalCollectedRevenueKopecks),
 		totalCollectedRevenueKopecks,
 		overallConversionPercent,
 		effectiveCommissionRatePercent: commissionCalc.effectiveRatePercent,
@@ -338,11 +345,19 @@ export function advancePatientFunnelStage(
 	nextStage: CuratorFunnelStage,
 	additionalPaidRub: number = 0,
 ): CuratorPatientQueueItem {
-	const newPaidRub = item.paidAmountRub + Math.max(0, additionalPaidRub);
-	const newPaidKopecks = parseKopecks(newPaidRub);
+	const prevPaidKopecks =
+		item.paidAmountKopecks > 0
+			? toExactKopecks(item.paidAmountKopecks)
+			: parseKopecks(item.paidAmountRub);
+	const additionalKopecks =
+		additionalPaidRub > 0
+			? rublesToKopecks(additionalPaidRub)
+			: toExactKopecks(0);
+	const newPaidKopecks = addKopecks(prevPaidKopecks, additionalKopecks);
+	const newPaidRub = kopecksToRubles(newPaidKopecks);
 	const totalKopecks = item.planTotalPriceKopecks > 0 ? item.planTotalPriceKopecks : parseKopecks(item.planTotalPriceRub);
 	const remainingKopecks = Math.max(0, totalKopecks - newPaidKopecks);
-	const remainingRub = remainingKopecks / 100;
+	const remainingRub = kopecksToRubles(remainingKopecks);
 
 	const urgency = evaluatePatientUrgency(0, nextStage, item.planTotalPriceRub, newPaidRub);
 

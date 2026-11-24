@@ -261,6 +261,11 @@ export * from "./leads/index.js";
 export * from "./analytics/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
+/** @deprecated Backward-compat fixture re-export for web test imports; import directly from tests/fixtures instead. */
+export {
+	DEFAULT_MONTHLY_DMS_REGISTRY_RECORDS,
+	SAMPLE_DMS_GUARANTEE_LETTERS,
+} from "./tests/fixtures/dmsMockFixtures.js";
 export * from "./messaging/index.js";
 export * from "./finance/index.js";
 export * from "./doctor-portal/index.js";

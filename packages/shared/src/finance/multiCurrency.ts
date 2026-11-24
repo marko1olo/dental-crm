@@ -126,7 +126,7 @@ export function convertRubToForeignCurrency(input: CurrencyConversionInput): Cur
 	}
 	const spread = Math.max(0, input.bankSpreadPercent ?? 0);
 	const effRate = (input.customRateRub ?? meta.cbrRateRub) * (1 + spread / 100);
-	const targetMinor = Math.round(((rubKop / 100) / (effRate / meta.nominal)) * meta.minorUnitRatio);
+	const targetMinor = Math.round((kopecksToRub(rubKop) / (effRate / meta.nominal)) * meta.minorUnitRatio);
 	const targetDec = targetMinor / meta.minorUnitRatio;
 	return {
 		sourceRubKopecks: rubKop, sourceRubFormatted: `${kopecksToNumericString(rubKop)} ₽`,
@@ -142,7 +142,7 @@ export function convertForeignCurrencyToRub(params: { foreignAmountMinor: number
 	const minor = Math.max(0, Math.round(params.foreignAmountMinor));
 	if (meta.code === "RUB") return { rubKopecks: minor, rubDecimal: kopecksToRub(minor), formattedRub: `${kopecksToNumericString(minor)} ₽` };
 	const effRate = (params.customRateRub ?? meta.cbrRateRub) * (1 - Math.max(0, params.bankSpreadPercent ?? 0) / 100);
-	const rubKop = Math.round((minor / meta.minorUnitRatio) * (effRate / meta.nominal) * 100);
+	const rubKop = rubToKopecks((minor / meta.minorUnitRatio) * (effRate / meta.nominal));
 	const rubDec = kopecksToRub(rubKop);
 	return { rubKopecks: rubKop, rubDecimal: rubDec, formattedRub: formatCurrencyAmount(rubDec, "RUB", false) };
 }

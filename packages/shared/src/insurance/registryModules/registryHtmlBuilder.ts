@@ -14,7 +14,7 @@ export function generateDmsRegistryA4Html(data: DmsRegistryData): string {
 		const tooth = rec.toothNumberFdi && rec.toothNumberFdi > 0 ? String(rec.toothNumberFdi) : "—";
 		return `<tr>
 			<td class="text-center">${index + 1}</td>
-			<td class="text-center whitespace-nowrap">${rec.serviceDate}</td>
+			<td class="text-center whitespace-nowrap">${escapeXml(rec.serviceDate)}</td>
 			<td class="font-medium">${escapeXml(rec.patientFullName)}<div class="text-muted text-xs">Полис: ${escapeXml(rec.policyNumber)}</div></td>
 			<td class="text-center">${escapeXml(rec.guaranteeLetterNumber)}</td>
 			<td class="text-center font-mono">${escapeXml(rec.icd10Code)}</td>

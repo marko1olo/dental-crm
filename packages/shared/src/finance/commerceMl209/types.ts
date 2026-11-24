@@ -53,12 +53,12 @@ export const DEFAULT_1C_CHART_OF_ACCOUNTS: OneCChartOfAccounts = {
 export const oneCClinicProfileSchema = z.object({
 	id: z.string().min(1),
 	name: z.string().min(1).max(255),
-	fullName: z.string().min(1).max(500),
-	inn: z.string().min(10).max(12),
+	fullName: z.string().max(500).default(""),
+	inn: z.string().max(12).default(""),
 	kpp: z.string().max(9).optional().nullable(),
 	ogrn: z.string().max(15).optional().nullable(),
-	address: z.string().min(1).max(500),
-	phone: z.string().min(1).max(50),
+	address: z.string().max(500).default(""),
+	phone: z.string().max(50).default(""),
 	email: z.string().email().optional().nullable(),
 	bankAccount: z.string().max(20).optional().nullable(),
 	bankBik: z.string().max(9).optional().nullable(),
@@ -303,7 +303,7 @@ export const exportCommerceMlParamsSchema = z.object({
 	includePayroll: z.boolean().default(true),
 	chartOfAccountsOverrides: oneCChartOfAccountsSchema.partial().optional(),
 	clinicProfileOverrides: oneCClinicProfileSchema.partial().optional(),
-});
+}).strict();
 export type ExportCommerceMlParams = z.infer<typeof exportCommerceMlParamsSchema>;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -315,7 +315,7 @@ export const oneCReconciledPaymentSchema = z.object({
 	status: z.string().default("reconciled"),
 	fiscalReceiptNumber: z.string().optional().nullable(),
 	reconciliationNote: z.string().optional().nullable(),
-});
+}).strict();
 export type OneCReconciledPayment = z.infer<typeof oneCReconciledPaymentSchema>;
 
 export const oneCInventoryStockUpdateSchema = z.object({
@@ -324,10 +324,11 @@ export const oneCInventoryStockUpdateSchema = z.object({
 	name: z.string().optional(),
 	updatedQty: z.number().nonnegative(),
 	unitCostRub: z.number().nonnegative().optional(),
+	unitCostKopecks: z.number().int().nonnegative().optional(),
 	warehouseName: z.string().optional(),
 	lotNumber: z.string().optional().nullable(),
 	expirationDate: z.string().optional().nullable(),
-});
+}).strict();
 export type OneCInventoryStockUpdate = z.infer<typeof oneCInventoryStockUpdateSchema>;
 
 export const oneCPostedDocumentConfirmationSchema = z.object({
@@ -336,7 +337,7 @@ export const oneCPostedDocumentConfirmationSchema = z.object({
 	isPosted: z.boolean().default(true),
 	oneCDocumentNumber: z.string().optional().nullable(),
 	postedAtIso: z.string().optional().nullable(),
-});
+}).strict();
 export type OneCPostedDocumentConfirmation = z.infer<typeof oneCPostedDocumentConfirmationSchema>;
 
 export const oneCSyncPayloadSchema = z.object({
@@ -350,7 +351,7 @@ export const oneCSyncPayloadSchema = z.object({
 		.array(oneCPostedDocumentConfirmationSchema)
 		.optional()
 		.default([]),
-});
+}).strict();
 export type OneCSyncPayload = z.infer<typeof oneCSyncPayloadSchema>;
 
 export interface OneCSyncResult {
@@ -372,7 +373,7 @@ export const exportCatalogParamsSchema = z.object({
 	catalogName: z.string().default("Каталог медицинских услуг"),
 	includeInactive: z.boolean().default(false),
 	priceTypeTitle: z.string().default("Основной прайс-лист"),
-});
+}).strict();
 export type ExportCatalogParams = z.infer<typeof exportCatalogParamsSchema>;
 
 export interface OneCCatalogXmlResult {
@@ -388,7 +389,7 @@ export const exportOffersParamsSchema = z.object({
 	warehouseName: z.string().default("Основной склад клиники"),
 	includeZeroStock: z.boolean().default(false),
 	priceTypeTitle: z.string().default("Основной прайс-лист"),
-});
+}).strict();
 export type ExportOffersParams = z.infer<typeof exportOffersParamsSchema>;
 
 export interface OneCOffersXmlResult {

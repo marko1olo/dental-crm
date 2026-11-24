@@ -1,4 +1,5 @@
 import { escapeXml } from "../../cda/c14n.js";
+import { kopecksToNumericString, kopecksToRubles } from "../../money.js";
 import { canonicalJsonStringify, sha256Hex } from "../../sync/hashing.js";
 import { validateRussianInn, validateRussianKpp, validateRussianOgrn } from "../tax/index.js";
 import type { OneCClinicProfile, OneCCommerceMlPackage, OneCPackageIntegrityResult } from "./types.js";
@@ -116,15 +117,15 @@ export function validatePackageIntegrity(pkg: OneCCommerceMlPackage): OneCPackag
 }
 
 export function formatKopToRub(kopecks: number): string {
-	return (Math.max(0, Math.round(kopecks)) / 100).toFixed(2);
+	return kopecksToNumericString(Math.max(0, Math.round(kopecks)));
 }
 
 export function formatKopToRubLocale(kopecks: number): string {
-	return `${(Math.max(0, Math.round(kopecks)) / 100).toLocaleString("ru-RU", {
+	return `${kopecksToRubles(Math.max(0, Math.round(kopecks))).toLocaleString("ru-RU", {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	})} ₽`;
 }
 
 export const reqVal = (name: string, val: string | number | boolean): string =>
-	`\t\t\t<ЗначениеРеквизита>\n\t\t\t\t<Наименование>${name}</Наименование>\n\t\t\t\t<Значение>${val}</Значение>\n\t\t\t</ЗначениеРеквизита>`;
+	`\t\t\t<ЗначениеРеквизита>\n\t\t\t\t<Наименование>${escapeXml(String(name))}</Наименование>\n\t\t\t\t<Значение>${escapeXml(String(val))}</Значение>\n\t\t\t</ЗначениеРеквизита>`;

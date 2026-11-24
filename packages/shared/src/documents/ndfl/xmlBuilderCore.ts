@@ -4,9 +4,12 @@
  */
 
 import {
+	calculatePercentDiscountKopecks,
 	formatKopecksRu,
 	kopecksToNumericString,
+	kopecksToRubles,
 	parseKopecks,
+	rublesToKopecks,
 	sumKopecks,
 } from "../../money.js";
 import {
@@ -286,14 +289,17 @@ ${signatoryBlockXml}
 			? NDFL_LIMITS.CODE_1_MAX_EXPENSE_FROM_2024
 			: NDFL_LIMITS.CODE_1_MAX_EXPENSE_LEGACY;
 
-	const code1EligibleRub = Math.min(code1Rub, code1Limit);
-	const refundCode1 = code1EligibleRub * NDFL_LIMITS.TAX_RATE;
-	const refundCode2 = code2Rub * NDFL_LIMITS.TAX_RATE;
-	const estimatedTaxRefundRub = Math.round((refundCode1 + refundCode2) * 100) / 100;
+	const code1LimitKopecks = rublesToKopecks(code1Limit);
+	const code1EligibleKopecks = Math.min(code1Kopecks, code1LimitKopecks);
+	const taxRatePercent = Math.round(NDFL_LIMITS.TAX_RATE * 100);
+	const highIncomeRatePercent = Math.round(NDFL_LIMITS.HIGH_INCOME_TAX_RATE * 100);
+	const refundCode1Kopecks = calculatePercentDiscountKopecks(code1EligibleKopecks, taxRatePercent);
+	const refundCode2Kopecks = calculatePercentDiscountKopecks(code2Kopecks, taxRatePercent);
+	const estimatedTaxRefundRub = kopecksToRubles(refundCode1Kopecks + refundCode2Kopecks);
 
-	const refundCode1_15 = code1EligibleRub * NDFL_LIMITS.HIGH_INCOME_TAX_RATE;
-	const refundCode2_15 = code2Rub * NDFL_LIMITS.HIGH_INCOME_TAX_RATE;
-	const estimatedTaxRefund15Rub = Math.round((refundCode1_15 + refundCode2_15) * 100) / 100;
+	const refundCode1_15Kopecks = calculatePercentDiscountKopecks(code1EligibleKopecks, highIncomeRatePercent);
+	const refundCode2_15Kopecks = calculatePercentDiscountKopecks(code2Kopecks, highIncomeRatePercent);
+	const estimatedTaxRefund15Rub = kopecksToRubles(refundCode1_15Kopecks + refundCode2_15Kopecks);
 
 	return {
 		xmlContent,

@@ -17,6 +17,7 @@ import type {
 } from "./types.js";
 import { resolveTaxDeductionCategoryShared } from "./classification.js";
 import {
+	calculatePercentDiscountKopecks,
 	kopecksToRub,
 	kopecksToRubles,
 	parseKopecks,
@@ -25,6 +26,7 @@ import {
 	percentageOfKopecks,
 	type Kopecks,
 } from "../../money.js";
+import { kopecksToWordsRu } from "../../moneyWordsRu.js";
 
 /**
  * Safely extracts the tax calendar year from an ISO date string (YYYY-MM-DD...)
@@ -36,8 +38,8 @@ export function extractTaxYearFromDate(dateIso: string): number {
 	}
 	const trimmed = dateIso.trim();
 	const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-	if (match) {
-		return Number.parseInt(match[1]!, 10);
+	if (match?.[1]) {
+		return Number.parseInt(match[1], 10);
 	}
 	const d = new Date(trimmed);
 	return Number.isNaN(d.getTime()) ? Number.NaN : d.getFullYear();
@@ -72,7 +74,7 @@ export function getTaxDeductionAbsKopecks(p: TaxDeductionPaymentItem): number {
 		return Math.abs(Math.round(p.amountKopecks));
 	}
 	if (typeof p.amountRub === "number" && Number.isFinite(p.amountRub)) {
-		return Math.abs(Math.round(p.amountRub * 100));
+		return Math.abs(rublesToKopecks(p.amountRub));
 	}
 	return 0;
 }
@@ -253,13 +255,17 @@ export function calculateTaxDeductionSummary(
 
 			// Лимит социального вычета: 150 000 ₽ с 2024 года, 120 000 ₽ до 2024 года
 			const statutoryLimitRub = taxYear >= 2024 ? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
-			const statutoryLimitKopecks = statutoryLimitRub * 100;
+			const statutoryLimitKopecks = rublesToKopecks(statutoryLimitRub);
 			const code01EligibleKopecks = Math.min(netCode01Kop, statutoryLimitKopecks);
 			const code01EligibleRub = kopecksToRub(code01EligibleKopecks);
 
 			// Расчетный возврат 13% и 15% в целых копейках (по Коду 01 с лимитом, по Коду 02 без ограничений)
-			const refund13EstimateKopecks = Math.round((code01EligibleKopecks * 13) / 100) + Math.round((netCode02Kop * 13) / 100);
-			const refund15EstimateKopecks = Math.round((code01EligibleKopecks * 15) / 100) + Math.round((netCode02Kop * 15) / 100);
+			const refund13EstimateKopecks =
+				calculatePercentDiscountKopecks(code01EligibleKopecks, 13) +
+				calculatePercentDiscountKopecks(netCode02Kop, 13);
+			const refund15EstimateKopecks =
+				calculatePercentDiscountKopecks(code01EligibleKopecks, 15) +
+				calculatePercentDiscountKopecks(netCode02Kop, 15);
 			const refund13EstimateRub = kopecksToRub(refund13EstimateKopecks);
 			const refund15EstimateRub = kopecksToRub(refund15EstimateKopecks);
 
@@ -322,92 +328,7 @@ export function calculateTaxDeductionSummary(
  */
 export function amountToWordsRu(kopecks: number): string {
 	if (kopecks <= 0 || !Number.isFinite(kopecks)) return "Ноль рублей 00 копеек";
-
-	const rub = Math.floor(kopecks / 100);
-	const kop = Math.abs(kopecks % 100);
-
-	const unitsM = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
-	const unitsF = ["", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
-	const teens = [
-		"десять",
-		"одиннадцать",
-		"двенадцать",
-		"тринадцать",
-		"четырнадцать",
-		"пятнадцать",
-		"шестнадцать",
-		"семнадцать",
-		"восемнадцать",
-		"девятнадцать",
-	];
-	const tens = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
-	const hundreds = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
-
-	function tripletToWords(n: number, isFemale: boolean): string {
-		const h = Math.floor(n / 100);
-		const rem = n % 100;
-		const t = Math.floor(rem / 10);
-		const u = rem % 10;
-
-		const parts: string[] = [];
-		if (h > 0) parts.push(hundreds[h]!);
-
-		if (rem >= 10 && rem <= 19) {
-			parts.push(teens[rem - 10]!);
-		} else {
-			if (t > 0) parts.push(tens[t]!);
-			if (u > 0) parts.push(isFemale ? unitsF[u]! : unitsM[u]!);
-		}
-
-		return parts.join(" ");
-	}
-
-	function getDeclension(n: number, form1: string, form2: string, form5: string): string {
-		const rem100 = Math.abs(n) % 100;
-		const rem10 = rem100 % 10;
-		if (rem100 >= 11 && rem100 <= 19) return form5;
-		if (rem10 === 1) return form1;
-		if (rem10 >= 2 && rem10 <= 4) return form2;
-		return form5;
-	}
-
-	const parts: string[] = [];
-
-	// Миллионы
-	const millions = Math.floor(rub / 1000000);
-	if (millions > 0) {
-		const mStr = tripletToWords(millions, false);
-		const decl = getDeclension(millions, "миллион", "миллиона", "миллионов");
-		parts.push(`${mStr} ${decl}`);
-	}
-
-	// Тысячи
-	const thousands = Math.floor((rub % 1000000) / 1000);
-	if (thousands > 0) {
-		const thStr = tripletToWords(thousands, true);
-		const decl = getDeclension(thousands, "тысяча", "тысячи", "тысяч");
-		parts.push(`${thStr} ${decl}`);
-	}
-
-	// Единицы рублей
-	const unitsRub = rub % 1000;
-	if (unitsRub > 0) {
-		const uStr = tripletToWords(unitsRub, false);
-		const decl = getDeclension(unitsRub, "рубль", "рубля", "рублей");
-		parts.push(`${uStr} ${decl}`);
-	} else if (parts.length === 0) {
-		parts.push("ноль рублей");
-	} else {
-		const decl = getDeclension(rub, "рубль", "рубля", "рублей");
-		parts.push(decl);
-	}
-
-	const rubText = parts.join(" ").trim();
-	const capitalizedRub = rubText.charAt(0).toUpperCase() + rubText.slice(1);
-	const kopStr = kop.toString().padStart(2, "0");
-	const kopDecl = getDeclension(kop, "копейка", "копейки", "копеек");
-
-	return `${capitalizedRub} ${kopStr} ${kopDecl}`;
+	return kopecksToWordsRu(Math.round(kopecks));
 }
 
 /**
@@ -455,7 +376,7 @@ export function calculateExactTaxSplitKopecks(
 				? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024
 				: ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
 
-	const limitKop = BigInt(Math.round(statutoryLimitRub * 100));
+	const limitKop = BigInt(rublesToKopecks(statutoryLimitRub));
 	const isCode01Capped = code01Kop > limitKop;
 	const code01EligibleKop = isCode01Capped ? limitKop : code01Kop;
 
@@ -525,7 +446,7 @@ export function calculatePlanTaxDeductionBreakdown(
 			code01TotalKopecks += lineTotalKopecks;
 		}
 
-		const itemRefund13Kopecks = Math.round((lineTotalKopecks * 13) / 100);
+		const itemRefund13Kopecks = calculatePercentDiscountKopecks(lineTotalKopecks, 13);
 
 		return {
 			id: item.id,
@@ -542,13 +463,13 @@ export function calculatePlanTaxDeductionBreakdown(
 		};
 	});
 
-	const limitKopecks = Math.max(0, Math.round(statutoryLimitRub * 100));
+	const limitKopecks = Math.max(0, rublesToKopecks(statutoryLimitRub));
 	const code01EligibleKopecks = Math.min(code01TotalKopecks, limitKopecks);
 	const isCode01Capped = code01TotalKopecks > limitKopecks;
-	const code01Refund13Kopecks = Math.round((code01EligibleKopecks * 13) / 100);
+	const code01Refund13Kopecks = calculatePercentDiscountKopecks(code01EligibleKopecks, 13);
 
 	const code02EligibleKopecks = code02TotalKopecks;
-	const code02Refund13Kopecks = Math.round((code02EligibleKopecks * 13) / 100);
+	const code02Refund13Kopecks = calculatePercentDiscountKopecks(code02EligibleKopecks, 13);
 
 	const grandTotalKopecks = code01TotalKopecks + code02TotalKopecks;
 	const grandTotalRefund13Kopecks = code01Refund13Kopecks + code02Refund13Kopecks;
