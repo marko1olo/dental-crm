@@ -189,3 +189,27 @@ export interface MedicalRecordData {
 	isLocked?: boolean | undefined;
 	revisionCount?: number | undefined;
 }
+
+export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
+
+export type ExtendedMedicalRecordInitialData = Partial<Omit<MedicalRecordData, "passport">> & {
+	readonly passport?: Partial<ClinicalPassportData> | undefined;
+	readonly isLocked?: boolean | undefined;
+	readonly status?: string | undefined;
+};
+
+export interface MedicalRecordStudioModalProps {
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly initialData?: ExtendedMedicalRecordInitialData | undefined;
+	readonly onSave?: ((updated: MedicalRecordData) => void | Promise<void>) | undefined;
+	readonly readOnly?: boolean | undefined;
+	readonly onOpenProtocolGenerator?: (() => void) | undefined;
+	readonly isLocked?: boolean | undefined;
+	readonly isDraft?: boolean | undefined;
+	readonly status?: string | undefined;
+	readonly initialTab?: RecordTabType | undefined;
+	readonly visitId?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly activeTooth?: number | string | null | undefined;
+}
