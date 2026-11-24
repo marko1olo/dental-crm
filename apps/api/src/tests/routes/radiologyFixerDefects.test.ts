@@ -40,6 +40,7 @@ describe("Radiology Fixer Defects Suite (SEV-1, SEV-2, SEV-3)", () => {
 
 	before(async () => {
 		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, orgId));
 			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
 			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
 			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));
@@ -82,6 +83,7 @@ describe("Radiology Fixer Defects Suite (SEV-1, SEV-2, SEV-3)", () => {
 
 	after(async () => {
 		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, orgId));
 			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
 			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
 			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));

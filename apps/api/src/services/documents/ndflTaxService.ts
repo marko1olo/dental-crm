@@ -55,6 +55,24 @@ export class TaxPayerRequisitesRequiredError extends Error {
 export const TaxDeductionIdentificationRequiredError = TaxPayerRequisitesRequiredError;
 export type TaxDeductionIdentificationRequiredError = TaxPayerRequisitesRequiredError;
 
+export class NdflPatientNotFoundError extends Error {
+	readonly statusCode = 404;
+	readonly code = "PatientNotFoundError";
+	constructor(message = "Пациент не найден в базе данных клиники.") {
+		super(message);
+		this.name = "NdflPatientNotFoundError";
+	}
+}
+
+export class NdflInvalidDateRangeError extends Error {
+	readonly statusCode = 400;
+	readonly code = "InvalidDateRangeError";
+	constructor(message = "Некорректный диапазон дат для расчета налогового вычета.") {
+		super(message);
+		this.name = "NdflInvalidDateRangeError";
+	}
+}
+
 function isEntityAnonymous(entity: unknown): boolean {
 	if (!entity || typeof entity !== "object") return false;
 	return Boolean((entity as Record<string, unknown>).isAnonymous);
@@ -116,7 +134,7 @@ export class NdflTaxService {
 	): Promise<NdflTaxPreviewResult> {
 		const patient = await getPatientByIdFromDb(organizationId, patientId);
 		if (!patient) {
-			throw new Error("Пациент не найден в базе данных клиники.");
+			throw new NdflPatientNotFoundError();
 		}
 
 		const isPatientAnonymous =
@@ -141,10 +159,22 @@ export class NdflTaxService {
 		let start: Date;
 		let end: Date;
 
-		if (options.startDate && options.endDate) {
-			start = new Date(options.startDate);
-			end = new Date(options.endDate);
+		if (options.startDate !== undefined || options.endDate !== undefined) {
+			start = options.startDate
+				? new Date(options.startDate)
+				: new Date(Date.UTC(targetYear, 0, 1, 0, 0, 0, 0));
+			end = options.endDate
+				? new Date(options.endDate)
+				: new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
 			if (
+				Number.isNaN(start.getTime()) ||
+				Number.isNaN(end.getTime()) ||
+				start.getTime() > end.getTime()
+			) {
+				throw new NdflInvalidDateRangeError();
+			}
+			if (
+				options.endDate &&
 				end.getUTCHours() === 0 &&
 				end.getUTCMinutes() === 0 &&
 				end.getUTCSeconds() === 0
@@ -157,7 +187,14 @@ export class NdflTaxService {
 		}
 
 		// 1. Проверка задолженности и анонимности (ст. 219 НК РФ, Приказ ФНС от 08.11.2023 № ЕА-7-11/824@)
-		const debtRub = patient.balanceRub < 0 ? Math.abs(patient.balanceRub) : 0;
+		const patientBalanceKop = Reflect.get(patient, "balanceKopecks");
+		const rawBalanceKop =
+			typeof patientBalanceKop === "number"
+				? patientBalanceKop
+				: typeof patientBalanceKop === "bigint"
+					? Number(patientBalanceKop)
+					: parseKopecks(patient.balanceRub);
+		const debtRub = rawBalanceKop < 0 ? rublesFromKopecks(Math.abs(rawBalanceKop)) : 0;
 		let isBlocked = false;
 		let blockReason: string | null = null;
 
@@ -182,7 +219,7 @@ export class NdflTaxService {
 		});
 
 		const hasExplicitNegativeRefunds = periodPayments.some(
-			(p) => (Number(p.amountRub) || 0) < 0,
+			(p) => parseKopecks(p.amountRub) < 0,
 		);
 
 		let code1Kopecks = 0;
@@ -258,7 +295,7 @@ export class NdflTaxService {
 					receiptDate,
 					serviceName: serviceName.toLowerCase().startsWith("возврат") ? serviceName : `Возврат средств: ${serviceName}`,
 					deductionCode,
-					amountRub: pay.amountRub,
+					amountRub: rublesFromKopecks(rawAmountKop),
 					isExcluded: false,
 				});
 				continue;
@@ -273,7 +310,7 @@ export class NdflTaxService {
 					receiptDate,
 					serviceName,
 					deductionCode: "1",
-					amountRub: pay.amountRub,
+					amountRub: rublesFromKopecks(rawAmountKop),
 					isExcluded: true,
 					exclusionReason: "Сумма по чеку полностью возвращена пациенту",
 				});
@@ -293,7 +330,7 @@ export class NdflTaxService {
 					receiptDate,
 					serviceName,
 					deductionCode: "1",
-					amountRub: pay.amountRub,
+					amountRub: rublesFromKopecks(rawAmountKop),
 					isExcluded: true,
 					exclusionReason: "Сумма по чеку полностью возвращена пациенту (заявление на возврат)",
 				});
@@ -311,7 +348,7 @@ export class NdflTaxService {
 					receiptDate,
 					serviceName,
 					deductionCode: "1",
-					amountRub: pay.amountRub,
+					amountRub: rublesFromKopecks(amountKop),
 					isExcluded: true,
 					exclusionReason:
 						"Оплата по договору ДМС со стороны страховой компании",
@@ -330,7 +367,7 @@ export class NdflTaxService {
 					receiptDate,
 					serviceName,
 					deductionCode: "1",
-					amountRub: pay.amountRub,
+					amountRub: rublesFromKopecks(amountKop),
 					isExcluded: true,
 					exclusionReason:
 						"Сопутствующий товар (не является медицинской услугой по ст. 219 НК РФ)",
@@ -383,7 +420,10 @@ export class NdflTaxService {
 						: item.amountRub != null
 							? parseKopecks(item.amountRub)
 							: typeof item.priceRub === "number"
-								? parseKopecks(item.priceRub * (item.quantity || 1))
+								? new Decimal(parseKopecks(item.priceRub))
+										.times(item.quantity ?? 1)
+										.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+										.toNumber()
 								: 0;
 					if (itemKop <= 0) continue;
 
@@ -430,7 +470,7 @@ export class NdflTaxService {
 						receiptDate,
 						serviceName,
 						deductionCode: "1",
-						amountRub: pay.amountRub,
+						amountRub: rublesFromKopecks(amountKop),
 						isExcluded: false,
 					});
 				}
@@ -455,7 +495,7 @@ export class NdflTaxService {
 					receiptDate,
 					serviceName,
 					deductionCode,
-					amountRub: pay.amountRub,
+					amountRub: rublesFromKopecks(amountKop),
 					isExcluded: false,
 				});
 			}

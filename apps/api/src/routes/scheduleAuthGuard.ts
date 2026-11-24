@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
-import { unguardedBypassAllowed } from "../accessGuard.js";
+import { isDemoShowcaseMode, unguardedBypassAllowed } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import {
@@ -39,14 +39,13 @@ export function requireClinicOrganizationId(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): string | null {
-	const clinicHeader =
-		request.headers["x-dente-clinic-token"] ||
-		request.headers["x-clinic-token"];
+	const clinicHeader = request.headers["x-dente-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader)
 		? clinicHeader[0]
 		: clinicHeader;
 
 	if (
+		isDemoShowcaseMode() &&
 		typeof clinicToken === "string" &&
 		(clinicToken.startsWith("demo-showcase-token") ||
 			clinicToken.startsWith("demo-showcase-clinic-token"))
@@ -57,7 +56,7 @@ export function requireClinicOrganizationId(
 	const hasAnyToken =
 		Boolean(clinicToken && typeof clinicToken === "string" && clinicToken.trim()) ||
 		Boolean(request.headers.authorization) ||
-		Boolean(request.headers["x-staff-token"]);
+		Boolean(request.headers["x-dente-staff-token"]);
 
 	const identity = getRequestIdentity(request);
 	if (identity.organizationId) {
@@ -91,13 +90,12 @@ export async function requireScheduleMutationAccess(
 	reply: FastifyReply,
 	protectedArea = "schedule mutation",
 ): Promise<boolean> {
-	const clinicHeader =
-		request.headers["x-dente-clinic-token"] ||
-		request.headers["x-clinic-token"];
+	const clinicHeader = request.headers["x-dente-clinic-token"];
 	const clinicToken = Array.isArray(clinicHeader)
 		? clinicHeader[0]
 		: clinicHeader;
 	if (
+		isDemoShowcaseMode() &&
 		typeof clinicToken === "string" &&
 		(clinicToken.startsWith("demo-showcase-token") ||
 			clinicToken.startsWith("demo-showcase-clinic-token"))

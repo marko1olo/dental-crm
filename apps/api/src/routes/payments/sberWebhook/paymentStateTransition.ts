@@ -12,6 +12,7 @@ import {
 	visits,
 } from "../../../db/schema.js";
 import { namedDevelopmentModeActive } from "../../../accessGuard.js";
+import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { verifySberPosWebhookChecksum } from "./signatureVerifier.js";
 import type { SberPosTransactionStatus } from "./types.js";
 
@@ -50,9 +51,18 @@ export async function reconcileInvoiceBalanceInDb(
 	}
 
 	const rawTotal = invoice.totalAmountRub || invoice.totalRub || "0";
-	const invoiceTotalKopecks = Fiscal54FzService.rubToKopecks(Number(rawTotal));
+	const invoiceTotalKopecks =
+		invoice.totalPriceKopecks !== null &&
+		invoice.totalPriceKopecks !== undefined &&
+		invoice.totalPriceKopecks > 0n
+			? Number(invoice.totalPriceKopecks)
+			: Fiscal54FzService.rubToKopecks(Number(rawTotal));
 
-	// Find all paid payments linked to this patient and visit/document
+	// Find all paid payments linked to this invoice (or visit) within the clinic
+	const linkScope = invoice.visitId
+		? or(eq(payments.documentId, invoice.id), eq(payments.visitId, invoice.visitId))
+		: eq(payments.documentId, invoice.id);
+
 	const invoicePayments = await tx
 		.select({
 			amountRub: payments.amountRub,
@@ -65,13 +75,15 @@ export async function reconcileInvoiceBalanceInDb(
 				eq(payments.organizationId, organizationId),
 				eq(payments.patientId, invoice.patientId),
 				eq(payments.status, "paid"),
-				invoice.visitId ? eq(payments.visitId, invoice.visitId) : sql`TRUE`,
+				linkScope,
 			),
 		);
 
 	const paidKopecks = sumKopecks(
 		invoicePayments.map((p) =>
-			p.amountKopecks !== null && p.amountKopecks !== undefined
+			p.amountKopecks !== null &&
+			p.amountKopecks !== undefined &&
+			p.amountKopecks > 0n
 				? Number(p.amountKopecks)
 				: Fiscal54FzService.rubToKopecks(p.amountRub),
 		),
@@ -84,7 +96,7 @@ export async function reconcileInvoiceBalanceInDb(
 		.update(patientInvoices)
 		.set({
 			status: isFullyPaid ? "paid" : paidKopecks > 0 ? "partially_paid" : "draft",
-			paidAt: isFullyPaid ? new Date() : invoice.paidAt,
+			paidAt: isFullyPaid ? new Date() : null,
 		})
 		.where(
 			and(
@@ -210,7 +222,16 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 		// Validate incoming amount in kopecks if provided
 		if (payload.amount !== undefined && payload.amount !== null) {
 			const incomingKopecks = Number(payload.amount);
-			if (!Number.isNaN(incomingKopecks) && BigInt(Math.round(incomingKopecks)) !== lockedTx.amountKopecks) {
+			if (!Number.isFinite(incomingKopecks) || !Number.isInteger(incomingKopecks) || incomingKopecks <= 0) {
+				return {
+					statusCode: 400,
+					body: {
+						error: "InvalidAmount",
+						message: "Сумма в уведомлении должна быть положительным целым числом копеек.",
+					},
+				};
+			}
+			if (BigInt(incomingKopecks) !== lockedTx.amountKopecks) {
 				request.log.warn(
 					{ orderId, expected: Number(lockedTx.amountKopecks), received: incomingKopecks },
 					"[SberPosWebhook] Amount mismatch detected",
@@ -267,6 +288,21 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 				);
 
 			if (nextStatus === "REFUNDED" || nextStatus === "REVERSED") {
+				const [refundTargetPayment] = await tx
+					.select()
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, lockedTx.organizationId),
+							or(
+								eq(payments.clientMutationId, clientMutationId),
+								eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+							),
+						),
+					)
+					.for("update")
+					.limit(1);
+
 				await tx
 					.update(payments)
 					.set({ status: "refunded", updatedAt: new Date() })
@@ -279,6 +315,57 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 							),
 						),
 					);
+
+				if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
+					await reconcileInvoiceBalanceInDb(tx, lockedTx.organizationId, lockedTx.invoiceId);
+				}
+
+				if (refundTargetPayment && refundTargetPayment.status === "paid") {
+					const refundKopecks =
+						refundTargetPayment.amountKopecks !== null && refundTargetPayment.amountKopecks > 0n
+							? Number(refundTargetPayment.amountKopecks)
+							: Number(lockedTx.amountKopecks);
+					const refundRub = kopecksToRubles(refundKopecks);
+					const refundReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+						organizationId: lockedTx.organizationId,
+						patientId: lockedTx.patientId,
+						customerContact:
+							(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
+							"cardholder@clinic.ru",
+						cashierFullName: "Кассир-администратор",
+						operationType: "income_return",
+						defaultCalculationMethod: "full_payment",
+						tenderSplits: {
+							electronicCardRub: refundRub,
+						},
+						positions: [
+							{
+								name: "Возврат оплаты медицинских стоматологических услуг",
+								priceRub: refundRub,
+								quantity: 1,
+								subject: "service",
+								method: "full_payment",
+								vatRate: "vat_none",
+							},
+						],
+						visitId: lockedTx.visitId,
+						documentId: lockedTx.documentId,
+						invoiceId: lockedTx.invoiceId,
+						clientMutationId: `${clientMutationId}:return`,
+					});
+					await tx.insert(fiscalReceiptQueue).values({
+						organizationId: lockedTx.organizationId,
+						paymentId: refundTargetPayment.id,
+						visitId: lockedTx.visitId || null,
+						receiptType: "income_return",
+						status: "pending_print",
+						payloadJson: {
+							...refundReceiptPayload,
+							tag1020_totalRub: refundReceiptPayload.tag1020_totalRubString,
+						},
+						retryCount: 0,
+					});
+				}
 			}
 
 			return {
@@ -364,7 +451,11 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 					organizationId: lockedTx.organizationId,
 					patientId: lockedTx.patientId,
 					visitId: lockedTx.visitId ? lockedTx.visitId : null,
-					documentId: lockedTx.documentId ? lockedTx.documentId : null,
+					documentId: lockedTx.documentId
+						? lockedTx.documentId
+						: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+							? lockedTx.invoiceId
+							: null,
 					method: "card",
 					status: "paid",
 					amountRub,

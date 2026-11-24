@@ -242,12 +242,17 @@ export function inferManifestFieldsFromPath(filePath: string) {
 			.match(/\b\d{1,2}[.-]\d{1,2}[.-]\d{4}\b/)?.[0]
 			?.replaceAll("-", ".") ?? null;
 	const toothCode =
-		spacedName.match(/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/)?.[0] ?? null;
+		spacedName.match(
+			/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/,
+		)?.[0] ?? null;
 	const kind = detectKind(originalName) ?? detectKind(spacedName);
 	const patientName =
 		spacedName
 			.replace(/\b\d{1,2}[ .-]\d{1,2}[ .-]\d{4}\b/g, " ")
-			.replace(/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/g, " ")
+			.replace(
+				/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/g,
+				" ",
+			)
 			.replace(
 				/cbct|кт|ккт|dicom|ceph|trg|трг|телерентг|цеф|opg|оптг|ортопан|панорам|прицельный|прицел|rvg|bitewing|фото/gi,
 				" ",
@@ -290,9 +295,13 @@ export async function collectDicomHeaderFiles(
 	options: ApiDicomScanOptions = {},
 	limits: ApiDicomFolderTraversalLimits = {},
 ) {
+	if (!root || root.includes("\0") || root.split(/[\\/]/).includes("..")) {
+		throw new Error("Недопустимый путь к каталогу снимков (обнаружен обход пути).");
+	}
 	const files: string[] = [];
 	const warnings: string[] = [];
-	const queue = [path.resolve(root)];
+	const resolvedRoot = path.resolve(root);
+	const queue = [resolvedRoot];
 	const maxFolders = Math.max(
 		1,
 		Math.floor(limits.maxFolders ?? apiDicomDefaultMaxFolders),
@@ -386,6 +395,7 @@ export async function buildDicomHeaderManifest(
 				...zip.warnings.map((warning) => `${filePath}: ${warning}`),
 			);
 			if (zip.fileHandle === null) continue;
+			const zipHandle = zip.fileHandle;
 			const dicomEntries = zip.entries.filter((entry) =>
 				isDicomLikeEntry(entry.name),
 			);
@@ -413,7 +423,7 @@ export async function buildDicomHeaderManifest(
 					const chunkResults = await Promise.all(
 						chunk.map(async (entry) => {
 							const prefix = await zipEntryPrefix(
-								zip.fileHandle as FileHandle,
+								zipHandle,
 								entry,
 								input.maxHeaderBytes,
 							);

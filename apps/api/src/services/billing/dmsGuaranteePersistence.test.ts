@@ -9,9 +9,10 @@ import { strict as assert } from "node:assert";
 import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
 import { insuranceRoutes } from "../../routes/insurance.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { dmsGuaranteeLetters, organizations, patients } from "../../db/schema.js";
 import {
@@ -29,6 +30,7 @@ import { createTenantTestApp } from "../../tests/support/tenantTestApp.js";
 async function buildTestApp() {
 	process.env.NODE_ENV = "test";
 	const app = createTenantTestApp();
+	await app.register(idempotencyPlugin);
 	await app.register(insuranceRoutes);
 	await app.ready();
 	return app;
@@ -88,7 +90,10 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		const createRes = await app.inject({
 			method: "POST",
 			url: "/api/insurance/guarantee-letters",
-			headers,
+			headers: {
+				...headers,
+				"idempotency-key": randomUUID(),
+			},
 			payload: {
 				organizationId: orgId,
 				patientId: testPatient.id,
@@ -173,7 +178,14 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		assert.equal(usage1Json.remainingCoverageRub, 60000);
 		assert.equal(usage1Json.status, "active");
 
-		// Verify via GET that usedAmountKopecks reflects 40,000 RUB = 4,000,000 kop
+		// Verify via GET & PG18 DB row that usedAmountKopecks reflects 40,000 RUB = 4,000,000 kop
+		await withFixtureTenant(orgId, async (tx) => {
+			const [dbAfterUsage1] = await tx
+				.select()
+				.from(dmsGuaranteeLetters)
+				.where(and(eq(dmsGuaranteeLetters.id, letterId), eq(dmsGuaranteeLetters.organizationId, orgId)));
+			assert.equal(dbAfterUsage1?.usedAmountKopecks, 4000000n, "DB usedAmountKopecks must persist 4000000n");
+		});
 		const listAfterUsage1 = await app.inject({
 			method: "GET",
 			url: `/api/insurance/guarantee-letters?patientId=${testPatient.id}`,
@@ -244,5 +256,54 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		assert.equal(postExhaustJson.remainingCoverageRub, 0);
 		assert.equal(postExhaustJson.remainingCoverageKopecks, 0);
 		assert.equal(postExhaustJson.status, "exhausted");
+
+		// 8. Verify idempotency replay via idempotencyPlugin without 409 in_flight conflict (DEF-INS-01)
+		const replayKey = randomUUID();
+		const r1 = await app.inject({
+			method: "POST",
+			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
+			headers: { ...headers, "idempotency-key": replayKey },
+			payload: { amountRub: 500.0 },
+		});
+		assert.equal(r1.statusCode, 200, `Expected 200 on first plugin call, got ${r1.statusCode}: ${r1.body}`);
+		const r2 = await app.inject({
+			method: "POST",
+			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
+			headers: { ...headers, "idempotency-key": replayKey },
+			payload: { amountRub: 500.0 },
+		});
+		assert.equal(r2.statusCode, 200);
+		assert.equal(r2.headers["idempotency-replayed"], "true");
+
+		// 9. Future validFrom letter guard (DEF-INS-02)
+		const futureDateIso = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+		const futureValidUntilIso = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+		const futureCreate = await app.inject({
+			method: "POST",
+			url: "/api/insurance/guarantee-letters",
+			headers: { ...headers, "idempotency-key": randomUUID() },
+			payload: {
+				patientId: testPatient.id,
+				patientFullName: testPatient.fullName,
+				policyNumber: "SOGAZ-FUT-1",
+				insurerKey: "sogaz",
+				insurerName: "АО «СОГАЗ»",
+				letterNumber: `ГП-FUTURE-${Date.now()}`,
+				issueDate: futureDateIso,
+				validFrom: futureDateIso,
+				validUntil: futureValidUntilIso,
+				maxCoverageRub: 20000,
+			},
+		});
+		assert.equal(futureCreate.statusCode, 201);
+		const futureLetterId = futureCreate.json().id;
+		const futureUsage = await app.inject({
+			method: "POST",
+			url: `/api/insurance/guarantee-letters/${futureLetterId}/record-usage`,
+			headers: { ...headers, "idempotency-key": randomUUID() },
+			payload: { amountRub: 1000 },
+		});
+		assert.equal(futureUsage.statusCode, 400);
+		assert.equal(futureUsage.json().error, "LetterNotYetValid");
 	});
 });

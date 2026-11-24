@@ -37,10 +37,10 @@ export async function handleWadoRetrieveInstance(
 		return reply.code(403).send({ error: "OrganizationUnknown", message: "Снимок не выдан: организация из токена не существует." });
 	}
 
-	const resolution = await withTenantCtx(organizationId, async () => {
+	const resolution = await withTenantCtx(organizationId, async (tx) => {
 		let organizationKnown: boolean;
 		try {
-			organizationKnown = await organizationExists(organizationId);
+			organizationKnown = await organizationExists(organizationId, tx);
 		} catch (lookupError) {
 			return { organizationCheckFailed: true as const, lookupError, organizationKnown: false, filePath: null };
 		}
@@ -49,7 +49,7 @@ export async function handleWadoRetrieveInstance(
 		}
 		return {
 			organizationCheckFailed: false as const, lookupError: null, organizationKnown,
-			filePath: await resolveInstanceFilePath(organizationId, studyUid, seriesUid, instanceUid),
+			filePath: await resolveInstanceFilePath(organizationId, studyUid, seriesUid, instanceUid, tx),
 		};
 	});
 

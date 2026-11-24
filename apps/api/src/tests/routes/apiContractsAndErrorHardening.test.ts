@@ -12,7 +12,8 @@ import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { registerStaffRoutes } from "../../routes/staff.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
-import { registerXrayRoutes } from "../../routes/imaging/studiesRoutes.js";
+import { registerAiAnalysisRoutes } from "../../routes/imaging/aiAnalysisRoutes.js";
+import { registerStudiesRoutes } from "../../routes/imaging/studiesRoutes.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
@@ -45,7 +46,8 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 		await registerConsentRoutes(app);
 		await registerFamilyFinanceRoutes(app);
 		await registerLabRoutes(app);
-		await registerXrayRoutes(app);
+		await registerStudiesRoutes(app);
+		await registerAiAnalysisRoutes(app);
 		await registerAnesthesiaRoutes(app);
 
 		await app.ready();
@@ -203,7 +205,7 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			assert.strictEqual(res.statusCode, 400);
 			const body = JSON.parse(res.body);
 			assert.strictEqual(body.error, "ValidationError");
-			assert.match(body.message, /Некорректный идентификатор чека в очереди/);
+			assert.match(body.message, /Некорректный UUID записи фискальной очереди/);
 		});
 
 		test("POST /api/billing/payments with missing idempotency key returns 400 BillingValidationError", async () => {
@@ -542,10 +544,10 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 	// 10. X-Ray & Imaging PACS SQL 22P02 Defense
 	// ==========================================
 	describe("10. X-Ray & Imaging PACS SQL 22P02 Defense", () => {
-		test("GET /api/xray/scans/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+		test("GET /api/imaging/studies/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
 			const res = await app.inject({
 				method: "GET",
-				url: "/api/xray/scans/not-a-uuid",
+				url: "/api/imaging/studies/not-a-uuid",
 				headers: staffHeaders,
 			});
 
@@ -555,10 +557,10 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			assert.match(body.message, /Некорректный идентификатор снимка/);
 		});
 
-		test("GET /api/xray/scans/not-a-uuid/file returns 400 (not 500 SQL 22P02)", async () => {
+		test("GET /api/imaging/studies/not-a-uuid/file returns 400 (not 500 SQL 22P02)", async () => {
 			const res = await app.inject({
 				method: "GET",
-				url: "/api/xray/scans/not-a-uuid/file",
+				url: "/api/imaging/studies/not-a-uuid/file",
 				headers: staffHeaders,
 			});
 
@@ -568,10 +570,10 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			assert.match(body.message, /Некорректный идентификатор снимка/);
 		});
 
-		test("POST /api/xray/scans/not-a-uuid/analyze returns 400 (not 500 SQL 22P02)", async () => {
+		test("POST /api/imaging/studies/not-a-uuid/analyze returns 400 (not 500 SQL 22P02)", async () => {
 			const res = await app.inject({
 				method: "POST",
-				url: "/api/xray/scans/not-a-uuid/analyze",
+				url: "/api/imaging/studies/not-a-uuid/analyze",
 				headers: staffHeaders,
 			});
 
@@ -581,12 +583,12 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			assert.match(body.message, /Некорректный идентификатор снимка/);
 		});
 
-		test("PUT /api/xray/scans/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+		test("PATCH /api/imaging/studies/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
 			const res = await app.inject({
-				method: "PUT",
-				url: "/api/xray/scans/not-a-uuid",
+				method: "PATCH",
+				url: "/api/imaging/studies/not-a-uuid",
 				headers: staffHeaders,
-				payload: { notes: "Контрольный снимок" },
+				payload: { title: "Контрольный снимок" },
 			});
 
 			assert.strictEqual(res.statusCode, 400);
@@ -595,10 +597,10 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			assert.match(body.message, /Некорректный идентификатор снимка/);
 		});
 
-		test("POST /api/xray/scans/not-a-uuid/bind-tooth returns 400 (not 500 SQL 22P02)", async () => {
+		test("POST /api/imaging/studies/not-a-uuid/bind-tooth returns 400 (not 500 SQL 22P02)", async () => {
 			const res = await app.inject({
 				method: "POST",
-				url: "/api/xray/scans/not-a-uuid/bind-tooth",
+				url: "/api/imaging/studies/not-a-uuid/bind-tooth",
 				headers: staffHeaders,
 				payload: { toothCode: "16" },
 			});

@@ -14,6 +14,7 @@ import {
 } from "../../db/schema.js";
 import { listQuarantine, listRuns } from "../../migration/engine.js";
 import { reconciliationReportCsv } from "../../migration/reconcile.js";
+import { failIfInvalidRunId } from "../migrationRunRoutes/types.js";
 
 export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 	/** Список прогонов организации. */
@@ -37,6 +38,8 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 				"migration run detail",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const [run] = await db
 				.select()
@@ -58,7 +61,12 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 			const [reconciliation] = await db
 				.select()
 				.from(migrationReconciliations)
-				.where(eq(migrationReconciliations.runId, run.id))
+				.where(
+					and(
+						eq(migrationReconciliations.runId, run.id),
+						eq(migrationReconciliations.organizationId, context.organizationId),
+					),
+				)
 				.orderBy(desc(migrationReconciliations.generatedAt))
 				.limit(1);
 
@@ -113,6 +121,8 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 			"migration quarantine",
 		);
 		if (!context) return reply;
+		const invalidId = failIfInvalidRunId(reply, request.params.runId);
+		if (invalidId) return invalidId;
 
 		const limit = Math.min(
 			Math.max(Number(request.query.limit ?? "200") || 200, 1),
@@ -141,6 +151,8 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 				"migration reconciliation report",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const [run] = await db
 				.select({ id: migrationRuns.id })
@@ -161,7 +173,12 @@ export async function registerMigrationStatusRoutes(app: FastifyInstance) {
 			const [reconciliation] = await db
 				.select()
 				.from(migrationReconciliations)
-				.where(eq(migrationReconciliations.runId, run.id))
+				.where(
+					and(
+						eq(migrationReconciliations.runId, run.id),
+						eq(migrationReconciliations.organizationId, context.organizationId),
+					),
+				)
 				.orderBy(desc(migrationReconciliations.generatedAt))
 				.limit(1);
 

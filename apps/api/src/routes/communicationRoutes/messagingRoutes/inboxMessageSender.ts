@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { and, eq, gt, or } from "drizzle-orm";
 import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { communicationEvents } from "../../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import type { CommunicationChannelCode } from "../../../services/communications/channelRouter.js";
 import { enqueueMessage } from "../../../services/communications/dispatch/dispatcherCore.js";
 import type {
@@ -12,6 +14,8 @@ import { resolveRecipientAddress } from "../../../services/communications/dispat
 import { MessageTemplateEngine } from "../../../services/communications/MessageTemplateEngine.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import type { SendMessageBody } from "../types.js";
+
+const logger = createApiLogger("inboxMessageSender");
 
 export async function processSendMessage(
 	orgId: string,
@@ -101,18 +105,20 @@ export async function processSendMessage(
 	);
 
 	if (!recipient.address) {
-		const [failedEvent] = await db
-			.insert(communicationEvents)
-			.values({
-				organizationId: orgId,
-				patientId,
-				channel: resolvedChannel,
-				direction: "outbound",
-				status: "failed",
-				message: messageToSend,
-				idempotencyKey: idempotencyKey ?? null,
-			})
-			.returning();
+		const [failedEvent] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.insert(communicationEvents)
+				.values({
+					organizationId: orgId,
+					patientId,
+					channel: resolvedChannel,
+					direction: "outbound",
+					status: "failed",
+					message: messageToSend,
+					idempotencyKey: idempotencyKey ?? null,
+				})
+				.returning(),
+		);
 
 		return {
 			success: false,
@@ -142,7 +148,7 @@ export async function processSendMessage(
 	let insertedEvent: typeof communicationEvents.$inferSelect | undefined;
 	let failedEvent: typeof communicationEvents.$inferSelect | undefined;
 
-	await db.transaction(async (tx) => {
+	await withTenantCtx(orgId, async (tx) => {
 		enqueueRes = await enqueueMessage(
 			{
 				organizationId: orgId,
@@ -214,8 +220,11 @@ export async function processSendMessage(
 				payload: { event: insertedEvent },
 			});
 		}
-	} catch {
-		// Не фатально для клиентского ответа
+	} catch (wsErr: unknown) {
+		logger.warn(
+			{ err: safeLogError(wsErr), orgId, patientId },
+			"[inboxMessageSender] Failed to broadcast INBOX_NEW_MESSAGE over WebSocket",
+		);
 	}
 
 	return {

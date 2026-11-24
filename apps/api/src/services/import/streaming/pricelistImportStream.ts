@@ -9,7 +9,7 @@
  * - Anti-Reality-Simulator: No fake setTimeout timers, immediate streaming/batch execution.
  */
 
-import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type DentalSpecialty, type ServiceCategory } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { auditEvents, serviceCatalogItems } from "../../../db/schema.js";
@@ -123,7 +123,7 @@ export function parsePriceNumber(raw: string): number {
 		.replace(",", ".")
 		.replace(/[^\d.]/g, "");
 	const num = parseFloat(cleaned);
-	return Number.isFinite(num) && num >= 0 ? Math.round(num * 100) / 100 : 0;
+	return Number.isFinite(num) && num >= 0 ? kopecksToRubles(rublesToKopecks(num)) : 0;
 }
 
 export function parseDurationNumber(raw: string): number {
@@ -204,7 +204,9 @@ export async function importPricelistStream(params: {
 		category: ServiceCategory;
 		specialty: DentalSpecialty;
 		basePriceRub: number;
+		basePriceKopecks: bigint;
 		priceRub: number;
+		priceKopecks: bigint;
 		durationMinutes: number;
 		taxDeductible: boolean;
 		isActive: boolean;
@@ -258,6 +260,7 @@ export async function importPricelistStream(params: {
 			status: "ready",
 		});
 
+		const priceKopecksBigInt = BigInt(rublesToKopecks(priceRub));
 		toInsertPayloads.push({
 			organizationId,
 			code: rawCode,
@@ -265,7 +268,9 @@ export async function importPricelistStream(params: {
 			category,
 			specialty: "universal",
 			basePriceRub: priceRub,
+			basePriceKopecks: priceKopecksBigInt,
 			priceRub: priceRub,
+			priceKopecks: priceKopecksBigInt,
 			durationMinutes,
 			taxDeductible: true,
 			isActive: true,

@@ -45,8 +45,11 @@ export async function validateAndLockDmsCoverage(
 
 	let lockedDmsLetter: typeof dmsGuaranteeLetters.$inferSelect | null = null;
 	let dmsAmountToDeductKop = 0n;
+	let newDmsUsedKop = 0n;
 	let newDmsUsedRub = 0;
 	let isDmsExhausted = false;
+	const isUuidString = (val?: string | null): boolean =>
+		Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
 
 	if (isEmergencyLetterAlias || (isUrgentCarePayment && !guaranteeLetterId)) {
 		// Mandate 8e: Acute pain / emergency bypass - proceed with pending letter
@@ -54,18 +57,20 @@ export async function validateAndLockDmsCoverage(
 		dmsAmountToDeductKop = requiredDmsKopecks;
 	} else {
 		if (guaranteeLetterId) {
-			const [matched] = await tx
-				.select()
-				.from(dmsGuaranteeLetters)
-				.where(
-					and(
-						eq(dmsGuaranteeLetters.id, guaranteeLetterId),
-						eq(dmsGuaranteeLetters.organizationId, orgId),
-					),
-				)
-				.for("update")
-				.limit(1);
-			lockedDmsLetter = matched ?? null;
+			if (isUuidString(guaranteeLetterId)) {
+				const [matched] = await tx
+					.select()
+					.from(dmsGuaranteeLetters)
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, guaranteeLetterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
+				lockedDmsLetter = matched ?? null;
+			}
 		} else if (resolvedPatientId) {
 			const activeLetters = await tx
 				.select()
@@ -97,24 +102,42 @@ export async function validateAndLockDmsCoverage(
 				};
 			}
 		} else {
-			// [FLOAT-DEFECT FIX]: Устранение round-trip rublesToKopecks(Number(lockedDmsLetter.usedAmountRub))
-			const curUsedKop = BigInt(parseKopecks(lockedDmsLetter.usedAmountRub ?? 0));
-			const maxCovKop = BigInt(parseKopecks(lockedDmsLetter.maxCoverageRub ?? 0));
+			// Приоритет целых копеек с безопасным фолбэком для исторических строк, засеянных только в рублях
+			const curUsedKop =
+				lockedDmsLetter.usedAmountKopecks > 0n
+					? lockedDmsLetter.usedAmountKopecks
+					: BigInt(parseKopecks(lockedDmsLetter.usedAmountRub ?? 0));
+			const maxCovKop =
+				lockedDmsLetter.maxCoverageKopecks > 0n
+					? lockedDmsLetter.maxCoverageKopecks
+					: BigInt(parseKopecks(lockedDmsLetter.maxCoverageRub ?? 0));
 
 			if (maxCovKop > 0n && curUsedKop + requiredDmsKopecks > maxCovKop) {
 				if (isUrgentCarePayment) {
 					// Soft Overdraft: Mandate 8e & 8v - do not abort transaction, record exhausted status
 					dmsAmountToDeductKop = requiredDmsKopecks;
 					const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
+					newDmsUsedKop = nextUsedKop;
 					newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
 					isDmsExhausted = true;
 				} else {
 					// Soft Split: Mandate 8e & 8v - credit available remainder to DMS, exhaust letter,
 					// and redirect remaining amount to patient co-pay without blocking chairside checkout!
 					const availableDmsKop = maxCovKop > curUsedKop ? maxCovKop - curUsedKop : 0n;
+					if (availableDmsKop <= 0n && requiredDmsKopecks >= ctx.totalKopecks) {
+						return {
+							failure: {
+								kind: "insufficient_dms_coverage",
+								letterNumber: lockedDmsLetter.letterNumber,
+								availableRub: kopecksToNumericString(0),
+								requiredRub: kopecksToNumericString(Number(requiredDmsKopecks)),
+							},
+						};
+					}
 					dmsAmountToDeductKop = availableDmsKop;
 					const patientCoPayKop = requiredDmsKopecks - availableDmsKop;
 					const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
+					newDmsUsedKop = nextUsedKop;
 					newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
 					isDmsExhausted = true;
 					ctx.patientCoPayKopecks = patientCoPayKop;
@@ -123,6 +146,7 @@ export async function validateAndLockDmsCoverage(
 			} else {
 				dmsAmountToDeductKop = requiredDmsKopecks;
 				const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
+				newDmsUsedKop = nextUsedKop;
 				newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
 				isDmsExhausted = maxCovKop > 0n && nextUsedKop >= maxCovKop;
 			}
@@ -131,6 +155,7 @@ export async function validateAndLockDmsCoverage(
 
 	ctx.lockedDmsLetter = lockedDmsLetter;
 	ctx.dmsAmountToDeductKop = dmsAmountToDeductKop;
+	ctx.newDmsUsedKopecks = newDmsUsedKop;
 	ctx.newDmsUsedRub = newDmsUsedRub;
 	ctx.isDmsExhausted = isDmsExhausted;
 
@@ -149,12 +174,14 @@ export async function finalizeDmsDeduction(
 		return;
 	}
 
-	const { orgId, lockedDmsLetter, newDmsUsedRub, isDmsExhausted } = ctx;
+	const { orgId, lockedDmsLetter, newDmsUsedKopecks, newDmsUsedRub, isDmsExhausted } = ctx;
 
 	await tx
 		.update(dmsGuaranteeLetters)
 		.set({
+			usedAmountKopecks: newDmsUsedKopecks,
 			usedAmountRub: newDmsUsedRub,
+			updatedAt: new Date(),
 			...(isDmsExhausted ? { status: "exhausted" } : {}),
 		})
 		.where(

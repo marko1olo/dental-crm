@@ -24,6 +24,11 @@ export function generateMonthBatchRows(params: {
 	const allTempLogs: Array<typeof temperatureHumidityLogs.$inferInsert> = [];
 	const allWasteLogs: Array<typeof medicalWasteLogs.$inferInsert> = [];
 
+	const cumulativeHoursByEquip = new Map<string, number>();
+	for (const eq of activeEquips) {
+		cumulativeHoursByEquip.set(eq.id, Number(eq.totalOperatingHours || 0));
+	}
+
 	for (const dateStr of workingDates) {
 		const { sterilRows, psoRows } = generateDailySterilAndPsoRows(dateStr, organizationId, operatorId);
 		allSterilRows.push(...sterilRows);
@@ -32,6 +37,8 @@ export function generateMonthBatchRows(params: {
 		const sessStart = new Date(`${dateStr}T08:00:00Z`);
 		const sessEnd = new Date(`${dateStr}T08:30:00Z`);
 		for (const eq of activeEquips) {
+			const nextCumulative = (cumulativeHoursByEquip.get(eq.id) ?? 0) + 0.5;
+			cumulativeHoursByEquip.set(eq.id, nextCumulative);
 			allBactLogs.push({
 				organizationId,
 				equipmentId: eq.id,
@@ -40,7 +47,7 @@ export function generateMonthBatchRows(params: {
 				sessionEndTime: sessEnd,
 				durationMinutes: 30,
 				operatingMode: "continuous_presence" as const,
-				cumulativeHoursAfterSession: (Number(eq.totalOperatingHours || 0) + 0.5).toFixed(2),
+				cumulativeHoursAfterSession: nextCumulative.toFixed(2),
 				operatorId,
 				notes: "Автопилот месяца: предсменная дезинфекция воздуха",
 			});
@@ -58,7 +65,7 @@ export function generateMonthBatchRows(params: {
 				isWithinNorm: true,
 				deviationReason: null,
 				operatorId,
-				notes: "Автопилот месяца: норма СанПиН 3.3686-21",
+				notes: "Автопилот месяца: норма микроклимата",
 			});
 		}
 

@@ -15,10 +15,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { IntraoralScannerVendor } from "@dental/shared";
+import { createApiLogger } from "../../observability/logger.js";
 import {
 	UniversalScannerHub,
 	type ProcessScanSessionOptions,
 } from "./universalScannerHub.js";
+
+const logger = createApiLogger("scannerHotFolderWatcher");
 
 export interface ScannerWatchFolderConfig {
 	readonly vendor: IntraoralScannerVendor;
@@ -66,8 +69,8 @@ export class ScannerHotFolderWatcher {
 			if (!this.isRunning) return;
 			try {
 				await this.scanAllFolders();
-			} catch {
-				// Resilient: never crash the loop
+			} catch (err) {
+				logger.warn({ err }, "ScannerHotFolderWatcher poll cycle error");
 			} finally {
 				if (this.isRunning) {
 					this.pollTimer = setTimeout(pollCycle, pollIntervalMs);
@@ -93,8 +96,8 @@ export class ScannerHotFolderWatcher {
 			try {
 				const folderEvents = await this.processFolder(cfg);
 				events.push(...folderEvents);
-			} catch {
-				// Continue with other configured folders
+			} catch (err) {
+				logger.warn({ err, folderPath: cfg.folderPath, organizationId: cfg.organizationId }, "ScannerHotFolderWatcher failed to process watch folder");
 			}
 		}
 
@@ -195,7 +198,8 @@ export class ScannerHotFolderWatcher {
 			}
 
 			return event;
-		} catch {
+		} catch (err) {
+			logger.warn({ err, zipPath, organizationId: cfg.organizationId }, "ScannerHotFolderWatcher failed to ingest zip archive");
 			return null;
 		}
 	}
@@ -235,7 +239,8 @@ export class ScannerHotFolderWatcher {
 			}
 
 			return event;
-		} catch {
+		} catch (err) {
+			logger.warn({ err, filePaths, organizationId: cfg.organizationId }, "ScannerHotFolderWatcher failed to ingest standalone scan files");
 			return null;
 		}
 	}

@@ -23,6 +23,9 @@
 import { createHmac } from "node:crypto";
 import { OmnichannelTokenVault } from "./services/bots/OmnichannelTokenVault.js";
 import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
+import { createApiLogger } from "./observability/logger.js";
+
+const logger = createApiLogger("whatsappTransport");
 
 const GRAPH_API_VERSION = "v21.0";
 
@@ -118,9 +121,9 @@ export function readWhatsappCredentials(config: {
 		try {
 			accessToken = OmnichannelTokenVault.decrypt(accessToken, config.organizationId);
 		} catch (err: unknown) {
-			console.error(
-				`[readWhatsappCredentials] Failed to decrypt WhatsApp access token for org ${config.organizationId}:`,
-				err,
+			logger.error(
+				{ err, organizationId: config.organizationId },
+				"[readWhatsappCredentials] Failed to decrypt WhatsApp access token",
 			);
 			// fallback to raw value if decryption fails
 		}

@@ -3,9 +3,9 @@ import {
 	type OneCChartOfAccounts,
 	type OneCClinicProfile,
 	type OneCPaymentBreakdownItem,
-	rubToKopecks,
+	rublesToKopecks,
 } from "@dental/shared";
-import { db } from "../../../../db/client.js";
+import type { TenantDb } from "../../../../db/rls.js";
 import { payments } from "../../../../db/schema.js";
 
 export interface ReconciledPaymentsResult {
@@ -13,18 +13,26 @@ export interface ReconciledPaymentsResult {
 	readonly totalPaymentsKop: number;
 }
 
-export async function fetchAndReconcilePayments(params: {
-	readonly orgId: string;
-	readonly startTimestamp: Date;
-	readonly endTimestamp: Date;
-	readonly cleanDate: string;
-	readonly clinic: OneCClinicProfile;
-	readonly chartOfAccounts: OneCChartOfAccounts;
-}): Promise<ReconciledPaymentsResult> {
+export async function fetchAndReconcilePayments(
+	tx: TenantDb,
+	params: {
+		readonly orgId: string;
+		readonly startTimestamp: Date;
+		readonly endTimestamp: Date;
+		readonly cleanDate: string;
+		readonly clinic: OneCClinicProfile;
+		readonly chartOfAccounts: OneCChartOfAccounts;
+	},
+): Promise<ReconciledPaymentsResult> {
 	const { orgId, startTimestamp, endTimestamp, cleanDate, clinic, chartOfAccounts } = params;
 
-	const paymentRows = await db
-		.select()
+	const paymentRows = await tx
+		.select({
+			id: payments.id,
+			method: payments.method,
+			amountRub: payments.amountRub,
+			amountKopecks: payments.amountKopecks,
+		})
 		.from(payments)
 		.where(
 			and(
@@ -40,7 +48,8 @@ export async function fetchAndReconcilePayments(params: {
 	let advanceKop = 0;
 
 	for (const p of paymentRows) {
-		const amountKop = rubToKopecks(Number(p.amountRub) || 0);
+		const kop = p.amountKopecks != null ? Number(p.amountKopecks) : 0;
+		const amountKop = kop !== 0 ? kop : rublesToKopecks(Number(p.amountRub) || 0);
 		if (p.method === "cash") {
 			cashKop += amountKop;
 		} else if (p.method === "card") {
@@ -70,7 +79,7 @@ export async function fetchAndReconcilePayments(params: {
 			tenderTitleRu: "Оплата банковской картой / Эквайринг (57.03)",
 			amountKopecks: acquiringKop,
 			accountCode: chartOfAccounts.accountAcquiringTransit,
-			acquiringBankName: clinic.bankName || "ПАО СБЕРБАНК",
+			...(clinic.bankName ? { acquiringBankName: clinic.bankName } : {}),
 		});
 	}
 	if (sbpKop > 0) {
@@ -94,28 +103,4 @@ export async function fetchAndReconcilePayments(params: {
 
 	const totalPaymentsKop = breakdowns.reduce((s, p) => s + p.amountKopecks, 0);
 	return { paymentBreakdowns: breakdowns, totalPaymentsKop };
-}
-
-export function balancePaymentBreakdowns(
-	breakdowns: OneCPaymentBreakdownItem[],
-	totalRevenueKop: number,
-	cleanDate: string,
-	chartOfAccounts: OneCChartOfAccounts,
-): void {
-	const totalPaymentsKop = breakdowns.reduce((s, p) => s + p.amountKopecks, 0);
-	if (totalPaymentsKop !== totalRevenueKop) {
-		const firstBreakdown = breakdowns[0];
-		if (firstBreakdown) {
-			const diff = totalRevenueKop - totalPaymentsKop;
-			firstBreakdown.amountKopecks = Math.max(0, Math.round(firstBreakdown.amountKopecks + diff));
-		} else if (totalRevenueKop > 0) {
-			breakdowns.push({
-				id: `pay-auto-${cleanDate}`,
-				tenderType: "cash",
-				tenderTitleRu: "Наличные (Касса клиники)",
-				amountKopecks: totalRevenueKop,
-				accountCode: chartOfAccounts.accountCashDesk,
-			});
-		}
-	}
 }

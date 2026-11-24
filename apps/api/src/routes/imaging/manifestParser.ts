@@ -150,7 +150,11 @@ export function extractFilePath(value: string) {
 }
 
 export function extractTooth(value: string) {
-	return value.match(/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/)?.[0] ?? null;
+	return (
+		value.match(
+			/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/,
+		)?.[0] ?? null
+	);
 }
 
 export function extractPhone(value: string) {
@@ -307,7 +311,7 @@ export function parseManifestLine(
 				/cbct|кт|ккт|dicom|ceph|trg|трг|телерентг|цеф|opg|оптг|прицельный|прицел|rvg|bitewing|фото/gi,
 				"",
 			)
-			.replace(/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/g, "")
+			.replace(/\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8]|5[1-5]|6[1-5]|7[1-5]|8[1-5])\b/g, "")
 			.split(/\s+/)
 			.filter((part) => /^[A-Za-zА-Яа-яЁё-]{2,}$/.test(part))
 			.slice(0, 4)
@@ -363,7 +367,7 @@ export async function parseImagingManifest(
 		| string,
 ) {
 	const orgId =
-		typeof orgIdOrInput === "string" && maybeInput ? orgIdOrInput : "default";
+		typeof orgIdOrInput === "string" && maybeInput ? orgIdOrInput.trim() : "";
 	const input =
 		typeof orgIdOrInput === "object"
 			? orgIdOrInput
@@ -390,6 +394,14 @@ export async function parseImagingManifest(
 			rows: [],
 			parserNotes: ["Нет строк для разбора."],
 		});
+	}
+
+	const UUID_REGEX =
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	if (!UUID_REGEX.test(orgId)) {
+		throw new Error(
+			"Некорректный идентификатор организации (UUID) при разборе манифеста снимков.",
+		);
 	}
 
 	const delimiter = detectDelimiter(lines[0] ?? "");

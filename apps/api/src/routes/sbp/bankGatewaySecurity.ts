@@ -29,10 +29,6 @@ export function verifySbpWebhookSignature(
 		cleanPayload[key] = String(value);
 	}
 
-	if (timingSafeSecretEqual(incomingSignature, secret)) {
-		return true;
-	}
-
 	const sortedKeys = Object.keys(cleanPayload).sort();
 	if (sortedKeys.length === 0) return false;
 

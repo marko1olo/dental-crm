@@ -1,10 +1,14 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	getDocumentById,
 	readIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { renderDocumentHtml } from "../../documents/renderDocument.js";
+import {
+	escapeHtml,
+	renderDocumentHtml,
+} from "../../documents/renderDocument.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -20,15 +24,30 @@ import {
 	resolveDocumentRenderContext,
 } from "./shared.js";
 
+const documentHtmlParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
+
+const documentHtmlQuerySchema = z
+	.object({
+		download: z.enum(["0", "1", "true", "false"]).optional(),
+	})
+	.strict();
+
 function injectVoidWatermarkIntoHtml(
 	html: string,
 	reason?: string | null,
 	voidedAt?: string | null,
 ): string {
-	const reasonStr = reason ? ` Причина: ${reason}.` : "";
-	const dateStr = voidedAt
-		? ` Дата аннулирования: ${new Date(voidedAt).toLocaleDateString("ru-RU")}.`
-		: "";
+	const safeReason = reason?.trim() ? escapeHtml(reason.trim()) : "";
+	const reasonStr = safeReason ? ` Причина: ${safeReason}.` : "";
+	const parsedVoidDate = voidedAt ? new Date(voidedAt) : null;
+	const dateStr =
+		parsedVoidDate && !Number.isNaN(parsedVoidDate.getTime())
+			? ` Дата аннулирования: ${escapeHtml(parsedVoidDate.toLocaleDateString("ru-RU"))}.`
+			: "";
 	const bannerHtml = `
 <div id="dente-void-banner" style="position: sticky; top: 0; left: 0; width: 100%; background: #fee2e2; border-bottom: 2px solid #ef4444; color: #991b1b; text-align: center; padding: 12px 16px; font-weight: 700; font-size: 15px; z-index: 99999; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box;">
   ВНИМАНИЕ: ДОКУМЕНТ АННУЛИРОВАН (ЮРИДИЧЕСКАЯ СИЛА УТРАЧЕНА).${reasonStr}${dateStr}
@@ -47,11 +66,15 @@ export async function register(app: FastifyInstance) {
 	app.get<{ Params: { id: string }; Querystring: { download?: string } }>(
 		"/api/documents/:id/html",
 		async (request, reply) => {
-			const { id } = request.params as { id: string };
-			const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-			if (!UUID_REGEX.test(id)) {
+			const parsedParams = documentHtmlParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply.code(400).send(apiError("Некорректный идентификатор документа (ожидается UUID)"));
 			}
+			const parsedQuery = documentHtmlQuerySchema.safeParse(request.query);
+			if (!parsedQuery.success) {
+				return reply.code(400).send(apiError("Некорректные параметры запроса HTML-версии документа"));
+			}
+			const { id } = parsedParams.data;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 			const document = await getDocumentById(orgId, id);
@@ -61,6 +84,12 @@ export async function register(app: FastifyInstance) {
 
 			// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
 			const portalPatient = extractPortalPatient(request);
+			const identity = getRequestIdentity(request);
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
 			if (portalPatient) {
 				if (document.patientId !== portalPatient.patientId) {
 					return reply
@@ -70,8 +99,6 @@ export async function register(app: FastifyInstance) {
 			} else {
 				// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах для персонала клиники
 				if (clinicalDocKinds.has(document.kind)) {
-					const identity = getRequestIdentity(request);
-					const access = evaluateClinicalAccess(identity.role);
 					if (
 						!access.hasClinicalAccess &&
 						!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
@@ -84,6 +111,13 @@ export async function register(app: FastifyInstance) {
 			const patient = await getPatientByIdFromDb(orgId, document.patientId);
 			if (!patient) {
 				return reply.code(404).send(apiError("Пациент не найден"));
+			}
+			if (!portalPatient && patient.status === "archived" && !access.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "patients.archived.read",
+					message: "Доступ к документам архивного пациента разрешён только клиническому персоналу.",
+				});
 			}
 
 			// 152-ФЗ / 323-ФЗ: Аудит просмотра медицинского документа
@@ -109,8 +143,8 @@ export async function register(app: FastifyInstance) {
 						);
 				}
 				if (
-					request.query.download === "1" ||
-					request.query.download === "true"
+					parsedQuery.data.download === "1" ||
+					parsedQuery.data.download === "true"
 				) {
 					reply.header(
 						"Content-Disposition",

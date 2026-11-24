@@ -177,6 +177,7 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 				.select()
 				.from(cashBoxShifts)
 				.where(and(eq(cashBoxShifts.id, shiftId), eq(cashBoxShifts.organizationId, orgId)));
+			assert.ok(shiftAfterDown, "Смена после первого взноса обязана существовать");
 			assert.equal(Number(shiftAfterDown.incomeTotalRub), 30000, "Выручка смены должна отражать 30 000 ₽ первого взноса");
 
 			// Проверяем очередь 54-ФЗ для первого взноса
@@ -270,6 +271,7 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 				.select()
 				.from(cashBoxShifts)
 				.where(and(eq(cashBoxShifts.id, shiftId), eq(cashBoxShifts.organizationId, orgId)));
+			assert.ok(shiftAfterTranche, "Смена после оплаты транша обязана существовать");
 			const expectedShiftIncome = 30000 + Number(firstTranche.amountRub);
 			assert.equal(Number(shiftAfterTranche.incomeTotalRub), expectedShiftIncome, "Выручка смены должна учесть сумму транша");
 
@@ -295,6 +297,7 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 				.select()
 				.from(cashBoxShifts)
 				.where(and(eq(cashBoxShifts.id, shiftId), eq(cashBoxShifts.organizationId, orgId)));
+			assert.ok(shiftAfterReplay, "Смена после идемпотентного повтора обязана существовать");
 			assert.equal(Number(shiftAfterReplay.incomeTotalRub), expectedShiftIncome, "Выручка смены не должна повторно увеличиваться");
 
 			// 5.5. ТЕСТ 3b: Частичная оплата транша №2 (проверка, что amountRub не затирается)

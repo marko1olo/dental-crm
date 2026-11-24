@@ -8,6 +8,7 @@
  * 4. Emergency acute pain alias ('emergency', 'acute-pain') bypasses 404 without prior letter
  */
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
@@ -90,14 +91,18 @@ describe("DMS Cashbox Split, Soft Overdraft & Box Routing Invariants", () => {
 				issueDate: "2026-01-01",
 				validFrom: "2026-01-01",
 				validUntil: "2027-12-31",
+				maxCoverageKopecks: 500000n,
 				maxCoverageRub: 5000,
+				usedAmountKopecks: 0n,
 				usedAmountRub: 0,
 				status: "active",
 			}).onConflictDoUpdate({
 				target: dmsGuaranteeLetters.id,
 				set: {
+					usedAmountKopecks: 0n,
 					usedAmountRub: 0,
 					status: "active",
+					maxCoverageKopecks: 500000n,
 					maxCoverageRub: 5000,
 				},
 			});
@@ -109,7 +114,7 @@ describe("DMS Cashbox Split, Soft Overdraft & Box Routing Invariants", () => {
 	});
 
 	test("1. DMS Split payment (Card + Insurance) matches total sum without SplitTenderSumMismatch", async () => {
-		const clientMutationId = `dms-split-${Date.now()}`;
+		const clientMutationId = randomUUID();
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/cashbox/payments",
@@ -156,7 +161,7 @@ describe("DMS Cashbox Split, Soft Overdraft & Box Routing Invariants", () => {
 	});
 
 	test("2. Soft Overdraft: Exceeding guarantee letter coverage with isUrgentCare succeeds with status 'exhausted'", async () => {
-		const clientMutationId = `dms-overdraft-${Date.now()}`;
+		const clientMutationId = randomUUID();
 		// Letter already has 4000 used out of 5000 max. We request 3000 more (total used becomes 7000 > 5000)
 		const res = await app.inject({
 			method: "POST",
@@ -241,7 +246,7 @@ describe("DMS Cashbox Split, Soft Overdraft & Box Routing Invariants", () => {
 	});
 
 	test("4. Emergency acute pain alias ('emergency') succeeds without prior letter", async () => {
-		const clientMutationId = `dms-emerg-${Date.now()}`;
+		const clientMutationId = randomUUID();
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/cashbox/payments",

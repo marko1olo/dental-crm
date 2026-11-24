@@ -611,7 +611,7 @@ export class InfodentCsvParser {
 			return parseKopecks(cleaned);
 		} catch {
 			const num = Number.parseFloat(String(value).replace(/\s+/g, "").replace(",", "."));
-			return Number.isNaN(num) ? null : Math.round(num * 100);
+			return Number.isFinite(num) ? rublesToKopecks(num) : null;
 		}
 	}
 }

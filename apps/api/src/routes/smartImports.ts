@@ -40,7 +40,22 @@ import { importProgressManager } from "../services/imports/smartImportsProgressS
 
 export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.get("/api/imports/smart/progress/stream", {}, async (request, reply) => {
-		importProgressManager.handleSseStream(request, reply);
+		if (
+			!(await requireClinicalReadAccess(
+				request,
+				reply,
+				"smart imports progress stream",
+			))
+		) {
+			return;
+		}
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"smart imports progress stream",
+		);
+		if (!orgId) return;
+		importProgressManager.handleSseStream(request, reply, orgId);
 	});
 
 	app.post("/api/imports/smart/preview", {}, async (request, reply) => {

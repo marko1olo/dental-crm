@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { FastifyRequest, FastifyReply } from "fastify";
+import { z } from "zod";
 import {
 	imagingImportPreviewRequestSchema,
 	dicomWebConnectorCheckRequestSchema,
@@ -42,12 +43,31 @@ export async function handleDicomWebCheck(request: FastifyRequest, reply: Fastif
 	return checkDicomWebConnector(parsed.data);
 }
 
+const dicomServerPingBodySchema = z.object({
+	endpointUrl: z.string().trim().url("Некорректный URL сервера PACS.").optional(),
+	host: z
+		.string()
+		.trim()
+		.min(1)
+		.max(255)
+		.regex(/^[a-zA-Z0-9.-]+$/, "Недопустимые символы в имени хоста PACS.")
+		.optional(),
+	port: z.coerce.number().int().min(1).max(65535).optional(),
+	aeTitle: z.string().trim().min(1).max(64).optional(),
+}).strict();
+
 export async function handleDicomServerPing(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "dicom server ping"))) return;
-	const body = (request.body ?? {}) as { endpointUrl?: string; host?: string; port?: number; aeTitle?: string };
-	const host = (body.host ?? "127.0.0.1").trim() || "127.0.0.1";
-	const port = Number(body.port) || 8042;
-	const endpointUrl = typeof body.endpointUrl === "string" && body.endpointUrl.trim().length > 0 ? body.endpointUrl.trim() : `http://${host}:${port}/dicom-web`;
+	const parsed = parseImagingPayload(
+		dicomServerPingBodySchema,
+		request.body ?? {},
+		"Некорректные параметры проверки соединения с PACS-сервером.",
+	);
+	if (!parsed.ok) return reply.code(400).send(parsed.response);
+	const body = parsed.data;
+	const host = body.host ?? "127.0.0.1";
+	const port = body.port ?? 8042;
+	const endpointUrl = body.endpointUrl && body.endpointUrl.length > 0 ? body.endpointUrl : `http://${host}:${port}/dicom-web`;
 	const checkResult = await checkDicomWebConnector({
 		endpointUrl, qidoRsPath: "/studies", wadoRsPath: "/studies", stowRsPath: "/studies", authMode: "none", timeoutMs: 2500,
 	});

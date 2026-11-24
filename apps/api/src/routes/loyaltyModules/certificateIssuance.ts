@@ -15,7 +15,7 @@ import {
 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import type { TenantDb } from "../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	cashBoxes,
 	cashOperations,
@@ -25,6 +25,7 @@ import {
 	payments,
 } from "../../db/schema.js";
 import type { FormattedCertificateDto } from "./certificateTypes.js";
+import { addCashBoxShiftDelta } from "./shiftLedgerSync.js";
 
 function isPgUniqueViolation(err: unknown): boolean {
 	const candidate = err as { code?: unknown; cause?: unknown };
@@ -94,15 +95,18 @@ export async function executeIssueGiftCertificate(
 					.for("update");
 
 				if (existingCert) {
+					const nomKop = existingCert.nominalKopecks != null ? Number(existingCert.nominalKopecks) : Number(parseKopecks(existingCert.nominalRub));
+					const initBalKop = existingCert.initialBalanceKopecks != null ? Number(existingCert.initialBalanceKopecks) : Number(parseKopecks(existingCert.initialBalanceRub));
+					const curBalKop = existingCert.currentBalanceKopecks != null ? Number(existingCert.currentBalanceKopecks) : Number(parseKopecks(existingCert.currentBalanceRub));
 					return {
 						id: existingCert.id,
 						serialNumber: existingCert.serialNumber,
-						nominalRub: Number(existingCert.nominalRub),
-						initialBalanceRub: Number(existingCert.initialBalanceRub),
-						currentBalanceRub: Number(existingCert.currentBalanceRub),
-						nominalKop: Number(parseKopecks(existingCert.nominalRub)),
-						initialBalanceKop: Number(parseKopecks(existingCert.initialBalanceRub)),
-						currentBalanceKop: Number(parseKopecks(existingCert.currentBalanceRub)),
+						nominalRub: kopecksToRubles(nomKop),
+						initialBalanceRub: kopecksToRubles(initBalKop),
+						currentBalanceRub: kopecksToRubles(curBalKop),
+						nominalKop: nomKop,
+						initialBalanceKop: initBalKop,
+						currentBalanceKop: curBalKop,
 						purchaserPatientId: existingCert.purchaserPatientId,
 						purchaserName: existingCert.purchaserName,
 						recipientPatientId: existingCert.recipientPatientId,
@@ -142,6 +146,7 @@ export async function executeIssueGiftCertificate(
 					organizationId: orgId,
 					patientId: effectivePurchaserId,
 					amountRub: nominalRubNum,
+					amountKopecks: BigInt(nominalKopExact),
 					method: "card",
 					status: "paid",
 					paidAt: new Date(),
@@ -164,14 +169,24 @@ export async function executeIssueGiftCertificate(
 			const currentBalKop = cashDeskBox.balanceKopecks != null ? cashDeskBox.balanceKopecks : parseKopecks(cashDeskBox.balanceRub || 0);
 			const newBalanceKop = currentBalKop + Number(nominalKopExact);
 			const newBalanceRub = Number(kopecksToNumericString(newBalanceKop));
+			const shiftId = await addCashBoxShiftDelta({
+				tx,
+				organizationId: orgId,
+				cashBoxId: cashDeskBox.id,
+				kind: "income",
+				deltaKopecks: Number(nominalKopExact),
+			});
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
+				shiftId,
 				operationType: "income",
 				amountRub: nominalRubNum,
 				amountKopecks: Number(nominalKopExact),
 				balanceBeforeRub: cashDeskBox.balanceRub || 0,
+				balanceBeforeKopecks: BigInt(currentBalKop),
 				balanceAfterRub: newBalanceRub,
+				balanceAfterKopecks: BigInt(newBalanceKop),
 				patientId: effectivePurchaserId,
 				kkmDocNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
 				reasonText: `Продажа подарочного сертификата №${serialNumber} (тег 1214: Аванс, предмет расчета 1212 = 10)`,
@@ -184,7 +199,7 @@ export async function executeIssueGiftCertificate(
 					balanceKopecks: newBalanceKop,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, cashDeskBox.id));
+				.where(and(eq(cashBoxes.id, cashDeskBox.id), eq(cashBoxes.organizationId, orgId)));
 		}
 
 		// Фискализация чека продажи 54-ФЗ (тег 1214: аванс, тег 1212 = 10)
@@ -292,15 +307,18 @@ export async function executeIssueGiftCertificate(
 						.limit(1);
 
 					if (existingCert) {
+						const nomKop = existingCert.nominalKopecks != null ? Number(existingCert.nominalKopecks) : Number(parseKopecks(existingCert.nominalRub));
+						const initBalKop = existingCert.initialBalanceKopecks != null ? Number(existingCert.initialBalanceKopecks) : Number(parseKopecks(existingCert.initialBalanceRub));
+						const curBalKop = existingCert.currentBalanceKopecks != null ? Number(existingCert.currentBalanceKopecks) : Number(parseKopecks(existingCert.currentBalanceRub));
 						return {
 							id: existingCert.id,
 							serialNumber: existingCert.serialNumber,
-							nominalRub: Number(existingCert.nominalRub),
-							initialBalanceRub: Number(existingCert.initialBalanceRub),
-							currentBalanceRub: Number(existingCert.currentBalanceRub),
-							nominalKop: Number(parseKopecks(existingCert.nominalRub)),
-							initialBalanceKop: Number(parseKopecks(existingCert.initialBalanceRub)),
-							currentBalanceKop: Number(parseKopecks(existingCert.currentBalanceRub)),
+							nominalRub: kopecksToRubles(nomKop),
+							initialBalanceRub: kopecksToRubles(initBalKop),
+							currentBalanceRub: kopecksToRubles(curBalKop),
+							nominalKop: nomKop,
+							initialBalanceKop: initBalKop,
+							currentBalanceKop: curBalKop,
 							purchaserPatientId: existingCert.purchaserPatientId,
 							purchaserName: existingCert.purchaserName,
 							recipientPatientId: existingCert.recipientPatientId,
@@ -335,50 +353,52 @@ export async function lookupGiftCertificateBySerial(
 	const cleaned = rawSerial.replace(/[\s-]/g, "");
 	const canonicalFormatted = `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8, 12)}-${cleaned.slice(12, 16)}`;
 
-	const [cert] = await db
-		.select()
-		.from(giftCertificates)
-		.where(
-			and(
-				eq(giftCertificates.organizationId, orgId),
-				sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
-			),
-		)
-		.limit(1);
+	return withTenantCtx(orgId, async (tx) => {
+		const [cert] = await tx
+			.select()
+			.from(giftCertificates)
+			.where(
+				and(
+					eq(giftCertificates.organizationId, orgId),
+					sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
+				),
+			)
+			.limit(1);
 
-	if (!cert) {
-		return { found: false };
-	}
+		if (!cert) {
+			return { found: false };
+		}
 
-	let effectiveStatus = cert.status;
-	const isExpired = new Date() > cert.expiresAt;
-	if (isExpired && cert.status === "active") {
-		effectiveStatus = "expired";
-		await db
-			.update(giftCertificates)
-			.set({ status: "expired", updatedAt: new Date() })
-			.where(eq(giftCertificates.id, cert.id));
-	}
+		let effectiveStatus = cert.status;
+		const isExpired = new Date() > cert.expiresAt;
+		if (isExpired && cert.status === "active") {
+			effectiveStatus = "expired";
+			await tx
+				.update(giftCertificates)
+				.set({ status: "expired", updatedAt: new Date() })
+				.where(and(eq(giftCertificates.id, cert.id), eq(giftCertificates.organizationId, orgId)));
+		}
 
-	const nomKop = cert.nominalKopecks != null ? cert.nominalKopecks : parseKopecks(cert.nominalRub);
-	const curBalKop = cert.currentBalanceKopecks != null ? cert.currentBalanceKopecks : parseKopecks(cert.currentBalanceRub);
+		const nomKop = cert.nominalKopecks != null ? cert.nominalKopecks : parseKopecks(cert.nominalRub);
+		const curBalKop = cert.currentBalanceKopecks != null ? cert.currentBalanceKopecks : parseKopecks(cert.currentBalanceRub);
 
-	return {
-		found: true,
-		certificate: {
-			id: cert.id,
-			serialNumber: canonicalFormatted,
-			nominalRub: kopecksToRubles(nomKop),
-			currentBalanceRub: kopecksToRubles(curBalKop),
-			nominalKop: nomKop,
-			currentBalanceKop: curBalKop,
-			status: effectiveStatus,
-			issuedAtIso: cert.issuedAt.toISOString(),
-			expiresAtIso: cert.expiresAt.toISOString(),
-			purchaserName: cert.purchaserName,
-			recipientName: cert.recipientName,
-			recipientPhone: cert.recipientPhone,
-			notes: cert.notes,
-		},
-	};
+		return {
+			found: true,
+			certificate: {
+				id: cert.id,
+				serialNumber: canonicalFormatted,
+				nominalRub: kopecksToRubles(nomKop),
+				currentBalanceRub: kopecksToRubles(curBalKop),
+				nominalKop: nomKop,
+				currentBalanceKop: curBalKop,
+				status: effectiveStatus,
+				issuedAtIso: cert.issuedAt.toISOString(),
+				expiresAtIso: cert.expiresAt.toISOString(),
+				purchaserName: cert.purchaserName,
+				recipientName: cert.recipientName,
+				recipientPhone: cert.recipientPhone,
+				notes: cert.notes,
+			},
+		};
+	});
 }

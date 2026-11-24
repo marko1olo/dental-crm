@@ -81,7 +81,8 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 		try {
 			const result = await familyWalletService.refund({
 				organizationId, familyGroupId: parsed.data.familyGroupId, patientId: parsed.data.patientId,
-				amountRub: parsed.data.amountRub, cashBoxId: parsed.data.cashBoxId, operatorId: parsed.data.operatorId,
+				amountRub: parsed.data.amountRub, amountKopecks: parsed.data.amountKopecks,
+				cashBoxId: parsed.data.cashBoxId, operatorId: parsed.data.operatorId,
 				method: parsed.data.method, reasonText: parsed.data.reason, clientMutationId: mutationId,
 			});
 			return {

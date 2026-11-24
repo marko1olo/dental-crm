@@ -1,15 +1,22 @@
 /**
  * DENTE Dental CRM — CommerceML 2.09 Decomposed Module Unit & Integration Tests.
- * Tests catalogXmlGenerator, offersXmlGenerator, and reconciliationEngine.
+ * Tests catalogXmlGenerator, offersXmlGenerator, and reconciliationEngine with PG18 persistence.
  */
 
 import { strict as assert } from "node:assert";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import {
 	COMMERCEML_VERSION_209,
 	COMMERCEML_XMLNS,
 	DEFAULT_OKEI_PIECE_CODE,
 } from "@dental/shared";
+import { db } from "../../../db/client.js";
+import { organizations } from "../../../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../../../tests/support/fixtureOrganizations.js";
 import {
 	CommerceMlService,
 	ReconciliationEngine,
@@ -19,9 +26,36 @@ import {
 	oneCSyncPayloadSchema,
 } from "./index.js";
 
-const TEST_ORG_ID = "00000000-0000-7000-8000-000000000001";
+const NAMESPACE = "commerceMlDecomposed";
+const TEST_ORG_ID = fixtureUuid(NAMESPACE, 1);
+const OTHER_ORG_ID = fixtureUuid(NAMESPACE, 2);
 
 describe("CommerceML Decomposed Modular Architecture Tests", () => {
+	before(async () => {
+		await purgeFixtureOrganizations([TEST_ORG_ID, OTHER_ORG_ID]);
+		await withFixtureTenant(TEST_ORG_ID, async () => {
+			await db.insert(organizations).values({
+				id: TEST_ORG_ID,
+				name: "ООО «ДЕНТЕ Тест Декомп»",
+				loginId: `org_cmld_${Date.now()}`,
+				inn: "7707083893",
+				kpp: "770701001",
+			});
+		});
+		await withFixtureTenant(OTHER_ORG_ID, async () => {
+			await db.insert(organizations).values({
+				id: OTHER_ORG_ID,
+				name: "ООО «Другая Клиника»",
+				loginId: `org_cmld2_${Date.now()}`,
+				inn: "7707083893",
+			});
+		});
+	});
+
+	after(async () => {
+		await purgeFixtureOrganizations([TEST_ORG_ID, OTHER_ORG_ID]);
+	});
+
 	it("catalogXmlGenerator generates valid statutory import.xml CommerceML 2.09 structure", async () => {
 		const result = await buildCatalogXml({
 			organizationId: TEST_ORG_ID,
@@ -46,7 +80,7 @@ describe("CommerceML Decomposed Modular Architecture Tests", () => {
 		assert.ok(xml.includes("Терапевтическая стоматология"));
 		assert.ok(xml.includes("Дентальная имплантация"));
 		assert.ok(xml.includes("Рентгенодиагностика"));
-		assert.ok(xml.includes("<Каталог СодержитТолькоИзменения=\"false\">"));
+		assert.ok(xml.includes('<Каталог СодержитТолькоИзменения="false">'));
 		assert.ok(xml.includes("<Товары>"));
 		assert.ok(xml.includes(`<Код>${DEFAULT_OKEI_PIECE_CODE}</Код>`));
 	});
@@ -68,14 +102,14 @@ describe("CommerceML Decomposed Modular Architecture Tests", () => {
 		assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
 		assert.ok(xml.includes(`<КоммерческаяИнформация xmlns="${COMMERCEML_XMLNS}"`));
 		assert.ok(xml.includes(`ВерсияСхемы="${COMMERCEML_VERSION_209}"`));
-		assert.ok(xml.includes("<ПакетПредложений СодержитТолькоИзменения=\"false\">"));
+		assert.ok(xml.includes('<ПакетПредложений СодержитТолькоИзменения="false">'));
 		assert.ok(xml.includes("<ТипыЦен>"));
 		assert.ok(xml.includes("<Склады>"));
 		assert.ok(xml.includes("<Предложения>"));
 		assert.ok(xml.includes("Основной склад клиники"));
 	});
 
-	it("ReconciliationEngine builds statutory package and validates integrity", async () => {
+	it("ReconciliationEngine builds statutory package and validates PG18 double-posting check", async () => {
 		const res = await ReconciliationEngine.buildCommerceMlPackage({
 			organizationId: TEST_ORG_ID,
 			startDateIso: "2026-09-01",
@@ -93,13 +127,12 @@ describe("CommerceML Decomposed Modular Architecture Tests", () => {
 		assert.equal(res.integrity.isValid, true);
 		assert.equal(res.integrity.errors.length, 0);
 
-		// Check facade integration with strict tenant isolation
-		const doubleCheck = CommerceMlService.checkDoublePosting(TEST_ORG_ID, res.sha256);
+		const doubleCheck = await CommerceMlService.checkDoublePosting(TEST_ORG_ID, res.sha256);
 		assert.equal(doubleCheck.isDoublePosting, true);
 		assert.ok(doubleCheck.message.includes("уже выгружался ранее"));
 
-		const otherOrgCheck = CommerceMlService.checkDoublePosting(
-			"11111111-2222-3333-4444-555555555555",
+		const otherOrgCheck = await CommerceMlService.checkDoublePosting(
+			OTHER_ORG_ID,
 			res.sha256,
 		);
 		assert.equal(otherOrgCheck.isDoublePosting, false);

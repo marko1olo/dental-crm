@@ -9,6 +9,7 @@
 
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { isDemoShowcaseMode } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
@@ -79,6 +80,10 @@ export async function seedDemoDataForPreset(
 					await tx.insert(schema.chairs).values(chairsToInsert);
 				}
 			}
+		}
+
+		if (!isDemoShowcaseMode() && !organizationId.startsWith("demo-")) {
+			return;
 		}
 
 		if (preset === "solo_therapist") {
@@ -332,43 +337,52 @@ export async function updateWorkspaceProfileHandler(
 		}
 		const incoming = parsedBody.data;
 
-		const [existing] = await db
-			.select({ flags: schema.organizations.workspaceFeatureFlags })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
-		if (!existing) {
+		const profileResult = await withTenantCtx(organizationId, async (tx) => {
+			const [existing] = await tx
+				.select({ flags: schema.organizations.workspaceFeatureFlags })
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, organizationId))
+				.for("update")
+				.limit(1);
+			if (!existing) {
+				return { notFound: true as const };
+			}
+
+			const existingRaw =
+				existing.flags &&
+				typeof existing.flags === "object" &&
+				!Array.isArray(existing.flags)
+					? (existing.flags as Record<string, unknown>)
+					: {};
+
+			const merged = workspaceFlagsFromStorage({
+				...workspaceFlagsFromStorage(existing.flags),
+				...incoming,
+			});
+
+			await tx
+				.update(schema.organizations)
+				.set({
+					workspaceFeatureFlags: {
+						...existingRaw,
+						...merged,
+					},
+					updatedAt: new Date(),
+				})
+				.where(eq(schema.organizations.id, organizationId));
+
+			return { notFound: false as const, merged };
+		});
+
+		if (profileResult.notFound) {
 			return reply.code(404).send({
 				error: "OrganizationNotFound",
 				message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
 			});
 		}
 
-		const existingRaw =
-			existing.flags &&
-			typeof existing.flags === "object" &&
-			!Array.isArray(existing.flags)
-				? (existing.flags as Record<string, unknown>)
-				: {};
-
-		const merged = workspaceFlagsFromStorage({
-			...workspaceFlagsFromStorage(existing.flags),
-			...incoming,
-		});
-
-		await db
-			.update(schema.organizations)
-			.set({
-				workspaceFeatureFlags: {
-					...existingRaw,
-					...merged,
-				},
-				updatedAt: new Date(),
-			})
-			.where(eq(schema.organizations.id, organizationId));
-
 		// Возвращаем сохранённый набор: клиент видит, что именно легло в базу.
-		return reply.send({ ok: true, ...merged });
+		return reply.send({ ok: true, ...profileResult.merged });
 	} catch (error) {
 		req.log.error({ err: error }, "Failed to update workspace profile");
 		return reply.code(500).send({ error: "Internal Server Error" });
@@ -442,39 +456,50 @@ export async function applyWorkspacePresetHandler(
 		 * незаданные не должны сбрасываться к умолчаниям. Имя пресета пишется тем же
 		 * значением, что вернётся клиенту.
 		 */
-		const [existing] = await db
-			.select({ flags: schema.organizations.workspaceFeatureFlags })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
-		if (!existing) {
+		const presetResult = await withTenantCtx(organizationId, async (tx) => {
+			const [existing] = await tx
+				.select({ flags: schema.organizations.workspaceFeatureFlags })
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, organizationId))
+				.for("update")
+				.limit(1);
+			if (!existing) {
+				return { notFound: true as const };
+			}
+			const existingRaw =
+				existing.flags &&
+				typeof existing.flags === "object" &&
+				!Array.isArray(existing.flags)
+					? (existing.flags as Record<string, unknown>)
+					: {};
+			const savedFlags = workspaceFlagsFromStorage({
+				...workspaceFlagsFromStorage(existing.flags),
+				...finalFlags,
+				workspacePreset: presetName,
+			});
+
+			await tx
+				.update(schema.organizations)
+				.set({
+					workspaceFeatureFlags: {
+						...existingRaw,
+						...savedFlags,
+					},
+					updatedAt: new Date(),
+				})
+				.where(eq(schema.organizations.id, organizationId));
+
+			return { notFound: false as const, savedFlags };
+		});
+
+		if (presetResult.notFound) {
 			return reply.code(404).send({
 				error: "OrganizationNotFound",
 				message: "Клиника не найдена. Войдите в рабочий кабинет заново.",
 			});
 		}
-		const existingRaw =
-			existing.flags &&
-			typeof existing.flags === "object" &&
-			!Array.isArray(existing.flags)
-				? (existing.flags as Record<string, unknown>)
-				: {};
-		const savedFlags = workspaceFlagsFromStorage({
-			...workspaceFlagsFromStorage(existing.flags),
-			...finalFlags,
-			workspacePreset: presetName,
-		});
 
-		await db
-			.update(schema.organizations)
-			.set({
-				workspaceFeatureFlags: {
-					...existingRaw,
-					...savedFlags,
-				},
-				updatedAt: new Date(),
-			})
-			.where(eq(schema.organizations.id, organizationId));
+		const savedFlags = presetResult.savedFlags;
 
 		// Async seeding — don't block response
 		seedDemoDataForPreset(

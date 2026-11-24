@@ -23,13 +23,6 @@ import type {
 } from "../../../db/schema.js";
 import type { CashboxPaymentRequest } from "../cashboxSchemas.js";
 
-/**
- * Максимальная сумма сдачи наличными (в копейках), которая может быть
- * автоматически зачислена на авансовый депозит пациента (5 000 ₽ = 500 000 коп.).
- * Мандат 8e: Автономия врача и кассира без блокирующих препятствий.
- */
-export const MAX_CASH_CHANGE_DEPOSIT_KOPECKS = 500_000n;
-
 export type CashboxPaymentOutcome =
 	| {
 			statusCode: 200;
@@ -134,7 +127,7 @@ export function stageFailureToOutcome(failure: StageFailure): CashboxPaymentOutc
 				statusCode: 400,
 				body: {
 					error: "FamilyWalletNotFound",
-					message: "FAMILY_WALLET_NOT_FOUND: Пациент не состоит в семейной группе",
+					message: "Пациент не состоит в семейной группе.",
 				},
 			};
 		case "unauthorized_family_spend":
@@ -276,6 +269,7 @@ export interface PaymentProcessingContext {
 	// ДМС
 	lockedDmsLetter: typeof dmsGuaranteeLetters.$inferSelect | null;
 	dmsAmountToDeductKop: bigint;
+	newDmsUsedKopecks: bigint;
 	newDmsUsedRub: number;
 	isDmsExhausted: boolean;
 	isEmergencyLetterAlias: boolean;
@@ -287,6 +281,8 @@ export interface PaymentProcessingContext {
 
 	// Сплиты и чеки
 	resolvedCashKop: number;
+	resolvedCardKop: number;
+	resolvedSbpKop: number;
 	resolvedElecKop: number;
 	splitTenderCount: number;
 	receiptNumber: string | null;

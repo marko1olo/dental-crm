@@ -1,9 +1,12 @@
+import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db as database } from "../../db/client.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { appointments, visits } from "../../db/schema.js";
 import { acceptVisitDraftInDb } from "../../db/visitsQuery.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { buildEffectiveDraft } from "./buildEffectiveDraft.js";
 import { executeVisitCompletionSideEffects } from "./visitCompletionEffects.js";
@@ -15,6 +18,16 @@ import {
 
 const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const completeVisitBodySchema = z
+	.object({
+		draft: z.record(z.unknown()).optional(),
+		diary: z.record(z.unknown()).optional(),
+		doctorSummary: z.string().nullable().optional(),
+		clientMutationId: z.string().optional(),
+		idempotencyKey: z.string().optional(),
+	})
+	.strict();
 
 export async function handleCompleteVisit(
 	request: FastifyRequest,
@@ -43,14 +56,58 @@ export async function handleCompleteVisit(
 		};
 	}
 
-	try {
-		const [existingVisit] = await database
-			.select()
-			.from(visits)
-			.where(and(eq(visits.id, trimmedVisitId), eq(visits.organizationId, orgId)))
-			.limit(1);
+	const parsedBody = completeVisitBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		reply.code(400);
+		return {
+			error: "ValidationError",
+			message: "Некорректные данные завершения приёма.",
+			issues: parsedBody.error.issues,
+		};
+	}
 
-		if (!existingVisit) {
+	try {
+		const lookup = await withTenantCtx(orgId, async (tx) => {
+			const [existingVisit] = await tx
+				.select()
+				.from(visits)
+				.where(and(eq(visits.id, trimmedVisitId), eq(visits.organizationId, orgId)))
+				.limit(1);
+
+			if (!existingVisit) {
+				return { kind: "not_found" as const };
+			}
+
+			if (existingVisit.status === "signed") {
+				if (existingVisit.appointmentId) {
+					const appointmentId = existingVisit.appointmentId;
+					await tx
+						.update(appointments)
+						.set({ status: "completed" })
+						.where(
+							and(
+								eq(appointments.id, appointmentId),
+								eq(appointments.organizationId, orgId),
+							),
+						);
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "APPOINTMENT_UPDATED",
+							payload: {
+								appointmentId,
+								visitId: trimmedVisitId,
+								status: "completed",
+							},
+						});
+					});
+				}
+				return { kind: "already_signed" as const, visit: existingVisit };
+			}
+
+			return { kind: "ready" as const, visit: existingVisit };
+		});
+
+		if (lookup.kind === "not_found") {
 			reply.code(404);
 			return {
 				error: "VisitNotFound",
@@ -59,49 +116,31 @@ export async function handleCompleteVisit(
 			};
 		}
 
-		if (existingVisit.status === "signed") {
-			if (existingVisit.appointmentId) {
-				await database
-					.update(appointments)
-					.set({ status: "completed" })
-					.where(
-						and(
-							eq(appointments.id, existingVisit.appointmentId),
-							eq(appointments.organizationId, orgId),
-						),
-					);
-				wsBroker.broadcastToOrganization(orgId, {
-					type: "APPOINTMENT_UPDATED",
-					payload: {
-						appointmentId: existingVisit.appointmentId,
-						visitId,
-						status: "completed",
-					},
-				});
-			}
+		if (lookup.kind === "already_signed") {
 			return {
 				ok: true,
 				status: "completed",
-				visit: existingVisit,
+				visit: lookup.visit,
 				alreadySigned: true,
 			};
 		}
 
-		const body = (request.body as Record<string, unknown> | undefined) ?? {};
-		const rawDraft = (body.draft || body.diary || {}) as Record<string, unknown>;
+		const existingVisit = lookup.visit;
+		const body = parsedBody.data;
+		const rawDraft = body.draft ?? body.diary ?? {};
 		const effectiveDraft = buildEffectiveDraft(rawDraft, existingVisit);
 
 		const acceptInput = {
 			visitId,
 			draft: effectiveDraft,
 			doctorSummary:
-				typeof body.doctorSummary === "string"
+				body.doctorSummary !== undefined
 					? body.doctorSummary
 					: existingVisit.doctorSummary ?? null,
 			clientMutationId:
 				typeof body.clientMutationId === "string" && body.clientMutationId.trim()
 					? body.clientMutationId.trim()
-					: `complete-${visitId}-${Date.now()}`,
+					: generateUuidV7(),
 			baseRevision: existingVisit.revision,
 			clientSavedAt: new Date().toISOString(),
 		};
@@ -109,10 +148,11 @@ export async function handleCompleteVisit(
 		const result = await acceptVisitDraftInDb(orgId, acceptInput);
 
 		if (result?.visit) {
+			const identity = getRequestIdentity(request);
 			await executeVisitCompletionSideEffects({
 				orgId,
 				visit: result.visit,
-				doctorId: (request as { user?: { id?: string } }).user?.id ?? null,
+				doctorId: identity.userId ?? null,
 				log: request.log,
 			});
 		}

@@ -1,8 +1,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, visitDiaries } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -57,50 +56,63 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 		if (firstPart) barcodeCandidates.push(firstPart);
 	}
 
-	const foundLogs = await withTenantCtx(organizationId, async (tx) =>
-		tx
+	const linkOutcome = await withTenantCtx(organizationId, async (tx) => {
+		const foundLogs = await tx
 			.select()
 			.from(sterilizationLogs)
 			.where(and(eq(sterilizationLogs.organizationId, organizationId), inArray(sterilizationLogs.barcode, barcodeCandidates)))
-			.orderBy(desc(sterilizationLogs.timestamp)),
-	);
+			.orderBy(desc(sterilizationLogs.timestamp));
 
-	let log = barcodeCandidates.map((c) => foundLogs.find((l) => l.barcode === c)).find(Boolean);
+		let log = barcodeCandidates.map((c) => foundLogs.find((l) => l.barcode === c)).find(Boolean);
 
-	if (!log) {
-		const autoValues = buildAutoProvisionSterilizationLogValues({
-			organizationId,
-			barcode: trimmedBarcode,
-			operatorId: doctorUserId,
-			now: new Date(),
-		});
-		const [autoCreatedLog] = await withTenantCtx(organizationId, async (tx) =>
-			tx.insert(sterilizationLogs).values(autoValues).returning(),
-		);
-		if (!autoCreatedLog) {
-			return reply.code(500).send({ error: "SterilizationAutoProvisionFailed", message: "Не удалось зарегистрировать лоток." });
+		if (!log) {
+			const autoValues = buildAutoProvisionSterilizationLogValues({
+				organizationId,
+				barcode: trimmedBarcode,
+				operatorId: doctorUserId,
+				now: new Date(),
+			});
+			const [autoCreatedLog] = await tx.insert(sterilizationLogs).values(autoValues).returning();
+			if (!autoCreatedLog) {
+				return { kind: "auto_provision_failed" as const };
+			}
+			log = autoCreatedLog;
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(organizationId, { type: "STERILIZATION_LOG_ADDED", payload: autoCreatedLog });
+			});
 		}
-		log = autoCreatedLog;
-		wsBroker.broadcastToOrganization(organizationId, { type: "STERILIZATION_LOG_ADDED", payload: autoCreatedLog });
-	}
 
-	const evaluation = evaluateSterilizationLogForLinking(log);
-	const isEmergencyAdmission = evaluation.isExpired;
-	const emergencyAdmissionNote = evaluation.emergencyLogNote || "";
+		const evaluation = evaluateSterilizationLogForLinking(log);
+		const isEmergencyAdmission = evaluation.isExpired;
+		const emergencyAdmissionNote = evaluation.emergencyLogNote || "";
 
-	const diaryResult = await executeLinkDiaryTransaction({
-		organizationId,
-		visitId,
-		trimmedBarcode,
-		doctorUserId,
-		isEmergencyAdmission,
-		emergencyAdmissionNote,
+		const diaryResult = await executeLinkDiaryTransaction({
+			organizationId,
+			visitId,
+			trimmedBarcode,
+			doctorUserId,
+			isEmergencyAdmission,
+			emergencyAdmissionNote,
+			tx,
+		});
+
+		if (diaryResult.kind === "failed_insert") {
+			return { kind: "failed_insert" as const };
+		}
+
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, { type: "VISIT_DIARY_UPDATED", payload: diaryResult.diary });
+		});
+
+		return { kind: "ok" as const, diary: diaryResult.diary };
 	});
 
-	if (diaryResult.kind === "failed_insert") {
+	if (linkOutcome.kind === "auto_provision_failed") {
+		return reply.code(500).send({ error: "SterilizationAutoProvisionFailed", message: "Не удалось зарегистрировать лоток." });
+	}
+	if (linkOutcome.kind === "failed_insert") {
 		return reply.code(500).send({ error: "VisitDiaryCreateFailed", message: "Не удалось инициализировать дневник визита." });
 	}
 
-	wsBroker.broadcastToOrganization(organizationId, { type: "VISIT_DIARY_UPDATED", payload: diaryResult.diary });
-	return reply.send(diaryResult.diary);
+	return reply.send(linkOutcome.diary);
 }

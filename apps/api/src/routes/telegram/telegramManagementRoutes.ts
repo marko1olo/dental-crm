@@ -60,6 +60,32 @@ import {
 } from "./telegramOutboxDelivery.js";
 import { executeDenteTelegramOutboxDueBatch } from "./telegramOutboxWorker.js";
 
+function resolveAuthorizedTelegramQueryScope(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Record<string, unknown> | null {
+	const queryObj =
+		request.query && typeof request.query === "object"
+			? { ...(request.query as Record<string, unknown>) }
+			: {};
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.organizationId) {
+		const requestedOrg =
+			typeof queryObj.organizationId === "string"
+				? queryObj.organizationId.trim()
+				: "";
+		if (requestedOrg && requestedOrg !== identity.organizationId) {
+			void reply.code(403).send({
+				error: "TelegramCrossTenantDenied",
+				message: "Запрещён доступ к данным Telegram другой организации.",
+			});
+			return null;
+		}
+		queryObj.organizationId = identity.organizationId;
+	}
+	return queryObj;
+}
+
 export function registerTelegramSettingsRoutes(
 	app: FastifyInstance,
 	telegramControlPlaneRouteOptions: {
@@ -77,6 +103,10 @@ export function registerTelegramSettingsRoutes(
 				);
 				if (loaded) {
 					applyLoadedTelegramBotSettings(loaded);
+					return await buildStatus(identity.organizationId);
+				}
+				if (resolveTelegramRuntimeContext(identity.organizationId).ok) {
+					return await buildStatus(identity.organizationId);
 				}
 			}
 			return await buildStatus();
@@ -106,9 +136,27 @@ export function registerTelegramSettingsRoutes(
 							: readableTelegramSettingsSchemaMessage(schemaResult.error),
 				});
 			}
-			const input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
+			const identity = getRequestIdentity(request);
+			let input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
+			if (identity.verified && identity.organizationId) {
+				if (
+					input.organizationId &&
+					input.organizationId !== identity.organizationId
+				) {
+					return reply.code(403).send({
+						error: "TelegramCrossTenantDenied",
+						message: "Запрещено изменять настройки Telegram другой организации.",
+					});
+				}
+				input = {
+					...input,
+					organizationId: identity.organizationId,
+				};
+			}
+			let savedOrgId: string | null = null;
 			try {
 				const updated = updateDenteTelegramBotSettings(input);
+				savedOrgId = updated.organizationId;
 				await persistTelegramBotSettingsToDatabase(updated);
 			} catch (settingsError) {
 				return reply.code(400).send({
@@ -116,14 +164,19 @@ export function registerTelegramSettingsRoutes(
 					message: readableTelegramSettingsValidationMessage(settingsError),
 				});
 			}
-			return await buildStatus();
+			return await buildStatus(savedOrgId);
 		},
 	);
 
 	app.get(
 		"/api/telegram/feature-plan",
 		telegramControlPlaneRouteOptions,
-		async () => buildFeaturePlan(getDenteTelegramBotSettings()),
+		async (request) => {
+			const identity = getRequestIdentity(request);
+			return buildFeaturePlan(
+				getDenteTelegramBotSettings(identity.organizationId ?? null),
+			);
+		},
 	);
 }
 
@@ -137,8 +190,10 @@ export function registerTelegramOutboxRoutes(
 		"/api/telegram/outbox",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -151,7 +206,7 @@ export function registerTelegramOutboxRoutes(
 				runtimeResult.runtime.context.organizationId,
 			);
 			return buildDenteTelegramOutbox(
-				parseTelegramOutboxQuery(request.query),
+				parseTelegramOutboxQuery(scopedQuery),
 				runtimeResult.runtime.runtimeScope,
 				domainState,
 			);
@@ -170,8 +225,10 @@ export function registerTelegramOutboxRoutes(
 				request.body ?? {},
 			);
 			if (!parsedInput.ok) return sendTelegramValidationError(reply);
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -203,8 +260,10 @@ export function registerTelegramOutboxRoutes(
 					reply,
 					"TelegramOutboxDueValidationFailed",
 				);
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -250,9 +309,23 @@ export function registerTelegramLinkRoutes(
 			);
 			if (!parsedInput.ok) return sendTelegramValidationError(reply);
 			const input = parsedInput.value;
+			const identity = getRequestIdentity(request);
+			if (
+				identity.verified &&
+				identity.organizationId &&
+				input.organizationId &&
+				input.organizationId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещено создавать код привязки для другой организации.",
+				});
+			}
 			const requestedOrganizationId =
-				input.organizationId ??
-				(input.botConfigId ? (input.clinicId ?? null) : null);
+				identity.verified && identity.organizationId
+					? identity.organizationId
+					: (input.organizationId ??
+						(input.botConfigId ? (input.clinicId ?? null) : null));
 			const runtimeResult = resolveTelegramRuntimeContext(
 				requestedOrganizationId,
 				input.botConfigId ?? null,
@@ -304,8 +377,10 @@ export function registerTelegramLinkRoutes(
 		"/api/telegram/link-codes",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -315,7 +390,7 @@ export function registerTelegramLinkRoutes(
 			}
 			const runtime = runtimeResult.runtime.context;
 			return buildDenteTelegramLinkCodeList({
-				...parseTelegramLinkCodeListQuery(request.query),
+				...parseTelegramLinkCodeListQuery(scopedQuery),
 				organizationId: runtime.organizationId,
 				clinicId: runtime.clinicId,
 				botConfigId: runtime.botConfigId,
@@ -327,8 +402,10 @@ export function registerTelegramLinkRoutes(
 		"/api/telegram/chat-links",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -338,7 +415,7 @@ export function registerTelegramLinkRoutes(
 			}
 			const runtime = runtimeResult.runtime.context;
 			return await buildDenteTelegramChatLinkList({
-				...parseTelegramChatLinkListQuery(request.query),
+				...parseTelegramChatLinkListQuery(scopedQuery),
 				organizationId: runtime.organizationId,
 				clinicId: runtime.clinicId,
 				botConfigId: runtime.botConfigId,
@@ -353,8 +430,10 @@ export function registerTelegramLinkRoutes(
 		"/api/telegram/chat-links/:linkId/revoke",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -400,8 +479,10 @@ export function registerTelegramPreviewRoutes(
 		"/api/telegram/messages/preview",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
+			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
-				request.query,
+				scopedQuery,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -456,12 +537,28 @@ export function registerTelegramBillingRoutes(
 	app.get<{ Querystring: { organizationId?: string } }>(
 		"/api/telegram/billing/usage",
 		telegramControlPlaneRouteOptions,
-		async (request) => {
+		async (request, reply) => {
+			const identity = getRequestIdentity(request);
 			const requestedOrgId = request.query?.organizationId?.trim();
-			const runtimeResult = resolveTelegramRuntimeContext(requestedOrgId);
+			if (
+				identity.verified &&
+				identity.organizationId &&
+				requestedOrgId &&
+				requestedOrgId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещён доступ к биллингу другой организации.",
+				});
+			}
+			const effectiveRequestedOrgId =
+				identity.verified && identity.organizationId
+					? identity.organizationId
+					: requestedOrgId;
+			const runtimeResult = resolveTelegramRuntimeContext(effectiveRequestedOrgId);
 			const organizationId = runtimeResult.ok
 				? runtimeResult.context.organizationId
-				: (requestedOrgId || "default");
+				: (effectiveRequestedOrgId || "default");
 
 			const usage = TelegramBotBillingService.getBillingUsage(organizationId);
 			return usage;
@@ -494,11 +591,27 @@ export function registerTelegramBillingRoutes(
 				});
 			}
 
+			const identity = getRequestIdentity(request);
 			const requestedOrgId = body.organizationId?.trim();
-			const runtimeResult = resolveTelegramRuntimeContext(requestedOrgId);
+			if (
+				identity.verified &&
+				identity.organizationId &&
+				requestedOrgId &&
+				requestedOrgId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещено изменять тарифный план другой организации.",
+				});
+			}
+			const effectiveRequestedOrgId =
+				identity.verified && identity.organizationId
+					? identity.organizationId
+					: requestedOrgId;
+			const runtimeResult = resolveTelegramRuntimeContext(effectiveRequestedOrgId);
 			const organizationId = runtimeResult.ok
 				? runtimeResult.context.organizationId
-				: (requestedOrgId || "default");
+				: (effectiveRequestedOrgId || "default");
 
 			const updated = TelegramBotBillingService.changePlan({
 				organizationId,

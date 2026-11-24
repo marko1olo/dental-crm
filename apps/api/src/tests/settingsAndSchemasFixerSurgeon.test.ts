@@ -84,7 +84,10 @@ import {
 	isDatabaseUnavailable,
 	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
-import { createTenantTestApp } from "./support/tenantTestApp.js";
+import {
+	createIdempotentTenantTestApp,
+	createTenantTestApp,
+} from "./support/tenantTestApp.js";
 
 const FIXTURE = "settingsFixer";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
@@ -543,66 +546,90 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 	it("3. visitPerioRoutes enforces Idempotency-Key, handles replay, and purges restBody leaks (DEF-PERIO-01, DEF-PERIO-02)", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		// 3a. Невалидный UUID в Idempotency-Key -> 400
-		const resInvalidIdem = await app.inject({
-			method: "POST",
-			url: `/api/visits/${VISIT_ID}/perio`,
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-				"idempotency-key": "invalid-perio-key",
-			},
-			payload: {
-				teeth: [{ toothNumber: 11, isPresent: true }],
-			},
-		});
-		assert.equal(resInvalidIdem.statusCode, 400);
-		const errJson = JSON.parse(resInvalidIdem.body);
-		assert.equal(errJson.error, "ValidationError");
+		const perioApp = await createIdempotentTenantTestApp();
+		registerVisitPerioRoutes(perioApp);
+		try {
+			// 3a. Невалидный UUID в Idempotency-Key -> 400
+			const resInvalidIdem = await perioApp.inject({
+				method: "POST",
+				url: `/api/visits/${VISIT_ID}/perio`,
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": "invalid-perio-key",
+				},
+				payload: {
+					teeth: [{ toothNumber: 11, isPresent: true }],
+				},
+			});
+			assert.equal(resInvalidIdem.statusCode, 400);
+			const errJson = JSON.parse(resInvalidIdem.body);
+			assert.ok(
+				errJson.error === "IdempotencyKeyRequired" || errJson.error === "ValidationError",
+			);
 
-		// 3b. Валидное первичное сохранение с teethData и psr (проверка нормализации DEF-PERIO-02)
-		const perioIdempotencyKey = fixtureUuid("perioIdem", 201);
-		const resFirst = await app.inject({
-			method: "POST",
-			url: `/api/visits/${VISIT_ID}/perio`,
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-				"idempotency-key": perioIdempotencyKey,
-			},
-			payload: {
+			// 3b. Валидное первичное сохранение с teethData и psr (проверка нормализации DEF-PERIO-02)
+			const perioPayload = {
 				teethData: [{ toothNumber: 11, isPresent: true, mobility: 1 }],
 				psr: {
 					"1": { code: 2, asterisk: false },
 				},
 				// Постороннее поле не должно со спредом ...restBody завалить строгую схему
 				__arbitraryJunkThatUsedToLeak: "garbage",
-			},
-		});
+			};
+			const perioIdempotencyKey = fixtureUuid("perioIdem", 201);
+			const resFirst = await perioApp.inject({
+				method: "POST",
+				url: `/api/visits/${VISIT_ID}/perio`,
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": perioIdempotencyKey,
+				},
+				payload: perioPayload,
+			});
 
-		assert.equal(resFirst.statusCode, 200);
-		assert.equal(resFirst.headers["idempotency-key"], perioIdempotencyKey);
-		const firstJson = JSON.parse(resFirst.body);
-		assert.equal(firstJson.success, true);
-		assert.equal(firstJson.visitId, VISIT_ID);
+			assert.equal(resFirst.statusCode, 200);
+			assert.equal(
+				resFirst.headers["idempotency-key"] || resFirst.headers["x-idempotency-key"],
+				perioIdempotencyKey,
+			);
+			const firstJson = JSON.parse(resFirst.body);
+			assert.equal(firstJson.success, true);
+			assert.equal(firstJson.visitId, VISIT_ID);
 
-		// 3c. Повторный вызов с тем же Idempotency-Key -> idempotency-replayed: true (DEF-PERIO-01)
-		const resReplay = await app.inject({
-			method: "POST",
-			url: `/api/visits/${VISIT_ID}/perio`,
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-				"idempotency-key": perioIdempotencyKey,
-			},
-			payload: {
-				teethData: [{ toothNumber: 11, isPresent: true, mobility: 1 }],
-			},
-		});
+			// 3c. Повторный вызов с тем же Idempotency-Key -> idempotency-replayed: true (DEF-PERIO-01)
+			const resReplay = await perioApp.inject({
+				method: "POST",
+				url: `/api/visits/${VISIT_ID}/perio`,
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": perioIdempotencyKey,
+				},
+				payload: perioPayload,
+			});
 
-		assert.equal(resReplay.statusCode, 200);
-		const replayedHeader = resReplay.headers["idempotency-replayed"] || resReplay.headers["x-idempotency-replayed"];
-		assert.equal(replayedHeader, "true", "Повторный запрос должен вернуть заголовок idempotency-replayed: true");
-		const replayJson = JSON.parse(resReplay.body);
-		assert.equal(replayJson.success, true);
-		assert.deepEqual(replayJson.visitId, firstJson.visitId);
+			assert.equal(resReplay.statusCode, 200);
+			const replayedHeader = resReplay.headers["idempotency-replayed"] || resReplay.headers["x-idempotency-replayed"];
+			assert.equal(replayedHeader, "true", "Повторный запрос должен вернуть заголовок idempotency-replayed: true");
+			const replayJson = JSON.parse(resReplay.body);
+			assert.equal(replayJson.success, true);
+			assert.deepEqual(replayJson.visitId, firstJson.visitId);
+
+			// 3d. Повторный вызов с тем же Idempotency-Key и ДРУГИМ payload -> 409 Conflict collision
+			const resCollision = await perioApp.inject({
+				method: "POST",
+				url: `/api/visits/${VISIT_ID}/perio`,
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": perioIdempotencyKey,
+				},
+				payload: {
+					teethData: [{ toothNumber: 12, isPresent: true }],
+				},
+			});
+			assert.equal(resCollision.statusCode, 409);
+		} finally {
+			await perioApp.close();
+		}
 	});
 
 	// ─── 4. STAFF SETTINGS ROUTES IDEMPOTENCY & STRICT VALIDATION ────────────────

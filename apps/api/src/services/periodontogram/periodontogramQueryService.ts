@@ -7,6 +7,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -33,7 +34,7 @@ export function formatSnapshotTeethWithSites(
 
 export async function fetchSnapshotTeethAndSites(
 	snapshotId: string,
-	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
+	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
 ) {
 	const teeth = await executor
 		.select()

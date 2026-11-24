@@ -9,20 +9,36 @@ import {
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { auditFromRequest } from "../clinicalAuditService.js";
 import { db } from "../db/client.js";
-import { auditEvents } from "../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity, requireStaffIdentity } from "../security/identity.js";
+import { clinicalAuditLogs, auditEvents } from "../db/schema.js";
 import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
-const auditQuerySchema = z.object({
-	entityType: z.string().optional(),
-	entityId: z.string().optional(),
-	actorUserId: z.string().uuid().optional(),
-	action: z.string().optional(),
-	startDate: z.string().optional(),
-	endDate: z.string().optional(),
-	limit: z.coerce.number().int().min(1).max(200).default(50),
-});
+const auditQuerySchema = z
+	.object({
+		entityType: z.string().trim().min(1).max(100).optional(),
+		entityId: z.string().trim().min(1).max(255).optional(),
+		actorUserId: z.string().uuid().optional(),
+		action: z.string().trim().min(1).max(100).optional(),
+		startDate: z.string().trim().optional(),
+		endDate: z.string().trim().optional(),
+		limit: z.coerce.number().int().min(1).max(200).default(50),
+	})
+	.strict();
+
+const medicalAccessQuerySchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		actorUserId: z.string().uuid().optional(),
+		limit: z.coerce.number().int().min(1).max(200).default(50),
+	})
+	.strict();
+
+const ingestAuditEntrySchema = staffActionAuditEntrySchema
+	.extend({
+		organizationId: z.string().uuid().optional(),
+	})
+	.strict();
 
 /*
  * ЗДЕСЬ СТОЯЛА ТРЕТЬЯ ФУНКЦИЯ `recordAuditEvent`, И ОНА УДАЛЕНА.
@@ -67,7 +83,15 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			if (!identity || !identity.organizationId) return;
 			const orgId = identity.organizationId;
 
-			const query = auditQuerySchema.parse(request.query);
+			const queryParsed = auditQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса журнала аудита.",
+					issues: queryParsed.error.issues,
+				});
+			}
+			const query = queryParsed.data;
 			const conditions = [eq(auditEvents.organizationId, orgId)];
 
 			if (query.entityType) {
@@ -84,15 +108,23 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			}
 			if (query.startDate) {
 				const start = new Date(query.startDate);
-				if (!isNaN(start.getTime())) {
-					conditions.push(gte(auditEvents.createdAt, start));
+				if (Number.isNaN(start.getTime())) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат startDate.",
+					});
 				}
+				conditions.push(gte(auditEvents.createdAt, start));
 			}
 			if (query.endDate) {
 				const end = new Date(query.endDate);
-				if (!isNaN(end.getTime())) {
-					conditions.push(lte(auditEvents.createdAt, end));
+				if (Number.isNaN(end.getTime())) {
+					return reply.status(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат endDate.",
+					});
 				}
+				conditions.push(lte(auditEvents.createdAt, end));
 			}
 
 			const logs = await db
@@ -138,25 +170,32 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/audit/medical-access",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"read medical access audit logs",
-			);
-			if (!orgId) return;
+			const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
+			if (!identity || !identity.organizationId) return;
+			const orgId = identity.organizationId;
 
-			const query = z
-				.object({
-					patientId: z.string().uuid().optional(),
-					actorUserId: z.string().uuid().optional(),
-					limit: z.coerce.number().int().min(1).max(200).default(50),
-				})
-				.parse(request.query);
+			const queryParsed = medicalAccessQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса журнала медицинского доступа.",
+					issues: queryParsed.error.issues,
+				});
+			}
+			const query = queryParsed.data;
 
 			const logs = await getMedicalAccessAuditTrailFromDb(orgId, {
 				...(query.patientId ? { patientId: query.patientId } : {}),
 				...(query.actorUserId ? { actorUserId: query.actorUserId } : {}),
 				limit: query.limit,
+			});
+
+			await auditFromRequest(request, {
+				organizationId: orgId,
+				userId: identity.userId ?? null,
+				action: "VIEW_AUDIT_LOG",
+				entityType: "medical_access_audit",
+				entityId: query.patientId ?? "all",
 			});
 
 			return reply.status(200).send({ logs });
@@ -199,7 +238,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 				: null;
 
 		const body = request.body;
-		let rawList: unknown[] = [];
+		let rawList: unknown[] | null = null;
 		if (Array.isArray(body)) {
 			rawList = body;
 		} else if (
@@ -209,11 +248,21 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			Array.isArray((body as Record<string, unknown>).events)
 		) {
 			rawList = (body as { events: unknown[] }).events;
-		} else if (body && typeof body === "object") {
+		} else if (body && typeof body === "object" && !("events" in body)) {
 			rawList = [body];
+		} else if (
+			body &&
+			typeof body === "object" &&
+			"events" in body &&
+			!Array.isArray((body as Record<string, unknown>).events)
+		) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Поле events должно быть массивом событий аудита.",
+			});
 		}
 
-		if (rawList.length === 0) {
+		if (!rawList || rawList.length === 0) {
 			return reply.status(400).send({
 				error: "EmptyEventsPayload",
 				message: "Список событий аудита пуст.",
@@ -229,77 +278,23 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		}
 
 		const now = new Date();
+		const authenticatedActorId = identity.userId ?? null;
 		const validAuditEvents: Array<typeof auditEvents.$inferInsert> = [];
+		const validClinicalAuditRows: Array<typeof clinicalAuditLogs.$inferInsert> = [];
 
-		for (const raw of rawList) {
-			if (!raw || typeof raw !== "object") continue;
-			const parsed = staffActionAuditEntrySchema
-				.omit({ organizationId: true })
-				.safeParse(raw);
-
+		for (let idx = 0; idx < rawList.length; idx += 1) {
+			const raw = rawList[idx];
+			const parsed = ingestAuditEntrySchema.safeParse(raw);
 			if (!parsed.success) {
-				const fallbackRaw = raw as Record<string, unknown>;
-				const actionType =
-					typeof fallbackRaw.actionType === "string"
-						? fallbackRaw.actionType
-						: typeof fallbackRaw.action === "string"
-							? fallbackRaw.action
-							: "custom_action";
-				const entityType =
-					typeof fallbackRaw.entityType === "string"
-						? fallbackRaw.entityType
-						: "general";
-				const entityId =
-					typeof fallbackRaw.entityId === "string"
-						? fallbackRaw.entityId
-						: randomUUID();
-
-				const eventId =
-					typeof fallbackRaw.id === "string" && fallbackRaw.id.length >= 10
-						? fallbackRaw.id
-						: randomUUID();
-
-				const actorUserId =
-					typeof fallbackRaw.actorUserId === "string"
-						? fallbackRaw.actorUserId
-						: identity.userId ?? null;
-
-				const rawDetails =
-					fallbackRaw.details && typeof fallbackRaw.details === "object"
-						? (fallbackRaw.details as Record<string, unknown>)
-						: {};
-				const sanitizedDetails = sanitizeAuditPayload(rawDetails);
-
-				const reason =
-					typeof fallbackRaw.reason === "string"
-						? fallbackRaw.reason
-						: typeof sanitizedDetails.reason === "string"
-							? (sanitizedDetails.reason as string)
-							: null;
-
-				const occurredAt =
-					typeof fallbackRaw.clientTimestamp === "string"
-						? new Date(fallbackRaw.clientTimestamp)
-						: now;
-
-				const validOccurredAt = isNaN(occurredAt.getTime()) ? now : occurredAt;
-
-				validAuditEvents.push({
-					id: eventId,
-					organizationId: orgId,
-					actorUserId,
-					entityType,
-					entityId,
-					action: actionType,
-					reason,
-					createdAt: validOccurredAt,
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: `Некорректная запись события аудита (индекс ${idx}).`,
+					issues: parsed.error.issues,
 				});
-				continue;
 			}
 
 			const entry = parsed.data;
 			const eventId = entry.id ?? randomUUID();
-			const actorUserId = entry.actorUserId ?? identity.userId ?? null;
 			const sanitizedDetails = sanitizeAuditPayload(entry.details ?? {});
 			const reason =
 				entry.reason ??
@@ -309,25 +304,41 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			const occurredAt = entry.clientTimestamp
 				? new Date(entry.clientTimestamp)
 				: now;
-			const validOccurredAt = isNaN(occurredAt.getTime()) ? now : occurredAt;
+			const validOccurredAt = Number.isNaN(occurredAt.getTime()) ? now : occurredAt;
 
 			validAuditEvents.push({
 				id: eventId,
 				organizationId: orgId,
-				actorUserId,
+				actorUserId: authenticatedActorId,
 				entityType: entry.entityType,
 				entityId: entry.entityId,
 				action: entry.actionType,
 				reason,
 				createdAt: validOccurredAt,
 			});
-		}
 
-		if (validAuditEvents.length > 0) {
-			await db.transaction(async (tx) => {
-				await tx.insert(auditEvents).values(validAuditEvents);
+			validClinicalAuditRows.push({
+				organizationId: orgId,
+				patientId: entry.patientId ?? null,
+				actorUserId: authenticatedActorId,
+				userId: authenticatedActorId,
+				actorLogin: identity.fullName ?? null,
+				eventType: "STAFF_ACTION",
+				action: entry.actionType.toUpperCase(),
+				resourceType: entry.entityType,
+				entityType: entry.entityType,
+				entityId: entry.entityId,
+				ipAddress: ip,
+				userAgent,
+				meta: sanitizedDetails,
+				createdAt: validOccurredAt,
 			});
 		}
+
+		await db.transaction(async (tx) => {
+			await tx.insert(auditEvents).values(validAuditEvents);
+			await tx.insert(clinicalAuditLogs).values(validClinicalAuditRows);
+		});
 
 		return reply.status(201).send({
 			success: true,

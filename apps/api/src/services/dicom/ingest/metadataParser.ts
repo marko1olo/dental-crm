@@ -11,7 +11,8 @@ import {
 	type RadiationExposureEntry,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { db, type TenantDb } from "../../../db/client.js";
+import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import {
 	classifyDicomModality,
@@ -21,7 +22,6 @@ import {
 	parseDicomIngestBuffer,
 } from "../dicomIngestMetadataParser.js";
 import { dicomIngestLogger } from "./dicomIngestLogger.js";
-import type { DbExecutor } from "./patientAutoBinder.js";
 import type {
 	ImagingStudyKindValue,
 	ParsedSliceBufferItem,
@@ -152,13 +152,12 @@ export async function recordSanpinRadiationDose(
 	patientId: string,
 	metadata: SanpinDoseMetadataInput,
 	_doctorId?: string | null,
-	executor: DbExecutor = db,
+	executor: TenantDb = db,
 ): Promise<void> {
 	if (!patientId || !organizationId) return;
 
-	try {
-		// 1. Извлекаем данные пациента
-		const [patient] = await executor
+	const runDose = async (tx: TenantDb): Promise<void> => {
+		const [patient] = await tx
 			.select({
 				id: schema.patients.id,
 				fullName: schema.patients.fullName,
@@ -176,6 +175,13 @@ export async function recordSanpinRadiationDose(
 
 		if (!patient) return;
 
+		const [orgRow] = await tx
+			.select({ name: schema.organizations.name })
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, organizationId))
+			.limit(1);
+		const clinicLegalName = orgRow?.name?.trim() || "Клиника";
+
 		const reportingYear = metadata.studyDate
 			? Number.parseInt(metadata.studyDate.slice(0, 4), 10) || new Date().getFullYear()
 			: new Date().getFullYear();
@@ -186,12 +192,12 @@ export async function recordSanpinRadiationDose(
 			(typeof adminProfile.medicalCardNumber === "string" && adminProfile.medicalCardNumber.trim()) ||
 			(typeof adminProfile.vatechPatId === "string" && adminProfile.vatechPatId.trim()) ||
 			metadata.patientChartNumber ||
-			"043/у";
+			"Не указан";
 
 		const gender = adminProfile.gender === "female" ? "female" : "male";
 
 		// 2. Ищем существующий лист дозовых нагрузок за текущий отчетный год
-		const existingDocs = await executor
+		const existingDocs = await tx
 			.select()
 			.from(schema.generatedDocuments)
 			.where(
@@ -228,7 +234,7 @@ export async function recordSanpinRadiationDose(
 			exposureTimeSeconds: metadata.exposureTimeMs ? Number((metadata.exposureTimeMs / 1000).toFixed(3)) : 0.12,
 			effectiveDoseMsv,
 			effectiveDoseMicrosieverts,
-			radiologistFullName: "Врач-рентгенолог",
+			radiologistFullName: "Лечащий врач",
 			notes: `Исследование DICOM UID: ${metadata.studyInstanceUid}${metadata.doseAreaProductDap ? `, DAP: ${metadata.doseAreaProductDap}` : ""}`,
 		};
 
@@ -255,7 +261,7 @@ export async function recordSanpinRadiationDose(
 
 				const updatedPayload: RadiationDoseSheetPayload = {
 					formNumber: "Лист дозовых нагрузок",
-					clinicLegalName: typeof currentPayload.clinicLegalName === "string" ? currentPayload.clinicLegalName : "ООО ДЕНТЕ КЛИНИК",
+					clinicLegalName: typeof currentPayload.clinicLegalName === "string" ? currentPayload.clinicLegalName : clinicLegalName,
 					clinicAddress: typeof currentPayload.clinicAddress === "string" ? currentPayload.clinicAddress : undefined,
 					clinicOgrn: typeof currentPayload.clinicOgrn === "string" ? currentPayload.clinicOgrn : undefined,
 					clinicLicenseNumber: typeof currentPayload.clinicLicenseNumber === "string" ? currentPayload.clinicLicenseNumber : undefined,
@@ -266,14 +272,14 @@ export async function recordSanpinRadiationDose(
 					reportingYear,
 					exposureEntries: updatedEntries,
 					annualSummary,
-					responsibleOfficerFullName: typeof currentPayload.responsibleOfficerFullName === "string" ? currentPayload.responsibleOfficerFullName : "Врач-рентгенолог",
+					responsibleOfficerFullName: typeof currentPayload.responsibleOfficerFullName === "string" ? currentPayload.responsibleOfficerFullName : "Лечащий врач",
 				};
 
-				await executor
+				await tx
 					.update(schema.generatedDocuments)
 					.set({
 						payloadJson: JSON.stringify(updatedPayload),
-						totalAmountRub: 0,
+						totalAmountKopecks: 0n,
 						taxYear: reportingYear,
 					})
 					.where(eq(schema.generatedDocuments.id, targetDoc.id));
@@ -285,7 +291,7 @@ export async function recordSanpinRadiationDose(
 
 			const newPayload: RadiationDoseSheetPayload = {
 				formNumber: "Лист дозовых нагрузок",
-				clinicLegalName: "ООО ДЕНТЕ КЛИНИК",
+				clinicLegalName,
 				patientFullName: patient.fullName,
 				patientBirthDate: patient.birthDate || "1990-01-01",
 				patientSex: gender,
@@ -293,10 +299,10 @@ export async function recordSanpinRadiationDose(
 				reportingYear,
 				exposureEntries: initialEntries,
 				annualSummary,
-				responsibleOfficerFullName: "Врач-рентгенолог",
+				responsibleOfficerFullName: "Лечащий врач",
 			};
 
-			await executor.insert(schema.generatedDocuments).values({
+			await tx.insert(schema.generatedDocuments).values({
 				organizationId,
 				patientId,
 				visitId: null,
@@ -304,9 +310,17 @@ export async function recordSanpinRadiationDose(
 				status: "draft",
 				title: `Лист учета дозовых нагрузок (${reportingYear} г.) — ${patient.fullName}`,
 				taxYear: reportingYear,
-				totalAmountRub: 0,
+				totalAmountKopecks: 0n,
 				payloadJson: JSON.stringify(newPayload),
 			});
+		}
+	};
+
+	try {
+		if (executor !== db) {
+			await withSavepoint(executor, runDose);
+		} else {
+			await withTenantCtx(organizationId, runDose);
 		}
 	} catch (err) {
 		// Ошибка логирования дозы не блокирует сохранение снимка
@@ -329,7 +343,7 @@ export async function recordStudySanpinDose(
 		dicomStudyUid?: string | null | undefined;
 	},
 	doctorId?: string | null,
-	executor: DbExecutor = db,
+	executor: TenantDb = db,
 ): Promise<void> {
 	if (!patientId || !organizationId) return;
 

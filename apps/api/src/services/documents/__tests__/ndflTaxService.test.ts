@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { NdflTaxService } from "../ndflTaxService.js";
+import { NdflInvalidDateRangeError, NdflTaxService } from "../ndflTaxService.js";
 import { type FnsTaxPayload } from "@dental/shared";
 
 describe("FNS NDFL Tax Service & Anti-Anomaly Controls Suite (Feature #33 & #5)", () => {
@@ -142,5 +142,11 @@ describe("FNS NDFL Tax Service & Anti-Anomaly Controls Suite (Feature #33 & #5)"
 		assert.strictEqual(result.estimatedTaxRefundRub, 50000 * 0.13 + 100000 * 0.13); // 6500 + 13000 = 19500
 		assert.ok(result.xmlContent.includes("<СведРасхУсл КодУслуг=\"1\" СумОпл=\"50000.00\"/>"));
 		assert.ok(result.xmlContent.includes("<СведРасхУсл КодУслуг=\"2\" СумОпл=\"100000.00\"/>"));
+	});
+
+	test("1.3 NdflInvalidDateRangeError exposes HTTP 400 contract", () => {
+		const err = new NdflInvalidDateRangeError();
+		assert.strictEqual(err.statusCode, 400);
+		assert.strictEqual(err.code, "InvalidDateRangeError");
 	});
 });

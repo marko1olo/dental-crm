@@ -19,19 +19,37 @@ import {
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
 import type { ApplyCashBoxReceiptParams, DbClientOrTransaction, PrintResultMetadata } from "./types.js";
 
+function resolveSafeBoxBalanceKop(box: {
+	balanceKopecks: number | null | undefined;
+	balanceRub: number;
+}): number {
+	const kop = box.balanceKopecks ?? 0;
+	const rub = Number(box.balanceRub || 0);
+	return kop !== 0 || rub === 0 ? kop : parseKopecks(rub);
+}
+
+export interface ApplyCashBoxReceiptOptions {
+	readonly skipDuplicatePaymentCheck?: boolean | undefined;
+}
+
 export async function applyCashBoxFiscalReceipt(
 	tx: DbClientOrTransaction,
 	orgId: string,
 	data: ApplyCashBoxReceiptParams,
 	printResult: PrintResultMetadata,
+	options?: ApplyCashBoxReceiptOptions,
 ): Promise<void> {
 	// ─────────────────────────────────────────────────────────────────────────
 	// ANTI-DOUBLE-INFLOW GUARD (ROT-001):
-	// Prevent 2x double counting of cash/bank revenue in cashBoxes & cashBoxShifts.
-	// If a payment with this clientMutationId was already recorded in payments,
-	// the checkout processor already credited the drawer and shift.
+	// Prevent 2x double counting when processCashboxPayment already recorded the payment.
+	// When direct POST /api/fiscal/receipts creates its own payment row inside finalizeKktPrintAndBuffer,
+	// `options.skipDuplicatePaymentCheck` is true so drawer & shift totals are updated once.
 	// ─────────────────────────────────────────────────────────────────────────
-	if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
+	if (
+		!options?.skipDuplicatePaymentCheck &&
+		data.clientMutationId &&
+		data.clientMutationId.trim().length > 0
+	) {
 		const mutationId = data.clientMutationId.trim();
 		const [existingPayment] = await tx
 			.select({ id: payments.id })
@@ -48,7 +66,6 @@ export async function applyCashBoxFiscalReceipt(
 			.limit(1);
 
 		if (existingPayment) {
-			// Funds already credited by processCashboxPayment.
 			return;
 		}
 	}
@@ -88,7 +105,7 @@ export async function applyCashBoxFiscalReceipt(
 		const chosenBox = allBoxes.find((b) => b.id === data.cashBoxId) ?? mainBox;
 		const totalInflowKop = (data.cashKopecks || 0) + (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
 		const amountRub = kopecksToRub(totalInflowKop);
-		const balanceBeforeKop = parseKopecks(chosenBox.balanceRub);
+		const balanceBeforeKop = resolveSafeBoxBalanceKop(chosenBox);
 		const balanceAfterKop = balanceBeforeKop + totalInflowKop;
 		const balanceBefore = kopecksToRub(balanceBeforeKop);
 		const balanceAfter = kopecksToRub(balanceAfterKop);
@@ -96,8 +113,8 @@ export async function applyCashBoxFiscalReceipt(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
-				balanceKopecks: sql`${cashBoxes.balanceKopecks} + ${totalInflowKop}::bigint`,
+				balanceRub: balanceAfter,
+				balanceKopecks: balanceAfterKop,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, chosenBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -115,11 +132,17 @@ export async function applyCashBoxFiscalReceipt(
 			.for("update")
 			.limit(1);
 
-		if (activeShift && amountRub > 0) {
+		if (activeShift && totalInflowKop > 0) {
+			const prevIncomeKop =
+				activeShift.incomeTotalKopecks > 0 || Number(activeShift.incomeTotalRub || 0) === 0
+					? activeShift.incomeTotalKopecks
+					: parseKopecks(activeShift.incomeTotalRub);
+			const nextIncomeKop = prevIncomeKop + totalInflowKop;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`round((${cashBoxShifts.incomeTotalRub} + ${amountRub})::numeric, 2)`,
+					incomeTotalRub: kopecksToRub(nextIncomeKop),
+					incomeTotalKopecks: nextIncomeKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -162,7 +185,7 @@ export async function applyCashBoxFiscalReceipt(
 
 	if (cashKop > 0 || (cashKop === 0 && electronicKop === 0)) {
 		const amountRub = kopecksToRub(cashKop);
-		const balanceBeforeKop = parseKopecks(mainBox.balanceRub);
+		const balanceBeforeKop = resolveSafeBoxBalanceKop(mainBox);
 		const balanceAfterKop = balanceBeforeKop + cashKop;
 		const balanceBefore = kopecksToRub(balanceBeforeKop);
 		const balanceAfter = kopecksToRub(balanceAfterKop);
@@ -170,8 +193,8 @@ export async function applyCashBoxFiscalReceipt(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
-				balanceKopecks: sql`${cashBoxes.balanceKopecks} + ${cashKop}::bigint`,
+				balanceRub: balanceAfter,
+				balanceKopecks: balanceAfterKop,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -189,11 +212,17 @@ export async function applyCashBoxFiscalReceipt(
 			.for("update")
 			.limit(1);
 
-		if (activeShift && amountRub > 0) {
+		if (activeShift && cashKop > 0) {
+			const prevIncomeKop =
+				activeShift.incomeTotalKopecks > 0 || Number(activeShift.incomeTotalRub || 0) === 0
+					? activeShift.incomeTotalKopecks
+					: parseKopecks(activeShift.incomeTotalRub);
+			const nextIncomeKop = prevIncomeKop + cashKop;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`round((${cashBoxShifts.incomeTotalRub} + ${amountRub})::numeric, 2)`,
+					incomeTotalRub: kopecksToRub(nextIncomeKop),
+					incomeTotalKopecks: nextIncomeKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -224,7 +253,7 @@ export async function applyCashBoxFiscalReceipt(
 
 	if (electronicKop > 0) {
 		const amountRub = kopecksToRub(electronicKop);
-		const balanceBeforeKop = parseKopecks(cashlessBox.balanceRub);
+		const balanceBeforeKop = resolveSafeBoxBalanceKop(cashlessBox);
 		const balanceAfterKop = balanceBeforeKop + electronicKop;
 		const balanceBefore = kopecksToRub(balanceBeforeKop);
 		const balanceAfter = kopecksToRub(balanceAfterKop);
@@ -232,8 +261,8 @@ export async function applyCashBoxFiscalReceipt(
 		await tx
 			.update(cashBoxes)
 			.set({
-				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
-				balanceKopecks: sql`${cashBoxes.balanceKopecks} + ${electronicKop}::bigint`,
+				balanceRub: balanceAfter,
+				balanceKopecks: balanceAfterKop,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -251,11 +280,17 @@ export async function applyCashBoxFiscalReceipt(
 			.for("update")
 			.limit(1);
 
-		if (activeShift && amountRub > 0) {
+		if (activeShift && electronicKop > 0) {
+			const prevIncomeKop =
+				activeShift.incomeTotalKopecks > 0 || Number(activeShift.incomeTotalRub || 0) === 0
+					? activeShift.incomeTotalKopecks
+					: parseKopecks(activeShift.incomeTotalRub);
+			const nextIncomeKop = prevIncomeKop + electronicKop;
 			await tx
 				.update(cashBoxShifts)
 				.set({
-					incomeTotalRub: sql`round((${cashBoxShifts.incomeTotalRub} + ${amountRub})::numeric, 2)`,
+					incomeTotalRub: kopecksToRub(nextIncomeKop),
+					incomeTotalKopecks: nextIncomeKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));

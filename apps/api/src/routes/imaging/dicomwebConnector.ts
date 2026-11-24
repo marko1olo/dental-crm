@@ -23,31 +23,23 @@ export async function checkDicomWebConnector(input: DicomWebConnectorCheckReques
 	const qidoUrl = buildQidoProbeUrl(input);
 	const wadoBaseUrl = safeJoinUrl(input.endpointUrl, input.wadoRsPath);
 	const stowBaseUrl = safeJoinUrl(input.endpointUrl, input.stowRsPath);
-	const parsedTarget = new URL(qidoUrl);
-	const isLocalEndpoint =
-		parsedTarget.hostname === "127.0.0.1" ||
-		parsedTarget.hostname === "localhost" ||
-		parsedTarget.hostname === "::1";
-
-	if (!isLocalEndpoint) {
-		const safety = await isSafeTarget(qidoUrl);
-		if (!safety.ok) {
-			return dicomWebConnectorCheckResponseSchema.parse({
-				endpointOrigin,
-				qidoUrl,
-				wadoBaseUrl,
-				stowBaseUrl,
-				configuredAuthMode: input.authMode,
-				status: "unreachable",
-				canSearch: false,
-				canRetrieve: false,
-				storeConfigured: Boolean(input.stowRsPath),
-				qidoHttpStatus: null,
-				latencyMs: Math.max(1, Math.round(performance.now() - startedAt)),
-				warnings: [`Запрос заблокирован политикой сетевой безопасности: ${safety.reason}.`],
-				nextAction: "Укажите доверенный адрес PACS/DICOMweb сервера или используйте локальный архив клиники.",
-			});
-		}
+	const safety = await isSafeTarget(qidoUrl);
+	if (!safety.ok) {
+		return dicomWebConnectorCheckResponseSchema.parse({
+			endpointOrigin,
+			qidoUrl,
+			wadoBaseUrl,
+			stowBaseUrl,
+			configuredAuthMode: input.authMode,
+			status: "unreachable",
+			canSearch: false,
+			canRetrieve: false,
+			storeConfigured: Boolean(input.stowRsPath),
+			qidoHttpStatus: null,
+			latencyMs: Math.max(1, Math.round(performance.now() - startedAt)),
+			warnings: [`Запрос заблокирован политикой сетевой безопасности: ${safety.reason}.`],
+			nextAction: "Укажите доверенный адрес PACS/DICOMweb сервера или используйте локальный архив клиники.",
+		});
 	}
 
 	try {
@@ -56,7 +48,7 @@ export async function checkDicomWebConnector(input: DicomWebConnectorCheckReques
 			method: "GET",
 			headers,
 			redirect: "manual",
-			signal: AbortSignal.timeout(isLocalEndpoint ? 1200 : input.timeoutMs),
+			signal: AbortSignal.timeout(input.timeoutMs),
 		});
 		const latencyMs = Math.max(1, Math.round(performance.now() - startedAt));
 		const status = connectorStatusFromHttpStatus(res.status, false);
@@ -86,27 +78,6 @@ export async function checkDicomWebConnector(input: DicomWebConnectorCheckReques
 		});
 	} catch {
 		const latencyMs = Math.max(1, Math.round(performance.now() - startedAt));
-		if (isLocalEndpoint) {
-			return dicomWebConnectorCheckResponseSchema.parse({
-				endpointOrigin,
-				qidoUrl,
-				wadoBaseUrl,
-				stowBaseUrl,
-				configuredAuthMode: input.authMode,
-				status: "unreachable",
-				canSearch: false,
-				canRetrieve: false,
-				storeConfigured: Boolean(input.stowRsPath),
-				qidoHttpStatus: null,
-				latencyMs,
-				warnings: [
-					"Внешний узел DICOMweb на локальном адресе не отвечает (порт закрыт или сервер не запущен).",
-					"Снимки КЛКТ и визиографа сохраняются во встроенном защищённом локальном хранилище клиники.",
-				],
-				nextAction: "Внешний PACS не запущен. Для работы со снимками используется встроенный защищённый архив клиники.",
-			});
-		}
-
 		return dicomWebConnectorCheckResponseSchema.parse({
 			endpointOrigin,
 			qidoUrl,

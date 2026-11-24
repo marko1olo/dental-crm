@@ -85,13 +85,17 @@ describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite", () => {
 	});
 
 	it("resolveStowBinding returns patient on explicit valid patientId", async (t) => {
-		t.mock.method(db, "select", () => ({
+		const select = () => ({
 			from: () => ({
 				where: () => ({
 					limit: () => Promise.resolve([{ id: PATIENT_ID, mergedIntoPatientId: null, fullName: "Тестовый Пациент" }]),
 				}),
 			}),
-		}));
+		});
+		t.mock.method(db, "select", select);
+		t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => unknown) =>
+			cb({ select, execute: () => Promise.resolve([]) }),
+		);
 
 		const resolved = await resolveStowBinding(ORG_ID, PATIENT_ID, {});
 
@@ -102,13 +106,17 @@ describe("DICOMweb STOW-RS & Patient Resolution Inquisitor Suite", () => {
 	});
 
 	it("resolveStowBinding returns unassigned when explicit patientId is not found (NEVER guesses)", async (t) => {
-		t.mock.method(db, "select", () => ({
+		const select = () => ({
 			from: () => ({
 				where: () => ({
 					limit: () => Promise.resolve([]),
 				}),
 			}),
-		}));
+		});
+		t.mock.method(db, "select", select);
+		t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => unknown) =>
+			cb({ select, execute: () => Promise.resolve([]) }),
+		);
 
 		const resolved = await resolveStowBinding(ORG_ID, "00000000-0000-0000-0000-000000000000", {});
 

@@ -1,11 +1,13 @@
 import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { requireAuthTokenSecret, requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import {
+	requireAuthTokenSecret,
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../../accessGuard.js";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients } from "../../db/schema.js";
-import { requireOrganizationId } from "../../security/identity.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
 import {
 	fetchPatientConsentsList,
@@ -23,12 +25,32 @@ import {
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SAFE_HOST_REGEX = /^[a-zA-Z0-9.-]+(?::\d{1,5})?$/;
+
+function resolveSafeConsentOrigin(request: FastifyRequest): string {
+	const configuredOrigin = process.env.PUBLIC_APP_ORIGIN?.trim();
+	if (configuredOrigin) {
+		return configuredOrigin.replace(/\/+$/, "");
+	}
+	const rawHost = Array.isArray(request.headers.host)
+		? request.headers.host[0]
+		: request.headers.host;
+	const host =
+		typeof rawHost === "string" && SAFE_HOST_REGEX.test(rawHost.trim())
+			? rawHost.trim()
+			: "127.0.0.1:5173";
+	const rawProto = Array.isArray(request.headers["x-forwarded-proto"])
+		? request.headers["x-forwarded-proto"][0]
+		: request.headers["x-forwarded-proto"];
+	const proto = rawProto === "https" ? "https" : "http";
+	return `${proto}://${host}`;
+}
 
 export async function register(app: FastifyInstance) {
 	app.get("/api/patients/:patientId/consents", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "consents read"))) return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		const context = await requireClinicalReadContext(request, reply, "consents read");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const { patientId } = request.params as { patientId: string };
 		if (!patientId || !UUID_REGEX.test(patientId)) {
@@ -42,9 +64,9 @@ export async function register(app: FastifyInstance) {
 	});
 
 	app.post("/api/patients/:patientId/consents", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalMutationAccess(request, reply, "consents save"))) return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(request, reply, "consents save");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const { patientId } = request.params as { patientId: string };
 		if (!patientId || !UUID_REGEX.test(patientId)) {
@@ -77,9 +99,9 @@ export async function register(app: FastifyInstance) {
 	});
 
 	app.post("/api/patients/:patientId/consents/share-link", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireClinicalReadAccess(request, reply, "consents share"))) return;
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(request, reply, "consents share");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const { patientId } = request.params as { patientId: string };
 		if (!patientId || !UUID_REGEX.test(patientId)) {
@@ -97,9 +119,7 @@ export async function register(app: FastifyInstance) {
 			});
 		}
 
-		const host = request.headers.host ?? "127.0.0.1:5173";
-		const proto = (request.headers["x-forwarded-proto"] as string) ?? "http";
-		const origin = `${proto}://${host}`;
+		const origin = resolveSafeConsentOrigin(request);
 
 		const result = generateConsentShareLink(origin, orgId, patientId, parsed.data, request.log);
 		return reply.send(result);
@@ -151,8 +171,11 @@ export async function register(app: FastifyInstance) {
 				if (pRow?.fullName) patientName = pRow.fullName;
 				if (oRow?.name) clinicName = oRow.name;
 			}
-		} catch {
-			/* fallback to defaults if db lookup fails */
+		} catch (lookupErr) {
+			request.log.warn(
+				{ err: lookupErr, orgId, patientId },
+				"[consents] Не удалось загрузить метаданные для публичной ссылки согласия",
+			);
 		}
 
 		return reply.send({

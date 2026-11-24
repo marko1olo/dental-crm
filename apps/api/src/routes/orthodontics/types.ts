@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ArchwireChangePayloadSchema, type ArchwireChangePayload } from "@dental/shared";
 
 export const patientParamsSchema = z.object({
-	patientId: z.string().min(1),
+	patientId: z.string().uuid(),
 });
 
 export const issueAlignerSetSchema = z
@@ -11,7 +11,7 @@ export const issueAlignerSetSchema = z
 		wearDaysPerAligner: z.number().int().min(3).max(30).default(14),
 		totalAligners: z.number().int().min(1).max(100).optional(),
 		note: z.string().max(300).optional(),
-		visitId: z.string().optional(),
+		visitId: z.string().uuid().optional(),
 		soapSummary: z.string().optional(),
 		applianceId: z.string().optional(),
 		applianceName: z.string().optional(),
@@ -27,8 +27,16 @@ export const issueAlignerSetSchema = z
 	})
 	.strict();
 
-export const archwireChangeSchema = ArchwireChangePayloadSchema;
-export const archwireChangePayloadSchema = ArchwireChangePayloadSchema;
+export const archwireChangeSchema = ArchwireChangePayloadSchema.superRefine((val, ctx) => {
+	if (val.visitId !== undefined && !z.string().uuid().safeParse(val.visitId).success) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["visitId"],
+			message: "Идентификатор визита должен быть UUID",
+		});
+	}
+});
+export const archwireChangePayloadSchema = archwireChangeSchema;
 export type { ArchwireChangePayload };
 
 export const ligatureActivateSchema = z
@@ -37,6 +45,8 @@ export const ligatureActivateSchema = z
 		powerChainSpan: z.string().max(50).optional(),
 		applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
 		note: z.string().max(300).optional(),
+		visitId: z.string().uuid().optional(),
+		soapSummary: z.string().max(4000).optional(),
 	})
 	.strict();
 
@@ -45,7 +55,7 @@ export const stageAdvanceSchema = z
 		nextStage: z.number().int().min(1).max(10),
 		stageTitle: z.string().max(120).optional(),
 		note: z.string().max(300).optional(),
-		visitId: z.string().optional(),
+		visitId: z.string().uuid().optional(),
 		soapSummary: z.string().optional(),
 		applianceId: z.string().optional(),
 		applianceName: z.string().optional(),
@@ -86,7 +96,7 @@ export const deductOrthoMaterialsSchema = z
 		quantity: z.number().positive().default(1),
 		unit: z.string().default("шт."),
 		arch: z.enum(["upper", "lower", "both"]).default("both"),
-		visitId: z.string().optional(),
+		visitId: z.string().uuid().optional(),
 		notes: z.string().max(300).optional(),
 	})
 	.strict();
@@ -108,25 +118,68 @@ export const cephMeasurementSchema = z
 		value: z.number().nullable(),
 		status: z.enum(["normal", "deviation_high", "deviation_low", "unmeasured"]),
 		clinicalInterpretation: z.string().max(500),
+		symbol: z.string().max(32).optional(),
 		category: z.enum([
 			"skeletal_sagittal",
 			"skeletal_vertical",
 			"dental_upper",
 			"dental_lower",
 			"dental_interincisal",
+			"interincisal",
 			"soft_tissue",
 		]),
+	})
+	.strict();
+
+export const cephDiagnosisSchema = z
+	.object({
+		skeletalClass: z.string().max(64).optional(),
+		skeletalClassRu: z.string().max(500).optional(),
+		maxillaryPosition: z.string().max(64).optional(),
+		maxillaryPositionRu: z.string().max(500).optional(),
+		mandibularPosition: z.string().max(64).optional(),
+		mandibularPositionRu: z.string().max(500).optional(),
+		growthPattern: z.string().max(64).optional(),
+		growthPatternRu: z.string().max(500).optional(),
+		upperIncisorInclination: z.string().max(64).optional(),
+		upperIncisorInclinationRu: z.string().max(500).optional(),
+		lowerIncisorInclination: z.string().max(64).optional(),
+		lowerIncisorInclinationRu: z.string().max(500).optional(),
+		rickettsELineRu: z.string().max(500).optional(),
+		witsRelationshipRu: z.string().max(500).optional(),
+		downsConvexityRu: z.string().max(500).optional(),
+		mcnamaraRelationshipRu: z.string().max(500).optional(),
+		u1NaRelationshipRu: z.string().max(500).optional(),
+		l1NbRelationshipRu: z.string().max(500).optional(),
+		summaryRu: z.string().max(4000).optional(),
+		clinicalProtocolText: z.string().max(8000).optional(),
+		protocol043Text: z.string().max(8000).optional(),
 	})
 	.strict();
 
 export const cephAnalysisPayloadSchema = z
 	.object({
 		measurements: z.array(cephMeasurementSchema).optional(),
-		diagnosis: z.record(z.string(), z.unknown()).optional(),
+		diagnosis: cephDiagnosisSchema.optional(),
+		landmarks: z.record(z.string(), cephPointSchema).optional(),
+		scaleMmPerPixel: z.number().positive().max(10).optional(),
+		isComplete: z.boolean().optional(),
+		placedCount: z.number().int().min(0).max(100).optional(),
+		totalCount: z.number().int().min(0).max(100).optional(),
+		completionPercentage: z.number().min(0).max(100).optional(),
 		summaryRu: z.string().max(4000).optional(),
+		clinicalProtocolText: z.string().max(8000).optional(),
 		protocol043Text: z.string().max(8000).optional(),
+		sna: z.number().optional(),
+		snb: z.number().optional(),
+		anb: z.number().optional(),
+		witsMm: z.number().optional(),
+		skeletalClass: z.string().max(64).optional(),
+		u1NaDeg: z.number().optional(),
+		l1NbDeg: z.number().optional(),
+		fmaDeg: z.number().optional(),
 	})
-	.passthrough();
+	.strict();
 
 export const cephAnalysisSaveSchema = z
 	.object({

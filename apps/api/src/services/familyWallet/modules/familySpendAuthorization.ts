@@ -43,19 +43,25 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	const currentBalKop = family.balanceKopecks != null
-		? Number(family.balanceKopecks)
-		: (family.balance ? parseKopecks(family.balance) : 0);
-	if (currentBalKop < debitKopecks) {
-		throw new FamilyWalletError(
-			`Недостаточно средств на семейном кошельке (доступно ${formatKopecksToRubles(currentBalKop)} ₽, требуется ${formatKopecksToRubles(debitKopecks)} ₽)`,
-			402,
-			"INSUFFICIENT_FAMILY_BALANCE",
-		);
-	}
+	const currentBalKop =
+		family.balanceKopecks != null &&
+		(Number(family.balanceKopecks) !== 0 ||
+			!family.balance ||
+			parseKopecks(family.balance) === 0)
+			? Number(family.balanceKopecks)
+			: family.balance
+				? parseKopecks(family.balance)
+				: 0;
 
 	// Case 1: Wallet owner is spending for themselves
 	if (patientId === walletOwnerId) {
+		if (currentBalKop < debitKopecks) {
+			throw new FamilyWalletError(
+				`Недостаточно средств на семейном кошельке (доступно ${formatKopecksToRubles(currentBalKop)} ₽, требуется ${formatKopecksToRubles(debitKopecks)} ₽)`,
+				402,
+				"INSUFFICIENT_FAMILY_BALANCE",
+			);
+		}
 		return;
 	}
 
@@ -166,11 +172,20 @@ export async function verifyFamilySpendAuthorization(params: {
 	});
 
 	if (!spendValidation.isAuthorized) {
+		const statusCode =
+			currentBalKop < debitKopecks &&
+			spendValidation.failureReason?.includes("Недостаточно средств")
+				? 402
+				: 403;
+		const errorCode =
+			statusCode === 402
+				? "INSUFFICIENT_FAMILY_BALANCE"
+				: "UNAUTHORIZED_FAMILY_SPEND";
 		throw new FamilyWalletError(
 			spendValidation.failureReason ||
 				"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
-			403,
-			"UNAUTHORIZED_FAMILY_SPEND",
+			statusCode,
+			errorCode,
 		);
 	}
 }

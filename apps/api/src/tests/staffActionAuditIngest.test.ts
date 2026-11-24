@@ -331,4 +331,74 @@ test("Staff Action Audit Ingestion & Immutability Suite", async (t) => {
 		assert.strictEqual(adminRes.statusCode, 200);
 		assert.ok(Array.isArray(adminRes.json().logs));
 	});
+
+	await t.test("8. Security: POST /api/audit/events rejects malformed fallback payloads (400) and overrides spoofed actorUserId", async () => {
+		const malformedRes = await app.inject({
+			method: "POST",
+			url: "/api/audit/events",
+			headers: authHeaders,
+			payload: {
+				arbitraryField: "should-be-rejected",
+			},
+		});
+		assert.strictEqual(malformedRes.statusCode, 400);
+		assert.strictEqual(malformedRes.json().error, "ValidationError");
+
+		if (!databaseAvailable) return;
+
+		const spoofedActorId = fixtureUuid(NAMESPACE, 888);
+		const spoofActorRes = await app.inject({
+			method: "POST",
+			url: "/api/audit/events",
+			headers: authHeaders,
+			payload: {
+				actorUserId: spoofedActorId,
+				actionType: "emr_open",
+				entityType: "patient_card",
+				entityId: "card-spoof-check",
+				reason: "Проверка защиты от подмены actorUserId",
+			},
+		});
+		assert.strictEqual(spoofActorRes.statusCode, 201);
+		const insertedId = spoofActorRes.json().insertedIds[0];
+
+		const [eventRow] = await db
+			.select()
+			.from(auditEvents)
+			.where(eq(auditEvents.id, insertedId));
+		assert.ok(eventRow);
+		assert.strictEqual(eventRow.actorUserId, DOCTOR_USER_ID);
+		assert.notStrictEqual(eventRow.actorUserId, spoofedActorId);
+	});
+
+	await t.test("9. Role-Based Access Control: GET /api/audit/medical-access rejects doctor (403) and logs admin access", async () => {
+		const doctorMedRes = await app.inject({
+			method: "GET",
+			url: "/api/audit/medical-access",
+			headers: authHeaders,
+		});
+		assert.strictEqual(doctorMedRes.statusCode, 403);
+		assert.strictEqual(doctorMedRes.json().error, "Forbidden");
+
+		if (!databaseAvailable) return;
+
+		const adminToken = signToken(
+			{
+				userId: fixtureUuid(NAMESPACE, 99),
+				organizationId: ORG_ID,
+				role: "admin",
+			},
+			authTokenSecret(),
+		);
+		const adminMedRes = await app.inject({
+			method: "GET",
+			url: `/api/audit/medical-access?patientId=${PATIENT_ID}`,
+			headers: {
+				"x-dente-staff-token": adminToken,
+				"x-dente-clinic-token": adminToken,
+			},
+		});
+		assert.strictEqual(adminMedRes.statusCode, 200);
+		assert.ok(Array.isArray(adminMedRes.json().logs));
+	});
 });

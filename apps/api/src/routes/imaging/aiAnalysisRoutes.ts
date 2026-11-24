@@ -7,11 +7,7 @@ import {
 } from "../../services/imaging/localPacsStorageService.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import {
-	parseImagingPayload,
-	sendImagingStudyNotFound,
-	sendImagingStudyScopeError,
-} from "./imagingHelpers.js";
+import { sendImagingStudyNotFound } from "./imagingHelpers.js";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
@@ -25,25 +21,31 @@ import {
 	updateImagingStudyAiSummaryInDb,
 } from "../../db/imagingQuery.js";
 import { saveImagingAiAnnotationsForStudy } from "../../db/imagingMeasurementsQuery.js";
-import { getPatientsFromDb } from "../../db/patientsQuery.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { parseDicomFirstFramePixel } from "./previewModules/firstFramePixelParser.js";
 
-export const imagingAiAnalysisBodySchema = z.object({
-	imageBase64: z.string().optional().default(""),
-	toothCode: z.string().trim().min(1).optional().nullable(),
-	patientId: z.string().trim().min(1).optional().nullable(),
-	visitId: z.string().trim().min(1).optional().nullable(),
-	studyId: z.string().trim().min(1).optional().nullable(),
-	focus: z.enum(["caries", "perio", "endo"]).optional().nullable(),
-});
+const MAX_AI_BASE64_CHARS = 32 * 1024 * 1024;
+
+export const imagingAiAnalysisBodySchema = z
+	.object({
+		imageBase64: z.string().max(MAX_AI_BASE64_CHARS).optional().default(""),
+		toothCode: z.string().trim().min(1).max(16).optional().nullable(),
+		patientId: z.string().uuid().optional().nullable(),
+		visitId: z.string().uuid().optional().nullable(),
+		studyId: z.string().uuid().optional().nullable(),
+		focus: z.enum(["caries", "perio", "endo"]).optional().nullable(),
+	})
+	.strict();
 
 export type ImagingAiAnalysisBody = z.infer<typeof imagingAiAnalysisBodySchema>;
 
-const studyAnalyzeParamsSchema = z.object({
-	id: z.string().trim().min(1),
-});
+const studyAnalyzeParamsSchema = z
+	.object({
+		id: z.string().uuid("Некорректный идентификатор снимка (ожидается UUID)."),
+	})
+	.strict();
 
 function convertBufferToVisionDataUrl(buf: Buffer, filePath?: string): string {
 	const isJpeg =
@@ -89,6 +91,18 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		)
 			return;
 
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.imaging.read",
+				role: staffRole,
+				message: `Отказ в доступе к ИИ-анализу снимков: ${evalAccess.reason}`,
+			});
+		}
+
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
@@ -120,24 +134,32 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		let imageBase64 = body.imageBase64.trim();
 		const toothCode = body.toothCode?.trim() ?? null;
 		const patientId = body.patientId?.trim() ?? null;
-		const visitId = body.visitId?.trim() ?? null;
 		const studyId = body.studyId?.trim() ?? null;
 
-		// If imageBase64 is not provided directly, try to load it from studyId if present
-		if (!imageBase64 && studyId) {
+		let loadedStudyPatientId: string | null = null;
+		if (studyId) {
 			const orgId = requireOrganizationId(request, reply);
-			if (orgId) {
-				const study = await getImagingStudyById(orgId, studyId);
-				if (study?.storagePath) {
-					try {
-						const resolved = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, study.storagePath);
-						if (existsSync(resolved)) {
-							const buf = await readFile(resolved);
-							imageBase64 = convertBufferToVisionDataUrl(buf, resolved);
-						}
-					} catch (readErr) {
-						request.log.warn({ readErr, studyId }, "Could not read study storage file for AI analysis");
+			if (!orgId) return;
+			const study = await withTenantCtx(orgId, (tx) => getImagingStudyById(orgId, studyId, tx));
+			if (!study) {
+				return sendImagingStudyNotFound(reply);
+			}
+			if (patientId && study.patientId && study.patientId !== patientId) {
+				return reply.code(409).send({
+					error: "StudyPatientMismatch",
+					message: "Указанное исследование принадлежит другому пациенту.",
+				});
+			}
+			loadedStudyPatientId = study.patientId ?? null;
+			if (!imageBase64 && study.storagePath) {
+				try {
+					const resolved = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, study.storagePath);
+					if (existsSync(resolved)) {
+						const buf = await readFile(resolved);
+						imageBase64 = convertBufferToVisionDataUrl(buf, resolved);
 					}
+				} catch (readErr) {
+					request.log.warn({ readErr, studyId }, "Could not read study storage file for AI analysis");
 				}
 			}
 		}
@@ -190,15 +212,13 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			// If studyId is present, persist aiSummary and toothUpdates annotations to db
 			if (studyId) {
 				const orgId = requireOrganizationId(request, reply);
-				if (orgId) {
-					try {
-						await updateImagingStudyAiSummaryInDb(orgId, studyId, summary || report);
-						if (patientId && toothUpdates.length > 0) {
-							await saveImagingAiAnnotationsForStudy(orgId, studyId, patientId, toothUpdates);
-						}
-					} catch (updateErr) {
-						request.log.warn({ updateErr }, "Failed to update study AI summary or annotations");
-					}
+				if (!orgId) return;
+				await withTenantCtx(orgId, (tx) =>
+					updateImagingStudyAiSummaryInDb(orgId, studyId, summary || report, tx),
+				);
+				const targetPatientId = patientId ?? loadedStudyPatientId;
+				if (targetPatientId && toothUpdates.length > 0) {
+					await saveImagingAiAnnotationsForStudy(orgId, studyId, targetPatientId, toothUpdates);
 				}
 			}
 
@@ -212,8 +232,10 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			});
 		} catch (err: unknown) {
 			request.log.error({ err }, "Imaging AI analysis failed");
-			const message = err instanceof Error ? err.message : "Ошибка обработки снимка";
-			return reply.code(500).send({ error: message });
+			return reply.code(500).send({
+				error: "AiAnalysisFailed",
+				message: "Ошибка обработки ИИ-анализа снимка.",
+			});
 		}
 	};
 
@@ -232,6 +254,18 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.imaging.write",
+				role: staffRole,
+				message: `Отказ в запуске ИИ-анализа снимка: ${evalAccess.reason}`,
+			});
+		}
+
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -249,12 +283,12 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		const paramsParsed = studyAnalyzeParamsSchema.safeParse(request.params);
 		if (!paramsParsed.success) {
 			return reply.code(400).send({
-				error: "InvalidParams",
-				message: "Некорректный идентификатор исследования",
+				error: "ValidationError",
+				message: "Некорректный идентификатор снимка (ожидается UUID).",
 			});
 		}
 		const { id } = paramsParsed.data;
-		const study = await getImagingStudyById(orgId, id);
+		const study = await withTenantCtx(orgId, (tx) => getImagingStudyById(orgId, id, tx));
 		if (!study) return sendImagingStudyNotFound(reply);
 
 		// БЫЛО: если файл снимка отсутствовал или не читался, в модель отправлялся
@@ -331,34 +365,21 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 
 		try {
 			const analysisResult = await analyzeImagingStudy(imageBase64);
-			// БЫЛО: результат записывался в поля объекта в памяти и умирал вместе
-			// с запросом — при повторном открытии заключение исчезало, а платный
-			// вызов модели выполнялся заново. Функция сохранения была импортирована,
-			// но не вызывалась ни разу.
-			try {
-				await updateImagingStudyAiSummaryInDb(
+			await withTenantCtx(orgId, (tx) =>
+				updateImagingStudyAiSummaryInDb(orgId, id, analysisResult.summary, tx),
+			);
+			if (study.patientId && Array.isArray(analysisResult.toothUpdates) && analysisResult.toothUpdates.length > 0) {
+				await saveImagingAiAnnotationsForStudy(
 					orgId,
 					id,
-					analysisResult.summary,
-				);
-				if (study.patientId && Array.isArray(analysisResult.toothUpdates) && analysisResult.toothUpdates.length > 0) {
-					await saveImagingAiAnnotationsForStudy(
-						orgId,
-						id,
-						study.patientId,
-						analysisResult.toothUpdates,
-					);
-				}
-			} catch (persistError) {
-				request.log.error(
-					{ err: persistError },
-					"[imaging] Не удалось сохранить заключение ИИ и аннотации",
+					study.patientId,
+					analysisResult.toothUpdates,
 				);
 			}
 			return reply.code(200).send({ ok: true, analysisResult });
 		} catch (err: unknown) {
-			const message = err instanceof Error ? err.message : "Анализ завершился ошибкой";
-			return reply.code(502).send({ ok: false, message });
+			request.log.error({ err, studyId: id }, "[imaging] Ошибка анализа снимка или сохранения заключения ИИ");
+			return reply.code(502).send({ ok: false, message: "Не удалось завершить или сохранить ИИ-анализ снимка." });
 		}
 	});
 

@@ -2,6 +2,9 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
+import { recordAuditEventInDb } from "../../db/auditQuery.js";
+import { safeLogError } from "../../observability/logger.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import {
 	backupsDirectory,
 	createEncryptedBackup,
@@ -46,7 +49,11 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 							.createHash("sha256")
 							.update(fileBuffer)
 							.digest("hex");
-					} catch {
+					} catch (hashErr: unknown) {
+						request.log.warn(
+							{ err: safeLogError(hashErr), filename },
+							"[backup] Failed to compute backup SHA-256",
+						);
 						sha256 = "";
 					}
 					return {
@@ -62,6 +69,10 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 
 			return { backups };
 		} catch (err: unknown) {
+			request.log.error(
+				{ err: safeLogError(err) },
+				"[backup] Failed to list backup directory",
+			);
 			reply.code(500);
 			return {
 				error: "BackupListFailed",
@@ -79,6 +90,16 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/backup/create", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const identity = getRequestIdentity(request);
+		if (identity.userId && identity.role !== "owner") {
+			reply.code(403);
+			return {
+				error: "PermissionDenied",
+				message:
+					"Создание полной резервной копии базы данных доступно только владельцу клиники.",
+			};
+		}
 
 		const outcome = await createEncryptedBackup();
 		if (!outcome.success || !outcome.filePath) {
@@ -99,14 +120,32 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 				fs.renameSync(finalPath, targetPath);
 				finalPath = targetPath;
 				finalFilename = targetFilename;
-			} catch {
-				// Оставляем исходный путь при ошибке rename
+			} catch (renameErr: unknown) {
+				request.log.warn(
+					{ err: safeLogError(renameErr), finalPath, targetPath },
+					"[backup] Failed to rename backup file with custom prefix",
+				);
 			}
 		}
 
 		const stat = fs.statSync(finalPath);
 		const fileBuffer = fs.readFileSync(finalPath);
 		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+
+		try {
+			await recordAuditEventInDb(orgId, {
+				entityType: "backup",
+				entityId: finalFilename,
+				action: "BACKUP_CREATED",
+				actorUserId: identity.userId,
+				reason: `sizeBytes=${stat.size}, sha256=${sha256.slice(0, 16)}`,
+			});
+		} catch (auditErr: unknown) {
+			request.log.warn(
+				{ err: safeLogError(auditErr), organizationId: orgId, filename: finalFilename },
+				"[backup] Failed to record BACKUP_CREATED audit event",
+			);
+		}
 
 		return {
 			success: true,

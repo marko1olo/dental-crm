@@ -2,7 +2,7 @@
  * recipeRowMapper.ts — Layer 1: Helper mapping joined procedureMaterialRules row to ConsumableLinkDetailed.
  */
 
-import { rublesToKopecks, type ConsumableLinkDetailed } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type ConsumableLinkDetailed } from "@dental/shared";
 
 export interface ConsumableLinkJoinedRow {
 	id: string;
@@ -32,6 +32,8 @@ export function mapRowToLinkDetailed(
 	const stock = Number(r.stockQuantity ?? 0);
 	const cost = Number(r.unitCostRub ?? 0);
 	const threshold = Number(r.criticalThreshold ?? 0);
+	const unitCostKopecks = rublesToKopecks(cost);
+	const totalCostKopecks = Math.round(qty * unitCostKopecks);
 	return {
 		id: r.id,
 		organizationId: r.organizationId ?? defaultOrgId,
@@ -49,10 +51,10 @@ export function mapRowToLinkDetailed(
 		itemUnit: r.itemUnit,
 		stockQuantity: stock,
 		unitCostRub: cost,
-		unitCostKopecks: rublesToKopecks(cost),
+		unitCostKopecks,
 		criticalThreshold: threshold,
-		totalCostRub: Number((qty * cost).toFixed(2)),
-		totalCostKopecks: rublesToKopecks(Number((qty * cost).toFixed(2))),
+		totalCostRub: kopecksToRubles(totalCostKopecks),
+		totalCostKopecks,
 		isLowStock: stock <= threshold,
 	};
 }

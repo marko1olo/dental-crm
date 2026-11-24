@@ -1,9 +1,8 @@
 import { openSync, readSync, closeSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { ImagingStudyKind } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
-import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
 export function normalizeImagingStudyKind(raw: string | undefined): ImagingStudyKind {
@@ -17,55 +16,49 @@ export function normalizeImagingStudyKind(raw: string | undefined): ImagingStudy
 	return "other";
 }
 
-const registerLocalStudyBodySchema = z.object({
-	patientId: z.string().uuid("Идентификатор пациента должен быть валидным UUID"),
-	visitId: z.string().uuid().optional().nullable(),
-	doctorId: z.string().uuid().optional().nullable(),
-	kind: z
-		.enum([
-			"ct",
-			"cbct",
-			"optg",
-			"opg",
-			"rvg",
-			"periapical",
-			"bitewing",
-			"panoramic",
-			"cephalometric",
-			"photo_intraoral",
-			"photo_extraoral",
-			"other",
-		])
-		.default("cbct"),
-	title: z.string().trim().min(1, "Название снимка обязательно").max(200).optional(),
-	toothCode: z.string().trim().max(50).optional().nullable(),
-	region: z.string().trim().max(100).optional().nullable(),
-	localFilePath: z.string().trim().min(1, "Путь к локальному файлу снимка обязателен"),
-	fileSizeBytes: z.number().int().nonnegative().optional(),
-	dicomStudyUid: z.string().trim().optional().nullable(),
-	dicomSeriesUid: z.string().trim().optional().nullable(),
-	dicomSopInstanceUid: z.string().trim().optional().nullable(),
-	localThumbnailDataUri: z.string().trim().optional().nullable(),
-});
+const registerLocalStudyBodySchema = z
+	.object({
+		patientId: z.string().uuid("Идентификатор пациента должен быть валидным UUID"),
+		visitId: z.string().uuid().optional().nullable(),
+		doctorId: z.string().uuid().optional().nullable(),
+		kind: z
+			.enum([
+				"ct",
+				"cbct",
+				"optg",
+				"opg",
+				"rvg",
+				"periapical",
+				"bitewing",
+				"panoramic",
+				"cephalometric",
+				"photo_intraoral",
+				"photo_extraoral",
+				"other",
+			])
+			.default("cbct"),
+		title: z.string().trim().min(1, "Название снимка обязательно").max(200).optional(),
+		toothCode: z.string().trim().max(50).optional().nullable(),
+		region: z.string().trim().max(100).optional().nullable(),
+		localFilePath: z.string().trim().min(1, "Путь к локальному файлу снимка обязателен"),
+		fileSizeBytes: z.number().int().nonnegative().optional(),
+		dicomStudyUid: z.string().trim().max(128).optional().nullable(),
+		dicomSeriesUid: z.string().trim().max(128).optional().nullable(),
+		dicomSopInstanceUid: z.string().trim().max(128).optional().nullable(),
+		localThumbnailDataUri: z.string().trim().optional().nullable(),
+	})
+	.strict();
 import type { FastifyInstance } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { parseImagingPayload } from "./imagingHelpers.js";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { xrayScans } from "../../db/schema.js";
+import { patients, xrayScans } from "../../db/schema.js";
 import { withTenantCtx } from "../../db/rls.js";
-import {
-	createImagingStudyInDb,
-	getAllImagingStudies,
-} from "../../db/imagingQuery.js";
-import { getPatientsFromDb } from "../../db/patientsQuery.js";
-import {
-	browserRenderableImageMimeType,
-	isDicomOrRadiographFile,
-} from "../../imaging/previewFormats.js";
+import { createImagingStudyInDb } from "../../db/imagingQuery.js";
 import { parseDicomHeader } from "./dicomParsing.js";
 import type { DicomHeaderMetadata } from "./imagingConstants.js";
 import {
@@ -105,8 +98,13 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 		}
 		const data = parseResult.data;
 
-		// 152-ФЗ / 323-ФЗ: Verify patient belongs to organization
-		const patient = await getPatientByIdFromDb(organizationId, data.patientId);
+		const [patient] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, data.patientId)))
+				.limit(1),
+		);
 		if (!patient) {
 			return reply.status(404).send({
 				error: "PatientNotFound",
@@ -243,15 +241,27 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				}
 			}
 
-			if (!patientId) {
+			if (!patientId || !isValidUuid(patientId)) {
 				return reply.status(400).send({
 					error: "ValidationError",
-					message: "Необходимо указать patientId для загрузки снимка.",
+					message: "Необходимо указать валидный UUID patientId для загрузки снимка.",
+				});
+			}
+			if (visitId && !isValidUuid(visitId)) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный UUID visitId.",
 				});
 			}
 
-			// Validate patient ownership
-			const patient = await getPatientByIdFromDb(organizationId, patientId);
+			// Validate patient ownership inside tenant context
+			const [patient] = await withTenantCtx(organizationId, async (tx) =>
+				tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+					.limit(1),
+			);
 			if (!patient) {
 				return reply.status(404).send({
 					error: "PatientNotFound",
@@ -266,6 +276,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				});
 			}
 
+			let storedStoragePath: string | null = null;
 			try {
 				const stored = await LocalPacsStorageService.storeTenantFileStream(
 					organizationId,
@@ -273,6 +284,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 					fileStream,
 					{ maxSizeBytes: 2 * 1024 * 1024 * 1024 }, // 2 GB limit per scan
 				);
+				storedStoragePath = stored.storagePath;
 
 				let dicomMetadata: DicomHeaderMetadata | null = null;
 				let localThumbnailDataUri: string | null = null;
@@ -288,8 +300,8 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 						if (parsed.tagsRead > 0) {
 							dicomMetadata = parsed;
 						}
-					} catch {
-						// Non-fatal if header parsing fails on full file
+					} catch (hdrErr) {
+						request.log.warn({ err: hdrErr, fileName: filename }, "Non-fatal DICOM header probe error on upload");
 					}
 				} else if (stored.detectedFormat === "heic") {
 					try {
@@ -301,13 +313,13 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 						if (decoded.success && decoded.thumbnailBuffer) {
 							localThumbnailDataUri = `data:image/webp;base64,${decoded.thumbnailBuffer.toString("base64")}`;
 						}
-					} catch {
-						// Non-fatal
+					} catch (heicErr) {
+						request.log.warn({ err: heicErr, fileName: filename }, "Non-fatal HEIC thumbnail decode error on upload");
 					}
 				}
 
 				const studyTitle = title.trim() || `Снимок ${kind.toUpperCase()}`;
-				const study = await db.transaction(async (tx) => {
+				const study = await withTenantCtx(organizationId, async (tx) => {
 					const createdStudy = await createImagingStudyInDb(
 						organizationId,
 						{
@@ -381,6 +393,11 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 					dicomMetadata,
 				});
 			} catch (err) {
+				if (storedStoragePath) {
+					await unlink(storedStoragePath).catch((unlinkErr) => {
+						request.log.warn({ err: unlinkErr, storedStoragePath }, "Failed to unlink orphan scan upload");
+					});
+				}
 				if (err instanceof InvalidMagicBytesError) {
 					return reply.status(400).send({
 						error: "InvalidMagicBytes",
@@ -396,7 +413,7 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 				request.log.error({ err }, "Error during imaging upload");
 				return reply.status(500).send({
 					error: "UploadFailed",
-					message: err instanceof Error ? err.message : "Ошибка при сохранении снимка.",
+					message: "Ошибка при сохранении снимка.",
 				});
 			}
 		},
@@ -416,6 +433,12 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const { studyId } = request.params;
+			if (!isValidUuid(studyId)) {
+				return reply.status(400).send({
+					error: "InvalidStudyId",
+					message: "Некорректный UUID снимка.",
+				});
+			}
 			const study = await LocalPacsStorageService.getLocalStudyForConsultation(organizationId, studyId);
 
 			if (!study) {
@@ -437,6 +460,12 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 	 * Queues background asynchronous cloud sync for large CBCT scans without blocking consultation.
 	 */
 
+	const syncQueueBodySchema = z
+		.object({
+			studyId: z.string().uuid("Некорректный UUID снимка"),
+		})
+		.strict();
+
 	app.post("/api/imaging/local-offline/sync-queue", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "queue local study sync"))) {
 			return;
@@ -455,15 +484,14 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const body = request.body as Record<string, unknown> | undefined;
-		const studyId = typeof body?.studyId === "string" ? body.studyId : "";
-
-		if (!studyId) {
+		const parsedBody = syncQueueBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
 			return reply.status(400).send({
 				error: "ValidationError",
-				message: "Необходимо указать studyId",
+				message: parsedBody.error.issues[0]?.message || "Необходимо указать корректный UUID studyId",
 			});
 		}
+		const { studyId } = parsedBody.data;
 
 		const result = await LocalPacsStorageService.queueCloudSync(studyId, organizationId);
 

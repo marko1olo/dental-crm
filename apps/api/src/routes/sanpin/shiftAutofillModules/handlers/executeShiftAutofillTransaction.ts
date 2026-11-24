@@ -32,7 +32,7 @@ export async function executeShiftAutofillTransaction(
 	params: ShiftAutofillParams,
 ): Promise<{
 	insertedPso: (typeof preSterilizationCleaningLogs.$inferSelect)[];
-	insertedSteril: (typeof sterilizationLogs.$inferSelect)[];
+	insertedSteril: Array<(typeof sterilizationLogs.$inferSelect) & { packagedItemsCount: number }>;
 }> {
 	const { organizationId, body, operatorId, todayStr } = params;
 
@@ -60,7 +60,7 @@ export async function executeShiftAutofillTransaction(
 				isBatchApproved: day.isPsoApproved !== false,
 				detergentBrand: (day.psoDetergent as string) || "Биолот 0.5%",
 				operatorId,
-				notes: (day.notes as string) || `Ретроспективная смена (${dayDateStr}): норма СанПиН 3.3686-21`,
+				notes: (day.notes as string) || `Ретроспективная смена (${dayDateStr}): клиническая норма`,
 				timestamp: validTimestamp,
 			};
 		});
@@ -133,8 +133,8 @@ export async function executeShiftAutofillTransaction(
 				detergentBrand: (p.detergentBrand as string) || "Биолот 0.5%",
 				operatorId,
 				notes: p.instrumentName
-					? `${p.instrumentName} | ${(p.notes as string) || "Автопилот смены: норма СанПиН 3.3686-21"}`
-					: (p.notes as string) || "Стоматологический инструментарий | Автопилот смены: норма СанПиН 3.3686-21",
+					? `${p.instrumentName} | ${(p.notes as string) || "Автопилот смены: клиническая норма"}`
+					: (p.notes as string) || "Стоматологический инструментарий | Автопилот смены: клиническая норма",
 			})),
 		)
 		.returning();
@@ -168,10 +168,7 @@ export async function executeShiftAutofillTransaction(
 	const sterilWithCounts = sterilRows.map((row, idx) => {
 		const f = autoclaveCycles[idx];
 		const packCount = Number(
-			(f as Record<string, unknown>)?.packagedItemsCount ??
-			(f as Record<string, unknown>)?.count ??
-			(body as Record<string, unknown>)?.packagedItemsCount ??
-			1,
+			f?.packagedItemsCount ?? f?.count ?? body.packagedItemsCount ?? 1,
 		);
 		return Object.assign(row, { packagedItemsCount: Math.max(1, packCount) });
 	});

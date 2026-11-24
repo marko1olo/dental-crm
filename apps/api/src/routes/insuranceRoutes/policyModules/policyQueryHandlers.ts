@@ -1,13 +1,18 @@
-import { calculateDmsCoverage } from "@dental/shared";
+import { calculateDmsCoverage, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { insuranceContracts } from "../../../db/schema.js";
 import {
 	INSURANCE_CONTRACT_NOT_FOUND,
 	INSURER_DIRECTORY,
 } from "../constants.js";
+import {
+	formatInsuranceContractResponse,
+	isValidUuid,
+	resolveDbKopecks,
+} from "../guaranteeLetterModules/guaranteeLetterFormatters.js";
 import { calculateCoverageBodySchema } from "../types.js";
 
 export async function registerPolicyQueryRoutes(app: FastifyInstance) {
@@ -20,18 +25,20 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const contracts = await db
-			.select()
-			.from(insuranceContracts)
-			.where(
-				and(
-					eq(insuranceContracts.organizationId, orgId),
-					eq(insuranceContracts.isActive, true),
-				),
-			)
-			.orderBy(insuranceContracts.companyName);
+		const contracts = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select()
+				.from(insuranceContracts)
+				.where(
+					and(
+						eq(insuranceContracts.organizationId, orgId),
+						eq(insuranceContracts.isActive, true),
+					),
+				)
+				.orderBy(insuranceContracts.companyName),
+		);
 
-		return contracts;
+		return contracts.map(formatInsuranceContractResponse);
 	});
 
 	// GET all known statutory insurers and clinic's active contracts
@@ -43,16 +50,18 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const activeContracts = await db
-			.select()
-			.from(insuranceContracts)
-			.where(
-				and(
-					eq(insuranceContracts.organizationId, orgId),
-					eq(insuranceContracts.isActive, true),
-				),
-			)
-			.orderBy(insuranceContracts.companyName);
+		const activeContracts = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select()
+				.from(insuranceContracts)
+				.where(
+					and(
+						eq(insuranceContracts.organizationId, orgId),
+						eq(insuranceContracts.isActive, true),
+					),
+				)
+				.orderBy(insuranceContracts.companyName),
+		);
 
 		const statutoryList = Object.entries(INSURER_DIRECTORY).map(([key, info]) => ({
 			key,
@@ -64,15 +73,19 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 			),
 		}));
 
-		const contractInsurers = activeContracts.map((c) => ({
-			key: `contract_${c.id}`,
-			name: c.companyName,
-			shortName: c.companyName,
-			contractId: c.id,
-			annualLimitRub: c.annualLimitRub,
-			patientFranchisePct: c.patientFranchisePct,
-			isPartner: true,
-		}));
+		const contractInsurers = activeContracts.map((c) => {
+			const formatted = formatInsuranceContractResponse(c);
+			return {
+				key: `contract_${c.id}`,
+				name: c.companyName,
+				shortName: c.companyName,
+				contractId: c.id,
+				annualLimitRub: formatted.annualLimitRub,
+				annualLimitKopecks: formatted.annualLimitKopecks,
+				patientFranchisePct: formatted.patientFranchisePct,
+				isPartner: true,
+			};
+		});
 
 		return reply.code(200).send({
 			insurers: statutoryList,
@@ -92,23 +105,32 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 			if (!orgId) return;
 
 			const { contractId } = request.params;
-			const [contract] = await db
-				.select()
-				.from(insuranceContracts)
-				.where(
-					and(
-						eq(insuranceContracts.id, contractId),
-						eq(insuranceContracts.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			if (!isValidUuid(contractId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Параметр contractId должен быть валидным UUID.",
+				});
+			}
+
+			const [contract] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select()
+					.from(insuranceContracts)
+					.where(
+						and(
+							eq(insuranceContracts.id, contractId),
+							eq(insuranceContracts.organizationId, orgId),
+						),
+					)
+					.limit(1),
+			);
 
 			if (!contract)
 				return reply.code(404).send({
 					error: "ContractNotFound",
 					message: INSURANCE_CONTRACT_NOT_FOUND,
 				});
-			return contract;
+			return formatInsuranceContractResponse(contract);
 		},
 	);
 
@@ -117,6 +139,7 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 		Params: { contractId: string };
 		Body: {
 			usedAnnualAmountRub?: number;
+			usedAnnualAmountKopecks?: number;
 			items: Array<{
 				serviceId: string;
 				serviceName?: string;
@@ -144,16 +167,25 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { contractId } = request.params;
-		const [contract] = await db
-			.select()
-			.from(insuranceContracts)
-			.where(
-				and(
-					eq(insuranceContracts.id, contractId),
-					eq(insuranceContracts.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		if (!isValidUuid(contractId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Параметр contractId должен быть валидным UUID.",
+			});
+		}
+
+		const [contract] = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select()
+				.from(insuranceContracts)
+				.where(
+					and(
+						eq(insuranceContracts.id, contractId),
+						eq(insuranceContracts.organizationId, orgId),
+					),
+				)
+				.limit(1),
+		);
 
 		if (!contract || !contract.isActive) {
 			return reply.code(404).send({
@@ -168,10 +200,22 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: msg,
+				details: parsed.error.issues,
 			});
 		}
 
-		const { items, usedAnnualAmountRub } = parsed.data;
+		const { items, usedAnnualAmountRub, usedAnnualAmountKopecks } = parsed.data;
+		const usedAnnualKop =
+			usedAnnualAmountKopecks !== undefined
+				? usedAnnualAmountKopecks
+				: rublesToKopecks(usedAnnualAmountRub);
+		const contractAnnualKop = resolveDbKopecks(contract.annualLimitKopecks, contract.annualLimitRub);
+		const contractAnnualRub =
+			contractAnnualKop > 0
+				? kopecksToRubles(contractAnnualKop)
+				: contract.annualLimitRub != null
+					? Number(contract.annualLimitRub)
+					: null;
 
 		const result = calculateDmsCoverage(
 			{
@@ -181,10 +225,10 @@ export async function registerPolicyQueryRoutes(app: FastifyInstance) {
 				coverageSurgeryPct: Number(contract.coverageSurgeryPct),
 				coverageOrthoPct: Number(contract.coverageOrthoPct),
 				coverageHygienePct: Number(contract.coverageHygienePct),
-				annualLimitRub: contract.annualLimitRub != null ? Number(contract.annualLimitRub) : null,
+				annualLimitRub: contractAnnualRub,
 			},
 			items,
-			usedAnnualAmountRub,
+			kopecksToRubles(usedAnnualKop),
 		);
 
 		return reply.code(200).send(result);

@@ -12,6 +12,7 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { Fiscal54FzService } from "../../services/billing/fiscal54fzService.js";
+import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 import { verifySberbankChecksum } from "./sberbankSecurityHelpers.js";
 
@@ -145,7 +146,17 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 			// Validate incoming amount in kopecks if provided by gateway
 			if (payload.amount !== undefined && payload.amount !== null) {
 				const incomingKopecks = Number(payload.amount);
-				if (!Number.isNaN(incomingKopecks) && BigInt(incomingKopecks) !== lockedTx.amountKopecks) {
+				if (
+					!Number.isFinite(incomingKopecks) ||
+					!Number.isInteger(incomingKopecks) ||
+					incomingKopecks <= 0
+				) {
+					return reply.status(400).send({
+						error: "InvalidAmount",
+						message: "Сумма в уведомлении должна быть положительным целым числом копеек.",
+					});
+				}
+				if (BigInt(incomingKopecks) !== lockedTx.amountKopecks) {
 					request.log.warn(
 						{ orderId, expected: Number(lockedTx.amountKopecks), received: incomingKopecks },
 						"[SberbankWebhook] Amount mismatch detected",
@@ -162,12 +173,22 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				payload.status ?? payload.operation ?? payload.actionCode ?? "success",
 			).toLowerCase();
 
-			// 1. Refund operation handling
-			if (operation === "refunded" || rawStatus === "refunded") {
+			// 1 & 2. Refund or Reversal handling
+			if (
+				operation === "refunded" ||
+				rawStatus === "refunded" ||
+				operation === "reversed" ||
+				rawStatus === "reversed"
+			) {
+				const terminalStatus =
+					operation === "refunded" || rawStatus === "refunded"
+						? ("refunded" as const)
+						: ("reversed" as const);
+
 				await tx
 					.update(sberbankTransactions)
 					.set({
-						status: "refunded",
+						status: terminalStatus,
 						updatedAt: new Date(),
 					})
 					.where(
@@ -177,6 +198,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 						),
 					);
 
+				const wasPaidPayment = lockedPayment?.status === "paid";
 				if (lockedPayment) {
 					await tx
 						.update(payments)
@@ -190,9 +212,58 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 								eq(payments.id, lockedPayment.id),
 							),
 						);
+
+					if (wasPaidPayment) {
+						const refundKopecks =
+							lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
+								? Number(lockedPayment.amountKopecks)
+								: Number(lockedTx.amountKopecks);
+						const refundRub = kopecksToRubles(refundKopecks);
+						const refundReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+							organizationId: lockedTx.organizationId,
+							patientId: lockedTx.patientId,
+							customerContact:
+								(typeof payload.customerContact === "string"
+									? payload.customerContact
+									: undefined) || "cardholder@clinic.ru",
+							cashierFullName: "Кассир-администратор",
+							operationType: "income_return",
+							defaultCalculationMethod: "full_payment",
+							tenderSplits: {
+								electronicCardRub: refundRub,
+							},
+							positions: [
+								{
+									name: `Возврат оплаты заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
+									priceRub: refundRub,
+									quantity: 1,
+									medicalServiceCode804n: null,
+									subject: "service",
+									method: "full_payment",
+									vatRate: "vat_none",
+								},
+							],
+							visitId: lockedTx.visitId,
+							documentId: lockedTx.documentId,
+							invoiceId: lockedTx.invoiceId,
+							clientMutationId: `sberbank:${lockedTx.orderId}:return`,
+						});
+						await tx.insert(fiscalReceiptQueue).values({
+							organizationId: lockedTx.organizationId,
+							paymentId: lockedPayment.id,
+							visitId: lockedTx.visitId || null,
+							receiptType: "income_return",
+							status: "pending_print",
+							payloadJson: {
+								...refundReceiptPayload,
+								tag1020_totalRub: refundReceiptPayload.tag1020_totalRubString,
+							},
+							retryCount: 0,
+						});
+					}
 				}
 
-				if (lockedTx.invoiceId) {
+				if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
 					await reconcileInvoiceBalanceInDb(
 						tx,
 						lockedTx.organizationId,
@@ -203,52 +274,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				return reply.status(200).send({
 					success: true,
 					processed: true,
-					status: "refunded",
-				});
-			}
-
-			// 2. Reversal (Unhold) handling
-			if (operation === "reversed" || rawStatus === "reversed") {
-				await tx
-					.update(sberbankTransactions)
-					.set({
-						status: "reversed",
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(sberbankTransactions.id, lockedTx.id),
-							eq(sberbankTransactions.organizationId, lockedTx.organizationId),
-						),
-					);
-
-				if (lockedPayment) {
-					await tx
-						.update(payments)
-						.set({
-							status: "refunded",
-							updatedAt: new Date(),
-						})
-						.where(
-							and(
-								eq(payments.organizationId, lockedTx.organizationId),
-								eq(payments.id, lockedPayment.id),
-							),
-						);
-				}
-
-				if (lockedTx.invoiceId) {
-					await reconcileInvoiceBalanceInDb(
-						tx,
-						lockedTx.organizationId,
-						lockedTx.invoiceId,
-					);
-				}
-
-				return reply.status(200).send({
-					success: true,
-					processed: true,
-					status: "reversed",
+					status: terminalStatus,
 				});
 			}
 
@@ -330,7 +356,11 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 						organizationId: lockedTx.organizationId,
 						patientId: lockedTx.patientId,
 						visitId: lockedTx.visitId ? lockedTx.visitId : null,
-						documentId: lockedTx.documentId ? lockedTx.documentId : null,
+						documentId: lockedTx.documentId
+							? lockedTx.documentId
+							: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+								? lockedTx.invoiceId
+								: null,
 						method: "card",
 						status: "paid",
 						amountRub,
@@ -370,7 +400,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				}
 
 				// Reconcile patient invoice balance if invoiceId is attached
-				if (lockedTx.invoiceId) {
+				if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
 					await reconcileInvoiceBalanceInDb(
 						tx,
 						lockedTx.organizationId,
@@ -379,62 +409,55 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				}
 
 				// 54-FZ statutory fiscal receipt queue registration
-				try {
-					const customerContact =
-						(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
-						(typeof payload.email === "string" ? payload.email : undefined) ||
-						(typeof payload.phone === "string" ? payload.phone : undefined) ||
-						"cardholder@clinic.ru";
+				const customerContact =
+					(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
+					(typeof payload.email === "string" ? payload.email : undefined) ||
+					(typeof payload.phone === "string" ? payload.phone : undefined) ||
+					"cardholder@clinic.ru";
 
-					const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-						organizationId: lockedTx.organizationId,
-						patientId: lockedTx.patientId,
-						customerContact,
-						cashierFullName: "Кассир-администратор",
-						operationType: "income",
-						defaultCalculationMethod: "full_payment",
-						tenderSplits: {
-							electronicCardRub: amountRub,
+				const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+					organizationId: lockedTx.organizationId,
+					patientId: lockedTx.patientId,
+					customerContact,
+					cashierFullName: "Кассир-администратор",
+					operationType: "income",
+					defaultCalculationMethod: "full_payment",
+					tenderSplits: {
+						electronicCardRub: amountRub,
+					},
+					positions: [
+						{
+							name:
+								(typeof payload.serviceTitle === "string"
+									? payload.serviceTitle
+									: undefined) ||
+								`Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
+							priceRub: amountRub,
+							quantity: 1,
+							medicalServiceCode804n: null,
+							subject: "service",
+							method: "full_payment",
+							vatRate: "vat_none",
 						},
-						positions: [
-							{
-								name:
-									(typeof payload.serviceTitle === "string"
-										? payload.serviceTitle
-										: undefined) ||
-									`Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
-								priceRub: amountRub,
-								quantity: 1,
-								medicalServiceCode804n: null,
-								subject: "service",
-								method: "full_payment",
-								vatRate: "vat_none",
-							},
-						],
-						visitId: lockedTx.visitId,
-						documentId: lockedTx.documentId,
-						invoiceId: lockedTx.invoiceId,
-						clientMutationId: `sberbank:${lockedTx.orderId}`,
-					});
+					],
+					visitId: lockedTx.visitId,
+					documentId: lockedTx.documentId,
+					invoiceId: lockedTx.invoiceId,
+					clientMutationId: `sberbank:${lockedTx.orderId}`,
+				});
 
-					await tx.insert(fiscalReceiptQueue).values({
-						organizationId: lockedTx.organizationId,
-						paymentId: insertedPayment?.id || lockedPayment?.id || null,
-						visitId: lockedTx.visitId || null,
-						receiptType: "income",
-						status: "pending_print",
-						payloadJson: {
-							...fiscalReceiptPayload,
-							tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
-						},
-						retryCount: 0,
-					});
-				} catch (fiscalErr) {
-					request.log.warn(
-						{ fiscalErr, orderId: lockedTx.orderId },
-						"[SberbankWebhook] Fiscal receipt enqueue skipped or warning",
-					);
-				}
+				await tx.insert(fiscalReceiptQueue).values({
+					organizationId: lockedTx.organizationId,
+					paymentId: insertedPayment?.id || lockedPayment?.id || null,
+					visitId: lockedTx.visitId || null,
+					receiptType: "income",
+					status: "pending_print",
+					payloadJson: {
+						...fiscalReceiptPayload,
+						tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
+					},
+					retryCount: 0,
+				});
 
 				return reply.status(200).send({
 					success: true,

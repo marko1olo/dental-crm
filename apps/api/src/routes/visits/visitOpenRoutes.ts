@@ -1,13 +1,12 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { computePayloadHash, isValidUuid } from "@dental/shared";
+import { isValidUuid } from "@dental/shared";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
-import { db as database } from "../../db/client.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { appointments, visits } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { sendVisitOpenError } from "./visitOpenErrors.js";
@@ -63,17 +62,20 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				};
 			}
 
-			const [existing] = await database
-				.select()
-				.from(visits)
-				.where(
-					and(
-						eq(visits.appointmentId, appointmentId.trim()),
-						eq(visits.organizationId, orgId),
-					),
-				)
-				.orderBy(visits.createdAt)
-				.limit(1);
+			const existing = await withTenantCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(visits)
+					.where(
+						and(
+							eq(visits.appointmentId, appointmentId.trim()),
+							eq(visits.organizationId, orgId),
+						),
+					)
+					.orderBy(visits.createdAt)
+					.limit(1);
+				return row ?? null;
+			});
 
 			const visit = existing
 				? {
@@ -120,44 +122,18 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 
 			if (idempotencyKey) {
 				reply.header("Idempotency-Key", idempotencyKey);
-				const [existingRecord] = await database
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, idempotencyKey),
-						),
-					)
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(existingRecord.responseCode || 200)
-							.send(existingRecord.responseBody);
-					}
-					if (existingRecord.status === "in_flight") {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							code: "IdempotencyConflict",
-							message: "Операция открытия визита с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
 			}
 
 			try {
-				const responsePayload = await database.transaction(async (tx) => {
-					const res = await openVisitForAppointmentInDb(orgId, appointmentId.trim(), tx);
+				const trimmedAppointmentId = appointmentId.trim();
+				const responsePayload = await withTenantCtx(orgId, async (tx) => {
+					const res = await openVisitForAppointmentInDb(orgId, trimmedAppointmentId, tx);
 					await tx
 						.update(appointments)
 						.set({ status: "in_treatment" })
 						.where(
 							and(
-								eq(appointments.id, appointmentId.trim()),
+								eq(appointments.id, trimmedAppointmentId),
 								eq(appointments.organizationId, orgId),
 							),
 						);
@@ -169,41 +145,20 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 					};
 					const responseCode = res.created ? 201 : 200;
 
-					if (idempotencyKey) {
-						await tx
-							.insert(idempotencyKeys)
-							.values({
-								clinicId: orgId,
-								key: idempotencyKey,
-								status: "completed",
-								payloadHash: computePayloadHash({
-									appointmentId: appointmentId.trim(),
-									...(request.body && typeof request.body === "object" ? request.body : {}),
-								}),
-								responseBody,
-								responseCode,
-							})
-							.onConflictDoUpdate({
-								target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-								set: {
-									status: "completed",
-									responseBody,
-									responseCode,
-								},
-							});
-					}
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "APPOINTMENT_UPDATED",
+							payload: {
+								appointmentId: trimmedAppointmentId,
+								visitId: res.visit.id,
+								status: "in_treatment",
+							},
+						});
+					});
 
-					return { res, responseBody, responseCode };
+					return { responseBody, responseCode };
 				});
 
-				wsBroker.broadcastToOrganization(orgId, {
-					type: "APPOINTMENT_UPDATED",
-					payload: {
-						appointmentId: appointmentId.trim(),
-						visitId: responsePayload.res.visit.id,
-						status: "in_treatment",
-					},
-				});
 				reply.code(responsePayload.responseCode);
 				return responsePayload.responseBody;
 			} catch (error) {

@@ -23,6 +23,7 @@ import {
 	TRANSFER_SYNTAX_EXPLICIT_VR_LITTLE_ENDIAN,
 } from "../dicomProtocolConstants.js";
 import { dicomStudyIngestService } from "../dicomStudyIngestService.js";
+import { dicomIngestLogger } from "../ingest/dicomIngestLogger.js";
 import { wrapInDicomPart10 } from "./dicomPart10Wrapper.js";
 import {
 	buildAssociateAcPdu,
@@ -158,8 +159,18 @@ export class DicomCStoreScpServer {
 		let dataChunks: Buffer[] = [];
 		let currentCommand: ParsedDimseCommand | null = null;
 
+		const MAX_INCOMING_PDU_BYTES = 16 * 1024 * 1024;
 		socket.on("data", async (chunk: Buffer) => {
 			this.lastActivityAt = new Date();
+			if (rxBuffer.length + chunk.length > MAX_INCOMING_PDU_BYTES) {
+				dicomIngestLogger.error("DICOM SCP rxBuffer exceeded max PDU safety cap, closing connection", undefined, {
+					callingAe,
+					bufferedBytes: rxBuffer.length + chunk.length,
+				});
+				rxBuffer = Buffer.alloc(0);
+				socket.destroy();
+				return;
+			}
 			rxBuffer = Buffer.concat([rxBuffer, chunk]);
 
 			try {
@@ -167,6 +178,15 @@ export class DicomCStoreScpServer {
 				while (rxBuffer.length >= 6) {
 					const pduType = rxBuffer[0];
 					const pduLength = rxBuffer.readUInt32BE(2);
+					if (pduLength > MAX_INCOMING_PDU_BYTES) {
+						dicomIngestLogger.error("DICOM SCP declared PDU length exceeds max limit", undefined, {
+							callingAe,
+							pduLength,
+						});
+						rxBuffer = Buffer.alloc(0);
+						socket.destroy();
+						return;
+					}
 					const totalPduSize = 6 + pduLength;
 
 					if (rxBuffer.length < totalPduSize) {
@@ -294,8 +314,12 @@ export class DicomCStoreScpServer {
 													STATUS_SUCCESS,
 												);
 												socket.write(rspPdu);
-											} catch {
+											} catch (storeErr) {
 												this.totalCStoresFailed++;
+												dicomIngestLogger.error("DICOM C-STORE ingest failure", storeErr, {
+													callingAe,
+													sopInstanceUid,
+												});
 												const rspPdu = buildCStoreRspPdu(
 													contextId,
 													currentCommand.messageId,
@@ -337,13 +361,14 @@ export class DicomCStoreScpServer {
 						}
 					}
 				}
-			} catch {
-				// Ошибка разбора PDU, предотвращаем падение процесса
+			} catch (pduErr) {
+				dicomIngestLogger.error("DICOM SCP PDU parser error", pduErr, { callingAe });
+				rxBuffer = Buffer.alloc(0);
 			}
 		});
 
-		socket.on("error", () => {
-			// Обработка сетевого сбоя сокета
+		socket.on("error", (socketErr) => {
+			dicomIngestLogger.warn("DICOM SCP socket error", { callingAe, error: socketErr.message });
 		});
 
 		socket.on("close", () => {
@@ -353,7 +378,7 @@ export class DicomCStoreScpServer {
 
 	/**
 	 * Резолвинг целевой организации для сохранения снимка.
-	 * Запрещен слепой LIMIT 1: мультитенантность и 152-ФЗ требуют строгой изоляции!
+	 * Мультитенантность требует строгой изоляции.
 	 */
 	private async resolveTargetOrganizationId(calledAe?: string, callingAe?: string): Promise<string> {
 		if (this.defaultOrganizationId) {
@@ -384,7 +409,7 @@ export class DicomCStoreScpServer {
 		}
 
 		throw new Error(
-			`BOLA Tenant Isolation Breach: Невозможно определить организацию для C-STORE SCP (CalledAE: '${targetAe}', CallingAE: '${callingAe ?? "UNKNOWN"}'). Доступ отклонен согласно 152-ФЗ.`,
+			`BOLA Tenant Isolation Breach: Невозможно определить организацию для C-STORE SCP (CalledAE: '${targetAe}', CallingAE: '${callingAe ?? "UNKNOWN"}'). Доступ отклонен.`,
 		);
 	}
 }

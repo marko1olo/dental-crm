@@ -1,12 +1,12 @@
 import crypto from "node:crypto";
-import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
+import { computePayloadHash, kopecksToNumericString, kopecksToRubles } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireResolvedOrganizationId as requireOrganizationContext,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	generatedDocuments,
@@ -17,10 +17,70 @@ import {
 	sberbankTransactions,
 	visits,
 } from "../../db/schema.js";
+import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requirePermission } from "../../security/permissions.js";
 import { Fiscal54FzService } from "../../services/billing/fiscal54fzService.js";
 import { SberbankClient } from "../../services/sberbankClient.js";
 import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
+
+async function enqueueSberbankFiscalReceiptInTx(
+	tx: TenantDb,
+	params: {
+		organizationId: string;
+		patientId: string;
+		orderId: string;
+		paymentId: string | null;
+		visitId: string | null;
+		documentId: string | null;
+		invoiceId: string | null;
+		amountKopecks: bigint | number;
+		operationType: "income" | "income_return";
+	},
+): Promise<void> {
+	const amountRub = kopecksToRubles(params.amountKopecks);
+	const isReturn = params.operationType === "income_return";
+	const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+		organizationId: params.organizationId,
+		patientId: params.patientId,
+		customerContact: "cardholder@clinic.ru",
+		cashierFullName: "Кассир-администратор",
+		operationType: params.operationType,
+		defaultCalculationMethod: "full_payment",
+		tenderSplits: {
+			electronicCardRub: amountRub,
+		},
+		positions: [
+			{
+				name: isReturn
+					? `Возврат оплаты заказа №${params.orderId} (Сбербанк Эквайринг)`
+					: `Оплата заказа №${params.orderId} (Сбербанк Эквайринг)`,
+				priceRub: amountRub,
+				quantity: 1,
+				medicalServiceCode804n: null,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+			},
+		],
+		visitId: params.visitId,
+		documentId: params.documentId,
+		invoiceId: params.invoiceId,
+		clientMutationId: isReturn ? `sberbank:${params.orderId}:return` : `sberbank:${params.orderId}`,
+	});
+
+	await tx.insert(fiscalReceiptQueue).values({
+		organizationId: params.organizationId,
+		paymentId: params.paymentId,
+		visitId: params.visitId || null,
+		receiptType: params.operationType,
+		status: "pending_print",
+		payloadJson: {
+			...fiscalReceiptPayload,
+			tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
+		},
+		retryCount: 0,
+	});
+}
 import {
 	sberbankCancelReconcileBodySchema,
 	sberbankCancelReconcileFastifySchema,
@@ -47,14 +107,32 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 			const organizationId = await requireOrganizationContext(request, reply);
 			if (!organizationId) return;
 
+			const parsed = sberbankPayBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры платежа.",
+					details: parsed.error.issues,
+				});
+			}
+
 			const rawIdempotencyKey =
 				(request.headers["idempotency-key"] as string | undefined) ||
 				(request.headers["x-idempotency-key"] as string | undefined);
 			const idempotencyKey = rawIdempotencyKey?.trim();
+			const payloadHash = computePayloadHash(parsed.data);
+			let acquiredInFlightKey = false;
 
 			if (idempotencyKey) {
-				const [existing] = await withTenantCtx(organizationId, async (tx) => {
-					return await tx
+				if (!isValidUuid(idempotencyKey)) {
+					return reply.status(400).send({
+						error: "IdempotencyKeyRequired",
+						message: "Заголовок Idempotency-Key должен быть корректным UUID.",
+					});
+				}
+
+				const idemCheck = await withTenantCtx(organizationId, async (tx) => {
+					const [existing] = await tx
 						.select()
 						.from(idempotencyKeys)
 						.where(
@@ -63,24 +141,56 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								eq(idempotencyKeys.key, idempotencyKey),
 							),
 						)
+						.for("update")
 						.limit(1);
+
+					if (existing) {
+						if (existing.payloadHash && existing.payloadHash !== payloadHash) {
+							return { action: "mismatch" as const, existing };
+						}
+						if (existing.status === "in_flight") {
+							return { action: "in_flight" as const, existing };
+						}
+						if (existing.status === "completed" && existing.responseBody) {
+							return { action: "replay" as const, existing };
+						}
+					}
+
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: organizationId,
+							key: idempotencyKey,
+							status: "in_flight",
+							payloadHash,
+							responseCode: 0,
+							lockedAt: new Date(),
+						})
+						.onConflictDoNothing({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						});
+					return { action: "acquired" as const, existing: null };
 				});
 
-				if (existing && existing.status === "completed" && existing.responseBody) {
+				if (idemCheck.action === "mismatch") {
+					return reply.status(409).send({
+						error: "IdempotencyConflict",
+						message: "Ключ идемпотентности уже использован с другим содержимым запроса.",
+					});
+				}
+				if (idemCheck.action === "in_flight") {
+					return reply.status(409).send({
+						error: "IdempotencyConflict",
+						message: "Операция с этим Idempotency-Key уже выполняется.",
+					});
+				}
+				if (idemCheck.action === "replay") {
 					return reply
 						.header("idempotency-replayed", "true")
-						.status(existing.responseCode)
-						.send(existing.responseBody);
+						.status(idemCheck.existing.responseCode)
+						.send(idemCheck.existing.responseBody);
 				}
-			}
-
-			const parsed = sberbankPayBodySchema.safeParse(request.body);
-			if (!parsed.success) {
-				return reply.status(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры платежа.",
-					details: parsed.error.issues,
-				});
+				acquiredInFlightKey = true;
 			}
 
 			const { patientId, amountKopecks, visitId, documentId, invoiceId } = parsed.data;
@@ -144,7 +254,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 				const responsePayload = { success: true, orderId: res.orderId, formUrl: res.formUrl };
 
-				if (idempotencyKey) {
+				if (idempotencyKey && acquiredInFlightKey) {
 					await withTenantCtx(organizationId, async (tx) => {
 						await tx
 							.insert(idempotencyKeys)
@@ -152,6 +262,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								clinicId: organizationId,
 								key: idempotencyKey,
 								status: "completed",
+								payloadHash,
 								responseCode: 200,
 								responseBody: responsePayload,
 							})
@@ -159,6 +270,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								target: [idempotencyKeys.clinicId, idempotencyKeys.key],
 								set: {
 									status: "completed",
+									payloadHash,
 									responseCode: 200,
 									responseBody: responsePayload,
 								},
@@ -168,6 +280,19 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 				return responsePayload;
 			} catch (error) {
+				if (idempotencyKey && acquiredInFlightKey) {
+					await withTenantCtx(organizationId, async (tx) => {
+						await tx
+							.delete(idempotencyKeys)
+							.where(
+								and(
+									eq(idempotencyKeys.clinicId, organizationId),
+									eq(idempotencyKeys.key, idempotencyKey),
+									eq(idempotencyKeys.status, "in_flight"),
+								),
+							);
+					});
+				}
 				return reply.status(500).send({
 					error: "SberbankError",
 					message: error instanceof Error ? error.message : "Неизвестная ошибка",
@@ -279,7 +404,11 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									organizationId: orgId,
 									patientId: lockedTx.patientId,
 									visitId: lockedTx.visitId ? lockedTx.visitId : null,
-									documentId: lockedTx.documentId ? lockedTx.documentId : null,
+									documentId: lockedTx.documentId
+										? lockedTx.documentId
+										: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+											? lockedTx.invoiceId
+											: null,
 									method: "card",
 									status: "paid",
 									amountRub,
@@ -318,7 +447,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									);
 							}
 
-							if (lockedTx.invoiceId) {
+							if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
 								await reconcileInvoiceBalanceInDb(
 									tx,
 									orgId,
@@ -326,53 +455,18 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								);
 							}
 
-							// 54-FZ compliance: Enqueue statutory fiscal receipt
-							try {
-								const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-									organizationId: orgId,
-									patientId: lockedTx.patientId,
-									customerContact: "cardholder@clinic.ru",
-									cashierFullName: "Кассир-администратор",
-									operationType: "income",
-									defaultCalculationMethod: "full_payment",
-									tenderSplits: {
-										electronicCardRub: amountRub,
-									},
-									positions: [
-										{
-											name: `Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
-											priceRub: amountRub,
-											quantity: 1,
-											medicalServiceCode804n: null,
-											subject: "service",
-											method: "full_payment",
-											vatRate: "vat_none",
-										},
-									],
-									visitId: lockedTx.visitId,
-									documentId: lockedTx.documentId,
-									invoiceId: lockedTx.invoiceId,
-									clientMutationId: `sberbank:${orderId}`,
-								});
-
-								await tx.insert(fiscalReceiptQueue).values({
-									organizationId: orgId,
-									paymentId: insertedPayment?.id || null,
-									visitId: lockedTx.visitId || null,
-									receiptType: "income",
-									status: "pending_print",
-									payloadJson: {
-										...fiscalReceiptPayload,
-										tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
-									},
-									retryCount: 0,
-								});
-							} catch (fiscalErr) {
-								request.log.warn(
-									{ fiscalErr, orderId: lockedTx.orderId },
-									"[SberbankStatus] Fiscal receipt enqueue skipped or warning",
-								);
-							}
+							// 54-FZ compliance: Enqueue statutory fiscal receipt atomically inside tx
+							await enqueueSberbankFiscalReceiptInTx(tx, {
+								organizationId: orgId,
+								patientId: lockedTx.patientId,
+								orderId: lockedTx.orderId,
+								paymentId: insertedPayment?.id || null,
+								visitId: lockedTx.visitId,
+								documentId: lockedTx.documentId,
+								invoiceId: lockedTx.invoiceId,
+								amountKopecks: lockedTx.amountKopecks,
+								operationType: "income",
+							});
 						}
 					}
 
@@ -489,7 +583,11 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									organizationId: orgId,
 									patientId: lockedTx.patientId,
 									visitId: lockedTx.visitId ? lockedTx.visitId : null,
-									documentId: lockedTx.documentId ? lockedTx.documentId : null,
+									documentId: lockedTx.documentId
+										? lockedTx.documentId
+										: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+											? lockedTx.invoiceId
+											: null,
 									method: "card",
 									status: "paid",
 									amountRub,
@@ -530,7 +628,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								);
 						}
 
-						if (lockedTx.invoiceId) {
+						if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
 							await reconcileInvoiceBalanceInDb(
 								tx,
 								orgId,
@@ -540,52 +638,17 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 						// 54-FZ statutory fiscal receipt queue registration
 						if (insertedPayment) {
-							try {
-								const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-									organizationId: orgId,
-									patientId: lockedTx.patientId,
-									customerContact: "cardholder@clinic.ru",
-									cashierFullName: "Кассир-администратор",
-									operationType: "income",
-									defaultCalculationMethod: "full_payment",
-									tenderSplits: {
-										electronicCardRub: amountRub,
-									},
-									positions: [
-										{
-											name: `Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
-											priceRub: amountRub,
-											quantity: 1,
-											medicalServiceCode804n: null,
-											subject: "service",
-											method: "full_payment",
-											vatRate: "vat_none",
-										},
-									],
-									visitId: lockedTx.visitId,
-									documentId: lockedTx.documentId,
-									invoiceId: lockedTx.invoiceId,
-									clientMutationId: `sberbank:${orderId}`,
-								});
-
-								await tx.insert(fiscalReceiptQueue).values({
-									organizationId: orgId,
-									paymentId: insertedPayment.id,
-									visitId: lockedTx.visitId || null,
-									receiptType: "income",
-									status: "pending_print",
-									payloadJson: {
-										...fiscalReceiptPayload,
-										tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
-									},
-									retryCount: 0,
-								});
-							} catch (fiscalErr) {
-								request.log.warn(
-									{ fiscalErr, orderId: lockedTx.orderId },
-									"[SberbankCancelReconcile] Fiscal receipt enqueue skipped or warning",
-								);
-							}
+							await enqueueSberbankFiscalReceiptInTx(tx, {
+								organizationId: orgId,
+								patientId: lockedTx.patientId,
+								orderId: lockedTx.orderId,
+								paymentId: insertedPayment.id,
+								visitId: lockedTx.visitId,
+								documentId: lockedTx.documentId,
+								invoiceId: lockedTx.invoiceId,
+								amountKopecks: lockedTx.amountKopecks,
+								operationType: "income",
+							});
 						}
 
 						return {
@@ -630,6 +693,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 							.limit(1);
 
 						if (lockedPayment) {
+							const wasPaidPayment = lockedPayment.status === "paid";
 							await tx
 								.update(payments)
 								.set({ status: "refunded", updatedAt: new Date() })
@@ -639,9 +703,26 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 										eq(payments.id, lockedPayment.id),
 									),
 								);
+
+							if (wasPaidPayment) {
+								await enqueueSberbankFiscalReceiptInTx(tx, {
+									organizationId: orgId,
+									patientId: lockedTx.patientId,
+									orderId: lockedTx.orderId,
+									paymentId: lockedPayment.id,
+									visitId: lockedTx.visitId,
+									documentId: lockedTx.documentId,
+									invoiceId: lockedTx.invoiceId,
+									amountKopecks:
+										lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
+											? lockedPayment.amountKopecks
+											: lockedTx.amountKopecks,
+									operationType: "income_return",
+								});
+							}
 						}
 
-						if (lockedTx.invoiceId) {
+						if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
 							await reconcileInvoiceBalanceInDb(
 								tx,
 								orgId,

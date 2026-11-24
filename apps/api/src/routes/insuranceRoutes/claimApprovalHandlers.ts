@@ -1,6 +1,5 @@
 import {
 	calculateDmsGuaranteeSplit,
-	computePayloadHash,
 	kopecksToRubles,
 	rublesToKopecks,
 	type DmsGuaranteeLetter,
@@ -11,9 +10,10 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { INSURER_NAMES } from "./constants.js";
+import { resolveDbKopecks } from "./guaranteeLetterModules/guaranteeLetterFormatters.js";
 import {
 	preAuthRequestBodySchema,
 	splitInvoiceBodySchema,
@@ -36,92 +36,104 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: msg,
+				details: parsed.error.issues,
 			});
 		}
 
 		const { letterId, contractId, visitDate, items } = parsed.data;
 
-		// 1. Поиск гарантийного письма из базы данных PostgreSQL
-		let letter: DmsGuaranteeLetter | null = null;
-		if (letterId) {
-			const [foundLetter] = await db
-				.select()
-				.from(dmsGuaranteeLetters)
-				.where(
-					and(
-						eq(dmsGuaranteeLetters.id, letterId),
-						eq(dmsGuaranteeLetters.organizationId, orgId),
-					),
-				)
-				.limit(1);
+		const { letter, contract } = await withTenantCtx(orgId, async (tx) => {
+			let resolvedLetter: DmsGuaranteeLetter | null = null;
+			if (letterId) {
+				const [foundLetter] = await tx
+					.select()
+					.from(dmsGuaranteeLetters)
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.limit(1);
 
-			if (foundLetter) {
-				letter = {
-					id: foundLetter.id,
-					organizationId: foundLetter.organizationId,
-					contractId: foundLetter.contractId,
-					patientId: foundLetter.patientId,
-					patientFullName: foundLetter.patientFullName,
-					patientBirthDate: foundLetter.patientBirthDate,
-					policyNumber: foundLetter.policyNumber,
-					insurerKey: foundLetter.insurerKey,
-					insurerName: foundLetter.insurerName,
-					letterNumber: foundLetter.letterNumber,
-					issueDate: foundLetter.issueDate,
-					validFrom: foundLetter.validFrom,
-					validUntil: foundLetter.validUntil,
-					maxCoverageRub: Number(foundLetter.maxCoverageRub),
-					usedAmountRub: Number(foundLetter.usedAmountRub),
-					franchisePct: Number(foundLetter.franchisePct),
-					franchiseType: (foundLetter.franchiseType as "percent" | "fixed_rub") || "percent",
-					franchiseFixedRub: Number(foundLetter.franchiseFixedRub),
-					programExclusions: (foundLetter.programExclusions as string[]) || [],
-					approvedServiceCodes: (foundLetter.approvedServiceCodes as string[]) || [],
-					approvedServiceCodes804n: (foundLetter.approvedServiceCodes as string[]) || [],
-					approvedTeethFdi: (foundLetter.approvedTeethFdi as string[]) || [],
-					approvedDiagnosisCodes: (foundLetter.approvedDiagnosisCodes as string[]) || [],
-					approvedDiagnosisMkb10: (foundLetter.approvedDiagnosisCodes as string[]) || [],
-					curatorFullName: foundLetter.curatorFullName,
-					curatorPhone: foundLetter.curatorPhone,
-					notes: foundLetter.notes,
-					status: (foundLetter.status as DmsGuaranteeLetter["status"]) || "active",
-					createdAt: foundLetter.createdAt.toISOString(),
-					updatedAt: foundLetter.updatedAt.toISOString(),
-				};
+				if (foundLetter) {
+					const maxCoverageKop = resolveDbKopecks(foundLetter.maxCoverageKopecks, foundLetter.maxCoverageRub);
+					const usedAmountKop = resolveDbKopecks(foundLetter.usedAmountKopecks, foundLetter.usedAmountRub);
+					const franchiseFixedKop = resolveDbKopecks(foundLetter.franchiseFixedKopecks, foundLetter.franchiseFixedRub);
+					resolvedLetter = {
+						id: foundLetter.id,
+						organizationId: foundLetter.organizationId,
+						contractId: foundLetter.contractId,
+						patientId: foundLetter.patientId,
+						patientFullName: foundLetter.patientFullName,
+						patientBirthDate: foundLetter.patientBirthDate,
+						policyNumber: foundLetter.policyNumber,
+						insurerKey: foundLetter.insurerKey,
+						insurerName: foundLetter.insurerName,
+						letterNumber: foundLetter.letterNumber,
+						issueDate: foundLetter.issueDate,
+						validFrom: foundLetter.validFrom,
+						validUntil: foundLetter.validUntil,
+						maxCoverageRub: kopecksToRubles(maxCoverageKop),
+						usedAmountRub: kopecksToRubles(usedAmountKop),
+						franchisePct: Number(foundLetter.franchisePct),
+						franchiseType: (foundLetter.franchiseType as "percent" | "fixed_rub") || "percent",
+						franchiseFixedRub: kopecksToRubles(franchiseFixedKop),
+						programExclusions: (foundLetter.programExclusions as string[]) || [],
+						approvedServiceCodes: (foundLetter.approvedServiceCodes as string[]) || [],
+						approvedServiceCodes804n: (foundLetter.approvedServiceCodes as string[]) || [],
+						approvedTeethFdi: (foundLetter.approvedTeethFdi as string[]) || [],
+						approvedDiagnosisCodes: (foundLetter.approvedDiagnosisCodes as string[]) || [],
+						approvedDiagnosisMkb10: (foundLetter.approvedDiagnosisCodes as string[]) || [],
+						curatorFullName: foundLetter.curatorFullName,
+						curatorPhone: foundLetter.curatorPhone,
+						notes: foundLetter.notes,
+						status: (foundLetter.status as DmsGuaranteeLetter["status"]) || "active",
+						createdAt: foundLetter.createdAt.toISOString(),
+						updatedAt: foundLetter.updatedAt.toISOString(),
+					};
+				}
 			}
-		}
 
-		// 2. Поиск договора ДМС (если передан contractId)
-		let contract: {
-			coverageTherapyPct: number;
-			coverageSurgeryPct: number;
-			coverageOrthoPct: number;
-			coverageHygienePct: number;
-			annualLimitRub: number | null;
-		} | null = null;
+			let resolvedContract: {
+				coverageTherapyPct: number;
+				coverageSurgeryPct: number;
+				coverageOrthoPct: number;
+				coverageHygienePct: number;
+				annualLimitRub: number | null;
+			} | null = null;
 
-		if (contractId) {
-			const [found] = await db
-				.select()
-				.from(insuranceContracts)
-				.where(
-					and(
-						eq(insuranceContracts.id, contractId),
-						eq(insuranceContracts.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			if (contractId) {
+				const [found] = await tx
+					.select()
+					.from(insuranceContracts)
+					.where(
+						and(
+							eq(insuranceContracts.id, contractId),
+							eq(insuranceContracts.organizationId, orgId),
+						),
+					)
+					.limit(1);
 
-			if (found && found.isActive) {
-				contract = {
-					coverageTherapyPct: Number(found.coverageTherapyPct),
-					coverageSurgeryPct: Number(found.coverageSurgeryPct),
-					coverageOrthoPct: Number(found.coverageOrthoPct),
-					coverageHygienePct: Number(found.coverageHygienePct),
-					annualLimitRub: found.annualLimitRub != null ? Number(found.annualLimitRub) : null,
-				};
+				if (found && found.isActive) {
+					const annualLimitKop = resolveDbKopecks(found.annualLimitKopecks, found.annualLimitRub);
+					resolvedContract = {
+						coverageTherapyPct: Number(found.coverageTherapyPct),
+						coverageSurgeryPct: Number(found.coverageSurgeryPct),
+						coverageOrthoPct: Number(found.coverageOrthoPct),
+						coverageHygienePct: Number(found.coverageHygienePct),
+						annualLimitRub:
+							annualLimitKop > 0
+								? kopecksToRubles(annualLimitKop)
+								: found.annualLimitRub != null
+									? Number(found.annualLimitRub)
+									: null,
+					};
+				}
 			}
-		}
+
+			return { letter: resolvedLetter, contract: resolvedContract };
+		});
 
 		const splitResult = calculateDmsGuaranteeSplit(letter, items, {
 			visitDate: visitDate || new Date().toISOString().slice(0, 10),
@@ -148,52 +160,13 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: msg,
+				details: parsed.error.issues,
 			});
-		}
-
-		// Mandate 8zp/8bo: Idempotency-Key support
-		const rawBodyMutationId = (request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.clientMutationId ||
-			(request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.idempotencyKey;
-		const rawIdemKey =
-			(request.headers["idempotency-key"] as string | undefined) ||
-			(request.headers["x-idempotency-key"] as string | undefined) ||
-			(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
-		const idempotencyKey =
-			typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
-				? rawIdemKey.trim()
-				: undefined;
-
-		if (idempotencyKey) {
-			const [existingRecord] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция смены статуса гарантийного письма с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const { letterId, status, notes, resolutionReason } = parsed.data;
 
-		const txResult = await db.transaction(async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
 			const [letter] = await tx
 				.select()
 				.from(dmsGuaranteeLetters)
@@ -252,47 +225,20 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 				};
 			}
 
-			const responsePayload = {
-				success: true,
-				letterId: updated.id,
-				status: updated.status,
-				notes: updated.notes,
-				updatedAt: updated.updatedAt.toISOString(),
-			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-						},
-					});
-			}
-
 			return {
 				status: 200,
-				data: responsePayload,
+				data: {
+					success: true,
+					letterId: updated.id,
+					status: updated.status,
+					notes: updated.notes,
+					updatedAt: updated.updatedAt.toISOString(),
+				},
 			};
 		});
 
 		if (txResult.status !== 200 || !txResult.data) {
 			return reply.code(txResult.status).send(txResult.error);
-		}
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
 		return reply.code(200).send(txResult.data);
@@ -313,60 +259,22 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: msg,
+				details: parsed.error.issues,
 			});
-		}
-
-		// Mandate 8zp/8bo: Idempotency-Key support
-		const rawBodyMutationId = (request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.clientMutationId ||
-			(request.body as { clientMutationId?: unknown; idempotencyKey?: unknown })?.idempotencyKey;
-		const rawIdemKey =
-			(request.headers["idempotency-key"] as string | undefined) ||
-			(request.headers["x-idempotency-key"] as string | undefined) ||
-			(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
-		const idempotencyKey =
-			typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
-				? rawIdemKey.trim()
-				: undefined;
-
-		if (idempotencyKey) {
-			const [existingRecord] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция предварительного согласования ДМС с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const d = parsed.data;
 
 		if (d.letterId) {
+			const targetLetterId = d.letterId;
 			// Update existing letter to pending_approval in ACID transaction
-			const txResult = await db.transaction(async (tx) => {
+			const txResult = await withTenantCtx(orgId, async (tx) => {
 				const [existing] = await tx
 					.select()
 					.from(dmsGuaranteeLetters)
 					.where(
 						and(
-							eq(dmsGuaranteeLetters.id, d.letterId as string),
+							eq(dmsGuaranteeLetters.id, targetLetterId),
 							eq(dmsGuaranteeLetters.organizationId, orgId),
 						),
 					)
@@ -402,7 +310,7 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					.set(updatePayload)
 					.where(
 						and(
-							eq(dmsGuaranteeLetters.id, d.letterId as string),
+							eq(dmsGuaranteeLetters.id, targetLetterId),
 							eq(dmsGuaranteeLetters.organizationId, orgId),
 						),
 					)
@@ -418,48 +326,21 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					};
 				}
 
-				const responsePayload = {
-					success: true,
-					letterId: updated.id,
-					status: updated.status,
-					curatorFullName: updated.curatorFullName,
-					curatorPhone: updated.curatorPhone,
-					message: "Запрос на предварительное согласование отправлен куратору страховой компании.",
-				};
-
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 200,
-							},
-						});
-				}
-
 				return {
 					status: 200,
-					data: responsePayload,
+					data: {
+						success: true,
+						letterId: updated.id,
+						status: updated.status,
+						curatorFullName: updated.curatorFullName,
+						curatorPhone: updated.curatorPhone,
+						message: "Запрос на предварительное согласование отправлен куратору страховой компании.",
+					},
 				};
 			});
 
 			if (txResult.status !== 200 || !txResult.data) {
 				return reply.code(txResult.status).send(txResult.error);
-			}
-
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
 			}
 
 			return reply.code(200).send(txResult.data);
@@ -468,10 +349,14 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 			const todayIso = new Date().toISOString().slice(0, 10);
 			const nextMonthIso = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
 
-			const txResult = await db.transaction(async (tx) => {
+			const txResult = await withTenantCtx(orgId, async (tx) => {
 				// Mandate 8z/8bd: BOLA/IDOR protection - verify patient belongs to current clinic organization
 				const [patientRecord] = await tx
-					.select({ id: patients.id })
+					.select({
+						id: patients.id,
+						fullName: patients.fullName,
+						birthDate: patients.birthDate,
+					})
 					.from(patients)
 					.where(
 						and(
@@ -491,9 +376,13 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					};
 				}
 
+				let contractCompanyName = "";
 				if (d.contractId) {
 					const [contractRecord] = await tx
-						.select({ id: insuranceContracts.id })
+						.select({
+							id: insuranceContracts.id,
+							companyName: insuranceContracts.companyName,
+						})
 						.from(insuranceContracts)
 						.where(
 							and(
@@ -512,10 +401,17 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 							},
 						};
 					}
+					contractCompanyName = contractRecord.companyName;
 				}
 
-				const estimatedCostKop = d.estimatedCostKopecks ?? (d.estimatedCostRub ? rublesToKopecks(d.estimatedCostRub) : 5000000);
+				const estimatedCostKop =
+					d.estimatedCostKopecks ??
+					(d.estimatedCostRub !== undefined ? rublesToKopecks(d.estimatedCostRub) : 0);
 				const estimatedCostRub = kopecksToRubles(estimatedCostKop);
+				const resolvedInsurerName =
+					d.insurerName?.trim() ||
+					(d.insurerKey ? INSURER_NAMES[d.insurerKey] || "" : "") ||
+					contractCompanyName;
 
 				const [created] = await tx
 					.insert(dmsGuaranteeLetters)
@@ -523,11 +419,11 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 						organizationId: orgId,
 						contractId: d.contractId ?? null,
 						patientId: d.patientId,
-						patientFullName: d.patientFullName?.trim() || "Пациент ДМС",
-						patientBirthDate: d.patientBirthDate ?? null,
-						policyNumber: d.policyNumber?.trim() || "СОГЛАСОВАНИЕ",
+						patientFullName: d.patientFullName?.trim() || patientRecord.fullName,
+						patientBirthDate: d.patientBirthDate ?? patientRecord.birthDate ?? null,
+						policyNumber: d.policyNumber?.trim() || "",
 						insurerKey: d.insurerKey || "custom",
-						insurerName: d.insurerName?.trim() || "Страховая компания",
+						insurerName: resolvedInsurerName,
 						letterNumber: `REQ-${Date.now().toString(36).toUpperCase()}`,
 						issueDate: todayIso,
 						validFrom: todayIso,
@@ -561,48 +457,22 @@ export async function registerClaimApprovalRoutes(app: FastifyInstance) {
 					};
 				}
 
-				const responsePayload = {
-					success: true,
-					letterId: created.id,
-					status: created.status,
-					curatorFullName: created.curatorFullName,
-					curatorPhone: created.curatorPhone,
-					message: "Создан запрос на предварительное согласование со статусом ожидания ответа куратора.",
-				};
-
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 201,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 201,
-							},
-						});
-				}
-
 				return {
 					status: 201,
-					data: responsePayload,
+					data: {
+						success: true,
+						letterId: created.id,
+						status: created.status,
+						estimatedCostKopecks: estimatedCostKop,
+						curatorFullName: created.curatorFullName,
+						curatorPhone: created.curatorPhone,
+						message: "Создан запрос на предварительное согласование со статусом ожидания ответа куратора.",
+					},
 				};
 			});
 
 			if (txResult.status !== 201 || !txResult.data) {
 				return reply.code(txResult.status).send(txResult.error);
-			}
-
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
 			}
 
 			return reply.code(201).send(txResult.data);

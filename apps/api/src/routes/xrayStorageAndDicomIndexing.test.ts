@@ -12,7 +12,7 @@ import {
 	xrayScans,
 } from "../db/schema.js";
 import { LocalPacsStorageService } from "../services/imaging/localPacsStorageService.js";
-import { registerXrayRoutes } from "./imaging/studiesRoutes.js";
+import { registerStudiesRoutes } from "./imaging/studiesRoutes.js";
 import { scanToResponse } from "./xraySchemas.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";
@@ -159,7 +159,7 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		});
 
 		app = createTenantTestApp();
-		await registerXrayRoutes(app);
+		await registerStudiesRoutes(app);
 		await app.ready();
 	});
 
@@ -198,23 +198,24 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		assert.deepStrictEqual(diskContent, TINY_PNG_BUFFER);
 	});
 
-	it("2.2 POST /api/xray/scans НЕ сохраняет base64 в PostgreSQL, а пишет storagePath на диск", async () => {
+	it("2.2 POST /api/imaging/studies НЕ сохраняет base64 в PostgreSQL, а пишет storagePath на диск", async () => {
 		const response = await app.inject({
 			method: "POST",
-			url: "/api/xray/scans",
+			url: "/api/imaging/studies",
 			headers: authHeaders,
 			payload: {
 				patientId: TEST_PATIENT_ID,
 				imageBase64: TINY_PNG_DATA_URI,
-				mimeType: "image/png",
-				originalFilename: "tooth_36_xray.png",
+				title: "tooth_36_xray.png",
 				toothCode: "36",
 				kind: "periapical",
+				sourceKind: "sensor_bridge",
+				sourceName: "Визиограф",
 			},
 		});
 
 		if (response.statusCode !== 201) {
-			console.log("POST /api/xray/scans error:", response.statusCode, response.body);
+			console.log("POST /api/imaging/studies error:", response.statusCode, response.body);
 		}
 		assert.strictEqual(response.statusCode, 201);
 		const body = JSON.parse(response.body);
@@ -246,18 +247,18 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		);
 		createdTestFiles.push(savedRow.storagePath);
 
-		// Клиент получает ответ с fileUrl и hasImage: true
-		assert.strictEqual(body.hasImage, true);
-		assert.strictEqual(body.fileUrl, `/api/xray/scans/${body.id}/file`);
+		// Клиент получает канонический ImagingStudy с previewUrl / viewerUrl на /api/imaging/studies/:id/file
+		assert.strictEqual(body.previewUrl, `/api/imaging/studies/${body.id}/file`);
+		assert.strictEqual(body.viewerUrl, `/api/imaging/studies/${body.id}/file`);
 		assert.strictEqual(body.storagePath, savedRow.storagePath);
 	});
 
-	it("2.3 GET /api/xray/scans/:id/file отдает бинарный файл напрямую с диска", async () => {
+	it("2.3 GET /api/imaging/studies/:id/file отдает бинарный файл напрямую с диска", async () => {
 		assert.ok(createdScanId, "Scan ID должен быть создан в тесте 2.2");
 
 		const response = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans/${createdScanId}/file`,
+			url: `/api/imaging/studies/${createdScanId}/file`,
 			headers: authHeaders,
 		});
 
@@ -291,7 +292,7 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		// Проверяем /file на обратную совместимость
 		const response = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans/${LEGACY_SCAN_ID}/file`,
+			url: `/api/imaging/studies/${LEGACY_SCAN_ID}/file`,
 			headers: authHeaders,
 		});
 
@@ -300,25 +301,32 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		assert.deepStrictEqual(response.rawPayload, TINY_PNG_BUFFER);
 	});
 
-	it("2.5 GET /api/xray/scans/:id прозрачно собирает data URI из дискового файла при includeImage=true", async () => {
+	it("2.5 GET /api/imaging/studies/:id возвращает previewUrl/storagePath и поток с диска", async () => {
 		assert.ok(createdScanId, "Scan ID должен быть создан в тесте 2.2");
 
 		const response = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans/${createdScanId}`,
+			url: `/api/imaging/studies/${createdScanId}`,
 			headers: authHeaders,
 		});
 
 		assert.strictEqual(response.statusCode, 200);
 		const body = JSON.parse(response.body);
 
-		// Клиент видит собранный на лету data URI, не зная, что в БД ничего лишнего не хранится
-		assert.strictEqual(body.imageDataUri, TINY_PNG_DATA_URI);
-		assert.strictEqual(body.hasImage, true);
-		assert.strictEqual(body.fileUrl, `/api/xray/scans/${createdScanId}/file`);
+		assert.strictEqual(body.previewUrl, `/api/imaging/studies/${createdScanId}/file`);
+		assert.strictEqual(body.viewerUrl, `/api/imaging/studies/${createdScanId}/file`);
+		assert.ok(typeof body.storagePath === "string" && body.storagePath.length > 0);
+
+		const fileRes = await app.inject({
+			method: "GET",
+			url: body.previewUrl,
+			headers: authHeaders,
+		});
+		assert.strictEqual(fileRes.statusCode, 200);
+		assert.deepStrictEqual(fileRes.rawPayload, TINY_PNG_BUFFER);
 	});
 
-	it("2.6 scanToResponse включает fileUrl и storagePath", () => {
+	it("2.6 scanToResponse включает fileUrl (/api/imaging/studies/:id/file) и storagePath", () => {
 		const dummyScan = {
 			id: "999e4567-e89b-12d3-a456-426614174000",
 			organizationId: TEST_ORG_ID,
@@ -347,7 +355,7 @@ describe("МАНДАТ 8l: Ликвидация хранения base64 в Postg
 		};
 
 		const res = scanToResponse(dummyScan, false);
-		assert.strictEqual(res.fileUrl, `/api/xray/scans/999e4567-e89b-12d3-a456-426614174000/file`);
+		assert.strictEqual(res.fileUrl, `/api/imaging/studies/999e4567-e89b-12d3-a456-426614174000/file`);
 		assert.strictEqual(res.storagePath, "C:\\pacs\\scan.jpg");
 		assert.strictEqual(res.hasImage, true);
 	});

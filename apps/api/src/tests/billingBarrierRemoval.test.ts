@@ -7,6 +7,7 @@
  */
 
 import { strict as assert } from "node:assert";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
@@ -91,6 +92,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			visitId,
 			amountRub: 5000,
 			method: "cash",
+			clientMutationId: randomUUID(),
 			payerFullName: "Тестовый Пациент с Переплатой",
 			note: "Оплата визита с переплатой",
 		});
@@ -149,6 +151,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			amountRub: 4500,
 			discountRub: 500,
 			method: "card",
+			clientMutationId: randomUUID(),
 		});
 
 		assert.equal(payment.amountRub, 4500);
@@ -191,6 +194,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			serviceId: catalogItemId,
 			amountRub: 5500,
 			method: "cash",
+			clientMutationId: randomUUID(),
 		});
 
 		assert.equal(payment.amountRub, 5500);
@@ -243,6 +247,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			serviceId: catalogItemId,
 			amountRub: 800,
 			method: "cash",
+			clientMutationId: randomUUID(),
 		});
 
 		assert.equal(payment.amountRub, 800);
@@ -270,6 +275,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			patientId,
 			amountRub: 1500,
 			method: "cash",
+			clientMutationId: randomUUID(),
 			payerFullName: "Иванов Иван Иванович",
 			payerInn: null, // Zero mandatory INN under 54-FZ for individuals
 		});
@@ -282,6 +288,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			patientId,
 			amountRub: 2500,
 			method: "card",
+			clientMutationId: randomUUID(),
 			payerFullName: "Иванов Иван Иванович",
 			payerInn: undefined, // Zero mandatory INN
 		});

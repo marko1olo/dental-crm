@@ -1,8 +1,9 @@
 import { kopecksToNumericString, kopecksToRub, parseKopecks } from "@dental/shared";
 import { Decimal } from "decimal.js";
-import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
-import { cashBoxes, cashOperations, familyGroups, payments } from "../../../db/schema.js";
+import { and, desc, eq } from "drizzle-orm";
+import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
+import { cashBoxes, cashOperations, familyGroups, fiscalReceiptQueue, payments } from "../../../db/schema.js";
+import { Fiscal54FzService } from "../../billing/fiscal54fzService.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { FamilyWalletError, type FamilyRefundParams, type FamilyRefundResult } from "../familyWalletTypes.js";
 
@@ -46,7 +47,11 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 
 		const [existingPayment] = await tx.select().from(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.clientMutationId, clientMutationId.trim()))).limit(1);
 		if (existingPayment) {
-			if (parseKopecks(existingPayment.amountRub) !== refundKopecks || existingPayment.status !== "refunded") {
+			const existingKopecks =
+				existingPayment.amountKopecks !== null && existingPayment.amountKopecks !== undefined && existingPayment.amountKopecks > 0n
+					? Number(existingPayment.amountKopecks)
+					: parseKopecks(existingPayment.amountRub);
+			if (existingKopecks !== refundKopecks || existingPayment.status !== "refunded") {
 				throw new FamilyWalletError("Клиентская операция уже записала другой возврат.", 409, "IDEMPOTENCY_CONFLICT");
 			}
 			const curBal = family.balanceKopecks != null ? Number(family.balanceKopecks) : (family.balance ? parseKopecks(family.balance) : 0);
@@ -55,10 +60,10 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 				payment: existingPayment,
 				previousBalanceRub: kopecksToRub(curBal),
 				newBalanceRub: kopecksToRub(curBal),
-				refundedRub: kopecksToRub(parseKopecks(existingPayment.amountRub)),
+				refundedRub: kopecksToRub(existingKopecks),
 				previousBalanceKopecks: curBal,
 				newBalanceKopecks: curBal,
-				refundedKopecks: parseKopecks(existingPayment.amountRub),
+				refundedKopecks: existingKopecks,
 				duplicate: true,
 			};
 		}
@@ -83,34 +88,54 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		if (!updatedFamily) throw new FamilyWalletError("Не удалось обновить баланс семейной группы", 500, "UPDATE_FAILED");
 
 		let cashOp: typeof cashOperations.$inferSelect | undefined;
+		let targetBox: typeof cashBoxes.$inferSelect | undefined;
 		if (cashBoxId) {
-			const [targetBox] = await tx.select().from(cashBoxes).where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, organizationId))).for("update").limit(1);
-			if (targetBox) {
-				const boxBalKop = targetBox.balanceKopecks != null ? Number(targetBox.balanceKopecks) : parseKopecks(targetBox.balanceRub || 0);
-				if (boxBalKop < refundKopecks) {
-					throw new FamilyWalletError(
-						`В кассе недостаточно наличных средств для возврата (в кассе: ${kopecksToRub(boxBalKop)} ₽, требуется: ${kopecksToRub(refundKopecks)} ₽)`,
-						400,
-						"INSUFFICIENT_CASHBOX_BALANCE",
-					);
-				}
-				const refundRub = kopecksToRub(refundKopecks);
-				const newBoxBalKop = boxBalKop - refundKopecks;
-
-				await tx.update(cashBoxes).set({
-					balanceRub: kopecksToRub(newBoxBalKop),
-					balanceKopecks: newBoxBalKop,
-					updatedAt: new Date(),
-				}).where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
-				const [createdOp] = await tx.insert(cashOperations).values({
-					organizationId, cashBoxId: targetBox.id, operationType: "expense", amountRub: refundRub,
-					amountKopecks: refundKopecks,
-					balanceBeforeRub: targetBox.balanceRub, balanceAfterRub: kopecksToRub(newBoxBalKop),
-					reasonText: reasonText || `Возврат неиспользованного семейного депозита: ${family.name || "Семья"}`,
-					patientId: targetPatientId, operatorId: operatorId ?? null,
-				}).returning();
-				cashOp = createdOp;
+			const [foundBox] = await tx
+				.select()
+				.from(cashBoxes)
+				.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, organizationId)))
+				.for("update")
+				.limit(1);
+			if (!foundBox) {
+				throw new FamilyWalletError("Указанная касса не найдена", 404, "CASHBOX_NOT_FOUND");
 			}
+			targetBox = foundBox;
+		} else if (method === "cash") {
+			const [defaultMainBox] = await tx
+				.select()
+				.from(cashBoxes)
+				.where(and(eq(cashBoxes.organizationId, organizationId), eq(cashBoxes.type, "main")))
+				.orderBy(desc(cashBoxes.isMain))
+				.for("update")
+				.limit(1);
+			targetBox = defaultMainBox;
+		}
+
+		if (targetBox) {
+			const boxBalKop = targetBox.balanceKopecks != null ? Number(targetBox.balanceKopecks) : parseKopecks(targetBox.balanceRub || 0);
+			if (boxBalKop < refundKopecks) {
+				throw new FamilyWalletError(
+					`В кассе недостаточно наличных средств для возврата (в кассе: ${kopecksToRub(boxBalKop)} ₽, требуется: ${kopecksToRub(refundKopecks)} ₽)`,
+					400,
+					"INSUFFICIENT_CASHBOX_BALANCE",
+				);
+			}
+			const refundRub = kopecksToRub(refundKopecks);
+			const newBoxBalKop = boxBalKop - refundKopecks;
+
+			await tx.update(cashBoxes).set({
+				balanceRub: kopecksToRub(newBoxBalKop),
+				balanceKopecks: newBoxBalKop,
+				updatedAt: new Date(),
+			}).where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
+			const [createdOp] = await tx.insert(cashOperations).values({
+				organizationId, cashBoxId: targetBox.id, operationType: "expense", amountRub: refundRub,
+				amountKopecks: refundKopecks,
+				balanceBeforeRub: targetBox.balanceRub, balanceAfterRub: kopecksToRub(newBoxBalKop),
+				reasonText: reasonText || `Возврат неиспользованного семейного депозита: ${family.name || "Семья"}`,
+				patientId: targetPatientId, operatorId: operatorId ?? null,
+			}).returning();
+			cashOp = createdOp;
 		}
 
 		const [payment] = await tx.insert(payments).values({
@@ -122,8 +147,44 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		}).returning();
 		if (!payment) throw new FamilyWalletError("Не удалось создать запись возврата", 500, "REFUND_PAYMENT_CREATION_FAILED");
 
-		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_BALANCE_UPDATED", payload: { organizationId, familyGroupId, balance: newBalanceStr } });
-		wsBroker.broadcastToOrganization(organizationId, { type: "PAYMENT_CREATED", payload: payment });
+		const refundRub = kopecksToRub(refundKopecks);
+		const fiscalRefundPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+			organizationId,
+			patientId: targetPatientId,
+			customerContact: "patient@clinic.ru",
+			cashierFullName: "Кассир-администратор",
+			operationType: "income_return",
+			defaultCalculationMethod: "advance",
+			tenderSplits: method === "cash" ? { cashRub: refundRub } : { electronicCardRub: refundRub },
+			positions: [
+				{
+					name: reasonText?.trim() || "Возврат неиспользованного семейного депозита",
+					priceRub: refundRub,
+					quantity: 1,
+					subject: "payment",
+					method: "advance",
+					vatRate: "vat_none",
+				},
+			],
+			documentId: familyGroupId,
+			clientMutationId: `${clientMutationId.trim()}:return`,
+		});
+		await tx.insert(fiscalReceiptQueue).values({
+			organizationId,
+			paymentId: payment.id,
+			receiptType: "income_return",
+			status: "pending_print",
+			payloadJson: {
+				...fiscalRefundPayload,
+				tag1020_totalRub: fiscalRefundPayload.tag1020_totalRubString,
+			},
+			retryCount: 0,
+		});
+
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_BALANCE_UPDATED", payload: { organizationId, familyGroupId, balance: newBalanceStr } });
+			wsBroker.broadcastToOrganization(organizationId, { type: "PAYMENT_CREATED", payload: payment });
+		});
 
 		return {
 			success: true,

@@ -240,24 +240,29 @@ export function buildIsolatedTempSignPaths(requestId?: string): {
  */
 export function decodeCryptoProOutput(buffer: Buffer): string {
 	// Сначала пробуем UTF-8
+	let decodeHint = "utf8";
 	try {
 		const utf8Str = buffer.toString("utf8");
 		if (/[А-Яа-яЁё]/.test(utf8Str) && !utf8Str.includes("\ufffd")) {
 			return utf8Str;
 		}
-	} catch {
-		// fallback to cp1251
+		decodeHint = "windows-1251";
+	} catch (err) {
+		void err;
+		decodeHint = "windows-1251";
 	}
 
 	// Пробуем windows-1251
-	try {
-		const cp1251Decoder = new TextDecoder("windows-1251");
-		const decoded = cp1251Decoder.decode(buffer);
-		if (/[А-Яа-яЁё]/.test(decoded)) {
-			return decoded;
+	if (decodeHint === "windows-1251") {
+		try {
+			const cp1251Decoder = new TextDecoder("windows-1251");
+			const decoded = cp1251Decoder.decode(buffer);
+			if (/[А-Яа-яЁё]/.test(decoded)) {
+				return decoded;
+			}
+		} catch (err) {
+			void err;
 		}
-	} catch {
-		// ignore
 	}
 
 	// Пробуем ibm866 (DOS / OEM кодировка консоли Windows)
@@ -267,8 +272,8 @@ export function decodeCryptoProOutput(buffer: Buffer): string {
 		if (/[А-Яа-яЁё]/.test(decoded)) {
 			return decoded;
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		void err;
 	}
 
 	return buffer.toString("utf8");
@@ -381,12 +386,14 @@ export function parseCertificatesOutput(rawText: string): CryptoProCertInfo[] {
 			doctorFullName = commonName;
 		}
 
-		// 6. Сроки действия
+		// 6. Сроки действия (никогда не фабрикуем валидный срок при нераспознанных датах)
 		const validFromMatch = block.match(/(?:Not valid before|Valid from|Действителен\s*с)\s*[:=]\s*([^\r\n]+)/i);
 		const validToMatch = block.match(/(?:Not valid after|Valid to|Действителен\s*по)\s*[:=]\s*([^\r\n]+)/i);
 
-		const validFrom = parseDateTimeString(validFromMatch?.[1] ?? "") || new Date().toISOString();
-		const validTo = parseDateTimeString(validToMatch?.[1] ?? "") || new Date(Date.now() + 365 * 86400000).toISOString();
+		const parsedValidFrom = parseDateTimeString(validFromMatch?.[1] ?? "");
+		const parsedValidTo = parseDateTimeString(validToMatch?.[1] ?? "");
+		const validFrom = parsedValidFrom ?? "";
+		const validTo = parsedValidTo ?? "";
 
 		// 7. Наличие закрытого ключа
 		const hasPrivateKey =
@@ -395,11 +402,16 @@ export function parseCertificatesOutput(rawText: string): CryptoProCertInfo[] {
 			/AcquireContext\s*:\s*OK/i.test(block) ||
 			/Certificate in container/i.test(block);
 
-		// 8. Валидность по времени
+		// 8. Валидность по времени (обязательны обе валидные даты)
 		const now = Date.now();
-		const fromTime = new Date(validFrom).getTime();
-		const toTime = new Date(validTo).getTime();
-		const isValid = !Number.isNaN(fromTime) && !Number.isNaN(toTime) && now >= fromTime && now <= toTime;
+		const fromTime = parsedValidFrom ? new Date(parsedValidFrom).getTime() : Number.NaN;
+		const toTime = parsedValidTo ? new Date(parsedValidTo).getTime() : Number.NaN;
+		const isValid =
+			Boolean(parsedValidFrom && parsedValidTo) &&
+			!Number.isNaN(fromTime) &&
+			!Number.isNaN(toTime) &&
+			now >= fromTime &&
+			now <= toTime;
 
 		// 9. Алгоритм
 		const algMatch = block.match(/(?:Algorithm|Алгоритм(?: ключа)?)\s*[:=]\s*([^\r\n]+)/i);
@@ -461,6 +473,7 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 		);
 	}
 
+	let enumFallbackError: string | null = null;
 	// 1. Предпочитаем certmgr или cryptcp (быстрее и структурированнее выдают uMy)
 	if (paths.certmgr) {
 		try {
@@ -470,8 +483,8 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 			});
 			const text = decodeCryptoProOutput(stdout);
 			return parseCertificatesOutput(text);
-		} catch {
-			// Если certmgr завершился с ошибкой, попробуем cryptcp
+		} catch (err) {
+			enumFallbackError = err instanceof Error ? err.message : String(err);
 		}
 	}
 
@@ -483,8 +496,8 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 			});
 			const text = decodeCryptoProOutput(stdout);
 			return parseCertificatesOutput(text);
-		} catch {
-			// fallback to csptest
+		} catch (err) {
+			enumFallbackError = err instanceof Error ? err.message : String(err);
 		}
 	}
 
@@ -507,7 +520,9 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 					{ paperFallbackAvailable: true },
 				);
 			}
-			const errOutput = decodeCryptoProOutput(error.stderr || error.stdout || Buffer.from(error.message || ""));
+			const errOutput = decodeCryptoProOutput(
+				error.stderr || error.stdout || Buffer.from(enumFallbackError || error.message || ""),
+			);
 			if (
 				errOutput.includes("0x8010000C") ||
 				errOutput.includes("SCARD_E_NO_SMARTCARD") ||
@@ -581,9 +596,14 @@ export async function signDetachedGost(
 	const { tmpDir, tmpFile, sgnFile, sigFile } = buildIsolatedTempSignPaths(options?.requestId);
 
 	const cleanup = async () => {
-		await fs.promises.unlink(tmpFile).catch(() => {});
-		await fs.promises.unlink(sgnFile).catch(() => {});
-		await fs.promises.unlink(sigFile).catch(() => {});
+		for (const filePath of [tmpFile, sgnFile, sigFile]) {
+			if (!fs.existsSync(filePath)) continue;
+			try {
+				await fs.promises.unlink(filePath);
+			} catch (unlinkErr) {
+				void unlinkErr;
+			}
+		}
 	};
 
 	try {
@@ -695,10 +715,15 @@ export async function signDetachedGost(
 				{ paperFallbackAvailable: true },
 			);
 		}
-		const decodedErr = decodeCryptoProOutput(execError.stderr || execError.stdout || Buffer.from(execError.message || ""));
+		const rawDecodedErr = decodeCryptoProOutput(
+			execError.stderr ||
+				execError.stdout ||
+				Buffer.from("Команда КриптоПро CSP завершилась с ошибкой"),
+		);
+		const decodedErr = rawDecodedErr.replace(/(?:-(?:password|pin))\s+\S+/gi, "-pin [REDACTED]");
 
 		let errorCode = "SIGNING_FAILED";
-		let userMessage = `Ошибка создания электронной подписи КриптоПро: ${decodedErr}`;
+		let userMessage = "Ошибка создания электронной подписи КриптоПро";
 
 		if (
 			decodedErr.includes("0x8010000C") ||
@@ -720,7 +745,6 @@ export async function signDetachedGost(
 
 		throw new CryptoProCliError(errorCode, userMessage, {
 			thumbprint: cleanThumbprint,
-			rawOutput: decodedErr,
 			exitCode: execError.code,
 		});
 	} finally {

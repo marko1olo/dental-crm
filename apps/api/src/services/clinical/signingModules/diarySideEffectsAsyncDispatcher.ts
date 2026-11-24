@@ -3,6 +3,7 @@ import type { FastifyBaseLogger } from "fastify";
 import { doctorCommissions } from "../../../db/schema.js";
 import { TreatmentConsumablesService } from "../../treatmentConsumables/index.js";
 import type { DiaryDbTransaction } from "./signatureTypeVerifier.js";
+import { createApiLogger } from "../../../observability/logger.js";
 
 export interface DiarySideEffectsLogger {
 	warn(msg: string, ...args: unknown[]): void;
@@ -23,9 +24,17 @@ export interface DiarySideEffectsResult {
 	completedTreatmentItems: number;
 }
 
+const apiLogger = createApiLogger("diarySideEffects");
+
 const fallbackLogger: DiarySideEffectsLogger = {
 	warn: (msg: string, ...args: unknown[]) => {
-		process.stderr.write(`[WARN] ${msg} ${args.length > 0 ? JSON.stringify(args) : ""}\n`);
+		apiLogger.warn({ args }, msg);
+	},
+	error: (msg: string, ...args: unknown[]) => {
+		apiLogger.error({ args }, msg);
+	},
+	info: (msg: string, ...args: unknown[]) => {
+		apiLogger.info({ args }, msg);
 	},
 };
 

@@ -75,7 +75,7 @@ export async function settleRefundedPaymentsForPatient(
 	const run = async (tenantTx: TenantDb) => {
 		const [payments, documents] = await Promise.all([
 			getPaymentsByPatientIdInDb(organizationId, patientId, tenantTx),
-			getDocumentsByPatientId(organizationId, patientId),
+			getDocumentsByPatientId(organizationId, patientId, tenantTx),
 		]);
 		const settlements = paymentRefundSettlements(payments, documents);
 		if (settlements.length === 0) {

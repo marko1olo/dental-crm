@@ -17,6 +17,10 @@ import { users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../accessGuard.js";
+import {
 	getLanServerDiscoveryMetadata,
 	getLocalLanAddresses,
 	getPrimaryLanIp,
@@ -479,7 +483,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * GET /api/network/lan-mesh/handshake
 	 * Fast HTTP probe endpoint to confirm active DENTE LAN node.
 	 */
-	app.get("/api/network/lan-mesh/handshake", async (_request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/network/lan-mesh/handshake", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalReadContext(request, reply, "lan mesh handshake read");
+		if (!context) return;
+
 		const meshService = getLanMeshService();
 		const handshake = meshService.getTopology().createHandshakePayload();
 		return reply.send({
@@ -497,6 +504,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Negotiates version and schema compatibility with remote clinic node.
 	 */
 	app.post("/api/network/lan-mesh/handshake", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalMutationContext(request, reply, "lan mesh handshake");
+		if (!context) return;
+
 		const parseRes = lanMeshHandshakePayloadSchema.safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
@@ -520,7 +530,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * GET /api/network/lan-mesh/status
 	 * Returns current topology status, known peers, Master election, and offline queue status badge.
 	 */
-	app.get("/api/network/lan-mesh/status", async (_request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/network/lan-mesh/status", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalReadContext(request, reply, "lan mesh status");
+		if (!context) return;
+
 		const meshService = getLanMeshService();
 		const badge = meshService.getStatusBadge();
 		const topology = meshService.getTopology();
@@ -539,6 +552,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Accepts streaming mutations from satellite workstations to the Master and applies to PostgreSQL.
 	 */
 	app.post("/api/network/lan-mesh/mutations", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalMutationContext(request, reply, "lan mesh mutations");
+		if (!context) return;
+
 		const parseRes = z.object({ mutations: z.array(queuedMeshMutationSchema) }).safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
@@ -563,19 +579,19 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const identity = getRequestIdentity(request);
-		const firstMutation = parseRes.data.mutations[0];
-		const firstMutationPayload = firstMutation?.payload;
-		let payloadOrgId: string | undefined = undefined;
-		if (isRecord(firstMutationPayload)) {
-			const candidateOrgId = firstMutationPayload["organizationId"];
-			if (typeof candidateOrgId === "string" && candidateOrgId.trim()) {
-				payloadOrgId = candidateOrgId.trim();
+		const orgId = context.organizationId;
+		for (const m of parseRes.data.mutations) {
+			if (isRecord(m.payload)) {
+				const candidateOrgId = m.payload["organizationId"];
+				if (typeof candidateOrgId === "string" && candidateOrgId.trim() && candidateOrgId.trim() !== orgId) {
+					return reply.code(403).send({
+						ok: false,
+						error: "CrossTenantMutationDenied",
+						message: "Запрещена синхронизация мутаций для другой организации.",
+					});
+				}
 			}
 		}
-		const rawOrgId = payloadOrgId || identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const orgId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawOrgId)
-			? rawOrgId
-			: "00000000-0000-0000-0000-000000000001";
 
 		// Transform QueuedMeshMutation to SyncMutationEnvelope
 		const envelopes: SyncMutationEnvelope[] = parseRes.data.mutations.map((m) => {
@@ -654,6 +670,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Persists incoming mutations into PostgreSQL and returns updated vector clock + sync results.
 	 */
 	app.post("/api/sync/mesh/exchange", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalMutationContext(request, reply, "lan mesh exchange");
+		if (!context) return;
+
 		const parseRes = meshSyncExchangeRequestSchema.safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
@@ -666,7 +685,14 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		const reqData = parseRes.data;
 		const identity = getRequestIdentity(request);
-		const orgId = reqData.organizationId || identity.organizationId || "clinic-default";
+		const orgId = context.organizationId;
+		if (reqData.organizationId && reqData.organizationId !== orgId) {
+			return reply.code(403).send({
+				ok: false,
+				error: "CrossTenantMutationDenied",
+				message: "Запрещён обмен мутациями mesh для другой организации.",
+			});
+		}
 		const meshService = getLanMeshService();
 		const responderNodeId = meshService.nodeId;
 		const responderTime = new Date().toISOString();
@@ -752,6 +778,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Peer-to-peer event dispatching between clinical workstations (chair status, CITO, invoice transfer).
 	 */
 	app.post("/api/lan/p2p/dispatch", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalMutationContext(request, reply, "lan p2p dispatch");
+		if (!context) return;
+
 		const parseRes = lanP2PMessageSchema.safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
@@ -763,6 +792,13 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const msg = parseRes.data;
+		if (msg.organizationId && msg.organizationId !== context.organizationId) {
+			return reply.code(403).send({
+				ok: false,
+				error: "CrossTenantDispatchDenied",
+				message: "Запрещена отправка P2P-сообщений для другой организации.",
+			});
+		}
 		request.log.info(
 			{
 				messageId: msg.messageId,
@@ -785,7 +821,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * POST /api/network/lan-mesh/discover
 	 * Triggers immediate UDP broadcast beacon and active subnet HTTP probe.
 	 */
-	app.post("/api/network/lan-mesh/discover", async (_request: FastifyRequest, reply: FastifyReply) => {
+	app.post("/api/network/lan-mesh/discover", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalMutationContext(request, reply, "lan mesh discover");
+		if (!context) return;
+
 		const meshService = getLanMeshService();
 		meshService.broadcastBeacon();
 		const discovered = await meshService.probeSubnetHttp();
@@ -802,7 +841,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * GET /api/network/mesh/auto-join/status
 	 * Returns current 6-digit PIN, remaining expiration time, and QR pairing URI.
 	 */
-	app.get("/api/network/mesh/auto-join/status", async (_request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/network/mesh/auto-join/status", async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalReadContext(request, reply, "lan mesh auto-join status");
+		if (!context) return;
+
 		const autoJoin = getLanMeshAutoJoinService();
 		const status = autoJoin.getPairingStatus();
 		return reply.send({

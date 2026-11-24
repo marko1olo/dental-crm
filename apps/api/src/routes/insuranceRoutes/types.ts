@@ -5,10 +5,13 @@ import {
 } from "@dental/shared";
 import { z } from "zod";
 
-export const calculateCoverageBodySchema = z.object({
-	usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
-	items: z.array(insuranceCalculationItemSchema).min(1, "Передайте как минимум одну услугу для расчёта покрытия ДМС."),
-});
+export const calculateCoverageBodySchema = z
+	.object({
+		usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
+		usedAnnualAmountKopecks: z.number().int().nonnegative().optional(),
+		items: z.array(insuranceCalculationItemSchema).min(1, "Передайте как минимум одну услугу для расчёта покрытия ДМС."),
+	})
+	.strict();
 
 export type CalculateCoverageBody = z.infer<typeof calculateCoverageBodySchema>;
 
@@ -61,6 +64,7 @@ export const insuranceCreateBodySchema = z.object({
 	coverageOrthoPct: z.number().finite().optional(),
 	coverageHygienePct: z.number().finite().optional(),
 	annualLimitRub: z.number().finite().optional(),
+	annualLimitKopecks: z.number().int().nonnegative().nullable().optional(),
 	patientFranchisePct: z.number().finite().min(0).max(100).optional(),
 	requiresGuaranteeLetter: z.boolean().optional(),
 	clientMutationId: z.string().optional(),
@@ -77,6 +81,7 @@ export const insuranceUpdateBodySchema = z.object({
 	coverageOrthoPct: z.number().finite().optional(),
 	coverageHygienePct: z.number().finite().optional(),
 	annualLimitRub: z.number().finite().nullable().optional(),
+	annualLimitKopecks: z.number().int().nonnegative().nullable().optional(),
 	patientFranchisePct: z.number().finite().min(0).max(100).optional(),
 	requiresGuaranteeLetter: z.boolean().optional(),
 	isActive: z.boolean().optional(),
@@ -87,10 +92,10 @@ export const insuranceUpdateBodySchema = z.object({
 export type InsuranceUpdateBody = z.infer<typeof insuranceUpdateBodySchema>;
 
 export const guaranteeLetterQuerySchema = z.object({
-	patientId: z.string().min(1).optional(),
+	patientId: z.string().uuid("Некорректный ID пациента").optional(),
 	status: z.string().optional(),
 	search: z.string().optional(),
-});
+}).strict();
 
 export type GuaranteeLetterQuery = z.infer<typeof guaranteeLetterQuerySchema>;
 
@@ -103,7 +108,7 @@ export const registryQuerySchema = z.object({
 	periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 	search: z.string().optional(),
 	format: z.enum(["json", "xml", "csv"]).optional().default("json"),
-});
+}).strict();
 
 export type RegistryQuery = z.infer<typeof registryQuerySchema>;
 

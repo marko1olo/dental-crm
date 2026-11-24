@@ -42,9 +42,10 @@ export class FiscalRetryPolicy {
 	}
 
 	/**
-	 * 1-Click Manual / Automatic Retry:
-	 * Re-attempts fiscalization for a transaction or payment in `fiscalization_pending` status.
-	 * Checks idempotency lock to prevent double-charging or printing duplicate receipts.
+	 * Manual / Automatic Retry via 3-Phase Outbox Pattern:
+	 * - Phase 1: Advisory-locked DB read + idempotency check
+	 * - Phase 2: Physical KKT network I/O strictly OUTSIDE PostgreSQL transaction
+	 * - Phase 3: Advisory-locked DB state update
 	 */
 	public static async retryFiscalizeTransaction(
 		organizationId: string,
@@ -52,18 +53,16 @@ export class FiscalRetryPolicy {
 		options: { kktConfig?: Partial<KktLanConfig> } = {},
 	): Promise<RetryFiscalizeResult> {
 		const { kktConfig } = options;
-		const deviceStatus = await LanKktDriverService.checkDeviceStatus(kktConfig);
 		const now = new Date();
 
-		return await withTenantCtx(organizationId, async (tx) => {
+		// Phase 1: Claim state & idempotency check inside fast PostgreSQL transaction
+		const preflight = await withTenantCtx(organizationId, async (tx) => {
 			const targetDb = tx ?? db;
 
-			// Advisory lock on transaction retry
 			await targetDb.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${`fiscal:retry:${organizationId}:${transactionOrPaymentId}`}))`,
 			);
 
-			// Find payment or queue item
 			const [matchedPayment] = await targetDb
 				.select()
 				.from(payments)
@@ -93,7 +92,6 @@ export class FiscalRetryPolicy {
 					.limit(1);
 				queueItem = q || null;
 			} else {
-				// Try lookup by queueItemId directly
 				const [q] = await targetDb
 					.select()
 					.from(fiscalReceiptQueue)
@@ -116,7 +114,6 @@ export class FiscalRetryPolicy {
 				throw notFoundErr;
 			}
 
-			// IDEMPOTENCY CHECK: If already printed with valid fiscal doc number, return idempotent success
 			if (
 				(matchedPayment && matchedPayment.fiscalReceiptNumber) ||
 				(queueItem && queueItem.status === "printed")
@@ -125,10 +122,9 @@ export class FiscalRetryPolicy {
 				const paymentReceipt = (matchedPayment?.fiscalReceipt ?? null) as FiscalReceiptDetails | null;
 
 				return {
-					success: true,
-					status: "already_fiscalized",
-					paymentId: targetPaymentId,
-					queueItemId: queueItem?.id,
+					kind: "already_fiscalized" as const,
+					targetPaymentId,
+					queueItem,
 					fiscalReceiptNumber:
 						matchedPayment?.fiscalReceiptNumber ||
 						queuePayload?.fiscalDocumentNumber,
@@ -141,19 +137,45 @@ export class FiscalRetryPolicy {
 					receiptIssuedAt:
 						matchedPayment?.fiscalReceiptIssuedAt ||
 						queueItem?.printedAt?.toISOString(),
-					deviceStatus,
 				};
 			}
 
-			// If hardware still offline or out of paper
-			if (!deviceStatus.online || !deviceStatus.paperOk) {
-				const offlineMsg =
-					deviceStatus.error ||
-					(!deviceStatus.online
-						? "ККТ недоступна в сети / порт не отвечает"
-						: "Отсутствует чековая лента (Out of Paper)");
+			return {
+				kind: "ready" as const,
+				targetPaymentId,
+				queueItem,
+			};
+		});
 
-				if (queueItem) {
+		const deviceStatus = await LanKktDriverService.checkDeviceStatus(kktConfig);
+
+		if (preflight.kind === "already_fiscalized") {
+			return {
+				success: true,
+				status: "already_fiscalized",
+				paymentId: preflight.targetPaymentId,
+				queueItemId: preflight.queueItem?.id,
+				fiscalReceiptNumber: preflight.fiscalReceiptNumber,
+				fiscalSign: preflight.fiscalSign,
+				ofdUrl: preflight.ofdUrl,
+				receiptIssuedAt: preflight.receiptIssuedAt,
+				deviceStatus,
+			};
+		}
+
+		const { targetPaymentId, queueItem } = preflight;
+
+		// Phase 2: KKT network checks & printing strictly OUTSIDE PostgreSQL transaction
+		if (!deviceStatus.online || !deviceStatus.paperOk) {
+			const offlineMsg =
+				deviceStatus.error ||
+				(!deviceStatus.online
+					? "ККТ недоступна в сети / порт не отвечает"
+					: "Отсутствует чековая лента (Out of Paper)");
+
+			if (queueItem) {
+				await withTenantCtx(organizationId, async (tx) => {
+					const targetDb = tx ?? db;
 					await targetDb
 						.update(fiscalReceiptQueue)
 						.set({
@@ -168,46 +190,51 @@ export class FiscalRetryPolicy {
 								eq(fiscalReceiptQueue.organizationId, organizationId),
 							),
 						);
-				}
-
-				return {
-					success: false,
-					status: "hardware_offline",
-					paymentId: targetPaymentId,
-					queueItemId: queueItem?.id,
-					error: offlineMsg,
-					deviceStatus,
-				};
+				});
 			}
 
-			// Attempt physical print
-			const rawPayload = queueItem?.payloadJson;
-			if (!rawPayload || typeof rawPayload !== "object") {
-				return {
-					success: false,
-					status: "hardware_offline",
-					paymentId: targetPaymentId,
-					queueItemId: queueItem?.id,
-					error: "Отсутствует корректный payload фискального чека в очереди",
-					deviceStatus,
-				};
-			}
-			const payload = rawPayload as Ffd12ReceiptPayload;
-			let printResult: KktPrintResult;
-			try {
-				printResult = await LanKktDriverService.printFiscalReceipt(
-					payload,
-					kktConfig,
-				);
-			} catch (err: unknown) {
-				printResult = {
-					success: false,
-					status: "hardware_offline",
-					receiptIssuedAt: now.toISOString(),
-					errorCode: "RETRY_EXCEPTION",
-					errorMessage: err instanceof Error ? err.message : String(err),
-				};
-			}
+			return {
+				success: false,
+				status: "hardware_offline",
+				paymentId: targetPaymentId,
+				queueItemId: queueItem?.id,
+				error: offlineMsg,
+				deviceStatus,
+			};
+		}
+
+		const rawPayload = queueItem?.payloadJson;
+		if (!rawPayload || typeof rawPayload !== "object") {
+			return {
+				success: false,
+				status: "hardware_offline",
+				paymentId: targetPaymentId,
+				queueItemId: queueItem?.id,
+				error: "Отсутствует корректный payload фискального чека в очереди",
+				deviceStatus,
+			};
+		}
+		const payload = rawPayload as Ffd12ReceiptPayload;
+		let printResult: KktPrintResult;
+		try {
+			printResult = await LanKktDriverService.printFiscalReceipt(payload, kktConfig);
+		} catch (err: unknown) {
+			printResult = {
+				success: false,
+				status: "hardware_offline",
+				receiptIssuedAt: now.toISOString(),
+				errorCode: "RETRY_EXCEPTION",
+				errorMessage: err instanceof Error ? err.message : String(err),
+			};
+		}
+
+		// Phase 3: Atomic commit of hardware result inside PostgreSQL transaction
+		return await withTenantCtx(organizationId, async (tx) => {
+			const targetDb = tx ?? db;
+
+			await targetDb.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${`fiscal:retry:${organizationId}:${transactionOrPaymentId}`}))`,
+			);
 
 			if (!printResult.success || printResult.status === "hardware_offline") {
 				const printError =
@@ -240,7 +267,6 @@ export class FiscalRetryPolicy {
 				};
 			}
 
-			// Succeeded: update queue item and payment record
 			const updatedPayload = {
 				...(typeof queueItem?.payloadJson === "object" && queueItem?.payloadJson !== null
 					? queueItem.payloadJson

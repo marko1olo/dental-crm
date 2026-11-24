@@ -3,14 +3,18 @@ import {
 	evaluatePasswordEntropy,
 	staffAuthorityStateSchema,
 	staffMemberSchema,
+	staffRoleSchema,
 	updateStaffAuthorityGrantsSchema,
 	updateStaffWorkingHoursSchema,
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
+import { safeLogError } from "../../observability/logger.js";
 import {
 	createStaffMemberInDb,
 	deactivateStaffMemberInDb,
@@ -125,11 +129,11 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			}
 
 			const params = request.params as { staffId?: string };
-			if (!params.staffId) {
+			if (!params.staffId || !isValidUuid(params.staffId)) {
 				reply.code(400);
 				return {
 					error: "SettingsRouteValidationError",
-					message: "ID сотрудника обязателен.",
+					message: "Некорректный ID сотрудника.",
 				};
 			}
 
@@ -189,7 +193,18 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 				 */
 				reply.code(200);
 				return { ok: true };
-			} catch (_err: unknown) {
+			} catch (err: unknown) {
+				if (err instanceof Error && err.message === "Сотрудник не найден.") {
+					reply.code(404);
+					return {
+						error: "StaffNotFound",
+						message: err.message,
+					};
+				}
+				request.log.error(
+					{ err: safeLogError(err), organizationId: orgId, staffId: params.staffId },
+					"Не удалось обновить доступы сотрудника",
+				);
 				reply.code(500);
 				return {
 					error: "InternalError",
@@ -634,15 +649,29 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 	app.get("/api/settings/role-matrix", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		const [org] = await db
-			.select()
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, orgId))
-			.limit(1);
+		const [org] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, orgId))
+				.limit(1),
+		);
 		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
-		const roleMatrix = (flags.roleMatrixOverrides as Record<string, Record<string, string>> | null) ?? {};
-		return reply.send({ ok: true, matrix: roleMatrix });
+		const roleMatrix = (flags.roleMatrixOverrides as Record<string, Record<string, string | boolean>> | null) ?? {};
+		return { ok: true, matrix: roleMatrix };
 	});
+
+	const roleMatrixBodySchema = z
+		.object({
+			matrix: z.record(
+				staffRoleSchema,
+				z.record(
+					z.string().regex(/^[a-z0-9_.]+$/i, "Некорректный ключ права"),
+					z.union([z.enum(["none", "read", "own", "full"]), z.boolean()]),
+				),
+			),
+		})
+		.strict();
 
 	/**
 	 * PUT /api/settings/role-matrix — Сохранение кастомной матрицы прав ролей клиники.
@@ -663,33 +692,50 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const raw = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
-		const incomingMatrix = (raw.matrix && typeof raw.matrix === "object" ? raw.matrix : raw) as Record<string, Record<string, string>>;
+		const parsedMatrix = roleMatrixBodySchema.safeParse(request.body);
+		if (!parsedMatrix.success) {
+			reply.code(400);
+			return {
+				error: "SettingsValidationError",
+				message:
+					parsedMatrix.error.issues[0]?.message ||
+					"Некорректная структура матрицы прав ролей.",
+			};
+		}
 
-		const [org] = await db
-			.select()
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, orgId))
-			.limit(1);
-		if (!org) {
+		const updatedOverrides = parsedMatrix.data.matrix;
+
+		const updated = await withTenantCtx(orgId, async (tx) => {
+			const [org] = await tx
+				.select()
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, orgId))
+				.for("update")
+				.limit(1);
+			if (!org) {
+				return false;
+			}
+			const existingFlags = (org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+			await tx
+				.update(schema.organizations)
+				.set({
+					workspaceFeatureFlags: {
+						...existingFlags,
+						roleMatrixOverrides: updatedOverrides,
+					},
+					updatedAt: new Date(),
+				})
+				.where(eq(schema.organizations.id, orgId));
+			return true;
+		});
+
+		if (!updated) {
 			reply.code(404);
 			return { error: "OrganizationNotFound", message: "Организация не найдена" };
 		}
-		const existingFlags = (org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
-		const updatedOverrides = incomingMatrix;
-		await db
-			.update(schema.organizations)
-			.set({
-				workspaceFeatureFlags: {
-					...existingFlags,
-					roleMatrixOverrides: updatedOverrides,
-				},
-				updatedAt: new Date(),
-			})
-			.where(eq(schema.organizations.id, orgId));
 
 		invalidateRoleMatrixCache(orgId);
 
-		return reply.send({ ok: true, matrix: updatedOverrides });
+		return { ok: true, matrix: updatedOverrides };
 	});
 }

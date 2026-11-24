@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { registerOrthodonticsRoutes } from "../../routes/orthodontics/index.js";
 import { linkOrthoServiceToBillingSafely } from "../../routes/orthodontics/orthoBillingService.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -18,9 +22,20 @@ const ORG_ID = fixtureUuid(NAMESPACE, 1);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 2);
 const OTHER_ORG_ID = fixtureUuid(NAMESPACE, 3);
 const OTHER_PATIENT_ID = fixtureUuid(NAMESPACE, 4);
+const DOCTOR_ID = fixtureUuid(NAMESPACE, 5);
+const OTHER_DOCTOR_ID = fixtureUuid(NAMESPACE, 6);
+const MARKETER_ID = fixtureUuid(NAMESPACE, 7);
 
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
-const OTHER_ORG_HEADERS = { "x-organization-id": OTHER_ORG_ID };
+let ORG_HEADERS: Record<string, string> = {};
+let OTHER_ORG_HEADERS: Record<string, string> = {};
+let MARKETER_HEADERS: Record<string, string> = {};
+
+function postHeaders(base: Record<string, string> = ORG_HEADERS, idemKey = randomUUID()): Record<string, string> {
+	return {
+		...base,
+		"idempotency-key": idemKey,
+	};
+}
 
 describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () => {
 	let app: FastifyInstance;
@@ -31,7 +46,16 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
+		const secret = authTokenSecret();
+		const tokenDoctor = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, secret, 3600);
+		const tokenOtherDoctor = signToken({ organizationId: OTHER_ORG_ID, userId: OTHER_DOCTOR_ID, role: "doctor" }, secret, 3600);
+		const tokenMarketer = signToken({ organizationId: ORG_ID, userId: MARKETER_ID, role: "marketer" }, secret, 3600);
+		ORG_HEADERS = { "x-dente-clinic-token": tokenDoctor, "x-dente-staff-token": tokenDoctor };
+		OTHER_ORG_HEADERS = { "x-dente-clinic-token": tokenOtherDoctor, "x-dente-staff-token": tokenOtherDoctor };
+		MARKETER_HEADERS = { "x-dente-clinic-token": tokenMarketer, "x-dente-staff-token": tokenMarketer };
+
 		app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await registerOrthodonticsRoutes(app);
 
 		try {
@@ -98,7 +122,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/aligners/issue-set`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				alignerCount: 2,
 				wearDaysPerAligner: 14,
@@ -134,7 +158,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				material: "CuNiTi",
 				section: ".016",
@@ -156,7 +180,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const plateRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				material: "niti", // DEF-ORTHO-11: lowercase normalisation
 				section: ".014",
@@ -174,7 +198,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const upperRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				material: "CuNiTi",
 				section: ".018",
@@ -189,7 +213,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const lowerRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				material: "SS",
 				section: ".019x.025",
@@ -213,7 +237,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/ligatures-activate`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				powerChain: true,
 				powerChainSpan: "13-23",
@@ -233,7 +257,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/stages/advance`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				nextStage: 2,
 				stageTitle: "Рабочий этап: юстировка и закрытие промежутков",
@@ -264,7 +288,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const postRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/aligners/issue-set`,
-			headers: OTHER_ORG_HEADERS,
+			headers: postHeaders(OTHER_ORG_HEADERS),
 			payload: {
 				alignerCount: 2,
 				wearDaysPerAligner: 14,
@@ -279,7 +303,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/deduct-materials`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				action: "spring_activation",
 				quantity: 2,
@@ -302,7 +326,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/rebracket`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				toothNumber: 24,
 				bracketType: "Damon Q2 (паз .022)",
@@ -327,7 +351,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const res = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/ceph-analysis`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				patientName: "Смирнова Екатерина Васильевна",
 				imageUrl: "/uploads/imaging/ceph-test.jpg",
@@ -441,7 +465,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		});
 		assert.equal(invalidIdemRes.statusCode, 400);
 		const invalidBody = JSON.parse(invalidIdemRes.body);
-		assert.equal(invalidBody.error, "ValidationError");
+		assert.equal(invalidBody.error, "IdempotencyKeyRequired");
 
 		// 12b. archwire-change performs exactly-once execution and idempotent replay
 		const idemKey1 = fixtureUuid(NAMESPACE, 21);
@@ -462,9 +486,9 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(firstWireRes.statusCode, 200);
 		const firstWireBody = JSON.parse(firstWireRes.body);
 		assert.equal(firstWireBody.success, true);
-		assert.equal(firstWireRes.headers["idempotency-key"], idemKey1);
+		assert.equal(firstWireRes.headers["x-idempotency-key"], idemKey1);
 
-		// Replay with identical key
+		// Replay with identical key (must NOT return 409 self-collision!)
 		const secondWireRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
@@ -514,6 +538,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 			payload: {
 				powerChain: true,
 				powerChainSpan: "14-24",
+				note: "Закрытие тремы",
 			},
 		});
 		assert.equal(secondLigRes.statusCode, 200);
@@ -550,6 +575,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 			payload: {
 				alignerCount: 2,
 				wearDaysPerAligner: 14,
+				note: "Выдача кап №1-2",
 			},
 		});
 		assert.equal(secondAlignerRes.statusCode, 200);
@@ -584,6 +610,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 			},
 			payload: {
 				nextStage: 4,
+				stageTitle: "Активация дуг и закрытие промежутков",
 			},
 		});
 		assert.equal(secondStageRes.statusCode, 200);
@@ -669,7 +696,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const alignerRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/aligners/issue-set`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				alignerCount: 2,
 				wearDaysPerAligner: 14,
@@ -682,7 +709,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const ligatureRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/ligatures-activate`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				powerChain: true,
 				rogueProperty: 123,
@@ -694,7 +721,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const stageRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/stages/advance`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				nextStage: 3,
 				unrecognizedPayload: true,
@@ -706,7 +733,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const rebracketRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/rebracket`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				toothNumber: 15,
 				unexpectedField: "boom",
@@ -718,7 +745,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		const deductRes = await app.inject({
 			method: "POST",
 			url: `/api/orthodontics/${PATIENT_ID}/deduct-materials`,
-			headers: ORG_HEADERS,
+			headers: postHeaders(),
 			payload: {
 				action: "wire_change",
 				quantity: 1,
@@ -726,5 +753,32 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 			},
 		});
 		assert.equal(deductRes.statusCode, 400);
+	});
+
+	it("14. Clinical RBAC & UUID validation: marketer is blocked with 403 and non-UUID patientId returns 400", async (t) => {
+		if (!databaseAvailable) return t.skip("Database is unavailable");
+
+		const marketerGet = await app.inject({
+			method: "GET",
+			url: `/api/orthodontics/${PATIENT_ID}/progress`,
+			headers: MARKETER_HEADERS,
+		});
+		assert.equal(marketerGet.statusCode, 403);
+		assert.equal(JSON.parse(marketerGet.body).error, "PermissionDenied");
+
+		const marketerPost = await app.inject({
+			method: "POST",
+			url: `/api/orthodontics/${PATIENT_ID}/archwire-change`,
+			headers: postHeaders(MARKETER_HEADERS),
+			payload: { material: "NiTi", section: ".014", arch: "upper" },
+		});
+		assert.equal(marketerPost.statusCode, 403);
+
+		const badUuidRes = await app.inject({
+			method: "GET",
+			url: "/api/orthodontics/not-a-uuid/progress",
+			headers: ORG_HEADERS,
+		});
+		assert.equal(badUuidRes.statusCode, 400);
 	});
 });

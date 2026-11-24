@@ -1,28 +1,37 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import type { FastifyRequest } from "fastify";
-import { auditFromRequest } from "./clinicalAuditService.js";
+import { auditFromRequest, type ClinicalAuditInput } from "./clinicalAuditService.js";
 import { db } from "./db/client.js";
+
+function createMockRequest(headers: Record<string, string>, ip?: string): FastifyRequest {
+	return { headers, ...(ip !== undefined ? { ip } : {}) } as FastifyRequest;
+}
+
+type AuditCapturedRow = ClinicalAuditInput & {
+	userId: string | null;
+	patientId: string | null;
+	ipAddress: string | null;
+	userAgent: string | null;
+};
 
 describe("auditFromRequest", () => {
 	test("extracts ip and user-agent from fastify request when both headers are present", async (t) => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		let capturedValues: any;
+		let capturedValues: AuditCapturedRow | undefined;
 		t.mock.method(db, "insert", () => ({
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			values: (vals: any) => {
+			values: (vals: AuditCapturedRow) => {
 				capturedValues = vals;
 				return Promise.resolve();
 			},
 		}));
 
-		const mockRequest = {
-			headers: {
+		const mockRequest = createMockRequest(
+			{
 				"x-forwarded-for": "203.0.113.195, 70.41.3.18, 150.172.238.178",
 				"user-agent": "Mozilla/5.0",
 			},
-			ip: "127.0.0.1",
-		} as unknown as FastifyRequest;
+			"127.0.0.1",
+		);
 
 		const payload = {
 			organizationId: "org-1",
@@ -46,22 +55,20 @@ describe("auditFromRequest", () => {
 	});
 
 	test("uses request.ip when x-forwarded-for is missing", async (t) => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		let capturedValues: any;
+		let capturedValues: AuditCapturedRow | undefined;
 		t.mock.method(db, "insert", () => ({
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			values: (vals: any) => {
+			values: (vals: AuditCapturedRow) => {
 				capturedValues = vals;
 				return Promise.resolve();
 			},
 		}));
 
-		const mockRequest = {
-			headers: {
+		const mockRequest = createMockRequest(
+			{
 				"user-agent": "CustomApp/1.0",
 			},
-			ip: "10.0.0.5",
-		} as unknown as FastifyRequest;
+			"10.0.0.5",
+		);
 
 		const payload = {
 			organizationId: "org-2",
@@ -85,19 +92,15 @@ describe("auditFromRequest", () => {
 	});
 
 	test("handles missing ip and user-agent", async (t) => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		let capturedValues: any;
+		let capturedValues: AuditCapturedRow | undefined;
 		t.mock.method(db, "insert", () => ({
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			values: (vals: any) => {
+			values: (vals: AuditCapturedRow) => {
 				capturedValues = vals;
 				return Promise.resolve();
 			},
 		}));
 
-		const mockRequest = {
-			headers: {},
-		} as unknown as FastifyRequest;
+		const mockRequest = createMockRequest({});
 
 		const payload = {
 			organizationId: "org-3",
@@ -121,21 +124,17 @@ describe("auditFromRequest", () => {
 	});
 
 	test("handles single ip in x-forwarded-for header without spaces", async (t) => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		let capturedValues: any;
+		let capturedValues: AuditCapturedRow | undefined;
 		t.mock.method(db, "insert", () => ({
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			values: (vals: any) => {
+			values: (vals: AuditCapturedRow) => {
 				capturedValues = vals;
 				return Promise.resolve();
 			},
 		}));
 
-		const mockRequest = {
-			headers: {
-				"x-forwarded-for": "192.168.1.100",
-			},
-		} as unknown as FastifyRequest;
+		const mockRequest = createMockRequest({
+			"x-forwarded-for": "192.168.1.100",
+		});
 
 		const payload = {
 			organizationId: "org-4",

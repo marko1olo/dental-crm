@@ -16,7 +16,7 @@
 
 import { z } from "zod";
 import { parseCsvRows, normalizeCsvHeader } from "../imports/csvParser.js";
-import { normalizePhone, normalizePhoneDigits } from "@dental/shared";
+import { kopecksToRubles, normalizePhone, normalizePhoneDigits, rublesToKopecks } from "@dental/shared";
 
 export type CompetitorSource =
 	| "ident"
@@ -215,7 +215,7 @@ export function parseRublesAmount(value: unknown): number {
 	}
 
 	const parsed = Number.parseFloat(cleaned);
-	return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0;
+	return Number.isFinite(parsed) && parsed > 0 ? kopecksToRubles(rublesToKopecks(parsed)) : 0;
 }
 
 
@@ -552,7 +552,7 @@ export function importCompetitorPatientDb(
 	const validCandidatesCount = candidates.filter((c) => c.isPhoneValid).length;
 	const averageEstimateSumRub =
 		candidates.length > 0
-			? Math.round((totalEstimateVolumeRub / candidates.length) * 100) / 100
+			? kopecksToRubles(Math.round(rublesToKopecks(totalEstimateVolumeRub) / candidates.length))
 			: 0;
 
 	return {

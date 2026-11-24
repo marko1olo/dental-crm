@@ -40,6 +40,7 @@ export async function registerFiscalReceiptRoutes(
 	_opts?: Record<string, unknown>,
 ): Promise<void> {
 	const fiscalMutationOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			description:
 				"Fiscal mutation endpoint with mandatory Idempotency-Key and organizationId isolation",
@@ -57,6 +58,7 @@ export async function registerFiscalReceiptRoutes(
 	};
 
 	const fiscalTelemetryOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			description:
 				"Fiscal telemetry and query endpoint with organizationId isolation",
@@ -72,13 +74,15 @@ export async function registerFiscalReceiptRoutes(
 		},
 	};
 
+	const fiscalReadOptions = { config: { tenantTxSelfManaged: true } };
+
 	// SBP status query & manual confirmation
-	app.get("/api/fiscal/sbp-status", handleSbpStatus);
+	app.get("/api/fiscal/sbp-status", fiscalReadOptions, handleSbpStatus);
 	app.post("/api/fiscal/sbp-status", fiscalTelemetryOptions, async (request, reply) => {
 		// Telemetry & query: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleSbpStatus(request, reply);
 	});
-	app.get("/api/payments/status", handleSbpStatus);
+	app.get("/api/payments/status", fiscalReadOptions, handleSbpStatus);
 	app.post("/api/payments/status", fiscalTelemetryOptions, async (request, reply) => {
 		// Telemetry & query: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleSbpStatus(request, reply);
@@ -91,7 +95,7 @@ export async function registerFiscalReceiptRoutes(
 	});
 
 	// Hardware telemetry & connection ping
-	app.get("/api/fiscal/devices/status", handleKktDeviceStatus);
+	app.get("/api/fiscal/devices/status", fiscalReadOptions, handleKktDeviceStatus);
 	app.post("/api/fiscal/devices/test-connection", fiscalTelemetryOptions, async (request, reply) => {
 		// Hardware ping: organizationId tenant isolation in withTenantCtx db.transaction
 		return handleKktTestConnection(request, reply);
@@ -140,7 +144,7 @@ export async function registerFiscalReceiptRoutes(
 	});
 
 	// Offline buffer queue management & retries
-	app.get("/api/fiscal/queue", handleFiscalQueueList);
+	app.get("/api/fiscal/queue", fiscalReadOptions, handleFiscalQueueList);
 	app.post("/api/fiscal/queue/:id/retry", fiscalMutationOptions, async (request, reply) => {
 		// Queue retry: Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleFiscalQueueRetry(request, reply);

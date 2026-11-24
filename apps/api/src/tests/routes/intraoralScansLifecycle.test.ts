@@ -379,4 +379,20 @@ describe("Universal Intraoral 3D Scans Lifecycle & Ingestion Invariants", () => 
 		const downloadBody = JSON.parse(downloadRes.body);
 		assert.equal(downloadBody.error, "PermissionDenied");
 	});
+
+	it("9. Path Traversal Defense: folderPath outside allowed scanner roots is rejected with 403", async () => {
+		const traversalRes = await app.inject({
+			method: "POST",
+			url: "/api/v1/scans/session",
+			headers: doctorHeaders,
+			payload: {
+				patientId,
+				vendor: "generic",
+				folderPath: "../../../etc/passwd",
+			},
+		});
+		assert.equal(traversalRes.statusCode, 403, `Path traversal must be rejected with 403, got ${traversalRes.statusCode}`);
+		const body = JSON.parse(traversalRes.body);
+		assert.equal(body.error, "PathTraversalDetected");
+	});
 });

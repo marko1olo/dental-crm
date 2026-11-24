@@ -25,25 +25,29 @@ export {
 	type RecallInviteResponse,
 };
 
-export const listQuerySchema = z.object({
-	minMonths: z.coerce.number().int().min(0).max(60).optional(),
-	minDays: z.coerce.number().int().min(0).max(1800).optional(),
-	limit: z.coerce.number().int().min(1).max(1000).optional(),
-	band: recallBandSchema.optional(),
-	filterBand: recallBandSchema.optional(),
-	includeNeverArrived: z
-		.enum(["true", "false"])
-		.optional()
-		.transform((value) => (value === undefined ? undefined : value === "true")),
-});
+export const listQuerySchema = z
+	.object({
+		minMonths: z.coerce.number().int().min(0).max(60).optional(),
+		minDays: z.coerce.number().int().min(0).max(1800).optional(),
+		limit: z.coerce.number().int().min(1).max(1000).optional(),
+		band: recallBandSchema.optional(),
+		filterBand: recallBandSchema.optional(),
+		includeNeverArrived: z
+			.enum(["true", "false"])
+			.optional()
+			.transform((value) => (value === undefined ? undefined : value === "true")),
+	})
+	.strict();
 
 export const inviteSchema = recallInviteSchema;
 
-export const statusUpdateSchema = z.object({
-	status: z.string().min(1).max(50),
-	channel: z.string().max(30).optional(),
-	note: z.string().max(1000).optional(),
-});
+export const statusUpdateSchema = z
+	.object({
+		status: z.string().min(1).max(50),
+		channel: z.string().max(30).optional(),
+		note: z.string().max(1000).optional(),
+	})
+	.strict();
 
 export function badRequest(reply: FastifyReply, message: string) {
 	return replyBadRequest(reply, "RecallValidationError", message);

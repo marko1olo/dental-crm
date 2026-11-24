@@ -1,8 +1,13 @@
-import { kopecksToRubles, resolveInvoiceTotalAmountRub, rublesToKopecks } from "@dental/shared";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+	kopecksToRubles,
+	multiplyKopecksFractional,
+	resolveInvoiceTotalAmountRub,
+	rublesToKopecks,
+} from "@dental/shared";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices, payments } from "../../../db/schema/billing.js";
 import { patients } from "../../../db/schema/patients.js";
 import { invoiceListQuerySchema } from "../types.js";
@@ -30,94 +35,130 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			: eq(patientInvoices.status, status)
 		: sql`TRUE`;
 
-	const invoiceRows = await db
-		.select({
-			id: patientInvoices.id,
-			organizationId: patientInvoices.organizationId,
-			patientId: patientInvoices.patientId,
-			visitId: patientInvoices.visitId,
-			totalAmountRub: patientInvoices.totalAmountRub,
-			totalRub: patientInvoices.totalRub,
-			status: patientInvoices.status,
-			issuedAt: patientInvoices.issuedAt,
-			paidAt: patientInvoices.paidAt,
-			createdAt: patientInvoices.createdAt,
-			patientName: patients.fullName,
-			patientPhone: patients.phone,
-		})
-		.from(patientInvoices)
-		.leftJoin(patients, eq(patientInvoices.patientId, patients.id))
-		.where(
-			and(
-				eq(patientInvoices.organizationId, orgId),
-				patientId ? eq(patientInvoices.patientId, patientId) : sql`TRUE`,
-				statusCondition,
-			),
-		)
-		.orderBy(desc(patientInvoices.createdAt))
-		.limit(limit);
-
-	const invoiceIds = invoiceRows.map((inv) => inv.id);
-	const rawItems = invoiceIds.length > 0
-		? await db
-			.select()
-			.from(invoiceItems)
-			.where(
-				and(
-					eq(invoiceItems.organizationId, orgId),
-					inArray(invoiceItems.invoiceId, invoiceIds),
-				),
-			)
-			.orderBy(desc(invoiceItems.createdAt))
-		: [];
-
-	const paymentSums = invoiceIds.length > 0
-		? await db
+	const { invoiceRows, rawItems, paidRows } = await withTenantCtx(orgId, async (tx) => {
+		const invRows = await tx
 			.select({
-				invoiceId: payments.documentId,
-				paidKopecks: sql<string>`coalesce(sum(${payments.amountKopecks}), 0)`.as("paid_kopecks"),
+				id: patientInvoices.id,
+				organizationId: patientInvoices.organizationId,
+				patientId: patientInvoices.patientId,
+				visitId: patientInvoices.visitId,
+				totalAmountRub: patientInvoices.totalAmountRub,
+				totalRub: patientInvoices.totalRub,
+				totalPriceKopecks: patientInvoices.totalPriceKopecks,
+				status: patientInvoices.status,
+				issuedAt: patientInvoices.issuedAt,
+				paidAt: patientInvoices.paidAt,
+				createdAt: patientInvoices.createdAt,
+				patientName: patients.fullName,
+				patientPhone: patients.phone,
 			})
-			.from(payments)
+			.from(patientInvoices)
+			.leftJoin(patients, eq(patientInvoices.patientId, patients.id))
 			.where(
 				and(
-					eq(payments.organizationId, orgId),
-					inArray(payments.documentId, invoiceIds),
-					eq(payments.status, "paid"),
+					eq(patientInvoices.organizationId, orgId),
+					patientId ? eq(patientInvoices.patientId, patientId) : sql`TRUE`,
+					statusCondition,
 				),
 			)
-			.groupBy(payments.documentId)
-		: [];
+			.orderBy(desc(patientInvoices.createdAt))
+			.limit(limit);
 
-	const paidKopecksMap = new Map<string, number>();
-	for (const p of paymentSums) {
-		if (p.invoiceId) {
-			paidKopecksMap.set(p.invoiceId, Number(p.paidKopecks) || 0);
-		}
-	}
+		const invoiceIds = invRows.map((inv) => inv.id);
+		const visitIds = Array.from(
+			new Set(invRows.map((inv) => inv.visitId).filter((v): v is string => Boolean(v))),
+		);
 
-	const items = rawItems.map((item) => ({
-		id: item.id,
-		serviceId: item.priceListItemId || item.serviceCode || undefined,
-		serviceCode: item.serviceCode || undefined,
-		code: item.serviceCode || undefined,
-		toothCode: item.toothCode,
-		toothNumber: item.toothCode ? Number(item.toothCode) || undefined : undefined,
-		title: item.name,
-		name: item.name,
-		quantity: Number(item.quantity) || 1,
-		unitPriceRub: kopecksToRubles(item.unitPriceKopecks),
-		priceRub: kopecksToRubles(item.totalPriceKopecks),
-		discountRub: 0,
-		totalAmountRub: kopecksToRubles(item.totalPriceKopecks),
-	}));
+		const invItems =
+			invoiceIds.length > 0
+				? await tx
+						.select()
+						.from(invoiceItems)
+						.where(
+							and(
+								eq(invoiceItems.organizationId, orgId),
+								inArray(invoiceItems.invoiceId, invoiceIds),
+							),
+						)
+						.orderBy(desc(invoiceItems.createdAt))
+				: [];
+
+		const invPayments =
+			invoiceIds.length > 0
+				? await tx
+						.select({
+							id: payments.id,
+							documentId: payments.documentId,
+							visitId: payments.visitId,
+							patientId: payments.patientId,
+							amountKopecks: payments.amountKopecks,
+							amountRub: payments.amountRub,
+						})
+						.from(payments)
+						.where(
+							and(
+								eq(payments.organizationId, orgId),
+								eq(payments.status, "paid"),
+								visitIds.length > 0
+									? or(
+											inArray(payments.documentId, invoiceIds),
+											inArray(payments.visitId, visitIds),
+										)
+									: inArray(payments.documentId, invoiceIds),
+							),
+						)
+				: [];
+
+		return { invoiceRows: invRows, rawItems: invItems, paidRows: invPayments };
+	});
+
+	const projectInvoiceItem = (item: typeof rawItems[number]) => {
+		const qty = Number(item.quantity) || 1;
+		const grossKopecks = multiplyKopecksFractional(Number(item.unitPriceKopecks), qty);
+		const discountKopecks = Math.max(0, grossKopecks - Number(item.totalPriceKopecks));
+		return {
+			id: item.id,
+			serviceId: item.priceListItemId || item.serviceCode || undefined,
+			serviceCode: item.serviceCode || undefined,
+			code: item.serviceCode || undefined,
+			toothCode: item.toothCode,
+			toothNumber: item.toothCode ? Number(item.toothCode) || undefined : undefined,
+			title: item.name,
+			name: item.name,
+			quantity: qty,
+			unitPriceRub: kopecksToRubles(item.unitPriceKopecks),
+			priceRub: kopecksToRubles(item.totalPriceKopecks),
+			discountRub: kopecksToRubles(discountKopecks),
+			totalAmountRub: kopecksToRubles(item.totalPriceKopecks),
+		};
+	};
+
+	const items = rawItems.map(projectInvoiceItem);
 
 	const invoices = invoiceRows.map((inv) => {
-		const totalAmount = resolveInvoiceTotalAmountRub({ totalAmountRub: inv.totalAmountRub, totalRub: inv.totalRub });
-		const totalAmountKopecks = rublesToKopecks(totalAmount);
-		const recordedPaidKopecks = paidKopecksMap.get(inv.id);
-		const paidAmountKopecks = recordedPaidKopecks !== undefined
-			? recordedPaidKopecks
-			: (inv.status === "paid" ? totalAmountKopecks : 0);
+		const totalAmountKopecks =
+			inv.totalPriceKopecks !== null && inv.totalPriceKopecks !== undefined && inv.totalPriceKopecks > 0n
+				? Number(inv.totalPriceKopecks)
+				: rublesToKopecks(
+						resolveInvoiceTotalAmountRub({ totalAmountRub: inv.totalAmountRub, totalRub: inv.totalRub }),
+					);
+		const matchingPayments = paidRows.filter(
+			(p) =>
+				p.documentId === inv.id ||
+				(inv.visitId !== null && p.visitId === inv.visitId && p.patientId === inv.patientId),
+		);
+		const paidAmountKopecks =
+			matchingPayments.length > 0
+				? matchingPayments.reduce((sum, p) => {
+						const rowKop =
+							p.amountKopecks !== null && p.amountKopecks !== undefined && p.amountKopecks > 0n
+								? Number(p.amountKopecks)
+								: rublesToKopecks(Number(p.amountRub ?? 0));
+						return sum + rowKop;
+					}, 0)
+				: inv.status === "paid"
+					? totalAmountKopecks
+					: 0;
 		const paidAmountRub = kopecksToRubles(paidAmountKopecks);
 		const remainingAmountKopecks = Math.max(0, totalAmountKopecks - paidAmountKopecks);
 		const remainingAmountRub = kopecksToRubles(remainingAmountKopecks);
@@ -126,21 +167,7 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 
 		const matchingItems = rawItems
 			.filter((it) => it.invoiceId === inv.id)
-			.map((it) => ({
-				id: it.id,
-				serviceId: it.priceListItemId || it.serviceCode || undefined,
-				serviceCode: it.serviceCode || undefined,
-				code: it.serviceCode || undefined,
-				toothCode: it.toothCode,
-				toothNumber: it.toothCode ? Number(it.toothCode) || undefined : undefined,
-				title: it.name,
-				name: it.name,
-				quantity: Number(it.quantity) || 1,
-				unitPriceRub: kopecksToRubles(it.unitPriceKopecks),
-				priceRub: kopecksToRubles(it.totalPriceKopecks),
-				discountRub: 0,
-				totalAmountRub: kopecksToRubles(it.totalPriceKopecks),
-			}));
+			.map(projectInvoiceItem);
 
 		return {
 			id: inv.id,

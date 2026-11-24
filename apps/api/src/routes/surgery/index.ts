@@ -18,28 +18,38 @@ import {
 	rublesToKopecks,
 	kopecksToRubles,
 	parseKopecks,
-	computePayloadHash,
 } from "@dental/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, notInArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import {
 	patientInvoices,
 	patients,
+	serviceCatalogItems,
 	toothStateHistory,
 	toothStates,
 	treatmentItems,
 	visits,
 } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { TreatmentConsumablesService, type UnifiedStockDeductionResult } from "../../services/treatmentConsumablesService.js";
+
+function resolveInvoiceTotalKopecks(invoice: {
+	totalPriceKopecks?: bigint | null;
+	totalAmountRub?: string | number | null;
+	totalRub?: string | number | null;
+}): bigint {
+	const legacyKopecks = BigInt(parseKopecks(invoice.totalAmountRub ?? invoice.totalRub ?? 0));
+	if (typeof invoice.totalPriceKopecks === "bigint" && (invoice.totalPriceKopecks > 0n || legacyKopecks === 0n)) {
+		return invoice.totalPriceKopecks;
+	}
+	return legacyKopecks;
+}
 
 export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -50,6 +60,18 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 	app.get("/api/surgery/protocols/templates", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.surgery.read",
+				role: staffRole,
+				message: `Отказ в доступе к шаблонам хирургических протоколов: ${evalAccess.reason}`,
+			});
+		}
 
 		return reply.send({
 			success: true,
@@ -75,50 +97,8 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				error: "PermissionDenied",
 				permission: "clinical.surgery.write",
 				role: staffRole,
-				message: `Отказ в записи протокола операции (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в записи протокола операции: ${evalAccess.reason}`,
 			});
-		}
-
-		// Дедупликация и проверка Idempotency-Key (Мандаты 8d, 8bo, 8zp)
-		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotence-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-				: undefined);
-
-		const idempotencyKey =
-			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-				? rawIdempotencyKey.trim()
-				: null;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const existingRecord = await withTenantCtx(orgId, async (tx) => {
-				const [rec] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-				return rec ?? null;
-			});
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция хирургического протокола с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const parsed = createSurgicalProtocolSchema.safeParse(request.body);
@@ -130,21 +110,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			});
 		}
 		const input = parsed.data;
-
-		// Автономный фоллбек пациента (Мандат 8e: врач никогда не блокируется из-за нестыковки id)
-		let targetPatientId = input.patientId;
-		const [patient] = await db
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
-			.limit(1);
-
-		if (!patient) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в текущей клинике.",
-			});
-		}
+		const targetPatientId = input.patientId;
 
 		const SCENARIO_NORM_ALIASES: Record<string, string> = {
 			"scen-extraction": "surgery_extraction_simple",
@@ -171,7 +137,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		}
 		if (Array.isArray(rawBody.teeth)) {
 			for (const t of rawBody.teeth) {
-				if (typeof t === "number" && !targetTeeth.includes(t)) {
+				if (typeof t === "number" && Number.isInteger(t) && !targetTeeth.includes(t)) {
 					targetTeeth.push(t);
 				}
 			}
@@ -188,7 +154,18 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			}
 		}
 
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
+				.for("update")
+				.limit(1);
+
+			if (!patient) {
+				return { patientNotFound: true as const };
+			}
+
 			let visitUpdated = false;
 			let targetVisitId = input.visitId ?? null;
 
@@ -302,7 +279,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			const candidateServices: Array<{
 				code: string;
 				nameRu: string;
-				priceRub: number;
+				priceKopecks: bigint;
 				quantity: number;
 				toothNumber?: number | undefined;
 				isPrimary?: boolean | undefined;
@@ -317,15 +294,14 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 			if (incomingServices && incomingServices.length > 0) {
 				for (const s of incomingServices) {
+					const unitPriceKopecks =
+						s.priceKopecks != null
+							? BigInt(s.priceKopecks)
+							: BigInt(rublesToKopecks(Number(s.priceRub ?? s.suggestedPriceRub ?? 0)));
 					candidateServices.push({
 						code: s.code,
 						nameRu: s.nameRu ?? s.name ?? norm?.title ?? "Хирургическая манипуляция",
-						priceRub:
-							s.priceRub ??
-							s.suggestedPriceRub ??
-							(s.priceKopecks != null
-								? kopecksToRubles(s.priceKopecks)
-								: 0),
+						priceKopecks: unitPriceKopecks,
 						quantity: s.quantity && s.quantity > 0 ? s.quantity : 1,
 						toothNumber: s.toothNumber ?? undefined,
 						isPrimary: s.isPrimary,
@@ -341,29 +317,52 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 				if (fallbackCatalog.length > 0) {
 					for (const s of fallbackCatalog) {
+						const unitPriceKopecks =
+							s.priceKopecks != null
+								? BigInt(s.priceKopecks)
+								: BigInt(rublesToKopecks(Number(s.priceRub ?? s.suggestedPriceRub ?? 0)));
 						candidateServices.push({
 							code: s.code,
 							nameRu: s.nameRu ?? s.name ?? norm?.title ?? "Хирургическая манипуляция",
-							priceRub:
-								s.priceRub ??
-								s.suggestedPriceRub ??
-								(s.priceKopecks != null
-									? kopecksToRubles(s.priceKopecks)
-									: 0),
+							priceKopecks: unitPriceKopecks,
 							quantity: s.quantity && s.quantity > 0 ? s.quantity : 1,
 							toothNumber: s.toothNumber ?? undefined,
 							isPrimary: s.isPrimary,
 						});
 					}
 				} else {
-					const defaultPriceRub =
-						norm?.order804nServices?.[0]?.priceRub ??
-						norm?.catalogServices?.[0]?.priceRub ??
-						3500;
+					const targetCode = norm?.code804n ?? "A16.07.001";
+					const [catalogRow] = await tx
+						.select({
+							priceKopecks: serviceCatalogItems.priceKopecks,
+							priceRub: serviceCatalogItems.priceRub,
+						})
+						.from(serviceCatalogItems)
+						.where(
+							and(
+								eq(serviceCatalogItems.organizationId, orgId),
+								eq(serviceCatalogItems.code, targetCode),
+								eq(serviceCatalogItems.isActive, true),
+							),
+						)
+						.limit(1);
+					const catalogLegacyKopecks = BigInt(rublesToKopecks(Number(catalogRow?.priceRub ?? 0)));
+					const resolvedCatalogKopecks =
+						catalogRow && typeof catalogRow.priceKopecks === "bigint" && (catalogRow.priceKopecks > 0n || catalogLegacyKopecks === 0n)
+							? catalogRow.priceKopecks
+							: catalogRow
+								? catalogLegacyKopecks
+								: BigInt(
+										rublesToKopecks(
+											norm?.order804nServices?.[0]?.priceRub ??
+												norm?.catalogServices?.[0]?.priceRub ??
+												3500,
+										),
+									);
 					candidateServices.push({
-						code: norm?.code804n ?? "A16.07.001",
+						code: targetCode,
 						nameRu: norm?.title ?? "Амбулаторная хирургическая операция",
-						priceRub: defaultPriceRub,
+						priceKopecks: resolvedCatalogKopecks,
 						quantity: 1,
 						isPrimary: true,
 					});
@@ -387,7 +386,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			for (let idx = 0; idx < candidateServices.length; idx++) {
 				const srv = candidateServices[idx];
 				if (!srv) continue;
-				const srvUnitPriceKopecks = BigInt(rublesToKopecks(srv.priceRub));
+				const srvUnitPriceKopecks = srv.priceKopecks;
 				const srvUnitPriceRub = kopecksToRubles(srvUnitPriceKopecks);
 				const isPrimaryOp = srv.isPrimary ?? idx === 0;
 
@@ -438,11 +437,19 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				const [existingInvoice] = await tx
 					.select()
 					.from(patientInvoices)
-					.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.visitId, targetVisitId)))
+					.where(
+						and(
+							eq(patientInvoices.organizationId, orgId),
+							eq(patientInvoices.visitId, targetVisitId),
+							eq(patientInvoices.patientId, targetPatientId),
+							notInArray(patientInvoices.status, ["voided", "paid"]),
+						),
+					)
+					.for("update")
 					.limit(1);
 				if (existingInvoice) {
 					linkedInvoiceId = existingInvoice.id;
-					const currentTotalKopecks = BigInt(parseKopecks(existingInvoice.totalAmountRub ?? existingInvoice.totalRub ?? 0));
+					const currentTotalKopecks = resolveInvoiceTotalKopecks(existingInvoice);
 					const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 					const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 					await tx
@@ -513,30 +520,15 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				protocol: protocolResult,
 			};
 
-			// Запись в таблицу idempotencyKeys для неделимого кэширования внутри единой ACID-транзакции (Мандат 8bo)
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 201,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 201,
-						},
-					});
-			}
-
-			return { protocol: protocolResult, responsePayload };
+			return { patientNotFound: false as const, protocol: protocolResult, responsePayload };
 		});
+
+		if (result.patientNotFound) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в текущей клинике.",
+			});
+		}
 
 		await auditMedicalAccessFromRequest(request, {
 			organizationId: orgId,
@@ -568,49 +560,18 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
 
-		// Дедупликация и проверка Idempotency-Key (Мандаты 8bo, 8zp)
-		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotence-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-				: undefined);
-
-		const idempotencyKey =
-			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-				? rawIdempotencyKey.trim()
-				: null;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const existingRecord = await withTenantCtx(orgId, async (tx) => {
-				const [rec] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-				return rec ?? null;
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.surgery.write",
+				role: staffRole,
+				message: `Отказ в списании хирургических материалов: ${evalAccess.reason}`,
 			});
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция списания материалов с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
-		const identity = getRequestIdentity(request);
 		const parsed = surgicalQuickDeductSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -621,7 +582,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		}
 		const input = parsed.data;
 
-		const responsePayload = await db.transaction(async (tx) => {
+		const responsePayload = await withTenantCtx(orgId, async (tx) => {
 			let res: UnifiedStockDeductionResult;
 			if (input.bundleType === "anesthesia_carpule") {
 				// Списание карпул анестетиков медсестрой (Класс Б, СанПиН 3.3686-21, без комиссий)
@@ -653,7 +614,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				});
 			}
 
-			const payload = {
+			return {
 				bundleType: input.bundleType,
 				success: res.success,
 				isOverdraft: res.isOverdraft,
@@ -662,29 +623,6 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				deductedItems: res.deductedItems,
 				warnings: res.warnings,
 			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: payload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: payload,
-							responseCode: 200,
-						},
-					});
-			}
-
-			return payload;
 		});
 
 		return reply.send(responsePayload);
@@ -699,7 +637,19 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const items = await inventoryQuery.getInventoryItems(orgId);
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.surgery.read",
+				role: staffRole,
+				message: `Отказ в проверке складского статуса операции: ${evalAccess.reason}`,
+			});
+		}
+
+		const items = await withTenantCtx(orgId, async () => inventoryQuery.getInventoryItems(orgId));
 
 		const overdraftItems = items
 			.filter((i) => Number(i.currentQty ?? i.stockQuantity ?? 0) <= 0)

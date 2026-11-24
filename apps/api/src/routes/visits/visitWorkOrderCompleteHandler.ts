@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { generateUuidV7 } from "@dental/shared";
+import { isValidUuid } from "@dental/shared";
+import { z } from "zod";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { visits } from "../../db/schema.js";
@@ -9,10 +10,21 @@ import {
 	VisitWorkOrderError,
 	VisitWorkOrderService,
 } from "../../services/clinical/VisitWorkOrderService.js";
+import { extractIdempotencyKey } from "../../utils/httpIdempotency.js";
 import { executeVisitCompletionSideEffects } from "./visitCompletionEffects.js";
 
 const UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const completeWorkOrderBodySchema = z
+	.object({
+		status: z
+			.enum(["signed", "draft", "voided", "completed", "in_progress"])
+			.optional(),
+		idempotencyKey: z.string().optional(),
+		clientMutationId: z.string().optional(),
+	})
+	.strict();
 
 export async function handleCompleteVisitWorkOrder(
 	request: FastifyRequest,
@@ -34,71 +46,83 @@ export async function handleCompleteVisitWorkOrder(
 		};
 	}
 
-	const rawIdempotencyKey =
-		(request.headers["idempotency-key"] as string | undefined) ??
-		(request.headers["x-idempotency-key"] as string | undefined) ??
-		(request.body && typeof request.body === "object"
-			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined)
-			: undefined);
+	const idempotencyKey = extractIdempotencyKey(request);
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			reply.code(400);
+			return {
+				error: "InvalidIdempotencyKey",
+				message:
+					"Заголовок Idempotency-Key / X-Idempotency-Key должен содержать валидный UUID (рекомендуется UUIDv7).",
+			};
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
-	const idempotencyKey =
-		typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-			? rawIdempotencyKey.trim()
-			: generateUuidV7();
-
-	reply.header("Idempotency-Key", idempotencyKey);
-
-	const body =
-		(request.body as
-			| { status?: "signed" | "draft" | "voided" | "completed" | "in_progress" }
-			| undefined) ?? {};
+	const parsedBody = completeWorkOrderBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		reply.code(400);
+		return {
+			error: "ValidationError",
+			message: "Некорректные параметры завершения наряда приёма.",
+			issues: parsedBody.error.issues,
+		};
+	}
+	const body = parsedBody.data;
 
 	try {
 		const identity = getRequestIdentity(request);
-		const result = await withTenantCtx(context.organizationId, async (tx) => {
-			const workOrderResult = await VisitWorkOrderService.completeVisitWorkOrder({
-				organizationId: context.organizationId,
-				visitId,
-				actorUserId: identity.userId ?? null,
-				status: body.status ?? "signed",
-				tx,
+		const { workOrderResult, completedVisit } = await withTenantCtx(
+			context.organizationId,
+			async (tx) => {
+				const completedWorkOrder =
+					await VisitWorkOrderService.completeVisitWorkOrder({
+						organizationId: context.organizationId,
+						visitId,
+						actorUserId: identity.userId ?? null,
+						status: body.status ?? "signed",
+						tx,
+					});
+
+				const [visitRow] = await tx
+					.select({
+						id: visits.id,
+						organizationId: visits.organizationId,
+						patientId: visits.patientId,
+						appointmentId: visits.appointmentId,
+						diagnosis: visits.diagnosis,
+						treatmentPlan: visits.treatmentPlan,
+						complaint: visits.complaint,
+						objectiveStatus: visits.objectiveStatus,
+						doctorSummary: visits.doctorSummary,
+					})
+					.from(visits)
+					.where(
+						and(
+							eq(visits.id, visitId),
+							eq(visits.organizationId, context.organizationId),
+						),
+					)
+					.limit(1);
+
+				return {
+					workOrderResult: completedWorkOrder,
+					completedVisit: visitRow ?? null,
+				};
+			},
+		);
+
+		if (completedVisit) {
+			await executeVisitCompletionSideEffects({
+				orgId: context.organizationId,
+				visit: completedVisit,
+				doctorId: identity.userId ?? null,
+				log: request.log,
+				skipBomDeduction: true,
 			});
+		}
 
-			const [completedVisit] = await tx
-				.select({
-					id: visits.id,
-					organizationId: visits.organizationId,
-					patientId: visits.patientId,
-					appointmentId: visits.appointmentId,
-					diagnosis: visits.diagnosis,
-					treatmentPlan: visits.treatmentPlan,
-					complaint: visits.complaint,
-					objectiveStatus: visits.objectiveStatus,
-					doctorSummary: visits.doctorSummary,
-				})
-				.from(visits)
-				.where(
-					and(
-						eq(visits.id, visitId),
-						eq(visits.organizationId, context.organizationId),
-					),
-				)
-				.limit(1);
-
-			if (completedVisit) {
-				await executeVisitCompletionSideEffects({
-					orgId: context.organizationId,
-					visit: completedVisit,
-					doctorId: identity.userId ?? null,
-					log: request.log,
-					skipBomDeduction: true,
-				});
-			}
-
-			return workOrderResult;
-		});
-
-		return result;
+		return workOrderResult;
 	} catch (error) {
 		if (error instanceof VisitWorkOrderError) {
 			reply.code(error.statusCode);

@@ -19,7 +19,7 @@ import { registerStudiesRoutes } from "./imaging/studiesRoutes.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { STAFF_TOKEN_HEADER } from "../security/identity.js";
-import { db } from "../db/client.js";
+import { db, dbRaw } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
 process.env.NODE_ENV = "test";
@@ -259,28 +259,30 @@ test("GET /api/imaging/studies: фильтрация по modality, bindingStatu
 	const app = Fastify();
 	await registerStudiesRoutes(app);
 
-	t.mock.method(db, "select", () => {
-		const chain: any = {
-			from: () => chain,
-			leftJoin: () => chain,
-			innerJoin: () => chain,
-			where: () => chain,
-			orderBy: () => chain,
-			limit: () => chain,
-			offset: () => chain,
-			then: (
-				onfulfilled?: ((val: unknown) => unknown) | null,
-				onrejected?: ((err: unknown) => unknown) | null,
-			) =>
-				Promise.resolve([
-					{
-						study: mockStudyDbRow,
-						patientFullName: "Захаров Иван",
-					},
-				]).then(onfulfilled, onrejected),
-		};
-		return chain;
-	});
+	const selectChain: any = {
+		from: () => selectChain,
+		leftJoin: () => selectChain,
+		innerJoin: () => selectChain,
+		where: () => selectChain,
+		orderBy: () => selectChain,
+		limit: () => selectChain,
+		offset: () => selectChain,
+		then: (
+			onfulfilled?: ((val: unknown) => unknown) | null,
+			onrejected?: ((err: unknown) => unknown) | null,
+		) =>
+			Promise.resolve([
+				{
+					study: mockStudyDbRow,
+					patientFullName: "Захаров Иван",
+				},
+			]).then(onfulfilled, onrejected),
+	};
+
+	t.mock.method(db, "select", () => selectChain);
+	t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => unknown) =>
+		cb({ select: () => selectChain, execute: () => Promise.resolve([]) }),
+	);
 
 	const res = await app.inject({
 		method: "GET",
@@ -303,19 +305,30 @@ test("POST /api/imaging/studies/:id/bind-patient: ручная привязка 
 	await registerStudiesRoutes(app);
 
 	const selectChain: any = {
-		from: () => selectChain,
+		from: (src: unknown) => {
+			(selectChain as { _src?: unknown })._src = src;
+			return selectChain;
+		},
 		where: () => selectChain,
 		limit: () => selectChain,
 		then: (
 			onfulfilled?: ((val: unknown) => unknown) | null,
 			onrejected?: ((err: unknown) => unknown) | null,
-		) =>
-			Promise.resolve([
+		) => {
+			const src = (selectChain as { _src?: unknown })._src;
+			if (src === schema.organizations) {
+				return Promise.resolve([{ id: ORG_ID, name: "Тестовая клиника" }]).then(onfulfilled, onrejected);
+			}
+			if (src === schema.generatedDocuments) {
+				return Promise.resolve([]).then(onfulfilled, onrejected);
+			}
+			return Promise.resolve([
 				{
 					id: PATIENT_ID,
 					fullName: "Захаров Иван",
 				},
-			]).then(onfulfilled, onrejected),
+			]).then(onfulfilled, onrejected);
+		},
 	};
 
 	const updateChain: any = {
@@ -337,13 +350,22 @@ test("POST /api/imaging/studies/:id/bind-patient: ручная привязка 
 			]).then(onfulfilled, onrejected),
 	};
 
+	const insertChain: any = {
+		values: () => insertChain,
+		returning: () => Promise.resolve([{ id: STUDY_ID }]),
+		then: (onfulfilled?: ((val: unknown) => unknown) | null) => Promise.resolve([]).then(onfulfilled),
+	};
+
 	t.mock.method(db, "select", () => selectChain);
 	t.mock.method(db, "update", () => updateChain);
 	const txMock: any = {
 		select: () => selectChain,
 		update: () => updateChain,
+		insert: () => insertChain,
+		execute: () => Promise.resolve([]),
 	};
 	t.mock.method(db, "transaction", async (cb: (tx: unknown) => unknown) => cb(txMock));
+	t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => unknown) => cb(txMock));
 
 	const res = await app.inject({
 		method: "POST",
@@ -389,8 +411,10 @@ test("POST /api/imaging/studies/:id/unbind-patient: отвязка исслед�
 	const unbindTxMock: any = {
 		update: () => unbindChain,
 		delete: () => unbindChain,
+		execute: () => Promise.resolve([]),
 	};
 	t.mock.method(db, "transaction", async (cb: (tx: unknown) => unknown) => cb(unbindTxMock));
+	t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => unknown) => cb(unbindTxMock));
 
 	const res = await app.inject({
 		method: "POST",
@@ -410,7 +434,7 @@ test("POST /api/imaging/studies/auto-bind-scan: пакетный запуск а
 	const app = Fastify();
 	await registerStudiesRoutes(app);
 
-	t.mock.method(db, "select", () => {
+	const autoSelect = () => {
 		let currentTable: unknown = null;
 		const chain: any = {
 			from: (source: unknown) => {
@@ -449,13 +473,16 @@ test("POST /api/imaging/studies/auto-bind-scan: пакетный запуск а
 						},
 					]).then(onfulfilled, onrejected);
 				}
+				if (currentTable === schema.organizations) {
+					return Promise.resolve([{ id: ORG_ID, name: "Тестовая клиника" }]).then(onfulfilled, onrejected);
+				}
 				return Promise.resolve([]).then(onfulfilled, onrejected);
 			},
 		};
 		return chain;
-	});
+	};
 
-	t.mock.method(db, "update", () => {
+	const autoUpdate = () => {
 		const chain: any = {
 			set: () => chain,
 			where: () => chain,
@@ -466,7 +493,27 @@ test("POST /api/imaging/studies/auto-bind-scan: пакетный запуск а
 			) => Promise.resolve([]).then(onfulfilled, onrejected),
 		};
 		return chain;
-	});
+	};
+
+	const autoInsert = () => {
+		const chain: any = {
+			values: () => chain,
+			returning: () => Promise.resolve([{ id: STUDY_ID }]),
+			then: (onfulfilled?: ((val: unknown) => unknown) | null) => Promise.resolve([]).then(onfulfilled),
+		};
+		return chain;
+	};
+
+	t.mock.method(db, "select", autoSelect);
+	t.mock.method(db, "update", autoUpdate);
+	t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => unknown) =>
+		cb({
+			select: autoSelect,
+			update: autoUpdate,
+			insert: autoInsert,
+			execute: () => Promise.resolve([]),
+		}),
+	);
 
 	const res = await app.inject({
 		method: "POST",

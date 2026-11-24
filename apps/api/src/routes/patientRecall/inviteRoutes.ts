@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { patientRecalls } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
@@ -49,25 +49,20 @@ export function registerInviteRoutes(app: FastifyInstance) {
 			);
 		}
 
-		if (
-			!(await recallCandidateBelongsTo(
-				context.organizationId,
-				patientId,
-			))
-		) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в этой клинике.",
-			});
-		}
-
 		const now = new Date();
 		const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 
-		let result: EnqueueMessageResult | undefined;
+		const outcome = await withTenantCtx(context.organizationId, async (tx) => {
+			if (
+				!(await recallCandidateBelongsTo(
+					context.organizationId,
+					patientId,
+				))
+			) {
+				return { kind: "not_found" as const };
+			}
 
-		await db.transaction(async (tx) => {
-			result = await enqueueMessage(
+			const enqueueRes: EnqueueMessageResult = await enqueueMessage(
 				{
 					organizationId: context.organizationId,
 					patientId,
@@ -80,7 +75,9 @@ export function registerInviteRoutes(app: FastifyInstance) {
 				tx,
 			);
 
-			if (!result.ok) return;
+			if (!enqueueRes.ok) {
+				return { kind: "rejected" as const, reason: enqueueRes.reason };
+			}
 
 			const existingRecalls = await tx
 				.select({ id: patientRecalls.id })
@@ -120,27 +117,42 @@ export function registerInviteRoutes(app: FastifyInstance) {
 					notes,
 				});
 			}
+
+			onTenantTxCommit(() => {
+				try {
+					wsBroker.broadcastToOrganization(context.organizationId, {
+						type: "PATIENT_RECALL_UPDATED",
+						payload: {
+							patientId,
+							status: "invited",
+							channel,
+							note: `Приглашение отправлено через ${channel}`,
+							updatedAt: now.toISOString(),
+						},
+					});
+				} catch (wsErr) {
+					request.log.warn(
+						{ err: wsErr, patientId, orgId: context.organizationId },
+						"[patientRecall] Ошибка отправки WS-уведомления о приглашении",
+					);
+				}
+			});
+
+			return { kind: "ok" as const, result: enqueueRes };
 		});
 
-		if (!result || !result.ok) {
-			return badRequest(reply, result?.reason ?? "Ошибка при постановке сообщения.");
-		}
-
-		try {
-			wsBroker.broadcastToOrganization(context.organizationId, {
-				type: "PATIENT_RECALL_UPDATED",
-				payload: {
-					patientId,
-					status: "invited",
-					channel,
-					note: `Приглашение отправлено через ${channel}`,
-					updatedAt: now.toISOString(),
-				},
+		if (outcome.kind === "not_found") {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
 			});
-		} catch {
-			// Не блокирует ответ
 		}
 
+		if (outcome.kind === "rejected") {
+			return badRequest(reply, outcome.reason ?? "Ошибка при постановке сообщения.");
+		}
+
+		const result = outcome.result;
 		return reply.code(200).send({
 			ok: true,
 			outboxId: result.outboxId,

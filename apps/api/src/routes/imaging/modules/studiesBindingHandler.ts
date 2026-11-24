@@ -1,11 +1,11 @@
-import { createReadStream, existsSync } from "node:fs";
+import { createReadStream } from "node:fs";
 import { access } from "node:fs/promises";
 import { and, eq } from "drizzle-orm";
 import { imagingStudySchema, isValidToothFdi } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireClinicalMutationAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../../accessGuard.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { xrayScans } from "../../../db/schema.js";
 import {
 	bindPatientToStudyInDb,
@@ -23,12 +23,17 @@ import { autoBindUnassignedStudies } from "../patientFioBindingEngine.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
 import { parseDicomHeader, readFilePrefixAsync } from "../dicomParsing.js";
 import { isDemoOperationAllowed } from "../../demo/demoRoutes.js";
+import { getRequestIdentity } from "../../../security/identity.js";
+import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import { recordStudySanpinDose } from "../../../services/dicom/ingest/metadataParser.js";
 
 export async function bindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind patient"))) return;
 	const { id } = request.params as { id: string };
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+	}
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -43,14 +48,18 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const bindBodySchema = z.object({ patientId: z.string().uuid().or(z.string().trim().min(1).max(128)) });
+	const bindBodySchema = z
+		.object({
+			patientId: z.string().uuid("Некорректный UUID пациента."),
+		})
+		.strict();
 	const parsed = bindBodySchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Необходимо передать валидный ID пациента в поле patientId.", details: parsed.error.issues });
 	}
 
 	try {
-		const updated = await db.transaction(async (tx) => {
+		const updated = await withTenantCtx(orgId, async (tx) => {
 			const study = await bindPatientToStudyInDb(orgId, id, parsed.data.patientId, tx);
 			if (study) {
 				const [existingXray] = await tx
@@ -100,6 +109,9 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 export async function bindToothHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind tooth"))) return;
 	const { id } = request.params as { id: string };
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+	}
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -114,7 +126,7 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const bindToothBodySchema = z.object({ toothCode: z.string().trim().max(16).nullable().optional() });
+	const bindToothBodySchema = z.object({ toothCode: z.string().trim().max(16).nullable().optional() }).strict();
 	const parsed = bindToothBodySchema.safeParse(request.body ?? {});
 	if (!parsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный номер зуба.", details: parsed.error.issues });
@@ -131,7 +143,7 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 		}
 	}
 
-	const updated = await db.transaction(async (tx) => {
+	const updated = await withTenantCtx(orgId, async (tx) => {
 		const study = await updateImagingStudyInDb(
 			orgId,
 			id,
@@ -153,6 +165,9 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 export async function bindVisitHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind visit"))) return;
 	const { id } = request.params as { id: string };
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+	}
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -167,10 +182,12 @@ export async function bindVisitHandler(request: FastifyRequest, reply: FastifyRe
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const bindVisitBodySchema = z.object({
-		visitId: z.string().uuid().nullable().optional(),
-		toothCode: z.string().trim().max(16).nullable().optional(),
-	});
+	const bindVisitBodySchema = z
+		.object({
+			visitId: z.string().uuid().nullable().optional(),
+			toothCode: z.string().trim().max(16).nullable().optional(),
+		})
+		.strict();
 	const parsed = bindVisitBodySchema.safeParse(request.body ?? {});
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -194,7 +211,7 @@ export async function bindVisitHandler(request: FastifyRequest, reply: FastifyRe
 	}
 
 	try {
-		const updated = await db.transaction(async (tx) => {
+		const updated = await withTenantCtx(orgId, async (tx) => {
 			const updatePayload: {
 				visitId?: string | null | undefined;
 				toothCode?: string | null | undefined;
@@ -238,6 +255,9 @@ export async function bindVisitHandler(request: FastifyRequest, reply: FastifyRe
 export async function unbindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging unbind patient"))) return;
 	const { id } = request.params as { id: string };
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+	}
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -253,7 +273,7 @@ export async function unbindPatientHandler(request: FastifyRequest, reply: Fasti
 	}
 
 	try {
-		const updated = await db.transaction(async (tx) => {
+		const updated = await withTenantCtx(orgId, async (tx) => {
 			const study = await unbindPatientFromStudyInDb(orgId, id, tx);
 			if (study) {
 				await tx
@@ -295,6 +315,20 @@ const cbctTunerQuerySchema = z.object({
 }).strict();
 
 export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: FastifyReply) {
+	if (!(await requireClinicalReadAccess(request, reply, "cbct tuner patients"))) return;
+
+	const identity = getRequestIdentity(request);
+	const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+	const evalAccess = evaluateClinicalAccess(staffRole);
+	if (!evalAccess.hasClinicalAccess) {
+		return reply.code(403).send({
+			error: "PermissionDenied",
+			permission: "clinical.imaging.read",
+			role: staffRole,
+			message: `Отказ в доступе к списку КТ-исследований: ${evalAccess.reason}`,
+		});
+	}
+
 	const parsedQuery = cbctTunerQuerySchema.safeParse(request.query ?? {});
 	if (!parsedQuery.success) {
 		return reply.code(400).send({
@@ -328,19 +362,33 @@ export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: F
 			type: s.kind === "cbct" ? "series" : "single",
 			description: s.title || (s.toothCode ? `Зуб #${s.toothCode}` : "3D КЛКТ / Панорама"),
 			available: Boolean(s.storagePath),
-			storagePath: s.storagePath ?? null,
 		}));
 
 		return reply.send({
 			ok: true,
 			patients: patientList,
 		});
-	} catch {
+	} catch (err) {
+		request.log.warn({ err }, "Failed to list CBCT tuner patients");
 		return reply.send({ ok: true, patients: [] });
 	}
 }
 
 export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: FastifyReply) {
+	if (!(await requireClinicalReadAccess(request, reply, "cbct tuner volume"))) return;
+
+	const identity = getRequestIdentity(request);
+	const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+	const evalAccess = evaluateClinicalAccess(staffRole);
+	if (!evalAccess.hasClinicalAccess) {
+		return reply.code(403).send({
+			error: "PermissionDenied",
+			permission: "clinical.imaging.read",
+			role: staffRole,
+			message: `Отказ в доступе к объёму КЛКТ: ${evalAccess.reason}`,
+		});
+	}
+
 	const parsedQuery = cbctTunerQuerySchema.safeParse(request.query ?? {});
 	if (!parsedQuery.success) {
 		return reply.code(400).send({
@@ -362,8 +410,12 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 			.send(emptyCube);
 	}
 
-	if (!query.id) {
+	const requestedStudyId = query.id;
+	if (!requestedStudyId) {
 		return reply.code(400).send({ error: "BadRequest", message: "Параметр id обязателен для получения КТ-объема." });
+	}
+	if (!isValidUuid(requestedStudyId)) {
+		return reply.code(404).send({ error: "NotFound", message: "КТ-исследование не найдено." });
 	}
 
 	const orgId = getImagingOrganizationId(request, reply);
@@ -371,7 +423,7 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 
 	let study;
 	try {
-		study = await getImagingStudyById(orgId, query.id);
+		study = await withTenantCtx(orgId, (tx) => getImagingStudyById(orgId, requestedStudyId, tx));
 	} catch {
 		return reply.code(404).send({ error: "NotFound", message: "КТ-исследование не найдено." });
 	}
@@ -388,10 +440,11 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 		let dimZ = study.sliceCount && study.sliceCount > 0 ? study.sliceCount : 1;
 		if (study.dimensions) {
 			const parts = study.dimensions.toLowerCase().split(/[x×]/).map((p) => Number.parseInt(p.trim(), 10)).filter((n) => !Number.isNaN(n) && n > 0);
-			if (parts.length >= 2) {
-				dimX = parts[0]!;
-				dimY = parts[1]!;
-				if (parts.length >= 3) dimZ = parts[2]!;
+			const [d0, d1, d2] = parts;
+			if (d0 !== undefined && d1 !== undefined) {
+				dimX = d0;
+				dimY = d1;
+				if (d2 !== undefined) dimZ = d2;
 			}
 		}
 
@@ -400,10 +453,11 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 		let spZ = 0.25;
 		if (study.voxelSpacing) {
 			const spParts = study.voxelSpacing.toLowerCase().replace(/mm/g, "").split(/[x×]/).map((p) => Number.parseFloat(p.trim())).filter((n) => !Number.isNaN(n) && n > 0);
-			if (spParts.length >= 1) {
-				spX = spParts[0]!;
-				spY = spParts[1] ?? spParts[0]!;
-				spZ = spParts[2] ?? spParts[1] ?? spParts[0]!;
+			const [s0, s1, s2] = spParts;
+			if (s0 !== undefined) {
+				spX = s0;
+				spY = s1 ?? s0;
+				spZ = s2 ?? s1 ?? s0;
 			}
 		}
 

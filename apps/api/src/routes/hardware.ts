@@ -8,12 +8,18 @@
  * - GET  /api/hardware/health: Service health and hardware probe capabilities.
  */
 
+import { existsSync } from "node:fs";
+import path from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { clinicHardwareDevices } from "../db/schema/hardware.js";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../accessGuard.js";
 
 import {
 	deviceInterfaceSchema,
@@ -84,22 +90,94 @@ const testPrintBodySchema = z.object({
 // ROUTE REGISTRATION
 // ============================================================================
 
-interface SyncHardwareDevicePayload {
-	presetId?: string | undefined;
-	name?: string | undefined;
-	vendor?: string | undefined;
-	category?: string | undefined;
-	executablePath?: string | undefined;
-	hotFolderPath?: string | undefined;
-	protocol?: string | undefined;
-	protocolTemplate?: string | undefined;
-	supportedExtensions?: unknown;
-	isActive?: boolean | undefined;
-	autoAttachToVisit?: boolean | undefined;
-	status?: string | undefined;
-	statusMessage?: string | undefined;
-	latencyMs?: unknown;
-	lastCheckedAt?: unknown;
+const HARDWARE_DEVICE_ID_SCHEMA = z.string().uuid("Некорректный ID устройства.");
+
+const hardwareDeviceCreateSchema = z
+	.object({
+		presetId: z.string().trim().max(120).optional(),
+		name: z.string().trim().max(200).optional(),
+		vendor: z.string().trim().max(120).optional(),
+		category: z.string().trim().max(80).optional(),
+		executablePath: z.string().trim().max(500).optional(),
+		hotFolderPath: z.string().trim().max(500).optional(),
+		protocol: z.string().trim().max(80).optional(),
+		protocolTemplate: z.string().trim().max(2000).optional(),
+		supportedExtensions: z.array(z.string().trim().max(20)).max(20).optional(),
+		isActive: z.boolean().optional(),
+		autoAttachToVisit: z.boolean().optional(),
+		status: z.string().trim().max(64).optional(),
+		statusMessage: z.string().trim().max(500).optional(),
+		latencyMs: z.number().int().nonnegative().nullable().optional(),
+		lastCheckedAt: z.string().datetime().nullable().optional(),
+	})
+	.strict();
+
+const hardwareDeviceUpdateSchema = hardwareDeviceCreateSchema;
+
+const hardwareDevicesSyncBodySchema = z
+	.object({
+		devices: z.array(hardwareDeviceCreateSchema).max(100),
+	})
+	.strict();
+
+const BLOCKED_HOT_FOLDER_ROOTS = [
+	"/etc",
+	"/proc",
+	"/sys",
+	"/dev",
+	"/boot",
+	"/root",
+	"/var/run",
+	"C:\\Windows",
+	"C:\\ProgramData",
+	"C:\\Program Files",
+	"C:\\Program Files (x86)",
+	"C:\\System Volume Information",
+].map((p) => path.resolve(p).toLowerCase());
+
+function isBlockedSsrfIp(rawIp: string): boolean {
+	const ip = rawIp.trim().toLowerCase();
+	const v4 = ip.startsWith("::ffff:") ? ip.slice(7) : ip;
+	if (ip === "::1" || ip === "::" || ip.startsWith("fe80:")) {
+		return true;
+	}
+	const parts = v4.split(".");
+	if (parts.length !== 4) return false;
+	const a = Number(parts[0]);
+	const b = Number(parts[1]);
+	if (!Number.isInteger(a) || !Number.isInteger(b)) return true;
+	if (a === 127 || a === 0) return true;
+	if (a === 169 && b === 254) return true;
+	return false;
+}
+
+function isSafeHotFolderPath(rawPath: string): boolean {
+	if (!rawPath || rawPath.includes("\0")) return false;
+	const resolved = path.resolve(rawPath.trim());
+	const normTarget = process.platform === "win32" ? resolved.toLowerCase() : resolved;
+	for (const blocked of BLOCKED_HOT_FOLDER_ROOTS) {
+		const normBlocked = process.platform === "win32" ? blocked : blocked;
+		const sep = normBlocked.endsWith(path.sep) ? "" : path.sep;
+		if (normTarget === normBlocked || normTarget.startsWith(`${normBlocked}${sep}`)) {
+			return false;
+		}
+	}
+	const allowedRaw = process.env.DENTE_RVG_ALLOWED_ROOTS?.trim();
+	if (allowedRaw) {
+		const allowedRoots = allowedRaw
+			.split(/[;,]/)
+			.map((r) => r.trim())
+			.filter(Boolean)
+			.map((r) => path.resolve(r));
+		if (allowedRoots.length > 0) {
+			return allowedRoots.some((root) => {
+				const normRoot = process.platform === "win32" ? root.toLowerCase() : root;
+				const sep = normRoot.endsWith(path.sep) ? "" : path.sep;
+				return normTarget === normRoot || normTarget.startsWith(`${normRoot}${sep}`);
+			});
+		}
+	}
+	return true;
 }
 
 export async function registerHardwareRoutes(app: FastifyInstance): Promise<void> {
@@ -110,6 +188,9 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.get(
 		"/api/hardware/devices",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const context = await requireClinicalReadContext(request, reply, "get hardware devices");
+			if (!context) return;
+
 			const parsedQuery = getDevicesQuerySchema.safeParse(request.query);
 			if (!parsedQuery.success) {
 				return reply.status(400).send({
@@ -121,14 +202,13 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const query = parsedQuery.data;
 
 			if (query.scope === "configured") {
-				const organizationId = await requireResolvedOrganizationId(request, reply, "get hardware devices");
-				if (!organizationId) return;
-
-				const devices = await db
-					.select()
-					.from(clinicHardwareDevices)
-					.where(eq(clinicHardwareDevices.organizationId, organizationId))
-					.orderBy(desc(clinicHardwareDevices.createdAt));
+				const devices = await withTenantCtx(context.organizationId, async (tx) =>
+					tx
+						.select()
+						.from(clinicHardwareDevices)
+						.where(eq(clinicHardwareDevices.organizationId, context.organizationId))
+						.orderBy(desc(clinicHardwareDevices.createdAt)),
+				);
 
 				return reply.status(200).send({
 					success: true,
@@ -169,6 +249,9 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.get(
 		"/api/hardware/devices/probe-tcp",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const context = await requireClinicalReadContext(request, reply, "hardware tcp probe");
+			if (!context) return;
+
 			const parsedQuery = z
 				.object({
 					ip: z.string().ip(),
@@ -191,6 +274,12 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 			const query = parsedQuery.data;
+			if (isBlockedSsrfIp(query.ip)) {
+				return reply.status(400).send({
+					error: "SsrfBlocked",
+					message: "Запрещён сетевой опрос loopback и link-local/metadata адресов.",
+				});
+			}
 
 			const statusReport = await probeRawTcpPrinterStatus(
 				query.ip,
@@ -214,6 +303,9 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.post(
 		"/api/hardware/test-print",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const context = await requireClinicalMutationContext(request, reply, "hardware test print");
+			if (!context) return;
+
 			const parsedBody = testPrintBodySchema.safeParse(request.body);
 			if (!parsedBody.success) {
 				return reply.status(400).send({
@@ -223,6 +315,12 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 			const body = parsedBody.data;
+			if (body.ipAddress && isBlockedSsrfIp(body.ipAddress)) {
+				return reply.status(400).send({
+					error: "SsrfBlocked",
+					message: "Запрещена тестовая печать на loopback или link-local/metadata адрес.",
+				});
+			}
 
 			const printResult = await hardwareDiscoveryService.sendTestPrint({
 				deviceId: body.deviceId,
@@ -277,17 +375,27 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.get(
 		"/api/hardware/sensor-status",
 		async (request: FastifyRequest, reply: FastifyReply) => {
+			const context = await requireClinicalReadContext(request, reply, "hardware sensor status");
+			if (!context) return;
+
 			const query = (request.query || {}) as Record<string, string>;
 			const modelId = query.modelId;
 			const hotFolder = query.hotFolder;
+
+			if (hotFolder && !isSafeHotFolderPath(hotFolder)) {
+				return reply.status(400).send({
+					error: "InvalidHotFolderPath",
+					message: "Недопустимый путь к сетевой папке визиографа.",
+				});
+			}
 
 			// Check if specified hot folder physically exists on workstation filesystem
 			let hotFolderExists = false;
 			if (hotFolder) {
 				try {
-					const { existsSync } = await import("node:fs");
-					hotFolderExists = existsSync(hotFolder);
-				} catch {
+					hotFolderExists = existsSync(path.resolve(hotFolder.trim()));
+				} catch (fsErr) {
+					request.log.warn({ fsErr }, "[hardware] Failed to check hotFolder existence");
 					hotFolderExists = false;
 				}
 			}
@@ -329,31 +437,41 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.post(
 		"/api/hardware/devices",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const organizationId = await requireResolvedOrganizationId(request, reply, "create hardware device");
-			if (!organizationId) return;
+			const context = await requireClinicalMutationContext(request, reply, "create hardware device");
+			if (!context) return;
 
-			const body = (request.body || {}) as Record<string, unknown>;
-			const inserted = await db
-				.insert(clinicHardwareDevices)
-				.values({
-					organizationId,
-					presetId: String(body.presetId || "custom"),
-					name: String(body.name || "Новое устройство"),
-					vendor: String(body.vendor || "Универсальный"),
-					category: String(body.category || "visiograph"),
-					executablePath: String(body.executablePath || ""),
-					hotFolderPath: String(body.hotFolderPath || ""),
-					protocol: String(body.protocol || "hot_folder"),
-					protocolTemplate: String(body.protocolTemplate || ""),
-					supportedExtensions: Array.isArray(body.supportedExtensions) ? (body.supportedExtensions as string[]) : [".dcm"],
-					isActive: body.isActive !== false,
-					autoAttachToVisit: body.autoAttachToVisit !== false,
-					status: String(body.status || "untested"),
-					statusMessage: String(body.statusMessage || "Нажмите для проверки связи"),
-					latencyMs: typeof body.latencyMs === "number" ? body.latencyMs : null,
-					lastCheckedAt: body.lastCheckedAt ? new Date(String(body.lastCheckedAt)) : null,
-				})
-				.returning();
+			const parsed = hardwareDeviceCreateSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры оборудования",
+					issues: parsed.error.issues,
+				});
+			}
+			const body = parsed.data;
+			const inserted = await withTenantCtx(context.organizationId, async (tx) =>
+				tx
+					.insert(clinicHardwareDevices)
+					.values({
+						organizationId: context.organizationId,
+						presetId: body.presetId || "custom",
+						name: body.name || "Новое устройство",
+						vendor: body.vendor || "Универсальный",
+						category: body.category || "visiograph",
+						executablePath: body.executablePath || "",
+						hotFolderPath: body.hotFolderPath || "",
+						protocol: body.protocol || "hot_folder",
+						protocolTemplate: body.protocolTemplate || "",
+						supportedExtensions: body.supportedExtensions ?? [".dcm"],
+						isActive: body.isActive !== false,
+						autoAttachToVisit: body.autoAttachToVisit !== false,
+						status: body.status || "untested",
+						statusMessage: body.statusMessage || "Нажмите для проверки связи",
+						latencyMs: body.latencyMs ?? null,
+						lastCheckedAt: body.lastCheckedAt ? new Date(body.lastCheckedAt) : null,
+					})
+					.returning(),
+			);
 
 			return reply.status(201).send({
 				success: true,
@@ -369,34 +487,58 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.put(
 		"/api/hardware/devices/:id",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const organizationId = await requireResolvedOrganizationId(request, reply, "update hardware device");
-			if (!organizationId) return;
+			const context = await requireClinicalMutationContext(request, reply, "update hardware device");
+			if (!context) return;
 
 			const { id } = request.params as { id: string };
-			const body = (request.body || {}) as Record<string, unknown>;
+			if (!HARDWARE_DEVICE_ID_SCHEMA.safeParse(id).success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный UUID устройства.",
+				});
+			}
+
+			const parsed = hardwareDeviceUpdateSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры обновления устройства",
+					issues: parsed.error.issues,
+				});
+			}
+			const body = parsed.data;
 
 			const patch: Record<string, unknown> = {
 				updatedAt: new Date(),
 			};
-			if (typeof body.name === "string") patch.name = body.name;
-			if (typeof body.vendor === "string") patch.vendor = body.vendor;
-			if (typeof body.executablePath === "string") patch.executablePath = body.executablePath;
-			if (typeof body.hotFolderPath === "string") patch.hotFolderPath = body.hotFolderPath;
-			if (typeof body.protocol === "string") patch.protocol = body.protocol;
-			if (typeof body.protocolTemplate === "string") patch.protocolTemplate = body.protocolTemplate;
-			if (Array.isArray(body.supportedExtensions)) patch.supportedExtensions = body.supportedExtensions;
-			if (typeof body.isActive === "boolean") patch.isActive = body.isActive;
-			if (typeof body.autoAttachToVisit === "boolean") patch.autoAttachToVisit = body.autoAttachToVisit;
-			if (typeof body.status === "string") patch.status = body.status;
-			if (typeof body.statusMessage === "string") patch.statusMessage = body.statusMessage;
-			if (typeof body.latencyMs === "number" || body.latencyMs === null) patch.latencyMs = body.latencyMs;
-			if (body.lastCheckedAt) patch.lastCheckedAt = new Date(String(body.lastCheckedAt));
+			if (body.name !== undefined) patch.name = body.name;
+			if (body.vendor !== undefined) patch.vendor = body.vendor;
+			if (body.executablePath !== undefined) patch.executablePath = body.executablePath;
+			if (body.hotFolderPath !== undefined) patch.hotFolderPath = body.hotFolderPath;
+			if (body.protocol !== undefined) patch.protocol = body.protocol;
+			if (body.protocolTemplate !== undefined) patch.protocolTemplate = body.protocolTemplate;
+			if (body.supportedExtensions !== undefined) patch.supportedExtensions = body.supportedExtensions;
+			if (body.isActive !== undefined) patch.isActive = body.isActive;
+			if (body.autoAttachToVisit !== undefined) patch.autoAttachToVisit = body.autoAttachToVisit;
+			if (body.status !== undefined) patch.status = body.status;
+			if (body.statusMessage !== undefined) patch.statusMessage = body.statusMessage;
+			if (body.latencyMs !== undefined) patch.latencyMs = body.latencyMs;
+			if (body.lastCheckedAt !== undefined) {
+				patch.lastCheckedAt = body.lastCheckedAt ? new Date(body.lastCheckedAt) : null;
+			}
 
-			const updated = await db
-				.update(clinicHardwareDevices)
-				.set(patch)
-				.where(and(eq(clinicHardwareDevices.id, id), eq(clinicHardwareDevices.organizationId, organizationId)))
-				.returning();
+			const updated = await withTenantCtx(context.organizationId, async (tx) =>
+				tx
+					.update(clinicHardwareDevices)
+					.set(patch)
+					.where(
+						and(
+							eq(clinicHardwareDevices.id, id),
+							eq(clinicHardwareDevices.organizationId, context.organizationId),
+						),
+					)
+					.returning(),
+			);
 
 			if (!updated.length) {
 				return reply.status(404).send({ error: "DeviceNotFound", message: "Устройство не найдено" });
@@ -416,13 +558,32 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.delete(
 		"/api/hardware/devices/:id",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const organizationId = await requireResolvedOrganizationId(request, reply, "delete hardware device");
-			if (!organizationId) return;
+			const context = await requireClinicalMutationContext(request, reply, "delete hardware device");
+			if (!context) return;
 
 			const { id } = request.params as { id: string };
-			await db
-				.delete(clinicHardwareDevices)
-				.where(and(eq(clinicHardwareDevices.id, id), eq(clinicHardwareDevices.organizationId, organizationId)));
+			if (!HARDWARE_DEVICE_ID_SCHEMA.safeParse(id).success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный UUID устройства.",
+				});
+			}
+
+			const deleted = await withTenantCtx(context.organizationId, async (tx) =>
+				tx
+					.delete(clinicHardwareDevices)
+					.where(
+						and(
+							eq(clinicHardwareDevices.id, id),
+							eq(clinicHardwareDevices.organizationId, context.organizationId),
+						),
+					)
+					.returning({ id: clinicHardwareDevices.id }),
+			);
+
+			if (!deleted.length) {
+				return reply.status(404).send({ error: "DeviceNotFound", message: "Устройство не найдено" });
+			}
 
 			return reply.status(200).send({ success: true, deletedId: id });
 		},
@@ -435,47 +596,52 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	app.post(
 		"/api/hardware/devices/sync",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const organizationId = await requireResolvedOrganizationId(request, reply, "sync hardware devices");
-			if (!organizationId) return;
+			const context = await requireClinicalMutationContext(request, reply, "sync hardware devices");
+			if (!context) return;
 
-			const body = (request.body || {}) as { devices?: SyncHardwareDevicePayload[] | undefined };
-			const rawDevices = Array.isArray(body?.devices) ? body.devices : [];
+			const parsed = hardwareDevicesSyncBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный список устройств для синхронизации",
+					issues: parsed.error.issues,
+				});
+			}
+			const rawDevices = parsed.data.devices;
 
-			await db.transaction(async (tx) => {
+			const updated = await withTenantCtx(context.organizationId, async (tx) => {
 				await tx
 					.delete(clinicHardwareDevices)
-					.where(eq(clinicHardwareDevices.organizationId, organizationId));
+					.where(eq(clinicHardwareDevices.organizationId, context.organizationId));
 
 				if (rawDevices.length > 0) {
-					const values = rawDevices.map((dev: SyncHardwareDevicePayload) => ({
-						organizationId,
-						presetId: String(dev.presetId || "custom"),
-						name: String(dev.name || "Устройство"),
-						vendor: String(dev.vendor || "Универсальный"),
-						category: String(dev.category || "visiograph"),
-						executablePath: String(dev.executablePath || ""),
-						hotFolderPath: String(dev.hotFolderPath || ""),
-						protocol: String(dev.protocol || "hot_folder"),
-						protocolTemplate: String(dev.protocolTemplate || ""),
-						supportedExtensions: Array.isArray(dev.supportedExtensions)
-							? dev.supportedExtensions.filter((ext): ext is string => typeof ext === "string")
-							: [".dcm"],
+					const values = rawDevices.map((dev) => ({
+						organizationId: context.organizationId,
+						presetId: dev.presetId || "custom",
+						name: dev.name || "Устройство",
+						vendor: dev.vendor || "Универсальный",
+						category: dev.category || "visiograph",
+						executablePath: dev.executablePath || "",
+						hotFolderPath: dev.hotFolderPath || "",
+						protocol: dev.protocol || "hot_folder",
+						protocolTemplate: dev.protocolTemplate || "",
+						supportedExtensions: dev.supportedExtensions ?? [".dcm"],
 						isActive: dev.isActive !== false,
 						autoAttachToVisit: dev.autoAttachToVisit !== false,
-						status: String(dev.status || "untested"),
-						statusMessage: String(dev.statusMessage || "Нажмите для проверки связи"),
-						latencyMs: typeof dev.latencyMs === "number" ? dev.latencyMs : null,
-						lastCheckedAt: dev.lastCheckedAt ? new Date(String(dev.lastCheckedAt)) : null,
+						status: dev.status || "untested",
+						statusMessage: dev.statusMessage || "Нажмите для проверки связи",
+						latencyMs: dev.latencyMs ?? null,
+						lastCheckedAt: dev.lastCheckedAt ? new Date(dev.lastCheckedAt) : null,
 					}));
 					await tx.insert(clinicHardwareDevices).values(values);
 				}
-			});
 
-			const updated = await db
-				.select()
-				.from(clinicHardwareDevices)
-				.where(eq(clinicHardwareDevices.organizationId, organizationId))
-				.orderBy(desc(clinicHardwareDevices.createdAt));
+				return tx
+					.select()
+					.from(clinicHardwareDevices)
+					.where(eq(clinicHardwareDevices.organizationId, context.organizationId))
+					.orderBy(desc(clinicHardwareDevices.createdAt));
+			});
 
 			return reply.status(200).send({
 				success: true,

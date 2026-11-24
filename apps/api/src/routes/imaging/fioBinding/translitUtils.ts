@@ -124,9 +124,7 @@ export function canonicalizeTranslit(word: string): string {
  */
 export function transliterateRuToEn(input: string): string {
 	let result = "";
-	const lower = input.toLowerCase();
-	for (let i = 0; i < lower.length; i++) {
-		const char = lower[i]!;
+	for (const char of input.toLowerCase()) {
 		result += RU_TO_EN_MAP[char] !== undefined ? RU_TO_EN_MAP[char] : char;
 	}
 	return result;
@@ -141,8 +139,7 @@ export function transliterateEnToRu(input: string): string {
 		lower = lower.replace(regex, replacement);
 	}
 	let result = "";
-	for (let i = 0; i < lower.length; i++) {
-		const char = lower[i]!;
+	for (const char of lower) {
 		result +=
 			EN_SINGLE_TO_RU[char] !== undefined ? EN_SINGLE_TO_RU[char] : char;
 	}

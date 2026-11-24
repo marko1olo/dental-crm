@@ -54,9 +54,10 @@ export async function processSettlementAndBomStage(
 
 	// 1. Обновление целевого инвойса
 	if (body.invoiceId) {
-		const [invoicePayments] = await tx
+		const invoicePayments = await tx
 			.select({
-				totalPaidRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+				amountKopecks: payments.amountKopecks,
+				amountRub: payments.amountRub,
 			})
 			.from(payments)
 			.where(
@@ -66,10 +67,15 @@ export async function processSettlementAndBomStage(
 					eq(payments.status, "paid"),
 				),
 			);
-		const invoiceTotalKop = parseKopecks(
-			ctx.lockedInvoice?.totalAmountRub ?? ctx.lockedInvoice?.totalRub ?? 0,
+		const invoiceTotalKop =
+			ctx.lockedInvoice?.totalPriceKopecks && ctx.lockedInvoice.totalPriceKopecks > 0n
+				? Number(ctx.lockedInvoice.totalPriceKopecks)
+				: parseKopecks(ctx.lockedInvoice?.totalAmountRub ?? ctx.lockedInvoice?.totalRub ?? 0);
+		const totalPaidKop = sumKopecks(
+			invoicePayments.map((p) =>
+				p.amountKopecks !== 0n ? Number(p.amountKopecks) : parseKopecks(p.amountRub ?? 0),
+			),
 		);
-		const totalPaidKop = parseKopecks(invoicePayments?.totalPaidRub ?? 0);
 		const nextStatus = totalPaidKop >= invoiceTotalKop ? "paid" : "partially_paid";
 
 		await tx
@@ -92,7 +98,9 @@ export async function processSettlementAndBomStage(
 			.select({
 				id: patientInvoices.id,
 				status: patientInvoices.status,
-				totalRub: patientInvoices.totalAmountRub,
+				totalPriceKopecks: patientInvoices.totalPriceKopecks,
+				totalAmountRub: patientInvoices.totalAmountRub,
+				totalRub: patientInvoices.totalRub,
 			})
 			.from(patientInvoices)
 			.where(
@@ -103,9 +111,10 @@ export async function processSettlementAndBomStage(
 			);
 
 		for (const inv of visitInvoices) {
-			const [invPaid] = await tx
+			const invPayments = await tx
 				.select({
-					totalPaidRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+					amountKopecks: payments.amountKopecks,
+					amountRub: payments.amountRub,
 				})
 				.from(payments)
 				.where(
@@ -115,8 +124,15 @@ export async function processSettlementAndBomStage(
 						eq(payments.status, "paid"),
 					),
 				);
-			const totalDueKop = parseKopecks(inv.totalRub ?? 0);
-			const totalPaidKop = parseKopecks(invPaid?.totalPaidRub ?? 0);
+			const totalDueKop =
+				inv.totalPriceKopecks > 0n
+					? Number(inv.totalPriceKopecks)
+					: parseKopecks(inv.totalAmountRub ?? inv.totalRub ?? 0);
+			const totalPaidKop = sumKopecks(
+				invPayments.map((p) =>
+					p.amountKopecks !== 0n ? Number(p.amountKopecks) : parseKopecks(p.amountRub ?? 0),
+				),
+			);
 			const invStatus =
 				totalPaidKop >= totalDueKop
 					? "paid"
@@ -168,6 +184,7 @@ export async function processSettlementAndBomStage(
 
 			const existingVisitPayments = await tx
 				.select({
+					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 				})
 				.from(payments)
@@ -186,7 +203,7 @@ export async function processSettlementAndBomStage(
 
 			const priorPaidKopecks = sumKopecks(
 				existingVisitPayments.map((p) =>
-					rublesToKopecks(Number(p.amountRub || 0)),
+					p.amountKopecks !== 0n ? Number(p.amountKopecks) : parseKopecks(p.amountRub ?? 0),
 				),
 			);
 
@@ -195,7 +212,13 @@ export async function processSettlementAndBomStage(
 				chargedVisitKopecks - priorPaidKopecks,
 			);
 
-			const incomingPaymentKopecks = Number(totalKopecks);
+			const effectivePaidKopecks =
+				ctx.patientCoPayKopecks && ctx.patientCoPayKopecks > 0n
+					? totalKopecks > ctx.patientCoPayKopecks
+						? totalKopecks - ctx.patientCoPayKopecks
+						: 0n
+					: totalKopecks;
+			const incomingPaymentKopecks = Number(effectivePaidKopecks);
 			if (incomingPaymentKopecks > remainingVisitKopecks) {
 				const overpaymentKopecks = incomingPaymentKopecks - remainingVisitKopecks;
 				const normMethod = normalizePaymentMethod(body.method);
@@ -275,9 +298,9 @@ export async function processSettlementAndBomStage(
 						transactionType: "auto_deduct",
 						clientMutationId: ctx.effectiveMutationId || body.clientMutationId || null,
 						patientId: resolvedPatientId,
-						carpulesCount: (body as { carpulesCount?: number }).carpulesCount ?? undefined,
-						drugName: (body as { drugName?: string }).drugName ?? undefined,
-						mdlpItems: (body as { mdlpItems?: Array<{ rawBarcode?: string | null; sgtin?: string | null; gtin?: string | null; serialNumber?: string | null; costRub?: number | null; tradeName?: string | null; inn?: string | null; series?: string | null }> }).mdlpItems ?? undefined,
+						carpulesCount: body.carpulesCount,
+						drugName: body.drugName,
+						mdlpItems: body.mdlpItems,
 						allowOverdraft: true,
 					});
 				});

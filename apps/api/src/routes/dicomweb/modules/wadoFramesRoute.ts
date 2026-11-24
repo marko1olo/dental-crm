@@ -85,19 +85,21 @@ export async function handleWadoRetrieveFrames(
 	if ((rows == null || columns == null) && typeof instanceUid === "string" && instanceUid) {
 		const targetUid = instanceUid;
 		try {
-			const [dbInst] = await db
-				.select({
-					rows: schema.imagingInstances.rows,
-					columns: schema.imagingInstances.columns,
-				})
-				.from(schema.imagingInstances)
-				.where(
-					and(
-						eq(schema.imagingInstances.organizationId, organizationId),
-						eq(schema.imagingInstances.dicomSopInstanceUid, targetUid),
-					),
-				)
-				.limit(1);
+			const [dbInst] = await withTenantCtx(organizationId, async (tx) =>
+				tx
+					.select({
+						rows: schema.imagingInstances.rows,
+						columns: schema.imagingInstances.columns,
+					})
+					.from(schema.imagingInstances)
+					.where(
+						and(
+							eq(schema.imagingInstances.organizationId, organizationId),
+							eq(schema.imagingInstances.dicomSopInstanceUid, targetUid),
+						),
+					)
+					.limit(1),
+			);
 			if (dbInst) {
 				if (rows == null && dbInst.rows != null) rows = dbInst.rows;
 				if (columns == null && dbInst.columns != null) columns = dbInst.columns;

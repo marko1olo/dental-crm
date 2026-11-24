@@ -5,7 +5,6 @@ import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../../security/identity.js";
@@ -44,11 +43,14 @@ export async function handleDicomwebStow(
 	if (!evaluateClinicalAccess(staffRole).hasClinicalAccess) {
 		return reply.code(403).send({
 			error: "PermissionDenied", permission: "clinical.dicom.store", role: staffRole,
-			message: "Сохранение КТ / DICOM снимка ограничено 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+			message: "Сохранение КТ / DICOM снимка разрешено только клиническому персоналу.",
 		});
 	}
 
-	if (!UUID_SHAPE.test(organizationId) || !(await organizationExists(organizationId))) {
+	if (
+		!UUID_SHAPE.test(organizationId) ||
+		!(await withTenantCtx(organizationId, async (tx) => organizationExists(organizationId, tx)))
+	) {
 		return reply.code(403).send({ error: "OrganizationUnknown", message: "Организация из токена не существует в базе." });
 	}
 
@@ -87,9 +89,20 @@ export async function handleDicomwebStow(
 		return reply.code(422).send({ error: "UnprocessableDicomInstance", message: "Файл не содержит обязательных DICOM-тегов идентификации: StudyInstanceUID, SeriesInstanceUID или SOPInstanceUID." });
 	}
 
-	const studyUid = parsed.studyUid;
-	const seriesUid = parsed.seriesUid;
-	const sopInstanceUid = parsed.sopInstanceUid;
+	const safeStudyUid = normalizeUid(parsed.studyUid);
+	const safeSeriesUid = normalizeUid(parsed.seriesUid);
+	const safeSopUid = normalizeUid(parsed.sopInstanceUid);
+	if (!safeStudyUid || !safeSeriesUid || !safeSopUid) {
+		await fs.unlink(tempFilePath).catch(() => {});
+		return reply.code(422).send({
+			error: "UnprocessableDicomInstance",
+			message: "Идентификаторы DICOM (StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID) содержат недопустимые символы.",
+		});
+	}
+
+	const studyUid = safeStudyUid;
+	const seriesUid = safeSeriesUid;
+	const sopInstanceUid = safeSopUid;
 
 	const pathStudyUid = request.params?.studyUid ? normalizeUid(request.params.studyUid) : null;
 	if (pathStudyUid && pathStudyUid !== studyUid) {
@@ -182,7 +195,7 @@ export async function handleDicomwebStow(
 		null;
 	const binding = await resolveStowBinding(organizationId, explicitPatientId, parsed);
 
-	const normalizedRelativePath = path.posix.join("uploads", "dicom", organizationId, parsed.studyUid, parsed.seriesUid, `${parsed.sopInstanceUid}.dcm`);
+	const normalizedRelativePath = path.posix.join("uploads", "dicom", organizationId, studyUid, seriesUid, `${sopInstanceUid}.dcm`);
 	const permanentDiskPath = path.resolve(process.cwd(), normalizedRelativePath);
 	await fs.mkdir(path.dirname(permanentDiskPath), { recursive: true });
 	await fs.rename(tempFilePath, permanentDiskPath);
@@ -190,7 +203,9 @@ export async function handleDicomwebStow(
 	let fileSizeOnDisk: number | undefined;
 	try {
 		fileSizeOnDisk = (await fs.stat(permanentDiskPath)).size;
-	} catch { /* fallback */ }
+	} catch (statErr) {
+		request.log.warn({ err: statErr, permanentDiskPath }, "Failed to stat stored STOW-RS DICOM file");
+	}
 
 	const explicitDoctorId =
 		request.query?.doctorId ||
@@ -215,9 +230,9 @@ export async function handleDicomwebStow(
 		result = await persistStowDicomEntities({
 			organizationId,
 			parsed: {
-				studyUid: parsed.studyUid,
-				seriesUid: parsed.seriesUid,
-				sopInstanceUid: parsed.sopInstanceUid,
+				studyUid,
+				seriesUid,
+				sopInstanceUid,
 				sopClassUid: parsed.sopClassUid,
 				rows: parsed.rows,
 				columns: parsed.columns,

@@ -7,12 +7,20 @@ import { requireOrganizationId } from "../../security/identity.js";
 import { NdflTaxService } from "../../services/documents/ndflTaxService.js";
 import { fnsTaxPayloadSchema } from "@dental/shared";
 
-const ndflQuerySchema = z.object({
-	patientId: z.string().uuid().optional(),
-	year: z.coerce.number().int().optional(),
-	startDate: z.string().optional(),
-	endDate: z.string().optional(),
-});
+const ndflParamsSchema = z
+	.object({
+		patientId: z.string().uuid("Некорректный идентификатор пациента (ожидается UUID)"),
+	})
+	.strict();
+
+const ndflQuerySchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		year: z.coerce.number().int().min(2000).max(2100).optional(),
+		startDate: z.string().min(4).max(40).optional(),
+		endDate: z.string().min(4).max(40).optional(),
+	})
+	.strict();
 
 export async function register(app: FastifyInstance) {
 	// 1. GET /api/v1/documents/tax-deduction/preview/:patientId (Feature #5)
@@ -22,9 +30,24 @@ export async function register(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
-		const { patientId } = request.params as { patientId: string };
-		const queryParsed = ndflQuerySchema.safeParse(request.query);
-		const query = queryParsed.success ? queryParsed.data : {};
+		const paramsParsed = ndflParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID).",
+			});
+		}
+		const { patientId } = paramsParsed.data;
+
+		const queryParsed = ndflQuerySchema.safeParse(request.query ?? {});
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса расчета налогового вычета.",
+				issues: queryParsed.error.issues,
+			});
+		}
+		const query = queryParsed.data;
 
 		const options: {
 			taxYear?: number;
@@ -43,12 +66,13 @@ export async function register(app: FastifyInstance) {
 			);
 			return reply.send(preview);
 		} catch (err: unknown) {
+			const errorCode =
+				err && typeof err === "object" && "code" in err
+					? (err as { code?: unknown }).code
+					: undefined;
 			if (
-				err &&
-				typeof err === "object" &&
-				"code" in err &&
-				((err as { code?: string }).code === "TaxPayerRequisitesRequiredError" ||
-				 (err as { code?: string }).code === "TaxDeductionIdentificationRequiredError")
+				errorCode === "TaxPayerRequisitesRequiredError" ||
+				errorCode === "TaxDeductionIdentificationRequiredError"
 			) {
 				return reply.code(422).send({
 					error: "TaxPayerRequisitesRequiredError",
@@ -57,10 +81,25 @@ export async function register(app: FastifyInstance) {
 						"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 				});
 			}
-			const msg = err instanceof Error ? err.message : "Ошибка расчета вычета";
-			return reply.code(400).send({
+			if (errorCode === "InvalidDateRangeError") {
+				return reply.code(400).send({
+					error: "InvalidDateRangeError",
+					message: "Некорректный диапазон дат для расчета налогового вычета.",
+				});
+			}
+			if (errorCode === "PatientNotFoundError") {
+				return reply.code(404).send({
+					error: "PatientNotFoundError",
+					message: "Пациент не найден.",
+				});
+			}
+			request.log.error(
+				{ err, organizationId, patientId },
+				"[NDFL] Ошибка расчета предварительной суммы налогового вычета",
+			);
+			return reply.code(500).send({
 				error: "NdflCalculationError",
-				message: msg,
+				message: "Не удалось рассчитать предварительную сумму налогового вычета.",
 			});
 		}
 	};
@@ -124,10 +163,13 @@ export async function register(app: FastifyInstance) {
 						"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
 				});
 			}
-			const msg = err instanceof Error ? err.message : "Ошибка генерации XML ФНС";
+			request.log.error(
+				{ err, organizationId },
+				"[NDFL] Ошибка генерации XML ФНС КНД 1151156",
+			);
 			return reply.code(500).send({
 				error: "NdflXmlGenerationError",
-				message: msg,
+				message: "Ошибка формирования XML-документа ФНС.",
 			});
 		}
 	};

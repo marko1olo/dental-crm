@@ -1,5 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -9,14 +8,13 @@ import {
 	generateTaxCertificateQrSvg,
 	kopecksToRubles,
 	normalizePaymentsForTaxCertificate,
+	parseKopecks,
 	renderOfficialTaxCertificateKnd1151156Html,
-	rublesToKopecks,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 	type TaxDeductionRelationship,
 } from "@dental/shared";
-import { db } from "../../db/client.js";
-import { writeIssuedDocumentSnapshot } from "../../db/documentQuery.js";
+import type { TenantDb } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	generatedDocuments,
@@ -27,15 +25,43 @@ import {
 	users,
 	visitDiaries,
 } from "../../db/schema.js";
+import { escapeHtml } from "../../documents/renderDocument.js";
+import { TaxPayerRequisitesRequiredError } from "../../services/documents/ndflTaxService.js";
+import { buildPdfContentDispositionHeader } from "../documents/pdf.js";
 import { renderIssuedHtmlToPdf } from "../documents/shared.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 
-const taxCertificateQuerySchema = z.object({
-	year: z.string().regex(/^\d{4}$/, "Год должен состоять из 4 цифр").optional(),
-	payerInn: z.string().max(12).optional(),
-	payerFullName: z.string().max(200).optional(),
-	relationship: z.string().max(50).optional(),
-});
+const taxCertificateQuerySchema = z
+	.object({
+		year: z.string().regex(/^\d{4}$/, "Год должен состоять из 4 цифр").optional(),
+		payerInn: z
+			.string()
+			.trim()
+			.regex(/^(\d{10}|\d{12})?$/, "ИНН должен содержать 10 или 12 цифр")
+			.optional(),
+		payerFullName: z.string().trim().max(200).optional(),
+		relationship: z
+			.enum(["patient", "patient_self", "spouse", "parent", "child"])
+			.optional(),
+	})
+	.strict();
+
+function sendTaxPayerRequisitesError(reply: FastifyReply, err: unknown): boolean {
+	const errCode = err !== null && typeof err === "object" ? Reflect.get(err, "code") : undefined;
+	const isRequisitesErr =
+		err instanceof TaxPayerRequisitesRequiredError ||
+		errCode === "TaxPayerRequisitesRequiredError" ||
+		errCode === "TaxDeductionIdentificationRequiredError";
+	if (!isRequisitesErr) return false;
+	reply.status(422).send({
+		error: "TaxPayerRequisitesRequiredError",
+		message:
+			err instanceof Error
+				? err.message
+				: "Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
+	});
+	return true;
+}
 
 export async function registerPortalTaxCertRoutes(server: FastifyInstance): Promise<void> {
 	// 11. FNS Order 824@ (КНД 1151156) Tax Deduction Certificate Preview & Verification
@@ -68,25 +94,31 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const data = await buildTaxCertificatePayload(
-				auth.patientId,
-				auth.organizationId,
-				targetYear,
-				queryParsed.data.payerFullName,
-				queryParsed.data.payerInn,
-				queryParsed.data.relationship,
-			);
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			try {
+				const data = await buildTaxCertificatePayload(
+					tx,
+					auth.patientId,
+					auth.organizationId,
+					targetYear,
+					queryParsed.data.payerFullName,
+					queryParsed.data.payerInn,
+					queryParsed.data.relationship,
+				);
 
-			if (!data) {
-				reply.status(404);
-				return { error: "PatientNotFound" };
+				if (!data) {
+					reply.status(404);
+					return { error: "PatientNotFound" };
+				}
+
+				return {
+					success: true,
+					certificate: data.certificate,
+				};
+			} catch (err) {
+				if (sendTaxPayerRequisitesError(reply, err)) return;
+				throw err;
 			}
-
-			return {
-				success: true,
-				certificate: data.certificate,
-			};
 		});
 	};
 
@@ -129,24 +161,30 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const data = await buildTaxCertificatePayload(
-				auth.patientId,
-				auth.organizationId,
-				targetYear,
-				queryParsed.data.payerFullName,
-				queryParsed.data.payerInn,
-				queryParsed.data.relationship,
-			);
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			try {
+				const data = await buildTaxCertificatePayload(
+					tx,
+					auth.patientId,
+					auth.organizationId,
+					targetYear,
+					queryParsed.data.payerFullName,
+					queryParsed.data.payerInn,
+					queryParsed.data.relationship,
+				);
 
-			if (!data) {
-				reply.status(404);
-				return { error: "PatientNotFound" };
+				if (!data) {
+					reply.status(404);
+					return { error: "PatientNotFound" };
+				}
+
+				const html = renderOfficialTaxCertificateKnd1151156Html(data.certParams);
+				reply.type("text/html; charset=utf-8");
+				return reply.send(html);
+			} catch (err) {
+				if (sendTaxPayerRequisitesError(reply, err)) return;
+				throw err;
 			}
-
-			const html = renderOfficialTaxCertificateKnd1151156Html(data.certParams);
-			reply.type("text/html; charset=utf-8");
-			return reply.send(html);
 		});
 	};
 
@@ -198,16 +236,23 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		const targetYear = queryParsed.data.year ? Number.parseInt(queryParsed.data.year, 10) : new Date().getFullYear();
 
-		const data = await withTenantCtx(auth.organizationId, async () => {
-			return buildTaxCertificatePayload(
-				auth.patientId,
-				auth.organizationId,
-				targetYear,
-				queryParsed.data.payerFullName,
-				queryParsed.data.payerInn,
-				queryParsed.data.relationship,
-			);
-		});
+		let data: Awaited<ReturnType<typeof buildTaxCertificatePayload>> = null;
+		try {
+			data = await withTenantCtx(auth.organizationId, async (tx) => {
+				return buildTaxCertificatePayload(
+					tx,
+					auth.patientId,
+					auth.organizationId,
+					targetYear,
+					queryParsed.data.payerFullName,
+					queryParsed.data.payerInn,
+					queryParsed.data.relationship,
+				);
+			});
+		} catch (err) {
+			if (sendTaxPayerRequisitesError(reply, err)) return;
+			throw err;
+		}
 
 		if (!data) {
 			reply.status(404);
@@ -223,7 +268,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 
 		const filename = `tax-certificate-${targetYear}-${auth.patientId.slice(0, 8)}.pdf`;
 		return reply
-			.header("Content-Disposition", `attachment; filename="${filename}"`)
+			.header("Content-Disposition", buildPdfContentDispositionHeader(filename, filename))
 			.type("application/pdf")
 			.send(result.pdf);
 	};
@@ -255,8 +300,8 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const html = await renderClinicalExtractHtml(auth.patientId, auth.organizationId);
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const html = await renderClinicalExtractHtml(tx, auth.patientId, auth.organizationId);
 			if (!html) {
 				reply.status(404);
 				return { error: "PatientNotFound" };
@@ -277,6 +322,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 }
 
 async function buildTaxCertificatePayload(
+	tx: TenantDb,
 	patientId: string,
 	organizationId: string,
 	targetYear: number,
@@ -284,7 +330,7 @@ async function buildTaxCertificatePayload(
 	payerInn?: string,
 	relationship?: string,
 ) {
-	const [patient] = await db
+	const [patient] = await tx
 		.select()
 		.from(patients)
 		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
@@ -292,35 +338,48 @@ async function buildTaxCertificatePayload(
 
 	if (!patient) return null;
 
+	const adminProfile =
+		patient.administrativeProfile && typeof patient.administrativeProfile === "object"
+			? (patient.administrativeProfile as Record<string, unknown>)
+			: null;
+	const isAnonymousPatient =
+		Boolean((patient as { isAnonymous?: unknown }).isAnonymous) ||
+		Boolean(adminProfile?.isAnonymous) ||
+		Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
+		Boolean(patient.fullName?.toLowerCase().includes("аноним"));
+	if (isAnonymousPatient) {
+		throw new TaxPayerRequisitesRequiredError(
+			"Для оформления справки по форме КНД 1151156 в соответствии со ст. 219 НК РФ требуются паспортные данные и ИНН налогоплательщика.",
+		);
+	}
+
 	// Поддержка семейных справок для налогового вычета (Приказ ФНС РФ № ЕА-7-11/824@):
-	// При запросе справки налогоплательщиком за родственников (детей/супругов) консолидируем платежи членов семьи
+	// Только подтверждённый плательщик или законный представитель может включать платежи подопечного.
 	let targetPatientIds = [patientId];
-	if (relationship && relationship !== "patient_self") {
-		const relRows = await db
+	if (relationship && relationship !== "patient" && relationship !== "patient_self") {
+		const relRows = await tx
 			.select({
-				patientId: patientRelationships.patientId,
 				relatedPatientId: patientRelationships.relatedPatientId,
+				isLegalRepresentative: patientRelationships.isLegalRepresentative,
+				isPrimaryPayer: patientRelationships.isPrimaryPayer,
 			})
 			.from(patientRelationships)
 			.where(
 				and(
 					eq(patientRelationships.organizationId, organizationId),
-					or(
-						eq(patientRelationships.patientId, patientId),
-						eq(patientRelationships.relatedPatientId, patientId),
-					),
+					eq(patientRelationships.patientId, patientId),
 				),
 			);
 
-		if (relRows.length > 0) {
-			const relatedIds = relRows.map((r) =>
-				r.patientId === patientId ? r.relatedPatientId : r.patientId,
-			);
-			targetPatientIds = Array.from(new Set([patientId, ...relatedIds]));
+		const authorizedRelatedIds = relRows
+			.filter((r) => r.isPrimaryPayer || r.isLegalRepresentative)
+			.map((r) => r.relatedPatientId);
+		if (authorizedRelatedIds.length > 0) {
+			targetPatientIds = Array.from(new Set([patientId, ...authorizedRelatedIds]));
 		}
 	}
 
-	const dbPayments = await db
+	const dbPayments = await tx
 		.select()
 		.from(payments)
 		.where(
@@ -342,11 +401,13 @@ async function buildTaxCertificatePayload(
 
 	for (const p of yearPayments) {
 		const rawAmountKopecks = "amountKopecks" in p ? (p as { amountKopecks?: unknown }).amountKopecks : undefined;
-		const parsedKop = typeof rawAmountKopecks === "bigint"
-			? Number(rawAmountKopecks)
-			: typeof rawAmountKopecks === "number"
-				? Math.round(rawAmountKopecks)
-				: rublesToKopecks(Number(p.amountRub) || 0);
+		const nonZeroKopecks =
+			typeof rawAmountKopecks === "bigint" && rawAmountKopecks !== 0n
+				? Number(rawAmountKopecks)
+				: typeof rawAmountKopecks === "number" && rawAmountKopecks !== 0
+					? Math.round(rawAmountKopecks)
+					: null;
+		const parsedKop = nonZeroKopecks ?? parseKopecks(p.amountRub);
 
 		const isRefundRecord =
 			p.status === "refunded" ||
@@ -399,7 +460,7 @@ async function buildTaxCertificatePayload(
 	let totalStandardKopBi = 0n;
 	let totalExpensiveKopBi = 0n;
 	for (const p of mappedPayments) {
-		const amtKop = BigInt(p.amountKopecks ?? rublesToKopecks(p.amountRub));
+		const amtKop = BigInt(p.amountKopecks ?? parseKopecks(p.amountRub));
 		if (p.taxCode === "2") {
 			totalExpensiveKopBi += amtKop;
 		} else {
@@ -413,7 +474,7 @@ async function buildTaxCertificatePayload(
 	const certificateNumber = `СПР-${targetYear}/${patientId.slice(0, 6).toUpperCase()}`;
 	const issueDateIso = new Date().toISOString();
 
-	const [org] = await db
+	const [org] = await tx
 		.select()
 		.from(organizations)
 		.where(eq(organizations.id, organizationId))
@@ -430,11 +491,14 @@ async function buildTaxCertificatePayload(
 
 	const effectivePayerFullName = payerFullName?.trim() || patient.fullName;
 	const effectivePayerInn = payerInn?.trim() || "";
-	const effectiveRelationship = (relationship as TaxDeductionRelationship) || "patient_self";
+	const effectiveRelationship: TaxDeductionRelationship =
+		relationship === "spouse" || relationship === "parent" || relationship === "child"
+			? relationship
+			: "patient";
 
 	let signatory = org?.signatoryName?.trim() || "";
 	if (!signatory) {
-		const [adminOrDoctor] = await db
+		const [adminOrDoctor] = await tx
 			.select({ fullName: users.fullName })
 			.from(users)
 			.where(
@@ -477,11 +541,10 @@ async function buildTaxCertificatePayload(
 	};
 
 	const qrSvg = generateTaxCertificateQrSvg(certParams, { size: 160 });
-	const certHtml = renderOfficialTaxCertificateKnd1151156Html(certParams);
 
-	// Атомарная фиксация справки в БД клиники (Мандат 8e, 8n): сохраняем в статусе "issued" с архивным снимком и хешем
-	const [existingDoc] = await db
-		.select({ id: generatedDocuments.id, status: generatedDocuments.status })
+	// HTTP GET-эндпоинты обязаны оставаться строго read-only без мутации БД и записи файлов на диск
+	const [existingDoc] = await tx
+		.select({ id: generatedDocuments.id })
 		.from(generatedDocuments)
 		.where(
 			and(
@@ -493,51 +556,7 @@ async function buildTaxCertificatePayload(
 		)
 		.limit(1);
 
-	let documentId = existingDoc?.id;
-	if (existingDoc) {
-		const snapshot = writeIssuedDocumentSnapshot(existingDoc.id, certHtml);
-		await db
-			.update(generatedDocuments)
-			.set({
-				status: "issued",
-				title: `Справка для налогового вычета за ${targetYear} год (${effectivePayerFullName})`,
-				taxPayerInn: effectivePayerInn || null,
-				totalAmountRub: totalSumRub,
-				totalAmountKopecks: BigInt(totalStandardKopBi + totalExpensiveKopBi),
-				taxPaymentSnapshotJson: JSON.stringify(mappedPayments),
-				payloadJson: JSON.stringify(certParams),
-				storagePath: snapshot.snapshotPath,
-				issuedSnapshotSha256: snapshot.sha256,
-				issuedSnapshotCreatedAt: new Date(snapshot.createdAt),
-				issuedAt: new Date(issueDateIso),
-			})
-			.where(eq(generatedDocuments.id, existingDoc.id));
-	} else {
-		const docId = randomUUID();
-		const snapshot = writeIssuedDocumentSnapshot(docId, certHtml);
-		const [newDoc] = await db
-			.insert(generatedDocuments)
-			.values({
-				id: docId,
-				organizationId,
-				patientId,
-				kind: "tax_deduction_certificate",
-				status: "issued",
-				title: `Справка для налогового вычета за ${targetYear} год (${effectivePayerFullName})`,
-				taxYear: targetYear,
-				taxPayerInn: effectivePayerInn || null,
-				totalAmountRub: totalSumRub,
-				totalAmountKopecks: BigInt(totalStandardKopBi + totalExpensiveKopBi),
-				taxPaymentSnapshotJson: JSON.stringify(mappedPayments),
-				payloadJson: JSON.stringify(certParams),
-				storagePath: snapshot.snapshotPath,
-				issuedSnapshotSha256: snapshot.sha256,
-				issuedSnapshotCreatedAt: new Date(snapshot.createdAt),
-				issuedAt: new Date(issueDateIso),
-			})
-			.returning({ id: generatedDocuments.id });
-		documentId = newDoc?.id ?? docId;
-	}
+	const documentId = existingDoc?.id ?? null;
 
 	return {
 		certParams,
@@ -579,8 +598,8 @@ async function buildTaxCertificatePayload(
 	};
 }
 
-async function renderClinicalExtractHtml(patientId: string, organizationId: string) {
-	const [patient] = await db
+async function renderClinicalExtractHtml(tx: TenantDb, patientId: string, organizationId: string) {
+	const [patient] = await tx
 		.select()
 		.from(patients)
 		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
@@ -588,7 +607,7 @@ async function renderClinicalExtractHtml(patientId: string, organizationId: stri
 
 	if (!patient) return null;
 
-	const diaries = await db
+	const diaries = await tx
 		.select()
 		.from(visitDiaries)
 		.where(
@@ -598,7 +617,7 @@ async function renderClinicalExtractHtml(patientId: string, organizationId: stri
 			),
 		);
 
-	const [org] = await db
+	const [org] = await tx
 		.select()
 		.from(organizations)
 		.where(eq(organizations.id, organizationId))
@@ -619,6 +638,16 @@ async function renderClinicalExtractHtml(patientId: string, organizationId: stri
 		.slice(0, 5)
 		.join("; ");
 
+	const safeClinicInfo = escapeHtml(clinicInfoStr);
+	const safePatientName = escapeHtml(patient.fullName);
+	const safeBirthDate = escapeHtml(patient.birthDate || "Не указана");
+	const safePhone = escapeHtml(patient.phone);
+	const safeCardNum = escapeHtml(patient.id.slice(0, 6).toUpperCase());
+	const safeDiagnoses = escapeHtml(diagnoses || "Санация полости рта");
+	const safeInterventions = escapeHtml(
+		clinicalInterventions || "Санация полости рта, лечение согласно клиническому протоколу.",
+	);
+
 	return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -638,21 +667,21 @@ async function renderClinicalExtractHtml(patientId: string, organizationId: stri
 </head>
 <body>
   <div class="header">
-    <div class="clinic-info">${clinicInfoStr}</div>
+    <div class="clinic-info">${safeClinicInfo}</div>
     <div class="doc-title">ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА</div>
     <div style="font-size: 12px; color: #64748b;">Медицинская выписка амбулаторного приёма DENTE CRM</div>
   </div>
 
   <div class="section-title">1. Паспортная часть</div>
-  <div class="data-row"><div class="data-label">ФИО пациента:</div><div class="data-val">${patient.fullName}</div></div>
-  <div class="data-row"><div class="data-label">Дата рождения:</div><div class="data-val">${patient.birthDate || "Не указана"}</div></div>
-  <div class="data-row"><div class="data-label">Телефон:</div><div class="data-val">${patient.phone}</div></div>
-  <div class="data-row"><div class="data-label">Номер медицинской карты:</div><div class="data-val">№ К-${patient.id.slice(0, 6).toUpperCase()}</div></div>
+  <div class="data-row"><div class="data-label">ФИО пациента:</div><div class="data-val">${safePatientName}</div></div>
+  <div class="data-row"><div class="data-label">Дата рождения:</div><div class="data-val">${safeBirthDate}</div></div>
+  <div class="data-row"><div class="data-label">Телефон:</div><div class="data-val">${safePhone}</div></div>
+  <div class="data-row"><div class="data-label">Номер медицинской карты:</div><div class="data-val">№ К-${safeCardNum}</div></div>
 
   <div class="section-title">2. Клинический диагноз и проведенное лечение</div>
-  <div class="data-row"><div class="data-label">Основной диагноз (МКБ-10):</div><div class="data-val">${diagnoses || "Санация полости рта"}</div></div>
+  <div class="data-row"><div class="data-label">Основной диагноз (МКБ-10):</div><div class="data-val">${safeDiagnoses}</div></div>
   <div class="data-row"><div class="data-label">Количество посещений:</div><div class="data-val">${diaries.length} визит(ов)</div></div>
-  <div class="data-row"><div class="data-label">Проведенные вмешательства:</div><div class="data-val">${clinicalInterventions || "Санация полости рта, лечение согласно клиническому протоколу."}</div></div>
+  <div class="data-row"><div class="data-label">Проведенные вмешательства:</div><div class="data-val">${safeInterventions}</div></div>
 
   <div class="section-title">3. Рекомендации и контрольный осмотр</div>
   <div class="data-row"><div class="data-label">Назначения:</div><div class="data-val">Индивидуальная гигиена полости рта, ирригатор, профилактический осмотр через 6 месяцев.</div></div>

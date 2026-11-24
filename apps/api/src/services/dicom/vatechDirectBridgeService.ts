@@ -16,7 +16,7 @@
 import { watch, type FSWatcher } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import {
 	type IngestDicomResult,
@@ -402,19 +402,16 @@ export class VatechDirectBridgeService {
 		try {
 			const tagContent = await fs.readFile(candidateTagPath, "utf-8");
 			tagMeta = parseVatechTagFileContent(tagContent);
-		} catch {
-			// .tag файл не найден, используем метаданные по умолчанию
+		} catch (tagErr) {
+			const errCode = (tagErr as NodeJS.ErrnoException)?.code;
+			if (errCode !== "ENOENT") {
+				dicomIngestLogger.warn("Failed to read companion Vatech .tag metadata file", {
+					candidateTagPath,
+					error: tagErr instanceof Error ? tagErr.message : String(tagErr),
+				});
+			}
 		}
 
-		// Авто-связывание пациента (Мандат 8e)
-		const patientBinding = await resolveOrAutoCreatePatientForDicom(orgId, {
-			patientFullName: tagMeta.patientName,
-			patientChartNumber: tagMeta.patientId,
-			patientBirthDate: tagMeta.birthDate,
-			autoCreateDraftIfNotFound: true,
-		});
-
-		// Сохраняем файл в изолированный tenant-каталог
 		const tenantDir = getPacsTenantStorageDir(orgId);
 		const subFolder = path.join(tenantDir, "vatech_scans", new Date().toISOString().slice(0, 10));
 		await fs.mkdir(subFolder, { recursive: true });
@@ -424,23 +421,34 @@ export class VatechDirectBridgeService {
 
 		const relativePath = toNormalizedRelativePacsStoragePath(orgId, targetFile, "pacs");
 
-		// Создаем запись в канонической imaging_studies и зеркало в xray_scans
-		if (patientBinding.patientId) {
-			const kvpStr = tagMeta.kvp ? ` ${tagMeta.kvp} кВ` : "";
-			const maStr = tagMeta.ma ? ` ${tagMeta.ma} мА` : "";
-			const expStr = tagMeta.exposureTimeMs ? ` ${tagMeta.exposureTimeMs} мс` : "";
-			const notes = `Vatech Visigraph Frame:${kvpStr}${maStr}${expStr}`.trim();
-			const mimeType = ext === ".png" ? "image/png" : ext === ".bmp" ? "image/bmp" : "image/jpeg";
-			const scanId = crypto.randomUUID();
-			const studyUid = `1.2.840.10008.study.vatech.${scanId}`;
-			const seriesUid = `${studyUid}.1`;
-			const studyTitle = tagMeta.toothCode ? `Прицельный снимок Vatech (зуб ${tagMeta.toothCode})` : "Прицельный снимок Vatech";
+		// Авто-связывание пациента и атомарное сохранение в PostgreSQL внутри tenant context
+		const patientBinding = await withTenantCtx(orgId, async (tx) => {
+			const resolvedBinding = await resolveOrAutoCreatePatientForDicom(
+				orgId,
+				{
+					patientFullName: tagMeta.patientName,
+					patientChartNumber: tagMeta.patientId,
+					patientBirthDate: tagMeta.birthDate,
+					autoCreateDraftIfNotFound: true,
+				},
+				tx,
+			);
 
-			const inserted = await db.transaction(async (tx) => {
+			if (resolvedBinding.patientId) {
+				const kvpStr = tagMeta.kvp ? ` ${tagMeta.kvp} кВ` : "";
+				const maStr = tagMeta.ma ? ` ${tagMeta.ma} мА` : "";
+				const expStr = tagMeta.exposureTimeMs ? ` ${tagMeta.exposureTimeMs} мс` : "";
+				const notes = `Vatech Visigraph Frame:${kvpStr}${maStr}${expStr}`.trim();
+				const mimeType = ext === ".png" ? "image/png" : ext === ".bmp" ? "image/bmp" : "image/jpeg";
+				const scanId = crypto.randomUUID();
+				const studyUid = `1.2.840.10008.study.vatech.${scanId}`;
+				const seriesUid = `${studyUid}.1`;
+				const studyTitle = tagMeta.toothCode ? `Прицельный снимок Vatech (зуб ${tagMeta.toothCode})` : "Прицельный снимок Vatech";
+
 				await tx.insert(schema.imagingStudies).values({
 					id: scanId,
 					organizationId: orgId,
-					patientId: patientBinding.patientId,
+					patientId: resolvedBinding.patientId,
 					kind: "periapical",
 					title: studyTitle,
 					toothCode: tagMeta.toothCode ?? null,
@@ -466,42 +474,42 @@ export class VatechDirectBridgeService {
 					},
 				});
 
-				if (patientBinding.patientId) {
-					await tx
-						.insert(schema.xrayScans)
-						.values({
-							id: scanId,
-							organizationId: orgId,
-							patientId: patientBinding.patientId,
-							storagePath: relativePath,
-							fileSizeBytes,
-							originalFilename: path.basename(filePath),
-							mimeType,
-							status: "done",
-							kind: "periapical",
-							toothCode: tagMeta.toothCode,
-							notes,
-						})
-						.onConflictDoNothing();
-				}
+				await tx
+					.insert(schema.xrayScans)
+					.values({
+						id: scanId,
+						organizationId: orgId,
+						patientId: resolvedBinding.patientId,
+						storagePath: relativePath,
+						fileSizeBytes,
+						originalFilename: path.basename(filePath),
+						mimeType,
+						status: "done",
+						kind: "periapical",
+						toothCode: tagMeta.toothCode,
+						notes,
+					})
+					.onConflictDoNothing();
 
-				return { id: scanId };
-			});
-
-			if (inserted) {
-				wsBroker.broadcastToOrganization(orgId, {
-					type: "IMAGING_STUDY_INGESTED",
-					payload: {
-						studyId: scanId,
-						xrayScanId: inserted.id,
-						patientId: patientBinding.patientId,
-						patientFullName: patientBinding.patientFullName,
-						modality: "intraoral",
-						title: studyTitle,
-						sourceName: "Vatech Folder Watcher",
-					},
-				});
+				return { ...resolvedBinding, studyId: scanId, studyTitle };
 			}
+
+			return { ...resolvedBinding, studyId: null as string | null, studyTitle: "" };
+		});
+
+		if (patientBinding.patientId && patientBinding.studyId) {
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "IMAGING_STUDY_INGESTED",
+				payload: {
+					studyId: patientBinding.studyId,
+					xrayScanId: patientBinding.studyId,
+					patientId: patientBinding.patientId,
+					patientFullName: patientBinding.patientFullName,
+					modality: "intraoral",
+					title: patientBinding.studyTitle,
+					sourceName: "Vatech Folder Watcher",
+				},
+			});
 		}
 
 		this.totalFilesIngested++;
@@ -514,7 +522,7 @@ export class VatechDirectBridgeService {
 		}
 
 		throw new Error(
-			"BOLA Tenant Isolation Breach: defaultOrganizationId для Vatech Folder Watcher не задан. Автоматический доступ к случайной организации заблокирован согласно 152-ФЗ.",
+			"BOLA Tenant Isolation Breach: defaultOrganizationId для Vatech Folder Watcher не задан. Автоматический доступ к случайной организации заблокирован.",
 		);
 	}
 }

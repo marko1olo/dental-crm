@@ -10,6 +10,8 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
+import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 import type { ProcessSbpWebhookResult } from "./sbpWebhookTypes.js";
 import type { SbpWebhookTargetContext } from "./types.js";
 
@@ -51,14 +53,29 @@ export async function handleSbpWebhookSuccess(params: {
 			.where(and(eq(sberbankTransactions.id, lockedSberTx.id), eq(sberbankTransactions.organizationId, orgId)));
 	}
 
-	const effectiveAmountKopecks = targetContext.amountKopecks ?? incomingAmountKopecks ?? (payload.amountKopecks ? Number(payload.amountKopecks) : 0);
+	const effectiveAmountKopecks =
+		targetContext.amountKopecks ??
+		incomingAmountKopecks ??
+		(payload.amountKopecks !== undefined && payload.amountKopecks !== null
+			? Number(payload.amountKopecks)
+			: 0);
 	const amountRub =
 		effectiveAmountKopecks > 0
 			? kopecksToRubles(effectiveAmountKopecks)
-			: payload.amountRub
+			: payload.amountRub !== undefined && payload.amountRub !== null && Number.isFinite(Number(payload.amountRub))
 				? Number(payload.amountRub)
 				: 0;
-	const targetAmountKopecks = effectiveAmountKopecks > 0 ? effectiveAmountKopecks : rublesToKopecks(amountRub);
+	const targetAmountKopecks =
+		effectiveAmountKopecks > 0 ? effectiveAmountKopecks : rublesToKopecks(amountRub);
+	if (!Number.isInteger(targetAmountKopecks) || targetAmountKopecks <= 0) {
+		return {
+			statusCode: 400,
+			body: {
+				error: "InvalidAmount",
+				message: "Некорректная сумма платежа СБП в копейках",
+			},
+		};
+	}
 
 	const effectivePatientId = targetContext.patientId || lockedSberTx?.patientId || (payload.patientId ? String(payload.patientId) : null);
 	if (!effectivePatientId) {
@@ -68,13 +85,18 @@ export async function handleSbpWebhookSuccess(params: {
 		};
 	}
 
+	const targetInvoiceId = targetContext.invoiceId || lockedSberTx?.invoiceId || null;
+	const resolvedDocumentId =
+		targetContext.documentId ||
+		lockedSberTx?.documentId ||
+		(targetInvoiceId && isValidUuid(targetInvoiceId) ? targetInvoiceId : null);
 	const [insertedPayment] = await tx
 		.insert(payments)
 		.values({
 			organizationId: orgId,
 			patientId: effectivePatientId,
 			visitId: targetContext.visitId || lockedSberTx?.visitId || null,
-			documentId: targetContext.documentId || lockedSberTx?.documentId || null,
+			documentId: resolvedDocumentId,
 			method: "online",
 			status: "paid",
 			amountRub,
@@ -99,9 +121,8 @@ export async function handleSbpWebhookSuccess(params: {
 		await tx.update(visits).set({ updatedAt: new Date() }).where(and(eq(visits.id, targetVisitId), eq(visits.organizationId, orgId)));
 	}
 
-	const targetInvoiceId = targetContext.invoiceId || lockedSberTx?.invoiceId;
-	if (targetInvoiceId) {
-		await tx.update(patientInvoices).set({ status: "paid", paidAt: new Date() }).where(and(eq(patientInvoices.id, targetInvoiceId), eq(patientInvoices.organizationId, orgId)));
+	if (targetInvoiceId && isValidUuid(targetInvoiceId)) {
+		await reconcileInvoiceBalanceInDb(tx, orgId, targetInvoiceId);
 	}
 
 	// 54-FZ Statutory Fiscal Receipt enqueuing for successful SBP online payment (Tag 1081)

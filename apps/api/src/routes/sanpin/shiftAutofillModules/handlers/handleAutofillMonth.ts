@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { autofillMonthSchema } from "../shiftAutofillSchemas.js";
@@ -26,21 +26,23 @@ export async function handleAutofillMonth(req: FastifyRequest, reply: FastifyRep
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
 	const result = await withTenantCtx(organizationId, async (tx) => {
-		return executeMonthAutofillTransaction(tx, {
+		const monthResult = await executeMonthAutofillTransaction(tx, {
 			organizationId,
 			body,
 			operatorId,
 		});
-	});
-
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "SANPIN_MONTH_AUTOPILOT_COMPLETED",
-		payload: {
-			monthLabelRu: result.monthLabelRu,
-			workingDaysCount: result.workingDaysCount,
-			sterilCount: result.insertedSterilCount,
-			psoCount: result.insertedPsoCount,
-		},
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_MONTH_AUTOPILOT_COMPLETED",
+				payload: {
+					monthLabelRu: monthResult.monthLabelRu,
+					workingDaysCount: monthResult.workingDaysCount,
+					sterilCount: monthResult.insertedSterilCount,
+					psoCount: monthResult.insertedPsoCount,
+				},
+			});
+		});
+		return monthResult;
 	});
 
 	return reply.send({
@@ -53,7 +55,7 @@ export async function handleAutofillMonth(req: FastifyRequest, reply: FastifyRep
 			totalSterilizationCycles: result.insertedSterilCount,
 			totalPsoBatches: result.insertedPsoCount,
 			complianceRatePercent: 100,
-			statutoryStatus: "100% Норма СанПиН 3.3686-21",
+			statutoryStatus: "100% Норма",
 		},
 	});
 }

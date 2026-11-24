@@ -1,16 +1,14 @@
 import {
-	computePayloadHash,
 	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters } from "../../../db/schema.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { recordUsageBodySchema } from "../types.js";
-import { isValidUuid } from "./guaranteeLetterFormatters.js";
+import { isValidUuid, resolveDbKopecks } from "./guaranteeLetterFormatters.js";
 
 export async function handleRecordGuaranteeLetterUsage(
 	request: FastifyRequest<{ Params: { letterId: string } }>,
@@ -30,6 +28,7 @@ export async function handleRecordGuaranteeLetterUsage(
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: msg,
+			details: parsed.error.issues,
 		});
 	}
 
@@ -37,7 +36,7 @@ export async function handleRecordGuaranteeLetterUsage(
 	const amountRub = kopecksToRubles(amountKop);
 	const isUrgentCare = Boolean(parsed.data.isEmergency || parsed.data.hasAcutePain || parsed.data.allowOverdraft);
 
-	// Mandate 8zp/8bo: Idempotency-Key is strictly required on money/stock/debit mutations
+	// Mandate 8zp/8bo: require Idempotency-Key even if called without global plugin in isolated tests
 	const rawBodyMutationId = (request.body as { clientMutationId?: unknown })?.clientMutationId;
 	const rawIdemKey =
 		(request.headers["idempotency-key"] as string | undefined) ||
@@ -55,64 +54,21 @@ export async function handleRecordGuaranteeLetterUsage(
 		});
 	}
 
-	// Check idempotency cache
-	const [existingRecord] = await db
-		.select()
-		.from(idempotencyKeys)
-		.where(
-			and(
-				eq(idempotencyKeys.clinicId, orgId),
-				eq(idempotencyKeys.key, idempotencyKey),
-			),
-		)
-		.limit(1);
-
-	if (existingRecord) {
-		if (existingRecord.status === "completed" && existingRecord.responseBody) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			reply.header("idempotency-replayed", "true");
-			reply.header("x-idempotency-replayed", "true");
-			return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
-		}
-		if (existingRecord.status === "in_flight") {
-			return reply.code(409).header("Retry-After", "1").send({
-				error: "Conflict",
-				message: "Операция списания по гарантийному письму с данным Idempotency-Key уже выполняется.",
-			});
-		}
-	}
-
 	// Mandate 8e: если списание производится для экстренного визита без ГП
 	if (letterId === "emergency" || letterId === "emergency_pending_letter" || letterId === "none" || letterId === "acute-pain") {
 		const emergencyPayload = {
 			success: true,
 			letterId,
 			debitedAmountRub: amountRub,
+			debitedAmountKopecks: amountKop,
 			usedAmountRub: amountRub,
+			usedAmountKopecks: amountKop,
 			remainingCoverageRub: 0,
+			remainingCoverageKopecks: 0,
 			status: "pending_letter",
 			warning: "Требуется досылка гарантийного письма ДМС",
 			isEmergency: true,
 		};
-
-		await db
-			.insert(idempotencyKeys)
-			.values({
-				clinicId: orgId,
-				key: idempotencyKey,
-				status: "completed",
-				payloadHash: computePayloadHash(request.body ?? {}),
-				responseBody: emergencyPayload,
-				responseCode: 200,
-			})
-			.onConflictDoUpdate({
-				target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-				set: {
-					status: "completed",
-					responseBody: emergencyPayload,
-					responseCode: 200,
-				},
-			});
 
 		reply.header("Idempotency-Key", idempotencyKey);
 		return reply.code(200).send(emergencyPayload);
@@ -125,44 +81,7 @@ export async function handleRecordGuaranteeLetterUsage(
 		});
 	}
 
-	const result = await db.transaction(async (tx) => {
-		// Advisory transaction lock per organization and idempotencyKey to prevent TOCTOU double-spend
-		await tx.execute(
-			sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
-		);
-
-		// Re-check idempotency record inside transaction under lock
-		const [txExistingRecord] = await tx
-			.select()
-			.from(idempotencyKeys)
-			.where(
-				and(
-					eq(idempotencyKeys.clinicId, orgId),
-					eq(idempotencyKeys.key, idempotencyKey),
-				),
-			)
-			.for("update")
-			.limit(1);
-
-		if (txExistingRecord) {
-			if (txExistingRecord.status === "completed" && txExistingRecord.responseBody) {
-				return {
-					status: txExistingRecord.responseCode || 200,
-					data: txExistingRecord.responseBody,
-					isReplayed: true,
-				};
-			}
-			if (txExistingRecord.status === "in_flight") {
-				return {
-					status: 409,
-					error: {
-						error: "Conflict",
-						message: "Операция списания по гарантийному письму с данным Idempotency-Key уже выполняется.",
-					},
-				};
-			}
-		}
-
+	const result = await withTenantCtx(orgId, async (tx) => {
 		const [letter] = await tx
 			.select()
 			.from(dmsGuaranteeLetters)
@@ -177,19 +96,21 @@ export async function handleRecordGuaranteeLetterUsage(
 
 		if (!letter) {
 			if (isUrgentCare) {
-				const emergencyData = {
-					success: true,
-					letterId,
-					debitedAmountRub: amountRub,
-					usedAmountRub: amountRub,
-					remainingCoverageRub: 0,
-					status: "pending_letter",
-					warning: "Требуется досылка гарантийного письма ДМС",
-					isEmergency: true,
-				};
 				return {
 					status: 200,
-					data: emergencyData,
+					data: {
+						success: true,
+						letterId,
+						debitedAmountRub: amountRub,
+						debitedAmountKopecks: amountKop,
+						usedAmountRub: amountRub,
+						usedAmountKopecks: amountKop,
+						remainingCoverageRub: 0,
+						remainingCoverageKopecks: 0,
+						status: "pending_letter",
+						warning: "Требуется досылка гарантийного письма ДМС",
+						isEmergency: true,
+					},
 				};
 			}
 			return {
@@ -201,21 +122,25 @@ export async function handleRecordGuaranteeLetterUsage(
 			};
 		}
 
+		const existingUsedKop = resolveDbKopecks(letter.usedAmountKopecks, letter.usedAmountRub);
+
 		if (letter.status === "cancelled") {
 			if (isUrgentCare) {
-				const emergencyData = {
-					success: true,
-					letterId: letter.id,
-					debitedAmountRub: amountRub,
-					usedAmountRub: Number(letter.usedAmountRub),
-					remainingCoverageRub: 0,
-					status: letter.status,
-					warning: "Требуется досылка гарантийного письма ДМС",
-					isEmergency: true,
-				};
 				return {
 					status: 200,
-					data: emergencyData,
+					data: {
+						success: true,
+						letterId: letter.id,
+						debitedAmountRub: amountRub,
+						debitedAmountKopecks: amountKop,
+						usedAmountRub: kopecksToRubles(existingUsedKop),
+						usedAmountKopecks: existingUsedKop,
+						remainingCoverageRub: 0,
+						remainingCoverageKopecks: 0,
+						status: letter.status,
+						warning: "Требуется досылка гарантийного письма ДМС",
+						isEmergency: true,
+					},
 				};
 			}
 			return {
@@ -228,21 +153,51 @@ export async function handleRecordGuaranteeLetterUsage(
 		}
 
 		const todayIso = new Date().toISOString().slice(0, 10);
-		if (letter.validUntil && letter.validUntil < todayIso) {
+		if (letter.validFrom && letter.validFrom > todayIso) {
 			if (isUrgentCare) {
-				const emergencyData = {
-					success: true,
-					letterId: letter.id,
-					debitedAmountRub: amountRub,
-					usedAmountRub: Number(letter.usedAmountRub),
-					remainingCoverageRub: 0,
-					status: letter.status,
-					warning: "Требуется досылка гарантийного письма ДМС",
-					isEmergency: true,
-				};
 				return {
 					status: 200,
-					data: emergencyData,
+					data: {
+						success: true,
+						letterId: letter.id,
+						debitedAmountRub: amountRub,
+						debitedAmountKopecks: amountKop,
+						usedAmountRub: kopecksToRubles(existingUsedKop),
+						usedAmountKopecks: existingUsedKop,
+						remainingCoverageRub: 0,
+						remainingCoverageKopecks: 0,
+						status: letter.status,
+						warning: "Требуется досылка гарантийного письма ДМС",
+						isEmergency: true,
+					},
+				};
+			}
+			return {
+				status: 400,
+				error: {
+					error: "LetterNotYetValid",
+					message: `Срок действия гарантийного письма ещё не наступил (${letter.validFrom}).`,
+				},
+			};
+		}
+
+		if (letter.validUntil && letter.validUntil < todayIso) {
+			if (isUrgentCare) {
+				return {
+					status: 200,
+					data: {
+						success: true,
+						letterId: letter.id,
+						debitedAmountRub: amountRub,
+						debitedAmountKopecks: amountKop,
+						usedAmountRub: kopecksToRubles(existingUsedKop),
+						usedAmountKopecks: existingUsedKop,
+						remainingCoverageRub: 0,
+						remainingCoverageKopecks: 0,
+						status: letter.status,
+						warning: "Требуется досылка гарантийного письма ДМС",
+						isEmergency: true,
+					},
 				};
 			}
 			return {
@@ -254,11 +209,9 @@ export async function handleRecordGuaranteeLetterUsage(
 			};
 		}
 
-		const maxCoverageKop = rublesToKopecks(Number(letter.maxCoverageRub));
-		const currentUsedKop = rublesToKopecks(Number(letter.usedAmountRub));
-		const amountKop = rublesToKopecks(amountRub);
+		const maxCoverageKop = resolveDbKopecks(letter.maxCoverageKopecks, letter.maxCoverageRub);
+		const currentUsedKop = existingUsedKop;
 		const remainingBeforeKop = Math.max(0, maxCoverageKop - currentUsedKop);
-		const remainingBeforeRub = kopecksToRubles(remainingBeforeKop);
 
 		if (letter.status === "exhausted" || remainingBeforeKop <= 0) {
 			if (isUrgentCare) {
@@ -269,6 +222,7 @@ export async function handleRecordGuaranteeLetterUsage(
 					.update(dmsGuaranteeLetters)
 					.set({
 						usedAmountRub: newUsedAmount,
+						usedAmountKopecks: BigInt(newUsedAmountKop),
 						status: "exhausted",
 						updatedAt: new Date(),
 					})
@@ -290,87 +244,46 @@ export async function handleRecordGuaranteeLetterUsage(
 					};
 				}
 
-				const overdraftData = {
-					success: true,
-					letterId: updated.id,
-					debitedAmountRub: amountRub,
-					usedAmountRub: Number(updated.usedAmountRub),
-					remainingCoverageRub: 0,
-					status: updated.status,
-					warning: "Требуется досылка гарантийного письма ДМС",
-					isEmergency: true,
-				};
-
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: overdraftData,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: overdraftData,
-							responseCode: 200,
-						},
-					});
-
 				return {
 					status: 200,
-					data: overdraftData,
+					data: {
+						success: true,
+						letterId: updated.id,
+						debitedAmountRub: amountRub,
+						debitedAmountKopecks: amountKop,
+						usedAmountRub: newUsedAmount,
+						usedAmountKopecks: newUsedAmountKop,
+						remainingCoverageRub: 0,
+						remainingCoverageKopecks: 0,
+						status: updated.status,
+						warning: "Требуется досылка гарантийного письма ДМС",
+						isEmergency: true,
+					},
 				};
 			}
 
 			// Mandate 8e: если лимит ГП исчерпан, возвращаем 200 с переносом всей суммы в сооплату пациента
-			// без блокировки врача и без ошибки 400 (DEF-DMS-08).
-			const exhaustedSplitData = {
-				success: true,
-				letterId: letter.id,
-				debitedAmountRub: 0,
-				debitedDmsKopecks: 0,
-				patientCoPayRub: amountRub,
-				patientCoPayKopecks: amountKop,
-				usedAmountRub: Number(letter.usedAmountRub),
-				remainingCoverageRub: 0,
-				remainingCoverageKopecks: 0,
-				status: "exhausted",
-				warning: "Лимит гарантийного письма исчерпан. Сумма перенесена в сооплату пациента.",
-			};
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: exhaustedSplitData,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: exhaustedSplitData,
-						responseCode: 200,
-					},
-				});
-
 			return {
 				status: 200,
-				data: exhaustedSplitData,
+				data: {
+					success: true,
+					letterId: letter.id,
+					debitedAmountRub: 0,
+					debitedDmsKopecks: 0,
+					patientCoPayRub: amountRub,
+					patientCoPayKopecks: amountKop,
+					usedAmountRub: kopecksToRubles(currentUsedKop),
+					usedAmountKopecks: currentUsedKop,
+					remainingCoverageRub: 0,
+					remainingCoverageKopecks: 0,
+					status: "exhausted",
+					warning: "Лимит гарантийного письма исчерпан. Сумма перенесена в сооплату пациента.",
+				},
 			};
 		}
 
 		if (amountKop > remainingBeforeKop) {
-			// Мандат 8e (Автономия врача): если сумма списания превышает остаток по письму,
-			// тихо списываем доступный остаток на СК, переводим письмо в "exhausted",
-			// а разницу переносим в сооплату пациента в кассу (patientCoPayKopecks) без блокировки приёма.
+			// Мандат 8e (Автономия врача): списываем доступный остаток на СК, остальное — в сооплату пациента
 			const debitedDmsKop = remainingBeforeKop;
 			const patientCoPayKop = amountKop - remainingBeforeKop;
 			const newUsedAmountKop = currentUsedKop + debitedDmsKop;
@@ -380,6 +293,7 @@ export async function handleRecordGuaranteeLetterUsage(
 				.update(dmsGuaranteeLetters)
 				.set({
 					usedAmountRub: newUsedAmount,
+					usedAmountKopecks: BigInt(newUsedAmountKop),
 					status: "exhausted",
 					updatedAt: new Date(),
 				})
@@ -401,42 +315,22 @@ export async function handleRecordGuaranteeLetterUsage(
 				};
 			}
 
-			const softSplitData = {
-				success: true,
-				letterId: updated.id,
-				debitedAmountRub: kopecksToRubles(debitedDmsKop),
-				debitedDmsKopecks: debitedDmsKop,
-				patientCoPayRub: kopecksToRubles(patientCoPayKop),
-				patientCoPayKopecks: patientCoPayKop,
-				usedAmountRub: Number(updated.usedAmountRub),
-				remainingCoverageRub: 0,
-				remainingCoverageKopecks: 0,
-				status: "exhausted",
-				warning: "Лимит гарантийного письма исчерпан. Оставшаяся сумма перенесена в сооплату пациента.",
-			};
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: softSplitData,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: softSplitData,
-						responseCode: 200,
-					},
-				});
-
 			return {
 				status: 200,
-				data: softSplitData,
+				data: {
+					success: true,
+					letterId: updated.id,
+					debitedAmountRub: kopecksToRubles(debitedDmsKop),
+					debitedDmsKopecks: debitedDmsKop,
+					patientCoPayRub: kopecksToRubles(patientCoPayKop),
+					patientCoPayKopecks: patientCoPayKop,
+					usedAmountRub: newUsedAmount,
+					usedAmountKopecks: newUsedAmountKop,
+					remainingCoverageRub: 0,
+					remainingCoverageKopecks: 0,
+					status: "exhausted",
+					warning: "Лимит гарантийного письма исчерпан. Оставшаяся сумма перенесена в сооплату пациента.",
+				},
 			};
 		}
 
@@ -451,6 +345,7 @@ export async function handleRecordGuaranteeLetterUsage(
 			.update(dmsGuaranteeLetters)
 			.set({
 				usedAmountRub: newUsedAmount,
+				usedAmountKopecks: BigInt(newUsedAmountKop),
 				status: newStatus,
 				updatedAt: new Date(),
 			})
@@ -474,37 +369,19 @@ export async function handleRecordGuaranteeLetterUsage(
 
 		const remainingCoverageKop = Math.max(0, maxCoverageKop - newUsedAmountKop);
 
-		const successData = {
-			success: true,
-			letterId: updated.id,
-			debitedAmountRub: amountRub,
-			usedAmountRub: Number(updated.usedAmountRub),
-			remainingCoverageRub: kopecksToRubles(remainingCoverageKop),
-			status: updated.status,
-		};
-
-		await tx
-			.insert(idempotencyKeys)
-			.values({
-				clinicId: orgId,
-				key: idempotencyKey,
-				status: "completed",
-				payloadHash: computePayloadHash(request.body ?? {}),
-				responseBody: successData,
-				responseCode: 200,
-			})
-			.onConflictDoUpdate({
-				target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-				set: {
-					status: "completed",
-					responseBody: successData,
-					responseCode: 200,
-				},
-			});
-
 		return {
 			status: 200,
-			data: successData,
+			data: {
+				success: true,
+				letterId: updated.id,
+				debitedAmountRub: amountRub,
+				debitedAmountKopecks: amountKop,
+				usedAmountRub: newUsedAmount,
+				usedAmountKopecks: newUsedAmountKop,
+				remainingCoverageRub: kopecksToRubles(remainingCoverageKop),
+				remainingCoverageKopecks: remainingCoverageKop,
+				status: updated.status,
+			},
 		};
 	});
 
@@ -512,10 +389,6 @@ export async function handleRecordGuaranteeLetterUsage(
 		return reply.code(result.status).send(result.error);
 	}
 	reply.header("Idempotency-Key", idempotencyKey);
-	if ("isReplayed" in result && result.isReplayed) {
-		reply.header("idempotency-replayed", "true");
-		reply.header("x-idempotency-replayed", "true");
-	}
 	return reply.code(200).send(result.data);
 }
 

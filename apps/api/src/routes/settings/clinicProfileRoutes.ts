@@ -181,19 +181,23 @@ export function registerClinicProfileRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/reset-demo", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+		reply.code(410);
 		return {
-			success: true,
+			success: false,
+			error: "EndpointDeprecated",
 			message:
-				"Демонстрационный режим больше не поддерживается (используется Postgres).",
+				"Демонстрационный сброс через этот маршрут отключён.",
 		};
 	});
 
 	app.post("/api/settings/reset-zero", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+		reply.code(410);
 		return {
-			success: true,
-			message: "Очистка базы больше не поддерживается (используется Postgres).",
+			success: false,
+			error: "EndpointDeprecated",
+			message: "Очистка базы через этот маршрут отключена.",
 		};
 	});
 }

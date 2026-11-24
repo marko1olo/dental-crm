@@ -5,6 +5,7 @@ import {
 } from "@dental/shared";
 import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { mdlpItems } from "../../db/schema.js";
 import { mdlpOutboxTable } from "../../db/schema/inventory/mdlpOutboxTable.js";
 import type { DbExecutor } from "../treatmentConsumables/types.js";
@@ -288,7 +289,7 @@ export class MdlpOutboxService {
 	): Promise<MdlpOutboxRecord[]> {
 		const now = new Date();
 
-		return await db.transaction(async (tx) => {
+		const runInTx = async (tx: DbExecutor): Promise<MdlpOutboxRecord[]> => {
 			const filterSql = organizationId
 				? sql`status = 'pending' AND next_retry_at <= ${now} AND organization_id = ${organizationId}::uuid`
 				: sql`status = 'pending' AND next_retry_at <= ${now}`;
@@ -342,7 +343,11 @@ export class MdlpOutboxService {
 				lockedAt: now,
 				lockedBy: workerId,
 			}));
-		});
+		};
+
+		return organizationId
+			? await withTenantCtx(organizationId, runInTx)
+			: await withSuperuserBypass(runInTx);
 	}
 
 	/**
@@ -352,20 +357,35 @@ export class MdlpOutboxService {
 		id: string,
 		crptOperationId: string,
 		crptResponsePayload?: Record<string, unknown> | undefined,
+		organizationId?: string | undefined,
 	): Promise<void> {
 		const now = new Date();
-		await db
-			.update(mdlpOutboxTable)
-			.set({
-				status: "completed",
-				crptOperationId,
-				crptResponsePayload: crptResponsePayload ?? null,
-				lockedAt: null,
-				lockedBy: null,
-				lastError: null,
-				updatedAt: now,
-			})
-			.where(eq(mdlpOutboxTable.id, id));
+		const runUpdate = async (tx: DbExecutor) => {
+			await tx
+				.update(mdlpOutboxTable)
+				.set({
+					status: "completed",
+					crptOperationId,
+					crptResponsePayload: crptResponsePayload ?? null,
+					lockedAt: null,
+					lockedBy: null,
+					lastError: null,
+					updatedAt: now,
+				})
+				.where(
+					organizationId
+						? and(
+								eq(mdlpOutboxTable.id, id),
+								eq(mdlpOutboxTable.organizationId, organizationId),
+							)
+						: eq(mdlpOutboxTable.id, id),
+				);
+		};
+		if (organizationId) {
+			await withTenantCtx(organizationId, runUpdate);
+		} else {
+			await withSuperuserBypass(runUpdate);
+		}
 	}
 
 	/**
@@ -377,23 +397,37 @@ export class MdlpOutboxService {
 		currentAttempts: number,
 		maxAttempts: number,
 		errorMessage: string,
+		organizationId?: string | undefined,
 	): Promise<"failed_retrying" | "escalated_to_dlq"> {
 		const newAttempts = currentAttempts + 1;
 		const now = new Date();
+		const scopeCond = organizationId
+			? and(
+					eq(mdlpOutboxTable.id, id),
+					eq(mdlpOutboxTable.organizationId, organizationId),
+				)
+			: eq(mdlpOutboxTable.id, id);
 
 		if (newAttempts >= maxAttempts) {
 			// Превышен лимит попыток -> эскалация в DLQ для старшей медсестры
-			await db
-				.update(mdlpOutboxTable)
-				.set({
-					status: "dlq",
-					attempts: newAttempts,
-					lastError: `[ESCALATED TO DLQ] ${errorMessage}`,
-					lockedAt: null,
-					lockedBy: null,
-					updatedAt: now,
-				})
-				.where(eq(mdlpOutboxTable.id, id));
+			const runDlq = async (tx: DbExecutor) => {
+				await tx
+					.update(mdlpOutboxTable)
+					.set({
+						status: "dlq",
+						attempts: newAttempts,
+						lastError: `[ESCALATED TO DLQ] ${errorMessage}`,
+						lockedAt: null,
+						lockedBy: null,
+						updatedAt: now,
+					})
+					.where(scopeCond);
+			};
+			if (organizationId) {
+				await withTenantCtx(organizationId, runDlq);
+			} else {
+				await withSuperuserBypass(runDlq);
+			}
 
 			mdlpLogger.error(
 				`[mdlpOutboxService] Outbox task ${id} escalated to DLQ after ${newAttempts} attempts: ${errorMessage}`,
@@ -406,18 +440,25 @@ export class MdlpOutboxService {
 			Math.min(3600, 10 * Math.pow(2, newAttempts)) + Math.floor(Math.random() * 5);
 		const nextRetryAt = new Date(now.getTime() + backoffSeconds * 1000);
 
-		await db
-			.update(mdlpOutboxTable)
-			.set({
-				status: "pending",
-				attempts: newAttempts,
-				nextRetryAt,
-				lastError: errorMessage,
-				lockedAt: null,
-				lockedBy: null,
-				updatedAt: now,
-			})
-			.where(eq(mdlpOutboxTable.id, id));
+		const runRetry = async (tx: DbExecutor) => {
+			await tx
+				.update(mdlpOutboxTable)
+				.set({
+					status: "pending",
+					attempts: newAttempts,
+					nextRetryAt,
+					lastError: errorMessage,
+					lockedAt: null,
+					lockedBy: null,
+					updatedAt: now,
+				})
+				.where(scopeCond);
+		};
+		if (organizationId) {
+			await withTenantCtx(organizationId, runRetry);
+		} else {
+			await withSuperuserBypass(runRetry);
+		}
 
 		mdlpLogger.warn(
 			`[mdlpOutboxService] Outbox task ${id} failed (attempt ${newAttempts}/${maxAttempts}), retry scheduled in ${backoffSeconds}s: ${errorMessage}`,

@@ -74,10 +74,18 @@ export function anonymizeDicomBuffer(
 
 		let valueLength = 0;
 		let valueOffset = 0;
+		let stepIntoNested = false;
 
-		if (group === 0x0002 || explicitVr) {
+		if (group === 0xfffe) {
+			// DICOM Item (FFFE,E000) and Delimitation Item (FFFE,E00D / FFFE,E0DD) tags
+			// ALWAYS encode a 4-byte length immediately after Tag with NO VR field, even in Explicit VR!
+			valueLength = bigEndian ? result.readUInt32BE(cursor + 4) : result.readUInt32LE(cursor + 4);
+			valueOffset = cursor + 8;
+			stepIntoNested = element === 0xe000;
+		} else if (group === 0x0002 || explicitVr) {
 			const vr = result.subarray(cursor + 4, cursor + 6).toString("latin1");
 			const isLongVr = ["OB", "OD", "OF", "OL", "OV", "OW", "SQ", "UC", "UR", "UT", "UN"].includes(vr);
+			stepIntoNested = vr === "SQ";
 
 			if (isLongVr) {
 				if (cursor + 12 > totalBytes) break;
@@ -143,7 +151,9 @@ export function anonymizeDicomBuffer(
 				break;
 		}
 
-		cursor = valueOffset + valueLength + (valueLength % 2);
+		cursor = stepIntoNested
+			? valueOffset
+			: valueOffset + valueLength + (valueLength % 2);
 	}
 
 	return result;

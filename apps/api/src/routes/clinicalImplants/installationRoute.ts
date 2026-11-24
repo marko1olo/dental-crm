@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import {
 	ImplantStabilityCalculator,
-	computePayloadHash,
 	createImplantInstallationSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -15,7 +14,6 @@ import {
 	visits,
 	warrantyCertificates,
 } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -36,50 +34,8 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.implants.write",
 				role: staffRole,
-				message: `Отказ в регистрации протокола имплантации (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в регистрации протокола имплантации: ${evalAccess.reason}`,
 			});
-		}
-
-		// Дедупликация и проверка Idempotency-Key (Мандаты 8bo, 8zp)
-		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotence-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-				: undefined);
-
-		const idempotencyKey =
-			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-				? rawIdempotencyKey.trim()
-				: null;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const existingRecord = await withTenantCtx(orgId, async (tx) => {
-				const [rec] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-				return rec ?? null;
-			});
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция регистрации имплантата с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		// Нормализация наименования бренда для устойчивости к пробелам и регистрам
@@ -146,11 +102,11 @@ export function registerInstallationRoute(app: FastifyInstance) {
 
 		// Единая неделимая ACID транзакция для всех имплантатов пакета (Мандаты 8bo, All-on-4)
 		const txResult = await withTenantCtx(orgId, async (tx) => {
-			// Автономный фоллбек пациента (Мандат 8e: врач никогда не блокируется из-за нестыковки id)
 			const [patient] = await tx
 				.select({ id: patients.id })
 				.from(patients)
 				.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!patient) {
@@ -175,7 +131,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				};
 
 				const screw = await deductImplantScrew(tx, orgId, identity.userId ?? null, currentItemInput);
-				const { deductedMaterials, consumablesCostTotal } = await deductConsumables(
+				const { deductedMaterials, consumablesCostTotalKopecksBigInt } = await deductConsumables(
 					tx,
 					orgId,
 					identity.userId ?? null,
@@ -186,6 +142,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						name: screw.invItem.name,
 						lotNumber: screw.effectiveLotNumber,
 						unitCostRub: screw.implantUnitCostRub,
+						unitCostKopecks: screw.implantUnitCostKopecks,
 						quantity: 1,
 						isOverdraft: screw.isOverdraft,
 					},
@@ -197,8 +154,8 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					tx,
 					orgId,
 					currentItemInput,
-					screw.implantUnitCostRub,
-					consumablesCostTotal,
+					screw.implantUnitCostKopecksBigInt,
+					consumablesCostTotalKopecksBigInt,
 					screw.effectiveLotNumber,
 					isqMean,
 					protocol,
@@ -335,6 +292,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					})
 					.onConflictDoUpdate({
 						target: warrantyCertificates.certificateNumber,
+						setWhere: eq(warrantyCertificates.organizationId, orgId),
 						set: {
 							status: "active",
 							itemsJson: implantItemsPayload,
@@ -413,28 +371,6 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				evaluatedProtocol: protocol,
 				decisionRationale,
 			};
-
-			// Атомарная фиксация Idempotency-Key СТРОГО внутри основной транзакции tx (Мандаты 8bo, 8zp)
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 201,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 201,
-						},
-					});
-			}
 
 			return {
 				patientNotFound: false as const,

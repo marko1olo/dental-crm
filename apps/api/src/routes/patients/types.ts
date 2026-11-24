@@ -62,16 +62,20 @@ export const patientReclamationStatusBodySchema = z.object({
 	status: z.unknown().optional(),
 });
 
-export const patientTaskTicketCreateBodySchema = z.object({
-	title: z.unknown().optional(),
-	description: z.unknown().optional(),
-	assignedToId: z.unknown().optional(),
-	priority: z.unknown().optional(),
-});
+export const patientTaskTicketCreateBodySchema = z
+	.object({
+		title: z.string().optional(),
+		description: z.string().nullable().optional(),
+		assignedToId: z.string().nullable().optional(),
+		priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+	})
+	.strict();
 
-export const patientTaskTicketStatusBodySchema = z.object({
-	status: z.unknown().optional(),
-});
+export const patientTaskTicketStatusBodySchema = z
+	.object({
+		status: z.string().optional(),
+	})
+	.strict();
 
 export const patientArchiveStatusBodySchema = z.object({
 	isBlacklisted: z.unknown().optional(),

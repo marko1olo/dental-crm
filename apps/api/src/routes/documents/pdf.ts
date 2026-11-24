@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	getDocumentById,
 	readIssuedDocumentSnapshot,
@@ -16,11 +17,25 @@ import {
 	applySignatureStampIfSigned,
 	documentAttachmentFileName,
 	documentHasIssuedArchiveMetadata,
-	documentRequiresIssuedArchive,
 	issuedArchiveIntegrityError,
 	renderIssuedHtmlToPdf,
 	resolveDocumentRenderContext,
 } from "./shared.js";
+
+const documentPdfParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
+
+export function buildPdfContentDispositionHeader(
+	utf8Filename: string,
+	asciiFallbackFilename: string,
+): string {
+	const safeAscii = asciiFallbackFilename.replace(/[^a-zA-Z0-9._-]+/g, "-");
+	const encodedUtf8 = encodeURIComponent(utf8Filename);
+	return `attachment; filename="${safeAscii}"; filename*=UTF-8''${encodedUtf8}`;
+}
 
 export async function register(app: FastifyInstance) {
 	// ────────────────────────────────────────────────────────────
@@ -41,23 +56,36 @@ export async function register(app: FastifyInstance) {
 		"/api/documents/:id/pdf",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
-			const { id } = request.params;
-			const UUID_REGEX =
-				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-			if (!id || !UUID_REGEX.test(id)) {
+			const parsedParams = documentPdfParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply
 					.code(400)
 					.send(
 						apiError("Некорректный идентификатор документа (ожидается UUID)"),
 					);
 			}
+			const { id } = parsedParams.data;
 			// Организация берётся из проверенного токена портала или кабинета клиники (401 иначе).
 			const portalPatient = extractPortalPatient(request);
 			const orgId = portalPatient ? portalPatient.organizationId : requireOrganizationId(request, reply);
 			if (!orgId) return;
-			const document = await withTenantCtx(orgId, () =>
-				getDocumentById(orgId, id),
-			);
+			const identity = getRequestIdentity(request);
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
+
+			const initialSources = await withTenantCtx(orgId, async () => {
+				const loadedDoc = await getDocumentById(orgId, id);
+				if (!loadedDoc) return { document: null, patient: null };
+				const loadedPatient = await getPatientByIdFromDb(
+					orgId,
+					loadedDoc.patientId,
+				);
+				return { document: loadedDoc, patient: loadedPatient ?? null };
+			});
+			const document = initialSources.document;
 			if (!document) {
 				return reply.code(404).send(apiError("Документ не найден"));
 			}
@@ -72,8 +100,6 @@ export async function register(app: FastifyInstance) {
 			} else {
 				// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
 				if (clinicalDocKinds.has(document.kind)) {
-					const identity = getRequestIdentity(request);
-					const access = evaluateClinicalAccess(identity.role);
 					if (
 						!access.hasClinicalAccess &&
 						!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
@@ -81,6 +107,20 @@ export async function register(app: FastifyInstance) {
 						return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
 					}
 				}
+			}
+			if (!initialSources.patient) {
+				return reply.code(404).send(apiError("Пациент не найден"));
+			}
+			if (
+				!portalPatient &&
+				initialSources.patient.status === "archived" &&
+				!access.hasClinicalAccess
+			) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "patients.archived.read",
+					message: "Доступ к документам архивного пациента разрешён только клиническому персоналу.",
+				});
 			}
 
 			// 152-ФЗ / 323-ФЗ: Аудит экспорта/печати медицинского документа в PDF
@@ -176,19 +216,31 @@ export async function register(app: FastifyInstance) {
 			const portalPatient = extractPortalPatient(request);
 			const orgId = portalPatient ? portalPatient.organizationId : requireOrganizationId(request, reply);
 			if (!orgId) return;
-			const { id } = request.params;
-			const UUID_REGEX =
-				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-			if (!id || !UUID_REGEX.test(id)) {
+			const parsedParams = documentPdfParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply
 					.code(400)
 					.send(
 						apiError("Некорректный идентификатор документа (ожидается UUID)"),
 					);
 			}
-			const document = await withTenantCtx(orgId, () =>
-				getDocumentById(orgId, id),
-			);
+			const { id } = parsedParams.data;
+			const identity = getRequestIdentity(request);
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
+			const planSources = await withTenantCtx(orgId, async () => {
+				const loadedDoc = await getDocumentById(orgId, id);
+				if (!loadedDoc) return { document: null, patient: null };
+				const loadedPatient = await getPatientByIdFromDb(
+					orgId,
+					loadedDoc.patientId,
+				);
+				return { document: loadedDoc, patient: loadedPatient ?? null };
+			});
+			const document = planSources.document;
 			if (!document) {
 				return reply.code(404).send(apiError("Документ не найден"));
 			}
@@ -211,8 +263,6 @@ export async function register(app: FastifyInstance) {
 				}
 			} else {
 				// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в плане лечения
-				const identity = getRequestIdentity(request);
-				const access = evaluateClinicalAccess(identity.role);
 				if (
 					!access.hasClinicalAccess &&
 					!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
@@ -225,6 +275,20 @@ export async function register(app: FastifyInstance) {
 							),
 						);
 				}
+			}
+			if (!planSources.patient) {
+				return reply.code(404).send(apiError("Пациент не найден"));
+			}
+			if (
+				!portalPatient &&
+				planSources.patient.status === "archived" &&
+				!access.hasClinicalAccess
+			) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "patients.archived.read",
+					message: "Доступ к документам архивного пациента разрешён только клиническому персоналу.",
+				});
 			}
 
 			// 152-ФЗ / 323-ФЗ: Аудит экспорта плана лечения в PDF
@@ -311,12 +375,17 @@ export async function register(app: FastifyInstance) {
 			const patientNameSlug = (patient.fullName ?? "patient")
 				.toLowerCase()
 				.replace(/[^a-zа-яё0-9]+/gi, "-")
+				.replace(/^-+|-+$/g, "")
 				.slice(0, 40);
 			const dateSlug = new Date().toISOString().slice(0, 10);
-			const filename = `plan-${patientNameSlug}-${dateSlug}.pdf`;
+			const utf8Filename = `plan-${patientNameSlug || document.id.slice(0, 8)}-${dateSlug}.pdf`;
+			const asciiFallbackFilename = `plan-${document.id.slice(0, 8)}-${dateSlug}.pdf`;
 
 			return reply
-				.header("Content-Disposition", `attachment; filename="${filename}"`)
+				.header(
+					"Content-Disposition",
+					buildPdfContentDispositionHeader(utf8Filename, asciiFallbackFilename),
+				)
 				.type("application/pdf")
 				.send(result.pdf);
 		},

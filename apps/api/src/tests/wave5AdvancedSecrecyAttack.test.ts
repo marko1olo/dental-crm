@@ -11,9 +11,8 @@
  *    - GET /api/documents/:id/pdf
  *    - Cross-role probing: marketer & call-center / receptionist vs doctor.
  * 2. Radiological Imaging & AI Visio Scans:
- *    - GET /api/xray/scans?patientId=... (aiReport, aiToothStates, notes)
- *    - GET /api/xray/scans/:id (imageDataUri raw radiograph, aiReport)
- *    - GET /api/imaging/studies?patientId=... (DICOM / CT series)
+ *    - GET /api/imaging/studies?patientId=... (DICOM / CT / X-Ray)
+ *    - GET /api/imaging/studies/:id (scan details)
  */
 
 import assert from "node:assert/strict";
@@ -33,7 +32,6 @@ import {
 import { registerDocumentRoutes } from "../routes/documents.js";
 import { registerImagingRoutes } from "../routes/imaging.js";
 import { registerPatientRoutes } from "../routes/patients.js";
-import { registerXrayRoutes } from "../routes/imaging/studiesRoutes.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { registerMedicalSecrecyPayloadStripping } from "../security/medicalSecrecyWarden.js";
 import { signToken } from "../utils/cryptoHelper.js";
@@ -320,7 +318,6 @@ describe("RED-TEAM HAMMER: WAVE 5 — Document Printing & Radiological Secrecy I
 		registerMedicalSecrecyPayloadStripping(app);
 		await registerPatientRoutes(app);
 		await registerDocumentRoutes(app);
-		await registerXrayRoutes(app);
 		await registerImagingRoutes(app);
 		await app.ready();
 	});
@@ -448,14 +445,14 @@ describe("RED-TEAM HAMMER: WAVE 5 — Document Printing & Radiological Secrecy I
 	});
 
 	// =========================================================================
-	// АТАКА 4: РЕНТГЕНОВСКИЕ СНИМКИ — GET /api/xray/scans?patientId=... ПОД МАРКЕТОЛОГОМ
+	// АТАКА 4: РЕНТГЕНОВСКИЕ СНИМКИ — GET /api/imaging/studies?patientId=... ПОД МАРКЕТОЛОГОМ
 	// =========================================================================
-	test("ATTACK 4: X-Ray Scans List — Marketer querying GET /api/xray/scans", async (t) => {
+	test("ATTACK 4: X-Ray Scans List — Marketer querying GET /api/imaging/studies?patientId=...", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans?patientId=${PATIENT_ID}`,
+			url: `/api/imaging/studies?patientId=${PATIENT_ID}`,
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": marketerStaffToken,
@@ -463,7 +460,7 @@ describe("RED-TEAM HAMMER: WAVE 5 — Document Printing & Radiological Secrecy I
 		});
 
 		console.log(
-			"\n[RED-TEAM AUDIT 4: GET /api/xray/scans under Marketer]\nStatus:",
+			"\n[RED-TEAM AUDIT 4: GET /api/imaging/studies?patientId=... under Marketer]\nStatus:",
 			res.statusCode,
 			"\nPayload snippet:",
 			res.payload.slice(0, 300),
@@ -491,14 +488,14 @@ describe("RED-TEAM HAMMER: WAVE 5 — Document Printing & Radiological Secrecy I
 	});
 
 	// =========================================================================
-	// АТАКА 5: СЫРОЙ РЕНТГЕНОВСКИЙ СНИМОК — GET /api/xray/scans/:id ПОД ОПЕРАТОРОМ
+	// АТАКА 5: СЫРОЙ РЕНТГЕНОВСКИЙ СНИМОК — GET /api/imaging/studies/:id ПОД ОПЕРАТОРОМ
 	// =========================================================================
-	test("ATTACK 5: X-Ray Raw Scan Detail — Call-Center Operator querying GET /api/xray/scans/:id", async (t) => {
+	test("ATTACK 5: X-Ray Raw Scan Detail — Call-Center Operator querying GET /api/imaging/studies/:id", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans/${XRAY_SCAN_ID}`,
+			url: `/api/imaging/studies/${XRAY_SCAN_ID}`,
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": callCenterStaffToken,
@@ -506,7 +503,7 @@ describe("RED-TEAM HAMMER: WAVE 5 — Document Printing & Radiological Secrecy I
 		});
 
 		console.log(
-			"\n[RED-TEAM AUDIT 5: GET /api/xray/scans/:id under Call-Center Operator]\nStatus:",
+			"\n[RED-TEAM AUDIT 5: GET /api/imaging/studies/:id under Call-Center Operator]\nStatus:",
 			res.statusCode,
 		);
 

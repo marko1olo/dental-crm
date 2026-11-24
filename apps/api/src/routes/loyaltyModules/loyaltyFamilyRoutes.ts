@@ -1,32 +1,40 @@
-import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { familyDebitBodySchema } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientBonusBalances, patientRelationships, patients } from "../../db/schema.js";
 import { executeFamilyBonusRedeem } from "./bonusRedemptionService.js";
-import { ensureFamilyMemberSpendAuthorization, executeCreateFamilyGroup, executeAddFamilyMember } from "../family/familyGroupWriteRoutes.js";
+import { executeCreateFamilyGroup, executeAddFamilyMember } from "../family/familyGroupWriteRoutes.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 
-const familyLinkSchema = z.object({
-	primaryPatientId: z.string().uuid(),
-	relativePatientId: z.string().min(1),
-	relationRole: z.string().default("член семьи"),
-});
+const familyLinkSchema = z
+	.object({
+		primaryPatientId: z.string().uuid(),
+		relativePatientId: z.string().min(1),
+		relationRole: z.string().default("член семьи"),
+	})
+	.strict();
 
 export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 	app.get("/api/loyalty/family/:patientId", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		const { patientId } = request.params as { patientId: string };
+		if (!patientId || !isValidUuid(patientId.trim())) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID)",
+			});
+		}
+		const cleanPatientId = patientId.trim();
 
-		return withTenantCtx(orgId, async () => {
-			const [patient] = await db
+		return withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 				.from(patients)
-				.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+				.where(and(eq(patients.organizationId, orgId), eq(patients.id, cleanPatientId)))
 				.limit(1);
 			if (!patient) return reply.status(404).send({ message: "Пациент не найден" });
 
@@ -37,13 +45,13 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [family] = await db
+			const [family] = await tx
 				.select()
 				.from(familyGroups)
 				.where(and(eq(familyGroups.organizationId, orgId), eq(familyGroups.id, patient.familyGroupId)))
 				.limit(1);
 
-			const membersList = await db
+			const membersList = await tx
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -53,7 +61,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 
 			const memberIds = membersList.map((m) => m.id);
 			const balances = memberIds.length > 0
-				? await db
+				? await tx
 						.select()
 						.from(patientBonusBalances)
 						.where(and(eq(patientBonusBalances.organizationId, orgId), inArray(patientBonusBalances.patientId, memberIds)))
@@ -82,7 +90,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				familyGroupId: family?.id ?? patient.familyGroupId,
 				familyName: family?.name ?? `Семья (${patient.fullName})`,
 				totalPooledPoints: totalPoints,
-				sponsorPatientId: family?.headPatientId ?? patientId,
+				sponsorPatientId: family?.headPatientId ?? cleanPatientId,
 				sponsorFullName: patient.fullName,
 				members,
 			});
@@ -106,17 +114,17 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 
 		const { sponsorPatientId, targetPatientId, pointsToDebit, description } = parsed.data;
 
-		return withTenantCtx(orgId, async () => {
+		return withTenantCtx(orgId, async (tx) => {
 			// BOLA/IDOR Defense: verify kinship & family group authorization
 			if (sponsorPatientId !== targetPatientId) {
-				const [sponsor] = await db
+				const [sponsor] = await tx
 					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
 					.from(patients)
 					.where(and(eq(patients.organizationId, orgId), eq(patients.id, sponsorPatientId)))
 					.limit(1);
 				if (!sponsor) return reply.status(404).send({ message: "Спонсор не найден" });
 
-				const [target] = await db
+				const [target] = await tx
 					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
 					.from(patients)
 					.where(and(eq(patients.organizationId, orgId), eq(patients.id, targetPatientId)))
@@ -131,7 +139,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 
 				let hasSpendAuth = false;
 				if (!sameFamily) {
-					const [rel] = await db
+					const [rel] = await tx
 						.select({
 							canSpendFamilyWallet: patientRelationships.canSpendFamilyWallet,
 							isPrimaryPayer: patientRelationships.isPrimaryPayer,
@@ -198,8 +206,8 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 
 		const { primaryPatientId, relativePatientId, relationRole } = parsed.data;
 
-		return withTenantCtx(orgId, async () => {
-			const [primary] = await db
+		return withTenantCtx(orgId, async (tx) => {
+			const [primary] = await tx
 				.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 				.from(patients)
 				.where(and(eq(patients.organizationId, orgId), eq(patients.id, primaryPatientId)))
@@ -207,12 +215,12 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 			if (!primary) return reply.status(404).send({ message: "Основной пациент не найден" });
 
 			const cleanRelativeInput = relativePatientId.trim();
-			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanRelativeInput);
+			const isUuid = isValidUuid(cleanRelativeInput);
 
 			let relative: { id: string; fullName: string; familyGroupId: string | null } | undefined;
 
 			if (isUuid) {
-				const [found] = await db
+				const [found] = await tx
 					.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 					.from(patients)
 					.where(and(eq(patients.organizationId, orgId), eq(patients.id, cleanRelativeInput)))
@@ -226,7 +234,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				if (digits.length >= 4) {
 					searchConditions.push(ilike(patients.phone, `%${digits}%`));
 				}
-				const foundList = await db
+				const foundList = await tx
 					.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 					.from(patients)
 					.where(and(eq(patients.organizationId, orgId), or(...searchConditions)))
@@ -263,7 +271,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				return reply.status(addRes.status).send({ message: addRes.body.message });
 			}
 
-			const [balance] = await db
+			const [balance] = await tx
 				.select()
 				.from(patientBonusBalances)
 				.where(and(eq(patientBonusBalances.organizationId, orgId), eq(patientBonusBalances.patientId, relative.id)))

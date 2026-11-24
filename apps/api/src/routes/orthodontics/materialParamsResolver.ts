@@ -1,4 +1,5 @@
 import { rublesToKopecks } from "@dental/shared";
+import type { TenantDb } from "../../db/rls.js";
 import type { deductOrthoMaterialsSchema } from "./types.js";
 import { resolveOrthoMaterialCost } from "./orthoPricelistResolver.js";
 
@@ -9,6 +10,7 @@ import { resolveOrthoMaterialCost } from "./orthoPricelistResolver.js";
 export async function resolveMaterialParams(
 	body: import("zod").infer<typeof deductOrthoMaterialsSchema>,
 	organizationId?: string,
+	tx?: TenantDb | undefined,
 ) {
 	let defaultName = body.materialName || "Расходный ортодонтический материал";
 	let pattern = body.materialName || "";
@@ -65,6 +67,7 @@ export async function resolveMaterialParams(
 			organizationId,
 			itemNamePattern: pattern,
 			fallbackCostRub,
+			tx,
 		});
 		unitCostRub = resolved.unitCostRub;
 		unitCostKopecks = resolved.unitCostKopecks;

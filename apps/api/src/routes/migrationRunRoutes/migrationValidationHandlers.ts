@@ -1,3 +1,5 @@
+import { realpath } from "node:fs/promises";
+import path from "node:path";
 import { Readable } from "node:stream";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -17,7 +19,8 @@ import {
 	storeUploadStream,
 	UploadTooLargeError,
 } from "../../migration/uploadStore.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import { safeLogError } from "../../observability/logger.js";
+import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
 import {
 	decodeHeaderText,
 	dicomInspectSchema,
@@ -25,6 +28,81 @@ import {
 	fail,
 	failSchemaRefusal,
 } from "./types.js";
+
+const BLOCKED_SYSTEM_ROOTS = [
+	"/etc",
+	"/proc",
+	"/sys",
+	"/dev",
+	"/boot",
+	"/root",
+	"/var/run",
+	"C:\\Windows",
+	"C:\\ProgramData",
+	"C:\\Program Files",
+	"C:\\Program Files (x86)",
+	"C:\\System Volume Information",
+].map((p) => path.resolve(p).toLowerCase());
+
+function isInsideRoot(target: string, root: string): boolean {
+	const normTarget = process.platform === "win32" ? target.toLowerCase() : target;
+	const normRoot = process.platform === "win32" ? root.toLowerCase() : root;
+	return (
+		normTarget === normRoot ||
+		normTarget.startsWith(
+			normRoot.endsWith(path.sep) ? normRoot : `${normRoot}${path.sep}`,
+		)
+	);
+}
+
+async function resolveSafeMigrationPath(rawPath: string): Promise<string> {
+	if (!rawPath || rawPath.includes("\0")) {
+		throw new Error("Некорректный путь к файлу или каталогу.");
+	}
+	const resolved = path.resolve(rawPath.trim());
+	let canonical = resolved;
+	try {
+		canonical = await realpath(resolved);
+	} catch (err: unknown) {
+		const code = (err as { code?: string } | null)?.code;
+		if (code && code !== "ENOENT") {
+			throw err;
+		}
+	}
+
+	for (const blocked of BLOCKED_SYSTEM_ROOTS) {
+		if (isInsideRoot(canonical, blocked)) {
+			throw new Error("Доступ к системным каталогам операционной системы запрещён.");
+		}
+	}
+
+	const uploadsBase = path.resolve(
+		process.env.DENTAL_MIGRATION_UPLOAD_ROOT?.trim() ||
+			path.join(process.cwd(), ".data", "migration-uploads"),
+	);
+	if (isInsideRoot(canonical, uploadsBase)) {
+		throw new Error("Прямое чтение внутреннего хранилища загрузок запрещено.");
+	}
+
+	const configuredRootsRaw = process.env.DENTAL_MIGRATION_ALLOWED_ROOTS?.trim();
+	if (configuredRootsRaw) {
+		const allowedRoots = configuredRootsRaw
+			.split(/[;,]/)
+			.map((r) => r.trim())
+			.filter(Boolean)
+			.map((r) => path.resolve(r));
+		if (
+			allowedRoots.length > 0 &&
+			!allowedRoots.some((root) => isInsideRoot(canonical, root))
+		) {
+			throw new Error(
+				"Указанный путь выходит за пределы разрешённых каталогов миграции (DENTAL_MIGRATION_ALLOWED_ROOTS).",
+			);
+		}
+	}
+
+	return canonical;
+}
 
 /**
  * Обработчики валидации форматов (CSV/XML/JSON/DBF/1C/InfoDent/D4W),
@@ -90,6 +168,10 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 						limitMegabytes: Math.floor(error.limitBytes / (1024 * 1024)),
 					});
 				}
+				request.log.warn(
+					{ err: safeLogError(error), organizationId: context.organizationId, fileName: rawFileName },
+					"[migration] Upload stream rejected",
+				);
 				const message =
 					error instanceof Error ? error.message : "Файл не принят.";
 				return fail(reply, 400, "UploadFailed", message);
@@ -110,6 +192,10 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 					forcedKind: undefined,
 				});
 			} catch (error) {
+				request.log.warn(
+					{ err: safeLogError(error), organizationId: context.organizationId, fileName: stored.fileName },
+					"[migration] Unsupported source shape deleted",
+				);
 				await deleteUpload(stored.filePath);
 				const message =
 					error instanceof Error ? error.message : "Формат файла не распознан.";
@@ -199,6 +285,19 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 		);
 		if (!context) return reply;
 
+		const identity = getRequestIdentity(request);
+		if (
+			identity.userId &&
+			!(ADMIN_ROLES as readonly string[]).includes(identity.role ?? "")
+		) {
+			return fail(
+				reply,
+				403,
+				"PermissionDenied",
+				"Поиск локальных баз на сервере доступен только владельцу или администратору клиники.",
+			);
+		}
+
 		const parsed = discoverRequestSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
 			return failSchemaRefusal(
@@ -209,9 +308,27 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 			);
 		}
 
+		let validatedRoots: string[] = [];
+		if (parsed.data.roots.length > 0) {
+			try {
+				validatedRoots = await Promise.all(
+					parsed.data.roots.map((r) => resolveSafeMigrationPath(r)),
+				);
+			} catch (pathError) {
+				return fail(
+					reply,
+					400,
+					"InvalidMigrationPath",
+					pathError instanceof Error
+						? pathError.message
+						: "Недопустимый каталог для поиска источников.",
+				);
+			}
+		}
+
 		try {
 			const result = await discoverLocalSources({
-				...(parsed.data.roots.length > 0 ? { roots: parsed.data.roots } : {}),
+				...(validatedRoots.length > 0 ? { roots: validatedRoots } : {}),
 				maxDepth: parsed.data.maxDepth,
 				timeBudgetMs: parsed.data.timeBudgetMs,
 			});
@@ -264,6 +381,10 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 				warnings: result.warnings,
 			};
 		} catch (error) {
+			request.log.error(
+				{ err: safeLogError(error), organizationId: context.organizationId },
+				"[migration] Local source discovery failed",
+			);
 			const message =
 				error instanceof Error ? error.message : "Поиск не выполнен.";
 			return fail(reply, 500, "DiscoveryFailed", message);
@@ -285,6 +406,19 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 		);
 		if (!context) return reply;
 
+		const identity = getRequestIdentity(request);
+		if (
+			identity.userId &&
+			!(ADMIN_ROLES as readonly string[]).includes(identity.role ?? "")
+		) {
+			return fail(
+				reply,
+				403,
+				"PermissionDenied",
+				"Инспекция файлов DICOM на сервере доступна только владельцу или администратору клиники.",
+			);
+		}
+
 		const parsed = dicomInspectSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
 			return failSchemaRefusal(
@@ -295,15 +429,33 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 			);
 		}
 
+		let safeFilePath: string;
 		try {
-			const metadata = await readDicomMetadata(parsed.data.filePath);
+			safeFilePath = await resolveSafeMigrationPath(parsed.data.filePath);
+		} catch (pathError) {
+			return fail(
+				reply,
+				400,
+				"InvalidMigrationPath",
+				pathError instanceof Error
+					? pathError.message
+					: "Недопустимый путь к файлу DICOM.",
+			);
+		}
+
+		try {
+			const metadata = await readDicomMetadata(safeFilePath);
 			reply.code(200);
-			return { filePath: parsed.data.filePath, metadata };
+			return { filePath: safeFilePath, metadata };
 		} catch (error) {
+			request.log.error(
+				{ err: safeLogError(error), organizationId: context.organizationId, filePath: safeFilePath },
+				"[migration] DICOM metadata inspection failed",
+			);
 			const message =
 				error instanceof Error ? error.message : "Снимок не разобран.";
 			return fail(reply, 422, "DicomRejected", message, {
-				filePath: parsed.data.filePath,
+				filePath: safeFilePath,
 			});
 		}
 	});

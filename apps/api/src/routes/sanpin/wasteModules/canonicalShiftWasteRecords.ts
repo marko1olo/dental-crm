@@ -68,7 +68,7 @@ export function buildCanonicalShiftWasteRecords(
 			disposalCompany,
 			transferActNumber: null,
 			responsibleStaffId: operatorId,
-			notes: `ТКО по СанПиН 3.3686-21. Ответственный: ${defaultOperatorName}`,
+			notes: `Твердые коммунальные отходы смены. Ответственный: ${defaultOperatorName}`,
 		},
 		// 2. Класс Б мягкие (желтые пакеты): эпидемиологически опасные отходы
 		{
@@ -104,7 +104,7 @@ export function buildCanonicalShiftWasteRecords(
 			disposalCompany,
 			transferActNumber: String(barcode || `АКТ-Б-О-${actSuffix}`),
 			responsibleStaffId: operatorId,
-			notes: `Пломба ${sealNumber}. Непрокалываемый контейнер с иглосъёмником по СанПиН 3.3686-21. Сдано: ${defaultOperatorName}`,
+			notes: `Пломба ${sealNumber}. Непрокалываемый контейнер с иглосъёмником. Сдано: ${defaultOperatorName}`,
 		},
 	];
 }

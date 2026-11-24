@@ -28,7 +28,6 @@ import {
 import {
 	bufferPendingFiscalReceipt,
 	checkExistingIdempotentReceipt,
-	executeKktPrintAndBuffer,
 	finalizeKktPrintAndBuffer,
 } from "./receiptKktSender.js";
 import { LanKktDriverService } from "../../../services/hardware/index.js";

@@ -34,7 +34,11 @@ export async function requireTelegramControlPlaneAccess(
 	if (
 		identity.verified &&
 		identity.organizationId &&
-		(identity.role ? (ADMIN_ROLES as readonly string[]).includes(identity.role) || identity.role === "doctor" : true)
+		(!identity.userId ||
+			(identity.role !== null &&
+				identity.role !== undefined &&
+				((ADMIN_ROLES as readonly string[]).includes(identity.role) ||
+					identity.role === "doctor")))
 	) {
 		return;
 	}

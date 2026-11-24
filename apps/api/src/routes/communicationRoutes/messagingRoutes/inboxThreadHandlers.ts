@@ -5,6 +5,7 @@ import { db } from "../../../db/client.js";
 import { communicationEvents, patients } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
+import { UUID_REGEX } from "../types.js";
 
 export function registerInboxThreadHandlers(app: FastifyInstance): void {
 	app.get<{ Params: { patientId: string } }>("/api/communications/inbox/:patientId", async (request, reply) => {
@@ -15,6 +16,12 @@ export function registerInboxThreadHandlers(app: FastifyInstance): void {
 		);
 		if (!orgId) return;
 		const { patientId } = request.params;
+		if (!UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({
+				error: "InvalidPatientId",
+				message: "Некорректный идентификатор пациента.",
+			});
+		}
 
 		const identity = getRequestIdentity(request);
 		if (identity.role === "marketer" || identity.role === "marketing") {

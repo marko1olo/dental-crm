@@ -1,153 +1,319 @@
 /**
  * DENTE Dental CRM — 1C:Enterprise (1С:Бухгалтерия 8.3 / 1С:Медицина)
  * CommerceML 2.09 Fastify Integration Routes.
- *
- * Statutory Endpoints:
- * - GET  /api/v1/integrations/1c/commerceml/export — Download statutory CommerceML 2.09 XML package.
- * - POST /api/v1/integrations/1c/commerceml/export — Generate CommerceML 2.09 JSON/XML package with SHA-256 idempotency.
- * - POST /api/v1/integrations/1c/commerceml/sync   — Inbound ACID sync from 1C (inventory stock, payments, confirmations).
- * - POST /api/v1/integrations/1c/commerceml/validate — Validate CommerceML package for exact kopeck math and accounts balancing.
- * - GET  /api/v1/integrations/1c/commerceml/shifts — List cash register shifts with 54-FZ status and 1C accounts (50.01, 57.03, 51, 62.02).
- * - GET  /api/v1/integrations/1c/commerceml/acts   — List medical acts with 804n nomenclature codes and doctor names.
- * - GET  /api/v1/integrations/1c/commerceml/materials — List CSO and warehouse write-offs (Account 10.01 / 10.06 -> 20.01).
- * - POST /api/v1/integrations/1c/commerceml/check-double-posting — Prevent double posting in 1C via SHA-256 hash.
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	COMMERCEML_VERSION_209,
-	type OneCChartOfAccounts,
-	type OneCClinicProfile,
-	type OneCCommerceMlPackage,
+	oneCChartOfAccountsSchema,
+	oneCClinicProfileSchema,
+	oneCCommerceMlPackageSchema,
+	rublesToKopecks,
+	sha256Hex,
 	validatePackageIntegrity,
 } from "@dental/shared";
-import {
-	namedDevelopmentModeActive,
-	requireResolvedOrganizationId,
-} from "../accessGuard.js";
+import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
 	CommerceMlService,
-	exportCommerceMlParamsSchema,
 	oneCSyncPayloadSchema,
+	type OneCSyncPayload,
 } from "../services/finance/commerceMlService.js";
 
-const exportQuerySchema = z.object({
-	organizationId: z.string().uuid().optional(),
-	startDateIso: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/)
-		.optional(),
-	endDateIso: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/)
-		.optional(),
-	format: z.enum(["xml", "json"]).default("xml"),
-	shiftId: z.string().optional(),
-	includeRetailSales: z
-		.union([z.boolean(), z.string()])
-		.transform((v) => v === true || v === "true" || v === "1")
-		.default(true),
-	includeMedicalActs: z
-		.union([z.boolean(), z.string()])
-		.transform((v) => v === true || v === "true" || v === "1")
-		.default(true),
-	includeMaterials: z
-		.union([z.boolean(), z.string()])
-		.transform((v) => v === true || v === "true" || v === "1")
-		.default(true),
-	includePayroll: z
-		.union([z.boolean(), z.string()])
-		.transform((v) => v === true || v === "true" || v === "1")
-		.default(true),
-});
+const DATE_ISO_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+const booleanQuerySchema = z
+	.union([z.boolean(), z.enum(["true", "false", "1", "0"])])
+	.transform((v) => v === true || v === "true" || v === "1");
+
+const exportQuerySchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		startDateIso: z.string().regex(DATE_ISO_REGEX).optional(),
+		endDateIso: z.string().regex(DATE_ISO_REGEX).optional(),
+		format: z.enum(["xml", "json"]).default("xml"),
+		shiftId: z.string().optional(),
+		includeRetailSales: booleanQuerySchema.default(true),
+		includeMedicalActs: booleanQuerySchema.default(true),
+		includeMaterials: booleanQuerySchema.default(true),
+		includePayroll: booleanQuerySchema.default(true),
+	})
+	.strict();
+
+const exportPostBodySchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		startDateIso: z.string().regex(DATE_ISO_REGEX).optional(),
+		endDateIso: z.string().regex(DATE_ISO_REGEX).optional(),
+		format: z.enum(["xml", "json"]).default("xml"),
+		shiftId: z.string().optional(),
+		includeRetailSales: z.boolean().default(true),
+		includeMedicalActs: z.boolean().default(true),
+		includeMaterials: z.boolean().default(true),
+		includePayroll: z.boolean().default(true),
+		chartOfAccountsOverrides: oneCChartOfAccountsSchema.partial().optional(),
+		clinicProfileOverrides: oneCClinicProfileSchema.partial().optional(),
+	})
+	.strict();
+
+const checkDoublePostingBodySchema = z
+	.object({
+		sha256Hash: z.string().min(1, "Необходимо передать sha256Hash пакета или документа"),
+		organizationId: z.string().uuid().optional(),
+	})
+	.strict();
+
+const catalogQuerySchema = z
+	.object({
+		format: z.enum(["xml", "json"]).default("xml"),
+		classifierName: z.string().optional(),
+		catalogName: z.string().optional(),
+		includeInactive: booleanQuerySchema.default(false),
+		priceTypeTitle: z.string().optional(),
+	})
+	.strict();
+
+const offersQuerySchema = z
+	.object({
+		format: z.enum(["xml", "json"]).default("xml"),
+		warehouseName: z.string().optional(),
+		includeZeroStock: booleanQuerySchema.default(false),
+		priceTypeTitle: z.string().optional(),
+	})
+	.strict();
+
+const FORBIDDEN_COMMERCEML_ROLES = new Set(["marketer", "marketing", "receptionist", "patient"]);
+
+async function requireCommerceMlAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	permission: "integrations.commerceml.export" | "integrations.commerceml.sync" | "integrations.commerceml.validate",
+): Promise<{ organizationId: string; userId: string } | null> {
+	const identity = getRequestIdentity(request);
+	const staffRole = identity.role;
+	if (staffRole && FORBIDDEN_COMMERCEML_ROLES.has(staffRole)) {
+		void reply.code(403).send({
+			error: "PermissionDenied",
+			permission,
+			role: staffRole,
+			message:
+				"Операции CommerceML 2.09 (реестры 1С, медицинские акты, склад и зарплаты) для нефинансового персонала запрещены (152-ФЗ / 323-ФЗ ст. 13).",
+		});
+		return null;
+	}
+
+	const verifiedOrgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, permission);
+	if (!verifiedOrgId) return null;
+
+	const verifiedIdentity = getRequestIdentity(request);
+	if (verifiedIdentity.role && FORBIDDEN_COMMERCEML_ROLES.has(verifiedIdentity.role)) {
+		void reply.code(403).send({
+			error: "PermissionDenied",
+			permission,
+			role: verifiedIdentity.role,
+			message:
+				"Операции CommerceML 2.09 (реестры 1С, медицинские акты, склад и зарплаты) для нефинансового персонала запрещены (152-ФЗ / 323-ФЗ ст. 13).",
+		});
+		return null;
+	}
+
+	return {
+		organizationId: verifiedOrgId,
+		userId: verifiedIdentity.userId || "",
+	};
+}
+
+function decodeXmlBody(body: string | Buffer): string {
+	if (typeof body === "string") {
+		return body.replace(/^\uFEFF/, "");
+	}
+	const asciiHead = body.subarray(0, 256).toString("latin1");
+	const encMatch = asciiHead.match(/encoding\s*=\s*["']([^"']+)["']/i);
+	const encoding = encMatch?.[1]?.toLowerCase() ?? "utf-8";
+	if (encoding === "windows-1251" || encoding === "cp1251" || encoding === "cp-1251") {
+		const cp1251Text = new TextDecoder("windows-1251").decode(body).replace(/^\uFEFF/, "");
+		if (/<КоммерческаяИнформация(?:\s|>)/i.test(cp1251Text)) {
+			return cp1251Text;
+		}
+		const utf8Text = new TextDecoder("utf-8").decode(body).replace(/^\uFEFF/, "");
+		if (/<КоммерческаяИнформация(?:\s|>)/i.test(utf8Text)) {
+			return utf8Text;
+		}
+		return cp1251Text;
+	}
+	return new TextDecoder("utf-8").decode(body).replace(/^\uFEFF/, "");
+}
+
+function extractXmlTagValue(block: string, tagName: string): string | undefined {
+	const escaped = tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const match = block.match(new RegExp(`<${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escaped}>`, "i"));
+	return match?.[1]?.trim() || undefined;
+}
+
+function extractXmlBlocks(xml: string, tagName: string): string[] {
+	const escaped = tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const regex = new RegExp(`<${escaped}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escaped}>`, "gi");
+	const blocks: string[] = [];
+	let m = regex.exec(xml);
+	while (m) {
+		if (m[1]) blocks.push(m[1]);
+		m = regex.exec(xml);
+	}
+	return blocks;
+}
+
+function parseInboundCommerceMlSyncXml(
+	xmlText: string,
+	organizationId: string,
+): { ok: true; payload: OneCSyncPayload } | { ok: false; message: string } {
+	const trimmed = xmlText.trim();
+	if (!trimmed.startsWith("<") || !/<КоммерческаяИнформация(?:\s|>)/i.test(trimmed)) {
+		return {
+			ok: false,
+			message: "Некорректный XML CommerceML 2.09: отсутствует корневой элемент <КоммерческаяИнформация>.",
+		};
+	}
+
+	const normalizedForHash = trimmed.replace(/\r\n/g, "\n");
+	const explicitSyncId =
+		extractXmlTagValue(trimmed, "ИдПакета") ||
+		`1c-xml-${sha256Hex(normalizedForHash).slice(0, 24)}`;
+
+	const postedDocumentConfirmations = extractXmlBlocks(trimmed, "Документ")
+		.map((docBlock) => {
+			const documentId = extractXmlTagValue(docBlock, "Ид");
+			const documentNumber = extractXmlTagValue(docBlock, "Номер");
+			if (!documentId || !documentNumber) return null;
+			const postedDate = extractXmlTagValue(docBlock, "Дата");
+			const postedRaw = extractXmlTagValue(docBlock, "Проведен");
+			const isPosted = postedRaw ? postedRaw.toLowerCase() !== "false" : true;
+			return {
+				documentId,
+				documentNumber,
+				isPosted,
+				oneCDocumentNumber: documentNumber,
+				...(postedDate ? { postedAtIso: postedDate } : {}),
+			};
+		})
+		.filter((item): item is NonNullable<typeof item> => item !== null);
+
+	const inventoryStockUpdates = extractXmlBlocks(trimmed, "Предложение")
+		.map((offerBlock) => {
+			const idVal = extractXmlTagValue(offerBlock, "Ид");
+			const skuVal = extractXmlTagValue(offerBlock, "Артикул");
+			const qtyRaw = extractXmlTagValue(offerBlock, "Количество");
+			if ((!idVal && !skuVal) || qtyRaw === undefined) return null;
+			const updatedQty = Number(qtyRaw.replace(",", "."));
+			if (!Number.isFinite(updatedQty) || updatedQty < 0) return null;
+			const priceRaw = extractXmlTagValue(offerBlock, "ЦенаЗаЕдиницу");
+			const priceNum = priceRaw ? Number(priceRaw.replace(",", ".")) : undefined;
+			const unitCostKopecks =
+				priceNum !== undefined && Number.isFinite(priceNum) && priceNum >= 0
+					? rublesToKopecks(priceNum)
+					: undefined;
+			return {
+				...(idVal && UUID_REGEX.test(idVal) ? { itemId: idVal } : {}),
+				...(skuVal ? { sku: skuVal } : idVal ? { sku: idVal } : {}),
+				updatedQty,
+				...(unitCostKopecks !== undefined ? { unitCostKopecks } : {}),
+			};
+		})
+		.filter((item): item is NonNullable<typeof item> => item !== null);
+
+	const reconciledPayments = extractXmlBlocks(trimmed, "Оплата")
+		.map((payBlock) => {
+			const paymentId = extractXmlTagValue(payBlock, "Ид");
+			if (!paymentId || !UUID_REGEX.test(paymentId)) return null;
+			const fiscalReceiptNumber = extractXmlTagValue(payBlock, "НомерЧека");
+			const status = extractXmlTagValue(payBlock, "Статус") || "reconciled";
+			return {
+				paymentId,
+				status,
+				...(fiscalReceiptNumber ? { fiscalReceiptNumber } : {}),
+			};
+		})
+		.filter((item): item is NonNullable<typeof item> => item !== null);
+
+	if (
+		postedDocumentConfirmations.length === 0 &&
+		inventoryStockUpdates.length === 0 &&
+		reconciledPayments.length === 0
+	) {
+		return {
+			ok: false,
+			message:
+				"XML CommerceML 2.09 не содержит распознаваемых элементов синхронизации (<Документ>, <Предложение> или <Оплата>).",
+		};
+	}
+
+	const candidate: OneCSyncPayload = {
+		organizationId,
+		syncTransactionId: explicitSyncId,
+		syncTimestamp: new Date().toISOString(),
+		postedDocumentConfirmations,
+		inventoryStockUpdates,
+		reconciledPayments,
+	};
+
+	const validated = oneCSyncPayloadSchema.safeParse(candidate);
+	if (!validated.success) {
+		return {
+			ok: false,
+			message: validated.error.issues[0]?.message ?? "Ошибка валидации распарсенного XML-пакета 1С.",
+		};
+	}
+
+	return { ok: true, payload: validated.data };
+}
 
 export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<void> {
 	if (!app.hasContentTypeParser("application/xml")) {
 		app.addContentTypeParser(
 			["application/xml", "text/xml"],
-			{ parseAs: "string" },
+			{ parseAs: "buffer" },
 			(_req, body, done) => {
 				done(null, body);
 			},
 		);
 	}
+
 	// ═════════════════════════════════════════════════════════════════════════
 	// 1. EXPORT ENDPOINTS (GET & POST)
 	// ═════════════════════════════════════════════════════════════════════════
 
-	const handleExport = async (
-		request: FastifyRequest,
+	const executeExport = async (
+		authOrgId: string,
 		reply: FastifyReply,
-		inputData: Record<string, unknown>,
+		inputData: z.infer<typeof exportPostBodySchema>,
 	) => {
-		const identity = getRequestIdentity(request);
-		const staffRole = identity.role;
-		if (staffRole === "marketer" || staffRole === "receptionist") {
+		if (inputData.organizationId && inputData.organizationId !== authOrgId) {
 			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "integrations.commerceml.export",
-				role: staffRole,
-				message:
-					"Выгрузка CommerceML (реестры 1С, медицинские акты и зарплаты) для нефинансового персонала запрещена (152-ФЗ / 323-ФЗ ст. 13).",
+				error: "TenantMismatch",
+				message: "Запрошенная организация не совпадает с авторизованным арендатором.",
 			});
 		}
 
-		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
-		if (reply.sent) return;
-		const targetOrgId =
-			verifiedOrgId ||
-			(typeof inputData.organizationId === "string"
-				? inputData.organizationId
-				: undefined);
-
-		if (!targetOrgId) {
-			if (!namedDevelopmentModeActive()) {
-				return reply.status(401).send({
-					error: "Unauthorized",
-					message: "Необходимо указать действующий токен организации",
-				});
-			}
-		}
-
-		const resolvedOrgId = targetOrgId || "00000000-0000-7000-8000-000000000001";
 		const todayIso = new Date().toISOString().slice(0, 10);
-
-		const startDateIso =
-			typeof inputData.startDateIso === "string"
-				? inputData.startDateIso
-				: todayIso;
-		const endDateIso =
-			typeof inputData.endDateIso === "string"
-				? inputData.endDateIso
-				: startDateIso;
-
-		const format = inputData.format === "json" ? "json" : "xml";
+		const startDateIso = inputData.startDateIso || todayIso;
+		const endDateIso = inputData.endDateIso || startDateIso;
 
 		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: resolvedOrgId,
+			organizationId: authOrgId,
 			startDateIso,
 			endDateIso,
-			shiftId:
-				typeof inputData.shiftId === "string" ? inputData.shiftId : undefined,
-			includeRetailSales: inputData.includeRetailSales !== false,
-			includeMedicalActs: inputData.includeMedicalActs !== false,
-			includeMaterials: inputData.includeMaterials !== false,
-			includePayroll: inputData.includePayroll !== false,
-			chartOfAccountsOverrides:
-				typeof inputData.chartOfAccountsOverrides === "object" &&
-				inputData.chartOfAccountsOverrides !== null
-					? (inputData.chartOfAccountsOverrides as Partial<OneCChartOfAccounts>)
-					: undefined,
-			clinicProfileOverrides:
-				typeof inputData.clinicProfileOverrides === "object" &&
-				inputData.clinicProfileOverrides !== null
-					? (inputData.clinicProfileOverrides as Partial<OneCClinicProfile>)
-					: undefined,
+			shiftId: inputData.shiftId,
+			includeRetailSales: inputData.includeRetailSales,
+			includeMedicalActs: inputData.includeMedicalActs,
+			includeMaterials: inputData.includeMaterials,
+			includePayroll: inputData.includePayroll,
+			chartOfAccountsOverrides: inputData.chartOfAccountsOverrides,
+			clinicProfileOverrides: inputData.clinicProfileOverrides,
 		});
 
-		if (format === "xml") {
+		if (inputData.format === "xml") {
 			const filename = `1C_CommerceML209_${result.package.clinic.prefix1C || "DN"}_${startDateIso.replace(/-/g, "")}.xml`;
 			return reply
 				.header("Content-Type", "application/xml; charset=utf-8")
@@ -168,78 +334,205 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		});
 	};
 
-	// Primary v1 statutory path
-	app.get("/api/v1/integrations/1c/commerceml/export", async (request, reply) => {
-		const parsedQuery = exportQuerySchema.parse(request.query || {});
-		return handleExport(request, reply, parsedQuery);
-	});
+	const handleGetExport = async (request: FastifyRequest, reply: FastifyReply) => {
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
 
-	app.post("/api/v1/integrations/1c/commerceml/export", async (request, reply) => {
-		const parsedBody =
-			typeof request.body === "object" && request.body !== null
-				? (request.body as Record<string, unknown>)
-				: {};
-		return handleExport(request, reply, parsedBody);
-	});
+		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса экспорта CommerceML.",
+				details: parsedQuery.error.issues,
+			});
+		}
+		return executeExport(access.organizationId, reply, parsedQuery.data);
+	};
 
-	// Direct alias paths for web client
-	app.get("/api/commerceml/export", async (request, reply) => {
-		const parsedQuery = exportQuerySchema.parse(request.query || {});
-		return handleExport(request, reply, parsedQuery);
-	});
+	const handlePostExport = async (request: FastifyRequest, reply: FastifyReply) => {
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
 
-	app.post("/api/commerceml/export", async (request, reply) => {
-		const parsedBody =
-			typeof request.body === "object" && request.body !== null
-				? (request.body as Record<string, unknown>)
-				: {};
-		return handleExport(request, reply, parsedBody);
-	});
+		const parsedBody = exportPostBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedBody.error.issues[0]?.message ?? "Некорректное тело запроса экспорта CommerceML.",
+				details: parsedBody.error.issues,
+			});
+		}
+		return executeExport(access.organizationId, reply, parsedBody.data);
+	};
+
+	app.get("/api/v1/integrations/1c/commerceml/export", handleGetExport);
+	app.post("/api/v1/integrations/1c/commerceml/export", handlePostExport);
+	app.get("/api/commerceml/export", handleGetExport);
+	app.post("/api/commerceml/export", handlePostExport);
 
 	// ═════════════════════════════════════════════════════════════════════════
-	// 2. INBOUND ACID SYNC ENDPOINT (POST)
+	// 2. CATALOG (import.xml) & OFFERS (offers.xml) ENDPOINTS
+	// ═════════════════════════════════════════════════════════════════════════
+
+	const handleGetCatalog = async (request: FastifyRequest, reply: FastifyReply) => {
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
+
+		const parsedQuery = catalogQuerySchema.safeParse(request.query || {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса каталога CommerceML.",
+				details: parsedQuery.error.issues,
+			});
+		}
+
+		const res = await CommerceMlService.buildCatalogXml({
+			organizationId: access.organizationId,
+			classifierName: parsedQuery.data.classifierName || "Классификатор стоматологических услуг и материалов",
+			catalogName: parsedQuery.data.catalogName || "Каталог медицинских услуг",
+			includeInactive: parsedQuery.data.includeInactive,
+			priceTypeTitle: parsedQuery.data.priceTypeTitle || "Основной прайс-лист",
+		});
+
+		if (parsedQuery.data.format === "json") {
+			return reply.send(res);
+		}
+		return reply
+			.header("Content-Type", "application/xml; charset=utf-8")
+			.header("X-CommerceML-Version", COMMERCEML_VERSION_209)
+			.header("X-CommerceML-SHA256", res.sha256)
+			.send(res.xml);
+	};
+
+	const handleGetOffers = async (request: FastifyRequest, reply: FastifyReply) => {
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
+
+		const parsedQuery = offersQuerySchema.safeParse(request.query || {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса остатков CommerceML.",
+				details: parsedQuery.error.issues,
+			});
+		}
+
+		const res = await CommerceMlService.buildOffersXml({
+			organizationId: access.organizationId,
+			warehouseName: parsedQuery.data.warehouseName || "Основной склад клиники",
+			includeZeroStock: parsedQuery.data.includeZeroStock,
+			priceTypeTitle: parsedQuery.data.priceTypeTitle || "Основной прайс-лист",
+		});
+
+		if (parsedQuery.data.format === "json") {
+			return reply.send(res);
+		}
+		return reply
+			.header("Content-Type", "application/xml; charset=utf-8")
+			.header("X-CommerceML-Version", COMMERCEML_VERSION_209)
+			.header("X-CommerceML-SHA256", res.sha256)
+			.send(res.xml);
+	};
+
+	app.get("/api/v1/integrations/1c/commerceml/catalog", handleGetCatalog);
+	app.get("/api/commerceml/catalog", handleGetCatalog);
+	app.get("/api/v1/integrations/1c/commerceml/offers", handleGetOffers);
+	app.get("/api/commerceml/offers", handleGetOffers);
+
+	// ═════════════════════════════════════════════════════════════════════════
+	// 3. INBOUND ACID SYNC ENDPOINT (POST)
 	// ═════════════════════════════════════════════════════════════════════════
 
 	const handleSync = async (request: FastifyRequest, reply: FastifyReply) => {
-		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
-		if (reply.sent) return;
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.sync");
+		if (!access) return;
 
-		let rawBody: Record<string, unknown> = {};
-		if (typeof request.body === "string") {
-			const trimmed = request.body.trim();
-			if (trimmed.startsWith("{")) {
+		const contentType = String(request.headers["content-type"] || "").toLowerCase();
+		let payloadToSync: OneCSyncPayload;
+
+		if (
+			Buffer.isBuffer(request.body) ||
+			typeof request.body === "string"
+		) {
+			const decoded = decodeXmlBody(request.body);
+			const trimmed = decoded.trim();
+			const looksLikeJson = !contentType.includes("xml") && trimmed.startsWith("{");
+
+			if (looksLikeJson) {
+				let parsedJson: unknown;
 				try {
-					rawBody = JSON.parse(trimmed) as Record<string, unknown>;
+					parsedJson = JSON.parse(trimmed);
 				} catch {
-					rawBody = {};
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный JSON в запросе синхронизации 1С.",
+					});
 				}
+				if (
+					parsedJson &&
+					typeof parsedJson === "object" &&
+					"organizationId" in parsedJson &&
+					(parsedJson as { organizationId?: unknown }).organizationId !== undefined &&
+					(parsedJson as { organizationId?: unknown }).organizationId !== access.organizationId
+				) {
+					return reply.code(403).send({
+						error: "TenantMismatch",
+						message: "Указанная организация не совпадает с авторизованным арендатором.",
+					});
+				}
+				const safeJson = oneCSyncPayloadSchema.safeParse({
+					...(parsedJson && typeof parsedJson === "object" ? parsedJson : {}),
+					organizationId: access.organizationId,
+				});
+				if (!safeJson.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: safeJson.error.issues[0]?.message ?? "Некорректный JSON-пакет синхронизации 1С.",
+						details: safeJson.error.issues,
+					});
+				}
+				payloadToSync = safeJson.data;
 			} else {
-				// XML payload received from 1C (Content-Type: application/xml or text/xml)
-				rawBody = {
-					syncTransactionId: `1c-xml-sync-${Date.now()}`,
-				};
+				const xmlResult = parseInboundCommerceMlSyncXml(decoded, access.organizationId);
+				if (!xmlResult.ok) {
+					return reply.code(400).send({
+						error: "InvalidXmlPayload",
+						message: xmlResult.message,
+					});
+				}
+				payloadToSync = xmlResult.payload;
 			}
-		} else if (typeof request.body === "object" && request.body !== null) {
-			rawBody = request.body as Record<string, unknown>;
+		} else if (typeof request.body === "object" && request.body !== null && !Array.isArray(request.body)) {
+			const rawObj = request.body as Record<string, unknown>;
+			if (rawObj.organizationId !== undefined && rawObj.organizationId !== access.organizationId) {
+				return reply.code(403).send({
+					error: "TenantMismatch",
+					message: "Указанная организация не совпадает с авторизованным арендатором.",
+				});
+			}
+			const safeObj = oneCSyncPayloadSchema.safeParse({
+				...rawObj,
+				organizationId: access.organizationId,
+			});
+			if (!safeObj.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: safeObj.error.issues[0]?.message ?? "Некорректные данные синхронизации 1С.",
+					details: safeObj.error.issues,
+				});
+			}
+			payloadToSync = safeObj.data;
+		} else {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Передайте JSON или XML CommerceML 2.09 для синхронизации с 1С.",
+			});
 		}
 
-		const resolvedOrgId =
-			verifiedOrgId ||
-			(typeof rawBody.organizationId === "string"
-				? rawBody.organizationId
-				: "00000000-0000-7000-8000-000000000001");
-
-		const identity = getRequestIdentity(request);
-		const actorUserId = identity.userId || undefined;
-
-		const payload = oneCSyncPayloadSchema.parse({
-			...rawBody,
-			organizationId: resolvedOrgId,
-			syncTransactionId:
-				(rawBody.syncTransactionId as string) || `sync-${Date.now()}`,
-		});
-
-		const syncResult = await CommerceMlService.syncFrom1C(payload, actorUserId);
+		const syncResult = await CommerceMlService.syncFrom1C(
+			payloadToSync,
+			access.userId || undefined,
+		);
 		return reply.send(syncResult);
 	};
 
@@ -247,19 +540,23 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	app.post("/api/commerceml/sync", handleSync);
 
 	// ═════════════════════════════════════════════════════════════════════════
-	// 3. VALIDATION ENDPOINT
+	// 4. VALIDATION ENDPOINT
 	// ═════════════════════════════════════════════════════════════════════════
 
 	const handleValidate = async (request: FastifyRequest, reply: FastifyReply) => {
-		const pkg = request.body as OneCCommerceMlPackage;
-		if (!pkg || typeof pkg !== "object") {
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.validate");
+		if (!access) return;
+
+		const parsedPkg = oneCCommerceMlPackageSchema.safeParse(request.body);
+		if (!parsedPkg.success) {
 			return reply.status(400).send({
 				error: "InvalidPayload",
-				message: "Требуется передать объект пакета CommerceML 2.09",
+				message: parsedPkg.error.issues[0]?.message ?? "Требуется передать валидный пакет CommerceML 2.09",
+				details: parsedPkg.error.issues,
 			});
 		}
 
-		const integrity = validatePackageIntegrity(pkg);
+		const integrity = validatePackageIntegrity(parsedPkg.data);
 		return reply.send({
 			isValid: integrity.isValid,
 			errors: integrity.errors,
@@ -272,33 +569,36 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	app.post("/api/commerceml/validate", handleValidate);
 
 	// ═════════════════════════════════════════════════════════════════════════
-	// 4. CHECK DOUBLE POSTING ENDPOINT
+	// 5. CHECK DOUBLE POSTING ENDPOINT
 	// ═════════════════════════════════════════════════════════════════════════
 
 	const handleCheckDoublePosting = async (
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
-		if (reply.sent) return;
-		const body = request.body as
-			| { sha256Hash?: string; organizationId?: string }
-			| undefined;
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
 
-		const hash = body?.sha256Hash;
-		if (!hash || typeof hash !== "string") {
+		const parsedBody = checkDoublePostingBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
 			return reply.status(400).send({
 				error: "MissingSha256",
-				message: "Необходимо передать sha256Hash пакета или документа",
+				message: parsedBody.error.issues[0]?.message ?? "Необходимо передать sha256Hash пакета или документа",
+				details: parsedBody.error.issues,
 			});
 		}
 
-		const resolvedOrgId =
-			verifiedOrgId ||
-			body?.organizationId ||
-			"00000000-0000-7000-8000-000000000001";
+		if (parsedBody.data.organizationId && parsedBody.data.organizationId !== access.organizationId) {
+			return reply.code(403).send({
+				error: "TenantMismatch",
+				message: "Запрошенная организация не совпадает с авторизованным арендатором.",
+			});
+		}
 
-		const check = CommerceMlService.checkDoublePosting(resolvedOrgId, hash);
+		const check = await CommerceMlService.checkDoublePosting(
+			access.organizationId,
+			parsedBody.data.sha256Hash,
+		);
 		return reply.send(check);
 	};
 
@@ -309,24 +609,27 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	app.post("/api/commerceml/check-double-posting", handleCheckDoublePosting);
 
 	// ═════════════════════════════════════════════════════════════════════════
-	// 5. STATUTORY DOMAIN INSPECTION LISTS
+	// 6. STATUTORY DOMAIN INSPECTION LISTS
 	// ═════════════════════════════════════════════════════════════════════════
 
-	// Shifts & 54-FZ receipts breakdown (Accounts 50.01, 57.03, 51, 62.02)
 	app.get("/api/v1/integrations/1c/commerceml/shifts", async (request, reply) => {
-		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
-		if (reply.sent) return;
-		const parsedQuery = exportQuerySchema.parse(request.query || {});
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
+
+		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса смен.",
+				details: parsedQuery.error.issues,
+			});
+		}
 		const todayIso = new Date().toISOString().slice(0, 10);
-		const resolvedOrgId =
-			verifiedOrgId ||
-			parsedQuery.organizationId ||
-			"00000000-0000-7000-8000-000000000001";
 
 		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: resolvedOrgId,
-			startDateIso: parsedQuery.startDateIso || todayIso,
-			endDateIso: parsedQuery.endDateIso || parsedQuery.startDateIso || todayIso,
+			organizationId: access.organizationId,
+			startDateIso: parsedQuery.data.startDateIso || todayIso,
+			endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
 			includeRetailSales: true,
 			includeMedicalActs: false,
 			includeMaterials: false,
@@ -347,21 +650,24 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		});
 	});
 
-	// Medical acts (804n codes & doctor names)
 	app.get("/api/v1/integrations/1c/commerceml/acts", async (request, reply) => {
-		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
-		if (reply.sent) return;
-		const parsedQuery = exportQuerySchema.parse(request.query || {});
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
+
+		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса медицинских актов.",
+				details: parsedQuery.error.issues,
+			});
+		}
 		const todayIso = new Date().toISOString().slice(0, 10);
-		const resolvedOrgId =
-			verifiedOrgId ||
-			parsedQuery.organizationId ||
-			"00000000-0000-7000-8000-000000000001";
 
 		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: resolvedOrgId,
-			startDateIso: parsedQuery.startDateIso || todayIso,
-			endDateIso: parsedQuery.endDateIso || parsedQuery.startDateIso || todayIso,
+			organizationId: access.organizationId,
+			startDateIso: parsedQuery.data.startDateIso || todayIso,
+			endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
 			includeRetailSales: false,
 			includeMedicalActs: true,
 			includeMaterials: false,
@@ -374,21 +680,24 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		});
 	});
 
-	// Warehouse & CSO write-offs (Account 10.01 / 10.06)
 	app.get("/api/v1/integrations/1c/commerceml/materials", async (request, reply) => {
-		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
-		if (reply.sent) return;
-		const parsedQuery = exportQuerySchema.parse(request.query || {});
+		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+		if (!access) return;
+
+		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса списания материалов.",
+				details: parsedQuery.error.issues,
+			});
+		}
 		const todayIso = new Date().toISOString().slice(0, 10);
-		const resolvedOrgId =
-			verifiedOrgId ||
-			parsedQuery.organizationId ||
-			"00000000-0000-7000-8000-000000000001";
 
 		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: resolvedOrgId,
-			startDateIso: parsedQuery.startDateIso || todayIso,
-			endDateIso: parsedQuery.endDateIso || parsedQuery.startDateIso || todayIso,
+			organizationId: access.organizationId,
+			startDateIso: parsedQuery.data.startDateIso || todayIso,
+			endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
 			includeRetailSales: false,
 			includeMedicalActs: false,
 			includeMaterials: true,

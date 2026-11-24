@@ -105,32 +105,59 @@ export function extractScanFilesFromZip(buffer: Buffer): ScanFileInput[] {
 
 			const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
 			let fileData: Buffer | null = null;
+			const maxTotalBytes = 256 * 1024 * 1024;
+			const currentTotalBytes = results.reduce((acc, item) => acc + item.buffer.length, 0);
+			const remainingBytes = maxTotalBytes - currentTotalBytes;
+			if (remainingBytes <= 0 || results.length >= 500) {
+				throw new Error("Превышен безопасный лимит объёма или количества файлов в ZIP-архиве (защита от Zip-бомбы).");
+			}
+			if (rawName.includes("..") || rawName.includes("\0") || rawName.startsWith("/") || /^[a-zA-Z]:/.test(rawName)) {
+				cursor = nextCursor;
+				continue;
+			}
 
 			try {
 				if (method === 0) {
+					if (compressed.length > remainingBytes) {
+						throw new Error("Размер файла в ZIP-архиве превышает допустимый суммарный лимит (256 МБ).");
+					}
 					fileData = compressed;
 				} else if (method === 8) {
-					// Inflate with 250MB limit to handle dense full-arch scans
 					fileData = inflateRawSync(compressed, {
-						maxOutputLength: 250 * 1024 * 1024,
+						maxOutputLength: remainingBytes,
 					});
 				}
-			} catch {
+			} catch (inflateErr) {
+				const errMsg = inflateErr instanceof Error ? inflateErr.message : String(inflateErr);
+				if (errMsg.includes("maxOutputLength") || errMsg.includes("лимит") || errMsg.includes("ERR_BUFFER_TOO_LARGE")) {
+					throw new Error("Превышен допустимый объём распаковки ZIP-архива (256 МБ, защита от Zip-бомбы).");
+				}
 				fileData = null;
 			}
 
 			if (fileData) {
+				if (currentTotalBytes + fileData.length > maxTotalBytes) {
+					throw new Error("Суммарный объём распакованного ZIP-архива превышает допустимый лимит (256 МБ).");
+				}
 				const cleanBaseName = path.basename(rawName);
+				if (!cleanBaseName || cleanBaseName === "." || cleanBaseName === "..") {
+					cursor = nextCursor;
+					continue;
+				}
 				results.push({
-					name: cleanBaseName || `scan_file_${i}.stl`,
+					name: cleanBaseName,
 					buffer: fileData,
 				});
 			}
 
 			cursor = nextCursor;
 		}
-	} catch {
-		// Return whatever entries were successfully extracted
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		if (msg.includes("Zip-бомбы") || msg.includes("лимит")) {
+			throw err;
+		}
+		// Other malformed zip headers return whatever valid entries were read
 	}
 
 	return results;

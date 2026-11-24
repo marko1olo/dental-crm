@@ -105,7 +105,7 @@ export function orthodonticMedicalCard043_1u(
 	if (payload) {
 		return renderForm043_1uHtml(stripNullProperties(payload));
 	}
-	return `<section><h2>Медицинская карта ортодонтического пациента (форма 043-1/у)</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные ортодонтической карты не заполнены.</p></section>`;
+	return `<section><h2>Медицинская карта ортодонтического пациента</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные ортодонтической карты не заполнены.</p></section>`;
 }
 
 export function radiationDoseSheet(

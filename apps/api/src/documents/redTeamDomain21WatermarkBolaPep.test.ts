@@ -1,6 +1,30 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import type { GeneratedDocument, Patient } from "@dental/shared";
+import { and, desc, eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
+import { db } from "../db/client.js";
+import {
+	documentSignatures,
+	generatedDocuments,
+	organizations,
+	patients,
+	portalOtpCodes,
+	users,
+} from "../db/schema.js";
+import { register as registerHtmlRoute } from "../routes/documents/html.js";
+import { register as registerSignatureRoute } from "../routes/documents/signature.js";
+import { PORTAL_TOKEN_KIND } from "../routes/portal/types.js";
+import { registerPortalDocumentsRoutes } from "../routes/portal/portalDocumentsRoutes.js";
+import { authTokenSecret } from "../security/authSecret.js";
+import { hashCredential, signToken } from "../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	isDatabaseUnavailable,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../tests/support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../tests/support/tenantTestApp.js";
 import { renderDocumentHtml } from "./renderDocument.js";
 import {
 	resolveDocumentDigitalSignatureStamp,
@@ -114,25 +138,339 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 		assert.ok(stampedHtml.includes("gost-stamp-simple"), "Штамп ПЭП должен быть внедрен в HTML через applySignatureStampIfSigned");
 	});
 
-	it("гарантирует отказ в доступе (BOLA) при несовпадении patientId в сессии пациента портала", () => {
-		const portalSessionPatientId = "patient-alpha-uuid";
-		const victimDocument = {
-			id: "doc-victim-001",
-			patientId: "patient-beta-uuid",
-			organizationId: "org-test-01",
-		};
+	describe("HTTP / PostgreSQL 18 BOLA, Void XSS, PEP OTP & UKEP Preservation", () => {
+		const NS = "domain21RealHttp";
+		const ORG_ID = fixtureUuid(NS, 1);
+		const DOCTOR_ID = fixtureUuid(NS, 2);
+		const ALPHA_PATIENT_ID = fixtureUuid(NS, 3);
+		const BETA_PATIENT_ID = fixtureUuid(NS, 4);
+		const BETA_DOC_ID = fixtureUuid(NS, 5);
+		const VOIDED_DOC_ID = fixtureUuid(NS, 6);
+		const DRAFT_DOC_ID = fixtureUuid(NS, 7);
+		const UKEP_ISSUED_DOC_ID = fixtureUuid(NS, 8);
+		const CONSENT_ID = fixtureUuid(NS, 9);
 
-		// Инвариант BOLA 152-ФЗ / 63-ФЗ: если в запросе авторизован пациент портала,
-		// доступ к документу разрешен ТОЛЬКО если document.patientId === auth.patientId
-		const isAccessAllowed = victimDocument.patientId === portalSessionPatientId;
-		assert.equal(isAccessAllowed, false, "Пациент не должен иметь доступа к документу чужого пациента");
+		let app: FastifyInstance;
+		let dbReady = true;
+		let staffHeaders: Record<string, string> = {};
+		let alphaPortalHeaders: Record<string, string> = {};
 
-		const ownDocument = {
-			id: "doc-own-001",
-			patientId: "patient-alpha-uuid",
-			organizationId: "org-test-01",
-		};
-		const isOwnAccessAllowed = ownDocument.patientId === portalSessionPatientId;
-		assert.equal(isOwnAccessAllowed, true, "Пациент обязан иметь доступ к своим собственным документам");
+		before(async () => {
+			process.env.NODE_ENV = "test";
+			app = createTenantTestApp();
+			await registerHtmlRoute(app);
+			await registerSignatureRoute(app);
+			await app.register(registerPortalDocumentsRoutes, { prefix: "/api/portal" });
+			await app.ready();
+
+			const secret = authTokenSecret();
+			const staffToken = signToken(
+				{ userId: DOCTOR_ID, organizationId: ORG_ID, role: "doctor", fullName: "Д-р Смирнова А.В." },
+				secret,
+			);
+			staffHeaders = {
+				"x-dente-staff-token": staffToken,
+				"x-dente-clinic-token": staffToken,
+			};
+			const alphaPortalToken = signToken(
+				{ kind: PORTAL_TOKEN_KIND, sub: ALPHA_PATIENT_ID, organizationId: ORG_ID },
+				secret,
+			);
+			alphaPortalHeaders = {
+				authorization: `Bearer ${alphaPortalToken}`,
+			};
+
+			try {
+				await purgeFixtureOrganizations([ORG_ID]);
+				await withFixtureTenant(ORG_ID, async (tx) => {
+					await tx
+						.insert(organizations)
+						.values({ id: ORG_ID, name: "Клиника Тест 21" })
+						.onConflictDoUpdate({
+							target: organizations.id,
+							set: { name: "Клиника Тест 21" },
+						});
+					await tx
+						.insert(users)
+						.values({
+							id: DOCTOR_ID,
+							organizationId: ORG_ID,
+							fullName: "Д-р Смирнова А.В.",
+							role: "doctor",
+							isActive: true,
+						})
+						.onConflictDoUpdate({
+							target: users.id,
+							set: {
+								organizationId: ORG_ID,
+								fullName: "Д-р Смирнова А.В.",
+								role: "doctor",
+								isActive: true,
+							},
+						});
+					await tx
+						.insert(patients)
+						.values([
+							{
+								id: ALPHA_PATIENT_ID,
+								organizationId: ORG_ID,
+								fullName: "Пациент Альфа А.А.",
+								phone: "+79991110001",
+							},
+							{
+								id: BETA_PATIENT_ID,
+								organizationId: ORG_ID,
+								fullName: "Пациент Бета Б.Б.",
+								phone: "+79991110002",
+							},
+						])
+						.onConflictDoUpdate({
+							target: patients.id,
+							set: {
+								organizationId: ORG_ID,
+							},
+						});
+					await tx
+						.delete(documentSignatures)
+						.where(eq(documentSignatures.organizationId, ORG_ID));
+					await tx
+						.delete(portalOtpCodes)
+						.where(eq(portalOtpCodes.organizationId, ORG_ID));
+					await tx
+						.insert(generatedDocuments)
+						.values([
+							{
+								id: BETA_DOC_ID,
+								organizationId: ORG_ID,
+								patientId: BETA_PATIENT_ID,
+								kind: "informed_consent",
+								title: "ИДС Бета",
+								status: "issued",
+								issuedAt: new Date(),
+								issuedSnapshotSha256: "deadbeef",
+								storagePath: "/tmp/nonexistent-beta.html",
+							},
+							{
+								id: VOIDED_DOC_ID,
+								organizationId: ORG_ID,
+								patientId: ALPHA_PATIENT_ID,
+								kind: "treatment_plan",
+								title: "План аннулированный",
+								status: "voided",
+								voidedAt: new Date(),
+								voidAttestation: {
+									reasonText: '<script>alert("xss")</script>',
+									staffFullName: "Врач",
+									staffRole: "doctor",
+								},
+							},
+							{
+								id: DRAFT_DOC_ID,
+								organizationId: ORG_ID,
+								patientId: ALPHA_PATIENT_ID,
+								kind: "informed_consent",
+								title: "ИДС Черновик",
+								status: "draft",
+							},
+							{
+								id: UKEP_ISSUED_DOC_ID,
+								organizationId: ORG_ID,
+								patientId: ALPHA_PATIENT_ID,
+								kind: "informed_consent",
+								title: "ИДС с УКЭП врача",
+								status: "issued",
+								issuedAt: new Date(),
+								storagePath: "/archive/ukep-original.html",
+								issuedSnapshotSha256: "origukephash123",
+								issuedSnapshotCreatedAt: new Date("2026-01-01T00:00:00.000Z"),
+								doctorSignaturePkcs7: "BASE64_UKEP_DOCTOR",
+							},
+						])
+						.onConflictDoNothing();
+				});
+			} catch (err) {
+				if (isDatabaseUnavailable(err)) {
+					dbReady = false;
+				} else {
+					throw err;
+				}
+			}
+		});
+
+		after(async () => {
+			if (app) await app.close();
+			if (dbReady) await purgeFixtureOrganizations([ORG_ID]);
+		});
+
+		it("отклоняет невалидный UUID в GET /api/documents/:id/html и /api/portal/documents/:documentId/html", async () => {
+			const staffRes = await app.inject({
+				method: "GET",
+				url: "/api/documents/not-a-uuid/html",
+				headers: staffHeaders,
+			});
+			assert.strictEqual(staffRes.statusCode, 400);
+
+			const portalRes = await app.inject({
+				method: "GET",
+				url: "/api/portal/documents/not-a-uuid/html",
+				headers: alphaPortalHeaders,
+			});
+			assert.strictEqual(portalRes.statusCode, 400);
+		});
+
+		it("блокирует доступ портала к чужому документу (403 BOLA) и экранирует XSS в водяном знаке аннулирования", async (t) => {
+			if (!dbReady) return t.skip("PostgreSQL unavailable");
+
+			const bolaRes = await app.inject({
+				method: "GET",
+				url: `/api/documents/${BETA_DOC_ID}/html`,
+				headers: alphaPortalHeaders,
+			});
+			assert.strictEqual(bolaRes.statusCode, 403);
+
+			const xssRes = await app.inject({
+				method: "GET",
+				url: `/api/documents/${VOIDED_DOC_ID}/html`,
+				headers: staffHeaders,
+			});
+			assert.strictEqual(xssRes.statusCode, 200);
+			assert.ok(!xssRes.body.includes('<script>alert("xss")</script>'));
+			assert.ok(xssRes.body.includes("&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"));
+		});
+
+		it("блокирует хардкодный байпас '1234'/'123456' в /pep-sms/verify и не утекает devCode в /pep-sms/send", async (t) => {
+			if (!dbReady) return t.skip("PostgreSQL unavailable");
+
+			const sendRes = await app.inject({
+				method: "POST",
+				url: "/api/documents/pep-sms/send",
+				headers: staffHeaders,
+				payload: {
+					patientId: ALPHA_PATIENT_ID,
+					phone: "+79991110001",
+				},
+			});
+			assert.strictEqual(sendRes.statusCode, 200);
+			const sendBody = sendRes.json();
+			assert.strictEqual(sendBody.success, true);
+			assert.strictEqual("devCode" in sendBody, false);
+
+			const bypassRes = await app.inject({
+				method: "POST",
+				url: "/api/documents/pep-sms/verify",
+				headers: staffHeaders,
+				payload: {
+					patientId: ALPHA_PATIENT_ID,
+					phone: "+79991110001",
+					code: "1234",
+				},
+			});
+			assert.strictEqual(bypassRes.statusCode, 400);
+		});
+
+		it("подписывает черновик без дубля в document_signatures, проверяет OTP и сохраняет УКЭП-архив при последующей ПЭП", async (t) => {
+			if (!dbReady) return t.skip("PostgreSQL unavailable");
+
+			const otpPlain = "654321";
+			const otpHash = await hashCredential(otpPlain);
+			await withFixtureTenant(ORG_ID, async (tx) => {
+				await tx
+					.update(portalOtpCodes)
+					.set({ consumedAt: new Date() })
+					.where(and(eq(portalOtpCodes.organizationId, ORG_ID), eq(portalOtpCodes.patientId, ALPHA_PATIENT_ID)));
+				await tx.insert(portalOtpCodes).values({
+					organizationId: ORG_ID,
+					patientId: ALPHA_PATIENT_ID,
+					phone: "79991110001",
+					codeHash: otpHash,
+					channel: "sms",
+					deliveryStatus: "sent",
+					expiresAt: new Date(Date.now() + 180_000),
+				});
+			});
+
+			// 1. Подписание черновика через pep_sms с реальным OTP -> ровно 1 строка в document_signatures
+			const draftSignRes = await app.inject({
+				method: "POST",
+				url: `/api/documents/${DRAFT_DOC_ID}/signature`,
+				headers: staffHeaders,
+				payload: {
+					signatureSvg: "<svg><path d='M0 0 L10 10'/></svg>",
+					mode: "pep_sms",
+					pepCode: otpPlain,
+				},
+			});
+			assert.strictEqual(draftSignRes.statusCode, 200);
+
+			const sigRows = await withFixtureTenant(ORG_ID, async (tx) =>
+				tx
+					.select()
+					.from(documentSignatures)
+					.where(and(eq(documentSignatures.organizationId, ORG_ID), eq(documentSignatures.documentId, DRAFT_DOC_ID))),
+			);
+			assert.strictEqual(sigRows.length, 1);
+
+			// Повторное использование того же OTP отклоняется (anti-replay)
+			const replayRes = await app.inject({
+				method: "POST",
+				url: `/api/documents/${UKEP_ISSUED_DOC_ID}/signature`,
+				headers: staffHeaders,
+				payload: {
+					signatureSvg: "<svg><path d='M0 0'/></svg>",
+					mode: "pep_sms",
+					pepCode: otpPlain,
+				},
+			});
+			assert.strictEqual(replayRes.statusCode, 400);
+
+			// 2. Последующее ПЭП поверх УКЭП-документа сохраняет storagePath / issuedSnapshotSha256
+			const ukepPepRes = await app.inject({
+				method: "POST",
+				url: `/api/documents/${UKEP_ISSUED_DOC_ID}/signature`,
+				headers: staffHeaders,
+				payload: {
+					signatureSvg: "<svg><path d='M1 1 L9 9'/></svg>",
+					mode: "simple_electronic_signature",
+				},
+			});
+			assert.strictEqual(ukepPepRes.statusCode, 200);
+
+			const [ukepDocAfter] = await withFixtureTenant(ORG_ID, async (tx) =>
+				tx
+					.select()
+					.from(generatedDocuments)
+					.where(and(eq(generatedDocuments.organizationId, ORG_ID), eq(generatedDocuments.id, UKEP_ISSUED_DOC_ID))),
+			);
+			assert.ok(ukepDocAfter);
+			assert.strictEqual(ukepDocAfter.storagePath, "/archive/ukep-original.html");
+			assert.strictEqual(ukepDocAfter.issuedSnapshotSha256, "origukephash123");
+
+			// 3. Портал /consents/:id/sign отклоняет невалидный signatureMethod и пустой pepCode для sms_otp
+			const badMethodRes = await app.inject({
+				method: "POST",
+				url: `/api/portal/consents/${CONSENT_ID}/sign`,
+				headers: alphaPortalHeaders,
+				payload: { signatureMethod: "unknown_hack_method" },
+			});
+			assert.strictEqual(badMethodRes.statusCode, 400);
+
+			const emptyOtpRes = await app.inject({
+				method: "POST",
+				url: `/api/portal/consents/${CONSENT_ID}/sign`,
+				headers: alphaPortalHeaders,
+				payload: { signatureMethod: "sms_otp", pepCode: "" },
+			});
+			assert.strictEqual(emptyOtpRes.statusCode, 400);
+
+			const latestOtp = await withFixtureTenant(ORG_ID, async (tx) =>
+				tx
+					.select()
+					.from(portalOtpCodes)
+					.where(eq(portalOtpCodes.patientId, ALPHA_PATIENT_ID))
+					.orderBy(desc(portalOtpCodes.createdAt))
+					.limit(1),
+			);
+			assert.ok(latestOtp.length > 0);
+		});
 	});
 });

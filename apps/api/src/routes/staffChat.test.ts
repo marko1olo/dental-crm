@@ -4,7 +4,7 @@
 
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { organizations, users } from "../db/schema.js";
+import { chairs, clinics, organizations, users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { registerStaffChatRoutes } from "./staffChat.js";
@@ -45,14 +45,30 @@ describe("Staff Messenger & Clinic Intercom Rails", () => {
 		const orgId = fixtureUuid("staffChatTest", 1);
 		const doctorId = fixtureUuid("staffChatTest", 2);
 		const assistantId = fixtureUuid("staffChatTest", 3);
+		const thirdStaffId = fixtureUuid("staffChatTest", 4);
+		const clinicId = fixtureUuid("staffChatTest", 5);
+		const chairId = fixtureUuid("staffChatTest", 6);
 
 		await purgeFixtureOrganizations([orgId]);
 
-		// 1. Setup isolated test organization and users under fixture tenant RLS
+		// 1. Setup isolated test organization, clinic, chair and users under fixture tenant RLS
 		await withFixtureTenant(orgId, async (tx) => {
 			await tx.insert(organizations).values({
 				id: orgId,
 				name: `Клиника Интерком Тест-${Date.now()}`,
+			});
+			await tx.insert(clinics).values({
+				id: clinicId,
+				organizationId: orgId,
+				name: "Основной филиал Интерком",
+			});
+			await tx.insert(chairs).values({
+				id: chairId,
+				organizationId: orgId,
+				clinicId,
+				name: "Кресло 1",
+				room: "Каб. 101",
+				isActive: true,
 			});
 			await tx.insert(users).values([
 				{
@@ -69,6 +85,13 @@ describe("Staff Messenger & Clinic Intercom Rails", () => {
 					role: "assistant",
 					isActive: true,
 				},
+				{
+					id: thirdStaffId,
+					organizationId: orgId,
+					fullName: "Администратор Сидорова О.В.",
+					role: "receptionist",
+					isActive: true,
+				},
 			]);
 		});
 
@@ -83,6 +106,12 @@ describe("Staff Messenger & Clinic Intercom Rails", () => {
 			assistantId,
 			"assistant",
 			"Ассистент Петрова А.С.",
+		);
+		const thirdStaffHeaders = createStaffHeaders(
+			orgId,
+			thirdStaffId,
+			"receptionist",
+			"Администратор Сидорова О.В.",
 		);
 
 		// 2. GET /api/staff-chat/channels — defaults should be created automatically
@@ -236,7 +265,68 @@ describe("Staff Messenger & Clinic Intercom Rails", () => {
 		const { members } = JSON.parse(membersRes.body);
 		assert.ok(Array.isArray(members));
 		assert.ok(members.length >= 2);
-		assert.ok(members.some((m: any) => m.staffId === doctorId));
-		assert.ok(members.some((m: any) => m.staffId === assistantId));
+		assert.ok(members.some((m: { staffId: string }) => m.staffId === doctorId));
+		assert.ok(members.some((m: { staffId: string }) => m.staffId === assistantId));
+
+		// 12. Security BOLA: 3rd employee cannot read, write or mark read in DM between doctor and assistant
+		const dmMsgRes = await app.inject({
+			method: "POST",
+			url: "/api/staff-chat/messages",
+			headers: doctorHeaders,
+			payload: {
+				channelId: directChannel.id,
+				content: "Приватное сообщение врачу-ассистенту",
+			},
+		});
+		assert.equal(dmMsgRes.statusCode, 201);
+
+		const intruderReadDmRes = await app.inject({
+			method: "GET",
+			url: `/api/staff-chat/messages?channelId=${directChannel.id}`,
+			headers: thirdStaffHeaders,
+		});
+		assert.equal(intruderReadDmRes.statusCode, 403);
+
+		const intruderSendDmRes = await app.inject({
+			method: "POST",
+			url: "/api/staff-chat/messages",
+			headers: thirdStaffHeaders,
+			payload: {
+				channelId: directChannel.id,
+				content: "Попытка внедрения в чужой DM",
+			},
+		});
+		assert.equal(intruderSendDmRes.statusCode, 403);
+
+		const intruderMarkReadRes = await app.inject({
+			method: "POST",
+			url: "/api/staff-chat/read",
+			headers: thirdStaffHeaders,
+			payload: { channelId: directChannel.id },
+		});
+		assert.equal(intruderMarkReadRes.statusCode, 403);
+
+		// 13. Nonexistent channelId returns 404 (not FK 23503 500) & invalid before returns 400
+		const nonexistentChannelId = fixtureUuid("staffChatTest", 999);
+		const missingChannelSendRes = await app.inject({
+			method: "POST",
+			url: "/api/staff-chat/messages",
+			headers: doctorHeaders,
+			payload: {
+				channelId: nonexistentChannelId,
+				content: "Сообщение в несуществующий канал",
+			},
+		});
+		assert.equal(missingChannelSendRes.statusCode, 404);
+
+		const invalidBeforeRes = await app.inject({
+			method: "GET",
+			url: `/api/staff-chat/messages?channelId=${generalChannel.id}&before=not-a-date`,
+			headers: doctorHeaders,
+		});
+		assert.equal(invalidBeforeRes.statusCode, 400);
+
+		await app.close();
+		await purgeFixtureOrganizations([orgId]);
 	});
 });

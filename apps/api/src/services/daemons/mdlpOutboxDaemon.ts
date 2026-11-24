@@ -157,6 +157,7 @@ export async function runMdlpOutboxDaemon(
 					record.id,
 					result.crptOperationId,
 					result.responsePayload,
+					record.organizationId,
 				);
 				digest.completedCount++;
 
@@ -173,6 +174,7 @@ export async function runMdlpOutboxDaemon(
 					record.attempts,
 					record.maxAttempts,
 					errorMsg,
+					record.organizationId,
 				);
 
 				if (outcome === "escalated_to_dlq") {

@@ -11,7 +11,10 @@ import {
 	patients,
 	payments,
 	sberbankTransactions,
+	fiscalReceiptQueue,
 } from "../../../db/schema.js";
+import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
 import { formatSberBankSlip, kopecksToRubles } from "@dental/shared";
 import type { SberPosOperationType, SberPosTransactionResponse } from "@dental/shared";
 import { initiateSberPosPaymentSchema, executeSberPosTransactionSchema } from "./types.js";
@@ -185,12 +188,12 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 
 	const body = (request.body as Record<string, unknown> | null) ?? {};
 	const rrn = String(body.rrn || "").trim();
-	const orderId = body.orderId ? String(body.orderId).trim() : undefined;
+	const orderId = typeof body.orderId === "string" ? body.orderId.trim() : "";
 
-	if (!rrn) {
+	if (!rrn || !orderId) {
 		return reply.code(400).send({
-			error: "MissingRrn",
-			message: "Номер RRN обязателен для сверки транзакции.",
+			error: "MissingRrnOrOrderId",
+			message: "Номер RRN и orderId обязательны для сверки транзакции.",
 		});
 	}
 
@@ -201,7 +204,7 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 			.where(
 				and(
 					eq(sberbankTransactions.organizationId, orgId),
-					orderId ? eq(sberbankTransactions.orderId, orderId) : sql`TRUE`,
+					eq(sberbankTransactions.orderId, orderId),
 				),
 			)
 			.limit(1);
@@ -210,6 +213,7 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 			return reply.code(200).send({
 				success: true,
 				status: txRow.status,
+				amountKopecks: Number(txRow.amountKopecks),
 				amountKop: Number(txRow.amountKopecks),
 				orderId: txRow.orderId,
 				rrn,
@@ -219,7 +223,7 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 
 		return reply.code(404).send({
 			error: "TransactionNotFound",
-			message: `Транзакция с RRN '${rrn}' ${orderId ? `и orderId '${orderId}' ` : ""}не найдена.`,
+			message: `Транзакция с RRN '${rrn}' и orderId '${orderId}' не найдена.`,
 		});
 	});
 };
@@ -232,13 +236,13 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 	if (!orgId) return;
 
 	const body = (request.body as Record<string, unknown> | null) ?? {};
-	const orderId = String(body.orderId || "").trim();
-	const rrn = body.rrn ? String(body.rrn).trim() : "";
+	const orderId = typeof body.orderId === "string" ? body.orderId.trim() : "";
+	const rrn = typeof body.rrn === "string" ? body.rrn.trim() : "";
 
-	if (!orderId && !rrn) {
+	if (!orderId) {
 		return reply.code(400).send({
-			error: "MissingIdentifier",
-			message: "Требуется указать orderId или rrn для отмены транзакции.",
+			error: "MissingOrderId",
+			message: "Требуется указать orderId для отмены транзакции.",
 		});
 	}
 
@@ -249,7 +253,7 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 			.where(
 				and(
 					eq(sberbankTransactions.organizationId, orgId),
-					orderId ? eq(sberbankTransactions.orderId, orderId) : sql`TRUE`,
+					eq(sberbankTransactions.orderId, orderId),
 				),
 			)
 			.for("update")
@@ -262,6 +266,21 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 			});
 		}
 
+		const [lockedPayment] = await tx
+			.select()
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					or(
+						eq(payments.clientMutationId, `sberpos:${lockedTx.orderId}`),
+						eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+					),
+				),
+			)
+			.for("update")
+			.limit(1);
+
 		await tx
 			.update(sberbankTransactions)
 			.set({ status: "REVERSED", updatedAt: new Date() })
@@ -272,18 +291,64 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 				),
 			);
 
-		await tx
-			.update(payments)
-			.set({ status: "refunded", updatedAt: new Date() })
-			.where(
-				and(
-					eq(payments.organizationId, orgId),
-					or(
-						eq(payments.clientMutationId, `sberpos:${lockedTx.orderId}`),
-						eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
+		if (lockedPayment) {
+			await tx
+				.update(payments)
+				.set({ status: "refunded", updatedAt: new Date() })
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.id, lockedPayment.id),
 					),
-				),
-			);
+				);
+
+			if (lockedPayment.status === "paid") {
+				const refundKopecks =
+					lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
+						? Number(lockedPayment.amountKopecks)
+						: Number(lockedTx.amountKopecks);
+				const refundRub = kopecksToRubles(refundKopecks);
+				const returnPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+					organizationId: orgId,
+					patientId: lockedTx.patientId,
+					customerContact: "cardholder@clinic.ru",
+					cashierFullName: "Кассир-администратор",
+					operationType: "income_return",
+					defaultCalculationMethod: "full_payment",
+					tenderSplits: { electronicCardRub: refundRub },
+					positions: [
+						{
+							name: `Отмена операции терминала ${lockedTx.orderId}`,
+							priceRub: refundRub,
+							quantity: 1,
+							subject: "service",
+							method: "full_payment",
+							vatRate: "vat_none",
+						},
+					],
+					visitId: lockedTx.visitId,
+					documentId: lockedTx.documentId,
+					invoiceId: lockedTx.invoiceId,
+					clientMutationId: `sberpos:${lockedTx.orderId}:return`,
+				});
+				await tx.insert(fiscalReceiptQueue).values({
+					organizationId: orgId,
+					paymentId: lockedPayment.id,
+					visitId: lockedTx.visitId || null,
+					receiptType: "income_return",
+					status: "pending_print",
+					payloadJson: {
+						...returnPayload,
+						tag1020_totalRub: returnPayload.tag1020_totalRubString,
+					},
+					retryCount: 0,
+				});
+			}
+		}
+
+		if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
+			await reconcileInvoiceBalanceInDb(tx, orgId, lockedTx.invoiceId);
+		}
 
 		return reply.code(200).send({
 			success: true,
@@ -341,6 +406,13 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 		const status =
 			op === "refund" ? "REFUNDED" : op === "void" ? "REVERSED" : "SETTLED";
 
+		if (status === "SETTLED" && input.amountKopecks <= 0) {
+			return reply.code(400).send({
+				error: "InvalidAmount",
+				message: "Сумма продажи POS-терминала должна быть строго больше нуля в копейках.",
+			});
+		}
+
 		const patientId = input.patientId || existingTx?.patientId;
 		if (!patientId) {
 			return reply.code(400).send({
@@ -396,13 +468,17 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 				.limit(1);
 
 			if (!existingPayment) {
+				const effectiveInvoiceId = input.invoiceId || existingTx?.invoiceId || null;
+				const resolvedDocumentId =
+					existingTx?.documentId ||
+					(effectiveInvoiceId && isValidUuid(effectiveInvoiceId) ? effectiveInvoiceId : null);
 				await tx
 					.insert(payments)
 					.values({
 						organizationId: orgId,
 						patientId,
 						visitId: input.visitId || existingTx?.visitId || null,
-						documentId: existingTx?.documentId || null,
+						documentId: resolvedDocumentId,
 						method: "card",
 						status: "paid",
 						amountRub,
@@ -415,15 +491,14 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 						target: [payments.organizationId, payments.clientMutationId],
 					});
 
-				const effectiveInvoiceId = input.invoiceId || existingTx?.invoiceId;
-				if (effectiveInvoiceId) {
+				if (effectiveInvoiceId && isValidUuid(effectiveInvoiceId)) {
 					await reconcileInvoiceBalanceInDb(tx, orgId, effectiveInvoiceId);
 				}
 			}
 		} else if (status === "REFUNDED" || status === "REVERSED") {
-			await tx
-				.update(payments)
-				.set({ status: "refunded", updatedAt: new Date() })
+			const [lockedPayment] = await tx
+				.select()
+				.from(payments)
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
@@ -432,7 +507,73 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 							eq(payments.clientMutationId, `sberbank:${orderId}`),
 						),
 					),
-				);
+				)
+				.for("update")
+				.limit(1);
+
+			if (lockedPayment) {
+				await tx
+					.update(payments)
+					.set({ status: "refunded", updatedAt: new Date() })
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.id, lockedPayment.id),
+						),
+					);
+
+				if (lockedPayment.status === "paid") {
+					const refundKopecks =
+						lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
+							? Number(lockedPayment.amountKopecks)
+							: input.amountKopecks > 0
+								? input.amountKopecks
+								: Number(existingTx?.amountKopecks ?? 0);
+					if (refundKopecks > 0) {
+						const refundRub = kopecksToRubles(refundKopecks);
+						const returnPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+							organizationId: orgId,
+							patientId,
+							customerContact: "cardholder@clinic.ru",
+							cashierFullName: "Кассир-администратор",
+							operationType: "income_return",
+							defaultCalculationMethod: "full_payment",
+							tenderSplits: { electronicCardRub: refundRub },
+							positions: [
+								{
+									name: `Возврат POS терминала ${orderId}`,
+									priceRub: refundRub,
+									quantity: 1,
+									subject: "service",
+									method: "full_payment",
+									vatRate: "vat_none",
+								},
+							],
+							visitId: input.visitId || existingTx?.visitId || null,
+							documentId: existingTx?.documentId || null,
+							invoiceId: input.invoiceId || existingTx?.invoiceId || null,
+							clientMutationId: `sberpos:${orderId}:return`,
+						});
+						await tx.insert(fiscalReceiptQueue).values({
+							organizationId: orgId,
+							paymentId: lockedPayment.id,
+							visitId: input.visitId || existingTx?.visitId || null,
+							receiptType: "income_return",
+							status: "pending_print",
+							payloadJson: {
+								...returnPayload,
+								tag1020_totalRub: returnPayload.tag1020_totalRubString,
+							},
+							retryCount: 0,
+						});
+					}
+				}
+			}
+
+			const effectiveInvoiceId = input.invoiceId || existingTx?.invoiceId;
+			if (effectiveInvoiceId && isValidUuid(effectiveInvoiceId)) {
+				await reconcileInvoiceBalanceInDb(tx, orgId, effectiveInvoiceId);
+			}
 		}
 
 		const [org] = await tx

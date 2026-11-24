@@ -1,7 +1,7 @@
 import { and, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters } from "../../../db/schema.js";
 import { guaranteeLetterQuerySchema } from "../types.js";
 import { formatGuaranteeLetterResponse, isValidUuid } from "./guaranteeLetterFormatters.js";
@@ -53,11 +53,13 @@ export async function handleListGuaranteeLetters(
 		}
 	}
 
-	const letters = await db
-		.select()
-		.from(dmsGuaranteeLetters)
-		.where(and(...conditions))
-		.orderBy(dmsGuaranteeLetters.createdAt);
+	const letters = await withTenantCtx(orgId as string, (tx) =>
+		tx
+			.select()
+			.from(dmsGuaranteeLetters)
+			.where(and(...conditions))
+			.orderBy(dmsGuaranteeLetters.createdAt),
+	);
 
 	const todayIso = new Date().toISOString().slice(0, 10);
 	const formatted = letters.map((l) => formatGuaranteeLetterResponse(l, todayIso));
@@ -84,16 +86,18 @@ export async function handleGetGuaranteeLetterById(
 		});
 	}
 
-	const [letter] = await db
-		.select()
-		.from(dmsGuaranteeLetters)
-		.where(
-			and(
-				eq(dmsGuaranteeLetters.id, letterId),
-				eq(dmsGuaranteeLetters.organizationId, orgId),
-			),
-		)
-		.limit(1);
+	const [letter] = await withTenantCtx(orgId, (tx) =>
+		tx
+			.select()
+			.from(dmsGuaranteeLetters)
+			.where(
+				and(
+					eq(dmsGuaranteeLetters.id, letterId),
+					eq(dmsGuaranteeLetters.organizationId, orgId),
+				),
+			)
+			.limit(1),
+	);
 
 	if (!letter) {
 		return reply.code(404).send({

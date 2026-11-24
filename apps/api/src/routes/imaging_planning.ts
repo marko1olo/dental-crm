@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { patientCtPlannings, patients } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { clinicSessionMissingMessage } from "../utils/clinicSessionRefusal.js";
@@ -102,12 +102,12 @@ const savePlanningSchema = z.object({
 			message: "Разметка имплантов должна быть валидным JSON-массивом объектов.",
 		})
 		.optional(),
-});
+}).strict();
 
 const loadPlanningQuerySchema = z.object({
 	studyUid: z.string().trim().min(1, "UID исследования обязателен."),
 	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID."),
-});
+}).strict();
 
 const CLINIC_UNKNOWN_SAVE_MESSAGE = clinicSessionMissingMessage(
 	"разметка планирования имплантации сохраняется только из кабинета, обведённая дуга остаётся на экране",
@@ -213,63 +213,53 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 				implantsJson,
 			} = parsed.data;
 
-			// Verify patient belongs to organization
-			const [patient] = await db
-				.select({ id: patients.id })
-				.from(patients)
-				.where(
-					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
-				)
-				.limit(1);
+			const saveOutcome = await withTenantCtx(orgId, async (tx) => {
+				// Verify patient belongs to organization
+				const [patient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+					)
+					.limit(1);
 
-			if (!patient) {
-				return reply.status(404).send({
-					error: "PatientNotFound",
-					message: PATIENT_NOT_FOUND_SAVE_MESSAGE,
-				});
-			}
+				if (!patient) {
+					return "patient_not_found" as const;
+				}
 
-			// Check if planning already exists
-			const [existing] = await db
-				.select({ id: patientCtPlannings.id })
-				.from(patientCtPlannings)
-				.where(
-					and(
-						eq(patientCtPlannings.organizationId, orgId),
-						eq(patientCtPlannings.patientId, patientId),
-						eq(patientCtPlannings.studyInstanceUid, studyInstanceUid),
-					),
-				)
-				.limit(1);
-
-			if (existing) {
-				// БЫЛО: UPDATE только по id после SELECT с org — TOCTOU/IDOR-класс:
-				// чужая клиника с угаданным id могла бы переписать разметку, а 0-row
-				// update всё равно отдавал success:true (врач думал, что дуга сохранена).
-				// СТАЛО: organizationId в WHERE + RETURNING; пустой результат — 500, не успех.
-				const [updated] = await db
-					.update(patientCtPlannings)
-					.set({
-						splinePointsJson: markupText(splinePointsJson),
-						nervePointsJson: markupText(nervePointsJson),
-						implantsJson: markupText(implantsJson),
-						updatedAt: new Date(),
-					})
+				// Check if planning already exists
+				const [existing] = await tx
+					.select({ id: patientCtPlannings.id })
+					.from(patientCtPlannings)
 					.where(
 						and(
-							eq(patientCtPlannings.id, existing.id),
 							eq(patientCtPlannings.organizationId, orgId),
+							eq(patientCtPlannings.patientId, patientId),
+							eq(patientCtPlannings.studyInstanceUid, studyInstanceUid),
 						),
 					)
-					.returning({ id: patientCtPlannings.id });
-				if (!updated) {
-					return reply.status(500).send({
-						error: "InternalServerError",
-						message: SAVE_FAILED_MESSAGE,
-					});
+					.limit(1);
+
+				if (existing) {
+					const [updated] = await tx
+						.update(patientCtPlannings)
+						.set({
+							splinePointsJson: markupText(splinePointsJson),
+							nervePointsJson: markupText(nervePointsJson),
+							implantsJson: markupText(implantsJson),
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(patientCtPlannings.id, existing.id),
+								eq(patientCtPlannings.organizationId, orgId),
+							),
+						)
+						.returning({ id: patientCtPlannings.id });
+					return updated ? ("ok" as const) : ("save_failed" as const);
 				}
-			} else {
-				const [inserted] = await db
+
+				const [inserted] = await tx
 					.insert(patientCtPlannings)
 					.values({
 						organizationId: orgId,
@@ -280,12 +270,20 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 						implantsJson: markupText(implantsJson),
 					})
 					.returning({ id: patientCtPlannings.id });
-				if (!inserted) {
-					return reply.status(500).send({
-						error: "InternalServerError",
-						message: SAVE_FAILED_MESSAGE,
-					});
-				}
+				return inserted ? ("ok" as const) : ("save_failed" as const);
+			});
+
+			if (saveOutcome === "patient_not_found") {
+				return reply.status(404).send({
+					error: "PatientNotFound",
+					message: PATIENT_NOT_FOUND_SAVE_MESSAGE,
+				});
+			}
+			if (saveOutcome === "save_failed") {
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: SAVE_FAILED_MESSAGE,
+				});
 			}
 
 			return reply.status(200).send({ success: true });
@@ -322,38 +320,43 @@ export async function registerImagingPlanningRoutes(app: FastifyInstance) {
 			}
 			const { studyUid, patientId } = parsed.data;
 
-			// Verify patient belongs to organization
-			const [patient] = await db
-				.select({ id: patients.id })
-				.from(patients)
-				.where(
-					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
-				)
-				.limit(1);
+			const loadOutcome = await withTenantCtx(orgId, async (tx) => {
+				// Verify patient belongs to organization
+				const [patient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+					)
+					.limit(1);
 
-			if (!patient) {
+				if (!patient) {
+					return { patientFound: false as const, planning: null };
+				}
+
+				const [planning] = await tx
+					.select(planningSelection)
+					.from(patientCtPlannings)
+					.where(
+						and(
+							eq(patientCtPlannings.organizationId, orgId),
+							eq(patientCtPlannings.patientId, patientId),
+							eq(patientCtPlannings.studyInstanceUid, studyUid),
+						),
+					)
+					.limit(1);
+
+				return { patientFound: true as const, planning: planning ?? null };
+			});
+
+			if (!loadOutcome.patientFound) {
 				return reply.status(404).send({
 					error: "PatientNotFound",
 					message: PATIENT_NOT_FOUND_LOAD_MESSAGE,
 				});
 			}
 
-			const [planning] = await db
-				.select(planningSelection)
-				.from(patientCtPlannings)
-				.where(
-					and(
-						eq(patientCtPlannings.organizationId, orgId),
-						eq(patientCtPlannings.patientId, patientId),
-						eq(patientCtPlannings.studyInstanceUid, studyUid),
-					),
-				)
-				.limit(1);
-
-			if (planning) {
-				return reply.send({ success: true, planning });
-			}
-			return reply.send({ success: true, planning: null });
+			return reply.send({ success: true, planning: loadOutcome.planning });
 		} catch (err) {
 			request.log.error(err);
 			return reply

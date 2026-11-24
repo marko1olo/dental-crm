@@ -36,19 +36,33 @@ export async function processSbpWebhookTransaction(params: {
 			.for("update")
 			.limit(1);
 
-		const incomingAmountKopecks =
+		const rawIncomingAmount =
 			payload.amountKopecks !== undefined && payload.amountKopecks !== null
-				? Number(payload.amountKopecks)
+				? payload.amountKopecks
 				: payload.amount !== undefined && payload.amount !== null
-					? Number(payload.amount)
+					? payload.amount
 					: payload.sum !== undefined && payload.sum !== null
-						? Number(payload.sum)
+						? payload.sum
 						: null;
+		const incomingAmountKopecks =
+			rawIncomingAmount !== null ? Number(rawIncomingAmount) : null;
+
+		if (
+			incomingAmountKopecks !== null &&
+			(!Number.isFinite(incomingAmountKopecks) || !Number.isInteger(incomingAmountKopecks) || incomingAmountKopecks <= 0)
+		) {
+			return {
+				statusCode: 400,
+				body: {
+					error: "InvalidAmount",
+					message: "Сумма операции СБП должна быть положительным целым числом в копейках",
+				},
+			};
+		}
 
 		if (
 			incomingAmountKopecks !== null &&
 			targetContext.amountKopecks !== null &&
-			!Number.isNaN(incomingAmountKopecks) &&
 			incomingAmountKopecks !== targetContext.amountKopecks
 		) {
 			if (logWarn) {
@@ -82,7 +96,7 @@ export async function processSbpWebhookTransaction(params: {
 			});
 		}
 
-		if (lockedSberTx) {
+		if (lockedSberTx && lockedSberTx.status !== "success") {
 			await tx
 				.update(sberbankTransactions)
 				.set({ status: "failed", updatedAt: new Date() })

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, notInArray } from "drizzle-orm";
 import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles, parseKopecks, toExactKopecks } from "@dental/shared";
 import type { z } from "zod";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
@@ -13,12 +13,36 @@ import {
 
 type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
 
+function resolveCatalogPriceKopecks(item: {
+	priceKopecks?: bigint | null;
+	priceRub?: string | number | null;
+}): bigint {
+	const legacyRub = Number(item.priceRub ?? 0);
+	const legacyKopecks = BigInt(rublesToKopecks(Number.isFinite(legacyRub) ? legacyRub : 0));
+	if (typeof item.priceKopecks === "bigint" && (item.priceKopecks > 0n || legacyKopecks === 0n)) {
+		return item.priceKopecks;
+	}
+	return legacyKopecks;
+}
+
+function resolveInvoiceTotalKopecks(invoice: {
+	totalPriceKopecks?: bigint | null;
+	totalAmountRub?: string | number | null;
+	totalRub?: string | number | null;
+}): bigint {
+	const legacyKopecks = BigInt(parseKopecks(invoice.totalAmountRub ?? invoice.totalRub ?? 0));
+	if (typeof invoice.totalPriceKopecks === "bigint" && (invoice.totalPriceKopecks > 0n || legacyKopecks === 0n)) {
+		return invoice.totalPriceKopecks;
+	}
+	return legacyKopecks;
+}
+
 export async function linkBillingAndOdontogram(
 	tx: DbExecutor,
 	orgId: string,
 	input: InstallationInput,
-	implantCost: number,
-	consumablesCost: number,
+	implantCost: number | bigint,
+	consumablesCost: number | bigint,
 	effectiveLot: string,
 	isqMean: number | null,
 	protocol: string,
@@ -32,14 +56,11 @@ export async function linkBillingAndOdontogram(
 		}
 	}
 
-	let resolvedPriceRub: number | null =
-		operationPriceKopecks !== null
-			? kopecksToRubles(operationPriceKopecks)
-			: (input.operationPriceRub !== undefined && input.operationPriceRub !== null
-				? Number(input.operationPriceRub)
-				: null);
+	if (operationPriceKopecks === null && input.operationPriceRub !== undefined && input.operationPriceRub !== null) {
+		operationPriceKopecks = BigInt(rublesToKopecks(Number(input.operationPriceRub)));
+	}
 
-	if (resolvedPriceRub === null && input.catalogItemId) {
+	if (operationPriceKopecks === null && input.catalogItemId) {
 		const [catalogItem] = await tx
 			.select()
 			.from(serviceCatalogItems)
@@ -51,11 +72,11 @@ export async function linkBillingAndOdontogram(
 			)
 			.limit(1);
 		if (catalogItem) {
-			resolvedPriceRub = Number(catalogItem.priceRub);
+			operationPriceKopecks = resolveCatalogPriceKopecks(catalogItem);
 		}
 	}
 
-	if (resolvedPriceRub === null) {
+	if (operationPriceKopecks === null) {
 		const [implantService] = await tx
 			.select()
 			.from(serviceCatalogItems)
@@ -67,16 +88,20 @@ export async function linkBillingAndOdontogram(
 			)
 			.limit(1);
 		if (implantService) {
-			resolvedPriceRub = Number(implantService.priceRub);
+			operationPriceKopecks = resolveCatalogPriceKopecks(implantService);
 		}
 	}
 
-	const operationPriceRub = resolvedPriceRub ?? (operationPriceKopecks !== null ? kopecksToRubles(operationPriceKopecks) : 0);
 	if (operationPriceKopecks === null) {
-		operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
+		operationPriceKopecks = 0n;
 	}
-	const implantCostKopecks = BigInt(rublesToKopecks(implantCost));
-	const consumablesCostKopecks = BigInt(rublesToKopecks(consumablesCost));
+	const operationPriceRub = kopecksToRubles(operationPriceKopecks);
+	const implantCostKopecks =
+		typeof implantCost === "bigint" ? implantCost : BigInt(rublesToKopecks(implantCost));
+	const consumablesCostKopecks =
+		typeof consumablesCost === "bigint" ? consumablesCost : BigInt(rublesToKopecks(consumablesCost));
+	const implantCostRub = kopecksToRubles(implantCostKopecks);
+	const consumablesCostRub = kopecksToRubles(consumablesCostKopecks);
 	const totalMaterialsCostKopecks = implantCostKopecks + consumablesCostKopecks;
 	const doctorGrossMarginKopecks = operationPriceKopecks - totalMaterialsCostKopecks;
 	const netDoctorIncomeKopecks = doctorGrossMarginKopecks > 0n ? doctorGrossMarginKopecks : 0n;
@@ -96,17 +121,15 @@ export async function linkBillingAndOdontogram(
 					eq(patientInvoices.id, input.invoiceId),
 					eq(patientInvoices.organizationId, orgId),
 					eq(patientInvoices.patientId, input.patientId),
+					notInArray(patientInvoices.status, ["voided", "paid"]),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (existingInvoice) {
 			linkedInvoiceId = existingInvoice.id;
-			const currentTotalKopecks = BigInt(
-				existingInvoice.totalPriceKopecks && existingInvoice.totalPriceKopecks > 0n
-					? existingInvoice.totalPriceKopecks
-					: parseKopecks(existingInvoice.totalAmountRub ?? existingInvoice.totalRub ?? 0),
-			);
+			const currentTotalKopecks = resolveInvoiceTotalKopecks(existingInvoice);
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
@@ -134,17 +157,15 @@ export async function linkBillingAndOdontogram(
 					eq(patientInvoices.organizationId, orgId),
 					eq(patientInvoices.visitId, input.visitId),
 					eq(patientInvoices.patientId, input.patientId),
+					notInArray(patientInvoices.status, ["voided", "paid"]),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		if (existing) {
 			linkedInvoiceId = existing.id;
-			const currentTotalKopecks = BigInt(
-				existing.totalPriceKopecks && existing.totalPriceKopecks > 0n
-					? existing.totalPriceKopecks
-					: parseKopecks(existing.totalAmountRub ?? existing.totalRub ?? 0),
-			);
+			const currentTotalKopecks = resolveInvoiceTotalKopecks(existing);
 			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
 			const updatedTotalRub = kopecksToRubles(newTotalKopecks);
 			await tx
@@ -215,15 +236,26 @@ export async function linkBillingAndOdontogram(
 		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см.${isqMean !== null ? ` ISQ: ${Math.round(isqMean)}.` : ""}`,
 	});
 
+	const marginTenthsPercent =
+		operationPriceKopecks > 0n
+			? Number(
+					(doctorGrossMarginKopecks * 1000n +
+						(doctorGrossMarginKopecks >= 0n
+							? operationPriceKopecks / 2n
+							: -(operationPriceKopecks / 2n))) /
+						operationPriceKopecks,
+				)
+			: 0;
+
 	const financialSummary = {
 		operationPriceRub,
 		operationPriceKopecks: operationPriceKopecks.toString(),
 		amountKopecks: operationPriceKopecks.toString(),
 		totalAmountRub: operationPriceRub,
 		totalAmountKopecks: operationPriceKopecks.toString(),
-		implantCostRub: implantCost,
+		implantCostRub,
 		implantCostKopecks: implantCostKopecks.toString(),
-		consumablesCostRub: consumablesCost,
+		consumablesCostRub,
 		consumablesCostKopecks: consumablesCostKopecks.toString(),
 		totalMaterialsCostRub,
 		totalMaterialsCostKopecks: totalMaterialsCostKopecks.toString(),
@@ -232,7 +264,7 @@ export async function linkBillingAndOdontogram(
 		netDoctorIncomeRub,
 		netDoctorIncomeKopecks: netDoctorIncomeKopecks.toString(),
 		invoiceId: linkedInvoiceId,
-		marginPercent: operationPriceKopecks > 0n ? Number(((Number(doctorGrossMarginKopecks) / Number(operationPriceKopecks)) * 100).toFixed(1)) : 0,
+		marginPercent: marginTenthsPercent / 10,
 	};
 
 	const [existingTooth] = await tx

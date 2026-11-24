@@ -249,7 +249,35 @@ describe("Loyalty, Family Wallet & RFM Marketing Inquisition Suite [LOY-02..11]"
 	test("3. [LOY-05 & LOY-06] Защита от BOLA/IDOR: запрет списания с чужого семейного кошелька без разрешения", async () => {
 		if (!databaseAvailable) return;
 
-		// 1. Попытка списания ребенком CHILD_PATIENT_ID без подтвержденного разрешения в patient_relationships
+		// 1a. Посторонний пациент (вне семейной группы) пытается списать с чужого семейного кошелька
+		await assert.rejects(
+			async () => {
+				await createPaymentInDb(ORG_ID, {
+					patientId: REFEREE_PATIENT_ID,
+					familyGroupId: FAMILY_GROUP_ID,
+					amountRub: 5000,
+					method: "family_wallet",
+					clientMutationId: `bola-stranger-fam-${Date.now()}`,
+				});
+			},
+			(err: unknown) =>
+				Boolean(
+					err instanceof Error &&
+						(err.message.includes("не связан") || err.message.includes("полномочий")),
+				),
+			"Списание посторонним лицом с чужого семейного кошелька должно блокироваться",
+		);
+
+		// 1b. Прямой член семьи с явным запретом canSpendFamilyWallet = false также блокируется
+		await db.insert(patientRelationships).values({
+			organizationId: ORG_ID,
+			patientId: HEAD_PATIENT_ID,
+			relatedPatientId: CHILD_PATIENT_ID,
+			relationshipType: "child",
+			canSpendFamilyWallet: false,
+			isLegalRepresentative: false,
+		});
+
 		await assert.rejects(
 			async () => {
 				await createPaymentInDb(ORG_ID, {
@@ -259,8 +287,9 @@ describe("Loyalty, Family Wallet & RFM Marketing Inquisition Suite [LOY-02..11]"
 					clientMutationId: `unauth-fam-spend-${Date.now()}`,
 				});
 			},
-			(err: any) => Boolean(err?.message && err.message.includes("полномочий на списание")),
-			"Списание должно блокироваться без прав canSpendFamilyWallet",
+			(err: unknown) =>
+				Boolean(err instanceof Error && err.message.includes("полномочий на списание")),
+			"Списание должно блокироваться при явном запрете canSpendFamilyWallet = false",
 		);
 
 		// 2. Попытка обхода проверки через подстановку payerPatientId = walletOwnerId в verifyFamilySpendAuthorization
@@ -274,13 +303,39 @@ describe("Loyalty, Family Wallet & RFM Marketing Inquisition Suite [LOY-02..11]"
 						tx,
 						organizationId: ORG_ID,
 						family: fam,
-						patientId: CHILD_PATIENT_ID,
-						payerPatientId: HEAD_PATIENT_ID, // Поддельный payerPatientId
+						patientId: REFEREE_PATIENT_ID,
+						payerPatientId: HEAD_PATIENT_ID, // Поддельный payerPatientId для постороннего лица
 						debitKopecks: 500000,
 					});
 				},
-				(err: any) => Boolean(err && (err.code === "UNAUTHORIZED_FAMILY_SPEND" || (err.message && err.message.includes("не связан")))),
+				(err: unknown) => {
+					const e = err as { code?: string; message?: string } | null;
+					return Boolean(
+						e &&
+							(e.code === "NOT_AUTHORIZED_KINSHIP" ||
+								e.code === "UNAUTHORIZED_FAMILY_SPEND" ||
+								(e.message && e.message.includes("не связан"))),
+					);
+				},
 				"Подделка payerPatientId не должна обходить проверку родства",
+			);
+
+			await assert.rejects(
+				async () => {
+					await verifyFamilySpendAuthorization({
+						tx,
+						organizationId: ORG_ID,
+						family: fam,
+						patientId: CHILD_PATIENT_ID,
+						payerPatientId: HEAD_PATIENT_ID, // Поддельный payerPatientId при canSpendFamilyWallet = false
+						debitKopecks: 500000,
+					});
+				},
+				(err: unknown) => {
+					const e = err as { code?: string } | null;
+					return Boolean(e && e.code === "UNAUTHORIZED_FAMILY_SPEND");
+				},
+				"Подделка payerPatientId не должна обходить запрет canSpendFamilyWallet = false",
 			);
 		});
 
@@ -293,14 +348,16 @@ describe("Loyalty, Family Wallet & RFM Marketing Inquisition Suite [LOY-02..11]"
 		if (!databaseAvailable) return;
 
 		// Выдаем ребенку право списания в таблице patient_relationships
-		await db.insert(patientRelationships).values({
-			organizationId: ORG_ID,
-			patientId: HEAD_PATIENT_ID,
-			relatedPatientId: CHILD_PATIENT_ID,
-			relationshipType: "child",
-			canSpendFamilyWallet: true,
-			isLegalRepresentative: false,
-		});
+		await db
+			.update(patientRelationships)
+			.set({ canSpendFamilyWallet: true })
+			.where(
+				and(
+					eq(patientRelationships.organizationId, ORG_ID),
+					eq(patientRelationships.patientId, HEAD_PATIENT_ID),
+					eq(patientRelationships.relatedPatientId, CHILD_PATIENT_ID),
+				),
+			);
 
 		// Теперь ребенок успешно оплачивает лечение из семейного кошелька
 		const payment = await createPaymentInDb(ORG_ID, {

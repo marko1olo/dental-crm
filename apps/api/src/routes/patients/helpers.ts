@@ -31,6 +31,7 @@
 
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { isDemoShowcaseMode } from "../../accessGuard.js";
 import {
 	canonicalizeHomoglyphs,
 	type PatientDuplicateCandidate,
@@ -283,8 +284,9 @@ export function requireClinicOrganizationId(
 		return null;
 	}
 	if (
-		clinicToken.startsWith("demo-showcase-token") ||
-		clinicToken.startsWith("demo-showcase-clinic-token")
+		isDemoShowcaseMode() &&
+		(clinicToken.startsWith("demo-showcase-token") ||
+			clinicToken.startsWith("demo-showcase-clinic-token"))
 	) {
 		return DEMO_SHOWCASE_ORG_ID;
 	}

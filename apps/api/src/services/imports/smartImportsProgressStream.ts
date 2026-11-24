@@ -6,12 +6,13 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 
 export interface ImportProgressEvent {
   taskId: string;
+  organizationId?: string | undefined;
   phase: "upload" | "discovery" | "parsing" | "validation" | "staging" | "committing" | "done" | "error";
   percent: number;
   processed: number;
   total: number;
   message: string;
-  error?: string;
+  error?: string | undefined;
 }
 
 class SmartImportProgressManager extends EventEmitter {
@@ -27,7 +28,11 @@ class SmartImportProgressManager extends EventEmitter {
     return this.tasks.get(taskId);
   }
 
-  public handleSseStream(request: FastifyRequest, reply: FastifyReply): void {
+  public handleSseStream(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    organizationId?: string,
+  ): void {
     const raw = reply.raw;
     raw.writeHead(200, {
       "Content-Type": "text/event-stream; charset=utf-8",
@@ -38,6 +43,9 @@ class SmartImportProgressManager extends EventEmitter {
     raw.write(": keepalive\n\n");
 
     const onBroadcast = (event: ImportProgressEvent) => {
+      if (organizationId && event.organizationId !== organizationId) {
+        return;
+      }
       raw.write(`event: progress\ndata: ${JSON.stringify(event)}\n\n`);
     };
 

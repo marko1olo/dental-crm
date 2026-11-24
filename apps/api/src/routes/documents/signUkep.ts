@@ -9,6 +9,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
+import { recordAuditEvent } from "../../audit.js";
 import { db } from "../../db/client.js";
 import {
 	readIssuedDocumentSnapshot,
@@ -23,27 +24,31 @@ import { clinicalDocKinds } from "./query.js";
  * УКЭП-подпись документа. Валидирует отсоединенную подпись CMS (PKCS#7)
  * по ГОСТ Р 34.10-2012 / 34.11-2012. Запрещает прием любых произвольных строк.
  */
-const documentUkepSignParamsSchema = z.object({
-	id: z.string().uuid({
-		message: "Не указан идентификатор документа или электронная подпись.",
-	}),
-});
+const documentUkepSignParamsSchema = z
+	.object({
+		id: z.string().uuid({
+			message: "Не указан идентификатор документа или электронная подпись.",
+		}),
+	})
+	.strict();
 
-const documentUkepSignBodySchema = z.object({
-	pkcs7Signature: z
-		.string({
-			required_error: "Не указан идентификатор документа или электронная подпись.",
-			invalid_type_error: "Не указан идентификатор документа или электронная подпись.",
-		})
-		.min(1, { message: "Не указан идентификатор документа или электронная подпись." }),
-	certificateSerialNumber: z.string().trim().optional(),
-	certificateSubject: z.string().trim().optional(),
-	certificateIssuer: z.string().trim().optional(),
-	validFrom: z.string().trim().optional(),
-	validTo: z.string().trim().optional(),
-	signedAt: z.string().trim().optional(),
-	signatureType: z.enum(["ukep", "unep"]).optional().default("ukep"),
-});
+const documentUkepSignBodySchema = z
+	.object({
+		pkcs7Signature: z
+			.string({
+				required_error: "Не указан идентификатор документа или электронная подпись.",
+				invalid_type_error: "Не указан идентификатор документа или электронная подпись.",
+			})
+			.min(1, { message: "Не указан идентификатор документа или электронная подпись." }),
+		certificateSerialNumber: z.string().trim().optional(),
+		certificateSubject: z.string().trim().optional(),
+		certificateIssuer: z.string().trim().optional(),
+		validFrom: z.string().trim().optional(),
+		validTo: z.string().trim().optional(),
+		signedAt: z.string().trim().optional(),
+		signatureType: z.enum(["ukep", "unep"]).optional().default("ukep"),
+	})
+	.strict();
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/sign-ukep", async (request, reply) => {
@@ -100,7 +105,11 @@ export async function register(app: FastifyInstance) {
 			// Медицинские документы могут подписываться электронной подписью только медицинским персоналом (врачом/главным врачом)
 			const identity = getRequestIdentity(request);
 			const staffRole = identity.role ?? request.user?.role ?? null;
-			const evalAccess = evaluateClinicalAccess(staffRole);
+			const evalAccess = evaluateClinicalAccess(staffRole, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
 			if (clinicalDocKinds.has(doc.kind) && !evalAccess.hasClinicalAccess) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
@@ -214,8 +223,11 @@ export async function register(app: FastifyInstance) {
 					if (meta.certificateSerialNumber) {
 						certSerial = meta.certificateSerialNumber;
 					}
-				} catch {
-					// DER extraction fallback
+				} catch (derErr) {
+					request.log.warn(
+						{ err: derErr, documentId: id },
+						"[DocumentSignUkep] Не удалось извлечь серийный номер из DER CMS",
+					);
 				}
 			}
 
@@ -295,6 +307,22 @@ export async function register(app: FastifyInstance) {
 						writeStampedDocumentSnapshot(doc.id, stampedHtml);
 					}
 				}
+
+				await recordAuditEvent({
+					organizationId: orgId,
+					actorUserId: identity.userId ?? null,
+					entityType: "generated_document",
+					entityId: doc.id,
+					action: "document_signed_ukep_63fz",
+					reason: JSON.stringify({
+						law: "63-FZ",
+						signatureType: parsedBody.data.signatureType ?? "ukep",
+						certSerial,
+						certSubject,
+						signedAt: signedAtDate.toISOString(),
+					}),
+					tx,
+				});
 
 				return { success: true as const, id: updated[0]?.id };
 			});

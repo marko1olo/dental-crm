@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { db, type TenantDb } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
 
 export interface StowSeriesInstanceParams {
@@ -11,11 +11,7 @@ export interface StowSeriesInstanceParams {
 	normalizedRelativePath: string;
 	rows?: number | undefined;
 	columns?: number | undefined;
-	tx?: {
-		select: typeof db.select;
-		insert: typeof db.insert;
-		update: typeof db.update;
-	};
+	tx?: TenantDb | undefined;
 }
 
 export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams): Promise<{ seriesId: string; instanceId: string }> {

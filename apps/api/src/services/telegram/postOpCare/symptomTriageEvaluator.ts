@@ -40,6 +40,9 @@ import {
 	isUuid,
 	type SymptomTriageEvaluationResult,
 } from "./types.js";
+import { createApiLogger } from "../../../observability/logger.js";
+
+const logger = createApiLogger("telegram:postOpCare");
 
 export type ScreenResolvers = {
 	get3HoursScreen?: (surgeryTitle?: string) => TriageScreenResult;
@@ -120,7 +123,7 @@ export async function evaluatePostOpSymptomCallback(
 					});
 				}
 			}).catch((err: unknown) => {
-				console.error("[symptomTriageEvaluator] Failed to record high bite triage communication task:", err);
+				logger.error({ err, organizationId, chatFingerprint }, "[symptomTriageEvaluator] Failed to record high bite triage communication task");
 			});
 		}
 
@@ -158,7 +161,7 @@ export async function evaluatePostOpSymptomCallback(
 					});
 				}
 			}).catch((err: unknown) => {
-				console.error("[symptomTriageEvaluator] Failed to record post-therapy pain triage communication task:", err);
+				logger.error({ err, organizationId, chatFingerprint }, "[symptomTriageEvaluator] Failed to record post-therapy pain triage communication task");
 			});
 		}
 

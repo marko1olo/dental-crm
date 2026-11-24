@@ -204,14 +204,26 @@ export function installmentScheduleMismatchReason(
 	payload: InstallmentPaymentSchedulePayload,
 	facts: DocumentCreationFacts,
 ): string | null {
-	const expectedRemainingRub = Math.max(
+	if (!Number.isFinite(payload.totalAmountRub) || !Number.isFinite(payload.prepaidAmountRub)) {
+		return `График рассрочки: остаток ${moneyRubText(payload.remainingAmountRub)} руб. не совпадает с суммой минус предоплатой ${moneyRubText(payload.totalAmountRub)} руб.`;
+	}
+	const expectedRemainingKopecks = Math.max(
 		0,
-		payload.totalAmountRub - payload.prepaidAmountRub,
+		parseKopecks(payload.totalAmountRub) - parseKopecks(payload.prepaidAmountRub),
 	);
-	if (payload.remainingAmountRub !== expectedRemainingRub) {
-		return `График рассрочки: остаток ${moneyRubText(payload.remainingAmountRub)} руб. не совпадает с суммой минус предоплатой ${moneyRubText(expectedRemainingRub)} руб.`;
+	if (
+		!Number.isFinite(payload.remainingAmountRub) ||
+		!moneyRubEquals(expectedRemainingKopecks, payload.remainingAmountRub)
+	) {
+		return `График рассрочки: остаток ${moneyRubText(payload.remainingAmountRub)} руб. не совпадает с суммой минус предоплатой ${moneyKopecksText(expectedRemainingKopecks)} руб.`;
 	}
 
+	const allInstallmentsFinite = payload.installments.every((installment) =>
+		Number.isFinite(installment.amountRub),
+	);
+	if (!allInstallmentsFinite) {
+		return `График рассрочки: сумма платежей ${moneyRubText(Number.NaN)} руб. не совпадает с остатком ${moneyRubText(payload.remainingAmountRub)} руб.`;
+	}
 	const installmentsTotalKopecks = sumKopecks(
 		payload.installments.map((installment) =>
 			parseKopecks(installment.amountRub),

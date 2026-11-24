@@ -1,7 +1,12 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import { getDocumentById } from "../../db/documentQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import {
+	getDocumentById,
+	getDocumentsByPatientId,
+} from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getClinicSettingsFromDb } from "../../db/settingsQuery.js";
 import {
 	documentIssueBlockReason,
 	taxFiscalDocumentBlockReason,
@@ -10,7 +15,12 @@ import {
 	buildTaxPaymentSnapshotForIssue,
 	taxDocumentUsesPaymentSnapshot,
 } from "../../documents/taxPaymentSnapshot.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import {
+	getRequestIdentity,
+	requireOrganizationId,
+} from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { buildPdfContentDispositionHeader } from "./pdf.js";
 import {
 	apiError,
 	buildKnd1151156Xml,
@@ -77,10 +87,27 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 	}
 
 	if (document.taxXmlSnapshot) {
+		const patient = await getPatientByIdFromDb(orgId, document.patientId);
+		const identity = getRequestIdentity(request);
+		const access = evaluateClinicalAccess(identity.role, {
+			clinicalRole: identity.clinicalRole ?? null,
+			canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+			specialties: identity.specialties ?? null,
+		});
+		if (patient?.status === "archived" && !access.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archived.read",
+				role: identity.role,
+				message:
+					"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+			});
+		}
+		const xmlFilename = `${document.taxXmlSnapshot.fileName}.xml`;
 		return reply
 			.header(
 				"Content-Disposition",
-				`attachment; filename="${document.taxXmlSnapshot.fileName}.xml"`,
+				buildPdfContentDispositionHeader(xmlFilename, xmlFilename),
 			)
 			.type("application/xml; charset=utf-8")
 			.send(document.taxXmlSnapshot.xml);
@@ -91,17 +118,29 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 		return reply.code(404).send(apiError("Пациент не найден"));
 	}
 
+	const identity = getRequestIdentity(request);
+	const access = evaluateClinicalAccess(identity.role, {
+		clinicalRole: identity.clinicalRole ?? null,
+		canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+		specialties: identity.specialties ?? null,
+	});
+	if (patient.status === "archived" && !access.hasClinicalAccess) {
+		return reply.code(403).send({
+			error: "PermissionDenied",
+			permission: "patients.archived.read",
+			role: identity.role,
+			message:
+				"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+		});
+	}
+
 	const taxPaymentSnapshot =
 		document.taxPaymentSnapshot ??
 		(taxDocumentUsesPaymentSnapshot(document.kind)
 			? buildTaxPaymentSnapshotForIssue(
 					document,
-					await import("../../db/billingQuery.js").then((m) =>
-						m.getPaymentsByPatientIdInDb(orgId, document.patientId),
-					),
-					await import("../../db/documentQuery.js").then((m) =>
-						m.getDocumentsByPatientId(orgId, document.patientId),
-					),
+					await getPaymentsByPatientIdInDb(orgId, document.patientId),
+					await getDocumentsByPatientId(orgId, document.patientId),
 				)
 			: null);
 	if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
@@ -147,15 +186,11 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 	const xmlPatient = frozenTaxXmlPatient(xmlDocument, patient);
 	const xmlClinicProfile = frozenTaxXmlClinicProfile(
 		xmlDocument,
-		await import("../../db/settingsQuery.js").then((m) =>
-			m.getClinicSettingsFromDb(orgId).then((s) => s.profile),
-		),
+		await getClinicSettingsFromDb(orgId).then((s) => s.profile),
 	);
 	const xmlPayments = frozenTaxXmlPayments(
 		xmlDocument,
-		await import("../../db/billingQuery.js").then((m) =>
-			m.getPaymentsByPatientIdInDb(orgId, xmlDocument.patientId),
-		),
+		await getPaymentsByPatientIdInDb(orgId, xmlDocument.patientId),
 	);
 	const xmlRenderContext = {
 		...renderContext,
@@ -206,10 +241,11 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 		return reply.code(result.statusCode).send(apiError(result.error));
 	}
 
+	const xmlFilename = `${result.fileName}.xml`;
 	return reply
 		.header(
 			"Content-Disposition",
-			`attachment; filename="${result.fileName}.xml"`,
+			buildPdfContentDispositionHeader(xmlFilename, xmlFilename),
 		)
 		.type("application/xml; charset=utf-8")
 		.send(result.xml);

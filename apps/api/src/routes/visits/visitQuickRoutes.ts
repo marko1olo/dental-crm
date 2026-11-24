@@ -1,11 +1,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db as database } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { createPatientInDb } from "../../db/patientsQuery.js";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
-import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
-import { findOrCreateActiveChair } from "./ensureActiveChair.js";
+import { getRequestIdentity } from "../../security/identity.js";
+import { resolveDefaultChairForCreate } from "../appointments/queries/appointmentDefaults.js";
 
 function isOverlapError(error: unknown): boolean {
 	const errObj = error as Record<string, unknown>;
@@ -53,19 +53,15 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 			};
 		}
 
-		const chair = await findOrCreateActiveChair(orgId);
-		if (!chair) {
-			reply.code(400);
-			return {
-				error: "QuickVisitValidationError",
-				message: "В клинике не настроены активные кресла",
-			};
-		}
-
 		const startsAt = new Date().toISOString();
 		const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 		try {
-			const result = await database.transaction(async (tx) => {
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const chairId = await resolveDefaultChairForCreate(tx, orgId);
+				if (!chairId) {
+					return { kind: "no_chair" as const };
+				}
+
 				const patient = await createPatientInDb(
 					orgId,
 					{
@@ -82,7 +78,7 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 					{
 						patientId: patient.id,
 						doctorUserId,
-						chairId: chair.id,
+						chairId,
 						status: "in_treatment",
 						startsAt,
 						endsAt,
@@ -95,11 +91,26 @@ export function registerVisitQuickRoutes(app: FastifyInstance) {
 
 				await openVisitForAppointmentInDb(orgId, appointment.id, tx);
 
-				return { patientId: patient.id, appointmentId: appointment.id };
+				return {
+					kind: "created" as const,
+					patientId: patient.id,
+					appointmentId: appointment.id,
+				};
 			});
 
+			if (txResult.kind === "no_chair") {
+				reply.code(400);
+				return {
+					error: "QuickVisitValidationError",
+					message: "В клинике не настроены активные кресла",
+				};
+			}
+
 			reply.code(201);
-			return result;
+			return {
+				patientId: txResult.patientId,
+				appointmentId: txResult.appointmentId,
+			};
 		} catch (error: unknown) {
 			if (isOverlapError(error)) {
 				return reply.code(409).send({

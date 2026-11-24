@@ -198,9 +198,10 @@ export async function finalizeKktPrintAndBuffer(
 
 	// Ensure payment record exists if clientMutationId was provided and not yet created
 	let paymentId =
-		("paymentId" in data && typeof (data as { paymentId?: unknown }).paymentId === "string"
-			? (data as { paymentId?: string }).paymentId
-			: null) ?? null;
+		"paymentId" in data && typeof data.paymentId === "string"
+			? data.paymentId
+			: null;
+	let insertedPaymentNow = false;
 	if (data.clientMutationId && data.patientId) {
 		const totalKop = data.totalKopecks || 0;
 		const amountRub = kopecksToRub(totalKop);
@@ -234,6 +235,7 @@ export async function finalizeKktPrintAndBuffer(
 				.returning({ id: payments.id });
 			if (inserted) {
 				paymentId = inserted.id;
+				insertedPaymentNow = true;
 			}
 		} else {
 			paymentId = existing.id;
@@ -285,7 +287,9 @@ export async function finalizeKktPrintAndBuffer(
 		)
 		.returning();
 
-	await applyCashBoxFiscalReceipt(tx, orgId, data, printResult);
+	await applyCashBoxFiscalReceipt(tx, orgId, data, printResult, {
+		skipDuplicatePaymentCheck: insertedPaymentNow,
+	});
 
 	return {
 		success: true,
@@ -320,9 +324,10 @@ export async function executeKktPrintAndBuffer(
 
 	// Ensure payment record exists if clientMutationId was provided and not yet created
 	let paymentId =
-		("paymentId" in data && typeof (data as { paymentId?: unknown }).paymentId === "string"
-			? (data as { paymentId?: string }).paymentId
-			: null) ?? null;
+		"paymentId" in data && typeof data.paymentId === "string"
+			? data.paymentId
+			: null;
+	let insertedPaymentNow = false;
 	if (data.clientMutationId && data.patientId) {
 		const totalKop = data.totalKopecks || 0;
 		const amountRub = kopecksToRub(totalKop);
@@ -356,6 +361,7 @@ export async function executeKktPrintAndBuffer(
 				.returning({ id: payments.id });
 			if (inserted) {
 				paymentId = inserted.id;
+				insertedPaymentNow = true;
 			}
 		} else {
 			paymentId = existing.id;
@@ -390,6 +396,7 @@ export async function executeKktPrintAndBuffer(
 		.insert(fiscalReceiptQueue)
 		.values({
 			organizationId: orgId,
+			paymentId: paymentId ?? undefined,
 			visitId: data.visitId || null,
 			receiptType: data.operationType,
 			status: (printResult.status as typeof fiscalReceiptQueue.$inferInsert.status) || "pending_print",
@@ -402,7 +409,9 @@ export async function executeKktPrintAndBuffer(
 		})
 		.returning();
 
-	await applyCashBoxFiscalReceipt(tx, orgId, data, printResult);
+	await applyCashBoxFiscalReceipt(tx, orgId, data, printResult, {
+		skipDuplicatePaymentCheck: insertedPaymentNow,
+	});
 
 	return {
 		success: true,

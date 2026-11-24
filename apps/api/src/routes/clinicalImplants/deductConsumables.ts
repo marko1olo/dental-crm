@@ -1,5 +1,5 @@
 import { and, eq, ilike, or } from "drizzle-orm";
-import { type createImplantInstallationSchema, rublesToKopecks } from "@dental/shared";
+import { type createImplantInstallationSchema, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems } from "../../db/schema.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
@@ -27,6 +27,23 @@ interface DeductConsumableItemParams {
 	notesPrefix: string;
 }
 
+function resolveInventoryUnitCostKopecks(item: {
+	unitCostKopecks?: bigint | null;
+	pricePerUnitKopecks?: bigint | null;
+	unitCostRub?: string | null;
+	pricePerUnit?: string | null;
+}): bigint {
+	const legacyRub = Number(item.unitCostRub || item.pricePerUnit || 0);
+	const legacyKopecks = BigInt(rublesToKopecks(Number.isFinite(legacyRub) ? legacyRub : 0));
+	if (typeof item.unitCostKopecks === "bigint" && (item.unitCostKopecks > 0n || legacyKopecks === 0n)) {
+		return item.unitCostKopecks;
+	}
+	if (typeof item.pricePerUnitKopecks === "bigint" && (item.pricePerUnitKopecks > 0n || legacyKopecks === 0n)) {
+		return item.pricePerUnitKopecks;
+	}
+	return legacyKopecks;
+}
+
 async function deductSingleConsumable(
 	tx: DbExecutor,
 	orgId: string,
@@ -47,15 +64,17 @@ async function deductSingleConsumable(
 	if (!item) {
 		const cleanName = params.materialName.trim();
 		const nameFilters = [
-			ilike(inventoryItems.name, `%${cleanName}%`),
+			...(cleanName.length > 0 ? [ilike(inventoryItems.name, `%${cleanName}%`)] : []),
 			...params.fallbackKeywords.map((kw) => ilike(inventoryItems.name, `%${kw}%`)),
 		];
-		const [foundByName] = await tx
-			.select()
-			.from(inventoryItems)
-			.where(and(eq(inventoryItems.organizationId, orgId), or(...nameFilters)))
-			.limit(1);
-		item = foundByName;
+		if (nameFilters.length > 0) {
+			const [foundByName] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(and(eq(inventoryItems.organizationId, orgId), or(...nameFilters)))
+				.limit(1);
+			item = foundByName;
+		}
 	}
 
 	if (!item) {
@@ -70,6 +89,8 @@ async function deductSingleConsumable(
 
 		const defaultName = matchedSeed?.name ?? params.materialName;
 		const defaultCostRub = matchedSeed?.unitCostRub ?? "0.00";
+		const defaultCostKopecks =
+			matchedSeed?.unitCostKopecks ?? BigInt(rublesToKopecks(Number(defaultCostRub)));
 		const defaultUnit = matchedSeed?.unit ?? "шт.";
 		const defaultSku = matchedSeed?.sku ?? null;
 		const defaultBarcode = matchedSeed?.barcode ?? null;
@@ -88,6 +109,8 @@ async function deductSingleConsumable(
 				criticalThreshold: "2",
 				unitCostRub: defaultCostRub,
 				pricePerUnit: defaultCostRub,
+				unitCostKopecks: defaultCostKopecks,
+				pricePerUnitKopecks: defaultCostKopecks,
 				sku: defaultSku,
 				barcode: defaultBarcode,
 				lotNumber: defaultLot,
@@ -113,14 +136,14 @@ async function deductSingleConsumable(
 		notes: `${params.notesPrefix} зуба FDI #${params.toothNumberFdi}`,
 	});
 
-	const cost = Number(item.unitCostRub || item.pricePerUnit || 0);
-	const costKopecks = BigInt(rublesToKopecks(cost));
+	const costKopecks = resolveInventoryUnitCostKopecks(item);
+	const costRub = kopecksToRubles(costKopecks);
 	const lotNumber = fefoResult.batchesUsed[0]?.batchNumber ?? item.lotNumber ?? null;
 
 	return {
 		name: item.name,
 		lotNumber,
-		unitCostRub: cost,
+		unitCostRub: costRub,
 		unitCostKopecks: costKopecks.toString(),
 		quantity: 1,
 		isOverdraft: fefoResult.isOverdraft,
@@ -134,15 +157,15 @@ export async function deductConsumables(
 	input: InstallationInput,
 ) {
 	const deductedMaterials: DeductedMaterial[] = [];
-	let consumablesCostTotal = 0;
+	let consumablesCostTotalKopecks = 0n;
 
 	// 1. Графт
 	if (input.boneGraftMaterial || input.boneGraftItemId) {
-		const graftName = input.boneGraftMaterial || "Костный графт Geistlich Bio-Oss (0.5г)";
+		const graftName = input.boneGraftMaterial || "Костный графт (ксенографт, 0.5 г)";
 		const result = await deductSingleConsumable(tx, orgId, userId, {
 			targetItemId: input.boneGraftItemId,
 			materialName: graftName,
-			fallbackKeywords: ["bio-oss", "графт", "костн"],
+			fallbackKeywords: ["ксенографт", "графт", "костн"],
 			category: "Хирургия",
 			toothNumberFdi: input.toothNumberFdi,
 			visitId: input.visitId ?? null,
@@ -150,17 +173,17 @@ export async function deductConsumables(
 		});
 		if (result) {
 			deductedMaterials.push(result);
-			consumablesCostTotal += result.unitCostRub;
+			consumablesCostTotalKopecks += BigInt(result.unitCostKopecks);
 		}
 	}
 
 	// 2. Мембрана
 	if (input.membraneUsed || input.membraneItemId) {
-		const memName = input.membraneUsed || "Коллагеновая мембрана Geistlich Bio-Gide (16x22мм)";
+		const memName = input.membraneUsed || "Коллагеновая барьерная мембрана (16×22 мм)";
 		const result = await deductSingleConsumable(tx, orgId, userId, {
 			targetItemId: input.membraneItemId,
 			materialName: memName,
-			fallbackKeywords: ["bio-gide", "мембран"],
+			fallbackKeywords: ["коллаген", "мембран"],
 			category: "Хирургия",
 			toothNumberFdi: input.toothNumberFdi,
 			visitId: input.visitId ?? null,
@@ -168,17 +191,17 @@ export async function deductConsumables(
 		});
 		if (result) {
 			deductedMaterials.push(result);
-			consumablesCostTotal += result.unitCostRub;
+			consumablesCostTotalKopecks += BigInt(result.unitCostKopecks);
 		}
 	}
 
 	// 3. Шовный материал (только если врач указал шовный материал или выбран айтем)
 	if (input.sutureMaterial || input.sutureItemId) {
-		const sutureName = input.sutureMaterial || "Шовный материал Ethicon Викрил 4-0";
+		const sutureName = input.sutureMaterial || "Шовный материал полиглактин 4-0";
 		const result = await deductSingleConsumable(tx, orgId, userId, {
 			targetItemId: input.sutureItemId,
 			materialName: sutureName,
-			fallbackKeywords: ["викрил", "vicryl", "шовн"],
+			fallbackKeywords: ["полиглактин", "монофиламент", "шовн"],
 			category: "Расходные материалы",
 			toothNumberFdi: input.toothNumberFdi,
 			visitId: input.visitId ?? null,
@@ -186,14 +209,15 @@ export async function deductConsumables(
 		});
 		if (result) {
 			deductedMaterials.push(result);
-			consumablesCostTotal += result.unitCostRub;
+			consumablesCostTotalKopecks += BigInt(result.unitCostKopecks);
 		}
 	}
 
-	const consumablesCostTotalKopecks = BigInt(rublesToKopecks(consumablesCostTotal));
+	const consumablesCostTotal = kopecksToRubles(consumablesCostTotalKopecks);
 	return {
 		deductedMaterials,
 		consumablesCostTotal,
 		consumablesCostTotalKopecks: consumablesCostTotalKopecks.toString(),
+		consumablesCostTotalKopecksBigInt: consumablesCostTotalKopecks,
 	};
 }

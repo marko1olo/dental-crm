@@ -14,7 +14,7 @@ import {
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import { normalizeTaxationSystem } from "../../../db/settings/clinicFiscalQueries.js";
 import { FiscalReceiptFactory, type Ffd12ReceiptPayload } from "../../../services/kkt/FiscalReceiptFactory.js";
@@ -55,27 +55,23 @@ export async function validateAndPrepareFiscalData(
 	const rawBody = (request.body ?? {}) as Record<string, unknown>;
 	if (rawBody.taxationSystem === undefined) {
 		try {
-			const [orgRow] = await db
-				.select({ flags: organizations.workspaceFeatureFlags })
-				.from(organizations)
-				.where(eq(organizations.id, orgId))
-				.limit(1);
+			const [orgRow] = await withTenantCtx(orgId, async (tx) => {
+				return tx
+					.select({ flags: organizations.workspaceFeatureFlags })
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.limit(1);
+			});
 			const orgFlags = (orgRow?.flags as Record<string, unknown> | null) ?? {};
 			if (typeof orgFlags.taxationSystem === "string") {
 				resolvedTaxationSystem = normalizeTaxationSystem(orgFlags.taxationSystem);
 			}
-		} catch {
-			// Fallback to parsed default taxationSystem
+		} catch (err) {
+			request.log.warn({ err, orgId }, "Failed to resolve organization taxationSystem; using parsed default");
 		}
 	}
 
-	const data: CreateFiscalReceiptPayload = {
-		...rawData,
-		taxationSystem: resolvedTaxationSystem,
-		clientMutationId: effectiveMutationId,
-	};
-
-	const verification = await verifyAndEnforceCatalogPrices(orgId, data.items);
+	const verification = await verifyAndEnforceCatalogPrices(orgId, rawData.items);
 	if (!verification.success) {
 		return {
 			success: false,
@@ -83,6 +79,13 @@ export async function validateAndPrepareFiscalData(
 			errorResponse: verification.response as Record<string, unknown>,
 		};
 	}
+
+	const data: CreateFiscalReceiptPayload = {
+		...rawData,
+		items: verification.normalizedItems,
+		taxationSystem: resolvedTaxationSystem,
+		clientMutationId: effectiveMutationId,
+	};
 
 	return {
 		success: true,

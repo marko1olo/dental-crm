@@ -13,7 +13,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { kopecksToNumericString, rublesToKopecks } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRub, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
@@ -81,29 +81,31 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		const { cashBoxId, amountRub, reasonText, operatorId } = parsed.data;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_transfer:' || ${idempotencyKey}))`,
+			);
+
 			await ensureOrganizationCashBoxes(tx, orgId);
 
-			if (idempotencyKey) {
-				const [existingOp] = await tx
+			const [existingOp] = await tx
+				.select()
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
+					),
+				)
+				.limit(1);
+
+			if (existingOp) {
+				const [currentBox] = await tx
 					.select()
-					.from(cashOperations)
-					.where(
-						and(
-							eq(cashOperations.organizationId, orgId),
-							sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
-						),
-					)
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, orgId)))
 					.limit(1);
 
-				if (existingOp) {
-					const [currentBox] = await tx
-						.select()
-						.from(cashBoxes)
-						.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, orgId)))
-						.limit(1);
-
-					return { kind: "ok" as const, operation: existingOp, cashBox: currentBox, isReplay: true };
-				}
+				return { kind: "ok" as const, operation: existingOp, cashBox: currentBox, isReplay: true };
 			}
 
 			let targetBox: typeof cashBoxes.$inferSelect | undefined;
@@ -131,12 +133,14 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 			const amountKopecks = rublesToKopecks(amountRub);
 			const beforeKop =
-				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+				targetBox.balanceKopecks !== undefined &&
+				targetBox.balanceKopecks !== null &&
+				(targetBox.balanceKopecks !== 0 || Number(targetBox.balanceRub || 0) === 0)
 					? Number(targetBox.balanceKopecks)
 					: rublesToKopecks(targetBox.balanceRub);
 			const afterKop = beforeKop + amountKopecks;
-			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = calculateBalanceAdd(balanceBefore, amountRub);
+			const balanceBefore = kopecksToRub(beforeKop);
+			const balanceAfter = kopecksToRub(afterKop);
 
 			// Находим активную смену
 			const [activeShift] = await tx
@@ -163,13 +167,18 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
 				.returning();
 
-			// Обновляем статистику смены
+			// Обновляем статистику смены (рубли и копейки)
 			if (activeShift) {
-				const updatedIncome = calculateBalanceAdd(activeShift.incomeTotalRub, amountRub);
+				const prevIncomeKop =
+					activeShift.incomeTotalKopecks > 0 || Number(activeShift.incomeTotalRub || 0) === 0
+						? activeShift.incomeTotalKopecks
+						: rublesToKopecks(activeShift.incomeTotalRub);
+				const nextIncomeKop = prevIncomeKop + amountKopecks;
 				await tx
 					.update(cashBoxShifts)
 					.set({
-						incomeTotalRub: updatedIncome,
+						incomeTotalRub: kopecksToRub(nextIncomeKop),
+						incomeTotalKopecks: nextIncomeKop,
 						updatedAt: new Date(),
 					})
 					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
@@ -291,29 +300,31 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		const { cashBoxId, amountRub, reasonText, operatorId } = parsed.data;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_transfer:' || ${idempotencyKey}))`,
+			);
+
 			await ensureOrganizationCashBoxes(tx, orgId);
 
-			if (idempotencyKey) {
-				const [existingOp] = await tx
+			const [existingOp] = await tx
+				.select()
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
+					),
+				)
+				.limit(1);
+
+			if (existingOp) {
+				const [currentBox] = await tx
 					.select()
-					.from(cashOperations)
-					.where(
-						and(
-							eq(cashOperations.organizationId, orgId),
-							sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
-						),
-					)
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, orgId)))
 					.limit(1);
 
-				if (existingOp) {
-					const [currentBox] = await tx
-						.select()
-						.from(cashBoxes)
-						.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, orgId)))
-						.limit(1);
-
-					return { kind: "ok" as const, operation: existingOp, cashBox: currentBox, isReplay: true };
-				}
+				return { kind: "ok" as const, operation: existingOp, cashBox: currentBox, isReplay: true };
 			}
 
 			let targetBox: typeof cashBoxes.$inferSelect | undefined;
@@ -341,11 +352,13 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 			const amountKopecks = rublesToKopecks(amountRub);
 			const beforeKop =
-				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+				targetBox.balanceKopecks !== undefined &&
+				targetBox.balanceKopecks !== null &&
+				(targetBox.balanceKopecks !== 0 || Number(targetBox.balanceRub || 0) === 0)
 					? Number(targetBox.balanceKopecks)
 					: rublesToKopecks(targetBox.balanceRub);
-			const balanceBefore = targetBox.balanceRub;
-			if (balanceBefore < amountRub || beforeKop < amountKopecks) {
+			const balanceBefore = kopecksToRub(beforeKop);
+			if (beforeKop < amountKopecks) {
 				return {
 					kind: "insufficient_funds" as const,
 					balanceBefore,
@@ -354,7 +367,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 			}
 
 			const afterKop = Math.max(0, beforeKop - amountKopecks);
-			const balanceAfter = calculateBalanceSubtract(balanceBefore, amountRub);
+			const balanceAfter = kopecksToRub(afterKop);
 
 			const [activeShift] = await tx
 				.select()
@@ -380,11 +393,16 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				.returning();
 
 			if (activeShift) {
-				const updatedExpense = calculateBalanceAdd(activeShift.expenseTotalRub, amountRub);
+				const prevExpenseKop =
+					activeShift.expenseTotalKopecks > 0 || Number(activeShift.expenseTotalRub || 0) === 0
+						? activeShift.expenseTotalKopecks
+						: rublesToKopecks(activeShift.expenseTotalRub);
+				const nextExpenseKop = prevExpenseKop + amountKopecks;
 				await tx
 					.update(cashBoxShifts)
 					.set({
-						expenseTotalRub: updatedExpense,
+						expenseTotalRub: kopecksToRub(nextExpenseKop),
+						expenseTotalKopecks: nextExpenseKop,
 						updatedAt: new Date(),
 					})
 					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));

@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { withTenantCtx } from "../../db/rls.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { getRequestIdentity } from "../../security/identity.js";
 
 /**
@@ -105,5 +106,11 @@ export function createTenantTestApp(): FastifyInstance {
 		};
 	});
 
+	return app;
+}
+
+export async function createIdempotentTenantTestApp(): Promise<FastifyInstance> {
+	const app = createTenantTestApp();
+	await app.register(idempotencyPlugin);
 	return app;
 }

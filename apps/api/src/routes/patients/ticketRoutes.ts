@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { PatientTaskAssigneeNotFoundError } from "../../db/patientTaskTicketsQuery.js";
 import {
 	PATIENT_ID_UUID_PATTERN,
 	requireClinicOrganizationId,
@@ -111,20 +112,16 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 			typeof body.description === "string" && body.description.trim()
 				? body.description.trim()
 				: null;
-		// Важность экран отправляет всегда ('normal'), но на всякий случай не
-		// доверяем: чужое значение не должно попасть в базу мимо смысла.
-		const priority =
-			typeof body.priority === "string" && body.priority.trim()
-				? body.priority.trim()
-				: "normal";
+		const priority = body.priority ?? "normal";
 
 		try {
 			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
 			if (!patient) return sendPatientNotFound(reply);
 
-			const { createPatientTaskTicketInDb } = await import(
-				"../../db/patientTaskTicketsQuery.js"
-			);
+			const {
+				createPatientTaskTicketInDb,
+				PatientTaskAssigneeNotFoundError,
+			} = await import("../../db/patientTaskTicketsQuery.js");
 			const created = await createPatientTaskTicketInDb(
 				orgId,
 				patientId.trim(),
@@ -137,6 +134,12 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 			);
 			return reply.status(201).send(created);
 		} catch (e) {
+			if (e instanceof PatientTaskAssigneeNotFoundError) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: e.message,
+				});
+			}
 			request.log.error(
 				{ err: e },
 				"[Patients] Ошибка создания задачи по пациенту",

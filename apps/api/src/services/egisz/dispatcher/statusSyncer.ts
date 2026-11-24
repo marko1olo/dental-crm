@@ -11,6 +11,9 @@ import { appendEgiszAuditLog } from "../EgiszAuditService.js";
 import type { OiisGatewayClient } from "../OiisGatewayClient.js";
 import type { EgiszRemdRegistrationReceipt } from "./types.js";
 import { createEgiszRemdReceipt } from "./egiszGatewayClient.js";
+import { createApiLogger } from "../../../observability/logger.js";
+
+const logger = createApiLogger("egisz:statusSyncer");
 
 /**
  * Polls and synchronizes status of in-flight "Sent" / "sending" transactions from РЭМД Минздрава РФ.
@@ -134,13 +137,9 @@ export async function syncPendingStatuses(
 				updatedCount++;
 			}
 		} catch (err: unknown) {
-			process.stderr.write(
-				`${JSON.stringify({
-					level: "error",
-					tag: "EgiszOutboxDispatcher",
-					message: `Outbox status sync failed for row ${row.id}`,
-					error: err instanceof Error ? err.message : String(err),
-				})}\n`,
+			logger.error(
+				{ err, rowId: row.id, organizationId },
+				`Outbox status sync failed for row ${row.id}`,
 			);
 		}
 	}
@@ -196,13 +195,9 @@ export async function syncPendingStatuses(
 				updatedCount++;
 			}
 		} catch (err: unknown) {
-			process.stderr.write(
-				`${JSON.stringify({
-					level: "error",
-					tag: "EgiszOutboxDispatcher",
-					message: `Status sync failed for log ${log.id}`,
-					error: err instanceof Error ? err.message : String(err),
-				})}\n`,
+			logger.error(
+				{ err, logId: log.id, organizationId: log.organizationId },
+				`Status sync failed for log ${log.id}`,
 			);
 		}
 	}

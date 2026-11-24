@@ -9,10 +9,9 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import {
-	requireClinicalMutationContext,
-	requireClinicalReadContext,
-} from "../security/tenantContext.js";
+import { recordAuditEvent } from "../audit.js";
+import { getDocumentById } from "../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../db/patientsQuery.js";
 import {
 	CryptoProCertInfo,
 	CryptoProCliError,
@@ -23,29 +22,48 @@ import {
 } from "../crypto/cryptoProCliEngine.js";
 import { getClinicSettingsFromDb } from "../db/settingsQuery.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../security/tenantContext.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
+import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./documents/query.js";
 
 // ─── Request Schemas ────────────────────────────────────────────────────────
 
-const signPayloadBodySchema = z.object({
-	data: z.string({
-		required_error: "Поле data (содержимое документа для подписи) обязательно",
-		invalid_type_error: "Поле data должно быть строкой",
-	}).min(1, "Данные для подписания не могут быть пустыми"),
-	dataEncoding: z.enum(["utf8", "base64", "hex"]).default("utf8"),
-	thumbprint: z.string({
-		required_error: "Отпечаток сертификата thumbprint обязателен",
-		invalid_type_error: "Отпечаток сертификата должен быть строкой",
-	}).trim().min(1, "Отпечаток сертификата обязателен"),
-	pin: z.string().trim().optional(),
-	requestId: z.string().trim().optional(),
-	documentId: z.string().trim().optional(),
-	documentKind: z.string().trim().optional(),
-});
+const signPayloadBodySchema = z
+	.object({
+		data: z
+			.string({
+				required_error: "Поле data (содержимое документа для подписи) обязательно",
+				invalid_type_error: "Поле data должно быть строкой",
+			})
+			.min(1, "Данные для подписания не могут быть пустыми"),
+		dataEncoding: z.enum(["utf8", "base64", "hex"]).default("utf8"),
+		thumbprint: z
+			.string({
+				required_error: "Отпечаток сертификата thumbprint обязателен",
+				invalid_type_error: "Отпечаток сертификата должен быть строкой",
+			})
+			.trim()
+			.min(1, "Отпечаток сертификата обязателен"),
+		pin: z.string().trim().optional(),
+		requestId: z.string().trim().optional(),
+		documentId: z
+			.string()
+			.trim()
+			.uuid("Некорректный идентификатор документа (ожидается UUID)")
+			.optional(),
+		documentKind: z.string().trim().optional(),
+	})
+	.strict();
 
-const thumbprintParamSchema = z.object({
-	thumbprint: z.string().trim().min(1, "Отпечаток сертификата обязателен"),
-});
+const thumbprintParamSchema = z
+	.object({
+		thumbprint: z.string().trim().min(1, "Отпечаток сертификата обязателен"),
+	})
+	.strict();
 
 // ─── Multi-Tenant Security & Certificate Matching ──────────────────────────
 
@@ -167,44 +185,46 @@ export function isCertificateAllowedForTenant(
 		}
 	}
 
-	// 4. Совпадение по ФИО врача (фамилия + имя или полное совпадение)
+	// 4. Совпадение по ФИО врача (точное совпадение или фамилия + инициал имени при длине фамилии >= 2)
 	if (cert.doctorFullName && context.allowedDoctorNames.length > 0) {
 		const certNameClean = cert.doctorFullName.trim().toLowerCase().replace(/\s+/g, " ");
 		const certParts = certNameClean.split(" ").filter(Boolean);
+		const certSurname = certParts[0];
+		const certGiven = certParts[1];
 
 		for (const allowedName of context.allowedDoctorNames) {
 			const allowedNameClean = allowedName.trim().toLowerCase().replace(/\s+/g, " ");
 			if (certNameClean === allowedNameClean) return true;
-			if (certNameClean.includes(allowedNameClean) || allowedNameClean.includes(certNameClean)) {
-				return true;
-			}
 
 			const allowedParts = allowedNameClean.split(" ").filter(Boolean);
-			// Проверка совпадения фамилии и первой буквы имени
-			if (certParts.length >= 2 && allowedParts.length >= 2) {
-				if (certParts[0] === allowedParts[0] && certParts[1]![0] === allowedParts[1]![0]) {
-					return true;
-				}
-			} else if (certParts.length >= 1 && allowedParts.length >= 1) {
-				if (certParts[0] === allowedParts[0] && certParts[0]!.length >= 3) {
-					return true;
-				}
+			const allowedSurname = allowedParts[0];
+			const allowedGiven = allowedParts[1];
+			if (
+				certSurname &&
+				certGiven &&
+				allowedSurname &&
+				allowedGiven &&
+				certSurname.length >= 2 &&
+				certSurname === allowedSurname &&
+				certGiven.charAt(0) === allowedGiven.charAt(0)
+			) {
+				return true;
 			}
 		}
 	}
 
-	// 5. Совпадение по наименованию организации
+	// 5. Точное нормализованное совпадение по наименованию организации
 	if (cert.organizationName) {
-		const certOrg = cert.organizationName.toLowerCase().replace(/["'«»]/g, "").trim();
-		if (context.clinicLegalName) {
-			const legalName = context.clinicLegalName.toLowerCase().replace(/["'«»]/g, "").trim();
-			if (certOrg.length >= 3 && (certOrg === legalName || certOrg.includes(legalName) || legalName.includes(certOrg))) {
+		const normalizeOrgName = (val: string) =>
+			val.toLowerCase().replace(/["'«»]/g, "").replace(/\s+/g, " ").trim();
+		const certOrg = normalizeOrgName(cert.organizationName);
+		if (certOrg.length >= 3 && context.clinicLegalName) {
+			if (certOrg === normalizeOrgName(context.clinicLegalName)) {
 				return true;
 			}
 		}
-		if (context.clinicName) {
-			const clinicName = context.clinicName.toLowerCase().replace(/["'«»]/g, "").trim();
-			if (certOrg.length >= 3 && (certOrg === clinicName || certOrg.includes(clinicName) || clinicName.includes(certOrg))) {
+		if (certOrg.length >= 3 && context.clinicName) {
+			if (certOrg === normalizeOrgName(context.clinicName)) {
 				return true;
 			}
 		}
@@ -220,7 +240,6 @@ export function mapCryptoErrorToHttpStatus(err: unknown): {
 	code: string;
 	message: string;
 	paperFallbackAvailable: boolean;
-	details?: unknown;
 } {
 	if (err instanceof CryptoProCliError) {
 		let statusCode = 422;
@@ -245,16 +264,22 @@ export function mapCryptoErrorToHttpStatus(err: unknown): {
 			statusCode = 400;
 		}
 
+		const safeMessage =
+			err.code === "CERTIFICATES_ENUM_FAILED"
+				? "Не удалось получить список сертификатов из КриптоПро CSP."
+				: err.code === "SIGNING_FAILED"
+					? "Не удалось сформировать электронную подпись КриптоПро CSP."
+					: err.message;
+
 		return {
 			statusCode,
 			code: err.code,
-			message: err.message,
+			message: safeMessage,
 			paperFallbackAvailable: true,
-			details: err.details,
 		};
 	}
 
-	const sysErr = err as { code?: string; message?: string };
+	const sysErr = err as { code?: string };
 	if (sysErr?.code === "ENOENT") {
 		return {
 			statusCode: 503,
@@ -265,11 +290,11 @@ export function mapCryptoErrorToHttpStatus(err: unknown): {
 		};
 	}
 
-	const message = err instanceof Error ? err.message : String(err);
 	return {
 		statusCode: 503,
 		code: "CRYPTO_SERVICE_UNAVAILABLE",
-		message: `Сервис электронной подписи временно недоступен: ${message}. Вы можете распечатать бумажный бланк документа для живой подписи врача.`,
+		message:
+			"Сервис электронной подписи временно недоступен. Вы можете распечатать бумажный бланк документа для живой подписи врача.",
 		paperFallbackAvailable: true,
 	};
 }
@@ -289,7 +314,11 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			signingAvailable: status.signingAvailable,
 			paperFallbackAvailable: status.paperFallbackAvailable,
 			message: status.message,
-			paths: status.paths,
+			paths: {
+				csptest: Boolean(status.paths.csptest),
+				cryptcp: Boolean(status.paths.cryptcp),
+				certmgr: Boolean(status.paths.certmgr),
+			},
 		});
 	};
 
@@ -327,13 +356,13 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				paperFallbackAvailable: true,
 			});
 		} catch (err: unknown) {
+			request.log.warn({ err, organizationId: context.organizationId }, "[CryptoPro] Ошибка перечисления сертификатов");
 			const mapped = mapCryptoErrorToHttpStatus(err);
 			return reply.status(mapped.statusCode).send({
 				success: false,
 				code: mapped.code,
 				message: mapped.message,
 				paperFallbackAvailable: mapped.paperFallbackAvailable,
-				details: mapped.details,
 			});
 		}
 	};
@@ -413,13 +442,13 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				certificate: cert,
 			});
 		} catch (err: unknown) {
+			request.log.warn({ err, organizationId: context.organizationId }, "[CryptoPro] Ошибка перечисления сертификатов");
 			const mapped = mapCryptoErrorToHttpStatus(err);
 			return reply.status(mapped.statusCode).send({
 				success: false,
 				code: mapped.code,
 				message: mapped.message,
 				paperFallbackAvailable: mapped.paperFallbackAvailable,
-				details: mapped.details,
 			});
 		}
 	};
@@ -435,7 +464,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 		if (!context) return;
 
 		const organizationId = context.organizationId;
-		const tenantContext = await getTenantCryptoContext(request, organizationId);
+		const identity = getRequestIdentity(request);
 
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
@@ -479,6 +508,41 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				code: "INVALID_THUMBPRINT",
 				message: "Некорректный отпечаток сертификата: ожидается 40-значный шестнадцатеричный SHA-1 отпечаток",
 			});
+		}
+
+		if (documentId) {
+			const doc = await getDocumentById(organizationId, documentId);
+			if (!doc) {
+				return reply.status(404).send({
+					success: false,
+					code: "DOCUMENT_NOT_FOUND",
+					message: "Документ не найден в данной клинике",
+				});
+			}
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
+			if (
+				clinicalDocKinds.has(doc.kind) &&
+				!access.hasClinicalAccess &&
+				!isReceptionistAllowedPrimaryDoc(doc.kind, identity.role)
+			) {
+				return reply.status(403).send({
+					success: false,
+					code: "PermissionDenied",
+					message: "Подписание клинического документа недоступно для вашей роли",
+				});
+			}
+			const patient = await getPatientByIdFromDb(organizationId, doc.patientId);
+			if (patient?.status === "archived" && !access.hasClinicalAccess) {
+				return reply.status(403).send({
+					success: false,
+					code: "PermissionDenied",
+					message: "Отказ в доступе к документам архивированного пациента",
+				});
+			}
 		}
 
 		// Преобразуем входящие данные в байтовый Buffer
@@ -537,8 +601,31 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				});
 			}
 
+			if (!cert.isValid) {
+				return reply.status(400).send({
+					success: false,
+					code: "CERTIFICATE_EXPIRED_OR_INVALID",
+					message: "Срок действия сертификата УКЭП истек или его период действия не подтвержден",
+				});
+			}
+
 			const signatureBuffer = await signDetachedGost(dataBuffer, cleanThumbprint, { requestId, pin });
 			const signatureBase64 = signatureBuffer.toString("base64");
+			const signedAt = new Date().toISOString();
+
+			await recordAuditEvent({
+				organizationId,
+				actorUserId: identity.userId ?? null,
+				entityType: documentId ? "generated_document" : "crypto_payload",
+				entityId: documentId ?? cleanThumbprint,
+				action: "ukep_payload_signed_gost",
+				reason: JSON.stringify({
+					thumbprint: cleanThumbprint,
+					documentKind: documentKind ?? null,
+					algorithm: "GOST R 34.10-2012",
+					signedAt,
+				}),
+			});
 
 			return reply.send({
 				success: true,
@@ -548,70 +635,80 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				documentKind: documentKind ?? null,
 				algorithm: "GOST R 34.10-2012",
 				containerFormat: "CMS_PKCS7_DETACHED_CADES_BES",
-				signedAt: new Date().toISOString(),
+				signedAt,
 			});
 		} catch (err: unknown) {
+			request.log.warn({ err, organizationId, documentId }, "[CryptoPro] Ошибка формирования подписи ГОСТ");
 			const mapped = mapCryptoErrorToHttpStatus(err);
 			return reply.status(mapped.statusCode).send({
 				success: false,
 				code: mapped.code,
 				message: mapped.message,
-				details: mapped.details,
 			});
 		}
+	};
+
+	const signPayloadRouteOptions = {
+		schema: {
+			description:
+				"Формирование отсоединенной подписи УКЭП ГОСТ Р 34.10-2012 с проверкой Idempotency-Key и изоляцией organizationId",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+				},
+			},
+			body: {
+				type: "object",
+				required: ["data", "thumbprint"],
+				additionalProperties: false,
+				properties: {
+					data: { type: "string", minLength: 1 },
+					dataEncoding: { type: "string", enum: ["utf8", "base64", "hex"] },
+					thumbprint: { type: "string", minLength: 1 },
+					pin: { type: "string" },
+					requestId: { type: "string" },
+					documentId: {
+						type: "string",
+						pattern:
+							"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+					},
+					documentKind: { type: "string" },
+				},
+			},
+		},
 	};
 
 	/**
 	 * POST /api/crypto/sign & POST /api/cryptopro/native/sign
 	 * Формирование отсоединенной электронной подписи (detached CMS / PKCS#7)
-	 * по ГОСТ Р 34.10-2012 для CDA R3 XML, выгрузок в ЕГИСЗ РЭМД или формы 043/у.
+	 * по ГОСТ Р 34.10-2012 для CDA R3 XML, выгрузок в ЕГИСЗ РЭМД или меддокументов.
 	 * Требует Idempotency-Key и tenant organizationId изоляцию (Мандат 8bo / RFC 9562).
 	 */
-	app.post(
-		"/api/crypto/sign",
-		{
-			schema: {
-				body: {
-					type: "object",
-					required: ["data", "thumbprint"],
-					properties: {
-						data: { type: "string", minLength: 1 },
-						dataEncoding: { type: "string", enum: ["utf8", "base64", "hex"] },
-						thumbprint: { type: "string", minLength: 1 },
-						pin: { type: "string" },
-						requestId: { type: "string" },
-						documentId: { type: "string" },
-						documentKind: { type: "string" },
-					},
-				},
-			},
-		},
-		async (request, reply) => {
-			return handleSign(request, reply);
-		},
-	);
+	app.post("/api/crypto/sign", signPayloadRouteOptions, async (request, reply) => {
+		const parsedBody = signPayloadBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				success: false,
+				code: "VALIDATION_ERROR",
+				message: "Некорректные параметры запроса на подписание",
+				errors: parsedBody.error.issues,
+			});
+		}
+		return handleSign(request, reply);
+	});
 
-	app.post(
-		"/api/cryptopro/native/sign",
-		{
-			schema: {
-				body: {
-					type: "object",
-					required: ["data", "thumbprint"],
-					properties: {
-						data: { type: "string", minLength: 1 },
-						dataEncoding: { type: "string", enum: ["utf8", "base64", "hex"] },
-						thumbprint: { type: "string", minLength: 1 },
-						pin: { type: "string" },
-						requestId: { type: "string" },
-						documentId: { type: "string" },
-						documentKind: { type: "string" },
-					},
-				},
-			},
-		},
-		async (request, reply) => {
-			return handleSign(request, reply);
-		},
-	);
+	app.post("/api/cryptopro/native/sign", signPayloadRouteOptions, async (request, reply) => {
+		const parsedBody = signPayloadBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				success: false,
+				code: "VALIDATION_ERROR",
+				message: "Некорректные параметры запроса на подписание",
+				errors: parsedBody.error.issues,
+			});
+		}
+		return handleSign(request, reply);
+	});
 }

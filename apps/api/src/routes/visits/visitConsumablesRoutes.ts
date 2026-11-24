@@ -9,10 +9,12 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	isValidUuid,
 	kopecksToRubles,
 	rublesToKopecks,
+	toExactKopecks,
 	treatmentConsumableDeductionRecordSchema,
 	treatmentConsumableDeductionWarningSchema,
 	type TreatmentConsumableDeductionRecord,
@@ -23,7 +25,7 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import {
 	inventoryTransactions,
 	treatmentConsumableDeductions,
@@ -38,28 +40,35 @@ interface VisitConsumablesRouteParams {
 	visitId?: string;
 }
 
-interface ConsumablesItemPayload {
-	inventoryItemId?: string;
-	id?: string;
-	name?: string;
-	quantity?: number;
-	notes?: string;
-	reason?: string;
-	unitCostRub?: number;
-	unitCostKopecks?: number;
-}
+const consumablesItemSchema = z
+	.object({
+		inventoryItemId: z.string().min(1).optional(),
+		id: z.string().min(1).optional(),
+		name: z.string().optional(),
+		quantity: z.number().finite().positive().optional(),
+		notes: z.string().optional(),
+		reason: z.string().optional(),
+		unitCostRub: z.number().finite().nonnegative().optional(),
+		unitCostKopecks: z.number().int().nonnegative().optional(),
+	})
+	.strict();
 
-interface VisitConsumablesRequestBody {
-	items?: ConsumablesItemPayload[];
-	bundleType?: "standard_kit" | "therapy" | "surgery" | "orthopedic" | "hygiene";
-	standardKit?: boolean;
-	carpulesCount?: number;
-	drugName?: string;
-	notes?: string;
-	allowOverdraft?: boolean;
-	idempotencyKey?: string;
-	clientMutationId?: string;
-}
+const visitConsumablesBodySchema = z
+	.object({
+		items: z.array(consumablesItemSchema).optional(),
+		bundleType: z
+			.enum(["standard_kit", "therapy", "surgery", "orthopedic", "hygiene"])
+			.optional(),
+		standardKit: z.boolean().optional(),
+		carpulesCount: z.number().finite().positive().optional(),
+		drugName: z.string().optional(),
+		notes: z.string().optional(),
+		allowOverdraft: z.boolean().optional(),
+		protocolId: z.string().optional(),
+		idempotencyKey: z.string().optional(),
+		clientMutationId: z.string().optional(),
+	})
+	.strict();
 
 function extractTargetVisitId(params: VisitConsumablesRouteParams): string | null {
 	return params.id || params.visitId || null;
@@ -96,10 +105,17 @@ function extractAndValidateIdempotencyKey(
 async function handlePostVisitConsumables(
 	request: FastifyRequest<{
 		Params: VisitConsumablesRouteParams;
-		Body: VisitConsumablesRequestBody;
 	}>,
 	reply: FastifyReply,
 ) {
+	const context = await requireClinicalMutationContext(
+		request,
+		reply,
+		"visit consumables deduction",
+	);
+	if (!context) return;
+	const orgId = context.organizationId;
+
 	const targetVisitId = extractTargetVisitId(request.params);
 	if (!targetVisitId || !isValidUuid(targetVisitId)) {
 		return reply.status(400).send({
@@ -115,84 +131,80 @@ async function handlePostVisitConsumables(
 			message: idemCheck.error,
 		});
 	}
+
+	const parsedBody = visitConsumablesBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры списания расходных материалов.",
+			issues: parsedBody.error.issues,
+		});
+	}
+
+	const body = parsedBody.data;
 	const idempotencyKey = idemCheck.key;
-	const body = request.body || {};
 	const clientMutationId =
 		typeof body.clientMutationId === "string" && body.clientMutationId.trim().length > 0
 			? body.clientMutationId.trim()
 			: null;
 	const effectiveIdemKey = idempotencyKey || clientMutationId || null;
-
-	const context = await requireClinicalMutationContext(
-		request,
-		reply,
-		"visit consumables deduction",
-	);
-	if (!context) return;
-	const orgId = context.organizationId;
 	const identity = getRequestIdentity(request);
 	const doctorUserId = identity.userId ?? request.user?.id ?? null;
 
-	// Идемпотентная проверка по реестру treatment_consumable_deductions (Мандаты 8e, 8n, 8bo)
-	if (effectiveIdemKey) {
-		const [existingDeduction] = await withTenantCtx(orgId, async (tx) => {
-			return tx
-				.select()
-				.from(treatmentConsumableDeductions)
-				.where(
-					and(
-						eq(treatmentConsumableDeductions.organizationId, orgId),
-						eq(treatmentConsumableDeductions.treatmentReferenceId, effectiveIdemKey),
-					),
-				)
-				.limit(1);
-		});
-
-		if (existingDeduction) {
-			reply.header("X-Idempotency-Key", effectiveIdemKey);
-			const prevDeductions = Array.isArray(existingDeduction.deductions)
-				? existingDeduction.deductions
-				: [];
-			const prevWarnings = Array.isArray(existingDeduction.warnings)
-				? existingDeduction.warnings
-				: [];
-			return reply.status(200).send({
-				success: true,
-				visitId: targetVisitId,
-				alreadyProcessed: true,
-				isOverdraft: existingDeduction.isOverdraft,
-				hasOverdraft: existingDeduction.isOverdraft,
-				deductions: prevDeductions,
-				items: prevDeductions,
-				warnings: [
-					...prevWarnings,
-					{
-						type: "already_processed",
-						message: `Списание по ключу «${effectiveIdemKey}» уже было выполнено ранее (дедуплицировано).`,
-					},
-				],
-				message: `Списание материалов по ключу «${effectiveIdemKey}» уже проведено ранее.`,
-			});
-		}
-	}
-
-	const [visit] = await withTenantCtx(orgId, async (tx) => {
-		return tx
-			.select({ id: visits.id })
-			.from(visits)
-			.where(and(eq(visits.id, targetVisitId), eq(visits.organizationId, orgId)))
-			.limit(1);
-	});
-
-	if (!visit) {
-		return reply.status(404).send({
-			error: "VisitNotFound",
-			message: `Приём ${targetVisitId} не найден в текущей организации`,
-		});
-	}
-
 	try {
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const outcome = await withTenantCtx(orgId, async (tx) => {
+			if (effectiveIdemKey) {
+				const [existingDeduction] = await tx
+					.select()
+					.from(treatmentConsumableDeductions)
+					.where(
+						and(
+							eq(treatmentConsumableDeductions.organizationId, orgId),
+							eq(treatmentConsumableDeductions.treatmentReferenceId, effectiveIdemKey),
+						),
+					)
+					.limit(1);
+
+				if (existingDeduction) {
+					const prevDeductions = Array.isArray(existingDeduction.deductions)
+						? existingDeduction.deductions
+						: [];
+					const prevWarnings = Array.isArray(existingDeduction.warnings)
+						? existingDeduction.warnings
+						: [];
+					return {
+						kind: "replay" as const,
+						body: {
+							success: true,
+							visitId: targetVisitId,
+							alreadyProcessed: true,
+							isOverdraft: existingDeduction.isOverdraft,
+							hasOverdraft: existingDeduction.isOverdraft,
+							deductions: prevDeductions,
+							items: prevDeductions,
+							warnings: [
+								...prevWarnings,
+								{
+									type: "already_processed",
+									message: `Списание по ключу «${effectiveIdemKey}» уже было выполнено ранее (дедуплицировано).`,
+								},
+							],
+							message: `Списание материалов по ключу «${effectiveIdemKey}» уже проведено ранее.`,
+						},
+					};
+				}
+			}
+
+			const [visit] = await tx
+				.select({ id: visits.id })
+				.from(visits)
+				.where(and(eq(visits.id, targetVisitId), eq(visits.organizationId, orgId)))
+				.limit(1);
+
+			if (!visit) {
+				return { kind: "not_found" as const };
+			}
+
 			let innerResult: unknown;
 
 			if (body.bundleType === "surgery") {
@@ -205,7 +217,7 @@ async function handlePostVisitConsumables(
 			} else if (body.bundleType === "orthopedic") {
 				innerResult = await TreatmentConsumablesService.quickWriteoffOrthopedicProtocol(tx, {
 					organizationId: orgId,
-					protocolId: (body as { protocolId?: string }).protocolId ?? "orthopedics_prep",
+					protocolId: body.protocolId ?? "orthopedics_prep",
 					visitId: targetVisitId,
 					userId: doctorUserId,
 					notes: body.notes ?? null,
@@ -223,16 +235,16 @@ async function handlePostVisitConsumables(
 			} else if (Array.isArray(body.items) && body.items.length > 0) {
 				const itemsToDeduct = body.items.map((it) => {
 					const unitCostKopecks =
-						it.unitCostKopecks != null
-							? Math.round(Number(it.unitCostKopecks))
-							: it.unitCostRub != null
-								? rublesToKopecks(Number(it.unitCostRub))
-								: 0;
+						it.unitCostKopecks !== undefined
+							? toExactKopecks(it.unitCostKopecks)
+							: it.unitCostRub !== undefined
+								? rublesToKopecks(it.unitCostRub)
+								: toExactKopecks(0);
 
 					return {
 						inventoryItemId: it.inventoryItemId || it.id,
 						name: it.name,
-						quantity: Number(it.quantity) || 1,
+						quantity: it.quantity ?? 1,
 						notes: it.notes || it.reason || body.notes || `Расходные материалы по приёму ${targetVisitId}`,
 						unitCostKopecks,
 						unitCostRub: String(kopecksToRubles(unitCostKopecks)),
@@ -315,29 +327,48 @@ async function handlePostVisitConsumables(
 					.onConflictDoNothing();
 			}
 
-			return innerResult;
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "INVENTORY_STOCK_CHANGED",
+					payload: {
+						visitId: targetVisitId,
+						action: "consumables_deducted",
+					},
+				});
+			});
+
+			return { kind: "ok" as const, result: innerResult };
 		});
 
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "INVENTORY_STOCK_CHANGED",
-			payload: {
-				visitId: targetVisitId,
-				action: "consumables_deducted",
-			},
-		});
+		if (outcome.kind === "replay") {
+			if (effectiveIdemKey) {
+				reply.header("X-Idempotency-Key", effectiveIdemKey);
+			}
+			return reply.status(200).send(outcome.body);
+		}
+
+		if (outcome.kind === "not_found") {
+			return reply.status(404).send({
+				error: "VisitNotFound",
+				message: `Приём ${targetVisitId} не найден в текущей организации`,
+			});
+		}
 
 		if (effectiveIdemKey) {
 			reply.header("X-Idempotency-Key", effectiveIdemKey);
 		}
 
-		return reply.status(200).send(result);
+		return reply.status(200).send(outcome.result);
 	} catch (error: unknown) {
-		request.log.warn({ err: error, visitId: targetVisitId }, "Failed to deduct visit consumables, deferring to back-office");
-		const msg = error instanceof Error ? error.message : "Не удалось списать расходные материалы";
-		return reply.status(200).send({
-			success: false,
-			deferred: true,
-			warning: "Списание отложено в бэк-офис",
+		request.log.error(
+			{ err: error, visitId: targetVisitId },
+			"Failed to deduct visit consumables",
+		);
+		const msg =
+			error instanceof Error
+				? error.message
+				: "Не удалось списать расходные материалы";
+		return reply.status(500).send({
 			error: "ConsumablesDeductionFailed",
 			message: msg,
 		});
@@ -348,14 +379,6 @@ async function handleGetVisitConsumables(
 	request: FastifyRequest<{ Params: VisitConsumablesRouteParams }>,
 	reply: FastifyReply,
 ) {
-	const targetVisitId = extractTargetVisitId(request.params);
-	if (!targetVisitId || !isValidUuid(targetVisitId)) {
-		return reply.status(400).send({
-			error: "ValidationError",
-			message: "Некорректный идентификатор приёма (ожидается UUID)",
-		});
-	}
-
 	const context = await requireClinicalReadContext(
 		request,
 		reply,
@@ -363,6 +386,14 @@ async function handleGetVisitConsumables(
 	);
 	if (!context) return;
 	const orgId = context.organizationId;
+
+	const targetVisitId = extractTargetVisitId(request.params);
+	if (!targetVisitId || !isValidUuid(targetVisitId)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор приёма (ожидается UUID)",
+		});
+	}
 
 	const transactions = await withTenantCtx(orgId, async (tx) => {
 		return tx

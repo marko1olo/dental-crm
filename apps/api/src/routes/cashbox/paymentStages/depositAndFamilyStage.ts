@@ -22,6 +22,8 @@ import {
 	clinicOwesPatientKopecks,
 } from "../../../money/patientDebt.js";
 import { onTenantTxCommit } from "../../../db/rls.js";
+import { FamilyWalletError } from "../../../services/familyWallet/familyWalletTypes.js";
+import { verifyFamilySpendAuthorization } from "../../../services/familyWallet/modules/familySpendAuthorization.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import type { PaymentProcessingContext, StageStepResult, TenantTransaction } from "./types.js";
 
@@ -189,69 +191,43 @@ export async function processDepositAndFamilyStage(
 		// Изоляция балансов (ROT-002): семейный депозит и личный аванс строго изолированы
 		if (lockedFamilyGroup) {
 			ctx.advanceRows = [];
-
-			// Сначала проверяем полномочия и лимит списания семейного кошелька ДО любых мутаций
-			const walletOwnerId =
+			const effectiveOwnerId =
 				lockedFamilyGroup.headPatientId ||
 				lockedFamilyGroup.primaryPatientId ||
 				(patientRow?.familyGroupId === lockedFamilyGroup.id ? resolvedPatientId : null);
-			if (!walletOwnerId) {
-				return {
-					failure: {
-						kind: "unauthorized_family_spend",
-						reason:
-							"У семейной группы не назначен владелец счета (headPatientId). Списание семейного депозита заблокировано.",
+
+			try {
+				await verifyFamilySpendAuthorization({
+					tx,
+					organizationId: orgId,
+					family: {
+						...lockedFamilyGroup,
+						headPatientId: effectiveOwnerId,
+						balanceKopecks: Number(familyBalanceKop),
 					},
-				};
-			}
-
-			if (resolvedPatientId !== walletOwnerId) {
-				// DEF-FAM-01: BOLA guard
-				const [rel] = await tx
-					.select()
-					.from(patientRelationships)
-					.where(
-						and(
-							eq(patientRelationships.organizationId, orgId),
-							or(
-								and(
-									eq(patientRelationships.patientId, walletOwnerId),
-									eq(patientRelationships.relatedPatientId, resolvedPatientId),
-								),
-								and(
-									eq(patientRelationships.patientId, resolvedPatientId),
-									eq(patientRelationships.relatedPatientId, walletOwnerId),
-								),
-							),
-						),
-					)
-					.limit(1);
-
-				if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
+					patientId: resolvedPatientId,
+					debitKopecks: Number(requiredDepositKopecks),
+				});
+			} catch (err) {
+				if (err instanceof FamilyWalletError) {
+					if (err.statusCode === 402) {
+						return {
+							failure: {
+								kind: "insufficient_deposit",
+								availableRub: kopecksToNumericString(Number(familyBalanceKop)),
+								requiredRub: kopecksToNumericString(Number(requiredDepositKopecks)),
+								isFamilyWallet: true,
+							},
+						};
+					}
 					return {
 						failure: {
 							kind: "unauthorized_family_spend",
-							reason:
-								"Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
+							reason: err.message,
 						},
 					};
 				}
-
-				// Проверка лимита списания spendLimitKopecks
-				const spendLimitKop =
-					rel.spendLimitKopecks != null ? Number(rel.spendLimitKopecks) : undefined;
-				if (
-					spendLimitKop !== undefined &&
-					spendLimitKop >= 0 &&
-					Number(requiredDepositKopecks) > spendLimitKop
-				) {
-					return {
-						failure: {
-							kind: "unauthorized_family_spend",
-							reason: `Превышен установленный лимит списания с семейного депозита (лимит: ${kopecksToNumericString(spendLimitKop)} ₽, запрошено: ${kopecksToNumericString(Number(requiredDepositKopecks))} ₽).`,
-						},
-					};
-				}
+				throw err;
 			}
 
 			if (familyBalanceKop < requiredDepositKopecks) {
@@ -312,7 +288,6 @@ export async function processDepositAndFamilyStage(
 						inArray(advanceDepositTaggings.allocationStatus, [
 							"unallocated",
 							"pinned",
-							"active",
 						]),
 					),
 				)
@@ -348,6 +323,7 @@ export async function processDepositAndFamilyStage(
 						patientId: payments.patientId,
 						status: payments.status,
 						amountRub: payments.amountRub,
+						amountKopecks: payments.amountKopecks,
 					})
 					.from(payments)
 					.where(
@@ -358,9 +334,18 @@ export async function processDepositAndFamilyStage(
 					),
 			]);
 
-			const ledger = buildPatientLedger(resolvedPatientId, patientCharges, patientPayments, {
-				organizationId: orgId,
-			});
+			const ledger = buildPatientLedger(
+				resolvedPatientId,
+				patientCharges,
+				patientPayments.map((p) => ({
+					...p,
+					amountRub:
+						p.amountKopecks !== 0n
+							? Number(p.amountKopecks) / 100
+							: p.amountRub,
+				})),
+				{ organizationId: orgId },
+			);
 			const ledgerOverpaidKop = BigInt(clinicOwesPatientKopecks(ledger));
 
 			// Доступный личный аванс: максимум из размеченных авансов (advanceDepositTaggings) и сальдо леджера переплаты.
@@ -429,7 +414,7 @@ export async function processDepositAndFamilyStage(
 					patientId: resolvedPatientId,
 					patientName: patientRow?.fullName || "Пациент клиники",
 					depositAmountRub: kopecksToNumericString(Number(remainingToDeductKop)),
-					depositAmountKopecks: 0n,
+					depositAmountKopecks: remainingToDeductKop,
 					taggedTargetType: "treatment_plan",
 					taggedTargetName: `Зачёт аванса по леджеру (счёт ${body.invoiceId || "б/н"})`,
 					allocationStatus: "spent",

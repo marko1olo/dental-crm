@@ -291,6 +291,7 @@ test("RED-TEAM HAMMER: WAVE 14 — Export Endpoints & Medical Search Penetration
 
 		assert.equal(csvRes.statusCode, 200);
 		assert.ok(csvRes.headers["content-type"]?.toString().includes("text/csv"));
+		assert.equal(csvRes.body.charCodeAt(0), 0xfeff, "Экспорт пациентов CSV обязан начинаться с UTF-8 BOM!");
 		// Проверяем, что в CSV нет незамаскированных диагнозов и зубов
 		assert.ok(!csvRes.body.includes("K02"), "Код K02 не должен фигурировать в открытом виде!");
 		assert.ok(!csvRes.body.includes("зуба 16"), "Номер зуба 16 не должен фигурировать в открытом виде!");
@@ -311,6 +312,7 @@ test("RED-TEAM HAMMER: WAVE 14 — Export Endpoints & Medical Search Penetration
 		const jsonPatients = JSON.parse(jsonRes.body);
 		const targetPatient = jsonPatients.find((p: any) => p.id === PATIENT_K02_ID);
 		assert.ok(targetPatient);
+		assert.equal(typeof targetPatient.balanceKopecks, "number", "JSON экспорт обязан содержать balanceKopecks!");
 		assert.equal(targetPatient.diagnosis, undefined, "Поле diagnosis не должно существовать в экспорте!");
 		assert.equal(targetPatient.toothFormula, undefined, "Поле toothFormula не должно существовать в экспорте!");
 		assert.equal(targetPatient.complaints, undefined, "Поле complaints не должно существовать в экспорте!");

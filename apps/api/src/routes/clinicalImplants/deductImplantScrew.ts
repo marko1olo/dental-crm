@@ -1,7 +1,8 @@
-import { and, eq, ilike } from "drizzle-orm";
-import { type createImplantInstallationSchema, rublesToKopecks } from "@dental/shared";
+import { and, desc, eq } from "drizzle-orm";
+import { type createImplantInstallationSchema, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
+import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import { CANONICAL_IMPLANT_WAREHOUSE_SEEDS } from "./implantWarehouseSeeds.js";
 
@@ -41,6 +42,23 @@ export function matchesImplantBrand(itemName: string, inputBrand: string): boole
 		}
 	}
 	return false;
+}
+
+function resolveImplantCostKopecks(invItem: {
+	unitCostKopecks?: bigint | null;
+	pricePerUnitKopecks?: bigint | null;
+	unitCostRub?: string | null;
+	pricePerUnit?: string | null;
+}): bigint {
+	const legacyRub = Number(invItem.unitCostRub ?? invItem.pricePerUnit ?? 0);
+	const legacyKopecks = BigInt(rublesToKopecks(Number.isFinite(legacyRub) ? legacyRub : 0));
+	if (typeof invItem.unitCostKopecks === "bigint" && (invItem.unitCostKopecks > 0n || legacyKopecks === 0n)) {
+		return invItem.unitCostKopecks;
+	}
+	if (typeof invItem.pricePerUnitKopecks === "bigint" && (invItem.pricePerUnitKopecks > 0n || legacyKopecks === 0n)) {
+		return invItem.pricePerUnitKopecks;
+	}
+	return legacyKopecks;
 }
 
 export async function deductImplantScrew(
@@ -103,6 +121,7 @@ export async function deductImplantScrew(
 		const itemName = exactBrandSeed ? exactBrandSeed.name : fallbackName;
 
 		const defaultCostRub = exactBrandSeed?.unitCostRub ?? fallbackSeed?.unitCostRub ?? "0.00";
+		const defaultCostKopecks = BigInt(rublesToKopecks(Number(defaultCostRub)));
 		const defaultLot = input.lotNumber || exactBrandSeed?.lotNumber || "";
 		const defaultExp = input.expirationDate || exactBrandSeed?.expirationDate || null;
 		const defaultSku = exactBrandSeed && "sku" in exactBrandSeed ? (exactBrandSeed.sku as string) : null;
@@ -120,6 +139,8 @@ export async function deductImplantScrew(
 				criticalThreshold: "2",
 				unitCostRub: defaultCostRub,
 				pricePerUnit: defaultCostRub,
+				unitCostKopecks: defaultCostKopecks,
+				pricePerUnitKopecks: defaultCostKopecks,
 				sku: defaultSku,
 				barcode: defaultBarcode,
 				lotNumber: defaultLot,
@@ -132,46 +153,50 @@ export async function deductImplantScrew(
 		invItem = created;
 	}
 
-	const effectiveLotNumber = input.lotNumber || invItem.lotNumber || "";
-	const effectiveSerialNumber = input.serialNumber || (invItem.barcode && invItem.barcode.includes("SN-") ? invItem.barcode.split("SN-")[1] : "") || "";
+	const initialLotNumber = input.lotNumber || invItem.lotNumber || "";
+	const effectiveSerialNumber =
+		input.serialNumber ||
+		(invItem.barcode && invItem.barcode.includes("SN-") ? invItem.barcode.split("SN-")[1] : "") ||
+		"";
 	const currentStock = Number(invItem.currentQty ?? invItem.stockQuantity ?? 0);
 	const newStock = Number((currentStock - 1).toFixed(4));
-	const isOverdraft = newStock < 0;
-	const implantUnitCostRub = Number(invItem.unitCostRub ?? invItem.pricePerUnit ?? 0);
-	const implantUnitCostKopecks = BigInt(rublesToKopecks(implantUnitCostRub));
+	const implantUnitCostKopecks = resolveImplantCostKopecks(invItem);
+	const implantUnitCostRub = kopecksToRubles(implantUnitCostKopecks);
 
-	await tx
-		.update(inventoryItems)
-		.set({ currentQty: String(newStock), stockQuantity: String(newStock), updatedAt: new Date() })
-		.where(and(eq(inventoryItems.id, invItem.id), eq(inventoryItems.organizationId, orgId)));
+	const fefoResult = await fefoStockService.deductFefo(tx, {
+		organizationId: orgId,
+		inventoryItemId: invItem.id,
+		requiredQty: 1,
+		visitId: input.visitId ?? null,
+		userId,
+		allowOverdraft: true,
+		transactionType: "auto_deduct",
+		notes: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (LOT: ${initialLotNumber}) зуба FDI #${input.toothNumberFdi}`,
+	});
+
+	const effectiveLotNumber = fefoResult.batchesUsed[0]?.batchNumber || initialLotNumber;
 
 	const [implantTx] = await tx
-		.insert(inventoryTransactions)
-		.values({
-			organizationId: orgId,
-			itemId: invItem.id,
-			inventoryItemId: invItem.id,
-			visitId: input.visitId ?? null,
-			transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
-			isOverdraft,
-			qty: "-1.000",
-			quantityChanged: "-1.000",
-			unitCostRub: String(implantUnitCostRub),
-			userId,
-			notes: isOverdraft
-				? `Мягкий овердрафт: имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (LOT: ${effectiveLotNumber}) зуба FDI #${input.toothNumberFdi}`
-				: `Списание со склада: имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (LOT: ${effectiveLotNumber}) зуба FDI #${input.toothNumberFdi}`,
-		})
-		.returning({ id: inventoryTransactions.id });
+		.select({ id: inventoryTransactions.id })
+		.from(inventoryTransactions)
+		.where(
+			and(
+				eq(inventoryTransactions.organizationId, orgId),
+				eq(inventoryTransactions.inventoryItemId, invItem.id),
+			),
+		)
+		.orderBy(desc(inventoryTransactions.createdAt))
+		.limit(1);
 
 	return {
 		invItem,
 		implantTx,
 		currentStock,
 		newStock,
-		isOverdraft,
+		isOverdraft: fefoResult.isOverdraft,
 		implantUnitCostRub,
 		implantUnitCostKopecks: implantUnitCostKopecks.toString(),
+		implantUnitCostKopecksBigInt: implantUnitCostKopecks,
 		effectiveLotNumber,
 		effectiveSerialNumber,
 	};

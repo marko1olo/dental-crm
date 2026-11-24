@@ -4,8 +4,9 @@
  * 54-FZ compliant: integer kopecks, idempotency, honest patient attribution.
  */
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -27,6 +28,22 @@ import { registerPatientBalanceRoutes } from "./patientBalanceService.js";
 import { registerCashLabPaymentRoutes } from "../lab/index.js";
 import { processCashboxPayment } from "./cashboxPaymentProcessor.js";
 import { cashOperationListQuerySchema } from "./cashboxSchemas.js";
+
+const patchCashBoxParamsSchema = z
+	.object({
+		id: z.string().uuid("Некорректный UUID кассового аппарата."),
+	})
+	.strict();
+
+const patchCashBoxBodySchema = z
+	.object({
+		name: z.string().trim().min(1).max(200).optional(),
+		kkmModel: z.string().trim().max(200).nullable().optional(),
+		kkmSerialNumber: z.string().trim().max(200).nullable().optional(),
+		branchId: z.string().trim().max(200).nullable().optional(),
+		kkmActive: z.boolean().optional(),
+	})
+	.strict();
 
 export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -82,8 +99,25 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			if (reply.sent) return reply;
 			if (!orgId) return reply;
 
-			const { id } = request.params;
-			const body = request.body ?? {};
+			const parsedParams = patchCashBoxParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор кассового аппарата.",
+					details: parsedParams.error.issues,
+				});
+			}
+			const parsedBody = patchCashBoxBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры обновления кассового аппарата.",
+					details: parsedBody.error.issues,
+				});
+			}
+
+			const { id } = parsedParams.data;
+			const body = parsedBody.data;
 
 			const updated = await withTenantCtx(orgId, async (tx) => {
 				const setFields: {
@@ -94,20 +128,13 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 					branchId?: string | null;
 					kkmActive?: boolean;
 				} = { updatedAt: new Date() };
-				if (typeof body.name === "string" && body.name.trim())
-					setFields.name = body.name.trim();
-				if (body.kkmModel !== undefined)
-					setFields.kkmModel =
-						typeof body.kkmModel === "string" ? body.kkmModel.trim() : null;
-				if (body.kkmSerialNumber !== undefined)
-					setFields.kkmSerialNumber =
-						typeof body.kkmSerialNumber === "string"
-							? body.kkmSerialNumber.trim()
-							: null;
-				if (body.branchId !== undefined)
-					setFields.branchId =
-						typeof body.branchId === "string" ? body.branchId.trim() : null;
-				if (typeof body.kkmActive === "boolean") setFields.kkmActive = body.kkmActive;
+				if (body.name) setFields.name = body.name;
+				if (body.kkmModel !== undefined) setFields.kkmModel = body.kkmModel;
+				if (body.kkmSerialNumber !== undefined) {
+					setFields.kkmSerialNumber = body.kkmSerialNumber;
+				}
+				if (body.branchId !== undefined) setFields.branchId = body.branchId;
+				if (body.kkmActive !== undefined) setFields.kkmActive = body.kkmActive;
 
 				const [row] = await tx
 					.update(cashBoxes)
@@ -183,7 +210,34 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			if (!orgId) return reply;
 
 			const parsed = cashOperationListQuerySchema.safeParse(request.query || {});
-			const filters = parsed.success ? parsed.data : {};
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса журнала операций.",
+					details: parsed.error.issues,
+				});
+			}
+			const filters = parsed.data;
+			let fromDate: Date | undefined;
+			let toDate: Date | undefined;
+			if (filters.dateFrom) {
+				fromDate = new Date(filters.dateFrom);
+				if (Number.isNaN(fromDate.getTime())) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат даты dateFrom.",
+					});
+				}
+			}
+			if (filters.dateTo) {
+				toDate = new Date(filters.dateTo);
+				if (Number.isNaN(toDate.getTime())) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат даты dateTo.",
+					});
+				}
+			}
 
 			const ops = await withTenantCtx(orgId, async (tx) => {
 				const conditions = [eq(cashOperations.organizationId, orgId)];
@@ -194,11 +248,11 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				if (filters.operationType) {
 					conditions.push(eq(cashOperations.operationType, filters.operationType));
 				}
-				if (filters.dateFrom) {
-					conditions.push(sql`${cashOperations.createdAt} >= ${filters.dateFrom}`);
+				if (fromDate) {
+					conditions.push(gte(cashOperations.createdAt, fromDate));
 				}
-				if (filters.dateTo) {
-					conditions.push(sql`${cashOperations.createdAt} <= ${filters.dateTo}`);
+				if (toDate) {
+					conditions.push(lte(cashOperations.createdAt, toDate));
 				}
 
 				return await tx

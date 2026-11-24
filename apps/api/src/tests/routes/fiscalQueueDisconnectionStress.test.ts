@@ -10,6 +10,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -137,6 +138,7 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": clientMutationId,
 				},
 				payload: {
 					...samplePayload,
@@ -217,6 +219,7 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": clientMutationId,
 				},
 				payload: {
 					...payload,
@@ -234,6 +237,7 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": clientMutationId,
 				},
 				payload: {
 					...payload,
@@ -252,6 +256,7 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": clientMutationId,
 				},
 				payload: {
 					...payload,
@@ -348,6 +353,7 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": randomUUID(),
 				},
 			});
 
@@ -371,6 +377,7 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 				headers: {
 					"x-dente-clinic-token": clinicToken,
 					"x-dente-staff-token": staffToken,
+					"idempotency-key": randomUUID(),
 				},
 			});
 

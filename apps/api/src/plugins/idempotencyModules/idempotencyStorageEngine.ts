@@ -10,6 +10,10 @@ import type { IdempotencyContext, InMemoryRecord } from "./idempotencyTypes.js";
 
 /** 60-second threshold for zombie in-flight locks (Crash Recovery) */
 export const STALE_LOCK_THRESHOLD_MS = 60_000;
+/** 24-hour TTL for completed in-memory idempotency cache entries */
+export const IN_MEMORY_COMPLETED_TTL_MS = 24 * 60 * 60 * 1000;
+/** Bounded LRU capacity to prevent unbounded memory growth */
+export const MAX_IN_MEMORY_CACHE_SIZE = 10_000;
 
 export function isLockStale(lockedAt: Date | string | number | null | undefined): boolean {
 	if (!lockedAt) return false;
@@ -18,19 +22,57 @@ export function isLockStale(lockedAt: Date | string | number | null | undefined)
 	return Date.now() - lockTime > STALE_LOCK_THRESHOLD_MS;
 }
 
-// In-memory fallback map for unauthenticated or non-database contexts
+export function shouldEvictIdempotencyStatus(statusCode: number): boolean {
+	return (
+		statusCode >= 500 ||
+		statusCode === 401 ||
+		statusCode === 403 ||
+		statusCode === 408 ||
+		statusCode === 409 ||
+		statusCode === 429
+	);
+}
+
+// Bounded LRU + TTL fallback map for unauthenticated or intra-process fast-path deduplication
 const inMemoryIdempotencyCache = new Map<string, InMemoryRecord>();
+
+export function buildIdempotencyMemKey(memScope: string, idempotencyKey: string): string {
+	return `${memScope}:${idempotencyKey}`;
+}
 
 export function clearInMemoryIdempotencyCache(): void {
 	inMemoryIdempotencyCache.clear();
 }
 
 export function getInMemoryIdempotencyRecord(memKey: string): InMemoryRecord | undefined {
-	return inMemoryIdempotencyCache.get(memKey);
+	const existing = inMemoryIdempotencyCache.get(memKey);
+	if (!existing) return undefined;
+
+	const ageMs = Date.now() - existing.createdAt;
+	if (
+		(existing.action === "completed" && ageMs > IN_MEMORY_COMPLETED_TTL_MS) ||
+		(existing.action === "in_flight" && ageMs > STALE_LOCK_THRESHOLD_MS)
+	) {
+		inMemoryIdempotencyCache.delete(memKey);
+		return undefined;
+	}
+
+	// Refresh LRU recency
+	inMemoryIdempotencyCache.delete(memKey);
+	inMemoryIdempotencyCache.set(memKey, existing);
+	return existing;
 }
 
 export function setInMemoryIdempotencyRecord(memKey: string, record: InMemoryRecord): void {
+	if (inMemoryIdempotencyCache.has(memKey)) {
+		inMemoryIdempotencyCache.delete(memKey);
+	}
 	inMemoryIdempotencyCache.set(memKey, record);
+	while (inMemoryIdempotencyCache.size > MAX_IN_MEMORY_CACHE_SIZE) {
+		const oldestKey = inMemoryIdempotencyCache.keys().next().value;
+		if (oldestKey === undefined) break;
+		inMemoryIdempotencyCache.delete(oldestKey);
+	}
 }
 
 export function deleteInMemoryIdempotencyRecord(memKey: string): void {
@@ -309,10 +351,11 @@ export async function persistResponseOrEvictOnFailure(
 	parsedJson: Record<string, unknown> | null,
 	logError?: (details: Record<string, unknown>, msg: string) => void,
 ): Promise<void> {
-	const { idempotencyKey, organizationId, payloadHash, useDatabase } = ctx;
-	const memKey = `${organizationId ?? "global"}:${idempotencyKey}`;
+	const { idempotencyKey, organizationId, memScope, payloadHash, useDatabase } = ctx;
+	const memKey = buildIdempotencyMemKey(memScope ?? organizationId ?? "unscoped", idempotencyKey);
+	const evict = shouldEvictIdempotencyStatus(statusCode);
 
-	if (statusCode >= 500) {
+	if (evict) {
 		deleteInMemoryIdempotencyRecord(memKey);
 	} else {
 		setInMemoryIdempotencyRecord(memKey, {
@@ -327,7 +370,7 @@ export async function persistResponseOrEvictOnFailure(
 
 	if (useDatabase && organizationId) {
 		try {
-			if (statusCode >= 500) {
+			if (evict) {
 				await evictDatabaseIdempotencyRecord(organizationId, idempotencyKey);
 			} else {
 				await recordCompletedToDatabase(
@@ -354,8 +397,8 @@ export async function persistResponseOrEvictOnFailure(
 export async function cleanupOnUncaughtError(
 	ctx: IdempotencyContext,
 ): Promise<void> {
-	const { idempotencyKey, organizationId, useDatabase } = ctx;
-	const memKey = `${organizationId ?? "global"}:${idempotencyKey}`;
+	const { idempotencyKey, organizationId, memScope, useDatabase } = ctx;
+	const memKey = buildIdempotencyMemKey(memScope ?? organizationId ?? "unscoped", idempotencyKey);
 	deleteInMemoryIdempotencyRecord(memKey);
 
 	if (useDatabase && organizationId) {

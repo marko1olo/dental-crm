@@ -13,13 +13,6 @@ import { fileStreamHandler, previewSvgHandler } from "./studiesFileStreamHandler
 import { getMeasurementsHandler, saveMeasurementsHandler } from "./studiesMeasurementsHandler.js";
 import { getStudiesHandler, getStudyByIdHandler } from "./studiesQueryHandler.js";
 import { getViewerSessionHandler, putViewerSessionHandler } from "./studiesViewerSessionHandler.js";
-import {
-	registerXrayLegacyCompatRoutes,
-	registerXrayRoutes,
-	registerXraySeriesRoute,
-} from "./xrayLegacyCompatRoutes.js";
-
-export { registerXrayRoutes, registerXraySeriesRoute };
 
 export async function registerStudiesRoutes(app: FastifyInstance) {
 	// List & Search
@@ -342,7 +335,4 @@ export async function registerStudiesRoutes(app: FastifyInstance) {
 	// CBCT Tuner
 	app.get("/api/cbct-tuner/patients", cbctTunerPatientsHandler);
 	app.get("/api/cbct-tuner/volume-binary", cbctTunerVolumeHandler);
-
-	// Legacy /api/xray/* Backwards-Compatibility Routes
-	await registerXrayLegacyCompatRoutes(app);
 }

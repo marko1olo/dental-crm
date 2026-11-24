@@ -1,5 +1,8 @@
 import type { FastifyReply } from "fastify";
 import { z } from "zod";
+import { createApiLogger } from "../../observability/logger.js";
+
+const outboxLogger = createApiLogger("outbox:types");
 
 export const channelSchema = z.enum([
 	"phone",
@@ -191,13 +194,9 @@ export function parseVariables(raw: string): string[] {
 			? parsed.filter((value): value is string => typeof value === "string")
 			: [];
 	} catch (err) {
-		process.stderr.write(
-			JSON.stringify({
-				level: "warn",
-				time: new Date().toISOString(),
-				msg: "[Outbox] parseVariables failed, returning empty array",
-				error: err instanceof Error ? err.message : String(err),
-			}) + "\n",
+		outboxLogger.warn(
+			{ err },
+			"[Outbox] parseVariables failed, returning empty array",
 		);
 		return [];
 	}

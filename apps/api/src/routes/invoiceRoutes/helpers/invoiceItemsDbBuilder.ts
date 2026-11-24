@@ -1,42 +1,13 @@
 import {
-	type PriceLockResolutionPolicy,
 	type validatePlanToInvoice,
 	kopecksToNumericString,
 	kopecksToRubles,
 } from "@dental/shared";
 import type {
 	CatalogRow,
-	GenerateInvoiceFromPlanBody,
 	GenerateInvoiceItemInput,
 	TreatmentPlanItemRow,
 } from "../types.js";
-
-export function buildEffectiveItemResolutionOverrides(
-	items: GenerateInvoiceItemInput[],
-): Record<string, PriceLockResolutionPolicy> {
-	const effectiveItemResolutionOverrides: Record<string, PriceLockResolutionPolicy> = {};
-	items.forEach((it, idx) => {
-		const itId = it.itemId || it.serviceId || `item-${idx + 1}`;
-		if (it.resolutionPolicy) {
-			effectiveItemResolutionOverrides[itId] = it.resolutionPolicy as PriceLockResolutionPolicy;
-		}
-	});
-	return effectiveItemResolutionOverrides;
-}
-
-export function formatInvoiceNumber(
-	documentType: GenerateInvoiceFromPlanBody["documentType"],
-	patientId: string,
-): string {
-	const timestamp = Date.now().toString().slice(-6);
-	const prefix =
-		documentType === "work_order"
-			? "НРД"
-			: documentType === "completed_act"
-				? "АКТ"
-				: "СЧТ";
-	return `${prefix}-${patientId.slice(0, 4).toUpperCase()}-${timestamp}`;
-}
 
 export function buildTreatmentItemsToInsert(params: {
 	validationReportItems: ReturnType<typeof validatePlanToInvoice>["items"];

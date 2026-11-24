@@ -4,6 +4,7 @@ import { areIntervalsOverlapping, clinicScheduleDefaultsSchema } from "@dental/s
 import { db } from "../db/client.js";
 import { appointments, clinics, organizations } from "../db/schema.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
+import { createApiLogger } from "../observability/logger.js";
 
 export type SchedulePayloadSchema<T> = {
 	safeParse: (
@@ -330,15 +331,29 @@ export interface ScheduleConflictStructuredLogger {
 	info?: (obj: unknown, msg?: string) => void;
 }
 
+const apiLogger = createApiLogger("appointmentErrors");
+
 const defaultStructuredLogger: ScheduleConflictStructuredLogger = {
 	error: (obj: unknown, msg?: string) => {
-		process.stderr.write(
-			`${JSON.stringify({
-				level: "error",
-				msg: msg || "[appointmentErrors]",
-				...(typeof obj === "object" && obj !== null ? obj : { data: obj }),
-			})}\n`,
-		);
+		if (typeof obj === "object" && obj !== null) {
+			apiLogger.error(obj as Record<string, unknown>, msg || "[appointmentErrors]");
+		} else {
+			apiLogger.error({ data: obj }, msg || "[appointmentErrors]");
+		}
+	},
+	warn: (obj: unknown, msg?: string) => {
+		if (typeof obj === "object" && obj !== null) {
+			apiLogger.warn(obj as Record<string, unknown>, msg || "[appointmentErrors]");
+		} else {
+			apiLogger.warn({ data: obj }, msg || "[appointmentErrors]");
+		}
+	},
+	info: (obj: unknown, msg?: string) => {
+		if (typeof obj === "object" && obj !== null) {
+			apiLogger.info(obj as Record<string, unknown>, msg || "[appointmentErrors]");
+		} else {
+			apiLogger.info({ data: obj }, msg || "[appointmentErrors]");
+		}
 	},
 };
 

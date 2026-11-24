@@ -4,20 +4,21 @@
 
 export interface IdempotencyPluginOptions {
 	/** Header name to check for idempotency key. Defaults to 'x-idempotency-key'. */
-	headerName?: string;
+	headerName?: string | undefined;
 	/** Mutating HTTP methods to guard. Defaults to ['POST', 'PUT', 'PATCH']. */
-	methods?: string[];
+	methods?: string[] | undefined;
 	/** Value for Retry-After header in seconds for in-flight requests. Defaults to 1. */
-	retryAfterSeconds?: number;
+	retryAfterSeconds?: number | undefined;
 	/** Global disable switch. */
-	disabled?: boolean;
+	disabled?: boolean | undefined;
 	/** Paths or patterns where Idempotency-Key is strictly required (Fail-Closed 400). */
-	enforceForPaths?: Array<string | RegExp>;
+	enforceForPaths?: Array<string | RegExp> | undefined;
 }
 
 export interface IdempotencyContext {
 	idempotencyKey: string;
 	organizationId: string | null;
+	memScope?: string | undefined;
 	payloadHash: string;
 	useDatabase: boolean;
 }

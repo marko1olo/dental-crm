@@ -1,8 +1,9 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { db, type TenantDb } from "../../db/client.js";
-import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
+import { formatKopecksToRubles, rublesToKopecks, toExactKopecks } from "@dental/shared";
+import { withSavepoint, withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { inventoryItems } from "../../db/schema.js";
+import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import type { OrthoMaterialDeductionResult } from "./types.js";
 
 export interface DeductOrthoMaterialParams {
@@ -24,6 +25,22 @@ export interface DeductOrthoMaterialParams {
 	tx?: TenantDb | undefined;
 }
 
+function resolveOrthoItemUnitCostKopecks(item: {
+	unitCostKopecks?: bigint | null;
+	pricePerUnitKopecks?: bigint | null;
+	unitCostRub?: string | number | null;
+}): bigint {
+	const legacyRub = Number(item.unitCostRub ?? 0);
+	const legacyKopecks = BigInt(rublesToKopecks(Number.isFinite(legacyRub) ? legacyRub : 0));
+	if (typeof item.unitCostKopecks === "bigint" && (item.unitCostKopecks > 0n || legacyKopecks === 0n)) {
+		return item.unitCostKopecks;
+	}
+	if (typeof item.pricePerUnitKopecks === "bigint" && (item.pricePerUnitKopecks > 0n || legacyKopecks === 0n)) {
+		return item.pricePerUnitKopecks;
+	}
+	return legacyKopecks;
+}
+
 export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParams): Promise<OrthoMaterialDeductionResult> {
 	const {
 		organizationId,
@@ -40,8 +57,6 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 		userId = null,
 	} = params;
 
-	// DEF-ORTHO-06: Канонический расчет стоимости в копейках (BIGINT)
-	// DEF-ORTHO-API-02: Канонический перевод копеек в рубли через formatKopecksToRubles
 	const explicitKopecks: bigint | null =
 		unitCostKopecks !== undefined
 			? BigInt(unitCostKopecks)
@@ -50,32 +65,51 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 				: null;
 
 	try {
-		const runWithTx = async (tx: TenantDb) => {
-			const found = await tx.select().from(inventoryItems).where(and(
-				eq(inventoryItems.organizationId, organizationId),
-				or(ilike(inventoryItems.name, `%${itemNamePattern}%`), ilike(inventoryItems.name, `%${defaultItemName}%`)),
-			)).orderBy(inventoryItems.id).limit(1).for("update");
+		const runWithTx = async (tx: TenantDb): Promise<OrthoMaterialDeductionResult> => {
+			const trimmedPattern = itemNamePattern.trim();
+			const nameFilters = [
+				...(trimmedPattern.length > 0 ? [ilike(inventoryItems.name, `%${trimmedPattern}%`)] : []),
+				...(defaultItemName.trim().length > 0 ? [ilike(inventoryItems.name, `%${defaultItemName.trim()}%`)] : []),
+			];
+
+			const found =
+				nameFilters.length > 0
+					? await tx
+							.select()
+							.from(inventoryItems)
+							.where(and(eq(inventoryItems.organizationId, organizationId), or(...nameFilters)))
+							.orderBy(inventoryItems.id)
+							.limit(1)
+							.for("update")
+					: [];
 			let targetItem = found[0];
 
 			const effectiveKopecks: bigint =
 				explicitKopecks !== null
 					? explicitKopecks
-					: targetItem?.unitCostRub != null
-						? BigInt(rublesToKopecks(Number(targetItem.unitCostRub)))
+					: targetItem
+						? resolveOrthoItemUnitCostKopecks(targetItem)
 						: 0n;
-			const costRubFormatted = formatKopecksToRubles(Number(effectiveKopecks));
+			const safeCostKopecks = toExactKopecks(effectiveKopecks);
+			const costRubFormatted = formatKopecksToRubles(safeCostKopecks);
 
 			if (!targetItem) {
-				const [created] = await tx.insert(inventoryItems).values({
-					organizationId,
-					name: defaultItemName,
-					category,
-					unit,
-					unitCostRub: costRubFormatted,
-					stockQuantity: "0",
-					currentQty: "0",
-					criticalThreshold: "5",
-				}).returning();
+				const [created] = await tx
+					.insert(inventoryItems)
+					.values({
+						organizationId,
+						name: defaultItemName,
+						category,
+						unit,
+						unitCostRub: costRubFormatted,
+						pricePerUnit: costRubFormatted,
+						unitCostKopecks: effectiveKopecks,
+						pricePerUnitKopecks: effectiveKopecks,
+						stockQuantity: "0",
+						currentQty: "0",
+						criticalThreshold: "5",
+					})
+					.returning();
 				targetItem = created;
 			}
 			if (!targetItem) return { success: false, isOverdraft: false, deductedQty: 0 };
@@ -83,28 +117,16 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 			const currentStock = Number(targetItem.stockQuantity ?? targetItem.currentQty ?? 0);
 			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
 			const newStock = Number((baseStock - quantity).toFixed(4));
-			const isOverdraft = newStock < 0;
 
-			await tx.update(inventoryItems).set({
-				stockQuantity: String(newStock),
-				currentQty: String(newStock),
-				updatedAt: new Date(),
-			}).where(and(eq(inventoryItems.id, targetItem.id), eq(inventoryItems.organizationId, organizationId)));
-
-			await tx.insert(inventoryTransactions).values({
+			const fefoRes = await fefoStockService.deductFefo(tx, {
 				organizationId,
+				inventoryItemId: targetItem.id,
+				requiredQty: quantity,
 				visitId,
 				userId,
-				itemId: targetItem.id,
-				inventoryItemId: targetItem.id,
-				quantityChanged: String(-quantity),
-				qty: String(-quantity),
-				unitCostRub: targetItem.unitCostRub ?? costRubFormatted,
-				transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
-				isOverdraft,
-				notes: isOverdraft
-					? `Списано под ортодонтический прием (мягкий овердрафт): пациент ${patientId}, остаток ${newStock} ${targetItem.unit}`
-					: `${notes} (пациент ${patientId})`,
+				allowOverdraft: true,
+				transactionType: "auto_deduct",
+				notes: `${notes} (пациент ${patientId})`,
 			});
 
 			return {
@@ -113,12 +135,14 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 				itemName: targetItem.name,
 				deductedQty: quantity,
 				remainingStock: newStock,
-				isOverdraft,
-				unitCostKopecks: Number(effectiveKopecks),
+				isOverdraft: fefoRes.isOverdraft,
+				unitCostKopecks: safeCostKopecks,
 			};
 		};
 
-		return params.tx ? await runWithTx(params.tx) : await db.transaction(runWithTx);
+		return params.tx
+			? await withSavepoint(params.tx, runWithTx)
+			: await withTenantCtx(organizationId, runWithTx);
 	} catch (err) {
 		params.logger?.warn(
 			{ err, organizationId, patientId, itemNamePattern },

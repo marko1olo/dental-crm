@@ -786,5 +786,20 @@ test("normalizeUid strictly rejects path traversal and non-numeric UIDs", async 
 	assert.strictEqual(normalizeUid("1.2.3."), null);
 });
 
+test("checkDicomWebConnector blocks loopback 127.0.0.1 SSRF targets", async () => {
+	const { checkDicomWebConnector } = await import("./imaging/dicomwebConnector.js");
+	const res = await checkDicomWebConnector({
+		endpointUrl: "http://127.0.0.1:8042",
+		qidoRsPath: "/dicom-web",
+		wadoRsPath: "/dicom-web",
+		stowRsPath: "/dicom-web",
+		authMode: "none",
+		timeoutMs: 2000,
+	});
+	assert.strictEqual(res.status, "unreachable");
+	assert.strictEqual(res.canSearch, false);
+	assert.ok(res.warnings.some((w) => w.includes("сетевой безопасности")));
+});
+
 
 

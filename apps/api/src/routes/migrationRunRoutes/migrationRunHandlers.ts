@@ -11,6 +11,7 @@ import {
 	executeRequestSchema,
 	fail,
 	failFromPhaseError,
+	failIfInvalidRunId,
 	failSchemaRefusal,
 	mapRequestSchema,
 } from "./types.js";
@@ -30,6 +31,8 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				"migration map",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const parsed = mapRequestSchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
@@ -71,7 +74,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 					nextStep: "POST /api/migration/:runId/execute",
 				};
 			} catch (error) {
-				return failFromPhaseError(reply, error);
+				return failFromPhaseError(reply, error, request.log);
 			}
 		},
 	);
@@ -92,6 +95,8 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				"migration stage",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			try {
 				const result = await stageRunPhase({
@@ -113,7 +118,7 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 					nextStep: "POST /api/migration/:runId/execute",
 				};
 			} catch (error) {
-				return failFromPhaseError(reply, error);
+				return failFromPhaseError(reply, error, request.log);
 			}
 		},
 	);
@@ -134,6 +139,8 @@ export function registerMigrationRunCoreRoutes(app: FastifyInstance): void {
 				"migration execute",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const parsed = executeRequestSchema.safeParse(request.body ?? {});
 			if (!parsed.success) {

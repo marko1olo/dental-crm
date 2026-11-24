@@ -1,13 +1,6 @@
 /**
  * DENTE Dental CRM — 1C:Enterprise (CommerceML 2.09) Catalog XML Generator.
  * Layer 1: Pure Statutory XML Serialization for Healthcare Services & Nomenclature.
- *
- * Implements:
- * - Generation of CommerceML 2.09 `import.xml` package containing medical nomenclature.
- * - Ministry of Health Order 804n nomenclature codes mapping.
- * - Standard Russian OKEI measurement units (796 - Piece / Service).
- * - Multi-specialty classification groups (Therapy, Orthopedics, Surgery, Orthodontics, etc.).
- * - Safe XML entity escaping and SHA-256 verification hash.
  */
 
 import { eq } from "drizzle-orm";
@@ -19,8 +12,8 @@ import {
 	computeCommerceMlSha256,
 	escapeXml,
 } from "@dental/shared";
-import { db } from "../../../db/client.js";
-import { organizations, serviceCatalogItems } from "../../../db/schema.js";
+import { withTenantCtx } from "../../../db/rls.js";
+import { organizations, serviceCatalogItems, warehouses } from "../../../db/schema.js";
 import type { ExportCatalogParams, OneCCatalogXmlResult } from "./types.js";
 
 interface NomenclatureGroupDefinition {
@@ -65,42 +58,15 @@ function resolveNomenclatureGroupId(code?: string | null, title?: string | null)
 export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneCCatalogXmlResult> {
 	const orgId = params.organizationId;
 	const generatedAtIso = new Date().toISOString();
-	const exportDate = generatedAtIso.slice(0, 10);
 
-	let orgName = "Стоматологическая клиника";
-	let orgInn = "7700000000";
-	let orgKpp = "770001001";
-	let orgOgrn = "1000000000000";
-
-	try {
-		const [org] = await db
+	const { org, catalogItems, warehouseRows } = await withTenantCtx(orgId, async (tx) => {
+		const [foundOrg] = await tx
 			.select()
 			.from(organizations)
 			.where(eq(organizations.id, orgId))
 			.limit(1);
 
-		if (org) {
-			orgName = org.name || orgName;
-			orgInn = org.inn || orgInn;
-			orgKpp = org.kpp || orgKpp;
-			orgOgrn = org.ogrn || orgOgrn;
-		}
-	} catch (dbErr) {
-		// Honest fallback to clinic defaults if database connection fails
-	}
-
-	let catalogItems: Array<{
-		id: string;
-		code: string | null;
-		order804nCode: string | null;
-		title: string;
-		priceRub: string | number | null;
-		category: string | null;
-		isActive: boolean | null;
-	}> = [];
-
-	try {
-		const rows = await db
+		const foundItems = await tx
 			.select({
 				id: serviceCatalogItems.id,
 				code: serviceCatalogItems.code,
@@ -113,16 +79,29 @@ export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneC
 			.from(serviceCatalogItems)
 			.where(eq(serviceCatalogItems.organizationId, orgId));
 
-		catalogItems = rows;
-	} catch (catalogErr) {
-		// Non-fatal, honest empty catalogue
-		catalogItems = [];
-	}
+		const foundWarehouses = await tx
+			.select({
+				id: warehouses.id,
+				name: warehouses.name,
+			})
+			.from(warehouses)
+			.where(eq(warehouses.organizationId, orgId));
+
+		return {
+			org: foundOrg ?? null,
+			catalogItems: foundItems,
+			warehouseRows: foundWarehouses,
+		};
+	});
+
+	const orgName = org?.name || "";
+	const orgInn = org?.inn || "";
+	const orgKpp = org?.kpp || "";
+	const orgOgrn = org?.ogrn || "";
 
 	const classifierId = `classifier-${orgId}`;
 	const catalogId = `catalog-${orgId}`;
 
-	// Render XML Structure
 	let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
 	xml += `<КоммерческаяИнформация xmlns="${COMMERCEML_XMLNS}" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ВерсияСхемы="${COMMERCEML_VERSION_209}" ДатаФормирования="${generatedAtIso}">\n`;
 
@@ -133,13 +112,12 @@ export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneC
 	xml += `    <Владелец>\n`;
 	xml += `      <Ид>${escapeXml(orgId)}</Ид>\n`;
 	xml += `      <Наименование>${escapeXml(orgName)}</Наименование>\n`;
-	xml += `      <ОфициальноеНаименование>ООО «${escapeXml(orgName)}»</ОфициальноеНаименование>\n`;
+	xml += `      <ОфициальноеНаименование>${escapeXml(orgName ? `ООО «${orgName}»` : "")}</ОфициальноеНаименование>\n`;
 	xml += `      <ИНН>${escapeXml(orgInn)}</ИНН>\n`;
 	xml += `      <КПП>${escapeXml(orgKpp)}</КПП>\n`;
 	xml += `      <ОГРН>${escapeXml(orgOgrn)}</ОГРН>\n`;
 	xml += `    </Владелец>\n`;
 
-	// Groups
 	xml += `    <Группы>\n`;
 	for (const grp of DENTAL_NOMENCLATURE_GROUPS) {
 		xml += `      <Группа>\n`;
@@ -149,7 +127,6 @@ export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneC
 	}
 	xml += `    </Группы>\n`;
 
-	// Price Types
 	xml += `    <ТипыЦен>\n`;
 	xml += `      <ТипЦены>\n`;
 	xml += `        <Ид>price-base</Ид>\n`;
@@ -158,17 +135,22 @@ export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneC
 	xml += `      </ТипЦены>\n`;
 	xml += `    </ТипыЦен>\n`;
 
-	// Warehouses
 	xml += `    <Склады>\n`;
-	xml += `      <Склад>\n`;
-	xml += `        <Ид>wh-main</Ид>\n`;
-	xml += `        <Наименование>Основной склад клиники</Наименование>\n`;
-	xml += `      </Склад>\n`;
-	xml += `      <Склад>\n`;
-	xml += `        <Ид>wh-cso</Ид>\n`;
-	xml += `        <Наименование>Центральное стерилизационное отделение (ЦСО)</Наименование>\n`;
-	xml += `      </Склад>\n`;
+	if (warehouseRows.length > 0) {
+		for (const wh of warehouseRows) {
+			xml += `      <Склад>\n`;
+			xml += `        <Ид>${escapeXml(wh.id)}</Ид>\n`;
+			xml += `        <Наименование>${escapeXml(wh.name)}</Наименование>\n`;
+			xml += `      </Склад>\n`;
+		}
+	} else {
+		xml += `      <Склад>\n`;
+		xml += `        <Ид>wh-main</Ид>\n`;
+		xml += `        <Наименование>Основной склад клиники</Наименование>\n`;
+		xml += `      </Склад>\n`;
+	}
 	xml += `    </Склады>\n`;
+
 	xml += `    <ЕдиницыИзмерения>\n`;
 	xml += `      <ЕдиницаИзмерения>\n`;
 	xml += `        <Ид>${DEFAULT_OKEI_PIECE_CODE}</Ид>\n`;
@@ -188,12 +170,11 @@ export async function buildCatalogXml(params: ExportCatalogParams): Promise<OneC
 	xml += `    <Владелец>\n`;
 	xml += `      <Ид>${escapeXml(orgId)}</Ид>\n`;
 	xml += `      <Наименование>${escapeXml(orgName)}</Наименование>\n`;
-	xml += `      <ОфициальноеНаименование>ООО «${escapeXml(orgName)}»</ОфициальноеНаименование>\n`;
+	xml += `      <ОфициальноеНаименование>${escapeXml(orgName ? `ООО «${orgName}»` : "")}</ОфициальноеНаименование>\n`;
 	xml += `      <ИНН>${escapeXml(orgInn)}</ИНН>\n`;
 	xml += `      <КПП>${escapeXml(orgKpp)}</КПП>\n`;
 	xml += `    </Владелец>\n`;
 
-	// Products / Medical Services
 	xml += `    <Товары>\n`;
 	let itemsCount = 0;
 	for (const item of catalogItems) {

@@ -120,12 +120,25 @@ describe("Staff Decomposed Routes Integration Tests", () => {
 		});
 	});
 
-	test("POST /api/staff/evaluate-password — оценка энтропии пароля", async () => {
+	test("POST /api/staff/evaluate-password — оценка энтропии пароля (требует авторизацию)", async () => {
+		const unauthRes = await app.inject({
+			method: "POST",
+			url: "/api/staff/evaluate-password",
+			headers: {
+				"content-type": "application/json",
+			},
+			payload: {
+				password: "SuperSecretDoctorPassword2026!",
+			},
+		});
+		assert.equal(unauthRes.statusCode, 401);
+
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/staff/evaluate-password",
 			headers: {
 				"content-type": "application/json",
+				...clinicTokenHeaders(),
 			},
 			payload: {
 				password: "SuperSecretDoctorPassword2026!",

@@ -13,6 +13,9 @@
 import type { FastifyBaseLogger } from "fastify";
 import { EgiszOutboxDispatcher, type OutboxProcessResult } from "./EgiszOutboxDispatcher.js";
 import { OiisGatewayClient } from "./OiisGatewayClient.js";
+import { createApiLogger } from "../../observability/logger.js";
+
+const apiLogger = createApiLogger("egisz:queueWorker");
 
 export type EgiszQueueWorkerLogger = {
 	info: (payload: Record<string, unknown>, message: string) => void;
@@ -41,18 +44,9 @@ export type EgiszQueueWorkerHandle = {
 
 function createDefaultLogger(): EgiszQueueWorkerLogger {
 	return {
-		info: (payload, message) =>
-			process.stdout.write(
-				`${JSON.stringify({ level: "info", tag: "EgiszQueueWorker", message, ...payload })}\n`,
-			),
-		warn: (payload, message) =>
-			process.stderr.write(
-				`${JSON.stringify({ level: "warn", tag: "EgiszQueueWorker", message, ...payload })}\n`,
-			),
-		error: (payload, message) =>
-			process.stderr.write(
-				`${JSON.stringify({ level: "error", tag: "EgiszQueueWorker", message, ...payload })}\n`,
-			),
+		info: (payload, message) => apiLogger.info(payload, message),
+		warn: (payload, message) => apiLogger.warn(payload, message),
+		error: (payload, message) => apiLogger.error(payload, message),
 	};
 }
 

@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
@@ -32,11 +31,11 @@ export async function handleQidoSeries(
 
 	if (!(await verifyDicomOrganization(organizationId, reply))) return;
 
-	const rows = await withTenantCtx(organizationId, async () => {
-		const orgKnown = await organizationExists(organizationId);
+	const rows = await withTenantCtx(organizationId, async (tx) => {
+		const orgKnown = await organizationExists(organizationId, tx);
 		if (!orgKnown) return null;
 
-		return db
+		return tx
 			.select({
 				seriesUid: schema.imagingSeries.dicomSeriesUid,
 				modality: schema.imagingSeries.modality,

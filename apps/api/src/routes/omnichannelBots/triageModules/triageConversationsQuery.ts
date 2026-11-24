@@ -200,6 +200,7 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 
 	// Агрегируем диалоги по ключу: `${channel}:${senderId}`
 	const convMap = new Map<string, InboxConversation>();
+	const patientChannelToExternalChatId = new Map<string, string>();
 
 	for (const evt of inboundEvents) {
 		const channel = (evt.channel as BotChannel) || "telegram";
@@ -259,6 +260,12 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 			matchedPatient = patientPhoneMap.get(phoneKey);
 		}
 
+		// Запоминаем externalChatId для сопоставления исходящих тредов (DEF-101: VK, MAX, Telegram)
+		const resolvedPatId = matchedPatient?.id || evt.patientId;
+		if (resolvedPatId && senderId) {
+			patientChannelToExternalChatId.set(`${channel}:${resolvedPatId}`, senderId);
+		}
+
 		// Ищем лид
 		const matchedLead = phoneKey ? leadPhoneMap.get(phoneKey) : undefined;
 
@@ -306,8 +313,11 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 
 		let senderId: string | null = null;
 		const linkedChatRef = patientIdToChatRef.get(p.id);
+		const knownExternalId = patientChannelToExternalChatId.get(`${channel}:${p.id}`);
 		if (channel === "telegram" && linkedChatRef) {
 			senderId = linkedChatRef;
+		} else if (knownExternalId) {
+			senderId = knownExternalId;
 		} else if (p.phone) {
 			senderId = p.phone.replace(/\D/g, "");
 		}

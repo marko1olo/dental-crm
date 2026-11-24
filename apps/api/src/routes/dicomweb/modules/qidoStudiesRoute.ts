@@ -1,7 +1,6 @@
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
@@ -31,15 +30,15 @@ export async function handleQidoStudies(
 	const limit = Math.min(Math.max(1, Number(request.query.limit) || 25), 100);
 	const offset = Math.max(0, Number(request.query.offset) || 0);
 
-	const results = await withTenantCtx(organizationId, async () => {
-		const orgKnown = await organizationExists(organizationId);
+	const results = await withTenantCtx(organizationId, async (tx) => {
+		const orgKnown = await organizationExists(organizationId, tx);
 		if (!orgKnown) return null;
 
 		const conditions = [eq(schema.imagingStudies.organizationId, organizationId), isNotNull(schema.imagingStudies.dicomStudyUid)];
 		if (queryStudyUid) conditions.push(eq(schema.imagingStudies.dicomStudyUid, queryStudyUid));
 		if (queryPatientId && UUID_SHAPE.test(queryPatientId)) conditions.push(eq(schema.imagingStudies.patientId, queryPatientId));
 
-		return db
+		return tx
 			.select({
 				studyId: schema.imagingStudies.id, dicomStudyUid: schema.imagingStudies.dicomStudyUid,
 				patientId: schema.imagingStudies.patientId, capturedAt: schema.imagingStudies.capturedAt,

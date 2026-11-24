@@ -64,4 +64,48 @@ describe("dicomAnonymizer 152-FZ Compliance", () => {
 		const smallBuf = Buffer.from([1, 2, 3]);
 		expect(anonymizeDicomBuffer(smallBuf)).toBe(smallBuf);
 	});
+
+	it("handles SQ delimiter tags (0xFFFE, 0xE000 / 0xE00D / 0xE0DD) without 2-byte VR corruption and wipes nested PII", () => {
+		const preamble = Buffer.alloc(128, 0);
+		const magic = Buffer.from("DICM", "latin1");
+
+		// SQ tag (0008, 1115) ReferencedSeriesSequence: VR=SQ, 2 reserved, 4-byte undefined length 0xFFFFFFFF
+		const sqTag = Buffer.from([0x08, 0x00, 0x15, 0x11]);
+		const sqVr = Buffer.from("SQ", "latin1");
+		const sqReserved = Buffer.from([0x00, 0x00]);
+		const sqLen = Buffer.from([0xff, 0xff, 0xff, 0xff]);
+
+		// Item tag (FFFE, E000) + 4-byte undefined length (NO VR!)
+		const itemStart = Buffer.from([0xfe, 0xff, 0x00, 0xe0, 0xff, 0xff, 0xff, 0xff]);
+
+		// Nested (0010, 0010) PatientName inside Item
+		const nestedPatName = Buffer.concat([
+			Buffer.from([0x10, 0x00, 0x10, 0x00]),
+			Buffer.from("PN", "latin1"),
+			Buffer.from([0x0c, 0x00]),
+			Buffer.from("SECRET^PATIE", "latin1"),
+		]);
+
+		// Item Delimitation Item (FFFE, E00D) + 4-byte len 0 (NO VR!)
+		const itemEnd = Buffer.from([0xfe, 0xff, 0x0d, 0xe0, 0x00, 0x00, 0x00, 0x00]);
+		// Sequence Delimitation Item (FFFE, E0DD) + 4-byte len 0 (NO VR!)
+		const seqEnd = Buffer.from([0xfe, 0xff, 0xdd, 0xe0, 0x00, 0x00, 0x00, 0x00]);
+
+		// Trailing (0010, 0020) PatientID after SQ
+		const afterId = Buffer.concat([
+			Buffer.from([0x10, 0x00, 0x20, 0x00]),
+			Buffer.from("LO", "latin1"),
+			Buffer.from([0x08, 0x00]),
+			Buffer.from("CHART-77", "latin1"),
+		]);
+
+		const raw = Buffer.concat([preamble, magic, sqTag, sqVr, sqReserved, sqLen, itemStart, nestedPatName, itemEnd, seqEnd, afterId]);
+		const anonymized = anonymizeDicomBuffer(raw, { patientName: "ANON^USER", patientId: "ANON-77" });
+
+		expect(anonymized.length).toBe(raw.length);
+		const text = anonymized.toString("latin1");
+		expect(text).not.toContain("SECRET^PATIE");
+		expect(text).not.toContain("CHART-77");
+		expect(text).toContain("ANON-77");
+	});
 });

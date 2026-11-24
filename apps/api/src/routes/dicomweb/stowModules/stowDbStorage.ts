@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import type { StowStoreResult } from "./stowTypes.js";

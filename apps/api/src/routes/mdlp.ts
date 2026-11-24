@@ -1,7 +1,15 @@
-import { createCarpuleQueueItem, getAllAnesthetics } from "@dental/shared";
+import {
+	createCarpuleQueueItem,
+	formatKopecksToRubles,
+	getAllAnesthetics,
+	nonNegativeMoneyRubSchema,
+} from "@dental/shared";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
+import {
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
+} from "../accessGuard.js";
 import { mdlpDisposalService, mdlpQueueService } from "../services/mdlp/index.js";
 
 // ─── Input Validation Schemas ───────────────────────────────────────────────
@@ -30,7 +38,8 @@ const mdlpDisposeBodySchema = z.object({
 	doctorName: z.string().trim().optional().nullable(),
 	docNum: z.string().trim().optional().nullable(),
 	docDate: z.string().trim().optional().nullable(),
-	costRub: z.number().finite().nonnegative().optional().nullable(),
+	costRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	costKopecks: z.number().int().nonnegative().optional().nullable(),
 	reason: z.string().trim().optional().nullable(),
 });
 
@@ -52,7 +61,8 @@ const mdlpBatchDisposeBodySchema = z.object({
 
 const mdlpQueueAddBodySchema = z.object({
 	rawBarcode: z.string().trim().min(1, "Штрихкод DataMatrix обязателен."),
-	costRub: z.number().finite().nonnegative().optional().nullable(),
+	costRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	costKopecks: z.number().int().nonnegative().optional().nullable(),
 	patientId: z.string().uuid().optional().nullable(),
 	patientName: z.string().trim().optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),
@@ -73,7 +83,8 @@ const mdlpActItemSchema = z.object({
 	serialNumber: z.string().trim().optional().nullable(),
 	series: z.string().trim().optional().nullable(),
 	expirationDate: z.string().trim().optional().nullable(),
-	costRub: z.number().finite().nonnegative().optional().nullable(),
+	costRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	costKopecks: z.number().int().nonnegative().optional().nullable(),
 	tradeName: z.string().trim().optional().nullable(),
 	inn: z.string().trim().optional().nullable(),
 	patientId: z.string().uuid().optional().nullable(),
@@ -120,6 +131,17 @@ const mdlpItemsQuerySchema = z.object({
 
 // ─── Route Registration ─────────────────────────────────────────────────────
 
+function resolveMdlpCostRub(
+	costRub: number | null | undefined,
+	costKopecks: number | null | undefined,
+): number | null | undefined {
+	if (costRub !== undefined && costRub !== null) return costRub;
+	if (costKopecks !== undefined && costKopecks !== null) {
+		return Number(formatKopecksToRubles(costKopecks));
+	}
+	return costRub;
+}
+
 export async function registerMdlpRoutes(
 	app: FastifyInstance,
 	_opts?: Record<string, unknown>,
@@ -129,12 +151,13 @@ export async function registerMdlpRoutes(
 	 * Verify GS1 DataMatrix barcode, check checksum, registration, expiration, and recognize drug.
 	 */
 	const handleScan = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
+		const context = await requireClinicalMutationContext(
 			request,
 			reply,
 			"mdlp barcode scan",
 		);
-		if (!orgId) return;
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const parsedBody = mdlpScanBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
@@ -173,12 +196,13 @@ export async function registerMdlpRoutes(
 	 * Record single medicine disposal under official MDLP Schema 10560.
 	 */
 	const handleDispose = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
+		const context = await requireClinicalMutationContext(
 			request,
 			reply,
 			"mdlp medication disposal",
 		);
-		if (!orgId) return;
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const parsedBody = mdlpDisposeBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
@@ -190,7 +214,11 @@ export async function registerMdlpRoutes(
 		}
 
 		try {
-			const result = await mdlpDisposalService.disposeSingle(orgId, parsedBody.data);
+			const disposePayload = {
+				...parsedBody.data,
+				costRub: resolveMdlpCostRub(parsedBody.data.costRub, parsedBody.data.costKopecks),
+			};
+			const result = await mdlpDisposalService.disposeSingle(orgId, disposePayload);
 			return reply.send({
 				success: true,
 				message: result.message,
@@ -213,12 +241,13 @@ export async function registerMdlpRoutes(
 	 * Batch write-off under Schema 10560 (from explicit array or from current queue).
 	 */
 	const handleDisposeBatch = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
+		const context = await requireClinicalMutationContext(
 			request,
 			reply,
 			"mdlp batch medication disposal",
 		);
-		if (!orgId) return;
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const parsedBody = mdlpBatchDisposeBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
@@ -230,7 +259,14 @@ export async function registerMdlpRoutes(
 		}
 
 		try {
-			const result = await mdlpDisposalService.disposeBatch(orgId, parsedBody.data);
+			const batchPayload = {
+				...parsedBody.data,
+				items: parsedBody.data.items?.map((item) => ({
+					...item,
+					costRub: resolveMdlpCostRub(item.costRub, item.costKopecks),
+				})),
+			};
+			const result = await mdlpDisposalService.disposeBatch(orgId, batchPayload);
 			return reply.send({
 				success: true,
 				message: result.message,
@@ -253,8 +289,9 @@ export async function registerMdlpRoutes(
 	 * Get current carpule disposal queue for organization.
 	 */
 	const handleGetQueue = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp get queue");
-		if (!orgId) return;
+		const context = await requireClinicalReadContext(request, reply, "mdlp get queue");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const result = await mdlpQueueService.getQueueAsync(orgId);
 		return reply.send({
@@ -269,8 +306,9 @@ export async function registerMdlpRoutes(
 	 * Add scanned carpule to queue.
 	 */
 	const handleQueueAdd = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp queue add");
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(request, reply, "mdlp queue add");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const parsedBody = mdlpQueueAddBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
@@ -281,7 +319,10 @@ export async function registerMdlpRoutes(
 			});
 		}
 
-		const result = await mdlpQueueService.addToQueueAsync(orgId, parsedBody.data);
+		const result = await mdlpQueueService.addToQueueAsync(orgId, {
+			...parsedBody.data,
+			costRub: resolveMdlpCostRub(parsedBody.data.costRub, parsedBody.data.costKopecks),
+		});
 		return reply.send(result);
 	};
 
@@ -290,8 +331,9 @@ export async function registerMdlpRoutes(
 	 * Remove carpule from queue.
 	 */
 	const handleQueueRemove = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp queue remove");
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(request, reply, "mdlp queue remove");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const parsedBody = mdlpQueueRemoveBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
@@ -310,8 +352,9 @@ export async function registerMdlpRoutes(
 	 * Clear entire queue for organization.
 	 */
 	const handleQueueClear = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp queue clear");
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(request, reply, "mdlp queue clear");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const result = await mdlpQueueService.clearQueueAsync(orgId);
 		return reply.send(result);
@@ -321,7 +364,9 @@ export async function registerMdlpRoutes(
 	 * GET /api/mdlp/catalog/anesthetics
 	 * Returns full dental anesthetics catalog.
 	 */
-	const handleGetAnestheticsCatalog = async (_request: FastifyRequest, reply: FastifyReply) => {
+	const handleGetAnestheticsCatalog = async (request: FastifyRequest, reply: FastifyReply) => {
+		const context = await requireClinicalReadContext(request, reply, "mdlp anesthetics catalog");
+		if (!context) return;
 		return reply.send({
 			success: true,
 			catalog: getAllAnesthetics(),
@@ -333,8 +378,9 @@ export async function registerMdlpRoutes(
 	 * Generates printable Senior Nurse Medication Disposal Act HTML & structured data.
 	 */
 	const handleGenerateAct = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp generate act");
-		if (!orgId) return;
+		const context = await requireClinicalMutationContext(request, reply, "mdlp generate act");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const parsedBody = mdlpActGenerateBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
@@ -347,7 +393,7 @@ export async function registerMdlpRoutes(
 
 		const itemsMapped = parsedBody.data.items?.map((it) =>
 			createCarpuleQueueItem(it.rawBarcode || it.sgtin || "", {
-				costRub: it.costRub,
+				costRub: resolveMdlpCostRub(it.costRub, it.costKopecks),
 				patientId: it.patientId ?? undefined,
 				patientName: it.patientName ?? undefined,
 				visitId: it.visitId ?? undefined,
@@ -357,7 +403,7 @@ export async function registerMdlpRoutes(
 			}),
 		);
 
-		const result = mdlpDisposalService.generateDisposalAct(orgId, {
+		const result = await mdlpDisposalService.generateDisposalAct(orgId, {
 			...parsedBody.data,
 			items: itemsMapped,
 		});
@@ -373,12 +419,13 @@ export async function registerMdlpRoutes(
 	 * List scanned and tracked medications from database.
 	 */
 	const handleItems = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
+		const context = await requireClinicalReadContext(
 			request,
 			reply,
 			"mdlp items list",
 		);
-		if (!orgId) return;
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const queryParsed = mdlpItemsQuerySchema.safeParse(request.query);
 		if (!queryParsed.success) {
@@ -404,8 +451,9 @@ export async function registerMdlpRoutes(
 	 * Real health-check of MDLP / Chestny Znak gateway connection status.
 	 */
 	const handleStatus = async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "mdlp status check");
-		if (!orgId) return;
+		const context = await requireClinicalReadContext(request, reply, "mdlp status check");
+		if (!context) return;
+		const orgId = context.organizationId;
 
 		const statusInfo = await mdlpDisposalService.getStatus(orgId);
 		return reply.send({
@@ -414,7 +462,7 @@ export async function registerMdlpRoutes(
 		});
 	};
 
-	// Register absolute paths
+	// Register canonical /api/mdlp/* routes
 	app.get("/api/mdlp/status", handleStatus);
 	app.post("/api/mdlp/scan", handleScan);
 	app.post("/api/mdlp/dispose", handleDispose);
@@ -427,20 +475,6 @@ export async function registerMdlpRoutes(
 	app.get("/api/mdlp/catalog/anesthetics", handleGetAnestheticsCatalog);
 	app.post("/api/mdlp/disposal-act", handleGenerateAct);
 	app.get("/api/mdlp/items", handleItems);
-
-	// Also support relative paths if mounted under prefix
-	app.get("/status", handleStatus);
-	app.post("/scan", handleScan);
-	app.post("/dispose", handleDispose);
-	app.post("/dispose-batch", handleDisposeBatch);
-	app.post("/batch-disposal", handleDisposeBatch);
-	app.get("/queue", handleGetQueue);
-	app.post("/queue/add", handleQueueAdd);
-	app.post("/queue/remove", handleQueueRemove);
-	app.post("/queue/clear", handleQueueClear);
-	app.get("/catalog/anesthetics", handleGetAnestheticsCatalog);
-	app.post("/disposal-act", handleGenerateAct);
-	app.get("/items", handleItems);
 }
 
 export const mdlpRoutes: FastifyPluginAsync = registerMdlpRoutes;

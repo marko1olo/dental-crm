@@ -191,10 +191,38 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 		assert.ok(json.photo.url.startsWith("/api/attachments/"));
 	});
 
-	it("8. GET /api/photo-bridge/poll/:token delivers uploaded photos to chairside monitor without F5", async () => {
+	it("7b. POST /api/photo-bridge/upload/:token rejects dangerous non-image file extensions (400)", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/photo-bridge/upload/${createdToken}`,
+			headers: { "content-type": "application/json" },
+			payload: {
+				slotId: "upper_occlusal",
+				fileName: "payload.html",
+				imageBase64: "data:text/html;base64,PGgxPkhlbGxvPC9oMT4=",
+			},
+		});
+		assert.equal(res.statusCode, 400);
+	});
+
+	it("8. GET /api/photo-bridge/poll/:token requires clinic auth & blocks cross-tenant access, then delivers photos", async () => {
+		const unauthRes = await app.inject({
+			method: "GET",
+			url: `/api/photo-bridge/poll/${createdToken}`,
+		});
+		assert.equal(unauthRes.statusCode, 401);
+
+		const crossTenantRes = await app.inject({
+			method: "GET",
+			url: `/api/photo-bridge/poll/${createdToken}`,
+			headers: otherOrgHeaders,
+		});
+		assert.equal(crossTenantRes.statusCode, 403);
+
 		const res = await app.inject({
 			method: "GET",
 			url: `/api/photo-bridge/poll/${createdToken}`,
+			headers: clinicHeaders,
 		});
 
 		assert.equal(res.statusCode, 200);
@@ -205,10 +233,24 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 		assert.equal(json.photos[1].slotId, "upper_occlusal");
 	});
 
-	it("9. DELETE /api/photo-bridge/session/:token terminates session cleanly", async () => {
+	it("9. DELETE /api/photo-bridge/session/:token blocks unauthorized/cross-tenant deletion and terminates cleanly for owner", async () => {
+		const unauthDel = await app.inject({
+			method: "DELETE",
+			url: `/api/photo-bridge/session/${createdToken}`,
+		});
+		assert.equal(unauthDel.statusCode, 401);
+
+		const crossTenantDel = await app.inject({
+			method: "DELETE",
+			url: `/api/photo-bridge/session/${createdToken}`,
+			headers: otherOrgHeaders,
+		});
+		assert.equal(crossTenantDel.statusCode, 403);
+
 		const res = await app.inject({
 			method: "DELETE",
 			url: `/api/photo-bridge/session/${createdToken}`,
+			headers: clinicHeaders,
 		});
 
 		assert.equal(res.statusCode, 200);
@@ -220,6 +262,7 @@ describe("Chairside Photo QR Bridge API (Fastify / PostgreSQL 18, Mandate 8e / P
 		const pollRes = await app.inject({
 			method: "GET",
 			url: `/api/photo-bridge/poll/${createdToken}`,
+			headers: clinicHeaders,
 		});
 		assert.equal(pollRes.statusCode, 410);
 	});

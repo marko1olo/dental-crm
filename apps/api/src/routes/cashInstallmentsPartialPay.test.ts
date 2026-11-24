@@ -76,7 +76,10 @@ describe("PLN-03: Partial installment tranche payment and debt reduction", () =>
 			const createRes = await app.inject({
 				method: "POST",
 				url: "/api/installments",
-				headers,
+				headers: {
+					...headers,
+					"idempotency-key": randomUUID(),
+				},
 				payload: {
 					patientId,
 					totalAmountRub: 60000,
@@ -115,7 +118,8 @@ describe("PLN-03: Partial installment tranche payment and debt reduction", () =>
 			// Проверка состояния транша после частичной оплаты
 			assert.equal(partialJson.tranche.isPaid, false, "isPaid обязан быть false при частичной оплате");
 			assert.equal(partialJson.tranche.status, "partially_paid", "Статус транша обязан быть partially_paid");
-			assert.equal(partialJson.tranche.amountRub, 6500, "Остаток долга по взносу должен уменьшиться до 6 500 ₽");
+			assert.equal(Number(partialJson.tranche.amountRub), 10000, "Номинал транша amountRub сохраняется (10 000 ₽)");
+			assert.equal(Number(partialJson.tranche.paidAmountKopecks), 350000, "Оплаченная сумма фиксируется в paidAmountKopecks (350 000 коп.)");
 
 			// Проверка договора рассрочки
 			assert.equal(partialJson.contract.paidAmountRub, 3500, "Оплачено по договору должно быть 3 500 ₽");

@@ -7,7 +7,7 @@ import * as schema from "../../db/schema.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { createTenantTestApp, closeAllTenantTestApps } from "../support/tenantTestApp.js";
 import { fixtureUuid, withFixtureTenant } from "../support/fixtureOrganizations.js";
-import { registerStudiesRoutes, registerXraySeriesRoute } from "../../routes/imaging/studiesRoutes.js";
+import { registerStudiesRoutes } from "../../routes/imaging/studiesRoutes.js";
 import { registerPacsRoutes } from "../../routes/imaging/pacsRoutes.js";
 import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 import { mapImagingStudy } from "../../db/imaging/imagingMappers.js";
@@ -35,6 +35,7 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 
 	before(async () => {
 		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, orgId));
 			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
 			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
 			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));
@@ -67,6 +68,7 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 	after(async () => {
 		await closeAllTenantTestApps();
 		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, orgId));
 			await db.delete(schema.imagingAnnotations).where(eq(schema.imagingAnnotations.organizationId, orgId));
 			await db.delete(schema.imagingViewerSessions).where(eq(schema.imagingViewerSessions.organizationId, orgId));
 			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));
@@ -201,9 +203,9 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 	});
 
 	describe("3. Unified CRUD & Cascading Deletion (Zero Zombie Scans)", () => {
-		it("DELETE /api/xray/scans/:id удаляет снимок из обеих таблиц (xrayScans и imagingStudies)", async () => {
+		it("DELETE /api/imaging/studies/:id удаляет снимок из обеих таблиц (xrayScans и imagingStudies)", async () => {
 			const app = createTenantTestApp();
-			await registerXraySeriesRoute(app);
+			await registerStudiesRoutes(app);
 
 			const testScanId = randomUUID();
 
@@ -235,7 +237,7 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 
 			const deleteRes = await app.inject({
 				method: "DELETE",
-				url: `/api/xray/scans/${testScanId}`,
+				url: `/api/imaging/studies/${testScanId}`,
 				headers: authHeaders,
 			});
 

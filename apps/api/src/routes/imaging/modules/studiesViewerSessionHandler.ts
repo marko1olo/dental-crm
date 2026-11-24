@@ -7,6 +7,7 @@ import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
 } from "../../../accessGuard.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { saveImagingMeasurementsForStudy } from "../../../db/imagingMeasurementsQuery.js";
 import {
 	getImagingStudyById,
@@ -31,16 +32,23 @@ export async function getViewerSessionHandler(request: FastifyRequest, reply: Fa
 	if (!evalAccess.hasClinicalAccess) {
 		return reply.code(403).send({
 			error: "PermissionDenied", permission: "clinical.imaging.read", role: staffRole,
-			message: `Отказ в доступе к КТ / DICOM исследованиям (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			message: `Отказ в доступе к КТ / DICOM исследованиям: ${evalAccess.reason}`,
 		});
 	}
 
 	const { id } = request.params as { id: string };
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+	}
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
-	const study = await getImagingStudyById(orgId, id);
-	if (!study) return sendImagingStudyNotFound(reply);
-	const session = await getOrCreateImagingViewerSession(orgId, study);
+
+	const session = await withTenantCtx(orgId, async (tx) => {
+		const study = await getImagingStudyById(orgId, id, tx);
+		if (!study) return null;
+		return getOrCreateImagingViewerSession(orgId, study, tx);
+	});
+	if (!session) return sendImagingStudyNotFound(reply);
 	return imagingViewerSessionResponseSchema.parse({ session, warnings: session.warnings });
 }
 
@@ -53,7 +61,20 @@ export async function putViewerSessionHandler(request: FastifyRequest, reply: Fa
 	if (!parsed.ok) return reply.code(400).send(parsed.response);
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging viewer session save"))) return;
 
+	const identity = getRequestIdentity(request);
+	const staffRole = identity.role ?? request.user?.role ?? (process.env.DENTAL_STATE_PERSISTENCE === "off" ? "doctor" : null);
+	const evalAccess = evaluateClinicalAccess(staffRole);
+	if (!evalAccess.hasClinicalAccess) {
+		return reply.code(403).send({
+			error: "PermissionDenied", permission: "clinical.imaging.write", role: staffRole,
+			message: `Отказ в сохранении сеанса просмотра снимка: ${evalAccess.reason}`,
+		});
+	}
+
 	const { id } = request.params as { id: string };
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+	}
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -68,14 +89,14 @@ export async function putViewerSessionHandler(request: FastifyRequest, reply: Fa
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const study = await getImagingStudyById(orgId, id);
-	if (!study) return sendImagingStudyNotFound(reply);
-
 	const input = parsed.data;
-	const session = await saveImagingViewerSession(orgId, id, input);
+	const session = await withTenantCtx(orgId, async (tx) => {
+		const study = await getImagingStudyById(orgId, id, tx);
+		if (!study) return null;
 
-	if (Array.isArray(input.annotations) && input.annotations.length > 0) {
-		try {
+		const savedSession = await saveImagingViewerSession(orgId, id, input, tx);
+
+		if (Array.isArray(input.annotations) && input.annotations.length > 0 && study.patientId) {
 			const measurementAnnotations = input.annotations.map((a) => ({
 				id: a.id,
 				toothCode: a.toothCode ?? study.toothCode ?? null,
@@ -84,13 +105,13 @@ export async function putViewerSessionHandler(request: FastifyRequest, reply: Fa
 				measurements: a.measurementValue != null ? { value: a.measurementValue, unit: a.unit } : null,
 				notes: a.note ?? a.label ?? null,
 			}));
-			if (study.patientId) {
-				await saveImagingMeasurementsForStudy(orgId, id, study.patientId, measurementAnnotations);
-			}
-		} catch (err) {
-			request.log.warn({ err }, "Failed to auto-sync annotations to imaging_annotations table");
+			await saveImagingMeasurementsForStudy(orgId, id, study.patientId, measurementAnnotations, tx);
 		}
-	}
+
+		return savedSession;
+	});
+
+	if (!session) return sendImagingStudyNotFound(reply);
 
 	return reply.code(200).send(imagingViewerSessionResponseSchema.parse({ session, warnings: session.warnings }));
 }

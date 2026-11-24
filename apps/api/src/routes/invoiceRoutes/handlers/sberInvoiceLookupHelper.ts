@@ -1,11 +1,12 @@
 import { kopecksToRubles } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import type { db as dbType } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 import { payments, sberbankTransactions } from "../../../db/schema/billing.js";
 
 /** Looks up payment status in sberbankTransactions by orderId */
 export async function lookupSberTransactionInvoice(params: {
-	db: typeof dbType;
+	db: TenantDb | typeof dbType;
 	orgId: string;
 	id: string;
 }): Promise<Record<string, unknown> | null> {
@@ -24,7 +25,12 @@ export async function lookupSberTransactionInvoice(params: {
 
 	if (!txRow) return null;
 
-	const isPaid = txRow.status === "SETTLED";
+	const normalizedStatus = txRow.status.toLowerCase();
+	const isPaid =
+		txRow.status === "SETTLED" ||
+		normalizedStatus === "success" ||
+		normalizedStatus === "paid";
+	const amountKopecks = Number(txRow.amountKopecks);
 	const amountRub = kopecksToRubles(txRow.amountKopecks);
 
 	let actualFiscalReceiptNumber: string | null = null;
@@ -35,7 +41,12 @@ export async function lookupSberTransactionInvoice(params: {
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(payments.clientMutationId, txRow.orderId),
+					or(
+						eq(payments.clientMutationId, txRow.orderId),
+						eq(payments.clientMutationId, `sberbank:${txRow.orderId}`),
+						eq(payments.clientMutationId, `sberpos:${txRow.orderId}`),
+						eq(payments.clientMutationId, `sbp:${txRow.orderId}`),
+					),
 				),
 			)
 			.limit(1);
@@ -44,11 +55,14 @@ export async function lookupSberTransactionInvoice(params: {
 
 	return {
 		id: txRow.orderId,
-		status: isPaid ? "paid" : txRow.status.toLowerCase(),
+		status: isPaid ? "paid" : normalizedStatus,
 		isPaid,
 		totalAmountRub: amountRub,
+		totalAmountKopecks: amountKopecks,
 		paidAmountRub: isPaid ? amountRub : 0,
+		paidAmountKopecks: isPaid ? amountKopecks : 0,
 		remainingAmountRub: isPaid ? 0 : amountRub,
+		remainingAmountKopecks: isPaid ? 0 : amountKopecks,
 		paidAtIso:
 			txRow.updatedAt?.toISOString() ||
 			txRow.createdAt?.toISOString() ||

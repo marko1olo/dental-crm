@@ -1,4 +1,4 @@
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { eq, or } from "drizzle-orm";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { payments, sberbankTransactions } from "../../db/schema.js";
@@ -51,13 +51,24 @@ export async function locateSbpWebhookContext(
 				visitId: existingPayment.visitId,
 				documentId: existingPayment.documentId,
 				invoiceId: null,
-				amountKopecks: rublesToKopecks(Number(existingPayment.amountRub)),
+				amountKopecks:
+					existingPayment.amountKopecks !== null && existingPayment.amountKopecks !== undefined
+						? Number(existingPayment.amountKopecks)
+						: rublesToKopecks(Number(existingPayment.amountRub)),
 				existingPayment,
 			};
 		}
 
 		// 3. If payload includes organizationId and patientId (or invoiceId)
 		if (payload.organizationId && (payload.patientId || payload.invoiceId)) {
+			const parsedAmountKopecks =
+				payload.amountKopecks !== undefined && payload.amountKopecks !== null
+					? Number(payload.amountKopecks)
+					: payload.amount !== undefined && payload.amount !== null
+						? Number(payload.amount)
+						: payload.amountRub !== undefined && payload.amountRub !== null && Number.isFinite(Number(payload.amountRub))
+							? rublesToKopecks(Number(payload.amountRub))
+							: null;
 			return {
 				source: "payload" as const,
 				organizationId: String(payload.organizationId),
@@ -65,10 +76,9 @@ export async function locateSbpWebhookContext(
 				visitId: payload.visitId ? String(payload.visitId) : null,
 				documentId: payload.documentId ? String(payload.documentId) : null,
 				invoiceId: payload.invoiceId ? String(payload.invoiceId) : null,
-				amountKopecks: payload.amountKopecks
-					? Number(payload.amountKopecks)
-					: payload.amount
-						? Number(payload.amount)
+				amountKopecks:
+					parsedAmountKopecks !== null && Number.isFinite(parsedAmountKopecks)
+						? parsedAmountKopecks
 						: null,
 			};
 		}

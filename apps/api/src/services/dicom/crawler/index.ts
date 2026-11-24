@@ -4,7 +4,6 @@
 
 export * from "./types.js";
 export * from "./archiveInspector.js";
-export * from "./studyMatcher.js";
 export * from "./directoryWatcher.js";
 export * from "./ingestPipeline.js";
 export {

@@ -9,9 +9,11 @@
  * 5. POST /api/insurance/guarantee-letters/emergency/record-usage returns 200 (Mandate 8e emergency alias)
  */
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { registerInsuranceRoutes } from "../../routes/insurance.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { organizations } from "../../db/schema.js";
@@ -38,6 +40,7 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 		});
 
 		app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await app.register(registerInsuranceRoutes);
 		await app.ready();
 
@@ -79,6 +82,7 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				notes: "Попытка обновления",
@@ -98,6 +102,7 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"idempotency-key": randomUUID(),
 			},
 		});
 

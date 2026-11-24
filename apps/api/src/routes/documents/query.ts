@@ -6,11 +6,12 @@ import {
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getDocumentById } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { generatedDocuments, patients } from "../../db/schema.js";
+import { generatedDocuments } from "../../db/schema.js";
 import {
 	getRequestIdentity,
 	requireOrganizationId,
@@ -19,6 +20,27 @@ import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { apiError } from "./shared.js";
+
+const documentListQuerySchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		kind: documentKindSchema.optional(),
+		limit: z.coerce.number().int().min(1).max(200).optional(),
+		offset: z.coerce.number().int().min(0).optional(),
+	})
+	.strict();
+
+const documentIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
+
+const documentTemplateKindParamsSchema = z
+	.object({
+		kind: z.string().trim().min(1).max(120),
+	})
+	.strict();
 
 export const clinicalDocKinds = new Set<string>([
 	"dental_medical_card_043u",
@@ -85,19 +107,32 @@ export function isReceptionistAllowedPrimaryDoc(
 export async function registerQuery(app: FastifyInstance) {
 	// 1. GET /api/documents — список документов с защитой врачебной тайны (152-ФЗ / 323-ФЗ)
 	app.get("/api/documents", async (request, reply) => {
-		const orgId = requireOrganizationId(request, reply);
+		const portalPatient = extractPortalPatient(request);
+		if (!portalPatient) {
+			if (!(await requireClinicalReadAccess(request, reply, "documents list"))) {
+				return;
+			}
+		}
+
+		const orgId = portalPatient
+			? portalPatient.organizationId
+			: requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const query = request.query as {
-			patientId?: string;
-			kind?: string;
-			limit?: string;
-			offset?: string;
-		};
+		const queryParsed = documentListQuerySchema.safeParse(request.query ?? {});
+		if (!queryParsed.success) {
+			return reply
+				.code(400)
+				.send(apiError("Некорректные параметры запроса списка документов"));
+		}
+		const query = queryParsed.data;
 
-		const portalPatient = extractPortalPatient(request);
 		const identity = getRequestIdentity(request);
-		const access = evaluateClinicalAccess(identity.role);
+		const access = evaluateClinicalAccess(identity.role, {
+			clinicalRole: identity.clinicalRole ?? null,
+			canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+			specialties: identity.specialties ?? null,
+		});
 
 		// Если запрос от пациента ЛК — строгая изоляция BOLA: видит только свои документы
 		const effectivePatientId = portalPatient ? portalPatient.patientId : query.patientId;
@@ -205,17 +240,25 @@ export async function registerQuery(app: FastifyInstance) {
 
 	// 2. GET /api/documents/:id — получение документа по идентификатору
 	app.get<{ Params: { id: string } }>("/api/documents/:id", async (request, reply) => {
-		const orgId = requireOrganizationId(request, reply);
+		const portalPatient = extractPortalPatient(request);
+		if (!portalPatient) {
+			if (!(await requireClinicalReadAccess(request, reply, "document read"))) {
+				return;
+			}
+		}
+
+		const orgId = portalPatient
+			? portalPatient.organizationId
+			: requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { id } = request.params;
-		const UUID_REGEX =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		if (!UUID_REGEX.test(id)) {
+		const paramsParsed = documentIdParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply
 				.code(400)
 				.send(apiError("Некорректный идентификатор документа (ожидается UUID)"));
 		}
+		const { id } = paramsParsed.data;
 
 		const document = await getDocumentById(orgId, id);
 		if (!document) {
@@ -223,7 +266,6 @@ export async function registerQuery(app: FastifyInstance) {
 		}
 
 		// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
-		const portalPatient = extractPortalPatient(request);
 		if (portalPatient) {
 			if (document.patientId !== portalPatient.patientId) {
 				return reply
@@ -232,7 +274,11 @@ export async function registerQuery(app: FastifyInstance) {
 			}
 		} else {
 			const identity = getRequestIdentity(request);
-			const access = evaluateClinicalAccess(identity.role);
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
 
 			// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
 			if (
@@ -280,11 +326,18 @@ export async function registerQuery(app: FastifyInstance) {
 
 	// 3. GET /api/documents/templates — список шаблонов документов
 	app.get("/api/documents/templates", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "document templates list"))) {
+			return;
+		}
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
 		const identity = getRequestIdentity(request);
-		const access = evaluateClinicalAccess(identity.role);
+		const access = evaluateClinicalAccess(identity.role, {
+			clinicalRole: identity.clinicalRole ?? null,
+			canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+			specialties: identity.specialties ?? null,
+		});
 
 		const allKinds = documentKindSchema.options;
 		const templates = allKinds
@@ -322,12 +375,23 @@ export async function registerQuery(app: FastifyInstance) {
 	app.get<{ Params: { kind: string } }>(
 		"/api/documents/templates/:kind",
 		async (request, reply) => {
+			if (!(await requireClinicalReadAccess(request, reply, "document template read"))) {
+				return;
+			}
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { kind } = request.params;
+			const paramsParsed = documentTemplateKindParamsSchema.safeParse(request.params);
+			if (!paramsParsed.success) {
+				return reply.code(404).send(apiError("Шаблон документа не найден"));
+			}
+			const { kind } = paramsParsed.data;
 			const identity = getRequestIdentity(request);
-			const access = evaluateClinicalAccess(identity.role);
+			const access = evaluateClinicalAccess(identity.role, {
+				clinicalRole: identity.clinicalRole ?? null,
+				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+				specialties: identity.specialties ?? null,
+			});
 
 			if (
 				clinicalDocKinds.has(kind) &&

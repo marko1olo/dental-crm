@@ -1,4 +1,3 @@
-import { computePayloadHash } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -7,17 +6,18 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { db as database } from "../../db/client.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { visitDiaries, visits } from "../../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	fetchPatientLatestPeriodontogram,
 	upsertPatientFullPeriodontogram,
 	upsertPatientFullPeriodontogramBodySchema,
-	type PatchToothInput,
-	type SiteItemInput,
 } from "../../services/periodontogramService.js";
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 export function registerVisitPerioRoutes(app: FastifyInstance) {
 	const getHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -37,39 +37,47 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [visit] = await database
-			.select({
-				id: visits.id,
-				patientId: visits.patientId,
-				organizationId: visits.organizationId,
-				status: visits.status,
-			})
-			.from(visits)
-			.where(
-				and(
-					eq(visits.id, visitId),
-					eq(visits.organizationId, context.organizationId),
-				),
-			)
-			.limit(1);
+		const latestPerio = await withTenantCtx(context.organizationId, async (tx) => {
+			const [visit] = await tx
+				.select({
+					id: visits.id,
+					patientId: visits.patientId,
+					organizationId: visits.organizationId,
+					status: visits.status,
+				})
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, context.organizationId),
+					),
+				)
+				.limit(1);
 
-		if (!visit) {
+			if (!visit) {
+				return null;
+			}
+
+			const data = await fetchPatientLatestPeriodontogram(
+				context.organizationId,
+				visit.patientId,
+			);
+			return { visit, data };
+		});
+
+		if (!latestPerio) {
 			return reply.code(404).send({
 				error: "VisitNotFound",
 				message: "Приём не найден",
 			});
 		}
-		const latestPerio = await fetchPatientLatestPeriodontogram(
-			context.organizationId,
-			visit.patientId,
-		);
 
 		return reply.send({
 			ok: true,
 			success: true,
-			visitId: visit.id,
-			patientId: visit.patientId,
-			data: latestPerio,
+			visitId: latestPerio.visit.id,
+			patientId: latestPerio.visit.patientId,
+			data: latestPerio.data,
 		});
 	};
 
@@ -99,92 +107,19 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
-
-			// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
-			const [existingRecord] = await database
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, context.organizationId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция сохранения пародонтограммы с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
-		const [visit] = await database
-			.select({
-				id: visits.id,
-				patientId: visits.patientId,
-				organizationId: visits.organizationId,
-				status: visits.status,
-			})
-			.from(visits)
-			.where(
-				and(
-					eq(visits.id, visitId),
-					eq(visits.organizationId, context.organizationId),
-				),
-			)
-			.limit(1);
-
-		if (!visit) {
-			return reply.code(404).send({
-				error: "VisitNotFound",
-				message: "Приём не найден",
-			});
-		}
-
-		if (visit.status === "signed") {
-			return reply.code(422).send({
-				error: "VISIT_PROTOCOL_LOCKED",
-				message: "Протокол приёма подписан и защищён от изменений.",
-			});
-		}
-
-		const [lockedDiary] = await database
-			.select({ id: visitDiaries.id })
-			.from(visitDiaries)
-			.where(
-				and(
-					eq(visitDiaries.visitId, visitId),
-					eq(visitDiaries.organizationId, context.organizationId),
-					eq(visitDiaries.isLocked, true),
-				),
-			)
-			.limit(1);
-
-		if (lockedDiary) {
-			return reply.code(422).send({
-				error: "VISIT_PROTOCOL_LOCKED",
-				message: "Протокол приёма подписан и защищён от изменений.",
-			});
-		}
-
-		const rawBody = (typeof request.body === "object" && request.body !== null ? request.body : {}) as Record<string, unknown>;
+		const rawBody = isPlainRecord(request.body) ? request.body : {};
 		const teeth = Array.isArray(rawBody.teeth)
 			? rawBody.teeth
 			: Array.isArray(rawBody.teethData)
 				? rawBody.teethData
 				: undefined;
-		const psrData = (rawBody.psrData ?? rawBody.psr ?? undefined) as Record<string, unknown> | undefined;
+		const psrData = isPlainRecord(rawBody.psrData)
+			? rawBody.psrData
+			: isPlainRecord(rawBody.psr)
+				? rawBody.psr
+				: undefined;
 
 		const normalizedBody: Record<string, unknown> = {};
 		if (rawBody.visitId !== undefined) normalizedBody.visitId = rawBody.visitId;
@@ -211,58 +146,85 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 		const identity = getRequestIdentity(request);
 		const doctorUserId = identity.userId ?? null;
 
-		// Сохраняем в единую каноническую систему periodontogram_snapshots / teeth / sites (ADR 0013)
-		const savedSnapshot = await upsertPatientFullPeriodontogram({
-			orgId: context.organizationId,
-			patientId: visit.patientId,
-			visitId: visit.id,
-			recordedByUserId: doctorUserId,
-			teeth: validData.teeth,
-			sites: validData.sites,
-			notes: validData.notes ?? null,
-			status: validData.status,
-			autoClose: validData.autoClose,
-			psrData: validData.psrData,
+		const txResult = await withTenantCtx(context.organizationId, async (tx) => {
+			const [visit] = await tx
+				.select({
+					id: visits.id,
+					patientId: visits.patientId,
+					organizationId: visits.organizationId,
+					status: visits.status,
+				})
+				.from(visits)
+				.where(
+					and(
+						eq(visits.id, visitId),
+						eq(visits.organizationId, context.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!visit) {
+				return { kind: "not_found" as const };
+			}
+
+			if (visit.status === "signed") {
+				return { kind: "locked" as const };
+			}
+
+			const [lockedDiary] = await tx
+				.select({ id: visitDiaries.id })
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, visitId),
+						eq(visitDiaries.organizationId, context.organizationId),
+						eq(visitDiaries.isLocked, true),
+					),
+				)
+				.limit(1);
+
+			if (lockedDiary) {
+				return { kind: "locked" as const };
+			}
+
+			// Сохраняем в единую каноническую систему periodontogram_snapshots / teeth / sites (ADR 0013)
+			const savedSnapshot = await upsertPatientFullPeriodontogram({
+				orgId: context.organizationId,
+				patientId: visit.patientId,
+				visitId: visit.id,
+				recordedByUserId: doctorUserId,
+				teeth: validData.teeth,
+				sites: validData.sites,
+				notes: validData.notes ?? null,
+				status: validData.status,
+				autoClose: validData.autoClose,
+				psrData: validData.psrData,
+			});
+
+			return { kind: "ok" as const, visit, savedSnapshot };
 		});
 
-		const responsePayload = {
-			ok: true,
-			success: true,
-			visitId: visit.id,
-			patientId: visit.patientId,
-			data: savedSnapshot,
-		};
-
-		if (idempotencyKey) {
-			try {
-				await database
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: context.organizationId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-							lockedAt: new Date(),
-						},
-					});
-			} catch (idemErr) {
-				request.log.warn(
-					{ err: idemErr, idempotencyKey, orgId: context.organizationId },
-					"[visitPerio] Не удалось сохранить ключ идемпотентности",
-				);
-			}
+		if (txResult.kind === "not_found") {
+			return reply.code(404).send({
+				error: "VisitNotFound",
+				message: "Приём не найден",
+			});
 		}
 
-		return reply.send(responsePayload);
+		if (txResult.kind === "locked") {
+			return reply.code(422).send({
+				error: "VISIT_PROTOCOL_LOCKED",
+				message: "Протокол приёма подписан и защищён от изменений.",
+			});
+		}
+
+		return reply.send({
+			ok: true,
+			success: true,
+			visitId: txResult.visit.id,
+			patientId: txResult.visit.patientId,
+			data: txResult.savedSnapshot,
+		});
 	};
 
 	// Регистрация обоих путей: /api/visits/:visitId/perio и /api/clinical/visits/:visitId/perio

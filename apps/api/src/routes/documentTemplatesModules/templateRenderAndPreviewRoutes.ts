@@ -1,6 +1,8 @@
 import { randomInt } from "node:crypto";
 import {
 	buildTemplateVariablesMap,
+	kopecksToRubles,
+	parseKopecks,
 	renderDocumentTemplate,
 	type TemplateExecutionContext,
 } from "@dental/shared";
@@ -400,13 +402,17 @@ export async function registerTemplateRenderAndPreviewRoutes(
 					);
 
 				if (visitPayments.length > 0) {
-					const totalRub = visitPayments.reduce(
-						(sum, p) => sum + (Number(p.amountRub) || 0),
+					const totalKop = visitPayments.reduce(
+						(sum, p) =>
+							sum +
+							(p.amountKopecks != null
+								? Number(p.amountKopecks)
+								: parseKopecks(p.amountRub ?? 0)),
 						0,
 					);
 					financialContextData = {
-						amountRubles: totalRub,
-						amountKopecks: Math.round(totalRub * 100),
+						amountRubles: kopecksToRubles(totalKop),
+						amountKopecks: totalKop,
 						actNumber: visitPayments[0]?.documentId ?? undefined,
 						actDate: visitPayments[0]?.createdAt ?? undefined,
 					};

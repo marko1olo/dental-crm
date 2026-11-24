@@ -83,7 +83,10 @@ export async function executeRedeemGiftCertificate(
 					.for("update");
 
 				if (existingCert) {
-					const existingRedeemedKop = parseKopecks(existingPayment.amountRub);
+					const existingRedeemedKop =
+						existingPayment.amountKopecks != null
+							? Number(existingPayment.amountKopecks)
+							: parseKopecks(existingPayment.amountRub);
 					const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
 					const currentBalKop = existingCert.currentBalanceKopecks != null
 						? existingCert.currentBalanceKopecks
@@ -232,6 +235,10 @@ export async function executeRedeemGiftCertificate(
 				.limit(1);
 
 			if (cashDeskBox) {
+				const deskBalKop =
+					cashDeskBox.balanceKopecks != null
+						? Number(cashDeskBox.balanceKopecks)
+						: parseKopecks(cashDeskBox.balanceRub || 0);
 				await tx.insert(cashOperations).values({
 					organizationId: orgId,
 					cashBoxId: cashDeskBox.id,
@@ -239,7 +246,9 @@ export async function executeRedeemGiftCertificate(
 					amountRub: redeemedRub,
 					amountKopecks: Number(redeemedKop),
 					balanceBeforeRub: cashDeskBox.balanceRub || 0,
+					balanceBeforeKopecks: BigInt(deskBalKop),
 					balanceAfterRub: cashDeskBox.balanceRub || 0,
+					balanceAfterKopecks: BigInt(deskBalKop),
 					patientId: targetPatientId,
 					kkmDocNumber: `CERT-${Date.now()}`,
 					reasonText: `Зачёт аванса (сертификат №${cert.serialNumber}): оплата стоматологических услуг`,
@@ -276,7 +285,10 @@ export async function executeRedeemGiftCertificate(
 
 			if (invoiceId) {
 				const existingPayments = await tx
-					.select({ amountRub: payments.amountRub })
+					.select({
+						amountRub: payments.amountRub,
+						amountKopecks: payments.amountKopecks,
+					})
 					.from(payments)
 					.where(
 						and(
@@ -286,7 +298,14 @@ export async function executeRedeemGiftCertificate(
 						),
 					);
 
-				const totalPaidKop = existingPayments.reduce((acc, p) => acc + parseKopecks(p.amountRub), 0);
+				const totalPaidKop = existingPayments.reduce(
+					(acc, p) =>
+						acc +
+						(p.amountKopecks != null
+							? Number(p.amountKopecks)
+							: parseKopecks(p.amountRub)),
+					0,
+				);
 				if (totalPaidKop >= invoiceAmountKop) {
 					await tx
 						.update(patientInvoices)
@@ -351,7 +370,10 @@ export async function executeRedeemGiftCertificate(
 						.limit(1);
 
 					if (existingCert) {
-						const existingRedeemedKop = parseKopecks(existingPayment.amountRub);
+						const existingRedeemedKop =
+							existingPayment.amountKopecks != null
+								? Number(existingPayment.amountKopecks)
+								: parseKopecks(existingPayment.amountRub);
 						const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
 						const currentBalKop = existingCert.currentBalanceKopecks != null
 							? existingCert.currentBalanceKopecks

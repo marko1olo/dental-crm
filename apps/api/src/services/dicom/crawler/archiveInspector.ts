@@ -151,7 +151,11 @@ export async function inspectZipForDicom(
 		const centralDirSize = tailBuf.readUInt32LE(eocdOffset + 12);
 		const centralDirOffset = tailBuf.readUInt32LE(eocdOffset + 16);
 
-		if (centralDirOffset + centralDirSize > stats.size) {
+		const MAX_ZIP_CENTRAL_DIR_BYTES = 32 * 1024 * 1024;
+		if (
+			centralDirSize > MAX_ZIP_CENTRAL_DIR_BYTES ||
+			centralDirOffset + centralDirSize > stats.size
+		) {
 			return { isDicomArchive: false, sliceCount: 0, totalArchiveBytes: stats.size, dicomFileNames: [], confidence: 0 };
 		}
 
@@ -221,7 +225,10 @@ export async function inspectZipForDicom(
 		}
 
 		// 4. Заглядываем внутрь первого файла: читаем первые байты
-		const firstEntry = finalCandidates[0]!;
+		const firstEntry = finalCandidates[0];
+		if (!firstEntry) {
+			return { isDicomArchive: false, sliceCount: 0, totalArchiveBytes: stats.size, dicomFileNames: [], confidence: 0 };
+		}
 		const prefixBuffer = await readZipEntryPrefix(fileHandle, firstEntry, ZIP_MAX_HEADER_PREFIX);
 
 		if (!prefixBuffer || prefixBuffer.length < 132) {
@@ -313,11 +320,22 @@ export async function unpackZipArchive(
 		const centralDirSize = tailBuf.readUInt32LE(eocdOffset + 12);
 		const centralDirOffset = tailBuf.readUInt32LE(eocdOffset + 16);
 
+		const MAX_ZIP_CENTRAL_DIR_BYTES = 32 * 1024 * 1024;
+		const MAX_ZIP_ENTRY_UNCOMPRESSED_BYTES = 128 * 1024 * 1024;
+		const MAX_ZIP_TOTAL_UNCOMPRESSED_BYTES = 512 * 1024 * 1024;
+		if (
+			centralDirSize > MAX_ZIP_CENTRAL_DIR_BYTES ||
+			centralDirOffset + centralDirSize > stats.size
+		) {
+			return extractedPaths;
+		}
+
 		const cdBuf = Buffer.alloc(centralDirSize);
 		await fileHandle.read(cdBuf, 0, centralDirSize, centralDirOffset);
 
 		let cursor = 0;
 		let entryIndex = 0;
+		let cumulativeUncompressedBytes = 0;
 
 		while (cursor + 46 <= cdBuf.length && entryIndex < totalEntries) {
 			if (cdBuf.readUInt32LE(cursor) !== 0x02014b50) break;
@@ -331,12 +349,14 @@ export async function unpackZipArchive(
 
 			const nameStart = cursor + 46;
 			const nameEnd = nameStart + nameLen;
+			if (nameEnd > cdBuf.length) break;
 			const entryName = cdBuf.toString("utf8", nameStart, nameEnd);
 			cursor = nameEnd + extraLen + commLen;
 			entryIndex++;
 
 			// Пропускаем папки
 			if (entryName.endsWith("/") || entryName.endsWith("\\")) continue;
+			if (entryName.includes("..") || entryName.includes("\0")) continue;
 
 			// Тотальная фильтрация сторонних просмотрщиков (Zero-Viewer Bleed)
 			const lowerEntry = entryName.toLowerCase();
@@ -346,9 +366,21 @@ export async function unpackZipArchive(
 				continue;
 			}
 
+			if (
+				uncompSize > MAX_ZIP_ENTRY_UNCOMPRESSED_BYTES ||
+				cumulativeUncompressedBytes + uncompSize > MAX_ZIP_TOTAL_UNCOMPRESSED_BYTES ||
+				localOffset + 30 > stats.size
+			) {
+				errorsCollector?.push(`Превышен безопасный лимит размера ZIP-архива для записи ${entryName}`);
+				break;
+			}
+
 			// Защита от path traversal (Zip Slip vulnerability)
 			const safeFileName = path.basename(entryName);
-			const outFilePath = path.join(destinationDir, safeFileName);
+			if (!safeFileName || safeFileName === "." || safeFileName === "..") continue;
+			const outFilePath = path.resolve(destinationDir, safeFileName);
+			const resolvedDest = path.resolve(destinationDir);
+			if (!outFilePath.startsWith(resolvedDest + path.sep)) continue;
 
 			// Читаем Local Header
 			const localHdr = Buffer.alloc(30);
@@ -358,29 +390,55 @@ export async function unpackZipArchive(
 			const fNameLen = localHdr.readUInt16LE(26);
 			const extLen = localHdr.readUInt16LE(28);
 			const dataStart = localOffset + 30 + fNameLen + extLen;
+			if (dataStart < 0 || dataStart + compSize > stats.size) continue;
 
 			let decompressedBuf: Buffer | null = null;
 
 			if (method === 0) {
 				// Без сжатия
-				decompressedBuf = Buffer.alloc(uncompSize);
-				await fileHandle.read(decompressedBuf, 0, uncompSize, dataStart);
+				const readSize = Math.min(uncompSize, stats.size - dataStart);
+				decompressedBuf = Buffer.alloc(readSize);
+				await fileHandle.read(decompressedBuf, 0, readSize, dataStart);
 			} else if (method === 8) {
-				// Deflate
+				// Deflate with strict uncompressed limit against Zip Bomb
+				if (compSize > MAX_ZIP_ENTRY_UNCOMPRESSED_BYTES) continue;
 				const compBuf = Buffer.alloc(compSize);
 				await fileHandle.read(compBuf, 0, compSize, dataStart);
 
 				decompressedBuf = await new Promise<Buffer | null>((resolve) => {
 					const inflater = createInflateRaw();
 					const outChunks: Buffer[] = [];
-					inflater.on("data", (chunk: Buffer) => outChunks.push(chunk));
-					inflater.on("end", () => resolve(Buffer.concat(outChunks, uncompSize)));
-					inflater.on("error", () => resolve(null));
+					let totalOut = 0;
+					let failed = false;
+					inflater.on("data", (chunk: Buffer) => {
+						if (failed) return;
+						totalOut += chunk.length;
+						if (
+							totalOut > MAX_ZIP_ENTRY_UNCOMPRESSED_BYTES ||
+							cumulativeUncompressedBytes + totalOut > MAX_ZIP_TOTAL_UNCOMPRESSED_BYTES
+						) {
+							failed = true;
+							inflater.destroy();
+							resolve(null);
+							return;
+						}
+						outChunks.push(chunk);
+					});
+					inflater.on("end", () => {
+						if (!failed) resolve(Buffer.concat(outChunks, totalOut));
+					});
+					inflater.on("error", () => {
+						if (!failed) {
+							failed = true;
+							resolve(null);
+						}
+					});
 					inflater.end(compBuf);
 				});
 			}
 
 			if (!decompressedBuf || decompressedBuf.length === 0) continue;
+			cumulativeUncompressedBytes += decompressedBuf.length;
 
 			// Проверяем: это реальный DICOM файл или сопутствующий DICOMDIR / манифест
 			const isPart10 = hasDicomPart10Magic(decompressedBuf);
@@ -419,8 +477,8 @@ export async function unpackZipArchive(
 			const sliceCount = studyMetadata?.sliceCount || dicomSlices.length;
 
 			// 1. Случай 1: 1 мультифреймовый файл DICOM
-			if (dicomSlices.length === 1) {
-				const firstSlice = dicomSlices[0]!;
+			const firstSlice = dicomSlices[0];
+			if (dicomSlices.length === 1 && firstSlice !== undefined) {
 				const targetVolumePath = path.join(destinationDir, "volume_multiframe.dcm");
 				if (path.basename(firstSlice).toLowerCase() !== "volume_multiframe.dcm") {
 					try {
@@ -436,7 +494,8 @@ export async function unpackZipArchive(
 				const slicesDir = path.join(destinationDir, "slices");
 				await mkdir(slicesDir, { recursive: true });
 				for (let i = 0; i < dicomSlices.length; i++) {
-					const srcSlice = dicomSlices[i]!;
+					const srcSlice = dicomSlices[i];
+					if (!srcSlice) continue;
 					const pad = String(i + 1).padStart(4, "0");
 					const targetSlicePath = path.join(slicesDir, `slice_${pad}.dcm`);
 					try {

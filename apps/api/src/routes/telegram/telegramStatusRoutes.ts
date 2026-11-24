@@ -6,10 +6,14 @@ import { denteTelegramBotConfigs } from "../../db/schema.js";
 import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 import type { PostOpSurveyInput, TelegramBotPresetId } from "@dental/shared";
-import { getDenteTelegramBotSettings } from "./telegramCanonicalStore.js";
+import {
+	applyLoadedTelegramBotSettings,
+	getDenteTelegramBotSettings,
+} from "./telegramCanonicalStore.js";
 import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
 import {
 	TELEGRAM_BOT_PRESETS,
@@ -23,6 +27,7 @@ import {
 } from "./telegramUtils.js";
 import {
 	hydrateTelegramDomainState,
+	loadTelegramBotSettingsFromDatabase,
 	requireTelegramControlPlaneAccess,
 	resolveTelegramRuntimeContext,
 } from "./telegramRuntimeContext.js";
@@ -62,10 +67,20 @@ export function registerTelegramStatusRoutes(
 	app.get(
 		"/api/telegram/supervisor/status",
 		telegramControlPlaneRouteOptions,
-		async () => {
+		async (request) => {
+			const identity = getRequestIdentity(request);
+			const scopedOrgId =
+				identity.verified && identity.organizationId
+					? identity.organizationId
+					: undefined;
 			return {
 				ok: true,
-				supervisor: telegramMultiTenantSupervisor.getSupervisorStatus(),
+				supervisor: scopedOrgId
+					? {
+							...telegramMultiTenantSupervisor.getSupervisorStatus(),
+							tenantBotsCount: telegramMultiTenantSupervisor.listBots(scopedOrgId).length,
+						}
+					: telegramMultiTenantSupervisor.getSupervisorStatus(),
 			};
 		},
 	);
@@ -83,6 +98,20 @@ export function registerTelegramStatusRoutes(
 					ok: false,
 					error: "BotIdRequired",
 					message: "Параметр botId обязателен.",
+				});
+			}
+			const identity = getRequestIdentity(request);
+			const existingBot = telegramMultiTenantSupervisor.getBot(botId);
+			if (
+				existingBot &&
+				identity.verified &&
+				identity.organizationId &&
+				existingBot.organizationId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					ok: false,
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещено управлять ботом другой организации.",
 				});
 			}
 			try {
@@ -121,6 +150,20 @@ export function registerTelegramStatusRoutes(
 					ok: false,
 					error: "BotIdRequired",
 					message: "Параметр botId обязателен.",
+				});
+			}
+			const identity = getRequestIdentity(request);
+			const existingBot = telegramMultiTenantSupervisor.getBot(botId);
+			if (
+				existingBot &&
+				identity.verified &&
+				identity.organizationId &&
+				existingBot.organizationId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					ok: false,
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещён просмотр статуса бота другой организации.",
 				});
 			}
 			try {
@@ -275,10 +318,28 @@ export function registerTelegramStatusRoutes(
 				});
 			}
 
-			const runtimeResult = resolveTelegramRuntimeContext();
-			const organizationId =
-				request.body?.organizationId ||
-				(runtimeResult.ok ? runtimeResult.context.organizationId : "default");
+			const identity = getRequestIdentity(request);
+			const requestedOrgId = request.body?.organizationId?.trim();
+			if (
+				identity.verified &&
+				identity.organizationId &&
+				requestedOrgId &&
+				requestedOrgId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					ok: false,
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещено применять пресет к боту другой организации.",
+				});
+			}
+			const effectiveOrgId =
+				identity.verified && identity.organizationId
+					? identity.organizationId
+					: requestedOrgId;
+			const runtimeResult = resolveTelegramRuntimeContext(effectiveOrgId);
+			const organizationId = runtimeResult.ok
+				? runtimeResult.context.organizationId
+				: (effectiveOrgId || "default");
 
 			const result = await TelegramBotHostingService.applyPresetToBot({
 				organizationId,
@@ -342,13 +403,45 @@ export function registerTelegramStatusRoutes(
 	app.get(
 		"/api/telegram/status",
 		telegramControlPlaneRouteOptions,
-		async () => await buildStatus(),
+		async (request) => {
+			const identity = getRequestIdentity(request);
+			if (identity.organizationId) {
+				const loaded = await loadTelegramBotSettingsFromDatabase(
+					identity.organizationId,
+				);
+				if (loaded) {
+					applyLoadedTelegramBotSettings(loaded);
+					return await buildStatus(identity.organizationId);
+				}
+				if (resolveTelegramRuntimeContext(identity.organizationId).ok) {
+					return await buildStatus(identity.organizationId);
+				}
+			}
+			return await buildStatus();
+		},
 	);
 
 	app.get<{ Params: { organizationId: string } }>(
 		"/api/telegram/status/:organizationId",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const identity = getRequestIdentity(request);
+			if (
+				identity.verified &&
+				identity.organizationId &&
+				request.params.organizationId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещён доступ к статусу Telegram другой организации.",
+				});
+			}
+			const loaded = await loadTelegramBotSettingsFromDatabase(
+				request.params.organizationId,
+			);
+			if (loaded) {
+				applyLoadedTelegramBotSettings(loaded);
+			}
 			const runtimeResult = resolveTelegramRuntimeContext(
 				request.params.organizationId,
 			);
@@ -366,6 +459,23 @@ export function registerTelegramStatusRoutes(
 		"/api/telegram/status/:organizationId/:botConfigId",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
+			const identity = getRequestIdentity(request);
+			if (
+				identity.verified &&
+				identity.organizationId &&
+				request.params.organizationId !== identity.organizationId
+			) {
+				return reply.code(403).send({
+					error: "TelegramCrossTenantDenied",
+					message: "Запрещён доступ к статусу Telegram другой организации.",
+				});
+			}
+			const loaded = await loadTelegramBotSettingsFromDatabase(
+				request.params.organizationId,
+			);
+			if (loaded) {
+				applyLoadedTelegramBotSettings(loaded);
+			}
 			const runtimeResult = resolveTelegramRuntimeContext(
 				request.params.organizationId,
 				request.params.botConfigId,

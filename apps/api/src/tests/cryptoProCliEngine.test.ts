@@ -195,6 +195,23 @@ PrivateKey: Present
 			assert.deepStrictEqual(parseCertificatesOutput("   \n\t "), []);
 			assert.deepStrictEqual(parseCertificatesOutput("Error: No certificates found in store"), []);
 		});
+
+		it("marks certificates with missing or unparseable validity dates as isValid=false", () => {
+			const noDatesOutput = `
+Subject: CN=Тестов Врач, SNILS=12345678901
+Issuer: CN=УЦ Тест
+Serial: 1234
+SHA1 Hash: 3333333333333333333333333333333333333333
+Not valid before: invalid-date-text
+Not valid after: 
+PrivateKey: Present
+`;
+			const certs = parseCertificatesOutput(noDatesOutput);
+			assert.strictEqual(certs.length, 1);
+			assert.strictEqual(certs[0]!.isValid, false);
+			assert.strictEqual(certs[0]!.validFrom, "");
+			assert.strictEqual(certs[0]!.validTo, "");
+		});
 	});
 
 	// ─── 4. Mandate 8 & Supreme Law: Strict Ban on Fake Signatures ───────────
@@ -325,6 +342,9 @@ PrivateKey: Present
 			assert.strictEqual(body.success, true);
 			assert.strictEqual(typeof body.installed, "boolean");
 			assert.ok(body.paths);
+			assert.strictEqual(typeof body.paths.csptest, "boolean");
+			assert.strictEqual(typeof body.paths.cryptcp, "boolean");
+			assert.strictEqual(typeof body.paths.certmgr, "boolean");
 
 			const nativeResponse = await app.inject({
 				method: "GET",
@@ -463,6 +483,38 @@ PrivateKey: Present
 				assert.strictEqual(body.code, "INVALID_THUMBPRINT");
 			}
 		});
+
+		it("POST /api/crypto/sign rejects unknown fields and non-UUID documentId with 400", async () => {
+			const installed = await isCryptoProInstalled();
+			if (!installed) return;
+
+			const app = Fastify();
+			await registerCryptoProNativeRoutes(app);
+
+			const extraFieldRes = await app.inject({
+				method: "POST",
+				url: "/api/crypto/sign",
+				headers: authHeaders,
+				payload: {
+					data: "Test",
+					thumbprint: "38F8B1029384756A1029384756A1029384756A10",
+					unexpectedSpoof: true,
+				},
+			});
+			assert.strictEqual(extraFieldRes.statusCode, 400);
+
+			const badDocIdRes = await app.inject({
+				method: "POST",
+				url: "/api/crypto/sign",
+				headers: authHeaders,
+				payload: {
+					data: "Test",
+					thumbprint: "38F8B1029384756A1029384756A1029384756A10",
+					documentId: "not-a-uuid",
+				},
+			});
+			assert.strictEqual(badDocIdRes.statusCode, 400);
+		});
 	});
 
 	// ─── 7. Multi-Tenant Certificate Isolation & Anti-IDOR ───────────────────
@@ -567,6 +619,20 @@ PrivateKey: Present
 				isBypass: true,
 			};
 			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, bypassContext), true);
+		});
+
+		it("blocks ambiguous 3-char partial substring doctor/org collisions", () => {
+			const ambiguousContext: TenantCryptoContext = {
+				organizationId: "org-other",
+				clinicInn: null,
+				clinicOgrn: null,
+				clinicName: "ООО",
+				clinicLegalName: null,
+				allowedDoctorNames: ["иван", "иванов"],
+				allowedSnils: [],
+				isBypass: false,
+			};
+			assert.strictEqual(isCertificateAllowedForTenant(sampleCert, ambiguousContext), false);
 		});
 	});
 

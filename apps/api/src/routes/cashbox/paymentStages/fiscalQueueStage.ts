@@ -37,7 +37,10 @@ export async function processFiscalQueueStage(
 		effectiveVisitId,
 		newPayment,
 		resolvedCashKop,
+		resolvedCardKop,
+		resolvedSbpKop,
 		resolvedElecKop,
+		patientCoPayKopecks,
 		splitTenderCount,
 		receiptNumber,
 		issuedAt,
@@ -50,9 +53,17 @@ export async function processFiscalQueueStage(
 		throw new Error("Не удалось сформировать фискальный чек: платеж не был создан.");
 	}
 
+	const effectiveTotalKopecks =
+		patientCoPayKopecks && patientCoPayKopecks > 0n
+			? totalKopecks > patientCoPayKopecks
+				? totalKopecks - patientCoPayKopecks
+				: 0n
+			: totalKopecks;
+	const effectiveAmountRub = kopecksToRub(Number(effectiveTotalKopecks));
+
 	let enqueuedReceiptId: string | null = null;
 
-	if (totalKopecks > 0n) {
+	if (effectiveTotalKopecks > 0n) {
 		const totalAdvanceOffsetKop = requiredDepositKopecks + requiredCertificateKopecks;
 		const [enqueued] = await tx
 			.insert(fiscalReceiptQueue)
@@ -64,8 +75,8 @@ export async function processFiscalQueueStage(
 				status: "pending_print",
 				payloadJson: {
 					clientMutationId: effectiveMutationId,
-					amountRub: amountRubNumber,
-					amountKopecks: Number(totalKopecks),
+					amountRub: effectiveAmountRub,
+					amountKopecks: Number(effectiveTotalKopecks),
 					method: normalizePaymentMethod(body.method),
 					isAdvanceDeposit: body.isAdvanceDeposit ?? false,
 					calculationMethodTag1214: body.isAdvanceDeposit ? 3 : undefined,
@@ -73,14 +84,16 @@ export async function processFiscalQueueStage(
 					advanceDepositTarget:
 						body.advanceDepositTarget ||
 						(body.familyGroupId ? "family" : "patient"),
-					advancePaymentRub: body.isAdvanceDeposit ? amountRubNumber : undefined,
+					advancePaymentRub: body.isAdvanceDeposit ? effectiveAmountRub : undefined,
 					advancePaymentKopecks: body.isAdvanceDeposit
-						? Number(totalKopecks)
+						? Number(effectiveTotalKopecks)
 						: undefined,
 					cashRub: kopecksToRub(resolvedCashKop),
 					cashKopecks: resolvedCashKop,
 					electronicRub: kopecksToRub(resolvedElecKop),
 					electronicKopecks: resolvedElecKop,
+					electronicCardKopecks: resolvedCardKop,
+					sbpKopecks: resolvedSbpKop,
 					advanceOffsetRub: kopecksToRub(Number(totalAdvanceOffsetKop)),
 					advanceOffsetKopecks: Number(totalAdvanceOffsetKop),
 					depositKopecks: Number(requiredDepositKopecks),
@@ -124,8 +137,10 @@ export async function processFiscalQueueStage(
 				patientId: newPayment.patientId,
 				visitId: newPayment.visitId,
 				documentId: newPayment.documentId,
-				amountKopecks: Number(totalKopecks),
-				amountRub: amountRubNumber,
+				amountKopecks: Number(effectiveTotalKopecks),
+				amountRub: effectiveAmountRub,
+				patientCoPayKopecks: patientCoPayKopecks && patientCoPayKopecks > 0n ? Number(patientCoPayKopecks) : undefined,
+				patientCoPayRub: patientCoPayKopecks && patientCoPayKopecks > 0n ? kopecksToRub(Number(patientCoPayKopecks)) : undefined,
 				bonusAmountKopecks: Number(requiredBonusKopecks),
 				certificateAmountKopecks: Number(requiredCertificateKopecks),
 				dmsAmountKopecks: Number(requiredDmsKopecks),

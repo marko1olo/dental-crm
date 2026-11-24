@@ -6,6 +6,7 @@ import {
 } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { patientCommunicationConsents } from "../../../db/schema.js";
+import { UUID_REGEX } from "../types.js";
 
 export function registerCampaignConsentHandlers(app: FastifyInstance): void {
 	app.get(
@@ -28,6 +29,12 @@ export function registerCampaignConsentHandlers(app: FastifyInstance): void {
 			if (!organizationId) return;
 
 			const { patientId } = request.params as { patientId: string };
+			if (!UUID_REGEX.test(patientId)) {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: "Некорректный идентификатор пациента.",
+				});
+			}
 
 			const consents = await db
 				.select()

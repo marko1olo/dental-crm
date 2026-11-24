@@ -1,10 +1,8 @@
-import { computePayloadHash } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { periodontogramSnapshots } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { computeSnapshotIndices } from "../../services/periodontogramIndices.js";
 import {
@@ -44,82 +42,50 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
-
-			// Каноническая проверка idempotencyKeys: при сетевом ретрае закрытия возвращаем кэшированный 200 OK
-			const [existingRecord] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция закрытия осмотра пародонтограммы с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
-		}
-
-		const [snapshot] = await db
-			.select()
-			.from(periodontogramSnapshots)
-			.where(
-				and(
-					eq(periodontogramSnapshots.id, id),
-					eq(periodontogramSnapshots.organizationId, orgId),
-				),
-			)
-			.limit(1);
-		if (!snapshot) {
-			return reply.code(404).send({
-				error: "SnapshotNotFound",
-				message: "Осмотр не найден",
-			});
-		}
-		if (snapshot.status === "closed") {
-			return reply.code(409).send({
-				error: "SnapshotAlreadyClosed",
-				message: "Snapshot is already closed",
-			});
 		}
 
 		const parsed = closeSnapshotBodySchema.safeParse(req.body);
-		const notes =
-			parsed.success && parsed.data?.notes !== undefined
-				? parsed.data.notes
-				: snapshot.notes;
+		const parsedNotes = parsed.success ? parsed.data?.notes : undefined;
 		const identity = getRequestIdentity(req);
-		const rawUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
-		const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId);
 
-		// Дефект 2: атомарная транзакция закрытия снимка periodontogram_snapshots
-		// Чтение fetchSnapshotTeethAndSites(id, tx) перенесено внутрь единой транзакции
-		const { closed, formattedTeeth } = await db.transaction(async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
+			const [snapshot] = await tx
+				.select()
+				.from(periodontogramSnapshots)
+				.where(
+					and(
+						eq(periodontogramSnapshots.id, id),
+						eq(periodontogramSnapshots.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (!snapshot) {
+				return { kind: "not_found" as const };
+			}
+			if (snapshot.status === "closed") {
+				return { kind: "already_closed" as const };
+			}
+
+			const notes = parsedNotes !== undefined ? parsedNotes : snapshot.notes;
+			const rawUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
+			const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId);
+
 			const { teeth, sites, formattedTeeth } = await fetchSnapshotTeethAndSites(id, tx);
 			const computedIndices = computeSnapshotIndices(teeth, sites);
 
-			const [result] = await tx
+			const existingIndices =
+				snapshot.indices && typeof snapshot.indices === "object"
+					? (snapshot.indices as Record<string, unknown>)
+					: {};
+
+			const [closed] = await tx
 				.update(periodontogramSnapshots)
 				.set({
 					status: "closed",
 					closedAt: new Date(),
 					closedByUserId,
 					indices: {
-						...((snapshot.indices as Record<string, unknown>) || {}),
+						...existingIndices,
 						...computedIndices,
 					},
 					notes,
@@ -132,41 +98,26 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 					),
 				)
 				.returning();
-			return { closed: result, formattedTeeth };
+			return { kind: "ok" as const, closed, formattedTeeth };
 		});
 
-		const responsePayload = { success: true, data: { ...closed, teeth: formattedTeeth } };
-
-		if (idempotencyKey) {
-			try {
-				await db
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(req.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-							lockedAt: new Date(),
-						},
-					});
-			} catch (idemErr) {
-				req.log.warn(
-					{ err: idemErr, idempotencyKey, orgId },
-					"[periodontogram] Не удалось сохранить ключ идемпотентности",
-				);
-			}
+		if (txResult.kind === "not_found") {
+			return reply.code(404).send({
+				error: "SnapshotNotFound",
+				message: "Осмотр не найден",
+			});
+		}
+		if (txResult.kind === "already_closed") {
+			return reply.code(409).send({
+				error: "SnapshotAlreadyClosed",
+				message: "Snapshot is already closed",
+			});
 		}
 
-		return reply.send(responsePayload);
+		return reply.send({
+			success: true,
+			data: { ...txResult.closed, teeth: txResult.formattedTeeth },
+		});
 	});
 
 	/**
@@ -187,40 +138,52 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 				message: "Некорректный идентификатор осмотра",
 			});
 		}
-		const [snapshot] = await db
-			.select({
-				id: periodontogramSnapshots.id,
-				status: periodontogramSnapshots.status,
-			})
-			.from(periodontogramSnapshots)
-			.where(
-				and(
-					eq(periodontogramSnapshots.id, id),
-					eq(periodontogramSnapshots.organizationId, orgId),
-				),
-			)
-			.limit(1);
-		if (!snapshot) {
+
+		const deleteResult = await withTenantCtx(orgId, async (tx) => {
+			const [snapshot] = await tx
+				.select({
+					id: periodontogramSnapshots.id,
+					status: periodontogramSnapshots.status,
+				})
+				.from(periodontogramSnapshots)
+				.where(
+					and(
+						eq(periodontogramSnapshots.id, id),
+						eq(periodontogramSnapshots.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (!snapshot) {
+				return { kind: "not_found" as const };
+			}
+			if (snapshot.status !== "draft") {
+				return { kind: "closed" as const };
+			}
+
+			await tx
+				.delete(periodontogramSnapshots)
+				.where(
+					and(
+						eq(periodontogramSnapshots.id, id),
+						eq(periodontogramSnapshots.organizationId, orgId),
+					),
+				);
+			return { kind: "deleted" as const };
+		});
+
+		if (deleteResult.kind === "not_found") {
 			return reply.code(404).send({
 				error: "SnapshotNotFound",
 				message: "Осмотр не найден",
 			});
 		}
-		if (snapshot.status !== "draft") {
+		if (deleteResult.kind === "closed") {
 			return reply.code(409).send({
 				error: "CannotDiscardClosedSnapshot",
 				message: "Only draft snapshots can be discarded",
 			});
 		}
 
-		await db
-			.delete(periodontogramSnapshots)
-			.where(
-				and(
-					eq(periodontogramSnapshots.id, id),
-					eq(periodontogramSnapshots.organizationId, orgId),
-				),
-			);
 		return reply.code(204).send();
 	});
 }

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { UUID_SHAPE } from "../../dicomwebHelpers.js";
 import { matchPatientForDicom } from "../../imaging/patientFioBindingEngine.js";
@@ -18,11 +18,14 @@ export async function resolveStowBinding(
 	parsed: { dicomPatientName?: string | null; dicomPatientId?: string | null; dicomBirthDate?: string | null },
 ): Promise<ResolvedStowBinding> {
 	if (explicitPatientId && UUID_SHAPE.test(explicitPatientId.trim())) {
-		const [found] = await db
-			.select({ id: schema.patients.id, mergedIntoPatientId: schema.patients.mergedIntoPatientId, fullName: schema.patients.fullName })
-			.from(schema.patients)
-			.where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, explicitPatientId.trim())))
-			.limit(1);
+		const found = await withTenantCtx(organizationId, async (tx) => {
+			const [row] = await tx
+				.select({ id: schema.patients.id, mergedIntoPatientId: schema.patients.mergedIntoPatientId, fullName: schema.patients.fullName })
+				.from(schema.patients)
+				.where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, explicitPatientId.trim())))
+				.limit(1);
+			return row ?? null;
+		});
 
 		if (found) {
 			return {

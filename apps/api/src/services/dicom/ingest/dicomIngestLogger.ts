@@ -3,6 +3,10 @@
  * Заменяет неструктурированные console.warn / console.error на JSON-логи.
  */
 
+import { createApiLogger } from "../../../observability/logger.js";
+
+const apiLogger = createApiLogger("dicom:ingest");
+
 export interface DicomIngestStructuredLog {
 	level: "info" | "warn" | "error";
 	scope: "dicom-ingest" | "metadata-parser" | "cstore-scp";
@@ -14,37 +18,16 @@ export interface DicomIngestStructuredLog {
 
 export const dicomIngestLogger = {
 	info(message: string, details?: Record<string, unknown>): void {
-		const entry: DicomIngestStructuredLog = {
-			level: "info",
-			scope: "dicom-ingest",
-			message,
-			details,
-			timestamp: new Date().toISOString(),
-		};
-		process.stdout.write(`${JSON.stringify(entry)}\n`);
+		apiLogger.info({ scope: "dicom-ingest", ...(details ?? {}) }, message);
 	},
 
 	warn(message: string, error?: unknown, details?: Record<string, unknown>): void {
-		const entry: DicomIngestStructuredLog = {
-			level: "warn",
-			scope: "dicom-ingest",
-			message,
-			error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-			details,
-			timestamp: new Date().toISOString(),
-		};
-		process.stderr.write(`${JSON.stringify(entry)}\n`);
+		const errData = error instanceof Error ? { message: error.message, stack: error.stack } : error;
+		apiLogger.warn({ scope: "dicom-ingest", error: errData, ...(details ?? {}) }, message);
 	},
 
 	error(message: string, error?: unknown, details?: Record<string, unknown>): void {
-		const entry: DicomIngestStructuredLog = {
-			level: "error",
-			scope: "dicom-ingest",
-			message,
-			error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-			details,
-			timestamp: new Date().toISOString(),
-		};
-		process.stderr.write(`${JSON.stringify(entry)}\n`);
+		const errData = error instanceof Error ? { message: error.message, stack: error.stack } : error;
+		apiLogger.error({ scope: "dicom-ingest", error: errData, ...(details ?? {}) }, message);
 	},
 };

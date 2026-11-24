@@ -5,28 +5,47 @@ import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { bonusTransactions, patientReferrals, patientReferralCodes, patients, payments } from "../../db/schema.js";
-import { referralRegisterBodySchema } from "@dental/shared";
+import {
+	bonusTransactions,
+	patientReferrals,
+	patientReferralCodes,
+	patients,
+	payments,
+	referralCampaigns,
+} from "../../db/schema.js";
+import {
+	kopecksToNumericString,
+	kopecksToRubles,
+	parseKopecks,
+	referralRegisterBodySchema,
+	rublesToKopecks,
+} from "@dental/shared";
 import { executeBonusAccrual } from "./bonusBalanceService.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 
-const creditReferralSchema = z.object({
-	referrerPatientId: z.string().uuid(),
-	refereePatientId: z.string().uuid().optional(),
-	paymentId: z.string().uuid({ message: "Требуется реальный идентификатор подтвержденного платежа" }),
-	rewardRub: z.number().positive().default(1000),
-});
+const creditReferralSchema = z
+	.object({
+		referrerPatientId: z.string().uuid(),
+		refereePatientId: z.string().uuid().optional(),
+		paymentId: z.string().uuid({ message: "Требуется реальный идентификатор подтвержденного платежа" }),
+		rewardRub: z.number().positive().default(1000),
+	})
+	.strict();
 
-const attributeReferralBodySchema = z.object({
-	refereePatientId: z.string().uuid(),
-	referralCode: z.string().min(3).max(50),
-});
+const attributeReferralBodySchema = z
+	.object({
+		refereePatientId: z.string().uuid(),
+		referralCode: z.string().min(3).max(50),
+	})
+	.strict();
 
-const rewardFirstVisitBodySchema = z.object({
-	refereePatientId: z.string().uuid(),
-	paymentId: z.string().uuid().optional(),
-	paidAmountRub: z.number().positive().optional(),
-});
+const rewardFirstVisitBodySchema = z
+	.object({
+		refereePatientId: z.string().uuid(),
+		paymentId: z.string().uuid().optional(),
+		paidAmountRub: z.number().positive().optional(),
+	})
+	.strict();
 
 function generateReferralCode(fullName: string): string {
 	const parts = fullName.trim().split(/\s+/);
@@ -54,22 +73,26 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		const { patientId } = request.params as { patientId: string };
+		if (!isValidUuid(patientId)) {
+			return reply.status(400).send({ message: "Некорректный идентификатор пациента" });
+		}
 
-		return withTenantCtx(orgId, async () => {
-			const [patient] = await db
+		return withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName })
 				.from(patients)
 				.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
 				.limit(1);
 			if (!patient) return reply.status(404).send({ message: "Пациент не найден" });
 
-			const realReferrals = await db
+			const realReferrals = await tx
 				.select({
 					id: patientReferrals.id,
 					refereePatientId: patientReferrals.refereePatientId,
 					refereeFullName: patients.fullName,
 					status: patientReferrals.status,
 					qualifyingAmountRub: patientReferrals.qualifyingAmountRub,
+					qualifyingAmountKopecks: patientReferrals.qualifyingAmountKopecks,
 					rewardedAt: patientReferrals.rewardedAt,
 					createdAt: patientReferrals.createdAt,
 				})
@@ -82,17 +105,26 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const formattedReferrals = realReferrals.map((r) => ({
-				id: r.id,
-				invitedPatientName: r.refereeFullName || "Приглашённый пациент",
-				rewardRub: r.status === "rewarded" ? 1000 : 0,
-				status: r.status === "rewarded" ? "completed" : "pending",
-				isRewardCredited: r.status === "rewarded",
-				note: r.status === "rewarded"
-					? `Бонус за первый визит друга (${r.qualifyingAmountRub || "1000"} ₽)`
-					: "Ожидает первой оплаты лечения",
-				createdAt: r.createdAt.toISOString(),
-			}));
+			const formattedReferrals = realReferrals.map((r) => {
+				const qualifyingKop =
+					r.qualifyingAmountKopecks != null
+						? Number(r.qualifyingAmountKopecks)
+						: r.qualifyingAmountRub != null
+							? parseKopecks(r.qualifyingAmountRub)
+							: 100_000;
+				const qualifyingDisplayRub = kopecksToRubles(qualifyingKop);
+				return {
+					id: r.id,
+					invitedPatientName: r.refereeFullName || "Приглашённый пациент",
+					rewardRub: r.status === "rewarded" ? 1000 : 0,
+					status: r.status === "rewarded" ? "completed" : "pending",
+					isRewardCredited: r.status === "rewarded",
+					note: r.status === "rewarded"
+						? `Бонус за первый визит друга (${qualifyingDisplayRub} ₽)`
+						: "Ожидает первой оплаты лечения",
+					createdAt: r.createdAt.toISOString(),
+				};
+			});
 
 			return reply.send({
 				referrerPatientId: patientId,
@@ -210,8 +242,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { referrerPatientId, refereePatientId, paymentId, rewardRub } = parsed.data;
 
-		return withTenantCtx(orgId, async () => {
-			const res = await db.transaction(async (tx) => {
+		const res = await withTenantCtx(orgId, async (tx) => {
 				// [LOY-07] Verify payment reality in database
 				const [verifiedPayment] = await tx
 					.select()
@@ -281,16 +312,28 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					.for("update");
 
 				if (refRecord) {
+					const qualifyingKop =
+						verifiedPayment.amountKopecks != null
+							? Number(verifiedPayment.amountKopecks)
+							: verifiedPayment.amountRub != null
+								? parseKopecks(verifiedPayment.amountRub)
+								: rublesToKopecks(rewardRub);
 					await tx
 						.update(patientReferrals)
 						.set({
 							status: "rewarded",
 							qualifyingPaymentId: verifiedPayment.id,
-							qualifyingAmountRub: String(verifiedPayment.amountRub ?? rewardRub),
+							qualifyingAmountRub: kopecksToNumericString(qualifyingKop),
+							qualifyingAmountKopecks: qualifyingKop,
 							rewardedAt: new Date(),
 							updatedAt: new Date(),
 						})
-						.where(eq(patientReferrals.id, refRecord.id));
+						.where(
+							and(
+								eq(patientReferrals.id, refRecord.id),
+								eq(patientReferrals.organizationId, orgId),
+							),
+						);
 				}
 
 				return {
@@ -298,7 +341,6 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					paymentId: verifiedPayment.id,
 				};
 			});
-
 			if ("paymentNotFound" in res) {
 				return reply.status(404).send({
 					message: "Оплаченный платеж не найден в базе данных клиники",
@@ -325,7 +367,6 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				paymentId: res.paymentId,
 				message: `Начислено ${rewardRub} ₽ бонусов за подтвержденную оплату рекомендателя`,
 			});
-		});
 	});
 
 	/**
@@ -524,69 +565,90 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { refereePatientId, paymentId, paidAmountRub } = parsed.data;
 
-		return withTenantCtx(orgId, async () => {
-			return await db.transaction(async (tx) => {
-				const [referral] = await tx
+		return withTenantCtx(orgId, async (tx) => {
+			const [referral] = await tx
+				.select()
+				.from(patientReferrals)
+				.where(
+					and(
+						eq(patientReferrals.organizationId, orgId),
+						eq(patientReferrals.refereePatientId, refereePatientId),
+						eq(patientReferrals.status, "registered"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!referral) {
+				return reply.status(404).send({
+					message: "Активная реферальная привязка со статусом 'registered' не найдена",
+				});
+			}
+
+			let verifiedAmountKop: number;
+			if (paymentId) {
+				const [verifiedPayment] = await tx
 					.select()
-					.from(patientReferrals)
+					.from(payments)
 					.where(
 						and(
-							eq(patientReferrals.organizationId, orgId),
-							eq(patientReferrals.refereePatientId, refereePatientId),
-							eq(patientReferrals.status, "registered"),
+							eq(payments.id, paymentId),
+							eq(payments.organizationId, orgId),
+							eq(payments.patientId, refereePatientId),
 						),
 					)
-					.for("update")
 					.limit(1);
 
-				if (!referral) {
+				if (!verifiedPayment) {
 					return reply.status(404).send({
-						message: "Активная реферальная привязка со статусом 'registered' не найдена",
+						message: "Платеж не найден или принадлежит другому пациенту",
 					});
 				}
 
-				let verifiedAmountRub: number;
-				if (paymentId) {
-					const [verifiedPayment] = await tx
-						.select()
-						.from(payments)
-						.where(
-							and(
-								eq(payments.id, paymentId),
-								eq(payments.organizationId, orgId),
-								eq(payments.patientId, refereePatientId),
-							),
-						)
-						.limit(1);
-
-					if (!verifiedPayment) {
-						return reply.status(404).send({
-							message: "Платеж не найден или принадлежит другому пациенту",
-						});
-					}
-
-					if (verifiedPayment.status !== "paid") {
-						return reply.status(400).send({
-							message: `Начисление бонуса отклонено: платеж находится в статусе '${verifiedPayment.status}', а не 'paid'`,
-						});
-					}
-
-					verifiedAmountRub = Number(verifiedPayment.amountRub);
-				} else if (typeof paidAmountRub === "number" && paidAmountRub > 0) {
-					verifiedAmountRub = paidAmountRub;
-				} else {
+				if (verifiedPayment.status !== "paid") {
 					return reply.status(400).send({
-						message: "Необходимо указать paymentId либо paidAmountRub",
+						message: `Начисление бонуса отклонено: платеж находится в статусе '${verifiedPayment.status}', а не 'paid'`,
 					});
 				}
 
-				const minSpend = 1500;
-				if (verifiedAmountRub < minSpend) {
-					return reply.status(200).send({
-						rewarded: false,
-						message: `Сумма первого чека (${verifiedAmountRub} ₽) меньше порога активации бонуса (${minSpend} ₽)`,
-					});
-				}
+				verifiedAmountKop =
+					verifiedPayment.amountKopecks != null
+						? Number(verifiedPayment.amountKopecks)
+						: parseKopecks(verifiedPayment.amountRub ?? 0);
+			} else if (typeof paidAmountRub === "number" && paidAmountRub > 0) {
+				verifiedAmountKop = rublesToKopecks(paidAmountRub);
+			} else {
+				return reply.status(400).send({
+					message: "Необходимо указать paymentId либо paidAmountRub",
+				});
+			}
+
+			const [activeCampaign] = await tx
+				.select({
+					minFirstSpendThresholdKopecks: referralCampaigns.minFirstSpendThresholdKopecks,
+					minFirstSpendThresholdRub: referralCampaigns.minFirstSpendThresholdRub,
+				})
+				.from(referralCampaigns)
+				.where(
+					and(
+						eq(referralCampaigns.organizationId, orgId),
+						eq(referralCampaigns.isActive, true),
+					),
+				)
+				.limit(1);
+
+			const minSpendKop = activeCampaign
+				? activeCampaign.minFirstSpendThresholdKopecks != null
+					? Number(activeCampaign.minFirstSpendThresholdKopecks)
+					: parseKopecks(activeCampaign.minFirstSpendThresholdRub)
+				: 150_000;
+
+			if (verifiedAmountKop < minSpendKop) {
+				return reply.status(200).send({
+					rewarded: false,
+					message: `Сумма первого чека (${kopecksToRubles(verifiedAmountKop)} ₽) меньше порога активации бонуса (${kopecksToRubles(minSpendKop)} ₽)`,
+				});
+			}
 
 				// Award Level 1 Referrer (+1000 points) via canonical executeBonusAccrual (zero float math, FIFO expiry)
 				const referrerL1Points = 1000;
@@ -628,7 +690,8 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					.set({
 						status: "rewarded",
 						qualifyingPaymentId: paymentId || null,
-						qualifyingAmountRub: String(verifiedAmountRub),
+						qualifyingAmountRub: kopecksToNumericString(verifiedAmountKop),
+						qualifyingAmountKopecks: verifiedAmountKop,
 						rewardedAt: new Date(),
 						updatedAt: new Date(),
 					})
@@ -649,7 +712,6 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					referrerTier1RewardedPoints: referrerL1Points,
 					referrerTier2RewardedPoints: referral.parentReferrerPatientId ? 300 : 0,
 				});
-			});
 		});
 	});
 }

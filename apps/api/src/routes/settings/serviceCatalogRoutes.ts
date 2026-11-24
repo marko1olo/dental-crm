@@ -31,30 +31,10 @@ const seedCatalogBaselineSchema = z
  * Ролевой барьер: requireCatalogMutationAccess (свободный доступ для врача у кресла без 403 Forbidden).
  */
 export function registerServiceCatalogRoutes(app: FastifyInstance): void {
-	const catalogMutationPreHandler = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
-		const orgId = await requireCatalogMutationAccess(request, reply);
-		if (!orgId) return reply;
-	};
-
 	// Делегация в канонические обработчики CRUD с ролевым контролем прейскуранта (Мандат 8e / 8n)
-	app.post(
-		"/api/settings/catalog",
-		{ preHandler: catalogMutationPreHandler },
-		handleCreateCatalogItem,
-	);
-	app.put(
-		"/api/settings/catalog/:serviceId",
-		{ preHandler: catalogMutationPreHandler },
-		handleUpdateCatalogItem,
-	);
-	app.delete(
-		"/api/settings/catalog/:serviceId",
-		{ preHandler: catalogMutationPreHandler },
-		handleDeactivateCatalogItem,
-	);
+	app.post("/api/settings/catalog", handleCreateCatalogItem);
+	app.put("/api/settings/catalog/:serviceId", handleUpdateCatalogItem);
+	app.delete("/api/settings/catalog/:serviceId", handleDeactivateCatalogItem);
 
 	/**
 	 * 1-клик быстрое наполнение каталога базовыми услугами 804н (30 услуг).

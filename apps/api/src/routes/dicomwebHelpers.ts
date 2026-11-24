@@ -5,10 +5,16 @@ import path from "node:path";
 import dicomParser from "dicom-parser";
 import { and, eq, isNotNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../db/client.js";
+import { db, type TenantDb } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import * as schema from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
+import {
+	PathTraversalError,
+	TenantIsolationError,
+	validateAndResolvePacsLocalFilePath,
+} from "../services/imaging/localPacsSanitizer.js";
 
 
 /** DICOM Standard Data Dictionary Tags */
@@ -209,9 +215,37 @@ export function sampleDicomOwnerOrganizationId(): string | null {
 	return configured;
 }
 
-export async function organizationExists(organizationId: string): Promise<boolean> {
+export function resolveTenantOrSampleDicomPath(
+	organizationId: string,
+	candidatePath: string,
+): string | null {
+	const trimmed = candidatePath.trim();
+	if (!trimmed) return null;
+	const resolvedSample = sampleDicomPath();
+	const sampleOwnerOrgId = sampleDicomOwnerOrganizationId();
+	if (
+		sampleOwnerOrgId !== null &&
+		sampleOwnerOrgId === organizationId &&
+		path.resolve(trimmed) === resolvedSample
+	) {
+		return resolvedSample;
+	}
+	try {
+		return validateAndResolvePacsLocalFilePath(organizationId, trimmed);
+	} catch (err) {
+		if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+			return null;
+		}
+		return null;
+	}
+}
+
+export async function organizationExists(
+	organizationId: string,
+	targetDb: TenantDb = db,
+): Promise<boolean> {
 	if (!UUID_SHAPE.test(organizationId)) return false;
-	const [row] = await db
+	const [row] = await targetDb
 		.select({ id: schema.organizations.id })
 		.from(schema.organizations)
 		.where(eq(schema.organizations.id, organizationId))
@@ -224,8 +258,9 @@ export async function resolveInstanceFilePath(
 	studyUid: string,
 	seriesUid: string,
 	instanceUid: string,
+	targetDb: TenantDb = db,
 ): Promise<string | null> {
-	const [instanceRow] = await db
+	const [instanceRow] = await targetDb
 		.select({ storagePath: schema.imagingInstances.storagePath })
 		.from(schema.imagingInstances)
 		.innerJoin(
@@ -248,9 +283,11 @@ export async function resolveInstanceFilePath(
 		)
 		.limit(1);
 
-	if (instanceRow?.storagePath) return path.resolve(instanceRow.storagePath);
+	if (instanceRow?.storagePath) {
+		return resolveTenantOrSampleDicomPath(organizationId, instanceRow.storagePath);
+	}
 
-	const [studyRow] = await db
+	const [studyRow] = await targetDb
 		.select({ storagePath: schema.imagingStudies.storagePath })
 		.from(schema.imagingStudies)
 		.where(
@@ -263,14 +300,18 @@ export async function resolveInstanceFilePath(
 		.limit(1);
 
 	if (studyRow?.storagePath) {
-		const studyFilePath = path.resolve(studyRow.storagePath);
+		const studyFilePath = resolveTenantOrSampleDicomPath(
+			organizationId,
+			studyRow.storagePath,
+		);
 		if (
-			await fileCarriesRequestedUids(
+			studyFilePath &&
+			(await fileCarriesRequestedUids(
 				studyFilePath,
 				studyUid,
 				seriesUid,
 				instanceUid,
-			)
+			))
 		) {
 			return studyFilePath;
 		}
@@ -352,7 +393,7 @@ export async function streamDicomFileResponse(
 }
 
 /**
- * 152-ФЗ / 323-ФЗ ст. 13: Доступ к КТ / DICOM исследованиям разрешен только клиническому персоналу.
+ * Доступ к КТ / DICOM исследованиям разрешен только клиническому персоналу.
  */
 export function enforceClinicalDicomAccess(
 	request: FastifyRequest,
@@ -367,7 +408,7 @@ export function enforceClinicalDicomAccess(
 			error: "PermissionDenied",
 			permission: "clinical.dicom.read",
 			role: staffRole,
-			message: `Доступ к ${resourceNameRu} ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.`,
+			message: `Доступ к ${resourceNameRu} разрешен только клиническому персоналу.`,
 		});
 		return false;
 	}
@@ -391,7 +432,9 @@ export async function verifyDicomOrganization(
 	}
 
 	if (db) {
-		const orgKnown = await organizationExists(organizationId);
+		const orgKnown = await withTenantCtx(organizationId, async (tx) =>
+			organizationExists(organizationId, tx),
+		);
 		if (!orgKnown) {
 			reply.code(403).send({
 				error: "OrganizationUnknown",

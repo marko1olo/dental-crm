@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
 import { executeSterilizationConsumablesDeduction } from "../handlers/sterilizationConsumablesDeduction.js";
 import { buildUnsealKraftPackageResponse } from "../sterilizationHelpers.js";
@@ -59,16 +59,27 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 			}
 		}
 
-		// Если передан visitId — привязываем стерильный лоток к визиту у кресла в 1 клик
+		// Если передан visitId — привязываем стерильный лоток к визиту у кресла
 		if (data.visitId) {
-			await executeLinkDiaryTransaction({
-				organizationId,
-				visitId: data.visitId,
-				trimmedBarcode: effectiveBarcode,
-				doctorUserId: data.operatorId || null,
-				isEmergencyAdmission: false,
-				emergencyAdmissionNote: "",
-			}).catch(() => null);
+			try {
+				const visitId = data.visitId;
+				await withSavepoint(tx, (spTx) =>
+					executeLinkDiaryTransaction({
+						organizationId,
+						visitId,
+						trimmedBarcode: effectiveBarcode,
+						doctorUserId: data.operatorId || null,
+						isEmergencyAdmission: false,
+						emergencyAdmissionNote: "",
+						tx: spTx,
+					}),
+				);
+			} catch (linkErr) {
+				req.log.warn(
+					{ err: linkErr, visitId: data.visitId, barcode: effectiveBarcode },
+					"Не удалось привязать стерильный лоток к дневнику визита при вскрытии упаковки",
+				);
+			}
 		}
 
 		await executeSterilizationConsumablesDeduction({

@@ -6,8 +6,8 @@
  * БЛОК 1 (RBAC & 152-ФЗ / 323-ФЗ Врачебная тайна):
  * 1. GET /api/diaries/visit/:visitId под маркетологом -> 403 Forbidden
  * 2. GET /api/diaries/:id/revisions под маркетологом -> 403 Forbidden
- * 3. GET /api/xray/scans под маркетологом -> 403 Forbidden
- * 4. GET /api/xray/scans/:id под маркетологом -> 403 Forbidden
+ * 3. GET /api/imaging/studies под маркетологом -> 403 Forbidden
+ * 4. GET /api/imaging/studies/:id под маркетологом -> 403 Forbidden
  * 5. GET /api/anesthesia/patients/:patientId/logs под маркетологом -> 403 Forbidden
  * 6. POST /api/anesthesia/patients/:patientId/logs под маркетологом -> 403 Forbidden
  * 7. GET /api/clinical/implants/patient/:patientId под маркетологом -> 403 Forbidden
@@ -50,7 +50,7 @@ import { registerInvoiceRoutes } from "../../routes/invoices.js";
 import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
-import { registerXrayRoutes } from "../../routes/imaging/studiesRoutes.js";
+import { registerStudiesRoutes } from "../../routes/imaging/studiesRoutes.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { registerMedicalSecrecyPayloadStripping } from "../../security/medicalSecrecyWarden.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -360,7 +360,7 @@ describe("152-FZ / 323-ФЗ Deep Routes Privacy Audit & Multi-Tenant Isolation",
 		registerRouteNotFoundHandler(app);
 		registerMedicalSecrecyPayloadStripping(app);
 		await registerDiaryRoutes(app);
-		await registerXrayRoutes(app);
+		await registerStudiesRoutes(app);
 		await registerAnesthesiaRoutes(app);
 		await registerClinicalImplantRoutes(app);
 		await registerDocumentRoutes(app);
@@ -425,12 +425,12 @@ describe("152-FZ / 323-ФЗ Deep Routes Privacy Audit & Multi-Tenant Isolation",
 		assert.strictEqual(body.permission, "clinical.diary.read");
 	});
 
-	test("3. GET /api/xray/scans under Marketer is BLOCKED with 403", async (t) => {
+	test("3. GET /api/imaging/studies under Marketer is BLOCKED with 403", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans?patientId=${PATIENT_A}`,
+			url: `/api/imaging/studies?patientId=${PATIENT_A}`,
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": marketerStaffTokenA,
@@ -444,15 +444,15 @@ describe("152-FZ / 323-ФЗ Deep Routes Privacy Audit & Multi-Tenant Isolation",
 		);
 		const body = JSON.parse(res.payload);
 		assert.strictEqual(body.error, "PermissionDenied");
-		assert.strictEqual(body.permission, "clinical.xray.read");
+		assert.strictEqual(body.permission, "clinical.imaging.read");
 	});
 
-	test("4. GET /api/xray/scans/:id under Marketer is BLOCKED with 403", async (t) => {
+	test("4. GET /api/imaging/studies/:id under Marketer is BLOCKED with 403", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "GET",
-			url: `/api/xray/scans/${SCAN_A}`,
+			url: `/api/imaging/studies/${SCAN_A}`,
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": marketerStaffTokenA,
@@ -466,7 +466,7 @@ describe("152-FZ / 323-ФЗ Deep Routes Privacy Audit & Multi-Tenant Isolation",
 		);
 		const body = JSON.parse(res.payload);
 		assert.strictEqual(body.error, "PermissionDenied");
-		assert.strictEqual(body.permission, "clinical.xray.read");
+		assert.strictEqual(body.permission, "clinical.imaging.read");
 	});
 
 	test("5. GET /api/anesthesia/patients/:patientId/logs under Marketer is BLOCKED with 403", async (t) => {

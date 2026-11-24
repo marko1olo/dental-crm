@@ -57,9 +57,11 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const bodySchema = z.object({
-			port: z.number().int().min(1).max(65535).optional(),
-		});
+		const bodySchema = z
+			.object({
+				port: z.number().int().min(1).max(65535).optional(),
+			})
+			.strict();
 
 		const parsed = bodySchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
@@ -78,9 +80,10 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				status: dicomCStoreScpServer.getStats(),
 			});
 		} catch (err) {
+			request.log.error({ err }, "Failed to start DICOM SCP server");
 			return reply.code(500).send({
 				error: "DicomServerStartError",
-				message: `Не удалось запустить DICOM SCP сервер: ${err instanceof Error ? err.message : String(err)}`,
+				message: "Не удалось запустить DICOM SCP сервер.",
 			});
 		}
 	});
@@ -113,9 +116,10 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				status: dicomCStoreScpServer.getStats(),
 			});
 		} catch (err) {
+			request.log.error({ err }, "Failed to stop DICOM SCP server");
 			return reply.code(500).send({
 				error: "DicomServerStopError",
-				message: `Ошибка при остановке сервера: ${err instanceof Error ? err.message : String(err)}`,
+				message: "Ошибка при остановке DICOM SCP сервера.",
 			});
 		}
 	});
@@ -141,13 +145,15 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const bodySchema = z.object({
-			dicomBase64: z.string().min(132, "Минимальный размер Base64 DICOM — 132 байта"),
-			visitId: z.string().uuid().optional().nullable(),
-			doctorId: z.string().uuid().optional().nullable(),
-			toothCode: z.string().optional().nullable(),
-			sourceName: z.string().optional(),
-		});
+		const bodySchema = z
+			.object({
+				dicomBase64: z.string().min(132, "Минимальный размер Base64 DICOM — 132 байта").max(32 * 1024 * 1024),
+				visitId: z.string().uuid().optional().nullable(),
+				doctorId: z.string().uuid().optional().nullable(),
+				toothCode: z.string().optional().nullable(),
+				sourceName: z.string().optional(),
+			})
+			.strict();
 
 		const parsed = bodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -175,9 +181,10 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				result,
 			});
 		} catch (err) {
+			request.log.error({ err }, "Failed to ingest DICOM buffer");
 			return reply.code(500).send({
 				error: "DicomIngestError",
-				message: `Сбой импорта DICOM: ${err instanceof Error ? err.message : String(err)}`,
+				message: "Сбой импорта DICOM-исследования.",
 			});
 		}
 	});
@@ -203,13 +210,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const bodySchema = z.object({
-			watchDirectory: z.string().optional(),
-		});
+		const bodySchema = z
+			.object({
+				watchDirectory: z.string().optional(),
+			})
+			.strict();
 		const parsed = bodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запуска Vatech Bridge.",
+			});
+		}
 
 		let sanitizedWatchDir: string | undefined;
-		if (parsed.success && parsed.data.watchDirectory) {
+		if (parsed.data.watchDirectory) {
 			try {
 				sanitizedWatchDir = validateAndResolvePacsLocalFilePath(orgId, parsed.data.watchDirectory);
 			} catch (err: unknown) {
@@ -228,9 +243,10 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				status: vatechDirectBridgeService.getStatus(),
 			});
 		} catch (err) {
+			request.log.error({ err }, "Failed to start Vatech bridge");
 			return reply.code(500).send({
 				error: "VatechBridgeStartError",
-				message: `Ошибка запуска мониторинга Vatech: ${err instanceof Error ? err.message : String(err)}`,
+				message: "Ошибка запуска мониторинга Vatech.",
 			});
 		}
 	});
@@ -264,9 +280,10 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 				status: vatechDirectBridgeService.getStatus(),
 			});
 		} catch (err) {
+			request.log.error({ err }, "Failed to stop Vatech bridge");
 			return reply.code(500).send({
 				error: "VatechBridgeStopError",
-				message: `Ошибка при остановке мониторинга: ${err instanceof Error ? err.message : String(err)}`,
+				message: "Ошибка при остановке мониторинга Vatech.",
 			});
 		}
 	});
@@ -292,13 +309,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const bodySchema = z.object({
-			directoryPath: z.string().optional(),
-		});
+		const bodySchema = z
+			.object({
+				directoryPath: z.string().optional(),
+			})
+			.strict();
 		const parsed = bodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры сканирования Vatech.",
+			});
+		}
 
 		let targetDir: string;
-		if (parsed.success && parsed.data.directoryPath) {
+		if (parsed.data.directoryPath) {
 			try {
 				targetDir = validateAndResolvePacsLocalFilePath(orgId, parsed.data.directoryPath);
 			} catch (err: unknown) {

@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, notInArray } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, parseKopecks } from "@dental/shared";
-import { db, type TenantDb } from "../../db/client.js";
+import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, parseKopecks, toExactKopecks } from "@dental/shared";
+import { withSavepoint, withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
 export interface LinkOrthoBillingParams {
@@ -27,6 +27,18 @@ export interface OrthoBillingResult {
 	error?: string | undefined;
 }
 
+function resolveOrthoInvoiceTotalKopecks(invoice: {
+	totalPriceKopecks?: bigint | null;
+	totalAmountRub?: string | number | null;
+	totalRub?: string | number | null;
+}): bigint {
+	const legacyKopecks = BigInt(parseKopecks(invoice.totalAmountRub ?? invoice.totalRub ?? 0));
+	if (typeof invoice.totalPriceKopecks === "bigint" && (invoice.totalPriceKopecks > 0n || legacyKopecks === 0n)) {
+		return invoice.totalPriceKopecks;
+	}
+	return legacyKopecks;
+}
+
 /**
  * DEF-ORTHO-05 / Red Team Досье: Связка ортодонтических активаций с прейскурантом и кассовым чеком.
  * DEF-ORTHO-API-01: priceKopecks — единственный источник правды (SSOT); priceRub рассчитывается автоматически из priceKopecks.
@@ -36,6 +48,7 @@ export interface OrthoBillingResult {
 export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingParams): Promise<OrthoBillingResult> {
 	const { organizationId, patientId, visitId, serviceCode, serviceName, priceKopecks } = params;
 	const itemKopecks = BigInt(priceKopecks);
+	const exactItemKopecks = toExactKopecks(itemKopecks);
 	const priceRub = kopecksToRubles(itemKopecks);
 
 	if (!visitId) {
@@ -44,7 +57,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceCode,
 			serviceName,
 			priceRub,
-			priceKopecks: Number(itemKopecks),
+			priceKopecks: exactItemKopecks,
 			amountKopecks: itemKopecks,
 		};
 	}
@@ -55,7 +68,14 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 				await tx
 					.select()
 					.from(patientInvoices)
-					.where(and(eq(patientInvoices.organizationId, organizationId), eq(patientInvoices.visitId, visitId)))
+					.where(
+						and(
+							eq(patientInvoices.organizationId, organizationId),
+							eq(patientInvoices.patientId, patientId),
+							eq(patientInvoices.visitId, visitId),
+							notInArray(patientInvoices.status, ["voided", "paid"]),
+						),
+					)
 					.limit(1)
 					.for("update")
 			)[0];
@@ -75,11 +95,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					.returning();
 				invoice = created;
 			} else {
-				// Мандат 8bm: Zero-Float Drift — суммирование сметы счёта строго в целочисленных копейках через parseKopecks без parseFloat и дробных погрешностей IEEE 754
-				const rawAmount = invoice.totalAmountRub ?? invoice.totalRub;
-				const existingKopecks = (invoice.totalPriceKopecks && invoice.totalPriceKopecks > 0n)
-					? BigInt(invoice.totalPriceKopecks)
-					: BigInt(parseKopecks(rawAmount));
+				const existingKopecks = resolveOrthoInvoiceTotalKopecks(invoice);
 				const newTotalKopecks = existingKopecks + itemKopecks;
 				const newTotalRub = kopecksToRubles(newTotalKopecks);
 				await tx
@@ -99,8 +115,8 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					name: serviceName,
 					serviceCode,
 					quantity: "1",
-					unitPriceKopecks: Number(itemKopecks),
-					totalPriceKopecks: Number(itemKopecks),
+					unitPriceKopecks: exactItemKopecks,
+					totalPriceKopecks: exactItemKopecks,
 					discountPercent: "0",
 				});
 			}
@@ -111,12 +127,14 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 				serviceCode,
 				serviceName,
 				priceRub,
-				priceKopecks: Number(itemKopecks),
+				priceKopecks: exactItemKopecks,
 				amountKopecks: itemKopecks,
 			};
 		};
 
-		return params.tx ? await runWithTx(params.tx) : await db.transaction(runWithTx);
+		return params.tx
+			? await withSavepoint(params.tx, runWithTx)
+			: await withTenantCtx(organizationId, runWithTx);
 	} catch (err) {
 		if (params.logger) {
 			params.logger.warn(
@@ -135,7 +153,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceCode,
 			serviceName,
 			priceRub,
-			priceKopecks: Number(itemKopecks),
+			priceKopecks: exactItemKopecks,
 			amountKopecks: itemKopecks,
 			error: err instanceof Error ? err.message : String(err),
 		};

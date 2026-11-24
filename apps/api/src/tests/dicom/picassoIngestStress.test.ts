@@ -41,14 +41,14 @@ import {
 import {
 	resolveOrAutoCreatePatientForDicom,
 } from "../../services/dicom/dicomPatientAutoBinder.js";
-import { db } from "../../db/client.js";
+import { db, dbRaw } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 
 const BARABASH_DIR = "C:/Ez3D2009/Picasso/BARABASH-SVETLANA-VIKTOROVNA_54_1.2.276.0.7230010.3.1.2.1733540729.9540.1631609468.630";
 const IVASHENKO_DIR = "C:/Ez3D2009/Picasso/IVASHENKOVYACHESLAV-VASILEVICH_31_1.76.380.18.15015219309720021120100417161581332062410575";
 
 const TEST_ORG_ID = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
-const TEST_DOCTOR_ID = "doctor-0000-1111-2222-333333333333";
+const TEST_DOCTOR_ID = "00000000-0000-4000-8000-000000000002";
 
 /**
  * Извлечение чисел из Drizzle SQL chunk (например, для атомарных инкрементов)
@@ -266,9 +266,16 @@ class MockDbEngine {
 			return chain;
 		};
 
+		const txProxy = {
+			select,
+			insert,
+			update,
+			execute: () => Promise.resolve([]),
+		};
 		t.mock.method(db, "select", select);
 		t.mock.method(db, "insert", insert);
 		t.mock.method(db, "update", update);
+		t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => Promise<unknown>) => cb(txProxy));
 	}
 }
 
@@ -284,7 +291,9 @@ test("1. Парсинг подлинных 16-битных КТ-снимков P
 	assert.strictEqual(barabashFiles.length, 400, "В исследовании Barabash должно быть ровно 400 срезов DICOM");
 
 	// Проверяем первый срез (0000)
-	const slice0000Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFiles[0]!));
+	const barabashFirstFile = barabashFiles[0];
+	assert.ok(barabashFirstFile, "Первый срез Barabash должен существовать");
+	const slice0000Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFirstFile));
 	const meta0000 = parseDicomIngestBuffer(slice0000Buf);
 
 	assert.strictEqual(meta0000.patientFullName, "BARABASH SVETLANA VIKTOROVNA", "ФИО пациента");
@@ -302,7 +311,9 @@ test("1. Парсинг подлинных 16-битных КТ-снимков P
 	assert.ok(meta0000.suggestedStudyTitle.includes("КЛКТ"), "Заголовок КЛКТ");
 
 	// Проверяем промежуточный срез (0200) и последний (0399)
-	const slice0200Buf = await fs.readFile(path.join(BARABASH_DIR, barabashFiles[200]!));
+	const barabashMidFile = barabashFiles[200];
+	assert.ok(barabashMidFile, "Срез 200 Barabash должен существовать");
+	const slice0200Buf = await fs.readFile(path.join(BARABASH_DIR, barabashMidFile));
 	const meta0200 = parseDicomIngestBuffer(slice0200Buf);
 	assert.strictEqual(meta0200.rows, 800);
 	assert.strictEqual(meta0200.columns, 800);
@@ -312,7 +323,9 @@ test("1. Парсинг подлинных 16-битных КТ-снимков P
 	const ivashenkoFiles = (await fs.readdir(IVASHENKO_DIR)).filter((f) => f.endsWith(".dcm")).sort();
 	assert.ok(ivashenkoFiles.length >= 600, "В исследовании Ivashenko должно быть более 600 срезов");
 
-	const ivaSliceBuf = await fs.readFile(path.join(IVASHENKO_DIR, ivashenkoFiles[0]!));
+	const ivaFirstFile = ivashenkoFiles[0];
+	assert.ok(ivaFirstFile, "Первый срез Ivashenko должен существовать");
+	const ivaSliceBuf = await fs.readFile(path.join(IVASHENKO_DIR, ivaFirstFile));
 	const ivaMeta = parseDicomIngestBuffer(ivaSliceBuf);
 
 	assert.strictEqual(ivaMeta.patientFullName, "IVASHENKO VYACHESLAV VASILEVICH");
@@ -482,7 +495,8 @@ test("4. Интеллектуальная привязка к пациенту: 
 		assert.strictEqual(res.matchMethod, "auto_created_from_dicom");
 
 		// Проверяем запись в базе
-		const createdPatient = mockDb.patients.get(res.patientId!);
+		assert.ok(res.patientId, "res.patientId должен присутствовать");
+		const createdPatient = mockDb.patients.get(res.patientId);
 		assert.ok(createdPatient, "Пациент должен быть сохранен в таблице patients");
 		assert.strictEqual(createdPatient.fullName, "BARABASH SVETLANA VIKTOROVNA");
 		assert.strictEqual(createdPatient.administrativeProfile.chartNumber, "6036");

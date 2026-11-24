@@ -3,7 +3,6 @@ import test from "node:test";
 import {
 	browserRenderableImageMimeType,
 	classifyImagingFile,
-	generateDicomPreviewFallbackSvg,
 	inspectLightweightPreviewFeasibility,
 	isDicomOrRadiographFile,
 } from "./previewFormats.js";
@@ -79,16 +78,5 @@ test("classifyImagingFile & inspectLightweightPreviewFeasibility", async (t) => 
 		const feasibility = inspectLightweightPreviewFeasibility("xray.tif");
 		assert.equal(feasibility.isRenderableViaWeb, false);
 		assert.equal(feasibility.suggestedViewer, "external_app");
-	});
-
-	await t.test("generates fallback SVG without CPU hang", () => {
-		const svg = generateDicomPreviewFallbackSvg({
-			modality: "CBCT",
-			title: "КЛКТ 3D двух челюстей",
-			patientName: "Иванов И.И.",
-		});
-		assert.ok(svg.includes("<svg"));
-		assert.ok(svg.includes("CBCT"));
-		assert.ok(svg.includes("КЛКТ 3D двух челюстей"));
 	});
 });

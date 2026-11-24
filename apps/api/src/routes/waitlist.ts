@@ -2,37 +2,43 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
-	requireResolvedOrganizationId,
-	requireResolvedStaffOrAdminOrganizationId,
+	requireClinicalMutationContext,
+	requireClinicalReadContext,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
+import { onTenantTxCommit, withSavepoint, withTenantCtx } from "../db/rls.js";
 import { appointmentWaitlists, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import { createCrmLeadFromPublicIntake } from "./publicBooking/bookingModules/publicBookingMutations.js";
 
-const waitlistParamsSchema = z.object({
-	id: z.string().uuid("Некорректный UUID записи листа ожидания"),
-});
+const waitlistParamsSchema = z
+	.object({
+		id: z.string().uuid("Некорректный UUID записи листа ожидания"),
+	})
+	.strict();
 
-const waitlistTimeRangeSchema = z.object({
-	day: z.string(),
-	slot: z.string(),
-	notes: z.string().optional(),
-	urgency: z.string().optional(),
-	treatmentCategory: z.string().optional(),
-});
+const waitlistTimeRangeSchema = z
+	.object({
+		day: z.string(),
+		slot: z.string(),
+		notes: z.string().optional(),
+		urgency: z.string().optional(),
+		treatmentCategory: z.string().optional(),
+	})
+	.strict();
 
-const waitlistSchema = z.object({
-	patientId: z.string().uuid().or(z.literal("")).nullable().optional(),
-	patientName: z.string().optional(),
-	patientPhone: z.string().optional(),
-	preferredDoctorId: z.string().uuid().nullable().optional(),
-	priorityLevel: z.enum(["high", "medium", "low"]).default("medium"),
-	notes: z.string().optional(),
-	urgency: z.string().optional(),
-	treatmentCategory: z.string().optional(),
-	preferredTimeRanges: z.array(waitlistTimeRangeSchema).optional(),
-});
+const waitlistSchema = z
+	.object({
+		patientId: z.string().uuid().or(z.literal("")).nullable().optional(),
+		patientName: z.string().optional(),
+		patientPhone: z.string().optional(),
+		preferredDoctorId: z.string().uuid().nullable().optional(),
+		priorityLevel: z.enum(["high", "medium", "low"]).default("medium"),
+		notes: z.string().optional(),
+		urgency: z.string().optional(),
+		treatmentCategory: z.string().optional(),
+		preferredTimeRanges: z.array(waitlistTimeRangeSchema).optional(),
+	})
+	.strict();
 
 function extractWaitlistMetadata(preferredTimeRanges: unknown): {
 	notes: string;
@@ -79,38 +85,53 @@ export async function registerWaitlistRoutes(
 	 */
 	app.get("/api/waitlist", async (request, reply) => {
 		try {
-			const orgId = await requireResolvedOrganizationId(
+			const context = await requireClinicalReadContext(
 				request,
 				reply,
 				"waitlist read",
 			);
-			if (!orgId) return;
+			if (!context) return;
+			const orgId = context.organizationId;
 
-			const items = await db
-				.select({
-					id: appointmentWaitlists.id,
-					patientId: appointmentWaitlists.patientId,
-					patientName: patients.fullName,
-					patientPhone: patients.phone,
-					storedPatientName: appointmentWaitlists.patientName,
-					storedPatientPhone: appointmentWaitlists.patientPhone,
-					preferredDoctorId: appointmentWaitlists.preferredDoctorId,
-					preferredDoctorName: users.fullName,
-					priorityLevel: appointmentWaitlists.priorityLevel,
-					preferredTimeRanges: appointmentWaitlists.preferredTimeRanges,
-					status: appointmentWaitlists.status,
-					createdAt: appointmentWaitlists.createdAt,
-				})
-				.from(appointmentWaitlists)
-				.leftJoin(patients, eq(patients.id, appointmentWaitlists.patientId))
-				.leftJoin(users, eq(users.id, appointmentWaitlists.preferredDoctorId))
-				.where(
-					and(
-						eq(appointmentWaitlists.organizationId, orgId),
-						inArray(appointmentWaitlists.status, ["active", "waiting"]),
-					),
-				)
-				.orderBy(desc(appointmentWaitlists.createdAt));
+			const items = await withTenantCtx(orgId, async (tx) =>
+				tx
+					.select({
+						id: appointmentWaitlists.id,
+						patientId: appointmentWaitlists.patientId,
+						patientName: patients.fullName,
+						patientPhone: patients.phone,
+						storedPatientName: appointmentWaitlists.patientName,
+						storedPatientPhone: appointmentWaitlists.patientPhone,
+						preferredDoctorId: appointmentWaitlists.preferredDoctorId,
+						preferredDoctorName: users.fullName,
+						priorityLevel: appointmentWaitlists.priorityLevel,
+						preferredTimeRanges: appointmentWaitlists.preferredTimeRanges,
+						status: appointmentWaitlists.status,
+						createdAt: appointmentWaitlists.createdAt,
+					})
+					.from(appointmentWaitlists)
+					.leftJoin(
+						patients,
+						and(
+							eq(patients.id, appointmentWaitlists.patientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.leftJoin(
+						users,
+						and(
+							eq(users.id, appointmentWaitlists.preferredDoctorId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.where(
+						and(
+							eq(appointmentWaitlists.organizationId, orgId),
+							inArray(appointmentWaitlists.status, ["active", "waiting"]),
+						),
+					)
+					.orderBy(desc(appointmentWaitlists.createdAt)),
+			);
 
 			return items.map((item) => {
 				const meta = extractWaitlistMetadata(item.preferredTimeRanges);
@@ -148,12 +169,13 @@ export async function registerWaitlistRoutes(
 	 */
 	app.post("/api/waitlist", async (request, reply) => {
 		try {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"waitlist write",
 			);
-			if (!orgId) return;
+			if (!context) return;
+			const orgId = context.organizationId;
 
 			const parsed = waitlistSchema.safeParse(request.body);
 			if (!parsed.success) {
@@ -164,129 +186,184 @@ export async function registerWaitlistRoutes(
 			}
 
 			const data = parsed.data;
-
-			let patient: typeof patients.$inferSelect | undefined;
-
-			// 1. Поиск по валидному patientId
-			if (data.patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patientId)) {
-				const [found] = await db
-					.select()
-					.from(patients)
-					.where(
-						and(
-							eq(patients.id, data.patientId),
-							eq(patients.organizationId, orgId),
-						),
-					)
-					.limit(1);
-				patient = found;
-			}
-
-			// 2. Если patientId пустой или не найден — пробуем найти по телефону в организации
 			const cleanPhone = data.patientPhone?.trim();
-			if (!patient && cleanPhone && cleanPhone.length > 0) {
-				const [foundByPhone] = await db
-					.select()
-					.from(patients)
-					.where(
-						and(
-							eq(patients.phone, cleanPhone),
-							eq(patients.organizationId, orgId),
-						),
-					)
-					.limit(1);
-				patient = foundByPhone;
-			}
-
-			// 3. Если всё ещё не найден, но указано имя — создаем легкого пациента-кандидата (Lightweight Patient)
 			const cleanName = data.patientName?.trim();
-			if (!patient && cleanName && cleanName.length > 0) {
-				const [newPatient] = await db
-					.insert(patients)
+
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				let patient: typeof patients.$inferSelect | undefined;
+
+				// 1. Поиск по валидному patientId
+				if (data.patientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patientId)) {
+					const [found] = await tx
+						.select()
+						.from(patients)
+						.where(
+							and(
+								eq(patients.id, data.patientId),
+								eq(patients.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					patient = found;
+				}
+
+				// 2. Если patientId пустой или не найден — пробуем найти по телефону в организации
+				if (!patient && cleanPhone && cleanPhone.length > 0) {
+					const [foundByPhone] = await tx
+						.select()
+						.from(patients)
+						.where(
+							and(
+								eq(patients.phone, cleanPhone),
+								eq(patients.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					patient = foundByPhone;
+				}
+
+				// 3. Если всё ещё не найден, но указано имя — создаем легкого пациента-кандидата (Lightweight Patient)
+				if (!patient && cleanName && cleanName.length > 0) {
+					const [newPatient] = await tx
+						.insert(patients)
+						.values({
+							organizationId: orgId,
+							fullName: cleanName,
+							phone: cleanPhone || null,
+						})
+						.returning();
+					patient = newPatient;
+				}
+
+				if (!patient) {
+					return { kind: "patient_required" as const };
+				}
+
+				// If a preferred doctor is named, it must be a doctor of this organization.
+				if (data.preferredDoctorId) {
+					const [doctor] = await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, data.preferredDoctorId),
+								eq(users.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (!doctor) {
+						return { kind: "doctor_not_found" as const };
+					}
+				}
+
+				const normalizedTimeRanges =
+					data.preferredTimeRanges && data.preferredTimeRanges.length > 0
+						? data.preferredTimeRanges.map((tr, index) =>
+								index === 0
+									? {
+											...tr,
+											...(data.notes !== undefined && !tr.notes
+												? { notes: data.notes }
+												: {}),
+											...(data.urgency !== undefined && !tr.urgency
+												? { urgency: data.urgency }
+												: {}),
+											...(data.treatmentCategory !== undefined &&
+											!tr.treatmentCategory
+												? { treatmentCategory: data.treatmentCategory }
+												: {}),
+										}
+									: tr,
+							)
+						: data.notes || data.urgency || data.treatmentCategory
+							? [
+									{
+										day: "Любой",
+										slot: "any",
+										...(data.notes ? { notes: data.notes } : {}),
+										...(data.urgency ? { urgency: data.urgency } : {}),
+										...(data.treatmentCategory
+											? { treatmentCategory: data.treatmentCategory }
+											: {}),
+									},
+								]
+							: [];
+
+				const [newItem] = await tx
+					.insert(appointmentWaitlists)
 					.values({
 						organizationId: orgId,
-						fullName: cleanName,
-						phone: cleanPhone || null,
+						patientId: patient.id,
+						patientName: patient.fullName,
+						patientPhone: patient.phone,
+						preferredDoctorId: data.preferredDoctorId ?? null,
+						priorityLevel: data.priorityLevel,
+						preferredTimeRanges: normalizedTimeRanges,
+						status: "active",
 					})
 					.returning();
-				patient = newPatient;
-			}
 
-			if (!patient) {
+				if (!newItem) {
+					return { kind: "not_saved" as const };
+				}
+
+				const meta = extractWaitlistMetadata(newItem.preferredTimeRanges);
+				const responseItem = {
+					...newItem,
+					patientName: patient.fullName,
+					patientPhone: patient.phone,
+					notes: meta.notes,
+					...(meta.urgency ? { urgency: meta.urgency } : {}),
+					...(meta.treatmentCategory
+						? { treatmentCategory: meta.treatmentCategory }
+						: {}),
+				};
+
+				// Create CRM Lead for the waitlist addition (DEF-PB-03) in SAVEPOINT
+				try {
+					const patientFullName = patient.fullName;
+					const patientPhone = patient.phone || "";
+					await withSavepoint(tx, (spTx) =>
+						createCrmLeadFromPublicIntake(spTx, {
+							organizationId: orgId,
+							patientName: patientFullName,
+							patientPhone,
+							source: "waitlist",
+							receiptStatus: "WAITLIST",
+							comment: `Лист ожидания: ${meta.notes || ""}`.trim(),
+							doctorId: data.preferredDoctorId || undefined,
+						}),
+					);
+				} catch (leadErr: unknown) {
+					request.log.warn(
+						{ err: leadErr, orgId, waitlistId: newItem.id },
+						"[waitlist] Не удалось создать CRM-лид для записи листа ожидания",
+					);
+				}
+
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "WAITLIST_UPDATED",
+						payload: responseItem,
+					});
+				});
+
+				return { kind: "ok" as const, responseItem };
+			});
+
+			if (txResult.kind === "patient_required") {
 				return reply.code(400).send({
 					error: "PatientRequired",
 					message: "Необходимо выбрать пациента или указать ФИО для добавления в лист ожидания.",
 				});
 			}
-
-			// If a preferred doctor is named, it must be a doctor of this organization.
-			if (data.preferredDoctorId) {
-				const [doctor] = await db
-					.select({ id: users.id })
-					.from(users)
-					.where(
-						and(
-							eq(users.id, data.preferredDoctorId),
-							eq(users.organizationId, orgId),
-						),
-					)
-					.limit(1);
-				if (!doctor) {
-					return reply.code(404).send({
-						error: "DoctorNotFound",
-						message: "Выбранный врач не найден в вашей клинике.",
-					});
-				}
+			if (txResult.kind === "doctor_not_found") {
+				return reply.code(404).send({
+					error: "DoctorNotFound",
+					message: "Выбранный врач не найден в вашей клинике.",
+				});
 			}
-
-			const normalizedTimeRanges =
-				data.preferredTimeRanges && data.preferredTimeRanges.length > 0
-					? data.preferredTimeRanges.map((tr, index) =>
-							index === 0
-								? {
-										...tr,
-										...(data.notes !== undefined && !tr.notes
-											? { notes: data.notes }
-											: {}),
-										...(data.urgency !== undefined && !tr.urgency
-											? { urgency: data.urgency }
-											: {}),
-										...(data.treatmentCategory !== undefined &&
-										!tr.treatmentCategory
-											? { treatmentCategory: data.treatmentCategory }
-											: {}),
-									}
-								: tr,
-						)
-					: data.notes || data.urgency || data.treatmentCategory
-						? [
-								{
-									day: "Любой",
-									slot: "any",
-									...(data.notes ? { notes: data.notes } : {}),
-									...(data.urgency ? { urgency: data.urgency } : {}),
-									...(data.treatmentCategory
-										? { treatmentCategory: data.treatmentCategory }
-										: {}),
-								},
-							]
-						: [];
-
-			const [newItem] = await db
-				.insert(appointmentWaitlists)
-				.values({
-					organizationId: orgId,
-					patientId: patient.id,
-					patientName: patient.fullName,
-					patientPhone: patient.phone,
-					preferredDoctorId: data.preferredDoctorId ?? null,
-					priorityLevel: data.priorityLevel,
-					preferredTimeRanges: normalizedTimeRanges,
-					status: "active",
-				})
-				.returning();
-
-			if (!newItem) {
+			if (txResult.kind === "not_saved") {
 				return reply.code(500).send({
 					error: "WaitlistNotSaved",
 					message:
@@ -294,40 +371,7 @@ export async function registerWaitlistRoutes(
 				});
 			}
 
-			const meta = extractWaitlistMetadata(newItem.preferredTimeRanges);
-			const responseItem = {
-				...newItem,
-				patientName: patient.fullName,
-				patientPhone: patient.phone,
-				notes: meta.notes,
-				...(meta.urgency ? { urgency: meta.urgency } : {}),
-				...(meta.treatmentCategory
-					? { treatmentCategory: meta.treatmentCategory }
-					: {}),
-			};
-
-			// Create CRM Lead for the waitlist addition (DEF-PB-03)
-			try {
-				await createCrmLeadFromPublicIntake(db, {
-					organizationId: orgId,
-					patientName: patient.fullName,
-					patientPhone: patient.phone || "",
-					source: "waitlist",
-					receiptStatus: "WAITLIST",
-					comment: `Лист ожидания: ${meta.notes || ""}`.trim(),
-					doctorId: data.preferredDoctorId || undefined,
-				});
-			} catch {
-				// Non-blocking CRM lead sync
-			}
-
-			// Notify UI via WebSocket
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "WAITLIST_UPDATED",
-				payload: responseItem,
-			});
-
-			return responseItem;
+			return txResult.responseItem;
 		} catch (error: unknown) {
 			const msg = error instanceof Error ? error.message : String(error);
 			request.log.error({ error: msg }, "Ошибка при добавлении пациента в лист ожидания");
@@ -344,12 +388,13 @@ export async function registerWaitlistRoutes(
 	 */
 	app.put("/api/waitlist/:id", async (request, reply) => {
 		try {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"waitlist write",
 			);
-			if (!orgId) return;
+			if (!context) return;
+			const orgId = context.organizationId;
 
 			const parsedParams = waitlistParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
@@ -360,19 +405,23 @@ export async function registerWaitlistRoutes(
 			}
 			const { id } = parsedParams.data;
 
-			const updateSchema = z.object({
-				preferredDoctorId: z.string().uuid().nullable().optional(),
-				priorityLevel: z.enum(["high", "medium", "low"]).optional(),
-				preferredTimeRanges: z
-					.array(
-						z.object({
-							day: z.string(),
-							slot: z.string(),
-						}),
-					)
-					.optional(),
-				status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]).optional(),
-			});
+			const updateSchema = z
+				.object({
+					preferredDoctorId: z.string().uuid().nullable().optional(),
+					priorityLevel: z.enum(["high", "medium", "low"]).optional(),
+					preferredTimeRanges: z
+						.array(
+							z
+								.object({
+									day: z.string(),
+									slot: z.string(),
+								})
+								.strict(),
+						)
+						.optional(),
+					status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]).optional(),
+				})
+				.strict();
 
 			const parsed = updateSchema.safeParse(request.body);
 			if (!parsed.success) {
@@ -384,53 +433,65 @@ export async function registerWaitlistRoutes(
 
 			const updateData = parsed.data;
 
-			if (updateData.preferredDoctorId) {
-				const [doctor] = await db
-					.select({ id: users.id })
-					.from(users)
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				if (updateData.preferredDoctorId) {
+					const [doctor] = await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, updateData.preferredDoctorId),
+								eq(users.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (!doctor) {
+						return { kind: "doctor_not_found" as const };
+					}
+				}
+
+				const [updated] = await tx
+					.update(appointmentWaitlists)
+					.set({
+						...updateData,
+						updatedAt: new Date(),
+					})
 					.where(
 						and(
-							eq(users.id, updateData.preferredDoctorId),
-							eq(users.organizationId, orgId),
+							eq(appointmentWaitlists.id, id),
+							eq(appointmentWaitlists.organizationId, orgId),
 						),
 					)
-					.limit(1);
-				if (!doctor) {
-					return reply.code(404).send({
-						error: "DoctorNotFound",
-						message: "Выбранный врач не найден в вашей клинике.",
-					});
+					.returning();
+
+				if (!updated) {
+					return { kind: "not_found" as const };
 				}
+
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(orgId, {
+						type: "WAITLIST_UPDATED",
+						payload: updated,
+					});
+				});
+
+				return { kind: "ok" as const, updated };
+			});
+
+			if (txResult.kind === "doctor_not_found") {
+				return reply.code(404).send({
+					error: "DoctorNotFound",
+					message: "Выбранный врач не найден в вашей клинике.",
+				});
 			}
-
-			const [updated] = await db
-				.update(appointmentWaitlists)
-				.set({
-					...updateData,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(appointmentWaitlists.id, id),
-						eq(appointmentWaitlists.organizationId, orgId),
-					),
-				)
-				.returning();
-
-			if (!updated) {
+			if (txResult.kind === "not_found") {
 				return reply.code(404).send({
 					error: "WaitlistItemNotFound",
 					message: "Запись листа ожидания не найдена.",
 				});
 			}
 
-			// Notify UI via WebSocket
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "WAITLIST_UPDATED",
-				payload: updated,
-			});
-
-			return updated;
+			return txResult.updated;
 		} catch (error: unknown) {
 			const msg = error instanceof Error ? error.message : String(error);
 			request.log.error({ error: msg }, "Ошибка при обновлении записи листа ожидания");
@@ -447,12 +508,13 @@ export async function registerWaitlistRoutes(
 	 */
 	app.patch("/api/waitlist/:id/status", async (request, reply) => {
 		try {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"waitlist write",
 			);
-			if (!orgId) return;
+			if (!context) return;
+			const orgId = context.organizationId;
 
 			const parsedParams = waitlistParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
@@ -462,9 +524,11 @@ export async function registerWaitlistRoutes(
 				});
 			}
 			const { id } = parsedParams.data;
-			const statusSchema = z.object({
-				status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]),
-			});
+			const statusSchema = z
+				.object({
+					status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]),
+				})
+				.strict();
 
 			const parsed = statusSchema.safeParse(request.body);
 			if (!parsed.success) {
@@ -474,19 +538,31 @@ export async function registerWaitlistRoutes(
 				});
 			}
 
-			const [updated] = await db
-				.update(appointmentWaitlists)
-				.set({
-					status: parsed.data.status,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(appointmentWaitlists.id, id),
-						eq(appointmentWaitlists.organizationId, orgId),
-					),
-				)
-				.returning();
+			const updated = await withTenantCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.update(appointmentWaitlists)
+					.set({
+						status: parsed.data.status,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(appointmentWaitlists.id, id),
+							eq(appointmentWaitlists.organizationId, orgId),
+						),
+					)
+					.returning();
+
+				if (row) {
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "WAITLIST_UPDATED",
+							payload: row,
+						});
+					});
+				}
+				return row ?? null;
+			});
 
 			if (!updated) {
 				return reply.code(404).send({
@@ -494,11 +570,6 @@ export async function registerWaitlistRoutes(
 					message: "Запись листа ожидания не найдена.",
 				});
 			}
-
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "WAITLIST_UPDATED",
-				payload: updated,
-			});
 
 			return updated;
 		} catch (error: unknown) {
@@ -517,12 +588,13 @@ export async function registerWaitlistRoutes(
 	 */
 	app.delete("/api/waitlist/:id", async (request, reply) => {
 		try {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			const context = await requireClinicalMutationContext(
 				request,
 				reply,
 				"waitlist delete",
 			);
-			if (!orgId) return;
+			if (!context) return;
+			const orgId = context.organizationId;
 
 			const parsedParams = waitlistParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
@@ -533,15 +605,27 @@ export async function registerWaitlistRoutes(
 			}
 			const { id } = parsedParams.data;
 
-			const [deleted] = await db
-				.delete(appointmentWaitlists)
-				.where(
-					and(
-						eq(appointmentWaitlists.id, id),
-						eq(appointmentWaitlists.organizationId, orgId),
-					),
-				)
-				.returning();
+			const deleted = await withTenantCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.delete(appointmentWaitlists)
+					.where(
+						and(
+							eq(appointmentWaitlists.id, id),
+							eq(appointmentWaitlists.organizationId, orgId),
+						),
+					)
+					.returning();
+
+				if (row) {
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "WAITLIST_DELETED",
+							payload: { id },
+						});
+					});
+				}
+				return row ?? null;
+			});
 
 			if (!deleted) {
 				return reply.code(404).send({
@@ -549,12 +633,6 @@ export async function registerWaitlistRoutes(
 					message: "Запись листа ожидания не найдена.",
 				});
 			}
-
-			// Notify UI via WebSocket
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "WAITLIST_DELETED",
-				payload: { id },
-			});
 
 			return { success: true };
 		} catch (error: unknown) {

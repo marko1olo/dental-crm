@@ -16,6 +16,7 @@ import {
 	rublesFromKopecks,
 	toKopecks,
 } from "../../../money/patientDebt.js";
+import { assertKopecks } from "../../../money/patientDebtCore.js";
 import type {
 	ReceivablesBucket,
 	ReceivablesPrepaymentRow,
@@ -177,9 +178,9 @@ export async function receivables(
 			 * то, что позиция без объёма больше не приписывает пациенту долг за
 			 * единицу, которой ему не оказывали.
 			 */
-			plannedRub: sql<
+			plannedKopecks: sql<
 				string | number
-			>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
+			>`coalesce(sum(greatest(round(coalesce(nullif(${treatmentItems.unitPriceKopecks}, 0), round(${treatmentItems.unitPriceRub} * 100)) * ${treatmentItems.quantity} - coalesce(nullif(${treatmentItems.discountKopecks}, 0), round(${treatmentItems.discountRub} * 100))), 0)), 0)::bigint`,
 			oldestChargeAt: sql<Date | null>`min(${visits.createdAt})`,
 			undatedItems: sql<number>`count(*) filter (where ${visits.createdAt} is null)::int`,
 		})
@@ -196,9 +197,9 @@ export async function receivables(
 	const paidRows = await db
 		.select({
 			patientId: payments.patientId,
-			paidRub: sql<
+			paidKopecks: sql<
 				string | number
-			>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
+			>`coalesce(sum(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)), 0)::bigint`,
 		})
 		.from(payments)
 		.where(
@@ -215,10 +216,11 @@ export async function receivables(
 	 * для всех последующих действий сразу.
 	 */
 	const paidByPatient = new Map(
-		paidRows.map((row) => [
-			row.patientId,
-			toKopecks(row.paidRub, "оплачено пациентом"),
-		]),
+		paidRows.map((row) => {
+			const kop = Number(row.paidKopecks);
+			assertKopecks(kop, "оплачено пациентом");
+			return [row.patientId, kop] as const;
+		}),
 	);
 
 	// Баланс по каждому пациенту, который есть хотя бы в одной из двух таблиц.
@@ -234,9 +236,10 @@ export async function receivables(
 			? new Date(planned.oldestChargeAt)
 			: null;
 		const plannedKopecks =
-			planned === undefined
-				? 0
-				: toKopecks(planned.plannedRub, "назначено пациенту");
+			planned === undefined ? 0 : Number(planned.plannedKopecks);
+		if (planned !== undefined) {
+			assertKopecks(plannedKopecks, "назначено пациенту");
+		}
 		return {
 			patientId,
 			// ЗДЕСЬ БЫЛ ДЕФЕКТ: `Number(planned) - paid` в рублях давало

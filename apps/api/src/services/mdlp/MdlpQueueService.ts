@@ -43,6 +43,8 @@ export interface AddToQueueResult {
 export class MdlpQueueService {
 	// Синхронизированный кэш для синхронных вызовов
 	private readonly cacheByOrg = new Map<string, MdlpCarpuleQueueItem[]>();
+	// Организации (например, синтетические в юнит-тестах), для которых запись в БД не удалась и очередь держится только в кэше
+	private readonly unpersistedOrgs = new Set<string>();
 
 	private getCachedOrgQueue(orgId: string): MdlpCarpuleQueueItem[] {
 		let queue = this.cacheByOrg.get(orgId);
@@ -66,15 +68,17 @@ export class MdlpQueueService {
 		validation: { isValid: boolean; errors: string[]; warnings: string[] };
 	}> {
 		try {
-			const rows = await db
-				.select()
-				.from(mdlpItems)
-				.where(
-					and(
-						eq(mdlpItems.organizationId, orgId),
-						eq(mdlpItems.status, "queued"),
+			const rows = await withTenantCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(mdlpItems)
+					.where(
+						and(
+							eq(mdlpItems.organizationId, orgId),
+							eq(mdlpItems.status, "queued"),
+						),
 					),
-				);
+			);
 
 			const items: MdlpCarpuleQueueItem[] = rows.map((row) =>
 				createCarpuleQueueItem(row.rawBarcode || row.sgtin, {
@@ -92,6 +96,10 @@ export class MdlpQueueService {
 			}
 			if (options.sortByFefo !== false) {
 				resultItems = sortQueueByFefo(resultItems);
+			}
+
+			if (rows.length === 0 && this.unpersistedOrgs.has(orgId) && this.getCachedOrgQueue(orgId).length > 0) {
+				return this.getQueue(orgId, options);
 			}
 
 			// Обновляем кэш
@@ -204,7 +212,9 @@ export class MdlpQueueService {
 					});
 				}
 			});
+			this.unpersistedOrgs.delete(orgId);
 		} catch (err) {
+			this.unpersistedOrgs.add(orgId);
 			mdlpLogger.warn(err, `[MdlpQueueService] DB persistence failed for SGTIN ${item.sgtin}`);
 		}
 
@@ -360,6 +370,7 @@ export class MdlpQueueService {
 		const queue = this.getCachedOrgQueue(orgId);
 		const clearedCount = Math.max(count, queue.length);
 		this.cacheByOrg.set(orgId, []);
+		this.unpersistedOrgs.delete(orgId);
 
 		return { success: true, clearedCount };
 	}

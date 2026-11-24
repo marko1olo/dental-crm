@@ -4,6 +4,9 @@ import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const logger = createApiLogger("migrationUploadStore");
 
 /**
  * Временное хранилище залитых выгрузок.
@@ -135,12 +138,22 @@ export async function storeUploadStream(
 		);
 	} catch (error) {
 		// Недописанный файл удаляем: мусор в хранилище никому не нужен.
-		await rm(filePath, { force: true }).catch(() => undefined);
+		await rm(filePath, { force: true }).catch((rmErr: unknown) => {
+			logger.warn(
+				{ err: safeLogError(rmErr), filePath },
+				"[uploadStore] Failed to cleanup aborted upload file",
+			);
+		});
 		throw aborted ?? error;
 	}
 
 	if (byteSize === 0) {
-		await rm(filePath, { force: true }).catch(() => undefined);
+		await rm(filePath, { force: true }).catch((rmErr: unknown) => {
+			logger.warn(
+				{ err: safeLogError(rmErr), filePath },
+				"[uploadStore] Failed to cleanup empty upload file",
+			);
+		});
 		throw new Error("Файл пуст: в теле запроса не пришло ни одного байта.");
 	}
 
@@ -176,7 +189,14 @@ export async function uploadExists(
 	try {
 		const info = await stat(filePath);
 		return info.isFile();
-	} catch {
+	} catch (err: unknown) {
+		const code = (err as { code?: string } | null)?.code;
+		if (code && code !== "ENOENT") {
+			logger.warn(
+				{ err: safeLogError(err), filePath },
+				"[uploadStore] Unexpected stat error in uploadExists",
+			);
+		}
 		return false;
 	}
 }
@@ -222,7 +242,12 @@ export async function deleteUpload(
 	filePath: string | null | undefined,
 ): Promise<void> {
 	if (!filePath) return;
-	await rm(filePath, { force: true }).catch(() => undefined);
+	await rm(filePath, { force: true }).catch((err: unknown) => {
+		logger.warn(
+			{ err: safeLogError(err), filePath },
+			"[uploadStore] Failed to delete migration upload",
+		);
+	});
 }
 
 /**
@@ -244,7 +269,14 @@ export async function cleanupExpiredUploads(
 	let entries: string[];
 	try {
 		entries = await readdir(root);
-	} catch {
+	} catch (err: unknown) {
+		const code = (err as { code?: string } | null)?.code;
+		if (code && code !== "ENOENT") {
+			logger.warn(
+				{ err: safeLogError(err), root },
+				"[uploadStore] Failed to list upload root during cleanup",
+			);
+		}
 		// Каталога нет — значит и убирать нечего.
 		return 0;
 	}
@@ -259,7 +291,14 @@ export async function cleanupExpiredUploads(
 				await rm(filePath, { force: true });
 				removed += 1;
 			}
-		} catch {
+		} catch (err: unknown) {
+			const code = (err as { code?: string } | null)?.code;
+			if (code && code !== "ENOENT") {
+				logger.warn(
+					{ err: safeLogError(err), filePath },
+					"[uploadStore] Failed to stat or delete expired upload",
+				);
+			}
 			// Файл исчез между readdir и stat — это не ошибка.
 		}
 	}

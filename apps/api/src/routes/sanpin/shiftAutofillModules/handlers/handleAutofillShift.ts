@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { executeSterilizationConsumablesDeduction } from "../../sterilizationModules/sterilizationStockDeduction.js";
@@ -24,20 +24,20 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 	}
 	const body = parsed.data;
 	const now = new Date();
-	const todayStr = (body.shiftDate as string) || (body.date as string) || now.toISOString().slice(0, 10);
+	const todayStr = body.shiftDate || body.date || now.toISOString().slice(0, 10);
 	const resolvedUserId = getRequestIdentity(req).userId ?? null;
 
 	const { insertedPso, insertedSteril } = await withTenantCtx(organizationId, async (tx) => {
 		const result = await executeShiftAutofillTransaction(tx, {
 			organizationId,
 			body,
-			operatorId: (body.operatorId as string) || resolvedUserId,
+			operatorId: body.operatorId || resolvedUserId,
 			todayStr,
 		});
 
 		// Пакетное списание расходников стерилизации со склада клиники в единой транзакции (Мандаты 8e, 8n, 8bo)
 		for (const steril of result.insertedSteril) {
-			const cycleCount = (steril as { packagedItemsCount?: number }).packagedItemsCount ?? (typeof body.packagedItemsCount === "number" ? body.packagedItemsCount : 1);
+			const cycleCount = steril.packagedItemsCount ?? body.packagedItemsCount ?? 1;
 			await executeSterilizationConsumablesDeduction({
 				organizationId,
 				userId: resolvedUserId,
@@ -50,16 +50,18 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 			}, tx);
 		}
 
-		return result;
-	});
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",
+				payload: {
+					date: todayStr,
+					psoCount: result.insertedPso.length,
+					sterilCount: result.insertedSteril.length,
+				},
+			});
+		});
 
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",
-		payload: {
-			date: todayStr,
-			psoCount: insertedPso.length,
-			sterilCount: insertedSteril.length,
-		},
+		return result;
 	});
 
 	return reply.send({

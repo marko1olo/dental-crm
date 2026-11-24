@@ -32,6 +32,7 @@ import {
 	isValidUuid,
 } from "./idempotencyModules/idempotencyHeaderParser.js";
 import {
+	buildIdempotencyMemKey,
 	cleanupOnUncaughtError,
 	clearInMemoryIdempotencyCache,
 	deleteInMemoryIdempotencyRecord,
@@ -90,6 +91,12 @@ export const DEFAULT_IDEMPOTENCY_EXEMPT_PATHS: RegExp[] = [
 	/^\/api\/integrations\/flexbe\/webhook$/,
 	/^\/api\/integrations\/medflex\/[^/]+\/webhook\/booking$/,
 	/^\/api\/payments\/sberbank\/webhook$/,
+	/^\/api\/payments\/sberbank\/pos\/webhook$/,
+	/^\/api\/payments\/sberbank\/qr\/webhook$/,
+	/^\/api\/payments\/sberpos\/webhook$/,
+	/^\/api\/sberbank\/webhook$/,
+	/^\/api\/sbp\/webhook$/,
+	/^\/api\/billing\/sbp\/webhook$/,
 	/^\/api\/fiscal\/validate$/,
 ];
 
@@ -157,7 +164,8 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 				isValidUuid(tenantId);
 
 			// Step 1: In-Memory Fast-Path Lock & Deduplication
-			const memKey = `${tenantId ?? "global"}:${idempotencyKey}`;
+			const memScope = tenantId ?? `unscoped:${request.method.toUpperCase()}:${url}`;
+			const memKey = buildIdempotencyMemKey(memScope, idempotencyKey);
 			const existingMem = getInMemoryIdempotencyRecord(memKey);
 
 			if (existingMem) {
@@ -203,7 +211,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 				} catch (dbReadErr) {
 					request.log.warn(
 						{ error: dbReadErr, idempotencyKey },
-						"[IdempotencyPlugin] Failed to read idempotency records from DB, continuing to fallback",
+						"[IdempotencyPlugin] Failed to read idempotency records from DB, proceeding to transactional in-flight lock",
 					);
 				}
 
@@ -226,6 +234,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 						request._idempotencyContext = {
 							idempotencyKey,
 							organizationId: tenantId,
+							memScope,
 							payloadHash,
 							useDatabase,
 						};
@@ -258,7 +267,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 					);
 				}
 
-				// Key is new: record in-flight row in PostgreSQL
+				// Key is new: record in-flight row in PostgreSQL (fail-closed if persistence unavailable)
 				const inFlightRes = await recordInFlightToDatabase(
 					tenantId,
 					idempotencyKey,
@@ -268,10 +277,22 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 					if (inFlightRes.isConflict) {
 						return sendConflict(reply, idempotencyKey, "in_flight", retryAfter);
 					}
+					deleteInMemoryIdempotencyRecord(memKey);
 					request.log.error(
 						{ error: inFlightRes.error, idempotencyKey },
 						"[IdempotencyPlugin] Failed to write in-flight record to DB",
 					);
+					const pgCode = extractPgErrorCode(inFlightRes.error);
+					if (pgCode === "23503") {
+						return reply.code(400).send({
+							error: "InvalidOrganization",
+							message: "Указанная организация не найдена для фиксации ключа идемпотентности.",
+						});
+					}
+					return reply.code(503).send({
+						error: "IdempotencyStoreUnavailable",
+						message: "Хранилище идемпотентности временно недоступно. Повторите запрос позже.",
+					});
 				}
 			}
 
@@ -279,6 +300,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			request._idempotencyContext = {
 				idempotencyKey,
 				organizationId: tenantId,
+				memScope,
 				payloadHash,
 				useDatabase,
 			};

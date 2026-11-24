@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { rublesToKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
@@ -109,11 +110,11 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 						const priceKopecks =
 							typeof it.priceKopecks === "number" || typeof it.priceKopecks === "bigint"
 								? Number(it.priceKopecks)
-								: Math.round((Number(it.priceRub) || 0) * 100);
+								: rublesToKopecks(Number(it.priceRub) || 0);
 						const discountKopecks =
 							typeof it.discountKopecks === "number" || typeof it.discountKopecks === "bigint"
 								? Number(it.discountKopecks)
-								: Math.round((Number(it.discountRub) || 0) * 100);
+								: rublesToKopecks(Number(it.discountRub) || 0);
 						return {
 							...it,
 							priceKopecks,
@@ -125,15 +126,15 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			const totalPriceKopecks =
 				typeof budget.totalPriceKopecks === "bigint" || typeof budget.totalPriceKopecks === "number"
 					? Number(budget.totalPriceKopecks)
-					: Math.round((Number(budget.totalPriceRub) || 0) * 100);
+					: rublesToKopecks(Number(budget.totalPriceRub) || 0);
 			const discountKopecks =
 				typeof budget.discountKopecks === "bigint" || typeof budget.discountKopecks === "number"
 					? Number(budget.discountKopecks)
-					: Math.round((Number(budget.discountRub) || 0) * 100);
+					: rublesToKopecks(Number(budget.discountRub) || 0);
 			const netTotalKopecks =
 				typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
 					? Number(budget.netTotalKopecks)
-					: Math.round((Number(budget.netTotalRub) || 0) * 100);
+					: rublesToKopecks(Number(budget.netTotalRub) || 0);
 
 			return reply.code(200).send({
 				token: budget.token,

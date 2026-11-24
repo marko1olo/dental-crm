@@ -9,11 +9,13 @@
  * Проверки: POST auth-first 401; POST null/{} → 400≠500 CompanyNameRequired;
  * PUT null body → 400≠500 CompanyNameRequired (договор-фикстура есть).
  */
+import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { insuranceContracts, organizations, users } from "../../db/schema.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { registerInsuranceRoutes } from "../../routes/insurance.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -44,6 +46,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 	) {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
+			"idempotency-key": randomUUID(),
 		};
 		if (opts.withAuth !== false) {
 			headers["x-dente-staff-token"] = staffToken;
@@ -88,6 +91,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 	) {
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
+			"idempotency-key": randomUUID(),
 		};
 		if (opts.withAuth !== false) {
 			headers["x-dente-staff-token"] = staffToken;
@@ -170,6 +174,7 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		// Оба хука изоляции боевого server.ts: без обёртки `withTenantCtx` маршрут
 		// договоров не видит ни одной строки своей же клиники.
 		app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await registerInsuranceRoutes(app);
 		await app.ready();
 	});
@@ -240,5 +245,26 @@ describe("ДМС договоры — Zod body (null → 400, не 500)", () => 
 		assert.notEqual(refused.statusCode, 500);
 		assert.equal(refused.json.error, "CompanyNameRequired");
 		assert.match(String(refused.json.message), /Страховая компания/);
+	});
+
+	test("POST неверная ставка при заполненном companyName → 400 ValidationError (не CompanyNameRequired)", async () => {
+		if (!databaseReady) return;
+		const refused = await postContract({
+			body: { companyName: "СОГАЗ", coverageTherapyPct: "invalid-pct" },
+		});
+		assert.equal(refused.statusCode, 400);
+		assert.equal(refused.json.error, "ValidationError");
+		assert.ok(Array.isArray(refused.json.details));
+	});
+
+	test("GET /contracts/not-a-uuid → 400 ValidationError", async () => {
+		if (!databaseReady) return;
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/insurance/contracts/not-a-uuid",
+			headers: { "x-dente-staff-token": staffToken },
+		});
+		assert.equal(res.statusCode, 400);
+		assert.equal(res.json().error, "ValidationError");
 	});
 });

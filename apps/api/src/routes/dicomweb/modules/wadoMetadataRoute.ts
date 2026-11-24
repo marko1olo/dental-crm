@@ -1,9 +1,7 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
@@ -14,6 +12,7 @@ import {
 	normalizeUid,
 	organizationExists,
 	readDicomIdentity,
+	resolveTenantOrSampleDicomPath,
 	sampleDicomOwnerOrganizationId,
 	sampleDicomPath,
 	verifyDicomOrganization,
@@ -37,11 +36,11 @@ export async function handleWadoSeriesMetadata(
 
 	if (!(await verifyDicomOrganization(organizationId, reply))) return;
 
-	const instances = await withTenantCtx(organizationId, async () => {
-		const orgKnown = await organizationExists(organizationId);
+	const instances = await withTenantCtx(organizationId, async (tx) => {
+		const orgKnown = await organizationExists(organizationId, tx);
 		if (!orgKnown) return null;
 
-		return db
+		return tx
 			.select({
 				sopInstanceUid: schema.imagingInstances.dicomSopInstanceUid,
 				instanceNumber: schema.imagingInstances.instanceNumber,
@@ -75,21 +74,23 @@ export async function handleWadoSeriesMetadata(
 
 		if (inst.storagePath) {
 			try {
-				const resolvedStoragePath = path.resolve(inst.storagePath);
-				ident = await readDicomIdentity(resolvedStoragePath);
-				if (actualRows == null && ident?.rows != null) actualRows = ident.rows;
-				if (actualColumns == null && ident?.columns != null) actualColumns = ident.columns;
+				const resolvedStoragePath = resolveTenantOrSampleDicomPath(organizationId, inst.storagePath);
+				if (resolvedStoragePath) {
+					ident = await readDicomIdentity(resolvedStoragePath, request.log);
+					if (actualRows == null && ident?.rows != null) actualRows = ident.rows;
+					if (actualColumns == null && ident?.columns != null) actualColumns = ident.columns;
 
-				if (actualRows == null || actualColumns == null) {
-					const probeBuf = Buffer.alloc(262144);
-					const fh = await fs.open(resolvedStoragePath, "r");
-					try {
-						const { bytesRead } = await fh.read(probeBuf, 0, probeBuf.length, 0);
-						const parsedHdr = parseDicomHeader(probeBuf.subarray(0, bytesRead));
-						if (actualRows == null && parsedHdr.imageRows != null) actualRows = parsedHdr.imageRows;
-						if (actualColumns == null && parsedHdr.imageColumns != null) actualColumns = parsedHdr.imageColumns;
-					} finally {
-						await fh.close();
+					if (actualRows == null || actualColumns == null) {
+						const probeBuf = Buffer.alloc(262144);
+						const fh = await fs.open(resolvedStoragePath, "r");
+						try {
+							const { bytesRead } = await fh.read(probeBuf, 0, probeBuf.length, 0);
+							const parsedHdr = parseDicomHeader(probeBuf.subarray(0, bytesRead));
+							if (actualRows == null && parsedHdr.imageRows != null) actualRows = parsedHdr.imageRows;
+							if (actualColumns == null && parsedHdr.imageColumns != null) actualColumns = parsedHdr.imageColumns;
+						} finally {
+							await fh.close();
+						}
 					}
 				}
 			} catch (err) {

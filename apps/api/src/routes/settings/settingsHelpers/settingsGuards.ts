@@ -173,7 +173,7 @@ export async function requireSettingsMutationAccess(
 	if (!orgId) return null;
 
 	const identity = getRequestIdentity(request);
-	if (identity.userId && identity.role) {
+	if (identity.userId) {
 		if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write")) {
 			return null;
 		}

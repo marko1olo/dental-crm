@@ -5,6 +5,10 @@
  * Defaults to structured console output with ISO timestamps.
  */
 
+import { createApiLogger } from "../../observability/logger.js";
+
+const apiLogger = createApiLogger("mdlp");
+
 export interface MdlpLogger {
 	debug: (objOrMsg: unknown, msg?: string) => void;
 	info: (objOrMsg: unknown, msg?: string) => void;
@@ -12,43 +16,40 @@ export interface MdlpLogger {
 	error: (objOrMsg: unknown, msg?: string) => void;
 }
 
-function formatMdlpLogLine(
-	level: "DEBUG" | "INFO" | "WARN" | "ERROR",
+function logToApi(
+	method: "debug" | "info" | "warn" | "error",
 	objOrMsg: unknown,
 	msg?: string,
-): string {
-	const prefix =
-		level === "WARN" || level === "ERROR" ? `[MDLP ${level}]` : "[MDLP]";
-	const payload =
-		typeof objOrMsg === "string"
-			? objOrMsg
-			: (() => {
-					try {
-						return JSON.stringify(objOrMsg);
-					} catch {
-						return String(objOrMsg);
-					}
-				})();
-	const text = msg ? `${msg} ${payload}` : payload;
-	return `[${new Date().toISOString()}] ${prefix} ${text}\n`;
+): void {
+	if (typeof objOrMsg === "string") {
+		if (msg) {
+			apiLogger[method]({ detail: objOrMsg }, msg);
+		} else {
+			apiLogger[method](objOrMsg);
+		}
+	} else if (typeof objOrMsg === "object" && objOrMsg !== null) {
+		apiLogger[method](objOrMsg as Record<string, unknown>, msg ?? "");
+	} else {
+		apiLogger[method]({ data: objOrMsg }, msg ?? "");
+	}
 }
 
 let activeLogger: MdlpLogger = {
 	debug: (objOrMsg: unknown, msg?: string) => {
 		if (process.env.NODE_ENV !== "test") {
-			process.stdout.write(formatMdlpLogLine("DEBUG", objOrMsg, msg));
+			logToApi("debug", objOrMsg, msg);
 		}
 	},
 	info: (objOrMsg: unknown, msg?: string) => {
 		if (process.env.NODE_ENV !== "test") {
-			process.stdout.write(formatMdlpLogLine("INFO", objOrMsg, msg));
+			logToApi("info", objOrMsg, msg);
 		}
 	},
 	warn: (objOrMsg: unknown, msg?: string) => {
-		process.stderr.write(formatMdlpLogLine("WARN", objOrMsg, msg));
+		logToApi("warn", objOrMsg, msg);
 	},
 	error: (objOrMsg: unknown, msg?: string) => {
-		process.stderr.write(formatMdlpLogLine("ERROR", objOrMsg, msg));
+		logToApi("error", objOrMsg, msg);
 	},
 };
 

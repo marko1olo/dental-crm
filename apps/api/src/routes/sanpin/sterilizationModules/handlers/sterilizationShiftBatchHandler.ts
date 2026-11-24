@@ -9,20 +9,29 @@ import type { SterilizationPackagingType } from "@dental/shared";
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { computeSterilizationExpiration, generateSterilizationBarcode } from "../sterilizationCycleEngine.js";
-import type { SterilizationShiftBatchBody } from "../sterilizationSchemas.js";
+import { sterilizationShiftBatchSchema } from "../sterilizationSchemas.js";
 import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
 
 export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization shift batch create");
 	if (!organizationId) return;
 
+	const parsed = sterilizationShiftBatchSchema.safeParse(req.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры пакетной регистрации стерилизации смены.",
+			issues: parsed.error.issues,
+		});
+	}
+
 	const operatorId = getRequestIdentity(req).userId ?? null;
-	const body = (req.body as SterilizationShiftBatchBody) || {};
+	const body = parsed.data;
 	const cyclesCount = Math.min(Math.max(Number(body.cyclesCount) || 1, 1), 5);
 	const deviceName = body.deviceName || "Melag Vacuklav 23 B+ (ЦСО №1)";
 	const packagingType = (body.packagingType as SterilizationPackagingType) || "kraft_heat_sealed";
@@ -95,12 +104,17 @@ export async function handleSterilizationShiftBatch(req: FastifyRequest, reply: 
 				timestamp: now,
 			});
 
+		onTenantTxCommit(() => {
+			for (const insertedLog of insertedLogs) {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "SANPIN_STERILIZATION_ADDED",
+					payload: insertedLog,
+				});
+			}
+		});
+
 		return { inserted: insertedLogs };
 	});
-
-	for (const insertedLog of inserted) {
-		wsBroker.broadcastToOrganization(organizationId, { type: "SANPIN_STERILIZATION_ADDED", payload: insertedLog });
-	}
 
 	return reply.code(201).send({
 		success: true,

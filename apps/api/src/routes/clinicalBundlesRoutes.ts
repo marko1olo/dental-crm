@@ -7,6 +7,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -14,7 +15,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	treatmentPlanItemsNew,
 	treatmentPlanStages,
@@ -30,14 +31,16 @@ import {
 export type { ApiBundleItemTemplate, ApiClinicalBundle };
 export { CANONICAL_CLINICAL_BUNDLES };
 
-const applyBundleBodySchema = z.object({
-	bundleId: z.string().trim().min(1, "Укажите ID клинического пакета"),
-	toothNumber: z.number().int().min(11).max(85).optional().nullable(),
-	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID").optional().nullable(),
-	planId: z.string().uuid("Идентификатор плана лечения должен быть корректным UUID").optional().nullable(),
-	selectedItemIds: z.array(z.string()).optional(),
-	doctorId: z.string().uuid().optional().nullable(),
-});
+const applyBundleBodySchema = z
+	.object({
+		bundleId: z.string().trim().min(1, "Укажите ID клинического пакета"),
+		toothNumber: z.number().int().min(11).max(85).optional().nullable(),
+		patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID").optional().nullable(),
+		planId: z.string().uuid("Идентификатор плана лечения должен быть корректным UUID").optional().nullable(),
+		selectedItemIds: z.array(z.string()).optional(),
+		doctorId: z.string().uuid().optional().nullable(),
+	})
+	.strict();
 
 export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 	// 1. GET /api/clinical-bundles и /api/v1/clinical-bundles
@@ -119,10 +122,8 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 			});
 		}
 
-		let totalRub = 0;
 		let totalKopecks = 0;
 		const constructedItems = selectedItems.map((it) => {
-			totalRub += it.defaultPriceRub;
 			totalKopecks += it.defaultPriceKopecks;
 			const toothPrefix = effectiveTooth ? `[Зуб ${effectiveTooth}] ` : "";
 			return {
@@ -133,9 +134,9 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 				name: `${toothPrefix}${it.name}`,
 				category: it.category,
 				toothNumber: effectiveTooth ?? null,
-				priceRub: it.defaultPriceRub,
+				priceRub: kopecksToRubles(it.defaultPriceKopecks),
 				priceKopecks: it.defaultPriceKopecks,
-				unitPriceRub: it.defaultPriceRub,
+				unitPriceRub: kopecksToRubles(it.defaultPriceKopecks),
 				discountRub: 0,
 				quantity: 1,
 				phase: targetBundle.stageNumber,
@@ -144,30 +145,28 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 				clinicalRationale: it.clinicalRationale,
 			};
 		});
+		const totalRub = kopecksToRubles(totalKopecks);
 
 		// Если передан существующий planId, привязываем позиции напрямую в PostgreSQL 18
 		const targetPlanId = data.planId;
 		if (targetPlanId) {
-			const [plan] = await db
-				.select({ id: treatmentPlans.id })
-				.from(treatmentPlans)
-				.where(
-					and(
-						eq(treatmentPlans.id, targetPlanId),
-						eq(treatmentPlans.organizationId, context.organizationId),
-					),
-				)
-				.limit(1);
+			const planFound = await withTenantCtx(context.organizationId, async (tx) => {
+				const [plan] = await tx
+					.select({ id: treatmentPlans.id })
+					.from(treatmentPlans)
+					.where(
+						and(
+							eq(treatmentPlans.id, targetPlanId),
+							eq(treatmentPlans.organizationId, context.organizationId),
+						),
+					)
+					.limit(1);
 
-			if (!plan) {
-				return reply.code(404).send({
-					error: "TreatmentPlanNotFound",
-					message: "Указанный план лечения не найден в вашей клинике",
-				});
-			}
+				if (!plan) {
+					return false;
+				}
 
-			// Транзакционная вставка в treatmentPlanItemsNew
-			await db.transaction(async (tx) => {
+				// Транзакционная вставка в treatmentPlanItemsNew
 				for (const item of constructedItems) {
 					await tx.insert(treatmentPlanItemsNew).values({
 						organizationId: context.organizationId,
@@ -175,14 +174,25 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 						toothNumber: item.toothNumber,
 						priceId: item.serviceCode,
 						quantity: item.quantity,
-						price: item.priceRub.toFixed(2),
-						discount: item.discountRub.toFixed(2),
+						price: kopecksToNumericString(item.priceKopecks),
+						priceKopecks: BigInt(item.priceKopecks),
+						discount: kopecksToNumericString(0),
+						discountKopecks: 0n,
+						commissionKopecks: 0n,
 						phase: item.phase,
 						isBundle: true,
 						doctorId: data.doctorId || null,
 					});
 				}
+				return true;
 			});
+
+			if (!planFound) {
+				return reply.code(404).send({
+					error: "TreatmentPlanNotFound",
+					message: "Указанный план лечения не найден в вашей клинике",
+				});
+			}
 		}
 
 		return reply.code(200).send({

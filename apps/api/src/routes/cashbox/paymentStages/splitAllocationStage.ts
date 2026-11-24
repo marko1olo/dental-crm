@@ -48,16 +48,20 @@ export async function processSplitAllocationStage(
 	ctx.issuedAt = issuedAt;
 
 	let resolvedCashKop = 0;
-	let resolvedElecKop = 0;
+	let resolvedCardKop = 0;
+	let resolvedSbpKop = 0;
 
 	if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const tk = tender.amountKopecks ?? rublesToKopecks(tender.amountRub ?? 0);
 			const norm = normalizePaymentMethod(tender.method);
+			const rawMethod = tender.method?.trim().toLowerCase();
 			if (norm === "cash") {
 				resolvedCashKop += tk;
-			} else if (["card", "sbp", "online"].includes(norm)) {
-				resolvedElecKop += tk;
+			} else if (rawMethod === "sbp" || rawMethod === "sbp_qr" || norm === "online") {
+				resolvedSbpKop += tk;
+			} else if (norm === "card") {
+				resolvedCardKop += tk;
 			}
 		}
 	} else {
@@ -65,27 +69,44 @@ export async function processSplitAllocationStage(
 			body.cashAmountKopecks ??
 			(body.cashAmountRub !== undefined ? rublesToKopecks(body.cashAmountRub) : undefined) ??
 			(body.method === "cash" ? Number(totalKopecks) : 0);
-		resolvedElecKop =
+		resolvedCardKop =
 			body.electronicAmountKopecks ??
 			(body.electronicAmountRub !== undefined
 				? rublesToKopecks(body.electronicAmountRub)
 				: undefined) ??
-			(["card", "sbp", "online"].includes(body.method || "")
-				? Number(totalKopecks)
-				: 0);
+			(body.method === "card" ? Number(totalKopecks) : 0);
+		resolvedSbpKop =
+			body.sbpAmountKopecks ??
+			(body.sbpAmountRub !== undefined
+				? rublesToKopecks(body.sbpAmountRub)
+				: undefined) ??
+			(body.method === "sbp" || body.method === "online" ? Number(totalKopecks) : 0);
 	}
 
+	const resolvedElecKop = resolvedCardKop + resolvedSbpKop;
 	ctx.resolvedCashKop = resolvedCashKop;
+	ctx.resolvedCardKop = resolvedCardKop;
+	ctx.resolvedSbpKop = resolvedSbpKop;
 	ctx.resolvedElecKop = resolvedElecKop;
+
+	const effectivePaidKopecks =
+		ctx.patientCoPayKopecks && ctx.patientCoPayKopecks > 0n
+			? totalKopecks > ctx.patientCoPayKopecks
+				? totalKopecks - ctx.patientCoPayKopecks
+				: 0n
+			: totalKopecks;
 
 	const splitTenderCount =
 		(resolvedCashKop > 0 ? 1 : 0) +
-		(resolvedElecKop > 0 ? 1 : 0) +
+		(resolvedCardKop > 0 ? 1 : 0) +
+		(resolvedSbpKop > 0 ? 1 : 0) +
 		(requiredDepositKopecks > 0n ? 1 : 0) +
 		(requiredBonusKopecks > 0n ? 1 : 0) +
 		(requiredCertificateKopecks > 0n ? 1 : 0) +
 		(requiredDmsKopecks > 0n ? 1 : 0);
 	ctx.splitTenderCount = splitTenderCount;
+
+	const targetDocId = body.invoiceId || body.familyGroupId || null;
 
 	let newPayment: typeof payments.$inferSelect;
 	const recordCreatedPaymentId = (paymentRow: typeof payments.$inferSelect | undefined) => {
@@ -96,23 +117,24 @@ export async function processSplitAllocationStage(
 
 	if (splitTenderCount > 1) {
 		let elecPayment: typeof payments.$inferSelect | undefined;
+		let sbpPayment: typeof payments.$inferSelect | undefined;
 		let cashPayment: typeof payments.$inferSelect | undefined;
 		let depositPayment: typeof payments.$inferSelect | undefined;
 		let bonusPayment: typeof payments.$inferSelect | undefined;
 		let certPayment: typeof payments.$inferSelect | undefined;
 		let dmsPayment: typeof payments.$inferSelect | undefined;
 
-		if (resolvedElecKop > 0) {
+		if (resolvedCardKop > 0) {
 			const [ep] = await tx
 				.insert(payments)
 				.values({
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: targetDocId,
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:card` : null,
-					amountRub: kopecksToRubles(resolvedElecKop),
-					amountKopecks: BigInt(resolvedElecKop),
+					amountRub: kopecksToRubles(resolvedCardKop),
+					amountKopecks: BigInt(resolvedCardKop),
 					method: "card",
 					status: "paid",
 					paidAt: new Date(),
@@ -130,6 +152,34 @@ export async function processSplitAllocationStage(
 			elecPayment = ep;
 		}
 
+		if (resolvedSbpKop > 0) {
+			const [sp] = await tx
+				.insert(payments)
+				.values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					visitId: effectiveVisitId,
+					documentId: targetDocId,
+					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:sbp` : null,
+					amountRub: kopecksToRubles(resolvedSbpKop),
+					amountKopecks: BigInt(resolvedSbpKop),
+					method: "online",
+					status: "paid",
+					paidAt: new Date(),
+					fiscalReceiptNumber: receiptNumber,
+					fiscalReceiptIssuedAt: issuedAt,
+					payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
+					payerInn: body.payerInn || body.buyerInn || null,
+					payerBirthDate: body.payerBirthDate || null,
+					payerIdentityDocument: body.payerIdentityDocument || null,
+					payerRelationship: body.payerRelationship || null,
+					taxDeductionCode: effectiveTaxCode,
+					note: body.note ? `${body.note} (СБП)` : "Сплит-оплата (СБП)",
+				})
+				.returning();
+			sbpPayment = sp;
+		}
+
 		if (resolvedCashKop > 0) {
 			const [cp] = await tx
 				.insert(payments)
@@ -137,7 +187,7 @@ export async function processSplitAllocationStage(
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: targetDocId,
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:cash` : null,
 					amountRub: kopecksToRubles(resolvedCashKop),
 					amountKopecks: BigInt(resolvedCashKop),
@@ -165,7 +215,7 @@ export async function processSplitAllocationStage(
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: targetDocId,
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:deposit` : null,
 					amountRub: kopecksToRubles(Number(requiredDepositKopecks)),
 					amountKopecks: requiredDepositKopecks,
@@ -193,7 +243,7 @@ export async function processSplitAllocationStage(
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: targetDocId,
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:bonus` : null,
 					amountRub: kopecksToRubles(Number(requiredBonusKopecks)),
 					amountKopecks: requiredBonusKopecks,
@@ -221,7 +271,7 @@ export async function processSplitAllocationStage(
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: targetDocId,
 					clientMutationId: effectiveMutationId ? `${effectiveMutationId}:certificate` : null,
 					amountRub: kopecksToRubles(Number(requiredCertificateKopecks)),
 					amountKopecks: requiredCertificateKopecks,
@@ -285,6 +335,7 @@ export async function processSplitAllocationStage(
 
 		for (const createdRow of [
 			elecPayment,
+			sbpPayment,
 			cashPayment,
 			depositPayment,
 			bonusPayment,
@@ -296,6 +347,7 @@ export async function processSplitAllocationStage(
 
 		const primaryCandidate =
 			elecPayment ||
+			sbpPayment ||
 			cashPayment ||
 			depositPayment ||
 			bonusPayment ||
@@ -307,6 +359,11 @@ export async function processSplitAllocationStage(
 		newPayment = primaryCandidate;
 	} else {
 		const isSingleInsurance = normalizePaymentMethod(body.method) === "insurance";
+		const effectiveSingleAmountKop = isSingleInsurance ? requiredDmsKopecks : effectivePaidKopecks;
+		const effectiveSingleAmountRub =
+			effectiveSingleAmountKop === totalKopecks
+				? amountRubNumber
+				: kopecksToRubles(Number(effectiveSingleAmountKop));
 		const effectiveSingleDocId = isSingleInsurance
 			? (isValidUuid(ctx.guaranteeLetterId) ? ctx.guaranteeLetterId : null) ||
 				(ctx.lockedDmsLetter?.id && isValidUuid(ctx.lockedDmsLetter.id) ? ctx.lockedDmsLetter.id : null) ||
@@ -331,8 +388,8 @@ export async function processSplitAllocationStage(
 				visitId: effectiveVisitId,
 				documentId: effectiveSingleDocId,
 				clientMutationId: effectiveMutationId,
-				amountRub: amountRubNumber,
-				amountKopecks: totalKopecks,
+				amountRub: effectiveSingleAmountRub,
+				amountKopecks: effectiveSingleAmountKop,
 				method: normalizePaymentMethod(body.method),
 				status: "paid",
 				paidAt: new Date(),

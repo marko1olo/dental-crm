@@ -16,13 +16,14 @@ import {
 } from "../../services/periodontogramIndices.js";
 import { siteItemSchema } from "../../services/periodontogramService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { organizations, patients, users } from "../../db/schema.js";
+import { organizations, patients, periodontogramSnapshots, users } from "../../db/schema.js";
 import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 
 const NAMESPACE = "perioSnapshotsTest";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
@@ -356,14 +357,21 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 	});
 
 	it("POST /api/periodontogram/snapshots/:id/close returns 409 if snapshot already closed", async () => {
-		// Mock db returning a closed snapshot
-		mock.method(db, "select", () => ({
-			from: () => ({
-				where: () => ({
-					limit: async () => [{ id: SNAPSHOT_ID, status: "closed" }],
-				}),
-			}),
-		}));
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.insert(periodontogramSnapshots)
+				.values({
+					id: SNAPSHOT_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					status: "closed",
+					recordedAt: new Date(),
+					closedAt: new Date(),
+					recordedByUserId: USER_ID,
+					closedByUserId: USER_ID,
+				})
+				.onConflictDoNothing();
+		});
 
 		const res = await app.inject({
 			method: "POST",
@@ -383,13 +391,21 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 	});
 
 	it("DELETE /api/periodontogram/snapshots/:id rejects deleting closed snapshot (409)", async () => {
-		mock.method(db, "select", () => ({
-			from: () => ({
-				where: () => ({
-					limit: async () => [{ id: SNAPSHOT_ID, status: "closed" }],
-				}),
-			}),
-		}));
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.insert(periodontogramSnapshots)
+				.values({
+					id: SNAPSHOT_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					status: "closed",
+					recordedAt: new Date(),
+					closedAt: new Date(),
+					recordedByUserId: USER_ID,
+					closedByUserId: USER_ID,
+				})
+				.onConflictDoNothing();
+		});
 
 		const res = await app.inject({
 			method: "DELETE",
@@ -578,39 +594,44 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.ok(snapshotId, "Draft snapshot ID must exist");
 
 		const testIdemKey = "01933a00-1111-7000-8000-000000000099";
+		const idemApp = await createIdempotentTenantTestApp();
+		await registerPeriodontogramRoutes(idemApp);
+		try {
+			// Первая попытка закрытия снимка с Idempotency-Key
+			const closeRes1 = await idemApp.inject({
+				method: "POST",
+				url: `/api/periodontogram/snapshots/${snapshotId}/close`,
+				headers: {
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+					"idempotency-key": testIdemKey,
+				},
+				payload: { notes: "Закрытие осмотра с ключом идемпотентности" },
+			});
 
-		// Первая попытка закрытия снимка с Idempotency-Key
-		const closeRes1 = await app.inject({
-			method: "POST",
-			url: `/api/periodontogram/snapshots/${snapshotId}/close`,
-			headers: {
-				[CLINIC_TOKEN_HEADER]: clinicToken,
-				[STAFF_TOKEN_HEADER]: staffToken,
-				"idempotency-key": testIdemKey,
-			},
-			payload: { notes: "Закрытие осмотра с ключом идемпотентности" },
-		});
+			assert.equal(closeRes1.statusCode, 200);
+			const closeJson1 = JSON.parse(closeRes1.body);
+			assert.equal(closeJson1.success, true);
 
-		assert.equal(closeRes1.statusCode, 200);
-		const closeJson1 = JSON.parse(closeRes1.body);
-		assert.equal(closeJson1.success, true);
+			// Повторный сетевой ретрай с тем же Idempotency-Key: должен вернуть 200 OK из кэша вместо 409 SnapshotAlreadyClosed!
+			const closeRes2 = await idemApp.inject({
+				method: "POST",
+				url: `/api/periodontogram/snapshots/${snapshotId}/close`,
+				headers: {
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+					"idempotency-key": testIdemKey,
+				},
+				payload: { notes: "Закрытие осмотра с ключом идемпотентности" },
+			});
 
-		// Повторный сетевой ретрай с тем же Idempotency-Key: должен вернуть 200 OK из кэша вместо 409 SnapshotAlreadyClosed!
-		const closeRes2 = await app.inject({
-			method: "POST",
-			url: `/api/periodontogram/snapshots/${snapshotId}/close`,
-			headers: {
-				[CLINIC_TOKEN_HEADER]: clinicToken,
-				[STAFF_TOKEN_HEADER]: staffToken,
-				"idempotency-key": testIdemKey,
-			},
-			payload: { notes: "Закрытие осмотра с ключом идемпотентности" },
-		});
-
-		assert.equal(closeRes2.statusCode, 200, "Retry with same Idempotency-Key must return 200 OK");
-		assert.equal(closeRes2.headers["idempotency-replayed"], "true");
-		const closeJson2 = JSON.parse(closeRes2.body);
-		assert.equal(closeJson2.success, true);
+			assert.equal(closeRes2.statusCode, 200, "Retry with same Idempotency-Key must return 200 OK");
+			assert.equal(closeRes2.headers["idempotency-replayed"], "true");
+			const closeJson2 = JSON.parse(closeRes2.body);
+			assert.equal(closeJson2.success, true);
+		} finally {
+			await idemApp.close();
+		}
 	});
 
 	it("POST /api/periodontogram/snapshots/:id/close returns 409 Conflict if idempotency key status is in_flight", async () => {
@@ -622,21 +643,27 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 			lockedAt: new Date(),
 		});
 
-		const res = await app.inject({
-			method: "POST",
-			url: `/api/periodontogram/snapshots/${SNAPSHOT_ID}/close`,
-			headers: {
-				[CLINIC_TOKEN_HEADER]: clinicToken,
-				[STAFF_TOKEN_HEADER]: staffToken,
-				"idempotency-key": inFlightKey,
-			},
-			payload: { notes: "Попытка закрытия при in_flight" },
-		});
+		const idemApp = await createIdempotentTenantTestApp();
+		await registerPeriodontogramRoutes(idemApp);
+		try {
+			const res = await idemApp.inject({
+				method: "POST",
+				url: `/api/periodontogram/snapshots/${SNAPSHOT_ID}/close`,
+				headers: {
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+					"idempotency-key": inFlightKey,
+				},
+				payload: { notes: "Попытка закрытия при in_flight" },
+			});
 
-		assert.equal(res.statusCode, 409);
-		const json = JSON.parse(res.body);
-		assert.equal(json.error, "Conflict");
-		assert.equal(res.headers["retry-after"], "1");
+			assert.equal(res.statusCode, 409);
+			const json = JSON.parse(res.body);
+			assert.equal(json.error, "Conflict");
+			assert.equal(res.headers["retry-after"], "1");
+		} finally {
+			await idemApp.close();
+		}
 	});
 
 	it("POST /api/perio/:patientId returns 409 Conflict if idempotency key status is in_flight", async () => {
@@ -648,20 +675,26 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 			lockedAt: new Date(),
 		});
 
-		const res = await app.inject({
-			method: "POST",
-			url: `/api/perio/${PATIENT_ID}`,
-			headers: {
-				[CLINIC_TOKEN_HEADER]: clinicToken,
-				[STAFF_TOKEN_HEADER]: staffToken,
-				"idempotency-key": inFlightKey,
-			},
-			payload: { notes: "Попытка сохранения при in_flight" },
-		});
+		const idemApp = await createIdempotentTenantTestApp();
+		await registerPeriodontogramRoutes(idemApp);
+		try {
+			const res = await idemApp.inject({
+				method: "POST",
+				url: `/api/perio/${PATIENT_ID}`,
+				headers: {
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+					"idempotency-key": inFlightKey,
+				},
+				payload: { notes: "Попытка сохранения при in_flight" },
+			});
 
-		assert.equal(res.statusCode, 409);
-		const json = JSON.parse(res.body);
-		assert.equal(json.error, "Conflict");
-		assert.equal(res.headers["retry-after"], "1");
+			assert.equal(res.statusCode, 409);
+			const json = JSON.parse(res.body);
+			assert.equal(json.error, "Conflict");
+			assert.equal(res.headers["retry-after"], "1");
+		} finally {
+			await idemApp.close();
+		}
 	});
 });

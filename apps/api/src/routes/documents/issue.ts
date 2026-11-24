@@ -6,9 +6,11 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { db } from "../../db/client.js";
 import {
 	getDocumentById,
+	getDocumentsByPatientId,
 	issueGeneratedDocumentInDb,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
@@ -80,7 +82,11 @@ export async function register(app: FastifyInstance) {
 		// Выдача клинических медицинских документов разрешена только клиническому персоналу
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
+		const evalAccess = evaluateClinicalAccess(staffRole, {
+			clinicalRole: identity.clinicalRole ?? null,
+			canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+			specialties: identity.specialties ?? null,
+		});
 		if (
 			clinicalDocKinds.has(existing.kind) &&
 			!evalAccess.hasClinicalAccess &&
@@ -113,15 +119,20 @@ export async function register(app: FastifyInstance) {
 		if (!patient) {
 			return reply.code(404).send(apiError("Пациент не найден"));
 		}
+		if (patient.status === "archived" && !evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archived.read",
+				role: staffRole,
+				message:
+					"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+			});
+		}
 		const taxPaymentSnapshot = taxDocumentUsesPaymentSnapshot(existing.kind)
 			? buildTaxPaymentSnapshotForIssue(
 					existing,
-					await import("../../db/billingQuery.js").then((m) =>
-						m.getPaymentsByPatientIdInDb(orgId, existing.patientId),
-					),
-					await import("../../db/documentQuery.js").then((m) =>
-						m.getDocumentsByPatientId(orgId, existing.patientId),
-					),
+					await getPaymentsByPatientIdInDb(orgId, existing.patientId),
+					await getDocumentsByPatientId(orgId, existing.patientId),
 				)
 			: null;
 		if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
@@ -178,12 +189,8 @@ export async function register(app: FastifyInstance) {
 		// созданием и выдачей мог быть выдан другой возврат по тому же чеку.
 		if (issueCandidate.kind === "payment_refund_correction_request") {
 			const [refundPayments, refundDocuments] = await Promise.all([
-				import("../../db/billingQuery.js").then((m) =>
-					m.getPaymentsByPatientIdInDb(orgId, existing.patientId),
-				),
-				import("../../db/documentQuery.js").then((m) =>
-					m.getDocumentsByPatientId(orgId, existing.patientId),
-				),
+				getPaymentsByPatientIdInDb(orgId, existing.patientId),
+				getDocumentsByPatientId(orgId, existing.patientId),
 			]);
 			const refundLimitError = paymentRefundCorrectionSelectionErrorForDocument(
 				issueCandidate,

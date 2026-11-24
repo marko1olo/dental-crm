@@ -6,13 +6,25 @@
 
 import { SanPiNRegulatoryEngine } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { recordAuditEvent } from "../../../audit.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
 import { preSterilizationCleaningLogs } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
+
+const psoQuickNormBodySchema = z
+	.object({
+		batchItemCount: z.number().int().positive().optional(),
+		testedSampleCount: z.number().int().positive().optional(),
+		detergentBrand: z.string().optional(),
+		instrumentName: z.string().optional(),
+		notes: z.string().optional(),
+		operatorId: z.string().uuid().nullable().optional(),
+	})
+	.strict();
 
 export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -33,21 +45,25 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const body = (req.body as Record<string, unknown>) || {};
-	const batchItemCount = typeof body.batchItemCount === "number" ? body.batchItemCount : 100;
+	const parsed = psoQuickNormBodySchema.safeParse(req.body ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры фиксации нормы предстерилизационной очистки.",
+			issues: parsed.error.issues,
+		});
+	}
+	const body = parsed.data;
+	const batchItemCount = body.batchItemCount ?? 100;
 	const testedSampleCount =
-		typeof body.testedSampleCount === "number"
-			? body.testedSampleCount
-			: Math.max(3, Math.ceil(batchItemCount * 0.01));
-	const detergentBrand = typeof body.detergentBrand === "string" ? body.detergentBrand : "Биолот 0.5% + Аламинол 1%";
+		body.testedSampleCount ?? Math.max(3, Math.ceil(batchItemCount * 0.01));
+	const detergentBrand = body.detergentBrand ?? "Биолот 0.5% + Аламинол 1%";
 	const instrumentName =
-		typeof body.instrumentName === "string"
-			? body.instrumentName
-			: "Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)";
+		body.instrumentName ??
+		"Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)";
 	const notesText =
-		typeof body.notes === "string"
-			? body.notes
-			: "Азопирамовая и фенолфталеиновая пробы отрицательные (следов крови и моющих средств не обнаружено, норма)";
+		body.notes ??
+		"Азопирамовая и фенолфталеиновая пробы отрицательные (следов крови и моющих средств не обнаружено, норма)";
 
 	const evaluation = SanPiNRegulatoryEngine.evaluatePsoSampling(
 		batchItemCount,
@@ -56,7 +72,7 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 		true,
 	);
 
-	const bodyOperatorId = typeof body.operatorId === "string" ? body.operatorId : null;
+	const bodyOperatorId = body.operatorId ?? null;
 	const actorUserId = getRequestIdentity(req).userId ?? null;
 
 	const [log] = await withTenantCtx(organizationId, async (tx) => {
@@ -88,14 +104,15 @@ export async function handlePostPsoQuickNorm(req: FastifyRequest, reply: Fastify
 				reason: `Физиологическая норма ПСО: ${created.notes}, партия: ${created.batchItemCount} шт`,
 				tx,
 			});
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "SANPIN_PSO_ADDED",
+					payload: created,
+				});
+			});
 		}
 
 		return [created];
-	});
-
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "SANPIN_PSO_ADDED",
-		payload: log,
 	});
 
 	return reply.code(201).send({

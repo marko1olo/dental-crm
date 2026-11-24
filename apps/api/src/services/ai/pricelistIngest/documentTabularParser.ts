@@ -3,7 +3,7 @@
  * Layer 1: Pure Tabular & Document Text Parsing (0 side effects)
  */
 
-import { parseKopecks, formatKopecksToRubles } from "@dental/shared";
+import { formatKopecksToRubles, parseKopecks, rublesToKopecks } from "@dental/shared";
 import type { PriceListIngestSourceType, ExtractedPriceInfo } from "./types.js";
 
 // =============================================================================
@@ -125,7 +125,7 @@ export function extractPriceAndTitleFromLine(rawLine: string): ExtractedPriceInf
 			const parsed = parseInt(rawDigits, 10);
 			if (Number.isFinite(parsed) && parsed >= 50 && parsed <= 10_000_000) {
 				priceRub = parsed;
-				priceKopecks = parsed * 100;
+				priceKopecks = rublesToKopecks(parsed);
 				rawPriceString = (match2[0] ?? "").trim();
 				cleanTitle = match2.index !== undefined ? line.slice(0, match2.index).trim() : cleanTitle;
 			}

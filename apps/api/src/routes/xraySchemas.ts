@@ -30,7 +30,7 @@ export const createXrayScanSchema = z.object({
 	aiSummary: z.string().max(2000).nullable().optional(),
 	aiToothStates: z.record(z.string(), z.string()).nullable().optional(),
 	status: z.enum(["pending", "analyzing", "done", "error"]).optional(),
-});
+}).strict();
 
 /** Целое из окружения с зажимом в границы. Ноль хардкода сроков в коде. */
 export function xrayIntFromEnv(
@@ -238,7 +238,7 @@ export function scanToResponse(
 		capturedAt: scan.capturedAt.toISOString(),
 		createdAt: scan.createdAt.toISOString(),
 		hasImage: !!(scan.imageDataUri || scan.storagePath),
-		fileUrl: `/api/xray/scans/${scan.id}/file`,
+		fileUrl: `/api/imaging/studies/${scan.id}/file`,
 		storagePath: scan.storagePath ?? null,
 		...(includeImage
 			? { imageDataUri: resolvedImageDataUri ?? scan.imageDataUri ?? null }

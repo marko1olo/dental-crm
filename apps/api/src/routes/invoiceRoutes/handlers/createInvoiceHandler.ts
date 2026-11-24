@@ -41,6 +41,12 @@ export async function handleCreateInvoice(
 	const visitIdFromParam = params.visitId && UUID_PATTERN.test(params.visitId.trim())
 		? params.visitId.trim()
 		: undefined;
+	if (params.visitId !== undefined && !visitIdFromParam) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор приёма (ожидается UUID).",
+		});
+	}
 
 	const parsed = createInvoiceSchema.safeParse({
 		...body,
@@ -108,6 +114,7 @@ export async function handleCreateInvoice(
 
 		return {
 			serviceId,
+			serviceCode: item.serviceCode?.trim() || item.code804n?.trim() || serviceId || null,
 			toothCode,
 			title,
 			quantity: qty,
@@ -126,7 +133,17 @@ export async function handleCreateInvoice(
 	} else if (data.totalAmountRub !== undefined && data.totalAmountRub !== null) {
 		finalNetKopecks = BigInt(Math.max(0, rublesToKopecks(data.totalAmountRub)));
 	} else if (preparedItems.length > 0) {
-		finalNetKopecks = totalItemsNetKopecks;
+		let invoiceDiscountKopecks = BigInt(0);
+		if (data.discountPercent > 0) {
+			const basisPoints = basisPointsFromPercent(Math.min(100, Math.max(0, data.discountPercent)));
+			invoiceDiscountKopecks = BigInt(percentageOfKopecks(Number(totalItemsNetKopecks), basisPoints));
+		} else if (data.discountRub > 0) {
+			invoiceDiscountKopecks = BigInt(Math.max(0, rublesToKopecks(data.discountRub)));
+		}
+		finalNetKopecks =
+			totalItemsNetKopecks > invoiceDiscountKopecks
+				? totalItemsNetKopecks - invoiceDiscountKopecks
+				: BigInt(0);
 	}
 
 	const totalAmountRub = kopecksToRubles(finalNetKopecks);
@@ -240,7 +257,7 @@ export async function handleCreateInvoice(
 				unitPriceKopecks: it.unitKopecks,
 				discountPercent: String(it.discountPercent),
 				totalPriceKopecks: it.netLineKopecks,
-				serviceCode: it.serviceId || null,
+				serviceCode: it.serviceCode || it.serviceId || null,
 				toothCode: it.toothCode || null,
 			}));
 
@@ -261,7 +278,7 @@ export async function handleCreateInvoice(
 					unitPriceRub: it.unitPriceRub,
 					priceRub: it.priceRub,
 					discountRub: it.discountRub,
-					status: "completed" as const,
+					status: invoiceStatus === "draft" ? ("proposed" as const) : ("completed" as const),
 					plannedDoctorUserId: data.doctorId ?? null,
 					notes: itemNotes,
 				}));
@@ -361,6 +378,7 @@ export async function handleCreateInvoice(
 			patientName: result.patientName,
 			visitId: effectiveVisitId,
 			totalAmountRub,
+			totalAmountKopecks: Number(finalNetKopecks),
 			status: invoiceStatus,
 			issuedAt: now.toISOString(),
 			createdAt: now.toISOString(),

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
-import { onTenantTxCommit, withSavepoint } from "../../db/rls.js";
+import { onTenantTxCommit, runDetachedInTenantCtx, withSavepoint } from "../../db/rls.js";
 import { visits } from "../../db/schema.js";
 import {
 	ensureDefaultStaffChannels,
@@ -9,7 +9,6 @@ import {
 } from "../../db/staffChatQuery.js";
 import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { triggerSmartGapFiller } from "../../services/daemons/smartGapFillerService.js";
 import { syncRecallOnAppointmentCompleted } from "../../services/patients/recallSyncService.js";
 import { executeAutoBomWriteoff } from "../../services/treatmentConsumables/autoBomWriteoffService.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -82,35 +81,39 @@ export async function dispatchPatientArrivedIntercom(
 				},
 			});
 
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "STAFF_CHAT_MESSAGE",
-				payload: createdMessage,
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "STAFF_CHAT_MESSAGE",
+					payload: createdMessage,
+				});
 			});
 		}
 
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "INTERCOM_PING",
-			payload: {
-				ping: {
-					content: `🛎️ Пациент ${patientName} прибыл в холл клиники (${doctorName})`,
-					urgency: "urgent",
-					intercomPreset: "patient_arrived",
-					patientAttachment: {
-						patientId: updatedAppt.patientId,
-						fullName: patientName,
-						cabinetNumber: chairName,
-						doctorName,
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "INTERCOM_PING",
+				payload: {
+					ping: {
+						content: `🛎️ Пациент ${patientName} прибыл в холл клиники (${doctorName})`,
+						urgency: "urgent",
+						intercomPreset: "patient_arrived",
+						patientAttachment: {
+							patientId: updatedAppt.patientId,
+							fullName: patientName,
+							cabinetNumber: chairName,
+							doctorName,
+						},
+						createdAt: new Date().toISOString(),
 					},
-					createdAt: new Date().toISOString(),
+					preset: {
+						key: "patient_arrived",
+						label: "Пациент в холле",
+						badge: "🛎️ В холле",
+						urgency: "urgent",
+					},
+					appointmentId,
 				},
-				preset: {
-					key: "patient_arrived",
-					label: "Пациент в холле",
-					badge: "🛎️ В холле",
-					urgency: "urgent",
-				},
-				appointmentId,
-			},
+			});
 		});
 	} catch (intercomErr) {
 		request.log.warn(
@@ -138,7 +141,16 @@ export async function applyAppointmentStatusTransitions(
 			throw err;
 		}
 	} else if (status === "completed") {
-		void syncRecallOnAppointmentCompleted(orgId, appointmentId);
+		onTenantTxCommit(() => {
+			void runDetachedInTenantCtx(orgId, async () => {
+				await syncRecallOnAppointmentCompleted(orgId, appointmentId);
+			}).catch((err) => {
+				request.log.warn(
+					{ err, appointmentId, orgId },
+					"[scheduleRoutes] Фоновая синхронизация recall завершилась с ошибкой",
+				);
+			});
+		});
 		try {
 			const updatedVisits = await tx
 				.update(visits)
@@ -207,31 +219,6 @@ export async function applyAppointmentStatusTransitions(
 			);
 			throw err;
 		}
-	}
-}
-
-export function triggerCancellationGapFillerEffect(
-	request: FastifyRequest,
-	orgId: string,
-	appointmentId: string,
-	status: string | undefined,
-): void {
-	if (status === "cancelled" || status === "no_show") {
-		triggerSmartGapFiller(appointmentId, { organizationId: orgId })
-			.then((alert) => {
-				if (alert && alert.candidates.length > 0) {
-					wsBroker.broadcastToOrganization(orgId, {
-						type: "HOT_SLOT_FREED",
-						payload: alert,
-					});
-				}
-			})
-			.catch((gapErr) => {
-				request.log.warn(
-					{ err: gapErr, appointmentId, orgId },
-					"[appointments] Не удалось выполнить анализ smartGapFiller при отмене приёма",
-				);
-			});
 	}
 }
 

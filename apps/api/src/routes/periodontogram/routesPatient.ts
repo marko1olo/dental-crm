@@ -1,20 +1,15 @@
-import { computePayloadHash } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	fetchPatientLatestPeriodontogram,
 	resolvePerioPatientId,
 	upsertPatientFullPeriodontogram,
 	upsertPatientFullPeriodontogramBodySchema,
-	type PatchToothInput,
-	type SiteItemInput,
 } from "../../services/periodontogramService.js";
 import {
 	getHygieneRecommendations,
@@ -23,6 +18,10 @@ import {
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) {
 	const handleGet = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -38,8 +37,18 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		}
 
 		let patientId: string;
+		let data: Awaited<ReturnType<typeof fetchPatientLatestPeriodontogram>>;
 		try {
-			patientId = await resolvePerioPatientId(orgId, rawPatientId);
+			const result = await withTenantCtx(orgId, async () => {
+				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId);
+				const latestData = await fetchPatientLatestPeriodontogram(
+					orgId,
+					resolvedPatientId,
+				);
+				return { patientId: resolvedPatientId, data: latestData };
+			});
+			patientId = result.patientId;
+			data = result.data;
 		} catch (err: unknown) {
 			const e = err as { statusCode?: number; code?: string; message?: string };
 			if (e.statusCode === 404 || e.code === "PatientNotFound") {
@@ -57,15 +66,14 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			throw err;
 		}
 
-		const data = await fetchPatientLatestPeriodontogram(orgId, patientId);
 		if (!data) {
 			return reply.send({ success: true, data: null });
 		}
 
 		// Связка с рекомендациями гигиены по коду PSR
 		const dataIndices =
-			data && typeof data === "object" && "indices" in data
-				? (data.indices as Record<string, unknown> | null)
+			data && typeof data === "object" && "indices" in data && isPlainRecord(data.indices)
+				? data.indices
 				: null;
 		const psrCode = Number(dataIndices?.psr ?? 0);
 		const hasAsterisk = Boolean(dataIndices?.hasAsterisk);
@@ -109,34 +117,6 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				});
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
-
-			// Каноническая проверка idempotencyKeys: при сетевом ретрае возвращаем кэшированный ответ
-			const [existingRecord] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция сохранения пародонтограммы с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const parsedBody = upsertPatientFullPeriodontogramBodySchema.safeParse(request.body);
@@ -151,43 +131,43 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		const identity = getRequestIdentity(request);
 		const recordedByUserId = identity.userId ?? null;
 
-		const rawIndices =
-			body.indices && typeof body.indices === "object"
-				? (body.indices as Record<string, unknown>)
+		const rawIndices = isPlainRecord(body.indices) ? body.indices : undefined;
+		const rawPsrData = isPlainRecord(rawIndices?.psrData)
+			? rawIndices.psrData
+			: isPlainRecord(body.psrData)
+				? body.psrData
 				: undefined;
-		const rawPsrData =
-			(rawIndices?.psrData as Record<string, unknown> | undefined) ??
-			(body.psrData && typeof body.psrData === "object"
-				? (body.psrData as Record<string, unknown>)
-				: undefined);
 
 		try {
-			const patientId = await resolvePerioPatientId(orgId, rawPatientId);
-			const result = await upsertPatientFullPeriodontogram({
-				orgId,
-				patientId,
-				rawPatientId,
-				recordedByUserId,
-				visitId: typeof body.visitId === "string" && body.visitId.trim() ? body.visitId.trim() : undefined,
-				teeth: body.teeth,
-				sites: body.sites,
-				notes: typeof body.notes === "string" ? body.notes : undefined,
-				status: body.status === "closed" ? "closed" : "draft",
-				autoClose: Boolean(body.autoClose),
-				psrData: rawPsrData,
+			const { patientId, result } = await withTenantCtx(orgId, async () => {
+				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId);
+				const upsertResult = await upsertPatientFullPeriodontogram({
+					orgId,
+					patientId: resolvedPatientId,
+					rawPatientId,
+					recordedByUserId,
+					visitId: typeof body.visitId === "string" && body.visitId.trim() ? body.visitId.trim() : undefined,
+					teeth: body.teeth,
+					sites: body.sites,
+					notes: typeof body.notes === "string" ? body.notes : undefined,
+					status: body.status === "closed" ? "closed" : "draft",
+					autoClose: Boolean(body.autoClose),
+					psrData: rawPsrData,
+				});
+				return { patientId: resolvedPatientId, result: upsertResult };
 			});
 
 			// Расчет рекомендаций гигиены
 			const resIndices =
-				result && typeof result === "object" && "indices" in result
-					? (result.indices as Record<string, unknown> | null)
+				result && typeof result === "object" && "indices" in result && isPlainRecord(result.indices)
+					? result.indices
 					: null;
 			const psrCode = Number(resIndices?.psr ?? body.psrCode ?? 0);
 			const hasAsterisk = Boolean(resIndices?.hasAsterisk ?? body.hasAsterisk);
 			const hygieneRecommendations = getHygieneRecommendations(psrCode, hasAsterisk);
 			const hygienePlan = getHygienePlanText(psrCode, hasAsterisk);
 
-			const responsePayload = {
+			return reply.send({
 				success: true,
 				data: {
 					...result,
@@ -196,38 +176,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 					hygieneRecommendations,
 					hygienePlan,
 				},
-			};
-
-			if (idempotencyKey) {
-				try {
-					await db
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 200,
-								lockedAt: new Date(),
-							},
-						});
-				} catch (idemErr) {
-					request.log.warn(
-						{ err: idemErr, idempotencyKey, orgId },
-						"[periodontogram] Не удалось сохранить ключ идемпотентности",
-					);
-				}
-			}
-
-			return reply.send(responsePayload);
+			});
 		} catch (err: unknown) {
 			const e = err as { statusCode?: number; code?: string; message?: string };
 			if (e.statusCode === 404 || e.code === "PatientNotFound") {

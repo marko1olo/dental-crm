@@ -19,7 +19,7 @@ import {
 	type TaxDeductionPaymentItem,
 } from "@dental/shared";
 import { and, eq, inArray, or } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients, payments } from "../../db/schema.js";
 import {
 	buildFnsKnd1151156Xml,
@@ -42,75 +42,141 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 	readonly customPayerPatientId?: string | undefined;
 }): Promise<readonly FnsTaxCertificateSummary[]> {
 	const { organizationId, familyGroupId, taxYear, clinic, signatory, customPayerPatientId } = params;
-	const targetYear = parseInt(taxYear, 10);
-
-	// 1. Fetch family group
-	const [family] = await db
-		.select()
-		.from(familyGroups)
-		.where(
-			and(
-				eq(familyGroups.id, familyGroupId),
-				eq(familyGroups.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-
-	if (!family) {
-		throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
-	}
-
-	// 2. Identify Primary Payer (Father / Head of Household)
-	const payerId = customPayerPatientId || family.headPatientId;
-	if (!payerId) {
+	const trimmedTaxYear = String(taxYear).trim();
+	const targetYear = Number.parseInt(trimmedTaxYear, 10);
+	if (!/^\d{4}$/.test(trimmedTaxYear) || !Number.isInteger(targetYear) || targetYear < 2000 || targetYear > 2100) {
 		throw new FamilyWalletError(
-			"В семейной группе не назначен главный плательщик (глава семьи)",
+			"Налоговый год должен быть корректным 4-значным числом (2000-2100)",
 			400,
-			"NO_PRIMARY_PAYER",
+			"INVALID_TAX_YEAR",
 		);
 	}
 
-	const [payerPatient] = await db
-		.select()
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, payerId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	const {
+		family,
+		payerPatient,
+		members,
+		allPayments,
+		relationships,
+		payerId,
+	} = await withTenantCtx(organizationId, async (tx) => {
+		// 1. Fetch family group
+		const [familyRow] = await tx
+			.select()
+			.from(familyGroups)
+			.where(
+				and(
+					eq(familyGroups.id, familyGroupId),
+					eq(familyGroups.organizationId, organizationId),
+				),
+			)
+			.limit(1);
 
-	if (!payerPatient) {
-		throw new FamilyWalletError("Главный плательщик не найден в базе пациентов", 404, "PAYER_NOT_FOUND");
-	}
+		if (!familyRow) {
+			throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
+		}
 
-	// 3. Fetch all family members
-	const members = await db
-		.select()
-		.from(patients)
-		.where(
-			and(
-				eq(patients.familyGroupId, familyGroupId),
-				eq(patients.organizationId, organizationId),
-			),
-		);
+		// 2. Identify Primary Payer (Head of Household)
+		const resolvedPayerId = customPayerPatientId || familyRow.headPatientId;
+		if (!resolvedPayerId) {
+			throw new FamilyWalletError(
+				"В семейной группе не назначен главный плательщик (глава семьи)",
+				400,
+				"NO_PRIMARY_PAYER",
+			);
+		}
 
-	// 4. Fetch all payments in the given tax year for family members
+		const [payerRow] = await tx
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, resolvedPayerId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!payerRow) {
+			throw new FamilyWalletError("Главный плательщик не найден в базе пациентов", 404, "PAYER_NOT_FOUND");
+		}
+
+		if (payerRow.administrativeProfile?.isAnonymous === true) {
+			throw new FamilyWalletError(
+				"Анонимный пациент не может выступать налогоплательщиком в справке ФНС (КНД 1151156)",
+				422,
+				"ANONYMOUS_PATIENT_FORBIDDEN",
+			);
+		}
+
+		// 3. Fetch all family members
+		const memberRows = await tx
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.familyGroupId, familyGroupId),
+					eq(patients.organizationId, organizationId),
+				),
+			);
+
+		const memberIds = memberRows.map((m) => m.id);
+		if (memberIds.length === 0) {
+			return {
+				family: familyRow,
+				payerPatient: payerRow,
+				members: memberRows,
+				allPayments: [] as Array<typeof payments.$inferSelect>,
+				relationships: [] as Array<typeof patientRelationships.$inferSelect>,
+				payerId: resolvedPayerId,
+			};
+		}
+
+		// 4. Fetch all payments & kinship graph inside the same tenant transaction
+		const paymentRows = await tx
+			.select()
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					inArray(payments.patientId, memberIds),
+				),
+			);
+
+		const relationshipRows = await tx
+			.select()
+			.from(patientRelationships)
+			.where(
+				and(
+					eq(patientRelationships.organizationId, organizationId),
+					or(
+						and(
+							eq(patientRelationships.patientId, resolvedPayerId),
+							inArray(patientRelationships.relatedPatientId, memberIds),
+						),
+						and(
+							inArray(patientRelationships.patientId, memberIds),
+							eq(patientRelationships.relatedPatientId, resolvedPayerId),
+						),
+					),
+				),
+			);
+
+		return {
+			family: familyRow,
+			payerPatient: payerRow,
+			members: memberRows,
+			allPayments: paymentRows,
+			relationships: relationshipRows,
+			payerId: resolvedPayerId,
+		};
+	});
+
+	void family;
 	const memberIds = members.map((m) => m.id);
 	if (memberIds.length === 0) {
 		return [];
 	}
-
-	const allPayments = await db
-		.select()
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, organizationId),
-				inArray(payments.patientId, memberIds),
-			),
-		);
 
 	const familyPayments = allPayments.filter((p) => {
 		if (!memberIds.includes(p.patientId)) return false;
@@ -123,27 +189,32 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 	});
 
 	// Format Payer Info for FNS
-	const payerFioParts = payerPatient.fullName.trim().split(/\s+/);
+	const payerFioParts = payerPatient.fullName.trim().split(/\s+/).filter(Boolean);
+	const [payerFamily, payerGiven, ...payerPatronymicParts] = payerFioParts;
+	if (!payerFamily || !payerGiven) {
+		throw new FamilyWalletError(
+			"Для формирования справки ФНС укажите полные фамилию и имя плательщика",
+			422,
+			"INCOMPLETE_PAYER_NAME",
+		);
+	}
 	const payerFio: { family: string; given: string; patronymic?: string } = {
-		family: payerFioParts[0] || "Иванов",
-		given: payerFioParts[1] || "Иван",
+		family: payerFamily,
+		given: payerGiven,
 	};
-	if (payerFioParts.length > 2) {
-		payerFio.patronymic = payerFioParts.slice(2).join(" ");
+	if (payerPatronymicParts.length > 0) {
+		payerFio.patronymic = payerPatronymicParts.join(" ");
 	}
 
 	const payerPerson: FnsPersonInfo = {
 		fullName: payerFio,
-		birthDate: payerPatient.birthDate || "1980-01-01",
+		birthDate: payerPatient.birthDate?.trim() || "",
 	};
 	if (payerPatient.administrativeProfile?.taxpayerInn) {
 		payerPerson.inn = payerPatient.administrativeProfile.taxpayerInn;
 	}
 	if (payerPatient.administrativeProfile?.snils) {
 		payerPerson.snils = payerPatient.administrativeProfile.snils;
-	}
-	if (payerPatient.birthDate) {
-		payerPerson.birthDate = payerPatient.birthDate;
 	}
 	if (payerPatient.administrativeProfile?.identityDocument) {
 		payerPerson.identityDocument = {
@@ -156,23 +227,32 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 
 	// 5. Generate certificates per treated family member
 	for (const member of members) {
+		if (member.administrativeProfile?.isAnonymous === true) {
+			continue;
+		}
 		const memberRawPayments = familyPayments.filter((p) => p.patientId === member.id);
 		if (memberRawPayments.length === 0) continue;
 
 		const mappedItems: TaxDeductionPaymentItem[] = memberRawPayments.map((p) => {
 			const rawAmountKopecks = "amountKopecks" in p ? (p as { amountKopecks?: unknown }).amountKopecks : undefined;
-			const amountKopecks = rawAmountKopecks != null
+			const hasExplicitKopecks =
+				rawAmountKopecks !== null &&
+				rawAmountKopecks !== undefined &&
+				BigInt(rawAmountKopecks as bigint | number) !== 0n;
+			const amountKopecks = hasExplicitKopecks
 				? BigInt(rawAmountKopecks as bigint | number)
-				: BigInt(rublesToKopecks(p.amountRub || 0));
+				: BigInt(rublesToKopecks(Number(p.amountRub || 0)));
 			const amtKop = Number(amountKopecks);
 
+			const explicitCode = p.taxDeductionCode === "2" ? "2" : p.taxDeductionCode === "1" ? "1" : null;
 			const rawNote = p.note?.trim() || undefined;
-			const code804nCandidate = rawNote && /^[A-B]\d{2}\.\d{2}\.\d{3}/i.test(rawNote) ? rawNote : undefined;
-			const isExpensive = Boolean(
-				p.taxDeductionCode === "2" ||
-				classifyTaxDeduction804n(code804nCandidate, rawNote).categoryCode === "2" ||
-				classifyNdflServiceCode(rawNote, code804nCandidate) === "2",
-			);
+			const isExpensive =
+				explicitCode !== null
+					? explicitCode === "2"
+					: Boolean(
+							classifyTaxDeduction804n(undefined, rawNote).categoryCode === "2" ||
+								classifyNdflServiceCode(rawNote) === "2",
+						);
 			const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
 			const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);
 			const rawReceipt = p.fiscalReceipt as Record<string, unknown> | null;
@@ -190,7 +270,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 				receiptNumber: p.fiscalReceiptNumber || `ФД-${docNum}`,
 				fiscalDocumentNumber: docNum || "0",
 				fiscalSign,
-				serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
+				serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическая стоматология (Код 01)"),
 				amountRub: kopecksToRubles(amtKop),
 				amountKopecks: amtKop,
 				taxCode: isExpensive ? ("2" as const) : ("1" as const),
@@ -228,81 +308,58 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			kinshipCode = "1";
 			kinshipNameRu = "Лично (налогоплательщик)";
 		} else {
-			// Query relationship graph between payer and treated member
-			const [rel] = await db
-				.select()
-				.from(patientRelationships)
-				.where(
-					and(
-						eq(patientRelationships.organizationId, organizationId),
-						or(
-							and(
-								eq(patientRelationships.patientId, payerId),
-								eq(patientRelationships.relatedPatientId, member.id),
-							),
-							and(
-								eq(patientRelationships.patientId, member.id),
-								eq(patientRelationships.relatedPatientId, payerId),
-							),
-						),
-					),
-				)
-				.limit(1);
+			const rel = relationships.find(
+				(r) =>
+					(r.patientId === payerId && r.relatedPatientId === member.id) ||
+					(r.patientId === member.id && r.relatedPatientId === payerId),
+			);
+			if (!rel) {
+				// Без подтвержденной родственной связи в patient_relationships вычет на третье лицо запрещен ст. 219 НК РФ
+				continue;
+			}
 
-			if (rel) {
-				const isPayerSource = rel.patientId === payerId;
-				let relType = rel.relationshipType;
-				if (!isPayerSource) {
-					if (relType === "parent") relType = "child";
-					else if (relType === "child") relType = "parent";
-					else if (relType === "guardian") relType = "ward";
-					else if (relType === "ward") relType = "guardian";
-				}
+			const isPayerSource = rel.patientId === payerId;
+			let relType = rel.relationshipType;
+			if (!isPayerSource) {
+				if (relType === "parent") relType = "child";
+				else if (relType === "child") relType = "parent";
+				else if (relType === "guardian") relType = "ward";
+				else if (relType === "ward") relType = "guardian";
+			}
 
-				if (relType === "child") {
-					kinshipCode = "4";
-					kinshipNameRu = "Ребенок";
-				} else if (relType === "parent") {
-					kinshipCode = "3";
-					kinshipNameRu = "Родитель";
-				} else if (relType === "spouse") {
-					kinshipCode = "2";
-					kinshipNameRu = "Супруг(а)";
-				} else if (relType === "ward") {
-					kinshipCode = "4";
-					kinshipNameRu = "Подопечный";
-				} else {
-					const memberBirthYear = member.birthDate ? new Date(member.birthDate).getFullYear() : null;
-					const isChild =
-						memberBirthYear !== null &&
-						!Number.isNaN(memberBirthYear) &&
-						new Date().getFullYear() - memberBirthYear < 24;
-					kinshipCode = isChild ? "4" : "1";
-					kinshipNameRu = isChild ? "Ребенок" : "Лично";
-				}
+			if (relType === "child") {
+				kinshipCode = "4";
+				kinshipNameRu = "Ребенок";
+			} else if (relType === "parent" || relType === "guardian") {
+				kinshipCode = "3";
+				kinshipNameRu = relType === "guardian" ? "Законный представитель / опекун" : "Родитель";
+			} else if (relType === "spouse") {
+				kinshipCode = "2";
+				kinshipNameRu = "Супруг(а)";
+			} else if (relType === "ward") {
+				kinshipCode = "5";
+				kinshipNameRu = "Подопечный";
 			} else {
-				const memberBirthYear = member.birthDate ? new Date(member.birthDate).getFullYear() : null;
-				const payerBirthYear = payerPatient.birthDate ? new Date(payerPatient.birthDate).getFullYear() : null;
-				if (memberBirthYear && payerBirthYear && memberBirthYear < payerBirthYear - 15) {
-					kinshipCode = "3";
-					kinshipNameRu = "Родитель";
-				} else if (memberBirthYear && payerBirthYear && memberBirthYear > payerBirthYear + 15) {
-					kinshipCode = "4";
-					kinshipNameRu = "Ребенок";
-				} else {
-					kinshipCode = "1";
-					kinshipNameRu = "Лично";
-				}
+				// Неклассифицированная бытовая связь (relative/other) не дает законного права на налоговый вычет без подтверждения родства
+				continue;
 			}
 		}
 
-		const memberFioParts = member.fullName.trim().split(/\s+/);
+		const memberFioParts = member.fullName.trim().split(/\s+/).filter(Boolean);
+		const [memberFamily, memberGiven, ...memberPatronymicParts] = memberFioParts;
+		if (!memberFamily || !memberGiven) {
+			throw new FamilyWalletError(
+				"Для формирования справки ФНС укажите полные фамилию и имя пациента",
+				422,
+				"INCOMPLETE_PATIENT_NAME",
+			);
+		}
 		const patientFio: { family: string; given: string; patronymic?: string } = {
-			family: memberFioParts[0] || "Иванова",
-			given: memberFioParts[1] || "Ольга",
+			family: memberFamily,
+			given: memberGiven,
 		};
-		if (memberFioParts.length > 2) {
-			patientFio.patronymic = memberFioParts.slice(2).join(" ");
+		if (memberPatronymicParts.length > 0) {
+			patientFio.patronymic = memberPatronymicParts.join(" ");
 		}
 
 		const patientInfo: FnsPatientInfo = {
@@ -325,7 +382,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			};
 		}
 
-		const certNumber = `FNS-${taxYear}-${member.id.slice(0, 8).toUpperCase()}`;
+		const certNumber = `FNS-${trimmedTaxYear}-${member.id.slice(0, 8).toUpperCase()}`;
 
 		const fnsPayload: FnsTaxPayload = {
 			documentNumber: certNumber,

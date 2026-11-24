@@ -11,6 +11,8 @@ import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import { evaluatePasswordBodySchema, staffCandidateSchema } from "./staffSchemas.js";
 import type { ExtendedHrProfileStorage, StaffSessionTelemetry } from "./types.js";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function registerStaffQueryRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/staff/extended — Список сотрудников клиники с расширенным профилем
@@ -55,6 +57,13 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 		if (!auth) return;
 
 		const params = request.params as { staffId: string };
+		if (!UUID_PATTERN.test(params.staffId)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный идентификатор сотрудника.",
+			};
+		}
 		const [user] = await db
 			.select()
 			.from(schema.users)
@@ -155,6 +164,9 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 	 * POST /api/staff/evaluate-password — Оценка энтропии и стойкости пароля
 	 */
 	app.post("/api/staff/evaluate-password", async (request, reply) => {
+		const auth = await resolveOrganizationId(request, reply);
+		if (!auth) return;
+
 		const parsed = evaluatePasswordBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			reply.code(400);
@@ -175,6 +187,13 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 		if (!auth) return;
 
 		const params = request.params as { staffId: string };
+		if (!UUID_PATTERN.test(params.staffId)) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный идентификатор сотрудника.",
+			};
+		}
 		const [user] = await db
 			.select({
 				id: schema.users.id,

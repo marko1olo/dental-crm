@@ -54,7 +54,8 @@ describe("Cashbox Shift & Fiscal Ledger Engine (SSOT & 54-FZ)", () => {
 
 		assert.equal(meta.fnSerial, "9999078900012345");
 		assert.equal(meta.fiscalDocNumber, "4201");
-		assert.ok(meta.fiscalSign.length >= 8);
+		assert.ok(meta.fiscalSign && meta.fiscalSign.length >= 8);
+		assert.ok(meta.qrString);
 		assert.ok(meta.qrString.startsWith("t="));
 		assert.ok(meta.qrString.includes("s=15450.50"));
 		assert.ok(meta.qrString.includes("fn=9999078900012345"));

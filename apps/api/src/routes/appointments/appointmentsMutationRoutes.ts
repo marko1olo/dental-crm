@@ -179,7 +179,7 @@ export const createAppointmentHandler = async (
 		}
 
 		const allowOverride = Boolean(
-			(input as { allowLabCollisionOverride?: boolean }).allowLabCollisionOverride ||
+			input.allowLabCollisionOverride ||
 				input.allowEmergencyOverride ||
 				input.allowOverbooking,
 		);
@@ -317,7 +317,7 @@ export const updateAppointmentHandler = async (
 			});
 		}
 
-		const existingAppt = await getAppointmentByIdInDb(orgId, appointmentId);
+		const existingAppt = await getAppointmentByIdInDb(orgId, appointmentId, tx);
 		if (!existingAppt) {
 			return reply.code(404).send({
 				code: "AppointmentNotFound",
@@ -329,7 +329,7 @@ export const updateAppointmentHandler = async (
 		if (input.startsAt) {
 			const effectivePatientId = input.patientId ?? existingAppt.patientId;
 			const allowOverride = Boolean(
-				(input as { allowLabCollisionOverride?: boolean }).allowLabCollisionOverride ||
+				input.allowLabCollisionOverride ||
 					input.allowEmergencyOverride ||
 					input.allowOverbooking,
 			);
@@ -508,7 +508,7 @@ export const createNextStageAppointmentHandler = async (
 			});
 		}
 
-		const parent = await getAppointmentByIdInDb(orgId, appointmentId);
+		const parent = await getAppointmentByIdInDb(orgId, appointmentId, tx);
 		if (!parent) {
 			return reply.code(404).send({
 				code: "AppointmentNotFound",

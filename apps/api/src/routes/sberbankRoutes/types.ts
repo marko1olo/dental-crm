@@ -22,7 +22,7 @@ export const sberbankPayBodySchema = z.preprocess(
 		visitId: z.string().uuid().optional().nullable(),
 		documentId: z.string().uuid().optional().nullable(),
 		invoiceId: z.string().uuid().optional().nullable(),
-	}),
+	}).strict(),
 );
 
 export type SberbankPayBody = z.infer<typeof sberbankPayBodySchema>;
@@ -30,19 +30,23 @@ export type SberbankPayBody = z.infer<typeof sberbankPayBodySchema>;
 /**
  * Zod validation schema for GET /api/sberbank/status/:orderId route params.
  */
-export const sberbankStatusParamsSchema = z.object({
-	orderId: z.string().trim().min(1, "orderId обязателен"),
-});
+export const sberbankStatusParamsSchema = z
+	.object({
+		orderId: z.string().trim().min(1, "orderId обязателен"),
+	})
+	.strict();
 
 export type SberbankStatusParams = z.infer<typeof sberbankStatusParamsSchema>;
 
 /**
  * Zod validation schema for POST /api/sberbank/cancel-or-reconcile request body.
  */
-export const sberbankCancelReconcileBodySchema = z.object({
-	orderId: z.string().trim().min(1, "Идентификатор заказа обязателен"),
-	forceReverse: z.boolean().optional(),
-});
+export const sberbankCancelReconcileBodySchema = z
+	.object({
+		orderId: z.string().trim().min(1, "Идентификатор заказа обязателен"),
+		forceReverse: z.boolean().optional(),
+	})
+	.strict();
 
 export type SberbankCancelReconcileBody = z.infer<typeof sberbankCancelReconcileBodySchema>;
 

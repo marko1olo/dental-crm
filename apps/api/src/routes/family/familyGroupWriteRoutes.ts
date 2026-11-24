@@ -2,7 +2,7 @@ import { kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import type { db } from "../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
@@ -32,6 +32,7 @@ export async function ensureFamilyMemberSpendAuthorization(
 	walletOwnerId: string,
 	memberId: string,
 	canSpend = true,
+	relationshipType?: string,
 ) {
 	if (!walletOwnerId || !memberId || walletOwnerId === memberId) return;
 
@@ -55,12 +56,15 @@ export async function ensureFamilyMemberSpendAuthorization(
 		)
 		.limit(1);
 
+	const resolvedRelationship = relationshipType?.trim() || undefined;
+
 	if (existing) {
 		await tx
 			.update(patientRelationships)
 			.set({
 				canSpendFamilyWallet: canSpend,
 				isPrimaryPayer: canSpend,
+				...(resolvedRelationship ? { relationshipType: resolvedRelationship } : {}),
 				updatedAt: new Date(),
 			})
 			.where(
@@ -74,7 +78,7 @@ export async function ensureFamilyMemberSpendAuthorization(
 			organizationId,
 			patientId: walletOwnerId,
 			relatedPatientId: memberId,
-			relationshipType: "relative",
+			relationshipType: resolvedRelationship ?? "relative",
 			isLegalRepresentative: false,
 			canViewMedicalRecord: true,
 			canSignConsents: false,
@@ -101,32 +105,44 @@ export async function executeCreateFamilyGroup(params: {
 }): Promise<ExecuteCreateFamilyGroupResult> {
 	const { organizationId, data } = params;
 
-	if (data.headPatientId) {
-		const [head] = await db.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients)
-			.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId))).limit(1);
-		if (!head) return { success: false, status: 403, error: "Forbidden", message: "Пациент не найден в клинике" };
-		if (head.familyGroupId) return { success: false, status: 409, error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" };
-	}
-
-	if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
-		const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
-		if (memberIds.length > 0) {
-			const orgMembers = await db
-				.select({ id: patients.id })
+	const txResult = await withTenantCtx(organizationId, async (tx): Promise<ExecuteCreateFamilyGroupResult> => {
+		if (data.headPatientId) {
+			const [head] = await tx
+				.select({ id: patients.id, familyGroupId: patients.familyGroupId })
 				.from(patients)
-				.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
-			if (orgMembers.length !== memberIds.length) {
-				return {
-					success: false,
-					status: 400,
-					error: "InvalidMemberPatientId",
-					message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
-				};
+				.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId)))
+				.limit(1);
+			if (!head) return { success: false, status: 403, error: "Forbidden", message: "Пациент не найден в клинике" };
+			if (head.familyGroupId) return { success: false, status: 409, error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" };
+		}
+
+		if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+			const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
+			if (memberIds.length > 0) {
+				const orgMembers = await tx
+					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
+					.from(patients)
+					.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
+				if (orgMembers.length !== memberIds.length) {
+					return {
+						success: false,
+						status: 400,
+						error: "InvalidMemberPatientId",
+						message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
+					};
+				}
+				const conflicting = orgMembers.find((m) => Boolean(m.familyGroupId));
+				if (conflicting) {
+					return {
+						success: false,
+						status: 409,
+						error: "PatientAlreadyInFamily",
+						message: "Один или несколько выбранных пациентов уже состоят в другой семье",
+					};
+				}
 			}
 		}
-	}
 
-	const family = await withTenantCtx(organizationId, async (tx) => {
 		const [created] = await tx.insert(familyGroups).values({
 			organizationId,
 			name: data.name,
@@ -135,29 +151,30 @@ export async function executeCreateFamilyGroup(params: {
 			balanceKopecks: 0,
 		}).returning();
 
-		if (data.headPatientId && created) {
+		if (!created) {
+			return { success: false, status: 500, error: "InsertFailed", message: "Не удалось создать семейную группу" };
+		}
+
+		if (data.headPatientId) {
 			await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
 				.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId)));
 		}
 
-		if (created && data.headPatientId && Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
-			for (const memberId of data.memberPatientIds) {
-				if (memberId && memberId !== data.headPatientId) {
-					await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
-						.where(and(eq(patients.id, memberId), eq(patients.organizationId, organizationId)));
-					await ensureFamilyMemberSpendAuthorization(tx, organizationId, data.headPatientId, memberId, true);
-				}
+		if (data.headPatientId && Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+			const uniqueMemberIds = Array.from(
+				new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)),
+			);
+			for (const memberId of uniqueMemberIds) {
+				await tx.update(patients).set({ familyGroupId: created.id, updatedAt: new Date() })
+					.where(and(eq(patients.id, memberId), eq(patients.organizationId, organizationId)));
+				await ensureFamilyMemberSpendAuthorization(tx, organizationId, data.headPatientId, memberId, true);
 			}
 		}
 
-		return created;
+		return { success: true, status: 200, family: created };
 	});
 
-	if (!family) {
-		return { success: false, status: 500, error: "InsertFailed", message: "Не удалось создать семейную группу" };
-	}
-
-	return { success: true, status: 200, family };
+	return txResult;
 }
 
 export type ExecuteAddFamilyMemberResult =
@@ -169,8 +186,9 @@ export async function executeAddFamilyMember(params: {
 	familyGroupId: string;
 	patientId: string;
 	canSpendFamilyWallet?: boolean | undefined;
+	relationshipType?: string | undefined;
 }): Promise<ExecuteAddFamilyMemberResult> {
-	const { organizationId, familyGroupId, patientId, canSpendFamilyWallet = true } = params;
+	const { organizationId, familyGroupId, patientId, canSpendFamilyWallet = true, relationshipType } = params;
 
 	return withTenantCtx(organizationId, async (tx) => {
 		const [family] = await tx.select().from(familyGroups)
@@ -190,7 +208,7 @@ export async function executeAddFamilyMember(params: {
 
 		const headId = family.headPatientId || family.primaryPatientId;
 		if (headId && headId !== patientId) {
-			await ensureFamilyMemberSpendAuthorization(tx, organizationId, headId, patientId, canSpendFamilyWallet);
+			await ensureFamilyMemberSpendAuthorization(tx, organizationId, headId, patientId, canSpendFamilyWallet, relationshipType);
 		}
 
 		return { success: true, status: 200, body: { success: true, patientId, familyGroupId, canSpendFamilyWallet } };
@@ -239,41 +257,69 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор семейной группы (ожидается UUID)" });
+		}
 		const updateParsed = updateFamilyGroupSchema.safeParse(req.body);
 		if (!updateParsed.success) {
 			return reply.code(400).send({ error: "ValidationError", message: "Проверьте данные семейной группы." });
 		}
 		const data = updateParsed.data;
 
-		if (data.headPatientId) {
-			const [head] = await db.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients)
-				.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId))).limit(1);
-			if (!head) return reply.code(403).send({ error: "Forbidden", message: "Пациент не найден в клинике" });
-			if (head.familyGroupId && head.familyGroupId !== id) {
-				return reply.code(409).send({ error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" });
-			}
-		}
-
-		if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
-			const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
-			if (memberIds.length > 0) {
-				const orgMembers = await db
-					.select({ id: patients.id })
+		const updateResult = await withTenantCtx(organizationId, async (tx) => {
+			if (data.headPatientId) {
+				const [head] = await tx
+					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
 					.from(patients)
-					.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
-				if (orgMembers.length !== memberIds.length) {
-					return reply.code(400).send({
-						error: "InvalidMemberPatientId",
-						message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
-					});
+					.where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId)))
+					.limit(1);
+				if (!head) return { status: 403 as const, body: { error: "Forbidden", message: "Пациент не найден в клинике" } };
+				if (head.familyGroupId && head.familyGroupId !== id) {
+					return { status: 409 as const, body: { error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" } };
 				}
 			}
-		}
 
-		const family = await withTenantCtx(organizationId, async (tx) => {
-			const [updated] = await tx.update(familyGroups).set(data)
-				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).returning();
-			if (!updated) return null;
+			if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+				const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
+				if (memberIds.length > 0) {
+					const orgMembers = await tx
+						.select({ id: patients.id, familyGroupId: patients.familyGroupId })
+						.from(patients)
+						.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
+					if (orgMembers.length !== memberIds.length) {
+						return {
+							status: 400 as const,
+							body: {
+								error: "InvalidMemberPatientId",
+								message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
+							},
+						};
+					}
+					const conflicting = orgMembers.find((m) => m.familyGroupId && m.familyGroupId !== id);
+					if (conflicting) {
+						return {
+							status: 409 as const,
+							body: {
+								error: "PatientAlreadyInFamily",
+								message: "Один или несколько пациентов уже состоят в другой семье",
+							},
+						};
+					}
+				}
+			}
+
+			const familyUpdates: Partial<typeof familyGroups.$inferInsert> = {
+				updatedAt: new Date(),
+			};
+			if (data.name !== undefined) familyUpdates.name = data.name;
+			if (data.headPatientId !== undefined) familyUpdates.headPatientId = data.headPatientId;
+
+			const [updated] = await tx
+				.update(familyGroups)
+				.set(familyUpdates)
+				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId)))
+				.returning();
+			if (!updated) return { status: 404 as const, body: { error: "Family group not found" } };
 
 			const effectiveHeadId = data.headPatientId || updated.headPatientId;
 
@@ -302,12 +348,14 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 					}
 				}
 			}
-			return updated;
+			return { status: 200 as const, body: updated };
 		});
 
-		if (!family) return reply.code(404).send({ error: "Family group not found" });
-		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_GROUP_UPDATED", payload: family });
-		return family;
+		if (updateResult.status !== 200) {
+			return reply.code(updateResult.status).send(updateResult.body);
+		}
+		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_GROUP_UPDATED", payload: updateResult.body });
+		return updateResult.body;
 	});
 
 	// POST /api/finance/family/:id/members — добавить пациента в семью с правами списания
@@ -322,17 +370,21 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор семейной группы (ожидается UUID)" });
+		}
 		const parsed = addFamilyMemberSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный ID пациента для добавления в семью" });
 		}
-		const { patientId, canSpendFamilyWallet } = parsed.data;
+		const { patientId, canSpendFamilyWallet, relationshipType } = parsed.data;
 
 		const result = await executeAddFamilyMember({
 			organizationId,
 			familyGroupId: id,
 			patientId,
 			canSpendFamilyWallet,
+			relationshipType,
 		});
 
 		if (result.status === 200) {
@@ -351,6 +403,9 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const { id, patientId } = req.params as { id: string; patientId: string };
+		if (!isValidUuid(id) || !isValidUuid(patientId)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный UUID семейной группы или пациента" });
+		}
 		const result = await withTenantCtx(organizationId, async (tx) => {
 			const [family] = await tx.select().from(familyGroups)
 				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
@@ -418,7 +473,7 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 						return age >= 18;
 					});
 
-					nextHeadId = adults[0]?.id || remainingMembers[0]!.id;
+					nextHeadId = adults[0]?.id ?? remainingMembers[0]?.id ?? null;
 				}
 
 				await tx
@@ -455,6 +510,9 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
 
 		const params = req.params as { id?: string };
+		if (params.id && !isValidUuid(params.id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор семейной группы (ожидается UUID)" });
+		}
 		const parsed = updateFamilyPermissionsSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры прав доступа", details: parsed.error.issues });
@@ -523,6 +581,9 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 		}
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор семейной группы (ожидается UUID)" });
+		}
 		const deleteResult = await withTenantCtx(organizationId, async (tx) => {
 			const [family] = await tx
 				.select()

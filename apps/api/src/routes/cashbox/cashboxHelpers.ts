@@ -5,7 +5,7 @@
  */
 
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { TenantDb } from "../../db/rls.js";
 import { users } from "../../db/schema.js";
 import type { ZReportDataPayload } from "./types.js";
@@ -32,6 +32,7 @@ export async function resolveEffectiveCashierUserId(
 		.select({ id: users.id })
 		.from(users)
 		.where(eq(users.organizationId, orgId))
+		.orderBy(asc(users.createdAt), asc(users.id))
 		.limit(1);
 
 	return firstUser?.id ?? null;

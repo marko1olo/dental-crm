@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -123,6 +124,7 @@ describe("Milestone 1: Offline 54-FZ KKT Fiscal Print Buffer (TASK-1.3)", () => 
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				patientId: PATIENT_A_ID,
@@ -182,6 +184,7 @@ describe("Milestone 1: Offline 54-FZ KKT Fiscal Print Buffer (TASK-1.3)", () => 
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				clientMutationId: mutationId,
@@ -355,6 +358,7 @@ describe("Milestone 1: Offline 54-FZ KKT Fiscal Print Buffer (TASK-1.3)", () => 
 			headers: {
 				"x-dente-clinic-token": clinicTokenA,
 				"x-dente-staff-token": staffTokenA,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				patientId: PATIENT_A_ID,
@@ -400,7 +404,7 @@ describe("Milestone 1: Offline 54-FZ KKT Fiscal Print Buffer (TASK-1.3)", () => 
 			},
 		});
 		assert.equal(orgBRetryRes.statusCode, 404);
-		assert.equal(orgBRetryRes.json().error, "FiscalQueueItemNotFound");
+		assert.equal(orgBRetryRes.json().error, "QueueItemNotFound");
 	});
 
 	it("1.7 POST /api/billing/fiscal-queue/retry-all flushes all pending items for the organization", async () => {

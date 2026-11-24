@@ -1,13 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { computePayloadHash } from "@dental/shared";
-import { db } from "../../db/client.js";
-import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { patients } from "../../db/schema.js";
 import { treatmentPlans, treatmentPlanStages } from "../../db/schema/clinical/treatmentPlansSchema.js";
-import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
 import { deductOrthoMaterialsSchema, patientParamsSchema, rebracketSchema, stageAdvanceSchema, type OrthodonticProgressRecord } from "./types.js";
@@ -20,39 +18,16 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.orthodontics.write",
+				role: staffRole,
+				message: `Отказ в списании ортодонтических материалов: ${evalAccess.reason}`,
 			});
-		}
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
-			const record = existingIdemKey ?? (existingSyncRecord ? {
-				status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
-				responseBody: existingSyncRecord.responseJson,
-				responseCode: existingSyncRecord.responseStatus,
-				lockedAt: existingSyncRecord.updatedAt,
-			} : null);
-
-			if (record) {
-				if (record.status === "completed" && record.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(record.responseCode || 200)
-						.send(record.responseBody);
-				}
-				if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const parsedParams = patientParamsSchema.safeParse(request.params);
@@ -73,11 +48,17 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			});
 		}
 		const body = parsedBody.data;
-		const patient = await getPatientByIdFromDb(orgId, patientId);
-		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
-		const resolved = await resolveMaterialParams(body, orgId);
-		const responsePayload = await db.transaction(async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.for("update")
+				.limit(1);
+			if (!patient) return { patientNotFound: true as const };
+
+			const resolved = await resolveMaterialParams(body, orgId, tx);
 			const deduction = await deductOrthoMaterialSafely({
 				organizationId: orgId,
 				patientId,
@@ -89,82 +70,44 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 				unitCostKopecks: resolved.unitCostKopecks,
 				unitCostRub: resolved.unitCostRub,
 				visitId: body.visitId ?? null,
+				userId: identity.userId ?? null,
 				notes: body.notes || `Ортодонтическое списание [${body.action}]`,
 				tx,
 				logger: request.log,
 			});
 
-			const payload: Record<string, unknown> = {
-				success: true,
-				action: body.action,
-				deduction,
-				message: `Материал «${deduction.itemName || resolved.defaultName}» успешно списан со склада (мягкий овердрафт).`,
+			return {
+				patientNotFound: false as const,
+				payload: {
+					success: true,
+					action: body.action,
+					deduction,
+					message: `Материал «${deduction.itemName || resolved.defaultName}» успешно списан со склада (мягкий овердрафт).`,
+				},
 			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: payload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: payload,
-							responseCode: 200,
-						},
-					});
-			}
-
-			return payload;
 		});
 
-		return reply.send(responsePayload);
+		if (txResult.patientNotFound) {
+			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+		}
+
+		return reply.send(txResult.payload);
 	});
 
 	app.post<{ Params: { patientId: string } }>(`${prefix}/:patientId/stages/advance`, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.orthodontics.write",
+				role: staffRole,
+				message: `Отказ в обновлении этапа ортодонтического лечения: ${evalAccess.reason}`,
 			});
-		}
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
-			const record = existingIdemKey ?? (existingSyncRecord ? {
-				status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
-				responseBody: existingSyncRecord.responseJson,
-				responseCode: existingSyncRecord.responseStatus,
-				lockedAt: existingSyncRecord.updatedAt,
-			} : null);
-
-			if (record) {
-				if (record.status === "completed" && record.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(record.responseCode || 200)
-						.send(record.responseBody);
-				}
-				if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const parsedParams = patientParamsSchema.safeParse(request.params);
@@ -185,134 +128,121 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			});
 		}
 		const body = parsedBody.data;
-		const patient = await getPatientByIdFromDb(orgId, patientId);
-		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
-
-		const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 		const actionSummary = `Переход на этап ${body.nextStage}${body.stageTitle ? `: ${body.stageTitle}` : ""}`;
-		const updatedProgress: OrthodonticProgressRecord = {
-			...currentProgress,
-			currentStage: body.nextStage,
-			stageTitle: body.stageTitle || currentProgress.stageTitle,
-			applianceId: body.applianceId || currentProgress.applianceId,
-			applianceName: body.applianceName || currentProgress.applianceName,
-			selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
-			selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
-			lastActionDate: new Date().toISOString(),
-			lastActionSummary: actionSummary,
-			...(body.angleClass ? { angleClass: body.angleClass } : {}),
-			...(body.verticalBite ? { verticalBite: body.verticalBite } : {}),
-			...(typeof body.overjetMm === "number" ? { overjetMm: body.overjetMm } : {}),
-			...(typeof body.overbitePercent === "number" ? { overbitePercent: body.overbitePercent } : {}),
-			...(typeof body.anbAngle === "number" ? { anbAngle: body.anbAngle } : {}),
-			...(body.skeletalClass ? { skeletalClass: body.skeletalClass } : {}),
-			...(body.treatmentPlanId ? { treatmentPlanId: body.treatmentPlanId } : {}),
-		};
 
-		// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при обновлении профиля пациента
-		const responsePayload = await db.transaction(async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
+				.select({
+					id: patients.id,
+					administrativeProfile: patients.administrativeProfile,
+				})
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.for("update")
+				.limit(1);
+			if (!patient) return { patientNotFound: true as const };
+
+			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
+			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
+			const updatedProgress: OrthodonticProgressRecord = {
+				...currentProgress,
+				currentStage: body.nextStage,
+				stageTitle: body.stageTitle || currentProgress.stageTitle,
+				applianceId: body.applianceId || currentProgress.applianceId,
+				applianceName: body.applianceName || currentProgress.applianceName,
+				selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
+				selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
+				lastActionDate: new Date().toISOString(),
+				lastActionSummary: actionSummary,
+				...(body.angleClass ? { angleClass: body.angleClass } : {}),
+				...(body.verticalBite ? { verticalBite: body.verticalBite } : {}),
+				...(typeof body.overjetMm === "number" ? { overjetMm: body.overjetMm } : {}),
+				...(typeof body.overbitePercent === "number" ? { overbitePercent: body.overbitePercent } : {}),
+				...(typeof body.anbAngle === "number" ? { anbAngle: body.anbAngle } : {}),
+				...(body.skeletalClass ? { skeletalClass: body.skeletalClass } : {}),
+				...(body.treatmentPlanId ? { treatmentPlanId: body.treatmentPlanId } : {}),
+			};
+
 			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress }, tx);
 
 			if (body.treatmentPlanId) {
-				await tx
-					.update(treatmentPlans)
-					.set({ status: "Approved" })
+				const [ownedPlan] = await tx
+					.select({ id: treatmentPlans.id, status: treatmentPlans.status })
+					.from(treatmentPlans)
 					.where(
 						and(
 							eq(treatmentPlans.id, body.treatmentPlanId),
 							eq(treatmentPlans.organizationId, orgId),
-							eq(treatmentPlans.status, "Draft"),
+							eq(treatmentPlans.patientId, patientId),
 						),
-					);
+					)
+					.for("update")
+					.limit(1);
 
-				// DEF-ORTHO-03: Синхронизация прогресса этапа плана лечения
-				await tx
-					.update(treatmentPlanStages)
-					.set({
-						completionPercentage: 100,
-						autoArchived: true,
-						archivedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(treatmentPlanStages.planId, body.treatmentPlanId),
-							eq(treatmentPlanStages.stageOrder, body.nextStage),
-						),
-					);
+				if (ownedPlan) {
+					if (ownedPlan.status === "Draft") {
+						await tx
+							.update(treatmentPlans)
+							.set({ status: "Approved" })
+							.where(
+								and(
+									eq(treatmentPlans.id, ownedPlan.id),
+									eq(treatmentPlans.organizationId, orgId),
+									eq(treatmentPlans.patientId, patientId),
+								),
+							);
+					}
+
+					// DEF-ORTHO-03: Синхронизация прогресса этапа плана лечения строго в рамках тенанта и плана пациента
+					await tx
+						.update(treatmentPlanStages)
+						.set({
+							completionPercentage: 100,
+							autoArchived: true,
+							archivedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(treatmentPlanStages.planId, ownedPlan.id),
+								eq(treatmentPlanStages.organizationId, orgId),
+								eq(treatmentPlanStages.stageOrder, body.nextStage),
+							),
+						);
+				}
 			}
 
-			const payload: Record<string, unknown> = {
-				success: true,
-				currentStage: body.nextStage,
-				actionSummary,
-				progress: updatedProgress,
+			return {
+				patientNotFound: false as const,
+				payload: {
+					success: true,
+					currentStage: body.nextStage,
+					actionSummary,
+					progress: updatedProgress,
+				},
 			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: payload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: payload,
-							responseCode: 200,
-						},
-					});
-			}
-
-			return payload;
 		});
 
-		return reply.send(responsePayload);
+		if (txResult.patientNotFound) {
+			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+		}
+
+		return reply.send(txResult.payload);
 	});
 
 	app.post<{ Params: { patientId: string } }>(`${prefix}/:patientId/rebracket`, async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.orthodontics.write",
+				role: staffRole,
+				message: `Отказ в фиксации повторного брекета: ${evalAccess.reason}`,
 			});
-		}
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
-			const record = existingIdemKey ?? (existingSyncRecord ? {
-				status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
-				responseBody: existingSyncRecord.responseJson,
-				responseCode: existingSyncRecord.responseStatus,
-				lockedAt: existingSyncRecord.updatedAt,
-			} : null);
-
-			if (record) {
-				if (record.status === "completed" && record.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(record.responseCode || 200)
-						.send(record.responseBody);
-				}
-				if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const parsedParams = patientParamsSchema.safeParse(request.params);
@@ -333,27 +263,35 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			});
 		}
 		const body = parsedBody.data;
-		const patient = await getPatientByIdFromDb(orgId, patientId);
-		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
-
-		const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 		const toothLabel = body.toothNumber ? ` на зубе ${body.toothNumber}` : "";
 		const actionSummary = `Повторная фиксация брекета (1 шт.)${toothLabel} · ${body.bracketType}${body.note ? ` (${body.note})` : ""}`;
-		const updatedProgress: OrthodonticProgressRecord = {
-			...currentProgress, lastActionDate: new Date().toISOString(), lastActionSummary: actionSummary,
-		};
 
-		// DEF-ORTHO-02: Выбор стоимости из складских остатков клиники
-		const rebracketCost = await resolveOrthoMaterialCost({
-			organizationId: orgId,
-			itemNamePattern: "брекет",
-			fallbackCostRub: 1200,
-			logger: request.log,
-		});
+		const txResult = await withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
+				.select({
+					id: patients.id,
+					administrativeProfile: patients.administrativeProfile,
+				})
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.for("update")
+				.limit(1);
+			if (!patient) return { patientNotFound: true as const };
 
-		const responsePayload = await db.transaction(async (tx) => {
-			// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
+			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
+			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
+			const updatedProgress: OrthodonticProgressRecord = {
+				...currentProgress, lastActionDate: new Date().toISOString(), lastActionSummary: actionSummary,
+			};
+
+			const rebracketCost = await resolveOrthoMaterialCost({
+				organizationId: orgId,
+				itemNamePattern: "брекет",
+				fallbackCostRub: 1200,
+				tx,
+				logger: request.log,
+			});
+
 			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress }, tx);
 
 			const deduction = await deductOrthoMaterialSafely({
@@ -366,43 +304,28 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 				unit: "шт.",
 				unitCostKopecks: rebracketCost.unitCostKopecks,
 				unitCostRub: rebracketCost.unitCostRub,
+				userId: identity.userId ?? null,
 				notes: actionSummary,
 				tx,
 				logger: request.log,
 			});
 
-			const payload: Record<string, unknown> = {
-				success: true,
-				actionSummary,
-				toothNumber: body.toothNumber,
-				progress: updatedProgress,
-				deduction,
+			return {
+				patientNotFound: false as const,
+				payload: {
+					success: true,
+					actionSummary,
+					toothNumber: body.toothNumber,
+					progress: updatedProgress,
+					deduction,
+				},
 			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: payload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: payload,
-							responseCode: 200,
-						},
-					});
-			}
-
-			return payload;
 		});
 
-		return reply.send(responsePayload);
+		if (txResult.patientNotFound) {
+			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+		}
+
+		return reply.send(txResult.payload);
 	});
 }

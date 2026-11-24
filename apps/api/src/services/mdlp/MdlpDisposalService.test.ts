@@ -66,17 +66,17 @@ describe("MdlpDisposalService & MdlpQueueService Tests", () => {
 		assert(disposeRes.schema10560Document.xmlContent.includes("<cost>420.00</cost>"));
 	});
 
-	test("mdlpDisposalService generates Senior Nurse Disposal Act", () => {
-		mdlpQueueService.clearQueue(testOrgId);
+	test("mdlpDisposalService generates Senior Nurse Disposal Act", async () => {
+		await mdlpQueueService.clearQueueAsync(testOrgId);
 		const raw =
 			"0103664798000016211A2B3C4D5E6F7\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
-		mdlpQueueService.addToQueue(testOrgId, {
+		await mdlpQueueService.addToQueueAsync(testOrgId, {
 			rawBarcode: raw,
 			costRub: 450,
 			patientName: "Кузнецов П.П.",
 		});
 
-		const actRes = mdlpDisposalService.generateDisposalAct(testOrgId, {
+		const actRes = await mdlpDisposalService.generateDisposalAct(testOrgId, {
 			actNumber: "СПИС-TEST-01",
 			useQueue: true,
 			seniorNurseName: "Сидорова С.С.",
@@ -89,17 +89,17 @@ describe("MdlpDisposalService & MdlpQueueService Tests", () => {
 		assert(actRes.html.includes("Сидорова С.С."));
 	});
 
-	test("mdlpDisposalService generates 1-click Disposal Act by doctor or admin without senior nurse requirement (Mandate 8e, 8n)", () => {
-		mdlpQueueService.clearQueue(testOrgId);
+	test("mdlpDisposalService generates 1-click Disposal Act by doctor or admin without senior nurse requirement (Mandate 8e, 8n)", async () => {
+		await mdlpQueueService.clearQueueAsync(testOrgId);
 		const raw =
 			"0103664798000016211A2B3C4D5E6F7\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
-		mdlpQueueService.addToQueue(testOrgId, {
+		await mdlpQueueService.addToQueueAsync(testOrgId, {
 			rawBarcode: raw,
 			costRub: 450,
 			patientName: "Алексеев А.А.",
 		});
 
-		const actRes = mdlpDisposalService.generateDisposalAct(testOrgId, {
+		const actRes = await mdlpDisposalService.generateDisposalAct(testOrgId, {
 			actNumber: "СПИС-TEST-DOCTOR-01",
 			useQueue: true,
 			approverRole: "doctor",

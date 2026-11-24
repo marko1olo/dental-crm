@@ -3,9 +3,7 @@ import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
-	ensureDefaultStaffChannels,
 	getOrCreateDirectStaffChannel,
-	getStaffChannelById,
 	getStaffChannelBySlug,
 	insertStaffMessage,
 	listClinicIntercomLocations,
@@ -14,11 +12,14 @@ import {
 	listStaffMessages,
 	markStaffChannelAsRead,
 	recordIntercomAck,
+	StaffChatAccessDeniedError,
+	StaffChatChannelNotFoundError,
+	StaffChatEntityNotFoundError,
+	StaffChatValidationError,
 } from "../db/staffChatQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import {
 	INTERCOM_PRESETS,
-	type IntercomPresetKey,
 	sendIntercomAckInputSchema,
 	sendIntercomPingInputSchema,
 	sendStaffChatMessageInputSchema,
@@ -26,19 +27,49 @@ import {
 } from "@dental/shared";
 import { TelegramBotHostingService } from "../services/telegram/TelegramBotHostingService.js";
 
-const markReadSchema = z.object({
-	channelId: z.string().uuid(),
-});
+const markReadSchema = z
+	.object({
+		channelId: z.string().uuid(),
+	})
+	.strict();
 
-const directChannelSchema = z.object({
-	targetUserId: z.string().uuid(),
-});
+const directChannelSchema = z
+	.object({
+		targetUserId: z.string().uuid(),
+	})
+	.strict();
 
-const getMessagesQuerySchema = z.object({
-	channelId: z.string().uuid(),
-	limit: z.coerce.number().int().min(1).max(200).default(50),
-	before: z.string().optional(),
-});
+const getMessagesQuerySchema = z
+	.object({
+		channelId: z.string().uuid(),
+		limit: z.coerce.number().int().min(1).max(200).default(50),
+		before: z.string().trim().min(1).max(64).optional(),
+	})
+	.strict();
+
+function sendMappedStaffChatError(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	error: unknown,
+	fallbackMessage: string,
+) {
+	if (
+		error instanceof StaffChatChannelNotFoundError ||
+		error instanceof StaffChatAccessDeniedError ||
+		error instanceof StaffChatValidationError ||
+		error instanceof StaffChatEntityNotFoundError
+	) {
+		return reply.code(error.statusCode).send({
+			error: error.code,
+			message: error.message,
+		});
+	}
+	request.log.error({ err: error }, fallbackMessage);
+	return reply.status(500).send({
+		error: "InternalServerError",
+		message: fallbackMessage,
+	});
+}
 
 export async function registerStaffChatRoutes(app: FastifyInstance) {
 	/**
@@ -105,15 +136,12 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			);
 			return { channel };
 		} catch (error: unknown) {
-			request.log.error(error);
-			const message =
-				error instanceof Error
-					? error.message
-					: "Ошибка при создании личного чата.";
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message,
-			});
+			return sendMappedStaffChatError(
+				request,
+				reply,
+				error,
+				"Ошибка при создании личного чата.",
+			);
 		}
 	});
 
@@ -130,6 +158,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			);
 			if (!organizationId) return;
 
+			const identity = getRequestIdentity(request);
 			const parsed = getMessagesQuerySchema.safeParse(request.query);
 			if (!parsed.success) {
 				return reply.code(400).send({
@@ -138,24 +167,33 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const beforeDate = parsed.data.before
-				? new Date(parsed.data.before)
-				: undefined;
+			let beforeDate: Date | undefined;
+			if (parsed.data.before) {
+				beforeDate = new Date(parsed.data.before);
+				if (Number.isNaN(beforeDate.getTime())) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректная дата параметра before.",
+					});
+				}
+			}
 
 			const messages = await listStaffMessages(
 				organizationId,
 				parsed.data.channelId,
 				parsed.data.limit,
 				beforeDate,
+				identity.userId ?? null,
 			);
 
 			return { messages };
 		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при загрузке сообщений.",
-			});
+			return sendMappedStaffChatError(
+				request,
+				reply,
+				error,
+				"Ошибка при загрузке сообщений.",
+			);
 		}
 	});
 
@@ -173,7 +211,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const parsed = sendStaffChatMessageInputSchema.safeParse(request.body);
+			const parsed = sendStaffChatMessageInputSchema.strict().safeParse(request.body);
 			if (!parsed.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -190,8 +228,20 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 					organizationId,
 					parsed.data.channelSlug,
 				);
-				if (ch) targetChannelId = ch.id;
-			} else if (!targetChannelId && parsed.data.directUserId && identity.userId) {
+				if (!ch) {
+					return reply.code(404).send({
+						error: "ChannelNotFound",
+						message: "Целевой канал чата не найден.",
+					});
+				}
+				targetChannelId = ch.id;
+			} else if (!targetChannelId && parsed.data.directUserId) {
+				if (!identity.userId) {
+					return reply.code(400).send({
+						error: "UserRequired",
+						message: "Для отправки личного сообщения требуется сессия сотрудника.",
+					});
+				}
 				const directCh = await getOrCreateDirectStaffChannel(
 					organizationId,
 					identity.userId,
@@ -232,11 +282,12 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 
 			return reply.code(201).send({ message: createdMessage });
 		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при отправке сообщения.",
-			});
+			return sendMappedStaffChatError(
+				request,
+				reply,
+				error,
+				"Ошибка при отправке сообщения.",
+			);
 		}
 	});
 
@@ -255,7 +306,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const parsed = sendIntercomPingInputSchema.safeParse(request.body);
+			const parsed = sendIntercomPingInputSchema.strict().safeParse(request.body);
 			if (!parsed.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -290,7 +341,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 				targetSlug,
 			);
 			if (!channel) {
-				return reply.code(500).send({
+				return reply.code(404).send({
 					error: "ChannelNotFound",
 					message: `Канал интеркома #${targetSlug} не найден.`,
 				});
@@ -437,7 +488,13 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			if (!organizationId) return;
 
 			const identity = getRequestIdentity(request);
-			const parsed = sendIntercomAckInputSchema.safeParse(request.body);
+			if (!identity.userId) {
+				return reply.code(400).send({
+					error: "UserRequired",
+					message: "Для подтверждения интерком-вызова требуется сессия сотрудника.",
+				});
+			}
+			const parsed = sendIntercomAckInputSchema.strict().safeParse(request.body);
 			if (!parsed.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
@@ -449,7 +506,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 			const ackParams: Parameters<typeof recordIntercomAck>[0] = {
 				organizationId,
 				messageId: parsed.data.messageId,
-				staffId: identity.userId || "anonymous",
+				staffId: identity.userId,
 				staffName: identity.fullName || "Сотрудник",
 				staffRole: identity.role || "staff",
 				ackType: parsed.data.ackType,
@@ -473,7 +530,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 				payload: {
 					message: updatedMessage,
 					ack: {
-						staffId: identity.userId || "anonymous",
+						staffId: identity.userId,
 						staffName: identity.fullName || "Сотрудник",
 						staffRole: identity.role || "staff",
 						ackType: parsed.data.ackType,
@@ -490,11 +547,12 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 
 			return { message: updatedMessage };
 		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при записи ответа на интерком-вызов.",
-			});
+			return sendMappedStaffChatError(
+				request,
+				reply,
+				error,
+				"Ошибка при записи ответа на интерком-вызов.",
+			);
 		}
 	});
 
@@ -541,11 +599,12 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 
 			return { ok: true, updatedCount };
 		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при отметке прочтения.",
-			});
+			return sendMappedStaffChatError(
+				request,
+				reply,
+				error,
+				"Ошибка при отметке прочтения.",
+			);
 		}
 	});
 
@@ -594,9 +653,7 @@ export async function registerStaffChatRoutes(app: FastifyInstance) {
 					status,
 					currentVisitId,
 					currentPatientName,
-					lastSeenAt: active
-						? new Date(active.lastSeen).toISOString()
-						: new Date(0).toISOString(),
+					lastSeenAt: active ? new Date(active.lastSeen).toISOString() : "",
 				};
 			});
 

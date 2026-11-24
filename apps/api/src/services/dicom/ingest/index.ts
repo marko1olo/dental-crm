@@ -40,7 +40,7 @@ export {
 	resolveOrAutoCreatePatientForDicom,
 	syncExistingStudyPatientBinding,
 	unbindStudy,
-} from "./patientAutoBinder.js";
+} from "../dicomPatientAutoBinder.js";
 
 export {
 	DicomStudyIngestService,

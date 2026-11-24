@@ -8,6 +8,7 @@
  */
 
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { kopecksToRub, rublesToKopecks } from "@dental/shared";
 import type { TenantDb } from "../../db/rls.js";
 import {
 	appointments,
@@ -148,20 +149,6 @@ export async function checkAndAutoCloseExpiredShifts(
 					? "schedule_ended_with_buffer"
 					: "max_duration_exceeded";
 
-		// Auto-release any hanging "in_treatment" appointments to "completed" without blocking cashbox
-		await tx
-			.update(appointments)
-			.set({
-				status: "completed",
-			})
-			.where(
-				and(
-					eq(appointments.organizationId, orgId),
-					eq(appointments.status, "in_treatment"),
-					lte(appointments.startsAt, now),
-				),
-			);
-
 		const box = boxMap.get(shift.cashBoxId);
 		const reconciliationResult = await reconcileSingleShift(
 			tx,
@@ -182,13 +169,31 @@ export async function checkAndAutoCloseExpiredShifts(
 			autoClosedAt: now.toISOString(),
 		};
 
+		const closingBalKop =
+			box?.balanceKopecks != null && (box.balanceKopecks !== 0 || Number(box.balanceRub || 0) === 0)
+				? Number(box.balanceKopecks)
+				: rublesToKopecks(Number(box?.balanceRub ?? 0));
+		const incomeKop =
+			shift.incomeTotalKopecks !== 0 || Number(shift.incomeTotalRub || 0) === 0
+				? Number(shift.incomeTotalKopecks)
+				: rublesToKopecks(Number(shift.incomeTotalRub || 0));
+		const expenseKop =
+			shift.expenseTotalKopecks !== 0 || Number(shift.expenseTotalRub || 0) === 0
+				? Number(shift.expenseTotalKopecks)
+				: rublesToKopecks(Number(shift.expenseTotalRub || 0));
+
 		await tx
 			.update(cashBoxShifts)
 			.set({
 				status: "closed",
 				closedAt: now,
 				closedByUserId: shift.openedByUserId,
-				closingBalanceRub: box?.balanceRub ?? 0,
+				closingBalanceRub: kopecksToRub(closingBalKop),
+				closingBalanceKopecks: closingBalKop,
+				incomeTotalRub: kopecksToRub(incomeKop),
+				incomeTotalKopecks: incomeKop,
+				expenseTotalRub: kopecksToRub(expenseKop),
+				expenseTotalKopecks: expenseKop,
 				zReportNumber: reconciliationResult.zReportNumber,
 				zReportData: updatedZReportData,
 				updatedAt: now,
@@ -209,6 +214,22 @@ export async function checkAndAutoCloseExpiredShifts(
 			reason,
 			zReportNumber: reconciliationResult.zReportNumber,
 		});
+	}
+
+	if (closedSummaries.length > 0) {
+		// Закрываем только реально истекшие приёмы (endsAt <= now), не затрагивая активные приёмы текущего часа
+		await tx
+			.update(appointments)
+			.set({
+				status: "completed",
+			})
+			.where(
+				and(
+					eq(appointments.organizationId, orgId),
+					eq(appointments.status, "in_treatment"),
+					lte(appointments.endsAt, now),
+				),
+			);
 	}
 
 	return {

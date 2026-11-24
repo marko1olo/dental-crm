@@ -30,6 +30,7 @@ describe("Dental DICOM & Radiology Measurements SSOT Persistence", () => {
 
 	after(async () => {
 		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, orgId));
 			await db.delete(schema.imagingAnnotations).where(eq(schema.imagingAnnotations.organizationId, orgId));
 			await db.delete(schema.imagingViewerSessions).where(eq(schema.imagingViewerSessions.organizationId, orgId));
 			await db.delete(schema.xrayScans).where(eq(schema.xrayScans.organizationId, orgId));

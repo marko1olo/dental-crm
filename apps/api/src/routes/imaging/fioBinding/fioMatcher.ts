@@ -26,22 +26,28 @@ export function levenshteinDistance(s1: string, s2: string): number {
 	for (let i = 0; i <= len1; i++) {
 		matrix[i] = [i];
 	}
-	for (let j = 0; j <= len2; j++) {
-		matrix[0]![j] = j;
+	const row0 = matrix[0];
+	if (row0) {
+		for (let j = 0; j <= len2; j++) {
+			row0[j] = j;
+		}
 	}
 
 	for (let i = 1; i <= len1; i++) {
+		const prevRow = matrix[i - 1];
+		const currRow = matrix[i];
+		if (!prevRow || !currRow) continue;
 		for (let j = 1; j <= len2; j++) {
 			const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-			matrix[i]![j] = Math.min(
-				matrix[i - 1]![j]! + 1,
-				matrix[i]![j - 1]! + 1,
-				matrix[i - 1]![j - 1]! + cost,
+			currRow[j] = Math.min(
+				(prevRow[j] ?? 0) + 1,
+				(currRow[j - 1] ?? 0) + 1,
+				(prevRow[j - 1] ?? 0) + cost,
 			);
 		}
 	}
 
-	return matrix[len1]![len2]!;
+	return matrix[len1]?.[len2] ?? 0;
 }
 
 /**
@@ -115,8 +121,8 @@ export function compareFioTokens(dicomRaw: string, patientRaw: string): number {
 	if (sortedSim >= 0.95) return 100;
 
 	// 2. Если в DICOM только одно слово (например "Amirova" или "Захаров")
-	if (dicomTokens.length === 1) {
-		const singleWord = dicomTokens[0]!;
+	const [singleWord] = dicomTokens;
+	if (dicomTokens.length === 1 && singleWord !== undefined) {
 		let bestWordScore = 0;
 		for (const pToken of patientTokens) {
 			const score = matchSingleWord(singleWord, pToken);
@@ -136,12 +142,14 @@ export function compareFioTokens(dicomRaw: string, patientRaw: string): number {
 
 		for (let pIdx = 0; pIdx < patientTokens.length; pIdx++) {
 			if (usedPatientIndices.has(pIdx)) continue;
-			const pToken = patientTokens[pIdx]!;
+			const pToken = patientTokens[pIdx];
+			if (pToken === undefined) continue;
 
 			// Проверка на инициал: если токен DICOM длиной 1 символ (например "I")
-			if (dToken.length === 1 && pToken.length > 1) {
+			const pFirstChar = pToken[0];
+			if (dToken.length === 1 && pToken.length > 1 && pFirstChar !== undefined) {
 				const dChar = transliterateRuToEn(dToken);
-				const pChar = transliterateRuToEn(pToken[0]!);
+				const pChar = transliterateRuToEn(pFirstChar);
 				if (dChar === pChar) {
 					if (bestScore < 0.9) {
 						bestScore = 0.9;

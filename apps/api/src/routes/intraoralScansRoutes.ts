@@ -8,7 +8,7 @@
  *   - GET  /api/v1/scans/sessions/:id
  *   - GET  /api/v1/scans/files/:sessionId/:fileName
  *
- * Invariants: Zero Any, Strict Zod schemas, 152-ФЗ / 323-ФЗ ст. 13 Medical Secrecy,
+ * Invariants: Zero Any, Strict Zod schemas, Clinical Medical Secrecy,
  * Multitenant RLS isolation, Path Traversal Jail.
  */
 
@@ -24,6 +24,10 @@ import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import {
+	PathTraversalError,
+	TenantIsolationError,
+} from "../services/imaging/localPacsSanitizer.js";
+import {
 	UniversalScannerHub,
 	type ScanFileInput,
 } from "../services/scanner/universalScannerHub.js";
@@ -32,41 +36,53 @@ import {
 // 1. ZOD SCHEMAS & TYPES
 // ============================================================================
 
-export const createScanSessionJsonSchema = z.object({
-	patientId: z.string().uuid().optional(),
-	visitId: z.string().uuid().optional(),
-	labOrderId: z.string().uuid().optional(),
-	vendor: z.enum(INTRAORAL_SCANNER_VENDORS).optional(),
-	scannerModel: z.string().optional(),
-	zipBase64: z.string().optional(),
-	files: z
-		.array(
-			z.object({
-				name: z.string().min(1),
-				contentBase64: z.string(),
-			}),
-		)
-		.optional(),
-	folderPath: z.string().optional(),
-	preparationTeethFdi: z.array(z.number().int()).optional(),
-	implantTeethFdi: z.array(z.number().int()).optional(),
-	materialsPlanned: z.record(z.string()).optional(),
-	vitaShade: z.string().optional(),
-});
+const fdiToothSchema = z.number().int().min(11).max(85);
+
+export const createScanSessionJsonSchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		visitId: z.string().uuid().optional(),
+		labOrderId: z.string().uuid().optional(),
+		vendor: z.enum(INTRAORAL_SCANNER_VENDORS).optional(),
+		scannerModel: z.string().max(200).optional(),
+		zipBase64: z.string().optional(),
+		files: z
+			.array(
+				z
+					.object({
+						name: z.string().min(1),
+						contentBase64: z.string(),
+					})
+					.strict(),
+			)
+			.optional(),
+		folderPath: z.string().min(1).optional(),
+		preparationTeethFdi: z.array(fdiToothSchema).optional(),
+		implantTeethFdi: z.array(fdiToothSchema).optional(),
+		materialsPlanned: z.record(z.string(), z.string()).optional(),
+		vitaShade: z.string().max(32).optional(),
+	})
+	.strict();
 export type CreateScanSessionJsonInput = z.infer<typeof createScanSessionJsonSchema>;
 
-export const patientScansParamsSchema = z.object({
-	patientId: z.string().uuid(),
-});
+export const patientScansParamsSchema = z
+	.object({
+		patientId: z.string().uuid(),
+	})
+	.strict();
 
-export const sessionByIdParamsSchema = z.object({
-	id: z.string().uuid(),
-});
+export const sessionByIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
 
-export const scanFileParamsSchema = z.object({
-	sessionId: z.string().uuid(),
-	fileName: z.string().min(1),
-});
+export const scanFileParamsSchema = z
+	.object({
+		sessionId: z.string().uuid(),
+		fileName: z.string().min(1),
+	})
+	.strict();
 
 interface MultipartFileCandidate {
 	filename?: string;
@@ -137,7 +153,7 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		// 152-ФЗ / 323-ФЗ ст. 13: Clinical Mutation Access Check
+		// Clinical Mutation Access Check
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
@@ -148,7 +164,7 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 				permission: "clinical.scan.upload",
 				role: staffRole,
 				message:
-					"Отказ в доступе (152-ФЗ / 323-ФЗ ст. 13): загрузка интраоральных сканов разрешена только клиническому персоналу.",
+					"Отказ в доступе: загрузка интраоральных сканов разрешена только клиническому персоналу.",
 			});
 		}
 
@@ -165,21 +181,52 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		let vitaShade: string | undefined;
 		let folderPath: string | undefined;
 
-		const query = (request.query || {}) as Record<string, string | undefined>;
+		const querySchema = z
+			.object({
+				patientId: z.string().uuid().optional(),
+				visitId: z.string().uuid().optional(),
+				labOrderId: z.string().uuid().optional(),
+				vendor: z.enum(INTRAORAL_SCANNER_VENDORS).optional(),
+				vitaShade: z.string().max(32).optional(),
+				fileName: z.string().min(1).optional(),
+			})
+			.strict();
+		const parsedQuery = querySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "InvalidPayload",
+				message: "Некорректные параметры запроса скана.",
+			});
+		}
+		const query = parsedQuery.data;
 		const headers = request.headers;
 
-		// Extract context from query or headers if provided
-		if (typeof query.patientId === "string") patientId = query.patientId;
-		if (typeof query.visitId === "string") visitId = query.visitId;
-		if (typeof query.labOrderId === "string") labOrderId = query.labOrderId;
-		if (typeof query.vendor === "string") vendor = query.vendor as IntraoralScannerVendor;
-		if (typeof query.vitaShade === "string") vitaShade = query.vitaShade;
+		if (query.patientId) patientId = query.patientId;
+		if (query.visitId) visitId = query.visitId;
+		if (query.labOrderId) labOrderId = query.labOrderId;
+		if (query.vendor) vendor = query.vendor;
+		if (query.vitaShade) vitaShade = query.vitaShade;
 
+		const uuidHeaderSchema = z.string().uuid();
 		if (!patientId && typeof headers["x-patient-id"] === "string") {
-			patientId = headers["x-patient-id"];
+			const pHead = uuidHeaderSchema.safeParse(headers["x-patient-id"]);
+			if (!pHead.success) {
+				return reply.code(400).send({
+					error: "InvalidPayload",
+					message: "Некорректный UUID в заголовке x-patient-id.",
+				});
+			}
+			patientId = pHead.data;
 		}
 		if (!visitId && typeof headers["x-visit-id"] === "string") {
-			visitId = headers["x-visit-id"];
+			const vHead = uuidHeaderSchema.safeParse(headers["x-visit-id"]);
+			if (!vHead.success) {
+				return reply.code(400).send({
+					error: "InvalidPayload",
+					message: "Некорректный UUID в заголовке x-visit-id.",
+				});
+			}
+			visitId = vHead.data;
 		}
 
 		// 1. Check for standard multipart file stream
@@ -202,15 +249,45 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 					}
 
 					const fields = part.fields;
-					if (fields?.patientId?.value) patientId = fields.patientId.value;
-					if (fields?.visitId?.value) visitId = fields.visitId.value;
-					if (fields?.labOrderId?.value) labOrderId = fields.labOrderId.value;
-					if (fields?.vendor?.value) vendor = fields.vendor.value as IntraoralScannerVendor;
+					if (fields?.patientId?.value) {
+						const parsedP = uuidHeaderSchema.safeParse(fields.patientId.value);
+						if (!parsedP.success) {
+							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID patientId в multipart." });
+						}
+						patientId = parsedP.data;
+					}
+					if (fields?.visitId?.value) {
+						const parsedV = uuidHeaderSchema.safeParse(fields.visitId.value);
+						if (!parsedV.success) {
+							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID visitId в multipart." });
+						}
+						visitId = parsedV.data;
+					}
+					if (fields?.labOrderId?.value) {
+						const parsedL = uuidHeaderSchema.safeParse(fields.labOrderId.value);
+						if (!parsedL.success) {
+							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID labOrderId в multipart." });
+						}
+						labOrderId = parsedL.data;
+					}
+					if (fields?.vendor?.value) {
+						const parsedVendor = z.enum(INTRAORAL_SCANNER_VENDORS).safeParse(fields.vendor.value);
+						if (!parsedVendor.success) {
+							return reply.code(400).send({ error: "InvalidPayload", message: "Неизвестный производитель сканера." });
+						}
+						vendor = parsedVendor.data;
+					}
 					if (fields?.scannerModel?.value) scannerModel = fields.scannerModel.value;
 					if (fields?.vitaShade?.value) vitaShade = fields.vitaShade.value;
 				}
-			} catch {
-				// Fallback to body inspection
+			} catch (multipartErr: unknown) {
+				request.log.warn({ err: multipartErr }, "Multipart stream parse fallback in intraoralScansRoutes");
+				if (!Buffer.isBuffer(request.body)) {
+					return reply.code(400).send({
+						error: "InvalidMultipartPayload",
+						message: "Не удалось прочитать multipart-поток файлов 3D-сканирования.",
+					});
+				}
 			}
 		}
 
@@ -307,6 +384,20 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 			const errorMessage = err instanceof Error ? err.message : String(err);
 			request.log.error({ err }, "Failed to process intraoral scan session");
 
+			if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+				return reply.code(403).send({
+					error: "PathTraversalDetected",
+					message: "Доступ к указанному пути сканирования запрещен.",
+				});
+			}
+
+			if (errorMessage.includes("Zip-бомбы") || errorMessage.includes("лимит")) {
+				return reply.code(400).send({
+					error: "ZipBombLimitExceeded",
+					message: errorMessage,
+				});
+			}
+
 			if (errorMessage.includes("Patient could not be linked") || errorMessage.includes("Missing patientId")) {
 				return reply.code(400).send({
 					error: "MissingPatientId",
@@ -318,13 +409,13 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 			if (errorMessage.includes("not found in this organization")) {
 				return reply.code(404).send({
 					error: "PatientNotFound",
-					message: errorMessage,
+					message: "Указанный пациент не найден в организации клиники.",
 				});
 			}
 
 			return reply.code(500).send({
 				error: "ScanProcessingError",
-				message: `Ошибка обработки интраорального скана: ${errorMessage}`,
+				message: "Ошибка обработки интраорального 3D-скана.",
 			});
 		}
 	};
@@ -339,6 +430,18 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 	const handleListPatientScans = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.scan.read",
+				role: staffRole,
+				message: "Доступ к списку 3D-сканов разрешен только клиническому персоналу.",
+			});
+		}
 
 		const parsedParams = patientScansParamsSchema.safeParse(request.params);
 		if (!parsedParams.success) {
@@ -370,6 +473,18 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 	const handleGetScanSession = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? request.user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.scan.read",
+				role: staffRole,
+				message: "Доступ к сессии 3D-сканирования разрешен только клиническому персоналу.",
+			});
+		}
 
 		const parsedParams = sessionByIdParamsSchema.safeParse(request.params);
 		if (!parsedParams.success) {
@@ -408,7 +523,7 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		// 152-ФЗ / 323-ФЗ ст. 13: Clinical Read Access Check
+		// Clinical Read Access Check
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
@@ -419,7 +534,7 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 				permission: "clinical.scan.download",
 				role: staffRole,
 				message:
-					"Отказ в доступе (152-ФЗ / 323-ФЗ ст. 13): скачивание файлов 3D-сканирования разрешено только клиническому персоналу.",
+					"Отказ в доступе: скачивание файлов 3D-сканирования разрешено только клиническому персоналу.",
 			});
 		}
 

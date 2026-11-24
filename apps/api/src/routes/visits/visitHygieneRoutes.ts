@@ -1,7 +1,6 @@
 import {
-	computePayloadHash,
-	generateUuidV7,
 	hygieneIndicesSchema,
+	isValidUuid,
 	type HygieneIndices,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
@@ -10,9 +9,9 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
-import { db as database } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { visitDiaries, visits } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { extractIdempotencyKey } from "../../utils/httpIdempotency.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,22 +33,25 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 					message: "Некорректный идентификатор пациента",
 				});
 			}
-			const [latest] = await database
-				.select({
-					id: visits.id,
-					hygieneIndices: visits.hygieneIndices,
-					createdAt: visits.createdAt,
-				})
-				.from(visits)
-				.where(
-					and(
-						eq(visits.patientId, patientId),
-						eq(visits.organizationId, context.organizationId),
-						sql`${visits.hygieneIndices} IS NOT NULL`,
-					),
-				)
-				.orderBy(desc(visits.createdAt))
-				.limit(1);
+			const latest = await withTenantCtx(context.organizationId, async (tx) => {
+				const [row] = await tx
+					.select({
+						id: visits.id,
+						hygieneIndices: visits.hygieneIndices,
+						createdAt: visits.createdAt,
+					})
+					.from(visits)
+					.where(
+						and(
+							eq(visits.patientId, patientId),
+							eq(visits.organizationId, context.organizationId),
+							sql`${visits.hygieneIndices} IS NOT NULL`,
+						),
+					)
+					.orderBy(desc(visits.createdAt))
+					.limit(1);
+				return row ?? null;
+			});
 
 			const parsedLatest: HygieneIndices | null = latest?.hygieneIndices
 				? (hygieneIndicesSchema.safeParse(latest.hygieneIndices).data ?? null)
@@ -83,45 +85,19 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 			return { error: "ValidationError", issues: parsed.error.issues };
 		}
 
-		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotency-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined)
-				: undefined);
-
-		const idempotencyKey =
-			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-				? rawIdempotencyKey.trim()
-				: generateUuidV7();
-
-		reply.header("Idempotency-Key", idempotencyKey);
-
-		return await database.transaction(async (tx) => {
-			const [existingKeyRecord] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, context.organizationId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingKeyRecord) {
-				if (existingKeyRecord.status === "completed" && existingKeyRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					return reply.code(existingKeyRecord.responseCode || 200).send(existingKeyRecord.responseBody);
-				}
-				if (existingKeyRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция сохранения индексов гигиены с данным Idempotency-Key уже выполняется.",
-					});
-				}
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey) {
+			if (!isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "InvalidIdempotencyKey",
+					message:
+						"Заголовок Idempotency-Key / X-Idempotency-Key должен содержать валидный UUID (рекомендуется UUIDv7).",
+				});
 			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
+		const txResult = await withTenantCtx(context.organizationId, async (tx) => {
 			const [visit] = await tx
 				.select({
 					id: visits.id,
@@ -138,17 +114,11 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			if (!visit) {
-				return reply.code(404).send({
-					error: "VisitNotFound",
-					message: "Приём не найден",
-				});
+				return { kind: "not_found" as const };
 			}
 
 			if (visit.status === "signed") {
-				return reply.code(422).send({
-					error: "VISIT_PROTOCOL_LOCKED",
-					message: "Протокол приёма подписан и защищён от изменений.",
-				});
+				return { kind: "locked" as const };
 			}
 
 			const [lockedDiary] = await tx
@@ -164,10 +134,7 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			if (lockedDiary) {
-				return reply.code(422).send({
-					error: "VISIT_PROTOCOL_LOCKED",
-					message: "Протокол приёма подписан и защищён от изменений.",
-				});
+				return { kind: "locked" as const };
 			}
 
 			const [updated] = await tx
@@ -184,32 +151,29 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 				)
 				.returning({ id: visits.id, hygieneIndices: visits.hygieneIndices });
 
-			const responseBody = {
-				ok: true,
-				visitId,
+			return {
+				kind: "ok" as const,
 				hygieneIndices: updated?.hygieneIndices ?? parsed.data,
 			};
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: context.organizationId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: responseBody as Record<string, unknown>,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: responseBody as Record<string, unknown>,
-						responseCode: 200,
-					},
-				});
-
-			return responseBody;
 		});
+
+		if (txResult.kind === "not_found") {
+			return reply.code(404).send({
+				error: "VisitNotFound",
+				message: "Приём не найден",
+			});
+		}
+		if (txResult.kind === "locked") {
+			return reply.code(422).send({
+				error: "VISIT_PROTOCOL_LOCKED",
+				message: "Протокол приёма подписан и защищён от изменений.",
+			});
+		}
+
+		return {
+			ok: true,
+			visitId,
+			hygieneIndices: txResult.hygieneIndices,
+		};
 	});
 }

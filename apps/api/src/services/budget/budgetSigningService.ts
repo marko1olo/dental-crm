@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	auditEvents,
@@ -412,12 +412,12 @@ export async function generateBudgetPortalToken(
 				patientBirthDate: patientBirthDate || null,
 				authMethod: resolvedMethod,
 				items: loadedItems,
-				totalPriceRub: String(Math.round(computedTotal)),
-				discountRub: String(Math.round(computedDiscount)),
-				netTotalRub: String(Math.round(netTotal)),
+				totalPriceRub: kopecksToNumericString(rublesToKopecks(computedTotal)),
+				discountRub: kopecksToNumericString(rublesToKopecks(computedDiscount)),
+				netTotalRub: kopecksToNumericString(netTotalKop),
 				totalPriceKopecks: BigInt(rublesToKopecks(computedTotal)),
 				discountKopecks: BigInt(rublesToKopecks(computedDiscount)),
-				netTotalKopecks: BigInt(rublesToKopecks(netTotal)),
+				netTotalKopecks: BigInt(netTotalKop),
 				currency: "RUB",
 				failedAttempts: 0,
 				totalFailures: 0,
@@ -429,12 +429,12 @@ export async function generateBudgetPortalToken(
 				set: {
 					status: "sent",
 					items: loadedItems,
-					totalPriceRub: String(Math.round(computedTotal)),
-					discountRub: String(Math.round(computedDiscount)),
-					netTotalRub: String(Math.round(netTotal)),
+					totalPriceRub: kopecksToNumericString(rublesToKopecks(computedTotal)),
+					discountRub: kopecksToNumericString(rublesToKopecks(computedDiscount)),
+					netTotalRub: kopecksToNumericString(netTotalKop),
 					totalPriceKopecks: BigInt(rublesToKopecks(computedTotal)),
 					discountKopecks: BigInt(rublesToKopecks(computedDiscount)),
-					netTotalKopecks: BigInt(rublesToKopecks(netTotal)),
+					netTotalKopecks: BigInt(netTotalKop),
 					updatedAt: new Date(),
 				},
 			});

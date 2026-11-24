@@ -3,12 +3,48 @@ import {
 	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
-import type { dmsGuaranteeLetters } from "../../../db/schema.js";
+import type { dmsGuaranteeLetters, insuranceContracts } from "../../../db/schema.js";
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export function isValidUuid(id: unknown): id is string {
 	return typeof id === "string" && UUID_REGEX.test(id);
+}
+
+/**
+ * Resolves BIGINT kopecks column as SSOT, falling back to legacy numeric rubles column
+ * only when kopecks is null or still 0 while rubles holds a non-zero legacy value.
+ */
+export function resolveDbKopecks(
+	kopecksCol: bigint | number | null | undefined,
+	rubCol: string | number | null | undefined,
+): number {
+	const kop = kopecksCol != null ? Number(kopecksCol) : 0;
+	if (kop !== 0) return kop;
+	return rubCol != null ? rublesToKopecks(Number(rubCol)) : 0;
+}
+
+export type DbInsuranceContractRow = typeof insuranceContracts.$inferSelect;
+
+export function formatInsuranceContractResponse(c: DbInsuranceContractRow) {
+	const annualLimitKop = resolveDbKopecks(c.annualLimitKopecks, c.annualLimitRub);
+	const resolvedAnnualLimitRub =
+		c.annualLimitRub != null
+			? Number(c.annualLimitRub)
+			: annualLimitKop > 0
+				? kopecksToRubles(annualLimitKop)
+				: null;
+
+	return {
+		...c,
+		coverageTherapyPct: Number(c.coverageTherapyPct),
+		coverageSurgeryPct: Number(c.coverageSurgeryPct),
+		coverageOrthoPct: Number(c.coverageOrthoPct),
+		coverageHygienePct: Number(c.coverageHygienePct),
+		patientFranchisePct: Number(c.patientFranchisePct),
+		annualLimitKopecks: annualLimitKop,
+		annualLimitRub: resolvedAnnualLimitRub,
+	};
 }
 
 export function safeToIsoString(date: unknown, fallback?: string): string {
@@ -27,18 +63,12 @@ export function safeToIsoString(date: unknown, fallback?: string): string {
 export type DbGuaranteeLetterRow = typeof dmsGuaranteeLetters.$inferSelect;
 
 export function formatGuaranteeLetterResponse(l: DbGuaranteeLetterRow, todayIso: string = new Date().toISOString().slice(0, 10)) {
-	const maxRub = Number(l.maxCoverageRub);
-	const usedRub = Number(l.usedAmountRub);
-	const limitKop = l.maxCoverageKopecks != null
-		? Number(l.maxCoverageKopecks)
-		: rublesToKopecks(maxRub);
-	const usedKop = l.usedAmountKopecks != null && Number(l.usedAmountKopecks) > 0
-		? Number(l.usedAmountKopecks)
-		: rublesToKopecks(usedRub);
+	const limitKop = resolveDbKopecks(l.maxCoverageKopecks, l.maxCoverageRub);
+	const usedKop = resolveDbKopecks(l.usedAmountKopecks, l.usedAmountRub);
 	const remainingLimitKop = Math.max(0, limitKop - usedKop);
-	const franchiseFixedKop = l.franchiseFixedKopecks != null
-		? Number(l.franchiseFixedKopecks)
-		: rublesToKopecks(Number(l.franchiseFixedRub));
+	const franchiseFixedKop = resolveDbKopecks(l.franchiseFixedKopecks, l.franchiseFixedRub);
+	const maxRub = limitKop > 0 ? kopecksToRubles(limitKop) : Number(l.maxCoverageRub);
+	const usedRub = usedKop > 0 ? kopecksToRubles(usedKop) : Number(l.usedAmountRub);
 
 	let computedStatus = l.status;
 	if ((l.status === "active" || l.status === "approved") && l.validUntil && l.validUntil < todayIso) {

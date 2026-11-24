@@ -248,8 +248,12 @@ export function validateAndResolvePacsLocalFilePath(organizationId: string, cand
 
 		if (!isWhitelisted) {
 			// For relative-like uploads paths passed as absolute (e.g. C:\Clinic_MVP\dental-crm\uploads\pacs\<orgId>\...)
-			const cwd = process.cwd().toLowerCase();
-			const isInsideTenantUploads = lower.startsWith(path.join(cwd, "uploads").toLowerCase()) && lower.includes(organizationId.toLowerCase());
+			const cwdUploads = path.join(process.cwd(), "uploads").toLowerCase();
+			const orgLower = organizationId.toLowerCase();
+			const sep = path.sep;
+			const isInsideTenantUploads =
+				(lower === cwdUploads || lower.startsWith(cwdUploads + sep)) &&
+				(lower.includes(`${sep}${orgLower}${sep}`) || lower.endsWith(`${sep}${orgLower}`));
 			if (!isInsideTenantUploads) {
 				throw new PathTraversalError(
 					`Доступ запрещен: путь ${candidatePath} находится вне разрешенного хранилища организации (sandbox whitelist).`,
@@ -279,7 +283,12 @@ export function validateAndResolvePacsLocalFilePath(organizationId: string, cand
 		}
 		// Strict tenant isolation for relative uploads
 		const lowerResolved = resolved.toLowerCase();
-		if (!lowerResolved.includes(organizationId.toLowerCase()) && !lowerResolved.startsWith(tenantDir.toLowerCase())) {
+		const orgLower = organizationId.toLowerCase();
+		const sep = path.sep;
+		const hasOrgSegment =
+			lowerResolved.includes(`${sep}${orgLower}${sep}`) ||
+			lowerResolved.endsWith(`${sep}${orgLower}`);
+		if (!hasOrgSegment && !lowerResolved.startsWith(tenantDir.toLowerCase() + sep) && lowerResolved !== tenantDir.toLowerCase()) {
 			throw new TenantIsolationError("Доступ к файлам другой организации запрещен.");
 		}
 		return resolved;

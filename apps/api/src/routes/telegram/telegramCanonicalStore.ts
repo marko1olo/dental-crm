@@ -316,7 +316,18 @@ function toValidUuid(val?: string | null): string | null {
 
 // ─── BOT SETTINGS & SCOPE RESOLUTION ─────────────────────────────────────────
 
-export function getDenteTelegramBotSettings(): DenteTelegramBotSettings {
+const telegramSettingsByOrganizationId = new Map<string, DenteTelegramBotSettings>();
+
+export function getDenteTelegramBotSettings(
+	organizationId?: string | null,
+): DenteTelegramBotSettings {
+	const trimmedOrgId = organizationId?.trim();
+	if (trimmedOrgId) {
+		const scoped = telegramSettingsByOrganizationId.get(trimmedOrgId);
+		if (scoped) {
+			return scoped;
+		}
+	}
 	return denteTelegramBotSettings;
 }
 
@@ -434,84 +445,94 @@ export function resolveDenteTelegramOutboxRuntimeScope(
 export function applyLoadedTelegramBotSettings(
 	loaded: DenteTelegramBotSettings,
 ): DenteTelegramBotSettings {
-	Object.assign(denteTelegramBotSettings, loaded);
-	return denteTelegramBotSettings;
+	const cloned: DenteTelegramBotSettings = { ...loaded };
+	telegramSettingsByOrganizationId.set(loaded.organizationId, cloned);
+	if (loaded.organizationId === denteTelegramBotSettings.organizationId) {
+		Object.assign(denteTelegramBotSettings, cloned);
+	}
+	return cloned;
 }
 
 export function updateDenteTelegramBotSettings(
 	input: UpdateDenteTelegramBotSettingsInput,
 ): DenteTelegramBotSettings {
-	if (
-		input.organizationId &&
-		input.organizationId !== denteTelegramBotSettings.organizationId
-	) {
-		denteTelegramBotSettings.organizationId = input.organizationId;
-	}
+	const targetOrgId = input.organizationId ?? denteTelegramBotSettings.organizationId;
+	const baseSettings = getDenteTelegramBotSettings(targetOrgId);
+	const currentSettings: DenteTelegramBotSettings =
+		baseSettings.organizationId === targetOrgId
+			? baseSettings
+			: { ...baseSettings, organizationId: targetOrgId };
 
 	const nextSettings: DenteTelegramBotSettings = {
-		...denteTelegramBotSettings,
+		...currentSettings,
 		...input,
 		version: 1,
-		organizationId: input.organizationId ?? denteTelegramBotSettings.organizationId,
-		mode: input.mode ?? denteTelegramBotSettings.mode,
+		organizationId: targetOrgId,
+		mode: input.mode ?? currentSettings.mode,
 		botUsername:
 			input.botUsername !== undefined
 				? normalizeTelegramBotUsername(input.botUsername)
-				: normalizeTelegramBotUsername(denteTelegramBotSettings.botUsername),
+				: normalizeTelegramBotUsername(currentSettings.botUsername),
 		ownBotUsername:
 			input.ownBotUsername !== undefined
 				? normalizeTelegramBotUsername(input.ownBotUsername)
-				: normalizeTelegramBotUsername(denteTelegramBotSettings.ownBotUsername),
+				: normalizeTelegramBotUsername(currentSettings.ownBotUsername),
 		webhookBaseUrl:
 			input.webhookBaseUrl !== undefined
 				? normalizeTelegramPublicHttpsUrl("webhookBaseUrl", input.webhookBaseUrl)
-				: denteTelegramBotSettings.webhookBaseUrl,
+				: currentSettings.webhookBaseUrl,
 		patientPortalBaseUrl:
 			input.patientPortalBaseUrl !== undefined
 				? normalizeTelegramPublicHttpsUrl("patientPortalBaseUrl", input.patientPortalBaseUrl)
-				: denteTelegramBotSettings.patientPortalBaseUrl,
+				: currentSettings.patientPortalBaseUrl,
 		welcomeImageUrl:
 			input.welcomeImageUrl !== undefined
 				? normalizeTelegramPublicHttpsUrl("welcomeImageUrl", input.welcomeImageUrl)
-				: (denteTelegramBotSettings.welcomeImageUrl ?? null),
+				: (currentSettings.welcomeImageUrl ?? null),
 		visualCardUrls:
 			input.visualCardUrls !== undefined
 				? normalizeDenteTelegramVisualCardUrls(input.visualCardUrls)
-				: normalizeExistingDenteTelegramVisualCardUrls(denteTelegramBotSettings.visualCardUrls),
+				: normalizeExistingDenteTelegramVisualCardUrls(currentSettings.visualCardUrls),
 		clinicReviewUrl:
 			input.clinicReviewUrl !== undefined
 				? normalizeTelegramPublicHttpsUrl("clinicReviewUrl", input.clinicReviewUrl)
-				: denteTelegramBotSettings.clinicReviewUrl,
+				: currentSettings.clinicReviewUrl,
 		clinicMapsUrl:
 			input.clinicMapsUrl !== undefined
 				? normalizeTelegramPublicHttpsUrl("clinicMapsUrl", input.clinicMapsUrl)
-				: denteTelegramBotSettings.clinicMapsUrl,
-		enabledFeatures: input.enabledFeatures ?? denteTelegramBotSettings.enabledFeatures,
+				: currentSettings.clinicMapsUrl,
+		enabledFeatures: input.enabledFeatures ?? currentSettings.enabledFeatures,
 		patientLinkTokenTtlMinutes:
-			input.patientLinkTokenTtlMinutes ?? denteTelegramBotSettings.patientLinkTokenTtlMinutes,
+			input.patientLinkTokenTtlMinutes ?? currentSettings.patientLinkTokenTtlMinutes,
 		appointmentReminderLeadTimesHours:
 			Array.isArray(input.appointmentReminderLeadTimesHours)
 				? normalizeAppointmentReminderLeadTimes(input.appointmentReminderLeadTimesHours)
-				: normalizeAppointmentReminderLeadTimes(denteTelegramBotSettings.appointmentReminderLeadTimesHours),
+				: normalizeAppointmentReminderLeadTimes(currentSettings.appointmentReminderLeadTimesHours),
 		reviewRequestDelayHours:
 			input.reviewRequestDelayHours !== undefined
 				? normalizeReviewRequestDelayHours(input.reviewRequestDelayHours)
-				: normalizeReviewRequestDelayHours(denteTelegramBotSettings.reviewRequestDelayHours),
+				: normalizeReviewRequestDelayHours(currentSettings.reviewRequestDelayHours),
 		postVisitCheckupDelayHoursByTopic:
 			input.postVisitCheckupDelayHoursByTopic !== undefined
 				? normalizePostVisitCheckupDelayHoursByTopic(input.postVisitCheckupDelayHoursByTopic)
-				: normalizePostVisitCheckupDelayHoursByTopic(denteTelegramBotSettings.postVisitCheckupDelayHoursByTopic),
-		allowVoiceIntake: input.allowVoiceIntake ?? denteTelegramBotSettings.allowVoiceIntake,
+				: normalizePostVisitCheckupDelayHoursByTopic(currentSettings.postVisitCheckupDelayHoursByTopic),
+		allowVoiceIntake: input.allowVoiceIntake ?? currentSettings.allowVoiceIntake,
 		staffEscalationChannel:
 			input.staffEscalationChannel !== undefined
 				? input.staffEscalationChannel
-				: denteTelegramBotSettings.staffEscalationChannel,
-		privacyMode: input.privacyMode ?? denteTelegramBotSettings.privacyMode,
+				: currentSettings.staffEscalationChannel,
+		privacyMode: input.privacyMode ?? currentSettings.privacyMode,
 		updatedAt: new Date().toISOString(),
 	};
 
-	Object.assign(denteTelegramBotSettings, nextSettings);
-	return denteTelegramBotSettings;
+	telegramSettingsByOrganizationId.set(nextSettings.organizationId, nextSettings);
+	if (
+		!input.organizationId ||
+		input.organizationId === denteTelegramBotSettings.organizationId
+	) {
+		Object.assign(denteTelegramBotSettings, nextSettings);
+	}
+	return nextSettings;
 }
 
 // ─── LINK CODES & CHAT LINKS ─────────────────────────────────────────────────

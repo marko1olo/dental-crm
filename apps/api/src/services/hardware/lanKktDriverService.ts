@@ -1,1287 +1,132 @@
 /**
- * DENTE Dental CRM — Production-Grade LAN KKT Direct Connect Driver & Hardware Manager.
- *
- * Provides direct TCP/IP LAN connectivity to fiscal registers (ATOL, Shtrikh-M) in clinic subnets (192.168.x.x):
- * - Direct TCP/IP socket and HTTP JSON driver for ATOL (Driver v10 / WebServer / TCP ports 5555, 12345, 16732)
- * - Direct TCP protocol framing for Shtrikh-M (protocol 1.x / ports 4001, 12345, 5555)
- * - Online / paper status / cover status health diagnostics
- * - Non-blocking hardware offline fallback to fiscal_receipt_queue
- * - Deterministic 54-FZ QR-code and fiscal document signature generation
+ * lanKktDriverService.ts — Facade preserving LanKktDriverService API.
+ * Delegates framing, device status, printing, and shift operations to ./kktModules/.
  */
 
-import * as http from "node:http";
-import * as net from "node:net";
-import { kopecksToRubles } from "@dental/shared";
-import { Fiscal54FzService } from "../billing/fiscal54fzService.js";
-import { FiscalReceiptFactory, type Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
+import { type Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
 import type {
 	KktDeviceStatus,
 	KktLanConfig,
-	KktModelType,
 	KktPrintResult,
 	KktShiftParams,
 	KktShiftResult,
 } from "./types.js";
+import {
+	checkKktDeviceStatus,
+	closeKktShift,
+	DEFAULT_ATOL_PORT,
+	DEFAULT_SHTRIKH_PORT,
+	DEFAULT_TIMEOUT_MS,
+	formatAtolJsonTask,
+	formatAtolShiftTask,
+	formatShtrikhMCommandPacket,
+	formatShtrikhShiftPacket,
+	getDefaultKktConfig,
+	mapAtolErrorCode,
+	mapShtrikhErrorCode,
+	openKktShift,
+	pingKktSocket,
+	printKktFiscalReceipt,
+	printKktXReport,
+	sendShtrikhCommand,
+} from "./kktModules/index.js";
 
 export class LanKktDriverService {
-	public static readonly DEFAULT_ATOL_PORT = 16732;
-	public static readonly DEFAULT_SHTRIKH_PORT = 4001;
-	public static readonly DEFAULT_TIMEOUT_MS = 3000;
+	public static readonly DEFAULT_ATOL_PORT = DEFAULT_ATOL_PORT;
+	public static readonly DEFAULT_SHTRIKH_PORT = DEFAULT_SHTRIKH_PORT;
+	public static readonly DEFAULT_TIMEOUT_MS = DEFAULT_TIMEOUT_MS;
 
-	/**
-	 * Resolves KKT configuration from environment or defaults.
-	 */
 	public static getDefaultConfig(): KktLanConfig {
-		const host = process.env.KKT_LAN_HOST || "192.168.1.150";
-		const portStr = process.env.KKT_LAN_PORT;
-		const modelStr = (
-			process.env.KKT_MODEL ||
-			(process.env.NODE_ENV === "test" ? "emulator" : "atol_web_server")
-		).toLowerCase();
-		const timeoutMsStr = process.env.KKT_TIMEOUT_MS;
-
-		const model: KktModelType =
-			modelStr === "shtrikh_m_tcp"
-				? "shtrikh_m_tcp"
-				: modelStr === "atol_json_tcp"
-					? "atol_json_tcp"
-					: modelStr === "emulator"
-						? "emulator"
-						: "atol_web_server";
-
-		const port = portStr
-			? Number.parseInt(portStr, 10) || (model === "shtrikh_m_tcp" ? 4001 : 16732)
-			: model === "shtrikh_m_tcp"
-				? 4001
-				: 16732;
-
-		const timeoutMs = timeoutMsStr
-			? Number.parseInt(timeoutMsStr, 10) || LanKktDriverService.DEFAULT_TIMEOUT_MS
-			: LanKktDriverService.DEFAULT_TIMEOUT_MS;
-
-		return { host, port, model, timeoutMs };
+		return getDefaultKktConfig();
 	}
 
-	/**
-	 * Performs low-level TCP socket ping to verify LAN reachability.
-	 */
 	public static async pingSocket(
 		host: string,
 		port: number,
 		timeoutMs = 2000,
 	): Promise<{ reachable: boolean; latencyMs: number; error?: string }> {
-		const start = Date.now();
-		return new Promise((resolve) => {
-			const socket = new net.Socket();
-			let hasResolved = false;
-
-			const onDone = (reachable: boolean, err?: Error) => {
-				if (hasResolved) return;
-				hasResolved = true;
-				const latencyMs = Date.now() - start;
-				socket.destroy();
-				resolve({
-					reachable,
-					latencyMs,
-					...(err ? { error: err.message } : {}),
-				});
-			};
-
-			socket.setTimeout(timeoutMs);
-			socket.once("connect", () => onDone(true));
-			socket.once("timeout", () =>
-				onDone(false, new Error(`Connection to ${host}:${port} timed out after ${timeoutMs}ms`)),
-			);
-			socket.once("error", (err) => onDone(false, err));
-
-			try {
-				socket.connect(port, host);
-			} catch (err: unknown) {
-				onDone(false, err instanceof Error ? err : new Error(String(err)));
-			}
-		});
+		return pingKktSocket(host, port, timeoutMs);
 	}
 
-	/**
-	 * Queries KKT hardware status and paper presence over LAN.
-	 */
 	public static async checkDeviceStatus(config?: Partial<KktLanConfig>): Promise<KktDeviceStatus> {
-		const cfg = { ...this.getDefaultConfig(), ...config };
-		const now = new Date().toISOString();
-
-		// Check if simulated offline flag is active (tests / manual override)
-		if (process.env.KKM_FORCE_OFFLINE === "1" || process.env.KKM_HARDWARE_TIMEOUT === "1") {
-			return {
-				online: false,
-				paperOk: false,
-				coverClosed: true,
-				fnPresent: true,
-				fnFiscalized: true,
-				fnWarning: "KKM_FORCE_OFFLINE active",
-				modelName: cfg.model === "shtrikh_m_tcp" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-				fnSerial: process.env.KKT_FN_SERIAL || "9960440302145896",
-				kktSerialNumber: "0010670000012345",
-				lastCheckAt: now,
-				latencyMs: 0,
-				error: "KKT connection timed out or device unreachable in clinic subnet",
-			};
-		}
-
-		if (process.env.KKM_OUT_OF_PAPER === "1") {
-			return {
-				online: true,
-				paperOk: false,
-				coverClosed: true,
-				fnPresent: true,
-				fnFiscalized: true,
-				fnWarning: "Бумага закончилась",
-				modelName: cfg.model === "shtrikh_m_tcp" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-				fnSerial: process.env.KKT_FN_SERIAL || "9960440302145896",
-				kktSerialNumber: "0010670000012345",
-				lastCheckAt: now,
-				latencyMs: 12,
-				error: "Отсутствует чековая лента (Out of Paper)",
-			};
-		}
-
-		// In test mode without real hardware, return healthy status
-		if (process.env.NODE_ENV === "test" || cfg.model === "emulator") {
-			return {
-				online: true,
-				paperOk: true,
-				coverClosed: true,
-				fnPresent: true,
-				fnFiscalized: true,
-				fnWarning: null,
-				modelName: cfg.model === "shtrikh_m_tcp" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-				firmwareVersion: "5.8.20",
-				fnSerial: process.env.KKT_FN_SERIAL || "9960440302145896",
-				kktSerialNumber: "0010670000012345",
-				lastCheckAt: now,
-				latencyMs: 8,
-			};
-		}
-
-		// Real LAN socket check
-		const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
-		if (!ping.reachable) {
-			return {
-				online: false,
-				paperOk: false,
-				coverClosed: false,
-				fnPresent: false,
-				fnFiscalized: false,
-				modelName: cfg.model === "shtrikh_m_tcp" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-				fnSerial: "",
-				kktSerialNumber: "",
-				lastCheckAt: now,
-				latencyMs: ping.latencyMs,
-				error: `KKT unreachable on ${cfg.host}:${cfg.port}: ${ping.error || "Connection refused"}`,
-			};
-		}
-
-		// For ATOL WebServer, execute real device status query
-		if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
-			try {
-				const controller = new AbortController();
-				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 3000);
-				let resp: Response;
-				try {
-					resp = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ type: "getDeviceStatus" }),
-						signal: controller.signal,
-					});
-				} finally {
-					clearTimeout(timeoutTimer);
-				}
-
-				if (resp.ok) {
-					const data = (await resp.json()) as Record<string, unknown>;
-					const results = Array.isArray(data.results)
-						? (data.results as Record<string, unknown>[])
-						: [data];
-					const first = results[0] ?? {};
-					const deviceInfo = (first.deviceInfo as Record<string, unknown> | undefined) || {};
-					const fnInfo = (first.fnInfo as Record<string, unknown> | undefined) || {};
-					const errorCode = typeof first.errorCode === "number" ? first.errorCode : 0;
-
-					const paperOk = deviceInfo.paperPresent !== undefined
-						? Boolean(deviceInfo.paperPresent)
-						: !first.outOfPaper && errorCode !== 2;
-					const coverClosed = deviceInfo.coverClosed !== undefined
-						? Boolean(deviceInfo.coverClosed)
-						: !first.coverOpen && errorCode !== 3;
-					const fnPresent = fnInfo.fnPresent !== undefined
-						? Boolean(fnInfo.fnPresent)
-						: errorCode !== 5;
-					const fnFiscalized = fnInfo.fiscalized !== undefined
-						? Boolean(fnInfo.fiscalized)
-						: true;
-
-					const kktSerialNumber = String(deviceInfo.serialNumber || first.kktSerialNumber || "");
-					const fnSerial = String(fnInfo.fnNumber || first.fnNumber || process.env.KKT_FN_SERIAL || "");
-					const firmwareVersion = deviceInfo.firmwareVersion ? String(deviceInfo.firmwareVersion) : undefined;
-					const modelName = String(deviceInfo.modelName || first.modelName || "АТОЛ 27Ф (LAN)");
-
-					return {
-						online: true,
-						paperOk,
-						coverClosed,
-						fnPresent,
-						fnFiscalized,
-						fnWarning: errorCode !== 0 ? this.mapAtolErrorCode(errorCode) : null,
-						modelName,
-						firmwareVersion,
-						fnSerial,
-						kktSerialNumber,
-						lastCheckAt: now,
-						latencyMs: ping.latencyMs,
-						error: errorCode !== 0 ? this.mapAtolErrorCode(errorCode) : null,
-					};
-				}
-			} catch {
-				// Protocol inquiry failed; do not fabricate fake telemetry
-			}
-		}
-
-		// Socket is reachable, but hardware telemetry has not been verified via vendor protocol
-		return {
-			online: true,
-			paperOk: false,
-			coverClosed: false,
-			fnPresent: false,
-			fnFiscalized: false,
-			fnWarning: "TCP-порт открыт, но телеметрия ККТ не подтверждена протокольным ответом",
-			modelName: cfg.model === "shtrikh_m_tcp" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-			fnSerial: process.env.KKT_FN_SERIAL || "",
-			kktSerialNumber: "",
-			lastCheckAt: now,
-			latencyMs: ping.latencyMs,
-			error: "Требуется подтверждение статуса через обмен командами с ККТ",
-		};
+		return checkKktDeviceStatus(config);
 	}
 
-	/**
-	 * Formats ATOL Driver v10 / WebServer JSON document task for printing.
-	 */
 	public static formatAtolJsonTask(receipt: Ffd12ReceiptPayload): Record<string, unknown> {
-		return {
-			type: receipt.tag1054_operationType === 2 ? "sellReturn" : "sell",
-			taxationType: receipt.tag1055_taxationSystem === 1 ? "osn" : "usnIncome",
-			operator: {
-				name: receipt.tag1021_cashierName,
-				vatin: receipt.tag1203_cashierInn || undefined,
-			},
-			clientInfo: {
-				emailOrPhone: receipt.tag1008_customerContact,
-			},
-			payments: [
-				...(receipt.payments.cashKopecks > 0
-					? [{ type: "cash", sum: kopecksToRubles(receipt.payments.cashKopecks) }]
-					: []),
-				...(receipt.payments.electronicCardKopecks > 0 || receipt.payments.sbpKopecks > 0
-					? [
-							{
-								type: "electronically",
-								sum: kopecksToRubles(
-									receipt.payments.electronicCardKopecks + receipt.payments.sbpKopecks,
-								),
-							},
-						]
-					: []),
-				...(receipt.payments.prepaidKopecks > 0
-					? [{ type: "prepaid", sum: kopecksToRubles(receipt.payments.prepaidKopecks) }]
-					: []),
-			],
-			items: receipt.items.map((item) => ({
-				type: "position",
-				name: item.tag1030_subjectName,
-				price: kopecksToRubles(item.priceKopecks),
-				quantity: item.quantity,
-				amount: kopecksToRubles(item.amountKopecks),
-				paymentMethod:
-					item.tag1214_paymentMethod === 1
-						? "fullPrepayment"
-						: item.tag1214_paymentMethod === 3
-							? "advance"
-							: "fullPayment",
-				paymentObject:
-					item.tag1212_paymentSubject === 32
-						? "marked"
-						: item.tag1212_paymentSubject === 1
-							? "commodity"
-							: "service",
-				vat: {
-					type:
-						item.tag1199_vatRate === 6
-							? "none"
-							: item.tag1199_vatRate === 1
-								? "vat20"
-								: "none",
-				},
-				measurementUnit: item.tag2108_quantityMeasure === 0 ? "piece" : "piece",
-				...(item.tag2000_markingPayload
-					? {
-							imcParams: {
-								imcType: "auto",
-								imc: item.tag2000_markingPayload.tag1163_markingCode,
-								itemEstimatedStatus: "itemPiece",
-							},
-						}
-					: {}),
-			})),
-			total: kopecksToRubles(receipt.totalKopecks),
-		};
+		return formatAtolJsonTask(receipt);
 	}
 
-	/**
-	 * Formats ATOL Driver v10 / WebServer JSON shift task (openShift, closeShift, reportX).
-	 */
 	public static formatAtolShiftTask(
 		type: "openShift" | "closeShift" | "reportX",
 		operator?: { name?: string | undefined; vatin?: string | undefined },
 	): Record<string, unknown> {
-		return {
-			type,
-			operator: {
-				name: operator?.name || "Кассир",
-				...(operator?.vatin ? { vatin: operator.vatin } : {}),
-			},
-		};
+		return formatAtolShiftTask(type, operator);
 	}
 
-	/**
-	 * Maps statutory ATOL Driver v10 response error codes to Russian descriptions.
-	 */
 	public static mapAtolErrorCode(code: number): string {
-		switch (code) {
-			case 0:
-				return "Ошибок нет (OK)";
-			case 1:
-				return "Нет связи с фискальным регистратором (порт недоступен)";
-			case 2:
-				return "Закончилась чековая лента (Out of Paper)";
-			case 3:
-				return "Открыта крышка фискального регистратора";
-			case 4:
-				return "Смена превысила 24 часа (требуется снятие Z-отчета)";
-			case 5:
-				return "Ошибка фискального накопителя (ФН)";
-			case 6:
-				return "Неверный пароль кассира/администратора";
-			case 7:
-				return "Недопустимый режим налогообложения";
-			default:
-				return `Ошибка АТОЛ (код 0x${code.toString(16)})`;
-		}
+		return mapAtolErrorCode(code);
 	}
 
-	/**
-	 * Maps Shtrikh-M protocol return codes to Russian descriptions.
-	 */
 	public static mapShtrikhErrorCode(code: number): string {
-		switch (code) {
-			case 0x00:
-				return "Ошибок нет (OK)";
-			case 0x01:
-				return "Выдача данных: нет данных";
-			case 0x02:
-				return "Команда не поддерживается в данном режиме";
-			case 0x03:
-				return "Ошибка контрольной ленты или датчика бумаги";
-			case 0x04:
-				return "Отсутствует бумага (Out of Paper)";
-			case 0x05:
-				return "Снята крышка принтера";
-			case 0x08:
-				return "Исчерпан ресурс фискального накопителя";
-			case 0x4a:
-				return "Ошибка контрольной суммы XOR пакета";
-			default:
-				return `Ошибка ШТРИХ-М (код 0x${code.toString(16)})`;
-		}
+		return mapShtrikhErrorCode(code);
 	}
 
-	/**
-	 * Formats Shtrikh-M Command Packet (Protocol 1.x / 2.0).
-	 */
 	public static formatShtrikhMCommandPacket(
 		commandCode: number,
 		dataBuffer: Buffer = Buffer.alloc(0),
 		password = 30,
 	): Buffer {
-		const passwordBuf = Buffer.alloc(4);
-		passwordBuf.writeUInt32LE(password, 0);
-
-		const length = 1 + 4 + dataBuffer.length;
-		const header = Buffer.from([0x02, length, commandCode]);
-		const payload = Buffer.concat([header, passwordBuf, dataBuffer]);
-
-		// Checksum: XOR of all bytes from length to end of data
-		let crc = 0;
-		for (let i = 1; i < payload.length; i++) {
-			crc ^= payload[i]!;
-		}
-		return Buffer.concat([payload, Buffer.from([crc])]);
+		return formatShtrikhMCommandPacket(commandCode, dataBuffer, password);
 	}
 
-	/**
-	 * Formats Shtrikh-M Shift Command Packet (0xE0 Open Shift, 0x21 Z-Report, 0x20 X-Report).
-	 */
 	public static formatShtrikhShiftPacket(
 		type: "openShift" | "closeShift" | "reportX",
 		password = 30,
 	): Buffer {
-		const commandCode =
-			type === "openShift" ? 0xe0 : type === "closeShift" ? 0x21 : 0x20;
-		return this.formatShtrikhMCommandPacket(commandCode, Buffer.alloc(0), password);
+		return formatShtrikhShiftPacket(type, password);
 	}
 
-	/**
-	 * Sends binary command packet to Shtrikh-M fiscal register over TCP socket.
-	 */
 	public static async sendShtrikhCommand(
 		host: string,
 		port: number,
 		packet: Buffer,
 		timeoutMs = 3000,
 	): Promise<{ success: boolean; data?: Buffer; errorCode?: number; errorMessage?: string }> {
-		return new Promise((resolve) => {
-			const socket = new net.Socket();
-			let hasResolved = false;
-			let response = Buffer.alloc(0);
-
-			const onDone = (res: { success: boolean; data?: Buffer; errorCode?: number; errorMessage?: string }) => {
-				if (hasResolved) return;
-				hasResolved = true;
-				socket.destroy();
-				resolve(res);
-			};
-
-			socket.setTimeout(timeoutMs);
-			socket.once("connect", () => {
-				socket.write(packet);
-			});
-			socket.on("data", (chunk) => {
-				response = Buffer.concat([response, chunk]);
-				if (response.length >= 4) {
-					const length = response[1]!;
-					if (response.length >= length + 2) {
-						const errorCode = response[3]!;
-						if (errorCode !== 0) {
-							onDone({
-								success: false,
-								errorCode,
-								errorMessage: LanKktDriverService.mapShtrikhErrorCode(errorCode),
-								data: response,
-							});
-						} else {
-							onDone({ success: true, errorCode: 0, data: response });
-						}
-					}
-				}
-			});
-			socket.once("timeout", () => {
-				onDone({
-					success: false,
-					errorMessage: `Таймаут обмена командами с ШТРИХ-М (${host}:${port})`,
-				});
-			});
-			socket.once("error", (err) => {
-				onDone({
-					success: false,
-					errorMessage: `Ошибка сокета ШТРИХ-М: ${err.message}`,
-				});
-			});
-
-			try {
-				socket.connect(port, host);
-			} catch (err: unknown) {
-				onDone({
-					success: false,
-					errorMessage: err instanceof Error ? err.message : String(err),
-				});
-			}
-		});
+		return sendShtrikhCommand(host, port, packet, timeoutMs);
 	}
 
-	/**
-	 * Direct execution of fiscal receipt print command over LAN.
-	 * If hardware is offline or out of paper, returns status "hardware_offline".
-	 * Fiscal document number and fiscal document signature (FPD) MUST be obtained
-	 * strictly from the physical KKT / FN response.
-	 */
 	public static async printFiscalReceipt(
 		receipt: Ffd12ReceiptPayload,
 		config?: Partial<KktLanConfig>,
 	): Promise<KktPrintResult> {
-		const cfg = { ...this.getDefaultConfig(), ...config };
-		const now = new Date();
-
-		// Mandate 8e & FFD 1.2: 100% warranty discount (0 kopecks) causes hardware error on physical KKT
-		if (receipt.totalKopecks <= 0) {
-			return {
-				success: true,
-				status: "printed",
-				fnSerial: "0000000000000000",
-				fiscalDocumentNumber: "0",
-				fiscalSign: "0000000000",
-				ofdVerificationUrl: "",
-				receiptIssuedAt: now.toISOString(),
-			};
-		}
-
-		const status = await this.checkDeviceStatus(cfg);
-		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
-
-		if (!status.online || !status.paperOk) {
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				receiptIssuedAt: now.toISOString(),
-				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
-				errorMessage:
-					status.error ||
-					(!status.online ? "ККТ недоступна в локальной сети" : "Закончилась кассовая лента"),
-			};
-		}
-
-		// Dispatch print job to physical fiscal register
-		try {
-			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
-				const atolTask = this.formatAtolJsonTask(receipt);
-				const controller = new AbortController();
-				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
-
-				let atolResponse: Response;
-				try {
-					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(atolTask),
-						signal: controller.signal,
-					});
-				} finally {
-					clearTimeout(timeoutTimer);
-				}
-
-				if (!atolResponse.ok) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						receiptIssuedAt: now.toISOString(),
-						errorCode: `ATOL_HTTP_${atolResponse.status}`,
-						errorMessage: `Ошибка связи с Web-сервером АТОЛ: HTTP ${atolResponse.status}`,
-					};
-				}
-
-				const atolData = (await atolResponse.json()) as Record<string, unknown>;
-				const results = Array.isArray(atolData.results)
-					? (atolData.results as Record<string, unknown>[])
-					: [atolData];
-				const firstResult = results[0] ?? {};
-
-				const errorCode =
-					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
-				if (errorCode !== 0) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						receiptIssuedAt: now.toISOString(),
-						errorCode: `ATOL_ERR_${errorCode}`,
-						errorMessage: this.mapAtolErrorCode(errorCode),
-					};
-				}
-
-				const fiscalParams =
-					(firstResult.fiscalParams as Record<string, unknown> | undefined) || {};
-				const fiscalDocNumber =
-					fiscalParams.fiscalDocumentNumber !== undefined
-						? String(fiscalParams.fiscalDocumentNumber)
-						: undefined;
-				const fiscalSign =
-					fiscalParams.fiscalDocumentSign !== undefined
-						? String(fiscalParams.fiscalDocumentSign)
-						: undefined;
-				const fnSerial = (fiscalParams.fnNumber as string | undefined) || fallbackFn;
-
-				if (!fiscalDocNumber || !fiscalSign || !fnSerial) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial,
-						receiptIssuedAt: now.toISOString(),
-						errorCode: "KKT_NO_FISCAL_PARAMS",
-						errorMessage:
-							"ККТ не вернула фискальный номер или фискальный признак (ФД / ФПД) из ФН.",
-					};
-				}
-
-				const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
-					fn: fnSerial,
-					fd: fiscalDocNumber,
-					fpd: fiscalSign,
-					amountKopecks: receipt.totalKopecks,
-					operationType:
-						receipt.tag1054_operationType === 2 ? "income_return" : "income",
-				});
-
-				const qrString = Fiscal54FzService.generate54FzQrString({
-					issuedAt: now,
-					totalRub: kopecksToRubles(receipt.totalKopecks),
-					fnSerial,
-					fiscalDocNumber,
-					fiscalSign,
-					operationType: receipt.tag1054_operationType,
-				});
-
-				return {
-					success: true,
-					status: "printed",
-					fnSerial,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					ofdVerificationUrl: ofdUrl,
-					qrString,
-					receiptIssuedAt: now.toISOString(),
-				};
-			}
-
-			// Shtrikh-M protocol handling over TCP
-			if (cfg.model === "shtrikh_m_tcp") {
-				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
-				if (!ping.reachable) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						receiptIssuedAt: now.toISOString(),
-						errorCode: "SHTRIKH_UNREACHABLE",
-						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
-					};
-				}
-
-				// Query physical Shtrikh-M device status via command 0x11
-				const statusPacket = this.formatShtrikhMCommandPacket(0x11, Buffer.alloc(0), 30);
-				const cmdRes = await LanKktDriverService.sendShtrikhCommand(cfg.host, cfg.port, statusPacket, cfg.timeoutMs);
-
-				return {
-					success: false,
-					status: "hardware_offline",
-					fnSerial: fallbackFn,
-					receiptIssuedAt: now.toISOString(),
-					errorCode: cmdRes.errorCode ? `SHTRIKH_ERR_${cmdRes.errorCode}` : "SHTRIKH_HARDWARE_OFFLINE",
-					errorMessage: cmdRes.errorMessage || "ШТРИХ-М не вернул фискальные параметры (ФД / ФПД) из ФН. Чек буферизован в очереди.",
-				};
-			}
-
-			if (cfg.model === "emulator") {
-				const fnSerial = fallbackFn || "9960440302145896";
-				const fiscalDocNumber = "1001";
-				const fiscalSign = "1234567890";
-				const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
-					fn: fnSerial,
-					fd: fiscalDocNumber,
-					fpd: fiscalSign,
-					amountKopecks: receipt.totalKopecks,
-					operationType:
-						receipt.tag1054_operationType === 2 ? "income_return" : "income",
-				});
-				const qrString = Fiscal54FzService.generate54FzQrString({
-					issuedAt: now,
-					totalRub: kopecksToRubles(receipt.totalKopecks),
-					fnSerial,
-					fiscalDocNumber,
-					fiscalSign,
-					operationType: receipt.tag1054_operationType,
-				});
-
-				return {
-					success: true,
-					status: "printed",
-					fnSerial,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					ofdVerificationUrl: ofdUrl,
-					qrString,
-					receiptIssuedAt: now.toISOString(),
-				};
-			}
-
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				receiptIssuedAt: now.toISOString(),
-				errorCode: "UNSUPPORTED_KKT_MODEL",
-				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает синхронную печать без драйвера.`,
-			};
-		} catch (err: unknown) {
-			const errMsg = err instanceof Error ? err.message : String(err);
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				receiptIssuedAt: now.toISOString(),
-				errorCode: "KKT_COMMUNICATION_ERROR",
-				errorMessage: `Сбой взаимодействия с ККТ: ${errMsg}`,
-			};
-		}
+		return printKktFiscalReceipt(receipt, config);
 	}
 
-	/**
-	 * Hardware shift opening command over LAN (54-FZ).
-	 * Supports ATOL Driver v10 (JSON sync), Shtrikh-M (command 0xE0), and Emulator.
-	 */
 	public static async openShift(
 		params?: KktShiftParams,
 		config?: Partial<KktLanConfig>,
 	): Promise<KktShiftResult> {
-		const cfg = { ...this.getDefaultConfig(), ...config };
-		const now = new Date();
-
-		const status = await this.checkDeviceStatus(cfg);
-		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
-
-		if (!status.online || !status.paperOk) {
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
-				errorMessage:
-					status.error ||
-					(!status.online
-						? "ККТ недоступна в локальной сети при открытии смены"
-						: "Закончилась кассовая лента при открытии смены"),
-			};
-		}
-
-		try {
-			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
-				const atolTask = this.formatAtolShiftTask("openShift", {
-					name: params?.cashierName,
-					vatin: params?.cashierInn,
-				});
-				const controller = new AbortController();
-				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
-
-				let atolResponse: Response;
-				try {
-					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(atolTask),
-						signal: controller.signal,
-					});
-				} finally {
-					clearTimeout(timeoutTimer);
-				}
-
-				if (!atolResponse.ok) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: `ATOL_HTTP_${atolResponse.status}`,
-						errorMessage: `Ошибка связи с Web-сервером АТОЛ при открытии смены: HTTP ${atolResponse.status}`,
-					};
-				}
-
-				const atolData = (await atolResponse.json()) as Record<string, unknown>;
-				const results = Array.isArray(atolData.results)
-					? (atolData.results as Record<string, unknown>[])
-					: [atolData];
-				const firstResult = results[0] ?? {};
-
-				const errorCode =
-					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
-				if (errorCode !== 0) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: `ATOL_ERR_${errorCode}`,
-						errorMessage: this.mapAtolErrorCode(errorCode),
-					};
-				}
-
-				const fiscalParams =
-					(firstResult.fiscalParams as Record<string, unknown> | undefined) || {};
-				const shiftNumber =
-					fiscalParams.shiftNumber !== undefined
-						? Number(fiscalParams.shiftNumber)
-						: params?.shiftNumber ?? 1;
-				const fiscalDocNumber =
-					fiscalParams.fiscalDocumentNumber !== undefined
-						? String(fiscalParams.fiscalDocumentNumber)
-						: undefined;
-				const fiscalSign =
-					fiscalParams.fiscalDocumentSign !== undefined
-						? String(fiscalParams.fiscalDocumentSign)
-						: undefined;
-				const fnSerial = (fiscalParams.fnNumber as string | undefined) || fallbackFn;
-
-				return {
-					success: true,
-					status: "opened",
-					shiftNumber,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					fnSerial,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			if (cfg.model === "shtrikh_m_tcp") {
-				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
-				if (!ping.reachable) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: "SHTRIKH_UNREACHABLE",
-						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
-					};
-				}
-
-				return {
-					success: true,
-					status: "opened",
-					shiftNumber: params?.shiftNumber ?? 1,
-					fnSerial: fallbackFn,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			if (cfg.model === "emulator") {
-				const fnSerial = fallbackFn || "9960440302145896";
-				const shiftNumber = params?.shiftNumber ?? 1;
-				const fiscalDocNumber = String(1000 + shiftNumber);
-				const fiscalSign = String(1000000000 + ((shiftNumber * 1234567) % 900000000));
-
-				return {
-					success: true,
-					status: "opened",
-					shiftNumber,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					fnSerial,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: "UNSUPPORTED_KKT_MODEL",
-				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает открытие смены.`,
-			};
-		} catch (err: unknown) {
-			const errMsg = err instanceof Error ? err.message : String(err);
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: "KKT_OPEN_SHIFT_ERROR",
-				errorMessage: `Сбой открытия смены на ККТ: ${errMsg}`,
-			};
-		}
+		return openKktShift(params, config);
 	}
 
-	/**
-	 * Hardware shift closing command with Z-report (54-FZ shift reset).
-	 * Resets 24-hour hardware lock timer in Fiscal Storage (FN).
-	 */
 	public static async closeShift(
 		params?: KktShiftParams,
 		config?: Partial<KktLanConfig>,
 	): Promise<KktShiftResult> {
-		const cfg = { ...this.getDefaultConfig(), ...config };
-		const now = new Date();
-
-		const status = await this.checkDeviceStatus(cfg);
-		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
-
-		if (!status.online || !status.paperOk) {
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
-				errorMessage:
-					status.error ||
-					(!status.online
-						? "ККТ недоступна в локальной сети при закрытии смены (Z-отчет)"
-						: "Закончилась кассовая лента при снятии Z-отчета"),
-			};
-		}
-
-		try {
-			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
-				const atolTask = this.formatAtolShiftTask("closeShift", {
-					name: params?.cashierName,
-					vatin: params?.cashierInn,
-				});
-				const controller = new AbortController();
-				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
-
-				let atolResponse: Response;
-				try {
-					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(atolTask),
-						signal: controller.signal,
-					});
-				} finally {
-					clearTimeout(timeoutTimer);
-				}
-
-				if (!atolResponse.ok) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: `ATOL_HTTP_${atolResponse.status}`,
-						errorMessage: `Ошибка связи с Web-сервером АТОЛ при закрытии смены: HTTP ${atolResponse.status}`,
-					};
-				}
-
-				const atolData = (await atolResponse.json()) as Record<string, unknown>;
-				const results = Array.isArray(atolData.results)
-					? (atolData.results as Record<string, unknown>[])
-					: [atolData];
-				const firstResult = results[0] ?? {};
-
-				const errorCode =
-					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
-				if (errorCode !== 0) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: `ATOL_ERR_${errorCode}`,
-						errorMessage: this.mapAtolErrorCode(errorCode),
-					};
-				}
-
-				const fiscalParams =
-					(firstResult.fiscalParams as Record<string, unknown> | undefined) || {};
-				const shiftNumber =
-					fiscalParams.shiftNumber !== undefined
-						? Number(fiscalParams.shiftNumber)
-						: params?.shiftNumber ?? 1;
-				const fiscalDocNumber =
-					fiscalParams.fiscalDocumentNumber !== undefined
-						? String(fiscalParams.fiscalDocumentNumber)
-						: undefined;
-				const fiscalSign =
-					fiscalParams.fiscalDocumentSign !== undefined
-						? String(fiscalParams.fiscalDocumentSign)
-						: undefined;
-				const fnSerial = (fiscalParams.fnNumber as string | undefined) || fallbackFn;
-
-				let qrString: string | undefined;
-				if (fnSerial && fiscalDocNumber && fiscalSign) {
-					qrString = Fiscal54FzService.generate54FzQrString({
-						issuedAt: now,
-						totalRub: 0,
-						fnSerial,
-						fiscalDocNumber,
-						fiscalSign,
-						operationType: 1,
-					});
-				}
-
-				return {
-					success: true,
-					status: "closed",
-					shiftNumber,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					fnSerial,
-					qrString,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			if (cfg.model === "shtrikh_m_tcp") {
-				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
-				if (!ping.reachable) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: "SHTRIKH_UNREACHABLE",
-						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
-					};
-				}
-
-				const packet = this.formatShtrikhShiftPacket("closeShift", 30);
-				const cmdRes = await LanKktDriverService.sendShtrikhCommand(
-					cfg.host,
-					cfg.port,
-					packet,
-					cfg.timeoutMs,
-				);
-				if (!cmdRes.success) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: cmdRes.errorCode
-							? `SHTRIKH_ERR_${cmdRes.errorCode}`
-							: "SHTRIKH_Z_REPORT_ERROR",
-						errorMessage:
-							cmdRes.errorMessage ||
-							`Ошибка выполнения Z-отчета на ШТРИХ-М (${cfg.host}:${cfg.port})`,
-					};
-				}
-
-				return {
-					success: true,
-					status: "closed",
-					shiftNumber: params?.shiftNumber ?? 1,
-					fnSerial: fallbackFn,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			if (cfg.model === "emulator") {
-				const fnSerial = fallbackFn || "9960440302145896";
-				const shiftNumber = params?.shiftNumber ?? 1;
-				const fiscalDocNumber = String(2000 + shiftNumber);
-				const fiscalSign = String(1000000000 + ((shiftNumber * 7654321) % 900000000));
-				const qrString = Fiscal54FzService.generate54FzQrString({
-					issuedAt: now,
-					totalRub: 0,
-					fnSerial,
-					fiscalDocNumber,
-					fiscalSign,
-					operationType: 1,
-				});
-
-				return {
-					success: true,
-					status: "closed",
-					shiftNumber,
-					fiscalDocumentNumber: fiscalDocNumber,
-					fiscalSign,
-					fnSerial,
-					qrString,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: "UNSUPPORTED_KKT_MODEL",
-				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает закрытие смены.`,
-			};
-		} catch (err: unknown) {
-			const errMsg = err instanceof Error ? err.message : String(err);
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: "KKT_CLOSE_SHIFT_ERROR",
-				errorMessage: `Сбой закрытия смены (Z-отчет) на ККТ: ${errMsg}`,
-			};
-		}
+		return closeKktShift(params, config);
 	}
 
-	/**
-	 * Statutory Z-report printing (alias to closeShift).
-	 */
 	public static async printZReport(
 		params?: KktShiftParams,
 		config?: Partial<KktLanConfig>,
 	): Promise<KktShiftResult> {
-		return await this.closeShift(params, config);
+		return closeKktShift(params, config);
 	}
 
-	/**
-	 * Mid-shift X-report without shift closure or FN shift reset (54-FZ).
-	 */
 	public static async printXReport(
 		params?: KktShiftParams,
 		config?: Partial<KktLanConfig>,
 	): Promise<KktShiftResult> {
-		const cfg = { ...this.getDefaultConfig(), ...config };
-		const now = new Date();
-
-		const status = await this.checkDeviceStatus(cfg);
-		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
-
-		if (!status.online || !status.paperOk) {
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
-				errorMessage:
-					status.error ||
-					(!status.online
-						? "ККТ недоступна в локальной сети при снятии X-отчета"
-						: "Закончилась кассовая лента при снятии X-отчета"),
-			};
-		}
-
-		try {
-			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
-				const atolTask = this.formatAtolShiftTask("reportX", {
-					name: params?.cashierName,
-					vatin: params?.cashierInn,
-				});
-				const controller = new AbortController();
-				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
-
-				let atolResponse: Response;
-				try {
-					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(atolTask),
-						signal: controller.signal,
-					});
-				} finally {
-					clearTimeout(timeoutTimer);
-				}
-
-				if (!atolResponse.ok) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: `ATOL_HTTP_${atolResponse.status}`,
-						errorMessage: `Ошибка связи с Web-сервером АТОЛ при печати X-отчета: HTTP ${atolResponse.status}`,
-					};
-				}
-
-				const atolData = (await atolResponse.json()) as Record<string, unknown>;
-				const results = Array.isArray(atolData.results)
-					? (atolData.results as Record<string, unknown>[])
-					: [atolData];
-				const firstResult = results[0] ?? {};
-
-				const errorCode =
-					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
-				if (errorCode !== 0) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: `ATOL_ERR_${errorCode}`,
-						errorMessage: this.mapAtolErrorCode(errorCode),
-					};
-				}
-
-				return {
-					success: true,
-					status: "printed",
-					shiftNumber: params?.shiftNumber ?? 1,
-					fnSerial: fallbackFn,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			if (cfg.model === "shtrikh_m_tcp") {
-				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
-				if (!ping.reachable) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: "SHTRIKH_UNREACHABLE",
-						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
-					};
-				}
-
-				const packet = this.formatShtrikhShiftPacket("reportX", 30);
-				const cmdRes = await LanKktDriverService.sendShtrikhCommand(
-					cfg.host,
-					cfg.port,
-					packet,
-					cfg.timeoutMs,
-				);
-				if (!cmdRes.success) {
-					return {
-						success: false,
-						status: "hardware_offline",
-						fnSerial: fallbackFn,
-						issuedAt: now.toISOString(),
-						errorCode: cmdRes.errorCode
-							? `SHTRIKH_ERR_${cmdRes.errorCode}`
-							: "SHTRIKH_X_REPORT_ERROR",
-						errorMessage:
-							cmdRes.errorMessage ||
-							`Ошибка выполнения X-отчета на ШТРИХ-М (${cfg.host}:${cfg.port})`,
-					};
-				}
-
-				return {
-					success: true,
-					status: "printed",
-					shiftNumber: params?.shiftNumber ?? 1,
-					fnSerial: fallbackFn,
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			if (cfg.model === "emulator") {
-				return {
-					success: true,
-					status: "printed",
-					shiftNumber: params?.shiftNumber ?? 1,
-					fnSerial: fallbackFn || "9960440302145896",
-					issuedAt: now.toISOString(),
-				};
-			}
-
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: "UNSUPPORTED_KKT_MODEL",
-				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает печать X-отчета.`,
-			};
-		} catch (err: unknown) {
-			const errMsg = err instanceof Error ? err.message : String(err);
-			return {
-				success: false,
-				status: "hardware_offline",
-				fnSerial: fallbackFn,
-				issuedAt: now.toISOString(),
-				errorCode: "KKT_X_REPORT_ERROR",
-				errorMessage: `Сбой печати X-отчета на ККТ: ${errMsg}`,
-			};
-		}
+		return printKktXReport(params, config);
 	}
 }

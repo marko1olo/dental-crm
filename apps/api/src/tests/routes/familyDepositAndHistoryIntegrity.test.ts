@@ -10,6 +10,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -157,6 +158,7 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 			visitId,
 			amountRub: 4000,
 			method: "family_wallet",
+			clientMutationId: generateUuidV7(),
 			note: "100% оплата с семейного депозита",
 		});
 
@@ -203,6 +205,7 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 					visitId,
 					amountRub: 50000,
 					method: "family_wallet",
+					clientMutationId: generateUuidV7(),
 					note: "Попытка перерасхода семейного депозита",
 				});
 			},

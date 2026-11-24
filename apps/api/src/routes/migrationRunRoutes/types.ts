@@ -156,10 +156,24 @@ export function failSchemaRefusal(
 	);
 }
 
+export const MIGRATION_RUN_ID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function failIfInvalidRunId(
+	reply: FastifyReply,
+	runId: string,
+): ApiErrorEnvelope | null {
+	if (MIGRATION_RUN_ID_REGEX.test(runId)) {
+		return null;
+	}
+	return fail(reply, 400, "InvalidRunId", "Некорректный идентификатор прогона миграции.");
+}
+
 /** Переводит отказ фазы в ответ API с сохранением машинного кода. */
 export function failFromPhaseError(
 	reply: FastifyReply,
 	error: unknown,
+	logger?: { error: (obj: unknown, msg: string) => void },
 ): ApiErrorEnvelope {
 	if (error instanceof MigrationPhaseError) {
 		const httpStatus =
@@ -170,6 +184,10 @@ export function failFromPhaseError(
 					: 422;
 		return fail(reply, httpStatus, error.code, error.message);
 	}
+	logger?.error(
+		{ err: error instanceof Error ? { name: error.name, message: error.message } : error },
+		"[migration] Unexpected phase error",
+	);
 	const message =
 		error instanceof Error ? error.message : "Неизвестная ошибка переноса.";
 	return fail(reply, 422, "MigrationFailed", message);

@@ -50,7 +50,7 @@ import {
 	SOP_CLASS_CT_IMAGE_STORAGE,
 	TRANSFER_SYNTAX_EXPLICIT_VR_LITTLE_ENDIAN,
 } from "../../services/dicom/dicomProtocolConstants.js";
-import { db } from "../../db/client.js";
+import { db, dbRaw } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 
 const SAMPLE_DICOM_PATH = fsSync.existsSync(path.resolve(process.cwd(), ".data/dicom/test.dcm"))
@@ -77,7 +77,7 @@ function setupDbMock(
 		node.where = () => node;
 		node.limit = () => {
 			if (currentTable === schema.organizations) {
-				return Promise.resolve([{ id: TEST_ORG_ID }]);
+				return Promise.resolve([{ id: TEST_ORG_ID, name: "Тестовая Клиника" }]);
 			}
 			if (currentTable === schema.patients) {
 				return Promise.resolve(patientsList);
@@ -86,7 +86,7 @@ function setupDbMock(
 		};
 		node.then = (onfulfilled?: ((value: unknown) => unknown) | null) => {
 			if (currentTable === schema.organizations) {
-				return Promise.resolve([{ id: TEST_ORG_ID }]).then(onfulfilled);
+				return Promise.resolve([{ id: TEST_ORG_ID, name: "Тестовая Клиника" }]).then(onfulfilled);
 			}
 			if (currentTable === schema.patients) {
 				return Promise.resolve(patientsList).then(onfulfilled);
@@ -103,20 +103,31 @@ function setupDbMock(
 			return node;
 		};
 		node.returning = () => Promise.resolve([{ id: "generated-uuid-id", fullName: "Созданный Пациент" }]);
+		node.then = (onfulfilled?: ((value: unknown) => unknown) | null) => Promise.resolve([]).then(onfulfilled);
 		return node;
 	};
 
 	const update = () => {
 		const node: Record<string, unknown> = {};
 		node.set = () => node;
-		node.where = () => Promise.resolve([]);
+		node.where = () => node;
+		node.returning = () => Promise.resolve([]);
+		node.then = (onfulfilled?: ((value: unknown) => unknown) | null) => Promise.resolve([]).then(onfulfilled);
 		return node;
+	};
+
+	const txProxy = {
+		select,
+		insert,
+		update,
+		execute: () => Promise.resolve([]),
 	};
 
 	t.mock.method(db, "select", select);
 	t.mock.method(db, "insert", insert);
 	t.mock.method(db, "update", update);
-	t.mock.method(db, "transaction", async (cb: (tx: unknown) => Promise<unknown>) => cb({ select, insert, update }));
+	t.mock.method(db, "transaction", async (cb: (tx: unknown) => Promise<unknown>) => cb(txProxy));
+	t.mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => Promise<unknown>) => cb(txProxy));
 }
 
 test("1. Парсинг подлинного DICOM образца из .data/dicom/test.dcm", async () => {

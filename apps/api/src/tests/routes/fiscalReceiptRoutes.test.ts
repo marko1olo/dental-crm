@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { createFiscalReceiptPayloadSchema } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -48,6 +49,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			startTelegramWorker: false,
 			startCommunicationWorker: false,
 			startMigrationWorker: false,
+			startEgiszWorker: false,
 		});
 
 		try {
@@ -98,6 +100,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 				// ignore
 			}
 		}
+		await app?.close();
 	});
 
 	it("1.1 POST /api/fiscal/validate — Pre-flight validation with Minzdrav 804n code and DataMatrix marking", async (context) => {
@@ -226,6 +229,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload,
 		});
@@ -291,6 +295,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload,
 		});
@@ -351,6 +356,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: refundPayload,
 		});
@@ -387,6 +393,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
 			},
 		});
 
@@ -433,6 +440,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: correctionPayload,
 		});
@@ -495,6 +503,7 @@ describe("54-FZ FFD 1.2 Fiscal Routes Suite (/api/fiscal/*)", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: refundPayload,
 		});

@@ -37,7 +37,7 @@ export async function preflightValidatePaymentEntities(
 			sendBillingPaymentScopeError(reply, 404, "Прием для оплаты не найден.");
 			return { ok: false };
 		}
-		if (visit.patientId !== input.patientId) {
+		if (visit.patientId !== paymentInput.patientId) {
 			sendBillingPaymentScopeError(reply, 409, "Прием оплаты относится к другому пациенту.");
 			return { ok: false };
 		}
@@ -48,7 +48,7 @@ export async function preflightValidatePaymentEntities(
 			sendBillingPaymentScopeError(reply, 404, "Документ для оплаты не найден.");
 			return { ok: false };
 		}
-		if (document.patientId !== input.patientId) {
+		if (document.patientId !== paymentInput.patientId) {
 			sendBillingPaymentScopeError(reply, 409, "Документ оплаты относится к другому пациенту.");
 			return { ok: false };
 		}
@@ -62,11 +62,11 @@ export async function preflightValidatePaymentEntities(
 				sendBillingPaymentScopeError(reply, 404, "Прием документа для оплаты не найден.");
 				return { ok: false };
 			}
-			if (visit.patientId !== input.patientId) {
+			if (visit.patientId !== paymentInput.patientId) {
 				sendBillingPaymentScopeError(reply, 409, "Прием документа относится к другому пациенту.");
 				return { ok: false };
 			}
-			paymentInput = { ...input, visitId: document.visitId };
+			paymentInput = { ...paymentInput, visitId: document.visitId };
 		}
 		if (document.status === "voided") {
 			sendBillingPaymentScopeError(reply, 409, "К аннулированному документу нельзя привязать оплату.");

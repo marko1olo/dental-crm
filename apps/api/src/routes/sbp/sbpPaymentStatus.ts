@@ -1,6 +1,7 @@
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
-import { payments } from "../../db/schema.js";
+import { payments, sberbankTransactions } from "../../db/schema.js";
 
 /** Queries payment status for SBP operation with mandatory tenant isolation */
 export async function getSbpPaymentStatus(
@@ -10,6 +11,7 @@ export async function getSbpPaymentStatus(
 	readonly found: boolean;
 	readonly status: string | null;
 	readonly amountRub: number | null;
+	readonly amountKopecks: number | null;
 	readonly paidAt: Date | null;
 	readonly paymentId: string | null;
 } | null> {
@@ -35,19 +37,52 @@ export async function getSbpPaymentStatus(
 
 		const [payment] = await query;
 		if (!payment) {
+			const [sberTx] = await tx
+				.select()
+				.from(sberbankTransactions)
+				.where(
+					and(
+						eq(sberbankTransactions.organizationId, orgId),
+						eq(sberbankTransactions.orderId, operationId),
+					),
+				)
+				.limit(1);
+
+			if (sberTx) {
+				const txAmountKopecks = Number(sberTx.amountKopecks);
+				return {
+					found: true,
+					status: sberTx.status,
+					amountRub: kopecksToRubles(txAmountKopecks),
+					amountKopecks: txAmountKopecks,
+					paidAt: null,
+					paymentId: null,
+				};
+			}
+
 			return {
 				found: false,
 				status: null,
 				amountRub: null,
+				amountKopecks: null,
 				paidAt: null,
 				paymentId: null,
 			};
 		}
 
+		const paymentAmountKopecks =
+			payment.amountKopecks !== null && payment.amountKopecks !== undefined
+				? Number(payment.amountKopecks)
+				: null;
+
 		return {
 			found: true,
 			status: payment.status,
-			amountRub: Number(payment.amountRub),
+			amountRub:
+				paymentAmountKopecks !== null && paymentAmountKopecks > 0
+					? kopecksToRubles(paymentAmountKopecks)
+					: Number(payment.amountRub),
+			amountKopecks: paymentAmountKopecks,
 			paidAt: payment.paidAt,
 			paymentId: payment.id,
 		};

@@ -52,8 +52,17 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			const patientId = auth.patientId;
 			const organizationId = auth.organizationId;
 
+			const documentId = request.params.documentId?.trim();
+			if (!documentId || !isValidUuid(documentId)) {
+				reply.status(400);
+				return {
+					error: "ValidationError",
+					message: "Идентификатор документа должен быть валидным UUID.",
+				};
+			}
+
 			const document = await withTenantCtx(organizationId, () =>
-				getDocumentById(organizationId, request.params.documentId),
+				getDocumentById(organizationId, documentId),
 			);
 
 			if (
@@ -173,6 +182,19 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			typeof request.body?.signatureMethod === "string"
 				? request.body.signatureMethod.trim().toLowerCase()
 				: "";
+		if (
+			rawMethod &&
+			rawMethod !== "paper_physical" &&
+			rawMethod !== "sms_otp" &&
+			rawMethod !== "touch_screen" &&
+			rawMethod !== "portal_pep"
+		) {
+			reply.status(400);
+			return {
+				error: "InvalidSignatureMethod",
+				message: "Неподдерживаемый способ подписания согласия.",
+			};
+		}
 		const signatureMethod =
 			rawMethod === "paper_physical"
 				? "paper_physical"
@@ -185,8 +207,15 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 		const pepCode =
 			typeof request.body?.pepCode === "string" ? request.body.pepCode.trim() : "";
 
-		// Верификация проверочного кода при подписании через SMS-OTP
-		if (signatureMethod === "sms_otp" && pepCode) {
+		// Обязательная верификация проверочного кода при подписании через SMS-OTP
+		if (signatureMethod === "sms_otp") {
+			if (!pepCode) {
+				reply.status(400);
+				return {
+					error: "PepCodeRequired",
+					message: "Для подписания по SMS-коду требуется проверочный код ПЭП.",
+				};
+			}
 			const isCodeValid = await verifyOtpCode(consentId, pepCode, auth.organizationId, auth.patientId);
 			if (!isCodeValid) {
 				reply.status(400);
@@ -201,6 +230,14 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			typeof request.body?.signatureSvg === "string"
 				? request.body.signatureSvg.trim()
 				: "";
+
+		if (signatureMethod === "touch_screen" && !signatureSvg) {
+			reply.status(400);
+			return {
+				error: "SignatureRequired",
+				message: "Для подписания на сенсорном экране требуется векторная подпись пациента.",
+			};
+		}
 
 		const defaultPaperSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f8fafc" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">ПОДПИСАНО НА БУМАГЕ</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#475569">Оригинал хранится в медицинской карте клиники</text></svg>';
 		const defaultPepSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ЭЛЕКТРОННАЯ ПОДПИСЬ ПАЦИЕНТА</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Подтверждено в личном кабинете пациента</text></svg>';

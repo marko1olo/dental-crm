@@ -26,7 +26,14 @@ export async function handleExportPricelist(
 	if (!orgId) return;
 
 	const queryParse = pricelistExportQuerySchema.safeParse(request.query ?? {});
-	const query = queryParse.success ? queryParse.data : { format: "csv" as const };
+	if (!queryParse.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры экспорта прейскуранта",
+			details: queryParse.error.issues,
+		});
+	}
+	const query = queryParse.data;
 
 	const catalog = await getServiceCatalogForOrganization(orgId);
 	let filtered = catalog;

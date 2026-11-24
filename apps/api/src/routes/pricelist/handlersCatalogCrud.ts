@@ -18,6 +18,7 @@ import {
 	requireCatalogMutationAccess,
 	serviceCatalogMutationRejection,
 } from "../settings/helpers.js";
+import { isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	createServiceCatalogItemSchema,
 	type CreateServiceCatalogItemInput,
@@ -32,20 +33,24 @@ import {
 	type UpdateServiceCatalogItemInput,
 } from "../settings/types.js";
 
-const serviceBomUpdateSchema = z.object({
-	title: z.string().trim().max(240).optional(),
-	description: z.string().trim().max(1000).optional().nullable(),
-	status: z.enum(["active", "draft", "archived"]).optional().default("active"),
-	items: z.array(
-		z.object({
-			inventoryItemId: z.string().uuid(),
-			quantity: z.number().positive(),
-			unit: z.string().trim().max(30).optional().default("шт"),
-			isMdlpRequired: z.boolean().optional().default(false),
-			notes: z.string().trim().max(500).optional().nullable(),
-		}),
-	),
-});
+const serviceBomUpdateSchema = z
+	.object({
+		title: z.string().trim().max(240).optional(),
+		description: z.string().trim().max(1000).optional().nullable(),
+		status: z.enum(["active", "draft", "archived"]).optional().default("active"),
+		items: z.array(
+			z
+				.object({
+					inventoryItemId: z.string().uuid(),
+					quantity: z.number().positive(),
+					unit: z.string().trim().max(30).optional().default("шт"),
+					isMdlpRequired: z.boolean().optional().default(false),
+					notes: z.string().trim().max(500).optional().nullable(),
+				})
+				.strict(),
+		),
+	})
+	.strict();
 
 /**
  * POST /api/pricelist & POST /api/pricelist/items
@@ -98,7 +103,7 @@ export async function handleGetCatalogItem(
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };
-	if (!params.serviceId) {
+	if (!params.serviceId || !isValidUuid(params.serviceId)) {
 		reply.code(400);
 		return {
 			error: "RouteValidationError",
@@ -133,7 +138,7 @@ export async function handleUpdateCatalogItem(
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };
-	if (!params.serviceId) {
+	if (!params.serviceId || !isValidUuid(params.serviceId)) {
 		reply.code(400);
 		return {
 			error: "SettingsRouteValidationError",
@@ -191,7 +196,7 @@ export async function handleDeactivateCatalogItem(
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };
-	if (!params.serviceId) {
+	if (!params.serviceId || !isValidUuid(params.serviceId)) {
 		reply.code(400);
 		return {
 			error: "SettingsRouteValidationError",
@@ -228,7 +233,7 @@ export async function handleGetServiceBom(
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };
-	if (!params.serviceId) {
+	if (!params.serviceId || !isValidUuid(params.serviceId)) {
 		reply.code(400);
 		return {
 			error: "RouteValidationError",
@@ -264,7 +269,7 @@ export async function handleUpdateServiceBom(
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };
-	if (!params.serviceId) {
+	if (!params.serviceId || !isValidUuid(params.serviceId)) {
 		reply.code(400);
 		return {
 			error: "RouteValidationError",

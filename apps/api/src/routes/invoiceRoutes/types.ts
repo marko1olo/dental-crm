@@ -75,12 +75,24 @@ export const generateInvoiceFromPlanSchema = z.object({
 				planUnitPriceRub: z.number().nonnegative().optional(),
 				effectiveUnitPriceRub: z.number().nonnegative().optional(),
 				unitPriceRub: z.number().nonnegative().optional(),
+				priceRub: z.number().nonnegative().optional(),
 				discountRub: z.number().nonnegative().optional(),
 				resolutionPolicy: priceLockResolutionPolicySchema.default("LOCK_ORIGINAL_PRICE"),
 				serviceId: z.string().optional(),
 				analogueServiceId: z.string().optional(),
 				doctorId: z.string().uuid().optional().nullable(),
-			}).strict(),
+			})
+				.strict()
+				.transform((item) => {
+					if (
+						item.priceRub !== undefined &&
+						item.unitPriceRub === undefined &&
+						item.planUnitPriceRub === undefined
+					) {
+						return { ...item, unitPriceRub: item.priceRub };
+					}
+					return item;
+				}),
 		)
 		.min(1),
 	adminOverridePin: z.string().optional(),

@@ -6,7 +6,7 @@ import { computePackagingExpirationDate, type SterilizationPackagingType } from 
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -102,10 +102,12 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 			logger: req.log,
 		}, tx);
 
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, { type: "SANPIN_STERILIZATION_ADDED", payload: createdLog });
+		});
+
 		return { log: createdLog, stockDeduction: deduction, cycleNumber: cycleNum, cycleTimeLabel: label };
 	});
-
-	wsBroker.broadcastToOrganization(organizationId, { type: "SANPIN_STERILIZATION_ADDED", payload: log });
 
 	return reply.code(201).send({
 		success: true,

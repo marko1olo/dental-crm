@@ -42,7 +42,9 @@ async function resolveAuthorizedOrg(
 			rawInitData,
 			botToken,
 			{
-				allowDevBypass: process.env.NODE_ENV === "test" || (!process.env.TELEGRAM_BOT_TOKEN && !process.env.DENTE_TELEGRAM_BOT_TOKEN),
+				allowDevBypass:
+					process.env.NODE_ENV === "test" &&
+					isExplicitlyUnguardedControlPlaneAllowed(),
 			},
 		);
 		if (validation.isValid && validation.user) {
@@ -158,9 +160,19 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 		}
 
 		const { organizationId, refereeTelegramChatId, startPayload, refereeProfile } = parsed.data;
+		const auth = await resolveAuthorizedOrg(request, reply, {
+			allowTelegramWebApp: true,
+		});
+		if (!auth) return;
+		if (auth.organizationId !== organizationId) {
+			return reply.status(403).send({
+				error: "Forbidden",
+				message: "Несоответствие организации в реферальном запросе.",
+			});
+		}
 
 		const result = await TelegramReferralLoyaltyService.processReferralStart(
-			organizationId,
+			auth.organizationId,
 			refereeTelegramChatId,
 			startPayload,
 			refereeProfile,
@@ -199,8 +211,18 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 		}
 
 		const { organizationId, appointmentId, score, comment, telegramChatId } = parsed.data;
+		const auth = await resolveAuthorizedOrg(request, reply, {
+			allowTelegramWebApp: true,
+		});
+		if (!auth) return;
+		if (auth.organizationId !== organizationId) {
+			return reply.status(403).send({
+				error: "Forbidden",
+				message: "Несоответствие организации в NPS-запросе.",
+			});
+		}
 
-		const result = await TelegramReferralLoyaltyService.handleNpsFeedback(organizationId, {
+		const result = await TelegramReferralLoyaltyService.handleNpsFeedback(auth.organizationId, {
 			appointmentId,
 			score,
 			comment,
@@ -245,9 +267,15 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 			requiredPatientId: parentPatientId,
 		});
 		if (!auth) return;
+		if (auth.organizationId !== organizationId) {
+			return reply.status(403).send({
+				error: "Forbidden",
+				message: "Несоответствие организации при подтверждении записи семьи.",
+			});
+		}
 
 		const result = await TelegramReferralLoyaltyService.confirmFamilyAppointment(
-			organizationId,
+			auth.organizationId,
 			parentPatientId,
 			appointmentId,
 		);

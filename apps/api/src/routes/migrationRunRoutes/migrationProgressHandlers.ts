@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -7,7 +7,7 @@ import { listQuarantine } from "../../migration/engine.js";
 import { reconciliationReportCsv } from "../../migration/reconcile.js";
 import { countStagingByStatus, findRun } from "../../migration/runStore.js";
 import { migrationWorkerStatus } from "../../migration/worker.js";
-import { fail, runStatusPayload } from "./types.js";
+import { fail, failIfInvalidRunId, runStatusPayload } from "./types.js";
 
 /**
  * Обработчики прогресса миграции:
@@ -24,6 +24,8 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				"migration run status",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const run = await findRun(request.params.runId, context.organizationId);
 			if (!run) {
@@ -53,6 +55,8 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				"migration reconciliation",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const run = await findRun(request.params.runId, context.organizationId);
 			if (!run) {
@@ -67,7 +71,12 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 			const [reconciliation] = await db
 				.select()
 				.from(migrationReconciliations)
-				.where(eq(migrationReconciliations.runId, run.id))
+				.where(
+					and(
+						eq(migrationReconciliations.runId, run.id),
+						eq(migrationReconciliations.organizationId, context.organizationId),
+					),
+				)
 				.orderBy(desc(migrationReconciliations.generatedAt))
 				.limit(1);
 
@@ -115,6 +124,8 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				"migration reconciliation csv",
 			);
 			if (!context) return reply;
+			const invalidId = failIfInvalidRunId(reply, request.params.runId);
+			if (invalidId) return invalidId;
 
 			const run = await findRun(request.params.runId, context.organizationId);
 			if (!run) {
@@ -129,7 +140,12 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 			const [reconciliation] = await db
 				.select()
 				.from(migrationReconciliations)
-				.where(eq(migrationReconciliations.runId, run.id))
+				.where(
+					and(
+						eq(migrationReconciliations.runId, run.id),
+						eq(migrationReconciliations.organizationId, context.organizationId),
+					),
+				)
 				.orderBy(desc(migrationReconciliations.generatedAt))
 				.limit(1);
 

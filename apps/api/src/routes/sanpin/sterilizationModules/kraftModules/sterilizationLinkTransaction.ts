@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { type TenantDb, withTenantCtx } from "../../../../db/rls.js";
 import { visitDiaries } from "../../../../db/schema.js";
 import {
 	applyEmergencySterilizationToDiaryTreatment,
@@ -13,6 +13,7 @@ export interface LinkDiaryTransactionParams {
 	doctorUserId: string | null;
 	isEmergencyAdmission: boolean;
 	emergencyAdmissionNote: string;
+	tx?: TenantDb | undefined;
 }
 
 export async function executeLinkDiaryTransaction(params: LinkDiaryTransactionParams) {
@@ -23,9 +24,10 @@ export async function executeLinkDiaryTransaction(params: LinkDiaryTransactionPa
 		doctorUserId,
 		isEmergencyAdmission,
 		emergencyAdmissionNote,
+		tx: existingTx,
 	} = params;
 
-	return withTenantCtx(organizationId, async (tx) => {
+	const runInTx = async (tx: TenantDb) => {
 		const [existingDiary] = await tx
 			.select()
 			.from(visitDiaries)
@@ -120,5 +122,10 @@ export async function executeLinkDiaryTransaction(params: LinkDiaryTransactionPa
 			return { kind: "locked_admitted" as const, diary: existingDiary };
 		}
 		return { kind: "ok" as const, diary: updated };
-	});
+	};
+
+	if (existingTx) {
+		return runInTx(existingTx);
+	}
+	return withTenantCtx(organizationId, runInTx);
 }

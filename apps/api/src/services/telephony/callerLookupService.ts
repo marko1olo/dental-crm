@@ -55,16 +55,31 @@ import {
 } from "@dental/shared";
 
 export type { CallerLookupFamilyMember } from "@dental/shared";
+import { createApiLogger } from "../../observability/logger.js";
+
+const apiLogger = createApiLogger("telephony:callerLookup");
 
 const defaultStructuredLogger = {
 	info: (obj: unknown, msg?: string) => {
-		process.stdout.write(`${JSON.stringify({ level: "info", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+		if (typeof obj === "object" && obj !== null) {
+			apiLogger.info(obj as Record<string, unknown>, msg ?? "");
+		} else {
+			apiLogger.info({ data: obj }, msg ?? "");
+		}
 	},
 	warn: (obj: unknown, msg?: string) => {
-		process.stdout.write(`${JSON.stringify({ level: "warn", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+		if (typeof obj === "object" && obj !== null) {
+			apiLogger.warn(obj as Record<string, unknown>, msg ?? "");
+		} else {
+			apiLogger.warn({ data: obj }, msg ?? "");
+		}
 	},
 	error: (obj: unknown, msg?: string) => {
-		process.stderr.write(`${JSON.stringify({ level: "error", msg, ...(typeof obj === "object" && obj !== null ? obj : { data: obj }) })}\n`);
+		if (typeof obj === "object" && obj !== null) {
+			apiLogger.error(obj as Record<string, unknown>, msg ?? "");
+		} else {
+			apiLogger.error({ data: obj }, msg ?? "");
+		}
 	},
 };
 

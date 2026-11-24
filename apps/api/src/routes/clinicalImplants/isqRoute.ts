@@ -1,6 +1,5 @@
 import {
 	ImplantStabilityCalculator,
-	computePayloadHash,
 	recordIsqMeasurementSchema,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -9,7 +8,6 @@ import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { implantIsqMeasurements, patientImplantInstallations } from "../../db/schema.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 
@@ -26,50 +24,8 @@ export function registerIsqRoute(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.implants.write",
 				role: staffRole,
-				message: `Отказ в записи замера ISQ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в записи замера ISQ: ${evalAccess.reason}`,
 			});
-		}
-
-		// Дедупликация и проверка Idempotency-Key (Мандаты 8bo, 8zp)
-		const rawIdempotencyKey =
-			(request.headers["idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotency-key"] as string | undefined) ??
-			(request.headers["x-idempotence-key"] as string | undefined) ??
-			(request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
-				  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
-				: undefined);
-
-		const idempotencyKey =
-			typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim().length > 0
-				? rawIdempotencyKey.trim()
-				: null;
-
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-			const existingRecord = await withTenantCtx(orgId, async (tx) => {
-				const [rec] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-				return rec ?? null;
-			});
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("Idempotency-Key", idempotencyKey);
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						message: "Операция регистрации замера ISQ с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const rawParams = (request.params && typeof request.params === "object" ? request.params : {}) as { installationId?: string };
@@ -98,6 +54,7 @@ export function registerIsqRoute(app: FastifyInstance) {
 				.select()
 				.from(patientImplantInstallations)
 				.where(and(eq(patientImplantInstallations.id, installationId), eq(patientImplantInstallations.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!installation) {
@@ -146,27 +103,6 @@ export function registerIsqRoute(app: FastifyInstance) {
 				measurement,
 				evaluation: { status, decisionRationale, isBiologicalDip },
 			};
-
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(request.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 201,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 201,
-						},
-					});
-			}
 
 			return { responsePayload };
 		});

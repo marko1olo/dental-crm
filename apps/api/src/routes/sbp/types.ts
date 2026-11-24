@@ -7,9 +7,11 @@ import { z } from "zod";
 import type { payments, sberbankTransactions } from "../../db/schema.js";
 
 /** Schema for validating SBP URL / payload verification request */
-export const verifyPayloadBodySchema = z.object({
-	payloadUrl: z.string().trim().url(),
-});
+export const verifyPayloadBodySchema = z
+	.object({
+		payloadUrl: z.string().trim().url(),
+	})
+	.strict();
 
 export type VerifyPayloadInput = z.infer<typeof verifyPayloadBodySchema>;
 export type GenerateSbpDynamicQrInput = z.infer<typeof generateSbpDynamicQrSchema>;

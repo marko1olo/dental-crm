@@ -18,9 +18,9 @@ import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { type ImagingStudyKind, isHeicOrHeifBuffer } from "@dental/shared";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { imagingInstances, imagingSeries, imagingStudies } from "../../db/schema.js";
+import { and, desc, eq } from "drizzle-orm";
+import { withTenantCtx } from "../../db/rls.js";
+import { imagingStudies } from "../../db/schema.js";
 import { PacsDbRegistration } from "./pacsDbRegistration.js";
 
 export * from "./localPacsSanitizer.js";
@@ -218,6 +218,11 @@ export class LocalPacsStorageService {
 			throw err;
 		}
 
+		if (!detectedFormat) {
+			await fs.unlink(targetPath).catch(() => undefined);
+			throw new InvalidMagicBytesError("Не удалось определить формат файла по сигнатуре (magic bytes).");
+		}
+
 		const normalizedRelative = path.posix.join("uploads", "pacs", organizationId, uniqueName);
 
 		return {
@@ -226,7 +231,7 @@ export class LocalPacsStorageService {
 			fileName: safeName,
 			fileSizeBytes: totalBytes,
 			sha256: hash.digest("hex"),
-			detectedFormat: detectedFormat!,
+			detectedFormat,
 		};
 	}
 
@@ -276,10 +281,22 @@ export class LocalPacsStorageService {
 			throw new Error(`Превышен максимальный размер файла рентген-снимка (${Math.round(maxBytes / (1024 * 1024))} МБ).`);
 		}
 
+		const detectedFormat = detectImagingMagicBytes(buffer);
+		const isWebp =
+			buffer.length >= 12 &&
+			buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+			buffer.subarray(8, 12).toString("ascii") === "WEBP";
+		if (!detectedFormat && !isWebp) {
+			throw new InvalidMagicBytesError(
+				"Загружаемый файл не соответствует поддерживаемым форматам рентген-снимков (JPEG, PNG, HEIC, WEBP, DICOM).",
+			);
+		}
+
 		let ext = ".jpg";
-		if (mimeType.includes("png")) ext = ".png";
-		else if (mimeType.includes("webp")) ext = ".webp";
-		else if (mimeType.includes("dicom") || mimeType.includes("dcm")) ext = ".dcm";
+		if (detectedFormat === "png" || mimeType.includes("png")) ext = ".png";
+		else if (isWebp || mimeType.includes("webp")) ext = ".webp";
+		else if (detectedFormat === "dicom" || mimeType.includes("dicom") || mimeType.includes("dcm")) ext = ".dcm";
+		else if (detectedFormat === "heic" || mimeType.includes("heic")) ext = ".heic";
 
 		const base = (rawFileName ?? "").split(/[\\/]/).pop()?.trim() ?? "";
 		let safeName = base
@@ -472,11 +489,13 @@ export class LocalPacsStorageService {
 		organizationId: string,
 		studyId: string,
 	): Promise<LocalRadiologyScanResult | null> {
-		const [study] = await db
-			.select()
-			.from(imagingStudies)
-			.where(and(eq(imagingStudies.id, studyId), eq(imagingStudies.organizationId, organizationId)))
-			.limit(1);
+		const [study] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select()
+				.from(imagingStudies)
+				.where(and(eq(imagingStudies.id, studyId), eq(imagingStudies.organizationId, organizationId)))
+				.limit(1),
+		);
 
 		if (!study) return null;
 
@@ -518,7 +537,7 @@ export class LocalPacsStorageService {
 			diagnostics: {
 				fileSizeMb: Number((fileSizeBytes / (1024 * 1024)).toFixed(2)),
 				fileExistsLocally,
-				localReadinessScore: 1.0,
+				localReadinessScore: fileExistsLocally ? 1.0 : 0.0,
 				thumbnailAvailable: Boolean(study.aiSummary),
 				isMultiGigabyteScan: fileSizeBytes >= 1024 * 1024 * 500,
 			},
@@ -532,11 +551,13 @@ export class LocalPacsStorageService {
 		studyId: string,
 		organizationId: string,
 	): Promise<{ queued: boolean; syncStatus: CloudSyncStatus; message: string }> {
-		const [study] = await db
-			.select({ id: imagingStudies.id })
-			.from(imagingStudies)
-			.where(and(eq(imagingStudies.id, studyId), eq(imagingStudies.organizationId, organizationId)))
-			.limit(1);
+		const [study] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({ id: imagingStudies.id })
+				.from(imagingStudies)
+				.where(and(eq(imagingStudies.id, studyId), eq(imagingStudies.organizationId, organizationId)))
+				.limit(1),
+		);
 
 		if (!study) {
 			return {
@@ -546,6 +567,12 @@ export class LocalPacsStorageService {
 			};
 		}
 
+		if (this.syncQueueMap.size >= 2000 && !this.syncQueueMap.has(studyId)) {
+			const oldestKey = this.syncQueueMap.keys().next().value;
+			if (oldestKey !== undefined) {
+				this.syncQueueMap.delete(oldestKey);
+			}
+		}
 		this.syncQueueMap.set(studyId, {
 			status: "sync_queued",
 			updatedAt: new Date().toISOString(),
@@ -562,18 +589,20 @@ export class LocalPacsStorageService {
 	 * Returns list of pending local scans awaiting cloud synchronization.
 	 */
 	public static async listPendingSyncs(organizationId: string): Promise<LocalPacsSyncQueueItem[]> {
-		const studies = await db
-			.select({
-				id: imagingStudies.id,
-				patientId: imagingStudies.patientId,
-				title: imagingStudies.title,
-				storagePath: imagingStudies.storagePath,
-				createdAt: imagingStudies.createdAt,
-			})
-			.from(imagingStudies)
-			.where(eq(imagingStudies.organizationId, organizationId))
-			.orderBy(desc(imagingStudies.createdAt))
-			.limit(50);
+		const studies = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({
+					id: imagingStudies.id,
+					patientId: imagingStudies.patientId,
+					title: imagingStudies.title,
+					storagePath: imagingStudies.storagePath,
+					createdAt: imagingStudies.createdAt,
+				})
+				.from(imagingStudies)
+				.where(eq(imagingStudies.organizationId, organizationId))
+				.orderBy(desc(imagingStudies.createdAt))
+				.limit(50),
+		);
 
 		return studies.map((s) => {
 			const sync = this.syncQueueMap.get(s.id);

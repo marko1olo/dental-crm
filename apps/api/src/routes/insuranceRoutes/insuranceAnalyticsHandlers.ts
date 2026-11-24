@@ -1,7 +1,6 @@
 import {
 	calculateDmsRegistryTotals,
 	calculateItemDmsSplit,
-	DEFAULT_CLINIC_PROFILE,
 	generateDmsRegistryCsv,
 	generateDmsRegistryXml,
 	kopecksToRubles,
@@ -11,10 +10,10 @@ import {
 	type DmsRegistryInsuranceCompanyInfo,
 	type DmsRegistryRecord,
 } from "@dental/shared";
-import { and, eq, ne, type SQL } from "drizzle-orm";
+import { and, eq, gte, isNotNull, isNull, lte, ne, or, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	clinics,
 	dmsGuaranteeLetters,
@@ -27,7 +26,15 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { INSURER_DIRECTORY } from "./constants.js";
+import { resolveDbKopecks } from "./guaranteeLetterModules/guaranteeLetterFormatters.js";
 import { registryQuerySchema } from "./types.js";
+
+function extractSpecialtiesLabel(specialties: unknown): string {
+	if (!Array.isArray(specialties)) return "";
+	return specialties
+		.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+		.join(", ");
+}
 
 export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 	// ─── РЕЕСТР ОКАЗАННЫХ УСЛУГ ДМС (STATUTORY DMS CLAIMS REGISTRY) ───────────
@@ -68,7 +75,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 
 		if (!startDateStr || !endDateStr) {
 			const year = now.getFullYear();
-			const month = now.getMonth(); // 0..11
+			const month = now.getMonth();
 
 			if (period === "prev_month") {
 				const prevMonthDate = new Date(year, month - 1, 1);
@@ -85,93 +92,187 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				startDateStr = `${year}-${String(startMonth + 1).padStart(2, "0")}-01`;
 				endDateStr = `${year}-${String(endMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 			} else {
-				// current_month
 				const lastDay = new Date(year, month + 1, 0).getDate();
 				startDateStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
 				endDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 			}
 		}
 
-		// 2. Реквизиты клиники из organizations и clinics
-		const [org] = await db
-			.select()
-			.from(organizations)
-			.where(eq(organizations.id, orgId))
-			.limit(1);
+		const periodStartTs = new Date(`${startDateStr}T00:00:00.000Z`);
+		const periodEndTs = new Date(`${endDateStr}T23:59:59.999Z`);
+		const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
 
-		const [clinicRow] = await db
-			.select()
-			.from(clinics)
-			.where(eq(clinics.organizationId, orgId))
-			.limit(1);
+		const {
+			org,
+			clinicRow,
+			contract,
+			lettersWithPatients,
+			treatments,
+		} = await withTenantCtx(orgId, async (tx) => {
+			const [foundOrg] = await tx
+				.select()
+				.from(organizations)
+				.where(eq(organizations.id, orgId))
+				.limit(1);
 
-		const clinicPhone = clinicRow?.phone || org?.website || "+7 (800) 200-00-00";
-		const clinicAddress = clinicRow?.address || org?.legalAddress || DEFAULT_CLINIC_PROFILE.address;
+			const [foundClinic] = await tx
+				.select()
+				.from(clinics)
+				.where(eq(clinics.organizationId, orgId))
+				.limit(1);
+
+			let resolvedContract: typeof insuranceContracts.$inferSelect | null = null;
+			if (contractId) {
+				const [found] = await tx
+					.select()
+					.from(insuranceContracts)
+					.where(
+						and(
+							eq(insuranceContracts.id, contractId),
+							eq(insuranceContracts.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				resolvedContract = found ?? null;
+			} else if (insurerKey && insurerKey !== "all") {
+				const insurerTargetName = matchedInsurer?.name?.toLowerCase().trim();
+				const orgContracts = await tx
+					.select()
+					.from(insuranceContracts)
+					.where(
+						and(
+							eq(insuranceContracts.organizationId, orgId),
+							eq(insuranceContracts.isActive, true),
+						),
+					);
+				const found = orgContracts.find((c) => {
+					const cName = c.companyName.toLowerCase().trim();
+					if (
+						insurerTargetName &&
+						(cName === insurerTargetName ||
+							cName.includes(insurerTargetName) ||
+							insurerTargetName.includes(cName))
+					) {
+						return true;
+					}
+					return cName.includes(insurerKey.toLowerCase());
+				});
+				if (found) resolvedContract = found;
+			}
+
+			const lettersQueryConditions: SQL[] = [eq(dmsGuaranteeLetters.organizationId, orgId)];
+			if (patientId) {
+				lettersQueryConditions.push(eq(dmsGuaranteeLetters.patientId, patientId));
+			}
+			if (contractId) {
+				lettersQueryConditions.push(eq(dmsGuaranteeLetters.contractId, contractId));
+			}
+			if (insurerKey && insurerKey !== "all") {
+				lettersQueryConditions.push(eq(dmsGuaranteeLetters.insurerKey, insurerKey));
+			}
+
+			const foundLetters = await tx
+				.select({
+					letter: dmsGuaranteeLetters,
+					patientAdminProfile: patients.administrativeProfile,
+				})
+				.from(dmsGuaranteeLetters)
+				.leftJoin(patients, eq(patients.id, dmsGuaranteeLetters.patientId))
+				.where(and(...lettersQueryConditions));
+
+			const visitDateCondition = or(
+				isNull(treatmentItems.visitId),
+				and(isNotNull(visits.signedAt), gte(visits.signedAt, periodStartTs), lte(visits.signedAt, periodEndTs)),
+				and(isNull(visits.signedAt), isNotNull(visits.createdAt), gte(visits.createdAt, periodStartTs), lte(visits.createdAt, periodEndTs)),
+			);
+
+			const treatmentConditions: SQL[] = [
+				eq(treatmentItems.organizationId, orgId),
+				ne(treatmentItems.status, "cancelled"),
+			];
+			if (patientId) {
+				treatmentConditions.push(eq(treatmentItems.patientId, patientId));
+			}
+			if (visitDateCondition) {
+				treatmentConditions.push(visitDateCondition);
+			}
+
+			const foundTreatments = await tx
+				.select({
+					id: treatmentItems.id,
+					patientId: treatmentItems.patientId,
+					visitId: treatmentItems.visitId,
+					serviceId: treatmentItems.serviceId,
+					toothCode: treatmentItems.toothCode,
+					title: treatmentItems.title,
+					quantity: treatmentItems.quantity,
+					priceRub: treatmentItems.priceRub,
+					unitPriceRub: treatmentItems.unitPriceRub,
+					discountRub: treatmentItems.discountRub,
+					priceKopecks: treatmentItems.priceKopecks,
+					unitPriceKopecks: treatmentItems.unitPriceKopecks,
+					discountKopecks: treatmentItems.discountKopecks,
+					status: treatmentItems.status,
+					plannedDoctorUserId: treatmentItems.plannedDoctorUserId,
+					patientFullName: patients.fullName,
+					patientBirthDate: patients.birthDate,
+					patientAdminProfile: patients.administrativeProfile,
+					catalogCode: serviceCatalogItems.code,
+					catalogOrder804nCode: serviceCatalogItems.order804nCode,
+					catalogCategory: serviceCatalogItems.category,
+					catalogTitle: serviceCatalogItems.title,
+					visitDiagnosis: visits.diagnosis,
+					visitSignedAt: visits.signedAt,
+					visitCreatedAt: visits.createdAt,
+					visitStatus: visits.status,
+					doctorFullName: users.fullName,
+					doctorSpecialties: users.specialties,
+				})
+				.from(treatmentItems)
+				.innerJoin(patients, eq(patients.id, treatmentItems.patientId))
+				.leftJoin(serviceCatalogItems, eq(serviceCatalogItems.id, treatmentItems.serviceId))
+				.leftJoin(visits, eq(visits.id, treatmentItems.visitId))
+				.leftJoin(users, eq(users.id, treatmentItems.plannedDoctorUserId))
+				.where(and(...treatmentConditions));
+
+			return {
+				org: foundOrg ?? null,
+				clinicRow: foundClinic ?? null,
+				contract: resolvedContract,
+				lettersWithPatients: foundLetters,
+				treatments: foundTreatments,
+			};
+		});
+
+		// 2. Реальные реквизиты клиники без синтетических заглушек
+		const clinicPhone = clinicRow?.phone || org?.website || "";
+		const clinicAddress = clinicRow?.address || org?.legalAddress || "";
 
 		const clinicInfo: DmsRegistryClinicInfo = {
-			nameRu: org?.name || DEFAULT_CLINIC_PROFILE.name,
-			inn: org?.inn || DEFAULT_CLINIC_PROFILE.inn,
-			kpp: org?.kpp || "770101001",
-			ogrn: org?.ogrn || DEFAULT_CLINIC_PROFILE.ogrn,
+			nameRu: org?.name || clinicRow?.name || "",
+			inn: org?.inn || "",
+			kpp: org?.kpp || "",
+			ogrn: org?.ogrn || "",
 			addressRu: clinicAddress,
 			phone: clinicPhone,
 			email: org?.email || undefined,
-			medicalLicenseNumber: org?.medicalLicenseNumber || "ЛО-77-01-019842",
-			chiefDoctorNameRu: org?.signatoryName || DEFAULT_CLINIC_PROFILE.chiefDoctor,
-			chiefAccountantNameRu: org?.signatoryName || "Руководитель организации",
+			medicalLicenseNumber: org?.medicalLicenseNumber || "",
+			chiefDoctorNameRu: org?.signatoryName || "",
+			chiefAccountantNameRu: org?.signatoryName || "",
 		};
 
 		// 3. Данные страховой компании
-		const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
-		let contract: typeof insuranceContracts.$inferSelect | null = null;
-
-		if (contractId) {
-			const [found] = await db
-				.select()
-				.from(insuranceContracts)
-				.where(
-					and(
-						eq(insuranceContracts.id, contractId),
-						eq(insuranceContracts.organizationId, orgId),
-					),
-				)
-				.limit(1);
-			contract = found || null;
-		} else if (insurerKey && insurerKey !== "all") {
-			const insurerTargetName = matchedInsurer?.name?.toLowerCase().trim();
-			const orgContracts = await db
-				.select()
-				.from(insuranceContracts)
-				.where(
-					and(
-						eq(insuranceContracts.organizationId, orgId),
-						eq(insuranceContracts.isActive, true),
-					),
-				);
-			const found = orgContracts.find((c) => {
-				const cName = c.companyName.toLowerCase().trim();
-				if (
-					insurerTargetName &&
-					(cName === insurerTargetName ||
-						cName.includes(insurerTargetName) ||
-						insurerTargetName.includes(cName))
-				) {
-					return true;
-				}
-				if (cName.includes(insurerKey.toLowerCase())) {
-					return true;
-				}
-				return false;
-			});
-			if (found) contract = found;
-		}
-
-		const insurerTitle = contract?.companyName || matchedInsurer?.name || (insurerKey && insurerKey !== "all" ? insurerKey : "Все страховые компании (Сводный отчет)");
-		const insurerInn = matchedInsurer?.inn || (insurerKey && insurerKey !== "all" ? "7700000000" : "0000000000");
+		const insurerTitle =
+			contract?.companyName ||
+			matchedInsurer?.name ||
+			(insurerKey && insurerKey !== "all" ? insurerKey : "Все страховые компании (Сводный отчет)");
+		const insurerInn = matchedInsurer?.inn || "";
 
 		const contractNumber = contract?.id
 			? `ДМС-${now.getFullYear()}/${contract.id.slice(0, 4).toUpperCase()}`
-			: (insurerKey && insurerKey !== "all" ? "Б/Н" : `ДМС-${now.getFullYear()}/СВОД`);
+			: insurerKey && insurerKey !== "all"
+				? "Б/Н"
+				: `ДМС-${now.getFullYear()}/СВОД`;
 		const contractDate = contract?.createdAt
 			? contract.createdAt.toISOString().slice(0, 10)
 			: `${now.getFullYear()}-01-01`;
@@ -184,81 +285,37 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			contractDate,
 		};
 
-		// 4. Поиск гарантийных писем с профилем пациента
-		const lettersQueryConditions: SQL[] = [eq(dmsGuaranteeLetters.organizationId, orgId)];
-		if (patientId) {
-			lettersQueryConditions.push(eq(dmsGuaranteeLetters.patientId, patientId));
-		}
-		if (insurerKey && insurerKey !== "all") {
-			lettersQueryConditions.push(eq(dmsGuaranteeLetters.insurerKey, insurerKey));
-		}
-		const lettersWithPatients = await db
-			.select({
-				letter: dmsGuaranteeLetters,
-				patientAdminProfile: patients.administrativeProfile,
-			})
-			.from(dmsGuaranteeLetters)
-			.leftJoin(patients, eq(patients.id, dmsGuaranteeLetters.patientId))
-			.where(and(...lettersQueryConditions));
-
 		const letters = lettersWithPatients.map((r) => r.letter);
 		const patientProfileByLetterId = new Map(
 			lettersWithPatients.map((r) => [r.letter.id, r.patientAdminProfile]),
 		);
 
-		const lettersByPatientId = new Map<string, typeof dmsGuaranteeLetters.$inferSelect>();
+		const lettersByPatientId = new Map<string, Array<typeof dmsGuaranteeLetters.$inferSelect>>();
 		for (const letter of letters) {
-			if (!lettersByPatientId.has(letter.patientId) || letter.status === "active" || letter.status === "approved") {
-				lettersByPatientId.set(letter.patientId, letter);
+			const bucket = lettersByPatientId.get(letter.patientId);
+			if (bucket) {
+				bucket.push(letter);
+			} else {
+				lettersByPatientId.set(letter.patientId, [letter]);
 			}
 		}
 
-		// 5. Запрос оказанных услуг (treatmentItems) - исключаем отмененные услуги
-		const treatmentConditions: SQL[] = [
-			eq(treatmentItems.organizationId, orgId),
-			ne(treatmentItems.status, "cancelled"),
-		];
-		if (patientId) {
-			treatmentConditions.push(eq(treatmentItems.patientId, patientId));
-		}
-
-		const treatments = await db
-			.select({
-				id: treatmentItems.id,
-				patientId: treatmentItems.patientId,
-				visitId: treatmentItems.visitId,
-				serviceId: treatmentItems.serviceId,
-				toothCode: treatmentItems.toothCode,
-				title: treatmentItems.title,
-				quantity: treatmentItems.quantity,
-				priceRub: treatmentItems.priceRub,
-				unitPriceRub: treatmentItems.unitPriceRub,
-				discountRub: treatmentItems.discountRub,
-				status: treatmentItems.status,
-				plannedDoctorUserId: treatmentItems.plannedDoctorUserId,
-				// Patient info
-				patientFullName: patients.fullName,
-				patientBirthDate: patients.birthDate,
-				patientAdminProfile: patients.administrativeProfile,
-				// Service catalog info
-				catalogCode: serviceCatalogItems.code,
-				catalogOrder804nCode: serviceCatalogItems.order804nCode,
-				catalogCategory: serviceCatalogItems.category,
-				catalogTitle: serviceCatalogItems.title,
-				// Visit info
-				visitDiagnosis: visits.diagnosis,
-				visitSignedAt: visits.signedAt,
-				visitCreatedAt: visits.createdAt,
-				visitStatus: visits.status,
-				// Doctor info
-				doctorFullName: users.fullName,
-			})
-			.from(treatmentItems)
-			.innerJoin(patients, eq(patients.id, treatmentItems.patientId))
-			.leftJoin(serviceCatalogItems, eq(serviceCatalogItems.id, treatmentItems.serviceId))
-			.leftJoin(visits, eq(visits.id, treatmentItems.visitId))
-			.leftJoin(users, eq(users.id, treatmentItems.plannedDoctorUserId))
-			.where(and(...treatmentConditions));
+		const pickBestLetterForTreatment = (
+			patientUuid: string,
+			visitDateIso: string,
+		): typeof dmsGuaranteeLetters.$inferSelect | undefined => {
+			const candidates = lettersByPatientId.get(patientUuid);
+			if (!candidates || candidates.length === 0) return undefined;
+			const exact = candidates.find(
+				(l) =>
+					(!contractId || l.contractId === contractId) &&
+					(!insurerKey || insurerKey === "all" || l.insurerKey === insurerKey) &&
+					(l.status === "active" || l.status === "approved") &&
+					(!l.validFrom || l.validFrom <= visitDateIso) &&
+					(!l.validUntil || l.validUntil >= visitDateIso),
+			);
+			return exact ?? candidates.find((l) => l.status === "active" || l.status === "approved") ?? candidates[0];
+		};
 
 		const canonicalRecords: DmsRegistryRecord[] = [];
 		const serviceRecords: Array<{
@@ -276,15 +333,19 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			toothNumber?: number | string;
 			quantity: number;
 			unitPriceRub: number;
+			unitPriceKopecks: number;
 			totalPriceRub: number;
+			totalPriceKopecks: number;
 			dmsCoveredRub: number;
+			dmsCoveredKopecks: number;
 			patientPaidRub: number;
+			patientPaidKopecks: number;
 			doctorFullName: string;
 			isExcluded: boolean;
 			exclusionReason?: string;
 		}> = [];
 
-		const treatedPatientIds = new Set<string>();
+		const representedLetterIds = new Set<string>();
 
 		for (const tr of treatments) {
 			const visitDateIso = tr.visitSignedAt
@@ -293,39 +354,47 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 					? tr.visitCreatedAt.toISOString().slice(0, 10)
 					: startDateStr;
 
-			// Фильтр по дате визита в отчетный период
 			if (visitDateIso < startDateStr || visitDateIso > endDateStr) {
 				continue;
 			}
-
-			// Исключаем аннулированные / отмененные визиты и услуги
 			if (tr.status === "cancelled" || tr.visitStatus === "voided") {
 				continue;
 			}
 
-			const letter = lettersByPatientId.get(tr.patientId);
+			const letter = pickBestLetterForTreatment(tr.patientId, visitDateIso);
 			const adminProfile = tr.patientAdminProfile;
 			const policyNumber = letter?.policyNumber || adminProfile?.insurancePolicyNumber || "";
 
-			// Включаем только пациентов с ДМС
 			const hasDms = Boolean(letter || adminProfile?.insurancePolicyNumber || adminProfile?.insuranceContractId);
 			if (!hasDms) continue;
 
-			const serviceInsurerName = letter?.insurerName || insurerTitle;
-			if (insurerKey && insurerKey !== "all" && letter && letter.insurerKey !== insurerKey) {
+			if (contractId && letter?.contractId !== contractId && adminProfile?.insuranceContractId !== contractId) {
 				continue;
 			}
 
-			treatedPatientIds.add(tr.patientId);
+			const serviceInsurerName = letter?.insurerName || insurerTitle;
+			if (insurerKey && insurerKey !== "all") {
+				if (letter && letter.insurerKey !== insurerKey) continue;
+				if (!letter && matchedInsurer && !serviceInsurerName.toLowerCase().includes(matchedInsurer.name.toLowerCase())) {
+					continue;
+				}
+			}
+
+			if (letter) {
+				representedLetterIds.add(letter.id);
+			}
 
 			const quantity = Math.max(1, Math.round(Number(tr.quantity) || 1));
-			const unitPriceRub = Number(tr.unitPriceRub) || Number(tr.priceRub) || 0;
-			const unitPriceKop = rublesToKopecks(unitPriceRub);
-			const totalGrossKop = unitPriceKop * quantity;
+			const unitPriceKopRaw = resolveDbKopecks(tr.unitPriceKopecks, tr.unitPriceRub);
+			const fallbackPriceKop = resolveDbKopecks(tr.priceKopecks, tr.priceRub);
+			const unitPriceKop = unitPriceKopRaw > 0 ? unitPriceKopRaw : fallbackPriceKop;
+			const discountKop = resolveDbKopecks(tr.discountKopecks, tr.discountRub);
+			const totalGrossKop = Math.max(0, unitPriceKop * quantity - discountKop);
+			const unitPriceRub = kopecksToRubles(unitPriceKop);
 			const totalPriceRub = kopecksToRubles(totalGrossKop);
 
-			const code804n = tr.catalogOrder804nCode || tr.catalogCode || "A16.07.002.001";
-			const serviceName = tr.title || tr.catalogTitle || "Медицинская услуга стоматологическая";
+			const code804n = tr.catalogOrder804nCode || tr.catalogCode || "";
+			const serviceName = tr.title || tr.catalogTitle || "";
 			const toothCode = tr.toothCode ? Number(tr.toothCode.replace(/\D/g, "")) : undefined;
 
 			const franchisePct = letter ? Number(letter.franchisePct) : 0;
@@ -346,16 +415,14 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 
 			const patientPaidRub = kopecksToRubles(patientPaidKop);
 			const dmsCoveredRub = kopecksToRubles(insurerClaimKop);
-
 			const genderVal: "M" | "F" | "М" | "Ж" = adminProfile?.gender === "female" ? "Ж" : "М";
 
-			let icd10 = "K02.1";
-			let icd10Desc = "Кариес дентина";
+			let icd10 = "";
+			let icd10Desc = tr.visitDiagnosis || "";
 			if (tr.visitDiagnosis) {
 				const match = tr.visitDiagnosis.match(/[A-Z]\d{2}(\.\d{1,2})?/i);
 				if (match) {
 					icd10 = match[0].toUpperCase();
-					icd10Desc = tr.visitDiagnosis;
 				}
 			}
 
@@ -369,23 +436,26 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				if (!matchSearch) continue;
 			}
 
+			const doctorName = tr.doctorFullName || "";
+			const doctorSpecialty = extractSpecialtiesLabel(tr.doctorSpecialties);
+
 			canonicalRecords.push({
 				recordId: tr.id,
 				serviceDate: visitDateIso,
 				patientFullName: tr.patientFullName,
-				patientBirthDate: tr.patientBirthDate || "1990-01-01",
+				patientBirthDate: tr.patientBirthDate || "",
 				patientGender: genderVal,
 				patientSnils: adminProfile?.snils || undefined,
-				policyNumber: policyNumber || "ДМС-БЕЗ-ПОЛИСА",
-				guaranteeLetterNumber: letter?.letterNumber || "ГП-БЕЗ-НОМЕРА",
+				policyNumber,
+				guaranteeLetterNumber: letter?.letterNumber || "",
 				guaranteeLetterDate: letter?.issueDate || undefined,
 				icd10Code: icd10,
 				icd10DescriptionRu: icd10Desc,
 				toothNumberFdi: toothCode && toothCode > 0 ? toothCode : undefined,
 				serviceCode804n: code804n,
 				serviceNameRu: serviceName,
-				doctorFullName: tr.doctorFullName || "Врач-стоматолог",
-				doctorSpecialtyRu: "Стоматолог-терапевт",
+				doctorFullName: doctorName,
+				...(doctorSpecialty ? { doctorSpecialtyRu: doctorSpecialty } : {}),
 				quantity,
 				unitPriceKopecks: unitPriceKop,
 				totalGrossKopecks: totalGrossKop,
@@ -400,7 +470,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				visitDate: visitDateIso,
 				patientId: tr.patientId,
 				patientFullName: tr.patientFullName,
-				policyNumber: policyNumber || "ДМС-БЕЗ-ПОЛИСА",
+				policyNumber,
 				...(letter?.letterNumber ? { letterNumber: letter.letterNumber } : {}),
 				insurerName: serviceInsurerName,
 				serviceCode804n: code804n,
@@ -409,33 +479,36 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				...(toothCode !== undefined ? { toothNumber: toothCode } : {}),
 				quantity,
 				unitPriceRub,
+				unitPriceKopecks: unitPriceKop,
 				totalPriceRub,
+				totalPriceKopecks: totalGrossKop,
 				dmsCoveredRub,
+				dmsCoveredKopecks: insurerClaimKop,
 				patientPaidRub,
-				doctorFullName: tr.doctorFullName || "Врач-стоматолог",
+				patientPaidKopecks: patientPaidKop,
+				doctorFullName: doctorName,
 				isExcluded,
 				...(isExcluded ? { exclusionReason: "Услуга входит в исключения полиса ДМС" } : {}),
 			});
 		}
 
-		// 6. Поддержка гарантийных писем с использованным лимитом при отсутствии отдельных treatmentItems (Mandate 8n)
+		// 6. Независимые гарантийные письма с использованным лимитом, не представленные через treatmentItems
 		for (const letter of letters) {
-			if (treatedPatientIds.has(letter.patientId)) continue;
-			const usedAmount = Number(letter.usedAmountRub);
-			if (usedAmount <= 0) continue;
+			if (representedLetterIds.has(letter.id)) continue;
+			const usedAmountKop = resolveDbKopecks(letter.usedAmountKopecks, letter.usedAmountRub);
+			if (usedAmountKop <= 0) continue;
 
 			const letterDateIso = letter.issueDate || startDateStr;
 			if (letterDateIso < startDateStr || letterDateIso > endDateStr) {
-				// Проверяем период действия
 				if (letter.validUntil < startDateStr || letter.validFrom > endDateStr) {
 					continue;
 				}
 			}
 
-			const unitPriceRub = usedAmount;
-			const unitPriceKop = rublesToKopecks(unitPriceRub);
+			const unitPriceKop = usedAmountKop;
 			const totalGrossKop = unitPriceKop;
-			const totalPriceRub = kopecksToRubles(totalGrossKop);
+			const unitPriceRub = kopecksToRubles(unitPriceKop);
+			const totalPriceRub = unitPriceRub;
 			const franchisePct = Number(letter.franchisePct) || 0;
 			const split = calculateItemDmsSplit(totalGrossKop, franchisePct, true);
 			const patientPaidKop = split.patientKopecks;
@@ -443,10 +516,10 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			const patientPaidRub = kopecksToRubles(patientPaidKop);
 			const dmsCoveredRub = kopecksToRubles(insurerClaimKop);
 
-			const code804n = (letter.approvedServiceCodes as string[])?.[0] || "A16.07.002.001";
+			const code804n = (letter.approvedServiceCodes as string[])?.[0] || "";
 			const serviceName = letter.notes?.trim() || "Оказание стоматологической помощи по гарантийному письму";
 			const toothCode = Number((letter.approvedTeethFdi as string[])?.[0]?.replace(/\D/g, "")) || undefined;
-			const icd10 = (letter.approvedDiagnosisCodes as string[])?.[0] || "K02.1";
+			const icd10 = (letter.approvedDiagnosisCodes as string[])?.[0] || "";
 
 			if (search && search.trim()) {
 				const q = search.trim().toLowerCase();
@@ -468,19 +541,18 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				recordId: letter.id,
 				serviceDate: letterDateIso,
 				patientFullName: letter.patientFullName,
-				patientBirthDate: letter.patientBirthDate || "1990-01-01",
+				patientBirthDate: letter.patientBirthDate || "",
 				patientGender: letterGender,
 				patientSnils: letterAdminProfile?.snils || undefined,
 				policyNumber: letter.policyNumber,
 				guaranteeLetterNumber: letter.letterNumber,
 				guaranteeLetterDate: letter.issueDate,
 				icd10Code: icd10,
-				icd10DescriptionRu: "Стоматологическое лечение по гарантийному письму",
+				icd10DescriptionRu: letter.notes?.trim() || "",
 				toothNumberFdi: toothCode,
 				serviceCode804n: code804n,
 				serviceNameRu: serviceName,
-				doctorFullName: "Врач-стоматолог",
-				doctorSpecialtyRu: "Стоматолог-терапевт",
+				doctorFullName: "",
 				quantity: 1,
 				unitPriceKopecks: unitPriceKop,
 				totalGrossKopecks: totalGrossKop,
@@ -504,10 +576,14 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				...(toothCode !== undefined ? { toothNumber: toothCode } : {}),
 				quantity: 1,
 				unitPriceRub,
+				unitPriceKopecks: unitPriceKop,
 				totalPriceRub,
+				totalPriceKopecks: totalGrossKop,
 				dmsCoveredRub,
+				dmsCoveredKopecks: insurerClaimKop,
 				patientPaidRub,
-				doctorFullName: "Врач-стоматолог",
+				patientPaidKopecks: patientPaidKop,
+				doctorFullName: "",
 				isExcluded: false,
 			});
 		}

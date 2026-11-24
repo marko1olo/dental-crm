@@ -73,7 +73,7 @@ export async function executeShiftBactericidalAndClimateLogs(
 				isWithinNorm: true,
 				deviationReason: null,
 				operatorId,
-				notes: "Автопилот смены: норма СанПиН 3.3686-21",
+				notes: "Автопилот смены: норма микроклимата",
 			})),
 		);
 	}

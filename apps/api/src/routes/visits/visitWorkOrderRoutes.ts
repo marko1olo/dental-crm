@@ -10,54 +10,36 @@ const workOrderParamsSchema = {
 	},
 };
 
-const applyPlanItemsSchema = {
+const workOrderRouteSchema = {
 	params: workOrderParamsSchema,
-	body: {
-		type: "object",
-		required: ["planId", "itemIds"],
-		properties: {
-			planId: { type: "string" },
-			itemIds: {
-				type: "array",
-				items: { type: "string" },
-				minItems: 1,
-			},
-			idempotencyKey: { type: "string" },
-		},
-	},
-};
-
-const completeWorkOrderSchema = {
-	params: workOrderParamsSchema,
-	body: {
+	headers: {
 		type: "object",
 		properties: {
-			status: {
-				type: "string",
-				enum: ["signed", "draft", "voided", "completed", "in_progress"],
-			},
-			idempotencyKey: { type: "string" },
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
+			organizationid: { type: "string" },
+			"x-organization-id": { type: "string" },
 		},
 	},
 };
 
 export function registerVisitWorkOrderRoutes(app: FastifyInstance) {
-	// Перенос согласованных услуг из плана лечения в наряд / протокол приёма (Feature #41, ЗоЗПП ст. 16, ПП РФ № 736)
+	// Перенос согласованных услуг из плана лечения в наряд / протокол приёма
 	app.post(
 		"/api/visits/:visitId/apply-plan-items",
-		{ schema: applyPlanItemsSchema },
+		{ schema: workOrderRouteSchema },
 		handleApplyPlanItemsToVisit,
 	);
 
 	// Атомарное завершение наряда приёма: списание материалов со склада и фиксация статуса визита
 	app.post(
 		"/api/visits/:visitId/complete-work-order",
-		{ schema: completeWorkOrderSchema },
+		{ schema: workOrderRouteSchema },
 		handleCompleteVisitWorkOrder,
 	);
 	app.post(
 		"/api/visits/:visitId/work-order/complete",
-		{ schema: completeWorkOrderSchema },
+		{ schema: workOrderRouteSchema },
 		handleCompleteVisitWorkOrder,
 	);
 }

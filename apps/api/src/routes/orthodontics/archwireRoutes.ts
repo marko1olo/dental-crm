@@ -1,13 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { computePayloadHash, rublesToKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
-import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { patients } from "../../db/schema.js";
 import { treatmentPlans } from "../../db/schema/clinical/treatmentPlansSchema.js";
-import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
 import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
@@ -21,39 +19,16 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const idempotencyKey = extractIdempotencyKey(request);
-			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.orthodontics.write",
+					role: staffRole,
+					message: `Отказ в фиксации смены дуги: ${evalAccess.reason}`,
 				});
-			}
-
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
-				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
-				const record = existingIdemKey ?? (existingSyncRecord ? {
-					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
-					responseBody: existingSyncRecord.responseJson,
-					responseCode: existingSyncRecord.responseStatus,
-					lockedAt: existingSyncRecord.updatedAt,
-				} : null);
-
-				if (record) {
-					if (record.status === "completed" && record.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(record.responseCode || 200)
-							.send(record.responseBody);
-					}
-					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							message: "Операция с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
 			}
 
 			const parsedParams = patientParamsSchema.safeParse(request.params);
@@ -74,11 +49,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				});
 			}
 			const body = parsedBody.data;
-			const patient = await getPatientByIdFromDb(orgId, patientId);
-			if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
-			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 			const effectiveUpperMat = body.upperMaterial || body.material;
 			const effectiveUpperSec = body.upperSection || body.section;
 			const effectiveLowerMat = body.lowerMaterial || body.material;
@@ -91,66 +62,8 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				: `${wireSpec} (${archLabel})`;
 			const actionSummary = `Смена дуги: ${archwireStr}${body.note ? ` · ${body.note}` : ""}`;
 
-			// DEF-ORTHO-01 / Досье a9c64bbc: Раздельное хранение дуг ВЧ и НЧ (исключение взаимного затирания)
-			let upperArchwire = currentProgress.upperArchwire;
-			let lowerArchwire = currentProgress.lowerArchwire;
-
-			if (body.arch === "upper") {
-				upperArchwire = `${wireSpec} (ВЧ)`;
-			} else if (body.arch === "lower") {
-				lowerArchwire = `${wireSpec} (НЧ)`;
-			} else {
-				upperArchwire = `${effectiveUpperMat} ${effectiveUpperSec}" (ВЧ)`;
-				lowerArchwire = `${effectiveLowerMat} ${effectiveLowerSec}" (НЧ)`;
-			}
-
-			let combinedArchwire = archwireStr;
-			if (body.arch === "both") {
-				if (effectiveUpperMat !== effectiveLowerMat || effectiveUpperSec !== effectiveLowerSec) {
-					combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
-				} else {
-					combinedArchwire = archwireStr;
-				}
-			} else if (upperArchwire && lowerArchwire) {
-				combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
-			} else {
-				combinedArchwire = upperArchwire || lowerArchwire || archwireStr;
-			}
-
-			const updatedProgress: OrthodonticProgressRecord = {
-				...currentProgress,
-				applianceId: body.applianceId || currentProgress.applianceId,
-				applianceName: body.applianceName || currentProgress.applianceName,
-				applianceCategory: body.applianceCategory || currentProgress.applianceCategory || "brackets",
-				selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
-				selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
-				upperArchwire,
-				lowerArchwire,
-				archwire: combinedArchwire,
-				lastActionDate: new Date().toISOString(),
-				lastActionSummary: actionSummary,
-				...(body.soapSummary ? { lastSoapSummary: body.soapSummary } : {}),
-				...(body.angleClass ? { angleClass: body.angleClass } : {}),
-				...(body.verticalBite ? { verticalBite: body.verticalBite } : {}),
-				...(typeof body.overjetMm === "number" ? { overjetMm: body.overjetMm } : {}),
-				...(typeof body.overbitePercent === "number" ? { overbitePercent: body.overbitePercent } : {}),
-				...(typeof body.anbAngle === "number" ? { anbAngle: body.anbAngle } : {}),
-				...(body.skeletalClass ? { skeletalClass: body.skeletalClass } : {}),
-				...(body.treatmentPlanId ? { treatmentPlanId: body.treatmentPlanId } : {}),
-			};
-
 			const isPlate = body.applianceCategory === "plate";
 			const shouldDeductWire = Boolean(body.isWireChange && !isPlate);
-
-			// DEF-ORTHO-02 / DEF-ORTHO-06 / DEF-ORTHO-10: Расчет стоимости из остатков склада
-			const archwireCost = await resolveOrthoMaterialCost({
-				organizationId: orgId,
-				itemNamePattern: body.material,
-				fallbackCostRub: 1200,
-			});
-
-			// DEF-ORTHO-02 / DEF-ORTHO-05 / Red Team: Выбор цены услуги из прейскуранта клиники
-			// Мандат 8bm: A16.07.048.001 при смене обеих дуг (4000 руб единым тарифом вместо двух счетов по 3500 руб)
 			const serviceName = isPlate
 				? "Активация съемного ортодонтического аппарата (пластинки)"
 				: body.arch === "both"
@@ -159,15 +72,85 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const serviceCode = isPlate ? "A16.07.047" : body.arch === "both" ? "A16.07.048.001" : "A16.07.048.002";
 			const fallbackPriceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
 
-			const resolvedPrice = await resolveOrthoServicePrice({
-				organizationId: orgId,
-				serviceCode,
-				defaultServiceName: serviceName,
-				fallbackPriceRub,
-			});
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const [patient] = await tx
+					.select({
+						id: patients.id,
+						administrativeProfile: patients.administrativeProfile,
+					})
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+				if (!patient) return { patientNotFound: true as const };
 
-			const responsePayload = await db.transaction(async (tx) => {
-				// DEF-ORTHO-01 / Мандат 8bo: Сохраняем структурированный JSONB объект внутри транзакции tx
+				const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
+				const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
+
+				let upperArchwire = currentProgress.upperArchwire;
+				let lowerArchwire = currentProgress.lowerArchwire;
+
+				if (body.arch === "upper") {
+					upperArchwire = `${wireSpec} (ВЧ)`;
+				} else if (body.arch === "lower") {
+					lowerArchwire = `${wireSpec} (НЧ)`;
+				} else {
+					upperArchwire = `${effectiveUpperMat} ${effectiveUpperSec}" (ВЧ)`;
+					lowerArchwire = `${effectiveLowerMat} ${effectiveLowerSec}" (НЧ)`;
+				}
+
+				let combinedArchwire = archwireStr;
+				if (body.arch === "both") {
+					if (effectiveUpperMat !== effectiveLowerMat || effectiveUpperSec !== effectiveLowerSec) {
+						combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
+					} else {
+						combinedArchwire = archwireStr;
+					}
+				} else if (upperArchwire && lowerArchwire) {
+					combinedArchwire = `${upperArchwire} / ${lowerArchwire}`;
+				} else {
+					combinedArchwire = upperArchwire || lowerArchwire || archwireStr;
+				}
+
+				const updatedProgress: OrthodonticProgressRecord = {
+					...currentProgress,
+					applianceId: body.applianceId || currentProgress.applianceId,
+					applianceName: body.applianceName || currentProgress.applianceName,
+					applianceCategory: body.applianceCategory || currentProgress.applianceCategory || "brackets",
+					selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
+					selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
+					upperArchwire,
+					lowerArchwire,
+					archwire: combinedArchwire,
+					lastActionDate: new Date().toISOString(),
+					lastActionSummary: actionSummary,
+					...(body.soapSummary ? { lastSoapSummary: body.soapSummary } : {}),
+					...(body.angleClass ? { angleClass: body.angleClass } : {}),
+					...(body.verticalBite ? { verticalBite: body.verticalBite } : {}),
+					...(typeof body.overjetMm === "number" ? { overjetMm: body.overjetMm } : {}),
+					...(typeof body.overbitePercent === "number" ? { overbitePercent: body.overbitePercent } : {}),
+					...(typeof body.anbAngle === "number" ? { anbAngle: body.anbAngle } : {}),
+					...(body.skeletalClass ? { skeletalClass: body.skeletalClass } : {}),
+					...(body.treatmentPlanId ? { treatmentPlanId: body.treatmentPlanId } : {}),
+				};
+
+				const archwireCost = await resolveOrthoMaterialCost({
+					organizationId: orgId,
+					itemNamePattern: body.material,
+					fallbackCostRub: 1200,
+					tx,
+					logger: request.log,
+				});
+
+				const resolvedPrice = await resolveOrthoServicePrice({
+					organizationId: orgId,
+					serviceCode,
+					defaultServiceName: serviceName,
+					fallbackPriceRub,
+					tx,
+					logger: request.log,
+				});
+
 				await updatePatientAdministrativeProfileInDb(
 					orgId,
 					patientId,
@@ -186,6 +169,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							and(
 								eq(treatmentPlans.id, body.treatmentPlanId),
 								eq(treatmentPlans.organizationId, orgId),
+								eq(treatmentPlans.patientId, patientId),
 								eq(treatmentPlans.status, "Draft"),
 							),
 						);
@@ -194,16 +178,19 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				let deductionRes: OrthoMaterialDeductionResult | null = null;
 				if (shouldDeductWire) {
 					if (body.arch === "both" && (effectiveUpperMat !== effectiveLowerMat || effectiveUpperSec !== effectiveLowerSec)) {
-						// Списание разных материалов для ВЧ и НЧ раздельно по BOM
 						const upperCost = await resolveOrthoMaterialCost({
 							organizationId: orgId,
 							itemNamePattern: effectiveUpperMat,
 							fallbackCostRub: 1200,
+							tx,
+							logger: request.log,
 						});
 						const lowerCost = await resolveOrthoMaterialCost({
 							organizationId: orgId,
 							itemNamePattern: effectiveLowerMat,
 							fallbackCostRub: 1200,
+							tx,
+							logger: request.log,
 						});
 						const upperDeduct = await deductOrthoMaterialSafely({
 							organizationId: orgId,
@@ -217,6 +204,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							unitCostRub: upperCost.unitCostRub,
 							notes: `Смена дуги ВЧ: ${effectiveUpperMat} ${effectiveUpperSec}"`,
 							visitId: body.visitId,
+							userId: identity.userId ?? null,
 							tx,
 							logger: request.log,
 						});
@@ -232,6 +220,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							unitCostRub: lowerCost.unitCostRub,
 							notes: `Смена дуги НЧ: ${effectiveLowerMat} ${effectiveLowerSec}"`,
 							visitId: body.visitId,
+							userId: identity.userId ?? null,
 							tx,
 							logger: request.log,
 						});
@@ -250,6 +239,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							unitCostRub: archwireCost.unitCostRub,
 							notes: `Смена дуги: ${archwireStr}`,
 							visitId: body.visitId,
+							userId: identity.userId ?? null,
 							tx,
 							logger: request.log,
 						});
@@ -268,43 +258,27 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 					logger: request.log,
 				});
 
-				const payload: Record<string, unknown> = {
-					success: true,
-					archwire: archwireStr,
-					upperArchwire,
-					lowerArchwire,
-					combinedArchwire,
-					actionSummary,
-					progress: updatedProgress,
-					deduction: deductionRes,
-					billing: billingRes,
+				return {
+					patientNotFound: false as const,
+					payload: {
+						success: true,
+						archwire: archwireStr,
+						upperArchwire,
+						lowerArchwire,
+						combinedArchwire,
+						actionSummary,
+						progress: updatedProgress,
+						deduction: deductionRes,
+						billing: billingRes,
+					},
 				};
-
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: payload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: payload,
-								responseCode: 200,
-							},
-						});
-				}
-
-				return payload;
 			});
 
-			return reply.send(responsePayload);
+			if (txResult.patientNotFound) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+			}
+
+			return reply.send(txResult.payload);
 		},
 	);
 
@@ -314,39 +288,16 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const idempotencyKey = extractIdempotencyKey(request);
-			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.orthodontics.write",
+					role: staffRole,
+					message: `Отказ в активации лигатур: ${evalAccess.reason}`,
 				});
-			}
-
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
-				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
-				const record = existingIdemKey ?? (existingSyncRecord ? {
-					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
-					responseBody: existingSyncRecord.responseJson,
-					responseCode: existingSyncRecord.responseStatus,
-					lockedAt: existingSyncRecord.updatedAt,
-				} : null);
-
-				if (record) {
-					if (record.status === "completed" && record.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(record.responseCode || 200)
-							.send(record.responseBody);
-					}
-					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							message: "Операция с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
 			}
 
 			const parsedParams = patientParamsSchema.safeParse(request.params);
@@ -367,39 +318,46 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				});
 			}
 			const body = parsedBody.data;
-			const patient = await getPatientByIdFromDb(orgId, patientId);
-			if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
-
-			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-			const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 			const actionSummary = body.powerChain
 				? `Установка цепочки Power Chain${body.powerChainSpan ? ` (сегмент ${body.powerChainSpan})` : ""}`
 				: `Активация лигатур замков брекет-системы${body.note ? ` · ${body.note}` : ""}`;
 
-			const updatedProgress: OrthodonticProgressRecord = {
-				...currentProgress,
-				lastActionDate: new Date().toISOString(),
-				lastActionSummary: actionSummary,
-			};
-
 			const isPlate = body.applianceCategory === "plate";
 			const shouldDeductLigatures = !isPlate;
 
-			// DEF-ORTHO-02 / DEF-ORTHO-06: Расчет стоимости из складских остатков клиники
-			const ligatureCost = await resolveOrthoMaterialCost({
-				organizationId: orgId,
-				itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
-				fallbackCostRub: body.powerChain ? 80 : 15,
-			});
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const [patient] = await tx
+					.select({
+						id: patients.id,
+						administrativeProfile: patients.administrativeProfile,
+					})
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+				if (!patient) return { patientNotFound: true as const };
 
-			const responsePayload = await db.transaction(async (tx) => {
-				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+				const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
+				const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
+				const updatedProgress: OrthodonticProgressRecord = {
+					...currentProgress,
+					lastActionDate: new Date().toISOString(),
+					lastActionSummary: actionSummary,
+				};
+
+				const ligatureCost = await resolveOrthoMaterialCost({
+					organizationId: orgId,
+					itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
+					fallbackCostRub: body.powerChain ? 80 : 15,
+					tx,
+					logger: request.log,
+				});
+
 				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
 					...adminProfile,
 					orthodonticProgress: updatedProgress,
 				}, tx);
 
-				// Списание материалов отключается для съемных пластинок (plate)
 				const deductionRes = shouldDeductLigatures
 					? await deductOrthoMaterialSafely({
 							organizationId: orgId,
@@ -413,44 +371,29 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 							unit: body.powerChain ? "см" : "шт.",
 							unitCostKopecks: ligatureCost.unitCostKopecks,
 							unitCostRub: ligatureCost.unitCostRub,
+							userId: identity.userId ?? null,
 							notes: actionSummary,
 							tx,
 							logger: request.log,
 					  })
 					: null;
 
-				const payload: Record<string, unknown> = {
-					success: true,
-					actionSummary,
-					progress: updatedProgress,
-					deduction: deductionRes,
+				return {
+					patientNotFound: false as const,
+					payload: {
+						success: true,
+						actionSummary,
+						progress: updatedProgress,
+						deduction: deductionRes,
+					},
 				};
-
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: payload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: payload,
-								responseCode: 200,
-							},
-						});
-				}
-
-				return payload;
 			});
 
-			return reply.send(responsePayload);
+			if (txResult.patientNotFound) {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+			}
+
+			return reply.send(txResult.payload);
 		},
 	);
 }

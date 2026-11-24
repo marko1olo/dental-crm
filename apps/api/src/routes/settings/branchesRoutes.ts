@@ -15,19 +15,23 @@ import {
 	requireSettingsMutationAccess,
 } from "./helpers.js";
 
-export const createBranchSchema = z.object({
-	name: z.string().trim().min(1, "Наименование филиала обязательно").max(255),
-	address: z.string().trim().max(500).nullable().optional(),
-	phone: z.string().trim().max(80).nullable().optional(),
-	timezone: z.string().trim().max(100).default("Europe/Samara"),
-});
+export const createBranchSchema = z
+	.object({
+		name: z.string().trim().min(1, "Наименование филиала обязательно").max(255),
+		address: z.string().trim().max(500).nullable().optional(),
+		phone: z.string().trim().max(80).nullable().optional(),
+		timezone: z.string().trim().max(100).default("Europe/Samara"),
+	})
+	.strict();
 
-export const updateBranchSchema = z.object({
-	name: z.string().trim().min(1).max(255).optional(),
-	address: z.string().trim().max(500).nullable().optional(),
-	phone: z.string().trim().max(80).nullable().optional(),
-	timezone: z.string().trim().max(100).optional(),
-});
+export const updateBranchSchema = z
+	.object({
+		name: z.string().trim().min(1).max(255).optional(),
+		address: z.string().trim().max(500).nullable().optional(),
+		phone: z.string().trim().max(80).nullable().optional(),
+		timezone: z.string().trim().max(100).optional(),
+	})
+	.strict();
 
 export const branchIdParamSchema = z.object({
 	id: z.string().uuid("Некорректный UUID филиала"),
@@ -80,11 +84,12 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 			chairCount: chairCountMap.get(b.id) ?? 0,
 		}));
 
-		return reply.code(200).send({
+		reply.code(200);
+		return {
 			success: true,
 			data: branches,
 			total: branches.length,
-		});
+		};
 	});
 
 	// GET /api/branches/:id — Получение данных конкретного филиала
@@ -94,10 +99,11 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 
 		const parsedParams = branchIdParamSchema.safeParse(request.params);
 		if (!parsedParams.success) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "ValidationError",
 				message: "Некорректный ID филиала.",
-			});
+			};
 		}
 
 		const [branch] = await db
@@ -112,10 +118,11 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 			.limit(1);
 
 		if (!branch) {
-			return reply.code(404).send({
+			reply.code(404);
+			return {
 				error: "NotFound",
 				message: "Филиал не найден.",
-			});
+			};
 		}
 
 		const chairs = await db
@@ -128,14 +135,15 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 				),
 			);
 
-		return reply.code(200).send({
+		reply.code(200);
+		return {
 			success: true,
 			data: {
 				...branch,
 				chairs,
 				chairCount: chairs.filter((c) => c.isActive).length,
 			},
-		});
+		};
 	});
 
 	// POST /api/branches — Создание нового филиала клиники
@@ -145,10 +153,11 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 
 		const parsed = createBranchSchema.safeParse(request.body);
 		if (!parsed.success) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "ValidationError",
 				message: parsed.error.issues[0]?.message || "Некорректные параметры филиала.",
-			});
+			};
 		}
 
 		const { name, address, phone, timezone } = parsed.data;
@@ -164,10 +173,11 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 			})
 			.returning();
 
-		return reply.code(201).send({
+		reply.code(201);
+		return {
 			success: true,
 			data: created,
-		});
+		};
 	});
 
 	// PATCH /api/branches/:id — Обновление филиала клиники
@@ -177,18 +187,20 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 
 		const parsedParams = branchIdParamSchema.safeParse(request.params);
 		if (!parsedParams.success) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "ValidationError",
 				message: "Некорректный ID филиала.",
-			});
+			};
 		}
 
 		const parsedBody = updateBranchSchema.safeParse(request.body);
 		if (!parsedBody.success) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "ValidationError",
 				message: parsedBody.error.issues[0]?.message || "Некорректные параметры обновления.",
-			});
+			};
 		}
 
 		const updateData: Partial<typeof schema.clinics.$inferInsert> = {};
@@ -198,10 +210,11 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 		if (parsedBody.data.timezone !== undefined) updateData.timezone = parsedBody.data.timezone;
 
 		if (Object.keys(updateData).length === 0) {
-			return reply.code(400).send({
+			reply.code(400);
+			return {
 				error: "ValidationError",
 				message: "Нет данных для обновления.",
-			});
+			};
 		}
 
 		const [updated] = await db
@@ -216,15 +229,17 @@ export function registerBranchesRoutes(app: FastifyInstance): void {
 			.returning();
 
 		if (!updated) {
-			return reply.code(404).send({
+			reply.code(404);
+			return {
 				error: "NotFound",
 				message: "Филиал не найден.",
-			});
+			};
 		}
 
-		return reply.code(200).send({
+		reply.code(200);
+		return {
 			success: true,
 			data: updated,
-		});
+		};
 	});
 }

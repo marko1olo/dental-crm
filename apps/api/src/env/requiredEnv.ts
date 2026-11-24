@@ -336,11 +336,11 @@ export function assertRequiredEnv(env: NodeJS.ProcessEnv = process.env): void {
 	if (problems.length === 0) return;
 
 	if (isDevelopmentEnvironment(env) || isAutomatedRun(env)) {
-		console.warn(
+		process.stderr.write(
 			"[env] Не заданы обязательные переменные: " +
 				problems.map((problem) => problem.entry.name).join(", ") +
 				". Старт разрешён только потому, что это режим разработки или автоматический прогон. " +
-				"При пустом NODE_ENV этот же запуск будет остановлен.",
+				"При пустом NODE_ENV этот же запуск будет остановлен.\n",
 		);
 		return;
 	}

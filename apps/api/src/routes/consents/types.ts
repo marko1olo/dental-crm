@@ -18,62 +18,68 @@ export const consentKindSchema = z.enum([
 
 export type ConsentKind = z.infer<typeof consentKindSchema>;
 
-export const saveConsentBodySchema = z.object({
-	kind: consentKindSchema.optional(),
-	consentType: z.string().optional(),
-	title: z.string().min(1).default("Информированное согласие на лечение"),
-	isSigned: z.boolean().optional(),
-	signedAt: z.string().optional(),
-	signatureType: z.enum([
-		"digital_canvas",
-		"paper_scanned",
-		"tablet_stylus",
-		"paper_signed",
-		"sms_otp",
-		"patient_portal",
-	]).optional(),
-	doctorFullName: z.string().optional(),
-	visitId: z.string().uuid().optional(),
-	documentId: z.string().uuid().optional(),
-	verificationMethod: z.enum([
-		"paper_signed",
-		"tablet_stylus",
-		"sms_otp",
-		"patient_portal",
-		"digital_canvas",
-		"paper_scanned",
-	]).default("paper_signed"),
-	signatureSvg: z.string().optional(),
-	integrityHash: z.string().optional(),
-	payload: z.record(z.unknown()).optional(),
-	notes: z.string().optional(),
-});
+export const saveConsentBodySchema = z
+	.object({
+		kind: consentKindSchema.optional(),
+		consentType: z.string().optional(),
+		title: z.string().min(1).default("Информированное согласие на лечение"),
+		isSigned: z.boolean().optional(),
+		signedAt: z.string().optional(),
+		signatureType: z.enum([
+			"digital_canvas",
+			"paper_scanned",
+			"tablet_stylus",
+			"paper_signed",
+			"sms_otp",
+			"patient_portal",
+		]).optional(),
+		doctorFullName: z.string().optional(),
+		visitId: z.string().uuid().optional(),
+		documentId: z.string().uuid().optional(),
+		verificationMethod: z.enum([
+			"paper_signed",
+			"tablet_stylus",
+			"sms_otp",
+			"patient_portal",
+			"digital_canvas",
+			"paper_scanned",
+		]).default("paper_signed"),
+		signatureSvg: z.string().optional(),
+		integrityHash: z.string().optional(),
+		payload: z.record(z.unknown()).optional(),
+		notes: z.string().optional(),
+	})
+	.strict();
 
 export type SaveConsentBody = z.infer<typeof saveConsentBodySchema>;
 
-export const shareConsentLinkSchema = z.object({
-	kind: consentKindSchema.default("informed_consent"),
-	title: z.string().optional(),
-	visitId: z.string().uuid().optional(),
-	channel: z.enum(["whatsapp", "sms", "telegram", "qr"]).default("whatsapp"),
-	phone: z.string().optional(),
-});
+export const shareConsentLinkSchema = z
+	.object({
+		kind: consentKindSchema.default("informed_consent"),
+		title: z.string().optional(),
+		visitId: z.string().uuid().optional(),
+		channel: z.enum(["whatsapp", "sms", "telegram", "qr"]).default("whatsapp"),
+		phone: z.string().optional(),
+	})
+	.strict();
 
 export type ShareConsentLinkInput = z.infer<typeof shareConsentLinkSchema>;
 
-export const publicSignConsentSchema = z.object({
-	token: z.string().min(1),
-	signatureSvg: z.string().optional(),
-	integrityHash: z.string().optional(),
-	signatureType: z.enum([
-		"digital_canvas",
-		"paper_scanned",
-		"tablet_stylus",
-		"paper_signed",
-		"sms_otp",
-		"patient_portal",
-	]).optional(),
-	notes: z.string().optional(),
-});
+export const publicSignConsentSchema = z
+	.object({
+		token: z.string().min(1),
+		signatureSvg: z.string().optional(),
+		integrityHash: z.string().optional(),
+		signatureType: z.enum([
+			"digital_canvas",
+			"paper_scanned",
+			"tablet_stylus",
+			"paper_signed",
+			"sms_otp",
+			"patient_portal",
+		]).optional(),
+		notes: z.string().optional(),
+	})
+	.strict();
 
 export type PublicSignConsentInput = z.infer<typeof publicSignConsentSchema>;

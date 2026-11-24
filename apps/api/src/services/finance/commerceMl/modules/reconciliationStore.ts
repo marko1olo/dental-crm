@@ -1,68 +1,161 @@
+import { and, eq } from "drizzle-orm";
+import { withTenantCtx, type TenantDb } from "../../../../db/rls.js";
+import { commercemlExportedPackages, commercemlSyncJournal } from "../../../../db/schema.js";
 import type { DoublePostingCheckResult } from "../types.js";
 
-// Multi-tenant stores partitioned by organizationId
-const processedSyncHashesByOrg = new Map<string, Set<string>>();
-const exportedPackageHashesByOrg = new Map<
-	string,
-	Map<string, { exportedAtIso: string; packageId: string }>
->();
-
-function getProcessedSyncSet(organizationId: string): Set<string> {
-	let set = processedSyncHashesByOrg.get(organizationId);
-	if (!set) {
-		set = new Set<string>();
-		processedSyncHashesByOrg.set(organizationId, set);
-	}
-	return set;
-}
-
-function getExportedMap(
+export async function isSyncHashProcessedTx(
+	tx: TenantDb,
 	organizationId: string,
-): Map<string, { exportedAtIso: string; packageId: string }> {
-	let map = exportedPackageHashesByOrg.get(organizationId);
-	if (!map) {
-		map = new Map<string, { exportedAtIso: string; packageId: string }>();
-		exportedPackageHashesByOrg.set(organizationId, map);
-	}
-	return map;
+	hash: string,
+): Promise<boolean> {
+	const [row] = await tx
+		.select({ id: commercemlSyncJournal.id })
+		.from(commercemlSyncJournal)
+		.where(
+			and(
+				eq(commercemlSyncJournal.organizationId, organizationId),
+				eq(commercemlSyncJournal.packageId, hash),
+			),
+		)
+		.limit(1);
+	return Boolean(row);
 }
 
-export function isSyncHashProcessed(organizationId: string, hash: string): boolean {
-	return getProcessedSyncSet(organizationId).has(hash);
+export async function isSyncHashProcessed(
+	organizationId: string,
+	hash: string,
+): Promise<boolean> {
+	return withTenantCtx(organizationId, (tx) => isSyncHashProcessedTx(tx, organizationId, hash));
 }
 
-export function markSyncHashProcessed(organizationId: string, hash: string): void {
-	getProcessedSyncSet(organizationId).add(hash);
+export async function markSyncHashProcessedTx(
+	tx: TenantDb,
+	organizationId: string,
+	hash: string,
+	meta?: {
+		syncTransactionId?: string | undefined;
+		status?: string | undefined;
+		processedCount?: number | undefined;
+		createdCount?: number | undefined;
+		updatedCount?: number | undefined;
+		errorsJson?: string[] | undefined;
+		summaryText?: string | undefined;
+		actorUserId?: string | undefined;
+	},
+): Promise<void> {
+	await tx.insert(commercemlSyncJournal).values({
+		organizationId,
+		syncId: meta?.syncTransactionId || hash,
+		packageId: hash,
+		direction: "inbound",
+		status: meta?.status || "success",
+		processedCount: meta?.processedCount ?? 0,
+		createdCount: meta?.createdCount ?? 0,
+		updatedCount: meta?.updatedCount ?? 0,
+		errorsJson: meta?.errorsJson ?? [],
+		summaryText: meta?.summaryText ?? "",
+		actorUserId: meta?.actorUserId ?? null,
+	});
 }
 
-export function registerExportedPackage(
+export async function markSyncHashProcessed(
+	organizationId: string,
+	hash: string,
+): Promise<void> {
+	await withTenantCtx(organizationId, (tx) => markSyncHashProcessedTx(tx, organizationId, hash));
+}
+
+export async function registerExportedPackageTx(
+	tx: TenantDb,
 	organizationId: string,
 	sha256: string,
-	info: { exportedAtIso: string; packageId: string },
-): void {
-	getExportedMap(organizationId).set(sha256, info);
+	info: {
+		exportedAtIso: string;
+		packageId: string;
+		packageKind?: string | undefined;
+		documentCount?: number | undefined;
+		totalAmountKopecks?: number | bigint | undefined;
+		exportedByUserId?: string | undefined;
+	},
+): Promise<void> {
+	const parsedDate = new Date(info.exportedAtIso);
+	const exportedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+	await tx
+		.insert(commercemlExportedPackages)
+		.values({
+			organizationId,
+			packageId: sha256,
+			packageKind: info.packageKind || info.packageId || "shift_export",
+			documentCount: info.documentCount ?? 0,
+			totalAmountKopecks: BigInt(info.totalAmountKopecks ?? 0),
+			exportedByUserId: info.exportedByUserId ?? null,
+			exportedAt,
+		})
+		.onConflictDoNothing({
+			target: [commercemlExportedPackages.organizationId, commercemlExportedPackages.packageId],
+		});
 }
 
-export function checkDoublePosting(
+export async function registerExportedPackage(
+	organizationId: string,
+	sha256: string,
+	info: {
+		exportedAtIso: string;
+		packageId: string;
+		packageKind?: string | undefined;
+		documentCount?: number | undefined;
+		totalAmountKopecks?: number | bigint | undefined;
+		exportedByUserId?: string | undefined;
+	},
+): Promise<void> {
+	await withTenantCtx(organizationId, (tx) =>
+		registerExportedPackageTx(tx, organizationId, sha256, info),
+	);
+}
+
+export async function checkDoublePosting(
 	organizationId: string,
 	sha256Hash: string,
-): DoublePostingCheckResult {
-	const orgMap = getExportedMap(organizationId);
-	const existing = orgMap.get(sha256Hash);
+): Promise<DoublePostingCheckResult> {
+	const [existing] = await withTenantCtx(organizationId, (tx) =>
+		tx
+			.select({
+				packageId: commercemlExportedPackages.packageId,
+				exportedAt: commercemlExportedPackages.exportedAt,
+			})
+			.from(commercemlExportedPackages)
+			.where(
+				and(
+					eq(commercemlExportedPackages.organizationId, organizationId),
+					eq(commercemlExportedPackages.packageId, sha256Hash),
+				),
+			)
+			.limit(1),
+	);
+
 	if (existing) {
+		const previousExportDate = existing.exportedAt.toISOString();
 		return {
 			isDoublePosting: true,
-			previousExportDate: existing.exportedAtIso,
-			message: `ВНИМАНИЕ: Пакет с контрольным хэшем SHA-256 (${sha256Hash.slice(0, 16)}...) уже выгружался ранее (${existing.exportedAtIso}). Повторное проведение может привести к удвоению проводок в 1С!`,
+			previousExportDate,
+			message: `ВНИМАНИЕ: Пакет с контрольным хэшем SHA-256 (${sha256Hash.slice(0, 16)}...) уже выгружался ранее (${previousExportDate}). Повторное проведение может привести к удвоению проводок в 1С!`,
 		};
 	}
+
 	return {
 		isDoublePosting: false,
 		message: "Пакет уникален, двойное проведение отсутствует.",
 	};
 }
 
-export function clearReconciliationStoreForTests(): void {
-	processedSyncHashesByOrg.clear();
-	exportedPackageHashesByOrg.clear();
+export async function clearReconciliationStoreForTests(organizationId?: string): Promise<void> {
+	if (!organizationId) return;
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.delete(commercemlSyncJournal)
+			.where(eq(commercemlSyncJournal.organizationId, organizationId));
+		await tx
+			.delete(commercemlExportedPackages)
+			.where(eq(commercemlExportedPackages.organizationId, organizationId));
+	});
 }

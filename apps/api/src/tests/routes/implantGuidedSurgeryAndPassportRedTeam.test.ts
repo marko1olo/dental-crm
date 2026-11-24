@@ -12,6 +12,7 @@ import {
 	patientInvoices,
 	patients,
 	serviceCatalogItems,
+	syncIdempotencyRecords,
 	toothStateHistory,
 	toothStates,
 	treatmentItems,
@@ -20,6 +21,7 @@ import {
 	warrantyCertificates,
 } from "../../db/schema.js";
 import { registerClinicalImplantRoutes } from "../../routes/clinicalImplants/index.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -60,6 +62,7 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 			await tx.delete(warrantyCertificates).where(eq(warrantyCertificates.organizationId, ORG_ID));
 			await tx.delete(patientImplantInstallations).where(eq(patientImplantInstallations.organizationId, ORG_ID));
 			await tx.delete(idempotencyKeys).where(eq(idempotencyKeys.clinicId, ORG_ID));
+			await tx.delete(syncIdempotencyRecords).where(eq(syncIdempotencyRecords.organizationId, ORG_ID));
 			await tx.delete(inventoryTransactions).where(eq(inventoryTransactions.organizationId, ORG_ID));
 			await tx.delete(inventoryItems).where(eq(inventoryItems.organizationId, ORG_ID));
 			await tx.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
@@ -131,6 +134,7 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 		);
 
 		app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await registerClinicalImplantRoutes(app);
 		await app.ready();
 	});
@@ -143,7 +147,7 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 		if (!dbAvailable) return t.skip();
 
 		const diarySoap = "ДНЕВНИК ОПЕРАЦИИ:\nРазрез по гребню, фиксация шаблона SG-2026-T46, препарирование ложа фрезами с охлаждением 0.9% NaCl, установка имплантата с торком 40 Н·см.";
-		const idempKey = "idemp-test-guided-surgery-tooth-46";
+		const idempKey = fixtureUuid(FIXTURE, 90);
 
 		const installRes = await app.inject({
 			method: "POST",
@@ -232,7 +236,8 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 	it("2. Идемпотентность: повторный запрос с тем же Idempotency-Key не дублирует установку и списание", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		const idempKey = "idemp-test-guided-surgery-tooth-46";
+		const diarySoap = "ДНЕВНИК ОПЕРАЦИИ:\nРазрез по гребню, фиксация шаблона SG-2026-T46, препарирование ложа фрезами с охлаждением 0.9% NaCl, установка имплантата с торком 40 Н·см.";
+		const idempKey = fixtureUuid(FIXTURE, 90);
 
 		// Отправляем точный повторный запрос, симулируя повторный клик или ретрай сети
 		const replayRes = await app.inject({
@@ -251,6 +256,21 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 				inventoryItemId: INVENTORY_IMPLANT_ID,
 				implantDiameterMm: 4.0,
 				implantLengthMm: 10.0,
+				catalogArticle: "TS3S4010S",
+				lotNumber: "LOT-OSS-2026-99",
+				serialNumber: "SN-OSS-46461",
+				expirationDate: "2029-12-31",
+				connectionType: "internal_hex",
+				boneDensityClass: "D2",
+				finalInsertionTorqueNcm: 40,
+				baselineIsqMesiodistal: 75,
+				baselineIsqBuccolingual: 75,
+				isGuidedSurgery: true,
+				guidedSleeveDiameterMm: 5.0,
+				guidedSleeveOffsetMm: 2.0,
+				surgicalGuideTemplateId: "SG-2026-T46",
+				sutureMaterial: "Викрил 4-0",
+				notes: diarySoap,
 				idempotencyKey: idempKey,
 			},
 		});
@@ -351,6 +371,7 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 			headers: {
 				"x-dente-clinic-token": tokenDoctor,
 				"x-dente-staff-token": tokenDoctor,
+				"Idempotency-Key": fixtureUuid(FIXTURE, 91),
 			},
 			body: {
 				daysPostOp: 0,
@@ -369,6 +390,7 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 			headers: {
 				"x-dente-clinic-token": tokenDoctor,
 				"x-dente-staff-token": tokenDoctor,
+				"Idempotency-Key": fixtureUuid(FIXTURE, 92),
 			},
 			body: {
 				daysPostOp: 14,

@@ -9,8 +9,12 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { randomUUID } from "node:crypto";
+import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
+import { db } from "../../db/client.js";
+import { organizations, users } from "../../db/schema.js";
+import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { buildPlanItemsForValidation } from "../../routes/invoiceRoutes/helpers/planItemsValidationBuilder.js";
 import {
 	checkDoublePosting,
@@ -22,8 +26,45 @@ import {
 import { registerCommerceMlRoutes } from "../../routes/commerceMl.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+import { createTenantTestApp } from "../support/tenantTestApp.js";
+
+const ORG_ALPHA = fixtureUuid("priceFreezeAlpha", 1);
+const ORG_BETA = fixtureUuid("priceFreezeBeta", 1);
+const STAFF_ID = fixtureUuid("priceFreezeAlpha", 2);
 
 describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
+	before(async () => {
+		await purgeFixtureOrganizations([ORG_ALPHA, ORG_BETA]);
+		await withFixtureTenant(ORG_ALPHA, async () => {
+			await db.insert(organizations).values({
+				id: ORG_ALPHA,
+				name: "Клиника Альфа (PriceFreeze Audit)",
+				loginId: `pf_alpha_${Date.now()}`,
+			}).onConflictDoNothing();
+			await db.insert(users).values({
+				id: STAFF_ID,
+				organizationId: ORG_ALPHA,
+				fullName: "Аудитор 1С Альфа",
+				role: "admin",
+			}).onConflictDoNothing();
+		});
+		await withFixtureTenant(ORG_BETA, async () => {
+			await db.insert(organizations).values({
+				id: ORG_BETA,
+				name: "Клиника Бета (PriceFreeze Audit)",
+				loginId: `pf_beta_${Date.now()}`,
+			}).onConflictDoNothing();
+		});
+	});
+
+	after(async () => {
+		await purgeFixtureOrganizations([ORG_ALPHA, ORG_BETA]);
+	});
 	it("SEV-1 FIXED: tooth-only match does NOT override price of unrelated service on same tooth", () => {
 		const targetPlanDbItems = [
 			{
@@ -140,34 +181,35 @@ describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
 		assert.equal(result[0]?.planUnitPriceKopecks, 3800000);
 	});
 
-	it("SEV-2 FIXED: CommerceML reconciliationStore multi-tenant isolation by organizationId", () => {
-		clearReconciliationStoreForTests();
-		const orgAlpha = "00000000-0000-7000-8000-000000000001";
-		const orgBeta = "00000000-0000-7000-8000-000000000002";
+	it("SEV-2 FIXED: CommerceML reconciliationStore multi-tenant isolation by organizationId in PG18", async () => {
+		await clearReconciliationStoreForTests(ORG_ALPHA);
+		await clearReconciliationStoreForTests(ORG_BETA);
 		const commonHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 		// Клиника Альфа обработала синхронизацию
-		markSyncHashProcessed(orgAlpha, commonHash);
-		assert.equal(isSyncHashProcessed(orgAlpha, commonHash), true);
+		await markSyncHashProcessed(ORG_ALPHA, commonHash);
+		assert.equal(await isSyncHashProcessed(ORG_ALPHA, commonHash), true);
 		// Клиника Бета НЕ должна блокироваться из-за хэша Альфы!
-		assert.equal(isSyncHashProcessed(orgBeta, commonHash), false);
+		assert.equal(await isSyncHashProcessed(ORG_BETA, commonHash), false);
 
 		// Клиника Альфа зарегистрировала экспорт пакета
-		registerExportedPackage(orgAlpha, commonHash, {
+		await registerExportedPackage(ORG_ALPHA, commonHash, {
 			exportedAtIso: "2026-11-14T10:00:00.000Z",
 			packageId: "pkg-alpha-01",
 		});
 
-		const checkAlpha = checkDoublePosting(orgAlpha, commonHash);
+		const checkAlpha = await checkDoublePosting(ORG_ALPHA, commonHash);
 		assert.equal(checkAlpha.isDoublePosting, true);
 
-		const checkBeta = checkDoublePosting(orgBeta, commonHash);
+		const checkBeta = await checkDoublePosting(ORG_BETA, commonHash);
 		assert.equal(checkBeta.isDoublePosting, false);
 	});
 
-	it("SEV-2 FIXED: Fastify handles application/xml and text/xml without 415 Unsupported Media Type", async () => {
-		const app = Fastify();
+	it("SEV-2 FIXED: Fastify handles application/xml and text/xml without 415 and parses XML real tags", async () => {
+		const app = createTenantTestApp();
+		await app.register(idempotencyPlugin);
 		await registerCommerceMlRoutes(app);
+		await app.ready();
 
 		const xmlPayload = `<?xml version="1.0" encoding="windows-1251"?>
 <КоммерческаяИнформация ВерсияСхемы="2.09" ДатаФормирования="2026-11-14">
@@ -181,9 +223,9 @@ describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
 
 		const token = signToken(
 			{
-				organizationId: "00000000-0000-7000-8000-000000000001",
+				organizationId: ORG_ALPHA,
 				role: "admin",
-				userId: "00000000-0000-7000-8000-000000000002",
+				userId: STAFF_ID,
 			},
 			authTokenSecret(),
 		);
@@ -193,12 +235,12 @@ describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
 			url: "/api/commerceml/sync",
 			headers: {
 				"content-type": "application/xml",
-				"x-dente-clinic-token": token,
+				"x-dente-staff-token": token,
+				"idempotency-key": randomUUID(),
 			},
 			payload: xmlPayload,
 		});
 
-		// Запрос НЕ должен отклоняться Fastify с HTTP 415!
 		assert.notEqual(
 			response.statusCode,
 			415,
@@ -207,5 +249,7 @@ describe("RED TEAM FIXER AUDIT [FIXER-PRICEFREEZE-01]", () => {
 		assert.equal(response.statusCode, 200);
 		const json = response.json();
 		assert.equal(json.success, true);
+		assert.equal(json.processedDocumentsCount, 1);
+		await app.close();
 	});
 });

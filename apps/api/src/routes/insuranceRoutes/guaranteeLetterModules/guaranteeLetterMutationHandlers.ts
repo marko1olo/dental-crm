@@ -1,5 +1,4 @@
 import {
-	computePayloadHash,
 	dmsGuaranteeLetterCreateSchema,
 	dmsGuaranteeLetterUpdateSchema,
 	kopecksToRubles,
@@ -8,10 +7,13 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { dmsGuaranteeLetters, insuranceContracts, patients } from "../../../db/schema.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
-import { formatGuaranteeLetterResponse, isValidUuid } from "./guaranteeLetterFormatters.js";
+import {
+	formatGuaranteeLetterResponse,
+	isValidUuid,
+	resolveDbKopecks,
+} from "./guaranteeLetterFormatters.js";
 
 export async function handleCreateGuaranteeLetter(
 	request: FastifyRequest,
@@ -30,73 +32,43 @@ export async function handleCreateGuaranteeLetter(
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: msg,
+			details: parsed.error.issues,
 		});
 	}
 
-	// Mandate 8zp/8bo: Idempotency-Key support
-	const rawBodyMutationId = (request.body as { clientMutationId?: unknown })?.clientMutationId;
-	const rawIdemKey =
-		(request.headers["idempotency-key"] as string | undefined) ||
-		(request.headers["x-idempotency-key"] as string | undefined) ||
-		(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
-	const idempotencyKey =
-		typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
-			? rawIdemKey.trim()
-			: undefined;
-
-	if (idempotencyKey) {
-		const [existingRecord] = await db
-			.select()
-			.from(idempotencyKeys)
-			.where(
-				and(
-					eq(idempotencyKeys.clinicId, orgId),
-					eq(idempotencyKeys.key, idempotencyKey),
-				),
-			)
-			.limit(1);
-
-		if (existingRecord) {
-			if (existingRecord.status === "completed" && existingRecord.responseBody) {
-				reply.header("Idempotency-Key", idempotencyKey);
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
-			}
-			if (existingRecord.status === "in_flight") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Операция создания гарантийного письма ДМС с данным Idempotency-Key уже выполняется.",
-				});
-			}
-		}
-	}
-
 	const data = parsed.data;
-	const effectiveMaxRub = data.maxCoverageRub > 0
-		? data.maxCoverageRub
-		: (data.limitKopecks ? kopecksToRubles(data.limitKopecks) : (data.maxCoverageKopecks ? kopecksToRubles(data.maxCoverageKopecks) : 0));
+	const effectiveMaxKopNum =
+		data.maxCoverageKopecks && data.maxCoverageKopecks > 0
+			? data.maxCoverageKopecks
+			: data.limitKopecks && data.limitKopecks > 0
+				? data.limitKopecks
+				: rublesToKopecks(data.maxCoverageRub ?? 0);
 
-	if (effectiveMaxRub <= 0) {
+	if (effectiveMaxKopNum <= 0) {
 		return reply.code(400).send({
 			error: "InvalidLimit",
 			message: "Лимит покрытия по гарантийному письму должен быть больше 0 ₽.",
 		});
 	}
 
-	const effectiveMaxKop = data.maxCoverageKopecks && data.maxCoverageKopecks > 0
-		? BigInt(data.maxCoverageKopecks)
-		: (data.limitKopecks && data.limitKopecks > 0 ? BigInt(data.limitKopecks) : BigInt(rublesToKopecks(effectiveMaxRub)));
+	const effectiveMaxRub = kopecksToRubles(effectiveMaxKopNum);
+	const effectiveMaxKop = BigInt(effectiveMaxKopNum);
 
-	const effectiveUsedRub = data.usedAmountRub ?? (data.usedKopecks ? kopecksToRubles(data.usedKopecks) : 0);
-	const effectiveUsedKop = data.usedAmountKopecks !== undefined && data.usedAmountKopecks !== null
-		? BigInt(data.usedAmountKopecks)
-		: (data.usedKopecks !== undefined && data.usedKopecks !== null ? BigInt(data.usedKopecks) : BigInt(rublesToKopecks(effectiveUsedRub)));
+	const effectiveUsedKopNum =
+		data.usedAmountKopecks !== undefined && data.usedAmountKopecks !== null
+			? data.usedAmountKopecks
+			: data.usedKopecks !== undefined && data.usedKopecks !== null
+				? data.usedKopecks
+				: rublesToKopecks(data.usedAmountRub ?? 0);
+	const effectiveUsedRub = kopecksToRubles(effectiveUsedKopNum);
+	const effectiveUsedKop = BigInt(effectiveUsedKopNum);
 
-	const effectiveFranchiseFixedRub = data.franchiseFixedRub ?? 0;
-	const effectiveFranchiseFixedKop = data.franchiseFixedKopecks !== undefined && data.franchiseFixedKopecks !== null
-		? BigInt(data.franchiseFixedKopecks)
-		: BigInt(rublesToKopecks(effectiveFranchiseFixedRub));
+	const effectiveFranchiseFixedKopNum =
+		data.franchiseFixedKopecks !== undefined && data.franchiseFixedKopecks !== null
+			? data.franchiseFixedKopecks
+			: rublesToKopecks(data.franchiseFixedRub ?? 0);
+	const effectiveFranchiseFixedRub = kopecksToRubles(effectiveFranchiseFixedKopNum);
+	const effectiveFranchiseFixedKop = BigInt(effectiveFranchiseFixedKopNum);
 
 	const effectiveValidUntil = data.validUntil || data.validTo || "";
 	if (data.validFrom > effectiveValidUntil) {
@@ -108,7 +80,7 @@ export async function handleCreateGuaranteeLetter(
 
 	const validLetterId = isValidUuid(data.id) ? data.id : undefined;
 
-	const created = await db.transaction(async (tx) => {
+	const created = await withTenantCtx(orgId, async (tx) => {
 		// Mandate 8z/8bd: BOLA/IDOR protection - verify patient belongs to current clinic organization
 		const [patientRecord] = await tx
 			.select({ id: patients.id })
@@ -201,36 +173,11 @@ export async function handleCreateGuaranteeLetter(
 
 		const formatted = formatGuaranteeLetterResponse(inserted);
 
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					payloadHash: computePayloadHash(request.body ?? {}),
-					responseBody: formatted,
-					responseCode: 201,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: formatted,
-						responseCode: 201,
-					},
-				});
-		}
-
 		return { status: 201, data: formatted };
 	});
 
 	if (created.status !== 201 || !created.data) {
 		return reply.code(created.status).send(created.error);
-	}
-
-	if (idempotencyKey) {
-		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
 	return reply.code(201).send(created.data);
@@ -261,12 +208,13 @@ export async function handleUpdateGuaranteeLetter(
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: msg,
+			details: parsed.error.issues,
 		});
 	}
 
 	const d = parsed.data;
 
-	const txResult = await db.transaction(async (tx) => {
+	const txResult = await withTenantCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select()
 			.from(dmsGuaranteeLetters)
@@ -385,9 +333,15 @@ export async function handleUpdateGuaranteeLetter(
 		if (d.notes !== undefined) updateData.notes = d.notes;
 		if (d.status !== undefined) updateData.status = d.status;
 
-		const finalMax = updateData.maxCoverageRub !== undefined ? Number(updateData.maxCoverageRub) : Number(existing.maxCoverageRub);
-		const finalUsed = updateData.usedAmountRub !== undefined ? Number(updateData.usedAmountRub) : Number(existing.usedAmountRub);
-		if (finalUsed >= finalMax && updateData.status === undefined) {
+		const finalMaxKop =
+			updateData.maxCoverageKopecks !== undefined
+				? Number(updateData.maxCoverageKopecks)
+				: resolveDbKopecks(existing.maxCoverageKopecks, existing.maxCoverageRub);
+		const finalUsedKop =
+			updateData.usedAmountKopecks !== undefined
+				? Number(updateData.usedAmountKopecks)
+				: resolveDbKopecks(existing.usedAmountKopecks, existing.usedAmountRub);
+		if (finalMaxKop > 0 && finalUsedKop >= finalMaxKop && updateData.status === undefined) {
 			updateData.status = "exhausted";
 		}
 
@@ -441,7 +395,7 @@ export async function handleDeleteGuaranteeLetter(
 		});
 	}
 
-	const deleteResult = await db.transaction(async (tx) => {
+	const deleteResult = await withTenantCtx(orgId, async (tx) => {
 		const [existing] = await tx
 			.select({ id: dmsGuaranteeLetters.id })
 			.from(dmsGuaranteeLetters)

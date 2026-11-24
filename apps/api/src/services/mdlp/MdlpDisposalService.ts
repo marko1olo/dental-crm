@@ -12,7 +12,7 @@ import {
 } from "@dental/shared";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../db/rls.js";
 import { mdlpItems } from "../../db/schema.js";
 import { inventoryItems } from "../../db/schema/inventory.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
@@ -114,42 +114,60 @@ export class MdlpDisposalService {
 			);
 		}
 
-		let itemRecord: Record<string, unknown> | null = null;
+		const itemRecord: Record<string, unknown> | null = await withTenantCtx(
+			orgId,
+			async (tx) => {
+				const [existing] = await tx
+					.select()
+					.from(mdlpItems)
+					.where(
+						and(
+							eq(mdlpItems.organizationId, orgId),
+							eq(mdlpItems.sgtin, parsed.sgtin),
+						),
+					)
+					.limit(1);
 
-		// Query PostgreSQL database
-		const [existing] = await db
-			.select()
-			.from(mdlpItems)
-			.where(
-				and(
-					eq(mdlpItems.organizationId, orgId),
-					eq(mdlpItems.sgtin, parsed.sgtin),
-				),
-			)
-			.limit(1);
-
-		if (existing) {
-			itemRecord = existing as Record<string, unknown>;
-		} else if (autoRegister) {
-			const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
-			const [inserted] = await db
-				.insert(mdlpItems)
-				.values({
-					organizationId: orgId,
-					sgtin: parsed.sgtin,
-					gtin: parsed.gtin,
-					serialNumber: parsed.serialNumber,
-					rawBarcode: parsed.rawBarcode,
-					tradeName: drug.tradeName ?? "Неизвестный медицинский препарат",
-					inn: drug.inn ?? "Не указано",
-					series: parsed.series ?? parsed.lot ?? null,
-					expirationDate: parsed.expirationDate,
-					status: "in_stock",
-					costRub: null,
-				})
-				.returning();
-			itemRecord = (inserted as Record<string, unknown>) ?? null;
-		}
+				if (existing) {
+					return existing as Record<string, unknown>;
+				}
+				if (!autoRegister) {
+					return null;
+				}
+				const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
+				const [inserted] = await tx
+					.insert(mdlpItems)
+					.values({
+						organizationId: orgId,
+						sgtin: parsed.sgtin,
+						gtin: parsed.gtin,
+						serialNumber: parsed.serialNumber,
+						rawBarcode: parsed.rawBarcode,
+						tradeName: drug.tradeName ?? "Неизвестный медицинский препарат",
+						inn: drug.inn ?? "Не указано",
+						series: parsed.series ?? parsed.lot ?? null,
+						expirationDate: parsed.expirationDate,
+						status: "in_stock",
+						costRub: null,
+					})
+					.onConflictDoNothing()
+					.returning();
+				if (inserted) {
+					return inserted as Record<string, unknown>;
+				}
+				const [afterConflict] = await tx
+					.select()
+					.from(mdlpItems)
+					.where(
+						and(
+							eq(mdlpItems.organizationId, orgId),
+							eq(mdlpItems.sgtin, parsed.sgtin),
+						),
+					)
+					.limit(1);
+				return (afterConflict as Record<string, unknown>) ?? null;
+			},
+		);
 
 		const isRegistered = Boolean(itemRecord);
 		const isDisposed = itemRecord?.status === "disposed";
@@ -300,42 +318,45 @@ export class MdlpDisposalService {
 				let inventoryTransactionId: string | null = null;
 
 				// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
+				// SAVEPOINT защищает внешнюю транзакцию от 25P02 при сбое склада
 				try {
-					const [inv] = await tx
-						.select()
-						.from(inventoryItems)
-						.where(
-							and(
-								eq(inventoryItems.organizationId, orgId),
-								or(
-									eq(inventoryItems.barcode, it.gtin),
-									eq(inventoryItems.barcode, it.sgtin),
-									...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
-									...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
+					await withSavepoint(tx, async (spTx) => {
+						const [inv] = await spTx
+							.select()
+							.from(inventoryItems)
+							.where(
+								and(
+									eq(inventoryItems.organizationId, orgId),
+									or(
+										eq(inventoryItems.barcode, it.gtin),
+										eq(inventoryItems.barcode, it.sgtin),
+										...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
+										...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
+									),
 								),
-							),
-						)
-						.limit(1);
+							)
+							.limit(1);
 
-					if (inv) {
-						inventoryItemId = inv.id;
-						const fefoRes = await fefoStockService.deductFefo(tx, {
-							organizationId: orgId,
-							inventoryItemId: inv.id,
-							requiredQty: 1,
-							warehouseId: warehouseId ?? undefined,
-							visitId: input.visitId ?? undefined,
-							userId: input.doctorId ?? undefined,
-							allowOverdraft: true,
-							transactionType: "write_off_mdlp",
-							notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
-						});
+						if (inv) {
+							inventoryItemId = inv.id;
+							const fefoRes = await fefoStockService.deductFefo(spTx, {
+								organizationId: orgId,
+								inventoryItemId: inv.id,
+								requiredQty: 1,
+								warehouseId: warehouseId ?? undefined,
+								visitId: input.visitId ?? undefined,
+								userId: input.doctorId ?? undefined,
+								allowOverdraft: true,
+								transactionType: "write_off_mdlp",
+								notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
+							});
 
-						const firstBatch = fefoRes.batchesUsed[0];
-						if (firstBatch) {
-							batchId = firstBatch.batchId;
+							const firstBatch = fefoRes.batchesUsed[0];
+							if (firstBatch) {
+								batchId = firstBatch.batchId;
+							}
 						}
-					}
+					});
 				} catch (stockErr) {
 					mdlpLogger.warn(
 						stockErr,
@@ -431,14 +452,14 @@ export class MdlpDisposalService {
 	/**
 	 * Generates printable Senior Nurse Medication Disposal Act HTML and structured data.
 	 */
-	public generateDisposalAct(
+	public async generateDisposalAct(
 		orgId: string,
 		input: MdlpActGenerateInput,
-	): { actData: SeniorNurseDisposalActData; html: string } {
+	): Promise<{ actData: SeniorNurseDisposalActData; html: string }> {
 		let queueItems: MdlpCarpuleQueueItem[] = [];
 
 		if (input.useQueue) {
-			const queue = mdlpQueueService.getQueue(orgId);
+			const queue = await mdlpQueueService.getQueueAsync(orgId);
 			queueItems = queue.items;
 		} else if (input.items && input.items.length > 0) {
 			queueItems = input.items;

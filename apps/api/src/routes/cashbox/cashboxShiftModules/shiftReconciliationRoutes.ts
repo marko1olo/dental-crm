@@ -7,22 +7,30 @@
  *
  * Strict compliance with:
  * - Federal Law 54-FZ (X-Report without shift reset)
- * - SSOT tender aggregation via shiftReconciliationEngine
+ * - KKT hardware I/O strictly outside PostgreSQL transactions
+ * - Pure read-only HTTP GET endpoints
  */
 
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { kopecksToRub, rublesToKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
-import {
-	cashBoxes,
-	cashBoxShifts,
-} from "../../../db/schema.js";
+import { cashBoxes, cashBoxShifts } from "../../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
+import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
+import { checkAndAutoCloseExpiredShifts } from "../../shifts/shiftAutoCloseService.js";
 import { xReportQueryOrBodySchema } from "../cashboxSchemas.js";
 import { calculateShiftTenderTotals } from "./shiftReconciliationEngine.js";
-import { checkAndAutoCloseExpiredShifts } from "../../shifts/shiftAutoCloseService.js";
-import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
+
+function resolveSafeKopecks(
+	kopecksVal: number | null | undefined,
+	rubVal: number | null | undefined,
+): number {
+	const kop = kopecksVal ?? 0;
+	const rub = Number(rubVal || 0);
+	return kop !== 0 || rub === 0 ? kop : rublesToKopecks(rub);
+}
 
 export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 	/**
@@ -34,14 +42,19 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const queryOrBody = (request.method === "POST" ? request.body : request.query) || {};
+		const queryOrBody = (request.method === "POST" ? request.body : request.query) ?? {};
 		const parsed = xReportQueryOrBodySchema.safeParse(queryOrBody);
-		const cashierFullName =
-			parsed.success && parsed.data.cashierFullName
-				? parsed.data.cashierFullName
-				: "Кассир / Администратор";
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса Х-отчета.",
+				details: parsed.error.issues,
+			});
+		}
 
-		const reportData = await withTenantCtx(orgId, async (tx) => {
+		const cashierFullName = parsed.data.cashierFullName || "Кассир / Администратор";
+
+		const dbSnapshot = await withTenantCtx(orgId, async (tx) => {
 			await ensureOrganizationCashBoxes(tx, orgId);
 
 			const boxes = await tx
@@ -60,62 +73,70 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 					),
 				);
 
-			let totalCashRub = 0;
-			let totalIncomeRub = 0;
-			let totalExpenseRub = 0;
+			let totalCashKop = 0;
+			let totalIncomeKop = 0;
+			let totalExpenseKop = 0;
 
 			for (const b of boxes) {
 				if (b.type === "main") {
-					totalCashRub += b.balanceRub;
+					totalCashKop += resolveSafeKopecks(b.balanceKopecks, b.balanceRub);
 				}
 			}
 
 			for (const s of openShifts) {
-				totalIncomeRub += s.incomeTotalRub;
-				totalExpenseRub += s.expenseTotalRub;
-			}
-
-			const currentShiftNumber =
-				parsed.success && parsed.data.shiftNumber
-					? parsed.data.shiftNumber
-					: (openShifts[0]?.shiftNumber ?? 1);
-
-			const now = new Date();
-
-			// Аппаратный запрос Х-отчета без гашения на ККТ (54-ФЗ)
-			let kktResult: Awaited<ReturnType<typeof LanKktDriverService.printXReport>> | undefined;
-			if (request.method === "POST" || (parsed.success && parsed.data.print)) {
-				try {
-					kktResult = await LanKktDriverService.printXReport({
-						cashierName: cashierFullName,
-						shiftNumber: currentShiftNumber,
-					});
-				} catch (err: unknown) {
-					request.log.warn({ err }, "LanKktDriverService.printXReport non-blocking warning");
-				}
+				totalIncomeKop += resolveSafeKopecks(s.incomeTotalKopecks, s.incomeTotalRub);
+				totalExpenseKop += resolveSafeKopecks(s.expenseTotalKopecks, s.expenseTotalRub);
 			}
 
 			return {
-				success: true,
-				reportType: "x_report" as const,
-				shiftNumber: currentShiftNumber,
-				status: (openShifts.length > 0 ? "open" : "closed") as "open" | "closed",
-				openedAt: openShifts[0]?.openedAt ?? now,
-				printedAt: now.toISOString(),
-				cashierFullName,
-				totalCashInDrawerRub: totalCashRub,
-				totalIncomeRub,
-				totalExpenseRub,
-				openShiftsCount: openShifts.length,
 				boxesCount: boxes.length,
-				kktResult,
+				openShiftsCount: openShifts.length,
+				firstShiftNumber: openShifts[0]?.shiftNumber ?? 1,
+				openedAt: openShifts[0]?.openedAt,
+				totalCashKop,
+				totalIncomeKop,
+				totalExpenseKop,
 			};
 		});
 
-		return reply.send(reportData);
+		const currentShiftNumber = parsed.data.shiftNumber ?? dbSnapshot.firstShiftNumber;
+		const now = new Date();
+
+		// Аппаратный запрос Х-отчета строго ВНЕ транзакции PostgreSQL
+		let kktResult: Awaited<ReturnType<typeof LanKktDriverService.printXReport>> | undefined;
+		if (request.method === "POST" || parsed.data.print) {
+			try {
+				kktResult = await LanKktDriverService.printXReport({
+					cashierName: cashierFullName,
+					shiftNumber: currentShiftNumber,
+				});
+			} catch (err: unknown) {
+				request.log.warn({ err }, "LanKktDriverService.printXReport non-blocking warning");
+			}
+		}
+
+		return reply.send({
+			success: true,
+			reportType: "x_report" as const,
+			shiftNumber: currentShiftNumber,
+			status: (dbSnapshot.openShiftsCount > 0 ? "open" : "closed") as "open" | "closed",
+			openedAt: dbSnapshot.openedAt ?? now,
+			printedAt: now.toISOString(),
+			cashierFullName,
+			totalCashInDrawerRub: kopecksToRub(dbSnapshot.totalCashKop),
+			totalCashInDrawerKopecks: dbSnapshot.totalCashKop,
+			totalIncomeRub: kopecksToRub(dbSnapshot.totalIncomeKop),
+			totalIncomeKopecks: dbSnapshot.totalIncomeKop,
+			totalExpenseRub: kopecksToRub(dbSnapshot.totalExpenseKop),
+			totalExpenseKopecks: dbSnapshot.totalExpenseKop,
+			openShiftsCount: dbSnapshot.openShiftsCount,
+			boxesCount: dbSnapshot.boxesCount,
+			kktResult,
+		});
 	};
 
 	const reportRouteOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			description:
 				"Shift X-report and reconciliation with organizationId tenant isolation and optional Idempotency-Key",
@@ -128,27 +149,24 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 			},
 		},
 	};
+	const readRouteOptions = { config: { tenantTxSelfManaged: true } };
 
 	app.post("/api/cash/x-report", reportRouteOptions, async (request, reply) => {
-		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleXReport(request, reply);
 	});
-	app.get("/api/cash/x-report", handleXReport);
+	app.get("/api/cash/x-report", readRouteOptions, handleXReport);
 	app.post("/api/fiscal/x-report", reportRouteOptions, async (request, reply) => {
-		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleXReport(request, reply);
 	});
-	app.get("/api/fiscal/x-report", handleXReport);
+	app.get("/api/fiscal/x-report", readRouteOptions, handleXReport);
 	app.post("/api/fiscal/reports/x-report", reportRouteOptions, async (request, reply) => {
-		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleXReport(request, reply);
 	});
-	app.get("/api/fiscal/reports/x-report", handleXReport);
+	app.get("/api/fiscal/reports/x-report", readRouteOptions, handleXReport);
 	app.post("/api/finance/reports/x-report", reportRouteOptions, async (request, reply) => {
-		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleXReport(request, reply);
 	});
-	app.get("/api/finance/reports/x-report", handleXReport);
+	app.get("/api/finance/reports/x-report", readRouteOptions, handleXReport);
 
 	/**
 	 * 2. GET & POST /api/cash/shift-reconciliation
@@ -166,8 +184,10 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 		const reconciliationData = await withTenantCtx(orgId, async (tx) => {
 			await ensureOrganizationCashBoxes(tx, orgId);
 
-			// Автоматически закрываем просроченные смены (со вчерашнего дня / по расписанию)
-			await checkAndAutoCloseExpiredShifts(tx, orgId);
+			// HTTP GET строго read-only; автозакрытие просроченных смен запускается только на POST или при открытии смены
+			if (request.method !== "GET") {
+				await checkAndAutoCloseExpiredShifts(tx, orgId);
+			}
 
 			const openShifts = await tx
 				.select()
@@ -223,14 +243,12 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 		return reply.send(reconciliationData);
 	};
 
-	app.get("/api/cash/shift-reconciliation", handleShiftReconciliation);
+	app.get("/api/cash/shift-reconciliation", readRouteOptions, handleShiftReconciliation);
 	app.post("/api/cash/shift-reconciliation", reportRouteOptions, async (request, reply) => {
-		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleShiftReconciliation(request, reply);
 	});
-	app.get("/api/cashbox/shift", handleShiftReconciliation);
+	app.get("/api/cashbox/shift", readRouteOptions, handleShiftReconciliation);
 	app.post("/api/cashbox/shift", reportRouteOptions, async (request, reply) => {
-		// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 		return handleShiftReconciliation(request, reply);
 	});
 }

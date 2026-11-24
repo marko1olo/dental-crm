@@ -9,6 +9,7 @@ import type { FastifyBaseLogger } from "fastify";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { withTenantCtx, type TenantDb } from "../db/rls.js";
 import { appointments, cashBoxes, cashOperations, doctorPayrollStatements, users } from "../db/schema.js";
+import { createApiLogger } from "../observability/logger.js";
 
 export interface SettlementPeriodCloseParams {
 	readonly organizationId: string;
@@ -75,11 +76,8 @@ export async function resolveDoctorUserUuid(
 		});
 		return docUser[0]?.id ?? null;
 	} catch (err) {
-		if (logger) {
-			logger.error({ err, orgId, targetId }, "[resolveDoctorUserUuid] DB query failed");
-		} else {
-			console.error("[resolveDoctorUserUuid] DB query failed:", { err, orgId, targetId });
-		}
+		const log = logger ?? createApiLogger("payroll");
+		log.error({ err, orgId, targetId }, "[resolveDoctorUserUuid] DB query failed");
 		throw err;
 	}
 }

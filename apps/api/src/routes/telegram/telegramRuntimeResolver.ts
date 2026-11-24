@@ -34,7 +34,7 @@ export function runtimeSettingsForRequestedOrganization(
 	requestedOrganizationId: string | null | undefined,
 	requestedBotConfigId: string | null | undefined = null,
 ): TelegramRuntimeSettingsResolution | null {
-	const currentSettings = getDenteTelegramBotSettings();
+	const currentSettings = getDenteTelegramBotSettings(requestedOrganizationId);
 	const envConfig = requestedOrganizationId
 		? clinicBotEnvConfigForOrganization(requestedOrganizationId, null, requestedBotConfigId ?? null)
 		: null;

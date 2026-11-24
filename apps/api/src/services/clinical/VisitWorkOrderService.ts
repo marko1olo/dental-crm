@@ -10,8 +10,9 @@
  * - Федеральный закон от 27.07.2006 № 152-ФЗ «О персональных данных»
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	clinicalAuditLogs,
 	serviceCatalogItems,
@@ -21,7 +22,6 @@ import {
 	treatmentPlans,
 	visits,
 } from "../../db/schema.js";
-import { rublesFromKopecks } from "../../money/patientDebt.js";
 import {
 	TreatmentConsumablesService,
 	type StockDeductionRecord,
@@ -168,7 +168,7 @@ export class VisitWorkOrderService {
 			}
 		}
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			// 1. Проверка существования и доступности визита с блокировкой FOR UPDATE
 			const [visit] = await tx
 				.select({
@@ -232,11 +232,10 @@ export class VisitWorkOrderService {
 				);
 			}
 
-			// 152-ФЗ, 323-ФЗ ст. 13: Изоляция пациентов
 			if (plan.patientId !== visit.patientId) {
 				throw new VisitWorkOrderError(
 					"PATIENT_MISMATCH",
-					"План лечения принадлежит другому пациенту. Перенос чужих услуг категорически запрещен (152-ФЗ, 323-ФЗ ст. 13).",
+					"План лечения принадлежит другому пациенту. Перенос услуг другого пациента недопустим.",
 					400,
 				);
 			}
@@ -370,18 +369,18 @@ export class VisitWorkOrderService {
 				const serviceId = catalogItem?.id ?? (UUID_REGEX.test(priceId) ? priceId : null);
 
 				const quantity = Math.max(1, item.quantity || 1);
-				const unitPriceKopecks = Math.round(Number(item.price) * 100);
-				const discountKopecks = Math.round(Number(item.discount) * 100);
+				const unitPriceKopecks = rublesToKopecks(Number(item.price));
+				const discountKopecks = rublesToKopecks(Number(item.discount));
 				const lineTotalKopecks = Math.max(
 					0,
 					unitPriceKopecks * quantity - discountKopecks,
 				);
 
-				const unitPriceRub = rublesFromKopecks(unitPriceKopecks);
-				const discountRub = rublesFromKopecks(discountKopecks);
-				const priceRub = rublesFromKopecks(lineTotalKopecks);
+				const unitPriceRub = kopecksToRubles(unitPriceKopecks);
+				const discountRub = kopecksToRubles(discountKopecks);
+				const priceRub = kopecksToRubles(lineTotalKopecks);
 
-				const noteTag = `[plan_item:${item.id}] [plan_id:${plan.id}] [804n:${order804nCode ?? "NONE"}] План: ${plan.name}`;
+				const noteTag = `[plan_item:${item.id}] [plan_id:${plan.id}] [code:${order804nCode ?? "NONE"}] План: ${plan.name}`;
 
 				pendingInserts.push({
 					item,
@@ -405,6 +404,9 @@ export class VisitWorkOrderService {
 						priceRub,
 						unitPriceRub,
 						discountRub,
+						priceKopecks: BigInt(lineTotalKopecks),
+						unitPriceKopecks: BigInt(unitPriceKopecks),
+						discountKopecks: BigInt(discountKopecks),
 						status: "in_progress",
 						plannedDoctorUserId: actorUserId ?? null,
 						notes: noteTag,
@@ -504,7 +506,7 @@ export class VisitWorkOrderService {
 						planName: plan.name,
 						transferredItemIds: newlyTransferred.map((i) => i.planItemId),
 						alreadyAppliedCount: appliedItems.length - newlyTransferred.length,
-						totalAddedRub: rublesFromKopecks(totalAddedKopecks),
+						totalAddedRub: kopecksToRubles(totalAddedKopecks),
 						completionPercentage,
 					},
 				});
@@ -556,7 +558,7 @@ export class VisitWorkOrderService {
 					completionPercentage,
 					planStatus: plan.status,
 				},
-				totalAddedRub: rublesFromKopecks(totalAddedKopecks),
+				totalAddedRub: kopecksToRubles(totalAddedKopecks),
 				totalAddedKopecks,
 				...(deductions.length > 0 ? { deductions } : {}),
 				...(hasOverdraft ? { isOverdraft: true, warning: "soft_overdraft" } : {}),
@@ -665,6 +667,6 @@ export class VisitWorkOrderService {
 		if (passedTx) {
 			return await executeInTx(passedTx);
 		}
-		return await db.transaction(async (tx) => executeInTx(tx));
+		return await withTenantCtx(organizationId, async (tx) => executeInTx(tx));
 	}
 }

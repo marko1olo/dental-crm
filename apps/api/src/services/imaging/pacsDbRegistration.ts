@@ -5,7 +5,7 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { imagingInstances, imagingSeries, imagingStudies, patients, visits } from "../../db/schema.js";
 import type { LocalRadiologyScanInput, LocalRadiologyScanResult } from "./pacsTypes.js";
 
@@ -29,7 +29,7 @@ export class PacsDbRegistration {
 		const now = new Date();
 		const capturedAtIso = now.toISOString();
 
-		const resultStudy = await db.transaction(async (tx) => {
+		const resultStudy = await withTenantCtx(input.organizationId, async (tx) => {
 			// 1. Проверка владения пациентом
 			const [ownedPatient] = await tx
 				.select({ id: patients.id })
@@ -159,7 +159,7 @@ export class PacsDbRegistration {
 			diagnostics: {
 				fileSizeMb: params.fileSizeMb,
 				fileExistsLocally: params.fileExistsLocally,
-				localReadinessScore: 1.0,
+				localReadinessScore: params.fileExistsLocally ? 1.0 : 0.0,
 				thumbnailAvailable: Boolean(input.localThumbnailDataUri),
 				isMultiGigabyteScan: params.isMultiGigabyteScan,
 			},
@@ -170,11 +170,13 @@ export class PacsDbRegistration {
 	 * Получение исследования из БД для консультации
 	 */
 	public static async getStudyByIdFromDb(organizationId: string, studyId: string) {
-		const [study] = await db
-			.select()
-			.from(imagingStudies)
-			.where(and(eq(imagingStudies.id, studyId), eq(imagingStudies.organizationId, organizationId)))
-			.limit(1);
+		const [study] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select()
+				.from(imagingStudies)
+				.where(and(eq(imagingStudies.id, studyId), eq(imagingStudies.organizationId, organizationId)))
+				.limit(1),
+		);
 		return study ?? null;
 	}
 
@@ -182,17 +184,19 @@ export class PacsDbRegistration {
 	 * Получение списка последних снимков организации для очереди синхронизации
 	 */
 	public static async listRecentStudiesFromDb(organizationId: string, limit = 50) {
-		return db
-			.select({
-				id: imagingStudies.id,
-				patientId: imagingStudies.patientId,
-				title: imagingStudies.title,
-				storagePath: imagingStudies.storagePath,
-				createdAt: imagingStudies.createdAt,
-			})
-			.from(imagingStudies)
-			.where(eq(imagingStudies.organizationId, organizationId))
-			.orderBy(desc(imagingStudies.createdAt))
-			.limit(limit);
+		return withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({
+					id: imagingStudies.id,
+					patientId: imagingStudies.patientId,
+					title: imagingStudies.title,
+					storagePath: imagingStudies.storagePath,
+					createdAt: imagingStudies.createdAt,
+				})
+				.from(imagingStudies)
+				.where(eq(imagingStudies.organizationId, organizationId))
+				.orderBy(desc(imagingStudies.createdAt))
+				.limit(limit),
+		);
 	}
 }

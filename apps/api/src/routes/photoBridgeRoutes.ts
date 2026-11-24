@@ -4,9 +4,10 @@ import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { attachments, patients, visits } from "../db/schema.js";
+import { isDemoShowcaseMode, requireResolvedOrganizationId } from "../accessGuard.js";
+import { withTenantCtx } from "../db/rls.js";
+import { patients, attachments, visits } from "../db/schema.js";
+import { safeLogError } from "../observability/logger.js";
 import { UPLOADS_DIR } from "./fileModules/common.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,22 +46,15 @@ export interface PhotoBridgeSession {
 // In-Memory сессионный пул с TTL 15 минут
 const sessionsMap = new Map<string, PhotoBridgeSession>();
 
-// Автоочистка просроченных токенов каждые 5 минут
-setInterval(() => {
-	const now = Date.now();
-	for (const [token, session] of sessionsMap.entries()) {
-		if (session.expiresAt <= now) {
-			sessionsMap.delete(token);
-		}
-	}
-}, 5 * 60 * 1000).unref();
-
 function getPatientInitials(fullName: string | null | undefined): string {
 	if (!fullName || !fullName.trim()) return "Пациент";
 	const parts = fullName.trim().split(/\s+/);
-	if (parts.length === 1) return parts[0]!;
-	if (parts.length === 2) return `${parts[0]} ${parts[1]!.charAt(0)}.`;
-	return `${parts[0]} ${parts[1]!.charAt(0)}. ${parts[2]!.charAt(0)}.`;
+	const first = parts[0] ?? "Пациент";
+	const second = parts[1];
+	const third = parts[2];
+	if (!second) return first;
+	if (!third) return `${first} ${second.charAt(0)}.`;
+	return `${first} ${second.charAt(0)}. ${third.charAt(0)}.`;
 }
 
 function stripMultipartWrapperFromBuffer(buffer: Buffer): {
@@ -116,6 +110,33 @@ const createSessionSchema = z.object({
 	})).optional(),
 });
 
+const tokenParamSchema = z.object({
+	token: z.string().min(8).max(128).regex(/^[a-zA-Z0-9_-]+$/),
+});
+
+const uploadQuerySchema = z.object({
+	slotId: z.string().min(1).max(64).optional(),
+});
+
+const jsonPhotoPayloadSchema = z.object({
+	dataUrl: z.string().max(25 * 1024 * 1024).optional(),
+	imageUrl: z.string().max(25 * 1024 * 1024).optional(),
+	imageBase64: z.string().max(25 * 1024 * 1024).optional(),
+	slotId: z.union([z.string().max(64), z.number()]).optional(),
+	fileName: z.string().max(255).optional(),
+	filename: z.string().max(255).optional(),
+});
+
+const ALLOWED_IMAGE_EXTENSIONS = new Set([".webp", ".jpg", ".jpeg", ".png", ".heic", ".heif"]);
+const MIME_TO_EXTENSION: Record<string, string> = {
+	"image/webp": ".webp",
+	"image/jpeg": ".jpg",
+	"image/jpg": ".jpg",
+	"image/png": ".png",
+	"image/heic": ".heic",
+	"image/heif": ".heif",
+};
+
 interface FastifyMultipartFilePart {
 	file: AsyncIterable<Buffer>;
 	filename?: string;
@@ -127,16 +148,21 @@ interface FastifyWithMultipart {
 	file?: () => Promise<FastifyMultipartFilePart | undefined>;
 }
 
-interface JsonPhotoPayload {
-	dataUrl?: string;
-	imageUrl?: string;
-	imageBase64?: string;
-	slotId?: string | number;
-	fileName?: string;
-	filename?: string;
-}
-
 export function registerPhotoBridgeRoutes(app: FastifyInstance) {
+	// Автоочистка просроченных токенов каждые 5 минут с очисткой при остановке Fastify
+	const cleanupTimer = setInterval(() => {
+		const now = Date.now();
+		for (const [token, session] of sessionsMap.entries()) {
+			if (session.expiresAt <= now) {
+				sessionsMap.delete(token);
+			}
+		}
+	}, 5 * 60 * 1000);
+	cleanupTimer.unref();
+	app.addHook("onClose", async () => {
+		clearInterval(cleanupTimer);
+	});
+
 	// Добавляем поддержку бинарных тел запросов для фотопротокола без сбоев дублирования
 	const binaryTypes = [
 		"image/jpeg",
@@ -154,8 +180,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					done(null, body);
 				});
 			}
-		} catch {
-			// Игнорируем если тип уже зарегистрирован внешним плагином
+		} catch (err) {
+			app.log.debug(
+				{ contentType: ct, err: safeLogError(err) },
+				"[photo-bridge] Content-type parser registration skipped",
+			);
 		}
 	}
 
@@ -180,9 +209,13 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		const { patientId, visitId, presetId, slots } = parseResult.data;
 
 		let patientFullName: string | null | undefined;
+		const allowDemoFixture = orgId.startsWith("demo-") || isDemoShowcaseMode();
 
-		// Мандат 8wy: в демо-режиме и тестовых стендах разрешаем демо-пациента без 404 ошибки и без падения 22P02
-		if (orgId.startsWith("demo-") || patientId.startsWith("01a00000") || patientId === "chairside" || patientId === "test") {
+		// Мандат 8wy: только в демо-режиме разрешаем демо-пациента без 404 ошибки и без падения 22P02
+		if (
+			orgId.startsWith("demo-") ||
+			(allowDemoFixture && (patientId.startsWith("01a00000") || patientId === "chairside" || patientId === "test"))
+		) {
 			patientFullName = "Демо Пациент";
 		} else if (!UUID_REGEX.test(patientId)) {
 			return reply.code(404).send({
@@ -190,12 +223,15 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 				message: "Пациент не найден в текущей организации.",
 			});
 		} else {
-			// Проверка пациента в организации (Tenant Isolation)
-			const [patient] = await db
-				.select({ id: patients.id, fullName: patients.fullName })
-				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-				.limit(1);
+			// Проверка пациента в организации под RLS-контекстом клиники (Tenant Isolation)
+			const patient = await withTenantCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.limit(1);
+				return row ?? null;
+			});
 
 			if (!patient) {
 				return reply.code(404).send({
@@ -209,18 +245,21 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		// Если передан visitId, проверяем его принадлежность без сбоев 22P02
 		if (visitId) {
 			if (!UUID_REGEX.test(visitId)) {
-				if (!orgId.startsWith("demo-") && visitId !== "chairside" && visitId !== "test") {
+				if (!allowDemoFixture || (visitId !== "chairside" && visitId !== "test")) {
 					return reply.code(404).send({
 						error: "VisitNotFound",
 						message: "Приём не найден в текущей клинике.",
 					});
 				}
 			} else {
-				const [visitRow] = await db
-					.select({ id: visits.id })
-					.from(visits)
-					.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-					.limit(1);
+				const visitRow = await withTenantCtx(orgId, async (tx) => {
+					const [row] = await tx
+						.select({ id: visits.id })
+						.from(visits)
+						.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+						.limit(1);
+					return row ?? null;
+				});
 				if (!visitRow && !orgId.startsWith("demo-")) {
 					return reply.code(404).send({
 						error: "VisitNotFound",
@@ -270,7 +309,14 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * Публичный эндпоинт (врач на личном смартфоне в перчатках без ввода паролей)
 	 */
 	app.get("/api/photo-bridge/session/:token", async (request: FastifyRequest, reply: FastifyReply) => {
-		const { token } = request.params as { token: string };
+		const paramParse = tokenParamSchema.safeParse(request.params);
+		if (!paramParse.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат токена QR-сессии.",
+			});
+		}
+		const { token } = paramParse.data;
 		const session = sessionsMap.get(token);
 
 		if (!session || session.expiresAt <= Date.now()) {
@@ -300,7 +346,14 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * Поддерживает как multipart/raw бинарные потоки, так и JSON payload
 	 */
 	app.post("/api/photo-bridge/upload/:token", async (request: FastifyRequest, reply: FastifyReply) => {
-		const { token } = request.params as { token: string };
+		const paramParse = tokenParamSchema.safeParse(request.params);
+		if (!paramParse.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат токена QR-сессии.",
+			});
+		}
+		const { token } = paramParse.data;
 		const session = sessionsMap.get(token);
 
 		if (!session || session.expiresAt <= Date.now()) {
@@ -314,8 +367,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		let fileBuffer: Buffer | null = null;
 		let filename = `chairside-${Date.now()}.webp`;
 		let mimeType = "image/webp";
-		const query = request.query as { slotId?: string };
-		let slotId = query?.slotId || (request.headers["x-slot-id"] as string) || "frontal_smile";
+		const queryParse = uploadQuerySchema.safeParse(request.query);
+		const querySlotId = queryParse.success ? queryParse.data.slotId : undefined;
+		const headerSlotRaw = request.headers["x-slot-id"];
+		const headerSlotId = typeof headerSlotRaw === "string" ? headerSlotRaw.slice(0, 64) : undefined;
+		let slotId = querySlotId || headerSlotId || "frontal_smile";
 
 		// 1. Попытка через стандартный multipart stream, если доступен
 		const reqWithMultipart = request as FastifyRequest & FastifyWithMultipart;
@@ -333,8 +389,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					const fields = part.fields;
 					if (fields?.slotId?.value) slotId = fields.slotId.value;
 				}
-			} catch {
-				// Fallback to body inspection
+			} catch (err) {
+				request.log.warn(
+					{ err: safeLogError(err) },
+					"[photo-bridge] Multipart stream parse failed, trying fallback body parser",
+				);
 			}
 		}
 
@@ -353,8 +412,15 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		}
 
 		// 3. Если тело пришло как JSON (dataUrl или imageBase64)
-		if (!fileBuffer && request.body && typeof request.body === "object") {
-			const b = request.body as JsonPhotoPayload;
+		if (!fileBuffer && request.body && typeof request.body === "object" && !Buffer.isBuffer(request.body)) {
+			const jsonParsed = jsonPhotoPayloadSchema.safeParse(request.body);
+			if (!jsonParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат данных снимка.",
+				});
+			}
+			const b = jsonParsed.data;
 			const dataUrl = b.dataUrl || b.imageUrl || b.imageBase64;
 			if (typeof dataUrl === "string") {
 				const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -365,7 +431,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					fileBuffer = Buffer.from(dataUrl, "base64");
 				}
 			}
-			if (b.slotId !== undefined) slotId = String(b.slotId);
+			if (b.slotId !== undefined) slotId = String(b.slotId).slice(0, 64);
 			if (b.fileName || b.filename) filename = String(b.fileName || b.filename);
 		}
 
@@ -376,33 +442,76 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Обеспечиваем существование каталога загрузок
+		const normalizedMime = mimeType.toLowerCase().split(";")[0]?.trim() || "image/webp";
+		const requestedExt = path.extname(filename).toLowerCase();
+		const mappedMimeExt = MIME_TO_EXTENSION[normalizedMime];
+		if (requestedExt && !ALLOWED_IMAGE_EXTENSIONS.has(requestedExt)) {
+			return reply.code(400).send({
+				error: "UnsupportedImageExtension",
+				message: "Допускаются только изображения форматов WebP, JPEG, PNG, HEIC или HEIF.",
+			});
+		}
+		if (!mappedMimeExt && normalizedMime !== "application/octet-stream") {
+			return reply.code(400).send({
+				error: "UnsupportedImageMimeType",
+				message: "Неподдерживаемый MIME-тип файла. Отправьте изображение.",
+			});
+		}
+		const rawExt = ALLOWED_IMAGE_EXTENSIONS.has(requestedExt)
+			? requestedExt
+			: (mappedMimeExt ?? ".webp");
+
+		// Обеспечиваем существование каталога загрузок и проверяем path containment
 		await fs.mkdir(UPLOADS_DIR, { recursive: true });
 
 		const uniqueSuffix = crypto.randomUUID();
-		const rawExt = path.extname(filename) || ".webp";
-		const safeBase = path.basename(filename, rawExt).replace(/[^a-zA-Z0-9.-]/g, "_");
+		const safeBase = (path.basename(filename, path.extname(filename)).replace(/[^a-zA-Z0-9.-]/g, "_") || "chairside").replace(/^\.+/, "") || "chairside";
 		const storageFilename = `${uniqueSuffix}-${safeBase}${rawExt}`;
-		const storagePath = path.join(UPLOADS_DIR, storageFilename);
+		const resolvedUploadsDir = path.resolve(UPLOADS_DIR);
+		const storagePath = path.resolve(resolvedUploadsDir, storageFilename);
+		if (!storagePath.startsWith(resolvedUploadsDir + path.sep)) {
+			return reply.code(400).send({
+				error: "InvalidFileName",
+				message: "Некорректное имя файла изображения.",
+			});
+		}
 
 		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 		await fs.writeFile(storagePath, fileBuffer);
 
-		// Создаем запись в attachments в PostgreSQL 18
-		const [attachment] = await db
-			.insert(attachments)
-			.values({
-				organizationId: session.organizationId,
-				patientId: UUID_REGEX.test(session.patientId) ? session.patientId : null,
-				visitId: session.visitId && UUID_REGEX.test(session.visitId) ? session.visitId : null,
-				fileName: filename,
-				mimeType,
-				storagePath: storageFilename,
-				sha256,
-			})
-			.returning();
+		// Создаем запись в attachments в PostgreSQL 18 под RLS-контекстом клиники
+		let attachment: typeof attachments.$inferSelect | undefined;
+		try {
+			attachment = await withTenantCtx(session.organizationId, async (tx) => {
+				const [row] = await tx
+					.insert(attachments)
+					.values({
+						organizationId: session.organizationId,
+						patientId: UUID_REGEX.test(session.patientId) ? session.patientId : null,
+						visitId: session.visitId && UUID_REGEX.test(session.visitId) ? session.visitId : null,
+						fileName: path.basename(filename).slice(0, 255),
+						mimeType: normalizedMime,
+						storagePath: storageFilename,
+						sha256,
+					})
+					.returning();
+				return row;
+			});
+		} catch (dbErr) {
+			await fs.rm(storagePath, { force: true }).catch((rmErr) => {
+				request.log.warn({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove orphan photo file after DB error");
+			});
+			request.log.error({ err: safeLogError(dbErr) }, "[photo-bridge] Failed to insert attachment row");
+			return reply.code(500).send({
+				error: "AttachmentSaveFailed",
+				message: "Не удалось сохранить снимок на сервере.",
+			});
+		}
 
 		if (!attachment) {
+			await fs.rm(storagePath, { force: true }).catch((rmErr) => {
+				request.log.warn({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove orphan photo file");
+			});
 			return reply.code(500).send({
 				error: "AttachmentSaveFailed",
 				message: "Не удалось сохранить снимок на сервере.",
@@ -430,10 +539,20 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	/**
 	 * Реактивный поллинг для десктопного монитора врача
 	 * GET /api/photo-bridge/poll/:token
-	 * Возвращает актуальный список фото без ручного F5
+	 * Возвращает актуальный список фото без ручного F5 (только авторизованной клинике-владельцу)
 	 */
 	app.get("/api/photo-bridge/poll/:token", async (request: FastifyRequest, reply: FastifyReply) => {
-		const { token } = request.params as { token: string };
+		const orgId = await requireResolvedOrganizationId(request, reply, "photo bridge poll");
+		if (!orgId) return;
+
+		const paramParse = tokenParamSchema.safeParse(request.params);
+		if (!paramParse.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат токена QR-сессии.",
+			});
+		}
+		const { token } = paramParse.data;
 		const session = sessionsMap.get(token);
 
 		if (!session || session.expiresAt <= Date.now()) {
@@ -441,6 +560,13 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			return reply.code(410).send({
 				error: "SessionExpiredOrNotFound",
 				message: "Сессия QR-загрузки истекла.",
+			});
+		}
+
+		if (session.organizationId !== orgId) {
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Доступ к QR-сессии другой клиники запрещён.",
 			});
 		}
 
@@ -457,7 +583,25 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 	 * DELETE /api/photo-bridge/session/:token
 	 */
 	app.delete("/api/photo-bridge/session/:token", async (request: FastifyRequest, reply: FastifyReply) => {
-		const { token } = request.params as { token: string };
+		const orgId = await requireResolvedOrganizationId(request, reply, "photo bridge delete");
+		if (!orgId) return;
+
+		const paramParse = tokenParamSchema.safeParse(request.params);
+		if (!paramParse.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат токена QR-сессии.",
+			});
+		}
+		const { token } = paramParse.data;
+		const existing = sessionsMap.get(token);
+		if (existing && existing.organizationId !== orgId) {
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Завершение QR-сессии другой клиники запрещено.",
+			});
+		}
+
 		const deleted = sessionsMap.delete(token);
 
 		return reply.send({

@@ -32,6 +32,9 @@ import {
 } from "@dental/shared";
 
 import { registerHardwareRoutes } from "../../routes/hardware.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { CLINIC_TOKEN_HEADER } from "../../security/identity.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	HardwareDiscoveryService,
 	hardwareDiscoveryService,
@@ -330,11 +333,21 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 	// ========================================================================
 	describe("Hardware REST API Endpoints", () => {
 		let app: FastifyInstance;
+		let clinicHeaders: Record<string, string>;
 
 		before(async () => {
 			app = Fastify({ logger: false });
 			await registerHardwareRoutes(app);
 			await app.ready();
+			const token = signToken(
+				{
+					organizationId: "11111111-2222-3333-4444-555555555555",
+					role: "clinic",
+				},
+				authTokenSecret(),
+				3600,
+			);
+			clinicHeaders = { [CLINIC_TOKEN_HEADER]: token };
 		});
 
 		after(async () => {
@@ -357,9 +370,16 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 		});
 
 		it("GET /api/hardware/devices returns connected devices and summary", async () => {
+			const unauth = await app.inject({
+				method: "GET",
+				url: "/api/hardware/devices?probeNetwork=false",
+			});
+			assert.ok(unauth.statusCode === 401 || unauth.statusCode === 403 || unauth.statusCode === 503);
+
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/hardware/devices?probeNetwork=false",
+				headers: clinicHeaders,
 			});
 
 			assert.equal(response.statusCode, 200);
@@ -370,10 +390,24 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			assert.ok(typeof body.summary.total === "number");
 		});
 
+		it("GET /api/hardware/devices/probe-tcp blocks SSRF targets (loopback and cloud metadata)", async () => {
+			for (const blockedIp of ["127.0.0.1", "169.254.169.254", "::1"]) {
+				const res = await app.inject({
+					method: "GET",
+					url: `/api/hardware/devices/probe-tcp?ip=${encodeURIComponent(blockedIp)}&port=5432`,
+					headers: clinicHeaders,
+				});
+				assert.equal(res.statusCode, 400);
+				const body = JSON.parse(res.payload);
+				assert.equal(body.error, "SsrfBlocked");
+			}
+		});
+
 		it("POST /api/hardware/test-print executes test print and returns hex preview", async () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/hardware/test-print",
+				headers: clinicHeaders,
 				payload: {
 					deviceType: "thermal_receipt",
 					interface: "system_spooler",
@@ -393,6 +427,7 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/hardware/test-print",
+				headers: clinicHeaders,
 				payload: {
 					// Missing deviceType and interface
 					randomField: 123,
@@ -407,6 +442,7 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/hardware/sensor-status",
+				headers: clinicHeaders,
 			});
 
 			assert.equal(response.statusCode, 200);
@@ -421,6 +457,7 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			const responseWithFolder = await app.inject({
 				method: "GET",
 				url: `/api/hardware/sensor-status?modelId=vatech_ezsensor_hd&hotFolder=${encodeURIComponent(process.cwd())}`,
+				headers: clinicHeaders,
 			});
 
 			assert.equal(responseWithFolder.statusCode, 200);

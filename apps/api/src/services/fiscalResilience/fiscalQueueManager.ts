@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 import {
 	type Ffd12VatRate,
 	type FiscalReceiptDetails,
+	kopecksToRub,
 	rublesToKopecks,
 	type TaxDeductionCategory,
 } from "@dental/shared";
@@ -60,7 +61,7 @@ export class FiscalQueueManager {
 		const autoRetryToken = randomUUID();
 
 		// Construct or reuse FFD 1.2 statutory receipt payload
-		let receiptPayload: Ffd12ReceiptPayload = input.receiptPayload!;
+		let receiptPayload: Ffd12ReceiptPayload | undefined = input.receiptPayload;
 		if (!receiptPayload) {
 			const paymentMethodMap: Record<
 				string,
@@ -171,23 +172,29 @@ export class FiscalQueueManager {
 						)
 						.limit(1);
 
-					return {
-						payment: existingPayment,
-						queueItem: existingQueue!,
-					};
+					if (existingQueue) {
+						return {
+							payment: existingPayment,
+							queueItem: existingQueue,
+						};
+					}
 				}
 			}
 
 			// Insert payment record — transaction is committed regardless of physical printer status
+			const exactAmountRub = kopecksToRub(totalKopecks);
+			const now = new Date();
 			const [newPayment] = await targetDb
 				.insert(payments)
 				.values({
 					organizationId,
 					patientId,
 					visitId: visitId || null,
-					amountRub,
+					amountRub: exactAmountRub,
+					amountKopecks: BigInt(totalKopecks),
 					method: method === "sbp" ? "online" : method,
 					status: "paid",
+					paidAt: now,
 					clientMutationId: clientMutationId || null,
 					fiscalReceipt: {
 						operationType: "income",

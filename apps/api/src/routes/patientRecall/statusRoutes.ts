@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { z } from "zod";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { auditEvents, communicationEvents, patientRecalls } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { roleHasPermission } from "../../security/permissions.js";
@@ -8,6 +9,8 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { recallCandidateBelongsTo } from "../../services/patients/recallCandidates.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { badRequest, statusUpdateSchema } from "./types.js";
+
+const uuidSchema = z.string().uuid();
 
 export function registerStatusRoutes(app: FastifyInstance) {
 	const handleStatusUpdate = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -30,20 +33,8 @@ export function registerStatusRoutes(app: FastifyInstance) {
 		}
 
 		const { patientId } = request.params as { patientId: string };
-		if (!patientId) {
-			return badRequest(reply, "Не указан идентификатор пациента.");
-		}
-
-		if (
-			!(await recallCandidateBelongsTo(
-				context.organizationId,
-				patientId,
-			))
-		) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в этой клинике.",
-			});
+		if (!patientId || !uuidSchema.safeParse(patientId).success) {
+			return badRequest(reply, "Некорректный идентификатор пациента.");
 		}
 
 		const parsed = statusUpdateSchema.safeParse(request.body);
@@ -53,14 +44,26 @@ export function registerStatusRoutes(app: FastifyInstance) {
 
 		const { status, channel, note } = parsed.data;
 		const normalizedAction = `RECALL_STATUS_${status.toUpperCase()}`;
-		const actorUserId = (request.user as { id?: string } | undefined)?.id ?? null;
+		const actorUserId = identity.userId ?? null;
 
 		const validCommChannels = ["sms", "whatsapp", "telegram", "phone", "email"] as const;
 		const commChannel = channel
 			? validCommChannels.find((c) => c === channel.toLowerCase())
 			: undefined;
 
-		await db.transaction(async (tx) => {
+		const updatedAt = new Date();
+		const updatedAtIso = updatedAt.toISOString();
+
+		const belongs = await withTenantCtx(context.organizationId, async (tx) => {
+			if (
+				!(await recallCandidateBelongsTo(
+					context.organizationId,
+					patientId,
+				))
+			) {
+				return false;
+			}
+
 			await tx.insert(auditEvents).values({
 				organizationId: context.organizationId,
 				actorUserId,
@@ -111,8 +114,8 @@ export function registerStatusRoutes(app: FastifyInstance) {
 						status,
 						channel: commChannel ?? channel ?? null,
 						notes: note ?? null,
-						completedAt: isCompletedState ? new Date() : null,
-						updatedAt: new Date(),
+						completedAt: isCompletedState ? updatedAt : null,
+						updatedAt,
 					})
 					.where(
 						and(
@@ -125,31 +128,41 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					organizationId: context.organizationId,
 					patientId,
 					status,
-					dueDate: new Date(),
+					dueDate: updatedAt,
 					channel: commChannel ?? channel ?? null,
 					notes: note ?? `Обновление статуса профосмотра: ${status}`,
-					completedAt: isCompletedState ? new Date() : null,
+					completedAt: isCompletedState ? updatedAt : null,
 				});
 			}
+
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(context.organizationId, {
+					type: "PATIENT_RECALL_UPDATED",
+					payload: {
+						patientId,
+						status,
+						channel: commChannel ?? channel ?? null,
+						note: note ?? null,
+						updatedAt: updatedAtIso,
+					},
+				});
+			});
+
+			return true;
 		});
 
-		const updatedAt = new Date().toISOString();
-		wsBroker.broadcastToOrganization(context.organizationId, {
-			type: "PATIENT_RECALL_UPDATED",
-			payload: {
-				patientId,
-				status,
-				channel: commChannel ?? channel ?? null,
-				note: note ?? null,
-				updatedAt,
-			},
-		});
+		if (!belongs) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
+		}
 
 		return reply.code(200).send({
 			ok: true,
 			patientId,
 			status,
-			updatedAt,
+			updatedAt: updatedAtIso,
 			message: "Статус контрольного осмотра сохранён.",
 		});
 	};

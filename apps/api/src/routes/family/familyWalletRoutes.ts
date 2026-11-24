@@ -100,6 +100,7 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				patientId: payParsed.data.patientId,
 				payerPatientId: payParsed.data.payerPatientId,
 				amountRub: payParsed.data.amountRub,
+				amountKopecks: payParsed.data.amountKopecks,
 				serviceId: payParsed.data.serviceId,
 				catalogItemId: payParsed.data.catalogItemId,
 				discountRub: payParsed.data.discountRub,
@@ -155,7 +156,20 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 			payerPatientId?: string;
 		};
 		const taxYear = query.taxYear?.trim() || String(new Date().getFullYear());
+		const parsedTaxYear = Number.parseInt(taxYear, 10);
+		if (!/^\d{4}$/.test(taxYear) || !Number.isInteger(parsedTaxYear) || parsedTaxYear < 2000 || parsedTaxYear > 2100) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный налоговый период (taxYear должен быть 4-значным годом, например 2025)",
+			});
+		}
 		const payerPatientId = query.payerPatientId?.trim();
+		if (payerPatientId && !UUID_REGEX.test(payerPatientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор плательщика payerPatientId (ожидается UUID)",
+			});
+		}
 
 		try {
 			const settings = await getClinicSettingsFromDb(organizationId);

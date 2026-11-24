@@ -1,7 +1,7 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
-import { db } from "../../db/client.js";
+import type { TenantDb } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	imagingStudies,
@@ -20,9 +20,10 @@ async function servePatientScan(
 	auth: { patientId: string; organizationId: string },
 	isView: boolean,
 	reply: FastifyReply,
+	tx: TenantDb,
 ) {
 	// 1. Поиск в imagingStudies (КТ, ОПТГ, визиография)
-	const [study] = await db
+	const [study] = await tx
 		.select()
 		.from(imagingStudies)
 		.where(
@@ -61,7 +62,7 @@ async function servePatientScan(
 	}
 
 	// 2. Поиск в xrayScans (прицельные снимки визиографа)
-	const [xray] = await db
+	const [xray] = await tx
 		.select()
 		.from(xrayScans)
 		.where(
@@ -120,8 +121,8 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const scans = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const scans = await tx
 				.select({
 					id: xrayScans.id,
 					kind: xrayScans.kind,
@@ -156,15 +157,20 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 								? "3D КТ (2D срез)"
 								: "Прицельная визиография RVG",
 					toothFdi: s.toothCode ? [s.toothCode] : [],
-					effectiveDoseMicrosv:
-						s.kind === "optg" ? 15.0 : s.kind === "cbct" ? 45.0 : 3.0,
+					effectiveDoseMicrosv: null,
 					imageUrl:
 						s.imageDataUri ||
 						(s.storagePath
 							? `/api/portal/scans/${s.id}/download`
 							: ""),
 					diagnosticConclusion:
-						s.aiSummary || s.notes || "Снимок без патологических изменений",
+						s.aiSummary ||
+						s.notes ||
+						(s.status === "error"
+							? "Ошибка анализа снимка"
+							: s.status === "pending" || s.status === "analyzing"
+								? "Заключение формируется"
+								: "Заключение врача не добавлено"),
 					capturedAtIso: s.capturedAt.toISOString(),
 				})),
 			};
@@ -185,8 +191,8 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 			return { error: "InvalidScanId" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			return servePatientScan(scanId, auth, false, reply);
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			return servePatientScan(scanId, auth, false, reply, tx);
 		});
 	});
 
@@ -204,8 +210,8 @@ export async function registerPortalImagingRoutes(server: FastifyInstance): Prom
 			return { error: "InvalidScanId" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			return servePatientScan(scanId, auth, true, reply);
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			return servePatientScan(scanId, auth, true, reply, tx);
 		});
 	});
 }

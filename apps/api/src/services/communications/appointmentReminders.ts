@@ -47,6 +47,9 @@ import {
 	resolveRecipientAddress,
 } from "./dispatcher.js";
 import { renderTemplate } from "./templateEngine/templateRenderer.js";
+import { createApiLogger } from "../../observability/logger.js";
+
+const remindersLogger = createApiLogger("appointmentReminders");
 
 /** Статусы, при которых напоминание уместно. Отменённому приёму оно вредно. */
 const REMINDABLE_STATUSES = ["planned", "confirmed"] as const;
@@ -151,16 +154,12 @@ function logStructured(
 	data: Record<string, unknown>,
 	msg: string,
 ) {
-	const payload = {
-		level,
-		time: new Date().toISOString(),
-		...data,
-		msg,
-	};
 	if (level === "error") {
-		process.stderr.write(JSON.stringify(payload) + "\n");
+		remindersLogger.error(data, msg);
+	} else if (level === "warn") {
+		remindersLogger.warn(data, msg);
 	} else {
-		process.stdout.write(JSON.stringify(payload) + "\n");
+		remindersLogger.info(data, msg);
 	}
 }
 

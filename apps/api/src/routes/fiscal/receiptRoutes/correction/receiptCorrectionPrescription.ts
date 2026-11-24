@@ -10,8 +10,10 @@
  */
 
 import {
+	buildFiscalReceiptPayloadSignature,
 	type CreateFiscalReceiptPayloadInput,
 	kopecksToNumericString,
+	verifyFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
@@ -20,6 +22,7 @@ import { withTenantCtx } from "../../../../db/rls.js";
 import { fiscalReceiptQueue } from "../../../../db/schema.js";
 import { LanKktDriverService } from "../../../../services/hardware/index.js";
 import { FiscalReceiptFactory } from "../../../../services/kkt/FiscalReceiptFactory.js";
+import { isValidUuid } from "../../../../utils/httpIdempotency.js";
 import { handleFiscalSelfCorrection } from "./receiptCorrectionSelfCalculation.js";
 import {
 	fiscalCorrectionPayloadSchema,
@@ -40,7 +43,11 @@ export async function handleFiscalPrescriptionCorrection(
 	if (!ctx) return;
 	const orgId = ctx.organizationId;
 
-	const body = (request.body || {}) as Record<string, unknown>;
+	const rawBody = request.body;
+	const body: Record<string, unknown> =
+		rawBody && typeof rawBody === "object" && !Array.isArray(rawBody)
+			? (rawBody as Record<string, unknown>)
+			: {};
 	const normalizedInput = {
 		...body,
 		isCorrection: true,
@@ -61,19 +68,20 @@ export async function handleFiscalPrescriptionCorrection(
 		(request.headers["idempotency-key"] as string | undefined) ||
 		(request.headers["x-idempotency-key"] as string | undefined);
 	const rawMutationId = data.clientMutationId?.trim() || headerIdempotencyKey?.trim();
+	const baseMutationId = rawMutationId?.includes("#")
+		? rawMutationId.split("#")[0]
+		: rawMutationId;
 
-	function isValidIdempotencyKey(key: string): boolean {
-		const base = key.includes("#") ? key.split("#")[0] : key;
-		return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(base || "");
-	}
-
-	if (!rawMutationId || !isValidIdempotencyKey(rawMutationId)) {
+	if (!rawMutationId || !isValidUuid(baseMutationId || "")) {
 		return reply.status(400).send({
 			error: "IdempotencyKeyRequired",
 			message: "Для чека коррекции обязателен валидный заголовок Idempotency-Key (UUIDv7)",
 		});
 	}
 	const clientMutationId = rawMutationId;
+
+	reply.header("Idempotency-Key", clientMutationId);
+	reply.header("X-Idempotency-Key", clientMutationId);
 
 	// Explicit check for tax authority prescription details
 	const prescriptionCheck = validatePrescriptionRequirements(
@@ -108,8 +116,20 @@ export async function handleFiscalPrescriptionCorrection(
 	};
 
 	const compiled = FiscalReceiptFactory.buildFfd12Receipt(preparedInput);
+	const expectedSignature = buildFiscalReceiptPayloadSignature({
+		patientId: data.patientId,
+		operationType: data.operationType,
+		taxationSystem: data.taxationSystem,
+		totalKopecks: data.totalKopecks,
+		cashKopecks: data.cashKopecks,
+		electronicCardKopecks: data.electronicCardKopecks,
+		sbpKopecks: data.sbpKopecks,
+		prepaidKopecks: data.prepaidKopecks,
+		creditKopecks: data.creditKopecks,
+		items: data.items,
+	});
 
-	// Phase 1: Fast Transaction (Advisory Lock + Idempotency Check + Outbox Buffer)
+	// Phase 1: Fast Transaction (Advisory Lock + Idempotency + Conflict Check + Outbox Buffer)
 	const preflight = await withTenantCtx(orgId, async (tx) => {
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${clientMutationId}))`,
@@ -128,8 +148,16 @@ export async function handleFiscalPrescriptionCorrection(
 
 		if (existingRow) {
 			const storedPayload = (existingRow.payloadJson || {}) as Record<string, unknown>;
+			const verification = verifyFiscalCompositeIdempotencyKey(
+				clientMutationId,
+				expectedSignature,
+			);
+			const totalKopecksMatch = Number(storedPayload["totalKopecks"]) === data.totalKopecks;
+			if (!verification.isValid || !totalKopecksMatch) {
+				return { kind: "conflict" as const };
+			}
 			return {
-				isExisting: true,
+				kind: "replay" as const,
 				responseData: {
 					success: true,
 					replayed: true,
@@ -142,7 +170,6 @@ export async function handleFiscalPrescriptionCorrection(
 					totalRub: kopecksToNumericString(data.totalKopecks),
 					message: "Чек коррекции успешно сформирован (повтор)",
 				},
-				queueRow: undefined,
 			};
 		}
 
@@ -162,10 +189,19 @@ export async function handleFiscalPrescriptionCorrection(
 			})
 			.returning();
 
-		return { isExisting: false, responseData: undefined, queueRow };
+		return { kind: "buffered" as const, queueRow };
 	});
 
-	if (preflight.isExisting) {
+	if (preflight.kind === "conflict") {
+		return reply.status(409).send({
+			error: "FiscalReceiptConflictError",
+			message: "Чек коррекции по предписанию с таким ключом уже зарегистрирован с другими параметрами.",
+		});
+	}
+
+	if (preflight.kind === "replay") {
+		reply.header("idempotency-replayed", "true");
+		reply.header("x-idempotency-replayed", "true");
 		return reply.status(200).send(preflight.responseData);
 	}
 

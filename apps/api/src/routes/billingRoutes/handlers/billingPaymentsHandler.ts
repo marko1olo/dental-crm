@@ -1,9 +1,10 @@
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
+import { isValidUuid } from "../../../utils/httpIdempotency.js";
 
 export async function handleGetBillingPayments(
 	request: FastifyRequest,
@@ -19,7 +20,13 @@ export async function handleGetBillingPayments(
 
 	const query = request.query as Record<string, string | undefined> | undefined;
 	const period = query?.period;
-	const patientId = query?.patientId;
+	const patientId = query?.patientId?.trim();
+	if (patientId && !isValidUuid(patientId)) {
+		return reply.code(400).send({
+			error: "BillingValidationError",
+			message: "Некорректный идентификатор пациента (ожидается UUID).",
+		});
+	}
 
 	let dateThreshold: Date | undefined;
 	const now = new Date();
@@ -44,30 +51,35 @@ export async function handleGetBillingPayments(
 		conditions.push(sql`${payments.paidAt} >= ${dateThreshold}`);
 	}
 
-	const rows = await db
-		.select()
-		.from(payments)
-		.where(and(...conditions))
-		.orderBy(desc(payments.paidAt))
-		.limit(500);
+	const rows = await withTenantCtx(orgId, async (tx) =>
+		tx
+			.select()
+			.from(payments)
+			.where(and(...conditions))
+			.orderBy(desc(payments.paidAt))
+			.limit(500),
+	);
 
-	const data = rows.map((row) => ({
-		id: row.id,
-		amountRub: Number(row.amountRub),
-		amountKopecks:
-			row.amountKopecks != null
+	const data = rows.map((row) => {
+		const amountKopecks =
+			row.amountKopecks != null && row.amountKopecks > 0n
 				? Number(row.amountKopecks)
-				: rublesToKopecks(Number(row.amountRub)),
-		status: row.status,
-		method: row.method,
-		paymentMethod: row.method,
-		patientId: row.patientId,
-		visitId: row.visitId,
-		documentId: row.documentId,
-		isPrimaryPatient: true,
-		paidAt: row.paidAt ? row.paidAt.toISOString() : undefined,
-		createdAt: row.createdAt ? row.createdAt.toISOString() : undefined,
-	}));
+				: rublesToKopecks(Number(row.amountRub));
+		return {
+			id: row.id,
+			amountRub: kopecksToRubles(amountKopecks),
+			amountKopecks,
+			status: row.status,
+			method: row.method,
+			paymentMethod: row.method,
+			patientId: row.patientId,
+			visitId: row.visitId,
+			documentId: row.documentId,
+			isPrimaryPatient: true,
+			paidAt: row.paidAt ? row.paidAt.toISOString() : undefined,
+			createdAt: row.createdAt ? row.createdAt.toISOString() : undefined,
+		};
+	});
 
 	return reply.send({ success: true, data });
 }

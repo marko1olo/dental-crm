@@ -154,10 +154,10 @@ describe("Sberbank & SBP Webhook Signature Verification Tests", () => {
 			true,
 		);
 
-		// Raw secret header match
+		// Raw secret header match without cryptographic HMAC/SHA-256 signature must be rejected
 		assert.equal(
 			verifySbpWebhookSignature({ ...params }, FIXTURE_CALLBACK_TOKEN, FIXTURE_CALLBACK_TOKEN),
-			true,
+			false,
 		);
 	});
 
@@ -669,7 +669,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 			3600,
 		);
 
-		const idempotencyKey = `pos-idem-${crypto.randomUUID()}`;
+		const idempotencyKey = crypto.randomUUID();
 		const payload = {
 			patientId: PATIENT_ID,
 			invoiceId: INVOICE_ID,

@@ -99,15 +99,30 @@ export async function calculateShiftTenderTotals(
 	let opsExpenseCashKop = 0;
 
 	for (const op of ops) {
-		const amtKop = rubToKopecks(op.amountRub);
+		const amtKop =
+			op.amountKopecks !== null && op.amountKopecks !== undefined
+				? Number(op.amountKopecks)
+				: rubToKopecks(op.amountRub);
+		const meta =
+			op.metadata && typeof op.metadata === "object"
+				? (op.metadata as Record<string, unknown>)
+				: null;
+		const isAdvanceOffsetOp = meta?.isAdvanceOffset === true;
+		const isDepositRefundOp = meta?.isDepositRefund === true;
+		const isDmsOp = meta?.tenderType === "dms";
+
 		if (op.operationType === "introduction") {
 			totalIntroductionsKop += amtKop;
 		} else if (op.operationType === "withdrawal") {
 			totalWithdrawalsKop += amtKop;
 		} else if (op.operationType === "income") {
-			opsIncomeCashKop += amtKop;
-		} else if (op.operationType === "expense") {
-			opsExpenseCashKop += amtKop;
+			if (!isAdvanceOffsetOp && !isDmsOp) {
+				opsIncomeCashKop += amtKop;
+			}
+		} else if (op.operationType === "expense" || op.operationType === "income_return") {
+			if (!isDepositRefundOp) {
+				opsExpenseCashKop += amtKop;
+			}
 		}
 	}
 
@@ -142,7 +157,10 @@ export async function calculateShiftTenderTotals(
 			);
 
 		for (const p of shiftPayments) {
-			const amtKop = rubToKopecks(p.amountRub);
+			const amtKop =
+				p.amountKopecks !== undefined && p.amountKopecks !== null && p.amountKopecks !== 0n
+					? Number(p.amountKopecks)
+					: rubToKopecks(p.amountRub);
 			const canonicalTender = normalizeTenderType(p.method);
 
 			if (canonicalTender === "cash") {
@@ -187,8 +205,8 @@ export async function calculateShiftTenderTotals(
 		cashKop = opsIncomeCashKop;
 	}
 
-	// Return operations if recorded in cash expense
-	if (opsExpenseCashKop > 0 && (isMainBox || isExtraBox)) {
+	// Return operations recorded as refund/expense
+	if (opsExpenseCashKop > 0 && (isMainBox || isExtraBox || isCashlessBox)) {
 		returnKop = opsExpenseCashKop;
 	}
 
@@ -206,7 +224,10 @@ export async function calculateShiftTenderTotals(
 	);
 
 	// In main cash box, expected cash = start + cashIncome + introductions - withdrawals - returns
-	const startKop = rubToKopecks(shift.startBalanceRub);
+	const startKop =
+		shift.startBalanceKopecks !== undefined && shift.startBalanceKopecks !== null && shift.startBalanceKopecks !== 0
+			? Number(shift.startBalanceKopecks)
+			: rubToKopecks(shift.startBalanceRub);
 	const expectedCashKop =
 		startKop + cashKop + totalIntroductionsKop - totalWithdrawalsKop - returnKop;
 	const expectedCashInDrawerRub = kopecksToRub(expectedCashKop);
@@ -345,9 +366,10 @@ export async function reconcileSingleShift(
 	const returnTotalRub = input.returnTotalRub ?? calculatedTotals.returnTotalRub;
 	const netRevenueRub = input.netRevenueRub ?? calculatedTotals.netRevenueRub;
 
-	// Validate tender parity if revenue is non-zero
+	// Gross inflow equals netRevenue + returns; validateTenderParity sums gross positive tenders
+	const grossDueKopecks = Math.max(0, rubToKopecks(netRevenueRub) + rubToKopecks(returnTotalRub));
 	const parityCheck = validateTenderParity({
-		totalDueKopecks: rubToKopecks(netRevenueRub),
+		totalDueKopecks: grossDueKopecks,
 		cashKopecks: rubToKopecks(incomeCashRub),
 		cardKopecks: rubToKopecks(incomeElectronicRub),
 		sbpKopecks: rubToKopecks(incomeSbpRub),

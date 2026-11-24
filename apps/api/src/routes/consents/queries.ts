@@ -1,5 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { generatedDocuments, patientConsents, patients } from "../../db/schema.js";
 import type { SaveConsentBody } from "./types.js";
 
@@ -54,38 +55,38 @@ function mapConsentKindToDocumentKind(kind: string): DocumentKindEnum {
 }
 
 export async function fetchPatientConsentsList(orgId: string, patientId: string) {
-	const consents = await db
-		.select({
-			id: patientConsents.id,
-			organizationId: patientConsents.organizationId,
-			patientId: patientConsents.patientId,
-			kind: patientConsents.kind,
-			grantedAt: patientConsents.grantedAt,
-			revokedAt: patientConsents.revokedAt,
-			documentId: patientConsents.documentId,
-			documentTitle: generatedDocuments.title,
-			documentStatus: generatedDocuments.status,
-			signatureSvg: generatedDocuments.signatureSvg,
-			integrityHash: generatedDocuments.issuedSnapshotSha256,
-			visitId: generatedDocuments.visitId,
-		})
-		.from(patientConsents)
-		.leftJoin(
-			generatedDocuments,
-			and(
-				eq(patientConsents.documentId, generatedDocuments.id),
-				eq(generatedDocuments.organizationId, orgId),
-			),
-		)
-		.where(
-			and(
-				eq(patientConsents.organizationId, orgId),
-				eq(patientConsents.patientId, patientId),
-			),
-		)
-		.orderBy(desc(patientConsents.grantedAt));
-
-	return consents;
+	return withTenantCtx(orgId, async (tx) => {
+		return tx
+			.select({
+				id: patientConsents.id,
+				organizationId: patientConsents.organizationId,
+				patientId: patientConsents.patientId,
+				kind: patientConsents.kind,
+				grantedAt: patientConsents.grantedAt,
+				revokedAt: patientConsents.revokedAt,
+				documentId: patientConsents.documentId,
+				documentTitle: generatedDocuments.title,
+				documentStatus: generatedDocuments.status,
+				signatureSvg: generatedDocuments.signatureSvg,
+				integrityHash: generatedDocuments.issuedSnapshotSha256,
+				visitId: generatedDocuments.visitId,
+			})
+			.from(patientConsents)
+			.leftJoin(
+				generatedDocuments,
+				and(
+					eq(patientConsents.documentId, generatedDocuments.id),
+					eq(generatedDocuments.organizationId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(patientConsents.organizationId, orgId),
+					eq(patientConsents.patientId, patientId),
+				),
+			)
+			.orderBy(desc(patientConsents.grantedAt));
+	});
 }
 
 export async function recordPatientConsentEntry(
@@ -94,25 +95,6 @@ export async function recordPatientConsentEntry(
 	body: SaveConsentBody,
 ) {
 	const now = body.signedAt ? new Date(body.signedAt) : new Date();
-
-	// 1. Извлекаем имя пациента для юридической аттестации подписи
-	const patientRow = await db
-		.select({ fullName: patients.fullName })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, orgId),
-			),
-		)
-		.limit(1);
-
-	const existingPatient = patientRow[0];
-	if (!existingPatient) {
-		throw new PatientNotFoundError(`Пациент с ID ${patientId} не найден в организации ${orgId}.`);
-	}
-
-	const patientFullName = existingPatient.fullName || "Пациент клиники";
 	const effectiveDoctorName = body.doctorFullName || "Лечащий врач";
 	const isDigital =
 		body.signatureType === "digital_canvas" ||
@@ -128,8 +110,26 @@ export async function recordPatientConsentEntry(
 	const effectiveKind = body.consentType || body.kind || "informed_consent";
 	let effectiveDocId: string | null = body.documentId ?? null;
 
-	// ACID-транзакция (Мандаты 8bo, 8d/8zp): атомарная запись в generatedDocuments и patientConsents
-	const savedConsent = await db.transaction(async (tx) => {
+	// ACID-транзакция с FORCE RLS (Мандаты 8bo, 8d/8zp): проверка пациента + generatedDocuments + patientConsents
+	const savedConsent = await withTenantCtx(orgId, async (tx) => {
+		const patientRow = await tx
+			.select({ fullName: patients.fullName })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		const existingPatient = patientRow[0];
+		if (!existingPatient) {
+			throw new PatientNotFoundError(`Пациент с ID ${patientId} не найден в организации ${orgId}.`);
+		}
+
+		const patientFullName = existingPatient.fullName || "Пациент клиники";
+
 		// 2. Если documentId не передан, создаем юридическую запись в generatedDocuments
 		if (!effectiveDocId) {
 			const targetKind = mapConsentKindToDocumentKind(effectiveKind);
@@ -168,7 +168,7 @@ export async function recordPatientConsentEntry(
 				effectiveDocId = createdDoc.id;
 			}
 		} else {
-			// Если documentId уже передан, обновляем подпись и хеш целостности в существующем документе
+			// Если documentId уже передан, обновляем подпись и хеш целостности строго у этого пациента (BOLA-guard)
 			await tx
 				.update(generatedDocuments)
 				.set({
@@ -194,6 +194,7 @@ export async function recordPatientConsentEntry(
 					and(
 						eq(generatedDocuments.id, effectiveDocId),
 						eq(generatedDocuments.organizationId, orgId),
+						eq(generatedDocuments.patientId, patientId),
 					),
 				);
 		}

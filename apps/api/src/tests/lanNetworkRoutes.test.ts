@@ -232,10 +232,19 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		assert.strictEqual(errJson.error, "InvalidPairingPin");
 	});
 
-	it("9. GET /api/network/lan-mesh/handshake: fast HTTP probe returns local node info", async () => {
+	it("9. GET /api/network/lan-mesh/handshake: requires auth and returns local node info", async () => {
+		const unauth = await app.inject({
+			method: "GET",
+			url: "/api/network/lan-mesh/handshake",
+		});
+		assert.ok(unauth.statusCode === 401 || unauth.statusCode === 403 || unauth.statusCode === 503);
+
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/network/lan-mesh/handshake",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
 		});
 
 		assert.strictEqual(res.statusCode, 200);
@@ -252,6 +261,9 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/network/lan-mesh/handshake",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
 			payload: {
 				nodeId: "remote-doctor-2",
 				clinicId: "clinic-default",
@@ -277,6 +289,9 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/network/lan-mesh/status",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
 		});
 
 		assert.strictEqual(res.statusCode, 200);
@@ -287,10 +302,20 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		assert.ok(["streaming", "offline_queued", "sync_deferred", "read_only"].includes(json.statusBadge.syncMode));
 	});
 
-	it("12. POST /api/network/lan-mesh/mutations: applies mutation batch", async () => {
+	it("12. POST /api/network/lan-mesh/mutations: rejects unauthenticated and applies authenticated mutation batch", async () => {
+		const unauth = await app.inject({
+			method: "POST",
+			url: "/api/network/lan-mesh/mutations",
+			payload: { mutations: [] },
+		});
+		assert.ok(unauth.statusCode === 401 || unauth.statusCode === 403 || unauth.statusCode === 503);
+
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/network/lan-mesh/mutations",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
 			payload: {
 				mutations: [
 					{
@@ -313,11 +338,32 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		assert.strictEqual(json.appliedCount, 1);
 	});
 
-	it("13. POST /api/sync/mesh/exchange: processes P2P bidirectional mesh exchange between workstations", async () => {
+	it("13. POST /api/sync/mesh/exchange: blocks cross-tenant orgId and processes valid P2P mesh exchange", async () => {
+		const crossTenantRes = await app.inject({
+			method: "POST",
+			url: "/api/sync/mesh/exchange",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
+			payload: {
+				exchangeId: `exch-cross-${Date.now()}`,
+				senderNodeId: "tablet-dr-ivanov",
+				senderRole: "doctor_tablet",
+				senderVectorClock: { "tablet-dr-ivanov": 1 },
+				mutations: [],
+				sentAt: new Date().toISOString(),
+				organizationId: "99999999-9999-4999-8999-999999999999",
+			},
+		});
+		assert.strictEqual(crossTenantRes.statusCode, 403);
+
 		const payloadData = { status: "in_treatment" };
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/sync/mesh/exchange",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
 			payload: {
 				exchangeId: `exch-${Date.now()}`,
 				senderNodeId: "tablet-dr-ivanov",
@@ -351,10 +397,13 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		assert.ok(Array.isArray(json.results));
 	});
 
-	it("14. POST /api/lan/p2p/dispatch: dispatches peer-to-peer event without server drop", async () => {
+	it("14. POST /api/lan/p2p/dispatch: dispatches peer-to-peer event with clinic auth", async () => {
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/lan/p2p/dispatch",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
 			payload: {
 				messageId: `p2p-msg-${Date.now()}`,
 				eventType: "chair_status_changed",

@@ -8,14 +8,12 @@
 
 import type { FastifyInstance } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { computePayloadHash } from "@dental/shared";
-import { db } from "../../db/client.js";
-import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
-import { idempotencyKeys } from "../../db/schema/idempotency.js";
+import { updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { patients } from "../../db/schema.js";
 import { imagingStudies } from "../../db/schema/imaging.js";
-import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { isLockStale, queryDatabaseIdempotencyRecord } from "../../plugins/idempotencyModules/idempotencyStorageEngine.js";
-import { requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { cephAnalysisSaveSchema, patientParamsSchema } from "./types.js";
 
 export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
@@ -29,114 +27,104 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const idempotencyKey = extractIdempotencyKey(request);
-			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.orthodontics.write",
+					role: staffRole,
+					message: `Отказ в сохранении цефалометрического анализа: ${evalAccess.reason}`,
 				});
 			}
 
-			if (idempotencyKey) {
-				reply.header("Idempotency-Key", idempotencyKey);
-				const { existingIdemKey, existingSyncRecord } = await queryDatabaseIdempotencyRecord(orgId, idempotencyKey);
-				const record = existingIdemKey ?? (existingSyncRecord ? {
-					status: existingSyncRecord.action === "completed" ? "completed" : "in_flight",
-					responseBody: existingSyncRecord.responseJson,
-					responseCode: existingSyncRecord.responseStatus,
-					lockedAt: existingSyncRecord.updatedAt,
-				} : null);
-
-				if (record) {
-					if (record.status === "completed" && record.responseBody) {
-						reply.header("idempotency-replayed", "true");
-						reply.header("x-idempotency-replayed", "true");
-						return reply
-							.code(record.responseCode || 200)
-							.send(record.responseBody);
-					}
-					if (record.status === "in_flight" && !isLockStale(record.lockedAt)) {
-						return reply.code(409).header("Retry-After", "1").send({
-							error: "Conflict",
-							message: "Операция сохранения ТРГ с данным Idempotency-Key уже выполняется.",
-						});
-					}
-				}
+			const parsedParams = patientParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор пациента",
+				});
 			}
+			const { patientId } = parsedParams.data;
 
-			const { patientId } = patientParamsSchema.parse(request.params);
-			const body = cephAnalysisSaveSchema.parse(request.body);
-
-			const patient = await getPatientByIdFromDb(orgId, patientId);
-			if (!patient) {
-				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+			const parsedBody = cephAnalysisSaveSchema.safeParse(request.body);
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры цефалометрического анализа: " + parsedBody.error.issues.map((i) => i.message).join("; "),
+					issues: parsedBody.error.issues,
+				});
 			}
+			const body = parsedBody.data;
 
-			// DEF-ORTHO-SEV1-03: Проверка принадлежности снимка ТРГ организации и пациенту
-			if (body.imagingStudyId) {
-				const [study] = await db
-					.select()
-					.from(imagingStudies)
-					.where(
-						and(
-							eq(imagingStudies.id, body.imagingStudyId),
-							eq(imagingStudies.organizationId, orgId),
-							eq(imagingStudies.patientId, patientId),
-						),
-					)
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const [patient] = await tx
+					.select({
+						id: patients.id,
+						fullName: patients.fullName,
+						administrativeProfile: patients.administrativeProfile,
+					})
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.for("update")
 					.limit(1);
-
-				if (!study) {
-					return reply.code(404).send({
-						error: "ImagingStudyNotFound",
-						message: "Рентгенологическое исследование ТРГ не найдено в профиле пациента или принадлежит другой организации",
-					});
+				if (!patient) {
+					return { status: "patient_not_found" as const };
 				}
-			}
 
-			const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
-			const nowIso = new Date().toISOString();
-			const studyId = body.id || `ceph-${Date.now()}`;
+				if (body.imagingStudyId) {
+					const [study] = await tx
+						.select({ id: imagingStudies.id })
+						.from(imagingStudies)
+						.where(
+							and(
+								eq(imagingStudies.id, body.imagingStudyId),
+								eq(imagingStudies.organizationId, orgId),
+								eq(imagingStudies.patientId, patientId),
+							),
+						)
+						.limit(1);
 
-			const studyRecord = {
-				id: studyId,
-				organizationId: orgId,
-				patientId,
-				imagingStudyId: body.imagingStudyId ?? null,
-				patientName: body.patientName || patient.fullName,
-				imageUrl: body.imageUrl ?? null,
-				landmarks: body.landmarks ?? {},
-				scaleMmPerPixel: body.scaleMmPerPixel ?? 0.15,
-				analysis: body.analysis ?? {},
-				source: body.source ?? "manual",
-				backendUsed: body.backendUsed ?? "Цефалометрический модуль",
-				isCalibratedFallback: Boolean(body.isCalibratedFallback),
-				placedCount: body.placedCount ?? Object.keys(body.landmarks ?? {}).length,
-				latencyMs: body.latencyMs ?? 0,
-				savedAt: nowIso,
-			};
+					if (!study) {
+						return { status: "study_not_found" as const };
+					}
+				}
 
-			const currentOrtho = (adminProfile.orthodonticProgress as Record<string, unknown>) ?? {};
-			const existingHistory = Array.isArray(currentOrtho.cephHistory) ? currentOrtho.cephHistory : [];
-			const history = [...existingHistory, studyRecord];
+				const adminProfile = (patient.administrativeProfile as Record<string, unknown>) ?? {};
+				const nowIso = new Date().toISOString();
+				const studyId = body.id || `ceph-${Date.now()}`;
 
-			const updatedOrtho = {
-				...currentOrtho,
-				cephAnalysis: studyRecord,
-				cephHistory: history.slice(-20),
-				lastActionDate: nowIso,
-				lastActionSummary: `Цефалометрический анализ ТРГ: ${studyRecord.placedCount} ориентиров`,
-			};
+				const studyRecord = {
+					id: studyId,
+					organizationId: orgId,
+					patientId,
+					imagingStudyId: body.imagingStudyId ?? null,
+					patientName: body.patientName || patient.fullName,
+					imageUrl: body.imageUrl ?? null,
+					landmarks: body.landmarks ?? {},
+					scaleMmPerPixel: body.scaleMmPerPixel ?? 0.15,
+					analysis: body.analysis ?? {},
+					source: body.source ?? "manual",
+					backendUsed: body.backendUsed ?? "Цефалометрический модуль",
+					isCalibratedFallback: Boolean(body.isCalibratedFallback),
+					placedCount: body.placedCount ?? Object.keys(body.landmarks ?? {}).length,
+					latencyMs: body.latencyMs ?? 0,
+					savedAt: nowIso,
+				};
 
-			const responsePayload = {
-				success: true,
-				id: studyId,
-				savedAt: nowIso,
-				study: studyRecord,
-			};
+				const currentOrtho = (adminProfile.orthodonticProgress as Record<string, unknown>) ?? {};
+				const existingHistory = Array.isArray(currentOrtho.cephHistory) ? currentOrtho.cephHistory : [];
+				const history = [...existingHistory, studyRecord];
 
-			// DEF-ORTHO-01 / Мандат 8bo: Неделимость транзакции при сохранении анализа ТРГ в PostgreSQL 18
-			await db.transaction(async (tx) => {
+				const updatedOrtho = {
+					...currentOrtho,
+					cephAnalysis: studyRecord,
+					cephHistory: history.slice(-20),
+					lastActionDate: nowIso,
+					lastActionSummary: `Цефалометрический анализ ТРГ: ${studyRecord.placedCount} ориентиров`,
+				};
+
 				await updatePatientAdministrativeProfileInDb(
 					orgId,
 					patientId,
@@ -147,11 +135,15 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 					tx,
 				);
 
-				// Связка со снимком: фиксация ортодонтического заключения в исследовании
 				if (body.imagingStudyId) {
+					const diagnosisObj = body.analysis?.diagnosis as Record<string, unknown> | undefined;
 					const summaryText =
+						body.analysis?.clinicalProtocolText ||
+						(typeof diagnosisObj?.clinicalProtocolText === "string" ? diagnosisObj.clinicalProtocolText : undefined) ||
 						body.analysis?.protocol043Text ||
+						(typeof diagnosisObj?.protocol043Text === "string" ? diagnosisObj.protocol043Text : undefined) ||
 						body.analysis?.summaryRu ||
+						(typeof diagnosisObj?.summaryRu === "string" ? diagnosisObj.summaryRu : undefined) ||
 						`Цефалометрический анализ ТРГ (${studyRecord.placedCount} точек)`;
 					await tx
 						.update(imagingStudies)
@@ -166,29 +158,28 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 						);
 				}
 
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 200,
-							},
-						});
-				}
+				return {
+					status: "ok" as const,
+					payload: {
+						success: true,
+						id: studyId,
+						savedAt: nowIso,
+						study: studyRecord,
+					},
+				};
 			});
 
-			return reply.send(responsePayload);
+			if (txResult.status === "patient_not_found") {
+				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
+			}
+			if (txResult.status === "study_not_found") {
+				return reply.code(404).send({
+					error: "ImagingStudyNotFound",
+					message: "Рентгенологическое исследование ТРГ не найдено в профиле пациента или принадлежит другой организации",
+				});
+			}
+
+			return reply.send(txResult.payload);
 		},
 	);
 
@@ -202,8 +193,38 @@ export function registerCephRoutes(app: FastifyInstance, prefix = "/api/orthodon
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { patientId } = patientParamsSchema.parse(request.params);
-			const patient = await getPatientByIdFromDb(orgId, patientId);
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.orthodontics.read",
+					role: staffRole,
+					message: `Отказ в просмотре цефалометрического анализа: ${evalAccess.reason}`,
+				});
+			}
+
+			const parsedParams = patientParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор пациента",
+				});
+			}
+			const { patientId } = parsedParams.data;
+
+			const patient = await withTenantCtx(orgId, async (tx) => {
+				const [row] = await tx
+					.select({
+						id: patients.id,
+						administrativeProfile: patients.administrativeProfile,
+					})
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.limit(1);
+				return row ?? null;
+			});
 			if (!patient) {
 				return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 			}

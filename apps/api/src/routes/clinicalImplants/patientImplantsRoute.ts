@@ -2,16 +2,64 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patientImplantInstallations } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 
-interface SurgeryImplantsQuery {
-	patientId?: string;
-	toothNumberFdi?: string | number;
-	limit?: string;
+const patientParamsSchema = z
+	.object({
+		patientId: z.string().uuid(),
+	})
+	.strict();
+
+const surgeryImplantsQuerySchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		toothNumberFdi: z.coerce.number().int().optional(),
+		limit: z.coerce.number().int().min(1).max(100).optional(),
+	})
+	.strict();
+
+type SurgeryImplantsQuery = z.infer<typeof surgeryImplantsQuerySchema>;
+
+function mapInstallationRow(
+	inst: typeof patientImplantInstallations.$inferSelect,
+	logError?: (err: unknown) => void,
+) {
+	let parsedNotes: Record<string, unknown> = {};
+	try {
+		if (inst.notes && inst.notes.startsWith("{")) {
+			parsedNotes = JSON.parse(inst.notes);
+		}
+	} catch (err) {
+		logError?.(err);
+	}
+
+	const rawFinancials = (inst.financialsJsonb as Record<string, unknown> | null) ?? null;
+	const financials =
+		rawFinancials && "financials" in rawFinancials
+			? rawFinancials.financials
+			: (rawFinancials ?? parsedNotes.financials ?? null);
+	const deductedMaterials =
+		rawFinancials && "deductedMaterials" in rawFinancials && Array.isArray(rawFinancials.deductedMaterials)
+			? rawFinancials.deductedMaterials
+			: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
+
+	return {
+		...inst,
+		catalogArticle: inst.catalogArticle ?? parsedNotes.sku ?? null,
+		sku: inst.catalogArticle ?? parsedNotes.sku ?? null,
+		expirationDate: inst.expirationDate ?? parsedNotes.expirationDate ?? null,
+		connectionType: inst.connectionType ?? parsedNotes.connectionType ?? "internal_hex",
+		financials,
+		deductedMaterials,
+		isImmediateLoadingFeasible:
+			Boolean(parsedNotes.isImmediateLoadingFeasible) ||
+			(rawFinancials && Boolean(rawFinancials.isImmediateLoadingFeasible)) ||
+			(Number(inst.baselineIsq || 0) >= 70 && Number(inst.finalInsertionTorqueNcm || 0) >= 35),
+	};
 }
 
 export function registerPatientImplantsRoute(app: FastifyInstance) {
@@ -27,58 +75,30 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.implants.read",
 				role: staffRole,
-				message: `Отказ в доступе к имплантологическому паспорту (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в доступе к имплантологическому паспорту: ${evalAccess.reason}`,
 			});
 		}
 
-		const { patientId } = request.params;
-		if (!z.string().uuid().safeParse(patientId).success) {
+		const parsedParams = patientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента (ожидается UUID).",
 			});
 		}
+		const { patientId } = parsedParams.data;
 
-		const rawInstallations = await db
-			.select()
-			.from(patientImplantInstallations)
-			.where(and(eq(patientImplantInstallations.patientId, patientId), eq(patientImplantInstallations.organizationId, orgId)))
-			.orderBy(desc(patientImplantInstallations.installedAt));
+		const rawInstallations = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(patientImplantInstallations)
+				.where(and(eq(patientImplantInstallations.patientId, patientId), eq(patientImplantInstallations.organizationId, orgId)))
+				.orderBy(desc(patientImplantInstallations.installedAt)),
+		);
 
-		const installations = rawInstallations.map((inst) => {
-			let parsedNotes: Record<string, unknown> = {};
-			try {
-				if (inst.notes && inst.notes.startsWith("{")) {
-					parsedNotes = JSON.parse(inst.notes);
-				}
-			} catch {
-				// fallback
-			}
-
-			const rawFinancials = (inst.financialsJsonb as Record<string, unknown> | null) ?? null;
-			const financials =
-				rawFinancials && "financials" in rawFinancials
-					? rawFinancials.financials
-					: (rawFinancials ?? parsedNotes.financials ?? null);
-			const deductedMaterials =
-				rawFinancials && "deductedMaterials" in rawFinancials && Array.isArray(rawFinancials.deductedMaterials)
-					? rawFinancials.deductedMaterials
-					: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
-
-			return {
-				...inst,
-				catalogArticle: inst.catalogArticle ?? parsedNotes.sku ?? null,
-				sku: inst.catalogArticle ?? parsedNotes.sku ?? null,
-				expirationDate: inst.expirationDate ?? parsedNotes.expirationDate ?? null,
-				connectionType: inst.connectionType ?? parsedNotes.connectionType ?? "internal_hex",
-				financials,
-				deductedMaterials,
-				isImmediateLoadingFeasible:
-					Boolean(parsedNotes.isImmediateLoadingFeasible) ||
-					(rawFinancials && Boolean(rawFinancials.isImmediateLoadingFeasible)) ||
-					(Number(inst.baselineIsq || 0) >= 70 && Number(inst.finalInsertionTorqueNcm || 0) >= 35),
-			};
-		});
+		const installations = rawInstallations.map((inst) =>
+			mapInstallationRow(inst, (err) => request.log.warn({ err, installationId: inst.id }, "[patientImplantsRoute] Failed to parse legacy JSON notes")),
+		);
 
 		if (installations.length > 0) {
 			await auditMedicalAccessFromRequest(request, {
@@ -108,11 +128,19 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.implants.read",
 				role: staffRole,
-				message: `Отказ в доступе к реестру имплантатов (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				message: `Отказ в доступе к реестру имплантатов: ${evalAccess.reason}`,
 			});
 		}
 
-		const query = request.query || {};
+		const parsedQuery = surgeryImplantsQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры фильтрации реестра имплантатов.",
+				details: parsedQuery.error.format(),
+			});
+		}
+		const query = parsedQuery.data;
 		const conditions = [eq(patientImplantInstallations.organizationId, orgId)];
 		const effectivePatientId = explicitPatientId || request.params?.patientId || query.patientId;
 
@@ -125,8 +153,8 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 			}
 			conditions.push(eq(patientImplantInstallations.patientId, effectivePatientId));
 		}
-		if (query.toothNumberFdi !== undefined && query.toothNumberFdi !== null && query.toothNumberFdi !== "") {
-			const fdi = Number(query.toothNumberFdi);
+		if (query.toothNumberFdi !== undefined) {
+			const fdi = query.toothNumberFdi;
 			const isPermanent =
 				(fdi >= 11 && fdi <= 18) ||
 				(fdi >= 21 && fdi <= 28) ||
@@ -141,49 +169,20 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 			conditions.push(eq(patientImplantInstallations.toothNumberFdi, fdi));
 		}
 
-		const limit = Math.max(1, Math.min(Number(query.limit) || 50, 100));
+		const limit = query.limit ?? 50;
 
-		const rawInstallations = await db
-			.select()
-			.from(patientImplantInstallations)
-			.where(and(...conditions))
-			.orderBy(desc(patientImplantInstallations.installedAt))
-			.limit(limit);
+		const rawInstallations = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(patientImplantInstallations)
+				.where(and(...conditions))
+				.orderBy(desc(patientImplantInstallations.installedAt))
+				.limit(limit),
+		);
 
-		const installations = rawInstallations.map((inst) => {
-			let parsedNotes: Record<string, unknown> = {};
-			try {
-				if (inst.notes && inst.notes.startsWith("{")) {
-					parsedNotes = JSON.parse(inst.notes);
-				}
-			} catch {
-				// fallback
-			}
-
-			const rawFinancials = (inst.financialsJsonb as Record<string, unknown> | null) ?? null;
-			const financials =
-				rawFinancials && "financials" in rawFinancials
-					? rawFinancials.financials
-					: (rawFinancials ?? parsedNotes.financials ?? null);
-			const deductedMaterials =
-				rawFinancials && "deductedMaterials" in rawFinancials && Array.isArray(rawFinancials.deductedMaterials)
-					? rawFinancials.deductedMaterials
-					: (Array.isArray(parsedNotes.deductedMaterials) ? parsedNotes.deductedMaterials : []);
-
-			return {
-				...inst,
-				catalogArticle: inst.catalogArticle ?? parsedNotes.sku ?? null,
-				sku: inst.catalogArticle ?? parsedNotes.sku ?? null,
-				expirationDate: inst.expirationDate ?? parsedNotes.expirationDate ?? null,
-				connectionType: inst.connectionType ?? parsedNotes.connectionType ?? "internal_hex",
-				financials,
-				deductedMaterials,
-				isImmediateLoadingFeasible:
-					Boolean(parsedNotes.isImmediateLoadingFeasible) ||
-					(rawFinancials && Boolean(rawFinancials.isImmediateLoadingFeasible)) ||
-					(Number(inst.baselineIsq || 0) >= 70 && Number(inst.finalInsertionTorqueNcm || 0) >= 35),
-			};
-		});
+		const installations = rawInstallations.map((inst) =>
+			mapInstallationRow(inst, (err) => request.log.warn({ err, installationId: inst.id }, "[patientImplantsRoute] Failed to parse legacy JSON notes")),
+		);
 
 		if (effectivePatientId && installations.length > 0) {
 			await auditMedicalAccessFromRequest(request, {

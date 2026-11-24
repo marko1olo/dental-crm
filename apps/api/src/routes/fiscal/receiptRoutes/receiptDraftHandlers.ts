@@ -18,12 +18,12 @@ import {
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { serviceCatalogItems } from "../../../db/schema.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 
 export type CatalogPriceVerificationResult =
-	| { success: true }
+	| { success: true; normalizedItems: CreateFiscalReceiptPayload["items"] }
 	| {
 			success: false;
 			statusCode: number;
@@ -47,24 +47,30 @@ export async function verifyAndEnforceCatalogPrices(
 		.filter((id): id is string => typeof id === "string" && id.length > 0);
 
 	if (serviceIds.length === 0) {
-		return { success: true };
+		return { success: true, normalizedItems: items };
 	}
 
-	const catalogRows = await db
-		.select()
-		.from(serviceCatalogItems)
-		.where(
-			and(
-				eq(serviceCatalogItems.organizationId, orgId),
-				inArray(serviceCatalogItems.id, serviceIds),
-			),
-		);
+	const catalogRows = await withTenantCtx(orgId, async (tx) => {
+		return tx
+			.select()
+			.from(serviceCatalogItems)
+			.where(
+				and(
+					eq(serviceCatalogItems.organizationId, orgId),
+					inArray(serviceCatalogItems.id, serviceIds),
+				),
+			);
+	});
 
 	const catalogMap = new Map(catalogRows.map((r) => [r.id, r]));
+	const normalizedItems: CreateFiscalReceiptPayload["items"] = [];
 
 	for (const item of items) {
 		const sId = item.serviceId || item.catalogItemId;
-		if (!sId) continue;
+		if (!sId) {
+			normalizedItems.push(item);
+			continue;
+		}
 		const catalogItem = catalogMap.get(sId);
 		if (!catalogItem) {
 			return {
@@ -95,11 +101,12 @@ export async function verifyAndEnforceCatalogPrices(
 			: multiplyKopecksFractional(toExactKopecks(expectedUnitPriceKop), item.quantity);
 
 		if (item.amountKopecks <= maxCatalogTotalItemKop) {
-			// Автономия врача на скидки до 100% (гарантийные переделки, скидки персоналу, округление копеек)
 			const actualDiscountKop = maxCatalogTotalItemKop - item.amountKopecks;
-			if (actualDiscountKop > 0) {
-				item.discountKopecks = actualDiscountKop;
-			}
+			normalizedItems.push(
+				actualDiscountKop > 0
+					? { ...item, discountKopecks: actualDiscountKop }
+					: item,
+			);
 		} else {
 			return {
 				success: false,
@@ -119,7 +126,7 @@ export async function verifyAndEnforceCatalogPrices(
 		}
 	}
 
-	return { success: true };
+	return { success: true, normalizedItems };
 }
 
 /**
@@ -148,7 +155,10 @@ export async function handleFiscalValidate(
 	}
 
 	try {
-		const compiled = FiscalReceiptFactory.buildFfd12Receipt(parsed.data);
+		const compiled = FiscalReceiptFactory.buildFfd12Receipt({
+			...parsed.data,
+			items: verification.normalizedItems,
+		});
 		return reply.status(200).send({
 			success: true,
 			valid: true,

@@ -1,7 +1,9 @@
 import { generateSbpDynamicQrSchema } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
+import { patientInvoices, sberbankTransactions } from "../../../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import {
 	generateSbpDynamicQrService,
@@ -54,8 +56,59 @@ export async function handleGenerateQr(
 		});
 	}
 
-	const response = await withTenantCtx(orgId, async (_tx) => {
-		return generateSbpDynamicQrService(parsed.data);
+	const response = await withTenantCtx(orgId, async (tx) => {
+		const result = generateSbpDynamicQrService(parsed.data);
+		const rawBody =
+			request.body && typeof request.body === "object"
+				? (request.body as Record<string, unknown>)
+				: null;
+		const bodyPatientId =
+			typeof rawBody?.patientId === "string" && isValidUuid(rawBody.patientId)
+				? rawBody.patientId
+				: null;
+		const rawInvoiceId = parsed.data.invoiceId ?? null;
+		const validInvoiceId =
+			typeof rawInvoiceId === "string" && isValidUuid(rawInvoiceId) ? rawInvoiceId : null;
+
+		let resolvedPatientId = bodyPatientId;
+		let resolvedVisitId: string | null = null;
+		if (validInvoiceId) {
+			const [invoice] = await tx
+				.select({
+					patientId: patientInvoices.patientId,
+					visitId: patientInvoices.visitId,
+				})
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.id, validInvoiceId),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (invoice) {
+				resolvedPatientId = resolvedPatientId ?? invoice.patientId;
+				resolvedVisitId = invoice.visitId ?? null;
+			}
+		}
+
+		if (resolvedPatientId) {
+			await tx
+				.insert(sberbankTransactions)
+				.values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					visitId: resolvedVisitId,
+					documentId: validInvoiceId,
+					invoiceId: validInvoiceId,
+					orderId: result.operationId,
+					amountKopecks: BigInt(parsed.data.amountKopecks),
+					status: "pending",
+				})
+				.onConflictDoNothing();
+		}
+
+		return result;
 	});
 
 	reply.header("Idempotency-Key", idempotencyKey);
