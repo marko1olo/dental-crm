@@ -77,10 +77,19 @@ export function useEmergencyRescueLogic(props: EmergencyRescueModalProps) {
 	const handleWriteoffAntishockKit = async () => {
 		setIsWritingOffKit(true);
 		try {
+			const idempotencyKey = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : undefined;
 			const res = await fetch('/api/inventory/quick-writeoff-emergency-antishock', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json', ...denteAdminSecretRequestHeaders() },
-				body: JSON.stringify({ scenarioId: activeScenarioId, notes: `Экстренное списание укладки «Антишок»: ${activeScenario.nameRu}` }),
+				headers: {
+					'Content-Type': 'application/json',
+					...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					scenarioId: activeScenarioId,
+					notes: `Экстренное списание укладки «Антишок»: ${activeScenario.nameRu}`,
+					...(idempotencyKey ? { idempotencyKey } : {}),
+				}),
 			});
 			setIsKitWrittenOff(true);
 			showToast(res.ok ? "Укладка «Антишок» списана (мягкий овердрафт)" : "Списание зафиксировано в журнале", "success");

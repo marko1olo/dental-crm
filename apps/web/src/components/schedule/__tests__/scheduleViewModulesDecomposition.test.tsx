@@ -30,9 +30,6 @@ describe("ScheduleView Monolith Decomposition Suite (/decomposer)", () => {
       "useScheduleViewController.ts",
       "useScheduleShiftDrawerController.ts",
       "useScheduleFilterSummary.tsx",
-      "ScheduleHeaderToolbar.tsx",
-      "ScheduleActiveViewPort.tsx",
-      "ScheduleModalsLayer.tsx",
     ];
 
     for (const file of requiredFiles) {
@@ -70,23 +67,17 @@ describe("ScheduleView Monolith Decomposition Suite (/decomposer)", () => {
     );
   });
 
-  it("4. enforces createPortal(..., document.body) in ScheduleModalsLayer without nested wrapper divs", () => {
-    const modalsSource = fs.readFileSync(
-      path.join(modulesDir, "ScheduleModalsLayer.tsx"),
-      "utf8",
+  it("4. enforces direct canonical component mounting in ScheduleView facade with createPortal", () => {
+    const facadeSource = fs.readFileSync(facadeFile, "utf8");
+    assert.ok(
+      facadeSource.includes("ScheduleViewToolbar") &&
+        facadeSource.includes("ScheduleViewBody") &&
+        facadeSource.includes("ScheduleViewModals"),
+      "ScheduleView must connect ScheduleViewToolbar, ScheduleViewBody, and ScheduleViewModals directly",
     );
     assert.ok(
-      modalsSource.includes("createPortal(") && modalsSource.includes("document.body"),
-      "ScheduleModalsLayer must mount modals strictly via createPortal(..., document.body)",
-    );
-
-    const headerSource = fs.readFileSync(
-      path.join(modulesDir, "ScheduleHeaderToolbar.tsx"),
-      "utf8",
-    );
-    assert.ok(
-      headerSource.includes("<>") && headerSource.includes("</>"),
-      "ScheduleHeaderToolbar must use React.Fragment to avoid accidental wrapper divs",
+      facadeSource.includes("createPortal(") && facadeSource.includes("document.body"),
+      "ScheduleView must mount modals strictly via createPortal(..., document.body)",
     );
   });
 

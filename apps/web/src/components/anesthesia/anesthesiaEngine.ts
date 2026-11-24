@@ -281,6 +281,8 @@ export async function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): 
 	const toothNum = typeof params.targetToothNumberFdi === "number" ? params.targetToothNumberFdi : parseInt(String(params.targetToothNumberFdi || ""), 10);
 	const toothNumbers = Number.isInteger(toothNum) && toothNum > 0 ? [toothNum] : [];
 
+	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+
 	const payload = {
 		patientId: params.patientId || null,
 		visitId: params.visitId || null,
@@ -300,13 +302,18 @@ export async function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): 
 		notes: params.diaryEntry,
 		autoDeductInventory: true,
 		addToVisitEstimate: true,
+		...(idempotencyKey ? { idempotencyKey } : {}),
 	};
 
 	try {
 		const endpoint = params.patientId ? `/api/anesthesia/patients/${params.patientId}/logs` : "/api/anesthesia/logs";
 		await fetch(endpoint, {
 			method: "POST",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+				...denteAdminSecretRequestHeaders(),
+			},
 			body: JSON.stringify(payload),
 		});
 	} catch (err) {

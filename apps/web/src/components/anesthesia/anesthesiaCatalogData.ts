@@ -297,10 +297,15 @@ export async function postQuickCarpuleWriteoff(params: {
 	needlesCount?: number | undefined;
 }): Promise<void> {
 	if (params.count <= 0) return;
+	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
 	try {
 		await fetch("/api/inventory/quick-writeoff-carpules", {
 			method: "POST",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+				...denteAdminSecretRequestHeaders(),
+			},
 			body: JSON.stringify({
 				visitId: params.visitId || null,
 				patientId: params.patientId || null,
@@ -309,6 +314,7 @@ export async function postQuickCarpuleWriteoff(params: {
 				needleName: params.needleName,
 				needlesCount: params.needlesCount ?? (params.count > 0 ? 1 : 0),
 				notes: `Списание ${params.count} карпул (${params.drugId || "Артикаин"}) у кресла`,
+				...(idempotencyKey ? { idempotencyKey } : {}),
 			}),
 		});
 	} catch (err) {
@@ -320,14 +326,20 @@ export async function postQuickCarpuleWriteoff(params: {
  * 1-Click Emergency Antishock writeoff
  */
 export async function postEmergencyAntishockWriteoff(visitId?: string): Promise<void> {
+	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
 	try {
 		await fetch("/api/inventory/quick-writeoff-emergency-antishock", {
 			method: "POST",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+				...denteAdminSecretRequestHeaders(),
+			},
 			body: JSON.stringify({
 				visitId: visitId || null,
 				scenarioId: "anaphylactic_shock",
 				notes: "Экстренное списание укладки «Антишок» у кресла",
+				...(idempotencyKey ? { idempotencyKey } : {}),
 			}),
 		});
 	} catch (err) {

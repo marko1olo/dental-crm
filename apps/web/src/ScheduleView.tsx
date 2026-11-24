@@ -1,9 +1,10 @@
 import React, { memo } from "react";
+import { createPortal } from "react-dom";
 import { ScheduleDisconnectedState } from "./components/schedule/view/ScheduleDisconnectedState";
 import { useScheduleViewController } from "./components/schedule/scheduleViewModules/useScheduleViewController";
-import { ScheduleHeaderToolbar } from "./components/schedule/scheduleViewModules/ScheduleHeaderToolbar";
-import { ScheduleActiveViewPort } from "./components/schedule/scheduleViewModules/ScheduleActiveViewPort";
-import { ScheduleModalsLayer } from "./components/schedule/scheduleViewModules/ScheduleModalsLayer";
+import { ScheduleViewToolbar } from "./components/schedule/view/ScheduleViewToolbar";
+import { ScheduleViewBody } from "./components/schedule/view/ScheduleViewBody";
+import { ScheduleViewModals } from "./components/schedule/view/ScheduleViewModals";
 import type { ScheduleViewProps } from "./components/schedule/scheduleViewModules/types";
 
 // Zero-downtime backwards-compatible re-exports
@@ -38,10 +39,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
       data-testid="schedule-view"
     >
       {!ctrl.isMobile && (
-        <ScheduleHeaderToolbar {...ctrl.headerToolbarProps} />
+        <ScheduleViewToolbar {...ctrl.headerToolbarProps} />
       )}
-      <ScheduleActiveViewPort {...ctrl.activeViewPortProps} />
-      <ScheduleModalsLayer {...ctrl.modalsLayerProps} />
+      <ScheduleViewBody {...ctrl.activeViewPortProps} />
+      {typeof document !== "undefined"
+        ? createPortal(<ScheduleViewModals {...ctrl.modalsLayerProps} />, document.body)
+        : <ScheduleViewModals {...ctrl.modalsLayerProps} />}
     </div>
   );
 }

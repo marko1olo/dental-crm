@@ -81,15 +81,18 @@ export function EmkAnesthesiaSection({
 
 	const handleAntishockEmergency = async () => {
 		try {
+			const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
 			fetch("/api/inventory/quick-writeoff-emergency-antishock", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
 					...getDenteAuthHeaders(),
 				},
 				body: JSON.stringify({
 					scenarioId: "anaphylactic_shock",
 					notes: "Экстренное списание укладки «Антишок»",
+					...(idempotencyKey ? { idempotencyKey } : {}),
 				}),
 			}).catch(() => {});
 			showToast("Экстренная укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
