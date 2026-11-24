@@ -27,7 +27,7 @@ export interface DentalLabConstructionDef {
 	readonly descriptionRu: string;
 }
 
-export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalLabConstructionDef> = {
+export const DENTAL_LAB_CONSTRUCTIONS = {
 	crown_zirconia: {
 		id: "crown_zirconia",
 		canonicalWorkTypeId: "wt_003",
@@ -123,4 +123,4 @@ export const DENTAL_LAB_CONSTRUCTIONS: Record<DentalLabConstructionType, DentalL
 		defaultZtlCostKopecks: 500000,       // 5 000 руб себестоимость ЗТЛ (совместимость)
 		descriptionRu: "Точный шаблон на основе совмещения КЛКТ и оптического скана со направляющими втулками.",
 	},
-};
+} satisfies Record<DentalLabConstructionType, DentalLabConstructionDef>;
