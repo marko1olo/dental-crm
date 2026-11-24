@@ -15,7 +15,7 @@ export * from "./audioPlayer";
 /**
  * CallAudioPlayer — Canonical SSOT Call Recording Player (Mandates 8b sweet spot, 8e, Apple HIG).
  * Decomposed into modular architecture under ./audioPlayer/ with <200 lines facade.
- * Single Primary CTA teal, Touch Targets >= 44x44px, Zero-mock fallback states.
+ * Single Primary CTA var(--primary), Touch Targets >= 44x44px, Zero-mock fallback states.
  */
 export function CallAudioPlayer({
 	recordingUrl,
@@ -33,7 +33,7 @@ export function CallAudioPlayer({
 				p.audioRef.current.pause();
 				p.audioRef.current.currentTime = 0;
 				p.audioRef.current.src = "";
-				try { p.audioRef.current.removeAttribute("src"); } catch {}
+				try { p.audioRef.current.removeAttribute("src"); } catch (err) { console.warn("[CallAudioPlayer] removeAttribute:", err); }
 				p.audioRef.current.load();
 			}
 		};
@@ -41,6 +41,13 @@ export function CallAudioPlayer({
 
 	const [blobAudioSrc, setBlobAudioSrc] = useState<string>("");
 	const activeBlobRef = useRef<string>("");
+
+	const revokeBlob = () => {
+		if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
+			try { URL.revokeObjectURL(activeBlobRef.current); } catch (err) { console.warn("[CallAudioPlayer] revokeBlob:", err); }
+			activeBlobRef.current = "";
+		}
+	};
 
 	// Resolve canonical protected stream endpoint without leaking tokens into query params
 	const streamEndpoint = useMemo(() => {
@@ -59,17 +66,14 @@ export function CallAudioPlayer({
 	// Authorized fetch to create local secure blob URL — prevents CORS, 401 and memory leaks
 	useEffect(() => {
 		if (!recordingUrl || recordingUrl.trim() === "") {
-			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
-				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
-				activeBlobRef.current = "";
-			}
+			revokeBlob();
 			setBlobAudioSrc("");
 			return;
 		}
 		const trimmed = recordingUrl.trim();
 		if (trimmed.startsWith("blob:")) {
 			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:") && activeBlobRef.current !== trimmed) {
-				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
+				try { URL.revokeObjectURL(activeBlobRef.current); } catch (err) { console.warn("[CallAudioPlayer] revokeBlob:", err); }
 			}
 			activeBlobRef.current = trimmed;
 			setBlobAudioSrc(trimmed);
@@ -77,27 +81,20 @@ export function CallAudioPlayer({
 		}
 		if (!streamEndpoint) {
 			p.setPlaybackError(true);
-			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
-				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
-				activeBlobRef.current = "";
-			}
+			revokeBlob();
 			setBlobAudioSrc("");
 			return;
 		}
 
 		let active = true;
-		const headers = getDenteAuthHeaders();
-
-		fetch(streamEndpoint, { headers })
+		fetch(streamEndpoint, { headers: getDenteAuthHeaders() })
 			.then((res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				return res.blob();
 			})
 			.then((blob) => {
 				if (active) {
-					if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
-						try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
-					}
+					revokeBlob();
 					const newUrl = URL.createObjectURL(blob);
 					activeBlobRef.current = newUrl;
 					setBlobAudioSrc(newUrl);
@@ -106,20 +103,14 @@ export function CallAudioPlayer({
 			.catch(() => {
 				if (active) {
 					p.setPlaybackError(true);
-					if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
-						try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
-						activeBlobRef.current = "";
-					}
+					revokeBlob();
 					setBlobAudioSrc("");
 				}
 			});
 
 		return () => {
 			active = false;
-			if (activeBlobRef.current && activeBlobRef.current.startsWith("blob:")) {
-				try { URL.revokeObjectURL(activeBlobRef.current); } catch {}
-				activeBlobRef.current = "";
-			}
+			revokeBlob();
 		};
 	}, [recordingUrl, streamEndpoint]);
 

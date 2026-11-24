@@ -169,7 +169,7 @@ describe("Red Team UI Mounting & Apple HIG Accessibility", () => {
 		assert.ok(html.includes("Иванова Анна Сергеевна"), "Must render patient name");
 		assert.ok(html.includes("data-testid=\"btn-execute-payment\""), "Must have Primary CTA button");
 		assert.ok(!html.includes("disabled=\"\""), "Primary CTA must NOT be dead disabled");
-		assert.ok(html.includes("var(--teal, #0d9488)"), "CTA must use canonical #0d9488 token");
+		assert.ok(html.includes("var(--primary)"), "CTA must use canonical var(--primary) token");
 	});
 
 	it("guarantees server data overwrites stale local cache during invoice reconciliation", () => {

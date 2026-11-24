@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
-import { kopecksToRubles, rublesToKopecks, percentageOfKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, basisPointsFromPercent } from "@dental/shared";
 import {
 	buildShiftCompletedServices,
 	type ShiftCompletedAppointment,
@@ -84,7 +84,7 @@ export function useShiftFinancialSummary({
 	const totalRevenueRub = useMemo(() => Math.max(0, directPaymentsRub > 0 ? directPaymentsRub : appointmentBilledRub), [directPaymentsRub, appointmentBilledRub]);
 	const estimatedDoctorPayoutRub = useMemo(() => {
 		const totalKop = rublesToKopecks(totalRevenueRub);
-		const basisPoints = Math.round(doctorCommissionPct * 100);
+		const basisPoints = basisPointsFromPercent(doctorCommissionPct);
 		return kopecksToRubles(percentageOfKopecks(totalKop, basisPoints));
 	}, [totalRevenueRub, doctorCommissionPct]);
 	const shiftCompletedServices = useMemo(() => buildShiftCompletedServices({ todayAppointments, patientsById, currentPatient, shiftActiveDoctorId, todayIso, staffById }), [todayAppointments, patientsById, currentPatient, shiftActiveDoctorId, todayIso, staffById]);

@@ -310,7 +310,7 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			const html = generateKo1Html(v);
 			assert.ok(html.includes("Квитанция об оплате медицинских услуг") || html.includes("Внесение наличных"));
 			assert.ok(html.includes("ПКО-42"));
-			assert.ok(html.includes("5000.00"));
+			assert.ok(html.replace(/[\s\u00a0\u202f]+/g, " ").includes("5 000"));
 			assert.ok(html.includes(DEFAULT_CLINIC_FISCAL_DETAILS.legalName));
 		});
 
@@ -332,7 +332,7 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			const html = generateKo2Html(v);
 			assert.ok(html.includes("Квитанция о выдаче"));
 			assert.ok(html.includes("РКО-42"));
-			assert.ok(html.includes("15400.00"));
+			assert.ok(html.replace(/[\s\u00a0\u202f]+/g, " ").includes("15 400"));
 		});
 
 		it("generates valid Encashment Statement and HTML", () => {
@@ -353,7 +353,7 @@ describe("cashShiftClosingEngine — 54-FZ Shift Closing & Encashment", () => {
 			const html = generateEncashmentStatementHtml(stmt);
 			assert.ok(html.includes("Ведомость инкассации и передачи выручки"));
 			assert.ok(html.includes("ИНК-42"));
-			assert.ok(html.includes("20000.00 руб."));
+			assert.ok(html.replace(/[\s\u00a0\u202f]+/g, " ").includes("20 000"));
 		});
 
 		it("generates valid Shift Closing Act and HTML", () => {

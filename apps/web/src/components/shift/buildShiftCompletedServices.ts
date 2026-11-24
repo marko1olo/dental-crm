@@ -1,4 +1,5 @@
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
+import { rublesToKopecks } from "@dental/shared";
 
 export interface ShiftRawServiceItem {
 	readonly id?: string | number | undefined;
@@ -126,9 +127,9 @@ export function buildShiftCompletedServices({
 					medicalCardNumber,
 					serviceNameRu: String(srv.name || srv.title || srv.serviceNameRu || app.reason || "Стоматологическая процедура"),
 					category: sanitizeCategory(srv.category, category),
-					grossRevenueKop: Math.round(srvPrice * 100),
-					labCostKop: Math.round((Number(srv.labCostRub) || 0) * 100),
-					materialCostKop: Math.round((Number(srv.materialCostRub) || 0) * 100),
+					grossRevenueKop: rublesToKopecks(srvPrice),
+					labCostKop: rublesToKopecks(Number(srv.labCostRub) || 0),
+					materialCostKop: rublesToKopecks(Number(srv.materialCostRub) || 0),
 					doctorId: docId,
 					performerId: srv.performerId || docId,
 				});
@@ -144,9 +145,9 @@ export function buildShiftCompletedServices({
 					medicalCardNumber,
 					serviceNameRu: String(app.reason || app.title || "Прием врача-стоматолога"),
 					category,
-					grossRevenueKop: Math.round(appPrice * 100),
-					labCostKop: Math.round((Number(app.labCostRub) || 0) * 100),
-					materialCostKop: Math.round((Number(app.materialCostRub) || 0) * 100),
+					grossRevenueKop: rublesToKopecks(appPrice),
+					labCostKop: rublesToKopecks(Number(app.labCostRub) || 0),
+					materialCostKop: rublesToKopecks(Number(app.materialCostRub) || 0),
 					doctorId: docId,
 					performerId: docId,
 				});

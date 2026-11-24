@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CheckCircle2, Lock, Wallet } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import { money } from "../../../AppHelpers";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { showToast } from "../../GlobalToast";
@@ -27,8 +28,8 @@ export const DoctorShiftEncashmentControls: React.FC<DoctorShiftEncashmentContro
 		StaffActionAuditService.logShiftClose({
 			cashRegisterId: "main_cashier",
 			shiftNumber: new Date().toLocaleDateString("ru-RU"),
-			totalRevenueKopecks: Math.round(effectiveTotalRub * 100),
-			closingCashKopecks: Math.round(encashmentAmount * 100),
+			totalRevenueKopecks: rublesToKopecks(effectiveTotalRub),
+			closingCashKopecks: rublesToKopecks(encashmentAmount),
 		});
 
 		setEncashmentCompleted(true);

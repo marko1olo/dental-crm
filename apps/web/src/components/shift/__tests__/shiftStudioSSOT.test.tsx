@@ -139,7 +139,7 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 
 			// 1. Cash reconciliation
 			assert.ok(html.includes("Сверка фактической наличности"), "Must render cash reconciliation");
-			assert.ok(html.includes("Сходится ✓"), "Must render matched cash badge when balanced");
+			assert.ok(html.includes("Сходится"), "Must render matched cash badge when balanced");
 			assert.ok(html.includes("Сверка терминала эквайринга"), "Must render terminal reconciliation");
 
 			// 2. Encashment options

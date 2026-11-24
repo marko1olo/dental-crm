@@ -11,7 +11,7 @@ import {
 	createDefaultInternalInstallmentsPreset, generateInstallmentReminder,
 	recordInstallmentPayment, TREATMENT_INSTALLMENT_PRESETS,
 } from "../installmentsEngine.js";
-import { rublesToKopecks, kopecksToRubles, percentageOfKopecks } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, percentageOfKopecks, basisPointsFromPercent } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext.js";
 import { usePatientInstallmentsApi, isUuid } from "../usePatientInstallmentsApi.js";
@@ -98,7 +98,7 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 
 	const handleCreateNewPlan = async () => {
 		const totalKop = rublesToKopecks(newTotalRubles);
-		const downPaymentKop = percentageOfKopecks(totalKop, newDownPaymentPercent * 100);
+		const downPaymentKop = percentageOfKopecks(totalKop, basisPointsFromPercent(newDownPaymentPercent));
 		const validMonths = toInstallmentMonths(newMonthsCount);
 		const presetCfg = TREATMENT_INSTALLMENT_PRESETS[selectedPreset];
 

@@ -12,6 +12,7 @@ import {
 	percentageOfKopecks,
 	splitKopecks,
 	formatKopecksRu,
+	basisPointsFromPercent,
 	type Kopecks,
 } from "@dental/shared";
 import { TREATMENT_INSTALLMENT_PRESETS, type TreatmentPresetType } from "../installmentsEngine.js";
@@ -39,7 +40,7 @@ export const InstallmentsPresetCreatorSubView: React.FC<InstallmentsPresetCreato
 	onCancel, onCreatePlan,
 }) => {
 	const totalKopecks = rublesToKopecks(newTotalRubles);
-	const downPaymentKopecks = percentageOfKopecks(totalKopecks, newDownPaymentPercent * 100);
+	const downPaymentKopecks = percentageOfKopecks(totalKopecks, basisPointsFromPercent(newDownPaymentPercent));
 	const remainingKopecks = (totalKopecks - downPaymentKopecks) as Kopecks;
 	const [monthlyKopecks] = newMonthsCount > 0 ? splitKopecks(remainingKopecks, newMonthsCount) : [0 as Kopecks];
 
