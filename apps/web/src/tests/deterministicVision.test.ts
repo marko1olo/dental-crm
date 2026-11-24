@@ -153,7 +153,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "diagnostics/DiagnosticDrawer.css", classPattern: ".dente-diagnostic-close-btn" },
 				{ file: "diagnostics/ToothContextDrawer.css", classPattern: ".dente-drawer-close-btn" },
 				{ file: "emergency/emergencyRescue.css", classPattern: ".emergency-close-btn" },
-				{ file: "marketing/marketing.css", classPattern: ".marketing-studio-close-btn" },
+				{ file: "../styles/modules/marketing.css", classPattern: ".marketing-studio-close-btn" },
 				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
 				{ file: "emr/emrStyles/emrMobileSheet.css", classPattern: ".emr-studio-btn-close" },
 				{ file: "documents/documentNavigation.css", classPattern: ".document-package-close-btn" },
@@ -162,7 +162,14 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 			for (const { file, classPattern } of closeButtonCssFiles) {
 				const fullPath = path.join(webComponentsDir, file);
 				assert.ok(fs.existsSync(fullPath), `CSS file must exist: ${file}`);
-				const content = fs.readFileSync(fullPath, "utf8");
+				let content = fs.readFileSync(fullPath, "utf8");
+				if (content.includes("@import")) {
+					const baseDir = path.dirname(fullPath);
+					content = content.replace(/@import\s+["']([^"']+)["'];/g, (_, rel) => {
+						const importPath = path.resolve(baseDir, rel);
+						return fs.existsSync(importPath) ? fs.readFileSync(importPath, "utf8") : "";
+					});
+				}
 
 				assert.ok(
 					content.includes(classPattern),
@@ -195,7 +202,14 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 			for (const relPath of mobileMediaCheckedFiles) {
 				const fullPath = path.join(webComponentsDir, relPath);
 				assert.ok(fs.existsSync(fullPath), `CSS file must exist: ${relPath}`);
-				const content = fs.readFileSync(fullPath, "utf8");
+				let content = fs.readFileSync(fullPath, "utf8");
+				if (content.includes("@import")) {
+					const baseDir = path.dirname(fullPath);
+					content = content.replace(/@import\s+["']([^"']+)["'];/g, (_, rel) => {
+						const importPath = path.resolve(baseDir, rel);
+						return fs.existsSync(importPath) ? fs.readFileSync(importPath, "utf8") : "";
+					});
+				}
 
 				assert.ok(
 					content.includes("@media (max-width: 640px)") || content.includes("@media (max-width: 768px)") || content.includes("@media (pointer: coarse)"),
@@ -210,17 +224,28 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 		test("TreatmentPlan3TierComparison.tsx implements Apple HIG Segmented Control for <= 640px viewports", () => {
 			const filePath = path.join(webComponentsDir, "treatment-plans/TreatmentPlan3TierComparison.tsx");
 			assert.ok(fs.existsSync(filePath), "TreatmentPlan3TierComparison.tsx must exist");
-			const content = fs.readFileSync(filePath, "utf8");
+			let content = fs.readFileSync(filePath, "utf8");
+			const subFiles = [
+				"TreatmentPlan3TierMobileSegmented.tsx",
+				"TreatmentPlan3TierMobileThumbBar.tsx",
+				"tierCard/TreatmentPlanTierCard.tsx",
+			];
+			for (const sub of subFiles) {
+				const subPath = path.join(path.dirname(filePath), sub);
+				if (fs.existsSync(subPath)) {
+					content += "\n" + fs.readFileSync(subPath, "utf8");
+				}
+			}
 
 			// Check for 3-tier structure
 			assert.ok(content.includes("economy"), "Must handle Economy tier");
 			assert.ok(content.includes("optimum"), "Must handle Optimum tier");
 			assert.ok(content.includes("standard") || content.includes("стандарт") || content.includes("премиум"), "Must handle Standard/Premium tier");
 
-			// Check for mobile segmented control layout & min-h-[44px]
+			// Check for mobile segmented control layout & >= 44px touch targets
 			assert.ok(
-				content.includes("min-h-[44px]") || content.includes("min-height: 44px") || content.includes("minHeight"),
-				"Interactive action buttons in 3-Tier comparison must define min-h-[44px] touch target",
+				content.includes("min-h-[44px]") || content.includes("min-h-[50px]") || content.includes("min-h-[52px]") || content.includes("min-height: 44px") || content.includes("minHeight"),
+				"Interactive action buttons in 3-Tier comparison must define >= 44px touch target",
 			);
 		});
 	});
@@ -236,7 +261,14 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 
 			for (const fullPath of filesToCheck) {
 				assert.ok(fs.existsSync(fullPath), `File must exist: ${path.basename(fullPath)}`);
-				const content = fs.readFileSync(fullPath, "utf8");
+				let content = fs.readFileSync(fullPath, "utf8");
+				if (content.includes("@import")) {
+					const baseDir = path.dirname(fullPath);
+					content = content.replace(/@import\s+["']([^"']+)["'];/g, (_, rel) => {
+						const importPath = path.resolve(baseDir, rel);
+						return fs.existsSync(importPath) ? fs.readFileSync(importPath, "utf8") : "";
+					});
+				}
 
 				const hasEllipsisOrBreak = /text-overflow:\s*ellipsis|word-break|overflow-wrap|break-word|overflow-x:\s*auto|overflow:\s*hidden/.test(content);
 				assert.ok(
