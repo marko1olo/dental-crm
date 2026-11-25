@@ -1,11 +1,14 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { denteTelegramBotConfigs } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import type { DenteTelegramOutboxRuntimeScope } from "./telegramCanonicalStore.js";
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import { resolveTelegramRuntimeContext } from "./telegramRuntimeResolver.js";
 import type { TelegramRuntimeContext } from "./types.js";
 import { parseTelegramOutboxRuntimeScopeQuery } from "./telegramUtils.js";
+
+const logger = createApiLogger("telegramOutboxScope");
 
 export function denteTelegramOutboxRuntimeScope(
 	runtime: TelegramRuntimeContext,
@@ -59,16 +62,18 @@ export async function resolveAllTelegramOutboxRuntimes(): Promise<
 	const runtimes: TelegramResolvedOutboxRuntime[] = [];
 	const seenKeys = new Set<string>();
 
-	// 1. Из физической БД: все активные конфигурации ботов
+	// 1. Из физической БД: все активные конфигурации ботов (кросс-тенантный опрос под superuser bypass до входа в TX клиники)
 	try {
-		const configs = await db
-			.select({
-				organizationId: denteTelegramBotConfigs.organizationId,
-				botConfigId: denteTelegramBotConfigs.botConfigId,
-				mode: denteTelegramBotConfigs.mode,
-			})
-			.from(denteTelegramBotConfigs)
-			.where(eq(denteTelegramBotConfigs.isActive, true));
+		const configs = await withSuperuserBypass(async (tx) =>
+			tx
+				.select({
+					organizationId: denteTelegramBotConfigs.organizationId,
+					botConfigId: denteTelegramBotConfigs.botConfigId,
+					mode: denteTelegramBotConfigs.mode,
+				})
+				.from(denteTelegramBotConfigs)
+				.where(eq(denteTelegramBotConfigs.isActive, true)),
+		);
 
 		for (const cfg of configs) {
 			if (cfg.mode === "disabled") continue;
@@ -84,8 +89,11 @@ export async function resolveAllTelegramOutboxRuntimes(): Promise<
 				runtimes.push(denteTelegramResolvedOutboxRuntime(resolved.context));
 			}
 		}
-	} catch {
-		// Fallback при отсутствии БД
+	} catch (err) {
+		logger.warn(
+			{ err: safeLogError(err) },
+			"Failed to load Telegram bot configs from DB during outbox runtime discovery",
+		);
 	}
 
 	// 2. Из Multi-Tenant Supervisor (динамически зарегистрированные боты)

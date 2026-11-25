@@ -1,7 +1,6 @@
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
 import {
 	authenticatePbxWebhook,
@@ -10,6 +9,7 @@ import {
 import { wsBroker } from "../../services/websocketBroker.js";
 import { resolveWebhookOrgId } from "./telephonyEngine.js";
 import {
+	escapeLikePattern,
 	type TelephonySmsWebhookPayload,
 	type TelephonyWebhookPayload,
 	telephonySmsWebhookPayloadSchema,
@@ -42,134 +42,140 @@ export async function telephonySmsWebhookHandler(
 	const isAuthenticated = await authenticatePbxWebhook(request, reply, resolvedOrgId, data as TelephonyWebhookPayload);
 	if (!isAuthenticated) return reply;
 
+	if (process.env.NODE_ENV === "production" && data.timestamp == null) {
+		return reply.status(400).send({ error: "MissingTimestamp", message: "Webhook timestamp is required in production" });
+	}
+
 	if (data.timestamp != null) {
 		const numTs = typeof data.timestamp === "number" ? data.timestamp : Number.parseInt(String(data.timestamp), 10);
-		if (!Number.isNaN(numTs) && numTs > 0) {
-			const msgTsSec = numTs > 1e11 ? Math.floor(numTs / 1000) : numTs;
-			if (Math.abs(Math.floor(Date.now() / 1000) - msgTsSec) > 300) {
-				return reply.status(400).send({ error: "Timestamp drift window exceeded (>300s)" });
-			}
+		if (Number.isNaN(numTs) || numTs <= 0) {
+			return reply.status(400).send({ error: "InvalidTimestamp", message: "Malformed webhook timestamp" });
+		}
+		const msgTsSec = numTs > 1e11 ? Math.floor(numTs / 1000) : numTs;
+		if (Math.abs(Math.floor(Date.now() / 1000) - msgTsSec) > 300) {
+			return reply.status(400).send({ error: "Timestamp drift window exceeded (>300s)" });
 		}
 	}
 
 	const orgId = resolvedOrgId;
 	const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
 	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
+	const escapedNational10 = escapeLikePattern(callerPhone.national10);
 
-	return withTenantCtx(orgId, async () => {
-		const smsId = (data.sms_id || data.call_id || data.id || "").trim();
-		if (smsId) {
-			const existing = await db
-				.select({ id: communicationEvents.id })
-				.from(communicationEvents)
+	try {
+		return await withTenantCtx(orgId, async (tx) => {
+			const smsId = (data.sms_id || data.call_id || data.id || "").trim();
+			if (smsId) {
+				const existing = await tx
+					.select({ id: communicationEvents.id })
+					.from(communicationEvents)
+					.where(
+						and(
+							eq(communicationEvents.organizationId, orgId),
+							eq(communicationEvents.providerCallId, smsId),
+						),
+					)
+					.limit(1);
+				if (existing.length > 0) return { success: true, duplicate: true };
+			}
+
+			const searchPatient = await tx
+				.select()
+				.from(patients)
 				.where(
 					and(
-						eq(communicationEvents.organizationId, orgId),
-						eq(communicationEvents.providerCallId, smsId),
+						eq(patients.organizationId, orgId),
+						or(
+							eq(patients.phone, callerPhone.e164),
+							ilike(patients.phone, `%${escapedNational10}%`),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${escapedNational10}%`}`,
+						),
 					),
 				)
 				.limit(1);
-			if (existing.length > 0) return { success: true, duplicate: true };
-		}
+			const existingPatient = searchPatient[0] || null;
 
-		const searchPatient = await db
-			.select()
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, orgId),
-					or(
-						eq(patients.phone, callerPhone.e164),
-						ilike(patients.phone, `%${callerPhone.national10}%`),
-						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
-					),
-				),
-			)
-			.limit(1);
-		const existingPatient = searchPatient[0] || null;
-
-		let patientId: string | null = null;
-		try {
-			await db.transaction(async (tx) => {
-				if (existingPatient) {
-					patientId = existingPatient.id;
-				} else if (callerPhone.isValid) {
-					const existingLead = await tx
-						.select({ id: crmLeads.id })
-						.from(crmLeads)
-						.where(
-							and(
-								eq(crmLeads.organizationId, orgId),
-								or(
-									eq(crmLeads.phone, callerPhone.e164),
-									ilike(crmLeads.phone, `%${callerPhone.national10}%`),
-								),
+			let patientId: string | null = null;
+			if (existingPatient) {
+				patientId = existingPatient.id;
+			} else if (callerPhone.isValid) {
+				const existingLead = await tx
+					.select({ id: crmLeads.id })
+					.from(crmLeads)
+					.where(
+						and(
+							eq(crmLeads.organizationId, orgId),
+							or(
+								eq(crmLeads.phone, callerPhone.e164),
+								ilike(crmLeads.phone, `%${escapedNational10}%`),
 							),
-						)
-						.limit(1);
+						),
+					)
+					.limit(1);
 
-					if (existingLead.length > 0 && existingLead[0]?.id) {
-						await tx
-							.update(crmLeads)
-							.set({
-								lastContactedAt: new Date(),
-								notes: `Входящее SMS: ${messageText}`,
-							})
-							.where(
-								and(
-									eq(crmLeads.id, existingLead[0].id),
-									eq(crmLeads.organizationId, orgId),
-								),
-							);
-					} else {
-						await tx.insert(crmLeads).values({
-							organizationId: orgId,
-							phone: callerPhone.e164,
-							patientName: `SMS Лид ${callerPhone.e164}`,
-							name: `SMS Лид ${callerPhone.e164}`,
-							source: "sms",
-							status: "new",
+				if (existingLead.length > 0 && existingLead[0]?.id) {
+					await tx
+						.update(crmLeads)
+						.set({
 							lastContactedAt: new Date(),
 							notes: `Входящее SMS: ${messageText}`,
-						});
-					}
+						})
+						.where(
+							and(
+								eq(crmLeads.id, existingLead[0].id),
+								eq(crmLeads.organizationId, orgId),
+							),
+						);
+				} else {
+					await tx.insert(crmLeads).values({
+						organizationId: orgId,
+						phone: callerPhone.e164,
+						patientName: `SMS Лид ${callerPhone.e164}`,
+						name: `SMS Лид ${callerPhone.e164}`,
+						source: "sms",
+						status: "new",
+						lastContactedAt: new Date(),
+						notes: `Входящее SMS: ${messageText}`,
+					});
 				}
+			}
 
-				await tx.insert(communicationEvents).values({
-					organizationId: orgId,
-					providerCallId: smsId || null,
-					patientId: patientId || null,
-					callerPhone: callerPhone.e164,
-					channel: "sms",
-					direction: "inbound",
-					status: "delivered",
-					message: messageText,
-					idempotencyKey,
+			await tx.insert(communicationEvents).values({
+				organizationId: orgId,
+				providerCallId: smsId || null,
+				patientId: patientId || null,
+				callerPhone: callerPhone.e164,
+				channel: "sms",
+				direction: "inbound",
+				status: "delivered",
+				message: messageText,
+				idempotencyKey,
+			});
+
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "INBOX_NEW_MESSAGE",
+					payload: {
+						channel: "sms",
+						patientId,
+						phone: callerPhone.e164,
+						text: messageText,
+					},
 				});
 			});
-		} catch (err) {
-			request.log.error(
-				{ err, orgId },
-				"[TelephonySms] Failed to persist SMS event in transaction",
-			);
-			return reply.status(500).send({
-				error: "SmsPersistenceError",
-				message: "Failed to persist communication event",
-			});
-		}
 
-		wsBroker.broadcastToOrganization(orgId, {
-			type: "INBOX_NEW_MESSAGE",
-			payload: {
-				channel: "sms",
-				patientId,
-				phone: callerPhone.e164,
-				text: messageText,
-			},
+			return { success: true };
 		});
-		return { success: true };
-	});
+	} catch (err) {
+		request.log.error(
+			{ err, orgId },
+			"[TelephonySms] Failed to persist SMS event in transaction",
+		);
+		return reply.status(500).send({
+			error: "SmsPersistenceError",
+			message: "Failed to persist communication event",
+		});
+	}
 }
 
 export const telephonySmsHandler = telephonySmsWebhookHandler;
-

@@ -24,7 +24,12 @@ import {
 	handleLinkPatient,
 } from "./triageAndBooking.js";
 import { handleWebhookGetHandshake } from "../../security/webhookAuth.js";
-import { bookAppointmentBodySchema } from "./schemas.js";
+import {
+	bookAppointmentBodySchema,
+	linkPatientBodySchema,
+	releaseBodySchema,
+	takeoverBodySchema,
+} from "./schemas.js";
 
 export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -42,9 +47,13 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 
 	/**
 	 * POST /api/messengers/test-connection
-	 * Тестирование связи с выбранным каналом мессенджера («Проверить связь» в 1 клик).
+	 * Тестирование связи с выбранным каналом мессенджера с реальной HTTP-пробой вне PG TX.
 	 */
-	app.post("/api/messengers/test-connection", handleTestConnection);
+	app.post(
+		"/api/messengers/test-connection",
+		{ config: { tenantTxSelfManaged: true } },
+		handleTestConnection,
+	);
 
 	/**
 	 * POST /api/bots/configs
@@ -201,17 +210,24 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 */
 	app.post<{
 		Params: { senderId: string };
-		Body: { channel: BotChannel; operatorName?: string };
+		Body: unknown;
 	}>("/api/bots/chats/:senderId/takeover", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots takeover");
 		if (!orgId) return;
 
-		const { senderId } = request.params;
-		const channel = (request.body?.channel as BotChannel) || "telegram";
-		const user = request.user as { name?: string; fullName?: string } | undefined;
-		const operatorName = request.body?.operatorName || user?.name || user?.fullName || "Оператор клиники";
+		const parsed = takeoverBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message || "Некорректные параметры перехвата диалога.",
+			});
+		}
 
-		const result = handleTakeoverChat(channel, orgId, senderId, operatorName);
+		const { senderId } = request.params;
+		const user = request.user as { name?: string; fullName?: string } | undefined;
+		const operatorName = parsed.data.operatorName || user?.name || user?.fullName || "Оператор клиники";
+
+		const result = handleTakeoverChat(parsed.data.channel, orgId, senderId, operatorName);
 		return reply.send(result);
 	});
 
@@ -221,15 +237,21 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 */
 	app.post<{
 		Params: { senderId: string };
-		Body: { channel: BotChannel };
+		Body: unknown;
 	}>("/api/bots/chats/:senderId/release", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots release");
 		if (!orgId) return;
 
-		const { senderId } = request.params;
-		const channel = (request.body?.channel as BotChannel) || "telegram";
+		const parsed = releaseBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message || "Некорректные параметры возврата диалога.",
+			});
+		}
 
-		const result = handleReleaseChat(channel, orgId, senderId);
+		const { senderId } = request.params;
+		const result = handleReleaseChat(parsed.data.channel, orgId, senderId);
 		return reply.send(result);
 	});
 
@@ -261,17 +283,21 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 */
 	app.post<{
 		Params: { senderId: string };
-		Body: {
-			channel: BotChannel;
-			patientId?: string;
-			createNew?: { fullName: string; phone?: string | null };
-		};
+		Body: unknown;
 	}>("/api/bots/chats/:senderId/link-patient", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots link patient");
 		if (!orgId) return;
 
+		const parsed = linkPatientBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message || "Некорректные параметры привязки пациента.",
+			});
+		}
+
 		const { senderId } = request.params;
-		const { channel = "telegram", patientId, createNew } = request.body || {};
+		const { channel, patientId, createNew } = parsed.data;
 
 		const res = await handleLinkPatient(orgId, senderId, channel, patientId, createNew);
 		if (!res.ok) {

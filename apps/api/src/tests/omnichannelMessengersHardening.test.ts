@@ -17,6 +17,8 @@ import { handleWebhookGetHandshake } from "../security/webhookAuth.js";
 import { TelegramVoiceIntakeService } from "../services/telegram/TelegramVoiceIntakeService.js";
 import { BotPatientStateStorage } from "../services/bots/omnichannel/botPatientStateStorage.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { OmnichannelTokenVault } from "../services/bots/OmnichannelTokenVault.js";
+import { resolveDecryptedWebhookSecret } from "../services/bots/webhookSecretAndReplay.js";
 import { registerOmnichannelBotRoutes } from "../routes/omnichannelBots/index.js";
 import { createIdempotentTenantTestApp } from "./support/tenantTestApp.js";
 
@@ -241,5 +243,20 @@ describe("Omnichannel & Messengers Hardening Verification Suite", () => {
 			if (prevMax === undefined) delete process.env.MAX_WEBHOOK_SECRET;
 			else process.env.MAX_WEBHOOK_SECRET = prevMax;
 		}
+	});
+
+	it("decrypts enc:v1:... encrypted VK/MAX webhook secrets before timingSafeSecretEqual", () => {
+		const orgId = "00000000-0000-4000-8000-000000000099";
+		const plainSecret = "vk_max_plain_secret_8842";
+		const encrypted = OmnichannelTokenVault.encrypt(plainSecret, orgId);
+		assert.ok(encrypted.startsWith("enc:v1:"));
+
+		const resolved = resolveDecryptedWebhookSecret(encrypted, orgId);
+		assert.equal(resolved, plainSecret);
+		assert.equal(timingSafeSecretEqual(plainSecret, resolved), true);
+		// Must NEVER accept raw enc:v1:... ciphertext as the webhook secret
+		assert.equal(timingSafeSecretEqual(encrypted, resolved), false);
+		// Cross-tenant decryption must fail closed (null)
+		assert.equal(resolveDecryptedWebhookSecret(encrypted, "00000000-0000-4000-8000-000000000088"), null);
 	});
 });

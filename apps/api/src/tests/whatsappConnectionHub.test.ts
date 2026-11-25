@@ -31,32 +31,64 @@ describe("WhatsApp Connection Hub (QR & WABA Cloud API)", () => {
 		assert.ok(!code.includes("I"), "Не должен содержать букву I");
 	});
 
-	test("QR Session Lifecycle: start -> status -> disconnect", () => {
-		// 1. Старт новой сессии
-		const session = WhatsappConnectionHubService.startQrSession({
-			organizationId: testOrgId,
-			pairingPhone: "+7 (999) 000-11-22",
-			forceRefresh: true,
-		});
+	test("QR Session Lifecycle: honest unconfigured outside demo mode, and start -> status -> disconnect with gateway", () => {
+		const prevGateway = process.env.WHATSAPP_GATEWAY_URL;
+		const prevGreenApi = process.env.GREEN_API_INSTANCE_ID;
+		const prevDemo = process.env.DENTE_DEMO_MODE;
+		const prevDemoLogin = process.env.DENTE_ALLOW_DEMO_LOGIN;
+		const prevDemoShowcase = process.env.DENTE_DEMO_SHOWCASE;
+		delete process.env.WHATSAPP_GATEWAY_URL;
+		delete process.env.GREEN_API_INSTANCE_ID;
+		delete process.env.DENTE_DEMO_MODE;
+		delete process.env.DENTE_ALLOW_DEMO_LOGIN;
+		delete process.env.DENTE_DEMO_SHOWCASE;
 
-		assert.strictEqual(session.status, "qr_ready");
-		assert.ok(session.qrDataUrl.startsWith("data:image/svg+xml;base64,"));
-		assert.strictEqual(session.pairingPhone, "+7 (999) 000-11-22");
-		assert.ok(session.expiresAt > Date.now());
+		try {
+			const unconf = WhatsappConnectionHubService.startQrSession({
+				organizationId: testOrgId,
+				forceRefresh: true,
+			});
+			assert.strictEqual(unconf.status, "disconnected");
+			assert.ok(unconf.notConfiguredReason);
 
-		// 2. Проверка статуса
-		const status = WhatsappConnectionHubService.getQrSessionStatus(testOrgId);
-		assert.strictEqual(status.status, "qr_ready");
-		assert.ok(status.secondsLeft > 0 && status.secondsLeft <= 60);
-		assert.strictEqual(status.pairingPhone, "+7 (999) 000-11-22");
+			process.env.WHATSAPP_GATEWAY_URL = "https://gateway.example.test";
+			// 1. Старт новой сессии при настроенном шлюзе
+			const session = WhatsappConnectionHubService.startQrSession({
+				organizationId: testOrgId,
+				pairingPhone: "+7 (999) 000-11-22",
+				forceRefresh: true,
+			});
 
-		// 3. Отвязка устройства
-		const disconnected = WhatsappConnectionHubService.disconnectQrSession(testOrgId);
-		assert.strictEqual(disconnected, true);
+			assert.strictEqual(session.status, "qr_ready");
+			assert.ok(session.qrDataUrl.startsWith("data:image/svg+xml;base64,"));
+			assert.strictEqual(session.pairingPhone, "+7 (999) 000-11-22");
+			assert.ok(session.expiresAt > Date.now());
 
-		const statusAfterDisconnect = WhatsappConnectionHubService.getQrSessionStatus(testOrgId);
-		assert.strictEqual(statusAfterDisconnect.status, "disconnected");
-		assert.strictEqual(statusAfterDisconnect.connectedPhone, null);
+			// 2. Проверка статуса
+			const status = WhatsappConnectionHubService.getQrSessionStatus(testOrgId);
+			assert.strictEqual(status.status, "qr_ready");
+			assert.ok(status.secondsLeft > 0 && status.secondsLeft <= 60);
+			assert.strictEqual(status.pairingPhone, "+7 (999) 000-11-22");
+
+			// 3. Отвязка устройства
+			const disconnected = WhatsappConnectionHubService.disconnectQrSession(testOrgId);
+			assert.strictEqual(disconnected, true);
+
+			const statusAfterDisconnect = WhatsappConnectionHubService.getQrSessionStatus(testOrgId);
+			assert.strictEqual(statusAfterDisconnect.status, "disconnected");
+			assert.strictEqual(statusAfterDisconnect.connectedPhone, null);
+		} finally {
+			if (prevGateway === undefined) delete process.env.WHATSAPP_GATEWAY_URL;
+			else process.env.WHATSAPP_GATEWAY_URL = prevGateway;
+			if (prevGreenApi === undefined) delete process.env.GREEN_API_INSTANCE_ID;
+			else process.env.GREEN_API_INSTANCE_ID = prevGreenApi;
+			if (prevDemo === undefined) delete process.env.DENTE_DEMO_MODE;
+			else process.env.DENTE_DEMO_MODE = prevDemo;
+			if (prevDemoLogin === undefined) delete process.env.DENTE_ALLOW_DEMO_LOGIN;
+			else process.env.DENTE_ALLOW_DEMO_LOGIN = prevDemoLogin;
+			if (prevDemoShowcase === undefined) delete process.env.DENTE_DEMO_SHOWCASE;
+			else process.env.DENTE_DEMO_SHOWCASE = prevDemoShowcase;
+		}
 	});
 
 	test("testWabaConnection: validates Meta API response via real HTTP client", async (t) => {

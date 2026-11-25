@@ -1,11 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
 import {
 	type AsteriskAmiEventPayload,
 	TelephonyGatewayService,
 } from "../../../services/telephony/telephonyGatewayService.js";
 import { UUID_REGEX } from "../../../services/telephony/telephonySecurity.js";
+import { asteriskAmiEventBodySchema } from "../types.js";
 
 export async function handleAsteriskAmiEvent(
 	request: FastifyRequest<{
@@ -33,10 +33,14 @@ export async function handleAsteriskAmiEvent(
 		});
 	}
 
-	const payload = (request.body || {}) as AsteriskAmiEventPayload;
-	const result = await withTenantCtx(orgId, async () => {
-		return await TelephonyGatewayService.processAsteriskAmiEvent(orgId, payload);
-	});
+	const parsedBody = asteriskAmiEventBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Invalid Asterisk AMI event payload",
+		});
+	}
 
+	const result = await TelephonyGatewayService.processAsteriskAmiEvent(orgId, parsedBody.data);
 	return reply.status(200).send(result);
 }

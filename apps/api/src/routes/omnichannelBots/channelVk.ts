@@ -3,22 +3,24 @@ import { withTenantCtx } from "../../db/rls.js";
 import { denteVkBotConfigs } from "../../db/schema.js";
 import { omnichannelBotEngine } from "../../services/bots/OmnichannelBotEngine.js";
 import type { BotInboundMessage } from "../../services/bots/types.js";
+import {
+	isValidWebhookOrganizationId,
+	resolveDecryptedWebhookSecret,
+} from "../../services/bots/webhookSecretAndReplay.js";
 import { getVkConfirmationCode } from "../../security/webhookAuth.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Обработка входящих событий VK Callback API (confirmation, message_new).
  * Требует обязательной проверки секретного ключа (Secret Key Callback API)
- * в соответствии со стандартами безопасности и защитой от BOLA/подделки вебхуков.
+ * с расшифровкой enc:v1:... через OmnichannelTokenVault и timingSafeSecretEqual.
  */
 export async function handleVkWebhook(
 	body: Record<string, unknown>,
 	organizationId: string,
 	incomingSecret?: string | null,
 ): Promise<{ statusCode: number; payload: string }> {
-	if (!UUID_REGEX.test(organizationId)) {
+	if (!isValidWebhookOrganizationId(organizationId)) {
 		return {
 			statusCode: 400,
 			payload: "Bad Request: invalid organizationId UUID",
@@ -37,7 +39,7 @@ export async function handleVkWebhook(
 	);
 
 	const configuredSecret =
-		cfg?.secretKey?.trim() ||
+		resolveDecryptedWebhookSecret(cfg?.secretKey, organizationId) ||
 		process.env.VK_WEBHOOK_SECRET?.trim() ||
 		process.env.DENTE_WEBHOOK_SECRET?.trim() ||
 		null;

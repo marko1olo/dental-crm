@@ -1,50 +1,403 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	denteMaxBotConfigs,
+	denteTelegramAccountConfigs,
 	denteTelegramBotConfigs,
 	denteVkBotConfigs,
+	denteVkUserAccounts,
 	denteWhatsappBotConfigs,
 } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault.js";
 import { testConnectionSchema } from "./schemas.js";
 
+const logger = createApiLogger("messengersOverview");
+const PROBE_TIMEOUT_MS = 8000;
+
+type ProbeTarget =
+	| { kind: "unconfigured"; label: string; reason: string }
+	| { kind: "error"; label: string; reason: string }
+	| { kind: "telegram_bot"; label: string; token: string }
+	| { kind: "vk_group"; label: string; token: string; groupId: string }
+	| { kind: "vk_account"; label: string; token: string; vkUserId?: string | null }
+	| { kind: "wa_green_api"; label: string; instanceId: string; token: string }
+	| { kind: "wa_waba"; label: string; phoneNumberId: string; token: string }
+	| { kind: "max_bot"; label: string; token: string };
+
+function safeResolveToken(
+	raw: string | null | undefined,
+	orgId: string,
+	channelLabel: string,
+): { ok: true; token: string | null } | { ok: false; reason: string } {
+	if (!raw || !raw.trim()) {
+		return { ok: true, token: null };
+	}
+	try {
+		return { ok: true, token: OmnichannelTokenVault.resolveToken(raw, orgId) };
+	} catch (err) {
+		logger.warn({ err: safeLogError(err), orgId, channelLabel }, "Token decryption failed during connection test");
+		return {
+			ok: false,
+			reason: `Не удалось расшифровать токен канала ${channelLabel}. Пересохраните токен в настройках.`,
+		};
+	}
+}
+
+async function resolveProbeTarget(orgId: string, channelId: string): Promise<ProbeTarget> {
+	return withTenantCtx(orgId, async (tx): Promise<ProbeTarget> => {
+		if (channelId === "tg_bot" || channelId === "telegram") {
+			const label = "Telegram";
+			const rows = await tx
+				.select()
+				.from(denteTelegramBotConfigs)
+				.where(eq(denteTelegramBotConfigs.organizationId, orgId));
+			const cfg = rows.find((c) => c.botConfigId !== "tg_account" && c.botConfigId !== "account") ?? rows[0];
+			if (!cfg || cfg.mode === "disabled" || !cfg.tokenSecretRef) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Канал Telegram еще не настроен. Нажмите «Настроить», чтобы ввести токен бота.",
+				};
+			}
+			const resolved = safeResolveToken(cfg.tokenSecretRef, orgId, label);
+			if (!resolved.ok) return { kind: "error", label, reason: resolved.reason };
+			if (!resolved.token) {
+				return { kind: "unconfigured", label, reason: "Токен Telegram-бота не задан." };
+			}
+			return { kind: "telegram_bot", label, token: resolved.token };
+		}
+
+		if (channelId === "tg_account") {
+			const label = "Telegram Аккаунт";
+			const [acc] = await tx
+				.select()
+				.from(denteTelegramAccountConfigs)
+				.where(eq(denteTelegramAccountConfigs.organizationId, orgId))
+				.limit(1);
+			if (!acc || !acc.isActive || !acc.sessionStringEncrypted) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Личный аккаунт Telegram не подключен. Для MTProto-подключения требуются TELEGRAM_API_ID и TELEGRAM_API_HASH.",
+				};
+			}
+			if (!process.env.TELEGRAM_API_ID?.trim() || !process.env.TELEGRAM_API_HASH?.trim()) {
+				return {
+					kind: "error",
+					label,
+					reason: "MTProto-шлюз не настроен на сервере (отсутствуют TELEGRAM_API_ID / TELEGRAM_API_HASH).",
+				};
+			}
+			return {
+				kind: "error",
+				label,
+				reason: "Живая проверка MTProto-сессии недоступна без активного MTProto-клиента.",
+			};
+		}
+
+		if (channelId === "vk_group" || channelId === "vk") {
+			const label = "ВКонтакте";
+			const rows = await tx
+				.select()
+				.from(denteVkBotConfigs)
+				.where(eq(denteVkBotConfigs.organizationId, orgId));
+			const cfg = rows.find((c) => c.botConfigId !== "vk_account" && c.botConfigId !== "account") ?? rows[0];
+			if (!cfg || (!cfg.groupToken && !cfg.tokenSecretRef) || !cfg.groupId) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Канал ВКонтакте еще не настроен. Нажмите «Настроить», чтобы указать ID группы и токен.",
+				};
+			}
+			const resolved = safeResolveToken(cfg.tokenSecretRef || cfg.groupToken, orgId, label);
+			if (!resolved.ok) return { kind: "error", label, reason: resolved.reason };
+			if (!resolved.token) {
+				return { kind: "unconfigured", label, reason: "Токен сообщества ВКонтакте не задан." };
+			}
+			return { kind: "vk_group", label, token: resolved.token, groupId: cfg.groupId };
+		}
+
+		if (channelId === "vk_account") {
+			const label = "VK Аккаунт";
+			const [acc] = await tx
+				.select()
+				.from(denteVkUserAccounts)
+				.where(eq(denteVkUserAccounts.organizationId, orgId))
+				.limit(1);
+			if (!acc || !acc.isActive || (!acc.accessToken && !acc.tokenSecretRef)) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Канал VK Аккаунт еще не настроен. Нажмите «Настроить», чтобы ввести токен или отсканировать QR.",
+				};
+			}
+			const resolved = safeResolveToken(acc.tokenSecretRef || acc.accessToken, orgId, label);
+			if (!resolved.ok) return { kind: "error", label, reason: resolved.reason };
+			if (!resolved.token) {
+				return { kind: "unconfigured", label, reason: "Токен личного аккаунта ВКонтакте не задан." };
+			}
+			return { kind: "vk_account", label, token: resolved.token, vkUserId: acc.vkUserId };
+		}
+
+		if (channelId === "wa_phone" || channelId === "wa_waba" || channelId === "whatsapp") {
+			const label = "WhatsApp";
+			const rows = await tx
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId));
+			const waPhone = rows.find((c) => c.provider === "green_api" || Boolean(c.greenApiInstanceId));
+			const waWaba =
+				rows.find((c) => c.provider === "cloud_api" || (!c.greenApiInstanceId && Boolean(c.phoneNumberId))) ??
+				rows[0];
+			const cfg = channelId === "wa_phone" ? waPhone : channelId === "wa_waba" ? waWaba : (waWaba ?? waPhone);
+			if (!cfg) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Канал WhatsApp еще не настроен. Нажмите «Настроить», чтобы ввести параметры подключения.",
+				};
+			}
+			if (channelId === "wa_phone" || cfg.provider === "green_api") {
+				const resolved = safeResolveToken(cfg.greenApiToken || cfg.tokenSecretRef, orgId, label);
+				if (!resolved.ok) return { kind: "error", label, reason: resolved.reason };
+				if (!cfg.greenApiInstanceId || !resolved.token) {
+					return {
+						kind: "unconfigured",
+						label,
+						reason: "Канал WhatsApp (Green-API) еще не настроен.",
+					};
+				}
+				return {
+					kind: "wa_green_api",
+					label,
+					instanceId: cfg.greenApiInstanceId,
+					token: resolved.token,
+				};
+			}
+			const resolved = safeResolveToken(cfg.accessToken || cfg.tokenSecretRef, orgId, label);
+			if (!resolved.ok) return { kind: "error", label, reason: resolved.reason };
+			if (!cfg.phoneNumberId || !resolved.token) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Канал WhatsApp WABA еще не настроен.",
+				};
+			}
+			return {
+				kind: "wa_waba",
+				label,
+				phoneNumberId: cfg.phoneNumberId,
+				token: resolved.token,
+			};
+		}
+
+		if (channelId === "max_bot" || channelId === "max") {
+			const label = "MAX";
+			const [cfg] = await tx
+				.select()
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, orgId))
+				.limit(1);
+			if (!cfg || (!cfg.maxBotToken && !cfg.tokenSecretRef)) {
+				return {
+					kind: "unconfigured",
+					label,
+					reason: "Канал MAX еще не настроен. Нажмите «Настроить», чтобы ввести токен бота.",
+				};
+			}
+			const resolved = safeResolveToken(cfg.maxBotToken || cfg.tokenSecretRef, orgId, label);
+			if (!resolved.ok) return { kind: "error", label, reason: resolved.reason };
+			if (!resolved.token) {
+				return { kind: "unconfigured", label, reason: "Токен MAX-бота не задан." };
+			}
+			return { kind: "max_bot", label, token: resolved.token };
+		}
+
+		return {
+			kind: "unconfigured",
+			label: channelId,
+			reason: `Неизвестный канал ${channelId}.`,
+		};
+	});
+}
+
+async function runExternalConnectionProbe(
+	target: Exclude<ProbeTarget, { kind: "unconfigured" } | { kind: "error" }>,
+): Promise<{ ok: boolean; message: string }> {
+	const signal = AbortSignal.timeout(PROBE_TIMEOUT_MS);
+
+	switch (target.kind) {
+		case "telegram_bot": {
+			const res = await fetch(`https://api.telegram.org/bot${target.token}/getMe`, { signal });
+			const json = (await res.json().catch(() => null)) as {
+				ok?: boolean;
+				description?: string;
+				result?: { username?: string };
+			} | null;
+			if (!res.ok || !json?.ok) {
+				return {
+					ok: false,
+					message: json?.description
+						? `Telegram Bot API отклонил токен: ${json.description}`
+						: `Telegram Bot API ответил HTTP ${res.status}`,
+				};
+			}
+			const botName = json.result?.username ? `@${json.result.username}` : "бот";
+			return {
+				ok: true,
+				message: `Связь с Telegram (${botName}) подтверждена. HTTP ${res.status} OK.`,
+			};
+		}
+
+		case "vk_group": {
+			const params = new URLSearchParams({
+				group_id: target.groupId.replace(/^club|^public/, ""),
+				access_token: target.token,
+				v: "5.199",
+			});
+			const res = await fetch(`https://api.vk.com/method/groups.getById?${params.toString()}`, { signal });
+			const json = (await res.json().catch(() => null)) as {
+				error?: { error_code?: number; error_msg?: string };
+				response?: unknown;
+			} | null;
+			if (!res.ok || json?.error || !json?.response) {
+				const errText = json?.error?.error_msg || `HTTP ${res.status}`;
+				return {
+					ok: false,
+					message: `Проверка ВКонтакте не пройдена: ${errText}`,
+				};
+			}
+			return {
+				ok: true,
+				message: `Связь с ВКонтакте подтверждена. HTTP ${res.status} OK.`,
+			};
+		}
+
+		case "vk_account": {
+			const params = new URLSearchParams({
+				access_token: target.token,
+				v: "5.199",
+			});
+			if (target.vkUserId) {
+				params.set("user_ids", target.vkUserId.replace(/^id/, ""));
+			}
+			const res = await fetch(`https://api.vk.com/method/users.get?${params.toString()}`, { signal });
+			const json = (await res.json().catch(() => null)) as {
+				error?: { error_msg?: string };
+				response?: unknown[];
+			} | null;
+			if (!res.ok || json?.error || !Array.isArray(json?.response) || json.response.length === 0) {
+				return {
+					ok: false,
+					message: `Проверка личного аккаунта ВКонтакте не пройдена: ${json?.error?.error_msg || `HTTP ${res.status}`}`,
+				};
+			}
+			return {
+				ok: true,
+				message: `Связь с личным аккаунтом ВКонтакте подтверждена. HTTP ${res.status} OK.`,
+			};
+		}
+
+		case "wa_green_api": {
+			const res = await fetch(
+				`https://api.green-api.com/waInstance${encodeURIComponent(target.instanceId)}/getStateInstance/${encodeURIComponent(target.token)}`,
+				{ signal },
+			);
+			const json = (await res.json().catch(() => null)) as { stateInstance?: string; message?: string } | null;
+			if (!res.ok) {
+				return {
+					ok: false,
+					message: json?.message || `Green-API вернул HTTP ${res.status}`,
+				};
+			}
+			if (json?.stateInstance && json.stateInstance !== "authorized") {
+				return {
+					ok: false,
+					message: `Инстанс WhatsApp не авторизован (состояние: ${json.stateInstance}).`,
+				};
+			}
+			return {
+				ok: true,
+				message: `Связь с WhatsApp (Green-API) подтверждена. HTTP ${res.status} OK.`,
+			};
+		}
+
+		case "wa_waba": {
+			const res = await fetch(
+				`https://graph.facebook.com/v20.0/${encodeURIComponent(target.phoneNumberId)}?fields=id,display_phone_number`,
+				{
+					headers: { Authorization: `Bearer ${target.token}` },
+					signal,
+				},
+			);
+			const json = (await res.json().catch(() => null)) as {
+				id?: string;
+				error?: { message?: string };
+			} | null;
+			if (!res.ok || json?.error || !json?.id) {
+				return {
+					ok: false,
+					message: `WhatsApp Cloud API вернул ошибку: ${json?.error?.message || `HTTP ${res.status}`}`,
+				};
+			}
+			return {
+				ok: true,
+				message: `Связь с WhatsApp Cloud API подтверждена. HTTP ${res.status} OK.`,
+			};
+		}
+
+		case "max_bot": {
+			const res = await fetch("https://platform-api2.max.ru/me", {
+				headers: { authorization: target.token },
+				signal,
+			});
+			const json = (await res.json().catch(() => null)) as { message?: string; name?: string } | null;
+			if (!res.ok) {
+				return {
+					ok: false,
+					message: `MAX API отклонил запрос: ${json?.message || `HTTP ${res.status}`}`,
+				};
+			}
+			return {
+				ok: true,
+				message: `Связь с MAX подтверждена. HTTP ${res.status} OK.`,
+			};
+		}
+	}
+}
+
 /**
  * GET /api/messengers/overview
- * Обзорный статус всех 6 каналов мессенджеров клиники:
- * 1. TG Бот (Telegram Bot)
- * 2. TG Аккаунт (Telegram Personal Account)
- * 3. VK Группа (VK Community Bot)
- * 4. VK Аккаунт (VK Personal Account)
- * 5. WA Телефон (WhatsApp Phone QR / Green-API)
- * 6. WA WABA (WhatsApp Cloud API / WABA)
- * 7. MAX (MAX by 1C)
+ * Обзорный статус всех каналов мессенджеров клиники.
  * Все токены гарантированно маскируются через OmnichannelTokenVault.
  */
 export async function getMessengersOverviewHandler(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply, "messengers overview read");
 	if (!orgId) return;
 
-	const [tgConfigs, vkConfigs, waConfigs, maxConfigs] = await Promise.all([
-		db
-			.select()
-			.from(denteTelegramBotConfigs)
-			.where(eq(denteTelegramBotConfigs.organizationId, orgId)),
-		db
-			.select()
-			.from(denteVkBotConfigs)
-			.where(eq(denteVkBotConfigs.organizationId, orgId)),
-		db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId)),
-		db
-			.select()
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId)),
-	]);
+	const [tgConfigs, vkConfigs, waConfigs, maxConfigs] = await withTenantCtx(orgId, async (tx) =>
+		Promise.all([
+			tx
+				.select()
+				.from(denteTelegramBotConfigs)
+				.where(eq(denteTelegramBotConfigs.organizationId, orgId)),
+			tx
+				.select()
+				.from(denteVkBotConfigs)
+				.where(eq(denteVkBotConfigs.organizationId, orgId)),
+			tx
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId)),
+			tx
+				.select()
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, orgId)),
+		]),
+	);
 
 	const tgBot = tgConfigs.find((c) => c.botConfigId !== "tg_account" && c.botConfigId !== "account") || tgConfigs[0];
 	const tgAccount = tgConfigs.find((c) => c.botConfigId === "tg_account" || c.botConfigId === "account");
@@ -225,7 +578,7 @@ export async function getMessengersOverviewHandler(request: FastifyRequest, repl
 
 /**
  * POST /api/messengers/test-connection
- * Тестирование связи с выбранным каналом мессенджера («Проверить связь» в 1 клик).
+ * Честная HTTP-проверка связи с выбранным шлюзом мессенджера (токен расшифровывается короткой TX, HTTP-запрос идёт строго вне PG TX).
  */
 export async function handleTestConnection(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedOrganizationId(request, reply, "messengers test connection");
@@ -240,69 +593,52 @@ export async function handleTestConnection(request: FastifyRequest, reply: Fasti
 	}
 
 	const { channelId } = parse.data;
+	const target = await resolveProbeTarget(orgId, channelId);
 
-	let isConfigured = false;
-	let channelLabel = channelId;
-
-	const pingStartTime = performance.now();
-
-	if (channelId === "tg_bot" || channelId === "tg_account" || channelId === "telegram") {
-		channelLabel = "Telegram";
-		const cfg = await db
-			.select()
-			.from(denteTelegramBotConfigs)
-			.where(eq(denteTelegramBotConfigs.organizationId, orgId))
-			.limit(1);
-		isConfigured = Boolean(cfg[0]?.tokenSecretRef && cfg[0]?.mode !== "disabled");
-	} else if (channelId === "vk_group" || channelId === "vk_account" || channelId === "vk") {
-		channelLabel = "ВКонтакте";
-		const cfg = await db
-			.select()
-			.from(denteVkBotConfigs)
-			.where(eq(denteVkBotConfigs.organizationId, orgId))
-			.limit(1);
-		isConfigured = Boolean(cfg[0]?.groupToken || cfg[0]?.tokenSecretRef);
-	} else if (channelId === "wa_phone" || channelId === "wa_waba" || channelId === "whatsapp") {
-		channelLabel = "WhatsApp";
-		const cfg = await db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-			.limit(1);
-		isConfigured = Boolean(
-			(cfg[0]?.provider === "green_api" && cfg[0]?.greenApiToken) ||
-			cfg[0]?.accessToken ||
-			cfg[0]?.tokenSecretRef
-		);
-	} else if (channelId === "max_bot" || channelId === "max") {
-		channelLabel = "MAX";
-		const cfg = await db
-			.select()
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId))
-			.limit(1);
-		isConfigured = Boolean(cfg[0]?.maxBotToken || cfg[0]?.tokenSecretRef);
-	}
-
-	const latencyMs = Math.max(1, Math.round(performance.now() - pingStartTime));
-
-	if (isConfigured) {
+	if (target.kind === "unconfigured") {
 		return reply.send({
-			ok: true,
+			ok: false,
 			channelId,
-			status: "connected",
-			latencyMs,
-			message: `Связь с шлюзом ${channelLabel} стабильна. Время отклика ${latencyMs}мс. HTTP 200 OK.`,
+			status: "unconfigured",
+			latencyMs: null,
+			message: target.reason,
 			testedAt: new Date().toISOString(),
 		});
 	}
 
-	return reply.send({
-		ok: false,
-		channelId,
-		status: "unconfigured",
-		latencyMs: null,
-		message: `Канал ${channelLabel} еще не настроен. Нажмите «Настроить», чтобы ввести токен или отсканировать QR.`,
-		testedAt: new Date().toISOString(),
-	});
+	if (target.kind === "error") {
+		return reply.send({
+			ok: false,
+			channelId,
+			status: "error",
+			latencyMs: null,
+			message: target.reason,
+			testedAt: new Date().toISOString(),
+		});
+	}
+
+	const pingStartTime = performance.now();
+	try {
+		const probe = await runExternalConnectionProbe(target);
+		const latencyMs = Math.max(1, Math.round(performance.now() - pingStartTime));
+		return reply.send({
+			ok: probe.ok,
+			channelId,
+			status: probe.ok ? "connected" : "error",
+			latencyMs,
+			message: probe.message,
+			testedAt: new Date().toISOString(),
+		});
+	} catch (err) {
+		const latencyMs = Math.max(1, Math.round(performance.now() - pingStartTime));
+		logger.warn({ err: safeLogError(err), orgId, channelId }, "Messenger gateway HTTP probe failed");
+		return reply.send({
+			ok: false,
+			channelId,
+			status: "error",
+			latencyMs,
+			message: `Не удалось подключиться к шлюзу ${target.label}: ${err instanceof Error ? err.message : String(err)}`,
+			testedAt: new Date().toISOString(),
+		});
+	}
 }

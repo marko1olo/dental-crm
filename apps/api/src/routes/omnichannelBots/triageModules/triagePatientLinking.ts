@@ -14,7 +14,7 @@ export async function handleLinkPatient(
 	senderId: string,
 	channel: BotChannel = "telegram",
 	patientId?: string,
-	createNew?: { fullName: string; phone?: string | null },
+	createNew?: { fullName: string; phone?: string | null | undefined },
 ): Promise<{
 	ok: boolean;
 	statusCode?: number;

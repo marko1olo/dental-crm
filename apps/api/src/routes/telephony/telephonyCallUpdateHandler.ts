@@ -5,14 +5,14 @@
  * Mandates 8e (Doctor Autonomy), 8x (Domain Purity), 8ba (Disruptive Reality).
  */
 
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { communicationEvents } from "../../db/schema.js";
 import { UUID_REGEX } from "../../services/telephony/telephonySecurity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { telephonyCallUpdateBodySchema } from "./types.js";
 
 export interface UpdateCallNoteBody {
 	note?: string;
@@ -59,7 +59,7 @@ export async function telephonyCallUpdateHandler(
 	}
 	const orgId = resolvedOrgId;
 
-	const callId = request.params.id;
+	const callId = (request.params.id || "").trim();
 	if (!callId) {
 		return reply.status(400).send({
 			error: "InvalidCallId",
@@ -67,7 +67,15 @@ export async function telephonyCallUpdateHandler(
 		});
 	}
 
-	const body = request.body || {};
+	const parsedBody = telephonyCallUpdateBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат данных заметки к звонку",
+		});
+	}
+
+	const body = parsedBody.data;
 	const noteText = (body.note ?? body.clinicalNote ?? body.message ?? "").trim();
 	if (!noteText) {
 		return reply.status(400).send({
@@ -76,19 +84,9 @@ export async function telephonyCallUpdateHandler(
 		});
 	}
 
-	let updatedCall: {
-		id: string;
-		providerCallId?: string | null;
-		patientId: string | null;
-		callerPhone: string | null;
-		message: string;
-		status: string;
-		createdAt: Date;
-	} | null = null;
-
-	if (UUID_REGEX.test(callId)) {
-		updatedCall = await withTenantCtx(orgId, async () => {
-			const existing = await db
+	const updatedCall = await withTenantCtx(orgId, async (tx) => {
+		if (UUID_REGEX.test(callId)) {
+			const existing = await tx
 				.select({
 					message: communicationEvents.message,
 					providerCallId: communicationEvents.providerCallId,
@@ -103,11 +101,15 @@ export async function telephonyCallUpdateHandler(
 				.limit(1);
 
 			const existingRow = existing[0];
-			const inferredProviderCallId =
-				existingRow?.providerCallId ||
-				extractCallIdMarker(existingRow?.message, undefined);
+			if (!existingRow) {
+				return null;
+			}
 
-			const res = await db
+			const inferredProviderCallId =
+				existingRow.providerCallId ||
+				extractCallIdMarker(existingRow.message, undefined);
+
+			const res = await tx
 				.update(communicationEvents)
 				.set({
 					message: noteText,
@@ -129,94 +131,80 @@ export async function telephonyCallUpdateHandler(
 					createdAt: communicationEvents.createdAt,
 				});
 
-			return res.length > 0 && res[0] ? res[0] : null;
-		});
-	} else {
-		// Non-UUID call identifier (e.g. Mango, Zadarma, UIS, Asterisk string tokens)
-		// Search in communicationEvents by providerCallId (relational column)
-		const callerPhone = body.callerPhone ?? body.phone ?? null;
-
-		updatedCall = await withTenantCtx(orgId, async () => {
-			// 1. Точный поиск события звонка строго по providerCallId (индексированная колонка)
-			const matchedEvents = await db
-				.select({
-					id: communicationEvents.id,
-					providerCallId: communicationEvents.providerCallId,
-				})
-				.from(communicationEvents)
-				.where(
-					and(
-						eq(communicationEvents.organizationId, orgId),
-						UUID_REGEX.test(callId)
-							? or(
-									eq(communicationEvents.providerCallId, callId),
-									eq(communicationEvents.id, callId),
-								)
-							: eq(communicationEvents.providerCallId, callId),
-					),
-				)
-				.orderBy(desc(communicationEvents.createdAt))
-				.limit(1);
-
-			const targetEvent = matchedEvents[0];
-
-			if (targetEvent) {
-				const res = await db
-					.update(communicationEvents)
-					.set({
-						message: noteText,
-						providerCallId: targetEvent.providerCallId || callId,
-					})
-					.where(
-						and(
-							eq(communicationEvents.id, targetEvent.id),
-							eq(communicationEvents.organizationId, orgId),
-						),
-					)
-					.returning({
-						id: communicationEvents.id,
-						providerCallId: communicationEvents.providerCallId,
-						patientId: communicationEvents.patientId,
-						callerPhone: communicationEvents.callerPhone,
-						message: communicationEvents.message,
-						status: communicationEvents.status,
-						createdAt: communicationEvents.createdAt,
+			const row = res[0] ?? null;
+			if (row) {
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(resolvedOrgId, {
+						type: "TELEPHONY_CALL_NOTE_UPDATED",
+						payload: {
+							callId: row.id,
+							note: noteText,
+							updatedAt: new Date().toISOString(),
+						},
 					});
-
-				return res[0] ?? null;
-			}
-
-			const rawIdempotencyKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"];
-			const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
-
-			// 2. Если звонок ещё не сохранён в БД (in-flight), создаём новую запись с привязкой providerCallId
-			const [created] = await db
-				.insert(communicationEvents)
-				.values({
-					organizationId: orgId,
-					providerCallId: callId,
-					providerName: "telephony",
-					callerPhone,
-					patientId: body.patientId && UUID_REGEX.test(body.patientId) ? body.patientId : null,
-					channel: "phone",
-					direction: body.direction === "outbound" ? "outbound" : "inbound",
-					status: "completed",
-					message: noteText,
-					idempotencyKey,
-				})
-				.returning({
-					id: communicationEvents.id,
-					providerCallId: communicationEvents.providerCallId,
-					patientId: communicationEvents.patientId,
-					callerPhone: communicationEvents.callerPhone,
-					message: communicationEvents.message,
-					status: communicationEvents.status,
-					createdAt: communicationEvents.createdAt,
 				});
+			}
+			return row;
+		}
 
-			return created ?? null;
-		});
-	}
+		// Non-UUID providerCallId lookup ONLY (never create fake call records on PATCH)
+		const matchedEvents = await tx
+			.select({
+				id: communicationEvents.id,
+				providerCallId: communicationEvents.providerCallId,
+			})
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.organizationId, orgId),
+					eq(communicationEvents.providerCallId, callId),
+				),
+			)
+			.orderBy(desc(communicationEvents.createdAt))
+			.limit(1);
+
+		const targetEvent = matchedEvents[0];
+		if (!targetEvent) {
+			return null;
+		}
+
+		const res = await tx
+			.update(communicationEvents)
+			.set({
+				message: noteText,
+				providerCallId: targetEvent.providerCallId || callId,
+			})
+			.where(
+				and(
+					eq(communicationEvents.id, targetEvent.id),
+					eq(communicationEvents.organizationId, orgId),
+				),
+			)
+			.returning({
+				id: communicationEvents.id,
+				providerCallId: communicationEvents.providerCallId,
+				patientId: communicationEvents.patientId,
+				callerPhone: communicationEvents.callerPhone,
+				message: communicationEvents.message,
+				status: communicationEvents.status,
+				createdAt: communicationEvents.createdAt,
+			});
+
+		const row = res[0] ?? null;
+		if (row) {
+			onTenantTxCommit(() => {
+				wsBroker.broadcastToOrganization(resolvedOrgId, {
+					type: "TELEPHONY_CALL_NOTE_UPDATED",
+					payload: {
+						callId: row.id,
+						note: noteText,
+						updatedAt: new Date().toISOString(),
+					},
+				});
+			});
+		}
+		return row;
+	});
 
 	if (!updatedCall) {
 		return reply.status(404).send({
@@ -225,19 +213,10 @@ export async function telephonyCallUpdateHandler(
 		});
 	}
 
-	wsBroker.broadcastToOrganization(resolvedOrgId, {
-		type: "TELEPHONY_CALL_NOTE_UPDATED",
-		payload: {
-			callId: updatedCall.id,
-			note: noteText,
-			updatedAt: new Date().toISOString(),
-		},
-	});
-
 	return reply.status(200).send({
 		success: true,
 		call: updatedCall,
-		callId: callId,
+		callId,
 		eventId: updatedCall.id,
 		note: noteText,
 	});

@@ -588,10 +588,40 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 			assert.equal(parsed.payload.callId, "call-999");
 		});
 
-		it("persists call notes physically in PostgreSQL for non-UUID provider callId tokens", async () => {
+		it("persists call notes physically in PostgreSQL for existing provider callId tokens and returns 404 for unknown callId", async () => {
 			if (!databaseReady) return;
 
 			const providerCallId = `mango-call-session-${Date.now()}`;
+			await withFixtureTenant(ORG_A_ID, async (tx) => {
+				await tx.insert(communicationEvents).values({
+					organizationId: ORG_A_ID,
+					providerCallId,
+					providerName: "mango",
+					patientId: PATIENT_A_ID,
+					callerPhone: "+79161112233",
+					channel: "phone",
+					direction: "inbound",
+					status: "completed",
+					message: "Входящий звонок",
+					durationSeconds: 30,
+				});
+			});
+
+			const unknownRes = await app.inject({
+				method: "PATCH",
+				url: `/api/telephony/${ORG_A_ID}/calls/nonexistent-call-${Date.now()}`,
+				headers: {
+					"x-dente-staff-token": signToken(
+						{ organizationId: ORG_A_ID, userId: STAFF_A_ID, role: "admin" },
+						authTokenSecret(),
+					),
+				},
+				payload: {
+					note: "Не должно создаваться",
+				},
+			});
+			assert.equal(unknownRes.statusCode, 404, "PATCH for unknown non-UUID callId must return 404 without inserting a new row");
+
 			const noteText = "Пациент жалуется на острую боль в области зуба 46, записан на 15:00";
 
 			const response = await app.inject({
@@ -605,8 +635,6 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 				},
 				payload: {
 					note: noteText,
-					callerPhone: "+79161112233",
-					patientId: PATIENT_A_ID,
 				},
 			});
 

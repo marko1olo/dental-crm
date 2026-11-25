@@ -8,10 +8,13 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { isDemoShowcaseMode } from "../../accessGuard.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { OmnichannelTokenVault } from "../bots/OmnichannelTokenVault.js";
-import { readWhatsappCredentials } from "../../whatsappTransport.js";
+
+const logger = createApiLogger("whatsappConnectionHub");
 
 export type WhatsappQrStatus = "qr_ready" | "scanned" | "authenticated" | "disconnected" | "expired";
 
@@ -216,9 +219,9 @@ export class WhatsappConnectionHubService {
 			process.env.WHATSAPP_GATEWAY_URL?.trim() ||
 			process.env.GREEN_API_INSTANCE_ID?.trim(),
 		);
-		const isProduction = process.env.NODE_ENV === "production";
+		const demoAllowed = isDemoShowcaseMode();
 
-		if (!hasGateway && isProduction && process.env.DENTE_DEMO_MODE !== "true") {
+		if (!hasGateway && !demoAllowed) {
 			const session: WhatsappQrSession = {
 				organizationId,
 				sessionId: `wa_qr_${organizationId}_disconnected`,
@@ -260,7 +263,6 @@ export class WhatsappConnectionHubService {
 			connectedAt: null,
 			deviceModel: null,
 			lastScannedAt: null,
-			isSimulated: !hasGateway,
 		};
 
 		activeQrSessions.set(organizationId, session);
@@ -354,20 +356,40 @@ export class WhatsappConnectionHubService {
 		const { organizationId, phoneNumberId, wabaAccountId, accessToken, webhookVerifyToken } = input;
 		const now = new Date();
 
-		const [existing] = await db
-			.select({ id: denteWhatsappBotConfigs.id })
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
-			.limit(1);
-
 		const encryptedToken = OmnichannelTokenVault.isEncrypted(accessToken)
 			? accessToken
 			: OmnichannelTokenVault.encrypt(accessToken, organizationId);
 
-		if (existing) {
-			await db
-				.update(denteWhatsappBotConfigs)
-				.set({
+		return withTenantCtx(organizationId, async (tx) => {
+			const [existing] = await tx
+				.select({ id: denteWhatsappBotConfigs.id })
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
+				.limit(1);
+
+			if (existing) {
+				await tx
+					.update(denteWhatsappBotConfigs)
+					.set({
+						phoneNumberId: phoneNumberId.trim(),
+						wabaAccountId: wabaAccountId?.trim() || null,
+						accessToken: encryptedToken,
+						tokenSecretRef: encryptedToken,
+						webhookVerifyToken: webhookVerifyToken?.trim() || null,
+						provider: "cloud_api",
+						isActive: true,
+						isEnabled: true,
+						updatedAt: now,
+					})
+					.where(eq(denteWhatsappBotConfigs.organizationId, organizationId));
+
+				return { ok: true, id: existing.id };
+			}
+
+			const [inserted] = await tx
+				.insert(denteWhatsappBotConfigs)
+				.values({
+					organizationId,
 					phoneNumberId: phoneNumberId.trim(),
 					wabaAccountId: wabaAccountId?.trim() || null,
 					accessToken: encryptedToken,
@@ -376,33 +398,15 @@ export class WhatsappConnectionHubService {
 					provider: "cloud_api",
 					isActive: true,
 					isEnabled: true,
-					updatedAt: now,
 				})
-				.where(eq(denteWhatsappBotConfigs.organizationId, organizationId));
+				.returning({ id: denteWhatsappBotConfigs.id });
 
-			return { ok: true, id: existing.id };
-		}
+			if (!inserted) {
+				throw new Error("Не удалось сохранить конфигурацию WABA в базе данных.");
+			}
 
-		const [inserted] = await db
-			.insert(denteWhatsappBotConfigs)
-			.values({
-				organizationId,
-				phoneNumberId: phoneNumberId.trim(),
-				wabaAccountId: wabaAccountId?.trim() || null,
-				accessToken: encryptedToken,
-				tokenSecretRef: encryptedToken,
-				webhookVerifyToken: webhookVerifyToken?.trim() || null,
-				provider: "cloud_api",
-				isActive: true,
-				isEnabled: true,
-			})
-			.returning({ id: denteWhatsappBotConfigs.id });
-
-		if (!inserted) {
-			throw new Error("Не удалось сохранить конфигурацию WABA в базе данных.");
-		}
-
-		return { ok: true, id: inserted.id };
+			return { ok: true, id: inserted.id };
+		});
 	}
 
 	/**
@@ -416,11 +420,26 @@ export class WhatsappConnectionHubService {
 		const { phoneNumberId, organizationId } = params;
 		let token = params.accessToken.trim();
 
-		if (OmnichannelTokenVault.isEncrypted(token) && organizationId) {
+		if (OmnichannelTokenVault.isEncrypted(token)) {
+			if (!organizationId) {
+				return {
+					ok: false,
+					errorCode: null,
+					errorMessage: "Невозможно расшифровать Access Token WhatsApp без organizationId.",
+				};
+			}
 			try {
 				token = OmnichannelTokenVault.decrypt(token, organizationId);
-			} catch {
-				// fallback
+			} catch (err) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId },
+					"Failed to decrypt WhatsApp WABA token in testWabaConnection",
+				);
+				return {
+					ok: false,
+					errorCode: null,
+					errorMessage: "Не удалось расшифровать Access Token WhatsApp. Пересохраните токен в настройках.",
+				};
 			}
 		}
 
@@ -473,11 +492,14 @@ export class WhatsappConnectionHubService {
 	 * Получение статуса WABA Cloud для организации.
 	 */
 	static async getWabaStatus(organizationId: string, serverOrigin = "http://127.0.0.1:3000"): Promise<WabaStatusResult> {
-		const [config] = await db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
-			.limit(1);
+		const config = await withTenantCtx(organizationId, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, organizationId))
+				.limit(1);
+			return row ?? null;
+		});
 
 		const webhookUrl = `${serverOrigin}/api/whatsapp/webhook`;
 

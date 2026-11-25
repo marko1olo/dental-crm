@@ -3,20 +3,22 @@ import { withTenantCtx } from "../../db/rls.js";
 import { denteMaxBotConfigs } from "../../db/schema.js";
 import { omnichannelBotEngine } from "../../services/bots/OmnichannelBotEngine.js";
 import type { BotInboundMessage } from "../../services/bots/types.js";
+import {
+	isValidWebhookOrganizationId,
+	resolveDecryptedWebhookSecret,
+} from "../../services/bots/webhookSecretAndReplay.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Обработка входящих событий корпоративного мессенджера MAX (VK Max) — Национальный корпоративный мессенджер.
- * Защищена обязательной проверкой токена/секрета через timingSafeSecretEqual.
+ * Защищена обязательной проверкой токена/секрета с расшифровкой enc:v1:... и timingSafeSecretEqual.
  */
 export async function handleMaxWebhook(
 	body: Record<string, unknown>,
 	organizationId: string,
 	incomingSecret?: string | null,
 ): Promise<{ ok: boolean; error?: string; statusCode?: number }> {
-	if (!UUID_REGEX.test(organizationId)) {
+	if (!isValidWebhookOrganizationId(organizationId)) {
 		return {
 			ok: false,
 			statusCode: 400,
@@ -44,8 +46,8 @@ export async function handleMaxWebhook(
 	);
 
 	const configuredSecret =
-		cfg?.tokenSecretRef?.trim() ||
-		cfg?.maxBotToken?.trim() ||
+		resolveDecryptedWebhookSecret(cfg?.tokenSecretRef, organizationId) ||
+		resolveDecryptedWebhookSecret(cfg?.maxBotToken, organizationId) ||
 		process.env.MAX_WEBHOOK_SECRET?.trim() ||
 		process.env.DENTE_WEBHOOK_SECRET?.trim() ||
 		null;

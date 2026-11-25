@@ -106,6 +106,16 @@ export function registerTelegramAccountQrRoutes(app: FastifyInstance) {
 			clinicId: resolvedClinic.clinicId,
 		});
 
+		if (!qr.ok) {
+			const statusCode = qr.configured === false ? 501 : 400;
+			return reply.code(statusCode).send({
+				ok: false,
+				...(qr.configured === false ? { configured: false } : {}),
+				error: qr.errorCode || "QrRequestFailed",
+				message: qr.error || "Не удалось запросить QR-код авторизации Telegram.",
+			});
+		}
+
 		return reply.code(200).send({
 			ok: true,
 			token: qr.token,
@@ -152,9 +162,11 @@ export function registerTelegramAccountQrRoutes(app: FastifyInstance) {
 		});
 
 		if (!result.ok) {
-			return reply.code(400).send({
+			const statusCode = result.configured === false ? 501 : 400;
+			return reply.code(statusCode).send({
 				ok: false,
-				error: "QrConfirmFailed",
+				...(result.configured === false ? { configured: false } : {}),
+				error: result.errorCode || "QrConfirmFailed",
 				message: result.error || "Не удалось подтвердить авторизацию по QR-коду.",
 			});
 		}

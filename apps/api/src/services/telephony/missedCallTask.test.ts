@@ -78,7 +78,8 @@ describe("MissedCallService — Telecom Interception & Urgent Task Engine", () =
 		assert.strictEqual(result.success, true);
 		assert.strictEqual(result.isNewLead, true);
 		assert.strictEqual(result.patientId, null, "Unknown caller must NOT have patientId");
-		assert.ok(result.taskId, "Should return task/lead reference ID");
+		assert.strictEqual(result.taskId, undefined, "Unknown caller must NOT substitute leadId into taskId");
+		assert.ok(result.leadId, "Should return created CRM lead ID");
 
 		// SANE INVARIANT: verify that NO fake patient was inserted into patients table
 		const foundPatients = await db

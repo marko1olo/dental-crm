@@ -58,3 +58,30 @@ export const bookAppointmentBodySchema = z
 	.strict();
 
 export type BookAppointmentBody = z.infer<typeof bookAppointmentBodySchema>;
+
+export const takeoverBodySchema = z
+	.object({
+		channel: z.enum(["telegram", "vk", "whatsapp", "max"]).default("telegram"),
+		operatorName: z.string().trim().min(1).max(120).optional(),
+	})
+	.strict();
+
+export const releaseBodySchema = z
+	.object({
+		channel: z.enum(["telegram", "vk", "whatsapp", "max"]).default("telegram"),
+	})
+	.strict();
+
+export const linkPatientBodySchema = z
+	.object({
+		channel: z.enum(["telegram", "vk", "whatsapp", "max"]).default("telegram"),
+		patientId: z.string().uuid("patientId должен быть валидным UUID").optional(),
+		createNew: z
+			.object({
+				fullName: z.string().trim().min(1, "Укажите ФИО пациента"),
+				phone: z.string().trim().nullable().optional(),
+			})
+			.strict()
+			.optional(),
+	})
+	.strict();

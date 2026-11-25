@@ -6,6 +6,7 @@
 import {
 	denteTelegramWebhookResponseSchema,
 } from "@dental/shared";
+import { safeLogError } from "../../../observability/logger.js";
 import { recordDenteTelegramWebhookEvent } from "../../../services/telegram/telegramWebhookEventsService.js";
 import {
 	answerTelegramCallbackQuery,
@@ -36,6 +37,7 @@ export async function handleIntercomAckCallback(
 	params: WebhookSpecializedCallbackParams,
 ): Promise<SpecializedCallbackHandlerResult> {
 	const {
+		request,
 		runtime,
 		callbackData,
 		callbackQueryId,
@@ -74,6 +76,11 @@ export async function handleIntercomAckCallback(
 				chatId,
 				text: intercomAckResult.responseText,
 				timeoutMs: 3000,
+			}).catch((err) => {
+				request.log.warn(
+					{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+					"Failed to send Telegram intercom ack message",
+				);
 			});
 		}
 
@@ -99,6 +106,7 @@ export async function handleCockpitCallback(
 	params: WebhookSpecializedCallbackParams,
 ): Promise<SpecializedCallbackHandlerResult> {
 	const {
+		request,
 		runtime,
 		callbackData,
 		callbackQueryId,
@@ -139,7 +147,12 @@ export async function handleCockpitCallback(
 				text: cockpitCallbackResult.responseText,
 				replyMarkup: cockpitCallbackResult.replyMarkup,
 				timeoutMs: 3000,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.warn(
+					{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+					"Failed to send Telegram staff cockpit reply",
+				);
+			});
 		}
 
 		return denteTelegramWebhookResponseSchema.parse(
@@ -185,7 +198,12 @@ export async function handlePresetNavCallback(
 			void answerTelegramCallbackQuery({
 				botToken: runtime.botToken,
 				callbackQueryId,
-			}).catch(() => {});
+			}).catch((err) => {
+				request.log.warn(
+					{ err: safeLogError(err), organizationId: runtime.organizationId },
+					"Failed to answer preset_nav callback query",
+				);
+			});
 		}
 
 		const activeBotToken = runtime.botToken;
@@ -204,7 +222,12 @@ export async function handlePresetNavCallback(
 					chatId: activeChatId,
 					text: resolvedScreen.text,
 					replyMarkup: resolvedScreen.replyMarkup,
-				}).catch(() => {});
+				}).catch((sendErr) => {
+					request.log.warn(
+						{ err: safeLogError(sendErr), organizationId: runtime.organizationId },
+						"Failed to send fallback preset_nav reply",
+					);
+				});
 			});
 		}
 

@@ -387,4 +387,63 @@ describe("MedFlex & ProDoctorov Integration Suite (Mandates 8e, 8n, Red Team)", 
 			`Expected 401/403 on update-settings without auth, got ${updateSettingsRes.statusCode}`,
 		);
 	});
+
+	it("8. Запрет отмены чужого приёма по голому startsAt: чужая запись на то же время НЕ отменяется", async () => {
+		const startsAt = new Date("2026-12-01T10:00:00Z");
+		const endsAt = new Date("2026-12-01T10:30:00Z");
+
+		// 1. Создаём запись Пациента А (бронь A-101)
+		const createPayload = {
+			event: "booking_created",
+			deliveryId: `cancel-guard-create-${Date.now()}`,
+			bookingId: `PD-OWN-${Date.now()}`,
+			patient: { fullName: "Защищённый Пациент", phone: "+79015554433" },
+			appointment: {
+				doctorId: testDoctorId,
+				startsAt: startsAt.toISOString(),
+				endsAt: endsAt.toISOString(),
+			},
+		};
+		const rawCreate = JSON.stringify(createPayload);
+		const sigCreate = createHmac("sha256", testWebhookSecret).update(rawCreate).digest("hex");
+
+		const createRes = await app.inject({
+			method: "POST",
+			url: `/api/integrations/medflex/${testClinicExternalId}/webhook/booking`,
+			headers: { "content-type": "application/json", "x-medflex-signature": sigCreate },
+			payload: rawCreate,
+		});
+		assert.equal(createRes.statusCode, 201);
+		const apptId = JSON.parse(createRes.body).appointmentId as string;
+
+		// 2. Пытаемся отменить НЕсуществующий bookingId, передав тот же startsAt чужой записи
+		const cancelPayload = {
+			event: "booking_cancelled",
+			deliveryId: `cancel-guard-del-${Date.now()}`,
+			bookingId: `PD-ALIEN-${Date.now()}`,
+			startsAt: startsAt.toISOString(),
+		};
+		const rawCancel = JSON.stringify(cancelPayload);
+		const sigCancel = createHmac("sha256", testWebhookSecret).update(rawCancel).digest("hex");
+
+		const cancelRes = await app.inject({
+			method: "POST",
+			url: `/api/integrations/medflex/${testClinicExternalId}/webhook/booking`,
+			headers: { "content-type": "application/json", "x-medflex-signature": sigCancel },
+			payload: rawCancel,
+		});
+		assert.equal(cancelRes.statusCode, 200);
+		const cancelBody = JSON.parse(cancelRes.body);
+		assert.equal(cancelBody.ignored, true);
+
+		// 3. Проверяем в БД, что запись Пациента А осталась активной (НЕ cancelled!)
+		const [stillActive] = await db
+			.select({ status: appointments.status })
+			.from(appointments)
+			.where(eq(appointments.id, apptId));
+		assert.ok(stillActive);
+		assert.notEqual(stillActive.status, "cancelled", "Чужой приём на тот же startsAt не должен отменяться!");
+
+		await db.delete(appointments).where(eq(appointments.id, apptId));
+	});
 });

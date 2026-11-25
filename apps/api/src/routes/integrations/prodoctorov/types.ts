@@ -44,21 +44,24 @@ export const DENTAL_SPECIALTIES_RU: Record<string, string> = {
 
 // ─── СХЕМЫ ВАЛИДАЦИИ ────────────────────────────────────────────────────────
 
-export const slotsQuerySchema = z.object({
-	organizationId: z.string().uuid().optional(),
-	doctorId: z.string().uuid().optional(),
-	startDate: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/)
-		.optional(),
-	endDate: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/)
-		.optional(),
-	durationMinutes: z.coerce.number().int().min(15).max(180).default(30),
-	// Технологическая пауза СанПиН 3.3686-21 на дезинфекцию кабинета и установки (10–15 минут)
-	sanpinDisinfectionMinutes: z.coerce.number().int().min(0).max(30).default(10),
-});
+export const slotsQuerySchema = z
+	.object({
+		clinicExternalId: z.string().trim().min(1).max(120).optional(),
+		organizationId: z.string().uuid().optional(),
+		doctorId: z.string().uuid().optional(),
+		startDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
+		endDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
+		durationMinutes: z.coerce.number().int().min(15).max(180).default(30),
+		// Технологическая пауза СанПиН 3.3686-21 на дезинфекцию кабинета и установки (10–15 минут)
+		sanpinDisinfectionMinutes: z.coerce.number().int().min(0).max(30).default(10),
+	})
+	.strict();
 
 export type SlotsQueryParams = z.infer<typeof slotsQuerySchema>;
 
@@ -66,6 +69,7 @@ export const webhookPayloadSchema = z
 	.object({
 		event: z.string().optional().default("booking_created"),
 		action: z.string().optional(),
+		clinicExternalId: z.string().trim().min(1).max(120).optional(),
 		deliveryId: z.string().optional(),
 		delivery_id: z.string().optional(),
 		bookingId: z.string().optional(),
@@ -87,6 +91,7 @@ export const webhookPayloadSchema = z
 				email: z.string().optional().nullable(),
 				notes: z.string().optional().nullable(),
 			})
+			.strict()
 			.optional(),
 		patientName: z.string().optional(),
 		patient_name: z.string().optional(),
@@ -114,6 +119,7 @@ export const webhookPayloadSchema = z
 				reason: z.string().optional(),
 				comment: z.string().optional(),
 			})
+			.strict()
 			.optional(),
 		doctorId: z.string().uuid().optional(),
 		doctor_id: z.string().uuid().optional(),
@@ -130,7 +136,7 @@ export const webhookPayloadSchema = z
 		reason: z.string().optional(),
 		comment: z.string().optional(),
 	})
-	.passthrough();
+	.strict();
 
 export type WebhookPayload = z.infer<typeof webhookPayloadSchema>;
 

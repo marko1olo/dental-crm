@@ -94,7 +94,7 @@ export async function getOrCreateMedflexSettings(
 	}
 
 	const generatedSecret = randomBytes(24).toString("hex");
-	const defaultExternalId = `mf-${organizationId.slice(0, 8)}`;
+	const defaultExternalId = `mf-${randomBytes(8).toString("hex")}`;
 
 	const [created] = await tx
 		.insert(medflexIntegrations)

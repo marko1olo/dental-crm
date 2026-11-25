@@ -42,9 +42,11 @@ export function registerTelegramAccountVerifyCodeRoute(app: FastifyInstance) {
 		});
 
 		if (!result.ok) {
-			return reply.code(400).send({
+			const statusCode = result.configured === false ? 501 : 400;
+			return reply.code(statusCode).send({
 				ok: false,
-				error: "VerificationFailed",
+				...(result.configured === false ? { configured: false } : {}),
+				error: result.errorCode || "VerificationFailed",
 				message: result.error || "Неверный код подтверждения.",
 			});
 		}

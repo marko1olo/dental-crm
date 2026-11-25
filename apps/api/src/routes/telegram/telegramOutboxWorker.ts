@@ -6,6 +6,7 @@ import {
 	denteTelegramOutboxSendDueResponseSchema,
 } from "@dental/shared";
 import { hydrateDomainStateFromDb } from "../../db/domainStateHydration.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import type { DomainState } from "./telegramCanonicalStore.js";
 import {
 	buildDenteTelegramOutbox,
@@ -33,6 +34,8 @@ import {
 	type DenteTelegramOutboxDueWorkerHandle,
 } from "./types.js";
 import { dispatchDueMessages } from "../../services/communications/dispatch/dispatcherCore.js";
+
+const outboxWorkerLogger = createApiLogger("telegramOutboxWorker");
 
 export async function executeDenteTelegramOutboxDueBatch(
 	input: TelegramOutboxSendDueInput,
@@ -70,12 +73,17 @@ export async function executeDenteTelegramOutboxDueBatch(
 	const orgId = runtimeResult.runtime?.context?.organizationId;
 	if (!effectiveDomainState && orgId) {
 		try {
-			const hydrated = await hydrateDomainStateFromDb(orgId);
+			const hydrated = await withTenantCtx(orgId, async () => {
+				return await hydrateDomainStateFromDb(orgId);
+			});
 			if (hydrated?.state) {
 				effectiveDomainState = hydrated.state;
 			}
-		} catch {
-			// Fallback: тихий возврат к domainState для изоляции тестов без физической БД
+		} catch (err) {
+			outboxWorkerLogger.warn(
+				{ err: safeLogError(err), orgId },
+				"[TelegramOutboxWorker] Failed to hydrate domain state from DB; using fallback state",
+			);
 		}
 	}
 
@@ -87,8 +95,11 @@ export async function executeDenteTelegramOutboxDueBatch(
 				organizationId: orgId,
 				batchSize: requestedLimit,
 			});
-		} catch {
-			// Изоляция фоновой обработки очереди коммуникаций
+		} catch (err) {
+			outboxWorkerLogger.warn(
+				{ err: safeLogError(err), orgId },
+				"[TelegramOutboxWorker] Communication dispatcher batch failed",
+			);
 		}
 	}
 	const outbox = buildDenteTelegramOutbox(
@@ -284,13 +295,10 @@ export function startDenteTelegramOutboxDueWorker(
 				let maxRetryDelayMs: number | null = null;
 
 				for (const currentRuntime of runtimes) {
-					const orgId = currentRuntime.context.organizationId;
-					const response = await withTenantCtx(orgId, async () => {
-						return await executeDenteTelegramOutboxDueBatch(
-							{ dryRun, limit },
-							currentRuntime,
-						);
-					});
+					const response = await executeDenteTelegramOutboxDueBatch(
+						{ dryRun, limit },
+						currentRuntime,
+					);
 
 					const retryDelayMs = retryAfterDelayMs(response);
 					if (retryDelayMs !== null) {

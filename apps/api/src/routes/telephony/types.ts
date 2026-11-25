@@ -27,6 +27,98 @@ export type NormalizedCallAction = "ringing" | "answered" | "ended" | "missed";
 
 export type { TelephonyProvider };
 
+export function escapeLikePattern(raw: string): string {
+	return raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+export const telephonyOutboundCallBodySchema = z
+	.object({
+		phone: z.string().trim().min(1).max(64),
+		patientId: z.string().uuid().optional(),
+		patientName: z.string().trim().max(200).optional(),
+	})
+	.strict();
+
+export const telephonyCallUpdateBodySchema = z
+	.object({
+		note: z.string().max(4000).optional(),
+		clinicalNote: z.string().max(4000).optional(),
+		message: z.string().max(4000).optional(),
+		patientId: z.string().uuid().optional(),
+		callerPhone: z.string().max(64).optional(),
+		phone: z.string().max(64).optional(),
+		direction: z.enum(["inbound", "outbound"]).optional(),
+	})
+	.strict();
+
+export const telephonyAnswerCallBodySchema = z
+	.object({
+		callId: z.string().trim().min(1).max(200),
+		phone: z.string().trim().min(1).max(64),
+		patientId: z.string().uuid().optional(),
+		lineId: z.union([z.literal(1), z.literal(2)]).optional(),
+		utm_source: z.string().max(200).optional(),
+		utm_campaign: z.string().max(200).optional(),
+		utm_medium: z.string().max(200).optional(),
+		advertising_channel: z.string().max(200).optional(),
+		virtualNumber: z.string().max(64).optional(),
+	})
+	.strict();
+
+export const telephonyEndCallBodySchema = z
+	.object({
+		callId: z.string().trim().min(1).max(200),
+		phone: z.string().trim().min(1).max(64),
+		patientId: z.string().uuid().optional(),
+		direction: z.enum(["inbound", "outbound"]).optional(),
+		durationSeconds: z.coerce.number().finite().min(0).max(86400 * 7).optional(),
+		recordingUrl: z.string().max(2000).optional(),
+		outcome: z.string().max(200).optional(),
+		notes: z.string().max(4000).optional(),
+		utm_source: z.string().max(200).optional(),
+		utm_campaign: z.string().max(200).optional(),
+		utm_medium: z.string().max(200).optional(),
+		advertising_channel: z.string().max(200).optional(),
+		virtualNumber: z.string().max(64).optional(),
+	})
+	.strict();
+
+export const telephonySipCredentialsBodySchema = z
+	.object({
+		extension: z.string().trim().min(1).max(64).optional(),
+		staffFullName: z.string().trim().max(200).optional(),
+	})
+	.strict();
+
+export const telephonySipFailoverBodySchema = z
+	.object({
+		forceCloudFallback: z.boolean(),
+	})
+	.strict();
+
+export const telephonySipTransferBodySchema = z
+	.object({
+		callId: z.string().trim().min(1).max(200),
+		targetExtensionOrPhone: z.string().trim().min(1).max(64),
+		transferType: z.enum(["blind", "attended"]).optional().default("blind"),
+	})
+	.strict();
+
+export const asteriskAmiEventBodySchema = z
+	.object({
+		event: z.string().trim().min(1).max(120),
+		channel: z.string().max(200).optional(),
+		callerIdNum: z.string().max(64).optional(),
+		callerIdName: z.string().max(200).optional(),
+		exten: z.string().max(64).optional(),
+		uniqueid: z.string().max(200).optional(),
+		linkedid: z.string().max(200).optional(),
+		duration: z.union([z.number(), z.string()]).optional(),
+		billsec: z.union([z.number(), z.string()]).optional(),
+		recordingUrl: z.string().max(2000).optional(),
+	})
+	.strict();
+
 export const telephonyWebhookPayloadSchema = z.object({
 	event: z.string().optional(),
 	notification_name: z.string().optional(),

@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext, requireClinicalReadContext } from "../../../accessGuard.js";
 import { TelephonyGatewayService } from "../../../services/telephony/telephonyGatewayService.js";
+import { telephonySipFailoverBodySchema } from "../types.js";
 
 export async function handleSipStatus(
 	request: FastifyRequest<{ Params: { organizationId?: string } }>,
@@ -41,9 +42,15 @@ export async function handleSipFailover(
 		});
 	}
 
-	const body = (request.body || {}) as { forceCloudFallback?: boolean };
-	const force = Boolean(body.forceCloudFallback);
+	const parsedBody = telephonySipFailoverBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "forceCloudFallback must be a boolean",
+		});
+	}
 
+	const force = parsedBody.data.forceCloudFallback;
 	await TelephonyGatewayService.setForcedFailover(orgId, force);
 	const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
 

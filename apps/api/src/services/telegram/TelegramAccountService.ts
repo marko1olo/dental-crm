@@ -1,11 +1,10 @@
-import { createHash, randomBytes, randomInt } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { denteTelegramAccountConfigs } from "../../db/schema.js";
-import { TelegramTokenVault } from "./TelegramTokenVault.js";
-import { generateQrMatrixSvg } from "../messaging/whatsappConnectionHub.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { wsBroker } from "../websocketBroker.js";
+
+const logger = createApiLogger("TelegramAccountService");
 
 export type TelegramAccountProfile = {
 	id: string;
@@ -20,41 +19,26 @@ export type TelegramAccountProfile = {
 	lastActiveAt: string | null;
 };
 
-type PendingCodeVerification = {
-	phone: string;
-	code: string;
-	phoneCodeHash: string;
-	expiresAt: number;
-	organizationId: string;
-	userId?: string | null | undefined;
-	clinicId?: string | null | undefined;
-};
+const MTPROTO_UNCONFIGURED_MESSAGE =
+	"Подключение личного аккаунта Telegram (MTProto) не настроено: требуется MTProto-драйвер и ключи TELEGRAM_API_ID / TELEGRAM_API_HASH.";
 
-type PendingQrSession = {
-	token: string;
-	qrPayload: string;
-	organizationId: string;
-	userId?: string | null | undefined;
-	clinicId?: string | null | undefined;
-	expiresAt: number;
-	status: "waiting" | "scanned" | "confirmed";
-	phone?: string;
-};
+function isMtprotoConfigured(): boolean {
+	return Boolean(
+		process.env.TELEGRAM_API_ID?.trim() &&
+			process.env.TELEGRAM_API_HASH?.trim() &&
+			process.env.TELEGRAM_MTPROTO_DRIVER_ENABLED === "true",
+	);
+}
 
 /**
  * Сервис управления личными аккаунтами врачей и персонала клиники в Telegram (MTProto).
- * 
- * Обеспечивает:
- * - Вход по номеру телефона (+7...) с отправкой 5-значного кода в Telegram / SMS
- * - Поддержку двухфакторной аутентификации 2FA (облачный пароль Telegram)
- * - Быструю авторизацию через QR-код (tg://login?token=...) с генерацией чистого SVG
- * - Защищенное хранение MTProto session string через AES-256-GCM с tenant AAD (TelegramTokenVault)
- * - Отслеживание статуса "Онлайн" в реальном времени с синхронизацией по WebSocket
+ *
+ * БЕЗ ПОТЁМКИНСКИХ СИМУЛЯЦИЙ (Мандат 8z):
+ * При отсутствии реального MTProto-драйвера и ключей TELEGRAM_API_ID / TELEGRAM_API_HASH
+ * возвращает честный структурированный отказ (`configured: false`, `errorCode: "MTProtoNotConfigured"`),
+ * не генерируя фейковых кодов, фейковых 2FA-правил, фиктивных номеров и поддельных профилей.
  */
 export class TelegramAccountService {
-	private static pendingVerifications = new Map<string, PendingCodeVerification>();
-	private static pendingQrSessions = new Map<string, PendingQrSession>();
-
 	/**
 	 * Нормализация телефонного номера к формату E.164 (+7XXXXXXXXXX).
 	 */
@@ -71,7 +55,7 @@ export class TelegramAccountService {
 	}
 
 	/**
-	 * Запрос кода подтверждения на телефон.
+	 * Запрос кода подтверждения на телефон через MTProto.
 	 */
 	static async requestCode(params: {
 		organizationId: string;
@@ -80,10 +64,11 @@ export class TelegramAccountService {
 		clinicId?: string | null | undefined;
 	}): Promise<{
 		ok: boolean;
+		configured?: boolean;
+		errorCode?: string;
 		phoneCodeHash: string;
 		timeoutSeconds: number;
 		formattedPhone: string;
-		testCode?: string;
 		error?: string;
 	}> {
 		const formattedPhone = this.normalizePhone(params.phone);
@@ -97,47 +82,31 @@ export class TelegramAccountService {
 			};
 		}
 
-		// Генерация 5-значного кода (в продакшене отправляется через MTProto auth.sendCode)
-		// Для тестового режима и предсказуемости генерируем криптографический код
-		const randomNum = randomInt(10000, 100000);
-		const code = randomNum.toString();
-		const phoneCodeHash = createHash("sha256")
-			.update(`${formattedPhone}:${Date.now()}:${randomBytes(16).toString("hex")}`)
-			.digest("hex")
-			.slice(0, 32);
-
-		const timeoutSeconds = 120;
-		const expiresAt = Date.now() + timeoutSeconds * 1000;
-
-		this.pendingVerifications.set(phoneCodeHash, {
-			phone: formattedPhone,
-			code,
-			phoneCodeHash,
-			expiresAt,
-			organizationId: params.organizationId,
-			userId: params.userId,
-			clinicId: params.clinicId,
-		});
-
-		// Автоочистка устаревших запросов через 10 минут
-		setTimeout(() => {
-			this.pendingVerifications.delete(phoneCodeHash);
-		}, 600000);
-
-		const isProduction = process.env.NODE_ENV === "production";
+		if (!isMtprotoConfigured()) {
+			return {
+				ok: false,
+				configured: false,
+				errorCode: "MTProtoNotConfigured",
+				phoneCodeHash: "",
+				timeoutSeconds: 0,
+				formattedPhone,
+				error: MTPROTO_UNCONFIGURED_MESSAGE,
+			};
+		}
 
 		return {
-			ok: true,
-			phoneCodeHash,
-			timeoutSeconds,
+			ok: false,
+			configured: false,
+			errorCode: "MTProtoNotConfigured",
+			phoneCodeHash: "",
+			timeoutSeconds: 0,
 			formattedPhone,
-			...(!isProduction ? { testCode: code } : {}),
+			error: MTPROTO_UNCONFIGURED_MESSAGE,
 		};
 	}
 
 	/**
-	 * Верификация 5-значного кода.
-	 * Если у аккаунта включен 2FA, переводит в статус `requires2fa: true`.
+	 * Верификация кода подтверждения через MTProto.
 	 */
 	static async verifyCode(params: {
 		organizationId: string;
@@ -148,95 +117,35 @@ export class TelegramAccountService {
 		clinicId?: string | null | undefined;
 	}): Promise<{
 		ok: boolean;
+		configured?: boolean;
+		errorCode?: string;
 		connected: boolean;
 		requires2fa: boolean;
 		account?: TelegramAccountProfile;
 		error?: string;
 	}> {
 		const formattedPhone = this.normalizePhone(params.phone);
-		const pending = this.pendingVerifications.get(params.phoneCodeHash);
-
-		const isPendingValid =
-			pending &&
-			pending.organizationId === params.organizationId &&
-			pending.phone === formattedPhone &&
-			pending.expiresAt > Date.now() &&
-			pending.code === params.code.trim();
-
-		if (!isPendingValid) {
+		if (!formattedPhone || formattedPhone.length < 11) {
 			return {
 				ok: false,
 				connected: false,
 				requires2fa: false,
-				error: "Неверный или просроченный код подтверждения. Запросите новый код.",
+				error: "Укажите корректный номер телефона.",
 			};
 		}
 
-		// Проверка 2FA (проверяем реальный флаг 2FA в БД; для тестового сьюта сохраняем эмуляцию)
-		let requires2fa = false;
-		try {
-			const [existing] = await withTenantCtx(params.organizationId, async (tx) => {
-				return tx
-					.select({ is2faEnabled: denteTelegramAccountConfigs.is2faEnabled })
-					.from(denteTelegramAccountConfigs)
-					.where(
-						and(
-							eq(denteTelegramAccountConfigs.organizationId, params.organizationId),
-							eq(denteTelegramAccountConfigs.phone, formattedPhone),
-						),
-					)
-					.limit(1);
-			});
-			if (existing?.is2faEnabled) {
-				requires2fa = true;
-			}
-		} catch {
-			// ignore db read failure in isolated offline tests
-		}
-
-		const isProduction = process.env.NODE_ENV === "production";
-		if (!isProduction && formattedPhone.endsWith("2")) {
-			requires2fa = true;
-		}
-
-		if (requires2fa) {
-			return {
-				ok: true,
-				connected: false,
-				requires2fa: true,
-			};
-		}
-
-		// Завершаем авторизацию и сохраняем профиль
-		try {
-			const account = await this.persistConnectedAccount({
-				organizationId: params.organizationId,
-				phone: formattedPhone,
-				userId: params.userId || pending?.userId,
-				clinicId: params.clinicId || pending?.clinicId,
-				is2faEnabled: false,
-			});
-
-			this.pendingVerifications.delete(params.phoneCodeHash);
-
-			return {
-				ok: true,
-				connected: true,
-				requires2fa: false,
-				account,
-			};
-		} catch (err) {
-			return {
-				ok: false,
-				connected: false,
-				requires2fa: false,
-				error: err instanceof Error ? err.message : String(err),
-			};
-		}
+		return {
+			ok: false,
+			configured: false,
+			errorCode: "MTProtoNotConfigured",
+			connected: false,
+			requires2fa: false,
+			error: MTPROTO_UNCONFIGURED_MESSAGE,
+		};
 	}
 
 	/**
-	 * Верификация облачного пароля двухфакторной аутентификации (2FA).
+	 * Верификация облачного пароля двухфакторной аутентификации (2FA) через MTProto.
 	 */
 	static async verify2fa(params: {
 		organizationId: string;
@@ -246,82 +155,59 @@ export class TelegramAccountService {
 		clinicId?: string | null | undefined;
 	}): Promise<{
 		ok: boolean;
+		configured?: boolean;
+		errorCode?: string;
 		connected: boolean;
 		account?: TelegramAccountProfile;
 		error?: string;
 	}> {
 		const formattedPhone = this.normalizePhone(params.phone);
-		if (!params.password || params.password.trim().length < 3) {
+		if (!formattedPhone || formattedPhone.length < 11 || !params.password?.trim()) {
 			return {
 				ok: false,
 				connected: false,
-				error: "Укажите действующий облачный пароль Telegram.",
+				error: "Укажите номер телефона и действующий облачный пароль Telegram.",
 			};
 		}
 
-		const account = await this.persistConnectedAccount({
-			organizationId: params.organizationId,
-			phone: formattedPhone,
-			userId: params.userId,
-			clinicId: params.clinicId,
-			is2faEnabled: true,
-		});
-
 		return {
-			ok: true,
-			connected: true,
-			account,
+			ok: false,
+			configured: false,
+			errorCode: "MTProtoNotConfigured",
+			connected: false,
+			error: MTPROTO_UNCONFIGURED_MESSAGE,
 		};
 	}
 
 	/**
-	 * Генерация QR-кода для авторизации в Telegram (tg://login?token=...).
+	 * Генерация QR-кода для авторизации в Telegram через MTProto (`auth.exportLoginToken`).
 	 */
-	static async requestQr(params: {
+	static async requestQr(_params: {
 		organizationId: string;
 		userId?: string | null | undefined;
 		clinicId?: string | null | undefined;
 	}): Promise<{
 		ok: boolean;
-		token: string;
-		qrPayload: string;
-		qrSvg: string;
-		expiresIn: number;
+		configured?: boolean;
+		errorCode?: string;
+		token?: string;
+		qrPayload?: string;
+		qrSvg?: string;
+		expiresIn?: number;
+		error?: string;
 	}> {
-		const token = randomBytes(24).toString("base64url");
-		const qrPayload = `tg://login?token=${token}`;
-		const expiresIn = 120;
-		const expiresAt = Date.now() + expiresIn * 1000;
-
-		const { svg } = generateQrMatrixSvg(qrPayload, 240);
-
-		this.pendingQrSessions.set(token, {
-			token,
-			qrPayload,
-			organizationId: params.organizationId,
-			userId: params.userId,
-			clinicId: params.clinicId,
-			expiresAt,
-			status: "waiting",
-		});
-
-		setTimeout(() => {
-			this.pendingQrSessions.delete(token);
-		}, 300000);
-
 		return {
-			ok: true,
-			token,
-			qrPayload,
-			qrSvg: svg,
-			expiresIn,
+			ok: false,
+			configured: false,
+			errorCode: "MTProtoNotConfigured",
+			error: MTPROTO_UNCONFIGURED_MESSAGE,
 		};
 	}
 
 	/**
-	 * Подтверждение авторизации по QR-коду (сканирование мобильным Telegram).
+	 * Подтверждение авторизации по QR-коду через MTProto.
 	 */
-	static async confirmQr(params: {
+	static async confirmQr(_params: {
 		organizationId: string;
 		token: string;
 		phone?: string | null | undefined;
@@ -329,48 +215,23 @@ export class TelegramAccountService {
 		clinicId?: string | null | undefined;
 	}): Promise<{
 		ok: boolean;
+		configured?: boolean;
+		errorCode?: string;
 		connected: boolean;
 		account?: TelegramAccountProfile;
 		error?: string;
 	}> {
-		const session = this.pendingQrSessions.get(params.token);
-		if (!session || session.organizationId !== params.organizationId) {
-			return {
-				ok: false,
-				connected: false,
-				error: "QR-код недействителен или срок его действия истёк.",
-			};
-		}
-
-		if (session.expiresAt < Date.now()) {
-			this.pendingQrSessions.delete(params.token);
-			return {
-				ok: false,
-				connected: false,
-				error: "Срок действия QR-кода истёк. Обновите QR-код.",
-			};
-		}
-
-		const phone = this.normalizePhone(params.phone || session.phone || "+79998887766");
-		const account = await this.persistConnectedAccount({
-			organizationId: params.organizationId,
-			phone,
-			userId: params.userId || session.userId,
-			clinicId: params.clinicId || session.clinicId,
-			is2faEnabled: false,
-		});
-
-		this.pendingQrSessions.delete(params.token);
-
 		return {
-			ok: true,
-			connected: true,
-			account,
+			ok: false,
+			configured: false,
+			errorCode: "MTProtoNotConfigured",
+			connected: false,
+			error: MTPROTO_UNCONFIGURED_MESSAGE,
 		};
 	}
 
 	/**
-	 * Получение текущего статуса личного аккаунта Telegram клиники/сотрудника.
+	 * Получение текущего статуса личного аккаунта Telegram клиники/сотрудника из БД.
 	 */
 	static async getAccountStatus(params: {
 		organizationId: string;
@@ -378,6 +239,7 @@ export class TelegramAccountService {
 	}): Promise<{
 		ok: boolean;
 		connected: boolean;
+		configured: boolean;
 		account: TelegramAccountProfile | null;
 	}> {
 		return await withTenantCtx(params.organizationId, async (tx) => {
@@ -404,6 +266,7 @@ export class TelegramAccountService {
 				return {
 					ok: true,
 					connected: false,
+					configured: isMtprotoConfigured(),
 					account: null,
 				};
 			}
@@ -411,6 +274,7 @@ export class TelegramAccountService {
 			return {
 				ok: true,
 				connected: true,
+				configured: isMtprotoConfigured(),
 				account: {
 					id: record.id,
 					phone: record.phone,
@@ -421,7 +285,7 @@ export class TelegramAccountService {
 					status: "online",
 					is2faEnabled: record.is2faEnabled,
 					connectedAt: record.connectedAt ? record.connectedAt.toISOString() : null,
-					lastActiveAt: record.lastActiveAt ? record.lastActiveAt.toISOString() : new Date().toISOString(),
+					lastActiveAt: record.lastActiveAt ? record.lastActiveAt.toISOString() : null,
 				},
 			};
 		});
@@ -455,128 +319,23 @@ export class TelegramAccountService {
 					updatedAt: new Date(),
 				})
 				.where(and(...conditions));
-		});
 
-		try {
-			wsBroker.broadcastToOrganization(params.organizationId, {
-				type: "telegram_account_disconnected",
-				organizationId: params.organizationId,
-				disconnectedAt: new Date().toISOString(),
+			onTenantTxCommit(() => {
+				try {
+					wsBroker.broadcastToOrganization(params.organizationId, {
+						type: "telegram_account_disconnected",
+						organizationId: params.organizationId,
+						disconnectedAt: new Date().toISOString(),
+					});
+				} catch (err) {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: params.organizationId },
+						"WS broadcast failed on telegram account disconnect",
+					);
+				}
 			});
-		} catch {
-			// Игнорируем ошибки сокетов в офлайн-режиме
-		}
+		});
 
 		return { ok: true };
-	}
-
-	/**
-	 * Вспомогательный метод сохранения профиля и сессии с шифрованием AES-256-GCM.
-	 */
-	private static async persistConnectedAccount(params: {
-		organizationId: string;
-		phone: string;
-		userId?: string | null | undefined;
-		clinicId?: string | null | undefined;
-		is2faEnabled: boolean;
-	}): Promise<TelegramAccountProfile> {
-		// Генерируем MTProto session string и шифруем его через TelegramTokenVault
-		const rawSession = `1ApWapzMBu4${randomBytes(64).toString("base64")}`;
-		const sessionStringEncrypted = TelegramTokenVault.encryptToken(
-			rawSession,
-			params.organizationId,
-		);
-
-		// Детерминированные или дефолтные данные профиля
-		const lastFour = params.phone.slice(-4);
-		const firstName = "Доктор";
-		const lastName = `DENTE #${lastFour}`;
-		const username = `@doc_${lastFour}`;
-		const avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(firstName + " " + lastName)}&backgroundColor=0284c7`;
-
-		const now = new Date();
-
-		const recordId = await withTenantCtx(params.organizationId, async (tx) => {
-			// Проверяем наличие записи
-			const [existing] = await tx
-				.select()
-				.from(denteTelegramAccountConfigs)
-				.where(
-					and(
-						eq(denteTelegramAccountConfigs.organizationId, params.organizationId),
-						eq(denteTelegramAccountConfigs.phone, params.phone),
-					),
-				)
-				.limit(1);
-
-			if (existing) {
-				await tx
-					.update(denteTelegramAccountConfigs)
-					.set({
-						clinicId: params.clinicId ?? existing.clinicId,
-						userId: params.userId ?? existing.userId,
-						sessionStringEncrypted,
-						firstName,
-						lastName,
-						username,
-						avatarUrl,
-						status: "connected",
-						is2faEnabled: params.is2faEnabled,
-						connectedAt: existing.connectedAt || now,
-						lastActiveAt: now,
-						isActive: true,
-						updatedAt: now,
-					})
-					.where(eq(denteTelegramAccountConfigs.id, existing.id));
-				return existing.id;
-			} else {
-				const [inserted] = await tx
-					.insert(denteTelegramAccountConfigs)
-					.values({
-						organizationId: params.organizationId,
-						clinicId: params.clinicId ?? null,
-						userId: params.userId ?? null,
-						phone: params.phone,
-						sessionStringEncrypted,
-						firstName,
-						lastName,
-						username,
-						avatarUrl,
-						status: "connected",
-						is2faEnabled: params.is2faEnabled,
-						connectedAt: now,
-						lastActiveAt: now,
-						isActive: true,
-						updatedAt: now,
-					})
-					.returning({ id: denteTelegramAccountConfigs.id });
-				return inserted?.id ?? "saved";
-			}
-		});
-
-		const profile: TelegramAccountProfile = {
-			id: recordId,
-			phone: params.phone,
-			firstName,
-			lastName,
-			username,
-			avatarUrl,
-			status: "online",
-			is2faEnabled: params.is2faEnabled,
-			connectedAt: now.toISOString(),
-			lastActiveAt: now.toISOString(),
-		};
-
-		try {
-			wsBroker.broadcastToOrganization(params.organizationId, {
-				type: "telegram_account_connected",
-				organizationId: params.organizationId,
-				account: profile,
-			});
-		} catch {
-			// Игнорируем в тестовом окружении
-		}
-
-		return profile;
 	}
 }

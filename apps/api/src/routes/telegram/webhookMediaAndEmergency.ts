@@ -3,6 +3,7 @@ import {
 	type DenteTelegramUpdateKind,
 	type DenteTelegramWebhookResponse,
 } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { recordDenteTelegramWebhookEvent } from "../../services/telegram/telegramWebhookEventsService.js";
 import { TelegramInteractiveTriageService } from "../../services/telegram/TelegramInteractiveTriageService.js";
 import { TelegramVoiceIntakeService } from "../../services/telegram/TelegramVoiceIntakeService.js";
@@ -19,6 +20,8 @@ import {
 	readableTelegramText,
 	stringFromUnknown,
 } from "./telegramUtils.js";
+
+const logger = createApiLogger("telegramWebhookMediaAndEmergency");
 
 export async function handleWebhookMediaAndEmergency(params: {
 	runtime: TelegramRuntimeContext;
@@ -38,7 +41,6 @@ export async function handleWebhookMediaAndEmergency(params: {
 		command,
 		chatHash,
 		chatId,
-		warnings,
 	} = params;
 
 		if (updateKind === "photo" && chatId && runtime.botToken) {
@@ -82,6 +84,11 @@ export async function handleWebhookMediaAndEmergency(params: {
 						chatId,
 						text: photoResult.responseScreen.text,
 						replyMarkup: photoResult.responseScreen.replyMarkup,
+					}).catch((err) => {
+						logger.warn(
+							{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+							"Failed to send Telegram photo intake reply",
+						);
 					});
 				}
 
@@ -147,6 +154,11 @@ export async function handleWebhookMediaAndEmergency(params: {
 						chatId,
 						text: voiceResult.responseScreen.text,
 						replyMarkup: voiceResult.responseScreen.replyMarkup,
+					}).catch((err) => {
+						logger.warn(
+							{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+							"Failed to send Telegram voice intake reply",
+						);
 					});
 				}
 
@@ -204,6 +216,11 @@ export async function handleWebhookMediaAndEmergency(params: {
 					chatId,
 					text: escResult.emergencyScreen.text,
 					replyMarkup: escResult.emergencyScreen.replyMarkup,
+				}).catch((err) => {
+					logger.warn(
+						{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+						"Failed to send Telegram emergency escalation reply",
+					);
 				});
 
 				return denteTelegramWebhookResponseSchema.parse(

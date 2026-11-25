@@ -16,37 +16,51 @@ export const telephonySipRoutes: FastifyPluginAsync = async (server) => {
 		handleSipCredentials,
 	);
 
-	// Gateway Status
-	server.get<{ Params: { organizationId: string } }>("/:organizationId/sip/status", handleSipStatus);
-	server.get<{ Params: { organizationId?: string } }>("/sip/status", handleSipStatus);
+	// Gateway Status (TCP socket probing outside PG TX)
+	server.get<{ Params: { organizationId: string } }>(
+		"/:organizationId/sip/status",
+		{ config: { tenantTxSelfManaged: true } },
+		handleSipStatus,
+	);
+	server.get<{ Params: { organizationId?: string } }>(
+		"/sip/status",
+		{ config: { tenantTxSelfManaged: true } },
+		handleSipStatus,
+	);
 
-	// Failover
+	// Failover (TCP socket probing outside PG TX)
 	server.post<{ Params: { organizationId: string }; Body: { forceCloudFallback?: boolean } }>(
 		"/:organizationId/sip/failover",
+		{ config: { tenantTxSelfManaged: true } },
 		handleSipFailover,
 	);
 	server.post<{ Params: { organizationId?: string }; Body: { forceCloudFallback?: boolean } }>(
 		"/sip/failover",
+		{ config: { tenantTxSelfManaged: true } },
 		handleSipFailover,
 	);
 
 	// Asterisk AMI / ARI
 	server.post<{ Params: { organizationId?: string }; Body: AsteriskAmiEventPayload }>(
 		"/:organizationId/asterisk/ami-event",
+		{ config: { tenantTxSelfManaged: true } },
 		handleAsteriskAmiEvent,
 	);
 	server.post<{ Params: { organizationId?: string }; Body: AsteriskAmiEventPayload }>(
 		"/asterisk/ami-event",
+		{ config: { tenantTxSelfManaged: true } },
 		handleAsteriskAmiEvent,
 	);
 
-	// SIP Transfer
+	// SIP Transfer (external PBX AMI / Cloud HTTP outside PG TX)
 	server.post<{ Params: { organizationId: string }; Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" } }>(
 		"/:organizationId/sip/transfer",
+		{ config: { tenantTxSelfManaged: true } },
 		handleSipCallTransfer,
 	);
 	server.post<{ Params: { organizationId?: string }; Body: { callId?: string; targetExtensionOrPhone?: string; transferType?: "blind" | "attended" } }>(
 		"/sip/transfer",
+		{ config: { tenantTxSelfManaged: true } },
 		handleSipCallTransfer,
 	);
 };

@@ -1,8 +1,6 @@
-import { randomBytes } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { communicationEvents } from "../../db/schema.js";
 import { TelephonyGatewayService } from "../../services/telephony/telephonyGatewayService.js";
 import {
@@ -10,6 +8,7 @@ import {
 	UUID_REGEX,
 } from "../../services/telephony/telephonySecurity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { telephonyOutboundCallBodySchema } from "./types.js";
 
 export async function telephonyOutboundCallHandler(
 	request: FastifyRequest<{
@@ -31,8 +30,16 @@ export async function telephonyOutboundCallHandler(
 	}
 	const orgId = resolvedOrgId;
 
-	const body = request.body || ({} as { phone?: string; patientId?: string; patientName?: string });
-	const rawPhone = (body.phone || "").trim();
+	const parsedBody = telephonyOutboundCallBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "InvalidPhoneNumber",
+			message: "Некорректные параметры исходящего звонка",
+		});
+	}
+
+	const body = parsedBody.data;
+	const rawPhone = body.phone;
 	const cleanDigits = rawPhone.replace(/\D/g, "");
 	const isSipExtension = cleanDigits.length === 3 && /^\d{3}$/.test(rawPhone);
 
@@ -57,7 +64,7 @@ export async function telephonyOutboundCallHandler(
 	const patientName = body.patientName || "Пациент";
 	const patientId = body.patientId && UUID_REGEX.test(body.patientId) ? body.patientId : null;
 
-	// Real dispatch to PBX gateway
+	// Real dispatch to PBX gateway strictly outside PG TX
 	const outboundResult = await TelephonyGatewayService.initiateOutboundCall({
 		organizationId: orgId,
 		callerPhone,
@@ -70,8 +77,8 @@ export async function telephonyOutboundCallHandler(
 	const idempotencyKey = typeof rawIdempotencyKey === "string" && rawIdempotencyKey.trim() ? rawIdempotencyKey.trim() : null;
 
 	if (!outboundResult.dispatched) {
-		await withTenantCtx(orgId, async () => {
-			await db.insert(communicationEvents).values({
+		await withTenantCtx(orgId, async (tx) => {
+			await tx.insert(communicationEvents).values({
 				organizationId: orgId,
 				providerCallId: outboundResult.callId,
 				providerName: outboundResult.provider,
@@ -97,8 +104,8 @@ export async function telephonyOutboundCallHandler(
 	const callId = outboundResult.callId;
 
 	// In progress call recorded as queued, never fake completed before talk
-	await withTenantCtx(orgId, async () => {
-		await db.insert(communicationEvents).values({
+	await withTenantCtx(orgId, async (tx) => {
+		await tx.insert(communicationEvents).values({
 			organizationId: orgId,
 			providerCallId: callId,
 			providerName: outboundResult.provider,
@@ -110,19 +117,21 @@ export async function telephonyOutboundCallHandler(
 			message: `Исходящий вызов на ${callerPhone.e164} через ${outboundResult.provider}`,
 			idempotencyKey,
 		});
-	});
 
-	wsBroker.broadcastToOrganization(resolvedOrgId, {
-		type: "TELEPHONY_OUTBOUND_CALL",
-		payload: {
-			callId,
-			phone: callerPhone.e164,
-			patientId,
-			patientName,
-			status: "dialing",
-			provider: outboundResult.provider,
-			timestamp: new Date().toISOString(),
-		},
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(resolvedOrgId, {
+				type: "TELEPHONY_OUTBOUND_CALL",
+				payload: {
+					callId,
+					phone: callerPhone.e164,
+					patientId,
+					patientName,
+					status: "dialing",
+					provider: outboundResult.provider,
+					timestamp: new Date().toISOString(),
+				},
+			});
+		});
 	});
 
 	return reply.status(200).send({
@@ -138,4 +147,3 @@ export async function telephonyOutboundCallHandler(
 }
 
 export const telephonyOutboundHandler = telephonyOutboundCallHandler;
-

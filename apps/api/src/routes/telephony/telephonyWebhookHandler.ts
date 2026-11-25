@@ -1,15 +1,16 @@
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { maskPhoneDisplay } from "@dental/shared";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withSavepoint, withTenantCtx } from "../../db/rls.js";
 import { crmLeads, patients } from "../../db/schema.js";
 import { MissedCallService } from "../../services/telephony/missedCallService.js";
 import {
 	authenticatePbxWebhook,
 	detectMarketingAttribution,
 	normalizePhoneNumber,
+	validateSsrfSafeRecordingUrl,
 } from "../../services/telephony/telephonySecurity.js";
+import { wsBroker } from "../../services/websocketBroker.js";
 import {
 	checkReplayTimestamp,
 	detectTelephonyProvider,
@@ -18,7 +19,7 @@ import {
 } from "./telephonyEngine.js";
 import { handleEndedEvent } from "./telephonyWebhookEndedService.js";
 import { handleRingingEvent } from "./telephonyWebhookRingingService.js";
-import { telephonyWebhookPayloadSchema } from "./types.js";
+import { escapeLikePattern, telephonyWebhookPayloadSchema } from "./types.js";
 
 export async function telephonyWebhookHandler(
 	request: FastifyRequest<{ Params: { organizationId?: string } }>,
@@ -64,47 +65,80 @@ export async function telephonyWebhookHandler(
 		return reply.status(400).send({ error: replay.reason });
 	}
 
-	return withTenantCtx(resolvedOrgId, async () => {
-		const callId = (data.call_id || data.uniqueid || data.CallId || data.callid || data.entry_id || "").trim();
-		const recordingUrl = (data.recording_url || data.record_url || data.RecUrl || data.link || "").trim();
-		const transcriptionSnippet = (data.transcription_snippet || data.transcript || data.transcription || data.ai_summary || "").trim().slice(0, 1000) || null;
-		const rawDuration = data.duration || data.duration_seconds || data.billsec || data.talk_time;
-		const durationSeconds = rawDuration != null ? Math.max(0, Number.parseInt(String(rawDuration), 10) || 0) : 0;
-		const detectedProvider = detectTelephonyProvider(data, String(data.event || data.notification_name || data.event_type || data.cmd || ""));
+	const callId = (data.call_id || data.uniqueid || data.CallId || data.callid || data.entry_id || "").trim();
+	const recordingUrl = (data.recording_url || data.record_url || data.RecUrl || data.link || "").trim();
+	const transcriptionSnippet = (data.transcription_snippet || data.transcript || data.transcription || data.ai_summary || "").trim().slice(0, 1000) || null;
+	const rawDuration = data.duration || data.duration_seconds || data.billsec || data.talk_time;
+	const durationSeconds = rawDuration != null ? Math.max(0, Number.parseInt(String(rawDuration), 10) || 0) : 0;
+	const detectedProvider = detectTelephonyProvider(data, String(data.event || data.notification_name || data.event_type || data.cmd || ""));
 
-		if (event === "ringing") {
+	// SSRF DNS check runs strictly outside PG TX before opening withTenantCtx
+	let preVerifiedRecordingUrl: string | null = null;
+	if (event === "ended" && recordingUrl) {
+		const ssrf = await validateSsrfSafeRecordingUrl(recordingUrl);
+		if (ssrf.valid) {
+			preVerifiedRecordingUrl = recordingUrl;
+		} else {
+			request.log.warn({ url: recordingUrl, err: ssrf.error }, "[Telephony] SSRF rejected recording URL");
+		}
+	}
+
+	if (event === "missed" || (event === "ended" && durationSeconds === 0)) {
+		const rawWait = data.wait_time ?? data.waiting_duration ?? data.duration ?? data.duration_seconds;
+		const waitSec = rawWait != null ? Number(rawWait) : undefined;
+		const isShortSpam = waitSec !== undefined && !Number.isNaN(waitSec) && waitSec > 0 && waitSec < 5;
+
+		if (isShortSpam) {
+			request.log.info({ callerPhone: maskPhoneDisplay(callerPhone.e164), waitSec }, "[Telephony] Suppressing spam lead for short dropped call (<5s)");
+			return { success: true, event: "missed", skippedSpam: true };
+		}
+
+		const missed = await MissedCallService.handleMissedCall({
+			organizationId: resolvedOrgId, phone: callerPhone.e164, rawPhone: callerPhone.raw,
+			callId: callId || null, provider: detectedProvider, reason: event === "missed" ? "missed" : "zero_duration_hangup",
+			waitDurationSeconds: waitSec, logger: request.log,
+		});
+		return { success: true, event: "missed", taskId: missed.taskId, leadId: missed.leadId, patientId: missed.patientId, isNewLead: missed.isNewLead };
+	}
+
+	const escapedNational10 = escapeLikePattern(callerPhone.national10);
+
+	if (event === "ringing") {
+		return withTenantCtx(resolvedOrgId, async (tx) => {
 			return handleRingingEvent({
 				request, resolvedOrgId, callerPhone, targetPhone, targetRaw,
-				data, detectedProvider, callId, recordingUrl, transcriptionSnippet,
+				data, detectedProvider, callId, recordingUrl, transcriptionSnippet, tx,
 			});
-		}
-		if (event === "answered") {
-			// Создание постоянного лида при ответе на звонок (event: "answered")
-			if (callerPhone.national10.length >= 7) {
-				const searchPatient = await db.select({ id: patients.id }).from(patients).where(
+		});
+	}
+
+	if (event === "answered") {
+		if (callerPhone.national10.length >= 7) {
+			await withTenantCtx(resolvedOrgId, async (tx) => {
+				const searchPatient = await tx.select({ id: patients.id }).from(patients).where(
 					and(
 						eq(patients.organizationId, resolvedOrgId),
 						or(
 							eq(patients.phone, callerPhone.e164),
-							ilike(patients.phone, `%${callerPhone.national10}%`),
-							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+							ilike(patients.phone, `%${escapedNational10}%`),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${escapedNational10}%`}`,
 						),
 					),
 				).limit(1);
 
 				if (searchPatient.length === 0) {
 					try {
-						await db.transaction(async (tx) => {
-							await tx.execute(
+						await withSavepoint(tx, async (spTx) => {
+							await spTx.execute(
 								sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${resolvedOrgId}:${callerPhone.national10}`}))`,
 							);
 							const calculatedIdempotencyKey = `telephony:lead:answered:${resolvedOrgId}:${callId || callerPhone.national10}`;
-							const existing = await tx.select().from(crmLeads).where(
+							const existing = await spTx.select().from(crmLeads).where(
 								and(
 									eq(crmLeads.organizationId, resolvedOrgId),
 									or(
 										eq(crmLeads.phone, callerPhone.e164),
-										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+										ilike(crmLeads.phone, `%${escapedNational10}%`),
 										callId ? sql`${crmLeads.metadata}->>'callId' = ${callId}` : sql`false`,
 										sql`${crmLeads.metadata}->>'idempotencyKey' = ${calculatedIdempotencyKey}`,
 									),
@@ -119,7 +153,7 @@ export async function telephonyWebhookHandler(
 									targetRaw,
 								});
 								const virtualTrunkNumber = targetPhone.e164 || targetRaw || "";
-								await tx.insert(crmLeads).values({
+								await spTx.insert(crmLeads).values({
 									organizationId: resolvedOrgId,
 									name: `Входящий звонок ${callerPhone.e164}`,
 									patientName: `Звонок ${callerPhone.e164}`,
@@ -148,39 +182,26 @@ export async function telephonyWebhookHandler(
 						request.log.warn({ leadErr, orgId: resolvedOrgId }, "[Telephony] Answered lead creation warning");
 					}
 				}
-			}
-			return { success: true, event: "answered" };
-		}
-		if (event === "missed" || (event === "ended" && durationSeconds === 0)) {
-			const rawWait = data.wait_time ?? data.waiting_duration ?? data.duration ?? data.duration_seconds;
-			const waitSec = rawWait != null ? Number(rawWait) : undefined;
-			const isShortSpam = waitSec !== undefined && !Number.isNaN(waitSec) && waitSec > 0 && waitSec < 5;
-
-			if (isShortSpam) {
-				request.log.info({ callerPhone: maskPhoneDisplay(callerPhone.e164), waitSec }, "[Telephony] Suppressing spam lead for short dropped call (<5s)");
-				return { success: true, event: "missed", skippedSpam: true };
-			}
-
-			const missed = await MissedCallService.handleMissedCall({
-				organizationId: resolvedOrgId, phone: callerPhone.e164, rawPhone: callerPhone.raw,
-				callId: callId || null, provider: detectedProvider, reason: event === "missed" ? "missed" : "zero_duration_hangup",
-				waitDurationSeconds: waitSec, logger: request.log,
 			});
-			return { success: true, event: "missed", taskId: missed.taskId, patientId: missed.patientId, isNewLead: missed.isNewLead };
 		}
-		if (event === "ended") {
-			const searchPatient = await db.select().from(patients).where(
+		return { success: true, event: "answered" };
+	}
+
+	if (event === "ended") {
+		return withTenantCtx(resolvedOrgId, async (tx) => {
+			const searchPatient = await tx.select().from(patients).where(
 				and(
 					eq(patients.organizationId, resolvedOrgId),
 					or(
 						eq(patients.phone, callerPhone.e164),
-						ilike(patients.phone, `%${callerPhone.national10}%`),
-						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+						ilike(patients.phone, `%${escapedNational10}%`),
+						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${escapedNational10}%`}`,
 					),
 				),
 			).limit(1);
 			return handleEndedEvent({
 				request, resolvedOrgId, callerPhone, callId, recordingUrl,
+				preVerifiedRecordingUrl,
 				durationSeconds, transcriptionSnippet, matchedPatient: searchPatient[0] || null,
 				utm_source: data.utm_source,
 				utm_campaign: data.utm_campaign,
@@ -188,8 +209,10 @@ export async function telephonyWebhookHandler(
 				advertising_channel: data.advertising_channel,
 				targetRaw,
 				targetPhone,
+				tx,
 			});
-		}
-		return { success: true, event };
-	});
+		});
+	}
+
+	return { success: true, event };
 }

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { TelephonyGatewayService } from "../../../services/telephony/telephonyGatewayService.js";
+import { telephonySipTransferBodySchema } from "../types.js";
 
 export async function handleSipCallTransfer(
 	request: FastifyRequest<{
@@ -28,12 +29,8 @@ export async function handleSipCallTransfer(
 		});
 	}
 
-	const body = request.body || {};
-	const callId = (body.callId || "").trim();
-	const targetExtensionOrPhone = (body.targetExtensionOrPhone || "").trim();
-	const transferType = body.transferType === "attended" ? "attended" : "blind";
-
-	if (!callId || !targetExtensionOrPhone) {
+	const parsedBody = telephonySipTransferBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
 		return reply.status(400).send({
 			error: "ValidationError",
 			message: "callId and targetExtensionOrPhone are required for call transfer",
@@ -43,11 +40,16 @@ export async function handleSipCallTransfer(
 	const identity = getRequestIdentity(request);
 	const result = await TelephonyGatewayService.transferCall({
 		organizationId: orgId,
-		callId,
-		targetExtensionOrPhone,
-		transferType,
+		callId: parsedBody.data.callId,
+		targetExtensionOrPhone: parsedBody.data.targetExtensionOrPhone,
+		transferType: parsedBody.data.transferType,
 		initiatedByUserId: identity.userId ?? undefined,
+		logger: request.log,
 	});
+
+	if (!result.success) {
+		return reply.status(result.statusCode ?? 422).send(result);
+	}
 
 	return reply.status(200).send(result);
 }

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { TelephonyGatewayService } from "../../../services/telephony/telephonyGatewayService.js";
+import { telephonySipCredentialsBodySchema } from "../types.js";
 
 export async function handleSipCredentials(
 	request: FastifyRequest<{
@@ -24,13 +25,20 @@ export async function handleSipCredentials(
 		});
 	}
 
-	const body = (request.body || {}) as { extension?: string; staffFullName?: string };
+	const parsedBody = telephonySipCredentialsBodySchema.safeParse(request.body ?? {});
+	if (!parsedBody.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Invalid SIP credentials request payload",
+		});
+	}
+
 	const identity = getRequestIdentity(request);
 	const credentials = TelephonyGatewayService.generateWebRtcSipCredentials({
 		organizationId: orgId,
 		userId: identity.userId || "anonymous",
-		extension: body.extension,
-		staffFullName: body.staffFullName,
+		extension: parsedBody.data.extension,
+		staffFullName: parsedBody.data.staffFullName,
 	});
 
 	return reply.status(200).send({

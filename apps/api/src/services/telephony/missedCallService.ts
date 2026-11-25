@@ -8,9 +8,8 @@
  * 4. Proactive Alert generation for Copilot SSE stream and WebSocket broadcast for reception desk.
  */
 
-import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, ilike, or, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { onTenantTxCommit, withSavepoint, withTenantCtx } from "../../db/rls.js";
 import {
 	communicationEvents,
 	communicationTasks,
@@ -18,31 +17,19 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { maskPhoneDisplay } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { normalizePhoneNumber } from "./telephonySecurity.js";
 import { wsBroker } from "../websocketBroker.js";
 
+const missedCallLogger = createApiLogger("missedCallService");
 const defaultStructuredLogger = {
-	warn: (obj: unknown, msg?: string) => {
-		process.stderr.write(
-			JSON.stringify({
-				level: "warn",
-				time: new Date().toISOString(),
-				msg: msg || "",
-				details: obj,
-			}) + "\n",
-		);
-	},
-	error: (obj: unknown, msg?: string) => {
-		process.stderr.write(
-			JSON.stringify({
-				level: "error",
-				time: new Date().toISOString(),
-				msg: msg || "",
-				details: obj,
-			}) + "\n",
-		);
-	},
+	warn: (obj: unknown, msg?: string) => missedCallLogger.warn({ details: obj }, msg || ""),
+	error: (obj: unknown, msg?: string) => missedCallLogger.error({ details: obj }, msg || ""),
 };
+
+function escapeLikePattern(raw: string): string {
+	return raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
 
 export interface MissedCallEventParams {
 	organizationId: string;
@@ -74,7 +61,7 @@ export class MissedCallService {
 	 * Serializes concurrent requests via PostgreSQL transaction advisory lock,
 	 * deduplicates rapid duplicate webhook cascades within a 60-second window,
 	 * creates an urgent communication task, logs the communication event,
-	 * and broadcasts proactive alerts to WebSocket and Copilot SSE streams.
+	 * and broadcasts proactive alerts strictly after commit.
 	 */
 	public static async handleMissedCall(
 		params: MissedCallEventParams,
@@ -83,9 +70,10 @@ export class MissedCallService {
 		const normalized = normalizePhoneNumber(params.phone || params.rawPhone);
 		const callerPhoneE164 = normalized.isValid ? normalized.e164 : params.phone;
 		const national10 = normalized.national10;
+		const escapedNational10 = escapeLikePattern(national10);
 		const callId = (params.callId || "").trim();
 
-		const txResult = await db.transaction(async (tx) => {
+		return await withTenantCtx(organizationId, async (tx) => {
 			// Serialize concurrent webhooks for this organization and phone/callId
 			const lockKey = callId
 				? `missed:${organizationId}:call:${callId}`
@@ -94,7 +82,7 @@ export class MissedCallService {
 				sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`,
 			);
 
-			// 1. Check if this callId was already processed as a missed call event
+			// 1. Check if this exact callId was already processed as a missed call event
 			if (callId) {
 				const existingEvents = await tx
 					.select({
@@ -110,41 +98,40 @@ export class MissedCallService {
 								eq(communicationEvents.status, "needs_call"),
 								eq(communicationEvents.status, "failed"),
 							),
-							or(
-								eq(communicationEvents.providerCallId, callId),
-								ilike(communicationEvents.message, `%${callId}%`),
-							),
+							eq(communicationEvents.providerCallId, callId),
 						),
 					)
 					.limit(1);
 
 				const candidateEv = existingEvents[0];
-				if (candidateEv && typeof candidateEv.patientId === "string") {
-					const existingPatientId: string = candidateEv.patientId;
-					const existingTasks = await tx
-						.select({
-							id: communicationTasks.id,
-							patientId: communicationTasks.patientId,
-						})
-						.from(communicationTasks)
-						.where(
-							and(
-								eq(communicationTasks.organizationId, organizationId),
-								eq(communicationTasks.workflowCode, "MISSED_CALL_CALLBACK"),
-								eq(communicationTasks.patientId, existingPatientId),
-							),
-						)
-						.orderBy(desc(communicationTasks.createdAt))
-						.limit(1);
+				if (candidateEv) {
+					let existingTaskId: string | undefined;
+					if (typeof candidateEv.patientId === "string") {
+						const existingTasks = await tx
+							.select({ id: communicationTasks.id })
+							.from(communicationTasks)
+							.where(
+								and(
+									eq(communicationTasks.organizationId, organizationId),
+									eq(communicationTasks.workflowCode, "MISSED_CALL_CALLBACK"),
+									eq(communicationTasks.patientId, candidateEv.patientId),
+								),
+							)
+							.orderBy(desc(communicationTasks.createdAt))
+							.limit(1);
+						existingTaskId = existingTasks[0]?.id;
+					}
 
 					return {
 						success: true,
 						duplicate: true,
-						taskId: existingTasks[0]?.id,
-						patientId: existingPatientId,
-						patientName: `Пациент (${callerPhoneE164})`,
+						taskId: existingTaskId,
+						patientId: candidateEv.patientId ?? null,
+						patientName: candidateEv.patientId
+							? `Пациент (${callerPhoneE164})`
+							: `Лид (${maskPhoneDisplay(callerPhoneE164)})`,
 						phone: callerPhoneE164,
-						isNewLead: false,
+						isNewLead: !candidateEv.patientId,
 					};
 				}
 			}
@@ -162,9 +149,9 @@ export class MissedCallService {
 							eq(patients.organizationId, organizationId),
 							or(
 								eq(patients.phone, callerPhoneE164),
-								ilike(patients.phone, `%${national10}%`),
-								sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
-								sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
+								ilike(patients.phone, `%${escapedNational10}%`),
+								sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${escapedNational10}%`}`,
+								sql`regexp_replace(coalesce(${patients.administrativeProfile}->>'legalRepresentativePhone', ''), '[^0-9]', '', 'g') LIKE ${`%${escapedNational10}%`}`,
 							),
 						),
 					)
@@ -181,6 +168,8 @@ export class MissedCallService {
 				: `Лид (${maskPhoneDisplay(callerPhoneE164)})`;
 			let createdLeadRecord: typeof crmLeads.$inferSelect | null = null;
 			let taskId: string | undefined = undefined;
+			let leadId: string | undefined = undefined;
+			let duplicateSuppression = false;
 
 			const sixtySecondsAgo = new Date(Date.now() - 60 * 1000);
 
@@ -190,9 +179,8 @@ export class MissedCallService {
 					matchedPatient.fullName.trim() || `Пациент (${callerPhoneE164})`;
 
 				// Check existing lead for constant patient — update lastContactedAt without creating duplicates
-				// Uses nested savepoint tx.transaction() to prevent poisoned transaction trap in PostgreSQL
 				try {
-					createdLeadRecord = await tx.transaction(async (leadTx) => {
+					createdLeadRecord = await withSavepoint(tx, async (leadTx) => {
 						const existingLeads = await leadTx
 							.select()
 							.from(crmLeads)
@@ -216,7 +204,12 @@ export class MissedCallService {
 									lastContactedAt: new Date(),
 									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Пропущенный звонок от пациента ${patientDisplayName}: ${new Date().toLocaleString("ru-RU")}`}`,
 								})
-								.where(eq(crmLeads.id, existingLead.id))
+								.where(
+									and(
+										eq(crmLeads.id, existingLead.id),
+										eq(crmLeads.organizationId, organizationId),
+									),
+								)
 								.returning();
 							return updatedLead || existingLead;
 						}
@@ -237,15 +230,17 @@ export class MissedCallService {
 							.returning();
 						return createdLead || null;
 					});
+					leadId = createdLeadRecord?.id;
 				} catch (err) {
 					const log = params.logger || defaultStructuredLogger;
 					log.warn(
-						{ err, organizationId, patientId },
+						{ err: safeLogError(err), organizationId, patientId },
 						"[MissedCallService] Existing patient lead handling notice",
 					);
 				}
 
-				// 3. Suppress duplicate task cascade if an active callback task already exists within 60 seconds
+				// 3. Suppress duplicate task cascade if an active callback task already exists within 60 seconds,
+				// while still persisting the communication event for distinct callIds.
 				const recentTasks = await tx
 					.select({ id: communicationTasks.id })
 					.from(communicationTasks)
@@ -262,44 +257,35 @@ export class MissedCallService {
 
 				const existingTask = recentTasks[0];
 				if (existingTask) {
-					return {
-						success: true,
-						duplicate: true,
-						taskId: existingTask.id,
-						patientId,
-						patientName: patientDisplayName,
-						phone: callerPhoneE164,
-						isNewLead: false,
-						leadId: createdLeadRecord?.id,
-					};
+					taskId = existingTask.id;
+					duplicateSuppression = true;
+				} else {
+					const dueAt = new Date(Date.now() + 60 * 1000);
+					const [createdTask] = await tx
+						.insert(communicationTasks)
+						.values({
+							organizationId,
+							patientId,
+							assignedRole: "receptionist",
+							channel: "phone",
+							intent: "general",
+							status: "needs_call",
+							priority: "urgent",
+							dueAt,
+							title: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
+							body: `🚨 Пропущенный вызов от ${callerPhoneE164}. Срочно перезвонить!`,
+							workflowCode: "MISSED_CALL_CALLBACK",
+						})
+						.returning();
+					taskId = createdTask?.id;
 				}
-
-				// Create URGENT task in communicationTasks for registered patient (60-second callback SLA)
-				const dueAt = new Date(Date.now() + 60 * 1000);
-				const [createdTask] = await tx
-					.insert(communicationTasks)
-					.values({
-						organizationId,
-						patientId,
-						assignedRole: "receptionist",
-						channel: "phone",
-						intent: "general",
-						status: "needs_call",
-						priority: "urgent",
-						dueAt,
-						title: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
-						body: `🚨 Пропущенный вызов от ${callerPhoneE164}. Срочно перезвонить!`,
-						workflowCode: "MISSED_CALL_CALLBACK",
-					})
-					.returning();
-				taskId = createdTask?.id;
 			} else {
-				// SANE DOMAIN RULE: DO NOT POLLUTE PATIENTS TABLE WITH UNKNOWN SPAM CALLS!
-				// Only create/update crmLeads entry for the marketing & reception desk funnel.
+				// SANE DOMAIN RULE: DO NOT POLLUTE PATIENTS TABLE WITH UNKNOWN CALLERS!
+				// Unknown callers create/update crmLeads only (taskId remains undefined; leadId carries the lead UUID).
 				isNewLead = true;
 
 				try {
-					const leadOutcome = await tx.transaction(async (leadTx) => {
+					const leadOutcome = await withSavepoint(tx, async (leadTx) => {
 						const existingLeads = await leadTx
 							.select()
 							.from(crmLeads)
@@ -328,21 +314,19 @@ export class MissedCallService {
 											: existingLead.status,
 									notes: sql`coalesce(${crmLeads.notes}, '') || E'\n' || ${`Повторный пропущенный звонок от ${callerPhoneE164} (${new Date().toLocaleString("ru-RU")})`}`,
 								})
-								.where(eq(crmLeads.id, existingLead.id))
+								.where(
+									and(
+										eq(crmLeads.id, existingLead.id),
+										eq(crmLeads.organizationId, organizationId),
+									),
+								)
 								.returning();
 							const record = updatedLead || existingLead;
 							const displayName =
 								existingLead.patientName || existingLead.name || `Лид (${callerPhoneE164})`;
 
-							if (wasRecent) {
-								return {
-									isDuplicate: true as const,
-									record,
-									displayName,
-								};
-							}
 							return {
-								isDuplicate: false as const,
+								isDuplicate: Boolean(wasRecent),
 								record,
 								displayName,
 							};
@@ -364,7 +348,7 @@ export class MissedCallService {
 							})
 							.returning();
 						return {
-							isDuplicate: false as const,
+							isDuplicate: false,
 							record: createdLead || null,
 							displayName: newLeadName,
 						};
@@ -373,25 +357,13 @@ export class MissedCallService {
 					if (leadOutcome) {
 						createdLeadRecord = leadOutcome.record;
 						patientDisplayName = leadOutcome.displayName;
-						taskId = leadOutcome.record?.id;
-
-						if (leadOutcome.isDuplicate) {
-							return {
-								success: true,
-								duplicate: true,
-								taskId: leadOutcome.record?.id,
-								patientId: null,
-								patientName: patientDisplayName,
-								phone: callerPhoneE164,
-								isNewLead: true,
-								leadId: leadOutcome.record?.id,
-							};
-						}
+						leadId = leadOutcome.record?.id;
+						duplicateSuppression = leadOutcome.isDuplicate;
 					}
 				} catch (err) {
 					const log = params.logger || defaultStructuredLogger;
 					log.warn(
-						{ err, organizationId, callerPhone: callerPhoneE164 },
+						{ err: safeLogError(err), organizationId, callerPhone: callerPhoneE164 },
 						"[MissedCallService] Unknown caller lead handling notice",
 					);
 					patientDisplayName = `Лид (${maskPhoneDisplay(callerPhoneE164)})`;
@@ -432,48 +404,43 @@ export class MissedCallService {
 				});
 			}
 
+			if (!duplicateSuppression) {
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "TELEPHONY_MISSED_CALL",
+						payload: {
+							taskId: taskId ?? null,
+							leadId: leadId ?? null,
+							phone: callerPhoneE164,
+							patientId,
+							patientName: patientDisplayName,
+							callId: callId || null,
+							provider: params.provider || "telephony",
+							timestamp: new Date().toISOString(),
+							priority: "URGENT",
+							taskTitle: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
+						},
+					});
+
+					if (createdLeadRecord) {
+						wsBroker.broadcastToOrganization(organizationId, {
+							type: "LEAD_CREATED",
+							payload: { lead: createdLeadRecord },
+						});
+					}
+				});
+			}
+
 			return {
-				result: {
-					success: true,
-					taskId,
-					patientId,
-					patientName: patientDisplayName,
-					phone: callerPhoneE164,
-					isNewLead,
-				},
-				broadcastMissedCall: {
-					taskId,
-					phone: callerPhoneE164,
-					patientId,
-					patientName: patientDisplayName,
-					callId: callId || null,
-					provider: params.provider || "telephony",
-					timestamp: new Date().toISOString(),
-					priority: "URGENT",
-					taskTitle: "🚨 Пропущенный вызов. Перезвонить за 60 секунд",
-				},
-				broadcastLead: createdLeadRecord ? { lead: createdLeadRecord } : null,
+				success: true,
+				taskId,
+				leadId,
+				patientId,
+				patientName: patientDisplayName,
+				phone: callerPhoneE164,
+				isNewLead,
+				...(duplicateSuppression ? { duplicate: true } : {}),
 			};
 		});
-
-		// 6. WebSocket Broadcast for Reception Desk strictly AFTER transaction commits (Mandate 8e & ACID)
-		if (
-			"broadcastMissedCall" in txResult &&
-			txResult.broadcastMissedCall
-		) {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "TELEPHONY_MISSED_CALL",
-				payload: txResult.broadcastMissedCall,
-			});
-		}
-
-		if ("broadcastLead" in txResult && txResult.broadcastLead) {
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "LEAD_CREATED",
-				payload: txResult.broadcastLead,
-			});
-		}
-
-		return "result" in txResult ? txResult.result : txResult;
 	}
 }

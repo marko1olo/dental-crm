@@ -5,7 +5,8 @@
 
 import { and, eq, lt, ne, sql } from "drizzle-orm";
 import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { db, type TenantDb } from "../../../db/client.js";
+import { type TenantDb } from "../../../db/client.js";
+import { withSavepoint } from "../../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -17,6 +18,7 @@ import {
 	serviceCatalogItems,
 	users,
 } from "../../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import {
 	ALLOWED_NOMENCLATURE_CATEGORIES,
 	type AllowedNomenclatureCategory,
@@ -25,7 +27,61 @@ import {
 	type ProdoctorovSyncStatusUpdate,
 	type SlotsQueryParams,
 } from "./types.js";
-import { findIntegrationByClinicExternalId } from "./medflexIntegrationService.js";
+
+const slotsSyncLogger = createApiLogger("prodoctorovSlotsSync");
+
+function resolveValidTimeZone(rawTimeZone: string | null | undefined): string {
+	const candidate = (rawTimeZone || "").trim() || "Europe/Samara";
+	try {
+		new Intl.DateTimeFormat("en-US", { timeZone: candidate });
+		return candidate;
+	} catch {
+		return "Europe/Samara";
+	}
+}
+
+function zonedWallClockToUtcDate(
+	year: number,
+	month: number,
+	day: number,
+	hour: number,
+	minute: number,
+	timeZone: string,
+): Date {
+	const utcGuessMs = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+	const dtf = new Intl.DateTimeFormat("en-US", {
+		timeZone,
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+	});
+	const getOffsetMs = (ms: number): number => {
+		const parts = dtf.formatToParts(new Date(ms));
+		const map: Record<string, number> = {};
+		for (const p of parts) {
+			if (p.type !== "literal") {
+				map[p.type] = Number.parseInt(p.value, 10);
+			}
+		}
+		const h = map.hour === 24 ? 0 : (map.hour ?? 0);
+		const wallMs = Date.UTC(
+			map.year ?? year,
+			(map.month ?? month) - 1,
+			map.day ?? day,
+			h,
+			map.minute ?? minute,
+			map.second ?? 0,
+		);
+		return wallMs - ms;
+	};
+	const offset1 = getOffsetMs(utcGuessMs);
+	const offset2 = getOffsetMs(utcGuessMs - offset1);
+	return new Date(utcGuessMs - offset2);
+}
 
 /**
  * Фильтр внутренних технических позиций клиники (расходные материалы, технические этапы лаборатории,
@@ -116,45 +172,49 @@ export function escapeXml(unsafe: string | null | undefined): string {
 		.replace(/'/g, "&apos;");
 }
 
-
 export async function syncProdoctorovExportStatus(
 	tx: TenantDb,
 	organizationId: string,
 	update: ProdoctorovSyncStatusUpdate,
 ): Promise<void> {
 	try {
-		const [existing] = await tx
-			.select({ id: prodoctorovSyncExports.id })
-			.from(prodoctorovSyncExports)
-			.where(eq(prodoctorovSyncExports.organizationId, organizationId))
-			.limit(1);
+		await withSavepoint(tx, async (spTx) => {
+			const [existing] = await spTx
+				.select({ id: prodoctorovSyncExports.id })
+				.from(prodoctorovSyncExports)
+				.where(eq(prodoctorovSyncExports.organizationId, organizationId))
+				.limit(1);
 
-		const now = new Date();
-		if (existing) {
-			await tx
-				.update(prodoctorovSyncExports)
-				.set({
-					...update,
+			const now = new Date();
+			if (existing) {
+				await spTx
+					.update(prodoctorovSyncExports)
+					.set({
+						...update,
+						lastSyncedAt: now,
+					})
+					.where(
+						and(
+							eq(prodoctorovSyncExports.id, existing.id),
+							eq(prodoctorovSyncExports.organizationId, organizationId),
+						),
+					);
+			} else {
+				await spTx.insert(prodoctorovSyncExports).values({
+					organizationId,
+					priceListSyncStatus: update.priceListSyncStatus ?? "synced",
+					availableSlotsCount: update.availableSlotsCount ?? 0,
+					medflexClubBadge: true,
 					lastSyncedAt: now,
-				})
-				.where(
-					and(
-						eq(prodoctorovSyncExports.id, existing.id),
-						eq(prodoctorovSyncExports.organizationId, organizationId),
-					),
-				);
-		} else {
-			await tx.insert(prodoctorovSyncExports).values({
-				organizationId,
-				priceListSyncStatus: update.priceListSyncStatus ?? "synced",
-				availableSlotsCount: update.availableSlotsCount ?? 0,
-				medflexClubBadge: true,
-				lastSyncedAt: now,
-				createdAt: now,
-			});
-		}
-	} catch {
-		// Не блокирует основной поток ответа
+					createdAt: now,
+				});
+			}
+		});
+	} catch (err) {
+		slotsSyncLogger.warn(
+			{ err: safeLogError(err), organizationId },
+			"[ProdoctorovSlotsSync] Failed to update export sync status",
+		);
 	}
 }
 
@@ -203,21 +263,23 @@ export async function generatePricelistXml(
 		)
 		.join("\n");
 
-	// Позиции прейскуранта: фильтрация внутренних технических позиций и копеечно-точные цены (Мандаты 8b, 8e, 8n)
+	// Позиции прейскуранта: строго целые копейки из priceKopecks / basePriceKopecks (Мандат 8bm)
 	const offersXmlLines: string[] = [];
 	for (const item of catalogItems) {
-		// Отсекаем внутренние расходники, технические этапы лаборатории и документы
 		if (isInternalTechnicalPosition(item)) continue;
 
 		const targetCategory = resolveAllowedCategory(item);
 		if (!targetCategory) continue;
 
-		const priceNum = Number(item.priceRub ?? item.basePriceRub ?? 0);
-		const priceKopecks = rublesToKopecks(priceNum);
-		// Исключаем бесплатные/нулевые внутренние технические заглушки (Мандат 8bm: цены через formatKopecksToRubles)
-		if (priceKopecks <= 0) continue;
+		const kopecksFromDb =
+			item.priceKopecks > 0n
+				? item.priceKopecks
+				: item.basePriceKopecks > 0n
+					? item.basePriceKopecks
+					: BigInt(rublesToKopecks(Number(item.priceRub ?? item.basePriceRub ?? 0)));
+		if (kopecksFromDb <= 0n) continue;
 
-		const formattedPrice = formatKopecksToRubles(priceKopecks);
+		const formattedPrice = formatKopecksToRubles(kopecksFromDb);
 
 		const code804n = item.order804nCode || item.code;
 		const specialtyRu =
@@ -277,6 +339,13 @@ export async function calculateAvailableSlots(
 		durationMinutes,
 	} = query;
 
+	const [clinic] = await tx
+		.select({ timezone: clinics.timezone })
+		.from(clinics)
+		.where(eq(clinics.organizationId, organizationId))
+		.limit(1);
+	const clinicTimeZone = resolveValidTimeZone(clinic?.timezone);
+
 	// 0. Загрузка маппингов внешних ID врачей МедФлекс / ПроДокторов
 	const mappings = await tx
 		.select()
@@ -296,16 +365,17 @@ export async function calculateAvailableSlots(
 		? (staffIdByExternalId.get(doctorId) ?? doctorId)
 		: undefined;
 
-	// 1. Поиск врачей
+	// 1. Поиск врачей строго по роли "doctor" (без утечки администраторов/медсестер в публичные слоты)
 	const doctorConditions = [
 		eq(users.organizationId, organizationId),
 		eq(users.isActive, true),
+		eq(users.role, "doctor"),
 	];
 	if (resolvedDoctorId) {
 		doctorConditions.push(eq(users.id, resolvedDoctorId));
 	}
 
-	let activeDoctors = await tx
+	const activeDoctors = await tx
 		.select({
 			id: users.id,
 			fullName: users.fullName,
@@ -315,26 +385,6 @@ export async function calculateAvailableSlots(
 		})
 		.from(users)
 		.where(and(...doctorConditions));
-
-	// Если врач не найден по строгой роли 'doctor', в соло-клинике берем активных сотрудников (Мандат 8n)
-	if (activeDoctors.length === 0 && !doctorId) {
-		activeDoctors = await tx
-			.select({
-				id: users.id,
-				fullName: users.fullName,
-				role: users.role,
-				specialties: users.specialties,
-				workingHours: users.workingHours,
-			})
-			.from(users)
-			.where(
-				and(
-					eq(users.organizationId, organizationId),
-					eq(users.isActive, true),
-				),
-			)
-			.limit(5);
-	}
 
 	// 2. Поиск активных кресел
 	const activeChairs = await tx
@@ -350,18 +400,48 @@ export async function calculateAvailableSlots(
 			),
 		);
 
-	// 3. Расчет диапазона дат (до 30 дней вперед)
+	// 3. Расчет диапазона локальных дат клиники (до 30 дней вперед)
 	const now = new Date();
-	const startDateObj = startDateStr
-		? new Date(`${startDateStr}T00:00:00.000Z`)
-		: new Date(now.toISOString().slice(0, 10) + "T00:00:00.000Z");
+	const todayClinicStr = new Intl.DateTimeFormat("en-CA", {
+		timeZone: clinicTimeZone,
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	}).format(now);
 
-	const endDateObj = endDateStr
-		? new Date(`${endDateStr}T23:59:59.999Z`)
-		: new Date(startDateObj.getTime() + 14 * 24 * 60 * 60 * 1000);
+	const effectiveStartStr = startDateStr ?? todayClinicStr;
+	const startParts = effectiveStartStr.split("-").map(Number);
+	const startUtcCalendar = new Date(
+		Date.UTC(startParts[0] ?? 2026, (startParts[1] ?? 1) - 1, startParts[2] ?? 1),
+	);
 
-	const maxEndMs = startDateObj.getTime() + 30 * 24 * 60 * 60 * 1000;
-	const effectiveEndMs = Math.min(endDateObj.getTime(), maxEndMs);
+	const requestedEndCalendar = endDateStr
+		? (() => {
+				const p = endDateStr.split("-").map(Number);
+				return new Date(Date.UTC(p[0] ?? 2026, (p[1] ?? 1) - 1, p[2] ?? 1));
+			})()
+		: new Date(startUtcCalendar.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+	const maxEndCalendarMs = startUtcCalendar.getTime() + 30 * 24 * 60 * 60 * 1000;
+	const effectiveEndCalendarMs = Math.min(requestedEndCalendar.getTime(), maxEndCalendarMs);
+	const effectiveEndCalendar = new Date(effectiveEndCalendarMs);
+
+	const rangeStartInstant = zonedWallClockToUtcDate(
+		startUtcCalendar.getUTCFullYear(),
+		startUtcCalendar.getUTCMonth() + 1,
+		startUtcCalendar.getUTCDate(),
+		0,
+		0,
+		clinicTimeZone,
+	);
+	const rangeEndInstant = zonedWallClockToUtcDate(
+		effectiveEndCalendar.getUTCFullYear(),
+		effectiveEndCalendar.getUTCMonth() + 1,
+		effectiveEndCalendar.getUTCDate(),
+		23,
+		59,
+		clinicTimeZone,
+	);
 
 	// 4. Загрузка занятых приемов в диапазоне
 	const existingAppts = await tx
@@ -378,8 +458,8 @@ export async function calculateAvailableSlots(
 				eq(appointments.organizationId, organizationId),
 				ne(appointments.status, "cancelled"),
 				ne(appointments.status, "no_show"),
-				lt(appointments.startsAt, new Date(effectiveEndMs)),
-				sql`${appointments.endsAt} > ${startDateObj}`,
+				lt(appointments.startsAt, rangeEndInstant),
+				sql`${appointments.endsAt} > ${rangeStartInstant}`,
 			),
 		);
 
@@ -394,24 +474,25 @@ export async function calculateAvailableSlots(
 			),
 		);
 
-	// 6. Генерация слотов
+	// 6. Генерация слотов в часовом поясе клиники
 	const doctorsWithSlots: ProdoctorovSlotsResponse["doctors"] = [];
 	let totalAvailableSlots = 0;
 
 	for (const doctor of activeDoctors) {
 		const doctorSlots: ProdoctorovSlotsResponse["doctors"][0]["slots"] = [];
-		const curDate = new Date(startDateObj);
-		curDate.setUTCHours(0, 0, 0, 0);
+		const curDay = new Date(startUtcCalendar);
 
-		while (curDate.getTime() <= effectiveEndMs) {
+		while (curDay.getTime() <= effectiveEndCalendarMs) {
+			const year = curDay.getUTCFullYear();
+			const month = curDay.getUTCMonth() + 1;
+			const day = curDay.getUTCDate();
 			// ISO weekday: 1 = Mon, 7 = Sun
-			const dayOfWeek = curDate.getUTCDay() === 0 ? 7 : curDate.getUTCDay();
+			const dayOfWeek = curDay.getUTCDay() === 0 ? 7 : curDay.getUTCDay();
 
 			let enabled = true;
-			let startMin = 9 * 60; // 09:00
-			let endMin = 20 * 60; // 20:00
+			let startMin = 9 * 60; // 09:00 local clinic time
+			let endMin = 20 * 60; // 20:00 local clinic time
 
-			// Если у врача заданы персональные workingHours
 			if (Array.isArray(doctor.workingHours)) {
 				interface DoctorWorkingHourDay {
 					weekday?: number;
@@ -443,7 +524,6 @@ export async function calculateAvailableSlots(
 					}
 				}
 			} else {
-				// По умолчанию для клиники: Сб 10-18, Вс 10-16
 				if (dayOfWeek === 6) {
 					startMin = 10 * 60;
 					endMin = 18 * 60;
@@ -459,12 +539,13 @@ export async function calculateAvailableSlots(
 					slotMin + durationMinutes <= endMin;
 					slotMin += durationMinutes
 				) {
-					const slotStart = new Date(curDate);
-					slotStart.setUTCHours(
+					const slotStart = zonedWallClockToUtcDate(
+						year,
+						month,
+						day,
 						Math.floor(slotMin / 60),
 						slotMin % 60,
-						0,
-						0,
+						clinicTimeZone,
 					);
 					const slotEnd = new Date(
 						slotStart.getTime() + durationMinutes * 60 * 1000,
@@ -484,7 +565,7 @@ export async function calculateAvailableSlots(
 					);
 					if (docBusy) continue;
 
-					// Проверка доступности хотя бы одного кресла с учетом занятости и технологических резерваций (DEF-PD-03)
+					// Проверка доступности хотя бы одного кресла с учетом занятости и технологических резерваций
 					let availableChairId: string | null = null;
 					let availableChairName: string | null = null;
 
@@ -520,13 +601,11 @@ export async function calculateAvailableSlots(
 						});
 
 						if (!foundChair) {
-							// Все кресла заняты или закрыты на санобработку в этот слот
 							continue;
 						}
 						availableChairId = foundChair.id;
 						availableChairName = foundChair.name;
 					} else {
-						// Если в клинике нет кресел в базе (соло-практика), проверяем только общие технологические блокировки
 						const generalResBusy = reservations.some((r) => {
 							const rStart = Date.parse(r.startTime);
 							const rEnd = Date.parse(r.endTime);
@@ -548,7 +627,7 @@ export async function calculateAvailableSlots(
 				}
 			}
 
-			curDate.setUTCDate(curDate.getUTCDate() + 1);
+			curDay.setUTCDate(curDay.getUTCDate() + 1);
 		}
 
 		totalAvailableSlots += doctorSlots.length;
@@ -564,7 +643,6 @@ export async function calculateAvailableSlots(
 		});
 	}
 
-	// Обновляем статистику в БД
 	await syncProdoctorovExportStatus(tx, organizationId, {
 		availableSlotsCount: totalAvailableSlots,
 	});
@@ -572,8 +650,8 @@ export async function calculateAvailableSlots(
 	return {
 		success: true,
 		organizationId,
-		startDate: startDateObj.toISOString().slice(0, 10),
-		endDate: new Date(effectiveEndMs).toISOString().slice(0, 10),
+		startDate: effectiveStartStr,
+		endDate: effectiveEndCalendar.toISOString().slice(0, 10),
 		totalAvailableSlots,
 		doctors: doctorsWithSlots,
 	};

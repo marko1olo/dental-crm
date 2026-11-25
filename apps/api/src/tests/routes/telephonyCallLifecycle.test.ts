@@ -181,14 +181,43 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		}
 	});
 
-	test("PATCH /calls/:id persists clinical note in communicationEvents and providerCallId column", async () => {
+	test("PATCH /calls/:id persists clinical note in existing communicationEvents and rejects unknown non-UUID id with 404", async () => {
 		const app = Fastify();
 		await app.register(telephonyRoutes);
 		await app.ready();
 
+		const providerCallId = `call-catalog-${Date.now()}`;
+		const unknownRes = await app.inject({
+			method: "PATCH",
+			url: `/calls/${providerCallId}`,
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+			payload: {
+				note: "Не должно создаваться без звонка",
+			},
+		});
+		assert.equal(unknownRes.statusCode, 404, "PATCH for nonexistent callId must return 404");
+
+		const createdEvent = await app.inject({
+			method: "POST",
+			url: "/calls/end",
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+			payload: {
+				callId: providerCallId,
+				phone: "+7 999 111-22-33",
+				durationSeconds: 30,
+			},
+		});
+		assert.equal(createdEvent.statusCode, 200);
+
 		const res = await app.inject({
 			method: "PATCH",
-			url: "/calls/call-catalog-1",
+			url: `/calls/${providerCallId}`,
 			headers: {
 				"x-dente-clinic-token": "demo-showcase-clinic-token",
 				"x-dente-staff-token": "demo-showcase-staff-token",
@@ -201,7 +230,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		assert.equal(res.statusCode, 200);
 		const json = res.json();
 		assert.equal(json.success, true);
-		assert.equal(json.callId, "call-catalog-1");
+		assert.equal(json.callId, providerCallId);
 		assert.equal(json.note, "Пациент записан на консультацию к ортодонту в субботу");
 		assert.equal(
 			json.call.message,
@@ -210,7 +239,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		);
 		assert.equal(
 			json.call.providerCallId,
-			"call-catalog-1",
+			providerCallId,
 			"communicationEvents.providerCallId must store indexed external call ID",
 		);
 
@@ -237,7 +266,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		);
 		assert.equal(
 			json2.call.providerCallId,
-			"call-catalog-1",
+			providerCallId,
 			"Second note update must preserve providerCallId",
 		);
 
@@ -580,7 +609,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		}
 	});
 
-	test("NOTE CORRUPTION PREVENTION: Updating note for unknown callId creates new record without overwriting past calls", async () => {
+	test("NOTE CORRUPTION PREVENTION: Updating note for unknown callId returns 404 without inserting or overwriting past calls", async () => {
 		const testOrgId = DEMO_SHOWCASE_ORG_ID;
 		const app = Fastify();
 		await app.register(telephonyRoutes);
@@ -607,7 +636,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 
 			assert.ok(oldCall);
 
-			// 2. Client sends note update with a NEW unknown callId
+			// 2. Client sends note update with a NEW unknown callId -> must return 404 and NOT insert fake row
 			const newCallId = `new-call-session-${Date.now()}`;
 			const res = await app.inject({
 				method: "PATCH",
@@ -622,9 +651,9 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 				},
 			});
 
-			assert.equal(res.statusCode, 200);
+			assert.equal(res.statusCode, 404);
 			const json = res.json();
-			assert.equal(json.success, true);
+			assert.equal(json.error, "CallNotFound");
 
 			// 3. Verify OLD call was NOT overwritten!
 			const [recheckedOldCall] = await db
@@ -637,8 +666,8 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 				"Old call message must NOT be corrupted by new note!",
 			);
 
-			// 4. Verify NEW call record was created with newCallId
-			const [createdNewCall] = await db
+			// 4. Verify NO fake call record was created for unknown newCallId
+			const createdNewCalls = await db
 				.select()
 				.from(communicationEvents)
 				.where(
@@ -648,10 +677,58 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 					),
 				);
 
-			assert.ok(createdNewCall, "New call record must be created for the new callId");
-			assert.ok(createdNewCall?.message.includes("Свежая заметка: Пациент хочет записаться завтра"));
+			assert.equal(createdNewCalls.length, 0, "Unknown callId PATCH must NOT insert a new call record");
 		} finally {
 			await app.close();
+		}
+	});
+
+	test("POST /sip/transfer fails honestly with 422 when no PBX transfer gateway is configured", async () => {
+		const prevVars = {
+			ASTERISK_AMI_SECRET: process.env.ASTERISK_AMI_SECRET,
+			ASTERISK_AMI_HOST: process.env.ASTERISK_AMI_HOST,
+			ASTERISK_HOST: process.env.ASTERISK_HOST,
+			MANGO_API_KEY: process.env.MANGO_API_KEY,
+			MANGO_VPBX_API_KEY: process.env.MANGO_VPBX_API_KEY,
+			UIS_API_KEY: process.env.UIS_API_KEY,
+			COMAGIC_API_KEY: process.env.COMAGIC_API_KEY,
+		};
+		delete process.env.ASTERISK_AMI_SECRET;
+		delete process.env.ASTERISK_AMI_HOST;
+		delete process.env.ASTERISK_HOST;
+		delete process.env.MANGO_API_KEY;
+		delete process.env.MANGO_VPBX_API_KEY;
+		delete process.env.UIS_API_KEY;
+		delete process.env.COMAGIC_API_KEY;
+
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		try {
+			const res = await app.inject({
+				method: "POST",
+				url: "/sip/transfer",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+				},
+				payload: {
+					callId: "call-123",
+					targetExtensionOrPhone: "102",
+					transferType: "blind",
+				},
+			});
+			assert.equal(res.statusCode, 422);
+			const json = res.json();
+			assert.equal(json.success, false);
+			assert.equal(json.error, "TelephonyTransferNotConfigured");
+		} finally {
+			await app.close();
+			for (const [k, v] of Object.entries(prevVars)) {
+				if (v === undefined) delete process.env[k];
+				else process.env[k] = v;
+			}
 		}
 	});
 

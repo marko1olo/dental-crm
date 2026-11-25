@@ -202,56 +202,103 @@ describe("Omnichannel Messengers Overview & Token Security Master Hub", { concur
 	// =========================================================================
 	// 3. FASTIFY API: POST /api/messengers/test-connection
 	// =========================================================================
-	test("API: POST /api/messengers/test-connection checks channel readiness", async (t) => {
+	test("API: POST /api/messengers/test-connection performs real HTTP probe outside TX and reports honest status", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
-		// Проверка подключенного канала
-		const resConnected = await app.inject({
-			method: "POST",
-			url: "/api/messengers/test-connection",
-			headers: {
-				"x-dente-clinic-token": clinicTokenA,
-			},
-			payload: {
-				channelId: "tg_bot",
-			},
-		});
+		const originalFetch = globalThis.fetch;
+		const probedUrls: string[] = [];
 
-		assert.equal(resConnected.statusCode, 200);
-		const bodyConn = JSON.parse(resConnected.body);
-		assert.equal(bodyConn.ok, true);
-		assert.equal(bodyConn.status, "connected");
-		assert.ok(bodyConn.latencyMs > 0, "Должен возвращать пинг/задержку");
-		assert.ok(bodyConn.message.includes("стабильна"));
+		globalThis.fetch = (async (input: string | URL | Request) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+			probedUrls.push(url);
+			if (url.includes("api.telegram.org") && url.endsWith("/getMe")) {
+				return new Response(
+					JSON.stringify({ ok: true, result: { id: 123456, username: "DenteTestBot" } }),
+					{ status: 200, headers: { "content-type": "application/json" } },
+				);
+			}
+			if (url.includes("graph.facebook.com")) {
+				return new Response(
+					JSON.stringify({ error: { message: "Invalid OAuth access token" } }),
+					{ status: 401, headers: { "content-type": "application/json" } },
+				);
+			}
+			return new Response(JSON.stringify({ ok: false }), { status: 404 });
+		}) as typeof fetch;
 
-		// Проверка неподключенного канала
-		const resUnconf = await app.inject({
-			method: "POST",
-			url: "/api/messengers/test-connection",
-			headers: {
-				"x-dente-clinic-token": clinicTokenA,
-			},
-			payload: {
-				channelId: "vk_account",
-			},
-		});
+		try {
+			// Проверка подключенного канала (реальный getMe через fetch)
+			const resConnected = await app.inject({
+				method: "POST",
+				url: "/api/messengers/test-connection",
+				headers: {
+					"x-dente-clinic-token": clinicTokenA,
+				},
+				payload: {
+					channelId: "tg_bot",
+				},
+			});
 
-		assert.equal(resUnconf.statusCode, 200);
-		const bodyUnconf = JSON.parse(resUnconf.body);
-		assert.equal(bodyUnconf.ok, false);
-		assert.equal(bodyUnconf.status, "unconfigured");
-		assert.ok(bodyUnconf.message.includes("еще не настроен"));
+			assert.equal(resConnected.statusCode, 200);
+			const bodyConn = JSON.parse(resConnected.body);
+			assert.equal(bodyConn.ok, true);
+			assert.equal(bodyConn.status, "connected");
+			assert.ok(bodyConn.latencyMs > 0, "Должен возвращать пинг/задержку");
+			assert.ok(bodyConn.message.includes("@DenteTestBot"));
+			assert.ok(
+				probedUrls.some((u) => u.includes("api.telegram.org/bot123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ/getMe")),
+				"Токен должен быть расшифрован из БД и передан в Telegram getMe",
+			);
 
-		// Некорректный запрос без channelId
-		const resInvalid = await app.inject({
-			method: "POST",
-			url: "/api/messengers/test-connection",
-			headers: {
-				"x-dente-clinic-token": clinicTokenA,
-			},
-			payload: {},
-		});
+			// Проверка канала с невалидным токеном (честная ошибка 401 от шлюза, без фейка 200 OK)
+			const resInvalidToken = await app.inject({
+				method: "POST",
+				url: "/api/messengers/test-connection",
+				headers: {
+					"x-dente-clinic-token": clinicTokenA,
+				},
+				payload: {
+					channelId: "wa_waba",
+				},
+			});
 
-		assert.equal(resInvalid.statusCode, 400);
+			assert.equal(resInvalidToken.statusCode, 200);
+			const bodyErr = JSON.parse(resInvalidToken.body);
+			assert.equal(bodyErr.ok, false);
+			assert.equal(bodyErr.status, "error");
+			assert.ok(bodyErr.message.includes("Invalid OAuth access token"));
+
+			// Проверка неподключенного канала
+			const resUnconf = await app.inject({
+				method: "POST",
+				url: "/api/messengers/test-connection",
+				headers: {
+					"x-dente-clinic-token": clinicTokenA,
+				},
+				payload: {
+					channelId: "vk_account",
+				},
+			});
+
+			assert.equal(resUnconf.statusCode, 200);
+			const bodyUnconf = JSON.parse(resUnconf.body);
+			assert.equal(bodyUnconf.ok, false);
+			assert.equal(bodyUnconf.status, "unconfigured");
+			assert.ok(bodyUnconf.message.includes("еще не настроен"));
+
+			// Некорректный запрос без channelId
+			const resInvalid = await app.inject({
+				method: "POST",
+				url: "/api/messengers/test-connection",
+				headers: {
+					"x-dente-clinic-token": clinicTokenA,
+				},
+				payload: {},
+			});
+
+			assert.equal(resInvalid.statusCode, 400);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });

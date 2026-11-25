@@ -35,9 +35,17 @@ export {
 export { telephonyOutboxService } from "../../services/telephonyOutboxService.js";
 
 export const telephonyRoutes: FastifyPluginAsync = async (server) => {
-	// Webhooks
-	server.post<{ Params: { organizationId: string } }>("/:organizationId/webhook", telephonyWebhookHandler);
-	server.post<{ Params: { organizationId?: string } }>("/webhook", telephonyWebhookHandler);
+	// Webhooks (SSRF DNS validation & short TX managed inside handler)
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/webhook",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyWebhookHandler,
+	);
+	server.post<{ Params: { organizationId?: string } }>(
+		"/webhook",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyWebhookHandler,
+	);
 
 	// Instant-Ack Outbox Webhook endpoints (<50ms ACK)
 	server.post<{ Params: { organizationId: string } }>("/:organizationId/webhook/async", async (req, reply) => {
@@ -48,8 +56,16 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	});
 
 	// SMS Webhooks
-	server.post<{ Params: { organizationId: string } }>("/:organizationId/sms/webhook", telephonySmsHandler);
-	server.post<{ Params: { organizationId?: string } }>("/sms/webhook", telephonySmsHandler);
+	server.post<{ Params: { organizationId: string } }>(
+		"/:organizationId/sms/webhook",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonySmsHandler,
+	);
+	server.post<{ Params: { organizationId?: string } }>(
+		"/sms/webhook",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonySmsHandler,
+	);
 
 	// Missed calls SLA
 	server.get<{ Params: { organizationId?: string }; Querystring: { page?: number; limit?: number; onlyOpen?: boolean } }>("/missed-calls", telephonyMissedCallsHandler);
@@ -63,15 +79,27 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	server.patch<{ Params: { id: string; organizationId?: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/calls/:id", telephonyCallUpdateHandler);
 	server.patch<{ Params: { id: string; organizationId: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/:organizationId/calls/:id", telephonyCallUpdateHandler);
 
-	// 1-Click Outbound call (Mandate 8e: Doctor Autonomy)
-	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
-	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound-call", telephonyOutboundHandler);
-	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
-	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/outbound-call", telephonyOutboundHandler);
-	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
-	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound", telephonyOutboundHandler);
-	// door-validation: none — Phone number and patientId validated inside telephonyOutboundHandler via normalizePhoneNumber
-	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/outbound", telephonyOutboundHandler);
+	// 1-Click Outbound call (external PBX HTTP/AMI dispatch runs outside PG TX)
+	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
+		"/:organizationId/outbound-call",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyOutboundHandler,
+	);
+	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
+		"/outbound-call",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyOutboundHandler,
+	);
+	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
+		"/:organizationId/outbound",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyOutboundHandler,
+	);
+	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(
+		"/outbound",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyOutboundHandler,
+	);
 
 	await server.register(telephonyRecordingStreamRoutes);
 	await server.register(telephonySipRoutes);

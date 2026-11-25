@@ -15,46 +15,58 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { onTenantTxCommit, withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	communicationEvents,
 	denteMaxBotConfigs,
-	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
 import { sendMaxTextMessage } from "../maxTransport.js";
+import { safeLogError } from "../observability/logger.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
 import { OmnichannelTokenVault } from "../services/bots/OmnichannelTokenVault.js";
+import {
+	checkWebhookTimestampFreshness,
+	persistInboundWebhookEventIfNew,
+	resolveDecryptedWebhookSecret,
+} from "../services/bots/webhookSecretAndReplay.js";
 import { resolveRecipientAddress } from "../services/communications/dispatch/channelAdapters.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
-const updateMaxConfigSchema = z.object({
-	botId: z.string().trim().max(128).nullable().optional(),
-	// Raw API token — hashed and stored as tokenSecretRef, never returned
-	apiToken: z.string().trim().max(512).optional(),
-	webhookUrl: z.string().trim().max(512).nullable().optional(),
-	enabledFeatures: z.array(z.string()).optional(),
-	staffRouting: z
-		.object({
-			defaultUserId: z.string().uuid().nullable(),
-			rules: z
-				.array(
-					z.object({
-						intent: z.string(),
-						assignToUserId: z.string().uuid().nullable(),
-					}),
-				)
-				.default([]),
-		})
-		.optional(),
-	isActive: z.boolean().optional(),
-});
+const updateMaxConfigSchema = z
+	.object({
+		botId: z.string().trim().max(128).nullable().optional(),
+		// Raw API token — hashed and stored as tokenSecretRef, never returned
+		apiToken: z.string().trim().max(512).optional(),
+		webhookUrl: z.string().trim().max(512).nullable().optional(),
+		enabledFeatures: z.array(z.string()).optional(),
+		staffRouting: z
+			.object({
+				defaultUserId: z.string().uuid().nullable(),
+				rules: z
+					.array(
+						z
+							.object({
+								intent: z.string(),
+								assignToUserId: z.string().uuid().nullable(),
+							})
+							.strict(),
+					)
+					.default([]),
+			})
+			.strict()
+			.optional(),
+		isActive: z.boolean().optional(),
+	})
+	.strict();
 
-function maskToken(raw: string): string {
-	return OmnichannelTokenVault.maskToken(raw);
-}
+const maxSendBodySchema = z
+	.object({
+		patientId: z.string().uuid(),
+		message: z.string().min(1),
+	})
+	.strict();
 
 function parseJsonSafe<T>(value: unknown, fallback: T, logger?: { error: (obj: unknown, msg?: string) => void }): T {
 	if (!value) return fallback;
@@ -77,10 +89,6 @@ function isWebhookPath(url: string): boolean {
 
 export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	app.addHook("preHandler", async (request, reply) => {
-		// БЫЛО: `if (request.url.includes("/webhook")) return;` полностью
-		// отключало авторизацию для любого URL, содержащего "/webhook" —
-		// включая, например, /api/max/settings?x=/webhook. Теперь путь
-		// вебхука проверяется точно и защищён общим секретом канала.
 		if (isWebhookPath(request.url)) {
 			if (
 				!verifyWebhookSecret(request, reply, {
@@ -97,6 +105,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			return reply;
 		}
 	});
+
 	/**
 	 * GET /api/max/settings
 	 * Returns the MAX bot config. Raw API token never returned.
@@ -109,11 +118,14 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		);
 		if (!orgId) return;
 
-		const [config] = await db
-			.select()
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId))
-			.limit(1);
+		const config = await withTenantCtx(orgId, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, orgId))
+				.limit(1);
+			return row ?? null;
+		});
 
 		if (!config) {
 			return reply.code(404).send({
@@ -129,10 +141,14 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			hasToken: Boolean(config.tokenSecretRef),
 			webhookUrl: config.webhookUrl ?? null,
 			enabledFeatures: parseJsonSafe<string[]>(config.enabledFeaturesJson, [], request.log),
-			staffRouting: parseJsonSafe(config.staffRoutingJson, {
-				defaultUserId: null,
-				rules: [],
-			}, request.log),
+			staffRouting: parseJsonSafe(
+				config.staffRoutingJson,
+				{
+					defaultUserId: null,
+					rules: [],
+				},
+				request.log,
+			),
 			isActive: config.isActive,
 			updatedAt: (config.updatedAt ?? new Date()).toISOString(),
 		};
@@ -161,63 +177,64 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		const input = parsed.data;
 		const now = new Date();
 
-		const [existing] = await db
-			.select({ id: denteMaxBotConfigs.id })
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId))
-			.limit(1);
+		await withTenantCtx(orgId, async (tx) => {
+			const [existing] = await tx
+				.select({ id: denteMaxBotConfigs.id })
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, orgId))
+				.limit(1);
 
-		if (existing) {
-			const updateValues: Partial<typeof denteMaxBotConfigs.$inferInsert> = {
-				updatedAt: now,
-			};
+			if (existing) {
+				const updateValues: Partial<typeof denteMaxBotConfigs.$inferInsert> = {
+					updatedAt: now,
+				};
 
-			if (input.botId !== undefined) updateValues.botId = input.botId;
-			if (input.apiToken) {
-				const encToken = OmnichannelTokenVault.isEncrypted(input.apiToken)
-					? input.apiToken
-					: OmnichannelTokenVault.encrypt(input.apiToken, orgId);
-				updateValues.maxBotToken = encToken;
-				updateValues.tokenSecretRef = encToken;
+				if (input.botId !== undefined) updateValues.botId = input.botId;
+				if (input.apiToken) {
+					const encToken = OmnichannelTokenVault.isEncrypted(input.apiToken)
+						? input.apiToken
+						: OmnichannelTokenVault.encrypt(input.apiToken, orgId);
+					updateValues.maxBotToken = encToken;
+					updateValues.tokenSecretRef = encToken;
+				}
+				if (input.webhookUrl !== undefined) updateValues.webhookUrl = input.webhookUrl;
+				if (input.enabledFeatures !== undefined) {
+					updateValues.enabledFeaturesJson = JSON.stringify(input.enabledFeatures);
+				}
+				if (input.staffRouting !== undefined) {
+					updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
+				}
+				if (input.isActive !== undefined) {
+					updateValues.isActive = input.isActive;
+					updateValues.isEnabled = input.isActive;
+				}
+
+				await tx
+					.update(denteMaxBotConfigs)
+					.set(updateValues)
+					.where(eq(denteMaxBotConfigs.organizationId, orgId));
+			} else {
+				const encToken = input.apiToken
+					? OmnichannelTokenVault.isEncrypted(input.apiToken)
+						? input.apiToken
+						: OmnichannelTokenVault.encrypt(input.apiToken, orgId)
+					: null;
+
+				await tx.insert(denteMaxBotConfigs).values({
+					organizationId: orgId,
+					botId: input.botId ?? null,
+					maxBotToken: encToken,
+					tokenSecretRef: encToken,
+					webhookUrl: input.webhookUrl ?? null,
+					enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
+					staffRoutingJson: JSON.stringify(
+						input.staffRouting ?? { defaultUserId: null, rules: [] },
+					),
+					isActive: input.isActive ?? false,
+					isEnabled: input.isActive ?? false,
+				});
 			}
-			if (input.webhookUrl !== undefined)
-				updateValues.webhookUrl = input.webhookUrl;
-			if (input.enabledFeatures !== undefined)
-				updateValues.enabledFeaturesJson = JSON.stringify(
-					input.enabledFeatures,
-				);
-			if (input.staffRouting !== undefined)
-				updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
-			if (input.isActive !== undefined) {
-				updateValues.isActive = input.isActive;
-				updateValues.isEnabled = input.isActive;
-			}
-
-			await db
-				.update(denteMaxBotConfigs)
-				.set(updateValues)
-				.where(eq(denteMaxBotConfigs.organizationId, orgId));
-		} else {
-			const encToken = input.apiToken
-				? OmnichannelTokenVault.isEncrypted(input.apiToken)
-					? input.apiToken
-					: OmnichannelTokenVault.encrypt(input.apiToken, orgId)
-				: null;
-
-			await db.insert(denteMaxBotConfigs).values({
-				organizationId: orgId,
-				botId: input.botId ?? null,
-				maxBotToken: encToken,
-				tokenSecretRef: encToken,
-				webhookUrl: input.webhookUrl ?? null,
-				enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
-				staffRoutingJson: JSON.stringify(
-					input.staffRouting ?? { defaultUserId: null, rules: [] },
-				),
-				isActive: input.isActive ?? false,
-				isEnabled: input.isActive ?? false,
-			});
-		}
+		});
 
 		return reply.code(200).send({ ok: true });
 	});
@@ -234,11 +251,14 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		);
 		if (!orgId) return;
 
-		const [config] = await db
-			.select()
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId))
-			.limit(1);
+		const config = await withTenantCtx(orgId, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(denteMaxBotConfigs)
+				.where(eq(denteMaxBotConfigs.organizationId, orgId))
+				.limit(1);
+			return row ?? null;
+		});
 
 		if (!config?.botId || (!config.tokenSecretRef && !config.maxBotToken)) {
 			return {
@@ -282,26 +302,16 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		const text = typeof textValue === "string" ? textValue : null;
 		const chatId = typeof chat?.chatId === "string" ? chat.chatId : "unknown";
 
-		const rawTs =
-			typeof payload.timestamp === "number"
-				? payload.timestamp
-				: typeof payload.timestamp === "string"
-					? Number.parseInt(payload.timestamp, 10)
-					: typeof body.timestamp === "number"
-						? body.timestamp
-						: typeof body.timestamp === "string"
-							? Number.parseInt(body.timestamp, 10)
-							: Number.NaN;
-		if (!Number.isNaN(rawTs) && rawTs > 0) {
-			const msgTsSec = rawTs > 1e11 ? Math.floor(rawTs / 1000) : rawTs;
-			const nowSec = Math.floor(Date.now() / 1000);
-			if (Math.abs(nowSec - msgTsSec) > 300) {
-				request.log.warn(
-					{ msgTsSec, nowSec },
-					"MAX webhook timestamp drift > 300s, skipping ingestion",
-				);
-				return;
-			}
+		const freshness = checkWebhookTimestampFreshness(
+			payload.timestamp ?? body.timestamp,
+			300,
+		);
+		if (!freshness.fresh) {
+			request.log.warn(
+				{ msgTsSec: freshness.msgTsSec, nowSec: freshness.nowSec },
+				"MAX webhook timestamp drift > 300s, skipping ingestion",
+			);
+			return;
 		}
 
 		const msgIdRaw =
@@ -316,13 +326,6 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				? String(msgIdRaw).trim()
 				: null;
 
-		/*
-		 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА»: событие прислал MAX, токена клиники в
-		 * вебхуке нет, и чья это клиника — известно только по идентификатору
-		 * бота. Под FORCE RLS запрос без контекста отдавал ноль строк,
-		 * срабатывал `return` ниже, и КАЖДОЕ входящее сообщение MAX молча
-		 * пропадало. Обход накрывает ровно этот SELECT одной колонки.
-		 */
 		const [orgConfig] = await withSuperuserBypass(async (tx) =>
 			tx
 				.select({ organizationId: denteMaxBotConfigs.organizationId })
@@ -333,46 +336,26 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 
 		if (!orgConfig) return;
 
-		// Клиника известна из найденных настроек бота — вставка идёт под её
-		// контекстом. Без него `INSERT` падал с 42501, а ответ 200 отправлялся
-		// раньше (выше по обработчику), поэтому MAX не повторял событие и оно
-		// терялось окончательно.
 		const inboundOrganizationId = orgConfig.organizationId;
 		await withTenantCtx(inboundOrganizationId, async (tx) => {
-			if (msgId) {
-				const existing = await tx
-					.select({ id: messengerInboundEvents.id })
-					.from(messengerInboundEvents)
-					.where(
-						and(
-							eq(messengerInboundEvents.organizationId, inboundOrganizationId),
-							eq(messengerInboundEvents.externalId, msgId),
-						),
-					)
-					.limit(1);
-				if (existing.length > 0) {
-					request.log.info(
-						{ msgId, inboundOrganizationId },
-						"MAX message already ingested (replay skipped)",
-					);
-					return;
-				}
-			}
-
-			await tx.insert(messengerInboundEvents).values({
+			const { isReplay } = await persistInboundWebhookEventIfNew(tx, {
 				organizationId: inboundOrganizationId,
 				channel: "max",
 				externalId: msgId,
 				externalChatId: chatId,
 				messageText: text,
-				eventKind: "message",
 				rawPayload: body as Record<string, unknown>,
 			});
+			if (isReplay) {
+				request.log.info(
+					{ msgId, inboundOrganizationId },
+					"MAX message already ingested (replay skipped)",
+				);
+			}
 		});
 
-		// Await or float the processor to ingest this message to the Inbox immediately
 		void processInboundEvents().catch((err) =>
-			request.log.error({ err }, "[Dente] parseJsonSafe failed: MAX ingestion error"),
+			request.log.error({ err: safeLogError(err) }, "[Dente] MAX inbound ingestion error"),
 		);
 	}
 
@@ -380,180 +363,182 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	 * POST /api/max/webhook
 	 * Receives inbound events from MAX messenger platform.
 	 * Always responds 200 immediately.
-	 *
-	 * MAX webhook payload (VK Teams Bot API pattern):
-	 * {
-	 *   eventType: "newMessage",
-	 *   payload: { chat: { chatId }, from: { userId }, text }
-	 * }
-	 * or batch array:
-	 * [
-	 *   { eventType: "newMessage", payload: ... }
-	 * ]
-	 *
-	 * Bot is identified by x-max-bot-id header or ?botId query param.
 	 */
 	// door-validation: none — Входящий вебхук MAX Messenger с динамической сигнатурой и асинхронной обработкой событий
-	app.post("/api/max/webhook", async (request, reply) => {
-		// Always ACK first — MAX retries on non-200. Shape-guard AFTER send so a
-		// null/non-object body cannot TypeError on body.payload (cast-after-200).
-		reply.code(200).send({ ok: true });
+	app.post(
+		"/api/max/webhook",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			reply.code(200).send({ ok: true });
 
-		if (!request.body || typeof request.body !== "object") {
-			return;
-		}
-
-		// Identify org by bot ID passed in header or query param
-		const botIdRaw =
-			request.headers["x-max-bot-id"] ??
-			(request.query as Record<string, string>).botId;
-		const botIdHeader = Array.isArray(botIdRaw) ? botIdRaw[0] : botIdRaw;
-
-		if (!botIdHeader) return;
-
-		const rawEvents: unknown[] = Array.isArray(request.body)
-			? request.body
-			: [request.body];
-
-		for (const rawItem of rawEvents) {
-			if (rawItem && typeof rawItem === "object" && !Array.isArray(rawItem)) {
-				await processMaxInboundEvent(
-					rawItem as Record<string, unknown>,
-					botIdHeader,
-					request,
-				);
+			if (!request.body || typeof request.body !== "object") {
+				return;
 			}
-		}
-	});
+
+			const botIdRaw =
+				request.headers["x-max-bot-id"] ??
+				(request.query as Record<string, string>).botId;
+			const botIdHeader = Array.isArray(botIdRaw) ? botIdRaw[0] : botIdRaw;
+
+			if (!botIdHeader) return;
+
+			const rawEvents: unknown[] = Array.isArray(request.body)
+				? request.body
+				: [request.body];
+
+			for (const rawItem of rawEvents) {
+				if (rawItem && typeof rawItem === "object" && !Array.isArray(rawItem)) {
+					try {
+						await processMaxInboundEvent(
+							rawItem as Record<string, unknown>,
+							botIdHeader,
+							request,
+						);
+					} catch (err) {
+						request.log.warn(
+							{ err: safeLogError(err), botIdHeader },
+							"MAX webhook item processing failed",
+						);
+					}
+				}
+			}
+		},
+	);
 
 	/**
 	 * POST /api/max/send
-	 * Sends an outbound VK Max message to a patient.
+	 * Sends an outbound VK Max message to a patient (HTTP outside PG TX).
 	 */
-	app.post("/api/max/send", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"max message send",
-		);
-		if (!orgId) return;
+	app.post(
+		"/api/max/send",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"max message send",
+			);
+			if (!orgId) return;
 
-		const bodySchema = z.object({
-			patientId: z.string().uuid(),
-			message: z.string().min(1),
-		});
+			const parsed = maxSendBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Укажите ID пациента и текст сообщения.",
+				});
+			}
 
-		const parsed = bodySchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Укажите ID пациента и текст сообщения.",
+			const { patientId, message } = parsed.data;
+
+			const preflight = await withTenantCtx(orgId, async (tx) => {
+				const [patient] = await tx
+					.select()
+					.from(patients)
+					.where(
+						and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+					)
+					.limit(1);
+				if (!patient) return { kind: "no_patient" as const };
+
+				const [config] = await tx
+					.select()
+					.from(denteMaxBotConfigs)
+					.where(eq(denteMaxBotConfigs.organizationId, orgId))
+					.limit(1);
+				return { kind: "ok" as const, config: config ?? null };
 			});
-		}
 
-		const { patientId, message } = parsed.data;
+			if (preflight.kind === "no_patient") {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден.",
+				});
+			}
 
-		const [patient] = await db
-			.select()
-			.from(patients)
-			// БЫЛО: условие только по patients.id, без организации. Сотрудник любой
-			// клиники мог указать UUID чужого пациента.
-			.where(
-				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
-			)
-			.limit(1);
+			const config = preflight.config;
+			if (!config?.isActive) {
+				return reply.code(400).send({
+					error: "MaxInactive",
+					message: "Интеграция VK Max неактивна или не настроена.",
+				});
+			}
 
-		if (!patient) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден.",
+			const rawStoredToken = config.maxBotToken || config.tokenSecretRef;
+			if (!rawStoredToken) {
+				return reply.code(400).send({
+					error: "MaxTokenMissing",
+					message: "В конфигурации MAX не указан токен бота.",
+				});
+			}
+
+			const botToken = resolveDecryptedWebhookSecret(rawStoredToken, orgId, request.log);
+			if (!botToken) {
+				return reply.code(400).send({
+					error: "MaxTokenInvalid",
+					message: "Не удалось расшифровать токен бота MAX.",
+				});
+			}
+
+			const { address: recipientAddress, reason: addressReason } =
+				await resolveRecipientAddress(orgId, "max", patientId);
+
+			if (!recipientAddress) {
+				return reply.code(422).send({
+					error: "RecipientUnavailable",
+					message:
+						addressReason ||
+						"У пациента нет переписки в MAX: отправить первым может только бот, которому пациент уже написал.",
+				});
+			}
+
+			// Исходящий HTTP строго вне транзакции PostgreSQL
+			const sendResult = await sendMaxTextMessage({
+				botToken,
+				recipient: { kind: "chat", id: recipientAddress },
+				text: message,
 			});
-		}
 
-		const [config] = await db
-			.select()
-			.from(denteMaxBotConfigs)
-			.where(eq(denteMaxBotConfigs.organizationId, orgId))
-			.limit(1);
+			const event = await withTenantCtx(orgId, async (tx) => {
+				const [inserted] = await tx
+					.insert(communicationEvents)
+					.values({
+						organizationId: orgId,
+						patientId,
+						channel: "max",
+						direction: "outbound",
+						status: sendResult.ok ? "sent" : "failed",
+						message,
+					})
+					.returning();
 
-		if (!config?.isActive) {
-			return reply.code(400).send({
-				error: "MaxInactive",
-				message: "Интеграция VK Max неактивна или не настроена.",
+				if (sendResult.ok && inserted) {
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(orgId, {
+							type: "INBOX_NEW_MESSAGE",
+							payload: { patientId, event: inserted },
+						});
+					});
+				}
+
+				return inserted;
 			});
-		}
 
-		const rawStoredToken = config.maxBotToken || config.tokenSecretRef;
-		if (!rawStoredToken) {
-			return reply.code(400).send({
-				error: "MaxTokenMissing",
-				message: "В конфигурации MAX не указан токен бота.",
-			});
-		}
+			if (!sendResult.ok) {
+				return reply.code(502).send({
+					ok: false,
+					error: "MaxDeliveryFailed",
+					message: sendResult.errorMessage,
+					event,
+				});
+			}
 
-		const botToken = OmnichannelTokenVault.resolveToken(rawStoredToken, orgId);
-		if (!botToken) {
-			return reply.code(400).send({
-				error: "MaxTokenInvalid",
-				message: "Не удалось расшифровать токен бота MAX.",
-			});
-		}
-
-		const { address: recipientAddress, reason: addressReason } =
-			await resolveRecipientAddress(orgId, "max", patientId);
-
-		if (!recipientAddress) {
-			return reply.code(422).send({
-				error: "RecipientUnavailable",
-				message:
-					addressReason ||
-					"У пациента нет переписки в MAX: отправить первым может только бот, которому пациент уже написал.",
-			});
-		}
-
-		const sendResult = await sendMaxTextMessage({
-			botToken,
-			recipient: { kind: "chat", id: recipientAddress },
-			text: message,
-		});
-
-		const [event] = await db
-			.insert(communicationEvents)
-			.values({
-				organizationId: orgId,
-				patientId,
-				channel: "max",
-				direction: "outbound",
-				status: sendResult.ok ? "sent" : "failed",
-				message,
-			})
-			.returning();
-
-		if (!sendResult.ok) {
-			return reply.code(502).send({
-				ok: false,
-				error: "MaxDeliveryFailed",
-				message: sendResult.errorMessage,
+			return reply.send({
+				ok: true,
+				providerMessageId: sendResult.providerMessageId,
 				event,
 			});
-		}
-
-		try {
-			wsBroker.broadcastToOrganization(orgId, {
-				type: "INBOX_NEW_MESSAGE",
-				payload: { patientId, event },
-			});
-		} catch {
-			// Non-fatal broadcast failure
-		}
-
-		return reply.send({
-			ok: true,
-			providerMessageId: sendResult.providerMessageId,
-			event,
-		});
-	});
+		},
+	);
 }
 
-// Silence unused import warning for patients (used in foreign key definition)
 void patients;

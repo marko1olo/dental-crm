@@ -6,15 +6,17 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
 	denteTelegramChatLinks,
 	messengerInboundEvents,
 } from "../../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { processInboundEvents } from "../../../services/messengerIngestion.js";
 import type { DatabaseTransaction } from "./telegramWebhookTypes.js";
+
+const logger = createApiLogger("telegramCallbackMutations");
 
 /**
  * Определение идентификатора последнего приема пациента по отпечатку чата Telegram.
@@ -106,7 +108,12 @@ export async function recordPostOpCriticalAlertInDb(
 		});
 	}
 
-	void processInboundEvents().catch(() => {});
+	void processInboundEvents().catch((err) => {
+		logger.warn(
+			{ err: safeLogError(err), organizationId },
+			"Failed to process post-op critical alert inbound events",
+		);
+	});
 }
 
 /**
@@ -119,7 +126,7 @@ export async function updateAppointmentStatusFromTelegram(
 	tx?: DatabaseTransaction,
 ): Promise<boolean> {
 	const execute = async (client: DatabaseTransaction) => {
-		const res = await client
+		await client
 			.update(appointments)
 			.set({ status })
 			.where(

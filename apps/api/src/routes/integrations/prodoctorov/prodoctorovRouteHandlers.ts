@@ -228,14 +228,19 @@ export async function handleWebhook(
 	}
 
 	const payload = parsedPayload.data;
-	const rawPayload = req.body as { clinicExternalId?: string } | undefined;
-	const clinicExternalId = rawPayload?.clinicExternalId;
+	const clinicExternalId = payload.clinicExternalId;
 	if (clinicExternalId) {
 		const integration = await findIntegrationByClinicExternalId(db, clinicExternalId);
 		if (!integration || !integration.isActive) {
 			return reply.status(404).send({
 				error: "ClinicIntegrationNotFound",
 				message: `Интеграция для клиники с внешним кодом '${clinicExternalId}' не найдена или неактивна`,
+			});
+		}
+		if (!verifyClinicMedflexSignature(req, integration.webhookSecret)) {
+			return reply.status(401).send({
+				error: "InvalidSignature",
+				message: "Недействительная цифровая подпись вебхука MedFlex / ПроДокторов для указанной клиники",
 			});
 		}
 		return await withTenantCtx(integration.organizationId, async (tx) => {

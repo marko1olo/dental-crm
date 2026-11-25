@@ -38,9 +38,11 @@ export function registerTelegramAccountRequestCodeRoute(app: FastifyInstance) {
 		});
 
 		if (!result.ok) {
-			return reply.code(400).send({
+			const statusCode = result.configured === false ? 501 : 400;
+			return reply.code(statusCode).send({
 				ok: false,
-				error: "RequestCodeFailed",
+				...(result.configured === false ? { configured: false } : {}),
+				error: result.errorCode || "RequestCodeFailed",
 				message: result.error || "Не удалось отправить код подтверждения.",
 			});
 		}

@@ -1,10 +1,9 @@
-import type { FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
+import type { FastifyRequest } from "fastify";
 import { withTenantCtx } from "../../db/rls.js";
 import { messengerInboundEvents } from "../../db/schema.js";
-import { updateAppointmentInDb } from "../../db/appointmentsQuery.js";
+import { safeLogError } from "../../observability/logger.js";
 import { processInboundEvents } from "../../services/messengerIngestion.js";
-import { wsBroker } from "../../services/websocketBroker.js";
 import {
 	denteTelegramWebhookResponseSchema,
 	type DenteTelegramBotSettings,
@@ -140,7 +139,12 @@ export async function dispatchWebhookMessage(params: {
 						rawPayload: update as Record<string, unknown>,
 					});
 				});
-				void processInboundEvents().catch(() => {});
+				void processInboundEvents().catch((err) => {
+					request.log.warn(
+						{ err: safeLogError(err), organizationId: runtime.organizationId },
+						"Telegram human_mode ingestion trigger failed",
+					);
+				});
 			} catch (humanErr) {
 				request.log.warn({ humanErr }, "Failed to record human_mode message");
 			}
@@ -159,36 +163,6 @@ export async function dispatchWebhookMessage(params: {
 			);
 		}
 
-		if (
-			appointmentCallbackResult.handled &&
-			appointmentCallbackResult.ok &&
-			appointmentCallbackResult.action === "telegram_appointment_confirmed" &&
-			appointmentCallbackResult.appointmentId
-		) {
-			try {
-				await updateAppointmentInDb(
-					runtime.organizationId,
-					appointmentCallbackResult.appointmentId,
-					{ status: "confirmed" },
-				);
-				wsBroker.broadcastToOrganization(runtime.organizationId, {
-					type: "APPOINTMENT_UPDATED",
-					payload: {
-						id: appointmentCallbackResult.appointmentId,
-						status: "confirmed",
-					},
-				});
-			} catch (updateError) {
-				request.log.error(
-					{
-						err: updateError,
-						organizationId: runtime.organizationId,
-						appointmentId: appointmentCallbackResult.appointmentId,
-					},
-					"[Telegram] Не удалось обновить статус записи на confirmed в базе",
-				);
-			}
-		}
 		const linkCode = appointmentCallbackResult.handled
 			? null
 			: extractDenteTelegramLinkCode(messageText);

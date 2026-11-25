@@ -28,93 +28,110 @@ export interface WhatsAppTemplateDefinition {
 /**
  * Configuration schema for updating WhatsApp bot credentials and routing.
  */
-export const updateWhatsappConfigSchema = z.object({
-	phoneNumberId: z.string().trim().max(64).nullable().optional(),
-	// Raw access token — encrypted with AES-256-GCM via OmnichannelTokenVault
-	accessToken: z.string().trim().max(512).optional(),
-	webhookVerifyToken: z.string().trim().max(128).nullable().optional(),
-	provider: z.enum(["cloud_api", "green_api"]).optional(),
-	greenApiInstanceId: z.string().trim().max(128).nullable().optional(),
-	greenApiToken: z.string().trim().max(512).nullable().optional(),
-	enabledFeatures: z.array(z.string()).optional(),
-	staffRouting: z
-		.object({
-			defaultUserId: z.string().uuid().nullable(),
-			rules: z
-				.array(
-					z.object({
-						intent: z.string(),
-						assignToUserId: z.string().uuid().nullable(),
-					}),
-				)
-				.default([]),
-		})
-		.optional(),
-	isActive: z.boolean().optional(),
-});
+export const updateWhatsappConfigSchema = z
+	.object({
+		phoneNumberId: z.string().trim().max(64).nullable().optional(),
+		// Raw access token — encrypted with AES-256-GCM via OmnichannelTokenVault
+		accessToken: z.string().trim().max(512).optional(),
+		webhookVerifyToken: z.string().trim().max(128).nullable().optional(),
+		provider: z.enum(["cloud_api", "green_api"]).optional(),
+		greenApiInstanceId: z.string().trim().max(128).nullable().optional(),
+		greenApiToken: z.string().trim().max(512).nullable().optional(),
+		enabledFeatures: z.array(z.string()).optional(),
+		staffRouting: z
+			.object({
+				defaultUserId: z.string().uuid().nullable(),
+				rules: z
+					.array(
+						z
+							.object({
+								intent: z.string(),
+								assignToUserId: z.string().uuid().nullable(),
+							})
+							.strict(),
+					)
+					.default([]),
+			})
+			.strict()
+			.optional(),
+		isActive: z.boolean().optional(),
+	})
+	.strict();
 
 export type UpdateWhatsappConfigInput = z.infer<typeof updateWhatsappConfigSchema>;
 
 /**
  * Message send input schema.
  */
-export const sendWhatsappMessageSchema = z.object({
-	patientId: z.string().uuid(),
-	message: z.string().min(1),
-	idempotencyKey: z.string().trim().max(128).optional(),
-});
+export const sendWhatsappMessageSchema = z
+	.object({
+		patientId: z.string().uuid(),
+		message: z.string().min(1),
+		idempotencyKey: z.string().trim().max(128).optional(),
+	})
+	.strict();
 
 export type SendWhatsappMessageInput = z.infer<typeof sendWhatsappMessageSchema>;
 
 /**
  * Test message send input schema.
  */
-export const sendWhatsappTestMessageSchema = z.object({
-	phone: z.string().trim().min(5, "Укажите номер телефона"),
-	message: z.string().trim().min(1, "Укажите текст сообщения"),
-});
+export const sendWhatsappTestMessageSchema = z
+	.object({
+		phone: z.string().trim().min(5, "Укажите номер телефона"),
+		message: z.string().trim().min(1, "Укажите текст сообщения"),
+	})
+	.strict();
 
 export type SendWhatsappTestMessageInput = z.infer<typeof sendWhatsappTestMessageSchema>;
 
 /**
  * QR Session start schema.
  */
-export const qrSessionStartSchema = z.object({
-	phone: z.string().trim().max(32).nullable().optional(),
-	forceRefresh: z.boolean().optional(),
-});
+export const qrSessionStartSchema = z
+	.object({
+		phone: z.string().trim().max(32).nullable().optional(),
+		forceRefresh: z.boolean().optional(),
+	})
+	.strict();
 
 export type QrSessionStartInput = z.infer<typeof qrSessionStartSchema>;
 
 /**
  * QR Simulate authentication schema.
  */
-export const qrSimulateAuthSchema = z.object({
-	phone: z.string().trim().default("+7 (999) 123-45-67"),
-	deviceModel: z.string().trim().default("Рабочий iPhone клиники"),
-});
+export const qrSimulateAuthSchema = z
+	.object({
+		phone: z.string().trim().default("+7 (999) 123-45-67"),
+		deviceModel: z.string().trim().default("Рабочий iPhone клиники"),
+	})
+	.strict();
 
 export type QrSimulateAuthInput = z.infer<typeof qrSimulateAuthSchema>;
 
 /**
  * WABA Connect schema.
  */
-export const wabaConnectSchema = z.object({
-	phoneNumberId: z.string().trim().min(5, "Укажите Phone Number ID"),
-	wabaAccountId: z.string().trim().nullable().optional(),
-	accessToken: z.string().trim().min(10, "Укажите Access Token"),
-	webhookVerifyToken: z.string().trim().nullable().optional(),
-});
+export const wabaConnectSchema = z
+	.object({
+		phoneNumberId: z.string().trim().min(5, "Укажите Phone Number ID"),
+		wabaAccountId: z.string().trim().nullable().optional(),
+		accessToken: z.string().trim().min(10, "Укажите Access Token"),
+		webhookVerifyToken: z.string().trim().nullable().optional(),
+	})
+	.strict();
 
 export type WabaConnectInput = z.infer<typeof wabaConnectSchema>;
 
 /**
  * WABA Test schema.
  */
-export const wabaTestSchema = z.object({
-	phoneNumberId: z.string().trim().optional(),
-	accessToken: z.string().trim().optional(),
-});
+export const wabaTestSchema = z
+	.object({
+		phoneNumberId: z.string().trim().optional(),
+		accessToken: z.string().trim().optional(),
+	})
+	.strict();
 
 export type WabaTestInput = z.infer<typeof wabaTestSchema>;
 

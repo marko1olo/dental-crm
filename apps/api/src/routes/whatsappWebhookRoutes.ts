@@ -11,8 +11,8 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { namedDevelopmentModeActive } from "../accessGuard.js";
-import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import {
 	denteWhatsappBotConfigs,
 	messengerInboundEvents,
@@ -47,8 +47,11 @@ declare module "fastify" {
 	}
 }
 
-const DEFAULT_VERIFY_TOKEN =
-	process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || "dente_whatsapp_verify_token";
+function configuredWhatsappVerifyToken(): string | null {
+	const raw = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+	const trimmed = typeof raw === "string" ? raw.trim() : "";
+	return trimmed.length > 0 ? trimmed : null;
+}
 
 /**
  * Meta App Secret used to verify the `x-hub-signature-256` header on inbound
@@ -130,7 +133,10 @@ export async function registerWhatsappWebhookRoutes(
 			return { error: "BadWebhookRequest" };
 		}
 
-		let isMatched = token === DEFAULT_VERIFY_TOKEN;
+		const envVerifyToken = configuredWhatsappVerifyToken();
+		let isMatched = Boolean(
+			envVerifyToken && timingSafeSecretEqual(token, envVerifyToken),
+		);
 		if (!isMatched) {
 			try {
 				const [config] = await withSuperuserBypass(async (tx) =>
@@ -310,6 +316,11 @@ export async function registerWhatsappWebhookRoutes(
 						: [];
 
 					const newEvents: Array<typeof messengerInboundEvents.$inferInsert> = [];
+					const pendingInteractiveActions: Array<{
+						patientRecord: { id: string; fullName: string; phone: string | null };
+						action: ParsedWebhookAction;
+					}> = [];
+
 					await withTenantCtx(inboundOrganizationId, async (tx) => {
 						for (const msg of messages) {
 							if (!msg || typeof msg !== "object" || Array.isArray(msg)) {
@@ -457,37 +468,14 @@ export async function registerWhatsappWebhookRoutes(
 								rawTs ? new Date(rawTs * 1000) : new Date(),
 							);
 
-							// Process interactive appointment or recall action if matched
-							if (patientRecord) {
-								if (action.type === "confirm_appointment") {
-									await processAppointmentConfirmation(
-										inboundOrganizationId,
-										patientRecord,
-										action,
-										orgConfig,
-									);
-								} else if (action.type === "cancel_appointment") {
-									await processAppointmentCancellation(
-										inboundOrganizationId,
-										patientRecord,
-										action,
-										orgConfig,
-									);
-								} else if (action.type === "recall_book") {
-									await processRecallBooking(
-										inboundOrganizationId,
-										patientRecord,
-										action,
-										orgConfig,
-									);
-								} else if (action.type === "recall_snooze") {
-									await processRecallSnooze(
-										inboundOrganizationId,
-										patientRecord,
-										action,
-										orgConfig,
-									);
-								}
+							if (
+								patientRecord &&
+								(action.type === "confirm_appointment" ||
+									action.type === "cancel_appointment" ||
+									action.type === "recall_book" ||
+									action.type === "recall_snooze")
+							) {
+								pendingInteractiveActions.push({ patientRecord, action });
 							}
 
 							newEvents.push({
@@ -506,6 +494,46 @@ export async function registerWhatsappWebhookRoutes(
 							await tx.insert(messengerInboundEvents).values(newEvents);
 						}
 					});
+
+					// Интерактивные действия и внешняя отправка квитанций выполняются строго ПОСЛЕ закрытия TX
+					for (const item of pendingInteractiveActions) {
+						try {
+							if (item.action.type === "confirm_appointment") {
+								await processAppointmentConfirmation(
+									inboundOrganizationId,
+									item.patientRecord,
+									item.action,
+									orgConfig,
+								);
+							} else if (item.action.type === "cancel_appointment") {
+								await processAppointmentCancellation(
+									inboundOrganizationId,
+									item.patientRecord,
+									item.action,
+									orgConfig,
+								);
+							} else if (item.action.type === "recall_book") {
+								await processRecallBooking(
+									inboundOrganizationId,
+									item.patientRecord,
+									item.action,
+									orgConfig,
+								);
+							} else if (item.action.type === "recall_snooze") {
+								await processRecallSnooze(
+									inboundOrganizationId,
+									item.patientRecord,
+									item.action,
+									orgConfig,
+								);
+							}
+						} catch (actionErr) {
+							request.log.warn(
+								{ err: actionErr, organizationId: inboundOrganizationId, actionType: item.action.type },
+								"WhatsApp interactive action failed",
+							);
+						}
+					}
 				}
 			}
 

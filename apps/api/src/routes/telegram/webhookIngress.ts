@@ -5,6 +5,7 @@ import {
 } from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { safeLogError } from "../../observability/logger.js";
 import {
 	inMemoryDomainState,
 	type DomainState,
@@ -367,7 +368,12 @@ export async function handleWebhook(
 					chatId,
 					text: referralResult.welcomeMessage,
 					replyMarkup,
-				}).catch(() => {});
+				}).catch((err) => {
+					request.log.warn(
+						{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+						"Failed to send Telegram referral welcome message",
+					);
+				});
 			}
 
 			return denteTelegramWebhookResponseSchema.parse(
@@ -436,7 +442,12 @@ export async function handleWebhook(
 					text: staffAuthResult.message,
 					replyMarkup: staffAuthResult.replyMarkup,
 					timeoutMs: 3000,
-				}).catch(() => {});
+				}).catch((err) => {
+					request.log.warn(
+						{ err: safeLogError(err), organizationId: runtime.organizationId, chatId },
+						"Failed to send Telegram staff auth reply",
+					);
+				});
 			}
 
 			return denteTelegramWebhookResponseSchema.parse(
@@ -518,27 +529,28 @@ export async function handleWebhook(
 		});
 	};
 
+	let domainState: DomainState;
 	try {
-		return await withTenantCtx(runtime.organizationId, async () => {
-			const domainState = await hydrateTelegramDomainState(
-				request,
-				runtime.organizationId,
-			);
-			return await executeWebhook(domainState);
-		});
+		domainState = await withTenantCtx(runtime.organizationId, async () =>
+			hydrateTelegramDomainState(request, runtime.organizationId),
+		);
 	} catch (err) {
 		if (
 			isDbConnectionError(err) &&
 			(process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)
 		) {
-			return await executeWebhook(inMemoryDomainState);
+			domainState = inMemoryDomainState;
+		} else {
+			throw err;
 		}
-		throw err;
 	}
+
+	// Выполнение вебхука идёт вне долгой PG-транзакции (каждая мутация БД берёт короткий withTenantCtx)
+	return await executeWebhook(domainState);
 }
 
 export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
-	const options = { bodyLimit: 256 * 1024 };
+	const options = { bodyLimit: 256 * 1024, config: { tenantTxSelfManaged: true } };
 	app.post("/api/telegram/webhook", options, handleWebhook);
 	app.post(
 		"/api/telegram/webhook/:organizationId/:botConfigId",

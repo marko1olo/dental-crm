@@ -112,6 +112,29 @@ describe("VK Integration: Community Bot, Personal Account & Webhook", () => {
 		assert.equal(body.group.id, 220000123);
 	});
 
+	test("POST /api/vk/bot/connect с groupToken: KEEP_EXISTING сохраняет существующий расшифрованный токен", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/vk/bot/connect",
+			headers: {
+				"content-type": "application/json",
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
+			payload: {
+				groupId: "220000123",
+				groupToken: "KEEP_EXISTING",
+				secretKey: "test_secret_key_123",
+				confirmationCode: "confirm77",
+				isEnabled: true,
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.ok, true);
+		assert.equal(body.group.id, 220000123);
+	});
+
 	test("GET /api/vk/account/status — до подключения аккаунта возвращает connected: false", async () => {
 		const res = await app.inject({
 			method: "GET",

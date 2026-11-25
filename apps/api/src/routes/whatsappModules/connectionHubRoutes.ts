@@ -13,7 +13,6 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
 import { OmnichannelTokenVault } from "../../services/bots/OmnichannelTokenVault.js";
@@ -70,11 +69,14 @@ export async function registerConnectionHubRoutes(
 		);
 		if (!orgId) return;
 
-		const [config] = await db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-			.limit(1);
+		const config = await withTenantCtx(orgId, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+				.limit(1);
+			return row ?? null;
+		});
 
 		if (!config) {
 			reply.code(404);
@@ -237,11 +239,14 @@ export async function registerConnectionHubRoutes(
 		);
 		if (!orgId) return;
 
-		const [config] = await db
-			.select()
-			.from(denteWhatsappBotConfigs)
-			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-			.limit(1);
+		const config = await withTenantCtx(orgId, async (tx) => {
+			const [row] = await tx
+				.select()
+				.from(denteWhatsappBotConfigs)
+				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+				.limit(1);
+			return row ?? null;
+		});
 
 		if (!config?.phoneNumberId || !config.tokenSecretRef) {
 			return {
@@ -290,8 +295,16 @@ export async function registerConnectionHubRoutes(
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const parsed = qrSessionStartSchema.safeParse(request.body || {});
-		const input = parsed.success ? parsed.data : {};
+		const parsed = qrSessionStartSchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			reply.code(400);
+			return {
+				ok: false,
+				error: "ValidationError",
+				message: parsed.error.errors[0]?.message || "Некорректные параметры запуска QR-сессии.",
+			};
+		}
+		const input = parsed.data;
 
 		const session = WhatsappConnectionHubService.startQrSession({
 			organizationId: orgId,
@@ -452,51 +465,65 @@ export async function registerConnectionHubRoutes(
 	 * POST /api/whatsapp/waba/test
 	 * Проверка связи с Meta Graph API.
 	 */
-	app.post("/api/whatsapp/waba/test", async (request, reply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"whatsapp waba test",
-		);
-		if (!orgId) return;
+	app.post(
+		"/api/whatsapp/waba/test",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"whatsapp waba test",
+			);
+			if (!orgId) return;
 
-		const idempotencyKey = extractIdempotencyKey(request);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			reply.code(400);
-			return {
-				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
-			};
-		}
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
+			const idempotencyKey = extractIdempotencyKey(request);
+			if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+				reply.code(400);
+				return {
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				};
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 
-		const parsed = wabaTestSchema.safeParse(request.body || {});
-		let phoneNumberId = parsed.success ? parsed.data.phoneNumberId : undefined;
-		let accessToken = parsed.success ? parsed.data.accessToken : undefined;
-
-		// Если параметры не переданы в теле, берем сохраненные из базы
-		if (!phoneNumberId || !accessToken) {
-			const [config] = await db
-				.select()
-				.from(denteWhatsappBotConfigs)
-				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
-				.limit(1);
-
-			if (!config?.phoneNumberId || !config.tokenSecretRef) {
+			const parsed = wabaTestSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
 				reply.code(400);
 				return {
 					ok: false,
-					error: "WabaNotConfigured",
-					message:
-						"Не заданы Phone Number ID и Access Token. Сначала укажите параметры подключения.",
+					error: "ValidationError",
+					message: parsed.error.errors[0]?.message || "Некорректные параметры проверки WABA.",
 				};
 			}
+			let phoneNumberId = parsed.data.phoneNumberId;
+			let accessToken = parsed.data.accessToken;
 
-			phoneNumberId = config.phoneNumberId;
-			accessToken = config.tokenSecretRef;
-		}
+			// Если параметры не переданы в теле, берем сохраненные из базы
+			if (!phoneNumberId || !accessToken) {
+				const config = await withTenantCtx(orgId, async (tx) => {
+					const [row] = await tx
+						.select()
+						.from(denteWhatsappBotConfigs)
+						.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+						.limit(1);
+					return row ?? null;
+				});
+
+				if (!config?.phoneNumberId || !config.tokenSecretRef) {
+					reply.code(400);
+					return {
+						ok: false,
+						error: "WabaNotConfigured",
+						message:
+							"Не заданы Phone Number ID и Access Token. Сначала укажите параметры подключения.",
+					};
+				}
+
+				phoneNumberId = config.phoneNumberId;
+				accessToken = config.tokenSecretRef;
+			}
 
 		const testResult = await WhatsappConnectionHubService.testWabaConnection({
 			phoneNumberId,
@@ -524,7 +551,8 @@ export async function registerConnectionHubRoutes(
 			codeVerificationStatus: testResult.codeVerificationStatus,
 			message: "Связь с Meta Graph API успешно подтверждена!",
 		};
-	});
+	},
+	);
 
 	/**
 	 * GET /api/whatsapp/waba/status

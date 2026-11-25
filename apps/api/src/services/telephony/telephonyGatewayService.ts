@@ -15,11 +15,14 @@
 import { createHash, createHmac, randomBytes } from "node:crypto";
 import * as net from "node:net";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, crmLeads, organizations, patients } from "../../db/schema.js";
-import { maskPhoneDisplay } from "@dental/shared";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { wsBroker } from "../websocketBroker.js";
+
+function escapeLikePattern(raw: string): string {
+	return raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
 
 export interface TelephonyStructuredLogger {
 	info(obj: unknown, msg?: string): void;
@@ -27,37 +30,11 @@ export interface TelephonyStructuredLogger {
 	error(obj: unknown, msg?: string): void;
 }
 
+const gatewayLogger = createApiLogger("telephonyGatewayService");
 const defaultStructuredLogger: TelephonyStructuredLogger = {
-	info: (obj, msg) => {
-		process.stdout.write(
-			JSON.stringify({
-				level: "info",
-				time: new Date().toISOString(),
-				msg: msg || "",
-				details: obj,
-			}) + "\n",
-		);
-	},
-	warn: (obj, msg) => {
-		process.stderr.write(
-			JSON.stringify({
-				level: "warn",
-				time: new Date().toISOString(),
-				msg: msg || "",
-				details: obj,
-			}) + "\n",
-		);
-	},
-	error: (obj, msg) => {
-		process.stderr.write(
-			JSON.stringify({
-				level: "error",
-				time: new Date().toISOString(),
-				msg: msg || "",
-				details: obj,
-			}) + "\n",
-		);
-	},
+	info: (obj, msg) => gatewayLogger.info({ details: obj }, msg || ""),
+	warn: (obj, msg) => gatewayLogger.warn({ details: obj }, msg || ""),
+	error: (obj, msg) => gatewayLogger.error({ details: obj }, msg || ""),
 };
 
 export type TelephonyMode = "local_webrtc_sip" | "cloud_webhooks" | "hybrid_active_fallback";
@@ -207,17 +184,19 @@ export class TelephonyGatewayService {
 		let isForcedFailover = this.forcedFailoverMap.get(organizationId);
 		if (isForcedFailover === undefined) {
 			try {
-				const orgRows = await db
-					.select({ flags: organizations.workspaceFeatureFlags })
-					.from(organizations)
-					.where(eq(organizations.id, organizationId))
-					.limit(1);
-				const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
+				const flags = await withTenantCtx(organizationId, async (tx) => {
+					const orgRows = await tx
+						.select({ flags: organizations.workspaceFeatureFlags })
+						.from(organizations)
+						.where(eq(organizations.id, organizationId))
+						.limit(1);
+					return (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
+				});
 				isForcedFailover = Boolean(flags.telephonyForcedFailover);
 				this.forcedFailoverMap.set(organizationId, isForcedFailover);
 			} catch (err) {
 				defaultStructuredLogger.warn(
-					{ err, organizationId },
+					{ err: safeLogError(err), organizationId },
 					"[TelephonyGatewayService] Failed to load workspace feature flags for telephony forced failover",
 				);
 				isForcedFailover = false;
@@ -270,7 +249,7 @@ export class TelephonyGatewayService {
 				});
 			} catch (err) {
 				defaultStructuredLogger.warn(
-					{ err, host: cfg.host, port: cfg.wsPort },
+					{ err: safeLogError(err), host: cfg.host, port: cfg.wsPort },
 					"[TelephonyGatewayService] Socket probing failed",
 				);
 				localPbxOnline = false;
@@ -310,23 +289,25 @@ export class TelephonyGatewayService {
 	): Promise<void> {
 		this.forcedFailoverMap.set(organizationId, forceCloudFallback);
 		try {
-			const orgRows = await db
-				.select({ flags: organizations.workspaceFeatureFlags })
-				.from(organizations)
-				.where(eq(organizations.id, organizationId))
-				.limit(1);
-			const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
-			const updatedFlags = { ...flags, telephonyForcedFailover: forceCloudFallback };
-			await db
-				.update(organizations)
-				.set({
-					workspaceFeatureFlags: updatedFlags,
-					updatedAt: new Date(),
-				})
-				.where(eq(organizations.id, organizationId));
+			await withTenantCtx(organizationId, async (tx) => {
+				const orgRows = await tx
+					.select({ flags: organizations.workspaceFeatureFlags })
+					.from(organizations)
+					.where(eq(organizations.id, organizationId))
+					.limit(1);
+				const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
+				const updatedFlags = { ...flags, telephonyForcedFailover: forceCloudFallback };
+				await tx
+					.update(organizations)
+					.set({
+						workspaceFeatureFlags: updatedFlags,
+						updatedAt: new Date(),
+					})
+					.where(eq(organizations.id, organizationId));
+			});
 		} catch (err) {
 			defaultStructuredLogger.error(
-				{ err, organizationId },
+				{ err: safeLogError(err), organizationId },
 				"[TelephonyGatewayService] Failed to persist failover status",
 			);
 		}
@@ -374,84 +355,85 @@ export class TelephonyGatewayService {
 		const cleanDigits = callerPhoneRaw.replace(/\D/g, "");
 		const national10 = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : cleanDigits;
 		const e164 = cleanDigits.startsWith("8") || cleanDigits.startsWith("7") ? `+7${national10}` : `+${cleanDigits}`;
+		const escapedNational10 = escapeLikePattern(national10);
 
-		// Search matching patient
-		const matchedPatients = await db
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					or(
-						eq(patients.phone, e164),
-						ilike(patients.phone, `%${national10}%`),
-						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
-					),
-				),
-			)
-			.limit(1);
-
-		const patient = matchedPatients[0] || null;
-		const patientName = patient?.fullName || `Звонок Asterisk ${e164}`;
-
-		if (event === "ringing") {
-			if (!patient && national10.length >= 7) {
-				await withTenantCtx(organizationId, async () => {
-					await db.transaction(async (tx) => {
-						await tx.execute(
-							sql`SELECT pg_advisory_xact_lock(hashtext('telephony:lead:asterisk:' || ${organizationId} || ':' || ${national10}));`,
-						);
-						const existingLead = await tx
-							.select({ id: crmLeads.id })
-							.from(crmLeads)
-							.where(
-								and(
-									eq(crmLeads.organizationId, organizationId),
-									or(
-										eq(crmLeads.phone, e164),
-										ilike(crmLeads.phone, `%${national10}%`),
-									),
+		const { patient, patientName } = await withTenantCtx(organizationId, async (tx) => {
+			const matchedPatients = national10
+				? await tx
+						.select({ id: patients.id, fullName: patients.fullName })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								or(
+									eq(patients.phone, e164),
+									ilike(patients.phone, `%${escapedNational10}%`),
+									sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${escapedNational10}%`}`,
 								),
-							)
-							.limit(1);
+							),
+						)
+						.limit(1)
+				: [];
 
-						if (existingLead.length === 0) {
-							await tx.insert(crmLeads).values({
-								organizationId,
-								phone: e164,
-								name: `Лид Asterisk ${e164}`,
-								source: "telephony_asterisk",
-								status: "new",
-							});
-						}
+			const foundPatient = matchedPatients[0] || null;
+			const resolvedName = foundPatient?.fullName || `Звонок Asterisk ${e164}`;
+
+			if (event === "ringing") {
+				if (!foundPatient && national10.length >= 7) {
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext('telephony:lead:asterisk:' || ${organizationId} || ':' || ${national10}));`,
+					);
+					const existingLead = await tx
+						.select({ id: crmLeads.id })
+						.from(crmLeads)
+						.where(
+							and(
+								eq(crmLeads.organizationId, organizationId),
+								or(
+									eq(crmLeads.phone, e164),
+									ilike(crmLeads.phone, `%${escapedNational10}%`),
+								),
+							),
+						)
+						.limit(1);
+
+					if (existingLead.length === 0) {
+						await tx.insert(crmLeads).values({
+							organizationId,
+							phone: e164,
+							name: `Лид Asterisk ${e164}`,
+							source: "telephony_asterisk",
+							status: "new",
+						});
+					}
+				}
+
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "TELEPHONY_INCOMING_CALL",
+						payload: {
+							phone: e164,
+							patientId: foundPatient?.id || null,
+							patientName: resolvedName,
+							callId: payload.uniqueid || payload.channel || null,
+							provider: "asterisk",
+							timestamp: new Date().toISOString(),
+						},
 					});
 				});
-			}
+			} else if (event === "ended") {
+				const callId = payload.uniqueid || payload.channel || null;
+				const duration =
+					typeof payload.billsec === "number"
+						? payload.billsec
+						: Number.parseInt(String(payload.billsec || "0"), 10) || 0;
+				const durationSeconds = duration > 0 ? duration : null;
+				const recordingUrl = payload.recordingUrl || null;
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "TELEPHONY_INCOMING_CALL",
-				payload: {
-					phone: e164,
-					patientId: patient?.id || null,
-					patientName,
-					callId: payload.uniqueid || payload.channel || null,
-					provider: "asterisk",
-					timestamp: new Date().toISOString(),
-				},
-			});
-		} else if (event === "ended") {
-			const callId = payload.uniqueid || payload.channel || null;
-			const duration =
-				typeof payload.billsec === "number"
-					? payload.billsec
-					: Number.parseInt(String(payload.billsec || "0"), 10) || 0;
-			const durationSeconds = duration > 0 ? duration : null;
-			const recordingUrl = payload.recordingUrl || null;
-
-			await withTenantCtx(organizationId, async () => {
 				let existingId: string | null = null;
 				if (callId) {
-					const existing = await db
+					const escapedCallId = escapeLikePattern(callId);
+					const existing = await tx
 						.select({ id: communicationEvents.id })
 						.from(communicationEvents)
 						.where(
@@ -459,8 +441,8 @@ export class TelephonyGatewayService {
 								eq(communicationEvents.organizationId, organizationId),
 								or(
 									eq(communicationEvents.providerCallId, callId),
-									ilike(communicationEvents.message, `%ID: ${callId}%`),
-									ilike(communicationEvents.message, `%call_id: ${callId}%`),
+									ilike(communicationEvents.message, `%ID: ${escapedCallId}%`),
+									ilike(communicationEvents.message, `%call_id: ${escapedCallId}%`),
 								),
 							),
 						)
@@ -471,28 +453,33 @@ export class TelephonyGatewayService {
 				}
 
 				if (existingId) {
-					await db
+					await tx
 						.update(communicationEvents)
 						.set({
 							status: "completed",
 							...(durationSeconds !== null ? { durationSeconds } : {}),
 							...(recordingUrl ? { recordingUrl } : {}),
-							...(patient?.id ? { patientId: patient.id } : {}),
+							...(foundPatient?.id ? { patientId: foundPatient.id } : {}),
 						})
-						.where(eq(communicationEvents.id, existingId));
+						.where(
+							and(
+								eq(communicationEvents.id, existingId),
+								eq(communicationEvents.organizationId, organizationId),
+							),
+						);
 				} else if (callId) {
-					await db
+					await tx
 						.insert(communicationEvents)
 						.values({
 							organizationId,
 							providerCallId: callId,
 							providerName: "asterisk",
-							patientId: patient?.id || null,
+							patientId: foundPatient?.id || null,
 							callerPhone: e164,
 							channel: "phone",
 							direction: "inbound",
 							status: "completed",
-							message: `Локальный звонок Asterisk завершён${!patient ? " (первичный абонент)" : ""}`,
+							message: `Локальный звонок Asterisk завершён${!foundPatient ? " (первичный абонент)" : ""}`,
 							durationSeconds,
 							recordingUrl,
 						})
@@ -502,26 +489,28 @@ export class TelephonyGatewayService {
 								status: "completed",
 								...(durationSeconds !== null ? { durationSeconds } : {}),
 								...(recordingUrl ? { recordingUrl } : {}),
-								...(patient?.id ? { patientId: patient.id } : {}),
+								...(foundPatient?.id ? { patientId: foundPatient.id } : {}),
 							},
 						});
 				} else {
-					await db.insert(communicationEvents).values({
+					await tx.insert(communicationEvents).values({
 						organizationId,
 						providerCallId: null,
 						providerName: "asterisk",
-						patientId: patient?.id || null,
+						patientId: foundPatient?.id || null,
 						callerPhone: e164,
 						channel: "phone",
 						direction: "inbound",
 						status: "completed",
-						message: `Локальный звонок Asterisk завершён${!patient ? " (первичный абонент)" : ""}`,
+						message: `Локальный звонок Asterisk завершён${!foundPatient ? " (первичный абонент)" : ""}`,
 						durationSeconds,
 						recordingUrl,
 					});
 				}
-			});
-		}
+			}
+
+			return { patient: foundPatient, patientName: resolvedName };
+		});
 
 		return {
 			success: true,
@@ -532,43 +521,238 @@ export class TelephonyGatewayService {
 	}
 
 	/**
-	 * Dispatches a SIP Call Transfer (Blind or Attended) command to Asterisk PBX / Cloud PBX.
+	 * Dispatches a real SIP Call Transfer (Blind or Attended) via Asterisk AMI Redirect/Atxfer
+	 * or Cloud PBX HTTP transfer API. Fails closed when PBX transfer gateway is not configured.
 	 */
+	public static async dispatchAsteriskTransfer(params: {
+		callId: string;
+		host: string;
+		port: number;
+		username: string;
+		secret: string;
+		channel: string;
+		exten: string;
+		context: string;
+		transferType: "blind" | "attended";
+	}): Promise<{ success: boolean }> {
+		return new Promise<{ success: boolean }>((resolve, reject) => {
+			const socket = new net.Socket();
+			let loggedIn = false;
+			let actionSent = false;
+			let settled = false;
+
+			const cleanup = (err?: Error) => {
+				if (settled) return;
+				settled = true;
+				socket.destroy();
+				if (err) reject(err);
+				else resolve({ success: true });
+			};
+
+			socket.setTimeout(4000);
+			socket.once("timeout", () => cleanup(new Error("Asterisk AMI transfer timeout")));
+			socket.once("error", (err) => cleanup(err));
+
+			socket.connect(params.port, params.host, () => {
+				socket.write(
+					`Action: Login\r\nUsername: ${params.username}\r\nSecret: ${params.secret}\r\n\r\n`,
+				);
+			});
+
+			socket.on("data", (chunk) => {
+				const data = chunk.toString("utf8");
+				if (!loggedIn) {
+					if (data.includes("Response: Success") || data.includes("Message: Authentication accepted")) {
+						loggedIn = true;
+						actionSent = true;
+						const amiAction = params.transferType === "attended" ? "Atxfer" : "Redirect";
+						socket.write(
+							`Action: ${amiAction}\r\n` +
+								`Channel: ${params.channel}\r\n` +
+								`Exten: ${params.exten}\r\n` +
+								`Context: ${params.context}\r\n` +
+								`Priority: 1\r\n` +
+								`ActionID: ${params.callId}\r\n\r\n`,
+						);
+						return;
+					}
+					if (data.includes("Response: Error")) {
+						cleanup(new Error(`Asterisk AMI authentication error: ${data.trim()}`));
+					}
+					return;
+				}
+				if (actionSent) {
+					if (data.includes("Response: Success")) {
+						socket.write("Action: Logoff\r\n\r\n");
+						cleanup();
+					} else if (data.includes("Response: Error")) {
+						cleanup(new Error(`Asterisk AMI transfer rejected: ${data.trim()}`));
+					}
+				}
+			});
+		});
+	}
+
 	public static async transferCall(params: {
 		organizationId: string;
 		callId: string;
 		targetExtensionOrPhone: string;
 		transferType: "blind" | "attended";
 		initiatedByUserId?: string | undefined;
+		logger?: { warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
 	}): Promise<{
 		success: boolean;
+		statusCode?: number;
+		error?: string;
+		message?: string;
 		callId: string;
 		target: string;
 		transferType: "blind" | "attended";
-		status: "transferred" | "initiated";
+		status: "transferred" | "initiated" | "failed";
+		provider?: string;
 		timestamp: string;
 	}> {
 		const now = new Date().toISOString();
 		const cleanTarget = params.targetExtensionOrPhone.trim();
+		const cleanCallId = params.callId.trim();
+		const log = params.logger || defaultStructuredLogger;
 
-		// Broadcast transfer event to clinic workstations via WebSocket
+		const amiSecret = process.env.ASTERISK_AMI_SECRET?.trim();
+		const amiHost = process.env.ASTERISK_AMI_HOST?.trim() || process.env.ASTERISK_HOST?.trim();
+		const mangoKey = process.env.MANGO_API_KEY?.trim() || process.env.MANGO_VPBX_API_KEY?.trim();
+		const mangoSalt = process.env.MANGO_API_SALT?.trim() || process.env.TELEPHONY_WEBHOOK_SECRET?.trim();
+		const uisKey = process.env.UIS_API_KEY?.trim() || process.env.COMAGIC_API_KEY?.trim();
+
+		let activeProvider: "asterisk" | "mango" | "uis" | null = null;
+		if (amiSecret && amiHost) {
+			activeProvider = "asterisk";
+		} else if (mangoKey && mangoSalt) {
+			activeProvider = "mango";
+		} else if (uisKey) {
+			activeProvider = "uis";
+		}
+
+		if (!activeProvider) {
+			return {
+				success: false,
+				statusCode: 422,
+				error: "TelephonyTransferNotConfigured",
+				message: "Шлюз перевода звонков АТС (Asterisk AMI / Mango / UIS) не настроен в клинике.",
+				callId: cleanCallId,
+				target: cleanTarget,
+				transferType: params.transferType,
+				status: "failed",
+				timestamp: now,
+			};
+		}
+
+		try {
+			if (activeProvider === "asterisk" && amiHost && amiSecret) {
+				const channel = cleanCallId.includes("/")
+					? cleanCallId
+					: `${process.env.ASTERISK_DEFAULT_CHANNEL || "PJSIP/101"}-${cleanCallId}`;
+				await this.dispatchAsteriskTransfer({
+					callId: cleanCallId,
+					host: amiHost,
+					port: Number.parseInt(process.env.ASTERISK_AMI_PORT || "5038", 10) || 5038,
+					username: process.env.ASTERISK_AMI_USER?.trim() || "admin",
+					secret: amiSecret,
+					channel,
+					exten: cleanTarget,
+					context: process.env.ASTERISK_OUTBOUND_CONTEXT || "from-internal",
+					transferType: params.transferType,
+				});
+			} else if (activeProvider === "mango" && mangoKey && mangoSalt) {
+				const jsonPayload = JSON.stringify({
+					command_id: `transfer-${cleanCallId}-${Date.now()}`,
+					call_id: cleanCallId,
+					method: params.transferType === "attended" ? "consult" : "blind",
+					to_number: cleanTarget,
+				});
+				const sign = createHash("sha256")
+					.update(`${mangoKey}${jsonPayload}${mangoSalt}`)
+					.digest("hex");
+				const body = new URLSearchParams({
+					vpbx_api_key: mangoKey,
+					sign,
+					json: jsonPayload,
+				});
+				const response = await fetch("https://app.mango-office.ru/vpbx/commands/transfer", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: body.toString(),
+					signal: AbortSignal.timeout(5000),
+				});
+				if (!response.ok) {
+					const text = await response.text().catch(() => "");
+					throw new Error(`Mango HTTP ${response.status}: ${text || response.statusText}`);
+				}
+			} else if (activeProvider === "uis" && uisKey) {
+				const response = await fetch("https://dataapi.uiscom.ru/v2.0", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						jsonrpc: "2.0",
+						id: cleanCallId,
+						method: "transfer_call",
+						params: {
+							access_token: uisKey,
+							call_session_id: cleanCallId,
+							destination: cleanTarget,
+							is_attended: params.transferType === "attended",
+						},
+					}),
+					signal: AbortSignal.timeout(5000),
+				});
+				if (!response.ok) {
+					const text = await response.text().catch(() => "");
+					throw new Error(`UIS HTTP ${response.status}: ${text || response.statusText}`);
+				}
+				const data = (await response.json().catch(() => ({}))) as { error?: { message?: string } };
+				if (data?.error) {
+					throw new Error(`UIS API error: ${data.error.message || JSON.stringify(data.error)}`);
+				}
+			}
+		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			log.error(
+				{ err: safeLogError(err), provider: activeProvider, callId: cleanCallId },
+				"[TelephonyGatewayService] Call transfer command failed",
+			);
+			return {
+				success: false,
+				statusCode: 502,
+				error: "TelephonyTransferFailed",
+				message: `Не удалось выполнить перевод вызова через ${activeProvider}: ${errMsg}`,
+				callId: cleanCallId,
+				target: cleanTarget,
+				transferType: params.transferType,
+				status: "failed",
+				provider: activeProvider,
+				timestamp: now,
+			};
+		}
+
+		// Broadcast transfer event strictly after PBX confirms transfer command
 		wsBroker.broadcastToOrganization(params.organizationId, {
 			type: "TELEPHONY_CALL_TRANSFERRED",
 			payload: {
-				callId: params.callId,
+				callId: cleanCallId,
 				target: cleanTarget,
 				transferType: params.transferType,
 				initiatedByUserId: params.initiatedByUserId || null,
+				provider: activeProvider,
 				timestamp: now,
 			},
 		});
 
 		return {
 			success: true,
-			callId: params.callId,
+			callId: cleanCallId,
 			target: cleanTarget,
 			transferType: params.transferType,
 			status: params.transferType === "blind" ? "transferred" : "initiated",
+			provider: activeProvider,
 			timestamp: now,
 		};
 	}

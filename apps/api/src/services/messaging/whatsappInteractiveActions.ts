@@ -493,7 +493,8 @@ export async function processRecallBooking(
 	const receiptText = `Спасибо, ${patient.fullName}! Мы приняли вашу заявку на профилактический осмотр. Администратор клиники ДЕНТЕ свяжется с вами для согласования удобного времени.`;
 
 	const eventId = await withTenantCtx(organizationId, async (tx) => {
-		if (action.recallId) {
+		const recallId = action.recallId;
+		if (recallId) {
 			try {
 				await withSavepoint(tx, async (spTx) => {
 					await spTx
@@ -504,14 +505,14 @@ export async function processRecallBooking(
 						})
 						.where(
 							and(
-								eq(communicationTasks.id, action.recallId),
+								eq(communicationTasks.id, recallId),
 								eq(communicationTasks.organizationId, organizationId),
 							),
 						);
 				});
 			} catch (err) {
 				logger.warn(
-					{ err: safeLogError(err), organizationId, recallId: action.recallId },
+					{ err: safeLogError(err), organizationId, recallId },
 					"Failed to update recall task status on booking",
 				);
 			}
@@ -573,7 +574,8 @@ export async function processRecallSnooze(
 	const receiptText = `Хорошо, ${patient.fullName}! Мы отложили напоминание и свяжемся с вами через месяц. Желаем здоровья вашим зубам!`;
 
 	const eventId = await withTenantCtx(organizationId, async (tx) => {
-		if (action.recallId) {
+		const recallId = action.recallId;
+		if (recallId) {
 			try {
 				await withSavepoint(tx, async (spTx) => {
 					await spTx
@@ -585,14 +587,14 @@ export async function processRecallSnooze(
 						})
 						.where(
 							and(
-								eq(communicationTasks.id, action.recallId),
+								eq(communicationTasks.id, recallId),
 								eq(communicationTasks.organizationId, organizationId),
 							),
 						);
 				});
 			} catch (err) {
 				logger.warn(
-					{ err: safeLogError(err), organizationId, recallId: action.recallId },
+					{ err: safeLogError(err), organizationId, recallId },
 					"Failed to snooze recall task",
 				);
 			}

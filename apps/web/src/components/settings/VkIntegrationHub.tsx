@@ -20,7 +20,9 @@ import {
 	Users,
 } from "lucide-react";
 import "./VkIntegrationHub.css";
+import { generateUuidV7 } from "@dental/shared";
 import { useVkSettings } from "../../hooks/useVkSettings.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { showToast } from "../GlobalToast.js";
 
 interface VkIntegrationHubProps {
@@ -133,7 +135,10 @@ export function VkIntegrationHub({ serverBaseUrl }: VkIntegrationHubProps) {
 			const base = serverBaseUrl || "";
 			const res = await fetch(`${base}/api/vk/bot/test-message`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					recipientId: testRecipientId.trim(),
 					message: testMessageText.trim(),

@@ -16,7 +16,7 @@ export function registerTelegramAccountVerify2faRoute(app: FastifyInstance) {
 		const schema = z.object({
 			phone: z.string().trim().min(5, "Укажите номер телефона"),
 			password: z.string().trim().min(1, "Укажите пароль 2FA"),
-		});
+		}).strict();
 
 		const parsed = schema.safeParse(request.body);
 		if (!parsed.success) {
@@ -40,9 +40,11 @@ export function registerTelegramAccountVerify2faRoute(app: FastifyInstance) {
 		});
 
 		if (!result.ok) {
-			return reply.code(400).send({
+			const statusCode = result.configured === false ? 501 : 400;
+			return reply.code(statusCode).send({
 				ok: false,
-				error: "2FaFailed",
+				...(result.configured === false ? { configured: false } : {}),
+				error: result.errorCode || "2FaFailed",
 				message: result.error || "Неверный облачный пароль Telegram.",
 			});
 		}

@@ -6,6 +6,7 @@
 import {
 	denteTelegramWebhookResponseSchema,
 } from "@dental/shared";
+import { safeLogError } from "../../../observability/logger.js";
 import { recordDenteTelegramWebhookEvent } from "../../../services/telegram/telegramWebhookEventsService.js";
 import {
 	answerTelegramCallbackQuery,
@@ -94,7 +95,12 @@ export async function handleNpsCallback(
 			botToken: runtime.botToken,
 			callbackQueryId,
 			text: score === 5 ? "⭐ Спасибо за высшую оценку!" : "Спасибо за отзыв!",
-		}).catch(() => {});
+		}).catch((err) => {
+			request.log.warn(
+				{ err: safeLogError(err), organizationId: runtime.organizationId },
+				"Failed to answer NPS callback query",
+			);
+		});
 	}
 
 	const messageId = extractMessageIdFromUpdate(update);
@@ -127,13 +133,22 @@ export async function handleNpsCallback(
 			messageId,
 			text: npsResult.replyMessage,
 			replyMarkup,
-		}).catch(async () => {
+		}).catch(async (editErr) => {
+			request.log.warn(
+				{ err: safeLogError(editErr), organizationId: runtime.organizationId },
+				"Failed to edit NPS message, falling back to send",
+			);
 			await sendTelegramTextMessage({
 				botToken: activeBotToken,
 				chatId: activeChatId,
 				text: npsResult.replyMessage,
 				replyMarkup,
-			}).catch(() => {});
+			}).catch((sendErr) => {
+				request.log.warn(
+					{ err: safeLogError(sendErr), organizationId: runtime.organizationId },
+					"Failed to send fallback NPS reply",
+				);
+			});
 		});
 	} else if (activeChatId && activeBotToken) {
 		await sendTelegramTextMessage({
@@ -141,7 +156,12 @@ export async function handleNpsCallback(
 			chatId: activeChatId,
 			text: npsResult.replyMessage,
 			replyMarkup,
-		}).catch(() => {});
+		}).catch((err) => {
+			request.log.warn(
+				{ err: safeLogError(err), organizationId: runtime.organizationId },
+				"Failed to send NPS reply",
+			);
+		});
 	}
 
 	const event = await recordDenteTelegramWebhookEvent({
@@ -247,7 +267,12 @@ export async function handlePostOpCallback(
 			text: surveyResult.isCriticalAlert
 				? "⚠️ Срочный сигнал передан дежурному врачу!"
 				: "Спасибо за ответ!",
-		}).catch(() => {});
+		}).catch((err) => {
+			request.log.warn(
+				{ err: safeLogError(err), organizationId: runtime.organizationId },
+				"Failed to answer post-op callback query",
+			);
+		});
 	}
 
 	if (surveyResult.isCriticalAlert && surveyResult.alertDoctorText) {
@@ -283,13 +308,22 @@ export async function handlePostOpCallback(
 			messageId,
 			text: surveyResult.patientMessage,
 			replyMarkup: screenMarkup,
-		}).catch(async () => {
+		}).catch(async (editErr) => {
+			request.log.warn(
+				{ err: safeLogError(editErr), organizationId: runtime.organizationId },
+				"Failed to edit post-op message, falling back to send",
+			);
 			await sendTelegramTextMessage({
 				botToken: activeBotToken,
 				chatId: activeChatId,
 				text: surveyResult.patientMessage,
 				replyMarkup: screenMarkup,
-			}).catch(() => {});
+			}).catch((sendErr) => {
+				request.log.warn(
+					{ err: safeLogError(sendErr), organizationId: runtime.organizationId },
+					"Failed to send fallback post-op message",
+				);
+			});
 		});
 	}
 
@@ -521,7 +555,12 @@ export async function handleAppointmentCallback(
 			botToken: runtime.botToken,
 			callbackQueryId,
 			text: toastText,
-		}).catch(() => {});
+		}).catch((err) => {
+			request.log.warn(
+				{ err: safeLogError(err), organizationId: runtime.organizationId },
+				"Failed to answer appointment callback query",
+			);
+		});
 	}
 
 	const messageId = extractMessageIdFromUpdate(update);
@@ -551,13 +590,22 @@ export async function handleAppointmentCallback(
 			messageId,
 			text: replyText,
 			replyMarkup,
-		}).catch(async () => {
+		}).catch(async (editErr) => {
+			request.log.warn(
+				{ err: safeLogError(editErr), organizationId: runtime.organizationId },
+				"Failed to edit appointment callback message, falling back to send",
+			);
 			await sendTelegramTextMessage({
 				botToken: activeBotToken,
 				chatId: activeChatId,
 				text: replyText,
 				replyMarkup,
-			}).catch(() => {});
+			}).catch((sendErr) => {
+				request.log.warn(
+					{ err: safeLogError(sendErr), organizationId: runtime.organizationId },
+					"Failed to send fallback appointment callback reply",
+				);
+			});
 		});
 	} else if (activeChatId && activeBotToken) {
 		await sendTelegramTextMessage({
@@ -565,7 +613,12 @@ export async function handleAppointmentCallback(
 			chatId: activeChatId,
 			text: replyText,
 			replyMarkup,
-		}).catch(() => {});
+		}).catch((err) => {
+			request.log.warn(
+				{ err: safeLogError(err), organizationId: runtime.organizationId },
+				"Failed to send appointment callback reply",
+			);
+		});
 	}
 
 	const event = await recordDenteTelegramWebhookEvent({
