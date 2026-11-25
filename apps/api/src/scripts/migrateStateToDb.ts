@@ -50,17 +50,27 @@
  * половинчатого сида не существует: любая ошибка откатывает всё.
  */
 
-import type {
-	Appointment,
-	Chair,
-	ClinicalRule,
-	CommunicationTask,
-	GeneratedDocument,
-	Patient,
-	Payment,
-	StaffMember,
+import {
+	type Appointment,
+	type Chair,
+	type ClinicalRule,
+	type CommunicationTask,
+	type GeneratedDocument,
+	type Patient,
+	type Payment,
+	rublesToKopecks,
+	type StaffMember,
 } from "@dental/shared";
 import { randomUUID } from "node:crypto";
+import { format } from "node:util";
+
+function cliOut(...args: unknown[]): void {
+	process.stdout.write(`${format(...args)}\n`);
+}
+
+function cliErr(...args: unknown[]): void {
+	process.stderr.write(`${format(...args)}\n`);
+}
 import { sql } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 
@@ -222,7 +232,7 @@ function resolveCredentials(): SeedCredentials {
 
 function reportCredentials(credentials: SeedCredentials): void {
 	if (credentials.defaulted.length === 0) {
-		console.log("Учётные данные сида: все четыре заданы окружением.");
+		cliOut("Учётные данные сида: все четыре заданы окружением.");
 		return;
 	}
 	const names = credentials.defaulted.join(", ");
@@ -236,7 +246,7 @@ function reportCredentials(credentials: SeedCredentials): void {
 			].join("\n"),
 		);
 	}
-	console.warn(
+	cliErr(
 		[
 			"",
 			"ВНИМАНИЕ: учётные данные взяты ПО УМОЛЧАНИЮ, они опубликованы в репозитории.",
@@ -298,14 +308,14 @@ async function clearTenantData(
 	const { total, byTable } = await countTenantRows(tx);
 
 	if (total === 0) {
-		console.log(
+		cliOut(
 			`Очистка: у арендатора ${organizationId} нет ни одной строки — удалять нечего.`,
 		);
 		return;
 	}
 
-	console.log(`Очистка затронет ${total} строк арендатора ${organizationId}:`);
-	for (const line of byTable) console.log(`   ${line}`);
+	cliOut(`Очистка затронет ${total} строк арендатора ${organizationId}:`);
+	for (const line of byTable) cliOut(`   ${line}`);
 
 	if (productionModeActive()) {
 		throw new SeedRefusedError(
@@ -326,13 +336,13 @@ async function clearTenantData(
 		);
 	}
 
-	console.log(
+	cliOut(
 		`Разрешено переменной ${DESTRUCTIVE_RESET_ENV_NAME}=${DESTRUCTIVE_RESET_ENV_VALUE}. Удаляю...`,
 	);
 	for (const entry of tenantScopedTablesInDeletionOrder) {
 		await tx.delete(entry.table);
 	}
-	console.log("Очистка завершена.");
+	cliOut("Очистка завершена.");
 }
 
 /**
@@ -353,7 +363,7 @@ function keepResolvable<T>(
 	const kept = rows.filter(isResolvable);
 	const skipped = rows.length - kept.length;
 	if (skipped > 0) {
-		console.warn(
+		cliErr(
 			`   пропущено ${skipped} из ${rows.length} (${label}): ссылка на отсутствующую строку`,
 		);
 	}
@@ -361,7 +371,7 @@ function keepResolvable<T>(
 }
 
 async function seed(): Promise<void> {
-	console.log("Перенос состояния JSON в базу...");
+	cliOut("Перенос состояния JSON в базу...");
 
 	const state = loadPersistentState();
 	if (!state) {
@@ -420,7 +430,7 @@ async function seed(): Promise<void> {
 	await withTenantCtx(organizationId, async (tx) => {
 		await clearTenantData(tx, organizationId);
 
-		console.log(
+		cliOut(
 			`Организация: ${clinicProfile?.clinicName || "(без названия)"}`,
 		);
 		await tx.insert(schema.organizations).values({
@@ -442,7 +452,7 @@ async function seed(): Promise<void> {
 			medicalLicenseIssuer: clinicProfile?.medicalLicenseIssuer,
 		}).onConflictDoNothing();
 
-		console.log("Клиника по умолчанию");
+		cliOut("Клиника по умолчанию");
 		await tx.insert(schema.clinics).values({
 			id: DEFAULT_CLINIC_ID,
 			organizationId,
@@ -452,13 +462,13 @@ async function seed(): Promise<void> {
 			timezone: clinicProfile?.timezone,
 		}).onConflictDoNothing();
 
-		console.log(`Сотрудники: ${staffRows.length}`);
+		cliOut(`Сотрудники: ${staffRows.length}`);
 		for (const chunk of chunkArray(staffRows, CHUNK_SIZE)) {
 			await tx.insert(schema.users).values(chunk).onConflictDoNothing();
 		}
 		const staffIds = new Set(staffRows.map((staff) => staff.id));
 
-		console.log(`Кресла: ${chairs.length}`);
+		cliOut(`Кресла: ${chairs.length}`);
 		const chairIdMap = new Map<string, string>();
 		const chairRows = chairs.map((chair) => {
 			const validId = UUID_PATTERN.test(chair.id) ? chair.id : randomUUID();
@@ -476,7 +486,7 @@ async function seed(): Promise<void> {
 		}
 		const chairIds = new Set(chairRows.map((chair) => chair.id));
 
-		console.log(`Пациенты: ${patients.length}`);
+		cliOut(`Пациенты: ${patients.length}`);
 		const patientRows = patients.map((patient) => ({
 			id: patient.id,
 			organizationId,
@@ -495,7 +505,7 @@ async function seed(): Promise<void> {
 		}
 		const patientIds = new Set(patientRows.map((patient) => patient.id));
 
-		console.log(`Записи в расписании: ${appointments.length}`);
+		cliOut(`Записи в расписании: ${appointments.length}`);
 		const appointmentRows = keepResolvable(
 			appointments,
 			"appointments",
@@ -566,17 +576,17 @@ async function seed(): Promise<void> {
 					]
 				: [];
 		if (activeVisit && visitRows.length === 0) {
-			console.warn(
+			cliErr(
 				`   активный приём ${activeVisit.id} пропущен: пациента ${activeVisit.patientId} нет в состоянии`,
 			);
 		}
-		console.log(`Активный приём: ${visitRows.length}`);
+		cliOut(`Активный приём: ${visitRows.length}`);
 		for (const chunk of chunkArray(visitRows, CHUNK_SIZE)) {
 			await tx.insert(schema.visits).values(chunk);
 		}
 		const visitIds = new Set(visitRows.map((row) => row.id));
 
-		console.log(`Документы: ${documents.length}`);
+		cliOut(`Документы: ${documents.length}`);
 		const documentRows = keepResolvable(
 			documents,
 			"generated_documents",
@@ -604,6 +614,10 @@ async function seed(): Promise<void> {
 			 */
 			title: document.title,
 			totalAmountRub: document.totalAmountRub,
+			totalAmountKopecks:
+				document.totalAmountRub !== null && document.totalAmountRub !== undefined
+					? BigInt(rublesToKopecks(document.totalAmountRub))
+					: null,
 			payloadJson: document.payload ? JSON.stringify(document.payload) : null,
 			issuedAt: document.issuedAt ? new Date(document.issuedAt) : null,
 			createdAt: new Date(document.issuedAt ?? Date.now()),
@@ -613,12 +627,12 @@ async function seed(): Promise<void> {
 		}
 		const documentIds = new Set(documentRows.map((row) => row.id));
 
-		console.log(`Клинические правила: ${clinicalRules.length}`);
+		cliOut(`Клинические правила: ${clinicalRules.length}`);
 		const rulesWithSlugId = clinicalRules.filter(
 			(rule) => !UUID_PATTERN.test(rule.id),
 		);
 		if (rulesWithSlugId.length > 0) {
-			console.warn(
+			cliErr(
 				`   у ${rulesWithSlugId.length} из ${clinicalRules.length} правил идентификатор не UUID ` +
 					`(например «${rulesWithSlugId[0]?.id}») — идентификатор назначит база`,
 			);
@@ -665,7 +679,7 @@ async function seed(): Promise<void> {
 			await tx.insert(schema.clinicalRules).values(chunk);
 		}
 
-		console.log(`Платежи: ${payments.length}`);
+		cliOut(`Платежи: ${payments.length}`);
 		const paymentRows = keepResolvable(payments, "payments", (payment) =>
 			patientIds.has(payment.patientId),
 		).map((payment) => ({
@@ -681,6 +695,7 @@ async function seed(): Promise<void> {
 					? payment.documentId
 					: null,
 			amountRub: payment.amountRub,
+			amountKopecks: BigInt(rublesToKopecks(payment.amountRub)),
 			method: payment.method,
 			status: payment.status,
 			/*
@@ -710,7 +725,7 @@ async function seed(): Promise<void> {
 			state.communicationTasks?.length
 				? state.communicationTasks
 				: inMemoryDomainState.communicationTasks;
-		console.log(`Задачи коммуникации: ${rawTasks.length}`);
+		cliOut(`Задачи коммуникации: ${rawTasks.length}`);
 		const taskRows = keepResolvable(rawTasks, "communication_tasks", (task) =>
 			patientIds.has(task.patientId),
 		).map((task) => ({
@@ -755,31 +770,31 @@ async function seed(): Promise<void> {
 		}
 	});
 
-	console.log("");
-	console.log("Засевание базовых клинических каталогов, касс и шаблонов документов...");
+	cliOut("");
+	cliOut("Засевание базовых клинических каталогов, касс и шаблонов документов...");
 	try {
 		const clinicalRes = await seedClinicalCore();
-		console.log(`  -> Клинический контур: ${clinicalRes.teethCount} зубов, ${clinicalRes.defectsCount} дефектов, ${clinicalRes.templatesCount} шаблонов 043/у.`);
+		cliOut(`  -> Клинический контур: ${clinicalRes.teethCount} зубов, ${clinicalRes.defectsCount} дефектов, ${clinicalRes.templatesCount} шаблонов приёма.`);
 	} catch (e) {
-		console.warn("  -> Пропуск сидирования клинического контура:", (e as Error).message);
+		cliErr("  -> Пропуск сидирования клинического контура:", (e as Error).message);
 	}
 
 	try {
 		await seedCashAndReasons(organizationId);
-		console.log(`  -> Кассовые счета и статьи расходов зафиксированы.`);
+		cliOut(`  -> Кассовые счета и статьи расходов зафиксированы.`);
 	} catch (e) {
-		console.warn("  -> Пропуск сидирования касс:", (e as Error).message);
+		cliErr("  -> Пропуск сидирования касс:", (e as Error).message);
 	}
 
 	try {
 		const docRes = await seedAll49DocumentTemplates();
-		console.log(`  -> Шаблоны документов: ${docRes.templatesCount} бланков, ${docRes.categoriesCount} рубрик.`);
+		cliOut(`  -> Шаблоны документов: ${docRes.templatesCount} бланков, ${docRes.categoriesCount} рубрик.`);
 	} catch (e) {
-		console.warn("  -> Пропуск сидирования шаблонов документов:", (e as Error).message);
+		cliErr("  -> Пропуск сидирования шаблонов документов:", (e as Error).message);
 	}
 
-	console.log("");
-	console.log(
+	cliOut("");
+	cliOut(
 		"Сид завершён. Схему создаёт 'npm run db:migrate', её надо запускать первой.",
 	);
 }
@@ -791,10 +806,10 @@ seed()
 	})
 	.catch(async (error: unknown) => {
 		if (error instanceof SeedRefusedError) {
-			console.error("");
-			console.error(error.message);
+			cliErr("");
+			cliErr(error.message);
 		} else {
-			console.error("Ошибка сида:", error);
+			cliErr("Ошибка сида:", error);
 		}
 		await pool.end();
 		process.exit(1);

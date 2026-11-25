@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { organizations, protocolTemplates, dentalSpecialty } from "../db/schema.js";
-import { createApiLogger } from "../observability/logger.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
 
 const templatesLogger = createApiLogger("seedTemplates");
 
@@ -180,7 +180,7 @@ const BUILT_IN_TEMPLATES: Array<{
 		defaultIcd10Label: "Хронический гингивит",
 	},
 
-	// ─── ОРТОПЕДИЯ (КАНОНИЧЕСКИЕ ПРОТОКОЛЫ 804Н / 8E) ──────────────────────
+	// ─── ОРТОПЕДИЯ (КАНОНИЧЕСКИЕ КЛИНИЧЕСКИЕ ПРОТОКОЛЫ / 8E) ───────────────
 	{
 		title: "Препарирование зуба под коронку ZrO2 / E.max (уступ 0.5–1.0 мм, ретракция, слепок/3Shape TRIOS)",
 		category: "Ортопедия",
@@ -531,7 +531,7 @@ if (nodePath) {
 			nodePath.endsWith("seedTemplates.js")
 		) {
 			seed().catch((err) => {
-				console.error(err);
+				templatesLogger.error({ err: safeLogError(err) }, "Ошибка сидирования шаблонов");
 				process.exit(1);
 			});
 		}

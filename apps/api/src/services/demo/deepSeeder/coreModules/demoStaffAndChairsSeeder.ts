@@ -82,6 +82,7 @@ export async function cleanDemoShowcaseTables(tx: DbTx): Promise<void> {
 		"staff_chat_channels",
 		"dente_vk_user_accounts",
 		"dente_telegram_account_configs",
+		"communication_outbox",
 		"communication_tasks",
 		"communication_events",
 		"generated_documents",

@@ -2,6 +2,7 @@
  * Живой сквозной прогон движка переноса против настоящей базы PostgreSQL.
  * Создаёт изолированную организацию, гоняет перенос, проверяет инварианты, убирает за собой.
  */
+import { format } from "node:util";
 import { and, eq, sql } from "drizzle-orm";
 import { db, pool } from "../db/client.js";
 import {
@@ -23,16 +24,24 @@ import {
 } from "../migration/engine.js";
 import { buildDbfFile, encodeSingleByte } from "../migration/tests/fixtures.js";
 
+function cliOut(...args: unknown[]): void {
+	process.stdout.write(`${format(...args)}\n`);
+}
+
+function cliErr(...args: unknown[]): void {
+	process.stderr.write(`${format(...args)}\n`);
+}
+
 let pass = 0;
 let fail = 0;
 
 function check(label: string, condition: boolean, detail = ""): void {
 	if (condition) {
 		pass += 1;
-		console.log(`  ok   ${label}${detail ? ` — ${detail}` : ""}`);
+		cliOut(`  ok   ${label}${detail ? ` — ${detail}` : ""}`);
 	} else {
 		fail += 1;
-		console.log(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
+		cliOut(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
 	}
 }
 
@@ -48,7 +57,7 @@ const [org] = await db
 	.returning();
 if (!org) throw new Error("Failed to create test organization");
 const ORG = org.id;
-console.log(`\nОрганизация ${ORG}\n`);
+cliOut(`\nОрганизация ${ORG}\n`);
 
 const base = {
 	organizationId: ORG,
@@ -58,7 +67,7 @@ const base = {
 };
 
 try {
-	console.log("--- 1. Анализ выгрузки пациентов в windows-1251");
+	cliOut("--- 1. Анализ выгрузки пациентов в windows-1251");
 	const csv = [
 		"Код;ФИО;Телефон;Дата рождения;Комментарий",
 		"101;Иванов Иван Иванович;+7 (900) 123-45-67;01.01.1980;Жалобы на боль в 16",
@@ -89,14 +98,14 @@ try {
 		!JSON.stringify(analysis.profile.sampleRows).includes("Иванов"),
 		JSON.stringify(analysis.profile.sampleRows[0]),
 	);
-	console.log(
+	cliOut(
 		`       карта: ${analysis.mapping.columns.map((c) => `${c.sourceColumn}→${c.targetField}`).join(", ")}`,
 	);
-	console.log(
+	cliOut(
 		`       оценка: готово ${analysis.projectedReady}, карантин ${analysis.projectedQuarantine}`,
 	);
 
-	console.log("--- 2. Сухой прогон не должен писать в боевые таблицы");
+	cliOut("--- 2. Сухой прогон не должен писать в боевые таблицы");
 	const dry = await runMigration({
 		...base,
 		sourceName: "пациенты.csv",
@@ -118,14 +127,14 @@ try {
 			.join("; ") || "все проверки пройдены",
 	);
 
-	console.log("--- 3. Боевой прогон");
+	cliOut("--- 3. Боевой прогон");
 	const live = await runMigration({
 		...base,
 		sourceName: "пациенты.csv",
 		contentBase64: content,
 		dryRun: false,
 	});
-	console.log(
+	cliOut(
 		`       создано ${live.run.loadedRows}, обновлено ${live.run.updatedRows}, дублей ${live.run.duplicateRows}, карантин ${live.run.quarantinedRows}, пропущено ${live.run.skippedRows}`,
 	);
 
@@ -137,7 +146,7 @@ try {
 		})
 		.from(patients)
 		.where(eq(patients.organizationId, ORG));
-	console.log(
+	cliOut(
 		`       в базе: ${loaded.map((p) => `${p.fullName}/${p.phone ?? "нет тел"}/${p.birthDate ?? "нет ДР"}`).join(" | ")}`,
 	);
 
@@ -170,9 +179,9 @@ try {
 		loaded.some((p) => p.phone === "+74957778899"),
 	);
 
-	console.log("--- 4. Сверка: баланс строк");
+	cliOut("--- 4. Сверка: баланс строк");
 	for (const c of live.reconciliation.checks) {
-		console.log(
+		cliOut(
 			`       ${c.passed ? "[+]" : "[-]"} ${c.title}: ожидалось ${c.expected}, получено ${c.actual}`,
 		);
 	}
@@ -193,7 +202,7 @@ try {
 		.from(migrationStagingRecords)
 		.where(eq(migrationStagingRecords.runId, live.run.runId))
 		.groupBy(migrationStagingRecords.status);
-	console.log(
+	cliOut(
 		`       стейджинг: ${staged.map((s) => `${s.status}=${s.n}`).join(", ")}`,
 	);
 	same(
@@ -202,10 +211,10 @@ try {
 		7,
 	);
 
-	console.log("--- 5. Карантин: причины на русском");
+	cliOut("--- 5. Карантин: причины на русском");
 	const quarantine = await listQuarantine(ORG, live.run.runId, 50);
 	for (const q of quarantine.slice(0, 7)) {
-		console.log(
+		cliOut(
 			`       строка ${q.sourceRowNumber} [${q.reason}${q.blocking ? ", блок" : ""}]: ${q.message.slice(0, 95)}`,
 		);
 	}
@@ -234,7 +243,7 @@ try {
 			.join(","),
 	);
 
-	console.log("--- 6. Идемпотентность: тот же файл второй раз");
+	cliOut("--- 6. Идемпотентность: тот же файл второй раз");
 	const again = await runMigration({
 		...base,
 		sourceName: "пациенты.csv",
@@ -245,7 +254,7 @@ try {
 		.select({ n: sql<string>`count(*)` })
 		.from(patients)
 		.where(eq(patients.organizationId, ORG));
-	console.log(
+	cliOut(
 		`       второй прогон: создано ${again.run.loadedRows}, обновлено ${again.run.updatedRows}, дублей ${again.run.duplicateRows}`,
 	);
 	same(
@@ -259,7 +268,7 @@ try {
 		again.run.updatedRows + again.run.duplicateRows > 0,
 	);
 
-	console.log("--- 7. Платежи со ссылкой на пациента по ключу старой системы");
+	cliOut("--- 7. Платежи со ссылкой на пациента по ключу старой системы");
 	const paymentsCsv = [
 		"Код;Пациент;Сумма;Дата оплаты;Способ оплаты",
 		"5001;101;1 500,00 руб.;05.02.2020;карта",
@@ -274,14 +283,14 @@ try {
 		dryRun: false,
 		requestedEntityKind: "payment",
 	});
-	console.log(
+	cliOut(
 		`       платежи: создано ${payRun.run.loadedRows}, карантин ${payRun.run.quarantinedRows}`,
 	);
 	const loadedPayments = await db
 		.select({ amountRub: payments.amountRub, patientId: payments.patientId })
 		.from(payments)
 		.where(eq(payments.organizationId, ORG));
-	console.log(
+	cliOut(
 		`       суммы в базе: ${loadedPayments.map((p) => p.amountRub).join(", ")}`,
 	);
 	same("загружено 2 платежа", loadedPayments.length, 2);
@@ -298,7 +307,7 @@ try {
 
 	const payQ = await listQuarantine(ORG, payRun.run.runId, 50);
 	for (const q of payQ.slice(0, 5)) {
-		console.log(
+		cliOut(
 			`       строка ${q.sourceRowNumber} [${q.reason}]: ${q.message.slice(0, 95)}`,
 		);
 	}
@@ -314,12 +323,12 @@ try {
 		),
 	);
 
-	console.log("--- 8. Сверка денег ДО КОПЕЙКИ");
+	cliOut("--- 8. Сверка денег ДО КОПЕЙКИ");
 	const moneyChecks = payRun.reconciliation.checks.filter((c) =>
 		c.code.startsWith("money"),
 	);
 	for (const c of moneyChecks) {
-		console.log(
+		cliOut(
 			`       ${c.passed ? "[+]" : "[-]"} ${c.title}: ожидалось ${c.expected}, получено ${c.actual}`,
 		);
 	}
@@ -386,14 +395,14 @@ try {
 		exactness?.passed === true,
 		exactness?.detail ?? "проверка отсутствует",
 	);
-	console.log(`       ${exactness?.detail ?? ""}`);
+	cliOut(`       ${exactness?.detail ?? ""}`);
 
-	console.log("--- 9. Откат прогона платежей");
+	cliOut("--- 9. Откат прогона платежей");
 	const rb = await rollbackRun({
 		organizationId: ORG,
 		runId: payRun.run.runId,
 	});
-	console.log(`       ${rb.message}`);
+	cliOut(`       ${rb.message}`);
 	const afterRollback = await db
 		.select({ n: sql<string>`count(*)` })
 		.from(payments)
@@ -424,7 +433,7 @@ try {
 		`${stagedAfterRb[0]?.n} строк`,
 	);
 
-	console.log("--- 10. Расписание: время приёма обязано сохраниться");
+	cliOut("--- 10. Расписание: время приёма обязано сохраниться");
 	const scheduleCsv = [
 		"Код;Пациент;Дата приёма;Длительность;Статус;Повод",
 		"9001;101;12.03.2019 14:30;45;завершён;Лечение 16 зуба",
@@ -439,7 +448,7 @@ try {
 		dryRun: false,
 		requestedEntityKind: "appointment",
 	});
-	console.log(
+	cliOut(
 		`       записи: создано ${schedRun.run.loadedRows}, карантин ${schedRun.run.quarantinedRows}`,
 	);
 
@@ -463,7 +472,7 @@ try {
 			day: "2-digit",
 			month: "2-digit",
 		}).format(value);
-	console.log(
+	cliOut(
 		`       в базе (мск): ${loadedAppointments.map((a) => `${asMoscow(a.startsAt)}→${asMoscow(a.endsAt)} ${a.status}`).join(" | ")}`,
 	);
 
@@ -515,7 +524,7 @@ try {
 		loadedAppointments.map((a) => asMoscow(a.startsAt)).join(", "),
 	);
 
-	console.log("--- 11. Приёмы с клинической частью");
+	cliOut("--- 11. Приёмы с клинической частью");
 	const visitsCsv = [
 		"Код;Пациент;Дата;Жалобы;Анамнез;Диагноз;План лечения",
 		"7001;101;12.03.2019 14:30;Боль при накусывании на 16;Лечение 2 года назад;K04.0 Пульпит;Эндодонтическое лечение 16",
@@ -537,10 +546,10 @@ try {
 		})
 		.from(visits)
 		.where(eq(visits.organizationId, ORG));
-	console.log(
+	cliOut(
 		`       приёмы: создано ${visitRun.run.loadedRows}, карантин ${visitRun.run.quarantinedRows}`,
 	);
-	console.log(
+	cliOut(
 		`       в базе: ${loadedVisits.map((v) => `${v.status}/${v.diagnosis}`).join(" | ")}`,
 	);
 	same("создано 2 приёма", loadedVisits.length, 2);
@@ -567,7 +576,7 @@ try {
 			.join(", "),
 	);
 
-	console.log(
+	cliOut(
 		"--- 12. Изоляция строки: отказ базы по одной строке не уносит остальные",
 	);
 	/**
@@ -622,7 +631,7 @@ try {
 			dryRun: false,
 			requestedEntityKind: "payment",
 		});
-		console.log(
+		cliOut(
 			`       создано ${isolationRun.run.loadedRows}, карантин ${isolationRun.run.quarantinedRows}, отказов ${isolationRun.run.sourceRows - isolationRun.run.loadedRows - isolationRun.run.duplicateRows}`,
 		);
 
@@ -633,7 +642,7 @@ try {
 		const amounts = isolationPayments
 			.map((p) => p.amountRub)
 			.sort((a, b) => a - b);
-		console.log(`       суммы в базе: ${amounts.join(", ")}`);
+		cliOut(`       суммы в базе: ${amounts.join(", ")}`);
 
 		// Две исправные строки обязаны загрузиться, несмотря на отказ третьей.
 		check(
@@ -649,7 +658,7 @@ try {
 
 		const isolationQ = await listQuarantine(ORG, isolationRun.run.runId, 20);
 		for (const q of isolationQ) {
-			console.log(
+			cliOut(
 				`       строка ${q.sourceRowNumber} [${q.reason}]: ${q.message.slice(0, 100)}`,
 			);
 		}
@@ -672,7 +681,7 @@ try {
 		);
 	}
 
-	console.log("--- 13. DBF в cp866 через тот же движок");
+	cliOut("--- 13. DBF в cp866 через тот же движок");
 	const dbf = buildDbfFile(
 		[
 			{ name: "NKART", type: "I", length: 4 },
@@ -707,7 +716,7 @@ try {
 				sql`${patients.fullName} like 'Морозов%' or ${patients.fullName} like 'Волкова%'`,
 			),
 		);
-	console.log(
+	cliOut(
 		`       из DBF: ${dbfPatients.map((p) => p.fullName).join(", ")}`,
 	);
 	same(
@@ -716,7 +725,7 @@ try {
 		["Волкова Анна Петровна", "Морозов Сергей Иванович"],
 	);
 } finally {
-	console.log("\n--- Уборка тестовых данных");
+	cliOut("\n--- Уборка тестовых данных");
 	// Порядок удаления от зависимых к тем, на кого ссылаются.
 	await db.delete(payments).where(eq(payments.organizationId, ORG));
 	await db.delete(visits).where(eq(visits.organizationId, ORG));
@@ -746,8 +755,8 @@ try {
 	await db.delete(migrationRuns).where(eq(migrationRuns.organizationId, ORG));
 	await db.delete(patients).where(eq(patients.organizationId, ORG));
 	await db.delete(organizations).where(eq(organizations.id, ORG));
-	console.log("Убрано.");
-	console.log(`\n${pass} passed, ${fail} failed`);
+	cliOut("Убрано.");
+	cliOut(`\n${pass} passed, ${fail} failed`);
 	await pool.end();
 	process.exit(fail ? 1 : 0);
 }

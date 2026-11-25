@@ -20,6 +20,6 @@ runMigrations({ dryRun, baseline, strict, mode })
 		}
 	})
 	.catch((err) => {
-		console.error("[migrate] FATAL:", (err as Error).message);
+		process.stderr.write(`[migrate] FATAL: ${(err as Error).message}\n`);
 		process.exit(1);
 	});

@@ -298,6 +298,7 @@ reference_repos/
 
 /scripts/commit_*.txt
 /scripts/*.txt
+scripts/.auth_tokens_cache.json
 
 # Large binary backups
 *.tar.gz

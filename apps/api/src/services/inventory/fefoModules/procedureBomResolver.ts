@@ -5,8 +5,9 @@
  * Ликвидирован Split-Brain каскад устаревших таблиц.
  */
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import {
+	procedureMaterialRules,
 	procedureTechCardItems,
 	procedureTechCards,
 } from "../../../db/schema/inventory.js";
@@ -105,14 +106,55 @@ export async function findDbProcedureItems(
 			.from(procedureTechCardItems)
 			.where(eq(procedureTechCardItems.techCardId, techCard.id));
 
-		return cardItems.map((ci) => ({
-			inventoryItemId: ci.inventoryItemId,
-			quantity: Number(ci.quantity) * serviceQuantity,
-			unit: ci.unit ?? "pcs",
-			isMdlpRequired: Boolean(ci.isMdlpRequired),
-			alternativeInventoryItemId: ci.alternativeInventoryItemId ?? null,
-			isOptional: Boolean(ci.isOptional),
-		}));
+		if (cardItems.length > 0) {
+			return cardItems.map((ci) => ({
+				inventoryItemId: ci.inventoryItemId,
+				quantity: Number(ci.quantity) * serviceQuantity,
+				unit: ci.unit ?? "pcs",
+				isMdlpRequired: Boolean(ci.isMdlpRequired),
+				alternativeInventoryItemId: ci.alternativeInventoryItemId ?? null,
+				isOptional: Boolean(ci.isOptional),
+			}));
+		}
+	}
+
+	const rulesOrgCond = or(
+		eq(procedureMaterialRules.organizationId, organizationId),
+		isNull(procedureMaterialRules.organizationId),
+	);
+	const rulesTargetCond = isUuid
+		? or(
+				eq(procedureMaterialRules.serviceId, serviceId),
+				...candidateCodes.map((c) => eq(procedureMaterialRules.serviceCode, c)),
+			)
+		: candidateCodes.length > 0
+			? or(...candidateCodes.map((c) => eq(procedureMaterialRules.serviceCode, c)))
+			: eq(procedureMaterialRules.serviceCode, serviceId);
+
+	const materialRules = await tx
+		.select()
+		.from(procedureMaterialRules)
+		.where(and(rulesOrgCond, rulesTargetCond));
+
+	if (materialRules.length > 0) {
+		const mapped: DbProcedureItem[] = [];
+		for (const rule of materialRules) {
+			const itemId = rule.inventoryItemId ?? rule.materialItemId;
+			if (!itemId) continue;
+			const baseQty = Number(rule.quantityToDeduct ?? rule.requiredQty ?? 0);
+			mapped.push({
+				inventoryItemId: itemId,
+				quantity: baseQty * serviceQuantity,
+				unit: rule.unit ?? "pcs",
+				...(rule.materialName ? { name: rule.materialName } : {}),
+				isMdlpRequired: Boolean(rule.isMdlpRequired),
+				alternativeInventoryItemId: null,
+				isOptional: false,
+			});
+		}
+		if (mapped.length > 0) {
+			return mapped;
+		}
 	}
 
 	return [];
@@ -128,7 +170,7 @@ export async function resolveItemsToDeductForProcedure(
 	const dbItems = await findDbProcedureItems(tx, organizationId, serviceId, meta, serviceQuantity);
 
 	if (dbItems.length > 0) {
-		return dbItems;
+		return dbItems.filter((item) => item.quantity > 0);
 	}
 
 	return resolveDefaultFallbackItems(tx, organizationId, serviceId, meta, serviceQuantity);

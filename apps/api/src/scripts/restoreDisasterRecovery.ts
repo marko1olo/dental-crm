@@ -61,7 +61,7 @@ export interface DisasterRecoveryResult {
 export async function runDisasterRecovery(options: DisasterRecoveryOptions): Promise<DisasterRecoveryResult> {
 	const startTime = Date.now();
 	const log = (msg: string) => {
-		if (!options.silent) console.log(msg);
+		if (!options.silent) process.stdout.write(`${msg}\n`);
 	};
 
 	log("\n================================================================================");
@@ -363,12 +363,12 @@ async function askQuestion(promptText: string): Promise<string> {
 export async function main(): Promise<void> {
 	let mnemonic = process.env.DENTE_RECOVERY_MNEMONIC || process.argv[2];
 	if (!mnemonic && process.stdin.isTTY) {
-		console.log("\n[DENTE RECOVERY WIZARD] Введите 12 слов мнемоники из сейфа:");
+		process.stdout.write("\n[DENTE RECOVERY WIZARD] Введите 12 слов мнемоники из сейфа:\n");
 		mnemonic = await askQuestion("> ");
 	}
 
 	if (!mnemonic) {
-		console.error("ОШИБКА: Мнемоника не передана. Использование: npx tsx restoreDisasterRecovery.ts \"word1 ... word12\"");
+		process.stderr.write("ОШИБКА: Мнемоника не передана. Использование: npx tsx restoreDisasterRecovery.ts \"word1 ... word12\"\n");
 		process.exit(1);
 	}
 
@@ -384,7 +384,7 @@ export async function main(): Promise<void> {
 			process.exit(1);
 		}
 	} catch (error) {
-		console.error("\n❌ СБОЙ ВОССТАНОВЛЕНИЯ:", error instanceof Error ? error.message : String(error));
+		process.stderr.write(`\n❌ СБОЙ ВОССТАНОВЛЕНИЯ: ${error instanceof Error ? error.message : String(error)}\n`);
 		process.exit(1);
 	}
 }

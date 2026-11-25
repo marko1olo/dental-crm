@@ -12,6 +12,7 @@
  *   — расход памяти не растёт пропорционально размеру файла;
  *   — прогон, брошенный «упавшим» процессом, подбирается и доводится до конца.
  */
+import { format } from "node:util";
 import { and, eq, sql } from "drizzle-orm";
 import { db, pool } from "../db/client.js";
 import {
@@ -33,16 +34,24 @@ import {
 import { createDenteApiApp } from "../server.js";
 import { signToken } from "../utils/cryptoHelper.js";
 
+function cliOut(...args: unknown[]): void {
+	process.stdout.write(`${format(...args)}\n`);
+}
+
+function cliErr(...args: unknown[]): void {
+	process.stderr.write(`${format(...args)}\n`);
+}
+
 let pass = 0;
 let fail = 0;
 
 function check(label: string, condition: boolean, detail = ""): void {
 	if (condition) {
 		pass += 1;
-		console.log(`  ok   ${label}${detail ? ` — ${detail}` : ""}`);
+		cliOut(`  ok   ${label}${detail ? ` — ${detail}` : ""}`);
 	} else {
 		fail += 1;
-		console.log(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
+		cliOut(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
 	}
 }
 
@@ -115,7 +124,7 @@ const PATRONYMICS = [
 	"Владимировна",
 ];
 
-console.log(
+cliOut(
 	`\n=== HTTP-конвейер переноса: ${ROWS} записей DBF через живой API ===\n`,
 );
 
@@ -139,8 +148,8 @@ const baseUrl =
 	typeof address === "object" && address !== null
 		? `http://127.0.0.1:${address.port}`
 		: "";
-console.log(`Сервер поднят: ${baseUrl}`);
-console.log(`Организация: ${ORG}\n`);
+cliOut(`Сервер поднят: ${baseUrl}`);
+cliOut(`Организация: ${ORG}\n`);
 
 /**
  * Токены подписываются тем же секретом, что проверяет сервер: проверка обязана
@@ -189,7 +198,7 @@ async function api(
 
 try {
 	// =====================================================================
-	console.log("--- 1. Готовим DBF на 10 000 записей в cp866");
+	cliOut("--- 1. Готовим DBF на 10 000 записей в cp866");
 	const memBeforeBuild = heapUsedMb();
 	const dbf = buildDbfFile(
 		[
@@ -243,15 +252,15 @@ try {
 		}),
 		{ languageDriver: 0x65, encoding: "ibm866" },
 	);
-	console.log(
+	cliOut(
 		`       размер файла: ${(dbf.byteLength / (1024 * 1024)).toFixed(2)} МБ`,
 	);
-	console.log(
+	cliOut(
 		`       память после сборки образца: heap ${heapUsedMb()} МБ (было ${memBeforeBuild}), rss ${rssMb()} МБ`,
 	);
 
 	// =====================================================================
-	console.log("--- 2. POST /api/migration/upload — заливка потоком");
+	cliOut("--- 2. POST /api/migration/upload — заливка потоком");
 	const uploadStarted = Date.now();
 	const uploadResponse = await fetch(`${baseUrl}/api/migration/upload`, {
 		method: "POST",
@@ -277,12 +286,12 @@ try {
 		(source?.columns as string[] | undefined)?.length,
 		6,
 	);
-	console.log(
+	cliOut(
 		`       заливка заняла ${uploadMs} мс, память heap ${heapUsedMb()} МБ, rss ${rssMb()} МБ`,
 	);
 
 	// =====================================================================
-	console.log("--- 3. POST /:runId/map — сопоставление колонок");
+	cliOut("--- 3. POST /:runId/map — сопоставление колонок");
 	const mapResult = await api("POST", `/api/migration/${runId}/map`, {
 		allowLlm: false,
 		entityKind: "patient",
@@ -293,7 +302,7 @@ try {
 		sourceColumn: string;
 		targetField: string;
 	}>;
-	console.log(
+	cliOut(
 		`       карта: ${mappedColumns.map((c) => `${c.sourceColumn}→${c.targetField}`).join(", ")}`,
 	);
 	same("сущность определена как пациенты", mapping?.entityKind, "patient");
@@ -311,7 +320,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 4. POST /:runId/execute — обязан вернуть 202 немедленно");
+	cliOut("--- 4. POST /:runId/execute — обязан вернуть 202 немедленно");
 	const executeStarted = Date.now();
 	const executeResult = await api("POST", `/api/migration/${runId}/execute`, {
 		dryRun: false,
@@ -326,7 +335,7 @@ try {
 		executeMs < 2000,
 		`${executeMs} мс`,
 	);
-	console.log(
+	cliOut(
 		`       ответ за ${executeMs} мс: ${String(executeResult.body.message)}`,
 	);
 
@@ -352,7 +361,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 5. Фоновый воркер выполняет работу");
+	cliOut("--- 5. Фоновый воркер выполняет работу");
 	const workStarted = Date.now();
 	let peakHeap = heapUsedMb();
 	let peakRss = rssMb();
@@ -365,10 +374,10 @@ try {
 	clearInterval(memoryTimer);
 	const workMs = Date.now() - workStarted;
 	same("воркер выполнил один прогон", drained, 1);
-	console.log(
+	cliOut(
 		`       обработка ${ROWS} строк заняла ${(workMs / 1000).toFixed(1)} с`,
 	);
-	console.log(`       пик памяти: heap ${peakHeap} МБ, rss ${peakRss} МБ`);
+	cliOut(`       пик памяти: heap ${peakHeap} МБ, rss ${peakRss} МБ`);
 
 	/**
 	 * Порог памяти. Файл ~1,3 МБ, но дело не в нём: если бы стейджинг держал все
@@ -379,20 +388,20 @@ try {
 	check("расход памяти не взлетел", peakHeap < 700, `пик heap ${peakHeap} МБ`);
 
 	// =====================================================================
-	console.log("--- 6. GET /:runId — состояние прогона");
+	cliOut("--- 6. GET /:runId — состояние прогона");
 	const statusResult = await api("GET", `/api/migration/${runId}`);
 	same("status вернул 200", statusResult.status, 200);
 	const run = statusResult.body.run as Record<string, unknown>;
 	const counters = run.counters as Record<string, number>;
 	const progress = run.progress as Record<string, number>;
-	console.log(
+	cliOut(
 		`       статус ${String(run.status)}, фаза «${String(run.phase)}»`,
 	);
-	console.log(
+	cliOut(
 		`       счётчики: источник ${counters.sourceRows}, уложено ${counters.stagedRows}, создано ${counters.loadedRows}, ` +
 			`дублей ${counters.duplicateRows}, карантин ${counters.quarantinedRows}`,
 	);
-	console.log(
+	cliOut(
 		`       прогресс: ${progress.done}/${progress.total} (${progress.percent}%)`,
 	);
 
@@ -407,7 +416,7 @@ try {
 	same("владелец освобождён", (run.worker as Record<string, unknown>).id, null);
 
 	// =====================================================================
-	console.log("--- 7. Пациенты в боевой таблице");
+	cliOut("--- 7. Пациенты в боевой таблице");
 	// Имя 5000-й строки считаем той же формулой, что и при сборке образца.
 	const index5000 = 4999;
 	const female5000 = index5000 % 2 === 1;
@@ -460,7 +469,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 8. GET /:runId/reconciliation — акт сверки");
+	cliOut("--- 8. GET /:runId/reconciliation — акт сверки");
 	const reconResult = await api(
 		"GET",
 		`/api/migration/${runId}/reconciliation`,
@@ -473,7 +482,7 @@ try {
 		passed: boolean;
 	}>;
 	for (const item of checks) {
-		console.log(
+		cliOut(
 			`       ${item.passed ? "[+]" : "[-]"} ${item.title}: ожидалось ${item.expected}, получено ${item.actual}`,
 		);
 	}
@@ -510,7 +519,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 9. Идемпотентность через HTTP: тот же файл второй раз");
+	cliOut("--- 9. Идемпотентность через HTTP: тот же файл второй раз");
 	const secondUpload = await fetch(`${baseUrl}/api/migration/upload`, {
 		method: "POST",
 		headers: {
@@ -554,7 +563,7 @@ try {
 	const secondStatus = await api("GET", `/api/migration/${secondRunId}`);
 	const secondCounters = (secondStatus.body.run as Record<string, unknown>)
 		.counters as Record<string, number>;
-	console.log(
+	cliOut(
 		`       второй прогон: создано ${secondCounters.loadedRows}, обновлено ${secondCounters.updatedRows}, дублей ${secondCounters.duplicateRows}`,
 	);
 	same("второй прогон ничего не создал", secondCounters.loadedRows, 0);
@@ -567,7 +576,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 10. Возобновление после падения процесса");
+	cliOut("--- 10. Возобновление после падения процесса");
 	/**
 	 * Симулируем смерть владельца: третий прогон ставится в очередь, воркер
 	 * берёт его и «умирает» на середине — мы вручную оставляем половину строк в
@@ -636,10 +645,10 @@ try {
 	const resumeRun = resumeStatus.body.run as Record<string, unknown>;
 	const resumeWorker = resumeRun.worker as Record<string, unknown>;
 	const resumeCounters = resumeRun.counters as Record<string, number>;
-	console.log(
+	cliOut(
 		`       статус после возобновления: ${String(resumeRun.status)}, подборов ${String(resumeWorker.resumeCount)}`,
 	);
-	console.log(`       создано ${resumeCounters.loadedRows} из 200`);
+	cliOut(`       создано ${resumeCounters.loadedRows} из 200`);
 	check(
 		"прогон доведён до конца",
 		resumeRun.status === "completed" ||
@@ -654,7 +663,7 @@ try {
 	same("загружены все 200 строк", resumeCounters.loadedRows, 200);
 
 	// =====================================================================
-	console.log("--- 11. Формат ошибок на несуществующем прогоне");
+	cliOut("--- 11. Формат ошибок на несуществующем прогоне");
 	const missing = await api(
 		"GET",
 		"/api/migration/00000000-0000-4000-8000-000000000000",
@@ -676,12 +685,12 @@ try {
 	 * «0 passed, 0 failed» и завершался успехом — то есть врал.
 	 */
 	fail += 1;
-	console.error("\n!!! Проверка прервана исключением:");
-	console.error(
+	cliErr("\n!!! Проверка прервана исключением:");
+	cliErr(
 		error instanceof Error ? (error.stack ?? error.message) : String(error),
 	);
 } finally {
-	console.log("\n--- Уборка");
+	cliOut("\n--- Уборка");
 	await app.close().catch(() => undefined);
 
 	await db
@@ -711,9 +720,9 @@ try {
 	]);
 	await db.delete(migrationRuns).where(eq(migrationRuns.organizationId, ORG));
 	await db.delete(organizations).where(eq(organizations.id, ORG));
-	console.log("Убрано.");
+	cliOut("Убрано.");
 
-	console.log(`\n${pass} passed, ${fail} failed`);
+	cliOut(`\n${pass} passed, ${fail} failed`);
 	await pool.end();
 	process.exit(fail ? 1 : 0);
 }

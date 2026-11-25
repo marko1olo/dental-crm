@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { eq, sql } from "drizzle-orm";
 import { withTenantCtx } from "../db/rls.js";
 import {
@@ -167,7 +168,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				revenues AS (
 					SELECT 
 						i.patient_id,
-						i.total_amount_rub,
+						i.total_price_kopecks,
 						EXTRACT(day FROM (i.created_at - p.created_at)) as days_since_registration
 					FROM patient_invoices i
 					JOIN patients p ON p.id = i.patient_id
@@ -175,8 +176,8 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				)
 				SELECT 
 					c.cohort,
-					COALESCE(SUM(CASE WHEN r.days_since_registration <= 30 THEN r.total_amount_rub ELSE 0 END), 0) as month_1_revenue,
-					COALESCE(SUM(CASE WHEN r.days_since_registration <= 365 THEN r.total_amount_rub ELSE 0 END), 0) as month_12_revenue
+					COALESCE(SUM(CASE WHEN r.days_since_registration <= 30 THEN r.total_price_kopecks ELSE 0 END), 0) as month_1_revenue,
+					COALESCE(SUM(CASE WHEN r.days_since_registration <= 365 THEN r.total_price_kopecks ELSE 0 END), 0) as month_12_revenue
 				FROM cohorts c
 				LEFT JOIN revenues r ON c.patient_id = r.patient_id
 				GROUP BY c.cohort
@@ -186,8 +187,8 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 
 			const cohortLtvJson = rawLtv.rows.map((row) => ({
 				cohort: row.cohort ?? "",
-				"Month 1": Number(row.month_1_revenue ?? 0),
-				"Month 12": Number(row.month_12_revenue ?? 0),
+				"Month 1": kopecksToRubles(toCount(row.month_1_revenue)),
+				"Month 12": kopecksToRubles(toCount(row.month_12_revenue)),
 			}));
 
 			// 2. Treatment Plan Funnel (Real Implementation)
@@ -263,7 +264,7 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				WITH doctor_revenue AS (
 					SELECT
 						a.doctor_user_id AS doctor_id,
-						SUM(i.total_amount_rub) AS revenue
+						SUM(i.total_price_kopecks) AS revenue
 					FROM appointments a
 					JOIN visits v ON v.appointment_id = a.id
 					JOIN patient_invoices i ON i.visit_id = v.id
@@ -293,8 +294,11 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 				LIMIT 5
 			`);
 
-			const doctorProfitabilityJson = doctorProf.rows.map(
-				(row) => buildDoctorProfitabilityRow(row),
+			const doctorProfitabilityJson = doctorProf.rows.map((row) =>
+				buildDoctorProfitabilityRow({
+					...row,
+					revenue: kopecksToRubles(toCount(row.revenue)),
+				}),
 			);
 
 			// Insert new snapshot

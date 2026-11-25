@@ -4,7 +4,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { recordAuditEvent } from "../../audit.js";
-import { db, type TenantDb } from "../../db/client.js";
+import { type TenantDb } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	getDocumentById,
 	issueGeneratedDocumentInDb,
@@ -242,7 +243,7 @@ export async function register(app: FastifyInstance) {
 		const codeHash = await hashCredential(otpCode);
 		const expiresAt = new Date(now.getTime() + 180_000); // 3 минуты TTL
 
-		const sendOutcome = await db.transaction(async (tx) => {
+		const sendOutcome = await withTenantCtx(orgId, async (tx) => {
 			const [recentOtp] = await tx
 				.select({ createdAt: schema.portalOtpCodes.createdAt })
 				.from(schema.portalOtpCodes)
@@ -335,7 +336,7 @@ export async function register(app: FastifyInstance) {
 		const enteredCode = code.trim();
 		const now = new Date();
 
-		const verifyOutcome = await db.transaction((tx) =>
+		const verifyOutcome = await withTenantCtx(orgId, (tx) =>
 			verifyAndConsumePepOtpInTx(tx, orgId, patientId, enteredCode, now),
 		);
 
@@ -490,7 +491,7 @@ export async function register(app: FastifyInstance) {
 
 		// Неделимая ACID транзакция (Мандат 8bo): блокировка строки документа, верификация OTP,
 		// атомарное сохранение подписи, вставка в documentSignatures, синхронизация согласия и аудит-событие
-		const txResult = await db.transaction(async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
 			const [lockedDoc] = await tx
 				.select()
 				.from(schema.generatedDocuments)

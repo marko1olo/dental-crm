@@ -186,8 +186,8 @@ export async function handleUniversalLogin(
 			}
 			user = lookupUser.row ?? null;
 
-			// 4. Если пользователь не найден — поиск по loginId или email организации
-			if (!user) {
+			// 4. Если пользователь не найден (и это не демо-вход пользователя) — поиск по loginId или email организации
+			if (!user && !isDemoUserLogin) {
 				const lookupOrg = await readUnderBypass((tx) =>
 					tx
 						.select()

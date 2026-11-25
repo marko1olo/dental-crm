@@ -294,6 +294,14 @@ export const fiscalReceiptDetailsSchema = z.object({
 	quantityMeasure: z.number().int().min(0).max(255).nullable().optional(),
 	/** Тег 1215: Сумма зачета ранее внесенного аванса / предоплаты */
 	advancePaymentRub: nonNegativeMoneyRubSchema.nullable().optional(),
+	/** Сплит-компоненты оплаты в копейках (для финансовой сводки и аналитики ДДС) */
+	cashKopecks: z.number().int().nonnegative().nullable().optional(),
+	cardKopecks: z.number().int().nonnegative().nullable().optional(),
+	sbpKopecks: z.number().int().nonnegative().nullable().optional(),
+	electronicKopecks: z.number().int().nonnegative().nullable().optional(),
+	advanceOffsetKopecks: z.number().int().nonnegative().nullable().optional(),
+	depositKopecks: z.number().int().nonnegative().nullable().optional(),
+	dmsKopecks: z.number().int().nonnegative().nullable().optional(),
 }).strict();
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
 

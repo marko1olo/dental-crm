@@ -20,6 +20,7 @@ import { mkdtemp, open, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { format } from "node:util";
 import { eq, sql } from "drizzle-orm";
 import { db, pool } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
@@ -53,16 +54,24 @@ import {
 	encodeSingleByte,
 } from "../migration/tests/fixtures.js";
 
+function cliOut(...args: unknown[]): void {
+	process.stdout.write(`${format(...args)}\n`);
+}
+
+function cliErr(...args: unknown[]): void {
+	process.stderr.write(`${format(...args)}\n`);
+}
+
 let pass = 0;
 let fail = 0;
 
 function check(label: string, condition: boolean, detail = ""): void {
 	if (condition) {
 		pass += 1;
-		console.log(`  ok   ${label}${detail ? ` — ${detail}` : ""}`);
+		cliOut(`  ok   ${label}${detail ? ` — ${detail}` : ""}`);
 	} else {
 		fail += 1;
-		console.log(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
+		cliOut(`  FAIL ${label}${detail ? ` — ${detail}` : ""}`);
 	}
 }
 
@@ -256,7 +265,7 @@ function buildOneCHeader(): Buffer {
 }
 // ---------------------------------------------------------------------------
 const workDir = await mkdtemp(path.join(tmpdir(), "dente-formats-"));
-console.log(
+cliOut(
 	`\n=== Настоящие форматы баз старых систем ===\nРабочий каталог: ${workDir}\n`,
 );
 
@@ -268,7 +277,7 @@ await withTenantCtx(ORG, async (tx) => {
 });
 try {
 	// =====================================================================
-	console.log("--- 1. DBF FoxPro в cp866 с memo-файлом .FPT (Инфодент)");
+	cliOut("--- 1. DBF FoxPro в cp866 с memo-файлом .FPT (Инфодент)");
 	/**
 	 * Главная проверка: memo-поле хранит НОМЕР БЛОКА, а не текст. Без чтения .fpt
 	 * в карточку пациента попала бы строка «1» вместо анамнеза.
@@ -369,7 +378,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 2. DBF dBASE III с memo .DBT (терминатор 0x1A, длины нет)");
+	cliOut("--- 2. DBF dBASE III с memo .DBT (терминатор 0x1A, длины нет)");
 	const dbtTexts = [
 		"Хронический пародонтит средней степени тяжести.",
 		"Состояние после имплантации 36 зуба.",
@@ -417,7 +426,7 @@ try {
 		(dbase3Rows[1]?.[2] ?? "").slice(0, 50),
 	);
 	// =====================================================================
-	console.log("--- 3. База SQLite с несколькими таблицами");
+	cliOut("--- 3. База SQLite с несколькими таблицами");
 	const sqlitePath = path.join(workDir, "clinic.db");
 	{
 		const database = new DatabaseSync(sqlitePath);
@@ -469,7 +478,7 @@ try {
 	);
 	const inspection = inspectSqlite(sqlitePath);
 	const ranked = rankTablesByRelevance(inspection.tables);
-	console.log(
+	cliOut(
 		`       таблицы: ${inspection.tables.map((t) => `${t.name}(${t.rowCount})`).join(", ")}`,
 	);
 	same(
@@ -509,7 +518,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 4. Снимок DICOM с кириллицей в ISO_IR 144");
+	cliOut("--- 4. Снимок DICOM с кириллицей в ISO_IR 144");
 	const dicomBuffer = buildDicomFile({
 		patientName: "Иванов^Иван^Иванович",
 		patientId: "101",
@@ -531,7 +540,7 @@ try {
 	);
 
 	const dicom = await readDicomMetadata(dicomPath);
-	console.log(
+	cliOut(
 		`       пациент: ${dicom.patientName}, ДР ${dicom.patientBirthDate}, ${dicom.modality}, ${dicom.manufacturer}`,
 	);
 	/**
@@ -559,7 +568,7 @@ try {
 	same("толщина среза", dicom.sliceThickness, "0.25");
 
 	// =====================================================================
-	console.log("--- 5. Закрытые форматы: опознание и инструкция вместо выдумки");
+	cliOut("--- 5. Закрытые форматы: опознание и инструкция вместо выдумки");
 	const closedFormats: Array<{
 		name: string;
 		buffer: Buffer;
@@ -609,22 +618,22 @@ try {
 			(format.guidance ?? "нет").slice(0, 90),
 		);
 		if (format.version)
-			console.log(`       ${item.name}: ${format.title}, ${format.version}`);
+			cliOut(`       ${item.name}: ${format.title}, ${format.version}`);
 	}
 
 	// =====================================================================
-	console.log("--- 6. Поиск по каталогу: что нашлось и что с этим делать");
+	cliOut("--- 6. Поиск по каталогу: что нашлось и что с этим делать");
 	const discovery = await discoverLocalSources({
 		roots: [workDir],
 		maxDepth: 2,
 		timeBudgetMs: 20_000,
 	});
 	const summary = summarizeDiscovery(discovery);
-	console.log(
+	cliOut(
 		`       просмотрено файлов: ${discovery.filesScanned}, найдено источников: ${discovery.sources.length}`,
 	);
 	for (const source of discovery.sources) {
-		console.log(
+		cliOut(
 			`       ${source.format.readable ? "[читаем]  " : "[выгрузка]"} ${source.fileName}: ${source.format.title}${
 				source.details.length > 0 ? ` — ${source.details[0]}` : ""
 			}`,
@@ -669,7 +678,7 @@ try {
 	);
 
 	// =====================================================================
-	console.log("--- 7. Сквозной перенос: DBF с memo → боевая база");
+	cliOut("--- 7. Сквозной перенос: DBF с memo → боевая база");
 	const migration = await runMigration({
 		organizationId: ORG,
 		sourceName: "Инфодент PACIENT.DBF",
@@ -680,7 +689,7 @@ try {
 		mappingOverrides: [],
 		requestedEntityKind: "patient",
 	});
-	console.log(
+	cliOut(
 		`       создано ${migration.run.loadedRows}, карантин ${migration.run.quarantinedRows}`,
 	);
 	const loaded = await withTenantCtx(ORG, (tx) =>
@@ -712,7 +721,7 @@ try {
 	);
 	void notes;
 
-	console.log("--- 8. Сквозной перенос: SQLite → боевая база");
+	cliOut("--- 8. Сквозной перенос: SQLite → боевая база");
 	const sqliteBytes = await readFile(sqlitePath);
 	const sqliteMigration = await runMigration({
 		organizationId: ORG,
@@ -724,7 +733,7 @@ try {
 		mappingOverrides: [],
 		requestedEntityKind: "patient",
 	});
-	console.log(
+	cliOut(
 		`       создано ${sqliteMigration.run.loadedRows}, карантин ${sqliteMigration.run.quarantinedRows}`,
 	);
 	const afterSqlite = await withTenantCtx(ORG, (tx) =>
@@ -748,12 +757,12 @@ try {
 	);
 } catch (error) {
 	fail += 1;
-	console.error("\n!!! Проверка прервана исключением:");
-	console.error(
+	cliErr("\n!!! Проверка прервана исключением:");
+	cliErr(
 		error instanceof Error ? (error.stack ?? error.message) : String(error),
 	);
 } finally {
-	console.log("\n--- Уборка");
+	cliOut("\n--- Уборка");
 	await withTenantCtx(ORG, async (tx) => {
 		await tx
 			.delete(patients)
@@ -784,11 +793,11 @@ try {
 		await tx.delete(organizations).where(eq(organizations.id, ORG));
 	}).catch(() => undefined);
 	await rm(workDir, { recursive: true, force: true });
-	console.log("Убрано.");
+	cliOut("Убрано.");
 
-	console.log(`\n${pass} passed, ${fail} failed`);
+	cliOut(`\n${pass} passed, ${fail} failed`);
 	if (pass === 0)
-		console.error("Ни одна проверка не выполнена — считаем это провалом.");
+		cliErr("Ни одна проверка не выполнена — считаем это провалом.");
 	await pool.end();
 	process.exit(fail > 0 || pass === 0 ? 1 : 0);
 }
