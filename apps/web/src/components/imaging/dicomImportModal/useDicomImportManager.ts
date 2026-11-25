@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { showToast } from "../../GlobalToast.js";
+import { denteClinicalReadHeaders, denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import type { PendingStudyItem, DicomImportTabType, DicomDaemonStatus } from "./types";
 
 export function useDicomImportManager(isOpen: boolean, onStudyBound?: () => void) {
@@ -18,8 +19,8 @@ export function useDicomImportManager(isOpen: boolean, onStudyBound?: () => void
 		try {
 			setIsLoading(true);
 			const [studiesRes, statusRes] = await Promise.all([
-				fetch("/api/imaging/daemon/pending"),
-				fetch("/api/imaging/daemon/status"),
+				fetch("/api/imaging/daemon/pending", { headers: denteClinicalReadHeaders() }),
+				fetch("/api/imaging/daemon/status", { headers: denteClinicalReadHeaders() }),
 			]);
 			if (studiesRes.ok) {
 				const sData = await studiesRes.json();
@@ -49,7 +50,7 @@ export function useDicomImportManager(isOpen: boolean, onStudyBound?: () => void
 			setIsScanning(true);
 			const res = await fetch("/api/imaging/daemon/scan-now", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: { "Content-Type": "application/json", ...denteClinicalMutationHeaders() },
 			});
 			if (!res.ok) throw new Error("HTTP error " + res.status);
 			const data = await res.json();
@@ -71,7 +72,7 @@ export function useDicomImportManager(isOpen: boolean, onStudyBound?: () => void
 			setActionPendingId(studyId);
 			const res = await fetch("/api/imaging/daemon/bind-patient", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: { "Content-Type": "application/json", ...denteClinicalMutationHeaders() },
 				body: JSON.stringify({ studyId, patientId }),
 			});
 			if (!res.ok) throw new Error("HTTP error " + res.status);
@@ -95,7 +96,7 @@ export function useDicomImportManager(isOpen: boolean, onStudyBound?: () => void
 			setActionPendingId(studyId);
 			const res = await fetch("/api/imaging/daemon/dismiss", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: { "Content-Type": "application/json", ...denteClinicalMutationHeaders() },
 				body: JSON.stringify({ studyId }),
 			});
 			if (!res.ok) throw new Error("HTTP error " + res.status);

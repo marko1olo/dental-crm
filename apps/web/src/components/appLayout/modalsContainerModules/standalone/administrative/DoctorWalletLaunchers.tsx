@@ -19,6 +19,7 @@ import {
 	type CanonicalPayrollApiResponse,
 } from "../../../../finance/doctorPayoutWallet/canonicalPayrollAdapter";
 import { showToast } from "../../../../GlobalToast";
+import { getDenteAuthHeaders } from "../../../../../lib/denteRequestHeaders";
 
 const DoctorPayoutMobileWallet = lazyWithRetry(() =>
 	import("../../../../finance/doctorPayoutWallet/DoctorPayoutMobileWallet").then((m) => ({
@@ -66,7 +67,7 @@ export const DoctorWalletStandaloneWorkspace: React.FC<{ readonly onClose?: () =
 			const { from, to } = getMonthBounds(selectedMonth);
 			const startDate = from.slice(0, 10);
 			const endDate = to.slice(0, 10);
-			const res = await fetch(`/api/v1/payroll/calculations?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+			const res = await fetch(`/api/v1/payroll/calculations?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, { headers: getDenteAuthHeaders() });
 			if (!res.ok) throw new Error("Payroll calculations api error");
 			const rawData = (await res.json()) as CanonicalPayrollApiResponse;
 			const data = canonicalPayrollToWalletReport(rawData, { from: startDate, to: endDate });

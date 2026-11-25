@@ -4,7 +4,7 @@ import { getLocalTasks } from "../clinicalTasksPresets";
 import type { ClinicalTask, CustomTaskType } from "../clinicalTasksTypes";
 import { getLoadFailureMessage } from "./clinicalPhaseTransitionEngine";
 
-export function useClinicalTasksFetch(patientId: string | null | undefined, readHeaders: () => Record<string, string>) {
+export function useClinicalTasksFetch(patientId: string | null | undefined, headers: () => Record<string, string>) {
 	const isMountedRef = useRef(true);
 	useEffect(() => {
 		isMountedRef.current = true;
@@ -28,9 +28,9 @@ export function useClinicalTasksFetch(patientId: string | null | undefined, read
 			let response: Response;
 			let customTypesResponse: Response | null = null;
 			try {
-				const headers = readHeaders();
-				response = await fetch(`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`, { headers });
-				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers }).catch(() => null);
+				const reqHeaders = headers();
+				response = await fetch(`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`, { headers: reqHeaders });
+				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: reqHeaders }).catch(() => null);
 			} catch {
 				if (!isMountedRef.current) return;
 				const local = getLocalTasks(patientId);
@@ -60,7 +60,7 @@ export function useClinicalTasksFetch(patientId: string | null | undefined, read
 		} finally {
 			if (isMountedRef.current) setLoading(false);
 		}
-	}, [patientId, readHeaders]);
+	}, [patientId, headers]);
 
 	useEffect(() => { void load(); }, [load]);
 

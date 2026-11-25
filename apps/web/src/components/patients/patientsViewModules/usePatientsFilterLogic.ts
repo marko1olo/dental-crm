@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDomListPagination } from "../../../hooks/useMemoryLeakGuard";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import type { PatientInsight } from "./types";
 import { usePatientCategoryCounters } from "./usePatientCategoryCounters";
 import { usePatientSearchDebounce } from "./usePatientSearchDebounce";
@@ -33,7 +34,7 @@ export function usePatientsFilterLogic({
 	const toggleLostPatients = () => {
 		if (showLostPatientsOnly) { setShowLostPatientsOnly(false); return; }
 		setIsLoadingLost(true);
-		fetch("/api/analytics/lost-patients-filters")
+		fetch("/api/analytics/lost-patients-filters", { headers: denteClinicalReadHeaders() })
 			.then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
 			.then((data: Array<{ id: string }>) => {
 				setLostPatientIds(new Set((data || []).map((item) => item.id)));

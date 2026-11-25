@@ -10,6 +10,7 @@ import type { SensorDetectionResult, SensorConnectionStatus } from "./types";
 import { UNIVERSAL_SENSOR_CATALOG } from "./sensorCatalogs";
 import { lookupSensorByUsbVidPid, NON_CONFLICTING_USB_POLICY } from "./twainAndUsbDrivers";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 
 interface WebUsbDevice {
 	readonly vendorId: number;
@@ -61,7 +62,7 @@ export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult
 	try {
 		if (typeof fetch === "function") {
 			const resp = await fetch("/api/hardware/sensor-status", {
-				headers: { Accept: "application/json" },
+				headers: { Accept: "application/json", ...denteClinicalReadHeaders() },
 				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(500) : null,
 			});
 			if (resp.ok) {
@@ -189,7 +190,7 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 	try {
 		if (typeof fetch === "function") {
 			const resp = await fetch(`/api/hardware/sensor-status?modelId=${encodeURIComponent(sensor.id)}`, {
-				headers: { Accept: "application/json" },
+				headers: { Accept: "application/json", ...denteClinicalReadHeaders() },
 				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(500) : null,
 			});
 			if (resp.ok) {

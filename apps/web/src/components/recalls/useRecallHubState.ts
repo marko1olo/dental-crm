@@ -15,7 +15,7 @@ import { calculateRecallStatusCounts, extractUniqueDoctors } from "./useRecallHu
 export function useRecallHubState(
 	isOpen: boolean,
 	initialCandidates?: readonly PatientRecallRecord[] | undefined,
-	authHeaders?: Record<string, string> | undefined,
+	headers?: Record<string, string> | undefined,
 ) {
 	const [candidates, setCandidates] = useState<readonly PatientRecallRecord[]>(initialCandidates ?? []);
 	const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +42,7 @@ export function useRecallHubState(
 		setFetchError(null);
 		try {
 			const res = await fetch("/api/recalls/candidates?minMonths=1&limit=200", {
-				headers: { ...(authHeaders ?? {}), Accept: "application/json" },
+				headers: { ...(headers ?? {}), Accept: "application/json" },
 			});
 			if (!res.ok) throw new Error(`Сервер ответил ${res.status}`);
 			const payload = (await res.json()) as RecallReport;
@@ -53,7 +53,7 @@ export function useRecallHubState(
 		} finally {
 			setIsLoading(false);
 		}
-	}, [authHeaders, initialCandidates]);
+	}, [headers, initialCandidates]);
 
 	useEffect(() => {
 		if (isOpen) void loadCandidates();

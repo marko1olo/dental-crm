@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 
 export interface DicomDaemonStatusPayload {
 	isRunning: boolean;
@@ -27,8 +28,8 @@ export function useDicomDaemonStatus() {
 		try {
 			setIsLoading(true);
 			const [statusRes, pendingRes] = await Promise.all([
-				fetch("/api/imaging/daemon/status"),
-				fetch("/api/imaging/daemon/pending"),
+				fetch("/api/imaging/daemon/status", { headers: denteClinicalReadHeaders() }),
+				fetch("/api/imaging/daemon/pending", { headers: denteClinicalReadHeaders() }),
 			]);
 
 			if (statusRes.ok) {

@@ -8,6 +8,7 @@ import { type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayout
 import { kopecksToRubles } from "@dental/shared";
 import { printDoctorPayslip, buildDoctorPayrollCalculation, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { DoctorPayrollTabPanel } from "./DoctorPayrollTabPanel";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./styles/doctorPayrollStudio.css";
@@ -113,7 +114,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		if (isDemo || !isOpen) return;
 		let cancelled = false;
 		if (!doctorsList || doctorsList.length === 0) {
-			void fetch("/api/v1/doctors").then((r) => r.ok ? r.json() : null).then((data) => {
+			void fetch("/api/v1/doctors", { headers: getDenteAuthHeaders() }).then((r) => r.ok ? r.json() : null).then((data) => {
 				if (!cancelled && data?.doctors?.length > 0) setApiDoctors(data.doctors);
 			}).catch(() => {});
 		}
@@ -132,7 +133,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			queryObj.commissionPercent = String(activeTabCustomPercent);
 		}
 		const query = new URLSearchParams(queryObj);
-		void fetch(`/api/v1/payroll/calculations?${query.toString()}`).then((r) => r.ok ? r.json() : null).then((data) => {
+		void fetch(`/api/v1/payroll/calculations?${query.toString()}`, { headers: getDenteAuthHeaders() }).then((r) => r.ok ? r.json() : null).then((data) => {
 			if (cancelled || !data) return;
 			if (Array.isArray(data.orders)) setApiOrders(data.orders);
 			if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);

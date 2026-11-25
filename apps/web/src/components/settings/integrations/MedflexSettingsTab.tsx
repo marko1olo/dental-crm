@@ -21,19 +21,10 @@ import {
 } from "lucide-react";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 
 function getAuthHeaders(): Record<string, string> {
-	const token =
-		localStorage.getItem("dente_token") ||
-		localStorage.getItem("auth_token") ||
-		"";
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
-	if (token) headers.Authorization = `Bearer ${token}`;
-	const orgId = localStorage.getItem("dente_organization_id") || "";
-	if (orgId) headers["x-organization-id"] = orgId;
-	return headers;
+	return { "Content-Type": "application/json", ...getDenteAuthHeaders() };
 }
 
 export interface MedflexSettings {

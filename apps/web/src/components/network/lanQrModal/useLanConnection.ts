@@ -48,7 +48,7 @@ export function useLanConnection(isOpen: boolean, initialRole: DeviceRole = "doc
 			fetch("/api/network/ping", { cache: "no-store" })
 				.then((r) => r.ok && setPingMs(Math.max(1, Math.round(performance.now() - s))))
 				.catch(() => setPingMs(null));
-			fetch("/api/network/lan-mesh/status", { cache: "no-store" })
+			fetch("/api/network/lan-mesh/status", { cache: "no-store", headers: getClinicAuthHeaders() })
 				.then((r) => r.json()).then((d) => d?.ok && setConnectedPeersCount(d.peers?.length || 0))
 				.catch(() => {});
 		};

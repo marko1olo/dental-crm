@@ -5,6 +5,7 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 
 export interface CloseSettlementPeriodParams {
 	readonly doctorId: string;
@@ -55,6 +56,7 @@ export async function closeSettlementPeriodApi(
 	const res = await fetch("/api/doctor/close-settlement-period", {
 		method: "POST",
 		headers: {
+			...getDenteAuthHeaders(),
 			"Content-Type": "application/json",
 			"Idempotency-Key": idempotencyKey,
 			"X-Idempotency-Key": idempotencyKey,
@@ -83,6 +85,7 @@ export async function reopenSettlementPeriodApi(
 	const res = await fetch("/api/doctor/settlement-period/reopen", {
 		method: "POST",
 		headers: {
+			...getDenteAuthHeaders(),
 			"Content-Type": "application/json",
 			"Idempotency-Key": idempotencyKey,
 			"X-Idempotency-Key": idempotencyKey,

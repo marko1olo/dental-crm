@@ -5,6 +5,7 @@
 
 import type { DoctorCompletedServiceItem } from "./staffPayrollEngine";
 import type { SettlementStatementPayload } from "./closeSettlementPeriodApi";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 
 export interface FetchDoctorEarningsParams {
 	readonly doctorId: string;
@@ -40,7 +41,7 @@ export async function fetchDoctorEarningsWithStatusApi(
 	}
 	const query = new URLSearchParams(queryObj);
 
-	const res = await fetch(`/api/v1/payroll/calculations?${query.toString()}`);
+	const res = await fetch(`/api/v1/payroll/calculations?${query.toString()}`, { headers: getDenteAuthHeaders() });
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	const data = await res.json();
 
