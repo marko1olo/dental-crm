@@ -51,6 +51,24 @@ export const speechProviders: SpeechProvider[] = [
 		sourceUrl: "https://console.groq.com/docs/speech-to-text",
 	},
 	{
+		id: "google_speech",
+		title: "Google Cloud Speech-to-Text (Gemini Audio)",
+		status: "needs_server_key",
+		mode: "server_upload",
+		recommendedFor: [
+			"Единый серверный канал распознавания по ключу Gemini / Google",
+			"Резервный облачный поток с клинической терминологией",
+		],
+		strengths: [
+			"Поддержка ключей GEMINI_API_KEY / GOOGLE_API_KEY без отдельного аккаунта",
+			"Высокая точность русской медицинской речи",
+		],
+		limits: ["Требует серверный ключ Gemini или Google Speech"],
+		costNote: "По тарифам Google AI / Cloud",
+		setupSettingsCount: 1,
+		sourceUrl: "https://ai.google.dev/gemini-api/docs/audio",
+	},
+	{
 		id: "gemini_transcribe_live",
 		title: "Gemini 3.5 Transcribe Live",
 		status: "needs_server_key",

@@ -135,4 +135,58 @@ describe("Agent Memory Contract & Schema Resilience", () => {
 		assert.ok(Array.isArray(data.memoryFacts));
 		assert.strictEqual(data.memoryFacts.length, 2);
 	});
+
+	it("5. Blocks SSRF targets (loopback, AWS metadata, RFC1918, localhost, non-https in prod) on /api/agent/validate-key", async () => {
+		const blockedUrls = [
+			"http://127.0.0.1:8080/v1",
+			"http://169.254.169.254/latest/meta-data",
+			"http://10.0.0.1/v1",
+			"http://localhost:11434/v1",
+		];
+
+		for (const baseUrl of blockedUrls) {
+			const res = await server.inject({
+				method: "POST",
+				url: "/api/agent/validate-key",
+				headers: {
+					[CLINIC_TOKEN_HEADER]: token,
+					"content-type": "application/json",
+				},
+				payload: {
+					provider: "custom",
+					apiKey: "sk-synthetic-ssrf-test",
+					baseUrl,
+				},
+			});
+			assert.strictEqual(
+				res.statusCode,
+				400,
+				`Expected HTTP 400 SSRF block for ${baseUrl}, got ${res.statusCode}: ${res.payload}`,
+			);
+		}
+
+		const strictUnknownRes = await server.inject({
+			method: "PUT",
+			url: "/api/agent/memory",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: token,
+				"content-type": "application/json",
+			},
+			payload: {
+				memoryFacts: ["Valid fact"],
+				unexpectedField: true,
+			},
+		});
+		assert.strictEqual(strictUnknownRes.statusCode, 400);
+
+		const { validateSsrfSafeAiBaseUrl } = await import("../../ai/agentRouterClient.js");
+		const prevNodeEnv = process.env.NODE_ENV;
+		process.env.NODE_ENV = "production";
+		try {
+			const prodHttp = await validateSsrfSafeAiBaseUrl("http://api.openai.com/v1");
+			assert.strictEqual(prodHttp.valid, false, "Non-HTTPS baseUrl must be rejected in production");
+		} finally {
+			process.env.NODE_ENV = prevNodeEnv;
+		}
+	});
 });

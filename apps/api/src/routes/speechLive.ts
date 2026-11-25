@@ -33,6 +33,7 @@ import {
 	getProviderKeyPoolSummary,
 } from "../speech/keyPool.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { requireClinicalReadContext } from "../accessGuard.js";
 
 interface SpeechLiveQueryParams {
 	readonly specialty?: DentalSpecialty | undefined;
@@ -57,7 +58,14 @@ export async function registerSpeechLiveRoutes(
 	// Status & Diagnostic endpoint
 	app.get(
 		"/api/v1/speech/live/status",
-		async (_request: FastifyRequest, reply: FastifyReply) => {
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const context = await requireClinicalReadContext(
+				request,
+				reply,
+				"speech live status",
+			);
+			if (!context) return;
+
 			const proxyStatus = getNetworkShieldStatus();
 			const keyPool = getProviderKeyPoolSummary("google_speech");
 			const activeTerms = getDentalSpeechBiasingTerms("universal");
@@ -94,6 +102,16 @@ export async function registerSpeechLiveRoutes(
 
 	// WebSocket Live Transcription Handler
 	const liveWsHandler = (clientSocket: WebSocket, request: FastifyRequest) => {
+			const identity = getRequestIdentity(request);
+			if (!identity.verified || !identity.organizationId) {
+				request.log.warn(
+					{ route: "/api/v1/speech/live" },
+					"[speechLive] Rejected unauthenticated WebSocket connection",
+				);
+				clientSocket.close(4001, "Unauthorized");
+				return;
+			}
+
 			const query = (request.query || {}) as SpeechLiveQueryParams;
 			const specialty = query.specialty as DentalSpecialty | undefined;
 			const sampleRate = query.sampleRate
@@ -103,17 +121,21 @@ export async function registerSpeechLiveRoutes(
 				? query.customTerms.split(/[,;\n]+/).map((t) => t.trim()).filter(Boolean)
 				: undefined;
 			const model = query.model;
-			const apiKey = query.key;
-
-			// Extract tenant identity if headers are available.
-			// Per Mandates 8e & 8n: Speech recognition (STT) is an input method, not a clinical secrecy release.
-			// All authorized clinic staff (doctors, assistants, receptionists, administrators, owners)
-			// have sovereign access to live speech dictation for Ctrl+K search, notes, copilot, and diaries.
-			const identity = getRequestIdentity(request);
-			const orgId = identity.organizationId || "anonymous";
+			const headerKeyRaw = request.headers["x-gemini-api-key"];
+			const apiKey =
+				typeof headerKeyRaw === "string" && headerKeyRaw.trim().length > 0
+					? headerKeyRaw.trim()
+					: undefined;
+			const orgId = identity.organizationId;
 
 			request.log.info(
-				{ orgId, specialty, sampleRate, url: request.url },
+				{
+					orgId,
+					specialty,
+					sampleRate,
+					route: "/api/v1/speech/live",
+					hasQueryKeyRejected: Boolean(query.key),
+				},
 				"[speechLive] Inbound client WebSocket connected to Gemini 3.5 Transcribe Live BiDi",
 			);
 

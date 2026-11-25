@@ -17,9 +17,13 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { and, desc, eq, exists, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { withTenantCtx } from "../db/rls.js";
+import { copilotMessages, copilotSessions } from "../db/schema/copilot.js";
+import { patients } from "../db/schema/patients.js";
 import {
 	createSessionInDb,
 	deleteSessionFromDb,
@@ -120,38 +124,66 @@ export function clearFallbackSessionsForTesting(): void {
 	fallbackMessages.clear();
 }
 
-const createSessionBodySchema = z.object({
-	id: z.string().optional(),
-	patientId: z.string().uuid().nullable().optional(),
-	activeView: z.string().nullable().optional(),
-	summary: z.string().nullable().optional(),
-	title: z.string().optional(),
-});
+const createSessionBodySchema = z
+	.object({
+		id: z.string().optional(),
+		patientId: z.string().uuid().nullable().optional(),
+		activeView: z.string().nullable().optional(),
+		summary: z.string().nullable().optional(),
+		title: z.string().optional(),
+	})
+	.strict();
 
-const updateSessionBodySchema = z.object({
-	patientId: z.string().uuid().nullable().optional(),
-	activeView: z.string().nullable().optional(),
-	summary: z.string().nullable().optional(),
-});
+const updateSessionBodySchema = z
+	.object({
+		patientId: z.string().uuid().nullable().optional(),
+		activeView: z.string().nullable().optional(),
+		summary: z.string().nullable().optional(),
+	})
+	.strict();
 
-const addMessageBodySchema = z.object({
-	role: z.enum(["user", "assistant", "system", "tool"]),
-	content: z.string().min(1, "Содержимое сообщения не может быть пустым"),
-	toolCalls: z.array(z.record(z.unknown())).nullable().optional(),
-	autoCompact: z.boolean().optional(),
-});
+const addMessageBodySchema = z
+	.object({
+		role: z.enum(["user", "assistant", "system", "tool"]),
+		content: z.string().min(1, "Содержимое сообщения не может быть пустым"),
+		toolCalls: z.array(z.record(z.unknown())).nullable().optional(),
+		autoCompact: z.boolean().optional(),
+	})
+	.strict();
 
-function getMemorySessions(orgId: string, query: { patientId?: string | undefined; q?: string | undefined; limit: number; offset: number }): MemorySession[] {
+const listSessionsQuerySchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		limit: z.coerce.number().int().min(1).max(100).default(50),
+		offset: z.coerce.number().int().min(0).default(0),
+		q: z.string().max(200).optional(),
+	})
+	.strict();
+
+const sessionMessagesQuerySchema = z
+	.object({
+		limit: z.coerce.number().int().min(1).max(200).default(100),
+		offset: z.coerce.number().int().min(0).default(0),
+		order: z.enum(["asc", "desc"]).default("asc"),
+	})
+	.strict();
+
+function getMemorySessions(
+	orgId: string,
+	query: { patientId?: string | undefined; q?: string | undefined; limit: number; offset: number },
+): MemorySession[] {
+	const needle = query.q?.trim().toLowerCase();
 	return Array.from(fallbackSessions.values())
 		.filter((s) => s.organizationId === orgId)
 		.filter((s) => !query.patientId || s.patientId === query.patientId)
-		.filter(
-			(s) =>
-				!query.q ||
-				(s.summary && s.summary.toLowerCase().includes(query.q.toLowerCase())) ||
-				(s.activeView && s.activeView.toLowerCase().includes(query.q.toLowerCase())) ||
-				s.id.toLowerCase().includes(query.q.toLowerCase())
-		)
+		.filter((s) => {
+			if (!needle) return true;
+			if (s.summary && s.summary.toLowerCase().includes(needle)) return true;
+			if (s.activeView && s.activeView.toLowerCase().includes(needle)) return true;
+			if (s.id.toLowerCase().includes(needle)) return true;
+			const msgs = fallbackMessages.get(s.id) || [];
+			return msgs.some((m) => m.content.toLowerCase().includes(needle));
+		})
 		.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 		.slice(query.offset, query.offset + query.limit);
 }
@@ -172,22 +204,83 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "list agent sessions");
 				if (!resolvedOrgId) return;
 
-				const querySchema = z.object({
-					patientId: z.string().uuid().optional(),
-					limit: z.coerce.number().int().min(1).max(100).default(50),
-					offset: z.coerce.number().int().min(0).default(0),
-					q: z.string().optional(),
-				});
-
-				const parseResult = querySchema.safeParse(request.query ?? {});
-				const query = parseResult.success ? parseResult.data : { limit: 50, offset: 0 };
+				const parseResult = listSessionsQuerySchema.safeParse(request.query ?? {});
+				if (!parseResult.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректные параметры фильтрации сессий",
+						details: parseResult.error.format(),
+					});
+				}
+				const query = parseResult.data;
 
 				try {
-					let sessions: (CopilotSessionRecord | MemorySession)[] = await listSessionsFromDb(resolvedOrgId, {
-						patientId: query.patientId,
-						limit: query.limit,
-						offset: query.offset,
-					});
+					let sessions: (CopilotSessionRecord | MemorySession)[];
+					const searchNeedle = query.q?.trim();
+
+					if (searchNeedle) {
+						const pattern = `%${searchNeedle}%`;
+						const rows = await withTenantCtx(resolvedOrgId, async (tx) => {
+							const conditions = [
+								eq(copilotSessions.organizationId, resolvedOrgId),
+								or(
+									ilike(copilotSessions.summary, pattern),
+									ilike(copilotSessions.activeView, pattern),
+									sql`${copilotSessions.id}::text ILIKE ${pattern}`,
+									exists(
+										tx
+											.select({ id: copilotMessages.id })
+											.from(copilotMessages)
+											.where(
+												and(
+													eq(copilotMessages.sessionId, copilotSessions.id),
+													ilike(copilotMessages.content, pattern),
+												),
+											),
+									),
+									exists(
+										tx
+											.select({ id: patients.id })
+											.from(patients)
+											.where(
+												and(
+													eq(patients.id, copilotSessions.patientId),
+													eq(patients.organizationId, resolvedOrgId),
+													ilike(patients.fullName, pattern),
+												),
+											),
+									),
+								),
+							];
+							if (query.patientId) {
+								conditions.push(eq(copilotSessions.patientId, query.patientId));
+							}
+
+							return tx
+								.select()
+								.from(copilotSessions)
+								.where(and(...conditions))
+								.orderBy(desc(copilotSessions.updatedAt))
+								.limit(query.limit)
+								.offset(query.offset);
+						});
+						sessions = rows.map((row) => ({
+							id: row.id,
+							organizationId: row.organizationId,
+							userId: row.userId ?? null,
+							patientId: row.patientId ?? null,
+							activeView: row.activeView ?? null,
+							summary: row.summary ?? null,
+							createdAt: row.createdAt,
+							updatedAt: row.updatedAt,
+						}));
+					} else {
+						sessions = await listSessionsFromDb(resolvedOrgId, {
+							patientId: query.patientId,
+							limit: query.limit,
+							offset: query.offset,
+						});
+					}
 
 					// Seamless fallback integration if memory holds pending sessions
 					if (sessions.length === 0) {
@@ -195,16 +288,6 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						if (memSessions.length > 0) {
 							sessions = memSessions;
 						}
-					}
-
-					if (query.q) {
-						const filter = query.q.toLowerCase();
-						sessions = sessions.filter(
-							(s) =>
-								(s.summary && s.summary.toLowerCase().includes(filter)) ||
-								(s.activeView && s.activeView.toLowerCase().includes(filter)) ||
-								s.id.toLowerCase().includes(filter)
-						);
 					}
 
 					return reply.code(200).send({
@@ -395,9 +478,12 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					);
 				}
 
-				const memExisted = fallbackSessions.has(id);
-				fallbackSessions.delete(id);
-				fallbackMessages.delete(id);
+				const memSession = fallbackSessions.get(id);
+				const memExisted = Boolean(memSession && memSession.organizationId === resolvedOrgId);
+				if (memExisted) {
+					fallbackSessions.delete(id);
+					fallbackMessages.delete(id);
+				}
 
 				return reply.code(200).send({ ok: true, deleted: dbDeleted || memExisted, success: dbDeleted || memExisted, id });
 			}
@@ -416,18 +502,29 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 					return reply.code(400).send({ error: "InvalidUUID", message: "ID сессии должен быть UUID" });
 				}
 
-				const querySchema = z.object({
-					limit: z.coerce.number().int().min(1).max(200).default(100),
-					offset: z.coerce.number().int().min(0).default(0),
-					order: z.enum(["asc", "desc"]).default("asc"),
-				});
+				const parseResult = sessionMessagesQuerySchema.safeParse(request.query ?? {});
+				if (!parseResult.success) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректные параметры запроса сообщений",
+						details: parseResult.error.format(),
+					});
+				}
+				const query = parseResult.data;
 
-				const parseResult = querySchema.safeParse(request.query ?? {});
-				const query = parseResult.success ? parseResult.data : { limit: 100, offset: 0, order: "asc" as const };
+				const memSession = fallbackSessions.get(id);
+				if (memSession && memSession.organizationId !== resolvedOrgId) {
+					return reply.code(404).send({ error: "NotFound", message: "Сессия диалога не найдена" });
+				}
 
 				try {
 					let messages: (CopilotMessageRecord | MemoryMessage)[] = await getMessagesFromDb(id, resolvedOrgId, query);
-					if (messages.length === 0 && fallbackMessages.has(id)) {
+					if (
+						messages.length === 0 &&
+						memSession &&
+						memSession.organizationId === resolvedOrgId &&
+						fallbackMessages.has(id)
+					) {
 						messages = (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit);
 					}
 
@@ -442,7 +539,10 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						{ err, organizationId: resolvedOrgId, id },
 						"[agentSessionRoutes] DB getMessagesFromDb failed, falling back to memory store",
 					);
-					const memMsgs = (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit);
+					const memMsgs =
+						memSession && memSession.organizationId === resolvedOrgId
+							? (fallbackMessages.get(id) || []).slice(query.offset, query.offset + query.limit)
+							: [];
 					return reply.code(200).send({
 						sessionId: id,
 						messages: memMsgs,
@@ -477,6 +577,10 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 				}
 
 				const body = parseResult.data;
+				const existingMemSession = fallbackSessions.get(id);
+				if (existingMemSession && existingMemSession.organizationId !== resolvedOrgId) {
+					return reply.code(404).send({ error: "NotFound", message: "Сессия диалога не найдена" });
+				}
 
 				try {
 					const message = await addMessageToDb({
@@ -495,6 +599,19 @@ export async function registerAgentSessionRoutes(server: FastifyInstance): Promi
 						"[agentSessionRoutes] DB addMessageToDb failed, appending to memory fallback",
 					);
 					const now = new Date();
+					if (!existingMemSession) {
+						const identity = getRequestIdentity(request);
+						saveFallbackSession({
+							id,
+							organizationId: resolvedOrgId,
+							userId: identity.userId ?? null,
+							patientId: null,
+							activeView: "Одонтограмма",
+							summary: body.content.slice(0, 120),
+							createdAt: now,
+							updatedAt: now,
+						});
+					}
 					const msgId = ensureValidUuid();
 					const memMsg: MemoryMessage = {
 						id: msgId,

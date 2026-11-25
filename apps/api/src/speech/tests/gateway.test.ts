@@ -1,7 +1,9 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import {
+	getSpeechGatewayHealthReport,
 	getSpeechGatewayStatus,
+	getSpeechProviderRuntimeStatuses,
 	speechJsonBodyLimitBytes,
 } from "../gateway.js";
 
@@ -133,5 +135,37 @@ describe("getSpeechGatewayStatus", () => {
 		assert.strictEqual(status.maxChunkBytes, 1234567);
 		assert.strictEqual(status.recommendedChunkMs, 23456);
 		assert.strictEqual(status.chunkingPolicy.minChunkMs, 12345);
+	});
+
+	it("should reflect GEMINI_API_KEY in google_speech and gemini_transcribe_live runtime & health without unsupported-gateway warning", () => {
+		const prevGeminiKey = process.env.GEMINI_API_KEY;
+		process.env.GEMINI_API_KEY = "AIzaSySyntheticGeminiTestKey12345";
+		try {
+			const runtimeStatuses = getSpeechProviderRuntimeStatuses();
+			const googleSpeechRuntime = runtimeStatuses.find((p) => p.providerId === "google_speech");
+			const geminiLiveRuntime = runtimeStatuses.find((p) => p.providerId === "gemini_transcribe_live");
+
+			assert.ok(googleSpeechRuntime, "google_speech must be present in speech providers runtime");
+			assert.strictEqual(googleSpeechRuntime.configured, true);
+			assert.strictEqual(googleSpeechRuntime.canTranscribeChunks, true);
+			assert.strictEqual(googleSpeechRuntime.connector, "server_wired");
+
+			assert.ok(geminiLiveRuntime, "gemini_transcribe_live must be present in speech providers runtime");
+			assert.strictEqual(geminiLiveRuntime.configured, true);
+			assert.strictEqual(geminiLiveRuntime.canTranscribeChunks, true);
+
+			const health = getSpeechGatewayHealthReport();
+			const googleHealth = health.providers.find((p) => p.providerId === "google_speech");
+			assert.ok(googleHealth, "google_speech must be included in gateway-health report");
+			assert.strictEqual(googleHealth.configured, true);
+			assert.strictEqual(
+				googleHealth.warnings.some((w) => w.includes("пока не включено в текущий шлюз")),
+				false,
+				"google_speech must not emit unsupported-gateway warning",
+			);
+		} finally {
+			if (prevGeminiKey !== undefined) process.env.GEMINI_API_KEY = prevGeminiKey;
+			else delete process.env.GEMINI_API_KEY;
+		}
 	});
 });

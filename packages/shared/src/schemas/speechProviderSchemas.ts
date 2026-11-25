@@ -48,19 +48,21 @@ export const speechProviderHealthSchema = z.object({
 
 export type SpeechProviderHealth = z.infer<typeof speechProviderHealthSchema>;
 
-export const speechRecordingStrategyRequestSchema = z.object({
-	expectedDurationMs: z
-		.number()
-		.int()
-		.positive()
-		.max(14_400_000)
-		.nullable()
-		.optional(),
-	networkState: z.enum(["online", "offline", "unknown"]).default("unknown"),
-	privacyMode: z.enum(["cloud_allowed", "local_only"]).default("cloud_allowed"),
-	specialty: dentalSpecialtySchema.default("universal"),
-	source: speechTranscriptionSourceSchema.default("visit"),
-});
+export const speechRecordingStrategyRequestSchema = z
+	.object({
+		expectedDurationMs: z
+			.number()
+			.int()
+			.positive()
+			.max(14_400_000)
+			.nullable()
+			.optional(),
+		networkState: z.enum(["online", "offline", "unknown"]).default("unknown"),
+		privacyMode: z.enum(["cloud_allowed", "local_only"]).default("cloud_allowed"),
+		specialty: dentalSpecialtySchema.default("universal"),
+		source: speechTranscriptionSourceSchema.default("visit"),
+	})
+	.strict();
 
 export type SpeechRecordingStrategyRequest = z.infer<
 	typeof speechRecordingStrategyRequestSchema

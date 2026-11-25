@@ -17,9 +17,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
-	requireClinicalMutationAccess,
 	requireClinicalMutationContext,
-	requireClinicalReadAccess,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -218,7 +216,7 @@ async function handleSpeechStatus(
 	reply: FastifyReply,
 ) {
 	if (
-		!(await requireClinicalReadAccess(request, reply, "speech gateway status"))
+		!(await requireClinicalReadContext(request, reply, "speech gateway status"))
 	)
 		return;
 	return speechGatewayStatusSchema.parse(getSpeechGatewayStatus());
@@ -229,7 +227,7 @@ async function handleSpeechGatewayHealth(
 	reply: FastifyReply,
 ) {
 	if (
-		!(await requireClinicalReadAccess(request, reply, "speech gateway health"))
+		!(await requireClinicalReadContext(request, reply, "speech gateway health"))
 	)
 		return;
 	return speechGatewayHealthReportSchema.parse(getSpeechGatewayHealthReport());
@@ -240,7 +238,7 @@ async function handleSpeechProvidersRuntime(
 	reply: FastifyReply,
 ) {
 	if (
-		!(await requireClinicalReadAccess(
+		!(await requireClinicalReadContext(
 			request,
 			reply,
 			"speech provider runtime",
@@ -257,7 +255,7 @@ async function handleSpeechRecordingStrategy(
 	reply: FastifyReply,
 ) {
 	if (
-		!(await requireClinicalReadAccess(
+		!(await requireClinicalReadContext(
 			request,
 			reply,
 			"speech recording strategy",
@@ -462,7 +460,7 @@ async function handleSpeechPolishTranscript(
 	reply: FastifyReply,
 ) {
 	if (
-		!(await requireClinicalMutationAccess(
+		!(await requireClinicalMutationContext(
 			request,
 			reply,
 			"speech transcript polish",

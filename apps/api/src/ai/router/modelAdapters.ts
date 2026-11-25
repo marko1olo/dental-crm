@@ -2,6 +2,8 @@
  * modelAdapters.ts — Request Payload Formatter and Tool Call Argument Parser
  */
 
+import * as dns from "node:dns/promises";
+import * as net from "node:net";
 import {
 	type AgentRouterChatParams,
 	type AgentRouterToolCall,
@@ -13,6 +15,7 @@ import {
 	SUPPORTED_GEMINI_MODELS,
 } from "./routerTypes.js";
 import { maskApiKey } from "./keyPoolManager.js";
+import { isForbiddenPrivateIp } from "../../services/telephony/telephonySecurity.js";
 
 /**
  * Checks whether the given model name belongs to Google Gemini family.
@@ -147,6 +150,108 @@ export async function validateGeminiApiKeyLive(
 	}
 }
 
+export interface SsrfBaseUrlValidationResult {
+	valid: boolean;
+	error?: string | undefined;
+	normalizedUrl?: string | undefined;
+}
+
+const FORBIDDEN_HOSTNAMES = new Set([
+	"localhost",
+	"localhost.localdomain",
+	"ip6-localhost",
+	"ip6-loopback",
+	"metadata.google.internal",
+	"metadata.goog",
+	"0.0.0.0",
+]);
+
+/**
+ * Validates that a custom BYOK AI provider baseUrl is safe against SSRF
+ * (blocks loopback, link-local cloud metadata, RFC1918 private networks, and non-HTTPS in production).
+ */
+export async function validateSsrfSafeAiBaseUrl(
+	rawUrl: string,
+): Promise<SsrfBaseUrlValidationResult> {
+	const trimmed = typeof rawUrl === "string" ? rawUrl.trim() : "";
+	if (!trimmed) {
+		return { valid: false, error: "URL провайдера ИИ не может быть пустым" };
+	}
+
+	let parsed: URL;
+	try {
+		parsed = new URL(trimmed);
+	} catch {
+		return { valid: false, error: "Некорректный формат URL провайдера ИИ" };
+	}
+
+	if (parsed.username || parsed.password) {
+		return {
+			valid: false,
+			error: "URL провайдера ИИ не должен содержать учётные данные",
+		};
+	}
+
+	if (process.env.NODE_ENV === "production") {
+		if (parsed.protocol !== "https:") {
+			return {
+				valid: false,
+				error: "В production разрешены только HTTPS URL провайдеров ИИ",
+			};
+		}
+	} else if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+		return {
+			valid: false,
+			error: "Поддерживаются только протоколы HTTP и HTTPS",
+		};
+	}
+
+	const rawHost = parsed.hostname.toLowerCase();
+	const host =
+		rawHost.startsWith("[") && rawHost.endsWith("]")
+			? rawHost.slice(1, -1)
+			: rawHost;
+
+	if (
+		!host ||
+		FORBIDDEN_HOSTNAMES.has(host) ||
+		host.endsWith(".localhost") ||
+		host.endsWith(".local") ||
+		host.endsWith(".internal")
+	) {
+		return {
+			valid: false,
+			error: "Локальные и внутренние адреса запрещены политикой SSRF",
+		};
+	}
+
+	if (net.isIP(host) !== 0) {
+		if (isForbiddenPrivateIp(host)) {
+			return {
+				valid: false,
+				error: "Приватные и loopback IP-адреса запрещены политикой SSRF",
+			};
+		}
+		return { valid: true, normalizedUrl: trimmed.replace(/\/+$/, "") };
+	}
+
+	try {
+		const resolved = await dns.lookup(host, { all: true });
+		for (const entry of resolved) {
+			if (isForbiddenPrivateIp(entry.address)) {
+				return {
+					valid: false,
+					error: "Домен разрешается в приватный или loopback IP-адрес (SSRF)",
+				};
+			}
+		}
+	} catch {
+		// Offline/unresolvable hostnames fall through to fetch/timeout without leaking internal IPs
+	}
+
+	return { valid: true, normalizedUrl: trimmed.replace(/\/+$/, "") };
+}
+
 export interface UniversalKeyValidationResult {
 	valid: boolean;
 	provider: string;
@@ -181,6 +286,21 @@ export async function validateUniversalApiKeyLive(
 			baseUrl: customBaseUrl || "",
 			error: "API-ключ не заполнен",
 		};
+	}
+
+	if (customBaseUrl && customBaseUrl.trim()) {
+		const ssrfCheck = await validateSsrfSafeAiBaseUrl(customBaseUrl);
+		if (!ssrfCheck.valid) {
+			return {
+				valid: false,
+				provider: prov,
+				model: targetModel || "default",
+				keyMask,
+				latencyMs: Date.now() - start,
+				baseUrl: customBaseUrl,
+				error: ssrfCheck.error ?? "URL заблокирован политикой SSRF",
+			};
+		}
 	}
 
 	if (prov === "gemini") {

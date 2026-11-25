@@ -179,7 +179,7 @@ describe("Desktop Agent Harness — Локальный MCP-мост (Model Conte
 		assert.strictEqual(lastBufRes.success, true);
 		assert.strictEqual(lastBufRes.data.barcode, "010460123456789021AB1234XYZ91EE06");
 
-		// TWAIN
+		// TWAIN (без фиктивного хардкода устройств при отсутствии нативного моста)
 		const twainRes = (await handleCallLocalMcpTool(
 			{
 				serverName: "twain_sensor",
@@ -187,11 +187,15 @@ describe("Desktop Agent Harness — Локальный MCP-мост (Model Conte
 				arguments: {},
 			},
 			DESKTOP_CTX,
-		)) as any;
-		assert.strictEqual(twainRes.success, true);
-		assert.ok(
-			twainRes.data.devices.some((d: any) => d.id === "vatech_ezsensor_15"),
-		);
+		)) as {
+			success: boolean;
+			status?: string;
+			data?: { devices?: unknown[] };
+		};
+		assert.strictEqual(twainRes.success, false);
+		assert.strictEqual(twainRes.status, "native_bridge_unavailable");
+		assert.ok(Array.isArray(twainRes.data?.devices));
+		assert.strictEqual(twainRes.data?.devices?.length, 0);
 	});
 
 	test("read_local_mcp_resource: чтение ресурса кассы и буфера сканера", async () => {

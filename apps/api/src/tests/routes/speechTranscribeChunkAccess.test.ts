@@ -319,17 +319,33 @@ describe("доступ к записи фрагмента диктовки", () 
 	 * у него не проверяется. Отдельный пакет, см.
 	 * .agents/archon/packets/S1-speech-unauthenticated/handoff.md.
 	 */
-	test("булевый гейт чтения все еще пускает запрос без учетных данных", async () => {
-		const response = await app.inject({
+	test("read-эндпоинты диктовки отклоняют запрос без учетных данных (401) и пускают с токеном клиники", async () => {
+		const unauthResponse = await app.inject({
 			method: "GET",
 			url: "/api/speech/status",
 		});
 
 		assert.equal(
-			response.statusCode,
-			200,
-			`ожидался открытый read-эндпоинт как эталон прежнего поведения, получено ${response.statusCode}`,
+			unauthResponse.statusCode,
+			401,
+			`ожидался 401 без токена на /api/speech/status, получено ${unauthResponse.statusCode}`,
 		);
+
+		const authResponse = await app.inject({
+			method: "GET",
+			url: "/api/speech/status",
+			headers: {
+				"x-dente-clinic-token": tokenOrgA,
+			},
+		});
+		assert.equal(authResponse.statusCode, 200);
+
+		const polishUnauth = await app.inject({
+			method: "POST",
+			url: "/api/speech/polish-transcript",
+			payload: { transcript: "жалобы на боль", specialty: "therapy" },
+		});
+		assert.equal(polishUnauth.statusCode, 401);
 	});
 
 	test("подделанный токен не пускает к записи", async () => {

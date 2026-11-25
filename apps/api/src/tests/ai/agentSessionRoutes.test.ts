@@ -171,4 +171,71 @@ describe("Agent Session & Dialogue History Routes", () => {
 		assert.equal(delRes.statusCode, 200);
 		assert.equal(delRes.json().success, true);
 	});
+
+	it("6. Enforces .strict() validation and isolates memory fallback messages across tenants (BOLA) + searches ?q=", async () => {
+		const unknownCreateRes = await server.inject({
+			method: "POST",
+			url: "/api/agent/sessions",
+			headers: { [CLINIC_TOKEN_HEADER]: tokenA },
+			payload: { title: "Valid", unexpectedKey: "rejected" },
+		});
+		assert.equal(unknownCreateRes.statusCode, 400);
+
+		const unknownQueryRes = await server.inject({
+			method: "GET",
+			url: "/api/agent/sessions?bogusParam=1",
+			headers: { [CLINIC_TOKEN_HEADER]: tokenA },
+		});
+		assert.equal(unknownQueryRes.statusCode, 400);
+
+		const createRes = await server.inject({
+			method: "POST",
+			url: "/api/agent/sessions",
+			headers: { [CLINIC_TOKEN_HEADER]: tokenA },
+			payload: { title: "Изолированная сессия клиники А" },
+		});
+		assert.equal(createRes.statusCode, 201);
+		const sessionAId = createRes.json().id;
+
+		const addMsgRes = await server.inject({
+			method: "POST",
+			url: `/api/agent/sessions/${sessionAId}/messages`,
+			headers: { [CLINIC_TOKEN_HEADER]: tokenA },
+			payload: {
+				role: "user",
+				content: "УникальныйТокенПоиска9842 жалоба на зуб 36",
+			},
+		});
+		assert.equal(addMsgRes.statusCode, 201);
+
+		const searchRes = await server.inject({
+			method: "GET",
+			url: "/api/agent/sessions?q=%D0%A3%D0%BD%D0%B8%D0%BA%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%D0%A2%D0%BE%D0%BA%D0%B5%D0%BD%D0%9F%D0%BE%D0%B8%D1%81%D0%BA%D0%B09842",
+			headers: { [CLINIC_TOKEN_HEADER]: tokenA },
+		});
+		assert.equal(searchRes.statusCode, 200);
+		assert.ok(
+			searchRes.json().sessions.some((s: { id: string }) => s.id === sessionAId),
+			"Search ?q= must match message content",
+		);
+
+		// Tenant B must not read messages or delete Tenant A's session even in fallback store
+		const crossMsgsRes = await server.inject({
+			method: "GET",
+			url: `/api/agent/sessions/${sessionAId}/messages`,
+			headers: { [CLINIC_TOKEN_HEADER]: tokenB },
+		});
+		assert.ok(
+			crossMsgsRes.statusCode === 404 || (crossMsgsRes.statusCode === 200 && crossMsgsRes.json().messages.length === 0),
+			`Tenant B must never receive Tenant A messages, got ${crossMsgsRes.statusCode}: ${crossMsgsRes.body}`,
+		);
+
+		const crossDelRes = await server.inject({
+			method: "DELETE",
+			url: `/api/agent/sessions/${sessionAId}`,
+			headers: { [CLINIC_TOKEN_HEADER]: tokenB },
+		});
+		assert.equal(crossDelRes.statusCode, 200);
+		assert.equal(crossDelRes.json().deleted, false);
+	});
 });

@@ -116,4 +116,80 @@ describe("Red Team Fixer Copilot Invariants", () => {
 
 		await app.close();
 	});
+
+	it("5. POST /api/agent/action enforces .strict() schema, UUID args validation (400) and blocks unconfirmed destructive tools (403)", async () => {
+		const app = Fastify();
+		await app.register(registerAgentRoutes);
+		await app.ready();
+
+		const strictRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validDoctorToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				toolName: "calculate_anesthesia",
+				args: { patientWeightKg: 70 },
+				unknownExtraProp: "nope",
+			},
+		});
+		assert.equal(strictRes.statusCode, 400);
+
+		const badUuidRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validDoctorToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				toolName: "calculate_anesthesia",
+				args: { patientWeightKg: 70 },
+				patientId: "not-a-uuid",
+			},
+		});
+		assert.equal(badUuidRes.statusCode, 400);
+
+		const unconfirmedDestructiveRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validDoctorToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				toolName: "create_appointment",
+				args: { patientId: "11111111-2222-3333-4444-555555555555" },
+			},
+		});
+		assert.equal(unconfirmedDestructiveRes.statusCode, 403);
+		assert.equal(JSON.parse(unconfirmedDestructiveRes.body).error, "ConfirmationRequired");
+
+		const webLocalRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validDoctorToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				toolName: "read_local_file",
+				runtimeMode: "web_browser",
+				args: { targetFile: "C:/Windows/win.ini" },
+			},
+		});
+		const webLocalJson = JSON.parse(webLocalRes.body);
+		assert.ok(
+			webLocalRes.statusCode === 403 || webLocalJson.ok === false,
+			`Desktop tool in web_browser must never have allowLocalExecution=true (status=${webLocalRes.statusCode})`,
+		);
+
+		await app.close();
+	});
 });

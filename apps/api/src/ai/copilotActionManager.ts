@@ -64,6 +64,8 @@ export const COPILOT_ACTION_TTL_MS = 15 * 60 * 1000; // 15 minutes
  */
 export class CopilotActionManager {
 	private readonly pendingActions = new Map<string, PendingAction>();
+	private readonly pendingPersistPromises = new Map<string, Promise<void>>();
+	private readonly inFlightConfirmations = new Set<string>();
 
 	public registerPending(
 		sessionId: string,
@@ -87,7 +89,7 @@ export class CopilotActionManager {
 		if (meta?.organizationId) {
 			const orgId = meta.organizationId;
 			const expiresAt = new Date(action.createdAt + COPILOT_ACTION_TTL_MS);
-			withTenantCtx(orgId, async (tx) => {
+			const persistPromise = withTenantCtx(orgId, async (tx) => {
 				await tx
 					.insert(copilotPendingActions)
 					.values({
@@ -110,7 +112,16 @@ export class CopilotActionManager {
 							expiresAt,
 						},
 					});
-			}).catch(() => {});
+			})
+				.catch((err: unknown) => {
+					aiLogger.warn("CopilotActionManager", "Failed to persist pending action to DB", err);
+				})
+				.finally(() => {
+					if (this.pendingPersistPromises.get(callId) === persistPromise) {
+						this.pendingPersistPromises.delete(callId);
+					}
+				});
+			this.pendingPersistPromises.set(callId, persistPromise);
 		}
 
 		return action;
@@ -133,6 +144,11 @@ export class CopilotActionManager {
 		callId: string,
 		organizationId?: string,
 	): Promise<PendingAction | undefined> {
+		const pendingPersist = this.pendingPersistPromises.get(callId);
+		if (pendingPersist) {
+			await pendingPersist;
+		}
+
 		const cached = this.getPending(callId);
 		if (cached) return cached;
 
@@ -171,7 +187,8 @@ export class CopilotActionManager {
 
 			this.pendingActions.set(callId, action);
 			return action;
-		} catch {
+		} catch (err: unknown) {
+			aiLogger.warn("CopilotActionManager", "Failed to resolve pending action from DB", err);
 			return undefined;
 		}
 	}
@@ -181,175 +198,206 @@ export class CopilotActionManager {
 		callId: string,
 		modifiedArgs?: Record<string, unknown>,
 	): Promise<ActionToolResult> {
-		const action = await this.resolvePending(callId, ctx.organizationId);
-		if (!action) {
+		if (this.inFlightConfirmations.has(callId)) {
 			return {
 				ok: false,
-				error: "Запрос на действие не найден или истек срок ожидания",
+				error: "Конфликт: действие уже подтверждено или находится в обработке",
 				executionTimeMs: 0,
 			};
 		}
 
-		const effectiveArgs = modifiedArgs ?? action.arguments;
+		this.inFlightConfirmations.add(callId);
+		try {
+			const action = await this.resolvePending(callId, ctx.organizationId);
+			if (!action) {
+				return {
+					ok: false,
+					error: "Запрос на действие не найден или истек срок ожидания",
+					executionTimeMs: 0,
+				};
+			}
 
-		// Атомарный SQL CAS: UPDATE copilot_pending_actions SET status = 'confirmed' WHERE id = ${callId} AND status = 'pending' RETURNING id
-		if (ctx.organizationId) {
-			try {
-				let updatedRows = await withTenantCtx(ctx.organizationId, async (tx) => {
-					return tx
-						.update(copilotPendingActions)
-						.set({
-							status: "confirmed",
-							arguments: effectiveArgs,
-							resolvedAt: new Date(),
-						})
-						.where(
-							and(
-								eq(copilotPendingActions.id, callId),
-								eq(copilotPendingActions.organizationId, ctx.organizationId),
-								eq(copilotPendingActions.status, "pending"),
-							),
-						)
-						.returning({ id: copilotPendingActions.id });
-				});
+			const cachedSnapshot = this.pendingActions.get(callId);
+			this.pendingActions.delete(callId);
+			const effectiveArgs = modifiedArgs ?? action.arguments;
 
-				// Fallback если экшен был зарегистрирован только в памяти и еще не сброшен в БД
-				if ((!updatedRows || updatedRows.length === 0) && this.pendingActions.has(callId)) {
-					const cached = this.pendingActions.get(callId);
-					if (cached) {
-						const expiresAt = new Date(cached.createdAt + COPILOT_ACTION_TTL_MS);
+			// Атомарный SQL CAS: UPDATE copilot_pending_actions SET status = 'confirmed' WHERE id = ${callId} AND status = 'pending' RETURNING id
+			if (ctx.organizationId) {
+				try {
+					let updatedRows = await withTenantCtx(ctx.organizationId, async (tx) => {
+						return tx
+							.update(copilotPendingActions)
+							.set({
+								status: "confirmed",
+								arguments: effectiveArgs,
+								resolvedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(copilotPendingActions.id, callId),
+									eq(copilotPendingActions.organizationId, ctx.organizationId),
+									eq(copilotPendingActions.status, "pending"),
+								),
+							)
+							.returning({ id: copilotPendingActions.id });
+					});
+
+					// Fallback если экшен был зарегистрирован только в памяти и еще не сброшен в БД
+					if ((!updatedRows || updatedRows.length === 0) && cachedSnapshot) {
+						const expiresAt = new Date(cachedSnapshot.createdAt + COPILOT_ACTION_TTL_MS);
 						updatedRows = await withTenantCtx(ctx.organizationId, async (tx) => {
-							return tx
+							const inserted = await tx
 								.insert(copilotPendingActions)
 								.values({
 									id: callId,
-									sessionId: cached.sessionId,
+									sessionId: cachedSnapshot.sessionId,
 									organizationId: ctx.organizationId,
 									userId: ctx.userId ?? null,
-									toolName: cached.toolName,
+									toolName: cachedSnapshot.toolName,
 									arguments: effectiveArgs,
 									status: "confirmed",
-									createdAt: new Date(cached.createdAt),
+									createdAt: new Date(cachedSnapshot.createdAt),
 									expiresAt,
 									resolvedAt: new Date(),
 								})
 								.onConflictDoNothing()
 								.returning({ id: copilotPendingActions.id });
+
+							if (inserted.length > 0) {
+								return inserted;
+							}
+
+							return tx
+								.update(copilotPendingActions)
+								.set({
+									status: "confirmed",
+									arguments: effectiveArgs,
+									resolvedAt: new Date(),
+								})
+								.where(
+									and(
+										eq(copilotPendingActions.id, callId),
+										eq(copilotPendingActions.organizationId, ctx.organizationId),
+										eq(copilotPendingActions.status, "pending"),
+									),
+								)
+								.returning({ id: copilotPendingActions.id });
 						});
 					}
-				}
 
-				if (!updatedRows || updatedRows.length === 0) {
-					this.pendingActions.delete(callId);
+					if (!updatedRows || updatedRows.length === 0) {
+						return {
+							ok: false,
+							error: "Конфликт: действие уже подтверждено или не находится в статусе ожидания",
+							executionTimeMs: 0,
+						};
+					}
+				} catch (dbErr: unknown) {
 					return {
 						ok: false,
-						error: "Конфликт: действие уже подтверждено или не находится в статусе ожидания",
+						error: dbErr instanceof Error ? dbErr.message : "Ошибка базы данных при подтверждении действия",
 						executionTimeMs: 0,
 					};
 				}
-			} catch (dbErr: unknown) {
-				return {
-					ok: false,
-					error: dbErr instanceof Error ? dbErr.message : "Ошибка базы данных при подтверждении действия",
-					executionTimeMs: 0,
-				};
 			}
-		}
 
-		this.pendingActions.delete(callId);
+			const startTime = Date.now();
+			// Execute with guardrail config overriding supervised requirement for this approved action
+			const approvedCtx: ActionManagerContext = {
+				...ctx,
+				mode: "autonomous",
+			};
 
-		const startTime = Date.now();
-		// Execute with guardrail config overriding supervised requirement for this approved action
-		const approvedCtx: ActionManagerContext = {
-			...ctx,
-			mode: "autonomous",
-		};
-
-		// 1. Canonical Dental Tools SSOT execution (Mandates 8e, 8s, 8wy)
-		const dentalContext: DentalToolContext = {
-			organizationId: ctx.organizationId,
-			userId: ctx.userId,
-			doctorId: ctx.userId,
-			patientId:
-				(effectiveArgs.patientId as string) ||
-				(ctx.metadata?.patientId as string) ||
-				undefined,
-			activeVisitId:
-				(effectiveArgs.visitId as string) ||
-				(ctx.metadata?.activeVisitId as string) ||
-				undefined,
-			activeTooth:
-				typeof effectiveArgs.toothNumber === "number"
-					? effectiveArgs.toothNumber
-					: typeof effectiveArgs.tooth === "number"
-						? effectiveArgs.tooth
-						: undefined,
-			runtimeMode:
+			const resolvedRuntimeMode =
 				(ctx.metadata?.runtimeMode as "web_browser" | "desktop_native") ||
-				"web_browser",
-			db: (ctx.db as TenantDb | undefined) ?? undefined,
-			allowLocalExecution: true,
-		};
+				"web_browser";
 
-		try {
-			const rawRes = await executeDentalTool(
-				action.toolName,
-				effectiveArgs,
-				dentalContext,
-			);
-			const res = (
-				typeof rawRes === "object" && rawRes !== null ? rawRes : {}
-			) as DentalToolResultEnvelope;
-			const executionTimeMs = Date.now() - startTime;
-			if (res.success === false) {
-				// Fallback to legacy registry if tool not found in dentalTools
+			// 1. Canonical Dental Tools SSOT execution (Mandates 8e, 8s, 8wy)
+			const dentalContext: DentalToolContext = {
+				organizationId: ctx.organizationId,
+				userId: ctx.userId,
+				doctorId: ctx.userId,
+				patientId:
+					(effectiveArgs.patientId as string) ||
+					(ctx.metadata?.patientId as string) ||
+					undefined,
+				activeVisitId:
+					(effectiveArgs.visitId as string) ||
+					(ctx.metadata?.activeVisitId as string) ||
+					undefined,
+				activeTooth:
+					typeof effectiveArgs.toothNumber === "number"
+						? effectiveArgs.toothNumber
+						: typeof effectiveArgs.tooth === "number"
+							? effectiveArgs.tooth
+							: undefined,
+				runtimeMode: resolvedRuntimeMode,
+				db: (ctx.db as TenantDb | undefined) ?? undefined,
+				allowLocalExecution: resolvedRuntimeMode === "desktop_native",
+			};
+
+			try {
+				const rawRes = await executeDentalTool(
+					action.toolName,
+					effectiveArgs,
+					dentalContext,
+				);
+				const res = (
+					typeof rawRes === "object" && rawRes !== null ? rawRes : {}
+				) as DentalToolResultEnvelope;
+				const executionTimeMs = Date.now() - startTime;
+				if (res.success === false) {
+					// Fallback to legacy registry if tool not found in dentalTools
+					if (
+						res.code === "TOOL_NOT_FOUND" &&
+						typeof ctx.tools?.has === "function" &&
+						ctx.tools.has(action.toolName) &&
+						typeof ctx.tools?.call === "function"
+					) {
+						return await ctx.tools.call(
+							approvedCtx,
+							action.toolName,
+							effectiveArgs,
+						);
+					}
+					return {
+						ok: false,
+						error: res.error || "Ошибка выполнения действия",
+						data: res,
+						executionTimeMs,
+					};
+				}
+				return {
+					ok: true,
+					data: res,
+					executionTimeMs,
+				};
+			} catch (err: unknown) {
+				const executionTimeMs = Date.now() - startTime;
+				// Fallback to legacy registry if error
 				if (
-					res.code === "TOOL_NOT_FOUND" &&
 					typeof ctx.tools?.has === "function" &&
 					ctx.tools.has(action.toolName) &&
 					typeof ctx.tools?.call === "function"
 				) {
-					return await ctx.tools.call(
-						approvedCtx,
-						action.toolName,
-						effectiveArgs,
-					);
+					try {
+						return await ctx.tools.call(
+							approvedCtx,
+							action.toolName,
+							effectiveArgs,
+						);
+					} catch (legacyErr: unknown) {
+						aiLogger.warn("CopilotActionManager", "Legacy tool registry fallback failed", legacyErr);
+					}
 				}
 				return {
 					ok: false,
-					error: res.error || "Ошибка выполнения действия",
-					data: res,
+					error: err instanceof Error ? err.message : String(err),
 					executionTimeMs,
 				};
 			}
-			return {
-				ok: true,
-				data: res,
-				executionTimeMs,
-			};
-		} catch (err: unknown) {
-			const executionTimeMs = Date.now() - startTime;
-			// Fallback to legacy registry if error
-			if (
-				typeof ctx.tools?.has === "function" &&
-				ctx.tools.has(action.toolName) &&
-				typeof ctx.tools?.call === "function"
-			) {
-				try {
-					return await ctx.tools.call(
-						approvedCtx,
-						action.toolName,
-						effectiveArgs,
-					);
-				} catch {
-					// Fall through to error return below
-				}
-			}
-			return {
-				ok: false,
-				error: err instanceof Error ? err.message : String(err),
-				executionTimeMs,
-			};
+		} finally {
+			this.inFlightConfirmations.delete(callId);
 		}
 	}
 
@@ -379,7 +427,9 @@ export class CopilotActionManager {
 							eq(copilotPendingActions.organizationId, orgId),
 						),
 					);
-			}).catch(() => {});
+			}).catch((err: unknown) => {
+				aiLogger.warn("CopilotActionManager", "Failed to persist rejected action to DB", err);
+			});
 		}
 
 		if (!action && !organizationId) {

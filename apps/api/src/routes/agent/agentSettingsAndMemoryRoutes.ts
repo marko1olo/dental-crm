@@ -12,7 +12,10 @@ import {
 	requireClinicalReadContext,
 } from "../../security/tenantContext.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { validateUniversalApiKeyLive } from "../../ai/agentRouterClient.js";
+import {
+	validateSsrfSafeAiBaseUrl,
+	validateUniversalApiKeyLive,
+} from "../../ai/agentRouterClient.js";
 import {
 	getDoctorPreferencesFromDb,
 	saveDoctorPreferencesInDb,
@@ -20,13 +23,59 @@ import {
 
 const memoryFactItemSchema = z.union([
 	z.string(),
-	z.object({
-		id: z.string().optional(),
-		category: z.string().optional(),
-		fact: z.string(),
-		createdAt: z.string().optional(),
-	}).passthrough(),
+	z
+		.object({
+			id: z.string().optional(),
+			category: z.string().optional(),
+			fact: z.string(),
+			createdAt: z.string().optional(),
+		})
+		.strict(),
 ]);
+
+const granularPermissionsPatchSchema = z
+	.object({
+		autoApproveFileReads: z.boolean().optional(),
+		autoApproveFileWrites: z.boolean().optional(),
+		autoApproveClinicalMutations: z.boolean().optional(),
+		autoApproveFinancialDrafts: z.boolean().optional(),
+		autoApproveExternalSoftware: z.boolean().optional(),
+	})
+	.strict();
+
+const copilotSettingsPatchSchema = z
+	.object({
+		trustLevel: z.enum(["confirm_all", "balanced", "autonomous"]).optional(),
+		provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "groq"]).optional(),
+		model: z.string().max(200).optional(),
+		modelRoutingMode: z.enum(["server_managed", "custom_byok"]).optional(),
+		byokProvider: z.enum(["gemini", "openai", "anthropic", "deepseek", "groq"]).optional(),
+		byokApiKey: z.string().max(500).optional(),
+		byokModel: z.string().max(200).optional(),
+		byokBaseUrl: z.string().max(500).optional(),
+		speedMode: z.enum(["turbo", "deep_reasoning"]).optional(),
+		showThinkingProcess: z.boolean().optional(),
+		showTypingAnimation: z.boolean().optional(),
+		clinicalSpecialization: z.enum(["therapy", "orthopedics", "surgery", "orthodontics", "perio", "pediatric"]).optional(),
+		diaryTemplate: z.enum(["soap", "treatment_diary", "clinical_protocol", "express"]).optional(),
+		customDoctorInstructions: z.string().max(8000).optional(),
+		granularPermissions: granularPermissionsPatchSchema.optional(),
+		temperature: z.number().min(0).max(2).optional(),
+		contextLimitTokens: z.number().int().positive().optional(),
+		runtimeMode: z.enum(["web_browser", "desktop_native", "chairside_tablet", "mobile_tablet"]).optional(),
+		speechEngine: z.enum(["gemini_live", "whisper", "web_speech"]).optional(),
+		autoSaveDrafts: z.boolean().optional(),
+		webSpeechSensitivity: z.enum(["high", "normal", "low"]).optional(),
+		maskPhiData: z.boolean().optional(),
+		apiKeyMasked: z.string().max(200).optional(),
+		globalDictationHotkey: z.string().max(100).optional(),
+		autoMicOnAppointmentOpen: z.boolean().optional(),
+		localDropzonePath: z.string().max(500).optional(),
+		gloveModeTouchTarget: z.boolean().optional(),
+		screenWakeLock: z.boolean().optional(),
+		hapticFeedbackEnabled: z.boolean().optional(),
+	})
+	.strict();
 
 export async function registerAgentSettingsAndMemoryRoutes(
 	server: FastifyInstance,
@@ -43,12 +92,14 @@ export async function registerAgentSettingsAndMemoryRoutes(
 			);
 			if (!context) return;
 
-			const bodySchema = z.object({
-				provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom", "groq"]),
-				apiKey: z.string().min(1, "API-ключ обязателен"),
-				model: z.string().optional(),
-				baseUrl: z.string().optional(),
-			});
+			const bodySchema = z
+				.object({
+					provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom", "groq"]),
+					apiKey: z.string().min(1, "API-ключ обязателен"),
+					model: z.string().optional(),
+					baseUrl: z.string().optional(),
+				})
+				.strict();
 
 			const parseResult = bodySchema.safeParse(request.body ?? {});
 			if (!parseResult.success) {
@@ -60,6 +111,17 @@ export async function registerAgentSettingsAndMemoryRoutes(
 			}
 
 			const { provider, apiKey, model, baseUrl } = parseResult.data;
+			if (baseUrl) {
+				const ssrfCheck = await validateSsrfSafeAiBaseUrl(baseUrl);
+				if (!ssrfCheck.valid) {
+					return reply.code(400).send({
+						valid: false,
+						error: "ValidationError",
+						message: ssrfCheck.error ?? "Недопустимый URL провайдера ИИ",
+					});
+				}
+			}
+
 			const validation = await validateUniversalApiKeyLive(
 				provider,
 				apiKey,
@@ -118,9 +180,11 @@ export async function registerAgentSettingsAndMemoryRoutes(
 			);
 			if (!context) return;
 
-			const bodySchema = z.object({
-				memoryFacts: z.array(memoryFactItemSchema),
-			});
+			const bodySchema = z
+				.object({
+					memoryFacts: z.array(memoryFactItemSchema),
+				})
+				.strict();
 
 			const parseResult = bodySchema.safeParse(request.body ?? {});
 			if (!parseResult.success) {
@@ -211,10 +275,12 @@ export async function registerAgentSettingsAndMemoryRoutes(
 			);
 			if (!context) return;
 
-			const bodySchema = z.object({
-				settings: z.record(z.unknown()),
-				specialty: z.string().optional(),
-			});
+			const bodySchema = z
+				.object({
+					settings: copilotSettingsPatchSchema,
+					specialty: z.string().optional(),
+				})
+				.strict();
 
 			const parseResult = bodySchema.safeParse(request.body ?? {});
 			if (!parseResult.success) {

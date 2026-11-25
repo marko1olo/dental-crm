@@ -51,8 +51,10 @@ export async function handleReplaceFileContent(args: ReplaceFileContentInput, co
 		const raw = await fs.promises.readFile(normalized, "utf8");
 		if (args.startLine !== undefined || args.endLine !== undefined) {
 			const res = applyLineScopedReplace(raw, args.targetContent, args.replacementContent, Math.max(1, args.startLine ?? 1), Math.min(raw.split(/\r?\n/).length, args.endLine ?? raw.split(/\r?\n/).length), args.allowMultiple ?? false);
-			if (res.error) return { success: false, error: res.error };
-			await fs.promises.writeFile(normalized, res.content!, "utf8");
+			if (res.error || res.content === undefined) {
+				return { success: false, error: res.error ?? "Не удалось применить замену в указанном диапазоне строк." };
+			}
+			await fs.promises.writeFile(normalized, res.content, "utf8");
 			return { success: true, targetFile: normalized, replacementsCount: res.count, message: `Заменено ${res.count} вхождений.` };
 		}
 		const count = raw.split(args.targetContent).length - 1;

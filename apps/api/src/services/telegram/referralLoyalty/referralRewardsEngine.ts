@@ -6,6 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { rublesToKopecks } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
@@ -267,6 +268,7 @@ export async function processReferralStart(
 						refereePatientId: refereeId,
 						status: "completed",
 						qualifyingAmountRub: String(config.refereeWelcomeBonusRub),
+						qualifyingAmountKopecks: rublesToKopecks(config.refereeWelcomeBonusRub),
 					});
 
 					// Начисляем приветственные 1 000 ₽ другу

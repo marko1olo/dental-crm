@@ -324,6 +324,9 @@ describe("Omnichannel Bot Engine & Token Vault Inquisition", () => {
 			assert.ok(zipStr.includes("docker-compose.yml"), "Архив обязан содержать docker-compose.yml");
 			assert.ok(zipStr.includes("src/bot.ts"), "Архив обязан содержать src/bot.ts");
 			assert.ok(zipStr.includes("README.md"), "Архив обязан содержать README.md");
+			assert.strictEqual(zipStr.includes("+79990000000"), false, "Шаблон бота не должен содержать фейковый телефон +79990000000");
+			assert.strictEqual(zipStr.includes("console.log"), false, "Шаблон бота должен использовать botLog вместо console.log");
+			assert.strictEqual(zipStr.includes("catch {}"), false, "Шаблон бота не должен содержать пустой catch {}");
 		});
 	});
 });

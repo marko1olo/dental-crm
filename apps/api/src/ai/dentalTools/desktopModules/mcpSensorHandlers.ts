@@ -79,39 +79,42 @@ export function handleScannerCall(toolName: string, args: Record<string, unknown
 	return null;
 }
 
-export function handleTwainCall(toolName: string, args: Record<string, unknown>) {
+export function handleTwainCall(toolName: string, _args: Record<string, unknown>) {
+	const bridgeUrl = process.env.TWAIN_BRIDGE_URL?.trim();
 	if (toolName === "list_devices") {
-		const isHardwareAttached = process.env.TWAIN_DEVICE_CONNECTED === "1";
-		return {
-			success: true,
-			data: {
-				devices: [
-					{ id: "vatech_ezsensor_15", name: "Vatech EzSensor 1.5", type: "sensor", connected: isHardwareAttached },
-					{ id: "planmeca_prosensor", name: "Planmeca ProSensor HD", type: "sensor", connected: false },
-				],
-			},
-		};
-	}
-	if (toolName === "acquire_frame") {
-		const isHardwareAttached = process.env.TWAIN_DEVICE_CONNECTED === "1";
-		if (!isHardwareAttached) {
+		if (!bridgeUrl) {
 			return {
 				success: false,
-				status: "device_offline",
-				message: "Визиограф не обнаружен",
-				error: "TWAIN-датчик не подключен к USB-порту или драйвер сенсора не установлен (device_offline)",
+				status: "native_bridge_unavailable",
+				data: {
+					devices: [],
+				},
+				message:
+					"Нативный TWAIN-драйвер визиографа не подключён (TWAIN_BRIDGE_URL не настроен).",
+				error:
+					"TWAIN-мост не обнаружен в текущем окружении (native_bridge_unavailable).",
 			};
 		}
 		return {
-			success: true,
+			success: false,
+			status: "native_bridge_sync_required",
 			data: {
-				deviceId: args.deviceId || "vatech_ezsensor_15",
-				resolutionDpi: 600,
-				width: 1400,
-				height: 1800,
-				capturedAt: new Date().toISOString(),
-				message: "Рентгеновский снимок успешно захвачен с TWAIN-сенсора.",
+				devices: [],
+				bridgeUrlConfigured: true,
 			},
+			message:
+				"Опрос TWAIN-устройств требует прямого вызова локального нативного агента визиографа.",
+			error: "Синхронный опрос драйвера TWAIN без IPC-канала недоступен.",
+		};
+	}
+	if (toolName === "acquire_frame") {
+		return {
+			success: false,
+			status: bridgeUrl ? "native_bridge_sync_required" : "device_offline",
+			message: "Визиограф не обнаружен",
+			error: bridgeUrl
+				? "Захват кадра с визиографа должен выполняться через асинхронный нативный TWAIN-мост."
+				: "TWAIN-датчик не подключен к USB-порту или драйвер сенсора не установлен (device_offline)",
 		};
 	}
 	return null;

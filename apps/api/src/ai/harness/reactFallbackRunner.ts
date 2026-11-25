@@ -114,7 +114,7 @@ export async function runDeterministicClinicalFallback(
 	if (isInvoiceRequest && context.patientId) {
 		const activeDb = context.db ?? defaultDb;
 		const orgId = context.organizationId;
-		let matchedService: { title: string; priceRub: number | string; code?: string } | null = null;
+		let matchedService: { title: string; priceKopecks: bigint | number | null; priceRub: number | string; code?: string } | null = null;
 
 		if (orgId) {
 			try {
@@ -130,6 +130,7 @@ export async function runDeterministicClinicalFallback(
 				const items = await activeDb
 					.select({
 						title: serviceCatalogItems.title,
+						priceKopecks: serviceCatalogItems.priceKopecks,
 						priceRub: serviceCatalogItems.priceRub,
 						code: serviceCatalogItems.code,
 					})
@@ -160,7 +161,9 @@ export async function runDeterministicClinicalFallback(
 			fallbackVerdictText = `${fallbackVerdict}\n\n${noServiceMsg}`;
 		} else {
 			const isConfirmAll = trustLevel === "confirm_all";
-			const priceKopecks = rublesToKopecks(Number(matchedService.priceRub));
+			const rawKopecks = Number(matchedService.priceKopecks ?? 0);
+			const priceKopecks =
+				rawKopecks > 0 ? rawKopecks : rublesToKopecks(Number(matchedService.priceRub ?? 0));
 			const invoiceTitle = toothMatch?.[1]
 				? `${matchedService.title} (зуб ${toothMatch[1]})`
 				: matchedService.title;

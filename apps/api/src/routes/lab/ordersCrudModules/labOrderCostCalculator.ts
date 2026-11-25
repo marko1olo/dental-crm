@@ -48,6 +48,9 @@ export async function fetchLabPriceFromDb(
 			.select({
 				id: serviceCatalogItems.id,
 				title: serviceCatalogItems.title,
+				basePriceKopecks: serviceCatalogItems.basePriceKopecks,
+				materialsCostKopecks: serviceCatalogItems.materialsCostKopecks,
+				labCostKopecks: serviceCatalogItems.labCostKopecks,
 				basePriceRub: serviceCatalogItems.basePriceRub,
 				materialsCostRub: serviceCatalogItems.materialsCostRub,
 				labCostRub: serviceCatalogItems.labCostRub,
@@ -67,10 +70,22 @@ export async function fetchLabPriceFromDb(
 
 		const matched = foundServices[0];
 		if (matched) {
+			const basePriceKopecks = Number(matched.basePriceKopecks ?? 0);
+			const labCostKopecks = Number(matched.labCostKopecks ?? 0);
+			const materialsCostKopecks = Number(matched.materialsCostKopecks ?? 0);
 
-			const basePrice = Number(matched.basePriceRub) || 0;
-			const labCost = Number(matched.labCostRub) || 0;
-			const materialsCost = Number(matched.materialsCostRub) || 0;
+			const basePrice =
+				basePriceKopecks > 0
+					? kopecksToRubles(basePriceKopecks)
+					: Number(matched.basePriceRub) || 0;
+			const labCost =
+				labCostKopecks > 0
+					? kopecksToRubles(labCostKopecks)
+					: Number(matched.labCostRub) || 0;
+			const materialsCost =
+				materialsCostKopecks > 0
+					? kopecksToRubles(materialsCostKopecks)
+					: Number(matched.materialsCostRub) || 0;
 			const resolvedCost =
 				labCost > 0
 					? labCost

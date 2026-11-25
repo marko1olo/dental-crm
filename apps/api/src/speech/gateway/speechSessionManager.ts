@@ -317,7 +317,6 @@ export function getSpeechGatewayStatus(): SpeechGatewayStatus {
 	if (
 		[
 			"azure_speech",
-			"google_speech",
 			"huggingface_asr",
 			"mobile_native_speech",
 		].includes(providerId)

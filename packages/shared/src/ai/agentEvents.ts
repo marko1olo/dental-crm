@@ -19,65 +19,102 @@ import { taskPlanSchema, type TaskPlan } from "./taskPlanTracker.js";
 // 1. ZOD SCHEMAS FOR RUNTIME VALIDATION
 // ==============================================================================
 
-export const agentHarnessEventTokenSchema = z.object({
-	type: z.literal("token"),
-	text: z.string(),
-});
+export const agentHarnessEventTokenSchema = z
+	.object({
+		type: z.literal("token"),
+		text: z.string(),
+	})
+	.strict();
 
-export const agentHarnessEventReasoningSchema = z.object({
-	type: z.literal("reasoning"),
-	text: z.string(),
-});
+export const agentHarnessEventReasoningSchema = z
+	.object({
+		type: z.literal("reasoning"),
+		text: z.string(),
+	})
+	.strict();
 
-export const agentHarnessEventToolStartSchema = z.object({
-	type: z.literal("tool_start"),
-	tool: z.string(),
-	args: z.record(z.unknown()),
-	callId: z.string(),
-});
+export const agentHarnessEventToolStartSchema = z
+	.object({
+		type: z.literal("tool_start"),
+		tool: z.string(),
+		args: z.record(z.unknown()),
+		callId: z.string(),
+	})
+	.strict();
 
-export const agentHarnessEventToolEndSchema = z.object({
-	type: z.literal("tool_end"),
-	tool: z.string(),
-	result: z.unknown().optional(),
-	callId: z.string(),
-});
+export const agentHarnessEventToolEndSchema = z
+	.object({
+		type: z.literal("tool_end"),
+		tool: z.string(),
+		result: z.unknown().optional(),
+		callId: z.string(),
+	})
+	.strict();
 
-export const agentHarnessEventConfirmationRequiredSchema = z.object({
-	type: z.literal("confirmation_required"),
-	tool: z.string(),
-	args: z.record(z.unknown()),
-	callId: z.string(),
-	descriptionRu: z.string().optional(),
-});
+export const agentHarnessEventConfirmationRequiredSchema = z
+	.object({
+		type: z.literal("confirmation_required"),
+		tool: z.string(),
+		args: z.record(z.unknown()),
+		callId: z.string(),
+		descriptionRu: z.string().optional(),
+		sessionId: z.string().optional(),
+	})
+	.strict();
 
-export const agentHarnessEventCompactTriggeredSchema = z.object({
-	type: z.literal("compact_triggered"),
-	tokensBefore: z.number().nonnegative(),
-	tokensAfter: z.number().nonnegative(),
-	compactedTurnsCount: z.number().int().nonnegative(),
-	strategy: z.string(),
-});
+export const agentHarnessEventCompactTriggeredSchema = z
+	.object({
+		type: z.literal("compact_triggered"),
+		tokensBefore: z.number().nonnegative().optional(),
+		tokensAfter: z.number().nonnegative().optional(),
+		compactedTurnsCount: z.number().int().nonnegative().optional(),
+		strategy: z.string().optional(),
+		beforeTokens: z.number().nonnegative().optional(),
+		afterTokens: z.number().nonnegative().optional(),
+		tokensSaved: z.number().nonnegative().optional(),
+		prunedToolOutputsCount: z.number().int().nonnegative().optional(),
+		compressedMessagesCount: z.number().int().nonnegative().optional(),
+		summary: z.string().optional(),
+	})
+	.strict();
 
-export const agentHarnessEventPlanUpdatedSchema = z.object({
-	type: z.literal("plan_updated"),
-	plan: taskPlanSchema,
-});
+export const agentHarnessEventPlanUpdatedSchema = z
+	.object({
+		type: z.literal("plan_updated"),
+		plan: taskPlanSchema,
+	})
+	.strict();
 
-export const agentHarnessEventErrorSchema = z.object({
-	type: z.literal("error"),
-	error: z.string(),
-	code: z.string().optional(),
-});
+export const agentHarnessEventErrorSchema = z
+	.object({
+		type: z.literal("error"),
+		error: z.string(),
+		code: z.string().optional(),
+	})
+	.strict();
 
-export const agentHarnessEventDoneSchema = z.object({
-	type: z.literal("done"),
-	text: z.string(),
-	toolCallsCount: z.number().int().nonnegative(),
-	iterations: z.number().int().nonnegative(),
-	plan: taskPlanSchema.optional(),
-	totalTokensEstimated: z.number().int().nonnegative().optional(),
-});
+export const agentHarnessEventDoneTokenUsageSchema = z
+	.object({
+		promptTokens: z.number().int().nonnegative(),
+		completionTokens: z.number().int().nonnegative(),
+		totalTokens: z.number().int().nonnegative(),
+		estimatedPromptTokens: z.number().int().nonnegative().optional(),
+	})
+	.strict();
+
+export const agentHarnessEventDoneSchema = z
+	.object({
+		type: z.literal("done"),
+		text: z.string(),
+		toolCallsCount: z.number().int().nonnegative(),
+		iterations: z.number().int().nonnegative(),
+		plan: taskPlanSchema.optional(),
+		totalTokensEstimated: z.number().int().nonnegative().optional(),
+		compacted: z.boolean().optional(),
+		tokenUsage: agentHarnessEventDoneTokenUsageSchema.optional(),
+		sessionId: z.string().optional(),
+	})
+	.strict();
 
 export const agentHarnessEventSchema = z.discriminatedUnion("type", [
 	agentHarnessEventTokenSchema,
@@ -156,12 +193,16 @@ export function parseAgentSseEvent(chunk: string): AgentHarnessEvent | null {
 	}
 
 	try {
-		const parsedJson = JSON.parse(dataLine);
-		// If payload didn't include type but event header did, backfill
-		if (!parsedJson.type && eventType) {
-			parsedJson.type = eventType;
+		const parsedJson: unknown = JSON.parse(dataLine);
+		if (!parsedJson || typeof parsedJson !== "object" || Array.isArray(parsedJson)) {
+			return null;
 		}
-		const validation = agentHarnessEventSchema.safeParse(parsedJson);
+		const record = parsedJson as Record<string, unknown>;
+		// If payload didn't include type but event header did, backfill
+		if (!record.type && eventType) {
+			record.type = eventType;
+		}
+		const validation = agentHarnessEventSchema.safeParse(record);
 		return validation.success ? validation.data : null;
 	} catch {
 		return null;

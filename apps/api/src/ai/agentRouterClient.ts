@@ -62,6 +62,7 @@ export {
 	getGeminiApiKeyCandidates,
 	getGroqApiKeyCandidates,
 	validateGeminiApiKeyLive,
+	validateSsrfSafeAiBaseUrl,
 	validateUniversalApiKeyLive,
 	resolveRequestEndpoint,
 	resolveEffectiveKeys,

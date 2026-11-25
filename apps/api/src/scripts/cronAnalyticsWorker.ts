@@ -17,6 +17,9 @@ import {
 	inClinicZone,
 	postgresKnowsTimeZone,
 } from "../services/reports/managerReports.js";
+import { createApiLogger, safeLogError } from "../observability/logger.js";
+
+const analyticsLogger = createApiLogger("cron-analytics");
 
 export interface CohortLtvQueryRow extends Record<string, unknown> {
 	readonly cohort: string | null;
@@ -114,8 +117,9 @@ export function buildDoctorProfitabilityRow(
 export async function runBiAnalyticsAggregation(orgId: string) {
 	try {
 		return await withTenantCtx(orgId, async (tx) => {
-			console.log(
-				`[BI Analytics] Starting aggregation for organization: ${orgId}`,
+			analyticsLogger.info(
+				{ organizationId: orgId },
+				"[BI Analytics] Starting aggregation for organization",
 			);
 
 			/*
@@ -307,14 +311,15 @@ export async function runBiAnalyticsAggregation(orgId: string) {
 					: [],
 			});
 
-			console.log(
-				`[BI Analytics] Snapshot generated successfully for organization: ${orgId}`,
+			analyticsLogger.info(
+				{ organizationId: orgId },
+				"[BI Analytics] Snapshot generated successfully for organization",
 			);
 		});
 	} catch (err: unknown) {
-		console.error(
-			`[BI Analytics] Failed to run aggregation for organization ${orgId}:`,
-			err,
+		analyticsLogger.error(
+			{ err: safeLogError(err), organizationId: orgId },
+			"[BI Analytics] Failed to run aggregation for organization",
 		);
 		throw err;
 	}
