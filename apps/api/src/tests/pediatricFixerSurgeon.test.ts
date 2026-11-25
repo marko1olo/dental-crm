@@ -73,7 +73,6 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 				email: "dr.pediatric@test.local",
 				fullName: "Др. Смирнова Анна Павловна",
 				role: "doctor",
-				isStaff: true,
 				isActive: true,
 			}).onConflictDoNothing();
 
@@ -247,16 +246,18 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 		assert.equal(bodyGet.memos[0].pulpotomyTooth, 54);
 
 		// 2d. Прямая верификация в таблице generatedDocuments
-		const [docInDb] = await db
-			.select()
-			.from(generatedDocuments)
-			.where(
-				and(
-					eq(generatedDocuments.organizationId, ORG_ID),
-					eq(generatedDocuments.id, bodyPost.memo.id)
+		const [docInDb] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(generatedDocuments)
+				.where(
+					and(
+						eq(generatedDocuments.organizationId, ORG_ID),
+						eq(generatedDocuments.id, bodyPost.memo.id)
+					)
 				)
-			)
-			.limit(1);
+				.limit(1)
+		);
 
 		assert.ok(docInDb, "Запись должна физически существовать в generatedDocuments");
 		assert.equal(docInDb.kind, "parent_memo");
@@ -298,16 +299,18 @@ describe("Pediatric Fixer Surgeon — Comprehensive Domain 1 Defect Elimination 
 		assert.equal(bodyPost.representative.consentSigned, true);
 
 		// 3b. Верификация в таблице patient_relationships
-		const [relInDb] = await db
-			.select()
-			.from(patientRelationships)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, ORG_ID),
-					eq(patientRelationships.patientId, CHILD_PATIENT_ID)
+		const [relInDb] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, ORG_ID),
+						eq(patientRelationships.patientId, CHILD_PATIENT_ID)
+					)
 				)
-			)
-			.limit(1);
+				.limit(1)
+		);
 
 		assert.ok(relInDb, "Связь должна быть сохранена в patient_relationships");
 		assert.equal(relInDb.isLegalRepresentative, true);

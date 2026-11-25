@@ -78,7 +78,7 @@ describe("Wave 9 Red-Team Fixer Proof: Leads, Marketing, Files, Photos & Patient
 			await withFixtureTenant(ORG_ID, async (tx) => {
 				await tx
 					.insert(organizations)
-					.values({ id: ORG_ID, name: "Wave9 Test Clinic", slug: `w9-${ORG_ID.slice(0, 8)}` })
+					.values({ id: ORG_ID, name: "Wave9 Test Clinic" })
 					.onConflictDoNothing();
 				await tx
 					.insert(clinics)
@@ -147,7 +147,7 @@ describe("Wave 9 Red-Team Fixer Proof: Leads, Marketing, Files, Photos & Patient
 			await withFixtureTenant(ORG_NO_DOCTOR_ID, async (tx) => {
 				await tx
 					.insert(organizations)
-					.values({ id: ORG_NO_DOCTOR_ID, name: "Wave9 NoDoc Clinic", slug: `w9-nodoc-${ORG_NO_DOCTOR_ID.slice(0, 8)}` })
+					.values({ id: ORG_NO_DOCTOR_ID, name: "Wave9 NoDoc Clinic" })
 					.onConflictDoNothing();
 				await tx.insert(users).values({
 					id: ADMIN_ONLY_ID,

@@ -8,26 +8,29 @@ import {
 	calculateLabOrderCostAndMarkup,
 	calculateLabOrderTurnaround,
 } from "../../routes/lab/ordersCrudModules/labOrderCostCalculator.js";
-import { mapDbStatusToStage } from "../../../../web/src/components/lab/dentalLabCatalogData.js";
-import { calculateLabFinancialSplit } from "../../../../web/src/components/lab/math/labFinancialSplit.js";
 import { mapStageToLabOrderStatus } from "../../routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.js";
-import { mapStageToCanonicalPgStatus } from "@dental/shared";
+import {
+	calculateLabFinancialSplitKopecks,
+	mapStageToCanonicalPgStatus,
+	rublesToKopecks,
+} from "@dental/shared";
 import { LAB_ORDER_STATUS_RU_MAP } from "../../services/daemons/ztlLookAheadDaemon.js";
 
 describe("Dental Lab Orders SSOT & Idempotency Invariants", () => {
-	it("1. mapDbStatusToStage correctly maps cancelled, rejected_remake, and shipped without default fallback", () => {
-		assert.equal(mapDbStatusToStage("cancelled"), "cancelled");
-		assert.equal(mapDbStatusToStage("rejected_remake"), "rejected_remake");
-		assert.equal(mapDbStatusToStage("rework"), "rejected_remake");
-		assert.equal(mapDbStatusToStage("shipped"), "shipped");
-		assert.equal(mapDbStatusToStage("in_progress"), "in_production");
-		assert.equal(mapDbStatusToStage("ready"), "in_clinic");
-		assert.equal(mapDbStatusToStage("completed"), "seated");
-		assert.equal(mapDbStatusToStage("sent"), "scan_sent");
+	it("1. mapStageToCanonicalPgStatus correctly maps cancelled, rejected_remake, rework, and shipped without default fallback", () => {
+		assert.equal(mapStageToCanonicalPgStatus("cancelled"), "cancelled");
+		assert.equal(mapStageToCanonicalPgStatus("rejected_remake"), "rejected_remake");
+		assert.equal(mapStageToCanonicalPgStatus("rework"), "refitting");
+		assert.equal(mapStageToCanonicalPgStatus("shipped"), "shipped");
+		assert.equal(mapStageToCanonicalPgStatus("in_production"), "in_progress");
+		assert.equal(mapStageToCanonicalPgStatus("ready"), "ready");
+		assert.equal(mapStageToCanonicalPgStatus("in_clinic"), "ready_in_clinic");
+		assert.equal(mapStageToCanonicalPgStatus("seated"), "completed");
+		assert.equal(mapStageToCanonicalPgStatus("scan_sent"), "sent");
 	});
 
-	it("2. calculateLabFinancialSplit computes exact kopeck split without float drift", () => {
-		const split = calculateLabFinancialSplit(15000, 30);
+	it("2. calculateLabFinancialSplitKopecks computes exact kopeck split without float drift", () => {
+		const split = calculateLabFinancialSplitKopecks(rublesToKopecks(15000), 30);
 		assert.equal(split.totalKopecks, 1500000);
 		assert.equal(split.doctorKopecks, 450000);
 		assert.equal(split.clinicKopecks, 1050000);

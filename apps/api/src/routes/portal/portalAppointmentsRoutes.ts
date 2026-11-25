@@ -1,6 +1,5 @@
 import { and, desc, eq, gt, lt, ne, notInArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
@@ -17,9 +16,12 @@ import {
 	utcToLocalWallTime,
 } from "../publicBooking/slotAvailabilityEngine.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
-import type {
-	BookAppointmentBody,
-	CancelAppointmentBody,
+import {
+	bookAppointmentBodySchema,
+	cancelAppointmentBodySchema,
+	rescheduleAppointmentBodySchema,
+	type BookAppointmentBody,
+	type CancelAppointmentBody,
 } from "./types.js";
 import { isValidUuid } from "@dental/shared";
 
@@ -32,8 +34,8 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const list = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const list = await tx
 				.select({
 					id: appointments.id,
 					doctorUserId: appointments.doctorUserId,
@@ -79,18 +81,22 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			};
 		}
 
-		const doctorId =
-			typeof request.body?.doctorId === "string" ? request.body.doctorId.trim() : "";
-		const startsAtStr =
-			typeof request.body?.startsAt === "string" ? request.body.startsAt.trim() : "";
-		const endsAtStr =
-			typeof request.body?.endsAt === "string" ? request.body.endsAt.trim() : "";
+		const parsedBody = bookAppointmentBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры записи на приём.",
+				details: parsedBody.error.format(),
+			};
+		}
+
+		const doctorId = parsedBody.data.doctorId?.trim() ?? "";
+		const startsAtStr = parsedBody.data.startsAt?.trim() ?? "";
+		const endsAtStr = parsedBody.data.endsAt?.trim() ?? "";
 		const reason =
-			typeof request.body?.reason === "string"
-				? request.body.reason.trim()
-				: "Запись через личный кабинет";
-		const comment =
-			typeof request.body?.comment === "string" ? request.body.comment.trim() : undefined;
+			parsedBody.data.reason?.trim() || "Запись через личный кабинет";
+		const comment = parsedBody.data.comment?.trim() || undefined;
 
 		if (!doctorId || !startsAtStr || !endsAtStr) {
 			reply.status(400);
@@ -141,9 +147,8 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			};
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			return db.transaction(async (tx) => {
-				// 1. Проверка рабочего графика клиники и врача (Мандат 8a, 8k: исключить запись в 3 ночи)
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			// 1. Проверка рабочего графика клиники и врача (Мандат 8a, 8k: исключить запись в 3 ночи)
 				const [orgRow] = await tx
 					.select({
 						clinicSchedule: organizations.clinicSchedule,
@@ -349,11 +354,11 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 
 				reply.status(201);
 				if (idempotencyKey) {
+					reply.header("Idempotency-Key", idempotencyKey);
 					reply.header("X-Idempotency-Key", idempotencyKey);
 				}
 				return { success: true, appointment: created };
 			});
-		});
 	});
 
 	// 19. Cancel Patient Appointment (Protected)
@@ -375,14 +380,20 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 				message: "Идентификатор записи на приём должен быть валидным UUID.",
 			};
 		}
+		const parsedBody = cancelAppointmentBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры отмены записи.",
+				details: parsedBody.error.format(),
+			};
+		}
 		const cancelReason =
-			typeof request.body?.reason === "string" && request.body.reason.trim()
-				? request.body.reason.trim()
-				: "Отменено пациентом через личный кабинет";
+			parsedBody.data.reason?.trim() || "Отменено пациентом через личный кабинет";
 
-		return withTenantCtx(auth.organizationId, async () => {
-			return db.transaction(async (tx) => {
-				const [appRow] = await tx
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [appRow] = await tx
 					.select()
 					.from(appointments)
 					.where(
@@ -433,7 +444,6 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 
 				return { success: true, appointment: updated };
 			});
-		});
 	});
 
 	// 19.1 Reschedule Patient Appointment (Protected)
@@ -460,7 +470,19 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			};
 		}
 
-		const startsAtStr = typeof request.body?.startsAt === "string" ? request.body.startsAt.trim() : "";
+		const parsedBody = rescheduleAppointmentBodySchema.safeParse(
+			request.body ?? {},
+		);
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры переноса записи.",
+				details: parsedBody.error.format(),
+			};
+		}
+
+		const startsAtStr = parsedBody.data.startsAt?.trim() ?? "";
 		if (!startsAtStr) {
 			reply.status(400);
 			return {
@@ -470,7 +492,7 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		}
 
 		const startDate = new Date(startsAtStr);
-		const endsAtStr = typeof request.body?.endsAt === "string" ? request.body.endsAt.trim() : "";
+		const endsAtStr = parsedBody.data.endsAt?.trim() ?? "";
 		const endDate = endsAtStr ? new Date(endsAtStr) : new Date(startDate.getTime() + 30 * 60 * 1000);
 
 		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
@@ -490,13 +512,10 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		}
 
 		const rescheduleReason =
-			typeof request.body?.reason === "string" && request.body.reason.trim()
-				? request.body.reason.trim()
-				: "Перенос пациентом через личный кабинет";
+			parsedBody.data.reason?.trim() || "Перенос пациентом через личный кабинет";
 
-		return withTenantCtx(auth.organizationId, async () => {
-			return db.transaction(async (tx) => {
-				const [appRow] = await tx
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [appRow] = await tx
 					.select()
 					.from(appointments)
 					.where(
@@ -735,7 +754,6 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 
 				return { success: true, appointment: updated };
 			});
-		});
 	});
 
 	// 20. Get Clinic Doctors for Online Booking (Protected)
@@ -746,8 +764,8 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			return { error: "Unauthorized" };
 		}
 
-		return withTenantCtx(auth.organizationId, async () => {
-			const list = await db
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const list = await tx
 				.select({
 					id: users.id,
 					fullName: users.fullName,

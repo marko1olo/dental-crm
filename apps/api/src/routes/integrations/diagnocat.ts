@@ -23,9 +23,11 @@ const diagnocatWebhookBodySchema = z
 	})
 	.passthrough();
 
-const diagnocatReportsParamsSchema = z.object({
-	patientId: z.string().regex(UUID_REGEX, "patientId должен быть UUID"),
-});
+const diagnocatReportsParamsSchema = z
+	.object({
+		patientId: z.string().regex(UUID_REGEX, "patientId должен быть UUID"),
+	})
+	.strict();
 
 export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 	const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -91,6 +93,21 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 		}
 
 		const inserted = await withTenantCtx(organizationId, async (tx) => {
+			const [patientRow] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, body.patientId),
+						eq(patients.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!patientRow) {
+				return null;
+			}
+
 			return tx
 				.insert(radiologyAiReports)
 				.values({
@@ -101,6 +118,13 @@ export async function registerDiagnocatIntegrationRoutes(app: FastifyInstance) {
 				})
 				.returning();
 		});
+
+		if (!inserted) {
+			return reply.status(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в указанной клинике.",
+			});
+		}
 
 		return reply.send({ success: true, reportId: inserted[0]?.id });
 	};

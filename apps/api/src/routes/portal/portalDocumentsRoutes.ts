@@ -18,6 +18,9 @@ import { extractPortalPatient } from "./portalAuthStore.js";
 import { DEFAULT_PORTAL_CONSENTS_CATALOG } from "./portalConsentsData.js";
 import { generateSha256Hex } from "./portalUtils.js";
 import {
+	approveTreatmentPlanBodySchema,
+	selectTierBodySchema,
+	signConsentBodySchema,
 	type SelectTierBody,
 } from "./types.js";
 import { isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
@@ -178,10 +181,17 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			};
 		}
 
-		const rawMethod =
-			typeof request.body?.signatureMethod === "string"
-				? request.body.signatureMethod.trim().toLowerCase()
-				: "";
+		const parsedBody = signConsentBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры подписания согласия.",
+				details: parsedBody.error.format(),
+			};
+		}
+
+		const rawMethod = parsedBody.data.signatureMethod?.trim().toLowerCase() ?? "";
 		if (
 			rawMethod &&
 			rawMethod !== "paper_physical" &&
@@ -204,8 +214,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 						? "touch_screen"
 						: "portal_pep";
 
-		const pepCode =
-			typeof request.body?.pepCode === "string" ? request.body.pepCode.trim() : "";
+		const pepCode = parsedBody.data.pepCode?.trim() ?? "";
 
 		// Обязательная верификация проверочного кода при подписании через SMS-OTP
 		if (signatureMethod === "sms_otp") {
@@ -226,10 +235,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			}
 		}
 
-		const signatureSvg =
-			typeof request.body?.signatureSvg === "string"
-				? request.body.signatureSvg.trim()
-				: "";
+		const signatureSvg = parsedBody.data.signatureSvg?.trim() ?? "";
 
 		if (signatureMethod === "touch_screen" && !signatureSvg) {
 			reply.status(400);
@@ -610,8 +616,17 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
 		}
 
-		const tierId =
-			typeof request.body?.tierId === "string" ? request.body.tierId.trim() : "";
+		const parsedBody = selectTierBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры выбора тарифа лечения.",
+				details: parsedBody.error.format(),
+			};
+		}
+
+		const tierId = parsedBody.data.tierId?.trim() ?? "";
 		if (tierId !== "basic" && tierId !== "standard" && tierId !== "premium") {
 			reply.status(400);
 			return {
@@ -705,7 +720,19 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
 		}
 
-		const pepCode = typeof request.body?.pepCode === "string" ? request.body.pepCode.trim() : "";
+		const parsedBody = approveTreatmentPlanBodySchema.safeParse(
+			request.body ?? {},
+		);
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры утверждения плана лечения.",
+				details: parsedBody.error.format(),
+			};
+		}
+
+		const pepCode = parsedBody.data.pepCode?.trim() ?? "";
 		if (!pepCode) {
 			reply.status(400);
 			return {

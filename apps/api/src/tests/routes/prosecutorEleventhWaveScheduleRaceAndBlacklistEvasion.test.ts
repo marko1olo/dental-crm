@@ -15,7 +15,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerPatientDuplicateRoutes } from "../../routes/patientDuplicates.js";
-import { registerPublicBookingRoutes } from "../../routes/publicBooking.js";
+import { registerPublicBookingRoutes } from "../../routes/publicBooking/index.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";

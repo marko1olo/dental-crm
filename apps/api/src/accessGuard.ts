@@ -127,6 +127,66 @@ export async function requireClinicalMutationAccess(
 	return false;
 }
 
+export function configuredSuperadminSecret(): string | null {
+	const explicit = process.env.DENTE_SUPERADMIN_SECRET?.trim();
+	return explicit || configuredClinicalMutationSecret();
+}
+
+export async function requireSuperadmin(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	protectedArea = "superadmin action",
+): Promise<boolean> {
+	const superadminSecret = configuredSuperadminSecret();
+	const explicitSuperadminSecret =
+		process.env.DENTE_SUPERADMIN_SECRET?.trim() || null;
+	const providedSuperadmin = request.headers["x-dente-superadmin-secret"];
+	const providedAdmin = request.headers[denteAdminSecretHeader];
+	const candidateSecret =
+		(Array.isArray(providedSuperadmin)
+			? providedSuperadmin[0]
+			: providedSuperadmin) ??
+		(Array.isArray(providedAdmin) ? providedAdmin[0] : providedAdmin);
+
+	if (
+		superadminSecret &&
+		timingSafeSecretEqual(
+			typeof candidateSecret === "string" ? candidateSecret : null,
+			superadminSecret,
+		)
+	) {
+		return true;
+	}
+
+	const identity = getRequestIdentity(request);
+	if (
+		identity.verified &&
+		(identity.role === "superadmin" ||
+			(!explicitSuperadminSecret && identity.role === "owner"))
+	) {
+		return true;
+	}
+
+	if (!superadminSecret) {
+		if (clinicalMutationsUnguardedAllowed()) return true;
+		reply.code(503).send({
+			error: "ClinicalAdminSecretMissing",
+			message:
+				"На сервере не задан секрет суперадминистратора для выполнения системной операции.",
+			protectedArea,
+		});
+		return false;
+	}
+
+	reply.code(403).send({
+		error: "ClinicalAdminSecretRequired",
+		message:
+			"Требуются права суперадминистратора или действующий секрет администратора.",
+		protectedArea,
+	});
+	return false;
+}
+
 export async function requireClinicalReadAccess(
 	request: FastifyRequest,
 	reply: FastifyReply,

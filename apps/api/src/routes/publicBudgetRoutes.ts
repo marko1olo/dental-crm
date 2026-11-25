@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { rublesToKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../db/client.js";
+import { withSuperuserBypass } from "../db/rls.js";
 import { portalBudgetTokens } from "../db/schema.js";
 import {
 	LOCKOUT_DURATION_MS,
@@ -33,11 +33,13 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				return reply.code(400).send({ error: "TokenRequired", message: "Укажите токен сметы." });
 			}
 
-			const [budget] = await db
-				.select()
-				.from(portalBudgetTokens)
-				.where(eq(portalBudgetTokens.token, token))
-				.limit(1);
+			const [budget] = await withSuperuserBypass(async (tx) =>
+				tx
+					.select()
+					.from(portalBudgetTokens)
+					.where(eq(portalBudgetTokens.token, token))
+					.limit(1),
+			);
 
 			if (!budget) {
 				return reply.code(404).send({
@@ -76,14 +78,16 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			// ФИКСАЦИЯ ПЕРВОГО ОТКРЫТИЯ (viewed)
 			if (!budget.viewedAt) {
 				const viewedIso = new Date();
-				await db
-					.update(portalBudgetTokens)
-					.set({
-						viewedAt: viewedIso,
-						status: budget.status === "sent" ? "viewed" : budget.status,
-						updatedAt: viewedIso,
-					})
-					.where(eq(portalBudgetTokens.token, token));
+				await withSuperuserBypass(async (tx) =>
+					tx
+						.update(portalBudgetTokens)
+						.set({
+							viewedAt: viewedIso,
+							status: budget.status === "sent" ? "viewed" : budget.status,
+							updatedAt: viewedIso,
+						})
+						.where(eq(portalBudgetTokens.token, token)),
+				);
 			}
 
 			// ЕСЛИ ЛИЧНОСТЬ НЕ ВЕРИФИЦИРОВАНА — НОЛЬ УТЕЧЕК!
@@ -190,11 +194,13 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			});
 		}
 
-		const [budget] = await db
-			.select()
-			.from(portalBudgetTokens)
-			.where(eq(portalBudgetTokens.token, token))
-			.limit(1);
+		const [budget] = await withSuperuserBypass(async (tx) =>
+			tx
+				.select()
+				.from(portalBudgetTokens)
+				.where(eq(portalBudgetTokens.token, token))
+				.limit(1),
+		);
 
 		if (!budget) {
 			return reply.code(404).send({
@@ -268,16 +274,18 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			const willLock = nextFailures >= MAX_VERIFY_ATTEMPTS;
 			const lockedUntil = willLock ? new Date(now + LOCKOUT_DURATION_MS) : null;
 
-			await db
-				.update(portalBudgetTokens)
-				.set({
-					failedAttempts: nextFailures,
-					totalFailures: (budget.totalFailures || 0) + 1,
-					isLocked: willLock,
-					lockedUntil,
-					updatedAt: new Date(),
-				})
-				.where(eq(portalBudgetTokens.token, token));
+			await withSuperuserBypass(async (tx) =>
+				tx
+					.update(portalBudgetTokens)
+					.set({
+						failedAttempts: nextFailures,
+						totalFailures: (budget.totalFailures || 0) + 1,
+						isLocked: willLock,
+						lockedUntil,
+						updatedAt: new Date(),
+					})
+					.where(eq(portalBudgetTokens.token, token)),
+			);
 
 			if (willLock) {
 				return reply.code(429).send({
@@ -298,15 +306,17 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 		}
 
 		// УСПЕШНОЕ ПОДТВЕРЖДЕНИЕ
-		await db
-			.update(portalBudgetTokens)
-			.set({
-				failedAttempts: 0,
-				isLocked: false,
-				lockedUntil: null,
-				updatedAt: new Date(),
-			})
-			.where(eq(portalBudgetTokens.token, token));
+		await withSuperuserBypass(async (tx) =>
+			tx
+				.update(portalBudgetTokens)
+				.set({
+					failedAttempts: 0,
+					isLocked: false,
+					lockedUntil: null,
+					updatedAt: new Date(),
+				})
+				.where(eq(portalBudgetTokens.token, token)),
+		);
 
 		const sessionToken = createSessionToken(budget.patientId, budget.token);
 		reply.header(
@@ -351,6 +361,7 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 			const idempotencyKey =
 				typeof rawIdemKey === "string" ? rawIdemKey.trim() : undefined;
 			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
 				reply.header("X-Idempotency-Key", idempotencyKey);
 			}
 
@@ -362,11 +373,13 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				});
 			}
 
-			const [budget] = await db
-				.select()
-				.from(portalBudgetTokens)
-				.where(eq(portalBudgetTokens.token, token))
-				.limit(1);
+			const [budget] = await withSuperuserBypass(async (tx) =>
+				tx
+					.select()
+					.from(portalBudgetTokens)
+					.where(eq(portalBudgetTokens.token, token))
+					.limit(1),
+			);
 
 			if (!budget) {
 				return reply.code(404).send({

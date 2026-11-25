@@ -596,6 +596,15 @@ export async function updatePatientInDb(
 					? (existingAdmin.clinicalSafetyProfile as Record<string, unknown>)
 					: {};
 
+			const adminNestedSafety =
+				input.administrativeProfile &&
+				typeof input.administrativeProfile === "object" &&
+				input.administrativeProfile.clinicalSafetyProfile &&
+				typeof input.administrativeProfile.clinicalSafetyProfile === "object" &&
+				!Array.isArray(input.administrativeProfile.clinicalSafetyProfile)
+					? (input.administrativeProfile.clinicalSafetyProfile as Record<string, unknown>)
+					: {};
+
 			const inputSafety =
 				input.clinicalSafetyProfile &&
 				typeof input.clinicalSafetyProfile === "object" &&
@@ -605,6 +614,7 @@ export async function updatePatientInDb(
 
 			const mergedSafety = {
 				...existingSafety,
+				...adminNestedSafety,
 				...inputSafety,
 				...(input.allergies !== undefined ? { allergies: input.allergies } : {}),
 				...(input.somaticNotes !== undefined ? { somaticNotes: input.somaticNotes } : {}),

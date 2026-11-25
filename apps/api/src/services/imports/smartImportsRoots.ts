@@ -2,7 +2,7 @@
  * Discovery root candidate identification and path ranking.
  */
 import { createHash } from "node:crypto";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, realpathSync, statSync } from "node:fs";
 import { open } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -541,10 +541,104 @@ export type MigrationSourceRoute = {
 	sourceKind: SmartImportLegacySource["kind"];
 	safeDisplayName: string;
 	sourceFingerprint: string;
+	organizationId?: string | undefined;
 	createdAtMs: number;
 };
 
 export const migrationSourceRouteStore = new Map<string, MigrationSourceRoute>();
+
+function resolveRealPathOrNearestParent(resolvedPath: string): string {
+	try {
+		return realpathSync(resolvedPath);
+	} catch {
+		let current = resolvedPath;
+		const trailing: string[] = [];
+		for (let i = 0; i < 16; i += 1) {
+			const parent = path.dirname(current);
+			if (parent === current) break;
+			trailing.unshift(path.basename(current));
+			try {
+				const realParent = realpathSync(parent);
+				return path.join(realParent, ...trailing);
+			} catch {
+				current = parent;
+			}
+		}
+		return resolvedPath;
+	}
+}
+
+export function isAllowedMigrationPath(targetPath: string): {
+	allowed: boolean;
+	realPath: string;
+	reason?: string;
+} {
+	const trimmed = targetPath.trim();
+	if (!trimmed || trimmed.includes("\0")) {
+		return { allowed: false, realPath: "", reason: "empty_or_null_byte" };
+	}
+	const resolved = path.resolve(trimmed);
+	const realPath = resolveRealPathOrNearestParent(resolved);
+	const normalized = realPath.replace(/\\/g, "/").toLowerCase();
+
+	const blockedPrefixes = [
+		"c:/windows",
+		"c:/system volume information",
+		"c:/$recycle.bin",
+		"c:/recovery",
+		"c:/programdata/microsoft",
+		"/etc",
+		"/proc",
+		"/sys",
+		"/dev",
+		"/boot",
+		"/root",
+		"/sbin",
+		"/usr/sbin",
+		"/var/run",
+		"/var/lib/postgresql",
+		"/private/etc",
+		"/private/var/db",
+	];
+	for (const prefix of blockedPrefixes) {
+		if (normalized === prefix || normalized.startsWith(`${prefix}/`)) {
+			return { allowed: false, realPath, reason: "blocked_system_directory" };
+		}
+	}
+
+	const segments = normalized.split("/").filter(Boolean);
+	const blockedSegments = new Set([
+		".ssh",
+		".gnupg",
+		".aws",
+		".kube",
+		"system32",
+		"syswow64",
+	]);
+	const blockedFiles = new Set([
+		".env",
+		"id_rsa",
+		"id_ed25519",
+		"sam",
+		"ntds.dit",
+		"shadow",
+		"passwd",
+	]);
+	for (let i = 0; i < segments.length; i += 1) {
+		const seg = segments[i] ?? "";
+		if (blockedSegments.has(seg)) {
+			return { allowed: false, realPath, reason: "blocked_sensitive_segment" };
+		}
+		if (
+			i === segments.length - 1 &&
+			(blockedFiles.has(seg) || seg.startsWith(".env."))
+		) {
+			return { allowed: false, realPath, reason: "blocked_sensitive_file" };
+		}
+	}
+
+	return { allowed: true, realPath };
+}
 
 export function isMigrationPublicSourceToken(sourceRef: string) {
 	return /^(?:browser-local|smart-preview|workstation-profile|workstation-signal):[a-f0-9]{8,12}$/i.test(
@@ -556,25 +650,35 @@ export function isMigrationSourceRouteToken(sourceRef: string) {
 	return /^migration-source:[a-f0-9]{8,12}$/i.test(sourceRef);
 }
 
+function migrationSourceStoreKey(tokenLower: string, organizationId?: string): string {
+	return `${organizationId ?? "global"}:${tokenLower}`;
+}
+
 export function registerMigrationSourceRoute(
 	sourceRef: string,
 	sourceKind: SmartImportLegacySource["kind"],
 	safeDisplayName: string,
+	organizationId?: string,
 ) {
 	if (isMigrationPublicSourceToken(sourceRef)) return sourceRef;
 	const sourceFingerprint = migrationFingerprint(sourceRef);
 	const token = `migration-source:${sourceFingerprint.toUpperCase()}`;
-	migrationSourceRouteStore.set(token.toLowerCase(), {
+	const key = migrationSourceStoreKey(token.toLowerCase(), organizationId);
+	migrationSourceRouteStore.set(key, {
 		sourceRef,
 		sourceKind,
 		safeDisplayName,
 		sourceFingerprint,
+		organizationId,
 		createdAtMs: Date.now(),
 	});
 	return token;
 }
 
-export function resolveMigrationSourceRoute(sourceRef: string) {
+export function resolveMigrationSourceRoute(
+	sourceRef: string,
+	organizationId?: string,
+) {
 	const trimmed = sourceRef.trim();
 	if (!isMigrationSourceRouteToken(trimmed)) {
 		return {
@@ -585,7 +689,8 @@ export function resolveMigrationSourceRoute(sourceRef: string) {
 			route: null as MigrationSourceRoute | null,
 		};
 	}
-	const route = migrationSourceRouteStore.get(trimmed.toLowerCase()) ?? null;
+	const key = migrationSourceStoreKey(trimmed.toLowerCase(), organizationId);
+	const route = migrationSourceRouteStore.get(key) ?? null;
 	return {
 		requestedSourceRef: trimmed,
 		sourceRef: route?.sourceRef ?? trimmed,

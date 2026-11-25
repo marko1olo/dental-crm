@@ -5,6 +5,19 @@ import { withTenantCtx } from "../../db/rls.js";
 import { communicationTasks, patients } from "../../db/schema.js";
 import { verifyWebhookSecret } from "../../security/webhookAuth.js";
 
+const flexbeLeadDataSchema = z
+	.object({
+		name: z.string().optional(),
+		phone: z.union([z.string(), z.number()]).optional(),
+		timestamp: z.union([z.string(), z.number()]).optional(),
+		time: z.union([z.string(), z.number()]).optional(),
+		id: z.union([z.string(), z.number()]).optional(),
+		submission_id: z.union([z.string(), z.number()]).optional(),
+		lead_id: z.union([z.string(), z.number()]).optional(),
+		req_id: z.union([z.string(), z.number()]).optional(),
+	})
+	.passthrough();
+
 const flexbePayloadSchema = z
 	.object({
 		event: z.string().optional(),
@@ -13,8 +26,17 @@ const flexbePayloadSchema = z
 				id: z.coerce.string().optional(),
 				name: z.string().optional(),
 			})
+			.passthrough()
 			.optional(),
-		data: z.record(z.unknown()).optional(),
+		data: flexbeLeadDataSchema.optional(),
+		name: z.string().optional(),
+		phone: z.union([z.string(), z.number()]).optional(),
+		timestamp: z.union([z.string(), z.number()]).optional(),
+		time: z.union([z.string(), z.number()]).optional(),
+		id: z.union([z.string(), z.number()]).optional(),
+		submission_id: z.union([z.string(), z.number()]).optional(),
+		lead_id: z.union([z.string(), z.number()]).optional(),
+		req_id: z.union([z.string(), z.number()]).optional(),
 	})
 	.passthrough();
 
@@ -31,11 +53,13 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 			) {
 				return reply;
 			}
-			const querySchema = z.object({
-				organizationId: z.string().uuid(),
-			});
+			const querySchema = z
+				.object({
+					organizationId: z.string().uuid(),
+				})
+				.strict();
 
-			const queryResult = querySchema.safeParse(req.query);
+			const queryResult = querySchema.safeParse(req.query ?? {});
 			if (!queryResult.success) {
 				return reply.status(400).send({
 					error:
@@ -49,12 +73,20 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 				return reply.status(400).send({ error: "Invalid payload format" });
 			}
 
-			const rawBody = (req.body && typeof req.body === "object" ? req.body : {}) as Record<string, unknown>;
-			const data: Record<string, unknown> = payload.data.data ?? rawBody;
-			const name = (typeof data["name"] === "string" && data["name"].trim().length > 0 ? data["name"] : "Лид с лендинга").toString();
-			const phone = typeof data["phone"] === "string" ? data["phone"].trim() : (data["phone"] != null ? String(data["phone"]) : null);
+			const validatedBody = payload.data;
+			const data = validatedBody.data ?? validatedBody;
+			const name =
+				typeof data.name === "string" && data.name.trim().length > 0
+					? data.name.trim()
+					: "Лид с лендинга";
+			const phone =
+				typeof data.phone === "string"
+					? data.phone.trim()
+					: data.phone != null
+						? String(data.phone)
+						: null;
 
-			const rawTs = data["timestamp"] ?? data["time"] ?? rawBody["timestamp"];
+			const rawTs = data.timestamp ?? data.time ?? validatedBody.timestamp;
 			if (rawTs != null) {
 				const numTs =
 					typeof rawTs === "number" ? rawTs : Number.parseInt(String(rawTs), 10);
@@ -70,11 +102,11 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 			}
 
 			const subIdRaw =
-				data["id"] ??
-				data["submission_id"] ??
-				data["lead_id"] ??
-				data["req_id"] ??
-				rawBody["id"];
+				data.id ??
+				data.submission_id ??
+				data.lead_id ??
+				data.req_id ??
+				validatedBody.id;
 			const subId =
 				subIdRaw != null && String(subIdRaw).trim().length > 0
 					? String(subIdRaw).trim()

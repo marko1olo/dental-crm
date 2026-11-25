@@ -129,23 +129,41 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			}
 		}
 
-		// 4. Проверка дубликатов по всей организации
-		const allStaff = await db
-			.select({
-				id: schema.users.id,
-				fullName: schema.users.fullName,
-				snils: schema.users.snils,
-				email: schema.users.email,
-				phone: schema.users.phone,
-				uiPreferences: schema.users.uiPreferences,
-			})
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.organizationId, auth.orgId),
-					ne(schema.users.id, params.staffId),
-				),
-			);
+		// 4. Проверка дубликатов по всей организации и загрузка существующей записи в контексте тенанта
+		const { allStaff, existingUser } = await withTenantCtx(
+			auth.orgId,
+			async (tx) => {
+				const staffRows = await tx
+					.select({
+						id: schema.users.id,
+						fullName: schema.users.fullName,
+						snils: schema.users.snils,
+						email: schema.users.email,
+						phone: schema.users.phone,
+						uiPreferences: schema.users.uiPreferences,
+					})
+					.from(schema.users)
+					.where(
+						and(
+							eq(schema.users.organizationId, auth.orgId),
+							ne(schema.users.id, params.staffId),
+						),
+					);
+
+				const [existing] = await tx
+					.select()
+					.from(schema.users)
+					.where(
+						and(
+							eq(schema.users.id, params.staffId),
+							eq(schema.users.organizationId, auth.orgId),
+						),
+					)
+					.limit(1);
+
+				return { allStaff: staffRows, existingUser: existing };
+			},
+		);
 
 		const staffCandidates: StaffMemberSearchCandidate[] = allStaff.map((u) => {
 			const ui = (u.uiPreferences as Record<string, unknown>) || {};
@@ -177,18 +195,6 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				conflict: duplicateConflict,
 			};
 		}
-
-		// 5. Загрузка существующей записи
-		const [existingUser] = await db
-			.select()
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			)
-			.limit(1);
 
 		if (!existingUser) {
 			reply.code(404);
@@ -585,26 +591,22 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			};
 		}
 
-		const [user] = await db
-			.select()
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			)
-			.limit(1);
+		const result = await withTenantCtx(auth.orgId, async (tx) => {
+			const [user] = await tx
+				.select()
+				.from(schema.users)
+				.where(
+					and(
+						eq(schema.users.id, params.staffId),
+						eq(schema.users.organizationId, auth.orgId),
+					),
+				)
+				.limit(1);
 
-		if (!user) {
-			reply.code(404);
-			return {
-				error: "StaffNotFound",
-				message: "Сотрудник не найден в этой клинике.",
-			};
-		}
+			if (!user) {
+				return { notFound: true as const };
+			}
 
-		await withTenantCtx(auth.orgId, async (tx) => {
 			await tx
 				.update(schema.users)
 				.set({ isActive: false })
@@ -622,8 +624,18 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				actorUserId: auth.callerUserId,
 				reason: `Деактивация сотрудника ${user.fullName} (${user.role})`,
 			}, tx);
+			return { notFound: false as const, user };
 		});
 
+		if (result.notFound) {
+			reply.code(404);
+			return {
+				error: "StaffNotFound",
+				message: "Сотрудник не найден в этой клинике.",
+			};
+		}
+
+		const { user } = result;
 		return {
 			ok: true,
 			id: user.id,

@@ -543,15 +543,18 @@ export async function buildMigrationAutopilot(
 		...(input.knownSources ?? []),
 		...smartImportKnownSources,
 	];
-	const discovery = await discoverLocalMigrationSources({
-		rootPaths: input.rootPaths,
-		maxDepth: input.maxDepth,
-		maxFolders: input.maxFolders,
-		maxFilesPerFolder: input.maxFilesPerFolder,
-		maxCandidates: input.maxCandidates,
-		includeWorkstationSignals: input.includeWorkstationSignals,
-		maxWorkstationSignals: input.maxWorkstationSignals,
-	});
+	const discovery = await discoverLocalMigrationSources(
+		{
+			rootPaths: input.rootPaths,
+			maxDepth: input.maxDepth,
+			maxFolders: input.maxFolders,
+			maxFilesPerFolder: input.maxFilesPerFolder,
+			maxCandidates: input.maxCandidates,
+			includeWorkstationSignals: input.includeWorkstationSignals,
+			maxWorkstationSignals: input.maxWorkstationSignals,
+		},
+		orgId,
+	);
 	discovery.warnings.forEach((warning) => {
 		warnings.add(warning);
 	});
@@ -622,16 +625,19 @@ export async function buildMigrationAutopilot(
 		probedCandidates.map(async (candidate) => {
 			let probe: MigrationLocalSourceProbeResponse | null = null;
 			try {
-				probe = await buildMigrationLocalSourceProbe({
-					sourceRef: candidate.sourceRef,
-					sourceKind: candidate.sourceKind,
-					safeDisplayName: candidate.safeDisplayName,
-					maxDepth: Math.min(2, input.maxDepth),
-					maxFolders: 100,
-					maxFiles: 600,
-					maxSampleArtifacts: 10,
-					readHeaderBytes: 4096,
-				});
+				probe = await buildMigrationLocalSourceProbe(
+					{
+						sourceRef: candidate.sourceRef,
+						sourceKind: candidate.sourceKind,
+						safeDisplayName: candidate.safeDisplayName,
+						maxDepth: Math.min(2, input.maxDepth),
+						maxFolders: 100,
+						maxFiles: 600,
+						maxSampleArtifacts: 10,
+						readHeaderBytes: 4096,
+					},
+					orgId,
+				);
 				probe.warnings.forEach((warning) => {
 					warnings.add(warning);
 				});

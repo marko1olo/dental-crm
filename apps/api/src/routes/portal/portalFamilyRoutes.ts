@@ -6,20 +6,24 @@ import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientRelationships, patients } from "../../db/schema.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 
-const addPortalFamilyMemberSchema = z.object({
-	fullName: z.string().min(1, "ФИО обязательно"),
-	relationship: z.string().min(1, "Степень родства обязательна"),
-	phone: z.string().optional(),
-	birthDate: z.string().optional(),
-	cardNumber: z.string().optional(),
-	allowSpendFamilyBalance: z.boolean().optional(),
-	allowBooking: z.boolean().optional(),
-});
+const addPortalFamilyMemberSchema = z
+	.object({
+		fullName: z.string().min(1, "ФИО обязательно"),
+		relationship: z.string().min(1, "Степень родства обязательна"),
+		phone: z.string().optional(),
+		birthDate: z.string().optional(),
+		cardNumber: z.string().optional(),
+		allowSpendFamilyBalance: z.boolean().optional(),
+		allowBooking: z.boolean().optional(),
+	})
+	.strict();
 
-const updatePortalFamilyPermissionsSchema = z.object({
-	memberId: z.string().min(1, "Идентификатор члена семьи обязателен"),
-	canSpendFamilyWallet: z.boolean(),
-});
+const updatePortalFamilyPermissionsSchema = z
+	.object({
+		memberId: z.string().min(1, "Идентификатор члена семьи обязателен"),
+		canSpendFamilyWallet: z.boolean(),
+	})
+	.strict();
 
 export async function registerPortalFamilyRoutes(server: FastifyInstance): Promise<void> {
 	// Добавление члена семьи через личный кабинет пациента

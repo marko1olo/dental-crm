@@ -145,7 +145,6 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 				email: "admin.fixer@test.local",
 				fullName: "Администратор Хирург",
 				role: "admin",
-				isStaff: true,
 				isActive: true,
 			}).onConflictDoNothing();
 
@@ -155,7 +154,6 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 				email: "doctor.fixer@test.local",
 				fullName: "Врач Хирург Пародонтолог",
 				role: "doctor",
-				isStaff: true,
 				isActive: true,
 			}).onConflictDoNothing();
 

@@ -23,7 +23,7 @@ import {
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
-	requireClinicalMutationAccess,
+	requireSuperadmin,
 	resolveOrganizationId,
 } from "../accessGuard.js";
 import { createApiLogger } from "../observability/logger.js";
@@ -51,15 +51,17 @@ export interface OtaRuntimeConfig {
 	customBundleZipPath?: string;
 }
 
-let otaConfig: OtaRuntimeConfig = {
-	version: process.env.DENTE_OTA_VERSION ?? "2.4.0",
-	minSupportedVersion:
-		process.env.DENTE_OTA_MIN_SUPPORTED_VERSION ?? "2.0.0",
-	releaseNotes:
-		"Плановое обновление DENTE CRM: оптимизация работы со снимками, защита целостности офлайн-мутаций, ускорение рендеринга зубной формулы.",
-	downloadUrl: "/api/mobile/bundle.zip",
-	publishedAt: new Date().toISOString(),
-};
+function createDefaultOtaConfig(): OtaRuntimeConfig {
+	return {
+		version: process.env.DENTE_OTA_VERSION ?? "2.4.0",
+		minSupportedVersion:
+			process.env.DENTE_OTA_MIN_SUPPORTED_VERSION ?? "2.0.0",
+		releaseNotes:
+			"Плановое обновление DENTE CRM: оптимизация работы со снимками, защита целостности офлайн-мутаций, ускорение рендеринга зубной формулы.",
+		downloadUrl: "/api/mobile/bundle.zip",
+		publishedAt: new Date().toISOString(),
+	};
+}
 
 /**
  * Кэш сгенерированного / прочитанного с диска бандла.
@@ -72,7 +74,29 @@ interface CachedBundle {
 	generatedAt: string;
 }
 
-let cachedBundle: CachedBundle | null = null;
+interface TenantOtaState {
+	config: OtaRuntimeConfig;
+	cachedBundle: CachedBundle | null;
+}
+
+const otaStateByOrg = new Map<string, TenantOtaState>();
+
+function otaStateKey(orgId: string | null): string {
+	return orgId?.trim() || "__platform__";
+}
+
+function getTenantOtaState(orgId: string | null): TenantOtaState {
+	const key = otaStateKey(orgId);
+	let state = otaStateByOrg.get(key);
+	if (!state) {
+		state = {
+			config: createDefaultOtaConfig(),
+			cachedBundle: null,
+		};
+		otaStateByOrg.set(key, state);
+	}
+	return state;
+}
 
 /**
  * Вычисление CRC-32 для ZIP заголовков.
@@ -193,33 +217,39 @@ export function createZipArchive(
  * Получение или создание детерминированного бандла для раздачи клиентам.
  */
 export function getOrCreateOtaBundle(
-	version = otaConfig.version,
+	version?: string,
 	customContent?: string,
+	orgId: string | null = null,
 ): CachedBundle {
+	const state = getTenantOtaState(orgId);
+	const effectiveVersion = version ?? state.config.version;
 	if (
-		cachedBundle &&
-		cachedBundle.version === version &&
+		state.cachedBundle &&
+		state.cachedBundle.version === effectiveVersion &&
 		!customContent
 	) {
-		return cachedBundle;
+		return state.cachedBundle;
 	}
 
 	// 1. Проверяем наличие реального zip файла на диске
-	if (otaConfig.customBundleZipPath && fs.existsSync(otaConfig.customBundleZipPath)) {
+	if (
+		state.config.customBundleZipPath &&
+		fs.existsSync(state.config.customBundleZipPath)
+	) {
 		try {
-			const fileBuffer = fs.readFileSync(otaConfig.customBundleZipPath);
+			const fileBuffer = fs.readFileSync(state.config.customBundleZipPath);
 			const sha256 = crypto
 				.createHash("sha256")
 				.update(fileBuffer)
 				.digest("hex");
-			cachedBundle = {
-				version,
+			state.cachedBundle = {
+				version: effectiveVersion,
 				buffer: fileBuffer,
 				sha256,
 				sizeBytes: fileBuffer.length,
 				generatedAt: new Date().toISOString(),
 			};
-			return cachedBundle;
+			return state.cachedBundle;
 		} catch (err) {
 			otaLogger.warn(
 				{ err },
@@ -232,9 +262,9 @@ export function getOrCreateOtaBundle(
 	const manifestContent = JSON.stringify(
 		{
 			app: "dente-crm",
-			version,
-			minSupportedVersion: otaConfig.minSupportedVersion,
-			builtAt: otaConfig.publishedAt,
+			version: effectiveVersion,
+			minSupportedVersion: state.config.minSupportedVersion,
+			builtAt: state.config.publishedAt,
 			customPayload: customContent ?? "production-web-bundle",
 		},
 		null,
@@ -245,11 +275,11 @@ export function getOrCreateOtaBundle(
 <html lang="ru">
 <head>
 	<meta charset="utf-8" />
-	<title>DENTE CRM — OTA Bundle v${version}</title>
+	<title>DENTE CRM — OTA Bundle v${effectiveVersion}</title>
 </head>
 <body>
-	<div id="dente-bundle-root" data-version="${version}">
-		<h1>DENTE Dynamic Shell v${version}</h1>
+	<div id="dente-bundle-root" data-version="${effectiveVersion}">
+		<h1>DENTE Dynamic Shell v${effectiveVersion}</h1>
 	</div>
 </body>
 </html>`;
@@ -265,7 +295,7 @@ export function getOrCreateOtaBundle(
 		},
 		{
 			name: "assets/version.txt",
-			data: Buffer.from(`DENTE_VERSION=${version}`, "utf-8"),
+			data: Buffer.from(`DENTE_VERSION=${effectiveVersion}`, "utf-8"),
 		},
 	];
 
@@ -275,25 +305,26 @@ export function getOrCreateOtaBundle(
 		.update(zipBuffer)
 		.digest("hex");
 
-	cachedBundle = {
-		version,
+	state.cachedBundle = {
+		version: effectiveVersion,
 		buffer: zipBuffer,
 		sha256,
 		sizeBytes: zipBuffer.length,
 		generatedAt: new Date().toISOString(),
 	};
 
-	return cachedBundle;
+	return state.cachedBundle;
 }
 
 /**
  * Сброс состояния для тестов.
  */
 export function resetOtaRuntimeState(newConfig?: Partial<OtaRuntimeConfig>): void {
-	cachedBundle = null;
+	otaStateByOrg.clear();
+	const platformState = getTenantOtaState(null);
 	if (newConfig) {
-		otaConfig = {
-			...otaConfig,
+		platformState.config = {
+			...platformState.config,
 			...newConfig,
 		};
 	}
@@ -311,30 +342,42 @@ export async function registerMobileOtaRoutes(
 	app.get(
 		"/api/mobile/version.json",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const query = (request.query ?? {}) as MobileOtaVersionQuery;
-			const parsedQuery = mobileOtaVersionQuerySchema.safeParse(query);
+			const parsedQuery = mobileOtaVersionQuerySchema.safeParse(
+				request.query ?? {},
+			);
+			if (!parsedQuery.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса версии OTA.",
+					details: parsedQuery.error.format(),
+				});
+			}
 
-			const clientVersion = parsedQuery.success
-				? parsedQuery.data.clientVersion
-				: (query.clientVersion as string | undefined);
+			const requesterOrgId = await resolveOrganizationId(request);
+			const state = getTenantOtaState(requesterOrgId);
+			const clientVersion = parsedQuery.data.clientVersion;
 
-			const bundle = getOrCreateOtaBundle(otaConfig.version);
+			const bundle = getOrCreateOtaBundle(
+				state.config.version,
+				undefined,
+				requesterOrgId,
+			);
 			const policy = evaluateOtaUpdatePolicy(
 				clientVersion,
-				otaConfig.version,
-				otaConfig.minSupportedVersion,
+				state.config.version,
+				state.config.minSupportedVersion,
 			);
 
 			const responsePayload: MobileOtaVersionResponse = {
-				version: otaConfig.version,
+				version: state.config.version,
 				bundleSha256: bundle.sha256,
-				minSupportedVersion: otaConfig.minSupportedVersion,
-				downloadUrl: otaConfig.downloadUrl,
-				releaseNotes: otaConfig.releaseNotes,
+				minSupportedVersion: state.config.minSupportedVersion,
+				downloadUrl: state.config.downloadUrl,
+				releaseNotes: state.config.releaseNotes,
 				mandatory: policy.mandatory,
 				updateAvailable: policy.updateAvailable,
 				isDeprecated: policy.isBlocked,
-				publishedAt: otaConfig.publishedAt,
+				publishedAt: state.config.publishedAt,
 				bundleSizeBytes: bundle.sizeBytes,
 			};
 
@@ -354,7 +397,13 @@ export async function registerMobileOtaRoutes(
 	app.get(
 		"/api/mobile/bundle.zip",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const bundle = getOrCreateOtaBundle(otaConfig.version);
+			const requesterOrgId = await resolveOrganizationId(request);
+			const state = getTenantOtaState(requesterOrgId);
+			const bundle = getOrCreateOtaBundle(
+				state.config.version,
+				undefined,
+				requesterOrgId,
+			);
 
 			const clientEtag = request.headers["if-none-match"];
 			if (
@@ -388,7 +437,7 @@ export async function registerMobileOtaRoutes(
 	app.post(
 		"/api/mobile/publish",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const accessGranted = await requireClinicalMutationAccess(
+			const accessGranted = await requireSuperadmin(
 				request,
 				reply,
 				"ota_publish",
@@ -407,26 +456,28 @@ export async function registerMobileOtaRoutes(
 			}
 
 			const body = parsedBody.data;
-			otaConfig.version = body.version;
+			const state = getTenantOtaState(requesterOrgId);
+			state.config.version = body.version;
 			if (body.minSupportedVersion) {
-				otaConfig.minSupportedVersion = body.minSupportedVersion;
+				state.config.minSupportedVersion = body.minSupportedVersion;
 			}
 			if (body.releaseNotes) {
-				otaConfig.releaseNotes = body.releaseNotes;
+				state.config.releaseNotes = body.releaseNotes;
 			}
-			otaConfig.publishedAt = new Date().toISOString();
+			state.config.publishedAt = new Date().toISOString();
 
-			// Сбрасываем кэш и генерируем новый бандл
-			cachedBundle = null;
+			// Сбрасываем кэш и генерируем новый бандл строго для текущего тенанта/платформы
+			state.cachedBundle = null;
 			const newBundle = getOrCreateOtaBundle(
-				otaConfig.version,
+				state.config.version,
 				body.customContent,
+				requesterOrgId,
 			);
 
 			otaLogger.info(
 				{
 					organizationId: requesterOrgId ?? "platform",
-					version: otaConfig.version,
+					version: state.config.version,
 					bundleSha256: newBundle.sha256,
 				},
 				"Published mobile OTA bundle",
@@ -434,11 +485,11 @@ export async function registerMobileOtaRoutes(
 
 			return reply.status(200).send({
 				success: true,
-				version: otaConfig.version,
-				minSupportedVersion: otaConfig.minSupportedVersion,
+				version: state.config.version,
+				minSupportedVersion: state.config.minSupportedVersion,
 				bundleSha256: newBundle.sha256,
 				bundleSizeBytes: newBundle.sizeBytes,
-				publishedAt: otaConfig.publishedAt,
+				publishedAt: state.config.publishedAt,
 			});
 		},
 	);
@@ -446,11 +497,17 @@ export async function registerMobileOtaRoutes(
 	/**
 	 * GET /api/mobile/health — Проверка статуса OTA подсистемы.
 	 */
-	app.get("/api/mobile/health", async () => {
-		const bundle = getOrCreateOtaBundle(otaConfig.version);
+	app.get("/api/mobile/health", async (request: FastifyRequest) => {
+		const requesterOrgId = await resolveOrganizationId(request);
+		const state = getTenantOtaState(requesterOrgId);
+		const bundle = getOrCreateOtaBundle(
+			state.config.version,
+			undefined,
+			requesterOrgId,
+		);
 		return {
 			status: "healthy",
-			otaVersion: otaConfig.version,
+			otaVersion: state.config.version,
 			bundleSha256: bundle.sha256,
 			bundleSize: bundle.sizeBytes,
 			time: new Date().toISOString(),

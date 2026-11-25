@@ -259,8 +259,9 @@ export async function recordPatientConsentEntry(
 	};
 }
 
+import type { TenantDb } from "../../db/rls.js";
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type DbOrTx = typeof db | DbTransaction;
+export type DbOrTx = typeof db | DbTransaction | TenantDb;
 
 export async function syncDocumentToPatientConsent(
 	orgId: string,

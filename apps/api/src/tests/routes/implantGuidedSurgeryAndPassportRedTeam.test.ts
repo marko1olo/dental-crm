@@ -85,7 +85,6 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 				email: "surgeon_implants@test.local",
 				fullName: "Др. Навигаторов С.В.",
 				role: "doctor",
-				isStaff: true,
 				isActive: true,
 			}).onConflictDoNothing();
 
@@ -112,7 +111,8 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 				sku: "TS3S4010S",
 				category: "implant_screw",
 				stockQuantity: "5.000",
-				priceKopecks: 1450000n,
+				pricePerUnitKopecks: 1450000n,
+				unitCostKopecks: 1450000n,
 				lotNumber: "LOT-OSS-2026-99",
 				expirationDate: "2029-12-31",
 				unit: "шт",

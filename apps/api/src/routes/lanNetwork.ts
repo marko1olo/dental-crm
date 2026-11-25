@@ -27,7 +27,7 @@ import {
 	getRankedLanInterfaces,
 } from "../services/lanDiscoveryService.js";
 import { getLanMeshService } from "../services/lanMeshService.js";
-import { getLanMeshAutoJoinService } from "../services/lanMeshAutoJoinService.js";
+import { getLanMeshAutoJoinServiceForOrg } from "../services/lanMeshAutoJoinService.js";
 import { SyncGatewayService } from "../services/sync/syncGatewayService.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 import {
@@ -67,33 +67,39 @@ function normalizeMeshEntityKind(kind: string): SyncMutationEntityKind {
 
 const pairRoleSchema = z.enum(["doctor", "assistant"]);
 
-const generatePairSchema = z.object({
-	role: pairRoleSchema.default("doctor"),
-	organizationId: z.string().optional(),
-	staffUserId: z.string().optional(),
-	targetIp: z.string().ip({ version: "v4" }).optional(),
-});
+const generatePairSchema = z
+	.object({
+		role: pairRoleSchema.default("doctor"),
+		organizationId: z.string().optional(),
+		staffUserId: z.string().optional(),
+		targetIp: z.string().ip({ version: "v4" }).optional(),
+	})
+	.strict();
 
-const verifyPairSchema = z.object({
-	token: z.string().min(1),
-	pin: z.string().optional(),
-	deviceName: z.string().optional(),
-});
+const verifyPairSchema = z
+	.object({
+		token: z.string().min(1),
+		pin: z.string().optional(),
+		deviceName: z.string().optional(),
+	})
+	.strict();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const lanPairingPayloadSchema = z.object({
-	type: z.literal("dente_lan_pairing"),
-	role: z.enum(["doctor", "assistant"]).default("doctor"),
-	organizationId: z.string(),
-	staffUserId: z.string().optional(),
-	serverId: z.string().optional(),
-	nonce: z.string(),
-	pin: z.string().optional(),
-	issuedAt: z.number().optional(),
-});
+const lanPairingPayloadSchema = z
+	.object({
+		type: z.literal("dente_lan_pairing"),
+		role: z.enum(["doctor", "assistant"]).default("doctor"),
+		organizationId: z.string(),
+		staffUserId: z.string().optional(),
+		serverId: z.string().optional(),
+		nonce: z.string(),
+		pin: z.string().optional(),
+		issuedAt: z.number().optional(),
+	})
+	.strict();
 
 export interface LanPairingPayload {
 	type: "dente_lan_pairing";
@@ -231,7 +237,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			hotspotGuide: {
 				title: "Включение мобильной точки доступа Windows (Hotspot)",
 				apIsolationWarning: "Если планшет врача или ассистента подключен к Wi-Fi клиники, но страница не открывается, на роутере включена изоляция клиентов (AP Isolation / Station Separation).",
-				solution: "Включите мобильную точку доступа прямо на компьютере сервера клиники в 1 клик, чтобы планшеты подключались напрямую без ограничений роутера.",
+				solution: "Включите мобильную точку доступа прямо на компьютере сервера клиники, чтобы планшеты подключались напрямую без ограничений роутера.",
 				steps: [
 					{ step: 1, title: "Параметры мобильного хот-спота", description: "Нажмите Win+I -> 'Сеть и Интернет' -> 'Мобильный хот-спот' (или запустите 'ms-settings:network-mobilehotspot').", command: "ms-settings:network-mobilehotspot" },
 					{ step: 2, title: "Включить раздачу Wi-Fi", description: "Включите тумблер 'Поделиться моим сетевым подключением'. Имя Wi-Fi сети и пароль отобразятся на экране." },
@@ -399,48 +405,34 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			60 * 60 * 24 * 7, // 7 days persistent tablet link
 		);
 
-		// Lookup target user or first active doctor/assistant for the role
+		// Lookup explicitly bound staff user only (never pick arbitrary first user)
 		let matchedUser: { id: string; fullName: string; role: string } | null = null;
 
-		try {
-			if (staffUserId) {
-				const targetStaffId = staffUserId;
-				const [user] = await withTenantCtx(orgId, async (tx) => {
-					return tx
-						.select({ id: users.id, fullName: users.fullName, role: users.role })
-						.from(users)
-						.where(
-							and(
-								eq(users.id, targetStaffId),
-								eq(users.organizationId, orgId),
-							),
-						)
-						.limit(1);
+		if (staffUserId) {
+			const targetStaffId = staffUserId;
+			const [user] = await withTenantCtx(orgId, async (tx) => {
+				return tx
+					.select({ id: users.id, fullName: users.fullName, role: users.role })
+					.from(users)
+					.where(
+						and(
+							eq(users.id, targetStaffId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.limit(1);
+			});
+			if (!user) {
+				return reply.code(403).send({
+					ok: false,
+					error: "StaffUserNotFound",
+					message: "Указанный сотрудник не найден в этой клинике.",
 				});
-				if (user) matchedUser = user;
 			}
-
-			if (!matchedUser) {
-				const [fallbackUser] = await withTenantCtx(orgId, async (tx) => {
-					return tx
-						.select({ id: users.id, fullName: users.fullName, role: users.role })
-						.from(users)
-						.where(
-							and(
-								eq(users.role, role === "assistant" ? "assistant" : "doctor"),
-								eq(users.organizationId, orgId),
-							),
-						)
-						.limit(1);
-				});
-				if (fallbackUser) matchedUser = fallbackUser;
-			}
-		} catch {
-			// Zero-Dead-Ends offline resilience: pairing succeeds even if database user lookup is temporarily unavailable
-			matchedUser = null;
+			matchedUser = user;
 		}
 
-		// Generate staff token for 1-click autonomy (no manual login required)
+		// Issue signed staff token only for explicitly matched user
 		const staffToken = matchedUser
 			? signToken(
 					{
@@ -555,7 +547,10 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const context = await requireClinicalMutationContext(request, reply, "lan mesh mutations");
 		if (!context) return;
 
-		const parseRes = z.object({ mutations: z.array(queuedMeshMutationSchema) }).safeParse(request.body);
+		const parseRes = z
+			.object({ mutations: z.array(queuedMeshMutationSchema) })
+			.strict()
+			.safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
 				ok: false,
@@ -845,7 +840,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const context = await requireClinicalReadContext(request, reply, "lan mesh auto-join status");
 		if (!context) return;
 
-		const autoJoin = getLanMeshAutoJoinService();
+		const autoJoin = getLanMeshAutoJoinServiceForOrg(context.organizationId);
 		const status = autoJoin.getPairingStatus();
 		return reply.send({
 			ok: true,
@@ -855,19 +850,17 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 	/**
 	 * POST /api/network/mesh/auto-join/rotate
-	 * Forces rotation of the 6-digit PIN (requires authenticated clinic session).
+	 * Forces rotation of the 6-digit PIN (requires authenticated clinic mutation context).
 	 */
 	app.post("/api/network/mesh/auto-join/rotate", async (request: FastifyRequest, reply: FastifyReply) => {
-		const identity = getRequestIdentity(request);
-		if (!identity.verified || !identity.organizationId) {
-			return reply.code(401).send({
-				ok: false,
-				error: "Unauthorized",
-				message: "Для ротации PIN-кода сопряжения требуется авторизованная сессия клиники.",
-			});
-		}
+		const context = await requireClinicalMutationContext(
+			request,
+			reply,
+			"lan mesh auto-join rotate",
+		);
+		if (!context) return;
 
-		const autoJoin = getLanMeshAutoJoinService();
+		const autoJoin = getLanMeshAutoJoinServiceForOrg(context.organizationId);
 		const pinInfo = autoJoin.rotatePin(true);
 		return reply.send({
 			ok: true,
@@ -881,15 +874,18 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * verifies mutual authentication, and joins the local clinic mesh.
 	 */
 	app.post("/api/network/mesh/auto-join/verify", { schema: { description: "LAN mesh auto-join verify with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
-		const autoJoinVerifySchema = z.object({
-			pin: z.string().min(6).max(6),
-			nodeId: z.string().optional(),
-			clientName: z.string().optional(),
-			role: lanMeshRoleSchema.optional(),
-			appVersion: z.string().optional(),
-			schemaVersion: z.union([z.number(), z.string()]).optional(),
-			port: z.number().int().positive().optional(),
-		});
+		const autoJoinVerifySchema = z
+			.object({
+				pin: z.string().min(6).max(6),
+				organizationId: z.string().uuid().optional(),
+				nodeId: z.string().optional(),
+				clientName: z.string().optional(),
+				role: lanMeshRoleSchema.optional(),
+				appVersion: z.string().optional(),
+				schemaVersion: z.union([z.number(), z.string()]).optional(),
+				port: z.number().int().positive().optional(),
+			})
+			.strict();
 
 		const parseRes = autoJoinVerifySchema.safeParse(request.body);
 		if (!parseRes.success) {
@@ -901,8 +897,14 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			});
 		}
 
+		const identity = getRequestIdentity(request);
+		const orgId =
+			identity.organizationId ??
+			parseRes.data.organizationId ??
+			process.env.DENTE_CLINIC_ID ??
+			"clinic-default";
 		const clientIp = request.ip || "127.0.0.1";
-		const autoJoin = getLanMeshAutoJoinService();
+		const autoJoin = getLanMeshAutoJoinServiceForOrg(orgId);
 		const joinResult = autoJoin.verifyAndJoin({
 			...parseRes.data,
 			clientIp,

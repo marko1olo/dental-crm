@@ -12,7 +12,7 @@ import {
 	patients,
 	users,
 } from "../../db/schema.js";
-import { registerPublicBookingRoutes } from "../../routes/publicBooking.js";
+import { registerPublicBookingRoutes } from "../../routes/publicBooking/index.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -85,19 +85,6 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 		};
 
 		try {
-			await withFixtureTenant(ORG_ID, async () => {
-				await db
-					.delete(appointments)
-					.where(eq(appointments.organizationId, ORG_ID));
-				await db
-					.delete(patientArchiveReasonsAndBlacklists)
-					.where(
-						eq(patientArchiveReasonsAndBlacklists.organizationId, ORG_ID),
-					);
-				await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-				await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			});
 			await purgeFixtureOrganizations([ORG_ID]);
 
 			await withFixtureTenant(ORG_ID, async () => {
@@ -108,13 +95,22 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 						workHours: [8, 21],
 						workingDays: [1, 2, 3, 4, 5, 6, 7],
 					},
+				}).onConflictDoUpdate({
+					target: organizations.id,
+					set: {
+						name: "Клиника строгой безопасности (Wave 8)",
+						clinicSchedule: {
+							workHours: [8, 21],
+							workingDays: [1, 2, 3, 4, 5, 6, 7],
+						},
+					},
 				});
 				await db.insert(clinics).values({
 					id: CLINIC_ID,
 					organizationId: ORG_ID,
 					name: "Центральное отделение",
 					timezone: "Europe/Moscow",
-				});
+				}).onConflictDoNothing();
 				// 1 активное кресло
 				await db.insert(chairs).values({
 					id: CHAIR_ID,
@@ -122,7 +118,7 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 					clinicId: CLINIC_ID,
 					name: "Кресло 1",
 					isActive: true,
-				});
+				}).onConflictDoNothing();
 				// 1 активный врач
 				await db.insert(users).values({
 					id: DOCTOR_ID,
@@ -139,7 +135,7 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 						saturday: { start: "08:00", end: "20:00" },
 						sunday: { start: "08:00", end: "20:00" },
 					},
-				});
+				}).onConflictDoNothing();
 				// Пациенты: 1 активный, 1 черный список, 1 архивный
 				await db.insert(patients).values([
 					{

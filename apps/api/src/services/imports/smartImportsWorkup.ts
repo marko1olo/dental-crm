@@ -22,6 +22,7 @@ import { detectLegacySourceKind, legacySourcePlaybook } from "./smartImportsLega
 const logger = createApiLogger("smartImportsWorkup");
 import { migrationLocalSourceWorkupResponseSchema } from "@dental/shared";
 import {
+  isAllowedMigrationPath,
   resolveMigrationSourceRoute,
   migrationSafeAlias,
   migrationVendorGuidanceMatches,
@@ -518,8 +519,9 @@ export function buildMigrationBridgeKit(input: {
 
 export function buildMigrationLocalSourceWorkup(
 	input: MigrationLocalSourceWorkupRequest,
+	organizationId?: string,
 ) {
-	const routeRef = resolveMigrationSourceRoute(input.sourceRef);
+	const routeRef = resolveMigrationSourceRoute(input.sourceRef, organizationId);
 	const sourceRef = routeRef.sourceRef;
 	const isUrl = /^https?:\/\//i.test(sourceRef);
 	const isBrowserManifest = /^browser-local:[a-f0-9]{8,12}$/i.test(sourceRef);
@@ -591,9 +593,24 @@ export function buildMigrationLocalSourceWorkup(
 		warnings.push(
 			"Источник пришел как системный след рабочей станции: процесс, служба или настроенный сигнал распознан, но это не база и не папка снимков. Нужна выгрузка, резервная копия, папка данных или локальный модуль только для чтения.",
 		);
-	} else if (!routeRef.routeExpired && !isUrl) {
+	}
+	const shouldCheckFsPath =
+		!routeRef.routeExpired &&
+		!isUrl &&
+		!isBrowserLikeManifest &&
+		!isWorkstationTrace &&
+		!sourceRef.startsWith("\\\\");
+	const pathJailCheck = shouldCheckFsPath
+		? isAllowedMigrationPath(normalizedSourceRef)
+		: { allowed: true, realPath: normalizedSourceRef };
+	if (!pathJailCheck.allowed) {
+		warnings.push(
+			"Источник отклонён политикой безопасности сервера (системный или защищённый каталог).",
+		);
+		fileExtension = null;
+	} else if (shouldCheckFsPath) {
 		try {
-			const stat = statSync(normalizedSourceRef);
+			const stat = statSync(pathJailCheck.realPath);
 			sourceExists = true;
 			sourceIsDirectory = stat.isDirectory();
 			if (sourceIsDirectory) fileExtension = null;
@@ -621,15 +638,17 @@ export function buildMigrationLocalSourceWorkup(
 							: sourceExists
 								? "Локальный файл"
 								: "Путь или источник";
-	const smartImportLineSourceRef =
-		routeRef.routeToken ??
-		(isMigrationPublicSourceToken(normalizedSourceRef)
-			? normalizedSourceRef
-			: registerMigrationSourceRoute(
-					normalizedSourceRef,
-					inferredKind,
-					safeDisplayName,
-				));
+	const smartImportLineSourceRef = !pathJailCheck.allowed
+		? "blocked-source"
+		: routeRef.routeToken ??
+			(isMigrationPublicSourceToken(normalizedSourceRef)
+				? normalizedSourceRef
+				: registerMigrationSourceRoute(
+						normalizedSourceRef,
+						inferredKind,
+						safeDisplayName,
+						organizationId,
+					));
 	const smartImportLine = `${legacySourceTitles[inferredKind]} ${smartImportLineSourceRef}`;
 	const requiredArtifacts = uniqueStrings([
 		...playbook.requiredArtifacts,

@@ -13,9 +13,11 @@ import { SyncGatewayService } from "../../services/sync/syncGatewayService.js";
 import { SyncAdministrativeHandlers } from "./syncAdministrativeHandlers.js";
 import { RouteSyncQueueManager } from "./syncQueueManager.js";
 
-const syncPullQuerySchema = z.object({
-	since: z.string().optional(),
-});
+const syncPullQuerySchema = z
+	.object({
+		since: z.string().optional(),
+	})
+	.strict();
 
 export async function registerSyncRoutes(app: FastifyInstance) {
 	/**
@@ -124,8 +126,15 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const parsed = syncPullQuerySchema.safeParse(request.query);
-		const since = parsed.success ? parsed.data.since : undefined;
+		const parsed = syncPullQuerySchema.safeParse(request.query ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса синхронизации.",
+				issues: parsed.error.issues,
+			});
+		}
+		const since = parsed.data.since;
 
 		const result = await SyncGatewayService.pullChanges(orgId, since);
 		return reply.code(200).send(result);
@@ -149,8 +158,15 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
-		const body = (request.body || {}) as { since?: string };
-		const result = await SyncGatewayService.pullChanges(orgId, body.since);
+		const parsed = syncPullQuerySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректное тело запроса синхронизации.",
+				issues: parsed.error.issues,
+			});
+		}
+		const result = await SyncGatewayService.pullChanges(orgId, parsed.data.since);
 		return reply.code(200).send(result);
 	});
 

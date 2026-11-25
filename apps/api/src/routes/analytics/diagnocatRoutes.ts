@@ -1,11 +1,18 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { radiologyAiFindings, radiologyAiReports } from "../../db/schema.js";
+
+const diagnocatAnalyticsQuerySchema = z
+	.object({
+		range: z.string().trim().max(40).optional(),
+	})
+	.strict();
 
 /**
  * Честный подсчет диагностических ИИ-осмотров и скрининга снимков (aiRadiologyFindings / aiDiagnosticReports).
@@ -20,35 +27,37 @@ export async function fetchAiDiagnosticStats(
 	findingsCount: number;
 	aiExaminedCount: number;
 }> {
-	const [aiReportsRow] = await db
-		.select({ count: sql<number>`count(*)::int` })
-		.from(radiologyAiReports)
-		.where(
-			and(
-				eq(radiologyAiReports.organizationId, orgId),
-				startDate ? gte(radiologyAiReports.createdAt, startDate) : undefined,
-			),
-		);
+	return withTenantCtx(orgId, async (tx) => {
+		const [aiReportsRow] = await tx
+			.select({ count: sql<number>`count(*)::int` })
+			.from(radiologyAiReports)
+			.where(
+				and(
+					eq(radiologyAiReports.organizationId, orgId),
+					startDate ? gte(radiologyAiReports.createdAt, startDate) : undefined,
+				),
+			);
 
-	const [aiFindingsRow] = await db
-		.select({ count: sql<number>`count(distinct ${radiologyAiFindings.id})::int` })
-		.from(radiologyAiFindings)
-		.where(
-			and(
-				eq(radiologyAiFindings.organizationId, orgId),
-				startDate ? gte(radiologyAiFindings.createdAt, startDate) : undefined,
-			),
-		);
+		const [aiFindingsRow] = await tx
+			.select({ count: sql<number>`count(distinct ${radiologyAiFindings.id})::int` })
+			.from(radiologyAiFindings)
+			.where(
+				and(
+					eq(radiologyAiFindings.organizationId, orgId),
+					startDate ? gte(radiologyAiFindings.createdAt, startDate) : undefined,
+				),
+			);
 
-	const reportsCount = Number(aiReportsRow?.count || 0);
-	const findingsCount = Number(aiFindingsRow?.count || 0);
-	const aiExaminedCount = Math.max(reportsCount, findingsCount);
+		const reportsCount = Number(aiReportsRow?.count || 0);
+		const findingsCount = Number(aiFindingsRow?.count || 0);
+		const aiExaminedCount = Math.max(reportsCount, findingsCount);
 
-	return {
-		reportsCount,
-		findingsCount,
-		aiExaminedCount,
-	};
+		return {
+			reportsCount,
+			findingsCount,
+			aiExaminedCount,
+		};
+	});
 }
 
 /** Алиас для обратной совместимости импортов */
@@ -70,8 +79,20 @@ export async function registerDiagnocatAnalyticsRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		const parsedQuery = diagnocatAnalyticsQuerySchema.safeParse(
+			request.query ?? {},
+		);
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				success: false,
+				error: "ValidationError",
+				message: "Некорректные параметры фильтра статистики.",
+				details: parsedQuery.error.issues,
+			});
+		}
+
 		try {
-			const { range } = request.query;
+			const { range } = parsedQuery.data;
 			let startDate: Date | undefined;
 			const now = new Date();
 

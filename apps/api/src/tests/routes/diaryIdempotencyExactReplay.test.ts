@@ -26,7 +26,7 @@ import registerDiaryRoutes from "../../routes/diary.js";
 import { idempotencyPlugin } from "../../plugins/idempotencyPlugin.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { fixtureUuid, purgeFixtureOrganizations } from "../support/fixtureOrganizations.js";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
 const TEST_TENANT = fixtureUuid("diaryIdempotency", 1);
@@ -42,34 +42,35 @@ describe("Дневники приёма: сквозная идемпотентн
 		await purgeFixtureOrganizations([TEST_TENANT]);
 
 		// Инициализация базы тестовой клиники
-		await db.insert(organizations).values({
-			id: TEST_TENANT,
-			name: "Клиника Идемпотентных Дневников",
-			createdAt: new Date(),
-		});
+		await withFixtureTenant(TEST_TENANT, async (tx) => {
+			await tx.insert(organizations).values({
+				id: TEST_TENANT,
+				name: "Клиника Идемпотентных Дневников",
+				createdAt: new Date(),
+			});
 
-		await db.insert(users).values({
-			id: TEST_DOCTOR,
-			organizationId: TEST_TENANT,
-			fullName: "Врач Идемпотент Тестович",
-			role: "doctor",
-			specialty: "Стоматолог-терапевт",
-			isActive: true,
-		});
+			await tx.insert(users).values({
+				id: TEST_DOCTOR,
+				organizationId: TEST_TENANT,
+				fullName: "Врач Идемпотент Тестович",
+				role: "doctor",
+				isActive: true,
+			});
 
-		await db.insert(patients).values({
-			id: TEST_PATIENT,
-			organizationId: TEST_TENANT,
-			fullName: "Пациент Повторный Клик",
-			birthDate: "1990-05-15",
-			phone: "+79998881122",
-		});
+			await tx.insert(patients).values({
+				id: TEST_PATIENT,
+				organizationId: TEST_TENANT,
+				fullName: "Пациент Повторный Клик",
+				birthDate: "1990-05-15",
+				phone: "+79998881122",
+			});
 
-		await db.insert(visits).values({
-			id: TEST_VISIT,
-			organizationId: TEST_TENANT,
-			patientId: TEST_PATIENT,
-			status: "draft",
+			await tx.insert(visits).values({
+				id: TEST_VISIT,
+				organizationId: TEST_TENANT,
+				patientId: TEST_PATIENT,
+				status: "draft",
+			});
 		});
 
 		doctorToken = signToken(
@@ -125,10 +126,12 @@ describe("Дневники приёма: сквозная идемпотентн
 		assert.ok(json1.id, "Должен вернуться ID дневника");
 
 		// Проверяем таблицу idempotency_keys
-		const [storedKey] = await db
-			.select()
-			.from(idempotencyKeys)
-			.where(and(eq(idempotencyKeys.clinicId, TEST_TENANT), eq(idempotencyKeys.key, idemKey)));
+		const [storedKey] = await withFixtureTenant(TEST_TENANT, async (tx) =>
+			tx
+				.select()
+				.from(idempotencyKeys)
+				.where(and(eq(idempotencyKeys.clinicId, TEST_TENANT), eq(idempotencyKeys.key, idemKey)))
+		);
 		assert.ok(storedKey, "Ключ должен быть сохранён в idempotency_keys");
 		assert.equal(storedKey.status, "completed");
 
@@ -150,25 +153,31 @@ describe("Дневники приёма: сквозная идемпотентн
 		assert.equal(json2.id, json1.id, "Должен вернуться тот же ID дневника");
 
 		// Проверяем физическое отсутствие дублей в базе данных
-		const diaryRows = await db
-			.select()
-			.from(visitDiaries)
-			.where(and(eq(visitDiaries.organizationId, TEST_TENANT), eq(visitDiaries.visitId, TEST_VISIT)));
+		const diaryRows = await withFixtureTenant(TEST_TENANT, async (tx) =>
+			tx
+				.select()
+				.from(visitDiaries)
+				.where(and(eq(visitDiaries.organizationId, TEST_TENANT), eq(visitDiaries.visitId, TEST_VISIT)))
+		);
 		assert.equal(diaryRows.length, 1, "В базе должна быть строго 1 запись дневника, а не дубль!");
 	});
 
 	test("2. Повторный клик POST /api/diaries/:id/revise с тем же Idempotency-Key возвращает кеш без лишних ревизий", async () => {
 		// Сначала подписываем дневник
-		const [diary] = await db
-			.select()
-			.from(visitDiaries)
-			.where(and(eq(visitDiaries.organizationId, TEST_TENANT), eq(visitDiaries.visitId, TEST_VISIT)));
+		const [diary] = await withFixtureTenant(TEST_TENANT, async (tx) =>
+			tx
+				.select()
+				.from(visitDiaries)
+				.where(and(eq(visitDiaries.organizationId, TEST_TENANT), eq(visitDiaries.visitId, TEST_VISIT)))
+		);
 		assert.ok(diary);
 
-		await db
-			.update(visitDiaries)
-			.set({ isLocked: true, lockedAt: new Date(), digitalSignatureHash: "sha256-mock-hash" })
-			.where(eq(visitDiaries.id, diary.id));
+		await withFixtureTenant(TEST_TENANT, async (tx) =>
+			tx
+				.update(visitDiaries)
+				.set({ isLocked: true, lockedAt: new Date(), cryptoSignaturePkcs7: "sha256-mock-hash" })
+				.where(eq(visitDiaries.id, diary.id))
+		);
 
 		const reviseIdemKey = crypto.randomUUID();
 		const reviseBody = {
@@ -211,10 +220,12 @@ describe("Дневники приёма: сквозная идемпотентн
 		assert.equal(revJson2.revisionCount, 1, "Число ревизий не должно увеличиться");
 
 		// Проверяем в базе число записей ревизий
-		const revisionsInDb = await db
-			.select()
-			.from(visitDiaryRevisions)
-			.where(and(eq(visitDiaryRevisions.organizationId, TEST_TENANT), eq(visitDiaryRevisions.diaryId, diary.id)));
+		const revisionsInDb = await withFixtureTenant(TEST_TENANT, async (tx) =>
+			tx
+				.select()
+				.from(visitDiaryRevisions)
+				.where(and(eq(visitDiaryRevisions.organizationId, TEST_TENANT), eq(visitDiaryRevisions.diaryId, diary.id)))
+		);
 		assert.equal(revisionsInDb.length, 1, "В базе должна быть ровно 1 запись в истории ревизий!");
 	});
 });

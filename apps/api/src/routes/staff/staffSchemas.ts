@@ -1,24 +1,30 @@
 import { z } from "zod";
 
-export const staffCandidateSchema = z.object({
-	id: z.string().uuid().optional(),
-	fullName: z.string().optional(),
-	snils: z.string().nullable().optional(),
-	inn: z.string().nullable().optional(),
-	email: z.string().nullable().optional(),
-	phone: z.string().nullable().optional(),
-});
+export const staffCandidateSchema = z
+	.object({
+		id: z.string().uuid().optional(),
+		fullName: z.string().optional(),
+		snils: z.string().nullable().optional(),
+		inn: z.string().nullable().optional(),
+		email: z.string().nullable().optional(),
+		phone: z.string().nullable().optional(),
+	})
+	.strict();
 
 export type StaffCandidateInput = z.infer<typeof staffCandidateSchema>;
 
-export const evaluatePasswordBodySchema = z.object({
-	password: z.string().default(""),
-});
+export const evaluatePasswordBodySchema = z
+	.object({
+		password: z.string().default(""),
+	})
+	.strict();
 
 export type EvaluatePasswordInput = z.infer<typeof evaluatePasswordBodySchema>;
 
-export const staffIdParamsSchema = z.object({
-	staffId: z.string(),
-});
+export const staffIdParamsSchema = z
+	.object({
+		staffId: z.string().uuid("Идентификатор сотрудника должен быть валидным UUID."),
+	})
+	.strict();
 
 export type StaffIdParams = z.infer<typeof staffIdParamsSchema>;

@@ -69,7 +69,6 @@ describe("Pediatric API Routes — PostgreSQL 18 & Data Integrity", () => {
 				email: "pediatrician@test.local",
 				fullName: "Др. Детская А.В.",
 				role: "doctor",
-				isStaff: true,
 				isActive: true,
 			}).onConflictDoNothing();
 

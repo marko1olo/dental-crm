@@ -491,21 +491,35 @@ export class LanMeshAutoJoinService {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Singleton Accessor
+// 3. Per-Tenant Singleton Accessor
 // ─────────────────────────────────────────────────────────────────────────────
 
-let globalAutoJoinService: LanMeshAutoJoinService | null = null;
+const autoJoinServicesByOrg = new Map<string, LanMeshAutoJoinService>();
+
+export function getLanMeshAutoJoinServiceForOrg(
+	organizationId: string,
+	config?: LanMeshAutoJoinConfig,
+): LanMeshAutoJoinService {
+	const orgKey = organizationId.trim() || "clinic-default";
+	let service = autoJoinServicesByOrg.get(orgKey);
+	if (!service) {
+		service = new LanMeshAutoJoinService({
+			clinicId: orgKey,
+			...config,
+		});
+		autoJoinServicesByOrg.set(orgKey, service);
+	}
+	return service;
+}
 
 export function getLanMeshAutoJoinService(config?: LanMeshAutoJoinConfig): LanMeshAutoJoinService {
-	if (!globalAutoJoinService) {
-		globalAutoJoinService = new LanMeshAutoJoinService(config);
-	}
-	return globalAutoJoinService;
+	const clinicKey = config?.clinicId || process.env.DENTE_CLINIC_ID || "clinic-default";
+	return getLanMeshAutoJoinServiceForOrg(clinicKey, config);
 }
 
 export function resetLanMeshAutoJoinServiceForTest(): void {
-	if (globalAutoJoinService) {
-		globalAutoJoinService.stop();
-		globalAutoJoinService = null;
+	for (const service of autoJoinServicesByOrg.values()) {
+		service.stop();
 	}
+	autoJoinServicesByOrg.clear();
 }

@@ -18,7 +18,7 @@ import {
   requireClinicalReadAccess,
   requireResolvedOrganizationId,
 } from "../accessGuard.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 import { commitImagingImport } from "./imaging.js";
 import { commitPatientImport } from "./imports.js";
@@ -101,6 +101,12 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 					))
 				)
 					return;
+				const orgId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"migration local source discovery",
+				);
+				if (!orgId) return;
 				const parsed = parseSmartImportPayload(
 					migrationLocalSourceDiscoveryRequestSchema,
 					request.body ?? {},
@@ -108,7 +114,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				);
 				if (!parsed.ok) return reply.code(400).send(parsed.response);
 				const input = parsed.data;
-				return await discoverLocalMigrationSources(input);
+				return await discoverLocalMigrationSources(input, orgId);
 			} catch (error) {
 				request.log.error(error);
 				return reply.code(500).send({ error: "Internal Server Error" });
@@ -129,6 +135,12 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 					))
 				)
 					return;
+				const orgId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"migration local source workup",
+				);
+				if (!orgId) return;
 				const parsed = parseSmartImportPayload(
 					migrationLocalSourceWorkupRequestSchema,
 					request.body,
@@ -136,7 +148,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				);
 				if (!parsed.ok) return reply.code(400).send(parsed.response);
 				const input = parsed.data;
-				return await buildMigrationLocalSourceWorkup(input);
+				return await buildMigrationLocalSourceWorkup(input, orgId);
 			} catch (error) {
 				request.log.error(error);
 				return reply.code(500).send({ error: "Internal Server Error" });
@@ -157,6 +169,12 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 					))
 				)
 					return;
+				const orgId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"migration local source probe",
+				);
+				if (!orgId) return;
 				const parsed = parseSmartImportPayload(
 					migrationLocalSourceProbeRequestSchema,
 					request.body,
@@ -164,7 +182,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				);
 				if (!parsed.ok) return reply.code(400).send(parsed.response);
 				const input = parsed.data;
-				return await buildMigrationLocalSourceProbe(input);
+				return await buildMigrationLocalSourceProbe(input, orgId);
 			} catch (error) {
 				request.log.error(error);
 				return reply.code(500).send({ error: "Internal Server Error" });
@@ -261,6 +279,12 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 					))
 				)
 					return;
+				const orgId = await requireResolvedOrganizationId(
+					request,
+					reply,
+					"clinic public lookup",
+				);
+				if (!orgId) return;
 				const parsed = parseSmartImportPayload(
 					clinicPublicLookupRequestSchema,
 					request.body,
@@ -399,7 +423,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				if (!orgId) return;
 				const preview = await buildSmartImportPreview(orgId, input);
 
-				const { patientCommit, imagingCommit } = await db.transaction(async (_tx) => {
+				const { patientCommit, imagingCommit } = await withTenantCtx(orgId, async (_tx) => {
 					const pCommit =
 						preview.patientPreview.totalRows > 0
 							? await commitPatientImport(orgId, {

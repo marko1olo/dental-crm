@@ -105,7 +105,7 @@ describe("Domain 61: Radiology DICOM Anonymization, Path Traversal & Async I/O F
 				organizationId: orgId,
 				role: "chief_doctor",
 				fullName: "Д-р Рентгенолог 61",
-				login: "chief_rad_61",
+				email: "chief_rad_61@test.local",
 				passwordHash: "hash",
 			}).onConflictDoNothing();
 

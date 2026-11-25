@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { anonymizeDicomBuffer } from "../dicomAnonymizer.js";
 
 describe("dicomAnonymizer 152-FZ Compliance", () => {
@@ -40,29 +41,29 @@ describe("dicomAnonymizer 152-FZ Compliance", () => {
 
 	it("physically overwrites patient personal data in binary stream without corrupting length", () => {
 		const rawDicom = createSyntheticDicomHeader();
-		expect(rawDicom.toString("latin1")).toContain("PAT-123456");
+		assert.ok(rawDicom.toString("latin1").includes("PAT-123456"));
 
 		const anonymized = anonymizeDicomBuffer(rawDicom, {
 			patientId: "ANON-9999",
 			institutionName: "DENTE CLINIC",
 		});
 
-		expect(anonymized.length).toBe(rawDicom.length);
+		assert.equal(anonymized.length, rawDicom.length);
 		const anonymizedText = anonymized.toString("latin1");
 
-		expect(anonymizedText).not.toContain("PAT-123456");
-		expect(anonymizedText).toContain("ANON-9999");
-		expect(anonymizedText).toContain("ANONYMIZED^PATIENT");
+		assert.equal(anonymizedText.includes("PAT-123456"), false);
+		assert.ok(anonymizedText.includes("ANON-9999"));
+		assert.ok(anonymizedText.includes("ANONYMIZED^PATIENT"));
 
 		// PixelData must remain completely intact
 		const pixelDataOriginal = rawDicom.subarray(rawDicom.length - 4);
 		const pixelDataAnonymized = anonymized.subarray(anonymized.length - 4);
-		expect(pixelDataAnonymized.equals(pixelDataOriginal)).toBe(true);
+		assert.equal(pixelDataAnonymized.equals(pixelDataOriginal), true);
 	});
 
 	it("safely handles truncated or empty buffers without crashing", () => {
 		const smallBuf = Buffer.from([1, 2, 3]);
-		expect(anonymizeDicomBuffer(smallBuf)).toBe(smallBuf);
+		assert.equal(anonymizeDicomBuffer(smallBuf), smallBuf);
 	});
 
 	it("handles SQ delimiter tags (0xFFFE, 0xE000 / 0xE00D / 0xE0DD) without 2-byte VR corruption and wipes nested PII", () => {
@@ -102,10 +103,10 @@ describe("dicomAnonymizer 152-FZ Compliance", () => {
 		const raw = Buffer.concat([preamble, magic, sqTag, sqVr, sqReserved, sqLen, itemStart, nestedPatName, itemEnd, seqEnd, afterId]);
 		const anonymized = anonymizeDicomBuffer(raw, { patientName: "ANON^USER", patientId: "ANON-77" });
 
-		expect(anonymized.length).toBe(raw.length);
+		assert.equal(anonymized.length, raw.length);
 		const text = anonymized.toString("latin1");
-		expect(text).not.toContain("SECRET^PATIE");
-		expect(text).not.toContain("CHART-77");
-		expect(text).toContain("ANON-77");
+		assert.equal(text.includes("SECRET^PATIE"), false);
+		assert.equal(text.includes("CHART-77"), false);
+		assert.ok(text.includes("ANON-77"));
 	});
 });

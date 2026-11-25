@@ -13,6 +13,7 @@
 
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { appointments, clinics, organizations, patients, users, visits } from "../../db/schema.js";
@@ -451,34 +452,74 @@ test("RED-TEAM HAMMER: Visits & Appointments Route Inquisition", async (suite) =
 		assert.equal(body.alreadySigned, true);
 	});
 
-	await suite.test("3.9. Попытка автосейва подписанного визита отклоняется с 409 visit_closed", async (t) => {
+	await suite.test("3.9. Автосейв подписанного визита сохраняет черновик ревизии без снятия подписи, а аннулированного — отклоняется с 409 visit_closed", async (t) => {
 		if (!databaseReady || !createdVisitId) return t.skip("База данных недоступна");
 
-		const res = await app.inject({
+		const resSigned = await app.inject({
 			method: "PUT",
 			url: `/api/visits/${createdVisitId}/draft/autosave`,
 			headers: { "x-dente-clinic-token": tokenClinicA },
 			payload: {
+				visitId: createdVisitId,
 				patientId: PATIENT_A,
 				selectedSpecialty: "therapist",
-				text: "Попытка изменить подписанный приём",
+				transcript: "Уточнение ревизии подписанного приёма",
 				draft: {
 					complaint: "боль",
-					anamnesis: null,
-					objectiveStatus: null,
-					examination: null,
-					diagnosis: null,
-					treatment: null,
-					treatmentPlan: null,
-					recommendations: null,
+					anamnesis: "",
+					objectiveStatus: "",
+					diagnosis: "",
+					treatmentPlan: "",
 					warnings: [],
 				},
 			},
 		});
 
-		assert.equal(res.statusCode, 409, "Подписанный визит заблокирован для изменений черновика");
-		const body = JSON.parse(res.body);
-		assert.equal(body.error, "VisitDraftMutationRejected");
-		assert.equal(body.reason, "visit_closed");
+		assert.equal(resSigned.statusCode, 200, `Expected 200 for signed revision draft, got ${resSigned.statusCode}: ${resSigned.body}`);
+		const [visitAfter] = await withFixtureTenant(ORG_A, async (tx) =>
+			tx.select({ status: visits.status }).from(visits).where(eq(visits.id, createdVisitId)).limit(1),
+		);
+		assert.equal(visitAfter?.status, "signed", "Статус подписанного визита не должен сбрасываться автосейвом");
+
+		const voidedVisitId = fixtureUuid(NAMESPACE, 99);
+		await withFixtureTenant(ORG_A, async (tx) => {
+			await tx
+				.insert(visits)
+				.values({
+					id: voidedVisitId,
+					organizationId: ORG_A,
+					patientId: PATIENT_A,
+					status: "voided",
+				})
+				.onConflictDoUpdate({
+					target: visits.id,
+					set: { status: "voided" },
+				});
+		});
+
+		const resVoided = await app.inject({
+			method: "PUT",
+			url: `/api/visits/${voidedVisitId}/draft/autosave`,
+			headers: { "x-dente-clinic-token": tokenClinicA },
+			payload: {
+				visitId: voidedVisitId,
+				patientId: PATIENT_A,
+				selectedSpecialty: "therapist",
+				transcript: "Попытка изменить аннулированный приём",
+				draft: {
+					complaint: "боль",
+					anamnesis: "",
+					objectiveStatus: "",
+					diagnosis: "",
+					treatmentPlan: "",
+					warnings: [],
+				},
+			},
+		});
+
+		assert.equal(resVoided.statusCode, 409, "Аннулированный визит заблокирован для изменений черновика");
+		const bodyVoided = JSON.parse(resVoided.body);
+		assert.equal(bodyVoided.error, "VisitDraftMutationRejected");
+		assert.equal(bodyVoided.reason, "visit_closed");
 	});
 });

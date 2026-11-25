@@ -2,9 +2,9 @@
  * apps/api/src/tests/routes/patientPatchMedicalCardPersistence.test.ts
  *
  * PROOF OF PERSISTENCE:
- * 1. PATCH /api/patients/:patientId updates core fields and administrativeProfile in real PostgreSQL 18.
- * 2. PUT /api/patients/:patientId/medical-card updates passport and anamnesis in PostgreSQL 18.
- * 3. Multi-tenant IDOR protection: Org A doctor cannot patch Org B patient (404).
+ * 1. PUT /api/patients/:patientId updates core fields and administrativeProfile in real PostgreSQL 18.
+ * 2. PUT /api/patients/:patientId/administrative-profile updates passport & safety profile in PostgreSQL 18.
+ * 3. Multi-tenant IDOR protection: Org A doctor cannot update Org B patient (404).
  * 4. Validation: non-UUID returns 400.
  */
 
@@ -70,7 +70,6 @@ describe("PATIENT PATCH & MEDICAL CARD PERSISTENCE SUITE (Real PostgreSQL 18)", 
 				fullName: "Д-р Тестов А.А.",
 				role: "doctor",
 				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 			await tx.insert(patients).values({
 				id: PATIENT_A_ID,
@@ -98,7 +97,6 @@ describe("PATIENT PATCH & MEDICAL CARD PERSISTENCE SUITE (Real PostgreSQL 18)", 
 				fullName: "Д-р Бетов Б.Б.",
 				role: "doctor",
 				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 			await tx.insert(patients).values({
 				id: PATIENT_B_ID,
@@ -136,11 +134,11 @@ describe("PATIENT PATCH & MEDICAL CARD PERSISTENCE SUITE (Real PostgreSQL 18)", 
 		}
 	});
 
-	it("1. PATCH /api/patients/:patientId updates core & administrative profile in real PostgreSQL 18", async (t) => {
+	it("1. PUT /api/patients/:patientId updates core & administrative profile in real PostgreSQL 18", async (t) => {
 		if (!dbAvailable) return t.skip("Database unavailable");
 
 		const res = await app.inject({
-			method: "PATCH",
+			method: "PUT",
 			url: `/api/patients/${PATIENT_A_ID}`,
 			headers: {
 				authorization: `Bearer ${tokenDoctorA}`,
@@ -186,34 +184,44 @@ describe("PATIENT PATCH & MEDICAL CARD PERSISTENCE SUITE (Real PostgreSQL 18)", 
 			const admin = row.administrativeProfile as Record<string, unknown> | null;
 			assert.strictEqual(admin?.snils, "123-456-789 00");
 			assert.strictEqual(admin?.identityDocument, "Паспорт РФ 4510 123456");
-			assert.strictEqual(admin?.clinicalSafetyProfile?.allergies, "Амоксициллин, Лидокаин");
+			const safety = admin?.clinicalSafetyProfile as Record<string, unknown> | undefined;
+			assert.strictEqual(safety?.allergies, "Амоксициллин, Лидокаин");
 		});
 	});
 
-	it("2. PUT /api/patients/:patientId/medical-card updates EMR passport & anamnesis payload", async (t) => {
+	it("2. PUT /api/patients/:patientId + /administrative-profile updates passport & clinical safety payload", async (t) => {
 		if (!dbAvailable) return t.skip("Database unavailable");
+
+		const headers = {
+			authorization: `Bearer ${tokenDoctorA}`,
+			"x-dente-clinic-token": tokenDoctorA,
+			"x-dente-staff-token": tokenDoctorA,
+			"x-dente-tenant-id": ORG_A_ID,
+			"content-type": "application/json",
+		};
+
+		const coreRes = await app.inject({
+			method: "PUT",
+			url: `/api/patients/${PATIENT_A_ID}`,
+			headers,
+			payload: {
+				fullName: "Пациент Альфа Обновленный",
+				phone: "+79007776655",
+				notes: "Реакция на холодное и горячее",
+			},
+		});
+		assert.strictEqual(coreRes.statusCode, 200, `Expected 200, got ${coreRes.statusCode}: ${coreRes.body}`);
 
 		const res = await app.inject({
 			method: "PUT",
-			url: `/api/patients/${PATIENT_A_ID}/medical-card`,
-			headers: {
-				authorization: `Bearer ${tokenDoctorA}`,
-				"x-dente-clinic-token": tokenDoctorA,
-				"x-dente-staff-token": tokenDoctorA,
-				"x-dente-tenant-id": ORG_A_ID,
-				"content-type": "application/json",
-			},
+			url: `/api/patients/${PATIENT_A_ID}/administrative-profile`,
+			headers,
 			payload: {
-				passport: {
-					patientFullName: "Пациент Альфа Обновленный",
-					patientPhone: "+79007776655",
-					identityDocument: "Паспорт РФ 4510 999888",
-					patientAddressRegistration: "г. Санкт-Петербург, Невский пр. 1",
-					snils: "987-654-321 99",
-					insurancePolicyNumber: "1234567890123456",
-				},
-				anamnesis: {
-					chiefComplaint: "Реакция на холодное и горячее",
+				identityDocument: "Паспорт РФ 4510 999888",
+				registrationAddress: "г. Санкт-Петербург, Невский пр. 1",
+				snils: "987-654-321 99",
+				insurancePolicyNumber: "1234567890123456",
+				clinicalSafetyProfile: {
 					allergies: "Ультракаин Д-С",
 					somaticDiseases: "Сахарный диабет 2 типа",
 					somaticNotes: "Глюкоза 5.8 ммоль/л",
@@ -231,11 +239,11 @@ describe("PATIENT PATCH & MEDICAL CARD PERSISTENCE SUITE (Real PostgreSQL 18)", 
 		assert.strictEqual(body.administrativeProfile?.clinicalSafetyProfile?.allergies, "Ультракаин Д-С");
 	});
 
-	it("3. Cross-Tenant IDOR: Doctor from Org A cannot PATCH patient from Org B (returns 404)", async (t) => {
+	it("3. Cross-Tenant IDOR: Doctor from Org A cannot PUT patient from Org B (returns 404)", async (t) => {
 		if (!dbAvailable) return t.skip("Database unavailable");
 
 		const res = await app.inject({
-			method: "PATCH",
+			method: "PUT",
 			url: `/api/patients/${PATIENT_B_ID}`,
 			headers: {
 				authorization: `Bearer ${tokenDoctorA}`,
@@ -256,7 +264,7 @@ describe("PATIENT PATCH & MEDICAL CARD PERSISTENCE SUITE (Real PostgreSQL 18)", 
 		if (!dbAvailable) return t.skip("Database unavailable");
 
 		const res = await app.inject({
-			method: "PATCH",
+			method: "PUT",
 			url: "/api/patients/not-a-valid-uuid",
 			headers: {
 				authorization: `Bearer ${tokenDoctorA}`,

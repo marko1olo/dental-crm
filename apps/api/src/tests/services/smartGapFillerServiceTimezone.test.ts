@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { utcToLocalWallTime } from "../../routes/publicBooking.js";
+import { utcToLocalWallTime } from "../../routes/publicBooking/index.js";
 import {
 	parsePreferredRanges,
 	slotFitsRanges,

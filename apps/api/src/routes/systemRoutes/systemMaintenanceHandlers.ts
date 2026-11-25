@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireSuperadmin } from "../../accessGuard.js";
 import {
 	buildPersistentStateExport,
 	getPersistentStateIntegrityReport,
@@ -13,7 +13,7 @@ export function timestampForDownloadName(value = new Date()): string {
 export function registerSystemMaintenanceRoutes(app: FastifyInstance): void {
 	app.get("/api/system/persistence/verify", async (request, reply) => {
 		if (
-			!(await requireClinicalReadAccess(request, reply, "persistence verify"))
+			!(await requireSuperadmin(request, reply, "persistence verify"))
 		)
 			return;
 		return await getPersistentStateIntegrityReport();
@@ -21,7 +21,7 @@ export function registerSystemMaintenanceRoutes(app: FastifyInstance): void {
 
 	app.get("/api/system/persistence/export", async (request, reply) => {
 		if (
-			!(await requireClinicalReadAccess(request, reply, "persistence export"))
+			!(await requireSuperadmin(request, reply, "persistence export"))
 		)
 			return;
 		await recordPersistenceExportAudit(request);

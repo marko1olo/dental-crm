@@ -65,150 +65,202 @@ export interface AuthenticatedPortalPatient {
 	readonly organizationId: string;
 }
 
-export const sendOtpBodySchema = z.object({
-	phone: z.unknown().optional(),
-	organizationId: z.unknown().optional(),
-});
+export const sendOtpBodySchema = z
+	.object({
+		phone: z.string().optional(),
+		organizationId: z.string().optional(),
+	})
+	.strict();
 export type SendOtpBody = z.infer<typeof sendOtpBodySchema>;
 
-export const verifyOtpBodySchema = z.object({
-	phone: z.unknown().optional(),
-	code: z.unknown().optional(),
-	organizationId: z.unknown().optional(),
-});
+export const verifyOtpBodySchema = z
+	.object({
+		phone: z.string().optional(),
+		code: z.string().optional(),
+		organizationId: z.string().optional(),
+	})
+	.strict();
 export type VerifyOtpBody = z.infer<typeof verifyOtpBodySchema>;
 
-export const selfCheckinBodySchema = z.object({
-	organizationId: z.unknown().optional(),
-	phoneLast4: z.unknown().optional(),
-	patientPhone: z.unknown().optional(),
-	patientId: z.unknown().optional(),
-	checkinCode: z.unknown().optional(),
-	signedConsents: z.unknown().optional(),
-	somaticProfile: z.unknown().optional(),
-});
+export const selfCheckinBodySchema = z
+	.object({
+		organizationId: z.string().optional(),
+		phoneLast4: z.string().optional(),
+		patientPhone: z.string().optional(),
+		patientId: z.string().optional(),
+		checkinCode: z.string().optional(),
+		signedConsents: z.array(z.string()).optional(),
+		somaticProfile: z.record(z.string(), z.unknown()).optional(),
+	})
+	.strict();
 export type SelfCheckinBody = z.infer<typeof selfCheckinBodySchema>;
 
-export const signConsentBodySchema = z.object({
-	signatureSvg: z.unknown().optional(),
-	signatureMethod: z.unknown().optional(),
-	consentKind: z.unknown().optional(),
-	deviceMeta: z.unknown().optional(),
-});
+export const signConsentBodySchema = z
+	.object({
+		signatureSvg: z.string().optional(),
+		signatureMethod: z.string().optional(),
+		consentKind: z.string().optional(),
+		deviceMeta: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+		pepCode: z.string().optional(),
+	})
+	.strict();
 export type SignConsentBody = z.infer<typeof signConsentBodySchema>;
 
-export const healthQuestionnaireBodySchema = z.object({
-	allergies: z
-		.object({
-			hasAllergies: z.boolean().optional(),
-			localAnestheticsAllergy: z.boolean().optional(),
-			antibioticsAllergy: z.boolean().optional(),
-			sulfiteAllergy: z.boolean().optional(),
-			latexAllergy: z.boolean().optional(),
-			drugList: z.array(z.string()).optional(),
-			details: z.string().optional(),
-		})
-		.optional(),
-	cardiovascular: z
-		.object({
-			hasRisk: z.boolean().optional(),
-			hypertension: z.boolean().optional(),
-			arrhythmia: z.boolean().optional(),
-			ischemicHeartDisease: z.boolean().optional(),
-			heartAttackHistory: z.boolean().optional(),
-			pacemaker: z.boolean().optional(),
-			details: z.string().optional(),
-		})
-		.optional(),
-	diabetes: z
-		.object({
-			hasDiabetes: z.boolean().optional(),
-			type: z.enum(["type1", "type2"]).optional(),
-			glucoseLevel: z.string().optional(),
-			insulinDependent: z.boolean().optional(),
-			details: z.string().optional(),
-		})
-		.optional(),
-	coagulation: z
-		.object({
-			hasBleedingDisorder: z.boolean().optional(),
-			onAnticoagulants: z.boolean().optional(),
-			anticoagulantName: z.string().optional(),
-			hemophilia: z.boolean().optional(),
-			details: z.string().optional(),
-		})
-		.optional(),
-	pregnancy: z
-		.object({
-			isPregnantOrLactating: z.boolean().optional(),
-			trimester: z.number().optional(),
-			weeks: z.number().optional(),
-			lactating: z.boolean().optional(),
-		})
-		.optional(),
-	infectious: z
-		.object({
-			hepatitisBOrC: z.boolean().optional(),
-			hiv: z.boolean().optional(),
-			tuberculosis: z.boolean().optional(),
-			details: z.string().optional(),
-		})
-		.optional(),
-	respiratory: z
-		.object({
-			bronchialAsthma: z.boolean().optional(),
-			details: z.string().optional(),
-		})
-		.optional(),
-	gastrointestinal: z
-		.object({
-			ulcerOrReflux: z.boolean().optional(),
-		})
-		.optional(),
-	currentMedications: z.array(z.string()).optional(),
-	additionalNotes: z.string().optional(),
-});
+export const healthQuestionnaireBodySchema = z
+	.object({
+		allergies: z
+			.object({
+				hasAllergies: z.boolean().optional(),
+				localAnestheticsAllergy: z.boolean().optional(),
+				antibioticsAllergy: z.boolean().optional(),
+				sulfiteAllergy: z.boolean().optional(),
+				latexAllergy: z.boolean().optional(),
+				drugList: z.array(z.string()).optional(),
+				details: z.string().optional(),
+			})
+			.strict()
+			.optional(),
+		cardiovascular: z
+			.object({
+				hasRisk: z.boolean().optional(),
+				hypertension: z.boolean().optional(),
+				arrhythmia: z.boolean().optional(),
+				ischemicHeartDisease: z.boolean().optional(),
+				heartAttackHistory: z.boolean().optional(),
+				pacemaker: z.boolean().optional(),
+				details: z.string().optional(),
+			})
+			.strict()
+			.optional(),
+		diabetes: z
+			.object({
+				hasDiabetes: z.boolean().optional(),
+				type: z.enum(["type1", "type2"]).optional(),
+				glucoseLevel: z.string().optional(),
+				insulinDependent: z.boolean().optional(),
+				details: z.string().optional(),
+			})
+			.strict()
+			.optional(),
+		coagulation: z
+			.object({
+				hasBleedingDisorder: z.boolean().optional(),
+				onAnticoagulants: z.boolean().optional(),
+				anticoagulantName: z.string().optional(),
+				hemophilia: z.boolean().optional(),
+				details: z.string().optional(),
+			})
+			.strict()
+			.optional(),
+		pregnancy: z
+			.object({
+				isPregnantOrLactating: z.boolean().optional(),
+				trimester: z.number().optional(),
+				weeks: z.number().optional(),
+				lactating: z.boolean().optional(),
+			})
+			.strict()
+			.optional(),
+		infectious: z
+			.object({
+				hepatitisBOrC: z.boolean().optional(),
+				hiv: z.boolean().optional(),
+				tuberculosis: z.boolean().optional(),
+				details: z.string().optional(),
+			})
+			.strict()
+			.optional(),
+		respiratory: z
+			.object({
+				bronchialAsthma: z.boolean().optional(),
+				details: z.string().optional(),
+			})
+			.strict()
+			.optional(),
+		gastrointestinal: z
+			.object({
+				ulcerOrReflux: z.boolean().optional(),
+			})
+			.strict()
+			.optional(),
+		currentMedications: z.array(z.string()).optional(),
+		additionalNotes: z.string().optional(),
+	})
+	.strict();
 export type HealthQuestionnaireBody = z.infer<
 	typeof healthQuestionnaireBodySchema
 >;
 
-export const selectTierBodySchema = z.object({
-	tierId: z.unknown().optional(),
-});
+export const selectTierBodySchema = z
+	.object({
+		tierId: z.string().optional(),
+	})
+	.strict();
 export type SelectTierBody = z.infer<typeof selectTierBodySchema>;
 
-export const createSbpQrBodySchema = z.object({
-	invoiceId: z.unknown().optional(),
-	planId: z.unknown().optional(),
-	stageId: z.unknown().optional(),
-	amountRub: z.unknown().optional(),
-});
+export const approveTreatmentPlanBodySchema = z
+	.object({
+		pepCode: z.string().optional(),
+		selectedTier: z.string().optional(),
+	})
+	.strict();
+export type ApproveTreatmentPlanBody = z.infer<
+	typeof approveTreatmentPlanBodySchema
+>;
+
+export const createSbpQrBodySchema = z
+	.object({
+		invoiceId: z.string().optional(),
+		planId: z.string().optional(),
+		stageId: z.string().optional(),
+		amountRub: z.number().finite().positive().optional(),
+	})
+	.strict();
 export type CreateSbpQrBody = z.infer<typeof createSbpQrBodySchema>;
 
-export const confirmSbpBodySchema = z.object({
-	invoiceId: z.unknown().optional(),
-	stageId: z.unknown().optional(),
-	amountRub: z.unknown().optional(),
-	sbpTransactionId: z.unknown().optional(),
-});
+export const confirmSbpBodySchema = z
+	.object({
+		invoiceId: z.string().optional(),
+		stageId: z.string().optional(),
+		amountRub: z.number().finite().positive().optional(),
+		sbpTransactionId: z.string().optional(),
+	})
+	.strict();
 export type ConfirmSbpBody = z.infer<typeof confirmSbpBodySchema>;
 
-export const paymentStatusQuerySchema = z.object({
-	invoiceNumber: z.string().optional(),
-	invoiceId: z.string().optional(),
-});
+export const paymentStatusQuerySchema = z
+	.object({
+		invoiceNumber: z.string().optional(),
+		invoiceId: z.string().optional(),
+	})
+	.strict();
 export type PaymentStatusQuery = z.infer<typeof paymentStatusQuerySchema>;
 
-export const bookAppointmentBodySchema = z.object({
-	doctorId: z.unknown().optional(),
-	startsAt: z.unknown().optional(),
-	endsAt: z.unknown().optional(),
-	reason: z.unknown().optional(),
-	comment: z.unknown().optional(),
-});
+export const bookAppointmentBodySchema = z
+	.object({
+		doctorId: z.string().optional(),
+		startsAt: z.string().optional(),
+		endsAt: z.string().optional(),
+		reason: z.string().optional(),
+		comment: z.string().optional(),
+	})
+	.strict();
 export type BookAppointmentBody = z.infer<typeof bookAppointmentBodySchema>;
 
-export const cancelAppointmentBodySchema = z.object({
-	reason: z.unknown().optional(),
-});
+export const rescheduleAppointmentBodySchema = z
+	.object({
+		startsAt: z.string().optional(),
+		endsAt: z.string().optional(),
+		reason: z.string().optional(),
+	})
+	.strict();
+export type RescheduleAppointmentBody = z.infer<
+	typeof rescheduleAppointmentBodySchema
+>;
+
+export const cancelAppointmentBodySchema = z
+	.object({
+		reason: z.string().optional(),
+	})
+	.strict();
 export type CancelAppointmentBody = z.infer<typeof cancelAppointmentBodySchema>;

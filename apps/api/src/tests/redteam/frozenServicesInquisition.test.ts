@@ -200,8 +200,8 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 						amountKopecks: 450000,
 						quantity: 1,
 						vatRate: "vat_none" as const, // Tag 1199
-						paymentMethod: "full_payment" as const, // Tag 1214
-						paymentObject: "service" as const, // Tag 1212
+						method: "full_payment" as const, // Tag 1214
+						subject: "service" as const, // Tag 1212
 						agentSign: "agent" as const, // Tag 1222
 					},
 				],

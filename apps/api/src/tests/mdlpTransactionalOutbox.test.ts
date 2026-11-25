@@ -21,12 +21,10 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 				{
 					id: testOrg1,
 					name: "Тестовая Клиника 1 (Outbox)",
-					slug: `test-org-outbox-1-${Date.now()}`,
 				},
 				{
 					id: testOrg2,
 					name: "Тестовая Клиника 2 (Outbox)",
-					slug: `test-org-outbox-2-${Date.now()}`,
 				},
 			])
 			.onConflictDoNothing({ target: organizations.id });

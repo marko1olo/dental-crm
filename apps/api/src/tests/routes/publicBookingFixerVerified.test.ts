@@ -13,12 +13,15 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerPublicBookingRoutes } from "../../routes/publicBooking/publicBookingHandlers.js";
+import { registerSettingsRoutes } from "../../routes/settings.js";
 import {
 	getActiveCodeForTesting,
 	requestPhoneVerification,
 } from "../../routes/publicBooking/smsVerificationAndSpamGate.js";
 import { isAnyChairAvailable } from "../../routes/publicBooking/slotAvailabilityEngine.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 import { OnlineBookingPlugin } from "../../services/bots/plugins/OnlineBookingPlugin.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -421,5 +424,133 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		const validBody = JSON.parse(resValid.body);
 		assert.equal(validBody.success, true);
 		assert.ok(validBody.challengeId);
+	});
+
+	it("8. Clinic work hours saved via PUT /api/settings/clinic/profile govern public booking slots and closed-day 409", async (t) => {
+		if (!databaseAvailable) return t.skip("Database not available");
+
+		const WORK_ORG_ID = fixtureUuid(NAMESPACE, 100);
+		const WORK_DOC_ID = fixtureUuid(NAMESPACE, 101);
+		const adminSecret = `proof-${Date.now()}`;
+		const prevSecret = process.env.DENTE_SETTINGS_ADMIN_SECRET;
+		const prevUnguarded = process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS;
+		process.env.DENTE_SETTINGS_ADMIN_SECRET = adminSecret;
+		process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS = "0";
+
+		const computeFutureWeekday = (targetDay: number): string => {
+			const d = new Date();
+			d.setDate(d.getDate() + 7);
+			const diff = (targetDay - d.getDay() + 7) % 7;
+			d.setDate(d.getDate() + diff);
+			return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+		};
+		const futureMonday = computeFutureWeekday(1);
+		const futureSaturday = computeFutureWeekday(6);
+
+		await purgeFixtureOrganizations([WORK_ORG_ID]);
+		const settingsApp = createTenantTestApp();
+		try {
+			await registerSettingsRoutes(settingsApp);
+			await settingsApp.register(registerPublicBookingRoutes, { prefix: "/api/public/booking" });
+			await settingsApp.ready();
+
+			await withFixtureTenant(WORK_ORG_ID, async (tx) => {
+				await tx.insert(organizations).values({ id: WORK_ORG_ID, name: "Проверка часов работы — клиника" });
+				await tx.insert(clinics).values({
+					organizationId: WORK_ORG_ID,
+					name: "Проверка часов работы — клиника",
+					timezone: "Europe/Samara",
+				});
+				await tx.insert(users).values({
+					id: WORK_DOC_ID,
+					organizationId: WORK_ORG_ID,
+					fullName: "Врач проверки часов",
+					role: "doctor",
+					isActive: true,
+				});
+			});
+
+			const readSlots = async (date: string) => {
+				const r = await settingsApp.inject({
+					method: "GET",
+					url: `/api/public/booking/${WORK_ORG_ID}/slots/${WORK_DOC_ID}?date=${date}`,
+				});
+				return {
+					status: r.statusCode,
+					slots: r.statusCode === 200 ? (JSON.parse(r.body) as Array<{ time: string }>) : null,
+					error: r.statusCode !== 200 ? ((JSON.parse(r.body) as { error?: string }).error ?? null) : null,
+				};
+			};
+
+			const beforeMon = await readSlots(futureMonday);
+			const beforeSat = await readSlots(futureSaturday);
+			assert.equal(beforeMon.slots?.[0]?.time, "09:00");
+			assert.equal((beforeSat.slots?.length ?? 0) > 0, true);
+
+			const clinicToken = signToken({ organizationId: WORK_ORG_ID }, authTokenSecret());
+			const ownerToken = signToken({ organizationId: WORK_ORG_ID, userId: WORK_DOC_ID, role: "owner" }, authTokenSecret());
+			const saved = await settingsApp.inject({
+				method: "PUT",
+				url: "/api/settings/clinic/profile",
+				headers: {
+					"content-type": "application/json",
+					"x-dente-clinic-token": clinicToken,
+					"x-dente-staff-token": ownerToken,
+					"x-dente-admin-secret": adminSecret,
+				},
+				payload: {
+					clinicName: "Проверка часов работы — клиника",
+					legalName: "Проверка часов работы — клиника",
+					timezone: "Europe/Samara",
+					defaultVisitMinutes: 60,
+					scheduleDefaults: {
+						workdayStart: "08:00",
+						workdayEnd: "20:00",
+						workingDays: [1, 2, 3, 4, 5],
+						appointmentBufferMinutes: 15,
+					},
+					egiszEnabled: false,
+				},
+			});
+			assert.equal(saved.statusCode, 200, saved.body);
+
+			const afterMon = await readSlots(futureMonday);
+			const afterSat = await readSlots(futureSaturday);
+			assert.equal(afterMon.slots?.[0]?.time, "08:00");
+			assert.equal(afterMon.slots?.[afterMon.slots.length - 1]?.time, "19:30");
+			assert.equal(afterMon.slots?.length, 24);
+			assert.equal(afterSat.status, 409);
+			assert.equal(afterSat.error, "ClinicClosedThatDay");
+
+			await withFixtureTenant(WORK_ORG_ID, async (tx) => {
+				const [patientRow] = await tx
+					.insert(patients)
+					.values({ organizationId: WORK_ORG_ID, fullName: "Пациент проверки часов" })
+					.returning({ id: patients.id });
+				assert.ok(patientRow);
+				const busyStart = new Date(`${futureMonday}T08:00:00.000+04:00`);
+				await tx.insert(appointments).values({
+					organizationId: WORK_ORG_ID,
+					patientId: patientRow.id,
+					doctorUserId: WORK_DOC_ID,
+					status: "planned",
+					startsAt: busyStart,
+					endsAt: new Date(busyStart.getTime() + 3_600_000),
+				});
+			});
+
+			const withBusy = await readSlots(futureMonday);
+			assert.equal(withBusy.slots?.some((s) => s.time === "08:00"), false);
+			assert.equal(withBusy.slots?.some((s) => s.time === "08:30"), false);
+			assert.equal(withBusy.slots?.[0]?.time, "09:00");
+			assert.equal(withBusy.slots?.length, 22);
+		} finally {
+			if (prevSecret === undefined) delete process.env.DENTE_SETTINGS_ADMIN_SECRET;
+			else process.env.DENTE_SETTINGS_ADMIN_SECRET = prevSecret;
+			if (prevUnguarded === undefined) delete process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS;
+			else process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS = prevUnguarded;
+			await settingsApp.close();
+			await purgeFixtureOrganizations([WORK_ORG_ID]);
+		}
 	});
 });

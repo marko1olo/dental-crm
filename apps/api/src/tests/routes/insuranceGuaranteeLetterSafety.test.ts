@@ -35,7 +35,6 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 			await tx.insert(organizations).values({
 				id: ORGANIZATION_ID,
 				name: `Клиника ДМС Тест-${Date.now()}`,
-				isActive: true,
 			}).onConflictDoNothing();
 		});
 

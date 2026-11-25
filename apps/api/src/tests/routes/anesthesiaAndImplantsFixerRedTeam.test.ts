@@ -91,7 +91,6 @@ describe("RED TEAM FIXER: ANESTHESIA, IMPLANTS & PEDIATRIC PROTOCOLS VERIFICATIO
 				email: "surgeon@test.local",
 				fullName: "Др. Хирургов А.В.",
 				role: "doctor",
-				isStaff: true,
 				isActive: true,
 			}).onConflictDoNothing();
 

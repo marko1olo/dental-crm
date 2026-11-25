@@ -15,10 +15,13 @@ import { SberbankClient } from "../../services/sberbankClient.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 import { generateDeterministicQrSvg } from "./portalUtils.js";
-import type {
-	ConfirmSbpBody,
-	CreateSbpQrBody,
-	PaymentStatusQuery,
+import {
+	confirmSbpBodySchema,
+	createSbpQrBodySchema,
+	paymentStatusQuerySchema,
+	type ConfirmSbpBody,
+	type CreateSbpQrBody,
+	type PaymentStatusQuery,
 } from "./types.js";
 
 function readHeaderString(value: string | string[] | undefined): string | undefined {
@@ -167,14 +170,19 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			readHeaderString(request.headers["idempotency-key"]) ??
 			readHeaderString(request.headers["x-idempotency-key"]);
 
-		const invoiceId =
-			typeof request.body?.invoiceId === "string" ? request.body.invoiceId.trim() : "";
-		const stageId =
-			typeof request.body?.stageId === "string" ? request.body.stageId.trim() : "";
-		const explicitAmount =
-			typeof request.body?.amountRub === "number" && request.body.amountRub > 0
-				? request.body.amountRub
-				: undefined;
+		const parsedBody = createSbpQrBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры создания СБП-платежа.",
+				details: parsedBody.error.format(),
+			};
+		}
+
+		const invoiceId = parsedBody.data.invoiceId?.trim() ?? "";
+		const stageId = parsedBody.data.stageId?.trim() ?? "";
+		const explicitAmount = parsedBody.data.amountRub;
 
 		return withTenantCtx(auth.organizationId, async (tx) => {
 			let amountRub = explicitAmount || 0;
@@ -358,10 +366,18 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				return { error: "Unauthorized" };
 			}
 
-			const invoiceId = typeof request.body?.invoiceId === "string" ? request.body.invoiceId.trim() : "";
-			const stageId = typeof request.body?.stageId === "string" ? request.body.stageId.trim() : "";
-			const sbpTxId =
-				typeof request.body?.sbpTransactionId === "string" ? request.body.sbpTransactionId.trim() : "";
+			const parsedBody = confirmSbpBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры подтверждения оплаты СБП.",
+					details: parsedBody.error.format(),
+				});
+			}
+
+			const invoiceId = parsedBody.data.invoiceId?.trim() ?? "";
+			const stageId = parsedBody.data.stageId?.trim() ?? "";
+			const sbpTxId = parsedBody.data.sbpTransactionId?.trim() ?? "";
 
 			if (!invoiceId) {
 				return reply.code(400).send({ error: "ValidationError", message: "Параметр invoiceId обязателен для подтверждения оплаты." });
@@ -370,11 +386,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				return reply.code(400).send({ error: "ValidationError", message: "Идентификатор транзакции СБП (sbpTransactionId) обязателен." });
 			}
 
-			const rawAmountRub = request.body?.amountRub;
-			if (rawAmountRub !== undefined && (typeof rawAmountRub !== "number" || !Number.isFinite(rawAmountRub) || rawAmountRub <= 0)) {
-				return reply.code(400).send({ error: "ValidationError", message: "Сумма оплаты должна быть положительным числом." });
-			}
-			const explicitAmount = typeof rawAmountRub === "number" ? rawAmountRub : undefined;
+			const explicitAmount = parsedBody.data.amountRub;
 
 			// External bank gateway check runs BEFORE opening a PostgreSQL transaction
 			const sberUser = process.env.SBERBANK_TERMINAL_USER?.trim();
@@ -688,8 +700,18 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			return { error: "Unauthorized" };
 		}
 
-		const invoiceId = request.query?.invoiceId?.trim();
-		const invoiceNumber = request.query?.invoiceNumber?.trim();
+		const parsedQuery = paymentStatusQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные параметры запроса статуса оплаты.",
+				details: parsedQuery.error.format(),
+			};
+		}
+
+		const invoiceId = parsedQuery.data.invoiceId?.trim();
+		const invoiceNumber = parsedQuery.data.invoiceNumber?.trim();
 
 		return withTenantCtx(auth.organizationId, async (tx) => {
 			let inv: typeof patientInvoices.$inferSelect | undefined;
@@ -742,7 +764,9 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			}
 
 			const isPaid = inv.status === "paid";
-			const totalAmountRub = Number(inv.totalAmountRub || inv.totalRub || 0);
+			const totalAmountRub = kopecksToRubles(
+				parseKopecks(inv.totalAmountRub || inv.totalRub || "0"),
+			);
 			return {
 				success: true,
 				status: inv.status,

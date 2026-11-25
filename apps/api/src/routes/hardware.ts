@@ -8,12 +8,11 @@
  * - GET  /api/hardware/health: Service health and hardware probe capabilities.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { clinicHardwareDevices } from "../db/schema/hardware.js";
 import {
@@ -37,54 +36,80 @@ import {
 // REQUEST VALIDATION SCHEMAS
 // ============================================================================
 
-const getDevicesQuerySchema = z.object({
-	scope: z.string().optional(),
-	probeNetwork: z
-		.union([z.boolean(), z.string()])
-		.optional()
-		.transform((v) => v === true || v === "true" || v === "1"),
-	includeOffline: z
-		.union([z.boolean(), z.string()])
-		.optional()
-		.transform((v) => v !== false && v !== "false" && v !== "0"),
-	subnets: z.string().optional(),
-	ports: z.string().optional(),
-	timeoutMs: z
-		.string()
-		.optional()
-		.transform((v) => (v ? Number.parseInt(v, 10) : undefined)),
-});
+const getDevicesQuerySchema = z
+	.object({
+		scope: z.string().optional(),
+		probeNetwork: z
+			.union([z.boolean(), z.string()])
+			.optional()
+			.transform((v) => v === true || v === "true" || v === "1"),
+		includeOffline: z
+			.union([z.boolean(), z.string()])
+			.optional()
+			.transform((v) => v !== false && v !== "false" && v !== "0"),
+		subnets: z.string().optional(),
+		ports: z.string().optional(),
+		timeoutMs: z
+			.string()
+			.optional()
+			.transform((v) => (v ? Number.parseInt(v, 10) : undefined)),
+	})
+	.strict();
 
-const testPrintBodySchema = z.object({
-	deviceId: z.string().optional(),
-	deviceType: deviceTypeSchema,
-	interface: deviceInterfaceSchema,
-	ipAddress: z.string().ip().optional(),
-	rawTcpPort: z.number().int().min(1).max(65535).optional(),
-	systemPrinterName: z.string().optional(),
-	serialPort: z.string().optional(),
-	paperWidthMm: thermalPaperWidthMmSchema.optional(),
-	emulation: labelPrinterEmulationSchema.optional(),
-	testPatternType: testPrintPatternTypeSchema.optional(),
-	customMessage: z.string().max(500).optional(),
-	labelData: z
-		.object({
-			batchNumber: z.string(),
-			cycleNumber: z.union([z.number(), z.string()]),
-			sterilizationDate: z.string(),
-			expiryDate: z.string(),
-			operatorName: z.string(),
-			autoclaveModel: z.string().optional(),
-			program: z.string().optional(),
-			indicatorClass: z.union([z.literal(4), z.literal(5)]).optional(),
-			contentsDescription: z.string().optional(),
-			dataMatrixCode: z.string(),
-			labelWidthMm: z.number().optional(),
-			labelHeightMm: z.number().optional(),
-			gapMm: z.number().optional(),
-		})
-		.optional(),
-});
+const testPrintBodySchema = z
+	.object({
+		deviceId: z.string().optional(),
+		deviceType: deviceTypeSchema,
+		interface: deviceInterfaceSchema,
+		ipAddress: z.string().ip().optional(),
+		rawTcpPort: z.number().int().min(1).max(65535).optional(),
+		systemPrinterName: z.string().optional(),
+		serialPort: z.string().optional(),
+		paperWidthMm: thermalPaperWidthMmSchema.optional(),
+		emulation: labelPrinterEmulationSchema.optional(),
+		testPatternType: testPrintPatternTypeSchema.optional(),
+		customMessage: z.string().max(500).optional(),
+		labelData: z
+			.object({
+				batchNumber: z.string(),
+				cycleNumber: z.union([z.number(), z.string()]),
+				sterilizationDate: z.string(),
+				expiryDate: z.string(),
+				operatorName: z.string(),
+				autoclaveModel: z.string().optional(),
+				program: z.string().optional(),
+				indicatorClass: z.union([z.literal(4), z.literal(5)]).optional(),
+				contentsDescription: z.string().optional(),
+				dataMatrixCode: z.string(),
+				labelWidthMm: z.number().optional(),
+				labelHeightMm: z.number().optional(),
+				gapMm: z.number().optional(),
+			})
+			.strict()
+			.optional(),
+	})
+	.strict();
+
+const probeTcpQuerySchema = z
+	.object({
+		ip: z.string().ip(),
+		port: z
+			.string()
+			.optional()
+			.transform((v) => (v ? Number.parseInt(v, 10) : 9100)),
+		timeoutMs: z
+			.string()
+			.optional()
+			.transform((v) => (v ? Number.parseInt(v, 10) : 1200)),
+	})
+	.strict();
+
+const sensorStatusQuerySchema = z
+	.object({
+		modelId: z.string().trim().max(120).optional(),
+		hotFolder: z.string().trim().max(500).optional(),
+	})
+	.strict();
 
 // ============================================================================
 // ROUTE REGISTRATION
@@ -151,10 +176,32 @@ function isBlockedSsrfIp(rawIp: string): boolean {
 	return false;
 }
 
+function resolveRealHotFolderTarget(resolvedPath: string): string {
+	try {
+		return realpathSync(resolvedPath);
+	} catch {
+		let current = resolvedPath;
+		const trailing: string[] = [];
+		for (let i = 0; i < 16; i += 1) {
+			const parent = path.dirname(current);
+			if (parent === current) break;
+			trailing.unshift(path.basename(current));
+			try {
+				const realParent = realpathSync(parent);
+				return path.join(realParent, ...trailing);
+			} catch {
+				current = parent;
+			}
+		}
+		return resolvedPath;
+	}
+}
+
 function isSafeHotFolderPath(rawPath: string): boolean {
 	if (!rawPath || rawPath.includes("\0")) return false;
 	const resolved = path.resolve(rawPath.trim());
-	const normTarget = process.platform === "win32" ? resolved.toLowerCase() : resolved;
+	const realResolved = resolveRealHotFolderTarget(resolved);
+	const normTarget = process.platform === "win32" ? realResolved.toLowerCase() : realResolved;
 	for (const blocked of BLOCKED_HOT_FOLDER_ROOTS) {
 		const normBlocked = process.platform === "win32" ? blocked : blocked;
 		const sep = normBlocked.endsWith(path.sep) ? "" : path.sep;
@@ -168,7 +215,7 @@ function isSafeHotFolderPath(rawPath: string): boolean {
 			.split(/[;,]/)
 			.map((r) => r.trim())
 			.filter(Boolean)
-			.map((r) => path.resolve(r));
+			.map((r) => resolveRealHotFolderTarget(path.resolve(r)));
 		if (allowedRoots.length > 0) {
 			return allowedRoots.some((root) => {
 				const normRoot = process.platform === "win32" ? root.toLowerCase() : root;
@@ -252,19 +299,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const context = await requireClinicalReadContext(request, reply, "hardware tcp probe");
 			if (!context) return;
 
-			const parsedQuery = z
-				.object({
-					ip: z.string().ip(),
-					port: z
-						.string()
-						.optional()
-						.transform((v) => (v ? Number.parseInt(v, 10) : 9100)),
-					timeoutMs: z
-						.string()
-						.optional()
-						.transform((v) => (v ? Number.parseInt(v, 10) : 1200)),
-				})
-				.safeParse(request.query);
+			const parsedQuery = probeTcpQuerySchema.safeParse(request.query ?? {});
 
 			if (!parsedQuery.success) {
 				return reply.status(400).send({
@@ -378,9 +413,16 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const context = await requireClinicalReadContext(request, reply, "hardware sensor status");
 			if (!context) return;
 
-			const query = (request.query || {}) as Record<string, string>;
-			const modelId = query.modelId;
-			const hotFolder = query.hotFolder;
+			const parsedQuery = sensorStatusQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры проверки датчика.",
+					issues: parsedQuery.error.issues,
+				});
+			}
+			const modelId = parsedQuery.data.modelId;
+			const hotFolder = parsedQuery.data.hotFolder;
 
 			if (hotFolder && !isSafeHotFolderPath(hotFolder)) {
 				return reply.status(400).send({
@@ -449,6 +491,18 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 			const body = parsed.data;
+			if (body.hotFolderPath && !isSafeHotFolderPath(body.hotFolderPath)) {
+				return reply.status(400).send({
+					error: "InvalidHotFolderPath",
+					message: "Недопустимый путь к сетевой папке (Hot Folder).",
+				});
+			}
+			if (body.hotFolderPath && !isSafeHotFolderPath(body.hotFolderPath)) {
+				return reply.status(400).send({
+					error: "InvalidHotFolderPath",
+					message: "Недопустимый путь к сетевой папке (Hot Folder).",
+				});
+			}
 			const inserted = await withTenantCtx(context.organizationId, async (tx) =>
 				tx
 					.insert(clinicHardwareDevices)
@@ -507,6 +561,12 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 			const body = parsed.data;
+			if (body.hotFolderPath && !isSafeHotFolderPath(body.hotFolderPath)) {
+				return reply.status(400).send({
+					error: "InvalidHotFolderPath",
+					message: "Недопустимый путь к сетевой папке (Hot Folder).",
+				});
+			}
 
 			const patch: Record<string, unknown> = {
 				updatedAt: new Date(),
@@ -608,6 +668,14 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 			const rawDevices = parsed.data.devices;
+			for (const dev of rawDevices) {
+				if (dev.hotFolderPath && !isSafeHotFolderPath(dev.hotFolderPath)) {
+					return reply.status(400).send({
+						error: "InvalidHotFolderPath",
+						message: "Недопустимый путь к сетевой папке (Hot Folder) в конфигурации устройства.",
+					});
+				}
+			}
 
 			const updated = await withTenantCtx(context.organizationId, async (tx) => {
 				await tx

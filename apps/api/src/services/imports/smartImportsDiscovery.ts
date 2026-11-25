@@ -33,6 +33,7 @@ import {
   migrationProfileSafeAlias,
   migrationSafeAlias,
   registerMigrationSourceRoute,
+  isAllowedMigrationPath,
   migrationFingerprint,
   migrationDiscoveryDepth,
   migrationDriveDataRoots,
@@ -71,6 +72,7 @@ export async function inspectMigrationDiscoveryFolder(
 	queue: MigrationDiscoveryQueueItem[],
 	candidates: MigrationLocalSourceDiscoveryCandidate[],
 	warnings: Set<string>,
+	organizationId?: string,
 ) {
 	let entries: Dirent[];
 	try {
@@ -269,6 +271,7 @@ export async function inspectMigrationDiscoveryFolder(
 		sourceRef,
 		sourceKind,
 		safeDisplayName,
+		organizationId,
 	);
 	candidates.push({
 		sourceRef: sourceRouteRef,
@@ -302,6 +305,7 @@ export async function inspectMigrationDiscoveryFolder(
 
 export async function discoverLocalMigrationSources(
 	input: MigrationLocalSourceDiscoveryRequest,
+	organizationId?: string,
 ) {
 	const warnings = new Set<string>();
 	const workstationSignals = await collectMigrationWorkstationSignals(
@@ -321,9 +325,16 @@ export async function discoverLocalMigrationSources(
 		...baseRoots,
 		...migrationDriveDataRoots(mappedRoots),
 	].map((root) => path.resolve(root));
-	const roots = Array.from(new Set(candidateRoots)).filter((root) =>
-		migrationRootExists(root),
-	);
+	const roots = Array.from(new Set(candidateRoots)).filter((root) => {
+		const pathCheck = isAllowedMigrationPath(root);
+		if (!pathCheck.allowed) {
+			warnings.add(
+				"Корневой каталог отклонён политикой безопасности сервера (системный или защищённый путь).",
+			);
+			return false;
+		}
+		return migrationRootExists(root);
+	});
 	const candidates: MigrationLocalSourceDiscoveryCandidate[] = [];
 	const visited = new Set<string>();
 	const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
@@ -343,6 +354,7 @@ export async function discoverLocalMigrationSources(
 			queue,
 			candidates,
 			warnings,
+			organizationId,
 		);
 	}
 

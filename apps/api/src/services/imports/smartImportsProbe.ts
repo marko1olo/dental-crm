@@ -32,7 +32,7 @@ import {
   migrationImageExtensions,
   migrationDicomExtensions
 } from "./smartImportsConstants.js";
-import { resolveMigrationSourceRoute, migrationFingerprint } from "./smartImportsRoots.js";
+import { isAllowedMigrationPath, resolveMigrationSourceRoute, migrationFingerprint } from "./smartImportsRoots.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { migrationProbeVendorMatchers, migrationProbeArtifactKindTitles } from "./smartImportsProbeMatchers.js";
 
@@ -512,8 +512,9 @@ export async function scanMigrationProbeDirectory(
 
 export async function buildMigrationLocalSourceProbe(
 	input: MigrationLocalSourceProbeRequest,
+	organizationId?: string,
 ) {
-	const routeRef = resolveMigrationSourceRoute(input.sourceRef);
+	const routeRef = resolveMigrationSourceRoute(input.sourceRef, organizationId);
 	const sourceRef = routeRef.sourceRef;
 	const isUrl = /^https?:\/\//i.test(sourceRef);
 	const isBrowserManifest = /^browser-local:[a-f0-9]{8,12}$/i.test(sourceRef);
@@ -575,16 +576,26 @@ export async function buildMigrationLocalSourceProbe(
 		isUrl,
 	});
 
-	if (
+	const shouldCheckFsPath =
 		!routeRef.routeExpired &&
 		!isBrowserManifest &&
 		!isSmartPreviewSource &&
 		!isWorkstationProfile &&
 		!isWorkstationSignal &&
-		!isUrl
-	) {
+		!isUrl &&
+		!sourceRef.startsWith("\\\\");
+	const pathJailCheck = shouldCheckFsPath
+		? isAllowedMigrationPath(normalizedSourceRef)
+		: { allowed: true, realPath: normalizedSourceRef };
+	if (!pathJailCheck.allowed) {
+		warnings.add(
+			"Источник отклонён политикой безопасности сервера (системный или защищённый каталог).",
+		);
+	}
+
+	if (shouldCheckFsPath && pathJailCheck.allowed) {
 		try {
-			const stat = statSync(normalizedSourceRef);
+			const stat = statSync(pathJailCheck.realPath);
 			sourceExists = true;
 			sourceIsDirectory = stat.isDirectory();
 			sourceByteSize = stat.isFile() ? stat.size : null;

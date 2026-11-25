@@ -5,11 +5,10 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { clinics, organizations } from "../../../db/schema.js";
 import { extractPortalPatient } from "../portalAuthStore.js";
-import type { HealthQuestionnaireBody } from "../types.js";
+import { healthQuestionnaireBodySchema, type HealthQuestionnaireBody } from "../types.js";
 import { fetchPatientAppointmentsAndDoctors } from "./portalProfileAppointments.js";
 import {
 	fetchPatientMedicalRecords,
@@ -28,7 +27,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		const auth = verifyPortalProfileRequest(request, reply);
 		if (!auth) return;
 
-		return withTenantCtx(auth.organizationId, async () => {
+		return withTenantCtx(auth.organizationId, async (tx) => {
 			const sanitizedPatient = await fetchSanitizedPatient(auth.patientId, auth.organizationId);
 			if (!sanitizedPatient) {
 				reply.status(404);
@@ -41,7 +40,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 			const { familyGroup: familyGroupData, familyMembers: familyMembersList } =
 				await fetchPatientFamilyData(auth.patientId, auth.organizationId, sanitizedPatient.familyGroupId);
 
-			const [org] = await db
+			const [org] = await tx
 				.select({
 					name: organizations.name,
 					inn: organizations.inn,
@@ -52,7 +51,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 				.where(eq(organizations.id, auth.organizationId))
 				.limit(1);
 
-			const [clinic] = await db
+			const [clinic] = await tx
 				.select({
 					name: clinics.name,
 					address: clinics.address,
@@ -63,13 +62,13 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 				.limit(1);
 
 			const clinicInfo = {
-				nameRu: clinic?.name || org?.name || "Стоматологическая клиника ДЕНТЕ",
-				legalName: org?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
-				inn: org?.inn || "7701234567",
-				kpp: org?.kpp || undefined,
-				ogrn: org?.ogrn || undefined,
-				address: clinic?.address || "г. Москва, ул. Арбат, д. 24",
-				phone: clinic?.phone || "+7 (800) 200-55-40",
+				nameRu: clinic?.name ?? org?.name ?? null,
+				legalName: org?.name ?? null,
+				inn: org?.inn ?? null,
+				kpp: org?.kpp ?? null,
+				ogrn: org?.ogrn ?? null,
+				address: clinic?.address ?? null,
+				phone: clinic?.phone ?? null,
 			};
 
 			return {
@@ -119,7 +118,17 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 			return { error: "Unauthorized" };
 		}
 
-		const body = request.body || {};
+		const parsed = healthQuestionnaireBodySchema.safeParse(request.body ?? {});
+		if (!parsed.success) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректные данные анкеты здоровья.",
+				details: parsed.error.format(),
+			};
+		}
+
+		const body = parsed.data;
 		return withTenantCtx(auth.organizationId, async () => {
 			const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body);
 			if (!result) {

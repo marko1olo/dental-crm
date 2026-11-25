@@ -3,7 +3,6 @@ import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSpamGate.js";
@@ -79,12 +78,14 @@ export function validateTelegramWebAppData(
 	}
 }
 
-const telegramAuthBodySchema = z.object({
-	initData: z.string().min(1, "initData is required"),
-	organizationId: z.string().uuid("organizationId must be a valid UUID"),
-	phone: z.string().max(30).optional(),
-	verificationCode: z.string().max(10).optional(),
-});
+const telegramAuthBodySchema = z
+	.object({
+		initData: z.string().min(1, "initData is required"),
+		organizationId: z.string().uuid("organizationId must be a valid UUID"),
+		phone: z.string().max(30).optional(),
+		verificationCode: z.string().max(10).optional(),
+	})
+	.strict();
 
 export async function registerPortalTelegramAuthRoutes(server: FastifyInstance): Promise<void> {
 	// Telegram Mini-App Direct Auth (/api/portal/auth/telegram-webapp)
@@ -129,8 +130,8 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 			};
 		}
 
-		const org = await withSuperuserBypass(async () => {
-			const [row] = await db
+		const org = await withSuperuserBypass(async (tx) => {
+			const [row] = await tx
 				.select({ id: organizations.id })
 				.from(organizations)
 				.where(eq(organizations.id, orgId))
@@ -146,14 +147,14 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 			};
 		}
 
-		return withTenantCtx(orgId, async () => {
+		return withTenantCtx(orgId, async (tx) => {
 			let foundPatient: typeof patients.$inferSelect | undefined;
 			const callerTelegramId = validation.user?.id ? String(validation.user.id) : null;
 
 			if (phone) {
 				const uniquePatient = await findUniquePatientByPhone(phone, orgId);
 				if (uniquePatient) {
-					const [p] = await db
+					const [p] = await tx
 						.select()
 						.from(patients)
 						.where(and(eq(patients.organizationId, orgId), eq(patients.id, uniquePatient.id)))
@@ -189,7 +190,7 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 
 						// 1. Проверяем в PostgreSQL portal_otp_codes (каноническое персистентное хранилище)
 						try {
-							const activeOtps = await db
+							const activeOtps = await tx
 								.select({
 									id: portalOtpCodes.id,
 									codeHash: portalOtpCodes.codeHash,
@@ -211,7 +212,7 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 								const candidate = activeOtps[0];
 								if (await verifyCredential(verificationCode, candidate.codeHash)) {
 									isOtpValid = true;
-									await db
+									await tx
 										.update(portalOtpCodes)
 										.set({ consumedAt: now })
 										.where(eq(portalOtpCodes.id, candidate.id));
@@ -239,7 +240,7 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 
 						// Фиксируем проверенную привязку Telegram ID к пациенту
 						if (callerTelegramId) {
-							await db
+							await tx
 								.update(patients)
 								.set({
 									administrativeProfile: normalizePatientAdministrativeProfile({
@@ -256,7 +257,7 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 			}
 
 			if (!foundPatient && validation.user?.id) {
-				const [p] = await db
+				const [p] = await tx
 					.select()
 					.from(patients)
 					.where(

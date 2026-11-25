@@ -23,25 +23,33 @@ import { syncMutationEntityKindSchema } from "@dental/shared";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const replayJobSchema = z.object({
-	jobId: z.string().regex(UUID_REGEX, "jobId must be a valid UUID"),
-});
+const replayJobSchema = z
+	.object({
+		jobId: z.string().regex(UUID_REGEX, "jobId must be a valid UUID"),
+	})
+	.strict();
 
-const listDlqQuerySchema = z.object({
-	limit: z.coerce.number().int().min(1).max(200).optional(),
-	offset: z.coerce.number().int().min(0).optional(),
-});
+const listDlqQuerySchema = z
+	.object({
+		limit: z.coerce.number().int().min(1).max(200).optional(),
+		offset: z.coerce.number().int().min(0).optional(),
+	})
+	.strict();
 
-const vectorAuditQuerySchema = z.object({
-	entityKind: syncMutationEntityKindSchema.optional(),
-	entityId: z.string().min(1).optional(),
-	limit: z.coerce.number().int().min(1).max(200).optional(),
-	offset: z.coerce.number().int().min(0).optional(),
-});
+const vectorAuditQuerySchema = z
+	.object({
+		entityKind: syncMutationEntityKindSchema.optional(),
+		entityId: z.string().min(1).optional(),
+		limit: z.coerce.number().int().min(1).max(200).optional(),
+		offset: z.coerce.number().int().min(0).optional(),
+	})
+	.strict();
 
-const recoverStaleSchema = z.object({
-	staleThresholdMs: z.number().int().min(1000).max(86400000).optional(),
-});
+const recoverStaleSchema = z
+	.object({
+		staleThresholdMs: z.number().int().min(1000).max(86400000).optional(),
+	})
+	.strict();
 
 export class SyncAdministrativeHandlers {
 	/**

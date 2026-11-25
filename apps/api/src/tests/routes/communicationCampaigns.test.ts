@@ -14,10 +14,12 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	estimateAudienceCost,
 	resolveAudience,
 } from "../../services/communications/audience.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
@@ -33,7 +35,7 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
  */
 
 const ORG_ID = "dce70000-0000-4000-8000-000000000201";
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const ORG_HEADERS: Record<string, string> = {};
 
 // Трое пациентов: с согласием, без согласия и без телефона.
 const CONSENTED = "dce70000-0000-4000-8000-000000000202";
@@ -120,6 +122,16 @@ describe("рассылки пациентам", () => {
 
 		app = createTenantTestApp();
 		await registerCommunicationOutboxRoutes(app);
+		Object.assign(ORG_HEADERS, {
+			"x-dente-staff-token": signToken(
+				{
+					organizationId: ORG_ID,
+					userId: "dce70000-0000-4000-8000-000000000299",
+					role: "owner",
+				},
+				authTokenSecret(),
+			),
+		});
 
 		try {
 			// Сначала расчистить место за оборванным прогоном, потом сеять.
@@ -562,7 +574,14 @@ describe("рассылки пациентам", () => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
 		const otherOrgHeaders = {
-			"x-organization-id": "dce70000-0000-4000-8000-0000000002ff",
+			"x-dente-staff-token": signToken(
+				{
+					organizationId: "dce70000-0000-4000-8000-0000000002ff",
+					userId: "dce70000-0000-4000-8000-0000000002fe",
+					role: "owner",
+				},
+				authTokenSecret(),
+			),
 		};
 		const preview = await app.inject({
 			method: "GET",
