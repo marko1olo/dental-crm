@@ -38,6 +38,7 @@ export const CopilotGlobalHost: React.FC = () => {
 
   const openVoiceModal = useCallback(() => setIsVoiceModalOpen(true), []);
   const closeVoiceModal = useCallback(() => setIsVoiceModalOpen(false), []);
+  const toggleVoiceModal = useCallback(() => setIsVoiceModalOpen((prev) => !prev), []);
   const openTreatmentPlanCopilot = useCallback(() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('dente:open-treatment-plans')); }, []);
   const closeTreatmentPlanCopilot = useCallback(() => {}, []);
 
@@ -71,6 +72,7 @@ export const CopilotGlobalHost: React.FC = () => {
     toggleHud: handleToggleHud,
     openVoiceModal,
     closeVoiceModal,
+    toggleVoiceModal,
     openTreatmentPlanCopilot,
     closeTreatmentPlanCopilot,
     setCustomMessages,

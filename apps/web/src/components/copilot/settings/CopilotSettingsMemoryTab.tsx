@@ -99,8 +99,8 @@ export function CopilotSettingsMemoryTab({ onOpenFullMemory }: CopilotSettingsMe
 							>
 								<div className="min-w-0">
 									<div className="flex items-center gap-2">
-										<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] uppercase">
-											{fact.category}
+										<span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--primary)]/12 text-[var(--primary)]">
+											{({ materials: "Материалы", anesthesia: "Анестезия", protocols: "Протоколы", diagnosis: "Диагнозы", equipment: "Оборудование", custom: "Общее" } as Record<string, string>)[fact.category] ?? fact.category}
 										</span>
 										<span className="text-[10px] text-[var(--muted)]">{fact.createdAt}</span>
 									</div>

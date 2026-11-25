@@ -24,7 +24,6 @@ export function VoiceDictationOverlay({
 		clearTranscript,
 		error,
 	} = useUnifiedDictation({
-		preferredMode: "gemini_live",
 		context: "visit",
 		specialty: "therapy",
 		autoFallback: true,
@@ -39,7 +38,7 @@ export function VoiceDictationOverlay({
 			clearTranscript();
 			setLiveIntentSummary(null);
 			prevParsedCountRef.current = 0;
-			void startDictation("gemini_live");
+			void startDictation();
 		} else {
 			if (isRecording) {
 				void stopDictation();

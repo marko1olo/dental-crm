@@ -2,7 +2,12 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as PnlModules from "../dashboardModules/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, "../../../../../../..");
 
 describe("ManagerialPnlDashboardModal Mandate 8b Decomposition & Invariants", () => {
 	const dashboardModules = [
@@ -31,7 +36,7 @@ describe("ManagerialPnlDashboardModal Mandate 8b Decomposition & Invariants", ()
 
 	it("guarantees every decomposed TSX module is in healthy sweet spot <= 350 lines", () => {
 		for (const relPath of dashboardModules) {
-			const fullPath = path.resolve(process.cwd(), relPath);
+			const fullPath = path.resolve(repoRoot, relPath);
 			assert.ok(fs.existsSync(fullPath), `File must exist: ${fullPath}`);
 			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
 			assert.ok(
@@ -43,7 +48,7 @@ describe("ManagerialPnlDashboardModal Mandate 8b Decomposition & Invariants", ()
 
 	it("guarantees every decomposed CSS stylesheet is in healthy range <= 350 lines", () => {
 		for (const relPath of cssStyles) {
-			const fullPath = path.resolve(process.cwd(), relPath);
+			const fullPath = path.resolve(repoRoot, relPath);
 			assert.ok(fs.existsSync(fullPath), `File must exist: ${fullPath}`);
 			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
 			assert.ok(
@@ -55,7 +60,7 @@ describe("ManagerialPnlDashboardModal Mandate 8b Decomposition & Invariants", ()
 
 	it("guarantees root facade ManagerialPnlDashboardModal.tsx is strictly <= 30 lines", () => {
 		const facadePath = path.resolve(
-			process.cwd(),
+			repoRoot,
 			"apps/web/src/components/finance/pnl/ManagerialPnlDashboardModal.tsx",
 		);
 		assert.ok(fs.existsSync(facadePath), `Facade file must exist: ${facadePath}`);
@@ -68,7 +73,7 @@ describe("ManagerialPnlDashboardModal Mandate 8b Decomposition & Invariants", ()
 
 	it("verifies elimination of hardcoded '6 касс · 12 регламентированных статей'", () => {
 		const headerPath = path.resolve(
-			process.cwd(),
+			repoRoot,
 			"apps/web/src/components/finance/pnl/dashboardModules/PnlHeader.tsx",
 		);
 		const content = fs.readFileSync(headerPath, "utf-8");

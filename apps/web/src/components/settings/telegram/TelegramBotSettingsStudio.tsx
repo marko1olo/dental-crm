@@ -58,7 +58,7 @@ export interface TelegramBotSettingsStudioProps {
 function getPresetIcon(iconName: string) {
 	switch (iconName) {
 		case "Sparkles":
-			return <Sparkles size={18} className="text-amber-500" />;
+			return <Sparkles size={18} className="text-[var(--warning)]" />;
 		case "Users":
 			return <Users size={18} className="text-emerald-500" />;
 		case "Activity":
@@ -324,7 +324,7 @@ export function TelegramBotSettingsStudio(
 						<label className="tg-feature-toggle-row">
 							<div>
 								<strong className="block text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
-									<Zap size={14} className="text-amber-500" /> Кнопка экстренной помощи при острой боли (CITO)
+									<Zap size={14} className="text-[var(--warning)]" /> Кнопка экстренной помощи при острой боли (CITO)
 								</strong>
 								<span className="text-xs text-slate-500 dark:text-slate-400">
 									Выводит памятку первой помощи и телефон дежурного врача для срочного приема.

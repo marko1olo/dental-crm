@@ -288,10 +288,11 @@ const CLINIC_NAME = process.env.CLINIC_NAME || '${clinicName}';
 const CLINIC_PHONE = process.env.CLINIC_PHONE || '${clinicPhone}';
 const CLINIC_ADDRESS = process.env.CLINIC_ADDRESS || '${clinicAddress}';
 const WELCOME_TEXT = ${JSON.stringify(welcomeText)};
+const logBotEvent = (event, payload) => {
+  process.stdout.write(JSON.stringify({ ts: new Date().toISOString(), event, ...(payload !== undefined ? { payload } : {}) }) + '\\n');
+};
 
-console.log('Запуск DENTE Bot для клиники:', CLINIC_NAME);
-console.log('Канал:', '${channel}');
-console.log('Плагины:', \${JSON.stringify(enabledPlugins)});
+logBotEvent('bot_init', { clinic: CLINIC_NAME, channel: '${channel}', plugins: \${JSON.stringify(enabledPlugins)} });
 
 // Базовый роут проверки здоровья (Healthcheck)
 app.get('/health', (req, res) => {
@@ -307,15 +308,14 @@ app.get('/health', (req, res) => {
 // Роут вебхука от DENTE CRM для отправки напоминаний
 app.post('/webhook/crm-events', (req, res) => {
   const { eventType, patientPhone, message } = req.body;
-  console.log('Получено событие от CRM:', eventType, 'для:', patientPhone);
+  logBotEvent('crm_webhook_event', { eventType, patientPhone });
   
   // Отправка сообщения в мессенджер в зависимости от канала
   res.json({ ok: true, deliveredAt: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
-  console.log(\`Сервер бота слушает порт \${PORT}\`);
-  console.log('Готов к приему сообщений пациентов 24/7.');
+  logBotEvent('bot_listening', { port: PORT, status: 'ready_24_7' });
 });
 `;
 

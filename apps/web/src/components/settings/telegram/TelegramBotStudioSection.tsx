@@ -44,7 +44,7 @@ export interface TelegramBotStudioProps {
 function getPresetMetaIcon(iconName: string) {
 	switch (iconName) {
 		case "Sparkles":
-			return <Sparkles size={16} className="text-amber-500" />;
+			return <Sparkles size={16} className="text-[var(--warning)]" />;
 		case "Users":
 			return <Users size={16} className="text-emerald-500" />;
 		case "Activity":
@@ -162,7 +162,7 @@ export function TelegramBotStudioSection({
 			clinicName: customClinicName,
 			clinicAddress,
 			clinicPhone,
-			botToken: "demo_bot_token",
+			botToken: "",
 			welcomeText: customWelcomeText,
 			enabledPlugins: {
 				onlineBooking: enableMiniAppBooking,
@@ -331,7 +331,7 @@ export function TelegramBotStudioSection({
 								</strong>
 							</div>
 							<p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-								Канал: <strong>{activeChannel.toUpperCase()}</strong>. Интерактивные кнопки симулятора переключают экраны in-place.
+								Канал: <strong>{({ telegram: "Telegram", vk: "VK", whatsapp: "WhatsApp", max: "MAX" } as Record<string, string>)[activeChannel] ?? activeChannel}</strong>. Интерактивные кнопки симулятора переключают экраны in-place.
 							</p>
 						</div>
 					</div>

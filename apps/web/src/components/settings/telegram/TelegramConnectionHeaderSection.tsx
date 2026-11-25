@@ -118,7 +118,7 @@ export function TelegramConnectionHeaderSection({
 			<details className="settings-advanced-block settings-admin-secret-block">
 				<summary className="settings-advanced-toggle">
 					<span className="settings-advanced-label flex items-center gap-1.5">
-						<Lock size={15} className="text-amber-500 shrink-0" />
+						<Lock size={15} className="text-[var(--warning)] shrink-0" />
 						Доступ к Telegram
 					</span>
 					<span className="settings-advanced-hint">

@@ -323,14 +323,14 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						<button
 							type="button"
 							onClick={onClose}
-							className="secondary-button h-10 px-4 rounded-xl border border-[var(--line)] text-xs font-semibold hover:bg-[var(--line)] cursor-pointer"
+							className="secondary-button h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium hover:bg-[var(--paper-soft)] cursor-pointer"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handleSave}
-							className="primary-button h-10 px-5 rounded-xl bg-[var(--teal)] text-white text-xs font-bold shadow-sm hover:opacity-95 cursor-pointer"
+							className="primary-button h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white text-sm font-medium shadow-sm hover:bg-[var(--primary-hover)] cursor-pointer"
 						>
 							Сохранить настройки
 						</button>

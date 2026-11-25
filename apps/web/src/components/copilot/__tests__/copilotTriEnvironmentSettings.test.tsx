@@ -230,9 +230,9 @@ describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)",
 		);
 
 		assert.ok(html.includes("Уровень доверия к действиям ИИ"));
-		assert.ok(html.includes("Максимальный контроль (Параноик)"));
+		assert.ok(html.includes("Максимальный контроль"));
 		assert.ok(html.includes("Сбалансированный (Копайлот)"));
-		assert.ok(html.includes("Высокая автономия (Суперагент)"));
+		assert.ok(html.includes("Высокая автономия"));
 		assert.ok(html.includes("Гранулярные разрешения действий"));
 		assert.ok(html.includes("Разметка формулы и дневника ЭМК"));
 	});

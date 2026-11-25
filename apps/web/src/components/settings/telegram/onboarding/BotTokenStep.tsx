@@ -98,7 +98,7 @@ export function BotTokenStep({
 			{/* Channel Specific 2-Step Visual Instructions */}
 			<div className="bot-channel-guide-card">
 				<h4 className="bot-guide-title">
-					Инструкция подключения для {activeChannel.toUpperCase()}
+					Инструкция подключения для {({ telegram: "Telegram", vk: "VK", whatsapp: "WhatsApp", max: "MAX" } as Record<string, string>)[activeChannel] ?? activeChannel}
 				</h4>
 
 				{activeChannel === "telegram" && (
@@ -206,7 +206,7 @@ export function BotTokenStep({
 				{/* Token Input Row */}
 				<div className="bot-token-box">
 					<label htmlFor={tokenInputId} className="bot-field-label">
-						Ключ доступа / Токен бота ({activeChannel.toUpperCase()}):
+						Ключ доступа / Токен бота ({({ telegram: "Telegram", vk: "VK", whatsapp: "WhatsApp", max: "MAX" } as Record<string, string>)[activeChannel] ?? activeChannel}):
 					</label>
 					<div className="bot-token-input-row">
 						<div className="bot-token-field-group">
@@ -238,7 +238,7 @@ export function BotTokenStep({
 						<button
 							type="button"
 							onClick={onVerifyConnection}
-							disabled={connectionStatus === "verifying"}
+							aria-busy={connectionStatus === "verifying"}
 							className="bot-verify-btn primary-button"
 						>
 							{connectionStatus === "verifying" ? (
@@ -253,7 +253,7 @@ export function BotTokenStep({
 					{/* Status Feedback */}
 					<div className={`bot-status-alert status-${connectionStatus}`}>
 						{connectionStatus === "connected" && <CheckCircle2 size={16} className="text-emerald-500" />}
-						{connectionStatus === "verifying" && <Radio size={16} className="text-amber-500 animate-pulse" />}
+						{connectionStatus === "verifying" && <Radio size={16} className="text-[var(--warning)] animate-pulse" />}
 						{connectionStatus === "error" && <HelpCircle size={16} className="text-rose-500" />}
 						{connectionStatus === "idle" && <Info size={16} className="text-slate-400" />}
 						<span>{statusMessage}</span>

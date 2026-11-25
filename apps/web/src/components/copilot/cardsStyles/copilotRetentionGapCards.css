@@ -86,7 +86,6 @@
 .copilot-emr-diary-label {
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
   color: var(--muted, #64748b);
   margin-bottom: 2px;
 }

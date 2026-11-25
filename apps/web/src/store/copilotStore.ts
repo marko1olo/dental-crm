@@ -6,6 +6,7 @@
  */
 
 import { create } from "zustand";
+import { generateUuidV7 } from "@dental/shared";
 import { logger } from "../utils/logger";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson, readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../lib/demoMode";
@@ -103,6 +104,10 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 					showThinkingProcess: next.showThinkingProcess,
 					temperature: next.temperature,
 					maskPhiData: next.maskPhiData,
+					speechEngine: next.speechEngine,
+					webSpeechSensitivity: next.webSpeechSensitivity,
+					globalDictationHotkey: next.globalDictationHotkey,
+					autoMicOnAppointmentOpen: next.autoMicOnAppointmentOpen,
 				});
 			}
 			return { settings: next };
@@ -349,7 +354,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		try {
 			const res = await fetch("/api/agent/action", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", "x-agent-runtime": runtime, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+				headers: { "Content-Type": "application/json", "Idempotency-Key": generateUuidV7(), "x-agent-runtime": runtime, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
 				body: JSON.stringify({ toolName, args, sessionId: get().activeThreadId || undefined, runtimeMode: runtime }),
 			});
 			const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };

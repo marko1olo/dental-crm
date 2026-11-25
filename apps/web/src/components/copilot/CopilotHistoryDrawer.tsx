@@ -172,15 +172,15 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 						<button
 							type="button"
 							onClick={handleCreateNew}
-							className="primary-button text-[11px] font-bold h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-95 shadow-xs flex items-center gap-1 cursor-pointer"
+							className="primary-button text-xs sm:text-sm font-medium h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs flex items-center gap-1.5 cursor-pointer"
 						>
-							<Plus size={13} />
+							<Plus size={14} />
 							<span>Новый диалог</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="icon-button min-w-[44px] min-h-[44px] w-9 h-9 md:w-8 md:h-8 flex items-center justify-center rounded-xl border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
+							className="icon-button min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
 							aria-label="Закрыть"
 						>
 							<X size={16} />
@@ -258,7 +258,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 									<button
 										type="button"
 										onClick={() => setIsConfirmingClear(false)}
-										className="px-2 py-0.5 rounded border border-[var(--line)] bg-[var(--paper)] text-[10px] cursor-pointer"
+										className="h-8 px-2.5 rounded-md border border-[var(--line)] bg-[var(--paper)] text-xs font-medium cursor-pointer"
 									>
 										Отмена
 									</button>
@@ -269,7 +269,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 											setIsConfirmingClear(false);
 											showToast("Вся история диалогов очищена", "info");
 										}}
-										className="px-2 py-0.5 rounded bg-[var(--danger)] text-white font-bold text-[10px] cursor-pointer"
+										className="h-8 px-2.5 rounded-md bg-[var(--danger)] text-white font-medium text-xs cursor-pointer"
 									>
 										Да, очистить
 									</button>

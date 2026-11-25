@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { downloadBotSourceZip } from "../botZipGenerator";
 import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotLeadItem } from "./types";
 import { DEFAULT_LEADS } from "./launchDefaults";
 import { fetchLiveInboxLeads, registerLiveBot } from "./launchBotApi";
+
+const CHANNEL_LABELS: Record<string, string> = {
+	telegram: "Telegram",
+	vk: "VK",
+	whatsapp: "WhatsApp",
+	max: "MAX",
+};
 
 interface UseBotPluginsAndLaunchParams {
 	activeChannel: BotChannelType;
@@ -45,6 +53,7 @@ export function useBotPluginsAndLaunch({
 	}, []);
 
 	const handleLaunchLiveBot = async () => {
+		if (isLaunching) return;
 		setIsLaunching(true);
 		setLiveNotice("Регистрируем конфигурацию и вебхук в защищенном облаке DENTE...");
 		try {
@@ -57,16 +66,22 @@ export function useBotPluginsAndLaunch({
 			].filter(Boolean) as string[];
 
 			const res = await registerLiveBot(activeChannel, botToken, plugins);
+			const chLabel = CHANNEL_LABELS[activeChannel] ?? activeChannel;
 			if (res.ok) {
 				setIsBotRunningLive(true);
-				setLiveNotice(`Бот ${activeChannel.toUpperCase()} успешно активирован в БД DENTE!`);
-				showToast(`Бот ${activeChannel.toUpperCase()} запущен!`, "success");
+				setLiveNotice(`Бот ${chLabel} успешно активирован в БД DENTE!`);
+				showToast(`Бот ${chLabel} запущен!`, "success");
 			} else {
 				const errData = await res.json().catch(() => ({}));
-				setLiveNotice(errData.message || "Ошибка сохранения настроек бота.");
+				const errMsg = errData.message || "Ошибка сохранения настроек бота.";
+				setLiveNotice(errMsg);
+				showToast(errMsg, "error");
 			}
-		} catch {
-			setLiveNotice("Сетевая ошибка при регистрации бота.");
+		} catch (err) {
+			clientLogger.warn("Ошибка запуска бота", err, { module: "useBotPluginsAndLaunch" });
+			const netMsg = "Сетевая ошибка при регистрации бота.";
+			setLiveNotice(netMsg);
+			showToast(netMsg, "error");
 		} finally {
 			setIsLaunching(false);
 		}
@@ -78,7 +93,7 @@ export function useBotPluginsAndLaunch({
 			clinicName,
 			clinicAddress,
 			clinicPhone,
-			botToken: botToken || "demo_token_12345",
+			botToken: botToken.trim(),
 			botUsername,
 			welcomeText,
 			enabledPlugins: {

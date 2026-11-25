@@ -94,7 +94,7 @@ export async function createRemoteSession(payload: {
 	try {
 		const res = await fetch("/api/agent/sessions", {
 			method: "POST",
-			headers: getAuthHeaders(),
+			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
@@ -119,7 +119,7 @@ export async function updateRemoteSession(id: string, patch: {
 	try {
 		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(id)}`, {
 			method: "PATCH",
-			headers: getAuthHeaders(),
+			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify(patch),
 		});
 		if (!res.ok) {
@@ -140,7 +140,7 @@ export async function deleteRemoteSession(id: string): Promise<boolean> {
 	try {
 		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(id)}`, {
 			method: "DELETE",
-			headers: getAuthHeaders(),
+			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 		});
 		if (!res.ok) {
 			logger.error(`[copilotSessionApi] deleteRemoteSession HTTP ${res.status}`);
@@ -180,7 +180,7 @@ export async function appendRemoteMessage(sessionId: string, message: {
 	try {
 		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
 			method: "POST",
-			headers: getAuthHeaders(),
+			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify(message),
 		});
 		if (!res.ok) {
@@ -215,7 +215,7 @@ export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promis
 	try {
 		const res = await fetch("/api/agent/memory", {
 			method: "PUT",
-			headers: getAuthHeaders(),
+			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify({ memoryFacts }),
 		});
 		if (!res.ok) {
@@ -250,7 +250,7 @@ export async function saveRemoteSettings(settings: Record<string, unknown>): Pro
 	try {
 		const res = await fetch("/api/agent/settings", {
 			method: "PUT",
-			headers: getAuthHeaders(),
+			headers: { ...getAuthHeaders(), "Idempotency-Key": generateUuidV7() },
 			body: JSON.stringify({ settings }),
 		});
 		if (!res.ok) {

@@ -17,7 +17,7 @@ export const PrescriptionUkepStamp: React.FC<PrescriptionUkepStampProps> = ({
       <div className="copilot-rx-ukep-stamp signed">
         <FileSignature size={18} className="text-[var(--teal)] flex-shrink-0" />
         <div style={{ minWidth: 0 }}>
-          <div className="font-bold text-xs uppercase tracking-wider text-[var(--teal-dark)]">
+          <div className="font-semibold text-xs tracking-wider text-[var(--teal-dark)]">
             Электронный документ подписан УКЭП
           </div>
           <div className="text-[11px] text-[var(--ink)] mt-0.5">

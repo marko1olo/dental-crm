@@ -8,7 +8,32 @@ import { useEffect, useState } from "react";
 import { createDefaultOrthoProtocolState, type AngleClass, type OrthoProtocolState, type VerticalBite } from "./orthodonticsCatalogData";
 import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
 import { clientLogger } from "../../services/logging/clientLogger";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import type { CephalometricSavedStudy } from "./cephalometricPersistence";
+
+function toCephalometricSavedStudy(raw: unknown, fallbackPatientId: string): CephalometricSavedStudy | null {
+	if (!raw || typeof raw !== "object") return null;
+	const obj = raw as Record<string, unknown>;
+	const id = typeof obj.id === "string" && obj.id.length > 0
+		? obj.id
+		: `ceph-${typeof obj.patientId === "string" ? obj.patientId : fallbackPatientId}`;
+	return {
+		id,
+		patientId: typeof obj.patientId === "string" ? obj.patientId : fallbackPatientId,
+		...(typeof obj.patientName === "string" ? { patientName: obj.patientName } : {}),
+		...(typeof obj.imageUrl === "string" || obj.imageUrl === null ? { imageUrl: obj.imageUrl } : {}),
+		...(obj.landmarks && typeof obj.landmarks === "object" ? { landmarks: obj.landmarks as CephalometricSavedStudy["landmarks"] } : {}),
+		...(typeof obj.scaleMmPerPixel === "number" ? { scaleMmPerPixel: obj.scaleMmPerPixel } : {}),
+		...(obj.analysis && typeof obj.analysis === "object" ? { analysis: obj.analysis as CephalometricSavedStudy["analysis"] } : {}),
+		...(Array.isArray(obj.measurements) ? { measurements: obj.measurements as CephalometricSavedStudy["measurements"] } : {}),
+		...(typeof obj.source === "string" ? { source: obj.source } : {}),
+		...(typeof obj.backendUsed === "string" ? { backendUsed: obj.backendUsed } : {}),
+		...(typeof obj.isCalibratedFallback === "boolean" ? { isCalibratedFallback: obj.isCalibratedFallback } : {}),
+		...(typeof obj.placedCount === "number" ? { placedCount: obj.placedCount } : {}),
+		...(typeof obj.latencyMs === "number" ? { latencyMs: obj.latencyMs } : {}),
+		...(typeof obj.savedAt === "string" ? { savedAt: obj.savedAt } : {}),
+	};
+}
 
 export interface OrthodonticsHydrationResult {
 	cephStudy: CephalometricSavedStudy | null;
@@ -69,7 +94,7 @@ export function useOrthodonticsStudioHydration(
 		const fetchProgress = async () => {
 			try {
 				const res = await fetch(`/api/orthodontics/${patientId}/progress`, {
-					headers: { Accept: "application/json" },
+					headers: denteClinicalReadHeaders({ Accept: "application/json" }),
 				});
 				if (res.ok) {
 					const data = (await res.json()) as {
@@ -154,7 +179,7 @@ export function useOrthodonticsStudioHydration(
 		const fetchCephAnalysis = async () => {
 			try {
 				const res = await fetch(`/api/orthodontics/${patientId}/ceph-analysis`, {
-					headers: { Accept: "application/json" },
+					headers: denteClinicalReadHeaders({ Accept: "application/json" }),
 				});
 				if (res.ok) {
 					const data = (await res.json()) as {
@@ -225,8 +250,9 @@ export function useOrthodonticsStudioHydration(
 		}>(patientId);
 
 		if (cachedStudy) {
-			setCephStudy(cachedStudy as unknown as CephalometricSavedStudy);
-			onCephStudyLoaded?.(cachedStudy as unknown as CephalometricSavedStudy);
+			const normalizedStudy = toCephalometricSavedStudy(cachedStudy, patientId);
+			setCephStudy(normalizedStudy);
+			onCephStudyLoaded?.(normalizedStudy);
 			const mList = cachedStudy.measurements || cachedStudy.analysis?.measurements;
 			if (Array.isArray(mList) && mList.length > 0) {
 				const vals = parseCephMeasurementsArray(mList);

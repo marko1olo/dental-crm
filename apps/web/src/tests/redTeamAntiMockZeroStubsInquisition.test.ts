@@ -33,13 +33,27 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 			webSrcDir,
 			"components/loyalty/LoyaltyStudioModal.tsx",
 		);
+		const loyaltyStatePath = path.join(
+			webSrcDir,
+			"components/loyalty/useLoyaltyStudioState.ts",
+		);
+		const loyaltyActionsPath = path.join(
+			webSrcDir,
+			"components/loyalty/loyaltyStudioActions.ts",
+		);
 
-		it("LoyaltyStudioModal.tsx must physically exist on disk", () => {
+		it("LoyaltyStudioModal.tsx and its decomposed modules must physically exist on disk", () => {
 			assert.ok(fs.existsSync(loyaltyModalPath), "LoyaltyStudioModal.tsx not found");
+			assert.ok(fs.existsSync(loyaltyStatePath), "useLoyaltyStudioState.ts not found");
+			assert.ok(fs.existsSync(loyaltyActionsPath), "loyaltyStudioActions.ts not found");
 		});
 
 		it("LoyaltyStudioModal must synchronize live balance and transactions via fetch", () => {
-			const content = fs.readFileSync(loyaltyModalPath, "utf-8");
+			const content = [
+				fs.readFileSync(loyaltyModalPath, "utf-8"),
+				fs.readFileSync(loyaltyStatePath, "utf-8"),
+				fs.readFileSync(loyaltyActionsPath, "utf-8"),
+			].join("\n");
 
 			// Must fetch live balance
 			assert.ok(
@@ -65,10 +79,10 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 				"LoyaltyStudioModal missing live POST /api/loyalty/accrue persistence",
 			);
 
-			// Must include authorization headers
+			// Must include clinical authorization headers
 			assert.ok(
-				content.includes("denteAdminSecretRequestHeaders"),
-				"LoyaltyStudioModal missing denteAdminSecretRequestHeaders authorization",
+				content.includes("denteClinicalReadHeaders") && content.includes("denteClinicalMutationHeaders"),
+				"LoyaltyStudio missing denteClinicalReadHeaders / denteClinicalMutationHeaders authorization",
 			);
 		});
 	});
@@ -81,13 +95,27 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 			webSrcDir,
 			"components/orthodontics/OrthodonticsStudioModal.tsx",
 		);
+		const orthoHydrationPath = path.join(
+			webSrcDir,
+			"components/orthodontics/useOrthodonticsStudioHydration.ts",
+		);
+		const orthoPersistencePath = path.join(
+			webSrcDir,
+			"components/orthodontics/orthodonticsStudioPersistence.ts",
+		);
 
-		it("OrthodonticsStudioModal.tsx must physically exist on disk", () => {
+		it("OrthodonticsStudioModal.tsx and its decomposed modules must physically exist on disk", () => {
 			assert.ok(fs.existsSync(orthoStudioPath), "OrthodonticsStudioModal.tsx not found");
+			assert.ok(fs.existsSync(orthoHydrationPath), "useOrthodonticsStudioHydration.ts not found");
+			assert.ok(fs.existsSync(orthoPersistencePath), "orthodonticsStudioPersistence.ts not found");
 		});
 
 		it("OrthodonticsStudioModal must synchronize progress and persist clinical actions", () => {
-			const content = fs.readFileSync(orthoStudioPath, "utf-8");
+			const content = [
+				fs.readFileSync(orthoStudioPath, "utf-8"),
+				fs.readFileSync(orthoHydrationPath, "utf-8"),
+				fs.readFileSync(orthoPersistencePath, "utf-8"),
+			].join("\n");
 
 			// Must fetch live progress
 			assert.ok(
@@ -113,10 +141,10 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 				"OrthodonticsStudioModal missing live POST /api/orthodontics/:patientId/ligatures-activate call",
 			);
 
-			// Must include authorization headers
+			// Must include clinical authorization headers
 			assert.ok(
-				content.includes("denteAdminSecretRequestHeaders"),
-				"OrthodonticsStudioModal missing denteAdminSecretRequestHeaders authorization",
+				content.includes("denteClinicalReadHeaders") && content.includes("denteClinicalMutationHeaders"),
+				"OrthodonticsStudio missing denteClinicalReadHeaders / denteClinicalMutationHeaders authorization",
 			);
 		});
 	});

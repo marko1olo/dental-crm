@@ -9,6 +9,7 @@ import type { OrthoProtocolState } from "./orthodonticsCatalogData";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { clientLogger } from "../../services/logging/clientLogger";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 
 export interface SaveOrthoProtocolOptions {
 	readonly protocol: OrthoProtocolState;
@@ -23,10 +24,10 @@ export interface SaveOrthoProtocolOptions {
 async function postOrthoEndpoint(url: string, payload: unknown, idempotencyKey: string): Promise<Response> {
 	const res = await fetch(url, {
 		method: "POST",
-		headers: {
+		headers: denteClinicalMutationHeaders({
 			"Content-Type": "application/json",
 			"Idempotency-Key": idempotencyKey,
-		},
+		}),
 		body: JSON.stringify(payload),
 	});
 
@@ -160,10 +161,10 @@ export async function saveOrthodonticProtocolToApi(options: SaveOrthoProtocolOpt
 			try {
 				const autoSaveRes = await fetch(`/api/visits/${visitId}/draft/autosave`, {
 					method: "PUT",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
-					},
+					}),
 					body: JSON.stringify({
 						visitId,
 						patientId,

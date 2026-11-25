@@ -66,7 +66,6 @@
 .chairside-hud-title {
   font-size: 12px;
   font-weight: 800;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink);
   white-space: nowrap;

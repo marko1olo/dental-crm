@@ -1,7 +1,35 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../../store/appStore';
+import { useCopilotStore } from '../../../store/copilotStore';
 import type { CopilotUiMessage, PendingConfirmation } from '../copilotTypes';
 import type { SpecialtyCategoryKey } from '../../visit/clinicalCatalog/clinicalProtocolsCatalog';
+
+function matchesConfiguredHotkey(e: KeyboardEvent, rawCombo: string): boolean {
+  const combo = rawCombo.trim().toLowerCase();
+  if (!combo) return false;
+  const parts = combo.split("+").map((p) => p.trim()).filter(Boolean);
+  const keyPart = parts[parts.length - 1];
+  if (!keyPart) return false;
+  const needsCtrl = parts.includes("ctrl") || parts.includes("control");
+  const needsShift = parts.includes("shift");
+  const needsAlt = parts.includes("alt");
+  const needsMeta = parts.includes("meta") || parts.includes("cmd");
+  if (e.ctrlKey !== needsCtrl || e.shiftKey !== needsShift || e.altKey !== needsAlt || e.metaKey !== needsMeta) {
+    return false;
+  }
+  const normalizedKey = e.key.toLowerCase();
+  const normalizedCode = e.code.toLowerCase();
+  const isMatch = normalizedKey === keyPart || (keyPart === "space" && (normalizedKey === " " || normalizedCode === "space"));
+  if (!isMatch) return false;
+
+  const target = e.target as HTMLElement | null;
+  const isTypingTarget = Boolean(target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable));
+  const isFunctionKey = /^f([1-9]|1[0-2])$/.test(keyPart);
+  if (isTypingTarget && !needsCtrl && !needsAlt && !needsMeta && !isFunctionKey) {
+    return false;
+  }
+  return true;
+}
 
 export interface DenteCopilotGlobalBridge {
   open: () => void;
@@ -12,6 +40,7 @@ export interface DenteCopilotGlobalBridge {
   toggleHud: () => void;
   openVoiceModal: () => void;
   closeVoiceModal: () => void;
+  toggleVoiceModal?: () => void;
   openTreatmentPlanCopilot: () => void;
   closeTreatmentPlanCopilot: () => void;
   openAiSettings: () => void;
@@ -41,6 +70,7 @@ export interface UseCopilotGlobalEventsOptions {
   toggleHud: () => void;
   openVoiceModal: () => void;
   closeVoiceModal: () => void;
+  toggleVoiceModal?: () => void;
   openTreatmentPlanCopilot: () => void;
   closeTreatmentPlanCopilot: () => void;
   setCustomMessages: (msgs: CopilotUiMessage[]) => void;
@@ -112,6 +142,16 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') || (e.altKey && e.key.toLowerCase() === 'c')) {
         e.preventDefault();
         optsRef.current.toggleHud();
+        return;
+      }
+      const dictationHotkey = useCopilotStore.getState().settings.globalDictationHotkey || "F9";
+      if (matchesConfiguredHotkey(e, dictationHotkey)) {
+        e.preventDefault();
+        if (optsRef.current.toggleVoiceModal) {
+          optsRef.current.toggleVoiceModal();
+        } else {
+          optsRef.current.openVoiceModal();
+        }
       }
     };
 
@@ -146,6 +186,13 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     const handleCloseHud = () => optsRef.current.closeHud();
     const handleOpenVoiceModal = () => optsRef.current.openVoiceModal();
     const handleCloseVoiceModal = () => optsRef.current.closeVoiceModal();
+    const handleToggleVoiceModal = () => {
+      if (optsRef.current.toggleVoiceModal) {
+        optsRef.current.toggleVoiceModal();
+      } else {
+        optsRef.current.openVoiceModal();
+      }
+    };
     const handleOpenTreatmentPlan = () => optsRef.current.openTreatmentPlanCopilot();
     const handleCloseTreatmentPlan = () => optsRef.current.closeTreatmentPlanCopilot();
 
@@ -163,6 +210,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     window.addEventListener('dente:close-chairside-hud', handleCloseHud);
     window.addEventListener('dente:open-voice-dictation', handleOpenVoiceModal);
     window.addEventListener('dente:close-voice-dictation', handleCloseVoiceModal);
+    window.addEventListener('dente:toggle-voice-dictation', handleToggleVoiceModal);
     window.addEventListener('dente:open-treatment-plan-copilot', handleOpenTreatmentPlan);
     window.addEventListener('dente:close-treatment-plan-copilot', handleCloseTreatmentPlan);
     window.addEventListener('dente:open-protocols-catalog', handleOpenCatalog);
@@ -182,6 +230,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       window.removeEventListener('dente:close-chairside-hud', handleCloseHud);
       window.removeEventListener('dente:open-voice-dictation', handleOpenVoiceModal);
       window.removeEventListener('dente:close-voice-dictation', handleCloseVoiceModal);
+      window.removeEventListener('dente:toggle-voice-dictation', handleToggleVoiceModal);
       window.removeEventListener('dente:open-treatment-plan-copilot', handleOpenTreatmentPlan);
       window.removeEventListener('dente:close-treatment-plan-copilot', handleCloseTreatmentPlan);
       window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);

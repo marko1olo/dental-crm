@@ -5,7 +5,7 @@
  */
 
 import { AudioStreamManager } from "../../../components/audio/AudioStreamManager";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import type { PendingTranscriptionRecord, VoiceOfflineQueue } from "../VoiceOfflineQueue";
 import { calculatePcmDurationMs, combineBufferedPcmChunks, encodeBlobToBase64, encodePcm16ToBase64 } from "./pcmAudioProcessor";
@@ -337,7 +337,7 @@ export class AudioStreamTransport {
 			audioBase64 = await encodeBlobToBase64(wavBlob);
 			const response = await fetch("/api/speech/transcribe-chunk", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders({}, opts.adminSecret) },
+				headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					recordingId: this.host.getRecordingId(),
 					chunkIndex: currentChunkIdx,

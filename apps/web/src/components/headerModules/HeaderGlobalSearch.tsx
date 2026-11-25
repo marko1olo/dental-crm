@@ -299,7 +299,7 @@ export function HeaderGlobalSearch({
 					placeholder={
 						isRecording ? "Слушаю команду или имя пациента..." : placeholder
 					}
-					className={`w-full h-8 pl-8 pr-20 text-xs rounded-lg border transition-all ${
+					className={`w-full h-9 pl-[38px] pr-20 text-sm sm:text-xs rounded-lg border transition-all ${
 						isRecording
 							? "border-[var(--danger)] ring-1 ring-[var(--danger)] bg-[var(--danger-soft)] text-[var(--ink)] placeholder:text-[var(--danger)]"
 							: "border-[var(--line,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] placeholder:text-[var(--muted,#94a3b8)] focus:outline-none focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal)]"
@@ -316,7 +316,7 @@ export function HeaderGlobalSearch({
 					<button
 						type="button"
 						onClick={toggleDictation}
-						className={`w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer ${
+						className={`w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer ${
 							isRecording
 								? "bg-[var(--danger)] text-white animate-pulse shadow-2xs"
 								: "text-[var(--muted,#64748b)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft,#f1f5f9)]"

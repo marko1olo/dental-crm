@@ -55,7 +55,7 @@ export const CopilotTimelineCard: React.FC<CopilotTimelineCardProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+        <span className="text-xs font-semibold tracking-wider text-[var(--muted)] flex items-center gap-1.5">
           <Calendar className="w-4 h-4 text-[var(--teal)]" />
           <span>Клиническая хронология ({events.length})</span>
         </span>

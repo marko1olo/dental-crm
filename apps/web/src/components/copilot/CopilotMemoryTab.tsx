@@ -79,8 +79,8 @@ export function CopilotMemoryTab() {
 					</select>
 				</div>
 				<div className="flex gap-2">
-					<input type="text" value={newFactText} onChange={(e) => setNewFactText(e.target.value)} placeholder="Например: Пломбирование каналов методом латеральной компакции..." className="flex-1 h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs focus:ring-1 focus:ring-[var(--teal)]" />
-					<button type="submit" className="primary-button h-9 px-3.5 rounded-lg bg-[var(--teal)] text-white text-xs font-bold hover:opacity-95 shadow-xs shrink-0 cursor-pointer">Сохранить</button>
+					<input type="text" value={newFactText} onChange={(e) => setNewFactText(e.target.value)} placeholder="Например: Пломбирование каналов методом латеральной компакции..." className="flex-1 h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm sm:text-xs focus:ring-1 focus:ring-[var(--primary)]" />
+					<button type="submit" className="primary-button h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:bg-[var(--primary-hover)] shadow-xs shrink-0 cursor-pointer">Сохранить</button>
 				</div>
 				<div className="flex flex-wrap items-center gap-1 pt-1">
 					<span className="text-[10px] text-[var(--muted)] flex items-center gap-1"><Sparkles size={11} className="text-[var(--teal)]" /><span>Быстрые пресеты:</span></span>

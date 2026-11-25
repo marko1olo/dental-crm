@@ -19,7 +19,6 @@
   justify-content: space-between;
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted, #6b7280);
 }

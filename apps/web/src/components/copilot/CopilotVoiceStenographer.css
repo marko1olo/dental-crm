@@ -265,7 +265,7 @@
 
 .copilot-stenographer-mic-btn--active {
   background: var(--danger);
-  color: var(--paper);
+  color: #ffffff;
   border-color: var(--danger);
   box-shadow: 0 0 12px var(--danger-soft);
 }
@@ -281,7 +281,7 @@
   border-radius: 12px;
   border: none;
   background: var(--primary);
-  color: var(--paper);
+  color: #ffffff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

@@ -1,10 +1,20 @@
 import { useState, useEffect, useId, useMemo } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { CLINICAL_BOT_PRESETS, type BotPreset, type BotTone } from "../telegramBotPresets";
 import { downloadBotSourceZip } from "../botZipGenerator";
 import type { BotChannelType } from "../BotMessagePreviewCard";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
+
+const CHANNEL_LABELS: Record<string, string> = {
+	telegram: "Telegram",
+	vk: "VK",
+	whatsapp: "WhatsApp",
+	max: "MAX",
+};
+const formatChannelLabel = (ch?: string): string => (ch ? CHANNEL_LABELS[ch] ?? ch : "Telegram");
 import type {
 	BotAdminsStepProps,
 	BotConnectionStatus,
@@ -149,7 +159,7 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 		const loadLiveInbox = async () => {
 			try {
 				const res = await fetch("/api/bots/inbox", {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
 				if (res.ok) {
 					const data = await res.json();
@@ -168,7 +178,7 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 								id: c.key || `lead-${idx}`,
 								patientName: c.patientName || "Пациент",
 								phone: c.phone || c.senderId || "",
-								action: `Диалог ${c.channel ? c.channel.toUpperCase() : "TG"}`,
+								action: `Диалог ${formatChannelLabel(c.channel)}`,
 								detail: c.lastMessage || "Новое сообщение",
 								status: c.isIntercepted ? "inquiry" : "confirmed",
 								statusLabel: c.isIntercepted ? "Оператор" : "Отвечает бот",
@@ -182,8 +192,8 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 						);
 					}
 				}
-			} catch {
-				// Keep fallback
+			} catch (err) {
+				clientLogger.warn("Не удалось загрузить входящие диалоги бота", err, { module: "useBotOnboardingState" });
 			}
 		};
 		loadLiveInbox();
@@ -291,10 +301,10 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 
 			const res = await fetch("/api/bots/configs", {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-				},
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					channel: activeChannel,
 					botConfigId: "default",
@@ -305,17 +315,23 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 			});
 
 			if (res.ok) {
+				const chLabel = formatChannelLabel(activeChannel);
 				setIsBotRunningLive(true);
 				setLiveNotice(
-					`Бот ${activeChannel.toUpperCase()} успешно активирован в БД DENTE и слушает вебхук 24/7!`,
+					`Бот ${chLabel} успешно активирован в БД DENTE и слушает вебхук 24/7!`,
 				);
-				showToast(`Бот ${activeChannel.toUpperCase()} сохранён в базе и запущен!`, "success");
+				showToast(`Бот ${chLabel} сохранён в базе и запущен!`, "success");
 			} else {
 				const errData = await res.json().catch(() => ({}));
-				setLiveNotice(errData.message || "Ошибка сохранения настроек бота.");
+				const errMsg = errData.message || "Ошибка сохранения настроек бота.";
+				setLiveNotice(errMsg);
+				showToast(errMsg, "error");
 			}
-		} catch {
-			setLiveNotice("Сетевая ошибка при регистрации бота.");
+		} catch (err) {
+			clientLogger.warn("Ошибка регистрации бота", err, { module: "useBotOnboardingState" });
+			const netMsg = "Сетевая ошибка при регистрации бота.";
+			setLiveNotice(netMsg);
+			showToast(netMsg, "error");
 		} finally {
 			setIsLaunching(false);
 		}
@@ -327,7 +343,7 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 			clinicName,
 			clinicAddress,
 			clinicPhone,
-			botToken: botTokenInput.trim() || "demo_token_12345",
+			botToken: botTokenInput.trim(),
 			botUsername,
 			welcomeText,
 			enabledPlugins: {

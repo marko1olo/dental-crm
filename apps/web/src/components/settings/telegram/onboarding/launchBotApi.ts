@@ -1,5 +1,14 @@
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { BotLeadItem } from "./types";
+
+const CHANNEL_LABELS: Record<string, string> = {
+	telegram: "Telegram",
+	vk: "VK",
+	whatsapp: "WhatsApp",
+	max: "MAX",
+};
 
 interface LiveConversationItem {
 	key?: string;
@@ -14,7 +23,7 @@ interface LiveConversationItem {
 
 export async function fetchLiveInboxLeads(): Promise<BotLeadItem[] | null> {
 	try {
-		const res = await fetch("/api/bots/inbox", { headers: denteAdminSecretRequestHeaders() });
+		const res = await fetch("/api/bots/inbox", { headers: denteClinicalReadHeaders() });
 		if (!res.ok) return null;
 		const data = await res.json();
 		if (!Array.isArray(data.conversations) || data.conversations.length === 0) return null;
@@ -22,7 +31,7 @@ export async function fetchLiveInboxLeads(): Promise<BotLeadItem[] | null> {
 			id: c.key || `lead-${idx}`,
 			patientName: c.patientName || "Пациент",
 			phone: c.phone || c.senderId || "",
-			action: `Диалог ${c.channel?.toUpperCase?.() || "TG"}`,
+			action: `Диалог ${c.channel ? (CHANNEL_LABELS[c.channel] ?? c.channel) : "Telegram"}`,
 			detail: c.lastMessage || "Новое сообщение",
 			status: c.isIntercepted ? "inquiry" : "confirmed",
 			statusLabel: c.isIntercepted ? "Оператор" : "Отвечает бот",
@@ -30,7 +39,8 @@ export async function fetchLiveInboxLeads(): Promise<BotLeadItem[] | null> {
 				? new Date(c.lastMessageAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
 				: "—",
 		}));
-	} catch {
+	} catch (err) {
+		clientLogger.warn("Не удалось получить список диалогов бота", err, { module: "launchBotApi" });
 		return null;
 	}
 }
@@ -38,7 +48,10 @@ export async function fetchLiveInboxLeads(): Promise<BotLeadItem[] | null> {
 export async function registerLiveBot(channel: string, token: string | undefined, plugins: string[]) {
 	const res = await fetch("/api/bots/configs", {
 		method: "POST",
-		headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" },
+		headers: denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
+		}),
 		body: JSON.stringify({
 			channel,
 			botConfigId: "default",

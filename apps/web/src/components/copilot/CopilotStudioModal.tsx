@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain, Minimize2, AlertTriangle } from "lucide-react";
 import "./styles/copilotStudio.css";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
@@ -109,7 +110,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     resetDraft(); onClose();
   }, [messages, threadKey, saveThreadMessages, resetDraft, onClose]);
   const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(() => new Set()), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>(""), [activeToolName, setActiveToolName] = useState<string | null>(null);
-  const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toCleanUuid(patientId), visitId: toCleanUuid(activeVisitId), autoFallback: true });
+  const unifiedVoice = useUnifiedDictation({ context: "chat", patientId: toCleanUuid(patientId), visitId: toCleanUuid(activeVisitId), autoFallback: true });
   const voice = { isListening: unifiedVoice.isRecording, fullText: unifiedVoice.fullTranscript, toggleListening: unifiedVoice.toggleDictation, stopListening: unifiedVoice.stopDictation, clearTranscript: unifiedVoice.clearTranscript };
 
   useEffect(() => {
@@ -162,7 +163,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     setIsStreaming(true);
 
     // [CLN-DICTATION]: Локальный клинический парсер речи и текста для одонтограммы, SOAP и сметы
-    const { fallbackText, fallbackProposalTooth, pendingAction: localPendingAction } = handleClinicalSpeechOrText(query, patientId, activeTooth, { trustLevel: settings.trustLevel, autoApply: false });
+    const { fallbackText, fallbackProposalTooth, pendingAction: localPendingAction } = handleClinicalSpeechOrText(query, patientId, activeTooth, { trustLevel: settings.trustLevel, autoApply: settings.trustLevel === "autonomous" });
     const token = readDenteClinicToken() || readDenteStaffToken() || "", apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 
     // Скользящее окно многошаговой памяти диалога (AI-REV-06): последние 10 сообщений + текущий запрос
@@ -307,7 +308,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     const startTime = Date.now(), token = readDenteClinicToken() || readDenteStaffToken() || "", apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
     try {
       const res = await fetch("/api/agent/action", {
-        method: "POST", headers: { "Content-Type": "application/json", "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": generateUuidV7(), "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ toolName: toolKey, args: payload, patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode }),
       });
       const data = parseJsonResponse(await res.json().catch(() => ({}))), ok = res.ok && data.ok !== false;

@@ -267,16 +267,7 @@ export function BotStudioModal({
 								<button
 									type="button"
 									onClick={handleCopyBotLink}
-									className="secondary-button compact-button"
-									style={{
-										width: "100%",
-										fontSize: "12px",
-										minHeight: "32px",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										gap: "6px",
-									}}
+									className="secondary-button h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full px-3 rounded-xl sm:rounded-lg text-xs font-medium flex items-center justify-center gap-1.5"
 								>
 									{copiedLink ? (
 										<Check size={13} color="#10b981" />
@@ -306,7 +297,7 @@ export function BotStudioModal({
 
 							<div className="bot-sim-footnote">
 								<span>
-									Канал: <strong>{activeChannel.toUpperCase()}</strong>
+									Канал: <strong>{({ telegram: "Telegram", vk: "VK", whatsapp: "WhatsApp", max: "MAX" } as Record<string, string>)[activeChannel] ?? activeChannel}</strong>
 								</span>
 								<span>•</span>
 								<span>

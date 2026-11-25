@@ -25,6 +25,7 @@ import type { RecognitionPreset } from "../../settingsStaticData";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { speechGatewayCanUpload as canonicalSpeechGatewayCanUpload } from "../../helpers/speechHelpers";
 import { AiRecognitionJobsPanel } from "./AiRecognitionJobsPanel";
+import { showToast } from "../GlobalToast";
 /* Форматтер предупреждений — константа модуля, а не пропс. */
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
 
@@ -383,8 +384,15 @@ export function SettingsAiTab() {
 						<button
 							className="primary-button"
 							type="button"
-							onClick={runRecognitionJob}
-							disabled={isRecognitionLoading || !recognitionInputReady}
+							aria-busy={isRecognitionLoading}
+							onClick={() => {
+								if (isRecognitionLoading) return;
+								if (!recognitionInputReady) {
+									showToast("Введите текст или приложите снимок перед распознаванием.", "info");
+									return;
+								}
+								runRecognitionJob();
+							}}
 						>
 							<Sparkles size={16} style={{ marginRight: "8px" }} />
 							{isRecognitionLoading

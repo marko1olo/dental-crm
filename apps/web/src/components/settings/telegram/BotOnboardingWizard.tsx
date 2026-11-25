@@ -61,7 +61,7 @@ export function BotOnboardingWizard(props: BotOnboardingWizardProps) {
 						<button
 							type="button"
 							onClick={s.handleLaunchLiveBot}
-							disabled={s.isLaunching}
+							aria-busy={s.isLaunching}
 							className="primary-button"
 						>
 							<Sparkles size={16} />

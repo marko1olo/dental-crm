@@ -17,9 +17,28 @@ import {
 	type UnifiedAudioState,
 } from "../services/voice/UnifiedAudioClient";
 import { useAppStore } from "../store/appStore";
+import { useCopilotStore } from "../store/copilotStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
+
+const DICTATION_MODE_LABELS: Record<UnifiedAudioMode, string> = {
+	gemini_live: "Gemini Live",
+	server_whisper: "Серверный Whisper",
+	browser_speech: "Браузерное распознавание",
+};
+
+function mapCopilotEngineToAudioMode(engine?: string): UnifiedAudioMode {
+	if (engine === "whisper") return "server_whisper";
+	if (engine === "web_speech") return "browser_speech";
+	return "gemini_live";
+}
+
+function mapSensitivityToVad(sensitivity?: "high" | "normal" | "low") {
+	if (sensitivity === "high") return { speechThresholdRms: 0.011, silenceThresholdRms: 0.005 };
+	if (sensitivity === "low") return { speechThresholdRms: 0.03, silenceThresholdRms: 0.014 };
+	return { speechThresholdRms: 0.016, silenceThresholdRms: 0.008 };
+}
 
 export interface UseUnifiedDictationOptions {
 	preferredMode?: UnifiedAudioMode | undefined;
@@ -65,14 +84,15 @@ export function useUnifiedDictation(
 	options: UseUnifiedDictationOptions = {},
 ): UseUnifiedDictationReturn {
 	const dashboard = useAppStore((state) => state.dashboard);
+	const copilotSpeechEngine = useCopilotStore((state) => state.settings.speechEngine);
+	const copilotSpeechSensitivity = useCopilotStore((state) => state.settings.webSpeechSensitivity);
 	const clinicalAdminSecretSession = useSettingsStore(
 		(state) => state.clinicalAdminSecretSession,
 	);
+	const effectivePreferredMode = options.preferredMode ?? mapCopilotEngineToAudioMode(copilotSpeechEngine);
 
 	const [state, setState] = useState<UnifiedAudioState>("idle");
-	const [mode, setModeState] = useState<UnifiedAudioMode>(
-		options.preferredMode ?? "gemini_live",
-	);
+	const [mode, setModeState] = useState<UnifiedAudioMode>(effectivePreferredMode);
 	const [interimText, setInterimText] = useState("");
 	const [finalText, setFinalText] = useState("");
 	const [fullTranscript, setFullTranscript] = useState("");
@@ -95,13 +115,15 @@ export function useUnifiedDictation(
 
 	// Инициализация UnifiedAudioClient
 	useEffect(() => {
+		setModeState(effectivePreferredMode);
 		const clientOptions: UnifiedAudioClientOptions = {
-			preferredMode: options.preferredMode ?? "gemini_live",
+			preferredMode: effectivePreferredMode,
 			organizationId: targetOrgId,
 			patientId: targetPatientId,
 			visitId: targetVisitId,
 			specialty: options.specialty ?? "therapy",
 			adminSecret: clinicalAdminSecretSession.trim() || undefined,
+			vadOptions: mapSensitivityToVad(copilotSpeechSensitivity),
 			autoFallback: options.autoFallback ?? true,
 		};
 
@@ -121,7 +143,7 @@ export function useUnifiedDictation(
 			onModeChange: (newMode, _prevMode, reason) => {
 				setModeState(newMode);
 				if (reason) {
-					showToast(`Режим диктовки: ${newMode} (${reason})`, "info");
+					showToast(`Режим диктовки: ${DICTATION_MODE_LABELS[newMode] ?? newMode} (${reason})`, "info");
 				}
 			},
 			onInterimText: (text) => {
@@ -163,7 +185,8 @@ export function useUnifiedDictation(
 		targetPatientId,
 		targetVisitId,
 		clinicalAdminSecretSession,
-		options.preferredMode,
+		effectivePreferredMode,
+		copilotSpeechSensitivity,
 		options.specialty,
 		options.autoFallback,
 	]);

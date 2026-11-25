@@ -39,7 +39,6 @@
 .copilot-action-confirm-diff-badge {
   font-size: 10px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 1px 6px;
   border-radius: 9999px;
@@ -73,7 +72,6 @@
 .copilot-action-confirm-diff-tag {
   font-size: 10px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted, #6b7280);
 }

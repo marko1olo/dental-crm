@@ -4,7 +4,7 @@
  * Мандаты 8b (320-390 строк), 8e (автономия врача), 8am (единый дизайн-код).
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } from "lucide-react";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { extractClinicalTerms, type ParsedClinicalSpeech } from "../../services/voice/clinicalTermsExtractor";
@@ -54,7 +54,17 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     stopDictation: stopListening,
     startDictation: startListening,
     clearTranscript,
-  } = useUnifiedDictation({ preferredMode: "gemini_live", autoFallback: true });
+  } = useUnifiedDictation({ autoFallback: true });
+
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    if (isOpen && !embedded && !wasOpenRef.current) {
+      wasOpenRef.current = true;
+      void startListening();
+    } else if (!isOpen) {
+      wasOpenRef.current = false;
+    }
+  }, [isOpen, embedded, startListening]);
 
   const fullText = fullTranscript || (finalText ? `${finalText} ${interimText}`.trim() : interimText);
 

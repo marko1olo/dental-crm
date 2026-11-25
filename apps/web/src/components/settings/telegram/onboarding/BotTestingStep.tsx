@@ -44,7 +44,7 @@ export function BotTestingStep({
 							</span>
 						</div>
 						<span className="text-xs text-slate-500 dark:text-slate-400">
-							Канал: <strong>{activeChannel.toUpperCase()}</strong> ({botUsername})
+							Канал: <strong>{({ telegram: "Telegram", vk: "VK", whatsapp: "WhatsApp", max: "MAX" } as Record<string, string>)[activeChannel] ?? activeChannel}</strong> ({botUsername})
 						</span>
 					</div>
 
@@ -52,7 +52,7 @@ export function BotTestingStep({
 						<button
 							type="button"
 							onClick={onLaunchLiveBot}
-							disabled={isLaunching}
+							aria-busy={isLaunching}
 							className="bot-primary-launch-cta primary-button"
 						>
 							{isLaunching ? (
