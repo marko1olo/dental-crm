@@ -400,7 +400,7 @@ export const integrationPresetSchema = z.object({
 	capabilities: z.array(integrationCapabilitySchema),
 	migrationNotes: z.array(z.string()),
 	riskLevel: z.enum(["low", "medium", "high"]),
-});
+}).strict();
 
 export type IntegrationPreset = z.infer<typeof integrationPresetSchema>;
 
@@ -450,7 +450,7 @@ export const speechProviderSchema = z.object({
 	costNote: z.string(),
 	setupSettingsCount: z.number().int().nonnegative(),
 	sourceUrl: z.string().url(),
-});
+}).strict();
 
 export type SpeechProvider = z.infer<typeof speechProviderSchema>;
 
@@ -529,7 +529,7 @@ export const speechTranscriptionQualitySchema = z.object({
 	providerWarnings: z.array(z.string()),
 	signals: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type SpeechTranscriptionQuality = z.infer<
 	typeof speechTranscriptionQualitySchema
@@ -556,7 +556,7 @@ export const speechKeyPoolSchema = z.object({
 	rateLimitCooldownMs: z.number().int().positive(),
 	errorCooldownMs: z.number().int().positive(),
 	authCooldownMs: z.number().int().positive(),
-});
+}).strict();
 
 export type SpeechKeyPool = z.infer<typeof speechKeyPoolSchema>;
 
@@ -585,7 +585,7 @@ export const speechProviderRuntimeStatusSchema = z.object({
 	recommendedUse: z.string(),
 	nextStep: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type SpeechProviderRuntimeStatus = z.infer<
 	typeof speechProviderRuntimeStatusSchema

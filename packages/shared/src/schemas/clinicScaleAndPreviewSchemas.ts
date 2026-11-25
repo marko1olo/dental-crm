@@ -94,7 +94,7 @@ export const staffAuthorityFlagsSchema = z.object({
 	canSignMedicalRecords: z.boolean(),
 	canManageMoney: z.boolean(),
 	canManageImports: z.boolean(),
-});
+}).strict();
 
 export type StaffAuthorityFlagsDto = z.infer<typeof staffAuthorityFlagsSchema>;
 
@@ -122,7 +122,7 @@ export const staffAuthorityStateSchema = z.object({
 	roleDerived: staffAuthorityFlagsSchema,
 	grants: staffAuthorityFlagsSchema,
 	effective: staffAuthorityFlagsSchema,
-});
+}).strict();
 
 export type StaffAuthorityState = z.infer<typeof staffAuthorityStateSchema>;
 
@@ -404,7 +404,7 @@ export const imagingImportPreviewRowSchema = z.object({
 	sourceName: z.string(),
 	status: z.enum(["ready", "warning", "blocked"]),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type ImagingImportPreviewRow = z.infer<
 	typeof imagingImportPreviewRowSchema
@@ -419,7 +419,7 @@ export const imagingImportPreviewResponseSchema = z.object({
 	blockedRows: z.number().int().nonnegative(),
 	rows: z.array(imagingImportPreviewRowSchema),
 	parserNotes: z.array(z.string()),
-});
+}).strict();
 
 export type ImagingImportPreviewResponse = z.infer<
 	typeof imagingImportPreviewResponseSchema
@@ -432,7 +432,7 @@ export const imagingImportCommitResponseSchema = z.object({
 	skippedCount: z.number().int().nonnegative(),
 	createdStudyIds: z.array(z.string().uuid()),
 	preview: imagingImportPreviewResponseSchema,
-});
+}).strict();
 
 export type ImagingImportCommitResponse = z.infer<
 	typeof imagingImportCommitResponseSchema
@@ -459,7 +459,7 @@ export const imagingFolderScanResponseSchema = z.object({
 	rawText: z.string(),
 	preview: imagingImportPreviewResponseSchema,
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type ImagingFolderScanResponse = z.infer<
 	typeof imagingFolderScanResponseSchema
@@ -553,7 +553,7 @@ export const dicomMprResourcePolicySchema = z.object({
 	cacheMode: dicomMprCacheModeSchema,
 	safetyCaps: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomMprResourcePolicy = z.infer<
 	typeof dicomMprResourcePolicySchema
@@ -577,7 +577,7 @@ export const dicomMprReadinessSchema = z.object({
 	blockers: z.array(z.string()),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomMprReadiness = z.infer<typeof dicomMprReadinessSchema>;
 

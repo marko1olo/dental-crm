@@ -223,7 +223,7 @@ export const zonalShadeSpecificationSchema = z.object({
 	translucency: z.enum(["UTML", "STML", "HT", "MT", "LT", "MO", "HO"]).default("HT"),
 	mamelons: z.boolean().default(false),
 	calcifications: z.boolean().default(false),
-});
+}).strict();
 
 export type ZonalShadeSpecification = z.infer<typeof zonalShadeSpecificationSchema>;
 
@@ -289,6 +289,6 @@ export type StabilityEvaluationStatus = z.infer<typeof stabilityEvaluationStatus
 export const torqueCurveSampleSchema = z.object({
 	depthMm: z.number().min(0).max(25),
 	torqueNcm: z.number().min(0).max(120),
-});
+}).strict();
 
 export type TorqueCurveSample = z.infer<typeof torqueCurveSampleSchema>;

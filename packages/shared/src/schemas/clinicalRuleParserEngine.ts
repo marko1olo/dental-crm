@@ -397,7 +397,7 @@ export const visitSaveReceiptSchema = z.object({
 	protocolId: z.string().nullable().optional(),
 	signatureSha256: z.string().nullable().optional(),
 	pepSigned: z.boolean().nullable().optional(),
-});
+}).strict();
 
 export type VisitSaveReceipt = z.infer<typeof visitSaveReceiptSchema>;
 
@@ -427,7 +427,7 @@ export const aiRecognitionJobSchema = z.object({
 	suggestedNextStep: z.string(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type AiRecognitionJob = z.infer<typeof aiRecognitionJobSchema>;
 
@@ -479,7 +479,7 @@ export const importPreviewRowSchema = z.object({
 	notes: z.string().nullable(),
 	status: z.enum(["ready", "warning", "blocked"]),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type ImportPreviewRow = z.infer<typeof importPreviewRowSchema>;
 
@@ -490,7 +490,7 @@ export const importPreviewResponseSchema = z.object({
 	warningRows: z.number().int().nonnegative(),
 	blockedRows: z.number().int().nonnegative(),
 	rows: z.array(importPreviewRowSchema),
-});
+}).strict();
 
 export type ImportPreviewResponse = z.infer<typeof importPreviewResponseSchema>;
 
@@ -503,7 +503,7 @@ export const importCommitResponseSchema = z.object({
 	importedCount: z.number().int().nonnegative(),
 	skippedCount: z.number().int().nonnegative(),
 	importedPatientIds: z.array(z.string().uuid()),
-});
+}).strict();
 
 export type ImportCommitResponse = z.infer<typeof importCommitResponseSchema>;
 

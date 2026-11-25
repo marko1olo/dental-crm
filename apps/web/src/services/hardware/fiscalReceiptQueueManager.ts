@@ -432,6 +432,9 @@ export class FiscalReceiptQueueManager {
 				}
 			}
 		}, intervalMs);
+		if (this.autoRetryTimer && typeof this.autoRetryTimer === "object" && "unref" in this.autoRetryTimer && typeof this.autoRetryTimer.unref === "function") {
+			this.autoRetryTimer.unref();
+		}
 	}
 
 	/**
