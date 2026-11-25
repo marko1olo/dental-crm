@@ -1,9 +1,9 @@
-import { kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../db/rls.js";
 import { fiscalReceiptQueue, payments, sberbankTransactions } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { Fiscal54FzService } from "../../services/billing/fiscal54fzService.js";
+import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
+import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 import type { SbpWebhookResult } from "./types.js";
 
@@ -45,31 +45,41 @@ export async function handleSbpWebhookRefund(params: {
 					? Number(lockedPayment.amountKopecks)
 					: Number(lockedSberTx?.amountKopecks ?? 0);
 			if (refundKopecks > 0) {
-				const refundRub = kopecksToRubles(refundKopecks);
-				const refundPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+				await applyAcquiringCashboxLedgerInTx(tx, {
 					organizationId: orgId,
+					direction: "refund",
+					amountKopecks: refundKopecks,
+					paymentMethod: "online",
 					patientId: lockedPayment.patientId,
-					customerContact: "sbp@clinic.ru",
-					cashierFullName: "Кассир-администратор",
+					paymentId: lockedPayment.id,
+					invoiceId: lockedSberTx?.invoiceId ?? lockedPayment.documentId,
+					reasonText: `Возврат оплаты через СБП QR (${lockedSberTx?.orderId ?? lockedPayment.id})`,
+					sourceTag: lockedPayment.clientMutationId ?? `sbp:${lockedPayment.id}`,
+				});
+
+				const ffdRefundPayload = FiscalReceiptFactory.buildFfd12Receipt({
+					patientId: lockedPayment.patientId,
+					visitId: lockedPayment.visitId ?? lockedSberTx?.visitId ?? undefined,
+					invoiceId: lockedSberTx?.invoiceId ?? undefined,
+					clientMutationId: `${lockedPayment.clientMutationId ?? lockedPayment.id}:return`,
 					operationType: "income_return",
-					defaultCalculationMethod: "full_payment",
-					tenderSplits: {
-						sberPayQrRub: refundRub,
-					},
-					positions: [
+					taxationSystem: "usn_income",
+					cashierFullName: "Кассир-администратор",
+					customerContact: "sbp@clinic.ru",
+					sbpKopecks: refundKopecks,
+					totalKopecks: refundKopecks,
+					items: [
 						{
 							name: "Возврат оплаты через СБП QR",
-							priceRub: refundRub,
+							priceKopecks: refundKopecks,
 							quantity: 1,
+							amountKopecks: refundKopecks,
 							subject: "service",
 							method: "full_payment",
 							vatRate: "vat_none",
+							measure: "piece",
 						},
 					],
-					visitId: lockedPayment.visitId ?? lockedSberTx?.visitId ?? null,
-					documentId: lockedPayment.documentId ?? lockedSberTx?.documentId ?? null,
-					invoiceId: lockedSberTx?.invoiceId ?? null,
-					clientMutationId: `${lockedPayment.clientMutationId ?? lockedPayment.id}:return`,
 				});
 				await tx.insert(fiscalReceiptQueue).values({
 					organizationId: orgId,
@@ -78,8 +88,10 @@ export async function handleSbpWebhookRefund(params: {
 					receiptType: "income_return",
 					status: "pending_print",
 					payloadJson: {
-						...refundPayload,
-						tag1020_totalRub: refundPayload.tag1020_totalRubString,
+						...ffdRefundPayload,
+						clientMutationId: `${lockedPayment.clientMutationId ?? lockedPayment.id}:return`,
+						originalPaymentId: lockedPayment.id,
+						invoiceId: lockedSberTx?.invoiceId ?? lockedPayment.documentId ?? null,
 					},
 					retryCount: 0,
 				});

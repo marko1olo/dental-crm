@@ -96,6 +96,24 @@ export async function processSbpWebhookTransaction(params: {
 			});
 		}
 
+		const currentTxStatus = lockedSberTx?.status?.toLowerCase();
+		if (
+			currentTxStatus === "refunded" ||
+			currentTxStatus === "reversed" ||
+			lockedPayment?.status === "refunded"
+		) {
+			return {
+				statusCode: 200,
+				body: {
+					success: true,
+					processed: false,
+					reason: "already_refunded",
+					status: "REFUNDED",
+					paymentId: lockedPayment?.id ?? undefined,
+				},
+			};
+		}
+
 		if (lockedSberTx && lockedSberTx.status !== "success") {
 			await tx
 				.update(sberbankTransactions)

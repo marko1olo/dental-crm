@@ -71,16 +71,18 @@ export function useFamilyTopupMutation({
 				}),
 			});
 
-			const resJson = (await res.json().catch(() => null)) as {
+			const rawJson = (await res.json().catch(() => null)) as {
+				data?: { newBalance?: string };
 				newBalance?: string;
 				message?: string;
 				error?: string;
 			} | null;
+			const resJson = rawJson?.data ?? rawJson;
 
 			if (!res.ok) {
 				throw new Error(
-					resJson?.message ||
-						resJson?.error ||
+					rawJson?.message ||
+						rawJson?.error ||
 						`Ошибка пополнения (${res.status})`,
 				);
 			}

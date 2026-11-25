@@ -51,7 +51,7 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 
 		const records = await getFamilyHistoryRecords(familyGroupId, organizationId);
 		if (!records) return reply.code(404).send({ error: "Family group not found" });
-		return records;
+		return { success: true, data: records };
 	});
 
 	// POST /api/finance/family/pay
@@ -114,11 +114,12 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				result.newBalanceKopecks != null
 					? Number(result.newBalanceKopecks)
 					: parseKopecks(result.newBalanceRub);
-			return {
+			const payPayload = {
 				payment: result.payment,
 				newBalance: kopecksToNumericString(finalBalKop),
 				duplicate: result.duplicate,
 			};
+			return { success: true, data: payPayload, ...payPayload };
 		} catch (err: unknown) {
 			const statusCode =
 				typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"
@@ -223,12 +224,13 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				customPayerPatientId: payerPatientId || undefined,
 			});
 
-			return {
+			const taxPayload = {
 				familyGroupId,
 				taxYear,
 				count: certificates.length,
 				certificates,
 			};
+			return { success: true, data: taxPayload, ...taxPayload };
 		} catch (err: unknown) {
 			const statusCode =
 				err instanceof FamilyWalletError

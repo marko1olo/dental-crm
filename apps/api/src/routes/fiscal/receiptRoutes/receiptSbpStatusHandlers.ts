@@ -17,6 +17,7 @@ import {
 	sberbankTransactions,
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { sbpStatusInputSchema } from "./types.js";
 
 /**
@@ -221,6 +222,30 @@ export async function handleSbpStatus(
 
 						if (insertedPay) {
 							resolvedPaymentId = insertedPay.id;
+							const sbpFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+								patientId: inv.patientId,
+								operationType: "income",
+								taxationSystem: "usn_income",
+								cashierFullName: "Кассир-администратор",
+								customerContact: "",
+								totalKopecks: invKop,
+								cashKopecks: 0,
+								electronicCardKopecks: 0,
+								sbpKopecks: invKop,
+								prepaidKopecks: 0,
+								items: [
+									{
+										name: `Оплата медицинских услуг по СБП (счёт ${inv.id.slice(0, 8)})`,
+										priceKopecks: invKop,
+										quantity: 1,
+										amountKopecks: invKop,
+										subject: "service",
+										method: "full_payment",
+										vatRate: "vat_none",
+										measure: "piece",
+									},
+								],
+							});
 							const [queuedReceipt] = await tx
 								.insert(fiscalReceiptQueue)
 								.values({
@@ -230,13 +255,11 @@ export async function handleSbpStatus(
 									receiptType: "income",
 									status: "pending_print",
 									payloadJson: {
-										receiptType: "income",
-										amountKopecks: invKop,
-										amountRub: kopecksToRub(invKop),
-										sbpKopecks: invKop,
+										...sbpFfdPayload,
 										method: "online",
 										patientId: inv.patientId,
 										invoiceId: inv.id,
+										...(clientMutationId ? { clientMutationId } : {}),
 									},
 									retryCount: 0,
 								})

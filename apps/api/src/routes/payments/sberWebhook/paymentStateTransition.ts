@@ -1,7 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { and, eq, or, sql } from "drizzle-orm";
-import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
-import { kopecksToRubles, sumKopecks } from "@dental/shared";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { kopecksToRubles, rublesToKopecks, sumKopecks } from "@dental/shared";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
 	fiscalReceiptQueue,
@@ -13,6 +12,8 @@ import {
 } from "../../../db/schema.js";
 import { namedDevelopmentModeActive } from "../../../accessGuard.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
+import { applyAcquiringCashboxLedgerInTx } from "../../cashbox/cashlessAcquiringLedger.js";
 import { verifySberPosWebhookChecksum } from "./signatureVerifier.js";
 import type { SberPosTransactionStatus } from "./types.js";
 
@@ -56,12 +57,30 @@ export async function reconcileInvoiceBalanceInDb(
 		invoice.totalPriceKopecks !== undefined &&
 		invoice.totalPriceKopecks > 0n
 			? Number(invoice.totalPriceKopecks)
-			: Fiscal54FzService.rubToKopecks(Number(rawTotal));
+			: rublesToKopecks(Number(rawTotal));
 
-	// Find all paid payments linked to this invoice (or visit) within the clinic
-	const linkScope = invoice.visitId
-		? or(eq(payments.documentId, invoice.id), eq(payments.visitId, invoice.visitId))
-		: eq(payments.documentId, invoice.id);
+	// Scope strictly to payments linked to this invoice (only allow legacy documentId IS NULL when visit has 1 invoice).
+	let useLegacyVisitFallback = false;
+	if (invoice.visitId) {
+		const [visitInvCount] = await tx
+			.select({ cnt: sql<number>`count(*)::int` })
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.organizationId, organizationId),
+					eq(patientInvoices.visitId, invoice.visitId),
+				),
+			);
+		useLegacyVisitFallback = (visitInvCount?.cnt ?? 0) === 1;
+	}
+
+	const linkScope =
+		invoice.visitId && useLegacyVisitFallback
+			? or(
+					eq(payments.documentId, invoice.id),
+					and(eq(payments.visitId, invoice.visitId), isNull(payments.documentId)),
+				)
+			: eq(payments.documentId, invoice.id);
 
 	const invoicePayments = await tx
 		.select({
@@ -85,7 +104,7 @@ export async function reconcileInvoiceBalanceInDb(
 			p.amountKopecks !== undefined &&
 			p.amountKopecks > 0n
 				? Number(p.amountKopecks)
-				: Fiscal54FzService.rubToKopecks(p.amountRub),
+				: rublesToKopecks(p.amountRub),
 		),
 	);
 
@@ -325,33 +344,45 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 						refundTargetPayment.amountKopecks !== null && refundTargetPayment.amountKopecks > 0n
 							? Number(refundTargetPayment.amountKopecks)
 							: Number(lockedTx.amountKopecks);
-					const refundRub = kopecksToRubles(refundKopecks);
-					const refundReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+
+					await applyAcquiringCashboxLedgerInTx(tx, {
 						organizationId: lockedTx.organizationId,
+						direction: "refund",
+						amountKopecks: refundKopecks,
+						paymentMethod: "card",
 						patientId: lockedTx.patientId,
+						paymentId: refundTargetPayment.id,
+						invoiceId: lockedTx.invoiceId,
+						reasonText: `Возврат оплаты Sberbank POS (${lockedTx.orderId})`,
+						sourceTag: clientMutationId,
+					});
+
+					const refundFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+						patientId: lockedTx.patientId,
+						visitId: lockedTx.visitId || undefined,
+						documentId: lockedTx.documentId || undefined,
+						invoiceId: lockedTx.invoiceId || undefined,
+						clientMutationId: `${clientMutationId}:return`,
 						customerContact:
 							(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
 							"cardholder@clinic.ru",
 						cashierFullName: "Кассир-администратор",
 						operationType: "income_return",
-						defaultCalculationMethod: "full_payment",
-						tenderSplits: {
-							electronicCardRub: refundRub,
-						},
-						positions: [
+						taxationSystem: "usn_income",
+						electronicCardKopecks: refundKopecks,
+						totalKopecks: refundKopecks,
+						items: [
 							{
 								name: "Возврат оплаты медицинских стоматологических услуг",
-								priceRub: refundRub,
+								priceKopecks: refundKopecks,
 								quantity: 1,
+								amountKopecks: refundKopecks,
 								subject: "service",
 								method: "full_payment",
 								vatRate: "vat_none",
+								measure: "piece",
 							},
 						],
-						visitId: lockedTx.visitId,
-						documentId: lockedTx.documentId,
-						invoiceId: lockedTx.invoiceId,
-						clientMutationId: `${clientMutationId}:return`,
 					});
 					await tx.insert(fiscalReceiptQueue).values({
 						organizationId: lockedTx.organizationId,
@@ -360,8 +391,10 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 						receiptType: "income_return",
 						status: "pending_print",
 						payloadJson: {
-							...refundReceiptPayload,
-							tag1020_totalRub: refundReceiptPayload.tag1020_totalRubString,
+							...refundFfdPayload,
+							clientMutationId: `${clientMutationId}:return`,
+							orderId: lockedTx.orderId,
+							invoiceId: lockedTx.invoiceId,
 						},
 						retryCount: 0,
 					});
@@ -381,6 +414,20 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 
 		// 2. AUTHORIZATION (HOLD) HANDLING
 		if (rawStatus === "AUTHORIZED" || rawStatus === "APPROVED" || rawStatus === "1") {
+			const txUpper = lockedTx.status.toUpperCase();
+			if (txUpper === "REFUNDED" || txUpper === "REVERSED" || lockedPayment?.status === "refunded") {
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: false,
+						reason: "already_refunded",
+						status: txUpper === "REVERSED" ? "REVERSED" : "REFUNDED",
+						orderId: lockedTx.orderId,
+					},
+				};
+			}
+
 			await tx
 				.update(sberbankTransactions)
 				.set({ status: "AUTHORIZED", updatedAt: new Date() })
@@ -412,6 +459,25 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			rawStatus === "0";
 
 		if (isSettled) {
+			const currentUpper = lockedTx.status.toUpperCase();
+			if (
+				currentUpper === "REFUNDED" ||
+				currentUpper === "REVERSED" ||
+				lockedPayment?.status === "refunded"
+			) {
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: false,
+						reason: "already_refunded",
+						status: currentUpper === "REVERSED" ? "REVERSED" : "REFUNDED",
+						paymentId: lockedPayment?.id,
+						orderId: lockedTx.orderId,
+					},
+				};
+			}
+
 			const isAlreadyProcessed =
 				lockedTx.status === "SETTLED" ||
 				lockedTx.status.toLowerCase() === "success" ||
@@ -451,11 +517,10 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 					organizationId: lockedTx.organizationId,
 					patientId: lockedTx.patientId,
 					visitId: lockedTx.visitId ? lockedTx.visitId : null,
-					documentId: lockedTx.documentId
-						? lockedTx.documentId
-						: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+					documentId:
+						lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
 							? lockedTx.invoiceId
-							: null,
+							: lockedTx.documentId || null,
 					method: "card",
 					status: "paid",
 					amountRub,
@@ -505,53 +570,70 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 				);
 			}
 
-			// Enqueue 54-FZ statutory receipt in fiscal queue
-			const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-				organizationId: lockedTx.organizationId,
-				patientId: lockedTx.patientId,
-				customerContact:
-					(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
-					"cardholder@clinic.ru",
-				cashierFullName: "Кассир-администратор",
-				operationType: "income",
-				defaultCalculationMethod: "full_payment",
-				tenderSplits: {
-					electronicCardRub: amountRub,
-				},
-				positions: [
-					{
-						name:
-							(typeof payload.serviceTitle === "string" ? payload.serviceTitle : undefined) ||
-							"Медицинские стоматологические услуги",
-						priceRub: amountRub,
-						quantity: 1,
-						medicalServiceCode804n:
-							(typeof payload.medicalServiceCode804n === "string"
-								? payload.medicalServiceCode804n
-								: undefined) || null,
-						subject: "service",
-						method: "full_payment",
-						vatRate: "vat_none",
-					},
-				],
-				visitId: lockedTx.visitId,
-				documentId: lockedTx.documentId,
-				invoiceId: lockedTx.invoiceId,
-				clientMutationId,
-			});
+			// Only enqueue 54-FZ receipt & sync cashless shift ledger if payment row was genuinely created
+			if (newPayment) {
+				const amountKopNum = Number(lockedTx.amountKopecks);
+				await applyAcquiringCashboxLedgerInTx(tx, {
+					organizationId: lockedTx.organizationId,
+					direction: "income",
+					amountKopecks: amountKopNum,
+					paymentMethod: "card",
+					patientId: lockedTx.patientId,
+					paymentId: newPayment.id,
+					invoiceId: lockedTx.invoiceId,
+					reasonText: `Оплата через Sberbank POS / SberPay (${lockedTx.orderId})`,
+					sourceTag: clientMutationId,
+				});
 
-			await tx.insert(fiscalReceiptQueue).values({
-				organizationId: lockedTx.organizationId,
-				paymentId: newPayment?.id || lockedPayment?.id || null,
-				visitId: lockedTx.visitId || null,
-				receiptType: "income",
-				status: "pending_print",
-				payloadJson: {
-					...fiscalReceiptPayload,
-					tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
-				},
-				retryCount: 0,
-			});
+				const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+					patientId: lockedTx.patientId,
+					visitId: lockedTx.visitId || undefined,
+					documentId: lockedTx.documentId || undefined,
+					invoiceId: lockedTx.invoiceId || undefined,
+					clientMutationId,
+					customerContact:
+						(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
+						"cardholder@clinic.ru",
+					cashierFullName: "Кассир-администратор",
+					operationType: "income",
+					taxationSystem: "usn_income",
+					electronicCardKopecks: amountKopNum,
+					totalKopecks: amountKopNum,
+					items: [
+						{
+							name:
+								(typeof payload.serviceTitle === "string" ? payload.serviceTitle : undefined) ||
+								"Медицинские стоматологические услуги",
+							priceKopecks: amountKopNum,
+							quantity: 1,
+							amountKopecks: amountKopNum,
+							medicalServiceCode804n:
+								(typeof payload.medicalServiceCode804n === "string"
+									? payload.medicalServiceCode804n
+									: undefined) || null,
+							subject: "service",
+							method: "full_payment",
+							vatRate: "vat_none",
+							measure: "piece",
+						},
+					],
+				});
+
+				await tx.insert(fiscalReceiptQueue).values({
+					organizationId: lockedTx.organizationId,
+					paymentId: newPayment.id,
+					visitId: lockedTx.visitId || null,
+					receiptType: "income",
+					status: "pending_print",
+					payloadJson: {
+						...ffdPayload,
+						clientMutationId,
+						orderId: lockedTx.orderId,
+						invoiceId: lockedTx.invoiceId,
+					},
+					retryCount: 0,
+				});
+			}
 
 			return {
 				statusCode: 200,

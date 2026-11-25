@@ -160,12 +160,10 @@ describe("DEF-EXP-02: /api/export/{patients,leads} CSV BOM, Formula Safety, bala
 			headers: { "x-dente-staff-token": adminToken },
 		});
 		assert.equal(res.statusCode, 200);
-		const list = JSON.parse(res.body) as Array<{
-			id: string;
-			balanceRub: number;
-			balanceKopecks: number;
-			notes: string | null;
-		}>;
+		const rawList = JSON.parse(res.body) as
+			| { data?: Array<{ id: string; balanceRub: number; balanceKopecks: number; notes: string | null }> }
+			| Array<{ id: string; balanceRub: number; balanceKopecks: number; notes: string | null }>;
+		const list = Array.isArray(rawList) ? rawList : (rawList.data ?? []);
 		const row = list.find((item) => item.id === PATIENT_A_ID);
 		assert.ok(row);
 		assert.equal(row.balanceRub, -1500);
@@ -193,7 +191,8 @@ describe("DEF-EXP-02: /api/export/{patients,leads} CSV BOM, Formula Safety, bala
 			headers: { "x-dente-staff-token": marketerToken },
 		});
 		assert.equal(jsonRes.statusCode, 200);
-		const leads = JSON.parse(jsonRes.body) as Array<{ id: string }>;
+		const rawLeads = JSON.parse(jsonRes.body) as { data?: Array<{ id: string }> } | Array<{ id: string }>;
+		const leads = Array.isArray(rawLeads) ? rawLeads : (rawLeads.data ?? []);
 		assert.equal(leads.some((lead) => lead.id === LEAD_A_ID), true);
 		assert.equal(leads.some((lead) => lead.id === LEAD_B_ID), false);
 	});

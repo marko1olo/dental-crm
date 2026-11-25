@@ -264,6 +264,7 @@ export interface PaymentProcessingContext {
 	// Сертификаты
 	lockedCertificate: typeof giftCertificates.$inferSelect | null;
 	certAmountToDeductKop: bigint;
+	newCertBalanceKopecks?: bigint | undefined;
 	newCertBalanceRub: string;
 
 	// ДМС

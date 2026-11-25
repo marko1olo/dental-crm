@@ -3,13 +3,27 @@ import { withTenantCtx, type TenantDb } from "../../../../db/rls.js";
 import { commercemlExportedPackages, commercemlSyncJournal } from "../../../../db/schema.js";
 import type { DoublePostingCheckResult } from "../types.js";
 
-export async function isSyncHashProcessedTx(
+export interface SyncJournalEntrySummary {
+	id: string;
+	processedCount: number;
+	createdCount: number;
+	updatedCount: number;
+	createdAt: Date;
+}
+
+export async function getSyncJournalEntryTx(
 	tx: TenantDb,
 	organizationId: string,
 	hash: string,
-): Promise<boolean> {
+): Promise<SyncJournalEntrySummary | null> {
 	const [row] = await tx
-		.select({ id: commercemlSyncJournal.id })
+		.select({
+			id: commercemlSyncJournal.id,
+			processedCount: commercemlSyncJournal.processedCount,
+			createdCount: commercemlSyncJournal.createdCount,
+			updatedCount: commercemlSyncJournal.updatedCount,
+			createdAt: commercemlSyncJournal.createdAt,
+		})
 		.from(commercemlSyncJournal)
 		.where(
 			and(
@@ -18,6 +32,15 @@ export async function isSyncHashProcessedTx(
 			),
 		)
 		.limit(1);
+	return row ?? null;
+}
+
+export async function isSyncHashProcessedTx(
+	tx: TenantDb,
+	organizationId: string,
+	hash: string,
+): Promise<boolean> {
+	const row = await getSyncJournalEntryTx(tx, organizationId, hash);
 	return Boolean(row);
 }
 

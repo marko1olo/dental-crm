@@ -3,7 +3,7 @@ import { Decimal } from "decimal.js";
 import { and, desc, eq } from "drizzle-orm";
 import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
 import { cashBoxes, cashOperations, familyGroups, fiscalReceiptQueue, payments } from "../../../db/schema.js";
-import { Fiscal54FzService } from "../../billing/fiscal54fzService.js";
+import { FiscalReceiptFactory } from "../../kkt/FiscalReceiptFactory.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { FamilyWalletError, type FamilyRefundParams, type FamilyRefundResult } from "../familyWalletTypes.js";
 
@@ -47,10 +47,14 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 
 		const [existingPayment] = await tx.select().from(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.clientMutationId, clientMutationId.trim()))).limit(1);
 		if (existingPayment) {
-			const existingKopecks =
-				existingPayment.amountKopecks !== null && existingPayment.amountKopecks !== undefined && existingPayment.amountKopecks > 0n
+			const signedExistingKopecks =
+				existingPayment.amountKopecks !== null &&
+				existingPayment.amountKopecks !== undefined &&
+				existingPayment.amountKopecks !== 0n
 					? Number(existingPayment.amountKopecks)
 					: parseKopecks(existingPayment.amountRub);
+			const existingKopecks =
+				signedExistingKopecks < 0 ? -signedExistingKopecks : signedExistingKopecks;
 			if (existingKopecks !== refundKopecks || existingPayment.status !== "refunded") {
 				throw new FamilyWalletError("Клиентская операция уже записала другой возврат.", 409, "IDEMPOTENCY_CONFLICT");
 			}
@@ -139,35 +143,38 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		}
 
 		const [payment] = await tx.insert(payments).values({
-			organizationId, patientId: targetPatientId, amountRub: kopecksToRub(refundKopecks),
-			amountKopecks: BigInt(refundKopecks), method,
+			organizationId, patientId: targetPatientId, amountRub: -kopecksToRub(refundKopecks),
+			amountKopecks: -BigInt(refundKopecks), method,
 			status: "refunded", clientMutationId: clientMutationId.trim(),
 			documentId: familyGroupId,
 			note: reasonText?.trim() ? `Возврат с семейного депозита: ${reasonText.trim()}` : "Возврат с семейного депозита",
 		}).returning();
 		if (!payment) throw new FamilyWalletError("Не удалось создать запись возврата", 500, "REFUND_PAYMENT_CREATION_FAILED");
 
-		const refundRub = kopecksToRub(refundKopecks);
-		const fiscalRefundPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-			organizationId,
+		const ffdRefundPayload = FiscalReceiptFactory.buildFfd12Receipt({
 			patientId: targetPatientId,
+			documentId: familyGroupId,
+			clientMutationId: `${clientMutationId.trim()}:return`,
 			customerContact: "patient@clinic.ru",
 			cashierFullName: "Кассир-администратор",
 			operationType: "income_return",
-			defaultCalculationMethod: "advance",
-			tenderSplits: method === "cash" ? { cashRub: refundRub } : { electronicCardRub: refundRub },
-			positions: [
+			taxationSystem: "usn_income",
+			cashKopecks: method === "cash" ? refundKopecks : 0,
+			electronicCardKopecks: method !== "cash" ? refundKopecks : 0,
+			sbpKopecks: 0,
+			totalKopecks: refundKopecks,
+			items: [
 				{
 					name: reasonText?.trim() || "Возврат неиспользованного семейного депозита",
-					priceRub: refundRub,
+					priceKopecks: refundKopecks,
 					quantity: 1,
+					amountKopecks: refundKopecks,
 					subject: "payment",
 					method: "advance",
 					vatRate: "vat_none",
+					measure: "piece",
 				},
 			],
-			documentId: familyGroupId,
-			clientMutationId: `${clientMutationId.trim()}:return`,
 		});
 		await tx.insert(fiscalReceiptQueue).values({
 			organizationId,
@@ -175,8 +182,11 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 			receiptType: "income_return",
 			status: "pending_print",
 			payloadJson: {
-				...fiscalRefundPayload,
-				tag1020_totalRub: fiscalRefundPayload.tag1020_totalRubString,
+				...ffdRefundPayload,
+				clientMutationId: `${clientMutationId.trim()}:return`,
+				documentId: familyGroupId,
+				method,
+				reasonText: reasonText?.trim() || "Возврат неиспользованного семейного депозита",
 			},
 			retryCount: 0,
 		});

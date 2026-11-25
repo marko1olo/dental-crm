@@ -34,6 +34,45 @@ export async function handleKktDeviceStatus(
 	});
 }
 
+const FORBIDDEN_SSRF_PORTS = new Set([
+	22, 23, 25, 53, 80, 110, 143, 389, 443, 445, 3306, 5432, 5672, 6379, 8080, 9000, 9200, 27017,
+]);
+
+function isSafeKktHostAndPort(rawHost: string, port: number): { safe: boolean; reason?: string } {
+	const host = rawHost.trim().toLowerCase();
+	if (!host || host.length > 255) {
+		return { safe: false, reason: "Некорректный адрес хоста ККТ." };
+	}
+	// Block cloud metadata & link-local / zero / IPv6 loopback metadata targets
+	if (
+		host === "0.0.0.0" ||
+		host.startsWith("169.254.") ||
+		host === "metadata.google.internal" ||
+		host.endsWith(".internal") ||
+		host === "::" ||
+		host === "::1" ||
+		host.startsWith("fe80:")
+	) {
+		return { safe: false, reason: "Запрещено обращение к служебным и metadata-адресам (SSRF защита)." };
+	}
+	if (FORBIDDEN_SSRF_PORTS.has(port)) {
+		return { safe: false, reason: `Порт ${port} заблокирован политикой безопасности (не является портом ККТ).` };
+	}
+	const isLoopback = host === "127.0.0.1" || host === "localhost";
+	const isPrivateLan =
+		/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+		/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
+		/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host) ||
+		host.endsWith(".local");
+	if (isLoopback && process.env.NODE_ENV === "production" && process.env.ALLOW_LOCALHOST_KKT !== "1") {
+		return { safe: false, reason: "Loopback-адрес ККТ запрещён в production без ALLOW_LOCALHOST_KKT=1." };
+	}
+	if (!isLoopback && !isPrivateLan) {
+		return { safe: false, reason: "Разрешено подключение только к локальной подсети клиники (RFC 1918 / .local)." };
+	}
+	return { safe: true };
+}
+
 export async function handleKktTestConnection(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -50,6 +89,14 @@ export async function handleKktTestConnection(
 	}
 
 	const { host, port, timeoutMs } = parsed.data;
+	const hostCheck = isSafeKktHostAndPort(host, port);
+	if (!hostCheck.safe) {
+		return reply.status(400).send({
+			error: "InvalidKktTarget",
+			message: hostCheck.reason || "Недопустимый адрес или порт ККТ",
+		});
+	}
+
 	const result = await LanKktDriverService.pingSocket(host, port, timeoutMs);
 
 	return reply.status(200).send({

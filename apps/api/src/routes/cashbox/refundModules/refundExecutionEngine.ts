@@ -24,6 +24,7 @@ import {
 } from "../../../db/schema.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import {
 	checkCashRefundReplay,
 	lockAndValidateRefundTargets,
@@ -369,48 +370,59 @@ export async function executeCashRefundTransaction(
 			if (insertedPayment) {
 				refundPaymentId = insertedPayment.id;
 
-				const [queuedReceipt] = await tx
-					.insert(fiscalReceiptQueue)
-					.values({
-						organizationId: orgId,
-						paymentId: insertedPayment.id,
-						visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
-						receiptType: "income_return",
-						status: "pending_print",
-						payloadJson: {
-							receiptType: "income_return",
-							tag1054: 2,
-							operationType: "income_return",
-							amountRub: exactAmountRub,
-							amountKopecks: refundKop,
-							method: refundMethod,
-							cashRub: isDepositRefund || targetBox.isCashless ? 0 : exactAmountRub,
-							cashKopecks: isDepositRefund || targetBox.isCashless ? 0 : refundKop,
-							electronicRub: !isDepositRefund && targetBox.isCashless ? exactAmountRub : 0,
-							electronicKopecks: !isDepositRefund && targetBox.isCashless ? refundKop : 0,
-							electronicCardKopecks:
-								!isDepositRefund && targetBox.isCashless && refundMethod !== "online" ? refundKop : 0,
-							sbpKopecks: !isDepositRefund && refundMethod === "online" ? refundKop : 0,
-							advanceOffsetRub: isDepositRefund ? exactAmountRub : 0,
-							advanceOffsetKopecks: isDepositRefund ? refundKop : 0,
-							fiscalReceiptNumber: null,
-							originalFiscalReceiptNumber: linkedPayment?.fiscalReceiptNumber || null,
-							originalPaymentId: linkedPayment?.id || null,
-							patientId: effectivePatientId,
-							patientName,
-							cashierFullName: resolvedCashierName,
-							invoiceId: linkedInvoice?.id || null,
-							reasonText:
-								reasonText ||
-								(isDepositRefund
-									? "Возврат на депозит покупателя"
-									: "Возврат денежных средств покупателю"),
-						},
-						retryCount: 0,
-					})
-					.returning({ id: fiscalReceiptQueue.id });
+				// Internal deposit / family_wallet refunds restore patient credit without paying cash/card out of KKT drawer.
+				if (!isDepositRefund) {
+					const refundFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+						patientId: effectivePatientId,
+						operationType: "income_return",
+						taxationSystem: "usn_income",
+						cashierFullName: resolvedCashierName,
+						customerContact: "",
+						customerName: patientName,
+						totalKopecks: refundKop,
+						cashKopecks: !targetBox.isCashless ? refundKop : 0,
+						electronicCardKopecks:
+							targetBox.isCashless && refundMethod !== "online" ? refundKop : 0,
+						sbpKopecks: refundMethod === "online" ? refundKop : 0,
+						prepaidKopecks: 0,
+						items: [
+							{
+								name: reasonText || "Возврат денежных средств покупателю",
+								priceKopecks: refundKop,
+								quantity: 1,
+								amountKopecks: refundKop,
+								subject: "service",
+								method: "full_payment",
+								vatRate: "vat_none",
+								measure: "piece",
+							},
+						],
+					});
 
-				queuedReceiptId = queuedReceipt?.id;
+					const [queuedReceipt] = await tx
+						.insert(fiscalReceiptQueue)
+						.values({
+							organizationId: orgId,
+							paymentId: insertedPayment.id,
+							visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
+							receiptType: "income_return",
+							status: "pending_print",
+							payloadJson: {
+								...refundFfdPayload,
+								clientMutationId: effectiveMutationId,
+								originalFiscalReceiptNumber: linkedPayment?.fiscalReceiptNumber || null,
+								originalPaymentId: linkedPayment?.id || null,
+								patientId: effectivePatientId,
+								patientName,
+								invoiceId: linkedInvoice?.id || null,
+								reasonText: reasonText || "Возврат денежных средств покупателю",
+							},
+							retryCount: 0,
+						})
+						.returning({ id: fiscalReceiptQueue.id });
+
+					queuedReceiptId = queuedReceipt?.id;
+				}
 			}
 		}
 

@@ -5,12 +5,14 @@ import {
 	fiscalReceiptQueue,
 	generatedDocuments,
 	patientInvoices,
+	patients,
 	payments,
 	sberbankTransactions,
 	visits,
 } from "../../db/schema.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 import type { ProcessSbpWebhookResult } from "./sbpWebhookTypes.js";
 import type { SbpWebhookTargetContext } from "./types.js";
@@ -39,11 +41,64 @@ export async function handleSbpWebhookSuccess(params: {
 		lockedPayment,
 	} = params;
 
+	const txStatusUpper = lockedSberTx?.status?.toUpperCase();
+	if (
+		txStatusUpper === "REFUNDED" ||
+		txStatusUpper === "REVERSED" ||
+		lockedPayment?.status === "refunded"
+	) {
+		return {
+			statusCode: 200,
+			body: {
+				success: true,
+				processed: false,
+				reason: "already_refunded",
+				status: "REFUNDED",
+				paymentId: lockedPayment?.id ?? undefined,
+			},
+		};
+	}
+
 	if ((lockedSberTx && lockedSberTx.status === "success") || (lockedPayment && lockedPayment.status === "paid")) {
 		return {
 			statusCode: 200,
 			body: { success: true, processed: false, reason: "already_processed", status: "PAID", paymentId: lockedPayment?.id ?? undefined },
 		};
+	}
+
+	const effectivePatientId = targetContext.patientId || lockedSberTx?.patientId || (payload.patientId ? String(payload.patientId) : null);
+	if (!effectivePatientId || !isValidUuid(effectivePatientId)) {
+		return {
+			statusCode: 400,
+			body: { error: "MissingPatientId", message: "Не удалось определить пациента для разноски платежа СБП." },
+		};
+	}
+
+	const [patientRow] = await tx
+		.select({ id: patients.id })
+		.from(patients)
+		.where(and(eq(patients.id, effectivePatientId), eq(patients.organizationId, orgId)))
+		.limit(1);
+	if (!patientRow) {
+		return {
+			statusCode: 404,
+			body: { error: "PatientNotFound", message: "Пациент не принадлежит клинике." },
+		};
+	}
+
+	const targetInvoiceId = targetContext.invoiceId || lockedSberTx?.invoiceId || null;
+	if (targetInvoiceId && isValidUuid(targetInvoiceId)) {
+		const [invRow] = await tx
+			.select({ id: patientInvoices.id, patientId: patientInvoices.patientId })
+			.from(patientInvoices)
+			.where(and(eq(patientInvoices.id, targetInvoiceId), eq(patientInvoices.organizationId, orgId)))
+			.limit(1);
+		if (!invRow || invRow.patientId !== effectivePatientId) {
+			return {
+				statusCode: 403,
+				body: { error: "ForbiddenInvoice", message: "Счёт не найден или принадлежит другому пациенту клиники." },
+			};
+		}
 	}
 
 	if (lockedSberTx) {
@@ -77,19 +132,11 @@ export async function handleSbpWebhookSuccess(params: {
 		};
 	}
 
-	const effectivePatientId = targetContext.patientId || lockedSberTx?.patientId || (payload.patientId ? String(payload.patientId) : null);
-	if (!effectivePatientId) {
-		return {
-			statusCode: 400,
-			body: { error: "MissingPatientId", message: "Не удалось определить пациента для разноски платежа СБП." },
-		};
-	}
-
-	const targetInvoiceId = targetContext.invoiceId || lockedSberTx?.invoiceId || null;
 	const resolvedDocumentId =
+		(targetInvoiceId && isValidUuid(targetInvoiceId) ? targetInvoiceId : null) ||
 		targetContext.documentId ||
 		lockedSberTx?.documentId ||
-		(targetInvoiceId && isValidUuid(targetInvoiceId) ? targetInvoiceId : null);
+		null;
 	const [insertedPayment] = await tx
 		.insert(payments)
 		.values({
@@ -125,50 +172,64 @@ export async function handleSbpWebhookSuccess(params: {
 		await reconcileInvoiceBalanceInDb(tx, orgId, targetInvoiceId);
 	}
 
-	// 54-FZ Statutory Fiscal Receipt enqueuing for successful SBP online payment (Tag 1081)
+	// Only enqueue 54-FZ receipt & update cashless shift ledger if payment row was genuinely inserted
 	const resolvedPaymentId = insertedPayment?.id || lockedPayment?.id || null;
-	const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
-		patientId: effectivePatientId,
-		invoiceId: targetInvoiceId || undefined,
-		visitId: targetVisitId || undefined,
-		clientMutationId: mutationId,
-		operationType: "income",
-		taxationSystem: "usn_income",
-		cashierFullName: "Система быстрых платежей (СБП)",
-		sbpKopecks: targetAmountKopecks,
-		totalKopecks: targetAmountKopecks,
-		items: [
-			{
-				name: (payload.serviceTitle as string) || "Оплата стоматологических услуг по СБП",
-				priceKopecks: targetAmountKopecks,
-				quantity: 1,
-				amountKopecks: targetAmountKopecks,
-				subject: "service",
-				method: "full_payment",
-				vatRate: "vat_none",
-				measure: "piece",
-			},
-		],
-	});
-
-	await tx.insert(fiscalReceiptQueue).values({
-		organizationId: orgId,
-		paymentId: resolvedPaymentId ?? undefined,
-		visitId: targetVisitId ?? undefined,
-		receiptType: "income",
-		status: "pending_print",
-		payloadJson: {
-			...ffdPayload,
-			clientMutationId: mutationId,
-			invoiceId: targetInvoiceId || null,
-			paymentId: resolvedPaymentId,
-			operationId,
-			amountRub,
+	if (insertedPayment) {
+		await applyAcquiringCashboxLedgerInTx(tx, {
+			organizationId: orgId,
+			direction: "income",
 			amountKopecks: targetAmountKopecks,
-			source: "sbp_webhook",
-		},
-		retryCount: 0,
-	});
+			paymentMethod: "online",
+			patientId: effectivePatientId,
+			paymentId: insertedPayment.id,
+			invoiceId: targetInvoiceId,
+			reasonText: `Оплата через СБП QR (операция ${operationId})`,
+			sourceTag: mutationId,
+		});
+
+		const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+			patientId: effectivePatientId,
+			invoiceId: targetInvoiceId || undefined,
+			visitId: targetVisitId || undefined,
+			clientMutationId: mutationId,
+			operationType: "income",
+			taxationSystem: "usn_income",
+			cashierFullName: "Система быстрых платежей (СБП)",
+			sbpKopecks: targetAmountKopecks,
+			totalKopecks: targetAmountKopecks,
+			items: [
+				{
+					name: (payload.serviceTitle as string) || "Оплата стоматологических услуг по СБП",
+					priceKopecks: targetAmountKopecks,
+					quantity: 1,
+					amountKopecks: targetAmountKopecks,
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
+				},
+			],
+		});
+
+		await tx.insert(fiscalReceiptQueue).values({
+			organizationId: orgId,
+			paymentId: insertedPayment.id,
+			visitId: targetVisitId ?? undefined,
+			receiptType: "income",
+			status: "pending_print",
+			payloadJson: {
+				...ffdPayload,
+				clientMutationId: mutationId,
+				invoiceId: targetInvoiceId || null,
+				paymentId: insertedPayment.id,
+				operationId,
+				amountRub,
+				amountKopecks: targetAmountKopecks,
+				source: "sbp_webhook",
+			},
+			retryCount: 0,
+		});
+	}
 
 	return {
 		statusCode: 200,

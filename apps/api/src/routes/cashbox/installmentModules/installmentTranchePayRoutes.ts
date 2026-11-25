@@ -18,6 +18,7 @@ import {
 	payments,
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import {
 	parseHeaderIdempotencyKey,
 	resolveCashBoxPaymentMethod,
@@ -323,26 +324,40 @@ export function registerInstallmentTranchePayRoutes(app: FastifyInstance): void 
 				throw new Error("Не удалось создать платёж транша рассрочки");
 			}
 
+			const trancheFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+				patientId: contract.patientId,
+				operationType: "income",
+				taxationSystem: "usn_income",
+				cashierFullName: "Кассир-администратор",
+				customerContact: "",
+				totalKopecks: paymentKop,
+				cashKopecks: paymentMethodCode === "cash" ? paymentKop : 0,
+				electronicCardKopecks: paymentMethodCode === "card" ? paymentKop : 0,
+				sbpKopecks: paymentMethodCode === "online" ? paymentKop : 0,
+				prepaidKopecks: 0,
+				items: [
+					{
+						name: `Оплата транша №${tranche.trancheNumber} по договору рассрочки ${contract.contractNumber}`,
+						priceKopecks: paymentKop,
+						quantity: 1,
+						amountKopecks: paymentKop,
+						subject: "payment",
+						method: "credit_payment",
+						vatRate: "vat_none",
+						measure: "piece",
+					},
+				],
+			});
+
 			await tx.insert(fiscalReceiptQueue).values({
 				organizationId: orgId,
 				paymentId: paymentRecord.id,
 				receiptType: "income",
 				status: "pending_print",
 				payloadJson: {
+					...trancheFfdPayload,
 					clientMutationId: idempotencyKey,
-					amountRub: paymentRub,
-					amountKopecks: paymentKop,
 					method: paymentMethodCode,
-					cashRub: paymentMethodCode === "cash" ? paymentRub : 0,
-					cashKopecks: paymentMethodCode === "cash" ? paymentKop : 0,
-					electronicRub: paymentMethodCode !== "cash" ? paymentRub : 0,
-					electronicKopecks: paymentMethodCode !== "cash" ? paymentKop : 0,
-					electronicCardKopecks: paymentMethodCode === "card" ? paymentKop : 0,
-					sbpKopecks: paymentMethodCode === "online" ? paymentKop : 0,
-					advanceOffsetRub: 0,
-					certificateOffsetRub: 0,
-					bonusOffsetRub: 0,
-					dmsOffsetRub: 0,
 					patientId: contract.patientId,
 					contractNumber: contract.contractNumber,
 					trancheNumber: tranche.trancheNumber,

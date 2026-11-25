@@ -4,7 +4,11 @@ import { createApiLogger, safeLogError } from "../../../../observability/logger.
 import { withTenantCtx } from "../../../../db/rls.js";
 import { auditEvents, inventoryItems, inventoryTransactions, payments, users } from "../../../../db/schema.js";
 import { oneCSyncPayloadSchema, type OneCSyncPayload, type OneCSyncResult } from "../types.js";
-import { isSyncHashProcessedTx, markSyncHashProcessedTx } from "./reconciliationStore.js";
+import {
+	getSyncJournalEntryTx,
+	markSyncHashProcessedTx,
+	type SyncJournalEntrySummary,
+} from "./reconciliationStore.js";
 
 const logger = createApiLogger("commerceMlSyncEngine");
 
@@ -16,7 +20,7 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 
 	let updatedStockCount = 0;
 	let reconciledPaymentsCount = 0;
-	let alreadyProcessed = false;
+	let existingLog: SyncJournalEntrySummary | null = null;
 
 	try {
 		await withTenantCtx(orgId, async (tx) => {
@@ -24,8 +28,8 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${hash}))`,
 			);
 
-			alreadyProcessed = await isSyncHashProcessedTx(tx, orgId, hash);
-			if (alreadyProcessed) {
+			existingLog = await getSyncJournalEntryTx(tx, orgId, hash);
+			if (existingLog) {
 				return;
 			}
 
@@ -148,14 +152,15 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 		throw txError;
 	}
 
-	if (alreadyProcessed) {
+	if (existingLog !== null) {
+		const logEntry: SyncJournalEntrySummary = existingLog;
 		return {
 			success: true,
-			processedDocumentsCount: parsed.postedDocumentConfirmations.length,
-			updatedStockItemsCount: parsed.inventoryStockUpdates.length,
-			reconciledPaymentsCount: parsed.reconciledPayments.length,
+			processedDocumentsCount: logEntry.processedCount,
+			updatedStockItemsCount: logEntry.updatedCount,
+			reconciledPaymentsCount: 0,
 			syncTransactionHash: hash,
-			timestamp: new Date().toISOString(),
+			timestamp: logEntry.createdAt.toISOString(),
 		};
 	}
 

@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { after, before, describe, test } from "node:test";
+import { createFiscalReceiptPayloadSchema } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
@@ -30,6 +31,7 @@ import {
 	Fiscal54FzService,
 	Fiscal54FzValidationError,
 } from "../services/billing/fiscal54fzService.js";
+import { FiscalReceiptFactory } from "../services/kkt/FiscalReceiptFactory.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -169,77 +171,87 @@ describe("1. Statutory 54-FZ FFD 1.2 Fiscal Tags & Split Engine Unit Tests", () 
 		assert.equal(tender.totalPaymentsRub, 4000.75);
 	});
 
-	test("h. buildStatutoryFiscalReceipt enforces line item sum equals tender total", () => {
-		const validReceipt = Fiscal54FzService.buildStatutoryFiscalReceipt({
-			organizationId: ORG_ID,
+	test("h. createFiscalReceiptPayloadSchema & FiscalReceiptFactory enforce line item sum equals tender total", () => {
+		const validInput = createFiscalReceiptPayloadSchema.parse({
 			patientId: PATIENT_ID,
 			customerContact: "+79991234567",
 			cashierFullName: "Кассир Иванов И.И.",
-			tenderSplits: {
-				electronicCardRub: 3500.0,
-			},
-			positions: [
+			totalKopecks: 350000,
+			electronicCardKopecks: 350000,
+			items: [
 				{
 					name: "Лечение кариеса",
-					priceRub: 3500.0,
+					priceKopecks: 350000,
 					quantity: 1,
+					amountKopecks: 350000,
 					medicalServiceCode804n: "A16.07.002.001",
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
 				},
 			],
 		});
+		const validReceipt = FiscalReceiptFactory.buildFfd12Receipt(validInput);
 
-		assert.equal(validReceipt.tag1020_totalKopecks, 350000);
-		assert.equal(validReceipt.tag1020_totalRub, 3500.0);
+		assert.equal(validReceipt.totalKopecks, 350000);
+		assert.equal(validReceipt.tag1020_totalRub, "3500.00");
 		assert.equal(validReceipt.items[0]?.tag1214_paymentMethod, 4); // Full payment
 		assert.equal(validReceipt.items[0]?.tag1212_paymentSubject, 4); // Service
 		assert.equal(validReceipt.items[0]?.tag1199_vatRate, 6); // Без НДС
 
 		// Test mismatch error
-		assert.throws(() => {
-			Fiscal54FzService.buildStatutoryFiscalReceipt({
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				customerContact: "+79991234567",
-				cashierFullName: "Кассир Иванов И.И.",
-				tenderSplits: {
-					electronicCardRub: 2000.0, // Mismatch with position 3500
+		const mismatched = createFiscalReceiptPayloadSchema.safeParse({
+			patientId: PATIENT_ID,
+			customerContact: "+79991234567",
+			cashierFullName: "Кассир Иванов И.И.",
+			totalKopecks: 350000,
+			electronicCardKopecks: 200000, // Mismatch with position 3500
+			items: [
+				{
+					name: "Лечение кариеса",
+					priceKopecks: 350000,
+					quantity: 1,
+					amountKopecks: 350000,
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
 				},
-				positions: [
-					{
-						name: "Лечение кариеса",
-						priceRub: 3500.0,
-						quantity: 1,
-					},
-				],
-			});
-		}, Fiscal54FzValidationError);
+			],
+		});
+		assert.equal(mismatched.success, false);
 	});
 
-	test("i. calculateAdvanceOffsetReceipt converts deposit to advance offset settlement", () => {
-		// Invoice for 12,000 RUB. Patient has 8,000 RUB deposit, pays 4,000 RUB by SberPay QR
-		const receipt = Fiscal54FzService.calculateAdvanceOffsetReceipt({
-			organizationId: ORG_ID,
+	test("i. FiscalReceiptFactory compiles deposit advance offset + SberPay QR multi-tender settlement", () => {
+		const receipt = FiscalReceiptFactory.buildFfd12Receipt({
 			patientId: PATIENT_ID,
 			customerContact: "+79991234567",
 			cashierFullName: "Старший администратор",
-			availableAdvanceDepositRub: 8000.0,
-			invoiceTotalRub: 12000.0,
-			additionalSberPayQrRub: 4000.0,
-			positions: [
+			operationType: "income",
+			totalKopecks: 1200000,
+			prepaidKopecks: 800000,
+			sbpKopecks: 400000,
+			items: [
 				{
 					name: "Установка коронки из диоксида циркония",
-					priceRub: 12000.0,
+					priceKopecks: 1200000,
 					quantity: 1,
+					amountKopecks: 1200000,
 					medicalServiceCode804n: "A16.07.004",
+					subject: "service",
+					method: "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
 				},
 			],
 		});
 
-		assert.equal(receipt.tag1020_totalKopecks, 1200000);
-		assert.equal(receipt.payments.tag1215_advanceOffsetKopecks, 800000);
-		assert.equal(receipt.payments.tag1215_advanceOffsetRub, 8000.0);
-		assert.equal(receipt.payments.tag1081_electronicKopecks, 400000);
-		assert.equal(receipt.payments.tag1081_electronicRub, 4000.0);
+		assert.equal(receipt.totalKopecks, 1200000);
+		assert.equal(receipt.payments.prepaidKopecks, 800000);
+		assert.equal(receipt.payments.tag1215_prepaidAdvanceOffsetRub, "8000.00");
+		assert.equal(receipt.payments.sbpKopecks, 400000);
+		assert.equal(receipt.payments.tag1081_electronicRub, "4000.00");
 		assert.equal(receipt.items[0]?.tag1214_paymentMethod, 4); // Full payment / Final settlement
 	});
 

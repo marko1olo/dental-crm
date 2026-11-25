@@ -491,32 +491,6 @@ export class SberbankTerminalService {
 				throw err;
 			}
 
-			// 2. Fallback attempt via backend API proxy /api/payments/sberbank/pos/transaction
-			try {
-				const proxyRes = await fetch("/api/payments/sberbank/pos/transaction", {
-					method: "POST",
-					headers: denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-					}),
-					body: JSON.stringify({
-						terminalId: this.config.terminalId,
-						operation: req.operation,
-						amountKopecks: req.amountKop,
-						orderId: req.orderId,
-						originalRrn: req.originalRrn,
-						originalAuthCode: req.originalAuthCode,
-					}),
-				});
-
-				if (proxyRes.ok) {
-					const data = (await proxyRes.json()) as SberPosTransactionResponse;
-					return data;
-				}
-			} catch (proxyErr) {
-				logger.debug("[SberbankTerminalService] Fallback proxy unreachable:", proxyErr);
-			}
-
 			const failureMessage =
 				err instanceof Error && err.name === "AbortError"
 					? `Таймаут связи с POS-терминалом Сбербанк (${this.config.hostIp}:${this.config.hostPort})`

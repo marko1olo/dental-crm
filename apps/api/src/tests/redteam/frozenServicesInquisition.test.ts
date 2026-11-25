@@ -247,34 +247,40 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 			assert.equal(Fiscal54FzService.resolveTag1057("commission_agent"), 6);
 			assert.equal(Fiscal54FzService.resolveTag1222("agent"), 7);
 
-			const compiled = Fiscal54FzService.buildStatutoryFiscalReceipt({
-				organizationId: "org-1",
-				patientId: "pat-1",
+			const ffd12WithAgent = FiscalReceiptFactory.buildFfd12Receipt({
+				patientId: "00000000-0000-0000-0000-000000000001",
 				customerContact: "+79991234567",
-				cashierFullName: "Иванов И.И.",
 				operationType: "income",
 				taxationSystem: "usn_income",
 				agentSign: "paying_agent",
 				customerName: "АО Страховая Группа",
 				customerInn: "7705123456",
-				positions: [
+				cashierFullName: "Иванов И.И.",
+				cashKopecks: 0,
+				electronicCardKopecks: 350000,
+				sbpKopecks: 0,
+				prepaidKopecks: 0,
+				creditKopecks: 0,
+				totalKopecks: 350000,
+				items: [
 					{
 						name: "Лечение поверхностного кариеса",
-						priceRub: 3500,
+						priceKopecks: 350000,
 						quantity: 1,
+						amountKopecks: 350000,
+						subject: "service",
+						method: "full_payment",
 						vatRate: "vat_none",
+						measure: "piece",
 						agentSign: "commission_agent",
 					},
 				],
-				tenderSplits: {
-					electronicCardRub: 3500,
-				},
 			});
 
-			assert.equal(compiled.tag1057_agentSign, 3);
-			assert.equal(compiled.tag1227_customerName, "АО Страховая Группа");
-			assert.equal(compiled.tag1228_customerInn, "7705123456");
-			assert.equal(compiled.items[0]!.tag1222_agentSign, 6);
+			assert.equal(ffd12WithAgent.tag1057_agentSign, 3);
+			assert.equal(ffd12WithAgent.tag1227_customerName, "АО Страховая Группа");
+			assert.equal(ffd12WithAgent.tag1228_customerInn, "7705123456");
+			assert.equal(ffd12WithAgent.items[0]!.tag1222_agentSign, 6);
 
 			const ffd12 = FiscalReceiptFactory.buildFfd12Receipt({
 				patientId: "00000000-0000-0000-0000-000000000001",

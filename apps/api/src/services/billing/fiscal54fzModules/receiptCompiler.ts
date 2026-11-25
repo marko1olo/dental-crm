@@ -5,27 +5,16 @@
 import { Decimal } from "decimal.js";
 import {
 	type AnatomicalCanalCount,
-	buildFfd12Tag2000MarkingPayload,
 	calculateEndodonticCompositeTreatment,
-	FFD12_TAG_1173_CORRECTION_CODES,
 	getAnatomicalRootCanalCount,
 	getOrder804nEndoProcedureForTooth,
 	isMultiRootedTooth,
 	kopecksToNumericString,
-	type Kopecks,
-	multiplyKopecks,
-	multiplyKopecksFractional,
-	parseChestnyZnakDataMatrix,
 } from "@dental/shared";
-import { FiscalReceiptFactory } from "../../kkt/FiscalReceiptFactory.js";
 import {
-	type BuildFiscalReceiptInput,
-	type CompiledFiscal54FzReceipt,
 	Fiscal54FzValidationError,
 	MINZDRAV_804N_CODE_REGEX,
-	MINZDRAV_804N_COMMON_CATALOG,
 	type MultiTenderPaymentSplitInput,
-	type NormalizedFiscalPosition,
 	type NormalizedMultiTenderPayments,
 } from "./typesAndCatalog.js";
 
@@ -136,161 +125,6 @@ export function compileMultiTenderPayments(
 		totalPaymentsKopecks,
 		totalPaymentsRub: kopecksToRubDecimal(totalPaymentsKopecks),
 		totalPaymentsRubString: kopecksToNumericString(totalPaymentsKopecks),
-	};
-}
-
-export function buildStatutoryFiscalReceipt(
-	input: BuildFiscalReceiptInput,
-): CompiledFiscal54FzReceipt {
-	if (!input.positions || input.positions.length === 0) {
-		throw new Fiscal54FzValidationError(
-			"EmptyPositions",
-			"Чек по 54-ФЗ должен содержать как минимум одну позицию номенклатуры.",
-		);
-	}
-
-	const defaultMethod = input.defaultCalculationMethod ?? "full_payment";
-	const operationType = input.operationType ?? "income";
-	const taxationSystem = input.taxationSystem ?? "usn_income";
-
-	let totalItemsKopecks = 0;
-	let hasCode2ExpensiveTreatment = false;
-
-	const normalizedItems: NormalizedFiscalPosition[] = input.positions.map((pos, index) => {
-		if (!pos.name || pos.name.trim().length === 0) {
-			throw new Fiscal54FzValidationError(
-				"InvalidPositionName",
-				`Позиция №${index + 1} не имеет наименования.`,
-			);
-		}
-		if (pos.quantity <= 0) {
-			throw new Fiscal54FzValidationError(
-				"InvalidQuantity",
-				`Количество позиции «${pos.name}» должно быть строго больше нуля.`,
-			);
-		}
-		const priceKopecks = rubToKopecksDecimal(pos.priceRub);
-		if (priceKopecks <= 0) {
-			throw new Fiscal54FzValidationError(
-				"InvalidPrice",
-				`Цена позиции «${pos.name}» должна быть строго больше нуля.`,
-			);
-		}
-
-		const amountKopecks = Number.isInteger(pos.quantity)
-			? multiplyKopecks(priceKopecks as Kopecks, pos.quantity)
-			: multiplyKopecksFractional(priceKopecks as Kopecks, pos.quantity);
-		totalItemsKopecks += amountKopecks;
-
-		const subject =
-			pos.subject ??
-			(pos.markingCode ? "goods_with_marking" : pos.name.toLowerCase().includes("аванс") ? "payment" : "service");
-		const method = pos.method ?? defaultMethod;
-		const vatRate = pos.vatRate ?? "vat_none";
-		const measure = pos.measure ?? "piece";
-
-		let code804n = pos.medicalServiceCode804n ?? null;
-		if (!code804n && pos.toothFdiNumber) {
-			const endo = resolveEndodonticOrder804nItem(pos.toothFdiNumber, pos.canalCount);
-			code804n = endo.packageItem.code;
-		}
-
-		const tag1030 = formatTag1030SubjectName(pos.name, code804n);
-
-		let taxCat: "1" | "2" = pos.taxDeductionCategory ?? "1";
-		if (
-			pos.name.toLowerCase().includes("имплантац") ||
-			pos.name.toLowerCase().includes("синус-лифтинг") ||
-			pos.name.toLowerCase().includes("костная пластика") ||
-			(code804n && MINZDRAV_804N_COMMON_CATALOG[code804n]?.expensiveCode2)
-		) {
-			taxCat = "2";
-			hasCode2ExpensiveTreatment = true;
-		}
-
-		let markingPayload: NormalizedFiscalPosition["tag2000_markingPayload"] = null;
-		if (pos.markingCode && pos.markingCode.trim().length > 0) {
-			const parsedMarking = parseChestnyZnakDataMatrix(pos.markingCode);
-			if (!parsedMarking.isValid || !parsedMarking.gtin || !parsedMarking.serialNumber) {
-				throw new Fiscal54FzValidationError(
-					"InvalidMarkingCode",
-					`Некорректный код маркировки Честный ЗНАК для позиции «${pos.name}»: ${parsedMarking.errorMessage || "ошибка валидации"}`,
-				);
-			}
-			markingPayload = buildFfd12Tag2000MarkingPayload({
-				rawDataMatrix: pos.markingCode,
-				gtin: parsedMarking.gtin,
-				serialNumber: parsedMarking.serialNumber,
-				cryptoKey: parsedMarking.cryptoKey,
-				cryptoTail: parsedMarking.cryptoTail,
-			});
-		}
-
-		return {
-			tag1030_subjectName: tag1030,
-			priceKopecks,
-			quantity: pos.quantity,
-			amountKopecks,
-			priceRub: kopecksToRubDecimal(priceKopecks),
-			amountRub: kopecksToRubDecimal(amountKopecks),
-			tag1079_unitPriceRub: kopecksToNumericString(priceKopecks),
-			tag1043_amountRub: kopecksToNumericString(amountKopecks),
-			tag1212_paymentSubject: FiscalReceiptFactory.resolveTag1212(subject),
-			tag1214_paymentMethod: FiscalReceiptFactory.resolveTag1214(method),
-			tag1199_vatRate: FiscalReceiptFactory.resolveTag1199(vatRate),
-			tag2108_quantityMeasure: FiscalReceiptFactory.resolveTag2108(measure),
-			tag1222_agentSign: FiscalReceiptFactory.resolveTag1222(pos.agentSign),
-			medicalServiceCode804n: code804n,
-			taxDeductionCategory: taxCat,
-			markingCode: pos.markingCode ?? null,
-			tag2000_markingPayload: markingPayload,
-		};
-	});
-
-	const payments = compileMultiTenderPayments(input.tenderSplits);
-
-	if (totalItemsKopecks !== payments.totalPaymentsKopecks) {
-		throw new Fiscal54FzValidationError(
-			"ReceiptBalanceMismatch",
-			`Сумма позиций чека (${totalItemsKopecks} коп. / ${kopecksToRubDecimal(totalItemsKopecks)} руб.) ` +
-				`не совпадает с суммой оплат по чеку (${payments.totalPaymentsKopecks} коп. / ${payments.totalPaymentsRub} руб.).`,
-			{
-				totalItemsKopecks,
-				totalPaymentsKopecks: payments.totalPaymentsKopecks,
-			},
-		);
-	}
-
-	return {
-		organizationId: input.organizationId,
-		patientId: input.patientId,
-		tag1054_operationType: FiscalReceiptFactory.resolveTag1054(operationType),
-		tag1055_taxationSystem: FiscalReceiptFactory.resolveTag1055(taxationSystem),
-		tag1057_agentSign: FiscalReceiptFactory.resolveTag1057(input.agentSign),
-		tag1021_cashierName: input.cashierFullName.trim() || "Кассир-администратор",
-		tag1203_cashierInn: input.cashierInn?.trim() || null,
-		tag1008_customerContact: input.customerContact.trim(),
-		tag1227_customerName: input.customerName?.trim() || null,
-		tag1228_customerInn: input.customerInn?.trim() || null,
-		tag1009_paymentAddress: input.paymentAddress?.trim() || null,
-		tag1187_paymentPlace: input.paymentPlace?.trim() || null,
-		tag1020_totalKopecks: totalItemsKopecks,
-		tag1020_totalRub: kopecksToRubDecimal(totalItemsKopecks),
-		tag1020_totalRubString: kopecksToNumericString(totalItemsKopecks),
-		totalRub: kopecksToRubDecimal(totalItemsKopecks),
-		payments,
-		items: normalizedItems,
-		overallTaxDeductionCategory: hasCode2ExpensiveTreatment ? "2" : "1",
-		isCorrection: Boolean(input.isCorrectionReceipt),
-		tag1173_correctionType: input.correctionBase
-			? FFD12_TAG_1173_CORRECTION_CODES[input.correctionBase.type]
-			: undefined,
-		tag1178_correctionDocDate: input.correctionBase?.documentDate,
-		tag1179_correctionDocNumber: input.correctionBase?.documentNumber,
-		visitId: input.visitId || null,
-		documentId: input.documentId || null,
-		invoiceId: input.invoiceId || null,
-		clientMutationId: input.clientMutationId || null,
 	};
 }
 

@@ -14,8 +14,14 @@ import {
 	fiscalReceiptQueue,
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
-import { formatSberBankSlip, kopecksToRubles } from "@dental/shared";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
+import { applyAcquiringCashboxLedgerInTx } from "../../cashbox/cashlessAcquiringLedger.js";
+import {
+	formatSberBankSlip,
+	isValidAuthCode,
+	isValidRrn,
+	kopecksToRubles,
+} from "@dental/shared";
 import type { SberPosOperationType, SberPosTransactionResponse } from "@dental/shared";
 import { initiateSberPosPaymentSchema, executeSberPosTransactionSchema } from "./types.js";
 import { reconcileInvoiceBalanceInDb } from "./paymentStateTransition.js";
@@ -307,29 +313,43 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 					lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
 						? Number(lockedPayment.amountKopecks)
 						: Number(lockedTx.amountKopecks);
-				const refundRub = kopecksToRubles(refundKopecks);
-				const returnPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+
+				await applyAcquiringCashboxLedgerInTx(tx, {
 					organizationId: orgId,
+					direction: "refund",
+					amountKopecks: refundKopecks,
+					paymentMethod: "card",
 					patientId: lockedTx.patientId,
+					paymentId: lockedPayment.id,
+					invoiceId: lockedTx.invoiceId,
+					reasonText: `Отмена операции терминала ${lockedTx.orderId}`,
+					sourceTag: `sberpos:${lockedTx.orderId}:void`,
+				});
+
+				const returnFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+					patientId: lockedTx.patientId,
+					visitId: lockedTx.visitId || undefined,
+					documentId: lockedTx.documentId || undefined,
+					invoiceId: lockedTx.invoiceId || undefined,
+					clientMutationId: `sberpos:${lockedTx.orderId}:return`,
 					customerContact: "cardholder@clinic.ru",
 					cashierFullName: "Кассир-администратор",
 					operationType: "income_return",
-					defaultCalculationMethod: "full_payment",
-					tenderSplits: { electronicCardRub: refundRub },
-					positions: [
+					taxationSystem: "usn_income",
+					electronicCardKopecks: refundKopecks,
+					totalKopecks: refundKopecks,
+					items: [
 						{
 							name: `Отмена операции терминала ${lockedTx.orderId}`,
-							priceRub: refundRub,
+							priceKopecks: refundKopecks,
 							quantity: 1,
+							amountKopecks: refundKopecks,
 							subject: "service",
 							method: "full_payment",
 							vatRate: "vat_none",
+							measure: "piece",
 						},
 					],
-					visitId: lockedTx.visitId,
-					documentId: lockedTx.documentId,
-					invoiceId: lockedTx.invoiceId,
-					clientMutationId: `sberpos:${lockedTx.orderId}:return`,
 				});
 				await tx.insert(fiscalReceiptQueue).values({
 					organizationId: orgId,
@@ -338,8 +358,10 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 					receiptType: "income_return",
 					status: "pending_print",
 					payloadJson: {
-						...returnPayload,
-						tag1020_totalRub: returnPayload.tag1020_totalRubString,
+						...returnFfdPayload,
+						clientMutationId: `sberpos:${lockedTx.orderId}:return`,
+						orderId: lockedTx.orderId,
+						invoiceId: lockedTx.invoiceId,
 					},
 					retryCount: 0,
 				});
@@ -381,13 +403,22 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 	}
 
 	const input = parsed.data;
+	const rrn = typeof input.originalRrn === "string" ? input.originalRrn.trim() : "";
+	const authCode =
+		typeof input.originalAuthCode === "string" ? input.originalAuthCode.trim() : "";
+
+	// Zero fake bank slips: server refuses to fabricate RRN/authCode/PAN/MIR approval when hardware PIN-pad is offline.
+	if (!isValidRrn(rrn) || !isValidAuthCode(authCode)) {
+		return reply.code(503).send({
+			error: "TERMINAL_OFFLINE",
+			message:
+				"POS-терминал Сбербанка недоступен или не передал подтверждённые банком RRN и AuthCode. Выполните операцию на физическом терминале или выберите другой способ оплаты.",
+		});
+	}
+
 	const orderId =
 		input.orderId ||
 		`POS-${crypto.randomUUID().slice(0, 18).toUpperCase()}`;
-	const rrn = input.originalRrn || `400${Date.now().toString().slice(-9)}`;
-	const authCode =
-		input.originalAuthCode ||
-		crypto.randomBytes(3).toString("hex").toUpperCase();
 	const nowIso = new Date().toISOString();
 	const op = (input.operation || "sale") as SberPosOperationType;
 
@@ -401,10 +432,26 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 					eq(sberbankTransactions.orderId, orderId),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		const status =
 			op === "refund" ? "REFUNDED" : op === "void" ? "REVERSED" : "SETTLED";
+
+		if (
+			status === "SETTLED" &&
+			existingTx &&
+			(existingTx.status.toUpperCase() === "REFUNDED" ||
+				existingTx.status.toUpperCase() === "REVERSED")
+		) {
+			return reply.code(200).send({
+				success: true,
+				processed: false,
+				reason: "already_refunded",
+				status: existingTx.status.toUpperCase(),
+				orderId,
+			});
+		}
 
 		if (status === "SETTLED" && input.amountKopecks <= 0) {
 			return reply.code(400).send({
@@ -447,7 +494,7 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			});
 		}
 
-		// Synchronize ledger payments table
+		// Synchronize ledger payments table & cashless shift box
 		if (status === "SETTLED") {
 			const amountRub = kopecksToRubles(input.amountKopecks);
 			const clientMutationId = `sberpos:${orderId}`;
@@ -472,7 +519,7 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 				const resolvedDocumentId =
 					existingTx?.documentId ||
 					(effectiveInvoiceId && isValidUuid(effectiveInvoiceId) ? effectiveInvoiceId : null);
-				await tx
+				const [insertedPayment] = await tx
 					.insert(payments)
 					.values({
 						organizationId: orgId,
@@ -485,11 +532,26 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 						amountKopecks: BigInt(input.amountKopecks),
 						paidAt: new Date(),
 						clientMutationId,
-						note: `Оплата через Sberbank POS терминал (заказ ${orderId})`,
+						note: `Оплата через Sberbank POS терминал (заказ ${orderId}, RRN ${rrn})`,
 					})
 					.onConflictDoNothing({
 						target: [payments.organizationId, payments.clientMutationId],
+					})
+					.returning();
+
+				if (insertedPayment) {
+					await applyAcquiringCashboxLedgerInTx(tx, {
+						organizationId: orgId,
+						direction: "income",
+						amountKopecks: input.amountKopecks,
+						paymentMethod: "card",
+						patientId,
+						paymentId: insertedPayment.id,
+						invoiceId: effectiveInvoiceId,
+						reasonText: `Оплата через Sberbank POS терминал (${orderId})`,
+						sourceTag: clientMutationId,
 					});
+				}
 
 				if (effectiveInvoiceId && isValidUuid(effectiveInvoiceId)) {
 					await reconcileInvoiceBalanceInDb(tx, orgId, effectiveInvoiceId);
@@ -530,29 +592,42 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 								? input.amountKopecks
 								: Number(existingTx?.amountKopecks ?? 0);
 					if (refundKopecks > 0) {
-						const refundRub = kopecksToRubles(refundKopecks);
-						const returnPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+						await applyAcquiringCashboxLedgerInTx(tx, {
 							organizationId: orgId,
+							direction: "refund",
+							amountKopecks: refundKopecks,
+							paymentMethod: "card",
 							patientId,
+							paymentId: lockedPayment.id,
+							invoiceId: input.invoiceId || existingTx?.invoiceId || null,
+							reasonText: `Возврат POS терминала ${orderId}`,
+							sourceTag: `sberpos:${orderId}:refund`,
+						});
+
+						const returnFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+							patientId,
+							visitId: input.visitId || existingTx?.visitId || undefined,
+							documentId: existingTx?.documentId || undefined,
+							invoiceId: input.invoiceId || existingTx?.invoiceId || undefined,
+							clientMutationId: `sberpos:${orderId}:return`,
 							customerContact: "cardholder@clinic.ru",
 							cashierFullName: "Кассир-администратор",
 							operationType: "income_return",
-							defaultCalculationMethod: "full_payment",
-							tenderSplits: { electronicCardRub: refundRub },
-							positions: [
+							taxationSystem: "usn_income",
+							electronicCardKopecks: refundKopecks,
+							totalKopecks: refundKopecks,
+							items: [
 								{
 									name: `Возврат POS терминала ${orderId}`,
-									priceRub: refundRub,
+									priceKopecks: refundKopecks,
 									quantity: 1,
+									amountKopecks: refundKopecks,
 									subject: "service",
 									method: "full_payment",
 									vatRate: "vat_none",
+									measure: "piece",
 								},
 							],
-							visitId: input.visitId || existingTx?.visitId || null,
-							documentId: existingTx?.documentId || null,
-							invoiceId: input.invoiceId || existingTx?.invoiceId || null,
-							clientMutationId: `sberpos:${orderId}:return`,
 						});
 						await tx.insert(fiscalReceiptQueue).values({
 							organizationId: orgId,
@@ -561,8 +636,10 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 							receiptType: "income_return",
 							status: "pending_print",
 							payloadJson: {
-								...returnPayload,
-								tag1020_totalRub: returnPayload.tag1020_totalRubString,
+								...returnFfdPayload,
+								clientMutationId: `sberpos:${orderId}:return`,
+								orderId,
+								invoiceId: input.invoiceId || existingTx?.invoiceId || null,
 							},
 							retryCount: 0,
 						});
@@ -600,13 +677,15 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			clinicInn: org?.inn || "",
 		};
 
+		const resolvedCardHash = input.cardHash || "••••";
+		const resolvedCardIssuer = input.cardIssuer || "BANK_CARD";
 		const slipData = {
 			operation: op,
 			amountKop: input.amountKopecks,
 			rrn,
 			authCode,
-			cardHash: input.cardHash || "••••",
-			cardIssuer: input.cardIssuer || "BANK_CARD",
+			cardHash: resolvedCardHash,
+			cardIssuer: resolvedCardIssuer,
 			aid: "A0000006581010",
 			tvr: "0000008000",
 			dateTime: nowIso.slice(0, 19).replace("T", " "),
@@ -631,8 +710,8 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 			merchantId: config.merchantId,
 			rrn,
 			authCode,
-			cardHash: input.cardHash || "2200********4819",
-			cardIssuer: input.cardIssuer || "МИР",
+			cardHash: resolvedCardHash,
+			cardIssuer: resolvedCardIssuer,
 			aid: "A0000006581010",
 			tvr: "0000008000",
 			amountKop: input.amountKopecks,

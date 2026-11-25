@@ -217,13 +217,21 @@ export async function handleCloseCashShift(
 				primaryResult = reconciliationResult;
 			}
 
+			const grossShiftIncomeRub =
+				(reconciliationResult.totals.incomeCashRub || 0) +
+				(reconciliationResult.totals.incomeElectronicRub || 0) +
+				(reconciliationResult.totals.incomeSbpRub || 0) +
+				(reconciliationResult.totals.advanceOffsetRub || 0) +
+				(reconciliationResult.totals.insuranceTotalRub || 0);
 			const incomeTotalKop = resolveSafeKopecks(
 				shift.incomeTotalKopecks,
-				reconciliationResult.zReportData.netRevenueRub ?? shift.incomeTotalRub,
+				grossShiftIncomeRub > 0 ? grossShiftIncomeRub : shift.incomeTotalRub,
 			);
 			const expenseTotalKop = resolveSafeKopecks(
 				shift.expenseTotalKopecks,
-				shift.expenseTotalRub,
+				reconciliationResult.totals.returnTotalRub > 0
+					? reconciliationResult.totals.returnTotalRub
+					: shift.expenseTotalRub,
 			);
 
 			const [updatedShift] = await tx

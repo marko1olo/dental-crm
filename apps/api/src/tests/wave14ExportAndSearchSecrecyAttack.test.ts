@@ -309,7 +309,8 @@ test("RED-TEAM HAMMER: WAVE 14 — Export Endpoints & Medical Search Penetration
 		});
 
 		assert.equal(jsonRes.statusCode, 200);
-		const jsonPatients = JSON.parse(jsonRes.body);
+		const rawJsonPatients = JSON.parse(jsonRes.body);
+		const jsonPatients = Array.isArray(rawJsonPatients) ? rawJsonPatients : (rawJsonPatients?.data ?? []);
 		const targetPatient = jsonPatients.find((p: any) => p.id === PATIENT_K02_ID);
 		assert.ok(targetPatient);
 		assert.equal(typeof targetPatient.balanceKopecks, "number", "JSON экспорт обязан содержать balanceKopecks!");
@@ -361,7 +362,8 @@ test("RED-TEAM HAMMER: WAVE 14 — Export Endpoints & Medical Search Penetration
 		});
 
 		assert.equal(jsonRes.statusCode, 200);
-		const jsonLeads = JSON.parse(jsonRes.body);
+		const rawJsonLeads = JSON.parse(jsonRes.body);
+		const jsonLeads = Array.isArray(rawJsonLeads) ? rawJsonLeads : (rawJsonLeads?.data ?? []);
 		const targetLead = jsonLeads.find((l: any) => l.id === LEAD_WITH_DIAGNOSIS_ID);
 		assert.ok(targetLead);
 		assert.ok(targetLead.notes.includes("[Сведения защищены 152-ФЗ]"));

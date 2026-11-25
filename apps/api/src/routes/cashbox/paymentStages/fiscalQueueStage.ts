@@ -11,6 +11,7 @@ import {
 	normalizePaymentMethod,
 } from "@dental/shared";
 import { fiscalReceiptQueue } from "../../../db/schema.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import type { CashboxPaymentOutcome, PaymentProcessingContext, TenantTransaction } from "./types.js";
 
 export async function processFiscalQueueStage(
@@ -65,6 +66,36 @@ export async function processFiscalQueueStage(
 
 	if (effectiveTotalKopecks > 0n) {
 		const totalAdvanceOffsetKop = requiredDepositKopecks + requiredCertificateKopecks;
+		const totalKopNum = Number(effectiveTotalKopecks);
+		const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+			patientId: resolvedPatientId,
+			operationType: "income",
+			taxationSystem: "usn_income",
+			cashierFullName: body.cashierFullName || "Кассир",
+			customerContact: body.customerContact || "",
+			totalKopecks: totalKopNum,
+			cashKopecks: resolvedCashKop,
+			electronicCardKopecks: resolvedCardKop,
+			sbpKopecks: resolvedSbpKop,
+			prepaidKopecks: Number(totalAdvanceOffsetKop),
+			items: [
+				{
+					name:
+						body.note?.trim() ||
+						(body.isAdvanceDeposit
+							? "Авансовый платёж (пополнение депозита)"
+							: "Стоматологические услуги"),
+					priceKopecks: totalKopNum,
+					quantity: 1,
+					amountKopecks: totalKopNum,
+					subject: body.isAdvanceDeposit ? "payment" : "service",
+					method: body.isAdvanceDeposit ? "advance" : "full_payment",
+					vatRate: "vat_none",
+					measure: "piece",
+				},
+			],
+		});
+
 		const [enqueued] = await tx
 			.insert(fiscalReceiptQueue)
 			.values({
@@ -74,35 +105,23 @@ export async function processFiscalQueueStage(
 				receiptType: "income",
 				status: "pending_print",
 				payloadJson: {
+					...ffdPayload,
 					clientMutationId: effectiveMutationId,
-					amountRub: effectiveAmountRub,
-					amountKopecks: Number(effectiveTotalKopecks),
 					method: normalizePaymentMethod(body.method),
 					isAdvanceDeposit: body.isAdvanceDeposit ?? false,
-					calculationMethodTag1214: body.isAdvanceDeposit ? 3 : undefined,
-					calculationSubjectTag1212: body.isAdvanceDeposit ? 10 : undefined,
 					advanceDepositTarget:
 						body.advanceDepositTarget ||
 						(body.familyGroupId ? "family" : "patient"),
-					advancePaymentRub: body.isAdvanceDeposit ? effectiveAmountRub : undefined,
-					advancePaymentKopecks: body.isAdvanceDeposit
-						? Number(effectiveTotalKopecks)
-						: undefined,
-					cashRub: kopecksToRub(resolvedCashKop),
-					cashKopecks: resolvedCashKop,
-					electronicRub: kopecksToRub(resolvedElecKop),
-					electronicKopecks: resolvedElecKop,
-					electronicCardKopecks: resolvedCardKop,
-					sbpKopecks: resolvedSbpKop,
-					advanceOffsetRub: kopecksToRub(Number(totalAdvanceOffsetKop)),
-					advanceOffsetKopecks: Number(totalAdvanceOffsetKop),
+					...(body.isAdvanceDeposit
+						? {
+								advancePaymentRub: effectiveAmountRub,
+								advancePaymentKopecks: totalKopNum,
+							}
+						: {}),
 					depositKopecks: Number(requiredDepositKopecks),
-					certificateOffsetRub: kopecksToRub(Number(requiredCertificateKopecks)),
 					certificateKopecks: Number(requiredCertificateKopecks),
 					certificateNumber: certificateNumber || null,
-					bonusOffsetRub: kopecksToRub(Number(requiredBonusKopecks)),
 					bonusKopecks: Number(requiredBonusKopecks),
-					dmsOffsetRub: kopecksToRub(Number(requiredDmsKopecks)),
 					dmsKopecks: Number(requiredDmsKopecks),
 					guaranteeLetterNumber:
 						lockedDmsLetter?.letterNumber ||
@@ -112,7 +131,6 @@ export async function processFiscalQueueStage(
 					fiscalReceiptNumber: receiptNumber,
 					patientId: resolvedPatientId,
 					patientName: patientRow?.fullName || patientName,
-					cashierFullName: body.cashierFullName || "Кассир",
 					invoiceId: body.invoiceId || null,
 					note: newPayment.note,
 					splitTenders: body.splitTenders ?? null,

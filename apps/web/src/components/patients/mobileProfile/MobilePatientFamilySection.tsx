@@ -33,7 +33,8 @@ export function MobilePatientFamilySection({
 				headers: denteAdminSecretRequestHeaders(),
 			});
 			if (res.ok) {
-				const data = await res.json().catch(() => null);
+				const raw = await res.json().catch(() => null);
+				const data = raw && typeof raw === "object" && "data" in raw ? raw.data : raw;
 				setFamilyData(data as FamilyGroupData | null);
 			} else {
 				setFamilyData(null);

@@ -15,7 +15,8 @@ export function useFamilyGroupData(patientId?: string | null) {
 		fetch(`/api/finance/family/patient/${patientId}`)
 			.then(async (res) => {
 				if (res.ok) {
-					const data = await res.json();
+					const raw = await res.json();
+					const data = (raw && typeof raw === "object" && "data" in raw ? raw.data : raw) as FamilyGroupData;
 					setFamilyData(data);
 				} else {
 					setFamilyData(null);

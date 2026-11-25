@@ -1,10 +1,13 @@
 import { kopecksToNumericString, SbpQrEngine } from "@dental/shared";
+import { createApiLogger } from "../../observability/logger.js";
 import { createTelegramQrSvg } from "../../telegramQr.js";
 import type {
 	GenerateQrResponse,
 	GenerateSbpDynamicQrInput,
 	VerifyPayloadResponse,
 } from "./types.js";
+
+const logger = createApiLogger("sbpQrService");
 
 /** Generates dynamic SBP QR code and vector SVG */
 export function generateSbpDynamicQrService(
@@ -21,7 +24,11 @@ export function generateSbpDynamicQrService(
 	let qrSvg: string | null = null;
 	try {
 		qrSvg = createTelegramQrSvg(payloadUrl);
-	} catch {
+	} catch (err) {
+		logger.warn(
+			{ err, operationId: cleanOperationId },
+			"[SbpQrService] Failed to render SVG QR for SBP payload",
+		);
 		qrSvg = null;
 	}
 

@@ -169,7 +169,8 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 					const data = await res.json().catch(() => ({}));
 					throw new Error(data.message || `Ошибка сервера (${res.status})`);
 				}
-				const result = await res.json();
+				const raw = await res.json();
+				const result = raw?.data ?? raw;
 				setCertificates(Array.isArray(result?.certificates) ? result.certificates : []);
 			} catch (err: unknown) {
 				const msg = err instanceof Error ? err.message : "Не удалось загрузить справки";

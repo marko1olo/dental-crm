@@ -74,8 +74,12 @@ export function useDepositOperations(
 			const seenIds = new Set<string>();
 
 			// 1. Семейная история операций
-			if (Array.isArray(familyRes)) {
-				for (const item of familyRes) {
+			const familyPayload =
+				familyRes && typeof familyRes === "object" && "data" in familyRes
+					? (familyRes as { data?: unknown }).data
+					: familyRes;
+			if (Array.isArray(familyPayload)) {
+				for (const item of familyPayload) {
 					if (!item?.id || seenIds.has(item.id)) continue;
 					seenIds.add(item.id);
 					const dateObj = new Date(item.date || Date.now());

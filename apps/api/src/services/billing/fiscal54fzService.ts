@@ -7,7 +7,6 @@ import { type Decimal } from "decimal.js";
 import { type AnatomicalCanalCount } from "@dental/shared";
 import { FiscalReceiptFactory } from "../kkt/FiscalReceiptFactory.js";
 import {
-	buildStatutoryFiscalReceipt,
 	compileMultiTenderPayments,
 	formatTag1030SubjectName,
 	generate54FzQrString,
@@ -17,8 +16,6 @@ import {
 	rubToKopecksDecimal,
 } from "./fiscal54fzModules/receiptCompiler.js";
 import {
-	type BuildFiscalReceiptInput,
-	type CompiledFiscal54FzReceipt,
 	FFD12_TAG_1054_OPERATION_CODES,
 	FFD12_TAG_1055_TAXATION_CODES,
 	FFD12_TAG_1057_AGENT_CODES,
@@ -37,11 +34,9 @@ import {
 	type Ffd12Tag1214Method,
 	type Ffd12Tag2108Measure,
 	Fiscal54FzValidationError,
-	type FiscalReceiptPositionInput,
 	MINZDRAV_804N_CODE_REGEX,
 	MINZDRAV_804N_COMMON_CATALOG,
 	type MultiTenderPaymentSplitInput,
-	type NormalizedFiscalPosition,
 	type NormalizedMultiTenderPayments,
 } from "./fiscal54fzModules/typesAndCatalog.js";
 
@@ -61,8 +56,6 @@ export {
 };
 
 export type {
-	BuildFiscalReceiptInput,
-	CompiledFiscal54FzReceipt,
 	Ffd12Tag1054Operation,
 	Ffd12Tag1055Taxation,
 	Ffd12Tag1057AgentSign,
@@ -71,9 +64,7 @@ export type {
 	Ffd12Tag1212Subject,
 	Ffd12Tag1214Method,
 	Ffd12Tag2108Measure,
-	FiscalReceiptPositionInput,
 	MultiTenderPaymentSplitInput,
-	NormalizedFiscalPosition,
 	NormalizedMultiTenderPayments,
 };
 
@@ -133,54 +124,6 @@ export class Fiscal54FzService {
 		tenderSplits: MultiTenderPaymentSplitInput,
 	): NormalizedMultiTenderPayments {
 		return compileMultiTenderPayments(tenderSplits);
-	}
-
-	public static buildStatutoryFiscalReceipt(
-		input: BuildFiscalReceiptInput,
-	): CompiledFiscal54FzReceipt {
-		return buildStatutoryFiscalReceipt(input);
-	}
-
-	public static calculateAdvanceOffsetReceipt(params: {
-		organizationId: string;
-		patientId: string;
-		customerContact: string;
-		cashierFullName: string;
-		availableAdvanceDepositRub: number;
-		invoiceTotalRub: number;
-		additionalCashRub?: number | undefined;
-		additionalElectronicRub?: number | undefined;
-		additionalSberPayQrRub?: number | undefined;
-		positions: readonly FiscalReceiptPositionInput[];
-		visitId?: string | null | undefined;
-		documentId?: string | null | undefined;
-		invoiceId?: string | null | undefined;
-		clientMutationId?: string | null | undefined;
-	}): CompiledFiscal54FzReceipt {
-		const totalInvoiceKopecks = rubToKopecksDecimal(params.invoiceTotalRub);
-		const availableDepositKopecks = rubToKopecksDecimal(params.availableAdvanceDepositRub);
-		const advanceOffsetKopecks = Math.min(totalInvoiceKopecks, availableDepositKopecks);
-		const advanceOffsetRub = kopecksToRubDecimal(advanceOffsetKopecks);
-
-		return buildStatutoryFiscalReceipt({
-			organizationId: params.organizationId,
-			patientId: params.patientId,
-			customerContact: params.customerContact,
-			cashierFullName: params.cashierFullName,
-			operationType: "income",
-			defaultCalculationMethod: "full_payment",
-			tenderSplits: {
-				advanceOffsetRub,
-				cashRub: params.additionalCashRub,
-				electronicCardRub: params.additionalElectronicRub,
-				sberPayQrRub: params.additionalSberPayQrRub,
-			},
-			positions: params.positions,
-			visitId: params.visitId,
-			documentId: params.documentId,
-			invoiceId: params.invoiceId,
-			clientMutationId: params.clientMutationId,
-		});
 	}
 
 	public static generate54FzQrString(params: {

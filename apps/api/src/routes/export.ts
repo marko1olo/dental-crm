@@ -96,8 +96,9 @@ export async function registerExportRoutes(app: FastifyInstance) {
 					return reply.send("\uFEFF" + headers + rows);
 				}
 
-				return reply.code(200).send(
-					sanitizedPatients.map((p) => ({
+				return reply.code(200).send({
+					success: true,
+					data: sanitizedPatients.map((p) => ({
 						id: p.id,
 						fullName: p.fullName,
 						phone: p.phone,
@@ -107,7 +108,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 						balanceRub: p.balanceRub ?? 0,
 						balanceKopecks: rublesToKopecks(p.balanceRub ?? 0),
 					})),
-				);
+				});
 			} catch (err) {
 				request.log.error({ err }, "[Export] Error exporting patients");
 				return reply.code(500).send({
@@ -163,8 +164,9 @@ export async function registerExportRoutes(app: FastifyInstance) {
 					return reply.send("\uFEFF" + headers + rows);
 				}
 
-				return reply.code(200).send(
-					leads.map((lead) => ({
+				return reply.code(200).send({
+					success: true,
+					data: leads.map((lead) => ({
 						id: lead.id,
 						name: lead.name,
 						phone: lead.phone,
@@ -174,7 +176,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 						expectedRevenue: lead.expectedRevenue,
 						createdAt: lead.createdAt,
 					})),
-				);
+				});
 			} catch (err) {
 				request.log.error({ err }, "[Export] Error exporting leads");
 				return reply.code(500).send({

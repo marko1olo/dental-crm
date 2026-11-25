@@ -2,7 +2,7 @@ import type { SbpWebhookResult } from "./types.js";
 
 export type ProcessSbpWebhookResult =
 	| {
-			readonly statusCode: 400;
+			readonly statusCode: 400 | 403 | 404;
 			readonly body: {
 				readonly error: string;
 				readonly message: string;

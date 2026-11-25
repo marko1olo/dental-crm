@@ -11,6 +11,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import { cashBoxShifts, fiscalReceiptQueue } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { LanKktDriverService } from "../hardware/lanKktDriverService.js";
+import { FiscalQueueRetryWorker } from "../hardware/queueModules/fiscalQueueWorker.js";
 import type { KktDeviceStatus, KktLanConfig } from "../hardware/types.js";
 import type { FiscalHealthTelemetry, FiscalRetryExecutor } from "./types.js";
 
@@ -93,6 +94,9 @@ export class FiscalHealthChecker {
 
 		const timer = setInterval(async () => {
 			try {
+				if (FiscalQueueRetryWorker.isAutoRetryRunning(organizationId)) {
+					return;
+				}
 				const status = await LanKktDriverService.checkDeviceStatus();
 				if (!status.online || !status.paperOk) return;
 
@@ -115,8 +119,9 @@ export class FiscalHealthChecker {
 				});
 
 				for (const item of pending) {
-					if (item.paymentId && executor) {
-						await executor(organizationId, item.paymentId);
+					const targetId = item.paymentId ?? item.id;
+					if (targetId && executor) {
+						await executor(organizationId, targetId);
 					}
 				}
 			} catch (err) {

@@ -233,7 +233,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		const memberRawPayments = familyPayments.filter((p) => p.patientId === member.id);
 		if (memberRawPayments.length === 0) continue;
 
-		const mappedItems: TaxDeductionPaymentItem[] = memberRawPayments.map((p) => {
+		const mappedItems: TaxDeductionPaymentItem[] = [];
+		for (const p of memberRawPayments) {
 			const rawAmountKopecks = "amountKopecks" in p ? (p as { amountKopecks?: unknown }).amountKopecks : undefined;
 			const hasExplicitKopecks =
 				rawAmountKopecks !== null &&
@@ -242,7 +243,13 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			const amountKopecks = hasExplicitKopecks
 				? BigInt(rawAmountKopecks as bigint | number)
 				: BigInt(rublesToKopecks(Number(p.amountRub || 0)));
-			const amtKop = Number(amountKopecks);
+			const rawAmtKop = Number(amountKopecks);
+			// In-place voided/refunded card/SBP payments store status="refunded" with positive amountKopecks
+			// and no separate negative row; skip them so they neither count as taxable nor offset unrelated paid receipts.
+			if (p.status === "refunded" && rawAmtKop >= 0) {
+				continue;
+			}
+			const amtKop = rawAmtKop;
 
 			const explicitCode = p.taxDeductionCode === "2" ? "2" : p.taxDeductionCode === "1" ? "1" : null;
 			const rawNote = p.note?.trim() || undefined;
@@ -264,7 +271,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 						? rawReceipt.fpd
 						: "";
 
-			return {
+			mappedItems.push({
 				id: p.id,
 				dateIso: paymentDateIso,
 				receiptNumber: p.fiscalReceiptNumber || `ФД-${docNum}`,
@@ -276,8 +283,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 				taxCode: isExpensive ? ("2" as const) : ("1" as const),
 				status: p.status === "refunded" ? ("refunded" as const) : ("paid" as const),
 				isRefund: amtKop < 0,
-			};
-		});
+			});
+		}
 
 		const normalizedItems = normalizePaymentsForTaxCertificate(mappedItems, targetYear);
 		if (normalizedItems.length === 0) continue;

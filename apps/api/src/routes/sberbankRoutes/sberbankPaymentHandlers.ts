@@ -18,8 +18,9 @@ import {
 } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { requirePermission } from "../../security/permissions.js";
-import { Fiscal54FzService } from "../../services/billing/fiscal54fzService.js";
+import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { SberbankClient } from "../../services/sberbankClient.js";
+import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 
 async function enqueueSberbankFiscalReceiptInTx(
@@ -36,35 +37,37 @@ async function enqueueSberbankFiscalReceiptInTx(
 		operationType: "income" | "income_return";
 	},
 ): Promise<void> {
-	const amountRub = kopecksToRubles(params.amountKopecks);
+	const totalKopecks = Number(params.amountKopecks);
 	const isReturn = params.operationType === "income_return";
-	const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-		organizationId: params.organizationId,
+	const clientMutationId = isReturn
+		? `sberbank:${params.orderId}:return`
+		: `sberbank:${params.orderId}`;
+	const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
 		patientId: params.patientId,
+		visitId: params.visitId || undefined,
+		documentId: params.documentId || undefined,
+		invoiceId: params.invoiceId || undefined,
+		clientMutationId,
 		customerContact: "cardholder@clinic.ru",
 		cashierFullName: "Кассир-администратор",
 		operationType: params.operationType,
-		defaultCalculationMethod: "full_payment",
-		tenderSplits: {
-			electronicCardRub: amountRub,
-		},
-		positions: [
+		taxationSystem: "usn_income",
+		electronicCardKopecks: totalKopecks,
+		totalKopecks,
+		items: [
 			{
 				name: isReturn
 					? `Возврат оплаты заказа №${params.orderId} (Сбербанк Эквайринг)`
 					: `Оплата заказа №${params.orderId} (Сбербанк Эквайринг)`,
-				priceRub: amountRub,
+				priceKopecks: totalKopecks,
 				quantity: 1,
-				medicalServiceCode804n: null,
+				amountKopecks: totalKopecks,
 				subject: "service",
 				method: "full_payment",
 				vatRate: "vat_none",
+				measure: "piece",
 			},
 		],
-		visitId: params.visitId,
-		documentId: params.documentId,
-		invoiceId: params.invoiceId,
-		clientMutationId: isReturn ? `sberbank:${params.orderId}:return` : `sberbank:${params.orderId}`,
 	});
 
 	await tx.insert(fiscalReceiptQueue).values({
@@ -74,8 +77,10 @@ async function enqueueSberbankFiscalReceiptInTx(
 		receiptType: params.operationType,
 		status: "pending_print",
 		payloadJson: {
-			...fiscalReceiptPayload,
-			tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
+			...ffdPayload,
+			clientMutationId,
+			orderId: params.orderId,
+			invoiceId: params.invoiceId,
 		},
 		retryCount: 0,
 	});
@@ -98,7 +103,10 @@ import {
 export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promise<void> {
 	app.post(
 		"/api/sberbank/pay",
-		sberbankPayFastifySchema,
+		{
+			...sberbankPayFastifySchema,
+			config: { tenantTxSelfManaged: true },
+		},
 		async (request, reply) => {
 			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
@@ -160,7 +168,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 				});
 			}
 
-			const orderNumber = crypto.randomUUID();
+			const orderNumber = idempotencyKey || crypto.randomUUID();
 			const origin = request.headers.origin;
 			const returnUrl = origin
 				? `${origin}/cabinet`
@@ -210,7 +218,10 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 	app.get(
 		"/api/sberbank/status/:orderId",
-		sberbankStatusFastifySchema,
+		{
+			...sberbankStatusFastifySchema,
+			config: { tenantTxSelfManaged: true },
+		},
 		async (request, reply) => {
 			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
@@ -283,7 +294,10 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 	app.post(
 		"/api/sberbank/status/:orderId",
-		sberbankStatusFastifySchema,
+		{
+			...sberbankStatusFastifySchema,
+			config: { tenantTxSelfManaged: true },
+		},
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
@@ -353,6 +367,20 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						.for("update")
 						.limit(1);
 
+					const txLower = lockedTx.status.toLowerCase();
+					if (
+						(txLower === "refunded" || txLower === "reversed" || lockedPayment?.status === "refunded") &&
+						mappedStatus !== "refunded"
+					) {
+						return {
+							success: true,
+							processed: false,
+							reason: "already_refunded",
+							status: lockedTx.status,
+							amount: Number(lockedTx.amountKopecks),
+						};
+					}
+
 					if (mappedStatus !== lockedTx.status) {
 						await tx
 							.update(sberbankTransactions)
@@ -377,11 +405,10 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									organizationId: orgId,
 									patientId: lockedTx.patientId,
 									visitId: lockedTx.visitId ? lockedTx.visitId : null,
-									documentId: lockedTx.documentId
-										? lockedTx.documentId
-										: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+									documentId:
+										lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
 											? lockedTx.invoiceId
-											: null,
+											: lockedTx.documentId || null,
 									method: "card",
 									status: "paid",
 									amountRub,
@@ -428,18 +455,31 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								);
 							}
 
-							// 54-FZ compliance: Enqueue statutory fiscal receipt atomically inside tx
-							await enqueueSberbankFiscalReceiptInTx(tx, {
-								organizationId: orgId,
-								patientId: lockedTx.patientId,
-								orderId: lockedTx.orderId,
-								paymentId: insertedPayment?.id || null,
-								visitId: lockedTx.visitId,
-								documentId: lockedTx.documentId,
-								invoiceId: lockedTx.invoiceId,
-								amountKopecks: lockedTx.amountKopecks,
-								operationType: "income",
-							});
+							if (insertedPayment) {
+								await applyAcquiringCashboxLedgerInTx(tx, {
+									organizationId: orgId,
+									direction: "income",
+									amountKopecks: lockedTx.amountKopecks,
+									paymentMethod: "card",
+									patientId: lockedTx.patientId,
+									paymentId: insertedPayment.id,
+									invoiceId: lockedTx.invoiceId,
+									reasonText: `Оплата через Сбербанк Эквайринг (заказ ${orderId})`,
+									sourceTag: `sberbank:${orderId}`,
+								});
+
+								await enqueueSberbankFiscalReceiptInTx(tx, {
+									organizationId: orgId,
+									patientId: lockedTx.patientId,
+									orderId: lockedTx.orderId,
+									paymentId: insertedPayment.id,
+									visitId: lockedTx.visitId,
+									documentId: lockedTx.documentId,
+									invoiceId: lockedTx.invoiceId,
+									amountKopecks: lockedTx.amountKopecks,
+									operationType: "income",
+								});
+							}
 						}
 					}
 
@@ -461,13 +501,16 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 	/**
 	 * POST /api/sberbank/cancel-or-reconcile
 	 * Prevents Double-Charge vulnerability on timeout / modal close:
-	 * 1. Checks live status in Sberbank processing via getOrderStatusExtended.
-	 * 2. If paid at the last second (Code 2), settles payment and returns status "paid" to prevent duplicate cash tender.
-	 * 3. If pending/authorized (Code 0, 1), sends automated Reversal (reverse.do) to void the transaction.
+	 * 1. Reads preflight state in short DB tx, then performs Sberbank HTTP outside PG tx (DEF-03).
+	 * 2. If paid (Code 2) and not already refunded, settles payment atomically.
+	 * 3. If pending/authorized (Code 0, 1) or forceReverse, reverses at gateway OUTSIDE PG tx, then persists reversal.
 	 */
 	app.post(
 		"/api/sberbank/cancel-or-reconcile",
-		sberbankCancelReconcileFastifySchema,
+		{
+			...sberbankCancelReconcileFastifySchema,
+			config: { tenantTxSelfManaged: true },
+		},
 		async (request, reply) => {
 			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
@@ -497,8 +540,39 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 			}
 
 			try {
+				const preflightTx = await withTenantCtx(orgId, async (tx) => {
+					const [row] = await tx
+						.select({ id: sberbankTransactions.id, status: sberbankTransactions.status })
+						.from(sberbankTransactions)
+						.where(
+							and(
+								eq(sberbankTransactions.orderId, orderId),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					return row ?? null;
+				});
+
+				if (!preflightTx) {
+					return reply.status(404).send({
+						error: "TransactionNotFound",
+						message: `Транзакция Сбербанк с orderId '${orderId}' не найдена.`,
+					});
+				}
+
 				const sberStatus = await client.getOrderStatusExtended(orderId);
 				const code = sberStatus.orderStatus;
+
+				const shouldReverseExternally =
+					code === 0 || code === 1 || (code !== 2 && code !== 4 && Boolean(forceReverse));
+				if (shouldReverseExternally) {
+					try {
+						await client.reverseOrder(orderId);
+					} catch (reverseErr) {
+						request.log.warn({ orderId, err: reverseErr }, "[Sberbank] Reversal warning");
+					}
+				}
 
 				return await withTenantCtx(orgId, async (tx) => {
 					const [lockedTx] = await tx
@@ -520,8 +594,39 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						});
 					}
 
+					const [lockedPayment] = await tx
+						.select()
+						.from(payments)
+						.where(
+							and(
+								eq(payments.organizationId, orgId),
+								or(
+									eq(payments.clientMutationId, `sberbank:${orderId}`),
+									eq(payments.clientMutationId, `sberpos:${orderId}`),
+								),
+							),
+						)
+						.for("update")
+						.limit(1);
+
+					const lockedStatusLower = lockedTx.status.toLowerCase();
+
 					// 1. Transaction was actually PAID by card right before/during timeout (Code 2)
 					if (code === 2) {
+						if (
+							lockedStatusLower === "refunded" ||
+							lockedStatusLower === "reversed" ||
+							lockedPayment?.status === "refunded"
+						) {
+							return {
+								success: true,
+								processed: false,
+								reason: "already_refunded",
+								status: lockedTx.status,
+								message: "Транзакция уже возвращена/отменена.",
+							};
+						}
+
 						await tx
 							.update(sberbankTransactions)
 							.set({ status: "success", updatedAt: new Date() })
@@ -533,21 +638,6 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 							);
 
 						const amountRub = kopecksToRubles(lockedTx.amountKopecks);
-						const [lockedPayment] = await tx
-							.select()
-							.from(payments)
-							.where(
-								and(
-									eq(payments.organizationId, orgId),
-									or(
-										eq(payments.clientMutationId, `sberbank:${orderId}`),
-										eq(payments.clientMutationId, `sberpos:${orderId}`),
-									),
-								),
-							)
-							.for("update")
-							.limit(1);
-
 						let insertedPayment: typeof payments.$inferSelect | undefined;
 						if (!lockedPayment) {
 							const [inserted] = await tx
@@ -556,11 +646,10 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									organizationId: orgId,
 									patientId: lockedTx.patientId,
 									visitId: lockedTx.visitId ? lockedTx.visitId : null,
-									documentId: lockedTx.documentId
-										? lockedTx.documentId
-										: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+									documentId:
+										lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
 											? lockedTx.invoiceId
-											: null,
+											: lockedTx.documentId || null,
 									method: "card",
 									status: "paid",
 									amountRub,
@@ -609,8 +698,19 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 							);
 						}
 
-						// 54-FZ statutory fiscal receipt queue registration
 						if (insertedPayment) {
+							await applyAcquiringCashboxLedgerInTx(tx, {
+								organizationId: orgId,
+								direction: "income",
+								amountKopecks: lockedTx.amountKopecks,
+								paymentMethod: "card",
+								patientId: lockedTx.patientId,
+								paymentId: insertedPayment.id,
+								invoiceId: lockedTx.invoiceId,
+								reasonText: `Оплата через Сбербанк Эквайринг (заказ ${orderId})`,
+								sourceTag: `sberbank:${orderId}`,
+							});
+
 							await enqueueSberbankFiscalReceiptInTx(tx, {
 								organizationId: orgId,
 								patientId: lockedTx.patientId,
@@ -632,14 +732,8 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						};
 					}
 
-					// 2. Transaction is Pending (Code 0) or Approved / Held (Code 1) -> Issue Reversal
+					// 2. Transaction is Pending (Code 0) or Approved / Held (Code 1) -> Persist Reversal
 					if (code === 0 || code === 1 || forceReverse) {
-						try {
-							await client.reverseOrder(orderId);
-						} catch (reverseErr) {
-							request.log.warn({ orderId, err: reverseErr }, "[Sberbank] Reversal warning");
-						}
-
 						await tx
 							.update(sberbankTransactions)
 							.set({ status: "reversed", updatedAt: new Date() })
@@ -649,21 +743,6 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									eq(sberbankTransactions.organizationId, orgId),
 								),
 							);
-
-						const [lockedPayment] = await tx
-							.select()
-							.from(payments)
-							.where(
-								and(
-									eq(payments.organizationId, orgId),
-									or(
-										eq(payments.clientMutationId, `sberbank:${orderId}`),
-										eq(payments.clientMutationId, `sberpos:${orderId}`),
-									),
-								),
-							)
-							.for("update")
-							.limit(1);
 
 						if (lockedPayment) {
 							const wasPaidPayment = lockedPayment.status === "paid";
@@ -678,6 +757,23 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								);
 
 							if (wasPaidPayment) {
+								const revKopecks =
+									lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
+										? lockedPayment.amountKopecks
+										: lockedTx.amountKopecks;
+
+								await applyAcquiringCashboxLedgerInTx(tx, {
+									organizationId: orgId,
+									direction: "refund",
+									amountKopecks: revKopecks,
+									paymentMethod: "card",
+									patientId: lockedTx.patientId,
+									paymentId: lockedPayment.id,
+									invoiceId: lockedTx.invoiceId,
+									reasonText: `Реверс заказа Сбербанк (${lockedTx.orderId})`,
+									sourceTag: `sberbank:${lockedTx.orderId}:reverse`,
+								});
+
 								await enqueueSberbankFiscalReceiptInTx(tx, {
 									organizationId: orgId,
 									patientId: lockedTx.patientId,
@@ -686,10 +782,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 									visitId: lockedTx.visitId,
 									documentId: lockedTx.documentId,
 									invoiceId: lockedTx.invoiceId,
-									amountKopecks:
-										lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
-											? lockedPayment.amountKopecks
-											: lockedTx.amountKopecks,
+									amountKopecks: revKopecks,
 									operationType: "income_return",
 								});
 							}
@@ -712,6 +805,19 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 					// 3. Declined or Refunded
 					const mappedStatus = code === 4 ? "refunded" : "failed";
+					if (
+						mappedStatus === "failed" &&
+						(lockedStatusLower === "refunded" || lockedStatusLower === "reversed")
+					) {
+						return {
+							success: true,
+							processed: false,
+							reason: "already_refunded",
+							status: lockedTx.status,
+							message: "Транзакция уже возвращена/отменена.",
+						};
+					}
+
 					await tx
 						.update(sberbankTransactions)
 						.set({ status: mappedStatus, updatedAt: new Date() })

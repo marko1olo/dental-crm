@@ -3,6 +3,8 @@ import {
 	basisPointsFromPercent,
 	computeCommerceMlSha256,
 	DEFAULT_OKEI_PIECE_CODE,
+	type Kopecks,
+	multiplyKopecksFractional,
 	type OneCChartOfAccounts,
 	type OneCClinicProfile,
 	type OneCMaterialWriteoffDocument,
@@ -71,7 +73,7 @@ export async function fetchAndBuildWriteoffDocument(
 				: itemCostKop !== 0
 					? itemCostKop
 					: rublesToKopecks(Number(tr.unitCostRub ?? item?.unitCostRub ?? 0));
-		const totalCostKop = Math.round(unitCostKop * qty);
+		const totalCostKop = multiplyKopecksFractional(unitCostKop as Kopecks, qty);
 
 		writeoffItems.push({
 			id: tr.id,
@@ -204,7 +206,7 @@ export async function fetchAndBuildPayrollDocument(
 		totalNdflKopecks: payrollEmployees.reduce((s, e) => s + e.ndfl13Kopecks, 0),
 		totalSocialTaxesKopecks: payrollEmployees.reduce((s, e) => s + e.socialInsuranceTaxesKopecks, 0),
 		totalNetPayoutKopecks: payrollEmployees.reduce((s, e) => s + e.netPayoutKopecks, 0),
-		comment: "Отражение заработной платы (Форма Т-51 / Т-13)",
+		comment: "Отражение начислений заработной платы по сдельным ведомостям клиники",
 	};
 	doc.sha256Hash = computeCommerceMlSha256(doc);
 	return doc;

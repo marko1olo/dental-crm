@@ -242,7 +242,8 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 		});
 
 		assert.equal(res.statusCode, 200);
-		const history = res.json();
+		const rawHistory = res.json();
+		const history = Array.isArray(rawHistory) ? rawHistory : rawHistory.data;
 		assert.ok(Array.isArray(history));
 		assert.ok(history.length >= 1, "Должна быть как минимум 1 транзакция списания");
 

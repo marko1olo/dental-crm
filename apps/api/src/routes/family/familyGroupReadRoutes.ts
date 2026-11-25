@@ -1,7 +1,7 @@
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patients } from "../../db/schema.js";
 import {
 	familyGroupForOrganization,
@@ -22,37 +22,45 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { search } = req.query as { search?: string };
-		const families = await db
-			.select({
-				id: familyGroups.id,
-				name: familyGroups.name,
-				balance: familyGroups.balance,
-				balanceKopecks: familyGroups.balanceKopecks,
-				headPatientId: familyGroups.headPatientId,
-				organizationId: familyGroups.organizationId,
-				createdAt: familyGroups.createdAt,
-				updatedAt: familyGroups.updatedAt,
-				headPatientName: patients.fullName,
-				headPatientPhone: patients.phone,
-			})
-			.from(familyGroups)
-			.leftJoin(patients, eq(familyGroups.headPatientId, patients.id))
-			.where(
-				search
-					? and(
-							eq(familyGroups.organizationId, organizationId),
-							or(
-								ilike(familyGroups.name, `%${search}%`),
-								ilike(patients.phone, `%${search}%`),
-								ilike(patients.fullName, `%${search}%`),
-							),
-						)
-					: eq(familyGroups.organizationId, organizationId),
-			)
-			.orderBy(desc(familyGroups.createdAt))
-			.limit(20);
+		const families = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({
+					id: familyGroups.id,
+					name: familyGroups.name,
+					balance: familyGroups.balance,
+					balanceKopecks: familyGroups.balanceKopecks,
+					headPatientId: familyGroups.headPatientId,
+					organizationId: familyGroups.organizationId,
+					createdAt: familyGroups.createdAt,
+					updatedAt: familyGroups.updatedAt,
+					headPatientName: patients.fullName,
+					headPatientPhone: patients.phone,
+				})
+				.from(familyGroups)
+				.leftJoin(
+					patients,
+					and(
+						eq(familyGroups.headPatientId, patients.id),
+						eq(patients.organizationId, organizationId),
+					),
+				)
+				.where(
+					search
+						? and(
+								eq(familyGroups.organizationId, organizationId),
+								or(
+									ilike(familyGroups.name, `%${search}%`),
+									ilike(patients.phone, `%${search}%`),
+									ilike(patients.fullName, `%${search}%`),
+								),
+							)
+						: eq(familyGroups.organizationId, organizationId),
+				)
+				.orderBy(desc(familyGroups.createdAt))
+				.limit(20),
+		);
 
-		return families;
+		return { success: true, data: families };
 	});
 
 	// GET /api/finance/family/patient/:patientId — fetch family by patient ID
@@ -71,16 +79,18 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 				message: "Некорректный идентификатор пациента (ожидается UUID)",
 			});
 		}
-		const [patient] = await db
-			.select({ familyGroupId: patients.familyGroupId })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.id, patientId),
-					eq(patients.organizationId, organizationId),
-				),
-			)
-			.limit(1);
+		const [patient] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({ familyGroupId: patients.familyGroupId })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, patientId),
+						eq(patients.organizationId, organizationId),
+					),
+				)
+				.limit(1),
+		);
 		if (!patient?.familyGroupId) {
 			return reply.code(404).send({ error: "Patient has no family group" });
 		}
@@ -89,7 +99,7 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		if (!family) return reply.code(404).send({ error: "Family group not found" });
 
 		const members = await familyMembersForOrganization(patient.familyGroupId, organizationId);
-		return { ...family, members };
+		return { success: true, data: { ...family, members } };
 	});
 
 	// GET /api/finance/family/:familyGroupId — fetch family group and members
@@ -116,6 +126,6 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		if (!family) return reply.code(404).send({ error: "Family group not found" });
 
 		const members = await familyMembersForOrganization(familyGroupId, organizationId);
-		return { ...family, members };
+		return { success: true, data: { ...family, members } };
 	});
 }

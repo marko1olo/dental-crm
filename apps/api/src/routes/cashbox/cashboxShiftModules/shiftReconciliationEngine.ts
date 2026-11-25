@@ -150,7 +150,7 @@ export async function calculateShiftTenderTotals(
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(payments.status, "paid"),
+					inArray(payments.status, ["paid", "refunded"]),
 					gte(payments.paidAt, shiftStart),
 					lte(payments.paidAt, shiftEnd),
 				),
@@ -161,6 +161,10 @@ export async function calculateShiftTenderTotals(
 				p.amountKopecks !== undefined && p.amountKopecks !== null && p.amountKopecks !== 0n
 					? Number(p.amountKopecks)
 					: rubToKopecks(p.amountRub);
+			// Negative ledger rows (created by refundExecutionEngine) represent return outflows already captured in opsExpenseCashKop.
+			if (amtKop <= 0) {
+				continue;
+			}
 			const canonicalTender = normalizeTenderType(p.method);
 
 			if (canonicalTender === "cash") {

@@ -100,6 +100,7 @@ export class SberbankClient {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: params.toString(),
+			signal: AbortSignal.timeout(15_000),
 		});
 
 		if (!response.ok) {
@@ -132,6 +133,7 @@ export class SberbankClient {
 			method: "POST", // API поддерживает и GET и POST, но POST надёжнее для URLSearchParams
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: params.toString(),
+			signal: AbortSignal.timeout(15_000),
 		});
 
 		if (!response.ok) {
@@ -162,6 +164,7 @@ export class SberbankClient {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: params.toString(),
+			signal: AbortSignal.timeout(15_000),
 		});
 
 		if (!response.ok) {
@@ -197,6 +200,7 @@ export class SberbankClient {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: params.toString(),
+			signal: AbortSignal.timeout(15_000),
 		});
 
 		if (!response.ok) {

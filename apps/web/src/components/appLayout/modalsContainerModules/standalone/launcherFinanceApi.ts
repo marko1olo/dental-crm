@@ -74,12 +74,19 @@ export async function fetchLauncherOutstandingDebtRub(patientId: string): Promis
 
 /** Семейный счёт пациента из базы; null — семейного счёта у пациента нет. */
 export async function fetchLauncherFamilyGroup(patientId: string): Promise<LauncherFamilyGroup | null> {
-	const data = await getJson<{
+	const raw = await getJson<{
+		data?: {
+			id?: string;
+			name?: string | null;
+			balance?: string | number;
+			headPatientName?: string | null;
+		};
 		id?: string;
 		name?: string | null;
 		balance?: string | number;
 		headPatientName?: string | null;
 	} | null>(`/api/finance/family/patient/${encodeURIComponent(patientId)}`);
+	const data = raw?.data ?? raw;
 	if (!data?.id) return null;
 	return {
 		id: data.id,

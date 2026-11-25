@@ -38,7 +38,7 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 				organizationId, familyGroupId: parsed.data.familyGroupId, patientId: parsed.data.patientId,
 				amountRub: parsed.data.amountRub, amountKopecks: parsed.data.amountKopecks, method: parsed.data.method, clientMutationId: mutationId, notes: parsed.data.comment,
 			});
-			return {
+			const payload = {
 				payment: result.payment,
 				newBalance: kopecksToNumericString(
 					result.newBalanceKopecks !== undefined
@@ -47,6 +47,7 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 				),
 				duplicate: result.duplicate,
 			};
+			return { success: true, data: payload, ...payload };
 		} catch (err: unknown) {
 			const statusCode =
 				typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"
@@ -85,7 +86,7 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 				cashBoxId: parsed.data.cashBoxId, operatorId: parsed.data.operatorId,
 				method: parsed.data.method, reasonText: parsed.data.reason, clientMutationId: mutationId,
 			});
-			return {
+			const refundPayload = {
 				payment: result.payment,
 				newBalance: kopecksToNumericString(
 					result.newBalanceKopecks !== undefined
@@ -96,6 +97,7 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 				duplicate: result.duplicate,
 				cashOperation: result.cashOperation,
 			};
+			return { success: true, data: refundPayload, ...refundPayload };
 		} catch (err: unknown) {
 			const statusCode =
 				typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"

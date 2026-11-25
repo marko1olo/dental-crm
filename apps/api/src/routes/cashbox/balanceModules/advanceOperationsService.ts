@@ -27,6 +27,7 @@ import {
 } from "../../../db/schema.js";
 import { FamilyWalletError } from "../../../services/familyWallet/familyWalletTypes.js";
 import { verifyFamilySpendAuthorization } from "../../../services/familyWallet/modules/familySpendAuthorization.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { getDetailedPatientBalance } from "./balanceQueryService.js";
 import {
 	type CreditAdvanceParams,
@@ -223,31 +224,45 @@ export async function creditPersonalAdvanceOp(
 		cashOp = op;
 	}
 
+	const creditFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+		patientId,
+		operationType: "income",
+		taxationSystem: "usn_income",
+		cashierFullName: "Кассир-администратор",
+		customerContact: "",
+		customerName: patient.fullName || "Пациент клиники",
+		totalKopecks: amountKopecks,
+		cashKopecks: statutoryMethod === "cash" ? amountKopecks : 0,
+		electronicCardKopecks:
+			statutoryMethod !== "cash" && statutoryMethod !== "online" ? amountKopecks : 0,
+		sbpKopecks: statutoryMethod === "online" ? amountKopecks : 0,
+		prepaidKopecks: 0,
+		items: [
+			{
+				name: operationNote || "Внесение личного авансового депозита",
+				priceKopecks: amountKopecks,
+				quantity: 1,
+				amountKopecks,
+				subject: "payment",
+				method: "advance",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		],
+	});
+
 	await tx.insert(fiscalReceiptQueue).values({
 		organizationId,
 		paymentId: payment.id,
 		receiptType: "income",
 		status: "pending_print",
 		payloadJson: {
+			...creditFfdPayload,
 			clientMutationId: idempotencyKey,
-			amountRub,
-			amountKopecks,
 			method: statutoryMethod,
-			cashRub: statutoryMethod === "cash" ? amountRub : 0,
-			cashKopecks: statutoryMethod === "cash" ? amountKopecks : 0,
-			electronicRub: statutoryMethod !== "cash" ? amountRub : 0,
-			electronicKopecks: statutoryMethod !== "cash" ? amountKopecks : 0,
-			electronicCardKopecks:
-				statutoryMethod !== "cash" && statutoryMethod !== "online" ? amountKopecks : 0,
-			sbpKopecks: statutoryMethod === "online" ? amountKopecks : 0,
-			advanceOffsetRub: 0,
-			certificateOffsetRub: 0,
-			bonusOffsetRub: 0,
-			dmsOffsetRub: 0,
 			patientId,
 			patientName: patient.fullName || "Пациент клиники",
 			note: operationNote,
-			calculationSign: 3, // Аванс (Тег 1214 = 3)
 		},
 		retryCount: 0,
 	});
@@ -489,6 +504,32 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 		throw new Error("Не удалось создать платёж зачёта аванса.");
 	}
 
+	const debitFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+		patientId,
+		operationType: "income",
+		taxationSystem: "usn_income",
+		cashierFullName: "Кассир-администратор",
+		customerContact: "",
+		customerName: balance.patientFullName,
+		totalKopecks: amountKopecks,
+		cashKopecks: 0,
+		electronicCardKopecks: 0,
+		sbpKopecks: 0,
+		prepaidKopecks: amountKopecks,
+		items: [
+			{
+				name: operationNote || "Зачёт аванса при окончательном расчёте",
+				priceKopecks: amountKopecks,
+				quantity: 1,
+				amountKopecks,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		],
+	});
+
 	await tx.insert(fiscalReceiptQueue).values({
 		organizationId,
 		paymentId: payment.id,
@@ -496,17 +537,9 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 		receiptType: "income",
 		status: "pending_print",
 		payloadJson: {
+			...debitFfdPayload,
 			clientMutationId: idempotencyKey,
-			amountRub: totalAmountRub,
-			amountKopecks,
 			method: "family_wallet",
-			cashRub: 0,
-			electronicRub: 0,
-			advanceOffsetRub: totalAmountRub,
-			advanceOffsetKopecks: amountKopecks,
-			certificateOffsetRub: 0,
-			bonusOffsetRub: 0,
-			dmsOffsetRub: 0,
 			patientId,
 			patientName: balance.patientFullName,
 			note: operationNote,
@@ -727,24 +760,41 @@ export async function refundPersonalAdvanceOp(
 		throw new Error("Не удалось зафиксировать платёж возврата аванса.");
 	}
 
+	const refundAdvanceFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+		patientId,
+		operationType: "income_return",
+		taxationSystem: "usn_income",
+		cashierFullName: "Кассир-администратор",
+		customerContact: "",
+		customerName: balance.patientFullName,
+		totalKopecks: amountKopecks,
+		cashKopecks: refundMethod === "cash" ? amountKopecks : 0,
+		electronicCardKopecks: refundMethod === "card" ? amountKopecks : 0,
+		sbpKopecks: refundMethod === "online" ? amountKopecks : 0,
+		prepaidKopecks: 0,
+		items: [
+			{
+				name: note || "Возврат неизрасходованного личного аванса",
+				priceKopecks: amountKopecks,
+				quantity: 1,
+				amountKopecks,
+				subject: "payment",
+				method: "advance",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		],
+	});
+
 	await tx.insert(fiscalReceiptQueue).values({
 		organizationId,
 		paymentId: payment.id,
 		receiptType: "income_return",
 		status: "pending_print",
 		payloadJson: {
-			receiptType: "income_return",
-			tag1054: 2,
-			operationType: "income_return",
-			amountRub,
-			amountKopecks,
+			...refundAdvanceFfdPayload,
+			clientMutationId: idempotencyKey,
 			method: refundMethod,
-			cashRub: refundMethod === "cash" ? amountRub : 0,
-			cashKopecks: refundMethod === "cash" ? amountKopecks : 0,
-			electronicRub: refundMethod !== "cash" ? amountRub : 0,
-			electronicKopecks: refundMethod !== "cash" ? amountKopecks : 0,
-			electronicCardKopecks: refundMethod === "card" ? amountKopecks : 0,
-			sbpKopecks: refundMethod === "online" ? amountKopecks : 0,
 			patientId,
 			patientName: balance.patientFullName,
 			reasonText: note,

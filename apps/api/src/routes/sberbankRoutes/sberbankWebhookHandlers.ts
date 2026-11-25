@@ -11,8 +11,9 @@ import {
 	sberbankTransactions,
 	visits,
 } from "../../db/schema.js";
-import { Fiscal54FzService } from "../../services/billing/fiscal54fzService.js";
+import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
 import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
 import { verifySberbankChecksum } from "./sberbankSecurityHelpers.js";
 
@@ -218,35 +219,46 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 							lockedPayment.amountKopecks !== null && lockedPayment.amountKopecks > 0n
 								? Number(lockedPayment.amountKopecks)
 								: Number(lockedTx.amountKopecks);
-						const refundRub = kopecksToRubles(refundKopecks);
-						const refundReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
+
+						await applyAcquiringCashboxLedgerInTx(tx, {
 							organizationId: lockedTx.organizationId,
+							direction: "refund",
+							amountKopecks: refundKopecks,
+							paymentMethod: "card",
 							patientId: lockedTx.patientId,
+							paymentId: lockedPayment.id,
+							invoiceId: lockedTx.invoiceId,
+							reasonText: `Возврат оплаты заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
+							sourceTag: `sberbank:${lockedTx.orderId}:refund`,
+						});
+
+						const refundFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+							patientId: lockedTx.patientId,
+							visitId: lockedTx.visitId || undefined,
+							documentId: lockedTx.documentId || undefined,
+							invoiceId: lockedTx.invoiceId || undefined,
+							clientMutationId: `sberbank:${lockedTx.orderId}:return`,
 							customerContact:
 								(typeof payload.customerContact === "string"
 									? payload.customerContact
 									: undefined) || "cardholder@clinic.ru",
 							cashierFullName: "Кассир-администратор",
 							operationType: "income_return",
-							defaultCalculationMethod: "full_payment",
-							tenderSplits: {
-								electronicCardRub: refundRub,
-							},
-							positions: [
+							taxationSystem: "usn_income",
+							electronicCardKopecks: refundKopecks,
+							totalKopecks: refundKopecks,
+							items: [
 								{
 									name: `Возврат оплаты заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
-									priceRub: refundRub,
+									priceKopecks: refundKopecks,
 									quantity: 1,
-									medicalServiceCode804n: null,
+									amountKopecks: refundKopecks,
 									subject: "service",
 									method: "full_payment",
 									vatRate: "vat_none",
+									measure: "piece",
 								},
 							],
-							visitId: lockedTx.visitId,
-							documentId: lockedTx.documentId,
-							invoiceId: lockedTx.invoiceId,
-							clientMutationId: `sberbank:${lockedTx.orderId}:return`,
 						});
 						await tx.insert(fiscalReceiptQueue).values({
 							organizationId: lockedTx.organizationId,
@@ -255,8 +267,10 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 							receiptType: "income_return",
 							status: "pending_print",
 							payloadJson: {
-								...refundReceiptPayload,
-								tag1020_totalRub: refundReceiptPayload.tag1020_totalRubString,
+								...refundFfdPayload,
+								clientMutationId: `sberbank:${lockedTx.orderId}:return`,
+								orderId: lockedTx.orderId,
+								invoiceId: lockedTx.invoiceId,
 							},
 							retryCount: 0,
 						});
@@ -275,6 +289,21 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 					success: true,
 					processed: true,
 					status: terminalStatus,
+				});
+			}
+
+			// Prevent state machine inversion on terminal states (case-insensitive + payment status check)
+			const lockedStatusLower = lockedTx.status.toLowerCase();
+			if (
+				lockedStatusLower === "refunded" ||
+				lockedStatusLower === "reversed" ||
+				lockedPayment?.status === "refunded"
+			) {
+				return reply.status(200).send({
+					success: true,
+					processed: false,
+					reason: "already_refunded",
+					status: lockedStatusLower === "reversed" ? "reversed" : "refunded",
 				});
 			}
 
@@ -297,16 +326,6 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 					success: true,
 					processed: true,
 					status: "approved",
-				});
-			}
-
-			// Prevent state machine inversion on terminal states
-			if (lockedTx.status === "refunded" && operation !== "refunded") {
-				return reply.status(200).send({
-					success: true,
-					processed: false,
-					reason: "already_refunded",
-					status: "refunded",
 				});
 			}
 
@@ -356,11 +375,10 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 						organizationId: lockedTx.organizationId,
 						patientId: lockedTx.patientId,
 						visitId: lockedTx.visitId ? lockedTx.visitId : null,
-						documentId: lockedTx.documentId
-							? lockedTx.documentId
-							: lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
+						documentId:
+							lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)
 								? lockedTx.invoiceId
-								: null,
+								: lockedTx.documentId || null,
 						method: "card",
 						status: "paid",
 						amountRub,
@@ -408,56 +426,71 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 					);
 				}
 
-				// 54-FZ statutory fiscal receipt queue registration
-				const customerContact =
-					(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
-					(typeof payload.email === "string" ? payload.email : undefined) ||
-					(typeof payload.phone === "string" ? payload.phone : undefined) ||
-					"cardholder@clinic.ru";
+				if (insertedPayment) {
+					const amountKopNum = Number(lockedTx.amountKopecks);
+					await applyAcquiringCashboxLedgerInTx(tx, {
+						organizationId: lockedTx.organizationId,
+						direction: "income",
+						amountKopecks: amountKopNum,
+						paymentMethod: "card",
+						patientId: lockedTx.patientId,
+						paymentId: insertedPayment.id,
+						invoiceId: lockedTx.invoiceId,
+						reasonText: `Оплата через Сбербанк Эквайринг (заказ ${lockedTx.orderId})`,
+						sourceTag: `sberbank:${lockedTx.orderId}`,
+					});
 
-				const fiscalReceiptPayload = Fiscal54FzService.buildStatutoryFiscalReceipt({
-					organizationId: lockedTx.organizationId,
-					patientId: lockedTx.patientId,
-					customerContact,
-					cashierFullName: "Кассир-администратор",
-					operationType: "income",
-					defaultCalculationMethod: "full_payment",
-					tenderSplits: {
-						electronicCardRub: amountRub,
-					},
-					positions: [
-						{
-							name:
-								(typeof payload.serviceTitle === "string"
-									? payload.serviceTitle
-									: undefined) ||
-								`Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
-							priceRub: amountRub,
-							quantity: 1,
-							medicalServiceCode804n: null,
-							subject: "service",
-							method: "full_payment",
-							vatRate: "vat_none",
+					const customerContact =
+						(typeof payload.customerContact === "string" ? payload.customerContact : undefined) ||
+						(typeof payload.email === "string" ? payload.email : undefined) ||
+						(typeof payload.phone === "string" ? payload.phone : undefined) ||
+						"cardholder@clinic.ru";
+
+					const ffdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+						patientId: lockedTx.patientId,
+						visitId: lockedTx.visitId || undefined,
+						documentId: lockedTx.documentId || undefined,
+						invoiceId: lockedTx.invoiceId || undefined,
+						clientMutationId: `sberbank:${lockedTx.orderId}`,
+						customerContact,
+						cashierFullName: "Кассир-администратор",
+						operationType: "income",
+						taxationSystem: "usn_income",
+						electronicCardKopecks: amountKopNum,
+						totalKopecks: amountKopNum,
+						items: [
+							{
+								name:
+									(typeof payload.serviceTitle === "string"
+										? payload.serviceTitle
+										: undefined) ||
+									`Оплата заказа №${lockedTx.orderId} (Сбербанк Эквайринг)`,
+								priceKopecks: amountKopNum,
+								quantity: 1,
+								amountKopecks: amountKopNum,
+								subject: "service",
+								method: "full_payment",
+								vatRate: "vat_none",
+								measure: "piece",
+							},
+						],
+					});
+
+					await tx.insert(fiscalReceiptQueue).values({
+						organizationId: lockedTx.organizationId,
+						paymentId: insertedPayment.id,
+						visitId: lockedTx.visitId || null,
+						receiptType: "income",
+						status: "pending_print",
+						payloadJson: {
+							...ffdPayload,
+							clientMutationId: `sberbank:${lockedTx.orderId}`,
+							orderId: lockedTx.orderId,
+							invoiceId: lockedTx.invoiceId,
 						},
-					],
-					visitId: lockedTx.visitId,
-					documentId: lockedTx.documentId,
-					invoiceId: lockedTx.invoiceId,
-					clientMutationId: `sberbank:${lockedTx.orderId}`,
-				});
-
-				await tx.insert(fiscalReceiptQueue).values({
-					organizationId: lockedTx.organizationId,
-					paymentId: insertedPayment?.id || lockedPayment?.id || null,
-					visitId: lockedTx.visitId || null,
-					receiptType: "income",
-					status: "pending_print",
-					payloadJson: {
-						...fiscalReceiptPayload,
-						tag1020_totalRub: fiscalReceiptPayload.tag1020_totalRubString,
-					},
-					retryCount: 0,
-				});
+						retryCount: 0,
+					});
+				}
 
 				return reply.status(200).send({
 					success: true,

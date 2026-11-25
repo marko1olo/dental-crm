@@ -40,7 +40,8 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 				headers: getDenteAuthHeaders(),
 			});
 			if (res.ok) {
-				const data = await res.json();
+				const raw = await res.json();
+				const data = raw?.data ?? raw;
 				if (Array.isArray(data)) setTransactions(data);
 			} else {
 				logger.warn(`Failed to fetch family wallet history: status ${res.status}`);
@@ -76,7 +77,8 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 			}
 
 			if (famRes.ok) {
-				const data: FamilyGroupDetails = await famRes.json();
+				const rawFam = await famRes.json();
+				const data: FamilyGroupDetails = rawFam?.data ?? rawFam;
 				setFamilyData(data);
 				if (data.id) loadFamilyHistory(data.id);
 				setSpendingPermissions((prev) => {

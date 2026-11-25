@@ -21,7 +21,7 @@ import { registerCashTransferRoutes } from "../routes/cashbox/cashboxShiftModule
 import { registerFiscalReceiptRoutes } from "../routes/fiscal/receiptRoutes/index.js";
 import { registerSbpRoutes } from "../routes/sbp/sbpRouteHandlers.js";
 import { sberbankPayBodySchema } from "../routes/sberbankRoutes/types.js";
-import { Fiscal54FzService } from "../services/billing/fiscal54fzService.js";
+import { FiscalReceiptFactory } from "../services/kkt/FiscalReceiptFactory.js";
 import { FiscalQueueRetryWorker } from "../services/hardware/index.js";
 
 describe("Cashbox & Payments Fixer Surgeon Suite (Domain 1)", () => {
@@ -151,29 +151,30 @@ describe("Cashbox & Payments Fixer Surgeon Suite (Domain 1)", () => {
 		const fractionalTotal = multiplyKopecksFractional(unitPrice, fractionalQty);
 		assert.equal(fractionalTotal, 308640); // 3,086.40 RUB exact
 
-		// Test Fiscal54FzService item builder
-		const receipt = Fiscal54FzService.buildStatutoryFiscalReceipt({
-			organizationId: "00000000-0000-7000-8000-000000000099",
+		// Test FiscalReceiptFactory SSOT item builder
+		const receipt = FiscalReceiptFactory.buildFfd12Receipt({
 			patientId: "00000000-0000-7000-8000-000000000001",
 			customerContact: "+79991112233",
 			cashierFullName: "Кассир Иванова М.С.",
 			taxationSystem: "usn_income",
-			positions: [
+			operationType: "income",
+			cashKopecks: 370368,
+			totalKopecks: 370368,
+			items: [
 				{
 					name: "Стоматологическая процедура",
-					priceRub: 1234.56,
+					priceKopecks: 123456,
 					quantity: 3,
+					amountKopecks: 370368,
 					vatRate: "vat_none",
 					subject: "service",
 					method: "full_payment",
+					measure: "piece",
 				},
 			],
-			tenderSplits: {
-				cashRub: 3703.68,
-			},
 		});
 
-		assert.equal(receipt.tag1020_totalKopecks, 370368);
+		assert.equal(receipt.totalKopecks, 370368);
 		assert.equal(receipt.items[0]?.amountKopecks, 370368);
 	});
 

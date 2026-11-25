@@ -96,6 +96,7 @@ export async function validateAndLockGiftCertificate(
 	ctx.lockedCertificate = cert;
 	ctx.certAmountToDeductKop = requiredCertificateKopecks;
 	const newBalKop = currentBalKop - ctx.certAmountToDeductKop;
+	ctx.newCertBalanceKopecks = newBalKop;
 	ctx.newCertBalanceRub = kopecksToNumericString(Number(newBalKop));
 
 	return { success: true };
@@ -113,15 +114,18 @@ export async function finalizeGiftCertificateDeduction(
 		return;
 	}
 
-	const { orgId, body, lockedCertificate, newCertBalanceRub } = ctx;
-	const newBalKop = parseKopecks(newCertBalanceRub);
+	const { orgId, body, lockedCertificate, newCertBalanceRub, newCertBalanceKopecks } = ctx;
+	const newBalKop =
+		newCertBalanceKopecks !== undefined
+			? Number(newCertBalanceKopecks)
+			: parseKopecks(newCertBalanceRub);
 	const isDepleted = newBalKop <= 0;
 
 	await tx
 		.update(giftCertificates)
 		.set({
 			currentBalanceRub: newCertBalanceRub,
-			currentBalanceKopecks: Number(newBalKop),
+			currentBalanceKopecks: newBalKop,
 			status: isDepleted ? "depleted" : "active",
 			notes: body.invoiceId
 				? `${lockedCertificate.notes || ""}; Оплата счета ${body.invoiceId}`.trim().slice(0, 500)

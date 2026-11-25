@@ -8,6 +8,7 @@
 import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import {
 	kopecksToNumericString,
+	kopecksToRubles,
 	parseKopecks,
 } from "@dental/shared";
 import {
@@ -341,7 +342,7 @@ export async function processDepositAndFamilyStage(
 					...p,
 					amountRub:
 						p.amountKopecks !== 0n
-							? Number(p.amountKopecks) / 100
+							? kopecksToRubles(Number(p.amountKopecks))
 							: p.amountRub,
 				})),
 				{ organizationId: orgId },

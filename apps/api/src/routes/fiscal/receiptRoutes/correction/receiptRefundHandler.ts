@@ -33,6 +33,7 @@ import { ensureOrganizationCashBoxes } from "../../../../db/seeds/seed_cash_and_
 import { LanKktDriverService } from "../../../../services/hardware/index.js";
 import { FiscalReceiptFactory } from "../../../../services/kkt/FiscalReceiptFactory.js";
 import { isValidUuid } from "../../../../utils/httpIdempotency.js";
+import { reconcileInvoiceBalanceInDb } from "../../../payments/sberWebhook/paymentStateTransition.js";
 import type { ApplyCashBoxRefundParams, DbClientOrTransaction, PrintResultMetadata } from "../types.js";
 import { resolvePatientCustomerContact } from "./receiptCorrectionValidation.js";
 
@@ -222,10 +223,11 @@ async function updateRefundedPaymentRecord(
 	orgId: string,
 	originalPaymentId: string,
 	refundKopecks: number,
-): Promise<string | null> {
+): Promise<{ id: string; documentId: string | null } | null> {
 	const [existingPayment] = await tx
 		.select({
 			id: payments.id,
+			documentId: payments.documentId,
 			amountRub: payments.amountRub,
 			amountKopecks: payments.amountKopecks,
 		})
@@ -258,7 +260,7 @@ async function updateRefundedPaymentRecord(
 			.where(and(eq(payments.id, existingPayment.id), eq(payments.organizationId, orgId)));
 	}
 
-	return existingPayment.id;
+	return { id: existingPayment.id, documentId: existingPayment.documentId };
 }
 
 /**
@@ -318,7 +320,7 @@ export async function handleFiscalRefund(
 
 	const patientContact = await resolvePatientCustomerContact(orgId, data.patientId);
 
-	const refundReceiptInput: CreateFiscalReceiptPayloadInput = createFiscalReceiptPayloadSchema.parse({
+	const refundReceiptParsed = createFiscalReceiptPayloadSchema.safeParse({
 		clientMutationId: data.clientMutationId,
 		patientId: data.patientId,
 		operationType: "income_return",
@@ -335,6 +337,14 @@ export async function handleFiscalRefund(
 		taxDeductionSummaryCode: "code_1_standard",
 		isCorrection: false,
 	});
+	if (!refundReceiptParsed.success) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Сумма возврата по способам оплаты не совпадает с позициями чека",
+			details: refundReceiptParsed.error.issues,
+		});
+	}
+	const refundReceiptInput: CreateFiscalReceiptPayloadInput = refundReceiptParsed.data;
 
 	const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
 
@@ -430,16 +440,20 @@ export async function handleFiscalRefund(
 	const isOffline = printResult.status === "hardware_offline";
 	const now = new Date();
 
-	// Phase 3: Atomic payment status reversal, queue finalization & cashbox/shift ledger
+	// Phase 3: Atomic payment status reversal, queue finalization, invoice sync & cashbox/shift ledger
 	await withTenantCtx(orgId, async (tx) => {
 		let validPaymentId: string | null = null;
 		if (data.originalPaymentId) {
-			validPaymentId = await updateRefundedPaymentRecord(
+			const updatedPayment = await updateRefundedPaymentRecord(
 				tx,
 				orgId,
 				data.originalPaymentId,
 				data.totalRefundKopecks,
 			);
+			validPaymentId = updatedPayment?.id ?? null;
+			if (updatedPayment?.documentId && isValidUuid(updatedPayment.documentId)) {
+				await reconcileInvoiceBalanceInDb(tx, orgId, updatedPayment.documentId);
+			}
 		}
 
 		const payloadToStore: Record<string, unknown> = {

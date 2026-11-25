@@ -30,6 +30,7 @@ import {
 	payments,
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import {
 	parseHeaderIdempotencyKey,
 	resolveCashBoxPaymentMethod,
@@ -160,7 +161,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				.where(
 					and(
 						eq(installmentContracts.organizationId, orgId),
-						sql`strpos(coalesce(${installmentContracts.notes}, ''), ${idempTag}) > 0`,
+						sql`starts_with(coalesce(${installmentContracts.notes}, ''), ${idempTag})`,
 					),
 				)
 				.limit(1);
@@ -197,10 +198,22 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				return { kind: "patient_not_found" as const };
 			}
 
-			let lockedInvoiceId: string | null = null;
+			let lockedInvoice: {
+				id: string;
+				status: string;
+				totalPriceKopecks: bigint | null;
+				totalAmountRub: number | null;
+				totalRub: string | null;
+			} | null = null;
 			if (invoiceId) {
 				const [inv] = await tx
-					.select({ id: patientInvoices.id })
+					.select({
+						id: patientInvoices.id,
+						status: patientInvoices.status,
+						totalPriceKopecks: patientInvoices.totalPriceKopecks,
+						totalAmountRub: patientInvoices.totalAmountRub,
+						totalRub: patientInvoices.totalRub,
+					})
 					.from(patientInvoices)
 					.where(
 						and(
@@ -213,7 +226,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				if (!inv) {
 					return { kind: "invoice_not_found" as const, invoiceId };
 				}
-				lockedInvoiceId = inv.id;
+				lockedInvoice = inv;
 			}
 
 			// Проверяем и блокируем кассовый счет заранее (при наличии первоначального взноса)
@@ -256,14 +269,27 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				throw new Error("Не удалось создать договор рассрочки");
 			}
 
-			if (lockedInvoiceId) {
+			if (lockedInvoice && downPaymentKop > 0) {
+				const invoiceTotalKop = resolveSafeKopecks(
+					lockedInvoice.totalPriceKopecks,
+					lockedInvoice.totalAmountRub ?? lockedInvoice.totalRub,
+				);
+				const nextInvoiceStatus =
+					invoiceTotalKop > 0 && downPaymentKop >= invoiceTotalKop
+						? "paid"
+						: "partially_paid";
 				await tx
 					.update(patientInvoices)
 					.set({
-						status: "paid",
-						paidAt: now,
+						status: nextInvoiceStatus,
+						...(nextInvoiceStatus === "paid" ? { paidAt: now } : {}),
 					})
-					.where(and(eq(patientInvoices.id, lockedInvoiceId), eq(patientInvoices.organizationId, orgId)));
+					.where(
+						and(
+							eq(patientInvoices.id, lockedInvoice.id),
+							eq(patientInvoices.organizationId, orgId),
+						),
+					);
 			}
 
 			const tranchesToInsert: Array<typeof installmentTranches.$inferInsert> = [];
@@ -396,6 +422,32 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				if (payRecord) {
 					downPaymentPayment = payRecord;
 
+					const downpayFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+						patientId,
+						operationType: "income",
+						taxationSystem: "usn_income",
+						cashierFullName: "Кассир-администратор",
+						customerContact: "",
+						customerName: patient.fullName,
+						totalKopecks: downPaymentKop,
+						cashKopecks: paymentMethodCode === "cash" ? downPaymentKop : 0,
+						electronicCardKopecks: paymentMethodCode === "card" ? downPaymentKop : 0,
+						sbpKopecks: paymentMethodCode === "online" ? downPaymentKop : 0,
+						prepaidKopecks: 0,
+						items: [
+							{
+								name: `Первоначальный взнос по договору рассрочки ${contractNumber}`,
+								priceKopecks: downPaymentKop,
+								quantity: 1,
+								amountKopecks: downPaymentKop,
+								subject: "payment",
+								method: "prepayment",
+								vatRate: "vat_none",
+								measure: "piece",
+							},
+						],
+					});
+
 					await tx.insert(fiscalReceiptQueue).values({
 						organizationId: orgId,
 						paymentId: payRecord.id,
@@ -403,20 +455,9 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 						receiptType: "income",
 						status: "pending_print",
 						payloadJson: {
+							...downpayFfdPayload,
 							clientMutationId: `downpay-${contract.id}`,
-							amountRub: downPaymentRub,
-							amountKopecks: downPaymentKop,
 							method: paymentMethodCode,
-							cashRub: paymentMethodCode === "cash" ? downPaymentRub : 0,
-							cashKopecks: paymentMethodCode === "cash" ? downPaymentKop : 0,
-							electronicRub: paymentMethodCode !== "cash" ? downPaymentRub : 0,
-							electronicKopecks: paymentMethodCode !== "cash" ? downPaymentKop : 0,
-							electronicCardKopecks: paymentMethodCode === "card" ? downPaymentKop : 0,
-							sbpKopecks: paymentMethodCode === "online" ? downPaymentKop : 0,
-							advanceOffsetRub: 0,
-							certificateOffsetRub: 0,
-							bonusOffsetRub: 0,
-							dmsOffsetRub: 0,
 							patientId,
 							contractNumber,
 							note: reasonText,
@@ -543,12 +584,18 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 					patientPhone: patients.phone,
 				})
 				.from(installmentContracts)
-				.innerJoin(patients, eq(patients.id, installmentContracts.patientId))
+				.innerJoin(
+					patients,
+					and(
+						eq(patients.id, installmentContracts.patientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
 				.where(and(...conditions))
 				.orderBy(desc(installmentContracts.createdAt));
 		});
 
-		return reply.send({ data: contractsList, total: contractsList.length });
+		return reply.send({ success: true, data: contractsList, total: contractsList.length });
 	};
 
 	app.get("/api/installments", handleGetContracts);
@@ -581,7 +628,13 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 						patientPhone: patients.phone,
 					})
 					.from(installmentContracts)
-					.innerJoin(patients, eq(patients.id, installmentContracts.patientId))
+					.innerJoin(
+						patients,
+						and(
+							eq(patients.id, installmentContracts.patientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
 					.where(and(eq(installmentContracts.id, id), eq(installmentContracts.organizationId, orgId)))
 					.limit(1);
 
@@ -611,7 +664,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				});
 			}
 
-			return reply.send({ data: result });
+			return reply.send({ success: true, data: result });
 		},
 	);
 }
