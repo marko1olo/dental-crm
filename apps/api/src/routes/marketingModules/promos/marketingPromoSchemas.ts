@@ -32,14 +32,16 @@ export const promoStatsSchema = z.preprocess(
 		revenueKopecks: z.number().int().nonnegative().default(0),
 		budgetSpentKopecks: z.number().int().nonnegative().default(0),
 		romiPercent: z.number().default(0),
-	}),
+	}).strict(),
 );
 
-export const promoTemplatesSchema = z.object({
-	sms: z.string().min(1),
-	whatsapp: z.string().min(1),
-	telegram: z.string().min(1),
-});
+export const promoTemplatesSchema = z
+	.object({
+		sms: z.string().min(1),
+		whatsapp: z.string().min(1),
+		telegram: z.string().min(1),
+	})
+	.strict();
 
 export const marketingPromoSchema = z.preprocess(
 	(raw: unknown) => {
@@ -80,7 +82,7 @@ export const marketingPromoSchema = z.preprocess(
 		templates: promoTemplatesSchema,
 		recommendedSegment: z.string().default("no_visit_6m"),
 		createdAt: z.string().default(() => new Date().toISOString()),
-	}),
+	}).strict(),
 );
 
 export type StoredMarketingPromo = z.infer<typeof marketingPromoSchema>;

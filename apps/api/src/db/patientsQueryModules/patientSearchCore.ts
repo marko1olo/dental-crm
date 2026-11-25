@@ -169,6 +169,7 @@ interface PatientWithLegacyProps extends Patient {
 export async function getPatientsFromDb(
 	organizationId: string,
 	options: GetPatientsOptions = {},
+	tx?: TenantDb,
 ): Promise<Patient[]> {
 	if (useInMemory()) {
 		let list: Patient[] = inMemoryPatients;
@@ -280,7 +281,8 @@ export async function getPatientsFromDb(
 			}
 		}
 		const whereClause = and(...conditions);
-		let ptsQuery = db
+		const executor = tx ?? db;
+		let ptsQuery = executor
 			.select()
 			.from(schema.patients)
 			.where(whereClause)
@@ -301,6 +303,7 @@ export async function getPatientsFromDb(
 		const balances = await patientAccountBalancesRub(
 			organizationId,
 			pts.map((p) => p.id),
+			tx,
 		);
 		return pts.map((p) => rowToPatient(p, balances.get(p.id) ?? null));
 	} catch (error) {
@@ -398,6 +401,7 @@ export async function updatePatientInDb(
 	organizationId: string,
 	patientId: string,
 	input: UpdatePatientInput,
+	tx?: TenantDb,
 ): Promise<Patient | null> {
 	if (useInMemory()) {
 		/*
@@ -469,8 +473,9 @@ export async function updatePatientInDb(
 			updateData.weightKg =
 				input.weightKg !== null ? String(input.weightKg) : null;
 
+		const executor = tx ?? db;
 		if (input.familyGroupId !== undefined || hasAdminUpdates) {
-			const [current] = await db
+			const [current] = await executor
 				.select({
 					familyGroupId: schema.patients.familyGroupId,
 					administrativeProfile: schema.patients.administrativeProfile,
@@ -500,7 +505,7 @@ export async function updatePatientInDb(
 				}
 
 				if (input.familyGroupId !== null) {
-				const [family] = await db
+				const [family] = await executor
 					.select({
 						id: schema.familyGroups.id,
 						headPatientId: schema.familyGroups.headPatientId,
@@ -523,7 +528,7 @@ export async function updatePatientInDb(
 				const ownerId = family.headPatientId || family.primaryPatientId;
 				if (ownerId && ownerId !== patientId) {
 					// Автоматически гарантируем авторизацию родственной связи для списания с семейного депозита (SEV-1 BOLA fix)
-					const [existingRel] = await db
+					const [existingRel] = await executor
 						.select({ id: schema.patientRelationships.id })
 						.from(schema.patientRelationships)
 						.where(
@@ -544,7 +549,7 @@ export async function updatePatientInDb(
 						.limit(1);
 
 					if (existingRel) {
-						await db
+						await executor
 							.update(schema.patientRelationships)
 							.set({
 								canSpendFamilyWallet: true,
@@ -558,7 +563,7 @@ export async function updatePatientInDb(
 								),
 							);
 					} else {
-						await db.insert(schema.patientRelationships).values({
+						await executor.insert(schema.patientRelationships).values({
 							organizationId,
 							patientId: ownerId,
 							relatedPatientId: patientId,
@@ -620,7 +625,7 @@ export async function updatePatientInDb(
 		}
 	}
 
-		const [updated] = await db
+		const [updated] = await executor
 			.update(schema.patients)
 			.set(updateData)
 			/* organizationId обязателен в условии. Без него запись шла только
@@ -643,9 +648,11 @@ export async function updatePatientInDb(
 		   экран: отдать в ней ноль значило бы гасить долг нажатием «Сохранить» в
 		   анкете. У пациента с долгом 6 000,00 ₽ так и было бы — проверено
 		   маршрутом PUT /api/patients/:id в tests/routes/patientCardBalanceIsReal. */
-		const balances = await patientAccountBalancesRub(organizationId, [
-			updated.id,
-		]);
+		const balances = await patientAccountBalancesRub(
+			organizationId,
+			[updated.id],
+			tx,
+		);
 		return rowToPatient(updated, balances.get(updated.id) ?? null);
 	} catch (error) {
 		/* См. комментарий в createPatientInDb. Здесь подмена памятью давала

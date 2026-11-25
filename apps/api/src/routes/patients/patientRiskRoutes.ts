@@ -9,12 +9,15 @@ import { computePatientNoShowRisk } from "../../db/patientNoShowRiskQuery.js";
 import {
 	PATIENT_ID_UUID_PATTERN,
 	requireClinicOrganizationId,
+	sendPatientNotFound,
 	sendPatientRouteValidationError,
 } from "./helpers.js";
 
-const predictNoShowSchema = z.object({
-	patientId: z.string().regex(PATIENT_ID_UUID_PATTERN),
-});
+const predictNoShowSchema = z
+	.object({
+		patientId: z.string().regex(PATIENT_ID_UUID_PATTERN),
+	})
+	.strict();
 
 export function registerPatientRiskRoutes(app: FastifyInstance) {
 	app.post("/api/ai/predict-no-show", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -28,6 +31,10 @@ export function registerPatientRiskRoutes(app: FastifyInstance) {
 		}
 
 		const outcome = await computePatientNoShowRisk(orgId, parsed.data.patientId);
+
+		if (outcome.kind === "patient_not_found") {
+			return sendPatientNotFound(reply);
+		}
 
 		if (outcome.kind === "not_enough_history") {
 			return reply.code(422).send({

@@ -20,7 +20,7 @@
  * решение принимает человек, а не порог.
  */
 import { and, desc, eq, lt } from "drizzle-orm";
-import { db } from "./client.js";
+import { withTenantCtx } from "./rls.js";
 import * as schema from "./schema.js";
 
 /** Ровно те три значения, которые понимает экран. */
@@ -51,6 +51,7 @@ type PatientNoShowRisk = {
 const MINIMUM_HISTORY_FOR_RISK = 2;
 
 export type NoShowRiskOutcome =
+	| { kind: "patient_not_found" }
 	| { kind: "computed"; risk: PatientNoShowRisk }
 	| { kind: "not_enough_history"; consideredAppointments: number };
 
@@ -69,23 +70,42 @@ export async function computePatientNoShowRisk(
 	patientId: string,
 ): Promise<NoShowRiskOutcome> {
 	/*
-	 * Берутся только ПРОШЕДШИЕ записи: запланированная на будущее ничего не говорит
-	 * о том, придёт ли человек. Фильтр по клинике стоит в SQL, а не после выборки.
+	 * Проверяем существование пациента в клинике под RLS-контекстом и берём только
+	 * ПРОШЕДШИЕ записи: запланированная на будущее ничего не говорит о том, придёт ли человек.
 	 */
-	const rows = await db
-		.select({
-			status: schema.appointments.status,
-			startsAt: schema.appointments.startsAt,
-		})
-		.from(schema.appointments)
-		.where(
-			and(
-				eq(schema.appointments.organizationId, orgId),
-				eq(schema.appointments.patientId, patientId),
-				lt(schema.appointments.startsAt, new Date()),
-			),
-		)
-		.orderBy(desc(schema.appointments.startsAt));
+	const rows = await withTenantCtx(orgId, async (tx) => {
+		const [patient] = await tx
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.organizationId, orgId),
+					eq(schema.patients.id, patientId),
+				),
+			)
+			.limit(1);
+
+		if (!patient) return null;
+
+		return tx
+			.select({
+				status: schema.appointments.status,
+				startsAt: schema.appointments.startsAt,
+			})
+			.from(schema.appointments)
+			.where(
+				and(
+					eq(schema.appointments.organizationId, orgId),
+					eq(schema.appointments.patientId, patientId),
+					lt(schema.appointments.startsAt, new Date()),
+				),
+			)
+			.orderBy(desc(schema.appointments.startsAt));
+	});
+
+	if (!rows) {
+		return { kind: "patient_not_found" };
+	}
 
 	/*
 	 * «Запланирована» и «подтверждена» в прошлом — это не исход, а незакрытая

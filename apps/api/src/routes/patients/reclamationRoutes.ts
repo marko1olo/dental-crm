@@ -137,11 +137,13 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				: null;
 
 		let toothNumber: number | null = null;
-		if (typeof body.toothNumber === "number" && Number.isFinite(body.toothNumber)) {
-			toothNumber = Math.round(body.toothNumber);
+		if (typeof body.toothNumber === "number" && Number.isInteger(body.toothNumber)) {
+			toothNumber = body.toothNumber;
 		} else if (typeof body.toothNumber === "string") {
-			const parsed = Number.parseInt(body.toothNumber.replace(/\D/g, ""), 10);
-			if (Number.isFinite(parsed)) toothNumber = parsed;
+			const parsed = Number(body.toothNumber);
+			if (Number.isInteger(parsed) && parsed >= 11 && parsed <= 85) {
+				toothNumber = parsed;
+			}
 		}
 
 		const warrantyCertificateId =

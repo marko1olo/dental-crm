@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { createWriteStream } from "node:fs";
-import path from "node:path";
+import fs from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -9,7 +9,12 @@ import { withTenantCtx } from "../../db/rls.js";
 import { attachments, patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
+import {
+	resolveSafeUploadPath,
+	sanitizeUploadFilename,
+	UPLOADS_DIR,
+	validateUploadMagicBytes,
+} from "./common.js";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -174,38 +179,67 @@ export const postPatientAttachmentsHandler = async (
 			});
 		}
 
+		await fs.mkdir(UPLOADS_DIR, { recursive: true });
 		const uniqueSuffix = crypto.randomUUID();
-		const safeFilename = data.filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+		const safeFilename = sanitizeUploadFilename(data.filename);
 		const filename = `${uniqueSuffix}-${safeFilename}`;
-		const storagePath = path.join(UPLOADS_DIR, filename);
+		const storagePath = resolveSafeUploadPath(filename);
+		if (!storagePath) {
+			return reply.code(400).send({
+				error: "InvalidStoragePath",
+				message: "Некорректное имя загружаемого файла.",
+			});
+		}
 
-		// Stream file to disk and calculate sha256
+		// Stream file to disk, inspect header magic bytes, and calculate sha256
 		const hash = crypto.createHash("sha256");
-		let sha256 = "";
+		const headerChunks: Buffer[] = [];
+		let headerBytes = 0;
 
-		// Create a write stream
 		const writeStream = createWriteStream(storagePath);
 
-		data.file.on("data", (chunk: Buffer) => hash.update(chunk));
+		data.file.on("data", (chunk: Buffer) => {
+			hash.update(chunk);
+			if (headerBytes < 512) {
+				headerChunks.push(chunk);
+				headerBytes += chunk.length;
+			}
+		});
 
 		await pipeline(data.file, writeStream);
-		sha256 = hash.digest("hex");
+		const headerBuffer = Buffer.concat(headerChunks).subarray(0, 512);
+		if (!validateUploadMagicBytes(headerBuffer, data.mimetype)) {
+			await fs.rm(storagePath, { force: true }).catch(() => undefined);
+			return reply.code(400).send({
+				error: "UnsupportedFileType",
+				message: "Неподдерживаемый или повреждённый формат файла вложения.",
+			});
+		}
+		const sha256 = hash.digest("hex");
 
-		const [attachment] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.insert(attachments)
-				.values({
-					organizationId: orgId,
-					patientId,
-					fileName: data.filename,
-					mimeType: data.mimetype,
-					storagePath: filename,
-					sha256,
-				})
-				.returning(),
-		);
+		let attachment: typeof attachments.$inferSelect | undefined;
+		try {
+			const inserted = await withTenantCtx(orgId, async (tx) =>
+				tx
+					.insert(attachments)
+					.values({
+						organizationId: orgId,
+						patientId,
+						fileName: safeFilename,
+						mimeType: data.mimetype,
+						storagePath: filename,
+						sha256,
+					})
+					.returning(),
+			);
+			attachment = inserted[0];
+		} catch (dbErr) {
+			await fs.rm(storagePath, { force: true }).catch(() => undefined);
+			throw dbErr;
+		}
 
 		if (!attachment) {
+			await fs.rm(storagePath, { force: true }).catch(() => undefined);
 			return reply.code(500).send({
 				error: "AttachmentNotSaved",
 				message:
@@ -237,8 +271,24 @@ export const postPatientAttachmentsHandler = async (
 };
 
 export function registerPatientAttachmentsRoutes(app: FastifyInstance) {
-	app.get("/api/patients/:patientId/attachments", getPatientAttachmentsHandler);
-	app.get("/api/files/patients/:patientId/attachments", getPatientAttachmentsHandler);
-	app.post("/api/patients/:patientId/attachments", postPatientAttachmentsHandler);
-	app.post("/api/files/patients/:patientId/attachments", postPatientAttachmentsHandler);
+	app.get(
+		"/api/patients/:patientId/attachments",
+		{ config: { tenantTxSelfManaged: true } },
+		getPatientAttachmentsHandler,
+	);
+	app.get(
+		"/api/files/patients/:patientId/attachments",
+		{ config: { tenantTxSelfManaged: true } },
+		getPatientAttachmentsHandler,
+	);
+	app.post(
+		"/api/patients/:patientId/attachments",
+		{ config: { tenantTxSelfManaged: true } },
+		postPatientAttachmentsHandler,
+	);
+	app.post(
+		"/api/files/patients/:patientId/attachments",
+		{ config: { tenantTxSelfManaged: true } },
+		postPatientAttachmentsHandler,
+	);
 }

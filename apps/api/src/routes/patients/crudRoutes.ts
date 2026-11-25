@@ -4,6 +4,8 @@ import {
 	updatePatientSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import { sql } from "drizzle-orm";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	createPatientInDb,
 	createPatientSafeInDb,
@@ -213,13 +215,11 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 							clinicalRole:
 								identity.clinicalRole ??
 								reqUser?.clinicalRole ??
-								(typeof request.headers["x-clinical-role"] === "string"
-									? request.headers["x-clinical-role"]
-									: null),
+								(isSuperAdmin ? headerClinicalRole : null),
 							canSignMedicalRecords:
 								identity.canSignMedicalRecords ??
 								reqUser?.canSignMedicalRecords ??
-								request.headers["x-can-sign-medical-records"] === "true",
+								(isSuperAdmin && request.headers["x-can-sign-medical-records"] === "true"),
 						})
 					: { hasClinicalAccess: false, reason: "Анонимный запрос без роли медработника" };
 
@@ -266,18 +266,14 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const rawPayloadCreate = (request.body && typeof request.body === "object" ? request.body : {}) as {
-			administrativeProfile?: { isAnonymous?: boolean; insurancePolicyNumber?: string | null; snils?: string | null };
-			isAnonymous?: boolean;
-		};
 		const isAnonCreate =
-			Boolean(rawPayloadCreate.isAnonymous) ||
-			Boolean(rawPayloadCreate.administrativeProfile?.isAnonymous) ||
+			Boolean(input.isAnonymous) ||
+			Boolean(input.administrativeProfile?.isAnonymous) ||
 			Boolean(input.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(input.fullName?.toLowerCase().includes("аноним"));
 		const policyCreate =
-			typeof rawPayloadCreate.administrativeProfile?.insurancePolicyNumber === "string"
-				? rawPayloadCreate.administrativeProfile.insurancePolicyNumber.trim()
+			typeof input.administrativeProfile?.insurancePolicyNumber === "string"
+				? input.administrativeProfile.insurancePolicyNumber.trim()
 				: "";
 		if (isAnonCreate && policyCreate.length > 0) {
 			return reply.code(422).send({
@@ -286,21 +282,12 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 					"Привязка полиса ОМС к анонимной карте не допускается. Для использования полиса ОМС требуется деанонимизация пациента с указанием паспортных данных и СНИЛС.",
 			});
 		}
-		const rawBody =
-			request.body && typeof request.body === "object"
-				? (request.body as Record<string, unknown>)
-				: {};
 		const inputWithSnils = {
 			...input,
-			snils:
-				(rawBody.snils as string | undefined) ??
-				(rawPayloadCreate.administrativeProfile?.snils as string | undefined) ??
-				null,
+			snils: input.snils ?? input.administrativeProfile?.snils ?? null,
 		};
 		try {
-			const allowDuplicate =
-				rawBody.allowDuplicate === true ||
-				(input as { allowDuplicate?: boolean }).allowDuplicate === true;
+			const allowDuplicate = input.allowDuplicate === true;
 			const safeResult = await createPatientSafeInDb(
 				orgId,
 				inputWithSnils,
@@ -380,17 +367,14 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const rawPayload = (request.body && typeof request.body === "object" ? request.body : {}) as {
-			administrativeProfile?: { isAnonymous?: boolean; insurancePolicyNumber?: string | null };
-		};
 		const isAnonUpdate =
 			Boolean(input.isAnonymous) ||
-			Boolean(rawPayload.administrativeProfile?.isAnonymous) ||
+			Boolean(input.administrativeProfile?.isAnonymous) ||
 			Boolean(input.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(input.fullName?.toLowerCase().includes("аноним"));
 		const policyUpdate =
-			typeof rawPayload.administrativeProfile?.insurancePolicyNumber === "string"
-				? rawPayload.administrativeProfile.insurancePolicyNumber.trim()
+			typeof input.administrativeProfile?.insurancePolicyNumber === "string"
+				? input.administrativeProfile.insurancePolicyNumber.trim()
 				: "";
 		if (isAnonUpdate && policyUpdate.length > 0) {
 			return reply.code(422).send({
@@ -401,28 +385,43 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const dbPatients = await getPatientsFromDb(orgId);
-			const rawBody =
-				request.body && typeof request.body === "object"
-					? (request.body as Record<string, unknown>)
-					: {};
+			const targetPatientId = params.patientId;
 			const inputWithSnils: PatientDuplicateInput = {
 				fullName: input.fullName,
 				birthDate: input.birthDate,
 				phone: input.phone,
-				snils: (rawBody.snils as string | undefined) ?? null,
-				administrativeProfile: (rawBody.administrativeProfile as Record<string, unknown> | undefined) ?? null,
+				snils: input.snils ?? input.administrativeProfile?.snils ?? null,
+				administrativeProfile: (input.administrativeProfile as Record<string, unknown> | undefined) ?? null,
 			};
-			const duplicate = findPatientDuplicate(
-				dbPatients,
-				inputWithSnils,
-				params.patientId,
-			);
-			if (duplicate) return sendPatientDuplicate(reply, duplicate);
 
-			const patient = await updatePatientInDb(orgId, params.patientId, input);
-			if (!patient) return sendPatientNotFound(reply);
-			return patientSchema.parse(patient);
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${`${orgId}:patient_dedup`}))`,
+				);
+				const dbPatients = await getPatientsFromDb(orgId, {}, tx);
+				const duplicate = findPatientDuplicate(
+					dbPatients,
+					inputWithSnils,
+					targetPatientId,
+				);
+				if (duplicate) {
+					return { kind: "duplicate" as const, duplicate };
+				}
+
+				const patient = await updatePatientInDb(orgId, targetPatientId, input, tx);
+				if (!patient) {
+					return { kind: "not_found" as const };
+				}
+				return { kind: "ok" as const, patient };
+			});
+
+			if (txResult.kind === "duplicate") {
+				return sendPatientDuplicate(reply, txResult.duplicate);
+			}
+			if (txResult.kind === "not_found") {
+				return sendPatientNotFound(reply);
+			}
+			return patientSchema.parse(txResult.patient);
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : "";
 			if (

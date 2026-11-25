@@ -1,7 +1,7 @@
 import { and, desc, eq, like, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { db } from "../../db/client.js";
+import { isDemoShowcaseMode } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	attachments,
@@ -54,14 +54,16 @@ const photoSlotItemSchema = z.union([
 	}).strict(),
 ]);
 
-const photoProtocolPayloadSchema = z.object({
-	presetId: z.string().min(1).default("express_6_slots"),
-	slots: z.record(z.string(), photoSlotItemSchema),
-	visitId: z.string().uuid().optional().nullable(),
-	stage: z.string().optional().default("before"),
-	notes: z.string().optional().nullable(),
-	dsdAnalysis: dsdAnalysisDataSchema.optional().nullable(),
-});
+const photoProtocolPayloadSchema = z
+	.object({
+		presetId: z.string().min(1).default("express_6_slots"),
+		slots: z.record(z.string(), photoSlotItemSchema),
+		visitId: z.string().uuid().optional().nullable(),
+		stage: z.string().optional().default("before"),
+		notes: z.string().optional().nullable(),
+		dsdAnalysis: dsdAnalysisDataSchema.optional().nullable(),
+	})
+	.strict();
 
 export function registerPatientPhotoRoutes(app: FastifyInstance) {
 	/**
@@ -80,7 +82,13 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 
 		// Защита от краха PostgreSQL 22P02: валидация UUID перед запросом в БД (Мандат 8e / Дефект 2)
 		if (!patientId || !UUID_REGEX.test(patientId)) {
-			if (patientId === "chairside" || patientId === "chairside-unassigned" || patientId === "test" || orgId.startsWith("demo-")) {
+			if (
+				isDemoShowcaseMode() &&
+				(patientId === "chairside" ||
+					patientId === "chairside-unassigned" ||
+					patientId === "test" ||
+					orgId.startsWith("demo-"))
+			) {
 				return reply.send({
 					success: true,
 					protocol: null,
@@ -90,74 +98,80 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			return sendPatientNotFound(reply);
 		}
 
-		// Проверка существования пациента в организации (Tenant Isolation)
-		const [patient] = await db
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-			.limit(1);
-
-		if (!patient) {
-			return sendPatientNotFound(reply);
-		}
-
 		try {
-			// 1. Получаем последний активный фотопротокол
-			const [latestProtocol] = await db
-				.select()
-				.from(patientPhotoProtocols)
-				.where(
-					and(
-						eq(patientPhotoProtocols.patientId, patientId),
-						eq(patientPhotoProtocols.organizationId, orgId),
-					),
-				)
-				.orderBy(desc(patientPhotoProtocols.updatedAt))
-				.limit(1);
+			const loaded = await withTenantCtx(orgId, async (tx) => {
+				const [patient] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.limit(1);
 
-			// 2. Получаем вложения изображений из attachments
-			const imageAttachments = await db
-				.select({
-					id: attachments.id,
-					fileName: attachments.fileName,
-					mimeType: attachments.mimeType,
-					storagePath: attachments.storagePath,
-					createdAt: attachments.createdAt,
-					visitId: attachments.visitId,
-				})
-				.from(attachments)
-				.where(
-					and(
-						eq(attachments.patientId, patientId),
-						eq(attachments.organizationId, orgId),
-						or(
-							like(attachments.mimeType, "image/%"),
-							like(attachments.fileName, "%.webp"),
-							like(attachments.fileName, "%.jpg"),
-							like(attachments.fileName, "%.jpeg"),
-							like(attachments.fileName, "%.png"),
+				if (!patient) return null;
+
+				// 1. Получаем последний активный фотопротокол
+				const [latestProtocol] = await tx
+					.select()
+					.from(patientPhotoProtocols)
+					.where(
+						and(
+							eq(patientPhotoProtocols.patientId, patientId),
+							eq(patientPhotoProtocols.organizationId, orgId),
 						),
-					),
-				)
-				.orderBy(desc(attachments.createdAt));
+					)
+					.orderBy(desc(patientPhotoProtocols.updatedAt))
+					.limit(1);
 
-			// 3. Получаем ссылки на фото визитов
-			const examLinks = await db
-				.select({
-					id: visitExaminationPhotoLinks.id,
-					visitId: visitExaminationPhotoLinks.visitId,
-					photoUrl: visitExaminationPhotoLinks.photoUrl,
-					caption: visitExaminationPhotoLinks.caption,
-					createdAt: visitExaminationPhotoLinks.createdAt,
-				})
-				.from(visitExaminationPhotoLinks)
-				.where(
-					and(
-						eq(visitExaminationPhotoLinks.patientId, patientId),
-						eq(visitExaminationPhotoLinks.organizationId, orgId),
-					),
-				)
-				.orderBy(desc(visitExaminationPhotoLinks.createdAt));
+				// 2. Получаем вложения изображений из attachments
+				const imageAttachments = await tx
+					.select({
+						id: attachments.id,
+						fileName: attachments.fileName,
+						mimeType: attachments.mimeType,
+						storagePath: attachments.storagePath,
+						createdAt: attachments.createdAt,
+						visitId: attachments.visitId,
+					})
+					.from(attachments)
+					.where(
+						and(
+							eq(attachments.patientId, patientId),
+							eq(attachments.organizationId, orgId),
+							or(
+								like(attachments.mimeType, "image/%"),
+								like(attachments.fileName, "%.webp"),
+								like(attachments.fileName, "%.jpg"),
+								like(attachments.fileName, "%.jpeg"),
+								like(attachments.fileName, "%.png"),
+							),
+						),
+					)
+					.orderBy(desc(attachments.createdAt));
+
+				// 3. Получаем ссылки на фото визитов
+				const examLinks = await tx
+					.select({
+						id: visitExaminationPhotoLinks.id,
+						visitId: visitExaminationPhotoLinks.visitId,
+						photoUrl: visitExaminationPhotoLinks.photoUrl,
+						caption: visitExaminationPhotoLinks.caption,
+						createdAt: visitExaminationPhotoLinks.createdAt,
+					})
+					.from(visitExaminationPhotoLinks)
+					.where(
+						and(
+							eq(visitExaminationPhotoLinks.patientId, patientId),
+							eq(visitExaminationPhotoLinks.organizationId, orgId),
+						),
+					)
+					.orderBy(desc(visitExaminationPhotoLinks.createdAt));
+
+				return { latestProtocol, imageAttachments, examLinks };
+			});
+
+			if (!loaded) {
+				return sendPatientNotFound(reply);
+			}
+			const { latestProtocol, imageAttachments, examLinks } = loaded;
 
 			const photos = [
 				...imageAttachments.map((att) => ({
@@ -228,12 +242,15 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Проверка существования пациента
-		const [patient] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-			.limit(1);
+		// Проверка существования пациента (RLS-контекст клиники)
+		const patient = await withTenantCtx(orgId, async (tx) => {
+			const [row] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+				.limit(1);
+			return row ?? null;
+		});
 
 		if (!patient) {
 			return sendPatientNotFound(reply);
@@ -373,29 +390,33 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
 		}
 
-		const [visit] = await db
-			.select({ id: visits.id, patientId: visits.patientId })
-			.from(visits)
-			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-			.limit(1);
+		const loaded = await withTenantCtx(orgId, async (tx) => {
+			const [visit] = await tx
+				.select({ id: visits.id, patientId: visits.patientId })
+				.from(visits)
+				.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+				.limit(1);
+			if (!visit) return null;
 
-		if (!visit) {
+			const [protocol] = await tx
+				.select()
+				.from(patientPhotoProtocols)
+				.where(
+					and(
+						eq(patientPhotoProtocols.visitId, visitId),
+						eq(patientPhotoProtocols.organizationId, orgId),
+					),
+				)
+				.orderBy(desc(patientPhotoProtocols.updatedAt))
+				.limit(1);
+			return { protocol: protocol || null };
+		});
+
+		if (!loaded) {
 			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
 		}
 
-		const [protocol] = await db
-			.select()
-			.from(patientPhotoProtocols)
-			.where(
-				and(
-					eq(patientPhotoProtocols.visitId, visitId),
-					eq(patientPhotoProtocols.organizationId, orgId),
-				),
-			)
-			.orderBy(desc(patientPhotoProtocols.updatedAt))
-			.limit(1);
-
-		return reply.send({ success: true, protocol: protocol || null });
+		return reply.send({ success: true, protocol: loaded.protocol });
 	});
 
 	app.post("/api/visits/:visitId/photo-protocol", async (request, reply) => {
@@ -404,16 +425,6 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		const { visitId } = request.params as { visitId: string };
 
 		if (!visitId || !UUID_REGEX.test(visitId)) {
-			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
-		}
-
-		const [visit] = await db
-			.select({ id: visits.id, patientId: visits.patientId })
-			.from(visits)
-			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-			.limit(1);
-
-		if (!visit) {
 			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
 		}
 
@@ -445,20 +456,71 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
+		const effectiveStage = stage || "during";
 
-		const [created] = await db
-			.insert(patientPhotoProtocols)
-			.values({
-				organizationId: orgId,
-				patientId: visit.patientId,
-				visitId,
-				presetId,
-				slots: effectiveSlots,
-				stage: stage || "during",
-				notes: notes || null,
-			})
-			.returning();
+		const txOutcome = await withTenantCtx(orgId, async (tx) => {
+			const [visit] = await tx
+				.select({ id: visits.id, patientId: visits.patientId })
+				.from(visits)
+				.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+				.limit(1);
 
-		return reply.send({ success: true, protocol: created });
+			if (!visit) {
+				return { kind: "visit_not_found" as const };
+			}
+
+			const [existing] = await tx
+				.select({ id: patientPhotoProtocols.id })
+				.from(patientPhotoProtocols)
+				.where(
+					and(
+						eq(patientPhotoProtocols.visitId, visitId),
+						eq(patientPhotoProtocols.organizationId, orgId),
+						eq(patientPhotoProtocols.stage, effectiveStage),
+					),
+				)
+				.orderBy(desc(patientPhotoProtocols.updatedAt))
+				.for("update")
+				.limit(1);
+
+			if (existing) {
+				const [updated] = await tx
+					.update(patientPhotoProtocols)
+					.set({
+						presetId,
+						slots: effectiveSlots,
+						notes: notes || null,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patientPhotoProtocols.id, existing.id),
+							eq(patientPhotoProtocols.organizationId, orgId),
+						),
+					)
+					.returning();
+				return { kind: "saved" as const, protocol: updated };
+			}
+
+			const [created] = await tx
+				.insert(patientPhotoProtocols)
+				.values({
+					organizationId: orgId,
+					patientId: visit.patientId,
+					visitId,
+					presetId,
+					slots: effectiveSlots,
+					stage: effectiveStage,
+					notes: notes || null,
+				})
+				.returning();
+			return { kind: "saved" as const, protocol: created };
+		});
+
+		if (txOutcome.kind === "visit_not_found") {
+			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
+		}
+
+		return reply.send({ success: true, protocol: txOutcome.protocol });
 	});
 }

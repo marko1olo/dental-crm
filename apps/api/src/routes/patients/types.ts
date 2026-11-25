@@ -49,18 +49,28 @@ export type PatientArchiveRowLike = {
  * но цель кампании — единый Zod-gate: не-object / wrong-type → 400 с прежними RU
  * текстами, AUTH (requireClinicOrganizationId) остаётся первым.
  */
-export const patientReclamationCreateBodySchema = z.object({
-	complicationDetails: z.unknown().optional(),
-	proposedAction: z.unknown().optional(),
-	doctorId: z.unknown().optional(),
-	toothNumber: z.unknown().optional(),
-	warrantyCertificateId: z.unknown().optional(),
-	defectType: z.unknown().optional(),
-});
+export const patientReclamationCreateBodySchema = z
+	.object({
+		complicationDetails: z.string().optional(),
+		proposedAction: z.string().max(2000).nullable().optional(),
+		doctorId: z.string().uuid().nullable().optional(),
+		toothNumber: z
+			.union([
+				z.number().int().min(11).max(85),
+				z.string().trim().regex(/^\d{2}$/),
+			])
+			.nullable()
+			.optional(),
+		warrantyCertificateId: z.string().uuid().nullable().optional(),
+		defectType: z.string().max(128).nullable().optional(),
+	})
+	.strict();
 
-export const patientReclamationStatusBodySchema = z.object({
-	status: z.unknown().optional(),
-});
+export const patientReclamationStatusBodySchema = z
+	.object({
+		status: z.enum(["resolved", "under_review"]).optional(),
+	})
+	.strict();
 
 export const patientTaskTicketCreateBodySchema = z
 	.object({
@@ -77,9 +87,11 @@ export const patientTaskTicketStatusBodySchema = z
 	})
 	.strict();
 
-export const patientArchiveStatusBodySchema = z.object({
-	isBlacklisted: z.unknown().optional(),
-});
+export const patientArchiveStatusBodySchema = z
+	.object({
+		isBlacklisted: z.boolean().optional(),
+	})
+	.strict();
 
 export const patientArchiveBodySchema = z
 	.object({
@@ -89,6 +101,7 @@ export const patientArchiveBodySchema = z
 		blacklistReason: z.string().optional(),
 		notes: z.string().optional(),
 	})
+	.strict()
 	.refine((data) => Boolean(data.reasonCode || data.archiveReason), {
 		message:
 			"Укажите причину архивации (код из справочника 323-ФЗ или текстовое описание)",

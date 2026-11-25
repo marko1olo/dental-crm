@@ -3,7 +3,7 @@
  */
 
 import { eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	marketingPromoSchema,
@@ -174,7 +174,7 @@ export async function readOrSeedOrganizationPromos(orgId: string): Promise<{
 	flags: Record<string, unknown>;
 	promos: StoredMarketingPromo[];
 }> {
-	return db.transaction(async (tx) => {
+	return withTenantCtx(orgId, async (tx) => {
 		const [org] = await tx
 			.select({ flags: organizations.workspaceFeatureFlags })
 			.from(organizations)

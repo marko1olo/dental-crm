@@ -125,6 +125,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					),
 				),
 				db.select({
+					amountKopecks: cashOperations.amountKopecks,
 					amountRub: cashOperations.amountRub,
 					metadata: cashOperations.metadata,
 					reasonCode: cashOperations.reasonCode,

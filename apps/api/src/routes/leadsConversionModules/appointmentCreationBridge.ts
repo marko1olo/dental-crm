@@ -9,6 +9,7 @@ import { z } from "zod";
 import type { Appointment } from "@dental/shared";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import type { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { chairs, crmLeads, users } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import type { wsBroker } from "../../services/websocketBroker.js";
@@ -18,17 +19,36 @@ import { broadcastLeadConversion, recordLeadStageTransition } from "./leadStageT
 import { saveLeadCommunicationConsents } from "./leadConsentBridge.js";
 import { resolveOrCreatePatientFromLead } from "./patientCreationBridge.js";
 
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-export async function resolveDoctorAndChair(tx: DbTransaction, orgId: string, payload: ConvertLeadPayload) {
+export async function resolveDoctorAndChair(tx: TenantDb, orgId: string, payload: ConvertLeadPayload) {
 	let doctor: { id: string } | undefined;
 	const candDoc = payload.doctorId;
 	if (candDoc && z.string().uuid().safeParse(candDoc).success) {
-		const [found] = await tx.select({ id: users.id }).from(users).where(and(eq(users.id, candDoc), eq(users.organizationId, orgId), eq(users.isActive, true))).limit(1);
+		const [found] = await tx
+			.select({ id: users.id })
+			.from(users)
+			.where(
+				and(
+					eq(users.id, candDoc),
+					eq(users.organizationId, orgId),
+					eq(users.role, "doctor"),
+					eq(users.isActive, true),
+				),
+			)
+			.limit(1);
 		doctor = found;
 	}
 	if (!doctor) {
-		const [fallback] = await tx.select({ id: users.id }).from(users).where(and(eq(users.organizationId, orgId), eq(users.isActive, true))).limit(1);
+		const [fallback] = await tx
+			.select({ id: users.id })
+			.from(users)
+			.where(
+				and(
+					eq(users.organizationId, orgId),
+					eq(users.role, "doctor"),
+					eq(users.isActive, true),
+				),
+			)
+			.limit(1);
 		doctor = fallback;
 	}
 
@@ -58,18 +78,23 @@ export async function convertLeadToAppointment(params: {
 	req: FastifyRequest;
 	reply: FastifyReply;
 }) {
-	const { db, wsBroker, organizationId, leadId, payload, req, reply } = params;
+	const { wsBroker, organizationId, leadId, payload, req, reply } = params;
 	const apptStart = payload.appointmentStart?.trim();
 	const apptEnd = payload.appointmentEnd?.trim();
 	const hasDates = Boolean(apptStart && apptEnd);
 
-	const result = await db.transaction(async (tx) => {
+	const result = await withTenantCtx(organizationId, async (tx) => {
 		const [lead] = await tx.select().from(crmLeads).where(
 			and(eq(crmLeads.id, leadId), eq(crmLeads.organizationId, organizationId)),
 		).for("update").limit(1);
 
 		if (!lead) return { notFound: true as const };
-		if (lead.status === "consult_booked" || lead.status === "converted") return { alreadyConverted: true as const };
+		if (
+			lead.status === "consult_booked" ||
+			(lead.status === "converted" && !hasDates)
+		) {
+			return { alreadyConverted: true as const };
+		}
 
 		const { doctor, resolvedChairId } = hasDates ? await resolveDoctorAndChair(tx, organizationId, payload) : {};
 		if (hasDates && !doctor) return { doctorNotFound: true as const };

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Camera, RefreshCw, Sparkles, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 
 export interface PatientPhotoItem {
 	id: string;
@@ -38,9 +39,9 @@ export const PatientPhotosTab: React.FC<PatientPhotosTabProps> = ({
 
 		try {
 			const res = await fetch(`/api/patients/${patientId}/photos`, {
-				headers: {
+				headers: denteClinicalReadHeaders({
 					Accept: "application/json",
-				},
+				}),
 			});
 
 			if (!res.ok) {

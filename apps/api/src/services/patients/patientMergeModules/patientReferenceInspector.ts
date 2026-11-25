@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/rls.js";
 
 /** Имя таблицы или колонки из каталога. Защита от подстановки в динамический SQL. */
 export const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
@@ -19,10 +20,10 @@ type SchemaColumnRow = {
  * Все колонки базы данных, ссылающиеся на пациента: и по внешнему ключу, и по имени.
  * Список извлекается динамически из `information_schema` во избежание оставления сирот.
  */
-export async function patientReferenceColumns(): Promise<
-	PatientReferenceColumn[]
-> {
-	const result = await db.execute<SchemaColumnRow>(sql`
+export async function patientReferenceColumns(
+	executor: TenantDb | typeof db = db,
+): Promise<PatientReferenceColumn[]> {
+	const result = await executor.execute<SchemaColumnRow>(sql`
 		select tc.table_name, kcu.column_name
 		from information_schema.table_constraints tc
 		join information_schema.key_column_usage kcu on kcu.constraint_name = tc.constraint_name

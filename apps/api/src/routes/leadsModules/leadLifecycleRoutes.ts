@@ -8,6 +8,7 @@ import {
 	patchLeadStageSchema,
 } from "@dental/shared";
 import {
+	isDemoShowcaseMode,
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
@@ -16,6 +17,7 @@ import {
 	isValidUuid,
 } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	crmLeads,
 	crmLeadStageHistory,
@@ -26,8 +28,8 @@ import { wsBroker } from "../../services/websocketBroker.js";
 import {
 	DEMO_SHOWCASE_SEED_LEADS,
 	leadSchema,
-	leadStatusEnum,
 	patchLeadSchema,
+	patchLeadStatusSchema,
 } from "./types.js";
 
 export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise<void> {
@@ -45,31 +47,40 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			.where(eq(crmLeads.organizationId, organizationId))
 			.orderBy(desc(crmLeads.createdAt));
 
-		if (leads.length === 0 && organizationId === DEMO_SHOWCASE_ORG_ID) {
+		if (
+			leads.length === 0 &&
+			organizationId === DEMO_SHOWCASE_ORG_ID &&
+			isDemoShowcaseMode()
+		) {
 			try {
 				const freshStageDate = new Date(Date.now() - 3 * 60_000);
-				leads = await db
-					.insert(crmLeads)
-					.values(
-						DEMO_SHOWCASE_SEED_LEADS.map((seed) => ({
-							organizationId,
-							name: seed.name,
-							phone: seed.phone,
-							source: seed.source,
-							status: seed.status,
-							expectedRevenue: seed.expectedRevenue,
-							expectedRevenueKopecks: seed.expectedRevenue
-								? BigInt(parseKopecks(seed.expectedRevenue))
-								: null,
-							notes: seed.notes,
-							clinicalTags: [...seed.clinicalTags],
-							priority: "normal" as const,
-							stageEnteredAt: freshStageDate,
-						})),
-					)
-					.returning();
-			} catch {
-				// Ignore seed error if concurrent request already seeded
+				leads = await withTenantCtx(organizationId, async (tx) =>
+					tx
+						.insert(crmLeads)
+						.values(
+							DEMO_SHOWCASE_SEED_LEADS.map((seed) => ({
+								organizationId,
+								name: seed.name,
+								phone: seed.phone,
+								source: seed.source,
+								status: seed.status,
+								expectedRevenue: seed.expectedRevenue,
+								expectedRevenueKopecks: seed.expectedRevenue
+									? BigInt(parseKopecks(seed.expectedRevenue))
+									: null,
+								notes: seed.notes,
+								clinicalTags: [...seed.clinicalTags],
+								priority: "normal" as const,
+								stageEnteredAt: freshStageDate,
+							})),
+						)
+						.returning(),
+				);
+			} catch (seedErr) {
+				req.log.warn(
+					{ err: seedErr, organizationId },
+					"[Leads] Demo showcase seed skipped (concurrent or failed)",
+				);
 			}
 		}
 
@@ -170,7 +181,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 					? BigInt(parseKopecks(data.expectedRevenue))
 					: null,
 				notes: data.notes,
-				dropReason: data.dropReason,
+				dropReason: data.dropReason ?? data.reason ?? null,
 				assignedDoctorId: data.assignedDoctorId,
 				priority: data.priority || "normal",
 				clinicalTags: data.clinicalTags ?? [],
@@ -227,44 +238,39 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		return leadWithPatient;
 	});
 
-	app.patch("/api/leads/:id/stage", async (req, reply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+	async function executeLeadStageTransition(params: {
+		req: FastifyRequest;
+		reply: FastifyReply;
+		organizationId: string;
+		id: string;
+		idempotencyKey: string | null | undefined;
+		toStage: (typeof crmLeads.$inferInsert)["status"] & string;
+		dropReason?: string | null | undefined;
+		notes?: string | null | undefined;
+		priority?: (typeof crmLeads.$inferInsert)["priority"] | undefined;
+		clinicalTags?: string[] | undefined;
+		assignedDoctorId?: string | null | undefined;
+	}) {
+		const {
 			req,
 			reply,
-			"lead stage update",
-		);
-		if (!organizationId) return;
-
-		const idempotencyKey = extractIdempotencyKey(req);
-		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
-			});
-		}
-
-		const { id } = req.params as { id: string };
-		const parsed = patchLeadStageSchema.safeParse(req.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message:
-					parsed.error.issues[0]?.message || "Проверьте данные смены этапа.",
-			});
-		}
-		const { toStage, notes, priority, clinicalTags, assignedDoctorId } =
-			parsed.data;
-		const bodyObj = req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : {};
-		const dropReason = typeof bodyObj.dropReason === "string" ? bodyObj.dropReason : (typeof bodyObj.reason === "string" ? bodyObj.reason : null);
+			organizationId,
+			id,
+			idempotencyKey,
+			toStage,
+			dropReason,
+			notes,
+			priority,
+			clinicalTags,
+			assignedDoctorId,
+		} = params;
 
 		const identity = getRequestIdentity(req);
 		const changedByUserId =
-			identity?.userId && z.string().uuid().safeParse(identity.userId).success
-				? identity.userId
-				: null;
+			identity?.userId && isValidUuid(identity.userId) ? identity.userId : null;
 		const now = new Date();
 
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			const [lead] = await tx
 				.select()
 				.from(crmLeads)
@@ -305,8 +311,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			}
 			if (priority !== undefined) updateFields.priority = priority;
 			if (clinicalTags !== undefined) updateFields.clinicalTags = clinicalTags;
-			if (assignedDoctorId !== undefined)
+			if (assignedDoctorId !== undefined) {
 				updateFields.assignedDoctorId = assignedDoctorId;
+			}
 
 			const [updated] = await tx
 				.update(crmLeads)
@@ -335,6 +342,55 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		}
 
 		return result.lead;
+	}
+
+	app.patch("/api/leads/:id/stage", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"lead stage update",
+		);
+		if (!organizationId) return;
+
+		const idempotencyKey = extractIdempotencyKey(req);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
+		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор лида.",
+			});
+		}
+		const parsed = patchLeadStageSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					parsed.error.issues[0]?.message || "Проверьте данные смены этапа.",
+			});
+		}
+		const { toStage, notes, priority, clinicalTags, assignedDoctorId, reason, dropReason } =
+			parsed.data;
+
+		return await executeLeadStageTransition({
+			req,
+			reply,
+			organizationId,
+			id,
+			idempotencyKey,
+			toStage,
+			dropReason: dropReason ?? reason ?? null,
+			notes,
+			priority,
+			clinicalTags,
+			assignedDoctorId,
+		});
 	});
 
 	app.get("/api/leads/:id/stage-history", async (req, reply) => {
@@ -346,6 +402,12 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		if (!organizationId) return;
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор лида.",
+			});
+		}
 		const history = await db
 			.select()
 			.from(crmLeadStageHistory)
@@ -377,85 +439,29 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		}
 
 		const { id } = req.params as { id: string };
-		const statusParsed = z
-			.object({
-				status: leadStatusEnum,
-				reason: z.string().optional().nullable(),
-				dropReason: z.string().optional().nullable(),
-			})
-			.safeParse(req.body);
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор лида.",
+			});
+		}
+		const statusParsed = patchLeadStatusSchema.safeParse(req.body);
 		if (!statusParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Проверьте статус лида.",
 			});
 		}
-		const { status } = statusParsed.data;
-		const dropReason = statusParsed.data.dropReason || statusParsed.data.reason;
-		const identity = getRequestIdentity(req);
-		const changedByUserId =
-			identity?.userId && z.string().uuid().safeParse(identity.userId).success
-				? identity.userId
-				: null;
-		const now = new Date();
-
-		const result = await db.transaction(async (tx) => {
-			const [lead] = await tx
-				.select()
-				.from(crmLeads)
-				.where(
-					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
-				)
-				.for("update")
-				.limit(1);
-
-			if (!lead) return { notFound: true as const };
-
-			const fromStage = lead.status;
-			const stageStart = lead.stageEnteredAt || lead.createdAt;
-			const durationSeconds = Math.max(
-				0,
-				Math.floor((now.getTime() - stageStart.getTime()) / 1000),
-			);
-
-			await tx.insert(crmLeadStageHistory).values({
-				organizationId,
-				leadId: lead.id,
-				fromStage,
-				toStage: status,
-				changedByUserId,
-				durationSeconds,
-				createdAt: now,
-			});
-
-			const updateFields: Partial<typeof crmLeads.$inferInsert> = {
-				status,
-				stageEnteredAt: now,
-			};
-			if (status === "trash" && dropReason) {
-				updateFields.dropReason = dropReason;
-			}
-
-			const [updated] = await tx
-				.update(crmLeads)
-				.set(updateFields)
-				.where(
-					and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
-				)
-				.returning();
-
-			return { lead: updated };
+		const { status, dropReason, reason } = statusParsed.data;
+		return await executeLeadStageTransition({
+			req,
+			reply,
+			organizationId,
+			id,
+			idempotencyKey,
+			toStage: status,
+			dropReason: dropReason ?? reason ?? null,
 		});
-
-		if ("notFound" in result) return reply.code(404).send({ error: "LeadNotFound" });
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "LEAD_UPDATED",
-			payload: result.lead,
-		});
-		if (idempotencyKey) {
-			reply.header("Idempotency-Key", idempotencyKey);
-		}
-		return result.lead;
 	});
 
 	app.patch("/api/leads/:id", async (req, reply) => {
@@ -475,6 +481,12 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		}
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор лида.",
+			});
+		}
 		const parsed = patchLeadSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -521,7 +533,9 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			}
 			if (data.status !== undefined) updatePayload.status = data.status;
 			if (data.notes !== undefined) updatePayload.notes = data.notes;
-			if (data.dropReason !== undefined) updatePayload.dropReason = data.dropReason;
+			if (data.dropReason !== undefined || data.reason !== undefined) {
+				updatePayload.dropReason = data.dropReason ?? data.reason ?? null;
+			}
 			if (data.assignedDoctorId !== undefined) updatePayload.assignedDoctorId = data.assignedDoctorId;
 			if (data.priority !== undefined) updatePayload.priority = data.priority;
 			if (data.clinicalTags !== undefined) updatePayload.clinicalTags = data.clinicalTags;
@@ -593,6 +607,12 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		}
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор лида.",
+			});
+		}
 		const parsed = leadSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -600,12 +620,12 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 				message: "Проверьте поля лида: нужно непустое имя.",
 			});
 		}
-		const data = parsed.data;
-		const cleanPhone = data.phone
-			? normalizePhone(data.phone) ?? data.phone.trim()
+		const { reason, dropReason, ...restData } = parsed.data;
+		const cleanPhone = restData.phone
+			? normalizePhone(restData.phone) ?? restData.phone.trim()
 			: null;
 
-		const [lead] = await db.transaction(async (tx) => {
+		const [lead] = await withTenantCtx(organizationId, async (tx) => {
 			const [current] = await tx
 				.select()
 				.from(crmLeads)
@@ -619,11 +639,17 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 
 			const now = new Date();
 			const updatePayload: Partial<typeof crmLeads.$inferInsert> = {
-				...data,
+				...restData,
 				phone: cleanPhone,
+				expectedRevenueKopecks: restData.expectedRevenue
+					? BigInt(parseKopecks(restData.expectedRevenue))
+					: null,
+				...(dropReason !== undefined || reason !== undefined
+					? { dropReason: dropReason ?? reason ?? null }
+					: {}),
 			};
 
-			if (data.status && data.status !== current.status) {
+			if (restData.status && restData.status !== current.status) {
 				const fromStage = current.status;
 				const stageStart = current.stageEnteredAt || current.createdAt;
 				const durationSeconds = Math.max(
@@ -642,7 +668,7 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 					organizationId,
 					leadId: current.id,
 					fromStage,
-					toStage: data.status,
+					toStage: restData.status,
 					changedByUserId,
 					durationSeconds,
 					createdAt: now,
@@ -703,8 +729,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		}
 
 		const { id } = req.params as { id: string };
+		if (!isValidUuid(id)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор лида.",
+			});
+		}
 
-		const lead = await db.transaction(async (tx) => {
+		const lead = await withTenantCtx(organizationId, async (tx) => {
 			await tx
 				.delete(crmLeadStageHistory)
 				.where(

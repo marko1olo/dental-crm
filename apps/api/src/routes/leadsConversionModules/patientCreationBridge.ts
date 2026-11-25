@@ -3,7 +3,7 @@
  * Mandate 8b (Strict <= 120 lines). Mandates 8e, 8n (Solo Doctor Autonomy & Deduplication).
  */
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { normalizePhone } from "@dental/shared";
 import { z } from "zod";
@@ -41,6 +41,9 @@ export async function resolveOrCreatePatientFromLead(
 	const leadSource = lead.source ? String(lead.source).trim() : null;
 
 	if (cleanPhone || rawPhone) {
+		const phoneLockKey = `${organizationId}:lead_patient_phone:${cleanPhone ?? rawPhone}`;
+		await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${phoneLockKey}))`);
+
 		const [existing] = await tx.select().from(patients).where(
 			and(
 				eq(patients.organizationId, organizationId),

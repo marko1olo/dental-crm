@@ -37,6 +37,32 @@ const promoStatusUpdateSchema = z
 	})
 	.strict();
 
+const campaignsBodySchema = z.union([
+	z.array(advertisingChannelInputSchema),
+	z
+		.object({
+			campaigns: z.array(advertisingChannelInputSchema).optional(),
+			channels: z.array(advertisingChannelInputSchema).optional(),
+		})
+		.strict()
+		.refine(
+			(val) => Array.isArray(val.campaigns) || Array.isArray(val.channels),
+			{
+				message: "Ожидался массив рекламных кампаний campaigns или channels",
+			},
+		),
+	advertisingChannelInputSchema,
+]);
+
+const romiChannelsBodySchema = z.union([
+	z.array(advertisingChannelInputSchema),
+	z
+		.object({
+			channels: z.array(advertisingChannelInputSchema),
+		})
+		.strict(),
+]);
+
 export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/marketing/promos
@@ -58,10 +84,9 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "[Marketing] Failed to load promos from DB");
-			return reply.code(200).send({
-				success: true,
-				organizationId: orgId,
-				promos: DEFAULT_SERVER_MARKETING_PROMOS,
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось загрузить акции из базы данных",
 			});
 		}
 	});
@@ -144,7 +169,24 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "toggle marketing promo status");
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const { id } = request.params as { id: string };
+		if (!id || id.trim().length === 0) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор акции",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 		const parsedStatus = promoStatusUpdateSchema.safeParse(request.body ?? {});
 		if (!parsedStatus.success) {
 			return reply.code(400).send({
@@ -234,10 +276,9 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "[Marketing] Failed to load ROMI channels from DB");
-			return reply.code(200).send({
-				success: true,
-				organizationId: orgId,
-				channels: buildDenteDefaultAdvertisingChannels(),
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось загрузить рекламные каналы из базы данных",
 			});
 		}
 	});
@@ -263,12 +304,9 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "[Marketing] Failed to load marketing campaigns from DB");
-			const defChannels = buildDenteDefaultAdvertisingChannels();
-			return reply.code(200).send({
-				success: true,
-				organizationId: orgId,
-				campaigns: defChannels,
-				channels: defChannels,
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось загрузить рекламные кампании из базы данных",
 			});
 		}
 	});
@@ -292,32 +330,22 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const body = request.body as Record<string, unknown> | unknown[] | null | undefined;
-		const rawList = Array.isArray(body)
-			? body
-			: Array.isArray((body as Record<string, unknown> | null)?.campaigns)
-				? (body as Record<string, unknown>).campaigns
-				: Array.isArray((body as Record<string, unknown> | null)?.channels)
-					? (body as Record<string, unknown>).channels
-					: body && typeof body === "object" && "channelKey" in body
-						? [body]
-						: null;
-
-		if (!rawList) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Ожидался массив рекламных кампаний campaigns или channels",
-			});
-		}
-
-		const parsed = z.array(advertisingChannelInputSchema).safeParse(rawList);
-		if (!parsed.success) {
+		const parsedBody = campaignsBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректная структура рекламных кампаний",
-				details: parsed.error.issues,
+				details: parsedBody.error.issues,
 			});
 		}
+
+		const parsedData = parsedBody.data;
+		const rawList: AdvertisingChannelInput[] = Array.isArray(parsedData)
+			? (parsedData as AdvertisingChannelInput[])
+			: "campaigns" in parsedData || "channels" in parsedData
+				? ((parsedData.campaigns ?? parsedData.channels ?? []) as AdvertisingChannelInput[])
+				: [parsedData as AdvertisingChannelInput];
+		const parsed = { data: rawList };
 
 		try {
 			const finalCampaigns = await withTenantCtx(orgId, async (tx) => {
@@ -389,28 +417,19 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const body = request.body as Record<string, unknown> | unknown[] | null | undefined;
-		const rawList = Array.isArray(body)
-			? body
-			: Array.isArray((body as Record<string, unknown> | null)?.channels)
-				? (body as Record<string, unknown>).channels
-				: null;
-
-		if (!rawList) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: "Ожидался массив рекламных каналов channels",
-			});
-		}
-
-		const parsed = z.array(advertisingChannelInputSchema).safeParse(rawList);
-		if (!parsed.success) {
+		const parsedBody = romiChannelsBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректная структура рекламных каналов",
-				details: parsed.error.issues,
+				details: parsedBody.error.issues,
 			});
 		}
+
+		const channelsList = Array.isArray(parsedBody.data)
+			? parsedBody.data
+			: parsedBody.data.channels;
+		const parsed = { data: channelsList };
 
 		try {
 			await withTenantCtx(orgId, async (tx) => {
@@ -455,6 +474,17 @@ export async function registerMarketingPromosRoutes(app: FastifyInstance) {
 
 		const orgId = await requireResolvedOrganizationId(request, reply, "reset marketing romi channels");
 		if (!orgId) return;
+
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+		if (idempotencyKey) {
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
 
 		try {
 			const resetChannels = buildDenteDefaultAdvertisingChannels();

@@ -1,17 +1,16 @@
 import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
-import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { attachments, patients } from "../../db/schema.js";
+import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { decodeServerHeicImage } from "../../services/imaging/serverHeicDecoder.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { type MultipartFilePayload, UPLOADS_DIR } from "./common.js";
+import { resolveSafeUploadPath } from "./common.js";
 
 /*
  * Выдача файла вложения.
@@ -37,6 +36,12 @@ export const downloadAttachmentHandler = async (
 	const orgId = await requireResolvedOrganizationId(request, reply);
 	if (!orgId) return;
 	const { attachmentId } = request.params;
+	if (!isValidUuid(attachmentId)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор вложения (ожидается UUID).",
+		});
+	}
 
 	const [attachment] = await withTenantCtx(orgId, (tx) =>
 		tx
@@ -76,16 +81,19 @@ export const downloadAttachmentHandler = async (
 
 	// Если вложение привязано к пациенту, проверяем архивный статус пациента
 	if (attachment.patientId) {
-		const [patient] = await db
-			.select({ id: patients.id, status: patients.status })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.id, attachment.patientId),
-					eq(patients.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		const attachmentPatientId = attachment.patientId;
+		const [patient] = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select({ id: patients.id, status: patients.status })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, attachmentPatientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.limit(1),
+		);
 
 		if (patient?.status === "archived" && !evalAccess.hasClinicalAccess) {
 			return reply.code(403).send({
@@ -111,7 +119,13 @@ export const downloadAttachmentHandler = async (
 		}
 	}
 
-	const filePath = path.join(UPLOADS_DIR, attachment.storagePath);
+	const filePath = resolveSafeUploadPath(attachment.storagePath);
+	if (!filePath) {
+		return reply.code(400).send({
+			error: "InvalidStoragePath",
+			message: "Недопустимый путь к файлу вложения.",
+		});
+	}
 	try {
 		await fs.access(filePath);
 		reply.header(

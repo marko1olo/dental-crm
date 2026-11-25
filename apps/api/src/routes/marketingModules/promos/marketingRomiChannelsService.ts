@@ -7,6 +7,7 @@ import { withTenantCtx } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	type AdvertisingChannelInput,
+	advertisingChannelInputSchema,
 	buildDenteDefaultAdvertisingChannels,
 } from "@dental/shared";
 
@@ -25,10 +26,19 @@ export async function readOrSeedOrganizationRomiChannels(orgId: string): Promise
 		const rawChannels = existingFlags.marketingRomiChannels;
 
 		if (Array.isArray(rawChannels) && rawChannels.length > 0) {
-			return {
-				flags: existingFlags,
-				channels: rawChannels as AdvertisingChannelInput[],
-			};
+			const validatedChannels: AdvertisingChannelInput[] = [];
+			for (const item of rawChannels) {
+				const parsed = advertisingChannelInputSchema.safeParse(item);
+				if (parsed.success) {
+					validatedChannels.push(parsed.data);
+				}
+			}
+			if (validatedChannels.length > 0) {
+				return {
+					flags: existingFlags,
+					channels: validatedChannels,
+				};
+			}
 		}
 
 		// Первичное авто-сидирование канонических каналов DENTE в PostgreSQL 18

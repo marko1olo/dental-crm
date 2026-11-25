@@ -3,7 +3,7 @@ import {
 	updatePatientAdministrativeProfileSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import {
@@ -258,31 +258,35 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				getPatientArchiveReasonsAndBlacklistsFromDb,
 				setPatientArchiveStatusInDb,
 			} = await import("../../db/patientArchiveReasonsAndBlacklistsQuery.js");
-			const patient = await getPatientByIdFromDb(orgId, patientId);
-			if (!patient) return sendPatientNotFound(reply);
 
-			const rowsBefore = selectPatientArchiveRows(
-				await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
-				patientId,
-				patient.fullName,
-			);
-			if (
-				patientArchiveRowsBlockBooking(rowsBefore) === requestedBlacklisted
-			) {
-				if (!requestedBlacklisted) {
-					await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${`${orgId}:patient_archive_status:${patientId}`}))`,
+				);
+				const [patient] = await tx
+					.select({ id: patients.id, fullName: patients.fullName })
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+
+				if (!patient) return { kind: "not_found" as const };
+
+				const rowsBefore = selectPatientArchiveRows(
+					await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId, tx),
+					patientId,
+					patient.fullName,
+				);
+				if (patientArchiveRowsBlockBooking(rowsBefore) === requestedBlacklisted) {
+					if (!requestedBlacklisted) {
 						await tx
 							.update(patients)
 							.set({ status: "active", updatedAt: new Date() })
 							.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)));
-					});
+					}
+					return { kind: "ok" as const };
 				}
-				return reply
-					.status(200)
-					.send({ success: true, isBlacklisted: requestedBlacklisted });
-			}
 
-			await withTenantCtx(orgId, async (tx) => {
 				await setPatientArchiveStatusInDb(
 					orgId,
 					patientId,
@@ -290,16 +294,22 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 					patient.fullName,
 					tx,
 				);
+
+				const rowsAfter = selectPatientArchiveRows(
+					await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId, tx),
+					patientId,
+					patient.fullName,
+				);
+				if (patientArchiveRowsBlockBooking(rowsAfter) !== requestedBlacklisted) {
+					return { kind: "not_saved" as const };
+				}
+				return { kind: "ok" as const };
 			});
 
-			const rowsAfter = selectPatientArchiveRows(
-				await getPatientArchiveReasonsAndBlacklistsFromDb(orgId, patientId),
-				patientId,
-				patient.fullName,
-			);
-			if (
-				patientArchiveRowsBlockBooking(rowsAfter) !== requestedBlacklisted
-			) {
+			if (txResult.kind === "not_found") {
+				return sendPatientNotFound(reply);
+			}
+			if (txResult.kind === "not_saved") {
 				return reply.code(500).send({
 					error: "PatientArchiveStatusNotSaved",
 					message: requestedBlacklisted

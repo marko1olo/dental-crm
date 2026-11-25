@@ -722,7 +722,6 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					.update(systemBackgroundJobs)
 					.set({
 						payload: updatedSession as unknown as Record<string, unknown>,
-						updatedAt: new Date(),
 					})
 					.where(
 						and(

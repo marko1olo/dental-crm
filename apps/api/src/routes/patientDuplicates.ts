@@ -36,10 +36,12 @@ import {
 const PATIENT_DUPLICATES_UUID_PATTERN =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const listQuerySchema = z.object({
-	minConfidence: z.coerce.number().min(0).max(1).optional(),
-	limit: z.coerce.number().int().min(1).max(500).optional(),
-});
+const listQuerySchema = z
+	.object({
+		minConfidence: z.coerce.number().min(0).max(1).optional(),
+		limit: z.coerce.number().int().min(1).max(500).optional(),
+	})
+	.strict();
 
 const mergeSchema = z
 	.object({
@@ -49,6 +51,7 @@ const mergeSchema = z
 		duplicatePatientId: z.string().uuid(),
 		reason: z.string().trim().max(500).optional(),
 	})
+	.strict()
 	// Одна и та же карточка — это испорченный запрос, а не конфликт состояний:
 	// отвечать на него 409 неверно, потому что конфликтовать тут не с чем.
 	.refine((value) => value.primaryPatientId !== value.duplicatePatientId, {
@@ -61,6 +64,7 @@ const dismissSchema = z
 		rightPatientId: z.string().uuid(),
 		reason: z.string().trim().max(500).optional(),
 	})
+	.strict()
 	.refine((value) => value.leftPatientId !== value.rightPatientId, {
 		message: "Указана одна и та же карточка",
 	});

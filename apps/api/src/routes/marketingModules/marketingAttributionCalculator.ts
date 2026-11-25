@@ -60,6 +60,7 @@ export interface RawCallEventData {
 }
 
 export interface RawMarketingExpenseData {
+	amountKopecks?: string | number | bigint | null;
 	amountRub?: string | number | null;
 	metadata?: unknown;
 	reasonCode?: number | null;
@@ -114,6 +115,10 @@ export function calculateMarketingAttributionReport(params: {
 			marketingSource?: string | null;
 			leadSource?: string | null;
 			utmSource?: string | null;
+			utmCampaign?: string | null;
+			utmMedium?: string | null;
+			utmContent?: string | null;
+			utmTerm?: string | null;
 		} | null;
 
 		const explicitSource =
@@ -124,8 +129,7 @@ export function calculateMarketingAttributionReport(params: {
 			(typeof adminProfile?.preferredAppointmentNote === "string" &&
 			adminProfile.preferredAppointmentNote.startsWith("src:")
 				? adminProfile.preferredAppointmentNote.slice(4)
-				: null) ||
-			(p.notes && p.notes.includes("Источник:") ? p.notes : null);
+				: null);
 
 		if (explicitSource) {
 			patientToChannel.set(p.id, detectChannelFromSource(explicitSource));
@@ -136,9 +140,12 @@ export function calculateMarketingAttributionReport(params: {
 	const patientRevenueKop = new Map<string, number>();
 	for (const pay of allPayments) {
 		const cur = patientRevenueKop.get(pay.patientId) || 0;
-		const kopecks = pay.amountKopecks != null
-			? Number(pay.amountKopecks)
-			: (pay.amountRub != null ? rublesToKopecks(Number(pay.amountRub)) : 0);
+		const kopecks =
+			pay.amountKopecks != null && Number(pay.amountKopecks) > 0
+				? Number(pay.amountKopecks)
+				: pay.amountRub != null
+					? rublesToKopecks(Number(pay.amountRub))
+					: 0;
 		patientRevenueKop.set(pay.patientId, cur + kopecks);
 	}
 
@@ -160,7 +167,12 @@ export function calculateMarketingAttributionReport(params: {
 	};
 	for (const row of allMarketingExpenses) {
 		const meta = row.metadata as { channelKey?: string } | null;
-		const spendKop = row.amountRub != null ? rublesToKopecks(Number(row.amountRub)) : 0;
+		const spendKop =
+			row.amountKopecks != null && Number(row.amountKopecks) > 0
+				? Number(row.amountKopecks)
+				: row.amountRub != null
+					? rublesToKopecks(Number(row.amountRub))
+					: 0;
 		const chKey = meta?.channelKey;
 		const targetKey = normalizeChannelKey(chKey);
 		channelSpendMap[targetKey] = (channelSpendMap[targetKey] ?? 0) + spendKop;
@@ -198,8 +210,9 @@ export function calculateMarketingAttributionReport(params: {
 			}
 		}
 
-		const viewsCount = Math.max(channelLeads.length, bookingsCount);
-		const slotSelectedCount = bookingsCount;
+		// Отдельных событий просмотров виджета и кликов выбора слота нет — не выдумываем счётчики из лидов
+		const viewsCount = 0;
+		const slotSelectedCount = 0;
 		const spentKopecks = channelSpendMap[def.key] || 0;
 		const rawRomi = spentKopecks > 0 ? ((revenueKopecks - spentKopecks) / spentKopecks) * 100 : 0;
 		const romiPercent = Number.isFinite(rawRomi) && !Number.isNaN(rawRomi) ? Math.round(rawRomi) : 0;
@@ -312,6 +325,13 @@ export function calculateMarketingAttributionReport(params: {
 		const currentStage: PatientAttributionItem["currentStage"] =
 			rev > 0 ? "paid_plan" : hasAttended ? "attended" : pAppts.length > 0 ? "booked" : "call";
 
+		const pAdminProfile = p.administrativeProfile as {
+			utmCampaign?: string | null;
+			utmMedium?: string | null;
+			utmContent?: string | null;
+			utmTerm?: string | null;
+		} | null;
+
 		attributions.push({
 			id: `attr-${p.id}`,
 			patientId: p.id,
@@ -323,10 +343,10 @@ export function calculateMarketingAttributionReport(params: {
 			categoryRu,
 			utm: {
 				utm_source: chKey,
-				utm_campaign: "clinic_marketing",
-				utm_medium: "",
-				utm_content: "",
-				utm_term: "",
+				utm_campaign: pAdminProfile?.utmCampaign || "",
+				utm_medium: pAdminProfile?.utmMedium || "",
+				utm_content: pAdminProfile?.utmContent || "",
+				utm_term: pAdminProfile?.utmTerm || "",
 			},
 			externalIds: {},
 			currentStage,

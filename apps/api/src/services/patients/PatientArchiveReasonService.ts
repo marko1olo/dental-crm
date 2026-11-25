@@ -6,7 +6,7 @@ import {
 	patientArchiveReasonsAndBlacklists,
 	patients,
 } from "../../db/schema.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 
 export interface ArchiveReasonDto {
 	id: string;
@@ -340,9 +340,11 @@ export class PatientArchiveReasonService {
 				archivedBy: input.actorUserId || null,
 			});
 
-			// 5. Синхронизируем быстрый кэш
+			// 5. Синхронизируем быстрый кэш строго после COMMIT транзакции
 			if (isBookingBlocked) {
-				inMemoryBlacklist.add(`${organizationId}:${input.patientId}`);
+				onTenantTxCommit(() => {
+					inMemoryBlacklist.add(`${organizationId}:${input.patientId}`);
+				});
 			}
 
 			return {
@@ -383,7 +385,9 @@ export class PatientArchiveReasonService {
 					),
 				);
 
-			inMemoryBlacklist.delete(`${organizationId}:${patientId}`);
+			onTenantTxCommit(() => {
+				inMemoryBlacklist.delete(`${organizationId}:${patientId}`);
+			});
 
 			return { success: true };
 		});
@@ -432,7 +436,9 @@ export class PatientArchiveReasonService {
 
 			const blockedRow = rows[0];
 			if (blockedRow) {
-				inMemoryBlacklist.add(`${organizationId}:${patientId}`);
+				onTenantTxCommit(() => {
+					inMemoryBlacklist.add(`${organizationId}:${patientId}`);
+				});
 				return {
 					isBlocked: true,
 					reason: blockedRow.archiveReason || blockedRow.blacklistReason || "Архив",
@@ -444,7 +450,9 @@ export class PatientArchiveReasonService {
 
 			// Если пациент имеет статус 'archived', но нет отдельной записи блокировки — по закону 323-ФЗ архивная карта также блокирует прием
 			if (patient?.status === "archived") {
-				inMemoryBlacklist.add(`${organizationId}:${patientId}`);
+				onTenantTxCommit(() => {
+					inMemoryBlacklist.add(`${organizationId}:${patientId}`);
+				});
 				return {
 					isBlocked: true,
 					reason: "Карта пациента находится в архиве",
