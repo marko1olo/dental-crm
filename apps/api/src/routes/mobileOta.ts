@@ -21,7 +21,23 @@ import {
 	mobileOtaVersionResponseSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { requireClinicalMutationAccess } from "../accessGuard.js";
+import { z } from "zod";
+import {
+	requireClinicalMutationAccess,
+	resolveOrganizationId,
+} from "../accessGuard.js";
+import { createApiLogger } from "../observability/logger.js";
+
+const otaLogger = createApiLogger("mobileOta");
+
+const mobileOtaPublishBodySchema = z
+	.object({
+		version: z.string().trim().min(1),
+		minSupportedVersion: z.string().trim().min(1).optional(),
+		releaseNotes: z.string().max(4000).optional(),
+		customContent: z.string().max(250_000).optional(),
+	})
+	.strict();
 
 /**
  * Конфигурация OTA по умолчанию.
@@ -204,8 +220,11 @@ export function getOrCreateOtaBundle(
 				generatedAt: new Date().toISOString(),
 			};
 			return cachedBundle;
-		} catch {
-			// fallback to generator
+		} catch (err) {
+			otaLogger.warn(
+				{ err },
+				"Failed to read custom OTA bundle from disk, falling back to generator",
+			);
 		}
 	}
 
@@ -376,20 +395,18 @@ export async function registerMobileOtaRoutes(
 			);
 			if (!accessGranted) return;
 
-			const body = (request.body ?? {}) as {
-				version?: string;
-				minSupportedVersion?: string;
-				releaseNotes?: string;
-				customContent?: string;
-			};
-
-			if (!body.version || typeof body.version !== "string") {
+			const requesterOrgId = await resolveOrganizationId(request);
+			const parsedBody = mobileOtaPublishBodySchema.safeParse(
+				request.body ?? {},
+			);
+			if (!parsedBody.success) {
 				return reply.status(400).send({
 					error: "ValidationError",
 					message: "Поле version обязательно для публикации",
 				});
 			}
 
+			const body = parsedBody.data;
 			otaConfig.version = body.version;
 			if (body.minSupportedVersion) {
 				otaConfig.minSupportedVersion = body.minSupportedVersion;
@@ -404,6 +421,15 @@ export async function registerMobileOtaRoutes(
 			const newBundle = getOrCreateOtaBundle(
 				otaConfig.version,
 				body.customContent,
+			);
+
+			otaLogger.info(
+				{
+					organizationId: requesterOrgId ?? "platform",
+					version: otaConfig.version,
+					bundleSha256: newBundle.sha256,
+				},
+				"Published mobile OTA bundle",
 			);
 
 			return reply.status(200).send({

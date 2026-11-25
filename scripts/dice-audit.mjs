@@ -920,7 +920,18 @@ export function auditFields(rootDir, prng, sampleCount = 5) {
 
 			if (isDrizzleTable || isZodSchema) {
 				const lineNum = i + 1;
-				const block = lines.slice(i, Math.min(lines.length, i + 30)).join("\n");
+				const maxLookahead = isZodSchema ? 80 : 30;
+				const sliceEnd = Math.min(lines.length, i + maxLookahead);
+				let blockEnd = sliceEnd;
+				if (isZodSchema) {
+					for (let j = i; j < sliceEnd; j++) {
+						if (/^\}[)\w.\s]*;\s*$/.test(lines[j])) {
+							blockEnd = j + 1;
+							break;
+						}
+					}
+				}
+				const block = lines.slice(i, blockEnd).join("\n");
 
 				const issues = [];
 
