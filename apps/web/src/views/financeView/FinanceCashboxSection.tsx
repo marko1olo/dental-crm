@@ -45,6 +45,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 
 			{isLoyaltyModalOpen && patient?.id && (
 				<LoyaltyStudioModal
+					key={patient.id}
 					isOpen={isLoyaltyModalOpen}
 					onClose={() => setIsLoyaltyModalOpen(false)}
 					clinicName={s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName}

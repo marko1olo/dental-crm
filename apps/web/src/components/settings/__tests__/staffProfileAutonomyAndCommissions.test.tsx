@@ -14,7 +14,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { StaffProfileCard } from "../StaffProfileCard";
 import { DoctorShiftSummaryCard } from "../../shift/DoctorShiftSummaryCard";
-import { DoctorMobileShiftAutonomy } from "../../doctor-portal/DoctorMobileShiftAutonomy";
+import { DoctorMobileShiftModal } from "../../doctor-portal/DoctorMobileShiftModal";
 import { DoctorShiftCloseFooter } from "../../shift/doctorShiftClose/DoctorShiftCloseFooter";
 import type { StaffProfileExtended } from "@dental/shared";
 
@@ -115,9 +115,9 @@ describe("Red Team: Staff Profile & Doctor Shift Autonomy", () => {
 		assert.strictEqual(html.includes("Инкассация наличной выручки"), false, "Doctor must not see cash drawer");
 	});
 
-	it("DoctorMobileShiftAutonomy renders mobile PWA interface with 1-click emergency reception", () => {
+	it("DoctorMobileShiftModal renders mobile PWA interface with 1-click emergency reception", () => {
 		const rawHtml = renderToString(
-			<DoctorMobileShiftAutonomy
+			<DoctorMobileShiftModal
 				isOpen={true}
 				onClose={() => {}}
 				initialDoctorId="doc-test-1"

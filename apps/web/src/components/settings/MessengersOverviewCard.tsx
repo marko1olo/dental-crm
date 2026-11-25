@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { useSettingsStore } from "../../store/settings";
 import { showToast } from "../GlobalToast";
 import { MessengerChannelGridItem } from "./messengers/MessengerChannelGridItem";
 import {
@@ -25,13 +27,18 @@ export function MessengersOverviewCard({ onSelectTab, className = "" }: Messenge
 	const fetchOverview = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const res = await fetch("/api/v1/messengers/overview", {
-				headers: denteAdminSecretRequestHeaders(),
+			const adminSecret = useSettingsStore.getState().settingsAdminSecretSession;
+			const res = await fetch("/api/messengers/overview", {
+				headers: denteAdminSecretRequestHeaders({}, adminSecret),
 			});
 			if (res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data.channels)) setChannels(data.channels);
-				if (data.summary) setSummary(data.summary);
+				const raw = await res.json();
+				const data = (raw?.data ?? raw) as {
+					channels?: MessengerChannelItem[];
+					summary?: MessengersOverviewSummary;
+				};
+				if (Array.isArray(data?.channels)) setChannels(data.channels);
+				if (data?.summary) setSummary(data.summary);
 			}
 		} catch {
 			// keep defaults
@@ -45,7 +52,27 @@ export function MessengersOverviewCard({ onSelectTab, className = "" }: Messenge
 	const handleTestChannel = async (ch: MessengerChannelItem) => {
 		setTestingChannelId(ch.id);
 		try {
-			showToast(`${ch.title}: связь стабильна`, "success");
+			const adminSecret = useSettingsStore.getState().settingsAdminSecretSession;
+			const res = await fetch("/api/messengers/test-connection", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					adminSecret,
+				),
+				body: JSON.stringify({ channelId: ch.id }),
+			});
+			const raw = await res.json().catch(() => null);
+			const data = (raw?.data ?? raw) as { ok?: boolean; message?: string } | null;
+			if (!res.ok || data?.ok === false) {
+				showToast(data?.message || `${ch.title}: ошибка проверки канала (${res.status})`, "error");
+				return;
+			}
+			showToast(data?.message || `${ch.title}: связь стабильна`, "success");
+		} catch {
+			showToast(`${ch.title}: не удалось проверить соединение`, "error");
 		} finally {
 			setTestingChannelId(null);
 		}

@@ -9,10 +9,12 @@
  * - Mandate 8n: Solo Doctor & Scale Sovereignty (Instant presets).
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { showToast } from "../components/GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import { useSettingsStore } from "./settings";
 import { saveWorkspaceFlags } from "../hooks/useWorkspaceProfile";
 import { logger } from "../utils/logger";
 
@@ -204,19 +206,27 @@ export const useDeepClinicalSettingsStore = create<DeepClinicalSettingsStore>()(
 						hasInventoryModule: true,
 					});
 
-					// 2. Persist to clinic settings endpoint if available
-					try {
-						await fetch("/api/settings/clinic/profile", {
-							method: "PUT",
-							headers: denteAdminSecretRequestHeaders({
-								"Content-Type": "application/json",
-							}),
-							body: JSON.stringify({
-								// Non-blocking payload passing
-							}),
-						});
-					} catch (apiErr) {
-						logger.warn("Non-blocking deep clinical settings API sync notice:", apiErr);
+					// 2. Sync workspace-backed clinic settings when admin secret session is unlocked
+					const adminSecret = useSettingsStore.getState().settingsAdminSecretSession;
+					if (adminSecret) {
+						try {
+							const profileRes = await fetch("/api/settings/clinic/profile", {
+								method: "PUT",
+								headers: denteAdminSecretRequestHeaders(
+									{
+										"Content-Type": "application/json",
+										"Idempotency-Key": generateUuidV7(),
+									},
+									adminSecret,
+								),
+								body: JSON.stringify({}),
+							});
+							if (!profileRes.ok) {
+								logger.warn("Non-blocking deep clinical settings API sync status:", profileRes.status);
+							}
+						} catch (apiErr) {
+							logger.warn("Non-blocking deep clinical settings API sync notice:", apiErr);
+						}
 					}
 
 					set({

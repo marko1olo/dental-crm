@@ -1,6 +1,15 @@
+import { generateUuidV7 } from "@dental/shared";
+
 export interface QuickWriteoffApiContext {
 	organizationId: string;
 	getHeaders: (extra?: Record<string, string>) => Record<string, string>;
+}
+
+function buildQuickWriteoffHeaders(ctx: QuickWriteoffApiContext): Record<string, string> {
+	return {
+		...ctx.getHeaders({ "Content-Type": "application/json" }),
+		"Idempotency-Key": generateUuidV7(),
+	};
 }
 
 export async function apiQuickWriteoffStandardKit(
@@ -9,8 +18,11 @@ export async function apiQuickWriteoffStandardKit(
 ) {
 	return fetch(`/api/inventory/${ctx.organizationId}/quick-writeoff-standard-kit`, {
 		method: "POST",
-		headers: ctx.getHeaders({ "Content-Type": "application/json" }),
-		body: JSON.stringify({ ...(options ?? {}), allowSoftOverdraft: true, allowOverdraft: true }),
+		headers: buildQuickWriteoffHeaders(ctx),
+		body: JSON.stringify({
+			...(options?.visitId !== undefined ? { visitId: options.visitId } : {}),
+			...(options?.notes !== undefined ? { notes: options.notes } : {}),
+		}),
 	});
 }
 
@@ -24,8 +36,13 @@ export async function apiQuickWriteoffCarpules(
 ) {
 	return fetch(`/api/inventory/${ctx.organizationId}/quick-writeoff-carpules`, {
 		method: "POST",
-		headers: ctx.getHeaders({ "Content-Type": "application/json" }),
-		body: JSON.stringify({ ...(options ?? {}), allowSoftOverdraft: true, allowOverdraft: true }),
+		headers: buildQuickWriteoffHeaders(ctx),
+		body: JSON.stringify({
+			...(options?.carpulesCount !== undefined ? { carpulesCount: options.carpulesCount } : {}),
+			...(options?.drugName !== undefined ? { drugName: options.drugName } : {}),
+			...(options?.visitId !== undefined ? { visitId: options.visitId } : {}),
+			...(options?.notes !== undefined ? { notes: options.notes } : {}),
+		}),
 	});
 }
 
@@ -35,15 +52,11 @@ export async function apiQuickWriteoffSterilizationKit(
 ) {
 	return fetch(`/api/inventory/${ctx.organizationId}/quick-writeoff-package`, {
 		method: "POST",
-		headers: ctx.getHeaders({ "Content-Type": "application/json" }),
+		headers: buildQuickWriteoffHeaders(ctx),
 		body: JSON.stringify({
 			packageId: "sterilization_kit",
-			...(options?.visitId ? { visitId: options.visitId } : {}),
-			...(options?.cabinetId ? { cabinetId: options.cabinetId } : {}),
-			...(options?.chairId ? { chairId: options.chairId } : {}),
+			...(options?.visitId !== undefined ? { visitId: options.visitId } : {}),
 			notes: options?.notes ?? "Быстрое списание: Набор стерилизации: 1 лоток + перчатки",
-			allowSoftOverdraft: true,
-			allowOverdraft: true,
 		}),
 	});
 }
@@ -55,15 +68,11 @@ export async function apiQuickWriteoffShiftBundle(
 ) {
 	return fetch(`/api/inventory/${ctx.organizationId}/quick-writeoff-shift-bundle`, {
 		method: "POST",
-		headers: ctx.getHeaders({ "Content-Type": "application/json" }),
+		headers: buildQuickWriteoffHeaders(ctx),
 		body: JSON.stringify({
 			bundleType,
-			visitId: options?.visitId,
-			cabinetId: options?.cabinetId,
-			chairId: options?.chairId,
-			notes: options?.notes,
-			allowSoftOverdraft: true,
-			allowOverdraft: true,
+			...(options?.visitId !== undefined ? { visitId: options.visitId } : {}),
+			...(options?.notes !== undefined ? { notes: options.notes } : {}),
 		}),
 	});
 }
@@ -75,15 +84,11 @@ export async function apiQuickWriteoffVisitBundle(
 ) {
 	return fetch(`/api/inventory/${ctx.organizationId}/quick-writeoff-visit-bundle`, {
 		method: "POST",
-		headers: ctx.getHeaders({ "Content-Type": "application/json" }),
+		headers: buildQuickWriteoffHeaders(ctx),
 		body: JSON.stringify({
 			visitType,
-			visitId: options?.visitId,
-			cabinetId: options?.cabinetId,
-			chairId: options?.chairId,
-			notes: options?.notes,
-			allowSoftOverdraft: true,
-			allowOverdraft: true,
+			...(options?.visitId !== undefined ? { visitId: options.visitId } : {}),
+			...(options?.notes !== undefined ? { notes: options.notes } : {}),
 		}),
 	});
 }

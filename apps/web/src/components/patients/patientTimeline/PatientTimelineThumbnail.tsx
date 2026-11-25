@@ -56,7 +56,7 @@ export const PatientTimelineThumbnail: React.FC<PatientTimelineThumbnailProps> =
 			)}
 			<span
 				style={{ backgroundColor: badge.bg, color: badge.text, borderColor: badge.border }}
-				className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded font-black text-[9px] uppercase tracking-wider backdrop-blur-md border shadow-xs"
+				className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded font-bold text-[9px] tracking-wider backdrop-blur-md border shadow-xs"
 			>
 				{badge.label}
 			</span>

@@ -71,9 +71,21 @@ export async function persistBatchSigningToApi(
 		);
 	}
 
+	const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 	for (const aptId of targetIds) {
+		if (!uuidRe.test(aptId)) continue;
 		try {
-			const lockRes = await fetch(`/api/diaries/${encodeURIComponent(aptId)}/lock`, {
+			const visitRes = await fetch(`/api/diaries/visit/${encodeURIComponent(aptId)}`, {
+				method: "GET",
+				headers: denteClinicalMutationHeaders(),
+			});
+			if (!visitRes.ok) continue;
+			const visitRaw = await visitRes.json().catch(() => null);
+			const visitPayload = (visitRaw?.data ?? visitRaw) as { diary?: { id?: string | null } } | null;
+			const diaryId = visitPayload?.diary?.id;
+			if (typeof diaryId !== "string" || !uuidRe.test(diaryId)) continue;
+
+			const lockRes = await fetch(`/api/diaries/${encodeURIComponent(diaryId)}/lock`, {
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
@@ -81,8 +93,6 @@ export async function persistBatchSigningToApi(
 				}),
 				body: JSON.stringify({
 					pkcs7Signature: protocolHash,
-					pepProtocolHash: protocolHash,
-					signedAtIso,
 				}),
 			});
 			if (!lockRes.ok) {

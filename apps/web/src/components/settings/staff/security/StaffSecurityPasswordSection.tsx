@@ -1,7 +1,8 @@
-import { evaluatePasswordEntropy, type StaffProfileExtended } from "@dental/shared";
+import { evaluatePasswordEntropy, generateUuidV7, type StaffProfileExtended } from "@dental/shared";
 import { Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { useSettingsStore } from "../../../../store/settings";
 import { showToast } from "../../../GlobalToast";
 
 interface Props {
@@ -26,7 +27,13 @@ export const StaffSecurityPasswordSection: React.FC<Props> = ({ staffMember, onS
 		try {
 			const res = await fetch(`/api/settings/staff/${staffMember.id}/credentials`, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({ password: passwordDraft }),
 			});
 			if (!res.ok) {

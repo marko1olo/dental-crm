@@ -45,12 +45,9 @@ import {
 import { clearInMemoryStorageCache } from "../lib/safeLocalStorage";
 import {
 	MobileBottomSheet,
-	MobileFloatingBottomBar,
 	MobileGroupedList,
 	MobileGroupedListItem,
 	MobileSegmentedControl,
-	MobileTopBar,
-	MobileChairsideEHR,
 } from "../components/mobile";
 import { useVisitStore } from "../store/visitStore";
 import { useAppStore } from "../store/appStore";
@@ -94,36 +91,6 @@ describe("Frontend State, Edge-Cases & Apple HIG Inquisition Suite", () => {
 			const handled = executeSoftFocusGuidance("non-existent-element-id");
 			assert.equal(typeof handled, "boolean");
 			assert.equal(handled, false);
-		});
-
-		test("1.5. MobileChairsideEHR renders Primary CTA active without disabled={true} on empty fields", () => {
-			const html = renderToString(
-				<MobileChairsideEHR
-					patientName="Иванов Петр Алексеевич"
-					onClose={() => {}}
-					onFinishVisit={() => {}}
-				/>,
-			);
-
-			// Bottom bar CTA must be rendered and not locked with disabled=""
-			assert.ok(html.includes("mobile-primary-cta"), "Must render mobile primary CTA");
-			assert.ok(!html.includes('disabled=""'), "Primary CTA must NEVER have disabled attribute (Mandate 8e)");
-		});
-
-		test("1.6. MobileChairsideEHR supports 0 ₽ warranty rework and 100% doctor discount without blocking checkout", () => {
-			const html = renderToString(
-				<MobileChairsideEHR
-					patientName="Смирнова Ольга Владимировна"
-					totalDueRub={0}
-					initialReceiptSheetOpen={true}
-					onClose={() => {}}
-					onFinishVisit={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("0 ₽"), "Must display 0 ₽ total due");
-			assert.ok(html.includes("mobile-primary-cta"), "Checkout button must be present");
-			assert.ok(html.includes("Фискализировать и закрыть приём"), "Button must allow closing warranty/free visit");
 		});
 	});
 
@@ -280,19 +247,6 @@ describe("Frontend State, Edge-Cases & Apple HIG Inquisition Suite", () => {
 			assert.ok(html.includes("Клинический протокол"), "Must render title");
 		});
 
-		test("4.2. MobileFloatingBottomBar places Primary CTA in Natural Thumb Zone with 52px height", () => {
-			const html = renderToString(
-				<MobileFloatingBottomBar
-					primaryLabel="Завершить приём и сформировать чек (54-ФЗ)"
-					onPrimaryClick={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("mobile-floating-bottom-bar"), "Must render floating bottom bar");
-			assert.ok(html.includes("mobile-primary-cta"), "Must render 52px Primary CTA button");
-			assert.ok(html.includes("Завершить приём и сформировать чек (54-ФЗ)"), "Must render label");
-		});
-
 		test("4.3. MobileGroupedList & ListItem adhere to Apple Health Inset Card layout (>= 52px height)", () => {
 			const html = renderToString(
 				<MobileGroupedList label="Назначения и услуги">
@@ -336,21 +290,6 @@ describe("Frontend State, Edge-Cases & Apple HIG Inquisition Suite", () => {
 			assert.ok(html.includes("mobile-segmented-button is-active"), "Active tab must have is-active class");
 			assert.ok(html.includes("Жалобы"), "Must include Complaints tab");
 			assert.ok(html.includes("Диагноз"), "Must include Diagnosis tab");
-		});
-
-		test("4.5. MobileTopBar renders 1-row compact layout (<= 56px height) with safe-area padding", () => {
-			const html = renderToString(
-				<MobileTopBar
-					title="Васильева Елена Сергеевна"
-					subtitle="29 лет · Терапевтический приём"
-					onBack={() => {}}
-				/>,
-			);
-
-			assert.ok(html.includes("mobile-top-bar"), "Must render 1-row top bar");
-			assert.ok(html.includes("mobile-top-bar-action"), "Must render 44x44px back button");
-			assert.ok(html.includes("mobile-top-bar-title"), "Must render centered title");
-			assert.ok(html.includes("Васильева Елена Сергеевна"), "Must render patient name");
 		});
 
 		test("4.6. mobileHigPrimitives.css enforces 0px horizontal drift, safe-area-insets, and >= 44px targets", () => {

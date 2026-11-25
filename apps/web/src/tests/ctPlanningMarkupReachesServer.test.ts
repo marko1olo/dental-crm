@@ -517,7 +517,10 @@ describe("разметка планирования имплантации ух�
 	});
 
 	test("пациент доезжает из экрана снимков до просмотрщика", () => {
-		const imagingView = readWeb("ImagingView.tsx");
+		const imagingView =
+			readWeb("ImagingView.tsx") +
+			"\n" +
+			readWeb(path.join("views", "imagingViewModules", "ImagingViewModals.tsx"));
 		const hasMount =
 			(imagingView.includes("<CbctMprImplantStudioModal") ||
 				imagingView.includes("<Cornerstone3DViewer")) &&

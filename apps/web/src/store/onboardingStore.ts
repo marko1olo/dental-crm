@@ -21,7 +21,8 @@ import {
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { showToast } from "../components/GlobalToast";
-import { denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
+import { denteAdminSecretRequestHeaders, denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
+import { useSettingsStore } from "./settings";
 import { saveWorkspaceFlags } from "../hooks/useWorkspaceProfile";
 import { logger } from "../utils/logger";
 
@@ -416,10 +417,13 @@ export const useOnboardingStore = create<OnboardingState>()(
 					// 4. Save clinic profile details into PostgreSQL 18
 					const profileRes = await fetch("/api/settings/clinic/profile", {
 						method: "POST",
-						headers: denteClinicalMutationHeaders({
-							"Content-Type": "application/json",
-							"Idempotency-Key": generateUuidV7(),
-						}),
+						headers: denteAdminSecretRequestHeaders(
+							{
+								"Content-Type": "application/json",
+								"Idempotency-Key": generateUuidV7(),
+							},
+							useSettingsStore.getState().settingsAdminSecretSession,
+						),
 						body: JSON.stringify({
 							clinicName: profile.clinicName,
 							phone: profile.phone,

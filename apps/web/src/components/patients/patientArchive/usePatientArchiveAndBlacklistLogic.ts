@@ -28,7 +28,7 @@ export function usePatientArchiveAndBlacklistLogic(patientId: string) {
 		setArchiveReason("");
 		setBlacklistReason("");
 		setModalIsBlacklisted(false);
-	}, []);
+	}, [patientId]);
 
 	const patientIdRef = useRef(patientId);
 	patientIdRef.current = patientId;

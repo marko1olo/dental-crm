@@ -4,6 +4,7 @@ import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useWebsocket } from "../../../hooks/useWebsocket";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { useSettingsStore } from "../../../store/settings";
 import { showToast } from "../../GlobalToast";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import type {
@@ -104,13 +105,14 @@ export function useOmnichannelOperatorDesk({
 		setIsLoadingList(true);
 		try {
 			const res = await fetch("/api/bots/inbox", {
-				headers: denteAdminSecretRequestHeaders(),
+				headers: denteAdminSecretRequestHeaders({}, useSettingsStore.getState().settingsAdminSecretSession),
 			});
 			if (res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data.conversations)) {
+				const raw = await res.json();
+				const data = (raw?.data ?? raw) as { conversations?: InboxConversation[] };
+				if (Array.isArray(data?.conversations)) {
 					setConversations(data.conversations);
-					if (data.conversations.length > 0 && !selectedKeyRef.current) {
+					if (data.conversations.length > 0 && !selectedKeyRef.current && data.conversations[0]) {
 						setSelectedKey(data.conversations[0].key);
 					}
 				}
@@ -125,7 +127,7 @@ export function useOmnichannelOperatorDesk({
 	const wsUrl = useMemo(() => {
 		const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
 		const host = typeof window !== "undefined" ? window.location.host : "localhost:4100";
-		return (import.meta.env.VITE_WS_URL as string | undefined) ?? `${protocol}//${host}/api/ws/schedule`;
+		return (import.meta.env?.VITE_WS_URL as string | undefined) ?? `${protocol}//${host}/api/ws/schedule`;
 	}, []);
 	const { lastMessage } = useWebsocket(wsUrl);
 
@@ -135,20 +137,25 @@ export function useOmnichannelOperatorDesk({
 		try {
 			const res = await fetch(
 				`/api/bots/inbox/${encodeURIComponent(conv.senderId)}/messages?channel=${conv.channel}`,
-				{ headers: denteAdminSecretRequestHeaders() },
+				{ headers: denteAdminSecretRequestHeaders({}, useSettingsStore.getState().settingsAdminSecretSession) },
 			);
 			if (res.ok) {
-				const data = await res.json();
-				if (Array.isArray(data.messages)) {
+				const raw = await res.json();
+				const data = (raw?.data ?? raw) as {
+					messages?: ChatMessageItem[];
+					intercept?: { isIntercepted?: boolean; interceptedBy?: string | null };
+				};
+				if (Array.isArray(data?.messages)) {
 					setMessages(data.messages);
 				}
-				if (data.intercept) {
+				if (data?.intercept) {
+					const intercept = data.intercept;
 					setConversations((prev) => {
 						const current = prev.find((c) => c.key === conv.key);
 						if (
 							current &&
-							current.isIntercepted === Boolean(data.intercept.isIntercepted) &&
-							current.interceptedBy === (data.intercept.interceptedBy || null)
+							current.isIntercepted === Boolean(intercept.isIntercepted) &&
+							current.interceptedBy === (intercept.interceptedBy || null)
 						) {
 							return prev;
 						}
@@ -156,8 +163,8 @@ export function useOmnichannelOperatorDesk({
 							c.key === conv.key
 								? {
 										...c,
-										isIntercepted: Boolean(data.intercept.isIntercepted),
-										interceptedBy: data.intercept.interceptedBy || null,
+										isIntercepted: Boolean(intercept.isIntercepted),
+										interceptedBy: intercept.interceptedBy || null,
 									}
 								: c,
 						);
@@ -238,11 +245,13 @@ export function useOmnichannelOperatorDesk({
 		try {
 			const res = await fetch(`/api/bots/chats/${encodeURIComponent(activeConv.senderId)}/takeover`, {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				},
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({
 					channel: activeConv.channel,
 					operatorName,
@@ -270,11 +279,13 @@ export function useOmnichannelOperatorDesk({
 		try {
 			const res = await fetch(`/api/bots/chats/${encodeURIComponent(activeConv.senderId)}/release`, {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				},
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({
 					channel: activeConv.channel,
 				}),
@@ -305,11 +316,13 @@ export function useOmnichannelOperatorDesk({
 		try {
 			const res = await fetch("/api/bots/send-message", {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				},
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({
 					channel: activeConv.channel,
 					senderId: activeConv.senderId,
@@ -318,7 +331,8 @@ export function useOmnichannelOperatorDesk({
 				}),
 			});
 
-			const data = await res.json();
+			const rawData = await res.json();
+			const data = (rawData?.data ?? rawData) as { ok?: boolean; messageId?: string; message?: string };
 			if (res.ok && data.ok) {
 				setInputText("");
 				showToast("Сообщение отправлено пациенту", "success");
@@ -391,11 +405,13 @@ export function useOmnichannelOperatorDesk({
 
 			const res = await fetch(`/api/bots/chats/${encodeURIComponent(activeConv.senderId)}/book-appointment`, {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				},
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({
 					channel: activeConv.channel,
 					patientId: activeConv.patientId,
@@ -408,7 +424,8 @@ export function useOmnichannelOperatorDesk({
 				}),
 			});
 
-			const data = await res.json();
+			const rawData = await res.json();
+			const data = (rawData?.data ?? rawData) as { ok?: boolean; message?: string };
 			if (res.ok && data.ok) {
 				showToast("✓ Запись на приём оформлена! Пациент уведомлен в чате.", "success");
 				setIsQuickBookingOpen(false);
@@ -438,11 +455,13 @@ export function useOmnichannelOperatorDesk({
 		try {
 			const res = await fetch(`/api/bots/chats/${encodeURIComponent(activeConv.senderId)}/link-patient`, {
 				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				},
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({
 					channel: activeConv.channel,
 					createNew: {
@@ -452,17 +471,23 @@ export function useOmnichannelOperatorDesk({
 				}),
 			});
 
-			const data = await res.json();
-			if (res.ok && data.ok && data.patient) {
-				showToast(`✓ Карта пациента ${data.patient.fullName} создана и привязана!`, "success");
+			const rawData = await res.json();
+			const data = (rawData?.data ?? rawData) as {
+				ok?: boolean;
+				message?: string;
+				patient?: { id: string; fullName: string; phone?: string | null };
+			};
+			const linkedPatient = data.patient;
+			if (res.ok && data.ok && linkedPatient) {
+				showToast(`✓ Карта пациента ${linkedPatient.fullName} создана и привязана!`, "success");
 				setConversations((prev) =>
 					prev.map((c) =>
 						c.key === activeConv.key
 							? {
 									...c,
-									patientId: data.patient.id,
-									patientName: data.patient.fullName,
-									phone: data.patient.phone || c.phone,
+									patientId: linkedPatient.id,
+									patientName: linkedPatient.fullName,
+									phone: linkedPatient.phone || c.phone,
 								}
 							: c,
 					),

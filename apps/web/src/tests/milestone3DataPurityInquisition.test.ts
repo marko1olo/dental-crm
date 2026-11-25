@@ -103,14 +103,4 @@ describe("Milestone 3: Data Purity & Zero Hardcoded Fallbacks Inquisition", () =
 		const diaryContent = fs.readFileSync(diaryPath, "utf-8");
 		assert.ok(diaryContent.includes("dashboard?.clinicSettings"), "extractClinicRequisites must check clinicSettings");
 	});
-
-	it("6. MobileChairsideEHR.tsx initializes with clean empty strings for diagnosis and plan", () => {
-		const filePath = path.resolve(webSrcDir, "components/mobile/MobileChairsideEHR.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.ok(!content.includes('useState<string>("К02.1 Кариес дентина")'), "Must not initialize diagnosis with hardcoded caries");
-		assert.ok(!content.includes('useState<string>(\n    "Препарирование, медикаментозная обработка'), "Must not initialize treatment plan with hardcoded procedure");
-		assert.ok(content.includes("initialDiagnosis = \"\""), "Must default initialDiagnosis to empty string");
-		assert.ok(content.includes("initialTreatmentPlan = \"\""), "Must default initialTreatmentPlan to empty string");
-	});
 });

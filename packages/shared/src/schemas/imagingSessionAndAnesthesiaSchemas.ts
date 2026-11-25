@@ -9,7 +9,7 @@ export const imagingViewerSaveSessionPayloadSchema = z.object({
 	studyId: z.string(),
 	state: imagingViewerStateSchema,
 	savedAt: z.string(),
-});
+}).strict();
 
 export type ImagingViewerSaveSessionPayload = z.infer<
 	typeof imagingViewerSaveSessionPayloadSchema
@@ -24,7 +24,7 @@ export const sharedLocalImagingFolderDraftSchema = z.object({
 	patientPhone: z.string().nullable().optional(),
 	fileCount: z.number().int().nonnegative(),
 	detectedKind: z.string().nullable().optional(),
-});
+}).strict();
 
 export type SharedLocalImagingFolderDraft = z.infer<
 	typeof sharedLocalImagingFolderDraftSchema
@@ -36,7 +36,7 @@ export const sharedBrowserPickedImagingFolderPreviewSchema = z.object({
 	readyFiles: z.number().int().nonnegative(),
 	warningFiles: z.number().int().nonnegative(),
 	blockedFiles: z.number().int().nonnegative(),
-});
+}).strict();
 
 export type SharedBrowserPickedImagingFolderPreview = z.infer<
 	typeof sharedBrowserPickedImagingFolderPreviewSchema
@@ -47,7 +47,7 @@ export const sharedBrowserImagingScanProgressSchema = z.object({
 	scannedFiles: z.number().int().nonnegative(),
 	totalFiles: z.number().int().nonnegative(),
 	errorMessage: z.string().optional(),
-});
+}).strict();
 
 export type SharedBrowserImagingScanProgress = z.infer<
 	typeof sharedBrowserImagingScanProgressSchema

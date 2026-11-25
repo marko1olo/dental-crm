@@ -28,6 +28,7 @@ export function AdministrativeModalsSubcontainer({
 			{isGlobalLoyaltyOpen && loyaltyModalContext?.patientId && (
 				<React.Suspense fallback={null}>
 					<LoyaltyStudioModal
+						key={loyaltyModalContext.patientId}
 						isOpen={isGlobalLoyaltyOpen}
 						onClose={() => setIsGlobalLoyaltyOpen?.(false)}
 						patientId={loyaltyModalContext.patientId}

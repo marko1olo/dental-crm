@@ -170,9 +170,9 @@ describe("экран не объявляет состояние форм, кот
 			1,
 			"в форме договора один ряд кнопок-подсказок основания обращения, и он должен идти через appendChipToText",
 		);
-		const refusal = read(
-			"components/documents/forms/MedicalInterventionRefusalForm.tsx",
-		);
+		const refusal =
+			read("components/documents/forms/MedicalInterventionRefusalForm.tsx") +
+			read("components/documents/forms/refusalForm/RefusalFieldsSection.tsx");
 		assert.equal(
 			refusal.match(/appendChipToText\(/g)?.length,
 			4,
@@ -219,6 +219,20 @@ describe("в каталоге документов нет незамеченны
 	const allWebFiles = sourceFiles(webSrc).filter(
 		(file) => !file.includes("/tests/") && !file.startsWith("tests/") && !file.includes("__tests__") && !file.includes(".test."),
 	);
+	const allImportedSpecifiers = new Map<string, string[]>();
+	const getSpecifiers = (relativePath: string): string[] => {
+		const hit = allImportedSpecifiers.get(relativePath);
+		if (hit !== undefined) return hit;
+		const content = read(relativePath);
+		const specs: string[] = [];
+		const specRegex = /["']([^"'\r\n]+)["']/g;
+		let match: RegExpExecArray | null;
+		while ((match = specRegex.exec(content)) !== null) {
+			if (match[1]) specs.push(match[1]);
+		}
+		allImportedSpecifiers.set(relativePath, specs);
+		return specs;
+	};
 
 	it("каталог документов найден и виден целиком", () => {
 		assert.ok(
@@ -238,9 +252,9 @@ describe("в каталоге документов нет незамеченны
 
 		it(`${file}: ${declaredUnwired ? "заявленный долг, подключения нет" : "его кто-то импортирует"}`, () => {
 			const selfPath = `components/documents/${file}`;
-			const importPattern = new RegExp(`(?:from|import)[\\s\\S]*?["'][^"']*${moduleName}(?:\\.[a-zA-Z]+)?["']`);
+			const specPattern = new RegExp(`(?:^|/)${moduleName}(?:\\.[a-zA-Z]+)?$`);
 			const importers = allWebFiles.filter(
-				(other) => other !== selfPath && importPattern.test(read(other)),
+				(other) => other !== selfPath && getSpecifiers(other).some((spec) => specPattern.test(spec)),
 			);
 
 			if (declaredUnwired) {

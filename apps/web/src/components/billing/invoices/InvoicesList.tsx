@@ -70,12 +70,14 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
 				<div ref={sentinelRef} className="h-1 w-full pointer-events-none opacity-0" aria-hidden="true" />
 			)}
 
-			<InvoicesDomVirtualizationBar
-				listSlice={listSlice}
-				onLoadMore={onLoadMore}
-				onLoadAll={onLoadAll}
-				onCollapseLimit={onCollapseLimit}
-			/>
+			{listSlice.totalCount > 50 && (
+				<InvoicesDomVirtualizationBar
+					listSlice={listSlice}
+					onLoadMore={onLoadMore}
+					onLoadAll={onLoadAll}
+					onCollapseLimit={onCollapseLimit}
+				/>
+			)}
 		</div>
 	);
 };

@@ -54,6 +54,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 
 			{isInstallmentsModalOpen && (
 				<PatientInstallmentsModal
+					key={patientId || "no-patient"}
 					isOpen={isInstallmentsModalOpen} onClose={() => setIsInstallmentsModalOpen(false)}
 					patientId={patientId} patientName={patientName} clinicName={clinicLegalName}
 					onOpenBankInstallment={() => {

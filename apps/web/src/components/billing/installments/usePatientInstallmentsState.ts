@@ -52,14 +52,27 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		getReadHeaders: () => appLogic?.auth?.denteClinicalReadHeaders?.() ?? {},
 	});
 
-	useEffect(() => { if (initialPlan) setPlan(initialPlan); }, [initialPlan]);
+	useEffect(() => {
+		setActiveSubView("schedule");
+		setSelectedPaymentItemId(null);
+		setCustomPayAmountRub("");
+		setLastReceipt(null);
+		if (initialPlan) {
+			setPlan(initialPlan);
+		} else {
+			setPlan(createDefaultInternalInstallmentsPreset(patientId, patientName, "aligners", new Date().toISOString(), patientPhone));
+		}
+	}, [isOpen, patientId, patientName, patientPhone, initialPlan]);
 
 	useEffect(() => {
 		if (isOpen && patientId && isUuid(patientId) && !initialPlan) {
+			let cancelled = false;
 			installmentsApi.fetchActiveContract().then((serverPlan) => {
-				if (serverPlan) { setPlan(serverPlan); onPlanUpdate?.(serverPlan); }
+				if (!cancelled && serverPlan) { setPlan(serverPlan); onPlanUpdate?.(serverPlan); }
 			});
+			return () => { cancelled = true; };
 		}
+		return undefined;
 	}, [isOpen, patientId, initialPlan, installmentsApi, onPlanUpdate]);
 
 	const handleInitiateQuickPay = (itemId?: string) => {
@@ -132,7 +145,7 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 	return {
 		plan, setPlan, activeSubView, setActiveSubView, selectedPaymentItemId, setSelectedPaymentItemId,
 		selectedPaymentMethod, setSelectedPaymentMethod, customPayAmountRub, setCustomPayAmountRub,
-		lastReceipt, selectedPreset, setSelectedPreset, newTotalRubles, setNewTotalRubles,
+		lastReceipt, setLastReceipt, selectedPreset, setSelectedPreset, newTotalRubles, setNewTotalRubles,
 		newDownPaymentPercent, setNewDownPaymentPercent, newMonthsCount, setNewMonthsCount,
 		reminderData, handleInitiateQuickPay, handleExecutePayment, handleCreateNewPlan,
 	};

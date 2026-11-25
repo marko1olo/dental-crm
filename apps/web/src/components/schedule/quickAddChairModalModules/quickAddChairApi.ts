@@ -1,6 +1,7 @@
 import { generateUuidV7 } from "@dental/shared";
-import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
+import { useSettingsStore } from "../../../store/settings";
 import { showToast } from "../../GlobalToast";
 import type { QuickAddChairData } from "./types";
 
@@ -18,18 +19,24 @@ export async function submitChairData(params: {
 		if (isEditMode && onUpdateChair) {
 			await Promise.resolve(onUpdateChair(payload));
 			showToast(`Кресло «${finalName}» успешно обновлено`, "success", 3000);
+			onClose();
 		} else if (onAddChair) {
 			await Promise.resolve(onAddChair(payload));
+			onClose();
 		} else {
 			const endpoint = isEditMode && initialData?.id
 				? `/api/settings/chairs/${initialData.id}`
 				: "/api/settings/chairs";
+			const adminSecret = useSettingsStore.getState().settingsAdminSecretSession;
 			const res = await fetch(endpoint, {
 				method: isEditMode ? "PUT" : "POST",
-				headers: denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				}),
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					adminSecret,
+				),
 				body: JSON.stringify({
 					name: payload.name,
 					room: payload.room,
@@ -42,13 +49,13 @@ export async function submitChairData(params: {
 			if (!res.ok) {
 				clientLogger.warn("[quickAddChairApi] Ошибка сохранения кресла:", res.status);
 				showToast(`Не удалось сохранить кресло (${res.status})`, "error", 4000);
+				return;
 			}
+			onClose();
 		}
 	} catch (err) {
 		clientLogger.warn("[quickAddChairApi] Сетевая ошибка сохранения кресла:", err);
 		showToast("Ошибка сети при сохранении кресла", "error", 4000);
-	} finally {
-		onClose();
 	}
 }
 
@@ -82,13 +89,18 @@ export async function duplicateChairData(params: {
 	try {
 		if (onAddChair) {
 			await Promise.resolve(onAddChair(payload));
+			onClose();
 		} else {
+			const adminSecret = useSettingsStore.getState().settingsAdminSecretSession;
 			const res = await fetch("/api/settings/chairs", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				}),
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					adminSecret,
+				),
 				body: JSON.stringify({
 					name: payload.name,
 					room: payload.room,
@@ -101,12 +113,12 @@ export async function duplicateChairData(params: {
 			if (!res.ok) {
 				clientLogger.warn("[quickAddChairApi] Ошибка дублирования кресла:", res.status);
 				showToast(`Не удалось создать копию кресла (${res.status})`, "error", 4000);
+				return;
 			}
+			onClose();
 		}
 	} catch (err) {
 		clientLogger.warn("[quickAddChairApi] Сетевая ошибка дублирования кресла:", err);
 		showToast("Ошибка сети при дублировании кресла", "error", 4000);
-	} finally {
-		onClose();
 	}
 }

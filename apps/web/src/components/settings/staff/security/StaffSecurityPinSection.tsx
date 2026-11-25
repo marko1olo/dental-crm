@@ -1,7 +1,8 @@
-import type { StaffProfileExtended } from "@dental/shared";
+import { generateUuidV7, type StaffProfileExtended } from "@dental/shared";
 import { KeyRound, Smartphone } from "lucide-react";
 import React, { useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { useSettingsStore } from "../../../../store/settings";
 import { showToast } from "../../../GlobalToast";
 
 interface Props {
@@ -23,7 +24,13 @@ export const StaffSecurityPinSection: React.FC<Props> = ({ staffMember, onSaved 
 		try {
 			const res = await fetch(`/api/settings/staff/${staffMember.id}/credentials`, {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({ pinCode: pinDraft }),
 			});
 			if (!res.ok) {

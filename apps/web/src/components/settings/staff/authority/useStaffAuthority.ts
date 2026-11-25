@@ -1,10 +1,12 @@
 import {
 	type StaffAuthorityFlagKey,
 	canSignMedicalRecords,
+	generateUuidV7,
 } from "@dental/shared";
 import { useCallback, useMemo, useState } from "react";
 import { useOptionalAppLogicContext } from "../../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { useSettingsStore } from "../../../../store/settings";
 import { showToast } from "../../../GlobalToast";
 import { staffRoleTitle } from "../../settingsInviteRoles";
 import {
@@ -74,14 +76,21 @@ export function useStaffAuthority() {
 		try {
 			const res = await fetch(`/api/settings/staff/${row.staffId}/authority`, {
 				method: "PUT",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteAdminSecretRequestHeaders(
+					{
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					},
+					useSettingsStore.getState().settingsAdminSecretSession,
+				),
 				body: JSON.stringify({ [flag]: nextValue }),
 			});
 			if (!res.ok) {
 				showToast("Не удалось сохранить полномочие", "error");
 				return;
 			}
-			const json = await res.json();
+			const rawJson = await res.json();
+			const json = rawJson?.data ?? rawJson;
 			if (json?.authority) {
 				setOverrides((prev) => ({
 					...prev,

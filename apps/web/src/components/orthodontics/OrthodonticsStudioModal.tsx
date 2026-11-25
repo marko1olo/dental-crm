@@ -180,7 +180,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	}, []);
 
 	const handleSaveProtocol = useCallback(async () => {
-		await saveOrthodonticProtocolToApi({
+		const saved = await saveOrthodonticProtocolToApi({
 			protocol,
 			soapSummary,
 			skeletalClass: skeletalClassInfo.skeletalClass,
@@ -189,6 +189,9 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 			treatmentPlanId: treatmentPlanId ?? protocol.treatmentPlanId,
 			onSaveProtocol,
 		});
+		if (!saved) {
+			return;
+		}
 
 		setFeedbackToast("✓ Активация этапа зафиксирована");
 		setTimeout(() => {

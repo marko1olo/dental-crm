@@ -84,7 +84,8 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
         return;
       }
 
-      const result = (await res.json()) as { success?: boolean; appointment?: Appointment; dashboard?: Dashboard };
+      const rawResult = await res.json();
+      const result = (rawResult?.data ?? rawResult) as { success?: boolean; appointment?: Appointment; dashboard?: Dashboard };
       const scheduleStore = useScheduleStore.getState();
       if (result?.appointment) {
         scheduleStore.upsertAppointment(result.appointment);

@@ -55,14 +55,6 @@ export interface HotFolderIntakeFooterActionsProps {
 	onSendToLab?: ((item: HotFolderItem, note: string) => void) | undefined;
 }
 
-export interface HotFolderIntakeHeaderProps {
-	modalId: string;
-	patientName: string;
-	patientCardNumber: string;
-	doctorName: string;
-	onClose: () => void;
-}
-
 export interface UseHotFolderIntakeLogicProps {
 	patientId?: string | undefined;
 	patientName?: string | undefined;

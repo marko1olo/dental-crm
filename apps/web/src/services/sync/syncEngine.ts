@@ -167,6 +167,9 @@ export class SyncEngine {
 				if (typeof document !== "undefined" && document.hidden) return;
 				this.boundAutoTrigger?.();
 			}, this.options.autoSyncIntervalMs);
+			if (this.autoSyncTimer && typeof this.autoSyncTimer === "object" && "unref" in this.autoSyncTimer && typeof this.autoSyncTimer.unref === "function") {
+				this.autoSyncTimer.unref();
+			}
 		}
 	}
 

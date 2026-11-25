@@ -45,12 +45,14 @@ export const renderDocumentBodySchema = z.object({
 					issuedBy: z.string().trim().optional(),
 					divisionCode: z.string().trim().optional(),
 				})
+				.strict()
 				.optional(),
 			birthDate: z.string().trim().optional(),
 			address: z.string().trim().optional(),
 			basis: z.string().trim().optional(),
 			snils: z.string().trim().optional(),
 		})
+		.strict()
 		.optional(),
 	authorizedPerson: z
 		.object({
@@ -64,11 +66,13 @@ export const renderDocumentBodySchema = z.object({
 					issuedBy: z.string().trim().optional(),
 					divisionCode: z.string().trim().optional(),
 				})
+				.strict()
 				.optional(),
 			birthDate: z.string().trim().optional(),
 			address: z.string().trim().optional(),
 			snils: z.string().trim().optional(),
 		})
+		.strict()
 		.optional(),
 	financial: z
 		.object({
@@ -82,6 +86,7 @@ export const renderDocumentBodySchema = z.object({
 			actDate: z.union([z.string(), z.date()]).optional(),
 			comment: z.string().optional(),
 		})
+		.strict()
 		.optional(),
 	clinicalExamination: z
 		.object({
@@ -102,6 +107,7 @@ export const renderDocumentBodySchema = z.object({
 			recommendations: z.string().optional(),
 			treatmentDateTime: z.union([z.string(), z.date()]).optional(),
 		})
+		.strict()
 		.optional(),
 	dentalFormula: z.union([z.record(z.unknown()), z.array(z.unknown())]).optional(),
 	currentUser: z
@@ -111,9 +117,10 @@ export const renderDocumentBodySchema = z.object({
 			position: z.string().optional(),
 			specialty: z.string().optional(),
 		})
+		.strict()
 		.optional(),
 	overrides: z.record(z.unknown()).optional(),
 	emptyPlaceholder: z.string().optional().default(""),
-});
+}).strict();
 
 export type RenderDocumentBody = z.infer<typeof renderDocumentBodySchema>;

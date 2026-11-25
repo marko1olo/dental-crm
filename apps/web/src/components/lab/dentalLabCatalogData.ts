@@ -16,7 +16,7 @@ import {
 	toExactKopecks,
 	percentageOfKopecks,
 } from "@dental/shared";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export type DentalLabStage =
 	| "created"
@@ -521,6 +521,6 @@ export const CHAIRSIDE_EXPRESS_PRESETS = [
 
 export const VITA_EXPRESS_SHADES = ["A1", "A2", "A3", "A3.5", "B1", "Bleach"] as const;
 
-export { getBridgeSpanTeeth } from "./fdiPickerModules/fdiBridgeSpanHelper";
+export { getBridgeSpanTeeth } from "./fdiPickerModules/fdiBridgeSpanHelper.js";
 
-export * from "./orderEngine/labExpressPresetsData";
+export * from "./orderEngine/labExpressPresetsData.js";

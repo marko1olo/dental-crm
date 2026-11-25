@@ -590,7 +590,7 @@ const utilizationQuerySchema = z.object({
 	monthlyEquipmentDepreciationRub: z.union([z.string(), z.number()]).optional(),
 	monthlySanpinSterilizationRub: z.union([z.string(), z.number()]).optional(),
 	monthlyMarketingAndOtherRub: z.union([z.string(), z.number()]).optional(),
-});
+}).strict();
 type UtilizationQuery = z.infer<typeof utilizationQuerySchema>;
 
 export async function registerUtilizationRoutes(app: FastifyInstance) {

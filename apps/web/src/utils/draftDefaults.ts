@@ -75,6 +75,7 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		advertisingSource: "",
 		telegramUserId: null,
 		telegramUsername: null,
+		familyRelation: "",
 	};
 }
 

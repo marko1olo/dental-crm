@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	type AuthArtItem,
 	getCurrentTimeSlot,
@@ -66,7 +67,9 @@ function blendRgbaOverRgb(fgR: number, fgG: number, fgB: number, alpha: number, 
 	return [r, g, b];
 }
 
-const AUTH_ART_DIR = path.resolve(process.cwd(), "apps/web/public/auth-art");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const AUTH_ART_DIR = path.resolve(__dirname, "../../../../public/auth-art");
 const MANIFEST_PATH = path.join(AUTH_ART_DIR, "manifest.json");
 
 describe("RED TEAM INQUISITION: Auth-Art Backgrounds & Asset Integrity", () => {

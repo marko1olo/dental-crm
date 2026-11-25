@@ -35,13 +35,13 @@ export function createDefaultPaidContract(params: CreateDefaultPaidContractParam
 	const [year, month, day] = today.split("-");
 	const formattedDate = year && month && day ? `${day}.${month}.${year}` : today;
 
+	const isDemo = isDemoShowcaseMode();
 	const passport = parsePassportSeriesNumber(params.patientPassport);
-	const resolvedServices = params.services || DEFAULT_SERVICES;
+	const resolvedServices = params.services ?? (isDemo ? DEFAULT_SERVICES : []);
 	const resolvedTotal = params.totalAmountKopecks !== undefined
 		? params.totalAmountKopecks
 		: calculatePaidContractGrandTotalKopecks(resolvedServices);
 
-	const isDemo = isDemoShowcaseMode();
 	return {
 		contractNumber: params.contractNumber || `ДПМУ-${year || "2026"}-001`,
 		contractDate: formattedDate,

@@ -62,7 +62,7 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 						<div className="hfi-header-info">
 							<div className="hfi-header-title-row">
 								<h2 id={`${modalId}-title`} className="hfi-header-title">Папка автозахвата снимков (радиовизиография и ОПТГ)</h2>
-								<span className="hfi-header-badge" title="Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB" data-testid="hfi-non-conflicting-badge">
+								<span className="hfi-header-badge" title="Работает параллельно с внешними программами визиографов без конфликта за USB" data-testid="hfi-non-conflicting-badge">
 									<Wifi className="w-3 h-3 text-emerald-400" />
 									<span>Бесконфликтный автозахват (Hot Folder)</span>
 								</span>

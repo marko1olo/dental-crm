@@ -25,6 +25,9 @@ export class SyncNetworkWatcher {
 				}
 			})();
 		}, intervalMs);
+		if (this.autoDrainIntervalId && typeof this.autoDrainIntervalId === "object" && "unref" in this.autoDrainIntervalId && typeof this.autoDrainIntervalId.unref === "function") {
+			this.autoDrainIntervalId.unref();
+		}
 	}
 
 	public stopHeartbeat(): void {

@@ -67,7 +67,7 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 
 	const [activeTab, setActiveTab] = useState<"balance" | "family" | "certificates" | "referrals" | "history">("balance");
 	const [pointsBalance, setPointsBalance] = useState<number>(initialPointsBalance);
-	const [lifetimeSpentKop] = useState<number>(initialLifetimeSpentKop);
+	const [lifetimeSpentKop, setLifetimeSpentKop] = useState<number>(initialLifetimeSpentKop);
 	const [nearestExpiringPoints, setNearestExpiringPoints] = useState<number>(0);
 	const [nearestExpirationDate, setNearestExpirationDate] = useState<string | null>(null);
 	const [daysUntilExpiration, setDaysUntilExpiration] = useState<number | null>(null);
@@ -87,6 +87,36 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 	const [refFriendName, setRefFriendName] = useState<string>(""), [refFriendPhone, setRefFriendPhone] = useState<string>("");
 	const [accrueInputRub, setAccrueInputRub] = useState<string>(""), [isAccrueOpen, setIsAccrueOpen] = useState<boolean>(false);
 	const [ledger, setLedger] = useState<readonly LoyaltyLedgerEntry[]>([]);
+
+	// Reset draft & loaded patient state on patient change or modal close (Mandate 8bn / 8zq)
+	useEffect(() => {
+		setActiveTab("balance");
+		setPointsBalance(initialPointsBalance);
+		setLifetimeSpentKop(initialLifetimeSpentKop);
+		setNearestExpiringPoints(0);
+		setNearestExpirationDate(null);
+		setDaysUntilExpiration(null);
+		setLifetimeExpiredPoints(0);
+		setRequestedPointsRub(500);
+		setIsDoctorOverride(false);
+		setSelectedFamilyMemberId(null);
+		setFamilyMembers([]);
+		setFamilyName("");
+		setFamilyGroupId(null);
+		setHasFamilyGroup(false);
+		setIsCreateFamilyOpen(false);
+		setNewFamilyGroupName("");
+		setRelativePatientIdInput("");
+		setRelativeRoleInput("Супруг / Супруга");
+		setCertSerial("");
+		setCertFeedback(null);
+		setVerifiedCertificate(null);
+		setRefFriendName("");
+		setRefFriendPhone("");
+		setAccrueInputRub("");
+		setIsAccrueOpen(false);
+		setLedger([]);
+	}, [patientId, isOpen, initialPointsBalance, initialLifetimeSpentKop]);
 
 	// 1. Live API Data Sync & Family Ecosystem Sync (Мандат 8wy, zero-mocks)
 	useEffect(() => {
@@ -128,7 +158,7 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 				if (txRes.ok) {
 					const rawTx = await txRes.json();
 					const data = rawTx?.data ?? rawTx;
-					if (!isCancelled && Array.isArray(data.transactions) && data.transactions.length > 0) {
+					if (!isCancelled && Array.isArray(data.transactions)) {
 						setLedger(data.transactions.map((t: ApiBonusTransactionResponse) => ({
 							id: t.id || `tx-${Date.now()}`, timestampIso: t.createdAt ? new Date(t.createdAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU"),
 							patientId: currentPatientId, patientName, medicalCardNumber, operationType: t.type === "expired" ? "expired" : t.type?.includes("accrual") ? "accrual" : "redemption",
@@ -137,6 +167,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 							paymentMethodRu: "Бонусный счет", staffNameRu: "Система лояльности", noteRu: t.description || "Операция с баллами",
 						})));
 					}
+				} else if (!isCancelled) {
+					setLedger([]);
 				}
 			} catch (err) {
 				clientLogger.error("[LoyaltyStudioModal] Live loyalty fetch error", err, { module: "useLoyaltyStudioState" });

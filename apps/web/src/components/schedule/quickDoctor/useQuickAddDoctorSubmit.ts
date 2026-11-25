@@ -5,9 +5,10 @@
 import { useState } from "react";
 import { generateUuidV7, type DentalSpecialty } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
+import { useSettingsStore } from "../../../store/settings";
 import {
 	QUICK_DOCTOR_SPECIALTIES,
 	formatDoctorShortName,
@@ -73,10 +74,13 @@ export function useQuickAddDoctorSubmit({
 			} else if (typeof fetch === "function") {
 				const res = await fetch("/api/settings/staff", {
 					method: "POST",
-					headers: denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": generateUuidV7(),
-					}),
+					headers: denteAdminSecretRequestHeaders(
+						{
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						},
+						useSettingsStore.getState().settingsAdminSecretSession,
+					),
 					body: JSON.stringify({
 						fullName: finalName, role: "doctor", specialties: [specialty], phone: phone.trim() || null,
 					}),

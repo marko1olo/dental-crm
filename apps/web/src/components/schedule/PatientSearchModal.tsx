@@ -91,7 +91,6 @@ export function PatientSearchModal({
 				...getDenteAuthHeaders(),
 			},
 			body: JSON.stringify({
-				id: generatedId,
 				fullName: trimmedName,
 				phone: trimmedPhone,
 			}),

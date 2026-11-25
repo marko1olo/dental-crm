@@ -176,7 +176,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 											Зачесть сертификат в счёт ({formatKopecksToRubles(currentInvoiceAmountKop > 0 ? Math.min(state.verifiedCertificate.currentBalanceKop, currentInvoiceAmountKop) : state.verifiedCertificate.currentBalanceKop)})
 										</button>
 										<div style={{ fontSize: "0.75rem", color: "var(--muted)", textAlign: "center", marginTop: "0.25rem" }}>
-											Фискализация по 54-ФЗ (тег 1215: зачёт аванса)
+											Зачёт номинала сертификата при оформлении чека
 										</div>
 									</div>
 								)}

@@ -31,10 +31,16 @@ export function buildQuickBookingPayload(opts: BuildPayloadOptions) {
 
   const stageServices = initialSlot?.services || initialSlot?.items || initialSlot?.procedures || [];
   const planId = initialSlot?.treatmentPlanId || initialSlot?.planId || null;
-  const stageId = initialSlot?.stageId || (initialSlot?.stageNumber ? String(initialSlot.stageNumber) : null);
+  const rawStageId = initialSlot?.stageId;
+  const stageId =
+    typeof rawStageId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawStageId)
+      ? rawStageId
+      : null;
+  const stageLabel = stageId || (initialSlot?.stageNumber ? String(initialSlot.stageNumber) : null);
   let effectiveComment = comment.trim();
   if (planId && !effectiveComment.includes("План лечения")) {
-    const marker = `[План лечения: ${planId}${initialSlot?.stageTitle ? ` | ${initialSlot.stageTitle}` : ""}]${stageId ? ` [Этап: ${stageId}]` : ""}`;
+    const marker = `[План лечения: ${planId}${initialSlot?.stageTitle ? ` | ${initialSlot.stageTitle}` : ""}]${stageLabel ? ` [Этап: ${stageLabel}]` : ""}`;
     effectiveComment = effectiveComment ? `${marker}\n${effectiveComment}` : marker;
   }
 

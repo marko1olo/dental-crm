@@ -27,7 +27,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 	const {
 		plan, activeSubView, setActiveSubView, selectedPaymentItemId, setSelectedPaymentItemId,
 		selectedPaymentMethod, setSelectedPaymentMethod, customPayAmountRub, setCustomPayAmountRub,
-		lastReceipt, selectedPreset, setSelectedPreset, newTotalRubles, setNewTotalRubles,
+		lastReceipt, setLastReceipt, selectedPreset, setSelectedPreset, newTotalRubles, setNewTotalRubles,
 		newDownPaymentPercent, setNewDownPaymentPercent, newMonthsCount, setNewMonthsCount,
 		reminderData, handleInitiateQuickPay, handleExecutePayment, handleCreateNewPlan,
 	} = usePatientInstallmentsState(props);
@@ -39,7 +39,7 @@ export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> =
 			<div className="patient-installments-modal" data-testid="patient-installments-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
 				<InstallmentsHeader
 					plan={plan} patientName={patientName} lastReceipt={lastReceipt}
-					onClose={onClose} onDismissReceipt={() => {}}
+					onClose={onClose} onDismissReceipt={() => setLastReceipt(null)}
 				/>
 
 				<InstallmentsKpiCards plan={plan} />

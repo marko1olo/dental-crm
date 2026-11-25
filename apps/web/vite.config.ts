@@ -85,6 +85,9 @@ export default defineConfig({
 			"react/jsx-dev-runtime",
 		],
 		alias: [
+			{ find: /^node:os$/, replacement: path.resolve(__dirname, "src/lib/nodeBuiltinBrowserStub.ts") },
+			{ find: /^node:zlib$/, replacement: path.resolve(__dirname, "src/lib/nodeBuiltinBrowserStub.ts") },
+			{ find: /^node:crypto$/, replacement: path.resolve(__dirname, "src/lib/nodeBuiltinBrowserStub.ts") },
 			{ find: /^@dental\/shared$/, replacement: path.resolve(__dirname, "../../packages/shared/src/index.ts") },
 			{ find: /^@dental\/shared\/(.*)$/, replacement: path.resolve(__dirname, "../../packages/shared/src/$1") },
 			{ find: "react", replacement: path.join(rootNodeModules, "react") },
@@ -108,6 +111,8 @@ export default defineConfig({
 		target: "es2022",
 		minify: "esbuild",
 		cssMinify: true,
+		sourcemap: false,
+		reportCompressedSize: false,
 		assetsInlineLimit: 4096,
 		modulePreload: {
 			resolveDependencies(filename, deps) {
@@ -127,6 +132,7 @@ export default defineConfig({
 			},
 		},
 		rollupOptions: {
+			maxParallelFileOps: 2,
 			output: {
 				manualChunks(id) {
 					const normalizedId = id.replaceAll("\\", "/");
@@ -314,50 +320,17 @@ export default defineConfig({
 						return "visit-store";
 					if (normalizedId.endsWith("/apps/web/src/store/appStore.ts"))
 						return "app-store";
-					// Rollup's functional manualChunks добавляет в ручной чанк не только сам модуль,
-					// но и ВСЕ его ещё не занятые зависимости. Из-за этого правило
-					// components/settings/ ниже засасывало общие модули, которые к настройкам
-					// отношения не имеют, и точка входа получала статическое ребро на
-					// settings-components (через lib/publicPortalRoute.ts, который импортирует
-					// main.tsx). Каждый общий модуль ниже занят явно, чтобы правила-каталоги
-					// не могли его поглотить.
-					if (normalizedId.endsWith("/apps/web/src/components/EmptyState.tsx"))
-						return "empty-state";
-					if (normalizedId.endsWith("/apps/web/src/lib/publicPortalRoute.ts"))
-						return "public-portal-route";
-					if (normalizedId.endsWith("/apps/web/src/SmartParsePreview.tsx"))
-						return "smart-parse-preview";
-					if (normalizedId.endsWith("/apps/web/src/lib/authedApiFile.ts"))
-						return "authed-api-file";
-					if (
-						normalizedId.endsWith("/apps/web/src/components/PatientPortal.tsx")
-					)
-						return "patient-portal";
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/workspace/WorkspaceFeaturesSelector.tsx",
-						)
-					)
-						return "features-selector";
-					if (normalizedId.includes("/apps/web/src/components/settings/"))
-						return "settings-components";
-					// dicom-parser и dcmjs: легковесные парсеры заголовков и тегов DICOM.
-					// Выделены в отдельный чанк от 3D WebGL движков Cornerstone3D и VTK.js,
-					// чтобы инспекция снимков и чтение метаданных не тянули многомегабайтный рантайм на медленном 5400 RPM HDD.
 					if (
 						normalizedId.includes("/node_modules/dicom-parser") ||
 						normalizedId.includes("/node_modules/dcmjs") ||
 						normalizedId.includes("/node_modules/dicomweb-client")
 					)
 						return "dicom-parser-vendor";
-					// @kitware/vtk.js: тяжелейший научный WebGL-конвейер визуализации объемных КТ/МПР данных.
-					// Изолирован в отдельный vendor-чанк, исключая замедление парсинга основного бандла на Celeron/Pentium.
 					if (
 						normalizedId.includes("/node_modules/@kitware/vtk.js") ||
 						normalizedId.includes("/node_modules/@kitware/")
 					)
 						return "vtk-vendor";
-					// Cornerstone3D и математические библиотеки матриц gl-matrix / hammerjs
 					if (
 						normalizedId.includes("/node_modules/@cornerstonejs/") ||
 						normalizedId.includes("/node_modules/cornerstone") ||
@@ -365,7 +338,6 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/hammerjs")
 					)
 						return "cornerstone-vendor";
-					// Three.js и WebGL 3D-библиотеки визуализации моделей
 					if (
 						normalizedId.includes("/node_modules/three/") ||
 						normalizedId.includes("/node_modules/three") ||
@@ -374,95 +346,6 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/@react-three/")
 					)
 						return "three-vendor";
-					// PanoramicRendererWindow: тяжелая панорамная реконструкция зубной дуги
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/dicom/PanoramicRendererWindow.tsx",
-						)
-					)
-						return "panoramic-renderer";
-					// DicomArchiveUploader: асинхронный загрузчик и парсер архивов срезов DICOM
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/dicom/DicomArchiveUploader.tsx",
-						)
-					)
-						return "dicom-archive-uploader";
-					// DicomViewport: специализированный 2D/WebGL просмотрщик RVG/DICOM
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/imaging/DicomViewport.tsx",
-						)
-					)
-						return "dicom-viewport";
-					// rvgViewerEngine: калибровка, фильтры и математика измерений визиографа
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/imaging/rvgViewerEngine.ts",
-						)
-					)
-						return "rvg-viewer-engine";
-					// dicom-utils: утилиты костной плотности и FDI-маппинга
-					if (normalizedId.includes("/apps/web/src/utils/dicom/"))
-						return "dicom-utils";
-					if (normalizedId.includes("/apps/web/src/components/dicom/"))
-						return "dicom-components";
-					if (normalizedId.includes("/apps/web/src/components/imaging/"))
-						return "imaging-components";
-					if (normalizedId.endsWith("/apps/web/src/ImagingView.tsx"))
-						return "imaging-view";
-					if (
-						normalizedId.includes(
-							"/apps/web/src/components/SmartMicrophoneButton",
-						)
-					)
-						return "SmartMicrophoneButton";
-					if (normalizedId.includes("/apps/web/src/components/GlobalToast"))
-						return "global-toast";
-					if (normalizedId.includes("/apps/web/src/components/Omnibar"))
-						return "omnibar";
-					if (
-						normalizedId.includes("/apps/web/src/components/Odontogram") ||
-						normalizedId.includes("/apps/web/src/components/odontogram/")
-					)
-						return "odontogram";
-					if (normalizedId.endsWith("/apps/web/src/DictationHints.tsx"))
-						return "dictation-hints";
-					if (normalizedId.endsWith("/apps/web/src/AppHelpers.tsx"))
-						return "app-helpers";
-					if (
-						normalizedId.endsWith("/apps/web/src/documentLogic.ts") ||
-						normalizedId.includes("/apps/web/src/documentLogic/")
-					)
-						return "document-logic";
-					if (
-						normalizedId.endsWith("/apps/web/src/documentValidators.ts") ||
-						normalizedId.includes("/apps/web/src/documentValidators/")
-					)
-						return "document-validators";
-					if (normalizedId.endsWith("/apps/web/src/useAppLogic.tsx"))
-						return "app-logic";
-					// Те же грабли, что и выше, но для правила App.tsx -> workspace: оба модуля
-					// общие (PanelLoadFailure рендерят 19 панелей, useWebsocket зовут 5 мест),
-					// и без явного захвата они уезжали внутрь workspace, из-за чего ленивые
-					// маршруты получали статическое ребро на самый тяжёлый чанк.
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/PanelLoadFailure.tsx",
-						)
-					)
-						return "panel-load-failure";
-					if (normalizedId.endsWith("/apps/web/src/hooks/useWebsocket.ts"))
-						return "use-websocket";
-					if (normalizedId.endsWith("/apps/web/src/App.tsx"))
-						return "workspace";
-					// d3 объявляют сразу двое: recharts (через victory-vendor) в аналитике и
-					// @kitware/vtk.js в просмотрщике DICOM. Вынесено в изолированный vendor-чанк.
-					if (
-						normalizedId.includes("/node_modules/d3-") ||
-						normalizedId.includes("/node_modules/d3/")
-					)
-						return "d3-vendor";
 					// react-rnd выносим до react-vendor, иначе includes("/node_modules/react") захватывает его
 					if (normalizedId.includes("/node_modules/react-rnd"))
 						return "rnd-vendor";
@@ -473,8 +356,6 @@ export default defineConfig({
 						normalizedId.endsWith("/node_modules/react-dom")
 					)
 						return "react-vendor";
-					// lucide-react: векторные иконки интерфейса. Выделены в отдельный чанк,
-					// чтобы критический клинический путь (расписание, визит, карточка) стартовал < 1.5 сек.
 					if (
 						normalizedId.includes("/node_modules/lucide-react") ||
 						normalizedId.includes("/node_modules/lucide")
@@ -486,7 +367,6 @@ export default defineConfig({
 						return "query-vendor";
 					if (normalizedId.includes("/node_modules/zod"))
 						return "schema-vendor";
-					// Библиотеки PDF, Canvas и графического экспорта документов (сохранение RAM для 2-ядерных CPU)
 					if (
 						normalizedId.includes("/node_modules/jspdf") ||
 						normalizedId.includes("/node_modules/pdfjs-dist") ||
@@ -494,7 +374,6 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/canvas")
 					)
 						return "pdf-canvas-vendor";
-					// date-fns и dayjs: календарная математика слотов расписания.
 					if (
 						normalizedId.includes("/node_modules/date-fns") ||
 						normalizedId.includes("/node_modules/dayjs")
@@ -508,7 +387,6 @@ export default defineConfig({
 						return "math-vendor";
 					if (normalizedId.includes("/node_modules/fuse.js"))
 						return "search-vendor";
-					// Recharts и связанные библиотеки графиков для аналитики
 					if (
 						normalizedId.includes("/node_modules/recharts") ||
 						normalizedId.includes("/node_modules/victory-vendor") ||
@@ -518,67 +396,6 @@ export default defineConfig({
 						normalizedId.includes("/node_modules/apexcharts")
 					)
 						return "charts-vendor";
-					// Изоляция аналитических панелей и графиков от основного бандла приёма врача
-					if (
-						normalizedId.includes("/apps/web/src/components/analytics/") ||
-						normalizedId.includes("/apps/web/src/pages/analyticsDashboard/") ||
-						normalizedId.includes("/apps/web/src/pages/AnalyticsDashboardView")
-					)
-						return "analytics-components";
-					// Изоляция тяжелой рентгенодиагностики и КЛКТ-студии (снижение нагрузки на I/O HDD 5400 RPM)
-					if (
-						normalizedId.endsWith(
-							"/apps/web/src/components/radiology/CbctMprImplantStudioModal.tsx",
-						)
-					)
-						return "cbct-implant-studio";
-					if (normalizedId.includes("/apps/web/src/components/radiology/"))
-						return "radiology-components";
-					// Изоляция пародонтограммы (3400+ строк) и эндодонтических протоколов
-					if (normalizedId.includes("/apps/web/src/components/perio/"))
-						return "perio-components";
-					if (normalizedId.includes("/apps/web/src/components/endo/"))
-						return "endo-components";
-					// Изоляция телефонии и софтфона от основного бандла рабочего места
-					if (normalizedId.includes("/apps/web/src/components/telephony/"))
-						return "telephony-components";
-					if (normalizedId.includes("/apps/web/src/components/lab/"))
-						return "dental-lab";
-					if (normalizedId.includes("/apps/web/src/components/inventory/"))
-						return "inventory-components";
-					if (normalizedId.includes("/apps/web/src/components/treatment-plans/"))
-						return "treatment-plans";
-					if (normalizedId.includes("/apps/web/src/components/sanpin/"))
-						return "sanpin-components";
-					if (normalizedId.includes("/apps/web/src/components/schedule/"))
-						return "schedule-components";
-					if (normalizedId.includes("/apps/web/src/components/onboarding/"))
-						return "onboarding-components";
-					if (
-						normalizedId.includes("/apps/web/src/components/auth/AuthHub") ||
-						normalizedId.includes("/apps/web/src/components/auth/StaffPinPad")
-					)
-						return "auth-hub";
-					if (normalizedId.includes("/apps/web/src/pwa/A2hsPromptModal"))
-						return "a2hs-modal";
-					if (normalizedId.includes("/apps/web/src/components/doctor-portal/"))
-						return "doctor-portal";
-					if (normalizedId.includes("/apps/web/src/components/egisz/"))
-						return "egisz-components";
-					if (
-						normalizedId.includes("/apps/web/src/components/marketing/") ||
-						normalizedId.endsWith("/apps/web/src/MarketingView.tsx")
-					)
-						return "marketing-components";
-					if (normalizedId.includes("/apps/web/src/components/copilot/"))
-						return "copilot-components";
-					if (normalizedId.includes("/apps/web/src/components/diagnostics/"))
-						return "diagnostics-components";
-					if (
-						normalizedId.includes("/packages/shared") ||
-						normalizedId.includes("/node_modules/@dental/shared/")
-					)
-						return "dental-shared";
 					// Изоляция ORM и DB-клиентов при возможном импорте из общих схем
 					if (
 						normalizedId.includes("/node_modules/drizzle-orm") ||
@@ -673,5 +490,8 @@ export default defineConfig({
 	},
 	worker: {
 		format: "es",
+		rollupOptions: {
+			maxParallelFileOps: 1,
+		},
 	},
 });

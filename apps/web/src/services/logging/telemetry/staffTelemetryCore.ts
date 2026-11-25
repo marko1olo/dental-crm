@@ -513,12 +513,15 @@ export class StaffTelemetryService {
 	// ─── Внутренние методы жизненного цикла и таймеров ───────────────────
 
 	private installLifecycleHooks(): void {
+		if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+			return;
+		}
 		window.addEventListener("online", () => {
 			void this.flushQueue();
 		});
 
 		window.addEventListener("visibilitychange", () => {
-			if (document.visibilityState === "hidden") {
+			if (typeof document !== "undefined" && document.visibilityState === "hidden") {
 				void this.flushQueue();
 			}
 		});
@@ -533,11 +536,20 @@ export class StaffTelemetryService {
 
 	private startAutoFlushTimer(): void {
 		if (this.flushTimer) clearInterval(this.flushTimer);
-		this.flushTimer = setInterval(() => {
+		const timer = setInterval(() => {
 			if (this.eventQueue.size() > 0) {
 				void this.flushQueue();
 			}
 		}, AUTO_FLUSH_INTERVAL_MS);
+		if (
+			typeof timer === "object" &&
+			timer !== null &&
+			"unref" in timer &&
+			typeof timer.unref === "function"
+		) {
+			timer.unref();
+		}
+		this.flushTimer = timer;
 	}
 
 	public destroy(): void {

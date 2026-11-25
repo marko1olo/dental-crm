@@ -78,7 +78,6 @@ export function useClinicFiscalSettings() {
 				kkmSerialNumber: kkmSerialNumber.trim() || "00108204958112",
 				branchId: branchId.trim() || "main",
 				kkmActive,
-				agentSign: agentSign === "none" ? undefined : agentSign,
 			}, buildHeaders());
 			setActiveTaxation(normalizeTaxationId(updated.taxationSystem));
 			if (updated.kkmModel) setKkmModel(updated.kkmModel);

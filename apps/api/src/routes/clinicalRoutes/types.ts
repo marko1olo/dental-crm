@@ -80,7 +80,7 @@ export const clinicalPhaseCompletionSchema = z.object({
 		.optional()
 		.default([]),
 	notes: z.string().nullable().optional(),
-});
+}).strict();
 
 export type ClinicalPhaseCompletionInput = z.infer<
 	typeof clinicalPhaseCompletionSchema
@@ -93,7 +93,7 @@ export type ClinicalPhaseCompletionInput = z.infer<
  */
 export const recentPatientViewBodySchema = z.object({
 	patientId: z.unknown().optional(),
-});
+}).strict();
 
 export function resolveClinicalStaffRole(request: FastifyRequest): string | null {
 	const identity = getRequestIdentity(request);

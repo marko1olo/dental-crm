@@ -278,6 +278,7 @@ export function patientAdministrativeProfileDraftFromPatient(
 		advertisingSource: safeProfileString(profile?.advertisingSource),
 		telegramUserId: typeof profile?.telegramUserId === "string" ? profile.telegramUserId : null,
 		telegramUsername: typeof profile?.telegramUsername === "string" ? profile.telegramUsername : null,
+		familyRelation: safeProfileString(profile?.familyRelation),
 	};
 }
 

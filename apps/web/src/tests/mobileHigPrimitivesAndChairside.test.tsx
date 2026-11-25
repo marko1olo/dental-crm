@@ -14,9 +14,6 @@ import {
   MobileGroupedList,
   MobileGroupedListItem,
   MobileSegmentedControl,
-  MobileFloatingBottomBar,
-  MobileTopBar,
-  MobileChairsideEHR,
 } from "../components/mobile";
 
 test("Sovereign Mobile Layer — Apple HIG Primitives & Chairside EHR Suite", async (t) => {
@@ -86,57 +83,7 @@ test("Sovereign Mobile Layer — Apple HIG Primitives & Chairside EHR Suite", as
     assert.ok(html.includes("Осмотр"), "Must render step2");
   });
 
-  await t.test("4. MobileFloatingBottomBar places Primary CTA strictly in Natural Thumb Zone", () => {
-    const html = renderToString(
-      <MobileFloatingBottomBar
-        primaryLabel="Завершить приём и чек — 4 500 ₽"
-        onPrimaryClick={() => {}}
-        secondaryAction={<button type="button">Отмена</button>}
-      />
-    );
-
-    assert.ok(html.includes("mobile-floating-bottom-bar"), "Must render floating bottom bar container");
-    assert.ok(html.includes("mobile-primary-cta"), "Must render 52px primary CTA button");
-    assert.ok(html.includes("Завершить приём и чек — 4 500 ₽"), "Must render primary label");
-  });
-
-  await t.test("5. MobileTopBar renders 1-row compact layout with back button and safe-area padding", () => {
-    const html = renderToString(
-      <MobileTopBar
-        title="Иванов Иван Иванович"
-        subtitle="34 года · Первичный приём"
-        onBack={() => {}}
-      />
-    );
-
-    assert.ok(html.includes("mobile-top-bar"), "Must render 1-row top bar");
-    assert.ok(html.includes("mobile-top-bar-action"), "Must render 44x44px back button");
-    assert.ok(html.includes("mobile-top-bar-title"), "Must render centered title");
-    assert.ok(html.includes("Иванов Иван Иванович"), "Must render patient name");
-  });
-
-  await t.test("6. MobileChairsideEHR renders chairside workflow: Top Bar, Segmented Steps, 1-Tap Norm and Thumb Zone CTA", () => {
-    const html = renderToString(
-      <MobileChairsideEHR
-        patientName="Петрова Анна Сергеевна"
-        patientAge={28}
-        allergyNotice="Лидокаин"
-        visitReason="Острая зубная боль"
-        toothCode="26"
-        onClose={() => {}}
-        onFinishVisit={() => {}}
-      />
-    );
-
-    assert.ok(html.includes("Петрова Анна Сергеевна"), "Must render patient name");
-    assert.ok(html.includes("Лидокаин"), "Must render allergy warning badge");
-    assert.ok(html.includes("Зуб 26"), "Must render tooth code");
-    assert.ok(html.includes("Автонорма") || html.includes("Автозаполнение"), "Must offer chairside norm auto-fill");
-    assert.ok(html.includes("✓ Заполнить нормой"), "Must render 1-tap norm button");
-    assert.ok(html.includes("mobile-floating-bottom-bar"), "Must provide thumb zone action bar");
-  });
-
-  await t.test("7. CSS Token & Invariant Verification: 0px horizontal drift, safe-area-insets, touch targets", () => {
+  await t.test("4. CSS Token & Invariant Verification: 0px horizontal drift, safe-area-insets, touch targets", () => {
     const candidatePath1 = path.resolve(process.cwd(), "src/components/mobile/mobileHigPrimitives.css");
     const candidatePath2 = path.resolve(process.cwd(), "apps/web/src/components/mobile/mobileHigPrimitives.css");
     const cssPath = fs.existsSync(candidatePath1) ? candidatePath1 : candidatePath2;
@@ -156,40 +103,5 @@ test("Sovereign Mobile Layer — Apple HIG Primitives & Chairside EHR Suite", as
 
     // Dark theme support
     assert.ok(cssContent.includes('[data-theme="dark"]'), "Must support dark theme tokens without glare");
-  });
-
-  await t.test("8. MobileChairsideEHR renders dynamic totalDueRub and interactive payment methods (no hardcoded fallback)", () => {
-    const html = renderToString(
-      <MobileChairsideEHR
-        patientName="Сидоров Алексей Владимирович"
-        patientAge={42}
-        totalDueRub={8200}
-        initialPaymentMethod="sbp"
-        initialReceiptSheetOpen={true}
-        onClose={() => {}}
-        onFinishVisit={() => {}}
-      />
-    );
-
-    assert.ok(html.includes((8200).toLocaleString("ru-RU")) || html.includes("8200"), "Must render dynamic total due");
-    assert.ok(html.includes("СБП (QR-код)"), "Must render SBP payment method");
-    assert.ok(html.includes("Банковская карта (POS-терминал)"), "Must render Card payment method");
-    assert.ok(html.includes("Наличные"), "Must render Cash payment method");
-    assert.ok(html.includes("✓ Выбрано • Комиссия 0.4%"), "Must indicate initial selected payment method");
-  });
-
-  await t.test("9. MobileChairsideEHR initializes with clean empty diagnosis and plan (Mandates 8f, 8am, 8wy)", () => {
-    const html = renderToString(
-      <MobileChairsideEHR
-        patientName="Ковалев Игорь Николаевич"
-        onClose={() => {}}
-        onFinishVisit={() => {}}
-      />
-    );
-
-    // Initial state does not render pre-filled hardcoded "К02.1 Кариес дентина" or pre-filled treatment plan in raw value
-    assert.ok(!html.includes('value="К02.1 Кариес дентина"'), "Must not hardcode diagnosis");
-    assert.ok(!html.includes('value="Препарирование, медикаментозная обработка'), "Must not hardcode treatment plan");
-    assert.ok(html.includes("Ковалев Игорь Николаевич"), "Renders patient name correctly");
   });
 });

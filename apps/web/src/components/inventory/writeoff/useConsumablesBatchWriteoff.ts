@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 
@@ -89,7 +90,11 @@ export function useConsumablesBatchWriteoff({
 				const res = await fetch(`/api/inventory${orgParam}/shift-summary`, { headers });
 				if (res.ok) {
 					const resJson = await res.json();
-					if (isMounted && resJson) setData(resJson);
+					const payload =
+						resJson && typeof resJson === "object" && "data" in resJson
+							? (resJson as { data?: ShiftBatchWriteoffData }).data
+							: (resJson as ShiftBatchWriteoffData);
+					if (isMounted && payload) setData(payload);
 				}
 			} catch {
 				// В офлайн-режиме дефолтные техкарты смены
@@ -119,7 +124,7 @@ export function useConsumablesBatchWriteoff({
 				await inventoryStore.deductStock(organizationId || "default", deductions, { skipNetworkSync: true });
 			}
 
-			const idempotencyKey = crypto.randomUUID();
+			const idempotencyKey = generateUuidV7();
 			const headers: Record<string, string> = {
 				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
 				"Idempotency-Key": idempotencyKey,
@@ -128,7 +133,7 @@ export function useConsumablesBatchWriteoff({
 			const payload = {
 				date: data.date,
 				notes: `Пакетное списание расходников за смену (${data.shiftStats.completedVisitsCount} приёмов)`,
-				items: data.consumablesSummary.map((c) => ({ id: c.itemId, name: c.itemName, quantity: c.qtyToDeduct })),
+				items: data.consumablesSummary.map((c) => ({ itemId: c.itemId, qty: c.qtyToDeduct, name: c.itemName })),
 			};
 
 			// Реальный вызов Fastify API: /shift-batch-deduct с фоллбэком на /shift-deduct
@@ -191,7 +196,7 @@ export function useConsumablesBatchWriteoff({
 		try {
 			const headers: Record<string, string> = {
 				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-carpules`, {
@@ -217,13 +222,13 @@ export function useConsumablesBatchWriteoff({
 		try {
 			const headers: Record<string, string> = {
 				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-package`, {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ packageId: "anesthesia", allowOverdraft: true }),
+				body: JSON.stringify({ packageId: "anesthesia" }),
 			});
 			if (res.ok) {
 				const d = await res.json();
@@ -243,13 +248,13 @@ export function useConsumablesBatchWriteoff({
 		try {
 			const headers: Record<string, string> = {
 				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-visit-bundle`, {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ visitType: "therapy", allowOverdraft: true }),
+				body: JSON.stringify({ visitType: "therapy" }),
 			});
 			if (res.ok) {
 				const d = await res.json();
@@ -269,13 +274,13 @@ export function useConsumablesBatchWriteoff({
 		try {
 			const headers: Record<string, string> = {
 				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const res = await fetch(`/api/inventory${orgParam}/quick-writeoff-surgery`, {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ allowOverdraft: true }),
+				body: JSON.stringify({}),
 			});
 			if (res.ok) {
 				const d = await res.json();
@@ -295,19 +300,19 @@ export function useConsumablesBatchWriteoff({
 		try {
 			const headers: Record<string, string> = {
 				...(getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" }),
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			};
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			let res = await fetch(`/api/inventory${orgParam}/quick-writeoff-hygiene`, {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ allowOverdraft: true }),
+				body: JSON.stringify({}),
 			});
 			if (!res.ok) {
 				res = await fetch(`/api/inventory${orgParam}/quick-writeoff-visit-bundle`, {
 					method: "POST",
 					headers,
-					body: JSON.stringify({ visitType: "hygiene", allowOverdraft: true }),
+					body: JSON.stringify({ visitType: "hygiene" }),
 				});
 			}
 			if (res.ok) {

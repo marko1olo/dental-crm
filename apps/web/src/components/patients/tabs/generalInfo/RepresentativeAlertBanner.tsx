@@ -27,7 +27,7 @@ export const RepresentativeAlertBanner: React.FC<RepresentativeAlertBannerProps>
 							<span className="sr-only">Основание: ст. 20 323-ФЗ, ст. 64 СК РФ</span>
 						</span>
 					</div>
-					<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shrink-0">
+					<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-600 text-white shrink-0">
 						Младше 15 лет
 					</span>
 				</div>
@@ -61,7 +61,7 @@ export const RepresentativeAlertBanner: React.FC<RepresentativeAlertBannerProps>
 						</span>
 					</div>
 					<span
-						className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 border ${
+						className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 border ${
 							selectedRep.isLegalRepresentative
 								? "bg-emerald-600 text-white border-emerald-700"
 								: "bg-amber-600 text-white border-amber-700"
