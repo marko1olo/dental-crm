@@ -304,3 +304,9 @@ scripts/.auth_tokens_cache.json
 *.tar.gz
 docs/_backup/*/docs_copy/
 
+# 3D scan binary files (STL, PLY, OBJ — runtime-generated, not source)
+apps/api/storage/scans/
+*.stl
+*.ply
+*.obj
+
