@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { withTenantCtx } from "../../../db/rls.js";
 import { auditEvents, organizations } from "../../../db/schema.js";
 import { resetRateLimit } from "../../../security/rateLimit.js";
@@ -12,7 +13,6 @@ import {
 	verifyCredential,
 } from "../../../utils/cryptoHelper.js";
 import {
-	authBodyRecord,
 	authFailureDelay,
 	demoLoginAllowed,
 	parseAuthPayload,
@@ -24,6 +24,12 @@ import {
 	clinicLoginBodySchema,
 	clinicLoginValidationMessage,
 } from "./loginValidationSchemas.js";
+
+const demoSeedBodySchema = z
+	.object({
+		forceReset: z.boolean().optional(),
+	})
+	.strict();
 
 /**
  * POST /api/auth/clinic/login
@@ -166,8 +172,14 @@ export async function handleDemoSeed(
 				"Инициализация демо-контура недоступна в текущей конфигурации сервера.",
 		});
 	}
-	const body = authBodyRecord(request.body);
-	const forceReset = body.forceReset === true;
+	const parsedSeedBody = demoSeedBodySchema.safeParse(request.body ?? {});
+	if (!parsedSeedBody.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректное тело запроса инициализации демо-контура.",
+		});
+	}
+	const forceReset = parsedSeedBody.data.forceReset === true;
 	try {
 		const result = await ensureDemoShowcaseTenant(undefined, { forceReset });
 		return reply.send({

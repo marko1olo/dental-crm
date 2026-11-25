@@ -17,6 +17,7 @@ export const outboxHeadersSchema = z
 	.passthrough();
 
 export const outboxDispatchRouteOptions = {
+	config: { tenantTxSelfManaged: true },
 	schema: {
 		description: "EGISZ Outbox dispatch queue with optional RFC 9562 Idempotency-Key",
 		headers: {
@@ -27,6 +28,10 @@ export const outboxDispatchRouteOptions = {
 			},
 		},
 	},
+};
+
+export const outboxSyncStatusRouteOptions = {
+	config: { tenantTxSelfManaged: true },
 };
 
 export async function handleOutboxDispatch(request: FastifyRequest, reply: FastifyReply) {

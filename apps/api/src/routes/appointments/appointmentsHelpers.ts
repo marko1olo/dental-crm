@@ -160,8 +160,8 @@ export function normalizeAppointmentUpdateRawBody(
 	timeZone?: string | null,
 ): Record<string, unknown> | null {
 	const rawBody =
-		body && typeof body === "object"
-			? { ...(body as Record<string, unknown>) }
+		body && typeof body === "object" && !Array.isArray(body)
+			? Object.fromEntries(Object.entries(body))
 			: null;
 
 	if (rawBody) {

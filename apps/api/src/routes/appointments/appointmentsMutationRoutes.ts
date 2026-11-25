@@ -292,6 +292,16 @@ export const updateAppointmentHandler = async (
 			message: "Запись не выбрана.",
 		});
 	}
+	if (
+		!request.body ||
+		typeof request.body !== "object" ||
+		Array.isArray(request.body)
+	) {
+		return reply.code(400).send({
+			code: "AppointmentValidationError",
+			message: appointmentUpdateValidationMessage,
+		});
+	}
 	const context = await requireScheduleMutationContext(
 		request,
 		reply,

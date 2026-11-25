@@ -6,7 +6,10 @@ import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
 import {
 	optionalDoctorIdSchema,
+	publicWaitlistSchema,
 	sendOtpSchema,
+	slotsParamSchema,
+	slotsQuerySchema,
 	verifyOtpSchema,
 } from "./bookingModules/publicBookingSchemas.js";
 import {
@@ -112,10 +115,20 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
+		const effectiveOrgId =
+			parsed.data.organizationId || request.params?.organizationId;
+		if (!effectiveOrgId || !isValidUuid(effectiveOrgId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message:
+					"Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
+
 		const check = await verifyPhoneOtpAsync(
 			parsed.data.phone,
 			parsed.data.code,
-			parsed.data.organizationId || request.params?.organizationId,
+			effectiveOrgId,
 		);
 		if (!check.valid) {
 			return reply.status(400).send({
@@ -181,7 +194,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 	// 0a-2. Get clinic details by organizationId
 	server.get("/:organizationId/clinic-info", async (request: FastifyRequest<{ Params: { organizationId: string } }>, reply) => {
+		if (isRateLimited(request.ip ?? "unknown")) {
+			return reply.status(429).send({ error: "Слишком много запросов." });
+		}
 		const { organizationId } = request.params;
+		if (!isValidUuid(organizationId)) {
+			return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
+		}
 		const [clinicRow] = await withSuperuserBypass(async (tx) => {
 			return tx
 				.select({
@@ -209,8 +228,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const { date, doctorId } = request.query;
-		const organizationId = request.query.organizationId;
+		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+		const organizationId = typeof rawQuery.organizationId === "string" ? rawQuery.organizationId : undefined;
 		if (!organizationId || !isValidUuid(organizationId)) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
@@ -218,20 +237,29 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
-		if (!date) {
+		if (!rawQuery.date || typeof rawQuery.date !== "string") {
 			return reply.status(400).send({
 				error: "BookingDateMissing",
 				message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
 			});
 		}
-		if (doctorId && !optionalDoctorIdSchema.safeParse(doctorId).success) {
+		const queryParsed = slotsQuerySchema.safeParse(rawQuery);
+		if (!queryParsed.success) {
+			const hasDoctorError = queryParsed.error.issues.some((i) => i.path.includes("doctorId"));
+			if (hasDoctorError) {
+				return reply.status(400).send({
+					error: "DoctorIdInvalid",
+					message: "Некорректный идентификатор врача.",
+				});
+			}
 			return reply.status(400).send({
-				error: "DoctorIdInvalid",
-				message: "Некорректный идентификатор врача.",
+				error: "BookingDateInvalid",
+				message: "Некорректные параметры запроса свободного времени.",
+				details: queryParsed.error.issues,
 			});
 		}
 
-		return handleSlotsQuery(organizationId, date, doctorId, reply);
+		return handleSlotsQuery(organizationId, queryParsed.data.date, queryParsed.data.doctorId, reply);
 	};
 
 	server.get<{
@@ -298,13 +326,15 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const body = request.body;
-		if (!body?.patientName?.trim() || !body?.patientPhone?.trim()) {
+		const parsedBody = publicWaitlistSchema.safeParse(request.body);
+		if (!parsedBody.success) {
 			return reply.status(400).send({
 				error: "ValidationError",
 				message: "Имя и телефон пациента обязательны для добавления в лист ожидания.",
+				details: parsedBody.error.issues,
 			});
 		}
+		const body = parsedBody.data;
 
 		const rawIdempotencyKey =
 			(request.headers["idempotency-key"] as string | undefined) ||
@@ -335,8 +365,23 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				);
 			}
 
-			let patientId = body.patientId;
-			if (!patientId) {
+			let patientId: string | undefined;
+			if (body.patientId) {
+				const [ownedPatient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, body.patientId),
+							eq(patients.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (!ownedPatient) {
+					return { patientNotFound: true as const };
+				}
+				patientId = ownedPatient.id;
+			} else {
 				const [existing] = await tx
 					.select({ id: patients.id })
 					.from(patients)
@@ -434,6 +479,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			return { waitlist: waitlistEntry, isReplayed: false };
 		});
 
+		if (waitlistResult && "patientNotFound" in waitlistResult) {
+			return reply.status(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
+		}
+
 		if (waitlistResult?.isReplayed) {
 			reply.header("idempotency-replayed", "true");
 		}
@@ -487,23 +539,36 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const { organizationId } = request.params;
-		const { date, doctorId } = request.query;
-
-		if (!date) {
+		const paramCheck = slotsParamSchema.safeParse(request.params);
+		if (!paramCheck.success) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
+		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+		if (!rawQuery.date || typeof rawQuery.date !== "string") {
 			return reply.status(400).send({
 				error: "BookingDateMissing",
 				message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
 			});
 		}
-		if (doctorId && !optionalDoctorIdSchema.safeParse(doctorId).success) {
+		const queryCheck = slotsQuerySchema.safeParse(rawQuery);
+		if (!queryCheck.success) {
+			if (queryCheck.error.issues.some((i) => i.path.includes("doctorId"))) {
+				return reply.status(400).send({
+					error: "DoctorIdInvalid",
+					message: "Некорректный идентификатор врача.",
+				});
+			}
 			return reply.status(400).send({
-				error: "DoctorIdInvalid",
-				message: "Некорректный идентификатор врача.",
+				error: "BookingDateInvalid",
+				message: "Некорректные параметры запроса свободного времени.",
+				details: queryCheck.error.issues,
 			});
 		}
 
-		return handleSlotsQuery(organizationId, date, doctorId, reply);
+		return handleSlotsQuery(paramCheck.data.organizationId, queryCheck.data.date, queryCheck.data.doctorId, reply);
 	});
 
 	// 2b. Backward-compatible param endpoint: GET /api/public/booking/:organizationId/slots/:doctorId?date=YYYY-MM-DD
@@ -515,16 +580,35 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
 		const { organizationId, doctorId } = request.params;
-		const { date } = request.query;
-
-		if (!date) {
+		if (!isValidUuid(organizationId)) {
+			return reply.status(404).send({
+				error: "ClinicNotFound",
+				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+			});
+		}
+		if (!isValidUuid(doctorId)) {
+			return reply.status(400).send({
+				error: "DoctorIdInvalid",
+				message: "Некорректный идентификатор врача.",
+			});
+		}
+		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
+		if (!rawQuery.date || typeof rawQuery.date !== "string") {
 			return reply.status(400).send({
 				error: "BookingDateMissing",
 				message: "Запрос свободного времени пришёл без даты приёма. Выберите дату в поле «Выберите дату».",
 			});
 		}
+		const queryCheck = slotsQuerySchema.safeParse(rawQuery);
+		if (!queryCheck.success) {
+			return reply.status(400).send({
+				error: "BookingDateInvalid",
+				message: "Некорректные параметры запроса свободного времени.",
+				details: queryCheck.error.issues,
+			});
+		}
 
-		return handleSlotsQuery(organizationId, date, doctorId, reply);
+		return handleSlotsQuery(organizationId, queryCheck.data.date, doctorId, reply);
 	});
 
 	// 3. Book an appointment with strict working hour & collision enforcement

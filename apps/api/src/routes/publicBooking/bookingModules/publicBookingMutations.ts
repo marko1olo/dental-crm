@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	clinics,
 	crmLeads,
@@ -102,9 +102,11 @@ export async function createCrmLeadFromPublicIntake(
 			createdAt: now,
 		});
 
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "LEAD_CREATED",
-			payload: createdLead,
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "LEAD_CREATED",
+				payload: createdLead,
+			});
 		});
 	}
 
@@ -122,12 +124,15 @@ export async function executePublicBookingAppointment(
 	const result = await executeBookingTransaction(tx, params);
 
 	if (!("blocked" in result) && !result.conflict && result.appointment) {
-		wsBroker.broadcastToOrganization(params.organizationId, {
-			type: "APPOINTMENT_CREATED",
-			payload: {
-				appointmentId: result.appointment.id,
-				startsAt: result.appointment.startsAt,
-			},
+		const createdAppointment = result.appointment;
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(params.organizationId, {
+				type: "APPOINTMENT_CREATED",
+				payload: {
+					appointmentId: createdAppointment.id,
+					startsAt: createdAppointment.startsAt,
+				},
+			});
 		});
 	}
 

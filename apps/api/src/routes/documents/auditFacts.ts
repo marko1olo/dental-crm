@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { getDocumentById } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
@@ -6,22 +7,27 @@ import { withTenantCtx } from "../../db/rls.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { apiError, buildDocumentAuditFacts } from "./shared.js";
 
+const documentIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
+
 export async function register(app: FastifyInstance) {
 	app.get("/api/documents/:id/audit-facts", async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(request, reply, "document audit facts"))
 		)
 			return;
-		const { id } = request.params as { id: string };
-		const UUID_REGEX =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		if (!id || !UUID_REGEX.test(id)) {
+		const parsedParams = documentIdParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply
 				.code(400)
 				.send(
 					apiError("Некорректный идентификатор документа (ожидается UUID)"),
 				);
 		}
+		const { id } = parsedParams.data;
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 

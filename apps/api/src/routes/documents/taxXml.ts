@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import {
@@ -39,19 +40,24 @@ export async function register(app: FastifyInstance) {
 	app.get("/api/documents/:id/tax-xml", handleGetTaxXml);
 }
 
+const documentIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
+
 async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "document tax xml")))
 		return;
-	const { id } = request.params as { id: string };
-	const UUID_REGEX =
-		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-	if (!id || !UUID_REGEX.test(id)) {
+	const parsedParams = documentIdParamsSchema.safeParse(request.params);
+	if (!parsedParams.success) {
 		return reply
 			.code(400)
 			.send(
 				apiError("Некорректный идентификатор документа (ожидается UUID)"),
 			);
 	}
+	const { id } = parsedParams.data;
 	// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
 	// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
 	// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.

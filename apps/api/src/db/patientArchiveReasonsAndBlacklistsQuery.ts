@@ -52,13 +52,15 @@ export async function getPatientArchiveReasonsAndBlacklistsFromDb(
 export async function isPatientBookingBlocked(
 	orgId: string,
 	patientId: string,
+	tx?: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] | undefined,
 ): Promise<boolean> {
 	if (inMemoryBlacklist.has(`${orgId}:${patientId}`)) {
 		return true;
 	}
+	const executor = tx ?? db;
 	try {
 		let fullName = "";
-		const [patientRow] = await db
+		const [patientRow] = await executor
 			.select({ fullName: patients.fullName, status: patients.status })
 			.from(patients)
 			.where(
@@ -72,7 +74,7 @@ export async function isPatientBookingBlocked(
 			fullName = patientRow.fullName.trim();
 		}
 
-		const rows = await db
+		const rows = await executor
 			.select({
 				id: patientArchiveReasonsAndBlacklists.id,
 				patientId: patientArchiveReasonsAndBlacklists.patientId,

@@ -5,7 +5,7 @@ import {
 	resolveOrganizationId,
 	unguardedBypassAllowed,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { visits } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
@@ -53,27 +53,9 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 		});
 	}
 	const data = parsedUpsert.data;
-	const userId: string | null = req.user?.id ?? null;
-	const role: string = req.user?.role ?? "assistant";
+	const userId: string | null = identity.userId ?? req.user?.id ?? null;
+	const role: string = identity.role ?? req.user?.role ?? "assistant";
 	data.organizationId = orgId;
-
-	const [visitForDiary] = await db
-		.select({ id: visits.id, patientId: visits.patientId })
-		.from(visits)
-		.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
-		.limit(1);
-	if (!visitForDiary) {
-		return reply.code(403).send({
-			error: "VisitNotInClinic",
-			message: "Приём не найден в этой клинике — дневник приёма к нему не привязать.",
-		});
-	}
-	if (visitForDiary.patientId !== data.patientId) {
-		return reply.code(400).send({
-			error: "PatientVisitMismatch",
-			message: "Пациент в запросе не совпадает с карточкой этого приёма.",
-		});
-	}
 
 	const isSigning = data.status === "signed";
 	if (isSigning && !isDoctorOrClinicalSigner(role)) {
@@ -81,11 +63,45 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 	}
 
 	try {
-		const outcome = await executeSaveOrSignDiaryTx({ data, orgId, userId });
+		const outcome = await withTenantCtx(orgId, async (tx) => {
+			const [visitForDiary] = await tx
+				.select({ id: visits.id, patientId: visits.patientId })
+				.from(visits)
+				.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
+				.limit(1);
+			if (!visitForDiary) {
+				return {
+					ok: false as const,
+					status: 403 as const,
+					body: {
+						error: "VisitNotInClinic",
+						message: "Приём не найден в этой клинике — дневник приёма к нему не привязать.",
+					},
+				};
+			}
+			if (visitForDiary.patientId !== data.patientId) {
+				return {
+					ok: false as const,
+					status: 400 as const,
+					body: {
+						error: "PatientVisitMismatch",
+						message: "Пациент в запросе не совпадает с карточкой этого приёма.",
+					},
+				};
+			}
+
+			const saved = await executeSaveOrSignDiaryTx({ data, orgId, userId });
+			return { ok: true as const, saved };
+		});
+
+		if (!outcome.ok) {
+			return reply.code(outcome.status).send(outcome.body);
+		}
+
 		const responsePayload = {
 			success: true,
-			id: outcome.diaryId,
-			hash: outcome.signing?.hash ?? outcome.draftHash ?? null,
+			id: outcome.saved.diaryId,
+			hash: outcome.saved.signing?.hash ?? outcome.saved.draftHash ?? null,
 		};
 
 		return reply.send(responsePayload);

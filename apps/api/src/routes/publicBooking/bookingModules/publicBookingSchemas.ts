@@ -51,28 +51,73 @@ export const optionalDoctorIdSchema = z.string().uuid("Некорректный 
 export const russianPhoneRegex =
 	/^(?:\+7|8|7)?[\s\-]?(?:\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$|^\+[1-9]\d{9,14}$/;
 
-export const bookingRequestSchema = z.object({
-	doctorId: z.string().uuid("Некорректный идентификатор врача"),
-	startsAt: z.string().datetime({ offset: true }),
-	endsAt: z.string().datetime({ offset: true }),
-	patientName: z.string().trim().min(2, "Имя пациента должно содержать от 2 символов").max(120),
-	patientPhone: z
-		.string()
-		.trim()
-		.regex(russianPhoneRegex, "Неверный формат номера телефона РФ (ожидается +7XXXXXXXXXX)"),
-	comment: z.string().trim().max(500).optional(),
-	verificationCode: z.string().trim().min(4, "Код подтверждения должен быть от 4 до 8 символов").max(8).optional(),
-	telegramInitData: z.string().trim().optional(),
-	source: z.string().trim().max(100).optional(),
-	utm_source: z.string().trim().max(100).optional(),
-	utmSource: z.string().trim().max(100).optional(),
-	utm_campaign: z.string().trim().max(100).optional(),
-	utm_medium: z.string().trim().max(100).optional(),
-	utm_content: z.string().trim().max(100).optional(),
-	utm_term: z.string().trim().max(100).optional(),
-	idempotencyKey: z.string().trim().max(100).optional(),
-	hasAgreedToPrivacy: z.boolean().optional(),
-});
+export const bookingRequestSchema = z
+	.object({
+		organizationId: z.string().uuid("Некорректный ID клиники").optional(),
+		patientId: z.string().uuid("Некорректный ID пациента").optional(),
+		doctorId: z.string().uuid("Некорректный идентификатор врача"),
+		startsAt: z.string().datetime({ offset: true }),
+		endsAt: z.string().datetime({ offset: true }),
+		patientName: z
+			.string()
+			.trim()
+			.min(2, "Имя пациента должно содержать от 2 символов")
+			.max(120),
+		patientPhone: z
+			.string()
+			.trim()
+			.regex(
+				russianPhoneRegex,
+				"Неверный формат номера телефона РФ (ожидается +7XXXXXXXXXX)",
+			),
+		comment: z.string().trim().max(500).optional(),
+		verificationCode: z
+			.string()
+			.trim()
+			.min(4, "Код подтверждения должен быть от 4 до 8 символов")
+			.max(8)
+			.optional(),
+		telegramInitData: z.string().trim().optional(),
+		status: z.string().trim().max(40).optional(),
+		source: z.string().trim().max(100).optional(),
+		utm_source: z.string().trim().max(100).optional(),
+		utmSource: z.string().trim().max(100).optional(),
+		utm_campaign: z.string().trim().max(100).optional(),
+		utm_medium: z.string().trim().max(100).optional(),
+		utm_content: z.string().trim().max(100).optional(),
+		utm_term: z.string().trim().max(100).optional(),
+		referrer: z.string().trim().max(500).optional(),
+		idempotencyKey: z.string().trim().max(100).optional(),
+		hasAgreedToPrivacy: z.boolean().optional(),
+	})
+	.strict();
+
+export const publicWaitlistSchema = z
+	.object({
+		organizationId: z.string().uuid("Некорректный ID клиники").optional(),
+		patientId: z.string().uuid("Некорректный ID пациента").optional(),
+		patientName: z
+			.string()
+			.trim()
+			.min(1, "Имя и телефон пациента обязательны для добавления в лист ожидания.")
+			.max(120),
+		patientPhone: z
+			.string()
+			.trim()
+			.min(1, "Имя и телефон пациента обязательны для добавления в лист ожидания.")
+			.max(30),
+		doctorId: z.string().uuid("Некорректный идентификатор врача").optional(),
+		preferredDoctorId: z
+			.string()
+			.uuid("Некорректный идентификатор врача")
+			.optional(),
+		date: z.string().trim().max(40).optional(),
+		comment: z.string().trim().max(1000).optional(),
+		notes: z.string().trim().max(1000).optional(),
+		hasAgreedToPrivacy: z.boolean().optional(),
+		idempotencyKey: z.string().trim().max(100).optional(),
+	})
+	.strict();
 
 export const publicBookingFieldLabels: Record<string, string> = {
 	doctorId: "врач",
@@ -84,26 +129,33 @@ export const publicBookingFieldLabels: Record<string, string> = {
 	verificationCode: "код подтверждения",
 };
 
-export const sendOtpSchema = z.object({
-	phone: z.string().trim().min(7).max(25),
-	method: z.enum(["sms", "flash_call"]).default("sms"),
-	organizationId: z.string().uuid().optional(),
-});
+export const sendOtpSchema = z
+	.object({
+		phone: z.string().trim().min(7).max(25),
+		method: z.enum(["sms", "flash_call"]).default("sms"),
+		organizationId: z.string().uuid().optional(),
+	})
+	.strict();
 
-export const verifyOtpSchema = z.object({
-	phone: z.string().trim().min(7).max(25),
-	code: z.string().trim().min(4).max(8),
-	organizationId: z.string().uuid().optional(),
-});
+export const verifyOtpSchema = z
+	.object({
+		phone: z.string().trim().min(7).max(25),
+		code: z.string().trim().min(4).max(8),
+		organizationId: z.string().uuid().optional(),
+	})
+	.strict();
 
+export const slotsQuerySchema = z
+	.object({
+		date: dateSchema,
+		doctorId: optionalDoctorIdSchema,
+		organizationId: organizationIdSchema.optional(),
+	})
+	.strict();
 
-
-export const slotsQuerySchema = z.object({
-	date: dateSchema,
-	doctorId: optionalDoctorIdSchema,
-});
-
-export const slotsParamSchema = z.object({
-	organizationId: organizationIdSchema,
-	doctorId: optionalDoctorIdSchema,
-});
+export const slotsParamSchema = z
+	.object({
+		organizationId: organizationIdSchema,
+		doctorId: optionalDoctorIdSchema,
+	})
+	.strict();

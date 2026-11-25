@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	createProtocolTemplateInDb,
 	deleteProtocolTemplateInDb,
@@ -24,6 +25,12 @@ import {
 	updateProtocolTemplateSchema,
 	type UpdateProtocolTemplateInput,
 } from "./types.js";
+
+const protocolTemplateIdParamsSchema = z
+	.object({
+		templateId: z.string().uuid(),
+	})
+	.strict();
 
 export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	/* ─── ШАБЛОНЫ ПРОТОКОЛОВ ПРИЁМА ───────────────────────────────────────────
@@ -73,14 +80,17 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	app.put("/api/settings/protocols/:templateId", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
-		const params = request.params as { templateId?: string };
-		if (!params.templateId) {
+		const paramsParsed = protocolTemplateIdParamsSchema.safeParse(
+			request.params,
+		);
+		if (!paramsParsed.success) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
 				message: protocolTemplateRouteValidationMessage,
 			};
 		}
+		const { templateId } = paramsParsed.data;
 		const input = parseSettingsPayload<UpdateProtocolTemplateInput>(
 			updateProtocolTemplateSchema,
 			request.body,
@@ -105,7 +115,7 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 		try {
 			const updated = await updateProtocolTemplateInDb(
 				orgId,
-				params.templateId,
+				templateId,
 				input,
 			);
 			return updated;
@@ -129,8 +139,10 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 	app.delete("/api/settings/protocols/:templateId", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
-		const params = request.params as { templateId?: string };
-		if (!params.templateId) {
+		const paramsParsed = protocolTemplateIdParamsSchema.safeParse(
+			request.params,
+		);
+		if (!paramsParsed.success) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
@@ -140,7 +152,7 @@ export function registerProtocolTemplatesRoutes(app: FastifyInstance): void {
 		try {
 			const deleted = await deleteProtocolTemplateInDb(
 				orgId,
-				params.templateId,
+				paramsParsed.data.templateId,
 			);
 			return deleted;
 		} catch (error) {

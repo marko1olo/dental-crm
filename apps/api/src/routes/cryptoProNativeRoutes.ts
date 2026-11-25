@@ -12,6 +12,7 @@ import { z } from "zod";
 import { recordAuditEvent } from "../audit.js";
 import { getDocumentById } from "../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../db/patientsQuery.js";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	CryptoProCertInfo,
 	CryptoProCliError,
@@ -113,7 +114,9 @@ export async function getTenantCryptoContext(
 	}
 
 	try {
-		const settings = await getClinicSettingsFromDb(targetOrgId);
+		const settings = await withTenantCtx(targetOrgId, () =>
+			getClinicSettingsFromDb(targetOrgId),
+		);
 		if (settings?.profile) {
 			clinicInn = settings.profile.inn?.trim() || null;
 			clinicOgrn = settings.profile.ogrn?.trim() || null;
@@ -127,8 +130,12 @@ export async function getTenantCryptoContext(
 				}
 			}
 		}
-	} catch {
+	} catch (err: unknown) {
 		// При отсутствии БД или настроек фильтруем по identity
+		request.log.debug(
+			{ err, organizationId: targetOrgId },
+			"[CryptoPro] Не удалось загрузить настройки клиники для контекста УКЭП",
+		);
 	}
 
 	return {
@@ -326,8 +333,9 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	 * GET /api/crypto/status & GET /api/cryptopro/native/status
 	 * Проверка статуса наличия КриптоПро CSP в операционной системе.
 	 */
-	app.get("/api/crypto/status", handleStatus);
-	app.get("/api/cryptopro/native/status", handleStatus);
+	const selfManagedRouteConfig = { config: { tenantTxSelfManaged: true } } as const;
+	app.get("/api/crypto/status", selfManagedRouteConfig, handleStatus);
+	app.get("/api/cryptopro/native/status", selfManagedRouteConfig, handleStatus);
 
 	const handleCertificates = async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalReadContext(request, reply, "crypto certificates");
@@ -371,8 +379,8 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	 * GET /api/crypto/certificates & GET /api/cryptopro/native/certificates
 	 * Получение списка установленных сертификатов УКЭП с фильтрацией по текущей клинике/врачу.
 	 */
-	app.get("/api/crypto/certificates", handleCertificates);
-	app.get("/api/cryptopro/native/certificates", handleCertificates);
+	app.get("/api/crypto/certificates", selfManagedRouteConfig, handleCertificates);
+	app.get("/api/cryptopro/native/certificates", selfManagedRouteConfig, handleCertificates);
 
 	const handleCertificateByThumbprint = async (request: FastifyRequest<{ Params: { thumbprint: string } }>, reply: FastifyReply) => {
 		const context = await requireClinicalReadContext(request, reply, "crypto certificate details");
@@ -456,8 +464,8 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/crypto/certificates/:thumbprint & GET /api/cryptopro/native/certificates/:thumbprint
 	 */
-	app.get<{ Params: { thumbprint: string } }>("/api/crypto/certificates/:thumbprint", handleCertificateByThumbprint);
-	app.get<{ Params: { thumbprint: string } }>("/api/cryptopro/native/certificates/:thumbprint", handleCertificateByThumbprint);
+	app.get<{ Params: { thumbprint: string } }>("/api/crypto/certificates/:thumbprint", selfManagedRouteConfig, handleCertificateByThumbprint);
+	app.get<{ Params: { thumbprint: string } }>("/api/cryptopro/native/certificates/:thumbprint", selfManagedRouteConfig, handleCertificateByThumbprint);
 
 	const handleSign = async (request: FastifyRequest, reply: FastifyReply) => {
 		const context = await requireClinicalMutationContext(request, reply, "crypto sign");
@@ -511,37 +519,52 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 		}
 
 		if (documentId) {
-			const doc = await getDocumentById(organizationId, documentId);
-			if (!doc) {
-				return reply.status(404).send({
-					success: false,
-					code: "DOCUMENT_NOT_FOUND",
-					message: "Документ не найден в данной клинике",
+			const docPreflightRejection = await withTenantCtx(organizationId, async (tx) => {
+				const doc = await getDocumentById(organizationId, documentId, tx);
+				if (!doc) {
+					return {
+						status: 404 as const,
+						body: {
+							success: false,
+							code: "DOCUMENT_NOT_FOUND",
+							message: "Документ не найден в данной клинике",
+						},
+					};
+				}
+				const access = evaluateClinicalAccess(identity.role, {
+					clinicalRole: identity.clinicalRole ?? null,
+					canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+					specialties: identity.specialties ?? null,
 				});
-			}
-			const access = evaluateClinicalAccess(identity.role, {
-				clinicalRole: identity.clinicalRole ?? null,
-				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
-				specialties: identity.specialties ?? null,
+				if (
+					clinicalDocKinds.has(doc.kind) &&
+					!access.hasClinicalAccess &&
+					!isReceptionistAllowedPrimaryDoc(doc.kind, identity.role)
+				) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							code: "PermissionDenied",
+							message: "Подписание клинического документа недоступно для вашей роли",
+						},
+					};
+				}
+				const patient = await getPatientByIdFromDb(organizationId, doc.patientId);
+				if (patient?.status === "archived" && !access.hasClinicalAccess) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							code: "PermissionDenied",
+							message: "Отказ в доступе к документам архивированного пациента",
+						},
+					};
+				}
+				return null;
 			});
-			if (
-				clinicalDocKinds.has(doc.kind) &&
-				!access.hasClinicalAccess &&
-				!isReceptionistAllowedPrimaryDoc(doc.kind, identity.role)
-			) {
-				return reply.status(403).send({
-					success: false,
-					code: "PermissionDenied",
-					message: "Подписание клинического документа недоступно для вашей роли",
-				});
-			}
-			const patient = await getPatientByIdFromDb(organizationId, doc.patientId);
-			if (patient?.status === "archived" && !access.hasClinicalAccess) {
-				return reply.status(403).send({
-					success: false,
-					code: "PermissionDenied",
-					message: "Отказ в доступе к документам архивированного пациента",
-				});
+			if (docPreflightRejection) {
+				return reply.status(docPreflightRejection.status).send(docPreflightRejection.body);
 			}
 		}
 
@@ -613,19 +636,22 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			const signatureBase64 = signatureBuffer.toString("base64");
 			const signedAt = new Date().toISOString();
 
-			await recordAuditEvent({
-				organizationId,
-				actorUserId: identity.userId ?? null,
-				entityType: documentId ? "generated_document" : "crypto_payload",
-				entityId: documentId ?? cleanThumbprint,
-				action: "ukep_payload_signed_gost",
-				reason: JSON.stringify({
-					thumbprint: cleanThumbprint,
-					documentKind: documentKind ?? null,
-					algorithm: "GOST R 34.10-2012",
-					signedAt,
+			await withTenantCtx(organizationId, (tx) =>
+				recordAuditEvent({
+					organizationId,
+					actorUserId: identity.userId ?? null,
+					entityType: documentId ? "generated_document" : "crypto_payload",
+					entityId: documentId ?? cleanThumbprint,
+					action: "ukep_payload_signed_gost",
+					reason: JSON.stringify({
+						thumbprint: cleanThumbprint,
+						documentKind: documentKind ?? null,
+						algorithm: "GOST R 34.10-2012",
+						signedAt,
+					}),
+					tx,
 				}),
-			});
+			);
 
 			return reply.send({
 				success: true,
@@ -649,6 +675,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 	};
 
 	const signPayloadRouteOptions = {
+		config: { tenantTxSelfManaged: true },
 		schema: {
 			description:
 				"Формирование отсоединенной подписи УКЭП ГОСТ Р 34.10-2012 с проверкой Idempotency-Key и изоляцией organizationId",

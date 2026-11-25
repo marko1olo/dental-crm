@@ -196,7 +196,7 @@ export async function executeBookingTransaction(
 				message: "Запись невозможна: карта пациента находится в архиве. Пожалуйста, обратитесь в клинику по телефону.",
 			};
 		}
-		const isBlocked = await isPatientBookingBlocked(organizationId, patientId);
+		const isBlocked = await isPatientBookingBlocked(organizationId, patientId, tx);
 		if (isBlocked) {
 			return {
 				conflict: false as const,

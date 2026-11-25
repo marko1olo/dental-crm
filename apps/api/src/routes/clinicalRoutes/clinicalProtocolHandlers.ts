@@ -199,6 +199,12 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 				}
 
 				const { ruleId } = request.params;
+				if (!ruleId || !UUID_PATTERN.test(ruleId)) {
+					return reply.code(400).send({
+						error: "ClinicalRuleValidationError",
+						message: "Ошибка валидации: ruleId должен быть UUID.",
+					});
+				}
 				const body =
 					request.body && typeof request.body === "object" ? request.body : {};
 				const input = parseClinicalPayload(updateClinicalRuleSchema, {

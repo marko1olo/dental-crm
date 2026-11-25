@@ -1,9 +1,28 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { requireClinicalReadAccess } from "../../accessGuard.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
+	getRequestIdentity,
 	requireOrganizationId,
 	requireStaffIdentity,
 } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { recentPatientViewBodySchema } from "./types.js";
+
+const catalog804nQuerySchema = z
+	.object({
+		q: z.string().optional(),
+		category: z.string().optional(),
+	})
+	.strict();
+
+const icd10QuerySchema = z
+	.object({
+		q: z.string().optional(),
+		group: z.string().optional(),
+	})
+	.strict();
 
 /**
  * Diagnostic, statutory classification, and patient history route handlers.
@@ -15,15 +34,20 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 		request: FastifyRequest,
 		reply: FastifyReply,
 	) => {
-		const query = request.query as
-			| { q?: string; category?: string }
-			| undefined;
+		const parsedQuery = catalog804nQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса справочника 804н.",
+			});
+		}
+		const query = parsedQuery.data;
 		const { getStatutory804nCatalog } = await import(
 			"../../services/clinical/statutoryCatalogs.js"
 		);
 		const items = getStatutory804nCatalog({
-			...(query?.q ? { q: query.q } : {}),
-			...(query?.category ? { category: query.category } : {}),
+			...(query.q ? { q: query.q } : {}),
+			...(query.category ? { category: query.category } : {}),
 		});
 		return reply.status(200).send(items);
 	};
@@ -34,15 +58,20 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/clinical/icd10",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const query = request.query as
-				| { q?: string; group?: string }
-				| undefined;
+			const parsedQuery = icd10QuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запроса справочника МКБ-10.",
+				});
+			}
+			const query = parsedQuery.data;
 			const { getStatutoryIcd10Catalog } = await import(
 				"../../services/clinical/statutoryCatalogs.js"
 			);
 			const items = getStatutoryIcd10Catalog({
-				...(query?.q ? { q: query.q } : {}),
-				...(query?.group ? { group: query.group } : {}),
+				...(query.q ? { q: query.q } : {}),
+				...(query.group ? { group: query.group } : {}),
 			});
 			return reply.status(200).send(items);
 		},
@@ -152,15 +181,47 @@ export async function registerClinicalDiagnosisRoutes(app: FastifyInstance) {
 	// COMPETITOR FEATURE #6: маркетинг::фильтр_потерянных_пациентов_в_отчете
 	app.get("/api/analytics/lost-patients-filters", async (request, reply) => {
 		try {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"lost patients filters",
+				))
+			) {
+				return;
+			}
 			// Организация берётся из подписанного токена, а не из заголовка клиента.
 			// Раньше здесь принимался x-organization-id без всякой аутентификации:
 			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			if (staffRole) {
+				const evalAccess = evaluateClinicalAccess(staffRole, {
+					clinicalRole: identity.clinicalRole ?? null,
+					canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+					specialties: identity.specialties ?? null,
+				});
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "clinical.analytics.read",
+						role: staffRole,
+						message:
+							"Доступ к фильтрам потерянных пациентов ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+					});
+				}
+			}
+
 			const { getLostPatientsFiltersFromDb } = await import(
 				"../../db/lostPatientsFiltersQuery.js"
 			);
-			return reply.status(200).send(await getLostPatientsFiltersFromDb(orgId));
+			const filters = await withTenantCtx(orgId, () =>
+				getLostPatientsFiltersFromDb(orgId),
+			);
+			return reply.status(200).send(filters);
 		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({

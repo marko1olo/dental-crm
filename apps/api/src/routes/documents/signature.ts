@@ -72,7 +72,12 @@ async function verifyAndConsumePepOtpInTx(
 		await tx
 			.update(schema.portalOtpCodes)
 			.set({ consumedAt: now })
-			.where(eq(schema.portalOtpCodes.id, candidate.id));
+			.where(
+				and(
+					eq(schema.portalOtpCodes.id, candidate.id),
+					eq(schema.portalOtpCodes.organizationId, orgId),
+				),
+			);
 		return {
 			ok: false,
 			statusCode: 429,
@@ -90,7 +95,12 @@ async function verifyAndConsumePepOtpInTx(
 				attemptCount: nextAttempts,
 				...(nextAttempts >= PEP_OTP_MAX_ATTEMPTS ? { consumedAt: now } : {}),
 			})
-			.where(eq(schema.portalOtpCodes.id, candidate.id));
+			.where(
+				and(
+					eq(schema.portalOtpCodes.id, candidate.id),
+					eq(schema.portalOtpCodes.organizationId, orgId),
+				),
+			);
 		return {
 			ok: false,
 			statusCode: 400,
@@ -105,6 +115,7 @@ async function verifyAndConsumePepOtpInTx(
 		.where(
 			and(
 				eq(schema.portalOtpCodes.id, candidate.id),
+				eq(schema.portalOtpCodes.organizationId, orgId),
 				isNull(schema.portalOtpCodes.consumedAt),
 			),
 		)
@@ -521,6 +532,7 @@ export async function register(app: FastifyInstance) {
 
 			// Если документ в статусе черновика — переводим его в issued с сохранением подписи
 			// issueGeneratedDocumentInDb сам вставляет 1 запись в schema.documentSignatures.
+			let stampedHtmlToWrite: string | null = null;
 			if (lockedDoc.status === "draft") {
 				const issuedDocumentCandidate = {
 					...existing,
@@ -544,8 +556,8 @@ export async function register(app: FastifyInstance) {
 					tx,
 				});
 			} else {
-				// Документ уже был выдан (включая УКЭП врача) — сохраняем визуальный штамп в .stamped.html,
-				// не перезаписывая storagePath / issuedSnapshotSha256 / issuedSnapshotCreatedAt исходного архива.
+				// Документ уже был выдан (включая УКЭП врача) — визуальный штамп .stamped.html
+				// пишем строго после коммита транзакции, чтобы откат/409 не оставил файл на диске.
 				const signedDocumentCandidate = {
 					...existing,
 					signatureAttestation,
@@ -556,7 +568,10 @@ export async function register(app: FastifyInstance) {
 					patient,
 					renderContext,
 				);
-				const snapshot = writeStampedDocumentSnapshot(id, signedHtml);
+				const stampedSha256 = crypto
+					.createHash("sha256")
+					.update(signedHtml, "utf8")
+					.digest("hex");
 
 				const [updatedIssued] = await tx
 					.update(schema.generatedDocuments)
@@ -583,7 +598,8 @@ export async function register(app: FastifyInstance) {
 					};
 				}
 
-				const docSha256 = lockedDoc.issuedSnapshotSha256 || snapshot.sha256;
+				stampedHtmlToWrite = signedHtml;
+				const docSha256 = lockedDoc.issuedSnapshotSha256 || stampedSha256;
 				await tx.insert(schema.documentSignatures).values({
 					organizationId: orgId,
 					documentId: existing.id,
@@ -629,7 +645,7 @@ export async function register(app: FastifyInstance) {
 				tx,
 			});
 
-			return { ok: true as const };
+			return { ok: true as const, stampedHtmlToWrite };
 		});
 
 		if (!txResult.ok) {
@@ -637,6 +653,10 @@ export async function register(app: FastifyInstance) {
 				error: txResult.error,
 				message: txResult.message,
 			});
+		}
+
+		if (txResult.stampedHtmlToWrite) {
+			writeStampedDocumentSnapshot(id, txResult.stampedHtmlToWrite);
 		}
 
 		request.log.info(

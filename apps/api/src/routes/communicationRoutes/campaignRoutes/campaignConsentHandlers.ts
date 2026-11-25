@@ -4,9 +4,9 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { patientCommunicationConsents } from "../../../db/schema.js";
-import { UUID_REGEX } from "../types.js";
+import { patientIdParamSchema } from "../types.js";
 
 export function registerCampaignConsentHandlers(app: FastifyInstance): void {
 	app.get(
@@ -28,24 +28,27 @@ export function registerCampaignConsentHandlers(app: FastifyInstance): void {
 			);
 			if (!organizationId) return;
 
-			const { patientId } = request.params as { patientId: string };
-			if (!UUID_REGEX.test(patientId)) {
+			const paramsParsed = patientIdParamSchema.safeParse(request.params);
+			if (!paramsParsed.success) {
 				return reply.code(400).send({
 					error: "InvalidPatientId",
 					message: "Некорректный идентификатор пациента.",
 				});
 			}
+			const { patientId } = paramsParsed.data;
 
-			const consents = await db
-				.select()
-				.from(patientCommunicationConsents)
-				.where(
-					and(
-						eq(patientCommunicationConsents.organizationId, organizationId),
-						eq(patientCommunicationConsents.patientId, patientId),
-					),
-				)
-				.orderBy(desc(patientCommunicationConsents.decidedAt));
+			const consents = await withTenantCtx(organizationId, (tx) =>
+				tx
+					.select()
+					.from(patientCommunicationConsents)
+					.where(
+						and(
+							eq(patientCommunicationConsents.organizationId, organizationId),
+							eq(patientCommunicationConsents.patientId, patientId),
+						),
+					)
+					.orderBy(desc(patientCommunicationConsents.decidedAt)),
+			);
 
 			return reply.send({
 				success: true,

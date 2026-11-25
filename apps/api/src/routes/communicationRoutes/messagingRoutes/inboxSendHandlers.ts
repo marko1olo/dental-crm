@@ -1,10 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { patients } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
-import { UUID_REGEX, sendMessageSchema } from "../types.js";
+import { patientIdParamSchema, sendMessageSchema } from "../types.js";
 import { processSendMessage } from "./inboxMessageSender.js";
 
 export function registerInboxSendHandlers(app: FastifyInstance): void {
@@ -17,7 +17,6 @@ export function registerInboxSendHandlers(app: FastifyInstance): void {
 				"communications send message",
 			);
 			if (!orgId) return;
-			const { patientId } = request.params as { patientId: string };
 
 			const identity = getRequestIdentity(request);
 			if (identity.role === "marketer" || identity.role === "marketing") {
@@ -30,20 +29,24 @@ export function registerInboxSendHandlers(app: FastifyInstance): void {
 				});
 			}
 
-			if (!UUID_REGEX.test(patientId)) {
+			const paramsParsed = patientIdParamSchema.safeParse(request.params);
+			if (!paramsParsed.success) {
 				return reply.code(400).send({
 					error: "InvalidPatientId",
 					message: "Некорректный идентификатор пациента.",
 				});
 			}
+			const { patientId } = paramsParsed.data;
 
-			const [patient] = await db
-				.select({ id: patients.id, status: patients.status })
-				.from(patients)
-				.where(
-					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
-				)
-				.limit(1);
+			const [patient] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({ id: patients.id, status: patients.status })
+					.from(patients)
+					.where(
+						and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+					)
+					.limit(1),
+			);
 			if (!patient) {
 				return reply.code(404).send({
 					error: "PatientNotFound",

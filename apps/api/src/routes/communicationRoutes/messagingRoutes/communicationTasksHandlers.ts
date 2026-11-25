@@ -5,7 +5,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { communicationEvents, communicationTasks } from "../../../db/schema.js";
 import {
 	communicationTaskNotFoundMessage,
@@ -30,7 +30,7 @@ export function registerCommunicationTasksHandlers(app: FastifyInstance): void {
 		}
 
 		try {
-			const result = await db.transaction(async (tx) => {
+			const result = await withTenantCtx(organizationId, async (tx) => {
 				const [task] = await tx
 					.select()
 					.from(communicationTasks)

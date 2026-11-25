@@ -20,87 +20,105 @@ export const communicationTaskValidationMessage =
 export const communicationTaskNotFoundMessage =
 	"Задача связи не закрыта: задача не найдена или уже недоступна.";
 
-export const chatIdParamSchema = z.object({
-	chatId: z.string().uuid("Идентификатор чата должен быть корректным UUID"),
-});
+export const chatIdParamSchema = z
+	.object({
+		chatId: z.string().uuid("Идентификатор чата должен быть корректным UUID"),
+	})
+	.strict();
 export type ChatIdParam = z.infer<typeof chatIdParamSchema>;
 
-export const lockChatBodySchema = z.object({
-	agentName: z.string().min(1).max(200).optional(),
-	durationMinutes: z.number().int().min(1).max(60).optional(),
-});
+export const lockChatBodySchema = z
+	.object({
+		agentName: z.string().min(1).max(200).optional(),
+		durationMinutes: z.number().int().min(1).max(60).optional(),
+	})
+	.strict();
 export type LockChatBody = z.infer<typeof lockChatBodySchema>;
 
-export const unlockChatBodySchema = z.object({
-	agentName: z.string().min(1).max(200).optional(),
-	force: z.boolean().optional(),
-});
+export const unlockChatBodySchema = z
+	.object({
+		agentName: z.string().min(1).max(200).optional(),
+		force: z.boolean().optional(),
+	})
+	.strict();
 export type UnlockChatBody = z.infer<typeof unlockChatBodySchema>;
 
-export const createTemplateRouteSchema = z.object({
-	title: z.string().min(1, "Название шаблона обязательно"),
-	channel: z
-		.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"])
-		.default("telegram"),
-	intent: z.string().default("general"),
-	templateText: z.string().min(1, "Текст шаблона обязателен"),
-	variables: z.array(z.string()).optional(),
-	isActive: z.boolean().default(true),
-});
+export const createTemplateRouteSchema = z
+	.object({
+		title: z.string().min(1, "Название шаблона обязательно"),
+		channel: z
+			.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"])
+			.default("telegram"),
+		intent: z.string().default("general"),
+		templateText: z.string().min(1, "Текст шаблона обязателен"),
+		variables: z.array(z.string()).optional(),
+		isActive: z.boolean().default(true),
+	})
+	.strict();
 export type CreateTemplateRouteInput = z.infer<typeof createTemplateRouteSchema>;
 
-export const renderTemplateRouteSchema = z.object({
-	templateId: z.string().uuid().optional(),
-	templateText: z.string().optional(),
-	channel: z
-		.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"])
-		.default("telegram"),
-	patientId: z.string().uuid().optional(),
-	appointmentId: z.string().uuid().optional(),
-	visitId: z.string().uuid().optional(),
-	variables: z.record(z.string(), z.union([z.string(), z.number(), z.null()]).optional()).optional(),
-	allowPreviewFallback: z.boolean().default(true),
-	violationHandling: z.enum(["block", "strip"]).default("block"),
-});
+export const renderTemplateRouteSchema = z
+	.object({
+		templateId: z.string().uuid().optional(),
+		templateText: z.string().optional(),
+		channel: z
+			.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"])
+			.default("telegram"),
+		patientId: z.string().uuid().optional(),
+		appointmentId: z.string().uuid().optional(),
+		visitId: z.string().uuid().optional(),
+		variables: z.record(z.string(), z.union([z.string(), z.number(), z.null()]).optional()).optional(),
+		allowPreviewFallback: z.boolean().default(true),
+		violationHandling: z.enum(["block", "strip"]).default("block"),
+	})
+	.strict();
 export type RenderTemplateRouteInput = z.infer<typeof renderTemplateRouteSchema>;
 
-export const sendMessageSchema = z.object({
-	message: z.string().trim().min(1, "Текст сообщения не может быть пустым."),
-	channel: z
-		.enum([
-			"phone",
-			"sms",
-			"whatsapp",
-			"telegram",
-			"email",
-			"in_person",
-			"vk",
-			"max",
-		])
-		.default("telegram"),
-	idempotencyKey: z.string().min(1).max(128).optional(),
-	sanitize: z.boolean().optional(),
-	templateName: z.string().optional(),
-	intent: z.string().optional(),
-	languageCode: z.string().optional(),
-	templateParameters: z.array(z.string()).optional(),
-});
+export const sendMessageSchema = z
+	.object({
+		message: z.string().trim().min(1, "Текст сообщения не может быть пустым."),
+		channel: z
+			.enum([
+				"phone",
+				"sms",
+				"whatsapp",
+				"telegram",
+				"email",
+				"in_person",
+				"vk",
+				"max",
+			])
+			.default("telegram"),
+		idempotencyKey: z.string().min(1).max(128).optional(),
+		sanitize: z.boolean().optional(),
+		templateName: z.string().optional(),
+		intent: z.string().optional(),
+		languageCode: z.string().optional(),
+		templateParameters: z.array(z.string()).optional(),
+	})
+	.strict();
 export type SendMessageBody = z.infer<typeof sendMessageSchema>;
 
-export const patientSearchQuerySchema = z.object({
-	q: z.string().optional(),
-});
+export const patientSearchQuerySchema = z
+	.object({
+		q: z.string().optional(),
+	})
+	.strict();
 export type PatientSearchQuery = z.infer<typeof patientSearchQuerySchema>;
 
-export const patientIdParamSchema = z.object({
-	patientId: z.string().regex(UUID_REGEX, "Некорректный идентификатор пациента."),
-});
+export const patientIdParamSchema = z
+	.object({
+		patientId: z.string().regex(UUID_REGEX, "Некорректный идентификатор пациента."),
+	})
+	.strict();
 export type PatientIdParam = z.infer<typeof patientIdParamSchema>;
 
-export const templateListQuerySchema = z.object({
-	channel: z.string().optional(),
-	intent: z.string().optional(),
-	isActive: z.string().optional(),
-});
+export const templateListQuerySchema = z
+	.object({
+		channel: z.string().optional(),
+		intent: z.string().optional(),
+		isActive: z.string().optional(),
+	})
+	.strict();
 export type TemplateListQuery = z.infer<typeof templateListQuerySchema>;
 

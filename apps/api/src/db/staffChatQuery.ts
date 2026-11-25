@@ -52,8 +52,13 @@ export class StaffChatEntityNotFoundError extends Error {
 	}
 }
 
+type StaffChatExecutor =
+	| TenantDb
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 async function assertChannelAccessInDb(
-	executor: TenantDb,
+	executor: StaffChatExecutor,
 	organizationId: string,
 	channelId: string,
 	currentUserId?: string | null,
@@ -91,8 +96,9 @@ async function assertChannelAccessInDb(
  */
 export async function ensureDefaultStaffChannels(
 	organizationId: string,
+	externalTx?: StaffChatExecutor | undefined,
 ): Promise<void> {
-	await db.transaction(async (tx) => {
+	const ensureInTx = async (tx: StaffChatExecutor): Promise<void> => {
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${`staff_chat_defaults:${organizationId}`}))`,
 		);
@@ -123,7 +129,13 @@ export async function ensureDefaultStaffChannels(
 		if (missingChannels.length > 0) {
 			await tx.insert(staffChatChannels).values(missingChannels);
 		}
-	});
+	};
+
+	if (externalTx) {
+		await ensureInTx(externalTx);
+		return;
+	}
+	await db.transaction(ensureInTx);
 }
 
 /**
@@ -489,10 +501,11 @@ export async function insertStaffMessage(params: {
 	intercomPreset?: IntercomPresetKey | null;
 	targetAudience?: string | null;
 	metadata?: Record<string, unknown> | null;
+	tx?: StaffChatExecutor | undefined;
 }): Promise<StaffChatMessage> {
 	const readBy = params.senderUserId ? [params.senderUserId] : [];
 
-	const inserted = await db.transaction(async (tx) => {
+	const runInsert = async (tx: StaffChatExecutor) => {
 		await assertChannelAccessInDb(
 			tx,
 			params.organizationId,
@@ -536,7 +549,11 @@ export async function insertStaffMessage(params: {
 			);
 
 		return row;
-	});
+	};
+
+	const inserted = params.tx
+		? await runInsert(params.tx)
+		: await db.transaction(runInsert);
 
 	return {
 		id: inserted.id,

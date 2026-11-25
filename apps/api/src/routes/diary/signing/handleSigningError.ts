@@ -1,6 +1,6 @@
 import type { FastifyReply } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { visitDiaries } from "../../../db/schema.js";
 import { DiarySigningError } from "../../../services/clinical/DiarySigningCeremonyService.js";
 
@@ -12,14 +12,16 @@ export async function handleDiarySigningError(
 ): Promise<void> {
 	if (err instanceof DiarySigningError) {
 		if (err.code === "AlreadyLocked") {
-			const [lockedRow] = await db
-				.select({
-					diaryHash: visitDiaries.diaryHash,
-					lockedAt: visitDiaries.lockedAt,
-				})
-				.from(visitDiaries)
-				.where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId)))
-				.limit(1);
+			const [lockedRow] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({
+						diaryHash: visitDiaries.diaryHash,
+						lockedAt: visitDiaries.lockedAt,
+					})
+					.from(visitDiaries)
+					.where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId)))
+					.limit(1),
+			);
 			return reply.code(409).send({
 				error: "AlreadyLocked",
 				hash: lockedRow?.diaryHash ?? null,

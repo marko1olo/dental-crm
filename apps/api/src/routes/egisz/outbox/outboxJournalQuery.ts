@@ -5,11 +5,19 @@
 
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
 import { formatOutboxRowForJournal } from "./outboxRowFormatter.js";
+
+const egiszJournalQuerySchema = z
+	.object({
+		status: z.string().trim().max(64).optional(),
+		limit: z.coerce.number().int().min(1).optional(),
+	})
+	.strict();
 
 export async function handleEgiszJournalQuery(
 	request: FastifyRequest,
@@ -20,8 +28,17 @@ export async function handleEgiszJournalQuery(
 	const orgId = requireOrganizationId(request, reply);
 	if (!orgId) return;
 
-	const query = (request.query || {}) as { status?: string; limit?: string };
-	const limit = Math.min(100, Math.max(1, Number(query.limit) || 50));
+	const queryParsed = egiszJournalQuerySchema.safeParse(request.query ?? {});
+	if (!queryParsed.success) {
+		return reply.status(400).send({
+			success: false,
+			error: "ValidationError",
+			message: "Некорректные параметры фильтрации журнала ЕГИСЗ.",
+			issues: queryParsed.error.issues,
+		});
+	}
+	const query = queryParsed.data;
+	const limit = Math.min(100, Math.max(1, query.limit ?? 50));
 
 	const conditions = [eq(schema.egiszOutbox.organizationId, orgId)];
 	if (query.status && query.status !== "all") {
@@ -40,32 +57,40 @@ export async function handleEgiszJournalQuery(
 		}
 	}
 
-	const rows = await db
-		.select({
-			id: schema.egiszOutbox.id, visitId: schema.egiszOutbox.visitId, documentId: schema.egiszOutbox.documentId,
-			patientId: schema.egiszOutbox.patientId, doctorId: schema.egiszOutbox.doctorId, docTypeNsiCode: schema.egiszOutbox.docTypeNsiCode,
-			status: schema.egiszOutbox.status, attempts: schema.egiszOutbox.attempts, maxAttempts: schema.egiszOutbox.maxAttempts,
-			scheduledAt: schema.egiszOutbox.scheduledAt, nextAttemptAt: schema.egiszOutbox.nextAttemptAt,
-			remdDocumentId: schema.egiszOutbox.remdDocumentId, remdTransactionId: schema.egiszOutbox.remdTransactionId,
-			lastErrorClass: schema.egiszOutbox.lastErrorClass, lastErrorMessage: schema.egiszOutbox.lastErrorMessage,
-			doctorSignaturePkcs7: schema.egiszOutbox.doctorSignaturePkcs7, doctorCertSerial: schema.egiszOutbox.doctorCertSerial,
-			doctorCertSubject: schema.egiszOutbox.doctorCertSubject, doctorSignedAt: schema.egiszOutbox.doctorSignedAt,
-			moSignaturePkcs7: schema.egiszOutbox.moSignaturePkcs7, moCertSerial: schema.egiszOutbox.moCertSerial,
-			moCertSubject: schema.egiszOutbox.moCertSubject, moSignedAt: schema.egiszOutbox.moSignedAt,
-			payloadHashSha256: schema.egiszOutbox.payloadHashSha256, dedupeKey: schema.egiszOutbox.dedupeKey,
-			createdAt: schema.egiszOutbox.createdAt, updatedAt: schema.egiszOutbox.updatedAt,
-			patientFullName: schema.patients.fullName, patientBirthDate: schema.patients.birthDate,
-			patientAdministrativeProfile: schema.patients.administrativeProfile,
-			doctorFullName: schema.users.fullName, doctorRole: schema.users.role, doctorSnils: schema.users.snils,
-			organizationName: schema.organizations.name, organizationInn: schema.organizations.inn, organizationOgrn: schema.organizations.ogrn,
-		})
-		.from(schema.egiszOutbox)
-		.leftJoin(schema.patients, eq(schema.egiszOutbox.patientId, schema.patients.id))
-		.leftJoin(schema.users, eq(schema.egiszOutbox.doctorId, schema.users.id))
-		.leftJoin(schema.organizations, eq(schema.egiszOutbox.organizationId, schema.organizations.id))
-		.where(and(...conditions))
-		.orderBy(desc(schema.egiszOutbox.createdAt))
-		.limit(limit);
+	const rows = await withTenantCtx(orgId, async (tx) =>
+		tx
+			.select({
+				id: schema.egiszOutbox.id, visitId: schema.egiszOutbox.visitId, documentId: schema.egiszOutbox.documentId,
+				patientId: schema.egiszOutbox.patientId, doctorId: schema.egiszOutbox.doctorId, docTypeNsiCode: schema.egiszOutbox.docTypeNsiCode,
+				status: schema.egiszOutbox.status, attempts: schema.egiszOutbox.attempts, maxAttempts: schema.egiszOutbox.maxAttempts,
+				scheduledAt: schema.egiszOutbox.scheduledAt, nextAttemptAt: schema.egiszOutbox.nextAttemptAt,
+				remdDocumentId: schema.egiszOutbox.remdDocumentId, remdTransactionId: schema.egiszOutbox.remdTransactionId,
+				lastErrorClass: schema.egiszOutbox.lastErrorClass, lastErrorMessage: schema.egiszOutbox.lastErrorMessage,
+				doctorSignaturePkcs7: schema.egiszOutbox.doctorSignaturePkcs7, doctorCertSerial: schema.egiszOutbox.doctorCertSerial,
+				doctorCertSubject: schema.egiszOutbox.doctorCertSubject, doctorSignedAt: schema.egiszOutbox.doctorSignedAt,
+				moSignaturePkcs7: schema.egiszOutbox.moSignaturePkcs7, moCertSerial: schema.egiszOutbox.moCertSerial,
+				moCertSubject: schema.egiszOutbox.moCertSubject, moSignedAt: schema.egiszOutbox.moSignedAt,
+				payloadHashSha256: schema.egiszOutbox.payloadHashSha256, dedupeKey: schema.egiszOutbox.dedupeKey,
+				createdAt: schema.egiszOutbox.createdAt, updatedAt: schema.egiszOutbox.updatedAt,
+				patientFullName: schema.patients.fullName, patientBirthDate: schema.patients.birthDate,
+				patientAdministrativeProfile: schema.patients.administrativeProfile,
+				doctorFullName: schema.users.fullName, doctorRole: schema.users.role, doctorSnils: schema.users.snils,
+				organizationName: schema.organizations.name, organizationInn: schema.organizations.inn, organizationOgrn: schema.organizations.ogrn,
+			})
+			.from(schema.egiszOutbox)
+			.leftJoin(
+				schema.patients,
+				and(
+					eq(schema.egiszOutbox.patientId, schema.patients.id),
+					eq(schema.patients.organizationId, orgId),
+				),
+			)
+			.leftJoin(schema.users, eq(schema.egiszOutbox.doctorId, schema.users.id))
+			.leftJoin(schema.organizations, eq(schema.egiszOutbox.organizationId, schema.organizations.id))
+			.where(and(...conditions))
+			.orderBy(desc(schema.egiszOutbox.createdAt))
+			.limit(limit),
+	);
 
 	const items = rows.map(formatOutboxRowForJournal);
 	return reply.status(200).send({ success: true, items, totalCount: items.length });

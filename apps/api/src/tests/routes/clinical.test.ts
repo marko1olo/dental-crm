@@ -209,7 +209,7 @@ describe("clinical routes integration", () => {
 	test("PATCH /api/clinical/rules/:ruleId validates input", async () => {
 		const response = await app.inject({
 			method: "PATCH",
-			url: "/api/clinical/rules/rule1",
+			url: "/api/clinical/rules/00000000-0000-0000-0000-000000000101",
 			headers: ORG_HEADERS,
 			payload: { action: "invalid" },
 		});
@@ -217,10 +217,22 @@ describe("clinical routes integration", () => {
 		assert.strictEqual(response.statusCode, 400);
 	});
 
-	test("PATCH /api/clinical/rules/:ruleId требует организацию", async () => {
+	test("PATCH /api/clinical/rules/:ruleId rejects non-UUID ruleId with 400", async () => {
 		const response = await app.inject({
 			method: "PATCH",
 			url: "/api/clinical/rules/rule1",
+			headers: ORG_HEADERS,
+			payload: { title: "t" },
+		});
+
+		assert.strictEqual(response.statusCode, 400);
+		assert.strictEqual(JSON.parse(response.body).error, "ClinicalRuleValidationError");
+	});
+
+	test("PATCH /api/clinical/rules/:ruleId требует организацию", async () => {
+		const response = await app.inject({
+			method: "PATCH",
+			url: "/api/clinical/rules/00000000-0000-0000-0000-000000000101",
 			payload: { title: "t" },
 		});
 
@@ -229,13 +241,14 @@ describe("clinical routes integration", () => {
 	});
 
 	test("PATCH /api/clinical/rules/:ruleId succeeds", async () => {
+		const ruleId = "00000000-0000-0000-0000-000000000101";
 		// getClinicalRuleById: db.select().from(...).where(...).limit(1)
 		mock.method(db, "select", () => ({
 			from: () => ({
 				where: () => ({
 					limit: async () => [
 						{
-							id: "rule1",
+							id: ruleId,
 							organizationId: ORG_ID,
 							title: "old",
 							category: "consultation",
@@ -262,7 +275,7 @@ describe("clinical routes integration", () => {
 				where: () => ({
 					returning: async () => [
 						{
-							id: "rule1",
+							id: ruleId,
 							organizationId: "00000000-0000-0000-0000-000000000000",
 							title: "new",
 							category: "consultation",
@@ -286,7 +299,7 @@ describe("clinical routes integration", () => {
 
 		const response = await app.inject({
 			method: "PATCH",
-			url: "/api/clinical/rules/rule1",
+			url: `/api/clinical/rules/${ruleId}`,
 			headers: ORG_HEADERS,
 			payload: {
 				title: "new",

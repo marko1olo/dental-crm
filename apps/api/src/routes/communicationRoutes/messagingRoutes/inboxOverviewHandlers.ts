@@ -1,14 +1,10 @@
 import { and, eq, ilike, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { patients } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
-
-const patientSearchQuerySchema = z.object({
-	q: z.string().optional(),
-});
+import { patientSearchQuerySchema } from "../types.js";
 
 interface RawInboxEventRow extends Record<string, unknown> {
 	id: string;
@@ -32,23 +28,31 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 		);
 		if (!orgId) return;
 		const queryParsed = patientSearchQuerySchema.safeParse(request.query ?? {});
-		const q = queryParsed.success ? queryParsed.data.q : undefined;
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры поиска пациентов.",
+			});
+		}
+		const q = queryParsed.data.q;
 		if (!q || q.length < 2) return reply.send([]);
 
-		const result = await db
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				phone: patients.phone,
-			})
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, orgId),
-					ilike(patients.fullName, `%${q}%`),
-				),
-			)
-			.limit(20);
+		const result = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					phone: patients.phone,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						ilike(patients.fullName, `%${q}%`),
+					),
+				)
+				.limit(20),
+		);
 
 		return reply.send(result);
 	});
@@ -72,7 +76,8 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 			});
 		}
 
-		const latestEvents = await db.execute<RawInboxEventRow>(sql`
+		const latestEvents = await withTenantCtx(orgId, (tx) =>
+			tx.execute<RawInboxEventRow>(sql`
 			SELECT DISTINCT ON (COALESCE(e.patient_id::text, e.caller_phone, e.id::text))
 				e.id,
 				e.patient_id AS "patientId",
@@ -89,7 +94,8 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 			LEFT JOIN crm_leads l ON (e.caller_phone = l.phone OR (e.caller_phone IS NOT NULL AND l.phone IS NOT NULL AND RIGHT(regexp_replace(l.phone, '[^0-9]', '', 'g'), 10) = RIGHT(regexp_replace(e.caller_phone, '[^0-9]', '', 'g'), 10))) AND l.organization_id = ${orgId}
 			WHERE e.organization_id = ${orgId}
 			ORDER BY COALESCE(e.patient_id::text, e.caller_phone, e.id::text), e.created_at DESC
-		`);
+		`),
+		);
 
 		const rawRows = latestEvents.rows;
 		const summaries = rawRows.map((row) => {

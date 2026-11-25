@@ -6,6 +6,7 @@
  */
 
 import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { isValidUuid } from "@dental/shared";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
@@ -32,6 +33,7 @@ export interface OtpChallenge {
 	sendCountInWindow: number;
 	windowStart: number;
 	failedAttempts: number;
+	organizationId?: string | undefined;
 }
 
 export function normalizePhoneDigits(phone: string): string {
@@ -170,6 +172,7 @@ export class BookingVerificationEngine {
 			sendCountInWindow: existing ? existing.sendCountInWindow : 1,
 			windowStart: existing ? existing.windowStart : now,
 			failedAttempts: 0,
+			organizationId,
 		});
 
 		try {
@@ -255,12 +258,23 @@ export class BookingVerificationEngine {
 		this.ipOtpRequests.clear();
 	}
 
-	public verifyPhoneOtp(phone: string, code: string): { valid: boolean; error?: string } {
+	public verifyPhoneOtp(
+		phone: string,
+		code: string,
+		organizationId?: string,
+	): { valid: boolean; error?: string } {
 		const cleanPhone = normalizePhoneDigits(phone);
 		const trimmedCode = code.trim();
 
 		const challenge = this.otpChallenges.get(cleanPhone);
 		if (!challenge) {
+			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };
+		}
+		if (
+			organizationId &&
+			challenge.organizationId &&
+			challenge.organizationId !== organizationId
+		) {
 			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };
 		}
 		if (Date.now() > challenge.expiresAt) {
@@ -295,87 +309,121 @@ export class BookingVerificationEngine {
 		code: string,
 		organizationId?: string,
 	): Promise<{ valid: boolean; error?: string }> {
-		const syncCheck = this.verifyPhoneOtp(phone, code);
-		if (syncCheck.valid) {
-			return syncCheck;
+		if (!organizationId || !isValidUuid(organizationId)) {
+			return {
+				valid: false,
+				error: "Не определена клиника для проверки кода подтверждения.",
+			};
 		}
 
-		// Fallback to PostgreSQL 18 portal_otp_codes (across multiple nodes/workers or after restart)
+		// PostgreSQL 18 portal_otp_codes is authoritative when available; fallback to in-memory only if DB has no challenge or is unavailable.
 		const cleanPhone = normalizePhoneDigits(phone);
 		const phoneSuffix = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
 		const trimmedCode = code.trim();
 		const now = new Date();
 
 		try {
-			const targetOrgId = organizationId ? await resolveDefaultOrganizationId(organizationId) : null;
-			const rows = await withSuperuserBypass(async (tx) => {
-				const baseFilter = and(
-					or(
-						eq(portalOtpCodes.phone, cleanPhone),
-						eq(portalOtpCodes.phone, phoneSuffix),
-					),
-					isNull(portalOtpCodes.consumedAt),
-					gt(portalOtpCodes.expiresAt, now),
-				);
-				const filter = targetOrgId
-					? and(eq(portalOtpCodes.organizationId, targetOrgId), baseFilter)
-					: baseFilter;
-
-				return tx
-					.select()
-					.from(portalOtpCodes)
-					.where(filter)
-					.orderBy(desc(portalOtpCodes.createdAt))
-					.limit(1);
-			});
-
-			const row = rows[0];
-			if (!row) {
-				return syncCheck;
+			const targetOrgId = await resolveDefaultOrganizationId(organizationId);
+			if (!targetOrgId) {
+				return this.verifyPhoneOtp(phone, code, organizationId);
 			}
 
-			if (row.attemptCount >= OTP_MAX_ATTEMPTS) {
-				await withSuperuserBypass(async (tx) => {
+			const dbResult = await withTenantCtx(targetOrgId, async (tx) => {
+				const rows = await tx
+					.select()
+					.from(portalOtpCodes)
+					.where(
+						and(
+							eq(portalOtpCodes.organizationId, targetOrgId),
+							or(
+								eq(portalOtpCodes.phone, cleanPhone),
+								eq(portalOtpCodes.phone, phoneSuffix),
+							),
+							isNull(portalOtpCodes.consumedAt),
+							gt(portalOtpCodes.expiresAt, now),
+						),
+					)
+					.orderBy(desc(portalOtpCodes.createdAt))
+					.limit(1)
+					.for("update");
+
+				const row = rows[0];
+				if (!row) {
+					return null;
+				}
+
+				if (row.attemptCount >= OTP_MAX_ATTEMPTS) {
 					await tx
 						.update(portalOtpCodes)
 						.set({ consumedAt: now })
-						.where(eq(portalOtpCodes.id, row.id));
-				});
-				return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
-			}
+						.where(
+							and(
+								eq(portalOtpCodes.id, row.id),
+								eq(portalOtpCodes.organizationId, targetOrgId),
+								isNull(portalOtpCodes.consumedAt),
+							),
+						);
+					this.otpChallenges.delete(cleanPhone);
+					return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
+				}
 
-			await withSuperuserBypass(async (tx) => {
 				await tx
 					.update(portalOtpCodes)
 					.set({ attemptCount: row.attemptCount + 1 })
-					.where(eq(portalOtpCodes.id, row.id));
-			});
+					.where(
+						and(
+							eq(portalOtpCodes.id, row.id),
+							eq(portalOtpCodes.organizationId, targetOrgId),
+							isNull(portalOtpCodes.consumedAt),
+						),
+					);
 
-			const isMatch = await verifyCredential(trimmedCode, row.codeHash);
-			if (!isMatch) {
-				const remaining = Math.max(0, OTP_MAX_ATTEMPTS - (row.attemptCount + 1));
-				if (remaining === 0) {
-					await withSuperuserBypass(async (tx) => {
+				const isMatch = await verifyCredential(trimmedCode, row.codeHash);
+				if (!isMatch) {
+					const remaining = Math.max(0, OTP_MAX_ATTEMPTS - (row.attemptCount + 1));
+					if (remaining === 0) {
 						await tx
 							.update(portalOtpCodes)
 							.set({ consumedAt: now })
-							.where(eq(portalOtpCodes.id, row.id));
-					});
-					return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
+							.where(
+								and(
+									eq(portalOtpCodes.id, row.id),
+									eq(portalOtpCodes.organizationId, targetOrgId),
+									isNull(portalOtpCodes.consumedAt),
+								),
+							);
+						this.otpChallenges.delete(cleanPhone);
+						return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
+					}
+					return { valid: false, error: `Неверный код подтверждения. Осталось попыток: ${remaining}` };
 				}
-				return { valid: false, error: `Неверный код подтверждения. Осталось попыток: ${remaining}` };
-			}
 
-			await withSuperuserBypass(async (tx) => {
-				await tx
+				const consumed = await tx
 					.update(portalOtpCodes)
 					.set({ consumedAt: now })
-					.where(eq(portalOtpCodes.id, row.id));
+					.where(
+						and(
+							eq(portalOtpCodes.id, row.id),
+							eq(portalOtpCodes.organizationId, targetOrgId),
+							isNull(portalOtpCodes.consumedAt),
+						),
+					)
+					.returning({ id: portalOtpCodes.id });
+
+				if (consumed.length === 0) {
+					return { valid: false, error: "Код подтверждения уже использован." };
+				}
+
+				this.otpChallenges.delete(cleanPhone);
+				return { valid: true };
 			});
 
-			return { valid: true };
+			if (dbResult !== null) {
+				return dbResult;
+			}
+			return this.verifyPhoneOtp(phone, code, organizationId);
 		} catch {
-			return syncCheck;
+			return this.verifyPhoneOtp(phone, code, organizationId);
 		}
 	}
 
@@ -405,8 +453,8 @@ export async function requestPhoneVerification(
 }
 
 // guard-callers: none — Делегирующий фасад верификации OTP-кода подтверждения для онлайн-записи и интеграционных тестов
-export function verifyPhoneOtp(phone: string, code: string) {
-	return bookingVerificationEngine.verifyPhoneOtp(phone, code);
+export function verifyPhoneOtp(phone: string, code: string, organizationId?: string) {
+	return bookingVerificationEngine.verifyPhoneOtp(phone, code, organizationId);
 }
 
 export async function verifyPhoneOtpAsync(

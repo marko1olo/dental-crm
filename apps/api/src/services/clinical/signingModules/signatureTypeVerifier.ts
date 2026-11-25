@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { db, type TenantDb } from "../../../db/client.js";
 import { users } from "../../../db/schema.js";
 import { verifyCredential } from "../../../utils/cryptoHelper.js";
 
@@ -53,7 +53,9 @@ export class DiarySigningError extends Error {
 	}
 }
 
-export type DiaryDbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DiaryDbTransaction =
+	| TenantDb
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Верификация подписи: сессионная в 1 клик, ПИН-код сотрудника или УКЭП.

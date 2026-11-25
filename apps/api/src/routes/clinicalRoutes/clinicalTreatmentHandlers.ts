@@ -5,6 +5,7 @@ import {
 	requireClinicalReadAccess,
 } from "../../accessGuard.js";
 import { ClinicalTaskOwnershipError } from "../../db/clinicalTasksQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	getRequestIdentity,
 	requireOrganizationId,
@@ -25,6 +26,18 @@ const clinicalTaskStatusUpdateSchema = z
 		status: z
 			.enum(["pending", "in_progress", "completed", "cancelled"])
 			.default("completed"),
+	})
+	.strict();
+
+const clinicalTasksQuerySchema = z
+	.object({
+		patientId: z.string().regex(UUID_PATTERN).optional(),
+	})
+	.strict();
+
+const clinicalTaskParamsSchema = z
+	.object({
+		taskId: z.string().regex(UUID_PATTERN),
 	})
 	.strict();
 
@@ -139,13 +152,16 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 						"Доступ к клиническим задачам ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
 				});
 			}
-			const { patientId } = request.query as { patientId?: string };
-			if (patientId !== undefined && !UUID_PATTERN.test(patientId)) {
+			const parsedQuery = clinicalTasksQuerySchema.safeParse(
+				request.query ?? {},
+			);
+			if (!parsedQuery.success) {
 				return reply.code(400).send({
 					error: "ClinicalTaskValidationError",
 					message: "Ошибка валидации: patientId должен быть UUID.",
 				});
 			}
+			const { patientId } = parsedQuery.data;
 			return reply
 				.code(200)
 				.send(await new ClinicalRouter().listTasks(orgId, patientId));
@@ -188,13 +204,16 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { taskId } = request.params as { taskId?: string };
-		if (!taskId || !UUID_PATTERN.test(taskId)) {
+		const parsedParams = clinicalTaskParamsSchema.safeParse(
+			request.params ?? {},
+		);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				error: "ClinicalTaskValidationError",
 				message: "Ошибка валидации: taskId должен быть UUID.",
 			});
 		}
+		const { taskId } = parsedParams.data;
 
 		const parsedBody = clinicalTaskStatusUpdateSchema.safeParse(
 			request.body ?? {},
@@ -235,15 +254,47 @@ export async function registerClinicalTreatmentRoutes(app: FastifyInstance) {
 	// COMPETITOR FEATURE #47: crm::конструктор_типов_задач_без_привязки_к_визиту
 	app.get("/api/crm/custom-task-types", async (request, reply) => {
 		try {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"crm custom task types",
+				))
+			) {
+				return;
+			}
 			// Организация берётся из подписанного токена, а не из заголовка клиента.
 			// Раньше здесь принимался x-organization-id без всякой аутентификации:
 			// любой мог подставить UUID чужой клиники и читать её медицинские данные.
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			if (staffRole) {
+				const evalAccess = evaluateClinicalAccess(staffRole, {
+					clinicalRole: identity.clinicalRole ?? null,
+					canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+					specialties: identity.specialties ?? null,
+				});
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "clinical.tasks.read",
+						role: staffRole,
+						message:
+							"Доступ к типам CRM-задач ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+					});
+				}
+			}
+
 			const { getCustomCrmTaskTypesFromDb } = await import(
 				"../../db/customCrmTaskTypesQuery.js"
 			);
-			return reply.status(200).send(await getCustomCrmTaskTypesFromDb(orgId));
+			const taskTypes = await withTenantCtx(orgId, () =>
+				getCustomCrmTaskTypesFromDb(orgId),
+			);
+			return reply.status(200).send(taskTypes);
 		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({

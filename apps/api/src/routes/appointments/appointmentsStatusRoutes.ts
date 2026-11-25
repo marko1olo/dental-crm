@@ -42,7 +42,7 @@ export async function dispatchPatientArrivedIntercom(
 		const doctorName = apptMeta?.doctorName || "Врач";
 		const chairName = apptMeta?.chairName || "Кабинет";
 
-		await ensureDefaultStaffChannels(orgId);
+		await ensureDefaultStaffChannels(orgId, tx);
 
 		const senderName = identity.fullName || "Ресепшен (Регистратура)";
 		const senderRole = identity.role || "admin";
@@ -63,6 +63,7 @@ export async function dispatchPatientArrivedIntercom(
 				senderRole,
 				messageType: "intercom_ping",
 				content: `🛎️ Пациент ${patientName} прибыл в холл клиники и ожидает приёма. Назначен к: ${doctorName} (${chairName}).`,
+				tx,
 				urgency: "urgent",
 				intercomPreset: "patient_arrived",
 				targetAudience: slug === "reception" ? "reception" : "all_assistants",

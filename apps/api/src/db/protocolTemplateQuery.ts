@@ -37,7 +37,7 @@ import { createApiLogger } from "../observability/logger.js";
  * текстов отказа по кабинету клиники (utils/clinicSessionRefusal.ts).
  */
 import { schemaIssueWords } from "../utils/schemaRefusalWords.js";
-import { db } from "./client.js";
+import { withTenantCtx, type TenantDb } from "./rls.js";
 import * as schema from "./schema.js";
 
 const logger = createApiLogger("protocolTemplateQuery");
@@ -239,10 +239,11 @@ function projectRow(row: ProtocolTemplateRow): ProtocolTemplate {
  * правился бы протокол чужой клиники.
  */
 async function selectOwnedRow(
+	tx: TenantDb,
 	organizationId: string,
 	templateId: string,
 ): Promise<ProtocolTemplateRow | null> {
-	const [row] = await db
+	const [row] = await tx
 		.select()
 		.from(schema.protocolTemplates)
 		.where(
@@ -261,27 +262,29 @@ export async function createProtocolTemplateInDb(
 	input: ProtocolTemplateInput,
 ): Promise<ProtocolTemplate> {
 	if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
-	const [row] = await db
-		.insert(schema.protocolTemplates)
-		.values({
-			organizationId,
-			specialty: input.specialty,
-			title: input.title,
-			visitReason: input.visitReason,
-			defaultDurationMinutes: input.defaultDurationMinutes,
-			complaintPrompt: input.complaintPrompt,
-			objectiveTemplate: input.objectiveTemplate,
-			treatmentPlanTemplate: input.treatmentPlanTemplate,
-			diagnosisHints: [...input.diagnosisHints],
-			requiredDocuments: [...input.requiredDocuments],
-			suggestedImaging: [...input.suggestedImaging],
-			safetyWarnings: [...input.safetyWarnings],
-			updatedAt: new Date(),
-		})
-		.returning();
-	if (!row)
-		throw new Error("Шаблон не создан: база не вернула ни одной строки.");
-	return projectRow(row);
+	return withTenantCtx(organizationId, async (tx) => {
+		const [row] = await tx
+			.insert(schema.protocolTemplates)
+			.values({
+				organizationId,
+				specialty: input.specialty,
+				title: input.title,
+				visitReason: input.visitReason,
+				defaultDurationMinutes: input.defaultDurationMinutes,
+				complaintPrompt: input.complaintPrompt,
+				objectiveTemplate: input.objectiveTemplate,
+				treatmentPlanTemplate: input.treatmentPlanTemplate,
+				diagnosisHints: [...input.diagnosisHints],
+				requiredDocuments: [...input.requiredDocuments],
+				suggestedImaging: [...input.suggestedImaging],
+				safetyWarnings: [...input.safetyWarnings],
+				updatedAt: new Date(),
+			})
+			.returning();
+		if (!row)
+			throw new Error("Шаблон не создан: база не вернула ни одной строки.");
+		return projectRow(row);
+	});
 }
 
 /** Правка шаблона. Меняются только переданные поля. */
@@ -291,51 +294,53 @@ export async function updateProtocolTemplateInDb(
 	patch: ProtocolTemplatePatch,
 ): Promise<ProtocolTemplate> {
 	if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
-	// Существование проверяется ДО обновления: drizzle на несовпавшем условии
-	// вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
-	const existing = await selectOwnedRow(organizationId, templateId);
-	if (!existing) throw new ProtocolTemplateNotFoundError();
+	return withTenantCtx(organizationId, async (tx) => {
+		// Существование проверяется ДО обновления: drizzle на несовпавшем условии
+		// вернёт пустой массив, и «не найдено» стало бы неотличимо от «не изменилось».
+		const existing = await selectOwnedRow(tx, organizationId, templateId);
+		if (!existing) throw new ProtocolTemplateNotFoundError();
 
-	const updates: Partial<typeof schema.protocolTemplates.$inferInsert> = {
-		// Дата правки обновляется всегда: шаблон меняет заполнение карты приёма, и
-		// «когда это стало таким» — часть ответа на вопрос, почему приём выглядит так.
-		updatedAt: new Date(),
-	};
-	if (patch.specialty !== undefined) updates.specialty = patch.specialty;
-	if (patch.title !== undefined) updates.title = patch.title;
-	if (patch.visitReason !== undefined) updates.visitReason = patch.visitReason;
-	if (patch.defaultDurationMinutes !== undefined) {
-		updates.defaultDurationMinutes = patch.defaultDurationMinutes;
-	}
-	if (patch.complaintPrompt !== undefined)
-		updates.complaintPrompt = patch.complaintPrompt;
-	if (patch.objectiveTemplate !== undefined)
-		updates.objectiveTemplate = patch.objectiveTemplate;
-	if (patch.treatmentPlanTemplate !== undefined) {
-		updates.treatmentPlanTemplate = patch.treatmentPlanTemplate;
-	}
-	if (patch.diagnosisHints !== undefined)
-		updates.diagnosisHints = [...patch.diagnosisHints];
-	if (patch.requiredDocuments !== undefined) {
-		updates.requiredDocuments = [...patch.requiredDocuments];
-	}
-	if (patch.suggestedImaging !== undefined)
-		updates.suggestedImaging = [...patch.suggestedImaging];
-	if (patch.safetyWarnings !== undefined)
-		updates.safetyWarnings = [...patch.safetyWarnings];
+		const updates: Partial<typeof schema.protocolTemplates.$inferInsert> = {
+			// Дата правки обновляется всегда: шаблон меняет заполнение карты приёма, и
+			// «когда это стало таким» — часть ответа на вопрос, почему приём выглядит так.
+			updatedAt: new Date(),
+		};
+		if (patch.specialty !== undefined) updates.specialty = patch.specialty;
+		if (patch.title !== undefined) updates.title = patch.title;
+		if (patch.visitReason !== undefined) updates.visitReason = patch.visitReason;
+		if (patch.defaultDurationMinutes !== undefined) {
+			updates.defaultDurationMinutes = patch.defaultDurationMinutes;
+		}
+		if (patch.complaintPrompt !== undefined)
+			updates.complaintPrompt = patch.complaintPrompt;
+		if (patch.objectiveTemplate !== undefined)
+			updates.objectiveTemplate = patch.objectiveTemplate;
+		if (patch.treatmentPlanTemplate !== undefined) {
+			updates.treatmentPlanTemplate = patch.treatmentPlanTemplate;
+		}
+		if (patch.diagnosisHints !== undefined)
+			updates.diagnosisHints = [...patch.diagnosisHints];
+		if (patch.requiredDocuments !== undefined) {
+			updates.requiredDocuments = [...patch.requiredDocuments];
+		}
+		if (patch.suggestedImaging !== undefined)
+			updates.suggestedImaging = [...patch.suggestedImaging];
+		if (patch.safetyWarnings !== undefined)
+			updates.safetyWarnings = [...patch.safetyWarnings];
 
-	const [row] = await db
-		.update(schema.protocolTemplates)
-		.set(updates)
-		.where(
-			and(
-				eq(schema.protocolTemplates.id, templateId),
-				eq(schema.protocolTemplates.organizationId, organizationId),
-			),
-		)
-		.returning();
-	if (!row) throw new ProtocolTemplateNotFoundError();
-	return projectRow(row);
+		const [row] = await tx
+			.update(schema.protocolTemplates)
+			.set(updates)
+			.where(
+				and(
+					eq(schema.protocolTemplates.id, templateId),
+					eq(schema.protocolTemplates.organizationId, organizationId),
+				),
+			)
+			.returning();
+		if (!row) throw new ProtocolTemplateNotFoundError();
+		return projectRow(row);
+	});
 }
 
 /**
@@ -349,17 +354,19 @@ export async function deleteProtocolTemplateInDb(
 	templateId: string,
 ): Promise<ProtocolTemplate> {
 	if (useInMemory()) throw new ProtocolTemplateStorageDisabledError();
-	const existing = await selectOwnedRow(organizationId, templateId);
-	if (!existing) throw new ProtocolTemplateNotFoundError();
-	const [row] = await db
-		.delete(schema.protocolTemplates)
-		.where(
-			and(
-				eq(schema.protocolTemplates.id, templateId),
-				eq(schema.protocolTemplates.organizationId, organizationId),
-			),
-		)
-		.returning();
-	if (!row) throw new ProtocolTemplateNotFoundError();
-	return projectRow(row);
+	return withTenantCtx(organizationId, async (tx) => {
+		const existing = await selectOwnedRow(tx, organizationId, templateId);
+		if (!existing) throw new ProtocolTemplateNotFoundError();
+		const [row] = await tx
+			.delete(schema.protocolTemplates)
+			.where(
+				and(
+					eq(schema.protocolTemplates.id, templateId),
+					eq(schema.protocolTemplates.organizationId, organizationId),
+				),
+			)
+			.returning();
+		if (!row) throw new ProtocolTemplateNotFoundError();
+		return projectRow(row);
+	});
 }

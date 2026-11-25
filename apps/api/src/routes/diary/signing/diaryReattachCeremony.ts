@@ -6,6 +6,7 @@ import {
 	isCertifiedUkepSignature,
 	resolveSignatureForStorage,
 } from "../../../services/clinical/DiarySigningCeremonyService.js";
+import type { DiaryDbTransaction } from "../../../services/clinical/signingModules/signatureTypeVerifier.js";
 
 export type ReattachTxResult =
 	| { kind: "not_found" }
@@ -23,10 +24,11 @@ export async function executeReattachCeremony(params: {
 	orgId: string;
 	userId: string | null;
 	incomingPkcs7: string;
+	tx?: DiaryDbTransaction | undefined;
 }): Promise<ReattachTxResult> {
 	const { id, orgId, userId, incomingPkcs7 } = params;
 
-	return await db.transaction(async (tx) => {
+	const runWithTx = async (tx: DiaryDbTransaction): Promise<ReattachTxResult> => {
 		const [row] = await tx
 			.select()
 			.from(visitDiaries)
@@ -59,6 +61,7 @@ export async function executeReattachCeremony(params: {
 			userId,
 			organizationId: orgId,
 			diaryHashForMark: reattachHash,
+			executor: tx,
 		});
 		if (!resolvedReattach.ok) {
 			return {
@@ -121,5 +124,10 @@ export async function executeReattachCeremony(params: {
 			lockedAt: lockedAtIso,
 			attached: isCertifiedUkepSignature(resolvedReattach.stored),
 		};
-	});
+	};
+
+	if (params.tx) {
+		return runWithTx(params.tx);
+	}
+	return await db.transaction(runWithTx);
 }

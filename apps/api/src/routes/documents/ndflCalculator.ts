@@ -106,6 +106,21 @@ export async function register(app: FastifyInstance) {
 
 	app.get("/api/documents/tax-deduction/preview/:patientId", handlePreview);
 
+function asPlainRecord(value: unknown): Record<string, unknown> | null {
+	return value !== null && typeof value === "object" && !Array.isArray(value)
+		? Object.fromEntries(Object.entries(value))
+		: null;
+}
+
+function extractPersonFamilyText(personObj: Record<string, unknown> | null): string {
+	if (!personObj) return "";
+	const fullNameObj = asPlainRecord(personObj.fullName);
+	if (fullNameObj) {
+		return typeof fullNameObj.family === "string" ? fullNameObj.family : "";
+	}
+	return typeof personObj.fullName === "string" ? personObj.fullName : "";
+}
+
 	// 2. POST /api/v1/documents/tax-deduction/xml (Feature #33)
 	const handleGenerateXml = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "document tax xml")))
@@ -113,20 +128,20 @@ export async function register(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
-		const rawBody = request.body as Record<string, unknown> | null | undefined;
-		const payerObj = rawBody?.payer as Record<string, unknown> | undefined;
-		const patientObj = rawBody?.patient as Record<string, unknown> | undefined;
-		const payerFamily = typeof payerObj?.fullName === "object" ? (payerObj.fullName as Record<string, unknown>)?.family : payerObj?.fullName;
-		const patientFamily = typeof patientObj?.fullName === "object" ? (patientObj.fullName as Record<string, unknown>)?.family : patientObj?.fullName;
+		const rawBody = asPlainRecord(request.body);
+		const payerObj = asPlainRecord(rawBody?.payer);
+		const patientObj = asPlainRecord(rawBody?.patient);
+		const payerFamily = extractPersonFamilyText(payerObj);
+		const patientFamily = extractPersonFamilyText(patientObj);
 
 		const isAnon =
 			Boolean(rawBody?.isAnonymous) ||
 			Boolean(payerObj?.isAnonymous) ||
 			Boolean(patientObj?.isAnonymous) ||
-			String(payerFamily || "").includes("UUID_ANON") ||
-			String(patientFamily || "").includes("UUID_ANON") ||
-			String(payerFamily || "").toLowerCase().includes("аноним") ||
-			String(patientFamily || "").toLowerCase().includes("аноним");
+			payerFamily.includes("UUID_ANON") ||
+			patientFamily.includes("UUID_ANON") ||
+			payerFamily.toLowerCase().includes("аноним") ||
+			patientFamily.toLowerCase().includes("аноним");
 
 		if (isAnon) {
 			return reply.code(422).send({

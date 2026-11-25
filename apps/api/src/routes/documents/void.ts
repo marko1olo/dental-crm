@@ -3,6 +3,7 @@ import {
 	voidDocumentSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import {
@@ -22,6 +23,12 @@ import {
 } from "../../text/repairMojibake.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { apiError, documentVoidValidationMessage } from "./shared.js";
+
+const documentIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents/:id/void", async (request, reply) => {
@@ -45,16 +52,15 @@ export async function register(app: FastifyInstance) {
 		// Организация теперь берётся только из проверенного токена (401 иначе).
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { id } = request.params as { id: string };
-		const UUID_REGEX =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		if (!id || !UUID_REGEX.test(id)) {
+		const parsedParams = documentIdParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply
 				.code(400)
 				.send(
 					apiError("Некорректный идентификатор документа (ожидается UUID)"),
 				);
 		}
+		const { id } = parsedParams.data;
 		const existing = await getDocumentById(orgId, id);
 		if (!existing) {
 			return reply.code(404).send(apiError("Документ не найден"));

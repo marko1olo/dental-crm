@@ -1,59 +1,74 @@
 import { z } from "zod";
 
-export const diaryUpsertSchema = z.object({
-	visitId: z.string().uuid(),
-	patientId: z.string().uuid(),
-	complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),
-	anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
-	statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
-	diagnosisIcd10: z.string().max(200).optional(),
-	diagnosisTooth: z.string().max(100).nullable().optional(),
-	treatmentDescription: z.string().max(65536, "Описание лечения не должно превышать 64 КБ").optional(),
-	complications: z.string().max(10000).optional(),
-	comorbidities: z.string().max(10000).optional(),
-	organizationId: z.string().uuid().optional(),
-	status: z.enum(["draft", "signed"]).optional(),
-	instrumentTrayBarcode: z.string().max(200).optional(),
-	pkcs7Signature: z.string().optional(),
-});
+export const diaryUpsertSchema = z
+	.object({
+		visitId: z.string().uuid(),
+		patientId: z.string().uuid(),
+		complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),
+		anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
+		statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
+		diagnosisIcd10: z.string().max(200).optional(),
+		diagnosisTooth: z.string().max(100).nullable().optional(),
+		treatmentDescription: z.string().max(65536, "Описание лечения не должно превышать 64 КБ").optional(),
+		complications: z.string().max(10000).optional(),
+		comorbidities: z.string().max(10000).optional(),
+		organizationId: z.string().uuid().optional(),
+		status: z.enum(["draft", "signed"]).optional(),
+		instrumentTrayBarcode: z.string().max(200).optional(),
+		pkcs7Signature: z.string().optional(),
+		idempotencyKey: z.string().max(128).optional(),
+		clientMutationId: z.string().max(128).optional(),
+	})
+	.strict();
 
 export const diaryLockBodySchema = z.object({
 	pkcs7Signature: z.unknown().optional(),
 }).strict();
 
-export const diaryReviseBodySchema = z.object({
-	complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),
-	anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
-	statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
-	diagnosisIcd10: z.string().max(200).optional(),
-	diagnosisTooth: z.string().max(100).nullable().optional(),
-	treatmentDescription: z.string().max(65536, "Описание лечения не должно превышать 64 КБ").optional(),
-	complications: z.string().max(10000).optional(),
-	comorbidities: z.string().max(10000).optional(),
-	instrumentTrayBarcode: z.string().max(200).optional(),
-	revisionReason: z.string().max(1000).optional(),
-});
+export const diaryReviseBodySchema = z
+	.object({
+		complaint: z.string().max(65536, "Жалобы не должны превышать 64 КБ").optional(),
+		anamnesis: z.string().max(65536, "Анамнез не должен превышать 64 КБ").optional(),
+		statusLocalis: z.string().max(65536, "Status localis не должен превышать 64 КБ").optional(),
+		diagnosisIcd10: z.string().max(200).optional(),
+		diagnosisTooth: z.string().max(100).nullable().optional(),
+		treatmentDescription: z.string().max(65536, "Описание лечения не должно превышать 64 КБ").optional(),
+		complications: z.string().max(10000).optional(),
+		comorbidities: z.string().max(10000).optional(),
+		instrumentTrayBarcode: z.string().max(200).optional(),
+		revisionReason: z.string().max(1000).optional(),
+		idempotencyKey: z.string().max(128).optional(),
+		clientMutationId: z.string().max(128).optional(),
+	})
+	.strict();
 
-export const chiefReviewBodySchema = z.object({
-	verdict: z.enum(["approved", "deficiencies_found", "critical_violation"]),
-	notes: z.string().optional().nullable(),
-	criteriaEvaluation: z
-		.object({
-			informedConsentPresent: z.boolean().optional(),
-			anamnesisComplete: z.boolean().optional(),
-			statusLocalisComplete: z.boolean().optional(),
-			icd10DiagnosisValid: z.boolean().optional(),
-			treatmentPlanAdequate: z.boolean().optional(),
-			instrumentTraceabilityValid: z.boolean().optional(),
-		})
-		.optional()
-		.nullable(),
-});
+export const chiefReviewBodySchema = z
+	.object({
+		verdict: z.enum(["approved", "deficiencies_found", "critical_violation"]),
+		notes: z.string().optional().nullable(),
+		criteriaEvaluation: z
+			.object({
+				informedConsentPresent: z.boolean().optional(),
+				anamnesisComplete: z.boolean().optional(),
+				statusLocalisComplete: z.boolean().optional(),
+				icd10DiagnosisValid: z.boolean().optional(),
+				treatmentPlanAdequate: z.boolean().optional(),
+				instrumentTraceabilityValid: z.boolean().optional(),
+			})
+			.strict()
+			.optional()
+			.nullable(),
+	})
+	.strict();
 
-export const diaryVisitParamsSchema = z.object({
-	visitId: z.string().uuid(),
-});
+export const diaryVisitParamsSchema = z
+	.object({
+		visitId: z.string().uuid(),
+	})
+	.strict();
 
-export const diaryIdParamsSchema = z.object({
-	id: z.string().uuid(),
-});
+export const diaryIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();

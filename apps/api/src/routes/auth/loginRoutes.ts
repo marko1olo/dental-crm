@@ -49,8 +49,30 @@ export function registerLoginRoutes(app: FastifyInstance): void {
 	app.post("/api/auth/staff/switch-role", handleStaffSwitchRole);
 
 	// ─── SaaS Universal User Login (email / phone / clinic UUID / code) ───────────
-	app.post("/api/auth/login", handleUniversalLogin);
+	app.post(
+		"/api/auth/login",
+		{
+			config: {
+				rateLimit: {
+					max: 5,
+					timeWindow: "1 minute",
+				},
+			},
+		},
+		handleUniversalLogin,
+	);
 
 	// ─── Demo Tenant Seeding / Reinitialization Endpoint ────────────────────────
-	app.post("/api/auth/demo/seed", handleDemoSeed);
+	app.post(
+		"/api/auth/demo/seed",
+		{
+			config: {
+				rateLimit: {
+					max: 5,
+					timeWindow: "1 minute",
+				},
+			},
+		},
+		handleDemoSeed,
+	);
 }

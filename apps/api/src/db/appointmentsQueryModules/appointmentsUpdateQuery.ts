@@ -116,7 +116,7 @@ export async function updateAppointmentInDb(
 				if (patient?.status === "archived") {
 					throw new Error("Пациент находится в архиве. Запись заблокирована.");
 				}
-				if (await isPatientBookingBlocked(organizationId, newPatientId)) {
+				if (await isPatientBookingBlocked(organizationId, newPatientId, tx)) {
 					throw new Error("Пациент внесен в черный список. Запись заблокирована.");
 				}
 			}
