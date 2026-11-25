@@ -438,8 +438,12 @@ export async function registerSpeechLiveRoutes(
 			// Handle inbound messages from client socket
 			clientSocket.on("message", (data: WebSocket.Data, isBinary: boolean) => {
 				try {
+					const treatAsBinary =
+						typeof isBinary === "boolean"
+							? isBinary
+							: Buffer.isBuffer(data) || data instanceof ArrayBuffer;
 					if (!activeSession) {
-						if (isBinary || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
+						if (treatAsBinary) {
 							rejectUnauthorized("binary_frame_before_auth");
 							return;
 						}
@@ -507,7 +511,7 @@ export async function registerSpeechLiveRoutes(
 					const activeBridge = bridge;
 					if (!activeBridge) return;
 
-					if (isBinary || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
+					if (treatAsBinary) {
 						// Binary audio frame (PCM)
 						activeBridge.sendAudio(data as Buffer | ArrayBuffer);
 						return;

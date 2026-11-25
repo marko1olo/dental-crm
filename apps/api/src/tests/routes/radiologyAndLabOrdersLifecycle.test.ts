@@ -123,6 +123,11 @@ describe("Section 1: Dental Radiology & RVG / PACS Invariants (Mandate 8e, 8n, 8
 			samplesPerPixel: 1,
 		});
 
+		// Warm up V8 JIT so cold-start tiering does not skew the tight micro-benchmark
+		for (let w = 0; w < 50; w++) {
+			parseDicomHeader(rawDicom);
+		}
+
 		const startTs = performance.now();
 		const meta = parseDicomHeader(rawDicom);
 		const elapsedMs = performance.now() - startTs;
@@ -154,6 +159,11 @@ describe("Section 1: Dental Radiology & RVG / PACS Invariants (Mandate 8e, 8n, 8
 			bitsAllocated: 16,
 			samplesPerPixel: 1,
 		});
+
+		// Warm up V8 JIT so cold-start tiering does not skew the tight micro-benchmark
+		for (let w = 0; w < 50; w++) {
+			parseDicomHeader(rawDicom);
+		}
 
 		const startTs = performance.now();
 		for (let i = 0; i < 1000; i++) {

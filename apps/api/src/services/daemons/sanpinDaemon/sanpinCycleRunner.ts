@@ -69,9 +69,11 @@ export function evaluateKraftPackShelfLife(
 	// - kraft_heat_sealed: 50 days hard-cap
 	const pkgStr = String(rawPackagingType);
 	const isUnpacked = pkgStr === "unpacked" || rawPackagingType === "other";
+	const hasExplicitExpiry = Boolean(record.expiresAt);
 	const isExpired =
-		now.getTime() > expiryDate.getTime() ||
-		(isUnpacked && elapsedDays >= 1) ||
+		(isUnpacked
+			? elapsedDays >= 1 || (hasExplicitExpiry && now.getTime() > expiryDate.getTime())
+			: now.getTime() > expiryDate.getTime()) ||
 		(rawPackagingType === "kraft_self_adhesive" && elapsedDays > 30) ||
 		(rawPackagingType === "kraft_heat_sealed" && elapsedDays > 50) ||
 		(pkgStr === "bix_filter" && elapsedDays > 20) ||

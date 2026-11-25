@@ -231,7 +231,7 @@ export const denteTelegramLinkCodeSchema = z.object({
 	usedAt: z.string().nullable(),
 	createdAt: z.string(),
 	createdByUserId: z.string().uuid().nullable(),
-});
+}).strict();
 
 export type DenteTelegramLinkCode = z.infer<typeof denteTelegramLinkCodeSchema>;
 
@@ -253,7 +253,7 @@ export const denteTelegramLinkCodeListResponseSchema = z.object({
 	expiredCount: z.number().int().nonnegative(),
 	revokedCount: z.number().int().nonnegative(),
 	linkCodes: z.array(denteTelegramLinkCodePublicSchema),
-});
+}).strict();
 
 export type DenteTelegramLinkCodeListResponse = z.infer<
 	typeof denteTelegramLinkCodeListResponseSchema
@@ -299,7 +299,7 @@ export const denteTelegramChatLinkSchema = z.object({
 	linkedAt: z.string(),
 	revokedAt: z.string().nullable(),
 	lastUpdateAt: z.string(),
-});
+}).strict();
 
 export type DenteTelegramChatLink = z.infer<typeof denteTelegramChatLinkSchema>;
 
@@ -319,7 +319,7 @@ export const denteTelegramChatLinkListResponseSchema = z.object({
 	activeCount: z.number().int().nonnegative(),
 	revokedCount: z.number().int().nonnegative(),
 	chatLinks: z.array(denteTelegramChatLinkPublicSchema),
-});
+}).strict();
 
 export type DenteTelegramChatLinkListResponse = z.infer<
 	typeof denteTelegramChatLinkListResponseSchema
@@ -366,7 +366,7 @@ export const denteTelegramAppointmentCallbackResultSchema = z.object({
 	eventId: z.string().uuid().nullable(),
 	replyText: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DenteTelegramAppointmentCallbackResult = z.infer<
 	typeof denteTelegramAppointmentCallbackResultSchema
@@ -406,7 +406,7 @@ export const denteTelegramMessagePreviewSchema = z.object({
 	variablesUsed: z.array(z.string()),
 	warnings: z.array(z.string()),
 	blockedReason: z.string().nullable(),
-});
+}).strict();
 
 export type DenteTelegramMessagePreview = z.infer<
 	typeof denteTelegramMessagePreviewSchema
@@ -454,7 +454,7 @@ export const denteTelegramOutboxItemSchema = z.object({
 		"appointment_reminder",
 		"tax_document_request",
 	]),
-});
+}).strict();
 
 export type DenteTelegramOutboxItem = z.infer<
 	typeof denteTelegramOutboxItemSchema
@@ -475,7 +475,7 @@ export const denteTelegramOutboxResponseSchema = z.object({
 	blockedCount: z.number().int().nonnegative(),
 	items: z.array(denteTelegramOutboxItemSchema),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DenteTelegramOutboxResponse = z.infer<
 	typeof denteTelegramOutboxResponseSchema

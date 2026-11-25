@@ -25,7 +25,7 @@ export const speechProviderKeyHealthSchema = z.object({
 	lastUsedAt: z.string().nullable(),
 	lastStatusCode: z.number().int().nullable(),
 	lastError: z.string().nullable(),
-});
+}).strict();
 
 export type SpeechProviderKeyHealth = z.infer<
 	typeof speechProviderKeyHealthSchema
@@ -44,7 +44,7 @@ export const speechProviderHealthSchema = z.object({
 	safeToUseInVisit: z.boolean(),
 	warnings: z.array(z.string()),
 	nextStep: z.string(),
-});
+}).strict();
 
 export type SpeechProviderHealth = z.infer<typeof speechProviderHealthSchema>;
 
@@ -104,7 +104,7 @@ export const speechSttPromptPolicySchema = z.object({
 	termCount: z.number().int().nonnegative(),
 	promptPreview: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type SpeechSttPromptPolicy = z.infer<typeof speechSttPromptPolicySchema>;
 
@@ -130,7 +130,7 @@ export const speechGatewayStatusSchema = z.object({
 		monitorIntervalMs: z.number().int().positive(),
 		overlapMs: z.number().int().nonnegative(),
 		dedupeWindowChars: z.number().int().positive(),
-	}),
+	}).strict(),
 	polishPolicy: z.object({
 		deterministicEnabled: z.boolean(),
 		neuralEnabled: z.boolean(),
@@ -138,12 +138,12 @@ export const speechGatewayStatusSchema = z.object({
 		modelName: z.string().nullable(),
 		maxTranscriptChars: z.number().int().positive(),
 		warnings: z.array(z.string()),
-	}),
+	}).strict(),
 	promptPolicy: speechSttPromptPolicySchema,
 	audioRetention: z.enum(["discard_after_transcription", "disabled"]),
 	nextSetupStep: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type SpeechGatewayStatus = z.infer<typeof speechGatewayStatusSchema>;
 
@@ -163,7 +163,7 @@ export const speechGatewayHealthReportSchema = z.object({
 	providers: z.array(speechProviderHealthSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type SpeechGatewayHealthReport = z.infer<
 	typeof speechGatewayHealthReportSchema
@@ -212,7 +212,7 @@ export type SpeechTranscriptionChunk = z.infer<
 export const speechTranscriptionResponseSchema = z.object({
 	chunk: speechTranscriptionChunkSchema,
 	gateway: speechGatewayStatusSchema,
-});
+}).strict();
 
 export type SpeechTranscriptionResponse = z.infer<
 	typeof speechTranscriptionResponseSchema
@@ -230,13 +230,13 @@ export const speechRecordingAssemblySchema = z.object({
 		review: z.number().int().nonnegative(),
 		empty: z.number().int().nonnegative(),
 		failed: z.number().int().nonnegative(),
-	}),
+	}).strict(),
 	transcript: z.string(),
 	warnings: z.array(z.string()),
 	firstChunkAt: z.string().nullable(),
 	lastChunkAt: z.string().nullable(),
 	assembledAt: z.string(),
-});
+}).strict();
 
 export type SpeechRecordingAssembly = z.infer<
 	typeof speechRecordingAssemblySchema
@@ -267,13 +267,13 @@ export const speechRecordingRecoveryItemSchema = z.object({
 		fallback_text: z.number().int().nonnegative(),
 		needs_provider_key: z.number().int().nonnegative(),
 		failed: z.number().int().nonnegative(),
-	}),
+	}).strict(),
 	qualityCounts: z.object({
 		clear: z.number().int().nonnegative(),
 		review: z.number().int().nonnegative(),
 		empty: z.number().int().nonnegative(),
 		failed: z.number().int().nonnegative(),
-	}),
+	}).strict(),
 	providerLabels: z.array(z.string()),
 	transcriptPreview: z.string(),
 	transcriptCharCount: z.number().int().nonnegative(),
@@ -284,7 +284,7 @@ export const speechRecordingRecoveryItemSchema = z.object({
 	recoveryState: speechRecordingRecoveryStateSchema,
 	nextAction: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type SpeechRecordingRecoveryItem = z.infer<
 	typeof speechRecordingRecoveryItemSchema
@@ -294,7 +294,7 @@ export const speechRecordingRecoveryListSchema = z.object({
 	recordings: z.array(speechRecordingRecoveryItemSchema),
 	totalRecordings: z.number().int().nonnegative(),
 	generatedAt: z.string(),
-});
+}).strict();
 
 export type SpeechRecordingRecoveryList = z.infer<
 	typeof speechRecordingRecoveryListSchema
@@ -450,7 +450,7 @@ export const staffMemberSchema = z.object({
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type StaffMember = z.infer<typeof staffMemberSchema>;
 export type User = StaffMember;
@@ -469,7 +469,7 @@ export const chairSchema = z.object({
 	notes: z.string().nullable(),
 	defaultDoctorId: z.string().uuid().nullable().optional(),
 	workingHours: staffWorkingHoursSchema.nullable().optional(),
-});
+}).strict();
 
 export type Chair = z.infer<typeof chairSchema>;
 
@@ -509,7 +509,7 @@ export const clinicWorkspaceProfileSchema = z.object({
 	requiredCapabilities: z.array(z.string()),
 	automations: z.array(z.string()),
 	safeguards: z.array(z.string()),
-});
+}).strict();
 
 export type ClinicWorkspaceProfile = z.infer<
 	typeof clinicWorkspaceProfileSchema
@@ -525,7 +525,7 @@ export const roleAccessPolicySchema = z.object({
 	restricted: z.array(workspaceSectionSchema),
 	requiresApprovalFor: z.array(z.string()),
 	auditEvents: z.array(z.string()),
-});
+}).strict();
 
 export type RoleAccessPolicy = z.infer<typeof roleAccessPolicySchema>;
 
@@ -538,6 +538,6 @@ export const clinicSettingsSchema = z.object({
 	roleAccessPolicies: z.array(roleAccessPolicySchema),
 	modeHints: z.array(z.string()),
 	soloDoctorMode: z.boolean().optional(),
-});
+}).strict();
 
 export type ClinicSettings = z.infer<typeof clinicSettingsSchema>;

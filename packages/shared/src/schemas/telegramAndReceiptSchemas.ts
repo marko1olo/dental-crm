@@ -58,7 +58,7 @@ export const denteTelegramWebhookEventSchema = z.object({
 	action: z.string(),
 	warnings: z.array(z.string()),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type DenteTelegramWebhookEvent = z.infer<
 	typeof denteTelegramWebhookEventSchema
@@ -87,7 +87,7 @@ export const denteTelegramBotStatusSchema = z.object({
 	pendingLinkCodeCount: z.number().int().nonnegative(),
 	activeChatLinkCount: z.number().int().nonnegative(),
 	recentEvents: z.array(denteTelegramWebhookEventSchema),
-});
+}).strict();
 
 export type DenteTelegramBotStatus = z.infer<
 	typeof denteTelegramBotStatusSchema
@@ -102,7 +102,7 @@ export const denteTelegramWebhookResponseSchema = z.object({
 	suggestedPhotoUrl: z.string().url().nullable().default(null),
 	warnings: z.array(z.string()),
 	event: denteTelegramWebhookEventSchema.nullable(),
-});
+}).strict();
 
 export type DenteTelegramWebhookResponse = z.infer<
 	typeof denteTelegramWebhookResponseSchema
@@ -117,7 +117,7 @@ export const communicationSummarySchema = z.object({
 	appointmentConfirmations: z.number().int().nonnegative(),
 	paymentReminders: z.number().int().nonnegative(),
 	postVisitInstructions: z.number().int().nonnegative(),
-});
+}).strict();
 
 export type CommunicationSummary = z.infer<typeof communicationSummarySchema>;
 
@@ -142,7 +142,7 @@ export const recommendedActionSchema = z.object({
 	metricLabel: z.string(),
 	actionLabel: z.string(),
 	source: z.string(),
-});
+}).strict();
 
 export type RecommendedAction = z.infer<typeof recommendedActionSchema>;
 
@@ -161,7 +161,7 @@ export const appointmentReadinessCheckSchema = z.object({
 	title: z.string(),
 	ready: z.boolean(),
 	detail: z.string(),
-});
+}).strict();
 
 export type AppointmentReadinessCheck = z.infer<
 	typeof appointmentReadinessCheckSchema
@@ -177,7 +177,7 @@ export const appointmentReadinessSchema = z.object({
 	blockers: z.array(z.string()),
 	warnings: z.array(z.string()).default([]),
 	checks: z.array(appointmentReadinessCheckSchema),
-});
+}).strict();
 
 export type AppointmentReadiness = z.infer<typeof appointmentReadinessSchema>;
 
@@ -191,7 +191,7 @@ export const scheduleSuggestionSchema = z.object({
 	detail: z.string(),
 	actionLabel: z.string(),
 	reason: z.string(),
-});
+}).strict();
 
 export type ScheduleSuggestion = z.infer<typeof scheduleSuggestionSchema>;
 
@@ -205,7 +205,7 @@ export const visitCloseChecklistItemSchema = z.object({
 	ownerRole: staffRoleSchema,
 	section: workspaceSectionSchema,
 	actionLabel: z.string(),
-});
+}).strict();
 
 export type VisitCloseChecklistItem = z.infer<
 	typeof visitCloseChecklistItemSchema
@@ -218,7 +218,7 @@ export const visitCloseChecklistSchema = z.object({
 	nextAction: z.string(),
 	blockingItems: z.number().int().nonnegative(),
 	items: z.array(visitCloseChecklistItemSchema),
-});
+}).strict();
 
 export type VisitCloseChecklist = z.infer<typeof visitCloseChecklistSchema>;
 
@@ -253,7 +253,7 @@ export const visitSchema = z.object({
 	hygieneIndices: hygieneIndicesSchema.nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type Visit = z.infer<typeof visitSchema>;
 

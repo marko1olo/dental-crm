@@ -17,6 +17,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { before, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	computePayloadHash,
 	createCompositeIdempotencyKey,
@@ -158,12 +159,13 @@ describe("Domain 58: Cloud Sync, Offline Rehydration, Conflict Resolution & WebS
 
 	// ── SEV-1.2: Zero Hardcoded Master Secrets Invariants ─────────────────────
 	test("SEV-1.2: Verify absolute absence of 'dente-core-secret-2026' in offline queues", () => {
-		const paymentQueuePath = path.resolve(
-			process.cwd(),
+		const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
+		const paymentQueuePath = path.join(
+			repoRoot,
 			"apps/web/src/offline/offlinePaymentQueue.ts",
 		);
-		const appointmentQueuePath = path.resolve(
-			process.cwd(),
+		const appointmentQueuePath = path.join(
+			repoRoot,
 			"apps/web/src/offline/offlineAppointmentQueue.ts",
 		);
 

@@ -25,7 +25,9 @@ const ROUTES_DIR = path.resolve(HERE, "../../routes");
 const ROUTE_FILES = [
 	"files.ts",
 	"waitlist.ts",
-	"lab.ts",
+	"lab/ordersCrudModules/labOrderCreateHandler.ts",
+	"lab/portalModules/technicianPortalGetAndPhotoHandlers.ts",
+	"lab/portalModules/technicianPortalStatusHandler.ts",
 	"inventory.ts",
 ] as const;
 

@@ -559,26 +559,36 @@ describe("auth routes", () => {
 				assert.strictEqual(orgAppointments.length, 6);
 				assert.strictEqual(orgAppointments[0]!.doctorUserId, data.userId);
 
-				// Чистим за собой все демо-сущности в порядке внешних ключей
-				await tx.execute(sql`DELETE FROM visit_diaries WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM visits WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM tooth_states WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM treatment_plan_stages WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM treatment_plans WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM appointments WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM stock_batches WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM inventory_items WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM warehouses WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM lab_order_events WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM lab_items WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM lab_orders WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM crm_leads WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM dms_guarantee_letters WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM insurance_contracts WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM patients WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM chairs WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM clinics WHERE organization_id = ${data.organizationId}::uuid`);
-				await tx.execute(sql`DELETE FROM users WHERE organization_id = ${data.organizationId}::uuid`);
+				// Чистим за собой все демо-сущности в порядке внешних ключей (без хардкода неполного списка таблиц)
+				const childTablesResult = await tx.execute<{ table_name: string }>(sql`
+					SELECT c.table_name
+					FROM information_schema.columns c
+					JOIN information_schema.tables t
+					  ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+					WHERE c.table_schema = 'public'
+					  AND t.table_type = 'BASE TABLE'
+					  AND c.column_name = 'organization_id'
+					  AND c.table_name NOT IN ('organizations', 'audit_events', 'clinical_audit_logs')
+				`);
+				let pendingTables = childTablesResult.rows.map((r) => r.table_name);
+				for (let pass = 0; pass < 8 && pendingTables.length > 0; pass += 1) {
+					const nextPending: string[] = [];
+					for (const tbl of pendingTables) {
+						await tx.execute(sql`SAVEPOINT auth_cleanup_sp`);
+						try {
+							await tx.execute(
+								sql`DELETE FROM ${sql.identifier(tbl)} WHERE organization_id = ${data.organizationId}::uuid`,
+							);
+							await tx.execute(sql`RELEASE SAVEPOINT auth_cleanup_sp`);
+						} catch {
+							await tx.execute(sql`ROLLBACK TO SAVEPOINT auth_cleanup_sp`);
+							await tx.execute(sql`RELEASE SAVEPOINT auth_cleanup_sp`);
+							nextPending.push(tbl);
+						}
+					}
+					if (nextPending.length === pendingTables.length) break;
+					pendingTables = nextPending;
+				}
 				await tx.execute(sql`DELETE FROM organizations WHERE id = ${data.organizationId}::uuid`);
 			});
 		});
