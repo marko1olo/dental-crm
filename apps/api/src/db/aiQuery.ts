@@ -6,7 +6,7 @@ import type {
 import { desc, eq } from "drizzle-orm";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
 import { recordAuditEventInDb } from "./auditQuery.js";
-import { db } from "./client.js";
+import { withSavepoint, withTenantCtx } from "./rls.js";
 import { aiJobs } from "./schema.js";
 
 const logger = createApiLogger("aiQuery");
@@ -71,12 +71,14 @@ function buildRecognitionOutput(input: CreateAiRecognitionJobInput) {
 export async function listAiRecognitionJobsFromDb(
 	organizationId: string,
 ): Promise<AiRecognitionJob[]> {
-	const jobs = await db
-		.select()
-		.from(aiJobs)
-		.where(eq(aiJobs.organizationId, organizationId))
-		.orderBy(desc(aiJobs.createdAt))
-		.limit(50);
+	const jobs = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select()
+			.from(aiJobs)
+			.where(eq(aiJobs.organizationId, organizationId))
+			.orderBy(desc(aiJobs.createdAt))
+			.limit(50),
+	);
 
 	return jobs.map((j) => ({
 		id: j.id,
@@ -102,60 +104,68 @@ export async function createAiRecognitionJobInDb(
 	input: CreateAiRecognitionJobInput,
 ): Promise<AiRecognitionJob> {
 	const output = buildRecognitionOutput(input);
-	const [job] = await db
-		.insert(aiJobs)
-		.values({
-			id: randomUUID(),
-			organizationId,
-			patientId: input.patientId ?? null,
-			imagingStudyId: input.imagingStudyId ?? null,
-			kind: input.kind,
-			target: input.target,
-			status: "needs_review",
-			sourceLabel: input.sourceLabel,
-			inputText: input.inputText,
-			resultText: output.resultText,
-			confidence: output.confidence ?? 0,
-			warnings: output.warnings ?? [],
-			suggestedNextStep: output.suggestedNextStep ?? "review_result",
-		})
-		.returning();
+	return withTenantCtx(organizationId, async (tx) => {
+		const [job] = await tx
+			.insert(aiJobs)
+			.values({
+				id: randomUUID(),
+				organizationId,
+				patientId: input.patientId ?? null,
+				imagingStudyId: input.imagingStudyId ?? null,
+				kind: input.kind,
+				target: input.target,
+				status: "needs_review",
+				sourceLabel: input.sourceLabel,
+				inputText: input.inputText,
+				resultText: output.resultText,
+				confidence: output.confidence ?? 0,
+				warnings: output.warnings ?? [],
+				suggestedNextStep: output.suggestedNextStep ?? "review_result",
+			})
+			.returning();
 
-	if (!job) throw new Error("Не удалось создать задачу ИИ в базе данных");
+		if (!job) throw new Error("Не удалось создать задачу ИИ в базе данных");
 
-	const aiJob = {
-		id: job.id,
-		organizationId: job.organizationId,
-		patientId: job.patientId,
-		imagingStudyId: job.imagingStudyId,
-		kind: job.kind,
-		target: job.target,
-		status: job.status,
-		sourceLabel: job.sourceLabel,
-		inputText: job.inputText ?? "",
-		resultText: job.resultText ?? "",
-		confidence: job.confidence ?? 0,
-		warnings: job.warnings ?? [],
-		suggestedNextStep: job.suggestedNextStep ?? "",
-		createdAt: job.createdAt.toISOString(),
-		updatedAt: job.updatedAt.toISOString(),
-	};
+		const aiJob: AiRecognitionJob = {
+			id: job.id,
+			organizationId: job.organizationId,
+			patientId: job.patientId,
+			imagingStudyId: job.imagingStudyId,
+			kind: job.kind,
+			target: job.target,
+			status: job.status,
+			sourceLabel: job.sourceLabel,
+			inputText: job.inputText ?? "",
+			resultText: job.resultText ?? "",
+			confidence: job.confidence ?? 0,
+			warnings: job.warnings ?? [],
+			suggestedNextStep: job.suggestedNextStep ?? "",
+			createdAt: job.createdAt.toISOString(),
+			updatedAt: job.updatedAt.toISOString(),
+		};
 
-	try {
-		await recordAuditEventInDb(organizationId, {
-			entityType: "ai_job",
-			entityId: job.id,
-			action: "ai_recognition_prepared",
-			reason: `${job.kind} подготовлен для ${job.target}.`,
-		});
-	} catch (e) {
-		// Audit logging must never block AI job creation, but a failure here is a
-		// 152-FZ traceability gap and must be surfaced, not silently swallowed.
-		logger.warn(
-			{ err: safeLogError(e), organizationId, jobId: job.id },
-			"Failed to record ai_recognition_prepared audit event",
-		);
-	}
+		try {
+			await withSavepoint(tx, (spTx) =>
+				recordAuditEventInDb(
+					organizationId,
+					{
+						entityType: "ai_job",
+						entityId: job.id,
+						action: "ai_recognition_prepared",
+						reason: `${job.kind} подготовлен для ${job.target}.`,
+					},
+					spTx,
+				),
+			);
+		} catch (e) {
+			// Audit logging must never block AI job creation, but a failure here is a
+			// 152-FZ traceability gap and must be surfaced, not silently swallowed.
+			logger.warn(
+				{ err: safeLogError(e), organizationId, jobId: job.id },
+				"Failed to record ai_recognition_prepared audit event",
+			);
+		}
 
-	return aiJob;
+		return aiJob;
+	});
 }

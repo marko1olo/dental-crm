@@ -3,29 +3,48 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test, { afterEach, beforeEach, describe } from "node:test";
+import type { FastifyBaseLogger } from "fastify";
+import { bindServerLogger } from "../observability/logger.js";
 
 /**
- * Демон резервного копирования переписан, а тест остался от прежней версии.
- *
- * Он ждал английских сообщений «Starting Encrypted Cloud Backup Daemon»,
- * «Running scheduled daily backup», «Stopped Encrypted Cloud Backup Daemon».
- * Ничего этого больше нет: сообщения русские, а по тику интервала демон просто
- * вызывает createEncryptedBackup и ничего не пишет в журнал.
- *
- * Главное же — startBackupDaemon теперь требует CLINIC_ENCRYPTION_KEY и без
- * него вообще не запускается: копия медицинских данных без шифрования
- * недопустима. Тест ключ не задавал, поэтому демон уходил в ветку с
- * console.error и не планировал ничего, а проверка «должно быть одно сообщение
- * о старте» видела ноль.
- *
+ * Тест демона резервного копирования.
  * Ключ здесь тестовый и к рабочим данным отношения не имеет; заведомо не
  * совпадает с образцом из репозитория, иначе демон его отвергнет.
  */
 const TEST_ENCRYPTION_KEY = "unit-test-key-do-not-use-in-prod!!";
 
+function createTestLoggerSpy() {
+	const infoLines: string[] = [];
+	const errorLines: string[] = [];
+	const formatArgs = (args: unknown[]): string =>
+		args
+			.map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg)))
+			.join(" ");
+
+	const spyLogger: FastifyBaseLogger = {
+		level: "info",
+		fatal: (...args: unknown[]) => {
+			errorLines.push(formatArgs(args));
+		},
+		error: (...args: unknown[]) => {
+			errorLines.push(formatArgs(args));
+		},
+		warn: () => {},
+		info: (...args: unknown[]) => {
+			infoLines.push(formatArgs(args));
+		},
+		debug: () => {},
+		trace: () => {},
+		silent: () => {},
+		child: () => spyLogger,
+		msgPrefix: "",
+	};
+
+	return { spyLogger, infoLines, errorLines };
+}
+
 describe("BackupWorker start/stop", () => {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let backupWorker: any;
+	let backupWorker: typeof import("./backupWorker.js") | undefined;
 	let tempDir: string;
 	let originalPath: string | undefined;
 	let originalKey: string | undefined;
@@ -61,6 +80,7 @@ describe("BackupWorker start/stop", () => {
 	});
 
 	afterEach(() => {
+		bindServerLogger(null);
 		if (backupWorker) backupWorker.stopBackupDaemon();
 		test.mock.restoreAll();
 		if (originalPath) process.env.PATH = originalPath;
@@ -78,26 +98,24 @@ describe("BackupWorker start/stop", () => {
 	test("daemon starts, schedules, and stops", async (t) => {
 		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
 
-		const logMock = t.mock.method(console, "log", () => {});
+		const { spyLogger, infoLines } = createTestLoggerSpy();
+		bindServerLogger(spyLogger);
 
-		backupWorker.startBackupDaemon();
+		backupWorker?.startBackupDaemon();
 
-		assert.strictEqual(logMock.mock.callCount(), 1, "Should log start message");
-		const startLog = logMock.mock.calls[0];
-		assert.ok(startLog);
-		assert.match(startLog.arguments[0], /Резервное копирование включено/);
+		assert.strictEqual(infoLines.length, 1, "Should log start message");
+		assert.match(infoLines[0] ?? "", /Резервное копирование включено/);
 
-		backupWorker.stopBackupDaemon();
+		backupWorker?.stopBackupDaemon();
 
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const logs = logMock.mock.calls.map((c: any) => c.arguments[0]).join(" ");
+		const logs = infoLines.join(" ");
 		assert.match(logs, /Резервное копирование остановлено/);
 
 		// После остановки интервал снят: тик 24 часов ничего не добавляет в журнал.
-		const callsAfterStop = logMock.mock.callCount();
+		const callsAfterStop = infoLines.length;
 		t.mock.timers.tick(24 * 60 * 60 * 1000);
 		assert.strictEqual(
-			logMock.mock.callCount(),
+			infoLines.length,
 			callsAfterStop,
 			"Should not execute backup callback after stop",
 		);
@@ -105,50 +123,47 @@ describe("BackupWorker start/stop", () => {
 
 	test("повторный запуск не создаёт второй интервал", async (t) => {
 		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
-		const logMock = t.mock.method(console, "log", () => {});
+		const { spyLogger, infoLines } = createTestLoggerSpy();
+		bindServerLogger(spyLogger);
 
-		backupWorker.startBackupDaemon();
-		backupWorker.startBackupDaemon();
+		backupWorker?.startBackupDaemon();
+		backupWorker?.startBackupDaemon();
 
 		// Второй вызов обязан выйти сразу: иначе первый интервал теряется и
 		// снять его уже нечем — копии начали бы делаться дважды.
-		assert.strictEqual(logMock.mock.callCount(), 1);
+		assert.strictEqual(infoLines.length, 1);
 	});
 
 	test("без ключа шифрования демон не запускается и говорит об этом", async (t) => {
 		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
 		delete process.env.CLINIC_ENCRYPTION_KEY;
 
-		const logMock = t.mock.method(console, "log", () => {});
-		const errorMock = t.mock.method(console, "error", () => {});
+		const { spyLogger, infoLines, errorLines } = createTestLoggerSpy();
+		bindServerLogger(spyLogger);
 
-		backupWorker.startBackupDaemon();
+		backupWorker?.startBackupDaemon();
 
 		// Молчать нельзя: клиника должна знать, что копий НЕТ.
-		assert.strictEqual(logMock.mock.callCount(), 0);
-		assert.strictEqual(errorMock.mock.callCount(), 1);
-		const disabledError = errorMock.mock.calls[0];
-		assert.ok(disabledError);
-		assert.match(disabledError.arguments[0], /ОТКЛЮЧЕНО/);
+		assert.strictEqual(infoLines.length, 0);
+		assert.strictEqual(errorLines.length, 1);
+		assert.match(errorLines[0] ?? "", /ОТКЛЮЧЕНО/);
 
 		// И ничего не запланировано.
-		backupWorker.stopBackupDaemon();
-		assert.strictEqual(logMock.mock.callCount(), 0);
+		backupWorker?.stopBackupDaemon();
+		assert.strictEqual(infoLines.length, 0);
 	});
 
 	test("слишком короткий ключ отвергается, а не дополняется нулями", async (t) => {
 		t.mock.timers.enable({ apis: ["setInterval", "setTimeout", "Date"] });
 		process.env.CLINIC_ENCRYPTION_KEY = "short-key";
 
-		const logMock = t.mock.method(console, "log", () => {});
-		const errorMock = t.mock.method(console, "error", () => {});
+		const { spyLogger, infoLines, errorLines } = createTestLoggerSpy();
+		bindServerLogger(spyLogger);
 
-		backupWorker.startBackupDaemon();
+		backupWorker?.startBackupDaemon();
 
-		assert.strictEqual(logMock.mock.callCount(), 0);
-		assert.strictEqual(errorMock.mock.callCount(), 1);
-		const shortKeyError = errorMock.mock.calls[0];
-		assert.ok(shortKeyError);
-		assert.match(shortKeyError.arguments[0], /короче 32 байт/);
+		assert.strictEqual(infoLines.length, 0);
+		assert.strictEqual(errorLines.length, 1);
+		assert.match(errorLines[0] ?? "", /короче 32 байт/);
 	});
 });

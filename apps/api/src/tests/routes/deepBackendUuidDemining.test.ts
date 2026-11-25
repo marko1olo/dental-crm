@@ -26,10 +26,12 @@ import { PORTAL_TOKEN_KIND } from "../../routes/portal/types.js";
 const TEST_SECRET = "demining-test-secret";
 const ORG_ID = "00000000-0000-0000-0000-000000000001";
 const PATIENT_ID = "00000000-0000-0000-0000-000000000002";
+const DOCTOR_ID = "00000000-0000-0000-0000-000000000003";
 
 describe("Deep Backend UUID Demining & 22P02 Crash Prevention", () => {
 	let app: FastifyInstance;
 	let portalToken: string;
+	let staffToken: string;
 
 	before(async () => {
 		process.env.AUTH_TOKEN_SECRET = TEST_SECRET;
@@ -43,6 +45,14 @@ describe("Deep Backend UUID Demining & 22P02 Crash Prevention", () => {
 				kind: PORTAL_TOKEN_KIND,
 				sub: PATIENT_ID,
 				organizationId: ORG_ID,
+			},
+			TEST_SECRET,
+		);
+		staffToken = signToken(
+			{
+				organizationId: ORG_ID,
+				userId: DOCTOR_ID,
+				role: "doctor",
 			},
 			TEST_SECRET,
 		);
@@ -196,6 +206,7 @@ describe("Deep Backend UUID Demining & 22P02 Crash Prevention", () => {
 			url: "/api/warranty/certificates/corrupted-patient-id",
 			headers: {
 				"x-organization-id": ORG_ID,
+				"x-dente-staff-token": staffToken,
 			},
 		});
 
@@ -211,6 +222,7 @@ describe("Deep Backend UUID Demining & 22P02 Crash Prevention", () => {
 			url: "/api/warranty/patient/corrupted-patient-id",
 			headers: {
 				"x-organization-id": ORG_ID,
+				"x-dente-staff-token": staffToken,
 			},
 		});
 

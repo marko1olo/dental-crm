@@ -12,6 +12,7 @@ import type { AgentRuntimeMode } from "../../ai/dentalTools.js";
 import type { AgentRouterChatMessage } from "../../ai/agentRouterClient.js";
 import { defaultCopilotActionManager } from "../../ai/copilotActionManager.js";
 import { addMessageToDb } from "../../ai/session/copilotMessageDb.js";
+import { ensureValidUuid } from "../../ai/session/copilotSessionTypes.js";
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const tolerantUuid = z.string().optional().transform((val) => {
@@ -225,7 +226,7 @@ export async function handleAgentChat(
 							reply.raw.write(formatSseMessage("tool_call_finished", { name: event.tool, result: event.result }));
 							reply.raw.write(formatSseMessage("tool_end", event));
 						} else if (event.type === "confirmation_required") {
-							const sessId = body.sessionId || body.conversationId || `sess_${Date.now()}`;
+							const sessId = ensureValidUuid(body.sessionId || body.conversationId);
 							defaultCopilotActionManager.registerPending(
 								sessId,
 								event.callId,

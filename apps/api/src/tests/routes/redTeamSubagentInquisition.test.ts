@@ -605,7 +605,8 @@ describe("RED TEAM PENTEST: ANESTHESIA, LAB ORDERS (ЗТЛ), PRESCRIPTIONS & TEN
 
 			console.log(`[PENTEST 2.5] lab-orders list status: ${res.statusCode}`);
 			assert.equal(res.statusCode, 200);
-			const orders = JSON.parse(res.body);
+			const payload = JSON.parse(res.body);
+			const orders = payload.data ?? payload;
 			assert.ok(Array.isArray(orders));
 			assert.ok(orders.every((o: { id: string }) => o.id !== LAB_ORDER_B_ID), "Заказ Клиники Б не должен присутствовать в выдаче Клиники А!");
 		});

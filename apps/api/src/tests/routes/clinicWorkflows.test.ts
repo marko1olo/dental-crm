@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import { and, eq } from "drizzle-orm";
 import Fastify from "fastify";
-import { db } from "../../db/client.js";
+import { db, dbRaw } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { registerClinicWorkflowsRoutes } from "../../routes/clinicWorkflows.js";
 
@@ -40,9 +40,13 @@ describe("Clinic Workflows API Routes", () => {
 		mock.method(db, "select", () => ({
 			from: () => ({
 				where: (condition: unknown) => {
-					return {
+					const selectResult = {
 						orderBy: async () => rows.filter((r) => r.organizationId === ORG_A),
 						limit: async (l: number) => rows.filter((r) => r.organizationId === ORG_A).slice(0, l),
+					};
+					return {
+						...selectResult,
+						for: () => selectResult,
 					};
 				},
 			}),
@@ -93,6 +97,16 @@ describe("Clinic Workflows API Routes", () => {
 				},
 			}),
 		}));
+
+		mock.method(dbRaw, "transaction", async (cb: (tx: unknown) => Promise<unknown>) =>
+			cb({
+				select: db.select.bind(db),
+				insert: db.insert.bind(db),
+				update: db.update.bind(db),
+				delete: db.delete.bind(db),
+				execute: async () => ({ rows: [] }),
+			}),
+		);
 
 		app = Fastify();
 		await registerClinicWorkflowsRoutes(app);

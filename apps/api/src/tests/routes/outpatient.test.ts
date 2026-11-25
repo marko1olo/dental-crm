@@ -36,8 +36,13 @@ describe("Outpatient & Clinical Core Integration Tests", () => {
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
-		// Убеждаемся, что клинический контур засеян
-		await seedClinicalCore();
+		// Убеждаемся, что клинический контур засеян (в PG18 справочники 55/91/1841/42/448 уже засеяны миграциями/сидами)
+		const [teethCountRow] = await db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(clinicalTeethCatalog);
+		if ((teethCountRow?.count ?? 0) === 0) {
+			await seedClinicalCore();
+		}
 
 		// Создаем тестовую организацию, врача, пациента и визит
 		await db

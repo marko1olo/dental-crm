@@ -36,6 +36,7 @@ export {
 
 export {
 	formatKopecksToRubles,
+	parseRublesToKopecks,
 } from "@dental/shared";
 
 export type {
@@ -63,7 +64,7 @@ export {
 	generateGostSignatureStampSvg,
 } from "./cdaR2/gostSignatures";
 
-import { generateCdaXml } from "@dental/shared/cda";
+import { canonicalizeCdaXml, generateCdaXml, generateSemd105Xml } from "@dental/shared/cda";
 import type { EgiszDentalCdaPayload } from "./cdaR2/cdaTypes";
 
 /**
@@ -73,51 +74,96 @@ import type { EgiszDentalCdaPayload } from "./cdaR2/cdaTypes";
 export function generateEgiszDentalCdaXml(payload: EgiszDentalCdaPayload): string {
 	const [patFamily = "Пациент", patGiven = "", patPatronymic = ""] = (payload.patient.patientFullName || "Пациент").trim().split(/\s+/);
 	const [docFamily = "Врач", docGiven = "", docPatronymic = ""] = (payload.doctor.doctorFullName || "Врач").trim().split(/\s+/);
-	const gender = payload.patient.patientGender === "male" || payload.patient.patientGender === "female" ? payload.patient.patientGender : "other";
+	const gender: "male" | "female" | "other" =
+		payload.patient.patientGender === "male" || payload.patient.patientGender === "female"
+			? payload.patient.patientGender
+			: "other";
 	const docCode = String(payload.docTypeCode || "108");
+	const visitDate = payload.encounterDate ? new Date(payload.encounterDate) : new Date();
+	const documentId = payload.documentUuid || `DOC-${Date.now()}`;
+	const documentVersion = payload.documentVersion || 1;
+	const dentalStatus = Object.entries(payload.toothStates || {}).map(([tooth, condition]) => ({
+		tooth,
+		condition,
+		...(payload.toothSurfaces?.[Number(tooth)] ? { surfaces: payload.toothSurfaces[Number(tooth)] } : {}),
+	}));
+	const diagnoses = payload.diagnoses.map((d) => ({
+		icd10Code: d.icd10Code,
+		diagnosisText: d.icd10Name || d.diagnosisName || d.icd10Code,
+		...(d.tooth !== undefined ? { tooth: d.tooth } : {}),
+		isPrimary: Boolean(d.isPrimary),
+	}));
+	const services = (payload.procedures || []).map((p) => ({
+		code: p.code,
+		name: p.name,
+		...(p.tooth !== undefined ? { tooth: p.tooth } : {}),
+		...(p.quantity !== undefined ? { quantity: p.quantity } : {}),
+	}));
+	const recommendations = payload.recommendations || "Наблюдение";
+
+	const patient = {
+		patientId: payload.patient.patientId || "pat",
+		name: { first: patGiven || "Пациент", last: patFamily || "Пациент", middle: patPatronymic || undefined },
+		snils: payload.patient.patientSnils,
+		birthDate: payload.patient.patientBirthDate || "1980-01-01",
+		gender,
+		polisOms: payload.patient.patientPolisOms,
+	};
+	const doctor = {
+		name: { first: docGiven || "Врач", last: docFamily || "Врач", middle: docPatronymic || undefined },
+		snils: payload.doctor.doctorSnils,
+		position: payload.doctor.doctorPosition,
+		positionCode: payload.doctor.doctorPositionCode,
+	};
+	const clinic = {
+		name: payload.clinic.clinicName,
+		oid: payload.clinic.clinicOid,
+		ogrn: payload.clinic.clinicOgrn,
+		inn: payload.clinic.clinicInn,
+	};
+
+	if (docCode === "105") {
+		const raw105 = generateSemd105Xml({
+			docKind: "105",
+			documentId,
+			documentVersion,
+			visitDate,
+			patient,
+			doctor,
+			clinic,
+			complaints: payload.complaints,
+			anamnesis: payload.anamnesisMorbi,
+			anamnesisVitae: payload.anamnesisVitae,
+			dentalStatus: dentalStatus.length > 0 ? dentalStatus : undefined,
+			diagnoses,
+			services,
+			treatmentDescription: payload.treatmentProtocolDescription,
+			recommendations,
+		});
+		return canonicalizeCdaXml(raw105);
+	}
+
+	const mappedCode = docCode === "303" ? "103" : docCode;
 	const validDocKinds = ["101", "103", "108", "104", "109", "043u", "043-1u"] as const;
 	type DocKindType = (typeof validDocKinds)[number];
-	const docKind: DocKindType = validDocKinds.includes(docCode as DocKindType) ? (docCode as DocKindType) : "108";
+	const docKind: DocKindType = validDocKinds.includes(mappedCode as DocKindType) ? (mappedCode as DocKindType) : "108";
 
 	const res = generateCdaXml({
 		docKind,
-		documentId: payload.documentUuid || `DOC-${Date.now()}`,
-		documentVersion: payload.documentVersion || 1,
-		visitDate: payload.encounterDate ? new Date(payload.encounterDate) : new Date(),
-		patient: {
-			patientId: payload.patient.patientId || "pat",
-			name: { first: patGiven || "Пациент", last: patFamily || "Пациент", middle: patPatronymic || undefined },
-			snils: payload.patient.patientSnils,
-			birthDate: payload.patient.patientBirthDate || "1980-01-01",
-			gender,
-			polisOms: payload.patient.patientPolisOms,
-		},
-		doctor: {
-			name: { first: docGiven || "Врач", last: docFamily || "Врач", middle: docPatronymic || undefined },
-			snils: payload.doctor.doctorSnils,
-			position: payload.doctor.doctorPosition,
-		},
-		clinic: {
-			name: payload.clinic.clinicName,
-			oid: payload.clinic.clinicOid,
-			ogrn: payload.clinic.clinicOgrn,
-			inn: payload.clinic.clinicInn,
-		},
+		documentId,
+		documentVersion,
+		visitDate,
+		patient,
+		doctor,
+		clinic,
 		complaints: payload.complaints,
 		anamnesis: payload.anamnesisMorbi,
 		anamnesisVitae: payload.anamnesisVitae,
-		diagnoses: payload.diagnoses.map((d) => ({
-			icd10Code: d.icd10Code,
-			diagnosisText: d.icd10Name || d.diagnosisName || d.icd10Code,
-			tooth: d.tooth,
-			isPrimary: Boolean(d.isPrimary),
-		})),
-		services: (payload.procedures || []).map((p) => ({
-			code: p.code,
-			name: p.name,
-			tooth: p.tooth,
-		})),
-		recommendations: payload.recommendations || "Наблюдение",
+		dentalStatus: dentalStatus.length > 0 ? dentalStatus : undefined,
+		diagnoses,
+		services,
+		treatmentDescription: payload.treatmentProtocolDescription,
+		recommendations,
 	});
 	return res.success ? res.xml : `<!-- Ошибка генерации CDA R2: ${res.errors.join("; ")} -->`;
 }

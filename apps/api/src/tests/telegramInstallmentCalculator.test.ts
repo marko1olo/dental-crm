@@ -130,7 +130,12 @@ describe("Telegram Treatment Plan Closer: Installment Calculator & Patient Scree
 	// ========================================================================
 	describe("3. Telegram In-Place UI Screens & Zero Chat Landfill", () => {
 		it("generates root follow-up screen with personalized greeting, doctor and teeth", () => {
-			const screen = TelegramTreatmentPlanCloserService.getPlanCloserRootScreen(samplePlan);
+			const namedPlan = {
+				...samplePlan,
+				patientName: "Иван Иванович",
+				doctorName: "Смирнова Анна Павловна",
+			};
+			const screen = TelegramTreatmentPlanCloserService.getPlanCloserRootScreen(namedPlan);
 
 			assert.ok(screen.text.includes("Иван Иванович"));
 			assert.ok(screen.text.includes("Смирнова Анна Павловна"));

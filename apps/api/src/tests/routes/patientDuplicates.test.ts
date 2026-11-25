@@ -161,9 +161,9 @@ describe("поиск и слияние дублей", () => {
 				.set({ mergedIntoPatientId: null })
 				.where(eq(patients.organizationId, ORG_ID));
 			await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-			await db.delete(users).where(eq(users.organizationId, ORG_ID));
-			await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-			await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+			// audit_events открыт только на дозапись (триггер audit_log_append_only_guard),
+			// поэтому статические фикстуры users/clinics/organizations сохраняем между прогонами
+			// (перед засевом используются вставки с onConflictDoNothing).
 		});
 	}
 

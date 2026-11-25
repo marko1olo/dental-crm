@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { clinicWorkflows } from "../db/schema.js";
 import { requirePermission } from "../security/permissions.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
@@ -67,11 +67,13 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 		const perm = await requirePermission(request, reply, "settings.read");
 		if (!perm) return;
 
-		const rows = await db
-			.select()
-			.from(clinicWorkflows)
-			.where(eq(clinicWorkflows.organizationId, organizationId))
-			.orderBy(clinicWorkflows.createdAt);
+		const rows = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select()
+				.from(clinicWorkflows)
+				.where(eq(clinicWorkflows.organizationId, organizationId))
+				.orderBy(clinicWorkflows.createdAt),
+		);
 
 		return reply.status(200).send({ workflows: rows.map(serializeWorkflow) });
 	});
@@ -117,16 +119,18 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 
 		const trigger = rawTrigger && rawTrigger.trim() ? rawTrigger.trim() : "manual";
 
-		const [created] = await db
-			.insert(clinicWorkflows)
-			.values({
-				organizationId,
-				name,
-				trigger,
-				definition: parsedDefinition,
-				active: active ?? false,
-			})
-			.returning();
+		const [created] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.insert(clinicWorkflows)
+				.values({
+					organizationId,
+					name,
+					trigger,
+					definition: parsedDefinition,
+					active: active ?? false,
+				})
+				.returning(),
+		);
 
 		if (!created) {
 			return reply.status(500).send({
@@ -180,41 +184,47 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 		}
 		const requestedActive = body.data?.active;
 
-		const [existing] = await db
-			.select()
-			.from(clinicWorkflows)
-			.where(
-				and(
-					eq(clinicWorkflows.id, params.data.id),
-					eq(clinicWorkflows.organizationId, organizationId),
-				),
-			)
-			.limit(1);
+		const toggleResult = await withTenantCtx(organizationId, async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(clinicWorkflows)
+				.where(
+					and(
+						eq(clinicWorkflows.id, params.data.id),
+						eq(clinicWorkflows.organizationId, organizationId),
+					),
+				)
+				.for("update")
+				.limit(1);
 
-		if (!existing) {
-			return reply.status(404).send({
-				error: "WorkflowNotFound",
-				message: "Сценарий автоматизации не найден.",
-			});
-		}
+			if (!existing) {
+				return { kind: "not_found" as const };
+			}
 
-		const nextActive = typeof requestedActive === "boolean" ? requestedActive : !existing.active;
+			const nextActive = typeof requestedActive === "boolean" ? requestedActive : !existing.active;
 
-		const [updated] = await db
-			.update(clinicWorkflows)
-			.set({
-				active: nextActive,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(clinicWorkflows.id, params.data.id),
-					eq(clinicWorkflows.organizationId, organizationId),
-				),
-			)
-			.returning();
+			const [updated] = await tx
+				.update(clinicWorkflows)
+				.set({
+					active: nextActive,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(clinicWorkflows.id, params.data.id),
+						eq(clinicWorkflows.organizationId, organizationId),
+					),
+				)
+				.returning();
 
-		if (!updated) {
+			if (!updated) {
+				return { kind: "not_found" as const };
+			}
+
+			return { kind: "ok" as const, workflow: updated };
+		});
+
+		if (toggleResult.kind === "not_found") {
 			return reply.status(404).send({
 				error: "WorkflowNotFound",
 				message: "Сценарий автоматизации не найден.",
@@ -225,7 +235,7 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		return reply.status(200).send({ workflow: serializeWorkflow(updated) });
+		return reply.status(200).send({ workflow: serializeWorkflow(toggleResult.workflow) });
 	});
 
 	/**
@@ -248,15 +258,17 @@ export async function registerClinicWorkflowsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const [deleted] = await db
-			.delete(clinicWorkflows)
-			.where(
-				and(
-					eq(clinicWorkflows.id, params.data.id),
-					eq(clinicWorkflows.organizationId, organizationId),
-				),
-			)
-			.returning({ id: clinicWorkflows.id });
+		const [deleted] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.delete(clinicWorkflows)
+				.where(
+					and(
+						eq(clinicWorkflows.id, params.data.id),
+						eq(clinicWorkflows.organizationId, organizationId),
+					),
+				)
+				.returning({ id: clinicWorkflows.id }),
+		);
 
 		if (!deleted) {
 			return reply.status(404).send({

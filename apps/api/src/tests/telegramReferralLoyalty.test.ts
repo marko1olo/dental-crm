@@ -13,6 +13,7 @@ import {
 	crmLeads,
 	denteTelegramBotConfigs,
 	denteTelegramChatLinks,
+	denteTelegramWebhookEvents,
 	familyGroups,
 	organizations,
 	patientBonusBalances,
@@ -172,6 +173,9 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 				await tx
 					.delete(communicationTasks)
 					.where(eq(communicationTasks.organizationId, TEST_ORG_ID));
+				await tx
+					.delete(denteTelegramWebhookEvents)
+					.where(eq(denteTelegramWebhookEvents.organizationId, TEST_ORG_ID));
 				await tx
 					.delete(patients)
 					.where(

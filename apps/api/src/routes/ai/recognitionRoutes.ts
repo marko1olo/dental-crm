@@ -21,6 +21,7 @@ import {
 } from "../../db/aiQuery.js";
 import { getImagingStudyById } from "../../db/imagingQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 
 const aiRecognitionValidationMessage =
 	"AI-задача не создана: выберите пациента или снимок и тип черновика.";
@@ -95,41 +96,53 @@ export async function registerRecognitionRoutes(app: FastifyInstance): Promise<v
 				});
 			}
 			const input = parsedInput.data;
-			const patient = input.patientId
-				? await getPatientByIdFromDb(orgId, input.patientId)
-				: null;
-			if (input.patientId && !patient) {
-				return sendAiRecognitionScopeError(
-					reply,
-					404,
-					aiRecognitionPatientMissingMessage,
-				);
-			}
-			const imagingStudy = input.imagingStudyId
-				? await getImagingStudyById(orgId, input.imagingStudyId)
-				: null;
-			if (input.imagingStudyId && !imagingStudy) {
-				return sendAiRecognitionScopeError(
-					reply,
-					404,
-					aiRecognitionStudyMissingMessage,
-				);
-			}
-			if (patient && imagingStudy && imagingStudy.patientId !== patient.id) {
-				return sendAiRecognitionScopeError(
-					reply,
-					409,
-					aiRecognitionStudyPatientMismatchMessage,
-				);
-			}
-			const job = await createAiRecognitionJobInDb(orgId, {
-				...input,
-				patientId:
-					patient?.id ?? imagingStudy?.patientId ?? input.patientId ?? null,
+			const createResult = await withTenantCtx(orgId, async () => {
+				const patient = input.patientId
+					? await getPatientByIdFromDb(orgId, input.patientId)
+					: null;
+				if (input.patientId && !patient) {
+					return {
+						kind: "error" as const,
+						statusCode: 404 as const,
+						message: aiRecognitionPatientMissingMessage,
+					};
+				}
+				const imagingStudy = input.imagingStudyId
+					? await getImagingStudyById(orgId, input.imagingStudyId)
+					: null;
+				if (input.imagingStudyId && !imagingStudy) {
+					return {
+						kind: "error" as const,
+						statusCode: 404 as const,
+						message: aiRecognitionStudyMissingMessage,
+					};
+				}
+				if (patient && imagingStudy && imagingStudy.patientId !== patient.id) {
+					return {
+						kind: "error" as const,
+						statusCode: 409 as const,
+						message: aiRecognitionStudyPatientMismatchMessage,
+					};
+				}
+				const job = await createAiRecognitionJobInDb(orgId, {
+					...input,
+					patientId:
+						patient?.id ?? imagingStudy?.patientId ?? input.patientId ?? null,
+				});
+				return { kind: "ok" as const, job };
 			});
+
+			if (createResult.kind === "error") {
+				return sendAiRecognitionScopeError(
+					reply,
+					createResult.statusCode,
+					createResult.message,
+				);
+			}
+
 			return reply
 				.code(201)
-				.send(aiRecognitionJobResponseSchema.parse({ job }));
+				.send(aiRecognitionJobResponseSchema.parse({ job: createResult.job }));
 		} catch (error: unknown) {
 			request.log.error(error);
 			return reply.status(500).send({

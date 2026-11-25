@@ -36,12 +36,13 @@ describe("egiszCdaValidator Semantic Rules & Generator Engine", () => {
 		const xml302 = buildCdaXml(validData);
 		assert.ok(xml302.includes('<realmCode code="RU"/>'), "Contains realmCode RU");
 		assert.ok(xml302.includes('<templateId root="1.2.643.5.1.13.13.11.1527"/>'), "Contains templateId OID");
-		assert.ok(xml302.includes("Протокол консультации стоматолога"), "Contains title for 302");
+		assert.ok(xml302.includes("Протокол консультации врача-стоматолога"), "Contains title for 302");
 		assert.ok(xml302.includes("code=\"K02.1\""), "Contains ICD-10 code in CD value");
 		assert.ok(xml302.includes("targetSiteCode code=\"16\""), "Contains tooth 16 targetSiteCode");
 
 		const xml303 = buildCdaXml({ ...validData, docTypeCode: "303" });
-		assert.ok(xml303.includes("Протокол стоматологического лечения/вмешательства"), "Contains title for 303");
+		assert.ok(xml303.includes("<ClinicalDocument"), "Contains ClinicalDocument root for 303");
+		assert.ok(xml303.includes("Протокол консультации врача-стоматолога"), "Contains title for 303");
 	});
 
 	it("canonicalizeXml trims trailing whitespace and normalizes CRLF to LF", () => {

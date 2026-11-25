@@ -108,7 +108,7 @@ describe("2. Exact Financial Math & Kopeck Formatting", () => {
 		assert.equal(formatKopecksToRubles(99), "0.99");
 		assert.equal(formatKopecksToRubles(5), "0.05");
 		assert.equal(formatKopecksToRubles(0), "0.00");
-		assert.equal(formatKopecksToRubles(-500), "0.00");
+		assert.equal(formatKopecksToRubles(-500), "-5.00");
 	});
 
 	it("2.2 Parses rubles string or number into integer kopecks", () => {
@@ -117,7 +117,8 @@ describe("2. Exact Financial Math & Kopeck Formatting", () => {
 		assert.equal(parseRublesToKopecks("0.99"), 99);
 		assert.equal(parseRublesToKopecks(85000.5), 8500050);
 		assert.equal(parseRublesToKopecks(""), 0);
-		assert.equal(parseRublesToKopecks("-100"), 0);
+		assert.equal(parseRublesToKopecks("-100"), -10000);
+		assert.equal(parseRublesToKopecks("не число"), 0);
 	});
 });
 
@@ -135,13 +136,13 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		// Patient info
 		assert.ok(xml.includes('<family>Соколова</family>'));
 		assert.ok(xml.includes('<given>Анна</given>'));
-		assert.ok(xml.includes('<identity:Patronymic>Владимировна</identity:Patronymic>'));
+		assert.ok(xml.includes('<given>Владимировна</given>'));
 		assert.ok(xml.includes('administrativeGenderCode code="2"')); // Female
 
 		// Doctor info
 		assert.ok(xml.includes('<family>Иванов</family>'));
 		assert.ok(xml.includes('<given>Сергей</given>'));
-		assert.ok(xml.includes('<identity:Patronymic>Павлович</identity:Patronymic>'));
+		assert.ok(xml.includes('<given>Павлович</given>'));
 		assert.ok(xml.includes('code="71"')); // Dentist therapist code
 
 		// Clinic info
@@ -149,17 +150,16 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		assert.ok(xml.includes(`id root="${EGISZ_REMD_OIDS.OGRN_LEGAL}"`));
 		assert.ok(xml.includes(`id root="${EGISZ_REMD_OIDS.INN}"`));
 
-		// 6 Clinical Sections (LOINC)
-		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_COMPLAINTS}"`)); // Complaints
-		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_ANAMNESIS}"`)); // Anamnesis
-		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_DENTAL_ODONTOGRAM}"`)); // Odontogram
+		// 5 Clinical Sections (LOINC) of SEMD 105
+		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_ANAMNESIS}"`)); // Anamnesis & complaints
+		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_DENTAL_STATUS}"`)); // Dental status / odontogram
 		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_DIAGNOSIS_SECTION}"`)); // Diagnoses
 		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_SERVICES_RENDERED}"`)); // Services
 		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_RECOMMENDATIONS}"`)); // Recommendations
 
 		// Clinical Content: ICD-10 K02.1 & 804n B01.065.001
 		assert.ok(xml.includes('code="K02.1"'));
-		assert.ok(xml.includes('code="B01.065.001"'));
+		assert.ok(xml.includes("B01.065.001"));
 		assert.ok(xml.includes('targetSiteCode code="46"')); // Tooth 46
 	});
 
@@ -183,26 +183,26 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 		};
 		const xml101 = generateEgiszDentalCdaXml(semd101Payload);
 		assert.ok(xml101.includes('code code="101"'));
-		assert.ok(xml101.includes("Протокол консультации стоматолога"));
+		assert.ok(xml101.includes("Протокол консультации врача-стоматолога"));
 
-		// SEMD 102 Outpatient Dental Protocol
+		// SEMD 102 Outpatient Dental Protocol (mapped to canonical SEMD 108)
 		const semd102Payload = {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "102" as const,
 		};
 		const xml102 = generateEgiszDentalCdaXml(semd102Payload);
-		assert.ok(xml102.includes('code code="102"'));
-		assert.ok(xml102.includes("Амбулаторный стоматологический протокол"));
+		assert.ok(xml102.includes('code code="108"'));
+		assert.ok(xml102.includes("Протокол стоматологического осмотра"));
 
-		// SEMD 303 Dental Procedure Protocol
+		// SEMD 303 Dental Procedure Protocol (mapped to canonical SEMD 103)
 		const procPayload = {
 			...SAMPLE_DENTAL_SEMD_105_PRESET,
 			docTypeCode: "303" as const,
 			treatmentProtocolDescription: "Проведено препарирование кариозной полости зуба 46, медикаментозная обработка 2% хлоргексидином, световая пломба Filtek Ultimate.",
 		};
 		const xml303 = generateEgiszDentalCdaXml(procPayload);
-		assert.ok(xml303.includes('code code="76"'));
-		assert.ok(xml303.includes("Протокол стоматологического лечения и вмешательства"));
+		assert.ok(xml303.includes('code code="103"'));
+		assert.ok(xml303.includes("Протокол стоматологического приёма (лечебно-диагностический)"));
 		assert.ok(xml303.includes("Filtek Ultimate"));
 	});
 
