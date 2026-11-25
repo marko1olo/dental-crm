@@ -218,20 +218,22 @@ export interface DoctorShiftEarningsBreakdown {
 }
 
 /** EMR Batch SMS PEP verification session */
-export const emrBatchSigningSessionSchema = z.object({
-	sessionId: z.string().min(1),
-	doctorId: z.string().min(1),
-	doctorName: z.string().min(1),
-	maskedPhone: z.string().min(1),
-	appointmentIds: z.array(z.string()).min(1),
-	shiftDateIso: z.string().min(1),
-	secretCode: z.string().min(4).max(8),
-	expiresAtIso: z.string().min(1),
-	attemptsRemaining: z.number().int().min(0).default(3),
-	batchHash: z.string().min(8),
-	isVerified: z.boolean().default(false),
-	isExpired: z.boolean().default(false),
-});
+export const emrBatchSigningSessionSchema = z
+	.object({
+		sessionId: z.string().min(1),
+		doctorId: z.string().min(1),
+		doctorName: z.string().min(1),
+		maskedPhone: z.string().min(1),
+		appointmentIds: z.array(z.string()).min(1),
+		shiftDateIso: z.string().min(1),
+		secretCode: z.string().min(4).max(8),
+		expiresAtIso: z.string().min(1),
+		attemptsRemaining: z.number().int().min(0).default(3),
+		batchHash: z.string().min(8),
+		isVerified: z.boolean().default(false),
+		isExpired: z.boolean().default(false),
+	})
+	.strict();
 export type EmrBatchSigningSession = z.infer<typeof emrBatchSigningSessionSchema>;
 
 export interface EmrBatchSigningResult {

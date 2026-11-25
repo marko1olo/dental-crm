@@ -11,7 +11,8 @@ export function decodeBase64(value: string | undefined): Buffer {
 	try {
 		const clean = value.includes(",") ? (value.split(",").pop() ?? "") : value;
 		return Buffer.from(clean, "base64");
-	} catch {
+	} catch (err: unknown) {
+		void err;
 		return Buffer.alloc(0);
 	}
 }
@@ -158,6 +159,8 @@ export function readZipEntries(buffer: Buffer): {
 		}
 
 		let cursor = centralOffset;
+		let totalDecompressedBytes = 0;
+		const maxTotalZipBytes = 50 * 1024 * 1024;
 
 		for (
 			let index = 0;
@@ -171,6 +174,7 @@ export function readZipEntries(buffer: Buffer): {
 
 			const method = buffer.readUInt16LE(cursor + 10);
 			const compressedSize = buffer.readUInt32LE(cursor + 20);
+			const uncompressedSize = buffer.readUInt32LE(cursor + 24);
 			const fileNameLength = buffer.readUInt16LE(cursor + 28);
 			const extraLength = buffer.readUInt16LE(cursor + 30);
 			const commentLength = buffer.readUInt16LE(cursor + 32);
@@ -218,24 +222,48 @@ export function readZipEntries(buffer: Buffer): {
 			}
 
 			const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
+			if (
+				uncompressedSize > 20 * 1024 * 1024 ||
+				totalDecompressedBytes + uncompressedSize > maxTotalZipBytes
+			) {
+				warnings.push("zip_bomb_size_limit_exceeded");
+				break;
+			}
 			try {
 				if (method === 0) {
+					if (totalDecompressedBytes + compressed.length > maxTotalZipBytes) {
+						warnings.push("zip_bomb_size_limit_exceeded");
+						break;
+					}
+					totalDecompressedBytes += compressed.length;
 					entries.push({ name, data: compressed });
 				} else if (method === 8) {
+					const remainingBudget = maxTotalZipBytes - totalDecompressedBytes;
+					if (remainingBudget <= 0) {
+						warnings.push("zip_bomb_size_limit_exceeded");
+						break;
+					}
+					const inflated = inflateRawSync(compressed, {
+						maxOutputLength: Math.min(20 * 1024 * 1024, remainingBudget),
+					});
+					totalDecompressedBytes += inflated.length;
 					entries.push({
 						name,
-						data: inflateRawSync(compressed, {
-							maxOutputLength: 20 * 1024 * 1024,
-						}),
+						data: inflated,
 					});
 				} else {
 					warnings.push(
 						`zip_unsupported_compression:${safeFileLabel(name, "Файл архива")}:${method}`,
 					);
 				}
-			} catch {
+			} catch (err: unknown) {
+				if (err instanceof RangeError) {
+					warnings.push("zip_bomb_size_limit_exceeded");
+					break;
+				}
+				const reason = err instanceof Error ? err.message : "inflate_error";
 				warnings.push(
-					`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}`,
+					`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}:${reason}`,
 				);
 			}
 

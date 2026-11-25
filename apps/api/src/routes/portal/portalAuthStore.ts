@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gt, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -310,4 +310,72 @@ export async function isIssuanceThrottled(
 		(row) => row.deliveryStatus === "sent" || row.deliveryStatus === "pending",
 	);
 	return billable.length >= policy.maxPerWindow;
+}
+
+export async function findPendingRegistrationOtp(
+	phoneSuffix: string,
+	targetOrgId: string | undefined,
+	now: Date,
+) {
+	const validTargetOrg =
+		targetOrgId &&
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+			targetOrgId,
+		);
+	const [dbPendingReg] = validTargetOrg
+		? await withTenantCtx(targetOrgId, async (tx) =>
+				tx
+					.select()
+					.from(portalOtpCodes)
+					.where(
+						and(
+							eq(portalOtpCodes.organizationId, targetOrgId),
+							isNull(portalOtpCodes.patientId),
+							eq(portalOtpCodes.phone, phoneSuffix),
+							isNull(portalOtpCodes.consumedAt),
+							gt(portalOtpCodes.expiresAt, now),
+						),
+					)
+					.orderBy(desc(portalOtpCodes.createdAt))
+					.limit(1),
+			)
+		: await withSuperuserBypass(async (tx) =>
+				tx
+					.select()
+					.from(portalOtpCodes)
+					.where(
+						and(
+							isNull(portalOtpCodes.patientId),
+							eq(portalOtpCodes.phone, phoneSuffix),
+							isNull(portalOtpCodes.consumedAt),
+							gt(portalOtpCodes.expiresAt, now),
+						),
+					)
+					.orderBy(desc(portalOtpCodes.createdAt))
+					.limit(1),
+			);
+
+	if (dbPendingReg) {
+		return {
+			organizationId: dbPendingReg.organizationId,
+			codeHash: dbPendingReg.codeHash,
+			attemptCount: dbPendingReg.attemptCount,
+			expiresAt: dbPendingReg.expiresAt,
+			id: dbPendingReg.id,
+		};
+	}
+	return pendingRegistrationOtpStore.get(phoneSuffix);
+}
+
+export async function setPendingRegistrationOtpAttemptOrConsumed(
+	organizationId: string,
+	regId: string,
+	values: { attemptCount?: number; consumedAt?: Date },
+): Promise<void> {
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(portalOtpCodes)
+			.set(values)
+			.where(eq(portalOtpCodes.id, regId));
+	});
 }

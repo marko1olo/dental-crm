@@ -33,9 +33,11 @@ export const updateBranchSchema = z
 	})
 	.strict();
 
-export const branchIdParamSchema = z.object({
-	id: z.string().uuid("Некорректный UUID филиала"),
-});
+export const branchIdParamSchema = z
+	.object({
+		id: z.string().uuid("Некорректный UUID филиала"),
+	})
+	.strict();
 
 export function registerBranchesRoutes(app: FastifyInstance): void {
 	// GET /api/branches — Получение всех филиалов организации с подсчетом кресел

@@ -82,14 +82,16 @@ export const sepaSiteValueSchema = z.object({
 });
 export type SepaSiteValue = z.infer<typeof sepaSiteValueSchema>;
 
-export const sepaSitePatchSchema = z.object({
-	probingDepthMm: z.number().int().min(0).max(15).nullable().optional(),
-	gingivalMarginMm: z.number().int().min(-5).max(10).nullable().optional(),
-	bleedingOnProbing: z.boolean().optional(),
-	plaque: z.boolean().optional(),
-	suppuration: z.boolean().optional(),
-	calculus: z.boolean().optional(),
-});
+export const sepaSitePatchSchema = z
+	.object({
+		probingDepthMm: z.number().int().min(0).max(15).nullable().optional(),
+		gingivalMarginMm: z.number().int().min(-5).max(10).nullable().optional(),
+		bleedingOnProbing: z.boolean().optional(),
+		plaque: z.boolean().optional(),
+		suppuration: z.boolean().optional(),
+		calculus: z.boolean().optional(),
+	})
+	.strict();
 export type SepaSitePatch = z.infer<typeof sepaSitePatchSchema>;
 
 export const sepaToothValueSchema = z.object({
@@ -105,15 +107,17 @@ export const sepaToothValueSchema = z.object({
 });
 export type SepaToothValue = z.infer<typeof sepaToothValueSchema>;
 
-export const sepaToothPatchSchema = z.object({
-	isPresent: z.boolean().optional(),
-	isImplant: z.boolean().optional(),
-	mobility: z.number().int().min(0).max(3).nullable().optional(),
-	prognosis: z.enum(PROGNOSIS_VALUES).nullable().optional(),
-	furcationBuccal: z.enum(FURCATION_VALUES).nullable().optional(),
-	furcationLingual: z.enum(FURCATION_VALUES).nullable().optional(),
-	keratinizedGingivaMm: z.number().int().min(0).max(20).nullable().optional(),
-});
+export const sepaToothPatchSchema = z
+	.object({
+		isPresent: z.boolean().optional(),
+		isImplant: z.boolean().optional(),
+		mobility: z.number().int().min(0).max(3).nullable().optional(),
+		prognosis: z.enum(PROGNOSIS_VALUES).nullable().optional(),
+		furcationBuccal: z.enum(FURCATION_VALUES).nullable().optional(),
+		furcationLingual: z.enum(FURCATION_VALUES).nullable().optional(),
+		keratinizedGingivaMm: z.number().int().min(0).max(20).nullable().optional(),
+	})
+	.strict();
 export type SepaToothPatch = z.infer<typeof sepaToothPatchSchema>;
 
 export const periodontogramIndicesSchema = z.object({

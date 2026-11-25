@@ -177,6 +177,7 @@ export const taxDeductionApplicationPayloadSchema = z
 		requestedAt: taxDateLikeStringSchema,
 		duplicateWarningAccepted: z.literal(true),
 	})
+	.strict()
 	.superRefine((value, context) => {
 		if (
 			value.requestedForm === "legacy_2021_2023" &&

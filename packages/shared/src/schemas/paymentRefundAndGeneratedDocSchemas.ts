@@ -41,6 +41,7 @@ export const paymentRefundCorrectionPayloadSchema = z
 			.optional(),
 		accountantDecision: z.string().trim().min(1).max(500),
 	})
+	.strict()
 	.superRefine((value, context) => {
 		if (
 			new Set(value.selectedPaymentIds).size !== value.selectedPaymentIds.length

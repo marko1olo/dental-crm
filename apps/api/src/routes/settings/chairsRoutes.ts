@@ -4,7 +4,9 @@ import {
 	updateChairWorkingHoursSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import {
 	createChairInDb,
 	deactivateChairInDb,
@@ -67,10 +69,30 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				message: chairCreateValidationMessage,
 			};
 		}
-		const created = await withTenantCtx(orgId, async () => {
+		const created = await withTenantCtx(orgId, async (tx) => {
 			await createChairInDb(orgId, input);
 			const settings = await getClinicSettingsFromDb(orgId);
-			return settings.chairs.find((c) => c.name === input.name);
+			const chair = settings.chairs.find((c) => c.name === input.name);
+			if (chair) {
+				try {
+					await recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "chair",
+							entityId: chair.id,
+							action: "CHAIR_CREATED",
+							actorUserId: getRequestIdentity(request).userId,
+						},
+						tx,
+					);
+				} catch (auditErr) {
+					request.log.warn(
+						{ error: auditErr },
+						"Не удалось записать аудит создания кресла",
+					);
+				}
+			}
+			return chair;
 		});
 		reply.code(201);
 		return chairSchema.parse(created);
@@ -95,7 +117,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 			}
 
 			const params = request.params as { chairId?: string };
-			if (!params.chairId) {
+			if (!params.chairId || !isValidUuid(params.chairId)) {
 				reply.code(400);
 				return {
 					error: "SettingsRouteValidationError",
@@ -115,11 +137,28 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 				};
 			}
 			try {
-				const updated = await withTenantCtx(orgId, async () => {
+				const updated = await withTenantCtx(orgId, async (tx) => {
 					await updateChairWorkingHoursInDb(orgId, chairId, input);
 					const settings = await getClinicSettingsFromDb(orgId);
 					const found = settings.chairs.find((c) => c.id === chairId);
 					if (!found) throw new Error("Кресло не найдено.");
+					try {
+						await recordAuditEventInDb(
+							orgId,
+							{
+								entityType: "chair",
+								entityId: chairId,
+								action: "CHAIR_WORKING_HOURS_UPDATED",
+								actorUserId: getRequestIdentity(request).userId,
+							},
+							tx,
+						);
+					} catch (auditErr) {
+						request.log.warn(
+							{ error: auditErr },
+							"Не удалось записать аудит графика кресла",
+						);
+					}
 					return found;
 				});
 				return chairSchema.parse(updated);
@@ -152,7 +191,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 		}
 
 		const params = request.params as { chairId?: string };
-		if (!params.chairId) {
+		if (!params.chairId || !isValidUuid(params.chairId)) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
@@ -176,11 +215,28 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			const updated = await withTenantCtx(orgId, async () => {
+			const updated = await withTenantCtx(orgId, async (tx) => {
 				await updateChairProfileInDb(orgId, chairId, input);
 				const settings = await getClinicSettingsFromDb(orgId);
 				const found = settings.chairs.find((c) => c.id === chairId);
 				if (!found) throw new Error("Кресло не найдено.");
+				try {
+					await recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "chair",
+							entityId: chairId,
+							action: "CHAIR_PROFILE_UPDATED",
+							actorUserId: getRequestIdentity(request).userId,
+						},
+						tx,
+					);
+				} catch (auditErr) {
+					request.log.warn(
+						{ error: auditErr },
+						"Не удалось записать аудит профиля кресла",
+					);
+				}
 				return found;
 			});
 			return chairSchema.parse(updated);
@@ -219,7 +275,7 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 		}
 
 		const params = request.params as { chairId?: string };
-		if (!params.chairId) {
+		if (!params.chairId || !isValidUuid(params.chairId)) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
@@ -228,11 +284,28 @@ export function registerChairsRoutes(app: FastifyInstance): void {
 		}
 		const chairId = params.chairId;
 		try {
-			const updated = await withTenantCtx(orgId, async () => {
+			const updated = await withTenantCtx(orgId, async (tx) => {
 				await deactivateChairInDb(orgId, chairId);
 				const settings = await getClinicSettingsFromDb(orgId);
 				const found = settings.chairs.find((c) => c.id === chairId);
 				if (!found) throw new Error("Кресло не найдено.");
+				try {
+					await recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "chair",
+							entityId: chairId,
+							action: "CHAIR_DEACTIVATED",
+							actorUserId: getRequestIdentity(request).userId,
+						},
+						tx,
+					);
+				} catch (auditErr) {
+					request.log.warn(
+						{ error: auditErr },
+						"Не удалось записать аудит деактивации кресла",
+					);
+				}
 				return found;
 			});
 			return chairSchema.parse(updated);

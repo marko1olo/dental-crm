@@ -162,6 +162,7 @@ export const createPatientRelationshipDtoSchema = z
 		isPrimaryPayer: z.boolean().optional(),
 		canViewRecords: z.boolean().optional(),
 	})
+	.strict()
 	.transform((data) => {
 		const isCloseRelative = ["parent", "child", "spouse", "guardian", "ward"].includes(data.relationshipType);
 		const defaultCanSpend = isCloseRelative ? true : (data.isPrimaryPayer ?? false);
@@ -195,6 +196,7 @@ export const patchPatientRelationshipDtoSchema = z
 		isPrimaryPayer: z.boolean().optional(),
 		canViewRecords: z.boolean().optional(),
 	})
+	.strict()
 	.transform((data) => {
 		const out = { ...data };
 		if (out.canViewRecords !== undefined && out.canViewMedicalRecord === undefined) {

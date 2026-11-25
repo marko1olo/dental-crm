@@ -101,37 +101,39 @@ export type DigitalCertificateInfo = z.infer<
 	typeof digitalCertificateInfoSchema
 >;
 
-export const detachedGostSignatureContainerSchema = z.object({
-	/** Отсоединенная подпись в формате Base64 (CMS PKCS#7 CAdES-BES) */
-	signatureBase64: z.string().min(1, "Криптографическая подпись обязательна"),
-	/** SHA-256 (или ГОСТ Р 34.11-2012) хэш подписанного документа в Hex */
-	documentHashHex: z
-		.string()
-		.length(64, "Длина хэша SHA-256 должна составлять 64 символа"),
-	/** Идентификатор подписанного документа */
-	documentId: z.string().min(1),
-	/** Тип медицинского документа (043u, informed_consent, treatment_plan, etc.) */
-	documentKind: z.string().min(1),
-	/** Метка времени подписания (ISO 8601) */
-	signedAt: z.string(),
-	/** OID алгоритма подписи */
-	signatureAlgorithmOid: z
-		.string()
-		.default(GOST_CRYPTO_OIDS.GOST_3410_2012_256),
-	/** OID алгоритма хэширования */
-	digestAlgorithmOid: z.string().default(GOST_CRYPTO_OIDS.GOST_3411_2012_256),
-	/** Сведения о сертификате ключа проверки */
-	certificateSerialNumber: z.string().min(1),
-	certificateSubject: z.string().min(1),
-	certificateIssuer: z.string().min(1),
-	validFrom: z.string(),
-	validTo: z.string(),
-	signatureType: digitalSignatureTypeSchema.default("ukep"),
-	/** Формат контейнера подписи */
-	containerFormat: z
-		.literal("CMS_PKCS7_DETACHED_CADES_BES")
-		.default("CMS_PKCS7_DETACHED_CADES_BES"),
-});
+export const detachedGostSignatureContainerSchema = z
+	.object({
+		/** Отсоединенная подпись в формате Base64 (CMS PKCS#7 CAdES-BES) */
+		signatureBase64: z.string().min(1, "Криптографическая подпись обязательна"),
+		/** SHA-256 (или ГОСТ Р 34.11-2012) хэш подписанного документа в Hex */
+		documentHashHex: z
+			.string()
+			.length(64, "Длина хэша SHA-256 должна составлять 64 символа"),
+		/** Идентификатор подписанного документа */
+		documentId: z.string().min(1),
+		/** Тип медицинского документа (043u, informed_consent, treatment_plan, etc.) */
+		documentKind: z.string().min(1),
+		/** Метка времени подписания (ISO 8601) */
+		signedAt: z.string(),
+		/** OID алгоритма подписи */
+		signatureAlgorithmOid: z
+			.string()
+			.default(GOST_CRYPTO_OIDS.GOST_3410_2012_256),
+		/** OID алгоритма хэширования */
+		digestAlgorithmOid: z.string().default(GOST_CRYPTO_OIDS.GOST_3411_2012_256),
+		/** Сведения о сертификате ключа проверки */
+		certificateSerialNumber: z.string().min(1),
+		certificateSubject: z.string().min(1),
+		certificateIssuer: z.string().min(1),
+		validFrom: z.string(),
+		validTo: z.string(),
+		signatureType: digitalSignatureTypeSchema.default("ukep"),
+		/** Формат контейнера подписи */
+		containerFormat: z
+			.literal("CMS_PKCS7_DETACHED_CADES_BES")
+			.default("CMS_PKCS7_DETACHED_CADES_BES"),
+	})
+	.strict();
 export type DetachedGostSignatureContainer = z.infer<
 	typeof detachedGostSignatureContainerSchema
 >;

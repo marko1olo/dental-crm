@@ -117,15 +117,17 @@ export async function updateStaffWorkingHoursInDb(
 	const workingHoursInput: UpdateStaffWorkingHoursInput = { workingHours };
 	if (useInMemory())
 		return updateStaffWorkingHoursInMemory(staffId, workingHoursInput);
-	await db
-		.update(schema.users)
-		.set({ workingHours })
-		.where(
-			and(
-				eq(schema.users.id, staffId),
-				eq(schema.users.organizationId, organizationId),
-			),
-		);
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(schema.users)
+			.set({ workingHours })
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			);
+	});
 }
 
 /**
@@ -211,15 +213,17 @@ export async function deactivateStaffMemberInDb(
 		deactivateStaffMemberInMemory(staffId);
 		return;
 	}
-	await db
-		.update(schema.users)
-		.set({ isActive: false })
-		.where(
-			and(
-				eq(schema.users.id, staffId),
-				eq(schema.users.organizationId, organizationId),
-			),
-		);
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(schema.users)
+			.set({ isActive: false })
+			.where(
+				and(
+					eq(schema.users.id, staffId),
+					eq(schema.users.organizationId, organizationId),
+				),
+			);
+	});
 }
 
 export async function updateStaffCredentialsInDb(

@@ -71,14 +71,18 @@ export const jawMeshLodsSchema = z.object({
 });
 export type JawMeshLods = z.infer<typeof jawMeshLodsSchema>;
 
-export const preparationMeshLodSchema = jawMeshLodsSchema.extend({
-	toothFdi: z.number().int().min(11).max(85),
-});
+export const preparationMeshLodSchema = jawMeshLodsSchema
+	.extend({
+		toothFdi: z.number().int().min(11).max(85),
+	})
+	.strict();
 export type PreparationMeshLod = z.infer<typeof preparationMeshLodSchema>;
 
-export const scanbodyMeshLodSchema = jawMeshLodsSchema.extend({
-	toothFdi: z.number().int().min(11).max(85),
-});
+export const scanbodyMeshLodSchema = jawMeshLodsSchema
+	.extend({
+		toothFdi: z.number().int().min(11).max(85),
+	})
+	.strict();
 export type ScanbodyMeshLod = z.infer<typeof scanbodyMeshLodSchema>;
 
 export const scannedFileInfoSchema = z.object({

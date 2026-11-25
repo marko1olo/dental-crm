@@ -143,19 +143,21 @@ export const patientTimelineEntrySchema = z.object({
 });
 export type PatientTimelineEntry = z.infer<typeof patientTimelineEntrySchema>;
 
-export const createPatientTimelineEntrySchema = z.object({
-	clinicId: z.string().uuid(),
-	patientId: z.string().uuid(),
-	eventType: timelineEventTypeSchema,
-	eventCategory: timelineCategorySchema,
-	sourceTable: z.string().min(1).max(100),
-	sourceId: z.string().uuid(),
-	title: z.string().min(1).max(300),
-	description: z.string().max(4000).optional().nullable(),
-	eventData: z.record(z.string(), z.unknown()).optional().nullable(),
-	occurredAt: z.string().datetime().optional(),
-	createdBy: z.string().uuid().optional().nullable(),
-});
+export const createPatientTimelineEntrySchema = z
+	.object({
+		clinicId: z.string().uuid(),
+		patientId: z.string().uuid(),
+		eventType: timelineEventTypeSchema,
+		eventCategory: timelineCategorySchema,
+		sourceTable: z.string().min(1).max(100),
+		sourceId: z.string().uuid(),
+		title: z.string().min(1).max(300),
+		description: z.string().max(4000).optional().nullable(),
+		eventData: z.record(z.string(), z.unknown()).optional().nullable(),
+		occurredAt: z.string().datetime().optional(),
+		createdBy: z.string().uuid().optional().nullable(),
+	})
+	.strict();
 export type CreatePatientTimelineEntryInput = z.infer<typeof createPatientTimelineEntrySchema>;
 
 export const patientTimelineFilterSchema = z.object({

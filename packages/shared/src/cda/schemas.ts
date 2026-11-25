@@ -308,18 +308,20 @@ export const cdaDocumentParamsSchema = z.union([
 
 // ─── Отсоединенная подпись и пакет РЭМД ────────────────────────────────────
 
-export const detachedSignatureSchema = z.object({
-	signatureBase64: z.string().min(1, "Подпись Base64 обязательна"),
-	certificateSerialNumber: z.string().min(1, "Серийный номер сертификата обязателен"),
-	certificateSubject: z.string().min(1, "Владелец сертификата обязателен"),
-	certificateIssuer: z.string().optional(),
-	validFrom: z.string().optional(),
-	validTo: z.string().optional(),
-	signedAt: z.string().datetime({ message: "Время подписания должно быть в формате ISO 8601" }),
-	algorithmOid: z.string().default("1.2.643.7.1.1.1.1"),
-	digestAlgorithmOid: z.string().optional(),
-	signatureValueHex: z.string().optional(),
-});
+export const detachedSignatureSchema = z
+	.object({
+		signatureBase64: z.string().min(1, "Подпись Base64 обязательна"),
+		certificateSerialNumber: z.string().min(1, "Серийный номер сертификата обязателен"),
+		certificateSubject: z.string().min(1, "Владелец сертификата обязателен"),
+		certificateIssuer: z.string().optional(),
+		validFrom: z.string().optional(),
+		validTo: z.string().optional(),
+		signedAt: z.string().datetime({ message: "Время подписания должно быть в формате ISO 8601" }),
+		algorithmOid: z.string().default("1.2.643.7.1.1.1.1"),
+		digestAlgorithmOid: z.string().optional(),
+		signatureValueHex: z.string().optional(),
+	})
+	.strict();
 
 export const egiszRemdPackageSchema = z.object({
 	documentId: z.string().uuid(),

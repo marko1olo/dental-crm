@@ -659,7 +659,10 @@ export function extractDocument(
 		if (!text) {
 			try {
 				text = decodeText(buffer.subarray(0, 50_000));
-			} catch {
+			} catch (fallbackErr: unknown) {
+				warnings.push(
+					`fallback_decode_failed:${fallbackErr instanceof Error ? fallbackErr.message : "unknown"}`,
+				);
 				text = "";
 			}
 		}

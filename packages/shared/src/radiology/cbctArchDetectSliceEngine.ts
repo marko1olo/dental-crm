@@ -60,10 +60,12 @@ export const NO_CROP: Readonly<CropBox> = Object.freeze({
 	max: [1, 1, 1] as [number, number, number],
 });
 
-export const clipPlaneParamSchema = z.object({
-	origin: vec3Schema,
-	normal: vec3Schema,
-});
+export const clipPlaneParamSchema = z
+	.object({
+		origin: vec3Schema,
+		normal: vec3Schema,
+	})
+	.strict();
 export type ClipPlaneParam = z.infer<typeof clipPlaneParamSchema>;
 
 const AXES_3D: readonly Vec3[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];

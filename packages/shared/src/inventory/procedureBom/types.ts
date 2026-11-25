@@ -75,14 +75,16 @@ export type ProcedureBomMap = z.infer<typeof procedureBomMapSchema>;
 /**
  * Completed procedure input descriptor for calculating BOM deductions.
  */
-export const completedProcedureInputSchema = z.object({
-	procedureCode804n: z.string().min(1),
-	procedureNameRu: z.string().optional(),
-	quantity: z.number().int().positive().default(1),
-	toothNumber: z.number().int().min(11).max(85).optional(),
-	doctorId: z.string().optional(),
-	cabinetId: z.string().optional(),
-});
+export const completedProcedureInputSchema = z
+	.object({
+		procedureCode804n: z.string().min(1),
+		procedureNameRu: z.string().optional(),
+		quantity: z.number().int().positive().default(1),
+		toothNumber: z.number().int().min(11).max(85).optional(),
+		doctorId: z.string().optional(),
+		cabinetId: z.string().optional(),
+	})
+	.strict();
 
 export type CompletedProcedureInput = z.infer<typeof completedProcedureInputSchema>;
 

@@ -38,14 +38,16 @@ export type WhatsappInteractiveType = z.infer<typeof whatsappInteractiveTypeSche
 
 // --- Settings & Configuration Schemas ---
 
-export const kapsoSettingsUpdateSchema = z.object({
-	apiKey: z.string().trim().min(1).optional().describe("Kapso API key / permanent Meta access token (write-only)"),
-	phoneNumberId: z.string().trim().max(64).nullable().optional(),
-	businessAccountId: z.string().trim().max(64).nullable().optional(),
-	webhookSecret: z.string().trim().max(128).nullable().optional().describe("Webhook verification signing secret (write-only)"),
-	displayPhoneNumber: z.string().trim().max(32).nullable().optional(),
-	isActive: z.boolean().optional(),
-});
+export const kapsoSettingsUpdateSchema = z
+	.object({
+		apiKey: z.string().trim().min(1).optional().describe("Kapso API key / permanent Meta access token (write-only)"),
+		phoneNumberId: z.string().trim().max(64).nullable().optional(),
+		businessAccountId: z.string().trim().max(64).nullable().optional(),
+		webhookSecret: z.string().trim().max(128).nullable().optional().describe("Webhook verification signing secret (write-only)"),
+		displayPhoneNumber: z.string().trim().max(32).nullable().optional(),
+		isActive: z.boolean().optional(),
+	})
+	.strict();
 export type KapsoSettingsUpdate = z.infer<typeof kapsoSettingsUpdateSchema>;
 
 export const kapsoSettingsResponseSchema = z.object({

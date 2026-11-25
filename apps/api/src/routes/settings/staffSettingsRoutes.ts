@@ -110,17 +110,24 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 				message: staffCreateValidationMessage,
 			};
 		}
-		const created = await createStaffMemberInDb(orgId, input);
-		try {
-			await recordAuditEventInDb(orgId, {
-				entityType: "user",
-				entityId: created.id,
-				action: "STAFF_CREATED",
-				actorUserId: getRequestIdentity(request).userId,
-			});
-		} catch (auditErr) {
-			request.log.warn({ error: auditErr }, "Не удалось записать аудит создания сотрудника");
-		}
+		const created = await withTenantCtx(orgId, async (tx) => {
+			const member = await createStaffMemberInDb(orgId, input);
+			try {
+				await recordAuditEventInDb(
+					orgId,
+					{
+						entityType: "user",
+						entityId: member.id,
+						action: "STAFF_CREATED",
+						actorUserId: getRequestIdentity(request).userId,
+					},
+					tx,
+				);
+			} catch (auditErr) {
+				request.log.warn({ error: auditErr }, "Не удалось записать аудит создания сотрудника");
+			}
+			return member;
+		});
 		reply.code(201);
 		return staffMemberSchema.parse(created);
 	});
@@ -151,6 +158,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 					message: "Некорректный ID сотрудника.",
 				};
 			}
+			const staffId = params.staffId;
 
 			const input = parseSettingsPayload(
 				updateStaffCredentialsSchema,
@@ -187,17 +195,23 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			if (pinCode) updates.pinCodeHash = await hashCredential(pinCode);
 
 			try {
-				await updateStaffCredentialsInDb(orgId, params.staffId, updates);
-				try {
-					await recordAuditEventInDb(orgId, {
-						entityType: "user",
-						entityId: params.staffId,
-						action: "STAFF_CREDENTIALS_UPDATED",
-						actorUserId: getRequestIdentity(request).userId,
-					});
-				} catch (auditErr) {
-					request.log.warn({ error: auditErr }, "Не удалось записать аудит доступов сотрудника");
-				}
+				await withTenantCtx(orgId, async (tx) => {
+					await updateStaffCredentialsInDb(orgId, staffId, updates);
+					try {
+						await recordAuditEventInDb(
+							orgId,
+							{
+								entityType: "user",
+								entityId: staffId,
+								action: "STAFF_CREDENTIALS_UPDATED",
+								actorUserId: getRequestIdentity(request).userId,
+							},
+							tx,
+						);
+					} catch (auditErr) {
+						request.log.warn({ error: auditErr }, "Не удалось записать аудит доступов сотрудника");
+					}
+				});
 				/*
 				 * ИМЕННО ЭТОТ ОТВЕТ ЧИТАЕТСЯ СРАЗУ. SettingsStaffTab.tsx после успеха
 				 * перечитывает GET /api/dashboard. Пока здесь стоял
@@ -248,13 +262,14 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			}
 
 			const params = request.params as { staffId?: string };
-			if (!params.staffId) {
+			if (!params.staffId || !isValidUuid(params.staffId)) {
 				reply.code(400);
 				return {
 					error: "SettingsRouteValidationError",
 					message: staffWorkingHoursRouteValidationMessage,
 				};
 			}
+			const staffId = params.staffId;
 			const input = parseSettingsPayload(
 				updateStaffWorkingHoursSchema,
 				request.body,
@@ -267,20 +282,27 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 				};
 			}
 			try {
-				await updateStaffWorkingHoursInDb(orgId, params.staffId, input);
-				try {
-					await recordAuditEventInDb(orgId, {
-						entityType: "user",
-						entityId: params.staffId,
-						action: "STAFF_WORKING_HOURS_UPDATED",
-						actorUserId: getRequestIdentity(request).userId,
-					});
-				} catch (auditErr) {
-					request.log.warn({ error: auditErr }, "Не удалось записать аудит графика сотрудника");
-				}
-				const settings = await getClinicSettingsFromDb(orgId);
-				const updated = settings.staff.find((s) => s.id === params.staffId);
-				if (!updated) throw new Error("Сотрудник не найден.");
+				const updated = await withTenantCtx(orgId, async (tx) => {
+					await updateStaffWorkingHoursInDb(orgId, staffId, input);
+					try {
+						await recordAuditEventInDb(
+							orgId,
+							{
+								entityType: "user",
+								entityId: staffId,
+								action: "STAFF_WORKING_HOURS_UPDATED",
+								actorUserId: getRequestIdentity(request).userId,
+							},
+							tx,
+						);
+					} catch (auditErr) {
+						request.log.warn({ error: auditErr }, "Не удалось записать аудит графика сотрудника");
+					}
+					const settings = await getClinicSettingsFromDb(orgId);
+					const found = settings.staff.find((s) => s.id === staffId);
+					if (!found) throw new Error("Сотрудник не найден.");
+					return found;
+				});
 				return staffMemberSchema.parse(updated);
 			} catch (error) {
 				return staffWorkingHoursRejection(reply, error);
@@ -315,13 +337,14 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		}
 
 		const params = request.params as { staffId?: string };
-		if (!params.staffId) {
+		if (!params.staffId || !isValidUuid(params.staffId)) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
 				message: staffProfileRouteValidationMessage,
 			};
 		}
+		const staffId = params.staffId;
 		const input = parseSettingsPayload(
 			updateStaffMemberProfileSchema,
 			request.body,
@@ -344,20 +367,27 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			await updateStaffMemberProfileInDb(orgId, params.staffId, input);
-			try {
-				await recordAuditEventInDb(orgId, {
-					entityType: "user",
-					entityId: params.staffId,
-					action: "STAFF_PROFILE_UPDATED",
-					actorUserId: getRequestIdentity(request).userId,
-				});
-			} catch (auditErr) {
-				request.log.warn({ error: auditErr }, "Не удалось записать аудит профиля сотрудника");
-			}
-			const settings = await getClinicSettingsFromDb(orgId);
-			const updated = settings.staff.find((s) => s.id === params.staffId);
-			if (!updated) throw new Error("Сотрудник не найден.");
+			const updated = await withTenantCtx(orgId, async (tx) => {
+				await updateStaffMemberProfileInDb(orgId, staffId, input);
+				try {
+					await recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "user",
+							entityId: staffId,
+							action: "STAFF_PROFILE_UPDATED",
+							actorUserId: getRequestIdentity(request).userId,
+						},
+						tx,
+					);
+				} catch (auditErr) {
+					request.log.warn({ error: auditErr }, "Не удалось записать аудит профиля сотрудника");
+				}
+				const settings = await getClinicSettingsFromDb(orgId);
+				const found = settings.staff.find((s) => s.id === staffId);
+				if (!found) throw new Error("Сотрудник не найден.");
+				return found;
+			});
 			return staffMemberSchema.parse(updated);
 		} catch (error) {
 			return staffMutationRejection(
@@ -380,28 +410,36 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
 		const params = request.params as { staffId?: string };
-		if (!params.staffId) {
+		if (!params.staffId || !isValidUuid(params.staffId)) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
 				message: staffDeactivateRouteValidationMessage,
 			};
 		}
+		const staffId = params.staffId;
 		try {
-			await deactivateStaffMemberInDb(orgId, params.staffId);
-			try {
-				await recordAuditEventInDb(orgId, {
-					entityType: "user",
-					entityId: params.staffId,
-					action: "STAFF_DEACTIVATED",
-					actorUserId: getRequestIdentity(request).userId,
-				});
-			} catch (auditErr) {
-				request.log.warn({ error: auditErr }, "Не удалось записать аудит деактивации сотрудника");
-			}
-			const settings = await getClinicSettingsFromDb(orgId);
-			const updated = settings.staff.find((s) => s.id === params.staffId);
-			if (!updated) throw new Error("Сотрудник не найден.");
+			const updated = await withTenantCtx(orgId, async (tx) => {
+				await deactivateStaffMemberInDb(orgId, staffId);
+				try {
+					await recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "user",
+							entityId: staffId,
+							action: "STAFF_DEACTIVATED",
+							actorUserId: getRequestIdentity(request).userId,
+						},
+						tx,
+					);
+				} catch (auditErr) {
+					request.log.warn({ error: auditErr }, "Не удалось записать аудит деактивации сотрудника");
+				}
+				const settings = await getClinicSettingsFromDb(orgId);
+				const found = settings.staff.find((s) => s.id === staffId);
+				if (!found) throw new Error("Сотрудник не найден.");
+				return found;
+			});
 			return staffMemberSchema.parse(updated);
 		} catch (error) {
 			return staffMutationRejection(
@@ -455,13 +493,14 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		}
 
 		const params = request.params as { staffId?: string };
-		if (!params.staffId) {
+		if (!params.staffId || !isValidUuid(params.staffId)) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",
 				message: doctorCommissionRouteValidationMessage,
 			};
 		}
+		const staffId = params.staffId;
 		const input = parseSettingsPayload(
 			updateDoctorCommissionSchema,
 			request.body,
@@ -474,25 +513,32 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			};
 		}
 		try {
-			const saved = await setDoctorCommissionRateInDb(
-				orgId,
-				params.staffId,
-				input.commissionPct,
-				{
-					materialCostDeductionPct: input.materialCostDeductionPct,
-					labCostDeductionPct: input.labCostDeductionPct,
-				},
-			);
-			try {
-				await recordAuditEventInDb(orgId, {
-					entityType: "doctor_commission",
-					entityId: params.staffId,
-					action: "STAFF_COMMISSION_UPDATED",
-					actorUserId: getRequestIdentity(request).userId,
-				});
-			} catch (auditErr) {
-				request.log.warn({ error: auditErr }, "Не удалось записать аудит комиссии врача");
-			}
+			const saved = await withTenantCtx(orgId, async (tx) => {
+				const rate = await setDoctorCommissionRateInDb(
+					orgId,
+					staffId,
+					input.commissionPct,
+					{
+						materialCostDeductionPct: input.materialCostDeductionPct,
+						labCostDeductionPct: input.labCostDeductionPct,
+					},
+				);
+				try {
+					await recordAuditEventInDb(
+						orgId,
+						{
+							entityType: "doctor_commission",
+							entityId: staffId,
+							action: "STAFF_COMMISSION_UPDATED",
+							actorUserId: getRequestIdentity(request).userId,
+						},
+						tx,
+					);
+				} catch (auditErr) {
+					request.log.warn({ error: auditErr }, "Не удалось записать аудит комиссии врача");
+				}
+				return rate;
+			});
 			return saved;
 		} catch (error) {
 			// Отключённое хранение — это не ошибка оператора: процент вводить некуда,
@@ -601,7 +647,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		const granter = await requirePermission(db, request, reply, "settings.write");
 		if (!granter) return;
 		const params = request.params as { staffId?: string };
-		if (!params.staffId) {
+		if (!params.staffId || !isValidUuid(params.staffId)) {
 			reply.code(400);
 			return {
 				error: "SettingsRouteValidationError",

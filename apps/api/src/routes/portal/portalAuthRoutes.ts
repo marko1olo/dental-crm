@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -21,6 +21,7 @@ import {
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import {
 	findPatientsByPhone,
+	findPendingRegistrationOtp,
 	findUniquePatientByPhone,
 	isIssuanceThrottled,
 	otpIpRequestCounts,
@@ -29,6 +30,7 @@ import {
 	persistRevokedToken,
 	portalRevokedBeforeByPatient,
 	revokedPortalTokens,
+	setPendingRegistrationOtpAttemptOrConsumed,
 } from "./portalAuthStore.js";
 import {
 	developerLogFallbackAllowed,
@@ -509,52 +511,8 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
 				const now = new Date();
 
-				const validTargetOrg =
-					targetOrgId &&
-					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetOrgId);
 				// Persistent PostgreSQL 18 check first, fallback to memory
-				const [dbPendingReg] = validTargetOrg
-					? await withTenantCtx(targetOrgId, async (tx) =>
-							tx
-								.select()
-								.from(portalOtpCodes)
-								.where(
-									and(
-										eq(portalOtpCodes.organizationId, targetOrgId),
-										isNull(portalOtpCodes.patientId),
-										eq(portalOtpCodes.phone, phoneSuffix),
-										isNull(portalOtpCodes.consumedAt),
-										gt(portalOtpCodes.expiresAt, now),
-									),
-								)
-								.orderBy(desc(portalOtpCodes.createdAt))
-								.limit(1),
-						)
-					: await withSuperuserBypass(async (tx) =>
-							tx
-								.select()
-								.from(portalOtpCodes)
-								.where(
-									and(
-										isNull(portalOtpCodes.patientId),
-										eq(portalOtpCodes.phone, phoneSuffix),
-										isNull(portalOtpCodes.consumedAt),
-										gt(portalOtpCodes.expiresAt, now),
-									),
-								)
-								.orderBy(desc(portalOtpCodes.createdAt))
-								.limit(1),
-						);
-
-				const pendingReg = dbPendingReg
-					? {
-							organizationId: dbPendingReg.organizationId,
-							codeHash: dbPendingReg.codeHash,
-							attemptCount: dbPendingReg.attemptCount,
-							expiresAt: dbPendingReg.expiresAt,
-							id: dbPendingReg.id,
-						}
-					: pendingRegistrationOtpStore.get(phoneSuffix);
+				const pendingReg = await findPendingRegistrationOtp(phoneSuffix, targetOrgId, now);
 
 				if (!pendingReg || pendingReg.expiresAt.getTime() < now.getTime()) {
 					pendingRegistrationOtpStore.delete(phoneSuffix);
@@ -564,13 +522,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 				if (pendingReg.attemptCount >= policy.maxAttempts) {
 					if ("id" in pendingReg) {
-						const regId = pendingReg.id;
-						await withTenantCtx(pendingReg.organizationId, async (tx) => {
-							await tx
-								.update(portalOtpCodes)
-								.set({ consumedAt: now })
-								.where(eq(portalOtpCodes.id, regId));
-						});
+						await setPendingRegistrationOtpAttemptOrConsumed(pendingReg.organizationId, pendingReg.id, { consumedAt: now });
 					}
 					pendingRegistrationOtpStore.delete(phoneSuffix);
 					reply.status(401);
@@ -578,13 +530,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				}
 
 				if ("id" in pendingReg) {
-					const regId = pendingReg.id;
-					await withTenantCtx(pendingReg.organizationId, async (tx) => {
-						await tx
-							.update(portalOtpCodes)
-							.set({ attemptCount: pendingReg.attemptCount + 1 })
-							.where(eq(portalOtpCodes.id, regId));
-					});
+					await setPendingRegistrationOtpAttemptOrConsumed(pendingReg.organizationId, pendingReg.id, { attemptCount: pendingReg.attemptCount + 1 });
 				} else {
 					pendingReg.attemptCount += 1;
 				}
@@ -596,13 +542,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				}
 
 				if ("id" in pendingReg) {
-					const regId = pendingReg.id;
-					await withTenantCtx(pendingReg.organizationId, async (tx) => {
-						await tx
-							.update(portalOtpCodes)
-							.set({ consumedAt: now })
-							.where(eq(portalOtpCodes.id, regId));
-					});
+					await setPendingRegistrationOtpAttemptOrConsumed(pendingReg.organizationId, pendingReg.id, { consumedAt: now });
 				}
 				pendingRegistrationOtpStore.delete(phoneSuffix);
 

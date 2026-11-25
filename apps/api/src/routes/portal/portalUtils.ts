@@ -1,6 +1,11 @@
 import { createHash, randomInt } from "node:crypto";
-import { generateQrMatrix } from "@dental/shared";
+import {
+	generateQrMatrix,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
+import type { treatmentPlanItemsNew, treatmentPlans } from "../../db/schema.js";
 import {
 	DEFAULT_OTP_SMS_TEMPLATE,
 	type PortalOtpPolicy,
@@ -115,4 +120,225 @@ export function generateDeterministicQrSvg(
 	}
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges" style="display:block;"><title>QR-код оплаты СБП (НСПК)</title><rect width="${size}" height="${size}" fill="${bg}"/><path d="${path.trim()}" fill="${fg}"/></svg>`;
+}
+
+export function mapConsentKindToDocMeta(consentId: string): {
+	kind:
+		| "informed_consent"
+		| "anesthesia_consent_log"
+		| "personal_data_processing_consent"
+		| "procedure_specific_consent_packet";
+	title: string;
+} {
+	const n = consentId.toLowerCase();
+	if (n.includes("anest") || n.includes("анест")) {
+		return {
+			kind: "anesthesia_consent_log",
+			title: "Информированное добровольное согласие на местное обезболивание",
+		};
+	}
+	if (n.includes("pd") || n.includes("пдн") || n.includes("152")) {
+		return {
+			kind: "personal_data_processing_consent",
+			title: "Согласие на обработку персональных данных (152-ФЗ)",
+		};
+	}
+	if (n.includes("packet") || n.includes("пакет")) {
+		return {
+			kind: "procedure_specific_consent_packet",
+			title: "Пакет информированных добровольных согласий на медицинские вмешательства",
+		};
+	}
+	return {
+		kind: "informed_consent",
+		title: "Информированное добровольное согласие на стоматологическое лечение (ст. 20 № 323-ФЗ)",
+	};
+}
+
+type PortalPlanRow = typeof treatmentPlans.$inferSelect;
+type PortalPlanItemRow = typeof treatmentPlanItemsNew.$inferSelect;
+
+export function buildPortalThreeTierPlansPayload(
+	dbPlans: PortalPlanRow[],
+	planItems: PortalPlanItemRow[],
+	selectedTier: unknown,
+) {
+	const hasRealAlternatives = dbPlans.some(
+		(p) => p.isAlternative || p.alternativeTier,
+	);
+	const basicPlan = dbPlans.find((p) => p.alternativeTier === "basic");
+	const standardPlan =
+		dbPlans.find(
+			(p) =>
+				p.alternativeTier === "standard" ||
+				(!p.alternativeTier && !p.isAlternative),
+		) || dbPlans[0];
+	const premiumPlan = dbPlans.find((p) => p.alternativeTier === "premium");
+
+	const getPlanStages = (targetPlanId?: string) => {
+		const items = targetPlanId
+			? planItems.filter((it) => it.planId === targetPlanId)
+			: planItems;
+		return items.map((it, idx) => {
+			const separatorIndex = (it.priceId ?? "").indexOf("::");
+			const titleRu =
+				separatorIndex >= 0
+					? it.priceId.slice(separatorIndex + 2) || "Лечебная процедура"
+					: it.priceId || "Лечебная процедура";
+			const itemPriceKopecks =
+				it.priceKopecks && it.priceKopecks > 0n
+					? it.priceKopecks
+					: it.price
+						? rublesToKopecks(Number(it.price))
+						: 0n;
+			const itemDiscountKopecks =
+				it.discountKopecks && it.discountKopecks > 0n
+					? it.discountKopecks
+					: it.discount
+						? rublesToKopecks(Number(it.discount))
+						: 0n;
+			const rawKopecks =
+				BigInt(itemPriceKopecks) * BigInt(it.quantity || 1) -
+				BigInt(itemDiscountKopecks);
+			const costRub = Math.max(
+				0,
+				kopecksToRubles(rawKopecks > 0n ? rawKopecks : 0n),
+			);
+			return {
+				id: it.id,
+				orderIndex: idx + 1,
+				titleRu,
+				categoryRu: "Стоматология",
+				teethFdi: it.toothNumber ? [String(it.toothNumber)] : [],
+				costRub,
+				paidRub: 0,
+				remainingRub: costRub,
+				status: "in_progress" as "in_progress" | "completed",
+				procedures: [titleRu],
+			};
+		});
+	};
+
+	interface TreatmentTierDto {
+		tierId: "basic" | "standard" | "premium";
+		tierNameRu: string;
+		subtitleRu: string;
+		totalCostRub: number;
+		warrantyMonths: number;
+		durationWeeks: number;
+		benefits: string[];
+		stages: ReturnType<typeof getPlanStages>;
+	}
+
+	const buildTier = (
+		tierId: "basic" | "standard" | "premium",
+		plan: typeof standardPlan,
+		defaultName: string,
+		subtitleRu: string,
+		warrantyMonths: number,
+		durationWeeks: number,
+		benefits: string[],
+	): TreatmentTierDto | null => {
+		if (!plan) return null;
+		const stages = getPlanStages(plan.id);
+		return {
+			tierId,
+			tierNameRu: plan.name || defaultName,
+			subtitleRu,
+			totalCostRub: stages.reduce((sum, s) => sum + s.costRub, 0),
+			warrantyMonths,
+			durationWeeks,
+			benefits,
+			stages,
+		};
+	};
+
+	const tiers: TreatmentTierDto[] = [];
+	if (hasRealAlternatives) {
+		const b = buildTier(
+			"basic",
+			basicPlan,
+			"Базовый (Эконом)",
+			"Функциональное восстановление базовыми материалами",
+			12,
+			4,
+			[
+				"Качественное восстановление материалами базового прейскуранта",
+				"Базовая клиническая гарантия 1 год",
+			],
+		);
+		if (b) tiers.push(b);
+		const s = buildTier(
+			"standard",
+			standardPlan,
+			"Оптимальный (Стандарт)",
+			"Анатомическая реставрация и расширенная гарантия",
+			24,
+			6,
+			[
+				"Высокоэстетичные нанокомпозиты и премиальные материалы",
+				"Лечение по международным клиническим протоколам",
+				"Гарантия 2 года",
+			],
+		);
+		if (s) tiers.push(s);
+		const p = buildTier(
+			"premium",
+			premiumPlan,
+			"Премиум (VIP All-Inclusive)",
+			"Премиальные технологии и бессрочное сопровождение",
+			60,
+			8,
+			[
+				"Премиальные биосовместимые материалы",
+				"Персональный врач-куратор",
+				"Расширенная гарантия 5 лет с регулярными чекапами",
+			],
+		);
+		if (p) tiers.push(p);
+	} else if (standardPlan) {
+		const s = buildTier(
+			"standard",
+			standardPlan,
+			"Основной план лечения",
+			"Утверждённый клинический план лечения",
+			24,
+			6,
+			[
+				"Лечение по международным клиническим протоколам",
+				"Сертифицированные биосовместимые материалы",
+				"Официальная гарантия клиники",
+			],
+		);
+		if (s) tiers.push(s);
+	}
+
+	const effectiveSelectedTier = tiers.some((t) => t.tierId === selectedTier)
+		? (selectedTier as "basic" | "standard" | "premium")
+		: tiers[0]?.tierId || "standard";
+
+	const threeTierModel =
+		tiers.length > 0
+			? {
+					selectedTier: effectiveSelectedTier,
+					isCustomAlternatives: hasRealAlternatives,
+					tiers,
+				}
+			: null;
+
+	const enrichedPlans = dbPlans.map((p) => ({
+		...p,
+		items: planItems
+			.filter((it) => it.planId === p.id)
+			.map((it) => {
+				// 152-ФЗ / Коммерческая тайна: зарплатные ставки и начисления врачу не должны утекать пациенту
+				const { commissionAmount: _comm, ...safeItem } = it;
+				return safeItem;
+			}),
+	}));
+
+	return {
+		plans: enrichedPlans,
+		threeTierModel,
+	};
 }

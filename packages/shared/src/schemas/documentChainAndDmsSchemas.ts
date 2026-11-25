@@ -528,13 +528,13 @@ export const dmsGuaranteeLetterCreateSchema = dmsGuaranteeLetterSchema.omit({
 	updatedAt: true,
 }).extend({
 	id: z.string().optional(),
-});
+}).strict();
 
 export type DmsGuaranteeLetterCreate = z.infer<typeof dmsGuaranteeLetterCreateSchema>;
 
 export const dmsGuaranteeLetterUpdateSchema = dmsGuaranteeLetterSchema.partial().extend({
 	id: z.string().optional(),
-});
+}).strict();
 
 export type DmsGuaranteeLetterUpdate = z.infer<typeof dmsGuaranteeLetterUpdateSchema>;
 

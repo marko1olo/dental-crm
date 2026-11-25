@@ -57,13 +57,15 @@ export type CopilotPendingAction = z.infer<typeof copilotPendingActionSchema>;
 // 3. CLINICAL DOMAIN TOOLS (WEB CRM HARNESS)
 // ============================================================================
 
-export const fdiToothUpdateActionSchema = z.object({
-	toothNumber: z.number().int().min(11).max(85),
-	status: z.string().min(1),
-	diagnosisCode: z.string().optional(),
-	surfaces: z.array(z.string()).optional(),
-	notes: z.string().optional(),
-});
+export const fdiToothUpdateActionSchema = z
+	.object({
+		toothNumber: z.number().int().min(11).max(85),
+		status: z.string().min(1),
+		diagnosisCode: z.string().optional(),
+		surfaces: z.array(z.string()).optional(),
+		notes: z.string().optional(),
+	})
+	.strict();
 export type FdiToothUpdateAction = z.infer<typeof fdiToothUpdateActionSchema>;
 
 export const soapDiaryDraftActionSchema = z.object({

@@ -8,7 +8,7 @@ import {
 } from "../../sampleData.js";
 import type { UpdateChairProfileInput } from "./types.js";
 import { useInMemory } from "./types.js";
-import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 
 export async function createChairInDb(
@@ -16,65 +16,67 @@ export async function createChairInDb(
 	input: CreateChairInput,
 ) {
 	if (useInMemory()) return createChairInMemory(input);
-	let clinic = input.clinicId
-		? (
-				await db
-					.select()
-					.from(schema.clinics)
-					.where(
-						and(
-							eq(schema.clinics.id, input.clinicId),
-							eq(schema.clinics.organizationId, organizationId),
-						),
-					)
-					.limit(1)
-			)[0]
-		: undefined;
+	await withTenantCtx(organizationId, async (tx) => {
+		let clinic = input.clinicId
+			? (
+					await tx
+						.select()
+						.from(schema.clinics)
+						.where(
+							and(
+								eq(schema.clinics.id, input.clinicId),
+								eq(schema.clinics.organizationId, organizationId),
+							),
+						)
+						.limit(1)
+				)[0]
+			: undefined;
 
-	if (!clinic) {
-		const [firstClinic] = await db
-			.select()
-			.from(schema.clinics)
-			.where(eq(schema.clinics.organizationId, organizationId))
-			.limit(1);
-		clinic = firstClinic;
-	}
+		if (!clinic) {
+			const [firstClinic] = await tx
+				.select()
+				.from(schema.clinics)
+				.where(eq(schema.clinics.organizationId, organizationId))
+				.limit(1);
+			clinic = firstClinic;
+		}
 
-	if (!clinic) {
-		const [org] = await db
-			.select({ name: schema.organizations.name })
-			.from(schema.organizations)
-			.where(eq(schema.organizations.id, organizationId))
-			.limit(1);
-		const [createdClinic] = await db
-			.insert(schema.clinics)
-			.values({
-				organizationId,
-				name: org?.name || "Основное отделение",
-			})
-			.returning();
-		clinic = createdClinic;
-	}
+		if (!clinic) {
+			const [org] = await tx
+				.select({ name: schema.organizations.name })
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, organizationId))
+				.limit(1);
+			const [createdClinic] = await tx
+				.insert(schema.clinics)
+				.values({
+					organizationId,
+					name: org?.name || "Основное отделение",
+				})
+				.returning();
+			clinic = createdClinic;
+		}
 
-	if (!clinic) throw new Error("Не удалось инициализировать отделение клиники для добавления кресла.");
+		if (!clinic) throw new Error("Не удалось инициализировать отделение клиники для добавления кресла.");
 
-	const equipmentParts: string[] = [];
-	if (input.hasXraySensor) equipmentParts.push("рентген");
-	if (input.hasMicroscope) equipmentParts.push("микроскоп");
-	if (input.hasSurgeryKit) equipmentParts.push("хирургия");
-	if (input.notes) equipmentParts.push(input.notes);
+		const equipmentParts: string[] = [];
+		if (input.hasXraySensor) equipmentParts.push("рентген");
+		if (input.hasMicroscope) equipmentParts.push("микроскоп");
+		if (input.hasSurgeryKit) equipmentParts.push("хирургия");
+		if (input.notes) equipmentParts.push(input.notes);
 
-	await db.insert(schema.chairs).values({
-		organizationId,
-		clinicId: clinic.id,
-		name: input.name,
-		room: input.room ?? null,
-		color: input.color ?? null,
-		defaultDoctorId: input.defaultDoctorId ?? null,
-		specializations: input.specialization ?? null,
-		equipment: equipmentParts.length > 0 ? equipmentParts.join(", ") : null,
-		isActive: true,
-		workingHours: input.workingHours,
+		await tx.insert(schema.chairs).values({
+			organizationId,
+			clinicId: clinic.id,
+			name: input.name,
+			room: input.room ?? null,
+			color: input.color ?? null,
+			defaultDoctorId: input.defaultDoctorId ?? null,
+			specializations: input.specialization ?? null,
+			equipment: equipmentParts.length > 0 ? equipmentParts.join(", ") : null,
+			isActive: true,
+			workingHours: input.workingHours,
+		});
 	});
 }
 
@@ -95,15 +97,17 @@ export async function updateChairWorkingHoursInDb(
 				}[];
 			},
 		);
-	await db
-		.update(schema.chairs)
-		.set({ workingHours })
-		.where(
-			and(
-				eq(schema.chairs.id, chairId),
-				eq(schema.chairs.organizationId, organizationId),
-			),
-		);
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(schema.chairs)
+			.set({ workingHours })
+			.where(
+				and(
+					eq(schema.chairs.id, chairId),
+					eq(schema.chairs.organizationId, organizationId),
+				),
+			);
+	});
 }
 
 /**
@@ -142,47 +146,51 @@ export async function updateChairProfileInDb(
 		input.hasSurgeryKit !== undefined ||
 		input.notes !== undefined;
 
-	if (hasEquipmentField) {
-		const [existing] = await db
-			.select()
-			.from(schema.chairs)
-			.where(
-				and(
-					eq(schema.chairs.id, chairId),
-					eq(schema.chairs.organizationId, organizationId),
-				),
-			)
-			.limit(1);
+	if (hasEquipmentField || Object.keys(updateData).length > 0) {
+		await withTenantCtx(organizationId, async (tx) => {
+			if (hasEquipmentField) {
+				const [existing] = await tx
+					.select()
+					.from(schema.chairs)
+					.where(
+						and(
+							eq(schema.chairs.id, chairId),
+							eq(schema.chairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
 
-		const eqStr = existing?.equipment || "";
-		const currentHasXray = eqStr.toLowerCase().includes("рентген") || eqStr.toLowerCase().includes("xray");
-		const currentHasMicroscope = eqStr.toLowerCase().includes("микроскоп") || eqStr.toLowerCase().includes("microscope");
-		const currentHasSurgery = eqStr.toLowerCase().includes("хирург") || eqStr.toLowerCase().includes("surgery");
+				const eqStr = existing?.equipment || "";
+				const currentHasXray = eqStr.toLowerCase().includes("рентген") || eqStr.toLowerCase().includes("xray");
+				const currentHasMicroscope = eqStr.toLowerCase().includes("микроскоп") || eqStr.toLowerCase().includes("microscope");
+				const currentHasSurgery = eqStr.toLowerCase().includes("хирург") || eqStr.toLowerCase().includes("surgery");
 
-		const hasXray = input.hasXraySensor !== undefined ? input.hasXraySensor : currentHasXray;
-		const hasMicroscope = input.hasMicroscope !== undefined ? input.hasMicroscope : currentHasMicroscope;
-		const hasSurgery = input.hasSurgeryKit !== undefined ? input.hasSurgeryKit : currentHasSurgery;
-		const notes = input.notes !== undefined ? input.notes : null;
+				const hasXray = input.hasXraySensor !== undefined ? input.hasXraySensor : currentHasXray;
+				const hasMicroscope = input.hasMicroscope !== undefined ? input.hasMicroscope : currentHasMicroscope;
+				const hasSurgery = input.hasSurgeryKit !== undefined ? input.hasSurgeryKit : currentHasSurgery;
+				const notes = input.notes !== undefined ? input.notes : null;
 
-		const equipmentParts: string[] = [];
-		if (hasXray) equipmentParts.push("рентген");
-		if (hasMicroscope) equipmentParts.push("микроскоп");
-		if (hasSurgery) equipmentParts.push("хирургия");
-		if (notes) equipmentParts.push(notes);
+				const equipmentParts: string[] = [];
+				if (hasXray) equipmentParts.push("рентген");
+				if (hasMicroscope) equipmentParts.push("микроскоп");
+				if (hasSurgery) equipmentParts.push("хирургия");
+				if (notes) equipmentParts.push(notes);
 
-		updateData.equipment = equipmentParts.length > 0 ? equipmentParts.join(", ") : null;
+				updateData.equipment = equipmentParts.length > 0 ? equipmentParts.join(", ") : null;
+			}
+
+			if (Object.keys(updateData).length === 0) return;
+			await tx
+				.update(schema.chairs)
+				.set(updateData)
+				.where(
+					and(
+						eq(schema.chairs.id, chairId),
+						eq(schema.chairs.organizationId, organizationId),
+					),
+				);
+		});
 	}
-
-	if (Object.keys(updateData).length === 0) return;
-	await db
-		.update(schema.chairs)
-		.set(updateData)
-		.where(
-			and(
-				eq(schema.chairs.id, chairId),
-				eq(schema.chairs.organizationId, organizationId),
-			),
-		);
 }
 
 /**
@@ -198,13 +206,15 @@ export async function deactivateChairInDb(
 		deactivateChairInMemory(chairId);
 		return;
 	}
-	await db
-		.update(schema.chairs)
-		.set({ isActive: false })
-		.where(
-			and(
-				eq(schema.chairs.id, chairId),
-				eq(schema.chairs.organizationId, organizationId),
-			),
-		);
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(schema.chairs)
+			.set({ isActive: false })
+			.where(
+				and(
+					eq(schema.chairs.id, chairId),
+					eq(schema.chairs.organizationId, organizationId),
+				),
+			);
+	});
 }

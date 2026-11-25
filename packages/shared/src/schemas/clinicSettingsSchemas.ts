@@ -275,6 +275,7 @@ export const dentalPricelistAnalysisRequestSchema = z
 		preferredSpecialty: dentalSpecialtySchema.default("universal"),
 		useServerAi: z.boolean().default(false),
 	})
+	.strict()
 	.refine(
 		(input) => Boolean(input.rawText.trim() || input.imageBase64?.trim()),
 		{

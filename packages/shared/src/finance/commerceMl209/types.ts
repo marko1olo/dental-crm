@@ -13,23 +13,25 @@ export const DEFAULT_OKEI_LITER_CODE = "112" as const;
 export const DEFAULT_OKEI_KG_CODE = "166" as const;
 export const DEFAULT_OKEI_PACK_CODE = "778" as const;
 
-export const oneCChartOfAccountsSchema = z.object({
-	accountSalesRevenue: z.string().default("90.01.1"),
-	accountSalesCost: z.string().default("90.02.1"),
-	accountMaterials: z.string().default("10.01"),
-	accountConsumables: z.string().default("10.06"),
-	accountProductionCost: z.string().default("20.01"),
-	accountGeneralExpense: z.string().default("26"),
-	accountCashDesk: z.string().default("50.01"),
-	accountBankCurrent: z.string().default("51"),
-	accountAcquiringTransit: z.string().default("57.03"),
-	accountBuyersSettlement: z.string().default("62.01"),
-	accountAdvancesReceived: z.string().default("62.02"),
-	accountRetailBuyers: z.string().default("62.Р"),
-	accountPayroll: z.string().default("70"),
-	accountNdfl: z.string().default("68.01"),
-	accountSocialTaxes: z.string().default("69.01"),
-});
+export const oneCChartOfAccountsSchema = z
+	.object({
+		accountSalesRevenue: z.string().default("90.01.1"),
+		accountSalesCost: z.string().default("90.02.1"),
+		accountMaterials: z.string().default("10.01"),
+		accountConsumables: z.string().default("10.06"),
+		accountProductionCost: z.string().default("20.01"),
+		accountGeneralExpense: z.string().default("26"),
+		accountCashDesk: z.string().default("50.01"),
+		accountBankCurrent: z.string().default("51"),
+		accountAcquiringTransit: z.string().default("57.03"),
+		accountBuyersSettlement: z.string().default("62.01"),
+		accountAdvancesReceived: z.string().default("62.02"),
+		accountRetailBuyers: z.string().default("62.Р"),
+		accountPayroll: z.string().default("70"),
+		accountNdfl: z.string().default("68.01"),
+		accountSocialTaxes: z.string().default("69.01"),
+	})
+	.strict();
 export type OneCChartOfAccounts = z.infer<typeof oneCChartOfAccountsSchema>;
 
 export const DEFAULT_1C_CHART_OF_ACCOUNTS: OneCChartOfAccounts = {
@@ -50,26 +52,28 @@ export const DEFAULT_1C_CHART_OF_ACCOUNTS: OneCChartOfAccounts = {
 	accountSocialTaxes: "69.01",
 };
 
-export const oneCClinicProfileSchema = z.object({
-	id: z.string().min(1),
-	name: z.string().min(1).max(255),
-	fullName: z.string().max(500).default(""),
-	inn: z.string().max(12).default(""),
-	kpp: z.string().max(9).optional().nullable(),
-	ogrn: z.string().max(15).optional().nullable(),
-	address: z.string().max(500).default(""),
-	phone: z.string().max(50).default(""),
-	email: z.string().email().optional().nullable(),
-	bankAccount: z.string().max(20).optional().nullable(),
-	bankBik: z.string().max(9).optional().nullable(),
-	bankName: z.string().max(255).optional().nullable(),
-	bankCorrAccount: z.string().max(20).optional().nullable(),
-	chiefDoctorName: z.string().max(255).optional().nullable(),
-	chiefAccountantName: z.string().max(255).optional().nullable(),
-	defaultWarehouseName: z.string().default("Основной склад клиники"),
-	defaultCashRegisterName: z.string().default("Касса №1 (АТОЛ 27Ф, ФФД 1.2)"),
-	prefix1C: z.string().default("DN"),
-});
+export const oneCClinicProfileSchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string().min(1).max(255),
+		fullName: z.string().max(500).default(""),
+		inn: z.string().max(12).default(""),
+		kpp: z.string().max(9).optional().nullable(),
+		ogrn: z.string().max(15).optional().nullable(),
+		address: z.string().max(500).default(""),
+		phone: z.string().max(50).default(""),
+		email: z.string().email().optional().nullable(),
+		bankAccount: z.string().max(20).optional().nullable(),
+		bankBik: z.string().max(9).optional().nullable(),
+		bankName: z.string().max(255).optional().nullable(),
+		bankCorrAccount: z.string().max(20).optional().nullable(),
+		chiefDoctorName: z.string().max(255).optional().nullable(),
+		chiefAccountantName: z.string().max(255).optional().nullable(),
+		defaultWarehouseName: z.string().default("Основной склад клиники"),
+		defaultCashRegisterName: z.string().default("Касса №1 (АТОЛ 27Ф, ФФД 1.2)"),
+		prefix1C: z.string().default("DN"),
+	})
+	.strict();
 export type OneCClinicProfile = z.infer<typeof oneCClinicProfileSchema>;
 
 export const DEFAULT_CLINIC_PROFILE_1C: OneCClinicProfile = {
@@ -98,163 +102,181 @@ export const oneCPaymentTenderTypeSchema = z.enum([
 ]);
 export type OneCPaymentTenderType = z.infer<typeof oneCPaymentTenderTypeSchema>;
 
-export const oneCPaymentBreakdownItemSchema = z.object({
-	id: z.string().min(1),
-	tenderType: oneCPaymentTenderTypeSchema,
-	tenderTitleRu: z.string().min(1),
-	amountKopecks: z.number().int().nonnegative(),
-	accountCode: z.string().min(1),
-	acquiringBankName: z.string().optional().nullable(),
-	acquiringTerminalId: z.string().optional().nullable(),
-	acquiringContractNumber: z.string().optional().nullable(),
-	fiscalReceiptNumber: z.string().optional().nullable(),
-	fiscalSign: z.string().optional().nullable(),
-});
+export const oneCPaymentBreakdownItemSchema = z
+	.object({
+		id: z.string().min(1),
+		tenderType: oneCPaymentTenderTypeSchema,
+		tenderTitleRu: z.string().min(1),
+		amountKopecks: z.number().int().nonnegative(),
+		accountCode: z.string().min(1),
+		acquiringBankName: z.string().optional().nullable(),
+		acquiringTerminalId: z.string().optional().nullable(),
+		acquiringContractNumber: z.string().optional().nullable(),
+		fiscalReceiptNumber: z.string().optional().nullable(),
+		fiscalSign: z.string().optional().nullable(),
+	})
+	.strict();
 export type OneCPaymentBreakdownItem = z.infer<typeof oneCPaymentBreakdownItemSchema>;
 
-export const oneCRetailSaleItemSchema = z.object({
-	id: z.string().min(1),
-	code804n: z.string().optional().nullable(),
-	name: z.string().min(1).max(500),
-	toothNumber: z.number().int().optional().nullable(),
-	unitCode: z.string().default(DEFAULT_OKEI_PIECE_CODE),
-	unitName: z.string().default(DEFAULT_OKEI_PIECE_NAME),
-	quantity: z.number().positive().default(1),
-	priceKopecks: z.number().int().nonnegative(),
-	discountKopecks: z.number().int().nonnegative().default(0),
-	totalKopecks: z.number().int().nonnegative(),
-	vatRate: z.string().default("Без НДС"),
-	vatAmountKopecks: z.number().int().default(0),
-	doctorName: z.string().optional().nullable(),
-	nomenclatureGroup: z.string().default("Стоматологические услуги"),
-});
+export const oneCRetailSaleItemSchema = z
+	.object({
+		id: z.string().min(1),
+		code804n: z.string().optional().nullable(),
+		name: z.string().min(1).max(500),
+		toothNumber: z.number().int().optional().nullable(),
+		unitCode: z.string().default(DEFAULT_OKEI_PIECE_CODE),
+		unitName: z.string().default(DEFAULT_OKEI_PIECE_NAME),
+		quantity: z.number().positive().default(1),
+		priceKopecks: z.number().int().nonnegative(),
+		discountKopecks: z.number().int().nonnegative().default(0),
+		totalKopecks: z.number().int().nonnegative(),
+		vatRate: z.string().default("Без НДС"),
+		vatAmountKopecks: z.number().int().default(0),
+		doctorName: z.string().optional().nullable(),
+		nomenclatureGroup: z.string().default("Стоматологические услуги"),
+	})
+	.strict();
 export type OneCRetailSaleItem = z.infer<typeof oneCRetailSaleItemSchema>;
 
-export const oneCRetailSalesDocumentSchema = z.object({
-	id: z.string().min(1),
-	documentNumber: z.string().min(1),
-	documentDateIso: z.string(),
-	documentTime: z.string().default("18:00:00"),
-	periodLabelRu: z.string().min(1),
-	cashRegisterName: z.string().min(1),
-	warehouseName: z.string().min(1),
-	items: z.array(oneCRetailSaleItemSchema).default([]),
-	payments: z.array(oneCPaymentBreakdownItemSchema).default([]),
-	totalRevenueKopecks: z.number().int().nonnegative(),
-	totalDiscountKopecks: z.number().int().nonnegative().default(0),
-	totalVatKopecks: z.number().int().default(0),
-	cashierName: z.string().optional().nullable(),
-	comment: z.string().optional().nullable(),
-	sha256Hash: z.string().length(64).optional(),
-});
+export const oneCRetailSalesDocumentSchema = z
+	.object({
+		id: z.string().min(1),
+		documentNumber: z.string().min(1),
+		documentDateIso: z.string(),
+		documentTime: z.string().default("18:00:00"),
+		periodLabelRu: z.string().min(1),
+		cashRegisterName: z.string().min(1),
+		warehouseName: z.string().min(1),
+		items: z.array(oneCRetailSaleItemSchema).default([]),
+		payments: z.array(oneCPaymentBreakdownItemSchema).default([]),
+		totalRevenueKopecks: z.number().int().nonnegative(),
+		totalDiscountKopecks: z.number().int().nonnegative().default(0),
+		totalVatKopecks: z.number().int().default(0),
+		cashierName: z.string().optional().nullable(),
+		comment: z.string().optional().nullable(),
+		sha256Hash: z.string().length(64).optional(),
+	})
+	.strict();
 export type OneCRetailSalesDocument = z.infer<typeof oneCRetailSalesDocumentSchema>;
 
-export const oneCMedicalActItemSchema = z.object({
-	id: z.string().min(1),
-	code804n: z.string().optional().nullable(),
-	name: z.string().min(1).max(500),
-	toothNumber: z.number().int().optional().nullable(),
-	unitCode: z.string().default(DEFAULT_OKEI_PIECE_CODE),
-	unitName: z.string().default(DEFAULT_OKEI_PIECE_NAME),
-	quantity: z.number().positive().default(1),
-	priceKopecks: z.number().int().nonnegative(),
-	discountKopecks: z.number().int().nonnegative().default(0),
-	totalKopecks: z.number().int().nonnegative(),
-	vatRate: z.string().default("Без НДС"),
-	vatAmountKopecks: z.number().int().default(0),
-	attendingDoctorName: z.string().optional().nullable(),
-	attendingDoctorSpecialty: z.string().optional().nullable(),
-});
+export const oneCMedicalActItemSchema = z
+	.object({
+		id: z.string().min(1),
+		code804n: z.string().optional().nullable(),
+		name: z.string().min(1).max(500),
+		toothNumber: z.number().int().optional().nullable(),
+		unitCode: z.string().default(DEFAULT_OKEI_PIECE_CODE),
+		unitName: z.string().default(DEFAULT_OKEI_PIECE_NAME),
+		quantity: z.number().positive().default(1),
+		priceKopecks: z.number().int().nonnegative(),
+		discountKopecks: z.number().int().nonnegative().default(0),
+		totalKopecks: z.number().int().nonnegative(),
+		vatRate: z.string().default("Без НДС"),
+		vatAmountKopecks: z.number().int().default(0),
+		attendingDoctorName: z.string().optional().nullable(),
+		attendingDoctorSpecialty: z.string().optional().nullable(),
+	})
+	.strict();
 export type OneCMedicalActItem = z.infer<typeof oneCMedicalActItemSchema>;
 
-export const oneCMedicalActDocumentSchema = z.object({
-	id: z.string().min(1),
-	actNumber: z.string().min(1),
-	documentDateIso: z.string(),
-	documentTime: z.string().default("12:00:00"),
-	patient: oneCPartyInfoSchema,
-	contractNumber: z.string().optional().nullable(),
-	contractDateIso: z.string().optional().nullable(),
-	attendingDoctorName: z.string().optional().nullable(),
-	items: z.array(oneCMedicalActItemSchema).min(1),
-	totalKopecks: z.number().int().nonnegative(),
-	comment: z.string().optional().nullable(),
-	sha256Hash: z.string().length(64).optional(),
-});
+export const oneCMedicalActDocumentSchema = z
+	.object({
+		id: z.string().min(1),
+		actNumber: z.string().min(1),
+		documentDateIso: z.string(),
+		documentTime: z.string().default("12:00:00"),
+		patient: oneCPartyInfoSchema,
+		contractNumber: z.string().optional().nullable(),
+		contractDateIso: z.string().optional().nullable(),
+		attendingDoctorName: z.string().optional().nullable(),
+		items: z.array(oneCMedicalActItemSchema).min(1),
+		totalKopecks: z.number().int().nonnegative(),
+		comment: z.string().optional().nullable(),
+		sha256Hash: z.string().length(64).optional(),
+	})
+	.strict();
 export type OneCMedicalActDocument = z.infer<typeof oneCMedicalActDocumentSchema>;
 
-export const oneCMaterialWriteoffItemSchema = z.object({
-	id: z.string().min(1),
-	article: z.string().min(1),
-	name: z.string().min(1).max(500),
-	batchNumber: z.string().optional().nullable(),
-	expirationDateIso: z.string().optional().nullable(),
-	unitCode: z.string().default(DEFAULT_OKEI_PIECE_CODE),
-	unitName: z.string().default(DEFAULT_OKEI_PIECE_NAME),
-	quantity: z.number().positive(),
-	unitCostKopecks: z.number().int().nonnegative(),
-	totalCostKopecks: z.number().int().nonnegative(),
-	debitAccount: z.string().default("20.01"),
-	creditAccount: z.string().default("10.01"),
-	costItemTitleRu: z.string().default("Списание стоматологических материалов (BOM / ЦСО)"),
-	relatedServiceCode804n: z.string().optional().nullable(),
-	relatedServiceName: z.string().optional().nullable(),
-	csoLogId: z.string().optional().nullable(),
-	sterilizerCycleNumber: z.string().optional().nullable(),
-});
+export const oneCMaterialWriteoffItemSchema = z
+	.object({
+		id: z.string().min(1),
+		article: z.string().min(1),
+		name: z.string().min(1).max(500),
+		batchNumber: z.string().optional().nullable(),
+		expirationDateIso: z.string().optional().nullable(),
+		unitCode: z.string().default(DEFAULT_OKEI_PIECE_CODE),
+		unitName: z.string().default(DEFAULT_OKEI_PIECE_NAME),
+		quantity: z.number().positive(),
+		unitCostKopecks: z.number().int().nonnegative(),
+		totalCostKopecks: z.number().int().nonnegative(),
+		debitAccount: z.string().default("20.01"),
+		creditAccount: z.string().default("10.01"),
+		costItemTitleRu: z.string().default("Списание стоматологических материалов (BOM / ЦСО)"),
+		relatedServiceCode804n: z.string().optional().nullable(),
+		relatedServiceName: z.string().optional().nullable(),
+		csoLogId: z.string().optional().nullable(),
+		sterilizerCycleNumber: z.string().optional().nullable(),
+	})
+	.strict();
 export type OneCMaterialWriteoffItem = z.infer<typeof oneCMaterialWriteoffItemSchema>;
 
-export const oneCMaterialWriteoffDocumentSchema = z.object({
-	id: z.string().min(1),
-	documentNumber: z.string().min(1),
-	documentDateIso: z.string(),
-	documentTime: z.string().default("19:00:00"),
-	periodLabelRu: z.string().min(1),
-	senderWarehouseName: z.string().default("Основной склад клиники"),
-	recipientDepartmentName: z.string().default("Лечебное отделение (ЦСО)"),
-	items: z.array(oneCMaterialWriteoffItemSchema).default([]),
-	totalCostKopecks: z.number().int().nonnegative(),
-	responsiblePersonName: z.string().optional().nullable(),
-	reasonRu: z.string().default("Списание материалов ЦСО и склада по нормам расхода (BOM)"),
-	sha256Hash: z.string().length(64).optional(),
-});
+export const oneCMaterialWriteoffDocumentSchema = z
+	.object({
+		id: z.string().min(1),
+		documentNumber: z.string().min(1),
+		documentDateIso: z.string(),
+		documentTime: z.string().default("19:00:00"),
+		periodLabelRu: z.string().min(1),
+		senderWarehouseName: z.string().default("Основной склад клиники"),
+		recipientDepartmentName: z.string().default("Лечебное отделение (ЦСО)"),
+		items: z.array(oneCMaterialWriteoffItemSchema).default([]),
+		totalCostKopecks: z.number().int().nonnegative(),
+		responsiblePersonName: z.string().optional().nullable(),
+		reasonRu: z.string().default("Списание материалов ЦСО и склада по нормам расхода (BOM)"),
+		sha256Hash: z.string().length(64).optional(),
+	})
+	.strict();
 export type OneCMaterialWriteoffDocument = z.infer<typeof oneCMaterialWriteoffDocumentSchema>;
 
-export const oneCPayrollEmployeeItemSchema = z.object({
-	id: z.string().min(1),
-	employeeTabNumber: z.string().min(1),
-	employeeName: z.string().min(1),
-	positionTitleRu: z.string().min(1),
-	specialtyRu: z.string().min(1),
-	calculationTypeTitleRu: z.string().min(1),
-	grossRevenueGeneratedKopecks: z.number().int().nonnegative(),
-	grossEarnedKopecks: z.number().int().nonnegative(),
-	ndfl13Kopecks: z.number().int().nonnegative(),
-	socialInsuranceTaxesKopecks: z.number().int().nonnegative(),
-	netPayoutKopecks: z.number().int().nonnegative(),
-	debitAccount: z.string().default("20.01"),
-	creditAccountPayroll: z.string().default("70"),
-	creditAccountNdfl: z.string().default("68.01"),
-	creditAccountSocial: z.string().default("69.01"),
-	costItemTitleRu: z.string().default("Оплата труда медицинского персонала"),
-});
+export const oneCPayrollEmployeeItemSchema = z
+	.object({
+		id: z.string().min(1),
+		employeeTabNumber: z.string().min(1),
+		employeeName: z.string().min(1),
+		positionTitleRu: z.string().min(1),
+		specialtyRu: z.string().min(1),
+		calculationTypeTitleRu: z.string().min(1),
+		grossRevenueGeneratedKopecks: z.number().int().nonnegative(),
+		grossEarnedKopecks: z.number().int().nonnegative(),
+		ndfl13Kopecks: z.number().int().nonnegative(),
+		socialInsuranceTaxesKopecks: z.number().int().nonnegative(),
+		netPayoutKopecks: z.number().int().nonnegative(),
+		debitAccount: z.string().default("20.01"),
+		creditAccountPayroll: z.string().default("70"),
+		creditAccountNdfl: z.string().default("68.01"),
+		creditAccountSocial: z.string().default("69.01"),
+		costItemTitleRu: z.string().default("Оплата труда медицинского персонала"),
+	})
+	.strict();
 export type OneCPayrollEmployeeItem = z.infer<typeof oneCPayrollEmployeeItemSchema>;
 
-export const oneCPayrollDocumentSchema = z.object({
-	id: z.string().min(1),
-	documentNumber: z.string().min(1),
-	documentDateIso: z.string(),
-	documentTime: z.string().default("20:00:00"),
-	registrationPeriodIso: z.string(),
-	periodLabelRu: z.string().min(1),
-	employees: z.array(oneCPayrollEmployeeItemSchema).default([]),
-	totalGrossKopecks: z.number().int().nonnegative(),
-	totalNdflKopecks: z.number().int().nonnegative(),
-	totalSocialTaxesKopecks: z.number().int().nonnegative(),
-	totalNetPayoutKopecks: z.number().int().nonnegative(),
-	comment: z.string().optional().nullable(),
-	sha256Hash: z.string().length(64).optional(),
-});
+export const oneCPayrollDocumentSchema = z
+	.object({
+		id: z.string().min(1),
+		documentNumber: z.string().min(1),
+		documentDateIso: z.string(),
+		documentTime: z.string().default("20:00:00"),
+		registrationPeriodIso: z.string(),
+		periodLabelRu: z.string().min(1),
+		employees: z.array(oneCPayrollEmployeeItemSchema).default([]),
+		totalGrossKopecks: z.number().int().nonnegative(),
+		totalNdflKopecks: z.number().int().nonnegative(),
+		totalSocialTaxesKopecks: z.number().int().nonnegative(),
+		totalNetPayoutKopecks: z.number().int().nonnegative(),
+		comment: z.string().optional().nullable(),
+		sha256Hash: z.string().length(64).optional(),
+	})
+	.strict();
 export type OneCPayrollDocument = z.infer<typeof oneCPayrollDocumentSchema>;
 
 export const oneCCommerceMlPackageSchema = z.object({

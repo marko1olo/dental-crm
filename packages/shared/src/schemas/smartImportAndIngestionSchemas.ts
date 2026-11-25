@@ -66,6 +66,7 @@ export const documentIngestionRequestSchema = z
 		rawText: z.string().max(300_000).optional(),
 		target: documentIngestionTargetSchema.default("smart_import"),
 	})
+	.strict()
 	.refine(
 		(input) => Boolean(input.fileBase64?.trim() || input.rawText?.trim()),
 		{

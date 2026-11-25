@@ -14,7 +14,7 @@ import { and, eq, gt, inArray, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../accessGuard.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { appointments, clinics, users } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
@@ -23,9 +23,11 @@ import {
 	type WaitlistMatch,
 } from "../services/schedule/waitlistMatching.js";
 
-const waitlistMatchParamsSchema = z.object({
-	appointmentId: z.string().uuid("Идентификатор приёма должен быть валидным UUID"),
-});
+const waitlistMatchParamsSchema = z
+	.object({
+		appointmentId: z.string().uuid("Идентификатор приёма должен быть валидным UUID"),
+	})
+	.strict();
 
 function badRequest(reply: FastifyReply, message: string) {
 	return replyBadRequest(reply, "WaitlistMatchValidationError", message);
@@ -63,34 +65,41 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				now.getTime() + horizonDays * 24 * 60 * 60 * 1000,
 			);
 
-			const [clinic] = await db
-				.select({ timezone: clinics.timezone })
-				.from(clinics)
-				.where(eq(clinics.organizationId, context.organizationId))
-				.limit(1);
-			const timeZone = clinic?.timezone ?? "Europe/Samara";
+			const { timeZone, rows } = await withTenantCtx(
+				context.organizationId,
+				async (tx) => {
+					const [clinic] = await tx
+						.select({ timezone: clinics.timezone })
+						.from(clinics)
+						.where(eq(clinics.organizationId, context.organizationId))
+						.limit(1);
+					const resolvedTimeZone = clinic?.timezone ?? "Europe/Samara";
 
-			const rows = await db
-				.select({
-					appointmentId: appointments.id,
-					startsAt: appointments.startsAt,
-					endsAt: appointments.endsAt,
-					status: appointments.status,
-					doctorUserId: appointments.doctorUserId,
-					doctorName: users.fullName,
-				})
-				.from(appointments)
-				.leftJoin(users, eq(users.id, appointments.doctorUserId))
-				.where(
-					and(
-						eq(appointments.organizationId, context.organizationId),
-						inArray(appointments.status, ["cancelled", "no_show"]),
-						// Только будущее: прошедшее окно предлагать некому.
-						gt(appointments.startsAt, now),
-						lte(appointments.startsAt, horizon),
-					),
-				)
-				.orderBy(appointments.startsAt);
+					const matchedRows = await tx
+						.select({
+							appointmentId: appointments.id,
+							startsAt: appointments.startsAt,
+							endsAt: appointments.endsAt,
+							status: appointments.status,
+							doctorUserId: appointments.doctorUserId,
+							doctorName: users.fullName,
+						})
+						.from(appointments)
+						.leftJoin(users, eq(users.id, appointments.doctorUserId))
+						.where(
+							and(
+								eq(appointments.organizationId, context.organizationId),
+								inArray(appointments.status, ["cancelled", "no_show"]),
+								// Только будущее: прошедшее окно предлагать некому.
+								gt(appointments.startsAt, now),
+								lte(appointments.startsAt, horizon),
+							),
+						)
+						.orderBy(appointments.startsAt);
+
+					return { timeZone: resolvedTimeZone, rows: matchedRows };
+				},
+			);
 
 			/*
 			 * Кандидаты считаются сразу для каждого окна. Иначе экран показывал бы
@@ -175,24 +184,40 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 				}
 				const { appointmentId } = parsedParams.data;
 
-				const [appointment] = await db
-					.select({
-						id: appointments.id,
-						startsAt: appointments.startsAt,
-						endsAt: appointments.endsAt,
-						status: appointments.status,
-						doctorUserId: appointments.doctorUserId,
-						doctorName: users.fullName,
-					})
-					.from(appointments)
-					.leftJoin(users, eq(users.id, appointments.doctorUserId))
-					.where(
-						and(
-							eq(appointments.id, appointmentId),
-							eq(appointments.organizationId, context.organizationId),
-						),
-					)
-					.limit(1);
+				const { appointment, timeZone } = await withTenantCtx(
+					context.organizationId,
+					async (tx) => {
+						const [apptRow] = await tx
+							.select({
+								id: appointments.id,
+								startsAt: appointments.startsAt,
+								endsAt: appointments.endsAt,
+								status: appointments.status,
+								doctorUserId: appointments.doctorUserId,
+								doctorName: users.fullName,
+							})
+							.from(appointments)
+							.leftJoin(users, eq(users.id, appointments.doctorUserId))
+							.where(
+								and(
+									eq(appointments.id, appointmentId),
+									eq(appointments.organizationId, context.organizationId),
+								),
+							)
+							.limit(1);
+
+						const [clinic] = await tx
+							.select({ timezone: clinics.timezone })
+							.from(clinics)
+							.where(eq(clinics.organizationId, context.organizationId))
+							.limit(1);
+
+						return {
+							appointment: apptRow,
+							timeZone: clinic?.timezone ?? "Europe/Samara",
+						};
+					},
+				);
 
 				if (!appointment) {
 					return reply.code(404).send({
@@ -222,13 +247,6 @@ export async function registerWaitlistMatchRoutes(app: FastifyInstance) {
 						"Это окно уже в прошлом — предлагать его некому.",
 					);
 				}
-
-				const [clinic] = await db
-					.select({ timezone: clinics.timezone })
-					.from(clinics)
-					.where(eq(clinics.organizationId, context.organizationId))
-					.limit(1);
-				const timeZone = clinic?.timezone ?? "Europe/Samara";
 
 				const report = await findWaitlistMatches({
 					organizationId: context.organizationId,

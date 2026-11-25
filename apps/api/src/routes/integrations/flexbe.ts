@@ -187,12 +187,18 @@ export async function registerFlexbeRoutes(app: FastifyInstance) {
 						.returning({ id: patients.id });
 					patientId = inserted[0]?.id ?? null;
 				}
+				if (!patientId) {
+					return reply.status(500).send({
+						error: "PatientCreationFailed",
+						message: "Не удалось создать карточку пациента для заявки Flexbe.",
+					});
+				}
 
 				const bodyText = `Имя: ${name}\nТелефон: ${phone || "не указан"}\nИсточник: Flexbe${subId ? `\n[submission_id: ${subId}]` : ""}`;
 
 				await tx.insert(communicationTasks).values({
 					organizationId,
-					patientId: patientId as string,
+					patientId,
 					assignedRole: "admin",
 					channel: "phone",
 					intent: "general",

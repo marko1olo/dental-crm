@@ -136,21 +136,23 @@ export interface DualUkepSigningSession {
 	completedAt: string | null;
 }
 
-export const cadesBesSignatureSchema = z.object({
-	signatureBase64: z.string().min(16, "Base64 подписи не может быть пустым"),
-	certificateSerialNumber: z.string().min(4, "Серийный номер сертификата обязателен"),
-	certificateSubject: z.string().min(3, "Субъект сертификата обязателен"),
-	certificateIssuer: z.string().min(3, "Издатель сертификата обязателен"),
-	certificateThumbprintSha1: z.string().length(40, "SHA-1 отпечаток должен состоять из 40 шестнадцатеричных символов"),
-	certificateThumbprintSha256: z.string().length(64, "SHA-256 отпечаток должен состоять из 64 шестнадцатеричных символов"),
-	algorithmOid: z.string().min(5),
-	digestAlgorithmOid: z.string().min(5),
-	signedAt: z.string().datetime({ offset: true }),
-	signatureValueHex: z.string().min(16),
-	messageDigestHex: z.string().min(32),
-	cadesType: z.enum(["CADES_BES", "CADES_T", "CADES_X_LONG_TYPE_1"]),
-	signerRole: z.enum(["DOCTOR", "CLINIC_MO", "CHIEF_DOCTOR"]),
-	signerSnils: z.string().min(11),
-	signerOgrn: z.string().optional(),
-	rawCertificateBase64: z.string().optional(),
-});
+export const cadesBesSignatureSchema = z
+	.object({
+		signatureBase64: z.string().min(16, "Base64 подписи не может быть пустым"),
+		certificateSerialNumber: z.string().min(4, "Серийный номер сертификата обязателен"),
+		certificateSubject: z.string().min(3, "Субъект сертификата обязателен"),
+		certificateIssuer: z.string().min(3, "Издатель сертификата обязателен"),
+		certificateThumbprintSha1: z.string().length(40, "SHA-1 отпечаток должен состоять из 40 шестнадцатеричных символов"),
+		certificateThumbprintSha256: z.string().length(64, "SHA-256 отпечаток должен состоять из 64 шестнадцатеричных символов"),
+		algorithmOid: z.string().min(5),
+		digestAlgorithmOid: z.string().min(5),
+		signedAt: z.string().datetime({ offset: true }),
+		signatureValueHex: z.string().min(16),
+		messageDigestHex: z.string().min(32),
+		cadesType: z.enum(["CADES_BES", "CADES_T", "CADES_X_LONG_TYPE_1"]),
+		signerRole: z.enum(["DOCTOR", "CLINIC_MO", "CHIEF_DOCTOR"]),
+		signerSnils: z.string().min(11),
+		signerOgrn: z.string().optional(),
+		rawCertificateBase64: z.string().optional(),
+	})
+	.strict();

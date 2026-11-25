@@ -23,8 +23,8 @@ export function decodePdfBytes(bytes: Buffer): string {
 		if (/[А-Яа-яЁё]/.test(decoded)) {
 			return decoded;
 		}
-	} catch {
-		// ignore
+	} catch (err: unknown) {
+		void err;
 	}
 	return utf8;
 }
@@ -144,13 +144,14 @@ export function extractPdfStreams(buffer: Buffer): string[] {
 			decompressed = inflateSync(streamData, {
 				maxOutputLength: 5 * 1024 * 1024,
 			});
-		} catch {
+		} catch (zlibErr: unknown) {
+			void zlibErr;
 			try {
 				decompressed = inflateRawSync(streamData, {
 					maxOutputLength: 5 * 1024 * 1024,
 				});
-			} catch {
-				// Not a zlib compressed stream
+			} catch (rawErr: unknown) {
+				void rawErr;
 			}
 		}
 
