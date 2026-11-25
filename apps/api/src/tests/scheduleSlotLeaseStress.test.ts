@@ -7,7 +7,7 @@
  */
 
 import assert from "node:assert/strict";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -30,7 +30,7 @@ import {
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
-import { createTenantTestApp } from "./support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "./support/tenantTestApp.js";
 
 const NAMESPACE = "schedSlotLease";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
@@ -56,7 +56,7 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 		process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_READS = "1";
 		process.env[SECRET_VARIABLE] = adminSecret;
 
-		app = createTenantTestApp();
+		app = await createIdempotentTenantTestApp();
 		await registerScheduleRoutes(app);
 		await app.ready();
 
@@ -160,6 +160,7 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 				"content-type": "application/json",
 				"x-dente-clinic-token": clinicToken,
 				[ADMIN_SECRET_HEADER]: adminSecret,
+				"idempotency-key": randomUUID(),
 			},
 			payload,
 		});
@@ -173,6 +174,7 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 				"content-type": "application/json",
 				"x-dente-clinic-token": clinicToken,
 				[ADMIN_SECRET_HEADER]: adminSecret,
+				"idempotency-key": randomUUID(),
 			},
 			payload: { leaseToken },
 		});
@@ -186,6 +188,7 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 				"content-type": "application/json",
 				"x-dente-clinic-token": clinicToken,
 				[ADMIN_SECRET_HEADER]: adminSecret,
+				"idempotency-key": randomUUID(),
 			},
 			payload: { leaseToken, extensionSeconds },
 		});
@@ -199,6 +202,7 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 				"content-type": "application/json",
 				"x-dente-clinic-token": clinicToken,
 				[ADMIN_SECRET_HEADER]: adminSecret,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				status: "planned",
@@ -550,6 +554,7 @@ describe("RED TEAM: Schedule Slot Lease Protocol & Concurrency Isolation (CORE-7
 				"content-type": "application/json",
 				"x-staff-token": doctorToken,
 				authorization: `Bearer ${doctorToken}`,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				leaseToken,

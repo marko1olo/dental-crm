@@ -6,7 +6,6 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
-import Fastify from "fastify";
 import { eq } from "drizzle-orm";
 import { generateUuidV7 } from "@dental/shared";
 import { db } from "../../db/client.js";
@@ -15,6 +14,7 @@ import { registerPayrollRoutes } from "../../routes/payroll.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { resetAuthSecretCacheForTests } from "../../security/authSecret.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 
 const TEST_SECRET = "doctor-payroll-inquisition-secret-key-32-chars-long".padEnd(48, "x");
 const ORG_ID = "c8000000-0000-4000-8000-00000000c001";
@@ -44,7 +44,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		process.env.AUTH_TOKEN_SECRET = TEST_SECRET;
 		resetAuthSecretCacheForTests();
 
-		app = Fastify({ logger: false });
+		app = await createIdempotentTenantTestApp();
 		await registerPayrollRoutes(app);
 		await app.ready();
 	});
@@ -119,6 +119,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: {
 				...authHeaders(DOCTOR_ID, "owner"),
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload,
 		});
@@ -166,6 +167,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: {
 				...authHeaders(DOCTOR_ID, "doctor"),
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				doctorId: "all",
@@ -185,6 +187,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: {
 				...authHeaders(DOCTOR_ID, "doctor"),
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				doctorId: OTHER_DOCTOR_ID,
@@ -203,6 +206,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: {
 				...authHeaders(DOCTOR_ID, "doctor"),
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				doctorId: DOCTOR_ID,
@@ -342,7 +346,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 
 		assert.equal(res.statusCode, 400);
 		const data = JSON.parse(res.body);
-		assert.equal(data.error, "ValidationError");
+		assert.equal(data.error, "IdempotencyKeyRequired");
 		assert.ok(data.message.includes("Idempotency-Key"));
 	});
 
@@ -387,6 +391,7 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 			headers: {
 				...authHeaders(DOCTOR_ID, "doctor"),
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			},
 			payload: {
 				doctorId: OTHER_DOCTOR_ID,

@@ -8,11 +8,10 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { calculateDoctorPeriodPayroll, computePayloadHash, isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { calculateDoctorPeriodPayroll, isValidUuid, rublesToKopecks } from "@dental/shared";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { doctorCommissions, users } from "../db/schema.js";
-import { idempotencyKeys } from "../db/schema/idempotency.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { roleHasPermission } from "../security/permissions.js";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
@@ -460,64 +459,9 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			}
 			reply.header("Idempotency-Key", idempotencyKey);
 			reply.header("X-Idempotency-Key", idempotencyKey);
-
-			const checkResult = await withTenantCtx(orgId, async (tx) => {
-				if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
-					await tx.execute(
-						sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
-					);
-				}
-
-				const [existingRecord] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						return {
-							action: "replay" as const,
-							code: existingRecord.responseCode || 200,
-							body: existingRecord.responseBody,
-						};
-					}
-					if (existingRecord.status === "in_flight") {
-						return {
-							action: "conflict" as const,
-						};
-					}
-				}
-
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "in_flight",
-						lockedAt: new Date(),
-					})
-					.onConflictDoNothing();
-
-				return { action: "proceed" as const };
-			});
-
-			if (checkResult.action === "replay") {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply.code(checkResult.code).send(checkResult.body);
-			}
-
-			if (checkResult.action === "conflict") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Операция фиксации расчетного периода с данным Idempotency-Key уже выполняется.",
-				});
-			}
 		}
 
-		try {
-			const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
+		const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
 			const toDate = new Date(`${body.periodEnd.slice(0, 10)}T23:59:59.999Z`);
 			const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
 				? body.periodStart.slice(0, 7)
@@ -588,37 +532,6 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 						if (res.statement) batchStatements.push(res.statement);
 						totalClosedAppts += res.closedAppointmentsCount;
-					}
-
-					if (idempotencyKey) {
-						const batchResponsePayload: Record<string, unknown> = {
-							ok: true,
-							statementId: batchStatements[0]?.id || "batch",
-							statement: batchStatements[0] || null,
-							statements: batchStatements,
-							count: batchStatements.length,
-							closedAppointmentsCount: totalClosedAppts,
-							message: `Пакетное утверждение ведомостей клиники: зафиксированы расчетные периоды для ${batchStatements.length} врачей`,
-						};
-
-						await tx
-							.insert(idempotencyKeys)
-							.values({
-								clinicId: orgId,
-								key: idempotencyKey,
-								status: "completed",
-								payloadHash: computePayloadHash(request.body ?? {}),
-								responseBody: batchResponsePayload,
-								responseCode: 200,
-							})
-							.onConflictDoUpdate({
-								target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-								set: {
-									status: "completed",
-									responseBody: batchResponsePayload,
-									responseCode: 200,
-								},
-							});
 					}
 				});
 
@@ -794,47 +707,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					message: isOwnDoctor ? "Акт сверки смены успешно подтвержден врачом" : "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
 				};
 
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: payload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: payload,
-								responseCode: 200,
-							},
-						});
-				}
-
 				return payload;
 			});
 
 			return reply.send(responsePayload);
-		} catch (error) {
-			if (idempotencyKey) {
-				await withTenantCtx(orgId, async (tx) => {
-					await tx
-						.delete(idempotencyKeys)
-						.where(
-							and(
-								eq(idempotencyKeys.clinicId, orgId),
-								eq(idempotencyKeys.key, idempotencyKey),
-								eq(idempotencyKeys.status, "in_flight"),
-							),
-						);
-				}).catch(() => {});
-			}
-			throw error;
-		}
 	};
 
 	const reopenSettlementHandler = async (
@@ -893,102 +769,12 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			? body.periodStart.slice(0, 7)
 			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
 
+		await reopenSettlementPeriodInDb(orgId, resolvedDocId, periodKey);
 		if (idempotencyKey) {
-			const checkResult = await withTenantCtx(orgId, async (tx) => {
-				const [existingRecord] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
-					.limit(1);
-
-				if (existingRecord) {
-					if (existingRecord.status === "completed" && existingRecord.responseBody) {
-						return {
-							action: "replay" as const,
-							code: existingRecord.responseCode || 200,
-							body: existingRecord.responseBody,
-						};
-					}
-					if (existingRecord.status === "in_flight") {
-						return {
-							action: "conflict" as const,
-						};
-					}
-				}
-
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "in_flight",
-						lockedAt: new Date(),
-					})
-					.onConflictDoNothing();
-
-				return { action: "proceed" as const };
-			});
-
-			if (checkResult.action === "replay") {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				reply.header("Idempotency-Key", idempotencyKey);
-				return reply.code(checkResult.code).send(checkResult.body);
-			}
-
-			if (checkResult.action === "conflict") {
-				return reply.code(409).header("Retry-After", "1").send({
-					error: "Conflict",
-					message: "Операция переоткрытия расчетного периода с данным Idempotency-Key уже выполняется.",
-				});
-			}
+			reply.header("Idempotency-Key", idempotencyKey);
+			reply.header("X-Idempotency-Key", idempotencyKey);
 		}
-
-		try {
-			await reopenSettlementPeriodInDb(orgId, resolvedDocId, periodKey);
-			const responsePayload = { ok: true, isFinalized: false };
-
-			if (idempotencyKey) {
-				await withTenantCtx(orgId, async (tx) => {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							payloadHash: computePayloadHash(request.body ?? {}),
-							responseBody: responsePayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: responsePayload,
-								responseCode: 200,
-							},
-						});
-				});
-				reply.header("Idempotency-Key", idempotencyKey);
-			}
-
-			return reply.send(responsePayload);
-		} catch (error) {
-			if (idempotencyKey) {
-				await withTenantCtx(orgId, async (tx) => {
-					await tx
-						.delete(idempotencyKeys)
-						.where(
-							and(
-								eq(idempotencyKeys.clinicId, orgId),
-								eq(idempotencyKeys.key, idempotencyKey),
-								eq(idempotencyKeys.status, "in_flight"),
-							),
-						);
-				}).catch(() => {});
-			}
-			throw error;
-		}
+		return reply.send({ ok: true, isFinalized: false });
 	};
 
 	app.post("/api/v1/payroll/close-settlement", closeSettlementHandler);

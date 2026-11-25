@@ -13,17 +13,13 @@
 
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, gt, gte, lt, lte, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, eq, gt, lt, lte, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../../db/client.js";
-import { appointments, idempotencyKeys, scheduleSlotLeases } from "../../db/schema.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { appointments, scheduleSlotLeases } from "../../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
-import {
-	requireClinicOrganizationId,
-	requireScheduleMutationContext,
-	scheduleUnguardedMutationsAllowed,
-} from "../scheduleAuthGuard.js";
+import { requireScheduleMutationContext } from "../scheduleAuthGuard.js";
 
 export const acquireSlotLeaseSchema = z
 	.object({
@@ -61,32 +57,6 @@ export const heartbeatSlotLeaseSchema = z
 
 export type HeartbeatSlotLeaseInput = z.infer<typeof heartbeatSlotLeaseSchema>;
 
-async function resolveOrganizationId(
-	request: FastifyRequest,
-	reply: FastifyReply,
-): Promise<string | null> {
-	const context = await requireScheduleMutationContext(
-		request,
-		reply,
-		"schedule slot lease",
-	);
-	if (context?.organizationId) {
-		return context.organizationId;
-	}
-
-	if (scheduleUnguardedMutationsAllowed()) {
-		const bodyOrg =
-			request.body && typeof request.body === "object"
-				? ((request.body as Record<string, unknown>).organizationId as string | undefined)
-				: undefined;
-		if (bodyOrg) return bodyOrg;
-		const headerOrg = request.headers["x-organization-id"];
-		if (typeof headerOrg === "string" && headerOrg.trim()) return headerOrg.trim();
-	}
-
-	return null;
-}
-
 export async function handleAcquireSlotLease(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -100,8 +70,9 @@ export async function handleAcquireSlotLease(
 		});
 	}
 
-	const orgId = await resolveOrganizationId(request, reply);
-	if (!orgId) return reply;
+	const authCtx = await requireScheduleMutationContext(request, reply, "schedule slot lease");
+	if (!authCtx) return;
+	const orgId = authCtx.organizationId;
 
 	const rawIdemKey = extractIdempotencyKey(request);
 	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
@@ -141,53 +112,7 @@ export async function handleAcquireSlotLease(
 
 	const identity = getRequestIdentity(request);
 
-	return await db.transaction(async (tx) => {
-		if (idempotencyKey) {
-			if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
-				await tx.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
-				);
-			}
-
-			const [existingRecord] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						code: "IdempotencyConflict",
-						message: "Запрос на удержание слота уже обрабатывается",
-					});
-				}
-			}
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "in_flight",
-					lockedAt: new Date(),
-				})
-				.onConflictDoNothing();
-		}
-
+	const outcome = await withTenantCtx(orgId, async (tx) => {
 		// 1. Атомарно удаляем протухшие лизы организации
 		await tx
 			.delete(scheduleSlotLeases)
@@ -231,10 +156,13 @@ export async function handleAcquireSlotLease(
 				.limit(1);
 
 			if (existingAppt) {
-				return reply.code(409).send({
-					error: "SLOT_OCCUPIED",
-					message: "Слот уже занят другой активной записью в расписании",
-				});
+				return {
+					status: 409 as const,
+					body: {
+						error: "SLOT_OCCUPIED",
+						message: "Слот уже занят другой активной записью в расписании",
+					},
+				};
 			}
 		}
 
@@ -282,37 +210,23 @@ export async function handleAcquireSlotLease(
 						doctorUserId: doctorUserId ?? activeLease.doctorUserId,
 						patientId: patientId ?? activeLease.patientId,
 					})
-					.where(eq(scheduleSlotLeases.id, activeLease.id));
+					.where(
+						and(
+							eq(scheduleSlotLeases.id, activeLease.id),
+							eq(scheduleSlotLeases.organizationId, orgId),
+						),
+					);
 
-				const renewPayload = {
-					success: true,
-					leaseToken: activeLease.leaseToken,
-					expiresAt: newExpiresAt.toISOString(),
-					remainingSeconds: durationSeconds,
-					renewed: true,
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						leaseToken: activeLease.leaseToken,
+						expiresAt: newExpiresAt.toISOString(),
+						remainingSeconds: durationSeconds,
+						renewed: true,
+					},
 				};
-
-				if (idempotencyKey) {
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: orgId,
-							key: idempotencyKey,
-							status: "completed",
-							responseBody: renewPayload,
-							responseCode: 200,
-						})
-						.onConflictDoUpdate({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-							set: {
-								status: "completed",
-								responseBody: renewPayload,
-								responseCode: 200,
-							},
-						});
-				}
-
-				return reply.code(200).send(renewPayload);
 			}
 
 			// Чужой активный лиз -> 409 Conflict
@@ -321,12 +235,15 @@ export async function handleAcquireSlotLease(
 				1,
 				Math.ceil((activeLease.expiresAt.getTime() - nowMs) / 1000),
 			);
-			return reply.code(409).send({
-				error: "SLOT_LEASED",
-				message: "Слот временно удерживается другим пользователем",
-				expiresAt: activeLease.expiresAt.toISOString(),
-				remainingSeconds,
-			});
+			return {
+				status: 409 as const,
+				body: {
+					error: "SLOT_LEASED",
+					message: "Слот временно удерживается другим пользователем",
+					expiresAt: activeLease.expiresAt.toISOString(),
+					remainingSeconds,
+				},
+			};
 		}
 
 		// 5. Слот свободен: выдаем новый leaseToken
@@ -347,35 +264,18 @@ export async function handleAcquireSlotLease(
 			expiresAt,
 		});
 
-		const createPayload = {
-			success: true,
-			leaseToken,
-			expiresAt: expiresAt.toISOString(),
-			remainingSeconds: durationSeconds,
+		return {
+			status: 201 as const,
+			body: {
+				success: true,
+				leaseToken,
+				expiresAt: expiresAt.toISOString(),
+				remainingSeconds: durationSeconds,
+			},
 		};
-
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseBody: createPayload,
-					responseCode: 201,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: createPayload,
-						responseCode: 201,
-					},
-				});
-		}
-
-		return reply.code(201).send(createPayload);
 	});
+
+	return reply.code(outcome.status).send(outcome.body);
 }
 
 export async function handleReleaseSlotLease(
@@ -391,8 +291,9 @@ export async function handleReleaseSlotLease(
 		});
 	}
 
-	const orgId = await resolveOrganizationId(request, reply);
-	if (!orgId) return reply;
+	const authCtx = await requireScheduleMutationContext(request, reply, "schedule slot lease");
+	if (!authCtx) return;
+	const orgId = authCtx.organizationId;
 
 	const rawIdemKey = extractIdempotencyKey(request);
 	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
@@ -418,53 +319,7 @@ export async function handleReleaseSlotLease(
 		  identity.role === "manager"
 		: false;
 
-	return await db.transaction(async (tx) => {
-		if (idempotencyKey) {
-			if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
-				await tx.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
-				);
-			}
-
-			const [existingRecord] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						code: "IdempotencyConflict",
-						message: "Запрос на освобождение слота уже обрабатывается",
-					});
-				}
-			}
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "in_flight",
-					lockedAt: new Date(),
-				})
-				.onConflictDoNothing();
-		}
-
+	const outcome = await withTenantCtx(orgId, async (tx) => {
 		const [activeLease] = await tx
 			.select()
 			.from(scheduleSlotLeases)
@@ -478,27 +333,10 @@ export async function handleReleaseSlotLease(
 			.limit(1);
 
 		if (!activeLease) {
-			const resBody = { success: true, released: true };
-			if (idempotencyKey) {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						responseBody: resBody,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: resBody,
-							responseCode: 200,
-						},
-					});
-			}
-			return reply.code(200).send(resBody);
+			return {
+				status: 200 as const,
+				body: { success: true, released: true },
+			};
 		}
 
 		// Проверка прав на освобождение слота:
@@ -518,39 +356,31 @@ export async function handleReleaseSlotLease(
 		);
 
 		if (!isPrivileged && !matchesSession && !matchesUser) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				message: "Нельзя освободить чужое бронирование слота",
-			});
+			return {
+				status: 403 as const,
+				body: {
+					error: "PermissionDenied",
+					message: "Нельзя освободить чужое бронирование слота",
+				},
+			};
 		}
 
 		await tx
 			.delete(scheduleSlotLeases)
-			.where(eq(scheduleSlotLeases.id, activeLease.id));
+			.where(
+				and(
+					eq(scheduleSlotLeases.id, activeLease.id),
+					eq(scheduleSlotLeases.organizationId, orgId),
+				),
+			);
 
-		const resBody = { success: true, released: true };
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseBody: resBody,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: resBody,
-						responseCode: 200,
-					},
-				});
-		}
-
-		return reply.code(200).send(resBody);
+		return {
+			status: 200 as const,
+			body: { success: true, released: true },
+		};
 	});
+
+	return reply.code(outcome.status).send(outcome.body);
 }
 
 export async function handleHeartbeatSlotLease(
@@ -566,8 +396,9 @@ export async function handleHeartbeatSlotLease(
 		});
 	}
 
-	const orgId = await resolveOrganizationId(request, reply);
-	if (!orgId) return reply;
+	const authCtx = await requireScheduleMutationContext(request, reply, "schedule slot lease");
+	if (!authCtx) return;
+	const orgId = authCtx.organizationId;
 
 	const rawIdemKey = extractIdempotencyKey(request);
 	const idempotencyKey = rawIdemKey?.trim() ? rawIdemKey.trim() : null;
@@ -583,53 +414,7 @@ export async function handleHeartbeatSlotLease(
 
 	const extensionSeconds = parsed.data.extensionSeconds ?? 60;
 
-	return await db.transaction(async (tx) => {
-		if (idempotencyKey) {
-			if (process.env.DENTAL_STATE_PERSISTENCE !== "off") {
-				await tx.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext(${idempotencyKey}))`,
-				);
-			}
-
-			const [existingRecord] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						code: "IdempotencyConflict",
-						message: "Запрос на продление слота уже обрабатывается",
-					});
-				}
-			}
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "in_flight",
-					lockedAt: new Date(),
-				})
-				.onConflictDoNothing();
-		}
-
+	const outcome = await withTenantCtx(orgId, async (tx) => {
 		const [lease] = await tx
 			.select()
 			.from(scheduleSlotLeases)
@@ -644,46 +429,37 @@ export async function handleHeartbeatSlotLease(
 			.limit(1);
 
 		if (!lease) {
-			return reply.code(409).send({
-				error: "LEASE_EXPIRED",
-				message: "Срок действия резервирования слота истек или токен не найден",
-			});
+			return {
+				status: 409 as const,
+				body: {
+					error: "LEASE_EXPIRED",
+					message: "Срок действия резервирования слота истек или токен не найден",
+				},
+			};
 		}
 
 		const newExpiresAt = new Date(Date.now() + extensionSeconds * 1000);
 		await tx
 			.update(scheduleSlotLeases)
 			.set({ expiresAt: newExpiresAt })
-			.where(eq(scheduleSlotLeases.id, lease.id));
+			.where(
+				and(
+					eq(scheduleSlotLeases.id, lease.id),
+					eq(scheduleSlotLeases.organizationId, orgId),
+				),
+			);
 
-		const heartbeatPayload = {
-			success: true,
-			expiresAt: newExpiresAt.toISOString(),
-			remainingSeconds: extensionSeconds,
+		return {
+			status: 200 as const,
+			body: {
+				success: true,
+				expiresAt: newExpiresAt.toISOString(),
+				remainingSeconds: extensionSeconds,
+			},
 		};
-
-		if (idempotencyKey) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseBody: heartbeatPayload,
-					responseCode: 200,
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: heartbeatPayload,
-						responseCode: 200,
-					},
-				});
-		}
-
-		return reply.code(200).send(heartbeatPayload);
 	});
+
+	return reply.code(outcome.status).send(outcome.body);
 }
 
 export const slotLeaseIdempotencyMutationOptionsWithOrgIdContext = {

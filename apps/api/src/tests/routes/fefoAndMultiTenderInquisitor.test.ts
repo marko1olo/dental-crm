@@ -14,6 +14,7 @@
  */
 
 import { strict as assert } from "node:assert";
+import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
@@ -417,7 +418,7 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 		);
 	});
 
-	it("6. [Cash Shift Close Guard] rejects closing with 409 when patient is 'in_treatment', succeeds with force: true", async () => {
+	it("6. [Cash Shift Close Guard] closes shifts non-blockingly with unfinishedVisitsWarning when patient is 'in_treatment' (Mandate 8e)", async () => {
 		const app = await buildTestApp();
 		const headers = createStaffHeaders(orgId, userId);
 
@@ -425,7 +426,10 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 		const openRes = await app.inject({
 			method: "POST",
 			url: "/api/cash/cash-box-all-open",
-			headers,
+			headers: {
+				...headers,
+				"Idempotency-Key": randomUUID(),
+			},
 			payload: { openedByUserId: userId },
 		});
 		assert.equal(openRes.statusCode, 200, "Cash shifts must open successfully");
@@ -452,11 +456,14 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 			});
 		});
 
-		// Attempt to close shifts without force -> MUST return 409 UnfinishedVisitsInChair!
-		const closeBlockedRes = await app.inject({
+		// Mandate 8e: closing shifts with active visits must NOT block with 409; returns 200 + unfinishedVisitsWarning
+		const closeRes = await app.inject({
 			method: "POST",
 			url: "/api/cash/cash-box-all-closing",
-			headers,
+			headers: {
+				...headers,
+				"Idempotency-Key": randomUUID(),
+			},
 			payload: {
 				closedByUserId: userId,
 				force: false,
@@ -464,44 +471,18 @@ describe("RED TEAM INQUISITOR 3: WAREHOUSE FEFO & MULTI-TENDER CASH INQUISITION"
 		});
 
 		assert.equal(
-			closeBlockedRes.statusCode,
-			409,
-			"Shift closing must be blocked with 409 when visits are in_treatment",
+			closeRes.statusCode,
+			200,
+			`Shift closing must succeed non-blockingly (Mandate 8e), got ${closeRes.statusCode}: ${closeRes.payload}`,
 		);
-		const blockedBody = JSON.parse(closeBlockedRes.payload);
-		assert.equal(blockedBody.error, "UnfinishedVisitsInChair");
-		assert.equal(blockedBody.code, "UNFINISHED_VISITS_IN_CHAIR");
-		assert.equal(blockedBody.unfinishedCount, 1);
-
-		// Verify shifts are still OPEN in database
-		await withFixtureTenant(orgId, async (tx) => {
-			const openShifts = await tx
-				.select()
-				.from(cashBoxShifts)
-				.where(
-					and(
-						eq(cashBoxShifts.organizationId, orgId),
-						eq(cashBoxShifts.status, "open"),
-					),
-				);
-			assert.ok(openShifts.length > 0, "Shifts must remain open after blocked closure");
-		});
-
-		// Now close shifts with force: true -> MUST succeed with 200 OK and generate Z-reports!
-		const closeForcedRes = await app.inject({
-			method: "POST",
-			url: "/api/cash/cash-box-all-closing",
-			headers,
-			payload: {
-				closedByUserId: userId,
-				force: true,
-			},
-		});
-
-		assert.equal(closeForcedRes.statusCode, 200, "Shift closing must succeed with force: true");
-		const forcedBody = JSON.parse(closeForcedRes.payload);
-		assert.equal(forcedBody.success, true);
-		assert.ok(forcedBody.closedShiftsCount > 0);
+		const closeBody = JSON.parse(closeRes.payload) as {
+			success: boolean;
+			closedShiftsCount: number;
+			unfinishedVisitsWarning?: { count: number; appointments?: unknown[] };
+		};
+		assert.equal(closeBody.success, true);
+		assert.ok(closeBody.closedShiftsCount > 0);
+		assert.equal(closeBody.unfinishedVisitsWarning?.count, 1);
 
 		// Verify shifts are now CLOSED in database
 		await withFixtureTenant(orgId, async (tx) => {

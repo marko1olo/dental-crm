@@ -16,7 +16,6 @@ import {
 	appointments,
 	cashBoxes,
 	cashBoxShifts,
-	idempotencyKeys,
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -41,7 +40,7 @@ function resolveSafeKopecks(
 export async function handleCloseCashShift(
 	request: FastifyRequest,
 	reply: FastifyReply,
-): Promise<void> {
+): Promise<unknown> {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(
 		request,
 		reply,
@@ -89,23 +88,8 @@ export async function handleCloseCashShift(
 	}
 	const idempotencyKey = parsedKey;
 
-	// Phase 1: Lightweight DB read (fast-path idempotency replay + shift numbers for KKT Z-report)
+	// Phase 1: Lightweight DB read (cashier resolution + shift numbers for KKT Z-report)
 	const preflight = await withTenantCtx(orgId, async (tx) => {
-		const [found] = await tx
-			.select()
-			.from(idempotencyKeys)
-			.where(
-				and(
-					eq(idempotencyKeys.clinicId, orgId),
-					eq(idempotencyKeys.key, idempotencyKey),
-				),
-			)
-			.limit(1);
-
-		if (found && found.status === "completed" && found.responseBody) {
-			return { kind: "replay" as const, existingRecord: found };
-		}
-
 		const effectiveUserId = await resolveEffectiveCashierUserId(
 			tx,
 			orgId,
@@ -124,20 +108,11 @@ export async function handleCloseCashShift(
 			);
 
 		return {
-			kind: "proceed" as const,
 			effectiveUserId,
 			firstShiftNumber: openShifts[0]?.shiftNumber ?? 1,
 			hasOpenShifts: openShifts.length > 0,
 		};
 	});
-
-	if (preflight.kind === "replay") {
-		reply.header("idempotency-replayed", "true");
-		reply.header("x-idempotency-replayed", "true");
-		return reply
-			.code(preflight.existingRecord.responseCode || 200)
-			.send(preflight.existingRecord.responseBody);
-	}
 
 	// Phase 2: Physical KKT Z-report strictly OUTSIDE PostgreSQL transactions (zero lock holding on TCP I/O)
 	let kktZResult: Awaited<ReturnType<typeof LanKktDriverService.closeShift>> | undefined;
@@ -153,30 +128,10 @@ export async function handleCloseCashShift(
 	}
 
 	// Phase 3: Atomic ACID reconciliation, Z-report storage, and shift closure inside advisory lock
-	const closeOutcome = await withTenantCtx(orgId, async (tx) => {
+	const closeResponse = await withTenantCtx(orgId, async (tx) => {
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_box_shifts_lock'))`,
 		);
-
-		// Re-check idempotency inside lock to neutralize TOCTOU double submissions
-		const [raceExisting] = await tx
-			.select()
-			.from(idempotencyKeys)
-			.where(
-				and(
-					eq(idempotencyKeys.clinicId, orgId),
-					eq(idempotencyKeys.key, idempotencyKey),
-				),
-			)
-			.limit(1);
-
-		if (raceExisting && raceExisting.status === "completed" && raceExisting.responseBody) {
-			return {
-				isReplay: true as const,
-				code: raceExisting.responseCode || 200,
-				body: raceExisting.responseBody,
-			};
-		}
 
 		let activeVisitsInChair: {
 			id: string;
@@ -331,31 +286,11 @@ export async function handleCloseCashShift(
 				: undefined,
 		};
 
-		await tx
-			.insert(idempotencyKeys)
-			.values({
-				clinicId: orgId,
-				key: idempotencyKey,
-				status: "completed",
-				responseBody: closeResponse,
-				responseCode: 200,
-			})
-			.onConflictDoNothing();
-
-		return {
-			isReplay: false as const,
-			body: closeResponse,
-		};
+		return closeResponse;
 	});
 
 	reply.header("Idempotency-Key", idempotencyKey);
 	reply.header("X-Idempotency-Key", idempotencyKey);
 
-	if (closeOutcome.isReplay) {
-		reply.header("idempotency-replayed", "true");
-		reply.header("x-idempotency-replayed", "true");
-		return reply.code(closeOutcome.code).send(closeOutcome.body);
-	}
-
-	return reply.send(closeOutcome.body);
+	return closeResponse;
 }

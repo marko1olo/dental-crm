@@ -258,6 +258,8 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 					doctorName: "Главный Врач / Кассир",
 					secureToken: `LO-TEST-${Date.now()}`,
 					priceRub: 5000,
+					labCostRub: 5000,
+					labCostKopecks: 500000,
 					toothFdi: "26",
 					material: "Цирконий",
 					status: "received",
@@ -282,7 +284,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const payLabRes = await app.inject({
 				method: "POST",
 				url: `/api/lab-orders/${labOrderId}/pay`,
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					cashBoxId: accountBox.id,
 				},
@@ -296,7 +301,10 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			const installRes = await app.inject({
 				method: "POST",
 				url: `/api/lab-orders/${labOrderId}/mark-installed`,
-				headers,
+				headers: {
+					...headers,
+					"Idempotency-Key": randomUUID(),
+				},
 				payload: {
 					clinicalNotes: "Коронка идеально зафиксирована на цемент Fuji I.",
 				},

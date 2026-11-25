@@ -3,16 +3,14 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
-	computePayloadHash,
 	detectCrossBranchScheduleCollisions,
 	type DoctorBranchShift,
 } from "@dental/shared";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	clinics,
 	doctorShiftRosters,
-	idempotencyKeys,
 	urgentScheduleRequests,
 } from "../../db/schema.js";
 import {
@@ -59,16 +57,18 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 		const orgId = await requireOrganizationContext(request, reply);
 		if (!orgId) return reply;
 
-		const requests = await db
-			.select()
-			.from(urgentScheduleRequests)
-			.where(
-				and(
-					eq(urgentScheduleRequests.organizationId, orgId),
-					eq(urgentScheduleRequests.isResolved, false),
-				),
-			)
-			.orderBy(asc(urgentScheduleRequests.createdAt));
+		const requests = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(urgentScheduleRequests)
+				.where(
+					and(
+						eq(urgentScheduleRequests.organizationId, orgId),
+						eq(urgentScheduleRequests.isResolved, false),
+					),
+				)
+				.orderBy(asc(urgentScheduleRequests.createdAt)),
+		);
 
 		return reply.code(200).send(requests);
 	});
@@ -89,15 +89,17 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			}
 			const { id } = parsedParams.data;
 
-			await db
-				.update(urgentScheduleRequests)
-				.set({ isResolved: true })
-				.where(
-					and(
-						eq(urgentScheduleRequests.id, id),
-						eq(urgentScheduleRequests.organizationId, orgId),
-					),
-				);
+			await withTenantCtx(orgId, async (tx) => {
+				await tx
+					.update(urgentScheduleRequests)
+					.set({ isResolved: true })
+					.where(
+						and(
+							eq(urgentScheduleRequests.id, id),
+							eq(urgentScheduleRequests.organizationId, orgId),
+						),
+					);
+			});
 
 			return reply.code(200).send({ success: true });
 		},
@@ -120,10 +122,12 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				)
 			: eq(doctorShiftRosters.organizationId, orgId);
 
-		const rows = await db
-			.select()
-			.from(doctorShiftRosters)
-			.where(condition);
+		const rows = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select()
+				.from(doctorShiftRosters)
+				.where(condition),
+		);
 
 		const shifts = rows.map((s) => ({
 			id: s.id,
@@ -163,35 +167,6 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			}
 
 			reply.header("Idempotency-Key", idempotencyKey);
-
-			const [existingRecord] = await db
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord) {
-				if (existingRecord.status === "completed" && existingRecord.responseBody) {
-					reply.header("idempotency-replayed", "true");
-					reply.header("x-idempotency-replayed", "true");
-					return reply
-						.code(existingRecord.responseCode || 200)
-						.send(existingRecord.responseBody);
-				}
-				if (existingRecord.status === "in_flight") {
-					return reply.code(409).header("Retry-After", "1").send({
-						error: "Conflict",
-						code: "IdempotencyConflict",
-						message:
-							"Операция сохранения смен расписания с данным Idempotency-Key уже выполняется.",
-					});
-				}
-			}
 		}
 
 		const parsed = scheduleShiftsSchema.safeParse(req.body);
@@ -207,75 +182,72 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			new Set([...shifts.map((s) => s.dateIso || s.shiftDateIso || ""), explicitDate].filter((d): d is string => Boolean(d))),
 		);
 
-		// Загрузка названий филиалов для понятных сообщений об ошибках коллизий
-		const clinicRows = await db
-			.select({ id: clinics.id, name: clinics.name })
-			.from(clinics)
-			.where(eq(clinics.organizationId, orgId));
-		const branchMap = new Map<string, string>(clinicRows.map((c) => [c.id, c.name]));
+		const outcome = await withTenantCtx(orgId, async (tx) => {
+			// Загрузка названий филиалов для понятных сообщений об ошибках коллизий
+			const clinicRows = await tx
+				.select({ id: clinics.id, name: clinics.name })
+				.from(clinics)
+				.where(eq(clinics.organizationId, orgId));
+			const branchMap = new Map<string, string>(clinicRows.map((c) => [c.id, c.name]));
 
-		// Проверка кросс-филиальных коллизий смен врача (Мандат Домена 30)
-		const shiftsToCheck: DoctorBranchShift[] = shifts.map((s) => {
-			const resolvedDate = s.dateIso || s.shiftDateIso || dateIso || new Date().toISOString().split("T")[0]!;
-			const bId = s.clinicId || s.branchId || "default";
-			return {
-				id: s.id || randomUUID(),
-				doctorId: s.doctorId,
-				doctorName: s.doctorName,
-				organizationId: orgId,
-				branchId: bId,
-				branchName: branchMap.get(bId) || `Отделение ${bId}`,
-				cabinetId: s.cabinetId || undefined,
-				shiftDate: String(resolvedDate),
-				startTime: s.startTime || "08:00",
-				endTime: s.endTime || "20:00",
-			};
-		});
+			// Проверка кросс-филиальных коллизий смен врача (Мандат Домена 30)
+			const shiftsToCheck: DoctorBranchShift[] = shifts.map((s) => {
+				const resolvedDate = s.dateIso || s.shiftDateIso || dateIso || new Date().toISOString().slice(0, 10);
+				const bId = s.clinicId || s.branchId || "default";
+				return {
+					id: s.id || randomUUID(),
+					doctorId: s.doctorId,
+					doctorName: s.doctorName,
+					organizationId: orgId,
+					branchId: bId,
+					branchName: branchMap.get(bId) || `Отделение ${bId}`,
+					cabinetId: s.cabinetId || undefined,
+					shiftDate: String(resolvedDate),
+					startTime: s.startTime || "08:00",
+					endTime: s.endTime || "20:00",
+				};
+			});
 
-		// Если не глобальная перезапись, учитываем существующие смены врача в других филиалах
-		const doctorIds = Array.from(new Set(shifts.map((s) => s.doctorId)));
-		if (doctorIds.length > 0 && targetDates.length > 0 && replaceAll !== true) {
-			const existingOtherShifts = await db
-				.select()
-				.from(doctorShiftRosters)
-				.where(
-					and(
-						eq(doctorShiftRosters.organizationId, orgId),
-						inArray(doctorShiftRosters.doctorId, doctorIds),
-						inArray(doctorShiftRosters.dateIso, targetDates),
-					),
-				);
-			for (const ex of existingOtherShifts) {
-				if (!shifts.some((s) => s.id === ex.id)) {
-					const bId = ex.clinicId || "default";
-					shiftsToCheck.push({
-						id: ex.id,
-						doctorId: ex.doctorId,
-						doctorName: ex.doctorName,
-						organizationId: orgId,
-						branchId: bId,
-						branchName: branchMap.get(bId) || `Отделение ${bId}`,
-						cabinetId: ex.cabinetId || undefined,
-						shiftDate: ex.dateIso,
-						startTime: ex.startTime,
-						endTime: ex.endTime,
-					});
+			// Если не глобальная перезапись, учитываем существующие смены врача в других филиалах
+			const doctorIds = Array.from(new Set(shifts.map((s) => s.doctorId)));
+			if (doctorIds.length > 0 && targetDates.length > 0 && replaceAll !== true) {
+				const existingOtherShifts = await tx
+					.select()
+					.from(doctorShiftRosters)
+					.where(
+						and(
+							eq(doctorShiftRosters.organizationId, orgId),
+							inArray(doctorShiftRosters.doctorId, doctorIds),
+							inArray(doctorShiftRosters.dateIso, targetDates),
+						),
+					);
+				for (const ex of existingOtherShifts) {
+					if (!shifts.some((s) => s.id === ex.id)) {
+						const bId = ex.clinicId || "default";
+						shiftsToCheck.push({
+							id: ex.id,
+							doctorId: ex.doctorId,
+							doctorName: ex.doctorName,
+							organizationId: orgId,
+							branchId: bId,
+							branchName: branchMap.get(bId) || `Отделение ${bId}`,
+							cabinetId: ex.cabinetId || undefined,
+							shiftDate: ex.dateIso,
+							startTime: ex.startTime,
+							endTime: ex.endTime,
+						});
+					}
 				}
 			}
-		}
 
-		const collisionReport = detectCrossBranchScheduleCollisions(shiftsToCheck, 30);
-		if (collisionReport.hasCollisions) {
-			return reply.code(409).send({
-				error: "ScheduleCollisionError",
-				message:
-					collisionReport.collisions[0]?.messageRu ||
-					"Обнаружена коллизия смен врача между филиалами клиники.",
-				collisions: collisionReport.collisions,
-			});
-		}
+			const collisionReport = detectCrossBranchScheduleCollisions(shiftsToCheck, 30);
+			if (collisionReport.hasCollisions) {
+				return {
+					kind: "collision" as const,
+					collisions: collisionReport.collisions,
+				};
+			}
 
-		await db.transaction(async (tx) => {
 			if (replaceAll === true) {
 				// Явный флаг глобальной перезаписи смен клиники
 				await tx.delete(doctorShiftRosters).where(eq(doctorShiftRosters.organizationId, orgId));
@@ -289,7 +261,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				);
 			} else {
 				// Защита от потери данных: без replaceAll и без дат ничего глобально не удаляем
-				return;
+				return { kind: "ok" as const };
 			}
 
 			if (shifts.length > 0) {
@@ -316,28 +288,18 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				);
 			}
 
-			if (idempotencyKey) {
-				const responsePayload = { ok: true, savedCount: shifts.length };
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: idempotencyKey,
-						status: "completed",
-						payloadHash: computePayloadHash(req.body ?? {}),
-						responseBody: responsePayload,
-						responseCode: 200,
-					})
-					.onConflictDoUpdate({
-						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						set: {
-							status: "completed",
-							responseBody: responsePayload,
-							responseCode: 200,
-						},
-					});
-			}
+			return { kind: "ok" as const };
 		});
+
+		if (outcome.kind === "collision") {
+			return reply.code(409).send({
+				error: "ScheduleCollisionError",
+				message:
+					outcome.collisions[0]?.messageRu ||
+					"Обнаружена коллизия смен врача между филиалами клиники.",
+				collisions: outcome.collisions,
+			});
+		}
 
 		return reply.send({ ok: true, savedCount: shifts.length });
 	});

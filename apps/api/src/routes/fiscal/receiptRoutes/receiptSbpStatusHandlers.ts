@@ -12,7 +12,6 @@ import {
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	fiscalReceiptQueue,
-	idempotencyKeys,
 	patientInvoices,
 	payments,
 	sberbankTransactions,
@@ -55,7 +54,15 @@ export async function handleSbpStatus(
 		body.action === "confirm_manual" ||
 		query.action === "confirm_manual" ||
 		query.confirm === "true";
-	const isMutation = request.method.toUpperCase() === "POST" || isConfirmManual;
+
+	if (request.method.toUpperCase() === "GET" && isConfirmManual) {
+		return reply.code(405).send({
+			error: "MethodNotAllowed",
+			message: "Для подтверждения оплаты СБП используйте POST /api/fiscal/sbp-status.",
+		});
+	}
+
+	const isMutation = request.method.toUpperCase() === "POST";
 
 	const ctx = isMutation
 		? await requireClinicalMutationContext(request, reply, "sbp status confirm")
@@ -84,26 +91,6 @@ export async function handleSbpStatus(
 	}
 
 	return await withTenantCtx(orgId, async (tx) => {
-		if (clientMutationId) {
-			const [existingKey] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, clientMutationId),
-					),
-				)
-				.limit(1);
-			if (existingKey && existingKey.status === "completed" && existingKey.responseBody) {
-				reply.header("idempotency-replayed", "true");
-				reply.header("x-idempotency-replayed", "true");
-				return reply
-					.code(existingKey.responseCode || 200)
-					.send(existingKey.responseBody);
-			}
-		}
-
 		let isPaid = false;
 		let resolvedOrderId = orderId || qrId || invoiceId || null;
 		let resolvedPaymentId: string | null = paymentId || null;
@@ -323,19 +310,6 @@ export async function handleSbpStatus(
 			paidAt: paidAtIso,
 			method: "sbp_qr",
 		};
-
-		if (isMutation && clientMutationId) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: clientMutationId,
-					status: "completed",
-					responseBody: responseData,
-					responseCode: 200,
-				})
-				.onConflictDoNothing();
-		}
 
 		return reply.status(200).send(responseData);
 	});

@@ -23,7 +23,6 @@ import {
 	cashBoxShifts,
 	cashOperations,
 	fiscalReceiptQueue,
-	idempotencyKeys,
 	installmentContracts,
 	installmentTranches,
 	patientInvoices,
@@ -154,51 +153,17 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':installment_contract:' || ${idempotencyKey}))`,
 			);
 
-			const [existingKey] = await tx
+			const idempTag = `[idempotency:${idempotencyKey}]`;
+			const [existingContract] = await tx
 				.select()
-				.from(idempotencyKeys)
+				.from(installmentContracts)
 				.where(
 					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, idempotencyKey),
+						eq(installmentContracts.organizationId, orgId),
+						sql`strpos(coalesce(${installmentContracts.notes}, ''), ${idempTag}) > 0`,
 					),
 				)
 				.limit(1);
-
-			let existingContract: typeof installmentContracts.$inferSelect | undefined;
-			if (
-				existingKey?.responseBody &&
-				typeof existingKey.responseBody === "object" &&
-				"contractId" in existingKey.responseBody &&
-				typeof existingKey.responseBody.contractId === "string"
-			) {
-				const [foundContract] = await tx
-					.select()
-					.from(installmentContracts)
-					.where(
-						and(
-							eq(installmentContracts.id, existingKey.responseBody.contractId),
-							eq(installmentContracts.organizationId, orgId),
-						),
-					)
-					.limit(1);
-				existingContract = foundContract;
-			}
-
-			if (!existingContract) {
-				const idempTag = `[idempotency:${idempotencyKey}]`;
-				const [byNotes] = await tx
-					.select()
-					.from(installmentContracts)
-					.where(
-						and(
-							eq(installmentContracts.organizationId, orgId),
-							sql`strpos(coalesce(${installmentContracts.notes}, ''), ${idempTag}) > 0`,
-						),
-					)
-					.limit(1);
-				existingContract = byNotes;
-			}
 
 			if (existingContract) {
 				const existingTranches = await tx
@@ -290,17 +255,6 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 			if (!contract) {
 				throw new Error("Не удалось создать договор рассрочки");
 			}
-
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: idempotencyKey,
-					status: "completed",
-					responseBody: { contractId: contract.id, contractNumber: contract.contractNumber },
-					responseCode: 201,
-				})
-				.onConflictDoNothing();
 
 			if (lockedInvoiceId) {
 				await tx

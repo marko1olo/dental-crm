@@ -788,67 +788,78 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 	it("7. pricelist ingest enforces Idempotency-Key, handles replay, and seals body", async (t) => {
 		if (!dbAvailable) return t.skip();
 
-		// 7a. Невалидный UUID в Idempotency-Key -> 400
-		const resInvalidIdem = await app.inject({
-			method: "POST",
-			url: "/api/pricelist/ingest",
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-				"idempotency-key": "invalid-key",
-			},
-			payload: {
-				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
-			},
-		});
-		assert.equal(resInvalidIdem.statusCode, 400);
+		const pricelistApp = await createIdempotentTenantTestApp();
+		await registerPricelistRoutes(pricelistApp);
+		try {
+			// 7a. Невалидный UUID в Idempotency-Key -> 400
+			const resInvalidIdem = await pricelistApp.inject({
+				method: "POST",
+				url: "/api/pricelist/ingest",
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": "invalid-key",
+				},
+				payload: {
+					rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+				},
+			});
+			assert.equal(resInvalidIdem.statusCode, 400);
 
-		// 7b. Посторонние поля отвергаются .strict()
-		const resStrict = await app.inject({
-			method: "POST",
-			url: "/api/pricelist/ingest",
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-			},
-			payload: {
-				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
-				__extraneousLeak: 123,
-			},
-		});
-		assert.equal(resStrict.statusCode, 400);
+			// 7b. Посторонние поля отвергаются .strict()
+			const resStrict = await pricelistApp.inject({
+				method: "POST",
+				url: "/api/pricelist/ingest",
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": fixtureUuid("ingestIdem", 700),
+				},
+				payload: {
+					rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+					__extraneousLeak: 123,
+				},
+			});
+			assert.equal(resStrict.statusCode, 400);
 
-		// 7c. Первичное выполнение с валидным ключом
-		const ingestKey = fixtureUuid("ingestIdem", 701);
-		const resFirst = await app.inject({
-			method: "POST",
-			url: "/api/pricelist/ingest",
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-				"idempotency-key": ingestKey,
-			},
-			payload: {
-				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
-			},
-		});
-		assert.equal(resFirst.statusCode, 200);
-		assert.equal(resFirst.headers["idempotency-key"], ingestKey);
-		const firstJson = JSON.parse(resFirst.body);
-		assert.equal(firstJson.success, true);
+			// 7c. Первичное выполнение с валидным ключом
+			const ingestKey = fixtureUuid("ingestIdem", 701);
+			const resFirst = await pricelistApp.inject({
+				method: "POST",
+				url: "/api/pricelist/ingest",
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": ingestKey,
+				},
+				payload: {
+					rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+				},
+			});
+			assert.equal(resFirst.statusCode, 200);
+			assert.equal(
+				resFirst.headers["idempotency-key"] || resFirst.headers["x-idempotency-key"],
+				ingestKey,
+			);
+			const firstJson = JSON.parse(resFirst.body);
+			assert.equal(firstJson.success, true);
 
-		// 7d. Повторный вызов с тем же Idempotency-Key возвращает replay без дублирования
-		const resReplay = await app.inject({
-			method: "POST",
-			url: "/api/pricelist/ingest",
-			headers: {
-				"x-dente-staff-token": tokenDoctor,
-				"idempotency-key": ingestKey,
-			},
-			payload: {
-				rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
-			},
-		});
-		assert.equal(resReplay.statusCode, 200);
-		const replayedHeader = resReplay.headers["idempotency-replayed"] || resReplay.headers["x-idempotency-replayed"];
-		assert.equal(replayedHeader, "true");
+			// 7d. Повторный вызов с тем же Idempotency-Key возвращает replay без дублирования
+			const resReplay = await pricelistApp.inject({
+				method: "POST",
+				url: "/api/pricelist/ingest",
+				headers: {
+					"x-dente-staff-token": tokenDoctor,
+					"idempotency-key": ingestKey,
+				},
+				payload: {
+					rawContent: "A16.07.002 Восстановление зуба пломбой 4500",
+				},
+			});
+			assert.equal(resReplay.statusCode, 200);
+			const replayedHeader =
+				resReplay.headers["idempotency-replayed"] || resReplay.headers["x-idempotency-replayed"];
+			assert.equal(replayedHeader, "true");
+		} finally {
+			await pricelistApp.close();
+		}
 	});
 
 	// ─── 8. MIGRATION EXPRESS IMPORT IDEMPOTENCY & COMMIT GUARD ─────────────────

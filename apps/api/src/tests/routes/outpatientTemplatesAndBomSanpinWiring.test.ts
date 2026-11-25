@@ -12,6 +12,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -278,12 +279,18 @@ describe("Frontend-Backend API Wiring & Orphan Discovery Verification", () => {
 				headers: {
 					"content-type": "application/json",
 					"x-dente-staff-token": staffToken,
+					"Idempotency-Key": randomUUID(),
 				},
 				payload: {
-					treatment_reference_id: VISIT_ID,
-					clamp_at_zero: true,
-					items: [{ inventory_item_id: INVENTORY_ITEM_ID, quantity: 10 }],
-					notes: "Тестовое списание визита с мягким овердрафтом",
+					visitId: VISIT_ID,
+					allowOverdraft: true,
+					items: [
+						{
+							inventoryItemId: INVENTORY_ITEM_ID,
+							quantity: 10,
+							reason: "Тестовое списание визита с мягким овердрафтом",
+						},
+					],
 				},
 			});
 
@@ -487,6 +494,7 @@ describe("Frontend-Backend API Wiring & Orphan Discovery Verification", () => {
 				headers: {
 					"content-type": "application/json",
 					"x-dente-staff-token": staffToken,
+					"Idempotency-Key": randomUUID(),
 				},
 				payload: {
 					cashierFullName: "Администратор Смены А. А.",
@@ -501,6 +509,7 @@ describe("Frontend-Backend API Wiring & Orphan Discovery Verification", () => {
 				headers: {
 					"content-type": "application/json",
 					"x-dente-staff-token": staffToken,
+					"Idempotency-Key": randomUUID(),
 				},
 				payload: {
 					cashierFullName: "Администратор Смены А. А.",

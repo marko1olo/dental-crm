@@ -6,6 +6,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -26,7 +27,7 @@ import {
 	isDatabaseUnavailable,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
-import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 
 const FIXTURE = "branchesAndScheduleCollisionsTest";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
@@ -53,7 +54,7 @@ describe("ДОМЕН 30: Multi-Clinic Chain & Cross-Branch Shifts Verification",
 			throw err;
 		}
 
-		app = await createTenantTestApp();
+		app = await createIdempotentTenantTestApp();
 		await registerSettingsRoutes(app);
 		await registerScheduleRoutes(app);
 		await app.ready();
@@ -151,6 +152,7 @@ describe("ДОМЕН 30: Multi-Clinic Chain & Cross-Branch Shifts Verification",
 			url: "/api/branches",
 			headers: {
 				authorization: `Bearer ${tokenAdmin}`,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				name: "Филиал Восток",
@@ -175,6 +177,7 @@ describe("ДОМЕН 30: Multi-Clinic Chain & Cross-Branch Shifts Verification",
 			url: `/api/branches/${BRANCH_A_ID}`,
 			headers: {
 				authorization: `Bearer ${tokenAdmin}`,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				name: "Филиал Север (Флагман)",
@@ -226,6 +229,7 @@ describe("ДОМЕН 30: Multi-Clinic Chain & Cross-Branch Shifts Verification",
 			url: "/api/schedule/shifts",
 			headers: {
 				authorization: `Bearer ${tokenAdmin}`,
+				"idempotency-key": randomUUID(),
 			},
 			payload: conflictingShiftsPayload,
 		});
@@ -269,6 +273,7 @@ describe("ДОМЕН 30: Multi-Clinic Chain & Cross-Branch Shifts Verification",
 			url: "/api/schedule/shifts",
 			headers: {
 				authorization: `Bearer ${tokenAdmin}`,
+				"idempotency-key": randomUUID(),
 			},
 			payload: validShiftsPayload,
 		});

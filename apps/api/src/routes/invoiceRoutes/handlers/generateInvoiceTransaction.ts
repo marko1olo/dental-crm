@@ -1,15 +1,9 @@
 import { randomUUID } from "node:crypto";
-import {
-	formatDiscountPercent,
-	kopecksToRubles,
-	rublesToKopecks,
-	type validatePlanToInvoice,
-} from "@dental/shared";
+import { formatDiscountPercent } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
 import { treatmentItems, treatmentPlans } from "../../../db/schema/clinical.js";
-import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { buildTreatmentItemsToInsert } from "../invoiceCalculationHelpers.js";
 import type {
 	CatalogRow,
@@ -23,7 +17,7 @@ export async function executeGenerateInvoiceTransaction(params: {
 	data: GenerateInvoiceFromPlanBody;
 	totalNetRub: number;
 	invoiceNumber: string;
-	validationReport: ReturnType<typeof validatePlanToInvoice>;
+	validationReport: ReturnType<typeof import("@dental/shared").validatePlanToInvoice>;
 	catalogRows: CatalogRow[];
 	targetPlanDbItems: TreatmentPlanItemRow[];
 }): Promise<{ invoiceId: string; createdItemIds: string[] }> {
@@ -37,52 +31,10 @@ export async function executeGenerateInvoiceTransaction(params: {
 		targetPlanDbItems,
 	} = params;
 
-	let finalInvoiceId: string = randomUUID();
+	const finalInvoiceId: string = randomUUID();
 	const createdItemIds: string[] = [];
 
 	await withTenantCtx(orgId, async (tx) => {
-		if (data.clientMutationId) {
-			const [existingRecord] = await tx
-				.select()
-				.from(idempotencyKeys)
-				.where(
-					and(
-						eq(idempotencyKeys.clinicId, orgId),
-						eq(idempotencyKeys.key, data.clientMutationId),
-					),
-				)
-				.limit(1);
-
-			if (existingRecord?.status === "completed" && existingRecord.responseBody) {
-				const body = existingRecord.responseBody as {
-					invoiceId?: string;
-					createdItemIds?: string[];
-				};
-				if (body.invoiceId) {
-					const [existingInvoice] = await tx
-						.select({ id: patientInvoices.id })
-						.from(patientInvoices)
-						.where(
-							and(
-								eq(patientInvoices.id, body.invoiceId),
-								eq(patientInvoices.organizationId, orgId),
-							),
-						)
-						.limit(1);
-
-					if (existingInvoice) {
-						finalInvoiceId = existingInvoice.id;
-						if (Array.isArray(body.createdItemIds)) {
-							for (const id of body.createdItemIds) {
-								createdItemIds.push(id);
-							}
-						}
-						return;
-					}
-				}
-			}
-		}
-
 		if (data.planId) {
 			await tx
 				.select()
@@ -158,26 +110,6 @@ export async function executeGenerateInvoiceTransaction(params: {
 			});
 
 			await tx.insert(invoiceItems).values(invoiceItemsToInsert);
-		}
-
-		if (data.clientMutationId) {
-			await tx
-				.insert(idempotencyKeys)
-				.values({
-					clinicId: orgId,
-					key: data.clientMutationId,
-					status: "completed",
-					responseCode: 201,
-					responseBody: { invoiceId: finalInvoiceId, createdItemIds },
-				})
-				.onConflictDoUpdate({
-					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-					set: {
-						status: "completed",
-						responseBody: { invoiceId: finalInvoiceId, createdItemIds },
-						lockedAt: new Date(),
-					},
-				});
 		}
 	});
 

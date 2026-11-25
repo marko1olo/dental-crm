@@ -9,6 +9,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -241,7 +242,10 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		const updateRes = await app.inject({
 			method: "PUT",
 			url: `/api/inventory/${ORG_ID}/${OVERDRAFT_ITEM_ID}`,
-			headers: authHeaders({ "content-type": "application/json" }),
+			headers: authHeaders({
+				"content-type": "application/json",
+				"idempotency-key": randomUUID(),
+			}),
 			payload: {
 				name: "Коффердам латексный Medium (обновленный артикул)",
 				purchasePriceKopecks: 92000,
@@ -265,7 +269,10 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		const patchRes = await app.inject({
 			method: "PATCH",
 			url: `/api/inventory/${ORG_ID}/items/${OVERDRAFT_ITEM_ID}`,
-			headers: authHeaders({ "content-type": "application/json" }),
+			headers: authHeaders({
+				"content-type": "application/json",
+				"idempotency-key": randomUUID(),
+			}),
 			payload: {
 				unit: "упак",
 			},
@@ -288,6 +295,15 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		if (!databaseReady) return t.skip("Database is down");
 
 		const IDEM_KEY = "018e6e5a-73d8-7b9c-8511-9a7c6e4d2f01"; // Valid UUIDv7 format
+		const canonicalPayload = {
+			items: [
+				{
+					inventoryItemId: FRACTIONAL_ITEM_ID,
+					quantity: 1.7,
+					notes: "Эндодонтическое лечение (зуб 16)",
+				},
+			],
+		};
 
 		// First deduction call
 		const res1 = await app.inject({
@@ -297,17 +313,7 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 				"content-type": "application/json",
 				"idempotency-key": IDEM_KEY,
 			}),
-			payload: {
-				serviceCode: "A16.07.002.099",
-				serviceName: "Эндодонтическое лечение",
-				toothCode: "16",
-				materials: [
-					{
-						itemId: FRACTIONAL_ITEM_ID,
-						quantity: 1.7,
-					},
-				],
-			},
+			payload: canonicalPayload,
 		});
 
 		assert.equal(res1.statusCode, 200, res1.body);
@@ -315,7 +321,7 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		assert.equal(body1.success, true);
 		assert.notEqual(body1.alreadyProcessed, true);
 
-		// Repeat call with identical Idempotency-Key (simulating network retry / double click)
+		// Repeat call with identical Idempotency-Key (treatment_consumable_deductions dedup)
 		const res2 = await app.inject({
 			method: "POST",
 			url: `/api/visits/${VISIT_ID}/consumables`,
@@ -323,17 +329,7 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 				"content-type": "application/json",
 				"idempotency-key": IDEM_KEY,
 			}),
-			payload: {
-				serviceCode: "A16.07.002.099",
-				serviceName: "Эндодонтическое лечение",
-				toothCode: "16",
-				materials: [
-					{
-						itemId: FRACTIONAL_ITEM_ID,
-						quantity: 1.7,
-					},
-				],
-			},
+			payload: canonicalPayload,
 		});
 
 		assert.equal(res2.statusCode, 200, res2.body);

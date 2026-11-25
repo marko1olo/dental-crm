@@ -19,6 +19,7 @@
  */
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -289,6 +290,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorStaffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				toothNumbers: [46],
@@ -317,7 +319,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 				);
 			assert.ok(toothState, "Состояние зуба 46 должно быть в базе данных");
 			assert.strictEqual(toothState.state, "Caries");
-			assert.deepStrictEqual(toothState.surfaces, ["M", "O", "D"]);
+			assert.deepStrictEqual(toothState.surfaces, ["d", "m", "o"]);
 		});
 
 		// -------------------------------------------------------------------------
@@ -358,7 +360,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 		// -------------------------------------------------------------------------
 		// ШАГ 8: Наряд в зуботехническую лабораторию (Lab Order) с Idempotency-Key
 		// -------------------------------------------------------------------------
-		const labMutationKey = `lab-order-key-${Date.now()}`;
+		const labMutationKey = randomUUID();
 		const labRes1 = await app.inject({
 			method: "POST",
 			url: "/api/clinical/lab-orders",
@@ -441,6 +443,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorStaffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				visitId: VISIT_ID,
@@ -493,6 +496,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorStaffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				visitId: VISIT_ID,
@@ -516,7 +520,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 		// -------------------------------------------------------------------------
 		// ШАГ 10: Формирование счёта (Invoice Generation)
 		// -------------------------------------------------------------------------
-		const invoiceMutationKey = `invoice-gen-${Date.now()}`;
+		const invoiceMutationKey = randomUUID();
 		const invoiceRes = await app.inject({
 			method: "POST",
 			url: "/api/invoices/generate-from-plan",
@@ -565,6 +569,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": adminStaffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				openedByUserId: ADMIN_ID,
@@ -583,7 +588,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 		// Наличные: 1,500.00 ₽ (150,000 копеек)
 		// Безнал (Карта 3,000 + СБП 2,000): 5,000.00 ₽ (500,000 копеек)
 		// Расхождение: ровно 0 копеек!
-		const paymentMutationKey = `split-pay-${Date.now()}`;
+		const paymentMutationKey = randomUUID();
 		const paymentRes1 = await app.inject({
 			method: "POST",
 			url: "/api/billing/payments",
@@ -715,6 +720,7 @@ describe("MANDATE INQUISITOR 2: Closed Loop Clinical Cycle & Financial/Stock Int
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": adminStaffToken,
+				"idempotency-key": randomUUID(),
 			},
 			payload: {
 				closedByUserId: ADMIN_ID,

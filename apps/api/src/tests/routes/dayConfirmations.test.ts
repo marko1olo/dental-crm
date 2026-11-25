@@ -17,6 +17,8 @@ import {
 	registerDayConfirmationRoutes,
 	tomorrowInTimeZone,
 } from "../../routes/dayConfirmations.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -59,7 +61,12 @@ const FIXTURE = "dayConfirmations";
 const ORG_ID = fixtureUuid(FIXTURE, 1);
 const CLINIC_ID = fixtureUuid(FIXTURE, 2);
 const DOCTOR_ID = fixtureUuid(FIXTURE, 3);
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const ORG_HEADERS = {
+	"x-dente-staff-token": signToken(
+		{ organizationId: ORG_ID, userId: DOCTOR_ID, role: "admin" },
+		authTokenSecret(),
+	),
+};
 
 // Четыре пациента под четыре разных случая.
 const CONFIRMED_PATIENT = fixtureUuid(FIXTURE, 0x11);
@@ -615,10 +622,18 @@ describe("список подтверждений на день", () => {
 	test("данные чужой организации не видны", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
+		const foreignToken = signToken(
+			{
+				organizationId: "dce70000-0000-4000-8000-0000000007ff",
+				userId: fixtureUuid(FIXTURE, 0xfe),
+				role: "admin",
+			},
+			authTokenSecret(),
+		);
 		const response = await app.inject({
 			method: "GET",
 			url: `/api/schedule/day-confirmations?date=${isoDate}`,
-			headers: { "x-organization-id": "dce70000-0000-4000-8000-0000000007ff" },
+			headers: { "x-dente-staff-token": foreignToken },
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		assert.equal(JSON.parse(response.body).summary.total, 0);

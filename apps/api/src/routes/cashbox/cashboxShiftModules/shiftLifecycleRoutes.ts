@@ -18,7 +18,6 @@ import { withTenantCtx } from "../../../db/rls.js";
 import {
 	cashBoxes,
 	cashBoxShifts,
-	idempotencyKeys,
 	users,
 } from "../../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
@@ -73,64 +72,24 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const effectiveUserId = await withTenantCtx(orgId, async (tx) => {
-			if (openIdempotencyKey) {
-				const [found] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, openIdempotencyKey),
-						),
-					)
-					.limit(1);
-				if (found && found.status === "completed" && found.responseBody) {
-					return { kind: "replay" as const, record: found };
-				}
-			}
-			const resolved = await resolveEffectiveCashierUserId(tx, orgId, requestedUserId, currentUserId);
-			return { kind: "proceed" as const, userId: resolved };
-		});
+		const resolvedUserId = await withTenantCtx(orgId, async (tx) =>
+			resolveEffectiveCashierUserId(tx, orgId, requestedUserId, currentUserId),
+		);
 
-		if (effectiveUserId.kind === "replay") {
-			reply.header("idempotency-replayed", "true");
-			reply.header("x-idempotency-replayed", "true");
-			return reply
-				.code(effectiveUserId.record.responseCode || 200)
-				.send(effectiveUserId.record.responseBody);
-		}
-
-		if (!effectiveUserId.userId) {
+		if (!resolvedUserId) {
 			return reply.code(400).send({
 				error: "UserRequired",
 				message:
 					"Для открытия кассовой смены требуется идентификатор сотрудника (кассира/администратора/врача).",
 			});
 		}
-		const openedByUserId = effectiveUserId.userId;
+		const openedByUserId = resolvedUserId;
 
-		const openTxOutcome = await withTenantCtx(orgId, async (tx) => {
+		const openedShifts = await withTenantCtx(orgId, async (tx) => {
 			// Блокируем параллельные гонки открытия смен
 			await tx.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_box_shifts_lock'))`,
 			);
-
-			if (openIdempotencyKey) {
-				const [raceFound] = await tx
-					.select()
-					.from(idempotencyKeys)
-					.where(
-						and(
-							eq(idempotencyKeys.clinicId, orgId),
-							eq(idempotencyKeys.key, openIdempotencyKey),
-						),
-					)
-					.limit(1);
-				if (raceFound && raceFound.status === "completed" && raceFound.responseBody) {
-					return { kind: "replay" as const, record: raceFound };
-				}
-			}
 
 			await checkAndAutoCloseExpiredShifts(tx, orgId);
 			await ensureOrganizationCashBoxes(tx, orgId);
@@ -207,18 +166,8 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 				}
 			}
 
-			return { kind: "opened" as const, shifts };
+			return shifts;
 		});
-
-		if (openTxOutcome.kind === "replay") {
-			reply.header("idempotency-replayed", "true");
-			reply.header("x-idempotency-replayed", "true");
-			return reply
-				.code(openTxOutcome.record.responseCode || 200)
-				.send(openTxOutcome.record.responseBody);
-		}
-
-		const openedShifts = openTxOutcome.shifts;
 
 		// Аппаратное открытие смены на ККТ строго ВНЕ транзакции PostgreSQL
 		try {
@@ -240,18 +189,6 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 		if (openIdempotencyKey) {
 			reply.header("Idempotency-Key", openIdempotencyKey);
 			reply.header("X-Idempotency-Key", openIdempotencyKey);
-			await withTenantCtx(orgId, async (tx) => {
-				await tx
-					.insert(idempotencyKeys)
-					.values({
-						clinicId: orgId,
-						key: openIdempotencyKey,
-						status: "completed",
-						responseBody: response,
-						responseCode: 200,
-					})
-					.onConflictDoNothing();
-			});
 		}
 
 		return reply.send(response);

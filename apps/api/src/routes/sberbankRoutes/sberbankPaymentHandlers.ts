@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
-import { computePayloadHash, kopecksToNumericString, kopecksToRubles } from "@dental/shared";
-import { and, eq, or } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import { kopecksToRubles } from "@dental/shared";
+import { and, eq, or, sql } from "drizzle-orm";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	requireResolvedOrganizationId as requireOrganizationContext,
 } from "../../accessGuard.js";
@@ -10,7 +10,6 @@ import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	generatedDocuments,
-	idempotencyKeys,
 	patientInvoices,
 	patients,
 	payments,
@@ -120,8 +119,6 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 				(request.headers["idempotency-key"] as string | undefined) ||
 				(request.headers["x-idempotency-key"] as string | undefined);
 			const idempotencyKey = rawIdempotencyKey?.trim();
-			const payloadHash = computePayloadHash(parsed.data);
-			let acquiredInFlightKey = false;
 
 			if (idempotencyKey) {
 				if (!isValidUuid(idempotencyKey)) {
@@ -130,67 +127,8 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						message: "Заголовок Idempotency-Key должен быть корректным UUID.",
 					});
 				}
-
-				const idemCheck = await withTenantCtx(organizationId, async (tx) => {
-					const [existing] = await tx
-						.select()
-						.from(idempotencyKeys)
-						.where(
-							and(
-								eq(idempotencyKeys.clinicId, organizationId),
-								eq(idempotencyKeys.key, idempotencyKey),
-							),
-						)
-						.for("update")
-						.limit(1);
-
-					if (existing) {
-						if (existing.payloadHash && existing.payloadHash !== payloadHash) {
-							return { action: "mismatch" as const, existing };
-						}
-						if (existing.status === "in_flight") {
-							return { action: "in_flight" as const, existing };
-						}
-						if (existing.status === "completed" && existing.responseBody) {
-							return { action: "replay" as const, existing };
-						}
-					}
-
-					await tx
-						.insert(idempotencyKeys)
-						.values({
-							clinicId: organizationId,
-							key: idempotencyKey,
-							status: "in_flight",
-							payloadHash,
-							responseCode: 0,
-							lockedAt: new Date(),
-						})
-						.onConflictDoNothing({
-							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-						});
-					return { action: "acquired" as const, existing: null };
-				});
-
-				if (idemCheck.action === "mismatch") {
-					return reply.status(409).send({
-						error: "IdempotencyConflict",
-						message: "Ключ идемпотентности уже использован с другим содержимым запроса.",
-					});
-				}
-				if (idemCheck.action === "in_flight") {
-					return reply.status(409).send({
-						error: "IdempotencyConflict",
-						message: "Операция с этим Idempotency-Key уже выполняется.",
-					});
-				}
-				if (idemCheck.action === "replay") {
-					return reply
-						.header("idempotency-replayed", "true")
-						.status(idemCheck.existing.responseCode)
-						.send(idemCheck.existing.responseBody);
-				}
-				acquiredInFlightKey = true;
+				reply.header("Idempotency-Key", idempotencyKey);
+				reply.header("X-Idempotency-Key", idempotencyKey);
 			}
 
 			const { patientId, amountKopecks, visitId, documentId, invoiceId } = parsed.data;
@@ -252,47 +190,8 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 					});
 				});
 
-				const responsePayload = { success: true, orderId: res.orderId, formUrl: res.formUrl };
-
-				if (idempotencyKey && acquiredInFlightKey) {
-					await withTenantCtx(organizationId, async (tx) => {
-						await tx
-							.insert(idempotencyKeys)
-							.values({
-								clinicId: organizationId,
-								key: idempotencyKey,
-								status: "completed",
-								payloadHash,
-								responseCode: 200,
-								responseBody: responsePayload,
-							})
-							.onConflictDoUpdate({
-								target: [idempotencyKeys.clinicId, idempotencyKeys.key],
-								set: {
-									status: "completed",
-									payloadHash,
-									responseCode: 200,
-									responseBody: responsePayload,
-								},
-							});
-					});
-				}
-
-				return responsePayload;
+				return { success: true, orderId: res.orderId, formUrl: res.formUrl };
 			} catch (error) {
-				if (idempotencyKey && acquiredInFlightKey) {
-					await withTenantCtx(organizationId, async (tx) => {
-						await tx
-							.delete(idempotencyKeys)
-							.where(
-								and(
-									eq(idempotencyKeys.clinicId, organizationId),
-									eq(idempotencyKeys.key, idempotencyKey),
-									eq(idempotencyKeys.status, "in_flight"),
-								),
-							);
-					});
-				}
 				return reply.status(500).send({
 					error: "SberbankError",
 					message: error instanceof Error ? error.message : "Неизвестная ошибка",
@@ -300,6 +199,14 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 			}
 		},
 	);
+
+	function mapSberbankOrderStatus(code: number | undefined): string {
+		if (code === 2) return "success";
+		if (code === 3 || code === 6) return "failed";
+		if (code === 1) return "approved";
+		if (code === 4) return "refunded";
+		return "pending";
+	}
 
 	app.get(
 		"/api/sberbank/status/:orderId",
@@ -332,20 +239,86 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 
 			try {
 				const sberStatus = await client.getOrderStatusExtended(orderId);
-				const code = sberStatus.orderStatus;
+				const mappedStatus = mapSberbankOrderStatus(sberStatus.orderStatus);
 
-				let mappedStatus = "pending";
-				if (code === 2) {
-					mappedStatus = "success";
-				} else if (code === 3 || code === 6) {
-					mappedStatus = "failed";
-				} else if (code === 1) {
-					mappedStatus = "approved";
-				} else if (code === 4) {
-					mappedStatus = "refunded";
+				const existingTx = await withTenantCtx(orgId, async (tx) => {
+					const [row] = await tx
+						.select({
+							id: sberbankTransactions.id,
+							status: sberbankTransactions.status,
+							amountKopecks: sberbankTransactions.amountKopecks,
+						})
+						.from(sberbankTransactions)
+						.where(
+							and(
+								eq(sberbankTransactions.orderId, orderId),
+								eq(sberbankTransactions.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					return row ?? null;
+				});
+
+				if (!existingTx) {
+					return reply.status(404).send({
+						error: "TransactionNotFound",
+						message: "Транзакция оплаты Сбербанк не найдена.",
+					});
 				}
 
+				return {
+					success: true,
+					status: mappedStatus,
+					recordedStatus: existingTx.status,
+					amount: Number(existingTx.amountKopecks),
+				};
+			} catch (error) {
+				return reply.status(500).send({
+					error: "SberbankError",
+					message: error instanceof Error ? error.message : "Неизвестная ошибка",
+				});
+			}
+		},
+	);
+
+	app.post(
+		"/api/sberbank/status/:orderId",
+		sberbankStatusFastifySchema,
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const perm = await requirePermission(db, request, reply, "finance.write");
+			if (!perm) return;
+			const paramsParsed = sberbankStatusParamsSchema.safeParse(request.params);
+			if (!paramsParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор заказа.",
+					details: paramsParsed.error.issues,
+				});
+			}
+			const { orderId } = paramsParsed.data;
+			const orgId = await requireOrganizationContext(request, reply);
+			if (!orgId) return;
+
+			let client: SberbankClient;
+			try {
+				client = new SberbankClient();
+			} catch (error) {
+				return reply.status(501).send({
+					error: "PaymentGatewayNotConfigured",
+					message:
+						"Платёжный шлюз Сбербанка не подключён: интеграция отсутствует в сборке.",
+				});
+			}
+
+			try {
+				const sberStatus = await client.getOrderStatusExtended(orderId);
+				const mappedStatus = mapSberbankOrderStatus(sberStatus.orderStatus);
+
 				return await withTenantCtx(orgId, async (tx) => {
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext(${orgId}), hashtext('sberbank_status:' || ${orderId}))`,
+					);
+
 					const [lockedTx] = await tx
 						.select()
 						.from(sberbankTransactions)

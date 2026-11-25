@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
+import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	organizations,
@@ -15,7 +17,7 @@ import {
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "../support/fixtureOrganizations.js";
-import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 
 /**
  * ИНТЕГРАЦИЯ СБЕРБАНКА.
@@ -82,13 +84,14 @@ function restoreSberbankConfiguration(environment: SberbankEnvironment): void {
 }
 
 describe("Sberbank Acquiring Routes", () => {
-	const app = createTenantTestApp();
+	let app: FastifyInstance;
 	let staffToken = "";
 	let databaseAvailable = true;
 	let originalSberbankEnvironment: SberbankEnvironment;
 
 	before(async () => {
 		originalSberbankEnvironment = clearSberbankConfiguration();
+		app = await createIdempotentTenantTestApp();
 		await registerSberbankRoutes(app);
 		await app.ready();
 		staffToken = signToken(
@@ -149,6 +152,7 @@ describe("Sberbank Acquiring Routes", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/sberbank/pay",
+			headers: { "idempotency-key": randomUUID() },
 			payload: { amount: 1500 },
 		});
 		assert.equal(response.statusCode, 400, response.body);
@@ -162,7 +166,10 @@ describe("Sberbank Acquiring Routes", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/sberbank/pay",
-			headers: { "x-dente-staff-token": staffToken },
+			headers: {
+				"x-dente-staff-token": staffToken,
+				"idempotency-key": randomUUID(),
+			},
 			payload: { patientId: PATIENT_ID, amount: 1500 },
 		});
 		assert.equal(response.statusCode, 501, response.body);

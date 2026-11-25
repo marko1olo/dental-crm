@@ -34,7 +34,7 @@ import { registerFiscalReceiptRoutes } from "../../routes/fiscal/receiptRoutes/i
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { createIdempotentTenantTestApp } from "../support/tenantTestApp.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -70,7 +70,7 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 			authTokenSecret(),
 		);
 
-		app = createTenantTestApp();
+		app = await createIdempotentTenantTestApp();
 		await registerCashboxRoutes(app);
 		await registerFiscalReceiptRoutes(app);
 		await app.ready();

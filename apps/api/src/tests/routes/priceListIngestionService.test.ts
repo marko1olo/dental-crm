@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import type { FastifyInstance } from "fastify";
 import type { ServiceCatalogItem } from "@dental/shared";
@@ -193,6 +194,7 @@ describe("POST /api/pricelist/ingest Route Integration", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"Idempotency-Key": randomUUID(),
 			},
 			payload: {
 				rawContent: "",
@@ -214,6 +216,7 @@ describe("POST /api/pricelist/ingest Route Integration", () => {
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
+				"Idempotency-Key": randomUUID(),
 			},
 			payload: {
 				rawContent: rawPricelist,
