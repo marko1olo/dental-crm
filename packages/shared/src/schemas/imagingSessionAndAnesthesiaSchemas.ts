@@ -74,7 +74,7 @@ export type VisitFlowStepKind = z.infer<typeof visitFlowStepKindSchema>;
 
 export const visitFlowDocumentSuggestionsSchema = z.object({
 	suggestions: z.array(z.string().trim().min(1).max(120)).max(24),
-});
+}).strict();
 
 export type VisitFlowDocumentSuggestions = z.infer<
 	typeof visitFlowDocumentSuggestionsSchema
@@ -85,7 +85,7 @@ export const visitFlowDraftStepResultSchema = z.object({
 	status: visitFlowStepStatusSchema,
 	message: z.string().nullable(),
 	data: visitNoteDraftSchema.nullable(),
-});
+}).strict();
 
 export type VisitFlowDraftStepResult = z.infer<
 	typeof visitFlowDraftStepResultSchema
@@ -96,7 +96,7 @@ export const visitFlowPlanStepResultSchema = z.object({
 	status: visitFlowStepStatusSchema,
 	message: z.string().nullable(),
 	data: treatmentPlanPayloadSchema.nullable(),
-});
+}).strict();
 
 export type VisitFlowPlanStepResult = z.infer<
 	typeof visitFlowPlanStepResultSchema
@@ -107,7 +107,7 @@ export const visitFlowRecommendationsStepResultSchema = z.object({
 	status: visitFlowStepStatusSchema,
 	message: z.string().nullable(),
 	data: postVisitRecommendationsPayloadSchema.nullable(),
-});
+}).strict();
 
 export type VisitFlowRecommendationsStepResult = z.infer<
 	typeof visitFlowRecommendationsStepResultSchema
@@ -118,7 +118,7 @@ export const visitFlowDocumentsStepResultSchema = z.object({
 	status: visitFlowStepStatusSchema,
 	message: z.string().nullable(),
 	data: visitFlowDocumentSuggestionsSchema.nullable(),
-});
+}).strict();
 
 export type VisitFlowDocumentsStepResult = z.infer<
 	typeof visitFlowDocumentsStepResultSchema
@@ -169,7 +169,7 @@ export const visitFlowRequestSchema = z.object({
 		.optional(),
 	planPayload: treatmentPlanPayloadSchema.nullable().optional(),
 	recommendationsPayload: postVisitRecommendationsPayloadSchema.nullable().optional(),
-});
+}).strict();
 
 export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;
 
@@ -179,7 +179,7 @@ export const visitFlowResultSchema = z.object({
 	recommendations: visitFlowRecommendationsStepResultSchema,
 	documents: visitFlowDocumentsStepResultSchema,
 	overallStatus: z.enum(["success", "partial", "error"]),
-});
+}).strict();
 
 export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;
 
@@ -193,7 +193,7 @@ export const urgentScheduleRequestSchema = z.object({
 	preferredSlotTime: z.string(),
 	isResolved: z.boolean(),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type UrgentScheduleRequest = z.infer<typeof urgentScheduleRequestSchema>;
 
@@ -207,7 +207,7 @@ export const messageTemplateCatalogSchema = z.object({
 	variables: z.record(z.string(), z.unknown()).optional().nullable(),
 	isActive: z.boolean(),
 	createdAt: z.union([z.string(), z.date()]).optional(), // Can be string or Date, handle flexibly
-});
+}).strict();
 
 export type MessageTemplateCatalog = z.infer<
 	typeof messageTemplateCatalogSchema
@@ -259,7 +259,7 @@ export const loyaltyProgramSchema = z.object({
 	isActive: z.boolean().default(true),
 	createdAt: z.string().optional(),
 	updatedAt: z.string().optional(),
-});
+}).strict();
 
 export type LoyaltyProgram = z.infer<typeof loyaltyProgramSchema>;
 
@@ -277,7 +277,7 @@ export const patientBonusBalanceSchema = z.object({
 	cashbackPercent: z.number().min(0).max(100).default(3),
 	maxInvoiceCoveragePercent: z.number().min(0).max(100).default(30),
 	updatedAt: z.string().optional(),
-});
+}).strict();
 
 export type PatientBonusBalance = z.infer<typeof patientBonusBalanceSchema>;
 
@@ -311,7 +311,7 @@ export const bonusTransactionSchema = z.object({
 	description: z.string(),
 	createdById: z.string().uuid().nullable().optional(),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type BonusTransaction = z.infer<typeof bonusTransactionSchema>;
 
@@ -329,7 +329,7 @@ export const referralCampaignSchema = z.object({
 	),
 	createdAt: z.string().optional(),
 	updatedAt: z.string().optional(),
-});
+}).strict();
 
 export type ReferralCampaign = z.infer<typeof referralCampaignSchema>;
 
@@ -344,7 +344,7 @@ export const patientReferralCodeSchema = z.object({
 	signupCount: z.number().int().nonnegative().default(0),
 	convertedCount: z.number().int().nonnegative().default(0),
 	createdAt: z.string().optional(),
-});
+}).strict();
 
 export type PatientReferralCode = z.infer<typeof patientReferralCodeSchema>;
 
@@ -372,7 +372,7 @@ export const patientReferralSchema = z.object({
 	rewardedAt: z.string().nullable().optional(),
 	createdAt: z.string().optional(),
 	updatedAt: z.string().optional(),
-});
+}).strict();
 
 export type PatientReferral = z.infer<typeof patientReferralSchema>;
 
@@ -476,7 +476,7 @@ export const vitalSignsMeasurementSchema = z.object({
 	spO2Pct: z.number().int().min(50).max(100).optional().nullable(),
 	respiratoryRate: z.number().int().min(5).max(60).optional().nullable(),
 	measuredAt: z.string(),
-});
+}).strict();
 
 export type VitalSignsMeasurement = z.infer<typeof vitalSignsMeasurementSchema>;
 
@@ -508,7 +508,7 @@ export const anesthesiaLogRecordSchema = z.object({
 	notes: z.string().optional().nullable(),
 	complications: z.string().optional().nullable(),
 	createdAt: z.string().optional(),
-});
+}).strict();
 
 export type AnesthesiaLogRecord = z.infer<typeof anesthesiaLogRecordSchema>;
 

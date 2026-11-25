@@ -174,7 +174,7 @@ export const denteTelegramBotSettingsSchema = z.object({
 	staffEscalationChannel: z.string().trim().max(128).nullable(),
 	privacyMode: denteTelegramPrivacyModeSchema,
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type DenteTelegramBotSettings = z.infer<
 	typeof denteTelegramBotSettingsSchema
@@ -511,7 +511,7 @@ export const denteTelegramOutboxSendResponseSchema = z.object({
 	warnings: z.array(z.string()),
 	retryAfterSeconds: z.number().int().nonnegative().nullable().default(null),
 	blockedReason: z.string().nullable(),
-});
+}).strict();
 
 export type DenteTelegramOutboxSendResponse = z.infer<
 	typeof denteTelegramOutboxSendResponseSchema
@@ -541,7 +541,7 @@ export const denteTelegramOutboxSendDueResponseSchema = z.object({
 			]),
 		}),
 	),
-});
+}).strict();
 
 export type DenteTelegramOutboxSendDueResponse = z.infer<
 	typeof denteTelegramOutboxSendDueResponseSchema

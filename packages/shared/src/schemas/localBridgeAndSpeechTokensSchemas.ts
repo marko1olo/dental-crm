@@ -15,7 +15,7 @@ export const localBridgeReadinessResponseSchema = z.object({
 	bridges: z.array(localBridgeReadinessItemSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type LocalBridgeReadinessResponse = z.infer<
 	typeof localBridgeReadinessResponseSchema
@@ -53,7 +53,7 @@ export const localBridgeUsePlanStepSchema = z.object({
 	storesLocalFirst: z.boolean(),
 	blocking: z.boolean(),
 	detail: z.string(),
-});
+}).strict();
 
 export type LocalBridgeUsePlanStep = z.infer<
 	typeof localBridgeUsePlanStepSchema
@@ -70,7 +70,7 @@ export const localBridgeUsePlanSchema = z.object({
 	steps: z.array(localBridgeUsePlanStepSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type LocalBridgeUsePlan = z.infer<typeof localBridgeUsePlanSchema>;
 
@@ -80,7 +80,7 @@ export const localBridgeUsePlansResponseSchema = z.object({
 	plans: z.array(localBridgeUsePlanSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type LocalBridgeUsePlansResponse = z.infer<
 	typeof localBridgeUsePlansResponseSchema
@@ -108,7 +108,7 @@ export const visitNoteDraftQualitySchema = z.object({
 	signals: z.array(z.string()),
 	missingCriticalFields: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type VisitNoteDraftQuality = z.infer<typeof visitNoteDraftQualitySchema>;
 
@@ -139,7 +139,7 @@ export const visitDraftAutosaveSchema = z.object({
 	serverSavedAt: z.string(),
 	transcriptHash: z.string(),
 	hygieneIndices: z.record(z.unknown()).nullable().optional(),
-});
+}).strict();
 
 export type VisitDraftAutosave = z.infer<typeof visitDraftAutosaveSchema>;
 
@@ -164,7 +164,7 @@ export const visitDraftAutosaveResponseSchema = z.object({
 	error: z.string().optional(),
 	reason: z.string().optional(),
 	message: z.string().optional(),
-});
+}).strict();
 
 export type VisitDraftAutosaveResponse = z.infer<
 	typeof visitDraftAutosaveResponseSchema
@@ -198,7 +198,7 @@ export const speechTranscriptPolishResponseSchema = z.object({
 	modelName: z.string().nullable(),
 	neuralWarnings: z.array(z.string()),
 	draft: visitNoteDraftSchema,
-});
+}).strict();
 
 export type SpeechTranscriptPolishResponse = z.infer<
 	typeof speechTranscriptPolishResponseSchema

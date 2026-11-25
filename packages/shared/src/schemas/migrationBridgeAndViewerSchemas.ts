@@ -15,7 +15,7 @@ export const migrationReadinessSchema = z.object({
 	warnings: z.array(migrationReadinessItemSchema),
 	ready: z.array(migrationReadinessItemSchema),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationReadiness = z.infer<typeof migrationReadinessSchema>;
 
@@ -26,7 +26,7 @@ export const migrationBridgeKitActionSchema = z.object({
 	detail: z.string(),
 	safety: z.string(),
 	doneWhen: z.string(),
-});
+}).strict();
 
 export type MigrationBridgeKitAction = z.infer<
 	typeof migrationBridgeKitActionSchema
@@ -58,7 +58,7 @@ export const migrationBridgeKitSchema = z.object({
 	}),
 	privacyBoundary: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationBridgeKit = z.infer<typeof migrationBridgeKitSchema>;
 
@@ -84,7 +84,7 @@ export const migrationLocalSourceWorkupResponseSchema = z.object({
 	privacyWarnings: z.array(z.string()),
 	smartImportLine: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationLocalSourceWorkupResponse = z.infer<
 	typeof migrationLocalSourceWorkupResponseSchema
@@ -130,7 +130,7 @@ export const migrationProbeArtifactSchema = z.object({
 	modifiedAt: z.string().nullable(),
 	depth: z.number().int().nonnegative(),
 	signals: z.array(z.string()),
-});
+}).strict();
 
 export type MigrationProbeArtifact = z.infer<
 	typeof migrationProbeArtifactSchema
@@ -151,7 +151,7 @@ export const migrationProbeAdapterSchema = z.object({
 	output: z.string(),
 	privacy: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationProbeAdapter = z.infer<typeof migrationProbeAdapterSchema>;
 
@@ -189,7 +189,7 @@ export const migrationLocalSourceProbeResponseSchema = z.object({
 	readiness: migrationReadinessSchema,
 	bridgeKit: migrationBridgeKitSchema,
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationLocalSourceProbeResponse = z.infer<
 	typeof migrationLocalSourceProbeResponseSchema
@@ -229,7 +229,7 @@ export const clinicPublicLookupSuggestionSchema = z.object({
 	confidence: z.number().min(0).max(1),
 	fields: updateClinicProfileSchema.partial(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type ClinicPublicLookupSuggestion = z.infer<
 	typeof clinicPublicLookupSuggestionSchema
@@ -250,7 +250,7 @@ export const clinicPublicLookupResponseSchema = z.object({
 	publicLookupTargets: z.array(smartImportPublicLookupTargetSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type ClinicPublicLookupResponse = z.infer<
 	typeof clinicPublicLookupResponseSchema
@@ -288,7 +288,7 @@ export const migrationAutopilotSourceSchema = z.object({
 	bridgeKit: migrationBridgeKitSchema,
 	recommendedAction: z.string(),
 	riskFlags: z.array(z.string()),
-});
+}).strict();
 
 export type MigrationAutopilotSource = z.infer<
 	typeof migrationAutopilotSourceSchema
@@ -300,7 +300,7 @@ export const migrationAutopilotStepSchema = z.object({
 	title: z.string(),
 	detail: z.string(),
 	blocking: z.boolean(),
-});
+}).strict();
 
 export type MigrationAutopilotStep = z.infer<
 	typeof migrationAutopilotStepSchema
@@ -328,7 +328,7 @@ export const migrationAutopilotPacketLaneSchema = z.object({
 	score: z.number().min(0).max(1),
 	detail: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationAutopilotPacketLane = z.infer<
 	typeof migrationAutopilotPacketLaneSchema
@@ -359,7 +359,7 @@ export const migrationAutopilotHandoffChecklistItemSchema = z.object({
 	privacy: z.string(),
 	doneWhen: z.string(),
 	blocking: z.boolean(),
-});
+}).strict();
 
 export type MigrationAutopilotHandoffChecklistItem = z.infer<
 	typeof migrationAutopilotHandoffChecklistItemSchema
@@ -393,7 +393,7 @@ export const migrationAutopilotOperatorScriptStepSchema = z.object({
 	sourceKind: smartImportLegacySourceKindSchema.nullable(),
 	estimatedMinutes: z.number().int().nonnegative(),
 	blocking: z.boolean(),
-});
+}).strict();
 
 export type MigrationAutopilotOperatorScriptStep = z.infer<
 	typeof migrationAutopilotOperatorScriptStepSchema
@@ -404,7 +404,7 @@ export const migrationAutopilotOperatorScriptSchema = z.object({
 	headline: z.string(),
 	totalEstimatedMinutes: z.number().int().nonnegative(),
 	steps: z.array(migrationAutopilotOperatorScriptStepSchema),
-});
+}).strict();
 
 export type MigrationAutopilotOperatorScript = z.infer<
 	typeof migrationAutopilotOperatorScriptSchema
@@ -418,7 +418,7 @@ export const migrationAutopilotDryRunSummarySchema = z.object({
 	estimatedClinicDowntimeMinutes: z.number().int().nonnegative(),
 	fastestRoute: z.string(),
 	nextBestAction: z.string(),
-});
+}).strict();
 
 export type MigrationAutopilotDryRunSummary = z.infer<
 	typeof migrationAutopilotDryRunSummarySchema
@@ -468,7 +468,7 @@ export const migrationAutopilotOperatorPacketSchema = z.object({
 			.enum(["not_configured", "ready", "error", "skipped_no_safe_query"])
 			.nullable(),
 	}),
-});
+}).strict();
 
 export type MigrationAutopilotOperatorPacket = z.infer<
 	typeof migrationAutopilotOperatorPacketSchema
@@ -490,7 +490,7 @@ export const migrationAutopilotResponseSchema = z.object({
 	warnings: z.array(z.string()),
 	privacyWarnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationAutopilotResponse = z.infer<
 	typeof migrationAutopilotResponseSchema
@@ -531,6 +531,6 @@ export const imagingViewerStateSchema = z.object({
 	flipHorizontal: z.boolean().default(false),
 	projection: mprProjectionSchema.default("axial"),
 	preset: mprWindowPresetSchema.default("bone"),
-});
+}).strict();
 
 export type ImagingViewerState = z.infer<typeof imagingViewerStateSchema>;

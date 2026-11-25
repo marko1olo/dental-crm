@@ -117,7 +117,7 @@ export const documentAuditFactsSchema = z.object({
 	doctorCertSerial: z.string().nullable().optional(),
 	doctorCertSubject: z.string().nullable().optional(),
 	doctorSignedAt: z.string().nullable().optional(),
-});
+}).strict();
 
 export type DocumentAuditFacts = z.infer<typeof documentAuditFactsSchema>;
 
@@ -178,7 +178,7 @@ export const imagingStudySchema = z.object({
 	effectiveDoseMsv: z.number().nullable().optional(),
 	previewUrl: z.string(),
 	viewerUrl: z.string().nullable(),
-});
+}).strict();
 
 export type ImagingStudy = z.infer<typeof imagingStudySchema>;
 
@@ -193,7 +193,7 @@ export const importBatchSchema = z.object({
 	warningRows: z.number().int().nonnegative(),
 	blockedRows: z.number().int().nonnegative(),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type ImportBatch = z.infer<typeof importBatchSchema>;
 
@@ -206,7 +206,7 @@ export const auditEventSchema = z.object({
 	action: z.string(),
 	reason: z.string().nullable(),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 
@@ -222,7 +222,7 @@ export const insuranceContractSchema = z.object({
 	annualLimitRub: z.number().min(0).nullable().optional(),
 	isActive: z.boolean().default(true),
 	createdAt: z.string().or(z.date()).optional(),
-});
+}).strict();
 
 export type InsuranceContract = z.infer<typeof insuranceContractSchema>;
 
@@ -283,7 +283,7 @@ export const dashboardSchema = z.object({
 	insuranceContracts: z.array(insuranceContractSchema).optional(),
 	invoices: z.array(invoiceSchema).optional(),
 	labOrders: z.array(z.record(z.string(), z.unknown())).optional(),
-});
+}).strict();
 
 export type Dashboard = z.infer<typeof dashboardSchema> & {
 	readonly labOrders?: readonly MinimalLabOrderForSchedule[] | undefined;
@@ -306,7 +306,7 @@ export const insuranceCalculationItemSchema = z.object({
 	]),
 	priceRub: nonNegativeMoneyRubSchema,
 	quantity: z.number().int().min(1).default(1),
-});
+}).strict();
 
 export type InsuranceCalculationItem = z.infer<typeof insuranceCalculationItemSchema>;
 
@@ -330,7 +330,7 @@ export const insuranceItemBreakdownSchema = z.object({
 	coveragePct: z.number(),
 	coveredAmountRub: z.number(),
 	patientCoPayRub: z.number(),
-});
+}).strict();
 
 export type InsuranceItemBreakdown = z.infer<typeof insuranceItemBreakdownSchema>;
 
@@ -344,7 +344,7 @@ export const insuranceCoverageCalculationResultSchema = z.object({
 	usedAnnualAmountRub: z.number(),
 	remainingAnnualLimitRub: z.number().nullable(),
 	itemBreakdown: z.array(insuranceItemBreakdownSchema),
-});
+}).strict();
 
 export type InsuranceCoverageCalculationResult = z.infer<
 	typeof insuranceCoverageCalculationResultSchema
@@ -518,7 +518,7 @@ export const dmsGuaranteeLetterSchema = z.object({
 	status: dmsGuaranteeLetterStatusSchema.default("active"),
 	createdAt: z.string().or(z.date()).optional(),
 	updatedAt: z.string().or(z.date()).optional(),
-});
+}).strict();
 
 export type DmsGuaranteeLetter = z.infer<typeof dmsGuaranteeLetterSchema>;
 
@@ -563,4 +563,4 @@ export const dmsSplitCalculationItemSchema = z.object({
 	discountKopecks: z.number().int().optional(),
 	isExcluded: z.boolean().optional(),
 	isExplicitlyApproved: z.boolean().optional(),
-});
+}).strict();

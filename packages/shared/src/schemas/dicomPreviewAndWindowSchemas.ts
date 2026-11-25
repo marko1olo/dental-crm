@@ -27,7 +27,7 @@ export const dicomSeriesPreviewRowSchema = z.object({
 	sourceName: z.string(),
 	status: z.enum(["ready", "warning", "blocked"]),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomSeriesPreviewRow = z.infer<typeof dicomSeriesPreviewRowSchema>;
 
@@ -55,7 +55,7 @@ export const dicomSeriesPreviewGroupSchema = z.object({
 	mprReadiness: dicomMprReadinessSchema,
 	status: z.enum(["ready", "warning", "blocked"]),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomSeriesPreviewGroup = z.infer<
 	typeof dicomSeriesPreviewGroupSchema
@@ -72,7 +72,7 @@ export const dicomSeriesPreviewResponseSchema = z.object({
 	rows: z.array(dicomSeriesPreviewRowSchema),
 	series: z.array(dicomSeriesPreviewGroupSchema),
 	parserNotes: z.array(z.string()),
-});
+}).strict();
 
 export type DicomSeriesPreviewResponse = z.infer<
 	typeof dicomSeriesPreviewResponseSchema
@@ -106,7 +106,7 @@ export const dicomFolderSeriesPreviewResponseSchema = z.object({
 	rawText: z.string(),
 	preview: dicomSeriesPreviewResponseSchema,
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomFolderSeriesPreviewResponse = z.infer<
 	typeof dicomFolderSeriesPreviewResponseSchema
@@ -167,7 +167,7 @@ export const dicomFirstFramePreviewResponseSchema = z.object({
 	imageDataUrl: z.string().nullable(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomFirstFramePreviewResponse = z.infer<
 	typeof dicomFirstFramePreviewResponseSchema
@@ -203,7 +203,7 @@ export const dicomLocalFolderDiscoveryCandidateSchema = z.object({
 	confidence: z.number().min(0).max(1),
 	reasons: z.array(z.string()),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomLocalFolderDiscoveryCandidate = z.infer<
 	typeof dicomLocalFolderDiscoveryCandidateSchema
@@ -217,7 +217,7 @@ export const dicomLocalFolderDiscoveryResponseSchema = z.object({
 	candidates: z.array(dicomLocalFolderDiscoveryCandidateSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomLocalFolderDiscoveryResponse = z.infer<
 	typeof dicomLocalFolderDiscoveryResponseSchema
@@ -263,7 +263,7 @@ export const dentalModelFileCandidateSchema = z.object({
 	sizeBytes: z.number().int().nonnegative(),
 	confidence: z.number().min(0).max(1),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DentalModelFileCandidate = z.infer<
 	typeof dentalModelFileCandidateSchema
@@ -327,7 +327,7 @@ export const ctSurfaceModelSourceSeriesRefSchema = z.object({
 	pairingHint: dentalModelWorkbenchPairingHintSchema,
 	studyInstanceUid: z.string().nullable(),
 	seriesInstanceUid: z.string().nullable(),
-});
+}).strict();
 
 export type CtSurfaceModelSourceSeriesRef = z.infer<
 	typeof ctSurfaceModelSourceSeriesRefSchema
@@ -354,7 +354,7 @@ export const ctSurfaceModelManifestSchema = z.object({
 	containsMeshGeometry: z.literal(false),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type CtSurfaceModelManifest = z.infer<
 	typeof ctSurfaceModelManifestSchema
@@ -371,7 +371,7 @@ export const dentalModelWorkbenchItemSchema = z.object({
 	ctSurfaceManifest: ctSurfaceModelManifestSchema.nullable(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DentalModelWorkbenchItem = z.infer<
 	typeof dentalModelWorkbenchItemSchema
@@ -387,7 +387,7 @@ export const dentalModelWorkbenchManifestSchema = z.object({
 	items: z.array(dentalModelWorkbenchItemSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DentalModelWorkbenchManifest = z.infer<
 	typeof dentalModelWorkbenchManifestSchema
@@ -439,7 +439,7 @@ export const localImagingOrganizerCaseSchema = z.object({
 	modelWorkbenchManifest: dentalModelWorkbenchManifestSchema,
 	reasons: z.array(z.string()),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type LocalImagingOrganizerCase = z.infer<
 	typeof localImagingOrganizerCaseSchema
@@ -453,7 +453,7 @@ export const localImagingOrganizerResponseSchema = z.object({
 	cases: z.array(localImagingOrganizerCaseSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type LocalImagingOrganizerResponse = z.infer<
 	typeof localImagingOrganizerResponseSchema
@@ -508,7 +508,7 @@ export const dicomWebConnectorCheckResponseSchema = z.object({
 	latencyMs: z.number().int().nonnegative(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomWebConnectorCheckResponse = z.infer<
 	typeof dicomWebConnectorCheckResponseSchema

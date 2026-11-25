@@ -127,7 +127,7 @@ export const serviceCatalogItemSchema = z.object({
 	isActive: z.boolean().optional().nullable(),
 	priceRub: z.number().optional().nullable(),
 	name: z.string().optional().nullable(),
-});
+}).strict();
 
 export type ServiceCatalogItem = z.infer<typeof serviceCatalogItemSchema>;
 

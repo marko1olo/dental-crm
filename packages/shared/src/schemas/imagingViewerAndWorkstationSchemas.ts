@@ -62,7 +62,7 @@ export const imagingViewerPointSchema = z.object({
 	y: z.number(),
 	z: z.number().nullable().optional(),
 	plane: dicomMprProjectionSchema.nullable().optional(),
-});
+}).strict();
 
 export type ImagingViewerPoint = z.infer<typeof imagingViewerPointSchema>;
 
@@ -75,7 +75,7 @@ export const imagingViewerImplantPlanSchema = z.object({
 	platform: z.string().min(1).max(120),
 	indication: z.string().max(300),
 	selectedAt: z.string().nullable().default(null),
-});
+}).strict();
 
 export type ImagingViewerImplantPlan = z.infer<
 	typeof imagingViewerImplantPlanSchema
@@ -103,7 +103,7 @@ export const imagingViewerSessionStateSchema = z.object({
 	crosshair: z.boolean(),
 	linkedPlanes: z.boolean(),
 	implantPlan: imagingViewerImplantPlanSchema.nullable().default(null),
-});
+}).strict();
 
 export type ImagingViewerSessionState = z.infer<
 	typeof imagingViewerSessionStateSchema
@@ -122,7 +122,7 @@ export const imagingViewerAnnotationSchema = z.object({
 	createdByUserId: z.string().uuid().nullable(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type ImagingViewerAnnotation = z.infer<
 	typeof imagingViewerAnnotationSchema
@@ -153,14 +153,14 @@ export const imagingViewerSessionSchema = z.object({
 	createdAt: z.string(),
 	updatedAt: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type ImagingViewerSession = z.infer<typeof imagingViewerSessionSchema>;
 
 export const imagingViewerSessionResponseSchema = z.object({
 	session: imagingViewerSessionSchema,
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type ImagingViewerSessionResponse = z.infer<
 	typeof imagingViewerSessionResponseSchema
@@ -345,7 +345,7 @@ export const dicomViewerToolConfigSchema = z.object({
 	mode: dicomViewerToolModeSchema,
 	shortcut: z.string().max(20).nullable(),
 	reason: z.string(),
-});
+}).strict();
 
 export type DicomViewerToolConfig = z.infer<typeof dicomViewerToolConfigSchema>;
 
@@ -365,7 +365,7 @@ export const dicomViewerViewportStateSchema = z.object({
 	axisDeg: z.number().min(-180).max(180),
 	crosshair: z.boolean(),
 	linkedPlanes: z.boolean(),
-});
+}).strict();
 
 export type DicomViewerViewportState = z.infer<
 	typeof dicomViewerViewportStateSchema
@@ -376,7 +376,7 @@ export const dicomViewerToolStatePointSchema = z.object({
 	canvas: z.tuple([z.number(), z.number()]).nullable(),
 	plane: dicomMprProjectionSchema.nullable(),
 	sourceIndex: z.number().int().nonnegative(),
-});
+}).strict();
 
 export type DicomViewerToolStatePoint = z.infer<
 	typeof dicomViewerToolStatePointSchema
@@ -402,7 +402,7 @@ export const dicomViewerToolStateAnnotationSchema = z.object({
 	locked: z.boolean(),
 	needsReview: z.boolean(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomViewerToolStateAnnotation = z.infer<
 	typeof dicomViewerToolStateAnnotationSchema
@@ -441,7 +441,7 @@ export const dicomViewerPlanningTaskSchema = z.object({
 	implantPlan: imagingViewerImplantPlanSchema.nullable().default(null),
 	reason: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomViewerPlanningTask = z.infer<
 	typeof dicomViewerPlanningTaskSchema
@@ -494,7 +494,7 @@ export const dicomWorkstationClientFactsSchema = z.object({
 	hardwareTier: hardwareTierSchema.optional(),
 	hardwareScore: z.number().int().min(0).max(100).optional(),
 	gpuType: hardwareGpuTypeSchema.optional(),
-});
+}).strict();
 
 export type DicomWorkstationClientFacts = z.infer<
 	typeof dicomWorkstationClientFactsSchema
@@ -534,7 +534,7 @@ export const dicomClientRuntimeProfileSchema = z.object({
 	label: z.string(),
 	nextAction: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomClientRuntimeProfile = z.infer<
 	typeof dicomClientRuntimeProfileSchema
@@ -546,4 +546,4 @@ export const dicomWorkstationReadinessCheckSchema = z.object({
 	status: z.enum(["pass", "warn", "fail"]),
 	detail: z.string(),
 	nextAction: z.string(),
-});
+}).strict();

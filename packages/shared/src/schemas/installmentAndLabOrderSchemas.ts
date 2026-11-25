@@ -361,7 +361,7 @@ export const prescriptionMedicationRowSchema = z.object({
 	dosage: z.string().trim().min(1).max(160),
 	instructions: z.string().trim().min(1).max(300),
 	duration: z.string().trim().min(1).max(120),
-});
+}).strict();
 
 export type PrescriptionMedicationRow = z.infer<
 	typeof prescriptionMedicationRowSchema

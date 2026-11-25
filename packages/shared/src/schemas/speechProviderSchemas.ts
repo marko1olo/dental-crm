@@ -90,7 +90,7 @@ export const speechRecordingStrategySchema = z.object({
 	reason: z.string(),
 	steps: z.array(z.string()),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type SpeechRecordingStrategy = z.infer<
 	typeof speechRecordingStrategySchema
@@ -203,7 +203,7 @@ export const speechTranscriptionChunkSchema = z.object({
 	warnings: z.array(z.string()),
 	clientRecordedAt: z.string().nullable(),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type SpeechTranscriptionChunk = z.infer<
 	typeof speechTranscriptionChunkSchema
@@ -430,7 +430,7 @@ export const clinicProfileSchema = z.object({
 	hasInsuranceCoPay: z.boolean().optional(),
 	hasInstallments: z.boolean().optional(),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type ClinicProfile = z.infer<typeof clinicProfileSchema>;
 

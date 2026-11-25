@@ -86,7 +86,7 @@ export const dicomGpuRenderPlanSchema = z.object({
 	firstPaintStrategy: z.string(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomGpuRenderPlan = z.infer<typeof dicomGpuRenderPlanSchema>;
 
@@ -146,7 +146,7 @@ export const dicomRenderCacheTaskSchema = z.object({
 	blocking: z.boolean(),
 	label: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomRenderCacheTask = z.infer<typeof dicomRenderCacheTaskSchema>;
 
@@ -164,7 +164,7 @@ export const dicomRenderInteractionPhaseSchema = z.object({
 	maxResidentSlices: z.number().int().positive(),
 	workerCount: z.number().int().nonnegative(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomRenderInteractionPhase = z.infer<
 	typeof dicomRenderInteractionPhaseSchema
@@ -229,7 +229,7 @@ export const dicomProgressiveLoadStageSchema = z.object({
 	budgetMs: z.number().int().positive(),
 	blocking: z.boolean(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomProgressiveLoadStage = z.infer<
 	typeof dicomProgressiveLoadStageSchema
@@ -274,7 +274,7 @@ export const dicomRenderCachePlanResponseSchema = z.object({
 	tasks: z.array(dicomRenderCacheTaskSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomRenderCachePlanResponse = z.infer<
 	typeof dicomRenderCachePlanResponseSchema
@@ -330,7 +330,7 @@ export const dicomViewerToolStateBundleResponseSchema = z.object({
 	exportHints: z.array(z.string()),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomViewerToolStateBundleResponse = z.infer<
 	typeof dicomViewerToolStateBundleResponseSchema
@@ -358,7 +358,7 @@ export const dicomWorkstationReadinessResponseSchema = z.object({
 	checks: z.array(dicomWorkstationReadinessCheckSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomWorkstationReadinessResponse = z.infer<
 	typeof dicomWorkstationReadinessResponseSchema
@@ -392,7 +392,7 @@ export const dicomViewerWorkbenchManifestResponseSchema = z.object({
 	doctorBlocking: z.boolean(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomViewerWorkbenchManifestResponse = z.infer<
 	typeof dicomViewerWorkbenchManifestResponseSchema
@@ -422,7 +422,7 @@ export const dicomWorkbenchBundleSchema = z.object({
 	createdAt: z.string(),
 	updatedAt: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomWorkbenchBundle = z.infer<typeof dicomWorkbenchBundleSchema>;
 
@@ -439,7 +439,7 @@ export type SaveDicomWorkbenchBundleRequest = z.infer<
 export const dicomWorkbenchBundleResponseSchema = z.object({
 	bundle: dicomWorkbenchBundleSchema,
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DicomWorkbenchBundleResponse = z.infer<
 	typeof dicomWorkbenchBundleResponseSchema
@@ -451,7 +451,7 @@ export const dicomWorkbenchBundleListResponseSchema = z.object({
 	generatedAt: z.string(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomWorkbenchBundleListResponse = z.infer<
 	typeof dicomWorkbenchBundleListResponseSchema
@@ -495,7 +495,7 @@ export const dicomFolderWorkupPlanSeriesSchema = z.object({
 	doctorBlocking: z.boolean(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomFolderWorkupPlanSeries = z.infer<
 	typeof dicomFolderWorkupPlanSeriesSchema
@@ -509,7 +509,7 @@ export const dicomFolderWorkupPlanResponseSchema = z.object({
 	plans: z.array(dicomFolderWorkupPlanSeriesSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DicomFolderWorkupPlanResponse = z.infer<
 	typeof dicomFolderWorkupPlanResponseSchema
@@ -551,4 +551,4 @@ export const localBridgeReadinessItemSchema = z.object({
 	privacyBoundary: z.string(),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();

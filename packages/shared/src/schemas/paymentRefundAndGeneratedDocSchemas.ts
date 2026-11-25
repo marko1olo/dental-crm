@@ -232,7 +232,7 @@ export const taxPaymentSnapshotSchema = z.object({
 	paymentIds: z.array(z.string().uuid()).min(1).max(200),
 	fiscalReceiptKeys: z.array(z.string().trim().min(1).max(160)).min(1).max(200),
 	payments: z.array(paymentSchema).min(1).max(200),
-});
+}).strict();
 
 export type TaxPaymentSnapshot = z.infer<typeof taxPaymentSnapshotSchema>;
 
@@ -521,6 +521,6 @@ export const generatedDocumentSchema = z.object({
 	doctorCertSerial: z.string().nullable().optional(),
 	doctorCertSubject: z.string().nullable().optional(),
 	doctorSignedAt: z.string().nullable().optional(),
-});
+}).strict();
 
 export type GeneratedDocument = z.infer<typeof generatedDocumentSchema>;

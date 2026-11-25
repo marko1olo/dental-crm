@@ -201,7 +201,7 @@
 	font-weight: 700;
 	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
 	color: var(--teal-dark, #0f766e);
-	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+	border: 1px solid var(--line, rgba(13, 148, 136, 0.2));
 }
 
 .cw-tooth-badge {
@@ -297,7 +297,7 @@
 	padding: 16px 20px;
 	border-radius: 14px;
 	background: var(--teal-surface, rgba(13, 148, 136, 0.06));
-	border: 1px solid var(--teal-glow, rgba(13, 148, 136, 0.2));
+	border: 1px solid var(--line, rgba(13, 148, 136, 0.2));
 }
 
 [data-theme="dark"] .cw-summary-bar {
