@@ -10,7 +10,7 @@ describe("surgeryMaterialBuilder — Precision Graft & Membrane Deduction (SEV-2
 			membrane: "none",
 		});
 
-		const membrane = materials.find((m) => m.category === "Костная пластика" && m.patterns.includes("bio-gide"));
+		const membrane = materials.find((m) => m.category === "Костная пластика" && (m.patterns ?? []).includes("bio-gide"));
 		assert.equal(membrane, undefined, "Bio-Gide membrane must NOT be deducted when membrane is 'none'");
 
 		const graft = materials.find((m) => m.defaultName.includes("Bio-Oss"));
@@ -119,7 +119,7 @@ describe("surgeryMaterialBuilder — Precision Graft & Membrane Deduction (SEV-2
 		const suture = materials.find((m) => m.category === "Шовный материал");
 		assert.equal(suture, undefined, "Simple extraction without suture options must NOT deduct suture");
 
-		const alvogyl = materials.find((m) => m.patterns.includes("альвожил"));
+		const alvogyl = materials.find((m) => (m.patterns ?? []).includes("альвожил"));
 		assert.equal(alvogyl, undefined, "Tampon hemostasis must NOT deduct Alveogyl");
 
 		const tampon = materials.find((m) => m.defaultName.includes("Марлевые тампоны"));

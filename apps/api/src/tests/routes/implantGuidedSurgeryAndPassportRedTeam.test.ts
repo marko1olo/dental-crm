@@ -116,7 +116,6 @@ describe("RED TEAM FIXER: GUIDED SURGERY, IMPLANT PASSPORT & IDEMPOTENCY VERIFIC
 				lotNumber: "LOT-OSS-2026-99",
 				expirationDate: "2029-12-31",
 				unit: "шт",
-				isCritical: true,
 			});
 		});
 

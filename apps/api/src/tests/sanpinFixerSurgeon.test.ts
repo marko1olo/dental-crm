@@ -18,7 +18,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type InjectOptions } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
@@ -44,6 +44,7 @@ import {
 	fixtureUuid,
 	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
+	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
 import { createTenantTestApp } from "./support/tenantTestApp.js";
 
@@ -69,7 +70,7 @@ describe("SanPiN & Medical Waste Fixer Surgeon — Invariants & SSOT", () => {
 		method: "GET" | "POST" | "PUT" | "DELETE",
 		url: string,
 		opts: {
-			body?: unknown;
+			body?: InjectOptions["payload"];
 			isAlien?: boolean;
 			idempotencyKey?: string;
 			extraHeaders?: Record<string, string>;
@@ -86,21 +87,12 @@ describe("SanPiN & Medical Waste Fixer Surgeon — Invariants & SSOT", () => {
 			headers["idempotency-key"] = opts.idempotencyKey;
 		}
 
-		const injectOpts: {
-			method: "GET" | "POST" | "PUT" | "DELETE";
-			url: string;
-			headers: Record<string, string>;
-			payload?: unknown;
-		} = {
+		const res = await targetApp.inject({
 			method,
 			url,
 			headers,
-		};
-		if (opts.body !== undefined) {
-			injectOpts.payload = opts.body;
-		}
-
-		const res = await targetApp.inject(injectOpts);
+			...(opts.body !== undefined ? { payload: opts.body } : {}),
+		});
 		let json: Record<string, unknown> | null = null;
 		try {
 			json = JSON.parse(res.body) as Record<string, unknown>;
@@ -149,44 +141,41 @@ describe("SanPiN & Medical Waste Fixer Surgeon — Invariants & SSOT", () => {
 		await app.ready();
 
 		// 3. Проверка доступности базы данных
-		if (!isDatabaseUnavailable()) {
-			try {
-				await purgeFixtureOrganizations([ORG_ID_MINE, ORG_ID_ALIEN]);
+		try {
+			await purgeFixtureOrganizations([ORG_ID_MINE, ORG_ID_ALIEN]);
 
-				await db.insert(organizations).values([
-					{
-						id: ORG_ID_MINE,
-						name: "SanPiN Fixer Mine Clinic",
-						timezone: "Europe/Moscow",
-					},
-					{
-						id: ORG_ID_ALIEN,
-						name: "SanPiN Fixer Alien Clinic",
-						timezone: "Europe/Moscow",
-					},
-				]);
+			await withFixtureTenant(ORG_ID_MINE, async (tx) => {
+				await tx.insert(organizations).values({
+					id: ORG_ID_MINE,
+					name: "SanPiN Fixer Mine Clinic",
+				}).onConflictDoNothing();
+				await tx.insert(users).values({
+					id: STAFF_ID_MINE,
+					organizationId: ORG_ID_MINE,
+					fullName: "Медсестра ЦСО Своя",
+					email: "nurse_mine@dente.local",
+					role: "admin",
+				}).onConflictDoNothing();
+			});
 
-				await db.insert(users).values([
-					{
-						id: STAFF_ID_MINE,
-						organizationId: ORG_ID_MINE,
-						fullName: "Медсестра ЦСО Своя",
-						email: "nurse_mine@dente.local",
-						role: "admin",
-					},
-					{
-						id: STAFF_ID_ALIEN,
-						organizationId: ORG_ID_ALIEN,
-						fullName: "Медсестра ЦСО Чужая",
-						email: "nurse_alien@dente.local",
-						role: "admin",
-					},
-				]);
-				databaseReady = true;
-			} catch (err) {
-				// База может быть недоступна в тестовом окружении
-				databaseReady = false;
-			}
+			await withFixtureTenant(ORG_ID_ALIEN, async (tx) => {
+				await tx.insert(organizations).values({
+					id: ORG_ID_ALIEN,
+					name: "SanPiN Fixer Alien Clinic",
+				}).onConflictDoNothing();
+				await tx.insert(users).values({
+					id: STAFF_ID_ALIEN,
+					organizationId: ORG_ID_ALIEN,
+					fullName: "Медсестра ЦСО Чужая",
+					email: "nurse_alien@dente.local",
+					role: "admin",
+				}).onConflictDoNothing();
+			});
+			databaseReady = true;
+		} catch (err) {
+			if (!isDatabaseUnavailable(err)) throw err;
+			// База может быть недоступна в тестовом окружении
+			databaseReady = false;
 		}
 	});
 

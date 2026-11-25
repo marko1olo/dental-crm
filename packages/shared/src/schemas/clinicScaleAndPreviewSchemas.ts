@@ -186,6 +186,7 @@ export const createDocumentSchema = z
 		payload: documentPayloadSchema.nullable().optional(),
 		signatureSvg: z.string().nullable().optional(),
 	})
+	.strict()
 	.superRefine((input, context) => {
 		const disallowedKeys = documentPayloadDisallowedKeys(
 			input.kind,
@@ -213,6 +214,7 @@ export const createPaymentSchema = z
 		visitId: z.string().uuid().nullable().optional(),
 		documentId: z.string().uuid().nullable().optional(),
 		invoiceId: z.string().uuid().nullable().optional(),
+		familyGroupId: z.string().uuid().nullable().optional(),
 		serviceId: z.string().uuid().nullable().optional(),
 		catalogItemId: z.string().uuid().nullable().optional(),
 		discountRub: nonNegativeMoneyRubSchema.nullable().optional(),

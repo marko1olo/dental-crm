@@ -59,7 +59,7 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 				organizationId: orgId,
 				role: "chief_doctor",
 				fullName: "Главврач Рентгенолог",
-				login: "chief_rad",
+				email: "chief_rad@test.local",
 				passwordHash: "hash",
 			}).onConflictDoNothing();
 		});
@@ -130,6 +130,7 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 				organizationId: orgId,
 				patientId,
 				visitId: null,
+				doctorId: null,
 				kind: "periapical",
 				status: "available",
 				title: "Прицельный снимок 36",
@@ -140,18 +141,22 @@ describe("Radiology Backend Engine: Security & Consistency SSOT Suite", () => {
 				sourceName: "RVG Sensor",
 				storagePath: null,
 				fileSizeBytes: 1024,
-				sopInstanceUid: null,
+				dicomStudyUid: null,
 				studyInstanceUid: null,
 				seriesInstanceUid: null,
+				modality: null,
+				seriesDescription: null,
+				studyDate: null,
 				sliceCount: 1,
 				voxelSpacing: null,
 				dimensions: null,
 				bindingStatus: "bound",
+				bindingConfidence: 100,
+				dicomPatientName: null,
+				dicomPatientId: null,
+				dicomBirthDate: null,
 				aiSummary: null,
-				aiFindings: null,
-				metadata: {},
 				createdAt: new Date(),
-				updatedAt: new Date(),
 			};
 
 			const mappedStudy = mapImagingStudy(dummyStudy);

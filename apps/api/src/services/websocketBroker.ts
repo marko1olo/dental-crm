@@ -124,8 +124,18 @@ export interface StaffPresenceInfo {
 	lastSeen: number;
 }
 
+export type WsClientSocket =
+	| WebSocket
+	| {
+			readyState: number;
+			ping?: () => void;
+			terminate: () => void;
+			on?: (event: string, listener: (...args: unknown[]) => void) => void;
+			send: (data: string, cb?: (err?: Error) => void) => void;
+	  };
+
 export type ClientConn = {
-	ws: WebSocket;
+	ws: WsClientSocket;
 	organizationId: string;
 	branchId?: string | undefined;
 	patientId?: string | undefined;
@@ -153,7 +163,7 @@ let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
 export const wsBroker = {
 	addClient(
-		ws: WebSocket,
+		ws: WsClientSocket,
 		organizationId: string,
 		patientIdOrOptions?: string | {
 			patientId?: string | undefined;
@@ -218,7 +228,7 @@ export const wsBroker = {
 		}
 	},
 	updatePresence(
-		ws: WebSocket,
+		ws: WsClientSocket,
 		organizationId: string,
 		info: Omit<StaffPresenceInfo, "lastSeen">,
 	): StaffPresenceInfo | null {
@@ -255,7 +265,7 @@ export const wsBroker = {
 
 		return fullPresence;
 	},
-	removePresence(ws: WebSocket): boolean {
+	removePresence(ws: WsClientSocket): boolean {
 		let targetConn: ClientConn | null = null;
 		for (const client of clients) {
 			if (client.ws === ws) {
@@ -456,7 +466,7 @@ export const wsBroker = {
 			}
 		}
 	},
-	removeClient(ws: WebSocket): boolean {
+	removeClient(ws: WsClientSocket): boolean {
 		wsBroker.removePresence(ws);
 		let removed = false;
 		for (const client of clients) {

@@ -59,8 +59,10 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 		const parsed = checkPlanContinuitySchema.safeParse(validPayload);
 		assert.equal(parsed.success, true);
 
-		let statusCode = 200;
-		let responseBody: Record<string, unknown> | null = null;
+		const replyState: { statusCode: number; body: Record<string, unknown> | null } = {
+			statusCode: 200,
+			body: null,
+		};
 
 		const testOrgId = "0192e2b0-8451-789a-bcde-000000000001";
 		const token = signToken(
@@ -84,32 +86,32 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 
 		const mockReply = {
 			status(code: number) {
-				statusCode = code;
+				replyState.statusCode = code;
 				return this;
 			},
 			code(code: number) {
-				statusCode = code;
+				replyState.statusCode = code;
 				return this;
 			},
 			send(payload: Record<string, unknown>) {
-				responseBody = payload;
+				replyState.body = payload;
 				return this;
 			},
 		} as unknown as FastifyReply;
 
 		await handleCheckPlanContinuity(mockReq, mockReply);
 
-		assert.equal(statusCode, 200);
-		assert.ok(responseBody, "Expected response body");
-		assert.equal(responseBody?.canProceed, true, "Mandate 8e: Doctor autonomy must not be blocked");
-		assert.equal(responseBody?.blocked, false, "Mandate 8e: blocked must be false");
-		assert.equal(responseBody?.isPlanExpired, true, "Plan > 30 days is marked as expired");
-		assert.equal(responseBody?.planAgeDays, 45);
-		assert.equal(responseBody?.requiresChiefPhysicianApproval, false, "No chief physician bureaucracy");
-		assert.equal(responseBody?.requiresSeniorTechnicianApproval, false);
-		assert.equal(responseBody?.autonomyCompliant, true);
+		assert.equal(replyState.statusCode, 200);
+		assert.ok(replyState.body, "Expected response body");
+		assert.equal(replyState.body.canProceed, true, "Mandate 8e: Doctor autonomy must not be blocked");
+		assert.equal(replyState.body.blocked, false, "Mandate 8e: blocked must be false");
+		assert.equal(replyState.body.isPlanExpired, true, "Plan > 30 days is marked as expired");
+		assert.equal(replyState.body.planAgeDays, 45);
+		assert.equal(replyState.body.requiresChiefPhysicianApproval, false, "No chief physician bureaucracy");
+		assert.equal(replyState.body.requiresSeniorTechnicianApproval, false);
+		assert.equal(replyState.body.autonomyCompliant, true);
 		assert.ok(
-			typeof responseBody?.noticeRu === "string" && responseBody.noticeRu.includes("без блокировок"),
+			typeof replyState.body.noticeRu === "string" && replyState.body.noticeRu.includes("без блокировок"),
 			"Notice informs doctor about autonomous continuation",
 		);
 	});
@@ -125,8 +127,10 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 			authTokenSecret(),
 		);
 
-		let statusCode = 200;
-		let responseBody: Record<string, unknown> | null = null;
+		const replyState: { statusCode: number; body: Record<string, unknown> | null } = {
+			statusCode: 200,
+			body: null,
+		};
 
 		const mockReq = {
 			headers: {
@@ -143,22 +147,22 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 
 		const mockReply = {
 			status(code: number) {
-				statusCode = code;
+				replyState.statusCode = code;
 				return this;
 			},
 			code(code: number) {
-				statusCode = code;
+				replyState.statusCode = code;
 				return this;
 			},
 			send(payload: Record<string, unknown>) {
-				responseBody = payload;
+				replyState.body = payload;
 				return this;
 			},
 		} as unknown as FastifyReply;
 
 		await handleCheckPlanContinuity(mockReq, mockReply);
-		assert.equal(statusCode, 404);
-		assert.equal(responseBody?.error, "TreatmentPlanNotFound");
+		assert.equal(replyState.statusCode, 404);
+		assert.equal(replyState.body?.error, "TreatmentPlanNotFound");
 	});
 });
 
@@ -231,8 +235,10 @@ describe("Dental Lab Warranty Passport & Circuit Integration (Mandates 8e, 8k)",
 			authTokenSecret(),
 		);
 
-		let statusCode = 200;
-		let responseBody: Record<string, unknown> | null = null;
+		const replyState: { statusCode: number; body: Record<string, unknown> | null } = {
+			statusCode: 200,
+			body: null,
+		};
 
 		const mockReq = {
 			headers: {
@@ -246,22 +252,22 @@ describe("Dental Lab Warranty Passport & Circuit Integration (Mandates 8e, 8k)",
 
 		const mockReply = {
 			status(code: number) {
-				statusCode = code;
+				replyState.statusCode = code;
 				return this;
 			},
 			code(code: number) {
-				statusCode = code;
+				replyState.statusCode = code;
 				return this;
 			},
 			send(payload: Record<string, unknown>) {
-				responseBody = payload;
+				replyState.body = payload;
 				return this;
 			},
 		} as unknown as FastifyReply;
 
 		await handleGetWarrantyPassport(mockReq, mockReply);
-		assert.equal(statusCode, 404);
-		assert.equal(responseBody?.error, "LabOrderNotFound");
+		assert.equal(replyState.statusCode, 404);
+		assert.equal(replyState.body?.error, "LabOrderNotFound");
 	});
 });
 

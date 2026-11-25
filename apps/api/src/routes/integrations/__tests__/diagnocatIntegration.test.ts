@@ -48,7 +48,6 @@ describe("Diagnocat / Clinical AI Webhook Authentication & Ingress Suite (DEF-DC
 			.values({
 				organizationId: testOrgId,
 				fullName: "Пациент Тестовый Диагнокатович",
-				gender: "male",
 				birthDate: "1985-05-15",
 			})
 			.returning({ id: patients.id });

@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test, { describe } from "node:test";
-import { getTableName } from "drizzle-orm";
+import { getTableName, is, Table } from "drizzle-orm";
 import {
 	createAppointmentSchema,
 	createAppointmentTool,
@@ -104,10 +104,10 @@ describe("CRM Database AI Tools — Two-Phase Confirmation Guard (Мандат 8
 		select: () => ({
 			from: (table: Parameters<typeof getTableName>[0] | { _: { name?: string }; name?: string }) => {
 				let name = "";
-				try {
+				if (is(table, Table)) {
 					name = getTableName(table);
-				} catch {
-					name = String(table?._?.name || table?.name || "");
+				} else {
+					name = String(table?._?.name || (table as { name?: string })?.name || "");
 				}
 				if (name === "appointments" || name.includes("lease") || name.includes("blacklist")) {
 					return makeQueryChain([]);
@@ -210,10 +210,10 @@ describe("CRM Database AI Tools — AI-REV-08: Мягкая валидация �
 		select: () => ({
 			from: (table: Parameters<typeof getTableName>[0] | { _: { name?: string }; name?: string }) => {
 				let name = "";
-				try {
+				if (is(table, Table)) {
 					name = getTableName(table);
-				} catch {
-					name = String(table?._?.name || table?.name || "");
+				} else {
+					name = String(table?._?.name || (table as { name?: string })?.name || "");
 				}
 				if (name === "appointments" || name.includes("lease") || name.includes("blacklist")) {
 					return makeQueryChain([]);

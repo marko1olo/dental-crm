@@ -8,7 +8,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 let spawnCalls: [string, string[], unknown][] = [];
 let mockChildProcess: ChildProcess | null = null;
 
-import { handleLaunchExternalViewer, setProcessSpawnerForTesting } from "../pacsModules/pacsExternalViewerLaunch.js";
+import { handleLaunchExternalViewer, setProcessSpawnerForTesting, type ProcessSpawner } from "../pacsModules/pacsExternalViewerLaunch.js";
 
 describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () => {
 	let mockRequest: {
@@ -45,10 +45,11 @@ describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () 
 		spawnCalls = [];
 		sentPayload = null;
 		statusCode = 200;
-		setProcessSpawnerForTesting((cmd: string, args: string[], options: unknown) => {
-			spawnCalls.push([cmd, args, options]);
-			return mockChildProcess;
-		});
+		const mockSpawner = ((cmd: string, args: readonly string[] = [], options: unknown = {}) => {
+			spawnCalls.push([cmd, [...args], options]);
+			return mockChildProcess as ChildProcess;
+		}) as ProcessSpawner;
+		setProcessSpawnerForTesting(mockSpawner);
 		mockReply = {
 			code: (code: number) => {
 				statusCode = code;
@@ -135,7 +136,7 @@ describe("RAD-01: PACS External Viewer Launch Server Stability Inquisition", () 
 		await handleLaunchExternalViewer(mockRequest as FastifyRequest, mockReply as FastifyReply);
 
 		assert.equal(spawnCalls.length, 1);
-		const [, spawnArgs] = spawnCalls[0] ?? ["", []];
+		const [, spawnArgs] = spawnCalls[0] ?? ["", [] as string[]];
 
 		assert.equal(spawnArgs.includes("/open"), false);
 		assert.equal(spawnArgs.includes("-study"), false);

@@ -173,7 +173,7 @@ describe("Sber POS Webhook & Acquiring Endpoints Integration Suite", () => {
 						visitId: VISIT_ID,
 						status: "draft",
 						totalRub: "3500.00",
-						totalAmountRub: "3500.00",
+						totalAmountRub: 3500,
 					})
 					.onConflictDoNothing();
 			});

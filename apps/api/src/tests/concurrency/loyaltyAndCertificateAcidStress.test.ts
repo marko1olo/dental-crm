@@ -75,7 +75,7 @@ describe("RED TEAM ACID: Loyalty & Certificate Double-Spend Defense", () => {
 					id: INVOICE_ID,
 					organizationId: ORG_ID,
 					patientId: PATIENT_ID,
-					totalRub: 20000,
+					totalRub: "20000.00",
 					status: "issued",
 				}).onConflictDoNothing();
 			});

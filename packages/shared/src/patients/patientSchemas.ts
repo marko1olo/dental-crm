@@ -106,6 +106,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 		.nullable()
 		.default(null),
 	legalRepresentativePhone: z.string().trim().max(80).nullable().default(null),
+	familyRelation: z.string().trim().max(120).nullable().optional(),
 	preferredDocumentRecipient: z
 		.string()
 		.trim()

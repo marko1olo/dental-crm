@@ -8,7 +8,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type InjectOptions } from "fastify";
 import {
 	emkAddDocumentBodySchema,
 	emkCloseCaseBodySchema,
@@ -50,7 +50,7 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 		method: "POST" | "GET",
 		url: string,
 		opts: {
-			body?: unknown;
+			body?: InjectOptions["payload"];
 			token?: string;
 			extraHeaders?: Record<string, string>;
 		} = {},
@@ -60,20 +60,12 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 			[CLINIC_TOKEN_HEADER]: opts.token ?? clinicTokenMine,
 			...(opts.extraHeaders ?? {}),
 		};
-		const injectOpts: {
-			method: "POST" | "GET";
-			url: string;
-			headers: Record<string, string>;
-			payload?: unknown;
-		} = {
+		const response = await app.inject({
 			method,
 			url,
 			headers,
-		};
-		if (opts.body !== undefined) {
-			injectOpts.payload = opts.body;
-		}
-		const response = await app.inject(injectOpts);
+			...(opts.body !== undefined ? { payload: opts.body } : {}),
+		});
 
 		let json: Record<string, unknown> | null = null;
 		try {
@@ -107,19 +99,21 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 		resetAuthSecretCacheForTests();
 
 		N3EventLogClient.prototype.getDocumentStatus = async (idDocumentMis: string) => {
+			const now = new Date().toISOString();
 			return {
 				idDocumentMis,
-				status: "Registered",
+				status: "REGISTERED",
 				statusCode: 1,
 				statusDescription: "Зарегистрирован в РЭМД ЕГИСЗ",
-				timestamp: new Date().toISOString(),
+				timestamp: now,
+				lastCheckedAt: now,
 			};
 		};
 
-		N3EventLogClient.prototype.queueForReexport = async (idDocumentMis: string, queue: string) => {
+		N3EventLogClient.prototype.queueForReexport = async (idDocumentMis: string, queue?: "REMD" | "IEMK") => {
 			return {
 				success: true,
-				message: `Документ ${idDocumentMis} успешно поставлен в очередь ${queue}`,
+				message: `Документ ${idDocumentMis} успешно поставлен в очередь ${queue ?? "REMD"}`,
 			};
 		};
 
@@ -436,7 +430,7 @@ describe("egiszFixerSurgeon — EGISZ & N3.Health Fixes & Invariants", () => {
 			assert.equal(res.status, 200);
 			assert.equal(res.json?.ok, true);
 			assert.equal(res.json?.idDocumentMis, "DOC-MINE-001");
-			assert.equal(res.json?.status, "Registered");
+			assert.equal(res.json?.status, "REGISTERED");
 		});
 
 		test("POST /api/egisz/n3health/eventlog/reexport returns 200 for document belonging to caller organization", async () => {

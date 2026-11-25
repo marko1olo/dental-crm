@@ -266,7 +266,7 @@ describe("Domain 58: Cloud Sync, Offline Rehydration, Conflict Resolution & WebS
 			on() {}
 			send() {}
 		}
-		const mockWs = new MockWebSocket() as import("ws").WebSocket;
+		const mockWs = new MockWebSocket();
 
 		wsBroker.clear();
 		wsBroker.addClient(mockWs, testOrgId, testPatientId);

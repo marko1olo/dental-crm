@@ -55,6 +55,10 @@ const PATIENT_BLACKLIST_ID = fixtureUuid(FIXTURE, 31);
 const PATIENT_ARCHIVED_ID = fixtureUuid(FIXTURE, 32);
 
 const BLACKLISTED_NAME = "Хулиганов Хам Хамович";
+const FUTURE_BOOKING_DATE = (() => {
+	const d = new Date(Date.now() + 7 * 86_400_000);
+	return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+})();
 
 describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST ENFORCEMENT)", () => {
 	let app: FastifyInstance;
@@ -226,8 +230,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 				patientId: PATIENT_BLACKLIST_ID,
 				doctorUserId: DOCTOR_ID,
 				chairId: CHAIR_ID,
-				startsAt: "2026-11-20T10:00:00.000Z",
-				endsAt: "2026-11-20T11:00:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T10:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T11:00:00.000Z`,
 				reason: "Попытка записать черносписочника через админа",
 			},
 		});
@@ -257,8 +261,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 				patientId: PATIENT_ARCHIVED_ID,
 				doctorUserId: DOCTOR_ID,
 				chairId: CHAIR_ID,
-				startsAt: "2026-11-20T11:00:00.000Z",
-				endsAt: "2026-11-20T12:00:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T11:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T12:00:00.000Z`,
 				reason: "Попытка записать архивного пациента",
 			},
 		});
@@ -287,8 +291,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 				patientId: PATIENT_ACTIVE_ID,
 				doctorUserId: DOCTOR_ID,
 				chairId: CHAIR_ID,
-				startsAt: "2026-11-20T12:00:00.000Z",
-				endsAt: "2026-11-20T13:00:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T12:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T13:00:00.000Z`,
 				reason: "Плановый приём активного пациента",
 			},
 		});
@@ -316,8 +320,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 			headers: { "content-type": "application/json" },
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-11-20T14:00:00.000Z",
-				endsAt: "2026-11-20T14:30:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T14:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T14:30:00.000Z`,
 				patientName: "Токсик Т.Т.",
 				patientPhone: "+7 (926) 222-22-22", // Телефон из чёрного списка!
 				comment: "Попытка онлайн-прорыва через виджет",
@@ -345,8 +349,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 			headers: { "content-type": "application/json" },
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-11-20T15:00:00.000Z",
-				endsAt: "2026-11-20T15:30:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T15:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T15:30:00.000Z`,
 				patientName: "Архивный Переехавший П.П.",
 				patientPhone: "+7 (926) 333-33-33", // Телефон архивного пациента!
 			},
@@ -374,8 +378,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 			headers: { "content-type": "application/json" },
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-11-20T16:00:00.000Z",
-				endsAt: "2026-11-20T16:30:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T16:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T16:30:00.000Z`,
 				patientName: BLACKLISTED_NAME, // "Хулиганов Хам Хамович"
 				patientPhone: "+7 (999) 777-88-99", // Новый телефон!
 			},
@@ -402,8 +406,8 @@ describe("PROSECUTOR 2: ВОСЬМАЯ ВОЛНА (ARCHIVE PATIENTS & BLACKLIST 
 			headers: { "content-type": "application/json" },
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-11-20T17:00:00.000Z",
-				endsAt: "2026-11-20T17:30:00.000Z",
+				startsAt: `${FUTURE_BOOKING_DATE}T17:00:00.000Z`,
+				endsAt: `${FUTURE_BOOKING_DATE}T17:30:00.000Z`,
 				patientName: "Новый Доброжелательный Н.Н.",
 				patientPhone: "+7 (903) 555-44-33",
 			},

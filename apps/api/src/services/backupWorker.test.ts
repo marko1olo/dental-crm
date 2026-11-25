@@ -37,7 +37,6 @@ function createTestLoggerSpy() {
 		trace: () => {},
 		silent: () => {},
 		child: () => spyLogger,
-		msgPrefix: "",
 	};
 
 	return { spyLogger, infoLines, errorLines };

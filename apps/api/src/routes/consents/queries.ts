@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { generatedDocuments, patientConsents, patients } from "../../db/schema.js";
 import type { SaveConsentBody } from "./types.js";
 
@@ -259,7 +259,6 @@ export async function recordPatientConsentEntry(
 	};
 }
 
-import type { TenantDb } from "../../db/rls.js";
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type DbOrTx = typeof db | DbTransaction | TenantDb;
 

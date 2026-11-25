@@ -32,8 +32,13 @@ import {
 import {
 	applySignatureStampIfSigned,
 } from "../routes/documents/sharedDocUtils/archiveAndPdfRenderer.js";
+import {
+	createTestClinicProfile,
+	createTestGeneratedDocument,
+	createTestPatient,
+} from "./testDocumentFixtures.js";
 
-const mockPatient: Patient = {
+const mockPatient: Patient = createTestPatient({
 	id: "pat-domain21-001",
 	organizationId: "org-test-01",
 	fullName: "Иванов Иван Иванович",
@@ -42,17 +47,17 @@ const mockPatient: Patient = {
 	createdAt: "2026-01-01T00:00:00.000Z",
 	updatedAt: "2026-01-01T00:00:00.000Z",
 	status: "active",
-};
+});
 
 const renderContext = {
-	clinicProfile: {
+	clinicProfile: createTestClinicProfile({
 		legalName: 'ООО "ДЕНТЕ КЛИНИКА"',
 		inn: "7701234567",
 		kpp: "770101001",
 		ogrn: "1237700000000",
 		address: "г. Москва, ул. Ленина, д. 10",
 		phone: "+7 495 123-45-67",
-	},
+	}),
 	branch: null,
 	staff: [],
 	priceList: [],
@@ -63,7 +68,7 @@ const renderContext = {
 
 describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63-ФЗ)", () => {
 	it("накладывает полупрозрачный водяной знак 'ЧЕРНОВИК' на документ со статусом draft", () => {
-		const draftDoc: GeneratedDocument = {
+		const draftDoc: GeneratedDocument = createTestGeneratedDocument({
 			id: "doc-draft-0000-0000-000000000001",
 			organizationId: "org-test-01",
 			patientId: mockPatient.id,
@@ -71,8 +76,8 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 			kind: "informed_consent",
 			status: "draft",
 			title: "Информированное добровольное согласие",
-			createdAt: "2026-11-22T08:00:00.000Z",
-		};
+			issuedAt: null,
+		});
 
 		const html = renderDocumentHtml(draftDoc, mockPatient, renderContext);
 		assert.ok(html.includes('<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'), "HTML должен содержать водяной знак ЧЕРНОВИК");
@@ -81,7 +86,7 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 	});
 
 	it("накладывает водяной знак 'ПОДПИСАНО ВРАЧОМ' на выданный документ со статусом issued", () => {
-		const issuedDoc: GeneratedDocument = {
+		const issuedDoc: GeneratedDocument = createTestGeneratedDocument({
 			id: "doc-issued-0000-0000-000000000002",
 			organizationId: "org-test-01",
 			patientId: mockPatient.id,
@@ -90,8 +95,7 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 			status: "issued",
 			title: "Информированное добровольное согласие",
 			issuedAt: "2026-11-22T08:30:00.000Z",
-			createdAt: "2026-11-22T08:00:00.000Z",
-		};
+		});
 
 		const html = renderDocumentHtml(issuedDoc, mockPatient, renderContext);
 		assert.ok(html.includes('<div class="watermark-signed" aria-hidden="true">ПОДПИСАНО ВРАЧОМ</div>'), "HTML должен содержать водяной знак ПОДПИСАНО ВРАЧОМ");
@@ -100,7 +104,7 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 	});
 
 	it("формирует официальный штамп ПЭП по 63-ФЗ при attestation mode 'simple_electronic_signature'", () => {
-		const pepDoc: GeneratedDocument = {
+		const pepDoc: GeneratedDocument = createTestGeneratedDocument({
 			id: "doc-pep-0000-0000-000000000003",
 			organizationId: "org-test-01",
 			patientId: mockPatient.id,
@@ -109,7 +113,6 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 			status: "issued",
 			title: "План лечения",
 			issuedAt: "2026-11-22T09:00:00.000Z",
-			createdAt: "2026-11-22T08:00:00.000Z",
 			signatureAttestation: {
 				mode: "simple_electronic_signature",
 				signedAt: "2026-11-22 09:00:00",
@@ -122,7 +125,7 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 				recipientSigned: true,
 				clinicRepresentativeSigned: true,
 			},
-		};
+		});
 
 		const stampHtml = resolveDocumentDigitalSignatureStamp(pepDoc, renderContext.clinicProfile);
 		assert.ok(stampHtml, "Штамп ПЭП должен быть сгенерирован");
@@ -259,9 +262,15 @@ describe("Red Team Domain 21: Watermark & Simple Electronic Signature (ПЭП 63
 								status: "voided",
 								voidedAt: new Date(),
 								voidAttestation: {
+									reasonCode: "other",
 									reasonText: '<script>alert("xss")</script>',
+									voidedAt: new Date().toISOString(),
 									staffFullName: "Врач",
 									staffRole: "doctor",
+									replacementRequired: false,
+									patientOrPayerNotified: false,
+									archivePreserved: true,
+									statusReviewed: true,
 								},
 							},
 							{

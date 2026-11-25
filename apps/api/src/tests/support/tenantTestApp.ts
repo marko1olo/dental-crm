@@ -92,15 +92,46 @@ export function createTenantTestApp(): FastifyInstance {
 	});
 
 	app.addHook("onRoute", (routeOptions) => {
+		if (routeOptions.config?.tenantTxSelfManaged === true) return;
 		const originalHandler = routeOptions.handler;
 		if (!originalHandler) return;
 		routeOptions.handler = async function (request, reply) {
-			const carrier = request as unknown as Record<string, unknown>;
+			const carrier = request as { tenantId?: unknown };
 			const tenantId = carrier.tenantId;
 			if (typeof tenantId === "string" && tenantId.length > 0) {
-				return withTenantCtx(tenantId, async () =>
-					originalHandler.call(this, request, reply),
-				);
+				let sendDeferred = false;
+				let hasDeferredPayload = false;
+				let deferredPayload: unknown;
+				const originalSend = reply.send.bind(reply);
+				const replyProto = Object.getPrototypeOf(reply) as object;
+				const sentDescriptor = Object.getOwnPropertyDescriptor(replyProto, "sent");
+
+				reply.send = function (payload?: unknown) {
+					sendDeferred = true;
+					hasDeferredPayload = arguments.length > 0;
+					deferredPayload = payload;
+					return reply;
+				};
+				Object.defineProperty(reply, "sent", {
+					configurable: true,
+					get() {
+						return sendDeferred || Boolean(sentDescriptor?.get?.call(reply));
+					},
+				});
+
+				let res: unknown;
+				try {
+					res = await withTenantCtx(tenantId, async () =>
+						originalHandler.call(this, request, reply),
+					);
+				} finally {
+					Reflect.deleteProperty(reply, "sent");
+					reply.send = originalSend;
+				}
+				if (sendDeferred && !reply.sent) {
+					return hasDeferredPayload ? originalSend(deferredPayload) : originalSend();
+				}
+				return res;
 			}
 			return originalHandler.call(this, request, reply);
 		};

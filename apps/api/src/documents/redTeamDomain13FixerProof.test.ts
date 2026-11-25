@@ -18,6 +18,7 @@ import {
 	withFixtureTenant,
 } from "../tests/support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../tests/support/tenantTestApp.js";
+import type { DocumentCreationFacts } from "./documentGuards/index.js";
 import {
 	installmentScheduleMismatchReason,
 	paidAmountRubForDocument,
@@ -55,11 +56,11 @@ describe("Domain 13 Red Team Proof Suite: Documents, Consents, Contracts & Tax C
 	});
 
 	test("DEF-2: plannedFactsTotalMismatchReason, paidFactsTotalMismatchReason & installmentScheduleMismatchReason use exact kopeck equality", () => {
-		const facts = {
+		const facts: DocumentCreationFacts = {
+			patient: { id: "patient-1", fullName: "Иванов Иван" },
+			visit: { id: "visit-1", patientId: "patient-1" },
 			plannedAmountRub: 1250.5,
 			paidAmountRub: 1250.5,
-			plannedCount: 1,
-			paidCount: 1,
 		};
 
 		// 1250.50 руб совпадает
@@ -76,12 +77,27 @@ describe("Domain 13 Red Team Proof Suite: Documents, Consents, Contracts & Tax C
 		// График рассрочки: 1000.1 - 300.05 в float = 700.0500000000001, в копейках точно 700.05
 		const installmentReason = installmentScheduleMismatchReason(
 			{
+				scheduleNumber: "Р-001",
+				scheduleDate: "2026-11-25",
+				baseDocumentTitle: "Договор №1",
+				payerFullName: "Иванов Иван Иванович",
 				totalAmountRub: 1000.1,
 				prepaidAmountRub: 300.05,
 				remainingAmountRub: 700.05,
-				installments: [{ dueDate: "2026-12-01", amountRub: 700.05 }],
+				installments: [{ dueDate: "2026-12-01", amountRub: 700.05, status: "planned", label: "Платёж 1" }],
+				latePaymentPolicy: "Уведомление за 3 дня",
+				paymentMethodNotes: "Карта или наличные",
+				responsibleStaffFullName: "Петрова А.А.",
+				patientAcceptedSchedule: true,
+				scheduleDoesNotReplaceFiscalReceipt: true,
+				changesRequireWrittenAgreement: true,
 			},
-			{ plannedAmountRub: 1000.1, paidAmountRub: 0, plannedCount: 1, paidCount: 0 },
+			{
+				patient: { id: "patient-1", fullName: "Иванов Иван" },
+				visit: { id: "visit-1", patientId: "patient-1" },
+				plannedAmountRub: 1000.1,
+				paidAmountRub: 0,
+			},
 		);
 		assert.strictEqual(installmentReason, null);
 	});

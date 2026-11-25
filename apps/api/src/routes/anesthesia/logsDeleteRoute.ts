@@ -42,7 +42,7 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 			});
 		}
 
-		return withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
 			const [log] = await tx
 				.select()
 				.from(anesthesiaLogs)
@@ -50,7 +50,7 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 				.for("update");
 
 			if (!log) {
-				return reply.status(404).send({ message: "Запись анестезии не найдена" });
+				return { found: false as const };
 			}
 
 			const carpulesCount = Number(log.carpulesAdministered || 0);
@@ -124,7 +124,12 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 					(_, v) => (typeof v === "bigint" ? v.toString() : v),
 				),
 			);
-			return reply.send(responsePayload);
+			return { found: true as const, responsePayload };
 		});
+
+		if (!txResult.found) {
+			return reply.status(404).send({ message: "Запись анестезии не найдена" });
+		}
+		return reply.send(txResult.responsePayload);
 	});
 }

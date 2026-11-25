@@ -28,7 +28,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 	test("POST /calls/answer broadcasts TELEPHONY_CALL_ANSWERED event and returns answered status", async () => {
 		const broadcasts: BroadcastedMsg[] = [];
 		const origBroadcast = wsBroker.broadcastToOrganization;
-		wsBroker.broadcastToOrganization = (orgId: string, message: unknown) => {
+		wsBroker.broadcastToOrganization = (orgId: string, message: object) => {
 			broadcasts.push({ orgId, message: message as BroadcastedMsg["message"] });
 			return origBroadcast.call(wsBroker, orgId, message);
 		};
@@ -75,7 +75,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 	test("POST /calls/end broadcasts TELEPHONY_CALL_ENDED and registers call finish", async () => {
 		const broadcasts: BroadcastedMsg[] = [];
 		const origBroadcast = wsBroker.broadcastToOrganization;
-		wsBroker.broadcastToOrganization = (orgId: string, message: unknown) => {
+		wsBroker.broadcastToOrganization = (orgId: string, message: object) => {
 			broadcasts.push({ orgId, message: message as BroadcastedMsg["message"] });
 			return origBroadcast.call(wsBroker, orgId, message);
 		};
@@ -124,7 +124,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 	test("POST /:organizationId/webhook with event: ended broadcasts TELEPHONY_CALL_ENDED via wsBroker", async () => {
 		const broadcasts: BroadcastedMsg[] = [];
 		const origBroadcast = wsBroker.broadcastToOrganization;
-		wsBroker.broadcastToOrganization = (orgId: string, message: unknown) => {
+		wsBroker.broadcastToOrganization = (orgId: string, message: object) => {
 			broadcasts.push({ orgId, message: message as BroadcastedMsg["message"] });
 			return origBroadcast.call(wsBroker, orgId, message);
 		};

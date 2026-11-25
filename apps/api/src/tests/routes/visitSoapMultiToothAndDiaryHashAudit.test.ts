@@ -162,6 +162,7 @@ describe("EMR / SOAP Multi-Tooth Autosave, complaint Column & diaryHash Audit (M
 				diagnosis: "K02.1",
 				diagnosisTooth: "16",
 				treatmentPlan: "Пломба 16",
+				warnings: [],
 			},
 		});
 
@@ -181,6 +182,7 @@ describe("EMR / SOAP Multi-Tooth Autosave, complaint Column & diaryHash Audit (M
 				diagnosis: "K02.1",
 				diagnosisTooth: "16",
 				treatmentPlan: amendedTreatment,
+				warnings: [],
 			},
 		});
 

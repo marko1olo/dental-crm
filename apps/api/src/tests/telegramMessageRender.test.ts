@@ -35,6 +35,7 @@ describe("buildDenteTelegramMessagePreviewData", () => {
 	it("should render appointment_confirmation correctly", () => {
 		const context: TelegramMessageContext = {
 			clinicName: "MyClinic",
+			appointmentTime: "",
 			hasAppointment: false,
 			portalUrl: null,
 			reviewUrl: null,
@@ -55,6 +56,7 @@ describe("buildDenteTelegramMessagePreviewData", () => {
 	it("should render staff_daily_digest correctly", () => {
 		const context: TelegramMessageContext = {
 			clinicName: "MyClinic",
+			appointmentTime: "",
 			hasAppointment: false,
 			portalUrl: null,
 			reviewUrl: null,
@@ -87,6 +89,7 @@ describe("buildDenteTelegramMessagePreviewData", () => {
 	it("should format missing portal gracefully for payment_reminder_notice", () => {
 		const context: TelegramMessageContext = {
 			clinicName: "MyClinic",
+			appointmentTime: "",
 			hasAppointment: false,
 			portalUrl: null,
 			reviewUrl: null,

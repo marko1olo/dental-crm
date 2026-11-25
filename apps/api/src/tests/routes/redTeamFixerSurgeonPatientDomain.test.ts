@@ -171,6 +171,7 @@ describe("Red Team Fixer Surgeon: Patient Profile, Consents, Family Wallet & Tax
 				ogrn: "1234567890123",
 			},
 			signatory: {
+				signatoryRole: "1",
 				fullName: { family: "Дорохов", given: "Сергей" },
 			},
 		});

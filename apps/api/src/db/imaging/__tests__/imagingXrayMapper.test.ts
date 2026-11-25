@@ -89,6 +89,9 @@ describe("imagingXrayMapper URL Resolution Integrity (Defect 1 Defense)", () => 
 			dicomStudyUid: null,
 			studyInstanceUid: null,
 			seriesInstanceUid: null,
+			sliceCount: null,
+			dimensions: null,
+			voxelSpacing: null,
 			modality: "IO",
 			seriesDescription: "Прицельный снимок 26",
 			fileSizeBytes: 1048576,
@@ -97,12 +100,10 @@ describe("imagingXrayMapper URL Resolution Integrity (Defect 1 Defense)", () => 
 			dicomPatientName: null,
 			dicomPatientId: null,
 			dicomBirthDate: null,
+			studyDate: null,
 			status: "available",
 			aiSummary: "Зуб 26: глубокий кариес",
-			doseMsv: null,
-			effectiveDoseMsv: null,
 			createdAt: new Date("2026-11-12T10:00:00Z"),
-			updatedAt: new Date("2026-11-12T10:00:00Z"),
 		};
 
 		const scan = mapImagingStudyToXrayScan(study);

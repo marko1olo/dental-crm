@@ -8,6 +8,7 @@ import {
 	extractTemplateVariables,
 	findTemplateVariable,
 	renderTemplate,
+	renderTemplateSync,
 	validateTemplateBody,
 } from "./templateEngine/templateRenderer.js";
 
@@ -193,7 +194,7 @@ describe("templateRenderer", () => {
 			});
 
 			const withBell = `Строка${String.fromCharCode(7)}один\n\n\n\nСтрока два`;
-			const bellResult = renderTemplate(withBell, {});
+			const bellResult = renderTemplateSync(withBell, {});
 			assert.equal(bellResult.ok, true);
 			if (bellResult.ok) {
 				assert.equal(bellResult.text, "Строкаодин\n\nСтрока два");

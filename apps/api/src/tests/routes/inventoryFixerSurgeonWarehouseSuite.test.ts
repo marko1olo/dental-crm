@@ -367,7 +367,6 @@ describe("Warehouse & Supply Fixer Surgeon Suite (Mandates 8v, 8e, 8n, 8bm)", ()
 		const refId = "ref-tier1-bom-" + Date.now();
 		const result = await applyProcedureConsumablesDeduction(ORG_ID, {
 			treatment_reference_id: refId,
-			patient_id: PATIENT_ID,
 			doctor_id: STAFF_ID,
 			items: [
 				{

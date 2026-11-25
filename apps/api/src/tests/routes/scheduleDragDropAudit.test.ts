@@ -92,14 +92,12 @@ describe("Schedule Drag & Drop Inquest: Overbooking, ACID Transitions & Solo Sov
 					{
 						id: PATIENT_1_ID,
 						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
 						fullName: "Иванов Иван Иванович",
 						phone: "+79001110001",
 					},
 					{
 						id: PATIENT_2_ID,
 						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
 						fullName: "Петров Петр Петрович",
 						phone: "+79001110002",
 					},
@@ -202,6 +200,7 @@ describe("Schedule Drag & Drop Inquest: Overbooking, ACID Transitions & Solo Sov
 			.select()
 			.from(appointments)
 			.where(and(eq(appointments.id, appt2.id), eq(appointments.organizationId, ORG_ID)));
+		assert.ok(dbAppt2);
 		assert.strictEqual(dbAppt2.startsAt.toISOString(), "2026-12-01T14:00:00.000Z");
 		assert.strictEqual(dbAppt2.isOverbooking, false);
 	});
@@ -241,6 +240,7 @@ describe("Schedule Drag & Drop Inquest: Overbooking, ACID Transitions & Solo Sov
 			.select()
 			.from(appointments)
 			.where(and(eq(appointments.id, appt2.id), eq(appointments.organizationId, ORG_ID)));
+		assert.ok(updatedDb);
 		assert.strictEqual(updatedDb.startsAt.toISOString(), "2026-12-01T10:30:00.000Z");
 		assert.strictEqual(updatedDb.isOverbooking, true);
 	});

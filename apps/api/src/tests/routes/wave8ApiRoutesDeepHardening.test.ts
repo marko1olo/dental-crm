@@ -155,7 +155,7 @@ describe("Wave 8 Deep API Routes Hardening ([D1]..[D11])", { concurrency: 1 }, (
 
 		const issued = await requestPhoneVerification("+79991112233", "sms", "127.0.0.1", ORG_A);
 		assert.equal(issued.allowed, true);
-		const code = issued.debugCode ?? getActiveCodeForTesting("+79991112233");
+		const code = issued.developerCode ?? getActiveCodeForTesting("+79991112233");
 		assert.ok(code);
 
 		// Cross-clinic verify must fail (memory and async)

@@ -632,6 +632,7 @@ describe("Red Team Fixer 3 Integration Suite: Idempotency, Gateways, Pricelist, 
 			ogrn: "1234567890123",
 		};
 		const signatoryInfo = {
+			signatoryRole: "1" as const,
 			fullName: { family: "Дорохов", given: "Сергей", patronymic: "Владимирович" },
 		};
 

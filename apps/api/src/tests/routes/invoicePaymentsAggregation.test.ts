@@ -98,7 +98,7 @@ describe("Invoice Payments Aggregation SSOT (Mandate 8bm)", () => {
 					organizationId: orgId,
 					patientId,
 					status: "issued",
-					totalAmountRub: "5000.00",
+					totalAmountRub: 5000,
 					totalRub: "5000.00",
 				});
 			});
@@ -132,9 +132,9 @@ describe("Invoice Payments Aggregation SSOT (Mandate 8bm)", () => {
 					patientId,
 					documentId: invoiceId,
 					amountKopecks: 200000n,
-					amountRub: "2000.00",
+					amountRub: 2000,
 					status: "paid",
-					paymentMethod: "cash",
+					method: "cash",
 				});
 			});
 
@@ -158,9 +158,9 @@ describe("Invoice Payments Aggregation SSOT (Mandate 8bm)", () => {
 					patientId,
 					documentId: invoiceId,
 					amountKopecks: 300000n,
-					amountRub: "3000.00",
+					amountRub: 3000,
 					status: "paid",
-					paymentMethod: "card",
+					method: "card",
 				});
 			});
 

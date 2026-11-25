@@ -358,10 +358,12 @@ describe("buildKnd1151156Xml", () => {
 				taxPaymentSelection: { selectedPaymentIds: ["payment-bone"] },
 			},
 		};
-		const paymentWithBoneGraft: Payment = createTestPayment({
-			...basePayment,
-			id: "payment-bone",
-			taxDeductionCode: undefined,
+		const paymentWithBoneGraft = {
+			...createTestPayment({
+				...basePayment,
+				id: "payment-bone",
+				taxDeductionCode: undefined,
+			}),
 			items: [
 				{
 					name: "Костная пластика челюсти (НКР) с применением гранул Bio-Oss и мембраны Bio-Gide",
@@ -376,7 +378,7 @@ describe("buildKnd1151156Xml", () => {
 					amountKopecks: 1500000,
 				},
 			],
-		});
+		};
 
 		const result = buildKnd1151156Xml(
 			docWithBoneGraft,
