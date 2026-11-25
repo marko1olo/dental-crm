@@ -83,8 +83,10 @@ export async function runWeeklyRetentionScan(options?: {
 
 		for (const p of activePatients) {
 			const orgId = p.organizationId;
-			if (!orgMap.has(orgId)) {
-				orgMap.set(orgId, []);
+			let orgRecords = orgMap.get(orgId);
+			if (!orgRecords) {
+				orgRecords = [];
+				orgMap.set(orgId, orgRecords);
 			}
 
 			const patientFullName = p.fullName || "Пациент";
@@ -140,7 +142,7 @@ export async function runWeeklyRetentionScan(options?: {
 				// Case A: Implant placed >= 4 months ago
 				if (v.createdAt <= fourMonthsAgo && (textContext.includes("имплант") || textContext.includes("установка имплантата") || textContext.includes("a16.07.054"))) {
 					const months = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30));
-					orgMap.get(orgId)!.push({
+					orgRecords.push({
 						patientId: p.id,
 						patientFullName,
 						patientPhone: p.phone,
@@ -158,7 +160,7 @@ export async function runWeeklyRetentionScan(options?: {
 				// Case B: Endodontics >= 2 weeks ago
 				if (!identified && v.createdAt <= twoWeeksAgo && (textContext.includes("пульпит") || textContext.includes("периодонтит") || textContext.includes("канал") || textContext.includes("временная пломба"))) {
 					const weeks = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 7));
-					orgMap.get(orgId)!.push({
+					orgRecords.push({
 						patientId: p.id,
 						patientFullName,
 						patientPhone: p.phone,
@@ -176,7 +178,7 @@ export async function runWeeklyRetentionScan(options?: {
 				// Case C: Hygiene >= 6 months ago
 				if (!identified && v.createdAt <= sixMonthsAgo && (textContext.includes("гигиен") || textContext.includes("чистк") || textContext.includes("air-flow"))) {
 					const months = Math.round((now.getTime() - v.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30));
-					orgMap.get(orgId)!.push({
+					orgRecords.push({
 						patientId: p.id,
 						patientFullName,
 						patientPhone: p.phone,

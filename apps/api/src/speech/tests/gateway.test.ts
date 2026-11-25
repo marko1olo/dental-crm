@@ -6,6 +6,7 @@ import {
 	getSpeechProviderRuntimeStatuses,
 	speechJsonBodyLimitBytes,
 } from "../gateway.js";
+import { speechProviders } from "../providers.js";
 
 describe("speechJsonBodyLimitBytes", () => {
 	it("should calculate correct limit based on default env value when env var is not set", () => {
@@ -167,5 +168,12 @@ describe("getSpeechGatewayStatus", () => {
 			if (prevGeminiKey !== undefined) process.env.GEMINI_API_KEY = prevGeminiKey;
 			else delete process.env.GEMINI_API_KEY;
 		}
+	});
+
+	it("should prioritize Gemini/Whisper cloud providers before browser_speech fallback", () => {
+		assert.strictEqual(speechProviders[0]?.id, "gemini_transcribe_live");
+		assert.strictEqual(speechProviders[1]?.id, "google_speech");
+		assert.strictEqual(speechProviders[2]?.id, "groq_whisper");
+		assert.strictEqual(speechProviders[speechProviders.length - 1]?.id, "browser_speech");
 	});
 });

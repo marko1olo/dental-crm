@@ -12,28 +12,40 @@ export function levenshteinDistance(a: string, b: string): number {
 	if (a.length === 0) return b.length;
 	if (b.length === 0) return a.length;
 
-	const matrix: number[][] = [];
+	const matrix: number[][] = Array.from({ length: b.length + 1 }, () =>
+		new Array<number>(a.length + 1).fill(0),
+	);
 	for (let i = 0; i <= b.length; i++) {
-		matrix[i] = [i];
+		const row = matrix[i];
+		if (row) row[0] = i;
 	}
-	for (let j = 0; j <= a.length; j++) {
-		matrix[0]![j] = j;
+	const firstRow = matrix[0];
+	if (firstRow) {
+		for (let j = 0; j <= a.length; j++) {
+			firstRow[j] = j;
+		}
 	}
 
 	for (let i = 1; i <= b.length; i++) {
+		const curRow = matrix[i];
+		const prevRow = matrix[i - 1];
+		if (!curRow || !prevRow) continue;
 		for (let j = 1; j <= a.length; j++) {
+			const diag = prevRow[j - 1] ?? 0;
 			if (b.charAt(i - 1) === a.charAt(j - 1)) {
-				matrix[i]![j] = matrix[i - 1]![j - 1]!;
+				curRow[j] = diag;
 			} else {
-				matrix[i]![j] = Math.min(
-					matrix[i - 1]![j - 1]! + 1, // substitution
-					matrix[i]![j - 1]! + 1,     // insertion
-					matrix[i - 1]![j]! + 1,     // deletion
+				const ins = curRow[j - 1] ?? 0;
+				const del = prevRow[j] ?? 0;
+				curRow[j] = Math.min(
+					diag + 1, // substitution
+					ins + 1,  // insertion
+					del + 1,  // deletion
 				);
 			}
 		}
 	}
-	return matrix[b.length]![a.length]!;
+	return matrix[b.length]?.[a.length] ?? 0;
 }
 
 /**

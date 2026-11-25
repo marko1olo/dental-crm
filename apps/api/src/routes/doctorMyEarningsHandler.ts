@@ -150,15 +150,18 @@ export async function handleGetDoctorMyEarnings(
 	}
 
 	function resolveServiceCommissionPercent(category: string, serviceName?: string, serviceCode?: string): number {
-		if (serviceCode && pricelistPercentByCode.has(serviceCode.trim().toLowerCase())) {
-			return pricelistPercentByCode.get(serviceCode.trim().toLowerCase())!;
+		const codeMatch = serviceCode ? pricelistPercentByCode.get(serviceCode.trim().toLowerCase()) : undefined;
+		if (codeMatch !== undefined) {
+			return codeMatch;
 		}
-		if (serviceName && pricelistPercentByName.has(serviceName.trim().toLowerCase())) {
-			return pricelistPercentByName.get(serviceName.trim().toLowerCase())!;
+		const nameMatch = serviceName ? pricelistPercentByName.get(serviceName.trim().toLowerCase()) : undefined;
+		if (nameMatch !== undefined) {
+			return nameMatch;
 		}
 		const catKey = category.toLowerCase() as AllowedSpecialtyCat;
-		if (categoryRatesMap[catKey] !== undefined) {
-			return categoryRatesMap[catKey]!;
+		const categoryRate = categoryRatesMap[catKey];
+		if (categoryRate !== undefined) {
+			return categoryRate;
 		}
 		return basePercent;
 	}

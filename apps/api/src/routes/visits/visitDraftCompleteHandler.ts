@@ -2,7 +2,10 @@ import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requireClinicalMutationContext } from "../../accessGuard.js";
+import {
+	ensureClinicalStaffAccess,
+	requireClinicalMutationContext,
+} from "../../security/tenantContext.js";
 import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import { appointments, visits } from "../../db/schema.js";
 import { acceptVisitDraftInDb } from "../../db/visitsQuery.js";
@@ -39,6 +42,7 @@ export async function handleCompleteVisit(
 		"visit complete",
 	);
 	if (!context) return;
+	if (!ensureClinicalStaffAccess(request, reply, "завершению приёма")) return;
 	const orgId = context.organizationId;
 	const { visitId } = request.params as { visitId: string };
 

@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test, { describe } from "node:test";
+import { speechChunkUploadSchema } from "@dental/shared";
 import { getTableName, is, Table } from "drizzle-orm";
 import {
 	createAppointmentSchema,
@@ -475,5 +476,40 @@ describe("CRM Database AI Tools — Здоровый размер модулей
 		const rootFacade = path.resolve(baseDir, "../crmDatabaseTools.ts");
 		const rootLines = fs.readFileSync(rootFacade, "utf-8").split("\n").length;
 		assert.ok(rootLines <= 30, `Корневой фасад crmDatabaseTools.ts превышает 30 строк (текущее: ${rootLines})`);
+	});
+
+	test("W11-AI-BE-04: createInvoiceDraftSchema и speechChunkUploadSchema отклоняют лишние поля (.strict()) и поддерживают копейки / organizationId: null", () => {
+		const invalidInvoice = createInvoiceDraftSchema.safeParse({
+			items: [{ title: "Лечение кариеса", priceKopecks: 350000, quantity: 1 }],
+			unexpectedField: true,
+		});
+		assert.strictEqual(invalidInvoice.success, false);
+
+		const invalidItem = createInvoiceDraftSchema.safeParse({
+			items: [{ title: "Лечение кариеса", priceKopecks: 350000, extraItemField: "x" }],
+		});
+		assert.strictEqual(invalidItem.success, false);
+
+		const validKopecksInvoice = createInvoiceDraftSchema.safeParse({
+			items: [{ title: "Лечение кариеса", priceKopecks: 350000, quantity: 1 }],
+			discountKopecks: 50000,
+		});
+		assert.strictEqual(validKopecksInvoice.success, true);
+
+		const invalidSpeechChunk = speechChunkUploadSchema.safeParse({
+			recordingId: "rec-1",
+			chunkIndex: 0,
+			localTranscript: "Зуб 36",
+			extraUnknown: 123,
+		});
+		assert.strictEqual(invalidSpeechChunk.success, false);
+
+		const validOfflineSpeechChunk = speechChunkUploadSchema.safeParse({
+			recordingId: "rec-1",
+			chunkIndex: 0,
+			localTranscript: "Зуб 36",
+			organizationId: null,
+		});
+		assert.strictEqual(validOfflineSpeechChunk.success, true);
 	});
 });

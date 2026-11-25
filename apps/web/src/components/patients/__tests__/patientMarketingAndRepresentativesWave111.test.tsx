@@ -16,7 +16,7 @@ test("Wave 111 — PatientGeneralInfoTab renders marketing source chips", () => 
 
 	assert.ok(markup.includes("Канал привлечения пациента (Маркетинг"));
 	assert.ok(markup.includes('data-testid="chip-marketing-gis2"'));
-	assert.ok(markup.includes('data-testid="chip-marketing-yandex"'));
+	assert.ok(markup.includes('data-testid="chip-marketing-yandex_maps"'));
 	assert.ok(markup.includes('data-testid="chip-marketing-word_of_mouth"'));
 });
 

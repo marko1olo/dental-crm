@@ -3,7 +3,10 @@ import {
 	acceptVisitDraftSchema,
 } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireClinicalMutationContext } from "../../accessGuard.js";
+import {
+	ensureClinicalStaffAccess,
+	requireClinicalMutationContext,
+} from "../../security/tenantContext.js";
 import {
 	acceptVisitDraftInDb,
 	VisitSignedResponseIncompleteError,
@@ -29,6 +32,7 @@ export async function handleAcceptVisitDraft(
 		"visit draft accept",
 	);
 	if (!context) return;
+	if (!ensureClinicalStaffAccess(request, reply, "подписанию черновика приёма")) return;
 	const orgId = context.organizationId;
 	const { visitId } = request.params as { visitId: string };
 

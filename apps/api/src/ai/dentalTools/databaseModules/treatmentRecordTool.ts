@@ -4,10 +4,9 @@
  */
 
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
 import { treatmentItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
-import { rubToKopecks, kopecksToRub } from "./dbTypes.js";
+import { rubToKopecks, kopecksToRub, withToolTenantDb } from "./dbTypes.js";
 
 export const treatmentRecordSchema = z.object({
 	patientId: z.string().uuid("Некорректный UUID пациента").describe("ID пациента"),
@@ -35,7 +34,6 @@ export interface TreatmentRecordResult {
 }
 
 export async function handleTreatmentRecord(args: TreatmentRecordInput, context: DentalToolContext): Promise<TreatmentRecordResult> {
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const qty = args.quantity ?? 1;
 	const unitKopecks = rubToKopecks(args.priceRub);
@@ -57,24 +55,26 @@ export async function handleTreatmentRecord(args: TreatmentRecordInput, context:
 		};
 	}
 
-	const [inserted] = await activeDb
-		.insert(treatmentItems)
-		.values({
-			organizationId: orgId,
-			patientId: args.patientId,
-			visitId: args.visitId ?? null,
-			title: args.title,
-			toothCode: args.toothCode ?? null,
-			quantity: String(qty),
-			priceRub: totalPrice,
-			unitPriceRub: args.priceRub,
-			discountRub: 0,
-			priceKopecks: kopecks,
-			unitPriceKopecks: unitKopecks,
-			discountKopecks: 0n,
-			status: "completed",
-		})
-		.returning({ id: treatmentItems.id });
+	const [inserted] = await withToolTenantDb(context, async (tx) =>
+		tx
+			.insert(treatmentItems)
+			.values({
+				organizationId: orgId,
+				patientId: args.patientId,
+				visitId: args.visitId ?? null,
+				title: args.title,
+				toothCode: args.toothCode ?? null,
+				quantity: String(qty),
+				priceRub: totalPrice,
+				unitPriceRub: args.priceRub,
+				discountRub: 0,
+				priceKopecks: kopecks,
+				unitPriceKopecks: unitKopecks,
+				discountKopecks: 0n,
+				status: "completed",
+			})
+			.returning({ id: treatmentItems.id }),
+	);
 
 	if (!inserted) {
 		throw new Error("Не удалось зафиксировать процедуру в карте приёма");

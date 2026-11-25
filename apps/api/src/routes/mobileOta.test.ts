@@ -212,53 +212,79 @@ describe("Over-The-Air (OTA) Updates & Dynamic Shell API", () => {
 
 	describe("POST /api/mobile/publish", () => {
 		it("публикует новую версию и пересчитывает манифест и хеши на лету", async () => {
-			const app = await buildTestApp();
+			const oldSecret = process.env.DENTE_CLINICAL_ADMIN_SECRET;
+			process.env.DENTE_CLINICAL_ADMIN_SECRET = "test-secret-value-12345678901234567890";
+			try {
+				const app = await buildTestApp();
 
-			const publishRes = await app.inject({
-				method: "POST",
-				url: "/api/mobile/publish",
-				payload: {
-					version: "3.0.0",
-					minSupportedVersion: "2.5.0",
-					releaseNotes: "Релиз 3.0.0 с полной поддержкой 3D PACS",
-					customContent: "bundle-v3-payload",
-				},
-			});
+				const publishRes = await app.inject({
+					method: "POST",
+					url: "/api/mobile/publish",
+					headers: {
+						"x-dente-admin-secret": "test-secret-value-12345678901234567890",
+					},
+					payload: {
+						version: "3.0.0",
+						minSupportedVersion: "2.5.0",
+						releaseNotes: "Релиз 3.0.0 с полной поддержкой 3D PACS",
+						customContent: "bundle-v3-payload",
+					},
+				});
 
-			assert.equal(publishRes.statusCode, 200);
-			const publishJson = publishRes.json();
-			assert.equal(publishJson.success, true);
-			assert.equal(publishJson.version, "3.0.0");
-			assert.equal(publishJson.minSupportedVersion, "2.5.0");
-			assert.equal(typeof publishJson.bundleSha256, "string");
+				assert.equal(publishRes.statusCode, 200);
+				const publishJson = publishRes.json();
+				assert.equal(publishJson.success, true);
+				assert.equal(publishJson.version, "3.0.0");
+				assert.equal(publishJson.minSupportedVersion, "2.5.0");
+				assert.equal(typeof publishJson.bundleSha256, "string");
 
-			// Проверяем, что version.json теперь отдает новую версию
-			const checkRes = await app.inject({
-				method: "GET",
-				url: "/api/mobile/version.json?clientVersion=2.4.0",
-			});
-			const checkJson = checkRes.json();
+				// Проверяем, что version.json теперь отдает новую версию
+				const checkRes = await app.inject({
+					method: "GET",
+					url: "/api/mobile/version.json?clientVersion=2.4.0",
+				});
+				const checkJson = checkRes.json();
 
-			assert.equal(checkJson.version, "3.0.0");
-			assert.equal(checkJson.minSupportedVersion, "2.5.0");
-			assert.equal(checkJson.bundleSha256, publishJson.bundleSha256);
-			// Так как клиент 2.4.0 < minSupported 2.5.0 — обновление обязательно
-			assert.equal(checkJson.mandatory, true);
-			assert.equal(checkJson.isDeprecated, true);
+				assert.equal(checkJson.version, "3.0.0");
+				assert.equal(checkJson.minSupportedVersion, "2.5.0");
+				assert.equal(checkJson.bundleSha256, publishJson.bundleSha256);
+				// Так как клиент 2.4.0 < minSupported 2.5.0 — обновление обязательно
+				assert.equal(checkJson.mandatory, true);
+				assert.equal(checkJson.isDeprecated, true);
+			} finally {
+				if (oldSecret !== undefined) {
+					process.env.DENTE_CLINICAL_ADMIN_SECRET = oldSecret;
+				} else {
+					delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+				}
+			}
 		});
 
 		it("отклоняет запрос без указания версии", async () => {
-			const app = await buildTestApp();
+			const oldSecret = process.env.DENTE_CLINICAL_ADMIN_SECRET;
+			process.env.DENTE_CLINICAL_ADMIN_SECRET = "test-secret-value-12345678901234567890";
+			try {
+				const app = await buildTestApp();
 
-			const res = await app.inject({
-				method: "POST",
-				url: "/api/mobile/publish",
-				payload: {},
-			});
+				const res = await app.inject({
+					method: "POST",
+					url: "/api/mobile/publish",
+					headers: {
+						"x-dente-admin-secret": "test-secret-value-12345678901234567890",
+					},
+					payload: {},
+				});
 
-			assert.equal(res.statusCode, 400);
-			const json = res.json();
-			assert.equal(json.error, "ValidationError");
+				assert.equal(res.statusCode, 400);
+				const json = res.json();
+				assert.equal(json.error, "ValidationError");
+			} finally {
+				if (oldSecret !== undefined) {
+					process.env.DENTE_CLINICAL_ADMIN_SECRET = oldSecret;
+				} else {
+					delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+				}
+			}
 		});
 
 		it("блокирует неавторизованную публикацию при включенном DENTE_CLINICAL_ADMIN_SECRET", async () => {

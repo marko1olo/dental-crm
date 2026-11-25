@@ -21,6 +21,7 @@ import {
 	requireClinicalReadContext,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { patients, visits } from "../db/schema.js";
 import {
 	buildSpeechRecordingStrategy,
@@ -164,31 +165,39 @@ async function validateSpeechClinicalScope(
 		);
 	}
 
-	let patient: typeof patients.$inferSelect | null = null;
-	if (requestedPatientId) {
-		const patientScope = and(
-			eq(patients.id, requestedPatientId),
-			eq(patients.organizationId, callerOrganizationId),
-		);
-		const [found] = await db
-			.select()
-			.from(patients)
-			.where(patientScope)
-			.limit(1);
-		patient = found ?? null;
-		if (!patient)
-			return speechScopeFailure(404, "Пациент для диктовки не найден.");
-	}
+	const { patient, visit } = await withTenantCtx(callerOrganizationId, async (tx) => {
+		let foundPatient: typeof patients.$inferSelect | null = null;
+		if (requestedPatientId) {
+			const patientScope = and(
+				eq(patients.id, requestedPatientId),
+				eq(patients.organizationId, callerOrganizationId),
+			);
+			const [found] = await tx
+				.select()
+				.from(patients)
+				.where(patientScope)
+				.limit(1);
+			foundPatient = found ?? null;
+		}
 
-	let visit: typeof visits.$inferSelect | null = null;
-	if (requestedVisitId) {
-		const visitScope = and(
-			eq(visits.id, requestedVisitId),
-			eq(visits.organizationId, callerOrganizationId),
-		);
-		const [found] = await db.select().from(visits).where(visitScope).limit(1);
-		visit = found ?? null;
-		if (!visit) return speechScopeFailure(404, "Прием для диктовки не найден.");
+		let foundVisit: typeof visits.$inferSelect | null = null;
+		if (requestedVisitId) {
+			const visitScope = and(
+				eq(visits.id, requestedVisitId),
+				eq(visits.organizationId, callerOrganizationId),
+			);
+			const [found] = await tx.select().from(visits).where(visitScope).limit(1);
+			foundVisit = found ?? null;
+		}
+
+		return { patient: foundPatient, visit: foundVisit };
+	});
+
+	if (requestedPatientId && !patient) {
+		return speechScopeFailure(404, "Пациент для диктовки не найден.");
+	}
+	if (requestedVisitId && !visit) {
+		return speechScopeFailure(404, "Прием для диктовки не найден.");
 	}
 
 	if (visit && patient && visit.patientId !== patient.id) {
@@ -275,26 +284,34 @@ async function handleSpeechRecordingStrategy(
 	);
 }
 
-const speechChunksQuerySchema = z.object({
-	recordingId: z.string().optional(),
-	visitId: z.string().optional(),
-	patientId: z.string().optional(),
-});
+const speechChunksQuerySchema = z
+	.object({
+		recordingId: z.string().optional(),
+		visitId: z.string().optional(),
+		patientId: z.string().optional(),
+	})
+	.strict();
 
-const speechRecoveryQuerySchema = z.object({
-	visitId: z.string().optional(),
-	patientId: z.string().optional(),
-	limit: z.string().optional(),
-});
+const speechRecoveryQuerySchema = z
+	.object({
+		visitId: z.string().optional(),
+		patientId: z.string().optional(),
+		limit: z.string().optional(),
+	})
+	.strict();
 
-const speechAssembleParamsSchema = z.object({
-	recordingId: z.string().min(1),
-});
+const speechAssembleParamsSchema = z
+	.object({
+		recordingId: z.string().min(1),
+	})
+	.strict();
 
-const speechAssembleQuerySchema = z.object({
-	visitId: z.string().optional(),
-	patientId: z.string().optional(),
-});
+const speechAssembleQuerySchema = z
+	.object({
+		visitId: z.string().optional(),
+		patientId: z.string().optional(),
+	})
+	.strict();
 
 async function handleSpeechChunks(
 	request: FastifyRequest,

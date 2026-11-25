@@ -209,7 +209,8 @@ export class TrojanCloserEngine {
 				// Шаг 1: День 3
 				const variants = CADENCE_TEMPLATES.abandoned_estimate.day_3;
 				const variantIndex = Math.abs(candidate.rawIndex) % variants.length;
-				const templateFn = variants[variantIndex]!;
+				const templateFn = variants[variantIndex];
+				if (!templateFn) return null;
 				const text = templateFn(firstName, doctor, candidate.estimateSumRub);
 
 				return {
@@ -233,7 +234,8 @@ export class TrojanCloserEngine {
 				// Шаг 2: День 7
 				const variants = CADENCE_TEMPLATES.abandoned_estimate.day_7;
 				const variantIndex = Math.abs(candidate.rawIndex + 1) % variants.length;
-				const templateFn = variants[variantIndex]!;
+				const templateFn = variants[variantIndex];
+				if (!templateFn) return null;
 				const text = templateFn(firstName, doctor, candidate.estimateSumRub);
 
 				return {
@@ -257,7 +259,8 @@ export class TrojanCloserEngine {
 				// Шаг 3: День 14
 				const variants = CADENCE_TEMPLATES.abandoned_estimate.day_14;
 				const variantIndex = Math.abs(candidate.rawIndex + 2) % variants.length;
-				const templateFn = variants[variantIndex]!;
+				const templateFn = variants[variantIndex];
+				if (!templateFn) return null;
 				const text = templateFn(firstName, doctor);
 
 				return {
@@ -282,7 +285,8 @@ export class TrojanCloserEngine {
 			if (state.currentStep === "initial") {
 				const variants = CADENCE_TEMPLATES.preventive_recall.month_5_5;
 				const variantIndex = Math.abs(candidate.rawIndex) % variants.length;
-				const templateFn = variants[variantIndex]!;
+				const templateFn = variants[variantIndex];
+				if (!templateFn) return null;
 				const text = templateFn(firstName, doctor);
 
 				return {
@@ -307,7 +311,8 @@ export class TrojanCloserEngine {
 			if (state.currentStep === "initial") {
 				const variants = CADENCE_TEMPLATES.preventive_recall.month_7_overdue;
 				const variantIndex = 0;
-				const templateFn = variants[variantIndex]!;
+				const templateFn = variants[variantIndex];
+				if (!templateFn) return null;
 				const text = templateFn(firstName, doctor);
 
 				return {
@@ -468,7 +473,8 @@ export class TrojanCloserEngine {
 			if (candState.suppressed) continue;
 
 			const firstName = candidate.firstName || candidate.fullName.split(" ")[0] || "Пациент";
-			const variantFn = variants[i % variants.length]!;
+			const variantFn = variants[i % variants.length];
+			if (!variantFn) continue;
 			const text = variantFn(
 				firstName,
 				request.doctorName,

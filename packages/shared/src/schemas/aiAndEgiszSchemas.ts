@@ -482,11 +482,13 @@ export const speechChunkUploadSchema = z
 		durationMs: z.number().int().positive().max(180_000).nullable().optional(),
 		language: z.string().min(2).max(12).default("ru"),
 		source: speechTranscriptionSourceSchema.default("visit"),
+		organizationId: z.string().uuid().nullable().optional(),
 		patientId: z.string().uuid().nullable().optional(),
 		visitId: z.string().uuid().nullable().optional(),
 		specialty: dentalSpecialtySchema.optional(),
 		clientRecordedAt: z.string().nullable().optional(),
 	})
+	.strict()
 	.refine(
 		(input) =>
 			Boolean(input.audioBase64?.trim() || input.localTranscript?.trim()),

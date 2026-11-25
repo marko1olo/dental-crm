@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { payments, users, visitDiaries } from "../../db/schema.js";
@@ -104,9 +104,15 @@ export function doctorProfitabilityRow(
  * Расчёт доходности по врачам для всех клиник.
  * Строгая изоляция tenant: join дневника визита и врача только внутри organizationId платежа.
  */
-export async function computeDoctorProfitabilityAll(): Promise<
-	Map<string, DoctorProfitabilitySnapshotRow[]>
-> {
+export async function computeDoctorProfitabilityAll(
+	organizationIds?: readonly string[],
+): Promise<Map<string, DoctorProfitabilitySnapshotRow[]>> {
+	if (organizationIds && organizationIds.length === 0) {
+		return new Map();
+	}
+	const whereClause = organizationIds
+		? and(PAID_PAYMENTS_ONLY, inArray(payments.organizationId, [...organizationIds]))
+		: PAID_PAYMENTS_ONLY;
 	const rows = await db
 		.select({
 			organizationId: payments.organizationId,
@@ -129,7 +135,7 @@ export async function computeDoctorProfitabilityAll(): Promise<
 				eq(users.organizationId, payments.organizationId),
 			),
 		)
-		.where(PAID_PAYMENTS_ONLY)
+		.where(whereClause)
 		.groupBy(payments.organizationId, visitDiaries.doctorId, users.fullName);
 
 	const map = new Map<string, DoctorProfitabilitySnapshotRow[]>();

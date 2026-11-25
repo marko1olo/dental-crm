@@ -63,7 +63,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			initData,
 			botToken || "test_bot_token",
 			{
-				allowDevBypass: process.env.NODE_ENV === "test",
+				allowDevBypass: false,
 			},
 		);
 		if (!validation.isValid || !validation.user) {

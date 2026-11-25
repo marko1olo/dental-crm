@@ -34,8 +34,8 @@ const agentActionBodySchema = z
 		runtimeMode: z
 			.enum(["web_browser", "desktop_native", "chairside_tablet", "mobile_tablet"])
 			.optional(),
-		patientId: z.string().uuid().optional(),
-		visitId: z.string().uuid().optional(),
+		patientId: z.string().uuid().nullish(),
+		visitId: z.string().uuid().nullish(),
 	})
 	.strict();
 

@@ -6,10 +6,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
 import { isPathSafe } from "../desktopSystemTools.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 import { parseCsvRows } from "./csvParser.js";
+import { withToolTenantDb } from "./dbTypes.js";
 import { importPatientsRows, importPricelistRows } from "./importDataHelpers.js";
 
 export * from "./csvParser.js";
@@ -35,7 +35,6 @@ export async function handleImportClinicDataFile(args: ImportClinicDataFileInput
 		return { success: false, error: `Файл для импорта не найден по пути: '${normalizedPath}'` };
 	}
 
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const ext = path.extname(normalizedPath).toLowerCase();
 	const isJson = parsedArgs.fileFormat === "json" || (parsedArgs.fileFormat === "auto" && ext === ".json");
@@ -63,10 +62,11 @@ export async function handleImportClinicDataFile(args: ImportClinicDataFileInput
 		return { success: false, error: "Файл пуст или не содержит доступных строк для импорта." };
 	}
 
-	const res =
+	const res = await withToolTenantDb(context, async (activeDb) =>
 		parsedArgs.entityType === "pricelist"
 			? await importPricelistRows(activeDb, orgId, records, parsedArgs.dryRun)
-			: await importPatientsRows(activeDb, orgId, records, parsedArgs.dryRun);
+			: await importPatientsRows(activeDb, orgId, records, parsedArgs.dryRun),
+	);
 
 	return {
 		success: true,

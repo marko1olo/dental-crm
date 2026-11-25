@@ -5,9 +5,9 @@
 
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
 import { patientDrugAllergies, patients, toothStates, visits } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
+import { withToolTenantDb } from "./dbTypes.js";
 
 export const getPatientEmrSchema = z.object({
 	patientId: z.string().uuid("Некорректный UUID пациента").optional().describe("Идентификатор пациента в CRM"),
@@ -48,47 +48,48 @@ export interface GetPatientEmrResult {
 }
 
 export async function handleGetPatientEmr(args: GetPatientEmrInput, context: DentalToolContext): Promise<GetPatientEmrResult> {
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	if (!args.patientId && !args.query) {
 		return { found: false, message: "Для поиска медицинской карты необходимо указать patientId или query (ФИО/телефон)." };
 	}
 
-	let targetPatient: typeof patients.$inferSelect | undefined;
-	if (args.patientId) {
-		const rows = await activeDb.select().from(patients).where(and(eq(patients.organizationId, orgId), eq(patients.id, args.patientId))).limit(1);
-		targetPatient = rows[0];
-	} else if (args.query) {
-		const searchPattern = `%${args.query.trim()}%`;
-		const rows = await activeDb.select().from(patients).where(and(eq(patients.organizationId, orgId), or(ilike(patients.fullName, searchPattern), ilike(patients.phone, searchPattern)))).limit(1);
-		targetPatient = rows[0];
-	}
+	return await withToolTenantDb(context, async (activeDb) => {
+		let targetPatient: typeof patients.$inferSelect | undefined;
+		if (args.patientId) {
+			const rows = await activeDb.select().from(patients).where(and(eq(patients.organizationId, orgId), eq(patients.id, args.patientId))).limit(1);
+			targetPatient = rows[0];
+		} else if (args.query) {
+			const searchPattern = `%${args.query.trim()}%`;
+			const rows = await activeDb.select().from(patients).where(and(eq(patients.organizationId, orgId), or(ilike(patients.fullName, searchPattern), ilike(patients.phone, searchPattern)))).limit(1);
+			targetPatient = rows[0];
+		}
 
-	if (!targetPatient) {
-		return { found: false, message: "Пациент не найден в базе данных организации." };
-	}
+		if (!targetPatient) {
+			return { found: false, message: "Пациент не найден в базе данных организации." };
+		}
 
-	const [allergiesRows, toothRows, visitRows] = await Promise.all([
-		activeDb.select().from(patientDrugAllergies).where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, targetPatient.id))),
-		activeDb.select().from(toothStates).where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, targetPatient.id))),
-		activeDb.select().from(visits).where(and(eq(visits.organizationId, orgId), eq(visits.patientId, targetPatient.id))).orderBy(desc(visits.createdAt)).limit(5),
-	]);
+		const [allergiesRows, toothRows, visitRows] = await Promise.all([
+			activeDb.select().from(patientDrugAllergies).where(and(eq(patientDrugAllergies.organizationId, orgId), eq(patientDrugAllergies.patientId, targetPatient.id))),
+			activeDb.select().from(toothStates).where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, targetPatient.id))),
+			activeDb.select().from(visits).where(and(eq(visits.organizationId, orgId), eq(visits.patientId, targetPatient.id))).orderBy(desc(visits.createdAt)).limit(5),
+		]);
 
-	const weightNum = targetPatient.weightKg ? Number.parseFloat(targetPatient.weightKg) : null;
-	return {
-		found: true,
-		patient: {
-			id: targetPatient.id,
-			fullName: targetPatient.fullName,
-			birthDate: targetPatient.birthDate,
-			phone: targetPatient.phone,
-			weightKg: Number.isNaN(weightNum) ? null : weightNum,
-			notes: targetPatient.notes,
-		},
-		allergies: allergiesRows.map((a) => ({ allergenGroup: a.allergenGroup, drugInnLatin: a.drugInnLatin, severity: a.reactionSeverity, manifestations: a.clinicalManifestations })),
-		toothStates: toothRows.map((t) => ({ toothNumber: t.toothNumber, state: t.state, surfaces: t.surfaces, notes: t.notes })),
-		recentVisits: visitRows.map((v) => ({ id: v.id, status: v.status, diagnosis: v.diagnosis, createdAt: v.createdAt })),
-	};
+		const weightNum = targetPatient.weightKg ? Number.parseFloat(targetPatient.weightKg) : null;
+		return {
+			found: true,
+			patient: {
+				id: targetPatient.id,
+				fullName: targetPatient.fullName,
+				birthDate: targetPatient.birthDate,
+				phone: targetPatient.phone,
+				weightKg: Number.isNaN(weightNum) ? null : weightNum,
+				notes: targetPatient.notes,
+			},
+			allergies: allergiesRows.map((a) => ({ allergenGroup: a.allergenGroup, drugInnLatin: a.drugInnLatin, severity: a.reactionSeverity, manifestations: a.clinicalManifestations })),
+			toothStates: toothRows.map((t) => ({ toothNumber: t.toothNumber, state: t.state, surfaces: t.surfaces, notes: t.notes })),
+			recentVisits: visitRows.map((v) => ({ id: v.id, status: v.status, diagnosis: v.diagnosis, createdAt: v.createdAt })),
+		};
+	});
 }
 
 export const getPatientEmrTool: DentalToolEntry<typeof getPatientEmrSchema> = {

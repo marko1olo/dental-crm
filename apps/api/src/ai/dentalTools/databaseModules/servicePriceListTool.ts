@@ -5,9 +5,9 @@
 
 import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
 import { serviceCatalogItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
+import { withToolTenantDb } from "./dbTypes.js";
 import { STANDARD_SERVICE_CATALOG, standardServiceCatalog } from "./serviceCatalogData.js";
 
 export * from "./serviceCatalogData.js";
@@ -39,27 +39,28 @@ export interface SearchServicesResult {
 }
 
 export async function handleSearchServices(args: SearchServicesInput, context: DentalToolContext): Promise<SearchServicesResult> {
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const query = args.codeOrName.trim();
 	const searchPattern = `%${query}%`;
 
-	// 1. Поиск в прейскуранте клиники (serviceCatalogItems)
-	const clinicItems = await activeDb
-		.select()
-		.from(serviceCatalogItems)
-		.where(
-			and(
-				eq(serviceCatalogItems.organizationId, orgId),
-				eq(serviceCatalogItems.isActive, true),
-				or(
-					ilike(serviceCatalogItems.title, searchPattern),
-					ilike(serviceCatalogItems.code, searchPattern),
-					ilike(serviceCatalogItems.order804nCode, searchPattern),
+	// 1. Поиск в прейскуранте клиники (serviceCatalogItems) с обязательным RLS-контекстом
+	const clinicItems = await withToolTenantDb(context, async (activeDb) =>
+		activeDb
+			.select()
+			.from(serviceCatalogItems)
+			.where(
+				and(
+					eq(serviceCatalogItems.organizationId, orgId),
+					eq(serviceCatalogItems.isActive, true),
+					or(
+						ilike(serviceCatalogItems.title, searchPattern),
+						ilike(serviceCatalogItems.code, searchPattern),
+						ilike(serviceCatalogItems.order804nCode, searchPattern),
+					),
 				),
-			),
-		)
-		.limit(10);
+			)
+			.limit(10),
+	);
 
 	if (clinicItems.length > 0) {
 		return {

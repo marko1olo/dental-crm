@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
@@ -141,9 +141,16 @@ export interface ChairUtilizationPoint {
 /**
  * Расчёт загрузки кресел по завершённым приёмам.
  */
-export async function computeChairUtilizationAll(): Promise<
-	Map<string, ChairUtilizationPoint[]>
-> {
+export async function computeChairUtilizationAll(
+	organizationIds?: readonly string[],
+): Promise<Map<string, ChairUtilizationPoint[]>> {
+	if (organizationIds && organizationIds.length === 0) {
+		return new Map();
+	}
+	const completedOnly = eq(appointments.status, "completed");
+	const whereClause = organizationIds
+		? and(completedOnly, inArray(appointments.organizationId, [...organizationIds]))
+		: completedOnly;
 	const stats = await db
 		.select({
 			organizationId: appointments.organizationId,
@@ -151,7 +158,7 @@ export async function computeChairUtilizationAll(): Promise<
 			count: sql<number>`count(*)`,
 		})
 		.from(appointments)
-		.where(eq(appointments.status, "completed"))
+		.where(whereClause)
 		.groupBy(appointments.organizationId, appointments.chairId);
 
 	const orgChairs = new Map<string, ChairUtilizationPoint[]>();

@@ -11,7 +11,7 @@ import type {
 	DenteTelegramWebhookEvent,
 	DenteTelegramWebhookStatus,
 } from "@dental/shared";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { denteTelegramWebhookEvents } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 
@@ -54,24 +54,29 @@ export async function hasDenteTelegramWebhookUpdate(
 	botConfigId = "default",
 ): Promise<boolean> {
 	try {
-		const [existing] = await db
-			.select({
-				id: denteTelegramWebhookEvents.id,
-				status: denteTelegramWebhookEvents.status,
-			})
-			.from(denteTelegramWebhookEvents)
-			.where(
-				and(
-					eq(denteTelegramWebhookEvents.organizationId, organizationId),
-					eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
-					eq(denteTelegramWebhookEvents.updateId, updateId),
-				),
-			)
-			.limit(1);
+		return await withTenantCtx(organizationId, async (tx) => {
+			const [existing] = await tx
+				.select({
+					id: denteTelegramWebhookEvents.id,
+					status: denteTelegramWebhookEvents.status,
+				})
+				.from(denteTelegramWebhookEvents)
+				.where(
+					and(
+						eq(denteTelegramWebhookEvents.organizationId, organizationId),
+						eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
+						eq(denteTelegramWebhookEvents.updateId, updateId),
+					),
+				)
+				.limit(1);
 
-		return Boolean(existing && existing.status !== "processing");
+			return Boolean(existing && existing.status !== "processing");
+		});
 	} catch (err) {
-		// Fallback при временной недоступности базы
+		logger.warn(
+			{ err: safeLogError(err), updateId, organizationId, botConfigId },
+			"Failed to check Telegram webhook deduplication status",
+		);
 		return false;
 	}
 }
@@ -93,47 +98,53 @@ export async function claimDenteTelegramWebhookUpdate(input: {
 	const botConfigId = input.botConfigId || "default";
 
 	try {
-		const [inserted] = await db
-			.insert(denteTelegramWebhookEvents)
-			.values({
-				organizationId: input.organizationId,
-				clinicId: input.clinicId ?? null,
-				updateId: input.updateId,
-				botConfigId,
-				chatFingerprint: input.chatFingerprint ?? null,
-				updateKind: input.updateKind,
-				command: input.command ?? null,
-				status: "processing",
-				action: "processing_webhook_update",
-				warningsJson: JSON.stringify([]),
-			})
-			.onConflictDoNothing({
-				target: [
-					denteTelegramWebhookEvents.organizationId,
-					denteTelegramWebhookEvents.botConfigId,
-					denteTelegramWebhookEvents.updateId,
-				],
-			})
-			.returning();
+		return await withTenantCtx(input.organizationId, async (tx) => {
+			const [inserted] = await tx
+				.insert(denteTelegramWebhookEvents)
+				.values({
+					organizationId: input.organizationId,
+					clinicId: input.clinicId ?? null,
+					updateId: input.updateId,
+					botConfigId,
+					chatFingerprint: input.chatFingerprint ?? null,
+					updateKind: input.updateKind,
+					command: input.command ?? null,
+					status: "processing",
+					action: "processing_webhook_update",
+					warningsJson: JSON.stringify([]),
+				})
+				.onConflictDoNothing({
+					target: [
+						denteTelegramWebhookEvents.organizationId,
+						denteTelegramWebhookEvents.botConfigId,
+						denteTelegramWebhookEvents.updateId,
+					],
+				})
+				.returning();
 
-		if (inserted) {
-			return { claimed: true, event: mapRowToEvent(inserted) };
-		}
+			if (inserted) {
+				return { claimed: true, event: mapRowToEvent(inserted) };
+			}
 
-		// Если строка уже есть — извлекаем существующую
-		const [existing] = await db
-			.select()
-			.from(denteTelegramWebhookEvents)
-			.where(
-				and(
-					eq(denteTelegramWebhookEvents.organizationId, input.organizationId),
-					eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
-					eq(denteTelegramWebhookEvents.updateId, input.updateId),
-				),
-			)
-			.limit(1);
+			// Если строка уже есть — извлекаем существующую
+			const [existing] = await tx
+				.select()
+				.from(denteTelegramWebhookEvents)
+				.where(
+					and(
+						eq(denteTelegramWebhookEvents.organizationId, input.organizationId),
+						eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
+						eq(denteTelegramWebhookEvents.updateId, input.updateId),
+					),
+				)
+				.limit(1);
 
-		if (existing) {
+			if (!existing) {
+				throw new Error(
+					`Telegram webhook update ${input.updateId} conflicted on insert but could not be reloaded for tenant ${input.organizationId}`,
+				);
+			}
+
 			// Проверка на зависшую обработку (> 120 сек)
 			const createdAtMs = existing.createdAt.getTime();
 			const isStale =
@@ -146,14 +157,19 @@ export async function claimDenteTelegramWebhookUpdate(input: {
 					"stale_processing_retry",
 				];
 
-				const [retried] = await db
+				const [retried] = await tx
 					.update(denteTelegramWebhookEvents)
 					.set({
 						action: "processing_webhook_update_retry",
 						warningsJson: JSON.stringify(updatedWarnings),
 						createdAt: new Date(),
 					})
-					.where(eq(denteTelegramWebhookEvents.id, existing.id))
+					.where(
+						and(
+							eq(denteTelegramWebhookEvents.id, existing.id),
+							eq(denteTelegramWebhookEvents.organizationId, input.organizationId),
+						),
+					)
 					.returning();
 
 				if (retried) {
@@ -162,29 +178,14 @@ export async function claimDenteTelegramWebhookUpdate(input: {
 			}
 
 			return { claimed: false, event: mapRowToEvent(existing) };
-		}
+		});
 	} catch (dbError) {
-		// Ошибка работы с БД
-		logger.error({ err: safeLogError(dbError), updateId: input.updateId, organizationId: input.organizationId }, "Database claim error");
+		logger.error(
+			{ err: safeLogError(dbError), updateId: input.updateId, organizationId: input.organizationId },
+			"Database claim error",
+		);
+		throw dbError;
 	}
-
-	// Fallback-объект при сбое базы данных
-	return {
-		claimed: true,
-		event: {
-			id: `fallback_${input.updateId}`,
-			organizationId: input.organizationId,
-			updateId: input.updateId,
-			botConfigId,
-			chatFingerprint: input.chatFingerprint ?? null,
-			updateKind: input.updateKind,
-			command: input.command ?? null,
-			status: "processing",
-			action: "processing_webhook_update",
-			warnings: [],
-			createdAt: new Date().toISOString(),
-		},
-	};
 }
 
 /**
@@ -207,62 +208,57 @@ export async function recordDenteTelegramWebhookEvent(input: {
 	const warningsJson = JSON.stringify(warnings);
 
 	try {
-		const [saved] = await db
-			.insert(denteTelegramWebhookEvents)
-			.values({
-				organizationId: input.organizationId,
-				clinicId: input.clinicId ?? null,
-				updateId: input.updateId,
-				botConfigId,
-				chatFingerprint: input.chatFingerprint ?? null,
-				updateKind: input.updateKind,
-				command: input.command ?? null,
-				status: input.status,
-				action: input.action,
-				warningsJson,
-			})
-			.onConflictDoUpdate({
-				target: [
-					denteTelegramWebhookEvents.organizationId,
-					denteTelegramWebhookEvents.botConfigId,
-					denteTelegramWebhookEvents.updateId,
-				],
-				set: {
+		return await withTenantCtx(input.organizationId, async (tx) => {
+			const [saved] = await tx
+				.insert(denteTelegramWebhookEvents)
+				.values({
+					organizationId: input.organizationId,
+					clinicId: input.clinicId ?? null,
+					updateId: input.updateId,
+					botConfigId,
+					chatFingerprint: input.chatFingerprint ?? null,
+					updateKind: input.updateKind,
+					command: input.command ?? null,
 					status: input.status,
 					action: input.action,
 					warningsJson,
-					...(input.command !== undefined ? { command: input.command } : {}),
-					...(input.chatFingerprint !== undefined
-						? { chatFingerprint: input.chatFingerprint }
-						: {}),
-				},
-			})
-			.returning();
+				})
+				.onConflictDoUpdate({
+					target: [
+						denteTelegramWebhookEvents.organizationId,
+						denteTelegramWebhookEvents.botConfigId,
+						denteTelegramWebhookEvents.updateId,
+					],
+					set: {
+						status: input.status,
+						action: input.action,
+						warningsJson,
+						...(input.command !== undefined ? { command: input.command } : {}),
+						...(input.chatFingerprint !== undefined
+							? { chatFingerprint: input.chatFingerprint }
+							: {}),
+					},
+				})
+				.returning();
 
-		if (saved) {
+			if (!saved) {
+				throw new Error(
+					`Failed to persist Telegram webhook event ${input.updateId} for tenant ${input.organizationId}`,
+				);
+			}
 			return mapRowToEvent(saved);
-		}
+		});
 	} catch (dbError) {
-		logger.error({ err: safeLogError(dbError), updateId: input.updateId, organizationId: input.organizationId }, "Database record error");
+		logger.error(
+			{ err: safeLogError(dbError), updateId: input.updateId, organizationId: input.organizationId },
+			"Database record error",
+		);
+		throw dbError;
 	}
-
-	return {
-		id: `fallback_${input.updateId}`,
-		organizationId: input.organizationId,
-		updateId: input.updateId,
-		botConfigId,
-		chatFingerprint: input.chatFingerprint ?? null,
-		updateKind: input.updateKind,
-		command: input.command ?? null,
-		status: input.status,
-		action: input.action,
-		warnings,
-		createdAt: new Date().toISOString(),
-	};
 }
 
 /**
- * Получение списка последних событий вебхуков из PostgreSQL 18.
+ * Получение списка последних событий вебхуков из PostgreSQL 18 для конкретной клиники.
  * Поддерживает оба порядка параметров: (limit, organizationId, botConfigId) или (organizationId, limit, botConfigId).
  */
 export async function listDenteTelegramWebhookEvents(
@@ -285,35 +281,37 @@ export async function listDenteTelegramWebhookEvents(
 		}
 	}
 
+	const scopedOrgId = organizationId?.trim();
+	if (!scopedOrgId) {
+		logger.warn("listDenteTelegramWebhookEvents called without organizationId — returning empty array (fail-closed)");
+		return [];
+	}
+
 	try {
-		const conditions: SQL[] = [];
-		if (organizationId) {
-			conditions.push(
-				eq(denteTelegramWebhookEvents.organizationId, organizationId),
-			);
-		}
-		if (botConfigId) {
-			conditions.push(
-				eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
-			);
-		}
+		return await withTenantCtx(scopedOrgId, async (tx) => {
+			const conditions: SQL[] = [
+				eq(denteTelegramWebhookEvents.organizationId, scopedOrgId),
+			];
+			if (botConfigId) {
+				conditions.push(
+					eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
+				);
+			}
 
-		const query = db
-			.select()
-			.from(denteTelegramWebhookEvents);
+			const rows = await tx
+				.select()
+				.from(denteTelegramWebhookEvents)
+				.where(and(...conditions))
+				.orderBy(desc(denteTelegramWebhookEvents.createdAt))
+				.limit(Math.max(1, Math.min(300, limit)));
 
-		const rows =
-			conditions.length > 0
-				? await query
-						.where(and(...conditions))
-						.orderBy(desc(denteTelegramWebhookEvents.createdAt))
-						.limit(Math.max(1, Math.min(300, limit)))
-				: await query
-						.orderBy(desc(denteTelegramWebhookEvents.createdAt))
-						.limit(Math.max(1, Math.min(300, limit)));
-
-		return rows.map(mapRowToEvent);
-	} catch {
+			return rows.map(mapRowToEvent);
+		});
+	} catch (err) {
+		logger.warn(
+			{ err: safeLogError(err), organizationId: scopedOrgId, botConfigId },
+			"Failed to list Telegram webhook events",
+		);
 		return [];
 	}
 }
@@ -331,28 +329,34 @@ export async function countRejectedTelegramLinkCodeAttempts(
 	const windowStartedAt = new Date(Date.now() - windowMs);
 
 	try {
-		const rows = await db
-			.select({
-				id: denteTelegramWebhookEvents.id,
-				action: denteTelegramWebhookEvents.action,
-			})
-			.from(denteTelegramWebhookEvents)
-			.where(
-				and(
-					eq(denteTelegramWebhookEvents.organizationId, organizationId),
-					eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
-					eq(denteTelegramWebhookEvents.chatFingerprint, chatFingerprintValue),
-					gte(denteTelegramWebhookEvents.createdAt, windowStartedAt),
-				),
-			)
-			.limit(100);
+		return await withTenantCtx(organizationId, async (tx) => {
+			const rows = await tx
+				.select({
+					id: denteTelegramWebhookEvents.id,
+					action: denteTelegramWebhookEvents.action,
+				})
+				.from(denteTelegramWebhookEvents)
+				.where(
+					and(
+						eq(denteTelegramWebhookEvents.organizationId, organizationId),
+						eq(denteTelegramWebhookEvents.botConfigId, botConfigId),
+						eq(denteTelegramWebhookEvents.chatFingerprint, chatFingerprintValue),
+						gte(denteTelegramWebhookEvents.createdAt, windowStartedAt),
+					),
+				)
+				.limit(100);
 
-		return rows.filter(
-			(r) =>
-				r.action === "rejected_telegram_link_code" ||
-				r.action === "rate_limited_telegram_link_code",
-		).length;
-	} catch {
+			return rows.filter(
+				(r) =>
+					r.action === "rejected_telegram_link_code" ||
+					r.action === "rate_limited_telegram_link_code",
+			).length;
+		});
+	} catch (err) {
+		logger.warn(
+			{ err: safeLogError(err), organizationId, botConfigId },
+			"Failed to count rejected Telegram link code attempts",
+		);
 		return 0;
 	}
 }

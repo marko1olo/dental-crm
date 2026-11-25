@@ -177,17 +177,22 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 	test("fail-closed logic: empty or absent organization context returns 0 rows and avoids 22P02 syntax errors", async (ctx) => {
 		if (!isDbReady) return ctx.skip("database unavailable");
 
-		// Test on a fresh client checkout outside withTenantCtx / withSuperuserBypass
+		// Test on a fresh client checkout as non-superuser role outside withTenantCtx / withSuperuserBypass
 		const client = await pool.connect();
 		try {
+			await client.query("BEGIN");
+			await client.query("SET LOCAL ROLE dente_rls_tester");
+			await client.query("SELECT set_config('app.superuser_bypass', 'off', true)");
+
 			// 1. Completely unset setting
-			await client.query("DISCARD TEMP");
+			await client.query("RESET app.current_organization_id");
+			await client.query("RESET app.current_tenant");
 			const res1 = await client.query('SELECT * FROM "anesthesia_logs" LIMIT 1');
 			assert.equal(res1.rows.length, 0);
 
 			// 2. Empty string setting (post-reset GUC)
 			await client.query(
-				"SELECT set_config('app.current_organization_id', '', false), set_config('app.current_tenant', '', false)",
+				"SELECT set_config('app.current_organization_id', '', true), set_config('app.current_tenant', '', true)",
 			);
 			const res2 = await client.query('SELECT * FROM "anesthesia_logs" LIMIT 1');
 			assert.equal(res2.rows.length, 0);
@@ -197,6 +202,11 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 
 			const res4 = await client.query('SELECT * FROM "bonus_transactions" LIMIT 1');
 			assert.equal(res4.rows.length, 0);
+
+			await client.query("ROLLBACK");
+		} catch (e) {
+			await client.query("ROLLBACK").catch(() => {});
+			throw e;
 		} finally {
 			client.release();
 		}

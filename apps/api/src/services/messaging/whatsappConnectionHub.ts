@@ -7,7 +7,7 @@
  */
 
 import { createHash, randomBytes } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { isDemoShowcaseMode } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
@@ -381,7 +381,12 @@ export class WhatsappConnectionHubService {
 						isEnabled: true,
 						updatedAt: now,
 					})
-					.where(eq(denteWhatsappBotConfigs.organizationId, organizationId));
+					.where(
+						and(
+							eq(denteWhatsappBotConfigs.id, existing.id),
+							eq(denteWhatsappBotConfigs.organizationId, organizationId),
+						),
+					);
 
 				return { ok: true, id: existing.id };
 			}

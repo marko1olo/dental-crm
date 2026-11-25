@@ -52,18 +52,20 @@ interface AnestheticPreset {
 	epiCarpMcg: number;
 }
 
+const DEFAULT_ARTICAINE_1_100000: AnestheticPreset = {
+	drug: "articaine",
+	name: "Артикаин 4% с эпинефрином 1:100 000",
+	trade: "Ультракаин Д-С форте / Септанест 1:100 000",
+	conc: 4,
+	ratio: "1:100000",
+	ratioLabel: "1:100 000",
+	carpuleMl: 1.7,
+	mgCarp: 68,
+	epiCarpMcg: 17,
+};
+
 const DRUGS: Record<string, AnestheticPreset> = {
-	articaine_1_100000: {
-		drug: "articaine",
-		name: "Артикаин 4% с эпинефрином 1:100 000",
-		trade: "Ультракаин Д-С форте / Септанест 1:100 000",
-		conc: 4,
-		ratio: "1:100000",
-		ratioLabel: "1:100 000",
-		carpuleMl: 1.7,
-		mgCarp: 68,
-		epiCarpMcg: 17,
-	},
+	articaine_1_100000: DEFAULT_ARTICAINE_1_100000,
 	articaine_1_200000: {
 		drug: "articaine",
 		name: "Артикаин 4% с эпинефрином 1:200 000",
@@ -102,7 +104,7 @@ export async function handleCalculateAnesthesia(args: CalculateAnesthesiaInput, 
 		warnings.push("КЛИНИЧЕСКОЕ ПРЕДОСТЕРЕЖЕНИЕ (СтАР): При сердечно-сосудистой патологии (ИБС, гипертония, бета-блокаторы) раствор 1:100 000 несет риск гипертонического криза. Рекомендовано переключение на 1:200 000 либо Мепивакаин 3% без вазоконстриктора.");
 	}
 
-	const spec = DRUGS[type] ?? DRUGS.articaine_1_100000!;
+	const spec = DRUGS[type] ?? DEFAULT_ARTICAINE_1_100000;
 
 	// Делегируем в канонический SSOT калькулятор @dental/shared
 	const safety = calculateAnestheticSafety({

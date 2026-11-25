@@ -326,7 +326,7 @@ export async function dispatchWebhookMessage(params: {
 									replyMarkup: safeCommandKeyboard(settings, "rejected"),
 									photoUrl: patientMenuCardPhoto(settings, "mainMenu"),
 								}
-							: suggestedReplyFor(
+							: await suggestedReplyFor(
 									command,
 									callbackAction,
 									settings,

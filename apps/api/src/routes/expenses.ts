@@ -288,7 +288,10 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				})
 				.returning();
 
-			return rowToExpenseRecord(operation!);
+			if (!operation) {
+				throw new Error("Не удалось записать расходную операцию в кассу.");
+			}
+			return rowToExpenseRecord(operation);
 		});
 
 		if ("kind" in newRecord && newRecord.kind === "no_cash_box") {
@@ -446,11 +449,21 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 			return { error: "NotFound", message: "Расходная операция не найдена." };
 		}
 
-		// Фиксация в неизменяемом аудит-логе клиники с безопасным разрешением FK пользователя
 		let actorUserId: string | null = null;
-		if (typeof identity.userId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identity.userId)) {
+		const identityUserId =
+			typeof identity.userId === "string" ? identity.userId : null;
+		if (
+			identityUserId &&
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+				identityUserId,
+			)
+		) {
 			const [existingUser] = await withTenantCtx(organizationId, async (tx) => {
-				return tx.select({ id: users.id }).from(users).where(eq(users.id, identity.userId!)).limit(1);
+				return tx
+					.select({ id: users.id })
+					.from(users)
+					.where(eq(users.id, identityUserId))
+					.limit(1);
 			});
 			if (existingUser) {
 				actorUserId = existingUser.id;

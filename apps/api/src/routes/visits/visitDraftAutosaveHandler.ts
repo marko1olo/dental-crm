@@ -6,9 +6,10 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import {
+	ensureClinicalStaffAccess,
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
-} from "../../accessGuard.js";
+} from "../../security/tenantContext.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import {
@@ -40,6 +41,7 @@ export async function handleGetVisitDraft(
 		"visit draft read",
 	);
 	if (!context) return;
+	if (!ensureClinicalStaffAccess(request, reply, "черновику приёма")) return;
 	const orgId = context.organizationId;
 	const { visitId } = request.params as { visitId: string };
 
@@ -147,6 +149,7 @@ export async function handlePutVisitDraft(
 		"visit draft autosave",
 	);
 	if (!context) return;
+	if (!ensureClinicalStaffAccess(request, reply, "черновику приёма")) return;
 	const orgId = context.organizationId;
 	const { visitId } = request.params as { visitId: string };
 

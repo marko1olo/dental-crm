@@ -7,7 +7,6 @@
 
 import { and, eq, gte, lt, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -61,8 +60,8 @@ export async function resolveOrganizationId(rawOrgId?: string | null): Promise<s
 	if (!organizationId || !UUID_REGEX.test(organizationId)) {
 		return null;
 	}
-	const [org] = await withSuperuserBypass(async () => {
-		return db
+	const [org] = await withSuperuserBypass(async (tx) => {
+		return tx
 			.select({ id: organizations.id })
 			.from(organizations)
 			.where(eq(organizations.id, organizationId))
@@ -86,7 +85,7 @@ export async function lookupPatient(
 		patientFullName?: string;
 	},
 ): Promise<KioskPatientRecord | null> {
-	return withTenantCtx(organizationId, async () => {
+	return withTenantCtx(organizationId, async (tx) => {
 		const {
 			rawPatientId,
 			rawPhone,
@@ -100,7 +99,7 @@ export async function lookupPatient(
 
 		// Поиск по явному patientId
 		if (rawPatientId) {
-			const [p] = await db
+			const [p] = await tx
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -116,7 +115,7 @@ export async function lookupPatient(
 		// Поиск по полному номеру телефона
 		if (!targetPatient && rawPhone) {
 			const phoneDigits = rawPhone.replace(/\D/g, "");
-			const [p] = await db
+			const [p] = await tx
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -136,7 +135,7 @@ export async function lookupPatient(
 
 		// Поиск по 4 последним цифрам телефона (только если полный номер не был передан)
 		if (!targetPatient && !rawPhone && rawPhoneLast4.length === 4) {
-			const candidates = await db
+			const candidates = await tx
 				.select({
 					id: patients.id,
 					fullName: patients.fullName,
@@ -157,7 +156,7 @@ export async function lookupPatient(
 				const now = new Date();
 				const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
 				const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-				const [apt] = await db
+				const [apt] = await tx
 					.select({ id: appointments.id })
 					.from(appointments)
 					.where(
@@ -179,7 +178,7 @@ export async function lookupPatient(
 				const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
 				for (const cand of candidates) {
-					const [apt] = await db
+					const [apt] = await tx
 						.select({ id: appointments.id })
 						.from(appointments)
 						.where(
@@ -227,12 +226,12 @@ export async function lookupTodayAppointment(
 	organizationId: string,
 	patientId: string,
 ): Promise<KioskAppointmentRecord | null> {
-	return withTenantCtx(organizationId, async () => {
+	return withTenantCtx(organizationId, async (tx) => {
 		const now = new Date();
 		const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
 		const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-		const [apt] = await db
+		const [apt] = await tx
 			.select({
 				id: appointments.id,
 				startsAt: appointments.startsAt,
@@ -284,8 +283,8 @@ export async function createEmergencyAppointment(
 
 	let created: KioskAppointmentRecord | null = null;
 
-	await withTenantCtx(organizationId, async () => {
-		const [createdAppt] = await db
+	await withTenantCtx(organizationId, async (tx) => {
+		const [createdAppt] = await tx
 			.insert(appointments)
 			.values({
 				organizationId,
@@ -337,8 +336,8 @@ export async function createFirstTimeAppointment(
 
 	let created: KioskAppointmentRecord | null = null;
 
-	await withTenantCtx(organizationId, async () => {
-		const [createdAppt] = await db
+	await withTenantCtx(organizationId, async (tx) => {
+		const [createdAppt] = await tx
 			.insert(appointments)
 			.values({
 				organizationId,
@@ -372,12 +371,12 @@ export async function getDoctorAndCabinetInfo(
 	doctorUserId: string | null,
 	chairId: string | null,
 ): Promise<{ doctorName: string; cabinetName: string }> {
-	return withTenantCtx(organizationId, async () => {
+	return withTenantCtx(organizationId, async (tx) => {
 		let doctorName = doctorUserId ? "Дежурный врач-стоматолог" : "Дежурный врач";
 		let cabinetName = chairId ? "Кабинет 1" : "Стойка регистрации";
 
 		if (doctorUserId) {
-			const [doc] = await db
+			const [doc] = await tx
 				.select({ fullName: users.fullName })
 				.from(users)
 				.where(and(eq(users.id, doctorUserId), eq(users.organizationId, organizationId)))
@@ -388,7 +387,7 @@ export async function getDoctorAndCabinetInfo(
 		}
 
 		if (chairId) {
-			const [chair] = await db
+			const [chair] = await tx
 				.select({ name: chairs.name })
 				.from(chairs)
 				.where(and(eq(chairs.id, chairId), eq(chairs.organizationId, organizationId)))

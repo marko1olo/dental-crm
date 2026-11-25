@@ -48,7 +48,7 @@ describe("HUMANIZE RUSSIAN ERROR & DANGER GUARD SANITY (WAVE 295)", () => {
 
 			assert.equal(humanized.titleRu, "Срок действия скидки или промокода истёк");
 			assert.ok(!humanized.titleRu.includes("крафт-пакет"));
-			assert.ok(humanized.actionAdviceRu.includes("Мандат 8e"));
+			assert.ok(humanized.actionAdviceRu.includes("по праву врача"));
 		});
 
 		it("Кириллическая ошибка 'Скидка просрочена' обрабатывается как скидка", () => {

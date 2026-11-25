@@ -36,8 +36,7 @@
  */
 
 import { and, eq, gte, lte, isNull, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { onTenantTxCommit, withSuperuserBypass, withTenantCtx, type TenantDb } from "../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -109,6 +108,7 @@ type PatientMatch =
  * чужую карту хуже, чем оставить её неразобранной.
  */
 async function findPatientByPhone(
+	tx: TenantDb,
 	organizationId: string,
 	rawPhone: string,
 ): Promise<PatientMatch> {
@@ -116,7 +116,7 @@ async function findPatientByPhone(
 	if (digits.length < 10) return { kind: "none" };
 	const suffix = digits.slice(-10);
 
-	const rows = await db
+	const rows = await tx
 		.select({ id: patients.id })
 		.from(patients)
 		.where(
@@ -135,10 +135,11 @@ async function findPatientByPhone(
 
 /** Пациент по метке внешнего чата в заметках — так связывается MAX. */
 async function findPatientByExternalMark(
+	tx: TenantDb,
 	organizationId: string,
 	mark: string,
 ): Promise<PatientMatch> {
-	const rows = await db
+	const rows = await tx
 		.select({ id: patients.id })
 		.from(patients)
 		.where(
@@ -161,6 +162,7 @@ async function findPatientByExternalMark(
  * не он.
  */
 async function revokeConsentForChannel(
+	tx: TenantDb,
 	organizationId: string,
 	patientId: string,
 	channel: CommunicationChannelCode,
@@ -168,7 +170,7 @@ async function revokeConsentForChannel(
 ) {
 	const now = new Date();
 	for (const scope of ["service", "marketing"] as const) {
-		await db
+		await tx
 			.insert(patientCommunicationConsents)
 			.values({
 				organizationId,
@@ -204,13 +206,14 @@ async function revokeConsentForChannel(
  * отдельное явное согласие (ФЗ «О рекламе» ст. 18 ч. 1).
  */
 async function restoreServiceConsent(
+	tx: TenantDb,
 	organizationId: string,
 	patientId: string,
 	channel: CommunicationChannelCode,
 	evidence: string,
 ) {
 	const now = new Date();
-	await db
+	await tx
 		.insert(patientCommunicationConsents)
 		.values({
 			organizationId,
@@ -239,11 +242,16 @@ async function restoreServiceConsent(
 		});
 }
 
-async function markAsProcessed(eventId: string) {
-	await db
+async function markAsProcessed(tx: TenantDb, organizationId: string, eventId: string) {
+	await tx
 		.update(messengerInboundEvents)
 		.set({ processedAt: new Date() })
-		.where(eq(messengerInboundEvents.id, eventId));
+		.where(
+			and(
+				eq(messengerInboundEvents.id, eventId),
+				eq(messengerInboundEvents.organizationId, organizationId),
+			),
+		);
 }
 
 export async function processInboundEvents(
@@ -262,20 +270,6 @@ export async function processInboundEvents(
 		problems: [] as string[],
 	};
 
-	/*
-	 * ОЧЕРЕДЬ ВХОДЯЩИХ ОБЩАЯ ДЛЯ ВСЕХ КЛИНИК, и это единственное место разбора,
-	 * где арендатор неизвестен: строка ещё не прочитана, назвать клинику нечем.
-	 *
-	 * Под FORCE RLS этот запрос без контекста возвращал ноль строк и не ошибался
-	 * ни разу: цикл ниже не выполнялся НИКОГДА, и весь модуль был мёртв при
-	 * живых вызывающих. Дороже всего это стоило на слове «СТОП» — отказ от
-	 * рассылки не доходил до согласий, и клиника продолжала писать человеку,
-	 * который прямо попросил перестать.
-	 *
-	 * Обход накрывает РОВНО это чтение очереди. Разбор каждого события идёт под
-	 * контекстом ЕГО клиники (ниже): под обходом соседнее событие чужой клиники
-	 * могло бы дописать согласие или лид не в ту картотеку.
-	 */
 	const pendingEvents = await withSuperuserBypass(async (tx) =>
 		tx
 			.select()
@@ -289,8 +283,8 @@ export async function processInboundEvents(
 		try {
 			// Сбой на одном событии не должен останавливать разбор очереди.
 			// Клиника события известна из самой строки — работа идёт под ней.
-			await withTenantCtx(event.organizationId, () =>
-				processSingleEvent(event, report, logger),
+			await withTenantCtx(event.organizationId, (tx) =>
+				processSingleEvent(tx, event, report, logger),
 			);
 			report.processed += 1;
 		} catch (error) {
@@ -322,6 +316,7 @@ export async function processInboundEvents(
  * важнее ответа. Молча это тоже не проходит — причина пишется в журнал.
  */
 async function sendOptOutAcknowledgement(
+	tx: TenantDb,
 	organizationId: string,
 	patientId: string,
 	channel: CommunicationChannelCode,
@@ -330,22 +325,25 @@ async function sendOptOutAcknowledgement(
 	logger?: InboundIngestionLogger,
 ): Promise<void> {
 	try {
-		const [clinic] = await db
+		const [clinic] = await tx
 			.select({ name: clinics.name })
 			.from(clinics)
 			.where(eq(clinics.organizationId, organizationId))
 			.limit(1);
 
-		const result = await enqueueMessage({
-			organizationId,
-			patientId,
-			channel,
-			intent: "transactional_reply",
-			// scope остаётся служебным: это ответ на обращение, не реклама.
-			scope: "service",
-			body: optOutAcknowledgement(intent, clinic?.name ?? "Клиника"),
-			dedupeKey: `optout-ack:${eventId}`,
-		});
+		const result = await enqueueMessage(
+			{
+				organizationId,
+				patientId,
+				channel,
+				intent: "transactional_reply",
+				// scope остаётся служебным: это ответ на обращение, не реклама.
+				scope: "service",
+				body: optOutAcknowledgement(intent, clinic?.name ?? "Клиника"),
+				dedupeKey: `optout-ack:${eventId}`,
+			},
+			tx,
+		);
 
 		if (!result.ok) {
 			logger?.warn?.(
@@ -376,6 +374,7 @@ export function isPositiveAppointmentConfirmationText(text: string): boolean {
 type InboundEventRow = typeof messengerInboundEvents.$inferSelect;
 
 async function processSingleEvent(
+	tx: TenantDb,
 	event: InboundEventRow,
 	report: {
 		matchedToPatient: number;
@@ -386,6 +385,7 @@ async function processSingleEvent(
 	},
 	logger?: InboundIngestionLogger,
 ): Promise<void> {
+	const organizationId = event.organizationId;
 	let messageText = event.messageText?.trim();
 	if (!messageText) {
 		if (event.eventKind === "message") {
@@ -399,12 +399,11 @@ async function processSingleEvent(
 			messageText = `[Входящее медиавложение: ${payloadType}]`;
 		} else {
 			// Статусы доставки и служебные события текста не несут.
-			await markAsProcessed(event.id);
+			await markAsProcessed(tx, organizationId, event.id);
 			return;
 		}
 	}
 
-	const organizationId = event.organizationId;
 	const channel = channelForEvent(event.channel);
 	const externalChatId = event.externalChatId?.trim() ?? "";
 	let patientId = event.patientId;
@@ -413,18 +412,24 @@ async function processSingleEvent(
 	if (!patientId && externalChatId) {
 		const match =
 			channel === "whatsapp" || channel === "sms"
-				? await findPatientByPhone(organizationId, externalChatId)
+				? await findPatientByPhone(tx, organizationId, externalChatId)
 				: await findPatientByExternalMark(
+						tx,
 						organizationId,
 						`${channel.toUpperCase()}:${externalChatId}`,
 					);
 
 		if (match.kind === "found") {
 			patientId = match.patientId;
-			await db
+			await tx
 				.update(messengerInboundEvents)
 				.set({ patientId })
-				.where(eq(messengerInboundEvents.id, event.id));
+				.where(
+					and(
+						eq(messengerInboundEvents.id, event.id),
+						eq(messengerInboundEvents.organizationId, organizationId),
+					),
+				);
 		} else if (match.kind === "ambiguous") {
 			ambiguousMatch = true;
 			report.ambiguous += 1;
@@ -437,6 +442,7 @@ async function processSingleEvent(
 		const intent = detectOptOutIntent(messageText);
 		if (intent === "opt_out") {
 			await revokeConsentForChannel(
+				tx,
 				organizationId,
 				patientId,
 				channel,
@@ -444,6 +450,7 @@ async function processSingleEvent(
 			);
 			report.optOuts += 1;
 			await sendOptOutAcknowledgement(
+				tx,
 				organizationId,
 				patientId,
 				channel,
@@ -453,6 +460,7 @@ async function processSingleEvent(
 			);
 		} else if (intent === "opt_in") {
 			await restoreServiceConsent(
+				tx,
 				organizationId,
 				patientId,
 				channel,
@@ -460,6 +468,7 @@ async function processSingleEvent(
 			);
 			report.optIns += 1;
 			await sendOptOutAcknowledgement(
+				tx,
 				organizationId,
 				patientId,
 				channel,
@@ -469,7 +478,7 @@ async function processSingleEvent(
 			);
 		}
 
-		await db.insert(communicationEvents).values({
+		await tx.insert(communicationEvents).values({
 			organizationId,
 			patientId,
 			// Канал записывается как есть: раньше MAX подменялся телеграмом.
@@ -482,9 +491,12 @@ async function processSingleEvent(
 					: `${messageText} [распознано: ${intent === "opt_out" ? "отказ от сообщений" : "возврат к рассылке"}]`,
 		});
 
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "INBOX_NEW_MESSAGE",
-			payload: { channel, patientId, text: messageText, optOutIntent: intent },
+		const broadcastText = messageText;
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "INBOX_NEW_MESSAGE",
+				payload: { channel, patientId, text: broadcastText, optOutIntent: intent },
+			});
 		});
 
 		// Автоматическое распознавание согласия на визит («Да, буду», «Подтверждаю»)
@@ -494,7 +506,7 @@ async function processSingleEvent(
 				const windowStart = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 				const windowEnd = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-				const [plannedAppt] = await db
+				const [plannedAppt] = await tx
 					.select({
 						id: appointments.id,
 						startsAt: appointments.startsAt,
@@ -513,7 +525,7 @@ async function processSingleEvent(
 					.limit(1);
 
 				if (plannedAppt) {
-					await db
+					await tx
 						.update(appointments)
 						.set({ status: "confirmed" })
 						.where(
@@ -523,20 +535,26 @@ async function processSingleEvent(
 							),
 						);
 
-					wsBroker.broadcastToOrganization(organizationId, {
-						type: "APPOINTMENT_UPDATED",
-						payload: { id: plannedAppt.id, status: "confirmed" },
+					const apptId = plannedAppt.id;
+					onTenantTxCommit(() => {
+						wsBroker.broadcastToOrganization(organizationId, {
+							type: "APPOINTMENT_UPDATED",
+							payload: { id: apptId, status: "confirmed" },
+						});
 					});
 
 					try {
-						await enqueueMessage({
-							organizationId,
-							patientId,
-							channel,
-							intent: "appointment_confirmation",
-							body: "Спасибо! Ваша запись подтверждена. Ждём вас в клинике!",
-							dedupeKey: `appt_confirm_ack_${plannedAppt.id}`,
-						});
+						await enqueueMessage(
+							{
+								organizationId,
+								patientId,
+								channel,
+								intent: "appointment_confirmation",
+								body: "Спасибо! Ваша запись подтверждена. Ждём вас в клинике!",
+								dedupeKey: `appt_confirm_ack_${plannedAppt.id}`,
+							},
+							tx,
+						);
 					} catch (enqueueErr) {
 						logger?.warn?.({ enqueueErr }, "[MessengerIngestion] Failed to enqueue confirmation reply");
 					}
@@ -549,25 +567,21 @@ async function processSingleEvent(
 		// Semantic triage & HitL pipeline integration (MAX / WhatsApp / Telegram / VK / SMS)
 		if (intent === null) {
 			try {
-				const [p] = await db
+				const [p] = await tx
 					.select({ fullName: patients.fullName, phone: patients.phone })
 					.from(patients)
-					.where(eq(patients.id, patientId))
+					.where(
+						and(
+							eq(patients.id, patientId),
+							eq(patients.organizationId, organizationId),
+						),
+					)
 					.limit(1);
 
-				const triageResult = await defaultWhatsAppBridge.handleIncomingMessage({
-					messageId: event.id,
-					fromPhone: externalChatId || p?.phone || "Неизвестный номер",
-					rawText: messageText,
-					timestamp: event.createdAt,
-					patientId,
-					patientName: p?.fullName || null,
-					organizationId,
-					channel,
-				});
+				const triageResult = defaultWhatsAppBridge.getTriageAnalyzer().analyze(messageText);
 
-				if (triageResult.triageResult.urgency === "CRITICAL") {
-					await db.insert(communicationTasks).values({
+				if (triageResult.urgency === "CRITICAL") {
+					await tx.insert(communicationTasks).values({
 						organizationId,
 						patientId,
 						assignedRole: "receptionist",
@@ -576,23 +590,41 @@ async function processSingleEvent(
 						status: "needs_call",
 						priority: "urgent",
 						dueAt: new Date(Date.now() + 60 * 1000),
-						title: `[Экстренно] Сообщение ${channel.toUpperCase()}: ${triageResult.triageResult.clinicalSummary}`,
+						title: `[Экстренно] Сообщение ${channel.toUpperCase()}: ${triageResult.clinicalSummary}`,
 						body: messageText,
 						workflowCode: "OMNICHANNEL_EMERGENCY_TRIAGE",
 					});
 				}
+
+				const bridgeMsg = {
+					messageId: event.id,
+					fromPhone: externalChatId || p?.phone || "Неизвестный номер",
+					rawText: messageText,
+					timestamp: event.createdAt,
+					patientId,
+					patientName: p?.fullName || null,
+					organizationId,
+					channel,
+				};
+				onTenantTxCommit(async () => {
+					try {
+						await defaultWhatsAppBridge.handleIncomingMessage(bridgeMsg);
+					} catch (err) {
+						logger?.warn?.({ err }, "[MessengerIngestion] Post-commit triage dispatch failed");
+					}
+				});
 			} catch (err) {
 				logger?.warn?.({ err }, "[MessengerIngestion] Triage processing failed");
 			}
 		}
 
-		await markAsProcessed(event.id);
+		await markAsProcessed(tx, organizationId, event.id);
 		return;
 	}
 
 	// Незнакомый отправитель — это лид, а не медицинская карта. Раньше здесь
 	// создавалась карточка пациента с именем «WhatsApp User 79161234567».
-	const [clinic] = await db
+	const [clinic] = await tx
 		.select({ name: clinics.name })
 		.from(clinics)
 		.where(eq(clinics.organizationId, organizationId))
@@ -619,7 +651,7 @@ async function processSingleEvent(
 	// Защита от дублей лидов: если незнакомый пациент пишет несколько сообщений подряд,
 	// дополняем существующий открытый лид вместо создания лавины дубликатов.
 	if (leadPhone) {
-		const [existingLead] = await db
+		const [existingLead] = await tx
 			.select({ id: crmLeads.id, notes: crmLeads.notes })
 			.from(crmLeads)
 			.where(
@@ -635,15 +667,20 @@ async function processSingleEvent(
 			const updatedNotes = existingLead.notes
 				? `${existingLead.notes}\n---\n[Доп. сообщение ${channel}]: ${messageText.slice(0, 400)}`
 				: noteParts.join("\n");
-			await db
+			await tx
 				.update(crmLeads)
 				.set({ notes: updatedNotes })
-				.where(eq(crmLeads.id, existingLead.id));
+				.where(
+					and(
+						eq(crmLeads.id, existingLead.id),
+						eq(crmLeads.organizationId, organizationId),
+					),
+				);
 		}
 	}
 
 	if (!leadId) {
-		const [lead] = await db
+		const [lead] = await tx
 			.insert(crmLeads)
 			.values({
 				organizationId,
@@ -661,32 +698,36 @@ async function processSingleEvent(
 		}
 	}
 
-	// Semantic triage for unknown lead
-	try {
-		await defaultWhatsAppBridge.handleIncomingMessage({
-			messageId: event.id,
-			fromPhone: externalChatId || "Неизвестный номер",
-			rawText: messageText,
-			timestamp: event.createdAt,
-			patientId: null,
-			patientName: `Лид (${channel.toUpperCase()}: ${externalChatId || "чат"})`,
-			organizationId,
-			channel,
+	// Semantic triage & WS broadcast strictly after TX commit
+	const finalLeadId = leadId;
+	const leadBridgeMsg = {
+		messageId: event.id,
+		fromPhone: externalChatId || "Неизвестный номер",
+		rawText: messageText,
+		timestamp: event.createdAt,
+		patientId: null,
+		patientName: `Лид (${channel.toUpperCase()}: ${externalChatId || "чат"})`,
+		organizationId,
+		channel,
+	};
+	const leadBroadcastText = messageText;
+	onTenantTxCommit(async () => {
+		try {
+			await defaultWhatsAppBridge.handleIncomingMessage(leadBridgeMsg);
+		} catch (err) {
+			logger?.warn?.({ err }, "[MessengerIngestion] Lead triage processing failed");
+		}
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "INBOX_NEW_MESSAGE",
+			payload: {
+				channel,
+				patientId: null,
+				leadId: finalLeadId,
+				text: leadBroadcastText,
+				ambiguousMatch,
+			},
 		});
-	} catch (err) {
-		logger?.warn?.({ err }, "[MessengerIngestion] Lead triage processing failed");
-	}
-
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "INBOX_NEW_MESSAGE",
-		payload: {
-			channel,
-			patientId: null,
-			leadId,
-			text: messageText,
-			ambiguousMatch,
-		},
 	});
 
-	await markAsProcessed(event.id);
+	await markAsProcessed(tx, organizationId, event.id);
 }

@@ -140,7 +140,7 @@ export async function patientAccountBalancesRub(
 		patientId: row.patientId,
 		status: row.status,
 		amountRub:
-			row.amountKopecks != null
+			row.amountKopecks != null && row.amountKopecks !== 0n
 				? kopecksToRubles(Number(row.amountKopecks))
 				: row.amountRub,
 	}));

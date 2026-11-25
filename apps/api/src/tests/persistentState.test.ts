@@ -4,6 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, mock, test } from "node:test";
+import pino from "pino";
+import { bindServerLogger } from "../observability/logger.js";
 import {
 	type DentalMutableState,
 	getPersistentStateIntegrityReport,
@@ -11,6 +13,132 @@ import {
 	loadPersistentState,
 	savePersistentState,
 } from "../persistentState.js";
+
+function captureWarnLogs(): string[] {
+	const warnings: string[] = [];
+	const sink = pino({ level: "warn" }, { write: () => {} });
+	mock.method(sink, "warn", (...args: unknown[]) => {
+		const text = args
+			.map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg)))
+			.join(" ");
+		warnings.push(text);
+	});
+	bindServerLogger(sink);
+	return warnings;
+}
+
+function buildTestMutableState(clinicId = "clinic-1", clinicName = "Test Clinic"): DentalMutableState {
+	const nowIso = "2026-01-01T00:00:00.000Z";
+	const orgId = "00000000-0000-4000-8000-000000000001";
+	return {
+		clinicProfile: {
+			organizationId: orgId,
+			clinicName: `${clinicName} (${clinicId})`,
+			legalName: null,
+			inn: null,
+			address: null,
+			phone: null,
+			medicalLicenseIssuedAt: null,
+			mode: "network_clinic",
+			timezone: "Europe/Moscow",
+			defaultVisitMinutes: 30,
+			scheduleDefaults: {
+				workdayStart: "09:00",
+				workdayEnd: "21:00",
+				workingDays: [1, 2, 3, 4, 5],
+				appointmentBufferMinutes: 15,
+			},
+			networkEnabled: true,
+			egiszEnabled: false,
+			updatedAt: nowIso,
+		},
+		staffMembers: [],
+		chairs: [],
+		appointments: [],
+		patients: [],
+		documents: [],
+		clinicalRules: [],
+		payments: [],
+		communicationTasks: [],
+		communicationEvents: [],
+		imagingStudies: [],
+		imagingViewerSessions: [],
+		dicomWorkbenchBundles: [],
+		importBatches: [],
+		auditEvents: [],
+		aiRecognitionJobs: [],
+		speechTranscriptionChunks: [],
+		visitDraftAutosaves: [],
+		visitSaveReceipts: [],
+		denteTelegramLinkCodes: [],
+		denteTelegramChatLinks: [],
+		denteTelegramWebhookEvents: [],
+		denteTelegramOutboxDeliveryReceipts: [],
+		denteTelegramBotSettings: {
+			version: 1,
+			organizationId: orgId,
+			mode: "shared_dente_bot",
+			botUsername: null,
+			ownBotUsername: null,
+			webhookBaseUrl: null,
+			patientPortalBaseUrl: null,
+			welcomeImageUrl: null,
+			visualCardUrls: {
+				mainMenu: null,
+				appointment: null,
+				documents: null,
+				tax: null,
+				billing: null,
+				care: null,
+				review: null,
+				staff: null,
+			},
+			clinicReviewUrl: null,
+			clinicMapsUrl: null,
+			enabledFeatures: ["appointment_confirmation"],
+			patientLinkTokenTtlMinutes: 15,
+			appointmentReminderLeadTimesHours: [24],
+			reviewRequestDelayHours: 2,
+			postVisitCheckupDelayHoursByTopic: {
+				extraction: 24,
+				implantation: 24,
+				surgery_aftercare: 24,
+				fixation_aftercare: 48,
+				filling_restoration: 48,
+				endo: 48,
+				surgery: 24,
+				local_anesthesia: 24,
+				hygiene: 72,
+				prosthetics: 48,
+				orthodontics: 72,
+				periodontology: 72,
+				other: 48,
+			},
+			allowVoiceIntake: true,
+			staffEscalationChannel: null,
+			privacyMode: "no_phi_by_default",
+			updatedAt: nowIso,
+		},
+		uiPreferences: null,
+		activeVisit: {
+			id: "00000000-0000-4000-8000-000000000002",
+			organizationId: orgId,
+			patientId: "00000000-0000-4000-8000-000000000003",
+			appointmentId: null,
+			status: "draft",
+			revision: 1,
+			complaint: "",
+			anamnesis: "",
+			objectiveStatus: "",
+			diagnosis: null,
+			treatmentPlan: null,
+			doctorSummary: null,
+			hygieneIndices: null,
+			createdAt: nowIso,
+			updatedAt: nowIso,
+		},
+	};
+}
 
 describe("loadPersistentState", () => {
 	let tempDir: string;
@@ -30,6 +158,7 @@ describe("loadPersistentState", () => {
 	});
 
 	afterEach(() => {
+		bindServerLogger(null);
 		mock.restoreAll();
 		for (const key of Object.keys(process.env)) {
 			if (!(key in originalEnv)) {
@@ -79,7 +208,7 @@ describe("loadPersistentState", () => {
 	test("returns null when file is unreadable (invalid json)", () => {
 		mock.method(fs, "existsSync", () => true);
 		mock.method(fs, "readFileSync", () => "{ invalid json");
-		mock.method(console, "warn", () => {});
+		captureWarnLogs();
 
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
 		const result = loadPersistentState();
@@ -91,7 +220,7 @@ describe("loadPersistentState", () => {
 		mock.method(fs, "readFileSync", () =>
 			JSON.stringify({ version: 999, state: {} }),
 		);
-		mock.method(console, "warn", () => {});
+		captureWarnLogs();
 
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
 		const result = loadPersistentState();
@@ -103,7 +232,7 @@ describe("loadPersistentState", () => {
 		mock.method(fs, "readFileSync", () =>
 			JSON.stringify({ version: 1, state: {}, checksum: "invalid" }),
 		);
-		mock.method(console, "warn", () => {});
+		captureWarnLogs();
 
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
 		const result = loadPersistentState();
@@ -115,7 +244,7 @@ describe("loadPersistentState", () => {
 		mock.method(fs, "readFileSync", () => {
 			throw new Error("EACCES: permission denied");
 		});
-		mock.method(console, "warn", () => {}); // Suppress expected warning
+		captureWarnLogs();
 
 		const result = loadPersistentState();
 
@@ -124,7 +253,7 @@ describe("loadPersistentState", () => {
 
 	test("returns null when file contains invalid JSON", () => {
 		fs.writeFileSync(stateFile, "{ invalid json", "utf8");
-		mock.method(console, "warn", () => {}); // Suppress expected warning
+		captureWarnLogs();
 
 		const result = loadPersistentState();
 
@@ -160,22 +289,19 @@ describe("loadPersistentState", () => {
 		};
 		fs.writeFileSync(stateFile, JSON.stringify(payload), "utf8");
 
-		let warningLogged = false;
-		mock.method(console, "warn", (message: string) => {
-			if (message.includes("checksum mismatch")) {
-				warningLogged = true;
-			}
-		});
+		const warnings = captureWarnLogs();
 
 		const result = loadPersistentState();
 
 		assert.strictEqual(result, null);
-		assert.strictEqual(warningLogged, true);
+		assert.strictEqual(
+			warnings.some((message) => message.includes("checksum mismatch")),
+			true,
+		);
 	});
 
 	test("returns parsed state when file is valid and checksum matches", () => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const mockState = { clinicProfile: { id: "test-123" } } as any;
+		const mockState = buildTestMutableState("test-123", "Test Clinic");
 
 		// Use savePersistentState to generate a valid file with correct checksum
 		savePersistentState(mockState);
@@ -196,6 +322,7 @@ describe("getPersistentStateMeta", () => {
 	});
 
 	afterEach(() => {
+		bindServerLogger(null);
 		mock.restoreAll();
 		for (const key of Object.keys(process.env)) {
 			if (!(key in originalEnv)) {
@@ -241,11 +368,10 @@ describe("getPersistentStateMeta", () => {
 		process.env.DENTAL_STATE_BACKUP_DIR = backupDir;
 		process.env.DENTAL_STATE_BACKUPS = "10";
 
-		mock.method(console, "warn", () => {});
+		captureWarnLogs();
 
 		// Save state multiple times to create backups
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		savePersistentState({} as any);
+		savePersistentState(buildTestMutableState());
 
 		// Create a manual backup to have distinct files
 		fs.mkdirSync(backupDir, { recursive: true });
@@ -255,8 +381,7 @@ describe("getPersistentStateMeta", () => {
 		);
 
 		// Save again to trigger rotation
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		savePersistentState({} as any);
+		savePersistentState(buildTestMutableState());
 
 		const meta = getPersistentStateMeta();
 
@@ -295,6 +420,7 @@ describe("getPersistentStateIntegrityReport", () => {
 	let tempDir: string;
 
 	afterEach(() => {
+		bindServerLogger(null);
 		mock.restoreAll();
 		for (const key of Object.keys(process.env)) {
 			if (!(key in originalEnv)) {
@@ -421,8 +547,7 @@ describe("getPersistentStateIntegrityReport", () => {
 		fs.writeFileSync(stateFile, JSON.stringify(payload), "utf8");
 
 		mock.method(fs.promises, "readFile", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const error: any = new Error("EACCES: permission denied");
+			const error: NodeJS.ErrnoException = new Error("EACCES: permission denied");
 			error.code = "EACCES";
 			return Promise.reject(error);
 		});
@@ -474,6 +599,7 @@ describe("savePersistentState", () => {
 	});
 
 	afterEach(() => {
+		bindServerLogger(null);
 		mock.restoreAll();
 		// Restore environment variables exactly
 		for (const key of Object.keys(process.env)) {
@@ -487,42 +613,11 @@ describe("savePersistentState", () => {
 		fs.rmSync(tempDir, { recursive: true, force: true });
 	});
 
-	const mockState: DentalMutableState = {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		clinicProfile: { id: "clinic-1", name: "Test Clinic" } as any,
-		staffMembers: [],
-		chairs: [],
-		appointments: [],
-		patients: [],
-		documents: [],
-		clinicalRules: [],
-		payments: [],
-		communicationTasks: [],
-		communicationEvents: [],
-		imagingStudies: [],
-		imagingViewerSessions: [],
-		dicomWorkbenchBundles: [],
-		importBatches: [],
-		auditEvents: [],
-		aiRecognitionJobs: [],
-		speechTranscriptionChunks: [],
-		visitDraftAutosaves: [],
-		visitSaveReceipts: [],
-		denteTelegramLinkCodes: [],
-		denteTelegramChatLinks: [],
-		denteTelegramWebhookEvents: [],
-		denteTelegramOutboxDeliveryReceipts: [],
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		denteTelegramBotSettings: {} as any,
-		uiPreferences: null,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		activeVisit: {} as any,
-	};
+	const mockState: DentalMutableState = buildTestMutableState("clinic-1", "Test Clinic");
 
 	test("does nothing if persistence is disabled", () => {
 		process.env.DENTAL_STATE_PERSISTENCE = "off";
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const stateFile = process.env.DENTAL_STATE_FILE!;
+		const stateFile = process.env.DENTAL_STATE_FILE ?? path.join(tempDir, "state.json");
 
 		savePersistentState(mockState);
 
@@ -531,8 +626,7 @@ describe("savePersistentState", () => {
 
 	test("saves state to file with checksum", () => {
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const stateFile = process.env.DENTAL_STATE_FILE!;
+		const stateFile = process.env.DENTAL_STATE_FILE ?? path.join(tempDir, "state.json");
 
 		savePersistentState(mockState);
 
@@ -549,20 +643,20 @@ describe("savePersistentState", () => {
 
 	test("rotates backup if file already exists", () => {
 		process.env.DENTAL_STATE_PERSISTENCE = "on";
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const stateFile = process.env.DENTAL_STATE_FILE!;
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const backupDir = process.env.DENTAL_STATE_BACKUP_DIR!;
+		const stateFile = process.env.DENTAL_STATE_FILE ?? path.join(tempDir, "state.json");
+		const backupDir = process.env.DENTAL_STATE_BACKUP_DIR ?? path.join(tempDir, "backups");
 
 		// First save
 		savePersistentState(mockState);
 		assert.strictEqual(fs.existsSync(stateFile), true);
 
 		// Modify state slightly for second save
-		const modifiedState = {
+		const modifiedState: DentalMutableState = {
 			...mockState,
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			clinicProfile: { id: "clinic-2", name: "Updated" } as any,
+			clinicProfile: {
+				...mockState.clinicProfile,
+				clinicName: "Updated",
+			},
 		};
 
 		// Second save
@@ -580,12 +674,15 @@ describe("savePersistentState", () => {
 		const backupParsed = JSON.parse(backupContent);
 
 		// Backup should be the FIRST state
-		assert.deepStrictEqual(backupParsed.state.clinicProfile.id, "clinic-1");
+		assert.deepStrictEqual(
+			backupParsed.state.clinicProfile.clinicName,
+			"Test Clinic (clinic-1)",
+		);
 
 		// Current file should be the SECOND state
 		const currentContent = fs.readFileSync(stateFile, "utf8");
 		const currentParsed = JSON.parse(currentContent);
-		assert.deepStrictEqual(currentParsed.state.clinicProfile.id, "clinic-2");
+		assert.deepStrictEqual(currentParsed.state.clinicProfile.clinicName, "Updated");
 	});
 
 	test("catches errors and logs a warning", () => {
@@ -594,16 +691,14 @@ describe("savePersistentState", () => {
 		// Set state file to a directory to force an error during writeFileSync
 		process.env.DENTAL_STATE_FILE = tempDir;
 
-		let warningLogged = false;
-		mock.method(console, "warn", (message: string) => {
-			if (message.includes("Dental state file save failed")) {
-				warningLogged = true;
-			}
-		});
+		const warnings = captureWarnLogs();
 
 		// Should not throw
 		savePersistentState(mockState);
 
-		assert.strictEqual(warningLogged, true);
+		assert.strictEqual(
+			warnings.some((message) => message.includes("Dental state file save failed")),
+			true,
+		);
 	});
 });

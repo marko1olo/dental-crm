@@ -50,17 +50,10 @@ export async function computeBiAnalyticsSnapshots(
 		for (const orgId of orgIds) {
 			try {
 				await withTenantCtx(orgId, async (tx) => {
-					const [
-						cohortLtvMap,
-						planFunnelMap,
-						chairUtilizationMap,
-						doctorProfitabilityMap,
-					] = await Promise.all([
-						computeCohortLtvAll([orgId]),
-						computePlanFunnelAll([orgId]),
-						computeChairUtilizationAll(),
-						computeDoctorProfitabilityAll(),
-					]);
+					const cohortLtvMap = await computeCohortLtvAll([orgId]);
+					const planFunnelMap = await computePlanFunnelAll([orgId]);
+					const chairUtilizationMap = await computeChairUtilizationAll([orgId]);
+					const doctorProfitabilityMap = await computeDoctorProfitabilityAll([orgId]);
 
 					const cohortLtvJson = cohortLtvMap.get(orgId) ?? [];
 					const planFunnelJson = planFunnelMap.get(orgId) ?? [];

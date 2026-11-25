@@ -205,4 +205,119 @@ describe("SpeechLive Fastify Routes (/api/v1/speech/live)", () => {
 		assert.equal(closedCode, 4001, `Ожидался код закрытия 4001 для анонимного WS, получено ${closedCode}`);
 		await app.close();
 	});
+
+	it("issues short-lived WS ticket via POST /api/v1/speech/live/ticket (.strict()) and accepts ?ticket= & first-frame auth", async () => {
+		const app = fastify({ logger: false });
+		try {
+			await registerSpeechLiveRoutes(app);
+			await app.ready();
+			await app.listen({ port: 0, host: "127.0.0.1" });
+			const addr = app.server.address();
+			const port = typeof addr === "object" && addr ? addr.port : 0;
+
+			const unauthTicketRes = await app.inject({ method: "POST", url: "/api/v1/speech/live/ticket" });
+			assert.equal(unauthTicketRes.statusCode, 401);
+
+			const secret = authTokenSecret();
+			const clinicToken = signToken({ organizationId: "org-speech-ticket" }, secret);
+			const staffToken = signToken(
+				{ organizationId: "org-speech-ticket", userId: "user-doc-1", role: "doctor" },
+				secret,
+			);
+
+			const extraFieldRes = await app.inject({
+				method: "POST",
+				url: "/api/v1/speech/live/ticket",
+				headers: {
+					"x-dente-clinic-token": clinicToken,
+					"x-dente-staff-token": staffToken,
+				},
+				payload: { unknownProp: true },
+			});
+			assert.equal(extraFieldRes.statusCode, 400);
+
+			const ticketRes = await app.inject({
+				method: "POST",
+				url: "/api/v1/speech/live/ticket",
+				headers: {
+					"x-dente-clinic-token": clinicToken,
+					"x-dente-staff-token": staffToken,
+				},
+				payload: { specialty: "therapist", sampleRate: 16000 },
+			});
+			assert.equal(ticketRes.statusCode, 200);
+			const ticketBody = ticketRes.json() as { ok: boolean; ticket: string };
+			assert.equal(ticketBody.ok, true);
+			assert.ok(ticketBody.ticket.length > 10);
+
+			// 1. Connect via query ticket
+			const wsTicket = new WebSocket(`ws://127.0.0.1:${port}/api/v1/speech/live?ticket=${encodeURIComponent(ticketBody.ticket)}`);
+			let ticketOpened = false;
+			let ticketClosedCode = 0;
+			await new Promise<void>((resolve) => {
+				wsTicket.on("open", () => {
+					ticketOpened = true;
+					wsTicket.send(JSON.stringify({ type: "ping" }));
+				});
+				wsTicket.on("message", (raw) => {
+					const msg = JSON.parse(raw.toString()) as { type?: string };
+					if (msg.type === "pong") {
+						wsTicket.close(1000, "Done");
+					}
+				});
+				wsTicket.on("close", (code) => {
+					ticketClosedCode = code;
+					resolve();
+				});
+				setTimeout(resolve, 2000);
+			});
+			assert.equal(ticketOpened, true, "WS с валидным ?ticket= должен открываться");
+			assert.notEqual(ticketClosedCode, 4001, "WS с валидным ?ticket= не должен закрываться с 4001");
+			assert.notEqual(ticketClosedCode, 4403);
+
+			// 2. Connect via browser-compatible first-frame session_init with signed tokens
+			const wsFirstFrame = new WebSocket(`ws://127.0.0.1:${port}/api/speech/live`);
+			let gotReady = false;
+			let firstFrameClosedCode = 0;
+			await new Promise<void>((resolve) => {
+				wsFirstFrame.on("open", () => {
+					wsFirstFrame.send(JSON.stringify({ type: "session_init", clinicToken, staffToken, sampleRate: 16000 }));
+				});
+				wsFirstFrame.on("message", (raw) => {
+					const msg = JSON.parse(raw.toString()) as { type?: string };
+					if (msg.type === "session_ready") {
+						gotReady = true;
+						wsFirstFrame.send(JSON.stringify({ type: "ping" }));
+					} else if (msg.type === "pong") {
+						wsFirstFrame.close(1000, "Done");
+					}
+				});
+				wsFirstFrame.on("close", (code) => {
+					firstFrameClosedCode = code;
+					resolve();
+				});
+				setTimeout(resolve, 2000);
+			});
+			assert.equal(gotReady, true, "WS с валидным session_init должен присылать session_ready");
+			assert.notEqual(firstFrameClosedCode, 4001);
+			assert.notEqual(firstFrameClosedCode, 4403);
+
+			// 3. Reject spoofed session_init without signed token or ticket (4001)
+			const wsSpoof = new WebSocket(`ws://127.0.0.1:${port}/api/speech/live`);
+			let spoofCloseCode = 0;
+			await new Promise<void>((resolve) => {
+				wsSpoof.on("open", () => {
+					wsSpoof.send(JSON.stringify({ type: "session_init", organizationId: "spoofed-org", adminSecret: "fake" }));
+				});
+				wsSpoof.on("close", (code) => {
+					spoofCloseCode = code;
+					resolve();
+				});
+				setTimeout(resolve, 2000);
+			});
+			assert.equal(spoofCloseCode, 4001);
+		} finally {
+			await app.close();
+		}
+	});
 });

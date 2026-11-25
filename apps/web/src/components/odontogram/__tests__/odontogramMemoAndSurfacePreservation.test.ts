@@ -9,6 +9,7 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { mergeToothSurfaceStates } from "@dental/shared";
 import type { ToothData } from "../chart/types/toothRendererTypes";
 import { applyUpdatedStatesToTeeth } from "../syncModules/odontogramIndexedDbSync";
 
@@ -98,7 +99,6 @@ describe("Odontogram Red Team Defect Invariants", () => {
 	});
 
 	it("[DEFECT-ODONT-01 & DEFECT-ODONT-03]: useToothSurfacesState maintains MODBL isolation when toggling caries on filled tooth", () => {
-		const { mergeToothSurfaceStates } = require("@dental/shared");
 		const prevMap = { M: "filling" };
 		const nextMap = { O: "caries" };
 		const merged = mergeToothSurfaceStates(prevMap, nextMap);

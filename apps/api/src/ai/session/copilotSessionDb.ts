@@ -25,7 +25,7 @@ export async function createSessionInDb(
 	const now = new Date();
 
 	return await withTenantCtx(orgId, async (tx) => {
-		const [row] = await tx
+		const [inserted] = await tx
 			.insert(copilotSessions)
 			.values({
 				id: sessionId,
@@ -37,7 +37,23 @@ export async function createSessionInDb(
 				createdAt: now,
 				updatedAt: now,
 			})
+			.onConflictDoNothing({ target: copilotSessions.id })
 			.returning();
+
+		let row = inserted;
+		if (!row) {
+			const existingRows = await tx
+				.select()
+				.from(copilotSessions)
+				.where(
+					and(
+						eq(copilotSessions.id, sessionId),
+						eq(copilotSessions.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			row = existingRows[0];
+		}
 
 		if (!row) {
 			throw new Error("Не удалось создать сессию копайлота в PostgreSQL");
@@ -103,11 +119,6 @@ export async function getOrCreateSessionInDb(
 	organizationId: string,
 	defaults?: Partial<CreateSessionParams>,
 ): Promise<CopilotSessionRecord> {
-	const existing = await getSessionFromDb(sessionId, organizationId);
-	if (existing) {
-		return existing;
-	}
-
 	return await createSessionInDb({
 		id: sessionId,
 		organizationId,

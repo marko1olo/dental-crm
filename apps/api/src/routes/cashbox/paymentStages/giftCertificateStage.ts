@@ -78,9 +78,11 @@ export async function validateAndLockGiftCertificate(
 	}
 
 	// [FLOAT-DEFECT FIX]: Чтение точных копеек из currentBalanceKopecks либо parseKopecks
-	const currentBalKop = cert.currentBalanceKopecks != null
-		? BigInt(cert.currentBalanceKopecks)
-		: BigInt(parseKopecks(cert.currentBalanceRub ?? 0));
+	const currentBalKop =
+		cert.currentBalanceKopecks != null &&
+		BigInt(cert.currentBalanceKopecks) !== 0n
+			? BigInt(cert.currentBalanceKopecks)
+			: BigInt(parseKopecks(cert.currentBalanceRub ?? 0));
 
 	if (currentBalKop < requiredCertificateKopecks) {
 		return {

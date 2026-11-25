@@ -5,9 +5,9 @@
 
 import { and, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
 import { appointments } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
+import { withToolTenantDb } from "./dbTypes.js";
 
 export const getAvailableSlotsSchema = z.object({
 	date: z.string().optional().describe("Дата для поиска свободных слотов (ГГГГ-ММ-ДД или ISO строка). По умолчанию сегодня."),
@@ -38,7 +38,6 @@ export async function handleGetAvailableSlots(
 	args: GetAvailableSlotsInput,
 	context: DentalToolContext,
 ): Promise<GetAvailableSlotsResult> {
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const doctorId = args.doctorId || context.doctorId || undefined;
 	const duration = args.durationMinutes ?? 30;
@@ -59,14 +58,16 @@ export async function handleGetAvailableSlots(
 		conditions.push(eq(appointments.doctorUserId, doctorId));
 	}
 
-	const existingAppointments = await activeDb
-		.select({
-			startsAt: appointments.startsAt,
-			endsAt: appointments.endsAt,
-			status: appointments.status,
-		})
-		.from(appointments)
-		.where(and(...conditions));
+	const existingAppointments = await withToolTenantDb(context, async (activeDb) =>
+		activeDb
+			.select({
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+			})
+			.from(appointments)
+			.where(and(...conditions)),
+	);
 
 	const busyIntervals = existingAppointments
 		.filter((apt) => apt.status !== "cancelled")

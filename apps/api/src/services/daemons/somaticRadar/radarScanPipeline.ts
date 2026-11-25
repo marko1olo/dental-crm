@@ -173,30 +173,33 @@ export async function runSomaticRadarScan(options?: {
 			]);
 
 			for (const item of batchAllergies) {
-				if (!allergiesByPatient.has(item.patientId)) {
-					allergiesByPatient.set(item.patientId, []);
+				let patientAllergies = allergiesByPatient.get(item.patientId);
+				if (!patientAllergies) {
+					patientAllergies = [];
+					allergiesByPatient.set(item.patientId, patientAllergies);
 				}
-				allergiesByPatient.get(item.patientId)!.push(item);
+				patientAllergies.push(item);
 			}
 
 			for (const v of batchVisits) {
 				if (!v.patientId) continue;
-				if (!pastVisitsByPatient.has(v.patientId)) {
-					pastVisitsByPatient.set(v.patientId, []);
+				let patientVisits = pastVisitsByPatient.get(v.patientId);
+				if (!patientVisits) {
+					patientVisits = [];
+					pastVisitsByPatient.set(v.patientId, patientVisits);
 				}
-				const patientVisits = pastVisitsByPatient.get(v.patientId)!;
 				if (patientVisits.length < 5) {
 					patientVisits.push(v);
 				}
 			}
 
 			for (const p of batchPrescriptionItems) {
-				if (!activePrescriptionsByPatient.has(p.patientId)) {
-					activePrescriptionsByPatient.set(p.patientId, []);
+				let rxList = activePrescriptionsByPatient.get(p.patientId);
+				if (!rxList) {
+					rxList = [];
+					activePrescriptionsByPatient.set(p.patientId, rxList);
 				}
-				activePrescriptionsByPatient.get(p.patientId)!.push(
-					`${p.innLatin} ${p.signatureDirectionRussian}`,
-				);
+				rxList.push(`${p.innLatin} ${p.signatureDirectionRussian}`);
 			}
 		}
 
@@ -279,10 +282,12 @@ export async function runSomaticRadarShiftSummary(options?: {
 
 		for (const a of alerts) {
 			const orgId = a.organizationId;
-			if (!orgMap.has(orgId)) {
-				orgMap.set(orgId, []);
+			let orgAlerts = orgMap.get(orgId);
+			if (!orgAlerts) {
+				orgAlerts = [];
+				orgMap.set(orgId, orgAlerts);
 			}
-			orgMap.get(orgId)!.push(a);
+			orgAlerts.push(a);
 		}
 
 		if (options?.organizationId && !orgMap.has(options.organizationId)) {

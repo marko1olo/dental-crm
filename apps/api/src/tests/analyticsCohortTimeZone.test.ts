@@ -385,7 +385,7 @@ describe("месяц когорты берётся в поясе клиники"
 		);
 
 		try {
-			await computeBiAnalyticsSnapshots();
+			await computeBiAnalyticsSnapshots(ORG_ID);
 
 			const snapshot = await withFixtureTenant(ORG_ID, async () =>
 				db.execute(

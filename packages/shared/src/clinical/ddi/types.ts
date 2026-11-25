@@ -25,18 +25,20 @@ export const safetyRiskLevelSchema = z.enum([
 ]);
 export type SafetyRiskLevel = z.infer<typeof safetyRiskLevelSchema>;
 
-export const drugSafetyAuditInputSchema = z.object({
-	patientId: z.string().optional(),
-	organizationId: z.string().optional(),
-	proposedMedications: z
-		.array(z.string().min(1))
-		.min(1, "Укажите хотя бы один назначаемый препарат"),
-	existingMedications: z.array(z.string()).optional().default([]),
-	patientConditions: z.array(z.string()).optional().default([]),
-	knownAllergies: z.array(z.string()).optional().default([]),
-	patientAgeYears: z.number().optional(),
-	patientWeightKg: z.number().optional(),
-});
+export const drugSafetyAuditInputSchema = z
+	.object({
+		patientId: z.string().optional(),
+		organizationId: z.string().optional(),
+		proposedMedications: z
+			.array(z.string().min(1))
+			.min(1, "Укажите хотя бы один назначаемый препарат"),
+		existingMedications: z.array(z.string()).optional().default([]),
+		patientConditions: z.array(z.string()).optional().default([]),
+		knownAllergies: z.array(z.string()).optional().default([]),
+		patientAgeYears: z.number().optional(),
+		patientWeightKg: z.number().optional(),
+	})
+	.strict();
 export type DrugSafetyAuditInput = z.input<typeof drugSafetyAuditInputSchema>;
 
 export interface ClinicalAllergyWarning {

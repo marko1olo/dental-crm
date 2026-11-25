@@ -15,7 +15,6 @@ import {
 	validateIcsRFC5545,
 	type IcalAppointmentItem,
 } from "@dental/shared";
-import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
@@ -44,13 +43,14 @@ export {
 	type IcalAppointmentItem,
 };
 
-const SettingsSchema = z.object({
-	yandexCalendarId: z.string().nullable(),
-	yandexCalendarToken: z.union([
-		z.string(),
-		z.record(z.string(), z.unknown()),
-	]).nullable(),
-});
+const SettingsSchema = z
+	.object({
+		yandexCalendarId: z.string().nullable(),
+		yandexCalendarToken: z
+			.union([z.string(), z.record(z.string(), z.unknown())])
+			.nullable(),
+	})
+	.strict();
 
 interface TokenPayload {
 	userId?: string;
@@ -301,13 +301,15 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 
 			try {
 				const body = SettingsSchema.parse(request.body);
-				await db
-					.update(users)
-					.set({
-						yandexCalendarId: body.yandexCalendarId,
-						yandexCalendarToken: body.yandexCalendarToken,
-					})
-					.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)));
+				await withTenantCtx(orgId, (tx) =>
+					tx
+						.update(users)
+						.set({
+							yandexCalendarId: body.yandexCalendarId,
+							yandexCalendarToken: body.yandexCalendarToken,
+						})
+						.where(and(eq(users.id, staffId), eq(users.organizationId, orgId))),
+				);
 
 				return { success: true };
 			} catch (err: unknown) {
@@ -325,19 +327,22 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		try {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.organizationId) return;
+			const orgId = identity.organizationId;
 
-			const syncs = await db
-				.select({
-					id: yandexCalendarSyncs.id,
-					organizationId: yandexCalendarSyncs.organizationId,
-					doctorName: users.fullName,
-					yandexCalendarId: yandexCalendarSyncs.yandexCalendarId,
-					syncStatus: yandexCalendarSyncs.syncStatus,
-					lastSyncedAt: yandexCalendarSyncs.lastSyncAt,
-				})
-				.from(yandexCalendarSyncs)
-				.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
-				.where(eq(yandexCalendarSyncs.organizationId, identity.organizationId));
+			const syncs = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({
+						id: yandexCalendarSyncs.id,
+						organizationId: yandexCalendarSyncs.organizationId,
+						doctorName: users.fullName,
+						yandexCalendarId: yandexCalendarSyncs.yandexCalendarId,
+						syncStatus: yandexCalendarSyncs.syncStatus,
+						lastSyncedAt: yandexCalendarSyncs.lastSyncAt,
+					})
+					.from(yandexCalendarSyncs)
+					.innerJoin(users, eq(yandexCalendarSyncs.doctorId, users.id))
+					.where(eq(yandexCalendarSyncs.organizationId, orgId)),
+			);
 
 			return syncs;
 		} catch (error: unknown) {
@@ -357,55 +362,61 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			const staffId = identity.userId;
 			const orgId = identity.organizationId;
 
-			const staffInfo = await db
-				.select({
-					yandexCalendarId: users.yandexCalendarId,
-					yandexCalendarToken: users.yandexCalendarToken,
-				})
-				.from(users)
-				.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)))
-				.then((r) => r[0]);
+			const outcome = await withTenantCtx(orgId, async (tx) => {
+				const [staffInfo] = await tx
+					.select({
+						yandexCalendarId: users.yandexCalendarId,
+						yandexCalendarToken: users.yandexCalendarToken,
+					})
+					.from(users)
+					.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)));
 
-			if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
-				return reply.code(400).send({
-					error: "YandexCalendarNotConnected",
-					message: "Яндекс.Календарь не подключен для данного сотрудника.",
-				});
-			}
+				if (!staffInfo?.yandexCalendarId || !staffInfo?.yandexCalendarToken) {
+					return { notConnected: true as const };
+				}
 
-			const existingSync = await db
-				.select({ id: yandexCalendarSyncs.id })
-				.from(yandexCalendarSyncs)
-				.where(
-					and(
-						eq(yandexCalendarSyncs.organizationId, orgId),
-						eq(yandexCalendarSyncs.doctorId, staffId),
-					),
-				)
-				.then((r) => r[0]);
+				const [existingSync] = await tx
+					.select({ id: yandexCalendarSyncs.id })
+					.from(yandexCalendarSyncs)
+					.where(
+						and(
+							eq(yandexCalendarSyncs.organizationId, orgId),
+							eq(yandexCalendarSyncs.doctorId, staffId),
+						),
+					);
 
-			if (existingSync) {
-				await db
-					.update(yandexCalendarSyncs)
-					.set({
+				if (existingSync) {
+					await tx
+						.update(yandexCalendarSyncs)
+						.set({
+							yandexCalendarId: staffInfo.yandexCalendarId,
+							syncStatus: "synced",
+							lastSyncAt: new Date(),
+							errorMessage: null,
+						})
+						.where(
+							and(
+								eq(yandexCalendarSyncs.id, existingSync.id),
+								eq(yandexCalendarSyncs.organizationId, orgId),
+							),
+						);
+				} else {
+					await tx.insert(yandexCalendarSyncs).values({
+						organizationId: orgId,
+						doctorId: staffId,
 						yandexCalendarId: staffInfo.yandexCalendarId,
 						syncStatus: "synced",
 						lastSyncAt: new Date(),
-						errorMessage: null,
-					})
-					.where(
-						and(
-							eq(yandexCalendarSyncs.id, existingSync.id),
-							eq(yandexCalendarSyncs.organizationId, orgId),
-						),
-					);
-			} else {
-				await db.insert(yandexCalendarSyncs).values({
-					organizationId: orgId,
-					doctorId: staffId,
-					yandexCalendarId: staffInfo.yandexCalendarId,
-					syncStatus: "synced",
-					lastSyncAt: new Date(),
+					});
+				}
+
+				return { notConnected: false as const };
+			});
+
+			if (outcome.notConnected) {
+				return reply.code(400).send({
+					error: "YandexCalendarNotConnected",
+					message: "Яндекс.Календарь не подключен для данного сотрудника.",
 				});
 			}
 
@@ -426,20 +437,24 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 			const identity = await requireStaffIdentity(request, reply);
 			if (!identity?.userId || !identity?.organizationId) return;
 
-			const user = await db
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					yandexCalendarToken: users.yandexCalendarToken,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.id, identity.userId),
-						eq(users.organizationId, identity.organizationId),
-					),
-				)
-				.then((r) => r[0]);
+			const orgId = identity.organizationId;
+			const staffId = identity.userId;
+			const user = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						yandexCalendarToken: users.yandexCalendarToken,
+					})
+					.from(users)
+					.where(
+						and(
+							eq(users.id, staffId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.then((r) => r[0]),
+			);
 
 			const tokenMeta = user?.yandexCalendarToken as DoctorTokenMeta | null;
 			const version = tokenMeta?.tokenVersion ?? 1;
@@ -479,21 +494,24 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const targetUser = await db
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					isActive: users.isActive,
-					yandexCalendarToken: users.yandexCalendarToken,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.id, targetDoctorId),
-						eq(users.organizationId, identity.organizationId),
-					),
-				)
-				.then((r) => r[0]);
+			const orgId = identity.organizationId;
+			const targetUser = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						isActive: users.isActive,
+						yandexCalendarToken: users.yandexCalendarToken,
+					})
+					.from(users)
+					.where(
+						and(
+							eq(users.id, targetDoctorId),
+							eq(users.organizationId, orgId),
+						),
+					)
+					.then((r) => r[0]),
+			);
 
 			if (!targetUser || !targetUser.isActive) {
 				return reply.code(404).send({
@@ -541,50 +559,60 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const targetUser = await db
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					isActive: users.isActive,
-					yandexCalendarToken: users.yandexCalendarToken,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.id, targetDoctorId),
-						eq(users.organizationId, identity.organizationId),
-					),
-				)
-				.then((r) => r[0]);
+			const orgId = identity.organizationId;
+			const rotateResult = await withTenantCtx(orgId, async (tx) => {
+				const [targetUser] = await tx
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						isActive: users.isActive,
+						yandexCalendarToken: users.yandexCalendarToken,
+					})
+					.from(users)
+					.where(
+						and(
+							eq(users.id, targetDoctorId),
+							eq(users.organizationId, orgId),
+						),
+					);
 
-			if (!targetUser || !targetUser.isActive) {
+				if (!targetUser || !targetUser.isActive) {
+					return null;
+				}
+
+				const prevMeta = (targetUser.yandexCalendarToken as DoctorTokenMeta | null) || {};
+				const newVersion = (prevMeta.tokenVersion ?? 1) + 1;
+				const rotatedAt = new Date().toISOString();
+
+				const newMeta: DoctorTokenMeta = {
+					...prevMeta,
+					tokenVersion: newVersion,
+					rotatedAt,
+				};
+
+				await tx
+					.update(users)
+					.set({
+						yandexCalendarToken: newMeta,
+					})
+					.where(
+						and(
+							eq(users.id, targetDoctorId),
+							eq(users.organizationId, orgId),
+						),
+					);
+
+				return { targetUser, newVersion, rotatedAt };
+			});
+
+			if (!rotateResult) {
 				return reply.code(404).send({
 					error: "DoctorNotFound",
 					message: "Врач не найден в организации.",
 				});
 			}
 
-			const prevMeta = (targetUser.yandexCalendarToken as DoctorTokenMeta | null) || {};
-			const newVersion = (prevMeta.tokenVersion ?? 1) + 1;
-			const rotatedAt = new Date().toISOString();
-
-			const newMeta: DoctorTokenMeta = {
-				...prevMeta,
-				tokenVersion: newVersion,
-				rotatedAt,
-			};
-
-			await db
-				.update(users)
-				.set({
-					yandexCalendarToken: newMeta,
-				})
-				.where(
-					and(
-						eq(users.id, targetDoctorId),
-						eq(users.organizationId, identity.organizationId),
-					),
-				);
+			const { targetUser, newVersion, rotatedAt } = rotateResult;
 
 			const newToken = generateDoctorIcalToken({
 				doctorId: targetDoctorId,
@@ -611,7 +639,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 	// Ротация для текущего пользователя
 	app.post("/api/schedule/ical/rotate", async (request, reply) => {
 		const identity = await requireStaffIdentity(request, reply);
-		if (!identity?.userId) return;
+		if (!identity?.userId || !identity?.organizationId) return;
 		return app.inject({
 			method: "POST",
 			url: `/api/schedule/ical/doctor/${identity.userId}/rotate`,

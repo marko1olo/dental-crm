@@ -26,6 +26,7 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 } from "@dental/shared";
 import {
+	isDemoShowcaseMode,
 	namedDevelopmentModeActive,
 	unguardedBypassAllowed,
 } from "../../accessGuard.js";
@@ -43,19 +44,22 @@ const demoSeedBodySchema = z
 	.object({
 		forceReset: z.boolean().optional(),
 	})
+	.strict()
 	.optional();
 
-const switchRoleBodySchema = z.object({
-	role: z.enum([
-		"therapist",
-		"orthopedist",
-		"orthodontist",
-		"surgeon",
-		"owner",
-		"administrator",
-		"admin",
-	]),
-});
+const switchRoleBodySchema = z
+	.object({
+		role: z.enum([
+			"therapist",
+			"orthopedist",
+			"orthodontist",
+			"surgeon",
+			"owner",
+			"administrator",
+			"admin",
+		]),
+	})
+	.strict();
 
 const ROLE_METADATA_MAP = {
 	therapist: {
@@ -133,7 +137,7 @@ export function isDemoOperationAllowed(request?: FastifyRequest): boolean {
 		return true;
 	}
 
-	if (request) {
+	if (request && isDemoShowcaseMode()) {
 		const clinicToken = request.headers["x-dente-clinic-token"];
 		const staffToken = request.headers["x-dente-staff-token"];
 		const clinicStr = Array.isArray(clinicToken) ? clinicToken[0] : clinicToken;

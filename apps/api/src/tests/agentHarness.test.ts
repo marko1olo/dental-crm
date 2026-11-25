@@ -433,4 +433,65 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 		assert.ok(result.text.includes("Прейскурант услуг"), "Must use clean clinical terms");
 		assert.ok(result.text.includes("Касса"), "Must use clean clinical terms");
 	});
+
+	it("12. POST /api/agent/chat auto-generates sessionId when omitted & /api/agent/action accepts nullish patientId/visitId", async () => {
+		const app = Fastify();
+		await app.register(registerAgentRoutes);
+		await app.ready();
+
+		const jsonChatRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/chat",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				messages: [{ role: "user", content: "Какой статус расписания?" }],
+				stream: false,
+				fallbackToDeterministicAgent: true,
+			},
+		});
+		assert.equal(jsonChatRes.statusCode, 200);
+		const chatBody = jsonChatRes.json() as { sessionId?: string };
+		assert.match(
+			chatBody.sessionId ?? "",
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+			"JSON /api/agent/chat must return auto-generated UUID sessionId",
+		);
+
+		const sseRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/chat",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				messages: [{ role: "user", content: "Краткий статус" }],
+				stream: true,
+				fallbackToDeterministicAgent: true,
+			},
+		});
+		assert.equal(sseRes.statusCode, 200);
+		assert.match(sseRes.body, /"sessionId":"[0-9a-f-]{36}"/i, "SSE events must include auto-generated sessionId");
+
+		const actionRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				tool: "patient_search",
+				args: { query: "Иванов" },
+				patientId: null,
+				visitId: null,
+			},
+		});
+		assert.notEqual(actionRes.statusCode, 400, "patientId: null and visitId: null must be accepted by .nullish()");
+
+		await app.close();
+	});
 });

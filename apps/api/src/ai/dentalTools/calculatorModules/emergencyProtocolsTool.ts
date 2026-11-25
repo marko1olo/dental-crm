@@ -21,6 +21,13 @@ export interface ChairsideEmergencyResult {
 	readonly prognosisAndCommunication: string;
 }
 
+const DEFAULT_SWALLOWED_FOREIGN_BODY: Omit<ChairsideEmergencyResult, "emergencyType"> = {
+	urgencyLevel: "URGENT_CLINICAL",
+	immediateActions: ["1. Прекратить манипуляции.", "2. Оценить проходимость дыхательных путей (кашель, стридор, цианоз).", "3. При аспирации — прием Геймлиха, вызов скорой.", "4. При проглатывании — направить на обзорную рентгенографию брюшной полости."],
+	pharmacotherapy: ["Симптоматическая терапия."],
+	prognosisAndCommunication: "Контроль эвакуации инородного тела.",
+};
+
 const EMERGENCY_MAP: Record<string, Omit<ChairsideEmergencyResult, "emergencyType">> = {
 	anaphylactic_shock: {
 		urgencyLevel: "CRITICAL_RESUSCITATION",
@@ -87,17 +94,12 @@ const EMERGENCY_MAP: Record<string, Omit<ChairsideEmergencyResult, "emergencyTyp
 		],
 		prognosisAndCommunication: "При закрытии перфорации в первые часы прогноз благоприятный. При застарелых перфорациях — риск формирования пародонтального кармана.",
 	},
-	swallowed_foreign_body: {
-		urgencyLevel: "URGENT_CLINICAL",
-		immediateActions: ["1. Прекратить манипуляции.", "2. Оценить проходимость дыхательных путей (кашель, стридор, цианоз).", "3. При аспирации — прием Геймлиха, вызов скорой.", "4. При проглатывании — направить на обзорную рентгенографию брюшной полости."],
-		pharmacotherapy: ["Симптоматическая терапия."],
-		prognosisAndCommunication: "Контроль эвакуации инородного тела.",
-	},
+	swallowed_foreign_body: DEFAULT_SWALLOWED_FOREIGN_BODY,
 };
 
 export async function handleChairsideEmergency(args: ChairsideEmergencyInput, _context: DentalToolContext): Promise<ChairsideEmergencyResult> {
 	const type = args.emergencyType;
-	const data = EMERGENCY_MAP[type] ?? EMERGENCY_MAP.swallowed_foreign_body!;
+	const data = EMERGENCY_MAP[type] ?? DEFAULT_SWALLOWED_FOREIGN_BODY;
 	return { emergencyType: type, ...data };
 }
 

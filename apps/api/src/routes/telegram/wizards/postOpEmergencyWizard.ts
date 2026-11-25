@@ -201,7 +201,7 @@ export function documentSubmenuReplyFor(
 export function careTopicReplyFor(
 	settings: DenteTelegramBotSettings,
 	topic: DenteTelegramCareRequestTopic,
-	requestResult?: ReturnType<typeof createDenteTelegramCareRequest>,
+	requestResult?: Awaited<ReturnType<typeof createDenteTelegramCareRequest>>,
 ): TelegramWebhookReplyPackage {
 	const portal = portalButton(settings, "care");
 	const texts: Record<DenteTelegramCareRequestTopic, string> = {

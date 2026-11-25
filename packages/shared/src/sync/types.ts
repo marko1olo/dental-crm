@@ -95,18 +95,20 @@ export const syncMutationStatusSchema = z.enum([
 ]);
 export type SyncMutationStatus = z.infer<typeof syncMutationStatusSchema>;
 
-export const syncMutationResultSchema = z.object({
-	mutationId: z.string(),
-	idempotencyKey: z.string(),
-	status: syncMutationStatusSchema,
-	entityKind: syncMutationEntityKindSchema,
-	entityId: z.string(),
-	appliedAt: z.string(),
-	mergedFields: z.array(z.string()).optional(),
-	conflictDetails: z.array(fieldConflictDetailSchema).optional(),
-	currentServerEntity: z.record(z.string(), z.unknown()).optional(),
-	error: z.string().optional(),
-});
+export const syncMutationResultSchema = z
+	.object({
+		mutationId: z.string(),
+		idempotencyKey: z.string(),
+		status: syncMutationStatusSchema,
+		entityKind: syncMutationEntityKindSchema,
+		entityId: z.string(),
+		appliedAt: z.string(),
+		mergedFields: z.array(z.string()).optional(),
+		conflictDetails: z.array(fieldConflictDetailSchema).optional(),
+		currentServerEntity: z.record(z.string(), z.unknown()).optional(),
+		error: z.string().optional(),
+	})
+	.strict();
 export type SyncMutationResult = z.infer<typeof syncMutationResultSchema>;
 
 export const syncPushBatchResponseSchema = z.object({

@@ -5,6 +5,7 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	generatedDocuments,
 	imagingStudies,
@@ -413,87 +414,89 @@ export async function saveSomaticHealthQuestionnaire(
 	const now = new Date();
 	const nowIso = now.toISOString();
 
-	const [patientRow] = await db
-		.select()
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-
-	if (!patientRow) return null;
-
-	const currentProfile = patientRow.administrativeProfile ?? {};
-
-	// Update administrative profile
-	await db
-		.update(patients)
-		.set({
-			administrativeProfile: {
-				...currentProfile,
-				somaticQuestionnaire: { ...body },
-				somaticRiskProfile: evaluated.somaticProfile,
-				somaticAlerts: evaluated.alerts,
-				somaticRiskLevel: evaluated.riskLevel,
-				somaticUpdatedAt: nowIso,
-			},
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		);
-
-	if (
-		evaluated.drugListToInsert.length > 0 &&
-		(body.allergies?.hasAllergies ||
-			evaluated.somaticProfile.hasPenicillinAllergy ||
-			evaluated.somaticProfile.hasLocalAnestheticsAllergy ||
-			evaluated.somaticProfile.hasSulfiteAllergy)
-	) {
-		const existingAllergies = await db
-			.select({ drugInnLatin: patientDrugAllergies.drugInnLatin })
-			.from(patientDrugAllergies)
+	return await withTenantCtx(organizationId, async (tx) => {
+		const [patientRow] = await tx
+			.select()
+			.from(patients)
 			.where(
 				and(
-					eq(patientDrugAllergies.organizationId, organizationId),
-					eq(patientDrugAllergies.patientId, patientId),
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!patientRow) return null;
+
+		const currentProfile = patientRow.administrativeProfile ?? {};
+
+		// Update administrative profile
+		await tx
+			.update(patients)
+			.set({
+				administrativeProfile: {
+					...currentProfile,
+					somaticQuestionnaire: { ...body },
+					somaticRiskProfile: evaluated.somaticProfile,
+					somaticAlerts: evaluated.alerts,
+					somaticRiskLevel: evaluated.riskLevel,
+					somaticUpdatedAt: nowIso,
+				},
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
 				),
 			);
-		const existingSet = new Set(
-			existingAllergies
-				.map((a) => a.drugInnLatin?.trim().toLowerCase())
-				.filter((s): s is string => Boolean(s)),
-		);
 
-		const itemsToInsert = evaluated.drugListToInsert
-			.filter((drugName) => !existingSet.has(drugName.trim().toLowerCase()))
-			.map((drugName) => ({
-				organizationId,
-				patientId,
-				allergenGroup: "Лекарственные препараты",
-				drugInnLatin: drugName,
-				reactionSeverity: "high",
-				clinicalManifestations:
-					body.allergies?.details || "Указано пациентом при заполнении анкеты здоровья в личном кабинете",
-				isConfirmedByAllergist: false,
-			}));
+		if (
+			evaluated.drugListToInsert.length > 0 &&
+			(body.allergies?.hasAllergies ||
+				evaluated.somaticProfile.hasPenicillinAllergy ||
+				evaluated.somaticProfile.hasLocalAnestheticsAllergy ||
+				evaluated.somaticProfile.hasSulfiteAllergy)
+		) {
+			const existingAllergies = await tx
+				.select({ drugInnLatin: patientDrugAllergies.drugInnLatin })
+				.from(patientDrugAllergies)
+				.where(
+					and(
+						eq(patientDrugAllergies.organizationId, organizationId),
+						eq(patientDrugAllergies.patientId, patientId),
+					),
+				);
+			const existingSet = new Set(
+				existingAllergies
+					.map((a) => a.drugInnLatin?.trim().toLowerCase())
+					.filter((s): s is string => Boolean(s)),
+			);
 
-		if (itemsToInsert.length > 0) {
-			await db.insert(patientDrugAllergies).values(itemsToInsert);
+			const itemsToInsert = evaluated.drugListToInsert
+				.filter((drugName) => !existingSet.has(drugName.trim().toLowerCase()))
+				.map((drugName) => ({
+					organizationId,
+					patientId,
+					allergenGroup: "Лекарственные препараты",
+					drugInnLatin: drugName,
+					reactionSeverity: "high",
+					clinicalManifestations:
+						body.allergies?.details || "Указано пациентом при заполнении анкеты здоровья в личном кабинете",
+					isConfirmedByAllergist: false,
+				}));
+
+			if (itemsToInsert.length > 0) {
+				await tx.insert(patientDrugAllergies).values(itemsToInsert);
+			}
 		}
-	}
 
-	return {
-		success: true,
-		somaticProfile: evaluated.somaticProfile,
-		alerts: evaluated.alerts,
-		riskLevel: evaluated.riskLevel,
-		updatedAt: nowIso,
-	};
+		return {
+			success: true,
+			somaticProfile: evaluated.somaticProfile,
+			alerts: evaluated.alerts,
+			riskLevel: evaluated.riskLevel,
+			updatedAt: nowIso,
+		};
+	});
 }

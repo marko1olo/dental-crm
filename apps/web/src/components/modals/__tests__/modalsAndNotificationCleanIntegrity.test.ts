@@ -36,11 +36,7 @@ test("Modals & Notifications Integrity — Wave 106 Verification", async (t) => 
 		assert.ok(content.includes("Нет новых уведомлений"), "Must contain clean empty state message");
 	});
 
-	await t.test("OfflineFiscalBatchModal — zero DEFAULT_MOCK_QUEUED_RECEIPTS and neutral cashier", () => {
-		const content = fs.readFileSync(offlineFiscalPath, "utf8");
-		assert.ok(!content.includes("DEFAULT_MOCK_QUEUED_RECEIPTS"), "DEFAULT_MOCK_QUEUED_RECEIPTS must be deleted");
-		assert.ok(!content.includes("Сидорова А. П."), "Mock cashier must be eliminated");
-		assert.ok(content.includes('cashierFullName = "Кассир"'), "Must default cashier to 'Кассир'");
-		assert.ok(content.includes("return [];"), "Must return empty array [] when queue is empty");
+	await t.test("OfflineFiscalBatchModal — eradicated legacy duplicate modal", () => {
+		assert.ok(!fs.existsSync(offlineFiscalPath), "OfflineFiscalBatchModal.tsx must remain removed as superseded duplicate");
 	});
 });

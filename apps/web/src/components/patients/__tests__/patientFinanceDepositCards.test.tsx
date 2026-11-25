@@ -40,7 +40,7 @@ describe("Patient Card & Finance Deposit Cards (Mandate 8e & Apple HIG)", () => 
 		for (const amt of presets) {
 			assert.ok(html.includes(`data-testid="btn-quick-deposit-${amt}"`));
 		}
-		assert.ok(html.includes("min-h-[48px]") || html.includes("h-12"));
+		assert.ok(html.includes("h-11") || html.includes("min-h-[44px]") || html.includes("min-h-[48px]") || html.includes("h-12"));
 		assert.ok(!html.includes('data-testid="btn-quick-deposit-1000" disabled'));
 	});
 

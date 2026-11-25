@@ -109,6 +109,17 @@ export function resolveIdentityFromTokens(
 					typeof staffPayload.sessionId === "string"
 						? staffPayload.sessionId
 						: null;
+				if (typeof staffPayload.clinicalRole === "string") {
+					identity.clinicalRole = staffPayload.clinicalRole;
+				}
+				if (typeof staffPayload.canSignMedicalRecords === "boolean") {
+					identity.canSignMedicalRecords = staffPayload.canSignMedicalRecords;
+				}
+				if (Array.isArray(staffPayload.specialties)) {
+					identity.specialties = staffPayload.specialties.filter(
+						(item): item is string => typeof item === "string",
+					);
+				}
 			}
 		}
 	}
@@ -166,12 +177,16 @@ export function getRequestIdentity(request: FastifyRequest): RequestIdentity {
 
 	// Совместимость: код, читающий request.user, продолжает работать.
 	if (identity.organizationId) {
+		const normalizedRole = identity.role?.trim().toLowerCase();
+		const isDefaultClinicalSigner =
+			normalizedRole === "owner" || normalizedRole === "doctor";
 		request.user = {
 			organizationId: identity.organizationId,
 			id: identity.userId ?? "",
 			...(identity.role ? { role: identity.role } : {}),
 			fullName: identity.fullName,
-			canSignMedicalRecords: true,
+			canSignMedicalRecords:
+				identity.canSignMedicalRecords ?? isDefaultClinicalSigner,
 			canManageMoney:
 				identity.role === "owner" || identity.role === "administrator",
 		};

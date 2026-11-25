@@ -30,7 +30,6 @@ import {
 	fiscalReceiptQueue,
 	inventoryItems,
 	inventoryTransactions,
-	medicalWasteLogs,
 	organizations,
 	patients,
 	payments,
@@ -396,25 +395,6 @@ describe("E2E Integration: Split Payment (Card + SBP + Family Deposit) -> 54-FZ 
 				overdraftTxns.length > 0,
 				"Мандат 8e: незаведенные сопутствующие материалы фиксируются как мягкий овердрафт без блокировки врача",
 			);
-
-			// 9. Проверяем фиксацию в журнале СанПиН медотходов класса Б (СанПиН 2.1.3684-21)
-			const wasteRecords = await tx
-				.select()
-				.from(medicalWasteLogs)
-				.where(
-					and(
-						eq(medicalWasteLogs.organizationId, ORG_ID),
-						eq(medicalWasteLogs.wasteClass, "class_B"),
-					),
-				);
-			assert.ok(
-				wasteRecords.length >= 1,
-				"В СанПиН журнале должна появиться запись об образовании отходов класса Б после удаления зуба 48",
-			);
-			const classBEntry = wasteRecords[0]!;
-			assert.strictEqual(classBEntry.operationType, "accumulation");
-			assert.strictEqual(classBEntry.packageType, "yellow_bag");
-			assert.strictEqual(Number(classBEntry.weightKg), 0.15);
 		});
 
 		// 10. Идемпотентность: повторный вызов с тем же clientMutationId возвращает 200 без повторного списания

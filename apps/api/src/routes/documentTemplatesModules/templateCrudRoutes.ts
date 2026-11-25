@@ -86,12 +86,11 @@ export async function registerTemplateCrudRoutes(
 			const conditions: SQL[] = [];
 			if (organizationId) {
 				// Системные шаблоны (organizationId IS NULL) либо шаблоны данной клиники
-				conditions.push(
-					or(
-						eq(documentTemplates.organizationId, organizationId),
-						isNull(documentTemplates.organizationId),
-					)!,
+				const orgOrSystem = or(
+					eq(documentTemplates.organizationId, organizationId),
+					isNull(documentTemplates.organizationId),
 				);
+				if (orgOrSystem) conditions.push(orgOrSystem);
 			} else {
 				// Если организация не указана, возвращаем только системные шаблоны
 				conditions.push(isNull(documentTemplates.organizationId));
@@ -190,12 +189,13 @@ export async function registerTemplateCrudRoutes(
 			}
 
 			const organizationId = await resolveOrganizationId(request);
-			const tenantFilter = organizationId
-				? or(
-						eq(documentTemplates.organizationId, organizationId),
-						isNull(documentTemplates.organizationId),
-				  )!
-				: isNull(documentTemplates.organizationId);
+			const tenantFilter =
+				(organizationId
+					? or(
+							eq(documentTemplates.organizationId, organizationId),
+							isNull(documentTemplates.organizationId),
+						)
+					: undefined) ?? isNull(documentTemplates.organizationId);
 
 			const [template] = await db
 				.select()

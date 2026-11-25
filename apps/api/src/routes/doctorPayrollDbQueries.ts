@@ -607,7 +607,8 @@ export async function fetchDoctorPayrollDataset(params: {
 
 		let remainingMatKop = totalMatKop;
 		for (let i = 0; i < vTreats.length; i++) {
-			const treat = vTreats[i]!;
+			const treat = vTreats[i];
+			if (!treat) continue;
 			const gKop = getTreatmentItemGrossKopecks(treat);
 
 			let allocatedMat = 0;

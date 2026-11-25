@@ -9,7 +9,7 @@
 
 import { and, eq, ilike, or } from "drizzle-orm";
 import { rublesToKopecks, formatKopecksToRub } from "@dental/shared";
-import { db as defaultDb } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { serviceCatalogItems } from "../../db/schema.js";
 import { defaultCopilotActionManager } from "../copilotActionManager.js";
 import { executeDentalTool } from "../dentalTools.js";
@@ -112,7 +112,6 @@ export async function runDeterministicClinicalFallback(
 
 	const isInvoiceRequest = /счет|счёт|смет|оплат|чек/i.test(promptText);
 	if (isInvoiceRequest && context.patientId) {
-		const activeDb = context.db ?? defaultDb;
 		const orgId = context.organizationId;
 		let matchedService: { title: string; priceKopecks: bigint | number | null; priceRub: number | string; code?: string } | null = null;
 
@@ -127,25 +126,47 @@ export async function runDeterministicClinicalFallback(
 				else if (lowerPrompt.includes("консультац") || lowerPrompt.includes("осмотр") || lowerPrompt.includes("приём") || lowerPrompt.includes("прием")) searchKeyword = "прием";
 
 				const searchPattern = `%${searchKeyword}%`;
-				const items = await activeDb
-					.select({
-						title: serviceCatalogItems.title,
-						priceKopecks: serviceCatalogItems.priceKopecks,
-						priceRub: serviceCatalogItems.priceRub,
-						code: serviceCatalogItems.code,
-					})
-					.from(serviceCatalogItems)
-					.where(
-						and(
-							eq(serviceCatalogItems.organizationId, orgId),
-							eq(serviceCatalogItems.isActive, true),
-							or(
-								ilike(serviceCatalogItems.title, searchPattern),
-								ilike(serviceCatalogItems.code, searchPattern),
-							),
-						),
-					)
-					.limit(1);
+				const items = context.db
+					? await context.db
+							.select({
+								title: serviceCatalogItems.title,
+								priceKopecks: serviceCatalogItems.priceKopecks,
+								priceRub: serviceCatalogItems.priceRub,
+								code: serviceCatalogItems.code,
+							})
+							.from(serviceCatalogItems)
+							.where(
+								and(
+									eq(serviceCatalogItems.organizationId, orgId),
+									eq(serviceCatalogItems.isActive, true),
+									or(
+										ilike(serviceCatalogItems.title, searchPattern),
+										ilike(serviceCatalogItems.code, searchPattern),
+									),
+								),
+							)
+							.limit(1)
+					: await withTenantCtx(orgId, async (tx) =>
+							tx
+								.select({
+									title: serviceCatalogItems.title,
+									priceKopecks: serviceCatalogItems.priceKopecks,
+									priceRub: serviceCatalogItems.priceRub,
+									code: serviceCatalogItems.code,
+								})
+								.from(serviceCatalogItems)
+								.where(
+									and(
+										eq(serviceCatalogItems.organizationId, orgId),
+										eq(serviceCatalogItems.isActive, true),
+										or(
+											ilike(serviceCatalogItems.title, searchPattern),
+											ilike(serviceCatalogItems.code, searchPattern),
+										),
+									),
+								)
+								.limit(1),
+					  );
 
 				if (items.length > 0 && items[0]) {
 					matchedService = items[0];

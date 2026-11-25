@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { LanConnectionActions } from "../lanQrModal/LanConnectionActions";
 import { LanDeviceRoleTabs } from "../lanQrModal/LanDeviceRoleTabs";
 import { LanQrCodeSvg } from "../lanQrModal/LanQrCodeSvg";

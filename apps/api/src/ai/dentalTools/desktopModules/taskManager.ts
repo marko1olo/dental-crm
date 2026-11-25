@@ -4,6 +4,7 @@
  */
 
 import type { ChildProcess } from "node:child_process";
+import { aiLogger } from "../../aiLogger.js";
 import type { WorkstationTask } from "./desktopTypes.js";
 import { workstationSchedules } from "./scheduleManager.js";
 import {
@@ -57,7 +58,9 @@ export class WorkstationTaskManager {
 			task.childProcess = undefined;
 			try {
 				workstationSchedules.notifyTaskFinished(taskId);
-			} catch {}
+			} catch (notifyErr) {
+				aiLogger.warn("WorkstationTaskManager", `Failed to notify finished task ${taskId}`, notifyErr);
+			}
 		});
 
 		this.tasks.set(taskId, task);
@@ -89,7 +92,9 @@ export class WorkstationTaskManager {
 		const res = executeTaskKill(task);
 		try {
 			workstationSchedules.notifyTaskFinished(taskId);
-		} catch {}
+		} catch (notifyErr) {
+			aiLogger.warn("WorkstationTaskManager", `Failed to notify killed task ${taskId}`, notifyErr);
+		}
 		return res;
 	}
 

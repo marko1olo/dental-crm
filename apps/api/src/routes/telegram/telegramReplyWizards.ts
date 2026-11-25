@@ -78,7 +78,7 @@ export {
 /**
  * Маршрутизация команд, callback-действий и свободного текста для ботов Telegram.
  */
-export function suggestedReplyFor(
+export async function suggestedReplyFor(
 	command: string | null,
 	callbackAction: TelegramSafeCallbackAction | null,
 	settings: DenteTelegramBotSettings,
@@ -86,7 +86,7 @@ export function suggestedReplyFor(
 	updateKind: DenteTelegramUpdateKind,
 	messageText: string | null,
 	scope: TelegramRequestScope = {},
-): TelegramWebhookReplyPackage {
+): Promise<TelegramWebhookReplyPackage> {
 	const normalizedCommand = command?.split("@")[0] ?? null;
 
 	if (
@@ -135,7 +135,7 @@ export function suggestedReplyFor(
 		return documentSubmenuReplyFor(
 			settings,
 			"tax",
-			createDenteTelegramDocumentRequest(chatFingerprintValue, "tax", scope),
+			await createDenteTelegramDocumentRequest(chatFingerprintValue, "tax", scope),
 		);
 	}
 
@@ -145,7 +145,7 @@ export function suggestedReplyFor(
 		return documentSubmenuReplyFor(
 			settings,
 			"billing",
-			createDenteTelegramDocumentRequest(
+			await createDenteTelegramDocumentRequest(
 				chatFingerprintValue,
 				"billing",
 				scope,
@@ -159,7 +159,7 @@ export function suggestedReplyFor(
 		return documentSubmenuReplyFor(
 			settings,
 			"medical",
-			createDenteTelegramDocumentRequest(
+			await createDenteTelegramDocumentRequest(
 				chatFingerprintValue,
 				"medical",
 				scope,
@@ -173,7 +173,7 @@ export function suggestedReplyFor(
 		return documentSubmenuReplyFor(
 			settings,
 			"patientForms",
-			createDenteTelegramDocumentRequest(
+			await createDenteTelegramDocumentRequest(
 				chatFingerprintValue,
 				"patientForms",
 				scope,
@@ -201,7 +201,7 @@ export function suggestedReplyFor(
 		return careTopicReplyFor(
 			settings,
 			callbackCareTopic,
-			createDenteTelegramCareRequest(
+			await createDenteTelegramCareRequest(
 				chatFingerprintValue,
 				callbackCareTopic,
 				scope,
@@ -214,7 +214,7 @@ export function suggestedReplyFor(
 		normalizedCommand === "/call" ||
 		callbackAction === "dente:contact"
 	) {
-		return contactRequestReplyFor(settings, chatFingerprintValue, scope);
+		return await contactRequestReplyFor(settings, chatFingerprintValue, scope);
 	}
 
 	if (normalizedCommand === "/review" || callbackAction === "dente:review") {
@@ -230,7 +230,7 @@ export function suggestedReplyFor(
 	}
 
 	if (!command && !callbackAction) {
-		return freeTextReplyFor(settings, chatFingerprintValue, messageText, scope);
+		return await freeTextReplyFor(settings, chatFingerprintValue, messageText, scope);
 	}
 
 	return {

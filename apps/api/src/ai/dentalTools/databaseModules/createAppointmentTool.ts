@@ -5,8 +5,8 @@
 
 import { z } from "zod";
 import { createAppointmentInDb } from "../../../db/appointmentsQuery.js";
-import { db as defaultDb } from "../../../db/client.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
+import { withToolTenantDb } from "./dbTypes.js";
 
 export const createAppointmentSchema = z.object({
 	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
@@ -43,7 +43,6 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		throw new Error("MISSING_DOCTOR_CONTEXT: Не указан врач (doctorId отсутствует в аргументах и контексте)");
 	}
 
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const start = new Date(args.startTime);
 	if (Number.isNaN(start.getTime())) {
@@ -68,19 +67,21 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		};
 	}
 
-	const created = await createAppointmentInDb(
-		orgId,
-		{
-			patientId,
-			doctorUserId: doctorId,
-			chairId: args.chairId ?? null,
-			startsAt: start.toISOString(),
-			endsAt: end.toISOString(),
-			status: "planned",
-			reason: args.serviceTitle ?? "Стоматологический приём",
-			comment: args.notes ?? null,
-		},
-		activeDb,
+	const created = await withToolTenantDb(context, async (tx) =>
+		createAppointmentInDb(
+			orgId,
+			{
+				patientId,
+				doctorUserId: doctorId,
+				chairId: args.chairId ?? null,
+				startsAt: start.toISOString(),
+				endsAt: end.toISOString(),
+				status: "planned",
+				reason: args.serviceTitle ?? "Стоматологический приём",
+				comment: args.notes ?? null,
+			},
+			tx,
+		),
 	);
 
 	return {

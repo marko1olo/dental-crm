@@ -115,7 +115,7 @@ export const copilotHitlCards = pgTable(
 	"copilot_hitl_cards",
 	{
 		id: text("id").primaryKey(), // approvalId
-		organizationId: text("organization_id").notNull(),
+		organizationId: uuid("organization_id").notNull(),
 		patientId: text("patient_id").notNull(),
 		patientName: text("patient_name").notNull(),
 		phone: text("phone").notNull(),

@@ -35,6 +35,8 @@ export async function handleImagingImportPreview(request: FastifyRequest, reply:
 
 export async function handleDicomWebCheck(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireDicomWebSettingsAccess(request, reply))) return;
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
 	const parsed = parseImagingPayload(
 		dicomWebConnectorCheckRequestSchema, request.body,
 		"Проверка DICOMweb не выполнена: передайте корректный адрес сервиса и параметры доступа.",
@@ -58,6 +60,8 @@ const dicomServerPingBodySchema = z.object({
 
 export async function handleDicomServerPing(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "dicom server ping"))) return;
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
 	const parsed = parseImagingPayload(
 		dicomServerPingBodySchema,
 		request.body ?? {},
@@ -87,6 +91,8 @@ export async function handleDicomServerPing(request: FastifyRequest, reply: Fast
 
 export async function handleViewerLaunchManifest(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "dicom viewer launch manifest"))) return;
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return;
 	const parsed = parseImagingPayload(
 		dicomViewerLaunchManifestRequestSchema, request.body,
 		"Пакет открытия просмотра не построен: передайте выбранную серию и состояние просмотра.",

@@ -16,8 +16,7 @@
 
 import { and, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { onTenantTxCommit, withSavepoint, withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
 	auditEvents,
 	clinics,
@@ -413,9 +412,9 @@ export class TelephonyOutboxService {
 			utmMedium,
 		} = payload;
 
-		await withTenantCtx(organizationId, async () => {
+		await withTenantCtx(organizationId, async (tx) => {
 			// 1. Match Patient within this tenant
-			const searchPatient = await db
+			const searchPatient = await tx
 				.select()
 				.from(patients)
 				.where(
@@ -439,22 +438,24 @@ export class TelephonyOutboxService {
 					matchedPatient?.fullName?.trim() ||
 					"Неизвестный номер";
 
-				wsBroker.broadcastToOrganization(organizationId, {
-					type: "TELEPHONY_INCOMING_CALL",
-					payload: {
-						phone: callerPhone.e164,
-						patientId: matchedPatient?.id || null,
-						patientName: patientDisplayName,
-						callId: callId || null,
-						provider: detectedProvider,
-						timestamp: new Date().toISOString(),
-						virtualNumber: virtualTrunkNumber || null,
-						utmSource: utmSource || null,
-						utmCampaign: utmCampaign || null,
-						utmMedium: utmMedium || null,
-						advertisingChannel: detectedMarketingChannel,
-						leadId: null,
-					},
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "TELEPHONY_INCOMING_CALL",
+						payload: {
+							phone: callerPhone.e164,
+							patientId: matchedPatient?.id || null,
+							patientName: patientDisplayName,
+							callId: callId || null,
+							provider: detectedProvider,
+							timestamp: new Date().toISOString(),
+							virtualNumber: virtualTrunkNumber || null,
+							utmSource: utmSource || null,
+							utmCampaign: utmCampaign || null,
+							utmMedium: utmMedium || null,
+							advertisingChannel: detectedMarketingChannel,
+							leadId: null,
+						},
+					});
 				});
 
 				return;
@@ -473,15 +474,15 @@ export class TelephonyOutboxService {
 					.join(", ");
 
 				if (!matchedPatient && callerPhone.national10.length >= 7) {
-					// Use transaction + advisory lock to prevent race conditions on lead insertion
-					matchedLead = await db.transaction(async (tx) => {
-						await tx.execute(
+					// Use savepoint + advisory lock within enclosing withTenantCtx transaction
+					matchedLead = await withSavepoint(tx, async (spTx) => {
+						await spTx.execute(
 							sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${organizationId}:${callerPhone.national10}`}))`,
 						);
 
 						const calculatedIdempotencyKey = `telephony:lead:answered:${organizationId}:${callId || callerPhone.national10}`;
 
-						const existingLeads = await tx
+						const existingLeads = await spTx
 							.select()
 							.from(crmLeads)
 							.where(
@@ -502,7 +503,7 @@ export class TelephonyOutboxService {
 							return existingLeads[0] ?? null;
 						}
 
-						const insertedLeads = await tx
+						const insertedLeads = await spTx
 							.insert(crmLeads)
 							.values({
 								organizationId,
@@ -571,6 +572,7 @@ export class TelephonyOutboxService {
 					durationSeconds,
 					transcriptionSnippet: transcriptionSnippet || null,
 					matchedPatient: matchedPatient || null,
+					tx,
 				});
 				return;
 			}
@@ -586,8 +588,8 @@ export class TelephonyOutboxService {
 		errorReason: string,
 	): Promise<void> {
 		try {
-			await withTenantCtx(organizationId, async () => {
-				await db.insert(auditEvents).values({
+			await withTenantCtx(organizationId, async (tx) => {
+				await tx.insert(auditEvents).values({
 					organizationId,
 					entityType: "telephony_outbox_dlq",
 					entityId: jobId,
@@ -622,7 +624,12 @@ export class TelephonyOutboxService {
 		try {
 			await TaskQueueService.retryJob(eventId, organizationId);
 			return true;
-		} catch {
+		} catch (err) {
+			const activeLogger = this.logger || defaultStructuredLogger;
+			activeLogger.warn(
+				{ err: err instanceof Error ? err.message : String(err), eventId, organizationId },
+				"[TelephonyOutboxService] Failed to retry DLQ call",
+			);
 			return false;
 		}
 	}
@@ -636,7 +643,12 @@ export class TelephonyOutboxService {
 				await tx.delete(systemBackgroundJobs).where(eq(systemBackgroundJobs.id, eventId));
 			});
 			return true;
-		} catch {
+		} catch (err) {
+			const activeLogger = this.logger || defaultStructuredLogger;
+			activeLogger.warn(
+				{ err: err instanceof Error ? err.message : String(err), eventId },
+				"[TelephonyOutboxService] Failed to purge DLQ call",
+			);
 			return false;
 		}
 	}

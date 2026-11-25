@@ -316,7 +316,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 	// =========================================================================
 
 	it("2.1 POST /api/imaging/local-offline/register registers multi-gigabyte CBCT scan with local_offline_available: true", async () => {
-		const localDicomPath = "C:\\RadiologyData\\Scans\\2026-08\\study-cbct-patientA.dcm";
+		const localDicomPath = `C:\\ProgramData\\DenteDental\\${ORG_A_ID}\\2026-08\\study-cbct-patientA.dcm`;
 
 		const response = await app.inject({
 			method: "POST",
@@ -399,7 +399,9 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 				.where(eq(imagingStudies.organizationId, ORG_A_ID))
 				.limit(1);
 		});
-		const studyId = listRes[0]!.id;
+		const firstStudy = listRes[0];
+		assert.ok(firstStudy, "Expected at least one imaging study in tenant");
+		const studyId = firstStudy.id;
 
 		const response = await app.inject({
 			method: "POST",

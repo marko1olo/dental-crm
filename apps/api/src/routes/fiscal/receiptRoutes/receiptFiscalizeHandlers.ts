@@ -52,10 +52,10 @@ export async function handleFiscalReceipt(
 	const orgId = ctx.organizationId;
 
 	const prepared = await validateAndPrepareFiscalData(request, orgId);
-	if (!prepared.success) {
+	if (!prepared.success || !prepared.data) {
 		return reply.status(prepared.statusCode || 400).send(prepared.errorResponse);
 	}
-	const data = prepared.data!;
+	const data = prepared.data;
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// 54-FZ & FFD 1.2: 100% WARRANTY DISCOUNT / 0.00 ₽ INTERNAL ACT (MANDATE 8E)

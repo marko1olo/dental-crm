@@ -3,7 +3,7 @@ import {
 	documentIngestionResponseSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess } from "../accessGuard.js";
+import { requireClinicalMutationContext } from "../accessGuard.js";
 import { extractDocument } from "../ingestion/documentExtractor.js";
 
 type IngestionPayloadSchema<T> = {
@@ -33,14 +33,12 @@ export async function registerIngestionRoutes(app: FastifyInstance) {
 			bodyLimit: 9 * 1024 * 1024,
 		},
 		async (request, reply) => {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"document ingestion extract",
-				))
-			)
-				return;
+			const context = await requireClinicalMutationContext(
+				request,
+				reply,
+				"document ingestion extract",
+			);
+			if (!context) return;
 			const input = parseIngestionPayload(
 				documentIngestionRequestSchema,
 				request.body,

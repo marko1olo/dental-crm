@@ -28,7 +28,7 @@ export const communicationTaskSchema = z.object({
 	createdAt: z
 		.union([z.string(), z.date()])
 		.transform((v) => (v instanceof Date ? v.toISOString() : v)),
-});
+}).strict();
 
 export type CommunicationTask = z.infer<typeof communicationTaskSchema>;
 
@@ -43,7 +43,7 @@ export const communicationEventSchema = z.object({
 	status: communicationStatusSchema,
 	message: z.string(),
 	createdAt: z.string(),
-});
+}).strict();
 
 export type CommunicationEvent = z.infer<typeof communicationEventSchema>;
 

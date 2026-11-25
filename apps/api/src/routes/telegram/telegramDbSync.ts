@@ -6,7 +6,7 @@ import type {
 } from "@dental/shared";
 import type { FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { hydrateDomainStateFromDb } from "../../db/domainStateHydration.js";
 import { denteTelegramBotConfigs } from "../../db/schema/communications/channelsSchema.js";
 import type { DomainState } from "./telegramCanonicalStore.js";
@@ -88,21 +88,56 @@ export async function persistTelegramBotSettingsToDatabase(
 					? `disabled:${orgId}`
 					: `shared_dente_bot:${orgId}`;
 
-		const [existing] = await db
-			.select({ id: denteTelegramBotConfigs.id })
-			.from(denteTelegramBotConfigs)
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, orgId),
-					eq(denteTelegramBotConfigs.botConfigId, configId),
-				),
-			)
-			.limit(1);
+		await withTenantCtx(orgId, async (tx) => {
+			const [existing] = await tx
+				.select({ id: denteTelegramBotConfigs.id })
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, orgId),
+						eq(denteTelegramBotConfigs.botConfigId, configId),
+					),
+				)
+				.limit(1);
 
-		if (existing) {
-			await db
-				.update(denteTelegramBotConfigs)
-				.set({
+			if (existing) {
+				await tx
+					.update(denteTelegramBotConfigs)
+					.set({
+						mode: settings.mode,
+						botUsername: settings.botUsername,
+						ownBotUsername: settings.ownBotUsername,
+						webhookBaseUrl: settings.webhookBaseUrl,
+						patientPortalBaseUrl: settings.patientPortalBaseUrl,
+						welcomeImageUrl: settings.welcomeImageUrl,
+						visualCardUrls: settings.visualCardUrls,
+						clinicReviewUrl: settings.clinicReviewUrl,
+						clinicMapsUrl: settings.clinicMapsUrl,
+						enabledFeaturesJson: JSON.stringify(settings.enabledFeatures ?? []),
+						patientLinkTokenTtlMinutes: settings.patientLinkTokenTtlMinutes,
+						appointmentReminderLeadTimesHoursJson: JSON.stringify(
+							settings.appointmentReminderLeadTimesHours ?? [24],
+						),
+						reviewRequestDelayHours: settings.reviewRequestDelayHours,
+						postVisitCheckupDelayHoursJson: JSON.stringify(
+							settings.postVisitCheckupDelayHoursByTopic ?? {},
+						),
+						allowVoiceIntake: settings.allowVoiceIntake,
+						staffEscalationChannel: settings.staffEscalationChannel,
+						privacyMode: settings.privacyMode,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(denteTelegramBotConfigs.id, existing.id),
+							eq(denteTelegramBotConfigs.organizationId, orgId),
+						),
+					);
+			} else {
+				await tx.insert(denteTelegramBotConfigs).values({
+					organizationId: orgId,
+					clinicId: clinicId ?? null,
+					botConfigId: configId,
 					mode: settings.mode,
 					botUsername: settings.botUsername,
 					ownBotUsername: settings.ownBotUsername,
@@ -124,38 +159,10 @@ export async function persistTelegramBotSettingsToDatabase(
 					allowVoiceIntake: settings.allowVoiceIntake,
 					staffEscalationChannel: settings.staffEscalationChannel,
 					privacyMode: settings.privacyMode,
-					updatedAt: new Date(),
-				})
-				.where(eq(denteTelegramBotConfigs.id, existing.id));
-		} else {
-			await db.insert(denteTelegramBotConfigs).values({
-				organizationId: orgId,
-				clinicId: clinicId ?? null,
-				botConfigId: configId,
-				mode: settings.mode,
-				botUsername: settings.botUsername,
-				ownBotUsername: settings.ownBotUsername,
-				webhookBaseUrl: settings.webhookBaseUrl,
-				patientPortalBaseUrl: settings.patientPortalBaseUrl,
-				welcomeImageUrl: settings.welcomeImageUrl,
-				visualCardUrls: settings.visualCardUrls,
-				clinicReviewUrl: settings.clinicReviewUrl,
-				clinicMapsUrl: settings.clinicMapsUrl,
-				enabledFeaturesJson: JSON.stringify(settings.enabledFeatures ?? []),
-				patientLinkTokenTtlMinutes: settings.patientLinkTokenTtlMinutes,
-				appointmentReminderLeadTimesHoursJson: JSON.stringify(
-					settings.appointmentReminderLeadTimesHours ?? [24],
-				),
-				reviewRequestDelayHours: settings.reviewRequestDelayHours,
-				postVisitCheckupDelayHoursJson: JSON.stringify(
-					settings.postVisitCheckupDelayHoursByTopic ?? {},
-				),
-				allowVoiceIntake: settings.allowVoiceIntake,
-				staffEscalationChannel: settings.staffEscalationChannel,
-				privacyMode: settings.privacyMode,
-				isActive: true,
-			});
-		}
+					isActive: true,
+				});
+			}
+		});
 	} catch (err) {
 		if (
 			isDbConnectionError(err) &&
@@ -174,16 +181,19 @@ export async function loadTelegramBotSettingsFromDatabase(
 	organizationId: string,
 ): Promise<DenteTelegramBotSettings | null> {
 	try {
-		const [row] = await db
-			.select()
-			.from(denteTelegramBotConfigs)
-			.where(
-				and(
-					eq(denteTelegramBotConfigs.organizationId, organizationId),
-					eq(denteTelegramBotConfigs.isActive, true),
-				),
-			)
-			.limit(1);
+		const row = await withTenantCtx(organizationId, async (tx) => {
+			const [found] = await tx
+				.select()
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, organizationId),
+						eq(denteTelegramBotConfigs.isActive, true),
+					),
+				)
+				.limit(1);
+			return found ?? null;
+		});
 
 		if (!row) return null;
 

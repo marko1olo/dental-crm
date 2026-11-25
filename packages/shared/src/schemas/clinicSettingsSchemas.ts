@@ -27,7 +27,7 @@ export const resourceLoadSchema = z.object({
 	nextFreeAt: z.string().nullable(),
 	state: workloadStateSchema,
 	flags: z.array(z.string()),
-});
+}).strict();
 
 export type ResourceLoad = z.infer<typeof resourceLoadSchema>;
 
@@ -39,7 +39,7 @@ export const roleQueueSchema = z.object({
 	nextAction: z.string(),
 	automationHint: z.string(),
 	blockedBy: z.array(z.string()),
-});
+}).strict();
 
 export type RoleQueue = z.infer<typeof roleQueueSchema>;
 
@@ -51,7 +51,7 @@ export const scheduleWarningSchema = z.object({
 	ownerRole: staffRoleSchema,
 	relatedAppointmentId: z.string().uuid().nullable(),
 	actionLabel: z.string(),
-});
+}).strict();
 
 export type ScheduleWarning = z.infer<typeof scheduleWarningSchema>;
 
@@ -62,7 +62,7 @@ export const clinicModeFitSchema = z.object({
 	blockers: z.array(z.string()),
 	upgrades: z.array(z.string()),
 	lowFrictionNextStep: z.string(),
-});
+}).strict();
 
 export type ClinicModeFit = z.infer<typeof clinicModeFitSchema>;
 
@@ -73,7 +73,7 @@ export const shiftIntelligenceSchema = z.object({
 	chairLoads: z.array(resourceLoadSchema),
 	roleQueues: z.array(roleQueueSchema),
 	scheduleWarnings: z.array(scheduleWarningSchema),
-});
+}).strict();
 
 export type ShiftIntelligence = z.infer<typeof shiftIntelligenceSchema>;
 
@@ -92,7 +92,7 @@ export const protocolTemplateSchema = z.object({
 	suggestedImaging: z.array(imagingStudyKindSchema),
 	safetyWarnings: z.array(z.string()),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type ProtocolTemplate = z.infer<typeof protocolTemplateSchema>;
 
@@ -208,7 +208,7 @@ export const pricelistAiVisionSchema = z.object({
 	modelName: z.string().nullable(),
 	maxImagesPerRequest: z.number().int().positive(),
 	reason: z.string(),
-});
+}).strict();
 
 export type PricelistAiVision = z.infer<typeof pricelistAiVisionSchema>;
 
@@ -234,7 +234,7 @@ export const dentalPricelistItemSchema = z.object({
 	confidence: z.number().min(0).max(1),
 	warnings: z.array(z.string()),
 	matchedServiceId: z.string().nullable(),
-});
+}).strict();
 
 export type DentalPricelistItem = z.infer<typeof dentalPricelistItemSchema>;
 
@@ -257,7 +257,7 @@ export const dentalPricelistCategorySummarySchema = z.object({
 	averagePriceRub: nonNegativeMoneyRubSchema.nullable(),
 	materialKinds: z.array(dentalMaterialKindSchema),
 	brands: z.array(z.string()),
-});
+}).strict();
 
 export type DentalPricelistCategorySummary = z.infer<
 	typeof dentalPricelistCategorySummarySchema
@@ -297,7 +297,7 @@ export const dentalPricelistAnalysisResponseSchema = z.object({
 	warnings: z.array(z.string()),
 	aiVision: pricelistAiVisionSchema,
 	groqJsonPromptVersion: z.string(),
-});
+}).strict();
 
 export type DentalPricelistAnalysisResponse = z.infer<
 	typeof dentalPricelistAnalysisResponseSchema
@@ -330,7 +330,7 @@ export const treatmentPlanItemSchema = z.object({
 	plannedDoctorUserId: z.string().uuid().nullable(),
 	plannedChairId: z.string().uuid().nullable(),
 	notes: z.string().nullable(),
-});
+}).strict();
 
 export type TreatmentPlanItem = z.infer<typeof treatmentPlanItemSchema>;
 
@@ -356,13 +356,13 @@ export const treatmentPlanScenarioSchema = z.object({
 			window: z.string(),
 			amountRub: nonNegativeMoneyRubSchema,
 			focus: z.string(),
-		}),
+		}).strict(),
 	),
 	pros: z.array(z.string()),
 	tradeoffs: z.array(z.string()),
 	clinicalWarnings: z.array(z.string()),
 	active: z.boolean(),
-});
+}).strict();
 
 export type TreatmentPlanScenario = z.infer<typeof treatmentPlanScenarioSchema>;
 
@@ -383,7 +383,7 @@ export const clinicalRuleSchema = z.object({
 	warningText: z.string(),
 	patientText: z.string(),
 	active: z.boolean(),
-});
+}).strict();
 
 export type ClinicalRule = z.infer<typeof clinicalRuleSchema>;
 
@@ -404,7 +404,7 @@ export const clinicalRuleEvaluationSchema = z.object({
 	message: z.string(),
 	patientMessage: z.string(),
 	resolved: z.boolean(),
-});
+}).strict();
 
 export type ClinicalRuleEvaluation = z.infer<
 	typeof clinicalRuleEvaluationSchema
@@ -418,7 +418,7 @@ export const clinicalRuleSummarySchema = z.object({
 	warnings: z.number().int().nonnegative(),
 	requiredServices: z.number().int().nonnegative(),
 	coveredRules: z.number().int().nonnegative(),
-});
+}).strict();
 
 export type ClinicalRuleSummary = z.infer<typeof clinicalRuleSummarySchema>;
 
@@ -439,7 +439,7 @@ export const clinicalRuleEvaluationResponseSchema = z.object({
 	summary: clinicalRuleSummarySchema,
 	hasWarnings: z.boolean().optional(),
 	warningMessage: z.string().nullable().optional(),
-});
+}).strict();
 
 export type ClinicalRuleEvaluationResponse = z.infer<
 	typeof clinicalRuleEvaluationResponseSchema
@@ -515,7 +515,7 @@ export const billingSummarySchema = z.object({
 	openTreatmentItems: z.number().int().nonnegative(),
 	unpaidDocuments: z.number().int().nonnegative(),
 	insuranceCoverageRub: nonNegativeMoneyRubSchema.optional(),
-});
+}).strict();
 
 export type BillingSummary = z.infer<typeof billingSummarySchema>;
 
@@ -529,6 +529,6 @@ export const communicationTemplateSchema = z.object({
 	body: z.string(),
 	variables: z.array(z.string()),
 	active: z.boolean(),
-});
+}).strict();
 
 export type CommunicationTemplate = z.infer<typeof communicationTemplateSchema>;

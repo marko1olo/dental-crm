@@ -343,7 +343,7 @@ export async function handleAgentChat(
 	const identity = getRequestIdentity(request);
 	const doctorId = identity.userId || undefined;
 	const rawSessionId = body.sessionId || body.conversationId;
-	let effectiveSessionId: string | undefined = rawSessionId ? ensureValidUuid(rawSessionId) : undefined;
+	const effectiveSessionId = ensureValidUuid(rawSessionId);
 
 	const hydratedContext = await loadAgentChatContextFromDb({
 		organizationId: resolvedOrgId,
@@ -352,6 +352,25 @@ export async function handleAgentChat(
 		incomingMessages: body.messages as AgentRouterChatMessage[],
 		logger: request.log,
 	});
+
+	const firstUserContent = body.messages.find((m) => m.role === "user")?.content;
+	const initialSessionSummary =
+		typeof firstUserContent === "string" && firstUserContent.trim().length > 0
+			? firstUserContent.trim().slice(0, 140)
+			: null;
+
+	try {
+		await getOrCreateSessionInDb(effectiveSessionId, resolvedOrgId, {
+			userId: doctorId ?? null,
+			patientId: body.patientId ?? null,
+			summary: initialSessionSummary,
+		});
+	} catch (persistErr: unknown) {
+		request.log.warn(
+			{ err: persistErr, sessionId: effectiveSessionId },
+			"[agentChatRoutes] Failed to ensure copilot session in PostgreSQL",
+		);
+	}
 
 	const normalizedTrust = body.trustLevel ?? hydratedContext.defaultTrustLevel;
 	const effectiveGranularPermissions = body.granularPermissions ?? hydratedContext.defaultGranularPermissions;
@@ -371,25 +390,7 @@ export async function handleAgentChat(
 		abortController.abort();
 	});
 
-	let sessionCreatedForConfirmation = false;
-	const ensureSessionPersistedForConfirmation = (): string => {
-		if (!effectiveSessionId) {
-			effectiveSessionId = ensureValidUuid();
-		}
-		if (!sessionCreatedForConfirmation) {
-			sessionCreatedForConfirmation = true;
-			void getOrCreateSessionInDb(effectiveSessionId, resolvedOrgId, {
-				userId: doctorId ?? null,
-				patientId: body.patientId ?? null,
-			}).catch((persistErr: unknown) => {
-				request.log.warn(
-					{ err: persistErr, sessionId: effectiveSessionId },
-					"[agentChatRoutes] Failed to ensure session in PostgreSQL for HITL confirmation",
-				);
-			});
-		}
-		return effectiveSessionId;
-	};
+	const ensureSessionPersistedForConfirmation = (): string => effectiveSessionId;
 
 	// STREAMING SSE MODE
 	if (isSseRequested) {

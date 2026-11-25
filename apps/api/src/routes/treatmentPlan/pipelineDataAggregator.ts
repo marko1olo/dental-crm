@@ -86,7 +86,9 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 	const budgetTokens = await db.select({
 		token: portalBudgetTokens.token, planId: portalBudgetTokens.planId, status: portalBudgetTokens.status,
 	}).from(portalBudgetTokens).where(and(eq(portalBudgetTokens.organizationId, organizationId), inArray(portalBudgetTokens.planId, planIds)));
-	const budgetMap = new Map(budgetTokens.filter((b) => b.planId).map((b) => [b.planId!, b]));
+	const budgetMap = new Map(
+		budgetTokens.flatMap((b) => (b.planId ? [[b.planId, b] as const] : [])),
+	);
 
 	const now = new Date();
 	const apptRows = await db.select({ patientId: appointments.patientId, startsAt: appointments.startsAt })
@@ -100,11 +102,13 @@ export async function aggregatePipelineData(organizationId: string, filter: Trea
 		if (isNaN(d.getTime())) continue;
 		const iso = d.toISOString();
 		if (d >= now) {
-			if (!futureAppts.has(a.patientId) || new Date(futureAppts.get(a.patientId)!) > d) {
+			const existingFuture = futureAppts.get(a.patientId);
+			if (!existingFuture || new Date(existingFuture) > d) {
 				futureAppts.set(a.patientId, iso);
 			}
 		} else {
-			if (!pastAppts.has(a.patientId) || new Date(pastAppts.get(a.patientId)!) < d) {
+			const existingPast = pastAppts.get(a.patientId);
+			if (!existingPast || new Date(existingPast) < d) {
 				pastAppts.set(a.patientId, iso);
 			}
 		}

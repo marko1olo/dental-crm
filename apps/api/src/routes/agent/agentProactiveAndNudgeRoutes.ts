@@ -11,7 +11,7 @@ import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { copilotHitlCards } from "../../db/schema/copilot.js";
-import { patientDrugAllergies } from "../../db/schema/patients.js";
+import { patientDrugAllergies, patients } from "../../db/schema/patients.js";
 import { visits } from "../../db/schema/clinical/visitsSchema.js";
 import { UUID_REGEX } from "../../ai/session/copilotSessionTypes.js";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -204,36 +204,211 @@ async function handleGetProactivePending(request: FastifyRequest, reply: Fastify
 	const resolvedOrgId = await requireResolvedOrganizationId(request, reply, "copilot proactive pending");
 	if (!resolvedOrgId) return;
 
+	const parsedQuery = nudgesQuerySchema.safeParse(request.query ?? {});
+	if (!parsedQuery.success) {
+		return reply.code(400).send({
+			ok: false,
+			error: "ValidationError",
+			message: "Некорректные параметры запроса уведомлений",
+			details: parsedQuery.error.format(),
+		});
+	}
+
 	try {
-		const cards = await withTenantCtx(resolvedOrgId, async (tx) =>
-			tx
+		const identity = getRequestIdentity(request);
+		const query = parsedQuery.data;
+
+		const { alerts, hitlCards } = await withTenantCtx(resolvedOrgId, async (tx) => {
+			const cardFilters = [
+				eq(copilotHitlCards.organizationId, resolvedOrgId),
+				eq(copilotHitlCards.status, "pending"),
+			];
+			if (query.patientId) {
+				cardFilters.push(eq(copilotHitlCards.patientId, query.patientId));
+			}
+
+			const cards = await tx
 				.select()
 				.from(copilotHitlCards)
-				.where(and(eq(copilotHitlCards.organizationId, resolvedOrgId), eq(copilotHitlCards.status, "pending")))
+				.where(and(...cardFilters))
 				.orderBy(desc(copilotHitlCards.createdAt))
-				.limit(20),
-		);
+				.limit(20);
 
-		const hitlCards = cards.map((c) => ({
-			approvalId: c.id,
-			patientId: c.patientId,
-			patientName: c.patientName,
-			phone: c.phone,
-			intent: c.intent,
-			urgency: c.urgency,
-			incomingSnippet: c.incomingSnippet,
-			draftReply: c.draftReply,
-			channel: c.channel,
-			confidenceScore: c.confidenceScore ? Number(c.confidenceScore) : 0.95,
-			actionPrompt: c.actionPrompt || undefined,
-			category: c.category || "chairside_triage",
-			metadata: (c.metadata as Record<string, unknown>) || {},
-			createdAt: c.createdAt.toISOString(),
-		}));
+			const mappedHitlCards = cards.map((c) => ({
+				approvalId: c.id,
+				patientId: c.patientId,
+				patientName: c.patientName,
+				phone: c.phone,
+				intent: c.intent,
+				urgency: c.urgency,
+				incomingSnippet: c.incomingSnippet,
+				draftReply: c.draftReply,
+				channel: c.channel,
+				confidenceScore: c.confidenceScore ? Number(c.confidenceScore) : 0.95,
+				actionPrompt: c.actionPrompt || undefined,
+				category: c.category || "chairside_triage",
+				metadata: (c.metadata as Record<string, unknown>) || {},
+				createdAt: c.createdAt.toISOString(),
+			}));
 
-		return reply.code(200).send({ ok: true, alerts: [], hitlCards });
+			const prefRecord = await getDoctorPreferencesFromDb(resolvedOrgId, identity.userId ?? null, tx);
+			const doctorPrefs = (prefRecord?.preferences ?? {}) as Record<string, unknown>;
+			const dismissedAlerts = Array.isArray(doctorPrefs.copilotDismissedAlertIds)
+				? (doctorPrefs.copilotDismissedAlertIds as string[])
+				: [];
+			const dismissedSet = new Set(dismissedAlerts);
+
+			const allergyFilters = [eq(patientDrugAllergies.organizationId, resolvedOrgId)];
+			if (query.patientId) {
+				allergyFilters.push(eq(patientDrugAllergies.patientId, query.patientId));
+			}
+
+			const allergyRows = await tx
+				.select({
+					id: patientDrugAllergies.id,
+					patientId: patientDrugAllergies.patientId,
+					patientName: patients.fullName,
+					allergenGroup: patientDrugAllergies.allergenGroup,
+					drugInnLatin: patientDrugAllergies.drugInnLatin,
+					reactionSeverity: patientDrugAllergies.reactionSeverity,
+					clinicalManifestations: patientDrugAllergies.clinicalManifestations,
+					createdAt: patientDrugAllergies.createdAt,
+				})
+				.from(patientDrugAllergies)
+				.leftJoin(patients, eq(patients.id, patientDrugAllergies.patientId))
+				.where(and(...allergyFilters))
+				.orderBy(desc(patientDrugAllergies.createdAt))
+				.limit(10);
+
+			const visitFilters = [eq(visits.organizationId, resolvedOrgId), eq(visits.status, "draft")];
+			if (query.patientId) visitFilters.push(eq(visits.patientId, query.patientId));
+			if (query.visitId) visitFilters.push(eq(visits.id, query.visitId));
+
+			const draftVisitRows = await tx
+				.select({
+					id: visits.id,
+					patientId: visits.patientId,
+					patientName: patients.fullName,
+					diagnosis: visits.diagnosis,
+					createdAt: visits.createdAt,
+				})
+				.from(visits)
+				.leftJoin(patients, eq(patients.id, visits.patientId))
+				.where(and(...visitFilters))
+				.orderBy(desc(visits.createdAt))
+				.limit(5);
+
+			const builtAlerts: Array<{
+				id: string;
+				urgency: "CRITICAL" | "URGENT" | "NORMAL";
+				title: string;
+				subtitle?: string;
+				description: string;
+				timestamp: string;
+				patientId?: string | null;
+				patientName?: string | null;
+				patientPhone?: string | null;
+				category:
+					| "whatsapp_emergency"
+					| "ztl_status"
+					| "retention"
+					| "gap_filler"
+					| "emr_draft"
+					| "clinical_alert"
+					| "general_message";
+				actions: Array<{
+					id: string;
+					label: string;
+					kind: "primary" | "secondary" | "danger";
+					prompt?: string;
+					actionType?: string;
+					payload?: Record<string, unknown>;
+				}>;
+			}> = [];
+
+			for (const a of allergyRows) {
+				const isCritical =
+					a.reactionSeverity === "anaphylaxis" || a.reactionSeverity === "severe";
+				builtAlerts.push({
+					id: `alert_allergy_${a.id}`,
+					urgency: isCritical ? "CRITICAL" : "URGENT",
+					title: `Аллергический стоп-фактор: ${a.allergenGroup}`,
+					subtitle: a.patientName ?? a.drugInnLatin ?? "Контроль фармакобезопасности",
+					description: `Реакция (${a.reactionSeverity}): ${a.clinicalManifestations || "соблюдайте осторожность при выборе анестезии и препаратов"}.`,
+					timestamp: a.createdAt.toISOString(),
+					patientId: a.patientId,
+					patientName: a.patientName ?? null,
+					category: "clinical_alert",
+					actions: [
+						{
+							id: "dismiss_allergy_alert",
+							label: "Принято к сведению",
+							kind: "secondary",
+							actionType: "dismiss",
+						},
+					],
+				});
+			}
+
+			for (const c of cards) {
+				if (c.urgency !== "CRITICAL" && c.urgency !== "URGENT") continue;
+				const cardUrgency: "CRITICAL" | "URGENT" =
+					c.urgency === "CRITICAL" ? "CRITICAL" : "URGENT";
+				builtAlerts.push({
+					id: c.id,
+					urgency: cardUrgency,
+					title: `${c.patientName}: ${c.intent}`,
+					subtitle: c.channel === "whatsapp" ? "WhatsApp Триаж" : "Входящее обращение",
+					description: c.incomingSnippet,
+					timestamp: c.createdAt.toISOString(),
+					patientId: c.patientId,
+					patientName: c.patientName,
+					patientPhone: c.phone,
+					category: c.category === "whatsapp_emergency" ? "whatsapp_emergency" : "general_message",
+					actions: [
+						{
+							id: "approve_hitl",
+							label: "Утвердить ответ",
+							kind: "primary",
+							actionType: "approve_hitl",
+							payload: { approvalId: c.id },
+						},
+					],
+				});
+			}
+
+			for (const v of draftVisitRows) {
+				if (v.diagnosis && v.diagnosis.trim().length > 0) continue;
+				builtAlerts.push({
+					id: `alert_emr_draft_${v.id}`,
+					urgency: "NORMAL",
+					title: "Незавершённый черновик приёма",
+					subtitle: v.patientName ?? "Электронная медкарта",
+					description: "В открытом приёме не заполнен диагноз по МКБ-10 и итоговый протокол.",
+					timestamp: v.createdAt.toISOString(),
+					patientId: v.patientId,
+					patientName: v.patientName ?? null,
+					category: "emr_draft",
+					actions: [
+						{
+							id: "fill_emr_draft",
+							label: "Заполнить протокол",
+							kind: "primary",
+							prompt: "Сформируй черновик дневника приёма и предложи код диагноза МКБ-10",
+						},
+					],
+				});
+			}
+
+			return {
+				alerts: builtAlerts.filter((a) => !dismissedSet.has(a.id)),
+				hitlCards: mappedHitlCards,
+			};
+		});
+
+		return reply.code(200).send({ ok: true, alerts, hitlCards });
 	} catch (err: unknown) {
-		request.log.error({ err }, "[agentProactiveAndNudgeRoutes] Error fetching copilotHitlCards from DB");
+		request.log.error({ err }, "[agentProactiveAndNudgeRoutes] Error fetching copilotHitlCards and proactive alerts from DB");
 		return reply.code(500).send({
 			ok: false,
 			error: "InternalServerError",

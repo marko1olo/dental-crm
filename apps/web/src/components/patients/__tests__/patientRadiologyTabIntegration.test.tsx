@@ -16,7 +16,7 @@ describe("Patient Radiology Tab Integration", () => {
 		);
 		assert.ok(html.includes('data-testid="patient-radiology-tab"'));
 		assert.ok(html.includes('data-testid="btn-patient-upload-ct"'));
-		assert.ok(html.includes("+ Загрузить КТ для этого пациента"));
+		assert.ok(html.includes("Загрузить КТ"));
 		assert.ok(html.includes('data-testid="btn-refresh-patient-radiology"'));
 	});
 

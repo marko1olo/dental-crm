@@ -25,6 +25,9 @@ import {
 } from "../index";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function countFileLines(relPath: string): number {
 	const candidates = [

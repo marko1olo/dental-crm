@@ -100,8 +100,8 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				? Number.parseInt(String(query.limit), 10)
 				: undefined;
 		const limit =
-			Number.isFinite(rawLimit) && rawLimit! > 0
-				? Math.min(rawLimit!, 500)
+			rawLimit !== undefined && Number.isFinite(rawLimit) && rawLimit > 0
+				? Math.min(rawLimit, 500)
 				: searchRaw
 					? 50
 					: undefined;
@@ -110,7 +110,9 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				? Number.parseInt(String(query.offset), 10)
 				: undefined;
 		const offset =
-			Number.isFinite(rawOffset) && rawOffset! >= 0 ? rawOffset : undefined;
+			rawOffset !== undefined && Number.isFinite(rawOffset) && rawOffset >= 0
+				? rawOffset
+				: undefined;
 
 		try {
 			let dbPatients = await getPatientsFromDb(orgId, {

@@ -4,14 +4,21 @@
  */
 
 import { patients, serviceCatalogItems } from "../../../db/schema.js";
+import { rubToKopecks, type ToolDbClient } from "./dbTypes.js";
 
-type DbClient = any;
+type DbClient = ToolDbClient;
 
 export async function importPricelistRows(activeDb: DbClient, orgId: string, records: Array<Record<string, unknown>>, dryRun: boolean) {
 	let importedCount = 0;
 	let skippedCount = 0;
 	const errors: string[] = [];
 	const sampleImported: Array<Record<string, unknown>> = [];
+	const validItems: Array<{
+		rowIndex: number;
+		title: string;
+		values: typeof serviceCatalogItems.$inferInsert;
+		sample: Record<string, unknown>;
+	}> = [];
 
 	for (let rIdx = 0; rIdx < records.length; rIdx++) {
 		const row = records[rIdx];
@@ -20,6 +27,7 @@ export async function importPricelistRows(activeDb: DbClient, orgId: string, rec
 		const title = String(row.title ?? row.наименование ?? row.название ?? row.услуга ?? row.процедура ?? "").trim();
 		const rawPrice = String(row.price ?? row.цена ?? row.стоимость ?? row.price_rub ?? row.руб ?? "0").replace(/[^\d.,]/g, "").replace(",", ".");
 		const priceNum = Number.parseFloat(rawPrice) || 0;
+		const priceKopecks = rubToKopecks(priceNum);
 		const categoryStr = String(row.category ?? row.категория ?? row.раздел ?? "therapy").toLowerCase();
 
 		let validCategory: "therapy" | "surgery" | "prosthetics" | "orthodontics" | "hygiene" | "consultation" | "other" = "therapy";
@@ -35,18 +43,55 @@ export async function importPricelistRows(activeDb: DbClient, orgId: string, rec
 			continue;
 		}
 
-		if (!dryRun) {
-			try {
-				await activeDb.insert(serviceCatalogItems).values({ organizationId: orgId, code, title, category: validCategory, specialty: "universal", basePriceRub: priceNum, priceRub: priceNum, durationMinutes: 30, order804nCode: code.startsWith("A") || code.startsWith("B") ? code : null, isActive: true });
-			} catch (dbErr) {
-				skippedCount++;
-				errors.push(`Строка ${rIdx + 1} ('${title}'): ошибка записи: ${(dbErr as Error).message}`);
-				continue;
+		validItems.push({
+			rowIndex: rIdx,
+			title,
+			values: {
+				organizationId: orgId,
+				code,
+				title,
+				category: validCategory,
+				specialty: "universal",
+				basePriceRub: priceNum,
+				priceRub: priceNum,
+				basePriceKopecks: priceKopecks,
+				priceKopecks,
+				durationMinutes: 30,
+				order804nCode: code.startsWith("A") || code.startsWith("B") ? code : null,
+				isActive: true,
+			},
+			sample: { code, title, priceRub: priceNum, priceKopecks: Number(priceKopecks), category: validCategory },
+		});
+	}
+
+	if (dryRun) {
+		for (const item of validItems) {
+			importedCount++;
+			if (sampleImported.length < 5) sampleImported.push(item.sample);
+		}
+		return { importedCount, skippedCount, errors, sampleImported };
+	}
+
+	if (validItems.length > 0) {
+		try {
+			await activeDb.insert(serviceCatalogItems).values(validItems.map((item) => item.values));
+			for (const item of validItems) {
+				importedCount++;
+				if (sampleImported.length < 5) sampleImported.push(item.sample);
+			}
+		} catch (batchErr) {
+			for (const item of validItems) {
+				try {
+					await activeDb.insert(serviceCatalogItems).values(item.values);
+					importedCount++;
+					if (sampleImported.length < 5) sampleImported.push(item.sample);
+				} catch (dbErr) {
+					skippedCount++;
+					const msg = dbErr instanceof Error ? dbErr.message : String(batchErr);
+					errors.push(`Строка ${item.rowIndex + 1} ('${item.title}'): ошибка записи: ${msg}`);
+				}
 			}
 		}
-
-		importedCount++;
-		if (sampleImported.length < 5) sampleImported.push({ code, title, priceRub: priceNum, category: validCategory });
 	}
 
 	return { importedCount, skippedCount, errors, sampleImported };
@@ -57,6 +102,12 @@ export async function importPatientsRows(activeDb: DbClient, orgId: string, reco
 	let skippedCount = 0;
 	const errors: string[] = [];
 	const sampleImported: Array<Record<string, unknown>> = [];
+	const validItems: Array<{
+		rowIndex: number;
+		fullName: string;
+		values: typeof patients.$inferInsert;
+		sample: Record<string, unknown>;
+	}> = [];
 
 	for (let rIdx = 0; rIdx < records.length; rIdx++) {
 		const row = records[rIdx];
@@ -73,18 +124,50 @@ export async function importPatientsRows(activeDb: DbClient, orgId: string, reco
 			continue;
 		}
 
-		if (!dryRun) {
-			try {
-				await activeDb.insert(patients).values({ organizationId: orgId, fullName, phone: phone || null, birthDate: birthDate || null, email: email || null, notes: notes || null, status: "active" });
-			} catch (dbErr) {
-				skippedCount++;
-				errors.push(`Строка ${rIdx + 1} ('${fullName}'): ошибка сохранения: ${(dbErr as Error).message}`);
-				continue;
+		validItems.push({
+			rowIndex: rIdx,
+			fullName,
+			values: {
+				organizationId: orgId,
+				fullName,
+				phone: phone || null,
+				birthDate: birthDate || null,
+				email: email || null,
+				notes: notes || null,
+				status: "active",
+			},
+			sample: { fullName, phone, birthDate },
+		});
+	}
+
+	if (dryRun) {
+		for (const item of validItems) {
+			importedCount++;
+			if (sampleImported.length < 5) sampleImported.push(item.sample);
+		}
+		return { importedCount, skippedCount, errors, sampleImported };
+	}
+
+	if (validItems.length > 0) {
+		try {
+			await activeDb.insert(patients).values(validItems.map((item) => item.values));
+			for (const item of validItems) {
+				importedCount++;
+				if (sampleImported.length < 5) sampleImported.push(item.sample);
+			}
+		} catch (batchErr) {
+			for (const item of validItems) {
+				try {
+					await activeDb.insert(patients).values(item.values);
+					importedCount++;
+					if (sampleImported.length < 5) sampleImported.push(item.sample);
+				} catch (dbErr) {
+					skippedCount++;
+					const msg = dbErr instanceof Error ? dbErr.message : String(batchErr);
+					errors.push(`Строка ${item.rowIndex + 1} ('${item.fullName}'): ошибка сохранения: ${msg}`);
+				}
 			}
 		}
-
-		importedCount++;
-		if (sampleImported.length < 5) sampleImported.push({ fullName, phone, birthDate });
 	}
 
 	return { importedCount, skippedCount, errors, sampleImported };

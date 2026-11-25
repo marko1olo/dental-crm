@@ -101,6 +101,15 @@ describe("agentProactiveAndNudgeRoutes RLS, Zod .strict() & Error Handling", () 
 		});
 		assert.equal(pendingRes.statusCode, 200);
 		assert.equal(pendingRes.json().ok, true);
+		assert.ok(Array.isArray(pendingRes.json().alerts));
+		assert.ok(Array.isArray(pendingRes.json().hitlCards));
+
+		const badPendingQueryRes = await app.inject({
+			method: "GET",
+			url: "/api/agent/proactive/pending?unexpected=1",
+			headers: { [CLINIC_TOKEN_HEADER]: clinicToken, [STAFF_TOKEN_HEADER]: staffToken },
+		});
+		assert.equal(badPendingQueryRes.statusCode, 400);
 
 		const approveMissingRes = await app.inject({
 			method: "POST",

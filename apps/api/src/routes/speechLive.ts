@@ -29,11 +29,12 @@ import {
 import {
 	getDentalSpeechBiasingTerms,
 } from "../speech/dentalPrompt.js";
-import {
-	getProviderKeyPoolSummary,
-} from "../speech/keyPool.js";
-import { getRequestIdentity } from "../security/identity.js";
-import { requireClinicalReadContext } from "../accessGuard.js";
+import { getProviderKeyPoolSummary } from "../speech/keyPool.js";
+import { authTokenSecret } from "../security/authSecret.js";
+import { getRequestIdentity, resolveIdentityFromTokens } from "../security/identity.js";
+import { requireClinicalReadContext, requireResolvedOrganizationId } from "../accessGuard.js";
+import { signToken, verifyToken } from "../utils/cryptoHelper.js";
+import { z } from "zod";
 
 interface SpeechLiveQueryParams {
 	readonly specialty?: DentalSpecialty | undefined;
@@ -41,6 +42,86 @@ interface SpeechLiveQueryParams {
 	readonly customTerms?: string | undefined;
 	readonly model?: string | undefined;
 	readonly key?: string | undefined;
+	readonly ticket?: string | undefined;
+}
+
+interface VerifiedWsSession {
+	readonly organizationId: string;
+	readonly userId: string | null;
+	readonly role: string;
+}
+
+const WS_TICKET_TTL_SECONDS = 60;
+const WS_FIRST_FRAME_AUTH_TIMEOUT_MS = 1200;
+
+const speechLiveTicketBodySchema = z
+	.object({
+		specialty: z.string().optional(),
+		sampleRate: z.number().int().positive().optional(),
+		model: z.string().optional(),
+	})
+	.strict();
+
+function verifySpeechWsTicket(ticket: unknown): VerifiedWsSession | null {
+	if (typeof ticket !== "string" || ticket.trim().length === 0) return null;
+	let secret: string;
+	try {
+		secret = authTokenSecret();
+	} catch {
+		return null;
+	}
+	const payload = verifyToken(ticket.trim(), secret);
+	if (!payload || payload.purpose !== "speech_live_ws") return null;
+	if (typeof payload.organizationId !== "string" || payload.organizationId.trim().length === 0) {
+		return null;
+	}
+	return {
+		organizationId: payload.organizationId,
+		userId: typeof payload.userId === "string" ? payload.userId : null,
+		role: typeof payload.role === "string" ? payload.role : "staff",
+	};
+}
+
+function extractProtocolTicket(request: FastifyRequest): string | null {
+	const rawProto = request.headers["sec-websocket-protocol"];
+	const values = Array.isArray(rawProto)
+		? rawProto
+		: typeof rawProto === "string"
+		? rawProto.split(",")
+		: [];
+	for (const entry of values) {
+		const trimmed = entry.trim();
+		if (trimmed.startsWith("dente-ticket.")) {
+			return trimmed.slice("dente-ticket.".length);
+		}
+		if (trimmed.startsWith("ticket.")) {
+			return trimmed.slice("ticket.".length);
+		}
+	}
+	return null;
+}
+
+function resolveInitialWsSession(request: FastifyRequest): VerifiedWsSession | null {
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.organizationId) {
+		return {
+			organizationId: identity.organizationId,
+			userId: identity.userId,
+			role: identity.role ?? "staff",
+		};
+	}
+
+	const query = (request.query || {}) as SpeechLiveQueryParams;
+	let urlTicket: string | null = null;
+	if (typeof request.url === "string" && request.url.includes("ticket=")) {
+		try {
+			urlTicket = new URL(request.url, "http://127.0.0.1").searchParams.get("ticket");
+		} catch {
+			urlTicket = null;
+		}
+	}
+	const ticketCandidate = query.ticket || urlTicket || extractProtocolTicket(request);
+	return verifySpeechWsTicket(ticketCandidate);
 }
 
 export async function registerSpeechLiveRoutes(
@@ -100,178 +181,335 @@ export async function registerSpeechLiveRoutes(
 		},
 	);
 
+	const issueWsTicketHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const organizationId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"speech live ws ticket",
+		);
+		if (!organizationId) return;
+
+		const parsedBody = speechLiveTicketBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				ok: false,
+				error: "ValidationError",
+				message: "Некорректные параметры запроса токена Live Speech",
+				details: parsedBody.error.format(),
+			});
+		}
+
+		let secret: string;
+		try {
+			secret = authTokenSecret();
+		} catch {
+			return reply.status(503).send({
+				ok: false,
+				error: "AuthNotConfigured",
+				message: "Секрет подписи токенов не настроен",
+			});
+		}
+
+		const identity = getRequestIdentity(request);
+		const ticket = signToken(
+			{
+				purpose: "speech_live_ws",
+				organizationId,
+				userId: identity.userId ?? null,
+				role: identity.role ?? "staff",
+			},
+			secret,
+			WS_TICKET_TTL_SECONDS,
+		);
+
+		return reply.status(200).send({
+			ok: true,
+			ticket,
+			expiresInSeconds: WS_TICKET_TTL_SECONDS,
+			organizationId,
+		});
+	};
+
+	app.post("/api/v1/speech/live/ticket", issueWsTicketHandler);
+	app.post("/api/speech/live/ticket", issueWsTicketHandler);
+
 	// WebSocket Live Transcription Handler
 	const liveWsHandler = (clientSocket: WebSocket, request: FastifyRequest) => {
-			const identity = getRequestIdentity(request);
-			if (!identity.verified || !identity.organizationId) {
-				request.log.warn(
-					{ route: "/api/v1/speech/live" },
-					"[speechLive] Rejected unauthenticated WebSocket connection",
-				);
-				clientSocket.close(4001, "Unauthorized");
-				return;
-			}
-
 			const query = (request.query || {}) as SpeechLiveQueryParams;
-			const specialty = query.specialty as DentalSpecialty | undefined;
-			const sampleRate = query.sampleRate
-				? Number(query.sampleRate)
-				: 16000;
-			const customTerms = query.customTerms
+			const baseSpecialty = query.specialty as DentalSpecialty | undefined;
+			const baseSampleRate = query.sampleRate ? Number(query.sampleRate) : 16000;
+			const baseCustomTerms = query.customTerms
 				? query.customTerms.split(/[,;\n]+/).map((t) => t.trim()).filter(Boolean)
 				: undefined;
-			const model = query.model;
+			const baseModel = query.model;
 			const headerKeyRaw = request.headers["x-gemini-api-key"];
 			const apiKey =
 				typeof headerKeyRaw === "string" && headerKeyRaw.trim().length > 0
 					? headerKeyRaw.trim()
 					: undefined;
-			const orgId = identity.organizationId;
 
-			request.log.info(
-				{
-					orgId,
+			let activeSession: VerifiedWsSession | null = resolveInitialWsSession(request);
+			let bridge: GeminiBidiBridge | null = null;
+			let authTimer: ReturnType<typeof setTimeout> | null = null;
+			let closedByAuthFailure = false;
+
+			const clearAuthTimer = () => {
+				if (authTimer) {
+					clearTimeout(authTimer);
+					authTimer = null;
+				}
+			};
+
+			const rejectUnauthorized = (reasonLog: string) => {
+				if (closedByAuthFailure) return;
+				closedByAuthFailure = true;
+				clearAuthTimer();
+				request.log.warn(
+					{ route: "/api/v1/speech/live", reason: reasonLog },
+					"[speechLive] Rejected unauthenticated WebSocket connection",
+				);
+				if (
+					clientSocket.readyState === clientSocket.OPEN ||
+					clientSocket.readyState === clientSocket.CONNECTING
+				) {
+					clientSocket.close(4001, "Unauthorized");
+				}
+			};
+
+			const startBridge = (
+				session: VerifiedWsSession,
+				overrides?: {
+					specialty?: DentalSpecialty | undefined;
+					sampleRate?: number | undefined;
+					customTerms?: string[] | undefined;
+					model?: string | undefined;
+				},
+			) => {
+				if (bridge) return;
+				const specialty = overrides?.specialty ?? baseSpecialty;
+				const sampleRate = overrides?.sampleRate ?? baseSampleRate;
+				const customTerms = overrides?.customTerms ?? baseCustomTerms;
+				const model = overrides?.model ?? baseModel;
+
+				request.log.info(
+					{
+						orgId: session.organizationId,
+						specialty,
+						sampleRate,
+						route: "/api/v1/speech/live",
+						hasQueryKeyRejected: Boolean(query.key),
+					},
+					"[speechLive] Inbound client WebSocket connected to Gemini 3.5 Transcribe Live BiDi",
+				);
+
+				const activeBridge = new GeminiBidiBridge({
 					specialty,
 					sampleRate,
-					route: "/api/v1/speech/live",
-					hasQueryKeyRejected: Boolean(query.key),
-				},
-				"[speechLive] Inbound client WebSocket connected to Gemini 3.5 Transcribe Live BiDi",
-			);
+					customTerms,
+					model,
+					apiKey,
+				});
+				bridge = activeBridge;
 
-			// Instantiate BiDi bridge to Google Gemini
-			const bridge = new GeminiBidiBridge({
-				specialty,
-				sampleRate,
-				customTerms,
-				model,
-				apiKey,
-			});
-
-			let bridgeConnected = false;
-
-			// Bridge event listeners -> forward to client socket
-			bridge.on("setup_complete", () => {
-				bridgeConnected = true;
-				if (clientSocket.readyState === clientSocket.OPEN) {
-					clientSocket.send(
-						JSON.stringify({
-							type: "setup_complete",
-							timestampMs: Date.now(),
-						}),
-					);
-				}
-			});
-
-			bridge.on("transcript", (event: GeminiBidiTranscriptEvent) => {
-				if (clientSocket.readyState === clientSocket.OPEN) {
-					clientSocket.send(
-						JSON.stringify({
-							type: event.type, // 'interim' | 'final'
-							text: event.text,
-							timestampMs: event.timestampMs,
-						}),
-					);
-				}
-			});
-
-			bridge.on("turn_complete", (payload: { finalText: string; timestampMs: number }) => {
-				if (clientSocket.readyState === clientSocket.OPEN) {
-					clientSocket.send(
-						JSON.stringify({
-							type: "turn_complete",
-							finalText: payload.finalText,
-							timestampMs: payload.timestampMs,
-						}),
-					);
-				}
-			});
-
-			bridge.on(
-				"reconnecting",
-				(info: { attempt: number; keyFingerprint: string; reason: string }) => {
-					request.log.warn(
-						info,
-						"[speechLive] Bridge key rotation / reconnecting in progress",
-					);
+				activeBridge.on("setup_complete", () => {
 					if (clientSocket.readyState === clientSocket.OPEN) {
 						clientSocket.send(
 							JSON.stringify({
-								type: "reconnecting",
-								attempt: info.attempt,
-								reason: info.reason,
+								type: "setup_complete",
 								timestampMs: Date.now(),
 							}),
 						);
 					}
-				},
-			);
+				});
 
-			bridge.on(
-				"key_rotated",
-				(info: { oldFingerprint?: string; newFingerprint: string }) => {
-					request.log.info(info, "[speechLive] Key successfully rotated");
+				activeBridge.on("transcript", (event: GeminiBidiTranscriptEvent) => {
 					if (clientSocket.readyState === clientSocket.OPEN) {
 						clientSocket.send(
 							JSON.stringify({
-								type: "key_rotated",
+								type: event.type, // 'interim' | 'final'
+								text: event.text,
+								timestampMs: event.timestampMs,
+							}),
+						);
+					}
+				});
+
+				activeBridge.on("turn_complete", (payload: { finalText: string; timestampMs: number }) => {
+					if (clientSocket.readyState === clientSocket.OPEN) {
+						clientSocket.send(
+							JSON.stringify({
+								type: "turn_complete",
+								finalText: payload.finalText,
+								timestampMs: payload.timestampMs,
+							}),
+						);
+					}
+				});
+
+				activeBridge.on(
+					"reconnecting",
+					(info: { attempt: number; keyFingerprint: string; reason: string }) => {
+						request.log.warn(
+							info,
+							"[speechLive] Bridge key rotation / reconnecting in progress",
+						);
+						if (clientSocket.readyState === clientSocket.OPEN) {
+							clientSocket.send(
+								JSON.stringify({
+									type: "reconnecting",
+									attempt: info.attempt,
+									reason: info.reason,
+									timestampMs: Date.now(),
+								}),
+							);
+						}
+					},
+				);
+
+				activeBridge.on(
+					"key_rotated",
+					(info: { oldFingerprint?: string; newFingerprint: string }) => {
+						request.log.info(info, "[speechLive] Key successfully rotated");
+						if (clientSocket.readyState === clientSocket.OPEN) {
+							clientSocket.send(
+								JSON.stringify({
+									type: "key_rotated",
+									timestampMs: Date.now(),
+								}),
+							);
+						}
+					},
+				);
+
+				activeBridge.on("error", (err: Error) => {
+					request.log.error(
+						{ err: err.message },
+						"[speechLive] Gemini BiDi Bridge error",
+					);
+					if (clientSocket.readyState === clientSocket.OPEN) {
+						clientSocket.send(
+							JSON.stringify({
+								type: "error",
+								message: err.message,
 								timestampMs: Date.now(),
 							}),
 						);
 					}
-				},
-			);
+				});
 
-			bridge.on("error", (err: Error) => {
-				request.log.error(
-					{ err: err.message },
-					"[speechLive] Gemini BiDi Bridge error",
-				);
-				if (clientSocket.readyState === clientSocket.OPEN) {
-					clientSocket.send(
-						JSON.stringify({
-							type: "error",
-							message: err.message,
-							timestampMs: Date.now(),
-						}),
+				activeBridge.on("close", (code: number, reason: string) => {
+					request.log.info(
+						{ code, reason },
+						"[speechLive] Gemini BiDi Bridge closed",
 					);
-				}
-			});
+					if (clientSocket.readyState === clientSocket.OPEN) {
+						clientSocket.close(code, reason || "Bridge Closed");
+					}
+				});
 
-			bridge.on("close", (code: number, reason: string) => {
-				request.log.info(
-					{ code, reason },
-					"[speechLive] Gemini BiDi Bridge closed",
-				);
-				if (clientSocket.readyState === clientSocket.OPEN) {
-					clientSocket.close(code, reason || "Bridge Closed");
-				}
-			});
-
-			// Connect the bridge
-			bridge.connect().catch((connectErr) => {
-				request.log.error(
-					{ err: connectErr.message },
-					"[speechLive] Failed to initiate Gemini BiDi Bridge connection",
-				);
-				if (clientSocket.readyState === clientSocket.OPEN) {
-					clientSocket.send(
-						JSON.stringify({
-							type: "error",
-							message: `Connection failed: ${connectErr.message}`,
-							timestampMs: Date.now(),
-						}),
+				activeBridge.connect().catch((connectErr) => {
+					request.log.error(
+						{ err: connectErr.message },
+						"[speechLive] Failed to initiate Gemini BiDi Bridge connection",
 					);
-					clientSocket.close(1011, "Bridge Connection Error");
-				}
-			});
+					if (clientSocket.readyState === clientSocket.OPEN) {
+						clientSocket.send(
+							JSON.stringify({
+								type: "error",
+								message: `Connection failed: ${connectErr.message}`,
+								timestampMs: Date.now(),
+							}),
+						);
+						clientSocket.close(1011, "Bridge Connection Error");
+					}
+				});
+			};
+
+			if (activeSession) {
+				startBridge(activeSession);
+			} else {
+				authTimer = setTimeout(() => {
+					if (!activeSession) {
+						rejectUnauthorized("first_frame_auth_timeout");
+					}
+				}, WS_FIRST_FRAME_AUTH_TIMEOUT_MS);
+			}
 
 			// Handle inbound messages from client socket
 			clientSocket.on("message", (data: WebSocket.Data, isBinary: boolean) => {
 				try {
+					if (!activeSession) {
+						if (isBinary || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
+							rejectUnauthorized("binary_frame_before_auth");
+							return;
+						}
+						let authMsg: Record<string, unknown>;
+						try {
+							authMsg = JSON.parse(data.toString()) as Record<string, unknown>;
+						} catch {
+							rejectUnauthorized("invalid_json_before_auth");
+							return;
+						}
+
+						if (authMsg.type !== "auth" && authMsg.type !== "session_init") {
+							rejectUnauthorized(`unexpected_frame_before_auth:${String(authMsg.type ?? "")}`);
+							return;
+						}
+
+						let verified: VerifiedWsSession | null = verifySpeechWsTicket(authMsg.ticket ?? authMsg.token);
+						if (!verified && (typeof authMsg.clinicToken === "string" || typeof authMsg.staffToken === "string")) {
+							const tokenIdentity = resolveIdentityFromTokens(
+								typeof authMsg.clinicToken === "string" ? authMsg.clinicToken : null,
+								typeof authMsg.staffToken === "string" ? authMsg.staffToken : null,
+							);
+							if (tokenIdentity.verified && tokenIdentity.organizationId) {
+								verified = {
+									organizationId: tokenIdentity.organizationId,
+									userId: tokenIdentity.userId,
+									role: tokenIdentity.role ?? "staff",
+								};
+							}
+						}
+
+						if (!verified) {
+							rejectUnauthorized("invalid_first_frame_credentials");
+							return;
+						}
+
+						clearAuthTimer();
+						activeSession = verified;
+						const initSpecialty = typeof authMsg.specialty === "string" ? (authMsg.specialty as DentalSpecialty) : undefined;
+						const initSampleRate = typeof authMsg.sampleRate === "number" && authMsg.sampleRate > 0 ? authMsg.sampleRate : undefined;
+						const initModel = typeof authMsg.model === "string" ? authMsg.model : undefined;
+						const initCustomTerms = Array.isArray(authMsg.customTerms)
+							? authMsg.customTerms.filter((t): t is string => typeof t === "string" && t.trim().length > 0)
+							: undefined;
+
+						startBridge(verified, {
+							specialty: initSpecialty,
+							sampleRate: initSampleRate,
+							customTerms: initCustomTerms,
+							model: initModel,
+						});
+
+						if (clientSocket.readyState === clientSocket.OPEN) {
+							clientSocket.send(
+								JSON.stringify({
+									type: authMsg.type === "auth" ? "auth_ok" : "session_ready",
+									organizationId: verified.organizationId,
+									timestampMs: Date.now(),
+								}),
+							);
+						}
+						return;
+					}
+
+					const activeBridge = bridge;
+					if (!activeBridge) return;
+
 					if (isBinary || Buffer.isBuffer(data) || data instanceof ArrayBuffer) {
 						// Binary audio frame (PCM)
-						bridge.sendAudio(data as Buffer | ArrayBuffer);
+						activeBridge.sendAudio(data as Buffer | ArrayBuffer);
 						return;
 					}
 
@@ -279,17 +517,21 @@ export async function registerSpeechLiveRoutes(
 					try {
 						const json = JSON.parse(text);
 
+						if (json.type === "auth" || json.type === "session_init") {
+							return;
+						}
+
 						if (
 							(json.type === "audio" || json.type === "audio_chunk") &&
 							(json.data || json.audioBase64)
 						) {
 							// Base64 PCM audio chunk
-							bridge.sendAudio(json.data || json.audioBase64);
+							activeBridge.sendAudio(json.data || json.audioBase64);
 							return;
 						}
 
 						if (json.type === "stop" || json.type === "turn_complete") {
-							bridge.endAudioStream();
+							activeBridge.endAudioStream();
 							return;
 						}
 
@@ -309,7 +551,7 @@ export async function registerSpeechLiveRoutes(
 							// Raw Gemini protocol forward
 							for (const chunk of json.realtimeInput.mediaChunks) {
 								if (chunk.data) {
-									bridge.sendAudio(chunk.data);
+									activeBridge.sendAudio(chunk.data);
 								}
 							}
 							return;
@@ -317,7 +559,7 @@ export async function registerSpeechLiveRoutes(
 					} catch {
 						// Non-JSON text payload: if base64 encoded audio, attempt sending
 						if (/^[A-Za-z0-9+/=]+$/.test(text.trim())) {
-							bridge.sendAudio(text.trim());
+							activeBridge.sendAudio(text.trim());
 						}
 					}
 				} catch (msgErr: unknown) {
@@ -329,19 +571,21 @@ export async function registerSpeechLiveRoutes(
 			});
 
 			clientSocket.on("close", (code: number, reason: Buffer) => {
+				clearAuthTimer();
 				request.log.info(
 					{ code, reason: reason.toString("utf8") },
 					"[speechLive] Client WebSocket disconnected",
 				);
-				bridge.close(code, reason.toString("utf8"));
+				bridge?.close(code, reason.toString("utf8"));
 			});
 
 			clientSocket.on("error", (err: Error) => {
+				clearAuthTimer();
 				request.log.error(
 					{ err: err.message },
 					"[speechLive] Client WebSocket socket error",
 				);
-				bridge.close(1011, err.message);
+				bridge?.close(1011, err.message);
 			});
 	};
 

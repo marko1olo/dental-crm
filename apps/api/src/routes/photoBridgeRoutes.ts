@@ -31,7 +31,7 @@ export interface PhotoBridgeSessionSlot {
 	descriptionRu?: string | undefined;
 }
 
-export interface PhotoBridgeSession {
+export type PhotoBridgeSession = {
 	token: string;
 	organizationId: string;
 	patientId: string;
@@ -42,7 +42,7 @@ export interface PhotoBridgeSession {
 	createdAt: number;
 	expiresAt: number;
 	photos: PhotoBridgeUploadedItem[];
-}
+};
 
 // In-Memory кэш сессий (синхронизируется через PostgreSQL system_background_jobs)
 const sessionsMap = new Map<string, PhotoBridgeSession>();
@@ -721,7 +721,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 				await tx
 					.update(systemBackgroundJobs)
 					.set({
-						payload: updatedSession as unknown as Record<string, unknown>,
+						payload: updatedSession,
 					})
 					.where(
 						and(

@@ -86,8 +86,8 @@ export const handleAcceptanceWaybillRequest = async (
 					.limit(1);
 			}
 
-			if (existingInvoice.length > 0) {
-				const inv = existingInvoice[0]!;
+			const inv = existingInvoice[0];
+			if (inv) {
 				return {
 					success: true,
 					alreadyProcessed: true,

@@ -33,7 +33,7 @@ export function extractPatients(
 	for (const payment of paymentRows) {
 		if (payment.status !== "paid") continue;
 		const paidKop =
-			payment.amountKopecks != null
+			payment.amountKopecks != null && payment.amountKopecks !== 0n
 				? Number(payment.amountKopecks)
 				: parseKopecks(payment.amountRub);
 		paidByPatientKop.set(
@@ -109,7 +109,7 @@ export function extractPayments(
 			visitId: payment.visitId ?? null,
 			documentId: payment.documentId ?? null,
 			amountRub:
-				payment.amountKopecks != null
+				payment.amountKopecks != null && payment.amountKopecks !== 0n
 					? kopecksToRubles(Number(payment.amountKopecks))
 					: payment.amountRub,
 			method: payment.method,

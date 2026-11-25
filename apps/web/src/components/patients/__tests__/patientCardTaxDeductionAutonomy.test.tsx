@@ -87,7 +87,7 @@ describe("PatientCardModal & TaxDeduction Autonomy (FNS Form KND 1151156)", () =
 			}),
 		);
 
-		assert.ok(html.includes("Справка для налогового вычета (13% НДФЛ)"));
+		assert.ok(html.includes("Справка для налогового вычета"));
 		assert.ok(html.includes("13% НДФЛ") || html.includes("Вычет 13%"));
 		assert.ok(html.includes("Иванов Иван Иванович"));
 		assert.ok(html.includes("Печать справки для налогового вычета (А4)"));

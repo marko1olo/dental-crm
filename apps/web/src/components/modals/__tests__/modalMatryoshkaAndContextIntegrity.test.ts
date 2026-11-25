@@ -68,10 +68,12 @@ test("Red Team Inquisitor — Contexts, Modals & Sync Resilience", async (t) => 
 
 	await t.test("5. ClinicalTasksPanel maintains 0 cartoon emojis and doctor autonomy", () => {
 		const content = fs.readFileSync(clinicalTasksPanelPath, "utf8");
+		const presetsPath = path.resolve(__dirname, "../../tasks/presets/clinicalTaskAutonomyExecutor.ts");
+		const presetsContent = fs.readFileSync(presetsPath, "utf8");
 		const forbiddenEmojis = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.ok(!forbiddenEmojis.test(content), "ClinicalTasksPanel must contain 0 cartoon emojis");
 		assert.ok(
-			content.includes("executeClinicalPresetTaskAutonomy"),
+			content.includes("clinicalTasksPresets") && presetsContent.includes("executeClinicalPresetTaskAutonomy"),
 			"Must export 1-click autonomous preset execution engine",
 		);
 	});

@@ -5,9 +5,9 @@
 
 import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
 import { patients } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
+import { withToolTenantDb } from "./dbTypes.js";
 
 export const patientSearchSchema = z.object({
 	query: z.string().min(1, "Поисковый запрос обязателен").describe("ФИО, номер телефона или номер карты пациента"),
@@ -30,27 +30,28 @@ export interface PatientSearchResult {
 }
 
 export async function handlePatientSearch(args: PatientSearchInput, context: DentalToolContext): Promise<PatientSearchResult> {
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const searchPattern = `%${args.query.trim()}%`;
 	const limit = args.limit ?? 10;
 
-	const rows = await activeDb
-		.select({
-			id: patients.id,
-			fullName: patients.fullName,
-			phone: patients.phone,
-			birthDate: patients.birthDate,
-			notes: patients.notes,
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, orgId),
-				or(ilike(patients.fullName, searchPattern), ilike(patients.phone, searchPattern)),
-			),
-		)
-		.limit(limit);
+	const rows = await withToolTenantDb(context, async (activeDb) =>
+		activeDb
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				birthDate: patients.birthDate,
+				notes: patients.notes,
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, orgId),
+					or(ilike(patients.fullName, searchPattern), ilike(patients.phone, searchPattern)),
+				),
+			)
+			.limit(limit),
+	);
 
 	return {
 		found: rows.length > 0,

@@ -211,7 +211,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		const html = renderToString(
 			createElement(DmsStudioModal, { isOpen: true }),
 		);
-		assert.ok(html.includes("Нет позиций для распределения счёта"), "Must render honest empty state notice in production");
+		assert.ok(html.includes("Нет услуг в счёте текущего визита для распределения ДМС"), "Must render honest empty state notice in production");
 		assert.ok(html.includes("0 ₽"), "Amounts must be 0 ₽ when no bill items exist");
 		assert.ok(!html.includes("22 250"), "Must NOT calculate total of 22 250 ₽ from demo items in prod");
 	});
@@ -221,7 +221,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		const html = renderToString(
 			createElement(DmsStudioModal, { isOpen: true }),
 		);
-		assert.ok(!html.includes("Нет позиций для распределения счёта"), "Demo mode must not show empty notice");
+		assert.ok(!html.includes("Нет услуг в счёте текущего визита для распределения ДМС"), "Demo mode must not show empty notice");
 		assert.ok(html.includes("Страховая") && html.includes("Пациент"));
 	});
 });

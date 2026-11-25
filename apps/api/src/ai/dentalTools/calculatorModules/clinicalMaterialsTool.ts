@@ -28,6 +28,17 @@ export interface CompareDentalMaterialsResult {
 	readonly keyRecommendation: string;
 }
 
+const DEFAULT_GIC_VS_SANDWICH: Omit<CompareDentalMaterialsResult, "category"> = {
+	materialA: "Стеклоиономерный цемент (Fuji IX, Ketac Molar)",
+	materialB: "Сэндвич-техника (СИЦ база + световой композит)",
+	clinicalVerdict: "Чистый СИЦ уступает в истираемости и эстетике, но незаменим у детей и при высоком кариесогенном статусе. Сэндвич-техника объединяет фторидную защиту СИЦ с прочностью композита.",
+	comparisonTable: [
+		{ criterion: "Выделение фтора и кариесостатичность", materialAVal: "Постоянное выделение фтора", materialBVal: "Выделение фтора в поддесневой зоне", winner: "tie" },
+		{ criterion: "Механическая прочность к истиранию", materialAVal: "Низкая", materialBVal: "Высокая", winner: "B" },
+	],
+	keyRecommendation: "При глубоких пришеечных полостях V класса и полостях II класса с выходом за эмалево-цементную границу применять открытую или закрытую сэндвич-технику.",
+};
+
 const COMPARISONS: Record<string, Omit<CompareDentalMaterialsResult, "category">> = {
 	bulk_fill_vs_layering: {
 		materialA: "Bulk Fill композиты (SDR Plus, Filtek One Bulk Fill)",
@@ -63,21 +74,12 @@ const COMPARISONS: Record<string, Omit<CompareDentalMaterialsResult, "category">
 		],
 		keyRecommendation: "Фронтальная зона (13-23) и виниры — e.max; моляры, мосты и абатменты имплантатов — монолитный диоксид циркония.",
 	},
-	gic_vs_sandwich: {
-		materialA: "Стеклоиономерный цемент (Fuji IX, Ketac Molar)",
-		materialB: "Сэндвич-техника (СИЦ база + световой композит)",
-		clinicalVerdict: "Чистый СИЦ уступает в истираемости и эстетике, но незаменим у детей и при высоком кариесогенном статусе. Сэндвич-техника объединяет фторидную защиту СИЦ с прочностью композита.",
-		comparisonTable: [
-			{ criterion: "Выделение фтора и кариесостатичность", materialAVal: "Постоянное выделение фтора", materialBVal: "Выделение фтора в поддесневой зоне", winner: "tie" },
-			{ criterion: "Механическая прочность к истиранию", materialAVal: "Низкая", materialBVal: "Высокая", winner: "B" },
-		],
-		keyRecommendation: "При глубоких пришеечных полостях V класса и полостях II класса с выходом за эмалево-цементную границу применять открытую или закрытую сэндвич-технику.",
-	},
+	gic_vs_sandwich: DEFAULT_GIC_VS_SANDWICH,
 };
 
 export async function handleCompareDentalMaterials(args: CompareDentalMaterialsInput, _context: DentalToolContext): Promise<CompareDentalMaterialsResult> {
 	const cat = args.comparisonCategory;
-	const item = COMPARISONS[cat] ?? COMPARISONS.gic_vs_sandwich!;
+	const item = COMPARISONS[cat] ?? DEFAULT_GIC_VS_SANDWICH;
 	return { category: cat, ...item };
 }
 

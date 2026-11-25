@@ -18,7 +18,33 @@ export function resolveStatutoryBomForService(
 	const materials: RawRequiredMaterial[] = [];
 	const effectiveServiceCode = meta.serviceCode || meta.statutoryCode || meta.order804nCode;
 
-	// 4a. CANONICAL_PROCEDURE_RECIPES (@dental/shared)
+	// 4a. Точный матч по коду в DEFAULT_SERVICE_BOM_SEEDS (например A16.07.001.001) имеет приоритет над общими алиасами
+	const exactSeed = DEFAULT_SERVICE_BOM_SEEDS.find((s) => {
+		return (
+			s.serviceCode === effectiveServiceCode ||
+			s.serviceCode === meta.serviceCode ||
+			s.serviceCode === meta.order804nCode ||
+			s.serviceCode === meta.rawToken
+		);
+	});
+
+	if (exactSeed && exactSeed.materials.length > 0) {
+		for (const mat of exactSeed.materials) {
+			materials.push({
+				key: mat.name,
+				name: mat.name,
+				quantity: mat.quantityToDeduct * srvQty,
+				unit: mat.unit,
+				defaultCostRub:
+					mat.defaultUnitCostKopecks != null
+						? kopecksToRubles(mat.defaultUnitCostKopecks)
+						: mat.defaultUnitCostRub,
+			});
+		}
+		return materials;
+	}
+
+	// 4b. CANONICAL_PROCEDURE_RECIPES (@dental/shared)
 	const canonicalRecipe = CANONICAL_PROCEDURE_RECIPES.find((rec) => {
 		return (
 			rec.code804n === effectiveServiceCode ||
@@ -44,15 +70,9 @@ export function resolveStatutoryBomForService(
 		return materials;
 	}
 
-	// 4b. DEFAULT_SERVICE_BOM_SEEDS (defaultBomSeeds.ts)
+	// 4c. DEFAULT_SERVICE_BOM_SEEDS (резервный матч по названию услуги)
 	const seed = DEFAULT_SERVICE_BOM_SEEDS.find((s) => {
-		return (
-			s.serviceCode === effectiveServiceCode ||
-			s.serviceCode === meta.serviceCode ||
-			s.serviceCode === meta.order804nCode ||
-			s.serviceCode === meta.rawToken ||
-			(meta.title ? s.serviceTitle.toLowerCase().includes(meta.title.toLowerCase()) : false)
-		);
+		return meta.title ? s.serviceTitle.toLowerCase().includes(meta.title.toLowerCase()) : false;
 	});
 
 	if (seed && seed.materials.length > 0) {

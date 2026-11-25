@@ -14,11 +14,15 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('Photo Protocol SSOT, Empty State & Persistence Inquisition Suite', () => {
-	const photographyDir = path.resolve(process.cwd(), 'apps/web/src/components/photography');
-	const visitDir = path.resolve(process.cwd(), 'apps/web/src/components/visit');
-	const presenterDir = path.resolve(process.cwd(), 'apps/web/src/components/treatment-plans');
+	const photographyDir = path.resolve(__dirname, '..');
+	const visitDir = path.resolve(__dirname, '../../visit');
+	const presenterDir = path.resolve(__dirname, '../../treatment-plans');
 
 	it('[PHO-03] usePhotoProtocolUpload hydrats and saves via PostgreSQL 18 Fastify API', () => {
 		const hookFile = fs.readFileSync(path.join(photographyDir, 'modal/usePhotoProtocolUpload.ts'), 'utf-8');

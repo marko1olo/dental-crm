@@ -5,12 +5,10 @@
 
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
-import type { TenantDb } from "../../../db/rls.js";
 import { toothStateHistory, toothStates } from "../../../db/schema.js";
 import { normalizeToothState } from "../../../routes/odontogram/types.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
-import { isValidFdiToothNumber } from "./dbTypes.js";
+import { isValidFdiToothNumber, type ToolDbClient, withToolTenantDb } from "./dbTypes.js";
 
 export const updateToothStatusSchema = z.object({
 	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
@@ -45,7 +43,6 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 		throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент (patientId отсутствует в аргументах и контексте)");
 	}
 
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const tooth = args.toothNumber;
 
@@ -73,7 +70,7 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 	let previousState: string | null = null;
 	let finalSurfaces: string[] | null = null;
 
-	async function mutateToothInDb(tx: typeof defaultDb | TenantDb) {
+	async function mutateToothInDb(tx: ToolDbClient) {
 		if (!patientId) {
 			throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент");
 		}
@@ -136,13 +133,7 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 		});
 	}
 
-	if ("transaction" in activeDb && typeof activeDb.transaction === "function") {
-		await activeDb.transaction(async (tx) => {
-			await mutateToothInDb(tx);
-		});
-	} else {
-		await mutateToothInDb(activeDb);
-	}
+	await withToolTenantDb(context, mutateToothInDb);
 
 	return {
 		success: true,

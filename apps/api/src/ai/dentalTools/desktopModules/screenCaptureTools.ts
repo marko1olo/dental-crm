@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
+import { aiLogger } from "../../aiLogger.js";
 import {
 	createOpenAIToolDefinition,
 	type DentalToolContext,
@@ -67,7 +68,9 @@ export async function handleCaptureWorkstationScreen(
 			try {
 				await execAsync(`powershell -NoProfile -NonInteractive -Command "${script}"`, { timeout: 3000 });
 				if (fs.existsSync(savePath)) isHardwareCaptured = true;
-			} catch {}
+			} catch (captureErr) {
+				aiLogger.warn("screenCaptureTools", "PowerShell hardware screen capture failed", captureErr);
+			}
 		}
 
 		if (!fs.existsSync(savePath)) {

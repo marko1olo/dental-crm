@@ -32,10 +32,21 @@ export async function addMessageToDb(
 	const orgId = params.organizationId;
 	const now = new Date();
 
-	// Ensure parent session exists
-	await getOrCreateSessionInDb(sessionId, orgId);
+	return await withTenantCtx(orgId, async (tx) => {
+		await tx
+			.insert(copilotSessions)
+			.values({
+				id: sessionId,
+				organizationId: orgId,
+				userId: null,
+				patientId: null,
+				activeView: null,
+				summary: null,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.onConflictDoNothing({ target: copilotSessions.id });
 
-	const messageRecord = await withTenantCtx(orgId, async (tx) => {
 		const [row] = await tx
 			.insert(copilotMessages)
 			.values({
@@ -62,6 +73,17 @@ export async function addMessageToDb(
 				),
 			);
 
+		if (params.autoCompact !== false) {
+			const [countRes] = await tx
+				.select({ total: count() })
+				.from(copilotMessages)
+				.where(eq(copilotMessages.sessionId, sessionId));
+			const messageCount = Number(countRes?.total ?? 0);
+			if (messageCount > DEFAULT_COMPACTION_THRESHOLD) {
+				await compactSessionInDb(sessionId, orgId);
+			}
+		}
+
 		return {
 			id: row.id,
 			sessionId: row.sessionId,
@@ -71,16 +93,6 @@ export async function addMessageToDb(
 			createdAt: row.createdAt,
 		};
 	});
-
-	// Trigger automatic compaction if requested or by default when count > 15
-	if (params.autoCompact !== false) {
-		const messageCount = await getMessageCountFromDb(sessionId, orgId);
-		if (messageCount > DEFAULT_COMPACTION_THRESHOLD) {
-			await compactSessionInDb(sessionId, orgId);
-		}
-	}
-
-	return messageRecord;
 }
 
 /**
@@ -188,8 +200,7 @@ export async function compactSessionInDb(
 	totalMessages: number;
 	retainedCount: number;
 }> {
-	const session = await getSessionFromDb(sessionId, organizationId);
-	if (!session) {
+	if (!UUID_REGEX.test(sessionId)) {
 		return {
 			compacted: false,
 			summary: null,
@@ -198,29 +209,71 @@ export async function compactSessionInDb(
 		};
 	}
 
-	const allMessages = await getMessagesFromDb(sessionId, organizationId, {
-		order: "asc",
-		limit: 500,
+	return await withTenantCtx(organizationId, async (tx) => {
+		const [sessionRow] = await tx
+			.select()
+			.from(copilotSessions)
+			.where(
+				and(
+					eq(copilotSessions.id, sessionId),
+					eq(copilotSessions.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!sessionRow) {
+			return {
+				compacted: false,
+				summary: null,
+				totalMessages: 0,
+				retainedCount: 0,
+			};
+		}
+
+		const rows = await tx
+			.select()
+			.from(copilotMessages)
+			.where(eq(copilotMessages.sessionId, sessionId))
+			.orderBy(asc(copilotMessages.createdAt))
+			.limit(500);
+
+		const allMessages: CopilotMessageRecord[] = rows.map((r) => ({
+			id: r.id,
+			sessionId: r.sessionId,
+			role: r.role as CopilotRole,
+			content: r.content,
+			toolCalls: (r.toolCalls as Record<string, unknown>[] | null) ?? null,
+			createdAt: r.createdAt,
+		}));
+
+		const compactionResult = compactMessageHistory(
+			allMessages,
+			sessionRow.summary,
+			options,
+		);
+
+		if (compactionResult.compacted) {
+			await tx
+				.update(copilotSessions)
+				.set({
+					summary: compactionResult.summary,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(copilotSessions.id, sessionId),
+						eq(copilotSessions.organizationId, organizationId),
+					),
+				);
+		}
+
+		return {
+			compacted: compactionResult.compacted,
+			summary: compactionResult.summary || sessionRow.summary,
+			totalMessages: compactionResult.totalMessagesCount,
+			retainedCount: compactionResult.retainedMessages.length,
+		};
 	});
-
-	const compactionResult = compactMessageHistory(
-		allMessages,
-		session.summary,
-		options,
-	);
-
-	if (compactionResult.compacted) {
-		await updateSessionInDb(sessionId, organizationId, {
-			summary: compactionResult.summary,
-		});
-	}
-
-	return {
-		compacted: compactionResult.compacted,
-		summary: compactionResult.summary || session.summary,
-		totalMessages: compactionResult.totalMessagesCount,
-		retainedCount: compactionResult.retainedMessages.length,
-	};
 }
 
 /**

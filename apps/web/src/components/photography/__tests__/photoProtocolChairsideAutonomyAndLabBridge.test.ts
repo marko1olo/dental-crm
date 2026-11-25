@@ -2,11 +2,15 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { clamp } from '../photoProtocolMath';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 describe('Photo Protocol Chairside Autonomy & Dental Lab (ZTL) Bridge', () => {
-	const photographyDir = path.resolve(process.cwd(), 'apps/web/src/components/photography');
-	const labDir = path.resolve(process.cwd(), 'apps/web/src/components/lab');
+	const photographyDir = path.resolve(__dirname, '..');
+	const labDir = path.resolve(__dirname, '../../lab');
 
 	test('1. VITA Shade to ZTL Bridge: dente-apply-lab-shade contract and storage key', () => {
 		const vitaSelectorFile = fs.readFileSync(path.join(photographyDir, 'VitaShadeSelector.tsx'), 'utf-8');

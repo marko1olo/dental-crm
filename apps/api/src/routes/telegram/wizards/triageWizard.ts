@@ -13,12 +13,12 @@ import { patientMenuCardPhoto } from "./postOpEmergencyWizard.js";
  * Визард триажа, неотложной помощи и связи с администратором клиники.
  */
 export class TriageWizard {
-	public static contactRequestReplyFor(
+	public static async contactRequestReplyFor(
 		settings: DenteTelegramBotSettings,
 		chatFingerprintValue: string | null,
 		scope: TelegramRequestScope = {},
-	): TelegramWebhookReplyPackage {
-		const result = createDenteTelegramContactRequest(chatFingerprintValue, scope);
+	): Promise<TelegramWebhookReplyPackage> {
+		const result = await createDenteTelegramContactRequest(chatFingerprintValue, scope);
 		const portal = portalButton(settings);
 		const rows = [
 			portal,

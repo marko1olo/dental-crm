@@ -20,6 +20,19 @@ import { completeBudgetSigning } from "../services/budget/budgetSigningService.j
 
 export { maskPhone };
 
+function extractCookieValue(cookieHeader: string | undefined, cookieName: string): string | undefined {
+	if (!cookieHeader) return undefined;
+	const prefix = `${cookieName}=`;
+	for (const rawPart of cookieHeader.split(";")) {
+		const part = rawPart.trim();
+		if (part.startsWith(prefix)) {
+			const val = part.slice(prefix.length).trim();
+			return val || undefined;
+		}
+	}
+	return undefined;
+}
+
 export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 	// 1. GET /api/v1/public/budgets/:token & /api/portal/budget/:token — публичные данные сметы
 	// ИНВАРИАНТ БЕЗОПАСНОСТИ: ZERO DATA LEAKS prior to phone verification.
@@ -60,11 +73,10 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				: undefined;
 
 			if (!sessionToken) {
-				const cookieHeader = request.headers.cookie || "";
-				const cookieMatch = cookieHeader.match(new RegExp(`pub_bdg_session_${token}=([^;]+)`));
-				if (cookieMatch && cookieMatch[1]) {
-					sessionToken = cookieMatch[1];
-				}
+				sessionToken = extractCookieValue(
+					request.headers.cookie,
+					`pub_bdg_session_${token}`,
+				);
 			}
 
 			const isSigned = budget.status === "accepted";
@@ -406,11 +418,10 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 					: undefined;
 
 				if (!sessionToken) {
-					const cookieHeader = request.headers.cookie || "";
-					const cookieMatch = cookieHeader.match(new RegExp(`pub_bdg_session_${token}=([^;]+)`));
-					if (cookieMatch && cookieMatch[1]) {
-						sessionToken = cookieMatch[1];
-					}
+					sessionToken = extractCookieValue(
+						request.headers.cookie,
+						`pub_bdg_session_${token}`,
+					);
 				}
 
 				const isAuthed = sessionToken

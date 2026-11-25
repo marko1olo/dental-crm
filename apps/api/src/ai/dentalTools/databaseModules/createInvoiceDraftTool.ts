@@ -4,30 +4,37 @@
  */
 
 import { z } from "zod";
-import { db as defaultDb } from "../../../db/client.js";
-import type { TenantDb } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices, treatmentItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
-import { kopecksToRub, rubToKopecks } from "./dbTypes.js";
+import { kopecksToRub, rubToKopecks, type ToolDbClient, withToolTenantDb } from "./dbTypes.js";
 
-export const createInvoiceDraftSchema = z.object({
-	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
-	visitId: z.string().uuid("Некорректный UUID визита").optional().describe("ID визита"),
-	items: z.array(z.object({
-		title: z.string().describe("Наименование услуги"),
-		priceKopecks: z.number().int().min(0).optional().describe("Цена единицы услуги в копейках (Мандат 8bm)"),
-		priceRub: z.number().min(0).optional().describe("Цена в рублях (legacy/fallback)"),
-		unitKopecks: z.number().int().min(0).optional().describe("Цена единицы услуги в копейках"),
-		lineKopecks: z.number().int().min(0).optional().describe("Общая стоимость позиции в копейках"),
-		quantity: z.number().min(1).default(1).describe("Количество"),
-		serviceCode: z.string().optional().describe("Код услуги в прейскуранте"),
-		regulatoryCode: z.string().optional().describe("Регуляторный код услуги"),
-		toothCode: z.string().optional().describe("Номер зуба"),
-	})).min(1, "Счет должен содержать хотя бы одну услугу").describe("Список оказанных услуг"),
-	discountKopecks: z.number().int().min(0).default(0).optional().describe("Скидка врача в копейках (Мандат 8bm, 8e)"),
-	discountRub: z.number().min(0).default(0).optional().describe("Скидка врача в рублях (legacy/fallback)"),
-	confirmed: z.boolean().optional().default(true).describe("Флаг подтверждения сметы (2-фазный Guard)"),
-});
+export const createInvoiceDraftSchema = z
+	.object({
+		patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
+		visitId: z.string().uuid("Некорректный UUID визита").optional().describe("ID визита"),
+		items: z
+			.array(
+				z
+					.object({
+						title: z.string().describe("Наименование услуги"),
+						priceKopecks: z.number().int().min(0).optional().describe("Цена единицы услуги в копейках (Мандат 8bm)"),
+						priceRub: z.number().min(0).optional().describe("Цена в рублях (legacy/fallback)"),
+						unitKopecks: z.number().int().min(0).optional().describe("Цена единицы услуги в копейках"),
+						lineKopecks: z.number().int().min(0).optional().describe("Общая стоимость позиции в копейках"),
+						quantity: z.number().min(1).default(1).describe("Количество"),
+						serviceCode: z.string().optional().describe("Код услуги в прейскуранте"),
+						regulatoryCode: z.string().optional().describe("Регуляторный код услуги"),
+						toothCode: z.string().optional().describe("Номер зуба"),
+					})
+					.strict(),
+			)
+			.min(1, "Счет должен содержать хотя бы одну услугу")
+			.describe("Список оказанных услуг"),
+		discountKopecks: z.number().int().min(0).default(0).optional().describe("Скидка врача в копейках (Мандат 8bm, 8e)"),
+		discountRub: z.number().min(0).default(0).optional().describe("Скидка врача в рублях (legacy/fallback)"),
+		confirmed: z.boolean().optional().default(true).describe("Флаг подтверждения сметы (2-фазный Guard)"),
+	})
+	.strict();
 
 export type CreateInvoiceDraftInput = z.infer<typeof createInvoiceDraftSchema>;
 
@@ -47,7 +54,6 @@ export interface CreateInvoiceDraftResult {
 }
 
 export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, context: DentalToolContext): Promise<CreateInvoiceDraftResult> {
-	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const patientId = args.patientId || context.patientId;
 	if (!patientId) {
@@ -103,7 +109,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		};
 	}
 
-	async function saveInvoiceInDb(tx: TenantDb | typeof defaultDb): Promise<string> {
+	async function saveInvoiceInDb(tx: ToolDbClient): Promise<string> {
 		if (!patientId) {
 			throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент");
 		}
@@ -161,14 +167,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		return inserted.id;
 	}
 
-	let insertedId: string;
-	if ("transaction" in activeDb && typeof activeDb.transaction === "function") {
-		insertedId = await activeDb.transaction(async (tx) => {
-			return await saveInvoiceInDb(tx);
-		});
-	} else {
-		insertedId = await saveInvoiceInDb(activeDb);
-	}
+	const insertedId = await withToolTenantDb(context, saveInvoiceInDb);
 
 	return {
 		success: true,

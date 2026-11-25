@@ -3,8 +3,8 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
-import { db } from "../../db/client.js";
 import { getDashboardFromDb } from "../../db/dashboardQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -75,26 +75,28 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
-		const items = await db
-			.select({
-				id: scheduleClipboardItems.id,
-				appointmentId: scheduleClipboardItems.appointmentId,
-				patientName: scheduleClipboardItems.patientName,
-				doctorName: scheduleClipboardItems.doctorName,
-				serviceTitle: scheduleClipboardItems.serviceTitle,
-				durationMinutes: scheduleClipboardItems.durationMinutes,
-				clipboardStatus: scheduleClipboardItems.clipboardStatus,
-				copiedAt: scheduleClipboardItems.copiedAt,
-			})
-			.from(scheduleClipboardItems)
-			.where(
-				and(
-					eq(scheduleClipboardItems.organizationId, orgId),
-					eq(scheduleClipboardItems.clipboardStatus, "copied"),
-				),
-			)
-			.orderBy(desc(scheduleClipboardItems.copiedAt))
-			.limit(20);
+		const items = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select({
+					id: scheduleClipboardItems.id,
+					appointmentId: scheduleClipboardItems.appointmentId,
+					patientName: scheduleClipboardItems.patientName,
+					doctorName: scheduleClipboardItems.doctorName,
+					serviceTitle: scheduleClipboardItems.serviceTitle,
+					durationMinutes: scheduleClipboardItems.durationMinutes,
+					clipboardStatus: scheduleClipboardItems.clipboardStatus,
+					copiedAt: scheduleClipboardItems.copiedAt,
+				})
+				.from(scheduleClipboardItems)
+				.where(
+					and(
+						eq(scheduleClipboardItems.organizationId, orgId),
+						eq(scheduleClipboardItems.clipboardStatus, "copied"),
+					),
+				)
+				.orderBy(desc(scheduleClipboardItems.copiedAt))
+				.limit(20),
+		);
 
 		return items.map((item) => ({
 			...item,
@@ -123,74 +125,83 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		}
 		const appointmentId = parsedBody.data.appointmentId.trim();
 
-		const [source] = await db
-			.select({
-				id: appointments.id,
-				startsAt: appointments.startsAt,
-				endsAt: appointments.endsAt,
-				reason: appointments.reason,
-				patientName: patients.fullName,
-				doctorName: users.fullName,
-			})
-			.from(appointments)
-			.leftJoin(patients, eq(patients.id, appointments.patientId))
-			.leftJoin(users, eq(users.id, appointments.doctorUserId))
-			.where(
-				and(
-					eq(appointments.id, appointmentId),
-					eq(appointments.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		const created = await withTenantCtx(orgId, async (tx) => {
+			const [source] = await tx
+				.select({
+					id: appointments.id,
+					startsAt: appointments.startsAt,
+					endsAt: appointments.endsAt,
+					reason: appointments.reason,
+					patientName: patients.fullName,
+					doctorName: users.fullName,
+				})
+				.from(appointments)
+				.leftJoin(patients, eq(patients.id, appointments.patientId))
+				.leftJoin(users, eq(users.id, appointments.doctorUserId))
+				.where(
+					and(
+						eq(appointments.id, appointmentId),
+						eq(appointments.organizationId, orgId),
+					),
+				)
+				.limit(1);
 
-		if (!source) {
+			if (!source) {
+				return { kind: "not_found" as const };
+			}
+
+			const startsMs =
+				source.startsAt instanceof Date
+					? source.startsAt.getTime()
+					: Date.parse(String(source.startsAt));
+			const endsMs =
+				source.endsAt instanceof Date
+					? source.endsAt.getTime()
+					: Date.parse(String(source.endsAt));
+			const durationMinutes =
+				Number.isFinite(startsMs) && Number.isFinite(endsMs) && endsMs > startsMs
+					? Math.max(5, Math.round((endsMs - startsMs) / 60_000))
+					: 30;
+
+			const serviceTitle =
+				typeof source.reason === "string" && source.reason.trim()
+					? source.reason.trim()
+					: "Приём";
+
+			const [inserted] = await tx
+				.insert(scheduleClipboardItems)
+				.values({
+					organizationId: orgId,
+					appointmentId: source.id,
+					patientName: source.patientName?.trim() || "Пациент не указан",
+					doctorName: source.doctorName?.trim() || "Врач не назначен",
+					serviceTitle,
+					durationMinutes,
+					clipboardStatus: "copied",
+				})
+				.returning({
+					id: scheduleClipboardItems.id,
+					appointmentId: scheduleClipboardItems.appointmentId,
+					patientName: scheduleClipboardItems.patientName,
+					doctorName: scheduleClipboardItems.doctorName,
+					serviceTitle: scheduleClipboardItems.serviceTitle,
+					durationMinutes: scheduleClipboardItems.durationMinutes,
+					clipboardStatus: scheduleClipboardItems.clipboardStatus,
+					copiedAt: scheduleClipboardItems.copiedAt,
+				});
+
+			return { kind: "ok" as const, item: inserted };
+		});
+
+		if (created.kind === "not_found") {
 			return reply.code(404).send({
 				code: "AppointmentNotFound",
 				message: appointmentNotFoundMessage,
 			});
 		}
 
-		const startsMs =
-			source.startsAt instanceof Date
-				? source.startsAt.getTime()
-				: Date.parse(String(source.startsAt));
-		const endsMs =
-			source.endsAt instanceof Date
-				? source.endsAt.getTime()
-				: Date.parse(String(source.endsAt));
-		const durationMinutes =
-			Number.isFinite(startsMs) && Number.isFinite(endsMs) && endsMs > startsMs
-				? Math.max(5, Math.round((endsMs - startsMs) / 60_000))
-				: 30;
-
-		const serviceTitle =
-			typeof source.reason === "string" && source.reason.trim()
-				? source.reason.trim()
-				: "Приём";
-
-		const [created] = await db
-			.insert(scheduleClipboardItems)
-			.values({
-				organizationId: orgId,
-				appointmentId: source.id,
-				patientName: source.patientName?.trim() || "Пациент не указан",
-				doctorName: source.doctorName?.trim() || "Врач не назначен",
-				serviceTitle,
-				durationMinutes,
-				clipboardStatus: "copied",
-			})
-			.returning({
-				id: scheduleClipboardItems.id,
-				appointmentId: scheduleClipboardItems.appointmentId,
-				patientName: scheduleClipboardItems.patientName,
-				doctorName: scheduleClipboardItems.doctorName,
-				serviceTitle: scheduleClipboardItems.serviceTitle,
-				durationMinutes: scheduleClipboardItems.durationMinutes,
-				clipboardStatus: scheduleClipboardItems.clipboardStatus,
-				copiedAt: scheduleClipboardItems.copiedAt,
-			});
-
-		if (!created) {
+		const createdItem = created.item;
+		if (!createdItem) {
 			return reply
 				.code(500)
 				.send({
@@ -200,11 +211,11 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		}
 
 		return reply.code(201).send({
-			...created,
+			...createdItem,
 			copiedAt:
-				created.copiedAt instanceof Date
-					? created.copiedAt.toISOString()
-					: String(created.copiedAt),
+				createdItem.copiedAt instanceof Date
+					? createdItem.copiedAt.toISOString()
+					: String(createdItem.copiedAt),
 		});
 	});
 
@@ -226,17 +237,19 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 		}
 		const itemId = parsedParams.data.id.trim();
 
-		const [updated] = await db
-			.update(scheduleClipboardItems)
-			.set({ clipboardStatus: "cleared" })
-			.where(
-				and(
-					eq(scheduleClipboardItems.id, itemId),
-					eq(scheduleClipboardItems.organizationId, orgId),
-					eq(scheduleClipboardItems.clipboardStatus, "copied"),
-				),
-			)
-			.returning({ id: scheduleClipboardItems.id });
+		const [updated] = await withTenantCtx(orgId, (tx) =>
+			tx
+				.update(scheduleClipboardItems)
+				.set({ clipboardStatus: "cleared" })
+				.where(
+					and(
+						eq(scheduleClipboardItems.id, itemId),
+						eq(scheduleClipboardItems.organizationId, orgId),
+						eq(scheduleClipboardItems.clipboardStatus, "copied"),
+					),
+				)
+				.returning({ id: scheduleClipboardItems.id }),
+		);
 
 		if (!updated) {
 			return reply.code(404).send({
@@ -284,80 +297,94 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [clipItem] = await db
-				.select({
-					id: scheduleClipboardItems.id,
-					appointmentId: scheduleClipboardItems.appointmentId,
-					durationMinutes: scheduleClipboardItems.durationMinutes,
-					clipboardStatus: scheduleClipboardItems.clipboardStatus,
-				})
-				.from(scheduleClipboardItems)
-				.where(
-					and(
-						eq(scheduleClipboardItems.id, itemId),
-						eq(scheduleClipboardItems.organizationId, orgId),
-						eq(scheduleClipboardItems.clipboardStatus, "copied"),
-					),
-				)
-				.limit(1);
+			const lookup = await withTenantCtx(orgId, async (tx) => {
+				const [clipItem] = await tx
+					.select({
+						id: scheduleClipboardItems.id,
+						appointmentId: scheduleClipboardItems.appointmentId,
+						durationMinutes: scheduleClipboardItems.durationMinutes,
+						clipboardStatus: scheduleClipboardItems.clipboardStatus,
+					})
+					.from(scheduleClipboardItems)
+					.where(
+						and(
+							eq(scheduleClipboardItems.id, itemId),
+							eq(scheduleClipboardItems.organizationId, orgId),
+							eq(scheduleClipboardItems.clipboardStatus, "copied"),
+						),
+					)
+					.limit(1);
 
-			if (!clipItem) {
+				if (!clipItem) {
+					return { kind: "clip_missing" as const };
+				}
+
+				const [original] = await tx
+					.select({
+						id: appointments.id,
+						patientId: appointments.patientId,
+						doctorUserId: appointments.doctorUserId,
+						assistantUserId: appointments.assistantUserId,
+						chairId: appointments.chairId,
+						reason: appointments.reason,
+						comment: appointments.comment,
+					})
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.id, clipItem.appointmentId),
+							eq(appointments.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (!original) {
+					return { kind: "appt_missing" as const };
+				}
+
+				let resolvedChairId =
+					typeof rawChairId === "string" && rawChairId.trim()
+						? rawChairId.trim()
+						: original.chairId;
+
+				if ((!resolvedChairId || resolvedChairId === "default-chair") && orgId) {
+					const [firstActiveChair] = await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(
+							and(
+								eq(chairs.organizationId, orgId),
+								eq(chairs.isActive, true),
+							),
+						)
+						.limit(1);
+					if (firstActiveChair) {
+						resolvedChairId = firstActiveChair.id;
+					}
+				}
+
+				return { kind: "ok" as const, clipItem, original, resolvedChairId };
+			});
+
+			if (lookup.kind === "clip_missing") {
 				return reply.code(404).send({
 					code: "ClipboardItemNotFound",
 					message: clipboardItemMissingMessage,
 				});
 			}
-
-			const [original] = await db
-				.select({
-					id: appointments.id,
-					patientId: appointments.patientId,
-					doctorUserId: appointments.doctorUserId,
-					assistantUserId: appointments.assistantUserId,
-					chairId: appointments.chairId,
-					reason: appointments.reason,
-					comment: appointments.comment,
-				})
-				.from(appointments)
-				.where(
-					and(
-						eq(appointments.id, clipItem.appointmentId),
-						eq(appointments.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!original) {
+			if (lookup.kind === "appt_missing") {
 				return reply.code(404).send({
 					code: "AppointmentNotFound",
 					message: clipboardAppointmentMissingMessage,
 				});
 			}
 
+			const { clipItem, original } = lookup;
 			const doctorUserId =
 				typeof rawDoctorUserId === "string" && rawDoctorUserId.trim()
 					? rawDoctorUserId.trim()
 					: original.doctorUserId;
-			let chairId =
-				typeof rawChairId === "string" && rawChairId.trim()
-					? rawChairId.trim()
-					: original.chairId;
-
-			if ((!chairId || chairId === "default-chair") && orgId) {
-				const [firstActiveChair] = await db
-					.select({ id: chairs.id })
-					.from(chairs)
-					.where(
-						and(
-							eq(chairs.organizationId, orgId),
-							eq(chairs.isActive, true),
-						),
-					)
-					.limit(1);
-				if (firstActiveChair) {
-					chairId = firstActiveChair.id;
-				}
-			}
+			const chairId = lookup.resolvedChairId;
 
 			const patientId = original.patientId ?? null;
 			if (!doctorUserId || !chairId) {
@@ -378,7 +405,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 			const startsAt = new Date(startsMs).toISOString();
 
 			try {
-				const created = await db.transaction(async (tx) => {
+				const created = await withTenantCtx(orgId, async (tx) => {
 					const newAppt = await createAppointmentInDb(
 						orgId,
 						{

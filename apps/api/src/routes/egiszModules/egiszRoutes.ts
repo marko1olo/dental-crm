@@ -177,16 +177,30 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 
 		const parsed = egiszBlankPermissionsPatchSchema.safeParse(request.body ?? {});
 		const body = parsed.success ? parsed.data : {};
-		const [existing] = await db.select().from(schema.egiszBlankPermissions).where(and(eq(schema.egiszBlankPermissions.id, permissionId), eq(schema.egiszBlankPermissions.organizationId, orgId))).limit(1);
-		if (!existing) {
+		const updated = await withTenantCtx(orgId, async (tx) => {
+			const [existing] = await tx
+				.select()
+				.from(schema.egiszBlankPermissions)
+				.where(and(eq(schema.egiszBlankPermissions.id, permissionId), eq(schema.egiszBlankPermissions.organizationId, orgId)))
+				.limit(1);
+			if (!existing) {
+				return "not_found" as const;
+			}
+
+			const [saved] = await tx
+				.update(schema.egiszBlankPermissions)
+				.set({
+					...(typeof body.isExportAllowed === "boolean" && { isAllowed: body.isExportAllowed }),
+					...(typeof body.patientOptOutRespect === "boolean" && { patientOptOutRespect: body.patientOptOutRespect }),
+				})
+				.where(and(eq(schema.egiszBlankPermissions.id, permissionId), eq(schema.egiszBlankPermissions.organizationId, orgId)))
+				.returning();
+			return saved ?? null;
+		});
+
+		if (updated === "not_found") {
 			return reply.status(404).send({ error: "PermissionNotFound", message: "Правило выгрузки бланка ЕГИСЗ не найдено в вашей клинике." });
 		}
-
-		const [updated] = await db.update(schema.egiszBlankPermissions).set({
-			...(typeof body.isExportAllowed === "boolean" && { isAllowed: body.isExportAllowed }),
-			...(typeof body.patientOptOutRespect === "boolean" && { patientOptOutRespect: body.patientOptOutRespect }),
-		}).where(and(eq(schema.egiszBlankPermissions.id, permissionId), eq(schema.egiszBlankPermissions.organizationId, orgId))).returning();
-
 		if (!updated) {
 			return reply.status(500).send({ error: "UpdateFailed", message: "Не удалось сохранить правило выгрузки бланка в ЕГИСЗ." });
 		}

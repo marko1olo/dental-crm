@@ -35,12 +35,12 @@ export function freeTextIncludes(value: string, fragments: string[]): boolean {
 	return fragments.some((fragment) => value.includes(fragment));
 }
 
-export function freeTextReplyFor(
+export async function freeTextReplyFor(
 	settings: DenteTelegramBotSettings,
 	chatFingerprintValue: string | null,
 	messageText: string | null,
 	scope: TelegramRequestScope = {},
-): TelegramWebhookReplyPackage {
+): Promise<TelegramWebhookReplyPackage> {
 	const text = normalizedFreeText(messageText);
 
 	if (
@@ -52,7 +52,7 @@ export function freeTextReplyFor(
 			? documentSubmenuReplyFor(
 					settings,
 					"tax",
-					createDenteTelegramDocumentRequest(
+					await createDenteTelegramDocumentRequest(
 						chatFingerprintValue,
 						"tax",
 						scope,
@@ -77,7 +77,7 @@ export function freeTextReplyFor(
 			? documentSubmenuReplyFor(
 					settings,
 					"billing",
-					createDenteTelegramDocumentRequest(
+					await createDenteTelegramDocumentRequest(
 						chatFingerprintValue,
 						"billing",
 						scope,
@@ -101,7 +101,7 @@ export function freeTextReplyFor(
 			? documentSubmenuReplyFor(
 					settings,
 					"medical",
-					createDenteTelegramDocumentRequest(
+					await createDenteTelegramDocumentRequest(
 						chatFingerprintValue,
 						"medical",
 						scope,
@@ -115,7 +115,7 @@ export function freeTextReplyFor(
 			? documentSubmenuReplyFor(
 					settings,
 					"patientForms",
-					createDenteTelegramDocumentRequest(
+					await createDenteTelegramDocumentRequest(
 						chatFingerprintValue,
 						"patientForms",
 						scope,
@@ -134,7 +134,7 @@ export function freeTextReplyFor(
 			? careTopicReplyFor(
 					settings,
 					careTopic,
-					createDenteTelegramCareRequest(
+					await createDenteTelegramCareRequest(
 						chatFingerprintValue,
 						careTopic,
 						scope,
@@ -176,7 +176,7 @@ export function freeTextReplyFor(
 			"температур",
 		])
 	) {
-		return contactRequestReplyFor(settings, chatFingerprintValue, scope);
+		return await contactRequestReplyFor(settings, chatFingerprintValue, scope);
 	}
 
 	if (freeTextIncludes(text, ["опросник", "триаж", "беспокоит", "симптом"])) {

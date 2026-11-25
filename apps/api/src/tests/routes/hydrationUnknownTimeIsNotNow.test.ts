@@ -57,9 +57,11 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import pino from "pino";
 import { denteAdminSecretHeader } from "../../accessGuard.js";
 import { db, pool } from "../../db/client.js";
 import { appointments, organizations, patients } from "../../db/schema.js";
+import { bindServerLogger } from "../../observability/logger.js";
 import { registerDashboardRoutes } from "../../routes/dashboard.js";
 import {
 	authTokenSecret,
@@ -147,21 +149,30 @@ async function readDashboardWithServerLog(): Promise<{
 	errors: string[];
 }> {
 	const errors: string[] = [];
-	const original = console.error;
-	console.error = (...args: unknown[]): void => {
+	const sink = pino({ level: "error" }, { write: () => {} });
+	const originalSinkError = sink.error.bind(sink);
+	sink.error = ((...args: unknown[]) => {
 		errors.push(
 			args
-				.map((entry) =>
-					entry instanceof Error ? entry.message : String(entry),
-				)
+				.map((entry) => {
+					if (entry instanceof Error) return entry.message;
+					if (typeof entry === "string") return entry;
+					try {
+						return JSON.stringify(entry);
+					} catch {
+						return String(entry);
+					}
+				})
 				.join(" "),
 		);
-	};
+		return originalSinkError(...(args as Parameters<typeof originalSinkError>));
+	}) as typeof sink.error;
+	bindServerLogger(sink);
 	try {
 		const body = await readDashboard();
 		return { body, errors };
 	} finally {
-		console.error = original;
+		bindServerLogger(null);
 	}
 }
 

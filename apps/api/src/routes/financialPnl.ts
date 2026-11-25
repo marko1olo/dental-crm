@@ -184,7 +184,9 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 						let allocatedKop = 0;
 						const entries = Array.from(catTotalsKop.entries());
 						for (let i = 0; i < entries.length; i++) {
-							const [cat, catPriceKop] = entries[i]!;
+							const entry = entries[i];
+							if (!entry) continue;
+							const [cat, catPriceKop] = entry;
 							const isLast = i === entries.length - 1;
 							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round((totalPaymentKop * catPriceKop) / sumPricesKop);
 							allocatedKop += catKop;
@@ -199,8 +201,9 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 						const count = categories.length;
 						const splitParts = splitKopecks(totalPaymentKop, count);
 						for (let i = 0; i < count; i++) {
-							const cat = categories[i]!;
-							const catKop = splitParts[i]!;
+							const cat = categories[i];
+							const catKop = splitParts[i];
+							if (cat === undefined || catKop === undefined) continue;
 							paymentRows.push({
 								amountRub: kopecksToRubles(catKop),
 								department: cat,

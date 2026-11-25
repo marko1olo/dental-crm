@@ -104,9 +104,11 @@ export function applyClinicScalePreset(
 				workingHours: null,
 			});
 		} else {
-			chairs[0]!.active = true;
+			const primaryChair = chairs[0];
+			if (primaryChair) primaryChair.active = true;
 			for (let i = 1; i < chairs.length; i++) {
-				chairs[i]!.active = false;
+				const extraChair = chairs[i];
+				if (extraChair) extraChair.active = false;
 			}
 		}
 	} else if (preset === "standard_clinic") {
@@ -137,7 +139,8 @@ export function applyClinicScalePreset(
 		clinicProfile.numberOfDoctors = 4;
 
 		for (let i = 0; i < Math.min(chairs.length, 3); i++) {
-			chairs[i]!.active = true;
+			const chair = chairs[i];
+			if (chair) chair.active = true;
 		}
 		while (chairs.length < 3) {
 			const idx = chairs.length + 1;
@@ -185,7 +188,8 @@ export function applyClinicScalePreset(
 		clinicProfile.numberOfDoctors = 10;
 
 		for (let i = 0; i < Math.min(chairs.length, 5); i++) {
-			chairs[i]!.active = true;
+			const chair = chairs[i];
+			if (chair) chair.active = true;
 		}
 		while (chairs.length < 5) {
 			const idx = chairs.length + 1;

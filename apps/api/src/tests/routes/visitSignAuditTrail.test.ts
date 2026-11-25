@@ -41,6 +41,7 @@ import { after, before, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import pino from "pino";
 import { db, pool } from "../../db/client.js";
 import {
 	auditEvents,
@@ -49,6 +50,7 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
+import { bindServerLogger } from "../../observability/logger.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -349,7 +351,7 @@ describe("подписание приёма оставляет след в audit
 			auditInsertPrototype,
 			"insert",
 		);
-		const realConsoleError = console.error;
+		const sink = pino({ level: "error" }, { write: () => {} });
 		const captured: string[] = [];
 
 		/*
@@ -371,15 +373,24 @@ describe("подписание приёма оставляет след в audit
 				return (realInsert as (this: unknown, target: unknown) => unknown).call(this, table);
 			} as unknown as typeof db.insert,
 		});
-		console.error = (...args: unknown[]) => {
+		const originalSinkError = sink.error.bind(sink);
+		sink.error = ((...args: unknown[]) => {
 			captured.push(
 				args
-					.map((value) =>
-						value instanceof Error ? value.message : String(value),
-					)
+					.map((value) => {
+						if (value instanceof Error) return value.message;
+						if (typeof value === "string") return value;
+						try {
+							return JSON.stringify(value);
+						} catch {
+							return String(value);
+						}
+					})
 					.join(" "),
 			);
-		};
+			return originalSinkError(...(args as Parameters<typeof originalSinkError>));
+		}) as typeof sink.error;
+		bindServerLogger(sink);
 
 		let response: Awaited<ReturnType<typeof app.inject>>;
 		try {
@@ -448,7 +459,7 @@ describe("подписание приёма оставляет след в audit
 			`строка лога не называет, ЧТО не записалось: ${complaint}`,
 		);
 		} finally {
-			console.error = realConsoleError;
+			bindServerLogger(null);
 			if (ownInsert) Object.defineProperty(auditInsertPrototype, "insert", ownInsert);
 			else Reflect.deleteProperty(auditInsertPrototype, "insert");
 		}

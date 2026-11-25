@@ -1,9 +1,28 @@
 import { openSync, readSync, closeSync } from "node:fs";
 import { readFile, unlink } from "node:fs/promises";
-import type { FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { ImagingStudyKind } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
+import { parseImagingPayload } from "./imagingHelpers.js";
+import {
+	requireClinicalMutationAccess,
+	requireClinicalReadAccess,
+} from "../../accessGuard.js";
+import { patients, xrayScans } from "../../db/schema.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { createImagingStudyInDb } from "../../db/imagingQuery.js";
+import { parseDicomHeader } from "./dicomParsing.js";
+import type { DicomHeaderMetadata } from "./imagingConstants.js";
+import {
+	LocalPacsStorageService,
+	InvalidMagicBytesError,
+	PathTraversalError,
+	TenantIsolationError,
+} from "../../services/imaging/localPacsStorageService.js";
+import { decodeServerHeicImage } from "../../services/imaging/serverHeicDecoder.js";
 
 export function normalizeImagingStudyKind(raw: string | undefined): ImagingStudyKind {
 	const val = (raw || "").toLowerCase().trim();
@@ -46,28 +65,9 @@ const registerLocalStudyBodySchema = z
 		dicomSeriesUid: z.string().trim().max(128).optional().nullable(),
 		dicomSopInstanceUid: z.string().trim().max(128).optional().nullable(),
 		localThumbnailDataUri: z.string().trim().optional().nullable(),
+		clientMutationId: z.string().min(1).max(128).optional(),
 	})
 	.strict();
-import type { FastifyInstance } from "fastify";
-import { and, eq } from "drizzle-orm";
-import { z } from "zod";
-import { parseImagingPayload } from "./imagingHelpers.js";
-import {
-	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
-} from "../../accessGuard.js";
-import { patients, xrayScans } from "../../db/schema.js";
-import { withTenantCtx } from "../../db/rls.js";
-import { createImagingStudyInDb } from "../../db/imagingQuery.js";
-import { parseDicomHeader } from "./dicomParsing.js";
-import type { DicomHeaderMetadata } from "./imagingConstants.js";
-import {
-	LocalPacsStorageService,
-	InvalidMagicBytesError,
-	PathTraversalError,
-	TenantIsolationError,
-} from "../../services/imaging/localPacsStorageService.js";
-import { decodeServerHeicImage } from "../../services/imaging/serverHeicDecoder.js";
 
 export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 	app.post("/api/imaging/local-offline/register", async (request: FastifyRequest, reply: FastifyReply) => {

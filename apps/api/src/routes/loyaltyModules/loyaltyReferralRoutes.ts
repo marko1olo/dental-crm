@@ -3,7 +3,6 @@ import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	bonusTransactions,
@@ -155,56 +154,48 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { referrerPatientId, invitedPatientName, rewardRub, note } = parsed.data;
 
-		return withTenantCtx(orgId, async () => {
-			const res = await db.transaction(async (tx) => {
-				const [referrer] = await tx
-					.select({ id: patients.id, fullName: patients.fullName })
-					.from(patients)
-					.where(and(eq(patients.organizationId, orgId), eq(patients.id, referrerPatientId)))
-					.limit(1)
-					.for("update");
+		return withTenantCtx(orgId, async (tx) => {
+			const [referrer] = await tx
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(and(eq(patients.organizationId, orgId), eq(patients.id, referrerPatientId)))
+				.limit(1)
+				.for("update");
 
-				if (!referrer) {
-					return { notFound: true as const };
-				}
-
-				// Ensure referral code exists for referrer
-				let [refCodeRecord] = await tx
-					.select()
-					.from(patientReferralCodes)
-					.where(
-						and(
-							eq(patientReferralCodes.organizationId, orgId),
-							eq(patientReferralCodes.patientId, referrerPatientId),
-						),
-					)
-					.limit(1)
-					.for("update");
-
-				if (!refCodeRecord) {
-					const sanitizedPrefix = referrer.fullName.trim().split(/\s+/)[0]?.slice(0, 4).toUpperCase() || "PATI";
-					const randSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
-					const code = `DENTE-${sanitizedPrefix}-${randSuffix}`;
-					const token = Buffer.from(`${referrerPatientId}-${crypto.randomUUID()}`).toString("base64url");
-					[refCodeRecord] = await tx
-						.insert(patientReferralCodes)
-						.values({
-							organizationId: orgId,
-							patientId: referrerPatientId,
-							referralCode: code,
-							referralToken: token,
-						})
-						.returning();
-				}
-
-				return {
-					referralCode: refCodeRecord?.referralCode || "DENTE-REF",
-				};
-			});
-
-			if ("notFound" in res) {
+			if (!referrer) {
 				return reply.status(404).send({ message: "Приглашающий пациент не найден" });
 			}
+
+			// Ensure referral code exists for referrer
+			let [refCodeRecord] = await tx
+				.select()
+				.from(patientReferralCodes)
+				.where(
+					and(
+						eq(patientReferralCodes.organizationId, orgId),
+						eq(patientReferralCodes.patientId, referrerPatientId),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (!refCodeRecord) {
+				const sanitizedPrefix = referrer.fullName.trim().split(/\s+/)[0]?.slice(0, 4).toUpperCase() || "PATI";
+				const randSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
+				const code = `DENTE-${sanitizedPrefix}-${randSuffix}`;
+				const token = Buffer.from(`${referrerPatientId}-${crypto.randomUUID()}`).toString("base64url");
+				[refCodeRecord] = await tx
+					.insert(patientReferralCodes)
+					.values({
+						organizationId: orgId,
+						patientId: referrerPatientId,
+						referralCode: code,
+						referralToken: token,
+					})
+					.returning();
+			}
+
+			const referralCode = refCodeRecord?.referralCode || "DENTE-REF";
 
 			if (idempotencyKey) {
 				reply.header("idempotency-key", idempotencyKey);
@@ -212,11 +203,11 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 			return reply.status(201).send({
 				success: true,
-				referralCode: res.referralCode,
+				referralCode,
 				invitedPatientName,
 				rewardRub,
 				note: note || undefined,
-				message: `Рекомендация для «${invitedPatientName}» зарегистрирована с кодом ${res.referralCode}`,
+				message: `Рекомендация для «${invitedPatientName}» зарегистрирована с кодом ${referralCode}`,
 			});
 		});
 	});
@@ -379,8 +370,8 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { patientId } = request.params as { patientId: string };
 
-		return withTenantCtx(orgId, async () => {
-			const [patient] = await db
+		return withTenantCtx(orgId, async (tx) => {
+			const [patient] = await tx
 				.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
 				.from(patients)
 				.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
@@ -390,7 +381,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				return reply.status(404).send({ message: "Пациент не найден" });
 			}
 
-			let [refRecord] = await db
+			let [refRecord] = await tx
 				.select()
 				.from(patientReferralCodes)
 				.where(
@@ -404,7 +395,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 			if (!refRecord) {
 				const code = generateReferralCode(patient.fullName);
 				const token = Buffer.from(`${patientId}-${Date.now()}`).toString("base64url");
-				[refRecord] = await db
+				[refRecord] = await tx
 					.insert(patientReferralCodes)
 					.values({
 						organizationId: orgId,
@@ -453,8 +444,8 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 		const { refereePatientId, referralCode } = parsed.data;
 
-		return withTenantCtx(orgId, async () => {
-			const [codeRecord] = await db
+		return withTenantCtx(orgId, async (tx) => {
+			const [codeRecord] = await tx
 				.select()
 				.from(patientReferralCodes)
 				.where(
@@ -476,7 +467,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 			}
 
 			// Check if already attributed
-			const [existingReferral] = await db
+			const [existingReferral] = await tx
 				.select()
 				.from(patientReferrals)
 				.where(
@@ -494,7 +485,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 			}
 
 			// Check if referrer has a parent referrer (Tier 2)
-			const [parentReferrer] = await db
+			const [parentReferrer] = await tx
 				.select()
 				.from(patientReferrals)
 				.where(
@@ -505,31 +496,29 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				)
 				.limit(1);
 
-			const [referral] = await db.transaction(async (tx) => {
-				const [newReferral] = await tx
-					.insert(patientReferrals)
-					.values({
-						organizationId: orgId,
-						referrerPatientId: codeRecord.patientId,
-						parentReferrerPatientId: parentReferrer?.referrerPatientId || null,
-						refereePatientId,
-						status: "registered",
-					})
-					.returning();
+			const [newReferral] = await tx
+				.insert(patientReferrals)
+				.values({
+					organizationId: orgId,
+					referrerPatientId: codeRecord.patientId,
+					parentReferrerPatientId: parentReferrer?.referrerPatientId || null,
+					refereePatientId,
+					status: "registered",
+				})
+				.returning();
 
-				// Increment code signup count
-				await tx
-					.update(patientReferralCodes)
-					.set({ signupCount: sql`${patientReferralCodes.signupCount} + 1` })
-					.where(
-						and(
-							eq(patientReferralCodes.id, codeRecord.id),
-							eq(patientReferralCodes.organizationId, orgId),
-						),
-					);
+			// Increment code signup count
+			await tx
+				.update(patientReferralCodes)
+				.set({ signupCount: sql`${patientReferralCodes.signupCount} + 1` })
+				.where(
+					and(
+						eq(patientReferralCodes.id, codeRecord.id),
+						eq(patientReferralCodes.organizationId, orgId),
+					),
+				);
 
-				return [newReferral];
-			});
+			const referral = newReferral;
 
 			return reply.status(201).send({
 				success: true,
