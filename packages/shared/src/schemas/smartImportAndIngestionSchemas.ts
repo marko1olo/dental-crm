@@ -18,7 +18,7 @@ export const importIntakeResponseSchema = z.object({
 	normalizedText: z.string(),
 	preview: importPreviewResponseSchema,
 	recognitionNotes: z.array(z.string()),
-});
+}).strict();
 
 export type ImportIntakeResponse = z.infer<typeof importIntakeResponseSchema>;
 
@@ -84,7 +84,7 @@ export const documentIngestionRouteSchema = z.object({
 	endpoint: z.string(),
 	enabled: z.boolean(),
 	reason: z.string(),
-});
+}).strict();
 
 export type DocumentIngestionRoute = z.infer<
 	typeof documentIngestionRouteSchema
@@ -96,7 +96,7 @@ export const documentIngestionQualitySchema = z.object({
 	suggestedTarget: documentIngestionTargetSchema,
 	signals: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type DocumentIngestionQuality = z.infer<
 	typeof documentIngestionQualitySchema
@@ -109,7 +109,7 @@ export const documentIngestionExtractedFileSchema = z.object({
 	tableCount: z.number().int().nonnegative(),
 	textPreview: z.string(),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type DocumentIngestionExtractedFile = z.infer<
 	typeof documentIngestionExtractedFileSchema
@@ -129,7 +129,7 @@ export const documentIngestionResponseSchema = z.object({
 	quality: documentIngestionQualitySchema,
 	warnings: z.array(z.string()),
 	parserNotes: z.array(z.string()),
-});
+}).strict();
 
 export type DocumentIngestionResponse = z.infer<
 	typeof documentIngestionResponseSchema
@@ -242,7 +242,7 @@ export const uiPreferencesSchema = z.object({
 		.enum(["anatomical_svg", "compact_clinical", "classic_gost"])
 		.default("anatomical_svg"),
 	savedAt: z.string().default(""),
-});
+}).strict();
 
 export type OdontogramViewMode =
 	| "anatomical_svg"
@@ -262,7 +262,7 @@ export const uiPreferencesInputSchema = uiPreferencesSchema
 	.extend({
 		version: z.literal(1).optional(),
 		savedAt: z.string().optional(),
-	});
+	}).strict();
 
 export type UiPreferencesInput = z.infer<typeof uiPreferencesInputSchema>;
 
@@ -290,7 +290,7 @@ export const smartImportLineClassificationSchema = z.object({
 	confidence: z.number().min(0).max(1),
 	reason: z.string(),
 	text: z.string(),
-});
+}).strict();
 
 export type SmartImportLineClassification = z.infer<
 	typeof smartImportLineClassificationSchema
@@ -301,7 +301,7 @@ export const smartImportClinicProfileSuggestionSchema = z.object({
 	confidence: z.number().min(0).max(1),
 	sourceLineNumbers: z.array(z.number().int().positive()),
 	warnings: z.array(z.string()),
-});
+}).strict();
 
 export type SmartImportClinicProfileSuggestion = z.infer<
 	typeof smartImportClinicProfileSuggestionSchema
@@ -319,7 +319,7 @@ export const smartImportPublicLookupTargetSchema = z.object({
 	url: z.string().url(),
 	privacy: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type SmartImportPublicLookupTarget = z.infer<
 	typeof smartImportPublicLookupTargetSchema
@@ -369,7 +369,7 @@ export const smartImportLegacySourceSchema = z.object({
 	automationLevel: smartImportLegacySourceAutomationLevelSchema,
 	privacy: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type SmartImportLegacySource = z.infer<
 	typeof smartImportLegacySourceSchema
@@ -381,7 +381,7 @@ export const smartImportMigrationPlanStepSchema = z.object({
 	status: z.enum(["ready", "review", "manual", "blocked"]),
 	detail: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type SmartImportMigrationPlanStep = z.infer<
 	typeof smartImportMigrationPlanStepSchema
@@ -398,7 +398,7 @@ export const smartImportMigrationPlanSchema = z.object({
 	steps: z.array(smartImportMigrationPlanStepSchema),
 	privacyWarnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type SmartImportMigrationPlan = z.infer<
 	typeof smartImportMigrationPlanSchema
@@ -419,7 +419,7 @@ export const smartImportPreviewResponseSchema = z.object({
 	migrationPlan: smartImportMigrationPlanSchema,
 	lineClassifications: z.array(smartImportLineClassificationSchema),
 	parserNotes: z.array(z.string()),
-});
+}).strict();
 
 export type SmartImportPreviewResponse = z.infer<
 	typeof smartImportPreviewResponseSchema
@@ -429,7 +429,7 @@ export const smartImportCommitResponseSchema = z.object({
 	preview: smartImportPreviewResponseSchema,
 	patientCommit: importCommitResponseSchema.nullable(),
 	imagingCommit: imagingImportCommitResponseSchema.nullable(),
-});
+}).strict();
 
 export type SmartImportCommitResponse = z.infer<
 	typeof smartImportCommitResponseSchema
@@ -469,7 +469,7 @@ export const migrationLocalSourceDiscoveryCandidateSchema = z.object({
 	reasons: z.array(z.string()),
 	warnings: z.array(z.string()),
 	smartImportLine: z.string(),
-});
+}).strict();
 
 export type MigrationLocalSourceDiscoveryCandidate = z.infer<
 	typeof migrationLocalSourceDiscoveryCandidateSchema
@@ -483,7 +483,7 @@ export const migrationLocalSourceDiscoveryResponseSchema = z.object({
 	candidates: z.array(migrationLocalSourceDiscoveryCandidateSchema),
 	warnings: z.array(z.string()),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationLocalSourceDiscoveryResponse = z.infer<
 	typeof migrationLocalSourceDiscoveryResponseSchema
@@ -522,7 +522,7 @@ export const migrationLocalSourceWorkupStepSchema = z.object({
 	status: z.enum(["ready", "needs_bridge", "manual", "blocked"]),
 	detail: z.string(),
 	actionLabel: z.string(),
-});
+}).strict();
 
 export type MigrationLocalSourceWorkupStep = z.infer<
 	typeof migrationLocalSourceWorkupStepSchema
@@ -534,7 +534,7 @@ export const migrationLocalSourceHandoffSchema = z.object({
 	endpoint: z.string(),
 	payloadHint: z.string(),
 	privacy: z.string(),
-});
+}).strict();
 
 export type MigrationLocalSourceHandoff = z.infer<
 	typeof migrationLocalSourceHandoffSchema
@@ -547,7 +547,7 @@ export const migrationReadinessItemSchema = z.object({
 	owner: z.enum(["administrator", "doctor", "assistant", "system"]),
 	detail: z.string(),
 	nextAction: z.string(),
-});
+}).strict();
 
 export type MigrationReadinessItem = z.infer<
 	typeof migrationReadinessItemSchema

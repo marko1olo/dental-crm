@@ -405,7 +405,7 @@ export const acceptVisitDraftResponseSchema = z.object({
 	visit: visitSchema,
 	visitCloseChecklist: visitCloseChecklistSchema,
 	saveReceipt: visitSaveReceiptSchema,
-});
+}).strict();
 
 export type AcceptVisitDraftResponse = z.infer<
 	typeof acceptVisitDraftResponseSchema
@@ -446,7 +446,7 @@ export type CreateAiRecognitionJobInput = z.infer<
 
 export const aiRecognitionJobResponseSchema = z.object({
 	job: aiRecognitionJobSchema,
-});
+}).strict();
 
 export type AiRecognitionJobResponse = z.infer<
 	typeof aiRecognitionJobResponseSchema
