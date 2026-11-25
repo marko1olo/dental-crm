@@ -1,7 +1,10 @@
 import {
 	clinicModeSchema,
+	clinicProfileSchema,
+	type ClinicProfile,
 	type Visit,
 } from "@dental/shared";
+import { z } from "zod";
 import {
 	inMemoryDomainState,
 	validScheduleTimeZone,
@@ -61,9 +64,18 @@ export function applyActiveVisit(
 	return latest ?? noVisitSkeleton(organizationId);
 }
 
+const canonicalClinicProfileSchema = z.object(clinicProfileSchema.shape);
+
+function buildBaseClinicProfile(organizationId: string): ClinicProfile {
+	return canonicalClinicProfileSchema.parse({
+		...inMemoryDomainState.clinicProfile,
+		organizationId,
+	});
+}
+
 export function emptyDomainState(organizationId: string): DomainState {
 	return {
-		clinicProfile: { ...inMemoryDomainState.clinicProfile, organizationId },
+		clinicProfile: buildBaseClinicProfile(organizationId),
 		staffMembers: [],
 		chairs: [],
 		patients: [],
@@ -95,9 +107,9 @@ export function buildClinicProfile(
 	clinic: typeof schema.clinics.$inferSelect | undefined,
 	report: DomainStateHydrationReport,
 ): DomainState["clinicProfile"] {
-	const clinicProfile: DomainState["clinicProfile"] = {
-		...inMemoryDomainState.clinicProfile,
-	};
+	const clinicProfile: DomainState["clinicProfile"] = buildBaseClinicProfile(
+		organization.id,
+	);
 	const orgFlags =
 		(organization.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
 	clinicProfile.organizationId = organization.id;

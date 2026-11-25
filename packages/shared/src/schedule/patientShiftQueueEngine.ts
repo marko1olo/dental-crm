@@ -507,16 +507,25 @@ function extractDateKey(isoString: string): string {
 // 7. BUILD PATIENT SHIFT QUEUE (MAIN CALCULATION ENGINE)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface PatientShiftQueueAppointmentInput extends Omit<Partial<Appointment>, "status"> {
+	status?: AppointmentStatus | PatientOperationalStatus | string | null | undefined;
+	visitStatus?: string | null | undefined;
+	patientName?: string | null | undefined;
+	patientFullName?: string | null | undefined;
+	patientPhone?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	doctorShortName?: string | null | undefined;
+	chairName?: string | null | undefined;
+	arrivedAt?: string | null | undefined;
+	inChairSince?: string | null | undefined;
+	treatmentDescription?: string | null | undefined;
+}
+
 /**
  * Builds the complete live shift queue data structure for the today queue board.
  */
 export function buildPatientShiftQueue(
-	appointments: Array<
-		(Omit<Partial<Appointment>, "status"> & {
-			status?: AppointmentStatus | PatientOperationalStatus | string | null;
-		}) &
-			Record<string, any>
-	>,
+	appointments: readonly PatientShiftQueueAppointmentInput[],
 	options: PatientShiftQueueOptions = {},
 ): PatientShiftQueueResult {
 	const nowMs = options.nowMs ?? Date.now();

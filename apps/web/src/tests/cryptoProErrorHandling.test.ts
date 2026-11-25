@@ -47,7 +47,7 @@ describe("CryptoPro CSP Error Handling & Timeout Rigor", () => {
 		assert.strictEqual(parsed.isCancellation, false);
 		assert.strictEqual(parsed.code, "INVALID_ALGORITHM");
 		assert.ok(parsed.userMessage.includes("ГОСТ Р 34.10-2012"));
-		assert.ok(parsed.userMessage.includes("63-ФЗ"));
+		assert.ok(parsed.userMessage.includes("квалифицированный сертификат"));
 	});
 
 	it("translates RPC / service unavailable error (0x800706BA)", () => {

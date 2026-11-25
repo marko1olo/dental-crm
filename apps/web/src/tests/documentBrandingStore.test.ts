@@ -12,7 +12,7 @@ describe("useDocumentBrandingStore", () => {
 
 	it("initializes with default clinical settings", () => {
 		const state = useDocumentBrandingStore.getState();
-		assert.ok(state.clinicName.includes("DENTE"));
+		assert.ok(state.clinicName.includes("Стоматологическая клиника"));
 		assert.equal(state.brandAccentColor, "deep_teal");
 		assert.equal(state.layoutDensity, "comfortable");
 		assert.equal(state.fontFamily, "sans");
@@ -62,7 +62,7 @@ describe("useDocumentBrandingStore", () => {
 		assert.equal(useDocumentBrandingStore.getState().clinicName, "Temporary");
 
 		store.resetToDefaults();
-		assert.ok(useDocumentBrandingStore.getState().clinicName.includes("DENTE"));
+		assert.ok(useDocumentBrandingStore.getState().clinicName.includes("Стоматологическая клиника"));
 		assert.equal(useDocumentBrandingStore.getState().brandAccentColor, "deep_teal");
 	});
 });

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -27,6 +27,19 @@ const webSrc = join(here, "..");
 const read = (relativePath: string) =>
 	readFileSync(join(webSrc, relativePath), "utf8");
 
+const readDirRecursive = (dirPath: string): string => {
+	const chunks: string[] = [];
+	for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+		const fullPath = join(dirPath, entry.name);
+		if (entry.isDirectory()) {
+			chunks.push(readDirRecursive(fullPath));
+		} else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+			chunks.push(readFileSync(fullPath, "utf8"));
+		}
+	}
+	return chunks.join("\n");
+};
+
 /** Начальное значение поля в объекте хранилища. */
 function initialValueOf(source: string, field: string): string | null {
 	const match = new RegExp(
@@ -39,8 +52,9 @@ function initialValueOf(source: string, field: string): string | null {
 }
 
 describe("денежные и импортные поля начинаются пустыми", () => {
-	const documentStore = read("store/documentStore.ts");
-	const appStore = read("store/appStore.ts");
+	const documentStore = read("store/documentStore.ts") + "\n" + readDirRecursive(join(webSrc, "store/documentStore"));
+	const appStore = read("store/appStore.ts") + "\n" + readDirRecursive(join(webSrc, "store/appStoreModules"));
+	const appStoreInitial = read("store/appStoreModules/initialAppState.ts");
 
 	it("сумма оплаты не подставлена", () => {
 		assert.equal(initialValueOf(documentStore, "paymentAmount"), '""');
@@ -51,15 +65,15 @@ describe("денежные и импортные поля начинаются �
 	});
 
 	it("выгрузка пациентов для импорта не подставлена", () => {
-		assert.equal(initialValueOf(appStore, "importText"), '""');
+		assert.equal(initialValueOf(appStoreInitial, "importText"), '""');
 	});
 
 	it("смешанная выгрузка для умного разбора не подставлена", () => {
-		assert.equal(initialValueOf(appStore, "smartImportText"), '""');
+		assert.equal(initialValueOf(appStoreInitial, "smartImportText"), '""');
 	});
 
 	it("прайс для импорта не подставлен", () => {
-		assert.equal(initialValueOf(appStore, "pricelistText"), '""');
+		assert.equal(initialValueOf(appStoreInitial, "pricelistText"), '""');
 	});
 
 	it("в хранилищах не осталось выдуманных цен и телефонов", () => {

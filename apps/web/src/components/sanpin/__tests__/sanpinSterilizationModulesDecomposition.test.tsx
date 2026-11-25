@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -28,7 +29,7 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle Decomposed Architecture (Mand
 	});
 
 	it("verifies all decomposed modules in sterilizationModules are strictly <= 350 lines (Mandate 8b)", () => {
-		const decomposedDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizationModules");
+		const decomposedDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../sterilizationModules");
 		assert.ok(fs.existsSync(decomposedDir), "Decomposed directory must exist");
 		const files = fs.readdirSync(decomposedDir);
 		for (const file of files) {

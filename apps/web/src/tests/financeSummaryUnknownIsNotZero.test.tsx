@@ -107,19 +107,25 @@ const renderOverview = (
  * Проверять «строка есть где-то в разметке» здесь недостаточно: плиток четыре,
  * и подмена суммы одной плитки суммой другой такой проверкой не ловится.
  */
+const findCaptionIndex = (markup: string, caption: string): number => {
+	const match = new RegExp(`<span[^>]*>${caption}:?</span>`).exec(markup);
+	return match ? match.index + match[0].length : -1;
+};
+
 const tileValue = (markup: string, caption: string) => {
-	const at = markup.indexOf(`<span>${caption}</span>`);
-	assert.notEqual(at, -1, `плитка «${caption}» исчезла с экрана`);
-	const value = /<strong>([^<]*)<\/strong>/.exec(markup.slice(at));
+	const restStart = findCaptionIndex(markup, caption);
+	assert.notEqual(restStart, -1, `плитка «${caption}» исчезла с экрана`);
+	const rest = markup.slice(restStart);
+	const value = /<strong[^>]*>([^<]*)<\/strong>/.exec(rest);
 	assert.notEqual(value, null, `у плитки «${caption}» нет значения`);
 	return value?.[1] ?? "";
 };
 
 /** Подпись под суммой в плитке с этой подписью. */
 const tileNote = (markup: string, caption: string) => {
-	const at = markup.indexOf(`<span>${caption}</span>`);
-	assert.notEqual(at, -1, `плитка «${caption}» исчезла с экрана`);
-	const note = /<p>([^<]*)<\/p>/.exec(markup.slice(at));
+	const restStart = findCaptionIndex(markup, caption);
+	assert.notEqual(restStart, -1, `плитка «${caption}» исчезла с экрана`);
+	const note = /<p[^>]*>([^<]*)<\/p>/.exec(markup.slice(restStart));
 	return note?.[1] ?? "";
 };
 
@@ -214,15 +220,20 @@ describe("финансовая сводка: непосчитанное не р�
  * tests/moneyUnknownNotZero.test.ts для вызовов money().
  */
 const webSrcDir = fileURLToPath(new URL("..", import.meta.url));
-const memoAnchor = "const patientBillingSummary = useMemo";
+const memoAnchors = [
+	"const patientBillingSummary = useMemo",
+	'return useMemo<Dashboard["billingSummary"] | null>',
+];
 
 /** Тело мемо от объявления и на 600 знаков вперёд: ранний возврат и его форма. */
 const unknownTotalDoor = (source: string) => {
-	const at = source.indexOf(memoAnchor);
+	const at = memoAnchors
+		.map((anchor) => source.indexOf(anchor))
+		.find((idx) => idx !== -1) ?? -1;
 	assert.notEqual(
 		at,
 		-1,
-		"мемо patientBillingSummary исчезло из useAppLogic.tsx",
+		"мемо patientBillingSummary исчезло из useDocumentPatientBillingSummary.ts",
 	);
 	return source.slice(at, at + 600);
 };
@@ -232,14 +243,16 @@ const doorReportsUnknown = (door: string) =>
 	!/totalDueRub:\s*0/.test(door);
 
 const loadLogicSource = () => {
-	const domainPath = join(
+	const summaryHookPath = join(
 		webSrcDir,
 		"hooks",
 		"domains",
-		"useDocumentWorkflowModule.ts",
+		"documents",
+		"workflow",
+		"useDocumentPatientBillingSummary.ts",
 	);
 	try {
-		return readFileSync(domainPath, "utf8");
+		return readFileSync(summaryHookPath, "utf8");
 	} catch {
 		return readFileSync(join(webSrcDir, "useAppLogic.tsx"), "utf8");
 	}

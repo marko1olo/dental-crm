@@ -25,8 +25,11 @@ const sharedSrcRoot = path.resolve(__dirname, "../../../../packages/shared/src")
 
 describe("Mandate V, VII, XIII, XIV: Academic Bloat & Hospital Cargo Cult Purge", () => {
 	it("1. VisitView ensures clinical silence during tooth treatment (odontogram tab)", () => {
-		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
-		const content = fs.readFileSync(visitViewPath, "utf8");
+		const content = [
+			fs.readFileSync(path.join(webSrcRoot, "VisitView.tsx"), "utf8"),
+			fs.readFileSync(path.join(webSrcRoot, "components/visit/view/VisitActionFooter.tsx"), "utf8"),
+			fs.readFileSync(path.join(webSrcRoot, "components/visit/view/VisitViewDesktopLayout.tsx"), "utf8"),
+		].join("\n");
 
 		// Secondary tools accordion must be hidden when on odontogram tab
 		assert.ok(
@@ -34,14 +37,14 @@ describe("Mandate V, VII, XIII, XIV: Academic Bloat & Hospital Cargo Cult Purge"
 			"VisitView must hide secondary tools tail during odontogram treatment",
 		);
 
-		// Smoke compatibility container must be sr-only / 0px offscreen
+		// Legacy sr-only smoke compat wrapper must be eliminated cleanly; polish button lives in visit-next-step-panel (hidden during odontogram)
 		assert.ok(
-			content.includes("smoke-compat-container sr-only"),
-			"Smoke test compatibility harness must be marked sr-only",
+			!content.includes("smoke-compat-container"),
+			"Legacy smoke-compat-container wrapper must be removed in favor of real VisitActionFooter controls",
 		);
 		assert.ok(
-			content.includes('position: "absolute"'),
-			"Smoke test harness must be positioned offscreen",
+			content.includes('data-testid="btn-polish-transcript"'),
+			"VisitActionFooter must expose real btn-polish-transcript control inside hidden-on-odontogram panel",
 		);
 	});
 
@@ -57,8 +60,10 @@ describe("Mandate V, VII, XIII, XIV: Academic Bloat & Hospital Cargo Cult Purge"
 	});
 
 	it("3. VisitView header contains 1-click somatic norm button with full autonomy", () => {
-		const visitViewPath = path.join(webSrcRoot, "VisitView.tsx");
-		const content = fs.readFileSync(visitViewPath, "utf8");
+		const content = [
+			fs.readFileSync(path.join(webSrcRoot, "VisitView.tsx"), "utf8"),
+			fs.readFileSync(path.join(webSrcRoot, "components/visit/view/visitHeaderModules/VisitHeaderActionsToolbar.tsx"), "utf8"),
+		].join("\n");
 
 		assert.ok(
 			content.includes('data-testid="btn-somatic-norm-one-click"'),

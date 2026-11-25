@@ -135,10 +135,10 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 
 		const studioPath = path.join(
 			repoRoot,
-			"apps/web/src/components/sanpin/SanpinStudioModal.tsx",
+			"apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx",
 		);
 		const studioContent = fs.readFileSync(studioPath, "utf-8");
-		assert.ok(!RAW_EMOJI_REGEX.test(studioContent), "SanpinStudioModal must be free of raw emojis");
+		assert.ok(!RAW_EMOJI_REGEX.test(studioContent), "SanpinStudioModal / SterilizationBatchCycleModal must be free of raw emojis");
 	});
 
 	it("10. SanpinCycleModal: eradicated per Mandate 8s (no dead dummy stub in repo)", () => {
@@ -158,11 +158,15 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 	});
 
 	it("12. MedicalWasteJournalModal: zero raw emojis, uses Lucide Sparkles icon", () => {
-		const filePath = path.join(
+		const modalPath = path.join(
 			repoRoot,
 			"apps/web/src/components/sanpin/waste/MedicalWasteJournalModal.tsx",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
+		const headerPath = path.join(
+			repoRoot,
+			"apps/web/src/components/sanpin/waste/MedicalWasteModalHeader.tsx",
+		);
+		const content = fs.readFileSync(modalPath, "utf-8") + "\n" + fs.readFileSync(headerPath, "utf-8");
 
 		assert.ok(!content.includes("⚡"), "MedicalWasteJournalModal must not contain raw ⚡ emoji");
 		assert.ok(!RAW_EMOJI_REGEX.test(content), "MedicalWasteJournalModal must be free of raw emojis");

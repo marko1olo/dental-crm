@@ -240,15 +240,27 @@ export const REMD_ERROR_CATALOG: Record<string, Omit<RemdErrorDiagnostic, "techn
 	},
 };
 
+const DEFAULT_SYSTEM_DIAGNOSTIC: Omit<RemdErrorDiagnostic, "technicalDetail"> = {
+	code: "REMD_ERR_099",
+	category: "SYSTEM",
+	title: "Внутренняя ошибка сервиса интеграции ФРЭМД",
+	description: "Временный технологический сбой или регламентные работы на стороне Федерального РЭМД ЕГИСЗ.",
+	remediation: "Повторите отправку документа через несколько минут (экспоненциальный бэкофф).",
+	isRetryable: true,
+	affectedEntity: "NETWORK",
+};
+
+function buildCatalogDiagnostic(key: string, technicalDetail: string): RemdErrorDiagnostic {
+	const entry = REMD_ERROR_CATALOG[key] ?? DEFAULT_SYSTEM_DIAGNOSTIC;
+	return { ...entry, technicalDetail };
+}
+
 /**
  * Ищет ошибку в каталоге по коду или тексту сообщения
  */
 export function lookupRemdErrorCode(codeOrText: string): RemdErrorDiagnostic {
 	if (!codeOrText) {
-		return {
-			...REMD_ERROR_CATALOG.REMD_ERR_099!,
-			technicalDetail: "Неизвестная ошибка",
-		};
+		return buildCatalogDiagnostic("REMD_ERR_099", "Неизвестная ошибка");
 	}
 
 	const upper = codeOrText.toUpperCase();
@@ -256,37 +268,34 @@ export function lookupRemdErrorCode(codeOrText: string): RemdErrorDiagnostic {
 	// Прямой поиск по коду
 	for (const key of Object.keys(REMD_ERROR_CATALOG)) {
 		if (upper.includes(key)) {
-			return {
-				...REMD_ERROR_CATALOG[key]!,
-				technicalDetail: codeOrText,
-			};
+			return buildCatalogDiagnostic(key, codeOrText);
 		}
 	}
 
 	// Поиск по ключевым словам
 	if (upper.includes("ФРМР") || upper.includes("FRMR") || upper.includes("СНИЛС ВРАЧА")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_001!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_001", codeOrText);
 	}
 	if (upper.includes("СЕРТИФИКАТ") || upper.includes("CERTIFICATE") || upper.includes("ИСТЕК") || upper.includes("ОТОЗВАН")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_002!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_002", codeOrText);
 	}
 	if (upper.includes("XSD") || upper.includes("SCHEMA") || upper.includes("ВАЛИДАЦИИ СХЕМЫ")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_003!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_003", codeOrText);
 	}
 	if (upper.includes("804Н") || upper.includes("НОМЕНКЛАТУР") || upper.includes("SERVICE CODE")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_004!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_004", codeOrText);
 	}
 	if (upper.includes("ФРМО") || upper.includes("FRMO") || upper.includes("ОГРН КЛИНИКИ")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_005!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_005", codeOrText);
 	}
 	if (upper.includes("ХЭШ") || upper.includes("DIGEST") || upper.includes("CHECKSUM") || upper.includes("CADES")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_006!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_006", codeOrText);
 	}
 	if (upper.includes("ДУБЛИКАТ") || upper.includes("DUPLICATE") || upper.includes("УЖЕ ЗАРЕГИСТРИРОВАН")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_007!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_007", codeOrText);
 	}
 	if (upper.includes("УКЭП МО") || upper.includes("ПОДПИСЬ ОРГАНИЗАЦИИ") || upper.includes("ГЛАВНОГО ВРАЧА")) {
-		return { ...REMD_ERROR_CATALOG.REMD_ERR_008!, technicalDetail: codeOrText };
+		return buildCatalogDiagnostic("REMD_ERR_008", codeOrText);
 	}
 
 	return {
@@ -314,9 +323,9 @@ export function parseRemdSoapFault(soapFaultXml: string): RemdErrorDiagnostic {
 	const faultStringMatch = soapFaultXml.match(/<(?:[a-zA-Z0-9_-]+:)?faultstring>([^<]+)<\//i);
 	const detailMatch = soapFaultXml.match(/<(?:[a-zA-Z0-9_-]+:)?detail>([\s\S]*?)<\//i);
 
-	const codeText = faultCodeMatch ? faultCodeMatch[1]!.trim() : "";
-	const stringText = faultStringMatch ? faultStringMatch[1]!.trim() : "";
-	const detailText = detailMatch ? detailMatch[1]!.trim() : "";
+	const codeText = faultCodeMatch?.[1]?.trim() ?? "";
+	const stringText = faultStringMatch?.[1]?.trim() ?? "";
+	const detailText = detailMatch?.[1]?.trim() ?? "";
 
 	const combined = `${codeText} ${stringText} ${detailText}`.trim();
 	const diag = lookupRemdErrorCode(combined);

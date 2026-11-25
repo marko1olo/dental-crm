@@ -100,7 +100,7 @@ describe("CBCT Seamless Autotransfer Integration Suite", () => {
 
 			// Проверка useVisitStore (дневник визита / смета)
 			const visitNote = useVisitStore.getState().visitNoteForm;
-			assert.ok(visitNote.treatmentPlan.includes("A06.07.012"), "Смета визита должна содержать A06.07.012");
+			assert.ok(visitNote.treatmentPlan.includes(STATUTORY_CBCT_804N.code804n), "Смета визита должна содержать код услуги КЛКТ");
 			assert.ok(visitNote.treatmentPlan.includes("A16.07.054.001"), "Смета визита должна содержать A16.07.054.001");
 
 			// Проверка useDocumentStore (акт выполненных работ)

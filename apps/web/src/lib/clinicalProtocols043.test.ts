@@ -392,9 +392,9 @@ describe("clinicalProtocols043 — Protocol Generation (generateSoapFromOdontogr
 		});
 		assert.equal(healthy.diagnosisIcd10, "Z01.2");
 		assert.equal(healthy.diagnosisTooth, "11");
-		assert.equal(healthy.diagnosisIcd10Label, "Стоматологическое обследование");
-		assert.ok(healthy.anamnesis.includes("Жалоб со стороны зуба 11"));
-		assert.ok(healthy.statusLocalis.includes("Интактен"));
+		assert.equal(healthy.diagnosisIcd10Label, "Интактный пародонт / Клиническая норма");
+		assert.ok(healthy.anamnesis.includes("Жалоб со стороны тканей пародонта в области зуба 11"));
+		assert.ok(healthy.statusLocalis.includes("десна бледно-розовая, плотная"));
 		assert.ok(healthy.treatmentDescription.includes("Профилактический осмотр"));
 	});
 });

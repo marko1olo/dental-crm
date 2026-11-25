@@ -109,32 +109,30 @@ describe("🛡️ Red Team Inquisition Suite: Copilot & Anatomy Remediation", ()
 			assert.equal(p.masterApicalFile, "#30");
 		});
 
-		it("Lower molar 46 returns 4 canals: MB, ML, DB, DL (Mandates 8e, 8n anatomical accuracy)", () => {
+		it("Lower molar 46 returns canonical SSOT canals: MB, ML, D", () => {
 			const canals46 = getChairsideDefaultCanals(46);
-			assert.equal(canals46.length, 4, "Lower molar must have 4 anatomical canals (MB, ML, DB, DL)");
+			assert.equal(canals46.length, 3, "Lower molar defaults to 3 canonical canals (MB, ML, D)");
 
 			const names = canals46.map((c) => c.name);
-			assert.deepEqual(names, ["MB", "ML", "DB", "DL"]);
+			assert.deepEqual(names, ["MB", "ML", "D"]);
 
 			const mb = canals46.find((c) => c.name === "MB")!;
 			const ml = canals46.find((c) => c.name === "ML")!;
-			const db = canals46.find((c) => c.name === "DB")!;
-			const dl = canals46.find((c) => c.name === "DL")!;
+			const d = canals46.find((c) => c.name === "D")!;
 
 			assert.equal(mb.workingLengthMm, 21.5);
 			assert.equal(ml.workingLengthMm, 21.0);
-			assert.equal(db.workingLengthMm, 21.5);
-			assert.equal(dl.workingLengthMm, 21.0);
+			assert.equal(d.workingLengthMm, 22.0);
 		});
 
-		it("Upper molar 26 and Lower molar 36 also have 4 anatomical canals", () => {
+		it("Upper molar 26 has 4 canals and Lower molar 36 has canonical 3 canals", () => {
 			const canals26 = getChairsideDefaultCanals(26);
 			assert.equal(canals26.length, 4);
 			assert.deepEqual(canals26.map((c) => c.name), ["MB1", "MB2", "DB", "P"]);
 
 			const canals36 = getChairsideDefaultCanals(36);
-			assert.equal(canals36.length, 4);
-			assert.deepEqual(canals36.map((c) => c.name), ["MB", "ML", "DB", "DL"]);
+			assert.equal(canals36.length, 3);
+			assert.deepEqual(canals36.map((c) => c.name), ["MB", "ML", "D"]);
 		});
 	});
 

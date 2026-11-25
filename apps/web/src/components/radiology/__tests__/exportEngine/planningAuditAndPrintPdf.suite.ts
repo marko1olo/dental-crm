@@ -356,7 +356,7 @@ export function runPlanningAuditAndPrintPdfTests() {
 		});
 
 		assert.equal(anonReport.patient.patientName, "АНОНИМИЗИРОВАН (152-ФЗ / КОНСИЛИУМ)");
-		assert.equal(anonReport.patient.cardRecordNumber, "043/у-[СКРЫТО]");
+		assert.equal(anonReport.patient.cardRecordNumber, "МК-[СКРЫТО]");
 		assert.equal(anonReport.patient.studyDate, "[СКРЫТО]");
 		assert.equal(anonReport.patient.isAnonymized, true);
 

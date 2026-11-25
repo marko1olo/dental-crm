@@ -62,7 +62,7 @@ export function paidContractRequiredFieldsReview(
 		{ field: "paidContractCustomerFullName", label: "Заказчик", hint: "ФИО заказчика", ok: customer !== "" },
 		{ field: "paidContractCareReason", label: "Основание обращения", hint: "жалоба или диагноз", ok: careReason !== "" },
 		{ field: "paidContractServiceScope", label: "Состав услуг", hint: "перечень согласованных услуг", ok: serviceScope !== "" },
-		{ field: "paidContractTotalRub", label: "Сумма договора", hint: "стоимость цифрами", ok: typeof input.totalRub === "number" && input.totalRub >= 0 },
+		{ field: "paidContractTotalRub", label: "Сумма договора", hint: "стоимость цифрами", ok: options?.allowBlankForPrint ? true : typeof input.totalRub === "number" && input.totalRub > 0 },
 		{ field: "paidContractPaymentTerms", label: "Порядок оплаты", hint: "условия оплаты", ok: filled(input.paymentTerms) !== "" },
 		{ field: "paidContractPriceChangeRules", label: "Изменение цены и объема", hint: "правила изменения цен", ok: filled(input.priceChangeRules) !== "" },
 		{ field: "paidContractFreeCareNotice", label: "Уведомление о бесплатной помощи", hint: "разъяснение госгарантий", ok: filled(input.freeCareNotice) !== "" },
@@ -70,10 +70,6 @@ export function paidContractRequiredFieldsReview(
 		{ field: "paidContractRefundTerms", label: "Отказ и возврат", hint: "порядок возврата", ok: filled(input.refundTerms) !== "" },
 		{ field: "paidContractWarrantyTerms", label: "Гарантия и претензии", hint: "гарантийный срок", ok: filled(input.warrantyTerms) !== "" },
 		{ field: "paidContractDoctorFullName", label: "Ответственный врач", hint: "ФИО врача", ok: options?.allowBlankForPrint ? true : doctor !== "" },
-		{ field: "paidContractClinicInfoConfirmed", label: "Сведения о клинике переданы", hint: "отметка", ok: input.clinicInfoConfirmed },
-		{ field: "paidContractServiceListConfirmed", label: "Перечень услуг передан", hint: "отметка", ok: input.serviceListConfirmed },
-		{ field: "paidContractPaidBasisConfirmed", label: "Платная основа понятна", hint: "отметка", ok: input.paidBasisConfirmed },
-		{ field: "paidContractWrittenChangesConfirmed", label: "Письменные изменения согласованы", hint: "отметка", ok: input.writtenChangesConfirmed },
 	];
 
 	return {

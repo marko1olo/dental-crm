@@ -781,9 +781,15 @@ describe("DENTE Sync Engine & Conflict Resolution Suite", () => {
 
 		let mockSentBody: any = null;
 		const mockFetch = async (
-			_url: string | URL | Request,
+			url: string | URL | Request,
 			init?: RequestInit,
 		): Promise<Response> => {
+			if (init?.method === "GET" || String(url).includes("/pull")) {
+				return new Response(
+					JSON.stringify({ serverTime: new Date().toISOString(), patients: [], visits: [] }),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			}
 			mockSentBody = JSON.parse(String(init?.body || "{}"));
 			return new Response(
 				JSON.stringify({

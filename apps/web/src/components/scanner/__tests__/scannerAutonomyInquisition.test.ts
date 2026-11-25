@@ -2,10 +2,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy', () => {
-	const scannerDir = path.resolve(process.cwd(), 'apps/web/src/components/scanner');
-	const photographyDir = path.resolve(process.cwd(), 'apps/web/src/components/photography');
+	const componentsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+	const scannerDir = path.join(componentsDir, 'scanner');
+	const photographyDir = path.join(componentsDir, 'photography');
 
 	const targetDirs = [scannerDir, photographyDir];
 

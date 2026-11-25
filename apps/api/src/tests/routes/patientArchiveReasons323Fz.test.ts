@@ -48,38 +48,56 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 		await purgeFixtureOrganizations([ORG_ID]);
 
 		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(organizations).values({
-				id: ORG_ID,
-				name: "Клиника 323-ФЗ Аудит Архива",
-			});
+			await tx
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника 323-ФЗ Аудит Архива",
+				})
+				.onConflictDoNothing();
 
-			await tx.insert(users).values({
-				id: DOCTOR_ID,
-				organizationId: ORG_ID,
-				email: "doctor.archive323@dente.pro",
-				role: "doctor",
-				fullName: "Доктор Стоматологов-Хирург",
-			});
+			await tx
+				.insert(users)
+				.values({
+					id: DOCTOR_ID,
+					organizationId: ORG_ID,
+					email: "doctor.archive323@dente.pro",
+					role: "doctor",
+					fullName: "Доктор Стоматологов-Хирург",
+				})
+				.onConflictDoNothing();
 
-			await tx.insert(clinics).values({
-				id: CLINIC_ID,
-				organizationId: ORG_ID,
-				name: "Тестовая клиника 323",
-			});
+			await tx
+				.insert(clinics)
+				.values({
+					id: CLINIC_ID,
+					organizationId: ORG_ID,
+					name: "Тестовая клиника 323",
+				})
+				.onConflictDoNothing();
 
-			await tx.insert(chairs).values({
-				id: CHAIR_ID,
-				organizationId: ORG_ID,
-				clinicId: CLINIC_ID,
-				name: "Кресло 1",
-			});
+			await tx
+				.insert(chairs)
+				.values({
+					id: CHAIR_ID,
+					organizationId: ORG_ID,
+					clinicId: CLINIC_ID,
+					name: "Кресло 1",
+				})
+				.onConflictDoNothing();
 
-			await tx.insert(familyGroups).values({
-				id: FAMILY_GROUP_ID,
-				organizationId: ORG_ID,
-				name: "Семья Ивановых",
-				balance: "5000.00",
-			});
+			await tx
+				.insert(familyGroups)
+				.values({
+					id: FAMILY_GROUP_ID,
+					organizationId: ORG_ID,
+					name: "Семья Ивановых",
+					balance: "5000.00",
+				})
+				.onConflictDoUpdate({
+					target: familyGroups.id,
+					set: { balance: "5000.00" },
+				});
 
 			for (const p of [
 				{
@@ -139,7 +157,21 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 					}),
 				},
 			]) {
-				await tx.insert(patients).values(p);
+				await tx
+					.insert(patients)
+					.values(p)
+					.onConflictDoUpdate({
+						target: patients.id,
+						set: {
+							fullName: p.fullName,
+							phone: p.phone,
+							status: "active",
+							mergedIntoPatientId: null,
+							weightKg: p.weightKg ?? null,
+							familyGroupId: p.familyGroupId ?? null,
+							administrativeProfile: p.administrativeProfile ?? {},
+						},
+					});
 			}
 		});
 	});

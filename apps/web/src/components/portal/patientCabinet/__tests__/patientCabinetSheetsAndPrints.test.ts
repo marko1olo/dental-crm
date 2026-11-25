@@ -209,7 +209,7 @@ describe("PatientCabinetSheetsAndPrints — Mandates 8e, 8s Sheets & Statutory P
 		};
 		const extractHtml = generateExtract043Html(docExtract, data);
 
-		assert.ok(extractHtml.includes("Форма № 043/у"), "Includes Form 043/u header");
+		assert.ok(extractHtml.includes("Выписка из медицинской карты приёма"), "Includes medical card extract header");
 		assert.ok(extractHtml.includes("ООО «Стоматологическая клиника ДЕНТЕ»"), "Includes clinic name");
 		assert.ok(extractHtml.includes("ЛО-78-01-011842"), "Includes license number");
 		assert.ok(extractHtml.includes(data.fullName), "Includes patient name");

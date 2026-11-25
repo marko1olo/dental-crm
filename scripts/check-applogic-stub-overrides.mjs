@@ -216,6 +216,26 @@ const visitDecls = (node) => {
 				hook,
 			});
 		}
+		// useMemo(() => ({ ...rawX, extraProp, ... })) — resolve through the first spread
+		if (hook === "useMemo") {
+			const memoArg = node.initializer.arguments[0];
+			if (memoArg && ts.isArrowFunction(memoArg) && memoArg.body) {
+				const body = ts.isParenthesizedExpression(memoArg.body)
+					? memoArg.body.expression
+					: memoArg.body;
+				if (ts.isObjectLiteralExpression(body)) {
+					for (const prop of body.properties) {
+						if (ts.isSpreadAssignment(prop) && ts.isIdentifier(prop.expression)) {
+							const spreadVar = prop.expression.text;
+							if (varToModule.has(spreadVar)) {
+								varToModule.set(node.name.text, varToModule.get(spreadVar));
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	node.forEachChild(visitDecls);
 };

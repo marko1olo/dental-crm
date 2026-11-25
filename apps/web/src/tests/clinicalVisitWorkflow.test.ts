@@ -268,9 +268,9 @@ describe("Subagent 6: Multi-Chair Solo Doctor Concurrent Workflow & Chair Switch
 	});
 
 	describe("5. Chairside 1-Click Smart Clinical Protocols & Crash Resilience (Mandates 8e, 8i, 8k)", () => {
-		it("provides all 5 core chairside protocols with compliant ICD-10, SOAP sections, and 804n codes", () => {
-			assert.equal(CHAIRSIDE_SMART_PROTOCOL_KEYS.length, 5);
-			const expectedKeys: ChairsideSmartProtocolKey[] = ["caries", "pulpitis", "periodontitis", "hygiene", "extraction"];
+		it("provides all core chairside protocols with compliant ICD-10, SOAP sections, and 804n codes", () => {
+			assert.equal(CHAIRSIDE_SMART_PROTOCOL_KEYS.length, 6);
+			const expectedKeys: ChairsideSmartProtocolKey[] = ["emergency_pain", "caries", "pulpitis", "periodontitis", "hygiene", "extraction"];
 			assert.deepEqual([...CHAIRSIDE_SMART_PROTOCOL_KEYS], expectedKeys);
 
 			for (const key of expectedKeys) {

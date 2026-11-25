@@ -17,7 +17,11 @@ import { describe, it } from "node:test";
 
 const webSrc = path.resolve(import.meta.dirname, "..", "..");
 const appLogicSource = readFileSync(
-	path.join(webSrc, "useAppLogic.tsx"),
+	path.join(webSrc, "hooks/appLogic/index.ts"),
+	"utf8",
+);
+const compatibilityBagSource = readFileSync(
+	path.join(webSrc, "hooks/appLogic/appLogicModules/compatibility/appLogicCompatibilityBag.ts"),
 	"utf8",
 );
 
@@ -77,9 +81,9 @@ describe("предпросмотр импорта: обёртка не зати�
 	 * typecheck, ни тест поведения выше этого не заметят. Поэтому порядок
 	 * проверяется по индексам в исходнике.
 	 */
-	const spreadAt = appLogicSource.indexOf("...migrationQueries,");
-	const previewOverrideAt = appLogicSource.indexOf(
-		"\n\t\tpreviewImport,\n\t\tcommitImport,",
+	const spreadAt = compatibilityBagSource.indexOf("...migrationQueries,");
+	const previewOverrideAt = compatibilityBagSource.indexOf(
+		"\n\t\tpreviewImport:",
 	);
 
 	it("обёртки объявлены и стоят ниже ...migrationQueries", () => {

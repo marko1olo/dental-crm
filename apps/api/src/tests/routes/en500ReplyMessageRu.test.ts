@@ -24,11 +24,14 @@ const ROUTES_DIR = path.resolve(HERE, "../../routes");
 
 const ROUTE_FILES = [
 	"files.ts",
+	"fileModules/patientAttachmentsHandlers.ts",
+	"fileModules/visitAttachmentsHandlers.ts",
 	"waitlist.ts",
 	"lab/ordersCrudModules/labOrderCreateHandler.ts",
 	"lab/portalModules/technicianPortalGetAndPhotoHandlers.ts",
 	"lab/portalModules/technicianPortalStatusHandler.ts",
 	"inventory.ts",
+	"inventory/itemCatalog/itemCatalogMutations.ts",
 ] as const;
 
 const CYRILLIC = /[А-Яа-яЁё]/;

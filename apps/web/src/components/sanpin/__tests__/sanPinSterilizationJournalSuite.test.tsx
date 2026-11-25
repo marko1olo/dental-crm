@@ -64,8 +64,9 @@ describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.36
 		it("не содержит мультяшных эмодзи и запрещенного дев-жаргона", async () => {
 			const fs = await import("node:fs");
 			const path = await import("node:path");
+			const { fileURLToPath } = await import("node:url");
 
-			const fullPath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx");
+			const fullPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "SanPinSterilizationJournal.tsx");
 			const content = fs.readFileSync(fullPath, "utf-8");
 
 			// 0 эмодзи
@@ -80,8 +81,9 @@ describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.36
 		it("проверяет золотой стандарт размера объединенного экрана SanPinSterilizationJournal.tsx (300–500 строк, Мандат 8b/8zi)", async () => {
 			const fs = await import("node:fs");
 			const path = await import("node:path");
+			const { fileURLToPath } = await import("node:url");
 
-			const fullPath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx");
+			const fullPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "SanPinSterilizationJournal.tsx");
 			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
 			assert.ok(
 				lines >= 300 && lines <= 500,

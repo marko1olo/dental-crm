@@ -17,27 +17,13 @@ import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { buildSettingsProps } from "../../components/settings/settingsPropsBuilder";
 import { type SettingsRoleMode, type SettingsViewProps, type SettingsTabItem, type SettingsViewLogicBag } from "./types.js";
 import { SettingsDesktopLayout } from "./SettingsDesktopLayout.js";
-import { useSettingsRoleModeSync, selectSettingsTabHelper, handleSettingsTabKeyboardNav } from "./useSettingsViewLogic.js";
+import { buildSettingsViewLogicBag, useSettingsRoleModeSync, selectSettingsTabHelper, handleSettingsTabKeyboardNav } from "./useSettingsViewLogic.js";
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const appLogic = useAppLogicContext();
 	const settingsStore = useSettingsStore();
 	const derivations = useSettingsDerivations();
-	const logic: SettingsViewLogicBag = {
-		...(appLogic ?? {}),
-		telegramAdminSecretSession: Boolean(appLogic?.telegramAdminSecretSession),
-		pricelistImageNote: appLogic?.pricelistImageNote ?? undefined,
-		pricelistWarningsText: (w: unknown[]) =>
-			appLogic ? appLogic.pricelistWarningsText(w.filter((x): x is string => typeof x === "string")) : "",
-		pricelistItemMaterialText: (it: unknown) => {
-			if (!it || typeof it !== "object" || !appLogic) return "";
-			return appLogic.pricelistItemMaterialText(it as Parameters<typeof appLogic.pricelistItemMaterialText>[0]);
-		},
-		pricelistMaterialSummaryText: (s: unknown) => {
-			if (!s || typeof s !== "object" || !appLogic) return "";
-			return appLogic.pricelistMaterialSummaryText(s as Parameters<typeof appLogic.pricelistMaterialSummaryText>[0]);
-		},
-	};
+	const logic = buildSettingsViewLogicBag(appLogic as Record<string, unknown> | null) as SettingsViewLogicBag;
 	const { activeSettingsTabButtonRef, reopenOnboarding, setSettingsTab, settingsTab, settingsTabs: rawSettingsTabs } =
 		logic as { activeSettingsTabButtonRef?: React.RefObject<HTMLButtonElement | null>; reopenOnboarding?: () => void; setSettingsTab?: (tab: string) => void; settingsTab?: string; settingsTabs?: SettingsTabItem[] };
 	const settingsProps = buildSettingsProps(logic, settingsStore, derivations, activeStaffUser);

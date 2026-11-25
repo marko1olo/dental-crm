@@ -50,6 +50,7 @@ const standardKitBodySchema = z.object({
 }).strict();
 
 const sterilizationKitBodySchema = z.object({
+	organizationId: z.string().uuid().optional(),
 	count: z.number().finite().positive().optional(),
 	visitId: z.string().nullable().optional(),
 	notes: z.string().nullable().optional(),

@@ -216,7 +216,9 @@ describe("GridAppointmentCard — Memoization & Content-Visibility Performance (
 
 		assert.ok(hoveredHtml.includes("schedule-grid-patient-hover-preview"), "Наведенная карточка должна отображать Hover HUD");
 		assert.ok(
-			hoveredHtml.includes("hover-status-confirmed-test-appt-1") || hoveredHtml.includes("Сменить статус в 1 клик"),
+			hoveredHtml.includes("timeline-hover-status-confirmed-test-appt-1") ||
+				hoveredHtml.includes("hover-status-confirmed-test-appt-1") ||
+				hoveredHtml.includes("Сменить статус"),
 			"Hover HUD должен содержать быстрые кнопки статуса",
 		);
 	});

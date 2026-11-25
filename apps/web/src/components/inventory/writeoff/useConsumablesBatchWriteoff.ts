@@ -55,6 +55,7 @@ export interface UseConsumablesBatchWriteoffOptions {
 	initialShiftData?: ShiftBatchWriteoffData | undefined;
 	getHeaders?: ((extra?: Record<string, string> | undefined) => Record<string, string>) | undefined;
 	stockBatches?: readonly unknown[] | undefined;
+	warehouseItems?: readonly unknown[] | undefined;
 	onWriteoffCompleted?: (() => void | Promise<void>) | undefined;
 	onDeductionComplete?: (() => void | Promise<void>) | undefined;
 	onConfirmWriteoff?: ((doc?: ShiftBatchWriteoffData) => void | Promise<void>) | undefined;
@@ -67,6 +68,7 @@ export function useConsumablesBatchWriteoff({
 	initialShiftData,
 	getHeaders,
 	stockBatches,
+	warehouseItems,
 	onWriteoffCompleted,
 	onDeductionComplete,
 	onConfirmWriteoff,
@@ -106,10 +108,17 @@ export function useConsumablesBatchWriteoff({
 		return () => { isMounted = false; };
 	}, [isOpen, organizationId, getHeaders]);
 
-	const hasOverdraft = Boolean(stockBatches?.some((b) => {
-		const item = b as { quantityAvailable?: number } | undefined;
-		return typeof item?.quantityAvailable === "number" && item.quantityAvailable <= 0;
-	})) || data.consumablesSummary.some((c) => c.isOverdraft);
+	const hasOverdraft =
+		Boolean(stockBatches?.some((b) => {
+			const item = b as { quantityAvailable?: number } | undefined;
+			return typeof item?.quantityAvailable === "number" && item.quantityAvailable <= 0;
+		})) ||
+		Boolean(warehouseItems?.some((w) => {
+			const rec = w as { stockQuantity?: number; quantity?: number } | null | undefined;
+			const qty = typeof rec?.stockQuantity === "number" ? rec.stockQuantity : rec?.quantity;
+			return typeof qty === "number" && qty <= 0;
+		})) ||
+		data.consumablesSummary.some((c) => c.isOverdraft);
 
 	const handleConfirmWriteoff = async () => {
 		setIsSubmitting(true);

@@ -121,6 +121,8 @@ export function buildAppLogicCompatibilityBag(
 		...staffSettingsLogic,
 		...patientIntakeLogic,
 		...migrationQueries,
+		previewImport: migrationQueries.previewImport,
+		commitImport: migrationQueries.commitImport,
 		...imagingQueries,
 		...communicationsQueries,
 		...modalOrchestrator,

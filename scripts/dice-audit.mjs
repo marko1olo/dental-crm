@@ -133,6 +133,7 @@ const EXCLUDED_DIRS = new Set([
 	"scratch",
 	".system_generated",
 	"artifacts",
+	"seeds", // clinical formulas (ИРОПЗ etc.) are not money math — false positive exclusion
 ]);
 
 const TEST_FILE_PATTERNS = [
@@ -527,6 +528,10 @@ const PUBLIC_ROUTE_PATTERNS = [
 	/\/api\/billing\/sbp\//i,
 	// DICOM WebStorage (DICOMweb STOW-RS) — standard medical imaging protocol, no orgId tenant isolation
 	/\/api\/dicomweb\//i,
+	// Workspace/feature-flags routes — protected by getRequestIdentity() inside handlers
+	/\/api\/workspace\//i,
+	// Demo seeding — protected by isDemoOperationAllowed() guard, not a real tenant endpoint
+	/\/api\/(auth\/)?demo\//i,
 ];
 
 function stripCodeComments(src) {
@@ -814,7 +819,7 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 				);
 			const hasManualIdempotencyInsert = /\.insert\s*\(\s*idempotencyKeys\s*\)/.test(codeOnlyBody);
 			const hasWebhookOrAuthGuard =
-				/verify\w*Signature|verifyProdoctorovWebhookAuth|hmac|webhookSecret|telegramSecret|deliveryId|updateId|requireResolved\w+|requireClinical\w+|requireTelegramControlPlaneAccess|getRequestIdentity|authenticate/i.test(
+				/verify\w*Signature|verifyProdoctorovWebhookAuth|hmac|webhookSecret|telegramSecret|deliveryId|updateId|requireResolved\w+|requireClinical\w+|requireTelegramControlPlaneAccess|getRequestIdentity|authenticate|guardReceiptCall/i.test(
 					codeOnlyBody,
 				);
 

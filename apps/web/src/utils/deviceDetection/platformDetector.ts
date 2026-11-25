@@ -41,7 +41,14 @@ export function isLowSpecHardware(): boolean {
 	if (typeof document !== "undefined" && document.documentElement) {
 		const el = document.documentElement;
 		const tier = el.getAttribute("data-hardware-tier") || el.getAttribute("data-perf-tier") || el.getAttribute("data-perf");
-		if (el.getAttribute("data-low-spec") === "true" || tier === "potato" || tier === "low" || el.classList.contains("low-spec-mode")) {
+		if (
+			el.getAttribute("data-low-spec") === "true" ||
+			el.getAttribute("data-perf-state") === "degraded" ||
+			el.getAttribute("data-ct-active") === "true" ||
+			tier === "potato" ||
+			tier === "low" ||
+			el.classList.contains("low-spec-mode")
+		) {
 			return true;
 		}
 		if (tier === "balanced" || tier === "ultra" || tier === "high") return false;

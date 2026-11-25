@@ -77,7 +77,7 @@ describe("Web Integration: Clinical Market Materials & Consumables (90% CIS/RF M
 			"packages/shared/src/warehouse/defaultServiceBomCatalog.ts",
 		];
 
-		const repoRoot = process.cwd();
+		const repoRoot = path.resolve(import.meta.dirname, "../../../..");
 		for (const relPath of filesToCheck) {
 			const fullPath = path.join(repoRoot, relPath);
 			assert.ok(fs.existsSync(fullPath), `Файл обязан существовать: ${relPath}`);
@@ -98,7 +98,7 @@ describe("Web Integration: Clinical Market Materials & Consumables (90% CIS/RF M
 			"apps/web/src/utils/draftDefaults.ts",
 		];
 
-		const repoRoot = process.cwd();
+		const repoRoot = path.resolve(import.meta.dirname, "../../../..");
 		for (const relPath of filesToCheck) {
 			const fullPath = path.join(repoRoot, relPath);
 			const content = fs.readFileSync(fullPath, "utf8");

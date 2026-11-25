@@ -246,7 +246,7 @@ describe("Patient Portal End-to-End Journey — Alexey Voronov Full Lifecycle", 
 		// 1-Click Form 043/u print
 		assert.ok(html.includes('data-testid="print-extract-043-btn"'), "Renders 043/u extract print button");
 		const extractHtml = generateExtract043Html(sample043Extract, enrichedData);
-		assert.ok(extractHtml.includes("Форма № 043/у"), "Contains official 043/u header");
+		assert.ok(extractHtml.includes("Выписка из медицинской карты приёма"), "Contains medical card extract header");
 		assert.ok(extractHtml.includes("К02.1") || extractHtml.includes("Кариес"), "Contains ICD-10 diagnosis");
 
 		// 1-Click Tax Certificate KND 1151156

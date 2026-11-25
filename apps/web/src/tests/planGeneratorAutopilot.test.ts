@@ -47,18 +47,18 @@ describe("1-Click 3-Tier Treatment Plan Generator (Economy, Standard, Optimum)",
 	];
 
 	it("generates exactly 3 distinct clinical tiers with full stage hierarchy", () => {
-		const [economy, standard, optimum] = generate3TierPlanComparison(sampleAdultOdontogram);
-		const tiers = [economy, standard, optimum];
+		const [economy, optimum, premium] = generate3TierPlanComparison(sampleAdultOdontogram);
+		const tiers = [economy, optimum, premium];
 
 		assert.equal(tiers.length, 3);
 		assert.equal(economy.tierId, "economy");
-		assert.equal(standard.tierId, "standard");
 		assert.equal(optimum.tierId, "optimum");
+		assert.equal(premium.tierId, "premium");
 
 		// Optimum should be flagged as recommended
 		assert.equal(optimum.isRecommended, true);
 		assert.equal(economy.isRecommended, false);
-		assert.equal(standard.isRecommended, false);
+		assert.equal(premium.isRecommended, false);
 
 		// Every tier must have 3 stages (Therapy/Diagnostics, Surgery, Orthopedics)
 		for (const tier of tiers) {
@@ -72,60 +72,57 @@ describe("1-Click 3-Tier Treatment Plan Generator (Economy, Standard, Optimum)",
 		}
 	});
 
-	it("differentiates clinical procedures across Economy, Standard, and Optimum tiers according to clinical standards", () => {
-		const [economy, standard, optimum] = generate3TierPlanComparison(sampleAdultOdontogram);
+	it("differentiates clinical procedures across Economy, Optimum, and Premium tiers according to clinical standards", () => {
+		const [economy, optimum, premium] = generate3TierPlanComparison(sampleAdultOdontogram);
 
 		// 1. ECONOMY TIER:
 		// - Caries: basic light-cured composite (A16.07.002)
 		// - Crown: metal-ceramic crown (A16.07.004)
-		// - Missing tooth 16: metal-ceramic bridge / clasp prosthesis (A16.07.005) in Orthopedics, NO implant
+		// - Missing tooth 16: metal-ceramic bridge prosthesis (A16.07.005) in Orthopedics, NO phantom extraction & NO implant
 		const econStage1Codes = economy.stages[0]?.items.map((i) => i.code804n) || [];
 		const econStage2Codes = economy.stages[1]?.items.map((i) => i.code804n) || [];
 		const econStage3Codes = economy.stages[2]?.items.map((i) => i.code804n) || [];
 
 		assert.ok(econStage1Codes.includes("A16.07.002"), "Economy must use basic composite A16.07.002 for caries");
-		assert.ok(econStage2Codes.includes("A16.07.001.001"), "Economy stage 2 must extract missing tooth root");
+		assert.ok(!econStage2Codes.includes("A16.07.001.001"), "Economy stage 2 must NOT charge phantom root extraction for Missing tooth");
 		assert.ok(!econStage2Codes.includes("A16.07.054.001"), "Economy stage 2 must NOT include dental implantation");
 		assert.ok(econStage3Codes.includes("A16.07.004"), "Economy must use metal-ceramic crown A16.07.004");
 		assert.ok(econStage3Codes.includes("A16.07.005"), "Economy must use bridge prosthesis A16.07.005 for missing tooth");
 		assert.equal(economy.warrantyYears, 1);
 
-		// 2. STANDARD TIER:
-		// - Caries: nanohybrid composite (A16.07.002.001)
-		// - Crown: monolithic zirconia crown (A16.07.004.001)
-		// - Missing tooth 16: Osstem TS-III implant (A16.07.054.001) in Surgery + zirconia crown on implant (A16.07.006) in Orthopedics
-		const stdStage1Codes = standard.stages[0]?.items.map((i) => i.code804n) || [];
-		const stdStage2Codes = standard.stages[1]?.items.map((i) => i.code804n) || [];
-		const stdStage3Codes = standard.stages[2]?.items.map((i) => i.code804n) || [];
-
-		assert.ok(stdStage1Codes.includes("A16.07.002.001"), "Standard must use nanohybrid composite A16.07.002.001");
-		assert.ok(stdStage2Codes.includes("A16.07.054.001"), "Standard must include dental implantation Osstem");
-		assert.ok(stdStage3Codes.includes("A16.07.004.001"), "Standard must use zirconia crown A16.07.004.001");
-		assert.ok(stdStage3Codes.includes("A16.07.006"), "Standard must use implant crown A16.07.006");
-		assert.equal(standard.warrantyYears, 2);
-
-		// 3. OPTIMUM / VIP TIER:
-		// - Caries: ceramic Inlay/Onlay IPS e.max (A16.07.003) in Orthopedics
-		// - Crown: individual IPS e.max / Katana UTML crown (A16.07.004.002)
-		// - Missing tooth 16: 3D surgical guide (A16.07.054) + Straumann Roxolid SLActive implant (A16.07.054.001) in Surgery
-		//   + custom Ti-Base zirconia abutment & E.max crown (A16.07.006) in Orthopedics
+		// 2. OPTIMUM TIER:
+		// - Caries: nanocomposite (A16.07.002.001)
+		// - Crown: IPS e.max ceramic crown (A16.07.004.002)
+		// - Missing tooth 16: 3D surgical guide (A16.07.054) + Osstem TS-III implant (A16.07.054.001) in Surgery + implant crown (A16.07.006) in Orthopedics
+		const optStage1Codes = optimum.stages[0]?.items.map((i) => i.code804n) || [];
 		const optStage2Codes = optimum.stages[1]?.items.map((i) => i.code804n) || [];
 		const optStage3Codes = optimum.stages[2]?.items.map((i) => i.code804n) || [];
 
+		assert.ok(optStage1Codes.includes("A16.07.002.001"), "Optimum must use nanohybrid composite A16.07.002.001");
 		assert.ok(optStage2Codes.includes("A16.07.054"), "Optimum must include 3D surgical navigation guide");
-		assert.ok(optStage2Codes.includes("A16.07.054.001"), "Optimum must include Straumann dental implantation");
-		assert.ok(optStage3Codes.includes("A16.07.003"), "Optimum must include ceramic Inlay/Onlay A16.07.003");
-		assert.ok(optStage3Codes.includes("A16.07.004.002"), "Optimum must include individual E.max crown A16.07.004.002");
-		assert.ok(optStage3Codes.includes("A16.07.006"), "Optimum must include custom Ti-Base implant crown A16.07.006");
+		assert.ok(optStage2Codes.includes("A16.07.054.001"), "Optimum must include dental implantation Osstem");
+		assert.ok(optStage3Codes.includes("A16.07.004.002"), "Optimum must use E.max crown A16.07.004.002");
+		assert.ok(optStage3Codes.includes("A16.07.006"), "Optimum must use implant crown A16.07.006");
 
-		// Pricing monotonicity: Economy < Standard < Optimum
+		// 3. PREMIUM TIER:
+		// - Crown: multi-layer zirconia (A16.07.004.001)
+		// - Missing tooth 16: 3D guide (A16.07.054) + Straumann Roxolid SLActive implant (A16.07.054.001) + Ti-Base implant crown (A16.07.006)
+		const premStage2Codes = premium.stages[1]?.items.map((i) => i.code804n) || [];
+		const premStage3Codes = premium.stages[2]?.items.map((i) => i.code804n) || [];
+
+		assert.ok(premStage2Codes.includes("A16.07.054"), "Premium must include 3D surgical navigation guide");
+		assert.ok(premStage2Codes.includes("A16.07.054.001"), "Premium must include Straumann dental implantation");
+		assert.ok(premStage3Codes.includes("A16.07.004.001"), "Premium must include zirconia crown A16.07.004.001");
+		assert.ok(premStage3Codes.includes("A16.07.006"), "Premium must include custom Ti-Base implant crown A16.07.006");
+
+		// Pricing monotonicity: Economy < Optimum < Premium
 		assert.ok(
-			economy.totalRub < standard.totalRub,
-			`Economy (${economy.totalRub} ₽) should be cheaper than Standard (${standard.totalRub} ₽)`,
+			economy.totalRub < optimum.totalRub,
+			`Economy (${economy.totalRub} ₽) should be cheaper than Optimum (${optimum.totalRub} ₽)`,
 		);
 		assert.ok(
-			standard.totalRub < optimum.totalRub,
-			`Standard (${standard.totalRub} ₽) should be cheaper than Optimum (${optimum.totalRub} ₽)`,
+			optimum.totalRub < premium.totalRub,
+			`Optimum (${optimum.totalRub} ₽) should be cheaper than Premium (${premium.totalRub} ₽)`,
 		);
 	});
 
@@ -133,8 +130,8 @@ describe("1-Click 3-Tier Treatment Plan Generator (Economy, Standard, Optimum)",
 		const options = generate3TierTreatmentPlanOptions(sampleAdultOdontogram);
 		assert.equal(options.length, 3);
 		assert.equal(options[0]?.tierId, "economy");
-		assert.equal(options[1]?.tierId, "standard");
-		assert.equal(options[2]?.tierId, "optimum");
+		assert.equal(options[1]?.tierId, "optimum");
+		assert.equal(options[2]?.tierId, "premium");
 	});
 });
 
@@ -279,7 +276,7 @@ describe("Pediatric and Parodontology Autopilot Invariants", () => {
 		assert.ok(stage2Codes.includes("A16.07.001"), "Must include pediatric tooth extraction");
 		assert.ok(stage3Codes.includes("A16.07.004.003"), "Must include pediatric stainless steel crown (SSC)");
 		assert.ok(stage1.items.some((i) => i.category === "Детская терапия"), "Must contain pediatric therapy category");
-		assert.ok(stage3.items.some((i) => i.category === "Детская ортопедия"), "Must contain pediatric orthopedics category");
+		assert.ok(stage3.items.some((i) => i.code804n === "A16.07.004.003" && i.stageKind === "stage_3_orthopedics"), "Must contain pediatric SSC crown in stage 3");
 	});
 
 	it("triggers SRP, curettage, and splinting for parodontal pathologies", () => {

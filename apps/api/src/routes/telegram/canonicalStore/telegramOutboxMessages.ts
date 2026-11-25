@@ -8,18 +8,33 @@ import {
 	type DenteTelegramOutboxItem,
 	type DenteTelegramOutboxResponse,
 	type DenteTelegramTemplateKind,
+	type Kopecks,
 } from "@dental/shared";
+import {
+	buildPatientLedger,
+	debtNumericText,
+	MoneyPrecisionError,
+	patientOwesClinicKopecks,
+	QuantityContractError,
+} from "../../../money/patientDebt.js";
+import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { repairMojibakeText } from "../../../text/repairMojibake.js";
-import { denteTelegramVisualCardUrlForTemplate } from "../telegramUrlHelpers.js";
+import {
+	denteTelegramPortalUrlForTemplate,
+	denteTelegramVisualCardUrlForTemplate,
+} from "../telegramUrlHelpers.js";
 import {
 	defaultClinicProfile,
 	denteTelegramBotSettings,
 	denteTelegramChatLinks,
+	denteTelegramOutboxDeliveryReceipts,
 	inMemoryDomainState,
 	resolveDenteTelegramOutboxRuntimeScope,
 	type DenteTelegramOutboxRuntimeScope,
 	type DomainState,
 } from "./telegramRuntimeDefaults.js";
+
+const logger = createApiLogger("telegramOutboxMessages");
 
 export type DenteTelegramOutboxStatusFilter =
 	| "all"
@@ -177,6 +192,179 @@ export function renderDenteTelegramMessagePreview(
 	});
 }
 
+function paymentReminderOutboxId(
+	patientId: string,
+	balanceDueKopecks: Kopecks,
+): string {
+	return `payment-reminder:${patientId}:${debtNumericText(Math.max(0, balanceDueKopecks))}`;
+}
+
+function telegramOutboxItemAlreadySent(outboxItemId: string): boolean {
+	return denteTelegramOutboxDeliveryReceipts.some(
+		(receipt) => receipt.outboxItemId === outboxItemId && receipt.status === "sent",
+	);
+}
+
+function patientPaymentDebtKopecks(
+	patientId: string,
+	organizationScope: string,
+	state: DomainState,
+): Kopecks {
+	const ledger = buildPatientLedger(
+		patientId,
+		state.treatmentPlanItems.filter(
+			(item) => item.organizationId === organizationScope,
+		),
+		state.payments.filter((payment) => payment.organizationId === organizationScope),
+	);
+	return patientOwesClinicKopecks(ledger);
+}
+
+function patientPaymentReminderScheduledAt(
+	patientId: string,
+	organizationScope: string,
+	state: DomainState,
+): string {
+	const latestPaidAtMs = state.payments
+		.filter(
+			(payment) =>
+				payment.organizationId === organizationScope &&
+				payment.patientId === patientId &&
+				payment.status === "paid",
+		)
+		.reduce((latest, payment) => {
+			const paidAtMs = Date.parse(payment.paidAt ?? payment.createdAt);
+			return Number.isFinite(paidAtMs) ? Math.max(latest, paidAtMs) : latest;
+		}, 0);
+	const baseMs = latestPaidAtMs || Date.now();
+	return new Date(baseMs + 30 * 60 * 1000).toISOString();
+}
+
+function buildDenteTelegramPaymentReminderItems(
+	runtimeScope: DenteTelegramOutboxRuntimeScope | undefined,
+	state: DomainState,
+): DenteTelegramOutboxItem[] {
+	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
+	const organizationScope = runtime.settings.organizationId;
+	const clinicName = repairMojibakeText(
+		state.clinicProfile?.clinicName || defaultClinicProfile.clinicName,
+	);
+	const portalUrl = denteTelegramPortalUrlForTemplate(
+		"payment_reminder_notice",
+		runtime.settings,
+	);
+	const photoUrl = denteTelegramVisualCardUrlForTemplate(
+		"payment_reminder_notice",
+		runtime.settings,
+	);
+	const previewData = buildDenteTelegramMessagePreviewData(
+		"payment_reminder_notice",
+		{
+			clinicName,
+			appointmentTime: "",
+			hasAppointment: false,
+			portalUrl,
+			reviewUrl: runtime.settings.clinicReviewUrl ?? null,
+			mapsUrl: runtime.settings.clinicMapsUrl ?? null,
+		},
+		"Медицинские диагнозы и финансовые суммы защищены врачебной тайной.",
+	);
+
+	return state.patients.flatMap((patient) => {
+		if (patient.organizationId !== organizationScope) return [];
+		if (patient.status !== "active") return [];
+
+		let balanceDueKopecks: Kopecks;
+		try {
+			balanceDueKopecks = patientPaymentDebtKopecks(
+				patient.id,
+				organizationScope,
+				state,
+			);
+		} catch (error) {
+			if (
+				error instanceof MoneyPrecisionError ||
+				error instanceof QuantityContractError
+			) {
+				logger.error(
+					{ err: safeLogError(error), patientId: patient.id, organizationId: organizationScope },
+					"Напоминание об оплате пациенту не построено: ошибка точности суммы или количества",
+				);
+				return [];
+			}
+			throw error;
+		}
+		if (balanceDueKopecks <= 0) return [];
+
+		const itemId = paymentReminderOutboxId(patient.id, balanceDueKopecks);
+		if (telegramOutboxItemAlreadySent(itemId)) return [];
+
+		const chatLink = denteTelegramChatLinks.find(
+			(link) =>
+				link.organizationId === organizationScope &&
+				link.subjectType === "patient" &&
+				link.subjectId === patient.id &&
+				link.status === "active",
+		);
+		let deliveryStatus: DenteTelegramOutboxResponse["items"][number]["deliveryStatus"] =
+			"ready";
+		let blockedReason: string | null = null;
+		if (runtime.settings.mode === "disabled") {
+			deliveryStatus = "disabled";
+			blockedReason = "telegram_bot_disabled";
+		} else if (!chatLink) {
+			deliveryStatus = "needs_chat_link";
+			blockedReason = "patient_or_staff_not_linked_to_telegram";
+		} else if (!runtime.botTokenConfigured || !chatLink.chatTransportRef) {
+			deliveryStatus = "transport_not_ready";
+			blockedReason = !runtime.botTokenConfigured
+				? "telegram_bot_token_missing"
+				: "encrypted_chat_transport_missing_or_unreadable";
+		}
+
+		return [
+			{
+				id: itemId,
+				organizationId: organizationScope,
+				subjectType: "patient",
+				subjectId: patient.id,
+				chatLinkId: chatLink?.id ?? null,
+				templateKind: "payment_reminder_notice",
+				title: "Напоминание об оплате",
+				previewText: previewData.text,
+				scheduledAt: patientPaymentReminderScheduledAt(
+					patient.id,
+					organizationScope,
+					state,
+				),
+				deliveryStatus,
+				taskId: null,
+				patientId: patient.id,
+				appointmentId: null,
+				replyMarkup: null,
+				photoUrl,
+				warnings: [...previewData.warnings],
+				blockedReason,
+				source: "payment_reminder",
+			},
+		];
+	});
+}
+
+function denteTelegramOutboxItemMatchesStatus(
+	item: DenteTelegramOutboxItem,
+	status: DenteTelegramOutboxStatusFilter,
+	nowMs: number,
+): boolean {
+	if (status === "all") return true;
+	if (status === "due") {
+		if (item.deliveryStatus !== "ready") return false;
+		const scheduledAtMs = Date.parse(item.scheduledAt);
+		return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= nowMs;
+	}
+	return item.deliveryStatus === status;
+}
+
 export function buildAllDenteTelegramOutboxItems(
 	now: string,
 	runtimeScope?: DenteTelegramOutboxRuntimeScope,
@@ -185,7 +373,7 @@ export function buildAllDenteTelegramOutboxItems(
 	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
 	const organizationScope = runtime.settings.organizationId;
 
-	return state.communicationTasks
+	const taskItems: DenteTelegramOutboxItem[] = state.communicationTasks
 		.filter(
 			(task) =>
 				task.channel === "telegram" &&
@@ -215,6 +403,15 @@ export function buildAllDenteTelegramOutboxItems(
 				source: "communication_task",
 			};
 		});
+
+	const paymentReminderItems = buildDenteTelegramPaymentReminderItems(
+		runtime,
+		state,
+	);
+
+	return [...taskItems, ...paymentReminderItems].sort((left, right) =>
+		left.scheduledAt.localeCompare(right.scheduledAt),
+	);
 }
 
 export function buildDenteTelegramOutbox(
@@ -223,27 +420,49 @@ export function buildDenteTelegramOutbox(
 	state: DomainState = inMemoryDomainState,
 ): DenteTelegramOutboxResponse {
 	const opts = typeof options === "number" ? { limit: options } : options;
-	const limit = Math.max(1, Math.min(300, opts.limit ?? 100));
+	const limit = Math.max(1, Math.min(300, Math.trunc(opts.limit ?? 100)));
+	const statusFilter = opts.status ?? "all";
+	const templateKindFilter = opts.templateKind ?? "all";
+	const parsedOffset = Number.parseInt(opts.cursor ?? "0", 10);
+	const safeOffset = Math.max(0, Number.isFinite(parsedOffset) ? parsedOffset : 0);
 	const now = new Date().toISOString();
-	const items = buildAllDenteTelegramOutboxItems(now, runtimeScope, state);
-	const dueItems = items.filter(
-		(item) => Date.parse(item.scheduledAt) <= Date.now(),
-	);
+	const nowMs = Date.now();
+	const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
+	const allItems = buildAllDenteTelegramOutboxItems(now, runtime, state);
+	const dueItems = allItems.filter((item) => {
+		const scheduledAtMs = Date.parse(item.scheduledAt);
+		return item.deliveryStatus === "ready" && (!Number.isFinite(scheduledAtMs) || scheduledAtMs <= nowMs);
+	});
+	const filteredItems = allItems.filter((item) => {
+		if (!denteTelegramOutboxItemMatchesStatus(item, statusFilter, nowMs)) {
+			return false;
+		}
+		if (
+			templateKindFilter !== "all" &&
+			item.templateKind !== templateKindFilter
+		) {
+			return false;
+		}
+		return true;
+	});
+	const pagedItems = filteredItems.slice(safeOffset, safeOffset + limit);
+	const nextOffset = safeOffset + pagedItems.length;
+	const nextCursor = nextOffset < filteredItems.length ? String(nextOffset) : null;
 
 	return denteTelegramOutboxResponseSchema.parse({
 		generatedAt: now,
-		mode: denteTelegramBotSettings.mode,
-		transportReady: true,
-		totalCount: items.length,
-		filteredCount: items.length,
+		mode: runtime.settings.mode,
+		transportReady: runtime.botTokenConfigured,
+		totalCount: allItems.length,
+		filteredCount: filteredItems.length,
 		limit,
-		cursor: null,
-		nextCursor: null,
-		readyCount: items.filter((i) => i.deliveryStatus === "ready").length,
+		cursor: String(safeOffset),
+		nextCursor,
+		readyCount: allItems.filter((i) => i.deliveryStatus === "ready").length,
 		dueCount: dueItems.length,
-		notDueCount: items.length - dueItems.length,
-		blockedCount: items.filter((i) => i.deliveryStatus !== "ready").length,
-		items: items.slice(0, limit),
+		notDueCount: allItems.filter((i) => i.deliveryStatus === "ready").length - dueItems.length,
+		blockedCount: allItems.filter((i) => i.deliveryStatus !== "ready").length,
+		items: pagedItems,
 		warnings: [],
 	});
 }

@@ -51,16 +51,13 @@ describe("visits routes integration", () => {
 	const validPayload = {
 		patientId: "123e4567-e89b-12d3-a456-426614174001",
 		selectedSpecialty: "therapist",
-		text: "hello",
+		transcript: "hello",
 		draft: {
 			complaint: "test",
 			anamnesis: null,
 			objectiveStatus: null,
-			examination: null,
 			diagnosis: null,
-			treatment: null,
 			treatmentPlan: null,
-			recommendations: null,
 			warnings: [],
 		},
 	};

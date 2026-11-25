@@ -13,6 +13,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import test, { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
@@ -61,10 +64,7 @@ describe("Settings Imports SSOT Decomposition & Invariants", () => {
 	});
 
 	it("2. File sizes adhere strictly to Sweet Spot & Anti-Monolith limits (Mandate 8b)", () => {
-		const baseDir = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/settings/imports",
-		);
+		const baseDir = path.resolve(__dirname, "..");
 
 		const facadeLines = fs
 			.readFileSync(path.join(baseDir, "useSettingsImportsLogic.ts"), "utf8")

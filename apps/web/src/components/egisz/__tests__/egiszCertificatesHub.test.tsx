@@ -212,7 +212,7 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 			createElement(DmsStudioModal, { isOpen: true }),
 		);
 		assert.ok(html.includes("Нет услуг в счёте текущего визита для распределения ДМС"), "Must render honest empty state notice in production");
-		assert.ok(html.includes("0 ₽"), "Amounts must be 0 ₽ when no bill items exist");
+		assert.ok(html.includes("0,00\u00A0₽"), "Amounts must be 0,00 ₽ when no bill items exist");
 		assert.ok(!html.includes("22 250"), "Must NOT calculate total of 22 250 ₽ from demo items in prod");
 	});
 

@@ -47,6 +47,7 @@ export const DOMAIN_SPREADS: ReadonlyMap<string, { file: string; fn: string }> =
 	["patientSelection", { file: join(APP_LOGIC_DIR, "usePatientSelectionState.ts"), fn: "usePatientSelectionState" }],
 	["profileAndLegal", { file: join(COMPAT_DIR, "appLogicLegacyBridge.ts"), fn: "buildProfileAndLegalHelpers" }],
 	["scheduleLogic", { file: join(APP_LOGIC_DIR, "useScheduleLogic.ts"), fn: "useScheduleLogic" }],
+	["serviceCatalog", { file: join(COMPAT_DIR, "appLogicCatalogCompatibility.ts"), fn: "buildServiceCatalogCompatibility" }],
 	["workflowSlice", { file: join(APP_LOGIC_MODULES_DIR, "appLogicWorkflowCompatibility.ts"), fn: "buildAppLogicWorkflowCompatibility" }],
 ]);
 
@@ -76,6 +77,7 @@ export const RESOLVED_SPREADS = [
 	"profileAndLegal",
 	"scheduleFilterController",
 	"scheduleLogic",
+	"serviceCatalog",
 	"staffSettingsLogic",
 	"telegram",
 	"telegramSettingsModule",
@@ -168,7 +170,11 @@ export function returnedObjectShape(filePath: string, functionName: string): Obj
 	let shape: ObjectShape | null = null;
 	for (const statement of (body.body as BabelNode[] | undefined) ?? []) {
 		if (statement.type !== "ReturnStatement") continue;
-		const argument = statement.argument as BabelNode | undefined;
+		const rawArgument = statement.argument as BabelNode | undefined;
+		const argument =
+			rawArgument?.type === "TSAsExpression"
+				? (rawArgument.expression as BabelNode | undefined)
+				: rawArgument;
 		if (argument?.type === "ObjectExpression")
 			shape = shapeOfObjectExpression(argument);
 		// Поддержка: return useMemo(() => ({...}), [...])

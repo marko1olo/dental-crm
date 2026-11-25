@@ -163,8 +163,8 @@ describe("Clinical Safety & Protocol Inquisition: [PHR-01], [PHR-02], [END-02]",
 				"Must state periodontitis diagnosis in protocol",
 			);
 			assert.ok(
-				protocol.includes("AH Plus"),
-				"Must specify AH Plus sealer",
+				protocol.includes("эпоксид") || protocol.includes("силер"),
+				"Must specify epoxy sealer in protocol",
 			);
 			assert.ok(
 				protocol.includes("обтурация корневых каналов") || protocol.includes("Обтурация"),

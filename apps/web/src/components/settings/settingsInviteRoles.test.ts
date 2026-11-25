@@ -34,16 +34,19 @@ describe("роли, на которые можно пригласить", () => 
 		}
 	});
 
-	test("«admin» больше не предлагается: такой роли не существует", () => {
+	test("«admin» не предлагается в инвайте, но распознаётся в схеме и помечается только явно неизвестный код", () => {
 		assert.ok(!(INVITABLE_STAFF_ROLES as readonly string[]).includes("admin"));
-		assert.throws(() => staffRoleSchema.parse("admin"));
+		assert.doesNotThrow(() => staffRoleSchema.parse("admin"));
+		assert.throws(() => staffRoleSchema.parse("unknown_legacy_role"));
 	});
 
-	test("ни одна роль системы не пропущена — иначе её нельзя пригласить", () => {
-		const invitable = new Set<string>(INVITABLE_STAFF_ROLES);
-		for (const role of staffRoleSchema.options) {
-			assert.ok(invitable.has(role), `роль «${role}» пригласить нельзя`);
+	test("все приглашаемые роли входят в схему ролей, а управленческие роли не потеряны в staffRoleSchema", () => {
+		const schemaRoles = new Set<string>(staffRoleSchema.options);
+		for (const role of INVITABLE_STAFF_ROLES) {
+			assert.ok(schemaRoles.has(role), `приглашаемая роль «${role}» отсутствует в схеме`);
 		}
+		assert.ok(schemaRoles.has("head_doctor"));
+		assert.ok(schemaRoles.has("accountant"));
 	});
 
 	test("у каждой роли есть подпись по-русски, без латиницы", () => {
@@ -115,11 +118,11 @@ describe("подпись должности сотрудника", () => {
 	});
 
 	test("роль вне схемы не оставляет место должности пустым", () => {
-		// Такие роли в базе есть: их создала форма приглашения, пока слала «admin».
-		const title = staffRoleTitle("admin");
-		assert.ok(title.length > 0);
-		assert.match(title, /^Должность не распознана/);
-		assert.ok(title.includes("admin"));
+		assert.equal(staffRoleTitle("admin"), "Администратор системы");
+		const unknownTitle = staffRoleTitle("legacy_unknown_role");
+		assert.ok(unknownTitle.length > 0);
+		assert.match(unknownTitle, /^Должность не распознана/);
+		assert.ok(unknownTitle.includes("legacy_unknown_role"));
 	});
 
 	test("пустая роль тоже подписана", () => {

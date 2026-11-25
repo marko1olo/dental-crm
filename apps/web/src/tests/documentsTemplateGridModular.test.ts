@@ -13,6 +13,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "vitest";
@@ -20,6 +21,8 @@ import {
 	CANONICAL_TEMPLATES,
 	DocumentsTemplateGrid,
 } from "../documentsView/DocumentsTemplateGrid";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EMOJI_REGEX =
 	/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;

@@ -62,8 +62,8 @@ export const LONG_EXPLICIT_VRS: ReadonlySet<string> = new Set([
 export function cleanDicomString(bytes: Uint8Array): string | null {
 	let str = "";
 	for (let i = 0; i < bytes.length; i++) {
-		const code = bytes[i]!;
-		if (code === 0) continue; // skip null terminators
+		const code = bytes[i];
+		if (code === undefined || code === 0) continue; // skip null terminators
 		str += String.fromCharCode(code);
 	}
 	const cleaned = str.replace(/\^/g, " ").replace(/\s+/g, " ").trim();
@@ -148,14 +148,20 @@ export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomD
 
 	// Check 128-byte preamble + "DICM" magic at offset 128
 	if (buffer.length >= 132) {
-		const magic =
-			String.fromCharCode(buffer[128]!) +
-			String.fromCharCode(buffer[129]!) +
-			String.fromCharCode(buffer[130]!) +
-			String.fromCharCode(buffer[131]!);
-		if (magic === "DICM") {
-			hasPreamble = true;
-			cursor = 132;
+		const b128 = buffer[128];
+		const b129 = buffer[129];
+		const b130 = buffer[130];
+		const b131 = buffer[131];
+		if (b128 !== undefined && b129 !== undefined && b130 !== undefined && b131 !== undefined) {
+			const magic =
+				String.fromCharCode(b128) +
+				String.fromCharCode(b129) +
+				String.fromCharCode(b130) +
+				String.fromCharCode(b131);
+			if (magic === "DICM") {
+				hasPreamble = true;
+				cursor = 132;
+			}
 		}
 	}
 
@@ -211,8 +217,11 @@ export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomD
 		let valueOffset = 0;
 
 		if (group === 0x0002 || isExplicitVr) {
-			const vr0 = String.fromCharCode(buffer[cursor + 4]!);
-			const vr1 = String.fromCharCode(buffer[cursor + 5]!);
+			const vrCode0 = buffer[cursor + 4];
+			const vrCode1 = buffer[cursor + 5];
+			if (vrCode0 === undefined || vrCode1 === undefined) break;
+			const vr0 = String.fromCharCode(vrCode0);
+			const vr1 = String.fromCharCode(vrCode1);
 			const vr = vr0 + vr1;
 
 			if (LONG_EXPLICIT_VRS.has(vr)) {
@@ -295,24 +304,24 @@ export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomD
 				break;
 			case "00200032": // Image Position (Patient)
 				{
-					const nums = parseMultiNumber(strVal);
-					if (nums.length >= 3) {
-						imagePositionPatient = [nums[0]!, nums[1]!, nums[2]!];
+					const [p0, p1, p2] = parseMultiNumber(strVal);
+					if (p0 !== undefined && p1 !== undefined && p2 !== undefined) {
+						imagePositionPatient = [p0, p1, p2];
 					}
 				}
 				break;
 			case "00200037": // Image Orientation (Patient)
 				{
-					const nums = parseMultiNumber(strVal);
-					if (nums.length >= 6) {
-						imageOrientationPatient = [
-							nums[0]!,
-							nums[1]!,
-							nums[2]!,
-							nums[3]!,
-							nums[4]!,
-							nums[5]!,
-						];
+					const [o0, o1, o2, o3, o4, o5] = parseMultiNumber(strVal);
+					if (
+						o0 !== undefined &&
+						o1 !== undefined &&
+						o2 !== undefined &&
+						o3 !== undefined &&
+						o4 !== undefined &&
+						o5 !== undefined
+					) {
+						imageOrientationPatient = [o0, o1, o2, o3, o4, o5];
 					}
 				}
 				break;
@@ -345,10 +354,10 @@ export function parseDicomDataset(input: Uint8Array | ArrayBuffer): ParsedDicomD
 				break;
 			case "00280030": // Pixel Spacing
 				{
-					const sp = parseMultiNumber(strVal);
-					if (sp.length >= 2 && sp[0]! > 0 && sp[1]! > 0) {
-						rowSpacing = sp[0]!;
-						colSpacing = sp[1]!;
+					const [sp0, sp1] = parseMultiNumber(strVal);
+					if (sp0 !== undefined && sp1 !== undefined && sp0 > 0 && sp1 > 0) {
+						rowSpacing = sp0;
+						colSpacing = sp1;
 					}
 				}
 				break;

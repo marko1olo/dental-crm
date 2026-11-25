@@ -29,7 +29,7 @@ const routesDir = path.resolve(
 );
 const serverFile = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
-	"../server.ts",
+	"../serverModules/routeRegistrar.ts",
 );
 
 /**
@@ -41,6 +41,18 @@ const NOT_ROUTE_MODULES = new Map<string, string>([
 	[
 		"documents.ts",
 		"библиотека валидаторов и рендеринга; сами маршруты лежат в routes/documents/*",
+	],
+	[
+		"agentSessionRoutes.ts",
+		"подключается делегатом из routes/agentRoutes.ts (registerAgentSessionRoutes)",
+	],
+	[
+		"telegramTreatmentPlanCloser.ts",
+		"подключается делегатом из routes/telegram/index.ts (registerTelegramTreatmentPlanCloserRoutes)",
+	],
+	[
+		"whatsappWebhookRoutes.ts",
+		"подключается делегатом из routes/whatsappModules/webhookReceiver.ts -> routes/whatsapp.ts",
 	],
 ]);
 
@@ -67,14 +79,14 @@ test("каждый модуль маршрутов импортируется в
 		.filter(declaresHttpRoutes)
 		.filter((fileName) => {
 			const moduleName = fileName.replace(/\.ts$/, "");
-			// server.ts импортирует с расширением .js (ESM после сборки).
-			return !server.includes(`./routes/${moduleName}.js`);
+			// serverModules/routeRegistrar.ts импортирует с расширением .js (ESM после сборки).
+			return !server.includes(`../routes/${moduleName}.js`);
 		});
 
 	assert.deepEqual(
 		unregistered,
 		[],
-		`Эти модули объявляют HTTP-маршруты, но не импортированы в server.ts — ` +
+		`Эти модули объявляют HTTP-маршруты, но не импортированы в serverModules/routeRegistrar.ts — ` +
 			`все их пути отвечают 404: ${unregistered.join(", ")}`,
 	);
 });
@@ -82,10 +94,10 @@ test("каждый модуль маршрутов импортируется в
 test("каждый импортированный модуль маршрутов ещё и вызывается", () => {
 	const serverSource = readFileSync(serverFile, "utf8");
 
-	// Имена, привязанные к импортам из ./routes/*
+	// Имена, привязанные к импортам из ../routes/*
 	const importedNames = [
 		...serverSource.matchAll(
-			/import\s+(?:(\w+)|\{([^}]+)\})\s+from\s+"\.\/routes\/[\w/]+\.js"/g,
+			/import\s+(?:(\w+)|\{([^}]+)\})\s+from\s+"\.\.\/routes\/[\w/]+\.js"/g,
 		),
 	].flatMap((match) => {
 		if (match[1]) return [match[1]];

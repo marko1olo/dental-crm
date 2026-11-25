@@ -859,9 +859,12 @@ test("Omni-Platform Adaptor & Multi-Environment Invariants Suite", async (t) => 
 	});
 
 	await t.test("20. Code Splitting & Memory Protection: Verify Cornerstone3D / heavy modules not loaded on Hot Path", async () => {
-		// Verify CbctMprImplantStudioModal is dynamically imported with lazy loading in ImagingView
+		// Verify CbctMprImplantStudioModal is dynamically imported with lazy loading in ImagingView / ImagingViewModals
 		const fs = await import("node:fs");
-		const imagingViewSource = fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/ImagingView.tsx", "utf-8");
+		const imagingViewSource =
+			fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/ImagingView.tsx", "utf-8") +
+			"\n" +
+			fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/views/imagingViewModules/ImagingViewModals.tsx", "utf-8");
 		assert.ok(
 			(imagingViewSource.includes("CbctMprImplantStudioModal") ||
 				imagingViewSource.includes("Cornerstone3DViewer")) &&
@@ -869,14 +872,19 @@ test("Omni-Platform Adaptor & Multi-Environment Invariants Suite", async (t) => 
 			"3D CBCT studio must be lazy loaded via lazyWithRetry to prevent loading on Schedule/Patients views",
 		);
 
-		// Verify App.tsx or AppViewRouter lazy-loads ImagingView
+		// Verify App.tsx, AppViewRouter, or ClinicalViewRouter lazy-loads ImagingView
 		const appSource = fs.readFileSync("C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx", "utf-8");
 		const routerPath = "C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/AppViewRouter.tsx";
-		const routerSource = fs.existsSync(routerPath) ? fs.readFileSync(routerPath, "utf-8") : "";
+		const clinicalRouterPath = "C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/viewRouterModules/ClinicalViewRouter.tsx";
+		const routerSource =
+			(fs.existsSync(routerPath) ? fs.readFileSync(routerPath, "utf-8") : "") +
+			"\n" +
+			(fs.existsSync(clinicalRouterPath) ? fs.readFileSync(clinicalRouterPath, "utf-8") : "");
 		assert.ok(
 			appSource.includes("lazyWithRetry(() => import(\"./ImagingView\"))") ||
 				appSource.includes("import(\"./ImagingView\")") ||
-				routerSource.includes("import(\"../../ImagingView\")"),
+				routerSource.includes("import(\"../../ImagingView\")") ||
+				routerSource.includes("import(\"../../../ImagingView\")"),
 			"ImagingView must be lazy loaded to isolate heavy DICOM/3D modules from Hot Path",
 		);
 	});

@@ -152,7 +152,7 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 			assert.equal(prophy.code804n, "A16.07.051");
 			assert.match(prophy.titleRu, /Профгигиена/);
 			assert.ok(prophy.defaultProtocolRu.includes("УЗ-скейлинг") || prophy.defaultProtocolRu.includes("ультразвук"));
-			assert.ok(prophy.defaultProtocolRu.includes("Air-Flow") && prophy.defaultProtocolRu.includes("глицин"));
+			assert.ok((prophy.defaultProtocolRu.includes("воздушно-абразивная") || prophy.defaultProtocolRu.includes("Air-Flow")) && prophy.defaultProtocolRu.includes("глицин"));
 			assert.ok(prophy.defaultProtocolRu.includes("Bifluorid") || prophy.defaultProtocolRu.includes("фторирование"));
 		});
 

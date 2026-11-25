@@ -76,32 +76,35 @@ function parseRules(css: string): Rule[] {
 	return rules;
 }
 
-/** Порядок листов берётся из main.tsx, а не из списка в тесте: иначе тест разойдётся со сборкой. */
+/** Порядок листов берётся из main.tsx с рекурсивным разворачиванием @import, чтобы тест совпадал со сборкой. */
 function importedStylesheets(): string[] {
 	const entry = readFileSync(path.join(webSrc, "main.tsx"), "utf8");
-	const files = [...entry.matchAll(/import\s+"\.\/styles\/([\w.-]+\.css)"/g)].map(
-		(match) => {
-			const file = match[1];
-			if (file === undefined) throw new Error("имя листа не разобрано");
-			return file;
-		},
-	);
+	const stylesRoot = path.join(webSrc, "styles");
+	const queue = [...entry.matchAll(/import\s+["']\.\/styles\/([^"'\r\n]+\.css)["']/g)]
+		.map((match) => match[1])
+		.filter((file): file is string => Boolean(file));
 	const allFiles: string[] = [];
-	for (const file of files) {
-		const filePath = path.join(webSrc, "styles", file);
-		const content = readFileSync(filePath, "utf8");
-		const nestedImports = [
-			...content.matchAll(/@import\s+["']\.\/([\w./-]+\.css)["'];/g),
-		].map((m) => m[1]);
-		for (const nested of nestedImports) {
-			if (nested && !allFiles.includes(nested)) {
-				allFiles.push(nested);
-			}
+	const seen = new Set<string>();
+
+	const visit = (relFromStyles: string): void => {
+		const normalized = relFromStyles.replace(/\\/g, "/");
+		if (seen.has(normalized)) return;
+		seen.add(normalized);
+		const filePath = path.join(stylesRoot, normalized);
+		const content = blankComments(readFileSync(filePath, "utf8"));
+		const dirFromStyles = path.posix.dirname(normalized);
+		for (const m of content.matchAll(/@import\s+["']([^"'\r\n]+\.css)["'];/g)) {
+			const spec = m[1];
+			if (!spec) continue;
+			const next = spec.startsWith("./") || spec.startsWith("../")
+				? path.posix.normalize(path.posix.join(dirFromStyles, spec))
+				: spec;
+			visit(next);
 		}
-		if (!allFiles.includes(file)) {
-			allFiles.push(file);
-		}
-	}
+		allFiles.push(normalized);
+	};
+
+	for (const file of queue) visit(file);
 	return allFiles;
 }
 

@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
 	clearMatcherCache,
@@ -107,7 +108,7 @@ describe("Nomenclature Matcher & Decomposed Modules Test Suite", () => {
 	});
 
 	it("6. Mandate 8b file line limits (submodules <= 120 lines, facades <= 15 lines)", () => {
-		const root = process.cwd();
+		const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 		const matcherModulesDir = path.join(root, "apps/api/src/services/ai/pricelistIngest/matcherModules");
 
 		const checkDir = (dir: string) => {

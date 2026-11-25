@@ -173,8 +173,9 @@ describe("Red Team Inquisition: Doctor Autonomy (Mandate 8e) & Patient Digital S
 			"Must contain statutory PEP reference",
 		);
 		assert.ok(
-			padSource.includes("323-ФЗ"),
-			"Must contain statutory medical consent reference (323-FZ)",
+			padSource.includes("С планом лечения, условиями гарантии и стоимостью услуг согласен") &&
+				readSource("pages/public/PublicConsentSignPage.tsx").includes("323-ФЗ"),
+			"Must contain agreement text and statutory medical consent reference (323-FZ)",
 		);
 
 		// Frictionless interactive mobile canvas signature

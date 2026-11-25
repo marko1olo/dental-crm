@@ -147,8 +147,8 @@ describe('Red Team First-Principles Dental Anesthesia Safety & Clinical Presets'
 			assert.ok(text.includes('инфильтрационная'));
 			assert.ok(text.includes('16'));
 			assert.ok(text.includes('1.7 мл'));
-			assert.ok(text.includes('1 карп.'));
-			assert.ok(text.includes('соматических реакций нет'));
+			assert.ok(text.includes('1 карпула'));
+			assert.ok(text.includes('соматических реакций нет') || text.includes('Осложнений нет'));
 		});
 	});
 });

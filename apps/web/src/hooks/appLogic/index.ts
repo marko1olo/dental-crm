@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { ImportCommitResponse, ImportIntakeResponse } from "@dental/shared";
 import { loadUiPreferences } from "../../AppHelpers";
 import { showToast } from "../../components/GlobalToast";
 import { useAppStore } from "../../store/appStore";
@@ -248,6 +249,48 @@ export function useAppLogic(): UseAppLogicReturn {
 	});
 
 	const migrationQueries = useMigrationQueries({ auth });
+	const previewImport = useCallback(async () => {
+		const s = useAppStore.getState();
+		const rawText = String(s.importText ?? "").trim();
+		const sourceKind = s.importSourceKind;
+		if (!rawText) return;
+		s.setIsImportLoading(true);
+		try {
+			const res = await migrationQueries.previewImport({ rawText, sourceKind });
+			if (!res.ok) throw new Error(`Ошибка проверки импорта (${res.status})`);
+			const rawJson = (await res.json()) as { data?: ImportIntakeResponse } | ImportIntakeResponse;
+			const intake = (rawJson && typeof rawJson === "object" && "data" in rawJson ? rawJson.data : rawJson) as ImportIntakeResponse;
+			s.setImportIntake(intake);
+			s.setImportPreview(intake?.preview ?? null);
+			s.setImportCommit(null);
+		} catch (err: unknown) {
+			appStore.setError(err instanceof Error ? err.message : "Ошибка предпросмотра импорта");
+		} finally {
+			useAppStore.getState().setIsImportLoading(false);
+		}
+	}, [appStore, migrationQueries]);
+
+	const commitImport = useCallback(async () => {
+		const s = useAppStore.getState();
+		const rawText = String(s.importText ?? "").trim();
+		const importPreview = s.importPreview;
+		if (!rawText || !importPreview) {
+			return;
+		}
+		s.setIsImportCommitting(true);
+		try {
+			const res = await migrationQueries.commitImport({ rawText, sourceKind: s.importSourceKind });
+			if (!res.ok) throw new Error(`Ошибка коммита импорта (${res.status})`);
+			const rawJson = (await res.json()) as { data?: ImportCommitResponse } | ImportCommitResponse;
+			const commit = (rawJson && typeof rawJson === "object" && "data" in rawJson ? rawJson.data : rawJson) as ImportCommitResponse;
+			s.setImportCommit(commit);
+			await loadDashboard();
+		} catch (err: unknown) {
+			appStore.setError(err instanceof Error ? err.message : "Ошибка сохранения импорта");
+		} finally {
+			useAppStore.getState().setIsImportCommitting(false);
+		}
+	}, [appStore, loadDashboard, migrationQueries]);
 	const imagingQueries = useImagingQueries({ auth });
 	const communicationsQueries = useCommunicationsQueries({ auth });
 

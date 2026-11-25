@@ -189,10 +189,10 @@ describe("Demo-to-Prod Data Highway & Seeding Parity", () => {
 
 	it("6. GET /api/patients/:id возвращает реальные профили каждого демо-пациента из PostgreSQL", async () => {
 		const patientChecks = [
-			{ id: DEMO_PATIENT_1_ID, namePart: "Иванов" },
-			{ id: DEMO_PATIENT_2_ID, namePart: "Смирнова" },
-			{ id: DEMO_PATIENT_3_ID, namePart: "Кузнецов" },
-			{ id: DEMO_PATIENT_4_ID, namePart: "Морозова" },
+			{ id: DEMO_PATIENT_1_ID, namePart: "Смирнова" },
+			{ id: DEMO_PATIENT_2_ID, namePart: "Воронов" },
+			{ id: DEMO_PATIENT_3_ID, namePart: "Ковалева" },
+			{ id: DEMO_PATIENT_4_ID, namePart: "Кузнецов" },
 		];
 
 		for (const target of patientChecks) {

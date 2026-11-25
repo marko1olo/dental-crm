@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("Telegram Bot Studio & Hub CSS Decomposition (Mandate 8b)", () => {
 	const baseDir = path.resolve(__dirname, "..");

@@ -27,20 +27,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Zero-Mock Chairside Diary, Odontogram & Clinical Protocol Inquisition", () => {
-	it("1. useVisitDiaryPatientInfo has ZERO Math.random() calls", () => {
+	it("1. visitIdentity has ZERO Math.random() calls and isolates foreign visit notes", () => {
 		const filePath = path.resolve(
 			__dirname,
-			"../components/visit/diary/useVisitDiaryPatientInfo.ts",
+			"../components/visit/visitIdentity.ts",
 		);
 		const content = fs.readFileSync(filePath, "utf8");
 		assert.equal(
 			/Math\.random\(\)/.test(content),
 			false,
-			"useVisitDiaryPatientInfo.ts must NOT contain any Math.random() calls (strictly deterministic IDs)",
+			"visitIdentity.ts must NOT contain any Math.random() calls (strictly deterministic IDs)",
 		);
 		assert.ok(
-			content.includes("visitId || patientId"),
-			"useVisitDiaryPatientInfo.ts must use deterministic visitId/patientId fallback",
+			content.includes("realVisitFieldId") && content.includes("NIL_UUID"),
+			"visitIdentity.ts must enforce NIL_UUID and cross-visit isolation",
 		);
 	});
 
@@ -52,7 +52,7 @@ describe("Zero-Mock Chairside Diary, Odontogram & Clinical Protocol Inquisition"
 			"../components/odontogram/OdontogramModule.tsx",
 			"../components/odontogram/ToothRadialMenu.tsx",
 			"../components/odontogram/useOdontogramSync.ts",
-			"../components/visit/diary/useVisitDiaryPatientInfo.ts",
+			"../components/visit/visitIdentity.ts",
 		];
 
 		for (const relPath of filesToCheck) {

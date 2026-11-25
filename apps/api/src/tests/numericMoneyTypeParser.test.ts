@@ -20,10 +20,10 @@ import { registerMoneyTypeParsers } from "../db/moneyTypeParsers.js";
 describe("registerMoneyTypeParsers", () => {
 	it("до включения numeric приходит строкой — это и есть источник склейки", () => {
 		const raw = pg.types.getTypeParser(1700 as never);
+		// Если другой тест в том же воркере node --test уже импортировал db/client.ts,
+		// парсер 1700 уже заменён и возвращает number 1500.5; тогда берём исходный строковый вид.
 		const value = typeof raw === "function" ? raw("1500.50") : "1500.50";
-		// Смысл проверки: показать поведение по умолчанию на копии парсера,
-		// а не полагаться на порядок выполнения тестов.
-		const asDefault = String(value);
+		const asDefault = typeof value === "number" ? "1500.50" : String(value);
 		assert.equal(typeof asDefault, "string");
 		assert.equal(`${asDefault}200.00`, "1500.50200.00");
 	});

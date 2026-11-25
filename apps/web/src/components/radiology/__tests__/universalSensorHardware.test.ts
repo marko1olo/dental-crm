@@ -255,7 +255,7 @@ describe("Universal Sensor Hardware & Telemetry Suite", () => {
 			assert.ok(headerSrc.includes('data-testid="rvg-non-conflicting-badge"'));
 			assert.ok(headerSrc.includes("Hot Folder / TWAIN (Бесконфликтно)"));
 			assert.ok(headerSrc.includes('data-testid="rvg-coexistence-hint"'));
-			assert.ok(headerSrc.includes("Параллельно с EzDent-i / Romexis (без конфликта за USB)"));
+			assert.ok(headerSrc.includes("Параллельно с внешними программами захвата (без конфликта за USB)"));
 			assert.ok(headerSrc.includes("Ожидание снимка (Hot Folder / Автоподхват)"));
 		});
 
@@ -270,10 +270,10 @@ describe("Universal Sensor Hardware & Telemetry Suite", () => {
 		it("verifies HotFolderIntakeModal supports non-conflicting badge and Ctrl+V clipboard ingestion", () => {
 			const intakeSrc = readSource("components/radiology/HotFolderIntakeModal.tsx");
 			assert.ok(intakeSrc.includes('data-testid="hfi-non-conflicting-badge"'));
-			assert.ok(intakeSrc.includes("Бесконфликтный автозахват (EzDent-i / Romexis)"));
+			assert.ok(intakeSrc.includes("Бесконфликтный автозахват (Hot Folder)"));
 			assert.ok(intakeSrc.includes('window.addEventListener("paste", handlePaste)'));
 			assert.ok(intakeSrc.includes("Снимок успешно вставлен из буфера обмена (Ctrl+V)"));
-			assert.ok(intakeSrc.includes("Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB"));
+			assert.ok(intakeSrc.includes("Работает параллельно с внешними программами визиографов без конфликта за USB"));
 		});
 	});
 });

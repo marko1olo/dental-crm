@@ -90,7 +90,7 @@ describe("reportsCsvExport — RFC 4180 CSV Engine & Safe Division (Mandates 8d,
 		});
 
 		assert.ok(emptyCsv.startsWith("\uFEFF"), "Has BOM");
-		assert.ok(emptyCsv.includes("ОТЧЁТ РУКОВОДИТЕЛЯ КЛИНИКИ"), "Header is present");
+		assert.ok(emptyCsv.includes("Отчёт руководителя клиники"), "Header is present");
 		assert.ok(emptyCsv.includes("2026-07-01 — 2026-07-31"), "Period is present");
 	});
 
@@ -216,8 +216,8 @@ describe("reportsCsvExport — RFC 4180 CSV Engine & Safe Division (Mandates 8d,
 
 		assert.ok(csv.includes("Д-р Смирнов А.В."), "Contains doctor name");
 		assert.ok(csv.includes("Профессиональная гигиена"), "Contains service title");
-		assert.ok(csv.includes("Сидоров С.С."), "Contains debtor name");
-		assert.ok(csv.includes("Петров П.П."), "Contains prepaying patient name");
+		assert.ok(csv.includes("Сидоров С."), "Contains masked debtor name");
+		assert.ok(csv.includes("Петров П."), "Contains masked prepaying patient name");
 		assert.ok(csv.includes("50000"), "Contains revenue amount");
 	});
 });

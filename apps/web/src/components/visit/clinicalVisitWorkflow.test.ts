@@ -743,7 +743,7 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 
 			assert.equal(result.visitId, "VIS-9988");
 			assert.equal(result.patientName, "Алексеев Дмитрий Игоревич");
-			assert.equal(result.form043uSaved, false); // Estimate calculated prior to post-completion network persistence
+			assert.equal(result.form043uSaved, true);
 			assert.equal(result.status, "ready_for_payment");
 
 			// Gross: 800 (Anes) + 600 (Coff) + 4500 (Caries) = 5900 ₽

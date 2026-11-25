@@ -92,3 +92,17 @@ export function handleSettingsTabKeyboardNav(
 	onSelect(targetTab.id);
 	window.setTimeout(() => document.getElementById(`settings-tab-${targetTab.id}`)?.focus(), 0);
 }
+
+export function buildSettingsViewLogicBag(appLogic: Record<string, unknown> | null | undefined): Record<string, unknown> {
+	return {
+		...(appLogic ?? {}),
+		telegramAdminSecretSession: Boolean(appLogic?.telegramAdminSecretSession),
+		pricelistImageNote: appLogic?.pricelistImageNote ?? undefined,
+		pricelistWarningsText: (w: unknown[]) =>
+			appLogic?.pricelistWarningsText ? appLogic.pricelistWarningsText(w.filter((x): x is string => typeof x === "string")) : "",
+		pricelistItemMaterialText: (it: unknown) =>
+			it && typeof it === "object" && appLogic?.pricelistItemMaterialText ? appLogic.pricelistItemMaterialText(it) : "",
+		pricelistMaterialSummaryText: (s: unknown) =>
+			s && typeof s === "object" && appLogic?.pricelistMaterialSummaryText ? appLogic.pricelistMaterialSummaryText(s) : "",
+	};
+}

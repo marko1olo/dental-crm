@@ -293,7 +293,11 @@ function moneyCallCount(fileName: string, source: string): number {
 	return count;
 }
 
-const guardedFiles = ["ShiftView.tsx", "FinancePlanning.tsx"];
+const guardedFiles = [
+	"ShiftView.tsx",
+	"shiftViewModules/PatientCockpitInsightPanel.tsx",
+	"FinancePlanning.tsx",
+];
 
 const readSource = (relativePath: string) =>
 	readFileSync(join(webSrcDir, relativePath), "utf8");
@@ -327,11 +331,18 @@ describe("неизвестная сумма не гасится нулём до 
 				0,
 				`${relativePath}: компилятор не разобрал файл — охрана смотрит на обрывок дерева`,
 			);
-			assert.ok(
-				moneyCallCount(relativePath, source) > 0,
-				`${relativePath}: вызовов money() не осталось — охрана потеряла предмет`,
-			);
 		}
+		assert.ok(
+			moneyCallCount(
+				"ShiftView+PatientCockpitInsightPanel",
+				readSource("ShiftView.tsx") + "\n" + readSource("shiftViewModules/PatientCockpitInsightPanel.tsx"),
+			) > 0,
+			"в ShiftView и PatientCockpitInsightPanel вызовов money() не осталось — охрана потеряла предмет",
+		);
+		assert.ok(
+			moneyCallCount("FinancePlanning.tsx", readSource("FinancePlanning.tsx")) > 0,
+			"FinancePlanning.tsx: вызовов money() не осталось — охрана потеряла предмет",
+		);
 	});
 
 	/*

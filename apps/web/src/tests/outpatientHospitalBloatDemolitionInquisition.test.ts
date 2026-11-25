@@ -111,10 +111,12 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 		});
 
 		it("1.3. PatientCardModal.tsx направляет пациента в Медицинскую карту", () => {
-			const wsContent = fs.readFileSync(
-				path.join(patientsDir, "PatientCardModal.tsx"),
-				"utf-8",
-			);
+			const wsContent =
+				fs.readFileSync(path.join(patientsDir, "PatientCardModal.tsx"), "utf-8") +
+				"\n" +
+				fs.readFileSync(path.join(patientsDir, "patientCardModalModules/PatientCardModalHeader.tsx"), "utf-8") +
+				"\n" +
+				fs.readFileSync(path.join(patientsDir, "patientCardModalModules/PatientCardModalFooter.tsx"), "utf-8");
 
 			assert.ok(
 				wsContent.includes("Карта пациента") ||

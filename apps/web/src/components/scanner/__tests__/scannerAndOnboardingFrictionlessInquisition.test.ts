@@ -12,6 +12,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -24,27 +25,30 @@ import {
 	validateSnilsChecksum,
 } from "../documentScannerEngine.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const componentsDir = path.resolve(__dirname, "../..");
+
 describe("Red Team Inquisition: Scanner & Onboarding Frictionless Suite", () => {
 	const scannerModalPath = path.resolve(
-		process.cwd(),
-		"apps/web/src/components/scanner/DocumentCameraScannerModal.tsx",
+		componentsDir,
+		"scanner/DocumentCameraScannerModal.tsx",
 	);
 	const scannerEnginePath = path.resolve(
-		process.cwd(),
-		"apps/web/src/components/scanner/documentScannerEngine.ts",
+		componentsDir,
+		"scanner/documentScannerEngine.ts",
 	);
 	const onboardingModalPath = path.resolve(
-		process.cwd(),
-		"apps/web/src/components/onboarding/OnboardingWizardModal.tsx",
+		componentsDir,
+		"onboarding/OnboardingWizardModal.tsx",
 	);
 
 	it("1. Camera Stream Lifecycle & Memory Leak Invariants in DocumentCameraScannerModal", () => {
 		const modalFiles = [
 			scannerModalPath,
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/cameraModal/ScannerCameraViewport.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/cameraModal/useScannerModalState.ts"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/hooks/useCameraStream.ts"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/hooks/usePhotoCapture.ts"),
+			path.resolve(componentsDir, "scanner/cameraModal/ScannerCameraViewport.tsx"),
+			path.resolve(componentsDir, "scanner/cameraModal/useScannerModalState.ts"),
+			path.resolve(componentsDir, "scanner/hooks/useCameraStream.ts"),
+			path.resolve(componentsDir, "scanner/hooks/usePhotoCapture.ts"),
 		];
 		const source = modalFiles.filter((f) => fs.existsSync(f)).map((f) => fs.readFileSync(f, "utf8")).join("\n");
 
@@ -86,10 +90,10 @@ describe("Red Team Inquisition: Scanner & Onboarding Frictionless Suite", () => 
 	it("2. 1-Click Fallback for Solo Doctor without Camera Hardware Lockout", () => {
 		const modalFiles = [
 			scannerModalPath,
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/cameraModal/ScannerCameraViewport.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/cameraModal/useScannerModalState.ts"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/hooks/useCameraStream.ts"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/hooks/usePhotoCapture.ts"),
+			path.resolve(componentsDir, "scanner/cameraModal/ScannerCameraViewport.tsx"),
+			path.resolve(componentsDir, "scanner/cameraModal/useScannerModalState.ts"),
+			path.resolve(componentsDir, "scanner/hooks/useCameraStream.ts"),
+			path.resolve(componentsDir, "scanner/hooks/usePhotoCapture.ts"),
 		];
 		const source = modalFiles.filter((f) => fs.existsSync(f)).map((f) => fs.readFileSync(f, "utf8")).join("\n");
 

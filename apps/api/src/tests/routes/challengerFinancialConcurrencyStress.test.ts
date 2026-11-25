@@ -16,7 +16,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	buildFiscalReceiptPayloadSignature,
@@ -77,31 +77,47 @@ describe("CHALLENGER 2: 100 CONCURRENT MUTATING PAYMENT REQUESTS & IDEMPOTENCY S
 		await purgeFixtureOrganizations([ORG_ID]);
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.insert(organizations).values({
-				id: ORG_ID,
-				name: "Клиника 100 Concurrency Stress Test",
-				inn: "7701999888",
-			});
-			await db.insert(users).values({
-				id: USER_ID,
-				organizationId: ORG_ID,
-				fullName: "Главный Аудитор 100 Потоков",
-				role: "admin",
-				isActive: true,
-			});
-			await db.insert(familyGroups).values({
-				id: FAMILY_ID,
-				organizationId: ORG_ID,
-				name: "Семья 100 Параллельных Потоков",
-				balance: "100000.00",
-			});
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				familyGroupId: FAMILY_ID,
-				fullName: "Стресс-Пациент 100 Запросов",
-				phone: "+79998881122",
-			});
+			await db
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника 100 Concurrency Stress Test",
+					inn: "7701999888",
+				})
+				.onConflictDoNothing();
+			await db
+				.insert(users)
+				.values({
+					id: USER_ID,
+					organizationId: ORG_ID,
+					fullName: "Главный Аудитор 100 Потоков",
+					role: "admin",
+					isActive: true,
+				})
+				.onConflictDoNothing();
+			await db
+				.insert(familyGroups)
+				.values({
+					id: FAMILY_ID,
+					organizationId: ORG_ID,
+					name: "Семья 100 Параллельных Потоков",
+					balance: "100000.00",
+					balanceKopecks: 10000000,
+				})
+				.onConflictDoUpdate({
+					target: familyGroups.id,
+					set: { balance: "100000.00", balanceKopecks: 10000000 },
+				});
+			await db
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					familyGroupId: FAMILY_ID,
+					fullName: "Стресс-Пациент 100 Запросов",
+					phone: "+79998881122",
+				})
+				.onConflictDoNothing();
 		});
 	});
 
@@ -253,11 +269,17 @@ describe("CHALLENGER 2: 100 CONCURRENT MUTATING PAYMENT REQUESTS & IDEMPOTENCY S
 			return await db
 				.select()
 				.from(fiscalReceiptQueue)
-				.where(eq(fiscalReceiptQueue.organizationId, ORG_ID));
+				.where(
+					and(
+						eq(fiscalReceiptQueue.organizationId, ORG_ID),
+						sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${compositeFiscalKey}`,
+					),
+				);
 		});
 
 		console.log(`  [CHALLENGE 1.2] PostgreSQL Database Record Count: ${dbFiscalRows.length} row(s) in 'fiscal_receipt_queue' table.`);
-		assert.equal(dbFiscalRows.length, 1, "PostgreSQL MUST contain strictly 1 fiscal receipt queue record!");
+		assert.equal(dbFiscalRows.length, 1, "PostgreSQL MUST contain strictly 1 fiscal receipt queue record for this composite key!");
+		assert.equal(dbFiscalRows[0]!.id, [...fiscalQueueIds][0]);
 	});
 
 	it("1.3 100 concurrent parallel family wallet payment requests deduct balance exactly once (zero double-deduction)", async () => {

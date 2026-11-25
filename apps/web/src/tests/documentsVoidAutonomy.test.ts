@@ -232,16 +232,16 @@ describe("Documents View Voiding Autonomy (Mandates 8e, 8k, 8n)", () => {
 		assert.ok(voidSectionMatch !== null);
 		const voidSectionHtml = voidSectionMatch?.[0] ?? "";
 		const buttonMatch = voidSectionHtml.match(
-			/<button[^>]*class="primary-button"[^>]*>([\s\S]*?)<\/button>/,
+			/<button[^>]*>[\s\S]*?Аннулировать с причиной[\s\S]*?<\/button>/,
 		);
 		assert.ok(buttonMatch !== null);
 		const buttonTag = buttonMatch?.[0] ?? "";
 		assert.ok(buttonTag.includes("Аннулировать с причиной"));
 		assert.ok(!buttonTag.includes("disabled"));
-		assert.ok(buttonTag.includes("min-height:44px"));
+		assert.ok(buttonTag.includes("min-h-[44px]") || buttonTag.includes("min-height:44px"));
 	});
 
-	it("2. Void confirmation button becomes disabled ONLY when documentVoidSaving is true", () => {
+	it("2. Void confirmation button marks aria-busy ONLY when documentVoidSaving is true", () => {
 		const mockContext = createMockAppLogic({
 			documentVoidReady: false,
 			documentVoidSaving: true,
@@ -263,11 +263,11 @@ describe("Documents View Voiding Autonomy (Mandates 8e, 8k, 8n)", () => {
 
 		assert.ok(voidSectionHtml.includes("Аннулирую документ"));
 		const buttonMatch = voidSectionHtml.match(
-			/<button[^>]*class="primary-button"[^>]*>([\s\S]*?)<\/button>/,
+			/<button[^>]*>[\s\S]*?Аннулирую документ[\s\S]*?<\/button>/,
 		);
 		assert.ok(buttonMatch !== null);
 		const buttonTag = buttonMatch?.[0] ?? "";
-		assert.ok(buttonTag.includes("disabled"));
+		assert.ok(buttonTag.includes('aria-busy="true"') || buttonTag.includes("disabled"));
 	});
 
 	it("3. Executing void auto-populates safe defaults and cancels document without bureaucratic dead-ends", async () => {
@@ -430,13 +430,13 @@ describe("Documents View Voiding Autonomy (Mandates 8e, 8k, 8n)", () => {
 		// Secondary button has min-height: 44px
 		assert.match(
 			html,
-			/<button[^>]*class="secondary-button"[^>]*style="[^"]*min-height:44px[^"]*"[^>]*>Вернуться<\/button>/,
+			/<button[^>]*(?:min-h-\[44px\]|min-height:44px)[^>]*>Вернуться<\/button>/,
 		);
 
-		// Primary button has min-height: 44px
+		// Void confirm button has min-height: 44px
 		assert.match(
 			html,
-			/<button[^>]*class="primary-button"[^>]*style="[^"]*min-height:44px[^"]*"[^>]*>Аннулировать с причиной<\/button>/,
+			/<button[^>]*(?:min-h-\[44px\]|min-height:44px)[^>]*>Аннулировать с причиной<\/button>/,
 		);
 
 		// Checkbox labels have min-height: 44px

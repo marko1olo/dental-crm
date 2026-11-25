@@ -80,10 +80,16 @@ describe("Patient PWA Portal: Interactive Smart Booking & SBP Deposit Suite", ()
 	});
 
 	it("CSS invariants strictly enforce Fitts Law touch targets >= 44px across patient portal", () => {
-		const cssContent = readFileSync(
-			resolve(__dirname, "../components/portal/patientCabinet/patientCabinet.css"),
-			"utf-8",
-		);
+		const cssContent =
+			readFileSync(
+				resolve(__dirname, "../components/portal/patientCabinet/patientCabinet.css"),
+				"utf-8",
+			) +
+			"\n" +
+			readFileSync(
+				resolve(__dirname, "../components/portal/patientCabinet/cabinetStyles/cabinetMobile.css"),
+				"utf-8",
+			);
 
 		assert.ok(
 			cssContent.includes("min-height: 44px"),

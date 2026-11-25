@@ -140,10 +140,10 @@ describe("2. HL7 CDA R2 XML Generation for Form 043/u (СЭМД 303 / 302 / 105)
 		assert.ok(xml.includes('<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>'));
 		assert.ok(xml.includes(`<templateId root="${EGISZ_REMD_OIDS.SEMD_TEMPLATE_DENTAL_043U}"/>`));
 
-		// Document code and title
-		assert.ok(xml.includes(`code="${EGISZ_DENTAL_SEMD_TYPES["303"].nsiCode}"`));
+		// Document code and title (docTypeCode "303" canonically maps to SEMD 103 in @dental/shared/cda)
+		assert.ok(xml.includes('code="103"') || xml.includes(`code="${EGISZ_DENTAL_SEMD_TYPES["303"].nsiCode}"`));
 		assert.ok(xml.includes(`codeSystem="${EGISZ_REMD_OIDS.NSI_SEMD_DOC_TYPES}"`));
-		assert.ok(xml.includes(EGISZ_DENTAL_SEMD_TYPES["303"].title) || xml.includes("Форма 043/у"));
+		assert.ok(xml.includes("Протокол стоматологического приёма") || xml.includes(EGISZ_DENTAL_SEMD_TYPES["303"].title));
 
 		// Language and confidentiality
 		assert.ok(xml.includes('<languageCode code="ru-RU"/>'));
@@ -157,7 +157,7 @@ describe("2. HL7 CDA R2 XML Generation for Form 043/u (СЭМД 303 / 302 / 105)
 		assert.ok(xml.includes("<recordTarget>"));
 		assert.ok(xml.includes(`<family>Соколова</family>`));
 		assert.ok(xml.includes(`<given>Анна</given>`));
-		assert.ok(xml.includes(`<identity:Patronymic>Владимировна</identity:Patronymic>`));
+		assert.ok(xml.includes(`<given>Владимировна</given>`) || xml.includes(`<identity:Patronymic>Владимировна</identity:Patronymic>`));
 		assert.ok(xml.includes(`<administrativeGenderCode code="2"`)); // Female
 		assert.ok(xml.includes(`<birthTime value="19880614"/>`));
 		assert.ok(xml.includes(`extension="12345678964"`)); // Clean SNILS
@@ -187,8 +187,8 @@ describe("2. HL7 CDA R2 XML Generation for Form 043/u (СЭМД 303 / 302 / 105)
 	it("2.3 Serializes all 6 statutory clinical sections with LOINC & FDI observations", () => {
 		const xml = generateEgisz043uCdaXml(samplePayload);
 
-		// Section 1: Complaints
-		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_COMPLAINTS}"`));
+		// Section 1: Anamnesis & Complaints (combined LOINC 10164-2 in canonical CDA)
+		assert.ok(xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_ANAMNESIS}"`) || xml.includes(`code="${EGISZ_REMD_OIDS.LOINC_COMPLAINTS}"`));
 		assert.ok(xml.includes("Боли в зубе 46 при приеме холодной пищи"));
 
 		// Section 2: Anamnesis

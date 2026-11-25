@@ -119,11 +119,11 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 		assert.equal(explicitContract.services.length, 1);
 		assert.equal(explicitContract.totalAmountKopecks, 500000, "Calculated kopecks must match explicit services");
 
-		// Demo mode: provides showcase mock services and 8,000 ₽
+		// Demo mode: provides showcase mock services (1 item, 1,500 ₽)
 		setRuntimeDemoMode(true);
 		const demoContract = createDefaultPaidContract({});
-		assert.equal(demoContract.services.length, 2, "Demo contract provides 2 sample services");
-		assert.equal(demoContract.totalAmountKopecks, 800000, "Demo contract provides 8,000 ₽ total amount");
+		assert.equal(demoContract.services.length, 1, "Demo contract provides 1 default sample service");
+		assert.equal(demoContract.totalAmountKopecks, 150000, "Demo contract provides 1,500 ₽ total amount");
 		assert.equal(demoContract.clinic.directorFullName, "Смирнов Алексей Викторович");
 
 		setRuntimeDemoMode(null);
@@ -189,7 +189,7 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 	it("RADIOLOGY CODE AUDIT: verifies CbctMprImplantStudioModal does NOT auto-inject Zakharov demo volume for real patients", () => {
 		const modalSourcePath = path.resolve(
 			getWebRoot(),
-			"src/components/radiology/CbctMprImplantStudioModal.tsx",
+			"src/components/radiology/studioModal/useCbctStudioLifecycle.ts",
 		);
 		const source = fs.readFileSync(modalSourcePath, "utf-8");
 
@@ -204,29 +204,29 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 	});
 
 	it("INVENTORY CODE AUDIT: verifies InventoryView and WarehouseInventoryAuditModal quarantine mock items", () => {
-		const invViewPath = path.resolve(getWebRoot(), "src/components/InventoryView.tsx");
-		const invViewSource = fs.readFileSync(invViewPath, "utf-8");
+		const invAuditPath = path.resolve(getWebRoot(), "src/components/inventory/viewModules/useInventoryViewAudit.ts");
+		const invViewSource = fs.readFileSync(invAuditPath, "utf-8");
 
-		assert.ok(invViewSource.includes("isDemoShowcaseMode"), "InventoryView imports isDemoShowcaseMode");
+		assert.ok(invViewSource.includes("isDemoShowcaseMode"), "useInventoryViewAudit imports isDemoShowcaseMode");
 		assert.ok(
 			invViewSource.includes("isDemo ? [...DEFAULT_INVENTORY_ITEMS_PRESET] : []"),
-			"InventoryView auditInitialDoc uses empty items for production",
+			"useInventoryViewAudit auditInitialDoc uses empty items for production",
 		);
 		assert.ok(
 			invViewSource.includes("isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS"),
-			"InventoryView auditInitialDoc defaults to solo doctor commission in production",
+			"useInventoryViewAudit auditInitialDoc defaults to solo doctor commission in production",
 		);
 
 		const modalPath = path.resolve(
 			getWebRoot(),
-			"src/components/inventory/WarehouseInventoryAuditModal.tsx",
+			"src/components/inventory/auditTab/useWarehouseAuditState.ts",
 		);
 		const modalSource = fs.readFileSync(modalPath, "utf-8");
-		assert.ok(modalSource.includes("isDemoShowcaseMode"), "WarehouseInventoryAuditModal imports isDemoShowcaseMode");
+		assert.ok(modalSource.includes("isDemoShowcaseMode"), "useWarehouseAuditState imports isDemoShowcaseMode");
 		assert.ok(
 			modalSource.includes("setItems([...DEFAULT_INVENTORY_ITEMS_PRESET]);") &&
 				modalSource.includes("setItems([]);"),
-			"WarehouseInventoryAuditModal initializes items as [] in production mode",
+			"useWarehouseAuditState initializes items as [] in production mode",
 		);
 	});
 
@@ -257,16 +257,12 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 		);
 	});
 
-	it("AUTH PURITY AUDIT: verifies App.tsx uses canonical doctor name and DemoTourSelector uses realistic clinic name", () => {
+	it("AUTH PURITY AUDIT: verifies App.tsx uses zero placeholder names and DemoTourSelector uses canonical doctor & clinic names", () => {
 		const appPath = path.resolve(getWebRoot(), "src/App.tsx");
 		const appSource = fs.readFileSync(appPath, "utf-8");
 		assert.ok(
 			!appSource.includes("Д-р Демонстрационный А. В."),
 			"App.tsx must not contain absurd placeholder 'Д-р Демонстрационный А. В.'",
-		);
-		assert.ok(
-			appSource.includes("Д-р Соколов А. В."),
-			"App.tsx must use realistic canonical doctor 'Д-р Соколов А. В.'",
 		);
 
 		const tourPath = path.resolve(
@@ -274,6 +270,10 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 			"src/components/auth/DemoTourSelector.tsx",
 		);
 		const tourSource = fs.readFileSync(tourPath, "utf-8");
+		assert.ok(
+			tourSource.includes("Д-р Соколов А. В."),
+			"DemoTourSelector must use realistic canonical doctor 'Д-р Соколов А. В.'",
+		);
 		assert.ok(
 			!tourSource.includes("Демонстрационная Клиника DENTE"),
 			"DemoTourSelector must not use absurd 'Демонстрационная Клиника DENTE'",

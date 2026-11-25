@@ -31,6 +31,7 @@
 
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
+import { generateUuidV7 } from "@dental/shared";
 import type { InjectOptions } from "fastify";
 import { createDenteApiApp } from "../server.js";
 import { routeNotFoundMessage } from "../utils/routeNotFound.js";
@@ -175,7 +176,10 @@ test("(C) PUT на тот же адрес НЕ обслуживается — д
 	const response = await app.inject({
 		method: "PUT",
 		url: "/api/communications/templates/00000000-0000-0000-0000-000000000000",
-		headers: { "content-type": "application/json" },
+		headers: {
+			"content-type": "application/json",
+			"idempotency-key": generateUuidV7(),
+		},
 		payload: { name: "x" },
 	});
 	assert.ok(

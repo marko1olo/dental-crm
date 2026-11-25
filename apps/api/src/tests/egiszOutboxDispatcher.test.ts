@@ -9,6 +9,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // 1. Facade Imports
 import {
@@ -40,11 +41,12 @@ import { OiisGatewayClient } from "../services/egisz/OiisGatewayClient.js";
 import { buildDeterministicGostCmsTestContainer } from "@dental/shared";
 
 describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
+	const apiSrcDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 	describe("1. Architectural Health & File Limits (<800 lines, Facade <= 50 lines)", () => {
 		it("1.1 Canonical facade EgiszOutboxDispatcher.ts is strictly <= 50 lines", () => {
 			const facadePath = path.resolve(
-				process.cwd(),
-				"apps/api/src/services/egisz/EgiszOutboxDispatcher.ts",
+				apiSrcDir,
+				"services/egisz/EgiszOutboxDispatcher.ts",
 			);
 			assert.ok(fs.existsSync(facadePath), "Facade file must exist");
 			const content = fs.readFileSync(facadePath, "utf8");
@@ -57,8 +59,8 @@ describe("EGISZ REMD Outbox Dispatcher Decomposed Architecture", () => {
 
 		it("1.2 All files in dispatcher/ are strictly <= 800 lines", () => {
 			const dirPath = path.resolve(
-				process.cwd(),
-				"apps/api/src/services/egisz/dispatcher",
+				apiSrcDir,
+				"services/egisz/dispatcher",
 			);
 			assert.ok(fs.existsSync(dirPath), "dispatcher/ directory must exist");
 			const files = fs.readdirSync(dirPath).filter((f) => f.endsWith(".ts"));

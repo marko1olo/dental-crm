@@ -14,6 +14,15 @@ import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
 import { registerImagingRoutes } from "../../routes/imaging.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import {
+	CLINIC_TOKEN_HEADER,
+	STAFF_TOKEN_HEADER,
+} from "../../security/identity.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+
+const VISIOGRAPH_TEST_ORG_ID = "11111111-1111-4111-8111-111111111111";
+const VISIOGRAPH_TEST_USER_ID = "22222222-2222-4222-8222-222222222222";
 
 describe("Imaging AI Analysis — body guard (null → 400, не 500)", () => {
 	let app: FastifyInstance;
@@ -48,8 +57,21 @@ describe("Imaging AI Analysis — body guard (null → 400, не 500)", () => {
 	async function postVisiograph(
 		opts: { body?: unknown; rawPayload?: string | Buffer | null } = {},
 	) {
+		const secret = authTokenSecret();
 		const headers: Record<string, string> = {
 			"content-type": "application/json",
+			[CLINIC_TOKEN_HEADER]: signToken(
+				{ organizationId: VISIOGRAPH_TEST_ORG_ID },
+				secret,
+			),
+			[STAFF_TOKEN_HEADER]: signToken(
+				{
+					organizationId: VISIOGRAPH_TEST_ORG_ID,
+					userId: VISIOGRAPH_TEST_USER_ID,
+					role: "doctor",
+				},
+				secret,
+			),
 		};
 		const injectOpts: {
 			method: "POST";

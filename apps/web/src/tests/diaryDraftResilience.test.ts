@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+const REPO_ROOT = path.resolve(import.meta.dirname, "../../../..");
 import { beforeEach, describe, test } from "node:test";
 import {
 	type DiaryState,
@@ -341,19 +342,19 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 
 	test("Мандат 8c / 8e: Полный запрет на window.alert, window.confirm и window.prompt в коде дневника", () => {
 		const inlineFormCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
 			"utf-8",
 		);
 		const diariesTabCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
 			"utf-8",
 		);
 		const visitEmkTabCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/VisitEmkTab.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/visit/VisitEmkTab.tsx"),
 			"utf-8",
 		);
 		const debouncedTextareaCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
 			"utf-8",
 		);
 
@@ -371,7 +372,7 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 
 	test("Мандат 8e: DebouncedEmkTextarea калиброван на 400ms и слушает телефонию и смену вкладок", () => {
 		const debouncedTextareaCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/visit/emk/DebouncedEmkTextarea.tsx"),
 			"utf-8",
 		);
 
@@ -410,7 +411,7 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 		];
 		return paths
 			.map((rel) => {
-				const abs = path.resolve(process.cwd(), rel);
+				const abs = path.resolve(REPO_ROOT, rel);
 				return fs.existsSync(abs) ? fs.readFileSync(abs, "utf-8") : "";
 			})
 			.join("\n");
@@ -418,15 +419,15 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 
 	test("Мандат 8e: Канонический контур сохранения ЭМК выполняет дуальное сохранение в localStorage и IndexedDB", () => {
 		const storageCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/save/visitDraftStorage.ts"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/visit/save/visitDraftStorage.ts"),
 			"utf-8",
 		);
 		const unloadFlushCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/save/useVisitSaveUnloadFlush.ts"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/visit/save/useVisitSaveUnloadFlush.ts"),
 			"utf-8",
 		);
 		const diariesTabCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
 			"utf-8",
 		);
 
@@ -450,15 +451,15 @@ describe("Visit SOAP Draft Recovery & Non-blocking Invariants (Mandate 8c, 8e)",
 
 	test("Мандат 8z: Полное искоренение советских кодов 043/у и 834н из пользовательского интерфейса", () => {
 		const inlineFormCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx"),
 			"utf-8",
 		);
 		const diariesTabCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx"),
 			"utf-8",
 		);
 		const controlBoardCode = fs.readFileSync(
-			path.resolve(process.cwd(), "apps/web/src/components/visit/EmkControlBoard.tsx"),
+			path.resolve(REPO_ROOT, "apps/web/src/components/visit/EmkControlBoard.tsx"),
 			"utf-8",
 		);
 

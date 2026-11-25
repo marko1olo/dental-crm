@@ -117,119 +117,134 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 						inn: "7701112233",
 					})
 					.onConflictDoNothing();
-				await db.insert(clinics).values({
-					id: CLINIC_ID,
-					organizationId: ORG_ID,
-					name: "Клинический Центр на Арбате",
-				});
-				await db.insert(users).values([
-					{
-						id: DOCTOR_1_ID,
+				await db
+					.insert(clinics)
+					.values({
+						id: CLINIC_ID,
 						organizationId: ORG_ID,
-						fullName: "Д-р Терапевтов Алексей",
-						role: "doctor",
-						isActive: true,
-					},
-					{
-						id: DOCTOR_2_ID,
-						organizationId: ORG_ID,
-						fullName: "Д-р Эндодонтистов Борис",
-						role: "doctor",
-						isActive: true,
-					},
-					{
-						id: SURGEON_ID,
-						organizationId: ORG_ID,
-						fullName: "Д-р Хирургов Сергей",
-						role: "doctor",
-						isActive: true,
-					},
-					{
-						id: ORTHO_ID,
-						organizationId: ORG_ID,
-						fullName: "Д-р Ортопедов Дмитрий",
-						role: "doctor",
-						isActive: true,
-					},
-				]);
-				await db.insert(chairs).values([
-					{
-						id: CHAIR_1_ID,
-						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
-						name: "Кресло 1 (Терапия)",
-						isActive: true,
-					},
-					{
-						id: CHAIR_2_ID,
-						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
-						name: "Кресло 2 (Хирургия)",
-						isActive: true,
-					},
-					{
-						id: CHAIR_3_ID,
-						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
-						name: "Кресло 3 (Ортопедия)",
-						isActive: true,
-					},
-				]);
-				await db.insert(patients).values([
-					{
-						id: PATIENT_1_ID,
-						organizationId: ORG_ID,
-						fullName: "Ковалев Константин Константинович",
-						status: "active",
-					},
-					{
-						id: PATIENT_2_ID,
-						organizationId: ORG_ID,
-						fullName: "Морозова Марина Михайловна",
-						status: "active",
-					},
-					{
-						id: PATIENT_3_ID,
-						organizationId: ORG_ID,
-						fullName: "Васильев Виктор Васильевич",
-						status: "active",
-					},
-				]);
-				await db.insert(doctorCommissions).values([
-					{
-						organizationId: ORG_ID,
-						userId: DOCTOR_1_ID,
-						specialty: "therapy",
-						serviceCategory: "therapy",
-						commissionPct: "30.00",
-						commissionPercent: "30.00",
-						materialCostDeductionPct: "100.00",
-						labCostDeductionPct: "0.00",
-						isActive: true,
-					},
-					{
-						organizationId: ORG_ID,
-						userId: SURGEON_ID,
-						specialty: "surgery",
-						serviceCategory: "surgery",
-						commissionPct: "25.00",
-						commissionPercent: "25.00",
-						materialCostDeductionPct: "50.00",
-						labCostDeductionPct: "0.00",
-						isActive: true,
-					},
-					{
-						organizationId: ORG_ID,
-						userId: ORTHO_ID,
-						specialty: "orthopedics",
-						serviceCategory: "orthopedics",
-						commissionPct: "20.00",
-						commissionPercent: "20.00",
-						materialCostDeductionPct: "100.00",
-						labCostDeductionPct: "30.00",
-						isActive: true,
-					},
-				]);
+						name: "Клинический Центр на Арбате",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values([
+						{
+							id: DOCTOR_1_ID,
+							organizationId: ORG_ID,
+							fullName: "Д-р Терапевтов Алексей",
+							role: "doctor",
+							isActive: true,
+						},
+						{
+							id: DOCTOR_2_ID,
+							organizationId: ORG_ID,
+							fullName: "Д-р Эндодонтистов Борис",
+							role: "doctor",
+							isActive: true,
+						},
+						{
+							id: SURGEON_ID,
+							organizationId: ORG_ID,
+							fullName: "Д-р Хирургов Сергей",
+							role: "doctor",
+							isActive: true,
+						},
+						{
+							id: ORTHO_ID,
+							organizationId: ORG_ID,
+							fullName: "Д-р Ортопедов Дмитрий",
+							role: "doctor",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
+				await db
+					.insert(chairs)
+					.values([
+						{
+							id: CHAIR_1_ID,
+							organizationId: ORG_ID,
+							clinicId: CLINIC_ID,
+							name: "Кресло 1 (Терапия)",
+							isActive: true,
+						},
+						{
+							id: CHAIR_2_ID,
+							organizationId: ORG_ID,
+							clinicId: CLINIC_ID,
+							name: "Кресло 2 (Хирургия)",
+							isActive: true,
+						},
+						{
+							id: CHAIR_3_ID,
+							organizationId: ORG_ID,
+							clinicId: CLINIC_ID,
+							name: "Кресло 3 (Ортопедия)",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values([
+						{
+							id: PATIENT_1_ID,
+							organizationId: ORG_ID,
+							fullName: "Ковалев Константин Константинович",
+							status: "active",
+						},
+						{
+							id: PATIENT_2_ID,
+							organizationId: ORG_ID,
+							fullName: "Морозова Марина Михайловна",
+							status: "active",
+						},
+						{
+							id: PATIENT_3_ID,
+							organizationId: ORG_ID,
+							fullName: "Васильев Виктор Васильевич",
+							status: "active",
+						},
+					])
+					.onConflictDoNothing();
+				await db
+					.insert(doctorCommissions)
+					.values([
+						{
+							organizationId: ORG_ID,
+							userId: DOCTOR_1_ID,
+							specialty: "therapy",
+							serviceCategory: "therapy",
+							commissionPct: "30.00",
+							commissionPercent: "30.00",
+							materialCostDeductionPct: "100.00",
+							labCostDeductionPct: "0.00",
+							isActive: true,
+						},
+						{
+							organizationId: ORG_ID,
+							userId: SURGEON_ID,
+							specialty: "surgery",
+							serviceCategory: "surgery",
+							commissionPct: "25.00",
+							commissionPercent: "25.00",
+							materialCostDeductionPct: "50.00",
+							labCostDeductionPct: "0.00",
+							isActive: true,
+						},
+						{
+							organizationId: ORG_ID,
+							userId: ORTHO_ID,
+							specialty: "orthopedics",
+							serviceCategory: "orthopedics",
+							commissionPct: "20.00",
+							commissionPercent: "20.00",
+							materialCostDeductionPct: "100.00",
+							labCostDeductionPct: "30.00",
+							isActive: true,
+						},
+					])
+					.onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;

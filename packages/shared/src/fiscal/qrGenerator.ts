@@ -43,14 +43,19 @@ const LOG_TABLE = new Uint8Array(256);
 
 function gfMul(a: number, b: number): number {
 	if (a === 0 || b === 0) return 0;
-	return EXP_TABLE[LOG_TABLE[a]! + LOG_TABLE[b]!]!;
+	const logA = LOG_TABLE[a];
+	const logB = LOG_TABLE[b];
+	if (logA === undefined || logB === undefined) return 0;
+	return EXP_TABLE[logA + logB] ?? 0;
 }
 
 function polyMul(p1: Uint8Array, p2: Uint8Array): Uint8Array {
 	const result = new Uint8Array(p1.length + p2.length - 1);
 	for (let i = 0; i < p1.length; i++) {
+		const v1 = p1[i] ?? 0;
 		for (let j = 0; j < p2.length; j++) {
-			result[i + j]! ^= gfMul(p1[i]!, p2[j]!);
+			const v2 = p2[j] ?? 0;
+			result[i + j] = (result[i + j] ?? 0) ^ gfMul(v1, v2);
 		}
 	}
 	return result;
@@ -59,10 +64,11 @@ function polyMul(p1: Uint8Array, p2: Uint8Array): Uint8Array {
 function polyRest(dividend: Uint8Array, divisor: Uint8Array): Uint8Array {
 	const result = new Uint8Array(dividend);
 	for (let i = 0; i <= result.length - divisor.length; i++) {
-		const coef = result[i]!;
+		const coef = result[i] ?? 0;
 		if (coef !== 0) {
 			for (let j = 0; j < divisor.length; j++) {
-				result[i + j]! ^= gfMul(divisor[j]!, coef);
+				const divVal = divisor[j] ?? 0;
+				result[i + j] = (result[i + j] ?? 0) ^ gfMul(divVal, coef);
 			}
 		}
 	}
@@ -72,7 +78,7 @@ function polyRest(dividend: Uint8Array, divisor: Uint8Array): Uint8Array {
 function getGeneratorPoly(degree: number): Uint8Array {
 	let gen: Uint8Array = new Uint8Array([1]);
 	for (let i = 0; i < degree; i++) {
-		gen = polyMul(gen, new Uint8Array([1, EXP_TABLE[i]!]));
+		gen = polyMul(gen, new Uint8Array([1, EXP_TABLE[i] ?? 0]));
 	}
 	return gen;
 }
@@ -182,6 +188,14 @@ const FORMAT_INFO: Record<QrErrorCorrectionLevel, number[]> = {
 	H: [0x1689, 0x13be, 0x1ce7, 0x19d0, 0x0762, 0x0255, 0x0d0c, 0x083b],
 };
 
+function getVersionEcBlock(version: number, ecLevel: QrErrorCorrectionLevel): VersionEcBlock {
+	const block = VERSION_TABLE[version]?.[ecLevel];
+	if (!block) {
+		throw new Error(`Неподдерживаемая версия QR-кода: ${version}`);
+	}
+	return block;
+}
+
 class BitBuffer {
 	private buffer: number[] = [];
 	private length = 0;
@@ -198,7 +212,7 @@ class BitBuffer {
 			this.buffer.push(0);
 		}
 		if (bit) {
-			this.buffer[bufIndex]! |= 0x80 >>> (this.length % 8);
+			this.buffer[bufIndex] = (this.buffer[bufIndex] ?? 0) | (0x80 >>> (this.length % 8));
 		}
 		this.length++;
 	}
@@ -217,7 +231,7 @@ class BitBuffer {
  */
 function encodeData(text: string, version: number, ecLevel: QrErrorCorrectionLevel): Uint8Array {
 	const utf8Bytes = new TextEncoder().encode(text);
-	const versionEc = VERSION_TABLE[version]![ecLevel];
+	const versionEc = getVersionEcBlock(version, ecLevel);
 	const maxDataBytes = versionEc.totalDataBytes;
 
 	const buffer = new BitBuffer();
@@ -250,7 +264,7 @@ function encodeData(text: string, version: number, ecLevel: QrErrorCorrectionLev
 	const padBytes = [0xec, 0x11];
 	let padIdx = 0;
 	while (rawBytes.length < maxDataBytes) {
-		rawBytes.push(padBytes[padIdx % 2]!);
+		rawBytes.push(padBytes[padIdx % 2] ?? 0xec);
 		padIdx++;
 	}
 
@@ -261,7 +275,7 @@ function encodeData(text: string, version: number, ecLevel: QrErrorCorrectionLev
  * Builds interleaved data & error-correction blocks.
  */
 function createEcBlocks(data: Uint8Array, version: number, ecLevel: QrErrorCorrectionLevel): Uint8Array {
-	const ecInfo = VERSION_TABLE[version]![ecLevel];
+	const ecInfo = getVersionEcBlock(version, ecLevel);
 	const generator = getGeneratorPoly(ecInfo.ecBytesPerBlock);
 
 	const totalBlocks = ecInfo.group1Blocks + ecInfo.group2Blocks;
@@ -300,8 +314,10 @@ function createEcBlocks(data: Uint8Array, version: number, ecLevel: QrErrorCorre
 	const maxDataLen = Math.max(ecInfo.group1DataBytesPerBlock, ecInfo.group2DataBytesPerBlock);
 	for (let i = 0; i < maxDataLen; i++) {
 		for (let b = 0; b < totalBlocks; b++) {
-			if (i < dataBlocks[b]!.length) {
-				result.push(dataBlocks[b]![i]!);
+			const block = dataBlocks[b];
+			if (block && i < block.length) {
+				const byteVal = block[i];
+				if (byteVal !== undefined) result.push(byteVal);
 			}
 		}
 	}
@@ -309,8 +325,10 @@ function createEcBlocks(data: Uint8Array, version: number, ecLevel: QrErrorCorre
 	// Interleave EC blocks
 	for (let i = 0; i < ecInfo.ecBytesPerBlock; i++) {
 		for (let b = 0; b < totalBlocks; b++) {
-			if (i < ecBlocks[b]!.length) {
-				result.push(ecBlocks[b]![i]!);
+			const ecBlock = ecBlocks[b];
+			if (ecBlock && i < ecBlock.length) {
+				const byteVal = ecBlock[i];
+				if (byteVal !== undefined) result.push(byteVal);
 			}
 		}
 	}
@@ -324,7 +342,7 @@ function createEcBlocks(data: Uint8Array, version: number, ecLevel: QrErrorCorre
 function findSmallestVersion(text: string, ecLevel: QrErrorCorrectionLevel): number {
 	const byteLen = new TextEncoder().encode(text).length;
 	for (let v = 1; v <= 14; v++) {
-		const ecInfo = VERSION_TABLE[v]![ecLevel];
+		const ecInfo = getVersionEcBlock(v, ecLevel);
 		const overhead = v >= 10 ? 3 : 2; // mode (4b) + length indicator (8b / 16b)
 		if (byteLen + overhead <= ecInfo.totalDataBytes) {
 			return v;
@@ -347,10 +365,28 @@ class QrMatrix {
 		this.isReserved = Array.from({ length: this.size }, () => Array(this.size).fill(false));
 	}
 
+	private setModule(r: number, c: number, val: boolean): void {
+		const row = this.modules[r];
+		if (row && c >= 0 && c < row.length) {
+			row[c] = val;
+		}
+	}
+
+	private setReservedFlag(r: number, c: number): void {
+		const row = this.isReserved[r];
+		if (row && c >= 0 && c < row.length) {
+			row[c] = true;
+		}
+	}
+
+	private getReservedFlag(r: number, c: number): boolean {
+		return this.isReserved[r]?.[c] ?? false;
+	}
+
 	set(r: number, c: number, val: boolean, reserved = true): void {
-		this.modules[r]![c] = val;
+		this.setModule(r, c, val);
 		if (reserved) {
-			this.isReserved[r]![c] = true;
+			this.setReservedFlag(r, c);
 		}
 	}
 
@@ -382,8 +418,8 @@ class QrMatrix {
 	setupTimingPatterns(): void {
 		for (let i = 8; i < this.size - 8; i++) {
 			const val = i % 2 === 0;
-			if (!this.isReserved[6]![i]) this.set(6, i, val, true);
-			if (!this.isReserved[i]![6]) this.set(i, 6, val, true);
+			if (!this.getReservedFlag(6, i)) this.set(6, i, val, true);
+			if (!this.getReservedFlag(i, 6)) this.set(i, 6, val, true);
 		}
 	}
 
@@ -391,14 +427,14 @@ class QrMatrix {
 		// Top-left format info
 		for (let i = 0; i <= 8; i++) {
 			if (i !== 6) {
-				this.isReserved[8]![i] = true;
-				this.isReserved[i]![8] = true;
+				this.setReservedFlag(8, i);
+				this.setReservedFlag(i, 8);
 			}
 		}
 		// Top-right & bottom-left
 		for (let i = 0; i < 8; i++) {
-			this.isReserved[8]![this.size - 1 - i] = true;
-			this.isReserved[this.size - 1 - i]![8] = true;
+			this.setReservedFlag(8, this.size - 1 - i);
+			this.setReservedFlag(this.size - 1 - i, 8);
 		}
 		// Dark module
 		this.set(this.size - 8, 8, true, true);
@@ -431,14 +467,14 @@ class QrMatrix {
 				const r = dir === -1 ? row - i : row + i;
 				for (let cOffset = 0; cOffset < 2; cOffset++) {
 					const c = col - cOffset;
-					if (!this.isReserved[r]![c]) {
+					if (!this.getReservedFlag(r, c)) {
 						let bit = false;
 						if (bitIdx < data.length * 8) {
-							const byte = data[Math.floor(bitIdx / 8)]!;
+							const byte = data[Math.floor(bitIdx / 8)] ?? 0;
 							bit = ((byte >>> (7 - (bitIdx % 8))) & 1) === 1;
 						}
 						const masked = isMasked(r, c) ? !bit : bit;
-						this.modules[r]![c] = masked;
+						this.setModule(r, c, masked);
 						bitIdx++;
 					}
 				}
@@ -451,26 +487,29 @@ class QrMatrix {
 	}
 
 	applyFormatInfo(ecLevel: QrErrorCorrectionLevel, mask: number): void {
-		const formatBits = FORMAT_INFO[ecLevel][mask]!;
+		const formatBits = FORMAT_INFO[ecLevel][mask];
+		if (formatBits === undefined) {
+			throw new Error(`Неподдерживаемая маска QR-кода: ${mask}`);
+		}
 		// Top-left
 		for (let i = 0; i < 15; i++) {
 			const bit = ((formatBits >>> (14 - i)) & 1) === 1;
 			// 0..5 -> (8, i), 6 -> (8, 7), 7 -> (8, 8), 8 -> (7, 8), 9..14 -> (14-i, 8)
-			if (i <= 5) this.modules[8]![i] = bit;
-			else if (i === 6) this.modules[8]![7] = bit;
-			else if (i === 7) this.modules[8]![8] = bit;
-			else if (i === 8) this.modules[7]![8] = bit;
-			else this.modules[14 - i]![8] = bit;
+			if (i <= 5) this.setModule(8, i, bit);
+			else if (i === 6) this.setModule(8, 7, bit);
+			else if (i === 7) this.setModule(8, 8, bit);
+			else if (i === 8) this.setModule(7, 8, bit);
+			else this.setModule(14 - i, 8, bit);
 		}
 
 		// Top-right & bottom-left
 		for (let i = 0; i < 8; i++) {
 			const bit = ((formatBits >>> i) & 1) === 1;
-			this.modules[8]![this.size - 1 - i] = bit;
+			this.setModule(8, this.size - 1 - i, bit);
 		}
 		for (let i = 8; i < 15; i++) {
 			const bit = ((formatBits >>> i) & 1) === 1;
-			this.modules[this.size - 15 + i]![8] = bit;
+			this.setModule(this.size - 15 + i, 8, bit);
 		}
 	}
 }
@@ -493,7 +532,7 @@ export function generateQrMatrix(
 	qr.placeFinderPattern(qr.size - 7, 0);
 
 	// Place alignment patterns
-	const alignments = VERSION_TABLE[version]![ecLevel].alignmentPatterns;
+	const alignments = getVersionEcBlock(version, ecLevel).alignmentPatterns;
 	for (const r of alignments) {
 		for (const c of alignments) {
 			// Skip if overlaps with finders
@@ -533,7 +572,7 @@ export function generateQrCodeSvg(text: string, options: QrSvgOptions = {}): str
 	let path = "";
 	for (let r = 0; r < size; r++) {
 		for (let c = 0; c < size; c++) {
-			if (matrix[r]![c]) {
+			if (matrix[r]?.[c]) {
 				path += `M${c + margin},${r + margin}h1v1h-1z `;
 			}
 		}

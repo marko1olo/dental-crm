@@ -16,7 +16,24 @@ import type {
 	ClinicLegalInfo,
 	ConsolidatedSanpinJournalData,
 	Form257Record,
+	PsoJournalRecord,
 } from "./types.js";
+
+export interface RegulatoryPsoRecordInput {
+	readonly id?: string | undefined;
+	readonly date?: string | undefined;
+	readonly timestamp?: string | undefined;
+	readonly instrumentName: string;
+	readonly batchItemCount: number;
+	readonly testedSampleCount: number;
+	readonly isAzopyramNegative: boolean;
+	readonly isPhenolphthaleinNegative: boolean;
+	readonly isBatchApproved: boolean;
+	readonly detergentBrand?: string | undefined;
+	readonly operatorFullName?: string | undefined;
+	readonly operatorStaffFullName?: string | undefined;
+	readonly notes?: string | undefined;
+}
 
 export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpinJournalData): string {
 	const clinic = data.clinicInfo || data.clinicLegalInfo || DEFAULT_CLINIC_LEGAL;
@@ -767,7 +784,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 
 export function generateRegulatorySanpinInspectionHtml(data: {
 	form257Records?: readonly Form257Record[];
-	psoRecords?: readonly any[];
+	psoRecords?: readonly (PsoJournalRecord | RegulatoryPsoRecordInput)[];
 	clinicInfo?: ClinicLegalInfo;
 	periodLabelRu?: string;
 }): string {
@@ -775,7 +792,7 @@ export function generateRegulatorySanpinInspectionHtml(data: {
 	const periodLabelRu = data.periodLabelRu ?? "за текущий отчетный период";
 	const printDateStr = new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
 
-	const psoList: readonly any[] = data.psoRecords && data.psoRecords.length > 0
+	const psoList: readonly RegulatoryPsoRecordInput[] = data.psoRecords && data.psoRecords.length > 0
 		? data.psoRecords
 		: [
 			{
@@ -825,7 +842,7 @@ export function generateRegulatorySanpinInspectionHtml(data: {
 		.map((pso, idx) => `
 			<tr>
 				<td style="text-align:center;">${idx + 1}</td>
-				<td style="text-align:center;">${pso.date}</td>
+				<td style="text-align:center;">${pso.date || (pso.timestamp ? pso.timestamp.slice(0, 10) : "—")}</td>
 				<td>${pso.instrumentName}</td>
 				<td style="text-align:center;">${pso.batchItemCount}</td>
 				<td style="text-align:center;"><strong>${pso.testedSampleCount}</strong> (1%)</td>
@@ -833,7 +850,7 @@ export function generateRegulatorySanpinInspectionHtml(data: {
 				<td style="text-align:center; color:#166534;"><strong>${pso.isPhenolphthaleinNegative ? "Отрицат." : "ПОЛОЖИТ."}</strong></td>
 				<td>${pso.detergentBrand || "Биолот 0.5%"}</td>
 				<td style="text-align:center; color:#166534;"><strong>${pso.isBatchApproved ? "ДОПУЩЕНО" : "БРАК"}</strong></td>
-				<td style="font-size:7.5pt; word-break:break-word;">${pso.operatorFullName || clinicInfo.headNurse || "Медсестра ЦСО"}</td>
+				<td style="font-size:7.5pt; word-break:break-word;">${pso.operatorFullName || pso.operatorStaffFullName || clinicInfo.headNurse || "Медсестра ЦСО"}</td>
 			</tr>
 		`)
 		.join("\n");

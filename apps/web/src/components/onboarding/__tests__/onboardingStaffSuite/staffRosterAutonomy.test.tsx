@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SettingsClinicTab } from "../../../settings/SettingsClinicTab";
 import { AppLogicProvider } from "../../../../contexts/AppLogicContext";
-import { OnboardingWizardModal } from "../../OnboardingWizardModal";
+import { OnboardingWizardModal, renderOnboardingWizardTree } from "../../OnboardingWizardModal";
 import {
 	createTestOnboardingProps,
 	createTestSettingsProps,
@@ -20,7 +20,7 @@ describe("Onboarding & Settings Staff Roster Autonomy (Mandate 8e)", () => {
 			newStaffName: "",
 			newStaffReadyToCreate: false,
 		});
-		const onboardingTree = OnboardingWizardModal(onboardingProps);
+		const onboardingTree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		const onboardingStaffBtn = findElement(
 			onboardingTree,
 			(n) =>
@@ -64,7 +64,7 @@ describe("Onboarding & Settings Staff Roster Autonomy (Mandate 8e)", () => {
 			setNewStaffName: setOnboardingStaffName,
 			addStaffMember: addOnboardingStaff,
 		});
-		const onboardingTree = OnboardingWizardModal(onboardingProps);
+		const onboardingTree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		const onboardingStaffBtn = findElement(
 			onboardingTree,
 			(n) =>
@@ -82,7 +82,7 @@ describe("Onboarding & Settings Staff Roster Autonomy (Mandate 8e)", () => {
 
 	it("3. Staff touch targets meet Apple HIG >= 44px (minHeight >= 44px)", () => {
 		const onboardingProps = createTestOnboardingProps();
-		const onboardingTree = OnboardingWizardModal(onboardingProps);
+		const onboardingTree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		const onboardingStaffBtn = findElement(
 			onboardingTree,
 			(n) =>
@@ -126,7 +126,7 @@ describe("Onboarding & Settings Staff Roster Autonomy (Mandate 8e)", () => {
 			setNewStaffName: setOnboardingStaffName,
 			addStaffMember: addOnboardingStaff,
 		});
-		const onboardingTree = OnboardingWizardModal(onboardingProps);
+		const onboardingTree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		const onboardingStaffBtn = findElement(
 			onboardingTree,
 			(n) =>

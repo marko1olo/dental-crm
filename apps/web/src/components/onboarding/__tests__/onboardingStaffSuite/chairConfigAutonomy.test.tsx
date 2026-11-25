@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SettingsClinicTab } from "../../../settings/SettingsClinicTab";
 import { AppLogicProvider } from "../../../../contexts/AppLogicContext";
-import { OnboardingWizardModal } from "../../OnboardingWizardModal";
+import { OnboardingWizardModal, renderOnboardingWizardTree } from "../../OnboardingWizardModal";
 import {
 	createTestOnboardingProps,
 	createTestSettingsProps,
@@ -20,7 +20,7 @@ describe("Onboarding & Settings Chair Configuration Autonomy (Mandates 8e, 8n)",
 			newChairName: "",
 			newChairReadyToCreate: false,
 		});
-		const onboardingTree = OnboardingWizardModal(onboardingProps);
+		const onboardingTree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		const onboardingChairBtn = findElement(
 			onboardingTree,
 			(n) =>
@@ -67,7 +67,7 @@ describe("Onboarding & Settings Chair Configuration Autonomy (Mandates 8e, 8n)",
 				},
 			} as any,
 		});
-		const tree1 = OnboardingWizardModal(onboardingProps1);
+		const tree1 = renderOnboardingWizardTree(onboardingProps1, false, () => {});
 		const btn1 = findElement(
 			tree1,
 			(n) =>
@@ -98,7 +98,7 @@ describe("Onboarding & Settings Chair Configuration Autonomy (Mandates 8e, 8n)",
 				},
 			} as any,
 		});
-		const tree2 = OnboardingWizardModal(onboardingProps2);
+		const tree2 = renderOnboardingWizardTree(onboardingProps2, false, () => {});
 		const btn2 = findElement(
 			tree2,
 			(n) =>
@@ -131,7 +131,7 @@ describe("Onboarding & Settings Chair Configuration Autonomy (Mandates 8e, 8n)",
 				},
 			} as any,
 		});
-		const tree = OnboardingWizardModal(onboardingProps);
+		const tree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		expect(tree).not.toBeNull();
 		// In solo mode, exactly 1 chair is sufficient for progress and does not block
 		assert.equal(onboardingProps.dashboard.clinicSettings.profile.mode, "solo_doctor");
@@ -140,7 +140,7 @@ describe("Onboarding & Settings Chair Configuration Autonomy (Mandates 8e, 8n)",
 
 	it("4. Chair touch targets meet Apple HIG >= 44px (minHeight >= 44px)", () => {
 		const onboardingProps = createTestOnboardingProps();
-		const onboardingTree = OnboardingWizardModal(onboardingProps);
+		const onboardingTree = renderOnboardingWizardTree(onboardingProps, false, () => {});
 		const onboardingChairBtn = findElement(
 			onboardingTree,
 			(n) =>

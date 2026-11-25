@@ -216,7 +216,7 @@ describe("Window #3: Capture Console & Hardware Gateways (Вкладка «СН�
 		it("verifies HotFolderIntakeModal provides non-conflicting badge and instant paste", () => {
 			const intakeSrc = readSource("components/radiology/HotFolderIntakeModal.tsx");
 			expect(intakeSrc).toContain('data-testid="hfi-non-conflicting-badge"');
-			expect(intakeSrc).toContain("Бесконфликтный автозахват (EzDent-i / Romexis)");
+			expect(intakeSrc).toContain("Бесконфликтный автозахват (Hot Folder)");
 			expect(intakeSrc).toContain('window.addEventListener("paste", handlePaste)');
 		});
 	});

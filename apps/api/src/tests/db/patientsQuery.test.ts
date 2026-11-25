@@ -48,11 +48,20 @@ describe("patientsQuery: сбой базы не подменяется памя�
 	});
 
 	test("getPatientsFromDb передаёт ошибку наружу, а не отдаёт массив-образец", async (t) => {
+		const failingQuery = {
+			orderBy: () => failingQuery,
+			limit: () => failingQuery,
+			offset: () => failingQuery,
+			then: (
+				_onFulfilled: unknown,
+				onRejected?: (reason: unknown) => unknown,
+			) => Promise.reject(DB_DOWN).then(undefined, onRejected),
+		};
 		t.mock.method(db, "select", () => ({
 			from: () => ({
-				where: async () => {
-					throw DB_DOWN;
-				},
+				where: () => ({
+					$dynamic: () => failingQuery,
+				}),
 			}),
 		}));
 
@@ -125,25 +134,38 @@ describe("patientsQuery: сбой базы не подменяется памя�
 	});
 
 	test("контроль: при исправной базе список пациентов возвращается как есть", async (t) => {
-		t.mock.method(db, "select", () => ({
-			from: () => ({
-				where: async () => [
-					{
-						id: PATIENT,
-						organizationId: ORG,
-						fullName: "Иванов Иван Иванович",
-						birthDate: null,
-						phone: null,
-						email: null,
-						notes: null,
-						administrativeProfile: null,
-						status: "active",
-						createdAt: new Date("2026-01-01T00:00:00.000Z"),
-						updatedAt: new Date("2026-01-02T00:00:00.000Z"),
-					},
-				],
-			}),
-		}));
+		const rows = [
+			{
+				id: PATIENT,
+				organizationId: ORG,
+				fullName: "Иванов Иван Иванович",
+				birthDate: null,
+				phone: null,
+				email: null,
+				notes: null,
+				administrativeProfile: null,
+				status: "active",
+				createdAt: new Date("2026-01-01T00:00:00.000Z"),
+				updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+			},
+		];
+		let selectCall = 0;
+		const okQuery = {
+			orderBy: () => okQuery,
+			limit: () => okQuery,
+			offset: () => okQuery,
+			then: (onFulfilled: (value: typeof rows) => unknown) =>
+				Promise.resolve(rows).then(onFulfilled),
+		};
+		t.mock.method(db, "select", () => {
+			const idx = selectCall++;
+			return {
+				from: () => ({
+					where: () =>
+						idx === 0 ? { $dynamic: () => okQuery } : Promise.resolve([]),
+				}),
+			};
+		});
 
 		const patients = await getPatientsFromDb(ORG);
 		assert.equal(patients.length, 1);

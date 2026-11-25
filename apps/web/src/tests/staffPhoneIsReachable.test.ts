@@ -36,25 +36,31 @@ import { webSrcRoot } from "./utils/componentReachability";
  * видно. Здесь проверка через assert.ok, и в выводе остаётся только сообщение.
  */
 
-const STAFF_TAB = join(
-	webSrcRoot,
-	"components",
-	"settings",
-	"SettingsStaffTab.tsx",
-);
-const SETTINGS_VIEW = join(webSrcRoot, "SettingsView.tsx");
+const STAFF_TAB_FILES = [
+	join(webSrcRoot, "components", "settings", "SettingsStaffTab.tsx"),
+	join(webSrcRoot, "components", "settings", "staff", "StaffAddForm.tsx"),
+	join(webSrcRoot, "components", "settings", "staff", "useStaffAddForm.ts"),
+	join(webSrcRoot, "components", "settings", "staff", "StaffActiveList.tsx"),
+	join(webSrcRoot, "components", "settings", "staff", "StaffMemberCard.tsx"),
+	join(webSrcRoot, "components", "settings", "staff", "StaffMemberCredentialsForm.tsx"),
+	join(webSrcRoot, "components", "settings", "staff", "useStaffMutations.ts"),
+];
+const SETTINGS_RENDERERS = [
+	join(webSrcRoot, "views", "settingsView", "index.tsx"),
+	join(webSrcRoot, "views", "settingsView", "tabRenderers", "SettingsAdminTabContent.tsx"),
+];
 
 /** Отказ печатает причину, а не содержимое файла. */
 function expectSource(source: string, pattern: RegExp, message: string): void {
 	assert.ok(pattern.test(source), message);
 }
 
-/** Код вкладки без строк комментариев: разбор в комментарии за код не считается. */
+/** Код модулей вкладки без строк комментариев: разбор в комментарии за код не считается. */
 function staffTabCode(): string {
-	const source = readFileSync(STAFF_TAB, "utf8");
+	const source = STAFF_TAB_FILES.map((file) => readFileSync(file, "utf8")).join("\n");
 	assert.ok(
 		source.length > 4000,
-		"SettingsStaffTab.tsx выродился — страж проверяет не тот файл или файл опустел",
+		"Модули SettingsStaffTab выродились — страж проверяет не те файлы или они опустели",
 	);
 	return source
 		.split(/\r?\n/)
@@ -71,9 +77,9 @@ function staffTabCode(): string {
 
 test("вкладка «Сотрудники» вообще смонтирована", () => {
 	expectSource(
-		readFileSync(SETTINGS_VIEW, "utf8"),
+		SETTINGS_RENDERERS.map((file) => readFileSync(file, "utf8")).join("\n"),
 		/SettingsStaffTab/,
-		"SettingsView.tsx больше не отрисовывает SettingsStaffTab — правки телефона до людей не доходят",
+		"SettingsAdminTabContent больше не отрисовывает SettingsStaffTab — правки телефона до людей не доходят",
 	);
 });
 
@@ -81,7 +87,7 @@ test("телефон сотрудника можно ввести при зав�
 	const code = staffTabCode();
 	expectSource(
 		code,
-		/newStaffPhone.*useState|useState.*newStaffPhone/,
+		/setPhone|useState\(""\)/,
 		"В форме заведения сотрудника нет состояния телефона",
 	);
 	expectSource(
@@ -96,7 +102,7 @@ test("телефон сотрудника можно ввести при зав�
 	);
 	expectSource(
 		code,
-		/phone:\s*newStaffPhone\.trim\(\)\s*\|\|\s*null/,
+		/phone:\s*(?:newStaffPhone|phone)\.trim\(\)\s*\|\|\s*null/,
 		"Введённый телефон не попадает в тело запроса POST /api/settings/staff — экран собирал бы его в пустоту",
 	);
 });
@@ -131,7 +137,7 @@ test("телефон уже заведённого сотрудника можн
 	const code = staffTabCode();
 	expectSource(
 		code,
-		/handleUpdatePhone/,
+		/updatePhone|handleUpdatePhone/,
 		"Обработчика правки телефона нет — страж потерял цель проверки",
 	);
 	expectSource(
@@ -146,7 +152,7 @@ test("телефон уже заведённого сотрудника можн
 	);
 	expectSource(
 		code,
-		/phone:\s*phoneDraft\.trim\(\)\s*\|\|\s*null/,
+		/phone:\s*(?:phoneDraft|phone)\.trim\(\)\s*\|\|\s*null/,
 		"Правка не отправляет телефон, либо пустое поле уходит пустой строкой вместо null: " +
 			"колонка nullable, и «номер стёрли» обязано храниться пустотой",
 	);

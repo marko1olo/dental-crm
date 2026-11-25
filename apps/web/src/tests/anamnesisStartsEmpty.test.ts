@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -30,10 +30,22 @@ import { fileURLToPath } from "node:url";
  * статически поймать его надёжнее, чем поднимая браузер.
  */
 const here = dirname(fileURLToPath(import.meta.url));
-const documentStore = readFileSync(
-	join(here, "..", "store", "documentStore.ts"),
-	"utf8",
-);
+function readTsTree(dirPath: string): string {
+	const chunks: string[] = [];
+	for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+		const fullPath = join(dirPath, entry.name);
+		if (entry.isDirectory()) {
+			chunks.push(readTsTree(fullPath));
+		} else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+			chunks.push(readFileSync(fullPath, "utf8"));
+		}
+	}
+	return chunks.join("\n");
+}
+const documentStore =
+	readFileSync(join(here, "..", "store", "documentStore.ts"), "utf8") +
+	"\n" +
+	readTsTree(join(here, "..", "store", "documentStore"));
 
 /** Начальное значение поля в объекте хранилища. */
 function initialValueOf(field: string): string | null {

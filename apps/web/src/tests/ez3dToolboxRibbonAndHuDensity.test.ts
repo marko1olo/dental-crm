@@ -94,8 +94,9 @@ describe("Mandate 8l: Ez3D-i Clinical Tooling & HU Bone Density Math", () => {
 			"apps/web/src/components/imaging/DicomViewport.tsx",
 		];
 
+		const repoRoot = path.resolve(import.meta.dirname, "../../../..");
 		for (const fileRelPath of filesToAudit) {
-			const fullPath = path.resolve(fileRelPath);
+			const fullPath = path.resolve(repoRoot, fileRelPath);
 			assert.ok(fs.existsSync(fullPath), `File must exist: ${fileRelPath}`);
 			const content = fs.readFileSync(fullPath, "utf8");
 			const lineCount = content.split("\n").length;
@@ -107,7 +108,8 @@ describe("Mandate 8l: Ez3D-i Clinical Tooling & HU Bone Density Math", () => {
 	});
 
 	it("should contain zero mock markers or fake stubs in DicomToolboxRibbon", () => {
-		const fullPath = path.resolve("apps/web/src/components/imaging/DicomToolboxRibbon.tsx");
+		const repoRoot = path.resolve(import.meta.dirname, "../../../..");
+		const fullPath = path.resolve(repoRoot, "apps/web/src/components/imaging/DicomToolboxRibbon.tsx");
 		const content = fs.readFileSync(fullPath, "utf8");
 		assert.ok(!content.includes("// TODO:"), "Forbidden // TODO stub found in DicomToolboxRibbon.tsx");
 		assert.ok(!content.includes("mockData"), "Forbidden mockData found in DicomToolboxRibbon.tsx");

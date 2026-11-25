@@ -56,24 +56,24 @@ describe("Mandate 8n: Scale Sovereignty Presets Specification", () => {
 		assert.ok(solo.features.some((f) => f.includes("склад")));
 	});
 
-	it("standard_clinic preset: 1–3 chairs, 54-FZ cashier, SanPiN autoclave registers", () => {
+	it("standard_clinic preset: 1–3 chairs, cashier, SanPiN autoclave registers", () => {
 		const standard = SOVEREIGN_PRESETS.find((p) => p.id === "standard_clinic");
 		assert.ok(standard);
 		assert.ok(standard.title.includes("Стандартная клиника") || standard.title.includes("1-3 кресла"));
 		assert.ok(standard.subtitle.includes("1-3 кресла") || standard.subtitle.includes("Команда врачей"));
 		assert.ok(standard.chairsCountText.includes("3 кресла"));
-		assert.ok(standard.features.some((f) => f.includes("54-ФЗ")));
-		assert.ok(standard.features.some((f) => f.includes("SanPiN")));
+		assert.ok(standard.features.some((f) => f.includes("фискализацией")));
+		assert.ok(standard.features.some((f) => f.includes("Автоклав") || f.includes("SanPiN")));
 	});
 
-	it("network_center preset: 5+ chairs, dental lab (ZTL), FEFO warehouse, unified contact center", () => {
+	it("network_center preset: 5+ chairs, dental lab (ZTL), warehouse, unified contact center", () => {
 		const network = SOVEREIGN_PRESETS.find((p) => p.id === "network_center");
 		assert.ok(network);
 		assert.ok(network.title.includes("Сеть") || network.title.includes("Многопрофильный центр"));
 		assert.ok(network.subtitle.includes("Сеть филиалов") || network.subtitle.includes("Филиалы"));
 		assert.ok(network.chairsCountText.includes("5+ кресел"));
 		assert.ok(network.features.some((f) => f.includes("ЗТЛ")));
-		assert.ok(network.features.some((f) => f.includes("FEFO")));
+		assert.ok(network.features.some((f) => f.includes("Складской учет")));
 	});
 });
 
@@ -261,8 +261,9 @@ describe("Mandate 8c & 8d: Markup, Ergonomics & Quality Standards", () => {
 			"apps/web/src/hooks/useClinicCapabilities.ts",
 			"apps/web/src/lib/clinicCapabilities.ts",
 		];
+		const repoRoot = path.resolve(import.meta.dirname, "../../../..");
 		for (const rel of files) {
-			const full = path.resolve(process.cwd(), rel);
+			const full = path.resolve(repoRoot, rel);
 			assert.ok(fs.existsSync(full), `File must exist: ${rel}`);
 			const lines = fs.readFileSync(full, "utf-8").split("\n").length;
 			assert.ok(

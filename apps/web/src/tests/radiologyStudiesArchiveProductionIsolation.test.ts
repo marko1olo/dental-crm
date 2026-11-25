@@ -236,32 +236,32 @@ describe("Radiology Studies Archive & PACS Production Isolation Invariant (Red T
 		);
 
 		assert.ok(
-			source.includes('app.post("/api/imaging/studies", createStudyHandler);') &&
-			source.includes('app.post("/api/radiology/studies", createStudyHandler);'),
+			/app\.post\(["']\/api\/imaging\/studies["'][\s\S]*?createStudyHandler/.test(source) &&
+			/app\.post\(["']\/api\/radiology\/studies["'][\s\S]*?createStudyHandler/.test(source),
 			"Both POST /api/imaging/studies and /api/radiology/studies are registered to createStudyHandler",
 		);
 
 		assert.ok(
-			source.includes('app.patch("/api/imaging/studies/:id", updateStudyHandler);') &&
-			source.includes('app.patch("/api/radiology/studies/:id", updateStudyHandler);'),
+			/app\.patch\(["']\/api\/imaging\/studies\/:id["'][\s\S]*?updateStudyHandler/.test(source) &&
+			/app\.patch\(["']\/api\/radiology\/studies\/:id["'][\s\S]*?updateStudyHandler/.test(source),
 			"Both PATCH /api/imaging/studies/:id and /api/radiology/studies/:id are registered",
 		);
 
 		assert.ok(
-			source.includes('app.post("/api/imaging/studies/:id/bind-patient", bindPatientHandler);') &&
-			source.includes('app.post("/api/radiology/studies/:id/bind-patient", bindPatientHandler);'),
+			/app\.post\(["']\/api\/imaging\/studies\/:id\/bind-patient["'][\s\S]*?bindPatientHandler/.test(source) &&
+			/app\.post\(["']\/api\/radiology\/studies\/:id\/bind-patient["'][\s\S]*?bindPatientHandler/.test(source),
 			"Both bind-patient routes are registered",
 		);
 
 		assert.ok(
-			source.includes('app.post("/api/imaging/studies/:id/unbind-patient", unbindPatientHandler);') &&
-			source.includes('app.post("/api/radiology/studies/:id/unbind-patient", unbindPatientHandler);'),
+			/app\.post\(["']\/api\/imaging\/studies\/:id\/unbind-patient["'][\s\S]*?unbindPatientHandler/.test(source) &&
+			/app\.post\(["']\/api\/radiology\/studies\/:id\/unbind-patient["'][\s\S]*?unbindPatientHandler/.test(source),
 			"Both unbind-patient routes are registered",
 		);
 
 		assert.ok(
-			source.includes('app.post("/api/imaging/studies/auto-bind-scan", autoBindHandler);') &&
-			source.includes('app.post("/api/radiology/studies/auto-bind-scan", autoBindHandler);'),
+			/app\.post\(["']\/api\/imaging\/studies\/auto-bind-scan["'][\s\S]*?autoBindHandler/.test(source) &&
+			/app\.post\(["']\/api\/radiology\/studies\/auto-bind-scan["'][\s\S]*?autoBindHandler/.test(source),
 			"Both auto-bind-scan routes are registered",
 		);
 	});

@@ -167,9 +167,11 @@ describe("RED TEAM CORE REALISM INQUISITION: REAL DB EXECUTION (POSTGRESQL 18)",
 				payload: {
 					fullName: "Тестовый Пациент Реализма",
 					phone: "+79991234567",
-					gender: "male",
 					birthDate: "1990-05-15",
 					notes: "Соматически здоров. Аллергий не выявлено.",
+					administrativeProfile: {
+						gender: "male",
+					},
 				},
 			});
 

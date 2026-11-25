@@ -263,7 +263,7 @@ describe("Fastify Concurrency: Invoice Checkout Idempotency & Split Payment Anti
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await tx
 				.update(familyGroups)
-				.set({ balance: "6000.00", updatedAt: new Date() })
+				.set({ balance: "6000.00", balanceKopecks: 600000, updatedAt: new Date() })
 				.where(
 					and(
 						eq(familyGroups.id, FAMILY_GROUP_ID),

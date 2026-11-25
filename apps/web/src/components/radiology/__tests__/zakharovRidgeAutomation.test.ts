@@ -43,8 +43,8 @@ describe("Zakharov Edentulous Ridge Automation & Form 043/u Protocol", () => {
 		assert.match(soap.statusLocalis, /W6 \(базальная ширина гребня на 6 мм апикальнее вершины\): 8\.2 мм/);
 		assert.match(soap.statusLocalis, /D3 \(средняя плотность: 385 HU\)/);
 		assert.match(soap.treatmentDescription, /Закрытый трансальвеолярный синус-лифтинг \(метод Саммерса\)/);
-		assert.match(soap.treatmentDescription, /Bio-Oss \/ Cerabone/);
-		assert.match(soap.treatmentDescription, /Bio-Gide/);
+		assert.match(soap.treatmentDescription, /Остеопластический ксеноматериал с медленной резорбцией/);
+		assert.match(soap.treatmentDescription, /Коллагеновая резорбируемая мембрана/);
 	});
 
 	it("4. Form 043/u protocol for tooth 27 indicates lateral window sinus lift and staged placement", () => {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, test } from "node:test";
 import Fastify from "fastify";
 import {
@@ -30,8 +31,9 @@ import {
 import type { PortalOtpPolicy } from "../../routes/portal/types.js";
 
 describe("Patient Portal Decomposition & Architecture Verification (Mandate 8b)", () => {
-	const portalDir = path.resolve(process.cwd(), "apps/api/src/routes/portal");
-	const portalFacadePath = path.resolve(process.cwd(), "apps/api/src/routes/portal.ts");
+	const testDir = path.dirname(fileURLToPath(import.meta.url));
+	const portalDir = path.resolve(testDir, "../../routes/portal");
+	const portalFacadePath = path.resolve(testDir, "../../routes/portal.ts");
 
 	test("Mandate 8b: All decomposed files in apps/api/src/routes/portal/ are strictly < 800 lines", () => {
 		// Устаревший фасад portal.ts снесен по Мандатам 8b/8bf в пользу прямого монтирования portal/index.ts

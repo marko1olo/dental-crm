@@ -248,7 +248,7 @@ describe("Red Team Adaptivity Inquisitor — Comprehensive Verification", () => 
 	});
 
 	describe("5. CSS Layer Verification (low-spec-hardware.css)", () => {
-		const cssPath = path.resolve(process.cwd(), "apps/web/src/styles/low-spec-hardware.css");
+		const cssPath = path.resolve(import.meta.dirname, "../styles/low-spec-hardware.css");
 		const cssContent = readCssWithImports(cssPath);
 
 		it("Section 1 defines design tokens for data-perf-tier, data-perf-state, and data-ct-active", () => {

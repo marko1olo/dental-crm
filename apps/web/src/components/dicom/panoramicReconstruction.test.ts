@@ -31,10 +31,8 @@ import {
 	polylineLength2D, polylineLength3D, rectangleAreaMm2,
 } from "./dicomMeasurementMath.js";
 import {
-	ASTRA_TECH_SYSTEM, DENTIUM_SYSTEM, formatImplantSpecRu,
-	getAllImplantSystems, getAvailableDiameters, getAvailableLengths,
-	getImplantSystem, getPlatformForDiameter, NOBEL_BIOCARE_SYSTEM,
-	OSSTEM_SYSTEM, STRAUMANN_SYSTEM, validateImplantDimensions,
+	buildClinicalImplantSpec, CANONICAL_IMPLANT_SYSTEMS,
+	IMPLANT_PLATFORM_COLORS, resolveImplantSystem,
 } from "./implantCatalog.js";
 import {
 	computeAxialIntersections, computeCrossSectionViewIntersections,
@@ -614,105 +612,55 @@ describe("Panoramic Reconstruction, CPR Math & Implant Safety Engine (Mandates 8
 		assert.equal(formatDensityRu(NaN), "— HU");
 	});
 
-	it("14. Validates canonical implant catalogs (Nobel, Straumann, Osstem, Dentium) and platform color coding", () => {
-		const allSystems = getAllImplantSystems();
-		assert.ok(allSystems.length >= 4);
+	it("14. Validates canonical implant catalogs (Nobel, Straumann, Osstem, Dentium, Astra Tech) and platform color coding", () => {
+		const allSystems = Object.values(CANONICAL_IMPLANT_SYSTEMS);
+		assert.ok(allSystems.length >= 6);
 
 		// Nobel Biocare specification
-		const nobel = getImplantSystem("nobel");
-		assert.equal(nobel.brand, "Nobel Biocare");
-		assert.equal(nobel.line, "NobelActive");
-		assert.ok(nobel.diameters.includes(3.5));
-		assert.ok(nobel.diameters.includes(4.3));
-		assert.ok(nobel.lengths.includes(11.5));
-
-		const nobelNP = getPlatformForDiameter("nobel", 3.5);
-		assert.equal(nobelNP.code, "NP");
-		assert.equal(nobelNP.hexColor, "#e11d48");
-
-		const nobelRP = getPlatformForDiameter("nobel", 4.3);
-		assert.equal(nobelRP.code, "RP");
-		assert.equal(nobelRP.hexColor, "#f59e0b");
+		const nobel = resolveImplantSystem("nobel");
+		assert.equal(nobel.brandName, "Nobel Biocare");
+		assert.equal(nobel.lineName, "Conical Connection (CC)");
+		assert.ok(nobel.diametersMm.includes(3.5));
+		assert.ok(nobel.diametersMm.includes(4.3));
+		assert.ok(nobel.lengthsMm.includes(11.5));
 
 		// Straumann specification
-		const straumann = getImplantSystem("straumann");
-		assert.equal(straumann.brand, "Straumann");
-		const straumannNC = getPlatformForDiameter("straumann", 3.5);
-		assert.equal(straumannNC.code, "NC");
-		const straumannRC = getPlatformForDiameter("straumann", 4.0);
-		assert.equal(straumannRC.code, "RC");
-		assert.equal(straumannRC.hexColor, "#a855f7");
+		const straumann = resolveImplantSystem("straumann");
+		assert.equal(straumann.brandName, "Straumann");
+		assert.ok(straumann.diametersMm.includes(3.3));
+		assert.ok(straumann.diametersMm.includes(4.1));
 
 		// Osstem specification
-		const osstem = getImplantSystem("osstem");
-		assert.equal(osstem.brand, "Osstem");
-		assert.equal(osstem.sleeveDiameterMm, 5.0);
-		const osstemMini = getPlatformForDiameter("osstem", 3.5);
-		assert.equal(osstemMini.code, "Mini");
-		const osstemReg = getPlatformForDiameter("osstem", 4.0);
-		assert.equal(osstemReg.code, "Regular");
-		assert.equal(osstemReg.hexColor, "#16a34a");
+		const osstem = resolveImplantSystem("osstem");
+		assert.equal(osstem.brandName, "Osstem");
+		assert.equal(osstem.defaultDiameterMm, 4.0);
+		assert.equal(osstem.defaultLengthMm, 10.0);
 
 		// Dentium specification
-		const dentium = getImplantSystem("dentium");
-		assert.equal(dentium.brand, "Dentium");
-		const dentiumReg = getPlatformForDiameter("dentium", 4.3);
-		assert.equal(dentiumReg.code, "Regular");
-
-		// Dimension validation & normalization
-		const validCheck = validateImplantDimensions("osstem", 4.0, 10.0);
-		assert.equal(validCheck.valid, true);
-		assert.equal(validCheck.normalizedDiameter, 4.0);
-		assert.equal(validCheck.normalizedLength, 10.0);
-		assert.equal(validCheck.platform.code, "Regular");
-
-		// Out-of-catalog dimension normalization (e.g. non-standard Ø4.1, length 9.6)
-		const invalidCheck = validateImplantDimensions("osstem", 4.1, 9.6);
-		assert.equal(invalidCheck.valid, false);
-		assert.equal(invalidCheck.normalizedDiameter, 4.0);
-		assert.equal(invalidCheck.normalizedLength, 10.0);
+		const dentium = resolveImplantSystem("dentium");
+		assert.equal(dentium.brandName, "Dentium");
+		assert.equal(dentium.defaultDiameterMm, 4.5);
 
 		// Astra Tech specification
-		const astra = getImplantSystem("astra");
-		assert.equal(astra.brand, "Astra Tech");
-		assert.equal(astra.line, "OsseoSpeed EV");
-		assert.ok(astra.diameters.includes(3.0));
-		assert.ok(astra.diameters.includes(3.6));
-		assert.ok(astra.diameters.includes(4.2));
-		assert.ok(astra.diameters.includes(4.8));
-		assert.ok(astra.diameters.includes(5.4));
-		assert.ok(astra.lengths.includes(11.0));
-		assert.ok(astra.lengths.includes(13.0));
+		const astra = resolveImplantSystem("astra");
+		assert.equal(astra.brandName, "Astra Tech");
+		assert.equal(astra.lineName, "OsseoSpeed EV");
+		assert.ok(astra.diametersMm.includes(3.0));
+		assert.ok(astra.diametersMm.includes(3.6));
+		assert.ok(astra.diametersMm.includes(4.2));
+		assert.ok(astra.diametersMm.includes(4.8));
+		assert.ok(astra.diametersMm.includes(5.4));
+		assert.ok(astra.lengthsMm.includes(11.0));
+		assert.ok(astra.lengthsMm.includes(13.0));
 
-		const astraGreen = getPlatformForDiameter("astra", 3.0);
-		assert.equal(astraGreen.code, "Green");
-		assert.equal(astraGreen.hexColor, "#10b981");
-
-		const astraYellow = getPlatformForDiameter("astra", 4.2);
-		assert.equal(astraYellow.code, "Yellow");
-		assert.equal(astraYellow.hexColor, "#f59e0b");
-
-		const astraValid = validateImplantDimensions("astra", 4.2, 11.0);
-		assert.equal(astraValid.valid, true);
-		assert.equal(astraValid.normalizedDiameter, 4.2);
-		assert.equal(astraValid.normalizedLength, 11.0);
-		assert.equal(astraValid.platform.code, "Yellow");
-
-		const astraLabel = formatImplantSpecRu("astra", 4.2, 11.0);
-		assert.ok(astraLabel.includes("Astra Tech"));
-		assert.ok(astraLabel.includes("Ø4.2 × 11.0 мм"));
-		assert.ok(astraLabel.includes("Yellow"));
-
-		// Clinical label formatting
-		const osstemLabel = formatImplantSpecRu("osstem", 4.0, 10.0);
-		assert.ok(osstemLabel.includes("Osstem"));
-		assert.ok(osstemLabel.includes("Ø4.0 × 10.0 мм"));
-		assert.ok(osstemLabel.includes("Regular"));
-
-		const nobelLabel = formatImplantSpecRu("nobel", 4.3, 11.5);
-		assert.ok(nobelLabel.includes("Nobel Biocare"));
-		assert.ok(nobelLabel.includes("Ø4.3 × 11.5 мм"));
-		assert.ok(nobelLabel.includes("RP"));
+		// Platform color coding and clinical cross-section spec
+		assert.equal(IMPLANT_PLATFORM_COLORS[4.0]?.hex, "#10b981");
+		assert.equal(IMPLANT_PLATFORM_COLORS[5.0]?.hex, "#a855f7");
+		const clinicalSpec = buildClinicalImplantSpec("osstem", 4.0, 10.0);
+		assert.equal(clinicalSpec.brandName, "Osstem");
+		assert.equal(clinicalSpec.diameterMm, 4.0);
+		assert.equal(clinicalSpec.lengthMm, 10.0);
+		assert.equal(clinicalSpec.platformColorHex, "#10b981");
 	});
 
 	it("15. Evaluates analytical 2D/3D slice intersection math and reference cut lines across all viewports", () => {

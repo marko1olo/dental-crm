@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
 import {
 	calculateAlertsFromItems,
@@ -11,7 +12,7 @@ import {
 } from "../../routes/inventory.js";
 
 describe("Inventory Routes Decomposition & Sweet Spot Architecture (Mandates 8b, 8e, 8n, 8x)", () => {
-	const cwd = process.cwd();
+	const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 	const itemCatalogDir = path.resolve(cwd, "apps/api/src/routes/inventory/itemCatalog");
 	const supplierInvoicesDir = path.resolve(cwd, "apps/api/src/routes/inventory/supplierInvoices");
 	const itemCatalogRouter = path.resolve(cwd, "apps/api/src/routes/inventory/itemCatalog/itemCatalogRoutes.ts");

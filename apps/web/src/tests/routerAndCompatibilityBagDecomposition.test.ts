@@ -19,7 +19,7 @@ import {
 
 test("runtimeRouter and appLogicCompatibilityBag Decomposition Compliance Suite", async (t) => {
 	await t.test("1. File limits and whitelist compliance", () => {
-		const root = process.cwd();
+		const root = path.resolve(import.meta.dirname, "../../../..");
 		const whitelistPath = path.join(root, "scripts/file_limits_whitelist.json");
 		const whitelist = JSON.parse(fs.readFileSync(whitelistPath, "utf-8"));
 

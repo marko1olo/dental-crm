@@ -38,7 +38,11 @@ export type {
 	OnboardingWizardModalProps,
 };
 
-export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
+export function renderOnboardingWizardTree(
+	props: OnboardingWizardModalProps,
+	showRapidWizard: boolean,
+	setShowRapidWizard: (val: boolean) => void,
+) {
 	const {
 		currentOnboardingIndex, onboardingSteps, legalReadinessPercent,
 		continueOnboardingInDraftMode, moveOnboardingTo, onboardingStep,
@@ -48,22 +52,7 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 		newChairName, setNewChairName, addChair, onboardingBlockingIssues,
 		dismissOnboarding: onDismissOnboarding, saveClinicProfileFromDraft,
 		clinicProfileSaveState, previousOnboardingStep, nextOnboardingStep,
-		initialShowRapidWizard, showRapidWizard: propShowRapidWizard, onToggleRapidWizard,
 	} = props;
-
-	const [hookShowRapidWizard, setHookShowRapidWizard] = React.useState<boolean>(Boolean(initialShowRapidWizard));
-
-	const showRapidWizard =
-		propShowRapidWizard !== undefined
-			? propShowRapidWizard
-			: hookShowRapidWizard;
-	const setShowRapidWizard = (val: boolean) => {
-		if (onToggleRapidWizard) {
-			onToggleRapidWizard(val);
-		} else {
-			setHookShowRapidWizard(val);
-		}
-	};
 
 	if (showRapidWizard) {
 		return (
@@ -250,4 +239,17 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 			</section>
 		</div>
 	);
+}
+
+export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
+	const [hookShowRapidWizard, setHookShowRapidWizard] = React.useState<boolean>(Boolean(props.initialShowRapidWizard));
+	const showRapidWizard = props.showRapidWizard !== undefined ? props.showRapidWizard : hookShowRapidWizard;
+	const setShowRapidWizard = (val: boolean) => {
+		if (props.onToggleRapidWizard) {
+			props.onToggleRapidWizard(val);
+		} else {
+			setHookShowRapidWizard(val);
+		}
+	};
+	return renderOnboardingWizardTree(props, showRapidWizard, setShowRapidWizard);
 }

@@ -268,10 +268,13 @@ describe("файлы защищённого API доходят до экрана
 
 	it("дневник приёма рисует объектный адрес, а акт сверки скачивается кнопкой", () => {
 		// Место ОТРИСОВКИ: ответ должен доходить до экрана, а не только до памяти.
-		const photoUpload = readWeb(
-			join("components", "VisitDiaryPhotoUpload.tsx"),
-		);
-		assert.match(photoUpload, /fetchAuthedApiFileObjectUrl\(attachment\.url\)/);
+		const photoUpload = [
+			readWeb(join("components", "VisitDiaryPhotoUpload.tsx")),
+			readWeb(join("components", "visit", "photoUpload", "useVisitDiaryPhotoUploadState.ts")),
+			readWeb(join("components", "visit", "photoUpload", "VisitDiaryPhotoThumbnailGrid.tsx")),
+			readWeb(join("components", "visit", "photoUpload", "VisitDiaryPhotoUpload.tsx")),
+		].join("\n");
+		assert.match(photoUpload, /fetchAuthedApiFileObjectUrl\((?:attachment|att)\.url\)/);
 		assert.match(photoUpload, /src=\{objectUrl\}/);
 		assert.match(
 			photoUpload,

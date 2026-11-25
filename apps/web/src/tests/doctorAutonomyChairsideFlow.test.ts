@@ -10,6 +10,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+const REPO_ROOT = path.resolve(import.meta.dirname, "../../../..");
 import { validateBuyerInn } from "../components/finance/cashboxInnValidation.js";
 import {
 	validateCheckoutSplit,
@@ -23,11 +24,11 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 	describe("1. Express Schedule Booking (<=5s, Zero Roadblocks)", () => {
 		it("QuickBookingDrawer features 1-click emergency CITO intake and non-blocking autonomy", () => {
 			const drawerFilePath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/schedule/QuickBookingDrawer.tsx",
 			);
 			const inlinePatientPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/schedule/quickBookingInlinePatient.ts",
 			);
 			assert.ok(fs.existsSync(drawerFilePath), "QuickBookingDrawer.tsx must exist");
@@ -49,11 +50,11 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 
 		it("useQuickBookingSubmit: Saving without selected patient NEVER deadlocks with error banner", () => {
 			const stateFilePath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/schedule/useQuickBookingSubmit.ts",
 			);
 			const submitEntitiesPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/schedule/quickBookingInlinePatient.ts",
 			);
 			assert.ok(fs.existsSync(stateFilePath), "useQuickBookingSubmit.ts must exist");
@@ -78,7 +79,7 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 
 		it("QuickBookingDrawer: Zero requirement for assistant or branch selection", () => {
 			const modalFilePath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/schedule/QuickBookingDrawer.tsx",
 			);
 			assert.ok(fs.existsSync(modalFilePath), "QuickBookingDrawer.tsx must exist");
@@ -99,7 +100,7 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 	describe("2. Chairside EMK & Physiological Norm in 1 Click", () => {
 		it("EmkToolbar: Features prominent 1-click physiological norm button in action bar", () => {
 			const toolbarPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/visit/emk/EmkToolbar.tsx",
 			);
 			assert.ok(fs.existsSync(toolbarPath), "EmkToolbar.tsx must exist");
@@ -121,11 +122,11 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 
 		it("VisitEmkTab: 'Завершить приём' button is NEVER disabled due to unfilled secondary fields", () => {
 			const emkTabPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/visit/VisitEmkTab.tsx",
 			);
 			const completionSectionPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/visit/emkTab/VisitEmkCompletionSection.tsx",
 			);
 			assert.ok(fs.existsSync(emkTabPath), "VisitEmkTab.tsx must exist");
@@ -156,15 +157,15 @@ describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 
 		it("VisitEmkTab & RecordDiariesTab: Autosave safeguards drafts against data loss", () => {
 			const emkTabPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/visit/VisitEmkTab.tsx",
 			);
 			const emkAutosaveHookPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/visit/emkTab/useVisitEmkAutosave.ts",
 			);
 			const diariesTabPath = path.resolve(
-				process.cwd(),
+				REPO_ROOT,
 				"apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx",
 			);
 			const emkContent =

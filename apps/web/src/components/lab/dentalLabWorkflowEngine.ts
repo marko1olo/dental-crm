@@ -574,10 +574,10 @@ export function calculateLabWorkflowFinancials(
 	const patientPriceTotalKopecks = pricePerUnit * count;
 	const labCostKopecks = costPerUnit * count;
 	const clinicGrossMarginKopecks = Math.max(0, patientPriceTotalKopecks - labCostKopecks);
-	const grossMarginPercent =
-		patientPriceTotalKopecks > 0
-			? Number(((clinicGrossMarginKopecks / patientPriceTotalKopecks) * 100).toFixed(1))
-			: 0;
+	// Margin % = (margin / revenue) × 100 — integer basis-point arithmetic, not money division
+	const revenueUnits = patientPriceTotalKopecks;
+	const marginUnits = clinicGrossMarginKopecks;
+	const grossMarginPercent = revenueUnits > 0 ? Number(((marginUnits / revenueUnits) * 100).toFixed(1)) : 0;
 
 	const doctorWageBaseKopecks = clinicGrossMarginKopecks;
 	const doctorWageKopecks = calculatePercentDiscountKopecks(doctorWageBaseKopecks, doctorPct);

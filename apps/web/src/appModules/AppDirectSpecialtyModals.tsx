@@ -7,6 +7,7 @@ import React, { Suspense } from "react";
 import { lazyWithRetry } from "../lib/lazyWithRetry";
 import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "../components/GlobalToast";
+import { useAppStore } from "../store/appStore";
 import { useVisitStore } from "../store/visitStore";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 import type { ToothData } from "../components/odontogram/ToothChart";
@@ -43,7 +44,6 @@ export interface SpecialtyModalsAppLogic {
 	readonly activePatient?: { id: string; fullName?: string; name?: string; birthDate?: string | null | undefined; cardNumber?: string; cardId?: string } | null | undefined;
 	readonly activeVisitPatient?: { id: string; fullName?: string; name?: string; birthDate?: string | null | undefined; cardNumber?: string; cardId?: string } | null | undefined;
 	readonly activeDoctor?: { id: string; fullName?: string; name?: string } | null | undefined;
-	readonly activeTooth?: string | number | null | undefined;
 }
 
 interface AppDirectSpecialtyModalsProps {
@@ -56,7 +56,9 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 	const { activePatient, activeVisitPatient, activeDoctor } = appLogic;
 	const staffUser = sessionAuth.activeStaffUser;
 	const patient = activePatient || activeVisitPatient;
-	const activeToothNumber = useVisitStore((s) => s.activeToothNumber) ?? (typeof appLogic?.activeTooth === "number" ? appLogic.activeTooth : 11);
+	const visitToothNumber = useVisitStore((s) => s.activeToothNumber);
+	const appActiveTooth = useAppStore((s) => s.activeTooth);
+	const activeToothNumber = visitToothNumber ?? (typeof appActiveTooth === "number" ? appActiveTooth : 11);
 	const visitToothRecord = useVisitStore((s) => s.visitToothRecordsByCode[String(activeToothNumber)]);
 	const reactiveToothData: ToothData = visitToothRecord
 		? { toothNumber: activeToothNumber, state: normalizeToothState(visitToothRecord.state), surfaces: visitToothRecord.surfaces ?? [] }

@@ -18,6 +18,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -38,7 +39,8 @@ import {
 import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
 import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
 
-const SANPIN_DIR = path.resolve(process.cwd(), "apps/web/src/components/sanpin");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SANPIN_DIR = path.resolve(__dirname, "..");
 
 describe("SANPIN & STERILIZATION CANONICAL SSOT SUITE", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {

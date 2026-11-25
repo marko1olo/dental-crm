@@ -52,9 +52,9 @@ export const PediatricModalHeader: React.FC<PediatricModalHeaderProps> = ({
 				<button
 					type="button"
 					onClick={() => onTabChange("timeline")}
-					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-medium rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 						activeTab === "timeline"
-							? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
+							? "border-[var(--teal)] text-[var(--teal)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
 							: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 					}`}
 				>
@@ -65,9 +65,9 @@ export const PediatricModalHeader: React.FC<PediatricModalHeaderProps> = ({
 				<button
 					type="button"
 					onClick={() => onTabChange("cariogram")}
-					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-medium rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 						activeTab === "cariogram"
-							? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
+							? "border-[var(--teal)] text-[var(--teal)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
 							: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 					}`}
 				>
@@ -78,9 +78,9 @@ export const PediatricModalHeader: React.FC<PediatricModalHeaderProps> = ({
 				<button
 					type="button"
 					onClick={() => onTabChange("resorption")}
-					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-medium rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 						activeTab === "resorption"
-							? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
+							? "border-[var(--teal)] text-[var(--teal)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
 							: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 					}`}
 				>
@@ -91,9 +91,9 @@ export const PediatricModalHeader: React.FC<PediatricModalHeaderProps> = ({
 				<button
 					type="button"
 					onClick={() => onTabChange("frankl")}
-					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+					className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-medium rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 						activeTab === "frankl"
-							? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
+							? "border-[var(--teal)] text-[var(--teal)] bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] shadow-xs"
 							: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] hover:text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 					}`}
 				>

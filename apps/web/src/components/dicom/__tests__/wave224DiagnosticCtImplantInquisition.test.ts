@@ -13,13 +13,7 @@ import { fileURLToPath } from "node:url";
 
 import {
 	CANONICAL_IMPLANT_SYSTEMS,
-	MIS_SYSTEM,
-	NOBEL_BIOCARE_SYSTEM,
-	OSSTEM_SYSTEM,
-	STRAUMANN_SYSTEM,
-	DENTIUM_SYSTEM,
-	getImplantSystem,
-	normalizeSystemId,
+	resolveImplantSystem,
 } from "../implantCatalog";
 import {
 	IMPLANT_BRANDS_METADATA,
@@ -48,29 +42,29 @@ describe("Wave 224 Inquisition: Real Diagnostic Engines, DICOM P10 & Outpatient 
 	// ─── 1. OUTPATIENT IMPLANT LIBRARY VERIFICATION ───────────────────────────
 	describe("1. Outpatient Dental Implant Library (Nobel, Straumann, Osstem, Dentium, MIS)", () => {
 		it("1.1 CANONICAL_IMPLANT_SYSTEMS contains all 5 outpatient dental brands with exact clinical specs", () => {
-			const systemIds = CANONICAL_IMPLANT_SYSTEMS.map((s) => s.id);
-			assert.ok(systemIds.includes(OSSTEM_SYSTEM.id), "Must include Osstem");
-			assert.ok(systemIds.includes(STRAUMANN_SYSTEM.id), "Must include Straumann");
-			assert.ok(systemIds.includes(NOBEL_BIOCARE_SYSTEM.id), "Must include Nobel Biocare");
-			assert.ok(systemIds.includes(DENTIUM_SYSTEM.id), "Must include Dentium");
-			assert.ok(systemIds.includes(MIS_SYSTEM.id), "Must include MIS Implants");
+			const systemIds = Object.keys(CANONICAL_IMPLANT_SYSTEMS);
+			assert.ok(systemIds.includes("osstem"), "Must include Osstem");
+			assert.ok(systemIds.includes("straumann"), "Must include Straumann");
+			assert.ok(systemIds.includes("nobel_biocare"), "Must include Nobel Biocare");
+			assert.ok(systemIds.includes("dentium"), "Must include Dentium");
+			assert.ok(systemIds.includes("mis"), "Must include MIS Implants");
 
-			// Verify MIS Implants clinical specs
-			assert.equal(MIS_SYSTEM.brand, "MIS Implants");
-			assert.equal(MIS_SYSTEM.country, "Израиль");
-			assert.ok(MIS_SYSTEM.diameters.includes(3.75), "MIS must offer 3.75 mm diameter");
-			assert.ok(MIS_SYSTEM.diameters.includes(4.2), "MIS must offer 4.2 mm diameter");
-			assert.ok(MIS_SYSTEM.lengths.includes(10.0), "MIS must offer 10.0 mm length");
-			assert.ok(MIS_SYSTEM.lengths.includes(11.5), "MIS must offer 11.5 mm length");
+			const mis = CANONICAL_IMPLANT_SYSTEMS.mis;
+			assert.equal(mis.brandName, "MIS Implants");
+			assert.equal(mis.countryRu, "Израиль");
+			assert.ok(mis.diametersMm.includes(3.75), "MIS must offer 3.75 mm diameter");
+			assert.ok(mis.diametersMm.includes(4.2), "MIS must offer 4.2 mm diameter");
+			assert.ok(mis.lengthsMm.includes(10.0), "MIS must offer 10.0 mm length");
+			assert.ok(mis.lengthsMm.includes(11.5), "MIS must offer 11.5 mm length");
 		});
 
 		it("1.2 Normalizes system IDs including mis, osstem, straumann, nobel, dentium", () => {
-			assert.equal(normalizeSystemId("MIS"), "mis-implants");
-			assert.equal(normalizeSystemId("mis-seven"), "mis-implants");
-			assert.equal(normalizeSystemId("Osstem"), "osstem-ts3");
-			assert.equal(normalizeSystemId("straumann"), "straumann-blx");
-			assert.equal(normalizeSystemId("nobel biocare"), "nobel-active");
-			assert.equal(normalizeSystemId("Dentium SuperLine"), "dentium-superline");
+			assert.equal(resolveImplantSystem("MIS").id, "mis");
+			assert.equal(resolveImplantSystem("mis-seven").id, "mis");
+			assert.equal(resolveImplantSystem("Osstem").id, "osstem");
+			assert.equal(resolveImplantSystem("straumann").id, "straumann");
+			assert.equal(resolveImplantSystem("nobel biocare").id, "nobel_biocare");
+			assert.equal(resolveImplantSystem("Dentium SuperLine").id, "dentium");
 		});
 
 		it("1.3 Implants catalog module exports fixtures and metadata for all 5 brands", () => {
@@ -236,10 +230,15 @@ describe("Wave 224 Inquisition: Real Diagnostic Engines, DICOM P10 & Outpatient 
 	// ─── 4. ZERO-DIORAMA & HONEST EMPTY STATE AUDIT (MANDATE 11 & 8s) ─────────
 	describe("4. Zero-Diorama Law (Mandate 11 & 8s): Elimination of Fake Canvas Dioramas", () => {
 		it("4.1 CbctMprImplantStudioModal contains honest empty dropzone and no procedural bone gradient generators", () => {
-			const source = fs.readFileSync(
+			const modalSource = fs.readFileSync(
 				path.resolve(__dirname, "../../radiology/CbctMprImplantStudioModal.tsx"),
 				"utf-8",
 			);
+			const dropzoneSource = fs.readFileSync(
+				path.resolve(__dirname, "../../radiology/mpr/CbctEmptyVolumeDropzone.tsx"),
+				"utf-8",
+			);
+			const source = `${modalSource}\n${dropzoneSource}`;
 
 			// Must NOT contain fake canvas diorama generators
 			assert.equal(

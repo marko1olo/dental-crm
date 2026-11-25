@@ -60,7 +60,7 @@ describe("Patient Field Requirements & Validation Engine (Feature #35)", () => {
 			requireAdvertisingSource: true,
 		};
 
-		// Missing source
+		// Missing source — advisory only per Mandate 8e (does not block patient intake)
 		const missingRes = validatePatientDraftWithRequirements(
 			{
 				fullName: "Смирнова Елена Васильевна",
@@ -69,9 +69,10 @@ describe("Patient Field Requirements & Validation Engine (Feature #35)", () => {
 			},
 			strictReqs,
 		);
-		assert.equal(missingRes.isValid, false);
-		assert.ok(missingRes.errors.advertisingSource);
+		assert.equal(missingRes.isValid, true);
+		assert.equal(missingRes.errors.advertisingSource, undefined);
 		assert.ok(missingRes.missingRequiredLabels.includes("Рекламный источник"));
+		assert.ok(missingRes.guidanceMessage?.includes("не блокируют регистрацию"));
 
 		// Filled source
 		const validRes = validatePatientDraftWithRequirements(
@@ -91,7 +92,7 @@ describe("Patient Field Requirements & Validation Engine (Feature #35)", () => {
 			requireSnils: true,
 		};
 
-		// Missing SNILS
+		// Missing SNILS — advisory recommendation only per Mandate 8e (never blocks intake)
 		const missingRes = validatePatientDraftWithRequirements(
 			{
 				fullName: "Кузнецов Петр Сергеевич",
@@ -100,8 +101,9 @@ describe("Patient Field Requirements & Validation Engine (Feature #35)", () => {
 			},
 			egiszReqs,
 		);
-		assert.equal(missingRes.isValid, false);
-		assert.ok(missingRes.errors.snils);
+		assert.equal(missingRes.isValid, true);
+		assert.equal(missingRes.errors.snils, undefined);
+		assert.ok(missingRes.missingRequiredLabels.includes("СНИЛС"));
 
 		// Invalid SNILS format (less than 11 digits)
 		const invalidRes = validatePatientDraftWithRequirements(

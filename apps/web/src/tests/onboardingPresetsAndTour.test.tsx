@@ -253,9 +253,11 @@ describe("Mandates & Quality Invariants Verification (8b, 8d, 8e)", () => {
 		"apps/web/src/components/settings/OwnerSettingsSection.tsx",
 	];
 
+	const repoRoot = path.resolve(import.meta.dirname, "../../../..");
+
 	it("enforces Mandate 8b: file length strictly <= 800 lines for all new components", () => {
 		for (const relativePath of filesToCheck) {
-			const fullPath = path.resolve(process.cwd(), relativePath);
+			const fullPath = path.resolve(repoRoot, relativePath);
 			assert.ok(fs.existsSync(fullPath), `File must exist: ${relativePath}`);
 			const content = fs.readFileSync(fullPath, "utf-8");
 			const lineCount = content.split("\n").length;
@@ -271,7 +273,7 @@ describe("Mandates & Quality Invariants Verification (8b, 8d, 8e)", () => {
 		const cartoonEmojiRegex = /[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}]/u;
 
 		for (const relativePath of filesToCheck) {
-			const fullPath = path.resolve(process.cwd(), relativePath);
+			const fullPath = path.resolve(repoRoot, relativePath);
 			const content = fs.readFileSync(fullPath, "utf-8");
 			const lines = content.split("\n");
 			const emojiViolations: { line: number; text: string }[] = [];

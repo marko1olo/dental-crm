@@ -24,6 +24,8 @@ import {
 } from "../components/sanpin/waste/medicalWastePresets.js";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 test("Medical Waste Presets: statutory SanPiN 2.1.3684-21 waste classes integrity", () => {
 	assert.equal(SANPIN_MEDICAL_WASTE_CLASSES.length, 4, "Must define Class A, B, V, and G");
@@ -222,7 +224,7 @@ test("Medical Waste Technological Journal & Transfer Act generation", () => {
 });
 
 test("MedicalWasteJournalModal: component export and contract verification", () => {
-	const modalFile = path.resolve("apps/web/src/components/sanpin/waste/MedicalWasteJournalModal.tsx");
+	const modalFile = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../components/sanpin/waste/MedicalWasteJournalModal.tsx");
 	assert.ok(fs.existsSync(modalFile), "MedicalWasteJournalModal.tsx exists");
 	const content = fs.readFileSync(modalFile, "utf-8");
 	assert.ok(content.includes("export const MedicalWasteJournalModal"), "Exports MedicalWasteJournalModal");

@@ -24,6 +24,7 @@ export const familyPaymentSchema = z
 
 export const familyRefundSchema = z
 	.object({
+		organizationId: z.string().uuid().optional(),
 		familyGroupId: z.string().uuid(),
 		amountRub: positiveMoneyRubSchema,
 		amountKopecks: z.number().int().positive().optional(),
@@ -38,6 +39,7 @@ export const familyRefundSchema = z
 
 export const familyTopupSchema = z
 	.object({
+		organizationId: z.string().uuid().optional(),
 		familyGroupId: z.string().uuid(),
 		amountRub: positiveMoneyRubSchema.refine((value) => value <= 10_000_000, {
 			message: "сумма одного пополнения не может превышать 10 000 000 ₽",

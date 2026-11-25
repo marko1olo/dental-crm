@@ -139,15 +139,13 @@ describe("Omnichannel Bot Engine & Token Vault Inquisition", () => {
 				timestamp: Date.now(),
 			};
 
-			let rateLimited = false;
-			// 60 запросов подряд обязаны исчерпать ведро в 40 токенов
-			for (let i = 0; i < 60; i++) {
-				const res = await engine.dispatchInboundMessage(msg);
-				if (!res.ok && res.error?.includes("Rate limit exceeded")) {
-					rateLimited = true;
-					break;
-				}
-			}
+			// 60 параллельных запросов обязаны исчерпать ведро в 40 токенов
+			const burst = await Promise.all(
+				Array.from({ length: 60 }, () => engine.dispatchInboundMessage(msg)),
+			);
+			const rateLimited = burst.some(
+				(res) => !res.ok && res.error?.includes("Rate limit exceeded"),
+			);
 
 			assert.strictEqual(rateLimited, true, "Рейт-лимитер обязан заблокировать флуд");
 		});

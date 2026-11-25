@@ -100,8 +100,9 @@ describe("Doctor Autonomy & Warranty Reception (0.00 ₽) — Mandates 8e, 8p", 
 		});
 
 		assert.equal(result.success, true);
-		assert.equal(result.fiscalSign, "0000000000");
-		assert.equal(result.fiscalDocNum, "0");
+		assert.equal(result.status, "printed");
+		assert.equal(result.fiscalSign, undefined);
+		assert.equal(result.fiscalDocNum, undefined);
 	});
 
 	it("immediately marks 0.00 ₽ receipts as printed in FiscalReceiptQueueManager without queuing to KKT", () => {

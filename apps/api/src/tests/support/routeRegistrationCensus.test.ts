@@ -233,7 +233,7 @@ describe("перепись проводки маршрутных модулей"
 		);
 		assert.deepEqual(
 			child.chain,
-			["server.ts", "documents.ts", "documents/create.ts"],
+			["routeRegistrar.ts", "documents.ts", "documents/create.ts"],
 			"цепочка проводки через routes/documents.ts не распознана — доверять вердиктам нельзя",
 		);
 		const registeredCount = census.modules.filter(

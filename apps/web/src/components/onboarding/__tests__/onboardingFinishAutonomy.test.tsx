@@ -20,6 +20,7 @@ import {
 } from "../../../workspaceUiLabels";
 import {
 	OnboardingWizardModal,
+	renderOnboardingWizardTree,
 	type OnboardingWizardModalProps,
 } from "../OnboardingWizardModal";
 
@@ -300,7 +301,7 @@ describe("Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)", () => {
 			nextOnboardingStep: null,
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const finishButton = findFinishButton(tree);
 
 		expect(finishButton).not.toBeNull();
@@ -351,7 +352,7 @@ describe("Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)", () => {
 				},
 			});
 
-			const tree = OnboardingWizardModal(props);
+			const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 			const finishButton = findFinishButton(tree);
 
 			expect(finishButton).not.toBeNull();
@@ -400,7 +401,7 @@ describe("Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)", () => {
 			},
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const nextButton = findNextButton(tree);
 
 		expect(nextButton).not.toBeNull();
@@ -448,7 +449,7 @@ describe("Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)", () => {
 			},
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const finishButton = findFinishButton(tree);
 
 		expect(finishButton).not.toBeNull();
@@ -483,7 +484,7 @@ describe("Onboarding Wizard Finish Autonomy (Mandates 8e, 8n)", () => {
 			},
 		});
 
-		const tree = OnboardingWizardModal(soloDoctorProps);
+		const tree = renderOnboardingWizardTree(soloDoctorProps, Boolean(soloDoctorProps.showRapidWizard ?? soloDoctorProps.initialShowRapidWizard), () => {});
 		const finishButton = findFinishButton(tree);
 
 		// Button is never greyed out or unclickable

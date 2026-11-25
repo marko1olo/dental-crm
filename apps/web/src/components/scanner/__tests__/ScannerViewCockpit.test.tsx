@@ -13,6 +13,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -124,14 +125,15 @@ describe("Document Scanner & SanPiN Workspace Suite (ScannerView)", () => {
 	});
 
 	it("5. Verifies Zero Cartoon Emojis, Zero Dev-Jargon and Zero Soviet forms in Scanner UI files", () => {
+		const webSrcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 		const scannerFiles = [
-			path.resolve(process.cwd(), "apps/web/src/ScannerView.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/ScannerHeaderBar.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/ScannerDocumentWorkspace.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/ScannerDocumentStage.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/ScannerPatientIntakePanel.tsx"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/documentScannerEngine.ts"),
-			path.resolve(process.cwd(), "apps/web/src/components/scanner/useScannerCockpit.ts"),
+			path.resolve(webSrcRoot, "ScannerView.tsx"),
+			path.resolve(webSrcRoot, "components/scanner/ScannerHeaderBar.tsx"),
+			path.resolve(webSrcRoot, "components/scanner/ScannerDocumentWorkspace.tsx"),
+			path.resolve(webSrcRoot, "components/scanner/ScannerDocumentStage.tsx"),
+			path.resolve(webSrcRoot, "components/scanner/ScannerPatientIntakePanel.tsx"),
+			path.resolve(webSrcRoot, "components/scanner/documentScannerEngine.ts"),
+			path.resolve(webSrcRoot, "components/scanner/useScannerCockpit.ts"),
 		];
 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]/u;
@@ -168,8 +170,8 @@ describe("Document Scanner & SanPiN Workspace Suite (ScannerView)", () => {
 
 	it("6. Verifies CSS tokenization and mobile touch target standards", () => {
 		const cssPath = path.resolve(
-			process.cwd(),
-			"apps/web/src/components/scanner/scannerCockpit.css",
+			path.dirname(fileURLToPath(import.meta.url)),
+			"../scannerCockpit.css",
 		);
 		assert.ok(fs.existsSync(cssPath), "scannerCockpit.css must exist");
 		const css = fs.readFileSync(cssPath, "utf8");

@@ -99,9 +99,23 @@ describe("ответ на несуществующий адрес понятен
 	});
 
 	test("обработчик подключён в server.ts, а не просто объявлен", () => {
-		const serverFile = path.join(import.meta.dirname, "..", "..", "server.ts");
-		const source = readFileSync(serverFile, "utf8");
-		const callLines = source
+		const pluginRegistrarFile = path.join(
+			import.meta.dirname,
+			"..",
+			"..",
+			"serverModules",
+			"pluginRegistrar.ts",
+		);
+		const bootstrapFile = path.join(
+			import.meta.dirname,
+			"..",
+			"..",
+			"serverModules",
+			"index.ts",
+		);
+		const registrarSource = readFileSync(pluginRegistrarFile, "utf8");
+		const bootstrapSource = readFileSync(bootstrapFile, "utf8");
+		const callLines = registrarSource
 			.split(/\r?\n/)
 			.map((line, index) => ({ line: line.trim(), number: index + 1 }))
 			.filter((entry) =>
@@ -110,9 +124,12 @@ describe("ответ на несуществующий адрес понятен
 		assert.equal(
 			callLines.length,
 			1,
-			"В server.ts должен быть ровно один вызов registerRouteNotFoundHandler. " +
-				`Найдено вызовов: ${callLines.length}. Ноль означает, что русский ответ существует только в исходниках, ` +
-				"а клиника по-прежнему читает английский текст Fastify.",
+			"В serverModules/pluginRegistrar.ts должен быть ровно один вызов registerRouteNotFoundHandler. " +
+				`Найдено вызовов: ${callLines.length}.`,
+		);
+		assert.ok(
+			bootstrapSource.includes("registerCorePlugins("),
+			"serverModules/index.ts обязан вызывать registerCorePlugins(app).",
 		);
 	});
 });

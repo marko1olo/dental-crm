@@ -161,10 +161,24 @@ export const fdiToothRecordSchema = z.object({
 	customNotes: z.string().trim().max(500).nullable().optional(),
 });
 export type FdiToothRecord = z.infer<typeof fdiToothRecordSchema>;
+export interface ToothFormulaFdiEntry {
+	readonly toothNumber?: number | string | undefined;
+	readonly statusCode?: ToothClinicalStatusCode | string | undefined;
+	readonly condition?: string | null | undefined;
+	readonly surfaces?: readonly ToothSurface[] | readonly string[] | Record<string, unknown> | null | undefined;
+	readonly mobility?: "none" | "degree_1" | "degree_2" | "degree_3" | string | undefined;
+	readonly furcationInvolvement?: "none" | "class_1" | "class_2" | "class_3" | string | undefined;
+	readonly probingDepthMm?: number | null | undefined;
+	readonly recessionMm?: number | null | undefined;
+	readonly rootCanalsCount?: number | null | undefined;
+	readonly diagnosisIcd10?: string | null | undefined;
+	readonly customNotes?: string | null | undefined;
+}
 export type DentalConditionCode = ToothClinicalStatusCode;
 export type DentalSurfaceName = ToothSurface;
-export type ToothFormulaFdiState = Record<number, any>;
-export type PeriodontalCpitnSextantCode = any;
+export type ToothFormulaFdiState = Record<number, FdiToothRecord | ToothFormulaFdiEntry>;
+export type PeriodontalCpitnSextantCode = CpitnSextantCode;
+export type DmftToothInput = FdiToothRecord | ToothFormulaFdiEntry;
 export const DENTAL_CONDITION_LABELS: Record<string, string> = toothStatusCodeLabels;
 
 /** Список всех 32 постоянных зубов FDI */
@@ -200,7 +214,7 @@ export type DmftIndex = z.infer<typeof dmftIndexSchema>;
 
 /** Калькулятор индекса КПУ по зубной формуле */
 export function calculateDmftFromOdontogram(
-	teethInput: readonly any[] | Record<number | string, any>,
+	teethInput: readonly DmftToothInput[] | Record<number | string, DmftToothInput>,
 ): DmftIndex & {
 	dmftTotal: number;
 	intensityLevelLabel: string;
@@ -260,6 +274,7 @@ export function calculateDmftFromOdontogram(
 	];
 
 	for (const tooth of teeth) {
+		if (!tooth) continue;
 		const num = Number(tooth.toothNumber);
 		const isDeciduous = num >= 51 && num <= 85;
 		const cond = tooth.condition ?? tooth.statusCode ?? "H";

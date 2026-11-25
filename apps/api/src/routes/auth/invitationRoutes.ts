@@ -85,7 +85,7 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 			 * Экранную часть уже починили (59a886a2c, список ролей выведен из схемы), но
 			 * сервер обязан отказывать сам: клиент — не место для проверки прав.
 			 */
-			const parsedRole = staffRoleSchema.safeParse(role);
+			const parsedRole = staffRoleSchema.exclude(["admin"]).safeParse(role);
 			if (!parsedRole.success) {
 				return reply.code(400).send({
 					error: "ValidationError",

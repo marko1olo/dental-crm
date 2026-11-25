@@ -19,6 +19,7 @@ import {
 } from "../../../workspaceUiLabels";
 import {
 	OnboardingWizardModal,
+	renderOnboardingWizardTree,
 	type OnboardingWizardModalProps,
 } from "../OnboardingWizardModal";
 
@@ -290,7 +291,7 @@ describe("Onboarding Wizard Dismissal Freedom & Autonomy (Mandates 8e, 8n)", () 
 			],
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const dismissButton = findDismissButton(tree);
 
 		expect(dismissButton).not.toBeNull();
@@ -327,7 +328,7 @@ describe("Onboarding Wizard Dismissal Freedom & Autonomy (Mandates 8e, 8n)", () 
 			},
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const dismissButton = findDismissButton(tree);
 
 		expect(dismissButton).not.toBeNull();
@@ -355,7 +356,7 @@ describe("Onboarding Wizard Dismissal Freedom & Autonomy (Mandates 8e, 8n)", () 
 			},
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const dismissButton = findDismissButton(tree);
 
 		expect(dismissButton).not.toBeNull();
@@ -383,7 +384,7 @@ describe("Onboarding Wizard Dismissal Freedom & Autonomy (Mandates 8e, 8n)", () 
 			},
 		});
 
-		const tree = OnboardingWizardModal(props);
+		const tree = renderOnboardingWizardTree(props, Boolean(props.showRapidWizard ?? props.initialShowRapidWizard), () => {});
 		const dismissButton = findDismissButton(tree);
 
 		expect(dismissButton).not.toBeNull();
@@ -416,7 +417,7 @@ describe("Onboarding Wizard Dismissal Freedom & Autonomy (Mandates 8e, 8n)", () 
 			},
 		});
 
-		const tree = OnboardingWizardModal(soloDoctorProps);
+		const tree = renderOnboardingWizardTree(soloDoctorProps, Boolean(soloDoctorProps.showRapidWizard ?? soloDoctorProps.initialShowRapidWizard), () => {});
 		const dismissButton = findDismissButton(tree);
 
 		// Doctor can immediately dismiss the wizard to accept emergency patient

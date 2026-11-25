@@ -343,6 +343,6 @@ export function denteApiCensus(): RouteRegistrationCensus {
 	const apiSrc = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 	return censusRouteModules({
 		routesDir: path.join(apiSrc, "routes"),
-		entryFile: path.join(apiSrc, "server.ts"),
+		entryFile: path.join(apiSrc, "serverModules", "routeRegistrar.ts"),
 	});
 }

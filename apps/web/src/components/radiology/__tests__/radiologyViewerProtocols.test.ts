@@ -176,7 +176,7 @@ test("DicomViewerModal: 1-клик Норма, опциональный ИИ б�
 	assert.ok(!source.includes("⚡ Норма"), "Сырой эмодзи молнии ⚡ запрещен в кнопке нормы");
 });
 
-test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 16 анатомических ориентиров", { timeout: 15000 }, async () => {
+test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 24 анатомических ориентира", { timeout: 15000 }, async () => {
 	const { LANDMARK_CLINICAL_ROLES, getRequiredLandmarksForMeasurement } = await import(
 		"../../orthodontics/cephalometricMath.js"
 	);
@@ -184,7 +184,7 @@ test("Cephalometrics: LANDMARK_CLINICAL_ROLES покрывает все 16 ан�
 		"../../orthodontics/cephalometricMath.js"
 	);
 
-	assert.equal(CEPHALOMETRIC_LANDMARKS.length, 16, "Должно быть ровно 16 анатомических ориентиров");
+	assert.equal(CEPHALOMETRIC_LANDMARKS.length, 24, "Должно быть ровно 24 анатомических ориентира");
 
 	for (const lm of CEPHALOMETRIC_LANDMARKS) {
 		const role = LANDMARK_CLINICAL_ROLES[lm.key];
@@ -285,23 +285,25 @@ test("Cephalometrics: Циклический обход нерасставлен
 		"../../orthodontics/cephalometricMath.js"
 	);
 
-	const landmarks = {
+	const landmarks: Record<string, { x: number; y: number } | undefined> = {
 		S: { x: 10, y: 10 },
 		N: { x: 20, y: 20 },
 		// Or и Po пропущены
 		ANS: { x: 30, y: 30 },
-		// L1a установлена последней
+		// L1a и Mo установлены в конце списка
 		L1a: { x: 100, y: 100 },
+		Mo: { x: 110, y: 110 },
 	};
 
-	// Эмулируем установку последней точки в массиве (L1a, индекс 15)
-	const currentIndex = CEPHALOMETRIC_LANDMARKS.findIndex((l) => l.key === "L1a");
+	// Эмулируем установку последней точки в массиве (Mo)
+	const lastKey = CEPHALOMETRIC_LANDMARKS[CEPHALOMETRIC_LANDMARKS.length - 1]!.key;
+	const currentIndex = CEPHALOMETRIC_LANDMARKS.findIndex((l) => l.key === lastKey);
 	const count = CEPHALOMETRIC_LANDMARKS.length;
 
 	const nextUnplaced = Array.from({ length: count }, (_, offset) => {
 		const idx = (currentIndex + 1 + offset) % count;
 		return CEPHALOMETRIC_LANDMARKS[idx]!;
-	}).find((l) => l.key !== "L1a" && !(landmarks as any)[l.key]);
+	}).find((l) => l.key !== lastKey && !landmarks[l.key]);
 
 	assert.ok(nextUnplaced, "Циклический поиск обязан найти пропущенную точку");
 	assert.equal(

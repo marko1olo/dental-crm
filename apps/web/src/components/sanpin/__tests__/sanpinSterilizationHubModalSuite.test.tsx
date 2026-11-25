@@ -10,6 +10,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -17,10 +18,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
 import { AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, calculateBatchStockDeduction, createOneClickShiftBatch } from "../sanpinCatalogData";
 
+const sanpinDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
 describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {
 		it("SterilizationBatchCycleModal.tsx является каноническим студийным компонентом (Мандат 8b/8zi)", () => {
-			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx");
+			const filePath = path.join(sanpinDir, "SterilizationBatchCycleModal.tsx");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
 				lines >= 250 && lines <= 350,
@@ -29,7 +32,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 		});
 
 		it("sanpinCatalogData.ts находится строго в диапазоне 300–380 строк", () => {
-			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/sanpinCatalogData.ts");
+			const filePath = path.join(sanpinDir, "sanpinCatalogData.ts");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
 				lines >= 300 && lines <= 380,
@@ -38,7 +41,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 		});
 
 		it("DirectSanpinLauncher.tsx находится строго в диапазоне 50–90 строк", () => {
-			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/DirectSanpinLauncher.tsx");
+			const filePath = path.join(sanpinDir, "DirectSanpinLauncher.tsx");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
 				lines >= 50 && lines <= 90,

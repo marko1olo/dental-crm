@@ -63,17 +63,23 @@ function code(relativePath: string): string {
 }
 
 const PANEL = "components/patients/PatientCommunicationTimelineWidget.tsx";
+const PANEL_CONSTANTS = "components/patients/timeline/timelineConstants.ts";
 const OVERVIEW_TAB = "components/patients/PatientOverviewTab.tsx";
 
 test("панель отправляет в раздел, который есть в реестре разделов", () => {
 	const source = code(PANEL);
+	const constantsSource = code(PANEL_CONSTANTS);
 
-	const declared = /const COMMUNICATIONS_SECTION_TITLE = "([^"]+)"/.exec(
-		source,
+	const declared = /COMMUNICATIONS_SECTION_TITLE = "([^"]+)"/.exec(
+		constantsSource,
 	);
 	assert.ok(
 		declared,
-		"в панели не найдено объявление COMMUNICATIONS_SECTION_TITLE — имя раздела снова вписано в разметку и разъедется с реестром",
+		"в timelineConstants.ts не найдено объявление COMMUNICATIONS_SECTION_TITLE — имя раздела снова вписано в разметку и разъедется с реестром",
+	);
+	assert.ok(
+		source.includes("COMMUNICATIONS_SECTION_TITLE"),
+		"в панели не используется COMMUNICATIONS_SECTION_TITLE",
 	);
 	assert.equal(
 		declared?.[1],

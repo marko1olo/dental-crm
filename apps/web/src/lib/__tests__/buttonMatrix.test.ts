@@ -83,7 +83,7 @@ describe("Unified Button Design Token Matrix (Section 17 frontend.md)", () => {
 
 		// Single-line text
 		assert.ok(
-			content.includes("Войти как Доктор Демо (PIN: 1111)"),
+			content.includes("Демо-вход (Главврач)"),
 			"StaffPinPad must have unified text",
 		);
 

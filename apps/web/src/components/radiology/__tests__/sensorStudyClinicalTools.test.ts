@@ -119,8 +119,8 @@ describe('SensorStudy Clinical Tools, Multi-Brand Hardware & Gauss Lesion Engine
     const existing = formatHumanStudyDate('15.09.2026 14:30');
     assert.equal(existing, '15.09.2026 14:30');
 
-    assert.equal(formatHumanStudyDate(null), '01.10.2026 10:14');
-    assert.equal(formatHumanStudyDate('—'), '01.10.2026 10:14');
+    assert.equal(formatHumanStudyDate(null), '—');
+    assert.equal(formatHumanStudyDate('—'), '—');
   });
 
   it('formats patient age eliminating empty "— (—)" badges', () => {
@@ -129,7 +129,7 @@ describe('SensorStudy Clinical Tools, Multi-Brand Hardware & Gauss Lesion Engine
     assert.ok(res1.formattedAge.includes('Y') || res1.formattedAge.includes('лет'));
 
     const resEmpty = formatPatientAge('—', '—');
-    assert.equal(resEmpty.formattedBirthDate, '01.01.1968');
+    assert.equal(resEmpty.formattedBirthDate, '—');
     assert.ok(resEmpty.formattedAge.length > 0);
     assert.ok(!resEmpty.formattedAge.includes('— (—)'));
   });

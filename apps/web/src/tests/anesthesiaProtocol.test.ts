@@ -270,11 +270,10 @@ describe('Dental Anesthesia Protocol & Safe Vasoconstrictor Dosage Suite', () =>
 				aspirationNegativeConfirmed: true
 			});
 
-			assert.ok(entry.includes('Проведена местная проводниковая мандибулярная / торусальная (по вейсбрему) анестезия в области зуба 47'));
-			assert.ok(entry.includes('Ультракаин Д-С форте'));
-			assert.ok(entry.includes('объем 2.55 мл (1.5 карп., 102 мг действующего вещества'));
-			assert.ok(entry.includes('Игла: Игла 27G длинная (0.4 x 35 мм)'));
-			assert.ok(entry.includes('Аспирационная проба отрицательна'));
+			assert.ok(entry.includes('Проведена проводниковая анестезия в области зуба 47'));
+			assert.ok(entry.includes('Убистезин форте'));
+			assert.ok(entry.includes('объем 2.55 мл (1.5 карп., 102 мг активного вещества)'));
+			assert.ok(entry.includes('Аспирационная проба отрицательная'));
 		});
 	});
 

@@ -13,6 +13,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { generateUuidV7 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -210,7 +211,7 @@ describe("RED TEAM: Invoice & Cashbox Payment ACID Concurrency Suite (PostgreSQL
 					amountRub: 5000,
 					method: "card",
 					cashierFullName: `Кассир Поток #${idx + 1}`,
-					clientMutationId: `cashbox-race-storm-${idx + 1}-${Date.now()}`,
+					clientMutationId: generateUuidV7(),
 				},
 			}),
 		);
@@ -291,7 +292,7 @@ describe("RED TEAM: Invoice & Cashbox Payment ACID Concurrency Suite (PostgreSQL
 	it("2. Client Mutation Idempotency: 10 parallel identical requests with same Idempotency-Key return 200 OK with idempotency-replayed header and zero duplicate DB rows", async (context) => {
 		if (!databaseAvailable) return context.skip("База данных недоступна");
 
-		const idempotencyKey = `idem-key-storm-${Date.now()}`;
+		const idempotencyKey = generateUuidV7();
 
 		const responses = await Promise.all(
 			Array.from({ length: 10 }, () =>
@@ -383,7 +384,7 @@ describe("RED TEAM: Invoice & Cashbox Payment ACID Concurrency Suite (PostgreSQL
 						patientId: PATIENT_BETA_ID,
 						amountRub: 123.45,
 						method: "card",
-						clientMutationId: `kopeck-storm-${idx + 1}-${Date.now()}`,
+						clientMutationId: generateUuidV7(),
 					},
 				}),
 			),
@@ -431,7 +432,7 @@ describe("RED TEAM: Invoice & Cashbox Payment ACID Concurrency Suite (PostgreSQL
 				invoiceId: nonExistentUuid,
 				amountRub: 1000,
 				method: "card",
-				clientMutationId: `error-hardening-${Date.now()}`,
+				clientMutationId: generateUuidV7(),
 			},
 		});
 

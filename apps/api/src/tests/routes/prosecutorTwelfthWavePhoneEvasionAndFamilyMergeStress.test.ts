@@ -51,109 +51,181 @@ describe("PROSECUTOR 2: ДВЕНАДЦАТАЯ ВОЛНА (PHONE EVASION, FAMILY
 		await purgeFixtureOrganizations([ORG_ID]);
 
 		await withFixtureTenant(ORG_ID, async (tx) => {
-			await tx.insert(organizations).values({
-				id: ORG_ID,
-				name: "Клиника Двенадцатая Волна — Стресс Дедупликации",
-			});
+			await tx
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника Двенадцатая Волна — Стресс Дедупликации",
+				})
+				.onConflictDoNothing();
 
-			await tx.insert(users).values({
-				id: DOCTOR_ID,
-				organizationId: ORG_ID,
-				email: "surgeon.dedup12@dente.pro",
-				role: "doctor",
-				fullName: "Профессор Дедупликации БД",
-			});
+			await tx
+				.insert(users)
+				.values({
+					id: DOCTOR_ID,
+					organizationId: ORG_ID,
+					email: "surgeon.dedup12@dente.pro",
+					role: "doctor",
+					fullName: "Профессор Дедупликации БД",
+				})
+				.onConflictDoNothing();
 
 			// Семейная группа А (Основная) с балансом 5 000.00 ₽
-			await tx.insert(familyGroups).values({
-				id: FAMILY_A_ID,
-				organizationId: ORG_ID,
-				name: "Семья Сергеевых",
-				headPatientId: PATIENT_A_ID,
-				primaryPatientId: PATIENT_A_ID,
-				balance: "5000.00",
-			});
+			await tx
+				.insert(familyGroups)
+				.values({
+					id: FAMILY_A_ID,
+					organizationId: ORG_ID,
+					name: "Семья Сергеевых",
+					headPatientId: PATIENT_A_ID,
+					primaryPatientId: PATIENT_A_ID,
+					balance: "5000.00",
+					balanceKopecks: 500000,
+				})
+				.onConflictDoUpdate({
+					target: familyGroups.id,
+					set: {
+						headPatientId: PATIENT_A_ID,
+						primaryPatientId: PATIENT_A_ID,
+						balance: "5000.00",
+						balanceKopecks: 500000,
+					},
+				});
 
 			// Семейная группа Б (Дублирующая) с балансом 3 500.50 ₽
-			await tx.insert(familyGroups).values({
-				id: FAMILY_B_ID,
-				organizationId: ORG_ID,
-				name: "Семья Сергеева (Дубль)",
-				headPatientId: PATIENT_B_ID,
-				primaryPatientId: PATIENT_B_ID,
-				balance: "3500.50",
-			});
+			await tx
+				.insert(familyGroups)
+				.values({
+					id: FAMILY_B_ID,
+					organizationId: ORG_ID,
+					name: "Семья Сергеева (Дубль)",
+					headPatientId: PATIENT_B_ID,
+					primaryPatientId: PATIENT_B_ID,
+					balance: "3500.50",
+					balanceKopecks: 350050,
+				})
+				.onConflictDoUpdate({
+					target: familyGroups.id,
+					set: {
+						headPatientId: PATIENT_B_ID,
+						primaryPatientId: PATIENT_B_ID,
+						balance: "3500.50",
+						balanceKopecks: 350050,
+					},
+				});
 
 			// Карточки пациентов
-			await tx.insert(patients).values({
-				id: PATIENT_A_ID,
-				organizationId: ORG_ID,
-				fullName: "Сергеев Сергей Сергеевич",
-				phone: "+7 (916) 123-45-67",
-				birthDate: "1985-05-15",
-				status: "active" as const,
-				familyGroupId: FAMILY_A_ID,
-				administrativeProfile: patientAdministrativeProfileSchema.parse({
-					snils: "111-222-333 44",
-				}),
-			});
-			await tx.insert(patients).values({
-				id: PATIENT_B_ID,
-				organizationId: ORG_ID,
-				fullName: "Сергеев Сергей Сергеевич",
-				// Номер с попыткой обхода: 8-ка, неразрывный пробел, добавочный
-				phone: "8\u00A0(916)\u00A0123-45-67 доб. 102",
-				birthDate: "1985-05-15",
-				status: "active" as const,
-				familyGroupId: FAMILY_B_ID,
-				weightKg: "82.50",
-				administrativeProfile: patientAdministrativeProfileSchema.parse({
-					snils: "111-222-333 44",
-					identityDocument: "Паспорт РФ 4515 987654",
-				}),
-			});
-			await tx.insert(patients).values({
-				id: PATIENT_C_CHILD_ID,
-				organizationId: ORG_ID,
-				fullName: "Сергеев Денис Сергеевич", // Сын в дублирующей семье Б
-				phone: "+7 (916) 123-45-67",
-				birthDate: "2015-08-20",
-				status: "active" as const,
-				familyGroupId: FAMILY_B_ID,
-			});
-			await tx.insert(patients).values({
-				id: PATIENT_FRIEND_ID,
-				organizationId: ORG_ID,
-				fullName: "Друг Семьи Приглашенный",
-				phone: "+7 (999) 777-88-99",
-				status: "active" as const,
-			});
+			await tx
+				.insert(patients)
+				.values({
+					id: PATIENT_A_ID,
+					organizationId: ORG_ID,
+					fullName: "Сергеев Сергей Сергеевич",
+					phone: "+7 (916) 123-45-67",
+					birthDate: "1985-05-15",
+					status: "active" as const,
+					familyGroupId: FAMILY_A_ID,
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
+						snils: "111-222-333 44",
+					}),
+				})
+				.onConflictDoUpdate({
+					target: patients.id,
+					set: {
+						status: "active",
+						mergedIntoPatientId: null,
+						familyGroupId: FAMILY_A_ID,
+					},
+				});
+			await tx
+				.insert(patients)
+				.values({
+					id: PATIENT_B_ID,
+					organizationId: ORG_ID,
+					fullName: "Сергеев Сергей Сергеевич",
+					// Номер с попыткой обхода: 8-ка, неразрывный пробел, добавочный
+					phone: "8\u00A0(916)\u00A0123-45-67 доб. 102",
+					birthDate: "1985-05-15",
+					status: "active" as const,
+					familyGroupId: FAMILY_B_ID,
+					weightKg: "82.50",
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
+						snils: "111-222-333 44",
+						identityDocument: "Паспорт РФ 4515 987654",
+					}),
+				})
+				.onConflictDoUpdate({
+					target: patients.id,
+					set: {
+						status: "active",
+						mergedIntoPatientId: null,
+						familyGroupId: FAMILY_B_ID,
+					},
+				});
+			await tx
+				.insert(patients)
+				.values({
+					id: PATIENT_C_CHILD_ID,
+					organizationId: ORG_ID,
+					fullName: "Сергеев Денис Сергеевич", // Сын в дублирующей семье Б
+					phone: "+7 (916) 123-45-67",
+					birthDate: "2015-08-20",
+					status: "active" as const,
+					familyGroupId: FAMILY_B_ID,
+				})
+				.onConflictDoUpdate({
+					target: patients.id,
+					set: {
+						status: "active",
+						mergedIntoPatientId: null,
+						familyGroupId: FAMILY_B_ID,
+					},
+				});
+			await tx
+				.insert(patients)
+				.values({
+					id: PATIENT_FRIEND_ID,
+					organizationId: ORG_ID,
+					fullName: "Друг Семьи Приглашенный",
+					phone: "+7 (999) 777-88-99",
+					status: "active" as const,
+				})
+				.onConflictDoUpdate({
+					target: patients.id,
+					set: { status: "active", mergedIntoPatientId: null },
+				});
 
 			// Реферальная кампания
-			await tx.insert(referralCampaigns).values({
-				id: CAMPAIGN_ID,
-				organizationId: ORG_ID,
-				name: "Приведи друга 2026",
-				refereeWelcomePoints: "500.00",
-			});
+			await tx
+				.insert(referralCampaigns)
+				.values({
+					id: CAMPAIGN_ID,
+					organizationId: ORG_ID,
+					name: "Приведи друга 2026",
+					refereeWelcomePoints: "500.00",
+				})
+				.onConflictDoNothing();
 
 			// Реферальные коды
-			await tx.insert(patientReferralCodes).values([
-				{
-					id: REF_CODE_A_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_A_ID,
-					referralCode: "SERGEY-A",
-					referralToken: "tok-sergey-a",
-				},
-				{
-					id: REF_CODE_B_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_B_ID,
-					referralCode: "SERGEY-B",
-					referralToken: "tok-sergey-b",
-				},
-			]);
+			await tx
+				.insert(patientReferralCodes)
+				.values([
+					{
+						id: REF_CODE_A_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_A_ID,
+						referralCode: "SERGEY-A",
+						referralToken: "tok-sergey-a",
+					},
+					{
+						id: REF_CODE_B_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_B_ID,
+						referralCode: "SERGEY-B",
+						referralToken: "tok-sergey-b",
+					},
+				])
+				.onConflictDoNothing();
 
 			// Рефералы:
 			// 1. Самореферальная петля обхода (А пригласил Б для получения бонуса)

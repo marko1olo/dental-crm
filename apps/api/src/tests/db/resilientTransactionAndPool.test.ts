@@ -7,6 +7,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import { generateUuidV7 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db, pool } from "../../db/client.js";
@@ -499,9 +500,20 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 			// Register idempotency guard plugin
 			await app.register(idempotencyPlugin, {
 				retryAfterSeconds: 1,
+				exemptPaths: ["/api/test/non-idempotent"],
 			});
 
 			// Setup test routes
+			app.post("/api/test/non-idempotent", async (request, reply) => {
+				mutationExecutionCount++;
+				const body = request.body as Record<string, unknown> | undefined;
+				return reply.code(201).send({
+					patientId: `pat_${mutationExecutionCount}`,
+					name: typeof body?.name === "string" ? body.name : "Default Patient",
+					executionId: mutationExecutionCount,
+				});
+			});
+
 			app.post("/api/test/patients", async (request, reply) => {
 				mutationExecutionCount++;
 				// biome-ignore lint/suspicious/noExplicitAny: test payload
@@ -550,12 +562,24 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 			await app.close();
 		});
 
-		test("mutating request without X-Idempotency-Key executes handler every time", async () => {
+		test("mutating request without X-Idempotency-Key rejects non-exempt route (400) and executes exempt route every time", async () => {
 			const initialCount = mutationExecutionCount;
+
+			const rejectedRes = await app.inject({
+				method: "POST",
+				url: "/api/test/patients",
+				headers: {
+					"x-organization-id": FIXTURE_ORG,
+				},
+				payload: { name: "Missing Key Rejected" },
+			});
+			assert.equal(rejectedRes.statusCode, 400);
+			assert.equal(rejectedRes.json().error, "IdempotencyKeyRequired");
+			assert.equal(mutationExecutionCount, initialCount);
 
 			const res1 = await app.inject({
 				method: "POST",
-				url: "/api/test/patients",
+				url: "/api/test/non-idempotent",
 				headers: {
 					"x-organization-id": FIXTURE_ORG,
 				},
@@ -565,7 +589,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 
 			const res2 = await app.inject({
 				method: "POST",
-				url: "/api/test/patients",
+				url: "/api/test/non-idempotent",
 				headers: {
 					"x-organization-id": FIXTURE_ORG,
 				},
@@ -577,7 +601,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 		});
 
 		test("first request with X-Idempotency-Key executes handler and stores response", async () => {
-			const key = `idem-key-${Date.now()}-1`;
+			const key = generateUuidV7();
 			const payload = { name: "Ivanov Ivan", phone: "+79991112233" };
 
 			const res = await app.inject({
@@ -597,7 +621,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 		});
 
 		test("second request with same X-Idempotency-Key returns cached response without executing handler", async () => {
-			const key = `idem-key-${Date.now()}-2`;
+			const key = generateUuidV7();
 			const payload = { name: "Petrov Petr", phone: "+79992223344" };
 
 			// Call 1
@@ -638,7 +662,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 		});
 
 		test("in-flight request returns 409 Conflict with Retry-After: 1 header", async () => {
-			const key = `idem-key-inflight-${Date.now()}`;
+			const key = generateUuidV7();
 			const payload = { name: "Concurrent Patient", fee: 5000 };
 
 			// Fire first slow request (will be in-flight)
@@ -679,7 +703,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 		});
 
 		test("payload hash mismatch for same X-Idempotency-Key returns 409 Conflict", async () => {
-			const key = `idem-key-${Date.now()}-3`;
+			const key = generateUuidV7();
 
 			// First request with payload A
 			const res1 = await app.inject({
@@ -711,7 +735,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 		});
 
 		test("server error (500) cleans up in-flight record so subsequent retry succeeds", async () => {
-			const key = `idem-key-500-recovery-${Date.now()}`;
+			const key = generateUuidV7();
 
 			// Attempt 1: Fails with 500
 			const res1 = await app.inject({
@@ -755,7 +779,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 		test("PostgreSQL sync_idempotency_records persistence under live RLS", async (t) => {
 			if (!dbAvailable) return t.skip("Database is unavailable");
 
-			const key = `pg-persisted-idem-${Date.now()}`;
+			const key = generateUuidV7();
 			const payload = { name: "Sidorov Semen", fee: 15000 };
 
 			const res = await app.inject({

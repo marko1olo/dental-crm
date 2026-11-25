@@ -271,16 +271,16 @@ test("Spotlight Geometry & Coach Mark Math Invariants", async (t) => {
 	});
 
 	await t.test("16. Stress Test: Theme typography and requestAnimationFrame presence verified in source", () => {
-		const tourPath = path.resolve(__dirname, "../components/workspace/DoctorClinicalTrainingTour.tsx");
+		const tourPath = path.resolve(__dirname, "../components/workspace/trainingTour/useTargetMeasurement.ts");
 		const tourContent = fs.readFileSync(tourPath, "utf8");
 
 		assert.ok(
 			tourContent.includes("requestAnimationFrame"),
-			"DoctorClinicalTrainingTour must use requestAnimationFrame to throttle scroll and resize updates",
+			"useTargetMeasurement must use requestAnimationFrame to throttle scroll and resize updates",
 		);
 		assert.ok(
 			tourContent.includes("scrollIntoView"),
-			"DoctorClinicalTrainingTour must call scrollIntoView for smooth auto-scroll to off-screen targets",
+			"useTargetMeasurement must call scrollIntoView for smooth auto-scroll to off-screen targets",
 		);
 
 		const cssPath = path.resolve(__dirname, "../styles/guided-tour.css");

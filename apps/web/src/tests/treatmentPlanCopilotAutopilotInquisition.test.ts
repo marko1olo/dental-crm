@@ -20,8 +20,7 @@ import {
 import type { TreatmentPlanStage } from "../components/treatment-plans/types";
 import type { ToothData } from "../components/odontogram/ToothChart";
 import { buildPeriodontalAndHygieneItems } from "../components/treatment-plans/autoGenerator/autoGenPeriodontal";
-import { assembleTierFromPreset } from "../components/treatment-plans/tierComparison/makeTierHelper";
-import { ECONOMY_TIER_META } from "../components/treatment-plans/tierComparison/tierMetadataPresets";
+import { assembleTierFromPreset, ECONOMY_TIER_META } from "../components/treatment-plans/tierComparison/makeTierHelper";
 
 describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 	it("1. Preserves item quantity and calculates exact sums without losing units across scenarios", () => {
@@ -125,23 +124,23 @@ describe("Treatment Plan Copilot & Autopilot Red Team Inquisition", () => {
 		assert.equal(optOrtho?.unitPriceRub, 16000);
 		assert.equal(optOrtho?.priceRub, 48000, "3 crowns in budget optimize must equal 48 000 ₽, not 16 000 ₽!");
 
-		// 2. Economy Scenario: 2 therapy * 4500 = 9000, 2 implants * 32000 = 64000, 3 crowns * 16000 = 48000
+		// 2. Economy Scenario (0.75x of clinic unitPriceRub): 2*7500=15000, 2*41250=82500, 3*22500=67500
 		const econRes = applyEconomyScenarioToPlan(stagesWithMultiQuantity);
-		assert.equal(econRes.stages[0]?.items[0]?.priceRub, 9000);
-		assert.equal(econRes.stages[1]?.items[0]?.priceRub, 64000);
-		assert.equal(econRes.stages[2]?.items[0]?.priceRub, 48000);
+		assert.equal(econRes.stages[0]?.items[0]?.priceRub, 15000);
+		assert.equal(econRes.stages[1]?.items[0]?.priceRub, 82500);
+		assert.equal(econRes.stages[2]?.items[0]?.priceRub, 67500);
 
-		// 3. Optimum Scenario: 2 therapy * 7500 = 15000, 2 implants * 38000 = 76000, 3 crowns * 26000 = 78000
+		// 3. Optimum Scenario (1.0x of clinic unitPriceRub): 2*10000=20000, 2*55000=110000, 3*30000=90000
 		const optRes = applyOptimumScenarioToPlan(stagesWithMultiQuantity);
-		assert.equal(optRes.stages[0]?.items[0]?.priceRub, 15000);
-		assert.equal(optRes.stages[1]?.items[0]?.priceRub, 76000);
-		assert.equal(optRes.stages[2]?.items[0]?.priceRub, 78000);
+		assert.equal(optRes.stages[0]?.items[0]?.priceRub, 20000);
+		assert.equal(optRes.stages[1]?.items[0]?.priceRub, 110000);
+		assert.equal(optRes.stages[2]?.items[0]?.priceRub, 90000);
 
-		// 4. Premium Scenario: 2 therapy * 12000 = 24000, 2 implants * 65000 = 130000, 3 crowns * 45000 = 135000
+		// 4. Premium Scenario (1.4x of clinic unitPriceRub): 2*14000=28000, 2*77000=154000, 3*42000=126000
 		const premRes = applyPremiumScenarioToPlan(stagesWithMultiQuantity);
-		assert.equal(premRes.stages[0]?.items[0]?.priceRub, 24000);
-		assert.equal(premRes.stages[1]?.items[0]?.priceRub, 130000);
-		assert.equal(premRes.stages[2]?.items[0]?.priceRub, 135000);
+		assert.equal(premRes.stages[0]?.items[0]?.priceRub, 28000);
+		assert.equal(premRes.stages[1]?.items[0]?.priceRub, 154000);
+		assert.equal(premRes.stages[2]?.items[0]?.priceRub, 126000);
 	});
 
 	it("2. Blocks bridge replacement on free-end terminal defects without distal abutments", () => {

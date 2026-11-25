@@ -76,7 +76,7 @@ export const PatientCommunicationTimelineWidget: React.FC<{
 
 					{entries.length === 0 ? (
 						<div className="p-4 rounded-lg border border-dashed border-[var(--glass-border)] text-xs bg-[var(--paper-soft)] text-[var(--muted)]">
-							Обращений через систему не записано. Здесь появляются SMS, сообщения в Telegram, WhatsApp, ВКонтакте и MAX, письма и звонки, прошедшие через клинику.
+							Обращений через систему не записано. Здесь появляются SMS, сообщения в Telegram, WhatsApp, ВКонтакте и MAX, письма и звонки, прошедшие через клинику. Звонки с личного телефона врача и переписка вне клиники сюда не попадают.
 						</div>
 					) : (
 						<>

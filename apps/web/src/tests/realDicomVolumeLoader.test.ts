@@ -273,7 +273,7 @@ describe("Real DICOM Series Volume Loader & Ingestion Engine", () => {
   });
 
   it("builds and auto-centers 3D CBCT volume from 50-slice demo dataset (Zakharov I.D.)", async () => {
-    const demoDir = path.resolve(process.cwd(), "apps/web/public/radiology/demo_cbct");
+    const demoDir = path.resolve(import.meta.dirname, "../../public/radiology/demo_cbct");
     assert.ok(fs.existsSync(demoDir), "Demo CBCT directory must exist");
 
     const manifestPath = path.join(demoDir, "manifest.json");

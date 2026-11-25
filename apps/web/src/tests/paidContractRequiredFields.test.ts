@@ -4,7 +4,7 @@ import {
 	type PaidContractRequiredFieldsInput,
 	paidContractRequiredFieldsReview,
 } from "../components/documents/paidContractRequiredFields";
-import { informedConsentBlockersReview } from "../components/documents/informedConsentBlockers";
+import { informedConsentBlockersReview } from "../components/documents/informedConsentGuiding";
 import {
 	validateDocumentPayloadForKind,
 	withDocumentCreationTimestamps,
@@ -114,10 +114,6 @@ const emptyByField: Record<string, Partial<PaidContractRequiredFieldsInput>> = {
 	paidContractRefundTerms: { refundTerms: "" },
 	paidContractWarrantyTerms: { warrantyTerms: "" },
 	paidContractDoctorFullName: { doctorFullName: "", activeDoctorFullName: "" },
-	paidContractClinicInfoConfirmed: { clinicInfoConfirmed: false },
-	paidContractServiceListConfirmed: { serviceListConfirmed: false },
-	paidContractPaidBasisConfirmed: { paidBasisConfirmed: false },
-	paidContractWrittenChangesConfirmed: { writtenChangesConfirmed: false },
 };
 
 describe("paidContractRequiredFieldsReview", () => {
@@ -182,7 +178,7 @@ describe("paidContractRequiredFieldsReview", () => {
 			writtenChangesConfirmed: false,
 		};
 		const review = paidContractRequiredFieldsReview(freshClinic);
-		assert.equal(review.missing.length, 8);
+		assert.equal(review.missing.length, 4);
 		assert.deepEqual(
 			review.missing.map((entry) => entry.field),
 			[
@@ -190,10 +186,6 @@ describe("paidContractRequiredFieldsReview", () => {
 				"paidContractServiceStart",
 				"paidContractServiceScope",
 				"paidContractTotalRub",
-				"paidContractClinicInfoConfirmed",
-				"paidContractServiceListConfirmed",
-				"paidContractPaidBasisConfirmed",
-				"paidContractWrittenChangesConfirmed",
 			],
 		);
 		/* А проверка при создании отдаёт из них ровно одну — первую. */
@@ -212,7 +204,7 @@ describe("paidContractRequiredFieldsReview", () => {
 			doctorFullName: "",
 			activeDoctorFullName: "",
 		});
-		assert.equal(review.requiredCount, 18);
+		assert.equal(review.requiredCount, 14);
 		for (const entry of review.missing) {
 			assert.ok(entry.label.trim() !== "", `нет подписи у ${entry.field}`);
 			assert.ok(entry.hint.trim() !== "", `нет подсказки у ${entry.field}`);

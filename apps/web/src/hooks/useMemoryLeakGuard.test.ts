@@ -159,7 +159,7 @@ describe("Wave 252-Perf2: useMemoryLeakGuard & InvoicesView Virtualization Tests
 				"Must display 'Показать все' button",
 			);
 			assert.ok(
-				html.includes("защита RAM ноутбука"),
+				html.includes("Отображено") && html.includes("осталось"),
 				"Must display informative label for weak hardware protection",
 			);
 		});
