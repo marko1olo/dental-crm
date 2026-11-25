@@ -1,3 +1,4 @@
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { DentalLabWorkflowOrder } from "../dentalLabWorkflowEngine";
 
 export function triggerLabOrderReschedule(
@@ -26,7 +27,7 @@ export function triggerLabOrderReschedule(
 			);
 			window.location.hash = "#schedule";
 		} catch (err) {
-			console.warn("Failed to trigger lab order reschedule draft:", err);
+			clientLogger.warn("[dentalLabRescheduleHelper] Failed to trigger lab order reschedule draft", err, { module: "DentalLab" });
 		}
 	}
 }

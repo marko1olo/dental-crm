@@ -13,6 +13,7 @@ import {
 	resolveInvoiceTotalAmountRub,
 } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import type { useMemoryLeakGuard } from "../../hooks/useMemoryLeakGuard.js";
 import type { BillingInvoice, InvoiceLineItem } from "./invoiceTypes.js";
 import { loadStoredInvoices, saveStoredInvoices } from "./invoicesStorage.js";
@@ -52,8 +53,15 @@ export function useInvoicesData({
 						...denteClinicalReadHeaders(),
 					},
 				});
-				if (!res.ok) return;
-				const data = (await res.json()) as unknown;
+				if (!res.ok) {
+					clientLogger.warn("[useInvoicesData] Ошибка ответа сервера при загрузке счетов", { status: res.status }, { module: "Billing" });
+					return;
+				}
+				const rawJson = (await res.json()) as unknown;
+				const data =
+					rawJson && typeof rawJson === "object" && "data" in rawJson && !Array.isArray(rawJson)
+						? (rawJson as { data?: unknown }).data ?? rawJson
+						: rawJson;
 				const rawList: Record<string, unknown>[] = Array.isArray((data as { invoices?: unknown[] })?.invoices)
 					? (data as { invoices: Record<string, unknown>[] }).invoices
 					: Array.isArray(data)
@@ -204,7 +212,9 @@ export function useInvoicesData({
 				if ((err as Error)?.name === "AbortError") {
 					return;
 				}
-				console.warn("[useInvoicesData] Сбой синхронизации счетов с сервером, продолжение с локальными данными:", err);
+				clientLogger.warn("[useInvoicesData] Сбой синхронизации счетов с сервером, продолжение с локальными данными", err, {
+					module: "Billing",
+				});
 				// Soft fallback: continue working with local data (Mandates 8e, 8n)
 			}
 		};

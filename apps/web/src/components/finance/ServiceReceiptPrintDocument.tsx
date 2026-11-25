@@ -8,6 +8,7 @@
 
 import React, { useMemo } from "react";
 import { generateQrCodeSvg } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import type { FiscalReceiptResult, FiscalReceipt54FzResult } from "./fiscalReceiptEngine.js";
 import {
 	ReceiptPrintHeader,
@@ -46,7 +47,9 @@ export const ServiceReceiptPrintDocument: React.FC<ServiceReceiptPrintDocumentPr
 				title: `ФНС Чек №${receipt.receiptNumber}`,
 			});
 		} catch (qrErr: unknown) {
-			console.warn("[ServiceReceiptPrintDocument] Ошибка генерации QR для чека:", qrErr);
+			clientLogger.warn("[ServiceReceiptPrintDocument] Ошибка генерации QR для чека", qrErr, {
+				module: "Finance",
+			});
 			return null;
 		}
 	}, [receipt.isWarrantyZeroAct, receipt.ofdUrl, receipt.receiptNumber]);

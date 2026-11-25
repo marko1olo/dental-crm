@@ -12,6 +12,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { generateUuidV7, formatRubles, calculatePercentDiscountKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
@@ -337,11 +338,14 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				});
 				if (!res.ok) return;
 				const json = await res.json().catch(() => null);
-				if (!isCancelled && json && typeof json === "object" && "data" in json && Array.isArray(json.data)) {
-					setRecentOperations(json.data.slice(0, 10));
+				const opsPayload = json && typeof json === "object" && "data" in json ? json.data : json;
+				if (!isCancelled && Array.isArray(opsPayload)) {
+					setRecentOperations(opsPayload.slice(0, 10));
 				}
 			} catch (fetchErr: unknown) {
-				console.warn("[useCashRegisterStudioState] Не удалось загрузить недавние операции кассы:", fetchErr);
+				clientLogger.warn("[useCashRegisterStudioState] Не удалось загрузить недавние операции кассы", fetchErr, {
+					module: "Cashbox",
+				});
 				// non-blocking / offline fallback
 			}
 		}
@@ -529,7 +533,9 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				onClose();
 				return;
 			} catch (offlineErr) {
-				console.warn("[CashRegisterStudio] Не удалось сохранить платёж в офлайн-очередь, переход к сетевому запросу:", offlineErr);
+				clientLogger.warn("[useCashRegisterStudioState] Не удалось сохранить платёж в офлайн-очередь, переход к сетевому запросу", offlineErr, {
+					module: "Cashbox",
+				});
 			}
 		}
 
@@ -565,8 +571,12 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 					throw new Error(errorJson?.message || `Ошибка оформления рассрочки (код ${res.status})`);
 				}
 
-				const json = (await res.json().catch(() => null)) as { contract?: { contractNumber?: string } } | null;
-				const contract = json?.contract;
+				const rawJson = (await res.json().catch(() => null)) as {
+					data?: { contract?: { contractNumber?: string } };
+					contract?: { contractNumber?: string };
+				} | null;
+				const payload = rawJson?.data ?? rawJson;
+				const contract = payload?.contract ?? rawJson?.contract;
 				showToast(
 					`Договор рассрочки ${contract?.contractNumber || ""} на ${installmentMonths} мес. успешно оформлен`,
 					"success",
@@ -622,7 +632,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			if (json && json.success === false) {
 				throw new Error(json.message || "Ошибка проведения платежа через кассовый аппарат");
 			}
-			const paymentResult = json?.data || {
+			const paymentResult = json?.data ?? {
 				success: true,
 				effectiveTotalRub,
 				method,
@@ -705,7 +715,9 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 					onClose();
 					return;
 				} catch (queueErr) {
-					console.warn("[CashRegisterStudio] Не удалось сохранить офлайн-платёж при сбое сети:", queueErr);
+					clientLogger.warn("[useCashRegisterStudioState] Не удалось сохранить офлайн-платёж при сбое сети", queueErr, {
+						module: "Cashbox",
+					});
 				}
 			}
 

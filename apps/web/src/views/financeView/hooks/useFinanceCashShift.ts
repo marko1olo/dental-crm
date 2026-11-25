@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, Payment } from "@dental/shared";
 import { generateUuidV7, rublesToKopecks, kopecksToRubles } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { showToast } from "../../../components/GlobalToast";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
@@ -14,6 +16,16 @@ interface ServerCashBoxItem {
 	readonly type: string;
 	readonly balanceRub?: number | string | null | undefined;
 	readonly balanceKopecks?: number | string | bigint | null | undefined;
+}
+
+async function extractShiftMutationErrorMessage(res: Response, fallbackMsg: string): Promise<string> {
+	const raw = (await res.json().catch(() => null)) as {
+		data?: { message?: string; error?: string } | null;
+		message?: string;
+		error?: string;
+	} | null;
+	const payload = raw?.data ?? raw;
+	return payload?.message || payload?.error || raw?.message || raw?.error || `${fallbackMsg} (HTTP ${res.status})`;
 }
 
 export interface UseFinanceCashShiftParams {
@@ -66,11 +78,12 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 	const fetchServerCashBoxBalance = useCallback(async () => {
 		try {
 			const res = await fetch("/api/cash/cash-box", {
-				headers: denteAdminSecretRequestHeaders(),
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
 				const json = await res.json();
-				const rawList = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
+				const payload = json && typeof json === "object" && "data" in json ? json.data : json;
+				const rawList = Array.isArray(payload) ? payload : [];
 				const boxes = rawList as readonly ServerCashBoxItem[];
 				const deskBox = boxes.find((b) => b.type === "main" || b.type === "cash_desk");
 				if (deskBox && deskBox.balanceRub !== undefined && deskBox.balanceRub !== null) {
@@ -81,11 +94,11 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 					}
 				}
 			} else {
-				console.warn("[useFinanceCashShift] Server cashbox returned non-ok status:", res.status);
+				clientLogger.warn("[useFinanceCashShift] Server cashbox returned non-ok status", { status: res.status }, { module: "Finance" });
 				setIsLocalBalanceFallback(true);
 			}
 		} catch (err) {
-			console.warn("[useFinanceCashShift] Failed to fetch server cashbox balance, falling back to local calculation:", err);
+			clientLogger.warn("[useFinanceCashShift] Failed to fetch server cashbox balance, falling back to local calculation", err, { module: "Finance" });
 			setIsLocalBalanceFallback(true);
 		}
 	}, []);
@@ -127,17 +140,29 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		if (propsOnOpenShift) {
 			await propsOnOpenShift();
 		} else {
-			await fetch("/api/cashbox/shift/open", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				}),
-				body: JSON.stringify({
-					cashierFullName: paymentFiscalCashierName || undefined,
-					openedAt: new Date().toISOString(),
-				}),
-			});
+			try {
+				const res = await fetch("/api/cashbox/shift/open", {
+					method: "POST",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify({
+						cashierFullName: paymentFiscalCashierName || undefined,
+						openedAt: new Date().toISOString(),
+					}),
+				});
+				if (!res.ok) {
+					const errMsg = await extractShiftMutationErrorMessage(res, "Не удалось открыть смену");
+					clientLogger.warn("[useFinanceCashShift] Failed to open shift", { status: res.status, errMsg }, { module: "Finance" });
+					showToast(errMsg, "error");
+					return;
+				}
+			} catch (err: unknown) {
+				clientLogger.warn("[useFinanceCashShift] Network error opening shift", err, { module: "Finance" });
+				showToast("Сетевая ошибка при открытии кассовой смены", "error");
+				return;
+			}
 		}
 		setIsShiftOpen(true);
 		safeLocalStorageSetItem("dente_cash_shift_open", "true");
@@ -152,20 +177,32 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		if (propsOnCloseShift) {
 			await propsOnCloseShift();
 		} else {
-			const zNumber = `Z-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${shiftNumber}`;
-			await fetch("/api/cashbox/shift/close", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				}),
-				body: JSON.stringify({
-					cashierFullName: paymentFiscalCashierName || undefined,
-					zReportNumber: zNumber,
-					shiftNumber,
-					closedAt: new Date().toISOString(),
-				}),
-			});
+			try {
+				const zNumber = `Z-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${shiftNumber}`;
+				const res = await fetch("/api/cashbox/shift/close", {
+					method: "POST",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify({
+						cashierFullName: paymentFiscalCashierName || undefined,
+						zReportNumber: zNumber,
+						shiftNumber,
+						closedAt: new Date().toISOString(),
+					}),
+				});
+				if (!res.ok) {
+					const errMsg = await extractShiftMutationErrorMessage(res, "Не удалось закрыть смену");
+					clientLogger.warn("[useFinanceCashShift] Failed to close shift", { status: res.status, errMsg }, { module: "Finance" });
+					showToast(errMsg, "error");
+					return;
+				}
+			} catch (err: unknown) {
+				clientLogger.warn("[useFinanceCashShift] Network error closing shift", err, { module: "Finance" });
+				showToast("Сетевая ошибка при закрытии кассовой смены", "error");
+				return;
+			}
 		}
 		setIsShiftOpen(false);
 		safeLocalStorageSetItem("dente_cash_shift_open", "false");
@@ -182,9 +219,9 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			if (propsOnCashIn) {
 				await propsOnCashIn(amountRub, basis, typeAlias);
 			} else {
-				await fetch("/api/cash/cash-introduction", {
+				const res = await fetch("/api/cash/cash-introduction", {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					}),
@@ -195,6 +232,11 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 						cashierFullName: paymentFiscalCashierName || undefined,
 					}),
 				});
+				if (!res.ok) {
+					const errMsg = await extractShiftMutationErrorMessage(res, "Ошибка внесения наличных");
+					clientLogger.warn("[useFinanceCashShift] cash-introduction failed", { status: res.status, errMsg }, { module: "Finance" });
+					throw new Error(errMsg);
+				}
 			}
 			setManualCashDeltaRub((prev) => {
 				const nextKop = rublesToKopecks(prev) + rublesToKopecks(amountRub);
@@ -218,9 +260,9 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			if (propsOnCashOut) {
 				await propsOnCashOut(amountRub, basis, recipientFio, typeAlias);
 			} else {
-				await fetch("/api/cash/cash-withdrawal", {
+				const res = await fetch("/api/cash/cash-withdrawal", {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
 					}),
@@ -236,6 +278,11 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 						cashierFullName: paymentFiscalCashierName || undefined,
 					}),
 				});
+				if (!res.ok) {
+					const errMsg = await extractShiftMutationErrorMessage(res, "Ошибка изъятия наличных");
+					clientLogger.warn("[useFinanceCashShift] cash-withdrawal failed", { status: res.status, errMsg }, { module: "Finance" });
+					throw new Error(errMsg);
+				}
 			}
 			setManualCashDeltaRub((prev) => {
 				const nextKop = rublesToKopecks(prev) - rublesToKopecks(amountRub);
@@ -250,17 +297,27 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 	);
 
 	const handlePrintXReport = useCallback(async () => {
-		await fetch("/api/fiscal/x-report", {
-			method: "POST",
-			headers: denteAdminSecretRequestHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": generateUuidV7(),
-			}),
-			body: JSON.stringify({
-				cashierFullName: paymentFiscalCashierName || undefined,
-				shiftNumber,
-			}),
-		});
+		try {
+			const res = await fetch("/api/fiscal/x-report", {
+				method: "POST",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
+					cashierFullName: paymentFiscalCashierName || undefined,
+					shiftNumber,
+				}),
+			});
+			if (!res.ok) {
+				const errMsg = await extractShiftMutationErrorMessage(res, "Ошибка формирования X-отчёта");
+				clientLogger.warn("[useFinanceCashShift] x-report failed", { status: res.status, errMsg }, { module: "Finance" });
+				showToast(errMsg, "error");
+			}
+		} catch (err: unknown) {
+			clientLogger.warn("[useFinanceCashShift] Network error generating X-report", err, { module: "Finance" });
+			showToast("Сетевая ошибка при печати X-отчёта", "error");
+		}
 	}, [paymentFiscalCashierName, shiftNumber]);
 
 	return {

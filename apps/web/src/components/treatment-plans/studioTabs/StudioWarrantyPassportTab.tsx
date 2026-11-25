@@ -21,11 +21,14 @@ import {
 	ExternalLink,
 	AlertCircle,
 } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
 import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
 import { printHtmlViaIframe } from "../../documents/printHtmlViaIframe";
 import { generateCertificateId, generateSha256 } from "../../warranty/warrantyIdUtils";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { showToast } from "../../GlobalToast";
 
 export interface StudioWarrantyPassportTabProps {
 	readonly activeTier: TreatmentPlanTier;
@@ -322,7 +325,10 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 		try {
 			const res = await fetch("/api/warranty/certificates", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					patientId: effectivePatientId,
 					certificateNumber: certNumber,
@@ -347,17 +353,26 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 				setRegisteredCert(result);
 				return result;
 			}
+			clientLogger.warn(
+				"[StudioWarrantyPassportTab] Сервер вернул ошибку при регистрации гарантийного сертификата",
+				{ status: res.status },
+				{ module: "TreatmentPlans" },
+			);
+			setPatientWarning("Не удалось зарегистрировать сертификат на сервере — сформирован локальный бланк.");
+			showToast("Сертификат не сохранён на сервере; сформирован локальный бланк", "warning");
 		} catch (err) {
-			console.warn("Non-blocking: could not persist warranty certificate to backend:", err);
+			clientLogger.warn("[StudioWarrantyPassportTab] Не удалось сохранить гарантийный сертификат на сервере", err, { module: "TreatmentPlans" });
+			setPatientWarning("Нет связи с сервером — сформирован локальный бланк без записи в реестр.");
+			showToast("Нет связи с сервером; сформирован локальный бланк", "warning");
 		} finally {
 			setIsRegistering(false);
 		}
 
-		// Локальный детерминированный результат при офлайн-печати
+		// Честный локальный статус без подделки "active" при сбое сервера
 		const fallbackResult = {
 			certificateNumber: certNumber,
 			integritySha256,
-			status: "active",
+			status: "local_offline",
 		};
 		setRegisteredCert(fallbackResult);
 		return fallbackResult;
@@ -519,24 +534,24 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 					<div className="flex items-center gap-2 flex-wrap">
 						{registeredCert ? (
 							<span
-								className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl border inline-flex items-center gap-1.5 ${
-									registeredCert.status === "preview"
-										? "text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30"
-										: "text-[var(--success,#16a34a)] bg-[var(--success-soft,rgba(22,163,74,0.1))] border-[var(--success,#16a34a)]/30"
+								className={`h-6 px-2.5 text-xs font-medium rounded-full border inline-flex items-center gap-1 shrink-0 ${
+									registeredCert.status === "preview" || registeredCert.status === "local_offline"
+										? "text-[var(--warning)] bg-[var(--warning-soft)] border-[var(--warning)]/30"
+										: "text-[var(--success)] bg-[var(--success-soft)] border-[var(--success)]/30"
 								}`}
-								data-testid={registeredCert.status === "preview" ? "warranty-cert-preview-badge" : "warranty-cert-registered-badge"}
+								data-testid={registeredCert.status === "preview" || registeredCert.status === "local_offline" ? "warranty-cert-preview-badge" : "warranty-cert-registered-badge"}
 							>
-								{registeredCert.status === "preview" ? <FileText className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
-								<span>{registeredCert.status === "preview" ? `Бланк: № ${registeredCert.certificateNumber}` : `Реестр: № ${registeredCert.certificateNumber}`}</span>
+								{registeredCert.status === "preview" || registeredCert.status === "local_offline" ? <FileText className="w-3.5 h-3.5 shrink-0" /> : <Check className="w-3.5 h-3.5 shrink-0" />}
+								<span>{registeredCert.status === "preview" || registeredCert.status === "local_offline" ? `Бланк: № ${registeredCert.certificateNumber}` : `Реестр: № ${registeredCert.certificateNumber}`}</span>
 							</span>
 						) : (
 							<button
 								type="button"
 								onClick={() => void registerCertificateInDatabase()}
-								className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[var(--primary)] bg-[var(--primary-soft)] hover:bg-[var(--primary)] hover:text-white text-xs font-bold text-[var(--primary)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--ink)] inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 								data-testid="register-warranty-cert-btn"
 							>
-								<RefreshCw className={`w-3.5 h-3.5 ${isRegistering ? "animate-spin" : ""}`} />
+								<RefreshCw className={`w-4 h-4 shrink-0 ${isRegistering ? "animate-spin" : ""}`} />
 								<span>{isRegistering ? "Регистрация..." : "Зарегистрировать в БД"}</span>
 							</button>
 						)}
@@ -544,10 +559,10 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 						<button
 							type="button"
 							onClick={handlePrintPassport}
-							className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--ink)] inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 							data-testid="print-warranty-passport-btn"
 						>
-							<Printer className="w-4 h-4 text-[var(--muted)]" />
+							<Printer className="w-4 h-4 shrink-0" />
 							<span>Печать гарантийного паспорта</span>
 						</button>
 
@@ -555,10 +570,10 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 							<button
 								type="button"
 								onClick={onOpenWarrantyPassportStudio}
-								className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center gap-1 transition-colors cursor-pointer"
+								className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--ink)] inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
 								title="Открыть расширенную гарантийную студию"
 							>
-								<ExternalLink className="w-3.5 h-3.5" />
+								<ExternalLink className="w-4 h-4 shrink-0" />
 								<span className="hidden sm:inline">Студия</span>
 							</button>
 						)}
@@ -595,11 +610,11 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 
 				{patientWarning && (
 					<div
-						className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-medium flex items-center gap-2"
+						className="p-3 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning)]/30 text-[var(--warning)] text-xs font-medium flex items-center gap-2"
 						role="status"
 						data-testid="warranty-patient-warning"
 					>
-						<AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+						<AlertCircle className="w-4 h-4 shrink-0" />
 						<span>{patientWarning}</span>
 					</div>
 				)}

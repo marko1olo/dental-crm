@@ -1,4 +1,5 @@
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { showToast } from "../GlobalToast.js";
 import type { BillingInvoice } from "./invoiceTypes.js";
 
@@ -64,7 +65,7 @@ th { background: #f8fafc; font-weight: 700; }
 			showToast(`Счет ${inv.number} отправлен на печать`, "success");
 		})
 		.catch((printErr: unknown) => {
-			console.error("[handlePrintInvoice] Ошибка отправки счета на принтер:", printErr);
+			clientLogger.error("[handlePrintInvoice] Ошибка отправки счета на принтер", printErr, { module: "Billing" });
 			showToast("Ошибка отправки счета на принтер", "error");
 		});
 };
@@ -132,7 +133,7 @@ th { background: #f8fafc; font-weight: 700; }
 			showToast(`Акт по счету ${inv.number} отправлен на печать`, "success");
 		})
 		.catch((printErr: unknown) => {
-			console.error("[handlePrintAct] Ошибка отправки акта на принтер:", printErr);
+			clientLogger.error("[handlePrintAct] Ошибка отправки акта на принтер", printErr, { module: "Billing" });
 			showToast("Ошибка отправки акта на принтер", "error");
 		});
 };

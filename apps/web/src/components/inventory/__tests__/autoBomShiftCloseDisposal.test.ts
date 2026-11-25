@@ -47,7 +47,10 @@ describe("BOM Deduction: Shift Close Class B Disposal", () => {
 		assert.ok(postedPayload !== null);
 		const payload = postedPayload as Record<string, unknown>;
 		assert.equal(payload.wasteClass, "class_B");
-		assert.equal(payload.responsibleStaffName, "Иванова М. С.");
+		assert.equal(payload.responsibleStaffName, undefined);
+		assert.ok(typeof payload.notes === "string" && payload.notes.includes("Иванова М. С."));
+		assert.ok(typeof payload.wasteDescription === "string" && payload.wasteDescription.length > 0);
+		assert.ok(typeof payload.disinfectantUsed === "string" && payload.disinfectantUsed.length > 0);
 	});
 
 	it("formatShiftCloseClassBWasteActHtml генерирует строгий документ без эмодзи", () => {

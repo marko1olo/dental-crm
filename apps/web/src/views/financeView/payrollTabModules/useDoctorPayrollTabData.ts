@@ -4,6 +4,8 @@ import type { PayrollDoctorOption } from "./types";
 import { fetchDoctorEarningsWithStatusApi } from "../../../components/payroll/fetchDoctorEarningsApi";
 import { exportDoctorPayrollCsv, printDoctorPayslipHtml } from "./payrollTabExportUtils";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 const EMPTY_DOCTOR: PayrollDoctorOption = {
 	id: "",
@@ -47,11 +49,26 @@ export function useDoctorPayrollTabData({
 	useEffect(() => {
 		if (doctorsList && doctorsList.length > 0) return;
 		let cancelled = false;
-		fetch("/api/v1/doctors")
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
-				if (cancelled || !data?.doctors || !Array.isArray(data.doctors)) return;
-				const mapped: PayrollDoctorOption[] = data.doctors.map((d: Record<string, unknown>) => ({
+		fetch("/api/v1/doctors", {
+			headers: denteClinicalReadHeaders(),
+		})
+			.then(async (res) => {
+				if (!res.ok) {
+					clientLogger.warn("[useDoctorPayrollTabData] Failed to load doctors HTTP status", { status: res.status }, { module: "Payroll" });
+					return null;
+				}
+				return res.json();
+			})
+			.then((raw) => {
+				const data = raw && typeof raw === "object" && "data" in raw ? (raw as { data?: unknown }).data ?? raw : raw;
+				const rawDoctors =
+					Array.isArray((data as { doctors?: unknown[] } | null)?.doctors)
+						? (data as { doctors: Record<string, unknown>[] }).doctors
+						: Array.isArray(data)
+							? (data as Record<string, unknown>[])
+							: null;
+				if (cancelled || !rawDoctors) return;
+				const mapped: PayrollDoctorOption[] = rawDoctors.map((d: Record<string, unknown>) => ({
 					id: String(d["id"] ?? ""),
 					name: String(d["name"] || "Врач-стоматолог"),
 					specialtyId: String(d["specialtyId"] || "general_dentist"),
@@ -62,7 +79,7 @@ export function useDoctorPayrollTabData({
 				}
 			})
 			.catch((err) => {
-				console.error("[useDoctorPayrollTabData] Failed to load doctors:", err);
+				clientLogger.error("[useDoctorPayrollTabData] Failed to load doctors", err, { module: "Payroll" });
 			});
 		return () => {
 			cancelled = true;
@@ -127,7 +144,7 @@ export function useDoctorPayrollTabData({
 				}
 			})
 			.catch((err) => {
-				console.error("[useDoctorPayrollTabData] Failed to load doctor earnings:", err);
+				clientLogger.error("[useDoctorPayrollTabData] Failed to load doctor earnings", err, { module: "Payroll" });
 				if (!isCancelled) {
 					setIsLoading(false);
 					setFetchError("Не удалось загрузить начисления врача из базы данных");

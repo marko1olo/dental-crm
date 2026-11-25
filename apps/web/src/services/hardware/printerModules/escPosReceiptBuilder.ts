@@ -103,14 +103,12 @@ export function buildEscPosFiscalReceiptCommandBuffer(
 
 	// 4. Double Height Bold Header
 	appendBytes([0x1b, 0x21, 0x20]); // Double height
-	appendLine("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»");
+	appendLine(payload.clinicName || "Стоматологическая клиника");
 	appendBytes([0x1b, 0x21, 0x00]); // Normal
 
-	appendLine("г. Москва, Ломоносовский пр-т, 24");
 	if (payload.cashierInn) {
 		appendLine(`ИНН: ${payload.cashierInn}`);
 	}
-	appendLine("Лицензия: № ЛО41-01137-77/00368421");
 	appendLine("--------------------------------");
 
 	// Operation Title
@@ -268,7 +266,7 @@ export function generatePrintableReceiptDocumentHtml(
 <head>
 	<meta charset="utf-8">
 	<meta name="description" content="Кассовый чек 54-ФЗ">
-	<title>Кассовый чек - ${payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</title>
+	<title>Кассовый чек - ${payload.clinicName || "Стоматологическая клиника"}</title>
 	<style>
 		@page { size: ${config.paperWidthMm === 80 ? "80mm auto" : "58mm auto"}; margin: 0; }
 		* { box-sizing: border-box; }
@@ -294,10 +292,8 @@ export function generatePrintableReceiptDocumentHtml(
 	</style>
 </head>
 <body>
-	<div class="center bold" style="font-size: 13px;">${payload.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}</div>
-	<div class="center" style="font-size: 10px;">г. Москва, Ломоносовский пр-т, 24</div>
+	<div class="center bold" style="font-size: 13px;">${payload.clinicName || "Стоматологическая клиника"}</div>
 	${payload.cashierInn ? `<div class="center" style="font-size: 10px;">ИНН: ${payload.cashierInn}</div>` : ""}
-	<div class="center" style="font-size: 10px;">Лицензия: № ЛО41-01137-77/00368421</div>
 	<div class="divider"></div>
 	<div class="center bold" style="font-size: 12px;">
 		${isReturn ? "КАССОВЫЙ ЧЕК / ВОЗВРАТ ПРИХОДА" : "КАССОВЫЙ ЧЕК / ПРИХОД"}
@@ -338,8 +334,8 @@ export function generatePrintableReceiptDocumentHtml(
 			try {
 				window.focus();
 				window.print();
-			} catch (e) {
-				console.warn("[thermal print template] window.print error:", e);
+			} catch {
+				/* browser print dialog blocked or unsupported */
 			}
 		};
 	</script>
@@ -399,7 +395,7 @@ export function buildEscPosBankSlipCommandBuffer(
 export function generatePrintableBankSlipDocumentHtml(
 	slipText: string,
 	config: HardwarePrinterConfig,
-	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+	clinicName = "Стоматологическая клиника",
 ): string {
 	const escapedSlip = slipText
 		.replace(/&/g, "&amp;")
@@ -439,8 +435,8 @@ export function generatePrintableBankSlipDocumentHtml(
 			try {
 				window.focus();
 				window.print();
-			} catch (e) {
-				console.warn("[bank slip template] window.print error:", e);
+			} catch {
+				/* browser print dialog blocked or unsupported */
 			}
 		};
 	</script>

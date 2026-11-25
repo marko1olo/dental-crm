@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { CalendarCheck, Copy, Send, X } from "lucide-react";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import { openWhatsAppChat, generateOrthopedicReadyMessage } from "../../store/telephonyClinical";
 import type { PartialDeliveryResult } from "./dentalLabOrderEngine";
@@ -91,7 +92,7 @@ export function DentalLabReadyInClinicModal({
 			await navigator.clipboard.writeText(msgText);
 			showToast("Сообщение скопировано в буфер");
 		} catch (err: unknown) {
-			console.warn("Failed to copy lab ready notification to clipboard:", err);
+			clientLogger.warn("[DentalLabReadyInClinicModal] Failed to copy lab ready notification to clipboard", err, { module: "DentalLab" });
 			showToast("Не удалось скопировать", "error");
 		}
 	};
@@ -121,7 +122,7 @@ export function DentalLabReadyInClinicModal({
 				window.dispatchEvent(new CustomEvent("dente-quick-appointment-draft", { detail: draft }));
 				window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: draft }));
 			} catch (err) {
-				console.warn("Failed to dispatch quick booking draft:", err);
+				clientLogger.warn("[DentalLabReadyInClinicModal] Failed to dispatch quick booking draft", err, { module: "DentalLab" });
 			}
 		}
 		onScheduleAppointment?.(draft);
@@ -130,16 +131,16 @@ export function DentalLabReadyInClinicModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" data-testid="dental-lab-ready-in-clinic-modal">
+		<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" data-testid="dental-lab-ready-in-clinic-modal">
 			<div className="relative w-full max-w-lg bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none p-4 sm:p-5 shadow-2xl space-y-4 max-sm:max-h-[92vh] overflow-y-auto">
-				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-1 shrink-0" aria-hidden="true" />
+				<div className="sm:hidden w-9 h-1.5 bg-[var(--line)] rounded-full mx-auto mb-1 shrink-0 pointer-events-none" aria-hidden="true" />
 				<div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
 					<div>
-						<h3 className="text-base font-bold text-[var(--ink)]">Работа доставлена в клинику</h3>
-						<p className="text-xs text-[var(--muted)]">Наряд #{order.orderNumber} · {order.patientName}</p>
+						<h3 className="text-base font-semibold text-[var(--ink)]">Работа доставлена в клинику</h3>
+						<p className="text-xs text-[var(--ink-muted)]">Наряд #{order.orderNumber} · {order.patientName}</p>
 					</div>
-					<button type="button" onClick={onClose} className="w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" aria-label="Закрыть">
-						<X size={18} />
+					<button type="button" onClick={onClose} className="w-11 h-11 sm:w-9 sm:h-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0" aria-label="Закрыть">
+						<X className="w-4 h-4 shrink-0" />
 					</button>
 				</div>
 				<div className="flex gap-2 border-b border-[var(--line)] pb-2">
@@ -149,19 +150,19 @@ export function DentalLabReadyInClinicModal({
 				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs text-[var(--ink)] whitespace-pre-wrap font-sans max-h-40 overflow-y-auto">
 					{msgText}
 				</div>
-				<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
+				<div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--line)]">
 					<div className="flex items-center gap-2">
-						<button type="button" onClick={handleCopy} className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-0 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-							<Copy size={14} /><span>Копировать</span>
+						<button type="button" onClick={handleCopy} className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0">
+							<Copy className="w-4 h-4 shrink-0" /><span>Копировать</span>
 						</button>
 						{channel === "whatsapp" && (
-							<button type="button" onClick={handleSendWhatsApp} className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-0 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-								<Send size={14} className="text-[var(--teal)]" /><span>Открыть чат</span>
+							<button type="button" onClick={handleSendWhatsApp} className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0">
+								<Send className="w-4 h-4 shrink-0" /><span>Открыть чат</span>
 							</button>
 						)}
 					</div>
-					<button type="button" onClick={handleSchedule} className="dente-btn dente-btn-primary min-h-[44px] sm:min-h-0 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid="btn-lab-schedule-appointment">
-						<CalendarCheck size={14} /><span>Записать на примерку</span>
+					<button type="button" onClick={handleSchedule} className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-sm cursor-pointer shrink-0" data-testid="btn-lab-schedule-appointment">
+						<CalendarCheck className="w-4 h-4 shrink-0" /><span>Записать на примерку</span>
 					</button>
 				</div>
 			</div>

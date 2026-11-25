@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { generateWarrantyPatientMemo, generateWarrantyRemediationActHtml, type WarrantyCertificateData, type WarrantyRemediationOrder } from "../../warrantyEngine.js";
-import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { showToast } from "../../../GlobalToast";
 import type { AttachedWarrantyPayload, WarrantyPatientMeta } from "../types";
 
@@ -36,10 +37,10 @@ export function useWarrantyExportActions({
 					: null;
 			const res = await fetch("/api/warranty/certificates", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				},
+				}),
 				body: JSON.stringify({
 					patientId: patient.id,
 					visitId: cleanVisitId,
@@ -64,11 +65,17 @@ export function useWarrantyExportActions({
 			});
 			if (!res.ok) {
 				const errText = await res.text().catch(() => "");
-				console.error("Failed to persist warranty certificate to backend:", res.status, errText);
+				clientLogger.error("[useWarrantyExportActions] Не удалось сохранить гарантийный паспорт", {
+					status: res.status,
+					errText,
+				}, { module: "Warranty" });
 				showToast("Не удалось сохранить гарантийный паспорт на сервере", "error");
 			}
 		} catch (err) {
-			console.error("Failed to persist warranty certificate to backend:", err);
+			clientLogger.error("[useWarrantyExportActions] Сетевой сбой при сохранении гарантийного паспорта", err, {
+				module: "Warranty",
+			});
+			showToast("Сетевая ошибка: гарантийный паспорт не сохранён на сервере", "error");
 		}
 	}, [certificateData, doctorName, onCertificateIssued, patient?.id, visitId]);
 

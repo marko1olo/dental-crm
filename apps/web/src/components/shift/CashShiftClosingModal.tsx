@@ -32,6 +32,7 @@ import {
 	denteClinicalMutationHeaders,
 	denteClinicalReadHeaders,
 } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	reconcileAcquiringWithKkt,
 	type AcquiringTerminalTransaction,
@@ -84,7 +85,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	shiftNumber: shiftNumberProp,
 	cashierFullName: cashierFullNameProp,
 	cashierName,
-	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+	clinicLegalName = "Стоматологическая клиника",
 	initialChangeFundRub: initialChangeFundRubProp,
 	cashInDrawerRub: cashInDrawerRubProp,
 	incomeCashRub: incomeCashRubProp,
@@ -100,13 +101,13 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 	// Auto-hydration from real database API if values are not explicitly supplied
 	const [autoFetchedData, setAutoFetchedData] = useState<{
-		incomeCashRub?: number;
-		incomeElectronicRub?: number;
-		incomeSbpRub?: number;
-		advanceOffsetRub?: number;
-		initialChangeFundRub?: number;
-		cashInDrawerRub?: number;
-		shiftNumber?: number;
+		incomeCashRub?: number | undefined;
+		incomeElectronicRub?: number | undefined;
+		incomeSbpRub?: number | undefined;
+		advanceOffsetRub?: number | undefined;
+		initialChangeFundRub?: number | undefined;
+		cashInDrawerRub?: number | undefined;
+		shiftNumber?: number | undefined;
 	} | null>(null);
 
 	const needsAutoFetch =
@@ -120,8 +121,16 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 		fetch("/api/cashbox/shift", {
 			headers: denteClinicalReadHeaders(),
 		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
+			.then(async (res) => {
+				if (!res.ok) {
+					clientLogger.warn("[CashShiftClosingModal] Ошибка ответа сервера при загрузке смены", { status: res.status }, { module: "Shift" });
+					return null;
+				}
+				return res.json();
+			})
+			.then((rawJson: unknown) => {
+				const rawObj = rawJson && typeof rawJson === "object" && "data" in rawJson ? (rawJson as { data?: unknown }).data ?? rawJson : rawJson;
+				const data = rawObj as Record<string, unknown> | null;
 				if (isMounted && data && typeof data === "object") {
 					setAutoFetchedData({
 						incomeCashRub: typeof data.incomeCashRub === "number" ? data.incomeCashRub : 0,
@@ -135,7 +144,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 				}
 			})
 			.catch((err) => {
-				console.warn("[CashShiftClosingModal] Не удалось загрузить данные кассовой смены:", err);
+				clientLogger.warn("[CashShiftClosingModal] Не удалось загрузить данные кассовой смены", err, { module: "Shift" });
 			});
 		return () => {
 			isMounted = false;
@@ -158,48 +167,16 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			? cashInDrawerRub
 			: initialChangeFundRub + totalCashRevenue;
 
-	// Acquiring & KKT reconciliation engine
+	// Acquiring & KKT reconciliation engine (real POS / OFD records only, no synthetic card metadata)
+	const hasRealAcquiringData = Boolean(
+		(acquiringTransactions && acquiringTransactions.length > 0) ||
+			(kktElectronicRecords && kktElectronicRecords.length > 0),
+	);
 	const acquiringReport = useMemo(() => {
-		const termTxs: AcquiringTerminalTransaction[] = acquiringTransactions
-			? [...acquiringTransactions]
-			: totalCardRevenue > 0
-				? [
-						{
-							id: `term-auto-${shiftNumber}`,
-							rrn: `RRN-${shiftNumber}-8842`,
-							authCode: "A77123",
-							panMasked: "5469 **** 9821",
-							paymentType: "card_contactless",
-							amountRub: totalCardRevenue,
-							amountKopecks: rubToKopecks(totalCardRevenue),
-							timestamp: new Date().toISOString(),
-							terminalId: "POS-01",
-							status: "approved",
-						},
-					]
-				: [];
-
-		const kktTxs: KktFiscalElectronicRecord[] = kktElectronicRecords
-			? [...kktElectronicRecords]
-			: totalCardRevenue > 0
-				? [
-						{
-							id: `kkt-auto-${shiftNumber}`,
-							fiscalDocNumber: String(shiftNumber * 10 + 1),
-							fiscalSign: "4928172910",
-							patientName: "Безналичный расчет смены",
-							electronicAmountRub: totalCardRevenue,
-							electronicAmountKopecks: rubToKopecks(totalCardRevenue),
-							operationType: "income",
-							timestamp: new Date().toISOString(),
-							terminalRrn: `RRN-${shiftNumber}-8842`,
-							authCode: "A77123",
-						},
-					]
-				: [];
-
+		const termTxs: AcquiringTerminalTransaction[] = acquiringTransactions ? [...acquiringTransactions] : [];
+		const kktTxs: KktFiscalElectronicRecord[] = kktElectronicRecords ? [...kktElectronicRecords] : [];
 		return reconcileAcquiringWithKkt(termTxs, kktTxs);
-	}, [acquiringTransactions, kktElectronicRecords, totalCardRevenue, shiftNumber]);
+	}, [acquiringTransactions, kktElectronicRecords]);
 
 	// Form state
 	const [countedCashRub, setCountedCashRub] = useState<number>(expectedCashInDrawer);
@@ -216,6 +193,12 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const [closedSuccessData, setClosedSuccessData] = useState<ZReportData | null>(null);
 
 	useEffect(() => {
+		if (!isOpen) {
+			setAutoFetchedData(null);
+			setIsTerminalReconciled(true);
+			setEncashmentOption("retain_change");
+			setPrintZReport(true);
+		}
 		setCountedCashRub(expectedCashInDrawer);
 		setChangeFundRetainRub(initialChangeFundRub);
 		setErrorMessage(null);
@@ -282,15 +265,16 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			}
 
 			const json = await res.json().catch(() => null);
-			const rawReport = (json?.zReportData || json?.reconciliation || payload) as Record<string, unknown>;
+			const jsonData = json && typeof json === "object" && "data" in json ? json.data : json;
+			const rawReport = (jsonData?.zReportData || jsonData?.reconciliation || json?.zReportData || json?.reconciliation || payload) as Record<string, unknown>;
 			const zReport: ZReportData = {
 				...payload,
 				expectedCashInDrawerRub: expectedCashInDrawer,
 				encashmentAmountRub,
 				...rawReport,
-				fiscalDocNumber: (rawReport.fiscalDocNumber ?? json?.reconciliation?.fiscalDocNumber ?? json?.zReportData?.fiscalDocNumber) as string | number | undefined,
-				fiscalSign: (rawReport.fiscalSign ?? json?.reconciliation?.fiscalSign ?? json?.zReportData?.fiscalSign) as string | undefined,
-				qrString: (rawReport.qrString ?? json?.reconciliation?.qrString ?? json?.zReportData?.qrString) as string | undefined,
+				fiscalDocNumber: (rawReport.fiscalDocNumber ?? jsonData?.reconciliation?.fiscalDocNumber ?? jsonData?.zReportData?.fiscalDocNumber) as string | number | undefined,
+				fiscalSign: (rawReport.fiscalSign ?? jsonData?.reconciliation?.fiscalSign ?? jsonData?.zReportData?.fiscalSign) as string | undefined,
+				qrString: (rawReport.qrString ?? jsonData?.reconciliation?.qrString ?? jsonData?.zReportData?.qrString) as string | undefined,
 			};
 
 			setClosedSuccessData(zReport);
@@ -314,105 +298,105 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			aria-labelledby={titleId}
 			data-testid="cash-shift-closing-modal"
 		>
-			<div className="w-full max-w-full md:max-w-xl lg:max-w-2xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper,#ffffff)] border-t md:border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] md:max-h-[90vh]">
+			<div className="w-full max-w-full md:max-w-xl lg:max-w-2xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper,#ffffff)] border-t md:border border-[var(--line)] text-[var(--ink)] shadow-2xl overflow-hidden overflow-x-clip flex flex-col max-h-[92dvh] md:max-h-[90vh]">
 				{/* Apple HIG Drag Handle for Mobile */}
 				<div className="md:hidden flex justify-center pt-2.5 pb-1" aria-hidden="true">
-					<div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))]" />
+					<div className="w-9 h-1.5 rounded-full bg-[var(--line)]" />
 				</div>
 
 				{/* Header */}
-				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line,#e2e8f0)]">
+				<div className="h-14 px-6 border-b border-[var(--line)] flex items-center justify-between shrink-0">
 					<div>
-						<h2 id={titleId} className="text-base md:text-lg font-semibold text-[var(--ink)] tracking-tight">
+						<h2 id={titleId} className="text-base font-semibold text-[var(--ink)] tracking-tight">
 							Закрытие смены и Z-отчёт
 						</h2>
-						<p className="text-xs text-[var(--muted,#64748b)]">
+						<p className="text-xs text-[var(--ink-muted)]">
 							{`Смена №${shiftNumber} • ${cashierFullName} • ${clinicLegalName}`}
 						</p>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
+						className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors shrink-0 cursor-pointer"
 						aria-label="Закрыть окно"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4 shrink-0" />
 					</button>
 				</div>
 
 				{/* Body Content */}
-				<div className="p-5 overflow-y-auto space-y-4 max-w-full">
+				<div className="p-6 overflow-y-auto space-y-4 max-w-full">
 					{/* Total Shift Revenue Hero Display */}
-					<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center text-center gap-1">
-						<span className="text-xs font-medium text-[var(--muted,#64748b)]">
+					<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center gap-1">
+						<span className="text-xs font-medium text-[var(--ink-muted)]">
 							Итоговая выручка смены
 						</span>
-						<span className="text-[32px] font-bold text-[var(--ink,#0f172a)] tracking-tight leading-none" data-testid="shift-closing-net-revenue">
+						<span className="text-[32px] font-semibold font-mono text-[var(--ink)] tracking-tight tabular-nums leading-none" data-testid="shift-closing-net-revenue">
 							{netRevenueRub.toLocaleString("ru-RU")} ₽
 						</span>
-						<span className="text-xs text-[var(--muted,#64748b)] mt-1">
+						<span className="text-xs text-[var(--ink-muted)] mt-1 font-mono tabular-nums tracking-tight">
 							Разменный фонд на начало: {initialChangeFundRub.toLocaleString("ru-RU")} ₽
 						</span>
 					</div>
 
 					{/* 4 Tenders Revenue Grid */}
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-						<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-1">
-							<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
-								<Banknote className="w-3.5 h-3.5 text-[var(--primary)]" />
+						<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1">
+							<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
+								<Banknote className="w-3.5 h-3.5 shrink-0 text-[var(--primary)]" />
 								<span>Наличные</span>
 							</div>
-							<span className="text-sm font-bold text-[var(--ink)]">
+							<span className="text-sm font-medium font-mono tracking-tight text-right tabular-nums text-[var(--ink)]">
 								{totalCashRevenue.toLocaleString("ru-RU")} ₽
 							</span>
 						</div>
 
-						<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-1">
-							<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
-								<CreditCard className="w-3.5 h-3.5 text-sky-600" />
+						<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1">
+							<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
+								<CreditCard className="w-3.5 h-3.5 shrink-0 text-[var(--primary)]" />
 								<span>Безнал / карта</span>
 							</div>
-							<span className="text-sm font-bold text-[var(--ink)]">
+							<span className="text-sm font-medium font-mono tracking-tight text-right tabular-nums text-[var(--ink)]">
 								{totalCardRevenue.toLocaleString("ru-RU")} ₽
 							</span>
 						</div>
 
-						<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-1">
-							<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
-								<QrCode className="w-3.5 h-3.5 text-amber-600" />
+						<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1">
+							<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
+								<QrCode className="w-3.5 h-3.5 shrink-0 text-[var(--primary)]" />
 								<span>QR СБП</span>
 							</div>
-							<span className="text-sm font-bold text-[var(--ink)]">
+							<span className="text-sm font-medium font-mono tracking-tight text-right tabular-nums text-[var(--ink)]">
 								{totalSbpRevenue.toLocaleString("ru-RU")} ₽
 							</span>
 						</div>
 
-						<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-1">
-							<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
-								<Wallet className="w-3.5 h-3.5 text-indigo-600" />
+						<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1">
+							<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
+								<Wallet className="w-3.5 h-3.5 shrink-0 text-[var(--primary)]" />
 								<span>Зачёт аванса</span>
 							</div>
-							<span className="text-sm font-bold text-[var(--ink)]">
+							<span className="text-sm font-medium font-mono tracking-tight text-right tabular-nums text-[var(--ink)]">
 								{totalAdvanceOffset.toLocaleString("ru-RU")} ₽
 							</span>
 						</div>
 					</div>
 
 					{/* Physical Cash Reconciliation Section */}
-					<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] space-y-3 bg-[var(--paper,#ffffff)]">
+					<div className="p-4 rounded-xl border border-[var(--line)] space-y-3 bg-[var(--paper)]">
 						<div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-[var(--ink)]">
 							<span className="flex items-center gap-1.5">
-								<Banknote className="w-4 h-4 text-[var(--primary)]" />
+								<Banknote className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 								Сверка фактической наличности
 							</span>
-							<span className="text-xs text-[var(--muted,#64748b)]">
+							<span className="text-xs text-[var(--ink-muted)] font-mono tabular-nums tracking-tight">
 								В ящике должно быть: <b>{expectedCashInDrawer.toLocaleString("ru-RU")} ₽</b>
 							</span>
 						</div>
 
 						<div className="flex items-center gap-3">
 							<div className="flex-1">
-								<label className="block text-[11px] text-[var(--muted,#64748b)] mb-1">
+								<label className="block text-xs text-[var(--ink-muted)] mb-1">
 									Фактическая наличность в кассе (₽)
 								</label>
 								<input
@@ -420,19 +404,19 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 									min={0}
 									value={countedCashRub || ""}
 									onChange={(e) => setCountedCashRub(Number(e.target.value) || 0)}
-									className="w-full min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-sm font-bold text-[var(--ink)]"
+									className="w-full h-11 md:h-9 px-3 rounded-xl md:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-base md:text-sm font-mono font-medium tracking-tight tabular-nums text-[var(--ink)]"
 								/>
 							</div>
 
 							<div className="pt-5 shrink-0">
 								{isCashMatched ? (
-									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] text-xs font-semibold">
-										<CheckCircle2 className="w-4 h-4 text-[var(--success-ink)]" />
+									<span className="h-6 px-2 rounded-full bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+										<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
 										Сходится
 									</span>
 								) : (
-									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold">
-										<AlertTriangle className="w-4 h-4 text-amber-600" />
+									<span className="h-6 px-2 rounded-full bg-[var(--warning-soft)] border border-[var(--warning)]/30 text-[var(--warning-ink,var(--warning))] text-xs font-medium inline-flex items-center gap-1 shrink-0 font-mono tabular-nums">
+										<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
 										{discrepancyRub > 0 ? `+${discrepancyRub}` : discrepancyRub} ₽
 									</span>
 								)}
@@ -440,48 +424,57 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						</div>
 
 						{/* Acquiring Terminal Reconciliation Checkbox & Engine */}
-						<div className="pt-2 border-t border-[var(--line-subtle,var(--line))] space-y-2">
-							<div className="flex items-center justify-between">
+						<div className="pt-2 border-t border-[var(--line)] space-y-2">
+							<div className="flex items-center justify-between gap-2">
 								<span className="text-xs text-[var(--ink)] flex items-center gap-1.5 font-medium">
-									<CreditCard className="w-3.5 h-3.5 text-sky-600" />
+									<CreditCard className="w-3.5 h-3.5 shrink-0 text-[var(--primary)]" />
 									Сверка терминала эквайринга ({totalCardRevenue.toLocaleString("ru-RU")} ₽)
 								</span>
 								<button
 									type="button"
 									onClick={() => setIsTerminalReconciled(!isTerminalReconciled)}
-									className={`min-h-[36px] px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+									className={`h-8 px-2.5 rounded-md border text-xs font-medium inline-flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${
 										isTerminalReconciled
 											? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
-											: "border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)]"
+											: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)]"
 									}`}
 								>
-									<CheckCircle2 className="w-3.5 h-3.5" />
+									<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
 									{isTerminalReconciled ? "Терминал сверен" : "Подтвердить сверку"}
 								</button>
 							</div>
-							<div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-								<span className="text-[var(--muted,#64748b)]">
-									Сверка эквайринга с ОФД: <strong>{acquiringReport.totalTerminalRub.toLocaleString("ru-RU")} ₽</strong>
+							<div className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
+								<span className="text-[var(--ink-muted)]">
+									Сверка эквайринга с ОФД:{" "}
+									<strong className="font-mono tabular-nums text-[var(--ink)]">
+										{hasRealAcquiringData
+											? `${acquiringReport.totalTerminalRub.toLocaleString("ru-RU")} ₽`
+											: `${totalCardRevenue.toLocaleString("ru-RU")} ₽`}
+									</strong>
 								</span>
 								<span
-									className={`font-semibold ${
-										acquiringReport.isExactMatch
-											? "text-[var(--success-ink)]"
-											: "text-amber-700 dark:text-amber-400"
+									className={`font-medium ${
+										!hasRealAcquiringData
+											? "text-[var(--ink-muted)]"
+											: acquiringReport.isExactMatch
+												? "text-[var(--success-ink)]"
+												: "text-[var(--warning-ink,var(--warning))]"
 									}`}
 								>
-									{acquiringReport.isExactMatch
-										? "100% совпадение с чеками"
-										: `Разница: ${acquiringReport.totalDiffRub.toFixed(2)} ₽`}
+									{!hasRealAcquiringData
+										? "Ожидает выгрузки POS / ОФД"
+										: acquiringReport.isExactMatch
+											? "100% совпадение с чеками"
+											: `Разница: ${acquiringReport.totalDiffRub.toFixed(2)} ₽`}
 								</span>
 							</div>
 						</div>
 					</div>
 
 					{/* Revenue Encashment / Withdrawal Options */}
-					<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] space-y-2.5 bg-[var(--paper,#ffffff)]">
+					<div className="p-4 rounded-xl border border-[var(--line)] space-y-2.5 bg-[var(--paper)]">
 						<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<ArrowDownToLine className="w-4 h-4 text-[var(--primary)]" />
+							<ArrowDownToLine className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 							Инкассация наличной выручки
 						</span>
 
@@ -489,39 +482,39 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setEncashmentOption("retain_change")}
-								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors ${
+								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors cursor-pointer ${
 									encashmentOption === "retain_change"
-										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold"
-										: "border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]"
+										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-medium"
+										: "border-[var(--line)] text-[var(--ink-muted)]"
 								}`}
 							>
 								<span>Оставить размен на утро</span>
-								<span className="text-[11px] font-normal opacity-80">Инкассировать только прибыль</span>
+								<span className="text-xs font-normal opacity-80">Инкассировать только прибыль</span>
 							</button>
 
 							<button
 								type="button"
 								onClick={() => setEncashmentOption("full")}
-								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors ${
+								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors cursor-pointer ${
 									encashmentOption === "full"
-										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold"
-										: "border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]"
+										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-medium"
+										: "border-[var(--line)] text-[var(--ink-muted)]"
 								}`}
 							>
 								<span>Полная инкассация в сейф</span>
-								<span className="text-[11px] font-normal opacity-80">Изъять всю наличность</span>
+								<span className="text-xs font-normal opacity-80">Изъять всю наличность</span>
 							</button>
 						</div>
 
 						{encashmentOption === "retain_change" && (
 							<div className="flex items-center gap-2 pt-1">
-								<span className="text-xs text-[var(--muted,#64748b)] shrink-0">Сумма размена:</span>
+								<span className="text-xs text-[var(--ink-muted)] shrink-0">Сумма размена:</span>
 								<input
 									type="number"
 									min={0}
 									value={changeFundRetainRub || ""}
 									onChange={(e) => setChangeFundRetainRub(Number(e.target.value) || 0)}
-									className="min-h-[36px] w-28 px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] text-xs font-bold"
+									className="h-9 w-28 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-mono font-medium tracking-tight tabular-nums text-[var(--ink)]"
 								/>
 								<span className="text-xs text-[var(--ink)]">₽</span>
 							</div>
@@ -529,42 +522,36 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					</div>
 
 					{/* Print Z-Report Toggle */}
-					<div className="flex items-center justify-between p-3 rounded-xl border border-[var(--line,#e2e8f0)]">
+					<div className="flex items-center justify-between p-3 rounded-xl border border-[var(--line)]">
 						<span className="text-xs sm:text-sm font-medium text-[var(--ink)] flex items-center gap-2">
-							<Printer className="w-4 h-4 text-[var(--primary)]" />
+							<Printer className="w-4 h-4 shrink-0 text-[var(--primary)]" />
 							Печать бумажного Z-отчёта на кассовом аппарате
 						</span>
-						<label className="relative inline-flex items-center cursor-pointer min-h-[36px]">
+						<label className="relative inline-flex items-center cursor-pointer min-h-[44px] md:min-h-[36px]">
 							<input
 								type="checkbox"
 								checked={printZReport}
 								onChange={(e) => setPrintZReport(e.target.checked)}
 								className="sr-only peer"
 							/>
-							<div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[8px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--primary)]" />
+							<div className="w-10 h-5 bg-[var(--line)] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[12px] md:after:top-[8px] after:left-[2px] after:bg-white after:border-[var(--line)] after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--primary)]" />
 						</label>
 					</div>
 
 					{/* Error Alert */}
 					{errorMessage && (
 						<div
-							className="p-3 rounded-xl border flex items-center justify-between text-xs animate-in fade-in duration-150"
-							style={{
-								backgroundColor: "var(--danger-soft, rgba(239, 68, 68, 0.1))",
-								borderColor: "var(--danger, #ef4444)",
-								color: "var(--danger, #ef4444)",
-							}}
+							className="p-3 rounded-xl border flex items-center justify-between gap-2 text-xs animate-in fade-in duration-150 bg-[var(--danger-soft)] border-[var(--danger)] text-[var(--danger)]"
 							role="alert"
 						>
 							<div className="flex items-center gap-2 min-w-0">
-								<AlertTriangle className="w-4 h-4 shrink-0 text-[var(--danger,#ef4444)]" />
+								<AlertTriangle className="w-4 h-4 shrink-0" />
 								<span>{errorMessage}</span>
 							</div>
 							<button
 								type="button"
 								onClick={handleExecuteCloseShift}
-								className="px-2.5 py-1 text-white rounded-lg text-[11px] font-semibold shrink-0 cursor-pointer shadow-xs hover:opacity-90 transition-opacity"
-								style={{ backgroundColor: "var(--danger, #ef4444)" }}
+								className="h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 shrink-0 cursor-pointer bg-[var(--danger)] text-white hover:opacity-90 transition-opacity"
 							>
 								Повторить
 							</button>
@@ -574,7 +561,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					{/* Success Toast */}
 					{closedSuccessData && (
 						<div className="p-3 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] flex items-center gap-2 text-xs">
-							<ShieldCheck className="w-4 h-4 text-[var(--success-ink)] shrink-0" />
+							<ShieldCheck className="w-4 h-4 shrink-0" />
 							<span>Смена №{shiftNumber} успешно закрыта! Z-отчёт сформирован.</span>
 						</div>
 					)}
@@ -582,14 +569,14 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 				{/* Footer with exactly 1 Primary CTA */}
 				<div
-					className="px-5 py-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]/80 flex items-center justify-between gap-3"
-					style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
+					className="h-16 px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0"
+					style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
 				>
 					<button
 						type="button"
 						onClick={onClose}
 						aria-busy={isSubmitting}
-						className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#cbd5e1)] text-xs sm:text-sm font-medium text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors"
+						className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-base md:text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer"
 					>
 						Отмена
 					</button>
@@ -599,12 +586,12 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						onClick={handleExecuteCloseShift}
 						aria-busy={isSubmitting}
 						data-testid="btn-confirm-close-shift-z-report"
-						className="min-h-[44px] flex-1 max-w-md py-2.5 px-5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+						className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-base md:text-sm font-medium shadow-sm inline-flex items-center justify-center gap-2 shrink-0 transition-all cursor-pointer"
 						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
 					>
 						{isSubmitting ? (
 							<>
-								<RefreshCw className="w-4 h-4 animate-spin" />
+								<RefreshCw className="w-4 h-4 shrink-0 animate-spin" />
 								<span>Закрытие смены и печать Z-отчёта...</span>
 							</>
 						) : (

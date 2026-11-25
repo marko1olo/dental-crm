@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
 import { rubAmountForInput } from "../../../rubAmountInput.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import type { PendingCheckout } from "../types.js";
 import {
 	resolveEffectiveBillingSummary,
@@ -47,7 +48,9 @@ export function useFinancePendingCheckoutAndPayment(params: UseFinancePendingChe
 				localStorage.getItem("dente_pending_checkout");
 			return raw ? JSON.parse(raw) : null;
 		} catch (err) {
-			console.warn("[FinancePendingCheckout] Не удалось прочитать dente_pending_checkout:", err);
+			clientLogger.warn("[FinancePendingCheckout] Не удалось прочитать dente_pending_checkout", err, {
+				module: "Finance",
+			});
 			return null;
 		}
 	});
@@ -66,7 +69,9 @@ export function useFinancePendingCheckoutAndPayment(params: UseFinancePendingChe
 					}
 				}
 			} catch (err) {
-				console.warn("[FinancePendingCheckout] Ошибка парсинга pending checkout:", err);
+				clientLogger.warn("[FinancePendingCheckout] Ошибка парсинга pending checkout", err, {
+					module: "Finance",
+				});
 			}
 		};
 		syncPendingCheckout();

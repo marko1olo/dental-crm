@@ -7,6 +7,7 @@ import {
 	saveStoredTeethData,
 } from "../../components/odontogram/odontogramStorage";
 import { useAppStore } from "../appStore";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { mapVisitUiStateToToothDataState } from "./odontogramSlice.js";
 import type { ToothState, VisitStore, VisitStoreSet } from "./types.js";
 
@@ -293,10 +294,9 @@ export function createBillingInvoiceSlice(
 							);
 						}
 					} catch (storageErr) {
-						console.warn(
-							"[visitStore] Ошибка локального обновления одонтограммы:",
-							storageErr,
-						);
+						clientLogger.warn("[billingInvoiceSlice] Ошибка локального обновления одонтограммы", storageErr, {
+							module: "VisitStore",
+						});
 					}
 				}
 

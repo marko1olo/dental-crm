@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Camera, Sparkles, CheckCircle2, Image as ImageIcon } from "lucide-react";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { BeforeAfterSplitSlider, type BeforeAfterPhotoItem } from "../../photography/BeforeAfterSplitSlider";
 import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 
@@ -39,14 +41,15 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
 
 		let isCancelled = false;
 		fetch(`/api/patients/${patientId}/photos`, {
-			headers: { Accept: "application/json" },
+			headers: denteClinicalReadHeaders({ Accept: "application/json" }),
 		})
 			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
-				if (isCancelled || !data) return;
+			.then((raw) => {
+				if (isCancelled || !raw) return;
+				const data = raw?.data ?? raw;
 				const items: BeforeAfterPhotoItem[] = [];
 
-				if (data.protocol?.slots && typeof data.protocol.slots === "object") {
+				if (data?.protocol?.slots && typeof data.protocol.slots === "object") {
 					for (const [slotId, slotVal] of Object.entries(data.protocol.slots)) {
 						if (typeof slotVal === "string" && slotVal.trim()) {
 							items.push({ id: slotId, url: slotVal, label: slotId });
@@ -58,7 +61,7 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
 					}
 				}
 
-				if (Array.isArray(data.photos)) {
+				if (Array.isArray(data?.photos)) {
 					for (const p of data.photos) {
 						if (p.url && !items.some((it) => it.url === p.url)) {
 							items.push({ id: p.id, url: p.url, label: p.name || "Снимок" });
@@ -69,7 +72,7 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
 				setFetchedPhotos(items);
 			})
 			.catch((fetchErr) => {
-				console.warn("[StudioPhotoProtocolTab] Ошибка загрузки фотопротокола пациента:", fetchErr);
+				clientLogger.warn("[StudioPhotoProtocolTab] Ошибка загрузки фотопротокола пациента", fetchErr, { module: "TreatmentPlans" });
 				if (!isCancelled) setFetchedPhotos([]);
 			});
 

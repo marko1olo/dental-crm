@@ -6,6 +6,8 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { rublesToKopecks, kopecksToRubles, generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type {
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
@@ -120,7 +122,7 @@ export function useStudioPlanLifecycle({
 				}
 				localStorage.removeItem("dente_plan_draft_current");
 			} catch (storageErr) {
-				console.warn("[useStudioPlanLifecycle] Storage cleanup non-blocking error:", storageErr);
+				clientLogger.warn("[useStudioPlanLifecycle] Storage cleanup non-blocking error", storageErr, { module: "TreatmentPlans" });
 			}
 		}
 	}, [patientId]);
@@ -143,12 +145,22 @@ export function useStudioPlanLifecycle({
 
 		const fetchPatientPlans = async () => {
 			try {
-				const res = await fetch(`/api/patients/${patientId}/treatment-plans`);
+				const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
+					headers: denteClinicalReadHeaders(),
+				});
 				if (!res.ok) return;
-				const data = await res.json();
+				const raw = await res.json();
 				if (isCancelled) return;
+				const data = raw?.data ?? raw;
+				const plansSource = Array.isArray(data?.plans)
+					? data.plans
+					: Array.isArray(raw?.plans)
+						? raw.plans
+						: Array.isArray(data)
+							? data
+							: null;
 
-				if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+				if (plansSource && plansSource.length > 0) {
 					type RemotePlanItemLike = {
 						id?: string;
 						phase?: number;
@@ -172,7 +184,7 @@ export function useStudioPlanLifecycle({
 						items?: RemotePlanItemLike[];
 						stages?: Array<{ id: string; stageName: string; stageOrder: number }>;
 					};
-					const plansList = data.plans as readonly RemotePlanLike[];
+					const plansList = plansSource as readonly RemotePlanLike[];
 					const activePlan = plansList.find((p) => p.status === "Approved" || p.status === "InProgress") || plansList[0];
 					if (activePlan && Array.isArray(activePlan.items) && activePlan.items.length > 0) {
 						const stageDefs = Array.isArray(activePlan.stages) ? activePlan.stages : [];
@@ -260,7 +272,7 @@ export function useStudioPlanLifecycle({
 								return;
 							}
 						} catch (draftParseErr) {
-							console.warn("[TreatmentPlanStudioModal] Ошибка парсинга локального черновика плана лечения:", draftParseErr);
+							clientLogger.warn("[TreatmentPlanStudioModal] Ошибка парсинга локального черновика плана лечения", draftParseErr, { module: "TreatmentPlans" });
 						}
 					}
 				}
@@ -269,7 +281,7 @@ export function useStudioPlanLifecycle({
 					setStages([]);
 				}
 			} catch (err) {
-				console.warn("[TreatmentPlanStudioModal] Ошибка реактивной гидратации планов лечения:", err);
+				clientLogger.warn("[TreatmentPlanStudioModal] Ошибка реактивной гидратации планов лечения", err, { module: "TreatmentPlans" });
 			}
 		};
 
@@ -514,10 +526,10 @@ export function useStudioPlanLifecycle({
 
 			const res = await fetch("/api/invoices/generate-from-plan", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-				},
+				}),
 				body: JSON.stringify({
 					patientId,
 					planId: currentPlanId || undefined,
@@ -535,7 +547,8 @@ export function useStudioPlanLifecycle({
 				return false;
 			}
 
-			const resJson = await res.json().catch(() => ({}));
+			const rawJson = await res.json().catch(() => ({}));
+			const resJson = rawJson?.data ?? rawJson;
 			window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: resJson, patientId } }));
 			window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
 
@@ -543,7 +556,7 @@ export function useStudioPlanLifecycle({
 			setTimeout(() => setApprovedSuccessMessage(null), 4000);
 			return true;
 		} catch (err) {
-			console.warn("[TreatmentPlanStudioModal] Ошибка выставления счета на этап:", err);
+			clientLogger.warn("[TreatmentPlanStudioModal] Ошибка выставления счета на этап", err, { module: "TreatmentPlans" });
 			setApprovalErrorMessage("Сетевой сбой при выставлении счёта на этап в кассу.");
 			setTimeout(() => setApprovalErrorMessage(null), 4000);
 			return false;
@@ -626,27 +639,41 @@ export function useStudioPlanLifecycle({
 
 			const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-				},
+				}),
 				body: JSON.stringify(bodyPayload),
 			});
 
 			if (res.ok) {
 				const json = await res.json().catch(() => ({}));
-				const savedId = json?.planId || json?.plan?.id || json?.treatmentPlan?.id || currentPlanId;
+				const payload = json?.data ?? json;
+				const savedId =
+					payload?.planId ||
+					payload?.plan?.id ||
+					payload?.treatmentPlan?.id ||
+					json?.planId ||
+					json?.plan?.id ||
+					json?.treatmentPlan?.id ||
+					currentPlanId;
 				if (savedId) {
 					setCurrentPlanId(savedId);
 					return savedId;
 				}
-			} else {
-				console.warn("[TreatmentPlanStudioModal] Ошибка сохранения плана на сервере:", await res.text().catch(() => ""));
+				return currentPlanId;
 			}
+			const errText = await res.text().catch(() => "");
+			clientLogger.warn("[useStudioPlanLifecycle] Ошибка сохранения плана на сервере", errText, {
+				module: "TreatmentPlans",
+			});
+			throw new Error(errText || `Ошибка сохранения плана (HTTP ${res.status})`);
 		} catch (saveErr) {
-			console.warn("[TreatmentPlanStudioModal] Сетевой сбой при сохранении плана:", saveErr);
+			clientLogger.warn("[useStudioPlanLifecycle] Сетевой сбой при сохранении плана", saveErr, {
+				module: "TreatmentPlans",
+			});
+			throw saveErr;
 		}
-		return currentPlanId;
 	}, [patientId, currentPlanId, activeTier, stages, doctorDiscountPercent]);
 
 	// 5. Утверждение плана (Мандат 8e: 0 disabled блокировок, честная контрактная обработка)
@@ -674,10 +701,10 @@ export function useStudioPlanLifecycle({
 				if (planIdToApprove) {
 					const approveRes = await fetch(`/api/treatment-plans/${planIdToApprove}/approve`, {
 						method: "POST",
-						headers: {
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
 							"Idempotency-Key": generateUuidV7(),
-						},
+						}),
 						body: JSON.stringify({
 							selectedTier: activeTier.tierId,
 						}),
@@ -685,21 +712,34 @@ export function useStudioPlanLifecycle({
 					if (!approveRes.ok) {
 						const errJson = await approveRes.json().catch(() => ({}));
 						const errMsg = errJson?.message || errJson?.error || "Ошибка утверждения плана лечения на сервере";
-						console.warn("[TreatmentPlanStudioModal] Ошибка утверждения плана лечения:", errJson);
+						clientLogger.warn("[useStudioPlanLifecycle] Ошибка утверждения плана лечения", errJson, {
+							module: "TreatmentPlans",
+						});
 						setApprovalErrorMessage(errMsg);
 						return;
 					}
 
 					const resJson = await approveRes.json().catch(() => ({}));
-					if (resJson?.invoice || resJson?.createdInvoice) {
-						const inv = resJson.invoice || resJson.createdInvoice;
-						window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: inv, patientId } }));
+					const approvePayload = resJson?.data ?? resJson;
+					const createdInv =
+						approvePayload?.invoice ||
+						approvePayload?.createdInvoice ||
+						resJson?.invoice ||
+						resJson?.createdInvoice;
+					if (createdInv) {
+						window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: createdInv, patientId } }));
 						window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
 					}
 				}
 			} catch (networkErr) {
-				console.warn("[TreatmentPlanStudioModal] Сетевой сбой при утверждении плана лечения:", networkErr);
-				setApprovalErrorMessage("Сетевая ошибка при обращении к серверу. Пожалуйста, повторите попытку.");
+				clientLogger.warn("[useStudioPlanLifecycle] Сетевой сбой при утверждении плана лечения", networkErr, {
+					module: "TreatmentPlans",
+				});
+				const errMsg =
+					networkErr instanceof Error && networkErr.message
+						? networkErr.message
+						: "Сетевая ошибка при обращении к серверу. Пожалуйста, повторите попытку.";
+				setApprovalErrorMessage(errMsg);
 				return;
 			}
 		}
@@ -730,7 +770,7 @@ export function useStudioPlanLifecycle({
 				}
 				localStorage.removeItem("dente_plan_draft_current");
 			} catch (storageErr) {
-				console.warn("[useStudioPlanLifecycle] Storage cleanup non-blocking error:", storageErr);
+				clientLogger.warn("[useStudioPlanLifecycle] Storage cleanup non-blocking error", storageErr, { module: "TreatmentPlans" });
 			}
 		}
 
@@ -742,7 +782,13 @@ export function useStudioPlanLifecycle({
 		if (onSaveDraft) onSaveDraft(stages, activeTier);
 
 		// SEV-1.3: Реальный сетевой вызов к API вместо исключительно локального хранилища
-		const savedId = await savePlanToApi("Draft");
+		let savedId = currentPlanId;
+		let serverSaveError: string | null = null;
+		try {
+			savedId = await savePlanToApi("Draft");
+		} catch (err: unknown) {
+			serverSaveError = err instanceof Error ? err.message : "Ошибка сохранения плана на сервере";
+		}
 
 		if (typeof window !== "undefined") {
 			try {
@@ -752,18 +798,27 @@ export function useStudioPlanLifecycle({
 					JSON.stringify({ stages, selectedTierId, doctorDiscountPercent, planId: savedId, updatedAt: new Date().toISOString() })
 				);
 			} catch (storageErr) {
-				console.warn("[TreatmentPlanStudioModal] Ошибка записи локального черновика плана лечения:", storageErr);
+				clientLogger.warn("[useStudioPlanLifecycle] Ошибка записи локального черновика плана лечения", storageErr, {
+					module: "TreatmentPlans",
+				});
 			}
-			window.dispatchEvent(
-				new CustomEvent("dente:plan-status-changed", {
-					detail: { planId: savedId || currentPlanId || "draft-saved", status: "Draft", selectedTier: selectedTierId, patientId },
-				})
-			);
-			window.dispatchEvent(
-				new CustomEvent("dente:plan-updated", {
-					detail: { planId: savedId || currentPlanId, patientId },
-				})
-			);
+			if (!serverSaveError) {
+				window.dispatchEvent(
+					new CustomEvent("dente:plan-status-changed", {
+						detail: { planId: savedId || currentPlanId || "draft-saved", status: "Draft", selectedTier: selectedTierId, patientId },
+					})
+				);
+				window.dispatchEvent(
+					new CustomEvent("dente:plan-updated", {
+						detail: { planId: savedId || currentPlanId, patientId },
+					})
+				);
+			}
+		}
+		if (serverSaveError) {
+			setDraftSavedNotice(null);
+			setApprovalErrorMessage(`Черновик сохранён локально, но сервер вернул ошибку: ${serverSaveError}`);
+			return;
 		}
 		setDraftSavedNotice("Черновик плана лечения успешно сохранён на сервере и в карте!");
 		setTimeout(() => setDraftSavedNotice(null), 3000);

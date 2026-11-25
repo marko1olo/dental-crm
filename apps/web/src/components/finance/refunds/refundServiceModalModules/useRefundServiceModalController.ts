@@ -10,6 +10,7 @@ import { generateUuidV7, kopecksToRubles } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../../lib/denteRequestHeaders";
 import { FiscalReceiptQueueManager } from "../../../../services/hardware/fiscalReceiptQueueManager";
 import { showToast } from "../../../GlobalToast";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode.js";
 import { StaffActionAuditService } from "../../../../services/audit/staffActionAuditService";
 import type {
@@ -238,7 +239,10 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 				});
 			} else {
 				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-				console.warn("[RefundServiceModal] /api/cashbox/refund returned status:", res.status, errData);
+				clientLogger.warn("[useRefundServiceModalController] /api/cashbox/refund returned error status", {
+					status: res.status,
+					errData,
+				}, { module: "Finance" });
 				const errMsg =
 					typeof errData.message === "string" && errData.message.trim()
 						? errData.message
@@ -246,7 +250,9 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 				showToast(errMsg, "error");
 			}
 		} catch (fetchErr) {
-			console.warn("[RefundServiceModal] Network error during refund fiscalization:", fetchErr);
+			clientLogger.warn("[useRefundServiceModalController] Network error during refund fiscalization", fetchErr, {
+				module: "Finance",
+			});
 			refundSucceeded = true;
 			isOffline = true;
 			finalQueueId = clientMutationId;

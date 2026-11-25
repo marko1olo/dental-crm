@@ -1,3 +1,5 @@
+import { clientLogger } from "../../services/logging/clientLogger";
+
 /**
  * guestLabPortalHelpers.ts
  * Dedicated helper functions, labels, and types for GuestLabPortal.
@@ -26,7 +28,7 @@ export function getAttachmentFileName(url: string): string {
 		const lastSegment = parsed.pathname.split("/").filter(Boolean).pop();
 		if (lastSegment) return decodeURIComponent(lastSegment);
 	} catch (err: unknown) {
-		console.warn("Failed to parse attachment filename from URL:", err);
+		clientLogger.warn("[guestLabPortalHelpers] Failed to parse attachment filename from URL", err, { module: "DentalLab" });
 	}
 	const clean = url.split("?")[0]?.split("#")[0] ?? "";
 	const last = clean.split("/").pop();
@@ -45,7 +47,7 @@ export function getAttachmentFileSize(url: string): string {
 		const sizeParam = parsed.searchParams.get("size");
 		if (sizeParam) return decodeURIComponent(sizeParam);
 	} catch (err: unknown) {
-		console.warn("Failed to parse attachment file size from URL:", err);
+		clientLogger.warn("[guestLabPortalHelpers] Failed to parse attachment file size from URL", err, { module: "DentalLab" });
 	}
 	if (url.startsWith("data:")) {
 		const bytes = Math.round((url.length * 3) / 4);

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import type { DentalLabOrderData } from "../../labMath";
 import { useAppStore } from "../../../../store/appStore";
 import { CANONICAL_DEMO_LAB_ORDERS } from "../constants";
@@ -81,7 +82,7 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 					const raw = window.localStorage.getItem("dente_pending_lab_order_draft");
 					if (raw) draft = JSON.parse(raw);
 				} catch (err) {
-					console.warn("Failed to parse pending lab order draft:", err);
+					clientLogger.warn("[useLabOrdersData] Failed to parse pending lab order draft", err, { module: "DentalLab" });
 				}
 			}
 			if (draft) onOpenOrderFromEvent?.(draft);

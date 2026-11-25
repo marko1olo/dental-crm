@@ -1,3 +1,5 @@
+import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import type { ClinicalWriteoffDocument } from "../writeoff/clinicalWriteoffEngine.js";
@@ -14,6 +16,7 @@ export function useClinicalAndTransferHandlers(
 	) => {
 		try {
 			let deductedCount = 0;
+			let failedCount = 0;
 			for (const line of doc.lines) {
 				if (line.actualQuantity <= 0) continue;
 				const matchingItem = items.find(
@@ -24,7 +27,10 @@ export function useClinicalAndTransferHandlers(
 						`/api/inventory/${organizationId}/${matchingItem.id}/stock`,
 						{
 							method: "PATCH",
-							headers: getHeaders({ "Content-Type": "application/json" }),
+							headers: getHeaders({
+								"Content-Type": "application/json",
+								"Idempotency-Key": generateUuidV7(),
+							}),
 							body: JSON.stringify({
 								adjustment: -line.actualQuantity,
 								allowOverdraft: true,
@@ -32,15 +38,31 @@ export function useClinicalAndTransferHandlers(
 							}),
 						},
 					);
-					if (res.ok) deductedCount++;
+					if (res.ok) {
+						deductedCount++;
+					} else {
+						failedCount++;
+						clientLogger.warn(
+							"[useClinicalAndTransferHandlers] Stock adjustment failed for line",
+							{ status: res.status, itemId: matchingItem.id },
+							{ module: "Inventory" },
+						);
+					}
 				}
 			}
-			showToast(
-				`Акт списания зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
-				"success",
-			);
+			if (failedCount > 0) {
+				showToast(
+					`Акт списания проведён частично (проведено ${deductedCount} поз., ошибок: ${failedCount})`,
+					"error",
+				);
+			} else {
+				showToast(
+					`Акт списания зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
+					"success",
+				);
+			}
 		} catch (e) {
-			console.error(e);
+			clientLogger.error("[useClinicalAndTransferHandlers] Clinical writeoff failed", e, { module: "Inventory" });
 			showToast("Ошибка при фиксации акта списания", "error");
 		} finally {
 			onClose();

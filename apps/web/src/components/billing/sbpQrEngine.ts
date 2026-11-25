@@ -16,6 +16,7 @@
 
 import { generateQrCodeSvg, generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 
 const SBP_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -125,7 +126,7 @@ export async function fetchSbpDynamicQr(config: SbpDynamicQrConfig): Promise<Sbp
 			errorRu: null,
 		};
 	} catch (err: unknown) {
-		console.warn("[requestDynamicSbpQr] Не удалось получить динамический СБП QR:", err);
+		clientLogger.warn("[sbpQrEngine] Не удалось получить динамический СБП QR", err, { module: "Billing" });
 		return {
 			qr: null,
 			errorRu: "Нет связи с сервером кассы. Проверьте сеть и обновите QR-код.",
@@ -171,7 +172,9 @@ export async function copySbpUrlToClipboard(url: string): Promise<boolean> {
 			return true;
 		}
 	} catch (clipErr: unknown) {
-		console.warn("[copySbpUrlToClipboard] navigator.clipboard.writeText недоступен, фоллбек на execCommand:", clipErr);
+		clientLogger.warn("[sbpQrEngine] navigator.clipboard.writeText недоступен, фоллбек на execCommand", clipErr, {
+			module: "Billing",
+		});
 	}
 
 	try {
@@ -187,7 +190,9 @@ export async function copySbpUrlToClipboard(url: string): Promise<boolean> {
 			return success;
 		}
 	} catch (fallbackErr: unknown) {
-		console.warn("[copySbpUrlToClipboard] Fallback execCommand('copy') завершился с ошибкой:", fallbackErr);
+		clientLogger.warn("[sbpQrEngine] Fallback execCommand('copy') завершился с ошибкой", fallbackErr, {
+			module: "Billing",
+		});
 		return false;
 	}
 	return false;

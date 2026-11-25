@@ -18,6 +18,7 @@ import { DEFAULT_DOM_CHUNK_STEP, DEFAULT_DOM_PAGE_SIZE } from "../../utils/domVi
 import { useInvoicesData } from "./useInvoicesData.js";
 import { useInvoicesViewLogic, InvoicesToolbar, InvoicesList, InvoicesEmptyState } from "./invoices/index.js";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 
 export { INVOICES_STORAGE_KEY, loadStoredInvoices, saveStoredInvoices };
 export type { InvoiceLineItem, BillingInvoice, InvoicesViewProps, InvoiceFilterTab };
@@ -92,20 +93,21 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 			if (!res.ok) {
 				const errPayload = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
 				const errMsg = errPayload?.message || errPayload?.error || `Ошибка сервера при создании счёта (${res.status})`;
-				console.error("[InvoicesView] Не удалось создать счёт через API:", res.status, errMsg);
+				clientLogger.error("[InvoicesView] Не удалось создать счёт через API", { status: res.status, errMsg }, { module: "Billing" });
 				showToast(errMsg, "error");
 				return;
 			}
 
 			const payload = (await res.json().catch(() => null)) as {
 				invoice?: { id?: string; number?: string; invoiceNumber?: string };
-				data?: { id?: string; number?: string; invoiceNumber?: string };
+				data?: { id?: string; number?: string; invoiceNumber?: string; invoice?: { id?: string; number?: string; invoiceNumber?: string } };
 			} | null;
-			const created = payload?.invoice || payload?.data;
+			const unwrapped = payload?.data ?? payload;
+			const created = payload?.invoice || unwrapped?.invoice || payload?.data;
 			generatedId = created?.id || (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "");
 			generatedNumber = created?.number || created?.invoiceNumber || invoiceNumber;
 		} catch (syncErr: unknown) {
-			console.error("[InvoicesView] Сетевой сбой при создании счёта:", syncErr);
+			clientLogger.error("[InvoicesView] Сетевой сбой при создании счёта", syncErr, { module: "Billing" });
 			showToast("Не удалось связаться с сервером для создания счёта. Проверьте соединение с сетью.", "error");
 			return;
 		}

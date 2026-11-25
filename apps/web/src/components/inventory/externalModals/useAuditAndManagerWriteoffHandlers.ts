@@ -1,3 +1,5 @@
+import { generateUuidV7 } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import type { WarehouseInventoryAuditDocument } from "../warehouseInventoryEngine.js";
 
@@ -20,23 +22,37 @@ export function useAuditAndManagerWriteoffHandlers(
 		try {
 			const discrepancyItems = doc.items.filter((it) => it.discrepancyQuantity !== 0);
 			if (discrepancyItems.length > 0) {
-				const headers = getHeaders({ "Content-Type": "application/json" });
+				let failedCount = 0;
 				for (const it of discrepancyItems) {
-					await fetch(`/api/inventory/${organizationId}/${it.itemId}/stock`, {
+					const res = await fetch(`/api/inventory/${organizationId}/${it.itemId}/stock`, {
 						method: "PATCH",
-						headers,
+						headers: getHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						}),
 						body: JSON.stringify({
 							adjustment: it.discrepancyQuantity,
 							reason: `Инвентаризация ${doc.documentNumber} (${it.discrepancyQuantity > 0 ? "излишек" : "недостача"})`,
 							allowOverdraft: true,
 						}),
 					});
+					if (!res.ok) {
+						failedCount++;
+					}
 				}
-				showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");
+				if (failedCount > 0) {
+					showToast(
+						`Инвентаризация проведена частично: не удалось обновить ${failedCount} из ${discrepancyItems.length} поз.`,
+						"error",
+					);
+				} else {
+					showToast(`Инвентаризация утверждена: скорректировано ${discrepancyItems.length} позиций на складе`, "info");
+				}
 			} else {
 				showToast("Инвентаризация утверждена: расхождений по остаткам не выявлено", "info");
 			}
 		} catch (err) {
+			clientLogger.error("[useAuditAndManagerWriteoffHandlers] Inventory audit failed", err, { module: "Inventory" });
 			const message = err instanceof Error ? err.message : "Не удалось провести списание/оприходование по инвентаризации";
 			showToast(message, "error");
 		} finally {
@@ -52,7 +68,10 @@ export function useAuditAndManagerWriteoffHandlers(
 		try {
 			const res = await fetch(`/api/inventory/${organizationId}/deduct`, {
 				method: "POST",
-				headers: getHeaders({ "Content-Type": "application/json" }),
+				headers: getHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					organizationId,
 					items: (writeoffLines || []).map((line) => ({
@@ -74,7 +93,7 @@ export function useAuditAndManagerWriteoffHandlers(
 			}
 			showToast(`Списание материалов успешно проведено (${writeoffLines?.length ?? 0} поз.)`, "success");
 		} catch (e) {
-			console.error(e);
+			clientLogger.error("[useAuditAndManagerWriteoffHandlers] Manager writeoff failed", e, { module: "Inventory" });
 			showToast(e instanceof Error ? e.message : "Не удалось провести списание материалов на сервере", "error");
 		} finally {
 			onClose();

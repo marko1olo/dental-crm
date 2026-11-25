@@ -7,8 +7,12 @@
  */
 
 import { create } from "zustand";
-import { kopecksToRubles } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
+import { generateUuidV7, kopecksToRubles } from "@dental/shared";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../lib/denteRequestHeaders";
+import { clientLogger } from "../services/logging/clientLogger";
 import { showToast } from "../components/GlobalToast";
 
 export interface InventoryStockItem {
@@ -91,12 +95,13 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 
 		set({ isLoading: true, error: null });
 		try {
-			const headers = denteAdminSecretRequestHeaders({
+			const headers = denteClinicalReadHeaders({
 				"Content-Type": "application/json",
 			});
 			const res = await fetcher(`/api/inventory/${organizationId}`, { headers });
 			if (res.ok) {
-				const data = await res.json();
+				const rawJson = await res.json();
+				const data = rawJson?.data ?? rawJson;
 				const rawList: unknown[] = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
 				const mapped: InventoryStockItem[] = rawList.map((entry) => {
 					const item = typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : {};
@@ -161,7 +166,7 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 				};
 
 				newTransactions.push({
-					id: `tx-deduct-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+					id: generateUuidV7(),
 					inventoryItemId: existing.id,
 					itemName: existing.name,
 					operationType: "auto_deduct",
@@ -178,7 +183,7 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 				// Item not yet in local catalog snapshot -> record overdraft placeholder
 				hasOverdraftEncountered = true;
 				newTransactions.push({
-					id: `tx-deduct-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+					id: generateUuidV7(),
 					inventoryItemId: ded.inventoryItemId,
 					itemName: ded.itemName,
 					operationType: "auto_deduct",
@@ -204,7 +209,7 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 			try {
 				const payload = {
 					organizationId,
-					visitId: options?.visitId || null,
+					...(options?.visitId ? { visitId: options.visitId } : {}),
 					allowOverdraft: options?.allowOverdraft ?? true,
 					reason: options?.reason || "Автосписание расходников по клиническим протоколам",
 					items: deductions.map((d) => ({
@@ -220,8 +225,9 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 					})),
 				};
 
-				const headers = denteAdminSecretRequestHeaders({
+				const headers = denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
 				});
 
 				const res = await fetcher(`/api/inventory/${organizationId}/deduct`, {
@@ -231,15 +237,20 @@ export const useInventoryStore = create<InventoryStoreState>((set, get) => ({
 				});
 
 				if (!res.ok) {
-					console.warn(
-						`[inventoryStore] Сервер вернул HTTP ${res.status} при списании материалов. Локальное списание сохранено.`,
+					clientLogger.warn(
+						`[inventoryStore] Сервер вернул HTTP ${res.status} при списании материалов`,
+						{ status: res.status },
+						{ module: "Inventory" },
 					);
+					showToast(`Списание сохранено локально (сервер вернул HTTP ${res.status})`, "warning");
 				}
 			} catch (syncErr) {
-				console.warn(
-					"[inventoryStore] Фоновая сетевая синхронизация списания со складом отложена:",
+				clientLogger.warn(
+					"[inventoryStore] Фоновая сетевая синхронизация списания со складом отложена",
 					syncErr,
+					{ module: "Inventory" },
 				);
+				showToast("Списание сохранено локально; сетевая синхронизация повторится позже", "warning");
 			}
 		}
 

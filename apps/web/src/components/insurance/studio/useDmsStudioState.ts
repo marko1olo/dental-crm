@@ -32,6 +32,7 @@ import {
 	denteClinicalReadHeaders,
 } from "../../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import { printHtmlViaIframe } from "../../documents/printHtmlViaIframe.js";
 
@@ -193,9 +194,19 @@ export function useDmsStudioState({
 		fetch("/api/insurance/contracts", {
 			headers: denteClinicalReadHeaders(),
 		})
-			.then((res) => (res.ok ? res.json() : []))
-			.then((data: unknown) => {
+			.then(async (res) => {
+				if (!res.ok) {
+					clientLogger.warn("[useDmsStudioState] Сервер вернул ошибку при загрузке договоров ДМС", { status: res.status }, { module: "Insurance" });
+					return [];
+				}
+				return res.json();
+			})
+			.then((raw: unknown) => {
 				if (!isMounted) return;
+				const data =
+					raw && typeof raw === "object" && "data" in raw && !Array.isArray(raw)
+						? (raw as { data?: unknown }).data ?? raw
+						: raw;
 				if (Array.isArray(data) && data.length > 0) {
 					const list: Array<{ id: string; companyName: string; insurerKey?: string }> = [];
 					for (const item of data) {
@@ -219,7 +230,7 @@ export function useDmsStudioState({
 				}
 			})
 			.catch((err) => {
-				console.warn("[useDmsStudioState] Не удалось загрузить договоры ДМС:", err);
+				clientLogger.warn("[useDmsStudioState] Не удалось загрузить договоры ДМС", err, { module: "Insurance" });
 			});
 
 		// 2. Fetch patient guarantee letters (only send patientId when it is a valid UUID)
@@ -231,9 +242,19 @@ export function useDmsStudioState({
 			fetch(`/api/insurance/guarantee-letters${query}`, {
 				headers: denteClinicalReadHeaders(),
 			})
-				.then((res) => (res.ok ? res.json() : []))
-				.then((data: unknown) => {
+				.then(async (res) => {
+					if (!res.ok) {
+						clientLogger.warn("[useDmsStudioState] Ошибка загрузки гарантийных писем", { status: res.status }, { module: "Insurance" });
+						return [];
+					}
+					return res.json();
+				})
+				.then((raw: unknown) => {
 					if (!isMounted) return;
+					const data =
+						raw && typeof raw === "object" && "data" in raw && !Array.isArray(raw)
+							? (raw as { data?: unknown }).data ?? raw
+							: raw;
 					if (Array.isArray(data) && data.length > 0) {
 						const list = data as DmsGuaranteeLetter[];
 						setLetters(list);
@@ -246,7 +267,7 @@ export function useDmsStudioState({
 					}
 				})
 				.catch((err) => {
-					console.warn("[useDmsStudioState] Ошибка загрузки гарантийных писем:", err);
+					clientLogger.warn("[useDmsStudioState] Ошибка загрузки гарантийных писем", err, { module: "Insurance" });
 					if (isMounted && isDemo) setLetters(initialLetters);
 				});
 		}
@@ -271,9 +292,19 @@ export function useDmsStudioState({
 		fetch(`/api/insurance/registry${regQuery}`, {
 			headers: denteClinicalReadHeaders(),
 		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data: unknown) => {
-				if (!isMounted || !data || typeof data !== "object") return;
+			.then(async (res) => {
+				if (!res.ok) {
+					clientLogger.warn("[useDmsStudioState] Ошибка загрузки реестра ДМС", { status: res.status }, { module: "Insurance" });
+					return null;
+				}
+				return res.json();
+			})
+			.then((raw: unknown) => {
+				if (!isMounted || !raw || typeof raw !== "object") return;
+				const data =
+					"data" in raw && (raw as { data?: unknown }).data && typeof (raw as { data?: unknown }).data === "object"
+						? (raw as { data: unknown }).data
+						: raw;
 				const parsed = data as { serviceRecords?: DmsRegistryServiceRecord[]; records?: DmsRegistryServiceRecord[] };
 				const recs = parsed.serviceRecords || parsed.records || [];
 				if (Array.isArray(recs) && recs.length > 0) {
@@ -281,7 +312,7 @@ export function useDmsStudioState({
 				}
 			})
 			.catch((err) => {
-				console.warn("[useDmsStudioState] Ошибка загрузки реестра ДМС:", err);
+				clientLogger.warn("[useDmsStudioState] Ошибка загрузки реестра ДМС", err, { module: "Insurance" });
 			});
 
 		return () => {
@@ -436,10 +467,14 @@ export function useDmsStudioState({
 				}
 				showToast("Гарантийное письмо сохранено в системе", "success");
 			} else {
-				showToast("Гарантийное письмо прикреплено локально", "info");
+				const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+				const errMsg = errJson?.message || errJson?.error || `HTTP ${res.status}`;
+				clientLogger.warn("[useDmsStudioState] Ошибка сохранения гарантийного письма", { status: res.status, errMsg }, { module: "Insurance" });
+				showToast(`Не удалось сохранить письмо на сервере (${errMsg}). Черновик сохранён локально.`, "warning");
 			}
-		} catch {
-			showToast("Гарантийное письмо прикреплено локально", "info");
+		} catch (err: unknown) {
+			clientLogger.warn("[useDmsStudioState] Сетевой сбой при сохранении гарантийного письма", err, { module: "Insurance" });
+			showToast("Сбой связи с сервером. Черновик гарантийного письма сохранён локально.", "warning");
 		}
 	};
 

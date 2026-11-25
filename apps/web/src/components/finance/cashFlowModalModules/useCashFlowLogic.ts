@@ -5,6 +5,7 @@ import {
 } from "@dental/shared";
 import { useState } from "react";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { type CashFlowModalProps, formatMoneyRu } from "./types";
 
 export function useCashFlowLogic(props: CashFlowModalProps) {
@@ -88,7 +89,9 @@ export function useCashFlowLogic(props: CashFlowModalProps) {
 			}
 			onClose();
 		} catch (flowErr: unknown) {
-			console.error("[useCashFlowLogic] Ошибка при фиксации кассовой операции:", flowErr);
+			clientLogger.error("[useCashFlowLogic] Ошибка при фиксации кассовой операции", flowErr, {
+				module: "Finance",
+			});
 			const msg = flowErr instanceof Error ? flowErr.message : "Ошибка при фиксации кассовой операции";
 			showToast(msg, "error");
 		} finally {

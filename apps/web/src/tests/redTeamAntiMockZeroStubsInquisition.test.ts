@@ -145,7 +145,8 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 
 			// Must persist new order creation via POST /api/lab/orders
 			assert.ok(
-				content.includes('method: "POST"') && content.includes("/api/lab/orders"),
+				(content.includes('method: "POST"') || content.includes('? "PUT" : "POST"')) &&
+					content.includes("/api/lab/orders"),
 				"DentalLabStudioModal missing live POST /api/lab/orders persistence",
 			);
 
@@ -157,8 +158,8 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 
 			// Must include authorization headers
 			assert.ok(
-				content.includes("denteAdminSecretRequestHeaders"),
-				"DentalLabStudioModal missing denteAdminSecretRequestHeaders authorization",
+				content.includes("denteClinicalMutationHeaders") && content.includes("denteClinicalReadHeaders"),
+				"DentalLabStudioModal missing denteClinicalMutationHeaders / denteClinicalReadHeaders authorization",
 			);
 		});
 	});

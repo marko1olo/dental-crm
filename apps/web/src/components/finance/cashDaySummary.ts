@@ -3,6 +3,7 @@ import {
 	kopecksToNumericString,
 	parseKopecks,
 } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 
 /*
  * СВЕРКА КАССЫ ЗА ДЕНЬ: СЧЁТ ОТДЕЛЬНО ОТ ПОКАЗА.
@@ -118,7 +119,9 @@ function paymentKopecks(payment: Payment): number {
 			return 0;
 		return parseKopecks(payment.amountRub);
 	} catch (err: unknown) {
-		console.warn("[paymentKopecks] Ошибка вычисления копеек для платежа:", err);
+		clientLogger.warn("[cashDaySummary] Ошибка вычисления копеек для платежа", err, {
+			module: "Finance",
+		});
 		return 0;
 	}
 }

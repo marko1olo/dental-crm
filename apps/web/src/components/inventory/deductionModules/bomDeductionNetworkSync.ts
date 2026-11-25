@@ -1,7 +1,9 @@
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
 import { denteQueryClient } from "../../../lib/queryClient.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 import { useOfflineStore } from "../../../store/offlineStore.js";
-import { type AutoVisitBomDeductionResult, kopecksToRubles } from "@dental/shared";
+import { type AutoVisitBomDeductionResult, generateUuidV7, kopecksToRubles } from "@dental/shared";
 import type { PerformAutoVisitBomDeductionOptions } from "./bomDeductionTypes.js";
 import type { DeductionValidationSummary } from "./bomDeductionValidator.js";
 
@@ -18,6 +20,12 @@ export interface OverdraftValidationItem {
 	readonly deficitQty: number;
 }
 
+function readOptionalStringProp(obj: object, key: string): string | null {
+	if (!(key in obj)) return null;
+	const value = (obj as Record<string, unknown>)[key];
+	return typeof value === "string" ? value : null;
+}
+
 export function syncAutoBomDeduction(
 	options: PerformAutoVisitBomDeductionOptions,
 	result: AutoVisitBomDeductionResult,
@@ -27,19 +35,16 @@ export function syncAutoBomDeduction(
 	try {
 		useInventoryStore.getState().deductStock(
 			options.organizationId || "org-default",
-			result.items.map((i) => {
-				const ext = i as unknown as Record<string, unknown>;
-				return {
-					inventoryItemId: i.inventoryItemId,
-					itemName: i.itemName,
-					quantity: i.deductedQty,
-					visitId: options.visitId,
-					reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
-					lotNumber: typeof ext.batchId === "string" ? ext.batchId : null,
-					expirationDate: typeof ext.expirationDate === "string" ? ext.expirationDate : null,
-					unitCostRub: kopecksToRubles(i.unitCostPriceKopecks),
-				};
-			}),
+			result.items.map((i) => ({
+				inventoryItemId: i.inventoryItemId,
+				itemName: i.itemName,
+				quantity: i.deductedQty,
+				visitId: options.visitId,
+				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
+				lotNumber: readOptionalStringProp(i, "batchId"),
+				expirationDate: readOptionalStringProp(i, "expirationDate"),
+				unitCostRub: kopecksToRubles(i.unitCostPriceKopecks),
+			})),
 			{
 				visitId: options.visitId,
 				allowOverdraft: options.allowOverdraft ?? true,
@@ -47,40 +52,29 @@ export function syncAutoBomDeduction(
 				skipNetworkSync: true, // Защита от двойного списания: сетевой вызов выполняется строго 1 раз через авто-BOM эндпоинт ниже
 			},
 		).catch((err) => {
-			console.warn("[autoBomDeduction] Local deductStock error:", err);
+			clientLogger.warn("[autoBomDeduction] Local deductStock error", err, { module: "Inventory" });
 		});
 
 		void denteQueryClient.invalidateQueries({ queryKey: ["inventory"] });
 		void denteQueryClient.invalidateQueries({ queryKey: ["warehouse"] });
 	} catch (err) {
-		console.warn("[autoBomDeduction] Failed to perform local store deduction:", err);
+		clientLogger.warn("[autoBomDeduction] Failed to perform local store deduction", err, { module: "Inventory" });
 	}
 
 	if (options.organizationId && options.fetchFn) {
 		const payload = {
 			visitId: options.visitId,
-			visitNumber: options.visitNumber,
-			chairId: options.chairId,
-			cabinetId: options.cabinetId,
-			userId: options.doctorId,
-			transactionType: "auto_deduct",
+			userId: options.doctorId ?? null,
+			transactionType: "auto_deduct" as const,
 			services: normalizedServices.map((s) => ({
 				serviceId: s.serviceCode,
 				quantity: s.quantity,
 			})),
-			items: result.items.map((i) => {
-				const ext = i as unknown as Record<string, unknown>;
-				return {
-					inventoryItemId: i.inventoryItemId,
-					id: i.inventoryItemId,
-					name: i.itemName,
-					quantity: i.deductedQty,
-					unitCostRub: kopecksToRubles(i.unitCostPriceKopecks),
-					reason: `Автосписание по визиту ${options.visitNumber || options.visitId}`,
-					lotNumber: typeof ext.batchId === "string" ? ext.batchId : null,
-					expirationDate: typeof ext.expirationDate === "string" ? ext.expirationDate : null,
-				};
-			}),
+			items: result.items.map((i) => ({
+				inventoryItemId: i.inventoryItemId,
+				quantity: i.deductedQty,
+				reason: `Автосписание по визиту ${options.visitNumber || options.visitId}`,
+			})),
 			allowOverdraft: true,
 			paperJournalAcknowledged: true,
 		};
@@ -93,10 +87,25 @@ export function syncAutoBomDeduction(
 
 			options.fetchFn(deductEndpoint, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify(payload),
+			}).then((res) => {
+				if (!res.ok) {
+					clientLogger.warn(
+						"[autoBomDeduction] Сервер вернул ошибку при авто-BOM списании",
+						{ status: res.status },
+						{ module: "Inventory" },
+					);
+				}
 			}).catch((err) => {
-				console.warn("[autoBomDeduction] Фоновая синхронизация списания с сервером отложена:", err);
+				clientLogger.warn(
+					"[autoBomDeduction] Фоновая синхронизация списания с сервером отложена",
+					err,
+					{ module: "Inventory" },
+				);
 			});
 
 			if (validation.hasOverdraft) {
@@ -119,10 +128,17 @@ export function syncAutoBomDeduction(
 
 				options.fetchFn(alertEndpoint, {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify(alertPayload),
 				}).catch((err) => {
-					console.warn("[autoBomDeduction] Failed to send overdraft alert to server, enqueuing to offlineStore:", err);
+					clientLogger.warn(
+						"[autoBomDeduction] Failed to send overdraft alert to server, enqueuing to offlineStore",
+						err,
+						{ module: "Inventory" },
+					);
 					void useOfflineStore.getState().enqueue({
 						entityType: "inventory",
 						entityId: options.visitId,
@@ -130,12 +146,16 @@ export function syncAutoBomDeduction(
 						action: "create",
 						payload: alertPayload,
 					}).catch((enqueueErr) => {
-						console.error("[autoBomDeduction] Failed to enqueue overdraft alert to offlineStore:", enqueueErr);
+						clientLogger.error(
+							"[autoBomDeduction] Failed to enqueue overdraft alert to offlineStore",
+							enqueueErr,
+							{ module: "Inventory" },
+						);
 					});
 				});
 			}
 		} catch (err) {
-			console.warn("[autoBomDeduction] Background network synchronization exception:", err);
+			clientLogger.warn("[autoBomDeduction] Background network synchronization exception", err, { module: "Inventory" });
 		}
 	}
 }

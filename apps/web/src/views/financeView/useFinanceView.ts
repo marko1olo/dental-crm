@@ -4,7 +4,8 @@ import { money as formatMoney } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { motionSafeScrollIntoView } from "../../motionPreference";
 import { rubAmountForInput } from "../../rubAmountInput.js";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import {
 	type FinanceViewComponentProps, type PendingCheckout, type TreatmentPlanItem,
 	type TreatmentPlanScenario, EMPTY_CLINICAL_RULE_SUMMARY, noLabels,
@@ -110,7 +111,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 			const raw = sessionStorage.getItem("dente_pending_checkout") || localStorage.getItem("dente_pending_checkout");
 			return raw ? JSON.parse(raw) : null;
 		} catch (err) {
-			console.warn("[FinanceView] Не удалось прочитать dente_pending_checkout:", err);
+			clientLogger.warn("[FinanceView] Не удалось прочитать dente_pending_checkout", err, { module: "Finance" });
 			return null;
 		}
 	});
@@ -125,7 +126,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 					if (parsed?.autoOpen) modals.setIsSplitPaymentOpen(true);
 				}
 			} catch (err) {
-				console.warn("[FinanceView] Ошибка парсинга pending checkout:", err);
+				clientLogger.warn("[FinanceView] Ошибка парсинга pending checkout", err, { module: "Finance" });
 			}
 		};
 		syncPendingCheckout();
@@ -159,10 +160,27 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 		const loadUnpaidInvoicesFromDb = async () => {
 			try {
 				const res = await fetch("/api/invoices/pending", {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
 				if (!res.ok) return;
-				const data = (await res.json()) as {
+				const rawJson = (await res.json()) as {
+					data?: { invoices?: Array<{
+						id: string;
+						patientId: string;
+						patientName?: string;
+						visitId?: string | null;
+						invoiceNumber?: string;
+						number?: string;
+						totalAmountRub: number;
+					}> } | Array<{
+						id: string;
+						patientId: string;
+						patientName?: string;
+						visitId?: string | null;
+						invoiceNumber?: string;
+						number?: string;
+						totalAmountRub: number;
+					}>;
 					invoices?: Array<{
 						id: string;
 						patientId: string;
@@ -174,7 +192,14 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 					}>;
 				};
 				if (!isMounted) return;
-				const invoices = Array.isArray(data.invoices) ? data.invoices : [];
+				const unwrapped = rawJson?.data && !Array.isArray(rawJson.data) ? rawJson.data : rawJson;
+				const invoices = Array.isArray(rawJson?.data)
+					? rawJson.data
+					: Array.isArray(unwrapped?.invoices)
+						? unwrapped.invoices
+						: Array.isArray(rawJson?.invoices)
+							? rawJson.invoices
+							: [];
 				if (invoices.length === 0) return;
 
 				const targetPatientId = effectivePatient?.id;
@@ -206,7 +231,7 @@ export function useFinanceView(rawProps?: FinanceViewComponentProps) {
 					});
 				}
 			} catch (err) {
-				console.warn("[FinanceView] Ошибка загрузки неоплаченных счетов из БД:", err);
+				clientLogger.warn("[FinanceView] Ошибка загрузки неоплаченных счетов из БД", err, { module: "Finance" });
 			}
 		};
 

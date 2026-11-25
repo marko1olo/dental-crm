@@ -1,3 +1,7 @@
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
+
 export async function syncMedicalWasteRegister(
 	fetchFn: typeof fetch | undefined,
 	params: {
@@ -18,9 +22,22 @@ export async function syncMedicalWasteRegister(
 	try {
 		const brokenNotice = params.brokenCarpulesCount > 0 ? ` (из них бой: ${params.brokenCarpulesCount} шт.)` : "";
 		const partialNotice = params.partiallyUsedCarpulesCount > 0 ? ` (неполные: ${params.partiallyUsedCarpulesCount} шт.)` : "";
-		await fetchFn("/api/registers/medical-waste", {
+		const noteDetails = [
+			`Акт ${params.actNumber}, пломба ${params.sealNumber}`,
+			params.cabinetId ? `каб. ${params.cabinetId}` : null,
+			params.chairId ? `кресло ${params.chairId}` : null,
+			params.responsibleStaffName ? `отв.: ${params.responsibleStaffName}` : null,
+		]
+			.filter(Boolean)
+			.join("; ")
+			.slice(0, 500);
+
+		const res = await fetchFn("/api/registers/medical-waste", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify({
 				logDate: params.actDate,
 				wasteClass: "class_B",
@@ -28,19 +45,25 @@ export async function syncMedicalWasteRegister(
 				packageType: "yellow_container_sharps",
 				packageCount: 1,
 				weightKg: params.netWeightKg,
-				cabinetId: params.cabinetId,
-				chairId: params.chairId,
-				totalCarpulesCount: params.totalCarpulesCount,
-				brokenCarpulesCount: params.brokenCarpulesCount,
-				partiallyUsedCarpulesCount: params.partiallyUsedCarpulesCount,
-				description: `Сдача отходов смены: ${params.totalCarpulesCount} карпул${brokenNotice}${partialNotice}, ${params.totalSharpsCount} игл/лезвий, СИЗ`,
+				wasteDescription: `Сдача отходов смены: ${params.totalCarpulesCount} карпул${brokenNotice}${partialNotice}, ${params.totalSharpsCount} игл/лезвий, СИЗ`,
 				disinfectionMethod: "chemical_soaking",
-				disinfectantName: "Аламинол 3% (60 мин)",
-				responsibleStaffName: params.responsibleStaffName,
-				notes: `Акт ${params.actNumber}, пломба ${params.sealNumber}, СанПиН 2.1.3684-21 и СанПиН 3.3686-21`,
+				disinfectantUsed: "Аламинол 3% (60 мин)",
+				notes: noteDetails,
 			}),
 		});
-	} catch {
-		// Graceful resilience
+
+		if (!res.ok) {
+			clientLogger.warn(
+				"[classBWasteRegisterSync] Ошибка синхронизации журнала медотходов",
+				{ status: res.status },
+				{ module: "Inventory" },
+			);
+		}
+	} catch (err: unknown) {
+		clientLogger.warn(
+			"[classBWasteRegisterSync] Сетевая синхронизация журнала медотходов отложена",
+			err,
+			{ module: "Inventory" },
+		);
 	}
 }

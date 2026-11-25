@@ -9,7 +9,8 @@ import { useWarrantyItemsSelection } from "./hooks/useWarrantyItemsSelection";
 import { useWarrantyRemediationState } from "./hooks/useWarrantyRemediationState";
 import { useWarrantyCertificateBuild } from "./hooks/useWarrantyCertificateBuild";
 import { useWarrantyExportActions } from "./hooks/useWarrantyExportActions";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { WarrantyRemediationOrder } from "../warrantyEngine.js";
 
 export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
@@ -55,22 +56,37 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 
 		const fetchHistory = async () => {
 			try {
-				const headers = denteAdminSecretRequestHeaders();
+				const headers = denteClinicalReadHeaders();
 				// 1. Загрузка существующих сертификатов пациента
 				const certsRes = await fetch(`/api/warranty/certificates/${patientId}`, { headers });
 				if (certsRes.ok && isMounted) {
 					const certsJson = (await certsRes.json().catch(() => null)) as {
 						certificates?: HistoricalWarrantyCertificate[];
+						data?: { certificates?: HistoricalWarrantyCertificate[] } | HistoricalWarrantyCertificate[];
 					} | null;
-					if (certsJson?.certificates && Array.isArray(certsJson.certificates)) {
-						setHistoricalCertificates(certsJson.certificates);
+					const certsPayload = certsJson?.data && !Array.isArray(certsJson.data) ? certsJson.data : certsJson;
+					const certList = Array.isArray(certsJson?.data)
+						? certsJson.data
+						: certsPayload?.certificates ?? certsJson?.certificates;
+					if (certList && Array.isArray(certList)) {
+						setHistoricalCertificates(certList);
 					}
 				}
 
 				// 2. Загрузка рекламаций и осложнений по пациенту
 				const reclRes = await fetch(`/api/patients/${patientId}/reclamations`, { headers });
 				if (reclRes.ok && isMounted) {
-					const reclJson = (await reclRes.json().catch(() => null)) as PatientReclamationResponse[] | null;
+					const reclRaw = (await reclRes.json().catch(() => null)) as
+						| PatientReclamationResponse[]
+						| { data?: PatientReclamationResponse[]; reclamations?: PatientReclamationResponse[] }
+						| null;
+					const reclJson = Array.isArray(reclRaw)
+						? reclRaw
+						: Array.isArray(reclRaw?.data)
+							? reclRaw.data
+							: Array.isArray(reclRaw?.reclamations)
+								? reclRaw.reclamations
+								: null;
 					if (Array.isArray(reclJson)) {
 						const mappedOrders: WarrantyRemediationOrder[] = reclJson.map((rec) => {
 							const formattedTooth = rec.toothNumber !== undefined && rec.toothNumber !== null
@@ -108,7 +124,7 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 								doctorName: rec.doctorName || props.doctorName || "Лечащий врач",
 								patientFullName: props.patient?.fullName || "Пациент",
 								patientCardNumber: props.patient?.cardNumber || "—",
-								clinicName: props.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+								clinicName: props.clinicName || "Стоматологическая клиника",
 								performedAtIso: rec.createdAt || new Date().toISOString(),
 								status: rec.status === "resolved" ? "completed" : "in_progress",
 								doctorNotes: rec.resolutionNotes || undefined,
@@ -122,7 +138,9 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 					}
 				}
 			} catch (err) {
-				console.error("Non-blocking: Failed to hydrate warranty history:", err);
+				clientLogger.error("[useWarrantyPassportState] Не удалось загрузить историю гарантийных паспортов", err, {
+					module: "Warranty",
+				});
 			} finally {
 				if (isMounted) setIsLoadingHistory(false);
 			}

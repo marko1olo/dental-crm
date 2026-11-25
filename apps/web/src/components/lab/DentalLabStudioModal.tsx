@@ -30,6 +30,8 @@ import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData } from "./labMath";
 
 export type LabFilterTab = "all" | "in_work" | "in_clinic" | "overdue";
@@ -116,7 +118,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		try {
 			const saved = localStorage.getItem("dente_custom_lab_names");
 			return saved ? JSON.parse(saved) : [];
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[DentalLabStudioModal] Failed to parse custom labs from localStorage", err, { module: "DentalLab" });
 			return [];
 		}
 	});
@@ -178,7 +181,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				const savedDefault = localStorage.getItem("dente_default_lab_name");
 				if (savedDefault) return savedDefault;
 			} catch (storageErr) {
-				console.warn("Could not read default lab from storage", storageErr);
+				clientLogger.warn("[DentalLabStudioModal] Could not read default lab from storage", storageErr, { module: "DentalLab" });
 			}
 		}
 		const defaultClinicLabs = getClinicLaboratories();
@@ -208,15 +211,21 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const handleOpenPassport = useCallback(async (order: DentalLabOrderData | DentalLabOrderEntry) => {
 		setIsPassportModalOpen(true);
 		try {
-			const res = await fetch(`/api/lab/orders/${encodeURIComponent(order.id || "")}/warranty-passport`);
+			const res = await fetch(
+				`/api/lab/orders/${encodeURIComponent(order.id || "")}/warranty-passport`,
+				{ headers: denteClinicalReadHeaders() },
+			);
 			if (res.ok) {
-				const data = (await res.json()) as { passport?: ProstheticWarrantyPassport };
-				if (data?.passport) {
-					setLivePassport(data.passport);
+				const raw = (await res.json()) as { data?: { passport?: ProstheticWarrantyPassport }; passport?: ProstheticWarrantyPassport };
+				const passport = raw?.data?.passport ?? raw?.passport;
+				if (passport) {
+					setLivePassport(passport);
 				}
+			} else {
+				clientLogger.warn("[DentalLabStudioModal] Сервер вернул ошибку при загрузке гарантийного паспорта", { status: res.status }, { module: "DentalLab" });
 			}
 		} catch (err) {
-			console.warn("[DentalLabStudioModal] Не удалось загрузить серверный гарантийный паспорт:", err);
+			clientLogger.warn("[DentalLabStudioModal] Не удалось загрузить серверный гарантийный паспорт", err, { module: "DentalLab" });
 		}
 	}, []);
 	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
@@ -257,7 +266,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				if (s) setSelectedShade(String(s));
 			}
 		} catch (err) {
-			console.warn("[DentalLabStudioModal] Ошибка разбора сохраненного пресета оттенка:", err);
+			clientLogger.warn("[DentalLabStudioModal] Ошибка разбора сохраненного пресета оттенка", err, { module: "DentalLab" });
 		}
 		const handleShadeEvent = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
@@ -344,7 +353,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					}
 				}
 			} catch (err) {
-				console.error("Failed to load live lab orders:", err);
+				clientLogger.error("[DentalLabStudioModal] Failed to load live lab orders", err, { module: "DentalLab" });
 			}
 		}
 		void loadLiveOrders();
@@ -428,7 +437,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						localStorage.setItem("dente_custom_lab_names", JSON.stringify(updated));
 					}
 				} catch (storageErr) {
-					console.warn("Could not save default lab to storage", storageErr);
+					clientLogger.warn("[DentalLabStudioModal] Could not save default lab to storage", storageErr, { module: "DentalLab" });
 				}
 			}
 		}
@@ -437,25 +446,31 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		onSaveOrder?.(newEntry);
 
 		try {
-			const payload = {
+			const trimmedNotes = notes.trim();
+			const combinedClinicalNotes = [isUrgent ? "[СРОЧНО]" : "", trimmedNotes].filter(Boolean).join(" ").trim();
+			const commonPayload = {
 				orderNumber: newEntry.orderNumber,
-				patientId: effectiveId || undefined,
-				patientName: effectiveName || undefined,
-				doctorId: effectiveDoctorId || undefined,
-				doctorName: effectiveDoctorName || undefined,
+				...(effectiveDoctorId ? { doctorId: effectiveDoctorId } : {}),
 				teethFdi: teethToSave.join(","),
 				materialId: selectedMaterialId,
 				shadeCode: selectedShade,
-				laboratoryName: selectedLab,
 				dueDate: effectiveDueDate,
 				labCostKopecks: totalLabCostKopecks,
 				patientPriceKopecks: totalPatientPriceKopecks,
-				isUrgent,
 				isWarranty: isWarrantyRework,
 				isWarrantyRework,
-				notes: notes.trim() || undefined,
+				...(combinedClinicalNotes ? { clinicalNotes: combinedClinicalNotes } : {}),
 				status: isEditMode ? ((targetOrder as DentalLabOrderData)?.status || "sent") : "sent",
 			};
+			const payload = isEditMode
+				? commonPayload
+				: {
+						...commonPayload,
+						...(effectiveId ? { patientId: effectiveId } : {}),
+						...(effectiveName ? { patientName: effectiveName } : {}),
+						...(effectiveDoctorName ? { doctorName: effectiveDoctorName } : {}),
+						...(selectedLab ? { laboratoryName: selectedLab } : {}),
+					};
 			const endpoint = isEditMode
 				? `${getLabApiBaseUrl()}/api/lab/orders/${effectiveEntryId}`
 				: `${getLabApiBaseUrl()}/api/lab/orders`;
@@ -472,12 +487,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			const res = await fetch(endpoint, reqOpts);
 			if (res.ok) {
 				const responseData = await res.json().catch(() => null);
-				const payload = responseData?.data ?? responseData;
-				const realId = payload?.id || responseData?.order?.id || responseData?.id;
+				const resPayload = responseData?.data ?? responseData;
+				const realId = resPayload?.id || responseData?.order?.id || responseData?.id;
 				const effectiveSavedId = String(realId || newEntry.id);
 				if (realId) setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
 				if (typeof window !== "undefined") {
-					const eventDetail = { ...payload, id: effectiveSavedId };
+					const eventDetail = { ...resPayload, id: effectiveSavedId };
 					// Единая каноническая шина событий ЗТЛ (Мандат 8zq / SSOT) + обратная совместимость
 					window.dispatchEvent(new CustomEvent(isEditMode ? "dente:lab:order-saved" : "dente:lab:order-created", { detail: eventDetail }));
 					window.dispatchEvent(new CustomEvent("dente:lab:order-saved", { detail: eventDetail }));
@@ -488,10 +503,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				const errBody = await res.json().catch(() => ({}));
 				const errMsg = (errBody as { message?: string; error?: string })?.message || (errBody as { message?: string; error?: string })?.error || `Ошибка ${isEditMode ? "обновления" : "создания"} наряда ${newEntry.orderNumber} на сервере`;
 				setFeedbackToast(errMsg);
+				showToast(errMsg, "error");
 			}
 		} catch (err) {
-			console.error("Failed to save lab order:", err);
-			setFeedbackToast(`Сетевая ошибка при отправке наряда ${newEntry.orderNumber}`);
+			clientLogger.error("[DentalLabStudioModal] Failed to save lab order", err, { module: "DentalLab" });
+			const errMsg = `Сетевая ошибка при отправке наряда ${newEntry.orderNumber}`;
+			setFeedbackToast(errMsg);
+			showToast(errMsg, "error");
 		} finally {
 			setTimeout(() => setFeedbackToast(null), 3500);
 		}
@@ -499,9 +517,10 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, isWarrantyRework, activePatient, onOrderCreated, onOrderSaved, onSaveOrder]);
 
 	const handleAdvanceStage = useCallback(async (orderId: string) => {
-		const targetOrder = orders.find((ord) => ord.id === orderId);
-		if (!targetOrder) return;
-		const curIdx = CANONICAL_LAB_STAGES.findIndex((s) => s.id === targetOrder.stage);
+		const previousOrders = orders;
+		const foundOrder = orders.find((ord) => ord.id === orderId);
+		if (!foundOrder) return;
+		const curIdx = CANONICAL_LAB_STAGES.findIndex((s) => s.id === foundOrder.stage);
 		const nextIdx = Math.min(CANONICAL_LAB_STAGES.length - 1, (curIdx >= 0 ? curIdx : 0) + 1);
 		const nextStage = CANONICAL_LAB_STAGES[nextIdx]?.id ?? "seated";
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: nextStage } : ord)));
@@ -513,16 +532,26 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: evtDetail }));
 		}
 		try {
-			const reqOpts = { method: "PATCH", headers: { ...denteClinicalMutationHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: STAGE_TO_DB_STATUS[nextStage] || "in_progress", stage: nextStage }) };
-			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, reqOpts);
-			if (!res.ok) console.warn(`Failed to advance lab order status on server: ${res.status}`);
+			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, {
+				method: "PATCH",
+				headers: { ...denteClinicalMutationHeaders(), "Content-Type": "application/json", "Idempotency-Key": generateUuidV7() },
+				body: JSON.stringify({ status: STAGE_TO_DB_STATUS[nextStage] || "in_progress", stage: nextStage }),
+			});
+			if (!res.ok) {
+				clientLogger.warn(`[DentalLabStudioModal] Failed to advance lab order status on server: ${res.status}`, { orderId, status: res.status }, { module: "DentalLab" });
+				setOrders(previousOrders);
+				showToast("Не удалось обновить этап наряда на сервере", "error");
+			}
 		} catch (err) {
-			console.error("Error advancing stage:", err);
+			clientLogger.error("[DentalLabStudioModal] Error advancing stage", err, { module: "DentalLab" });
+			setOrders(previousOrders);
+			showToast("Сетевая ошибка при смене этапа наряда", "error");
 		}
 	}, [orders]);
 
 	const handleMarkInClinic = useCallback(async (orderId: string) => {
-		const targetOrder = orders.find((ord) => ord.id === orderId);
+		const previousOrders = orders;
+		const foundOrder = orders.find((ord) => ord.id === orderId);
 		setOrders((prev) => prev.map((ord) => (ord.id === orderId ? { ...ord, stage: "in_clinic" } : ord)));
 		setFeedbackToast("Заказ отмечен: готов в клинике"); setTimeout(() => setFeedbackToast(null), 2500);
 		if (typeof window !== "undefined") {
@@ -530,22 +559,30 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
 			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: evtDetail }));
 		}
-		if (targetOrder) {
+		if (foundOrder) {
 			setReadyInClinicOrder({
-				id: targetOrder.id, orderNumber: String(targetOrder.orderNumber ?? ""), patientName: targetOrder.patientName,
-				patientPhone: targetOrder.patientPhone, doctorName: targetOrder.doctorName, doctorId: targetOrder.doctorId,
-				toothFdi: Array.isArray(targetOrder.teeth) ? targetOrder.teeth.join(", ") : "", material: getMaterialMeta(targetOrder.materialId).titleRu,
-				colorVita: targetOrder.shadeCode, priceRub: kopecksToRubles(targetOrder.patientPriceKopecks),
-				isWarrantyRework: Boolean(targetOrder.isWarrantyRework || targetOrder.isWarranty),
+				id: foundOrder.id, orderNumber: String(foundOrder.orderNumber ?? ""), patientName: foundOrder.patientName,
+				patientPhone: foundOrder.patientPhone, doctorName: foundOrder.doctorName, doctorId: foundOrder.doctorId,
+				toothFdi: Array.isArray(foundOrder.teeth) ? foundOrder.teeth.join(", ") : "", material: getMaterialMeta(foundOrder.materialId).titleRu,
+				colorVita: foundOrder.shadeCode, priceRub: kopecksToRubles(foundOrder.patientPriceKopecks), isWarrantyRework: Boolean(foundOrder.isWarrantyRework || foundOrder.isWarranty),
 			});
 			setIsReadyInClinicOpen(true);
 		}
 		try {
-			const reqOpts = { method: "PATCH", headers: { ...denteClinicalMutationHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: "received", stage: "in_clinic" }) };
-			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, reqOpts);
-			if (!res.ok) console.warn(`Failed to mark lab order in clinic on server: ${res.status}`);
+			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, {
+				method: "PATCH",
+				headers: { ...denteClinicalMutationHeaders(), "Content-Type": "application/json", "Idempotency-Key": generateUuidV7() },
+				body: JSON.stringify({ status: "received", stage: "in_clinic" }),
+			});
+			if (!res.ok) {
+				clientLogger.warn(`[DentalLabStudioModal] Failed to mark lab order in clinic on server: ${res.status}`, { orderId, status: res.status }, { module: "DentalLab" });
+				setOrders(previousOrders);
+				showToast("Не удалось зафиксировать поступление работы в клинику", "error");
+			}
 		} catch (err) {
-			console.error("Error marking in clinic:", err);
+			clientLogger.error("[DentalLabStudioModal] Error marking in clinic", err, { module: "DentalLab" });
+			setOrders(previousOrders);
+			showToast("Сетевая ошибка при обновлении статуса наряда", "error");
 		}
 	}, [orders]);
 
@@ -653,12 +690,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					<div className="w-full p-4 overflow-y-auto max-h-[78vh]">
 						<section className="dental-lab-right-column w-full border-0 p-0" data-testid="lab-orders-registry-panel">
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mb-3">
-								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+								<div className="inline-flex items-center gap-1 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] overflow-x-auto scrollbar-none">
 									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
 										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
 										return (
 											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
-												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
+												className={`h-8 px-3 rounded-lg text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{labels[tab]}</button>
 										);
 									})}
 								</div>
@@ -697,12 +734,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						{/* ПРАВАЯ КОЛОНКА: Оперативный реестр последних нарядов */}
 						<section className="dental-lab-right-column mobile-hidden" data-testid="lab-orders-registry-panel">
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+								<div className="inline-flex items-center gap-1 p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] overflow-x-auto scrollbar-none">
 									{(["all", "in_work", "in_clinic", "overdue"] as const).map((tab) => {
 										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В лаборатории", in_clinic: "Готово в клинике", overdue: "Просроченные" };
 										return (
 											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
-												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
+												className={`h-8 px-3 rounded-lg text-xs whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{labels[tab]}</button>
 										);
 									})}
 								</div>
@@ -737,26 +774,15 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				{isPassportModalOpen && targetOrder && (
 					<OrthopedicPassportA4Modal
 						isOpen={isPassportModalOpen}
-						onClose={() => {
-							setIsPassportModalOpen(false);
-							setLivePassport(null);
-						}}
+						onClose={() => { setIsPassportModalOpen(false); setLivePassport(null); }}
 						passport={livePassport || {
 							orderNumber: String(targetOrder.orderNumber || (targetOrder.id ? `ЗТЛ-${targetOrder.id.slice(0, 8).toUpperCase()}` : "Б/Н")),
 							batchCode: `LOT-${new Date().getFullYear()}-${targetOrder.id ? targetOrder.id.slice(0, 6).toUpperCase() : "0001"}`,
-							patientFullName: currentPatientName,
-							clinicName: "Стоматологическая клиника «DENTE»",
-							doctorFullName: effectiveDoctorName,
-							technicianLabName: selectedLab,
+							patientFullName: currentPatientName, clinicName: "Стоматологическая клиника «DENTE»", doctorFullName: effectiveDoctorName, technicianLabName: selectedLab,
 							toothFdi: Array.isArray(selectedTeeth) && selectedTeeth.length > 0 ? selectedTeeth.join(", ") : (currentToothNumber ? String(currentToothNumber) : "—"),
-							restorationType: selectedMaterial.titleRu,
-							frameworkMaterial: selectedMaterial.titleRu,
-							shade: selectedShade,
-							shadeStump: null,
-							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-							warrantyYears: 2,
-							fixationDate: new Date().toISOString().slice(0, 10),
-							expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+							restorationType: selectedMaterial.titleRu, frameworkMaterial: selectedMaterial.titleRu, shade: selectedShade, shadeStump: null,
+							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)", warrantyYears: 2,
+							fixationDate: new Date().toISOString().slice(0, 10), expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
 							gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
 							sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
 						}}

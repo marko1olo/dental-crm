@@ -6,10 +6,12 @@
  * Мандаты 8b (Sweet Spot 250–350L), 8e (Автономия), 8n (Оприходование), 8am (1 Primary CTA var(--teal)), 8x (Живой язык).
  */
 
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, Plus, X, Zap, Box } from "lucide-react";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, X, Zap, Box } from "lucide-react";
+import { generateUuidV7, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { InboundWaybillItemsTable } from "./InboundWaybillItemsTable.js";
 import { CANONICAL_DENTAL_SUPPLIERS } from "./acceptanceWaybills/acceptanceCanonicalSuppliers.js";
 import { generateAcceptanceWaybillHtml } from "./acceptanceWaybills/acceptanceWaybillPrintDocument.js";
@@ -40,7 +42,7 @@ function printHtmlViaHiddenIframe(htmlContent: string, documentTitle = "Прих
 			iframe.contentWindow?.focus();
 			iframe.contentWindow?.print();
 		} catch (e) {
-			console.warn("Iframe print error", e);
+			clientLogger.warn("[InboundWaybillModal] Iframe print error", e, { module: "Inventory" });
 		} finally {
 			setTimeout(() => {
 				if (document.body.contains(iframe)) {
@@ -120,6 +122,46 @@ const PRESETS = [
 	{ label: "ProTaper", items: [{ name: "ProTaper Gold ассорти", quantity: 5, priceRub: 2900, unit: "упак", lot: "PTG-2026-G", exp: "2029-01-31" }] },
 ];
 
+function buildInitialInvoiceNumber(initialWaybill?: InitialWaybillData): string {
+	return initialWaybill?.waybillNumber || `Приходная накладная № ${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-1`;
+}
+
+function buildInitialSupplierName(initialWaybill?: InitialWaybillData): string {
+	return initialWaybill?.supplier?.name || initialWaybill?.supplierName || "";
+}
+
+function buildInitialReceiptDate(initialWaybill?: InitialWaybillData): string {
+	return initialWaybill?.receiptDate || new Date().toISOString().slice(0, 10);
+}
+
+function buildInitialLines(initialWaybill?: InitialWaybillData): InboundInvoiceItem[] {
+	if (initialWaybill?.items?.length) {
+		return initialWaybill.items.map((it, idx: number) => ({
+			id: it.id || `line-${idx}`,
+			inventoryItemId: it.inventoryItemId || it.itemId,
+			name: it.name || "",
+			quantity: Number(it.quantity) || 1,
+			priceRub: Number(it.unitPriceKopecks ? kopecksToRubles(it.unitPriceKopecks) : (it.unitCostRub || it.priceRub)) || 0,
+			priceKopecks: Number(it.unitPriceKopecks || (it.unitCostRub ? rublesToKopecks(Number(it.unitCostRub)) : 0)) || 0,
+			unit: it.unit || "шт.",
+			lotNumber: it.batchNumber || it.lotNumber || it.lot || `LOT-${idx + 1}`,
+			expirationDate: it.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+		}));
+	}
+	return [
+		{
+			id: "line-1",
+			name: "",
+			quantity: 1,
+			priceRub: 0,
+			priceKopecks: 0,
+			unit: "шт.",
+			lotNumber: "",
+			expirationDate: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+		},
+	];
+}
+
 export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 	isOpen,
 	onClose,
@@ -131,47 +173,28 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 	getHeaders,
 }) => {
 	const defaultId = useId();
-	const [invoiceNumber, setInvoiceNumber] = useState(
-		initialWaybill?.waybillNumber || `Приходная накладная № ${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-1`,
-	);
-	const [supplierName, setSupplierName] = useState(
-		initialWaybill?.supplier?.name || initialWaybill?.supplierName || "",
-	);
-	const [receiptDate, setReceiptDate] = useState(initialWaybill?.receiptDate || new Date().toISOString().slice(0, 10));
+	const [invoiceNumber, setInvoiceNumber] = useState(() => buildInitialInvoiceNumber(initialWaybill));
+	const [supplierName, setSupplierName] = useState(() => buildInitialSupplierName(initialWaybill));
+	const [receiptDate, setReceiptDate] = useState(() => buildInitialReceiptDate(initialWaybill));
 	const [isPosting, setIsPosting] = useState(false);
 	const [errorBanner, setErrorBanner] = useState<string | null>(null);
 	const [isAddingNewItem, setIsAddingNewItem] = useState(false);
 	const [newItemName, setNewItemName] = useState("");
 	const [newItemUnit, setNewItemUnit] = useState("шт.");
 	const [newItemCost, setNewItemCost] = useState("1000");
+	const [lines, setLines] = useState<InboundInvoiceItem[]>(() => buildInitialLines(initialWaybill));
 
-	const [lines, setLines] = useState<InboundInvoiceItem[]>(() => {
-		if (initialWaybill?.items?.length) {
-			return initialWaybill.items.map((it, idx: number) => ({
-				id: it.id || `line-${idx}`,
-				inventoryItemId: it.inventoryItemId || it.itemId,
-				name: it.name || "",
-				quantity: Number(it.quantity) || 1,
-				priceRub: Number(it.unitPriceKopecks ? kopecksToRubles(it.unitPriceKopecks) : (it.unitCostRub || it.priceRub)) || 0,
-				priceKopecks: Number(it.unitPriceKopecks || (it.unitCostRub ? rublesToKopecks(Number(it.unitCostRub)) : 0)) || 0,
-				unit: it.unit || "шт.",
-				lotNumber: it.batchNumber || it.lotNumber || it.lot || `LOT-${idx + 1}`,
-				expirationDate: it.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
-			}));
-		}
-		return [
-			{
-				id: "line-1",
-				name: "",
-				quantity: 1,
-				priceRub: 0,
-				priceKopecks: 0,
-				unit: "шт.",
-				lotNumber: "",
-				expirationDate: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
-			},
-		];
-	});
+	useEffect(() => {
+		setInvoiceNumber(buildInitialInvoiceNumber(initialWaybill));
+		setSupplierName(buildInitialSupplierName(initialWaybill));
+		setReceiptDate(buildInitialReceiptDate(initialWaybill));
+		setLines(buildInitialLines(initialWaybill));
+		setErrorBanner(null);
+		setIsAddingNewItem(false);
+		setNewItemName("");
+		setNewItemUnit("шт.");
+		setNewItemCost("1000");
+	}, [isOpen, initialWaybill]);
 
 	if (!isOpen) return null;
 
@@ -328,20 +351,24 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 		setIsPosting(true);
 		setErrorBanner(null);
 		try {
-			const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const idempotencyHeaders = {
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+			};
+			const headers = getHeaders
+				? getHeaders(idempotencyHeaders)
+				: denteClinicalMutationHeaders(idempotencyHeaders);
 			const payload = {
 				waybillNumber: invoiceNumber,
 				supplierName,
 				receiptDate,
-				totalKopecks,
 				items: lines.map((l) => ({
-					inventoryItemId: l.inventoryItemId,
+					...(l.inventoryItemId ? { inventoryItemId: l.inventoryItemId } : {}),
 					name: l.name,
 					quantity: Number(l.quantity) || 1,
 					purchasePriceKopecks: l.priceKopecks,
+					unitPriceKopecks: l.priceKopecks,
 					purchasePricePerUnit: l.priceRub,
-					priceKopecks: l.priceKopecks,
-					unitCostRub: l.priceRub,
 					unit: l.unit || "шт.",
 					batchNumber: l.lotNumber || `LOT-${Date.now().toString().slice(-4)}`,
 					lotNumber: l.lotNumber || `LOT-${Date.now().toString().slice(-4)}`,
@@ -357,7 +384,8 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				try {
 					const errorJson = await res.json();
 					errorMessage = errorJson.error || errorJson.message || `Ошибка сервера (${res.status})`;
-				} catch {
+				} catch (parseErr) {
+					clientLogger.warn("[InboundWaybillModal] Failed to parse error JSON", parseErr, { module: "Inventory" });
 					errorMessage = `Ошибка сервера (${res.status} ${res.statusText})`;
 				}
 				setErrorBanner(errorMessage);
@@ -378,8 +406,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 
 	const modal = (
 		<div
-			style={{ zIndex: 100000 }}
-			className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto overflow-x-clip max-w-full animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="inbound-invoice-title"
@@ -388,44 +415,48 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 			onClick={(e) => { if (e.target === e.currentTarget && !isPosting) onClose(); }}
 		>
 			<div
-				style={{ maxWidth: "880px", width: "95%" }}
-				className="relative my-auto rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden text-[var(--ink)]"
+				className="relative sm:my-auto w-full sm:w-[95%] sm:max-w-[880px] rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden text-[var(--ink)]"
 				data-testid="inbound-waybill-modal"
 			>
-				<div className="w-10 h-1 rounded-full bg-[var(--line)] mx-auto mt-2 sm:hidden shrink-0" aria-hidden="true" />
+				<div className="w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto my-3 sm:hidden pointer-events-none shrink-0" aria-hidden="true" />
 
 				{/* Шапка модалки */}
-				<div className="p-3.5 sm:p-4 border-b border-[var(--line)] flex items-center justify-between shrink-0 bg-[var(--paper-soft)]">
-					<div className="flex items-center gap-3">
-						<div className="w-9 h-9 rounded-xl bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
-							<PackagePlus size={20} />
+				<div className="h-14 px-6 border-b border-[var(--line)] flex items-center justify-between shrink-0 bg-[var(--paper-soft)]">
+					<div className="flex items-center gap-3 min-w-0">
+						<div className="w-9 h-9 rounded-xl bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center shrink-0">
+							<PackagePlus className="w-4 h-4 shrink-0" />
 						</div>
-						<div>
+						<div className="min-w-0">
 							<div className="flex items-center gap-2">
-								<h3 id="inbound-invoice-title" className="text-base sm:text-lg font-bold text-[var(--ink)]">Приходная накладная поставщика</h3>
-								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
+								<h3 id="inbound-invoice-title" className="text-base font-semibold text-[var(--ink)] truncate">Приходная накладная поставщика</h3>
+								<span className="h-6 px-2 text-xs font-medium rounded-full inline-flex items-center gap-1 shrink-0 bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30">
 									FEFO контроль
 								</span>
 							</div>
-							<p className="text-xs text-[var(--muted)]">Поступление материалов на склад и погашение овердрафта</p>
+							<p className="text-xs text-[var(--ink-muted)] truncate">Поступление материалов на склад и погашение овердрафта</p>
 						</div>
 					</div>
-					<button type="button" onClick={onClose} className="secondary-button p-2 text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Закрыть">
-						<X size={18} />
+					<button
+						type="button"
+						onClick={onClose}
+						className="h-11 w-11 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+						aria-label="Закрыть"
+					>
+						<X className="w-4 h-4 shrink-0" />
 					</button>
 				</div>
 
 				{/* Тело модалки */}
-				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+				<div className="flex-1 overflow-y-auto p-6 space-y-4">
 					{errorBanner && (
 						<div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger-soft)] text-[var(--danger)] text-xs flex items-center gap-2">
-							<AlertTriangle size={16} className="shrink-0" /><span>{errorBanner}</span>
+							<AlertTriangle className="w-4 h-4 shrink-0" /><span>{errorBanner}</span>
 						</div>
 					)}
 
 					{negativeItem && (
 						<div className="p-3 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning-soft)] text-[var(--warning)] text-xs flex items-center gap-2">
-							<AlertTriangle size={16} className="shrink-0" />
+							<AlertTriangle className="w-4 h-4 shrink-0" />
 							<span>Зафиксирован дефицит у кресла (мягкий овердрафт: {negativeItem.stockQuantity} ед.): оприходование накладной покроет дефицит.</span>
 						</div>
 					)}
@@ -433,38 +464,38 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					{/* Реквизиты накладной */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)]">
 						<div>
-							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Номер приходной накладной</label>
-							<input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-number-input" />
+							<label className="block text-xs font-medium text-[var(--ink-muted)] mb-1">Номер приходной накладной</label>
+							<input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full h-11 sm:h-9 px-3 text-base sm:text-sm bg-[var(--paper)] text-[var(--ink)] rounded-xl sm:rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-number-input" />
 						</div>
 						<div>
-							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Поставщик</label>
-							<input type="text" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} list={`sup-list-${defaultId}`} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-supplier-input" />
+							<label className="block text-xs font-medium text-[var(--ink-muted)] mb-1">Поставщик</label>
+							<input type="text" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} list={`sup-list-${defaultId}`} className="w-full h-11 sm:h-9 px-3 text-base sm:text-sm bg-[var(--paper)] text-[var(--ink)] rounded-xl sm:rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-supplier-input" />
 							<datalist id={`sup-list-${defaultId}`}>
 								{DEFAULT_SUPPLIERS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</datalist>
 						</div>
 						<div>
-							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Дата поступления</label>
-							<input type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-date-input" />
+							<label className="block text-xs font-medium text-[var(--ink-muted)] mb-1">Дата поступления</label>
+							<input type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="w-full h-11 sm:h-9 px-3 text-base sm:text-sm bg-[var(--paper)] text-[var(--ink)] rounded-xl sm:rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-date-input" />
 						</div>
 					</div>
 
 					{/* Быстрые шаблоны и создание карточки */}
 					<div className="flex flex-wrap items-center justify-between gap-2">
 						<div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-							<span className="text-[11px] font-medium text-[var(--muted)] shrink-0">Шаблон:</span>
+							<span className="text-xs font-medium text-[var(--ink-muted)] shrink-0">Шаблон:</span>
 							{PRESETS.map((p) => (
-								<button key={p.label} type="button" onClick={() => handleApplyPreset(p)} className="secondary-button px-2.5 py-1 text-xs rounded-lg flex items-center gap-1.5 shrink-0">
-									<Zap size={12} className="text-[var(--warning)]" /><span>{p.label}</span>
+								<button key={p.label} type="button" onClick={() => handleApplyPreset(p)} className="h-11 sm:h-8 px-2.5 rounded-xl sm:rounded-lg text-xs font-medium inline-flex items-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shrink-0 cursor-pointer">
+									<Zap className="w-3.5 h-3.5 shrink-0" /><span>{p.label}</span>
 								</button>
 							))}
 						</div>
 						<button
 							type="button"
 							onClick={() => setIsAddingNewItem(!isAddingNewItem)}
-							className="secondary-button px-2.5 py-1 text-xs flex items-center gap-1 font-medium ml-auto"
+							className="h-11 sm:h-8 px-2.5 rounded-xl sm:rounded-lg text-xs font-medium inline-flex items-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] ml-auto cursor-pointer shrink-0"
 						>
-							<Box size={14} className="text-[var(--teal)]" />
+							<Box className="w-3.5 h-3.5 shrink-0" />
 							<span>{isAddingNewItem ? "Скрыть форму карточки" : "+ Новый материал в каталог"}</span>
 						</button>
 					</div>
@@ -472,21 +503,21 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					{/* Секция быстрого добавления новой карточки номенклатуры */}
 					{isAddingNewItem && (
 						<div className="p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] space-y-2.5 animate-in fade-in">
-							<div className="text-xs font-bold text-[var(--ink)]">Быстрая карточка нового материала</div>
+							<div className="text-xs font-semibold text-[var(--ink)]">Быстрая карточка нового материала</div>
 							<div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
 								<input
 									type="text"
 									placeholder="Наименование материала"
 									value={newItemName}
 									onChange={(e) => setNewItemName(e.target.value)}
-									className="sm:col-span-2 px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none"
+									className="sm:col-span-2 h-11 sm:h-9 px-3 bg-[var(--paper)] text-[var(--ink)] rounded-xl sm:rounded-lg border border-[var(--line)] focus:outline-none"
 								/>
 								<input
 									type="text"
 									placeholder="Ед. (шт, уп)"
 									value={newItemUnit}
 									onChange={(e) => setNewItemUnit(e.target.value)}
-									className="px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none"
+									className="h-11 sm:h-9 px-3 bg-[var(--paper)] text-[var(--ink)] rounded-xl sm:rounded-lg border border-[var(--line)] focus:outline-none"
 								/>
 								<div className="flex items-center gap-2">
 									<input
@@ -494,12 +525,12 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 										placeholder="Цена ₽"
 										value={newItemCost}
 										onChange={(e) => setNewItemCost(e.target.value)}
-										className="w-full px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none"
+										className="w-full h-11 sm:h-9 px-3 bg-[var(--paper)] text-[var(--ink)] rounded-xl sm:rounded-lg border border-[var(--line)] focus:outline-none"
 									/>
 									<button
 										type="button"
 										onClick={handleCreateNewCatalogItem}
-										className="secondary-button px-3 py-1.5 text-xs font-semibold shrink-0 border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] rounded-lg transition-colors cursor-pointer"
+										className="h-11 sm:h-9 px-3.5 text-xs font-medium shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] rounded-xl sm:rounded-lg transition-colors cursor-pointer"
 									>
 										Добавить
 									</button>
@@ -520,30 +551,30 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				</div>
 
 				{/* Футер: ровно 1 Primary CTA кнопка var(--primary), остальные вторичные */}
-				<div className="p-3.5 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 shrink-0">
+				<div className="min-h-[64px] px-6 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2 flex-wrap shrink-0">
-						<span className="text-sm font-medium text-[var(--muted)]">Итого по накладной:</span>
-						<strong className="text-base font-bold text-[var(--ink)] font-mono tabular-nums">{totalRub.toLocaleString("ru-RU")} ₽</strong>
-						<button type="button" onClick={handlePrintWaybill} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Печать приходной накладной" data-testid="print-waybill">
+						<span className="text-sm font-medium text-[var(--ink-muted)]">Итого по накладной:</span>
+						<strong className="text-base font-medium text-[var(--ink)] font-mono tracking-tight text-right tabular-nums">{totalRub.toLocaleString("ru-RU")} ₽</strong>
+						<button type="button" onClick={handlePrintWaybill} className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0" title="Печать приходной накладной" data-testid="print-waybill">
 							Печать накладной
 						</button>
-						<button type="button" onClick={handleExportCsv} className="secondary-button px-2.5 py-1 text-xs font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Экспорт накладной в CSV" data-testid="btn-export-invoice-csv">CSV</button>
+						<button type="button" onClick={handleExportCsv} className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center cursor-pointer border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] shrink-0" title="Экспорт накладной в CSV" data-testid="btn-export-invoice-csv">CSV</button>
 					</div>
-					<div className="flex items-center gap-2.5 shrink-0 ml-auto w-full sm:w-auto justify-end">
-						<button type="button" onClick={onClose} className="secondary-button px-4 py-2 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] text-xs sm:text-sm rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]">
+					<div className="flex items-center gap-3 shrink-0 ml-auto w-full sm:w-auto justify-end">
+						<button type="button" onClick={onClose} className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0">
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handlePostInvoice}
-							className="primary-button px-4 py-2 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] text-sm font-semibold flex items-center justify-center gap-2 shadow-xs whitespace-nowrap shrink-0 rounded-xl text-white bg-[var(--primary,#0d9488)] hover:opacity-95 transition-opacity"
+							className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shadow-sm whitespace-nowrap shrink-0 text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors cursor-pointer"
 							data-testid="btn-post-acceptance-waybill"
 							data-cy="btn-post-inbound-invoice"
 						>
 							{isPosting ? (
-								<><Loader2 className="animate-spin" size={16} /><span className="whitespace-nowrap">Проведение...</span></>
+								<><Loader2 className="w-4 h-4 shrink-0 animate-spin" /><span className="whitespace-nowrap">Проведение...</span></>
 							) : (
-								<><CheckCircle2 size={16} /><span className="whitespace-nowrap">Оприходовать накладную</span></>
+								<><CheckCircle2 className="w-4 h-4 shrink-0" /><span className="whitespace-nowrap">Оприходовать накладную</span></>
 							)}
 						</button>
 					</div>

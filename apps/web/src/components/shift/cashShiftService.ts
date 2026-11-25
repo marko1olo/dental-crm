@@ -8,6 +8,7 @@
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService.js";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 
 export interface CloseShiftPayload {
 	readonly shiftNumber: number;
@@ -54,7 +55,7 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 			errorReason = errJson?.message || `Ошибка сервера (${res.status})`;
 		}
 	} catch (endpointErr: unknown) {
-		console.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}:`, endpointErr);
+		clientLogger.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}`, endpointErr, { module: "Shift" });
 		errorReason = endpointErr instanceof Error ? endpointErr.message : "Сетевой сбой при закрытии смены";
 	}
 
@@ -93,8 +94,9 @@ export async function executeOpenShiftDbTransaction(payload: OpenShiftPayload): 
 	try {
 		const res = await fetch(canonicalEndpoint, { method: "POST", headers: buildShiftMutationHeaders(), body });
 		if (res.ok) return true;
+		clientLogger.warn(`[executeOpenShiftDbTransaction] Ошибка ответа ${canonicalEndpoint}`, { status: res.status }, { module: "Shift" });
 	} catch (endpointErr: unknown) {
-		console.warn(`[executeOpenShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}:`, endpointErr);
+		clientLogger.warn(`[executeOpenShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}`, endpointErr, { module: "Shift" });
 	}
 	return false;
 }
