@@ -1,14 +1,20 @@
 /**
  * payrollSettlementDbQueries.ts — Персистенция закрытия расчетных периодов врачей в PostgreSQL.
- * Mandate 8b: строго <= 150 строк на файл.
- * Mandate 8wy: 100% реальный PostgreSQL без моков.
+ * Mandate 8wy: 100% реальный PostgreSQL без моков и без raw SQL float.
  */
 
-import { and, eq, gte, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { withTenantCtx, type TenantDb } from "../db/rls.js";
-import { appointments, cashBoxes, cashOperations, doctorPayrollStatements, users } from "../db/schema.js";
+import {
+	appointments,
+	cashBoxes,
+	cashBoxShifts,
+	cashOperations,
+	doctorPayrollStatements,
+	users,
+} from "../db/schema.js";
 import { createApiLogger } from "../observability/logger.js";
 
 export interface SettlementPeriodCloseParams {
@@ -44,6 +50,30 @@ export interface SettlementPeriodCloseParams {
 	readonly netPayoutRub?: number | undefined;
 	readonly markPaid?: boolean | undefined;
 	readonly rkoNumber?: string | undefined;
+}
+
+function resolveBoxBalanceKopecks(box: {
+	balanceKopecks: number | bigint | null | undefined;
+	balanceRub: number | string | null | undefined;
+}): number {
+	const kop = box.balanceKopecks != null ? Number(box.balanceKopecks) : 0;
+	const rubKop = rublesToKopecks(Number(box.balanceRub || 0));
+	if (kop !== 0 || rubKop === 0) {
+		return kop;
+	}
+	return rubKop;
+}
+
+function resolveShiftExpenseKopecks(shift: {
+	expenseTotalKopecks: number | bigint | null | undefined;
+	expenseTotalRub: number | string | null | undefined;
+}): number {
+	const kop = shift.expenseTotalKopecks != null ? Number(shift.expenseTotalKopecks) : 0;
+	const rubKop = rublesToKopecks(Number(shift.expenseTotalRub || 0));
+	if (kop !== 0 || rubKop === 0) {
+		return kop;
+	}
+	return rubKop;
 }
 
 export async function resolveDoctorUserUuid(
@@ -104,11 +134,11 @@ export async function findPayrollStatement(
 			return rows[0] ?? null;
 		});
 	} catch (err) {
-		logger?.warn(
+		logger?.error(
 			{ err, orgId, doctorId, periodKey },
 			"[settlementPeriodDb] findPayrollStatement error",
 		);
-		return null;
+		throw err;
 	}
 }
 
@@ -129,6 +159,7 @@ export async function closeSettlementPeriodInDb(
 					eq(doctorPayrollStatements.period, periodKey),
 				),
 			)
+			.for("update")
 			.limit(1);
 
 		const now = new Date();
@@ -256,7 +287,7 @@ export async function closeSettlementPeriodInDb(
 			statementId = statementRow.id;
 		}
 
-		// Кассовая дисциплина 54-ФЗ: при markPaid: true создаем проводку в cash_operations (DEF-PAYROLL-RKO-01)
+		// Кассовая дисциплина 54-ФЗ: при markPaid: true создаем проводку в cash_operations и синхронизируем смену
 		const effectiveRkoNumber = statementRow.rkoNumber || params.rkoNumber || `РКО-${statementId.slice(0, 8).toUpperCase()}`;
 		if (params.markPaid && payoutKop > 0) {
 			const existingCashOps = await tx
@@ -270,6 +301,7 @@ export async function closeSettlementPeriodInDb(
 						sql`coalesce(${cashOperations.metadata}->>'isStorno', 'false') != 'true'`,
 					),
 				)
+				.for("update")
 				.limit(1);
 
 			if (existingCashOps.length === 0) {
@@ -287,29 +319,56 @@ export async function closeSettlementPeriodInDb(
 					.for("update");
 
 				if (box) {
-					const curBalanceKop = box.balanceKopecks != null
-						? Number(box.balanceKopecks)
-						: rublesToKopecks(Number(box.balanceRub || 0));
+					const curBalanceKop = resolveBoxBalanceKopecks(box);
 					const newBalanceKop = curBalanceKop - payoutKop;
 					const newBalanceRub = kopecksToRubles(newBalanceKop);
+
+					const [activeShift] = await tx
+						.select()
+						.from(cashBoxShifts)
+						.where(
+							and(
+								eq(cashBoxShifts.organizationId, organizationId),
+								eq(cashBoxShifts.cashBoxId, box.id),
+								eq(cashBoxShifts.status, "open"),
+							),
+						)
+						.for("update")
+						.limit(1);
 
 					await tx
 						.update(cashBoxes)
 						.set({
-							balanceKopecks: sql`coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) - ${payoutKop}::bigint`,
-							balanceRub: sql`((coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) - ${payoutKop}::bigint)::numeric / 100)::numeric(14, 2)`,
+							balanceKopecks: newBalanceKop,
+							balanceRub: newBalanceRub,
 							updatedAt: now,
 						})
 						.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));
 
+					if (activeShift) {
+						const prevExpenseKop = resolveShiftExpenseKopecks(activeShift);
+						const nextExpenseKop = prevExpenseKop + payoutKop;
+						await tx
+							.update(cashBoxShifts)
+							.set({
+								expenseTotalKopecks: nextExpenseKop,
+								expenseTotalRub: kopecksToRubles(nextExpenseKop),
+								updatedAt: now,
+							})
+							.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, organizationId)));
+					}
+
 					await tx.insert(cashOperations).values({
 						organizationId,
 						cashBoxId: box.id,
+						shiftId: activeShift?.id ?? null,
 						operationType: "expense",
 						amountRub: payoutRub,
 						amountKopecks: payoutKop,
 						balanceBeforeRub: kopecksToRubles(curBalanceKop),
+						balanceBeforeKopecks: BigInt(curBalanceKop),
 						balanceAfterRub: newBalanceRub,
+						balanceAfterKopecks: BigInt(newBalanceKop),
 						reasonCode: 1, // Зарплата персонала
 						reasonText: `Выплата заработной платы по ведомости ${statementRow.period || periodKey} (${effectiveRkoNumber})`,
 						operatorId: null,
@@ -324,22 +383,66 @@ export async function closeSettlementPeriodInDb(
 					});
 				}
 			} else {
-				// Актуализировать сумму РКО при повторном закрытии ведомости (SEV-1.2)
+				// Актуализировать сумму РКО при повторном закрытии ведомости с блокировкой кассы и смены
 				const existingOp = existingCashOps[0];
 				if (existingOp) {
-					const prevKop = existingOp.amountKopecks != null
+					const prevKop = existingOp.amountKopecks != null && existingOp.amountKopecks !== 0
 						? Number(existingOp.amountKopecks)
 						: rublesToKopecks(Number(existingOp.amountRub || 0));
 					const deltaKop = payoutKop - prevKop;
 					if (deltaKop !== 0) {
-						await tx
-							.update(cashBoxes)
-							.set({
-								balanceKopecks: sql`coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) - ${deltaKop}::bigint`,
-								balanceRub: sql`((coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) - ${deltaKop}::bigint)::numeric / 100)::numeric(14, 2)`,
-								updatedAt: now,
-							})
-							.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, organizationId)));
+						const [lockedBox] = await tx
+							.select()
+							.from(cashBoxes)
+							.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, organizationId)))
+							.for("update")
+							.limit(1);
+
+						let nextBoxBalKop = 0;
+						if (lockedBox) {
+							const curBoxKop = resolveBoxBalanceKopecks(lockedBox);
+							nextBoxBalKop = curBoxKop - deltaKop;
+							await tx
+								.update(cashBoxes)
+								.set({
+									balanceKopecks: nextBoxBalKop,
+									balanceRub: kopecksToRubles(nextBoxBalKop),
+									updatedAt: now,
+								})
+								.where(and(eq(cashBoxes.id, lockedBox.id), eq(cashBoxes.organizationId, organizationId)));
+						}
+
+						if (existingOp.shiftId) {
+							const [openShift] = await tx
+								.select()
+								.from(cashBoxShifts)
+								.where(
+									and(
+										eq(cashBoxShifts.id, existingOp.shiftId),
+										eq(cashBoxShifts.organizationId, organizationId),
+										eq(cashBoxShifts.status, "open"),
+									),
+								)
+								.for("update")
+								.limit(1);
+							if (openShift) {
+								const prevExpKop = resolveShiftExpenseKopecks(openShift);
+								const nextExpKop = Math.max(0, prevExpKop + deltaKop);
+								await tx
+									.update(cashBoxShifts)
+									.set({
+										expenseTotalKopecks: nextExpKop,
+										expenseTotalRub: kopecksToRubles(nextExpKop),
+										updatedAt: now,
+									})
+									.where(and(eq(cashBoxShifts.id, openShift.id), eq(cashBoxShifts.organizationId, organizationId)));
+							}
+						}
+
+						const prevBeforeKop = existingOp.balanceBeforeKopecks != null
+							? Number(existingOp.balanceBeforeKopecks)
+							: rublesToKopecks(Number(existingOp.balanceBeforeRub || 0));
+						const updatedAfterKop = lockedBox ? nextBoxBalKop : prevBeforeKop - payoutKop;
 
 						const metaObj = (existingOp.metadata && typeof existingOp.metadata === "object") ? existingOp.metadata : {};
 						await tx
@@ -347,6 +450,8 @@ export async function closeSettlementPeriodInDb(
 							.set({
 								amountRub: payoutRub,
 								amountKopecks: payoutKop,
+								balanceAfterRub: kopecksToRubles(updatedAfterKop),
+								balanceAfterKopecks: BigInt(updatedAfterKop),
 								reasonText: `Выплата заработной платы по ведомости ${statementRow.period || periodKey} (${effectiveRkoNumber})`,
 								metadata: {
 									...metaObj,
@@ -431,7 +536,7 @@ export async function reopenSettlementPeriodInDb(orgId: string, doctorId: string
 			return null;
 		}
 
-		// Сторнирование связанных кассовых расходных операций (54-ФЗ кассовая дисциплина, SEV-1.2)
+		// Сторнирование связанных кассовых расходных операций с созданием новой компенсирующей записи (без затирания истории)
 		const linkedCashOps = await tx
 			.select()
 			.from(cashOperations)
@@ -442,39 +547,99 @@ export async function reopenSettlementPeriodInDb(orgId: string, doctorId: string
 					sql`coalesce(${cashOperations.metadata}->>'isAnnulled', 'false') != 'true'`,
 					sql`coalesce(${cashOperations.metadata}->>'isStorno', 'false') != 'true'`,
 				),
-			);
+			)
+			.for("update");
 
 		const now = new Date();
 		for (const op of linkedCashOps) {
-			const opKop = op.amountKopecks != null
+			const opKop = op.amountKopecks != null && op.amountKopecks !== 0
 				? Number(op.amountKopecks)
 				: rublesToKopecks(Number(op.amountRub || 0));
 
 			if (opKop > 0) {
-				// Блокируем кассу для атомарного возврата баланса
-				await tx
+				const [box] = await tx
 					.select()
 					.from(cashBoxes)
 					.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, orgId)))
-					.for("update");
+					.for("update")
+					.limit(1);
 
-				// Возвращаем баланс в кассу
-				await tx
-					.update(cashBoxes)
-					.set({
-						balanceKopecks: sql`coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) + ${opKop}::bigint`,
-						balanceRub: sql`((coalesce(${cashBoxes.balanceKopecks}, round(coalesce(${cashBoxes.balanceRub}, 0) * 100)::bigint) + ${opKop}::bigint)::numeric / 100)::numeric(14, 2)`,
-						updatedAt: now,
-					})
-					.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, orgId)));
+				if (box) {
+					const curBalanceKop = resolveBoxBalanceKopecks(box);
+					const newBalanceKop = curBalanceKop + opKop;
+					const curBalanceRub = kopecksToRubles(curBalanceKop);
+					const newBalanceRub = kopecksToRubles(newBalanceKop);
+
+					await tx
+						.update(cashBoxes)
+						.set({
+							balanceKopecks: newBalanceKop,
+							balanceRub: newBalanceRub,
+							updatedAt: now,
+						})
+						.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, orgId)));
+
+					let activeShiftId: string | null = null;
+					if (op.shiftId) {
+						const [openShift] = await tx
+							.select()
+							.from(cashBoxShifts)
+							.where(
+								and(
+									eq(cashBoxShifts.id, op.shiftId),
+									eq(cashBoxShifts.organizationId, orgId),
+									eq(cashBoxShifts.status, "open"),
+								),
+							)
+							.for("update")
+							.limit(1);
+						if (openShift) {
+							activeShiftId = openShift.id;
+							const prevExpKop = resolveShiftExpenseKopecks(openShift);
+							const nextExpKop = Math.max(0, prevExpKop - opKop);
+							await tx
+								.update(cashBoxShifts)
+								.set({
+									expenseTotalKopecks: nextExpKop,
+									expenseTotalRub: kopecksToRubles(nextExpKop),
+									updatedAt: now,
+								})
+								.where(and(eq(cashBoxShifts.id, openShift.id), eq(cashBoxShifts.organizationId, orgId)));
+						}
+					}
+
+					await tx.insert(cashOperations).values({
+						organizationId: orgId,
+						cashBoxId: box.id,
+						shiftId: activeShiftId,
+						operationType: "introduction",
+						amountRub: kopecksToRubles(opKop),
+						amountKopecks: opKop,
+						balanceBeforeRub: curBalanceRub,
+						balanceBeforeKopecks: BigInt(curBalanceKop),
+						balanceAfterRub: newBalanceRub,
+						balanceAfterKopecks: BigInt(newBalanceKop),
+						reasonCode: 1,
+						reasonText: `Сторно выплаты по ведомости ${statement.period || periodKey} (${statement.rkoNumber || op.id.slice(0, 8)})`,
+						operatorId: null,
+						operatorName: "Система начисления заработной платы",
+						metadata: {
+							category: "payroll_storno",
+							isStorno: true,
+							originalCashOperationId: op.id,
+							statementId: statement.id,
+							doctorId,
+							period: periodKey,
+						},
+					});
+				}
 			}
 
-			// Помечаем операцию аннулированной / сторнированной
+			// Отмечаем исходную проводку как сторнированную в metadata без искажения её исторических сумм
 			const prevMeta = (op.metadata && typeof op.metadata === "object") ? op.metadata : {};
 			await tx
 				.update(cashOperations)
 				.set({
-					reasonText: `${op.reasonText || "Расход по РКО"} (Аннулировано / Сторно)`,
 					metadata: {
 						...prevMeta,
 						isAnnulled: true,

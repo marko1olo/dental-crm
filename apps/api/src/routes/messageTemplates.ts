@@ -3,15 +3,15 @@ import {
 	renderMessageTemplateInputSchema,
 	updateMessageTemplateSchema,
 } from "@dental/shared";
-import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
-import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 import {
+	MessageTemplateSecrecyError,
 	createMessageTemplate,
 	deleteMessageTemplate,
 	ensureDefaultMessageTemplatesSeeded,
@@ -20,22 +20,27 @@ import {
 	renderMessageTemplate,
 	updateMessageTemplate,
 } from "../services/communications/messageTemplateService.js";
+import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
-const templateQuerySchema = z.object({
-	channel: z.string().optional(),
-	scenario: z.string().optional(),
-	intent: z.string().optional(),
-	isActive: z
-		.enum(["true", "false"])
-		.optional()
-		.transform((v) => (v === undefined ? undefined : v === "true")),
-});
+const templateQuerySchema = z
+	.object({
+		channel: z.string().optional(),
+		scenario: z.string().optional(),
+		intent: z.string().optional(),
+		isActive: z
+			.enum(["true", "false"])
+			.optional()
+			.transform((v) => (v === undefined ? undefined : v === "true")),
+	})
+	.strict();
+
+const templateIdParamsSchema = z
+	.object({
+		id: z.string().uuid(),
+	})
+	.strict();
 
 export async function registerMessageTemplateRoutes(app: FastifyInstance) {
-	/**
-	 * GET /api/v1/message-templates
-	 * Retrieves list of message templates filtered by channel and scenario.
-	 */
 	app.get("/api/v1/message-templates", async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
@@ -48,10 +53,15 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const query = templateQuerySchema.safeParse(request.query);
-		const filter = query.success ? query.data : {};
+		const query = templateQuerySchema.safeParse(request.query ?? {});
+		if (!query.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры фильтра шаблонов.",
+			});
+		}
 
-		const templates = await getMessageTemplates(orgId, filter);
+		const templates = await getMessageTemplates(orgId, query.data);
 		return reply.send({
 			success: true,
 			data: templates,
@@ -59,24 +69,22 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		});
 	});
 
-	/**
-	 * Backward compatibility GET /api/settings/message-templates
-	 */
 	app.get("/api/settings/message-templates", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const query = templateQuerySchema.safeParse(request.query);
-		const filter = query.success ? query.data : {};
+		const query = templateQuerySchema.safeParse(request.query ?? {});
+		if (!query.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры фильтра шаблонов.",
+			});
+		}
 
-		const templates = await getMessageTemplates(orgId, filter);
+		const templates = await getMessageTemplates(orgId, query.data);
 		return reply.send(templates);
 	});
 
-	/**
-	 * GET /api/v1/message-templates/:id
-	 * Retrieves a single template by ID.
-	 */
 	app.get("/api/v1/message-templates/:id", async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
@@ -89,14 +97,14 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { id } = request.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = templateIdParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Идентификатор шаблона сообщения должен быть валидным UUID.",
 			});
 		}
-		const template = await getMessageTemplateById(orgId, id);
+		const template = await getMessageTemplateById(orgId, paramsParsed.data.id);
 
 		if (!template) {
 			return reply.code(404).send({
@@ -108,10 +116,6 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, data: template });
 	});
 
-	/**
-	 * POST /api/v1/message-templates & /api/settings/message-templates
-	 * Creates a new message template with dynamic tags.
-	 */
 	const handleCreateTemplate = async (
 		request: FastifyRequest,
 		reply: FastifyReply,
@@ -128,7 +132,8 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				message:
+					"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
 			});
 		}
 		if (idempotencyKey) {
@@ -144,20 +149,30 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const template = await createMessageTemplate(organizationId, parsedInput.data);
-		if (request.url.startsWith("/api/settings/")) {
-			return reply.code(201).send(template);
+		try {
+			const template = await createMessageTemplate(
+				organizationId,
+				parsedInput.data,
+			);
+			if (request.url.startsWith("/api/settings/")) {
+				return reply.code(201).send(template);
+			}
+			return reply.code(201).send({ success: true, data: template });
+		} catch (error) {
+			if (error instanceof MessageTemplateSecrecyError) {
+				return reply.code(422).send({
+					error: "MedicalSecrecyViolation",
+					message: error.message,
+					detectedTerms: error.detectedTerms,
+				});
+			}
+			throw error;
 		}
-		return reply.code(201).send({ success: true, data: template });
 	};
 
 	app.post("/api/v1/message-templates", handleCreateTemplate);
 	app.post("/api/settings/message-templates", handleCreateTemplate);
 
-	/**
-	 * PUT /api/v1/message-templates/:id & /api/settings/message-templates/:id
-	 * Updates an existing template.
-	 */
 	const handleUpdateTemplate = async (
 		request: FastifyRequest,
 		reply: FastifyReply,
@@ -174,20 +189,23 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				message:
+					"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
 			});
 		}
 		if (idempotencyKey) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const { id } = request.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = templateIdParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Идентификатор шаблона сообщения должен быть валидным UUID.",
 			});
 		}
+		const { id } = paramsParsed.data;
+
 		const parsedInput = updateMessageTemplateSchema.safeParse(request.body);
 		if (!parsedInput.success) {
 			return reply.code(400).send({
@@ -208,6 +226,13 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 			}
 			return reply.send({ success: true, data: template });
 		} catch (error) {
+			if (error instanceof MessageTemplateSecrecyError) {
+				return reply.code(422).send({
+					error: "MedicalSecrecyViolation",
+					message: error.message,
+					detectedTerms: error.detectedTerms,
+				});
+			}
 			return reply.code(404).send({
 				error: "NotFound",
 				message:
@@ -221,10 +246,6 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 	app.put("/api/v1/message-templates/:id", handleUpdateTemplate);
 	app.put("/api/settings/message-templates/:id", handleUpdateTemplate);
 
-	/**
-	 * DELETE /api/v1/message-templates/:id & /api/settings/message-templates/:id
-	 * Deletes a message template.
-	 */
 	const handleDeleteTemplate = async (
 		request: FastifyRequest,
 		reply: FastifyReply,
@@ -241,22 +262,24 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				message:
+					"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
 			});
 		}
 		if (idempotencyKey) {
 			reply.header("Idempotency-Key", idempotencyKey);
 		}
 
-		const { id } = request.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = templateIdParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Идентификатор шаблона сообщения должен быть валидным UUID.",
 			});
 		}
+
 		try {
-			await deleteMessageTemplate(organizationId, id);
+			await deleteMessageTemplate(organizationId, paramsParsed.data.id);
 			return reply.send({ success: true });
 		} catch (error) {
 			return reply.code(404).send({
@@ -272,10 +295,6 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 	app.delete("/api/v1/message-templates/:id", handleDeleteTemplate);
 	app.delete("/api/settings/message-templates/:id", handleDeleteTemplate);
 
-	/**
-	 * POST /api/v1/message-templates/render
-	 * Renders template with dynamic macros for a patient or appointment.
-	 */
 	app.post("/api/v1/message-templates/render", async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
@@ -303,10 +322,6 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		return reply.send({ success: true, data: result });
 	});
 
-	/**
-	 * POST /api/v1/message-templates/seed
-	 * Seeds standard clinical templates if none exist.
-	 */
 	app.post("/api/v1/message-templates/seed", async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
@@ -320,7 +335,8 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
+				message:
+					"Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",
 			});
 		}
 		if (idempotencyKey) {
@@ -329,7 +345,11 @@ export async function registerMessageTemplateRoutes(app: FastifyInstance) {
 
 		const count = await ensureDefaultMessageTemplatesSeeded(organizationId);
 		const templates = await getMessageTemplates(organizationId);
-		return reply.send({ success: true, seededCount: count, total: templates.length });
+		return reply.send({
+			success: true,
+			seededCount: count,
+			total: templates.length,
+		});
 	});
 }
 

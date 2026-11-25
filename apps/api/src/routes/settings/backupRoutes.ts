@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
-import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { safeLogError } from "../../observability/logger.js";
@@ -15,6 +16,17 @@ import {
 	requireSettingsSensitiveReadAccess,
 } from "./helpers.js";
 
+const createBackupBodySchema = z.object({}).strict().optional();
+
+async function pathExists(targetPath: string): Promise<boolean> {
+	try {
+		await fsPromises.access(targetPath);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export function registerBackupRoutes(app: FastifyInstance): void {
 	/**
 	 * Получить список реальных зашифрованных копий на диске с SHA-256 и точным размером в байтах.
@@ -25,47 +37,50 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 
 		try {
 			const dir = backupsDirectory();
-			if (!fs.existsSync(dir)) {
+			if (!(await pathExists(dir))) {
 				return { backups: [] };
 			}
 
-			const files = fs.readdirSync(dir);
+			const files = await fsPromises.readdir(dir);
 			const orgPrefix = `org_${orgId}_`;
-			const backups = files
-				.filter(
-					(f) =>
-						f.startsWith(orgPrefix) &&
-						(f.endsWith(".sql.enc") ||
-							f.endsWith(".dente") ||
-							f.endsWith(".dentalbackup")),
+			const matchingFiles = files.filter(
+				(f) =>
+					f.startsWith(orgPrefix) &&
+					(f.endsWith(".sql.enc") ||
+						f.endsWith(".dente") ||
+						f.endsWith(".dentalbackup")),
+			);
+
+			const backups = (
+				await Promise.all(
+					matchingFiles.map(async (filename) => {
+						const fullPath = path.join(dir, filename);
+						const stat = await fsPromises.stat(fullPath);
+						let sha256 = "";
+						try {
+							const fileBuffer = await fsPromises.readFile(fullPath);
+							sha256 = crypto
+								.createHash("sha256")
+								.update(fileBuffer)
+								.digest("hex");
+						} catch (hashErr: unknown) {
+							request.log.warn(
+								{ err: safeLogError(hashErr), filename },
+								"[backup] Failed to compute backup SHA-256",
+							);
+							sha256 = "";
+						}
+						return {
+							id: filename,
+							filename,
+							filePath: fullPath,
+							sizeBytes: stat.size,
+							createdAt: stat.mtime.toISOString(),
+							sha256,
+						};
+					}),
 				)
-				.map((filename) => {
-					const fullPath = path.join(dir, filename);
-					const stat = fs.statSync(fullPath);
-					let sha256 = "";
-					try {
-						const fileBuffer = fs.readFileSync(fullPath);
-						sha256 = crypto
-							.createHash("sha256")
-							.update(fileBuffer)
-							.digest("hex");
-					} catch (hashErr: unknown) {
-						request.log.warn(
-							{ err: safeLogError(hashErr), filename },
-							"[backup] Failed to compute backup SHA-256",
-						);
-						sha256 = "";
-					}
-					return {
-						id: filename,
-						filename,
-						filePath: fullPath,
-						sizeBytes: stat.size,
-						createdAt: stat.mtime.toISOString(),
-						sha256,
-					};
-				})
-				.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+			).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
 			return { backups };
 		} catch (err: unknown) {
@@ -90,6 +105,15 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	app.post("/api/settings/backup/create", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
 		if (!orgId) return;
+
+		const bodyParsed = createBackupBodySchema.safeParse(request.body);
+		if (!bodyParsed.success) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Лишние или некорректные параметры запроса резервного копирования.",
+			};
+		}
 
 		const identity = getRequestIdentity(request);
 		if (identity.userId && identity.role !== "owner") {
@@ -117,7 +141,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			const targetFilename = `${orgPrefix}${finalFilename}`;
 			const targetPath = path.join(path.dirname(finalPath), targetFilename);
 			try {
-				fs.renameSync(finalPath, targetPath);
+				await fsPromises.rename(finalPath, targetPath);
 				finalPath = targetPath;
 				finalFilename = targetFilename;
 			} catch (renameErr: unknown) {
@@ -128,8 +152,8 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			}
 		}
 
-		const stat = fs.statSync(finalPath);
-		const fileBuffer = fs.readFileSync(finalPath);
+		const stat = await fsPromises.stat(finalPath);
+		const fileBuffer = await fsPromises.readFile(finalPath);
 		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
 		try {
@@ -148,7 +172,11 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			);
 		} catch (auditErr: unknown) {
 			request.log.warn(
-				{ err: safeLogError(auditErr), organizationId: orgId, filename: finalFilename },
+				{
+					err: safeLogError(auditErr),
+					organizationId: orgId,
+					filename: finalFilename,
+				},
 				"[backup] Failed to record BACKUP_CREATED audit event",
 			);
 		}

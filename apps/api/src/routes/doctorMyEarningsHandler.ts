@@ -1,22 +1,15 @@
 /**
  * doctorMyEarningsHandler.ts — Обработчик Fastify API для мобильного кошелька врача
  * GET /api/doctor/my-earnings и GET /api/v1/doctor/my-earnings.
- *
- * Соответствие:
- * - Мандат 8e: Автономия врача и финансовый суверенитет.
- * - Мандат 8n: Целочисленные копейки (amountKopecks, BIGINT) без float-дрифта.
- * - Мандат 8be: Строгая типизация, Zod safeParse, ноль any.
- * - Мандат 8wy: 100% реальный PostgreSQL без синтетических подделок.
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { doctorCommissions, pricelistDoctorPayrolls, users } from "../db/schema.js";
 import {
 	basisPointsFromPercent,
-	calculateDoctorCommissionKopecks,
 	calculateDoctorPeriodPayroll,
 	kopecksToRubles,
 	percentageOfKopecks,
@@ -29,14 +22,16 @@ import {
 	SPECIALTY_TITLES,
 } from "./doctorPayrollDbQueries.js";
 
-const doctorMyEarningsQuerySchema = z.object({
-	doctorId: z.string().optional(),
-	date: z.string().optional(),
-	from: z.string().optional(),
-	to: z.string().optional(),
-	startDate: z.string().optional(),
-	endDate: z.string().optional(),
-});
+const doctorMyEarningsQuerySchema = z
+	.object({
+		doctorId: z.string().optional(),
+		date: z.string().optional(),
+		from: z.string().optional(),
+		to: z.string().optional(),
+		startDate: z.string().optional(),
+		endDate: z.string().optional(),
+	})
+	.strict();
 
 export async function handleGetDoctorMyEarnings(
 	request: FastifyRequest,
@@ -45,8 +40,15 @@ export async function handleGetDoctorMyEarnings(
 	const payoutAccess = await requirePayoutAccess(request, reply);
 	if (!payoutAccess) return;
 
-	const parsed = doctorMyEarningsQuerySchema.safeParse(request.query);
-	const q = parsed.success ? parsed.data : {};
+	const parsed = doctorMyEarningsQuerySchema.safeParse(request.query ?? {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры запроса кошелька врача",
+			details: parsed.error.format(),
+		});
+	}
+	const q = parsed.data;
 	const orgId = payoutAccess.organizationId;
 	let rawDocId = q.doctorId || payoutAccess.userId || "";
 
@@ -68,38 +70,83 @@ export async function handleGetDoctorMyEarnings(
 		return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден" });
 	}
 
-	const [docUser] = await db
-		.select({
-			id: users.id,
-			fullName: users.fullName,
-			specialties: users.specialties,
-		})
-		.from(users)
-		.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
-		.limit(1);
+	let fromStr: string;
+	let toStr: string;
+	if (q.date) {
+		const cleanDate = q.date.slice(0, 10);
+		fromStr = cleanDate;
+		toStr = cleanDate;
+	} else {
+		fromStr = q.from || q.startDate || new Date().toISOString().slice(0, 10);
+		toStr = q.to || q.endDate || new Date().toISOString().slice(0, 10);
+	}
+
+	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
+	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
+
+	const {
+		docUser,
+		commRecords,
+		pricelistRows,
+		dataset: { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop },
+	} = await withTenantCtx(orgId, async (tx) => {
+		const [u] = await tx
+			.select({
+				id: users.id,
+				fullName: users.fullName,
+				specialties: users.specialties,
+			})
+			.from(users)
+			.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
+			.limit(1);
+
+		const comms = await tx
+			.select({
+				serviceCategory: doctorCommissions.serviceCategory,
+				commissionPct: doctorCommissions.commissionPct,
+				commissionPercent: doctorCommissions.commissionPercent,
+				effectiveFrom: doctorCommissions.effectiveFrom,
+			})
+			.from(doctorCommissions)
+			.where(
+				and(
+					eq(doctorCommissions.organizationId, orgId),
+					or(
+						eq(doctorCommissions.userId, resolvedDocId),
+						eq(doctorCommissions.doctorId, resolvedDocId),
+					),
+					eq(doctorCommissions.isActive, true),
+				),
+			)
+			.orderBy(sql`${doctorCommissions.effectiveFrom} desc`);
+
+		const prRows = await tx
+			.select({
+				serviceCode: pricelistDoctorPayrolls.serviceCode,
+				serviceName: pricelistDoctorPayrolls.serviceName,
+				doctorPayrollPercent: pricelistDoctorPayrolls.doctorPayrollPercent,
+			})
+			.from(pricelistDoctorPayrolls)
+			.where(eq(pricelistDoctorPayrolls.organizationId, orgId));
+
+		const dataset = await fetchDoctorPayrollDataset({
+			orgId,
+			resolvedDocId,
+			fromStr,
+			toStr,
+			fromDate,
+			toDate,
+			tx,
+		});
+
+		return { docUser: u, commRecords: comms, pricelistRows: prRows, dataset };
+	});
 
 	const doctorName = docUser?.fullName || "Врач-стоматолог";
 	const specId = Array.isArray(docUser?.specialties) && docUser.specialties[0]
 		? String(docUser.specialties[0])
 		: "therapy";
 	const doctorSpecialty = SPECIALTY_TITLES[specId] || "Врач-стоматолог";
-
-	const commRecords = await db
-		.select({
-			serviceCategory: doctorCommissions.serviceCategory,
-			commissionPct: doctorCommissions.commissionPct,
-			commissionPercent: doctorCommissions.commissionPercent,
-			effectiveFrom: doctorCommissions.effectiveFrom,
-		})
-		.from(doctorCommissions)
-		.where(
-			and(
-				eq(doctorCommissions.organizationId, orgId),
-				eq(doctorCommissions.userId, resolvedDocId),
-				eq(doctorCommissions.isActive, true),
-			),
-		)
-		.orderBy(sql`${doctorCommissions.effectiveFrom} desc`);
 
 	type AllowedSpecialtyCat = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric";
 	const categoryRatesMap: Partial<Record<AllowedSpecialtyCat, number>> = {};
@@ -125,15 +172,6 @@ export async function handleGetDoctorMyEarnings(
 			basePercent = firstVal;
 		}
 	}
-
-	const pricelistRows = await db
-		.select({
-			serviceCode: pricelistDoctorPayrolls.serviceCode,
-			serviceName: pricelistDoctorPayrolls.serviceName,
-			doctorPayrollPercent: pricelistDoctorPayrolls.doctorPayrollPercent,
-		})
-		.from(pricelistDoctorPayrolls)
-		.where(eq(pricelistDoctorPayrolls.organizationId, orgId));
 
 	const pricelistPercentByCode = new Map<string, number>();
 	const pricelistPercentByName = new Map<string, number>();
@@ -166,29 +204,6 @@ export async function handleGetDoctorMyEarnings(
 		return basePercent;
 	}
 
-	let fromStr: string;
-	let toStr: string;
-	if (q.date) {
-		const cleanDate = q.date.slice(0, 10);
-		fromStr = cleanDate;
-		toStr = cleanDate;
-	} else {
-		fromStr = q.from || q.startDate || new Date().toISOString().slice(0, 10);
-		toStr = q.to || q.endDate || new Date().toISOString().slice(0, 10);
-	}
-
-	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
-	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
-
-	const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
-		orgId,
-		resolvedDocId,
-		fromStr,
-		toStr,
-		fromDate,
-		toDate,
-	});
-
 	const enrichedCompletedServices = completedServices.map((cs) => {
 		const commPct = resolveServiceCommissionPercent(cs.category, cs.serviceNameRu, cs.serviceCode);
 		return {
@@ -214,7 +229,7 @@ export async function handleGetDoctorMyEarnings(
 		unallocatedLabKop,
 	});
 
-	// Группировка по назначениям / визитам для appointments
+	// Группировка по реальным назначениям / визитам
 	type ApptAccumulator = {
 		appointmentId: string;
 		visitId: string | null;
@@ -225,6 +240,8 @@ export async function handleGetDoctorMyEarnings(
 		endsAtIso: string;
 		status: string;
 		paymentStatus: "paid" | "partial" | "unpaid";
+		paidCount: number;
+		totalCount: number;
 		grossRevenueKop: number;
 		labCostKop: number;
 		materialsCostKop: number;
@@ -266,19 +283,21 @@ export async function handleGetDoctorMyEarnings(
 	const apptMap = new Map<string, ApptAccumulator>();
 
 	for (const ord of orders) {
-		const apptKey = ord.orderNumber;
+		const apptKey = ord.appointmentId || ord.visitId || ord.id;
 		let appt = apptMap.get(apptKey);
 		if (!appt) {
 			appt = {
-				appointmentId: ord.id,
-				visitId: ord.id,
-				patientId: ord.id,
+				appointmentId: ord.appointmentId || ord.id,
+				visitId: ord.visitId || null,
+				patientId: ord.patientId || "",
 				patientFullName: ord.patientName,
 				cardNumber: ord.medicalCardNumber,
 				startsAtIso: ord.startsAtIso || `${ord.dateIso}T00:00:00.000Z`,
 				endsAtIso: ord.endsAtIso || `${ord.dateIso}T00:00:00.000Z`,
 				status: "completed",
 				paymentStatus: ord.isPaid54Fz ? "paid" : "unpaid",
+				paidCount: 0,
+				totalCount: 0,
 				grossRevenueKop: 0,
 				labCostKop: 0,
 				materialsCostKop: 0,
@@ -300,6 +319,15 @@ export async function handleGetDoctorMyEarnings(
 		const earnedItemKop = effectivePaidKop > 0
 			? percentageOfKopecks(netBaseItemKop as Kopecks, basisPointsFromPercent(itemCommPercent))
 			: 0;
+
+		appt.totalCount += 1;
+		if (effectivePaidKop > 0) appt.paidCount += 1;
+		appt.paymentStatus =
+			appt.paidCount === appt.totalCount
+				? "paid"
+				: appt.paidCount > 0
+					? "partial"
+					: "unpaid";
 
 		appt.grossRevenueKop += ord.grossKopecks;
 		appt.labCostKop += ord.labCostKopecks;
@@ -343,7 +371,7 @@ export async function handleGetDoctorMyEarnings(
 		}
 	}
 
-	const appointments = Array.from(apptMap.values()).map((a) => ({
+	const appointments = Array.from(apptMap.values()).map(({ paidCount: _pc, totalCount: _tc, ...a }) => ({
 		...a,
 		grossRevenueRub: kopecksToRubles(a.grossRevenueKop),
 		labCostRub: kopecksToRubles(a.labCostKop),
@@ -421,6 +449,7 @@ export async function handleGetDoctorMyEarnings(
 	const unpaidAmountKop = unpaidOrders.reduce((acc, o) => acc + Math.max(0, o.grossKopecks - o.paidKopecks), 0);
 
 	const summary = {
+		shiftsCount,
 		totalGrossRevenueRub: kopecksToRubles(totalGrossRevenueKop),
 		totalGrossRevenueKop,
 		totalLabDeductionsRub: kopecksToRubles(totalLabDeductionsKop),

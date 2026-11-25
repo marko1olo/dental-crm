@@ -1,10 +1,18 @@
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
 import { isValidUuid } from "../../../utils/httpIdempotency.js";
+
+const billingPaymentsQuerySchema = z
+	.object({
+		period: z.enum(["day", "week", "month", "quarter", "year"]).optional(),
+		patientId: z.string().optional(),
+	})
+	.strict();
 
 export async function handleGetBillingPayments(
 	request: FastifyRequest,
@@ -18,9 +26,17 @@ export async function handleGetBillingPayments(
 	if (reply.sent) return reply;
 	if (!orgId) return reply;
 
-	const query = request.query as Record<string, string | undefined> | undefined;
-	const period = query?.period;
-	const patientId = query?.patientId?.trim();
+	const parsedQuery = billingPaymentsQuerySchema.safeParse(request.query ?? {});
+	if (!parsedQuery.success) {
+		return reply.code(400).send({
+			error: "BillingValidationError",
+			message: "Некорректные параметры запроса платежей.",
+			details: parsedQuery.error.format(),
+		});
+	}
+	const query = parsedQuery.data;
+	const period = query.period;
+	const patientId = query.patientId?.trim();
 	if (patientId && !isValidUuid(patientId)) {
 		return reply.code(400).send({
 			error: "BillingValidationError",
@@ -62,7 +78,7 @@ export async function handleGetBillingPayments(
 
 	const data = rows.map((row) => {
 		const amountKopecks =
-			row.amountKopecks != null && row.amountKopecks > 0n
+			row.amountKopecks != null && row.amountKopecks !== 0n
 				? Number(row.amountKopecks)
 				: rublesToKopecks(Number(row.amountRub));
 		return {
