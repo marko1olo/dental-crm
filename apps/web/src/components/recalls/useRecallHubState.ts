@@ -11,12 +11,16 @@ import {
 import type { RecallHubActiveTab } from "./RecallHubHeader";
 import type { QuickBookingSlotInfo } from "../schedule/QuickBookingDrawerTypes";
 import { calculateRecallStatusCounts, extractUniqueDoctors } from "./useRecallHubSelectors";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function useRecallHubState(
 	isOpen: boolean,
 	initialCandidates?: readonly PatientRecallRecord[] | undefined,
-	headers?: Record<string, string> | undefined,
+	/** @deprecated pass nothing — headers are resolved internally via auth context */
+	_legacyHeaders?: Record<string, string> | undefined,
 ) {
+	const appLogic = useOptionalAppLogicContext();
+	const auth = appLogic?.auth;
 	const [candidates, setCandidates] = useState<readonly PatientRecallRecord[]>(initialCandidates ?? []);
 	const [isLoading, setIsLoading] = useState(false);
 	const [fetchError, setFetchError] = useState<string | null>(null);
@@ -41,8 +45,9 @@ export function useRecallHubState(
 		setIsLoading(true);
 		setFetchError(null);
 		try {
+			const denteClinicalReadHeaders = auth ? auth.denteClinicalReadHeaders() : {};
 			const res = await fetch("/api/recalls/candidates?minMonths=1&limit=200", {
-				headers: { ...(headers ?? {}), Accept: "application/json" },
+				headers: { ...denteClinicalReadHeaders, Accept: "application/json" },
 			});
 			if (!res.ok) throw new Error(`Сервер ответил ${res.status}`);
 			const payload = (await res.json()) as RecallReport;
@@ -53,7 +58,7 @@ export function useRecallHubState(
 		} finally {
 			setIsLoading(false);
 		}
-	}, [headers, initialCandidates]);
+	}, [auth, initialCandidates]);
 
 	useEffect(() => {
 		if (isOpen) void loadCandidates();

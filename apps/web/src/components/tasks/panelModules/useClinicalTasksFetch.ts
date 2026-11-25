@@ -3,8 +3,15 @@ import { logger } from "../../../utils/logger";
 import { getLocalTasks } from "../clinicalTasksPresets";
 import type { ClinicalTask, CustomTaskType } from "../clinicalTasksTypes";
 import { getLoadFailureMessage } from "./clinicalPhaseTransitionEngine";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 
-export function useClinicalTasksFetch(patientId: string | null | undefined, headers: () => Record<string, string>) {
+export function useClinicalTasksFetch(
+	patientId: string | null | undefined,
+	/** @deprecated pass nothing — headers resolved internally via auth context */
+	_legacyReadHeaders?: () => Record<string, string>,
+) {
+	const appLogic = useOptionalAppLogicContext();
+	const auth = appLogic?.auth;
 	const isMountedRef = useRef(true);
 	useEffect(() => {
 		isMountedRef.current = true;
@@ -28,9 +35,9 @@ export function useClinicalTasksFetch(patientId: string | null | undefined, head
 			let response: Response;
 			let customTypesResponse: Response | null = null;
 			try {
-				const reqHeaders = headers();
-				response = await fetch(`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`, { headers: reqHeaders });
-				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: reqHeaders }).catch(() => null);
+				const denteClinicalReadHeaders = auth ? auth.denteClinicalReadHeaders() : {};
+				response = await fetch(`/api/clinical/tasks?patientId=${encodeURIComponent(patientId)}`, { headers: denteClinicalReadHeaders });
+				customTypesResponse = await fetch("/api/crm/custom-task-types", { headers: denteClinicalReadHeaders }).catch(() => null);
 			} catch {
 				if (!isMountedRef.current) return;
 				const local = getLocalTasks(patientId);
@@ -60,7 +67,7 @@ export function useClinicalTasksFetch(patientId: string | null | undefined, head
 		} finally {
 			if (isMountedRef.current) setLoading(false);
 		}
-	}, [patientId, headers]);
+	}, [patientId, auth]);
 
 	useEffect(() => { void load(); }, [load]);
 

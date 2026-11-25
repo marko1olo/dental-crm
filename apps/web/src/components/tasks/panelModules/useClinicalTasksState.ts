@@ -20,7 +20,7 @@ export function useClinicalTasksState({ patientId, assignedDoctorId = null, trea
 	const orgId = appLogic?.dashboard?.clinicSettings?.profile?.organizationId || auth?.activeWorkspaceProfile?.id || "current-org";
 	const authUserId = auth?.activeWorkspaceProfile?.id || appLogic?.activeDoctor?.id;
 	const readHeaders = useCallback(() => (auth ? auth.denteClinicalReadHeaders() : {}), [auth]);
-	const { tasks, setTasks, customTaskTypes, error, loading, load } = useClinicalTasksFetch(patientId, readHeaders);
+	const { tasks, setTasks, customTaskTypes, error, loading, load } = useClinicalTasksFetch(patientId);
 
 	const [submittingPhase, setSubmittingPhase] = useState<ClinicalPhaseCode | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);

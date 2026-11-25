@@ -6,23 +6,29 @@
  * - Appointment cancellations (cancel_appointment_<uuid> / APPT_CANCEL / "нет")
  * - Reschedule requests (APPT_RESCHEDULE)
  * - Preventative recall quick booking (recall_book_<id> / recall_snooze_<id>)
+ *
+ * TX-SPLIT INVARIANT (DEF-W9-M04):
+ * DB updates run inside short `withTenantCtx` transactions; external Meta HTTP calls run strictly OUTSIDE PG TX;
+ * `"sent"` is persisted ONLY after confirmed delivery.
  */
 
-import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { and, asc, eq, gte, sql } from "drizzle-orm";
+import { onTenantTxCommit, withSavepoint, withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	communicationEvents,
 	communicationTasks,
 	denteWhatsappBotConfigs,
-	patients,
 } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { wsBroker } from "../websocketBroker.js";
 import {
 	normalizeWhatsappRecipient,
 	readWhatsappCredentials,
 	sendWhatsappTextMessage,
 } from "../../whatsappTransport.js";
+
+const logger = createApiLogger("whatsappInteractiveActions");
 
 export interface ParsedWebhookAction {
 	type:
@@ -54,7 +60,7 @@ export function parseIncomingAction(
 	const rawBtn = (buttonId || "").trim();
 	const cleanText = (bodyText || "").trim().toLowerCase();
 
-	// Explicit recall action buttons: RECALL_BOOK_<id> or RECALL_SNOOZE_<id>
+	// Explicit recall action buttons: RECALL_BOOK_<id> or RECALL_SNOOZЕ_<id>
 	const recallBookMatch = rawBtn.match(/^recall_book[-_:](.+)$/i);
 	if (recallBookMatch) {
 		return {
@@ -81,7 +87,6 @@ export function parseIncomingAction(
 		};
 	}
 
-	// Explicit appointment confirmation button: confirm_appointment_<id> or APPT_CONFIRM_<id>
 	const confirmMatch = rawBtn.match(
 		/^(?:confirm_appointment|appt_confirm)[-_:]([0-9a-f-]{36})$/i,
 	);
@@ -97,7 +102,6 @@ export function parseIncomingAction(
 		};
 	}
 
-	// Explicit appointment cancellation button: cancel_appointment_<id> or APPT_CANCEL_<id>
 	const cancelMatch = rawBtn.match(
 		/^(?:cancel_appointment|appt_cancel)[-_:]([0-9a-f-]{36})$/i,
 	);
@@ -198,40 +202,99 @@ export async function findTargetAppointment(
 	patientId: string,
 	specificAppointmentId?: string | null,
 ) {
-	if (specificAppointmentId) {
-		const [appt] = await db
+	return withTenantCtx(organizationId, async (tx) => {
+		if (specificAppointmentId) {
+			const [appt] = await tx
+				.select()
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.id, specificAppointmentId),
+						eq(appointments.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (appt) return appt;
+		}
+
+		const [nextAppt] = await tx
 			.select()
 			.from(appointments)
 			.where(
 				and(
-					eq(appointments.id, specificAppointmentId),
 					eq(appointments.organizationId, organizationId),
+					eq(appointments.patientId, patientId),
+					eq(appointments.status, "planned"),
+					gte(appointments.startsAt, new Date()),
 				),
 			)
+			.orderBy(asc(appointments.startsAt))
 			.limit(1);
-		if (appt) return appt;
+
+		return nextAppt ?? null;
+	});
+}
+
+async function dispatchAndFinalizeReceipt(params: {
+	organizationId: string;
+	patient: { id: string; phone: string | null };
+	receiptText: string;
+	config: typeof denteWhatsappBotConfigs.$inferSelect | null;
+	eventId: string | null;
+}): Promise<boolean> {
+	const { organizationId, patient, receiptText, config, eventId } = params;
+	let sent = false;
+	let providerMessageId: string | null = null;
+
+	if (config && patient.phone) {
+		const creds = readWhatsappCredentials({ ...config, organizationId });
+		const recipient = normalizeWhatsappRecipient(patient.phone);
+		if (creds && recipient) {
+			try {
+				const res = await sendWhatsappTextMessage({
+					...creds,
+					toPhoneE164: recipient,
+					text: receiptText,
+				});
+				sent = res.ok;
+				providerMessageId = res.providerMessageId ?? null;
+				if (!res.ok) {
+					logger.warn(
+						{ organizationId, errorClass: res.errorClass, errorCode: res.errorCode },
+						"WhatsApp interactive receipt delivery failed",
+					);
+				}
+			} catch (err) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId },
+					"WhatsApp interactive receipt transport threw error",
+				);
+			}
+		}
 	}
 
-	// Find earliest upcoming planned appointment for this patient
-	const [nextAppt] = await db
-		.select()
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, organizationId),
-				eq(appointments.patientId, patientId),
-				eq(appointments.status, "planned"),
-				gte(appointments.startsAt, new Date()),
-			),
-		)
-		.orderBy(asc(appointments.startsAt))
-		.limit(1);
+	if (eventId) {
+		await withTenantCtx(organizationId, async (tx) => {
+			await tx
+				.update(communicationEvents)
+				.set({
+					status: sent ? "sent" : "failed",
+					providerCallId: providerMessageId,
+				})
+				.where(
+					and(
+						eq(communicationEvents.id, eventId),
+						eq(communicationEvents.organizationId, organizationId),
+					),
+				);
+		});
+	}
 
-	return nextAppt ?? null;
+	return sent;
 }
 
 /**
- * Executes appointment confirmation, updates database in ACID transaction, and dispatches confirmation receipt.
+ * Executes appointment confirmation, updates database in ACID transaction, and dispatches confirmation receipt outside TX.
  */
 export async function processAppointmentConfirmation(
 	organizationId: string,
@@ -245,88 +308,84 @@ export async function processAppointmentConfirmation(
 		action.appointmentId,
 	);
 
-	if (targetAppt) {
-		// Format formatted appointment time
-		const dateStr = new Date(targetAppt.startsAt).toLocaleString("ru-RU", {
-			day: "numeric",
-			month: "long",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
+	if (!targetAppt) {
+		return {
+			status: "no_matching_appointment",
+			appointmentId: null,
+			receiptSent: false,
+		};
+	}
 
-		const receiptText = `Спасибо, ${patient.fullName}! Ваша запись на ${dateStr} успешно подтверждена. Ждём вас в клинике ДЕНТЕ!`;
+	const dateStr = new Date(targetAppt.startsAt).toLocaleString("ru-RU", {
+		day: "numeric",
+		month: "long",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 
-		// Атомарная транзакция обновления статуса визита и фиксации события коммуникации
-		await db.transaction(async (tx) => {
-			await tx
-				.update(appointments)
-				.set({
-					status: "confirmed",
-				})
-				.where(
-					and(
-						eq(appointments.id, targetAppt.id),
-						eq(appointments.organizationId, organizationId),
-					),
-				);
+	const receiptText = `Спасибо, ${patient.fullName}! Ваша запись на ${dateStr} успешно подтверждена. Ждём вас в клинике ДЕНТЕ!`;
 
-			await tx.insert(communicationEvents).values({
+	const eventId = await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(appointments)
+			.set({ status: "confirmed" })
+			.where(
+				and(
+					eq(appointments.id, targetAppt.id),
+					eq(appointments.organizationId, organizationId),
+				),
+			);
+
+		const [inserted] = await tx
+			.insert(communicationEvents)
+			.values({
 				organizationId,
 				patientId: patient.id,
 				channel: "whatsapp",
 				direction: "outbound",
-				status: "sent",
+				status: "queued",
 				message: receiptText,
+			})
+			.returning({ id: communicationEvents.id });
+
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "APPOINTMENT_UPDATED",
+				payload: {
+					id: targetAppt.id,
+					appointmentId: targetAppt.id,
+					patientId: patient.id,
+					status: "confirmed",
+					source: "messenger_callback",
+				},
+			});
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "APPOINTMENT_CONFIRMED",
+				payload: {
+					appointmentId: targetAppt.id,
+					patientId: patient.id,
+					patientName: patient.fullName,
+					startsAt: targetAppt.startsAt,
+					confirmedVia: "whatsapp_interactive",
+				},
 			});
 		});
 
-		// Dispatch confirmation message via WhatsApp if credentials exist
-		if (config && patient.phone) {
-			const creds = readWhatsappCredentials(config);
-			const recipient = normalizeWhatsappRecipient(patient.phone);
-			if (creds && recipient) {
-				await sendWhatsappTextMessage({
-					...creds,
-					toPhoneE164: recipient,
-					text: receiptText,
-				}).catch(() => null);
-			}
-		}
+		return inserted?.id ?? null;
+	});
 
-		// Broadcast to reception via WebSocket (канонический контракт APPOINTMENT_UPDATED + обратная совместимость)
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "APPOINTMENT_UPDATED",
-			payload: {
-				id: targetAppt.id,
-				appointmentId: targetAppt.id,
-				patientId: patient.id,
-				status: "confirmed",
-				source: "messenger_callback",
-			},
-		});
-
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "APPOINTMENT_CONFIRMED",
-			payload: {
-				appointmentId: targetAppt.id,
-				patientId: patient.id,
-				patientName: patient.fullName,
-				startsAt: targetAppt.startsAt,
-				confirmedVia: "whatsapp_interactive",
-			},
-		});
-
-		return {
-			status: "confirmed",
-			appointmentId: targetAppt.id,
-			receiptSent: true,
-		};
-	}
+	const receiptSent = await dispatchAndFinalizeReceipt({
+		organizationId,
+		patient,
+		receiptText,
+		config,
+		eventId,
+	});
 
 	return {
-		status: "no_matching_appointment",
-		appointmentId: null,
-		receiptSent: false,
+		status: "confirmed",
+		appointmentId: targetAppt.id,
+		receiptSent,
 	};
 }
 
@@ -345,80 +404,80 @@ export async function processAppointmentCancellation(
 		action.appointmentId,
 	);
 
-	if (targetAppt) {
-		const receiptText = `Ваша запись была отменена. Если вы хотите подобрать другое время, позвоните нам или напишите в этот чат.`;
+	if (!targetAppt) {
+		return {
+			status: "no_matching_appointment",
+			appointmentId: null,
+			receiptSent: false,
+		};
+	}
 
-		// Атомарная транзакция отмены записи
-		await db.transaction(async (tx) => {
-			await tx
-				.update(appointments)
-				.set({
-					status: "cancelled",
-					comment: sql`COALESCE(comment, '') || ' [Отменено пациентом через WhatsApp]'`,
-				})
-				.where(
-					and(
-						eq(appointments.id, targetAppt.id),
-						eq(appointments.organizationId, organizationId),
-					),
-				);
+	const receiptText = `Ваша запись была отменена. Если вы хотите подобрать другое время, позвоните нам или напишите в этот чат.`;
 
-			await tx.insert(communicationEvents).values({
+	const eventId = await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(appointments)
+			.set({
+				status: "cancelled",
+				comment: sql`COALESCE(comment, '') || ' [Отменено пациентом через WhatsApp]'`,
+			})
+			.where(
+				and(
+					eq(appointments.id, targetAppt.id),
+					eq(appointments.organizationId, organizationId),
+				),
+			);
+
+		const [inserted] = await tx
+			.insert(communicationEvents)
+			.values({
 				organizationId,
 				patientId: patient.id,
 				channel: "whatsapp",
 				direction: "outbound",
-				status: "sent",
+				status: "queued",
 				message: receiptText,
+			})
+			.returning({ id: communicationEvents.id });
+
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "APPOINTMENT_UPDATED",
+				payload: {
+					id: targetAppt.id,
+					appointmentId: targetAppt.id,
+					patientId: patient.id,
+					status: "cancelled",
+					source: "messenger_callback",
+				},
+			});
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "APPOINTMENT_CANCELLED",
+				payload: {
+					appointmentId: targetAppt.id,
+					patientId: patient.id,
+					patientName: patient.fullName,
+					startsAt: targetAppt.startsAt,
+					cancelledVia: "whatsapp_interactive",
+				},
 			});
 		});
 
-		if (config && patient.phone) {
-			const creds = readWhatsappCredentials(config);
-			const recipient = normalizeWhatsappRecipient(patient.phone);
-			if (creds && recipient) {
-				await sendWhatsappTextMessage({
-					...creds,
-					toPhoneE164: recipient,
-					text: receiptText,
-				}).catch(() => null);
-			}
-		}
+		return inserted?.id ?? null;
+	});
 
-		// Broadcast to reception via WebSocket (канонический APPOINTMENT_UPDATED + APPOINTMENT_CANCELLED)
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "APPOINTMENT_UPDATED",
-			payload: {
-				id: targetAppt.id,
-				appointmentId: targetAppt.id,
-				patientId: patient.id,
-				status: "cancelled",
-				source: "messenger_callback",
-			},
-		});
-
-		wsBroker.broadcastToOrganization(organizationId, {
-			type: "APPOINTMENT_CANCELLED",
-			payload: {
-				appointmentId: targetAppt.id,
-				patientId: patient.id,
-				patientName: patient.fullName,
-				startsAt: targetAppt.startsAt,
-				cancelledVia: "whatsapp_interactive",
-			},
-		});
-
-		return {
-			status: "cancelled",
-			appointmentId: targetAppt.id,
-			receiptSent: true,
-		};
-	}
+	const receiptSent = await dispatchAndFinalizeReceipt({
+		organizationId,
+		patient,
+		receiptText,
+		config,
+		eventId,
+	});
 
 	return {
-		status: "no_matching_appointment",
-		appointmentId: null,
-		receiptSent: false,
+		status: "cancelled",
+		appointmentId: targetAppt.id,
+		receiptSent,
 	};
 }
 
@@ -431,58 +490,71 @@ export async function processRecallBooking(
 	action: ParsedWebhookAction,
 	config: typeof denteWhatsappBotConfigs.$inferSelect | null,
 ) {
-	if (action.recallId) {
-		await db
-			.update(communicationTasks)
-			.set({
-				status: "delivered",
-				lastEventAt: new Date(),
-			})
-			.where(
-				and(
-					eq(communicationTasks.id, action.recallId),
-					eq(communicationTasks.organizationId, organizationId),
-				),
-			)
-			.catch(() => null);
-	}
-
 	const receiptText = `Спасибо, ${patient.fullName}! Мы приняли вашу заявку на профилактический осмотр. Администратор клиники ДЕНТЕ свяжется с вами для согласования удобного времени.`;
 
-	if (config && patient.phone) {
-		const creds = readWhatsappCredentials(config);
-		const recipient = normalizeWhatsappRecipient(patient.phone);
-		if (creds && recipient) {
-			await sendWhatsappTextMessage({
-				...creds,
-				toPhoneE164: recipient,
-				text: receiptText,
-			}).catch(() => null);
+	const eventId = await withTenantCtx(organizationId, async (tx) => {
+		if (action.recallId) {
+			try {
+				await withSavepoint(tx, async (spTx) => {
+					await spTx
+						.update(communicationTasks)
+						.set({
+							status: "delivered",
+							lastEventAt: new Date(),
+						})
+						.where(
+							and(
+								eq(communicationTasks.id, action.recallId),
+								eq(communicationTasks.organizationId, organizationId),
+							),
+						);
+				});
+			} catch (err) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId, recallId: action.recallId },
+					"Failed to update recall task status on booking",
+				);
+			}
 		}
-	}
 
-	await db.insert(communicationEvents).values({
-		organizationId,
-		patientId: patient.id,
-		channel: "whatsapp",
-		direction: "outbound",
-		status: "sent",
-		message: receiptText,
+		const [inserted] = await tx
+			.insert(communicationEvents)
+			.values({
+				organizationId,
+				patientId: patient.id,
+				channel: "whatsapp",
+				direction: "outbound",
+				status: "queued",
+				message: receiptText,
+			})
+			.returning({ id: communicationEvents.id });
+
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "RECALL_BOOKING_REQUESTED",
+				payload: {
+					recallId: action.recallId,
+					patientId: patient.id,
+					patientName: patient.fullName,
+					requestedVia: "whatsapp_interactive",
+				},
+			});
+		});
+
+		return inserted?.id ?? null;
 	});
 
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "RECALL_BOOKING_REQUESTED",
-		payload: {
-			recallId: action.recallId,
-			patientId: patient.id,
-			patientName: patient.fullName,
-			requestedVia: "whatsapp_interactive",
-		},
+	const receiptSent = await dispatchAndFinalizeReceipt({
+		organizationId,
+		patient,
+		receiptText,
+		config,
+		eventId,
 	});
 
 	return {
 		status: "booking_requested",
-		receiptSent: true,
+		receiptSent,
 	};
 }
 
@@ -498,59 +570,72 @@ export async function processRecallSnooze(
 	const newDueDate = new Date();
 	newDueDate.setDate(newDueDate.getDate() + 30);
 
-	if (action.recallId) {
-		await db
-			.update(communicationTasks)
-			.set({
-				status: "queued",
-				dueAt: newDueDate,
-				lastEventAt: new Date(),
-			})
-			.where(
-				and(
-					eq(communicationTasks.id, action.recallId),
-					eq(communicationTasks.organizationId, organizationId),
-				),
-			)
-			.catch(() => null);
-	}
-
 	const receiptText = `Хорошо, ${patient.fullName}! Мы отложили напоминание и свяжемся с вами через месяц. Желаем здоровья вашим зубам!`;
 
-	if (config && patient.phone) {
-		const creds = readWhatsappCredentials(config);
-		const recipient = normalizeWhatsappRecipient(patient.phone);
-		if (creds && recipient) {
-			await sendWhatsappTextMessage({
-				...creds,
-				toPhoneE164: recipient,
-				text: receiptText,
-			}).catch(() => null);
+	const eventId = await withTenantCtx(organizationId, async (tx) => {
+		if (action.recallId) {
+			try {
+				await withSavepoint(tx, async (spTx) => {
+					await spTx
+						.update(communicationTasks)
+						.set({
+							status: "queued",
+							dueAt: newDueDate,
+							lastEventAt: new Date(),
+						})
+						.where(
+							and(
+								eq(communicationTasks.id, action.recallId),
+								eq(communicationTasks.organizationId, organizationId),
+							),
+						);
+				});
+			} catch (err) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId, recallId: action.recallId },
+					"Failed to snooze recall task",
+				);
+			}
 		}
-	}
 
-	await db.insert(communicationEvents).values({
-		organizationId,
-		patientId: patient.id,
-		channel: "whatsapp",
-		direction: "outbound",
-		status: "sent",
-		message: receiptText,
+		const [inserted] = await tx
+			.insert(communicationEvents)
+			.values({
+				organizationId,
+				patientId: patient.id,
+				channel: "whatsapp",
+				direction: "outbound",
+				status: "queued",
+				message: receiptText,
+			})
+			.returning({ id: communicationEvents.id });
+
+		onTenantTxCommit(() => {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "RECALL_SNOOZED",
+				payload: {
+					recallId: action.recallId,
+					patientId: patient.id,
+					patientName: patient.fullName,
+					snoozeDays: 30,
+					snoozedVia: "whatsapp_interactive",
+				},
+			});
+		});
+
+		return inserted?.id ?? null;
 	});
 
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "RECALL_SNOOZED",
-		payload: {
-			recallId: action.recallId,
-			patientId: patient.id,
-			patientName: patient.fullName,
-			snoozeDays: 30,
-			snoozedVia: "whatsapp_interactive",
-		},
+	const receiptSent = await dispatchAndFinalizeReceipt({
+		organizationId,
+		patient,
+		receiptText,
+		config,
+		eventId,
 	});
 
 	return {
 		status: "snoozed",
-		receiptSent: true,
+		receiptSent,
 	};
 }

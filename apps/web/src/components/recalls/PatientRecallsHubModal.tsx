@@ -37,8 +37,7 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 	embedded = false,
 }) => {
 	const appLogic = useOptionalAppLogicContext();
-	const authHeaders = appLogic?.auth ? appLogic.auth.denteClinicalReadHeaders() : undefined;
-	const hub = useRecallHubState(isOpen, initialCandidates ?? [], authHeaders);
+	const hub = useRecallHubState(isOpen, initialCandidates ?? []);
 	const actions = useRecallHubActions({
 		clinicName,
 		setCandidates: hub.setCandidates,

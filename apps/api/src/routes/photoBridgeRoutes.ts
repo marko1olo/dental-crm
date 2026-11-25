@@ -5,12 +5,13 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { isDemoShowcaseMode, requireResolvedOrganizationId } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
-import { patients, attachments, visits } from "../db/schema.js";
+import { onTenantTxCommit, withSuperuserBypass, withTenantCtx } from "../db/rls.js";
+import { patients, attachments, systemBackgroundJobs, visits } from "../db/schema.js";
 import { safeLogError } from "../observability/logger.js";
-import { UPLOADS_DIR } from "./fileModules/common.js";
+import { UPLOADS_DIR, validateUploadMagicBytes } from "./fileModules/common.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PHOTO_BRIDGE_QUEUE = "photo_bridge_session";
 
 export interface PhotoBridgeUploadedItem {
 	id: string;
@@ -43,7 +44,7 @@ export interface PhotoBridgeSession {
 	photos: PhotoBridgeUploadedItem[];
 }
 
-// In-Memory сессионный пул с TTL 15 минут
+// In-Memory кэш сессий (синхронизируется через PostgreSQL system_background_jobs)
 const sessionsMap = new Map<string, PhotoBridgeSession>();
 
 function getPatientInitials(fullName: string | null | undefined): string {
@@ -57,11 +58,94 @@ function getPatientInitials(fullName: string | null | undefined): string {
 	return `${first} ${second.charAt(0)}. ${third.charAt(0)}.`;
 }
 
-function stripMultipartWrapperFromBuffer(buffer: Buffer): {
+function stripMultipartWrapperFromBuffer(
+	buffer: Buffer,
+	contentType?: string,
+): {
 	data: Buffer;
 	filename?: string | undefined;
 	mimeType?: string | undefined;
+	slotId?: string | undefined;
 } {
+	const boundaryMatch = contentType?.match(/boundary=(?:"([^"]+)"|([^;\s]+))/i);
+	const boundaryStr = boundaryMatch?.[1] ?? boundaryMatch?.[2];
+
+	if (boundaryStr) {
+		const delimiter = Buffer.from(`--${boundaryStr}`);
+		const parts: Buffer[] = [];
+		let searchStart = 0;
+		while (true) {
+			const idx = buffer.indexOf(delimiter, searchStart);
+			if (idx === -1) break;
+			if (searchStart > 0) {
+				parts.push(buffer.subarray(searchStart, idx));
+			}
+			searchStart = idx + delimiter.length;
+			if (
+				buffer.subarray(searchStart, searchStart + 2).equals(Buffer.from("--"))
+			) {
+				break;
+			}
+			if (buffer[searchStart] === 0x0d && buffer[searchStart + 1] === 0x0a) {
+				searchStart += 2;
+			} else if (buffer[searchStart] === 0x0a) {
+				searchStart += 1;
+			}
+		}
+
+		let extractedSlotId: string | undefined;
+		let fileResult:
+			| {
+					data: Buffer;
+					filename?: string | undefined;
+					mimeType?: string | undefined;
+			  }
+			| undefined;
+
+		for (const rawPart of parts) {
+			const sepCrLf = rawPart.indexOf("\r\n\r\n");
+			const sepLf = rawPart.indexOf("\n\n");
+			const sepIdx = sepCrLf !== -1 ? sepCrLf : sepLf;
+			const sepLen = sepCrLf !== -1 ? 4 : 2;
+			if (sepIdx === -1) continue;
+
+			const headerText = rawPart.subarray(0, sepIdx).toString("utf8");
+			let bodySlice = rawPart.subarray(sepIdx + sepLen);
+			if (
+				bodySlice.length >= 2 &&
+				bodySlice[bodySlice.length - 2] === 0x0d &&
+				bodySlice[bodySlice.length - 1] === 0x0a
+			) {
+				bodySlice = bodySlice.subarray(0, bodySlice.length - 2);
+			} else if (
+				bodySlice.length >= 1 &&
+				bodySlice[bodySlice.length - 1] === 0x0a
+			) {
+				bodySlice = bodySlice.subarray(0, bodySlice.length - 1);
+			}
+
+			const matchFile = headerText.match(/filename="([^"]+)"/i);
+			if (matchFile) {
+				const matchMime = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
+				fileResult = {
+					data: bodySlice,
+					filename: matchFile[1],
+					...(matchMime?.[1] ? { mimeType: matchMime[1].trim() } : {}),
+				};
+			} else if (/name="slotId"/i.test(headerText)) {
+				const val = bodySlice.toString("utf8").trim().slice(0, 64);
+				if (val) extractedSlotId = val;
+			}
+		}
+
+		if (fileResult) {
+			return {
+				...fileResult,
+				...(extractedSlotId ? { slotId: extractedSlotId } : {}),
+			};
+		}
+	}
+
 	const headerEndCrLf = buffer.indexOf("\r\n\r\n");
 	const headerEndLf = buffer.indexOf("\n\n");
 	let startOffset = 0;
@@ -97,10 +181,23 @@ function stripMultipartWrapperFromBuffer(buffer: Buffer): {
 	};
 }
 
-const createSessionSchema = z.object({
-	patientId: z.string().min(1),
-	visitId: z.string().optional().nullable(),
-	presetId: z.string().optional().default("express_6_slots"),
+const photoBridgeUploadedItemSchema = z.object({
+	id: z.string(),
+	slotId: z.string(),
+	url: z.string(),
+	fileName: z.string(),
+	mimeType: z.string(),
+	sizeBytes: z.number(),
+	uploadedAt: z.string(),
+});
+
+const photoBridgeSessionSchema = z.object({
+	token: z.string().min(1),
+	organizationId: z.string(),
+	patientId: z.string(),
+	patientInitials: z.string(),
+	visitId: z.string().nullable().optional(),
+	presetId: z.string(),
 	slots: z.array(z.object({
 		id: z.string(),
 		titleRu: z.string(),
@@ -108,24 +205,125 @@ const createSessionSchema = z.object({
 		category: z.string().optional(),
 		descriptionRu: z.string().optional(),
 	})).optional(),
+	createdAt: z.number(),
+	expiresAt: z.number(),
+	photos: z.array(photoBridgeUploadedItemSchema),
 });
 
-const tokenParamSchema = z.object({
-	token: z.string().min(8).max(128).regex(/^[a-zA-Z0-9_-]+$/),
-});
+async function savePhotoBridgeSessionToDb(session: PhotoBridgeSession): Promise<void> {
+	const write = async (tx: Parameters<Parameters<typeof withTenantCtx>[1]>[0]) => {
+		await tx.insert(systemBackgroundJobs).values({
+			organizationId: UUID_REGEX.test(session.organizationId) ? session.organizationId : null,
+			queueName: PHOTO_BRIDGE_QUEUE,
+			taskName: session.token,
+			payload: JSON.parse(JSON.stringify(session)) as Record<string, unknown>,
+			status: "pending",
+			scheduledFor: new Date(session.expiresAt),
+		});
+		onTenantTxCommit(() => {
+			sessionsMap.set(session.token, session);
+		});
+	};
 
-const uploadQuerySchema = z.object({
-	slotId: z.string().min(1).max(64).optional(),
-});
+	if (UUID_REGEX.test(session.organizationId)) {
+		await withTenantCtx(session.organizationId, write);
+	} else {
+		await withSuperuserBypass(write);
+	}
+}
 
-const jsonPhotoPayloadSchema = z.object({
-	dataUrl: z.string().max(25 * 1024 * 1024).optional(),
-	imageUrl: z.string().max(25 * 1024 * 1024).optional(),
-	imageBase64: z.string().max(25 * 1024 * 1024).optional(),
-	slotId: z.union([z.string().max(64), z.number()]).optional(),
-	fileName: z.string().max(255).optional(),
-	filename: z.string().max(255).optional(),
-});
+async function loadPhotoBridgeSession(token: string): Promise<PhotoBridgeSession | null> {
+	const cached = sessionsMap.get(token);
+	if (cached) {
+		if (cached.expiresAt <= Date.now()) {
+			sessionsMap.delete(token);
+			await withSuperuserBypass(async (tx) => {
+				await tx
+					.delete(systemBackgroundJobs)
+					.where(
+						and(
+							eq(systemBackgroundJobs.queueName, PHOTO_BRIDGE_QUEUE),
+							eq(systemBackgroundJobs.taskName, token),
+						),
+					);
+			}).catch(() => undefined);
+			return null;
+		}
+		return cached;
+	}
+
+	const row = await withSuperuserBypass(async (tx) => {
+		const [found] = await tx
+			.select()
+			.from(systemBackgroundJobs)
+			.where(
+				and(
+					eq(systemBackgroundJobs.queueName, PHOTO_BRIDGE_QUEUE),
+					eq(systemBackgroundJobs.taskName, token),
+				),
+			)
+			.limit(1);
+		return found ?? null;
+	});
+
+	if (!row || !row.payload || typeof row.payload !== "object") {
+		return null;
+	}
+	const parsed = photoBridgeSessionSchema.safeParse(row.payload);
+	if (!parsed.success || !parsed.data.token || parsed.data.expiresAt <= Date.now()) {
+		await withSuperuserBypass(async (tx) => {
+			await tx.delete(systemBackgroundJobs).where(eq(systemBackgroundJobs.id, row.id));
+		}).catch(() => undefined);
+		return null;
+	}
+
+	sessionsMap.set(token, parsed.data);
+	return parsed.data;
+}
+
+const createSessionSchema = z
+	.object({
+		patientId: z.string().min(1),
+		visitId: z.string().optional().nullable(),
+		presetId: z.string().optional().default("express_6_slots"),
+		slots: z
+			.array(
+				z
+					.object({
+						id: z.string(),
+						titleRu: z.string(),
+						shortLabelRu: z.string(),
+						category: z.string().optional(),
+						descriptionRu: z.string().optional(),
+					})
+					.strict(),
+			)
+			.optional(),
+	})
+	.strict();
+
+const tokenParamSchema = z
+	.object({
+		token: z.string().min(8).max(128).regex(/^[a-zA-Z0-9_-]+$/),
+	})
+	.strict();
+
+const uploadQuerySchema = z
+	.object({
+		slotId: z.string().min(1).max(64).optional(),
+	})
+	.strict();
+
+const jsonPhotoPayloadSchema = z
+	.object({
+		dataUrl: z.string().max(25 * 1024 * 1024).optional(),
+		imageUrl: z.string().max(25 * 1024 * 1024).optional(),
+		imageBase64: z.string().max(25 * 1024 * 1024).optional(),
+		slotId: z.union([z.string().max(64), z.number()]).optional(),
+		fileName: z.string().max(255).optional(),
+		filename: z.string().max(255).optional(),
+	})
+	.strict();
 
 const ALLOWED_IMAGE_EXTENSIONS = new Set([".webp", ".jpg", ".jpeg", ".png", ".heic", ".heif"]);
 const MIME_TO_EXTENSION: Record<string, string> = {
@@ -209,12 +407,15 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		const { patientId, visitId, presetId, slots } = parseResult.data;
 
 		let patientFullName: string | null | undefined;
-		const allowDemoFixture = orgId.startsWith("demo-") || isDemoShowcaseMode();
+		const allowDemoFixture = isDemoShowcaseMode();
 
 		// Мандат 8wy: только в демо-режиме разрешаем демо-пациента без 404 ошибки и без падения 22P02
 		if (
-			orgId.startsWith("demo-") ||
-			(allowDemoFixture && (patientId.startsWith("01a00000") || patientId === "chairside" || patientId === "test"))
+			allowDemoFixture &&
+			(orgId.startsWith("demo-") ||
+				patientId.startsWith("01a00000") ||
+				patientId === "chairside" ||
+				patientId === "test")
 		) {
 			patientFullName = "Демо Пациент";
 		} else if (!UUID_REGEX.test(patientId)) {
@@ -260,7 +461,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 						.limit(1);
 					return row ?? null;
 				});
-				if (!visitRow && !orgId.startsWith("demo-")) {
+				if (!visitRow && !(allowDemoFixture && orgId.startsWith("demo-"))) {
 					return reply.code(404).send({
 						error: "VisitNotFound",
 						message: "Приём не найден в текущей клинике.",
@@ -289,7 +490,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			photos: [],
 		};
 
-		sessionsMap.set(token, session);
+		await savePhotoBridgeSessionToDb(session);
 
 		const uploadPath = `/#photo-bridge?token=${token}`;
 
@@ -317,10 +518,9 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const session = sessionsMap.get(token);
+		const session = await loadPhotoBridgeSession(token);
 
 		if (!session || session.expiresAt <= Date.now()) {
-			if (session) sessionsMap.delete(token);
 			return reply.code(410).send({
 				error: "SessionExpiredOrNotFound",
 				message: "Сессия QR-загрузки истекла или не найдена. Обновите QR-код на экране компьютера.",
@@ -354,10 +554,9 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const session = sessionsMap.get(token);
+		const session = await loadPhotoBridgeSession(token);
 
 		if (!session || session.expiresAt <= Date.now()) {
-			if (session) sessionsMap.delete(token);
 			return reply.code(410).send({
 				error: "SessionExpired",
 				message: "Время сессии истекло. Обновите QR-код на экране монитора врача.",
@@ -401,10 +600,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		if (!fileBuffer && Buffer.isBuffer(request.body)) {
 			const contentType = request.headers["content-type"] || "";
 			if (contentType.includes("multipart/form-data")) {
-				const stripped = stripMultipartWrapperFromBuffer(request.body);
+				const stripped = stripMultipartWrapperFromBuffer(request.body, contentType);
 				fileBuffer = stripped.data;
 				if (stripped.filename) filename = stripped.filename;
 				if (stripped.mimeType) mimeType = stripped.mimeType;
+				if (stripped.slotId && !querySlotId && !headerSlotId) slotId = stripped.slotId;
 			} else {
 				fileBuffer = request.body;
 				mimeType = contentType.split(";")[0]?.trim() || mimeType;
@@ -457,6 +657,13 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 				message: "Неподдерживаемый MIME-тип файла. Отправьте изображение.",
 			});
 		}
+		const magicMime = mappedMimeExt ? normalizedMime : "image/*";
+		if (!validateUploadMagicBytes(fileBuffer.subarray(0, 512), magicMime)) {
+			return reply.code(400).send({
+				error: "UnsupportedImageMagicBytes",
+				message: "Содержимое файла не является допустимым изображением (WebP, JPEG, PNG, HEIC или HEIF).",
+			});
+		}
 		const rawExt = ALLOWED_IMAGE_EXTENSIONS.has(requestedExt)
 			? requestedExt
 			: (mappedMimeExt ?? ".webp");
@@ -479,10 +686,11 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 		await fs.writeFile(storagePath, fileBuffer);
 
-		// Создаем запись в attachments в PostgreSQL 18 под RLS-контекстом клиники
+		// Создаём запись в attachments в PostgreSQL 18 под RLS-контекстом клиники
 		let attachment: typeof attachments.$inferSelect | undefined;
+		let persistedPhotoItem: PhotoBridgeUploadedItem | undefined;
 		try {
-			attachment = await withTenantCtx(session.organizationId, async (tx) => {
+			const txResult = await withTenantCtx(session.organizationId, async (tx) => {
 				const [row] = await tx
 					.insert(attachments)
 					.values({
@@ -495,8 +703,41 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 						sha256,
 					})
 					.returning();
-				return row;
+				if (!row) return undefined;
+
+				const nextPhoto: PhotoBridgeUploadedItem = {
+					id: row.id,
+					slotId,
+					url: `/api/attachments/${row.id}/download`,
+					fileName: row.fileName,
+					mimeType: row.mimeType,
+					sizeBytes: fileBuffer.length,
+					uploadedAt: new Date().toISOString(),
+				};
+				const updatedSession: PhotoBridgeSession = {
+					...session,
+					photos: [...session.photos, nextPhoto],
+				};
+				await tx
+					.update(systemBackgroundJobs)
+					.set({
+						payload: updatedSession as unknown as Record<string, unknown>,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(systemBackgroundJobs.queueName, PHOTO_BRIDGE_QUEUE),
+							eq(systemBackgroundJobs.taskName, session.token),
+						),
+					);
+				onTenantTxCommit(() => {
+					session.photos.push(nextPhoto);
+					sessionsMap.set(session.token, session);
+				});
+				return { row, nextPhoto };
 			});
+			attachment = txResult?.row;
+			persistedPhotoItem = txResult?.nextPhoto;
 		} catch (dbErr) {
 			await fs.rm(storagePath, { force: true }).catch((rmErr) => {
 				request.log.warn({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove orphan photo file after DB error");
@@ -508,7 +749,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		if (!attachment) {
+		if (!attachment || !persistedPhotoItem) {
 			await fs.rm(storagePath, { force: true }).catch((rmErr) => {
 				request.log.warn({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove orphan photo file");
 			});
@@ -518,21 +759,9 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const photoItem: PhotoBridgeUploadedItem = {
-			id: attachment.id,
-			slotId,
-			url: `/api/attachments/${attachment.id}/download`,
-			fileName: attachment.fileName,
-			mimeType: attachment.mimeType,
-			sizeBytes: fileBuffer.length,
-			uploadedAt: new Date().toISOString(),
-		};
-
-		session.photos.push(photoItem);
-
 		return reply.code(201).send({
 			success: true,
-			photo: photoItem,
+			photo: persistedPhotoItem,
 		});
 	});
 
@@ -553,10 +782,9 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const session = sessionsMap.get(token);
+		const session = await loadPhotoBridgeSession(token);
 
 		if (!session || session.expiresAt <= Date.now()) {
-			if (session) sessionsMap.delete(token);
 			return reply.code(410).send({
 				error: "SessionExpiredOrNotFound",
 				message: "Сессия QR-загрузки истекла.",
@@ -594,7 +822,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const existing = sessionsMap.get(token);
+		const existing = await loadPhotoBridgeSession(token);
 		if (existing && existing.organizationId !== orgId) {
 			return reply.code(403).send({
 				error: "Forbidden",
@@ -602,7 +830,28 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const deleted = sessionsMap.delete(token);
+		let deleted = false;
+		const removeFn = async (tx: Parameters<Parameters<typeof withTenantCtx>[1]>[0]) => {
+			const removedRows = await tx
+				.delete(systemBackgroundJobs)
+				.where(
+					and(
+						eq(systemBackgroundJobs.queueName, PHOTO_BRIDGE_QUEUE),
+						eq(systemBackgroundJobs.taskName, token),
+					),
+				)
+				.returning({ id: systemBackgroundJobs.id });
+			deleted = removedRows.length > 0 || sessionsMap.has(token);
+			onTenantTxCommit(() => {
+				sessionsMap.delete(token);
+			});
+		};
+		if (UUID_REGEX.test(orgId)) {
+			await withTenantCtx(orgId, removeFn);
+		} else {
+			await withSuperuserBypass(removeFn);
+			sessionsMap.delete(token);
+		}
 
 		return reply.send({
 			success: true,
