@@ -61,6 +61,7 @@ export const HEADER_HELPERS = [
 	"denteAdminSecretRequestHeaders",
 	"denteClinicalReadHeaders",
 	"denteClinicalMutationHeaders",
+	"getDenteAuthHeaders",
 	"denteAdminSecretHeaderName",
 	"x-dente-admin-secret",
 	"settingsAccessHeaders",

@@ -58,6 +58,14 @@ const WEB_DIR = "apps/web/src";
  * обязан слать заголовок сам через denteAdminSecretRequestHeaders() или
  * auth.settingsAccessHeaders() / auth.scheduleMutationHeaders() /
  * telegramControlPlaneHeaders().
+ *
+ * РАСШИРЕНО 2026-11-25: добавлена `scopeForReport` — файловая обёртка над
+ * `requireClinicalReadContext` из `apps/api/src/routes/reports/reportsShared.ts`.
+ * Маршруты отчётов (revenueAndDebtReportsRoutes.ts, clinicalWorkloadReportsRoutes.ts,
+ * doctorPerformancePayrollRoutes.ts) зовут охрану через неё — ВСЕГДА, без исключений.
+ * Добавлена сюда вместо поиска по обёрткам: функция определена в ДРУГОМ файле, чем
+ * маршруты, и localGuardWrappers(code) её не видит (анализирует один файл). Проверено
+ * живьём: /api/reports/summary возвращает 403 при включённой охране.
  */
 const GUARD_NAMES = [
 	"requireClinicalReadAccess",
@@ -71,6 +79,11 @@ const GUARD_NAMES = [
 	"requireDicomWebSettingsAccess",
 	"requirePayoutAccess",
 	"requireNonDoctorAccess",
+	// Файловая обёртка над requireClinicalReadContext для всех маршрутов отчётов.
+	// Определена в apps/api/src/routes/reports/reportsShared.ts, зовётся из трёх
+	// подмодулей reports/. localGuardWrappers не видит её (кросс-файловый вызов),
+	// поэтому имя добавлено сюда явно.
+	"scopeForReport",
 ];
 
 /**
@@ -664,7 +677,7 @@ if (!guarded.some((route) => route.path === "/api/reports/summary")) {
 	process.exit(2);
 }
 console.log(
-	"самопроверка: /api/reports/summary опознан охраняемым через обёртку scopeFor",
+	"самопроверка: /api/reports/summary опознан охраняемым через scopeForReport",
 );
 
 /*

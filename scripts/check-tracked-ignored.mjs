@@ -83,12 +83,12 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
  */
 const BUDGETS = new Map([
 	["artifacts/", 0],
-	[".data/", 909],
+	[".data/", 0],
 	["dist/", 0],
-	["apps/api/.data/", 21],
+	["apps/api/.data/", 0],
 	["local-secrets/*.env", 0],
-	[".agents/orchestrator_*/", 201],
-	[".agents/sentinel_*/", 59],
+	[".agents/orchestrator_*/", 0],
+	[".agents/sentinel_*/", 0],
 ]);
 
 /** Сколько путей печатать по группе, вышедшей за бюджет. */
