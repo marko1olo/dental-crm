@@ -1,4 +1,9 @@
-import type { StockDeductionRecord, StockDeductionWarning } from "@dental/shared";
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	type StockDeductionRecord,
+	type StockDeductionWarning,
+} from "@dental/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { inventoryItems, inventoryTransactions } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
@@ -76,6 +81,12 @@ export async function executeManualDeductionLoop(
 			.where(and(eq(inventoryItems.id, inv.id), eq(inventoryItems.organizationId, organizationId)));
 
 		const reason = reasonsByItem.get(itemId) || notes;
+		const resolvedUnitCostKopecks =
+			inv.unitCostKopecks ??
+			inv.pricePerUnitKopecks ??
+			BigInt(rublesToKopecks(Number(inv.unitCostRub ?? inv.pricePerUnit ?? 0)));
+		const resolvedUnitCostRub = kopecksToRubles(resolvedUnitCostKopecks);
+
 		transactionsToInsert.push({
 			organizationId,
 			visitId,
@@ -83,7 +94,8 @@ export async function executeManualDeductionLoop(
 			inventoryItemId: inv.id,
 			quantityChanged: String(-requiredQty),
 			qty: String(-requiredQty),
-			unitCostRub: inv.unitCostRub ?? "0",
+			unitCostRub: inv.unitCostRub ?? String(resolvedUnitCostRub),
+			unitCostKopecks: resolvedUnitCostKopecks,
 			transactionType: isItemOverdraft ? "emergency_overdraft" : "manual_writeoff",
 			isOverdraft: isItemOverdraft,
 			userId,
@@ -96,7 +108,7 @@ export async function executeManualDeductionLoop(
 			inventoryItemId: inv.id,
 			inventoryItemName: inv.name,
 			quantityChanged: String(-requiredQty),
-			unitCostRub: inv.unitCostRub,
+			unitCostRub: inv.unitCostRub ?? String(resolvedUnitCostRub),
 			lotNumber: inv.lotNumber,
 			remainingStock: newStock,
 		});

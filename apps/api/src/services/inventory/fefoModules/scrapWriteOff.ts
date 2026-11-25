@@ -3,6 +3,7 @@
  * Списание просроченных или бракованных материалов по акту списания/утилизации (Мандаты 8e, 8n, 8bj).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import {
 	inventoryItems,
@@ -94,6 +95,10 @@ export async function writeOffExpiredOrScrap(
 		quantityChanged: String(-quantity),
 		qty: String(-quantity),
 		unitCostRub: batchFound?.purchasePricePerUnit ?? inv.unitCostRub,
+		unitCostKopecks:
+			batchFound?.purchasePricePerUnitKopecks ??
+			inv.unitCostKopecks ??
+			BigInt(rublesToKopecks(Number(batchFound?.purchasePricePerUnit ?? inv.unitCostRub ?? 0))),
 		transactionType: reason === "expired" ? "write_off_expired" : "write_off_scrap",
 		userId: userId ?? null,
 		notes: `Акт утилизации/брака №${actNumber} (${reason}). ${notes ?? ""}`.trim(),

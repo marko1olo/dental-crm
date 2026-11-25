@@ -68,7 +68,7 @@ export async function syncFrom1C(payload: OneCSyncPayload, actorUserId?: string)
 							? BigInt(stock.unitCostKopecks)
 							: stock.unitCostRub !== undefined
 								? BigInt(rublesToKopecks(stock.unitCostRub))
-								: targetItem.unitCostKopecks ?? null;
+								: targetItem.unitCostKopecks ?? 0n;
 					const nextCostRub =
 						stock.unitCostKopecks !== undefined
 							? kopecksToNumericString(BigInt(stock.unitCostKopecks))

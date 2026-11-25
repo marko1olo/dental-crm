@@ -2,6 +2,7 @@
  * stockDeductionIdempotency.ts — Idempotency guards against duplicate stock deductions on network retry.
  */
 
+import { kopecksToNumericString } from "@dental/shared";
 import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import { inventoryTransactions } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
@@ -14,7 +15,10 @@ function makeIdempotentResult(txRows: Array<typeof inventoryTransactions.$inferS
 			inventoryItemId: txRow.itemId ?? txRow.inventoryItemId ?? "unknown",
 			inventoryItemName: "Ранее списанный материал",
 			quantityChanged: String(txRow.quantityChanged ?? txRow.qty ?? "0"),
-			unitCostRub: txRow.unitCostRub,
+			unitCostRub:
+				txRow.unitCostKopecks != null
+					? kopecksToNumericString(txRow.unitCostKopecks)
+					: txRow.unitCostRub,
 			lotNumber: null,
 			remainingStock: 0,
 		})),

@@ -2,6 +2,7 @@
  * inventoryItemMatcher.ts — Matches and auto-creates uncataloged inventory items on-the-fly.
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { inventoryItems } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
@@ -82,6 +83,7 @@ export async function matchAndCreateInventoryItems(
 		const isUuid = isPureUuid(key);
 		const fallbackName = entry.name || (isUuid ? `Материал ${key}` : key);
 		const defaultCost = entry.defaultCostRub != null ? String(entry.defaultCostRub) : "0";
+		const defaultCostKopecks = BigInt(rublesToKopecks(entry.defaultCostRub ?? 0));
 
 		const [created] = await tx
 			.insert(inventoryItems)
@@ -95,6 +97,8 @@ export async function matchAndCreateInventoryItems(
 				currentQty: "0",
 				criticalThreshold: "0",
 				unitCostRub: defaultCost,
+				unitCostKopecks: defaultCostKopecks,
+				pricePerUnitKopecks: defaultCostKopecks,
 			})
 			.returning();
 

@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
@@ -86,12 +87,15 @@ async function handleStockAdjustment(
 				parsedStock.data.expirationDate ||
 				item.expirationDate ||
 				getDefaultExpirationDate();
+			const itemCostKop = item.unitCostKopecks ?? item.pricePerUnitKopecks;
 			const purchasePrice =
 				parsedStock.data.purchasePricePerUnit != null
 					? parsedStock.data.purchasePricePerUnit
-					: item.unitCostRub != null
-						? Number(item.unitCostRub)
-						: undefined;
+					: itemCostKop != null
+						? kopecksToRubles(itemCostKop)
+						: item.unitCostRub != null
+							? Number(item.unitCostRub)
+							: undefined;
 
 			const createdBatch = await fefoStockService.receiveBatch(tx, {
 				organizationId,

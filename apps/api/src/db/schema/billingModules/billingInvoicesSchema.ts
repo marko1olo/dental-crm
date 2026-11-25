@@ -214,11 +214,17 @@ export const ndflTaxCalculators = pgTable(
 		taxYear: integer("tax_year").notNull(),
 		totalMedExpensesKopecks: bigint("total_med_expenses_kopecks", {
 			mode: "bigint",
-		}),
+		})
+			.notNull()
+			.default(sql`0`),
 		deductionAmountKopecks: bigint("deduction_amount_kopecks", {
 			mode: "bigint",
-		}),
-		ndflReturnKopecks: bigint("ndfl_return_kopecks", { mode: "bigint" }),
+		})
+			.notNull()
+			.default(sql`0`),
+		ndflReturnKopecks: bigint("ndfl_return_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		/** Сумма по коду 1 (Обычное лечение, лимит социального вычета 150 000 ₽) */
 		code1AmountKopecks: bigint("code1_amount_kopecks", {
 			mode: "bigint",

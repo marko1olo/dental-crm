@@ -1,6 +1,7 @@
 import {
 	generateMdlpSchema10560Payload,
 	generateUuidV7,
+	kopecksToRubles,
 	type MdlpDisposalItem,
 } from "@dental/shared";
 import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
@@ -110,7 +111,12 @@ export class MdlpOutboxService {
 					series: row.series,
 					lot: row.series,
 					expirationDate: row.expirationDate,
-					costRub: row.costRub ? Number(row.costRub) : null,
+					costRub:
+						row.costKopecks != null
+							? kopecksToRubles(row.costKopecks)
+							: row.costRub
+								? Number(row.costRub)
+								: null,
 					tradeName: row.tradeName,
 					inn: row.inn,
 				});
@@ -175,7 +181,12 @@ export class MdlpOutboxService {
 						series: q.series,
 						lot: q.series,
 						expirationDate: q.expirationDate,
-						costRub: q.costRub ? Number(q.costRub) : null,
+						costRub:
+							q.costKopecks != null
+								? kopecksToRubles(q.costKopecks)
+								: q.costRub
+									? Number(q.costRub)
+									: null,
 						tradeName: q.tradeName,
 						inn: q.inn,
 					});

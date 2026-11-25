@@ -9,7 +9,15 @@ import {
 	generateMdlpSchema10560Payload,
 	generateSeniorNurseDisposalActHtml,
 	parseMdlpDataMatrix,
+	rublesToKopecks,
 } from "@dental/shared";
+
+function toSerializableMdlpItem(row: typeof mdlpItems.$inferSelect): Record<string, unknown> {
+	return {
+		...row,
+		costKopecks: row.costKopecks != null ? Number(row.costKopecks) : null,
+	};
+}
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSavepoint, withTenantCtx } from "../../db/rls.js";
@@ -149,11 +157,12 @@ export class MdlpDisposalService {
 						expirationDate: parsed.expirationDate,
 						status: "in_stock",
 						costRub: null,
+						costKopecks: null,
 					})
 					.onConflictDoNothing()
 					.returning();
 				if (inserted) {
-					return inserted as Record<string, unknown>;
+					return toSerializableMdlpItem(inserted);
 				}
 				const [afterConflict] = await tx
 					.select()
@@ -165,7 +174,7 @@ export class MdlpDisposalService {
 						),
 					)
 					.limit(1);
-				return (afterConflict as Record<string, unknown>) ?? null;
+				return afterConflict ? toSerializableMdlpItem(afterConflict) : null;
 			},
 		);
 
@@ -390,7 +399,11 @@ export class MdlpDisposalService {
 							inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
 							batchId: batchId ?? existing.batchId,
 							inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
-							costRub: it.costRub ? String(it.costRub) : existing.costRub,
+							costRub: it.costRub != null ? String(it.costRub) : existing.costRub,
+							costKopecks:
+								it.costRub != null
+									? BigInt(rublesToKopecks(it.costRub))
+									: existing.costKopecks,
 							crptReceiptNumber,
 							schema10560Xml: schemaDoc.xmlContent,
 							schema10560Json: schemaDoc.jsonContent,
@@ -398,7 +411,7 @@ export class MdlpDisposalService {
 						})
 						.where(eq(mdlpItems.id, existing.id))
 						.returning();
-					if (res) updatedItems.push(res as Record<string, unknown>);
+					if (res) updatedItems.push(toSerializableMdlpItem(res));
 				} else {
 					const [res] = await tx
 						.insert(mdlpItems)
@@ -423,13 +436,14 @@ export class MdlpDisposalService {
 							inventoryItemId,
 							batchId,
 							inventoryTransactionId,
-							costRub: it.costRub ? String(it.costRub) : null,
+							costRub: it.costRub != null ? String(it.costRub) : null,
+							costKopecks: it.costRub != null ? BigInt(rublesToKopecks(it.costRub)) : null,
 							crptReceiptNumber,
 							schema10560Xml: schemaDoc.xmlContent,
 							schema10560Json: schemaDoc.jsonContent,
 						})
 						.returning();
-					if (res) updatedItems.push(res as Record<string, unknown>);
+					if (res) updatedItems.push(toSerializableMdlpItem(res));
 				}
 			}
 		});
@@ -555,7 +569,7 @@ export class MdlpDisposalService {
 
 		return {
 			total: totalCount,
-			items: itemsList as Record<string, unknown>[],
+			items: itemsList.map(toSerializableMdlpItem),
 		};
 	}
 

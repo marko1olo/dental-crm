@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadContext } from "../../accessGuard.js";
@@ -104,9 +105,18 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				checks: reconciliation.checksJson,
 				entityBreakdown: reconciliation.entityBreakdownJson,
 				money: {
-					sourceTotalRub: reconciliation.sourceMoneyTotalRub,
-					loadedTotalRub: reconciliation.loadedMoneyTotalRub,
-					quarantinedTotalRub: reconciliation.quarantinedMoneyTotalRub,
+					sourceTotalRub:
+						reconciliation.sourceMoneyTotalKopecks != null
+							? kopecksToRubles(reconciliation.sourceMoneyTotalKopecks)
+							: reconciliation.sourceMoneyTotalRub,
+					loadedTotalRub:
+						reconciliation.loadedMoneyTotalKopecks != null
+							? kopecksToRubles(reconciliation.loadedMoneyTotalKopecks)
+							: reconciliation.loadedMoneyTotalRub,
+					quarantinedTotalRub:
+						reconciliation.quarantinedMoneyTotalKopecks != null
+							? kopecksToRubles(reconciliation.quarantinedMoneyTotalKopecks)
+							: reconciliation.quarantinedMoneyTotalRub,
 				},
 				run: runStatusPayload(run),
 				quarantinePreview,
@@ -165,9 +175,18 @@ export function registerMigrationProgressRoutes(app: FastifyInstance): void {
 				balanced: reconciliation.balanced,
 				checks: reconciliation.checksJson,
 				entityBreakdown: reconciliation.entityBreakdownJson,
-				sourceMoneyTotalRub: reconciliation.sourceMoneyTotalRub,
-				loadedMoneyTotalRub: reconciliation.loadedMoneyTotalRub,
-				quarantinedMoneyTotalRub: reconciliation.quarantinedMoneyTotalRub,
+				sourceMoneyTotalRub:
+					reconciliation.sourceMoneyTotalKopecks != null
+						? kopecksToRubles(reconciliation.sourceMoneyTotalKopecks)
+						: reconciliation.sourceMoneyTotalRub,
+				loadedMoneyTotalRub:
+					reconciliation.loadedMoneyTotalKopecks != null
+						? kopecksToRubles(reconciliation.loadedMoneyTotalKopecks)
+						: reconciliation.loadedMoneyTotalRub,
+				quarantinedMoneyTotalRub:
+					reconciliation.quarantinedMoneyTotalKopecks != null
+						? kopecksToRubles(reconciliation.quarantinedMoneyTotalKopecks)
+						: reconciliation.quarantinedMoneyTotalRub,
 			});
 
 			reply.header("Content-Type", "text/csv; charset=utf-8");

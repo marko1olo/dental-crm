@@ -18,6 +18,7 @@ import {
 	type TreatmentConsumableDeductionResponse,
 	type TreatmentConsumableDeductionWarning,
 	convertInventoryUnit,
+	kopecksToRubles,
 } from "@dental/shared";
 import { and, asc, eq, inArray, isNull, or, type SQL } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
@@ -279,6 +280,8 @@ export async function applyProcedureConsumablesDeduction(
 						currentQty: "0",
 						criticalThreshold: "0",
 						unitCostRub: "0",
+						unitCostKopecks: 0n,
+						pricePerUnitKopecks: 0n,
 					})
 					.returning();
 
@@ -325,7 +328,11 @@ export async function applyProcedureConsumablesDeduction(
 			if (convertedRequestedQty <= 0) continue;
 
 			const currentQty = Number(item.currentQty ?? item.stockQuantity ?? 0);
-			const unitCostRub = Number(item.unitCostRub ?? item.pricePerUnit ?? 0);
+			const unitCostKop = item.unitCostKopecks ?? item.pricePerUnitKopecks;
+			const unitCostRub =
+				unitCostKop != null
+					? kopecksToRubles(unitCostKop)
+					: Number(item.unitCostRub ?? item.pricePerUnit ?? 0);
 
 			let stockAfter: number;
 			let deficit = 0;

@@ -23,10 +23,14 @@ export const calculateAlertsFromItems = (
 	for (const item of items) {
 		const stock = Number(item.stockQuantity ?? 0);
 		const threshold = Number(item.criticalThreshold ?? 0);
-		const cost = Number(item.unitCostRub ?? 0);
+		const costKopecks =
+			item.unitCostKopecks != null
+				? Number(item.unitCostKopecks)
+				: item.pricePerUnitKopecks != null
+					? Number(item.pricePerUnitKopecks)
+					: rublesToKopecks(Number(item.unitCostRub ?? item.pricePerUnit ?? 0));
 
-		if (Number.isFinite(stock) && Number.isFinite(cost) && stock > 0 && cost > 0) {
-			const costKopecks = rublesToKopecks(cost);
+		if (Number.isFinite(stock) && stock > 0 && costKopecks > 0) {
 			const lineValuationKopecks = BigInt(Math.round(stock * costKopecks));
 			totalValuationKopecks += lineValuationKopecks;
 		}

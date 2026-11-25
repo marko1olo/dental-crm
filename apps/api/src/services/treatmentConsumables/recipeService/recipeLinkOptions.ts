@@ -2,7 +2,7 @@
  * recipeLinkOptions.ts — Layer 2: Picker options queries for services and inventory items.
  */
 
-import type { LinkOptionsItem, LinkOptionsResponse, LinkOptionsTreatment } from "@dental/shared";
+import { kopecksToRubles, type LinkOptionsItem, type LinkOptionsResponse, type LinkOptionsTreatment } from "@dental/shared";
 import { and, eq, ilike, or } from "drizzle-orm";
 import { inventoryItems, serviceCatalogItems } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
@@ -59,6 +59,8 @@ export async function getLinkOptions(
 			category: inventoryItems.category,
 			stockQuantity: inventoryItems.stockQuantity,
 			unitCostRub: inventoryItems.unitCostRub,
+			unitCostKopecks: inventoryItems.unitCostKopecks,
+			pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
 			expirationDate: inventoryItems.expirationDate,
 		})
 		.from(inventoryItems)
@@ -77,15 +79,21 @@ export async function getLinkOptions(
 			}),
 		),
 		items: items.map(
-			(i): LinkOptionsItem => ({
-				id: i.id,
-				name: i.name,
-				unit: i.unit,
-				category: i.category,
-				stockQuantity: Number(i.stockQuantity ?? 0),
-				unitCostRub: Number(i.unitCostRub ?? 0),
-				expirationDate: i.expirationDate,
-			}),
+			(i): LinkOptionsItem => {
+				const unitCostKop = i.unitCostKopecks ?? i.pricePerUnitKopecks;
+				return {
+					id: i.id,
+					name: i.name,
+					unit: i.unit,
+					category: i.category,
+					stockQuantity: Number(i.stockQuantity ?? 0),
+					unitCostRub:
+						unitCostKop != null
+							? kopecksToRubles(unitCostKop)
+							: Number(i.unitCostRub ?? 0),
+					expirationDate: i.expirationDate,
+				};
+			},
 		),
 	};
 }

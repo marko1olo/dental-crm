@@ -377,6 +377,9 @@ export const inventoryQuery = {
 
 			const unitPrice =
 				line.purchasePricePerUnit ?? line.unitCostRub ?? 0;
+			const createdItemUnitCostKopecks = BigInt(
+				rublesToKopecks(Math.max(0, unitPrice)),
+			);
 
 			// 3. Автосоздание карточки материала, если позиция новая в накладной
 			if (!itemRecord) {
@@ -391,6 +394,8 @@ export const inventoryQuery = {
 						stockQuantity: "0",
 						currentQty: "0",
 						unitCostRub: String(Math.max(0, unitPrice)),
+						unitCostKopecks: createdItemUnitCostKopecks,
+						pricePerUnitKopecks: createdItemUnitCostKopecks,
 						criticalThreshold: "0",
 						barcode: line.barcode?.trim() || null,
 					})

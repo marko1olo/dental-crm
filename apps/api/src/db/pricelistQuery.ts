@@ -826,7 +826,9 @@ export async function getServiceBomFromDb(
 					notes: schema.procedureTechCardItems.notes,
 					itemName: schema.inventoryItems.name,
 					pricePerUnit: schema.inventoryItems.pricePerUnit,
+					pricePerUnitKopecks: schema.inventoryItems.pricePerUnitKopecks,
 					unitCostRub: schema.inventoryItems.unitCostRub,
+					unitCostKopecks: schema.inventoryItems.unitCostKopecks,
 				})
 				.from(schema.procedureTechCardItems)
 				.leftJoin(
@@ -841,7 +843,12 @@ export async function getServiceBomFromDb(
 			let totalCostKopecks = 0;
 			const items: ServiceBomItemPayload[] = cardItems.map((ci) => {
 				const qty = Number(ci.quantity) || 1;
-				const unitCostKopecks = rublesToKopecks(Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0));
+				const unitCostKopecks =
+					ci.pricePerUnitKopecks != null
+						? Number(ci.pricePerUnitKopecks)
+						: ci.unitCostKopecks != null
+							? Number(ci.unitCostKopecks)
+							: rublesToKopecks(Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0));
 				const lineCostKopecks = multiplyKopecksFractional(unitCostKopecks, qty);
 				totalCostKopecks += lineCostKopecks;
 				return {
@@ -1012,7 +1019,9 @@ export async function upsertServiceBomInDb(
 			const [inv] = await tx
 				.select({
 					pricePerUnit: schema.inventoryItems.pricePerUnit,
+					pricePerUnitKopecks: schema.inventoryItems.pricePerUnitKopecks,
 					unitCostRub: schema.inventoryItems.unitCostRub,
+					unitCostKopecks: schema.inventoryItems.unitCostKopecks,
 					name: schema.inventoryItems.name,
 				})
 				.from(schema.inventoryItems)
@@ -1025,7 +1034,11 @@ export async function upsertServiceBomInDb(
 				.limit(1);
 
 			const unitKopecks = inv
-				? rublesToKopecks(Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0))
+				? inv.pricePerUnitKopecks != null
+					? Number(inv.pricePerUnitKopecks)
+					: inv.unitCostKopecks != null
+						? Number(inv.unitCostKopecks)
+						: rublesToKopecks(Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0))
 				: 0;
 			const lineCostKopecks = multiplyKopecksFractional(unitKopecks, qty);
 			totalCostKopecks += lineCostKopecks;

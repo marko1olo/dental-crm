@@ -46,7 +46,9 @@ export const stockBatches = pgTable(
 		}).default("0"),
 		purchasePricePerUnitKopecks: bigint("purchase_price_per_unit_kopecks", {
 			mode: "bigint",
-		}),
+		})
+			.notNull()
+			.default(0n),
 		status: text("status").notNull().default("active"), // active | depleted | expired | quarantine
 		barcode: text("barcode"),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -97,7 +99,9 @@ export const inventoryTransactions = pgTable(
 		// alias — some routes call it quantityChanged
 		quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
 		unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }),
-		unitCostKopecks: bigint("unit_cost_kopecks", { mode: "bigint" }),
+		unitCostKopecks: bigint("unit_cost_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(0n),
 		isOverdraft: boolean("is_overdraft").default(false),
 		userId: uuid("user_id"),
 		notes: text("notes"),

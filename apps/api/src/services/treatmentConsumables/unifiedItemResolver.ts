@@ -2,6 +2,7 @@
  * unifiedItemResolver.ts — Layer 1: Resolves or auto-creates items on the fly (Zero Dead-Ends).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { inventoryItems } from "../../db/schema.js";
 import type { DbExecutor } from "./types.js";
@@ -32,6 +33,7 @@ export async function resolveOrAutoCreateItems(
 		}
 
 		if (!matched) {
+			const costKop = BigInt(rublesToKopecks(Number(def.defaultCost ?? 0)));
 			const [created] = await tx
 				.insert(inventoryItems)
 				.values({
@@ -43,6 +45,8 @@ export async function resolveOrAutoCreateItems(
 					currentQty: "0",
 					criticalThreshold: "10",
 					unitCostRub: def.defaultCost ?? "0",
+					unitCostKopecks: costKop,
+					pricePerUnitKopecks: costKop,
 				})
 				.returning();
 			if (created) {

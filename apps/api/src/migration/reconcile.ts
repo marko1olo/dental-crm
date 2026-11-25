@@ -508,8 +508,20 @@ export async function reconcileRun(
 			checksJson: checks,
 			entityBreakdownJson: entityBreakdown,
 			sourceMoneyTotalRub: report.sourceMoneyTotalRub,
+			sourceMoneyTotalKopecks:
+				input.sourceMoneyTotalKopecks === null
+					? null
+					: BigInt(input.sourceMoneyTotalKopecks),
 			loadedMoneyTotalRub: report.loadedMoneyTotalRub,
+			loadedMoneyTotalKopecks:
+				paymentTally && paymentTally.total > 0
+					? BigInt(money.loadedKopecks)
+					: null,
 			quarantinedMoneyTotalRub: report.quarantinedMoneyTotalRub,
+			quarantinedMoneyTotalKopecks:
+				paymentTally && paymentTally.total > 0
+					? BigInt(money.quarantinedKopecks)
+					: null,
 		});
 	});
 

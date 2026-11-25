@@ -3,6 +3,7 @@
  * Оприходование партий медикаментов и расходников, закрытие технического дефицита (Мандат 8b).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { inventoryItems, stockBatches } from "../../../db/schema/inventory.js";
 import type { DbTransaction, ReceiveBatchInput } from "./types.js";
@@ -54,6 +55,15 @@ export async function receiveBatch(
 	const { deficit, remainingInBatch, isDepletedByDeficit, newStock } =
 		resolveDeficitOnReceipt(currentStock, quantity);
 
+	const resolvedUnitCostKopecks =
+		purchasePricePerUnit != null
+			? BigInt(rublesToKopecks(purchasePricePerUnit))
+			: (inv.unitCostKopecks ?? BigInt(rublesToKopecks(Number(inv.unitCostRub ?? 0))));
+	const purchasePriceKopecks =
+		purchasePricePerUnit != null
+			? BigInt(rublesToKopecks(purchasePricePerUnit))
+			: resolvedUnitCostKopecks;
+
 	const [createdBatch] = await tx
 		.insert(stockBatches)
 		.values({
@@ -67,6 +77,7 @@ export async function receiveBatch(
 			remainingQty: String(remainingInBatch),
 			purchasePricePerUnit:
 				purchasePricePerUnit != null ? String(purchasePricePerUnit) : null,
+			purchasePricePerUnitKopecks: purchasePriceKopecks,
 			status: isDepletedByDeficit ? "depleted" : "active",
 			barcode: batchMeta.barcode,
 		})
@@ -88,6 +99,9 @@ export async function receiveBatch(
 			expirationDate: shouldUpdateCardDate ? batchMeta.expirationDate : inv.expirationDate,
 			unitCostRub:
 				purchasePricePerUnit != null ? String(purchasePricePerUnit) : inv.unitCostRub,
+			unitCostKopecks: resolvedUnitCostKopecks,
+			pricePerUnitKopecks:
+				purchasePricePerUnit != null ? resolvedUnitCostKopecks : inv.pricePerUnitKopecks,
 			updatedAt: new Date(),
 		})
 		.where(eq(inventoryItems.id, inv.id));
@@ -99,6 +113,7 @@ export async function receiveBatch(
 		warehouseId: warehouseId ?? null,
 		quantity,
 		unitCostRub: purchasePricePerUnit != null ? String(purchasePricePerUnit) : inv.unitCostRub,
+		unitCostKopecks: resolvedUnitCostKopecks,
 		userId: userId ?? null,
 		notes: notes ?? null,
 		closedDeficit: deficit,

@@ -25,6 +25,8 @@ const LINK_SELECT_FIELDS = {
 	itemUnit: inventoryItems.unit,
 	stockQuantity: inventoryItems.stockQuantity,
 	unitCostRub: inventoryItems.unitCostRub,
+	unitCostKopecks: inventoryItems.unitCostKopecks,
+	pricePerUnitKopecks: inventoryItems.pricePerUnitKopecks,
 	criticalThreshold: inventoryItems.criticalThreshold,
 };
 

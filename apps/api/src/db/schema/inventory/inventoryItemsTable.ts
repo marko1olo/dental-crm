@@ -43,12 +43,16 @@ export const inventoryItems = pgTable(
 			scale: 3,
 		}).default("0"),
 		pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
-		pricePerUnitKopecks: bigint("price_per_unit_kopecks", { mode: "bigint" }),
+		pricePerUnitKopecks: bigint("price_per_unit_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(0n),
 		// alias — some routes call it unitCostRub
 		unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }).default(
 			"0",
 		),
-		unitCostKopecks: bigint("unit_cost_kopecks", { mode: "bigint" }),
+		unitCostKopecks: bigint("unit_cost_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(0n),
 		notes: text("notes"),
 		sku: text("sku"),
 		barcode: text("barcode"),

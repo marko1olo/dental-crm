@@ -5,7 +5,7 @@
 
 import { and, eq, or, sql } from "drizzle-orm";
 import { inventoryItems } from "../../../db/schema/inventory.js";
-import { DEFAULT_804N_CONSUMABLE_LINKS, kopecksToRubles } from "@dental/shared";
+import { DEFAULT_804N_CONSUMABLE_LINKS, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { DEFAULT_SERVICE_BOM_SEEDS } from "../bomSeeds/registry.js";
 import type { DbTransaction } from "./types.js";
 import type { ServiceMeta } from "./procedureBomResolver.js";
@@ -54,6 +54,8 @@ export async function resolveDefaultFallbackItems(
 						currentQty: "0",
 						criticalThreshold: String(mat.criticalThreshold),
 						unitCostRub: String(mat.defaultUnitCostRub),
+						unitCostKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
+						pricePerUnitKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
 					})
 					.returning({ id: inventoryItems.id });
 				targetItemId = created?.id;
@@ -101,6 +103,8 @@ export async function resolveDefaultFallbackItems(
 					currentQty: "0",
 					criticalThreshold: "5",
 					unitCostRub: String(kopecksToRubles(link.costPriceKopecks)),
+					unitCostKopecks: BigInt(link.costPriceKopecks),
+					pricePerUnitKopecks: BigInt(link.costPriceKopecks),
 				})
 				.returning({ id: inventoryItems.id });
 			targetItemId = created?.id;

@@ -3,6 +3,7 @@
  * Журнал складских транзакций (audit trail) в таблице inventory_transactions (Мандат 8b).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { inventoryTransactions } from "../../../db/schema/inventory.js";
 import type { DbTransaction } from "./types.js";
 
@@ -23,6 +24,7 @@ export function buildReceiptTransaction(params: {
 	readonly warehouseId?: string | null;
 	readonly quantity: number;
 	readonly unitCostRub?: string | null;
+	readonly unitCostKopecks?: bigint | null | undefined;
 	readonly userId?: string | null;
 	readonly notes?: string | null;
 	readonly closedDeficit?: number;
@@ -34,6 +36,7 @@ export function buildReceiptTransaction(params: {
 		warehouseId,
 		quantity,
 		unitCostRub,
+		unitCostKopecks,
 		userId,
 		notes,
 		closedDeficit = 0,
@@ -44,6 +47,9 @@ export function buildReceiptTransaction(params: {
 			? `${notes ? `${notes} • ` : ""}Поступление (${quantity} ед., закрыт технический дефицит ${closedDeficit} ед.)`
 			: (notes ?? `Поступление партии (${quantity} ед.)`);
 
+	const resolvedCostKopecks =
+		unitCostKopecks ?? BigInt(rublesToKopecks(Number(unitCostRub ?? 0)));
+
 	return {
 		organizationId,
 		itemId,
@@ -53,6 +59,7 @@ export function buildReceiptTransaction(params: {
 		qty: String(quantity),
 		quantityChanged: String(quantity),
 		unitCostRub: unitCostRub ?? null,
+		unitCostKopecks: resolvedCostKopecks,
 		transactionType: "receipt",
 		userId: userId ?? null,
 		notes: note,

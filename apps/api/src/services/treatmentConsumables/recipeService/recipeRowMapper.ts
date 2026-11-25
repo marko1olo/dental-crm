@@ -21,6 +21,8 @@ export interface ConsumableLinkJoinedRow {
 	itemUnit?: string | null | undefined;
 	stockQuantity?: number | string | null | undefined;
 	unitCostRub?: number | string | null | undefined;
+	unitCostKopecks?: bigint | number | string | null | undefined;
+	pricePerUnitKopecks?: bigint | number | string | null | undefined;
 	criticalThreshold?: number | string | null | undefined;
 }
 
@@ -30,9 +32,13 @@ export function mapRowToLinkDetailed(
 ): ConsumableLinkDetailed {
 	const qty = Number(r.quantityToDeduct ?? r.requiredQty ?? 1);
 	const stock = Number(r.stockQuantity ?? 0);
-	const cost = Number(r.unitCostRub ?? 0);
+	const resolvedCostKopecks = r.unitCostKopecks ?? r.pricePerUnitKopecks;
+	const unitCostKopecks =
+		resolvedCostKopecks != null
+			? Number(resolvedCostKopecks)
+			: rublesToKopecks(Number(r.unitCostRub ?? 0));
+	const cost = kopecksToRubles(unitCostKopecks);
 	const threshold = Number(r.criticalThreshold ?? 0);
-	const unitCostKopecks = rublesToKopecks(cost);
 	const totalCostKopecks = Math.round(qty * unitCostKopecks);
 	return {
 		id: r.id,

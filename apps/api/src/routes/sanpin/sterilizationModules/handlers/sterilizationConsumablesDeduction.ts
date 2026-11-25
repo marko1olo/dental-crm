@@ -49,6 +49,9 @@ export async function executeSterilizationConsumablesDeduction(
 						stockQuantity: "0",
 						minQty: "20",
 						criticalThreshold: "20",
+						unitCostRub: "0",
+						unitCostKopecks: 0n,
+						pricePerUnitKopecks: 0n,
 						notes: "Авто-создано системой учета стерилизации",
 					})
 					.returning();
@@ -74,6 +77,8 @@ export async function executeSterilizationConsumablesDeduction(
 				transactionType: isOverdraft ? "emergency_overdraft" : "auto_deduct",
 				qty: String(spec.qty),
 				quantityChanged: String(-spec.qty),
+				unitCostRub: item.unitCostRub ?? "0",
+				unitCostKopecks: item.unitCostKopecks ?? 0n,
 				isOverdraft,
 				userId: params.userId ?? null,
 				notes: note,

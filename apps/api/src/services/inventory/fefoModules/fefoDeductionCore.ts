@@ -55,6 +55,7 @@ export async function deductFefo(
 		transactionType,
 		notes: notes ?? null,
 		defaultUnitCostRub: inv.unitCostRub,
+		defaultUnitCostKopecks: inv.unitCostKopecks,
 	});
 
 	const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);

@@ -5,12 +5,19 @@
 
 import {
 	generateSupplierPurchaseOrder,
+	rublesToKopecks,
 	type SupplierPurchaseOrder,
 } from "@dental/shared";
 import type { InventoryTransactionInsert } from "./auditLogging.js";
 
 export function resolveDeficitAndOverdraft(params: {
-	readonly inv: { id: string; name: string; unit?: string | null; unitCostRub?: string | null };
+	readonly inv: {
+		id: string;
+		name: string;
+		unit?: string | null;
+		unitCostRub?: string | null;
+		unitCostKopecks?: bigint | null;
+	};
 	readonly needed: number;
 	readonly currentStock: number;
 	readonly requiredQty: number;
@@ -59,6 +66,8 @@ export function resolveDeficitAndOverdraft(params: {
 				qty: String(-unbatchedDeduct),
 				quantityChanged: String(-unbatchedDeduct),
 				unitCostRub: inv.unitCostRub ?? null,
+				unitCostKopecks:
+					inv.unitCostKopecks ?? BigInt(rublesToKopecks(Number(inv.unitCostRub ?? 0))),
 				transactionType,
 				isOverdraft: false,
 				userId: userId ?? null,
@@ -84,6 +93,8 @@ export function resolveDeficitAndOverdraft(params: {
 				qty: String(-deficitQty),
 				quantityChanged: String(-deficitQty),
 				unitCostRub: inv.unitCostRub ?? null,
+				unitCostKopecks:
+					inv.unitCostKopecks ?? BigInt(rublesToKopecks(Number(inv.unitCostRub ?? 0))),
 				transactionType: "emergency_overdraft",
 				isOverdraft: true,
 				userId: userId ?? null,

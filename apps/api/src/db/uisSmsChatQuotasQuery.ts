@@ -1,3 +1,4 @@
+import { kopecksToNumericString, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import type { TenantDb } from "./rls.js";
@@ -18,10 +19,18 @@ export async function getDailySmsQuota(organizationId: string, tx: TenantDb = db
 		.limit(1);
 
 	if (quota) {
+		const costKopecks =
+			quota.costKopecks != null
+				? quota.costKopecks
+				: quota.costRub != null
+					? rublesToKopecks(Number(quota.costRub))
+					: 0;
 		return {
 			smsSentCount: quota.smsSentCount,
 			smsQuotaLimit: quota.smsQuotaLimit,
 			remaining: Math.max(0, quota.smsQuotaLimit - quota.smsSentCount),
+			costKopecks,
+			costRub: kopecksToRubles(costKopecks),
 		};
 	}
 
@@ -29,6 +38,8 @@ export async function getDailySmsQuota(organizationId: string, tx: TenantDb = db
 		smsSentCount: 0,
 		smsQuotaLimit: 300,
 		remaining: 300,
+		costKopecks: 0,
+		costRub: 0,
 	};
 }
 
@@ -47,6 +58,7 @@ export async function ensureAndLockDailySmsQuota(organizationId: string, tx: Ten
 			smsSentCount: 0,
 			smsQuotaLimit: 300,
 			costKopecks: 0,
+			costRub: "0.00",
 		})
 		.onConflictDoNothing({
 			target: [uisSmsChatQuotas.organizationId, uisSmsChatQuotas.monthYear],
@@ -56,6 +68,7 @@ export async function ensureAndLockDailySmsQuota(organizationId: string, tx: Ten
 		.select({
 			smsSentCount: uisSmsChatQuotas.smsSentCount,
 			smsQuotaLimit: uisSmsChatQuotas.smsQuotaLimit,
+			costKopecks: uisSmsChatQuotas.costKopecks,
 		})
 		.from(uisSmsChatQuotas)
 		.where(
@@ -69,29 +82,64 @@ export async function ensureAndLockDailySmsQuota(organizationId: string, tx: Ten
 
 	const smsSentCount = quota?.smsSentCount ?? 0;
 	const smsQuotaLimit = quota?.smsQuotaLimit ?? 300;
+	const costKopecks = quota?.costKopecks ?? 0;
 	return {
 		smsSentCount,
 		smsQuotaLimit,
 		remaining: Math.max(0, smsQuotaLimit - smsSentCount),
+		costKopecks,
+		costRub: kopecksToRubles(costKopecks),
 	};
 }
 
-export async function incrementDailySmsQuota(organizationId: string, tx: TenantDb = db) {
+export async function incrementDailySmsQuota(
+	organizationId: string,
+	tx: TenantDb = db,
+	smsCostKopecks = 0,
+) {
 	const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+	const safeCostKopecks =
+		Number.isFinite(smsCostKopecks) && smsCostKopecks > 0
+			? Math.round(smsCostKopecks)
+			: 0;
 
-	await tx
+	const [upserted] = await tx
 		.insert(uisSmsChatQuotas)
 		.values({
 			organizationId,
 			monthYear: today,
 			smsSentCount: 1,
 			smsQuotaLimit: 300,
-			costKopecks: 0,
+			costKopecks: safeCostKopecks,
+			costRub: kopecksToNumericString(safeCostKopecks),
 		})
 		.onConflictDoUpdate({
 			target: [uisSmsChatQuotas.organizationId, uisSmsChatQuotas.monthYear],
 			set: {
 				smsSentCount: sql`${uisSmsChatQuotas.smsSentCount} + 1`,
+				...(safeCostKopecks > 0
+					? {
+							costKopecks: sql`${uisSmsChatQuotas.costKopecks} + ${safeCostKopecks}`,
+						}
+					: {}),
 			},
+		})
+		.returning({
+			id: uisSmsChatQuotas.id,
+			costKopecks: uisSmsChatQuotas.costKopecks,
 		});
+
+	if (safeCostKopecks > 0 && upserted) {
+		await tx
+			.update(uisSmsChatQuotas)
+			.set({
+				costRub: kopecksToNumericString(upserted.costKopecks ?? safeCostKopecks),
+			})
+			.where(
+				and(
+					eq(uisSmsChatQuotas.id, upserted.id),
+					eq(uisSmsChatQuotas.organizationId, organizationId),
+				),
+			);
+	}
 }

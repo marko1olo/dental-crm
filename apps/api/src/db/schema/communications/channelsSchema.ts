@@ -291,7 +291,7 @@ export const uisSmsChatQuotas = pgTable(
 		smsSentCount: integer("sms_sent_count").notNull().default(0),
 		smsQuotaLimit: integer("sms_quota_limit").notNull().default(1000),
 		costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
-		costKopecks: bigint("cost_kopecks", { mode: "number" }).default(0),
+		costKopecks: bigint("cost_kopecks", { mode: "number" }).notNull().default(0),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

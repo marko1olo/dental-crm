@@ -187,17 +187,21 @@ export const giftCertificates = pgTable(
 			.references(() => organizations.id, { onDelete: "cascade" }),
 		serialNumber: text("serial_number").notNull(),
 		nominalRub: numeric("nominal_rub", { precision: 12, scale: 2 }).notNull(),
-		nominalKopecks: bigint("nominal_kopecks", { mode: "number" }),
+		nominalKopecks: bigint("nominal_kopecks", { mode: "number" }).notNull().default(0),
 		initialBalanceRub: numeric("initial_balance_rub", {
 			precision: 12,
 			scale: 2,
 		}).notNull(),
-		initialBalanceKopecks: bigint("initial_balance_kopecks", { mode: "number" }),
+		initialBalanceKopecks: bigint("initial_balance_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		currentBalanceRub: numeric("current_balance_rub", {
 			precision: 12,
 			scale: 2,
 		}).notNull(),
-		currentBalanceKopecks: bigint("current_balance_kopecks", { mode: "number" }),
+		currentBalanceKopecks: bigint("current_balance_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		purchaserPatientId: uuid("purchaser_patient_id").references(() => patients.id, {
 			onDelete: "set null",
 		}),

@@ -3,6 +3,7 @@
  */
 
 import {
+	kopecksToRubles,
 	type RequiredMaterialItem,
 	type StockAvailabilityCheckResponse,
 } from "@dental/shared";
@@ -86,6 +87,7 @@ export async function checkStockSufficiency(
 			);
 		}
 
+		const unitCostKop = inv?.unitCostKopecks ?? inv?.pricePerUnitKopecks;
 		requiredMaterials.push({
 			inventoryItemId: itemId,
 			itemName: inv?.name ?? "Неизвестный материал",
@@ -94,7 +96,10 @@ export async function checkStockSufficiency(
 			isSufficient,
 			deficit,
 			unit: inv?.unit,
-			unitCostRub: Number(inv?.unitCostRub ?? 0),
+			unitCostRub:
+				unitCostKop != null
+					? kopecksToRubles(unitCostKop)
+					: Number(inv?.unitCostRub ?? 0),
 		});
 	}
 

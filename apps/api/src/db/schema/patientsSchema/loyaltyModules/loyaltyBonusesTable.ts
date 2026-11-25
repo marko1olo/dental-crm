@@ -34,7 +34,9 @@ export const loyaltyPrograms = pgTable(
 			.default("0.00"),
 		minSpendThresholdKopecks: bigint("min_spend_threshold_kopecks", {
 			mode: "bigint",
-		}),
+		})
+			.notNull()
+			.default(0n),
 		cashbackPercent: numeric("cashback_percent", {
 			precision: 5,
 			scale: 2,
@@ -56,7 +58,9 @@ export const loyaltyPrograms = pgTable(
 			.default("1.00"),
 		pointRateKopecks: bigint("point_rate_kopecks", {
 			mode: "bigint",
-		}),
+		})
+			.notNull()
+			.default(100n),
 		isActive: boolean("is_active").notNull().default(true),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

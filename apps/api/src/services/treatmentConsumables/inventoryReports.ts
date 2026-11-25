@@ -41,11 +41,16 @@ export async function getInventoryAlerts(
 	for (const item of items) {
 		const stock = Number(item.stockQuantity ?? item.currentQty ?? 0);
 		const threshold = Number(item.criticalThreshold ?? item.minQty ?? 0);
-		const cost = Number(item.unitCostRub ?? item.pricePerUnit ?? 0);
+		const unitCostKopecks =
+			item.unitCostKopecks != null
+				? Number(item.unitCostKopecks)
+				: item.pricePerUnitKopecks != null
+					? Number(item.pricePerUnitKopecks)
+					: rublesToKopecks(Number(item.unitCostRub ?? item.pricePerUnit ?? 0));
+		const cost = kopecksToRubles(unitCostKopecks);
 
-		if (Number.isFinite(stock) && Number.isFinite(cost) && stock > 0 && cost > 0) {
-			const costKopecks = rublesToKopecks(cost);
-			const lineValuationKopecks = BigInt(Math.round(stock * costKopecks));
+		if (Number.isFinite(stock) && stock > 0 && unitCostKopecks > 0) {
+			const lineValuationKopecks = BigInt(Math.round(stock * unitCostKopecks));
 			totalValuationKopecks += lineValuationKopecks;
 		}
 

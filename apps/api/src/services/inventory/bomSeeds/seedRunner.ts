@@ -3,6 +3,7 @@
  * Идемпотентный сидер дефолтных технологических карт (BOM) расхода материалов (Мандат 8b).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import {
@@ -66,6 +67,8 @@ export async function seedDefaultProcedureMaterialRules(
 						category: mat.category,
 						unit: mat.unit,
 						unitCostRub: String(mat.defaultUnitCostRub),
+						unitCostKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
+						pricePerUnitKopecks: BigInt(rublesToKopecks(mat.defaultUnitCostRub)),
 						stockQuantity: String(mat.defaultStockQty),
 						currentQty: String(mat.defaultStockQty),
 						criticalThreshold: String(mat.criticalThreshold),

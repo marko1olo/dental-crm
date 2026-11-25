@@ -43,6 +43,8 @@ export async function ensureInventoryItemForDeduction(
 				currentQty: "0",
 				criticalThreshold: "0",
 				unitCostRub: "0",
+				unitCostKopecks: 0n,
+				pricePerUnitKopecks: 0n,
 			})
 			.returning();
 		if (created) {

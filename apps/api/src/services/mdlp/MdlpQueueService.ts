@@ -6,6 +6,8 @@ import {
 	createCarpuleQueueItem,
 	generateUuidV7,
 	groupQueueByBatch,
+	kopecksToRubles,
+	rublesToKopecks,
 	sortQueueByFefo,
 	validateQueueForDisposal,
 } from "@dental/shared";
@@ -83,7 +85,12 @@ export class MdlpQueueService {
 			const items: MdlpCarpuleQueueItem[] = rows.map((row) =>
 				createCarpuleQueueItem(row.rawBarcode || row.sgtin, {
 					id: row.id,
-					costRub: row.costRub != null ? Number(row.costRub) : null,
+					costRub:
+						row.costKopecks != null
+							? kopecksToRubles(row.costKopecks)
+							: row.costRub != null
+								? Number(row.costRub)
+								: null,
 					patientId: row.patientId ?? undefined,
 					visitId: row.visitId ?? undefined,
 					doctorId: row.doctorId ?? undefined,
@@ -188,6 +195,10 @@ export class MdlpQueueService {
 								visitId: item.visitId ?? existing.visitId,
 								doctorId: item.doctorId ?? existing.doctorId,
 								costRub: item.costRub != null ? String(item.costRub) : existing.costRub,
+								costKopecks:
+									item.costRub != null
+										? BigInt(rublesToKopecks(item.costRub))
+										: existing.costKopecks,
 								updatedAt: new Date(),
 							})
 							.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.id, existing.id)));
@@ -206,6 +217,8 @@ export class MdlpQueueService {
 						expirationDate: item.expirationDate,
 						status: "queued",
 						costRub: item.costRub != null ? String(item.costRub) : null,
+						costKopecks:
+							item.costRub != null ? BigInt(rublesToKopecks(item.costRub)) : null,
 						patientId: item.patientId ?? null,
 						visitId: item.visitId ?? null,
 						doctorId: item.doctorId ?? null,
