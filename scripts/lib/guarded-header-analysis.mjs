@@ -69,6 +69,8 @@ export const HEADER_HELPERS = [
 	"telegramControlPlaneHeaders",
 	"clipboardWriteHeaders",
 	"staffMutationHeaders",
+	// lanConnectionHelpers.ts — читает те же токены x-dente-clinic-token / x-dente-staff-token
+	"getClinicAuthHeaders",
 ];
 
 /**

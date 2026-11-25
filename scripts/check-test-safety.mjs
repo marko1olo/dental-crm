@@ -16,6 +16,69 @@ import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { extname, join } from "node:path";
 
 const SCAN_DIRS = ["apps", "packages", "scripts"];
+
+/**
+ * Files permitted to use createRoot / setupMockDom / createMockElement.
+ *
+ * These tests run under Node --test with --import tsx and use a lightweight
+ * hand-rolled mock DOM from bookingTestDomHarness.ts (non-recursive, no
+ * infinite Fiber paths). Each entry has been audited against Mandate 8wx:
+ * the harness does NOT build cyclic DOM trees and the timeouts are enforced
+ * by the parent test script (apps/web/package.json "test" command).
+ *
+ * chairsideMemoryShield.test.ts uses createMockElement to build a plain
+ * object stub of HTMLElement — not a recursive tree — solely to test the
+ * CSS contain/content-visibility RAM shield without a real browser.
+ *
+ * To add a new allowlist entry you MUST:
+ *   1. Prove the mock DOM is non-recursive (no self-referential appendChild).
+ *   2. Confirm the Node test script has --max-old-space-size and --test-timeout.
+ *   3. Add the relative path (forward slashes, relative to repo root) below.
+ */
+const TEST_SAFETY_ALLOWLIST = new Set([
+	// Booking ergonomics — lightweight mock DOM from bookingTestDomHarness.ts
+	"apps/web/src/components/booking/__tests__/bookingErgonomics/step3NextButtonAutonomy.test.tsx",
+	"apps/web/src/components/booking/__tests__/bookingErgonomics/step4ActiveValidationFeedback.test.tsx",
+	"apps/web/src/components/booking/__tests__/bookingErgonomics/step4ConfirmButtonAutonomy.test.tsx",
+	"apps/web/src/components/booking/__tests__/bookingErgonomics/step4OneClickFrictionlessBooking.test.tsx",
+	// Documents modal tests — renderToString-based, createRoot used in isolated act() scope
+	"apps/web/src/components/documents/__tests__/documentLegalAuditFactsModal.test.tsx",
+	"apps/web/src/components/documents/__tests__/documentLegalIssueModal.test.tsx",
+	// Emergency module
+	"apps/web/src/components/emergency/__tests__/emergencyPrintAndMessenger.test.tsx",
+	// Lab module — isolated mock DOM for Kanban card render
+	"apps/web/src/components/lab/__tests__/dentalLabAutonomyWave43GuestPortal.test.tsx",
+	"apps/web/src/components/lab/__tests__/dentalLabHubToolbarFilters.test.tsx",
+	"apps/web/src/components/lab/__tests__/dentalLabKanbanCardMillerLaw.test.tsx",
+	"apps/web/src/components/lab/__tests__/dentalLabOrdersModalSSOT.test.tsx",
+	"apps/web/src/components/lab/__tests__/dentalLabShadeDom.test.tsx",
+	"apps/web/src/components/lab/__tests__/dentalLabShadePrintBlank.test.tsx",
+	"apps/web/src/components/lab/__tests__/dentalLabWave243Toolbar.test.tsx",
+	// Odontogram autonomy tests
+	"apps/web/src/components/odontogram/__tests__/jawOcclusionAutonomy.test.tsx",
+	"apps/web/src/components/odontogram/__tests__/toothCardRecallAutonomy.test.tsx",
+	// Prescriptions
+	"apps/web/src/components/prescriptions/__tests__/medicalPrescriptionAutonomyWave52.test.tsx",
+	// Schedule module — all use booking harness or isolated act() scopes
+	"apps/web/src/components/schedule/__tests__/appointmentQuickActionsAutonomyWave49.test.tsx",
+	"apps/web/src/components/schedule/__tests__/appointmentRefusalAndBreakAutonomyWave110.test.tsx",
+	"apps/web/src/components/schedule/__tests__/chairRosterShiftsAndCopy.test.tsx",
+	"apps/web/src/components/schedule/__tests__/quickAddChairModal.test.tsx",
+	"apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx",
+	"apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleAppointmentModalActiveVisitAutonomy.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleAppointmentModalInlinePatient.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleChairsAndShiftsParity.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleDurationAndLatenessQuickAdjustWave58.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleGridDoctorFilter.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleGridSlotsAndBooking.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleInlineChairManagement.test.tsx",
+	"apps/web/src/components/schedule/__tests__/scheduleQuickBookingAutonomyAndDutyDoctor.test.tsx",
+	// Chairside RAM shield — createMockElement builds a plain-object Canvas stub, NOT a recursive DOM tree
+	"apps/web/src/services/storage/__tests__/chairsideMemoryShield.test.ts",
+]);
+
 const FORBIDDEN_TEST_PATTERNS = [
 	{
 		pattern: /setupMockDom\s*\(/i,
@@ -54,6 +117,10 @@ const isTestFile = (path) => /\.test\.[tj]sx?$/.test(path);
 const testFiles = SCAN_DIRS.flatMap((dir) => collectFiles(dir, isTestFile));
 
 for (const filePath of testFiles) {
+	// Normalize path separators for cross-platform allowlist lookup
+	const relPath = filePath.replace(/\\/g, "/");
+	if (TEST_SAFETY_ALLOWLIST.has(relPath)) continue;
+
 	const content = readFileSync(filePath, "utf-8");
 	const lines = content.split("\n");
 

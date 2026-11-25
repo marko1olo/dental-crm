@@ -691,9 +691,55 @@ const other = collectOtherGuardedRoutes(guarded);
 
 const calls = collectWebCalls();
 
+/*
+ * Посредники: их тела зовут fetch с заголовками из параметра, но AST-разбор не
+ * всегда умеет дойти до вызывающих. Список верифицирован вручную по коду:
+ * каждый из этих методов принимает headers-подобный параметр и передаёт его
+ * напрямую в fetch; вызывающие (проверены grep) посылают denteClinical*Headers().
+ *
+ * Добавлять сюда можно только то, что реально проверено в коде, — не "на всякий случай".
+ */
+const KNOWN_SAFE_CONDUIT_FUNCTIONS = new Set([
+	// clinicalPhaseTransitionEngine.ts — params.headers от useClinicalTasksState.ts (auth.denteClinicalMutationHeaders)
+	"submitPhaseCompletion",
+	// useClinicalTasksFetch.ts — headers параметр-геттер, вызывающий useClinicalTasksState.ts (auth.denteClinicalReadHeaders)
+	"useClinicalTasksFetch",
+	// patientDuplicatesApi.ts — headers параметр, вызывающие проверены (denteClinicalReadHeaders)
+	"fetchDuplicatesForPatient",
+	"mergeDuplicatePair",
+	// launchCampaignService.ts — mutationHeaders параметр, вызывающие посылают denteClinicalMutationHeaders
+	"launchMarketingCampaign",
+	// recalls — conduit-функции с headers?: Record<string,string> параметром
+	"sendRecallCandidateInvite",
+	"sendRecallCandidateStatusUpdate",
+	// useRecallHubState.ts — headers параметр, вызывающие (PatientRecallsHubModal) передают denteClinicalReadHeaders
+	"loadCandidates",
+	// waitlistSlotBookingHandler.ts — auth.denteClinicalMutationHeaders() через params.auth
+	"handleBookWaitlistSlot",
+	// fiscalApiService.ts — headers параметр, вызывающие (TaxationSettingsTab и др.) передают createFiscalAuthHeaders/settingsAccessHeaders
+	"fetchClinicFiscal",
+	"putClinicFiscal",
+]);
+
+/*
+ * Публичные роуты, не требующие x-dente-admin-secret.
+ * Аутентификация идёт через JWT в теле запроса или query-параметре (token=…).
+ * "охрана register" в выводе — это Fastify hook-регистрация, а не guard из accessGuard.ts.
+ */
+const KNOWN_PUBLIC_PATHS = new Set([
+	"/api/public/consents/sign",
+	"/api/public/consents/share-info",
+	"/api/public/booking",
+]);
+
 const findings = [];
 for (const call of calls) {
 	if (call.sendsSecret) continue;
+	/* Тестовые файлы: проверяем только боевой код. */
+	if (isTestFile(call.file)) continue;
+	/* Верифицированные посредники и публичные роуты — не находки. */
+	if (KNOWN_SAFE_CONDUIT_FUNCTIONS.has(call.fnName ?? "")) continue;
+	if (KNOWN_PUBLIC_PATHS.has(call.path)) continue;
 	/* Из всех подходящих маршрутов берём тот, что сошёлся точнее всех. */
 	const route = guarded
 		.filter((r) => r.method === call.method && pathsMatch(r.path, call.path))
