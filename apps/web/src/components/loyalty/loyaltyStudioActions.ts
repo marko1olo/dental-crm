@@ -3,8 +3,9 @@
  * Мандат 8b (Декомпозиция хука <= 300 строк), Мандат 8bm (rublesToKopecks, kopecksToRubles).
  */
 
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { generateUuidV7, rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import {
 	validateGiftCertificateSerial,
@@ -23,8 +24,8 @@ export const postLoyaltyJson = (url: string, body: unknown) =>
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
-			"Idempotency-Key": crypto.randomUUID(),
-			...denteAdminSecretRequestHeaders(),
+			"Idempotency-Key": generateUuidV7(),
+			...denteClinicalMutationHeaders(),
 		},
 		body: JSON.stringify(body),
 	});
@@ -112,7 +113,7 @@ export async function actionApplyPoints(params: {
 			showToast(famResult.messageRu, "success");
 			if (onRedeemSuccess) onRedeemSuccess(famResult.debitedPointsRub, famResult.fiscal54FzSplit);
 		} catch (err) {
-			console.error("[LoyaltyStudioActions] Family debit failed:", err);
+			clientLogger.error("[LoyaltyStudioActions] Family debit failed", err, { module: "loyaltyStudioActions" });
 			showToast("Сетевой сбой при списании семейных баллов", "error");
 			setPointsBalance(prevPointsBalance);
 			setLedger(() => prevLedger);
@@ -158,12 +159,13 @@ export async function actionApplyPoints(params: {
 				setLedger(() => prevLedger);
 				return;
 			}
-			const data = await res.json().catch(() => ({}));
+			const raw = await res.json().catch(() => ({}));
+			const data = raw?.data ?? raw;
 			if (typeof data.activePoints === "number") setPointsBalance(data.activePoints);
 			showToast(`Успешно списано ${redemption.actualRedeemedPointsRub} бонусов. К оплате: ${formatKopecksToRubles(redemption.remainingPayableKop)}`, "success");
 			if (onRedeemSuccess) onRedeemSuccess(redemption.actualRedeemedPointsRub, redemption.fiscal54FzSplit);
 		} catch (err) {
-			console.error("[LoyaltyStudioActions] Redeem call failed:", err);
+			clientLogger.error("[LoyaltyStudioActions] Redeem call failed", err, { module: "loyaltyStudioActions" });
 			showToast("Сетевой сбой при списании бонусов. Проверьте соединение", "error");
 			setPointsBalance(prevPointsBalance);
 			setLedger(() => prevLedger);
@@ -230,14 +232,15 @@ export async function actionAccruePoints(params: {
 			setLedger(() => prevLedger);
 			return;
 		}
-		const data = await res.json().catch(() => ({}));
+		const raw = await res.json().catch(() => ({}));
+		const data = raw?.data ?? raw;
 		const actualBal = typeof data.activePoints === "number" ? data.activePoints : newBal;
 		if (typeof data.activePoints === "number") setPointsBalance(data.activePoints);
 		showToast(`Начислено ${amount} бонусов! Новый баланс: ${actualBal} ₽`, "success");
 		setAccrueInputRub("");
 		setIsAccrueOpen(false);
 	} catch (err) {
-		console.error("[LoyaltyStudioActions] Accrue call failed:", err);
+		clientLogger.error("[LoyaltyStudioActions] Accrue call failed", err, { module: "loyaltyStudioActions" });
 		showToast("Сетевой сбой при начислении бонусов", "error");
 		setPointsBalance(prevPointsBalance);
 		setLedger(() => prevLedger);
@@ -287,8 +290,9 @@ export async function actionRedeemCertificate(params: {
 			showToast(err.message || "Не удалось списать сертификат", "warning");
 			return;
 		}
-		const data = await res.json();
-		showToast(`Сертификат успешно зачтён на сумму ${data.redeemedAmountRub} ₽! (Чек 54-ФЗ тег 1215)`, "success");
+		const raw = await res.json();
+		const data = raw?.data ?? raw;
+		showToast(`Сертификат успешно зачтён на сумму ${data.redeemedAmountRub} ₽!`, "success");
 		setCertFeedback(`Зачтено ${data.redeemedAmountRub} ₽. Новый остаток: ${data.newBalanceRub} ₽`);
 		setVerifiedCertificate(null);
 		setCertSerial("");
@@ -323,7 +327,7 @@ export async function actionRedeemCertificate(params: {
 			});
 		}
 	} catch (err) {
-		console.error("[LoyaltyStudioActions] Redeem certificate call failed:", err);
+		clientLogger.error("[LoyaltyStudioActions] Redeem certificate call failed", err, { module: "loyaltyStudioActions" });
 		showToast("Ошибка сети при списании сертификата", "error");
 	}
 }
@@ -359,7 +363,8 @@ export async function actionIssueCertificate(params: {
 			showToast(errJson.message || "Не удалось оформить сертификат", "warning");
 			return;
 		}
-		const data = await res.json().catch(() => ({}));
+		const raw = await res.json().catch(() => ({}));
+		const data = raw?.data ?? raw;
 		const serial = data.certificate?.serialNumber || "—";
 		setCertSerial(serial);
 		setCertFeedback(`Оформлен сертификат ${serial} на сумму ${nominalRub.toLocaleString("ru-RU")} ₽`);
@@ -383,7 +388,7 @@ export async function actionIssueCertificate(params: {
 			...prev,
 		]);
 	} catch (err) {
-		console.error("[LoyaltyStudioActions] Issue certificate call failed:", err);
+		clientLogger.error("[LoyaltyStudioActions] Issue certificate call failed", err, { module: "loyaltyStudioActions" });
 		showToast("Ошибка сети при оформлении сертификата", "error");
 	}
 }
@@ -408,7 +413,8 @@ export async function actionVerifyCertificate(params: {
 	try {
 		const res = await postLoyaltyJson("/api/loyalty/certificates/validate", { serialNumber: serial });
 		if (res.ok) {
-			const certData = await res.json();
+			const raw = await res.json();
+			const certData = raw?.data ?? raw;
 			if (certData.certificate) {
 				const cert = certData.certificate;
 				if (cert.status === "depleted") {
@@ -456,7 +462,8 @@ export async function actionVerifyCertificate(params: {
 		setCertFeedback(msg);
 		setVerifiedCertificate(null);
 		showToast(msg, "warning");
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[LoyaltyStudioActions] Verify certificate call failed", err, { module: "loyaltyStudioActions" });
 		setCertFeedback("Сертификат не найден в базе клиники или аннулирован");
 		setVerifiedCertificate(null);
 		showToast("Сертификат не найден в базе клиники или аннулирован", "warning");

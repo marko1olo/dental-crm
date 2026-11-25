@@ -9,7 +9,8 @@
 import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, FileSignature, ShieldCheck } from "lucide-react";
-import { sha256Hex } from "@dental/shared";
+import { generateUuidV7, sha256Hex } from "@dental/shared";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { PublicBudgetSignaturePad } from "./PublicBudgetSignaturePad";
 
 export interface PublicConsentSignPageProps {
@@ -68,10 +69,13 @@ export const PublicConsentSignPage: React.FC<PublicConsentSignPageProps> = ({
 				setIsLoading(false);
 				return;
 			}
-			const data = (await res.json()) as ConsentShareInfo;
+			const raw = (await res.json()) as { data?: ConsentShareInfo } | ConsentShareInfo;
+			const data = ("data" in raw && raw.data ? raw.data : raw) as ConsentShareInfo;
 			setInfo(data);
 		} catch (err) {
-			console.warn("[PublicConsentSignPage] Ошибка проверки ссылки:", err);
+			clientLogger.warn("[PublicConsentSignPage] Ошибка проверки ссылки", err, {
+				module: "PublicConsentSignPage",
+			});
 			setError("Не удалось связаться с сервером клиники. Пожалуйста, проверьте интернет-соединение.");
 		} finally {
 			setIsLoading(false);
@@ -110,7 +114,7 @@ export const PublicConsentSignPage: React.FC<PublicConsentSignPageProps> = ({
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"Idempotency-Key": crypto.randomUUID(),
+						"Idempotency-Key": generateUuidV7(),
 					},
 					body: JSON.stringify({
 						token,
@@ -129,7 +133,9 @@ export const PublicConsentSignPage: React.FC<PublicConsentSignPageProps> = ({
 
 				setIsSignedSuccess(true);
 			} catch (err) {
-				console.warn("[PublicConsentSignPage] Ошибка отправки подписи:", err);
+				clientLogger.warn("[PublicConsentSignPage] Ошибка отправки подписи", err, {
+					module: "PublicConsentSignPage",
+				});
 				setError("Ошибка сети при отправке подписи. Пожалуйста, повторите.");
 			} finally {
 				setIsSubmitting(false);

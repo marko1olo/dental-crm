@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Award, Copy, Printer, Send, MessageCircle, X } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import { resolveBraveryDiplomaRequisites } from "../../utils/pediatric/braveryDiplomaGenerator";
 import { printBraveryDiploma } from "./diploma/diplomaPrint";
@@ -49,17 +52,14 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 
 	const persistBraveryDiploma = useCallback(async () => {
 		if (!patientId || !patientId.trim()) return;
-		const idempotencyKey =
-			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-				? crypto.randomUUID()
-				: `diploma-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+		const idempotencyKey = generateUuidV7();
 		try {
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/bravery-diploma`, {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": idempotencyKey,
-				},
+				}),
 				credentials: "include",
 				body: JSON.stringify({
 					patientName: heroName.trim() || resolved.patientName || "Юный пациент",
@@ -71,11 +71,11 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 				}),
 			});
 			if (!res.ok) {
-				console.warn("[diploma] Server returned error saving bravery diploma:", res.status);
+				clientLogger.warn("[diploma] Server returned error saving bravery diploma", { status: res.status }, { module: "PediatricBraveryDiplomaModal" });
 				showToast("Диплом напечатан локально (сервер временно недоступен)", "info");
 			}
 		} catch (err) {
-			console.warn("[diploma] Failed to persist bravery diploma:", err);
+			clientLogger.warn("[diploma] Failed to persist bravery diploma", err, { module: "PediatricBraveryDiplomaModal" });
 			showToast("Диплом напечатан локально (сервер временно недоступен)", "info");
 		}
 	}, [patientId, heroName, resolved.patientName, patientAgeYears, effectiveDoctorName, effectiveClinicName, praiseText]);
@@ -98,7 +98,10 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(diplomaSummaryText).then(() => {
 				showToast("Текст диплома скопирован в буфер обмена", "success");
-			}).catch(() => {});
+			}).catch((err) => {
+				clientLogger.warn("[diploma] Failed to copy diploma text", err, { module: "PediatricBraveryDiplomaModal" });
+				showToast("Не удалось скопировать текст", "warning");
+			});
 		}
 	}, [diplomaSummaryText]);
 

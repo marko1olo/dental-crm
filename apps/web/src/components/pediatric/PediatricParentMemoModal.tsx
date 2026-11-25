@@ -2,11 +2,14 @@ import React, { useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import type {
-	FranklRating,
-	PediatricSilveringOptions,
-	PediatricFissureSealingOptions,
-	PediatricPulpotomyOptions,
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
+import {
+	generateUuidV7,
+	type FranklRating,
+	type PediatricSilveringOptions,
+	type PediatricFissureSealingOptions,
+	type PediatricPulpotomyOptions,
 } from "@dental/shared";
 import { buildParentMemoText } from "./parentMemo/parentMemoTextGenerator";
 import { printParentMemo } from "./parentMemo/parentMemoPrint";
@@ -87,17 +90,14 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 
 	const persistParentMemo = useCallback(async () => {
 		if (!patientId || !patientId.trim()) return;
-		const idempotencyKey =
-			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-				? crypto.randomUUID()
-				: `parent-memo-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+		const idempotencyKey = generateUuidV7();
 		try {
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId.trim())}/pediatric/parent-memo`, {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": idempotencyKey,
-				},
+				}),
 				credentials: "include",
 				body: JSON.stringify({
 					patientName,
@@ -120,18 +120,29 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 				}),
 			});
 			if (!res.ok) {
-				console.warn("[parent-memo] Server returned error saving parent memo:", res.status);
+				clientLogger.warn("[parent-memo] Server returned error saving parent memo", { status: res.status }, { module: "PediatricParentMemoModal" });
 				showToast("Памятка напечатана локально (сервер временно недоступен)", "info");
 			}
 		} catch (err) {
-			console.warn("[parent-memo] Failed to persist parent memo:", err);
+			clientLogger.warn("[parent-memo] Failed to persist parent memo", err, { module: "PediatricParentMemoModal" });
 			showToast("Памятка напечатана локально (сервер временно недоступен)", "info");
 		}
 	}, [patientId, patientName, patientPhone, patientAgeYears, doctorName, clinicName, clinicPhone, frankl, hasAnesthesia, hasPulpotomy, pulpotomyTooth, hasFissureSealing, fissureTeeth, hasSilvering, silveringTeeth, customNotes, memoText]);
 
 	const handleCopy = useCallback(() => {
-		navigator.clipboard.writeText(memoText);
-		showToast("Текст памятки скопирован в буфер обмена", "success");
+		if (typeof navigator === "undefined" || !navigator.clipboard) {
+			showToast("Буфер обмена недоступен", "warning");
+			return;
+		}
+		navigator.clipboard
+			.writeText(memoText)
+			.then(() => {
+				showToast("Текст памятки скопирован в буфер обмена", "success");
+			})
+			.catch((err) => {
+				clientLogger.warn("[parent-memo] Failed to copy memo text", err, { module: "PediatricParentMemoModal" });
+				showToast("Не удалось скопировать текст памятки", "warning");
+			});
 	}, [memoText]);
 
 	const handleWhatsApp = useCallback(() => {

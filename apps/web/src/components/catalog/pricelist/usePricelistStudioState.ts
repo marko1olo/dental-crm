@@ -23,6 +23,8 @@ import {
 	batchSyncPricelistToBackend,
 } from "../pricelistCatalogData";
 import { printPricelistA4 } from "../../settings/pricesTab/pricesExportPrintHelpers";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { showToast as showGlobalToast } from "../../GlobalToast";
 import { kopecksToRubles, rublesToKopecks, type DentalSpecialty } from "@dental/shared";
 import {
 	STATUTORY_VAT_EXEMPTION_NOTE,
@@ -149,7 +151,10 @@ export function usePricelistStudioState({
 					setItems(backendItems);
 				}
 			}).catch((err) => {
-				console.warn("[PricelistStudioModal] Failed to fetch pricelist from backend:", err);
+				clientLogger.warn("[PricelistStudioModal] Failed to fetch pricelist from backend", err, {
+					module: "usePricelistStudioState",
+				});
+				showGlobalToast("Не удалось загрузить прейскурант с сервера", "warning");
 			});
 		}
 	}, [isOpen, initialItems]);
@@ -187,9 +192,21 @@ export function usePricelistStudioState({
 		setItems(newItems);
 		saveCanonicalPricelist(newItems);
 		if (itemToSync) {
-			syncServiceItemToBackend(itemToSync).catch((err) => {
-				console.warn("[PricelistStudioModal] Failed to sync item to backend:", err);
-			});
+			syncServiceItemToBackend(itemToSync)
+				.then((result) => {
+					if (!result.success) {
+						clientLogger.warn("[PricelistStudioModal] Sync item returned unsuccessful result", { id: itemToSync.id }, {
+							module: "usePricelistStudioState",
+						});
+						showGlobalToast("Изменения сохранены локально, не удалось синхронизировать с сервером", "warning");
+					}
+				})
+				.catch((err) => {
+					clientLogger.warn("[PricelistStudioModal] Failed to sync item to backend", err, {
+						module: "usePricelistStudioState",
+					});
+					showGlobalToast("Не удалось синхронизировать позицию с сервером", "warning");
+				});
 		}
 		if (onSaveCatalog) onSaveCatalog(newItems);
 	};
@@ -331,9 +348,11 @@ export function usePricelistStudioState({
 			type: "text/csv;charset=utf-8;",
 		});
 		const link = document.createElement("a");
-		link.href = URL.createObjectURL(blob);
+		const objectUrl = URL.createObjectURL(blob);
+		link.href = objectUrl;
 		link.download = `Прейскурант_${new Date().toISOString().slice(0, 10)}.csv`;
 		link.click();
+		URL.revokeObjectURL(objectUrl);
 		showToast("Экспортировано в CSV");
 	};
 
@@ -376,9 +395,21 @@ export function usePricelistStudioState({
 			if (importedItems.length > 0) {
 				const merged = [...importedItems, ...items];
 				commitItemsUpdate(merged);
-				batchSyncPricelistToBackend(importedItems).catch((err) => {
-					console.warn("[PricelistStudioModal] Failed to batch sync imported items:", err);
-				});
+				batchSyncPricelistToBackend(importedItems)
+					.then((ok) => {
+						if (!ok) {
+							clientLogger.warn("[PricelistStudioModal] Batch sync returned unsuccessful status", undefined, {
+								module: "usePricelistStudioState",
+							});
+							showGlobalToast("Импорт сохранён локально, сервер недоступен", "warning");
+						}
+					})
+					.catch((err) => {
+						clientLogger.warn("[PricelistStudioModal] Failed to batch sync imported items", err, {
+							module: "usePricelistStudioState",
+						});
+						showGlobalToast("Не удалось синхронизировать импорт с сервером", "warning");
+					});
 				showToast(`Импортировано ${importedItems.length} позиций из CSV`);
 			}
 		};

@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import { getOccupancyStatus } from "./analyticsCatalogData";
 import "./styles/analyticsStudio.css";
 
@@ -130,8 +132,23 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 				setLoading(false);
 				return;
 			}
+			clientLogger.warn(
+				"Failed to fetch chair utilization from API",
+				{ status: res.status, period: p },
+				{ module: "ChairOccupancyReport" },
+			);
+			if (!isDemoShowcaseMode()) {
+				showToast("Не удалось загрузить загрузку кресел", "error");
+			}
 		} catch (err: unknown) {
-			console.warn("[ChairOccupancyReport] Failed to fetch chair utilization from API:", err);
+			clientLogger.warn(
+				"Failed to fetch chair utilization from API",
+				err,
+				{ module: "ChairOccupancyReport" },
+			);
+			if (!isDemoShowcaseMode()) {
+				showToast("Не удалось загрузить загрузку кресел", "error");
+			}
 		}
 
 		if (isDemoShowcaseMode()) {

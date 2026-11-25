@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { emptyVisitNoteForm } from "../../utils/draftDefaults.js";
 import { createBillingInvoiceSlice } from "./billingInvoiceSlice.js";
 import { createDiaryProtocolSlice } from "./diaryProtocolSlice.js";
@@ -63,7 +64,9 @@ if (typeof window !== "undefined") {
 				useVisitStore.getState().applyServicesToToothState(event.detail);
 			}
 		} catch (err) {
-			console.warn("Failed to apply services to tooth state from event:", err);
+			clientLogger.warn("Failed to apply services to tooth state from event", err, {
+				module: "visitStoreCore",
+			});
 		}
 	});
 }

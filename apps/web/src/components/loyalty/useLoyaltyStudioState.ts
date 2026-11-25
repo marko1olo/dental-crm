@@ -5,7 +5,8 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
 import {
 	calculateTierProgression,
@@ -94,10 +95,11 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 		let isCancelled = false;
 		async function fetchLiveLoyaltyAndFamily() {
 			try {
-				const headers = denteAdminSecretRequestHeaders();
+				const headers = denteClinicalReadHeaders();
 				const balRes = await fetch(`/api/loyalty/balance/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (balRes.ok) {
-					const data = await balRes.json();
+					const rawBal = await balRes.json();
+					const data = rawBal?.data ?? rawBal;
 					if (!isCancelled) {
 						if (typeof data.activePoints === "number") setPointsBalance(data.activePoints);
 						if (typeof data.nearestExpiringPoints === "number") setNearestExpiringPoints(data.nearestExpiringPoints);
@@ -108,7 +110,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 				}
 				const famRes = await fetch(`/api/loyalty/family/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (famRes.ok) {
-					const famData = await famRes.json();
+					const rawFam = await famRes.json();
+					const famData = rawFam?.data ?? rawFam;
 					if (!isCancelled && famData?.hasFamilyGroup && famData?.members?.length > 0) {
 						setHasFamilyGroup(true);
 						if (famData.familyName) setFamilyName(famData.familyName);
@@ -123,7 +126,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 				} else if (!isCancelled) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); setFamilyGroupId(null); }
 				const txRes = await fetch(`/api/loyalty/transactions/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (txRes.ok) {
-					const data = await txRes.json();
+					const rawTx = await txRes.json();
+					const data = rawTx?.data ?? rawTx;
 					if (!isCancelled && Array.isArray(data.transactions) && data.transactions.length > 0) {
 						setLedger(data.transactions.map((t: ApiBonusTransactionResponse) => ({
 							id: t.id || `tx-${Date.now()}`, timestampIso: t.createdAt ? new Date(t.createdAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU"),
@@ -134,7 +138,10 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 						})));
 					}
 				}
-			} catch (err) { console.error("[LoyaltyStudioModal] Live loyalty fetch error:", err); }
+			} catch (err) {
+				clientLogger.error("[LoyaltyStudioModal] Live loyalty fetch error", err, { module: "useLoyaltyStudioState" });
+				showToast("Не удалось загрузить данные программы лояльности", "warning");
+			}
 		}
 		void fetchLiveLoyaltyAndFamily();
 		return () => { isCancelled = true; };
@@ -175,12 +182,13 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 		try {
 			const res = await postLoyaltyJson("/api/finance/family", { name: gName, headPatientId: patientId });
 			if (!res.ok) { const errJson = await res.json().catch(() => ({})); showToast(errJson.message || "Не удалось создать семейную группу", "warning"); return; }
-			const created = await res.json().catch(() => ({}));
+			const rawCreated = await res.json().catch(() => ({}));
+			const created = rawCreated?.data ?? rawCreated;
 			if (created?.id) setFamilyGroupId(created.id);
 			setFamilyName(gName); setHasFamilyGroup(true);
 			setFamilyMembers([{ patientId: patientId || "", fullName: `${patientName} (Глава)`, roleRu: "Глава семьи", individualPointsBalance: pointsBalance, lifetimeSpentKop, isBonusSpendingAllowed: true }]);
 			setIsCreateFamilyOpen(false); showToast(`Семейный счет «${gName}» активирован`, "success");
-		} catch (err) { console.error("[LoyaltyStudioModal] Family creation failed:", err); showToast("Ошибка сети при создании семейной группы", "error"); }
+		} catch (err) { clientLogger.error("[LoyaltyStudioModal] Family creation failed", err, { module: "useLoyaltyStudioState" }); showToast("Ошибка сети при создании семейной группы", "error"); }
 	};
 
 	const handleLinkRelative = async () => {
@@ -226,7 +234,9 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 					showToast(err.message || "Пациент не найден в картотеке клиники", "warning");
 					return;
 				}
-				const data = await res.json(), rel = data.relative;
+				const raw = await res.json();
+				const data = raw?.data ?? raw;
+				const rel = data.relative;
 				if (data.familyGroupId) setFamilyGroupId(data.familyGroupId);
 				setHasFamilyGroup(true);
 				setFamilyMembers((prev) => [
@@ -244,7 +254,8 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 				setIsCreateFamilyOpen(false);
 				showToast(data.message || "Родственник успешно привязан к семейному счету", "success");
 			}
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[LoyaltyStudioModal] Link relative failed", err, { module: "useLoyaltyStudioState" });
 			showToast("Ошибка привязки родственника к семейному счету", "warning");
 		}
 	};
@@ -261,8 +272,19 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 	});
 
 	const handleCopyReferralLink = () => {
-		if (typeof navigator !== "undefined" && navigator.clipboard) { navigator.clipboard.writeText(patientReferralLink).catch(() => {}); }
-		showToast("Реферальная ссылка скопирована в буфер обмена", "success");
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard
+				.writeText(patientReferralLink)
+				.then(() => {
+					showToast("Реферальная ссылка скопирована в буфер обмена", "success");
+				})
+				.catch((err) => {
+					clientLogger.warn("[LoyaltyStudioModal] Failed to copy referral link", err, { module: "useLoyaltyStudioState" });
+					showToast("Не удалось скопировать реферальную ссылку", "warning");
+				});
+			return;
+		}
+		showToast("Буфер обмена недоступен", "warning");
 	};
 
 	const handleSendReferralInvite = async () => {
@@ -284,7 +306,7 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 			setRefFriendName("");
 			setRefFriendPhone("");
 		} catch (err) {
-			console.error("[LoyaltyStudioModal] Referral register call failed:", err);
+			clientLogger.error("[LoyaltyStudioModal] Referral register call failed", err, { module: "useLoyaltyStudioState" });
 			showToast("Сетевой сбой при регистрации реферального приглашения", "error");
 		}
 	};

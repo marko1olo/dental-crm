@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { RotateCcw, Save, Settings } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
 import {
 	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
 	loadPatientFieldRequirements,
@@ -7,7 +8,8 @@ import {
 	savePatientFieldRequirements,
 } from "../../patients/patientFieldRequirementsConfig";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function PatientFieldRequirementsSettings() {
 	const [requirements, setRequirements] = useState<PatientFieldRequirements>(() => loadPatientFieldRequirements());
@@ -16,16 +18,19 @@ export function PatientFieldRequirementsSettings() {
 	useEffect(() => {
 		let isMounted = true;
 		fetch("/api/marketing/patient-field-requirements", {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((serverData) => {
 				if (!isMounted || !serverData) return;
-				setRequirements(serverData);
-				savePatientFieldRequirements(serverData);
+				const payload = (serverData?.data ?? serverData) as PatientFieldRequirements;
+				setRequirements(payload);
+				savePatientFieldRequirements(payload);
 			})
 			.catch((err) => {
-				console.warn("[PatientFieldRequirements] Offline/fallback mode:", err);
+				clientLogger.warn("Offline/fallback mode while loading patient field requirements", err, {
+					module: "PatientFieldRequirementsSettings",
+				});
 			});
 		return () => {
 			isMounted = false;
@@ -45,7 +50,8 @@ export function PatientFieldRequirementsSettings() {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
+					"Idempotency-Key": generateUuidV7(),
+					...denteClinicalMutationHeaders(),
 				},
 				body: JSON.stringify(requirements),
 			});
@@ -54,7 +60,9 @@ export function PatientFieldRequirementsSettings() {
 			}
 			showToast("Настройки обязательности полей сохранены на сервере", "success");
 		} catch (err) {
-			console.warn("[PatientFieldRequirements] Saved to local cache only:", err);
+			clientLogger.warn("Saved patient field requirements to local cache only", err, {
+				module: "PatientFieldRequirementsSettings",
+			});
 			showToast("Настройки сохранены локально (сервер недоступен)", "info");
 		}
 		setTimeout(() => setIsSaved(false), 2500);
@@ -66,17 +74,24 @@ export function PatientFieldRequirementsSettings() {
 		savePatientFieldRequirements(resetReq);
 		setIsSaved(true);
 		try {
-			await fetch("/api/marketing/patient-field-requirements", {
+			const res = await fetch("/api/marketing/patient-field-requirements", {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					...denteAdminSecretRequestHeaders(),
+					"Idempotency-Key": generateUuidV7(),
+					...denteClinicalMutationHeaders(),
 				},
 				body: JSON.stringify(resetReq),
 			});
+			if (!res.ok) {
+				throw new Error(`Server returned status ${res.status}`);
+			}
 			showToast("Настройки сброшены по умолчанию", "success");
 		} catch (err) {
-			showToast("Настройки сброшены локально", "info");
+			clientLogger.warn("Failed to reset patient field requirements on server", err, {
+				module: "PatientFieldRequirementsSettings",
+			});
+			showToast("Настройки сброшены локально (сервер недоступен)", "warning");
 		}
 		setTimeout(() => setIsSaved(false), 2500);
 	};

@@ -13,6 +13,7 @@ import { ClinicalPhotoProtocolModal } from "../../../../photography/ClinicalPhot
 import { ChairsideAnesthesiaQuickBar } from "../../../../anesthesia/AnesthesiaQuickBar";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
+import { clientLogger } from "../../../../../services/logging/clientLogger";
 
 export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 	const patientId = useMemo(() => readPatientIdFromUrl(), []);
@@ -35,7 +36,9 @@ export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = ({ o
 				<ChairsideAnesthesiaQuickBar
 					patientWeightKg={70}
 					targetToothNumberFdi={16}
-					onApplyAnesthesia={(text, res) => console.log("Applied anesthesia:", text, res)}
+					onApplyAnesthesia={(text, res) =>
+						clientLogger.info("Applied anesthesia", { text, res }, { module: "StandaloneSurgeryHosts" })
+					}
 				/>
 			</div>
 		</div>

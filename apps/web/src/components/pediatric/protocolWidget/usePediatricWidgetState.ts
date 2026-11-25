@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { estimatePediatricWeightKg, type FranklRating, type ResorptionStagePercent } from "@dental/shared";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { PediatricDentitionMode, ToothClinicalFinding } from "../PediatricTeethChart";
 import { DEFAULT_LEGAL_REPRESENTATIVE, DEFAULT_PEDIATRIC_SOMATIC_NORM, type LegalRepresentativeData, type PediatricSomaticStatus } from "../PediatricSomaticAndLegalRep";
 import type { PediatricAnesthesiaCalculationResult } from "../PediatricAnesthesiaCalculator";
@@ -47,7 +49,10 @@ export function usePediatricWidgetState(props: VisitPediatricProtocolWidgetProps
 	useEffect(() => {
 		if (!props.patientId || representativeFullName) return;
 		let isMounted = true;
-		fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, { credentials: "include" })
+		fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, {
+			credentials: "include",
+			headers: denteClinicalReadHeaders(),
+		})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((json: { data?: { representative?: { fullName?: string; phone?: string; role?: string; consentSigned?: boolean; statutoryDocument?: string } | null } | null; representative?: { fullName?: string; phone?: string; role?: string; consentSigned?: boolean; statutoryDocument?: string } | null } | null) => {
 				const payload = json?.data ?? json;
@@ -63,7 +68,7 @@ export function usePediatricWidgetState(props: VisitPediatricProtocolWidgetProps
 				}));
 			})
 			.catch((err) => {
-				console.warn("Could not prefetch legal representative:", err);
+				clientLogger.warn("Could not prefetch legal representative", err, { module: "usePediatricWidgetState" });
 			});
 		return () => {
 			isMounted = false;

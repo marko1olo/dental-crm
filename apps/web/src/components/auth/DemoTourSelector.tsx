@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import type { StaffRole } from "@dental/shared";
+import { generateUuidV7, type StaffRole } from "@dental/shared";
 import type { AppView } from "../../utils/routeUtils";
 import {
 	DEMO_SHOWCASE_ORG_ID,
@@ -33,6 +33,7 @@ import { syncAuthTokensFromStorage } from "../../lib/apiAuthFetch";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
+import { clientLogger } from "../../services/logging/clientLogger";
 
 export interface DemoRoleOption {
 	id: string;
@@ -216,19 +217,28 @@ export function DemoTourSelector({
 
 			// Честный засев PostgreSQL 18 через Fastify API перед переходом в витрину
 			try {
-				await fetch("/api/demo/seed", {
+				const res = await fetch("/api/demo/seed", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						"x-dente-clinic-token": `demo-showcase-token-${roleOption.id}`,
 						"x-dente-staff-token": `demo-showcase-staff-token-${roleOption.id}`,
 					},
 					body: JSON.stringify({ forceReset: false }),
 				});
+				if (!res.ok) {
+					clientLogger.warn(
+						"[DEMO_TOUR_API_SEED_WARN] Серверный засев вернул ошибку",
+						{ status: res.status },
+						{ module: "DemoTourSelector" },
+					);
+				}
 			} catch (seedErr) {
-				console.warn(
-					"[DEMO_TOUR_API_SEED_WARN] Серверный засев недоступен, продолжение в локальном режиме:",
+				clientLogger.warn(
+					"[DEMO_TOUR_API_SEED_WARN] Серверный засев недоступен, продолжение в локальном режиме",
 					seedErr,
+					{ module: "DemoTourSelector" },
 				);
 			}
 
@@ -318,8 +328,9 @@ export function DemoTourSelector({
 			<div className="auth-demo-tour-actions">
 				<button
 					type="button"
-					disabled={loading}
+					aria-busy={loading}
 					onClick={() => {
+						if (loading) return;
 						const activeRole =
 							DEMO_ROLES.find((r) => r.id === selectedRole) ?? DEMO_ROLES[0];
 						if (activeRole) handleLaunchRole(activeRole);

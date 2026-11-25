@@ -70,8 +70,8 @@ describe("Doctor Shift Cockpit & Header Integration (THE HAMMER Standards)", () 
 		assert.ok(html.includes("В кресле"));
 		assert.ok(html.includes("Завершен"));
 
-		// 3. Batch 043/u signing action
-		assert.ok(html.includes('data-testid="sign-all-043u-btn"'));
+		// 3. Batch medical card signing action
+		assert.ok(html.includes('data-testid="sign-all-cards-btn"'));
 
 		// 4. Shift close reconciliation trigger
 		assert.ok(html.includes('data-testid="doctor-pwa-close-shift-btn"'));

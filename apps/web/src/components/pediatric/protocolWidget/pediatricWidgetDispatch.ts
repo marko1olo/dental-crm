@@ -1,4 +1,5 @@
 import { useVisitStore } from "../../../store/visitStore";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { ClinicalCalculationResult } from "./protocolCalculation";
 import type { PediatricServiceItem } from "./types";
 
@@ -21,7 +22,7 @@ export function updateVisitNoteStore(textToApply: string) {
 			};
 		});
 	} catch (err) {
-		console.warn("useVisitStore update fallback:", err);
+		clientLogger.warn("useVisitStore update fallback", err, { module: "pediatricWidgetDispatch" });
 	}
 }
 
@@ -61,7 +62,7 @@ export function dispatchApplySoapProtocol(
 			}),
 		);
 	} catch (err) {
-		console.warn("dente-apply-soap-protocol dispatch fallback:", err);
+		clientLogger.warn("dente-apply-soap-protocol dispatch fallback", err, { module: "pediatricWidgetDispatch" });
 	}
 }
 
@@ -76,6 +77,6 @@ export function dispatchAddServicesToInvoice(
 			}),
 		);
 	} catch (err) {
-		console.warn("dente-add-services-to-invoice dispatch fallback:", err);
+		clientLogger.warn("dente-add-services-to-invoice dispatch fallback", err, { module: "pediatricWidgetDispatch" });
 	}
 }

@@ -1,3 +1,5 @@
+import { clientLogger } from "../../../services/logging/clientLogger";
+
 export interface VolumeScalarDataSource {
 	/** [columns, rows, slices] of the volume. */
 	dimensions?: ArrayLike<number> | undefined;
@@ -38,7 +40,11 @@ function readWithoutThrowing(
 	try {
 		return read();
 	} catch (err) {
-		console.warn("[panoramicArchVolumeReader] Failed to read volume scalar data array from manager:", err);
+		clientLogger.warn(
+			"[panoramicArchVolumeReader] Failed to read volume scalar data array from manager",
+			err,
+			{ module: "panoramicArchVolumeReader" },
+		);
 		return undefined;
 	}
 }

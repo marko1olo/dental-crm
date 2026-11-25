@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import type { CuratorFunnelStage, CuratorPatientQueueItem } from "@dental/shared";
+import { generateUuidV7, type CuratorFunnelStage, type CuratorPatientQueueItem } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQueueItem[]) {
 	const [queueItems, setQueueItems] = useState<CuratorPatientQueueItem[]>([]);
@@ -11,17 +12,28 @@ export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQue
 		setIsLoading(true);
 		try {
 			const res = await fetch("/api/analytics/curators", {
-				headers: denteAdminSecretRequestHeaders(),
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
 				const json = await res.json();
-				if (Array.isArray(json?.data?.queue) && json.data.queue.length > 0) {
-					setQueueItems(json.data.queue);
+				const payload = json?.data ?? json;
+				if (Array.isArray(payload?.queue) && payload.queue.length > 0) {
+					setQueueItems(payload.queue);
 					return;
 				}
+			} else {
+				clientLogger.warn(
+					"Failed to fetch curator queue",
+					{ status: res.status },
+					{ module: "useCuratorDashboardData" },
+				);
 			}
 		} catch (err) {
-			console.warn("[CuratorDashboard] Failed to fetch server queue, falling back to local context:", err);
+			clientLogger.warn(
+				"Failed to fetch server queue, falling back to local context",
+				err,
+				{ module: "useCuratorDashboardData" },
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -36,19 +48,31 @@ export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQue
 		try {
 			const res = await fetch("/api/analytics/curators/stage", {
 				method: "PATCH",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					...denteClinicalMutationHeaders(),
+				},
 				body: JSON.stringify({ patientId, treatmentPlanId, stage: nextStage }),
 			});
 			if (!res.ok) {
-				await fetch(`/api/patients/${encodeURIComponent(patientId)}/administrative-profile`, {
+				const fallbackRes = await fetch(`/api/patients/${encodeURIComponent(patientId)}/administrative-profile`, {
 					method: "PUT",
-					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+						...denteClinicalMutationHeaders(),
+					},
 					body: JSON.stringify({ curatorFunnelStage: nextStage, treatmentPlanId }),
 				});
+				if (!fallbackRes.ok) {
+					throw new Error(`Server returned status ${fallbackRes.status}`);
+				}
 			}
 		} catch (err) {
-			console.error("Failed to persist curator stage:", err);
+			clientLogger.error("Failed to persist curator stage", err, { module: "useCuratorDashboardData" });
 			showToast("Не удалось сохранить этап на сервере", "warning");
+			return;
 		}
 
 		setQueueItems((prev) =>

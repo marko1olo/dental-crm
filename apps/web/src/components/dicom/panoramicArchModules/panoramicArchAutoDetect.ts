@@ -2,6 +2,7 @@ import { autoDetectDentalArch } from "@dental/shared";
 import type { Point2D } from "../../../utils/math/mprMath";
 import { createAnatomicalJawControlPoints } from "../panoramicMprMath";
 import { orientArchPatientRightFirst } from "./panoramicArchGeometry";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export interface PanoramicVolumeInputShape {
 	scalarData?: ArrayLike<number> | null;
@@ -57,7 +58,11 @@ export function autoDetectPanoramicArch(
 			return orientArchPatientRightFirst(points);
 		}
 	} catch (err) {
-		console.warn("[autoDetectPanoramicArch] Dental arch auto-detection failed, using anatomical fallback:", err);
+		clientLogger.warn(
+			"[autoDetectPanoramicArch] Dental arch auto-detection failed, using anatomical fallback",
+			err,
+			{ module: "panoramicArchAutoDetect" },
+		);
 	}
 
 	return createAnatomicalJawControlPoints().map((p) => ({ x: p.x, y: p.y }));

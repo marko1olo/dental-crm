@@ -3,7 +3,9 @@ import { ChevronDown, ChevronUp, Scan } from "lucide-react";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { WarmAccordionSection } from "./toothDrawerTypes";
+import { generateUuidV7 } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -91,7 +93,7 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 												method: "POST",
 												headers: denteClinicalMutationHeaders({
 													"Content-Type": "application/json",
-													"Idempotency-Key": crypto.randomUUID(),
+													"Idempotency-Key": generateUuidV7(),
 												}),
 												body: JSON.stringify({
 													patientId,
@@ -106,7 +108,12 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 											});
 
 											if (res.ok) {
-												const json = (await res.json()) as { id?: string; fileUrl?: string };
+												const raw = (await res.json()) as {
+													data?: { id?: string; fileUrl?: string };
+													id?: string;
+													fileUrl?: string;
+												};
+												const json = raw?.data ?? raw;
 												const persistentUrl = json?.fileUrl || (json?.id ? `/api/imaging/studies/${json.id}/file` : null);
 												if (persistentUrl) {
 													onUpdateTooth?.(toothNumber, {
@@ -134,12 +141,18 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 												showToast(`Не удалось сохранить снимок в PACS (${res.status})`, "error");
 											}
 										} catch (err) {
-											console.warn("[ToothDrawerRvgAccordion] PACS network upload failed", err);
+											clientLogger.warn("[ToothDrawerRvgAccordion] PACS network upload failed", err, {
+												module: "ToothDrawerRvgAccordion",
+											});
+											showToast("Не удалось загрузить снимок в PACS", "error");
 										}
 									};
 									reader.readAsDataURL(file);
 								} catch (uploadErr) {
-									console.warn("[ToothDrawerRvgAccordion] Background PACS upload failed, keeping preview", uploadErr);
+									clientLogger.warn("[ToothDrawerRvgAccordion] Background PACS upload failed, keeping preview", uploadErr, {
+										module: "ToothDrawerRvgAccordion",
+									});
+									showToast("Не удалось загрузить снимок в PACS", "error");
 								}
 							}
 						}}

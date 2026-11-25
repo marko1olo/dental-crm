@@ -1,6 +1,8 @@
 import { useCallback } from "react";
+import { generateUuidV7, type FranklRating } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
-import type { FranklRating } from "@dental/shared";
 import { FRANKL_EXPRESS_ITEMS, PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION } from "./constants";
 import type { ClinicalCalculationResult } from "./protocolCalculation";
 import { buildPhysiologicalNormClinicalNoteText } from "./protocolCalculation";
@@ -55,15 +57,13 @@ export function usePediatricWidgetActions(
 
 		if (props.patientId && updatedRep.fullName.trim()) {
 			try {
-				const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-					? crypto.randomUUID()
-					: `rep-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-				await fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, {
+				const idempotencyKey = generateUuidV7();
+				const res = await fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, {
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": idempotencyKey,
-					},
+					}),
 					credentials: "include",
 					body: JSON.stringify({
 						fullName: updatedRep.fullName.trim(),
@@ -73,8 +73,13 @@ export function usePediatricWidgetActions(
 						statutoryDocument: updatedRep.statutoryDocument,
 					}),
 				});
+				if (!res.ok) {
+					clientLogger.warn("Failed to sync legal representative to server", { status: res.status }, { module: "usePediatricWidgetActions" });
+					showToast("Не удалось синхронизировать согласие представителя с сервером", "warning");
+				}
 			} catch (err) {
-				console.warn("Failed to sync legal representative to server:", err);
+				clientLogger.warn("Failed to sync legal representative to server", err, { module: "usePediatricWidgetActions" });
+				showToast("Не удалось синхронизировать согласие представителя с сервером", "warning");
 			}
 		}
 	}, [props.patientId, state]);
@@ -94,15 +99,13 @@ export function usePediatricWidgetActions(
 
 		if (props.patientId && state.representative.fullName.trim()) {
 			try {
-				const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-					? crypto.randomUUID()
-					: `rep-note-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+				const idempotencyKey = generateUuidV7();
 				void fetch(`/api/patients/${props.patientId}/pediatric/legal-representative`, {
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": idempotencyKey,
-					},
+					}),
 					credentials: "include",
 					body: JSON.stringify({
 						fullName: state.representative.fullName.trim(),
@@ -111,11 +114,20 @@ export function usePediatricWidgetActions(
 						consentSigned: state.representative.consentSigned,
 						statutoryDocument: state.representative.statutoryDocument,
 					}),
-				}).catch((err) => {
-					console.warn("Background legal representative sync warning:", err);
-				});
+				})
+					.then((res) => {
+						if (!res.ok) {
+							clientLogger.warn("Background legal representative sync returned error", { status: res.status }, { module: "usePediatricWidgetActions" });
+							showToast("Не удалось синхронизировать данные представителя с сервером", "warning");
+						}
+					})
+					.catch((err) => {
+						clientLogger.warn("Background legal representative sync warning", err, { module: "usePediatricWidgetActions" });
+						showToast("Не удалось синхронизировать данные представителя с сервером", "warning");
+					});
 			} catch (err) {
-				console.warn("Legal representative note sync error:", err);
+				clientLogger.warn("Legal representative note sync error", err, { module: "usePediatricWidgetActions" });
+				showToast("Не удалось синхронизировать данные представителя с сервером", "warning");
 			}
 		}
 

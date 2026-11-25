@@ -17,6 +17,7 @@
 
 import {
 	generatePatientCasePresentation,
+	generateUuidV7,
 	humanizeDentalText,
 	isMicroConsumable,
 	kopecksToRubles,
@@ -32,7 +33,8 @@ import type {
 	TreatmentPlanItem,
 	TreatmentPlanStage,
 } from "../../components/treatment-plans/types";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../logging/clientLogger";
 import {
 	type CopilotModificationAuditItem,
 	type CopilotModificationResult,
@@ -254,7 +256,9 @@ export function applyCopilotCommandToPlan(
 				}
 			}
 		} else {
-			const toothMatches = [...lower.matchAll(/\b([1-4][1-8])\b/g)].map((m) => parseInt(m[1]!, 10));
+			const toothMatches = [...lower.matchAll(/\b([1-4][1-8])\b/g)].flatMap((m) =>
+				m[1] ? [parseInt(m[1], 10)] : [],
+			);
 			if (toothMatches.length > 0) {
 				parsedTeeth = toothMatches;
 			}
@@ -346,8 +350,9 @@ export async function requestTreatmentPlanAiValidationAndComment(
 	};
 
 	try {
-		const headers: Record<string, string> = denteAdminSecretRequestHeaders({
+		const headers: Record<string, string> = denteClinicalMutationHeaders({
 			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
 			...(options.authHeaders || {}),
 		});
 
@@ -365,14 +370,19 @@ export async function requestTreatmentPlanAiValidationAndComment(
 
 		if (!response.ok) {
 			const errBody = await response.json().catch(() => ({}));
-			console.warn("[TreatmentPlanCopilot] AI API returned error:", response.status, errBody);
+			clientLogger.warn("[TreatmentPlanCopilot] AI API returned error", { status: response.status, errBody }, {
+				module: "treatmentPlanCopilot",
+			});
 			throw new Error(`AI API status ${response.status}`);
 		}
 
-		const data = (await response.json()) as TreatmentPlanValidateAndCommentResponse;
+		const raw = (await response.json()) as { data?: TreatmentPlanValidateAndCommentResponse } | TreatmentPlanValidateAndCommentResponse;
+		const data = ("data" in raw && raw.data ? raw.data : raw) as TreatmentPlanValidateAndCommentResponse;
 		return data;
 	} catch (error) {
-		console.warn("[TreatmentPlanCopilot] Falling back to client-side deterministic engine:", error);
+		clientLogger.warn("[TreatmentPlanCopilot] Falling back to client-side deterministic engine", error, {
+			module: "treatmentPlanCopilot",
+		});
 		const totalRub = stages.reduce((acc, s) => acc + s.totalRub, 0);
 		const totalKop = rublesToKopecks(totalRub);
 		const eligibleKop = rublesToKopecks(Math.min(totalRub, 150000));

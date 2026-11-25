@@ -3,6 +3,7 @@
  */
 
 import type { Point2D } from "@dental/shared";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type { HuProfileSample, HuProfileStats } from "./types";
 
 export function classifyMischDensity(hu: number): "D1" | "D2" | "D3" | "D4" | "D5" {
@@ -35,7 +36,9 @@ export function calculateBoneDensityProfile(
 			ctx = canvas.getContext("2d", { willReadFrequently: true });
 			if (ctx) imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 		} catch (error) {
-			console.error("[rvgBoneDensity] Canvas getImageData failed:", error);
+			clientLogger.error("[rvgBoneDensity] Canvas getImageData failed", error, {
+				module: "rvgBoneDensity",
+			});
 		}
 	}
 

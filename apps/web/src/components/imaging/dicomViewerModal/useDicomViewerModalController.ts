@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useVisitStore } from "../../../store/visitStore.js";
 import { usePatientStore } from "../../../store/patientStore.js";
@@ -11,6 +12,7 @@ import type { DicomViewerModalProps } from "./types.js";
 import { useDicomViewerModalAi } from "./useDicomViewerModalAi.js";
 import { teardownViewportCanvases } from "../../../utils/viewportTeardownHelper.js";
 import { logger } from "../../../utils/logger.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { denteClinicalMutationHeaders as getDenteMutationHeaders, denteClinicalReadHeaders as getDenteReadHeaders } from "../../../lib/denteRequestHeaders.js";
 
 type AuthWithClinicalHeaders = {
@@ -72,7 +74,9 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 					setIsCbctStudioOpen(true);
 				}
 			}).catch((err) => {
-				console.warn("[Radiology] Не удалось открыть внешнее окно КЛКТ, переключаем на встроенную студию:", err);
+				clientLogger.warn("[Radiology] Не удалось открыть внешнее окно КЛКТ, переключаем на встроенную студию", err, {
+					module: "useDicomViewerModalController",
+				});
 				setIsCbctStudioOpen(true);
 			});
 			return;
@@ -88,7 +92,9 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => ({ ...prev, objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n${statement}` : statement }));
 		} catch (err) {
-			console.warn("[Radiology] Не удалось записать заключение в дневник визита:", err);
+			clientLogger.warn("[Radiology] Не удалось записать заключение в дневник визита", err, {
+				module: "useDicomViewerModalController",
+			});
 		}
 		if (onInsertToProtocol) onInsertToProtocol(statement);
 		setIsNormaApplied(true);
@@ -124,7 +130,7 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 			try {
 				const headers = denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					"Idempotency-Key": crypto.randomUUID(),
+					"Idempotency-Key": generateUuidV7(),
 				});
 				const res = await fetch("/api/imaging/studies", {
 					method: "POST",

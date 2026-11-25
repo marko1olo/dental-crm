@@ -70,6 +70,24 @@ export function useAuditTrailHubModalController({
 		return initialEntries ?? [];
 	});
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [copiedHash, setCopiedHash] = useState<string | null>(null);
+	const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+	const showToast = useCallback((msg: string): void => {
+		setToastMsg(msg);
+	}, []);
+
+	useEffect(() => {
+		if (!toastMsg) return;
+		const timerId = window.setTimeout(() => setToastMsg(null), 3200);
+		return () => window.clearTimeout(timerId);
+	}, [toastMsg]);
+
+	useEffect(() => {
+		if (!copiedHash) return;
+		const timerId = window.setTimeout(() => setCopiedHash(null), 2200);
+		return () => window.clearTimeout(timerId);
+	}, [copiedHash]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -91,12 +109,20 @@ export function useAuditTrailHubModalController({
 
 				const rawEvents: Array<Record<string, unknown>> = [];
 				if (logsRes.status === 'fulfilled' && logsRes.value.ok) {
-					const data = (await logsRes.value.json()) as { logs?: Array<Record<string, unknown>> };
-					if (Array.isArray(data.logs)) rawEvents.push(...data.logs);
+					const raw = (await logsRes.value.json()) as {
+						data?: { logs?: Array<Record<string, unknown>> };
+						logs?: Array<Record<string, unknown>>;
+					};
+					const logs = raw?.data?.logs ?? raw?.logs;
+					if (Array.isArray(logs)) rawEvents.push(...logs);
 				}
 				if (medRes.status === 'fulfilled' && medRes.value.ok) {
-					const data = (await medRes.value.json()) as { logs?: Array<Record<string, unknown>> };
-					if (Array.isArray(data.logs)) rawEvents.push(...data.logs);
+					const raw = (await medRes.value.json()) as {
+						data?: { logs?: Array<Record<string, unknown>> };
+						logs?: Array<Record<string, unknown>>;
+					};
+					const logs = raw?.data?.logs ?? raw?.logs;
+					if (Array.isArray(logs)) rawEvents.push(...logs);
 				}
 
 				// Also include offline buffer from clientLogger
@@ -124,7 +150,10 @@ export function useAuditTrailHubModalController({
 					setEntries(chained.reverse()); // Newest first for display
 				}
 			} catch (err) {
-				console.warn('[AuditTrailHubModal] Ошибка загрузки журнала аудита:', err);
+				clientLogger.warn('Ошибка загрузки журнала аудита', err, { module: 'useAuditTrailHubModalController' });
+				if (isMounted) {
+					showToast('Не удалось загрузить журнал аудита');
+				}
 			} finally {
 				if (isMounted) setIsLoading(false);
 			}
@@ -135,7 +164,7 @@ export function useAuditTrailHubModalController({
 		return () => {
 			isMounted = false;
 		};
-	}, [isOpen, initialEntries]);
+	}, [isOpen, initialEntries, showToast]);
 
 	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [selectedEventType, setSelectedEventType] = useState<AuditEventType | 'all'>('all');
@@ -144,9 +173,7 @@ export function useAuditTrailHubModalController({
 	const [onlyAnomalies, setOnlyAnomalies] = useState<boolean>(false);
 
 	const [selectedEntry, setSelectedEntry] = useState<AuditTrailEntry | null>(null);
-	const [copiedHash, setCopiedHash] = useState<string | null>(null);
 	const [showActModal, setShowActModal] = useState<boolean>(false);
-	const [toastMsg, setToastMsg] = useState<string | null>(null);
 
 	// Верификация цепочки (проверяется в хронологическом порядке 1..N)
 	const verificationResult = useMemo(() => {
@@ -196,16 +223,23 @@ export function useAuditTrailHubModalController({
 		};
 	}, [entries, anomalies]);
 
-	const showToast = useCallback((msg: string): void => {
-		setToastMsg(msg);
-		setTimeout(() => setToastMsg(null), 3000);
-	}, []);
-
 	const handleCopyHash = useCallback((hash: string): void => {
-		navigator.clipboard.writeText(hash);
-		setCopiedHash(hash);
-		showToast('Хэш SHA-256 скопирован в буфер!');
-		setTimeout(() => setCopiedHash(null), 2000);
+		if (typeof navigator === 'undefined' || !navigator.clipboard) {
+			showToast('Буфер обмена недоступен');
+			return;
+		}
+		navigator.clipboard
+			.writeText(hash)
+			.then(() => {
+				setCopiedHash(hash);
+				showToast('Хэш SHA-256 скопирован в буфер!');
+			})
+			.catch((err) => {
+				clientLogger.warn('Не удалось скопировать хэш SHA-256', err, {
+					module: 'useAuditTrailHubModalController',
+				});
+				showToast('Не удалось скопировать хэш в буфер');
+			});
 	}, [showToast]);
 
 	const handleExportJson = useCallback((): void => {

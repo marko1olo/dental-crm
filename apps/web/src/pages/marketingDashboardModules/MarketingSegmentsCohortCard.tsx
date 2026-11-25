@@ -11,7 +11,8 @@ import { ChevronRight, Sparkles, Users } from "lucide-react";
 import { formatKopecksToRub } from "@dental/shared";
 import { showToast } from "../../components/GlobalToast";
 import { DEFAULT_PATIENT_SEGMENTS } from "../../components/marketing/marketingPresets";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import type { PatientSegmentOption } from "../../components/marketing/marketingTypes";
 
 export interface MarketingSegmentsCohortCardProps {
@@ -35,10 +36,21 @@ export function MarketingSegmentsCohortCard({
 	useEffect(() => {
 		let isMounted = true;
 		fetch("/api/marketing/cohort-segments", {
-			headers: denteAdminSecretRequestHeaders(),
+			headers: denteClinicalReadHeaders(),
 		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data) => {
+			.then((res) => {
+				if (!res.ok) {
+					clientLogger.warn(
+						"[MarketingCohort] Failed to load cohorts",
+						{ status: res.status },
+						{ module: "MarketingSegmentsCohortCard" },
+					);
+					return null;
+				}
+				return res.json();
+			})
+			.then((raw) => {
+				const data = raw?.data ?? raw;
 				if (!isMounted || !data) return;
 				if (Array.isArray(data.segments) && data.segments.length > 0) {
 					setSegments(data.segments);
@@ -52,7 +64,9 @@ export function MarketingSegmentsCohortCard({
 				}
 			})
 			.catch((err) => {
-				console.error("[MarketingCohort] Failed to load cohorts:", err);
+				clientLogger.error("[MarketingCohort] Failed to load cohorts", err, {
+					module: "MarketingSegmentsCohortCard",
+				});
 				showToast("Не удалось загрузить сегменты базы", "warning");
 			});
 		return () => {

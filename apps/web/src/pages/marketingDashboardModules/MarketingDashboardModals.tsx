@@ -6,8 +6,10 @@
  */
 
 import React, { lazy, Suspense } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../components/GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { MarketingNewPromoModal } from "../../components/marketing/MarketingNewPromoModal";
 import type { FunnelLead } from "../../components/leads/leadsFunnelEngine";
 
@@ -71,9 +73,9 @@ export function MarketingDashboardModals({
 						const res = await fetch("/api/marketing/promos", {
 							method: "POST",
 							headers: {
-								...denteAdminSecretRequestHeaders(),
+								...denteClinicalMutationHeaders(),
 								"Content-Type": "application/json",
-								"Idempotency-Key": crypto.randomUUID(),
+								"Idempotency-Key": generateUuidV7(),
 							},
 							body: JSON.stringify(newPromo),
 						});
@@ -84,7 +86,9 @@ export function MarketingDashboardModals({
 						}
 						showToast(`Акция «${newPromo.title}» сохранена`, "success");
 					} catch (err) {
-						console.error("[Marketing] Failed to persist promo:", err);
+						clientLogger.error("[Marketing] Failed to persist promo", err, {
+							module: "MarketingDashboardModals",
+						});
 						showToast("Сетевая ошибка при сохранении акции", "error");
 					}
 				}}

@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import type { ImagingStudy, ImagingViewerState, ViewerRulerMeasurement } from "./types.js";
 import {
 	fetchStudyMeasurementsAndSession,
@@ -64,7 +65,9 @@ export function useImagingMeasurementsPersistence({
 					}
 				}
 			} catch (err) {
-				console.warn("Failed to hydrate imaging measurements / viewer session", err);
+				clientLogger.warn("Failed to hydrate imaging measurements / viewer session", err, {
+					module: "useImagingMeasurementsPersistence",
+				});
 			} finally {
 				if (!isCancelled) setIsHydratingMeasurements(false);
 			}
@@ -89,7 +92,9 @@ export function useImagingMeasurementsPersistence({
 				const ok = await saveStudyMeasurements(studyId, selectedImagingStudy.toothCode, rulerMeasurements, headers);
 				if (ok) lastSavedMeasurementsHashRef.current = currentHash;
 			} catch (err) {
-				console.warn("Failed to auto-save imaging measurements", err);
+				clientLogger.warn("Failed to auto-save imaging measurements", err, {
+					module: "useImagingMeasurementsPersistence",
+				});
 			}
 		}, 600);
 

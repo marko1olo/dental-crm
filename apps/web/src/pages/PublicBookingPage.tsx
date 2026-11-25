@@ -19,8 +19,20 @@ import { DEMO_PATIENT_CABINET } from "../components/portal/patientCabinet/patien
 import type { PatientPersonalCabinetData } from "../components/portal/patientCabinet/patientCabinetEngine";
 import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../lib/demoMode";
+import { clientLogger } from "../services/logging/clientLogger";
 import { AuthArtBackground } from "../components/auth/AuthArtBackground";
 import "./PublicBookingWidget.css";
+
+interface TelegramWebAppInstance {
+	expand?: (() => void) | undefined;
+	ready?: (() => void) | undefined;
+	initData?: string | undefined;
+	initDataUnsafe?: { user?: { first_name?: string | undefined } | undefined } | undefined;
+}
+
+interface TelegramWindow extends Window {
+	Telegram?: { WebApp?: TelegramWebAppInstance | undefined } | undefined;
+}
 
 export interface PublicBookingPageProps {
 	/**
@@ -92,8 +104,9 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 
 		fetch(targetUrl)
 			.then((res) => (res.ok ? res.json() : null))
-			.then((json) => {
+			.then((raw) => {
 				if (cancelled) return;
+				const json = raw?.data ?? raw;
 				if (json?.organizationId) {
 					setEffectiveOrgId(json.organizationId);
 				} else if (organizationId) {
@@ -109,7 +122,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 				}
 				setIsResolvingClinic(false);
 			})
-			.catch(() => {
+			.catch((err) => {
+				clientLogger.warn("[PublicBookingPage] Failed to resolve clinic info", err, {
+					module: "PublicBookingPage",
+				});
 				if (!cancelled) {
 					if (organizationId) setEffectiveOrgId(organizationId);
 					setIsResolvingClinic(false);
@@ -122,7 +138,11 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 
 	// Определение Telegram WebApp (бесшовный вход)
 	useEffect(() => {
-		const tg = (window as unknown as { Telegram?: { WebApp?: { expand?: () => void; ready?: () => void; initData?: string; initDataUnsafe?: { user?: { first_name?: string } } } } }).Telegram?.WebApp;
+		const tgWindow: TelegramWindow | null =
+			typeof window !== "undefined" && "Telegram" in window
+				? (window as TelegramWindow)
+				: null;
+		const tg = tgWindow?.Telegram?.WebApp;
 		if (tg) {
 			tg.ready?.();
 			tg.expand?.();
@@ -136,7 +156,8 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 					body: JSON.stringify({ initData: tg.initData, organizationId: effectiveOrgId }),
 				})
 					.then((res) => (res.ok ? res.json() : null))
-					.then((json) => {
+					.then((raw) => {
+						const json = raw?.data ?? raw;
 						if (json?.token) {
 							if (typeof window !== "undefined") {
 								localStorage.setItem("dente_portal_token", json.token);
@@ -147,7 +168,9 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 						}
 					})
 					.catch((err) => {
-						console.warn("[PublicBookingPage] Telegram WebApp auth check failed:", err);
+						clientLogger.warn("[PublicBookingPage] Telegram WebApp auth check failed", err, {
+							module: "PublicBookingPage",
+						});
 					});
 			}
 		}
@@ -202,8 +225,9 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 				body: JSON.stringify({ phone: loginPhone.trim(), code: otpCode.trim(), organizationId: effectiveOrgId || "default" }),
 			});
 			if (res.ok) {
-				const json = await res.json();
-				if (json.token) {
+				const raw = await res.json();
+				const json = raw?.data ?? raw;
+				if (json?.token) {
 					if (typeof window !== "undefined") {
 						localStorage.setItem("dente_portal_token", json.token);
 					}

@@ -8,7 +8,8 @@
 import { useEffect, useState } from "react";
 import { kopecksToRubles } from "@dental/shared";
 import { showToast } from "../../components/GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import {
 	type ChannelSpendMap,
 	getDefaultChannelSpendMap,
@@ -27,10 +28,18 @@ export function useMarketingLiveSpends() {
 		async function fetchLiveSpends() {
 			try {
 				const res = await fetch("/api/marketing/attribution", {
-					headers: denteAdminSecretRequestHeaders(),
+					headers: denteClinicalReadHeaders(),
 				});
-				if (!res.ok) return;
-				const data = await res.json();
+				if (!res.ok) {
+					clientLogger.warn(
+						"[MarketingLiveSpends] Failed to fetch attribution",
+						{ status: res.status },
+						{ module: "useMarketingLiveSpends" },
+					);
+					return;
+				}
+				const raw = await res.json();
+				const data = raw?.data ?? raw;
 				if (cancelled || !data) return;
 
 				if (data.summary && typeof data.summary.onlineSharePercent === "number") {
@@ -78,7 +87,9 @@ export function useMarketingLiveSpends() {
 					}));
 				}
 			} catch (err) {
-				console.error("[MarketingLiveSpends] Network error fetching attribution:", err);
+				clientLogger.error("[MarketingLiveSpends] Network error fetching attribution", err, {
+					module: "useMarketingLiveSpends",
+				});
 				showToast("Не удалось загрузить онлайн-расходы рекламы", "warning");
 			}
 		}

@@ -242,7 +242,7 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 							<span>{unsignedAppointmentIds.length} медицинских карт требуют подписи</span>
 						</div>
 						<span className="text-[10px] text-[var(--muted)] font-semibold">
-							63-ФЗ ст. 9 (ПЭП) • Приказ 947н
+							Простая электронная подпись врача
 						</span>
 					</div>
 					<div className="flex flex-col sm:flex-row items-stretch gap-2 mt-2">
@@ -260,7 +260,6 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 							onClick={onInitiateBatchSigning}
 							className="doctor-batch-pep-btn secondary sm:w-auto px-3 text-xs"
 							data-testid="sign-all-cards-btn"
-							data-legacy-testid="sign-all-043u-btn"
 							title="Подписать через СМС-код подтверждения"
 						>
 							<Smartphone size={14} />

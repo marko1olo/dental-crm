@@ -27,6 +27,7 @@ import {
 	printPricelistA4,
 } from "./pricesExportPrintHelpers";
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import type {
 	ExistingCatalogReference,
 	IngestedMappingItem,
@@ -337,12 +338,15 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 					});
 				}
 				if (response.ok) {
-					const data = await response.json();
+					const raw = await response.json();
+					const data = raw?.data ?? raw;
 					seededCount = data.createdCount ?? 30;
 					apiSucceeded = true;
 				}
 			} catch (fetchErr) {
-				console.warn("[pricelist] fetch /api/pricelist/seed fallback to client loop:", fetchErr);
+				clientLogger.warn("[pricelist] fetch /api/pricelist/seed fallback to client loop", fetchErr, {
+					module: "useSettingsPricesLogic",
+				});
 			}
 
 			if (!apiSucceeded) {
@@ -357,7 +361,9 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			showToast(seededCount > 0 ? `Базовый прейскурант услуг успешно заполнен (${seededCount} услуг)` : "Базовый прейскурант услуг актуален (услуги уже присутствуют в каталоге)", "success");
 			setIsCodesMenuOpen(false);
 		} catch (error: unknown) {
-			console.error("[pricelist] Ошибка наполнения базового прейскуранта услуг:", error);
+			clientLogger.error("[pricelist] Ошибка наполнения базового прейскуранта услуг", error, {
+				module: "useSettingsPricesLogic",
+			});
 			const msg = error instanceof Error ? error.message : "Не удалось наполнить базовый прейскурант услуг";
 			showToast(msg, "error");
 		} finally {
@@ -387,7 +393,8 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				const errData = await res.json().catch(() => ({}));
 				throw new Error(errData.message || `Ошибка сканирования прейскуранта (HTTP ${res.status})`);
 			}
-			const data = await res.json();
+			const raw = await res.json();
+			const data = raw?.data ?? raw;
 			const itemsList = data.scanResult?.items || data.items;
 			if (itemsList && itemsList.length > 0) {
 				const diffItems = mapScanItemsToDiffItems(itemsList);
@@ -444,7 +451,8 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				const errData = await res.json().catch(() => ({}));
 				throw new Error(errData.message || `Ошибка сохранения прейскуранта (HTTP ${res.status})`);
 			}
-			const data = await res.json();
+			const raw = await res.json();
+			const data = raw?.data ?? raw;
 			const count = data.committedCount ?? approvedItems.length;
 			showToast(`Прейскурант успешно сохранён: ${count} услуг в каталоге клиники`, "success");
 			setIsMappingDiffOpen(false);
@@ -484,7 +492,8 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				const errData = await res.json().catch(() => ({}));
 				throw new Error(errData.message || `Ошибка импорта прейскуранта (HTTP ${res.status})`);
 			}
-			const data = await res.json();
+			const raw = await res.json();
+			const data = raw?.data ?? raw;
 			const count = data.committedCount ?? data.scanResult?.items?.length ?? 0;
 			showToast(`Прейскурант успешно импортирован: ${count} услуг в каталоге клиники`, "success");
 			setIsNativeScannerDropzoneOpen(false);

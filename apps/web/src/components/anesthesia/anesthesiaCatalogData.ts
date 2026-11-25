@@ -4,7 +4,9 @@
  * 4 canonical drugs in Russian clinical practice, carpule volumes, 1-click presets & soft negative stock writeoff.
  */
 
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 
 export type AnestheticDrugId =
 	| "articaine_1_100k"
@@ -297,14 +299,14 @@ export async function postQuickCarpuleWriteoff(params: {
 	needlesCount?: number | undefined;
 }): Promise<void> {
 	if (params.count <= 0) return;
-	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+	const idempotencyKey = generateUuidV7();
 	try {
-		await fetch("/api/inventory/quick-writeoff-carpules", {
+		const res = await fetch("/api/inventory/quick-writeoff-carpules", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-				...denteAdminSecretRequestHeaders(),
+				"Idempotency-Key": idempotencyKey,
+				...denteClinicalMutationHeaders(),
 			},
 			body: JSON.stringify({
 				visitId: params.visitId || null,
@@ -314,11 +316,14 @@ export async function postQuickCarpuleWriteoff(params: {
 				needleName: params.needleName,
 				needlesCount: params.needlesCount ?? (params.count > 0 ? 1 : 0),
 				notes: `Списание ${params.count} карпул (${params.drugId || "Артикаин"}) у кресла`,
-				...(idempotencyKey ? { idempotencyKey } : {}),
+				idempotencyKey,
 			}),
 		});
+		if (!res.ok) {
+			clientLogger.warn("[anesthesia] Quick carpule writeoff non-OK status", { status: res.status }, { module: "anesthesiaCatalogData" });
+		}
 	} catch (err) {
-		console.warn("[anesthesia] Quick carpule writeoff fallback:", err);
+		clientLogger.warn("[anesthesia] Quick carpule writeoff fallback", err, { module: "anesthesiaCatalogData" });
 	}
 }
 
@@ -326,23 +331,26 @@ export async function postQuickCarpuleWriteoff(params: {
  * 1-Click Emergency Antishock writeoff
  */
 export async function postEmergencyAntishockWriteoff(visitId?: string): Promise<void> {
-	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+	const idempotencyKey = generateUuidV7();
 	try {
-		await fetch("/api/inventory/quick-writeoff-emergency-antishock", {
+		const res = await fetch("/api/inventory/quick-writeoff-emergency-antishock", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-				...denteAdminSecretRequestHeaders(),
+				"Idempotency-Key": idempotencyKey,
+				...denteClinicalMutationHeaders(),
 			},
 			body: JSON.stringify({
 				visitId: visitId || null,
 				scenarioId: "anaphylactic_shock",
 				notes: "Экстренное списание укладки «Антишок» у кресла",
-				...(idempotencyKey ? { idempotencyKey } : {}),
+				idempotencyKey,
 			}),
 		});
+		if (!res.ok) {
+			clientLogger.warn("[anesthesia] Emergency writeoff non-OK status", { status: res.status }, { module: "anesthesiaCatalogData" });
+		}
 	} catch (err) {
-		console.warn("[anesthesia] Emergency writeoff fallback:", err);
+		clientLogger.warn("[anesthesia] Emergency writeoff fallback", err, { module: "anesthesiaCatalogData" });
 	}
 }

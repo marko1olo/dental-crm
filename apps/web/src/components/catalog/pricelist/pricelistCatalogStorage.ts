@@ -8,6 +8,11 @@
 
 import { generateUuidV7, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import {
 	getSpecialtyForCategory,
 	normalizeCategoryFromBackend,
 	normalizeCategoryToBackend,
@@ -30,7 +35,9 @@ export function loadCanonicalPricelist(): readonly PricelistStudioItem[] {
 			return parsed as readonly PricelistStudioItem[];
 		}
 	} catch (e) {
-		console.warn("Failed to read pricelist from storage, using preset fallback", e);
+		clientLogger.warn("Failed to read pricelist from storage, using preset fallback", e, {
+			module: "pricelistCatalogStorage",
+		});
 	}
 	return CANONICAL_PRICELIST_PRESETS;
 }
@@ -43,7 +50,9 @@ export function saveCanonicalPricelist(items: readonly PricelistStudioItem[]): v
 	try {
 		window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
 	} catch (e) {
-		console.warn("Failed to persist pricelist to storage", e);
+		clientLogger.warn("Failed to persist pricelist to storage", e, {
+			module: "pricelistCatalogStorage",
+		});
 	}
 }
 
@@ -80,16 +89,29 @@ export async function fetchPricelistFromBackend(
 		const res = await fetch("/api/pricelist", {
 			method: "GET",
 			headers: {
+				...denteClinicalReadHeaders(),
 				Accept: "application/json",
 				...headers,
 			},
 		});
 		if (!res.ok) {
-			console.warn(`[pricelist] GET /api/pricelist status ${res.status}, using offline cache`);
+			clientLogger.warn(
+				`[pricelist] GET /api/pricelist status ${res.status}, using offline cache`,
+				{ status: res.status },
+				{ module: "pricelistCatalogStorage" },
+			);
 			return loadCanonicalPricelist();
 		}
-		const data = (await res.json()) as { readonly items?: readonly RawBackendPricelistItem[] | undefined };
-		const rawItems: readonly RawBackendPricelistItem[] = Array.isArray(data.items) ? data.items : [];
+		const raw = (await res.json()) as {
+			readonly data?: { readonly items?: readonly RawBackendPricelistItem[] | undefined } | readonly RawBackendPricelistItem[] | undefined;
+			readonly items?: readonly RawBackendPricelistItem[] | undefined;
+		};
+		const unwrapped = raw?.data ?? raw;
+		const rawItems: readonly RawBackendPricelistItem[] = Array.isArray(unwrapped)
+			? unwrapped
+			: unwrapped && typeof unwrapped === "object" && "items" in unwrapped && Array.isArray(unwrapped.items)
+				? unwrapped.items
+				: [];
 		if (rawItems.length === 0) {
 			return loadCanonicalPricelist();
 		}
@@ -127,7 +149,9 @@ export async function fetchPricelistFromBackend(
 		saveCanonicalPricelist(mapped);
 		return mapped;
 	} catch (err) {
-		console.warn("[pricelist] fetch /api/pricelist failed:", err);
+		clientLogger.warn("[pricelist] fetch /api/pricelist failed", err, {
+			module: "pricelistCatalogStorage",
+		});
 		return loadCanonicalPricelist();
 	}
 }
@@ -168,6 +192,7 @@ export async function syncServiceItemToBackend(
 		const res = await fetch(url, {
 			method,
 			headers: {
+				...denteClinicalMutationHeaders(),
 				"Content-Type": "application/json",
 				Accept: "application/json",
 				"Idempotency-Key": generateUuidV7(),
@@ -176,13 +201,19 @@ export async function syncServiceItemToBackend(
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {
-			console.warn(`[pricelist] ${method} ${url} failed with ${res.status}`);
+			clientLogger.warn(`[pricelist] ${method} ${url} failed with ${res.status}`, { status: res.status }, {
+				module: "pricelistCatalogStorage",
+			});
 			return { success: false };
 		}
-		const data = await res.json();
-		return { success: true, id: data.id || item.id };
+		const raw = (await res.json()) as { id?: string; data?: { id?: string } };
+		const data = raw?.data ?? raw;
+		const resolvedId = data?.id || item.id;
+		return resolvedId !== undefined ? { success: true, id: resolvedId } : { success: true };
 	} catch (err) {
-		console.warn(`[pricelist] syncServiceItemToBackend error:`, err);
+		clientLogger.warn("[pricelist] syncServiceItemToBackend error", err, {
+			module: "pricelistCatalogStorage",
+		});
 		return { success: false };
 	}
 }
@@ -212,6 +243,7 @@ export async function batchSyncPricelistToBackend(
 		const res = await fetch("/api/pricelist/batch-import", {
 			method: "POST",
 			headers: {
+				...denteClinicalMutationHeaders(),
 				"Content-Type": "application/json",
 				Accept: "application/json",
 				"Idempotency-Key": generateUuidV7(),
@@ -224,7 +256,9 @@ export async function batchSyncPricelistToBackend(
 		});
 		return res.ok;
 	} catch (err) {
-		console.warn("[pricelist] batchSyncPricelistToBackend error:", err);
+		clientLogger.warn("[pricelist] batchSyncPricelistToBackend error", err, {
+			module: "pricelistCatalogStorage",
+		});
 		return false;
 	}
 }

@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import type { DoctorPayrollStudioModalProps } from "../payroll/DoctorPayrollStudioModal";
 import { AssistantPayrollTable } from "./AssistantPayrollTable";
 import {
@@ -91,20 +93,43 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				}),
 			]);
 
-			let docData: {
-				rows?: DoctorPayrollItem[];
-				assistantRows?: AssistantPayrollItem[];
-				totals?: DoctorPayrollTotals | null;
-			} | null = null;
-			let asstData: {
-				rows?: AssistantPayrollItem[];
-			} | null = null;
+			interface DocPayrollApiResponse {
+				rows?: DoctorPayrollItem[] | undefined;
+				assistantRows?: AssistantPayrollItem[] | undefined;
+				totals?: DoctorPayrollTotals | null | undefined;
+			}
+			interface AsstPayrollApiResponse {
+				rows?: AssistantPayrollItem[] | undefined;
+			}
+			let docData: DocPayrollApiResponse | null = null;
+			let asstData: AsstPayrollApiResponse | null = null;
+			let hasFetchError = false;
 
 			if (docRes.status === "fulfilled" && docRes.value.ok) {
-				docData = await docRes.value.json();
+				const rawDoc = await docRes.value.json();
+				docData = (rawDoc?.data ?? rawDoc) as DocPayrollApiResponse;
+			} else {
+				hasFetchError = true;
+				clientLogger.warn(
+					"Failed to fetch doctor payroll report",
+					docRes.status === "rejected" ? docRes.reason : { status: docRes.value.status },
+					{ module: "DoctorPayrollReport" },
+				);
 			}
 			if (asstRes.status === "fulfilled" && asstRes.value.ok) {
-				asstData = await asstRes.value.json();
+				const rawAsst = await asstRes.value.json();
+				asstData = (rawAsst?.data ?? rawAsst) as AsstPayrollApiResponse;
+			} else {
+				hasFetchError = true;
+				clientLogger.warn(
+					"Failed to fetch assistant payroll report",
+					asstRes.status === "rejected" ? asstRes.reason : { status: asstRes.value.status },
+					{ module: "DoctorPayrollReport" },
+				);
+			}
+
+			if (hasFetchError) {
+				showToast("Не удалось загрузить данные ведомости", "error");
 			}
 
 			if (docData || asstData) {
@@ -121,7 +146,8 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				setTotals(null);
 			}
 		} catch (err: unknown) {
-			console.error("[DoctorPayrollReport] Failed to fetch payroll data:", err);
+			clientLogger.error("Failed to fetch payroll data", err, { module: "DoctorPayrollReport" });
+			showToast("Не удалось загрузить данные ведомости", "error");
 			setRows([]);
 			setAssistantRows([]);
 			setTotals(null);

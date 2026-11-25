@@ -3,6 +3,8 @@ import type { DentalSpecialty, ServiceCatalogItem, ServiceCategory } from "@dent
 import { normalizeRubAmountInput } from "../../../rubAmountInput";
 import { rubToPriceInput } from "../pricelistEditorHelpers";
 import { normalizeCategoryToBackend } from "../../catalog/pricelistCatalogData";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { showToast } from "../../GlobalToast";
 import type { CreateServicePayload } from "../pricesTab/types";
 
 interface UseMobilePriceDrawerFormParams {
@@ -34,7 +36,7 @@ export function useMobilePriceDrawerForm({
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
-		if (service) {
+		if (isOpen && service) {
 			setTitle(service.title || "");
 			setCode(service.code || "");
 			const basePrice = service.basePriceRub ?? service.priceRub ?? 0;
@@ -55,7 +57,7 @@ export function useMobilePriceDrawerForm({
 			setVatRate("vat_exempt");
 		}
 		setPriceProblem(null);
-	}, [service]);
+	}, [service, isOpen]);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -89,7 +91,8 @@ export function useMobilePriceDrawerForm({
 			}, service?.id);
 			onClose();
 		} catch (err) {
-			console.error("[MobilePriceDrawer] Save error:", err);
+			clientLogger.error("[MobilePriceDrawer] Save error", err, { module: "useMobilePriceDrawerForm" });
+			showToast("Не удалось сохранить услугу", "error");
 		} finally {
 			setIsSaving(false);
 		}
@@ -102,7 +105,8 @@ export function useMobilePriceDrawerForm({
 			await onDelete(service.id);
 			onClose();
 		} catch (err) {
-			console.error("[MobilePriceDrawer] Delete error:", err);
+			clientLogger.error("[MobilePriceDrawer] Delete error", err, { module: "useMobilePriceDrawerForm" });
+			showToast("Не удалось удалить услугу", "error");
 		} finally {
 			setIsDeleting(false);
 		}

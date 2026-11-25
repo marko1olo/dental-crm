@@ -1,4 +1,6 @@
+import { generateUuidV7 } from "@dental/shared";
 import { fetchWithHandling } from "../../utils/networkUtils";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { useImagingStore } from "../../store/imagingStore";
 import { scanBrowserFileList } from "../../utils/browserImagingFolderScan";
 import {
@@ -45,6 +47,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify({ updates }),
 		});
@@ -59,6 +62,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload),
 		});
@@ -69,6 +73,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload),
 		});
@@ -83,7 +88,9 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 	const deleteScan = async (scanId: string) => {
 		return fetchWithHandling(`/api/imaging/studies/${encodeURIComponent(scanId)}`, {
 			method: "DELETE",
-			headers: getMutationHeaders(),
+			headers: getMutationHeaders({
+				"Idempotency-Key": generateUuidV7(),
+			}),
 		});
 	};
 
@@ -104,6 +111,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload ?? {}),
 		});
@@ -114,6 +122,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload ?? {}),
 		});
@@ -141,6 +150,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			method: "POST",
 			headers: getMutationHeaders({
 				"content-type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload ?? {}),
 		});
@@ -194,9 +204,10 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 			}
 		} catch (scanError) {
 			if (!isBrowserImagingScanAbortError(scanError)) {
-				console.error(
-					"[handleBrowserDirectoryInputChange] scan error:",
+				clientLogger.error(
+					"[handleBrowserDirectoryInputChange] scan error",
 					scanError,
+					{ module: "useImagingQueries" },
 				);
 			}
 		} finally {
@@ -217,7 +228,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 	const selectCtPlanningImplant = (_implant: unknown) => {};
 
 	async function loadImagingViewerSession(studyId: string) {
-		await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
+		return fetchWithHandling(`/api/imaging/studies/${encodeURIComponent(studyId)}/viewer-session`, {
 			headers: getReadHeaders(),
 		});
 	}
@@ -225,10 +236,11 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 		studyId: string,
 		payload: Record<string, unknown>,
 	) {
-		await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
+		return fetchWithHandling(`/api/imaging/studies/${encodeURIComponent(studyId)}/viewer-session`, {
 			method: "PUT",
 			headers: getMutationHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload),
 		});
@@ -237,7 +249,7 @@ export function useImagingQueries(options?: UseImagingQueriesOptions) {
 		folderPath: string,
 		controller: AbortController,
 	) {
-		await fetch("/api/imaging/dicom/folder-series-preview", {
+		return fetchWithHandling("/api/imaging/dicom/folder-series-preview", {
 			method: "POST",
 			signal: controller.signal,
 			headers: getReadHeaders({

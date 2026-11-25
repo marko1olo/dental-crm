@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Shield } from "lucide-react";
 import { rublesToKopecks } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../../services/logging/clientLogger";
 import { POPULAR_DMS_COMPANIES } from "./constants";
 import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
@@ -23,7 +24,11 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 			headers: denteClinicalReadHeaders(),
 		})
 			.then((res) => (res.ok ? res.json() : []))
-			.then((data: unknown) => {
+			.then((raw: unknown) => {
+				const data =
+					raw && typeof raw === "object" && "data" in raw
+						? (raw as { data: unknown }).data
+						: raw;
 				if (!isMounted || !Array.isArray(data)) return;
 				const list: Array<{ id: string; companyName: string; insurerKey?: string | undefined }> = [];
 				for (const item of data) {
@@ -38,7 +43,9 @@ export const DmsPolicyCard: React.FC<DmsPolicyCardProps> = ({
 				setContracts(list);
 			})
 			.catch((err) => {
-				console.warn("[DmsPolicyCard] Не удалось загрузить список договоров ДМС:", err);
+				clientLogger.warn("[DmsPolicyCard] Не удалось загрузить список договоров ДМС", err, {
+					module: "DmsPolicyCard",
+				});
 			});
 		return () => {
 			isMounted = false;

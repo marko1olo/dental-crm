@@ -4,6 +4,9 @@
  * Autonomy, 1-click somatic status, passive safety warnings, clean Latin SOAP diary and live Fastify sync.
  */
 
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import {
 	DENTAL_ANESTHETICS,
 	type AnestheticDrugId,
@@ -283,7 +286,7 @@ export async function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): 
 	const toothNum = typeof params.targetToothNumberFdi === "number" ? params.targetToothNumberFdi : parseInt(String(params.targetToothNumberFdi || ""), 10);
 	const toothNumbers = Number.isInteger(toothNum) && toothNum > 0 ? [toothNum] : [];
 
-	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : undefined;
+	const idempotencyKey = generateUuidV7();
 
 	const payload = {
 		patientId: params.patientId || null,
@@ -304,21 +307,24 @@ export async function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): 
 		notes: params.diaryEntry,
 		autoDeductInventory: true,
 		addToVisitEstimate: true,
-		...(idempotencyKey ? { idempotencyKey } : {}),
+		idempotencyKey,
 	};
 
 	try {
 		const endpoint = params.patientId ? `/api/anesthesia/patients/${params.patientId}/logs` : "/api/anesthesia/logs";
-		await fetch(endpoint, {
+		const res = await fetch(endpoint, {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-			},
+				"Idempotency-Key": idempotencyKey,
+			}),
 			credentials: "include",
 			body: JSON.stringify(payload),
 		});
+		if (!res.ok) {
+			clientLogger.warn("[anesthesia] Log persist returned non-OK status", { status: res.status }, { module: "anesthesiaEngine" });
+		}
 	} catch (err) {
-		console.warn("[anesthesia] Log persist fallback:", err);
+		clientLogger.warn("[anesthesia] Log persist fallback", err, { module: "anesthesiaEngine" });
 	}
 }

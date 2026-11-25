@@ -20,7 +20,6 @@ import {
 	sanitizePayload,
 	sanitizeString,
 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	staffTelemetryService,
 	registerTelemetryLoggerBridge,

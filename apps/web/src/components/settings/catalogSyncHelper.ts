@@ -9,6 +9,8 @@ import {
 	normalizeCategoryToBackend,
 	getSpecialtyForCategory,
 } from "../catalog/pricelistCatalogData";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 
 export interface SyncableCatalogItemInput {
 	readonly id?: string | undefined;
@@ -224,7 +226,8 @@ export async function syncPricelistItemsToCatalog({
 			if (itemCode) existingByCode.set(itemCode, targetRecord);
 			if (normTitle) existingByTitle.set(normTitle, targetRecord);
 		} catch (err) {
-			console.error("Failed to sync catalog item:", itemTitle, err);
+			clientLogger.error("Failed to sync catalog item", { itemTitle, err }, { module: "catalogSyncHelper" });
+			showToast(`Не удалось синхронизировать услугу «${itemTitle || "Без названия"}»`, "warning");
 		}
 	}
 }

@@ -10,6 +10,7 @@ import { createPortal, flushSync } from "react-dom";
 import { AlertTriangle } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { usePatientStore } from "../../store/patientStore";
 import { useAppStore } from "../../store/appStore";
 import {
@@ -31,7 +32,7 @@ import {
 import { resolveEffectiveSurgeryPatientId } from "./resolveSurgeryPatient";
 import { SurgeryPostOpMemoSection } from "./SurgeryPostOpMemoSection";
 import { ImplantPassportCard } from "../implants/ImplantPassportCard";
-import type { FastImplantPassportData } from "@dental/shared";
+import { generateUuidV7, type FastImplantPassportData } from "@dental/shared";
 import { SurgeryHubHeader } from "./modules/SurgeryHubHeader";
 import { SurgeryHubNavigation, type SurgeryHubTab } from "./modules/SurgeryHubNavigation";
 import { SurgeryGeneralProtocolSection } from "./modules/SurgeryGeneralProtocolSection";
@@ -211,13 +212,16 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					headers: getDenteAuthHeaders(),
 				});
 				if (res.ok) {
-					const data = await res.json();
-					if (!isCancelled && data?.success && Array.isArray(data.implants) && data.implants.length > 0) {
+					const raw = await res.json();
+					const data = raw?.data ?? raw;
+					if (!isCancelled && (raw?.success || data?.success) && Array.isArray(data?.implants) && data.implants.length > 0) {
 						setStockImplants(data.implants);
 					}
 				}
 			} catch (err) {
-				console.warn("[ChairsideSurgeryHub] Не удалось загрузить остатки имплантатов из API, используется локальный каталог:", err);
+				clientLogger.warn("[ChairsideSurgeryHub] Не удалось загрузить остатки имплантатов из API, используется локальный каталог", err, {
+					module: "ChairsideSurgeryHubModal",
+				});
 			}
 		}
 		void loadStock();
@@ -237,8 +241,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					headers: getDenteAuthHeaders(),
 				});
 				if (!res.ok) return;
-				const body = await res.json();
-				if (isCancelled || !body?.success || !Array.isArray(body.installations) || body.installations.length === 0) return;
+				const rawBody = await res.json();
+				const body = rawBody?.data ?? rawBody;
+				if (isCancelled || !(rawBody?.success || body?.success) || !Array.isArray(body?.installations) || body.installations.length === 0) return;
 
 				interface RawInstallation {
 					readonly id?: string | null;
@@ -263,8 +268,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							headers: getDenteAuthHeaders(),
 						});
 						if (passRes.ok) {
-							const passJson = await passRes.json();
-							if (passJson?.success && passJson.passport) {
+							const rawPassJson = await passRes.json();
+							const passJson = rawPassJson?.data ?? rawPassJson;
+							if ((rawPassJson?.success || passJson?.success) && passJson?.passport) {
 								setApiPassportData(passJson.passport);
 								const p = passJson.passport;
 								if (p.lotNumber) setLotNumber(String(p.lotNumber));
@@ -279,7 +285,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							}
 						}
 					} catch (e) {
-						console.warn("[ChairsideSurgeryHub] Ошибка запроса паспорта имплантата из API:", e);
+						clientLogger.warn("[ChairsideSurgeryHub] Ошибка запроса паспорта имплантата из API", e, {
+							module: "ChairsideSurgeryHubModal",
+						});
 					}
 				}
 
@@ -311,7 +319,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 				if (matched.serialNumber) setSerialNumber(String(matched.serialNumber));
 				if (matched.catalogArticle) setCatalogArticle(String(matched.catalogArticle));
 			} catch (err) {
-				console.warn("[ChairsideSurgeryHub] Ошибка гидратации предыдущих имплантатов пациента:", err);
+				clientLogger.warn("[ChairsideSurgeryHub] Ошибка гидратации предыдущих имплантатов пациента", err, {
+					module: "ChairsideSurgeryHubModal",
+				});
 			}
 		}
 		void hydratePatientImplants();
@@ -540,10 +550,10 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			}
 			try {
 				let saveError: string | null = null;
-				const idempKey = crypto.randomUUID();
+				const idempKey = generateUuidV7();
 				const headers = getDenteAuthHeaders({
 					"Content-Type": "application/json",
-					"X-Idempotency-Key": idempKey,
+					"Idempotency-Key": idempKey,
 				});
 
 				if (activeScenario === "implant") {
@@ -655,11 +665,11 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						const errBody = await protoRes.json().catch(() => null);
 						saveError = errBody?.message || errBody?.error || `Ошибка сохранения протокола (${protoRes.status})`;
 					} else {
-						await fetch("/api/surgery/materials/quick-deduct", {
+						const deductRes = await fetch("/api/surgery/materials/quick-deduct", {
 							method: "POST",
 							headers: getDenteAuthHeaders({
 								"Content-Type": "application/json",
-								"X-Idempotency-Key": crypto.randomUUID(),
+								"Idempotency-Key": generateUuidV7(),
 							}),
 							body: JSON.stringify({
 								bundleType: activeScenario === "sinus_gbr" ? "sinus_gbr" : "surgery",
@@ -667,6 +677,14 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 								notes: `Списание по техкарте: ${scenarioConfig.titleRu} #${teethToProcess.join(", #")}`,
 							}),
 						});
+						if (!deductRes.ok) {
+							clientLogger.warn(
+								"[ChairsideSurgeryHub] Quick deduct returned non-OK status",
+								{ status: deductRes.status },
+								{ module: "ChairsideSurgeryHubModal" },
+							);
+							showToast("Протокол сохранён, но списание материалов по техкарте отложено", "warning");
+						}
 					}
 				}
 				if (saveError) {
@@ -716,7 +734,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		try {
 			window.print?.();
 		} catch (err) {
-			console.warn("[ChairsideSurgeryHub] Не удалось открыть диалог печати:", err);
+			clientLogger.warn("[ChairsideSurgeryHub] Не удалось открыть диалог печати", err, {
+				module: "ChairsideSurgeryHubModal",
+			});
 		}
 		showToast(`Печать документа операции #${toothFdi}`, "success");
 	}, [activeTab, activeScenario, toothFdi]);

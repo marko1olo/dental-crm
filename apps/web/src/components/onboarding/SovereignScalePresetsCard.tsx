@@ -11,10 +11,12 @@
 
 import React, { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { generateUuidV7 } from "@dental/shared";
 import { useOnboardingStore } from "../../store/onboardingStore";
 import { useAppStore } from "../../store/appStore";
 import { useSettingsStore } from "../../store/settingsStore";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { clinicProfileDraftFromProfile } from "../../utils/clinicProfileUtils";
 import { showToast } from "../GlobalToast";
 import {
@@ -70,8 +72,9 @@ export function SovereignScalePresetsCard({
 			try {
 				const response = await fetch("/api/settings/clinic/scale-preset", {
 					method: "PATCH",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					}),
 					body: JSON.stringify({
 						preset: presetId,
@@ -79,7 +82,8 @@ export function SovereignScalePresetsCard({
 					}),
 				});
 				if (response.ok) {
-					const updatedSettings = await response.json();
+					const raw = await response.json();
+					const updatedSettings = raw?.data ?? raw;
 					if (
 						updatedSettings &&
 						typeof updatedSettings === "object" &&
@@ -102,14 +106,17 @@ export function SovereignScalePresetsCard({
 						}
 					}
 				} else {
-					console.warn(
+					clientLogger.warn(
 						`[ScalePreset] Server returned status ${response.status}. Falling back to client-side sync.`,
+						{ status: response.status },
+						{ module: "SovereignScalePresetsCard" },
 					);
 				}
 			} catch (netErr) {
-				console.warn(
+				clientLogger.warn(
 					"[ScalePreset] Network request failed. Updating local operational stores.",
 					netErr,
+					{ module: "SovereignScalePresetsCard" },
 				);
 			}
 
@@ -123,7 +130,9 @@ export function SovereignScalePresetsCard({
 
 			onPresetApplied?.(presetId);
 		} catch (err) {
-			console.error("[ScalePreset] Error applying preset:", err);
+			clientLogger.error("[ScalePreset] Error applying preset", err, {
+				module: "SovereignScalePresetsCard",
+			});
 			showToast("Пресет сохранён в локальном профиле", "info");
 			onPresetApplied?.(presetId);
 		} finally {

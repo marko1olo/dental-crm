@@ -23,6 +23,9 @@ import {
 	Wallet,
 } from "lucide-react";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { showToast } from "../GlobalToast";
 import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 
 export interface PaymentBreakdownItem {
@@ -126,8 +129,23 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 				setLoading(false);
 				return;
 			}
+			clientLogger.warn(
+				"Failed to fetch executive financial summary",
+				{ status: res.status, period: p },
+				{ module: "ExecutiveFinancialSummary" },
+			);
+			if (!isDemoShowcaseMode()) {
+				showToast("Не удалось загрузить финансовую сводку", "warning");
+			}
 		} catch (err: unknown) {
-			console.warn("[ExecutiveFinancialSummary] Failed to fetch summary, fallback to empty state:", err);
+			clientLogger.warn(
+				"Failed to fetch summary, fallback to empty state",
+				err,
+				{ module: "ExecutiveFinancialSummary" },
+			);
+			if (!isDemoShowcaseMode()) {
+				showToast("Не удалось загрузить финансовую сводку", "warning");
+			}
 		}
 
 		setSummary(createEmptySummary());
