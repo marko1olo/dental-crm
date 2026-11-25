@@ -91,7 +91,7 @@ export const visitNoteDraftRequestSchema = z.object({
 	transcript: z.string().trim().min(1).max(80_000),
 	specialty: dentalSpecialtySchema.default("universal"),
 	source: z.enum(["voice", "typed", "image"]).default("voice"),
-});
+}).strict();
 
 export type VisitNoteDraftRequest = z.infer<typeof visitNoteDraftRequestSchema>;
 
@@ -122,8 +122,8 @@ export const visitNoteDraftSchema = z.object({
 	diagnosisTooth: z.union([z.string(), z.number()]).nullable().optional(),
 	toothNumber: z.union([z.string(), z.number()]).nullable().optional(),
 	quality: visitNoteDraftQualitySchema.optional(),
-	warnings: z.array(z.string()),
-});
+	warnings: z.array(z.string()).default([]),
+}).strict();
 
 export type VisitNoteDraft = z.infer<typeof visitNoteDraftSchema>;
 
@@ -153,7 +153,7 @@ export const visitDraftAutosaveRequestSchema = z.object({
 	clientDraftId: z.string().min(1).max(120).nullable().optional(),
 	clientSavedAt: z.string().nullable().optional(),
 	hygieneIndices: z.record(z.unknown()).nullable().optional(),
-});
+}).strict();
 
 export type VisitDraftAutosaveRequest = z.infer<
 	typeof visitDraftAutosaveRequestSchema
@@ -174,7 +174,7 @@ export const speechTranscriptPolishRequestSchema = z.object({
 	transcript: z.string().trim().min(1).max(80_000),
 	specialty: dentalSpecialtySchema.default("universal"),
 	source: z.enum(["voice", "typed", "recording_chunk"]).default("voice"),
-});
+}).strict();
 
 export type SpeechTranscriptPolishRequest = z.infer<
 	typeof speechTranscriptPolishRequestSchema

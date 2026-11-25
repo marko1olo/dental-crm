@@ -239,7 +239,7 @@ export const dicomRenderCachePlanRequestSchema = z.object({
 	series: dicomSeriesPreviewGroupSchema,
 	renderPlan: dicomGpuRenderPlanSchema,
 	viewerState: imagingViewerSessionStateSchema.nullable().optional(),
-});
+}).strict();
 
 export type DicomRenderCachePlanRequest = z.infer<
 	typeof dicomRenderCachePlanRequestSchema
@@ -287,7 +287,7 @@ export const dicomViewerToolStateBundleRequestSchema = z.object({
 	viewerState: imagingViewerSessionStateSchema.nullable().optional(),
 	annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
 	renderPlan: dicomGpuRenderPlanSchema.nullable().optional(),
-});
+}).strict();
 
 export type DicomViewerToolStateBundleRequest = z.infer<
 	typeof dicomViewerToolStateBundleRequestSchema
@@ -340,7 +340,7 @@ export const dicomWorkstationReadinessRequestSchema = z.object({
 	series: dicomSeriesPreviewGroupSchema,
 	client: dicomWorkstationClientFactsSchema,
 	connector: dicomWebConnectorCheckResponseSchema.nullable().optional(),
-});
+}).strict();
 
 export type DicomWorkstationReadinessRequest = z.infer<
 	typeof dicomWorkstationReadinessRequestSchema
@@ -376,7 +376,7 @@ export const dicomViewerWorkbenchManifestRequestSchema = z.object({
 	ohifBaseUrl: httpUrlSchema.nullable().optional(),
 	externalViewerPath: externalViewerPathSchema.nullable().optional(),
 	allowExternalHandoff: z.boolean().default(true),
-});
+}).strict();
 
 export type DicomViewerWorkbenchManifestRequest = z.infer<
 	typeof dicomViewerWorkbenchManifestRequestSchema
@@ -430,7 +430,7 @@ export const saveDicomWorkbenchBundleRequestSchema = z.object({
 	manifest: dicomViewerWorkbenchManifestResponseSchema,
 	clientSavedAt: z.string().nullable().optional(),
 	seriesKey: z.string().min(1).max(1000).optional(),
-});
+}).strict();
 
 export type SaveDicomWorkbenchBundleRequest = z.infer<
 	typeof saveDicomWorkbenchBundleRequestSchema
@@ -481,7 +481,7 @@ export const dicomFolderWorkupPlanRequestSchema = z.object({
 		.default(256 * 1024),
 	client: dicomWorkstationClientFactsSchema,
 	viewerState: imagingViewerSessionStateSchema.nullable().optional(),
-});
+}).strict();
 
 export type DicomFolderWorkupPlanRequest = z.infer<
 	typeof dicomFolderWorkupPlanRequestSchema

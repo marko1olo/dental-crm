@@ -7,16 +7,10 @@
 
 import type { UkepDigitalSignaturePayload } from "./types.js";
 
+import { escapeHtml } from "../../utils/strings.js";
+
 /** Безопасное экранирование HTML-спецсимволов для печатных форм */
-export function escapeHtml(str: unknown): string {
-	if (str === null || str === undefined) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+export { escapeHtml };
 
 /** Общие CSS стили для печати медицинских документов на листах А4 по ГОСТ Р 7.0.97-2016 */
 export const CLINICAL_DOCUMENT_PRINT_STYLES = `

@@ -5,6 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { formatKopecksRu, toExactKopecks } from "../money.js";
 import {
 	type FdiToothRecord,
 	type ToothSurface,
@@ -294,9 +295,7 @@ export function synthesizeFullOdontogramAutopilot(request: FullOdontogramAutopil
 	const isFullyCompliant = autopilotItems.every((item) => item.complianceAudit.isCompliant);
 	const missingBlocks = Array.from(new Set(autopilotItems.flatMap((item) => item.complianceAudit.missingMandatoryBlocks)));
 
-	const rubles = Math.floor(totalKopecks / 100);
-	const kopecks = totalKopecks % 100;
-	const totalFormattedRub = `${rubles.toLocaleString("ru-RU")},${kopecks.toString().padStart(2, "0")} ₽`;
+	const totalFormattedRub = formatKopecksRu(toExactKopecks(totalKopecks));
 
 	return {
 		totalTeethCount: validTeeth.length,

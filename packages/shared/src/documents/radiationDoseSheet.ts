@@ -57,7 +57,7 @@ export const radiationExposureEntrySchema = z.object({
 	effectiveDoseMicrosieverts: z.number().min(0.1).max(5000.0), // в микрозивертах (мкЗв = мЗв * 1000)
 	radiologistFullName: z.string().trim().min(1).max(160),
 	notes: z.string().trim().max(500).nullable().optional(),
-});
+}).strict();
 export type RadiationExposureEntry = z.infer<typeof radiationExposureEntrySchema>;
 export type PatientRadiationExposureRecord = RadiationExposureEntry;
 export const STANDARD_DENTAL_RADIATION_DOSES: Record<string, number> = DEFAULT_EFFECTIVE_DOSES_MSV;
@@ -111,7 +111,7 @@ export function calculateAnnualRadiationDose(
 		safetyZone = "red_warning";
 		riskCategory = "moderate"; // moderate risk of exceeding standard preventive diagnostic limit
 		safetyZoneLabel = "Красная зона (≥ 1.0 мЗв/год) — Достигнут рекомендуемый годовой диагностический порог.";
-		safetyRecommendation = "Внимание: годовая эффективная доза превысила 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования проводятся по обоснованным клиническим показаниям с записью в медицинской карте (форма 043/у) без блокировки съемки.";
+		safetyRecommendation = "Внимание: годовая эффективная доза превысила 1.0 мЗв (СанПиН 2.6.1.2523-09 НРБ-99/2009). Все последующие исследования проводятся по обоснованным клиническим показаниям с записью в медицинской карте без блокировки съемки.";
 	} else if (totalMsv >= 0.5) {
 		safetyZone = "yellow_moderate";
 		riskCategory = "moderate";
@@ -162,7 +162,7 @@ export const radiationDoseSheetPayloadSchema = z.object({
 		safetyZone: z.enum(["green_optimal", "yellow_moderate", "red_warning"]).default("green_optimal"),
 		safetyZoneLabel: z.string().trim().default("Зеленая зона (< 0.5 мЗв/год) — Оптимальный безопасный уровень."),
 		safetyRecommendation: z.string().trim().default("Накопленная дозовая нагрузка в пределах нормы."),
-	}).default({
+	}).strict().default({
 		totalDoseYearMsv: 0,
 		totalDoseYearMicrosieverts: 0,
 		safetyZone: "green_optimal",
@@ -170,5 +170,5 @@ export const radiationDoseSheetPayloadSchema = z.object({
 		safetyRecommendation: "Накопленная дозовая нагрузка в пределах нормы.",
 	}),
 	responsibleOfficerFullName: z.string().trim().min(1).max(160).default("Врач-рентгенолог / Ответственный за РБ"),
-});
+}).strict();
 export type RadiationDoseSheetPayload = z.infer<typeof radiationDoseSheetPayloadSchema>;

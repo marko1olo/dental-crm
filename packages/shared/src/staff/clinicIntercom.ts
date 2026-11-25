@@ -368,7 +368,7 @@ export const sendStaffChatMessageInputSchema = z.object({
 	intercomPreset: intercomPresetKeySchema.optional(),
 	targetAudience: z.string().optional(),
 	metadata: z.record(z.unknown()).optional(),
-});
+}).strict();
 export type SendStaffChatMessageInput = z.infer<typeof sendStaffChatMessageInputSchema>;
 
 export const sendIntercomPingInputSchema = z.object({
@@ -385,14 +385,14 @@ export const sendIntercomPingInputSchema = z.object({
 	doctorName: z.string().optional(),
 	urgency: staffChatUrgencySchema.optional(),
 	customNote: z.string().optional(),
-});
+}).strict();
 export type SendIntercomPingInput = z.infer<typeof sendIntercomPingInputSchema>;
 
 export const sendIntercomAckInputSchema = z.object({
 	messageId: z.string().uuid(),
 	ackType: intercomAckTypeSchema,
 	customComment: z.string().optional(),
-});
+}).strict();
 export type SendIntercomAckInput = z.infer<typeof sendIntercomAckInputSchema>;
 
 export const staffMemberPresenceItemSchema = z.object({

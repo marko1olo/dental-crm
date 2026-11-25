@@ -383,7 +383,7 @@ export const acceptVisitDraftSchema = z.object({
 	baseRevision: z.number().int().nonnegative().nullable().optional(),
 	clientSavedAt: z.string().nullable().optional(),
 	hygieneIndices: hygieneIndicesSchema.nullable().optional(),
-});
+}).strict();
 
 export type AcceptVisitDraftInput = z.infer<typeof acceptVisitDraftSchema>;
 
@@ -438,7 +438,7 @@ export const createAiRecognitionJobSchema = z.object({
 	inputText: z.string().trim().min(1).max(80000),
 	patientId: z.string().uuid().nullable().optional(),
 	imagingStudyId: z.string().uuid().nullable().optional(),
-});
+}).strict();
 
 export type CreateAiRecognitionJobInput = z.infer<
 	typeof createAiRecognitionJobSchema
@@ -467,7 +467,7 @@ export const importPreviewRequestSchema = z.object({
 	sourceName: z.string().trim().min(1).max(160).default("manual_csv"),
 	sourceKind: importSourceKindSchema.default("csv_text"),
 	rawText: z.string().trim().min(1).max(120000),
-});
+}).strict();
 
 export type ImportPreviewRequest = z.infer<typeof importPreviewRequestSchema>;
 
@@ -512,6 +512,6 @@ export const importIntakeRequestSchema = z.object({
 	sourceKind: importSourceKindSchema,
 	rawText: z.string().trim().min(1).max(120000),
 	fileName: z.string().trim().min(1).max(260).nullable().optional(),
-});
+}).strict();
 
 export type ImportIntakeRequest = z.infer<typeof importIntakeRequestSchema>;

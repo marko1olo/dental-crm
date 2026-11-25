@@ -5,7 +5,7 @@
 
 import type { Ffd12OperationType } from "../ffd12Types.js";
 import { sha256Hex } from "../../sync/hashing.js";
-import { parseKopecks, kopecksToRubles } from "../../money.js";
+import { kopecksToNumericString, kopecksToRubles, parseKopecks, toExactKopecks } from "../../money.js";
 import type { ComputeFpd54FzParams, Format54FzFtsQrParams, Parsed54FzQrResult } from "./types.js";
 
 /**
@@ -88,9 +88,7 @@ export function format54FzFtsQrString(params: Format54FzFtsQrParams): string {
 	const minutes = String(dateObj.getMinutes()).padStart(2, "0");
 	const t = `${year}${month}${day}T${hours}${minutes}`;
 
-	const rubles = Math.floor(params.totalKopecks / 100);
-	const kopecks = Math.abs(params.totalKopecks % 100);
-	const s = `${rubles}.${String(kopecks).padStart(2, "0")}`;
+	const s = kopecksToNumericString(toExactKopecks(Math.round(params.totalKopecks)));
 
 	const fn = String(params.fnSerial).trim();
 	const i = String(params.fiscalDocumentNumber).trim();
@@ -153,7 +151,14 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 	}
 
 	// 2. Validate timestamp 't' (YYYYMMDDTHHMM or YYYYMMDDTHHMMSS)
-	const tVal = params["t"]!;
+	const tVal = params["t"];
+	if (!tVal) {
+		return {
+			isValid: false,
+			errorMessage: "В QR-строке 54-ФЗ отсутствует обязательный реквизит 't'",
+			rawParams: params,
+		};
+	}
 	const tMatch = tVal.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?$/i);
 	if (!tMatch) {
 		return {
@@ -194,7 +199,14 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 	const issuedAtIso = parsedDate.toISOString();
 
 	// 3. Validate sum 's' (format: XXXX.XX)
-	const sVal = params["s"]!;
+	const sVal = params["s"];
+	if (!sVal) {
+		return {
+			isValid: false,
+			errorMessage: "В QR-строке 54-ФЗ отсутствует обязательный реквизит 's'",
+			rawParams: params,
+		};
+	}
 	if (!/^\d+(\.\d{1,2})?$/.test(sVal)) {
 		return {
 			isValid: false,
@@ -223,7 +235,14 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 	const totalAmountRub = kopecksToRubles(totalAmountKopecks);
 
 	// 4. Validate FN serial 'fn' (16 digits)
-	const fnVal = params["fn"]!;
+	const fnVal = params["fn"];
+	if (!fnVal) {
+		return {
+			isValid: false,
+			errorMessage: "В QR-строке 54-ФЗ отсутствует обязательный реквизит 'fn'",
+			rawParams: params,
+		};
+	}
 	if (!/^\d{16}$/.test(fnVal)) {
 		return {
 			isValid: false,
@@ -233,7 +252,14 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 	}
 
 	// 5. Validate Fiscal Document number 'i' (integer >= 1)
-	const iVal = params["i"]!;
+	const iVal = params["i"];
+	if (!iVal) {
+		return {
+			isValid: false,
+			errorMessage: "В QR-строке 54-ФЗ отсутствует обязательный реквизит 'i'",
+			rawParams: params,
+		};
+	}
 	if (!/^\d{1,10}$/.test(iVal) || Number(iVal) <= 0) {
 		return {
 			isValid: false,
@@ -244,7 +270,14 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 	const fiscalDocumentNumber = Number(iVal);
 
 	// 6. Validate Fiscal Sign 'fp' (up to 10 digits integer)
-	const fpVal = params["fp"]!;
+	const fpVal = params["fp"];
+	if (!fpVal) {
+		return {
+			isValid: false,
+			errorMessage: "В QR-строке 54-ФЗ отсутствует обязательный реквизит 'fp'",
+			rawParams: params,
+		};
+	}
 	if (!/^\d{1,10}$/.test(fpVal)) {
 		return {
 			isValid: false,
@@ -254,7 +287,14 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
 	}
 
 	// 7. Validate Operation Type 'n' (1, 2, 3, 4)
-	const nVal = params["n"]!;
+	const nVal = params["n"];
+	if (!nVal) {
+		return {
+			isValid: false,
+			errorMessage: "В QR-строке 54-ФЗ отсутствует обязательный реквизит 'n'",
+			rawParams: params,
+		};
+	}
 	let operationType: Ffd12OperationType;
 	switch (nVal) {
 		case "1":

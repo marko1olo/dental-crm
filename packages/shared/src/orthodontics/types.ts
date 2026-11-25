@@ -100,7 +100,7 @@ export const archwireChangePayloadSchema = z.object({
 	anbAngle: z.number().optional(),
 	skeletalClass: z.string().optional(),
 	treatmentPlanId: z.string().uuid().optional(),
-}).transform((data) => {
+}).strict().transform((data) => {
 	const effectiveSection = data.section || data.size || ".016";
 	const effectiveProfile = data.profile || (effectiveSection.includes("x") ? "rectangular" : "round");
 	return {

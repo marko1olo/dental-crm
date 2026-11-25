@@ -6,15 +6,7 @@ import type { Kopecks } from "../../money.js";
 import { formatKopecksRu, kopecksToRubles } from "../../money.js";
 import { integerToRussianWords } from "../../sanpin/sanpinRegistryEngine.js";
 
-export function escapeHtml(str: unknown): string {
-	if (str === null || str === undefined) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+export { escapeHtml } from "../../utils/strings.js";
 
 export function formatRublesFromKopecks(kopecks: Kopecks): string {
 	return formatKopecksRu(kopecks);

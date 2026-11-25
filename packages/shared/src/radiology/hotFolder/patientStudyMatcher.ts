@@ -144,8 +144,9 @@ export function matchRadiologyStudyWithVisits(
 				}
 
 				// Проверка пересечения номеров зубов в приёме
-				if (metadata.toothFdiList.length > 0 && visit.assignedToothList && visit.assignedToothList.length > 0) {
-					const hasToothOverlap = metadata.toothFdiList.some((t) => visit.assignedToothList!.includes(t));
+				const assignedTeeth = visit.assignedToothList;
+				if (metadata.toothFdiList.length > 0 && assignedTeeth && assignedTeeth.length > 0) {
+					const hasToothOverlap = metadata.toothFdiList.some((t) => assignedTeeth.includes(t));
 					if (hasToothOverlap) {
 						score += 0.1;
 						details += `, совпадает зуб FDI (${metadata.toothFdiList.join(", ")})`;

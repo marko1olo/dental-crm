@@ -4,6 +4,7 @@
  * (Код 01: стандартное лечение / Код 02: дорогостоящее лечение) по 54-ФЗ и приказу ФНС ЕД-7-11/824@.
  */
 
+import { calculatePercentDiscountKopecks, toExactKopecks } from "../money.js";
 import {
 	kopecksToNumericString,
 	kopecksToRub,
@@ -247,7 +248,7 @@ export function compileFamilyBillingDraft(
 			// Code 02 is unlimited expensive treatment
 			const code01EligibleRub = Math.min(150000, code01Rub);
 			const eligibleKopecks = rubToKopecks(code01EligibleRub) + rubToKopecks(code02Rub);
-			const estimatedRefund13Kopecks = Math.round((eligibleKopecks * 13) / 100);
+			const estimatedRefund13Kopecks = calculatePercentDiscountKopecks(toExactKopecks(eligibleKopecks), 13);
 			const estimatedRefund13Rub = kopecksToRub(estimatedRefund13Kopecks);
 
 			return {

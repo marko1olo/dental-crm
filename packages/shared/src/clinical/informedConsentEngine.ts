@@ -304,7 +304,7 @@ export function validateConsentSigningInput(
 		const hasScan = Boolean(params.paperScanAttached || params.scanFileName);
 		const hasArchive = Boolean(params.paperOriginalConfirmed || params.paperOriginalStored);
 		if (!hasScan && !hasArchive) {
-			const err = "Прикрепите скан/фото подписанного бланка или подтвердите факт подшивки оригинала в карту 043/у.";
+			const err = "Прикрепите скан/фото подписанного бланка или подтвердите факт подшивки оригинала в медицинскую карту.";
 			return {
 				isValid: false,
 				valid: false,

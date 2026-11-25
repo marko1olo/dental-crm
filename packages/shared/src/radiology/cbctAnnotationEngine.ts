@@ -305,26 +305,31 @@ export function calculateAnnotationStats(params: CalculateAnnotationStatsParams)
 
 	switch (toolType) {
 		case "Length": {
-			if (!points || points.length < 2) return { stats: { lengthMm: 0 }, formattedValue: "0.0 мм" };
-			const lengthMm = calculateDistance3D(points[0]!, points[1]!);
+			const [p0, p1] = points ?? [];
+			if (!p0 || !p1) return { stats: { lengthMm: 0 }, formattedValue: "0.0 мм" };
+			const lengthMm = calculateDistance3D(p0, p1);
 			return { stats: { lengthMm }, formattedValue: `${f1(lengthMm)} мм` };
 		}
 		case "Angle": {
-			if (!points || points.length < 3) return { stats: { angleDeg: 0 }, formattedValue: "0.0°" };
-			const angleDeg = calculateAngle3D(points[0]!, points[1]!, points[2]!);
+			const [p0, p1, p2] = points ?? [];
+			if (!p0 || !p1 || !p2) return { stats: { angleDeg: 0 }, formattedValue: "0.0°" };
+			const angleDeg = calculateAngle3D(p0, p1, p2);
 			return { stats: { angleDeg }, formattedValue: `${f1(angleDeg)}°` };
 		}
 		case "Bidirectional": {
-			if (!points || points.length < 2) {
+			const [p0, p1, p2, p3] = points ?? [];
+			if (!p0 || !p1) {
 				return { stats: { lengthMm: 0, widthMm: 0 }, formattedValue: "0.0 × 0.0 мм" };
 			}
-			const lengthMm = calculateDistance3D(points[0]!, points[1]!);
-			const widthMm = points.length >= 4 ? calculateDistance3D(points[2]!, points[3]!) : 0;
+			const lengthMm = calculateDistance3D(p0, p1);
+			const widthMm = p2 && p3 ? calculateDistance3D(p2, p3) : 0;
 			return { stats: { lengthMm, widthMm }, formattedValue: `${f1(lengthMm)} × ${f1(widthMm)} мм` };
 		}
 		case "Probe": {
-			if (!points || points.length < 1) return { stats: { probeHu: 0 }, formattedValue: "0 HU" };
-			const hu = huValues && huValues.length > 0 ? huValues[0]! : voxelSampler ? voxelSampler(points[0]!) : 0;
+			const p0 = points?.[0];
+			if (!p0) return { stats: { probeHu: 0 }, formattedValue: "0 HU" };
+			const firstHu = huValues?.[0];
+			const hu = firstHu !== undefined ? firstHu : voxelSampler ? voxelSampler(p0) : 0;
 			return {
 				stats: { probeHu: hu, mean: hu, min: hu, max: hu, stdDev: 0, voxelCount: 1 },
 				formattedValue: `${f0(hu)} HU`,
@@ -334,21 +339,21 @@ export function calculateAnnotationStats(params: CalculateAnnotationStatsParams)
 			let a = 0;
 			let b = 0;
 			let center: Vec3 = [0, 0, 0];
-			if (points.length >= 4) {
-				a = calculateDistance3D(points[0]!, points[1]!) / 2;
-				b = calculateDistance3D(points[2]!, points[3]!) / 2;
-				center = [(points[0]![0] + points[1]![0]) / 2, (points[0]![1] + points[1]![1]) / 2, (points[0]![2] + points[1]![2]) / 2];
-			} else if (points.length === 2) {
-				const [p1, p2] = [points[0]!, points[1]!];
-				const [dx, dy, dz] = [Math.abs(p2[0] - p1[0]), Math.abs(p2[1] - p1[1]), Math.abs(p2[2] - p1[2])];
+			const [p0, p1, p2, p3] = points;
+			if (points.length >= 4 && p0 && p1 && p2 && p3) {
+				a = calculateDistance3D(p0, p1) / 2;
+				b = calculateDistance3D(p2, p3) / 2;
+				center = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2];
+			} else if (points.length === 2 && p0 && p1) {
+				const [dx, dy, dz] = [Math.abs(p1[0] - p0[0]), Math.abs(p1[1] - p0[1]), Math.abs(p1[2] - p0[2])];
 				a = Math.max(dx, dy, dz) / 2;
 				b = Math.min(Math.max(dx, dy), Math.max(dy, dz), Math.max(dx, dz)) / 2;
 				if (b < 1e-6) b = a;
-				center = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2];
-			} else if (points.length === 3) {
-				center = points[0]!;
-				a = calculateDistance3D(center, points[1]!);
-				b = calculateDistance3D(center, points[2]!);
+				center = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2];
+			} else if (points.length === 3 && p0 && p1 && p2) {
+				center = p0;
+				a = calculateDistance3D(center, p1);
+				b = calculateDistance3D(center, p2);
 			}
 			const areaMm2 = Math.PI * a * b;
 			const h = a + b > 0 ? (a - b) ** 2 / (a + b) ** 2 : 0;
@@ -378,19 +383,19 @@ export function calculateAnnotationStats(params: CalculateAnnotationStatsParams)
 			let areaMm2 = 0;
 			let perimeterMm = 0;
 			let center: Vec3 = [0, 0, 0];
-			if (points.length === 2) {
-				const [p1, p2] = [points[0]!, points[1]!];
-				widthMm = Math.abs(p2[0] - p1[0]);
-				heightMm = Math.abs(p2[1] - p1[1]) || Math.abs(p2[2] - p1[2]);
+			const [p0, p1, p2] = points;
+			if (points.length === 2 && p0 && p1) {
+				widthMm = Math.abs(p1[0] - p0[0]);
+				heightMm = Math.abs(p1[1] - p0[1]) || Math.abs(p1[2] - p0[2]);
 				areaMm2 = widthMm * heightMm;
 				perimeterMm = 2 * (widthMm + heightMm);
-				center = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2];
-			} else if (points.length >= 4) {
+				center = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2];
+			} else if (points.length >= 4 && p0 && p1 && p2) {
 				const poly = calculatePolygonArea3D(points);
 				areaMm2 = poly.areaMm2;
 				perimeterMm = poly.perimeterMm;
-				widthMm = calculateDistance3D(points[0]!, points[1]!);
-				heightMm = calculateDistance3D(points[1]!, points[2]!);
+				widthMm = calculateDistance3D(p0, p1);
+				heightMm = calculateDistance3D(p1, p2);
 				center = [
 					points.reduce((acc, p) => acc + p[0], 0) / points.length,
 					points.reduce((acc, p) => acc + p[1], 0) / points.length,
@@ -428,7 +433,8 @@ export function calculateAnnotationStats(params: CalculateAnnotationStatsParams)
 			return { stats, formattedValue };
 		}
 		case "ArrowAnnotate": {
-			const lengthMm = points.length >= 2 ? calculateDistance3D(points[0]!, points[1]!) : 0;
+			const [p0, p1] = points;
+			const lengthMm = p0 && p1 ? calculateDistance3D(p0, p1) : 0;
 			return {
 				stats: { lengthMm },
 				formattedValue: label ? `${label} (${f1(lengthMm)} мм)` : `Стрелка (${f1(lengthMm)} мм)`,
@@ -573,7 +579,7 @@ export function formatAnnotationReportForm043A4(input: AnnotationReportInput): s
 	const patientName = input.patientName || "Не указан";
 	const patientBirthDate = input.patientBirthDate || "Не указана";
 	const patientCardNumber = input.patientCardNumber || "Б/Н";
-	const studyDate = input.studyDate || new Date().toISOString().split("T")[0]!;
+	const studyDate = input.studyDate || (new Date().toISOString().split("T")[0] ?? "");
 	const doctorName = input.doctorName || "Врач-рентгенолог / Стоматолог";
 	const modality = input.studyModality || "КЛКТ (Конусно-лучевая компьютерная томография 3D, Dental CBCT)";
 	const indication = input.indication || "Рентгеноморфометрический анализ, планирование дентальной имплантации и костной пластики";
@@ -611,7 +617,8 @@ export function formatAnnotationReportForm043A4(input: AnnotationReportInput): s
 		lines.push("Аннотации и линейные измерения не зафиксированы.");
 	} else {
 		for (let i = 0; i < annotations.length; i++) {
-			const ann = annotations[i]!;
+			const ann = annotations[i];
+			if (!ann) continue;
 			const num = String(i + 1).padStart(2, " ");
 			const toolName = ANNOTATION_TOOL_NAMES_RU[ann.toolType] || ann.toolType;
 			const slice = `${ann.sliceView || "All"}${ann.sliceCoordinate != null ? ` (коорд. ${f1(ann.sliceCoordinate)} мм)` : ""}`;
@@ -635,7 +642,7 @@ export function formatAnnotationReportForm043A4(input: AnnotationReportInput): s
 		lines.push(`Всего аннотаций: ${annotations.length} | Линейных: ${linearAnns.length} | ROI площадей: ${areaAnns.length} | Денситометрий: ${densAnns.length}`);
 
 		if (linearAnns.length > 0) {
-			const lengths = linearAnns.map((a) => a.stats!.lengthMm!);
+			const lengths = linearAnns.map((a) => a.stats?.lengthMm ?? 0);
 			const sumLen = lengths.reduce((acc, v) => acc + v, 0);
 			const minLen = Math.min(...lengths);
 			const maxLen = Math.max(...lengths);
@@ -643,7 +650,7 @@ export function formatAnnotationReportForm043A4(input: AnnotationReportInput): s
 		}
 
 		if (densAnns.length > 0) {
-			const means = densAnns.map((a) => a.stats!.mean!);
+			const means = densAnns.map((a) => a.stats?.mean ?? 0);
 			const avgHU = means.reduce((acc, v) => acc + v, 0) / means.length;
 			lines.push(`Средняя оптическая плотность в исследованных ROI: ${f0(avgHU)} HU`);
 		}

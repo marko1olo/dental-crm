@@ -4,7 +4,7 @@
  * Mandate 8b: <= 120 lines.
  */
 
-import { formatKopecksRu } from "../../money.js";
+import { formatKopecksRu, kopecksToRubles } from "../../money.js";
 import { EXECUTIVE_FUNNEL_STAGE_DEFINITIONS, type ExecutiveFunnelStage } from "./executiveFunnelDefinitions.js";
 import type { ExecutiveFunnelStageItem, RawFunnelStageInput } from "./executiveFunnelTypes.js";
 
@@ -74,7 +74,7 @@ export function calculateExecutiveFunnel(
 			dropOffCount,
 			dropOffPercent: Math.min(100, Math.max(0, dropOffPercent)),
 			totalVolumeKopecks: volumeKopecks,
-			totalVolumeRub: Math.round(volumeKopecks / 100),
+			totalVolumeRub: Math.round(kopecksToRubles(volumeKopecks)),
 			totalVolumeFormatted: formatKopecksRu(volumeKopecks),
 			unitCostKopecks,
 			unitCostFormatted: unitCostKopecks !== null ? formatKopecksRu(unitCostKopecks) : "—",

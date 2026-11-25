@@ -33,7 +33,7 @@ export const visualSignatureStampParamsSchema = z.object({
 	signatureType: z.enum(["ukep", "unep", "simple", "draft"]).default("ukep"),
 	organizationName: z.string().trim().optional(),
 	documentId: z.string().trim().optional(),
-});
+}).strict();
 export type VisualSignatureStampParams = z.input<typeof visualSignatureStampParamsSchema>;
 export type VisualSignatureStampOutput = z.infer<typeof visualSignatureStampParamsSchema>;
 

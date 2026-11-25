@@ -213,7 +213,7 @@ export function verifyAndSignBatchEmrSha256(params: {
 
 	return {
 		success: true,
-		messageRu: `Успешно подписано ${newlySignedIds.length} медицинских карт ф. 043/у через криптографический протокол ПЭП (63-ФЗ).`,
+		messageRu: `Успешно подписано ${newlySignedIds.length} медицинских карт через криптографический протокол ПЭП (63-ФЗ).`,
 		signedCount: newlySignedIds.length,
 		signedAppointmentIds: newlySignedIds,
 		updatedAppointments,

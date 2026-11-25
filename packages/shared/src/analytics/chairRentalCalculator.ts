@@ -48,7 +48,7 @@ export const chairRentalSummaryQuerySchema = z.object({
 	landlordPercent: z.coerce.number().min(0).max(100).optional().default(25),           // 25% клинике
 	monthlyRateKopecks: z.coerce.number().int().nonnegative().optional().default(6_600_000), // 66 000 RUB/мес
 	workingDaysInMonth: z.coerce.number().positive().optional().default(22),
-});
+}).strict();
 export type ChairRentalSummaryQuery = z.infer<typeof chairRentalSummaryQuerySchema>;
 
 export interface ChairRentalReconciliationAct {

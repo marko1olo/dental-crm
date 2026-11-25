@@ -41,7 +41,7 @@ export const advertisingChannelInputSchema = z.object({
 	repeatVisitsCount: z.number().int().nonnegative().optional(),
 	totalLtvRevenueKopecks: z.number().int().nonnegative().optional(),
 	notes: z.string().optional(),
-});
+}).strict();
 
 export type AdvertisingChannelInput = z.infer<typeof advertisingChannelInputSchema>;
 

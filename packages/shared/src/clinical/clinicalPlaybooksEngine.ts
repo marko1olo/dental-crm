@@ -59,7 +59,7 @@ export const MorningDoctorBriefingInputSchema = z.object({
   appointments: z.array(MorningAppointmentItemSchema),
   overdueRecallsCount: z.number().int().nonnegative().default(0),
   unansweredBudgetsCount: z.number().int().nonnegative().default(0),
-});
+}).strict();
 export type MorningDoctorBriefingInput = z.input<typeof MorningDoctorBriefingInputSchema>;
 
 export const ChairLoadItemSchema = z.object({
@@ -150,7 +150,7 @@ export const CancellationGapRecoveryInputSchema = z.object({
   cancelledSlot: CancelledSlotSchema,
   recallCandidates: z.array(RecallCandidateSchema),
   maxCandidates: z.number().int().positive().default(5),
-});
+}).strict();
 export type CancellationGapRecoveryInput = z.input<
   typeof CancellationGapRecoveryInputSchema
 >;
@@ -226,10 +226,10 @@ export const PreAppointmentSummaryInputSchema = z.object({
         procedure: z.string(),
         dueDate: z.string(),
         isOverdue: z.boolean(),
-      })
+      }).strict()
     )
     .default([]),
-});
+}).strict();
 export type PreAppointmentSummaryInput = z.input<
   typeof PreAppointmentSummaryInputSchema
 >;
@@ -632,7 +632,7 @@ export function generatePreAppointmentSummary(
     );
   }
 
-  suggestedActions.push("Заполнить электронный дневник 043/у по протоколу СтАР");
+  suggestedActions.push("Заполнить электронный дневник приёма по клиническому протоколу");
 
   // Format clean print/display text
   const textLines: string[] = [];

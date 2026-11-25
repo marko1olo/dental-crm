@@ -38,15 +38,7 @@ export const DEFAULT_CLINIC_LICENSE_NUMBER = defaultResolved.medicalLicenseNumbe
 export const DEFAULT_CLINIC_LICENSE_DATE = defaultResolved.medicalLicenseDate;
 export const DEFAULT_CLINIC_LICENSE_ISSUER = defaultResolved.medicalLicenseIssuer;
 
-export function escapeHtml(str: unknown): string {
-	if (str === null || str === undefined) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+export { escapeHtml } from "../../utils/strings.js";
 
 /**
  * Перечень стандартных стоматологических медицинских вмешательств

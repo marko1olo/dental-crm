@@ -2,7 +2,7 @@
  * treatmentPlanMultiOptionBuilder.ts — Создание многовариантного плана лечения (А, Б, В) DENTE.
  */
 
-import { multiplyKopecks, percentageOfKopecks } from "../../money.js";
+import { basisPointsFromPercent, multiplyKopecks, percentageOfKopecks } from "../../money.js";
 import { generateTreatmentPlanId, generateTreatmentPlanNumber } from "../../utils/idGenerators.js";
 import {
 	DEFAULT_CLINIC_LEGAL_REQUISITES,
@@ -25,7 +25,7 @@ export function buildMultiOptionTreatmentPlan(
 	const planNumber = input.planNumber || generateTreatmentPlanNumber(now, {
 		seedKey: `${input.patientId}:${input.doctorFullName}`,
 	});
-	const clinicId = input.clinicId || "clinic_main";
+	const clinicId = input.clinicId?.trim() ?? "";
 	const clinicRequisites: ClinicLegalRequisites = {
 		...DEFAULT_CLINIC_LEGAL_REQUISITES,
 		...(input.clinicRequisites || {}),
@@ -33,7 +33,7 @@ export function buildMultiOptionTreatmentPlan(
 
 	let processedItems = input.items;
 	if (typeof input.globalDiscountPercent === "number" && input.globalDiscountPercent > 0) {
-		const bp = Math.min(10000, Math.max(0, Math.round(input.globalDiscountPercent * 100)));
+		const bp = Math.min(10000, Math.max(0, basisPointsFromPercent(input.globalDiscountPercent)));
 		processedItems = input.items.map((it) => {
 			const qty = it.quantity || 1;
 			const gross = multiplyKopecks(it.unitPriceKopecks, qty);
@@ -51,17 +51,18 @@ export function buildMultiOptionTreatmentPlan(
 	// DEF-PLAN-05 / Red Team: Честное разделение тарифов.
 	// Если у позиций нет раздельных тарифов (tierKey), честно выводим 1 базовый вариант, а не дублируем одинаковые суммы с разными ярлыками.
 	const hasExplicitTierItems = input.items.some((it) => Boolean(it.tierKey) || Boolean(it.tierPrices));
+	const defaultTierKey: PlanTierKey = input.selectedTierKey ?? "optimum";
 	const availableTierKeys: PlanTierKey[] = hasExplicitTierItems
 		? ["economy", "optimum", "premium"]
-		: [input.selectedTierKey || "optimum"];
-	const selectedTierKey = input.selectedTierKey || (hasExplicitTierItems ? "optimum" : availableTierKeys[0]!);
+		: [defaultTierKey];
+	const selectedTierKey: PlanTierKey = input.selectedTierKey ?? (hasExplicitTierItems ? "optimum" : defaultTierKey);
 	const selectedTier = tiers[selectedTierKey];
 	const isPennyExact = Object.values(tiers).every((t) => t.isPennyExact);
 
 	return {
 		planId, planNumber, clinicId, patientId: input.patientId,
 		patientFullName: input.patientFullName.trim(),
-		patientBirthDate: input.patientBirthDate || "01.01.1985",
+		patientBirthDate: input.patientBirthDate?.trim() ?? "",
 		patientPhone: input.patientPhone || "+7 (___) ___-__-__",
 		patientPassport: input.patientPassport || "Паспорт РФ",
 		doctorFullName: input.doctorFullName.trim(),

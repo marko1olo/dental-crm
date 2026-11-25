@@ -11,9 +11,11 @@
  */
 
 import {
+	calculatePercentDiscountKopecks,
 	formatKopecksToRubles,
 	kopecksToRubles,
 	rublesToKopecks,
+	toExactKopecks,
 } from "../../money.js";
 import type {
 	PurchaseOrderRecord,
@@ -87,7 +89,7 @@ export function validateThreeWayMatching(
 
 		// 1. Price comparison (PO price vs Invoice price)
 		const priceDiffKopecks = invLine.unitPriceKopecks - poLine.unitPriceKopecks;
-		const maxAllowedPriceDiff = Math.round((poLine.unitPriceKopecks * priceTol) / 100);
+		const maxAllowedPriceDiff = calculatePercentDiscountKopecks(toExactKopecks(poLine.unitPriceKopecks), priceTol);
 		if (Math.abs(priceDiffKopecks) > maxAllowedPriceDiff) {
 			discrepancies.push({
 				inventoryItemId: invLine.inventoryItemId,

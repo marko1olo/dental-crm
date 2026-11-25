@@ -23,7 +23,7 @@ export type SovereignScalePresetId = z.infer<
 export const applyClinicScalePresetSchema = z.object({
 	preset: sovereignScalePresetIdSchema,
 	confirmResetExtraChairs: z.boolean().optional(),
-});
+}).strict();
 
 export type ApplyClinicScalePresetInput = z.infer<
 	typeof applyClinicScalePresetSchema
@@ -31,6 +31,6 @@ export type ApplyClinicScalePresetInput = z.infer<
 
 export const updateClinicModeSchema = z.object({
 	mode: clinicModeSchema,
-});
+}).strict();
 
 export type UpdateClinicModeInput = z.infer<typeof updateClinicModeSchema>;

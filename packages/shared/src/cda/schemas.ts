@@ -333,8 +333,8 @@ export const egiszRemdPackageSchema = z.object({
 		clinicOid: z.string().min(1),
 		clinicOgrn: z.string().optional(),
 		docTypeNsiCode: z.string().optional().default("108"),
-	}),
-});
+	}).strict(),
+}).strict();
 
 export const egiszRemdRegistrationReceiptSchema = z.object({
 	receiptId: z.string().min(1).nullable(),

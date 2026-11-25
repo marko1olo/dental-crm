@@ -11,7 +11,7 @@ export const patientFieldRequirementsSchema = z.object({
 	requireSnils: z.boolean().default(false),
 	requireBirthDate: z.boolean().default(false),
 	requireIdentityDocument: z.boolean().default(false),
-});
+}).strict();
 
 export type PatientFieldRequirements = z.infer<
 	typeof patientFieldRequirementsSchema

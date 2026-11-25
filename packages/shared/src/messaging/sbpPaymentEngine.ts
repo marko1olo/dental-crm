@@ -44,7 +44,7 @@ export const generateSbpDynamicQrSchema = z.object({
 	merchantName: z.string().optional().default("DENTE CLINIC"),
 	merchantCity: z.string().optional().default("MOSCOW"),
 	mcc: z.string().optional().default("8021"), // 8021 = Стоматологические услуги
-});
+}).strict();
 export type GenerateSbpDynamicQrInput = z.input<typeof generateSbpDynamicQrSchema>;
 export type GenerateSbpDynamicQrOutput = z.output<typeof generateSbpDynamicQrSchema>;
 

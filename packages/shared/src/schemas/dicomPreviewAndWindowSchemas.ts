@@ -91,7 +91,7 @@ export const dicomFolderSeriesPreviewRequestSchema = z.object({
 		.positive()
 		.max(1024 * 1024)
 		.default(256 * 1024),
-});
+}).strict();
 
 export type DicomFolderSeriesPreviewRequest = z.infer<
 	typeof dicomFolderSeriesPreviewRequestSchema
@@ -126,7 +126,7 @@ export const dicomFirstFramePreviewRequestSchema = z.object({
 		.default(64 * 1024 * 1024),
 	maxPreviewEdge: z.number().int().min(128).max(1024).default(512),
 	preferredFileIndex: z.number().int().nonnegative().optional(),
-});
+}).strict();
 
 export type DicomFirstFramePreviewRequest = z.infer<
 	typeof dicomFirstFramePreviewRequestSchema
@@ -180,7 +180,7 @@ export const dicomLocalFolderDiscoveryRequestSchema = z.object({
 	maxFilesPerFolder: z.number().int().positive().max(500).default(120),
 	minDicomFiles: z.number().int().positive().max(20).default(2),
 	maxCandidates: z.number().int().positive().max(50).default(12),
-});
+}).strict();
 
 export type DicomLocalFolderDiscoveryRequest = z.infer<
 	typeof dicomLocalFolderDiscoveryRequestSchema
@@ -401,7 +401,7 @@ export const localImagingOrganizerRequestSchema = z.object({
 	maxCandidates: z.number().int().positive().max(50).default(12),
 	includeDentalModels: z.boolean().default(true),
 	includeDicom: z.boolean().default(true),
-});
+}).strict();
 
 export type LocalImagingOrganizerRequest = z.infer<
 	typeof localImagingOrganizerRequestSchema
@@ -488,7 +488,7 @@ export const dicomWebConnectorCheckRequestSchema = z.object({
 	seriesInstanceUid: z.string().max(128).nullable().optional(),
 	authMode: dicomWebAuthModeSchema.default("reverse_proxy"),
 	timeoutMs: z.number().int().positive().max(30_000).default(5_000),
-});
+}).strict();
 
 export type DicomWebConnectorCheckRequest = z.infer<
 	typeof dicomWebConnectorCheckRequestSchema

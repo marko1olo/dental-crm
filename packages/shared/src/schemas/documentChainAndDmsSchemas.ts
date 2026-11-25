@@ -314,7 +314,7 @@ export const insuranceCoverageCalculationInputSchema = z.object({
 	contractId: z.string().uuid(),
 	usedAnnualAmountRub: nonNegativeMoneyRubSchema.default(0),
 	items: z.array(insuranceCalculationItemSchema).min(1),
-});
+}).strict();
 
 export type InsuranceCoverageCalculationInput = z.infer<
 	typeof insuranceCoverageCalculationInputSchema

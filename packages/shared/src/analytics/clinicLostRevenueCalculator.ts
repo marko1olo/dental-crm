@@ -40,7 +40,7 @@ export const clinicLostRevenueInputSchema = z.object({
 	automationMonthlyCostRub: z.number().nonnegative().default(19_900),
 	/** Legacy alias для обратной совместимости */
 	trojanBotMonthlyCost: z.number().nonnegative().optional(),
-});
+}).strict();
 
 export type ClinicLostRevenueInput = z.infer<typeof clinicLostRevenueInputSchema>;
 

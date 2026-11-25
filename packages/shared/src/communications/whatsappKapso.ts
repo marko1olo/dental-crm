@@ -74,14 +74,14 @@ export const kapsoTemplateMapRequestSchema = z.object({
 	notificationType: z.string().max(100),
 	locale: z.string().max(10),
 	templateName: z.string().max(200),
-});
+}).strict();
 export type KapsoTemplateMapRequest = z.infer<typeof kapsoTemplateMapRequestSchema>;
 
 export const kapsoTestRequestSchema = z.object({
 	toNumber: z.string().trim().min(6).max(32),
 	templateName: z.string().trim().min(1).max(200),
 	language: z.string().trim().default("ru"),
-});
+}).strict();
 export type KapsoTestRequest = z.infer<typeof kapsoTestRequestSchema>;
 
 // --- Interactive Payloads (Buttons & Lists) ---

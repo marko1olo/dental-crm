@@ -10,7 +10,7 @@
  */
 
 import { z } from "zod";
-import { kopecksToRubles, rublesToKopecks } from "../money.js";
+import { calculatePercentDiscountKopecks, kopecksToRubles, rublesToKopecks, toExactKopecks } from "../money.js";
 
 // ─── 1. ZOD SCHEMAS & TYPES ───────────────────────────────────────────────────
 
@@ -63,7 +63,7 @@ export const acceptanceWaybillItemSchema = z.object({
 	barcode: z.string().optional(),
 	sku: z.string().optional(),
 	notes: z.string().optional(),
-});
+}).strict();
 export type AcceptanceWaybillItem = z.infer<typeof acceptanceWaybillItemSchema>;
 
 export interface AcceptanceWaybillTotals {
@@ -213,7 +213,7 @@ export function calculateItemTotals(
 
 	const validRates: readonly VatRate[] = [0, 5, 7, 10, 20];
 	const rate: VatRate = validRates.includes(vatRate) ? vatRate : 0;
-	const vatKopecks = Math.round((lineSubtotalKopecks * rate) / 100);
+	const vatKopecks = calculatePercentDiscountKopecks(toExactKopecks(lineSubtotalKopecks), rate);
 	const lineTotalKopecks = lineSubtotalKopecks + vatKopecks;
 
 	return {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { escapeHtml } from "../utils/strings.js";
 
 /**
  * Supported communication channels for omnichannel messaging.
@@ -208,22 +209,6 @@ export function extractTemplateMacroKeys(templateText: string): string[] {
 		}
 	}
 	return Array.from(found);
-}
-
-/**
- * Escapes HTML/XML entities in strings to prevent XSS / HTML injection in channels
- * that interpret markup (email HTML bodies, Telegram HTML parse_mode).
- * Strips dangerous ASCII control characters and escapes &, <, >, ", '.
- */
-function escapeHtml(value: unknown): string {
-	if (value === null || value === undefined) return "";
-	return String(value)
-		.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;");
 }
 
 export const escapeTemplateMacroHtml = escapeHtml;
@@ -622,10 +607,10 @@ export const createMessageTemplateSchema = z.object({
 	templateText: z.string().min(1, "Текст шаблона обязателен"),
 	variables: z.array(z.string()).optional(),
 	isActive: z.boolean().optional().default(true),
-});
+}).strict();
 export type CreateMessageTemplateInput = z.infer<typeof createMessageTemplateSchema>;
 
-export const updateMessageTemplateSchema = createMessageTemplateSchema.partial();
+export const updateMessageTemplateSchema = createMessageTemplateSchema.partial().strict();
 export type UpdateMessageTemplateInput = z.infer<typeof updateMessageTemplateSchema>;
 
 export const renderMessageTemplateInputSchema = z.object({

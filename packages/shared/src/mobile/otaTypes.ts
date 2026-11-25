@@ -31,7 +31,7 @@ export const mobileOtaVersionQuerySchema = z.object({
 	platform: mobileOtaPlatformSchema.optional().default("web"),
 	appId: z.string().optional(),
 	channel: z.enum(["stable", "beta", "nightly"]).optional().default("stable"),
-});
+}).strict();
 export type MobileOtaVersionQuery = z.infer<typeof mobileOtaVersionQuerySchema>;
 
 /**

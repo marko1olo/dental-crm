@@ -5,6 +5,7 @@
 
 import { kopecksToNumericString, kopecksToRub, rubToKopecks } from "./kopecksArithmetic.js";
 import { percentageOfKopecks, toExactKopecks } from "../money.js";
+import { escapeHtml } from "../utils/strings.js";
 
 export interface ClinicFiscalRequisites {
 	readonly name: string;
@@ -222,15 +223,7 @@ export function calculateFiscalPeriodStatementTotals(
 	return { totals, bankReconciliation };
 }
 
-function escapeHtml(str: string | undefined | null): string {
-	if (!str) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+// (HTML escaping delegated to utils/strings.ts SSOT)
 
 function formatRubCurrency(rub: number): string {
 	return new Intl.NumberFormat("ru-RU", {

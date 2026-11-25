@@ -339,8 +339,9 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 
 		// Расчет прямых затрат направления
 		let deptDirectCostsKop = 0;
-		if (input.departmentDirectCosts && input.departmentDirectCosts[dept] !== undefined) {
-			deptDirectCostsKop = rubToKopecks(input.departmentDirectCosts[dept]!);
+		const explicitDeptCost = input.departmentDirectCosts?.[dept];
+		if (explicitDeptCost !== undefined) {
+			deptDirectCostsKop = rubToKopecks(explicitDeptCost);
 		} else if (grossRevenueKop > 0 && totalCogsKop > 0) {
 			// Пропорциональное распределение COGS по выручке
 			deptDirectCostsKop = Math.round((info.sumKop / grossRevenueKop) * totalCogsKop);
@@ -452,12 +453,13 @@ export function calculateManagerialPnl(input: CalculateManagerialPnlInput): Mana
 	let totalOccupiedHours = 0;
 
 	if (chairCfg.chairs && chairCfg.chairs.length > 0) {
+		const chairsCount = chairCfg.chairs.length;
 		chairsList = chairCfg.chairs.map((c) => {
 			const opHours = c.operatingHours ?? operatingDays * operatingHoursPerDay;
 			const occHours = c.occupiedHours ?? 0;
 			totalOccupiedHours += occHours;
 			const occPct = opHours > 0 ? Number(((occHours / opHours) * 100).toFixed(1)) : 0;
-			const revRub = c.revenueRub ?? (grossRevenueRub / chairCfg.chairs!.length);
+			const revRub = c.revenueRub ?? (grossRevenueRub / chairsCount);
 			const costRub = activeChairsCount > 0 ? totalExpensesRub / activeChairsCount : 0;
 			const pRub = revRub - costRub;
 			return {

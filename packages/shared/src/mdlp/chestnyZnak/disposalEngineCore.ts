@@ -1,4 +1,5 @@
 import { escapeXml } from "../../cda/c14n.js";
+import { kopecksToRubles, rublesToKopecks } from "../../money.js";
 import type {
 	ChestnyZnakScannedItem,
 	ChestnyZnakScanSummary,
@@ -152,26 +153,30 @@ export function parseMdlpSchema531Xml(xml: string): MdlpSchema531Params {
 	const docDateMatch = xml.match(/<doc_date>([^<]+)<\/doc_date>/);
 	const withdrawalTypeMatch = xml.match(/<withdrawal_type>([^<]+)<\/withdrawal_type>/);
 
-	const subjectId = subjectMatch ? subjectMatch[1]!.trim() : "";
-	const operationDate = opDateMatch ? opDateMatch[1]!.trim() : new Date().toISOString();
-	const docNum = docNumMatch ? docNumMatch[1]!.trim() : "";
-	const docDate = docDateMatch ? docDateMatch[1]!.trim() : "";
-	const withdrawalType = withdrawalTypeMatch ? Number.parseInt(withdrawalTypeMatch[1]!.trim(), 10) : 13;
+	const subjectId = subjectMatch?.[1] ? subjectMatch[1].trim() : "";
+	const operationDate = opDateMatch?.[1] ? opDateMatch[1].trim() : new Date().toISOString();
+	const docNum = docNumMatch?.[1] ? docNumMatch[1].trim() : "";
+	const docDate = docDateMatch?.[1] ? docDateMatch[1].trim() : "";
+	const withdrawalTypeRaw = withdrawalTypeMatch?.[1]?.trim();
+	const withdrawalType = withdrawalTypeRaw ? Number.parseInt(withdrawalTypeRaw, 10) : 13;
 
 	const items: MdlpSchema531Item[] = [];
 	const unionRegex = /<union>([\s\S]*?)<\/union>/g;
 	let match: RegExpExecArray | null;
 
 	while ((match = unionRegex.exec(xml)) !== null) {
-		const block = match[1]!;
+		const block = match[1] ?? "";
 		const sgtinMatch = block.match(/<sgtin>([^<]+)<\/sgtin>/);
 		const costMatch = block.match(/<cost>([^<]+)<\/cost>/);
 		const vatMatch = block.match(/<vat_value>([^<]+)<\/vat_value>/);
 
-		if (sgtinMatch) {
-			const sgtin = sgtinMatch[1]!.trim();
-			const costRub = costMatch ? Number.parseFloat(costMatch[1]!.trim()) : undefined;
-			const vatValueRub = vatMatch ? Number.parseFloat(vatMatch[1]!.trim()) : undefined;
+		const sgtinRaw = sgtinMatch?.[1];
+		if (sgtinRaw) {
+			const sgtin = sgtinRaw.trim();
+			const costRaw = costMatch?.[1];
+			const vatRaw = vatMatch?.[1];
+			const costRub = costRaw ? Number.parseFloat(costRaw.trim()) : undefined;
+			const vatValueRub = vatRaw ? Number.parseFloat(vatRaw.trim()) : undefined;
 			const gtin = sgtin.slice(0, 14);
 			const serialNumber = sgtin.slice(14);
 
@@ -179,8 +184,8 @@ export function parseMdlpSchema531Xml(xml: string): MdlpSchema531Params {
 				sgtin,
 				gtin,
 				serialNumber,
-				costRub: Number.isNaN(costRub) ? undefined : costRub,
-				vatValueRub: Number.isNaN(vatValueRub) ? undefined : vatValueRub,
+				costRub: costRub !== undefined && Number.isNaN(costRub) ? undefined : costRub,
+				vatValueRub: vatValueRub !== undefined && Number.isNaN(vatValueRub) ? undefined : vatValueRub,
 			});
 		}
 	}
@@ -236,7 +241,7 @@ export function calculateChestnyZnakSummary(
 	let warningCount = 0;
 	let expiredCount = 0;
 	let invalidCount = 0;
-	let totalCostRub = 0;
+	let totalCostKopecks = 0;
 
 	const gtinSet = new Set<string>();
 	const seriesSet = new Set<string>();
@@ -252,8 +257,8 @@ export function calculateChestnyZnakSummary(
 			invalidCount++;
 		}
 
-		if (item.costRub != null && item.costRub > 0) {
-			totalCostRub += item.costRub;
+		if (item.costRub != null && Number.isFinite(item.costRub) && item.costRub > 0) {
+			totalCostKopecks += rublesToKopecks(item.costRub);
 		}
 
 		if (item.gtin) {
@@ -270,7 +275,7 @@ export function calculateChestnyZnakSummary(
 		warningCount,
 		expiredCount,
 		invalidCount,
-		totalCostRub: Math.round(totalCostRub * 100) / 100,
+		totalCostRub: kopecksToRubles(totalCostKopecks),
 		uniqueGtinCount: gtinSet.size,
 		uniqueSeriesCount: seriesSet.size,
 	};

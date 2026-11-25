@@ -220,7 +220,7 @@ export const photoPairInputSchema = z.object({
 	photo_id_a: z.string().min(1, "photo_id_a обязателен"),
 	photo_id_b: z.string().min(1, "photo_id_b обязателен"),
 	projection: z.string().optional(),
-});
+}).strict();
 export type PhotoPairInput = z.infer<typeof photoPairInputSchema>;
 
 export const beforeAfterComparisonPairSchema = z.object({

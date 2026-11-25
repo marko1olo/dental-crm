@@ -178,7 +178,7 @@ export const dmsInvoiceSplitInputSchema = z.object({
 	items: z.array(dmsInvoiceItemSchema),
 	defaultFranchisePercent: dmsFranchiseRateSchema,
 	guaranteeLetterRemainingLimitKopecks: z.number().int().nonnegative().optional(),
-});
+}).strict();
 
 /**
  * Summary breakdown of an invoice split between Patient and Insurer.
@@ -253,7 +253,7 @@ export function calculateItemDmsSplit(
 		};
 	}
 
-	const patientKopecks = Math.round((totalKopecks * franchisePercent) / 100);
+	const patientKopecks = calculatePercentDiscountKopecks(totalKopecks, franchisePercent);
 	const insurerKopecks = totalKopecks - patientKopecks;
 
 	return {

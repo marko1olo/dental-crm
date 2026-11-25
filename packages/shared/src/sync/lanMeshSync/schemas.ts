@@ -39,7 +39,7 @@ export const lanMeshHandshakePayloadSchema = z.object({
 	peerList: z.array(lanMeshPeerSummarySchema),
 	timestamp: z.number().nonnegative().optional(),
 	metadata: z.record(z.string(), z.unknown()).optional(),
-});
+}).strict();
 export type LanMeshHandshakePayload = z.infer<typeof lanMeshHandshakePayloadSchema>;
 
 export const lanMeshDiscoveryBeaconPayloadSchema = z.object({
@@ -53,7 +53,7 @@ export const lanMeshDiscoveryBeaconPayloadSchema = z.object({
 	appVersion: z.string(),
 	schemaVersion: z.union([z.number().int().nonnegative(), z.string()]),
 	timestamp: z.number().nonnegative(),
-});
+}).strict();
 export type LanMeshDiscoveryBeaconPayload = z.infer<typeof lanMeshDiscoveryBeaconPayloadSchema>;
 
 export const schemaCompatibilityModeSchema = z.enum(["full_sync", "read_only", "sync_deferred"]);
@@ -88,7 +88,7 @@ export const queuedMeshMutationSchema = z.object({
 	attempts: z.number().int().nonnegative().default(0),
 	idempotencyKey: z.string().min(1).max(256),
 	originNodeId: z.string().min(1).max(128),
-});
+}).strict();
 export type QueuedMeshMutation = z.infer<typeof queuedMeshMutationSchema>;
 
 export const meshSyncStatusBadgeSchema = z.object({

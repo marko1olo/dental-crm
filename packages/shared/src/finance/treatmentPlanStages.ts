@@ -377,7 +377,7 @@ export const treatmentPlanValidateAndCommentRequestSchema = z.object({
 	doctorSpecialty: z.string().optional(),
 	clinicName: z.string().optional(),
 	userPrompt: z.string().optional(),
-});
+}).strict();
 export type TreatmentPlanValidateAndCommentRequest = z.infer<
 	typeof treatmentPlanValidateAndCommentRequestSchema
 >;

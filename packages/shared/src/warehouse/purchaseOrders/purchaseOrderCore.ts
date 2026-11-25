@@ -13,7 +13,8 @@
  * 6. Clean Statutory Print Summaries & Form M-7 (Mandate 8d, zero emojis).
  */
 
-import { formatKopecksRu } from "../../money.js";
+import { calculatePercentDiscountKopecks, formatKopecksRu, toExactKopecks } from "../../money.js";
+import { calculateVatKopecks } from "../../fiscal/kopecksArithmetic.js";
 import type {
 	PurchaseOrderStatus,
 	VatRate,
@@ -114,7 +115,13 @@ export function calculatePOLineTotal(
 			return { lineTotalKopecks, vatKopecks: 0 };
 		}
 		const ratePercent = typeof vatRate === "number" ? vatRate : 0;
-		const vatKopecks = Math.round((lineTotalKopecks * ratePercent) / (100 + ratePercent));
+		const vatDivisor = 100 + ratePercent;
+		const vatKopecks =
+			ratePercent === 20
+				? calculateVatKopecks(toExactKopecks(lineTotalKopecks), "vat_20_120")
+				: ratePercent === 10
+					? calculateVatKopecks(toExactKopecks(lineTotalKopecks), "vat_10_110")
+					: Math.round((lineTotalKopecks * ratePercent) / vatDivisor);
 		return { lineTotalKopecks, vatKopecks };
 	}
 
@@ -124,7 +131,7 @@ export function calculatePOLineTotal(
 	}
 
 	const ratePercent = typeof vatRate === "number" ? vatRate : 0;
-	const vatKopecks = Math.round((netKopecks * ratePercent) / 100);
+	const vatKopecks = calculatePercentDiscountKopecks(toExactKopecks(netKopecks), ratePercent);
 	const lineTotalKopecks = netKopecks + vatKopecks;
 
 	return { lineTotalKopecks, vatKopecks };
@@ -299,7 +306,7 @@ export function applyPurchaseReceipt(
 	}
 
 	// 4. Reconstruct updated lines preserving original order
-	const updatedLines = order.lines.map((l) => lineMap.get(l.id)!);
+	const updatedLines = order.lines.map((l) => lineMap.get(l.id) ?? l);
 
 	// 5. Evaluate completion status
 	const isFullyReceived =
@@ -334,25 +341,13 @@ export function applyPurchaseReceipt(
  * Formats integer kopecks as human-readable Russian rubles string with 2 decimals.
  * Example: 150000 -> "1 500,00 ₽"
  */
-function formatKopecksToRublesRu(kopecks: number): string {
-	if (!Number.isFinite(kopecks)) return "0,00 ₽";
-	return formatKopecksRu(Math.round(kopecks));
-}
-
-/**
- * Formats an ISO date string (e.g. "2026-09-11T12:00:00Z") to Russian date "DD.MM.YYYY".
- */
 function formatDateRu(isoString: string): string {
-	try {
-		const d = new Date(isoString);
-		if (Number.isNaN(d.getTime())) return isoString;
-		const day = String(d.getDate()).padStart(2, "0");
-		const month = String(d.getMonth() + 1).padStart(2, "0");
-		const year = d.getFullYear();
-		return `${day}.${month}.${year}`;
-	} catch {
-		return isoString;
-	}
+	const d = new Date(isoString);
+	if (Number.isNaN(d.getTime())) return isoString;
+	const day = String(d.getDate()).padStart(2, "0");
+	const month = String(d.getMonth() + 1).padStart(2, "0");
+	const year = d.getFullYear();
+	return `${day}.${month}.${year}`;
 }
 
 /**
@@ -393,9 +388,9 @@ export function formatPurchaseOrderPrintSummary(
 
 		const num = String(index + 1).padStart(2, " ");
 		const skuStr = line.supplierSku ? ` (Артикул поставщика: ${line.supplierSku})` : "";
-		const unitPriceStr = formatKopecksToRublesRu(line.unitPriceKopecks);
+		const unitPriceStr = formatKopecksRu(toExactKopecks(Math.round(line.unitPriceKopecks)));
 		const vatLabel = VAT_RATE_LABELS_RU[line.vatRate] ?? String(line.vatRate);
-		const lineTotalStr = formatKopecksToRublesRu(line.totalPriceKopecks);
+		const lineTotalStr = formatKopecksRu(toExactKopecks(Math.round(line.totalPriceKopecks)));
 
 		return [
 			` ${num}. ${line.itemName}${skuStr}`,
@@ -410,8 +405,8 @@ export function formatPurchaseOrderPrintSummary(
 			? lineItemsText.join("\n\n")
 			: " [Позиции заказа отсутствуют]";
 
-	const grandTotalStr = formatKopecksToRublesRu(order.totalAmountKopecks);
-	const grandVatStr = formatKopecksToRublesRu(order.vatAmountKopecks);
+	const grandTotalStr = formatKopecksRu(toExactKopecks(Math.round(order.totalAmountKopecks)));
+	const grandVatStr = formatKopecksRu(toExactKopecks(Math.round(order.vatAmountKopecks)));
 
 	return [
 		headerSep,
@@ -616,7 +611,7 @@ export function receiveDeliveryBatch(
 		});
 	}
 
-	const updatedLines = order.lines.map((l) => lineMap.get(l.id)!);
+	const updatedLines = order.lines.map((l) => lineMap.get(l.id) ?? l);
 	const fullyReceived =
 		updatedLines.length > 0 &&
 		updatedLines.every((l) => l.quantityReceived >= l.quantityOrdered);
@@ -712,8 +707,8 @@ export function formatMaterialReceiptStatementA4(
 		totalRejectedUnits += rejectedQty;
 		totalAcceptedKopecks += lineAcceptedKopecks;
 
-		const priceStr = formatKopecksToRublesRu(line.unitPriceKopecks);
-		const sumStr = formatKopecksToRublesRu(lineAcceptedKopecks);
+		const priceStr = formatKopecksRu(toExactKopecks(Math.round(line.unitPriceKopecks)));
+		const sumStr = formatKopecksRu(toExactKopecks(Math.round(lineAcceptedKopecks)));
 
 		return [
 			` ${num}. ${line.itemName} (Код: ${line.inventoryItemId})`,
@@ -750,7 +745,7 @@ export function formatMaterialReceiptStatementA4(
 		`Всего единиц по заказу:                ${totalOrderedUnits} шт.`,
 		`Фактически принято годных (Good):      ${totalGoodUnits} шт.`,
 		`Забраковано / дефект / бой (Rejected): ${totalRejectedUnits} шт.`,
-		`Общая сумма принятых материалов:      ${formatKopecksToRublesRu(totalAcceptedKopecks)}`,
+		`Общая сумма принятых материалов:      ${formatKopecksRu(toExactKopecks(Math.round(totalAcceptedKopecks)))}`,
 		subSep,
 		conclusionText,
 		sep,

@@ -177,7 +177,7 @@ export const reorderCalculationParamsSchema = z.object({
 	supplierId: z.string().optional().nullable(),
 	supplierName: z.string().optional().nullable(),
 	includeOptimal: z.boolean().default(false),
-});
+}).strict();
 export type ReorderCalculationParams = z.infer<
 	typeof reorderCalculationParamsSchema
 >;
@@ -228,7 +228,7 @@ export const supplierRatingInputSchema = z.object({
 	defectRatePct: z.number().min(0).max(100).optional(),
 	manualReviewScore: z.number().min(1).max(5).optional(),
 	weights: supplierRatingWeightsSchema.optional(),
-});
+}).strict();
 export type SupplierRatingInput = z.infer<typeof supplierRatingInputSchema>;
 
 export const supplierRatingScoreSchema = z.object({

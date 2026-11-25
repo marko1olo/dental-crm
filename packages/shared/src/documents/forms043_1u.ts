@@ -41,7 +41,7 @@ export const facialAnthropometrySchema = z.object({
 	incisalDisplayAtSmileMm: z.number().min(-5).max(15).default(3), // Экспозиция резцов при улыбке (норма 2-4 мм)
 	gummySmileMm: z.number().min(0).max(15).default(0), // Десневая улыбка (>2 мм)
 	photoProtocolCompleted: z.boolean().default(true), // Фотометрия (анфас, улыбка, профиль 90°, 45°, внутриротовые)
-});
+}).strict();
 export type FacialAnthropometry = z.infer<typeof facialAnthropometrySchema>;
 
 /** Цефалометрия ТРГ (Телерентгенография черепа в боковой проекции) */
@@ -59,7 +59,7 @@ export const cephalometricTrgAnalysisSchema = z.object({
 	interincisalAngle: z.number().min(90).max(170).default(130), // Межрезцовый угол (130° ± 5°)
 	growthPattern: z.enum(["normodivergent", "hyperdivergent_vertical", "hypodivergent_horizontal"]).default("normodivergent"),
 	skeletalClass: z.enum(["class_1", "class_2_sub_1", "class_2_sub_2", "class_3"]).default("class_1"),
-});
+}).strict();
 export type CephalometricTrgAnalysis = z.infer<typeof cephalometricTrgAnalysisSchema>;
 
 /** Расчет индекса Тона (Tonn index) */
@@ -317,7 +317,7 @@ export const orthodonticAppliancePlanSchema = z.object({
 	]),
 	estimatedDurationMonths: z.number().int().min(1).max(48).default(18),
 	retentionProtocol: z.string().trim().max(1000).default("Несъемный проволочный ретейнер на фронтальные зубы в/ч и н/ч пожизненно/на срок не менее 5 лет + ретенционная каппа на ночь 12 месяцев"),
-});
+}).strict();
 export type OrthodonticAppliancePlan = z.infer<typeof orthodonticAppliancePlanSchema>;
 
 /** Полный структурированный Payload формы № 043-1/у */
@@ -398,5 +398,5 @@ export const orthodonticCard043_1uPayloadSchema = z.object({
 		estimatedDurationMonths: 18,
 		retentionProtocol: "Несъемный ретейнер 33-43, 13-23 + ретенционная капа",
 	}),
-});
+}).strict();
 export type OrthodonticCard043_1uPayload = z.infer<typeof orthodonticCard043_1uPayloadSchema>;

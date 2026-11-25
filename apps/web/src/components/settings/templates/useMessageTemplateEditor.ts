@@ -56,7 +56,6 @@ export function useMessageTemplateEditor(
 					title: title.trim(),
 					channel,
 					intent: scenario,
-					scenario,
 					templateText: text.trim(),
 					isActive: true,
 				}),

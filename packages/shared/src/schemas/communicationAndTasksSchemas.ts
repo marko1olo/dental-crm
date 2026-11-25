@@ -390,7 +390,7 @@ export const denteTelegramMessagePreviewRequestSchema = z.object({
 	documentId: z.string().uuid().optional(),
 	taskId: z.string().uuid().optional(),
 	includePhi: z.boolean().default(false),
-});
+}).strict();
 
 export type DenteTelegramMessagePreviewRequest = z.infer<
 	typeof denteTelegramMessagePreviewRequestSchema
@@ -484,7 +484,7 @@ export type DenteTelegramOutboxResponse = z.infer<
 export const denteTelegramOutboxSendRequestSchema = z.object({
 	dryRun: z.boolean().default(false),
 	clientMutationId: z.string().min(1).max(120).nullable().optional(),
-});
+}).strict();
 
 export type DenteTelegramOutboxSendRequest = z.infer<
 	typeof denteTelegramOutboxSendRequestSchema

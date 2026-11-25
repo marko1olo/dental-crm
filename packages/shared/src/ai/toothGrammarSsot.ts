@@ -13,28 +13,22 @@
  * - Мандат 8s (Anti-Semantic-Duplicate / Single Source of Truth)
  */
 
+import {
+	ALL_FDI_TEETH,
+	DECIDUOUS_TEETH,
+	PERMANENT_TEETH,
+	isValidFdiToothNumber as isValidFdiToothNumberCore,
+} from "../clinical/dentalFormulaFdi.js";
+
 // ============================================================================
 // 1. КОНСТАНТЫ ЗУБОВ FDI / ISO 3950
 // ============================================================================
 
-export const VALID_FDI_PERMANENT_TEETH: readonly number[] = [
-	11, 12, 13, 14, 15, 16, 17, 18,
-	21, 22, 23, 24, 25, 26, 27, 28,
-	31, 32, 33, 34, 35, 36, 37, 38,
-	41, 42, 43, 44, 45, 46, 47, 48,
-];
+export const VALID_FDI_PERMANENT_TEETH: readonly number[] = PERMANENT_TEETH;
 
-export const VALID_FDI_PRIMARY_TEETH: readonly number[] = [
-	51, 52, 53, 54, 55,
-	61, 62, 63, 64, 65,
-	71, 72, 73, 74, 75,
-	81, 82, 83, 84, 85,
-];
+export const VALID_FDI_PRIMARY_TEETH: readonly number[] = DECIDUOUS_TEETH;
 
-export const ALL_VALID_FDI_TEETH: readonly number[] = [
-	...VALID_FDI_PERMANENT_TEETH,
-	...VALID_FDI_PRIMARY_TEETH,
-];
+export const ALL_VALID_FDI_TEETH: readonly number[] = ALL_FDI_TEETH;
 
 /**
  * Проверяет, является ли значение валидным номером зуба по классификации FDI (11..85).
@@ -42,11 +36,9 @@ export const ALL_VALID_FDI_TEETH: readonly number[] = [
 export function isValidFdiToothNumber(num: unknown): boolean {
 	if (typeof num === "string") {
 		const parsed = parseInt(num, 10);
-		if (Number.isNaN(parsed)) return false;
-		return (ALL_VALID_FDI_TEETH as readonly number[]).includes(parsed);
+		return isValidFdiToothNumberCore(parsed);
 	}
-	if (typeof num !== "number" || !Number.isInteger(num)) return false;
-	return (ALL_VALID_FDI_TEETH as readonly number[]).includes(num);
+	return isValidFdiToothNumberCore(num);
 }
 
 // ============================================================================

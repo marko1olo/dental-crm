@@ -78,7 +78,7 @@ export type DoctorCalendarSyncInfo = z.infer<typeof doctorCalendarSyncInfoSchema
 export const rotateCalendarTokenRequestSchema = z.object({
 	doctorId: z.string().uuid().optional(),
 	reason: z.string().max(300).optional().default("manual_user_rotation"),
-});
+}).strict();
 export type RotateCalendarTokenRequest = z.infer<typeof rotateCalendarTokenRequestSchema>;
 
 export const rotateCalendarTokenResponseSchema = z.object({

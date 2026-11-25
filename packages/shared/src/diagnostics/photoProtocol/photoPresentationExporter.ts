@@ -22,6 +22,7 @@ import {
 	calculateOrthodonticProtocolCompleteness,
 } from "./shotAngleClassifier.js";
 import { buildOrthodonticComparisonSeries } from "./beforeAfterComparator.js";
+import { escapeHtml } from "../../utils/strings.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. REPORT BUILDER & HTML ESCAPING
@@ -53,17 +54,7 @@ export function generateOrthodonticClinicalReport(
 	};
 }
 
-/**
- * Escapes HTML characters safely.
- */
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+// (HTML escaping delegated to utils/strings.ts SSOT)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. CLINICAL PRESENTATION HTML BUILDER

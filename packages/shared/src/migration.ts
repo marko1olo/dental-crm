@@ -505,7 +505,7 @@ export const migrationRollbackRequestSchema = z.object({
 	 * случайный повторный клик не должен этого делать.
 	 */
 	confirm: z.literal(true),
-});
+}).strict();
 export type MigrationRollbackRequest = z.infer<
 	typeof migrationRollbackRequestSchema
 >;

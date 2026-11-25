@@ -100,7 +100,7 @@ export const postOpSurveyInputSchema = z.object({
 	hasHeavyBleeding: z.boolean().default(false),
 	hasSevereSwelling: z.boolean().default(false),
 	additionalNotes: z.string().optional(),
-});
+}).strict();
 export type PostOpSurveyInput = z.infer<typeof postOpSurveyInputSchema>;
 
 export const postOpSurveyResultSchema = z.object({

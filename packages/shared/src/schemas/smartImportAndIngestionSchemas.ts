@@ -269,7 +269,7 @@ export const smartImportRequestSchema = z.object({
 	sourceName: z.string().trim().min(1).max(160).default("smart_import"),
 	rawText: z.string().trim().min(1).max(120000),
 	mode: smartImportModeSchema.default("auto"),
-});
+}).strict();
 
 export type SmartImportRequest = z.infer<typeof smartImportRequestSchema>;
 
@@ -442,7 +442,7 @@ export const migrationLocalSourceDiscoveryRequestSchema = z.object({
 	maxCandidates: z.number().int().positive().max(80).default(18),
 	includeWorkstationSignals: z.boolean().default(true),
 	maxWorkstationSignals: z.number().int().nonnegative().max(80).default(24),
-});
+}).strict();
 
 export type MigrationLocalSourceDiscoveryRequest = z.infer<
 	typeof migrationLocalSourceDiscoveryRequestSchema
@@ -492,7 +492,7 @@ export const migrationLocalSourceWorkupRequestSchema = z.object({
 	sourceRef: z.string().min(1),
 	sourceKind: smartImportLegacySourceKindSchema.optional(),
 	safeDisplayName: z.string().trim().max(160).optional(),
-});
+}).strict();
 
 export type MigrationLocalSourceWorkupRequest = z.infer<
 	typeof migrationLocalSourceWorkupRequestSchema

@@ -12,8 +12,11 @@ import {
 	type Kopecks,
 	formatKopecksRu,
 	parseKopecks,
+	percentageOfKopecks,
 	rublesToKopecks,
+	splitKopecks,
 	sumKopecks,
+	toExactKopecks,
 } from "../money.js";
 
 export type ClinicalStageCategory = "surgery" | "orthopedics" | "therapy" | "orthodontics" | "hygiene";
@@ -92,7 +95,10 @@ export function calculatePatientDebtSummary(
 			: 100;
 
 	// 13% NDFL tax deduction on paid amounts (limit 150 000 ₽ for standard, unlimited for high-tech surgery)
-	const ndflRefund13PercentKopecks = Math.floor((totalPaidKopecks * 13) / 100) as Kopecks;
+	const ndflRefund13PercentKopecks =
+		totalPaidKopecks > 0
+			? percentageOfKopecks(toExactKopecks(Math.round(totalPaidKopecks)), 1300)
+			: toExactKopecks(0);
 
 	return {
 		totalPlanCostKopecks,
@@ -175,8 +181,7 @@ export function createDefaultImplantStagesPreset(
 	startDateIso: string = new Date().toISOString(),
 ): ClinicalStagePaymentItem[] {
 	const totalKopecks = rublesToKopecks(totalRubles);
-	const surgeryKopecks = Math.floor((totalKopecks * 50) / 100) as Kopecks;
-	const orthoKopecks = (totalKopecks - surgeryKopecks) as Kopecks;
+	const [surgeryKopecks, orthoKopecks = toExactKopecks(0)] = splitKopecks(totalKopecks, 2);
 
 	const start = new Date(startDateIso);
 	const orthoDate = new Date(start);

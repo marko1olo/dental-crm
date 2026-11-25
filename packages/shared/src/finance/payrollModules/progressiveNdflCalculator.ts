@@ -5,6 +5,17 @@
  */
 
 import type { NdflTaxCalculationResult } from "./payrollPresetTypes.js";
+import {
+	calculatePercentDiscountKopecks,
+	kopecksToRubles,
+	rublesToKopecks,
+	toExactKopecks,
+} from "../../money.js";
+
+function calculateWholeRubleNdflKop(baseKop: number, ratePercent: 13 | 15): number {
+	const rawKop = calculatePercentDiscountKopecks(toExactKopecks(Math.round(baseKop)), ratePercent);
+	return rublesToKopecks(Math.round(kopecksToRubles(rawKop)));
+}
 
 /**
  * Порог дохода для перехода на прогрессивную ставку НДФЛ 15% (ст. 224 НК РФ):
@@ -39,16 +50,16 @@ export function calculateProgressiveNdflTax(
 
 	if (newGross <= thresholdKop) {
 		// Полностью в базовой ставке 13%, округление до целого рубля (п. 6 ст. 225 НК РФ)
-		tax13Kop = Math.round((grossPayoutKop * 13) / 10000) * 100;
+		tax13Kop = calculateWholeRubleNdflKop(grossPayoutKop, 13);
 	} else if (prevGross >= thresholdKop) {
 		// Полностью в прогрессивной ставке 15%, округление до целого рубля
-		tax15Kop = Math.round((grossPayoutKop * 15) / 10000) * 100;
+		tax15Kop = calculateWholeRubleNdflKop(grossPayoutKop, 15);
 	} else {
 		// Переход через порог 5 000 000 руб: часть по 13%, остаток по 15%
 		const portionIn13 = thresholdKop - prevGross;
 		const portionIn15 = grossPayoutKop - portionIn13;
-		tax13Kop = Math.round((portionIn13 * 13) / 10000) * 100;
-		tax15Kop = Math.round((portionIn15 * 15) / 10000) * 100;
+		tax13Kop = calculateWholeRubleNdflKop(portionIn13, 13);
+		tax15Kop = calculateWholeRubleNdflKop(portionIn15, 15);
 	}
 
 	const totalTaxKop = tax13Kop + tax15Kop;

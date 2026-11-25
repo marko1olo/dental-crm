@@ -161,7 +161,7 @@ export const photoProtocolUploadPayloadSchema = z.object({
 	colorCalibrationApplied: z.boolean().default(false),
 	vitaShade: z.string().optional().nullable(),
 	notes: z.string().max(1000).optional().nullable(),
-});
+}).strict();
 
 export type PhotoProtocolUploadPayload = z.infer<
 	typeof photoProtocolUploadPayloadSchema

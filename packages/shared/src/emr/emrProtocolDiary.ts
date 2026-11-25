@@ -5,6 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { isValidFdiToothNumber as isValidFdiToothNumberCore } from "../clinical/dentalFormulaFdi.js";
 import {
 	type FdiToothRecord,
 	type ToothSurface,
@@ -111,23 +112,7 @@ export { validateForm043uCompliance };
 export function isValidFdiToothNumber(num: number | string | null | undefined): boolean {
 	if (num === null || num === undefined) return false;
 	const n = typeof num === "string" ? parseInt(num, 10) : num;
-	if (Number.isNaN(n)) return false;
-
-	// Постоянные зубы (11-18, 21-28, 31-38, 41-48)
-	const permanentQuadrants = [1, 2, 3, 4];
-	// Временные зубы (51-55, 61-65, 71-75, 81-85)
-	const deciduousQuadrants = [5, 6, 7, 8];
-
-	const quadrant = Math.floor(n / 10);
-	const toothInQuadrant = n % 10;
-
-	if (permanentQuadrants.includes(quadrant)) {
-		return toothInQuadrant >= 1 && toothInQuadrant <= 8;
-	}
-	if (deciduousQuadrants.includes(quadrant)) {
-		return toothInQuadrant >= 1 && toothInQuadrant <= 5;
-	}
-	return false;
+	return isValidFdiToothNumberCore(n);
 }
 
 /** Автоматическое определение класса по Блэку на основе поверхностей и номера зуба */

@@ -528,7 +528,7 @@ export const updateStaffProfileExtendedSchema = z.object({
 	canManageMoney: z.boolean().optional(),
 	canManageImports: z.boolean().optional(),
 	passwordEntropyBits: z.number().nonnegative().optional(),
-});
+}).strict();
 
 export type UpdateStaffProfileExtendedInput = z.infer<
 	typeof updateStaffProfileExtendedSchema

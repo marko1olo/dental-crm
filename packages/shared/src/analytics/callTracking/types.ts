@@ -77,7 +77,7 @@ export const advertisingChannelPerformanceInputSchema = z.object({
 	paidPlansCount: z.number().int().nonnegative().default(0),
 	revenueKopecks: z.number().int().nonnegative("Выручка не может быть отрицательной"),
 	notes: z.string().optional(),
-});
+}).strict();
 
 export type AdvertisingChannelPerformanceInput = z.infer<
 	typeof advertisingChannelPerformanceInputSchema

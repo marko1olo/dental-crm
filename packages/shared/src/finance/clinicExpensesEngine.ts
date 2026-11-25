@@ -110,9 +110,9 @@ export const chairHourCostInputSchema = z.object({
 		z.object({
 			generalOverheadKopecks: z.number().int().nonnegative(),
 			directOperatoryKopecks: z.number().int().nonnegative().default(0),
-		}),
+		}).strict(),
 	]),
-});
+}).strict();
 export type ChairHourCostInput = z.infer<typeof chairHourCostInputSchema>;
 
 /**
@@ -145,7 +145,7 @@ export const visitMarginInputSchema = z.object({
 	serviceName: z.string().optional(),
 	patientName: z.string().optional(),
 	doctorName: z.string().optional(),
-});
+}).strict();
 export type VisitMarginInput = z.infer<typeof visitMarginInputSchema>;
 
 /**

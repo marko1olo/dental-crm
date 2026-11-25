@@ -292,8 +292,8 @@ let sequenceCounter = 0;
  * - 2-bit RFC 4122 variant (0b10)
  * - 62-bit cryptographic randomness
  */
-export function generateUuidV7(): string {
-	const now = Date.now();
+export function generateUuidV7(timestampMs?: number): string {
+	const now = timestampMs !== undefined ? Math.max(0, Math.floor(timestampMs)) : Date.now();
 	if (now === lastTimestampMs) {
 		sequenceCounter = (sequenceCounter + 1) & 0xfff;
 	} else {

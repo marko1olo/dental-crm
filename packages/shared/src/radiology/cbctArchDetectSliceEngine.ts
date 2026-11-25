@@ -359,7 +359,7 @@ export const archDetectAndSlicingReportParamsSchema = z.object({
 		contourLengthMm: z.number().optional(),
 	}).optional(),
 	clinicalConclusion: z.string().optional(),
-});
+}).strict();
 export type ArchDetectAndSlicingReportParams = z.infer<typeof archDetectAndSlicingReportParamsSchema>;
 
 /**

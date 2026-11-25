@@ -99,7 +99,7 @@ export const migrationLocalSourceProbeRequestSchema = z.object({
 	maxFiles: z.number().int().positive().max(3000).default(600),
 	maxSampleArtifacts: z.number().int().positive().max(80).default(18),
 	readHeaderBytes: z.number().int().positive().max(65536).default(4096),
-});
+}).strict();
 
 export type MigrationLocalSourceProbeRequest = z.infer<
 	typeof migrationLocalSourceProbeRequestSchema
@@ -205,6 +205,7 @@ export const clinicPublicLookupRequestSchema = z
 		address: z.string().trim().max(500).optional(),
 		medicalLicenseNumber: z.string().trim().max(120).optional(),
 	})
+	.strict()
 	.refine(
 		(value) =>
 			[
@@ -271,7 +272,7 @@ export const migrationAutopilotRequestSchema = z.object({
 	knownScannedFolders: z.number().int().nonnegative().max(5000).optional(),
 	smartImport: smartImportRequestSchema.optional(),
 	clinic: clinicPublicLookupRequestSchema.optional(),
-});
+}).strict();
 
 export type MigrationAutopilotRequest = z.infer<
 	typeof migrationAutopilotRequestSchema

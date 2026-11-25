@@ -134,7 +134,7 @@ export const saveImagingViewerSessionRequestSchema = z.object({
 	state: imagingViewerSessionStateSchema,
 	annotations: z.array(imagingViewerAnnotationSchema).max(200).default([]),
 	clientSavedAt: z.string().nullable().optional(),
-});
+}).strict();
 
 export type SaveImagingViewerSessionRequest = z.infer<
 	typeof saveImagingViewerSessionRequestSchema
@@ -207,7 +207,7 @@ export const dicomViewerLaunchManifestRequestSchema = z.object({
 	ohifBaseUrl: httpUrlSchema.nullable().optional(),
 	externalViewerPath: externalViewerPathSchema.nullable().optional(),
 	allowExternalHandoff: z.boolean().default(true),
-});
+}).strict();
 
 export type DicomViewerLaunchManifestRequest = z.infer<
 	typeof dicomViewerLaunchManifestRequestSchema

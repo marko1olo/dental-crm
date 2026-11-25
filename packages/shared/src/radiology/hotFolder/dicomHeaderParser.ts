@@ -5,6 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { isValidFdiToothNumber } from "../../clinical/dentalFormulaFdi.js";
 import { type ParsedDicomDataset } from "../../imaging/dicomParser.js";
 import type {
 	DentalStudyType,
@@ -116,17 +117,7 @@ export function calculateLevenshteinDistance(a: string, b: string): number {
 // ─── 2. ПАРСЕР ИМЁН ФАЙЛОВ И DICOM МЕТАДАННЫХ ─────────────────────────────────
 
 export function isValidToothFdi(tooth: number): boolean {
-	if (!Number.isInteger(tooth)) return false;
-	return (
-		(tooth >= 11 && tooth <= 18) ||
-		(tooth >= 21 && tooth <= 28) ||
-		(tooth >= 31 && tooth <= 38) ||
-		(tooth >= 41 && tooth <= 48) ||
-		(tooth >= 51 && tooth <= 55) ||
-		(tooth >= 61 && tooth <= 65) ||
-		(tooth >= 71 && tooth <= 75) ||
-		(tooth >= 81 && tooth <= 85)
-	);
+	return isValidFdiToothNumber(tooth);
 }
 
 /**

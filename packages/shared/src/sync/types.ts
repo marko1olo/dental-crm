@@ -27,7 +27,7 @@ export const fieldVectorEntrySchema = z.object({
 	version: z.number().int().nonnegative().optional(),
 	authorId: z.string().optional(),
 	clientId: z.string().optional(),
-});
+}).strict();
 export type FieldVectorEntry = z.infer<typeof fieldVectorEntrySchema>;
 
 export const mutationVectorSchema = z.record(z.string(), fieldVectorEntrySchema);
@@ -50,7 +50,7 @@ export const syncMutationEnvelopeSchema = z.object({
 	clientId: z.string().min(1).max(128).optional(),
 	authorUserId: z.string().uuid().optional(),
 	baseVersion: z.number().int().nonnegative().optional(),
-});
+}).strict();
 export type SyncMutationEnvelope = z.infer<typeof syncMutationEnvelopeSchema>;
 
 export const syncPushBatchRequestSchema = z.object({
@@ -58,7 +58,7 @@ export const syncPushBatchRequestSchema = z.object({
 	clientId: z.string().min(1).max(128),
 	mutations: z.array(syncMutationEnvelopeSchema),
 	sentAt: z.string(),
-});
+}).strict();
 export type SyncPushBatchRequest = z.infer<typeof syncPushBatchRequestSchema>;
 
 export const conflictResolutionStrategySchema = z.enum([
@@ -179,7 +179,7 @@ export const meshSyncExchangeRequestSchema = z.object({
 	mutations: z.array(syncMutationEnvelopeSchema),
 	sentAt: z.string(),
 	organizationId: z.string().optional(),
-});
+}).strict();
 export type MeshSyncExchangeRequest = z.infer<
 	typeof meshSyncExchangeRequestSchema
 >;

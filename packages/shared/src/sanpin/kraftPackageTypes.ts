@@ -287,7 +287,7 @@ export const thermalPrintJobDtoSchema = z.object({
 	packageRecordIds: z.array(z.string()).min(1, "Выберите хотя бы один крафт-пакет для печати"),
 	copiesPerLabel: z.number().int().min(1).max(10).default(1),
 	clinicName: z.string().optional(),
-});
+}).strict();
 export type ThermalPrintJobDto = z.infer<typeof thermalPrintJobDtoSchema>;
 
 export function getKraftMaterialDefinition(id: KraftPackageMaterialId): KraftPackageMaterialDefinition {

@@ -57,4 +57,4 @@ export const informedConsent1051nPayloadSchema = z.object({
 	isDraft: z.boolean().optional(),
 	isSigned: z.boolean().optional(),
 	watermarkText: z.string().optional(),
-});
+}).strict();

@@ -76,10 +76,10 @@ export const EMR_043_SECTIONS_CONFIG: readonly Emr043SectionConfig[] = [
 	},
 	{
 		sectionId: "services_rendered",
-		nameRu: "Наряд-заказ / оказанные услуги (Номенклатура 804н)",
+		nameRu: "Наряд-заказ / оказанные услуги (Прейскурант)",
 		weightPercent: 15,
 		isMandatoryForSigning: true,
-		statutoryBasisRu: "Приказ Минздрава РФ № 804н от 13.10.2017",
+		statutoryBasisRu: "Номенклатура медицинских услуг клиники",
 	},
 	{
 		sectionId: "doctor_signature",
@@ -123,7 +123,7 @@ export interface Emr043CardEvaluationInput {
 	readonly historyOfPresentIllness?: string | null | undefined;
 	readonly allergologicalHistory?: string | null | undefined;
 	readonly concomitantDiseases?: string | null | undefined;
-	readonly odontogramTeeth?: readonly any[] | null | undefined;
+	readonly odontogramTeeth?: readonly unknown[] | null | undefined;
 	readonly diagnosisTooth?: string | null | undefined;
 	readonly diagnosisIcd10?: string | null | undefined;
 	readonly treatmentDescription?: string | null | undefined;
@@ -152,7 +152,7 @@ export function evaluateEmr043Completeness(
 	const complaintsMissing: string[] = [];
 	if (!isComplaintsComplete) {
 		complaintsMissing.push("Не заполнены субъективные жалобы пациента");
-		blockingIssuesRu.push("Отсутствуют жалобы пациента (Раздел 1 ф. 043/у)");
+		blockingIssuesRu.push("Отсутствуют жалобы пациента (Раздел 1 медкарты)");
 	}
 	sections.push({
 		sectionId: "complaints",
@@ -176,7 +176,7 @@ export function evaluateEmr043Completeness(
 	const anamnesisMissing: string[] = [];
 	if (!isAnamnesisComplete) {
 		anamnesisMissing.push("Не указан анамнез заболевания или аллергологический статус");
-		blockingIssuesRu.push("Отсутствует анамнез настоящего заболевания (Раздел 2 ф. 043/у)");
+		blockingIssuesRu.push("Отсутствует анамнез настоящего заболевания (Раздел 2 медкарты)");
 	}
 	sections.push({
 		sectionId: "anamnesis",
@@ -194,7 +194,7 @@ export function evaluateEmr043Completeness(
 	const formulaMissing: string[] = [];
 	if (!isFormulaComplete) {
 		formulaMissing.push("Не отмечен причинный зуб или отсутствует зубная формула FDI");
-		blockingIssuesRu.push("Не заполнена зубная формула / статус зуба (Раздел 3 ф. 043/у)");
+		blockingIssuesRu.push("Не заполнена зубная формула / статус зуба (Раздел 3 медкарты)");
 	}
 	sections.push({
 		sectionId: "dental_formula",
@@ -211,7 +211,7 @@ export function evaluateEmr043Completeness(
 	const icd10Missing: string[] = [];
 	if (!isIcd10Complete) {
 		icd10Missing.push("Не указан клинический диагноз по МКБ-10 (рубрика K00-K14)");
-		blockingIssuesRu.push("Отсутствует диагноз по МКБ-10 (Раздел 4 ф. 043/у)");
+		blockingIssuesRu.push("Отсутствует диагноз по МКБ-10 (Раздел 4 медкарты)");
 	}
 	sections.push({
 		sectionId: "icd10_diagnosis",
@@ -233,7 +233,7 @@ export function evaluateEmr043Completeness(
 	const treatmentMissing: string[] = [];
 	if (!isTreatmentComplete) {
 		treatmentMissing.push("Не описан протокол манипуляций или план лечения");
-		blockingIssuesRu.push("Не заполнен протокол лечения / план (Раздел 5 ф. 043/у)");
+		blockingIssuesRu.push("Не заполнен протокол лечения / план (Раздел 5 медкарты)");
 	}
 	sections.push({
 		sectionId: "treatment_plan",
@@ -251,11 +251,11 @@ export function evaluateEmr043Completeness(
 	const servicesMissing: string[] = [];
 	if (!hasServices) {
 		servicesMissing.push("В наряд-заказ не добавлено ни одной медицинской услуги");
-		blockingIssuesRu.push("Отсутствуют медицинские услуги в наряд-заказе (Приказ 804н)");
+		blockingIssuesRu.push("Отсутствуют медицинские услуги в наряд-заказе (Прейскурант)");
 	}
 	sections.push({
 		sectionId: "services_rendered",
-		nameRu: "Наряд-заказ / оказанные услуги (Номенклатура 804н)",
+		nameRu: "Наряд-заказ / оказанные услуги (Прейскурант)",
 		weightPercent: 15,
 		isComplete: hasServices,
 		earnedScore: hasServices ? 15 : 0,
@@ -304,7 +304,7 @@ export function evaluateEmr043Completeness(
 
 	let evaluationSummaryRu = "";
 	if (readinessStatus === "fully_signed") {
-		evaluationSummaryRu = "ЭМК 043/у полностью заполнена и заверена подписью ПЭП (100%).";
+		evaluationSummaryRu = "Медкарта полностью заполнена и заверена подписью ПЭП (100%).";
 	} else if (readinessStatus === "ready_for_signing") {
 		evaluationSummaryRu = "Все клинические разделы заполнены (90%). Карта готова к заверению ПЭП.";
 	} else if (readinessStatus === "draft") {

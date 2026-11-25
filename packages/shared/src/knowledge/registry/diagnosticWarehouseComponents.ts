@@ -340,7 +340,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 	},
 	quickTips: [
 		"Мандат 8v: запрещен крафт-пакетный маразм у кресла; лоток стерилен по умолчанию",
-		"Журнал формы 257/у формируется автоматически для проверок Роспотребнадзора",
+		"Журнал стерилизации формируется автоматически для проверок Роспотребнадзора",
 		"Никаких обязательных сканирований штрихкодов пакетов на приёме у врача",
 	],
 	primaryActions: [
@@ -356,7 +356,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 			id: "btn-export-sanpin-pdf",
 			label: "Экспорт для Роспотребнадзора",
 			selector: '[data-testid="btn-export-sanpin-pdf"]',
-			effect: "Генерирует готовые журналы (форма 257/у, 366/у) для надзорных органов.",
+			effect: "Генерирует готовые журналы стерилизации и предстерилизационной очистки для надзорных органов.",
 			requiresConfirmation: false,
 			role: ["nurse", "admin", "owner"],
 		},
@@ -385,7 +385,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 		},
 		{
 			question: "Какие формы журналов экспортируются?",
-			answer: "Форма 257/у (журнал работы автоклава) и форма 366/у (журнал учета азопирамовых проб ПСО).",
+			answer: "Журнал работы автоклава и журнал учета азопирамовых проб предстерилизационной очистки (ПСО).",
 		},
 	],
 	troubleshooting: [
@@ -403,7 +403,7 @@ export const SANPIN_STERILIZATION_JOURNAL_COMPONENT: CrmComponentKnowledge = {
 		},
 	],
 	scaleAdaptability: "Для кабинета — тихий фоновый режим. Для сети — централизованный СанПиН комплаенс.",
-	complianceNotes: "СанПиН 3.3686-21, журнал формы 257/у, контроль предстерилизационной очистки (ПСО).",
+	complianceNotes: "Регламент стерилизации СанПиН 3.3686-21 и контроль предстерилизационной очистки (ПСО).",
 	keywords: ["санпин", "стерилизация", "автоклав", "азопирам", "псо", "роспотребнадзор", "журнал", "крафт-пакет", "257у"],
 };
 

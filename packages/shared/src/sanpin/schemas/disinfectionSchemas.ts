@@ -56,7 +56,7 @@ export const createPsoCleaningLogDtoSchema = z.object({
 	detergentBrand: z.string().trim().max(120).optional().nullable(),
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreatePsoCleaningLogDto = z.input<typeof createPsoCleaningLogDtoSchema>;
 
 // ─── 3. Бактерицидные установки и рециркуляторы ─────────────────────────────
@@ -178,7 +178,7 @@ export const createGeneralCleaningLogDtoSchema = z.object({
 	inspectorId: z.string().uuid().optional().nullable(),
 	status: cleaningStatusSchema.default("completed"),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateGeneralCleaningLogDto = z.input<typeof createGeneralCleaningLogDtoSchema>;
 
 // ─── 6. Журнал аварийных ситуаций (Аптечка «Анти-ВИЧ» / Постконтакт) ─────────
@@ -268,7 +268,7 @@ export const createTemperatureHumidityEquipmentDtoSchema = z.object({
 	targetHumidityMinPercent: z.number().min(0).max(100).optional().nullable(),
 	targetHumidityMaxPercent: z.number().min(0).max(100).optional().nullable(),
 	isActive: z.boolean().default(true),
-});
+}).strict();
 export type CreateTemperatureHumidityEquipmentDto = z.input<typeof createTemperatureHumidityEquipmentDtoSchema>;
 
 export const temperatureHumidityLogSchema = z.object({
@@ -301,7 +301,7 @@ export const createTemperatureHumidityLogDtoSchema = z.object({
 	correctiveAction: z.string().trim().max(300).optional().nullable(),
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateTemperatureHumidityLogDto = z.input<typeof createTemperatureHumidityLogDtoSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────

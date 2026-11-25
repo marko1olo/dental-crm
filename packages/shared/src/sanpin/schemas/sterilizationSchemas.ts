@@ -58,7 +58,7 @@ export const createSterilizationLogDtoSchema = z.object({
 	biologicalTestResult: z.enum(["passed", "failed", "not_conducted"]).default("not_conducted"),
 	operatorId: z.string().uuid().optional().nullable(),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateSterilizationLogDto = z.input<typeof createSterilizationLogDtoSchema>;
 
 // ─── 2.1. Парк стерилизаторов и автоклавов (Учет оборудования ЦСО) ────────────
@@ -104,14 +104,14 @@ export const createSterilizerEquipmentDtoSchema = z.object({
 	commissioningDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты ввода: ГГГГ-ММ-ДД").optional().nullable(),
 	status: sterilizerEquipmentStatusSchema.default("active"),
 	notes: z.string().trim().max(500).optional().nullable(),
-});
+}).strict();
 export type CreateSterilizerEquipmentDto = z.input<typeof createSterilizerEquipmentDtoSchema>;
 
 export const updateSterilizerEquipmentDtoSchema = createSterilizerEquipmentDtoSchema.partial().extend({
 	action: z.enum(["put_in_maintenance", "return_to_service", "decommission", "recommission", "update_verification"]).optional(),
 	decommissioningDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 	decommissionReason: z.string().max(300).optional().nullable(),
-});
+}).strict();
 export type UpdateSterilizerEquipmentDto = z.input<typeof updateSterilizerEquipmentDtoSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────

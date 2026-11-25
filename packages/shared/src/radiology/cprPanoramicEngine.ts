@@ -63,7 +63,7 @@ export const volumeSamplingInputSchema = z.object({
   dimensions: z.tuple([z.number().int().positive(), z.number().int().positive(), z.number().int().positive()]),
   spacing: z.tuple([z.number().positive(), z.number().positive(), z.number().positive()]),
   origin: z.tuple([z.number(), z.number(), z.number()]).optional(),
-});
+}).strict();
 
 export const panoramicReformationParamsSchema = z.object({
   controlPoints: z.array(point2Schema).min(2),
@@ -71,7 +71,7 @@ export const panoramicReformationParamsSchema = z.object({
   projection: projectionModeSchema.optional().default("MIP"),
   resolutionMm: z.number().min(0.1).max(2.0).optional().default(0.4),
   slabStepMm: z.number().positive().optional().default(1.0),
-});
+}).strict();
 
 export interface PanoramicReformationParams {
   volume: VolumeSamplingData | VolumeSamplingInput;
@@ -106,7 +106,7 @@ export const paraxialCrossSectionParamsSchema = z.object({
   tiltDeg: z.number().min(-30).max(30).optional().default(0),
   widthMm: z.number().min(5).max(50).optional().default(20),
   resolutionMm: z.number().min(0.05).max(1.0).optional().default(0.25),
-});
+}).strict();
 
 export interface ParaxialCrossSectionParams {
   volume: VolumeSamplingData | VolumeSamplingInput;

@@ -7,6 +7,13 @@
  */
 
 import { z } from "zod";
+import {
+	calculatePercentDiscountKopecks,
+	formatKopecksRu,
+	parseKopecks,
+	rublesToKopecks,
+	toExactKopecks,
+} from "../money.js";
 
 /** Входные параметры для расчета сдельной выработки по категориям приёма */
 export interface DoctorCategoryPerformanceInput {
@@ -110,10 +117,8 @@ export interface DoctorPieceRatePayoutResult {
  * Точный расчет процента в целых копейках: (kopecks * pct) / 100 с банковским округлением
  */
 export function calculateExactPercentageKopecks(kopecks: number, pct: number): number {
-	if (kopecks <= 0 || pct <= 0) return 0;
-	// Умножаем на basis points (100 * pct), чтобы исключить дробные доли
-	const basisPoints = Math.round(pct * 100);
-	return Math.round((kopecks * basisPoints) / 10000);
+	if (!Number.isFinite(kopecks) || kopecks <= 0 || !Number.isFinite(pct) || pct <= 0) return 0;
+	return calculatePercentDiscountKopecks(toExactKopecks(Math.round(kopecks)), pct);
 }
 
 /**
@@ -201,16 +206,8 @@ export function calculateDoctorPieceRatePayout(
  * Пример: 125050 -> "1 250,50 ₽"
  */
 export function formatKopecksToRublesDisplay(kopecks: number): string {
-	const isNegative = kopecks < 0;
-	const absKopecks = Math.abs(kopecks);
-	const rubles = Math.floor(absKopecks / 100);
-	const remainderKopecks = absKopecks % 100;
-
-	const rublesFormatted = rubles.toLocaleString("ru-RU");
-	const kopecksFormatted = remainderKopecks.toString().padStart(2, "0");
-
-	const sign = isNegative ? "−" : "";
-	return `${sign}${rublesFormatted},${kopecksFormatted} ₽`;
+	const safeKopecks = Number.isFinite(kopecks) ? Math.round(kopecks) : 0;
+	return formatKopecksRu(toExactKopecks(safeKopecks)).replace(/\u00a0₽$/, " ₽");
 }
 
 export function formatKopecksWithCurrency(kopecks: number): string {
@@ -226,13 +223,17 @@ export function parseRublesToKopecks(input: string | number | null | undefined):
 	if (input === null || input === undefined) return 0;
 	if (typeof input === "number") {
 		if (!Number.isFinite(input)) return 0;
-		return Math.round(input * 100);
+		return rublesToKopecks(input);
 	}
 
 	const normalized = input.trim().replace(/\s+/g, "").replace(",", ".");
 	if (!normalized) return 0;
 
+	if (/^-?\d+(?:\.\d{1,2})?$/.test(normalized)) {
+		return parseKopecks(normalized);
+	}
+
 	const num = Number(normalized);
 	if (!Number.isFinite(num)) return 0;
-	return Math.round(num * 100);
+	return rublesToKopecks(num);
 }

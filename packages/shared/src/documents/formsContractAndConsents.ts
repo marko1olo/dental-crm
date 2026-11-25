@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { escapeHtml } from "../utils/strings.js";
 import { CLINICAL_DOCUMENT_PRINT_STYLES } from "./renderers/sharedStyles.js";
 import {
 	BASE_INFORMED_CONSENT_PRESET,
@@ -28,15 +29,7 @@ import {
 
 
 
-function escapeHtml(str: unknown): string {
-	if (str === null || str === undefined) return "";
-	return String(str)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+// (HTML escaping delegated to utils/strings.ts SSOT)
 
 function formatRublesWithKopecks(amountRub: number): string {
 	return kopecksToRubles(rublesToKopecks(Number(amountRub) || 0))
@@ -93,7 +86,7 @@ export const paidServiceContract736PayloadSchema = z.object({
 	serviceStart: z.string().trim().max(32).nullable().optional(),
 	serviceEnd: z.string().trim().max(32).nullable().optional(),
 	doctorFullName: z.string().trim().max(160).default(""),
-});
+}).strict();
 export type PaidServiceContract736Payload = z.infer<typeof paidServiceContract736PayloadSchema>;
 
 export type PaidServiceContract736RenderInput = Partial<PaidServiceContract736Payload> & {
@@ -271,7 +264,7 @@ export const actOfCompletedWorksItemSchema = z.object({
 	quantity: z.number().int().positive().default(1),
 	unitPriceRub: z.number().nonnegative(),
 	totalRub: z.number().nonnegative(),
-});
+}).strict();
 export type ActOfCompletedWorksItem = z.infer<typeof actOfCompletedWorksItemSchema>;
 
 export const actOfCompletedWorksPayloadSchema = z.object({
@@ -293,7 +286,7 @@ export const actOfCompletedWorksPayloadSchema = z.object({
 	totalAmountRub: z.number().nonnegative(),
 	warrantyPeriodMonths: z.number().int().nonnegative().default(12),
 	warrantyTermsText: z.string().trim().max(500).default("12 месяцев на композитные реставрации, 24 месяца на ортопедические конструкции при соблюдении графика контрольных осмотров 1 раз в 6 месяцев"),
-});
+}).strict();
 export type ActOfCompletedWorksPayload = z.infer<typeof actOfCompletedWorksPayloadSchema>;
 
 export type ActOfCompletedWorksRenderInput = Partial<Omit<ActOfCompletedWorksPayload, "items">> & {

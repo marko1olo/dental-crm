@@ -304,8 +304,8 @@ export const DOCTOR_HOTKEYS = {
 	F1: {
 		key: "F1",
 		code: "F1",
-		labelRu: "F1 — Справочник номенклатуры 804н",
-		actionDescription: "Быстрый вызов подсказок и стандартов номенклатуры 804н",
+		labelRu: "F1 — Справочник услуг и прейскурант",
+		actionDescription: "Быстрый вызов подсказок и справочника прейскуранта",
 		preventsBrowserDefault: true,
 	},
 	F2: {
@@ -360,7 +360,7 @@ export const DOCTOR_HOTKEYS = {
 	F12: {
 		key: "F12",
 		code: "F12",
-		labelRu: "F12 — Печать дневника 043/у",
+		labelRu: "F12 — Печать медкарты",
 		actionDescription: "Быстрая печать текущей медицинской карты или черновика",
 		preventsBrowserDefault: true,
 	},

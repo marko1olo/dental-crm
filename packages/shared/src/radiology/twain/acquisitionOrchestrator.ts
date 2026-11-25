@@ -42,20 +42,22 @@ export function applySensorHardwareCalibration(
 	const maxVal = (1 << maxBitDepth) - 1;
 	const calibrated = new Uint16Array(totalPixels);
 
-	const hasDark = profile?.darkFrameMatrix && profile.darkFrameMatrix.length === totalPixels;
-	const hasGain = profile?.flatFieldGainMatrix && profile.flatFieldGainMatrix.length === totalPixels;
+	const darkMatrix = profile?.darkFrameMatrix;
+	const gainMatrix = profile?.flatFieldGainMatrix;
+	const hasDark = darkMatrix && darkMatrix.length === totalPixels;
+	const hasGain = gainMatrix && gainMatrix.length === totalPixels;
 
 	// Шаг 1 & 2: Dark frame subtraction + Flat field gain normalization
 	for (let i = 0; i < totalPixels; i++) {
-		let val = rawPixels[i]!;
+		let val = rawPixels[i] ?? 0;
 
-		if (hasDark) {
-			const darkVal = profile!.darkFrameMatrix![i]!;
+		if (hasDark && darkMatrix) {
+			const darkVal = darkMatrix[i] ?? 0;
 			val = val > darkVal ? val - darkVal : 0;
 		}
 
-		if (hasGain) {
-			const gain = profile!.flatFieldGainMatrix![i]!;
+		if (hasGain && gainMatrix) {
+			const gain = gainMatrix[i] ?? 0;
 			if (gain > 0) {
 				val = Math.round(val * gain);
 			}
@@ -66,9 +68,8 @@ export function applySensorHardwareCalibration(
 
 	// Шаг 3: Bad pixel interpolation (замена битых/горячих пикселей средним значением 8 соседей)
 	if (profile?.badPixelMap && profile.badPixelMap.length > 0) {
-		const badMap = profile.badPixelMap;
-		for (let b = 0; b < badMap.length; b++) {
-			const { x, y } = badMap[b]!;
+		for (const badPixel of profile.badPixelMap) {
+			const { x, y } = badPixel;
 			if (x < 0 || x >= width || y < 0 || y >= height) continue;
 
 			let sum = 0;
@@ -81,7 +82,7 @@ export function applySensorHardwareCalibration(
 					const ny = y + dy;
 					if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
 						const nIdx = ny * width + nx;
-						sum += calibrated[nIdx]!;
+						sum += calibrated[nIdx] ?? 0;
 						validCount++;
 					}
 				}
@@ -107,7 +108,10 @@ export function createSyntheticRvgRawFrame(options: {
 	readonly corruptedPixels?: readonly BadPixelLocation[];
 	readonly darkNoiseAdc?: number;
 }): RvgRawFrame {
-	const spec = KNOWN_RVG_SENSOR_CATALOG[options.sensorKey] ?? KNOWN_RVG_SENSOR_CATALOG["vatech_ezsensor_hd_size1"]!;
+	const spec = KNOWN_RVG_SENSOR_CATALOG[options.sensorKey] ?? KNOWN_RVG_SENSOR_CATALOG["vatech_ezsensor_hd_size1"];
+	if (!spec) {
+		throw new Error(`RVG sensor specification not found for "${options.sensorKey}"`);
+	}
 	const [width, height] = spec.matrixResolutionPx;
 	const totalPixels = width * height;
 	const buffer = new Uint16Array(totalPixels);

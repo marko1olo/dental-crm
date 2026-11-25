@@ -167,7 +167,7 @@ export const patientTimelineFilterSchema = z.object({
 	searchQuery: z.string().max(200).optional(),
 	limit: z.number().int().min(1).max(500).default(100),
 	offset: z.number().int().min(0).default(0),
-});
+}).strict();
 export type PatientTimelineFilter = z.infer<typeof patientTimelineFilterSchema>;
 
 export interface TimelineGroupedByDate {

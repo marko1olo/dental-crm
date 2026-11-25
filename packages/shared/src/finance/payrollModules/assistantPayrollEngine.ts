@@ -6,6 +6,12 @@
 
 import type { AssistantPayrollResult, AssistantShiftLogItem, AssistantShiftRateRule } from "./payrollPresetTypes.js";
 import { ASSISTANT_SHIFT_RULE } from "./payrollRules.js";
+import {
+	calculatePercentDiscountKopecks,
+	kopecksToRubles,
+	rublesToKopecks,
+	toExactKopecks,
+} from "../../money.js";
 
 /**
  * Calculates assistant shift pay + piece rate bonuses
@@ -40,7 +46,9 @@ export function calculateAssistantPeriodPayroll(
 	const surgeryPayout = totalSurgeries * rules.surgeryAssistanceBonusKop;
 	const grossTotal = baseShiftPayout + radiographPayout + surgeryPayout;
 	// Округление НДФЛ 13% строго до целых рублей (п. 6 ст. 225 НК РФ)
-	const ndfl13 = Math.round((grossTotal * 13) / 10000) * 100;
+	const ndfl13 = rublesToKopecks(
+		Math.round(kopecksToRubles(calculatePercentDiscountKopecks(toExactKopecks(grossTotal), 13))),
+	);
 	const netToAssistant = Math.max(0, grossTotal - ndfl13);
 
 	return {

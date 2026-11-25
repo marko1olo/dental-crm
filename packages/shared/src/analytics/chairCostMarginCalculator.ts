@@ -14,6 +14,7 @@
 import { z } from "zod";
 import { calculateChairHourCost } from "../finance/clinicExpensesEngine.js";
 import { kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
+import { basisPointsFromPercent, calculatePercentDiscountKopecks } from "../money.js";
 
 // ─── 1. ВХОДНЫЕ ПАРАМЕТРЫ КЛИНИКИ И ПРОЦЕДУРЫ ─────────────────────────────────
 
@@ -175,7 +176,10 @@ export function calculateProcedureEconomics(
 ): ProcedureEconomicsResult {
 	const chairCost = calculateChairHourlyCost(overheadInput);
 
-	const discountAmountRub = Math.round(procInput.patientPriceRub * procInput.discountRate);
+	const discountPercent = basisPointsFromPercent(procInput.discountRate);
+	const patientPriceKopecks = rubToKopecks(procInput.patientPriceRub);
+	const discountAmountKopecks = calculatePercentDiscountKopecks(patientPriceKopecks, discountPercent);
+	const discountAmountRub = Math.round(kopecksToRub(discountAmountKopecks));
 	const actualPatientPriceRub = procInput.patientPriceRub - discountAmountRub;
 
 	// Фиксированные накладные расходы кресла за длительность процедуры
@@ -256,7 +260,7 @@ export function calculateProcedureEconomics(
 	} else if (clinicNetMarginPercent < 15) {
 		executiveDiagnosticRu = `Критически низкая маржа (${clinicNetMarginPercent}%). Любая задержка на 15 мин уведет прием в минус.`;
 	} else if (discountProfitErosionPercent >= 30) {
-		executiveDiagnosticRu = `Скидка ${Math.round(procInput.discountRate * 100)}% уничтожила ${discountProfitErosionPercent}% чистой прибыли клиники!`;
+		executiveDiagnosticRu = `Скидка ${discountPercent}% уничтожила ${discountProfitErosionPercent}% чистой прибыли клиники!`;
 	}
 
 	return {

@@ -152,18 +152,20 @@ export function computeCompositeScore(
 			? Math.min(5.0, Math.max(1.0, manualScore))
 			: undefined;
 
-	const hasOnTime = metrics.onTimeRatePct !== null && Number.isFinite(metrics.onTimeRatePct);
-	const hasReject = metrics.rejectRatePct !== null && Number.isFinite(metrics.rejectRatePct);
+	const onTimeRatePct = metrics.onTimeRatePct;
+	const rejectRatePct = metrics.rejectRatePct;
 
 	// Map onTime percentage (0..100) to 1.0–5.0 scale
-	const onTimeScore = hasOnTime
-		? 1.0 + (metrics.onTimeRatePct! / 100) * 4.0
-		: null;
+	const onTimeScore =
+		onTimeRatePct !== null && Number.isFinite(onTimeRatePct)
+			? 1.0 + (onTimeRatePct / 100) * 4.0
+			: null;
 
 	// Map quality percentage (100 - rejectRatePct) to 1.0–5.0 scale
-	const qualityScore = hasReject
-		? 1.0 + (Math.max(0, 100 - metrics.rejectRatePct!) / 100) * 4.0
-		: null;
+	const qualityScore =
+		rejectRatePct !== null && Number.isFinite(rejectRatePct)
+			? 1.0 + (Math.max(0, 100 - rejectRatePct) / 100) * 4.0
+			: null;
 
 	// Case 1: Neither delivery metric is available (no order history)
 	if (onTimeScore === null && qualityScore === null) {
@@ -460,8 +462,9 @@ export function computeSupplierMetrics(
 
 	let onTimeCount = 0;
 	for (const item of withDueDate) {
-		const expectedStr = item.expectedDate!.trim().slice(0, 10);
-		const receivedStr = item.receivedAt!.trim().slice(0, 10);
+		if (!item.expectedDate || !item.receivedAt) continue;
+		const expectedStr = item.expectedDate.trim().slice(0, 10);
+		const receivedStr = item.receivedAt.trim().slice(0, 10);
 		if (receivedStr <= expectedStr) {
 			onTimeCount += 1;
 		}

@@ -269,7 +269,7 @@ export const oneCCommerceMlPackageSchema = z.object({
 	materialWriteoffDocument: oneCMaterialWriteoffDocumentSchema,
 	payrollDocument: oneCPayrollDocumentSchema.optional().nullable(),
 	sha256Hash: z.string().length(64).optional(),
-});
+}).strict();
 export type OneCCommerceMlPackage = z.infer<typeof oneCCommerceMlPackageSchema>;
 
 export interface OneCPackageIntegrityResult {

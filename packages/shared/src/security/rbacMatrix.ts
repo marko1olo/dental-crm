@@ -172,7 +172,7 @@ export const PERMISSION_DEFINITIONS: readonly PermissionDefinition[] = [
 		key: "clinical.treatment_plans.manage",
 		module: "clinical",
 		title: "Составление комплексных планов лечения",
-		description: "Формирование этапных смет и подбор номенклатуры 804н.",
+		description: "Формирование этапных смет и подбор позиций прейскуранта.",
 	},
 	// Расписание
 	{
@@ -230,7 +230,7 @@ export const PERMISSION_DEFINITIONS: readonly PermissionDefinition[] = [
 		key: "finance.tariffs_manage",
 		module: "finance_reports",
 		title: "Управление прейскурантом и ценами",
-		description: "Редактирование цен, категорий услуг 804н и технологических карт расходов.",
+		description: "Редактирование цен, категорий прейскуранта и технологических карт расходов.",
 	},
 	// Зарплата и мотивация
 	{

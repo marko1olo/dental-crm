@@ -10,7 +10,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import type { Kopecks } from "../../money.js";
+import { calculatePercentDiscountKopecks, toExactKopecks, type Kopecks } from "../../money.js";
 import { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "./types.js";
 
 /**
@@ -85,15 +85,17 @@ export function calculateServicePieceRateAccrual(
 	const revenue = Math.max(0, Math.round(effectiveRevenue || 0));
 	const labCost = Math.max(0, Math.round(item.directLabZtlCostKop || 0));
 	const matCost = Math.max(0, Math.round(item.directMaterialCostKop || 0));
+	const categoryCommissionPct =
+		item.category !== undefined ? DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] : undefined;
 	const pct =
 		typeof item.commissionPercent === "number" && item.commissionPercent >= 0
 			? item.commissionPercent
-			: item.category && DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category] !== undefined
-				? DEFAULT_CATEGORY_COMMISSION_PERCENT[item.category]!
+			: categoryCommissionPct !== undefined
+				? categoryCommissionPct
 				: fallbackCommissionPct;
 
 	const dealBaseKop = Math.max(0, revenue - labCost - matCost);
-	const earnedPayoutKop = Math.round((dealBaseKop * pct) / 100);
+	const earnedPayoutKop = calculatePercentDiscountKopecks(toExactKopecks(dealBaseKop), pct);
 
 	return {
 		dealBaseKop,

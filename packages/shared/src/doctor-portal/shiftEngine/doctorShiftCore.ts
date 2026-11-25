@@ -541,7 +541,7 @@ export function verifyAndSignBatchEmr(params: {
 
 	return {
 		success: true,
-		messageRu: `Успешно подписано ${newlySignedIds.length} медицинских карт ф. 043/у через ПЭП${isSessionPep ? " текущей сессии (63-ФЗ)" : ""}.`,
+		messageRu: `Успешно подписано ${newlySignedIds.length} медицинских карт через ПЭП${isSessionPep ? " текущей сессии (63-ФЗ)" : ""}.`,
 		signedCount: newlySignedIds.length,
 		signedAppointmentIds: newlySignedIds,
 		updatedAppointments,

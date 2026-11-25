@@ -224,7 +224,7 @@ export const assignPatientToothDefectSchema = z.object({
 	visitId: z.string().uuid().optional().nullable(),
 	diagnosedByDoctorId: z.string().uuid().optional().nullable(),
 	comment: z.string().max(1000).optional().nullable(),
-});
+}).strict();
 export type AssignPatientToothDefectInput = z.infer<
 	typeof assignPatientToothDefectSchema
 >;
@@ -232,7 +232,7 @@ export type AssignPatientToothDefectInput = z.infer<
 export const updatePatientToothDefectSchema = z.object({
 	resolvedAt: z.string().datetime({ offset: true }).optional().nullable(),
 	comment: z.string().max(1000).optional().nullable(),
-});
+}).strict();
 export type UpdatePatientToothDefectInput = z.infer<
 	typeof updatePatientToothDefectSchema
 >;
@@ -254,7 +254,7 @@ export const submitOutpatientForVerificationSchema = z.object({
 	visitId: z.string().uuid(),
 	patientId: z.string().uuid(),
 	doctorId: z.string().uuid(),
-});
+}).strict();
 export type SubmitOutpatientForVerificationInput = z.infer<
 	typeof submitOutpatientForVerificationSchema
 >;
@@ -262,7 +262,7 @@ export type SubmitOutpatientForVerificationInput = z.infer<
 export const updateOutpatientVerificationStatusSchema = z.object({
 	status: z.enum(["approved", "rejected", "review"]),
 	rejectionReason: z.string().max(2000).optional().nullable(),
-});
+}).strict();
 export type UpdateOutpatientVerificationStatusInput = z.infer<
 	typeof updateOutpatientVerificationStatusSchema
 >;
@@ -300,7 +300,7 @@ export const outpatientTemplatesFilterSchema = z.object({
 	mkbCode: z.string().optional(),
 	limit: z.coerce.number().int().min(1).max(500).default(100),
 	offset: z.coerce.number().int().min(0).default(0),
-});
+}).strict();
 export type OutpatientTemplatesFilter = z.infer<
 	typeof outpatientTemplatesFilterSchema
 >;
@@ -312,5 +312,5 @@ export const mkbCategoriesFilterSchema = z.object({
 	dentalOnly: z.enum(["true", "false", "1", "0"]).optional(),
 	search: z.string().optional(),
 	parentId: z.string().optional(),
-});
+}).strict();
 export type MkbCategoriesFilter = z.infer<typeof mkbCategoriesFilterSchema>;

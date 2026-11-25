@@ -76,7 +76,7 @@ export const radiologyReferralPayloadSchema = z.object({
 	hasMetallicArtifacts: z.boolean().default(false), // Наличие металлоконструкций / брекетов
 	isPregnancyExcluded: z.boolean().default(true), // Беременность исключена
 	specialInstructions: z.string().trim().max(500).nullable().optional(),
-});
+}).strict();
 export type RadiologyReferralPayload = z.infer<typeof radiologyReferralPayloadSchema>;
 
 /**
@@ -107,9 +107,10 @@ export function generateRadiologyReferralPayloadFromSoap(options: {
 }): RadiologyReferralPayload {
 	const icd = (options.diagnosisIcd10 || "K04.0").toUpperCase().trim();
 	const teeth = (options.diagnosisTooth || "").trim();
+	const randomSuffix = globalThis.crypto.randomUUID().slice(0, 6).toUpperCase();
 	const referralNum =
 		options.customReferralNumber ||
-		`НАПР-ЛД-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+		`НАПР-ЛД-${new Date().getFullYear()}-${randomSuffix}`;
 
 	// Автоопределение типа исследования и цели по МКБ-10
 	let determinedStudy: DentalRadiologyStudyType = options.studyType || "cbct_jaw_8x8";

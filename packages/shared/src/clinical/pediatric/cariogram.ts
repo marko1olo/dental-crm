@@ -13,7 +13,7 @@ export type CariogramRiskLevel = z.infer<typeof cariogramRiskLevelSchema>;
 
 export const cariogramInputSchema = z.object({
 	cariesRiskLevel: cariogramRiskLevelSchema.optional().default("low"),
-});
+}).strict();
 
 export type CariogramInput = z.infer<typeof cariogramInputSchema>;
 
