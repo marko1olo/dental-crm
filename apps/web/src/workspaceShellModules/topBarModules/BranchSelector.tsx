@@ -7,6 +7,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Building2, Check, ChevronDown, Plus } from "lucide-react";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 
 export interface BranchItem {
 	id: string;
@@ -41,7 +42,9 @@ export function BranchSelector({
 		let isMounted = true;
 		async function fetchBranches() {
 			try {
-				const res = await fetch("/api/branches");
+				const res = await fetch("/api/branches", {
+					headers: getDenteAuthHeaders(),
+				});
 				if (!res.ok) return;
 				const json = await res.json();
 				const items: BranchItem[] = json?.data ?? (Array.isArray(json) ? json : []);

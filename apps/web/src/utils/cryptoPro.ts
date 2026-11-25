@@ -1,4 +1,5 @@
 import { GOST_CRYPTO_OIDS } from "@dental/shared";
+import { denteClinicalReadHeaders } from "../lib/denteRequestHeaders";
 import { logger } from "./logger";
 
 /**
@@ -258,7 +259,7 @@ export async function checkCryptoProNativeBridge(): Promise<boolean> {
 	try {
 		const res = await fetch("/api/cryptopro/native/status", {
 			method: "GET",
-			headers: { Accept: "application/json" },
+			headers: { ...denteClinicalReadHeaders(), Accept: "application/json" },
 		});
 		if (!res.ok) {
 			cachedNativeStatus = { available: false, timestamp: Date.now() };
@@ -412,7 +413,7 @@ export async function getPersonalCertificates(): Promise<CryptoProCertificate[]>
 	try {
 		const res = await fetch("/api/cryptopro/native/certificates", {
 			method: "GET",
-			headers: { Accept: "application/json" },
+			headers: { ...denteClinicalReadHeaders(), Accept: "application/json" },
 		});
 		if (!res.ok) {
 			const errData = (await res.json().catch(() => ({}))) as { message?: string; code?: string };
@@ -560,6 +561,7 @@ export async function signBase64WithCertificate(
 		const res = await fetch("/api/cryptopro/native/sign", {
 			method: "POST",
 			headers: {
+				...denteClinicalReadHeaders(),
 				"Content-Type": "application/json",
 				Accept: "application/json",
 			},

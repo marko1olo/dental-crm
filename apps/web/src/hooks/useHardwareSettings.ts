@@ -21,6 +21,7 @@ import {
 	type HardwareDeviceConfig,
 	type HardwarePreset,
 } from "../services/hardware/hardwarePresets.js";
+import { denteClinicalReadHeaders, denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
 
 export function useHardwareSettings() {
 	const [devices, setDevices] = useState<HardwareDeviceConfig[]>(() => loadHardwareConfigs());
@@ -48,7 +49,9 @@ export function useHardwareSettings() {
 	// Server synchronization with PostgreSQL 18 on mount
 	useEffect(() => {
 		let isMounted = true;
-		fetch("/api/hardware/devices?scope=configured")
+		fetch("/api/hardware/devices?scope=configured", {
+				headers: denteClinicalReadHeaders(),
+			})
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data: { success?: boolean; devices?: HardwareDeviceConfig[] } | null) => {
 				if (isMounted && data?.success && Array.isArray(data.devices) && data.devices.length > 0) {
@@ -68,7 +71,7 @@ export function useHardwareSettings() {
 	const syncDevicesToServer = useCallback((nextDevices: HardwareDeviceConfig[]) => {
 		fetch("/api/hardware/devices/sync", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: { ...denteClinicalMutationHeaders(), "Content-Type": "application/json" },
 			body: JSON.stringify({ devices: nextDevices }),
 		}).catch(() => {
 			// Silent background sync fallback
