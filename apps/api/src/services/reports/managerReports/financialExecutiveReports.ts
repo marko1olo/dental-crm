@@ -9,40 +9,26 @@
  * 3. Все расчёты дублируются в целочисленных копейках для исключения float-погрешностей.
  */
 
-import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { db } from "../../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	appointments,
-	doctorCommissions,
-	doctorPayrollStatements,
-	inventoryItems,
-	inventoryTransactions,
 	invoices,
-	patientInvoices,
-	patients,
 	payments,
-	serviceCatalogItems,
-	treatmentItems,
-	users,
-	visits,
 } from "../../../db/schema.js";
-import { labOrders } from "../../../db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.js";
 import {
 	assistantPayrollReport,
 	type AssistantPayrollRow,
 } from "./assistantPayrollReports.js";
 import {
-	DEFAULT_CATEGORY_COMMISSION_PERCENT,
 	calculateDoctorPeriodPayroll,
-	type DoctorCompletedServiceItem,
+	calculateKopecksSharePercent,
 	kopecksToRubles,
-	rublesToKopecks,
 } from "@dental/shared";
 import {
 	fetchActiveDoctorProfiles,
 	fetchDoctorPayrollDataset,
-	normalizeClinicalCategory,
 } from "../../../routes/doctorPayrollDbQueries.js";
 import type { ReportScope } from "./types.js";
 
@@ -133,212 +119,203 @@ export type DoctorPayrollReportData = {
  */
 export async function financialExecutiveSummary(
 	scope: ReportScope,
+	executor?: TenantDb,
 ): Promise<FinancialExecutiveSummaryReport> {
-	// 1. [ANL-02] Честные платежи за период (чистый приход минус возвраты строго по времени оплаты)
-	// Распаковка комбинированных сплит-чеков ('split') по тендерам без искажения ДДС
-	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
-	const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
+	const runQuery = async (tx: TenantDb): Promise<FinancialExecutiveSummaryReport> => {
+		// 1. [ANL-02] Честные платежи за период (чистый приход минус возвраты строго по времени оплаты)
+		// Распаковка комбинированных сплит-чеков ('split') по тендерам без искажения ДДС
+		const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
+		const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
+		const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
+		const methodText = sql`${payments.method}::text`;
+		const splitCardKopExpr = sql`coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${paymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0)`;
 
-	const [paymentTotals] = await db
-		.select({
-			cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-				when ${payments.method} = 'cash' then ${paymentKopExpr} 
-				when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) 
-				else 0 end)), 0)::bigint`,
-			cashCount: sql<number>`count(case when ${payments.status} = 'paid' and (${payments.method} = 'cash' or (${payments.method} = 'split' and coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) > 0)) then 1 end)::int`,
-			cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-				when ${payments.method} = 'card' then ${paymentKopExpr} 
-				when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${paymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) 
-				when ${payments.method}::text not in ('cash', 'online', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split') then ${paymentKopExpr}
-				else 0 end)), 0)::bigint`,
-			cardCount: sql<number>`count(case when ${payments.status} = 'paid' and ((${payments.method} = 'card' or ${payments.method}::text not in ('cash', 'online', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split')) or (${payments.method} = 'split' and coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, 0), 0) > 0)) then 1 end)::int`,
-			sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-				when ${payments.method} = 'online' then ${paymentKopExpr} 
-				when ${payments.method} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) 
-				else 0 end)), 0)::bigint`,
-			sbpCount: sql<number>`count(case when ${payments.status} = 'paid' and (${payments.method} = 'online' or (${payments.method} = 'split' and coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) > 0)) then 1 end)::int`,
-			depositKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-				when ${payments.method} in ('family_wallet', 'other', 'certificate') then ${paymentKopExpr} 
-				when ${payments.method} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) 
-				else 0 end)), 0)::bigint`,
-			depositCount: sql<number>`count(case when ${payments.status} = 'paid' and (${payments.method} in ('family_wallet', 'other', 'certificate') or (${payments.method} = 'split' and coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) > 0)) then 1 end)::int`,
-		})
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, scope.organizationId),
-				inArray(payments.status, ["paid", "refunded"]),
-				gte(paymentTimestamp, scope.from),
-				lte(paymentTimestamp, scope.to),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
-			),
-		);
+		const [paymentTotals] = await tx
+			.select({
+				cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
+					when ${methodText} = 'cash' then ${paymentKopExpr} 
+					when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) 
+					else 0 end)), 0)::bigint`,
+				cashCount: sql<number>`count(case when ${payments.status} = 'paid' and (${methodText} = 'cash' or (${methodText} = 'split' and coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) > 0)) then 1 end)::int`,
+				cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
+					when ${methodText} = 'card' then ${paymentKopExpr} 
+					when ${methodText} = 'split' then ${splitCardKopExpr}
+					when ${methodText} not in ('cash', 'online', 'sbp', 'deposit', 'advance', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split') then ${paymentKopExpr}
+					else 0 end)), 0)::bigint`,
+				cardCount: sql<number>`count(case when ${payments.status} = 'paid' and ((${methodText} = 'card' or ${methodText} not in ('cash', 'online', 'sbp', 'deposit', 'advance', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split')) or (${methodText} = 'split' and ${splitCardKopExpr} > 0)) then 1 end)::int`,
+				sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
+					when ${methodText} in ('sbp', 'online') then ${paymentKopExpr} 
+					when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) 
+					else 0 end)), 0)::bigint`,
+				sbpCount: sql<number>`count(case when ${payments.status} = 'paid' and (${methodText} in ('sbp', 'online') or (${methodText} = 'split' and coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) > 0)) then 1 end)::int`,
+				depositKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
+					when ${methodText} in ('deposit', 'advance', 'family_wallet', 'other', 'certificate') then ${paymentKopExpr} 
+					when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) 
+					else 0 end)), 0)::bigint`,
+				depositCount: sql<number>`count(case when ${payments.status} = 'paid' and (${methodText} in ('deposit', 'advance', 'family_wallet', 'other', 'certificate') or (${methodText} = 'split' and coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) > 0)) then 1 end)::int`,
+			})
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, scope.organizationId),
+					inArray(payments.status, ["paid", "refunded"]),
+					gte(paymentTimestamp, scope.from),
+					lte(paymentTimestamp, scope.to),
+					sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
+				),
+			);
 
-	const cashKopecks = Math.max(0, Number(paymentTotals?.cashKopecks || 0));
-	const cardKopecks = Math.max(0, Number(paymentTotals?.cardKopecks || 0));
-	const sbpKopecks = Math.max(0, Number(paymentTotals?.sbpKopecks || 0));
-	const depositKopecks = Math.max(0, Number(paymentTotals?.depositKopecks || 0));
+		const cashKopecks = Math.max(0, Number(paymentTotals?.cashKopecks || 0));
+		const cardKopecks = Math.max(0, Number(paymentTotals?.cardKopecks || 0));
+		const sbpKopecks = Math.max(0, Number(paymentTotals?.sbpKopecks || 0));
+		const depositKopecks = Math.max(0, Number(paymentTotals?.depositKopecks || 0));
 
-	const cashCount = Number(paymentTotals?.cashCount || 0);
-	const cardCount = Number(paymentTotals?.cardCount || 0);
-	const sbpCount = Number(paymentTotals?.sbpCount || 0);
-	const depositCount = Number(paymentTotals?.depositCount || 0);
+		const cashCount = Number(paymentTotals?.cashCount || 0);
+		const cardCount = Number(paymentTotals?.cardCount || 0);
+		const sbpCount = Number(paymentTotals?.sbpCount || 0);
+		const depositCount = Number(paymentTotals?.depositCount || 0);
 
-	const cashRub = kopecksToRubles(cashKopecks);
-	const cardRub = kopecksToRubles(cardKopecks);
-	const sbpRub = kopecksToRubles(sbpKopecks);
-	const depositRub = kopecksToRubles(depositKopecks);
+		const cashRub = kopecksToRubles(cashKopecks);
+		const cardRub = kopecksToRubles(cardKopecks);
+		const sbpRub = kopecksToRubles(sbpKopecks);
+		const depositRub = kopecksToRubles(depositKopecks);
 
-	// 2. Оформленные наряды за период (invoices / patient_invoices)
-	const [invoicesSummary] = await db
-		.select({
-			invoicesCount: sql<number>`count(*)::int`,
-			totalInvoicedKopecks: sql<number>`coalesce(sum(case when ${invoices.status} != 'voided' and ${invoices.status} != 'cancelled' then coalesce(${invoices.totalPriceKopecks}, 0)::bigint else 0 end), 0)::bigint`,
-		})
-		.from(invoices)
-		.where(
-			and(
-				eq(invoices.organizationId, scope.organizationId),
-				gte(invoices.createdAt, scope.from),
-				lte(invoices.createdAt, scope.to),
-			),
-		);
+		// 2. Оформленные наряды за период (invoices / patient_invoices)
+		const [invoicesSummary] = await tx
+			.select({
+				invoicesCount: sql<number>`count(*)::int`,
+				totalInvoicedKopecks: sql<number>`coalesce(sum(case when ${invoices.status} != 'voided' and ${invoices.status} != 'cancelled' then coalesce(${invoices.totalPriceKopecks}, 0)::bigint else 0 end), 0)::bigint`,
+			})
+			.from(invoices)
+			.where(
+				and(
+					eq(invoices.organizationId, scope.organizationId),
+					gte(invoices.createdAt, scope.from),
+					lte(invoices.createdAt, scope.to),
+				),
+			);
 
-	const invoicesCount = Number(invoicesSummary?.invoicesCount || 0);
-	const totalInvoicedKopecks = Number(invoicesSummary?.totalInvoicedKopecks || 0);
-	const totalInvoicedRub = kopecksToRubles(totalInvoicedKopecks);
+		const invoicesCount = Number(invoicesSummary?.invoicesCount || 0);
+		const totalInvoicedKopecks = Number(invoicesSummary?.totalInvoicedKopecks || 0);
+		const totalInvoicedRub = kopecksToRubles(totalInvoicedKopecks);
 
-	// [FIN-01] Ликвидация двойного учёта выручки:
-	// (а) Реальный денежный приток в кассу и банк (ДДС): физические поступления средств за период (нал + карты + СБП).
-	const cashInflowKopecks = cashKopecks + cardKopecks + sbpKopecks;
-	const cashInflowRub = kopecksToRubles(cashInflowKopecks);
+		const cashInflowKopecks = cashKopecks + cardKopecks + sbpKopecks;
+		const cashInflowRub = kopecksToRubles(cashInflowKopecks);
+		const depositRealizedKopecks = depositKopecks;
+		const depositRealizedRub = kopecksToRubles(depositRealizedKopecks);
+		const totalRevenueKopecks = cashInflowKopecks + depositRealizedKopecks;
+		const totalRevenueRub = kopecksToRubles(totalRevenueKopecks);
 
-	// (б) Реализация услуг через погашение авансов / депозитов.
-	const depositRealizedKopecks = depositKopecks;
-	const depositRealizedRub = kopecksToRubles(depositRealizedKopecks);
+		// 3. Число фактически завершенных приемов и плативших пациентов за период
+		const [completedApptRow] = await tx
+			.select({
+				count: sql<number>`count(*)::int`,
+			})
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, scope.organizationId),
+					eq(appointments.status, "completed"),
+					gte(appointments.startsAt, scope.from),
+					lte(appointments.startsAt, scope.to),
+				),
+			);
 
-	// (в) Итоговая выручка от реализации услуг за период:
-	// Выручка = фактически принятые кассовые оплаты (cashInflowRub) + реализованные депозиты (depositRealizedRub).
-	// Недопустимо перетирать реальные кассовые поступления единичным инвойсом.
-	const totalRevenueKopecks = cashInflowKopecks + depositRealizedKopecks;
-	const totalRevenueRub = kopecksToRubles(totalRevenueKopecks);
+		const [payingPatientRow] = await tx
+			.select({
+				count: sql<number>`count(distinct ${payments.patientId})::int`,
+			})
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, scope.organizationId),
+					inArray(payments.status, ["paid"]),
+					gte(paymentTimestamp, scope.from),
+					lte(paymentTimestamp, scope.to),
+					sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
+				),
+			);
 
-	// 3. Число фактически завершенных приемов и плативших пациентов за период (Мандат 8wy, SSOT среднего чека)
-	const [completedApptRow] = await db
-		.select({
-			count: sql<number>`count(*)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				eq(appointments.status, "completed"),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		);
+		const completedAppointmentsCount = Number(completedApptRow?.count || 0);
+		const payingPatientsCount = Number(payingPatientRow?.count || 0);
 
-	const [payingPatientRow] = await db
-		.select({
-			count: sql<number>`count(distinct ${payments.patientId})::int`,
-		})
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, scope.organizationId),
-				inArray(payments.status, ["paid"]),
-				gte(paymentTimestamp, scope.from),
-				lte(paymentTimestamp, scope.to),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
-			),
-		);
+		const paymentTurnoverKopecks = totalRevenueKopecks;
+		const cashPercent = calculateKopecksSharePercent(cashKopecks, paymentTurnoverKopecks, 1);
+		const cardPercent = calculateKopecksSharePercent(cardKopecks, paymentTurnoverKopecks, 1);
+		const sbpPercent = calculateKopecksSharePercent(sbpKopecks, paymentTurnoverKopecks, 1);
+		const depositPercent = calculateKopecksSharePercent(depositKopecks, paymentTurnoverKopecks, 1);
 
-	const completedAppointmentsCount = Number(completedApptRow?.count || 0);
-	const payingPatientsCount = Number(payingPatientRow?.count || 0);
+		const averageCheckDivisor =
+			completedAppointmentsCount > 0
+				? completedAppointmentsCount
+				: payingPatientsCount > 0
+					? payingPatientsCount
+					: invoicesCount > 0
+						? invoicesCount
+						: 0;
 
-	// Общий объем платежных проводок за период (для долевого распределения в breakdown)
-	const paymentTurnoverKopecks = totalRevenueKopecks;
-	const cashPercent =
-		paymentTurnoverKopecks > 0 ? Number(((cashKopecks / paymentTurnoverKopecks) * 100).toFixed(1)) : 0;
-	const cardPercent =
-		paymentTurnoverKopecks > 0 ? Number(((cardKopecks / paymentTurnoverKopecks) * 100).toFixed(1)) : 0;
-	const sbpPercent =
-		paymentTurnoverKopecks > 0 ? Number(((sbpKopecks / paymentTurnoverKopecks) * 100).toFixed(1)) : 0;
-	const depositPercent =
-		paymentTurnoverKopecks > 0
-			? Number(((depositKopecks / paymentTurnoverKopecks) * 100).toFixed(1))
-			: 0;
+		const averageCheckKopecks =
+			averageCheckDivisor > 0
+				? Math.round(totalRevenueKopecks / averageCheckDivisor)
+				: 0;
+		const averageCheckRub = kopecksToRubles(averageCheckKopecks);
 
-	// Канонический SSOT среднего чека: Выручка / Завершенные приемы (или платившие пациенты, если приемов нет).
-	// Исключена потёмкинская логика присвоения всей выручки клиники среднему чеку при отсутствии счетов!
-	const averageCheckDivisor =
-		completedAppointmentsCount > 0
-			? completedAppointmentsCount
-			: payingPatientsCount > 0
-				? payingPatientsCount
-				: invoicesCount > 0
-					? invoicesCount
-					: 0;
-
-	const averageCheckKopecks =
-		averageCheckDivisor > 0
-			? Math.round(totalRevenueKopecks / averageCheckDivisor)
-			: 0;
-	const averageCheckRub = kopecksToRubles(averageCheckKopecks);
-
-	return {
-		period: {
-			from: scope.from.toISOString(),
-			to: scope.to.toISOString(),
-		},
-		totalRevenueRub,
-		totalRevenueKopecks,
-		cashInflowRub,
-		cashInflowKopecks,
-		depositRealizedRub,
-		depositRealizedKopecks,
-		invoicesCount,
-		totalInvoicedRub,
-		totalInvoicedKopecks,
-		averageCheckRub,
-		averageCheckKopecks,
-		paymentBreakdown: {
-			cash: {
-				method: "cash",
-				label: "Наличные (Касса)",
-				amountRub: cashRub,
-				amountKopecks: cashKopecks,
-				percent: cashPercent,
-				count: cashCount,
+		return {
+			period: {
+				from: scope.from.toISOString(),
+				to: scope.to.toISOString(),
 			},
-			card: {
-				method: "card",
-				label: "Банковские карты",
-				amountRub: cardRub,
-				amountKopecks: cardKopecks,
-				percent: cardPercent,
-				count: cardCount,
+			totalRevenueRub,
+			totalRevenueKopecks,
+			cashInflowRub,
+			cashInflowKopecks,
+			depositRealizedRub,
+			depositRealizedKopecks,
+			invoicesCount,
+			totalInvoicedRub,
+			totalInvoicedKopecks,
+			averageCheckRub,
+			averageCheckKopecks,
+			paymentBreakdown: {
+				cash: {
+					method: "cash",
+					label: "Наличные (Касса)",
+					amountRub: cashRub,
+					amountKopecks: cashKopecks,
+					percent: cashPercent,
+					count: cashCount,
+				},
+				card: {
+					method: "card",
+					label: "Банковские карты",
+					amountRub: cardRub,
+					amountKopecks: cardKopecks,
+					percent: cardPercent,
+					count: cardCount,
+				},
+				sbp: {
+					method: "sbp",
+					label: "Оплата по QR (СБП)",
+					amountRub: sbpRub,
+					amountKopecks: sbpKopecks,
+					percent: sbpPercent,
+					count: sbpCount,
+				},
+				deposit: {
+					method: "deposit",
+					label: "Списание с авансов/депозитов",
+					amountRub: depositRub,
+					amountKopecks: depositKopecks,
+					percent: depositPercent,
+					count: depositCount,
+				},
 			},
-			sbp: {
-				method: "sbp",
-				label: "Оплата по QR (СБП)",
-				amountRub: sbpRub,
-				amountKopecks: sbpKopecks,
-				percent: sbpPercent,
-				count: sbpCount,
-			},
-			deposit: {
-				method: "deposit",
-				label: "Списание с авансов/депозитов",
-				amountRub: depositRub,
-				amountKopecks: depositKopecks,
-				percent: depositPercent,
-				count: depositCount,
-			},
-		},
-		isEmpty: totalRevenueKopecks === 0 && invoicesCount === 0 && cashInflowKopecks === 0,
+			isEmpty: totalRevenueKopecks === 0 && invoicesCount === 0 && cashInflowKopecks === 0,
+		};
 	};
+
+	if (executor) return runQuery(executor);
+	return withTenantCtx(scope.organizationId, runQuery);
 }
 
 /**
@@ -350,6 +327,7 @@ export async function doctorPayrollReport(
 	scope: ReportScope,
 	filterDoctorId?: string | undefined,
 	logger?: FastifyBaseLogger | undefined,
+	executor?: TenantDb,
 ): Promise<DoctorPayrollReportData> {
 	try {
 		let activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId);
@@ -439,7 +417,7 @@ export async function doctorPayrollReport(
 		// 6. Расчет оплаты труда ассистентов клиники (скрывается при персональной выгрузке врача)
 		const assistantReport = filterDoctorId
 			? { rows: [], totals: { totalPayoutRub: 0, totalPayoutKopecks: 0 }, isEmpty: true }
-			: await assistantPayrollReport(scope);
+			: await assistantPayrollReport(scope, executor);
 
 		return {
 			period: {

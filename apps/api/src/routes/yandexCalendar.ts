@@ -60,9 +60,24 @@ interface TokenPayload {
 }
 
 interface DoctorTokenMeta {
-	tokenVersion?: number;
-	rotatedAt?: string;
-	lastAccessedAt?: string;
+	tokenVersion?: number | undefined;
+	rotatedAt?: string | undefined;
+	lastAccessedAt?: string | undefined;
+	oauthToken?: string | undefined;
+	[key: string]: unknown;
+}
+
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function extractDoctorTokenMeta(raw: unknown): DoctorTokenMeta {
+	if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+		return raw as DoctorTokenMeta;
+	}
+	if (typeof raw === "string" && raw.trim().length > 0) {
+		return { oauthToken: raw };
+	}
+	return {};
 }
 
 /**
@@ -301,15 +316,51 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 
 			try {
 				const body = SettingsSchema.parse(request.body);
-				await withTenantCtx(orgId, (tx) =>
-					tx
+				await withTenantCtx(orgId, async (tx) => {
+					const [existingUser] = await tx
+						.select({ yandexCalendarToken: users.yandexCalendarToken })
+						.from(users)
+						.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)))
+						.limit(1);
+
+					const prevMeta = extractDoctorTokenMeta(existingUser?.yandexCalendarToken);
+					let nextTokenValue: unknown = body.yandexCalendarToken;
+
+					if (body.yandexCalendarToken === null) {
+						nextTokenValue =
+							prevMeta.tokenVersion !== undefined || prevMeta.rotatedAt !== undefined
+								? {
+										...(prevMeta.tokenVersion !== undefined
+											? { tokenVersion: prevMeta.tokenVersion }
+											: {}),
+										...(prevMeta.rotatedAt !== undefined
+											? { rotatedAt: prevMeta.rotatedAt }
+											: {}),
+									}
+								: null;
+					} else if (typeof body.yandexCalendarToken === "string") {
+						nextTokenValue =
+							prevMeta.tokenVersion !== undefined || prevMeta.rotatedAt !== undefined
+								? {
+										...prevMeta,
+										oauthToken: body.yandexCalendarToken,
+									}
+								: body.yandexCalendarToken;
+					} else {
+						nextTokenValue = {
+							...prevMeta,
+							...body.yandexCalendarToken,
+						};
+					}
+
+					await tx
 						.update(users)
 						.set({
 							yandexCalendarId: body.yandexCalendarId,
-							yandexCalendarToken: body.yandexCalendarToken,
+							yandexCalendarToken: nextTokenValue,
 						})
-						.where(and(eq(users.id, staffId), eq(users.organizationId, orgId))),
-				);
+						.where(and(eq(users.id, staffId), eq(users.organizationId, orgId)));
+				});
 
 				return { success: true };
 			} catch (err: unknown) {
@@ -483,10 +534,19 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 
 			const params = request.params as { doctorId?: string };
 			const targetDoctorId = params.doctorId || identity.userId;
+			if (!UUID_REGEX.test(targetDoctorId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный идентификатор врача (ожидается UUID).",
+				});
+			}
 
 			// Проверка прав: только сам врач или администратор/владелец
 			const isSelf = identity.userId === targetDoctorId;
-			const isPrivileged = identity.role === "owner" || identity.role === "admin";
+			const isPrivileged =
+				identity.role === "owner" ||
+				identity.role === "admin" ||
+				identity.role === "administrator";
 			if (!isSelf && !isPrivileged) {
 				return reply.code(403).send({
 					error: "Forbidden",
@@ -540,6 +600,108 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 		},
 	);
 
+	async function performDoctorIcalRotate(
+		request: FastifyRequest,
+		reply: FastifyReply,
+		identity: NonNullable<Awaited<ReturnType<typeof requireStaffIdentity>>>,
+		targetDoctorId: string,
+	) {
+		if (!identity.userId || !identity.organizationId) return;
+		if (!UUID_REGEX.test(targetDoctorId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор врача (ожидается UUID).",
+			});
+		}
+
+		const isSelf = identity.userId === targetDoctorId;
+		const isPrivileged =
+			identity.role === "owner" ||
+			identity.role === "admin" ||
+			identity.role === "administrator";
+		if (!isSelf && !isPrivileged) {
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Недостаточно прав для ротации ссылки расписания другого врача.",
+			});
+		}
+
+		const orgId = identity.organizationId;
+		const rotateResult = await withTenantCtx(orgId, async (tx) => {
+			const [targetUser] = await tx
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					isActive: users.isActive,
+					yandexCalendarToken: users.yandexCalendarToken,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.id, targetDoctorId),
+						eq(users.organizationId, orgId),
+					),
+				);
+
+			if (!targetUser || !targetUser.isActive) {
+				return null;
+			}
+
+			const prevMeta = extractDoctorTokenMeta(targetUser.yandexCalendarToken);
+			const newVersion = (prevMeta.tokenVersion ?? 1) + 1;
+			const rotatedAt = new Date().toISOString();
+
+			const newMeta: DoctorTokenMeta = {
+				...prevMeta,
+				tokenVersion: newVersion,
+				rotatedAt,
+			};
+
+			await tx
+				.update(users)
+				.set({
+					yandexCalendarToken: newMeta,
+				})
+				.where(
+					and(
+						eq(users.id, targetDoctorId),
+						eq(users.organizationId, orgId),
+					),
+				);
+
+			return { targetUser, newVersion, rotatedAt };
+		});
+
+		if (!rotateResult) {
+			return reply.code(404).send({
+				error: "DoctorNotFound",
+				message: "Врач не найден в организации.",
+			});
+		}
+
+		const { targetUser, newVersion, rotatedAt } = rotateResult;
+
+		const newToken = generateDoctorIcalToken({
+			doctorId: targetDoctorId,
+			organizationId: identity.organizationId,
+			tokenVersion: newVersion,
+		});
+
+		const host = request.headers.host || "localhost";
+		const feedPath = `/api/schedule/ical/doctor/${newToken}.ics`;
+
+		return {
+			success: true,
+			message: "Ссылка подписки успешно отозвана. Выпущена новая ссылка доступа.",
+			doctorId: targetDoctorId,
+			doctorName: targetUser.fullName,
+			feedUrl: feedPath,
+			webcalUrl: `webcal://${host}${feedPath}`,
+			tokenVersion: newVersion,
+			rotatedAt,
+		};
+	}
+
 	// Мгновенная ротация токена подписки iCal (при компрометации ссылки)
 	app.post(
 		"/api/schedule/ical/doctor/:doctorId/rotate",
@@ -549,90 +711,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 
 			const params = request.params as { doctorId?: string };
 			const targetDoctorId = params.doctorId || identity.userId;
-
-			const isSelf = identity.userId === targetDoctorId;
-			const isPrivileged = identity.role === "owner" || identity.role === "admin";
-			if (!isSelf && !isPrivileged) {
-				return reply.code(403).send({
-					error: "Forbidden",
-					message: "Недостаточно прав для ротации ссылки расписания другого врача.",
-				});
-			}
-
-			const orgId = identity.organizationId;
-			const rotateResult = await withTenantCtx(orgId, async (tx) => {
-				const [targetUser] = await tx
-					.select({
-						id: users.id,
-						fullName: users.fullName,
-						isActive: users.isActive,
-						yandexCalendarToken: users.yandexCalendarToken,
-					})
-					.from(users)
-					.where(
-						and(
-							eq(users.id, targetDoctorId),
-							eq(users.organizationId, orgId),
-						),
-					);
-
-				if (!targetUser || !targetUser.isActive) {
-					return null;
-				}
-
-				const prevMeta = (targetUser.yandexCalendarToken as DoctorTokenMeta | null) || {};
-				const newVersion = (prevMeta.tokenVersion ?? 1) + 1;
-				const rotatedAt = new Date().toISOString();
-
-				const newMeta: DoctorTokenMeta = {
-					...prevMeta,
-					tokenVersion: newVersion,
-					rotatedAt,
-				};
-
-				await tx
-					.update(users)
-					.set({
-						yandexCalendarToken: newMeta,
-					})
-					.where(
-						and(
-							eq(users.id, targetDoctorId),
-							eq(users.organizationId, orgId),
-						),
-					);
-
-				return { targetUser, newVersion, rotatedAt };
-			});
-
-			if (!rotateResult) {
-				return reply.code(404).send({
-					error: "DoctorNotFound",
-					message: "Врач не найден в организации.",
-				});
-			}
-
-			const { targetUser, newVersion, rotatedAt } = rotateResult;
-
-			const newToken = generateDoctorIcalToken({
-				doctorId: targetDoctorId,
-				organizationId: identity.organizationId,
-				tokenVersion: newVersion,
-			});
-
-			const host = request.headers.host || "localhost";
-			const feedPath = `/api/schedule/ical/doctor/${newToken}.ics`;
-
-			return {
-				success: true,
-				message: "Ссылка подписки успешно отозвана. Выпущена новая ссылка доступа.",
-				doctorId: targetDoctorId,
-				doctorName: targetUser.fullName,
-				feedUrl: feedPath,
-				webcalUrl: `webcal://${host}${feedPath}`,
-				tokenVersion: newVersion,
-				rotatedAt,
-			};
+			return performDoctorIcalRotate(request, reply, identity, targetDoctorId);
 		},
 	);
 
@@ -640,11 +719,7 @@ export async function registerYandexCalendarRoutes(app: FastifyInstance) {
 	app.post("/api/schedule/ical/rotate", async (request, reply) => {
 		const identity = await requireStaffIdentity(request, reply);
 		if (!identity?.userId || !identity?.organizationId) return;
-		return app.inject({
-			method: "POST",
-			url: `/api/schedule/ical/doctor/${identity.userId}/rotate`,
-			headers: request.headers as Record<string, string>,
-		});
+		return performDoctorIcalRotate(request, reply, identity, identity.userId);
 	});
 
 	// RFC 5545 iCalendar endpoint: /api/schedule/ical/doctor/:token (.ics)

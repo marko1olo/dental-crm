@@ -73,7 +73,7 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 
 		app = await createIdempotentTenantTestApp();
 		await registerCashboxRoutes(app);
-		await registerExpensesRoutes(app);
+		await app.register(registerExpensesRoutes);
 		await registerFiscalReceiptRoutes(app);
 		await app.ready();
 
@@ -591,10 +591,16 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 			);
 			if (closedCashlessShift) {
 				assert.equal(
-					Number(closedCashlessShift.endBalanceKopecks),
-					Number(closedCashlessShift.expectedEndBalanceKopecks),
-					"Cashless shift endBalanceKopecks must stay at ledger balance instead of physical countedCashRub",
+					Number(closedCashlessShift.closingBalanceKopecks),
+					Number(cashlessBox.balanceKopecks),
+					"Cashless shift closingBalanceKopecks must stay at ledger balance instead of physical countedCashRub",
 				);
+				const zReport = closedCashlessShift.zReportData;
+				assert.ok(zReport && typeof zReport === "object");
+				if ("differenceRub" in zReport && "isBalanced" in zReport) {
+					assert.equal(zReport.differenceRub, 0);
+					assert.equal(zReport.isBalanced, true);
+				}
 			}
 		}
 	});

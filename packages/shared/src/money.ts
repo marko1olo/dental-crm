@@ -358,6 +358,34 @@ export function formatDiscountPercent(
 }
 
 /**
+ * Вычисляет процентную долю или маржинальность по суммам в копейках
+ * с округлением до заданного числа знаков после запятой (по умолчанию 1).
+ * Если знаменатель <= 0 или входные значения некорректны, возвращает 0.
+ * Поддерживает отрицательные числители (например, отрицательную маржу).
+ */
+export function calculateKopecksSharePercent(
+	partKopecks: number | bigint,
+	totalKopecks: number | bigint,
+	decimals = 1,
+): number {
+	const numerator = typeof partKopecks === "bigint" ? Number(partKopecks) : partKopecks;
+	const denominator = typeof totalKopecks === "bigint" ? Number(totalKopecks) : totalKopecks;
+	if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) {
+		return 0;
+	}
+	const safeDecimals =
+		Number.isInteger(decimals) && decimals >= 0 && decimals <= 4 ? decimals : 1;
+	const scale = 10 ** safeDecimals;
+	const basisMultiplier = 10 ** (safeDecimals + 2);
+	const sign = numerator < 0 ? -1 : 1;
+	const scaledUnits =
+		sign * Math.round((Math.abs(numerator) * basisMultiplier) / denominator);
+	return scaledUnits === 0 ? 0 : scaledUnits / scale;
+}
+
+export const calculateMarginPercentFromKopecks = calculateKopecksSharePercent;
+
+/**
  * Делит сумму на `parts` частей так, что их сумма РАВНА исходной.
  *
  * Нужно для рассрочки: 100.00 на 3 платежа — это 33.34 + 33.33 + 33.33, а не

@@ -20,7 +20,7 @@ const addPortalFamilyMemberSchema = z
 
 const updatePortalFamilyPermissionsSchema = z
 	.object({
-		memberId: z.string().min(1, "Идентификатор члена семьи обязателен"),
+		memberId: z.string().uuid("Некорректный идентификатор члена семьи"),
 		canSpendFamilyWallet: z.boolean(),
 	})
 	.strict();
@@ -217,6 +217,78 @@ export async function registerPortalFamilyRoutes(server: FastifyInstance): Promi
 		const body = bodyParse.data;
 
 		return withTenantCtx(auth.organizationId, async (tx) => {
+			const [callerPatient] = await tx
+				.select({
+					id: patients.id,
+					familyGroupId: patients.familyGroupId,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, auth.patientId),
+						eq(patients.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!callerPatient?.familyGroupId) {
+				reply.status(403);
+				return {
+					error: "Forbidden",
+					message: "Управление правами семейного кошелька доступно только главе семьи.",
+				};
+			}
+
+			const [fg] = await tx
+				.select({
+					id: familyGroups.id,
+					headPatientId: familyGroups.headPatientId,
+					primaryPatientId: familyGroups.primaryPatientId,
+				})
+				.from(familyGroups)
+				.where(
+					and(
+						eq(familyGroups.id, callerPatient.familyGroupId),
+						eq(familyGroups.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!fg) {
+				reply.status(403);
+				return {
+					error: "Forbidden",
+					message: "Только глава семейной группы может изменять права расходования семейного баланса.",
+				};
+			}
+
+			const isFamilyHead =
+				fg.headPatientId === auth.patientId || fg.primaryPatientId === auth.patientId;
+			if (!isFamilyHead) {
+				reply.status(403);
+				return {
+					error: "Forbidden",
+					message: "Только глава семейной группы может изменять права расходования семейного баланса.",
+				};
+			}
+
+			const [targetMember] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, body.memberId),
+						eq(patients.organizationId, auth.organizationId),
+						eq(patients.familyGroupId, callerPatient.familyGroupId),
+					),
+				)
+				.limit(1);
+
+			if (!targetMember) {
+				reply.status(404);
+				return { error: "RelationshipNotFound", message: "Член семьи не найден в вашей семейной группе." };
+			}
+
 			const updated = await tx
 				.update(patientRelationships)
 				.set({

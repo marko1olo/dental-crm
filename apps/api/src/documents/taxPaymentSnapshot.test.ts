@@ -479,4 +479,56 @@ describe("taxPaymentsForIssueSnapshot", () => {
 		assert.strictEqual(result[0]?.id, "payment-1");
 		assert.strictEqual(result[1]?.id, "payment-2");
 	});
+
+	test("исключает ДМС-платежи, допускает чеки без ИНН плательщика и вычитает выданные частичные возвраты", () => {
+		const docWithInn: GeneratedDocument = {
+			...baseDocument,
+			kind: "tax_deduction_certificate",
+			taxPayerInn: "123456789012",
+			payload: null,
+		};
+		const payments: Payment[] = [
+			{
+				...basePayment,
+				id: "p-cash-no-inn",
+				amountRub: 10000,
+				fiscalReceiptNumber: "rcpt-no-inn-1",
+				payerInn: null,
+				method: "cash",
+			},
+			{
+				...basePayment,
+				id: "p-dms",
+				amountRub: 50000,
+				method: "insurance",
+				note: "Оплата по полису ДМС",
+			},
+		];
+		const refundDoc = createTestGeneratedDocument({
+			id: "refund-1",
+			kind: "payment_refund_correction_request",
+			status: "issued",
+			patientId: baseDocument.patientId,
+			payload: {
+				paymentRefundCorrection: {
+					action: "partial_refund",
+					selectedPaymentIds: ["p-cash-no-inn"],
+					amountRub: 2500,
+					reason: "Частичный возврат",
+					refundMethod: "cash",
+					recipientFullName: "Иванов Иван Иванович",
+					recipientIdentityDocument: "Паспорт 11 22 333444 выдан 01.01.2010",
+					originalFiscalReceiptNumber: "rcpt-no-inn-1",
+					accountantDecision: "Частичный возврат согласован",
+				},
+			},
+		});
+
+		const result = taxPaymentsForIssueSnapshot(docWithInn, payments, [refundDoc]);
+		assert.strictEqual(result.length, 1);
+		const netPayment = result[0];
+		assert.ok(netPayment);
+		assert.strictEqual(netPayment.id, "p-cash-no-inn");
+		assert.strictEqual(netPayment.amountRub, 7500);
+	});
 });

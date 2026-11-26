@@ -362,8 +362,10 @@ describe("buildKnd1151156Xml", () => {
 			...createTestPayment({
 				...basePayment,
 				id: "payment-bone",
+				amountRub: 90000,
 				taxDeductionCode: undefined,
 			}),
+			amountKopecks: 9000000,
 			items: [
 				{
 					name: "Костная пластика челюсти (НКР) с применением гранул Bio-Oss и мембраны Bio-Gide",
@@ -392,5 +394,75 @@ describe("buildKnd1151156Xml", () => {
 		assert.match(result.xml, /<СведРасхУсл КодУслуг="2" СумОпл="75000\.00"\/>/);
 		// Code 01: 15 000.00 ₽ (therapy)
 		assert.match(result.xml, /<СведРасхУсл КодУслуг="1" СумОпл="15000\.00"\/>/);
+	});
+
+	test("regression: excludes non-medical goods and scales discounted items to net payment", () => {
+		const docWithDiscountAndGoods: GeneratedDocument = {
+			...baseDocument,
+			payload: {
+				taxPaymentSelection: { selectedPaymentIds: ["payment-disc"] },
+			},
+		};
+		const paymentWithGoods = {
+			...createTestPayment({
+				...basePayment,
+				id: "payment-disc",
+				amountRub: 4500,
+				taxDeductionCode: undefined,
+			}),
+			amountKopecks: 450000,
+			items: [
+				{
+					name: "Лечение кариеса",
+					code804n: "A16.07.002",
+					amountRub: 5000,
+					amountKopecks: 500000,
+				},
+				{
+					name: "Зубная паста и ирригатор",
+					category: "goods",
+					amountRub: 1500,
+					amountKopecks: 150000,
+				},
+			],
+		};
+		const res = buildKnd1151156Xml(docWithDiscountAndGoods, basePatient, {
+			...baseContext,
+			payments: [paymentWithGoods],
+		});
+		assert.strictEqual(res.ok, true);
+		if (!res.ok) return;
+		assert.match(res.xml, /<СведРасхУсл КодУслуг="1" СумОпл="4500\.00"\/>/);
+	});
+
+	test("error: rejects mixing different taxpayers in one certificate", () => {
+		const docMixedPayers: GeneratedDocument = {
+			...baseDocument,
+			payload: {
+				taxPaymentSelection: { selectedPaymentIds: ["p-self", "p-spouse"] },
+			},
+		};
+		const pSelf = createTestPayment({
+			...basePayment,
+			id: "p-self",
+			payerFullName: "Иванов Иван Иванович",
+			payerInn: "123456789012",
+			payerRelationship: "self",
+		});
+		const pSpouse = createTestPayment({
+			...basePayment,
+			id: "p-spouse",
+			payerFullName: "Иванова Мария Петровна",
+			payerInn: "210987654321",
+			payerRelationship: "spouse",
+		});
+		const res = buildKnd1151156Xml(docMixedPayers, basePatient, {
+			...baseContext,
+			payments: [pSelf, pSpouse],
+		});
+		assert.strictEqual(res.ok, false);
+		if (!res.ok) {
+			assert.match(res.error, /смешивать платежи разных налогоплательщиков/);
+		}
 	});
 });

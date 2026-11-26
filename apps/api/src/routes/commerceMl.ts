@@ -546,6 +546,7 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 	const handleValidate = async (request: FastifyRequest, reply: FastifyReply) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.validate");
 		if (!access) return;
+		const organizationId = access.organizationId;
 
 		const parsedPkg = oneCCommerceMlPackageSchema.safeParse(request.body);
 		if (!parsedPkg.success) {
@@ -556,8 +557,19 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 			});
 		}
 
+		if (
+			UUID_REGEX.test(parsedPkg.data.clinic.id) &&
+			parsedPkg.data.clinic.id !== organizationId
+		) {
+			return reply.code(403).send({
+				error: "TenantMismatch",
+				message: "Запрошенная организация не совпадает с авторизованным арендатором.",
+			});
+		}
+
 		const integrity = validatePackageIntegrity(parsedPkg.data);
 		return reply.send({
+			organizationId,
 			isValid: integrity.isValid,
 			errors: integrity.errors,
 			totalsKop: integrity.totalsKop,

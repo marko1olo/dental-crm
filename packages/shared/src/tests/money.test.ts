@@ -8,6 +8,8 @@ import {
 	parseKopecks,
 	percentageOfKopecks,
 	basisPointsFromPercent,
+	calculateKopecksSharePercent,
+	calculateMarginPercentFromKopecks,
 	calculatePercentDiscountKopecks,
 	formatDiscountPercent,
 	RU_MONEY_MINUS,
@@ -149,6 +151,18 @@ describe("percentageOfKopecks", () => {
 		assert.strictEqual(formatDiscountPercent(0, 5000), "0.00");
 		assert.strictEqual(formatDiscountPercent(50000, 50000), "100.00");
 		assert.strictEqual(formatDiscountPercent(50000, 60000), "100.00");
+	});
+
+	test("calculateKopecksSharePercent и calculateMarginPercentFromKopecks точно считают доли и маржу без float-дрейфа", () => {
+		assert.strictEqual(calculateKopecksSharePercent(25000, 100000), 25);
+		assert.strictEqual(calculateKopecksSharePercent(33333n, 100000n), 33.3);
+		assert.strictEqual(calculateKopecksSharePercent(1, 3, 2), 33.33);
+		assert.strictEqual(calculateKopecksSharePercent(2505, 10000, 0), 25);
+		assert.strictEqual(calculateMarginPercentFromKopecks(-15050, 100000), -15.1);
+		assert.strictEqual(calculateKopecksSharePercent(0, 100000), 0);
+		assert.strictEqual(calculateKopecksSharePercent(5000, 0), 0);
+		assert.strictEqual(calculateKopecksSharePercent(5000, -100), 0);
+		assert.strictEqual(Object.is(calculateKopecksSharePercent(-1, 100000), 0), true);
 	});
 });
 

@@ -30,8 +30,8 @@ export interface LocalOfflineMutationRecord {
 	readonly createdAt: string;
 	readonly clientTimestamp: number;
 	readonly retryAttempts: number;
-	readonly synced: boolean;
-	readonly syncedAt?: string | null | undefined;
+	synced: boolean;
+	syncedAt?: string | null | undefined;
 }
 
 export interface DatabaseFailoverDecision {
@@ -126,9 +126,7 @@ export class LocalOfflineDatabaseManager {
 	public markMutationSynced(mutationId: string): void {
 		const target = this.pendingMutations.find((m) => m.id === mutationId);
 		if (target) {
-			// @ts-expect-error mutation state update
 			target.synced = true;
-			// @ts-expect-error mutation state update
 			target.syncedAt = new Date().toISOString();
 		}
 	}
