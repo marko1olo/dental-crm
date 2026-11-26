@@ -64,6 +64,11 @@ export const visits = pgTable(
 				table.organizationId,
 				table.patientId,
 			),
+			idxVisitsOrgPatientCreated: index("idx_visits_org_patient_created").on(
+				table.organizationId,
+				table.patientId,
+				table.createdAt,
+			),
 			idxVisitsOrgCreatedAt: index("idx_visits_org_created_at").on(
 				table.organizationId,
 				table.createdAt,

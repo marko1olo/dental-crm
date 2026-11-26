@@ -320,6 +320,12 @@ export const communicationOutbox = pgTable(
 				table.organizationId,
 				table.createdAt,
 			),
+			outboxStatusNextAttemptIdx: index(
+				"communication_outbox_status_next_attempt_idx",
+			).on(table.status, table.nextAttemptAt),
+			outboxOrgStatusNextAttemptIdx: index(
+				"communication_outbox_org_status_next_attempt_idx",
+			).on(table.organizationId, table.status, table.nextAttemptAt),
 			clinicIdIdx: index("communication_outbox_clinicId_idx").on(
 				table.clinicId,
 			),

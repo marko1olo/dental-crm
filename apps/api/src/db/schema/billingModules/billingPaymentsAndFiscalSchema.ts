@@ -94,6 +94,11 @@ export const payments = pgTable(
 				table.organizationId,
 				table.patientId,
 			),
+			idxPaymentsOrgPatientCreated: index("idx_payments_org_patient_created").on(
+				table.organizationId,
+				table.patientId,
+				table.createdAt,
+			),
 			idxPaymentsOrgStatus: index("idx_payments_org_status").on(
 				table.organizationId,
 				table.status,

@@ -14,8 +14,11 @@
  */
 
 import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointments, labOrders, patients, users } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
+
+const logger = createApiLogger("ztlLookAheadDaemon");
 
 export interface ZtlLookAheadAlert {
 	readonly id: string;
@@ -87,55 +90,130 @@ export async function runZtlLookAheadScan(options?: {
 			),
 		];
 
-		if (options?.organizationId) {
-			conditions.push(eq(appointments.organizationId, options.organizationId));
+		const targetOrgId = options?.organizationId;
+		if (targetOrgId) {
+			conditions.push(eq(appointments.organizationId, targetOrgId));
 		}
 
-		const upcomingAppointments = await db
-			.select({
-				appointmentId: appointments.id,
-				organizationId: appointments.organizationId,
-				patientId: appointments.patientId,
-				doctorUserId: appointments.doctorUserId,
-				startsAt: appointments.startsAt,
-				endsAt: appointments.endsAt,
-				reason: appointments.reason,
-				comment: appointments.comment,
-				patientFullName: patients.fullName,
-				patientPhone: patients.phone,
-				doctorFullName: users.fullName,
-			})
-			.from(appointments)
-			.leftJoin(patients, eq(appointments.patientId, patients.id))
-			.leftJoin(users, eq(appointments.doctorUserId, users.id))
-			.where(and(...conditions));
+		const upcomingAppointments = await (targetOrgId
+			? withTenantCtx(targetOrgId, (tx) =>
+					tx
+						.select({
+							appointmentId: appointments.id,
+							organizationId: appointments.organizationId,
+							patientId: appointments.patientId,
+							doctorUserId: appointments.doctorUserId,
+							startsAt: appointments.startsAt,
+							endsAt: appointments.endsAt,
+							reason: appointments.reason,
+							comment: appointments.comment,
+							patientFullName: patients.fullName,
+							patientPhone: patients.phone,
+							doctorFullName: users.fullName,
+						})
+						.from(appointments)
+						.leftJoin(patients, eq(appointments.patientId, patients.id))
+						.leftJoin(users, eq(appointments.doctorUserId, users.id))
+						.where(and(...conditions)),
+				)
+			: withSuperuserBypass((tx) =>
+					tx
+						.select({
+							appointmentId: appointments.id,
+							organizationId: appointments.organizationId,
+							patientId: appointments.patientId,
+							doctorUserId: appointments.doctorUserId,
+							startsAt: appointments.startsAt,
+							endsAt: appointments.endsAt,
+							reason: appointments.reason,
+							comment: appointments.comment,
+							patientFullName: patients.fullName,
+							patientPhone: patients.phone,
+							doctorFullName: users.fullName,
+						})
+						.from(appointments)
+						.leftJoin(patients, eq(appointments.patientId, patients.id))
+						.leftJoin(users, eq(appointments.doctorUserId, users.id))
+						.where(and(...conditions)),
+				));
+
+		const patientIds = Array.from(
+			new Set(
+				upcomingAppointments
+					.map((appt) => appt.patientId)
+					.filter((id): id is string => typeof id === "string" && id.length > 0),
+			),
+		);
+
+		if (patientIds.length === 0) {
+			return [];
+		}
+
+		const activeStatuses = ["draft", "sent", "in_progress", "shipped", "ready", "refitting"];
+		const labOrderRows = await (targetOrgId
+			? withTenantCtx(targetOrgId, (tx) =>
+					tx
+						.select({
+							id: labOrders.id,
+							organizationId: labOrders.organizationId,
+							patientId: labOrders.patientId,
+							status: labOrders.status,
+							toothFdi: labOrders.toothFdi,
+							material: labOrders.material,
+							dueDate: labOrders.dueDate,
+							doctorName: labOrders.doctorName,
+							clinicalNotes: labOrders.clinicalNotes,
+							priceKopecks: labOrders.priceKopecks,
+						})
+						.from(labOrders)
+						.where(
+							and(
+								eq(labOrders.organizationId, targetOrgId),
+								inArray(labOrders.patientId, patientIds),
+								inArray(labOrders.status, activeStatuses),
+							),
+						),
+				)
+			: withSuperuserBypass((tx) =>
+					tx
+						.select({
+							id: labOrders.id,
+							organizationId: labOrders.organizationId,
+							patientId: labOrders.patientId,
+							status: labOrders.status,
+							toothFdi: labOrders.toothFdi,
+							material: labOrders.material,
+							dueDate: labOrders.dueDate,
+							doctorName: labOrders.doctorName,
+							clinicalNotes: labOrders.clinicalNotes,
+							priceKopecks: labOrders.priceKopecks,
+						})
+						.from(labOrders)
+						.where(
+							and(
+								inArray(labOrders.patientId, patientIds),
+								inArray(labOrders.status, activeStatuses),
+							),
+						),
+				));
+
+		const ordersByOrgPatient = new Map<string, typeof labOrderRows>();
+		for (const order of labOrderRows) {
+			const key = `${order.organizationId}:${order.patientId}`;
+			const bucket = ordersByOrgPatient.get(key);
+			if (bucket) {
+				bucket.push(order);
+			} else {
+				ordersByOrgPatient.set(key, [order]);
+			}
+		}
 
 		const alerts: ZtlLookAheadAlert[] = [];
 
 		for (const appt of upcomingAppointments) {
 			if (!appt.patientId) continue;
 
-			// Check for active lab orders for this patient
-			const orders = await db
-				.select({
-					id: labOrders.id,
-					status: labOrders.status,
-					toothFdi: labOrders.toothFdi,
-					material: labOrders.material,
-					dueDate: labOrders.dueDate,
-					doctorName: labOrders.doctorName,
-					clinicalNotes: labOrders.clinicalNotes,
-					priceKopecks: labOrders.priceKopecks,
-				})
-				.from(labOrders)
-				.where(
-					and(
-						eq(labOrders.organizationId, appt.organizationId),
-						eq(labOrders.patientId, appt.patientId),
-						// Statuses that mean the order is NOT in the clinic yet
-						inArray(labOrders.status, ["draft", "sent", "in_progress", "shipped", "ready", "refitting"]),
-					),
-				);
+			const orders = ordersByOrgPatient.get(`${appt.organizationId}:${appt.patientId}`) ?? [];
 
 			if (orders.length === 0) {
 				continue;
@@ -222,7 +300,11 @@ export async function runZtlLookAheadScan(options?: {
 		}
 
 		return alerts;
-	} catch {
+	} catch (err: unknown) {
+		logger.error(
+			{ err: safeLogError(err), organizationId: options?.organizationId },
+			"[ztlLookAheadDaemon] Failed to run ZTL look-ahead scan",
+		);
 		return [];
 	}
 }

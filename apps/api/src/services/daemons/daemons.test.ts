@@ -32,9 +32,12 @@ import { describe, it, before, after } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import {
 	DaemonScheduler,
+	acquireSessionAdvisoryLock,
 	defaultDaemonScheduler,
+	releaseSessionAdvisoryLock,
 	type DaemonJobName,
 } from "./daemonScheduler.js";
+import type { AdvisoryLockPool } from "./daemonJobRegistry.js";
 import {
 	draftSoapFromNomenclatureServices,
 	runEmrSaviorScan,
@@ -318,6 +321,136 @@ describe("Background Daemons & Scheduler Architecture", () => {
 			assert.ok(Array.isArray(aggregate.sanpinAndInventoryDigests));
 			assert.equal(typeof aggregate.totalAlertsCount, "number");
 			assert.ok(aggregate.scannedAt);
+		});
+	});
+
+	// =========================================================================
+	// 5. ADVISORY LOCK FAIL-CLOSED & CONNECTION CLEANUP (ANTI-SPLIT-BRAIN)
+	// =========================================================================
+	describe("5. DaemonScheduler Advisory Lock Fail-Closed & Connection Cleanup", () => {
+		it("fails closed (acquired: false) when pool.connect() throws", async () => {
+			const brokenPool: AdvisoryLockPool = {
+				connect: async () => {
+					throw new Error("ECONNREFUSED: PostgreSQL unavailable");
+				},
+			};
+
+			const lock = await acquireSessionAdvisoryLock("ztl_lookahead_0800", brokenPool);
+			assert.equal(lock.acquired, false, "Must fail closed when DB pool connect fails");
+			assert.equal(lock.client, null);
+		});
+
+		it("fails closed and destroys broken client (release(true)) when client.query() throws", async () => {
+			const releaseArgs: Array<boolean | Error | undefined> = [];
+			const queryErrorPool: AdvisoryLockPool = {
+				connect: async () => ({
+					query: async () => {
+						throw new Error("Connection terminated unexpectedly");
+					},
+					release: (destroy?: boolean | Error) => {
+						releaseArgs.push(destroy);
+					},
+				}),
+			};
+
+			const lock = await acquireSessionAdvisoryLock("emr_savior_2100", queryErrorPool);
+			assert.equal(lock.acquired, false, "Must fail closed on lock query error");
+			assert.equal(lock.client, null);
+			assert.deepEqual(releaseArgs, [true], "Must destroy broken pool client to prevent connection leak");
+		});
+
+		it("fails closed when advisory lock is held by another instance or empty rows returned", async () => {
+			const releaseCalls: number[] = [];
+			const contendedPool: AdvisoryLockPool = {
+				connect: async () => ({
+					query: async () => ({ rows: [{ acquired: false }] }),
+					release: () => {
+						releaseCalls.push(1);
+					},
+				}),
+			};
+
+			const lock1 = await acquireSessionAdvisoryLock("somatic_radar_0730", contendedPool);
+			assert.equal(lock1.acquired, false);
+			assert.equal(lock1.client, null);
+			assert.equal(releaseCalls.length, 1);
+
+			const emptyRowsPool: AdvisoryLockPool = {
+				connect: async () => ({
+					query: async () => ({ rows: [] }),
+					release: () => {
+						releaseCalls.push(2);
+					},
+				}),
+			};
+
+			const lock2 = await acquireSessionAdvisoryLock("somatic_radar_0730", emptyRowsPool);
+			assert.equal(lock2.acquired, false, "Empty row result must NOT be treated as acquired");
+			assert.equal(lock2.client, null);
+			assert.equal(releaseCalls.length, 2);
+		});
+
+		it("DaemonScheduler skips job execution on lock failure and retries once lock recovers", async () => {
+			let poolHealthy = false;
+			const queriesExecuted: string[] = [];
+			const releaseArgs: Array<boolean | Error | undefined> = [];
+			const mockPool: AdvisoryLockPool = {
+				connect: async () => {
+					if (!poolHealthy) {
+						throw new Error("Pool exhausted");
+					}
+					return {
+						query: async (sqlText: string) => {
+							queriesExecuted.push(sqlText);
+							return { rows: [{ acquired: true }] };
+						},
+						release: (destroy?: boolean | Error) => {
+							releaseArgs.push(destroy);
+						},
+					};
+				},
+			};
+
+			const fixedTime = new Date("2026-09-01T08:00:00");
+			const scheduler = new DaemonScheduler({
+				organizationId: TEST_ORG_ID,
+				nowProvider: () => fixedTime,
+				advisoryLockPool: mockPool,
+				enableSomaticRadar: false,
+				enableEmrSavior: false,
+				enableSanpinAndInventory: false,
+				enableWeeklyRetention: false,
+				enableMdlpOutbox: false,
+			});
+
+			// 1. Degraded DB pool -> fail closed, job must NOT run and minute must NOT be marked executed
+			const skippedRun = await scheduler.checkAndRunJobs(fixedTime);
+			assert.deepEqual(skippedRun, [], "No job may run when advisory lock fails");
+
+			// 2. DB pool recovers -> job runs once and releases lock cleanly
+			poolHealthy = true;
+			const recoveredRun = await scheduler.checkAndRunJobs(fixedTime);
+			assert.deepEqual(recoveredRun, ["ztl_lookahead_0800"]);
+			assert.equal(queriesExecuted.length, 2, "Should call pg_try_advisory_lock and pg_advisory_unlock");
+			assert.ok(queriesExecuted[0]?.includes("pg_try_advisory_lock"));
+			assert.ok(queriesExecuted[1]?.includes("pg_advisory_unlock"));
+			assert.deepEqual(releaseArgs, [undefined], "Healthy lock release must return connection cleanly");
+		});
+
+		it("releaseSessionAdvisoryLock destroys client if pg_advisory_unlock fails", async () => {
+			const releaseArgs: Array<boolean | Error | undefined> = [];
+			await releaseSessionAdvisoryLock(
+				{
+					query: async () => {
+						throw new Error("Socket closed during unlock");
+					},
+					release: (destroy?: boolean | Error) => {
+						releaseArgs.push(destroy);
+					},
+				},
+				"ztl_lookahead_0800",
+			);
+			assert.deepEqual(releaseArgs, [true]);
 		});
 	});
 });

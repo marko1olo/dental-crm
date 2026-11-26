@@ -79,6 +79,20 @@ export const appointments = pgTable(
 				table.startsAt,
 				table.endsAt,
 			),
+			idxAppointmentsOrgStartsAt: index("idx_appointments_org_starts_at").on(
+				table.organizationId,
+				table.startsAt,
+			),
+			idxAppointmentsOrgChairStartsAt: index("idx_appointments_org_chair_starts_at").on(
+				table.organizationId,
+				table.chairId,
+				table.startsAt,
+			),
+			idxAppointmentsOrgPatientStartsAt: index("idx_appointments_org_patient_starts_at").on(
+				table.organizationId,
+				table.patientId,
+				table.startsAt,
+			),
 			idxAppointmentsOrgDoctorTime: index("idx_appointments_org_doctor_time").on(
 				table.organizationId,
 				table.doctorUserId,

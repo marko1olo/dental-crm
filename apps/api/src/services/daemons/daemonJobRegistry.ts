@@ -38,6 +38,18 @@ export interface ScheduledDaemonJob {
 	}) => Promise<unknown>;
 }
 
+export interface AdvisoryLockClient {
+	query: (
+		sqlText: string,
+		values?: string[],
+	) => Promise<{ rows: Array<{ acquired?: unknown }> }>;
+	release: (destroy?: boolean | Error) => void;
+}
+
+export interface AdvisoryLockPool {
+	connect: () => Promise<AdvisoryLockClient>;
+}
+
 export interface DaemonSchedulerOptions {
 	organizationId?: string | undefined;
 	pollIntervalMs?: number | undefined;
@@ -47,6 +59,7 @@ export interface DaemonSchedulerOptions {
 	enableSanpinAndInventory?: boolean | undefined;
 	enableWeeklyRetention?: boolean | undefined;
 	enableMdlpOutbox?: boolean | undefined;
+	advisoryLockPool?: AdvisoryLockPool | undefined;
 	logger?:
 		| FastifyBaseLogger
 		| {

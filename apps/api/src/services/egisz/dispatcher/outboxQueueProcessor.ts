@@ -5,10 +5,13 @@
  * Zero mocks: strictly dispatches genuine signed packages with doctor UKEP (FZ-63 / Order 911n).
  */
 
-import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import type { TenantDb } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
 	egiszOutbox,
+	type EgiszOutboxItem,
 } from "../../../db/schema.js";
 import { appendEgiszAuditLog, computePayloadSha256 } from "../EgiszAuditService.js";
 import {
@@ -175,7 +178,8 @@ export class EgiszOutboxDispatcher {
 
 	/**
 	 * Processes pending EGISZ REMD submissions for an organization (or all organizations).
-	 * Uses PostgreSQL SELECT ... FOR UPDATE SKIP LOCKED pattern on egisz_outbox.
+	 * Uses atomic PostgreSQL SELECT ... FOR UPDATE SKIP LOCKED + UPDATE inside a single
+	 * ACID transaction for both stale lock recovery and batch claiming.
 	 */
 	public async processPendingQueue(
 		organizationId?: string,
@@ -188,160 +192,198 @@ export class EgiszOutboxDispatcher {
 			results: [],
 		};
 
-		// 1. Stale lock recovery: auto-recover items stuck in 'sending' without transaction ID for > 5 minutes
+		if (limit <= 0) {
+			return result;
+		}
+
+		// 1. Atomic stale lock recovery: recover items stuck in 'sending' without transaction ID for > 5 minutes
 		const staleThreshold = new Date(Date.now() - 5 * 60_000);
-		const staleRows = await (organizationId
-			? withTenantCtx(organizationId, async (tx) =>
-					tx
-						.select({
-							id: egiszOutbox.id,
-							attempts: egiszOutbox.attempts,
-							maxAttempts: egiszOutbox.maxAttempts,
-							organizationId: egiszOutbox.organizationId,
-							visitId: egiszOutbox.visitId,
-							patientId: egiszOutbox.patientId,
-						})
-						.from(egiszOutbox)
-						.where(
-							and(
-								eq(egiszOutbox.organizationId, organizationId),
-								eq(egiszOutbox.status, "sending"),
-								sql`${egiszOutbox.remdTransactionId} IS NULL`,
-								or(
-									lte(egiszOutbox.lockedAt, staleThreshold),
-									sql`${egiszOutbox.lockedAt} IS NULL`,
-								),
-							),
+		const recoverStaleInTx = async (tx: TenantDb): Promise<void> => {
+			const staleWhere = organizationId
+				? and(
+						eq(egiszOutbox.organizationId, organizationId),
+						eq(egiszOutbox.status, "sending"),
+						sql`${egiszOutbox.remdTransactionId} IS NULL`,
+						or(
+							lte(egiszOutbox.lockedAt, staleThreshold),
+							sql`${egiszOutbox.lockedAt} IS NULL`,
 						),
-				)
-			: withSuperuserBypass(async (tx) =>
-					tx
-						.select({
-							id: egiszOutbox.id,
-							attempts: egiszOutbox.attempts,
-							maxAttempts: egiszOutbox.maxAttempts,
-							organizationId: egiszOutbox.organizationId,
-							visitId: egiszOutbox.visitId,
-							patientId: egiszOutbox.patientId,
-						})
-						.from(egiszOutbox)
-						.where(
-							and(
-								eq(egiszOutbox.status, "sending"),
-								sql`${egiszOutbox.remdTransactionId} IS NULL`,
-								or(
-									lte(egiszOutbox.lockedAt, staleThreshold),
-									sql`${egiszOutbox.lockedAt} IS NULL`,
-								),
-							),
-						),
-				));
-
-		for (const staleRow of staleRows) {
-			const nextAttempt = staleRow.attempts + 1;
-			const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
-			const isTerminal = nextAttempt >= staleRow.maxAttempts;
-			const nextStatus = isTerminal ? "failed" : "ready_for_dispatch";
-
-			await withTenantCtx(staleRow.organizationId, async (tx) => {
-				await tx
-					.update(egiszOutbox)
-					.set({
-						status: nextStatus,
-						attempts: nextAttempt,
-						nextAttemptAt: new Date(Date.now() + (isTerminal ? 0 : delayMs)),
-						lastErrorClass: "StaleLockTimeout",
-						lastErrorMessage: "Сброс зависшей блокировки воркера (таймаут отправки > 5 мин)",
-						lockedAt: null,
-						lockedBy: null,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(egiszOutbox.id, staleRow.id),
-							eq(egiszOutbox.organizationId, staleRow.organizationId),
+					)
+				: and(
+						eq(egiszOutbox.status, "sending"),
+						sql`${egiszOutbox.remdTransactionId} IS NULL`,
+						or(
+							lte(egiszOutbox.lockedAt, staleThreshold),
+							sql`${egiszOutbox.lockedAt} IS NULL`,
 						),
 					);
 
-				await appendEgiszAuditLog(tx, {
-					organizationId: staleRow.organizationId,
-					eventType: isTerminal ? "REMD_STALE_LOCK_EXHAUSTED" : "REMD_STALE_LOCK_RECOVERED",
-					entityType: "egisz_outbox",
-					entityId: staleRow.id,
-					patientId: staleRow.patientId,
-					payload: {
-						outboxId: staleRow.id,
-						visitId: staleRow.visitId,
-						previousAttempts: staleRow.attempts,
-						newAttempts: nextAttempt,
-						status: nextStatus,
-						retryScheduledInMs: isTerminal ? null : delayMs,
-					},
-				});
-			});
+			const lockedStaleRows = await tx
+				.select({
+					id: egiszOutbox.id,
+					attempts: egiszOutbox.attempts,
+					maxAttempts: egiszOutbox.maxAttempts,
+					organizationId: egiszOutbox.organizationId,
+					visitId: egiszOutbox.visitId,
+					patientId: egiszOutbox.patientId,
+				})
+				.from(egiszOutbox)
+				.where(staleWhere)
+				.limit(limit)
+				.for("update", { skipLocked: true });
+
+			for (const staleRow of lockedStaleRows) {
+				const nextAttempt = staleRow.attempts + 1;
+				const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
+				const isTerminal = nextAttempt >= staleRow.maxAttempts;
+				const nextStatus = isTerminal ? "failed" : "ready_for_dispatch";
+				const recoveredAt = new Date();
+
+				const applyRecovery = async (tenantTx: TenantDb): Promise<void> => {
+					await tenantTx
+						.update(egiszOutbox)
+						.set({
+							status: nextStatus,
+							attempts: nextAttempt,
+							nextAttemptAt: new Date(recoveredAt.getTime() + (isTerminal ? 0 : delayMs)),
+							lastErrorClass: "StaleLockTimeout",
+							lastErrorMessage: "Сброс зависшей блокировки воркера (таймаут отправки > 5 мин)",
+							lockedAt: null,
+							lockedBy: null,
+							updatedAt: recoveredAt,
+						})
+						.where(
+							and(
+								eq(egiszOutbox.id, staleRow.id),
+								eq(egiszOutbox.organizationId, staleRow.organizationId),
+								eq(egiszOutbox.status, "sending"),
+							),
+						);
+
+					await appendEgiszAuditLog(tenantTx, {
+						organizationId: staleRow.organizationId,
+						eventType: isTerminal ? "REMD_STALE_LOCK_EXHAUSTED" : "REMD_STALE_LOCK_RECOVERED",
+						entityType: "egisz_outbox",
+						entityId: staleRow.id,
+						patientId: staleRow.patientId,
+						payload: {
+							outboxId: staleRow.id,
+							visitId: staleRow.visitId,
+							previousAttempts: staleRow.attempts,
+							newAttempts: nextAttempt,
+							status: nextStatus,
+							retryScheduledInMs: isTerminal ? null : delayMs,
+						},
+					});
+				};
+
+				if (organizationId) {
+					await applyRecovery(tx);
+				} else {
+					await withTenantCtx(staleRow.organizationId, applyRecovery);
+				}
+			}
+		};
+
+		if (organizationId) {
+			await withTenantCtx(organizationId, recoverStaleInTx);
+		} else {
+			await withSuperuserBypass(recoverStaleInTx);
 		}
 
-		// 2. Process items from egisz_outbox table
-		const now = new Date();
-		const dueOutboxRows = await (organizationId
-			? withTenantCtx(organizationId, async (tx) =>
-					tx
-						.select()
-						.from(egiszOutbox)
-						.where(
-							and(
-								eq(egiszOutbox.organizationId, organizationId),
-								inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
-								or(isNull(egiszOutbox.nextAttemptAt), lte(egiszOutbox.nextAttemptAt, now)),
-								sql`${egiszOutbox.attempts} < ${egiszOutbox.maxAttempts}`,
-							),
-						)
-						.orderBy(egiszOutbox.nextAttemptAt)
-						.limit(limit),
-				)
-			: withSuperuserBypass(async (tx) =>
-					tx
-						.select()
-						.from(egiszOutbox)
-						.where(
-							and(
-								inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
-								or(isNull(egiszOutbox.nextAttemptAt), lte(egiszOutbox.nextAttemptAt, now)),
-								sql`${egiszOutbox.attempts} < ${egiszOutbox.maxAttempts}`,
-							),
-						)
-						.orderBy(egiszOutbox.nextAttemptAt)
-						.limit(limit),
-				));
+		// 2. Atomic batch claim: SELECT ... FOR UPDATE SKIP LOCKED + UPDATE status='sending' in one ACID transaction
+		const claimNow = new Date();
+		const workerLock = `worker-${process.pid}-${claimNow.getTime()}-${randomUUID().slice(0, 8)}`;
 
-		for (const row of dueOutboxRows) {
-			result.processedCount++;
-			const workerLock = `worker-${Date.now()}`;
+		const claimBatchInTx = async (tx: TenantDb): Promise<EgiszOutboxItem[]> => {
+			const dueWhere = organizationId
+				? and(
+						eq(egiszOutbox.organizationId, organizationId),
+						inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
+						or(isNull(egiszOutbox.nextAttemptAt), lte(egiszOutbox.nextAttemptAt, claimNow)),
+						sql`${egiszOutbox.attempts} < ${egiszOutbox.maxAttempts}`,
+					)
+				: and(
+						inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
+						or(isNull(egiszOutbox.nextAttemptAt), lte(egiszOutbox.nextAttemptAt, claimNow)),
+						sql`${egiszOutbox.attempts} < ${egiszOutbox.maxAttempts}`,
+					);
 
-			// Lock row for processing (concurrency check: skip if already claimed by another worker)
-			const [lockedRow] = await withTenantCtx(row.organizationId, async (tx) =>
-				tx
+			const candidates = await tx
+				.select({
+					id: egiszOutbox.id,
+					organizationId: egiszOutbox.organizationId,
+				})
+				.from(egiszOutbox)
+				.where(dueWhere)
+				.orderBy(asc(egiszOutbox.nextAttemptAt), asc(egiszOutbox.createdAt))
+				.limit(limit)
+				.for("update", { skipLocked: true });
+
+			if (candidates.length === 0) {
+				return [];
+			}
+
+			if (organizationId) {
+				const ids = candidates.map((c) => c.id);
+				return tx
 					.update(egiszOutbox)
 					.set({
 						status: "sending",
-						lockedAt: new Date(),
+						lockedAt: claimNow,
 						lockedBy: workerLock,
-						updatedAt: new Date(),
+						updatedAt: claimNow,
 					})
 					.where(
 						and(
-							eq(egiszOutbox.id, row.id),
-							eq(egiszOutbox.organizationId, row.organizationId),
+							eq(egiszOutbox.organizationId, organizationId),
+							inArray(egiszOutbox.id, ids),
 							inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
 						),
 					)
-					.returning({ id: egiszOutbox.id }),
-			);
-
-			if (!lockedRow) {
-				continue;
+					.returning();
 			}
 
+			// Under superuser bypass, RLS WITH CHECK requires app.current_tenant per orgId on UPDATE
+			const idsByOrg = new Map<string, string[]>();
+			for (const candidate of candidates) {
+				const list = idsByOrg.get(candidate.organizationId) ?? [];
+				list.push(candidate.id);
+				idsByOrg.set(candidate.organizationId, list);
+			}
+
+			const claimedRows: EgiszOutboxItem[] = [];
+			for (const [orgId, ids] of idsByOrg.entries()) {
+				const orgClaimed = await withTenantCtx(orgId, async (tenantTx) =>
+					tenantTx
+						.update(egiszOutbox)
+						.set({
+							status: "sending",
+							lockedAt: claimNow,
+							lockedBy: workerLock,
+							updatedAt: claimNow,
+						})
+						.where(
+							and(
+								eq(egiszOutbox.organizationId, orgId),
+								inArray(egiszOutbox.id, ids),
+								inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
+							),
+						)
+						.returning(),
+				);
+				claimedRows.push(...orgClaimed);
+			}
+			return claimedRows;
+		};
+
+		const claimedOutboxRows = organizationId
+			? await withTenantCtx(organizationId, claimBatchInTx)
+			: await withSuperuserBypass(claimBatchInTx);
+
+		// 3. Dispatch claimed rows outside the claim transaction (no DB locks held during network I/O)
+		for (const row of claimedOutboxRows) {
+			result.processedCount++;
 			const activeClient = await this.resolveClientForOrg(row.organizationId);
 			const rowRes = await processOutboxRow(row, activeClient);
 			if (rowRes.success) {
@@ -359,7 +401,14 @@ export class EgiszOutboxDispatcher {
 	 * Polls and synchronizes status of in-flight "Sent" / "sending" transactions from РЭМД Минздрава РФ.
 	 */
 	public async syncPendingStatuses(organizationId?: string): Promise<number> {
-		return syncPendingStatuses(this.client, organizationId);
+		if (organizationId) {
+			const activeClient = await this.resolveClientForOrg(organizationId);
+			return syncPendingStatuses(activeClient, organizationId);
+		}
+		return syncPendingStatuses(
+			(orgId) => this.resolveClientForOrg(orgId),
+			undefined,
+		);
 	}
 
 	/**

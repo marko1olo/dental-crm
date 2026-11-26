@@ -223,6 +223,11 @@ export const cashOperations = pgTable(
 			t.organizationId,
 			t.patientId,
 		),
+		orgPatientCreatedAtIdx: index("cash_operations_org_patient_created_idx").on(
+			t.organizationId,
+			t.patientId,
+			t.createdAt,
+		),
 		orgOpTypeIdx: index("cash_operations_org_op_type_idx").on(
 			t.organizationId,
 			t.operationType,

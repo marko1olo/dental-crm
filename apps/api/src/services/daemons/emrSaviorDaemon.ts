@@ -14,8 +14,8 @@
  * - Saves the generated draft into `visits.draftAutosave` for 1-click review and signing.
  */
 
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	patients,
@@ -28,6 +28,9 @@ import {
 	type SoapNoteStructure,
 	renderForm043Diary,
 } from "../../ai/clinicalNotes/soapDiaryRenderer.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
+
+const logger = createApiLogger("emrSaviorDaemon");
 
 export interface EmrSaviorDraftAlert {
 	readonly id: string;
@@ -195,61 +198,154 @@ export async function runEmrSaviorScan(options?: {
 			),
 		];
 
-		if (options?.organizationId) {
-			conditions.push(eq(visits.organizationId, options.organizationId));
+		const targetOrgId = options?.organizationId;
+		if (targetOrgId) {
+			conditions.push(eq(visits.organizationId, targetOrgId));
 		}
 
-		const unwrittenVisits = await db
-			.select({
-				visitId: visits.id,
-				organizationId: visits.organizationId,
-				patientId: visits.patientId,
-				appointmentId: visits.appointmentId,
-				status: visits.status,
-				patientFullName: patients.fullName,
-				doctorUserId: appointments.doctorUserId,
-				doctorFullName: users.fullName,
-			})
-			.from(visits)
-			.leftJoin(patients, eq(visits.patientId, patients.id))
-			.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-			.leftJoin(users, eq(appointments.doctorUserId, users.id))
-			.where(and(...conditions));
+		const unwrittenVisits = await (targetOrgId
+			? withTenantCtx(targetOrgId, (tx) =>
+					tx
+						.select({
+							visitId: visits.id,
+							organizationId: visits.organizationId,
+							patientId: visits.patientId,
+							appointmentId: visits.appointmentId,
+							status: visits.status,
+							patientFullName: patients.fullName,
+							doctorUserId: appointments.doctorUserId,
+							doctorFullName: users.fullName,
+						})
+						.from(visits)
+						.leftJoin(patients, eq(visits.patientId, patients.id))
+						.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+						.leftJoin(users, eq(appointments.doctorUserId, users.id))
+						.where(and(...conditions)),
+				)
+			: withSuperuserBypass((tx) =>
+					tx
+						.select({
+							visitId: visits.id,
+							organizationId: visits.organizationId,
+							patientId: visits.patientId,
+							appointmentId: visits.appointmentId,
+							status: visits.status,
+							patientFullName: patients.fullName,
+							doctorUserId: appointments.doctorUserId,
+							doctorFullName: users.fullName,
+						})
+						.from(visits)
+						.leftJoin(patients, eq(visits.patientId, patients.id))
+						.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+						.leftJoin(users, eq(appointments.doctorUserId, users.id))
+						.where(and(...conditions)),
+				));
+
+		if (unwrittenVisits.length === 0) {
+			return [];
+		}
+
+		const visitIds = Array.from(new Set(unwrittenVisits.map((v) => v.visitId)));
+
+		const { batchPayments, batchTreatmentItems } = await (targetOrgId
+			? withTenantCtx(targetOrgId, async (tx) => {
+					const [pRows, tRows] = await Promise.all([
+						tx
+							.select({
+								id: payments.id,
+								organizationId: payments.organizationId,
+								visitId: payments.visitId,
+								amountRub: payments.amountRub,
+								note: payments.note,
+							})
+							.from(payments)
+							.where(
+								and(
+									eq(payments.organizationId, targetOrgId),
+									inArray(payments.visitId, visitIds),
+								),
+							),
+						tx
+							.select({
+								id: treatmentItems.id,
+								organizationId: treatmentItems.organizationId,
+								visitId: treatmentItems.visitId,
+								toothCode: treatmentItems.toothCode,
+								title: treatmentItems.title,
+								priceRub: treatmentItems.priceRub,
+							})
+							.from(treatmentItems)
+							.where(
+								and(
+									eq(treatmentItems.organizationId, targetOrgId),
+									inArray(treatmentItems.visitId, visitIds),
+								),
+							),
+					]);
+					return { batchPayments: pRows, batchTreatmentItems: tRows };
+				})
+			: withSuperuserBypass(async (tx) => {
+					const [pRows, tRows] = await Promise.all([
+						tx
+							.select({
+								id: payments.id,
+								organizationId: payments.organizationId,
+								visitId: payments.visitId,
+								amountRub: payments.amountRub,
+								note: payments.note,
+							})
+							.from(payments)
+							.where(inArray(payments.visitId, visitIds)),
+						tx
+							.select({
+								id: treatmentItems.id,
+								organizationId: treatmentItems.organizationId,
+								visitId: treatmentItems.visitId,
+								toothCode: treatmentItems.toothCode,
+								title: treatmentItems.title,
+								priceRub: treatmentItems.priceRub,
+							})
+							.from(treatmentItems)
+							.where(inArray(treatmentItems.visitId, visitIds)),
+					]);
+					return { batchPayments: pRows, batchTreatmentItems: tRows };
+				}));
+
+		const paymentsByOrgVisit = new Map<string, typeof batchPayments>();
+		for (const p of batchPayments) {
+			if (!p.visitId) continue;
+			const key = `${p.organizationId}:${p.visitId}`;
+			const bucket = paymentsByOrgVisit.get(key);
+			if (bucket) {
+				bucket.push(p);
+			} else {
+				paymentsByOrgVisit.set(key, [p]);
+			}
+		}
+
+		const itemsByOrgVisit = new Map<string, typeof batchTreatmentItems>();
+		for (const item of batchTreatmentItems) {
+			if (!item.visitId) continue;
+			const key = `${item.organizationId}:${item.visitId}`;
+			const bucket = itemsByOrgVisit.get(key);
+			if (bucket) {
+				bucket.push(item);
+			} else {
+				itemsByOrgVisit.set(key, [item]);
+			}
+		}
 
 		const alerts: EmrSaviorDraftAlert[] = [];
+		const draftUpdates: Array<{
+			visitId: string;
+			organizationId: string;
+			soapDraft: SoapNoteStructure;
+		}> = [];
 
 		for (const v of unwrittenVisits) {
-			// Fetch payments and billed items for this visit
-			const visitPayments = await db
-				.select({
-					id: payments.id,
-					amountRub: payments.amountRub,
-					note: payments.note,
-				})
-				.from(payments)
-				.where(
-					and(
-						eq(payments.organizationId, v.organizationId),
-						eq(payments.patientId, v.patientId),
-						eq(payments.visitId, v.visitId),
-					),
-				);
-
-			// Fetch treatment items to check if toothCode was recorded
-			const visitTreatmentItems = await db
-				.select({
-					id: treatmentItems.id,
-					toothCode: treatmentItems.toothCode,
-					title: treatmentItems.title,
-					priceRub: treatmentItems.priceRub,
-				})
-				.from(treatmentItems)
-				.where(
-					and(
-						eq(treatmentItems.organizationId, v.organizationId),
-						eq(treatmentItems.visitId, v.visitId),
-					),
-				);
+			const orgVisitKey = `${v.organizationId}:${v.visitId}`;
+			const visitPayments = paymentsByOrgVisit.get(orgVisitKey) ?? [];
+			const visitTreatmentItems = itemsByOrgVisit.get(orgVisitKey) ?? [];
 
 			// Determine tooth code (or null if not specified)
 			let detectedToothCode: string | null = null;
@@ -294,18 +390,11 @@ export async function runEmrSaviorScan(options?: {
 
 			const soapDraft = draftSoapFromNomenclatureServices(billedItems, patientFullName, detectedToothCode);
 
-			// Save generated draft into visit draftAutosave field
-			await db
-				.update(visits)
-				.set({
-					draftAutosave: {
-						autoGeneratedByAi: true,
-						generatedAt: new Date().toISOString(),
-						soap: soapDraft,
-					},
-					updatedAt: new Date(),
-				})
-				.where(eq(visits.id, v.visitId));
+			draftUpdates.push({
+				visitId: v.visitId,
+				organizationId: v.organizationId,
+				soapDraft,
+			});
 
 			alerts.push({
 				id: `emr_savior_${v.visitId}`,
@@ -324,8 +413,48 @@ export async function runEmrSaviorScan(options?: {
 			});
 		}
 
+		// Persist generated drafts grouped by organization inside tenant-scoped transactions
+		const updatesByOrg = new Map<string, typeof draftUpdates>();
+		for (const upd of draftUpdates) {
+			const bucket = updatesByOrg.get(upd.organizationId);
+			if (bucket) {
+				bucket.push(upd);
+			} else {
+				updatesByOrg.set(upd.organizationId, [upd]);
+			}
+		}
+
+		const savedAt = new Date();
+		const generatedAtIso = savedAt.toISOString();
+		for (const [orgId, orgUpdates] of updatesByOrg.entries()) {
+			await withTenantCtx(orgId, async (tx) => {
+				for (const upd of orgUpdates) {
+					await tx
+						.update(visits)
+						.set({
+							draftAutosave: {
+								autoGeneratedByAi: true,
+								generatedAt: generatedAtIso,
+								soap: upd.soapDraft,
+							},
+							updatedAt: savedAt,
+						})
+						.where(
+							and(
+								eq(visits.id, upd.visitId),
+								eq(visits.organizationId, orgId),
+							),
+						);
+				}
+			});
+		}
+
 		return alerts;
-	} catch {
+	} catch (err: unknown) {
+		logger.error(
+			{ err: safeLogError(err), organizationId: options?.organizationId },
+			"[emrSaviorDaemon] Failed to run shift closure EMR scan",
+		);
 		return [];
 	}
 }

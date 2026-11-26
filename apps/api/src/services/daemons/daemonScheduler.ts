@@ -4,14 +4,15 @@
  * Job definitions and option contracts live in `./daemonJobRegistry.ts`.
  */
 
-import type pg from "pg";
 import { pool } from "../../db/client.js";
-import { createApiLogger } from "../../observability/index.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
 import {
 	runWeeklyRetentionScan,
 	type WeeklyRetentionSummary,
 } from "./abandonedTreatmentHunterDaemon.js";
 import {
+	type AdvisoryLockClient,
+	type AdvisoryLockPool,
 	buildScheduledDaemonJobs,
 	type DaemonJobName,
 	type DaemonSchedulerOptions,
@@ -60,49 +61,71 @@ export {
 
 const defaultDaemonLogger = createApiLogger("daemonScheduler");
 
-async function acquireSessionAdvisoryLock(
+export async function acquireSessionAdvisoryLock(
 	jobName: DaemonJobName,
-): Promise<{ client: pg.PoolClient | null; acquired: boolean }> {
-	let client: pg.PoolClient | null = null;
+	lockPool: AdvisoryLockPool = pool,
+): Promise<{ client: AdvisoryLockClient | null; acquired: boolean }> {
+	let client: AdvisoryLockClient | null = null;
 	try {
-		client = await pool.connect();
-		const lockResult = await client.query<{ acquired: boolean }>(
+		client = await lockPool.connect();
+		const lockResult = await client.query(
 			"SELECT pg_try_advisory_lock(hashtext($1)) AS acquired",
 			[`daemon_${jobName}`],
 		);
-		const acquired = lockResult.rows[0]?.acquired !== false;
+		const acquired = lockResult.rows[0]?.acquired === true;
 		if (!acquired) {
-			client.release();
+			try {
+				client.release();
+			} catch (releaseErr: unknown) {
+				defaultDaemonLogger.warn(
+					{ err: safeLogError(releaseErr), jobName },
+					"[DaemonScheduler] Failed to release advisory lock connection after contention",
+				);
+			}
 			return { client: null, acquired: false };
 		}
 		return { client, acquired: true };
-	} catch {
+	} catch (err: unknown) {
+		defaultDaemonLogger.error(
+			{ err: safeLogError(err), jobName },
+			"[DaemonScheduler] Advisory lock acquisition failed; failing closed to prevent split-brain",
+		);
 		if (client) {
 			try {
-				client.release();
-			} catch {
-				// Ignore cleanup error on degraded pool
+				client.release(true);
+			} catch (cleanupErr: unknown) {
+				defaultDaemonLogger.warn(
+					{ err: safeLogError(cleanupErr), jobName },
+					"[DaemonScheduler] Failed to destroy broken pool client after lock error",
+				);
 			}
 		}
-		// Fallback for unit environments without live DB connection
-		return { client: null, acquired: true };
+		return { client: null, acquired: false };
 	}
 }
 
-async function releaseSessionAdvisoryLock(
-	client: pg.PoolClient | null,
+export async function releaseSessionAdvisoryLock(
+	client: AdvisoryLockClient | null,
 	jobName: DaemonJobName,
 ): Promise<void> {
 	if (!client) return;
+	let unlockFailed = false;
 	try {
 		await client.query("SELECT pg_advisory_unlock(hashtext($1))", [`daemon_${jobName}`]);
-	} catch {
-		// Safe ignore on connection drop (session ends anyway)
+	} catch (err: unknown) {
+		unlockFailed = true;
+		defaultDaemonLogger.warn(
+			{ err: safeLogError(err), jobName },
+			"[DaemonScheduler] Failed to unlock session advisory lock; destroying connection",
+		);
 	} finally {
 		try {
-			client.release();
-		} catch {
-			// Safe ignore
+			client.release(unlockFailed ? true : undefined);
+		} catch (releaseErr: unknown) {
+			defaultDaemonLogger.warn(
+				{ err: safeLogError(releaseErr), jobName },
+				"[DaemonScheduler] Failed to release advisory lock connection",
+			);
 		}
 	}
 }
@@ -134,6 +157,7 @@ export class DaemonScheduler {
 			enableSanpinAndInventory: options?.enableSanpinAndInventory ?? true,
 			enableWeeklyRetention: options?.enableWeeklyRetention ?? true,
 			enableMdlpOutbox: options?.enableMdlpOutbox ?? true,
+			advisoryLockPool: options?.advisoryLockPool,
 			logger: options?.logger ?? defaultDaemonLogger,
 		};
 
@@ -169,10 +193,9 @@ export class DaemonScheduler {
 		}
 	}
 
-	public start(startOptions?: { logger?: unknown }): void {
+	public start(startOptions?: { logger?: DaemonSchedulerOptions["logger"] }): void {
 		if (startOptions?.logger !== undefined) {
-			this.options.logger =
-				startOptions.logger as DaemonSchedulerOptions["logger"];
+			this.options.logger = startOptions.logger;
 		}
 		if (this.isRunning) return;
 		this.isRunning = true;
@@ -180,14 +203,16 @@ export class DaemonScheduler {
 
 		const pollMs = this.options.pollIntervalMs ?? 30000;
 		this.timer = setInterval(() => {
-			this.checkAndRunJobs().catch((err) => {
-				this.log(`Error during checkAndRunJobs: ${err?.message || err}`);
+			this.checkAndRunJobs().catch((err: unknown) => {
+				const msg = err instanceof Error ? err.message : String(err);
+				this.log(`Error during checkAndRunJobs: ${msg}`);
 			});
 		}, pollMs);
 		this.timer.unref();
 
-		this.checkAndRunJobs().catch((err) => {
-			this.log(`Initial check error: ${err?.message || err}`);
+		this.checkAndRunJobs().catch((err: unknown) => {
+			const msg = err instanceof Error ? err.message : String(err);
+			this.log(`Initial check error: ${msg}`);
 		});
 	}
 
@@ -265,10 +290,13 @@ export class DaemonScheduler {
 				const lastRun = this.lastExecutedDateHourMinute.get(job.name);
 				if (lastRun === dateKey) continue;
 
-				const lock = await acquireSessionAdvisoryLock(job.name);
+				const lock = await acquireSessionAdvisoryLock(
+					job.name,
+					this.options.advisoryLockPool,
+				);
 				if (!lock.acquired) {
 					this.log(
-						`Job «${job.name}» skipped: advisory lock held by another cluster instance.`,
+						`Job «${job.name}» skipped: advisory lock unavailable or held by another cluster instance.`,
 					);
 					continue;
 				}

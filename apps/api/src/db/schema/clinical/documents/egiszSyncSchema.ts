@@ -191,6 +191,10 @@ export const egiszOutbox = pgTable(
 			t.status,
 			t.nextAttemptAt,
 		),
+		statusNextAttemptIdx: index("egisz_outbox_status_next_attempt_idx").on(
+			t.status,
+			t.nextAttemptAt,
+		),
 		patientIdx: index("egisz_outbox_patient_idx").on(
 			t.organizationId,
 			t.patientId,
