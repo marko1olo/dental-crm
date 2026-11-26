@@ -126,7 +126,7 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"settings.read",
 	],
 
-	// Старший администратор: управление расписанием, касса, картотека, запись, склад
+	// Старший администратор: управление расписанием, касса, картотека, запись, склад (без P&L аналитики)
 	senior_admin: [
 		"schedule.read",
 		"schedule.write",
@@ -135,7 +135,6 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"clinical.read",
 		"finance.read",
 		"finance.write",
-		"analytics.read",
 		"payroll.read.own",
 		"inventory.read",
 		"inventory.write",
@@ -146,7 +145,7 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"agent.write",
 	],
 
-	// Администратор ресепшена: записывает, ведёт картотеку, принимает оплату.
+	// Администратор ресепшена: записывает, ведёт картотеку, принимает оплату (без P&L аналитики).
 	// Зарплаты врачей не видит — ни чужие, ни свои: он не врач.
 	administrator: [
 		"schedule.read",
@@ -156,7 +155,6 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"clinical.read",
 		"finance.read",
 		"finance.write",
-		"analytics.read",
 		"inventory.read",
 		"settings.read",
 		"communications.read",
@@ -165,7 +163,7 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"agent.write",
 	],
 
-	// Регистратор: базовая запись, встреча пациентов, базовый чек
+	// Регистратор: базовая запись, встреча пациентов, базовый чек (без P&L аналитики)
 	registrar: [
 		"schedule.read",
 		"schedule.write",
@@ -174,7 +172,6 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"clinical.read",
 		"finance.read",
 		"finance.write",
-		"analytics.read",
 		"inventory.read",
 		"settings.read",
 		"communications.read",

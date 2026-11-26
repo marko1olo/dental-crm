@@ -65,7 +65,7 @@ export const viewHints: Record<AppView, string> = {
 };
 
 export function getFilteredAppViews(role: StaffRole): AppView[] {
-	if (role === "doctor") {
+	if (role === "doctor" || role === "head_doctor") {
 		return [
 			"shift",
 			"schedule",
@@ -95,19 +95,48 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"scanner",
 		];
 	}
-	if (role === "administrator") {
+	if (role === "senior_nurse") {
+		return [
+			"shift",
+			"inventory",
+			"scanner",
+			"lab",
+			"documents",
+		];
+	}
+	if (role === "accountant") {
+		return [
+			"finance",
+			"analytics",
+			"documents",
+			"inventory",
+			"shift",
+		];
+	}
+	if (role === "administrator" || role === "senior_admin") {
 		return [
 			"schedule",
 			"patients",
 			"pipeline",
 			"documents",
 			"finance",
-			"analytics",
 			"communications",
 			"inventory",
 			"lab",
+			"scanner",
 			"leads",
 			"settings",
+		];
+	}
+	if (role === "registrar") {
+		return [
+			"schedule",
+			"patients",
+			"documents",
+			"finance",
+			"communications",
+			"leads",
+			"scanner",
 		];
 	}
 	if (role === "manager") {
@@ -126,16 +155,18 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 	}
 	if (role === "curator") {
 		return [
-			"shift",
 			"schedule",
 			"patients",
+			"leads",
+			"communications",
+			"analytics",
+			"documents",
+			"shift",
 			"pipeline",
 			"imaging",
-			"documents",
-			"communications",
 		];
 	}
-	if (role === "owner") {
+	if (role === "owner" || role === "admin") {
 		return Array.from(appViews);
 	}
 	return ["shift"];

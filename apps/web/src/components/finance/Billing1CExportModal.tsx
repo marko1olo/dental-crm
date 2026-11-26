@@ -24,6 +24,7 @@ export function Billing1CExportModal(props: Billing1CExportModalProps): React.Re
 	const doctorName = props.doctorName || "Врач стоматолог";
 
 	const state = useOneCExportModalState({
+		isOpen: props.isOpen,
 		items: props.items,
 		patientId,
 		patientName,
@@ -58,11 +59,52 @@ export function Billing1CExportModal(props: Billing1CExportModalProps): React.Re
 					calculatedTotalRub={state.calculatedTotalRub}
 					activeSubTab={state.activeSubTab}
 					setActiveSubTab={state.setActiveSubTab}
-					itemsCount={props.items.length}
+					itemsCount={state.effectiveItems.length}
 					onClose={props.onClose}
 				/>
 
 				<div className="flex-[1_1_auto] min-h-0 overflow-y-auto [overscroll-behavior:contain] p-3 sm:p-6 pb-6 space-y-3 sm:space-y-4">
+					{props.items.length === 0 && (
+						<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2 text-xs">
+							<div className="flex flex-wrap items-center gap-2">
+								<span className="font-medium text-[var(--ink)]">Период 1С CommerceML:</span>
+								<input
+									type="date"
+									value={state.startDateIso}
+									onChange={(e) => state.setStartDateIso(e.target.value)}
+									aria-label="Дата начала периода 1С"
+									className="h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+								/>
+								<span className="text-[var(--ink-muted)]">—</span>
+								<input
+									type="date"
+									value={state.endDateIso}
+									onChange={(e) => state.setEndDateIso(e.target.value)}
+									aria-label="Дата окончания периода 1С"
+									className="h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								{state.serverSha256 && (
+									<span className="text-[11px] font-mono text-[var(--ink-muted)]" title={state.serverSha256}>
+										SHA-256: {state.serverSha256.slice(0, 10)}...
+									</span>
+								)}
+								<button
+									type="button"
+									onClick={() => void state.loadServerCommerceMl(state.startDateIso, state.endDateIso)}
+									className="h-8 px-2.5 rounded-md text-xs font-medium bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0"
+									data-testid="btn-load-server-1c-commerceml"
+								>
+									{state.serverExportLoading ? "Загрузка..." : "Обновить из БД"}
+								</button>
+							</div>
+							{state.serverExportError && (
+								<div className="w-full text-[var(--danger)]">{state.serverExportError}</div>
+							)}
+						</div>
+					)}
+
 					<OneCRequisitesStrip
 						isEditingRequisites={state.isEditingRequisites}
 						setIsEditingRequisites={state.setIsEditingRequisites}
@@ -79,7 +121,7 @@ export function Billing1CExportModal(props: Billing1CExportModalProps): React.Re
 
 					{state.activeSubTab === "items" && (
 						<OneCExportItemsTable
-							items={props.items}
+							items={state.effectiveItems}
 							calculatedTotalRub={state.calculatedTotalRub}
 						/>
 					)}

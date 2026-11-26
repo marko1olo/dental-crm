@@ -5,11 +5,10 @@ import {
 	requireResolvedOrganizationId,
 	unguardedBypassAllowed,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { organizations } from "../../db/schema/auth.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
-	roleHasPermission,
 	roleHasPermissionWithOverrides,
 } from "../../security/permissions.js";
 import { fetchRoleMatrixOverrides } from "../../security/permissionsModules/permissionGuards.js";
@@ -22,6 +21,7 @@ const EXECUTIVE_ROLES = new Set([
 	"director",
 	"chief_doctor",
 	"head_doctor",
+	"accountant",
 ]);
 
 export async function requireExecutiveAccess(
@@ -51,7 +51,24 @@ export async function requireExecutiveAccess(
 			return orgId;
 		}
 
-		const overrides = await fetchRoleMatrixOverrides(orgId);
+		const { overrides, clinicMode } = await withTenantCtx(orgId, async (tx) => {
+			const loadedOverrides = await fetchRoleMatrixOverrides(orgId, tx);
+			let mode: string | null | undefined = null;
+			if (role === "doctor") {
+				try {
+					const [orgRecord] = await tx
+						.select({ clinicMode: organizations.clinicMode })
+						.from(organizations)
+						.where(eq(organizations.id, orgId))
+						.limit(1);
+					mode = orgRecord?.clinicMode;
+				} catch (dbErr) {
+					request.log?.warn?.({ err: dbErr, orgId }, "Failed to query clinicMode in requireExecutiveAccess");
+				}
+			}
+			return { overrides: loadedOverrides, clinicMode: mode };
+		});
+
 		const doctorOverrides = overrides?.[role] ?? (role === "doctor" ? overrides?.doctor : undefined);
 		const hasExplicitPnlOrAnalytics =
 			doctorOverrides?.["finance.reports_pnl"] === true ||
@@ -68,19 +85,8 @@ export async function requireExecutiveAccess(
 			}
 
 			// Разрешаем соло-врачам (Мандаты 8e, 8n) только в соло-режимах
-			try {
-				const [orgRecord] = await db
-					.select({ clinicMode: organizations.clinicMode })
-					.from(organizations)
-					.where(eq(organizations.id, orgId))
-					.limit(1);
-
-				const mode = orgRecord?.clinicMode;
-				if (mode === "solo_doctor" || mode === "one_chair") {
-					return orgId;
-				}
-			} catch (dbErr) {
-				request.log?.warn?.({ err: dbErr, orgId }, "Failed to query clinicMode in requireExecutiveAccess");
+			if (clinicMode === "solo_doctor" || clinicMode === "one_chair") {
+				return orgId;
 			}
 
 			reply.code(403).send({

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   type Dashboard,
   getPatientActiveLabStatus,
@@ -6,8 +6,12 @@ import {
 } from "@dental/shared";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { SEED_LAB_ORDERS } from "../lab/dentalLabCatalogData";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type QuickBookingDashboard = Dashboard & {
   readonly labOrders?: readonly MinimalLabOrderForSchedule[] | undefined;
@@ -52,6 +56,49 @@ export function useQuickBookingCollision({
   fromLocal,
   toLocal,
 }: UseQuickBookingCollisionParams) {
+  const [fetchedPatientLabOrders, setFetchedPatientLabOrders] = useState<readonly MinimalLabOrderForSchedule[]>([]);
+
+  useEffect(() => {
+    if (!patientId || !UUID_REGEX.test(patientId) || isDemoShowcaseMode()) {
+      setFetchedPatientLabOrders([]);
+      return;
+    }
+    let active = true;
+    fetch(`/api/lab/orders?patientId=${encodeURIComponent(patientId)}`, {
+      headers: denteClinicalReadHeaders(),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          clientLogger.warn("[useQuickBookingCollision] Failed to fetch patient lab orders", {
+            status: res.status,
+            patientId,
+          }, { module: "Schedule" });
+          return null;
+        }
+        return res.json();
+      })
+      .then((rawJson: unknown) => {
+        if (!active || !rawJson) return;
+        const payload =
+          typeof rawJson === "object" && "data" in rawJson
+            ? ((rawJson as { data?: unknown }).data ?? rawJson)
+            : rawJson;
+        if (Array.isArray(payload)) {
+          setFetchedPatientLabOrders(payload as MinimalLabOrderForSchedule[]);
+        } else if (payload && typeof payload === "object" && Array.isArray((payload as { items?: unknown }).items)) {
+          setFetchedPatientLabOrders((payload as { items: MinimalLabOrderForSchedule[] }).items);
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        clientLogger.warn("[useQuickBookingCollision] Network error loading patient lab orders", err, { module: "Schedule" });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [patientId]);
+
   const collision = useMemo(() => {
     if (!startsAtLocal) {
       return {
@@ -93,9 +140,43 @@ export function useQuickBookingCollision({
     // Проверка коллизии готовности работы ЗТЛ со временем визита (Мандат 8e / 8bd)
     let labCollision: QuickBookingLabCollisionInfo | null = null;
     const rawDashLab = dashboard?.labOrders;
+    const apptLabOrders: MinimalLabOrderForSchedule[] = [];
+    for (const appt of dashboard?.appointments ?? []) {
+      if (typeof appt !== "object" || appt === null || !("labOrder" in appt)) continue;
+      const rawLabOrder = appt.labOrder;
+      if (
+        rawLabOrder &&
+        typeof rawLabOrder === "object" &&
+        "id" in rawLabOrder &&
+        typeof rawLabOrder.id === "string"
+      ) {
+        const embedded = rawLabOrder as MinimalLabOrderForSchedule;
+        apptLabOrders.push({
+          ...embedded,
+          patientId: embedded.patientId ?? appt.patientId ?? null,
+        });
+      }
+    }
+    const combinedOrdersById = new Map<string, MinimalLabOrderForSchedule>();
+    for (const o of Array.isArray(rawDashLab) ? rawDashLab : []) {
+      if (typeof o.id === "string" && o.id) {
+        combinedOrdersById.set(o.id, o);
+      }
+    }
+    for (const o of apptLabOrders) {
+      if (o.id && !combinedOrdersById.has(o.id)) {
+        combinedOrdersById.set(o.id, o);
+      }
+    }
+    for (const o of fetchedPatientLabOrders) {
+      if (o.id) {
+        combinedOrdersById.set(o.id, o);
+      }
+    }
+    const mergedLabOrders = Array.from(combinedOrdersById.values());
     const labOrders: readonly MinimalLabOrderForSchedule[] | undefined =
-      Array.isArray(rawDashLab) && rawDashLab.length > 0
-        ? rawDashLab
+      mergedLabOrders.length > 0
+        ? mergedLabOrders
         : (isDemoShowcaseMode()
             ? SEED_LAB_ORDERS.map((o) => ({
                 id: o.id,
@@ -159,6 +240,7 @@ export function useQuickBookingCollision({
     dashboard?.clinicSettings?.chairs,
     dashboard?.patients,
     dashboard?.labOrders,
+    fetchedPatientLabOrders,
   ]);
 
   return collision;

@@ -1,4 +1,5 @@
 import React from "react";
+import type { StaffRole } from "@dental/shared";
 import { MoreHorizontal } from "lucide-react";
 import { FinanceToolbarMenuItems } from "./FinanceToolbarMenuItems.js";
 
@@ -18,6 +19,7 @@ export interface FinanceToolbarMenuProps {
 	readonly onOpenAccountingExport?: (() => void) | undefined;
 	readonly isCashShiftOpen: boolean;
 	readonly onToggleCashShift: () => void;
+	readonly userRole?: StaffRole | undefined;
 }
 
 export function FinanceToolbarMenu(p: FinanceToolbarMenuProps): React.JSX.Element {

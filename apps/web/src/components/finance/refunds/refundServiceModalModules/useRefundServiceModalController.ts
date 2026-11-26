@@ -31,6 +31,7 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 		patientId,
 		patientName,
 		patientPhone,
+		cashBoxId,
 		originalPaymentId,
 		originalReceiptNumber,
 		originalFiscalSign,
@@ -153,12 +154,22 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 
 			const isPaymentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(originalPaymentId || "");
 			const isInvoiceUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invoiceId || "");
+			const isPatientUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
+			const isCashBoxUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cashBoxId || "");
+			const methodLabel =
+				paymentMethod === "cash"
+					? "наличные"
+					: paymentMethod === "advance_deposit"
+						? "авансовый депозит"
+						: "безналично (карта)";
 
 			const refundCashboxPayload = {
 				...(isPaymentUuid && originalPaymentId ? { paymentId: originalPaymentId } : {}),
 				...(isInvoiceUuid && invoiceId ? { invoiceId } : {}),
+				...(isPatientUuid && patientId ? { patientId } : {}),
+				...(isCashBoxUuid && cashBoxId ? { cashBoxId } : {}),
 				amountRub: calculation.totalRefundRub,
-				reasonText: reasonText.slice(0, 500),
+				reasonText: `${reasonText} [Способ возврата: ${methodLabel}]`.slice(0, 500),
 				cashierFullName: "Кассир-администратор",
 				clientMutationId,
 			};
@@ -253,32 +264,11 @@ export function useRefundServiceModalController(props: RefundServiceModalProps) 
 			clientLogger.warn("[useRefundServiceModalController] Network error during refund fiscalization", fetchErr, {
 				module: "Finance",
 			});
-			refundSucceeded = true;
-			isOffline = true;
-			finalQueueId = clientMutationId;
-			FiscalReceiptQueueManager.enqueueReceipt(
-				{
-					operationType: "income_return",
-					customerContact: patientPhone || "",
-					cashierFullName: "Кассир-администратор",
-					totalRub: calculation.totalRefundRub,
-					items: calculation.refundedItems.map((it) => ({
-						name: it.name,
-						priceRub: it.unitPriceRub,
-						quantity: it.quantityRefunded,
-						amountRub: it.refundedNetRub,
-						paymentMethod: "full_payment",
-						paymentSubject: "service",
-					})),
-					cashRub: kopecksToRubles(refundCashKopecks),
-					electronicRub: kopecksToRubles(refundElectronicKopecks),
-					prepaidRub: kopecksToRubles(refundPrepaidKopecks),
-					taxationSystem: "usn_income",
-				},
-				"ККТ временно недоступна: чек возврата сохранен в локальную очередь",
-				finalQueueId,
-			);
-			showToast("ККТ временно недоступна: чек возврата сохранен в локальную очередь", "warning");
+			const msg =
+				fetchErr instanceof Error && fetchErr.message.trim()
+					? fetchErr.message
+					: "Сетевая ошибка при оформлении возврата. Проверьте соединение и повторите попытку.";
+			showToast(msg, "error");
 		} finally {
 			if (refundSucceeded) {
 				setFiscalInfo({

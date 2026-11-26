@@ -74,6 +74,9 @@ export interface CashShiftClosingModalProps {
 	readonly incomeElectronicRub?: number | undefined;
 	readonly incomeSbpRub?: number | undefined;
 	readonly advanceOffsetRub?: number | undefined;
+	readonly returnTotalRub?: number | undefined;
+	readonly insuranceTotalRub?: number | undefined;
+	readonly netRevenueRub?: number | undefined;
 	readonly acquiringTransactions?: readonly AcquiringTerminalTransaction[] | undefined;
 	readonly kktElectronicRecords?: readonly KktFiscalElectronicRecord[] | undefined;
 	readonly onShiftClosed?: ((zReportData: ZReportData) => void) | undefined;
@@ -92,6 +95,9 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	incomeElectronicRub: incomeElectronicRubProp,
 	incomeSbpRub: incomeSbpRubProp,
 	advanceOffsetRub: advanceOffsetRubProp,
+	returnTotalRub: returnTotalRubProp,
+	insuranceTotalRub: insuranceTotalRubProp,
+	netRevenueRub: netRevenueRubProp,
 	acquiringTransactions,
 	kktElectronicRecords,
 	onShiftClosed,
@@ -101,19 +107,20 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 	// Auto-hydration from real database API if values are not explicitly supplied
 	const [autoFetchedData, setAutoFetchedData] = useState<{
+		hasOpenShift?: boolean | undefined;
 		incomeCashRub?: number | undefined;
 		incomeElectronicRub?: number | undefined;
 		incomeSbpRub?: number | undefined;
 		advanceOffsetRub?: number | undefined;
+		returnTotalRub?: number | undefined;
+		insuranceTotalRub?: number | undefined;
+		netRevenueRub?: number | undefined;
 		initialChangeFundRub?: number | undefined;
 		cashInDrawerRub?: number | undefined;
 		shiftNumber?: number | undefined;
 	} | null>(null);
 
-	const needsAutoFetch =
-		incomeCashRubProp === undefined &&
-		incomeElectronicRubProp === undefined &&
-		incomeSbpRubProp === undefined;
+	const needsAutoFetch = incomeCashRubProp === undefined;
 
 	useEffect(() => {
 		if (!isOpen || !needsAutoFetch) return;
@@ -132,12 +139,33 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 				const rawObj = rawJson && typeof rawJson === "object" && "data" in rawJson ? (rawJson as { data?: unknown }).data ?? rawJson : rawJson;
 				const data = rawObj as Record<string, unknown> | null;
 				if (isMounted && data && typeof data === "object") {
+					const hasOpenShift = data.hasOpenShift !== false;
+					if (!hasOpenShift) {
+						setAutoFetchedData({
+							hasOpenShift: false,
+							incomeCashRub: 0,
+							incomeElectronicRub: 0,
+							incomeSbpRub: 0,
+							advanceOffsetRub: 0,
+							returnTotalRub: 0,
+							insuranceTotalRub: 0,
+							netRevenueRub: 0,
+							initialChangeFundRub: 0,
+							cashInDrawerRub: 0,
+							shiftNumber: typeof data.shiftNumber === "number" ? data.shiftNumber : undefined,
+						});
+						return;
+					}
 					setAutoFetchedData({
+						hasOpenShift: true,
 						incomeCashRub: typeof data.incomeCashRub === "number" ? data.incomeCashRub : 0,
 						incomeElectronicRub: typeof data.incomeElectronicRub === "number" ? data.incomeElectronicRub : 0,
 						incomeSbpRub: typeof data.incomeSbpRub === "number" ? data.incomeSbpRub : 0,
 						advanceOffsetRub: typeof data.advanceOffsetRub === "number" ? data.advanceOffsetRub : 0,
-						initialChangeFundRub: typeof data.startingBalanceRub === "number" ? data.startingBalanceRub : 5000,
+						returnTotalRub: typeof data.returnTotalRub === "number" ? data.returnTotalRub : 0,
+						insuranceTotalRub: typeof data.insuranceTotalRub === "number" ? data.insuranceTotalRub : 0,
+						netRevenueRub: typeof data.netRevenueRub === "number" ? data.netRevenueRub : undefined,
+						initialChangeFundRub: typeof data.startingBalanceRub === "number" ? data.startingBalanceRub : 0,
 						cashInDrawerRub: typeof data.expectedCashInDrawerRub === "number" ? data.expectedCashInDrawerRub : undefined,
 						shiftNumber: typeof data.shiftNumber === "number" ? data.shiftNumber : undefined,
 					});
@@ -152,7 +180,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	}, [isOpen, needsAutoFetch]);
 
 	const shiftNumber = autoFetchedData?.shiftNumber ?? shiftNumberProp ?? 1;
-	const initialChangeFundRub = initialChangeFundRubProp ?? autoFetchedData?.initialChangeFundRub ?? 5000;
+	const initialChangeFundRub = initialChangeFundRubProp ?? autoFetchedData?.initialChangeFundRub ?? 0;
 	const cashInDrawerRub = cashInDrawerRubProp ?? autoFetchedData?.cashInDrawerRub;
 
 	// Revenue numbers in integer kopecks
@@ -160,8 +188,21 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const totalCardRevenue = Math.max(0, incomeElectronicRubProp ?? autoFetchedData?.incomeElectronicRub ?? 0);
 	const totalSbpRevenue = Math.max(0, incomeSbpRubProp ?? autoFetchedData?.incomeSbpRub ?? 0);
 	const totalAdvanceOffset = Math.max(0, advanceOffsetRubProp ?? autoFetchedData?.advanceOffsetRub ?? 0);
+	const totalReturnRub = Math.max(0, returnTotalRubProp ?? autoFetchedData?.returnTotalRub ?? 0);
+	const totalInsuranceRub = Math.max(0, insuranceTotalRubProp ?? autoFetchedData?.insuranceTotalRub ?? 0);
 
-	const netRevenueRub = totalCashRevenue + totalCardRevenue + totalSbpRevenue + totalAdvanceOffset;
+	const computedNetRevenueRub = kopecksToRub(
+		rubToKopecks(totalCashRevenue) +
+			rubToKopecks(totalCardRevenue) +
+			rubToKopecks(totalSbpRevenue) +
+			rubToKopecks(totalAdvanceOffset) +
+			rubToKopecks(totalInsuranceRub) -
+			rubToKopecks(totalReturnRub),
+	);
+	const netRevenueRub =
+		netRevenueRubProp ??
+		autoFetchedData?.netRevenueRub ??
+		computedNetRevenueRub;
 	const expectedCashInDrawer =
 		cashInDrawerRub !== undefined
 			? cashInDrawerRub
@@ -326,6 +367,13 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 				{/* Body Content */}
 				<div className="p-6 overflow-y-auto space-y-4 max-w-full">
+					{autoFetchedData?.hasOpenShift === false && (
+						<div className="p-3 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/30 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+							<AlertTriangle className="w-4 h-4 shrink-0" />
+							<span>Активная кассовая смена на сервере не открыта. Отображены данные нулевой смены.</span>
+						</div>
+					)}
+
 					{/* Total Shift Revenue Hero Display */}
 					<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col items-center justify-center text-center gap-1">
 						<span className="text-xs font-medium text-[var(--ink-muted)]">
@@ -336,6 +384,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						</span>
 						<span className="text-xs text-[var(--ink-muted)] mt-1 font-mono tabular-nums tracking-tight">
 							Разменный фонд на начало: {initialChangeFundRub.toLocaleString("ru-RU")} ₽
+							{(totalReturnRub > 0 || totalInsuranceRub > 0) &&
+								` • Возвраты: -${totalReturnRub.toLocaleString("ru-RU")} ₽ • ДМС: ${totalInsuranceRub.toLocaleString("ru-RU")} ₽`}
 						</span>
 					</div>
 

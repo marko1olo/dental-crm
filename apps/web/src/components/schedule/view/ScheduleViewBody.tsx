@@ -424,6 +424,20 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
       setScheduleDateFilter={setScheduleDateFilter}
       todayScheduleDate={todayScheduleDate}
       onOpenVisit={handleOpenVisit}
+      onBookUrgentRequest={(request) => {
+        setQuickBookingSlot({
+          dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
+          doctorUserId: scheduleDoctorFilterId || null,
+          doctorName: request.doctorName || null,
+          chairId: scheduleChairFilterId || null,
+          patientName: request.patientName || null,
+          isCitoEmergency: true,
+          reason: `Срочно! ${request.requestType}`,
+          comment: request.preferredSlotTime ? `Предпочтительное время: ${request.preferredSlotTime}` : undefined,
+          durationMinutes: 30,
+        });
+        setQuickBookingOpen(true);
+      }}
     />
   );
 }

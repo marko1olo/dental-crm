@@ -56,7 +56,7 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 
 	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
 		const saved = safeLocalStorageGetItem("dente_cash_shift_open");
-		return saved !== null ? saved === "true" : true;
+		return saved === "true";
 	});
 	const [shiftNumber, setShiftNumber] = useState<number>(() => {
 		const saved = safeLocalStorageGetItem("dente_cash_shift_number");
@@ -73,15 +73,29 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		return saved ? kopecksToRubles(rublesToKopecks(Number(saved) || 0)) : 0;
 	});
 	const [serverCashBoxBalanceRub, setServerCashBoxBalanceRub] = useState<number | null>(null);
+	const [serverShiftSnapshot, setServerShiftSnapshot] = useState<{
+		hasOpenShift: boolean;
+		startingBalanceRub: number;
+		expectedCashInDrawerRub: number;
+		incomeCashRub: number;
+		incomeElectronicRub: number;
+		incomeSbpRub: number;
+		advanceOffsetRub: number;
+		returnTotalRub: number;
+		insuranceTotalRub: number;
+		netRevenueRub: number;
+	} | null>(null);
 	const [isLocalBalanceFallback, setIsLocalBalanceFallback] = useState<boolean>(false);
 
 	const fetchServerCashBoxBalance = useCallback(async () => {
 		try {
-			const res = await fetch("/api/cash/cash-box", {
-				headers: denteClinicalReadHeaders(),
-			});
-			if (res.ok) {
-				const json = await res.json();
+			const [boxRes, shiftRes] = await Promise.allSettled([
+				fetch("/api/cash/cash-box", { headers: denteClinicalReadHeaders() }),
+				fetch("/api/cashbox/shift", { headers: denteClinicalReadHeaders() }),
+			]);
+
+			if (boxRes.status === "fulfilled" && boxRes.value.ok) {
+				const json = await boxRes.value.json();
 				const payload = json && typeof json === "object" && "data" in json ? json.data : json;
 				const rawList = Array.isArray(payload) ? payload : [];
 				const boxes = rawList as readonly ServerCashBoxItem[];
@@ -94,8 +108,58 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 					}
 				}
 			} else {
-				clientLogger.warn("[useFinanceCashShift] Server cashbox returned non-ok status", { status: res.status }, { module: "Finance" });
+				clientLogger.warn("[useFinanceCashShift] Server cashbox returned non-ok status", {
+					status: boxRes.status === "fulfilled" ? boxRes.value.status : "network_error",
+				}, { module: "Finance" });
 				setIsLocalBalanceFallback(true);
+			}
+
+			if (shiftRes.status === "fulfilled" && shiftRes.value.ok) {
+				const rawShiftJson = await shiftRes.value.json();
+				const shiftPayload =
+					rawShiftJson && typeof rawShiftJson === "object" && "data" in rawShiftJson
+						? ((rawShiftJson as { data?: unknown }).data ?? rawShiftJson)
+						: rawShiftJson;
+				const shiftRec =
+					shiftPayload && typeof shiftPayload === "object"
+						? (shiftPayload as Record<string, unknown>)
+						: null;
+				if (shiftRec) {
+					const openOnServer = shiftRec.hasOpenShift === true;
+					setIsShiftOpen(openOnServer);
+					safeLocalStorageSetItem("dente_cash_shift_open", openOnServer ? "true" : "false");
+					if (openOnServer) {
+						if (typeof shiftRec.shiftNumber === "number" && shiftRec.shiftNumber > 0) {
+							setShiftNumber(shiftRec.shiftNumber);
+							safeLocalStorageSetItem("dente_cash_shift_number", String(shiftRec.shiftNumber));
+						}
+						setServerShiftSnapshot({
+							hasOpenShift: true,
+							startingBalanceRub: typeof shiftRec.startingBalanceRub === "number" ? shiftRec.startingBalanceRub : 0,
+							expectedCashInDrawerRub: typeof shiftRec.expectedCashInDrawerRub === "number" ? shiftRec.expectedCashInDrawerRub : 0,
+							incomeCashRub: typeof shiftRec.incomeCashRub === "number" ? shiftRec.incomeCashRub : 0,
+							incomeElectronicRub: typeof shiftRec.incomeElectronicRub === "number" ? shiftRec.incomeElectronicRub : 0,
+							incomeSbpRub: typeof shiftRec.incomeSbpRub === "number" ? shiftRec.incomeSbpRub : 0,
+							advanceOffsetRub: typeof shiftRec.advanceOffsetRub === "number" ? shiftRec.advanceOffsetRub : 0,
+							returnTotalRub: typeof shiftRec.returnTotalRub === "number" ? shiftRec.returnTotalRub : 0,
+							insuranceTotalRub: typeof shiftRec.insuranceTotalRub === "number" ? shiftRec.insuranceTotalRub : 0,
+							netRevenueRub: typeof shiftRec.netRevenueRub === "number" ? shiftRec.netRevenueRub : 0,
+						});
+					} else {
+						setServerShiftSnapshot({
+							hasOpenShift: false,
+							startingBalanceRub: 0,
+							expectedCashInDrawerRub: 0,
+							incomeCashRub: 0,
+							incomeElectronicRub: 0,
+							incomeSbpRub: 0,
+							advanceOffsetRub: 0,
+							returnTotalRub: 0,
+							insuranceTotalRub: 0,
+							netRevenueRub: 0,
+						});
+					}
+				}
 			}
 		} catch (err) {
 			clientLogger.warn("[useFinanceCashShift] Failed to fetch server cashbox balance, falling back to local calculation", err, { module: "Finance" });
@@ -124,6 +188,9 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 	}, [dashboard?.payments, activePayments, todayKey]);
 
 	const cashInDrawerRub = useMemo(() => {
+		if (serverShiftSnapshot?.hasOpenShift) {
+			return Math.max(0, serverShiftSnapshot.expectedCashInDrawerRub);
+		}
 		if (serverCashBoxBalanceRub !== null && Number.isFinite(serverCashBoxBalanceRub)) {
 			return Math.max(0, serverCashBoxBalanceRub);
 		}
@@ -131,10 +198,14 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			0,
 			kopecksToRubles(rublesToKopecks(cashDayTotals?.cashRub ?? 0) + rublesToKopecks(manualCashDeltaRub)),
 		);
-	}, [serverCashBoxBalanceRub, cashDayTotals?.cashRub, manualCashDeltaRub]);
-	const cardSumRub = cashDayTotals?.cardRub ?? 0;
-	const sbpSumRub = cashDayTotals?.sbpRub ?? 0;
-	const advanceOffsetRub = cashDayTotals?.advanceRub ?? 0;
+	}, [serverShiftSnapshot, serverCashBoxBalanceRub, cashDayTotals?.cashRub, manualCashDeltaRub]);
+	const cardSumRub = serverShiftSnapshot?.hasOpenShift ? serverShiftSnapshot.incomeElectronicRub : (cashDayTotals?.cardRub ?? 0);
+	const sbpSumRub = serverShiftSnapshot?.hasOpenShift ? serverShiftSnapshot.incomeSbpRub : (cashDayTotals?.sbpRub ?? 0);
+	const advanceOffsetRub = serverShiftSnapshot?.hasOpenShift ? serverShiftSnapshot.advanceOffsetRub : (cashDayTotals?.advanceRub ?? 0);
+	const returnTotalRub = serverShiftSnapshot?.returnTotalRub ?? 0;
+	const insuranceTotalRub = serverShiftSnapshot?.insuranceTotalRub ?? 0;
+	const netRevenueRub = serverShiftSnapshot?.netRevenueRub;
+	const startingBalanceRub = serverShiftSnapshot?.startingBalanceRub ?? 0;
 
 	const handleOpenShift = useCallback(async () => {
 		if (propsOnOpenShift) {
@@ -207,7 +278,8 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		setIsShiftOpen(false);
 		safeLocalStorageSetItem("dente_cash_shift_open", "false");
 		setManualCashDeltaRub(0);
-		setServerCashBoxBalanceRub(0);
+		setServerCashBoxBalanceRub(null);
+		setServerShiftSnapshot(null);
 		safeLocalStorageRemoveItem("dente_cash_shift_delta");
 		safeLocalStorageRemoveItem("dente_cash_shift_delta_kop");
 		void loadDashboard?.();
@@ -330,10 +402,14 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		handleCloseShift,
 		handleOpenShift,
 		handlePrintXReport,
+		insuranceTotalRub,
 		isLocalBalanceFallback,
 		isServerBalanceOffline: isLocalBalanceFallback,
 		isShiftOpen,
+		netRevenueRub,
+		returnTotalRub,
 		sbpSumRub,
 		shiftNumber,
+		startingBalanceRub,
 	};
 }

@@ -228,28 +228,72 @@ describe("TOMORROW REMINDERS DISPATCHER & MULTI-CHANNEL WATERFALL SUITE", () => 
 
 	// ── 5. BATCH DISPATCHER EXECUTION & REPORTING ────────────────────────────
 
-	test("5.1. dispatchBatchReminders processes reminders respecting quiet hours and contacts", async () => {
+	test("5.1. dispatchBatchReminders calls /api/schedule/tomorrow-reminders/dispatch with Idempotency-Key and respects quiet hours and contacts", async () => {
 		const nightTime = new Date("2026-08-26T23:00:00+03:00");
 		const summary = compileTomorrowReminders(mockDashboard, mockTomorrowIso, {
 			now: nightTime,
 		});
 
-		// During night time without override: normal appointments skipped, CITO dispatched
-		const resultNight = await dispatchBatchReminders(summary.reminders, {
-			allowQuietHoursOverride: false,
-		});
+		const originalFetch = globalThis.fetch;
+		const calls: Array<{ url: string; headers: Record<string, string> }> = [];
+		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : String(input);
+			const headers = (init?.headers ?? {}) as Record<string, string>;
+			calls.push({ url, headers });
+			return new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						dispatched: 10,
+					},
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		}) as typeof fetch;
 
-		assert.strictEqual(resultNight.total, 4);
-		assert.strictEqual(resultNight.skippedNoContact, 1); // Patient 3 has no phone
-		assert.strictEqual(resultNight.skippedQuietHours, 2); // Patient 1 & 2 skipped
-		assert.strictEqual(resultNight.dispatched, 1); // Patient 4 (CITO) dispatched
+		try {
+			// During night time without override: normal appointments skipped, CITO dispatched
+			const resultNight = await dispatchBatchReminders(summary.reminders, {
+				allowQuietHoursOverride: false,
+			});
 
-		// With override enabled
-		const resultOverride = await dispatchBatchReminders(summary.reminders, {
-			allowQuietHoursOverride: true,
-		});
-		assert.strictEqual(resultOverride.dispatched, 3);
-		assert.strictEqual(resultOverride.skippedNoContact, 1);
+			assert.strictEqual(resultNight.total, 4);
+			assert.strictEqual(resultNight.skippedNoContact, 1); // Patient 3 has no phone
+			assert.strictEqual(resultNight.skippedQuietHours, 2); // Patient 1 & 2 skipped
+			assert.strictEqual(resultNight.dispatched, 1); // Patient 4 (CITO) dispatched
+			assert.strictEqual(calls[0]?.url, "/api/schedule/tomorrow-reminders/dispatch");
+			assert.ok(Boolean(calls[0]?.headers["Idempotency-Key"]));
+
+			// With override enabled
+			const resultOverride = await dispatchBatchReminders(summary.reminders, {
+				allowQuietHoursOverride: true,
+			});
+			assert.strictEqual(resultOverride.dispatched, 3);
+			assert.strictEqual(resultOverride.skippedNoContact, 1);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
+	test("5.2. dispatchBatchReminders never counts failed/non-OK responses as dispatched", async () => {
+		const summary = compileTomorrowReminders(mockDashboard, mockTomorrowIso);
+		const originalFetch = globalThis.fetch;
+		globalThis.fetch = (async () => {
+			return new Response(
+				JSON.stringify({ message: "Сервис временно недоступен" }),
+				{ status: 500, headers: { "Content-Type": "application/json" } },
+			);
+		}) as typeof fetch;
+
+		try {
+			const result = await dispatchBatchReminders(summary.reminders, {
+				allowQuietHoursOverride: true,
+			});
+			assert.strictEqual(result.dispatched, 0);
+			assert.ok(result.results.some((r) => r.status === "error" && r.error?.includes("Сервис временно недоступен")));
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 
 	// ── 6. CLIPBOARD BUFFER FORMATTING ────────────────────────────────────────

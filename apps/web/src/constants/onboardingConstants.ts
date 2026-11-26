@@ -197,6 +197,13 @@ export const roleFocusOrder: StaffRole[] = [
 	"doctor",
 	"administrator",
 	"assistant",
+	"curator",
+	"accountant",
+	"senior_nurse",
+	"senior_admin",
+	"registrar",
+	"head_doctor",
 	"manager",
 	"owner",
+	"admin",
 ];

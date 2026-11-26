@@ -11,6 +11,7 @@
  * (Мандат 8ap: Реляционная правда из PostgreSQL 18, zero fake simulation).
  */
 
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { formatCurrency, formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
@@ -241,7 +242,7 @@ export async function fetchClinicAnalyticsSSOT(
 
 		const requestInit: RequestInit = {
 			method: "GET",
-			headers: { Accept: "application/json" },
+			headers: denteClinicalReadHeaders({ Accept: "application/json" }),
 			credentials: "same-origin",
 		};
 		if (signal) {
@@ -370,7 +371,14 @@ export async function fetchClinicAnalyticsSSOT(
 			};
 		});
 
-		const repeatPct = Number(kpis.repeatPatientsPercent || 0);
+		const repeatPct =
+			typeof kpis.repeatPatientsPercent === "number"
+				? Math.round(Number(kpis.repeatPatientsPercent))
+				: Number(kpis.totalPatientsCount ?? 0) > 0 && typeof kpis.repeatPatientsCount === "number"
+					? Math.round((Number(kpis.repeatPatientsCount) / Number(kpis.totalPatientsCount)) * 100)
+					: typeof kpis.primaryPatientsPercent === "number" && Number(kpis.totalPatientsCount ?? 0) > 0
+						? Math.max(0, Math.min(100, Math.round(100 - Number(kpis.primaryPatientsPercent))))
+						: 0;
 		const isEmpty = Boolean(payload.isEmpty) || (totalRevenueKop === 0 && totalVisits === 0);
 
 		const kpiRecallCohorts = (kpis as { recallCohorts?: PatientRecallCohort[] }).recallCohorts;

@@ -98,7 +98,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps) {
 				);
 			})}
 			<div className="schedule-widgets-container mt-4">
-				<UrgentScheduleRequestsWidget />
+				<UrgentScheduleRequestsWidget onBookUrgentRequest={props.onBookUrgentRequest} />
 			</div>
 		</div>
 	);

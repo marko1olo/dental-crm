@@ -12,10 +12,35 @@ import {
 	UploadCloud,
 	FileSpreadsheet,
 } from "lucide-react";
-import { generateUuidV7 } from "@dental/shared";
-import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
-import type { FinanceToolbarMenuProps } from "./FinanceToolbarMenu.js";
-import { showToast } from "../../GlobalToast.js";
+import { generateUuidV7, type StaffRole } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { useAppStore } from "../../../store/appStore";
+import type { FinanceToolbarMenuProps } from "./FinanceToolbarMenu";
+import { showToast } from "../../GlobalToast";
+
+const PNL_ALLOWED_ROLES: ReadonlySet<StaffRole> = new Set([
+	"owner",
+	"admin",
+	"manager",
+	"head_doctor",
+	"accountant",
+]);
+
+const ACCOUNTING_ALLOWED_ROLES: ReadonlySet<StaffRole> = new Set([
+	"owner",
+	"admin",
+	"manager",
+	"accountant",
+]);
+
+const TIMESHEET_ALLOWED_ROLES: ReadonlySet<StaffRole> = new Set([
+	"owner",
+	"admin",
+	"manager",
+	"head_doctor",
+	"accountant",
+	"senior_admin",
+]);
 
 function MenuItemBtn({ onClick, icon, label, testId, isDanger }: {
 	readonly onClick: () => void;
@@ -42,6 +67,11 @@ function MenuItemBtn({ onClick, icon, label, testId, isDanger }: {
 export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.Element {
 	const wrap = (fn: () => void) => () => { p.onCloseFinanceOptions(); fn(); };
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const effectiveRole = p.userRole ?? selectedWorkspaceRole;
+	const canViewPnl = PNL_ALLOWED_ROLES.has(effectiveRole);
+	const canManageAccounting = ACCOUNTING_ALLOWED_ROLES.has(effectiveRole);
+	const canViewTimesheet = TIMESHEET_ALLOWED_ROLES.has(effectiveRole);
 
 	const handleUploadBankStatementFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -95,8 +125,10 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 					isDanger
 				/>
 			)}
-			<MenuItemBtn onClick={wrap(p.onOpenPnl)} icon={<TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />} label="Управленческий P&L" />
-			{p.onOpenAccountingExport && (
+			{canViewPnl && (
+				<MenuItemBtn onClick={wrap(p.onOpenPnl)} icon={<TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />} label="Управленческий P&L" />
+			)}
+			{canManageAccounting && p.onOpenAccountingExport && (
 				<MenuItemBtn
 					onClick={wrap(p.onOpenAccountingExport)}
 					icon={<FileSpreadsheet size={14} className="shrink-0 text-orange-600 dark:text-orange-400" />}
@@ -104,21 +136,23 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 					testId="menuitem-accounting-export"
 				/>
 			)}
-			<MenuItemBtn
-				onClick={() => {
-					p.onCloseFinanceOptions();
-					fileInputRef.current?.click();
-				}}
-				icon={<UploadCloud size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />}
-				label="Выписка 1С (Загрузка)"
-				testId="menuitem-upload-bank-statement"
-			/>
+			{canManageAccounting && (
+				<MenuItemBtn
+					onClick={() => {
+						p.onCloseFinanceOptions();
+						fileInputRef.current?.click();
+					}}
+					icon={<UploadCloud size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />}
+					label="Выписка 1С (Загрузка)"
+					testId="menuitem-upload-bank-statement"
+				/>
+			)}
 			<MenuItemBtn onClick={wrap(p.onGoToDocuments)} icon={<FileText size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />} label="Документы" />
 			<MenuItemBtn onClick={wrap(() => p.onOpenBillingAct?.())} icon={<FileCheck size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />} label="Акт выполненных работ и гарантии" testId="btn-finance-open-billing-act" />
 			{p.onOpenTaxCertificate && (
 				<MenuItemBtn onClick={wrap(p.onOpenTaxCertificate)} icon={<FileText size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />} label="Справка для налогового вычета" testId="btn-finance-open-tax-cert" />
 			)}
-			{p.onOpenT13Timesheet && (
+			{canViewTimesheet && p.onOpenT13Timesheet && (
 				<MenuItemBtn onClick={wrap(p.onOpenT13Timesheet)} icon={<Calendar size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />} label="Табель рабочего времени" testId="btn-finance-open-timesheet-t13" />
 			)}
 			<MenuItemBtn onClick={wrap(p.onOpenCashbox)} icon={<Banknote size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />} label="Касса и оплата" testId="btn-finance-open-cashbox" />

@@ -10,6 +10,8 @@ import { printDoctorPayslip, buildDoctorPayrollCalculation, EMPTY_DOCTOR_PAYROLL
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { DoctorPayrollTabPanel } from "./DoctorPayrollTabPanel";
+import { AssistantPayrollTable } from "../analytics/AssistantPayrollTable";
+import type { AssistantPayrollItem } from "../analytics/doctorPayrollExportUtils";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./styles/doctorPayrollStudio.css";
 
@@ -52,6 +54,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [apiClosedPeriods, setApiClosedPeriods] = useState<ClosedPayrollPeriodItem[] | null>(null);
 	const [apiSummary, setApiSummary] = useState<DoctorPayrollSummary | null>(null);
 	const [apiDoctorSummaries, setApiDoctorSummaries] = useState<Record<string, Partial<DoctorPayrollSummary>>>({});
+	const [assistantRows, setAssistantRows] = useState<AssistantPayrollItem[]>([]);
 	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
@@ -144,8 +147,21 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				setApiSummary(data.summary);
 			}
 		}).catch(() => {});
+		const reportPeriod = periodPreset === "shift" ? "day" : "month";
+		void fetch(`/api/reports/assistant-payroll?period=${encodeURIComponent(reportPeriod)}`, {
+			headers: getDenteAuthHeaders(),
+		})
+			.then((r) => (r.ok ? r.json() : null))
+			.then((raw) => {
+				if (cancelled || !raw) return;
+				const payload = raw && typeof raw === "object" && "data" in raw ? (raw.data ?? raw) : raw;
+				if (payload && typeof payload === "object" && Array.isArray((payload as { rows?: unknown }).rows)) {
+					setAssistantRows((payload as { rows: AssistantPayrollItem[] }).rows);
+				}
+			})
+			.catch(() => {});
 		return () => { cancelled = true; };
-	}, [isDemo, isOpen, periodDates, selectedDoctor, activeTabCustomPercent]);
+	}, [isDemo, isOpen, periodDates, periodPreset, selectedDoctor, activeTabCustomPercent]);
 
 	const effectiveDoctorSummary: DoctorPayrollSummary = useMemo(() => {
 		if (activeTabDoctorSummary && selectedDoctor && activeTabDoctorSummary.doctorId === selectedDoctor.id) {
@@ -190,9 +206,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	}), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo]);
 
 	const clinicTotals = useMemo(() => allDoctorsSummaries.reduce((acc, item) => ({
-		gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
-		netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
-	}), { gross: 0, lab: 0, netBase: 0, payout: 0 }), [allDoctorsSummaries]);
+		gross: acc.gross + item.summary.totalGrossKopecks,
+		lab: acc.lab + item.summary.totalLabCostKopecks,
+		materials: acc.materials + item.summary.totalMaterialCostKopecks,
+		netBase: acc.netBase + item.summary.totalNetBaseKopecks,
+		accrued: acc.accrued + item.summary.doctorAccruedKopecks,
+		ndfl: acc.ndfl + item.summary.ndfl13TaxKopecks,
+		payout: acc.payout + item.summary.payoutKopecks,
+	}), { gross: 0, lab: 0, materials: 0, netBase: 0, accrued: 0, ndfl: 0, payout: 0 }), [allDoctorsSummaries]);
 	const rub = (kop: number) => `${kopecksToRubles(kop).toLocaleString("ru-RU")} ₽`;
 	const calcCompat = useMemo(() => buildDoctorPayrollCalculation(effectiveDoctorSummary, selectedDoctor, periodDates, activeTabCustomPercent), [effectiveDoctorSummary, selectedDoctor, periodDates, activeTabCustomPercent]);
 
@@ -208,8 +229,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				await closeSettlementPeriodApi({
 					doctorId: "all", periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
 					payoutModel: "percentage", chairRentalRub: 0, advanceRub: 0, grossRevenueKop: clinicTotals.gross,
-					labCostKop: clinicTotals.lab, materialCostKop: 0, netBaseKop: clinicTotals.netBase, categoryPercent: 0,
-					totalAccruedKop: clinicTotals.payout, ndflKop: 0, netPayoutKop: clinicTotals.payout, markPaid: true,
+					labCostKop: clinicTotals.lab, materialCostKop: clinicTotals.materials, netBaseKop: clinicTotals.netBase, categoryPercent: 0,
+					totalAccruedKop: clinicTotals.accrued, ndflKop: clinicTotals.ndfl, netPayoutKop: clinicTotals.payout, markPaid: true,
 				});
 				setPayoutStatus("paid_rko"); setFeedbackMsg("Ведомости клиники утверждены для всех врачей, выданы РКО");
 			} else {
@@ -293,25 +314,30 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 							<div className="payroll-studio-kpi-grid">
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка клиники (касса)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.gross)}</span></div>
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Затраты на ЗТЛ</span><span className="payroll-studio-kpi-value text-[var(--danger)]">− {rub(clinicTotals.lab)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Материалы</span><span className="payroll-studio-kpi-value text-[var(--danger)]">− {rub(clinicTotals.materials)}</span></div>
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Чистая база (Net Base)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.netBase)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">НДФЛ (13%)</span><span className="payroll-studio-kpi-value text-[var(--danger)]">− {rub(clinicTotals.ndfl)}</span></div>
 								<div className="payroll-studio-kpi-card bg-[var(--primary)]/10 border-[var(--primary)]/30"><span className="payroll-studio-kpi-label text-[var(--primary)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--primary)]">{rub(clinicTotals.payout)}</span></div>
 							</div>
 
 							<div className="hidden sm:block payroll-studio-table-container">
 								<table className="payroll-studio-table">
 									<thead>
-										<tr><th>Врач-специалист</th><th>Специальность</th><th className="text-right">Выручка кассы</th><th className="text-right">ЗТЛ</th><th className="text-right">Чистая база</th><th className="text-right">Ставка</th><th className="text-right">К выплате</th><th className="text-center">Действие</th></tr>
+										<tr><th>Врач-специалист</th><th>Специальность</th><th className="text-right">Выручка кассы</th><th className="text-right">ЗТЛ</th><th className="text-right">Материалы</th><th className="text-right">Чистая база</th><th className="text-right">Ставка</th><th className="text-right">НДФЛ</th><th className="text-right">К выплате</th><th className="text-center">Действие</th></tr>
 									</thead>
 									<tbody>
 										{allDoctorsSummaries.length === 0 || effectiveOrders.length === 0 ? (
-											<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
+											<tr><td colSpan={10} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
 										) : (
 											allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
 												<tr key={doctor.id} className="hover:bg-[var(--paper-soft)]/50">
 													<td className="font-semibold text-[var(--ink)]"><div>{doctor.name}</div><div className="text-[10px] text-[var(--muted)]">{doctor.taxRegime === "self_employed" ? "Самозанятый (НПД)" : "Трудовой договор"}</div></td>
 													<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
-													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td><td className="text-right text-[var(--danger)]">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
+													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td>
+													<td className="text-right text-[var(--danger)]">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
+													<td className="text-right text-[var(--danger)]">{docSummary.totalMaterialCostKopecks > 0 ? `− ${rub(docSummary.totalMaterialCostKopecks)}` : "—"}</td>
 													<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td><td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
+													<td className="text-right text-[var(--danger)]">{docSummary.ndfl13TaxKopecks > 0 ? `− ${rub(docSummary.ndfl13TaxKopecks)}` : "—"}</td>
 													<td className="text-right font-bold text-[var(--primary)]">{rub(docSummary.payoutKopecks)}</td>
 													<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
 												</tr>
@@ -328,11 +354,18 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
 										<div key={doctor.id} className="payroll-studio-mobile-card">
 											<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div><div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div></div><span className="font-bold text-sm text-[var(--primary)]">{rub(docSummary.payoutKopecks)}</span></div>
-											<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]"><span>Выручка: {rub(docSummary.totalGrossKopecks)}</span><span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button></div>
+											<div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]"><span>Выручка: {rub(docSummary.totalGrossKopecks)}</span><span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span><span>Мат.: −{rub(docSummary.totalMaterialCostKopecks)}</span><span>НДФЛ: −{rub(docSummary.ndfl13TaxKopecks)}</span><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button></div>
 										</div>
 									))
 								)}
 							</div>
+
+							{assistantRows.length > 0 && (
+								<div className="space-y-2 pt-2 border-t border-[var(--line)]">
+									<h3 className="text-xs font-semibold text-[var(--ink)]">Ведомость ассистентов за период</h3>
+									<AssistantPayrollTable assistantRows={assistantRows} loading={false} />
+								</div>
+							)}
 						</div>
 					)}
 

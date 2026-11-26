@@ -3,6 +3,7 @@ import type {
 	AppointmentReadiness,
 	Dashboard,
 	ScheduleSuggestion,
+	UrgentScheduleRequest,
 } from "@dental/shared";
 import type { AppointmentScheduleDraft } from "../../../utils/draftDefaults";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
@@ -52,6 +53,7 @@ export interface ScheduleTimelineProps {
 	setScheduleDateFilter?: ((date: string) => void) | undefined;
 	todayScheduleDate?: (() => string) | undefined;
 	onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
+	onBookUrgentRequest?: ((request: UrgentScheduleRequest) => void) | undefined;
 }
 
 export interface TimelineDayGroupProps {

@@ -4,8 +4,31 @@
  */
 
 import React, { useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { UserCheck, Calendar, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { useAppStore } from "../../../store/appStore";
+
+const LEGACY_STAGE_TO_PIPELINE: Readonly<Record<string, string>> = {
+	consultation: "requires_budget",
+	decision_making: "awaiting_decision",
+	tier_selected: "no_appointment",
+	in_treatment: "in_progress_abandoned",
+};
+
+const CANONICAL_PIPELINE_STAGES = new Set([
+	"requires_budget",
+	"awaiting_decision",
+	"no_appointment",
+	"in_progress_abandoned",
+	"completed",
+]);
+
+function normalizePipelineStage(raw?: string | null): string {
+	if (!raw) return "awaiting_decision";
+	if (CANONICAL_PIPELINE_STAGES.has(raw)) return raw;
+	return LEGACY_STAGE_TO_PIPELINE[raw] ?? "awaiting_decision";
+}
 
 export interface StudioCuratorAssignmentTabProps {
 	readonly doctorFullName?: string | undefined;
@@ -40,7 +63,7 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 	}));
 
 	const [selectedCuratorId, setSelectedCuratorId] = useState<string>(initialCuratorId || "doctor_self");
-	const [funnelStage, setFunnelStage] = useState<string>(initialFunnelStage || "decision_making");
+	const [funnelStage, setFunnelStage] = useState<string>(() => normalizePipelineStage(initialFunnelStage));
 	const [nextContactDate, setNextContactDate] = useState<string>(
 		initialNextContactDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] || ""
 	);
@@ -62,9 +85,10 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 			try {
 				const res = await fetch(`/api/treatment-plans/${encodeURIComponent(planId)}`, {
 					method: "PATCH",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
-					},
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						curatorId: actualCuratorId,
 						curatorName,
@@ -162,10 +186,11 @@ export const StudioCuratorAssignmentTab: React.FC<StudioCuratorAssignmentTabProp
 						onChange={(e) => setFunnelStage(e.target.value)}
 						className="w-full h-10 px-3 text-xs font-medium bg-[var(--paper)] border border-[var(--line)] rounded-xl text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)] cursor-pointer"
 					>
-						<option value="consultation">Первичная консультация и диагностика</option>
-						<option value="decision_making">План презентован (пациент принимает решение)</option>
-						<option value="tier_selected">Тариф согласован (ожидание предоплаты / визита)</option>
-						<option value="in_treatment">Лечение начато (активная реализация этапов)</option>
+						<option value="requires_budget">Первичная консультация и диагностика</option>
+						<option value="awaiting_decision">План презентован (пациент принимает решение)</option>
+						<option value="no_appointment">Тариф согласован (нет записи на визит)</option>
+						<option value="in_progress_abandoned">Лечение начато (контроль продолжения)</option>
+						<option value="completed">План лечения завершён</option>
 					</select>
 				</div>
 

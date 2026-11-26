@@ -5,6 +5,8 @@ import { ExecutiveDashboard } from "../../components/analytics/ExecutiveDashboar
 import { LostPatientsPanel } from "../../components/analytics/LostPatientsPanel";
 import { MarketingAttributionDashboard } from "../../components/analytics/MarketingAttributionDashboard";
 import { FreedSlotsPanel } from "../../components/schedule/FreedSlotsPanel";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import type { AnalyticsSubDashboardsProps } from "./types";
 
 const MarketingDashboardView = lazy(() =>
@@ -83,7 +85,23 @@ export function AnalyticsSubDashboards({
 			)}
 
 			{analyticsSection === "curators" && (
-				<CuratorDashboard />
+				<CuratorDashboard
+					onOpenPatientCard={(patientId) => {
+						usePatientStore.getState().setSelectedPatientId(patientId);
+						useAppStore.getState().setCurrentView("patients");
+					}}
+					onOpenPatientPlan={(patientId, planId) => {
+						usePatientStore.getState().setSelectedPatientId(patientId);
+						useAppStore.getState().setCurrentView("pipeline");
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente:open-treatment-plan", {
+									detail: { patientId, planId },
+								}),
+							);
+						}
+					}}
+				/>
 			)}
 
 			{analyticsSection === "lost_patients" && (

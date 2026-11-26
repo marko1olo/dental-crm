@@ -24,6 +24,7 @@ export interface RefundServiceModalProps {
 	readonly patientId: string;
 	readonly patientName: string;
 	readonly patientPhone?: string | undefined;
+	readonly cashBoxId?: string | undefined;
 	readonly originalPaymentId?: string | undefined;
 	readonly paymentId?: string | undefined;
 	readonly originalReceiptNumber?: string | undefined;

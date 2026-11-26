@@ -17,16 +17,26 @@ import {
 	Calculator,
 	CreditCard,
 	DollarSign,
+	Download,
 	FileSpreadsheet,
 	Printer,
 	Repeat,
 	TrendingUp,
 	Users,
+	Wallet,
 } from "lucide-react";
 import { ChairOccupancyReport } from "./ChairOccupancyReport";
 import { DoctorPayrollReport } from "./DoctorPayrollReport";
 import { ExecutiveFinancialSummary } from "./ExecutiveFinancialSummary";
+import { ExecutiveReceivablesPanel } from "./ExecutiveReceivablesPanel";
 import { RebookingConversionPanel } from "./RebookingConversionPanel";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { showToast } from "../GlobalToast";
+import {
+	generateManagerReportsCsv,
+	type ManagerReportsDataBundle,
+	triggerCsvDownload,
+} from "./analyticsCsvUtils";
 import {
 	CANONICAL_PERIOD_OPTIONS,
 	type ExecutiveDashboardProps,
@@ -42,7 +52,7 @@ const ManagerialPnlDashboardModal = lazy(() =>
 export { CANONICAL_PERIOD_OPTIONS };
 export type { ExecutiveDashboardProps, MobileAnalyticsPeriod };
 
-export type ExecutiveActiveTab = "financial" | "payroll" | "chairs" | "rebooking";
+export type ExecutiveActiveTab = "financial" | "payroll" | "chairs" | "rebooking" | "receivables";
 
 export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => {
 	const {
@@ -57,7 +67,13 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 		if (initialTab) return initialTab;
 		if (typeof window !== "undefined") {
 			const savedTab = sessionStorage.getItem("dente_executive_tab") || localStorage.getItem("dente_executive_tab");
-			if (savedTab === "payroll" || savedTab === "chairs" || savedTab === "financial" || savedTab === "rebooking") {
+			if (
+				savedTab === "payroll" ||
+				savedTab === "chairs" ||
+				savedTab === "financial" ||
+				savedTab === "rebooking" ||
+				savedTab === "receivables"
+			) {
 				return savedTab;
 			}
 			const h = window.location.hash.toLowerCase();
@@ -78,6 +94,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			if (h.includes("rebooking") || s.includes("rebooking") || h.includes("retention") || s.includes("retention")) {
 				return "rebooking";
 			}
+			if (h.includes("receivables") || s.includes("receivables") || h.includes("debt")) {
+				return "receivables";
+			}
 		}
 		return "financial";
 	});
@@ -96,6 +115,56 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 		if (typeof window !== "undefined") window.print();
 	}, []);
 
+	const handleExportCsv = useCallback(async () => {
+		try {
+			const [sumRes, recRes, svcRes] = await Promise.all([
+				fetch(`/api/reports/summary?period=${encodeURIComponent(currentPeriod)}`, {
+					headers: denteClinicalReadHeaders(),
+				}),
+				fetch("/api/reports/receivables", {
+					headers: denteClinicalReadHeaders(),
+				}),
+				fetch(`/api/reports/services?period=${encodeURIComponent(currentPeriod)}`, {
+					headers: denteClinicalReadHeaders(),
+				}),
+			]);
+
+			const unwrapJson = async (res: Response): Promise<unknown> => {
+				if (!res.ok) return null;
+				const raw = (await res.json()) as unknown;
+				return raw && typeof raw === "object" && "data" in raw
+					? ((raw as { data?: unknown }).data ?? raw)
+					: raw;
+			};
+
+			const [sumPayload, recPayload, svcPayload] = await Promise.all([
+				unwrapJson(sumRes),
+				unwrapJson(recRes),
+				unwrapJson(svcRes),
+			]);
+
+			const sumObj = (sumPayload && typeof sumPayload === "object" ? sumPayload : null) as Record<string, unknown> | null;
+			const periodObj = (sumObj?.period ?? null) as { from?: string; to?: string } | null;
+			const todayIso = new Date().toISOString().slice(0, 10);
+			const fromIso = periodObj?.from ? String(periodObj.from).slice(0, 10) : todayIso;
+			const toIso = periodObj?.to ? String(periodObj.to).slice(0, 10) : todayIso;
+
+			const bundle: ManagerReportsDataBundle = {
+				period: { from: fromIso, to: toIso },
+				summary: (sumObj as ManagerReportsDataBundle["summary"]) ?? null,
+				services: (svcPayload as ManagerReportsDataBundle["services"]) ?? null,
+				receivables: (recPayload as ManagerReportsDataBundle["receivables"]) ?? null,
+				scheduleLoad: null,
+			};
+			const csv = generateManagerReportsCsv(bundle);
+			const filename = `DENTE_Analytics_${fromIso}_${toIso}.csv`;
+			triggerCsvDownload(csv, filename);
+			showToast(`Сводный отчёт (${filename}) выгружен в CSV`, "success");
+		} catch {
+			showToast("Не удалось выгрузить сводный отчёт в CSV", "error");
+		}
+	}, [currentPeriod]);
+
 	return (
 		<div
 			className="executive-dashboard-container space-y-4"
@@ -104,7 +173,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			{/* Верхний лаконичный селектор режима (32-36px) — ровно 1 строка */}
 			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 				<div
-					className="p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] grid grid-cols-4 sm:flex sm:flex-nowrap gap-1 w-full sm:w-auto"
+					className="p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] grid grid-cols-5 sm:flex sm:flex-nowrap gap-1 w-full sm:w-auto"
 					role="tablist"
 					aria-label="Вкладки финансового пульта"
 				>
@@ -175,9 +244,37 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						<span className="sm:hidden text-[11px]">Повтор</span>
 						<span className="hidden sm:inline">Повторная запись</span>
 					</button>
+
+					<button
+						type="button"
+						role="tab"
+						data-testid="executive-tab-receivables"
+						aria-selected={activeTab === "receivables"}
+						onClick={() => setActiveTab("receivables")}
+						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+							activeTab === "receivables"
+								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Wallet size={14} aria-hidden="true" className="shrink-0" />
+						<span className="sm:hidden text-[11px]">Долги</span>
+						<span className="hidden sm:inline">Дебиторка и авансы</span>
+					</button>
 				</div>
 
 				<div className="flex items-center justify-end gap-2 shrink-0">
+					<button
+						type="button"
+						onClick={() => void handleExportCsv()}
+						data-testid="executive-export-csv-btn"
+						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						title="Выгрузить сводный отчёт в CSV (Excel)"
+					>
+						<Download size={13} aria-hidden="true" />
+						<span className="hidden sm:inline">CSV</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handlePrint}
@@ -235,6 +332,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						onPeriodChange={handlePeriodSelect}
 						onPrint={handlePrint}
 					/>
+				)}
+
+				{activeTab === "receivables" && (
+					<ExecutiveReceivablesPanel period={currentPeriod} />
 				)}
 			</div>
 

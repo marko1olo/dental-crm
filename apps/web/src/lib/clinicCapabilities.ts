@@ -269,8 +269,33 @@ export function resolveClinicMode(value: unknown): ClinicMode | null {
 const ROLES_BY_MODE: Readonly<Record<ClinicMode, readonly StaffRole[]>> = {
 	solo_doctor: ["doctor", "owner"],
 	one_chair: ["doctor", "assistant", "administrator", "owner"],
-	small_clinic: ["doctor", "assistant", "administrator", "manager", "owner"],
-	network_clinic: ["doctor", "assistant", "administrator", "manager", "owner"],
+	small_clinic: [
+		"doctor",
+		"assistant",
+		"administrator",
+		"senior_admin",
+		"registrar",
+		"curator",
+		"accountant",
+		"senior_nurse",
+		"head_doctor",
+		"manager",
+		"owner",
+	],
+	network_clinic: [
+		"doctor",
+		"assistant",
+		"administrator",
+		"senior_admin",
+		"registrar",
+		"curator",
+		"accountant",
+		"senior_nurse",
+		"head_doctor",
+		"manager",
+		"owner",
+		"admin",
+	],
 };
 
 /**

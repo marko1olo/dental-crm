@@ -11,11 +11,10 @@ import { clientLogger } from "../../../services/logging/clientLogger";
 import {
 	printTaxCertificate,
 	buildTaxCertificateDocumentData,
-	downloadFnsTaxXmlFile,
-	downloadFnsNoMedoplXmlFile,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 } from "../taxCertificateEngine";
+import { parseFio } from "../ndflXml/fnsNdflXmlEngine";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 import { printHtmlViaIframe } from "../printHtmlViaIframe";
 import { generateA4PrintHtml } from "../studio/generateA4PrintHtml";
@@ -210,35 +209,166 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 		}
 	}, [options]);
 
-	const downloadXmlMutation = useCallback(() => {
-		try {
+	const requestServerTaxXml = useCallback(
+		async (filePrefix: "UT_SVOPLMEDUSL" | "NO_MEDOPL") => {
 			const certParams = buildCertParams();
 			if (!certParams.payments || certParams.payments.length === 0) {
 				options.showToast("Нет подтверждённых платежей за выбранный год", "error");
 				return;
 			}
-			downloadFnsTaxXmlFile(certParams);
-			options.showToast("XML-файл справки выгружен для ТКС", "success");
-		} catch (err) {
-			clientLogger.error("[useDocumentStudioSignAndIssue] Сбой генерации XML справки:", err);
-			options.showToast("Ошибка формирования XML справки", "error");
-		}
-	}, [buildCertParams, options]);
+			const birthDate = certParams.payer.birthDate?.trim();
+			if (!birthDate) {
+				options.showToast("Укажите дату рождения налогоплательщика для выгрузки XML ФНС", "error");
+				return;
+			}
+			const kinshipMap: Readonly<Record<string, "1" | "2" | "3" | "4" | "5">> = {
+				patient: "1",
+				self: "1",
+				spouse: "2",
+				parent: "3",
+				child: "4",
+				ward: "5",
+			};
+			const payerFio = parseFio(certParams.payer.fullName);
+			const patientFio = parseFio(certParams.patient.fullName);
+			const payerPassport = options.taxpayer?.passport || options.directPayerPassport || options.patient.passport;
+			const clinicInn = certParams.clinic.inn.replace(/\D/g, "");
+			const clinicOgrn = (certParams.clinic.ogrn || "").replace(/\D/g, "");
+			const receipts = certParams.payments
+				.filter((item) => {
+					const kop = typeof item.amountKopecks === "number" ? item.amountKopecks : Math.round((item.amountRub || 0) * 100);
+					return kop > 0;
+				})
+				.map((item, idx) => {
+					const kop = typeof item.amountKopecks === "number" ? item.amountKopecks : Math.round((item.amountRub || 0) * 100);
+					return {
+						id: item.id || `receipt-${idx + 1}`,
+						receiptNumber: item.receiptNumber || `ЧК-${idx + 1}`,
+						fiscalDocumentNumber: item.fiscalDocumentNumber || null,
+						receiptDate: item.dateIso || certParams.issueDateIso.slice(0, 10),
+						serviceName: item.serviceName || "Стоматологическая услуга",
+						deductionCode: (item.taxCode === "2" ? "2" : "1") as "1" | "2",
+						amountRub: kopecksToRubles(kop),
+						amountKopecks: kop,
+					};
+				});
+
+			const payload = {
+				documentNumber: certParams.certificateNumber,
+				documentDate: certParams.issueDateIso,
+				taxYear: certParams.taxYear,
+				taxInspectionCode: "7701",
+				certificateKind: "1" as const,
+				correctionNumber: 0,
+				filePrefix,
+				clinic: {
+					inn: clinicInn,
+					kpp: certParams.clinic.kpp || null,
+					ogrn: clinicOgrn,
+					name: certParams.clinic.legalName,
+					license: certParams.clinic.licenseNumber
+						? { number: certParams.clinic.licenseNumber, date: certParams.issueDateIso.slice(0, 10) }
+						: null,
+					directorName: certParams.clinic.chiefDoctorName || null,
+					phone: options.clinicRequisites.phone || null,
+				},
+				payer: {
+					fullName: {
+						family: payerFio.family || "Не указано",
+						given: payerFio.given || "Не указано",
+						patronymic: payerFio.patronymic ?? null,
+					},
+					inn: certParams.payer.inn || null,
+					birthDate,
+					...(payerPassport?.trim()
+						? { identityDocument: { docTypeCode: "21", seriesAndNumber: payerPassport.trim() } }
+						: {}),
+				},
+				patient: {
+					patientKinshipCode: kinshipMap[certParams.payer.relationship || "patient"] ?? "1",
+					fullName: {
+						family: patientFio.family || payerFio.family || "Не указано",
+						given: patientFio.given || payerFio.given || "Не указано",
+						patronymic: patientFio.patronymic ?? null,
+					},
+					inn: certParams.patient.inn || null,
+					birthDate: certParams.patient.birthDate || null,
+				},
+				expenses: {
+					code1AmountKopecks: Math.max(0, options.taxCode01Kopecks),
+					code2AmountKopecks: Math.max(0, options.taxCode02Kopecks),
+					totalAmountKopecks: Math.max(0, options.taxTotalAmountKopecks),
+				},
+				receipts,
+			};
+
+			try {
+				const res = await fetch("/api/documents/tax-deduction/xml", {
+					method: "POST",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify(payload),
+				});
+
+				if (!res.ok) {
+					const errJson = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+					const errMsg =
+						(typeof errJson?.message === "string" && errJson.message.trim()) ||
+						`Не удалось сформировать XML ФНС на сервере (HTTP ${res.status})`;
+					options.showToast(errMsg, "error");
+					return;
+				}
+
+				const rawJson = (await res.json()) as unknown;
+				const result =
+					rawJson && typeof rawJson === "object" && "data" in rawJson
+						? ((rawJson as { data?: unknown }).data ?? rawJson)
+						: rawJson;
+				const rec = (result && typeof result === "object" ? result : {}) as Record<string, unknown>;
+				const xmlContent = typeof rec.xmlContent === "string" ? rec.xmlContent : "";
+				const fileName =
+					typeof rec.fileName === "string" && rec.fileName.trim()
+						? rec.fileName
+						: `${filePrefix}_${options.taxYear}.xml`;
+
+				if (!xmlContent) {
+					options.showToast("Сервер вернул пустой XML-документ справки", "error");
+					return;
+				}
+
+				const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = fileName;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+
+				options.showToast(
+					filePrefix === "NO_MEDOPL"
+						? "Файл электронного реестра NO_MEDOPL (5.01) выгружен с сервера"
+						: "XML-файл справки выгружен с сервера для ТКС",
+					"success",
+				);
+			} catch (err) {
+				clientLogger.error("[useDocumentStudioSignAndIssue] Сбой серверной генерации XML справки:", err);
+				options.showToast("Ошибка обращения к серверу при формировании XML справки", "error");
+			}
+		},
+		[buildCertParams, options],
+	);
+
+	const downloadXmlMutation = useCallback(() => {
+		void requestServerTaxXml("UT_SVOPLMEDUSL");
+	}, [requestServerTaxXml]);
 
 	const downloadNoMedoplMutation = useCallback(() => {
-		try {
-			const certParams = buildCertParams();
-			if (!certParams.payments || certParams.payments.length === 0) {
-				options.showToast("Нет подтверждённых платежей за выбранный год", "error");
-				return;
-			}
-			downloadFnsNoMedoplXmlFile(certParams);
-			options.showToast("Файл электронного реестра NO_MEDOPL (5.01) выгружен", "success");
-		} catch (err) {
-			clientLogger.error("[useDocumentStudioSignAndIssue] Сбой генерации NO_MEDOPL:", err);
-			options.showToast("Ошибка формирования реестра NO_MEDOPL", "error");
-		}
-	}, [buildCertParams, options]);
+		void requestServerTaxXml("NO_MEDOPL");
+	}, [requestServerTaxXml]);
 
 	const paperConfirmMutation = useCallback(async () => {
 		options.setHasSigned(true);
