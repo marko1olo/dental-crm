@@ -65,13 +65,9 @@ export async function handleGenerateQr(
 	}
 
 	const outcome = await withTenantCtx(orgId, async (tx) => {
-		const rawBody =
-			request.body && typeof request.body === "object"
-				? (request.body as Record<string, unknown>)
-				: null;
 		const bodyPatientId =
-			typeof rawBody?.patientId === "string" && isValidUuid(rawBody.patientId)
-				? rawBody.patientId
+			parsed.data.patientId && isValidUuid(parsed.data.patientId)
+				? parsed.data.patientId
 				: null;
 		const validInvoiceId = rawInvoiceId;
 

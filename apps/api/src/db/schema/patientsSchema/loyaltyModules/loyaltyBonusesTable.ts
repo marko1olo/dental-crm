@@ -15,64 +15,7 @@ import { organizations, users } from "../../auth.js";
 import { payments } from "../../billing.js";
 import { patients } from "../patientCore.js";
 
-// ─── Loyalty Programs & Patient Bonus Balances ───────────────────────────────
-
-export const loyaltyPrograms = pgTable(
-	"loyalty_programs",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		name: text("name").notNull(),
-		tier: text("tier").notNull().default("bronze"),
-		minSpendThresholdRub: numeric("min_spend_threshold_rub", {
-			precision: 12,
-			scale: 2,
-		})
-			.notNull()
-			.default("0.00"),
-		minSpendThresholdKopecks: bigint("min_spend_threshold_kopecks", {
-			mode: "bigint",
-		})
-			.notNull()
-			.default(0n),
-		cashbackPercent: numeric("cashback_percent", {
-			precision: 5,
-			scale: 2,
-		})
-			.notNull()
-			.default("3.00"),
-		maxInvoiceCoveragePercent: numeric("max_invoice_coverage_percent", {
-			precision: 5,
-			scale: 2,
-		})
-			.notNull()
-			.default("30.00"),
-		pointsTtlDays: integer("points_ttl_days").default(180),
-		pointRateRub: numeric("point_rate_rub", {
-			precision: 12,
-			scale: 2,
-		})
-			.notNull()
-			.default("1.00"),
-		pointRateKopecks: bigint("point_rate_kopecks", {
-			mode: "bigint",
-		})
-			.notNull()
-			.default(100n),
-		isActive: boolean("is_active").notNull().default(true),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		orgIdx: index("loyalty_programs_org_idx").on(t.organizationId),
-	}),
-);
+// ─── Patient Bonus Balances ──────────────────────────────────────────────────
 
 export const patientBonusBalances = pgTable(
 	"patient_bonus_balances",
@@ -108,9 +51,7 @@ export const patientBonusBalances = pgTable(
 		})
 			.notNull()
 			.default("0.00"),
-		currentLoyaltyProgramId: uuid("current_loyalty_program_id").references(
-			() => loyaltyPrograms.id,
-		),
+		currentLoyaltyProgramId: uuid("current_loyalty_program_id"),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -175,9 +116,6 @@ export const bonusTransactions = pgTable(
 		),
 	}),
 );
-
-export type LoyaltyProgram = InferSelectModel<typeof loyaltyPrograms>;
-export type NewLoyaltyProgram = InferInsertModel<typeof loyaltyPrograms>;
 
 export type PatientBonusBalance = InferSelectModel<typeof patientBonusBalances>;
 export type NewPatientBonusBalance = InferInsertModel<typeof patientBonusBalances>;

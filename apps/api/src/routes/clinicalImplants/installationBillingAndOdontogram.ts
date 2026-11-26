@@ -1,6 +1,11 @@
 import { and, eq, notInArray } from "drizzle-orm";
-import { type createImplantInstallationSchema, rublesToKopecks, kopecksToRubles, parseKopecks, toExactKopecks } from "@dental/shared";
-import type { z } from "zod";
+import {
+	type ResolvedImplantInstallationInput,
+	rublesToKopecks,
+	kopecksToRubles,
+	parseKopecks,
+	toExactKopecks,
+} from "@dental/shared";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import {
 	invoiceItems,
@@ -11,7 +16,7 @@ import {
 	treatmentItems,
 } from "../../db/schema.js";
 
-type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
+type InstallationInput = ResolvedImplantInstallationInput;
 
 function resolveCatalogPriceKopecks(item: {
 	priceKopecks?: bigint | null;

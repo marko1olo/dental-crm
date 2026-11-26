@@ -10,7 +10,6 @@ const PHASE26_SANPIN_TABLES = [
 	"bactericidal_irradiator_logs",
 	"bonus_transactions",
 	"cash_shifts",
-	"drug_catalog",
 	"drug_interactions",
 	"egisz_audit_logs",
 	"egisz_outbox",
@@ -24,7 +23,6 @@ const PHASE26_SANPIN_TABLES = [
 	"inventory_transfer_items",
 	"lab_items",
 	"lab_order_events",
-	"loyalty_programs",
 	"mdlp_items",
 	"medical_waste_logs",
 	"patient_bonus_balances",
@@ -43,7 +41,7 @@ const PHASE26_SANPIN_TABLES = [
 	"patient_duplicate_decisions",
 ] as const;
 
-describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
+describe("RLS Phase 26 & SanPiN 35 Secondary Tables Tenant Isolation", () => {
 	let isDbReady = false;
 
 	before(async () => {
@@ -80,7 +78,7 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 		}
 	});
 
-	test("all 37 secondary tables have ROW LEVEL SECURITY and FORCE ROW LEVEL SECURITY enabled", async (ctx) => {
+	test("all 35 secondary tables have ROW LEVEL SECURITY and FORCE ROW LEVEL SECURITY enabled", async (ctx) => {
 		if (!isDbReady) return ctx.skip("database unavailable");
 
 		const result = await db.execute<{
@@ -104,8 +102,8 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 
 		assert.equal(
 			rows.length,
-			37,
-			`Expected all 37 tables in public schema, found ${rows.length}`,
+			35,
+			`Expected all 35 tables in public schema, found ${rows.length}`,
 		);
 
 		for (const tableName of PHASE26_SANPIN_TABLES) {
@@ -124,7 +122,7 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 		}
 	});
 
-	test("all 37 secondary tables have a valid tenant_isolation policy", async (ctx) => {
+	test("all 35 secondary tables have a valid tenant_isolation policy", async (ctx) => {
 		if (!isDbReady) return ctx.skip("database unavailable");
 
 		const result = await db.execute<{
@@ -154,8 +152,8 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 		}>;
 		assert.equal(
 			rows.length,
-			37,
-			`Expected 37 tenant_isolation policies, found ${rows.length}`,
+			35,
+			`Expected 35 tenant_isolation policies, found ${rows.length}`,
 		);
 
 		const policyMap = new Map(rows.map((r) => [r.tablename, r]));
@@ -197,7 +195,7 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 			const res2 = await client.query('SELECT * FROM "anesthesia_logs" LIMIT 1');
 			assert.equal(res2.rows.length, 0);
 
-			const res3 = await client.query('SELECT * FROM "drug_catalog" LIMIT 1');
+			const res3 = await client.query('SELECT * FROM "drug_interactions" LIMIT 1');
 			assert.equal(res3.rows.length, 0);
 
 			const res4 = await client.query('SELECT * FROM "bonus_transactions" LIMIT 1');
@@ -238,14 +236,14 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 			await client.query("SELECT set_config('app.current_tenant', $1, true)", [orgA]);
 
 			await client.query(
-				`INSERT INTO "drug_catalog" ("id", "organization_id", "trade_name_ru", "inn_latin", "inn_ru", "category", "dosage_form", "strength_concentration", "latin_signature_template", "default_sig_russian", "is_active")
-				 VALUES (gen_random_uuid(), $1, 'ТестЛекарство А', 'TestDrugA', 'ТестПрепаратА', 'antibiotic', 'tab', '500mg', 'D.t.d.', 'По 1 таб', true)`,
+				`INSERT INTO "drug_interactions" ("id", "organization_id", "drug_a_inn_latin", "drug_b_inn_latin", "severity", "interaction_type", "clinical_effect_ru", "mechanism_description", "management_recommendation", "evidence_level", "is_active")
+				 VALUES (gen_random_uuid(), $1, 'TestDrugA', 'TestDrugB', 'warning', 'pharmacokinetic', 'Тестовый эффект', 'Тестовый механизм', 'Тестовая рекомендация', 'established', true)`,
 				[orgA],
 			);
 
 			// 2. Query under orgA: sees the row
 			const checkOrgA = await client.query(
-				'SELECT * FROM "drug_catalog" WHERE "inn_latin" = \'TestDrugA\'',
+				'SELECT * FROM "drug_interactions" WHERE "drug_a_inn_latin" = \'TestDrugA\'',
 			);
 			assert.equal(checkOrgA.rows.length, 1);
 			assert.equal(checkOrgA.rows[0].organization_id, orgA);
@@ -255,15 +253,15 @@ describe("RLS Phase 26 & SanPiN 37 Secondary Tables Tenant Isolation", () => {
 			await client.query("SELECT set_config('app.current_tenant', $1, true)", [orgB]);
 
 			const checkOrgB = await client.query(
-				'SELECT * FROM "drug_catalog" WHERE "inn_latin" = \'TestDrugA\'',
+				'SELECT * FROM "drug_interactions" WHERE "drug_a_inn_latin" = \'TestDrugA\'',
 			);
-			assert.equal(checkOrgB.rows.length, 0, "Tenant B must not see Tenant A drug catalog item");
+			assert.equal(checkOrgB.rows.length, 0, "Tenant B must not see Tenant A drug interaction item");
 
 			// 4. Verify backward-compatible app.current_tenant also sees orgA data
 			await client.query("SELECT set_config('app.current_organization_id', '', true)");
 			await client.query("SELECT set_config('app.current_tenant', $1, true)", [orgA]);
 			const checkTenantA = await client.query(
-				'SELECT * FROM "drug_catalog" WHERE "inn_latin" = \'TestDrugA\'',
+				'SELECT * FROM "drug_interactions" WHERE "drug_a_inn_latin" = \'TestDrugA\'',
 			);
 			assert.equal(checkTenantA.rows.length, 1);
 

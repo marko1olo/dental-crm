@@ -44,6 +44,13 @@ export async function handleDiaryLockPost(req: FastifyRequest, reply: FastifyRep
 	if (!orgId) {
 		return reply.code(403).send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SIGN_MESSAGE });
 	}
+	if (!identity.verified) {
+		return reply.code(401).send({
+			error: "UnverifiedOrganizationCannotMutate",
+			message:
+				"Заголовок x-organization-id не подтверждён подписанным токеном клиники.",
+		});
+	}
 
 	try {
 		const outcome = await withTenantCtx(orgId, async (tx) => {

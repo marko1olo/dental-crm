@@ -36,38 +36,6 @@ export const urgentScheduleRequests = pgTable(
 	}),
 );
 
-// #23 — аналитика::отчет_эффективность_подтверждения_приемов
-export const confirmationPerformanceReports = pgTable(
-	"confirmation_performance_reports",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		staffName: text("staff_name").notNull(),
-		totalCallsMade: integer("total_calls_made").default(0).notNull(),
-		confirmedAppointmentsCount: integer("confirmed_appointments_count")
-			.default(0)
-			.notNull(),
-		rescheduledCount: integer("rescheduled_count").default(0).notNull(),
-		conversionRatePercent: numeric("conversion_rate_percent", {
-			precision: 5,
-			scale: 2,
-		})
-			.default("0.00")
-			.notNull(),
-		reportPeriod: text("report_period").notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"confirmation_performance_reports_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
 // #48 — расписание::буфер_обмена_в_расписании_для_быстрого_переноса
 export const scheduleClipboardItems = pgTable(
 	"schedule_clipboard_items",

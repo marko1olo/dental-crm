@@ -33,6 +33,7 @@ import {
 	lockAndValidateRefundTargets,
 	resolveInvoiceTotalKopecks,
 } from "./refundLookupAndValidation.js";
+import { revertTreatmentItemsOnFullRefundTx } from "../../billingRoutes/invoiceBalanceReconciler.js";
 import type { CashRefundTxResult, ExecuteCashRefundParams } from "./types.js";
 
 export async function executeCashRefundTransaction(
@@ -535,6 +536,17 @@ export async function executeCashRefundTransaction(
 						eq(patientInvoices.organizationId, orgId),
 					),
 				);
+
+			if (netPaidKop <= 0n && totalRefundedKop > 0n) {
+				await revertTreatmentItemsOnFullRefundTx(tx, orgId, {
+					invoiceId: linkedInvoice.id,
+					visitId: linkedPayment?.visitId || linkedInvoice.visitId || null,
+				});
+			}
+		} else if (linkedPayment?.visitId) {
+			await revertTreatmentItemsOnFullRefundTx(tx, orgId, {
+				visitId: linkedPayment.visitId,
+			});
 		}
 
 		if (!operation || !updatedBox) {

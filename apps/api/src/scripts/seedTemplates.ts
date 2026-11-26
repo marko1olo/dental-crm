@@ -461,6 +461,29 @@ function normalizeSpecialty(val: string): (typeof dentalSpecialty.enumValues)[nu
 	return "therapist";
 }
 
+export function getBuiltInProtocolTemplatesReadOnly(organizationId: string) {
+	const nowIso = new Date().toISOString();
+	return BUILT_IN_TEMPLATES.map((template, idx) => {
+		const suffix = String(idx + 1).padStart(12, "0");
+		return {
+			id: `00000000-0000-4000-8000-${suffix}`,
+			organizationId,
+			title: template.title,
+			category: template.category || "Общий",
+			specialty: normalizeSpecialty(template.specialty),
+			prefilledAnamnesis: template.prefilledAnamnesis,
+			prefilledObjective: template.prefilledObjective,
+			prefilledTreatment: template.prefilledTreatment,
+			defaultIcd10: template.defaultIcd10,
+			defaultIcd10Label: template.defaultIcd10Label,
+			suggestedProcedureIds: [] as string[],
+			isBuiltIn: true,
+			createdAt: nowIso,
+			updatedAt: nowIso,
+		};
+	});
+}
+
 export async function ensureClinicalTemplatesSeeded(
 	organizationId: string,
 ): Promise<void> {

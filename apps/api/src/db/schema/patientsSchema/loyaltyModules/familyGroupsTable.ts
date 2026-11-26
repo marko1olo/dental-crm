@@ -67,31 +67,6 @@ export const familyGroups = pgTable(
 	}),
 );
 
-// family recommendation sources (family referral attribution)
-export const familyRecommendationSources = pgTable(
-	"family_recommendation_sources",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		familyGroupName: text("family_group_name").notNull(),
-		newMemberName: text("new_member_name").notNull(),
-		referrerMemberName: text("referrer_member_name").notNull(),
-		assignedMarketingSource: text("assigned_marketing_source")
-			.notNull()
-			.default("Рекомендация семьи"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"family_recommendation_sources_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
 export const patientRelationships = pgTable(
 	"patient_relationships",
 	{
@@ -145,9 +120,6 @@ export const patientRelationships = pgTable(
 
 export type FamilyGroup = InferSelectModel<typeof familyGroups>;
 export type NewFamilyGroup = InferInsertModel<typeof familyGroups>;
-
-export type FamilyRecommendationSource = InferSelectModel<typeof familyRecommendationSources>;
-export type NewFamilyRecommendationSource = InferInsertModel<typeof familyRecommendationSources>;
 
 export type PatientRelationship = InferSelectModel<typeof patientRelationships>;
 export type NewPatientRelationship = InferInsertModel<typeof patientRelationships>;

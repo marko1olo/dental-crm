@@ -1,12 +1,15 @@
 import { and, eq, ilike, or } from "drizzle-orm";
-import { type createImplantInstallationSchema, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import type { z } from "zod";
+import {
+	type ResolvedImplantInstallationInput,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "@dental/shared";
 import { inventoryItems } from "../../db/schema.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import { CANONICAL_BIOMATERIAL_SEEDS } from "./implantBiomaterialSeeds.js";
 
-type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
+type InstallationInput = ResolvedImplantInstallationInput;
 
 export interface DeductedMaterial {
 	name: string;

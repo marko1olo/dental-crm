@@ -26,7 +26,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { RAW_MONEY_MATH_RE } from "./check-staged-safety.mjs";
+import { codeOnly, NON_NULL_RE, RAW_MONEY_MATH_RE } from "./check-staged-safety.mjs";
+import { collectFiles as collectAllCodeFiles, isTestFile as isAstTestFile, scanTestSource } from "./lib/code-health-ast.mjs";
 import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 /* ------------------------------------------------------------------ *
@@ -95,12 +96,12 @@ export function parseCliArgs(argv = process.argv.slice(2)) {
 			options.seed = arg.split("=")[1] ?? null;
 		} else if (arg === "--list" || arg === "-l") {
 			const val = (argv[++i] || "").toLowerCase();
-			if (["doors", "fields", "ui", "all"].includes(val)) {
+			if (["doors", "fields", "ui", "tests", "all"].includes(val)) {
 				options.list = val;
 			}
 		} else if (arg.startsWith("--list=")) {
 			const val = arg.split("=")[1]?.toLowerCase();
-			if (["doors", "fields", "ui", "all"].includes(val)) {
+			if (["doors", "fields", "ui", "tests", "all"].includes(val)) {
 				options.list = val;
 			}
 		} else if (arg === "--strict") {
@@ -288,33 +289,61 @@ export function inspectLine(sample) {
 
 	const defects = [];
 
-	// Проверка 1: Запрещенный any (Мандат 8be)
-	// Игнорируем в комментариях // или /*
+	// Проверка 0: Подавление компилятора/линтера (живут именно в комментариях — проверяем ДО isComment!)
 	const trimmedCurrent = current.trim();
 	const isComment = trimmedCurrent.startsWith("//") || trimmedCurrent.startsWith("/*") || trimmedCurrent.startsWith("*");
+	if (/(?:\/\/|\/\*)\s*(@ts-ignore|@ts-expect-error|@ts-nocheck|biome-ignore|eslint-disable)/.test(current)) {
+		defects.push({
+			rule: "MANDATE_8be_SUPPRESSION_DIRECTIVE",
+			severity: "HIGH",
+			message: "Обнаружена директива подавления компилятора/линтера (@ts-ignore / @ts-expect-error / biome-ignore / eslint-disable).",
+		});
+	}
+
+	// Проверка 1: Запрещенный any / double cast / as never / z.any() (Мандат 8be)
 	if (!isComment) {
-		if (/\bas\s+any\b/i.test(current)) {
+		const currentCode = codeOnly(current);
+		const isTsFile = /\.(?:ts|tsx|mts|cts)$/.test(relPath);
+
+		if (/\bas\s*\(?\s*any\s*\)?\b/i.test(currentCode)) {
 			defects.push({
 				rule: "MANDATE_8be_AS_ANY",
 				severity: "HIGH",
 				message: "Обнаружен слепой каст 'as any'. Требуется строгий Zod/TypeScript контракт.",
 			});
-		} else if (/\bas\s+unknown\s+as\b/i.test(current)) {
+		} else if (/\bas\s+(?:unknown|any)\s+as\b/i.test(currentCode)) {
 			defects.push({
 				rule: "MANDATE_8be_DOUBLE_CAST",
 				severity: "HIGH",
 				message: "Обнаружен двойной каст 'as unknown as ...'. Нарушение честной типизации.",
 			});
-		} else if (/:\s*any\b/.test(current) && !/biome-ignore|eslint-disable/.test(current)) {
+		} else if (/\bas\s+never\b/.test(currentCode)) {
+			defects.push({
+				rule: "MANDATE_8be_AS_NEVER",
+				severity: "HIGH",
+				message: "Обнаружен слепой каст 'as never'. Требуется строгий тип без обмана компилятора.",
+			});
+		} else if (
+			isTsFile &&
+			(/(?::\s*any\b|\bany\[\]|<\s*any\s*>|\bRecord\s*<\s*[^,>]+\s*,\s*any\s*>|\|\s*any\b|\bany\s*\||=\s*any\b)/.test(currentCode))
+		) {
 			defects.push({
 				rule: "MANDATE_8be_EXPLICIT_ANY",
-				severity: "MEDIUM",
-				message: "Объявлен нетипизированный ': any'. Требуется строгий DTO или Discriminated Union.",
+				severity: "HIGH",
+				message: "Объявлен нетипизированный 'any' (: any, any[], Record<_, any>, | any). Требуется строгий DTO или Discriminated Union.",
 			});
 		}
 
-		// Проверка 2: Слепой Non-null assertion (!) (Мандат 8be)
-		if (/[a-zA-Z0-9_$]+!\.[a-zA-Z0-9_$]+/.test(current)) {
+		if (/\bz\.any\s*\(/.test(currentCode)) {
+			defects.push({
+				rule: "MANDATE_8be_ZOD_ANY",
+				severity: "HIGH",
+				message: "Обнаружен z.any() в Zod-валидации. Используй строгий контракт или z.unknown().",
+			});
+		}
+
+		// Проверка 2: Слепой Non-null assertion (!) в ЛЮБОЙ форме (x!.y, arr[0]!, fn()!, foo(a!)) (Мандат 8be)
+		if (isTsFile && NON_NULL_RE.test(currentCode)) {
 			defects.push({
 				rule: "MANDATE_8be_NON_NULL_ASSERTION",
 				severity: "HIGH",
@@ -323,8 +352,9 @@ export function inspectLine(sample) {
 		}
 
 		// Проверка 3: Опасное деление на 100 или скрытое умножение на 0.01 / .01 для денег (Мандат 8bm)
-		if (RAW_MONEY_MATH_RE.test(current)) {
-			const isDiv = /\/\s*100\b/.test(current);
+		const isCanonicalMoneyFile = /(?:^|\/)(?:money|kopecksArithmetic|billingMath)\.[cm]?[jt]sx?$/i.test(relPath);
+		if (!isCanonicalMoneyFile && RAW_MONEY_MATH_RE.test(currentCode)) {
+			const isDiv = /\/\s*100\b/.test(currentCode);
 			defects.push({
 				rule: isDiv ? "MANDATE_8bm_RAW_MONEY_DIVISION" : "MANDATE_8bm_RAW_MONEY_MULTIPLICATION",
 				severity: "HIGH",
@@ -361,29 +391,54 @@ export function inspectLine(sample) {
 			});
 		}
 
+		// Проверка 6.5: Тихое проглатывание промисов и тест-сниффинг в боевом коде
+		if (/\.catch\s*\(\s*(?:\([^)]*\)|[a-zA-Z_$][\w$]*)\s*=>\s*(?:\{\s*\}|undefined|null)\s*\)/.test(currentCode)) {
+			defects.push({
+				rule: "MANDATE_8zr_SWALLOWED_PROMISE",
+				severity: "HIGH",
+				message: "Тихое проглатывание rejected Promise (.catch(() => {} / null / undefined)).",
+			});
+		}
+		if (/\bwindow\.(alert|confirm|prompt)\s*\(/.test(currentCode)) {
+			defects.push({
+				rule: "MANDATE_8e_WINDOW_DIALOG",
+				severity: "HIGH",
+				message: "Блокирующее браузерное окно window.alert/confirm/prompt запрещено.",
+			});
+		}
+		if (/\bprocess\.env\.(?:VITEST|VITEST_WORKER_ID|JEST_WORKER_ID|NODE_TEST_CONTEXT)\b/.test(currentCode)) {
+			defects.push({
+				rule: "ANTI_GOODHART_TEST_ENV_SNIFF",
+				severity: "HIGH",
+				message: "Боевой код детектирует тест-раннер (VITEST / NODE_TEST_CONTEXT) и меняет поведение под тесты.",
+			});
+		}
+
 		// Проверка 7: Расширенная контекстная инспекция блока (±15 строк)
-		if (/\bas\s+any\b/i.test(joinedContext) && !/\bas\s+any\b/i.test(current)) {
+		const contextCode = contextLines.map((l) => codeOnly(l)).join("\n");
+		if (/\bas\s+any\b/i.test(contextCode) && !/\bas\s+any\b/i.test(currentCode)) {
 			defects.push({
 				rule: "MANDATE_8be_CONTEXT_AS_ANY",
 				severity: "HIGH",
 				message: "В блоке обнаружен слепой каст 'as any'. Требуется строгая типизация.",
 			});
 		}
-		if (RAW_MONEY_MATH_RE.test(joinedContext) && !RAW_MONEY_MATH_RE.test(current)) {
+		if (!isCanonicalMoneyFile && RAW_MONEY_MATH_RE.test(contextCode) && !RAW_MONEY_MATH_RE.test(currentCode)) {
 			defects.push({
 				rule: "MANDATE_8bm_CONTEXT_RAW_MONEY_DIVISION",
 				severity: "HIGH",
 				message: "В блоке обнаружен ручной float-расчёт денег (/ 100, * 0.01) в обход money.ts.",
 			});
 		}
-		if (relPath.includes("apps/api/") && /console\.(log|warn|error)\(/.test(joinedContext) && !relPath.includes("scripts/")) {
+		if (relPath.includes("apps/api/") && /console\.(log|warn|error)\(/.test(contextCode) && !relPath.includes("scripts/")) {
 			defects.push({
 				rule: "ROT_008_CONTEXT_CONSOLE_IN_API",
 				severity: "MEDIUM",
 				message: "В блоке API обнаружен неструктурированный console.log вместо Fastify logger.",
 			});
 		}
-		if (/catch\s*\([_a-zA-Z0-9]*\)\s*\{\s*\}/.test(joinedContext)) {
+		// Ловим И `catch {}` (ES2019 optional catch binding), И `catch (e) {}`!
+		if (/catch\s*(?:\([^)]*\))?\s*\{\s*\}/.test(contextCode)) {
 			defects.push({
 				rule: "MANDATE_8zr_EMPTY_CATCH",
 				severity: "HIGH",
@@ -415,24 +470,33 @@ export function inspectLine(sample) {
 export function sampleLines(files, count, prng, rootDir) {
 	if (!files || files.length === 0) return [];
 
-	// Для реалистичного взвешивания Тимаэрта (кубик взвешен объёмом):
-	// Считаем размер каждого файла в байтах.
-	const weightedFiles = [];
-	let totalWeight = 0;
+	// Сбалансированное взвешивание Тимаэрта: 50% равный вес файла + 50% вес по объёму (байты),
+	// чтобы мелкие и средние файлы не тонули в тени гигантских модулей.
+	const rawFiles = [];
+	let totalSize = 0;
 
 	for (const f of files) {
 		try {
 			const size = statSync(f).size;
 			if (size > 10) {
-				weightedFiles.push({ file: f, weight: size });
-				totalWeight += size;
+				rawFiles.push({ file: f, size });
+				totalSize += size;
 			}
 		} catch {
 			// игнорируем файлы с ошибкой чтения
 		}
 	}
 
-	if (weightedFiles.length === 0) return [];
+	if (rawFiles.length === 0) return [];
+
+	const avgSize = totalSize / rawFiles.length;
+	const weightedFiles = [];
+	let totalWeight = 0;
+	for (const rf of rawFiles) {
+		const weight = 0.5 * avgSize + 0.5 * rf.size;
+		weightedFiles.push({ file: rf.file, weight });
+		totalWeight += weight;
+	}
 
 	const samples = [];
 	const usedCoordinates = new Set();
@@ -512,27 +576,19 @@ export function sampleLines(files, count, prng, rootDir) {
  * Секция 7. Список 1: Двери и Мутации (Doors & Mutations)
  * ------------------------------------------------------------------ */
 
-// Routes that are intentionally public / webhook / infra — no orgId BOLA check needed
+// Routes that are genuinely public / non-tenant auth / portal / DICOMweb / stateless checks
 const PUBLIC_ROUTE_PATTERNS = [
-	/\/api\/auth\/(login|logout|refresh|password|forgot|reset|pin|setup)/i,
-	/\/api\/(public|portal)\//i,
-	/\/api\/sbp\//i,
-	/\/api\/sber(bank)?\//i,
-	/\/api\/telegram\//i,
-	/\/api\/egisz\/n3health\/eventlog\//i,
-	/\/api\/sync\/admin\//i,
-	/\/api\/migration\//i,
-	/\/api\/imaging\/dicom\/viewer-launch-manifest/i,
-	/\/api\/staff-chat\//i,
-	/\/api\/mdlp\//i,
-	/\/api\/billing\/sbp\//i,
-	// DICOM WebStorage (DICOMweb STOW-RS) — standard medical imaging protocol, no orgId tenant isolation
+	/\/api\/auth\/(login|logout|refresh|password|forgot|reset|pin|setup|register|invites\/accept|staff\/unlock|staff\/switch-role)\b/i,
+	/\/api\/(?:v1\/)?(public|portal)\//i,
+	/\/api\/(?:billing\/)?sbp\/verify-payload\b/i,
+	/\/api\/imaging\/dicom\/viewer-launch-manifest\b/i,
 	/\/api\/dicomweb\//i,
-	// Workspace/feature-flags routes — protected by getRequestIdentity() inside handlers
-	/\/api\/workspace\//i,
-	// Demo seeding — protected by isDemoOperationAllowed() guard, not a real tenant endpoint
 	/\/api\/(auth\/)?demo\//i,
 ];
+
+// External callbacks/webhooks must verify cryptographic signature or shared webhook secret
+const WEBHOOK_ROUTE_PATTERN =
+	/(\/webhook|\/callback|\/api\/communications\/receipts\/(?:smsru|smsc))(\b|\/|$)/i;
 
 function stripCodeComments(src) {
 	return src
@@ -545,12 +601,25 @@ function extractBalancedBlock(text, startIdx, openChar = "{", closeChar = "}", m
 	let inSingle = false;
 	let inDouble = false;
 	let inTemplate = false;
+	let inLineComment = false;
+	let inBlockComment = false;
 	let escaped = false;
 	let started = false;
 	const endLimit = Math.min(text.length, startIdx + maxChars);
 
 	for (let k = startIdx; k < endLimit; k++) {
 		const ch = text[k];
+		if (inLineComment) {
+			if (ch === "\n") inLineComment = false;
+			continue;
+		}
+		if (inBlockComment) {
+			if (ch === "*" && text[k + 1] === "/") {
+				inBlockComment = false;
+				k++;
+			}
+			continue;
+		}
 		if (escaped) {
 			escaped = false;
 			continue;
@@ -558,6 +627,18 @@ function extractBalancedBlock(text, startIdx, openChar = "{", closeChar = "}", m
 		if (ch === "\\" && (inSingle || inDouble || inTemplate)) {
 			escaped = true;
 			continue;
+		}
+		if (!inSingle && !inDouble && !inTemplate) {
+			if (ch === "/" && text[k + 1] === "/") {
+				inLineComment = true;
+				k++;
+				continue;
+			}
+			if (ch === "/" && text[k + 1] === "*") {
+				inBlockComment = true;
+				k++;
+				continue;
+			}
 		}
 		if (!inDouble && !inTemplate && ch === "'") {
 			inSingle = !inSingle;
@@ -620,37 +701,146 @@ function loadGlobalIdempotencyConfig(rootDir) {
 	return { hasGlobalPlugin, exemptPaths };
 }
 
+function computeLineStartOffsets(content) {
+	const offsets = [0];
+	for (let idx = 0; idx < content.length; idx++) {
+		if (content[idx] === "\n") {
+			offsets.push(idx + 1);
+		}
+	}
+	return offsets;
+}
+
+function resolveRelativeTsFile(fromFilePath, relImport) {
+	const dir = path.dirname(fromFilePath);
+	const baseImport = relImport.replace(/\.[cm]?js$/, "");
+	const candidates = [
+		path.resolve(dir, `${baseImport}.ts`),
+		path.resolve(dir, `${baseImport}.mts`),
+		path.resolve(dir, `${baseImport}/index.ts`),
+	];
+	const resolvedFile = candidates.find((c) => existsSync(c));
+	if (!resolvedFile) return null;
+	const normalizedResolved = resolvedFile.replace(/\\/g, "/");
+	if (
+		!normalizedResolved.includes("/apps/api/src/") &&
+		!normalizedResolved.includes("/routes/")
+	) {
+		return null;
+	}
+	return resolvedFile;
+}
+
+function readCachedFile(filePath, fileContentCache) {
+	let content = fileContentCache.get(filePath);
+	if (content === undefined) {
+		try {
+			content = readFileSync(filePath, "utf8");
+		} catch {
+			content = "";
+		}
+		fileContentCache.set(filePath, content);
+	}
+	return content;
+}
+
+function extractClassMethodBlock(classBody, methodName) {
+	const methodRe = new RegExp(
+		`(?:^|\\n)[ \\t]*(?:public|private|protected|static|async|\\s)*\\b${methodName}\\s*\\(`,
+	);
+	const m = methodRe.exec(classBody);
+	if (!m) return null;
+	const braceIdx = findFunctionBodyBrace(classBody, m.index + m[0].length - 1, false);
+	if (braceIdx === -1) return null;
+	return extractBalancedBlock(classBody, braceIdx);
+}
+
+function extractSymbolFromModule(filePath, symbolName, fileContentCache, depth = 0) {
+	if (depth > 3) return null;
+	const targetContent = readCachedFile(filePath, fileContentCache);
+	if (!targetContent) return null;
+
+	const declRe = new RegExp(
+		`(?:^|\\n)(?:export\\s+)?(?:(?:async\\s+)?function\\s+${symbolName}\\b|(?:abstract\\s+)?class\\s+${symbolName}\\b|(?:const|let)\\s+${symbolName}\\s*=)`,
+	);
+	const declMatch = declRe.exec(targetContent);
+	if (declMatch) {
+		if (/(?:^|\s)class\s+/.test(declMatch[0])) {
+			const classBraceIdx = targetContent.indexOf("{", declMatch.index);
+			if (classBraceIdx !== -1) {
+				return extractBalancedBlock(targetContent, classBraceIdx);
+			}
+		}
+		const isConstArrow = /(?:const|let)\s+/.test(declMatch[0]);
+		const eqOffset = isConstArrow ? targetContent.indexOf("=", declMatch.index) : -1;
+		if (isConstArrow && eqOffset !== -1) {
+			const aliasMatch = targetContent
+				.slice(eqOffset + 1, eqOffset + 120)
+				.match(/^\s*([a-zA-Z_$][\w$]*)\s*;/);
+			if (aliasMatch && aliasMatch[1] !== symbolName) {
+				const aliased = extractSymbolFromModule(
+					filePath,
+					aliasMatch[1],
+					fileContentCache,
+					depth + 1,
+				);
+				if (aliased) return aliased;
+			}
+		}
+		const braceIdx = findFunctionBodyBrace(
+			targetContent,
+			declMatch.index,
+			isConstArrow,
+		);
+		if (braceIdx !== -1) {
+			return extractBalancedBlock(targetContent, braceIdx);
+		}
+		const fallbackBrace = targetContent.indexOf("{", declMatch.index);
+		if (fallbackBrace !== -1) {
+			return extractBalancedBlock(targetContent, fallbackBrace);
+		}
+	}
+
+	const reExportRe = /export\s+\{([^}]+)\}\s+from\s+["'](\.[^"']+)["']/g;
+	for (const m of targetContent.matchAll(reExportRe)) {
+		const targetRel = m[2];
+		for (const rawSpec of m[1].split(",")) {
+			const cleanSpec = rawSpec.trim().replace(/^type\s+/, "");
+			if (!cleanSpec) continue;
+			const parts = cleanSpec.split(/\s+as\s+/);
+			const origName = parts[0].trim();
+			const exportedName = (parts[1] || parts[0]).trim();
+			if (exportedName === symbolName) {
+				const subFile = resolveRelativeTsFile(filePath, targetRel);
+				if (subFile) {
+					const found = extractSymbolFromModule(subFile, origName, fileContentCache, depth + 1);
+					if (found) return found;
+				}
+			}
+		}
+	}
+
+	const starRe = /export\s+\*\s+from\s+["'](\.[^"']+)["']/g;
+	for (const m of targetContent.matchAll(starRe)) {
+		const subFile = resolveRelativeTsFile(filePath, m[1]);
+		if (subFile) {
+			const found = extractSymbolFromModule(subFile, symbolName, fileContentCache, depth + 1);
+			if (found) return found;
+		}
+	}
+
+	return null;
+}
+
 function resolveRouteModuleImports(filePath, content, fileContentCache) {
 	const importedSymbols = new Map();
-	const dir = path.dirname(filePath);
 	const importRe = /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+["'](\.[^"']+)["']/g;
 
 	for (const match of content.matchAll(importRe)) {
 		const specifiers = match[1];
 		const relImport = match[2];
-		const baseImport = relImport.replace(/\.[cm]?js$/, "");
-		const candidates = [
-			path.resolve(dir, `${baseImport}.ts`),
-			path.resolve(dir, `${baseImport}.mts`),
-			path.resolve(dir, `${baseImport}/index.ts`),
-		];
-		const resolvedFile = candidates.find((c) => existsSync(c));
+		const resolvedFile = resolveRelativeTsFile(filePath, relImport);
 		if (!resolvedFile) continue;
-		const normalizedResolved = resolvedFile.replace(/\\/g, "/");
-		if (!normalizedResolved.includes("/apps/api/src/routes/") && !normalizedResolved.includes("/routes/")) {
-			continue;
-		}
-
-		let targetContent = fileContentCache.get(resolvedFile);
-		if (targetContent === undefined) {
-			try {
-				targetContent = readFileSync(resolvedFile, "utf8");
-			} catch {
-				targetContent = "";
-			}
-			fileContentCache.set(resolvedFile, targetContent);
-		}
-		if (!targetContent) continue;
 
 		for (const rawSpec of specifiers.split(",")) {
 			const cleanSpec = rawSpec.trim().replace(/^type\s+/, "");
@@ -660,15 +850,9 @@ function resolveRouteModuleImports(filePath, content, fileContentCache) {
 			const localName = (parts[1] || parts[0]).trim();
 			if (!origName || !localName) continue;
 
-			const declRe = new RegExp(
-				`(?:export\\s+)?(?:async\\s+function\\s+${origName}\\b|(?:const|let)\\s+${origName}\\s*=)`,
-			);
-			const declMatch = declRe.exec(targetContent);
-			if (!declMatch) continue;
-
-			const braceIdx = targetContent.indexOf("{", declMatch.index);
-			if (braceIdx !== -1) {
-				importedSymbols.set(localName, extractBalancedBlock(targetContent, braceIdx));
+			const extracted = extractSymbolFromModule(resolvedFile, origName, fileContentCache, 0);
+			if (extracted) {
+				importedSymbols.set(localName, extracted);
 			}
 		}
 	}
@@ -681,20 +865,101 @@ function findFunctionBodyBrace(content, searchFromIdx, isArrow) {
 	if (parenIdx === -1) return content.indexOf("{", searchFromIdx);
 	const paramBlock = extractBalancedBlock(content, parenIdx, "(", ")");
 	const afterParamsIdx = parenIdx + paramBlock.length;
-	if (isArrow) {
-		const arrowIdx = content.indexOf("=>", afterParamsIdx);
-		if (arrowIdx !== -1) {
-			return content.indexOf("{", arrowIdx + 2);
+
+	let angleDepth = 0;
+	let parenDepth = 0;
+	let braceDepth = 0;
+	let inSingle = false;
+	let inDouble = false;
+	let inTemplate = false;
+	let escaped = false;
+	let passedArrow = !isArrow;
+	const limit = Math.min(content.length, afterParamsIdx + 2000);
+
+	for (let k = afterParamsIdx; k < limit; k++) {
+		const ch = content[k];
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+		if (ch === "\\" && (inSingle || inDouble || inTemplate)) {
+			escaped = true;
+			continue;
+		}
+		if (!inDouble && !inTemplate && ch === "'") {
+			inSingle = !inSingle;
+			continue;
+		}
+		if (!inSingle && !inTemplate && ch === '"') {
+			inDouble = !inDouble;
+			continue;
+		}
+		if (!inSingle && !inDouble && ch === "`") {
+			inTemplate = !inTemplate;
+			continue;
+		}
+		if (inSingle || inDouble || inTemplate) continue;
+
+		if (
+			isArrow &&
+			!passedArrow &&
+			angleDepth === 0 &&
+			parenDepth === 0 &&
+			braceDepth === 0 &&
+			ch === "=" &&
+			content[k + 1] === ">"
+		) {
+			passedArrow = true;
+			k++;
+			continue;
+		}
+		if (ch === "<") {
+			angleDepth++;
+			continue;
+		}
+		if (ch === ">" && angleDepth > 0) {
+			angleDepth--;
+			continue;
+		}
+		if (ch === "(") {
+			parenDepth++;
+			continue;
+		}
+		if (ch === ")" && parenDepth > 0) {
+			parenDepth--;
+			continue;
+		}
+		if (passedArrow && angleDepth === 0 && parenDepth === 0 && braceDepth === 0 && ch === "{") {
+			const candidateBlock = extractBalancedBlock(content, k, "{", "}");
+			const afterCandidate = content.slice(k + candidateBlock.length).trimStart();
+			if (afterCandidate.startsWith("{")) {
+				k = k + candidateBlock.length - 1;
+				continue;
+			}
+			return k;
+		}
+		if (ch === "{") {
+			braceDepth++;
+			continue;
+		}
+		if (ch === "}" && braceDepth > 0) {
+			braceDepth--;
+			continue;
+		}
+		if (angleDepth === 0 && parenDepth === 0 && braceDepth === 0 && ch === ";") {
+			return -1;
 		}
 	}
-	return content.indexOf("{", afterParamsIdx);
+
+	return -1;
 }
 
 function extractLocalDeclarations(content) {
 	const localVars = new Map();
 	const localFuncs = new Map();
 
-	const varRe = /(?:^|\n)\s*(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=/g;
+	// Опции маршрутов (const fooOptions = { ... }) — только top-level (без отступов)
+	const varRe = /(?:^|\n)(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=/g;
 	for (const m of content.matchAll(varRe)) {
 		const name = m[1];
 		const eqOffset = m.index + m[0].length;
@@ -713,7 +978,21 @@ function extractLocalDeclarations(content) {
 		}
 	}
 
-	const fnRe = /(?:^|\n)\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
+	// Хэндлеры-стрелки и функции уровня модуля или тела registerRoutes (до 1 таба / 4 пробелов),
+	// исключая обычные переменные данных внутри обработчиков (const res = ...)
+	const nestedArrowFnRe = /(?:^|\n)[ \t]{1,4}(?:export\s+)?(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?(?:\(|[a-zA-Z_$][\w$]*\s*=>|async\s+function\b|function\b)/g;
+	for (const m of content.matchAll(nestedArrowFnRe)) {
+		const name = m[1];
+		const eqIdx = content.indexOf("=", m.index);
+		const afterEq = content.slice(eqIdx + 1).trimStart();
+		const isArrow = !/^(async\s+)?function\b/.test(afterEq);
+		const braceIdx = findFunctionBodyBrace(content, eqIdx + 1, isArrow);
+		if (braceIdx !== -1) {
+			localFuncs.set(name, extractBalancedBlock(content, braceIdx));
+		}
+	}
+
+	const fnRe = /(?:^|\n)[ \t]{0,4}(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
 	for (const m of content.matchAll(fnRe)) {
 		const name = m[1];
 		const braceIdx = findFunctionBodyBrace(content, m.index + m[0].length - 1, false);
@@ -744,29 +1023,40 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 
 		const relPath = path.relative(rootDir, file).replace(/\\/g, "/");
 		const lines = content.split(/\r?\n/);
-		const lineStartOffsets = [];
-		let offset = 0;
-		for (const ln of lines) {
-			lineStartOffsets.push(offset);
-			offset += ln.length + 1;
-		}
+		const lineStartOffsets = computeLineStartOffsets(content);
 
 		const { localVars, localFuncs } = extractLocalDeclarations(content);
 		const importedHandlers = resolveRouteModuleImports(file, content, fileContentCache);
+		const filePreHooks = [];
+		const preHookRe = /\b(?:fastify|app|router|server)\.addHook\s*\(\s*['"](?:preHandler|onRequest)['"]/g;
+		for (const hm of content.matchAll(preHookRe)) {
+			const openIdx = content.indexOf("(", hm.index);
+			if (openIdx !== -1) {
+				filePreHooks.push(stripCodeComments(extractBalancedBlock(content, openIdx, "(", ")")));
+			}
+		}
 
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
-			const isMethodCall = /\b(fastify|app|router)\.(post|put|patch|delete)\s*\(/i.test(line);
-			const isRouteConfig =
-				/\b(fastify|app|router)\.route\s*\(/i.test(line) &&
-				/method:\s*['"](POST|PUT|PATCH|DELETE)['"]/i.test(
-					lines.slice(i, Math.min(lines.length, i + 6)).join("\n"),
-				);
+			const methodMatch = line.match(
+				/\b(fastify|app|router|server)\.(get|post|put|patch|delete)\s*(?:<[^>]*>)?\s*\(/i,
+			);
+			const isRouteConfig = /\b(fastify|app|router|server)\.route\s*(?:<[^>]*>)?\s*\(/i.test(line);
+			let routeMethod = methodMatch ? methodMatch[2].toUpperCase() : null;
 
-			if (!isMethodCall && !isRouteConfig) continue;
+			if (!routeMethod && isRouteConfig) {
+				const routeCfgPreview = lines.slice(i, Math.min(lines.length, i + 8)).join("\n");
+				const cfgMethodMatch = routeCfgPreview.match(/method:\s*['"](GET|POST|PUT|PATCH|DELETE)['"]/i);
+				if (cfgMethodMatch) {
+					routeMethod = cfgMethodMatch[1].toUpperCase();
+				}
+			}
+
+			if (!routeMethod) continue;
 
 			const lineNum = i + 1;
-			const callStartOffset = lineStartOffsets[i] + line.search(/\b(fastify|app|router)\./i);
+			const callStartOffset =
+				lineStartOffsets[i] + line.search(/\b(fastify|app|router|server)\./i);
 			const openParenIdx = content.indexOf("(", callStartOffset);
 			const fullCallBlock =
 				openParenIdx !== -1
@@ -789,24 +1079,60 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 			}
 			for (const [impName, impBody] of importedHandlers.entries()) {
 				if (new RegExp(`\\b${impName}\\b`).test(codeOnlyCall)) {
-					extraBlocks.push(impBody);
+					const memberMatch = codeOnlyCall.match(new RegExp(`\\b${impName}\\.(\\w+)\\b`));
+					const memberBody = memberMatch ? extractClassMethodBlock(impBody, memberMatch[1]) : null;
+					extraBlocks.push(memberBody || impBody);
 				}
 			}
-			// Follow one hop from local wrapper handlers to imported handlers (e.g. inline wrapper -> handleX)
-			if (extraBlocks.length === 0 || codeOnlyCall.length < 400) {
-				const combinedSoFar = `${codeOnlyCall}\n${extraBlocks.join("\n")}`;
-				for (const [impName, impBody] of importedHandlers.entries()) {
-					if (new RegExp(`\\b${impName}\\b`).test(combinedSoFar)) {
-						extraBlocks.push(impBody);
+			// Follow one hop from local wrapper handlers to imported/local handlers
+			const combinedFirstHop = `${codeOnlyCall}\n${extraBlocks.join("\n")}`;
+			for (const [impName, impBody] of importedHandlers.entries()) {
+				if (new RegExp(`\\b${impName}\\b`).test(combinedFirstHop)) {
+					const memberMatch = combinedFirstHop.match(new RegExp(`\\b${impName}\\.(\\w+)\\b`));
+					const memberBody = memberMatch ? extractClassMethodBlock(impBody, memberMatch[1]) : null;
+					const resolvedBody = memberBody || impBody;
+					if (!extraBlocks.includes(resolvedBody)) {
+						extraBlocks.push(resolvedBody);
 					}
+				}
+			}
+			for (const [fnName, fnBody] of localFuncs.entries()) {
+				if (new RegExp(`\\b${fnName}\\b`).test(combinedFirstHop) && !extraBlocks.includes(fnBody)) {
+					extraBlocks.push(fnBody);
 				}
 			}
 
 			const codeOnlyBody = stripCodeComments(`${codeOnlyCall}\n${extraBlocks.join("\n")}`);
 
-			const routeUrlMatch = codeOnlyCall.match(/['"](\/api\/[^'"]+)['"]/);
+			const routeUrlMatch =
+				codeOnlyCall.match(/['"](\/api\/[^'"]+)['"]/) ||
+				codeOnlyCall.match(/['"](\/[^'"]+)['"]/);
 			const routeUrl = routeUrlMatch ? routeUrlMatch[1] : "";
 			const isPublicRoute = PUBLIC_ROUTE_PATTERNS.some((pat) => pat.test(routeUrl));
+			const isWebhookRoute = WEBHOOK_ROUTE_PATTERN.test(routeUrl);
+
+			if (routeMethod === "GET") {
+				// Исключаем обязательное 152-ФЗ логирование чтения PHI (auditLogs / medicalAudit*)
+				const getMutationMatches = (
+					codeOnlyBody.match(
+						/\b(?:db|tx|trx|executor|bypassTx)\.(insert|update|delete)\s*\(\s*(?!\w*audit\w*|systemBackgroundJobs\b)[^)]*/gi,
+					) || []
+				);
+				if (getMutationMatches.length > 0) {
+					doors.push({
+						relPath,
+						lineNum,
+						routeSignature: routeUrl ? `${line.trim()} (${routeUrl})` : line.trim(),
+						hasIdempotency: true,
+						hasTransaction: /db\.transaction|withTenantCtx|\bwithSavepoint\b|\btx\./i.test(codeOnlyBody),
+						usesKopecks: /kopecks|amountKopecks|priceKopecks/i.test(codeOnlyBody),
+						issues: ["GET-роут выполняет мутацию БД (insert/update/delete), нарушая read-only семантику GET"],
+						status: "DEFECT",
+					});
+				}
+				continue;
+			}
+
 			const isExemptPath =
 				Boolean(routeUrl) &&
 				exemptPaths.some(
@@ -818,8 +1144,19 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 					codeOnlyBody,
 				);
 			const hasManualIdempotencyInsert = /\.insert\s*\(\s*idempotencyKeys\s*\)/.test(codeOnlyBody);
+			const hasInlineWebhookVerifier =
+				/verify\w*Signature|verifyProdoctorovWebhookAuth|verifyClinicMedflexSignature|authenticatePbxWebhook|handleInstantAck|guardReceiptCall|receiptSecretMatches|hmac|timingSafeEqual|timingSafeSecretEqual|webhookSecret|telegramSecret|secretToken|x-telegram-bot-api-secret-token|\bsignature\b/i.test(
+					codeOnlyBody,
+				);
+			const hasPreHookWebhookVerifier =
+				isWebhookRoute &&
+				filePreHooks.some((h) =>
+					/verifyWebhookSecret|verify\w*Signature|timingSafeEqual|timingSafeSecretEqual|hmac/i.test(h),
+				);
+			const hasWebhookVerifier = hasInlineWebhookVerifier || hasPreHookWebhookVerifier;
 			const hasWebhookOrAuthGuard =
-				/verify\w*Signature|verifyProdoctorovWebhookAuth|hmac|webhookSecret|telegramSecret|deliveryId|updateId|requireResolved\w+|requireClinical\w+|requireTelegramControlPlaneAccess|getRequestIdentity|authenticate|guardReceiptCall/i.test(
+				hasWebhookVerifier ||
+				/deliveryId|updateId|requireResolved\w+|requireClinical\w+|requireTelegramControlPlaneAccess|getRequestIdentity|authenticate|guardReceiptCall/i.test(
 					codeOnlyBody,
 				);
 
@@ -847,22 +1184,83 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 			}
 			const mutationMatches =
 				codeOnlyBody.match(/\b(?:db|tx|trx|executor|bypassTx)\.(insert|update|delete)\s*\(/gi) || [];
-			// Exempt self-managed transactions and patterns where only 1 mutation fires per code-path
-			// (e.g. if/else upsert where exactly one branch runs — count ≤1 per path)
 			const isTxSelfManaged = /tenantTxSelfManaged|selfManagedTx/.test(codeOnlyBody);
-			// If the entire body contains the mutations only inside an if/else block (upsert pattern),
-			// the actual execution path always runs at most 1 mutation — not a real multi-mutation concern.
 			const isIfElseUpsert =
 				mutationMatches.length <= 2 &&
 				/if\s*\(existing\)|if\s*\(\s*existing\s*\)|if\s*\(\s*rows?\.length|if\s*\(\s*found/i.test(codeOnlyBody);
 			if (!hasTransaction && !isTxSelfManaged && !isIfElseUpsert && mutationMatches.length > 1) {
 				issues.push("Множественные мутации данных без единой атомарной db.transaction() (Мандат 8bo)");
 			}
-			const hasOrgContext =
-				/organizationId|organization_id|orgId|withTenantCtx|requireClinicalMutationContext|requireClinicalReadContext|requireResolvedOrganizationId|requireResolvedStaffOrAdminOrganizationId|requireTelegramControlPlaneAccess|verifyClinicMedflexSignature|verifyProdoctorovWebhookAuth|getRequestIdentity/i.test(
-					codeOnlyBody,
-				);
-			if (!isPublicRoute && !hasOrgContext) {
+			const usesTxVar = /\btx\.(select|insert|update|delete|execute)\s*\(/.test(codeOnlyBody);
+			const usesBareDbMutation = /\bdb\.(insert|update|delete)\s*\(/.test(codeOnlyBody);
+			if (hasTransaction && usesTxVar && usesBareDbMutation) {
+				issues.push("Прямой вызов db.insert/update/delete рядом с tx.* внутри транзакции (Мандат 8bo)");
+			}
+
+			// Разрешаем параметры-коллбэки register*Routes(app, arg) из реальных вызывающих модулей (напр. statusHandler, telegramControlPlaneRouteOptions)
+			let resolvedCallerContext = "";
+			const regFnMatch = content.match(/export\s+(?:async\s+)?function\s+(register\w+)\s*\(([^)]+)\)/);
+			if (regFnMatch) {
+				const regFnName = regFnMatch[1];
+				const regParams = regFnMatch[2]
+					.split(",")
+					.map((p) => p.trim().split(/[:=]/)[0].trim())
+					.filter(Boolean);
+				const usedParamIndices = [];
+				for (let pIdx = 1; pIdx < regParams.length; pIdx++) {
+					if (new RegExp(`\\b${regParams[pIdx]}\\b`).test(codeOnlyCall)) {
+						usedParamIndices.push(pIdx);
+					}
+				}
+				if (usedParamIndices.length > 0) {
+					for (const callerFile of routeFiles) {
+						const callerContent = readCachedFile(callerFile, fileContentCache);
+						if (!callerContent || !callerContent.includes(regFnName)) continue;
+						const callRe = new RegExp(`\\b${regFnName}\\s*\\(([^)]+)\\)`, "g");
+						for (const cm of callerContent.matchAll(callRe)) {
+							const callArgs = cm[1].split(",").map((a) => a.trim());
+							const callerDecls = extractLocalDeclarations(callerContent);
+							const callerImports = resolveRouteModuleImports(callerFile, callerContent, fileContentCache);
+							for (const pIdx of usedParamIndices) {
+								const argIdent = callArgs[pIdx];
+								if (!argIdent || !/^[a-zA-Z_$][\w$]*$/.test(argIdent)) continue;
+								if (callerDecls.localFuncs.has(argIdent)) resolvedCallerContext += "\n" + callerDecls.localFuncs.get(argIdent);
+								if (callerDecls.localVars.has(argIdent)) resolvedCallerContext += "\n" + callerDecls.localVars.get(argIdent);
+								if (callerImports.has(argIdent)) resolvedCallerContext += "\n" + callerImports.get(argIdent);
+								const localObjMatch = new RegExp(`\\b(?:const|let)\\s+${argIdent}\\s*=\\s*\\{`).exec(callerContent);
+								if (localObjMatch) {
+									const objBrace = callerContent.indexOf("{", localObjMatch.index);
+									if (objBrace !== -1) {
+										resolvedCallerContext += "\n" + extractBalancedBlock(callerContent, objBrace);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			const fullCheckBody = resolvedCallerContext
+				? `${codeOnlyBody}\n${stripCodeComments(resolvedCallerContext)}`
+				: codeOnlyBody;
+
+			const hasTrustedOrgGuard =
+				/\b(withTenantCtx|requireResolvedOrganizationId|requireResolvedStaffOrAdminOrganizationId|requireOrganizationId|requireClinicalReadContext|requireClinicalMutationContext|requireStaffIdentity|requireClinicOrganizationId|requireTelegramControlPlaneAccess|verifyClinicMedflexSignature|verifyProdoctorovWebhookAuth|requireAuthenticatedUser|requireExecutiveAccess|requireNonDoctorAccess|requireScheduleMutationAccess|requireClinicalMutationAccess|requireClinicalReadAccess|requireCatalogMutationAccess|requireSettingsMutationAccess|getImagingOrganizationId|requireDicomWebSettingsAccess)\b/.test(
+					fullCheckBody,
+				) || /\bgetRequestIdentity\b[\s\S]{0,600}\bverified\b/.test(fullCheckBody);
+
+			const isUnconditionalDenialStub =
+				/\breply\s*\.\s*(?:code|status)\s*\(\s*(?:403|410)\s*\)/.test(codeOnlyBody) &&
+				mutationMatches.length === 0 &&
+				!/\b(?:db|tx|withTenantCtx|Service|Engine|Manager)\b/.test(codeOnlyBody);
+
+			if (isWebhookRoute && !hasWebhookVerifier) {
+				issues.push("Webhook-роут без проверки криптографической подписи или секрета");
+			} else if (
+				!isPublicRoute &&
+				!(isWebhookRoute && hasWebhookVerifier) &&
+				!isUnconditionalDenialStub &&
+				!hasTrustedOrgGuard
+			) {
 				issues.push("Мутационный роут без проверки контекста организации/арендатора (BOLA/IDOR риск)");
 			}
 
@@ -914,6 +1312,7 @@ export function auditFields(rootDir, prng, sampleCount = 5) {
 
 		const relPath = path.relative(rootDir, file).replace(/\\/g, "/");
 		const lines = content.split(/\r?\n/);
+		const lineStartOffsets = computeLineStartOffsets(content);
 
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
@@ -925,18 +1324,25 @@ export function auditFields(rootDir, prng, sampleCount = 5) {
 
 			if (isDrizzleTable || isZodSchema) {
 				const lineNum = i + 1;
-				const maxLookahead = isZodSchema ? 80 : 30;
-				const sliceEnd = Math.min(lines.length, i + maxLookahead);
-				let blockEnd = sliceEnd;
-				if (isZodSchema) {
-					for (let j = i; j < sliceEnd; j++) {
-						if (/^\}[)\w.\s]*;\s*$/.test(lines[j])) {
-							blockEnd = j + 1;
-							break;
-						}
+				let block;
+				if (isDrizzleTable) {
+					const pgIdx = content.indexOf("(", lineStartOffsets[i] + Math.max(0, line.indexOf("pgTable")));
+					block = pgIdx !== -1
+						? extractBalancedBlock(content, pgIdx, "(", ")", 60000)
+						: lines.slice(i, Math.min(lines.length, i + 120)).join("\n");
+				} else {
+					const zodIdx = content.indexOf("(", lineStartOffsets[i] + Math.max(0, line.indexOf("z.object")));
+					if (zodIdx !== -1) {
+						const zodBody = extractBalancedBlock(content, zodIdx, "(", ")", 60000);
+						const tailEnd = content.indexOf(";", zodIdx + zodBody.length);
+						const tail = tailEnd !== -1
+							? content.slice(zodIdx + zodBody.length, Math.min(tailEnd + 1, zodIdx + zodBody.length + 500))
+							: "";
+						block = `${line}\n${zodBody}${tail}`;
+					} else {
+						block = lines.slice(i, Math.min(lines.length, i + 80)).join("\n");
 					}
 				}
-				const block = lines.slice(i, blockEnd).join("\n");
 
 				const issues = [];
 
@@ -958,11 +1364,21 @@ export function auditFields(rootDir, prng, sampleCount = 5) {
 					if (hasMoneyFieldWithoutKopecks) {
 						issues.push("Колонка цены/суммы без явного суффикса _kopecks или типа integer/bigint");
 					}
-					// Проверка ROT-015: numeric поля для денег в рублях
+					// Проверка ROT-015: numeric / doublePrecision / real поля для денег в рублях
 					// Exempt tables already carrying a parallel kopecks bigint (dual-column migration pattern)
 					const hasKopecksParallelColumn = /bigint\s*\(\s*["']\w*kopeck\w*["']/i.test(block);
-					if (!hasKopecksParallelColumn && /numeric\s*\(\s*["']\w*(rub|amount|price|cost|balance|total|fee)\w*["']/i.test(block)) {
-						issues.push("Денежная колонка объявлена как numeric(Rub) вместо bigint(kopecks) (Мандат 8bm / ROT-015)");
+					const numericMoneyMatches = [
+						...block.matchAll(/(?:numeric|doublePrecision|real)\s*\(\s*["']([a-z0-9_]+)["']/gi),
+					];
+					const hasNumericMoneyColumn = numericMoneyMatches.some((m) => {
+						const colName = m[1].toLowerCase();
+						if (/(?:_pct|_percent|_points|_qty|_count|_ratio|_rate)$/.test(colName)) {
+							return false;
+						}
+						return /(?:^|_)(?:rub|amount|price|cost|balance|fee)(?:_|$)/.test(colName);
+					});
+					if (!hasKopecksParallelColumn && hasNumericMoneyColumn) {
+						issues.push("Денежная колонка объявлена как numeric(Rub)/float вместо bigint(kopecks) (Мандат 8bm / ROT-015)");
 					}
 				}
 
@@ -1077,6 +1493,67 @@ export function auditUi(rootDir, prng, sampleCount = 5) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Секция 9.5. Список 4: Инквизиция честности тестов (Anti-Goodhart)
+ * ------------------------------------------------------------------ */
+
+const TEST_DEFECT_LABELS = {
+	"test-no-assertion": "Тест без единого assert/expect (не может упасть)",
+	"test-tautology": "Тавтология (assert.ok(true) / true === true)",
+	"test-phantom-no-sut": "Фантомный тест (не вызывает боевой код проекта)",
+	"test-skipped": "Отключённый тест (.skip / .todo)",
+	"test-only-left": "Оставлен .only() (глушит остальные тесты)",
+	"test-swallowed-assertion": "Assert внутри try/catch с проглатыванием ошибки",
+	"test-self-mock": "Тест мокает сам тестируемый модуль",
+	"test-size-assertion": "Гудхарт-тест на число строк исходника (дублирует check:limits)",
+	"test-source-grep": "Тест грепает текст исходника вместо исполнения поведения",
+	"test-weak-only": "Тест только со слабыми ассертами (toBeDefined/assert.ok(x))",
+};
+
+export function auditTests(rootDir, prng, sampleCount = 25) {
+	const scanDirs = ["packages/shared/src", "apps/api/src", "apps/web/src"].map((d) => path.join(rootDir, d));
+	const testFiles = [];
+	for (const dir of scanDirs) {
+		for (const file of collectAllCodeFiles(dir)) {
+			const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+			if (isAstTestFile(rel) && /\.(test|spec)\.[cm]?[jt]sx?$/.test(rel)) {
+				testFiles.push({ file, rel });
+			}
+		}
+	}
+
+	const pool = [...testFiles];
+	const count = Math.min(sampleCount, pool.length);
+	const sampled = [];
+
+	for (let i = 0; i < count; i++) {
+		const idx = Math.floor(prng() * pool.length);
+		const picked = pool.splice(idx, 1)[0];
+		let content = "";
+		try {
+			content = readFileSync(picked.file, "utf8");
+		} catch {
+			continue;
+		}
+		const scanned = scanTestSource(content, picked.rel);
+		const issues = scanned.findings.map(
+			(f) => `[${f.rule}] L${f.line}: ${TEST_DEFECT_LABELS[f.rule] ?? f.rule} (${f.text.slice(0, 70)})`,
+		);
+		sampled.push({
+			relPath: picked.rel,
+			testsCount: scanned.tests,
+			findings: scanned.findings,
+			issues,
+			status: issues.length === 0 ? "CLEAN" : "DEFECT",
+		});
+	}
+
+	return {
+		totalTestFilesFound: testFiles.length,
+		sampled,
+	};
+}
+
+/* ------------------------------------------------------------------ *
  * Секция 10. Главный координатор Monte Carlo Reality Audit
  * ------------------------------------------------------------------ */
 
@@ -1088,7 +1565,7 @@ export function runDiceAudit(options = {}, rootDir = process.cwd()) {
 
 	const report = {
 		meta: {
-			engine: "Monte Carlo Reality Audit Engine («Кубик-Тест»)",
+			engine: "Monte Carlo Reality Audit Engine («Кубик-Тест» v2 — AST + Tests Inquisition)",
 			seed: seedStr,
 			totalCombatFiles: allCombatFiles.length,
 			timestamp: new Date().toISOString(),
@@ -1105,6 +1582,7 @@ export function runDiceAudit(options = {}, rootDir = process.cwd()) {
 		doors: null,
 		fields: null,
 		ui: null,
+		tests: null,
 	};
 
 	// 1. Сэмплирование случайных строк (Кубик по строкам)
@@ -1126,6 +1604,11 @@ export function runDiceAudit(options = {}, rootDir = process.cwd()) {
 	// 4. Структурный Список 3: Точки входа UI
 	if (options.list === "all" || options.list === "ui") {
 		report.ui = auditUi(rootDir, prng, Math.max(25, Math.floor((options.samples || 100) / 4)));
+	}
+
+	// 5. Структурный Список 4: Инквизиция честности тестов (Anti-Goodhart)
+	if (options.list === "all" || options.list === "tests") {
+		report.tests = auditTests(rootDir, prng, Math.max(25, Math.floor((options.samples || 100) / 4)));
 	}
 
 	// Подсчет агрегированной статистики
@@ -1158,6 +1641,13 @@ export function runDiceAudit(options = {}, rootDir = process.cwd()) {
 		}
 		if (report.ui.duplicateModalsFound > 0) {
 			totalDefects += report.ui.duplicateModalsFound;
+		}
+	}
+
+	if (report.tests?.sampled) {
+		for (const t of report.tests.sampled) {
+			totalEvaluated++;
+			if (t.status === "DEFECT") totalDefects++;
 		}
 	}
 
@@ -1265,6 +1755,20 @@ function formatTerminalReport(report) {
 			console.log(`   ${st} ${c.cyan(`[${u.relPath}:${u.lineNum}]`)} ${u.snippet.slice(0, 70)}...`);
 			if (u.issues.length > 0) {
 				for (const iss of u.issues) console.log(`      ${c.yellow("⚠")} ${iss}`);
+			}
+		}
+	}
+
+	// 5. Список 4: Инквизиция честности тестов (Anti-Goodhart)
+	if (report.tests?.sampled && report.tests.sampled.length > 0) {
+		console.log(`\n${c.bold("🧪 СПИСОК 4 (ИНКВИЗИЦИЯ ТЕСТОВ / ANTI-GOODHART):")}`);
+		console.log(c.dim(`   Всего тестовых файлов найдено: ${report.tests.totalTestFilesFound}`));
+		for (const t of report.tests.sampled) {
+			const st = t.status === "CLEAN" ? c.green("✓") : c.red("✗");
+			console.log(`   ${st} ${c.cyan(`[${t.relPath}]`)} (${t.testsCount} tests)`);
+			if (t.issues.length > 0) {
+				for (const iss of t.issues.slice(0, 5)) console.log(`      ${c.red("⚠")} ${iss}`);
+				if (t.issues.length > 5) console.log(`      ${c.dim(`... и ещё ${t.issues.length - 5} замечаний`)}`);
 			}
 		}
 	}

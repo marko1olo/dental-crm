@@ -15,32 +15,6 @@ import { organizations } from "../../auth.js";
 import { payments } from "../../billing.js";
 import { patients } from "../patientCore.js";
 
-// #6 — маркетинг::фильтр_потерянных_пациентов_в_отчете
-export const lostPatientsFilters = pgTable(
-	"lost_patients_filters",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
-		phone: text("phone").notNull(),
-		daysSinceLastVisit: integer("days_since_last_visit").default(90).notNull(),
-		hasFutureAppointment: boolean("has_future_appointment")
-			.default(false)
-			.notNull(),
-		hasActiveCrmTask: boolean("has_active_crm_task").default(false).notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("lost_patients_filters_organizationId_idx").on(
-			t.organizationId,
-		),
-	}),
-);
-
 export const referralCampaigns = pgTable(
 	"referral_campaigns",
 	{
@@ -251,9 +225,6 @@ export const giftCertificates = pgTable(
 		),
 	}),
 );
-
-export type LostPatientsFilter = InferSelectModel<typeof lostPatientsFilters>;
-export type NewLostPatientsFilter = InferInsertModel<typeof lostPatientsFilters>;
 
 export type ReferralCampaign = InferSelectModel<typeof referralCampaigns>;
 export type NewReferralCampaign = InferInsertModel<typeof referralCampaigns>;

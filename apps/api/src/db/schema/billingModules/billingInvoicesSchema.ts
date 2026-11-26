@@ -202,56 +202,6 @@ export const pricelistDoctorPayrolls = pgTable(
 	}),
 );
 
-// NDFL tax calculators (personal income tax deduction calc)
-export const ndflTaxCalculators = pgTable(
-	"ndfl_tax_calculators",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientId: uuid("patient_id"),
-		taxYear: integer("tax_year").notNull(),
-		totalMedExpensesKopecks: bigint("total_med_expenses_kopecks", {
-			mode: "bigint",
-		})
-			.notNull()
-			.default(sql`0`),
-		deductionAmountKopecks: bigint("deduction_amount_kopecks", {
-			mode: "bigint",
-		})
-			.notNull()
-			.default(sql`0`),
-		ndflReturnKopecks: bigint("ndfl_return_kopecks", { mode: "bigint" })
-			.notNull()
-			.default(sql`0`),
-		/** Сумма по коду 1 (Обычное лечение, лимит социального вычета 150 000 ₽) */
-		code1AmountKopecks: bigint("code1_amount_kopecks", {
-			mode: "bigint",
-		})
-			.notNull()
-			.default(sql`0`),
-		/** Сумма по коду 2 (Дорогостоящее лечение: имплантация, костная пластика — вычет со всей суммы без ограничений!) */
-		code2AmountKopecks: bigint("code2_amount_kopecks", {
-			mode: "bigint",
-		})
-			.notNull()
-			.default(sql`0`),
-		calculatedAt: timestamp("calculated_at", {
-			withTimezone: true,
-		}).defaultNow(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("ndfl_tax_calculators_organizationId_idx").on(
-			t.organizationId,
-		),
-		patientIdIdx: index("ndfl_tax_calculators_patient_id_idx").on(t.patientId),
-	}),
-);
-
 export const patientInvoicesRelations = relations(patientInvoices, ({ one, many }) => ({
 	organization: one(organizations, {
 		fields: [patientInvoices.organizationId],

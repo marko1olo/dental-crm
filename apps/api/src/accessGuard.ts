@@ -2,7 +2,11 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { authTokenSecret, clinicalAdminSecret } from "./security/authSecret.js";
 import {
 	getRequestIdentity,
+	identityRejectionOf,
+	ORGANIZATION_HEADER,
 	requireOrganizationId as requireVerifiedOrganizationId,
+	UNVERIFIED_MUTATION_REJECTION,
+	verifyActiveStaffSession,
 } from "./security/identity.js";
 import { timingSafeSecretEqual } from "./utils/timingSafeSecretEqual.js";
 
@@ -88,6 +92,15 @@ export async function requireClinicalMutationAccess(
 		identity.organizationId &&
 		(identity.userId || identity.role)
 	) {
+		if (identity.userId) {
+			return await verifyActiveStaffSession(
+				request,
+				reply,
+				identity.organizationId,
+				identity.userId,
+				identity.sessionId,
+			);
+		}
 		return true;
 	}
 
@@ -202,6 +215,15 @@ export async function requireClinicalReadAccess(
 		identity.organizationId &&
 		(identity.userId || identity.role)
 	) {
+		if (identity.userId) {
+			return await verifyActiveStaffSession(
+				request,
+				reply,
+				identity.organizationId,
+				identity.userId,
+				identity.sessionId,
+			);
+		}
 		return true;
 	}
 
@@ -277,11 +299,29 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 	reply: FastifyReply,
 	_protectedArea?: string,
 ): Promise<string | null> {
-	const { organizationId, userId, sessionId } = getRequestIdentity(request);
+	const { organizationId, userId, sessionId, verified } =
+		getRequestIdentity(request);
 	if (!organizationId) {
+		if (identityRejectionOf(request) === UNVERIFIED_MUTATION_REJECTION) {
+			reply.code(401).send({
+				error: "UnverifiedOrganizationCannotMutate",
+				message:
+					`Заголовок ${ORGANIZATION_HEADER} определяет клинику только для чтения и только в локальной разработке. ` +
+					"Для изменения данных нужен подписанный токен рабочего кабинета.",
+			});
+			return null;
+		}
 		reply.code(401).send({
 			error: "AuthRequired",
 			message: "Требуется авторизация рабочего кабинета клиники.",
+		});
+		return null;
+	}
+	if (!verified) {
+		reply.code(401).send({
+			error: "UnverifiedOrganizationCannotMutate",
+			message:
+				`Заголовок ${ORGANIZATION_HEADER} не подтверждён подписанным токеном клиники.`,
 		});
 		return null;
 	}
@@ -293,34 +333,15 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 		return null;
 	}
 
-	if (sessionId) {
-		const { withTenantCtx } = await import("./db/rls.js");
-		const { users } = await import("./db/schema.js");
-		const { eq, and } = await import("drizzle-orm");
-		const [user] = await withTenantCtx(organizationId, async (tx) =>
-			tx
-				.select({ currentSessionId: users.currentSessionId })
-				.from(users)
-				.where(
-					and(
-						eq(users.id, userId),
-						eq(users.organizationId, organizationId),
-					),
-				)
-				.limit(1),
-		);
-
-		if (
-			!user?.currentSessionId ||
-			user.currentSessionId !== sessionId
-		) {
-			reply.code(401).send({
-				error: "invalid_session",
-				message:
-					"Выполнен вход с другого устройства. Текущая сессия завершена.",
-			});
-			return null;
-		}
+	const sessionOk = await verifyActiveStaffSession(
+		request,
+		reply,
+		organizationId,
+		userId,
+		sessionId,
+	);
+	if (!sessionOk) {
+		return null;
 	}
 
 	return organizationId;
@@ -334,7 +355,8 @@ async function _requireResolvedStaffUserId(
 	reply: FastifyReply,
 	_protectedArea?: string,
 ): Promise<string | null> {
-	const { userId, organizationId, sessionId } = getRequestIdentity(request);
+	const { userId, organizationId, sessionId, verified } =
+		getRequestIdentity(request);
 	if (!userId) {
 		reply.code(401).send({
 			error: "StaffAuthRequired",
@@ -342,43 +364,24 @@ async function _requireResolvedStaffUserId(
 		});
 		return null;
 	}
+	if (!verified) {
+		reply.code(401).send({
+			error: "UnverifiedOrganizationCannotMutate",
+			message:
+				`Заголовок ${ORGANIZATION_HEADER} не подтверждён подписанным токеном клиники.`,
+		});
+		return null;
+	}
 
-	if (sessionId) {
-		const { withSuperuserBypass, withTenantCtx } = await import("./db/rls.js");
-		const { users } = await import("./db/schema.js");
-		const { eq, and } = await import("drizzle-orm");
-		const [user] = organizationId
-			? await withTenantCtx(organizationId, async (tx) =>
-					tx
-						.select({ currentSessionId: users.currentSessionId })
-						.from(users)
-						.where(
-							and(
-								eq(users.id, userId),
-								eq(users.organizationId, organizationId),
-							),
-						)
-						.limit(1),
-				)
-			: await withSuperuserBypass(async (tx) =>
-					tx
-						.select({ currentSessionId: users.currentSessionId })
-						.from(users)
-						.where(eq(users.id, userId))
-						.limit(1),
-				);
-
-		if (
-			!user?.currentSessionId ||
-			user.currentSessionId !== sessionId
-		) {
-			reply.code(401).send({
-				error: "invalid_session",
-				message:
-					"Выполнен вход с другого устройства. Текущая сессия завершена.",
-			});
-			return null;
-		}
+	const sessionOk = await verifyActiveStaffSession(
+		request,
+		reply,
+		organizationId,
+		userId,
+		sessionId,
+	);
+	if (!sessionOk) {
+		return null;
 	}
 
 	return userId;

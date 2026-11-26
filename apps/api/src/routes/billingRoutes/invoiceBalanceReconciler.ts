@@ -1,8 +1,94 @@
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { rublesToKopecks, sumPaymentFlowBigInt } from "@dental/shared";
 import type { TenantDb } from "../../db/rls.js";
-import { installmentContracts, patientInvoices, payments } from "../../db/schema.js";
+import {
+	installmentContracts,
+	patientInvoices,
+	payments,
+	treatmentItems,
+} from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+
+/**
+ * Atomically reverts completed treatment items back to "approved" inside `tx`
+ * when an invoice or visit has reached a full refund (net paid <= 0 and refunded > 0).
+ */
+export async function revertTreatmentItemsOnFullRefundTx(
+	tx: TenantDb,
+	organizationId: string,
+	params: { invoiceId?: string | null; visitId?: string | null },
+): Promise<void> {
+	const { invoiceId, visitId } = params;
+	if (invoiceId && isValidUuid(invoiceId)) {
+		await tx
+			.update(treatmentItems)
+			.set({
+				status: "approved",
+				version: sql`${treatmentItems.version} + 1`,
+			})
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					eq(treatmentItems.invoiceId, invoiceId),
+					eq(treatmentItems.status, "completed"),
+				),
+			);
+	}
+
+	if (visitId && isValidUuid(visitId)) {
+		const visitInvoices = await tx
+			.select({
+				id: patientInvoices.id,
+				status: patientInvoices.status,
+			})
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.organizationId, organizationId),
+					eq(patientInvoices.visitId, visitId),
+					ne(patientInvoices.status, "voided"),
+				),
+			);
+		const hasActivePaidInvoice = visitInvoices.some(
+			(inv) => inv.status === "paid" || inv.status === "partially_paid",
+		);
+		if (hasActivePaidInvoice) {
+			return;
+		}
+
+		const visitPayments = await tx
+			.select({
+				amountRub: payments.amountRub,
+				amountKopecks: payments.amountKopecks,
+				status: payments.status,
+				fiscalReceipt: payments.fiscalReceipt,
+			})
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.visitId, visitId),
+					or(eq(payments.status, "paid"), eq(payments.status, "refunded")),
+				),
+			);
+		const visitFlow = sumPaymentFlowBigInt(visitPayments, "ledger");
+		if (visitFlow.netKopecks <= 0n && visitFlow.refundedKopecks > 0n) {
+			await tx
+				.update(treatmentItems)
+				.set({
+					status: "approved",
+					version: sql`${treatmentItems.version} + 1`,
+				})
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.visitId, visitId),
+						eq(treatmentItems.status, "completed"),
+					),
+				);
+		}
+	}
+}
 
 export interface InvoiceReconciliationResult {
 	invoiceTotalKopecks: number;
@@ -132,6 +218,13 @@ export async function reconcileInvoiceBalanceInDb(
 				eq(patientInvoices.id, invoiceId),
 			),
 		);
+
+	if (flowSummary.netKopecks <= 0n && flowSummary.refundedKopecks > 0n) {
+		await revertTreatmentItemsOnFullRefundTx(tx, organizationId, {
+			invoiceId,
+			visitId: invoice.visitId,
+		});
+	}
 
 	return {
 		invoiceTotalKopecks,

@@ -83,7 +83,7 @@ export const DEFAULT_IDEMPOTENCY_EXEMPT_PATHS: RegExp[] = [
 	/^\/api\/auth\/(?:login|refresh|logout|staff\/unlock)$/,
 	/^\/api\/portal\/auth\/(?:send-code|verify-code|send-otp|verify-otp|refresh|logout|telegram-webapp)$/,
 	/^\/api\/portal\/kiosk\/checkin$/,
-	/^\/api\/(?:v1\/public\/budgets|portal\/budget)\/[^/]+\/verify(?:-pin)?$/,
+	/^\/api\/(?:v1\/public\/budgets|portal\/budget)\/[^/]+\/(?:verify(?:-pin)?|view)$/,
 	/^\/api\/public\/consents\/sign$/,
 	/^\/(?:api\/)?(?:health|ping)$/,
 	/^\/api\/telephony(?:\/.*)?\/webhook$/,

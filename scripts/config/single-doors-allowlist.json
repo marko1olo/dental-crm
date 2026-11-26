@@ -27,10 +27,6 @@
       "reason": "Модалка возврата услуги. Интегрирована в чекаут кассы и смену"
     },
     {
-      "file": "apps/web/src/components/hardware/HardwareSettingsModal.tsx",
-      "reason": "Модалка настройки периферийного оборудования (ККТ, визиографы, сканеры)"
-    },
-    {
       "file": "apps/web/src/components/imaging/dicomToolboxRibbonModules/DicomBoneDensityModal.tsx",
       "reason": "Субкомпонент тулбокса КЛКТ для замера плотности кости по Хаунсфилду (HU)"
     },
@@ -97,532 +93,716 @@
   ],
   "api_mutation_doors_legacy_backlog": [
     {
-      "pattern": "* /api/agent/*",
-      "reason": "Стриминговый чат соло-копилота, валидация через кастомный протокол SSE/WebSocket"
+      "pattern": "DELETE /:organizationId/:itemId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/itemCatalog/itemCatalogMutationRoutes.ts)"
     },
     {
-      "pattern": "* /api/audit*",
-      "reason": "Фоновый журнал аудита безопасности, внутренний контракт fastify"
+      "pattern": "DELETE /:organizationId/items/:itemId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/itemCatalog/itemCatalogMutationRoutes.ts)"
     },
     {
-      "pattern": "* /api/auth*",
-      "reason": "Маршруты аутентификации клиники и персонала, специфичный парсер токенов и PIN-кодов"
+      "pattern": "DELETE /:organizationId/links/:linkId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/consumables/techCardNormHandlers.ts)"
     },
     {
-      "pattern": "POST /api/billing/payments",
-      "reason": "Легаси маршрут проведения оплаты, валидация внутри транзакционного paymentProcessingService"
+      "pattern": "DELETE /:organizationId/rules/:ruleId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/procedureRuleRoutes.ts)"
     },
     {
-      "pattern": "POST /api/billing/invoices/:id/payments",
-      "reason": "Оплата инвойса в биллинге, валидация внутри billingInvoicesHandler"
+      "pattern": "DELETE /:organizationId/rules/service/:serviceId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/procedureRuleRoutes.ts)"
     },
     {
-      "pattern": "POST /api/billing/invoices/:id",
-      "reason": "Обновление инвойса, валидация внутри billingInvoicesHandler"
+      "pattern": "DELETE /api/clinical/lab-orders/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lab/ordersCrudRoutes.ts)"
     },
     {
-      "pattern": "POST /api/billing/refunds/partial",
-      "reason": "Частичный возврат средств по счету, валидация внутри refundProcessingService"
+      "pattern": "DELETE /api/clinical/lab-orders/:id/items/:itemId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lab/orderItemsRoutes.ts)"
     },
     {
-      "pattern": "POST /api/billing/fiscal-queue/:id/retry",
-      "reason": "Повторная отправка чека в фискализатор, валидация параметров очереди"
+      "pattern": "DELETE /api/clinical/rules/:ruleId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/clinicalRoutes/clinicalProtocolHandlers.ts)"
+    },
+    {
+      "pattern": "DELETE /api/finance/family/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/family/familyGroupWriteRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/finance/family/:id/members/:patientId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/family/familyGroupWriteRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/insurance/contracts/:contractId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/insuranceRoutes/policyModules/policyMutationHandlers.ts)"
+    },
+    {
+      "pattern": "DELETE /api/insurance/guarantee-letters/:letterId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/insuranceRoutes/guaranteeLetterModules/guaranteeLetterMutationHandlers.ts)"
+    },
+    {
+      "pattern": "DELETE /api/lab/orders/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lab/ordersCrudRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/lab/orders/:id/items/:itemId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lab/orderItemsRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/patients/:patientId/reclamations/:reclamationId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/patients/reclamationRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/patients/:patientId/tickets/:ticketId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/patients/ticketRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/pricelist/:serviceId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/pricelist/routeHandlers.ts)"
+    },
+    {
+      "pattern": "DELETE /api/registers/bactericidal/equipments/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sanpin/bactericidalRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/settings/catalog/:serviceId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/serviceCatalogRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/staff/:staffId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/staff/staffMutationRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE /api/templates/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/templates.ts)"
+    },
+    {
+      "pattern": "DELETE /items/:itemId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/itemCatalog/itemCatalogMutationRoutes.ts)"
+    },
+    {
+      "pattern": "DELETE <dynamic>",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/agentSessionRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/appointments/:appointmentId/status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/appointments/appointmentsStatusRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/pricelist/:serviceId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/pricelist/routeHandlers.ts)"
+    },
+    {
+      "pattern": "PATCH /api/schedule/appointments/:appointmentId/status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/appointments/appointmentsStatusRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/settings/clinic/fiscal",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/clinicProfileRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/treatment-plans/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/treatment-plans/:id/stages/:stageId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/treatment-plans/:id/status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/v1/treatment-plans/:id",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/v1/treatment-plans/:id/stages/:stageId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH /api/v1/treatment-plans/:id/status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
+    },
+    {
+      "pattern": "PATCH <dynamic>",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/audit.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/acceptance-waybill",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/calls/cleanup-stale",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/telephonyCallLifecycleHandler.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/invoices",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/outbound",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/outbound-call",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/rules/seed-defaults",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/procedureRuleRoutes.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/sms/webhook",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/waybills",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)"
+    },
+    {
+      "pattern": "POST /:organizationId/webhook/async",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
+    },
+    {
+      "pattern": "POST /acceptance-waybill",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)"
+    },
+    {
+      "pattern": "POST /api/appointments/:appointmentId/visit",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/visits/visitOpenRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/auth/clinic/login",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/auth/loginRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/auth/staff/unlock",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/auth/loginRoutes.ts)"
     },
     {
       "pattern": "POST /api/billing/fiscal-queue/retry-all",
-      "reason": "Пакетная повторная отправка чеков в фискализатор"
-    },
-    {
-      "pattern": "POST /api/billing/cash/in",
-      "reason": "Внесение наличных в кассу, валидация в cashTransferService"
-    },
-    {
-      "pattern": "POST /api/billing/cash/out",
-      "reason": "Инкассация наличных из кассы, валидация в cashTransferService"
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/billingRoutes/billingRouteHandlers.ts)"
     },
     {
       "pattern": "POST /api/billing/fiscalize-receipt",
-      "reason": "Прямая фискализация кассового чека, валидация в KktLanPrinterService"
-    },
-    {
-      "pattern": "POST /api/billing/sbp/generate-qr",
-      "reason": "Генерация динамического QR-кода СБП, валидация в SbpPaymentEngine"
-    },
-    {
-      "pattern": "POST /api/billing/sbp/verify-payload",
-      "reason": "Верификация полезной нагрузки СБП, валидация сигнатуры НСПК"
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
     },
     {
       "pattern": "POST /api/billing/sbp/webhook",
-      "reason": "Входящий вебхук Системы Быстрых Платежей, криптографическая проверка подписи банка"
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sbp/sbpRouteHandlers.ts)"
     },
     {
-      "pattern": "POST /api/payments",
-      "reason": "Шлюз проведения оплат, валидация внутри paymentProcessingService"
+      "pattern": "POST /api/bots/webhook/:channel/:organizationId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/omnichannelBots/index.ts)"
     },
     {
-      "pattern": "POST /api/payments/status",
-      "reason": "Проверка статуса эквайринговой транзакции, валидация внутри paymentProcessingService"
+      "pattern": "POST /api/cash/payments",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
     },
     {
-      "pattern": "POST /api/payments/sberbank/pos/initiate",
-      "reason": "Инициация транзакции на POS-терминале Сбера, валидация в SberPosDriver"
+      "pattern": "POST /api/cash/receipt",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/cash/shift-reconciliation",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/cash/transactions/:id/retry-fiscalize",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/cashbox/payments",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/cashbox/receipt",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/cashbox/shift",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/cashbox/transactions/:id/retry-fiscalize",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/clinical/egisz/outbox/sync-status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/egisz/outboxRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/campaigns/:campaignId/cancel",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/outbox/outboxAndCampaignRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/campaigns/:campaignId/launch",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/outbox/outboxAndCampaignRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/outbox/:outboxId/cancel",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/outbox/outboxAndCampaignRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/outbox/:outboxId/retry",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/outbox/outboxAndCampaignRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/receipts/smsc",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/communicationReceipts.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/receipts/smsru",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/communicationReceipts.ts)"
+    },
+    {
+      "pattern": "POST /api/communications/reminders/run",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/outbox/outboxAndCampaignRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/dicomweb/studies",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/dicomweb/stowModules/stowRegistration.ts)"
+    },
+    {
+      "pattern": "POST /api/dicomweb/studies/:studyUid",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/dicomweb/stowModules/stowRegistration.ts)"
+    },
+    {
+      "pattern": "POST /api/egisz/outbox/sync-status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/egisz/outboxRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/files/patients/:patientId/attachments",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fileModules/patientAttachmentsHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/files/visits/:visitId/attachments",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fileModules/visitAttachmentsHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/finance/correction",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/finance/receipts",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/fiscal/correction",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/fiscal/queue/auto-retry/start",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/fiscal/queue/auto-retry/stop",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/fiscal/queue/retry-all",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/fiscal/receipts",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fiscal/receiptRoutes/index.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/chunks/:uploadId/complete",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/chunkedUploadRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/daemon/start",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/dicomRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/daemon/stop",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/dicomRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/decode-heic",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fileModules/fileUploadHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/dicom/viewer-launch-manifest",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/pacsRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/dicomweb/check",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/pacsRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/imports/commit",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/pacsRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/imports/preview",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/pacsRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/studies/auto-bind-scan",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/modules/studiesRegistration.ts)"
+    },
+    {
+      "pattern": "POST /api/imaging/upload",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/sensorOfflineRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/clinic-public-lookup",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/local-source-discovery",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/local-source-probe",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/local-source-workup",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/migration-autopilot",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/migration-autopilot/report.csv",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/preview",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/report.csv",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/imports/smart/report.safe.csv",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/smartImports.ts)"
+    },
+    {
+      "pattern": "POST /api/integrations/dicom-server/ping",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/pacsRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/integrations/medflex/settings/generate-secret",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/integrations/prodoctorov/prodoctorovRouteHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/integrations/yandex-calendar/sync",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/yandexCalendar.ts)"
+    },
+    {
+      "pattern": "POST /api/lab/orders/:id/scans/upload-url",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lab/scansUploadRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/leads/:id/convert-to-patient",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/leadsModules/leadConversionRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/leads/:id/create-patient",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/leadsModules/leadConversionRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/marketing/romi-channels/reset",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/marketingModules/promos/marketingChannelRoutes.ts)"
+    },
+    {
+      "pattern": "POST /api/mdlp/queue/clear",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/mdlp.ts)"
+    },
+    {
+      "pattern": "POST /api/migration/:runId/stage",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/migrationRunRoutes/migrationRunHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/migration/upload",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/migrationRunRoutes/migrationValidationHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/network/lan-mesh/discover",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lanNetwork.ts)"
+    },
+    {
+      "pattern": "POST /api/network/mesh/auto-join/rotate",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lanNetwork.ts)"
+    },
+    {
+      "pattern": "POST /api/onboarding/skip",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/onboarding/index.ts)"
+    },
+    {
+      "pattern": "POST /api/patients/:patientId/attachments",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/fileModules/patientAttachmentsHandlers.ts)"
+    },
+    {
+      "pattern": "POST /api/patients/:patientId/unarchive",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/patients/administrativeRoutes.ts)"
     },
     {
       "pattern": "POST /api/payments/sberbank/pos/webhook",
-      "reason": "Вебхук результата оплаты терминала Сбера, HMAC верификация сигнатуры"
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/payments/sberWebhook/index.ts)"
     },
     {
       "pattern": "POST /api/payments/sberbank/qr/webhook",
-      "reason": "Вебхук оплаты по QR Сбербанка, криптографическая верификация сигнатуры"
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/payments/sberWebhook/index.ts)"
     },
     {
       "pattern": "POST /api/payments/sberpos/webhook",
-      "reason": "Алиас вебхука POS Сбербанка, верификация контрольной суммы"
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/payments/sberWebhook/index.ts)"
     },
     {
-      "pattern": "POST /api/payments/sberbank/pos/reconcile-rrn",
-      "reason": "Сверка чека Сбера по номеру ссылки RRN, валидация параметров сверки"
+      "pattern": "POST /api/prescriptions/:id/verify",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/prescriptions.ts)"
     },
     {
-      "pattern": "POST /api/payments/sberbank/pos/void",
-      "reason": "Отмена (void) безналичной транзакции до закрытия банковской смены"
+      "pattern": "POST /api/prescriptions/preview-html",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/prescriptions.ts)"
     },
     {
-      "pattern": "POST /api/payments/sberbank/pos/transaction",
-      "reason": "Запрос детального статуса транзакции эквайринга"
+      "pattern": "POST /api/prescriptions/validate",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/prescriptions.ts)"
     },
     {
-      "pattern": "POST /api/payments/sberbank/pos/reversal",
-      "reason": "Реверс операции эквайринга при сбое ККТ"
+      "pattern": "POST /api/pricelist",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/pricelist/routeHandlers.ts)"
     },
     {
-      "pattern": "* /api/finance*",
-      "reason": "Финансовые отчеты и операции, валидация внутри финансовых сервисов"
+      "pattern": "POST /api/pricelist/items",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/pricelist/routeHandlers.ts)"
     },
     {
-      "pattern": "* /api/v1/billing*",
-      "reason": "Шлюз проведения оплат v1, валидация внутри paymentProcessingService"
+      "pattern": "POST /api/radiology/dicom/bridge/stop",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/radiology/dicomReceiverRoutes.ts)"
     },
     {
-      "pattern": "* /api/v1/finance*",
-      "reason": "Шлюз проведения оплат v1, валидация внутри paymentProcessingService"
+      "pattern": "POST /api/radiology/dicom/server/stop",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/radiology/dicomReceiverRoutes.ts)"
     },
     {
-      "pattern": "* /api/invoices*",
-      "reason": "Оплата инвойса, валидация внутри paymentProcessingService"
+      "pattern": "POST /api/radiology/studies/auto-bind-scan",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/modules/studiesRegistration.ts)"
     },
     {
-      "pattern": "* /api/v1/invoices*",
-      "reason": "Оплата инвойса v1, валидация внутри paymentProcessingService"
+      "pattern": "POST /api/registers/cleaning/autopilot-month",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sanpin/cleaningRoutes.ts)"
     },
     {
-      "pattern": "* /api/cash*",
-      "reason": "Кассовые и фискальные операции 54-ФЗ, валидация внутри CashboxPaymentProcessor"
+      "pattern": "POST /api/registers/medical-waste/quick-shift-bundle",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sanpin/wasteAndBiohazardRoutes.ts)"
     },
     {
-      "pattern": "* /api/cashbox*",
-      "reason": "Кассовые операции кассы 54-ФЗ, валидация внутри кассовых процессоров"
+      "pattern": "POST /api/registers/temperature-humidity/shift-autopilot",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sanpin/temperatureRoutes.ts)"
     },
     {
-      "pattern": "* /api/fiscal*",
-      "reason": "Фискальные очереди и чеки 54-ФЗ, валидация в KktLanPrinterService"
+      "pattern": "POST /api/sberbank/webhook",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sberbankRoutes/sberbankWebhookHandlers.ts)"
     },
     {
-      "pattern": "* /api/commerceml*",
-      "reason": "Интеграция CommerceML 1С, парсинг XML-документов"
+      "pattern": "POST /api/sbp/webhook",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sbp/sbpRouteHandlers.ts)"
     },
     {
-      "pattern": "* /api/v1/integrations/1c/commerceml*",
-      "reason": "Интеграция CommerceML 1С v1, XML-поток"
+      "pattern": "POST /api/schedule/ical/doctor/:doctorId/rotate",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/yandexCalendar.ts)"
     },
     {
-      "pattern": "* /api/communications*",
-      "reason": "Входящие вебхуки провайдеров SMS (SMS.RU, SMSC), кастомная верификация подписи"
+      "pattern": "POST /api/schedule/ical/rotate",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/yandexCalendar.ts)"
     },
     {
-      "pattern": "* /api/dicomweb*",
-      "reason": "DICOMweb STOW-RS/WADO протоколы, бинарный multipart/related поток DICOM"
+      "pattern": "POST /api/settings/catalog",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/serviceCatalogRoutes.ts)"
     },
     {
-      "pattern": "* /api/clinical/egisz*",
-      "reason": "Шлюз отправки РЭМД в ЕГИСЗ, валидация в сервисе криптографии"
+      "pattern": "POST /api/settings/reset-demo",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/clinicProfileRoutes.ts)"
     },
     {
-      "pattern": "* /api/egisz*",
-      "reason": "Шлюз отправки РЭМД в ЕГИСЗ, валидация в сервисе криптографии"
+      "pattern": "POST /api/settings/reset-zero",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/clinicProfileRoutes.ts)"
     },
     {
-      "pattern": "* /api/imaging*",
-      "reason": "Модули визиографа и томографии, multipart/бинарный ввод снимков DICOM"
+      "pattern": "POST /api/staff/:staffId/terminate-session",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/staff/staffMutationRoutes.ts)"
     },
     {
-      "pattern": "* /api/radiology*",
-      "reason": "Радиология и КЛКТ, валидация внутри рентген-сервисов"
+      "pattern": "POST /api/sync/admin/recover-stale",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sync/index.ts)"
     },
     {
-      "pattern": "* /api/files*",
-      "reason": "Загрузка файлов и фотографий визита, multipart file-stream"
+      "pattern": "POST /api/sync/admin/replay",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/sync/index.ts)"
     },
     {
-      "pattern": "* /api/patients/:patientId/attachments",
-      "reason": "Загрузка прикреплений карты пациента, multipart-поток"
+      "pattern": "POST /api/telegram/bot/disconnect",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telegram/telegramBotConnectionRoutes.ts)"
     },
     {
-      "pattern": "* /api/patients*",
-      "reason": "Картотека пациентов и родственные связи, валидация в patientService"
+      "pattern": "POST /api/telegram/supervisor/bots/:botId/reload",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telegram/telegramStatusRoutes.ts)"
     },
     {
-      "pattern": "* /api/hardware*",
-      "reason": "Драйверы оборудования и сокеты ККТ"
+      "pattern": "POST /api/templates/seed",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/templates.ts)"
     },
     {
-      "pattern": "* /api/integrations*",
-      "reason": "Внешние вебхуки и интеграции (Diagnocat и др.), кастомная верификация HMAC"
+      "pattern": "POST /api/treatment-plan",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /api/clinical-ai*",
-      "reason": "Вебхуки клинического ИИ, кастомная валидация подписи"
+      "pattern": "POST /api/treatment-plans",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /api/imports*",
-      "reason": "Импорт пациентов и номенклатуры (Excel/CSV/CommerceML), кастомный парсер таблиц"
+      "pattern": "POST /api/treatment-plans/:id/approve",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /api/installments*",
-      "reason": "Оплата траншей рассрочки, валидация внутри сервиса рассрочек"
+      "pattern": "POST /api/treatment-plans/:id/sign-pep",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /api/installment-payments*",
-      "reason": "Оплата траншей рассрочки, валидация внутри сервиса рассрочек"
+      "pattern": "POST /api/treatment-plans/:id/transition-stage",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /api/clinical-bundles*",
-      "reason": "Готовые комплексы услуг, валидация внутри сервиса"
+      "pattern": "POST /api/v1/message-templates/seed",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/messageTemplates.ts)"
     },
     {
-      "pattern": "* /api/v1/clinical-bundles*",
-      "reason": "Готовые комплексы услуг v1, валидация внутри сервиса"
+      "pattern": "POST /api/v1/treatment-plan",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /:organizationId*",
-      "reason": "Префиксные складские маршруты филиалов, валидация в DTO сервиса склада"
+      "pattern": "POST /api/v1/treatment-plans",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /receive-batch*",
-      "reason": "Складской приход партии, валидация в DTO склада"
+      "pattern": "POST /api/v1/treatment-plans/:id/approve",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /items*",
-      "reason": "Складская номенклатура, валидация в DTO склада"
+      "pattern": "POST /api/v1/treatment-plans/:id/create-budget-link",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /quick-writeoff*",
-      "reason": "Складское быстрое списание по техкарте (BOM), валидация в DTO склада"
+      "pattern": "POST /api/v1/treatment-plans/:id/sign-pep",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /storno*",
-      "reason": "Складское сторно и возвраты, валидация в DTO склада"
+      "pattern": "POST /api/v1/treatment-plans/:id/transition-stage",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/treatmentPlanRoutes.ts)"
     },
     {
-      "pattern": "* /overdraft-alert*",
-      "reason": "Складские алерты овердрафта, валидация в DTO склада"
+      "pattern": "POST /api/visits/fast",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/visits/visitQuickRoutes.ts)"
     },
     {
-      "pattern": "* /acceptance-waybill*",
-      "reason": "Складские приходные накладные, валидация в DTO склада"
+      "pattern": "POST /api/visits/quick",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/visits/visitQuickRoutes.ts)"
     },
     {
-      "pattern": "* /waybills*",
-      "reason": "Складские приходные накладные, валидация в DTO склада"
+      "pattern": "POST /api/vk/account/disconnect",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/vk/accountRoutes.ts)"
     },
     {
-      "pattern": "* /invoices*",
-      "reason": "Складские счета поставщиков, валидация в DTO склада"
+      "pattern": "POST /api/vk/bot/disconnect",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/vk/botRoutes.ts)"
     },
     {
-      "pattern": "* /consumables*",
-      "reason": "Складские расходники, валидация в DTO склада"
+      "pattern": "POST /api/whatsapp/qr/session/disconnect",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/whatsappModules/connectionHubRoutes.ts)"
     },
     {
-      "pattern": "* /reorder*",
-      "reason": "Складской перезаказ номенклатуры, валидация в DTO склада"
+      "pattern": "POST /api/whatsapp/qr/session/simulate-auth",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/whatsappModules/connectionHubRoutes.ts)"
     },
     {
-      "pattern": "* /:itemId/*",
-      "reason": "Складские остатки по артикулу, валидация в DTO склада"
+      "pattern": "POST /api/whatsapp/templates/sync",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/whatsappModules/templateManagerRoutes.ts)"
     },
     {
-      "pattern": "* <dynamic>",
-      "reason": "Динамические эндпоинты MCP / системных агентов"
+      "pattern": "POST /appointments",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/publicBooking/publicBookingHandlers.ts)"
     },
     {
-      "pattern": "* /api/appointments*",
-      "reason": "Статусы и переходы приёма, валидация в appointmentsStatusRoutes"
+      "pattern": "POST /auth/logout",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/portal/portalAuthRoutes.ts)"
     },
     {
-      "pattern": "* /api/schedule/appointments*",
-      "reason": "Статусы и переходы расписания, валидация в appointmentsStatusRoutes"
+      "pattern": "POST /calls/cleanup-stale",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/telephonyCallLifecycleHandler.ts)"
     },
     {
-      "pattern": "* /api/clinical/*",
-      "reason": "Клинические протоколы, наряды лаборатории и задачи врача, валидация в clinicalTreatmentHandlers"
+      "pattern": "POST /create",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/publicBooking/publicBookingHandlers.ts)"
     },
     {
-      "pattern": "* /api/insurance*",
-      "reason": "Прикрепление полиса ДМС, валидация в policyMutationHandlers"
+      "pattern": "POST /invoices",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)"
     },
     {
-      "pattern": "* /api/visits*",
-      "reason": "Клинический приём и дневники ЭМК, валидация внутри visitDraftAutosaveHandler / visitStore"
+      "pattern": "POST /outbound",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
     },
     {
-      "pattern": "* /api/v1/visits*",
-      "reason": "Клинический приём и дневники ЭМК v1, валидация внутри visitDraftAutosaveHandler / visitStore"
+      "pattern": "POST /outbound-call",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
     },
     {
-      "pattern": "* /api/treatment-plan*",
-      "reason": "Планы лечения и сметы, валидация внутри treatmentPlanService"
+      "pattern": "POST /sms/webhook",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
     },
     {
-      "pattern": "* /api/v1/treatment-plan*",
-      "reason": "Планы лечения и сметы v1, валидация внутри treatmentPlanService"
+      "pattern": "POST /waybills",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)"
     },
     {
-      "pattern": "* /api/lab*",
-      "reason": "Зуботехническая лаборатория, наряды и заказы"
+      "pattern": "POST /webhook/async",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/telephony/index.ts)"
     },
     {
-      "pattern": "* /api/vk*",
-      "reason": "Интеграция с ВКонтакте, кастомный парсер webhook / OAuth токенов"
+      "pattern": "POST <dynamic>",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/audit.ts)"
     },
     {
-      "pattern": "* */vk/webhook",
-      "reason": "Входящий вебхук VK Callback API, кастомная валидация secret_key"
+      "pattern": "PUT /api/appointments/:appointmentId/status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/appointments/appointmentsStatusRoutes.ts)"
     },
     {
-      "pattern": "* /api/whatsapp*",
-      "reason": "Интеграция WhatsApp Cloud API, валидация webhook-сигнатур"
+      "pattern": "PUT /api/imaging/chunks/:uploadId/part",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/imaging/chunkedUploadRoutes.ts)"
     },
     {
-      "pattern": "* /api/telegram*",
-      "reason": "Интеграция Telegram Bot API, валидация секретных токенов бота"
+      "pattern": "PUT /api/portal/direct-storage/upload",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/lab/scansUploadRoutes.ts)"
     },
     {
-      "pattern": "* /api/schedule/ical*",
-      "reason": "Ротация секретных токенов подписки календаря iCal (без payload)"
+      "pattern": "PUT /api/pricelist/:serviceId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/pricelist/routeHandlers.ts)"
     },
     {
-      "pattern": "* /api/xray*",
-      "reason": "Рентгенологические снимки и запуск ИИ-анализа, multipart/бинарный поток"
+      "pattern": "PUT /api/schedule/appointments/:appointmentId/status",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/appointments/appointmentsStatusRoutes.ts)"
     },
     {
-      "pattern": "* /api/odontogram*",
-      "reason": "Зубная формула и эндодонтия, валидация в toothStatusController"
+      "pattern": "PUT /api/settings/catalog/:serviceId",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/serviceCatalogRoutes.ts)"
     },
     {
-      "pattern": "* /api/portal*",
-      "reason": "Портал самозаписи и онлайн-оплаты пациента, кастомный OTP-контракт"
+      "pattern": "PUT /api/settings/clinic/fiscal",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/settings/clinicProfileRoutes.ts)"
     },
     {
-      "pattern": "* /api/documents*",
-      "reason": "Юридические документы и печатные формы, валидация в документарном сервисе"
-    },
-    {
-      "pattern": "* /api/settings*",
-      "reason": "Настройки филиалов и персонала, валидация в settingsPayloadParser"
-    },
-    {
-      "pattern": "* /api/staff*",
-      "reason": "Мутации карточки сотрудников клиники, валидация в staffMutationRoutes"
-    },
-    {
-      "pattern": "* /api/workspace*",
-      "reason": "Профиль клиники и филиалы, валидация в workspaceProfileHandlers"
-    },
-    {
-      "pattern": "* /api/network*",
-      "reason": "Сетевой меш и авто-обнаружение рабочих станций клиники"
-    },
-    {
-      "pattern": "* /api/leads*",
-      "reason": "Воронка обращений и лидов, валидация в leadsService"
-    },
-    {
-      "pattern": "* /api/marketing*",
-      "reason": "Маркетинговые каналы и ROMI-аналитика"
-    },
-    {
-      "pattern": "* /api/mdlp*",
-      "reason": "Фоновая очередь маркировки Честный Знак / МДЛП"
-    },
-    {
-      "pattern": "* /queue/*",
-      "reason": "Фоновая очередь маркировки Честный Знак / МДЛП"
-    },
-    {
-      "pattern": "* /api/v1/message-templates*",
-      "reason": "Шаблоны сервисных сообщений и уведомлений"
-    },
-    {
-      "pattern": "* /api/message-templates*",
-      "reason": "Шаблоны сервисных сообщений и уведомлений"
-    },
-    {
-      "pattern": "* /api/day-confirmations*",
-      "reason": "Подтверждение расписания дня, кастомный парсер статусов"
-    },
-    {
-      "pattern": "* /api/public*",
-      "reason": "Публичные виджеты онлайн-записи и вебхуки, кастомная валидация"
-    },
-    {
-      "pattern": "* /api/migration*",
-      "reason": "Маршруты миграции данных клиники из сторонних МИС (Dental4Windows, Инфодент), кастомная валидация схем"
-    },
-    {
-      "pattern": "* /api/mobile*",
-      "reason": "Маршруты публикации обновлений Mobile OTA, кастомная подпись артефактов"
-    },
-    {
-      "pattern": "* /api/bots*",
-      "reason": "Омниканальные боты и чаты клиники (Telegram, WhatsApp, MAX), кастомная валидация вебхуков"
-    },
-    {
-      "pattern": "* /api/onboarding*",
-      "reason": "Мастер первоначальной настройки клиники (onboarding), транзакционные обработчики"
-    },
-    {
-      "pattern": "* /api/periodontogram*",
-      "reason": "Пародонтологическая карта (перио-карта), валидация в perioControllers"
-    },
-    {
-      "pattern": "* /api/perio*",
-      "reason": "Пародонтологическая карта (перио-карта) алиас, валидация в perioControllers"
-    },
-    {
-      "pattern": "* /api/photo-bridge*",
-      "reason": "Стриминг фотографий полости рта с мобильного устройства врача, multipart upload по токену"
-    },
-    {
-      "pattern": "* /self-checkin*",
-      "reason": "Киоск саморегистрации пациента в холле клиники, валидация в kioskHandlers"
-    },
-    {
-      "pattern": "* /kiosk*",
-      "reason": "Киоск терминала пациента (саморегистрация, экстренный визит), валидация в kioskHandlers"
-    },
-    {
-      "pattern": "* /appointments*",
-      "reason": "Пациентский портал: запись и перенос приёма, валидация в patientPortalHandlers"
-    },
-    {
-      "pattern": "* /auth*",
-      "reason": "Пациентский портал: OTP-авторизация по СМС, валидация в portalAuthHandlers"
-    },
-    {
-      "pattern": "* /consents*",
-      "reason": "Пациентский портал: подписание согласий ИДС, валидация в portalConsentsHandlers"
-    },
-    {
-      "pattern": "* /treatment-plans*",
-      "reason": "Пациентский портал: выбор и одобрение плана лечения, валидация в portalTreatmentPlanHandlers"
-    },
-    {
-      "pattern": "* /payments*",
-      "reason": "Пациентский портал: онлайн-оплата СБП по QR-коду, валидация в portalPaymentHandlers"
-    },
-    {
-      "pattern": "* /health-questionnaire*",
-      "reason": "Пациентский портал: электронная анкета здоровья перед приёмом, валидация в portalHealthHandlers"
-    },
-    {
-      "pattern": "* /api/prescriptions*",
-      "reason": "Рецептурные бланки (форма 107-1/у) и превью, валидация в prescriptionHandlers"
-    },
-    {
-      "pattern": "* /api/pricelist*",
-      "reason": "Прейскурант и прайс-лист клиники, валидация в pricelistHandlers"
-    },
-    {
-      "pattern": "* /create*",
-      "reason": "Публичный виджет онлайн-записи: создание записи, валидация в publicBookingMutations"
-    },
-    {
-      "pattern": "* /waitlist*",
-      "reason": "Публичный виджет онлайн-записи: постановка в лист ожидания, валидация в publicBookingMutations"
-    },
-    {
-      "pattern": "* /api/registers*",
-      "reason": "Журналы СанПиН старшей медсестры (бактерицидные, генеральные уборки, ПСО), пакетные нормы"
-    },
-    {
-      "pattern": "* /api/sterilization*",
-      "reason": "Журналы стерилизации и автоклавирования, пакетное закрытие смены медсестры"
-    },
-    {
-      "pattern": "* /api/sanpin*",
-      "reason": "СанПиН и автоклавы: циклы стерилизации и азопирамовые пробы, валидация в sanpinSterilizationHandlers"
-    },
-    {
-      "pattern": "* /api/sberbank*",
-      "reason": "Вебхук эквайринга Сбербанка, верификация HMAC и криптографической подписи"
-    },
-    {
-      "pattern": "* /api/sbp*",
-      "reason": "Вебхук Системы Быстрых Платежей (СБП), верификация подписи НСПК"
-    },
-    {
-      "pattern": "* /api/shifts*",
-      "reason": "Сменные итоги и Z-отчеты кассы, валидация в shiftHandlers"
-    },
-    {
-      "pattern": "* /api/sync*",
-      "reason": "Синхронизация данных оффлайн-клиента, валидация в syncHandlers"
-    },
-    {
-      "pattern": "* /calls*",
-      "reason": "Маршруты управления звонками софтфона (ответ, завершение, теги), валидация в telephonyCallLifecycleHandler"
-    },
-    {
-      "pattern": "* /webhook*",
-      "reason": "Входящие вебхуки телефонии (Asterisk/SIP/Телфин), валидация в telephonyWebhookHandler"
-    },
-    {
-      "pattern": "* /sms*",
-      "reason": "Входящие вебхуки СМС-провайдеров, кастомная валидация сигнатуры"
-    },
-    {
-      "pattern": "* /outbound*",
-      "reason": "Инициация исходящего звонка из карточки пациента, валидация в telephonyOutboundHandler"
-    },
-    {
-      "pattern": "* /sip*",
-      "reason": "SIP-учетные данные и перевод звонка, валидация в telephonySipRoutes"
-    },
-    {
-      "pattern": "* /asterisk*",
-      "reason": "События AMI Asterisk, внутренняя шина телефонии"
-    },
-    {
-      "pattern": "* /api/templates*",
-      "reason": "Сидирование системных шаблонов документов и протоколов"
-    },
-    {
-      "pattern": "DELETE /api/v1/expenses/:id",
-      "reason": "Легаси удаление расхода, авторизация в requireStaffIdentity, параметры в URL"
-    },
-    {
-      "pattern": "DELETE /api/expenses/:id",
-      "reason": "Легаси алиас удаления расхода, параметры в URL"
-    },
-    {
-      "pattern": "DELETE /:id",
-      "reason": "Легаси удаление нормы технологической карты по ID"
-    },
-    {
-      "pattern": "DELETE /api/tasks/:id",
-      "reason": "Легаси удаление задачи по ID из URL"
+      "pattern": "PUT <dynamic>",
+      "reason": "Frozen legacy route pending Zod body schema (apps/api/src/routes/audit.ts)"
     }
   ]
 }

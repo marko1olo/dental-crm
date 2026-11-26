@@ -366,3 +366,34 @@ test("E2E Integration: check-single-doors passes on real monorepo with Exit Code
 	assert.ok(parsed.stats.webFilesCount > 0);
 	assert.ok(parsed.stats.apiFilesCount > 0);
 });
+
+test("Rule 3 (API Mutation Doors): rejects JSON.parse/Date.parse/bare z.object bypasses", () => {
+	fs.mkdirSync(cacheDir, { recursive: true });
+	const tempDir = fs.mkdtempSync(path.join(cacheDir, "dente-door-bypass-"));
+
+	try {
+		const routeFile = path.join(tempDir, "bypassAttempts.ts");
+		fs.writeFileSync(
+			routeFile,
+			`
+			import { FastifyInstance } from "fastify";
+			export async function testRoutes(fastify: FastifyInstance) {
+				fastify.post("/api/json-parse-bypass", async (req) => {
+					return JSON.parse(String(req.body));
+				});
+				fastify.put("/api/date-parse-bypass", async (req) => {
+					return Date.parse(String(req.body));
+				});
+			}
+			`,
+			"utf8",
+		);
+
+		const violations = checkApiMutationDoors([routeFile], { api_mutation_doors_legacy_backlog: [] });
+		assert.equal(violations.length, 2);
+		assert.ok(violations.some((v) => v.path === "/api/json-parse-bypass"));
+		assert.ok(violations.some((v) => v.path === "/api/date-parse-bypass"));
+	} finally {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});

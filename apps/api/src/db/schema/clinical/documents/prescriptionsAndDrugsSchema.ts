@@ -20,55 +20,6 @@ import { visits } from "../visitsSchema.js";
 // PHASE 26: DENTAL PHARMACOLOGY & 1094н PRESCRIPTIONS
 // ─────────────────────────────────────────────────────────────
 
-export const drugCatalog = pgTable(
-	"drug_catalog",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		tradeNameRu: text("trade_name_ru").notNull(),
-		innLatin: text("inn_latin").notNull(),
-		innRu: text("inn_ru").notNull(),
-		category: text("category").notNull(),
-		dosageForm: text("dosage_form").notNull(),
-		strengthConcentration: text("strength_concentration").notNull(),
-		standardPackageUnits: integer("standard_package_units").notNull().default(20),
-		latinSignatureTemplate: text("latin_signature_template").notNull(),
-		defaultDispenseInstructionLatin: text("default_dispense_instruction_latin")
-			.notNull()
-			.default("D.t.d. N 20 in tab.\nS."),
-		defaultSigRussian: text("default_sig_russian").notNull(),
-		maxSingleDoseMg: numeric("max_single_dose_mg", { precision: 8, scale: 2 }),
-		maxDailyDoseMg: numeric("max_daily_dose_mg", { precision: 8, scale: 2 }),
-		contraindicatedAgeMinYears: integer("contraindicated_age_min_years").default(0),
-		pregnancyCategoryRisk: text("pregnancy_category_risk").default("B"),
-		requiresSpecialPrescriptionForm: boolean(
-			"requires_special_prescription_form",
-		)
-			.notNull()
-			.default(false),
-		atcCode: varchar("atc_code", { length: 10 }),
-		isActive: boolean("is_active").notNull().default(true),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		orgCategoryIdx: index("drug_catalog_org_cat_idx").on(
-			t.organizationId,
-			t.category,
-		),
-		innLatinIdx: index("drug_catalog_inn_latin_idx").on(
-			t.organizationId,
-			t.innLatin,
-		),
-	}),
-);
-
 export const drugInteractions = pgTable(
 	"drug_interactions",
 	{
@@ -183,9 +134,7 @@ export const electronicPrescriptionItems = pgTable(
 		prescriptionId: uuid("prescription_id")
 			.notNull()
 			.references(() => electronicPrescriptions.id, { onDelete: "cascade" }),
-		catalogDrugId: uuid("catalog_drug_id").references(() => drugCatalog.id, {
-			onDelete: "set null",
-		}),
+		catalogDrugId: uuid("catalog_drug_id"),
 		itemIndex: integer("item_index").notNull().default(1),
 		innLatin: text("inn_latin").notNull(),
 		tradeName: text("trade_name"),
@@ -212,8 +161,6 @@ export const electronicPrescriptionItems = pgTable(
 	}),
 );
 
-export type DrugCatalogItem = typeof drugCatalog.$inferSelect;
-export type NewDrugCatalogItem = typeof drugCatalog.$inferInsert;
 export type DrugInteraction = typeof drugInteractions.$inferSelect;
 export type NewDrugInteraction = typeof drugInteractions.$inferInsert;
 export type ElectronicPrescription = typeof electronicPrescriptions.$inferSelect;

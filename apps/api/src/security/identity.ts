@@ -7,7 +7,9 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { verifyToken } from "../utils/cryptoHelper.js";
-import { authTokenSecret } from "./authSecret.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
+import { authTokenSecret, clinicalAdminSecret } from "./authSecret.js";
+import { namedDevelopmentModeActive } from "./bypass.js";
 import {
 	ADMIN_ROLES,
 	CLINIC_TOKEN_HEADER,
@@ -35,6 +37,7 @@ export {
 	ADMIN_ROLES,
 	CLINIC_TOKEN_HEADER,
 	EMPTY_IDENTITY,
+	identityRejectionOf,
 	ORGANIZATION_HEADER,
 	STAFF_TOKEN_HEADER,
 	UNVERIFIED_MUTATION_REJECTION,
@@ -221,6 +224,142 @@ export function requireOrganizationId(
 	return identity.organizationId;
 }
 
+const UUID_FORMAT_RE =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function hasTrustedBypassForSessionCheck(request: FastifyRequest): boolean {
+	if (namedDevelopmentModeActive()) {
+		const clinicHeader = headerValue(request, CLINIC_TOKEN_HEADER);
+		if (
+			clinicHeader &&
+			(clinicHeader.startsWith("demo-showcase-token") ||
+				clinicHeader.startsWith("demo-showcase-clinic-token"))
+		) {
+			return true;
+		}
+	}
+	const adminSecretHeader =
+		headerValue(request, "x-dente-admin-secret") ??
+		headerValue(request, "x-admin-secret");
+	if (!adminSecretHeader) return false;
+	const configuredSecret = clinicalAdminSecret();
+	if (
+		configuredSecret &&
+		timingSafeSecretEqual(adminSecretHeader, configuredSecret)
+	) {
+		return true;
+	}
+	return (
+		namedDevelopmentModeActive() &&
+		(adminSecretHeader === "dente-local-dev-secret" ||
+			adminSecretHeader === "dev-secret" ||
+			adminSecretHeader === "synthetic-clinical-secret" ||
+			adminSecretHeader === "synthetic-schedule-secret" ||
+			adminSecretHeader === "test_secret_or_allow")
+	);
+}
+
+/**
+ * Проверяет актуальность сессии сотрудника в БД.
+ * Отклоняет не только несовпадающий sessionId, но и старые токены без sessionId,
+ * если в БД у пользователя уже зафиксирована активная сессия (currentSessionId !== null).
+ */
+export async function verifyActiveStaffSession(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	organizationId: string | null,
+	userId: string,
+	sessionId: string | null,
+): Promise<boolean> {
+	const hasValidUuidUser = UUID_FORMAT_RE.test(userId);
+	const hasValidUuidOrg = organizationId
+		? UUID_FORMAT_RE.test(organizationId)
+		: false;
+
+	if (sessionId) {
+		if (!hasValidUuidUser || (organizationId && !hasValidUuidOrg)) {
+			reply.code(401).send({
+				error: "invalid_session",
+				message:
+					"Выполнен вход с другого устройства. Текущая сессия завершена.",
+			});
+			return false;
+		}
+		const { withSuperuserBypass, withTenantCtx } = await import("../db/rls.js");
+		const { users } = await import("../db/schema.js");
+		const { eq, and } = await import("drizzle-orm");
+		const [user] = organizationId
+			? await withTenantCtx(organizationId, async (tx) =>
+					tx
+						.select({ currentSessionId: users.currentSessionId })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, userId),
+								eq(users.organizationId, organizationId),
+							),
+						)
+						.limit(1),
+				)
+			: await withSuperuserBypass(async (tx) =>
+					tx
+						.select({ currentSessionId: users.currentSessionId })
+						.from(users)
+						.where(eq(users.id, userId))
+						.limit(1),
+				);
+
+		if (!user?.currentSessionId || user.currentSessionId !== sessionId) {
+			reply.code(401).send({
+				error: "invalid_session",
+				message:
+					"Выполнен вход с другого устройства. Текущая сессия завершена.",
+			});
+			return false;
+		}
+		return true;
+	}
+
+	if (hasTrustedBypassForSessionCheck(request) || !hasValidUuidUser) {
+		return true;
+	}
+
+	const { withSuperuserBypass, withTenantCtx } = await import("../db/rls.js");
+	const { users } = await import("../db/schema.js");
+	const { eq, and } = await import("drizzle-orm");
+	const [user] =
+		organizationId && hasValidUuidOrg
+			? await withTenantCtx(organizationId, async (tx) =>
+					tx
+						.select({ currentSessionId: users.currentSessionId })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, userId),
+								eq(users.organizationId, organizationId),
+							),
+						)
+						.limit(1),
+				)
+			: await withSuperuserBypass(async (tx) =>
+					tx
+						.select({ currentSessionId: users.currentSessionId })
+						.from(users)
+						.where(eq(users.id, userId))
+						.limit(1),
+				);
+
+	if (user?.currentSessionId) {
+		reply.code(401).send({
+			error: "invalid_session",
+			message:
+				"Выполнен вход с другого устройства. Текущая сессия завершена.",
+		});
+		return false;
+	}
+	return true;
+}
+
 /**
  * Требует авторизованного сотрудника (не только токен кабинета).
  * Возвращает null и отправляет 401/403 при неудаче.
@@ -232,9 +371,26 @@ export async function requireStaffIdentity(
 ): Promise<RequestIdentity | null> {
 	const identity = getRequestIdentity(request);
 	if (!identity.organizationId || !identity.userId) {
+		if (identityRejectionOf(request) === UNVERIFIED_MUTATION_REJECTION) {
+			reply.code(401).send({
+				error: "UnverifiedOrganizationCannotMutate",
+				message:
+					`Заголовок ${ORGANIZATION_HEADER} определяет клинику только для чтения и только в локальной разработке. ` +
+					"Для изменения данных нужен подписанный токен рабочего кабинета.",
+			});
+			return null;
+		}
 		reply.code(401).send({
 			error: "AuthRequired",
 			message: "Требуется вход сотрудника.",
+		});
+		return null;
+	}
+	if (!identity.verified) {
+		reply.code(401).send({
+			error: "UnverifiedOrganizationCannotMutate",
+			message:
+				`Заголовок ${ORGANIZATION_HEADER} не подтверждён подписанным токеном клиники.`,
 		});
 		return null;
 	}
@@ -248,36 +404,15 @@ export async function requireStaffIdentity(
 			return null;
 		}
 	}
-	if (identity.sessionId) {
-		const checkedUserId = identity.userId;
-		const checkedOrgId = identity.organizationId;
-		const { withTenantCtx } = await import("../db/rls.js");
-		const { users } = await import("../db/schema.js");
-		const { eq, and } = await import("drizzle-orm");
-		const [user] = await withTenantCtx(checkedOrgId, async (tx) =>
-			tx
-				.select({ currentSessionId: users.currentSessionId })
-				.from(users)
-				.where(
-					and(
-						eq(users.id, checkedUserId),
-						eq(users.organizationId, checkedOrgId),
-					),
-				)
-				.limit(1),
-		);
-
-		if (
-			!user?.currentSessionId ||
-			user.currentSessionId !== identity.sessionId
-		) {
-			reply.code(401).send({
-				error: "invalid_session",
-				message:
-					"Выполнен вход с другого устройства. Текущая сессия завершена.",
-			});
-			return null;
-		}
+	const sessionOk = await verifyActiveStaffSession(
+		request,
+		reply,
+		identity.organizationId,
+		identity.userId,
+		identity.sessionId,
+	);
+	if (!sessionOk) {
+		return null;
 	}
 	return identity;
 }

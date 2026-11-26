@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { rublesToKopecks } from "@dental/shared";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { withSuperuserBypass } from "../db/rls.js";
 import { portalBudgetTokens } from "../db/schema.js";
@@ -88,41 +88,11 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 
 			const masked = maskPhone(budget.patientPhone);
 
-			// ФИКСАЦИЯ ПЕРВОГО ОТКРЫТИЯ (viewed) И УВЕДОМЛЕНИЕ КЛИНИКИ В РЕАЛЬНОМ ВРЕМЕНИ
-			if (!budget.viewedAt) {
-				const viewedIso = new Date();
-				await withSuperuserBypass(async (tx) =>
-					tx
-						.update(portalBudgetTokens)
-						.set({
-							viewedAt: viewedIso,
-							status: budget.status === "sent" ? "viewed" : budget.status,
-							updatedAt: viewedIso,
-						})
-						.where(eq(portalBudgetTokens.token, token)),
-				);
-				wsBroker.broadcastToOrganization(budget.organizationId, {
-					type: "TREATMENT_PLAN_VIEWED",
-					payload: {
-						token: budget.token,
-						planId: budget.planId,
-						patientId: budget.patientId,
-						patientFirstName: budget.patientFirstName,
-						clinicName: budget.clinicName,
-						viewedAt: viewedIso.toISOString(),
-						netTotalKopecks:
-							typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
-								? Number(budget.netTotalKopecks)
-								: rublesToKopecks(Number(budget.netTotalRub) || 0),
-					},
-				});
-			}
-
 			// ЕСЛИ ЛИЧНОСТЬ НЕ ВЕРИФИЦИРОВАНА — НОЛЬ УТЕЧЕК!
 			if (!isVerified) {
 				return reply.code(200).send({
 					token: budget.token,
-					status: budget.status === "sent" ? "viewed" : budget.status,
+					status: budget.status,
 					clinicName: budget.clinicName,
 					clinicPhone: budget.clinicPhone,
 					clinicAddress: budget.clinicAddress,
@@ -212,6 +182,89 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 	server.get<{ Params: { token: string } }>(
 		"/api/portal/budget/:token",
 		getBudgetHandler,
+	);
+
+	// 1b. POST /api/v1/public/budgets/:token/view & /api/portal/budget/:token/view — явная фиксация первого просмотра сметы
+	const markBudgetViewedHandler = async (
+		request: FastifyRequest<{ Params: { token: string } }>,
+		reply: FastifyReply,
+	) => {
+		const token = request.params.token?.trim();
+		if (!token) {
+			return reply.code(400).send({ error: "TokenRequired", message: "Укажите токен сметы." });
+		}
+
+		const [budget] = await withSuperuserBypass(async (tx) =>
+			tx
+				.select()
+				.from(portalBudgetTokens)
+				.where(eq(portalBudgetTokens.token, token))
+				.limit(1),
+		);
+
+		if (!budget) {
+			return reply.code(404).send({
+				error: "BudgetNotFound",
+				message: "Смета не найдена или срок действия ссылки истёк.",
+			});
+		}
+
+		const viewedAt = budget.viewedAt ?? new Date();
+		const nextStatus = budget.status === "sent" ? "viewed" : budget.status;
+		if (!budget.viewedAt) {
+			const updated = await withSuperuserBypass(async (tx) =>
+				tx
+					.update(portalBudgetTokens)
+					.set({
+						viewedAt,
+						status: nextStatus,
+						updatedAt: viewedAt,
+					})
+					.where(
+						and(
+							eq(portalBudgetTokens.token, token),
+							isNull(portalBudgetTokens.viewedAt),
+						),
+					)
+					.returning({ token: portalBudgetTokens.token }),
+			);
+
+			if (updated.length > 0) {
+				wsBroker.broadcastToOrganization(budget.organizationId, {
+					type: "TREATMENT_PLAN_VIEWED",
+					payload: {
+						token: budget.token,
+						planId: budget.planId,
+						patientId: budget.patientId,
+						patientFirstName: budget.patientFirstName,
+						clinicName: budget.clinicName,
+						viewedAt: viewedAt.toISOString(),
+						netTotalKopecks:
+							typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
+								? Number(budget.netTotalKopecks)
+								: rublesToKopecks(Number(budget.netTotalRub) || 0),
+					},
+				});
+			}
+		}
+
+		return reply.code(200).send({
+			success: true,
+			token: budget.token,
+			status: nextStatus,
+			viewedAt: viewedAt.toISOString(),
+		});
+	};
+
+	// door-validation: none — Фиксация первого просмотра сметы использует только параметр :token в URL без тела запроса
+	server.post<{ Params: { token: string } }>(
+		"/api/v1/public/budgets/:token/view",
+		markBudgetViewedHandler,
+	);
+	// door-validation: none — Фиксация первого просмотра сметы использует только параметр :token в URL без тела запроса
+	server.post<{ Params: { token: string } }>(
+		"/api/portal/budget/:token/view",
+		markBudgetViewedHandler,
 	);
 
 	// 2. POST /api/v1/public/budgets/:token/verify & /verify-pin — 2FA подтверждение по последним 4 цифрам телефона или PIN

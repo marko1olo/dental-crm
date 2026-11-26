@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import {
+	type CreateImplantInstallationInput,
+	type ImplantBatchToothSpec,
 	ImplantStabilityCalculator,
+	type ResolvedImplantInstallationInput,
 	createImplantInstallationSchema,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -21,6 +24,173 @@ import { wsBroker } from "../../services/websocketBroker.js";
 import { deductConsumables } from "./deductConsumables.js";
 import { deductImplantScrew } from "./deductImplantScrew.js";
 import { linkBillingAndOdontogram } from "./installationBillingAndOdontogram.js";
+
+function normalizeBrandString(value: unknown): unknown {
+	return typeof value === "string"
+		? value.trim().toLowerCase().replace(/[\s-]+/g, "_")
+		: value;
+}
+
+function collectCandidateTeeth(rawBody: Record<string, unknown>): number[] {
+	const result: number[] = [];
+	const pushTooth = (val: unknown) => {
+		if (typeof val === "number" && !result.includes(val)) {
+			result.push(val);
+		}
+	};
+	if (Array.isArray(rawBody.teeth)) {
+		for (const t of rawBody.teeth) pushTooth(t);
+	}
+	pushTooth(rawBody.toothNumberFdi);
+	const rawSpecs = Array.isArray(rawBody.installations)
+		? rawBody.installations
+		: Array.isArray(rawBody.teethSpecs)
+			? rawBody.teethSpecs
+			: [];
+	for (const item of rawSpecs) {
+		if (item && typeof item === "object") {
+			pushTooth((item as Record<string, unknown>).toothNumberFdi);
+		}
+	}
+	return result;
+}
+
+function resolveSingleToothSpec(
+	base: CreateImplantInstallationInput,
+	toothNumberFdi: number,
+	override?: ImplantBatchToothSpec,
+): ResolvedImplantInstallationInput {
+	const diameter = override?.implantDiameterMm ?? base.implantDiameterMm;
+	const length = override?.implantLengthMm ?? base.implantLengthMm;
+	const torque = override?.finalInsertionTorqueNcm ?? base.finalInsertionTorqueNcm;
+	if (diameter === undefined || length === undefined || torque === undefined) {
+		throw new Error("IMPLANT_SPEC_INCOMPLETE");
+	}
+	return {
+		...base,
+		toothNumberFdi,
+		implantDiameterMm: diameter,
+		implantLengthMm: length,
+		finalInsertionTorqueNcm: torque,
+		implantBrand: override?.implantBrand ?? base.implantBrand,
+		connectionType:
+			override?.connectionType !== undefined
+				? override.connectionType
+				: base.connectionType,
+		implantConnectionType:
+			override?.implantConnectionType !== undefined
+				? override.implantConnectionType
+				: base.implantConnectionType,
+		catalogItemId:
+			override?.catalogItemId !== undefined
+				? override.catalogItemId
+				: base.catalogItemId,
+		inventoryItemId:
+			override?.inventoryItemId !== undefined
+				? override.inventoryItemId
+				: base.inventoryItemId,
+		lotNumber:
+			override?.lotNumber !== undefined
+				? override.lotNumber
+				: (base.lotNumber ?? null),
+		serialNumber:
+			override?.serialNumber !== undefined
+				? override.serialNumber
+				: (base.serialNumber ?? null),
+		catalogArticle:
+			override?.catalogArticle !== undefined
+				? override.catalogArticle
+				: base.catalogArticle,
+		expirationDate:
+			override?.expirationDate !== undefined
+				? override.expirationDate
+				: base.expirationDate,
+		isGuidedSurgery: override?.isGuidedSurgery ?? base.isGuidedSurgery,
+		guidedSleeveDiameterMm:
+			override?.guidedSleeveDiameterMm !== undefined
+				? override.guidedSleeveDiameterMm
+				: base.guidedSleeveDiameterMm,
+		guidedSleeveOffsetMm:
+			override?.guidedSleeveOffsetMm !== undefined
+				? override.guidedSleeveOffsetMm
+				: base.guidedSleeveOffsetMm,
+		surgicalGuideTemplateId:
+			override?.surgicalGuideTemplateId !== undefined
+				? override.surgicalGuideTemplateId
+				: base.surgicalGuideTemplateId,
+		boneDensityClass: override?.boneDensityClass ?? base.boneDensityClass,
+		averageHounsfieldUnits:
+			override?.averageHounsfieldUnits !== undefined
+				? override.averageHounsfieldUnits
+				: base.averageHounsfieldUnits,
+		baselineIsqMesiodistal:
+			override?.baselineIsqMesiodistal !== undefined
+				? override.baselineIsqMesiodistal
+				: base.baselineIsqMesiodistal,
+		baselineIsqBuccolingual:
+			override?.baselineIsqBuccolingual !== undefined
+				? override.baselineIsqBuccolingual
+				: base.baselineIsqBuccolingual,
+		baselineIsqDistopalatal:
+			override?.baselineIsqDistopalatal !== undefined
+				? override.baselineIsqDistopalatal
+				: base.baselineIsqDistopalatal,
+		corticalTapUsed: override?.corticalTapUsed ?? base.corticalTapUsed,
+		underdrillingUsed: override?.underdrillingUsed ?? base.underdrillingUsed,
+		boneGraftMaterial:
+			override?.boneGraftMaterial !== undefined
+				? override.boneGraftMaterial
+				: base.boneGraftMaterial,
+		boneGraftItemId:
+			override?.boneGraftItemId !== undefined
+				? override.boneGraftItemId
+				: base.boneGraftItemId,
+		membraneUsed:
+			override?.membraneUsed !== undefined
+				? override.membraneUsed
+				: base.membraneUsed,
+		membraneItemId:
+			override?.membraneItemId !== undefined
+				? override.membraneItemId
+				: base.membraneItemId,
+		sutureMaterial:
+			override?.sutureMaterial !== undefined
+				? override.sutureMaterial
+				: base.sutureMaterial,
+		sutureItemId:
+			override?.sutureItemId !== undefined
+				? override.sutureItemId
+				: base.sutureItemId,
+		operationPriceRub:
+			override?.operationPriceRub !== undefined
+				? override.operationPriceRub
+				: base.operationPriceRub,
+		operationPriceKopecks:
+			override?.operationPriceKopecks !== undefined
+				? override.operationPriceKopecks
+				: base.operationPriceKopecks,
+		notes: override?.notes !== undefined ? override.notes : base.notes,
+	};
+}
+
+function buildToothSpecsToProcess(
+	input: CreateImplantInstallationInput,
+	fallbackTeeth: number[],
+): ResolvedImplantInstallationInput[] {
+	const explicitSpecs = input.installations ?? input.teethSpecs;
+	if (explicitSpecs && explicitSpecs.length > 0) {
+		return explicitSpecs.map((spec) =>
+			resolveSingleToothSpec(input, spec.toothNumberFdi, spec),
+		);
+	}
+	const uniqueTeeth =
+		fallbackTeeth.length > 0
+			? fallbackTeeth
+			: input.toothNumberFdi !== undefined
+				? [input.toothNumberFdi]
+				: [];
+	return uniqueTeeth.map((toothNum) => resolveSingleToothSpec(input, toothNum));
+}
 
 export function registerInstallationRoute(app: FastifyInstance) {
 	const handleInstallation = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -45,21 +215,26 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				? { ...(request.body as Record<string, unknown>) }
 				: {};
 		if (typeof rawBody.implantBrand === "string") {
-			rawBody.implantBrand = rawBody.implantBrand.trim().toLowerCase().replace(/[\s-]+/g, "_");
+			rawBody.implantBrand = normalizeBrandString(rawBody.implantBrand);
+		}
+		for (const key of ["installations", "teethSpecs"] as const) {
+			const list = rawBody[key];
+			if (Array.isArray(list)) {
+				rawBody[key] = list.map((item) => {
+					if (item && typeof item === "object") {
+						const clone = { ...(item as Record<string, unknown>) };
+						if (typeof clone.implantBrand === "string") {
+							clone.implantBrand = normalizeBrandString(clone.implantBrand);
+						}
+						return clone;
+					}
+					return item;
+				});
+			}
 		}
 
 		// Поддержка множественной имплантации (All-on-4 / пакетная установка)
-		const targetTeeth: number[] = [];
-		if (Array.isArray(rawBody.teeth)) {
-			for (const t of rawBody.teeth) {
-				if (typeof t === "number" && !targetTeeth.includes(t)) {
-					targetTeeth.push(t);
-				}
-			}
-		}
-		if (typeof rawBody.toothNumberFdi === "number" && !targetTeeth.includes(rawBody.toothNumberFdi)) {
-			targetTeeth.push(rawBody.toothNumberFdi);
-		}
+		const targetTeeth = collectCandidateTeeth(rawBody);
 
 		// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
 		for (const toothNum of targetTeeth) {
@@ -80,9 +255,17 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			});
 		}
 		const input = parsed.data;
-
+		const specsToProcess = buildToothSpecsToProcess(input, targetTeeth);
+		const firstSpec = specsToProcess[0];
+		if (!firstSpec) {
+			return reply.code(400).send({
+				error: "ImplantInstallationValidationError",
+				message: "Не указан ни один зуб для установки имплантата.",
+			});
+		}
+		const teethToProcess = specsToProcess.map((s) => s.toothNumberFdi);
 		const targetPatientId = input.patientId;
-		const effectiveInput = { ...input, patientId: targetPatientId };
+		const effectiveInput = firstSpec;
 
 		const { isqMean, isqAnisotropyDelta } = ImplantStabilityCalculator.calculateMeanIsq(
 			effectiveInput.baselineIsqMesiodistal,
@@ -98,8 +281,6 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			(isqMean !== null ? isqMean >= 70 : false) &&
 			effectiveInput.finalInsertionTorqueNcm >= 35 &&
 			effectiveInput.finalInsertionTorqueNcm <= 55;
-
-		const teethToProcess = targetTeeth.length > 0 ? targetTeeth : [effectiveInput.toothNumberFdi];
 
 		// Единая неделимая ACID транзакция для всех имплантатов пакета (Мандаты 8bo, All-on-4)
 		const txResult = await withTenantCtx(orgId, async (tx) => {
@@ -119,17 +300,32 @@ export function registerInstallationRoute(app: FastifyInstance) {
 			let primaryFinancials: unknown = null;
 			let firstInstallationRecord: typeof patientImplantInstallations.$inferSelect | null = null;
 			let firstInventoryDeduction: unknown = null;
+			let batchInvoiceId: string | undefined = input.invoiceId ?? undefined;
 
-			for (const toothNum of teethToProcess) {
-				const toothLot =
-					teethToProcess.length > 1
-						? `${effectiveInput.lotNumber || "LOT"}-T${toothNum}`
-						: effectiveInput.lotNumber;
-				const currentItemInput = {
-					...effectiveInput,
-					toothNumberFdi: toothNum,
-					lotNumber: toothLot,
+			for (const specItem of specsToProcess) {
+				const toothNum = specItem.toothNumberFdi;
+				const currentItemInput: ResolvedImplantInstallationInput = {
+					...specItem,
+					...(batchInvoiceId ? { invoiceId: batchInvoiceId } : {}),
 				};
+				const toothStability = ImplantStabilityCalculator.calculateMeanIsq(
+					currentItemInput.baselineIsqMesiodistal,
+					currentItemInput.baselineIsqBuccolingual,
+					currentItemInput.baselineIsqDistopalatal,
+				);
+				const toothIsqMean = toothStability.isqMean;
+				const toothIsqDelta = toothStability.isqAnisotropyDelta;
+				const toothEval = ImplantStabilityCalculator.evaluateLoadingProtocol(
+					toothIsqMean,
+					currentItemInput.finalInsertionTorqueNcm,
+					0,
+				);
+				const toothProtocol = toothEval.protocol;
+				const toothDecisionRationale = toothEval.decisionRationale;
+				const toothImmediateLoadingFeasible =
+					(toothIsqMean !== null ? toothIsqMean >= 70 : false) &&
+					currentItemInput.finalInsertionTorqueNcm >= 35 &&
+					currentItemInput.finalInsertionTorqueNcm <= 55;
 
 				const screw = await deductImplantScrew(tx, orgId, identity.userId ?? null, currentItemInput);
 				const { deductedMaterials, consumablesCostTotalKopecksBigInt } = await deductConsumables(
@@ -158,9 +354,12 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					screw.implantUnitCostKopecksBigInt,
 					consumablesCostTotalKopecksBigInt,
 					screw.effectiveLotNumber,
-					isqMean,
-					protocol,
+					toothIsqMean,
+					toothProtocol,
 				);
+				if (!batchInvoiceId && financials.invoiceId) {
+					batchInvoiceId = financials.invoiceId;
+				}
 				if (!primaryFinancials) {
 					primaryFinancials = financials;
 				}
@@ -228,8 +427,8 @@ export function registerInstallationRoute(app: FastifyInstance) {
 							? String(currentItemInput.averageHounsfieldUnits)
 							: null,
 						finalInsertionTorqueNcm: String(currentItemInput.finalInsertionTorqueNcm),
-						baselineIsq: isqMean !== null ? Math.round(isqMean) : null,
-						initialProtocol: protocol,
+						baselineIsq: toothIsqMean !== null ? Math.round(toothIsqMean) : null,
+						initialProtocol: toothProtocol,
 						corticalTapUsed: currentItemInput.corticalTapUsed,
 						underdrillingUsed: currentItemInput.underdrillingUsed,
 						boneGraftMaterial: currentItemInput.boneGraftMaterial ?? null,
@@ -248,7 +447,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						financialsJsonb: {
 							financials,
 							deductedMaterials: itemDeductions,
-							isImmediateLoadingFeasible,
+							isImmediateLoadingFeasible: toothImmediateLoadingFeasible,
 						},
 						notes: currentItemInput.notes ?? null,
 					})
@@ -260,7 +459,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 				if (
 					currentItemInput.baselineIsqMesiodistal != null &&
 					currentItemInput.baselineIsqBuccolingual != null &&
-					isqMean != null
+					toothIsqMean != null
 				) {
 					await tx.insert(implantIsqMeasurements).values({
 						organizationId: orgId,
@@ -271,10 +470,10 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						isqMesiodistal: currentItemInput.baselineIsqMesiodistal,
 						isqBuccolingual: currentItemInput.baselineIsqBuccolingual,
 						isqDistopalatal: currentItemInput.baselineIsqDistopalatal ?? null,
-						isqMean: String(isqMean),
-						isqAnisotropyDelta: isqAnisotropyDelta ?? 0,
+						isqMean: String(toothIsqMean),
+						isqAnisotropyDelta: toothIsqDelta ?? 0,
 						stabilityStatus: "primary_mechanical_high",
-						recommendedLoadingDecision: decisionRationale,
+						recommendedLoadingDecision: toothDecisionRationale,
 						isBiologicalDipDetected: false,
 					});
 				}
@@ -361,7 +560,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					inventoryDeduction: deductionSummary,
 					deductedMaterials: itemDeductions,
 					financials,
-					isImmediateLoadingFeasible,
+					isImmediateLoadingFeasible: toothImmediateLoadingFeasible,
 				});
 			}
 

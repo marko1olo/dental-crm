@@ -22,6 +22,7 @@ import test from "node:test";
 import {
 	auditDoors,
 	auditFields,
+	auditTests,
 	auditUi,
 	createPrng,
 	inspectLine,
@@ -495,6 +496,52 @@ test("isCombatSourceFile исключает файлы внутри /tests/ (н�
 	assert.equal(isCombatSourceFile("apps/api/src/routes/billing.ts"), true);
 });
 
+test("Кубик v2: inspectLine ловит catch {} без скобок, .catch(()=>{}), z.any(), @ts-expect-error, any[], as never и NON_NULL_RE", () => {
+	const cases = [
+		["try { save(); } catch {}", "MANDATE_8zr_EMPTY_CATCH"],
+		["fetch('/api/x').catch(() => {});", "MANDATE_8zr_SWALLOWED_PROMISE"],
+		["const s = z.object({ a: z.any() });", "MANDATE_8be_ZOD_ANY"],
+		["// @ts-expect-error ignore later", "MANDATE_8be_SUPPRESSION_DIRECTIVE"],
+		["const list: any[] = [];", "MANDATE_8be_EXPLICIT_ANY"],
+		["const x = val as never;", "MANDATE_8be_AS_NEVER"],
+		["const first = items[0]!;", "MANDATE_8be_NON_NULL_ASSERTION"],
+		["if (process.env.VITEST) return;", "ANTI_GOODHART_TEST_ENV_SNIFF"],
+	];
+	for (const [line, expectedRule] of cases) {
+		const res = inspectLine({ relPath: "apps/api/src/routes/x.ts", lineNum: 10, current: line, before: [], after: [] });
+		assert.equal(res.status, "DEFECT", `должен находить дефект в: ${line}`);
+		assert.ok(res.defects.some((d) => d.rule === expectedRule), `ожидали ${expectedRule} для: ${line}, получили ${JSON.stringify(res.defects)}`);
+	}
+});
+
+test("Кубик v2 Список 4 (auditTests / --list tests): выявляет лживые тесты (assert.ok(true), no-assertion, phantom)", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-tests-"));
+	try {
+		const testsDir = path.join(tmpDir, "packages/shared/src/tests");
+		mkdirSync(testsDir, { recursive: true });
+		writeFileSync(
+			path.join(testsDir, "lying.test.ts"),
+			[
+				'import assert from "node:assert/strict";',
+				'import { it } from "node:test";',
+				'it("fake pass", () => { assert.ok(true); });',
+				'it("no assert", () => { const a = 1 + 1; void a; });',
+			].join("\n"),
+			"utf8",
+		);
+		const report = auditTests(tmpDir, createPrng(7), 5);
+		assert.equal(report.totalTestFilesFound, 1);
+		assert.equal(report.sampled[0].status, "DEFECT");
+		assert.ok(report.sampled[0].findings.some((f) => f.rule === "test-tautology"));
+		assert.ok(report.sampled[0].findings.some((f) => f.rule === "test-no-assertion"));
+
+		const cliOpts = parseCliArgs(["--list", "tests"]);
+		assert.equal(cliOpts.list, "tests");
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
 test("Реестр манифестов отказов FAILURE_MANIFESTOS: полнота и валидность всех 12 шлюзов", () => {
 	const REQUIRED_GATES = [
 		"DIFF_SAFETY",
@@ -549,5 +596,68 @@ test("Реестр манифестов отказов FAILURE_MANIFESTOS: по�
 		assert.ok(errorOutput.includes("UNKNOWN_GATE_123"));
 	} finally {
 		console.error = originalError;
+	}
+});
+
+test("Hardened auditDoors: выявляет мутацию БД внутри GET-роута и bare db.* рядом с tx.*", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-doors-hardened-"));
+	try {
+		const routesDir = path.join(tmpDir, "apps/api/src/routes");
+		mkdirSync(routesDir, { recursive: true });
+		writeFileSync(
+			path.join(routesDir, "hardenedViolations.ts"),
+			[
+				'import { FastifyInstance } from "fastify";',
+				"export async function hardenedRoutes(app: FastifyInstance) {",
+				'  app.get("/api/leaky-read", async (req, reply) => {',
+				"    const orgId = await requireResolvedOrganizationId(req, reply);",
+				"    await withTenantCtx(orgId, async (tx) => { await tx.insert(budgets).values({ id: 1 }); });",
+				"    return { ok: true };",
+				"  });",
+				'  app.post("/api/split-tx", async (req, reply) => {',
+				"    const orgId = await requireResolvedOrganizationId(req, reply);",
+				'    await withTenantCtx(orgId, async (tx) => { await tx.insert(a).values({ x: 1 }); await db.update(b).set({ y: 2 }); });',
+				"    return { ok: true };",
+				"  });",
+				"}",
+			].join("\n"),
+			"utf8",
+		);
+
+		const report = auditDoors(tmpDir, createPrng(9), 10);
+		assert.equal(report.totalDoorsFound, 2);
+		const getDoor = report.sampled.find((d) => d.routeSignature.includes("/api/leaky-read"));
+		const postDoor = report.sampled.find((d) => d.routeSignature.includes("/api/split-tx"));
+		assert.equal(getDoor?.status, "DEFECT");
+		assert.ok(getDoor?.issues.some((i) => i.includes("GET-роут выполняет мутацию БД")));
+		assert.equal(postDoor?.status, "DEFECT");
+		assert.ok(postDoor?.issues.some((i) => i.includes("Прямой вызов db.insert/update/delete рядом с tx.*")));
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
+	}
+});
+
+test("Hardened auditFields: различает бонусные баллы/проценты от денежных numeric колонок", () => {
+	const tmpDir = mkdtempSync(path.join(os.tmpdir(), "dice-fields-pct-"));
+	try {
+		const schemaDir = path.join(tmpDir, "apps/api/src/db/schema");
+		mkdirSync(schemaDir, { recursive: true });
+		writeFileSync(
+			path.join(schemaDir, "cleanMetrics.ts"),
+			[
+				'import { pgTable, uuid, numeric } from "drizzle-orm/pg-core";',
+				'export const cleanCommissions = pgTable("clean_commissions", {',
+				'  id: uuid("id").primaryKey(),',
+				'  amountPoints: numeric("amount_points", { precision: 12, scale: 2 }).notNull(),',
+				'  materialCostDeductionPct: numeric("material_cost_deduction_pct", { precision: 5, scale: 2 }).notNull(),',
+				"});",
+			].join("\n"),
+			"utf8",
+		);
+		const fieldReport = auditFields(tmpDir, createPrng(1), 5);
+		assert.equal(fieldReport.totalContractsFound, 1);
+		assert.equal(fieldReport.sampled[0]?.status, "CLEAN");
+	} finally {
+		rmSync(tmpDir, { recursive: true, force: true });
 	}
 });

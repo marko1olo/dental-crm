@@ -518,30 +518,6 @@ export const patientCtPlannings = pgTable(
 	}),
 );
 
-// bulk image operation logs (batch DICOM operations)
-export const bulkImageOperationLogs = pgTable(
-	"bulk_image_operation_logs",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		operationType: text("operation_type").notNull(),
-		studyIds: jsonb("study_ids"),
-		requestedBy: uuid("requested_by"),
-		status: text("status").notNull().default("completed"),
-		errorDetails: jsonb("error_details"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("bulk_image_operation_logs_organizationId_idx").on(
-			t.organizationId,
-		),
-	}),
-);
-
 // Clinical AI findings & dental radiograph automated pathology analysis
 export const radiologyAiFindings = pgTable(
 	"radiology_ai_findings",

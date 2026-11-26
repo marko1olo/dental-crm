@@ -91,7 +91,7 @@ function isLocalStorageAuthorized(
 
 	// Check 2: Authenticated clinic staff session with tenant isolation
 	const identity = getRequestIdentity(request);
-	if (identity.organizationId) {
+	if (identity.organizationId && identity.verified) {
 		const keyOrg = extractOrgFromKey(rawKey);
 		const callerOrgClean = identity.organizationId.replace(/[^a-zA-Z0-9_-]/g, "");
 		if (keyOrg && keyOrg === callerOrgClean) {

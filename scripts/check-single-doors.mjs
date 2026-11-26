@@ -437,28 +437,46 @@ export function hasAstValidation(node, parsedSourceFile) {
 
 	let hasValidation = false;
 
+	function isRequestBodyOrSchemaCall(callNode) {
+		const expr = callNode.expression;
+		const callText = expr.getText(parsedSourceFile);
+		// Исключаем JSON.parse, Date.parse, Number.parseInt и подобные не-валидаторы
+		if (/^(JSON|Date|URL|Number|querystring|qs|path)\./i.test(callText)) {
+			return false;
+		}
+		// Если аргумент содержит body / payload / request.body / rawBody — считаем валидацией входа
+		const argsText = callNode.arguments.map((a) => a.getText(parsedSourceFile)).join(" ");
+		if (/\b(body|rawBody|payload|input|params|query|data)\b/i.test(argsText)) {
+			return true;
+		}
+		// Либо вызов идёт на объекте *Schema / *Validator
+		if (/schema|validator/i.test(callText)) {
+			return true;
+		}
+		return false;
+	}
+
 	function walk(n) {
 		if (hasValidation) return;
 
-		// 1. Проверяем вызовы функций:
+		// 1. Проверяем вызовы функций валидации, привязанные к схеме или request.body:
 		if (ts.isCallExpression(n)) {
 			// e.g. schema.safeParse(req.body), schema.parse(req.body)
 			if (ts.isPropertyAccessExpression(n.expression)) {
 				const methodName = n.expression.name.text;
 				if (
 					methodName === "safeParse" ||
-					methodName === "parse" ||
 					methodName === "parseAsync" ||
-					methodName === "safeParseAsync" ||
-					/^validate[A-Z_]/.test(methodName) ||
-					/^assert[A-Z_]/.test(methodName) ||
-					/^verify[A-Z_]/.test(methodName)
+					methodName === "safeParseAsync"
 				) {
+					if (n.arguments.length >= 1) {
+						hasValidation = true;
+						return;
+					}
+				} else if (methodName === "parse" && isRequestBodyOrSchemaCall(n)) {
 					hasValidation = true;
 					return;
-				}
-				// e.g. z.object(...), z.tuple(...)
-				if (ts.isIdentifier(n.expression.expression) && n.expression.expression.text === "z") {
+				} else if (/^(validate|assert)(Body|Payload|Input|Request|[A-Z]\w*(?:Body|Payload|Input|Schema|Params|Query))/.test(methodName)) {
 					hasValidation = true;
 					return;
 				}
@@ -471,14 +489,11 @@ export function hasAstValidation(node, parsedSourceFile) {
 				const fnName = n.expression.text;
 				if (
 					fnName === "safeParse" ||
-					fnName === "parse" ||
 					fnName === "assert" ||
 					fnName === "parseSchedulePayload" ||
 					fnName === "parseBody" ||
 					fnName === "parseAndValidate" ||
-					/^validate[A-Z_]/.test(fnName) ||
-					/^assert[A-Z_]/.test(fnName) ||
-					/^verify[A-Z_]/.test(fnName)
+					/^(validate|assert)(Body|Payload|Input|Request|[A-Z]\w*(?:Body|Payload|Input|Schema|Params|Query))/.test(fnName)
 				) {
 					hasValidation = true;
 					return;
@@ -486,16 +501,7 @@ export function hasAstValidation(node, parsedSourceFile) {
 			}
 		}
 
-		// 2. Обращение к Zod-конструкторам схем (z.object, z.tuple, z.array, z.discriminatedUnion, etc.)
-		if (ts.isPropertyAccessExpression(n)) {
-			if (ts.isIdentifier(n.expression) && n.expression.text === "z") {
-				const prop = n.name.text;
-				if (["object", "tuple", "array", "discriminatedUnion", "record", "string", "number"].includes(prop)) {
-					hasValidation = true;
-					return;
-				}
-			}
-		}
+		// 2. Прямой вызов z.object(...).safeParse / .parse обрабатывается в п.1 (голый z.object без парсинга не засчитывается)
 
 		ts.forEachChild(n, walk);
 	}
@@ -578,12 +584,51 @@ function hasCommentValidationOverride(parsedSourceFile, node) {
 }
 
 /**
- * Проверка AST обработчика Fastify (локального или импортированного).
+ * Проверка AST обработчика Fastify (локального, импортированного или обёртки `(req, res) => fn(req, res)`).
  */
-function checkHandlerValidation(handlerNode, localFns, importedFns, topLevelFunctionsMap, currentSourceFile) {
-	if (!handlerNode) return false;
+function checkHandlerValidation(
+	handlerNode,
+	localFns,
+	importedFns,
+	topLevelFunctionsMap,
+	currentSourceFile,
+	depth = 0,
+	visited = new Set(),
+) {
+	if (!handlerNode || depth > 2) return false;
 	if (ts.isArrowFunction(handlerNode) || ts.isFunctionExpression(handlerNode)) {
-		return hasAstValidation(handlerNode, currentSourceFile);
+		if (hasAstValidation(handlerNode, currentSourceFile)) {
+			return true;
+		}
+		// Если стрелка — тонкая обёртка (например, async (req, reply) => handleCreatePayment(req, reply)),
+		// проверяем вызываемый внутри локальный или импортированный хэндлер
+		let delegated = false;
+		function findDelegatedCall(n) {
+			if (delegated) return;
+			if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) {
+				const calleeName = n.expression.text;
+				if (!visited.has(calleeName)) {
+					visited.add(calleeName);
+					if (
+						checkHandlerValidation(
+							n.expression,
+							localFns,
+							importedFns,
+							topLevelFunctionsMap,
+							currentSourceFile,
+							depth + 1,
+							visited,
+						)
+					) {
+						delegated = true;
+						return;
+					}
+				}
+			}
+			ts.forEachChild(n, findDelegatedCall);
+		}
+		ts.forEachChild(handlerNode, findDelegatedCall);
+		return delegated;
 	}
 	if (ts.isIdentifier(handlerNode)) {
 		const fnName = handlerNode.text;
@@ -610,16 +655,30 @@ export function checkApiMutationDoors(routeFiles, allowlist) {
 	const violations = [];
 	const legacyBacklog = allowlist.api_mutation_doors_legacy_backlog || [];
 
-	// Карта верхнеуровневых функций по файлам (сохраняем AST узлы)
+	// Карта верхнеуровневых функций по файлам (сохраняем AST узлы, нормализуем пути)
+	const normalizedFiles = routeFiles.map((f) => path.resolve(f));
 	const parsedFilesCache = new Map();
 	const topLevelFunctionsMap = new Map();
+	const barrelReExportsMap = new Map();
 
-	for (const file of routeFiles) {
+	function resolveRelativeTsTarget(fromFile, spec) {
+		if (!spec.startsWith(".")) return null;
+		const targetBase = path.resolve(path.dirname(fromFile), spec);
+		const candidates = [
+			targetBase.replace(/\.js$/, ".ts"),
+			targetBase + ".ts",
+			path.join(targetBase, "index.ts"),
+		];
+		return candidates.find(fs.existsSync) || null;
+	}
+
+	for (const file of normalizedFiles) {
 		const source = fs.readFileSync(file, "utf8");
 		const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
 		parsedFilesCache.set(file, parsed);
 
 		const fnMap = new Map();
+		const reExports = [];
 		function collectFns(node) {
 			if (ts.isFunctionDeclaration(node) && node.name) {
 				fnMap.set(node.name.text, { node, sourceFile: parsed });
@@ -629,14 +688,59 @@ export function checkApiMutationDoors(routeFiles, allowlist) {
 						fnMap.set(decl.name.text, { node: decl.initializer, sourceFile: parsed });
 					}
 				}
+			} else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+				const target = resolveRelativeTsTarget(file, node.moduleSpecifier.text);
+				if (target) {
+					if (node.exportClause && ts.isNamedExports(node.exportClause)) {
+						for (const el of node.exportClause.elements) {
+							reExports.push({
+								exportedName: el.name.text,
+								origName: el.propertyName ? el.propertyName.text : el.name.text,
+								targetFile: target,
+							});
+						}
+					} else if (!node.exportClause) {
+						reExports.push({ star: true, targetFile: target });
+					}
+				}
 			}
 			ts.forEachChild(node, collectFns);
 		}
 		ts.forEachChild(parsed, collectFns);
 		topLevelFunctionsMap.set(file, fnMap);
+		if (reExports.length > 0) {
+			barrelReExportsMap.set(file, reExports);
+		}
 	}
 
-	for (const file of routeFiles) {
+	// Разрешаем barrel ре-экспорты (export { a } from "./b.js") до 3 уровней
+	for (let pass = 0; pass < 3; pass++) {
+		let changed = false;
+		for (const [file, entries] of barrelReExportsMap.entries()) {
+			const fnMap = topLevelFunctionsMap.get(file);
+			for (const entry of entries) {
+				const targetMap = topLevelFunctionsMap.get(entry.targetFile);
+				if (!targetMap) continue;
+				if (entry.star) {
+					for (const [k, v] of targetMap.entries()) {
+						if (!fnMap.has(k)) {
+							fnMap.set(k, v);
+							changed = true;
+						}
+					}
+				} else {
+					const found = targetMap.get(entry.origName);
+					if (found && !fnMap.has(entry.exportedName)) {
+						fnMap.set(entry.exportedName, found);
+						changed = true;
+					}
+				}
+			}
+		}
+		if (!changed) break;
+	}
+
+	for (const file of normalizedFiles) {
 		const parsed = parsedFilesCache.get(file);
 		const localFns = topLevelFunctionsMap.get(file);
 
@@ -644,21 +748,12 @@ export function checkApiMutationDoors(routeFiles, allowlist) {
 		const importedFns = new Map();
 		function collectImports(node) {
 			if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-				const spec = node.moduleSpecifier.text;
-				if (spec.startsWith(".")) {
-					const targetBase = path.resolve(path.dirname(file), spec);
-					const candidates = [
-						targetBase.replace(/\.js$/, ".ts"),
-						targetBase + ".ts",
-						path.join(targetBase, "index.ts"),
-					];
-					const target = candidates.find(fs.existsSync);
-					if (target) {
-						const clause = node.importClause;
-						if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-							for (const el of clause.namedBindings.elements) {
-								importedFns.set(el.name.text, target);
-							}
+				const target = resolveRelativeTsTarget(file, node.moduleSpecifier.text);
+				if (target) {
+					const clause = node.importClause;
+					if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+						for (const el of clause.namedBindings.elements) {
+							importedFns.set(el.name.text, target);
 						}
 					}
 				}

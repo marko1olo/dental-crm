@@ -58,6 +58,13 @@ export async function handleDiaryRevisePost(req: FastifyRequest, reply: FastifyR
 			message: DIARY_CLINIC_UNKNOWN_REVISE_MESSAGE,
 		});
 	}
+	if (!identity.verified) {
+		return reply.code(401).send({
+			error: "UnverifiedOrganizationCannotMutate",
+			message:
+				"Заголовок x-organization-id не подтверждён подписанным токеном клиники.",
+		});
+	}
 
 	const body: ReviseInputData = {
 		complaint: typeof parsedReviseBody.data.complaint === "string" ? parsedReviseBody.data.complaint : undefined,

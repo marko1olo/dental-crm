@@ -15,57 +15,12 @@ import { type OutboxQuery, parseVariables } from "./types.js";
 const logger = createApiLogger("outboxQueries");
 
 export async function fetchTemplateList(organizationId: string) {
-	const rows = await withTenantCtx(organizationId, async (tx) => {
-		let found = await tx
+	const rows = await withTenantCtx(organizationId, async (tx) =>
+		tx
 			.select()
 			.from(communicationTemplates)
-			.where(eq(communicationTemplates.organizationId, organizationId));
-
-		if (found.length === 0) {
-			try {
-				await tx.insert(communicationTemplates).values([
-					{
-						organizationId,
-						title: "Подтверждение приёма (WhatsApp)",
-						channel: "whatsapp",
-						intent: "appointment_confirmation",
-						audienceRole: "patient",
-						body: "Здравствуйте, {patient_name}! Напоминаем о записи в клинику {clinic_name} {appointment_date} в {appointment_time}. Пожалуйста, подтвердите визит.",
-						variablesJson: JSON.stringify(["patient_name", "clinic_name", "appointment_date", "appointment_time"]),
-						isActive: true,
-					},
-					{
-						organizationId,
-						title: "Рекомендации после лечения (Telegram)",
-						channel: "telegram",
-						intent: "post_visit_instruction",
-						audienceRole: "patient",
-						body: "Здравствуйте, {patient_name}! Благодарим за визит в {clinic_name}. Соблюдайте рекомендации лечащего врача. При вопросах звоните: {clinic_phone}.",
-						variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
-						isActive: true,
-					},
-					{
-						organizationId,
-						title: "Приглашение на профосмотр (SMS)",
-						channel: "sms",
-						intent: "recall",
-						audienceRole: "patient",
-						body: "{patient_name}, прошло 6 мес. с вашего осмотра в {clinic_name}. Запишитесь на плановую профгигиену: {clinic_phone}",
-						variablesJson: JSON.stringify(["patient_name", "clinic_name", "clinic_phone"]),
-						isActive: true,
-					},
-				]);
-				found = await tx
-					.select()
-					.from(communicationTemplates)
-					.where(eq(communicationTemplates.organizationId, organizationId));
-			} catch (err) {
-				logger.warn({ err, organizationId }, "Не удалось засеять стартовые шаблоны сообщений");
-			}
-		}
-
-		return found;
-	});
+			.where(eq(communicationTemplates.organizationId, organizationId)),
+	);
 
 	return rows.map((row) => ({
 		id: row.id,

@@ -13,54 +13,6 @@ import {
 import { organizations } from "../auth.js";
 import { patients } from "../patients.js";
 
-// #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
-// ВНИМАНИЕ (DEF-PED-02 / SSOT): Каноническим источником истины для всех состояний одонтограммы,
-// включая молочный прикус (isPrimaryPediatric), подвижность (mobilityDegree), резорбцию (resorptionStage),
-// детские коронки (pediatricCrownPresent) и вторичный кариес (secondaryCariesUnderFilling), является
-// таблица `toothStates` (через notes/clinicalData JSON). Данная таблица сохранена для сохранения DDL-паритета миграций.
-export const extendedOdontogramStates = pgTable(
-	"extended_odontogram_states",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id, { onDelete: "cascade" }),
-		patientName: text("patient_name"),
-		toothNumber: integer("tooth_number").notNull(),
-		isPrimaryPediatric: boolean("is_primary_pediatric")
-			.default(false)
-			.notNull(),
-		secondaryCariesUnderFilling: boolean("secondary_caries_under_filling")
-			.default(false)
-			.notNull(),
-		mobilityDegree: integer("mobility_degree").default(0).notNull(),
-		pediatricCrownPresent: boolean("pediatric_crown_present")
-			.default(false)
-			.notNull(),
-		notes: text("notes").default("").notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"extended_odontogram_states_organizationId_idx",
-		).on(t.organizationId),
-		patientIdIdx: index(
-			"extended_odontogram_states_patientId_idx",
-		).on(t.patientId),
-		orgPatientIdx: index(
-			"extended_odontogram_states_org_patient_idx",
-		).on(t.organizationId, t.patientId),
-		orgPatientToothIdx: index(
-			"extended_odontogram_states_org_patient_tooth_idx",
-		).on(t.organizationId, t.patientId, t.toothNumber),
-	}),
-);
-
 // tooth states (per-tooth status for odontogram)
 export const toothStates = pgTable(
 	"tooth_states",

@@ -48,6 +48,18 @@ export async function resolveOrganizationId(
 	 */
 	const identity = getRequestIdentity(request);
 	if (identity.organizationId) {
+		const isReadOnlyMethod =
+			request.method === "GET" ||
+			request.method === "HEAD" ||
+			request.method === "OPTIONS";
+		if (!isReadOnlyMethod && !identity.verified) {
+			reply.code(401).send({
+				error: "UnverifiedOrganizationCannotMutate",
+				message:
+					"Заголовок x-organization-id не подтверждён подписанным токеном клиники.",
+			});
+			return null;
+		}
 		return {
 			orgId: identity.organizationId,
 			callerRole: identity.role,

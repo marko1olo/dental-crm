@@ -193,6 +193,7 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 					if (!claimed.length)
 						return { claimed: false, user: null, clinicName: null };
 
+					const initialSessionId = crypto.randomUUID();
 					const [createdUser] = await tx
 						.insert(users)
 						.values({
@@ -202,6 +203,7 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 							email: invite.email,
 							passwordHash,
 							pinCodeHash,
+							currentSessionId: initialSessionId,
 							isActive: true,
 						})
 						.returning();
@@ -255,6 +257,7 @@ export function registerInvitationRoutes(app: FastifyInstance): void {
 					fullName: user.fullName,
 					role: user.role,
 					organizationId: user.organizationId,
+					...(user.currentSessionId ? { sessionId: user.currentSessionId } : {}),
 				},
 				TOKEN_SECRET(),
 				60 * 60 * 24 * 7,

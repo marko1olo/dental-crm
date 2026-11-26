@@ -219,31 +219,6 @@ export const crmLeadStageHistory = pgTable(
 	}),
 );
 
-// chat message dispatch statuses (outbound message delivery)
-export const chatMessageDispatchStatuses = pgTable(
-	"chat_message_dispatch_statuses",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		chatId: uuid("chat_id"),
-		messageId: text("message_id"),
-		channel: text("channel").notNull().default("telegram"),
-		status: text("status").notNull().default("sent"),
-		deliveredAt: timestamp("delivered_at", { withTimezone: true }),
-		failReason: text("fail_reason"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"chat_message_dispatch_statuses_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
 // collaborative chat processing states (concurrent agent sync)
 export const collaborativeChatProcessingStates = pgTable(
 	"collaborative_chat_processing_states",
@@ -264,30 +239,6 @@ export const collaborativeChatProcessingStates = pgTable(
 	(t) => ({
 		organizationIdIdx: index(
 			"collaborative_chat_processing_states_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
-// messenger file attachments (files sent through chat)
-export const messengerFileAttachments = pgTable(
-	"messenger_file_attachments",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		chatId: uuid("chat_id"),
-		fileUrl: text("file_url").notNull(),
-		fileType: text("file_type").notNull().default("document"),
-		fileSizeBytes: integer("file_size_bytes"),
-		uploadedBy: uuid("uploaded_by"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"messenger_file_attachments_organizationId_idx",
 		).on(t.organizationId),
 	}),
 );

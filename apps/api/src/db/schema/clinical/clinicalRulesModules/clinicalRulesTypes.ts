@@ -15,7 +15,6 @@ import type {
 	labItems,
 	labOrderEvents,
 	labOrders,
-	mkb10AutoDirectories,
 	patientImplantInstallations,
 } from "./clinicalProtocolsTables.js";
 import type {
@@ -128,6 +127,3 @@ export type NewDmsGuaranteeLetter = InferInsertModel<typeof dmsGuaranteeLetters>
 
 export type AnesthesiaLog = InferSelectModel<typeof anesthesiaLogs>;
 export type NewAnesthesiaLog = InferInsertModel<typeof anesthesiaLogs>;
-
-export type Mkb10AutoDirectory = InferSelectModel<typeof mkb10AutoDirectories>;
-export type NewMkb10AutoDirectory = InferInsertModel<typeof mkb10AutoDirectories>;

@@ -59,7 +59,7 @@ export function requireClinicOrganizationId(
 		Boolean(request.headers["x-dente-staff-token"]);
 
 	const identity = getRequestIdentity(request);
-	if (identity.organizationId) {
+	if (identity.organizationId && identity.verified) {
 		return identity.organizationId;
 	}
 
@@ -106,7 +106,7 @@ export async function requireScheduleMutationAccess(
 	// Мандаты 8e & 8n: Авторизованный персонал клиники (токен кабинета, staff-токен, Bearer)
 	// имеет полный суверенный доступ к расписанию без бюрократических паролей.
 	const identity = getRequestIdentity(request);
-	if (identity.organizationId) {
+	if (identity.organizationId && identity.verified) {
 		return true;
 	}
 

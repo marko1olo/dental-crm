@@ -10,7 +10,10 @@ import { getRequestIdentity } from "../security/identity.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { withTenantCtx } from "../db/rls.js";
 import { protocolTemplates } from "../db/schema.js";
-import { ensureClinicalTemplatesSeeded } from "../scripts/seedTemplates.js";
+import {
+	ensureClinicalTemplatesSeeded,
+	getBuiltInProtocolTemplatesReadOnly,
+} from "../scripts/seedTemplates.js";
 import { clinicNotIdentifiedMessage } from "../utils/clinicSessionRefusal.js";
 
 const TEMPLATE_UUID_PATTERN =
@@ -184,27 +187,7 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 				message: TEMPLATES_CLINIC_UNKNOWN_LIST_MESSAGE,
 			});
 
-		// Auto-seed built-in templates if none exist
-		const existing = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.select()
-				.from(protocolTemplates)
-				.where(eq(protocolTemplates.organizationId, orgId)),
-		);
-
-		let seedFailure: unknown = null;
-		if (existing.length === 0) {
-			try {
-				await ensureClinicalTemplatesSeeded(orgId);
-			} catch (err) {
-				seedFailure = err;
-				app.log.error(
-					`[Templates] Установка встроенных протоколов провалилась для организации ${orgId}: ${String(err)}`,
-				);
-			}
-		}
-
-		const templates = (
+		const existing = (
 			await withTenantCtx(orgId, async (tx) =>
 				tx
 					.select()
@@ -213,13 +196,8 @@ export default async function registerTemplateRoutes(app: FastifyInstance) {
 			)
 		).map(mapProtocolTemplateToLegacy);
 
-		if (seedFailure && templates.length === 0) {
-			return reply.code(503).send({
-				error: "ClinicalTemplatesSeedFailed",
-				message:
-					"Встроенные клинические протоколы не установились в этой клинике, поэтому список пуст — это сбой установки, а не отсутствие протоколов. Дневник приёма пока заполните вручную и передайте это сообщение администратору клиники: установку нужно повторить.",
-			});
-		}
+		const templates =
+			existing.length > 0 ? existing : getBuiltInProtocolTemplatesReadOnly(orgId);
 
 		return reply.send({ templates });
 	});

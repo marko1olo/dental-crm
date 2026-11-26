@@ -27,7 +27,6 @@ const HOT_PATH_TABLES = [
 	"dente_telegram_chat_links",
 	"dente_telegram_link_codes",
 	"dente_telegram_webhook_events",
-	"outgoing_notifications",
 	"bi_analytics_snapshots",
 	"sync_entity_vectors",
 	"sync_idempotency_records",

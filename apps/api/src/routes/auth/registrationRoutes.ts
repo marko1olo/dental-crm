@@ -307,6 +307,7 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 					.returning();
 				if (!organization) return { organization: null, owner: null };
 
+				const initialSessionId = crypto.randomUUID();
 				// Владелец с полным суверенитетом (Doctor Autonomy Mandate 8e)
 				const [ownerUser] = await tx
 					.insert(users)
@@ -318,6 +319,7 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 						phone: phone?.trim() || null,
 						passwordHash,
 						pinCodeHash,
+						currentSessionId: initialSessionId,
 						isActive: true,
 						canSignMedicalRecords: true,
 						canManageMoney: true,
@@ -412,6 +414,7 @@ export function registerRegistrationRoutes(app: FastifyInstance): void {
 					fullName: user.fullName,
 					role: user.role,
 					organizationId: org.id,
+					...(user.currentSessionId ? { sessionId: user.currentSessionId } : {}),
 				},
 				TOKEN_SECRET(),
 				60 * 60 * 24 * 7,

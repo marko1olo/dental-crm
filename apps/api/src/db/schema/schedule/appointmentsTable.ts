@@ -136,59 +136,6 @@ export const appointments = pgTable(
 	},
 );
 
-// #56 — пациенты::целевые_причины_отмены_приемов_клиника_vs_пациент
-export const cancellationReasonsTwoLevel = pgTable(
-	"cancellation_reasons_two_level",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		category: text("category").notNull(),
-		reasonCode: text("reason_code").notNull(),
-		reasonTitle: text("reason_title").notNull(),
-		requiresNote: boolean("requires_note").default(false).notNull(),
-		isActive: boolean("is_active").default(true).notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"cancellation_reasons_two_level_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
-// #9 — коммуникации::подтверждение_приема_при_обработке_обращения
-export const quickAppointmentConfirmations = pgTable(
-	"quick_appointment_confirmations",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
-		appointmentId: uuid("appointment_id").notNull(),
-		confirmedByStaffName: text("confirmed_by_staff_name").notNull(),
-		channelUsed: text("channel_used").default("call").notNull(),
-		confirmedAt: timestamp("confirmed_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"quick_appointment_confirmations_organizationId_idx",
-		).on(t.organizationId),
-		appointmentIdIdx: index(
-			"quick_appointment_confirmations_appointment_id_idx",
-		).on(t.appointmentId),
-		orgCreatedIdx: index(
-			"quick_appointment_confirmations_org_created_idx",
-		).on(t.organizationId, t.confirmedAt),
-	}),
-);
-
 // appointment waitlists (patient waiting queue)
 export const appointmentWaitlists = pgTable(
 	"appointment_waitlists",
@@ -228,56 +175,6 @@ export const appointmentWaitlists = pgTable(
 			t.organizationId,
 			t.createdAt,
 		),
-	}),
-);
-
-// appointment channel inheritances (messenger channel routing)
-export const appointmentChannelInheritances = pgTable(
-	"appointment_channel_inheritances",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		chatId: uuid("chat_id").notNull(),
-		patientName: text("patient_name").notNull(),
-		inheritedChannel: text("inherited_channel").notNull().default("whatsapp"),
-		isAutoApplied: boolean("is_auto_applied").notNull().default(true),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"appointment_channel_inheritances_organizationId_idx",
-		).on(t.organizationId),
-	}),
-);
-
-// UIS mass appointment confirmations (bulk SMS confirmation campaigns)
-export const uisMassAppointmentConfirmations = pgTable(
-	"uis_mass_appointment_confirmations",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		targetDate: text("target_date").notNull(),
-		totalAppointmentsCount: integer("total_appointments_count")
-			.notNull()
-			.default(0),
-		confirmedViaSmsCount: integer("confirmed_via_sms_count")
-			.notNull()
-			.default(0),
-		dispatchChannel: text("dispatch_channel").notNull().default("uis_sms"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"uis_mass_appointment_confirmations_organizationId_idx",
-		).on(t.organizationId),
 	}),
 );
 

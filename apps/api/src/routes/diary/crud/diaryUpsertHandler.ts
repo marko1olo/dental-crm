@@ -34,6 +34,13 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 	if (!orgId) return reply.code(403).send({ error: "OrgRequired", message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE });
 
 	const identity = getRequestIdentity(req);
+	if (!identity.verified) {
+		return reply.code(401).send({
+			error: "UnverifiedOrganizationCannotMutate",
+			message:
+				"Заголовок x-organization-id не подтверждён подписанным токеном клиники.",
+		});
+	}
 	const staffRole = identity.role ?? req.user?.role ?? null;
 	const evalAccess = evaluateClinicalAccess(staffRole);
 	if (!evalAccess.hasClinicalAccess && !unguardedBypassAllowed("DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS")) {
@@ -90,7 +97,7 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 				};
 			}
 
-			const saved = await executeSaveOrSignDiaryTx({ data, orgId, userId });
+			const saved = await executeSaveOrSignDiaryTx({ data, orgId, userId, tx });
 			return { ok: true as const, saved };
 		});
 
@@ -112,17 +119,6 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 			}
 			if (["Icd10Required", "Icd10Invalid", "ToothRequired", "ToothInvalid", "PepDoctorForbidden"].includes(err.code)) {
 				return reply.code(422).send({ error: err.code, message: err.message });
-			}
-			if (err.code === "InsufficientStock") {
-				req.log.warn({ err }, "Складской овердрафт при сохранении дневника приёма — разрешён мягкий минус (Мандаты 8e, 8v, 8aa)");
-				const overdraftPayload = {
-					success: true,
-					id: data.visitId,
-					warning: "InsufficientStockOverdraft",
-					message: "Дневник приёма сохранён. Склад переведён в режим мягкого овердрафта.",
-				};
-
-				return reply.send(overdraftPayload);
 			}
 			if (err.code === "PinRejected") {
 				return reply.code(403).send({ error: "PinRejected", message: err.message });

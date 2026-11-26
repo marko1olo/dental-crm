@@ -13,7 +13,6 @@ export * from "./sanpin.js";
 export * from "./sync.js";
 export * from "./copilot.js";
 export * from "./rag.js";
-export * from "./aiTelemetry.js";
 export * from "./documents.js";
 export * from "./outpatientCore.js";
 export * from "./finance.js";

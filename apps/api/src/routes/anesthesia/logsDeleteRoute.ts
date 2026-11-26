@@ -6,21 +6,23 @@
 import { rublesToKopecks } from "@dental/shared";
 import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { anesthesiaLogs, inventoryItems, inventoryTransactions, treatmentItems } from "../../db/schema.js";
-import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { UUID_REGEX } from "./schemas.js";
 
-interface DeleteAnesthesiaLogParams {
-	logId: string;
-}
+const deleteAnesthesiaLogParamsSchema = z.object({
+	logId: z.string().uuid(),
+});
 
 export function registerLogsDeleteRoute(app: FastifyInstance): void {
-	app.delete<{ Params: DeleteAnesthesiaLogParams }>("/api/anesthesia/logs/:logId", async (request, reply) => {
-		const orgId = requireOrganizationId(request, reply);
-		if (!orgId) return;
+	app.delete<{ Params: { logId: string } }>("/api/anesthesia/logs/:logId", async (request, reply) => {
+		const ctx = await requireClinicalMutationContext(request, reply, "delete anesthesia log");
+		if (!ctx) return;
+		const orgId = ctx.organizationId;
 
 		const identity = getRequestIdentity(request);
 		const staffRole = identity.role ?? request.user?.role ?? null;
@@ -34,13 +36,14 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 			});
 		}
 
-		const { logId } = request.params;
-		if (!logId || !UUID_REGEX.test(logId)) {
+		const parsedParams = deleteAnesthesiaLogParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор записи анестезии (ожидается UUID).",
 			});
 		}
+		const { logId } = parsedParams.data;
 
 		const txResult = await withTenantCtx(orgId, async (tx) => {
 			const [log] = await tx

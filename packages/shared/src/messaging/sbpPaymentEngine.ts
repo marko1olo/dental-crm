@@ -41,6 +41,7 @@ export const generateSbpDynamicQrSchema = z.object({
 	description: z.string().trim().max(140).optional().nullable(),
 	ttlSeconds: z.number().int().min(60).max(86400).optional().default(1800), // 30 min default
 	invoiceId: z.string().optional().nullable(),
+	patientId: z.string().uuid().optional().nullable(),
 	merchantName: z.string().optional().default("DENTE CLINIC"),
 	merchantCity: z.string().optional().default("MOSCOW"),
 	mcc: z.string().optional().default("8021"), // 8021 = Стоматологические услуги

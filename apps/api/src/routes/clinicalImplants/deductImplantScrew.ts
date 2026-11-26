@@ -1,12 +1,15 @@
 import { and, desc, eq } from "drizzle-orm";
-import { type createImplantInstallationSchema, kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import type { z } from "zod";
+import {
+	type ResolvedImplantInstallationInput,
+	kopecksToRubles,
+	rublesToKopecks,
+} from "@dental/shared";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
 import { CANONICAL_IMPLANT_WAREHOUSE_SEEDS } from "./implantWarehouseSeeds.js";
 
-type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
+type InstallationInput = ResolvedImplantInstallationInput;
 
 const BRAND_SYNONYMS: Record<string, readonly string[]> = {
 	nobel_biocare: ["nobel biocare", "nobel", "nobelactive", "parallel cc", "replace select", "nobelparallel"],

@@ -36,31 +36,6 @@ export const patientConsents = pgTable(
 	}),
 );
 
-// #55 — пациенты::вкладка_приемы_рабочий_стол_администратора
-export const patientServiceLineages = pgTable(
-	"patient_service_lineages",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientName: text("patient_name").notNull(),
-		leadSource: text("lead_source").notNull(),
-		rescheduleCount: integer("reschedule_count").default(0).notNull(),
-		waitlistEntryId: uuid("waitlist_entry_id"),
-		finalVisitId: uuid("final_visit_id"),
-		lifecycleStage: text("lifecycle_stage").default("completed").notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("patient_service_lineages_organizationId_idx").on(
-			t.organizationId,
-		),
-	}),
-);
-
 /**
  * Рекламации и осложнения по пациенту — основание для гарантии, возврата и
  * переделки.

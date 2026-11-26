@@ -481,26 +481,3 @@ export const implantIsqMeasurements = pgTable(
 		),
 	}),
 );
-
-// MKB-10 auto directories (ICD-10 diagnosis quick-select)
-export const mkb10AutoDirectories = pgTable(
-	"mkb10_auto_directories",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		specialty: text("specialty").notNull().default("universal"),
-		code: text("code").notNull(),
-		title: text("title").notNull(),
-		sortOrder: integer("sort_order").notNull().default(0),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("mkb10_auto_directories_organizationId_idx").on(
-			t.organizationId,
-		),
-	}),
-);

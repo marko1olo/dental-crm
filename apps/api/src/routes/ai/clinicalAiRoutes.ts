@@ -16,7 +16,9 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
+	requireClinicalMutationContext,
 	requireClinicalReadAccess,
+	requireClinicalReadContext,
 	requireResolvedOrganizationId,
 	resolveOrganizationId,
 } from "../../accessGuard.js";
@@ -83,8 +85,10 @@ function sendVisitNoteDraftScopeError(
 
 async function resolveClinicTimeZone(
 	request: FastifyRequest,
+	explicitOrganizationId?: string | null,
 ): Promise<string | null> {
-	const organizationId = await resolveOrganizationId(request);
+	const organizationId =
+		explicitOrganizationId ?? (await resolveOrganizationId(request));
 	if (!organizationId) return null;
 	try {
 		return await withTenantCtx(organizationId, async (tx) => {
@@ -136,13 +140,12 @@ export async function registerClinicalAiRoutes(
 	app: FastifyInstance,
 ): Promise<void> {
 	app.post("/api/ai/parse-dictation", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"parse dictation with AI",
-			))
-		) {
+		const orgCtx = await requireClinicalMutationContext(
+			request,
+			reply,
+			"parse dictation with AI",
+		);
+		if (!orgCtx) {
 			return;
 		}
 
@@ -162,7 +165,7 @@ export async function registerClinicalAiRoutes(
 				result = await parseDictationWithLlmFallback(
 					text,
 					type,
-					await resolveClinicTimeZone(request),
+					await resolveClinicTimeZone(request, orgCtx.organizationId),
 				);
 			}
 
@@ -174,23 +177,21 @@ export async function registerClinicalAiRoutes(
 			if (
 				volumeContext &&
 				candidateResult?.toothUpdates &&
-				candidateResult.toothUpdates.length > 0
+				candidateResult.toothUpdates.length > 0 &&
+				orgCtx.organizationId === volumeContext.organizationId
 			) {
-				const callerOrgId = await resolveOrganizationId(request);
-				if (callerOrgId && callerOrgId === volumeContext.organizationId) {
-					const valuesToInsert = candidateResult.toothUpdates.map((update) => ({
-						organizationId: callerOrgId,
-						patientId: volumeContext.patientId,
-						studyId: volumeContext.studyId,
-						annotationType: "tooth" as const,
-						toothCode: update.code,
-						coordinates: volumeContext.coordinates || null,
-						notes: candidateResult.emkUpdates?.complaint || update.state,
-					}));
-					await withTenantCtx(callerOrgId, (tx) =>
-						tx.insert(imagingAnnotations).values(valuesToInsert),
-					);
-				}
+				const valuesToInsert = candidateResult.toothUpdates.map((update) => ({
+					organizationId: orgCtx.organizationId,
+					patientId: volumeContext.patientId,
+					studyId: volumeContext.studyId,
+					annotationType: "tooth" as const,
+					toothCode: update.code,
+					coordinates: volumeContext.coordinates || null,
+					notes: candidateResult.emkUpdates?.complaint || update.state,
+				}));
+				await withTenantCtx(orgCtx.organizationId, (tx) =>
+					tx.insert(imagingAnnotations).values(valuesToInsert),
+				);
 			}
 
 			return reply.send(result);
@@ -289,13 +290,12 @@ export async function registerClinicalAiRoutes(
 
 	app.post("/api/ai/treatment-plan-personalize", async (request, reply) => {
 		try {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"personalize treatment plan",
-				))
-			) {
+			const orgCtx = await requireClinicalReadContext(
+				request,
+				reply,
+				"personalize treatment plan",
+			);
+			if (!orgCtx) {
 				return;
 			}
 			const parsedInput = treatmentPlanPayloadSchema.safeParse(request.body);
@@ -320,13 +320,12 @@ export async function registerClinicalAiRoutes(
 		"/api/ai/treatment-plan-validate-and-comment",
 		async (request, reply) => {
 			try {
-				if (
-					!(await requireClinicalReadAccess(
-						request,
-						reply,
-						"validate and comment treatment plan",
-					))
-				) {
+				const orgCtx = await requireClinicalReadContext(
+					request,
+					reply,
+					"validate and comment treatment plan",
+				);
+				if (!orgCtx) {
 					return;
 				}
 				const parsedInput =
@@ -353,13 +352,12 @@ export async function registerClinicalAiRoutes(
 
 	app.post("/api/ai/post-visit-personalize", async (request, reply) => {
 		try {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"personalize post visit recommendations",
-				))
-			) {
+			const orgCtx = await requireClinicalReadContext(
+				request,
+				reply,
+				"personalize post visit recommendations",
+			);
+			if (!orgCtx) {
 				return;
 			}
 			const parsedInput = postVisitPersonalizeSchema.safeParse(request.body);

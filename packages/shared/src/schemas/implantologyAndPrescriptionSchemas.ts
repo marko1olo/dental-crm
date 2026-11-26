@@ -18,17 +18,57 @@ export const permanentToothNumberFdiSchema = z
 		"Номер зуба для имплантации должен соответствовать постоянному прикусу FDI (11–18, 21–28, 31–38, 41–48). Установка дентальных имплантатов в область молочных зубов (51–85) запрещена.",
 	);
 
+export const implantBatchToothSpecSchema = z
+	.object({
+		toothNumberFdi: permanentToothNumberFdiSchema,
+		catalogItemId: z.string().uuid().optional().nullable(),
+		inventoryItemId: z.string().uuid().optional().nullable(),
+		implantBrand: z.string().trim().min(1).max(100).optional(),
+		connectionType: implantSystemBrandSchema.optional().nullable(),
+		implantConnectionType: implantSystemBrandSchema.optional().nullable(),
+		implantDiameterMm: z.number().min(2.0).max(7.0).optional(),
+		implantLengthMm: z.number().min(4.0).max(20.0).optional(),
+		lotNumber: z.string().trim().max(80).optional().nullable(),
+		serialNumber: z.string().trim().max(80).optional().nullable(),
+		catalogArticle: z.string().trim().max(80).optional().nullable(),
+		expirationDate: z.string().trim().max(40).optional().nullable(),
+		isGuidedSurgery: z.boolean().optional(),
+		guidedSleeveDiameterMm: z.number().min(1.0).max(10.0).optional().nullable(),
+		guidedSleeveOffsetMm: z.number().min(0.0).max(25.0).optional().nullable(),
+		surgicalGuideTemplateId: z.string().trim().max(100).optional().nullable(),
+		boneDensityClass: boneDensityClassSchema.optional(),
+		averageHounsfieldUnits: z.number().min(-1000).max(3000).optional().nullable(),
+		finalInsertionTorqueNcm: z.number().min(5).max(100).optional(),
+		baselineIsqMesiodistal: z.number().int().min(1).max(100).optional().nullable(),
+		baselineIsqBuccolingual: z.number().int().min(1).max(100).optional().nullable(),
+		baselineIsqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
+		corticalTapUsed: z.boolean().optional(),
+		underdrillingUsed: z.boolean().optional(),
+		boneGraftMaterial: z.string().trim().max(200).optional().nullable(),
+		boneGraftItemId: z.string().uuid().optional().nullable(),
+		membraneUsed: z.string().trim().max(200).optional().nullable(),
+		membraneItemId: z.string().uuid().optional().nullable(),
+		sutureMaterial: z.string().trim().max(100).optional().nullable(),
+		sutureItemId: z.string().uuid().optional().nullable(),
+		operationPriceRub: z.number().min(0).optional().nullable(),
+		operationPriceKopecks: z.union([z.string(), z.number(), z.bigint()]).optional().nullable(),
+		notes: z.string().trim().max(1000).optional().nullable(),
+	})
+	.strict();
+
+export type ImplantBatchToothSpec = z.infer<typeof implantBatchToothSpecSchema>;
+
 export const createImplantInstallationSchema = z.object({
 	patientId: z.string().uuid(),
-	toothNumberFdi: permanentToothNumberFdiSchema,
+	toothNumberFdi: permanentToothNumberFdiSchema.optional(),
 	catalogItemId: z.string().uuid().optional().nullable(),
 	inventoryItemId: z.string().uuid().optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),
 	implantBrand: z.string().trim().min(1).max(100).default("osstem"),
 	connectionType: implantSystemBrandSchema.optional().nullable().default("internal_hex"),
 	implantConnectionType: implantSystemBrandSchema.optional().nullable().default("internal_hex"),
-	implantDiameterMm: z.number().min(2.0).max(7.0),
-	implantLengthMm: z.number().min(4.0).max(20.0),
+	implantDiameterMm: z.number().min(2.0).max(7.0).optional(),
+	implantLengthMm: z.number().min(4.0).max(20.0).optional(),
 	lotNumber: z.string().trim().max(80).optional().nullable(),
 	serialNumber: z.string().trim().max(80).optional().nullable(),
 	catalogArticle: z.string().trim().max(80).optional().nullable(),
@@ -39,7 +79,7 @@ export const createImplantInstallationSchema = z.object({
 	surgicalGuideTemplateId: z.string().trim().max(100).optional().nullable(),
 	boneDensityClass: boneDensityClassSchema.default("D2"),
 	averageHounsfieldUnits: z.number().min(-1000).max(3000).optional().nullable(),
-	finalInsertionTorqueNcm: z.number().min(5).max(100),
+	finalInsertionTorqueNcm: z.number().min(5).max(100).optional(),
 	baselineIsqMesiodistal: z.number().int().min(1).max(100).optional().nullable(),
 	baselineIsqBuccolingual: z.number().int().min(1).max(100).optional().nullable(),
 	baselineIsqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
@@ -57,13 +97,93 @@ export const createImplantInstallationSchema = z.object({
 	torqueCurveSamples: z.array(torqueCurveSampleSchema).default([]),
 	notes: z.string().trim().max(1000).optional().nullable(),
 	teeth: z.array(permanentToothNumberFdiSchema).optional(),
+	installations: z.array(implantBatchToothSpecSchema).min(1).optional(),
+	teethSpecs: z.array(implantBatchToothSpecSchema).min(1).optional(),
 	idempotencyKey: z.string().optional().nullable(),
 	clientMutationId: z.string().optional().nullable(),
-}).strict();
+})
+	.strict()
+	.superRefine((data, ctx) => {
+		const specList = data.installations ?? data.teethSpecs ?? [];
+		const hasTooth =
+			data.toothNumberFdi !== undefined ||
+			(data.teeth !== undefined && data.teeth.length > 0) ||
+			specList.length > 0;
+		if (!hasTooth) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["toothNumberFdi"],
+				message: "Укажите зуб (toothNumberFdi, teeth или installations).",
+			});
+			return;
+		}
+		if (specList.length > 0) {
+			for (let i = 0; i < specList.length; i += 1) {
+				const spec = specList[i];
+				if (!spec) continue;
+				const diam = spec.implantDiameterMm ?? data.implantDiameterMm;
+				const len = spec.implantLengthMm ?? data.implantLengthMm;
+				const torque = spec.finalInsertionTorqueNcm ?? data.finalInsertionTorqueNcm;
+				if (diam === undefined) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: [data.installations ? "installations" : "teethSpecs", i, "implantDiameterMm"],
+						message: "Укажите диаметр имплантата (implantDiameterMm).",
+					});
+				}
+				if (len === undefined) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: [data.installations ? "installations" : "teethSpecs", i, "implantLengthMm"],
+						message: "Укажите длину имплантата (implantLengthMm).",
+					});
+				}
+				if (torque === undefined) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: [data.installations ? "installations" : "teethSpecs", i, "finalInsertionTorqueNcm"],
+						message: "Укажите торк установки (finalInsertionTorqueNcm).",
+					});
+				}
+			}
+			return;
+		}
+		if (data.implantDiameterMm === undefined) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["implantDiameterMm"],
+				message: "Укажите диаметр имплантата (implantDiameterMm).",
+			});
+		}
+		if (data.implantLengthMm === undefined) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["implantLengthMm"],
+				message: "Укажите длину имплантата (implantLengthMm).",
+			});
+		}
+		if (data.finalInsertionTorqueNcm === undefined) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["finalInsertionTorqueNcm"],
+				message: "Укажите торк установки (finalInsertionTorqueNcm).",
+			});
+		}
+	});
 
 export type CreateImplantInstallationInput = z.infer<
 	typeof createImplantInstallationSchema
 >;
+
+export type ResolvedImplantInstallationInput = Omit<
+	CreateImplantInstallationInput,
+	"toothNumberFdi" | "implantDiameterMm" | "implantLengthMm" | "finalInsertionTorqueNcm"
+> & {
+	toothNumberFdi: number;
+	implantDiameterMm: number;
+	implantLengthMm: number;
+	finalInsertionTorqueNcm: number;
+};
 
 export const recordIsqMeasurementSchema = z.object({
 	installationId: z.string().uuid(),
