@@ -18,7 +18,8 @@ import React, { useState, useEffect, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, CheckCircle2, FileText, Layers, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { generateUuidV7, kopecksToRub, rubToKopecks } from "@dental/shared";
-import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 import {
 	type CashShiftRecord,
@@ -40,29 +41,103 @@ import "./styles/shiftStudio.css";
 export interface ShiftStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialTab?: "current" | "closing" | "journal";
-	readonly initialShift?: CashShiftRecord;
-	readonly onShiftClosed?: (zReportData: ReturnType<typeof buildZReportPrintData>) => void;
+	readonly initialTab?: "current" | "closing" | "journal" | undefined;
+	readonly initialShift?: CashShiftRecord | undefined;
+	readonly onShiftClosed?: ((zReportData: ReturnType<typeof buildZReportPrintData>) => void) | undefined;
+}
+
+function createEmptyLiveShift(): CashShiftRecord {
+	return {
+		id: "live-shift",
+		shiftNumber: 0,
+		status: "open",
+		openedAt: new Date().toISOString(),
+		closedAt: null,
+		cashierId: "",
+		cashierFullName: "Администратор / Кассир",
+		clinicLegalName: "Стоматологическая клиника",
+		cashboxModel: "Основная касса",
+		initialChangeFundKopecks: 0,
+		revenue: {
+			cashKopecks: 0,
+			cardKopecks: 0,
+			sbpKopecks: 0,
+			depositKopecks: 0,
+		},
+		totalRevenueKopecks: 0,
+		countedCashKopecks: 0,
+		expectedCashInDrawerKopecks: 0,
+		cashDiscrepancyKopecks: 0,
+		isBalanced: true,
+		isTerminalReconciled: true,
+		encashmentKopecks: 0,
+		retainedChangeFundKopecks: 0,
+		ofdStatus: "pending",
+		zReportNumber: null,
+		doctorsEarnings: [],
+	};
+}
+
+interface ApiReconciliationSnapshot {
+	hasOpenShift?: boolean;
+	shiftId?: string;
+	shiftNumber?: number;
+	openedAt?: string;
+	cashierId?: string;
+	startingBalanceRub?: number;
+	expectedCashInDrawerRub?: number;
+	incomeCashRub?: number;
+	incomeElectronicRub?: number;
+	incomeSbpRub?: number;
+	advanceOffsetRub?: number;
+	netRevenueRub?: number;
+}
+
+interface ApiJournalShiftRow {
+	id: string;
+	shiftNumber: number;
+	status: "open" | "closed";
+	openedAt: string;
+	closedAt?: string | null;
+	cashierName?: string;
+	startBalanceRub?: number;
+	startBalanceKopecks?: number;
+	closingBalanceRub?: number | null;
+	incomeTotalRub?: number;
+	incomeTotalKopecks?: number;
+	incomeCashRub?: number;
+	incomeElectronicRub?: number;
+	incomeSbpRub?: number;
+	advanceOffsetRub?: number;
+	ofdStatus?: "delivered" | "pending";
+	zReportNumber?: string | null;
 }
 
 export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 	isOpen,
 	onClose,
 	initialTab = "current",
-	initialShift = ACTIVE_SHIFT_PRESET,
+	initialShift,
 	onShiftClosed,
 }) => {
 	const titleId = useId();
+	const isDemo = isDemoShowcaseMode();
+	const resolvedDefaultShift = useMemo(
+		() => initialShift ?? (isDemo ? ACTIVE_SHIFT_PRESET : createEmptyLiveShift()),
+		[initialShift, isDemo],
+	);
 	const [activeTab, setActiveTab] = useState<"current" | "closing" | "journal">(initialTab);
-	const [currentShift, setCurrentShift] = useState<CashShiftRecord>(initialShift);
-	const [shiftsJournal, setShiftsJournal] = useState<readonly CashShiftRecord[]>(SHIFT_JOURNAL_FIXTURES);
+	const [currentShift, setCurrentShift] = useState<CashShiftRecord>(resolvedDefaultShift);
+	const [shiftsJournal, setShiftsJournal] = useState<readonly CashShiftRecord[]>(() =>
+		isDemo ? SHIFT_JOURNAL_FIXTURES : [],
+	);
 	const [journalFilter, setJournalFilter] = useState<"all" | "open" | "closed">("all");
 
 	// Closing form local state
-	const [countedCashRub, setCountedCashRub] = useState<number>(() => kopecksToRub(currentShift.countedCashKopecks));
+	const [countedCashRub, setCountedCashRub] = useState<number>(() => kopecksToRub(resolvedDefaultShift.countedCashKopecks));
 	const [isTerminalReconciled, setIsTerminalReconciled] = useState<boolean>(true);
 	const [encashmentOption, setEncashmentOption] = useState<"full" | "retain_change">("retain_change");
-	const [retainedChangeRub, setRetainedChangeRub] = useState<number>(() => kopecksToRub(currentShift.retainedChangeFundKopecks));
+	const [retainedChangeRub, setRetainedChangeRub] = useState<number>(() => kopecksToRub(resolvedDefaultShift.retainedChangeFundKopecks));
 	const [printZReport, setPrintZReport] = useState<boolean>(true);
 
 	// Execution state
@@ -70,17 +145,138 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-	// Reset state on modal open
+	// Reset state on modal open/close & hydrate live shift + journal from PostgreSQL 18 API
 	useEffect(() => {
-		if (isOpen) {
-			setActiveTab(initialTab);
-			setCurrentShift(initialShift);
-			setCountedCashRub(kopecksToRub(initialShift.countedCashKopecks));
-			setRetainedChangeRub(kopecksToRub(initialShift.retainedChangeFundKopecks));
+		if (!isOpen) {
 			setErrorMessage(null);
 			setSuccessNotice(null);
+			return;
 		}
-	}, [isOpen, initialTab, initialShift]);
+		setActiveTab(initialTab);
+		setCurrentShift(resolvedDefaultShift);
+		setCountedCashRub(kopecksToRub(resolvedDefaultShift.countedCashKopecks));
+		setRetainedChangeRub(kopecksToRub(resolvedDefaultShift.retainedChangeFundKopecks));
+		setErrorMessage(null);
+		setSuccessNotice(null);
+
+		if (initialShift || isDemo) {
+			return;
+		}
+
+		let cancelled = false;
+		const loadLiveShiftData = async () => {
+			try {
+				const [shiftRes, journalRes] = await Promise.all([
+					fetch("/api/cashbox/shift", { headers: denteClinicalReadHeaders() }),
+					fetch("/api/cashbox/shifts", { headers: denteClinicalReadHeaders() }),
+				]);
+
+				if (!cancelled && shiftRes.ok) {
+					const raw = (await shiftRes.json().catch(() => null)) as unknown;
+					const snap = (
+						raw && typeof raw === "object" && "data" in raw
+							? (raw as { data?: ApiReconciliationSnapshot }).data
+							: raw
+					) as ApiReconciliationSnapshot | null;
+
+					if (snap && snap.hasOpenShift) {
+						const startKop = rubToKopecks(Number(snap.startingBalanceRub || 0));
+						const cashKop = rubToKopecks(Number(snap.incomeCashRub || 0));
+						const cardKop = rubToKopecks(Number(snap.incomeElectronicRub || 0));
+						const sbpKop = rubToKopecks(Number(snap.incomeSbpRub || 0));
+						const depKop = rubToKopecks(Number(snap.advanceOffsetRub || 0));
+						const expectedKop = snap.expectedCashInDrawerRub != null
+							? rubToKopecks(Number(snap.expectedCashInDrawerRub))
+							: startKop + cashKop;
+						const totalKop = snap.netRevenueRub != null
+							? rubToKopecks(Number(snap.netRevenueRub))
+							: cashKop + cardKop + sbpKop + depKop;
+
+						const hydrated: CashShiftRecord = {
+							...createEmptyLiveShift(),
+							id: snap.shiftId || "live-shift",
+							shiftNumber: snap.shiftNumber || 1,
+							status: "open",
+							openedAt: snap.openedAt || new Date().toISOString(),
+							cashierId: snap.cashierId || "",
+							initialChangeFundKopecks: startKop,
+							revenue: {
+								cashKopecks: cashKop,
+								cardKopecks: cardKop,
+								sbpKopecks: sbpKop,
+								depositKopecks: depKop,
+							},
+							totalRevenueKopecks: totalKop,
+							countedCashKopecks: expectedKop,
+							expectedCashInDrawerKopecks: expectedKop,
+							retainedChangeFundKopecks: startKop,
+							encashmentKopecks: Math.max(0, expectedKop - startKop),
+						};
+						setCurrentShift(hydrated);
+						setCountedCashRub(kopecksToRub(expectedKop));
+						setRetainedChangeRub(kopecksToRub(startKop));
+					} else if (snap && snap.hasOpenShift === false) {
+						setCurrentShift({ ...createEmptyLiveShift(), status: "closed" });
+						setCountedCashRub(0);
+						setRetainedChangeRub(0);
+					}
+				}
+
+				if (!cancelled && journalRes.ok) {
+					const rawJ = (await journalRes.json().catch(() => null)) as unknown;
+					const rows = (
+						rawJ && typeof rawJ === "object" && "data" in rawJ
+							? (rawJ as { data?: unknown }).data
+							: rawJ
+					) as ApiJournalShiftRow[] | null;
+
+					if (Array.isArray(rows)) {
+						setShiftsJournal(
+							rows.map((r) => {
+								const startKop = r.startBalanceKopecks ?? rubToKopecks(Number(r.startBalanceRub || 0));
+								const cashKop = rubToKopecks(Number(r.incomeCashRub || 0));
+								const cardKop = rubToKopecks(Number(r.incomeElectronicRub || 0));
+								const sbpKop = rubToKopecks(Number(r.incomeSbpRub || 0));
+								const depKop = rubToKopecks(Number(r.advanceOffsetRub || 0));
+								const totalKop = r.incomeTotalKopecks ?? (cashKop + cardKop + sbpKop + depKop);
+								const closingKop = r.closingBalanceRub != null ? rubToKopecks(Number(r.closingBalanceRub)) : startKop + cashKop;
+								return {
+									...createEmptyLiveShift(),
+									id: r.id,
+									shiftNumber: r.shiftNumber,
+									status: r.status,
+									openedAt: r.openedAt,
+									closedAt: r.closedAt ?? null,
+									cashierFullName: r.cashierName || "Кассир клиники",
+									initialChangeFundKopecks: startKop,
+									revenue: {
+										cashKopecks: cashKop,
+										cardKopecks: cardKop,
+										sbpKopecks: sbpKop,
+										depositKopecks: depKop,
+									},
+									totalRevenueKopecks: totalKop,
+									countedCashKopecks: closingKop,
+									expectedCashInDrawerKopecks: startKop + cashKop,
+									retainedChangeFundKopecks: startKop,
+									ofdStatus: r.ofdStatus || "pending",
+									zReportNumber: r.zReportNumber ?? null,
+								};
+							}),
+						);
+					}
+				}
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Не удалось загрузить данные кассовой смены";
+				if (!cancelled) setErrorMessage(msg);
+			}
+		};
+
+		void loadLiveShiftData();
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, initialTab, initialShift, isDemo, resolvedDefaultShift]);
 
 	// Escape key dismissal
 	useEffect(() => {
@@ -138,10 +334,11 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 				countedCashRub: kopecksToRub(countedCashKop),
 				differenceRub: kopecksToRub(cashDiscrepancyKop),
 				isBalanced: isCashMatched,
-				idempotencyKey,
+				force: true,
+				closedAt: new Date().toISOString(),
 			};
 
-			const res = await fetch("/api/cash/cash-box-all-closing", {
+			const res = await fetch("/api/cashbox/shift/close", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

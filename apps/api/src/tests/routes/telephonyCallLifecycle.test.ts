@@ -5,7 +5,7 @@ import { describe, test } from "node:test";
 import { and, eq, ilike, or } from "drizzle-orm";
 import Fastify from "fastify";
 import { db } from "../../db/client.js";
-import { communicationEvents, crmLeads, organizations, patients } from "../../db/schema.js";
+import { communicationEvents, crmLeads, organizations, patients, uisCallSpeechTranscripts } from "../../db/schema.js";
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { telephonyCallLifecycleRoutes } from "../../routes/telephony/telephonyCallLifecycleHandler.js";
 import { getAudioCachePath } from "../../routes/telephony/telephonyRecordingStreamHandler.js";
@@ -910,5 +910,128 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		assert.equal(mismatchJson.error, "OrganizationMismatch");
 
 		await app.close();
+	});
+
+	test("Webhook ended and POST /calls/:id/transcript persist uis_call_speech_transcripts and GET /calls returns transcripts", async () => {
+		const prevSecret = process.env.TELEPHONY_WEBHOOK_SECRET;
+		process.env.TELEPHONY_WEBHOOK_SECRET = "test-telephony-secret";
+
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		const testOrgId = DEMO_SHOWCASE_ORG_ID;
+		const callId = `call-transcript-${Date.now()}`;
+
+		try {
+			const webhookRes = await app.inject({
+				method: "POST",
+				url: `/${testOrgId}/webhook`,
+				headers: {
+					"x-dente-webhook-secret": "test-telephony-secret",
+				},
+				payload: {
+					event: "ended",
+					call_id: callId,
+					from: "+79995554433",
+					to: "+74951112233",
+					duration: 64,
+					transcript: "Оператор: Клиника ДЕНТЕ, добрый день.\nПациент: Хочу записаться на гигиену.",
+					ai_summary: "Запрос на профессиональную гигиену полости рта",
+					sentiment: "positive",
+				},
+			});
+			assert.equal(webhookRes.statusCode, 200);
+
+			const savedRows = await db
+				.select()
+				.from(uisCallSpeechTranscripts)
+				.where(
+					and(
+						eq(uisCallSpeechTranscripts.organizationId, testOrgId),
+						eq(uisCallSpeechTranscripts.callId, callId),
+					),
+				)
+				.limit(1);
+			assert.equal(savedRows.length, 1, "Transcript must be persisted in uis_call_speech_transcripts");
+			assert.equal(savedRows[0]?.aiSummary, "Запрос на профессиональную гигиену полости рта");
+			assert.equal(savedRows[0]?.sentiment, "positive");
+
+			const listRes = await app.inject({
+				method: "GET",
+				url: `/${testOrgId}/calls?limit=20`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+				},
+			});
+			assert.equal(listRes.statusCode, 200);
+			const listJson = listRes.json() as { calls?: Array<{ id: string; providerCallId?: string; aiSummary?: string | null; transcript?: Array<{ speaker: string; text: string }> }> };
+			const matched = listJson.calls?.find((c) => c.providerCallId === callId);
+			assert.ok(matched, "GET /calls must include the call");
+			assert.equal(matched?.aiSummary, "Запрос на профессиональную гигиену полости рта");
+			assert.equal(matched?.transcript?.length, 2);
+			assert.equal(matched?.transcript?.[0]?.speaker, "operator");
+			assert.equal(matched?.transcript?.[1]?.speaker, "patient");
+
+			const updateRes = await app.inject({
+				method: "POST",
+				url: `/${testOrgId}/calls/${callId}/transcript`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+				},
+				payload: {
+					transcript: "Оператор: Записали вас на пятницу 14:00.",
+					sentiment: "positive",
+					aiSummary: "Запись подтверждена на пятницу 14:00",
+				},
+			});
+			assert.equal(updateRes.statusCode, 200);
+
+			const updatedRows = await db
+				.select()
+				.from(uisCallSpeechTranscripts)
+				.where(
+					and(
+						eq(uisCallSpeechTranscripts.organizationId, testOrgId),
+						eq(uisCallSpeechTranscripts.callId, callId),
+					),
+				)
+				.limit(2);
+			assert.equal(updatedRows.length, 1, "POST /calls/:id/transcript must upsert without duplicating");
+			assert.equal(updatedRows[0]?.aiSummary, "Запись подтверждена на пятницу 14:00");
+		} finally {
+			await db
+				.delete(uisCallSpeechTranscripts)
+				.where(
+					and(
+						eq(uisCallSpeechTranscripts.organizationId, testOrgId),
+						eq(uisCallSpeechTranscripts.callId, callId),
+					),
+				);
+			await db
+				.delete(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, testOrgId),
+						eq(communicationEvents.providerCallId, callId),
+					),
+				);
+			await db
+				.delete(crmLeads)
+				.where(
+					and(
+						eq(crmLeads.organizationId, testOrgId),
+						ilike(crmLeads.notes, `%${callId}%`),
+					),
+				);
+			await app.close();
+			if (prevSecret !== undefined) {
+				process.env.TELEPHONY_WEBHOOK_SECRET = prevSecret;
+			} else {
+				delete process.env.TELEPHONY_WEBHOOK_SECRET;
+			}
+		}
 	});
 });

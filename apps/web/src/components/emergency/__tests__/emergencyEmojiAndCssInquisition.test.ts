@@ -16,7 +16,7 @@ const emergencyDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const CARTOON_EMOJI_REGEX = /[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 
 describe('Red Team Inquisition: Emojis & CSS Tokens', () => {
-	const targetFiles = ['EmergencyRescueModal.tsx', 'emergencyRescueEngine.ts', 'emergencyRescuePresets.ts', 'EmergencyRescueModal.css', 'emergencyRescue.css'];
+	const targetFiles = ['EmergencyRescueModal.tsx', 'emergencyRescueEngine.ts', 'emergencyRescuePresets.ts', 'EmergencyRescueModal.css'];
 	for (const file of targetFiles) {
 		it(`File ${file} contains strictly ZERO cartoon emojis`, () => {
 			const content = fs.readFileSync(path.join(emergencyDir, file), 'utf8');
@@ -43,16 +43,16 @@ describe('Red Team Inquisition: Emojis & CSS Tokens', () => {
 		assert.ok(!CARTOON_EMOJI_REGEX.test(generateEmergencyIncidentAct(incident)));
 	});
 
-	it('emergencyRescue.css and EmergencyRescueModal.tsx contain ZERO hardcoded hex colors', () => {
-		const cssContent = fs.readFileSync(path.join(emergencyDir, 'emergencyRescue.css'), 'utf8');
+	it('EmergencyRescueModal.css and EmergencyRescueModal.tsx contain ZERO hardcoded hex colors', () => {
+		const cssContent = fs.readFileSync(path.join(emergencyDir, 'EmergencyRescueModal.css'), 'utf8');
 		assert.equal(cssContent.match(/#[0-9a-fA-F]{3,8}\b/g), null);
 
 		const tsxContent = fs.readFileSync(path.join(emergencyDir, 'EmergencyRescueModal.tsx'), 'utf8');
 		assert.equal(tsxContent.match(/#[0-9a-fA-F]{3,8}\b/g), null);
 	});
 
-	it('emergencyRescue.css defines semantic classes for buttons and chips', () => {
-		const content = fs.readFileSync(path.join(emergencyDir, 'emergencyRescue.css'), 'utf8');
+	it('EmergencyRescueModal.css defines semantic classes for buttons and chips', () => {
+		const content = fs.readFileSync(path.join(emergencyDir, 'EmergencyRescueModal.css'), 'utf8');
 		assert.ok(content.includes('.emergency-copy-act-btn.teal'));
 		assert.ok(content.includes('.emergency-copy-act-btn.primary'));
 		assert.ok(content.includes('.emergency-copy-act-btn.danger'));
@@ -62,8 +62,8 @@ describe('Red Team Inquisition: Emojis & CSS Tokens', () => {
 		assert.ok(content.includes('.emergency-kit-row'));
 	});
 
-	it('emergencyRescue.css enforces high-stress touch targets min-height >= 48px', () => {
-		const content = fs.readFileSync(path.join(emergencyDir, 'emergencyRescue.css'), 'utf8');
+	it('EmergencyRescueModal.css enforces high-stress touch targets min-height >= 48px', () => {
+		const content = fs.readFileSync(path.join(emergencyDir, 'EmergencyRescueModal.css'), 'utf8');
 		assert.ok(content.match(/\.emergency-weight-chip\s*\{[^}]*min-height:\s*48px/));
 		assert.ok(content.match(/\.emergency-timer-btn\s*\{[^}]*min-height:\s*48px/));
 		assert.ok(content.match(/\.emergency-call-112-btn\s*\{[^}]*min-height:\s*48px/));

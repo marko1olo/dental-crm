@@ -2,7 +2,7 @@ import { and, desc, eq, ilike, ne, or, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import type { TenantDb } from "../../db/client.js";
 import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
-import { communicationEvents, crmLeads, type patients } from "../../db/schema.js";
+import { communicationEvents, crmLeads, uisCallSpeechTranscripts, type patients } from "../../db/schema.js";
 import {
 	type NormalizedPhone,
 	detectMarketingAttribution,
@@ -28,6 +28,9 @@ export interface HandleEndedParams {
 	preVerifiedRecordingUrl?: string | null | undefined;
 	durationSeconds: number;
 	transcriptionSnippet: string | null;
+	fullTranscript?: string | null | undefined;
+	aiSummary?: string | null | undefined;
+	sentiment?: string | null | undefined;
 	matchedPatient: typeof patients.$inferSelect | null;
 	utm_source?: string | undefined;
 	utm_campaign?: string | undefined;
@@ -36,6 +39,63 @@ export interface HandleEndedParams {
 	targetRaw?: string | undefined;
 	targetPhone?: NormalizedPhone | undefined;
 	tx?: TenantDb | undefined;
+}
+
+async function upsertCallSpeechTranscriptInTx(
+	tx: TenantDb,
+	params: {
+		organizationId: string;
+		callId: string;
+		patientPhone: string | null;
+		durationSeconds: number | null;
+		transcript: string | null;
+		sentiment: string | null;
+		aiSummary: string | null;
+	},
+) {
+	if (!params.callId || (!params.transcript && !params.aiSummary)) {
+		return;
+	}
+	const [existing] = await tx
+		.select({ id: uisCallSpeechTranscripts.id })
+		.from(uisCallSpeechTranscripts)
+		.where(
+			and(
+				eq(uisCallSpeechTranscripts.organizationId, params.organizationId),
+				eq(uisCallSpeechTranscripts.callId, params.callId),
+			),
+		)
+		.orderBy(desc(uisCallSpeechTranscripts.createdAt))
+		.limit(1);
+
+	if (existing) {
+		await tx
+			.update(uisCallSpeechTranscripts)
+			.set({
+				...(params.patientPhone ? { patientPhone: params.patientPhone } : {}),
+				...(params.durationSeconds !== null ? { durationSeconds: params.durationSeconds } : {}),
+				...(params.transcript ? { transcript: params.transcript } : {}),
+				...(params.sentiment ? { sentiment: params.sentiment } : {}),
+				...(params.aiSummary ? { aiSummary: params.aiSummary } : {}),
+			})
+			.where(
+				and(
+					eq(uisCallSpeechTranscripts.id, existing.id),
+					eq(uisCallSpeechTranscripts.organizationId, params.organizationId),
+				),
+			);
+		return;
+	}
+
+	await tx.insert(uisCallSpeechTranscripts).values({
+		organizationId: params.organizationId,
+		callId: params.callId,
+		patientPhone: params.patientPhone,
+		durationSeconds: params.durationSeconds,
+		transcript: params.transcript,
+		sentiment: params.sentiment,
+		aiSummary: params.aiSummary,
+	});
 }
 
 async function runEndedInTx(
@@ -87,6 +147,16 @@ async function runEndedInTx(
 				recordingUrl: communicationEvents.recordingUrl,
 				durationSeconds: communicationEvents.durationSeconds,
 			});
+
+		await upsertCallSpeechTranscriptInTx(tx, {
+			organizationId: p.resolvedOrgId,
+			callId: cleanCallId,
+			patientPhone: p.callerPhone.e164,
+			durationSeconds: nextDuration,
+			transcript: p.fullTranscript ?? p.transcriptionSnippet ?? null,
+			sentiment: p.sentiment ?? null,
+			aiSummary: p.aiSummary ?? null,
+		});
 
 		if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
 			await tx.execute(
@@ -229,18 +299,33 @@ async function runEndedInTx(
 	}
 
 	const fallbackEventIdempotencyKey = `telephony:ended:fallback:${p.resolvedOrgId}:${p.recordingUrl || `${p.callerPhone.national10}_${Date.now()}`}`;
-	await tx.insert(communicationEvents).values({
-		organizationId: p.resolvedOrgId,
-		patientId: p.matchedPatient?.id || null,
-		callerPhone: p.callerPhone.e164,
-		channel: "phone",
-		direction: "inbound",
-		status: "completed",
-		message: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
-		recordingUrl: verifiedRecUrl,
-		durationSeconds: nextDuration,
-		idempotencyKey: fallbackEventIdempotencyKey,
-	});
+	const [insertedFallbackEvent] = await tx
+		.insert(communicationEvents)
+		.values({
+			organizationId: p.resolvedOrgId,
+			patientId: p.matchedPatient?.id || null,
+			callerPhone: p.callerPhone.e164,
+			channel: "phone",
+			direction: "inbound",
+			status: "completed",
+			message: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
+			recordingUrl: verifiedRecUrl,
+			durationSeconds: nextDuration,
+			idempotencyKey: fallbackEventIdempotencyKey,
+		})
+		.returning({ id: communicationEvents.id });
+
+	if (insertedFallbackEvent?.id) {
+		await upsertCallSpeechTranscriptInTx(tx, {
+			organizationId: p.resolvedOrgId,
+			callId: insertedFallbackEvent.id,
+			patientPhone: p.callerPhone.e164,
+			durationSeconds: nextDuration,
+			transcript: p.fullTranscript ?? p.transcriptionSnippet ?? null,
+			sentiment: p.sentiment ?? null,
+			aiSummary: p.aiSummary ?? null,
+		});
+	}
 
 	if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
 		await tx.execute(

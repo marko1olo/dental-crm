@@ -108,7 +108,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 					}
 					setLocalApproved(true);
 					if (onApproveTreatmentPlan) onApproveTreatmentPlan(signed);
-					if (onShowToast) onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
+					if (onShowToast) onShowToast("План лечения успешно согласован!");
 				})
 				.catch((err) => {
 					clientLogger.warn("[TreatmentPlanTab] Сетевая ошибка согласования плана:", err);
@@ -118,7 +118,7 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 		}
 		setLocalApproved(true);
 		if (onApproveTreatmentPlan) onApproveTreatmentPlan(signed);
-		if (onShowToast) onShowToast("План лечения успешно согласован по 63-ФЗ (ПЭП)!");
+		if (onShowToast) onShowToast("План лечения успешно согласован!");
 	};
 
 	const handleSelectTier = (tier: "basic" | "standard" | "premium") => {

@@ -7,6 +7,7 @@ import {
 import { resolveCanonicalCallStatus } from "../../components/telephony/telephonyCatalogData";
 import {
 	type CallHistoryItem,
+	type CallTranscriptUtterance,
 	type MissedCallSlaItem,
 	type MissedCallsSlaSummary,
 	type TelephonyStore,
@@ -85,6 +86,36 @@ interface ApiCallRecord {
 	durationSeconds?: number | null;
 	createdAt?: string;
 	message?: string | null;
+	transcriptText?: string | null;
+	aiSummary?: string | null;
+	sentiment?: string | null;
+	transcript?: CallTranscriptUtterance[] | string | null;
+}
+
+function normalizeTranscriptField(
+	c: ApiCallRecord,
+): CallTranscriptUtterance[] | undefined {
+	if (Array.isArray(c.transcript) && c.transcript.length > 0) {
+		return c.transcript;
+	}
+	const rawText = (
+		typeof c.transcript === "string" ? c.transcript : c.transcriptText
+	)?.trim();
+	if (!rawText) return undefined;
+	const sentiment =
+		c.sentiment === "positive" || c.sentiment === "negative"
+			? c.sentiment
+			: "neutral";
+	return [
+		{
+			speaker: "patient",
+			startTimeSeconds: 0,
+			endTimeSeconds: Math.max(1, c.durationSeconds ?? 10),
+			text: rawText,
+			confidence: 1,
+			sentiment,
+		},
+	];
 }
 
 export async function fetchCallHistoryAction(set: SetState, get: GetState): Promise<void> {
@@ -131,6 +162,8 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 					callStartedAt: c.createdAt ? new Date(c.createdAt).getTime() : Date.now(),
 					outcome: c.status === "completed" ? ("accepted" as const) : undefined,
 					outcomeNote: c.message || undefined,
+					transcript: normalizeTranscriptField(c),
+					aiSummary: c.aiSummary || undefined,
 				};
 			});
 			const unsynced = existing.filter(

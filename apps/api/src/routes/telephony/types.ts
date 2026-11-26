@@ -177,12 +177,26 @@ export const telephonyWebhookPayloadSchema = z.object({
 	transcription: z.string().optional(),
 	transcription_snippet: z.string().optional(),
 	ai_summary: z.string().optional(),
+	sentiment: z.string().optional(),
 	gravitel_call_id: z.string().optional(),
 	voice_call_id: z.string().optional(),
 	provider: z.string().optional(),
 });
 
 export type TelephonyWebhookPayload = z.infer<typeof telephonyWebhookPayloadSchema>;
+
+export const telephonyTranscriptBodySchema = z
+	.object({
+		callId: z.string().trim().min(1).max(200).optional(),
+		patientPhone: z.string().trim().max(40).optional(),
+		durationSeconds: z.number().int().min(0).max(86400 * 7).optional(),
+		transcript: z.string().trim().min(1).max(50000),
+		sentiment: z.enum(["neutral", "positive", "negative"]).optional(),
+		aiSummary: z.string().trim().max(4000).optional(),
+	})
+	.strict();
+
+export type TelephonyTranscriptBody = z.infer<typeof telephonyTranscriptBodySchema>;
 
 export const telephonySmsWebhookPayloadSchema = z.object({
 	from: z.string().optional(),

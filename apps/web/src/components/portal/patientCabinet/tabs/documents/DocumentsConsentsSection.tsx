@@ -28,7 +28,7 @@ export const DocumentsConsentsSection: React.FC<DocumentsConsentsSectionProps> =
 					<FileCheck size={20} className="pc-icon-primary" />
 					<span>Информированные согласия (ИДС)</span>
 				</div>
-				<span className="pc-section-hint">Юридическая сила по 63-ФЗ ст. 6</span>
+				<span className="pc-section-hint">Юридическая значимость цифровой подписи</span>
 			</div>
 			<div className="pc-consents-list">
 				{(consents || []).map((consent) => {
@@ -50,7 +50,7 @@ export const DocumentsConsentsSection: React.FC<DocumentsConsentsSectionProps> =
 								<div>
 									<span className={`pc-status-badge ${isSigned ? "paid" : "unpaid"}`}>
 										{isSigned ? <ShieldCheck size={14} /> : <AlertTriangle size={14} />}
-										<span>{isSigned ? "Подписано по 63-ФЗ" : "Ожидает подписи"}</span>
+										<span>{isSigned ? "Подписано по SMS" : "Ожидает подписи"}</span>
 									</span>
 								</div>
 							</div>
@@ -67,7 +67,7 @@ export const DocumentsConsentsSection: React.FC<DocumentsConsentsSectionProps> =
 										onClick={() => handlePrintSigned(consent)}
 									>
 										<Eye size={13} />
-										<span>Бланк со штампом ПЭП</span>
+										<span>Бланк со штампом подписи</span>
 									</button>
 								</div>
 							)}
@@ -81,7 +81,7 @@ export const DocumentsConsentsSection: React.FC<DocumentsConsentsSectionProps> =
 										data-legacy-testid={`sign-sms-btn-${consent.id}`}
 									>
 										<Smartphone size={16} />
-										<span>Подписать по SMS (63-ФЗ ПЭП)</span>
+										<span>Подписать по SMS</span>
 									</button>
 									<button
 										type="button"

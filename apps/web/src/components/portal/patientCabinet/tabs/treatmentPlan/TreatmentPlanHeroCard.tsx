@@ -54,7 +54,7 @@ export const TreatmentPlanHeroCard: React.FC<TreatmentPlanHeroCardProps> = ({
 					<div className="pc-plan-actions-strip" data-testid="pc-plan-actions-strip" style={{ marginTop: "12px", paddingTop: "10px", borderTop: "1px dashed var(--pc-border, #cbd5e1)", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
 						{isPlanApproved ? (
 							<span className="pc-status-badge paid" data-testid="plan-approved-badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px" }}>
-								<CheckCircle2 size={15} /><span>План согласован (ПЭП 63-ФЗ)</span>
+								<CheckCircle2 size={15} /><span>План согласован онлайн</span>
 							</span>
 						) : (
 							<>
@@ -62,7 +62,7 @@ export const TreatmentPlanHeroCard: React.FC<TreatmentPlanHeroCardProps> = ({
 									<Clock size={15} /><span>Требуется согласование</span>
 								</span>
 								<button type="button" className="pc-btn-primary pc-btn-compact" onClick={onApprovePlan} data-testid="approve-treatment-plan-btn" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-									<Smartphone size={14} /><span>Согласовать план (ПЭП 63-ФЗ)</span>
+									<Smartphone size={14} /><span>Согласовать план по SMS</span>
 								</button>
 							</>
 						)}

@@ -13,13 +13,16 @@ import {
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { SberbankClient } from "../../services/sberbankClient.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { resolveSberReturnUrl } from "../sberbankRoutes/sberbankUtils.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 import { generateDeterministicQrSvg } from "./portalUtils.js";
 import {
 	confirmSbpBodySchema,
+	createCardOrderBodySchema,
 	createSbpQrBodySchema,
 	paymentStatusQuerySchema,
 	type ConfirmSbpBody,
+	type CreateCardOrderBody,
 	type CreateSbpQrBody,
 	type PaymentStatusQuery,
 } from "./types.js";
@@ -363,6 +366,127 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			return { success: true, sbpPayload };
 		});
 	});
+
+	// 11b. Create Online Card Payment Order via Acquiring Gateway (Protected)
+	server.post<{ Body: CreateCardOrderBody }>(
+		"/payments/create-card-order",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
+				return reply.status(401).send({ error: "Unauthorized" });
+			}
+
+			const parsedBody = createCardOrderBodySchema.safeParse(request.body ?? {});
+			if (!parsedBody.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры создания оплаты картой.",
+					details: parsedBody.error.format(),
+				});
+			}
+
+			const invoiceId = parsedBody.data.invoiceId.trim();
+			const explicitAmountRub = parsedBody.data.amountRub;
+			const idempotencyKey =
+				readHeaderString(request.headers["idempotency-key"]) ??
+				readHeaderString(request.headers["x-idempotency-key"]);
+
+			const invoiceCheck = await withTenantCtx(auth.organizationId, async (tx) => {
+				const [inv] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(
+						and(
+							eq(patientInvoices.id, invoiceId),
+							eq(patientInvoices.organizationId, auth.organizationId),
+							eq(patientInvoices.patientId, auth.patientId),
+						),
+					)
+					.limit(1);
+
+				if (!inv) {
+					return { ok: false as const, status: 404 as const, error: "InvoiceNotFound", message: "Счёт на оплату не найден." };
+				}
+				if (inv.status === "paid" || inv.status === "voided" || inv.status === "cancelled") {
+					return { ok: false as const, status: 409 as const, error: "InvoiceAlreadyPaid", message: "Счёт уже оплачен или аннулирован." };
+				}
+				const invTotalKop = resolveInvoiceTotalKopecks(inv);
+				const amountKopecks = explicitAmountRub !== undefined ? rublesToKopecks(explicitAmountRub) : invTotalKop;
+				if (!Number.isSafeInteger(amountKopecks) || amountKopecks <= 0) {
+					return { ok: false as const, status: 400 as const, error: "InvalidAmount", message: "Сумма к оплате должна быть больше нуля." };
+				}
+				return { ok: true as const, invoice: inv, amountKopecks };
+			});
+
+			if (!invoiceCheck.ok) {
+				return reply.status(invoiceCheck.status).send({
+					error: invoiceCheck.error,
+					message: invoiceCheck.message,
+				});
+			}
+
+			const returnUrl = resolveSberReturnUrl(
+				typeof request.headers.origin === "string" ? request.headers.origin : undefined,
+			);
+			if (!returnUrl) {
+				return reply.status(500).send({
+					error: "ReturnUrlNotConfigured",
+					message: "Не настроен безопасный адрес возврата для платёжной формы.",
+				});
+			}
+
+			let client: SberbankClient;
+			try {
+				client = new SberbankClient();
+			} catch {
+				return reply.status(501).send({
+					error: "PaymentGatewayNotConfigured",
+					message: "Интернет-эквайринг для оплаты картой не подключён. Доступна оплата по СБП.",
+				});
+			}
+
+			const orderNumber = idempotencyKey
+				? `CARD-${createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 20).toUpperCase()}`
+				: `CARD-${invoiceCheck.invoice.id.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+
+			const reg = await client.registerOrder(orderNumber, invoiceCheck.amountKopecks, returnUrl);
+			if (reg.errorCode && reg.errorCode !== "0") {
+				return reply.status(502).send({
+					error: "PaymentGatewayError",
+					message: reg.errorMessage || "Платёжный шлюз отклонил регистрацию оплаты.",
+				});
+			}
+			const orderId = reg.orderId;
+			const formUrl = reg.formUrl;
+			if (!orderId || !formUrl) {
+				return reply.status(502).send({
+					error: "PaymentGatewayError",
+					message: "Платёжный шлюз не вернул ссылку на форму оплаты.",
+				});
+			}
+
+			await withTenantCtx(auth.organizationId, async (tx) => {
+				await tx.insert(sberbankTransactions).values({
+					organizationId: auth.organizationId,
+					patientId: auth.patientId,
+					invoiceId: invoiceCheck.invoice.id,
+					visitId: invoiceCheck.invoice.visitId ?? null,
+					orderId,
+					amountKopecks: BigInt(invoiceCheck.amountKopecks),
+					status: "WAITING_FOR_CARD",
+				});
+			});
+
+			return reply.status(200).send({
+				success: true,
+				orderId,
+				formUrl,
+				amountKopecks: invoiceCheck.amountKopecks,
+				amountRub: kopecksToRubles(invoiceCheck.amountKopecks),
+			});
+		},
+	);
 
 	// 12. Confirm SBP Payment & Enqueue 54-FZ Fiscal Receipt (Protected)
 	// tenantTxSelfManaged: true so external Sberbank HTTP check never holds a PG connection open

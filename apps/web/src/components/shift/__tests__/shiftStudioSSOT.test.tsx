@@ -20,10 +20,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
+import "../../../../testCssStub.mjs";
 import { CashShiftClosingModal } from "../CashShiftClosingModal";
 import { CashShiftJournalView } from "../CashShiftJournalView";
-import { DirectShiftLauncher } from "../DirectShiftLauncher";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
+const { DirectShiftLauncher } = await import("../DirectShiftLauncher");
+const { ShiftStudioModal } = await import("../ShiftStudioModal");
 import {
 	type TenderRevenueKopecks,
 	ACTIVE_SHIFT_PRESET,
@@ -272,6 +274,19 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 			const code = fs.readFileSync(registryPath, "utf-8");
 			assert.ok(code.includes("DirectShiftLauncher"), "administrativeLaunchersRegistry must import DirectShiftLauncher");
 			assert.ok(code.includes("shift-studio"), "administrativeLaunchersRegistry must include shift-studio entry");
+		});
+
+		it("renders zeroed live shift state in ShiftStudioModal when outside demo mode (no ACTIVE_SHIFT_PRESET leak)", () => {
+			const html = renderToString(
+				<ShiftStudioModal
+					isOpen={true}
+					onClose={() => {}}
+					initialTab="current"
+				/>,
+			);
+			assert.ok(!html.includes("45\u00A0000") && !html.includes("45 000"), "Must not leak ACTIVE_SHIFT_PRESET 45 000 ₽ in prod");
+			assert.ok(!html.includes("Иванова Екатерина Сергеевна"), "Must not leak fixture cashier name in prod");
+			assert.ok(!html.includes("Смирнов Алексей Викторович"), "Must not leak fixture doctor earnings in prod");
 		});
 	});
 

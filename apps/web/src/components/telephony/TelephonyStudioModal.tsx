@@ -200,8 +200,24 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 					{selectedCall.clinicalNote}
 				</div>
 			)}
-			{selectedCall.hasRecording && selectedCall.recordingUrl && (
-				<div className="pt-1"><CallAudioPlayer recordingUrl={selectedCall.recordingUrl} /></div>
+			{selectedCall.aiSummary && (
+				<div
+					data-testid="telephony-call-ai-summary"
+					className="text-xs text-[var(--ink)] bg-[var(--primary)]/5 p-2.5 rounded-lg border border-[var(--primary)]/20"
+				>
+					<span className="font-semibold text-[var(--primary)]">Краткое резюме звонка: </span>
+					{selectedCall.aiSummary}
+				</div>
+			)}
+			{((selectedCall.hasRecording && selectedCall.recordingUrl) || (selectedCall.transcript && selectedCall.transcript.length > 0)) && (
+				<div className="pt-1">
+					<CallAudioPlayer
+						recordingUrl={selectedCall.recordingUrl}
+						eventId={selectedCall.id}
+						durationSeconds={selectedCall.durationSeconds}
+						transcript={selectedCall.transcript}
+					/>
+				</div>
 			)}
 			<div className="space-y-1.5 pt-1">
 				<label className="text-xs font-semibold text-[var(--ink-muted)]">Заметка к звонку:</label>
@@ -316,7 +332,9 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				timestampText,
 				hasRecording: Boolean(c.recordingUrl),
 				recordingUrl: c.recordingUrl || undefined,
+				transcript: c.transcript,
 				transcriptSnippet: c.transcript?.[0]?.text,
+				aiSummary: c.aiSummary,
 			};
 		});
 	}, [callHistory]);

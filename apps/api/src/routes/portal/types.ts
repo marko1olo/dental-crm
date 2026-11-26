@@ -218,6 +218,15 @@ export const createSbpQrBodySchema = z
 	.strict();
 export type CreateSbpQrBody = z.infer<typeof createSbpQrBodySchema>;
 
+export const createCardOrderBodySchema = z
+	.object({
+		invoiceId: z.string().min(1),
+		stageId: z.string().optional(),
+		amountRub: z.number().finite().positive().optional(),
+	})
+	.strict();
+export type CreateCardOrderBody = z.infer<typeof createCardOrderBodySchema>;
+
 export const confirmSbpBodySchema = z
 	.object({
 		invoiceId: z.string().optional(),

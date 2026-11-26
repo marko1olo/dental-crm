@@ -10,7 +10,8 @@
 
 import React from "react";
 import { RefreshCw, Sparkles, X } from "lucide-react";
-import { formatRubles } from "../patientCabinetEngine.js";
+import { generateUuidV7 } from "@dental/shared";
+import { formatRubles, type PatientInvoiceItem } from "../patientCabinetEngine.js";
 import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
 import { MobileSelfCheckinModal } from "../../selfCheckin/index";
 import { OverviewTab, InvoicesTab, DocumentsTab, FamilyTab } from "../tabs/index.js";
@@ -112,6 +113,48 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 	} = usePatientCabinetModal(props);
 
 	if (!isOpen) return null;
+
+	const handleStartCardPayment = async (inv: PatientInvoiceItem) => {
+		const token =
+			props.token ??
+			(typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
+		if (!token) {
+			handleShowCabinetToast("Для оплаты картой перейдите к быстрой оплате через СБП");
+			handleStartSbpPayment(inv);
+			return;
+		}
+		try {
+			const res = await fetch("/api/portal/payments/create-card-order", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({ invoiceId: inv.id }),
+			});
+			const raw = (await res.json().catch(() => null)) as unknown;
+			const payload = (
+				raw && typeof raw === "object" && "data" in raw
+					? (raw as { data?: { formUrl?: string; message?: string } }).data
+					: raw
+			) as { formUrl?: string; message?: string } | null;
+
+			if (res.ok && payload?.formUrl) {
+				window.open(payload.formUrl, "_blank", "noopener,noreferrer");
+				handleShowCabinetToast(`Платёжная форма для счёта № ${inv.invoiceNumber} открыта`);
+				return;
+			}
+
+			handleShowCabinetToast(
+				payload?.message || "Онлайн-оплата картой временно недоступна — открыта оплата по СБП",
+			);
+			handleStartSbpPayment(inv);
+		} catch {
+			handleShowCabinetToast("Ошибка соединения с платёжным шлюзом — доступна оплата по СБП");
+			handleStartSbpPayment(inv);
+		}
+	};
 
 	if (isSelfCheckinOpen) {
 		return (
@@ -311,7 +354,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 												p.id === updatedPlan.id ? updatedPlan : p,
 											),
 										}));
-										handleShowCabinetToast("План лечения успешно согласован (ПЭП 63-ФЗ)!");
+										handleShowCabinetToast("План лечения успешно согласован!");
 									}}
 									onShowToast={handleShowCabinetToast}
 									onOpenClinicalScans={() => setShowClinicalPlanDetail((prev) => !prev)}
@@ -324,11 +367,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 								<InvoicesTab
 									data={data}
 									onOpenSbpForInvoice={handleStartSbpPayment}
-									onOpenCardPayment={(inv) =>
-										handleShowCabinetToast(
-											`Открытие безопасного интернет-эквайринга для счета № ${inv.invoiceNumber}...`,
-										)
-									}
+									onOpenCardPayment={(inv) => {
+										void handleStartCardPayment(inv);
+									}}
 									onShowToast={handleShowCabinetToast}
 								/>
 							)}

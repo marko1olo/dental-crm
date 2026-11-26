@@ -79,8 +79,14 @@ export const ShiftJournalList: React.FC<ShiftJournalListProps> = ({
 								>
 									{shift.status === "open" ? "Открыта" : "Закрыта"}
 								</span>
-								<span className="text-[10px] text-emerald-600 font-semibold">
-									ОФД: Доставлен ✓
+								<span
+									className={`text-[10px] font-semibold ${
+										shift.ofdStatus === "delivered"
+											? "text-emerald-600"
+											: "text-[var(--muted)]"
+									}`}
+								>
+									{shift.ofdStatus === "delivered" ? "ОФД: Доставлен ✓" : "ОФД: Ожидает"}
 								</span>
 							</div>
 							<div className="text-[11px] text-[var(--muted)] mt-0.5">

@@ -67,7 +67,14 @@ export async function telephonyWebhookHandler(
 
 	const callId = (data.call_id || data.uniqueid || data.CallId || data.callid || data.entry_id || "").trim();
 	const recordingUrl = (data.recording_url || data.record_url || data.RecUrl || data.link || "").trim();
-	const transcriptionSnippet = (data.transcription_snippet || data.transcript || data.transcription || data.ai_summary || "").trim().slice(0, 1000) || null;
+	const fullTranscript = (data.transcript || data.transcription || data.transcription_snippet || "").trim().slice(0, 50000) || null;
+	const aiSummary = (data.ai_summary || "").trim().slice(0, 4000) || null;
+	const rawSentiment = typeof data.sentiment === "string" ? data.sentiment.trim().toLowerCase() : "";
+	const sentiment =
+		rawSentiment === "positive" || rawSentiment === "negative" || rawSentiment === "neutral"
+			? rawSentiment
+			: null;
+	const transcriptionSnippet = (fullTranscript || aiSummary || "").trim().slice(0, 1000) || null;
 	const rawDuration = data.duration || data.duration_seconds || data.billsec || data.talk_time;
 	const durationSeconds = rawDuration != null ? Math.max(0, Number.parseInt(String(rawDuration), 10) || 0) : 0;
 	const detectedProvider = detectTelephonyProvider(data, String(data.event || data.notification_name || data.event_type || data.cmd || ""));
@@ -202,7 +209,11 @@ export async function telephonyWebhookHandler(
 			return handleEndedEvent({
 				request, resolvedOrgId, callerPhone, callId, recordingUrl,
 				preVerifiedRecordingUrl,
-				durationSeconds, transcriptionSnippet, matchedPatient: searchPatient[0] || null,
+				durationSeconds, transcriptionSnippet,
+				fullTranscript,
+				aiSummary,
+				sentiment,
+				matchedPatient: searchPatient[0] || null,
 				utm_source: data.utm_source,
 				utm_campaign: data.utm_campaign,
 				utm_medium: data.utm_medium,

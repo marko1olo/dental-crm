@@ -73,7 +73,7 @@ describe('Wave 53: Emergency Relative Notice & Markup', () => {
 		assert.ok(html.includes('data-testid="emergency-print-act-btn"'));
 		assert.ok(html.includes('data-testid="emergency-copy-relative-notice-btn"'));
 
-		const cssPath = path.resolve(emergencyDir, 'emergencyRescue.css');
+		const cssPath = path.resolve(emergencyDir, 'EmergencyRescueModal.css');
 		assert.ok(fs.existsSync(cssPath));
 		const cssContent = fs.readFileSync(cssPath, 'utf-8');
 		assert.ok(cssContent.includes('.emergency-copy-act-btn'));

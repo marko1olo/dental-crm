@@ -315,9 +315,8 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({
 													if (onOpenCardPayment) {
 														onOpenCardPayment(inv);
 													} else {
-														onShowToast(
-															`Переход к безопасной интернет-оплате картой счета № ${inv.invoiceNumber}...`,
-														);
+														onShowToast("Оплата картой подключается — открыта оплата через СБП");
+														onOpenSbpForInvoice(inv);
 													}
 												}}
 												data-testid={`pay-card-btn-${inv.id}`}

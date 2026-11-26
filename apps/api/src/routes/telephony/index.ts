@@ -6,6 +6,7 @@ import { telephonyCallerLookupRoutes } from "./telephonyCallerLookupRoutes.js";
 import { telephonyCallLifecycleRoutes } from "./telephonyCallLifecycleHandler.js";
 import { telephonyCallsListHandler } from "./telephonyCallsListHandler.js";
 import { telephonyCallUpdateHandler } from "./telephonyCallUpdateHandler.js";
+import { telephonyTranscriptSaveHandler } from "./telephonyTranscriptHandler.js";
 import { telephonyMissedCallsHandler } from "./telephonyMissedCallsHandler.js";
 import { telephonyOutboundHandler } from "./telephonyOutboundHandler.js";
 import { telephonySmsHandler } from "./telephonySmsHandler.js";
@@ -78,6 +79,18 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	// Update Call Note (PATCH /api/telephony/calls/:id)
 	server.patch<{ Params: { id: string; organizationId?: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/calls/:id", telephonyCallUpdateHandler);
 	server.patch<{ Params: { id: string; organizationId: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/:organizationId/calls/:id", telephonyCallUpdateHandler);
+
+	// Persist / update Call Speech Transcript in uis_call_speech_transcripts
+	server.post<{ Params: { id: string; organizationId?: string } }>(
+		"/calls/:id/transcript",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyTranscriptSaveHandler,
+	);
+	server.post<{ Params: { id: string; organizationId: string } }>(
+		"/:organizationId/calls/:id/transcript",
+		{ config: { tenantTxSelfManaged: true } },
+		telephonyTranscriptSaveHandler,
+	);
 
 	// 1-Click Outbound call (external PBX HTTP/AMI dispatch runs outside PG TX)
 	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>(

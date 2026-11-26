@@ -66,6 +66,8 @@ export interface IncomingCallPayload {
 	direction?: CallDirection | undefined;
 	acutePain?: boolean | undefined;
 	transcript?: SpeechTranscriptUtterance[] | undefined;
+	aiSummary?: string | undefined;
+	sentiment?: "neutral" | "positive" | "negative" | undefined;
 	virtualNumber?: string | undefined;
 	calledDid?: string | undefined;
 	utmSource?: string | undefined;

@@ -55,7 +55,7 @@ export const OverviewAlertsAndHealth: React.FC<OverviewAlertsAndHealthProps> = (
 						<ShieldAlert size={22} className="pc-icon-danger flex-shrink-0" />
 						<div>
 							<strong>Ожидает подписи {summary.pendingConsentsCount} информированное согласие (ИДС)</strong>
-							<p className="pc-alert-subtext">Подтвердите согласие на медицинское вмешательство по SMS (63-ФЗ ПЭП) прямо сейчас.</p>
+							<p className="pc-alert-subtext">Подтвердите согласие на медицинское вмешательство по SMS прямо сейчас.</p>
 						</div>
 					</div>
 					<button type="button" className="pc-btn-primary pc-danger-btn" onClick={() => onOpenTab("documents")}>

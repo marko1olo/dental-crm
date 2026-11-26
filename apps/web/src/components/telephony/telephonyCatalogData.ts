@@ -14,7 +14,7 @@ import {
 	maskPhoneRu,
 	formatWhatsAppUrl,
 } from "@dental/shared";
-import type { CallStatus } from "../../store/telephonyTypes";
+import type { CallStatus, SpeechTranscriptUtterance } from "../../store/telephonyTypes";
 
 export { normalizePhoneRu, formatPhoneRu, maskPhoneRu, formatWhatsAppUrl };
 
@@ -215,6 +215,9 @@ export interface TelephonyCallApiRecord {
 	createdAt?: string | Date;
 	message?: string;
 	recordingUrl?: string | null;
+	transcriptText?: string | null;
+	aiSummary?: string | null;
+	transcript?: SpeechTranscriptUtterance[] | string | null;
 }
 
 export interface TelephonyCatalogCall {
@@ -233,7 +236,9 @@ export interface TelephonyCatalogCall {
 	timestampText: string;
 	hasRecording: boolean;
 	recordingUrl?: string | undefined;
+	transcript?: SpeechTranscriptUtterance[] | undefined;
 	transcriptSnippet?: string | undefined;
+	aiSummary?: string | undefined;
 }
 
 /**
