@@ -3,7 +3,7 @@
 > 🏛️ Полные 46 мандатов (8e–8bq), CSS-классы кнопок/модалок и 15 DoD гейтов — в [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md). Архитектурная карта: [`.agents/architecture/GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md`](file:///C:/Clinic_MVP/dental-crm/.agents/architecture/GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md) | Навигация: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md).
 
 ## 🚨 КАНОНИЧЕСКИЕ ИНВАРИАНТЫ РЕАЛИЗАЦИИ (ОБНОВЛЕНО ПО ПЛАНУ)
-1. **Закон №0 & Со-развитие (8az):** Перед кодом читать ПОЛНОСТЬЮ `THE_HAMMER_MASTER_PROMPT.md`, профильный стандарт и КАЖДЫЙ целевой файл (`1..EOF`) + `git status`. Нашёл баг -> `SYSTEMIC_ROT_RATCHET.md` -> код -> тест/пруф -> статус.
+1. **Закон №0 & Со-развитие (8az):** Перед кодом читать ПОЛНОСТЬЮ `THE_HAMMER_MASTER_PROMPT.md`, профильный стандарт и КАЖДЫЙ целевой файл (`1..EOF`) + `git status`. До старта и по коммиту отмечайся в `SYSTEMIC_ROT_RATCHET.md` и в трекере [`GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md`](file:///C:/Clinic_MVP/dental-crm/.agents/architecture/GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md), чтобы не делать одно и то же дважды.
 2. **3-Shell UI, CSS DAG & Матрёшка = 0:**
    - Единый 3-контурный роутер (`routeResolver.ts` + `WorkspaceStudioOverlayHost`) без `isStandaloneActive()` и сиротских `Direct*Launcher` модалок вне каркаса.
    - `Max Modal Depth = 1` (без `opacity-0` `SubModals` матрёшек, без двойных баров сохранения; каталог шаблонов ЭМК — встроенная 380px боковая шторка; при смене пациента — `key={patientId}` + `resetDraft()`).

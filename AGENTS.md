@@ -11,7 +11,7 @@
 | **P2 ДОЛГ** | При закрытых P0. | `as any` (двойной счётчик!), `audit:dice` дефекты, снос legacy `*Rub -> *Kopecks BIGINT`, 3-Shell / Wheeler SVG `#id` / Flat Modal Stack |
 | **P3 ПЛАНОВОЕ** | После стабилизации ядра. | Сквош исторических миграций DDL, консолидация устаревших алиасов API, зачистка одноразовых скриптов |
 
-**Claim Protocol:** Старт → `🔒 [AgentId] — [скоуп] — [HH:MM DD.MM]` в `SYSTEMIC_ROT_RATCHET.md`. Коммит → `✅ [AgentId] — DONE — commit <hash> — [ДО→ПОСЛЕ]`. Брошен `>60 мин` — снимает оркестратор.
+**Claim Protocol:** Старт → `🔒` в `SYSTEMIC_ROT_RATCHET.md` и [`GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md`](file:///C:/Clinic_MVP/dental-crm/.agents/architecture/GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md). Коммит → `✅ DONE` (`<hash>`, ДО→ПОСЛЕ) в обоих файлах. Брошен `>60 мин` — снимает L1.
 **Worktree & Main-Only:** Всегда `main` (`git checkout -b` = бан). `git status` на старте; `git add <file>` пофайлово (запрет `git add .`). Отчёт без коммита = БРАК.
 **ДО/ПОСЛЕ & Honest Tests:** Таргетные тесты (без source-grep/фантомов, Часть 6Г), счётчики `any`/`tsc` оба вниз (`global typecheck` запускает L1, воркеры — таргетно `tsc | Select-String`).
 **Scout→Fixer:** Scout Read-Only (`git grep`/`ast-grep`) → 1:1 Verbatim досье `[ФАЙЛ:СТРОКА]` → Fixer правит SSOT, `git rm` дубли (2FP). `[ПРОВЕРЕНО: ЧИСТО]` неприкосновенно.

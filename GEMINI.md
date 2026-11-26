@@ -41,7 +41,7 @@
 30. **8aw (Симметрия):** ПК `1440x900` и Смартфон `390x844` равноправны (4-State Proof для UI; BACKEND FOCUS OVERRIDE для бэкенда).
 31. **8ax (Memento):** `git status` + `git diff --stat` -> план в `scratch/` -> `read_file`.
 32. **8ay (Заземление):** Полное чтение стандарта до правки.
-33. **8az (Со-развитие):** Нашёл -> `SYSTEMIC_ROT_RATCHET.md` -> фикс -> тест/пруф -> статус.
+33. **8az (Со-развитие):** Нашёл -> `SYSTEMIC_ROT_RATCHET.md` + трекер `GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md` -> фикс -> тест/пруф -> статус `DONE`.
 34. **8ba (5 Вопросов):** (1) Пакетные батчи; (2) 0px для 99% нормы; (3) Сквозной ввод; (4) Гидратация; (5) Разблокированный Primary CTA.
 35. **8be (Типы — 0 `any`/`!`):** Тотальный бан `: any`, `as any`, `as unknown as`, `as never`, `!`, `const arr = []`. Лечим через интерфейсы `FastifyRequest`, unions (`in`), `z.infer`/`safeParse`, guard clauses, `?? fallback`. `npm run typecheck` = 0 ошибок.
 36. **8bk (Двойной счётчик):** Чистка `any` строго в боевом коде (`apps/*/src`, `packages/*/src`). Замер `any` и `tsc` ДО/ПОСЛЕ: рост/стагнация `tsc` при падении `any` = БРАК. Web: `npm run typecheck -w @dental/web`, точечно `tsc ... | Select-String`.
@@ -67,4 +67,4 @@
 - **BigInt JSON, Таймзоны, Утечки & Git-гонки:** явно сериализовать `bigint` до `reply.send()` (`Do not know how to serialize a BigInt`); даты/слоты форматировать в `clinicTimezone` клиники, без UTC-сдвига `toISOString().slice(0, 10)`; чистить `URL.revokeObjectURL`, observers/SSE/таймеры при unmount и гасить временные тестовые серверы после съёмки PNG (снимать на непустых данных!); перед `git commit` проверять `git diff --cached --name-only` против чужих файлов (или `git commit --only`), не трогая `.git/index.lock` живых воркеров.
 
 ## 🛠️ МАШИННЫЕ ГЕЙТЫ ПРИЁМКИ (15 DoD, Exit Code 0)
-1. `check:diff` | 2. `check:encoding` | 3. `check:ratchet` & `check:doors` | 4. `audit:dice` | 5. `check:stub-overrides` | 6. `check:fetch-response` | 7. `check:dynamic-imports` | 8. `check:react-hooks` | 9. `check:buttons` & `check:css-tokens` | 10. `check:migration-drift` | 11. `typecheck` (`shared`/`api`/`web`) | 12. Затронутые тесты (`<=10с`) | 13. 4-State Proof (`read_file` PNG >=20KB для UI; Backend Focus для API) | 14. Синхронизация `.agents/`/`SYSTEMIC_ROT_RATCHET.md` | 15. Пофайловый `git add <file>`, Conventional Commit, push `origin` + `gitlab`.
+1. `check:diff` | 2. `check:encoding` | 3. `check:ratchet` & `check:doors` | 4. `audit:dice` | 5. `check:stub-overrides` | 6. `check:fetch-response` | 7. `check:dynamic-imports` | 8. `check:react-hooks` | 9. `check:buttons` & `check:css-tokens` | 10. `check:migration-drift` | 11. `typecheck` (`shared`/`api`/`web`) | 12. Затронутые тесты (`<=10с`) | 13. 4-State Proof (`read_file` PNG >=20KB для UI; Backend Focus для API) | 14. Синхронизация `.agents/` / `SYSTEMIC_ROT_RATCHET.md` / `GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md` | 15. Пофайловый `git add <file>`, Conventional Commit, push `origin` + `gitlab`.

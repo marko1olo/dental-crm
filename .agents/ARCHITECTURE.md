@@ -24,7 +24,7 @@ This document describes the structure, data flows, and architectural conventions
 * 🗺️ **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Central Documentation Index.
 * 📚 **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Documentation Knowledge Hub & Specifications Gateway.
 * 🛣️ **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Comprehensive Fastify API Routes Catalog (771 endpoints, 14 domains, Zod validation, RBAC, DB tables).
-* 🗄️ **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4 engine, Drizzle ORM schema (216 tables across 28 modules / 78 files, 276 migrations, 3011 columns), RLS isolation, and migration pipeline.
+* 🗄️ **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4 engine, Drizzle ORM schema (**195 `pgTable`** across 79 schema files, **292 migrations** as of `2026-11-27`), RLS `withTenantReadCtx`/`withTenantWriteCtx`, `DENTETB2` full DR backup, and migration pipeline.
 * 💳 **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — 54-FZ fiscal receipts, cashboxes, family shared balances, and payment idempotency.
 * ⚕️ **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Clinical rules engine, triggers matching, prerequisite checks, and warning/blocking actions.
 * 📞 **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Mango/Zadarma/UIS Telephony webhooks, WebSocket broadcasts, Patient Portal OTP auth, and PWA setup.
@@ -71,8 +71,8 @@ For an exhaustive, machine-verified catalog of all 771 endpoints with method, pa
 13. Integrations & Data Sync: 1C Enterprise CommerceML 2.09, Flexbe landing webhooks, Yandex Calendar sync, offline CRDT sync protocol, and migration engine for competitor CRM imports (IDENT, DentalPRO, iStom).
 14. System, Settings & WebSockets: Clinic configurations, chairs, branch offices, nomenclature 804n pricelist, audit logs, and real-time WebSocket broker.
 
-### 🛡️ Multi-Tenant Isolation & Identity Guarding
-*   AsyncLocalStorage & RLS Integration: Every incoming request is encapsulated inside `withTenantCtx` (`apps/api/src/db/rls.ts`), executing `SET LOCAL app.current_tenant = organizationId`. Native PostgreSQL Row Level Security (RLS) automatically isolates data queries at the database kernel level.
+### 🛡️ Multi-Tenant Isolation, Route Factories & Identity Guarding
+*   AsyncLocalStorage, Read/Write Split & `FORCE RLS`: Routes are progressively migrating via typed builders (`apps/api/src/core/routeFactories.ts`: `defineTenantQuery` `READ ONLY`, `defineTenantMutation` `READ WRITE`, `defineStreamRoute` short `runReadTx`/`runWriteTx` outside external HTTP/streams, `definePublicRoute`, `defineWebhookRoute`) backed by `withTenantReadCtx` / `withTenantWriteCtx` (`apps/api/src/db/rls.ts`, ALS fast-path without redundant `current_setting` roundtrips) and `requireVerifiedPrincipal` (`apps/api/src/security/unifiedAuthPerimeter.ts` with TTL-cached `verifyActiveStaffSession`). Legacy routes keep the safety `onRoute` `withTenantCtx` hook until 100% migration completes so `FORCE RLS` never silently returns `[]`.
 *   Encapsulation Boundaries: Modules requiring dedicated pre-handlers (such as `registerMaxRoutes`, `registerWhatsappRoutes`, `warehouseRoutes`, `inventoryRoutes`) are registered via `app.register(...)` to prevent local hooks from polluting root Fastify route scopes.
 *   Autonomous Doctor Mandate (Constitution §VII): Routine clinical and administrative workflows must never be blocked by artificial UI locks. Clinicians have full autonomy over treatment plans, notes editing, discounts up to 100%, and warehouse soft overdrafts.
 
@@ -112,8 +112,8 @@ DENTE integrates automated voice dictation for dental visits.
 ## 🗄️ Database Integration Layer (`apps/api/src/db`)
 
 *   Native PostgreSQL 18.4 Engine: Connected over TCP at `127.0.0.1:5432` via `pg.Pool`. Requires valid `DATABASE_URL`.
-*   Modular Drizzle Schema: `apps/api/src/db/schema.ts` re-exports 18 domain schema modules under `apps/api/src/db/schema/` defining **203 `pgTable`** entities.
-*   ALS Proxy Client: The exported `db` client from `apps/api/src/db/client.ts` proxies queries directly to the active `AsyncLocalStorage` transaction opened by `withTenantCtx`, guaranteeing tenant RLS enforcement.
+*   Modular Drizzle Schema: `apps/api/src/db/schema.ts` re-exports domain schema modules under `apps/api/src/db/schema/` (79 files defining **195 `pgTable`** entities, 292 SQL migrations in `apps/api/drizzle/` as of `2026-11-27`; 24 dead tables dropped in `0303` / `58aecfe055`).
+*   ALS Proxy Client & Phase-1 Trap: `db` (`apps/api/src/db/client.ts`) proxies queries directly to the active `AsyncLocalStorage` transaction opened by `withTenantReadCtx`/`withTenantWriteCtx`/`withTenantCtx` and flags unscoped tenant accesses under `strictUnscopedDbTrapStorage`.
 
 ---
 

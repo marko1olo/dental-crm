@@ -28,6 +28,10 @@ This document details the database architecture, migration mechanism, and table 
 
 ---
 
+> **Актуальный срез БД (замерен 2026-11-27):** **195 таблиц** `pgTable` (24 мёртвые таблицы удалены миграцией `0303` в коммите `58aecfe055`), **79** файлов схемы в `apps/api/src/db/schema/**/*.ts`, **292** SQL-миграции в `apps/api/drizzle/*.sql`. Транзакции RLS разделены на `withTenantReadCtx` (`READ ONLY`) и `withTenantWriteCtx` (`READ WRITE`) + фаза-1 strict DB trap (`48a091d668`); DR-бэкап `DENTETB2` (`schemaBackupRegistry.ts`) динамически покрывает **195/195** таблиц без `session_replication_role` (`7c9b5693cc`).
+>
+> *(Историческая справка `2026-08-06` ниже сохранена для контекста эволюции PGlite -> PostgreSQL 18.4; актуальные счётчики и транзакционный слой приведены в абзаце выше.)*
+
 > Re-measured 2026-08-06. Read this block before you trust any number below it.
 > Every count in this document is a measurement with a date, not a standing fact. The counts as of
 > 2026-08-06 are stated inline below and were taken by running `fd`/`jq`/`wc` and by querying the
