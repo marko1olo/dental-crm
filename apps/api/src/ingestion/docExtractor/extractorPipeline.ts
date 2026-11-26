@@ -28,9 +28,10 @@ import {
 	extensionOf,
 	isIgnoredArchiveEntry,
 	isImagingEntry,
+	iterateZipEntries,
 	looksTabular,
 	normalizeText,
-	readZipEntries,
+	readLimitedStreamToBuffer,
 	safeFileLabel,
 } from "./zipReader.js";
 
@@ -142,15 +143,16 @@ export function legacyStagingManifest(input: {
 	].join("\n");
 }
 
-export function extractByKind(
+export async function extractByKind(
 	kind: DocumentIngestionKind,
 	buffer: Buffer,
-): ExtractedDocument {
+): Promise<ExtractedDocument> {
 	try {
 		if (["txt", "csv", "tsv", "json", "xml"].includes(kind)) {
+			const decoded = decodeText(buffer);
 			return {
-				text: decodeText(buffer),
-				tableCount: looksTabular(decodeText(buffer)) ? 1 : 0,
+				text: decoded,
+				tableCount: looksTabular(decoded) ? 1 : 0,
 				warnings: [],
 				parserNotes: [`${kind.toUpperCase()} decoded as text.`],
 			};
@@ -174,11 +176,11 @@ export function extractByKind(
 			};
 		}
 		if (kind === "pdf") return extractPdf(buffer);
-		if (kind === "docx") return extractDocx(buffer);
-		if (kind === "xlsx") return extractXlsx(buffer);
-		if (kind === "pptx") return extractPptx(buffer);
+		if (kind === "docx") return await extractDocx(buffer);
+		if (kind === "xlsx") return await extractXlsx(buffer);
+		if (kind === "pptx") return await extractPptx(buffer);
 		if (kind === "odt" || kind === "ods" || kind === "odp")
-			return extractOpenDocument(buffer, kind);
+			return await extractOpenDocument(buffer, kind);
 		return {
 			text: "",
 			tableCount: 0,
@@ -189,38 +191,57 @@ export function extractByKind(
 		return {
 			text: "",
 			tableCount: 0,
-			warnings: [`extract_by_kind_error:${kind}:${err instanceof Error ? err.message : String(err)}`],
+			warnings: [
+				`extract_by_kind_error:${kind}:${err instanceof Error ? err.message : String(err)}`,
+			],
 			parserNotes: [`Ошибка разбора формата ${kind}`],
 		};
 	}
 }
 
-export function extractZipArchive(
-	buffer: Buffer,
+export async function extractZipArchive(
+	source: Buffer | string,
 	archiveName: string,
-): ExtractedDocument & { extractedFiles: ExtractedArchiveFile[] } {
-	const zip = readZipEntries(buffer);
-	const warnings = [...zip.warnings];
+): Promise<ExtractedDocument & { extractedFiles: ExtractedArchiveFile[] }> {
 	const safeArchiveName = safeFileLabel(archiveName, "Архив");
 	const parserNotes = [
-		"ZIP-архив разобран только для чтения; текст и таблицы извлечены, бинарные снимки показаны как строки списка файлов.",
+		"ZIP-архив разобран потоково только для чтения; текст и таблицы извлечены, бинарные снимки показаны как строки списка файлов.",
 		"Имена файлов внутри архива скрыты безопасными метками перед показом предпросмотра.",
 	];
 	const extractedFiles: ExtractedArchiveFile[] = [];
 	const textParts: string[] = [];
+	const warnings: string[] = [];
 	let tableCount = 0;
 	let processedEntries = 0;
+	let totalEntriesCount = 0;
 
-	for (const entry of zip.entries) {
-		if (isIgnoredArchiveEntry(entry.name)) continue;
+	const iterRes = await iterateZipEntries(source, async (entry) => {
+		totalEntriesCount += 1;
+		if (isIgnoredArchiveEntry(entry.name)) return;
 		processedEntries += 1;
 		if (processedEntries > 80) {
 			warnings.push("zip_entry_limit_reached");
-			break;
+			return "stop";
 		}
 
-		const kind = detectKind(entry.name, null, entry.data);
 		const safeEntryName = safeFileLabel(entry.name, "Файл архива");
+		if (isImagingEntry(entry.name)) {
+			const manifestLine = `${safeArchiveName}::${safeEntryName}`;
+			textParts.push(manifestLine);
+			extractedFiles.push({
+				fileName: safeEntryName,
+				detectedKind: "image",
+				rowCount: 1,
+				tableCount: 0,
+				textPreview: manifestLine,
+				warnings: ["binary_file_listed_as_manifest_reference"],
+			});
+			return;
+		}
+
+		const entryBuffer = await readLimitedStreamToBuffer(await entry.openStream());
+		const kind = detectKind(entry.name, null, entryBuffer);
+
 		if (kind === "zip") {
 			warnings.push(`zip_nested_archive_skipped:${safeEntryName}`);
 			extractedFiles.push({
@@ -231,24 +252,24 @@ export function extractZipArchive(
 				textPreview: "",
 				warnings: ["nested_archive_skipped"],
 			});
-			continue;
+			return;
 		}
 
-		if (kind === "image" || isImagingEntry(entry.name)) {
+		if (kind === "image") {
 			const manifestLine = `${safeArchiveName}::${safeEntryName}`;
 			textParts.push(manifestLine);
 			extractedFiles.push({
 				fileName: safeEntryName,
-				detectedKind: kind === "unknown" ? "image" : kind,
+				detectedKind: "image",
 				rowCount: 1,
 				tableCount: 0,
 				textPreview: manifestLine,
 				warnings: ["binary_file_listed_as_manifest_reference"],
 			});
-			continue;
+			return;
 		}
 
-		const extracted = extractByKind(kind, entry.data);
+		const extracted = await extractByKind(kind, entryBuffer);
 		const text = normalizeText(extracted.text);
 		tableCount += extracted.tableCount || (looksTabular(text) ? 1 : 0);
 		warnings.push(
@@ -263,9 +284,11 @@ export function extractZipArchive(
 			warnings: extracted.warnings,
 		});
 		if (text) textParts.push(`--- ${safeEntryName} ---\n${text}`);
-	}
+	});
 
-	if (!textParts.length && !zip.entries.length)
+	warnings.unshift(...iterRes.warnings);
+
+	if (!textParts.length && totalEntriesCount === 0)
 		warnings.push("zip_no_supported_entries");
 
 	return {
@@ -288,7 +311,6 @@ export function collectSignals(
 	warnings: string[],
 ): string[] {
 	const signals: string[] = [];
-	// Защита от зависаний regex (ReDoS): анализ сигналов на репрезентативной выборке
 	const sampleText = text.slice(0, 35_000);
 	const normalized = sampleText.toLowerCase();
 
@@ -302,7 +324,6 @@ export function collectSignals(
 	if (looksTabular(sampleText)) signals.push("похоже на таблицу");
 	if (/[А-Яа-яЁё]/.test(sampleText)) signals.push("русский текст");
 
-	// Безопасный не-бэктрекинговый паттерн телефона РФ/международного формата
 	if (
 		/(?:\+?7|8)?[\s(]*\d{3}[)\s-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/.test(
 			sampleText,
@@ -334,7 +355,6 @@ export function collectSignals(
 	if (/(?:договор|акт|соглас|справк|вычет|паспорт|полис)/i.test(sampleText))
 		signals.push("похоже на документ");
 
-	// Профильная стоматологическая Форма 043/у
 	const hasForm043Signal =
 		/(?:форма\s*(?:№\s*)?043\s*[/уy]|карта\s*стоматологического|зубная\s*формула|прикус|состояние\s*слизистой|зубной\s*ряд|кпу|ohi-s|дневник\s*врача|осмотр\s*полости\s*рта|амбулаторная\s*карта\s*стоматолог|043[-/ ]*у)/i.test(
 			sampleText,
@@ -583,9 +603,9 @@ export function qualityFor(
 	};
 }
 
-export function extractDocument(
+export async function extractDocument(
 	input: DocumentIngestionRequest,
-): DocumentIngestionResponse {
+): Promise<DocumentIngestionResponse> {
 	const buffer = decodeBase64(input.fileBase64);
 	const rawText = input.rawText?.trim() ? normalizeText(input.rawText) : "";
 	const kind = detectKind(input.fileName, input.mimeType, buffer, rawText);
@@ -598,7 +618,7 @@ export function extractDocument(
 	try {
 		if (!text && buffer.length) {
 			if (kind === "zip") {
-				const extracted = extractZipArchive(buffer, input.fileName);
+				const extracted = await extractZipArchive(buffer, input.fileName);
 				text = extracted.text;
 				tableCount = extracted.tableCount;
 				extractedFiles = extracted.extractedFiles;
@@ -622,7 +642,7 @@ export function extractDocument(
 					"odp",
 				].includes(kind)
 			) {
-				const extracted = extractByKind(kind, buffer);
+				const extracted = await extractByKind(kind, buffer);
 				text = extracted.text;
 				tableCount = extracted.tableCount;
 				warnings.push(...extracted.warnings);

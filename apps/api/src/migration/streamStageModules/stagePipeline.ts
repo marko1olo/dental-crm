@@ -13,6 +13,7 @@ import {
 import { looksLikeDbf } from "../parsers/dbf.js";
 import { detectDelimiter, parseDelimited } from "../parsers/delimited.js";
 import { type ParsedTable, parseSource } from "../parsers/index.js";
+import { streamXlsxSheetBatches } from "../parsers/spreadsheet.js";
 import { readUploadFully, readUploadHead } from "../uploadStore.js";
 import { alignRow, applyDbfMemoFields } from "./batchTransformer.js";
 import {
@@ -122,8 +123,53 @@ export async function detectSourceShape(
 		};
 	}
 
-	// ---- Прочие двоичные контейнеры (XLSX/ODS) и деревья (JSON/XML): целиком.
+	// ---- XLSX/XLSM: потоковое чтение с файлового пути через yauzl без OOM!
 	const looksZip = head.length >= 2 && head[0] === 0x50 && head[1] === 0x4b;
+	const lowerFileName = input.fileName.toLowerCase();
+	const isXlsxFile =
+		looksZip &&
+		(lowerFileName.endsWith(".xlsx") ||
+			lowerFileName.endsWith(".xlsm") ||
+			(!lowerFileName.endsWith(".ods") &&
+				!head.includes(Buffer.from("opendocument.spreadsheet"))));
+
+	if (isXlsxFile) {
+		const sampleRows: string[][] = [];
+		let columns: string[] = [];
+		let tableName = input.fileName;
+		const warnings: string[] = [];
+
+		for await (const batch of streamXlsxSheetBatches(input.filePath, {
+			batchRows: 500,
+			maxRowsPerSheet: 2000,
+			sheetIndex: 0,
+		})) {
+			if (columns.length === 0) {
+				columns = batch.columns;
+				tableName = batch.sheetName;
+			}
+			warnings.push(...batch.warnings);
+			for (const row of batch.rows) {
+				if (sampleRows.length >= 2000) break;
+				sampleRows.push(row);
+			}
+			if (sampleRows.length >= 2000) break;
+		}
+
+		return {
+			sourceKind: "spreadsheet",
+			detectedEncoding: "utf-8",
+			encodingConfidence: 1,
+			delimiter: null,
+			columns,
+			tableName,
+			sampleRows,
+			warnings: Array.from(new Set(warnings)),
+			streamable: true,
+		};
+	}
+
+	// ---- Прочие двоичные контейнеры (ODS) и деревья (JSON/XML): целиком.
 	const decodedHead = decodeSourceBuffer(head);
 	const headText = decodedHead.text.trimStart();
 	const looksTree =
@@ -140,14 +186,14 @@ export async function detectSourceShape(
 	) {
 		if (input.byteSize > WHOLE_FILE_FORMAT_LIMIT_BYTES) {
 			throw new Error(
-				`Формат этого файла (книга Excel, JSON или XML) разбирается только целиком, а его размер ${Math.round(
+				`Формат этого файла (ODS, JSON или XML) разбирается только целиком, а его размер ${Math.round(
 					input.byteSize / (1024 * 1024),
 				)} МБ превышает предел ${Math.round(WHOLE_FILE_FORMAT_LIMIT_BYTES / (1024 * 1024))} МБ. ` +
-					"Выгрузите данные в CSV или DBF — эти форматы читаются потоком без ограничения размера.",
+					"Выгрузите данные в CSV, XLSX или DBF — эти форматы читаются потоком без ограничения размера.",
 			);
 		}
 		const content = await readUploadFully(input.filePath);
-		const parsed = parseSource({
+		const parsed = await parseSource({
 			sourceName: input.fileName,
 			content,
 			...(input.forcedKind === undefined
@@ -292,6 +338,23 @@ export async function* streamSourceRows(
 		return;
 	}
 
+	if (input.shape.streamable && input.shape.sourceKind === "spreadsheet") {
+		for await (const batch of streamXlsxSheetBatches(input.filePath, {
+			batchRows,
+		})) {
+			if (batch.rows.length === 0) continue;
+			yield {
+				tableName: batch.sheetName,
+				columns: batch.columns,
+				rows: batch.rows.map((row) =>
+					alignRow(row, batch.columns.length || columnCount, input.shape.delimiter),
+				),
+				firstRowNumber: batch.firstRowNumber,
+			};
+		}
+		return;
+	}
+
 	if (input.shape.streamable) {
 		for await (const batch of streamDelimitedRows(
 			input.filePath,
@@ -316,7 +379,7 @@ export async function* streamSourceRows(
 
 	// ---- Форматы, разбираемые целиком.
 	const content = await readUploadFully(input.filePath);
-	const parsed = parseSource({ sourceName: input.fileName, content });
+	const parsed = await parseSource({ sourceName: input.fileName, content });
 	for (const table of parsed.tables) {
 		let tableRowNumber = 2;
 		for (let offset = 0; offset < table.rows.length; offset += batchRows) {

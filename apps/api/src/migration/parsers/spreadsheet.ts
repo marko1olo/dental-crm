@@ -1,26 +1,20 @@
 import {
-	readZipEntries,
-	type ZipEntry,
-} from "../../ingestion/documentExtractor.js";
+	iterateZipEntries,
+	readLimitedStreamToBuffer,
+} from "../../ingestion/docExtractor/zipReader.js";
+import { streamXmlTagElements } from "./streamingXmlRowScanner.js";
 
 /**
- * Чтение книг Excel (.xlsx) и OpenDocument (.ods) в виде строк с колонками.
+ * Чтение книг Excel (.xlsx) и OpenDocument (.ods) в виде строк с колонками
+ * потоково на базе yauzl + streamXmlTagElements без загрузки XML листов в память.
  *
  * ЗАЧЕМ ОТДЕЛЬНО ОТ extractXlsx В documentExtractor.ts
- * Тот разбор склеивает ячейки строки в порядке появления тега <c>:
- *
- *     .map((cellMatch) => extractCellValue(...)).join("\t")
- *
- * В формате OpenXML пустая ячейка НЕ записывается вовсе — её позиция известна
- * только из атрибута r="B2". Поэтому строка «Иванов | (пусто) | 89001234567»
- * склеивается в «Иванов→89001234567», и телефон встаёт в колонку даты рождения.
- * Для чтения текста документа это терпимо; для переноса базы это порча данных,
- * которую никто не заметит: колонки просто съезжают на одну влево у части строк.
- *
- * Здесь адрес ячейки читается всегда, и пустые позиции сохраняются.
+ * В формате OpenXML пустая ячейка не записывается вовсе — её позиция известна
+ * только из атрибута r="B2". Здесь адрес ячейки читается всегда, и пустые
+ * позиции сохраняются (иначе телефон встаёт в колонку даты рождения).
  */
 
-interface SpreadsheetSheet {
+export interface SpreadsheetSheet {
 	name: string;
 	/** Строки, выровненные по колонкам: длина каждой равна числу колонок листа. */
 	rows: string[][];
@@ -30,6 +24,20 @@ export interface SpreadsheetParseResult {
 	sheets: SpreadsheetSheet[];
 	warnings: string[];
 }
+
+export interface StreamedXlsxBatch {
+	sheetName: string;
+	sheetIndex: number;
+	columns: string[];
+	rows: string[][];
+	firstRowNumber: number;
+	warnings: string[];
+}
+
+const MAX_SHARED_STRINGS_BYTES = 64 * 1024 * 1024;
+const MAX_STYLES_OR_WORKBOOK_BYTES = 16 * 1024 * 1024;
+const MAX_WORKSHEET_XML_BYTES = 512 * 1024 * 1024;
+const MAX_ODS_CONTENT_BYTES = 128 * 1024 * 1024;
 
 /** «BC» → 55. Адреса в OpenXML буквенные, база 26 без нуля. */
 export function columnLettersToIndex(letters: string): number {
@@ -67,34 +75,14 @@ function elementText(xml: string): string {
 	return xmlDecodeEntities(xml.replace(/<[^>]*>/g, ""));
 }
 
-function readSharedStrings(entries: ZipEntry[]): string[] {
-	const entry = entries.find((candidate) =>
-		/(?:^|\/)xl\/sharedStrings\.xml$/.test(candidate.name),
-	);
-	if (!entry) return [];
-	const xml = entry.data.toString("utf8");
-	return Array.from(
-		xml.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>|<si\b[^>]*\/>/g),
-	).map((match) => (match[1] === undefined ? "" : elementText(match[1])));
-}
-
 /**
  * Форматы, по которым видно, что число в ячейке — дата. Excel хранит даты
  * числом, и без разбора formatCode дата 15.03.1992 приезжает как «33683».
- * Числовой формат берётся из styles.xml по индексу стиля ячейки.
  */
-function readDateStyleIndexes(entries: ZipEntry[]): Set<number> {
+function parseDateStyleIndexesFromXml(xml: string): Set<number> {
 	const dateStyles = new Set<number>();
-	const entry = entries.find((candidate) =>
-		/(?:^|\/)xl\/styles\.xml$/.test(candidate.name),
-	);
-	if (!entry) return dateStyles;
-	const xml = entry.data.toString("utf8");
+	if (!xml) return dateStyles;
 
-	/**
-	 * Встроенные форматы дат по спецификации ECMA-376: 14–17 и 22 — даты,
-	 * 45–47 — время, 27–36 и 50–58 — региональные календарные форматы.
-	 */
 	const builtInDateFormats = new Set([
 		14, 15, 16, 17, 22, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 45, 46, 47, 50,
 		51, 52, 53, 54, 55, 56, 57, 58,
@@ -106,7 +94,6 @@ function readDateStyleIndexes(entries: ZipEntry[]): Set<number> {
 	)) {
 		const id = Number(match[1]);
 		const code = xmlDecodeEntities(match[2] ?? "");
-		// Признак даты в формате: d/m/y вне литералов, при отсутствии знака валюты.
 		const stripped = code.replace(/"[^"]*"/g, "").replace(/\[[^\]]*\]/g, "");
 		if (
 			/[dmyhs]/i.test(stripped) &&
@@ -144,33 +131,23 @@ function excelSerialToIso(serial: number): string | null {
 	return date.toISOString().slice(0, 10);
 }
 
-function readSheetNames(entries: ZipEntry[]): Map<string, string> {
-	/**
-	 * Имя листа лежит в workbook.xml и связано с файлом через r:id в
-	 * workbook.xml.rels. Без этого листы называются sheet1.xml, и оператор не
-	 * понимает, какой из них «Пациенты», а какой «Платежи».
-	 */
+function parseSheetNamesFromXml(
+	workbookXml: string,
+	relsXml: string,
+): Map<string, string> {
 	const names = new Map<string, string>();
-	const workbook = entries.find((candidate) =>
-		/(?:^|\/)xl\/workbook\.xml$/.test(candidate.name),
-	);
-	const rels = entries.find((candidate) =>
-		/(?:^|\/)xl\/_rels\/workbook\.xml\.rels$/.test(candidate.name),
-	);
-	if (!workbook || !rels) return names;
+	if (!workbookXml || !relsXml) return names;
 
 	const relTargets = new Map<string, string>();
-	for (const match of rels.data
-		.toString("utf8")
-		.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)) {
+	for (const match of relsXml.matchAll(
+		/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g,
+	)) {
 		if (match[1]) {
 			relTargets.set(match[1], (match[2] ?? "").replace(/^\/?(xl\/)?/, ""));
 		}
 	}
 
-	for (const match of workbook.data
-		.toString("utf8")
-		.matchAll(/<sheet\b[^>]*\/>|<sheet\b[^>]*>/g)) {
+	for (const match of workbookXml.matchAll(/<sheet\b[^>]*\/>|<sheet\b[^>]*>/g)) {
 		const tag = match[0];
 		const name = xmlDecodeEntities(/name="([^"]*)"/.exec(tag)?.[1] ?? "");
 		const relId = /r:id="([^"]+)"/.exec(tag)?.[1];
@@ -181,10 +158,284 @@ function readSheetNames(entries: ZipEntry[]): Map<string, string> {
 	return names;
 }
 
-export function parseXlsx(buffer: Buffer): SpreadsheetParseResult {
-	const zip = readZipEntries(buffer);
-	const warnings = zip.warnings.map((code) => `Архив книги Excel: ${code}.`);
-	if (zip.entries.length === 0) {
+function parseRowCells(
+	rowXml: string,
+	shared: readonly string[],
+	dateStyles: ReadonlySet<number>,
+): { cells: Map<number, string>; maxColumnIndex: number } {
+	const cells = new Map<number, string>();
+	let maxColumnIndex = -1;
+	let fallbackColumn = 0;
+
+	for (const cellMatch of rowXml.matchAll(
+		/<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g,
+	)) {
+		const attributes = cellMatch[1] ?? "";
+		const body = cellMatch[2] ?? "";
+
+		const reference = /\br="([A-Z]+)(\d+)"/i.exec(attributes);
+		const columnIndex = reference?.[1]
+			? columnLettersToIndex(reference[1])
+			: fallbackColumn;
+		if (columnIndex < 0) continue;
+		fallbackColumn = columnIndex + 1;
+
+		const type = /\bt="([^"]+)"/.exec(attributes)?.[1] ?? "n";
+		const styleIndex = Number(/\bs="(\d+)"/.exec(attributes)?.[1] ?? "-1");
+
+		let value: string;
+		if (type === "inlineStr") {
+			const inline = /<is\b[^>]*>([\s\S]*?)<\/is>/.exec(body)?.[1] ?? body;
+			value = elementText(inline);
+		} else if (type === "s") {
+			const rawIndex = Number(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
+			value = Number.isInteger(rawIndex) ? (shared[rawIndex] ?? "") : "";
+		} else if (type === "str") {
+			value = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
+		} else if (type === "b") {
+			const raw = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "";
+			value = raw === "1" ? "1" : "0";
+		} else if (type === "e") {
+			value = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
+		} else if (type === "d") {
+			value = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
+		} else {
+			const raw = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
+			if (raw !== "" && dateStyles.has(styleIndex)) {
+				const iso = excelSerialToIso(Number(raw));
+				value = iso ?? raw;
+			} else {
+				value = raw;
+			}
+		}
+
+		cells.set(columnIndex, value);
+		if (columnIndex > maxColumnIndex) maxColumnIndex = columnIndex;
+	}
+
+	return { cells, maxColumnIndex };
+}
+
+interface XlsxMetadataPassResult {
+	shared: string[];
+	dateStyles: Set<number>;
+	sheetNames: Map<string, string>;
+	sheetEntryNames: string[];
+	warnings: string[];
+	visitedCount: number;
+}
+
+async function readXlsxMetadataPass(
+	source: Buffer | string,
+): Promise<XlsxMetadataPassResult> {
+	const shared: string[] = [];
+	let stylesXml = "";
+	let workbookXml = "";
+	let relsXml = "";
+	const sheetEntryNames: string[] = [];
+
+	const { warnings, visitedCount } = await iterateZipEntries(
+		source,
+		async (entry) => {
+			if (/(?:^|\/)xl\/sharedStrings\.xml$/.test(entry.name)) {
+				const stream = await entry.openStream(MAX_SHARED_STRINGS_BYTES);
+				for await (const siEl of streamXmlTagElements(stream, "si")) {
+					shared.push(siEl.innerXml ? elementText(siEl.innerXml) : "");
+				}
+			} else if (/(?:^|\/)xl\/styles\.xml$/.test(entry.name)) {
+				const buf = await readLimitedStreamToBuffer(
+					await entry.openStream(MAX_STYLES_OR_WORKBOOK_BYTES),
+				);
+				stylesXml = buf.toString("utf8");
+			} else if (/(?:^|\/)xl\/workbook\.xml$/.test(entry.name)) {
+				const buf = await readLimitedStreamToBuffer(
+					await entry.openStream(MAX_STYLES_OR_WORKBOOK_BYTES),
+				);
+				workbookXml = buf.toString("utf8");
+			} else if (/(?:^|\/)xl\/_rels\/workbook\.xml\.rels$/.test(entry.name)) {
+				const buf = await readLimitedStreamToBuffer(
+					await entry.openStream(MAX_STYLES_OR_WORKBOOK_BYTES),
+				);
+				relsXml = buf.toString("utf8");
+			} else if (/(?:^|\/)xl\/worksheets\/sheet\d+\.xml$/.test(entry.name)) {
+				sheetEntryNames.push(entry.name);
+			}
+		},
+		{
+			maxEntryBytes: MAX_SHARED_STRINGS_BYTES,
+			maxTotalBytes: MAX_SHARED_STRINGS_BYTES + MAX_STYLES_OR_WORKBOOK_BYTES * 3,
+			// В проходе 1 sheet*.xml не читаются — не отсекаем архив по их суммарному размеру
+			checkDeclaredSize: false,
+		},
+	);
+
+	sheetEntryNames.sort((left, right) =>
+		left.localeCompare(right, "en", { numeric: true }),
+	);
+
+	return {
+		shared,
+		dateStyles: parseDateStyleIndexesFromXml(stylesXml),
+		sheetNames: parseSheetNamesFromXml(workbookXml, relsXml),
+		sheetEntryNames,
+		warnings: warnings.map((code) => `Архив книги Excel: ${code}.`),
+		visitedCount,
+	};
+}
+
+function resolveSheetDisplayName(
+	entryName: string,
+	sheetNames: ReadonlyMap<string, string>,
+): string {
+	const relativeName = entryName.replace(
+		/^.*?(worksheets\/sheet\d+\.xml)$/,
+		"$1",
+	);
+	return (
+		sheetNames.get(relativeName) ??
+		sheetNames.get(entryName) ??
+		relativeName
+	);
+}
+
+/**
+ * Потоково читает листы XLSX с файлового пути (yauzl.open) или из Buffer
+ * без буферизации sheet*.xml целиком, выдавая выровненные батчи строк.
+ */
+export async function* streamXlsxSheetBatches(
+	source: Buffer | string,
+	options?: {
+		readonly batchRows?: number | undefined;
+		readonly maxRowsPerSheet?: number | undefined;
+		readonly sheetIndex?: number | undefined;
+	},
+): AsyncGenerator<StreamedXlsxBatch, void, undefined> {
+	const batchRows = options?.batchRows ?? 1000;
+	const maxRowsPerSheet = options?.maxRowsPerSheet ?? Number.POSITIVE_INFINITY;
+
+	const meta = await readXlsxMetadataPass(source);
+	if (meta.sheetEntryNames.length === 0) return;
+
+	const targetSheetNames =
+		options?.sheetIndex !== undefined
+			? meta.sheetEntryNames.slice(options.sheetIndex, options.sheetIndex + 1)
+			: meta.sheetEntryNames;
+
+	for (let sIdx = 0; sIdx < targetSheetNames.length; sIdx += 1) {
+		const targetEntryName = targetSheetNames[sIdx];
+		if (!targetEntryName) continue;
+		const displayName = resolveSheetDisplayName(targetEntryName, meta.sheetNames);
+
+		const batches: StreamedXlsxBatch[] = [];
+		let columns: string[] = [];
+		let headerCaptured = false;
+		let pendingCells: Array<Map<number, string>> = [];
+		let observedMaxCol = -1;
+		let totalDataRowsEmitted = 0;
+		let hitLimit = false;
+
+		const flushPending = (isFirstHeaderBatch: boolean): StreamedXlsxBatch | null => {
+			if (pendingCells.length === 0) return null;
+			const width = Math.max(columns.length, observedMaxCol + 1);
+			if (!headerCaptured && pendingCells.length > 0) {
+				const firstMap = pendingCells.shift();
+				if (firstMap) {
+					columns = Array.from(
+						{ length: width },
+						(_, colIdx) => firstMap.get(colIdx) ?? "",
+					);
+				}
+				headerCaptured = true;
+			}
+			if (pendingCells.length === 0) return null;
+
+			const rows = pendingCells.map((cellMap) =>
+				Array.from({ length: width }, (_, colIdx) => cellMap.get(colIdx) ?? ""),
+			);
+			const firstRowNumber = totalDataRowsEmitted + 2;
+			totalDataRowsEmitted += rows.length;
+			pendingCells = [];
+			return {
+				sheetName: displayName,
+				sheetIndex: options?.sheetIndex ?? sIdx,
+				columns: columns.length === width
+					? columns
+					: [...columns, ...Array<string>(width - columns.length).fill("")],
+				rows,
+				firstRowNumber,
+				warnings: isFirstHeaderBatch ? meta.warnings : [],
+			};
+		};
+
+		// Стримим один лист за проход — не держим открытых 200МБ потоков одновременно
+		const passWarnings: string[] = [];
+		const iter = await iterateZipEntries(
+			source,
+			async (entry) => {
+				if (entry.name !== targetEntryName) return;
+				const stream = await entry.openStream(MAX_WORKSHEET_XML_BYTES);
+
+				for await (const rowEl of streamXmlTagElements(stream, "row")) {
+					const { cells, maxColumnIndex } = parseRowCells(
+						rowEl.innerXml,
+						meta.shared,
+						meta.dateStyles,
+					);
+					if (cells.size === 0) continue;
+					if (maxColumnIndex > observedMaxCol) observedMaxCol = maxColumnIndex;
+
+					pendingCells.push(cells);
+
+					const dataCountPending = headerCaptured
+						? pendingCells.length
+						: Math.max(0, pendingCells.length - 1);
+
+					if (dataCountPending >= batchRows) {
+						const batch = flushPending(totalDataRowsEmitted === 0);
+						if (batch) batches.push(batch);
+					}
+
+					if (totalDataRowsEmitted + pendingCells.length >= maxRowsPerSheet + 1) {
+						hitLimit = true;
+						stream.destroy();
+						break;
+					}
+				}
+				return "stop";
+			},
+			{
+				maxEntryBytes: MAX_WORKSHEET_XML_BYTES,
+				maxTotalBytes: MAX_WORKSHEET_XML_BYTES * 2,
+				checkDeclaredSize: false,
+			},
+		);
+
+		passWarnings.push(...iter.warnings.map((c) => `Архив книги Excel: ${c}.`));
+
+		for (const b of batches) {
+			yield b;
+		}
+		if (!hitLimit || pendingCells.length > 0) {
+			const tailBatch = flushPending(totalDataRowsEmitted === 0);
+			if (tailBatch) {
+				if (passWarnings.length > 0) {
+					tailBatch.warnings.push(...passWarnings);
+				}
+				yield tailBatch;
+			} else if (!headerCaptured && columns.length === 0 && batches.length === 0) {
+				// Лист пуст — ничего не отдаём
+			}
+		}
+	}
+}
+
+export async function parseXlsx(
+	source: Buffer | string,
+): Promise<SpreadsheetParseResult> {
+	const meta = await readXlsxMetadataPass(source);
+	const warnings = [...meta.warnings];
+
+	if (meta.visitedCount === 0) {
 		return {
 			sheets: [],
 			warnings: [
@@ -194,115 +445,79 @@ export function parseXlsx(buffer: Buffer): SpreadsheetParseResult {
 		};
 	}
 
-	const shared = readSharedStrings(zip.entries);
-	const dateStyles = readDateStyleIndexes(zip.entries);
-	const sheetNames = readSheetNames(zip.entries);
-
-	const sheetEntries = zip.entries
-		.filter((entry) =>
-			/(?:^|\/)xl\/worksheets\/sheet\d+\.xml$/.test(entry.name),
-		)
-		.sort((left, right) =>
-			left.name.localeCompare(right.name, "en", { numeric: true }),
-		);
-
 	const sheets: SpreadsheetSheet[] = [];
+	const targetSet = new Set(meta.sheetEntryNames);
+	const parsedByEntry = new Map<
+		string,
+		{
+			displayName: string;
+			sparseRows: Map<number, Map<number, string>>;
+			maxColumnIndex: number;
+		}
+	>();
 
-	for (const entry of sheetEntries) {
-		const xml = entry.data.toString("utf8");
-		const relativeName = entry.name.replace(
-			/^.*?(worksheets\/sheet\d+\.xml)$/,
-			"$1",
-		);
-		const displayName =
-			sheetNames.get(relativeName) ??
-			sheetNames.get(entry.name) ??
-			relativeName;
+	const pass2 = await iterateZipEntries(
+		source,
+		async (entry) => {
+			if (!targetSet.has(entry.name)) return;
+			const displayName = resolveSheetDisplayName(entry.name, meta.sheetNames);
+			const sparseRows = new Map<number, Map<number, string>>();
+			let maxColumnIndex = -1;
 
-		const sparseRows = new Map<number, Map<number, string>>();
-		let maxColumnIndex = -1;
+			const stream = await entry.openStream(MAX_WORKSHEET_XML_BYTES);
+			for await (const rowEl of streamXmlTagElements(stream, "row")) {
+				const declaredRow = Number(
+					/\br="(\d+)"/.exec(rowEl.attrs)?.[1] ?? "0",
+				);
+				const rowIndex = declaredRow > 0 ? declaredRow - 1 : sparseRows.size;
 
-		for (const rowMatch of xml.matchAll(/<row\b([^>]*)>([\s\S]*?)<\/row>/g)) {
-			const rowAttributes = rowMatch[1] ?? "";
-			const rowXml = rowMatch[2] ?? "";
-			// Номер строки из атрибута r: пропущенные строки не должны сдвигать таблицу.
-			const declaredRow = Number(/\br="(\d+)"/.exec(rowAttributes)?.[1] ?? "0");
-			const rowIndex = declaredRow > 0 ? declaredRow - 1 : sparseRows.size;
-
-			const cells = new Map<number, string>();
-			let fallbackColumn = 0;
-
-			for (const cellMatch of xml === ""
-				? []
-				: rowXml.matchAll(/<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
-				const attributes = cellMatch[1] ?? "";
-				const body = cellMatch[2] ?? "";
-
-				// Адрес ячейки — источник истины о номере колонки.
-				const reference = /\br="([A-Z]+)(\d+)"/i.exec(attributes);
-				const columnIndex = reference?.[1]
-					? columnLettersToIndex(reference[1])
-					: fallbackColumn;
-				if (columnIndex < 0) continue;
-				fallbackColumn = columnIndex + 1;
-
-				const type = /\bt="([^"]+)"/.exec(attributes)?.[1] ?? "n";
-				const styleIndex = Number(/\bs="(\d+)"/.exec(attributes)?.[1] ?? "-1");
-
-				let value: string;
-				if (type === "inlineStr") {
-					const inline = /<is\b[^>]*>([\s\S]*?)<\/is>/.exec(body)?.[1] ?? body;
-					value = elementText(inline);
-				} else if (type === "s") {
-					const rawIndex = Number(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
-					value = Number.isInteger(rawIndex) ? (shared[rawIndex] ?? "") : "";
-				} else if (type === "str") {
-					// Результат формулы как строка.
-					value = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
-				} else if (type === "b") {
-					const raw = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "";
-					value = raw === "1" ? "1" : "0";
-				} else if (type === "e") {
-					// Ошибка формулы (#N/A, #DIV/0!) — не данные, но и не пустота.
-					value = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
-				} else if (type === "d") {
-					// ISO-дата в явном виде (Excel 2010+).
-					value = xmlDecodeEntities(/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "");
-				} else {
-					const raw = xmlDecodeEntities(
-						/<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? "",
-					);
-					if (raw !== "" && dateStyles.has(styleIndex)) {
-						const iso = excelSerialToIso(Number(raw));
-						value = iso ?? raw;
-					} else {
-						value = raw;
+				const parsedRow = parseRowCells(
+					rowEl.innerXml,
+					meta.shared,
+					meta.dateStyles,
+				);
+				if (parsedRow.cells.size > 0) {
+					sparseRows.set(rowIndex, parsedRow.cells);
+					if (parsedRow.maxColumnIndex > maxColumnIndex) {
+						maxColumnIndex = parsedRow.maxColumnIndex;
 					}
 				}
-
-				cells.set(columnIndex, value);
-				if (columnIndex > maxColumnIndex) maxColumnIndex = columnIndex;
 			}
 
-			if (cells.size > 0) sparseRows.set(rowIndex, cells);
-		}
+			parsedByEntry.set(entry.name, {
+				displayName,
+				sparseRows,
+				maxColumnIndex,
+			});
+		},
+		{
+			maxEntryBytes: MAX_WORKSHEET_XML_BYTES,
+			maxTotalBytes: MAX_WORKSHEET_XML_BYTES * 2,
+			checkDeclaredSize: false,
+		},
+	);
 
-		if (sparseRows.size === 0) continue;
+	for (const code of pass2.warnings) {
+		const formatted = `Архив книги Excel: ${code}.`;
+		if (!warnings.includes(formatted)) warnings.push(formatted);
+	}
 
-		const width = maxColumnIndex + 1;
-		const orderedRowIndexes = [...sparseRows.keys()].sort(
+	for (const entryName of meta.sheetEntryNames) {
+		const sheetData = parsedByEntry.get(entryName);
+		if (!sheetData || sheetData.sparseRows.size === 0) continue;
+
+		const width = sheetData.maxColumnIndex + 1;
+		const orderedRowIndexes = [...sheetData.sparseRows.keys()].sort(
 			(left, right) => left - right,
 		);
 		const rows = orderedRowIndexes.map((rowIndex) => {
-			const cells = sparseRows.get(rowIndex);
-			// Пустые позиции восстанавливаются как пустые строки, а не пропускаются.
+			const cells = sheetData.sparseRows.get(rowIndex);
 			return Array.from(
 				{ length: width },
 				(_, columnIndex) => cells?.get(columnIndex) ?? "",
 			);
 		});
-
-		sheets.push({ name: displayName, rows });
+		sheets.push({ name: sheetData.displayName, rows });
 	}
 
 	if (sheets.length === 0) {
@@ -318,101 +533,120 @@ export function parseXlsx(buffer: Buffer): SpreadsheetParseResult {
 }
 
 /**
- * OpenDocument (.ods). Формат проще: ячейки идут по порядку, но повторы
- * сжимаются атрибутом number-columns-repeated, и его нужно разворачивать —
- * иначе колонки съезжают точно так же, как в xlsx с пустыми ячейками.
+ * OpenDocument (.ods) — потоковый разбор через yauzl + streamXmlTagElements("table:table").
  */
-export function parseOds(buffer: Buffer): SpreadsheetParseResult {
-	const zip = readZipEntries(buffer);
-	const warnings = zip.warnings.map((code) => `Архив ODS: ${code}.`);
-	const content = zip.entries.find((entry) =>
-		/(?:^|\/)content\.xml$/.test(entry.name),
+export async function parseOds(
+	source: Buffer | string,
+): Promise<SpreadsheetParseResult> {
+	const sheets: SpreadsheetSheet[] = [];
+	let contentFound = false;
+
+	const { warnings } = await iterateZipEntries(
+		source,
+		async (entry) => {
+			if (!/(?:^|\/)content\.xml$/.test(entry.name)) return;
+			contentFound = true;
+			const stream = await entry.openStream(MAX_ODS_CONTENT_BYTES);
+
+			for await (const tableEl of streamXmlTagElements(stream, "table:table")) {
+				const name = xmlDecodeEntities(
+					/table:name="([^"]*)"/.exec(tableEl.attrs)?.[1] ??
+						`Лист ${sheets.length + 1}`,
+				);
+				const body = tableEl.innerXml;
+				const rows: string[][] = [];
+
+				for (const rowMatch of body.matchAll(
+					/<table:table-row\b([^>]*)>([\s\S]*?)<\/table:table-row>|<table:table-row\b([^>]*)\/>/g,
+				)) {
+					const rowAttributes = rowMatch[1] ?? rowMatch[3] ?? "";
+					const rowBody = rowMatch[2] ?? "";
+					const rowRepeat = Math.min(
+						Number(
+							/table:number-rows-repeated="(\d+)"/.exec(rowAttributes)?.[1] ??
+								"1",
+						),
+						10_000,
+					);
+
+					const cells: string[] = [];
+					for (const cellMatch of rowBody.matchAll(
+						/<table:table-cell\b([^>]*)>([\s\S]*?)<\/table:table-cell>|<table:table-cell\b([^>]*)\/>/g,
+					)) {
+						const attributes = cellMatch[1] ?? cellMatch[3] ?? "";
+						const cellBody = cellMatch[2] ?? "";
+						const repeat = Math.min(
+							Number(
+								/table:number-columns-repeated="(\d+)"/.exec(attributes)?.[1] ??
+									"1",
+							),
+							4096,
+						);
+
+						const dateValue = /office:date-value="([^"]*)"/.exec(
+							attributes,
+						)?.[1];
+						const numberValue = /office:value="([^"]*)"/.exec(
+							attributes,
+						)?.[1];
+						const text = Array.from(
+							cellBody.matchAll(/<text:p\b[^>]*>([\s\S]*?)<\/text:p>/g),
+						)
+							.map((match) =>
+								xmlDecodeEntities((match[1] ?? "").replace(/<[^>]*>/g, "")),
+							)
+							.join("\n");
+
+						const value = dateValue
+							? dateValue.slice(0, 10)
+							: text !== ""
+								? text
+								: (numberValue ?? "");
+						for (let index = 0; index < repeat; index += 1) cells.push(value);
+					}
+
+					while (cells.length > 0 && cells[cells.length - 1] === "") cells.pop();
+					if (cells.length === 0) continue;
+					for (let index = 0; index < rowRepeat; index += 1)
+						rows.push([...cells]);
+				}
+
+				if (rows.length === 0) continue;
+				const width = Math.max(...rows.map((row) => row.length));
+				sheets.push({
+					name,
+					rows: rows.map((row) => [
+						...row,
+						...Array<string>(width - row.length).fill(""),
+					]),
+				});
+			}
+			return "stop";
+		},
+		{
+			maxEntryBytes: MAX_ODS_CONTENT_BYTES,
+			maxTotalBytes: MAX_ODS_CONTENT_BYTES * 2,
+			checkDeclaredSize: false,
+		},
 	);
-	if (!content) {
+
+	const formattedWarnings = warnings.map((code) => `Архив ODS: ${code}.`);
+	if (!contentFound) {
 		return {
 			sheets: [],
-			warnings: [...warnings, "Файл ODS не открылся: content.xml не найден."],
+			warnings: [
+				...formattedWarnings,
+				"Файл ODS не открылся: content.xml не найден.",
+			],
 		};
 	}
 
-	const xml = content.data.toString("utf8");
-	const sheets: SpreadsheetSheet[] = [];
-
-	for (const tableMatch of xml.matchAll(
-		/<table:table\b([^>]*)>([\s\S]*?)<\/table:table>/g,
-	)) {
-		const name = xmlDecodeEntities(
-			/table:name="([^"]*)"/.exec(tableMatch[1] ?? "")?.[1] ??
-				`Лист ${sheets.length + 1}`,
+	if (sheets.length === 0) {
+		formattedWarnings.push(
+			"В файле ODS не найдено ни одной заполненной таблицы.",
 		);
-		const body = tableMatch[2] ?? "";
-		const rows: string[][] = [];
-
-		for (const rowMatch of body.matchAll(
-			/<table:table-row\b([^>]*)>([\s\S]*?)<\/table:table-row>|<table:table-row\b([^>]*)\/>/g,
-		)) {
-			const rowAttributes = rowMatch[1] ?? rowMatch[3] ?? "";
-			const rowBody = rowMatch[2] ?? "";
-			const rowRepeat = Math.min(
-				Number(
-					/table:number-rows-repeated="(\d+)"/.exec(rowAttributes)?.[1] ?? "1",
-				),
-				10_000,
-			);
-
-			const cells: string[] = [];
-			for (const cellMatch of rowBody.matchAll(
-				/<table:table-cell\b([^>]*)>([\s\S]*?)<\/table:table-cell>|<table:table-cell\b([^>]*)\/>/g,
-			)) {
-				const attributes = cellMatch[1] ?? cellMatch[3] ?? "";
-				const cellBody = cellMatch[2] ?? "";
-				const repeat = Math.min(
-					Number(
-						/table:number-columns-repeated="(\d+)"/.exec(attributes)?.[1] ??
-							"1",
-					),
-					4096,
-				);
-
-				// Дата и число хранятся в атрибутах, текст — в <text:p>.
-				const dateValue = /office:date-value="([^"]*)"/.exec(attributes)?.[1];
-				const numberValue = /office:value="([^"]*)"/.exec(attributes)?.[1];
-				const text = Array.from(
-					cellBody.matchAll(/<text:p\b[^>]*>([\s\S]*?)<\/text:p>/g),
-				)
-					.map((match) =>
-						xmlDecodeEntities((match[1] ?? "").replace(/<[^>]*>/g, "")),
-					)
-					.join("\n");
-
-				const value = dateValue
-					? dateValue.slice(0, 10)
-					: text !== ""
-						? text
-						: (numberValue ?? "");
-				for (let index = 0; index < repeat; index += 1) cells.push(value);
-			}
-
-			// Хвост из повторяющихся пустых ячеек не несёт данных.
-			while (cells.length > 0 && cells[cells.length - 1] === "") cells.pop();
-			if (cells.length === 0) continue;
-			for (let index = 0; index < rowRepeat; index += 1) rows.push([...cells]);
-		}
-
-		if (rows.length === 0) continue;
-		const width = Math.max(...rows.map((row) => row.length));
-		sheets.push({
-			name,
-			rows: rows.map((row) => [
-				...row,
-				...Array<string>(width - row.length).fill(""),
-			]),
-		});
 	}
-
-	if (sheets.length === 0)
-		warnings.push("В файле ODS не найдено ни одной заполненной таблицы.");
-	return { sheets, warnings };
+	return { sheets, warnings: formattedWarnings };
 }
 
 /** Признак ZIP-контейнера OpenXML/OpenDocument. */

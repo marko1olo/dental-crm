@@ -44,7 +44,7 @@ export async function prepareSource(input: EngineInput): Promise<{
 	warnings: string[];
 }> {
 	const content = decodeContent(input.contentBase64);
-	const parsed = parseSource({
+	const parsed = await parseSource({
 		sourceName: input.sourceName,
 		content,
 		rawText: input.rawText,

@@ -55,7 +55,7 @@ export async function handleParseFile(
 
 	let parsedBook;
 	try {
-		parsedBook = resolveSpreadsheetRowsAndSheets(
+		parsedBook = await resolveSpreadsheetRowsAndSheets(
 			fileBase64,
 			rawText,
 			filename,

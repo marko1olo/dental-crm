@@ -1,8 +1,10 @@
-import type { ExtractedDocument, ZipEntry } from "./types.js";
+import { streamXmlTagElements } from "../../migration/parsers/streamingXmlRowScanner.js";
+import { type ExtractedDocument, maxExtractedTextChars, type ZipEntry } from "./types.js";
 import {
 	decodeText,
+	iterateZipEntries,
 	normalizeText,
-	readZipEntries,
+	readLimitedStreamToBuffer,
 	stripXmlTags,
 	xmlDecode,
 	zipText,
@@ -47,7 +49,6 @@ export function extractOpenXmlTablesAndText(xml: string): {
 	tableCount: number;
 } {
 	let tableCount = 0;
-	// Заменяем таблицы на структурированные строки с разделителем \t и переносом \n
 	const processed = xml.replace(/<w:tbl\b[\s\S]*?<\/w:tbl>/g, (tblXml) => {
 		tableCount += 1;
 		const rows: string[] = [];
@@ -67,7 +68,7 @@ export function extractOpenXmlTablesAndText(xml: string): {
 				rows.push(cells.join("\t"));
 			}
 		}
-		return "\n\n" + rows.join("\n") + "\n\n";
+		return `\n\n${rows.join("\n")}\n\n`;
 	});
 
 	return {
@@ -76,34 +77,39 @@ export function extractOpenXmlTablesAndText(xml: string): {
 	};
 }
 
-export function extractDocx(buffer: Buffer): ExtractedDocument {
+export async function extractDocx(
+	source: Buffer | string,
+): Promise<ExtractedDocument> {
 	try {
-		const zip = readZipEntries(buffer);
-		const docEntry = zip.entries.find((entry) =>
-			/(?:^|\/)word\/document\.xml$/.test(entry.name),
-		);
 		let tableCount = 0;
 		let mainText = "";
+		const headerFooterEntries: ZipEntry[] = [];
 
-		if (docEntry) {
-			const xml = decodeText(docEntry.data);
-			const extracted = extractOpenXmlTablesAndText(xml);
-			mainText = extracted.text;
-			tableCount = extracted.tableCount;
-		}
+		const { warnings } = await iterateZipEntries(source, async (entry) => {
+			if (/(?:^|\/)word\/document\.xml$/.test(entry.name)) {
+				const buf = await readLimitedStreamToBuffer(await entry.openStream());
+				const xml = decodeText(buf);
+				const extracted = extractOpenXmlTablesAndText(xml);
+				mainText = extracted.text;
+				tableCount = extracted.tableCount;
+			} else if (/(?:^|\/)word\/(?:header\d*|footer\d*)\.xml$/.test(entry.name)) {
+				const buf = await readLimitedStreamToBuffer(await entry.openStream());
+				headerFooterEntries.push({ name: entry.name, data: buf });
+			}
+		});
 
 		const otherParts = zipText(
-			zip.entries,
+			headerFooterEntries,
 			/(?:^|\/)word\/(?:header\d*|footer\d*)\.xml$/,
 		);
-
 		const allText = [mainText, ...otherParts].filter(Boolean).join("\n\n");
+
 		return {
 			text: allText,
 			tableCount,
-			warnings: zip.warnings,
+			warnings,
 			parserNotes: [
-				"DOCX разобран встроенным извлечением текста и таблиц из OpenXML ZIP.",
+				"DOCX разобран потоковым извлечением текста и таблиц из OpenXML ZIP.",
 			],
 		};
 	} catch (err: unknown) {
@@ -139,35 +145,76 @@ export function extractCellValue(cellXml: string, shared: string[]): string {
 	return xmlDecode(rawValue);
 }
 
-export function extractXlsx(buffer: Buffer): ExtractedDocument {
+/**
+ * Потоковый экстрактор XLSX на базе yauzl + streamXmlTagElements (`<si>`, `<row>`).
+ * Не буферизует весь `sheet*.xml` в строку V8 и прерывается при достижении `maxExtractedTextChars`.
+ */
+export async function extractXlsx(
+	source: Buffer | string,
+): Promise<ExtractedDocument> {
 	try {
-		const zip = readZipEntries(buffer);
-		const shared = sharedStrings(zip.entries);
-		const sheetTexts: string[] = [];
-		const sheets = zip.entries.filter((entry) =>
-			/(?:^|\/)xl\/worksheets\/sheet\d+\.xml$/.test(entry.name),
+		const shared: string[] = [];
+		const sheetEntryNames: string[] = [];
+
+		// Проход 1: читаем только sharedStrings.xml и собираем имена листов
+		const pass1 = await iterateZipEntries(
+			source,
+			async (entry) => {
+				if (/(?:^|\/)xl\/sharedStrings\.xml$/.test(entry.name)) {
+					const stream = await entry.openStream(64 * 1024 * 1024);
+					for await (const siEl of streamXmlTagElements(stream, "si")) {
+						shared.push(stripXmlTags(siEl.innerXml));
+					}
+				} else if (/(?:^|\/)xl\/worksheets\/sheet\d+\.xml$/.test(entry.name)) {
+					sheetEntryNames.push(entry.name);
+				}
+			},
+			{ maxEntryBytes: 64 * 1024 * 1024, maxTotalBytes: 256 * 1024 * 1024 },
 		);
 
-		for (const sheet of sheets) {
-			const xml = decodeText(sheet.data);
-			const rows = Array.from(xml.matchAll(/<row\b[\s\S]*?<\/row>/g)).map(
-				(rowMatch) => {
-					const rowXml = rowMatch[0] ?? "";
-					return Array.from(rowXml.matchAll(/<c\b[\s\S]*?<\/c>/g))
+		sheetEntryNames.sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
+		const targetSet = new Set(sheetEntryNames);
+		const sheetLinesMap = new Map<string, string[]>();
+		let totalChars = 0;
+
+		// Проход 2: потоково сканируем `<row>...</row>` без загрузки XML листа целиком
+		const pass2 = await iterateZipEntries(
+			source,
+			async (entry) => {
+				if (!targetSet.has(entry.name)) return;
+				if (totalChars >= maxExtractedTextChars) return "stop";
+
+				const stream = await entry.openStream(512 * 1024 * 1024);
+				const lines: string[] = [];
+				for await (const rowEl of streamXmlTagElements(stream, "row")) {
+					const rowText = Array.from(rowEl.innerXml.matchAll(/<c\b[\s\S]*?<\/c>/g))
 						.map((cellMatch) => extractCellValue(cellMatch[0] ?? "", shared))
 						.join("\t")
 						.replace(/\t+$/g, "");
-				},
-			);
-			sheetTexts.push(rows.filter(Boolean).join("\n"));
-		}
+					if (rowText) {
+						lines.push(rowText);
+						totalChars += rowText.length + 1;
+						if (totalChars >= maxExtractedTextChars) {
+							stream.destroy();
+							break;
+						}
+					}
+				}
+				sheetLinesMap.set(entry.name, lines);
+			},
+			{ maxEntryBytes: 512 * 1024 * 1024, maxTotalBytes: 1024 * 1024 * 1024 },
+		);
+
+		const sheetTexts = sheetEntryNames
+			.map((name) => (sheetLinesMap.get(name) ?? []).join("\n"))
+			.filter(Boolean);
 
 		return {
-			text: sheetTexts.filter(Boolean).join("\n\n"),
-			tableCount: sheets.length,
-			warnings: zip.warnings,
+			text: sheetTexts.join("\n\n"),
+			tableCount: sheetEntryNames.length,
+			warnings: Array.from(new Set([...pass1.warnings, ...pass2.warnings])),
 			parserNotes: [
-				"XLSX разобран встроенным извлечением таблиц из OpenXML ZIP; формулы не вычисляются.",
+				"XLSX разобран потоковым извлечением таблиц из OpenXML ZIP; формулы не вычисляются.",
 			],
 		};
 	} catch (err: unknown) {
@@ -180,15 +227,24 @@ export function extractXlsx(buffer: Buffer): ExtractedDocument {
 	}
 }
 
-export function extractPptx(buffer: Buffer): ExtractedDocument {
+export async function extractPptx(
+	source: Buffer | string,
+): Promise<ExtractedDocument> {
 	try {
-		const zip = readZipEntries(buffer);
-		const parts = zipText(zip.entries, /(?:^|\/)ppt\/slides\/slide\d+\.xml$/);
+		const slideEntries: ZipEntry[] = [];
+		const { warnings } = await iterateZipEntries(source, async (entry) => {
+			if (/(?:^|\/)ppt\/slides\/slide\d+\.xml$/.test(entry.name)) {
+				const data = await readLimitedStreamToBuffer(await entry.openStream());
+				slideEntries.push({ name: entry.name, data });
+			}
+		});
+		slideEntries.sort((a, b) => a.name.localeCompare(b.name, "en", { numeric: true }));
+		const parts = zipText(slideEntries, /(?:^|\/)ppt\/slides\/slide\d+\.xml$/);
 		return {
 			text: parts.join("\n\n"),
 			tableCount: 0,
-			warnings: zip.warnings,
-			parserNotes: ["PPTX разобран встроенным извлечением текста слайдов."],
+			warnings,
+			parserNotes: ["PPTX разобран потоковым извлечением текста слайдов."],
 		};
 	} catch (err: unknown) {
 		return {
@@ -200,25 +256,52 @@ export function extractPptx(buffer: Buffer): ExtractedDocument {
 	}
 }
 
-export function extractOpenDocument(
-	buffer: Buffer,
+export async function extractOpenDocument(
+	source: Buffer | string,
 	kind: "odt" | "ods" | "odp",
-): ExtractedDocument {
+): Promise<ExtractedDocument> {
 	try {
-		const zip = readZipEntries(buffer);
-		const content = zip.entries.find((entry) =>
-			/(?:^|\/)content\.xml$/.test(entry.name),
-		);
-		const text = content ? stripXmlTags(decodeText(content.data)) : "";
-		const tableCount = content
-			? (decodeText(content.data).match(/<table:table\b/g) ?? []).length
-			: 0;
+		let tableCount = 0;
+		const chunks: string[] = [];
+		let totalChars = 0;
+
+		const { warnings } = await iterateZipEntries(source, async (entry) => {
+			if (!/(?:^|\/)content\.xml$/.test(entry.name)) return;
+			const stream = await entry.openStream(64 * 1024 * 1024);
+			for await (const tableEl of streamXmlTagElements(stream, "table:table")) {
+				tableCount += 1;
+				const text = stripXmlTags(tableEl.innerXml);
+				if (text) {
+					chunks.push(text);
+					totalChars += text.length;
+					if (totalChars >= maxExtractedTextChars) {
+						stream.destroy();
+						break;
+					}
+				}
+			}
+			// Если таблиц не было (например текстовый ODT без таблиц) — читаем абзацы
+			if (tableCount === 0) {
+				return "stop";
+			}
+		});
+
+		if (tableCount === 0 && chunks.length === 0) {
+			await iterateZipEntries(source, async (entry) => {
+				if (!/(?:^|\/)content\.xml$/.test(entry.name)) return;
+				const buf = await readLimitedStreamToBuffer(await entry.openStream());
+				const text = stripXmlTags(decodeText(buf));
+				if (text) chunks.push(text);
+				return "stop";
+			});
+		}
+
 		return {
-			text,
+			text: chunks.join("\n\n"),
 			tableCount,
-			warnings: zip.warnings,
+			warnings,
 			parserNotes: [
-				`${kind.toUpperCase()} разобран встроенным извлечением текста из OpenDocument ZIP.`,
+				`${kind.toUpperCase()} разобран потоковым извлечением текста из OpenDocument ZIP.`,
 			],
 		};
 	} catch (err: unknown) {

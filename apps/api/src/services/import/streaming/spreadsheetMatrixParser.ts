@@ -19,16 +19,16 @@ export interface ParsedSpreadsheetData {
 /**
  * Universal Matrix Parser for CSV, TSV, XLSX, and ODS.
  */
-export function parseSpreadsheetBufferToMatrix(
+export async function parseSpreadsheetBufferToMatrix(
 	buffer: Buffer,
 	filename: string,
 	sheetIndex = 0,
-): ParsedSpreadsheetData {
+): Promise<ParsedSpreadsheetData> {
 	const lower = filename.toLowerCase();
 
 	if (lower.endsWith(".xlsx") || lower.endsWith(".ods") || looksLikeZipContainer(buffer)) {
 		const isOds = lower.endsWith(".ods");
-		const book = isOds ? parseOds(buffer) : parseXlsx(buffer);
+		const book = isOds ? await parseOds(buffer) : await parseXlsx(buffer);
 		if (book.sheets.length > 0) {
 			const idx = Math.min(sheetIndex, book.sheets.length - 1);
 			return {

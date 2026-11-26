@@ -6,7 +6,11 @@
 
 export type { ZipEntry } from "./docExtractor/index.js";
 export {
+	ByteLimitTransform,
+	ZipBombLimitError,
 	extractDocument,
-	readZipEntries,
+	iterateZipEntries,
+	openZipEntryStream,
+	readLimitedStreamToBuffer,
 	readZipEntriesAsync,
 } from "./docExtractor/index.js";

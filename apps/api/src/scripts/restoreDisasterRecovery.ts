@@ -1,17 +1,18 @@
 /**
  * restoreDisasterRecovery.ts — Автоматическое восстановление клиники при полной гибели оборудования
  *
- * СЦЕНАРИЙ АВАРИЙНОГО ВОССТАНОВЛЕНИЯ (152-ФЗ / 323-ФЗ):
+ * СЦЕНАРИЙ АВАРИЙНОГО ВОССТАНОВЛЕНИЯ:
  * 1. Компьютер клиники сгорел, украден или зашифрован шифровальщиком-вымогателем.
  * 2. Врач/владелец клиники ставит DenteSetup на новый чистый ноутбук.
  * 3. Достает из сейфа листок бумаги с 12 словами мнемоники BIP-39.
  * 4. Скрипт скачивает зашифрованный снимок из S3 (Selectel / Yandex Cloud),
- *    проверяет целостность GCM Auth Tag, расшифровывает на диск и накатывает в PostgreSQL 18.
+ *    проверяет целостность GCM Auth Tag, расшифровывает на диск и потоково
+ *    восстанавливает все ~183 боевых таблицы клиники в PostgreSQL 18.
  * 5. ЗАЩИТА ОТ CRYPTOGRAPHIC DOOM PRINCIPLE:
- *    Открытые данные попадают в psql ТОЛЬКО ПОСЛЕ полной проверки Auth Tag и gzip-декомпрессии!
- * 6. ANTI-OOM STREAMING:
- *    Дамп восстанавливается напрямую из проверенного файла на диске (psql -f) без
- *    попыток загрузить гигабайты в оперативную память.
+ *    Данные фиксируются в PostgreSQL (`COMMIT`) ТОЛЬКО ПОСЛЕ полной проверки Auth Tag.
+ * 6. ANTI-OOM STREAMING (< 25 МБ RAM):
+ *    Дамп `DENTETB2` (NDJSON) восстанавливается потоково батчами по 200 строк
+ *    без `fsPromises.readFile` / `JSON.parse` на весь файл.
  */
 
 import { spawn } from "node:child_process";
@@ -22,6 +23,14 @@ import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
 import pg from "pg";
+import { requireDatabaseUrl } from "../db/client.js";
+import { createApiLogger, safeLogError } from "../observability/index.js";
+import { resolveEncryptionKey } from "../services/backup/backupCryptoUtils.js";
+import {
+	restoreLegacySnapshotObjectToPg,
+	restoreNdjsonSnapshotStreamToPg,
+	restoreTenantSnapshotStreaming,
+} from "../services/backup/streamingSnapshotRestorer.js";
 import {
 	type CloudBackupMetadata,
 	type CloudBackupObjectInfo,
@@ -31,12 +40,16 @@ import {
 	validateMnemonic,
 } from "../services/cloudBackupEngine.js";
 
+const logger = createApiLogger("restoreDisasterRecovery");
+const MAX_LEGACY_PLAIN_JSON_BYTES = 128 * 1024 * 1024;
+
 export interface DisasterRecoveryOptions {
 	mnemonic: string;
 	orgId?: string | undefined;
 	ogrn?: string | undefined;
 	backupKey?: string | undefined;
 	databaseUrl?: string | undefined;
+	encryptionKey?: Buffer | undefined;
 	storage?: IS3StorageAdapter | undefined;
 	dryRun?: boolean | undefined;
 	silent?: boolean | undefined;
@@ -54,56 +67,15 @@ export interface DisasterRecoveryResult {
 	error?: string | undefined;
 }
 
-const TENANT_SNAPSHOT_TABLE_ORDER: ReadonlyArray<
-	readonly [snapshotKey: string, sqlTable: string]
-> = [
-	["organization", "organizations"],
-	["organizations", "organizations"],
-	["clinics", "clinics"],
-	["users", "users"],
-	["chairs", "chairs"],
-	["doctorPreferences", "doctor_preferences"],
-	["serviceCatalogItems", "service_catalog_items"],
-	["protocolTemplates", "protocol_templates"],
-	["patients", "patients"],
-	["patientConsents", "patient_consents"],
-	["patientDrugAllergies", "patient_drug_allergies"],
-	["patientRecalls", "patient_recalls"],
-	["appointments", "appointments"],
-	["visits", "visits"],
-	["visitDiaries", "visit_diaries"],
-	["visitDiaryRevisions", "visit_diary_revisions"],
-	["treatmentPlans", "treatment_plans"],
-	["treatmentPlanStages", "treatment_plan_stages"],
-	["treatmentItems", "treatment_items"],
-	["toothStates", "tooth_states"],
-	["toothStateHistory", "tooth_state_history"],
-	["patientInvoices", "patient_invoices"],
-	// Обратная совместимость со старыми снимками, где алиас schema.invoices сериализовался отдельно
-	["invoices", "patient_invoices"],
-	["invoiceItems", "invoice_items"],
-	["payments", "payments"],
-	["inventoryItems", "inventory_items"],
-	["warehouses", "warehouses"],
-	["inventoryTransactions", "inventory_transactions"],
-	["labOrders", "lab_orders"],
-	["labItems", "lab_items"],
-	["labOrderEvents", "lab_order_events"],
-	["implantCatalogItems", "implant_catalog_items"],
-	["patientImplantInstallations", "patient_implant_installations"],
-	["implantIsqMeasurements", "implant_isq_measurements"],
-	["generatedDocuments", "generated_documents"],
-	["imagingStudies", "imaging_studies"],
-	["communicationTemplates", "communication_templates"],
-	["communicationSettings", "communication_settings"],
-	["communicationTasks", "communication_tasks"],
-	["staffChatChannels", "staff_chat_channels"],
-	["staffChatMessages", "staff_chat_messages"],
-	["warrantyCertificates", "warranty_certificates"],
-];
-
-function camelToSnakeCase(key: string): string {
-	return key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+async function safeRemoveDir(dirPath: string): Promise<void> {
+	try {
+		await fsPromises.rm(dirPath, { recursive: true, force: true });
+	} catch (err) {
+		logger.warn(
+			{ err: safeLogError(err), dirPath },
+			"Не удалось удалить временную директорию восстановления",
+		);
+	}
 }
 
 export async function runDisasterRecovery(
@@ -118,7 +90,7 @@ export async function runDisasterRecovery(
 		"\n================================================================================",
 	);
 	log(
-		" [DENTE CRM] ЗАПУСК ПРОТОКОЛА АВАРИЙНОГО ВОССТАНОВЛЕНИЯ (152-ФЗ DISASTER RECOVERY)",
+		" [DENTE CRM] ЗАПУСК ПРОТОКОЛА АВАРИЙНОГО ВОССТАНОВЛЕНИЯ (DISASTER RECOVERY)",
 	);
 	log(
 		"================================================================================",
@@ -183,9 +155,7 @@ export async function runDisasterRecovery(
 			...(options.ogrn ? { ogrn: options.ogrn } : {}),
 		});
 	} catch (err) {
-		await fsPromises
-			.rm(recoveryTempDir, { recursive: true, force: true })
-			.catch(() => {});
+		await safeRemoveDir(recoveryTempDir);
 		throw new Error(
 			`КРИТИЧЕСКИЙ СБОЙ КРИПТОГРАФИИ: Аутентификация дампа провалена (возможна подделка данных или неверный ключ). Ошибка: ${err instanceof Error ? err.message : String(err)}`,
 		);
@@ -205,15 +175,11 @@ export async function runDisasterRecovery(
 		`✓ Интервал с момента последнего снимка (RPO): ${rpoMinutes.toFixed(1)} мин.`,
 	);
 	log(
-		"ℹ [152-ФЗ / RPO АУДИТ] Фактическая потеря данных (RPO) определяется частотой снимков.",
+		"ℹ [RPO АУДИТ] Фактическая потеря данных (RPO) определяется частотой снимков.",
 	);
 
 	let restoredTablesCount = 0;
 	let restoredRowsCount = 0;
-	const databaseUrl =
-		options.databaseUrl ||
-		process.env.DATABASE_URL ||
-		"postgres://dental:dental@127.0.0.1:5432/dental_crm";
 
 	try {
 		if (options.dryRun) {
@@ -222,19 +188,21 @@ export async function runDisasterRecovery(
 			restoredRowsCount =
 				header.dumpStats?.dataRows ?? Math.max(1, Math.round(plaintextSize / 200));
 		} else {
+			const databaseUrl = options.databaseUrl ?? requireDatabaseUrl();
 			log("⏳ Восстановление схемы и клинических данных в PostgreSQL 18...");
-			const pgResult = await restoreVerifiedDumpToPostgres(
-				verifiedPlaintextPath,
+			const pgResult = await restoreVerifiedDumpToPostgres({
+				dumpFilePath: verifiedPlaintextPath,
 				databaseUrl,
+				expectedOrganizationId: options.orgId ?? header.orgId,
+				encryptionKey: options.encryptionKey,
+				tempDir: recoveryTempDir,
 				log,
-			);
+			});
 			restoredTablesCount = pgResult.tablesCount;
 			restoredRowsCount = pgResult.rowsCount;
 		}
 	} finally {
-		await fsPromises
-			.rm(recoveryTempDir, { recursive: true, force: true })
-			.catch(() => {});
+		await safeRemoveDir(recoveryTempDir);
 	}
 
 	const elapsedMs = Date.now() - startTime;
@@ -275,16 +243,118 @@ export async function runDisasterRecovery(
 	};
 }
 
-async function restoreVerifiedDumpToPostgres(
-	sqlFilePath: string,
-	databaseUrl: string,
-	log: (msg: string) => void,
-): Promise<{ tablesCount: number; rowsCount: number }> {
-	const fd = await fsPromises.open(sqlFilePath, "r");
-	const sampleBuf = Buffer.alloc(4096);
-	const { bytesRead } = await fd.read(sampleBuf, 0, 4096, 0);
+async function readFirstNdjsonLineHeader(
+	filePath: string,
+): Promise<{ format?: string; organizationId?: string } | null> {
+	const rl = readline.createInterface({
+		input: fs.createReadStream(filePath, { encoding: "utf8", highWaterMark: 16 * 1024 }),
+		crlfDelay: Number.POSITIVE_INFINITY,
+	});
+	try {
+		for await (const line of rl) {
+			if (!line.trim()) continue;
+			const parsed = JSON.parse(line) as unknown;
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				return parsed as { format?: string; organizationId?: string };
+			}
+			return null;
+		}
+		return null;
+	} catch {
+		return null;
+	} finally {
+		rl.close();
+	}
+}
+
+export async function restoreVerifiedDumpToPostgres(params: {
+	readonly dumpFilePath: string;
+	readonly databaseUrl: string;
+	readonly expectedOrganizationId?: string | undefined;
+	readonly encryptionKey?: Buffer | undefined;
+	readonly tempDir?: string | undefined;
+	readonly log: (msg: string) => void;
+}): Promise<{ tablesCount: number; rowsCount: number }> {
+	const { dumpFilePath, databaseUrl, expectedOrganizationId, log } = params;
+
+	const stat = await fsPromises.stat(dumpFilePath);
+	const fd = await fsPromises.open(dumpFilePath, "r");
+	const sampleBuf = Buffer.alloc(Math.min(4096, stat.size));
+	const { bytesRead } = await fd.read(sampleBuf, 0, sampleBuf.length, 0);
 	await fd.close();
+
+	const headMagic = sampleBuf.subarray(0, 8).toString("ascii");
+	if (headMagic === "DENTETB2" || headMagic === "DENTETB1") {
+		let keyBuf = params.encryptionKey;
+		if (!keyBuf) {
+			const resolved = resolveEncryptionKey();
+			if ("error" in resolved) {
+				throw new Error(resolved.error);
+			}
+			keyBuf = resolved.key;
+		}
+		if (!expectedOrganizationId) {
+			throw new Error(
+				"Для восстановления зашифрованного снимка клиники требуется organizationId.",
+			);
+		}
+		log(`✓ Распознан потоковый контейнер ${headMagic}; запуск батчевого восстановления без OOM.`);
+		const client = new pg.Client({ connectionString: databaseUrl });
+		await client.connect();
+		try {
+			const res = await restoreTenantSnapshotStreaming({
+				archivePath: dumpFilePath,
+				encryptionKey32Bytes: keyBuf,
+				expectedOrganizationId,
+				pgClient: client,
+				tempDir: params.tempDir,
+			});
+			return { tablesCount: res.restoredTables, rowsCount: res.restoredRows };
+		} finally {
+			try {
+				await client.end();
+			} catch (endErr) {
+				logger.warn({ err: safeLogError(endErr) }, "Ошибка закрытия pg.Client после restore");
+			}
+		}
+	}
+
 	const sampleStr = sampleBuf.subarray(0, bytesRead).toString("utf8");
+	const trimmedHead = sampleStr.trimStart();
+
+	// Потоковый NDJSON-формат DENTETB2 (распакованный из облачного S3 конверта)
+	if (trimmedHead.startsWith("{") && trimmedHead.includes('"DENTETB2"')) {
+		const firstObj = await readFirstNdjsonLineHeader(dumpFilePath);
+		if (firstObj?.format === "DENTETB2") {
+			const targetOrgId = expectedOrganizationId ?? firstObj.organizationId;
+			if (!targetOrgId) {
+				throw new Error("DENTETB2 NDJSON header is missing organizationId");
+			}
+			log("✓ Распознан потоковый NDJSON снимок DENTETB2; запуск батчевого восстановления.");
+			const client = new pg.Client({ connectionString: databaseUrl });
+			await client.connect();
+			const inputStream = fs.createReadStream(dumpFilePath, {
+				encoding: "utf8",
+				highWaterMark: 64 * 1024,
+			});
+			try {
+				const res = await restoreNdjsonSnapshotStreamToPg({
+					inputStream,
+					expectedOrganizationId: targetOrgId,
+					pgClient: client,
+					tempDir: params.tempDir,
+				});
+				return { tablesCount: res.restoredTables, rowsCount: res.restoredRows };
+			} finally {
+				inputStream.destroy();
+				try {
+					await client.end();
+				} catch (endErr) {
+					logger.warn({ err: safeLogError(endErr) }, "Ошибка закрытия pg.Client после NDJSON restore");
+				}
+			}
+		}
+	}
 
 	const isSqlDump =
 		/CREATE\s+TABLE|COPY\s+\S+\s+FROM|INSERT\s+INTO|--\s+PostgreSQL/i.test(
@@ -295,30 +365,47 @@ async function restoreVerifiedDumpToPostgres(
 		const psqlBinary = resolvePsqlBinary();
 		if (psqlBinary) {
 			log(`✓ Найден бинарный восстановитель: ${psqlBinary}`);
-			await runPsqlFile(psqlBinary, databaseUrl, sqlFilePath);
+			await runPsqlFile(psqlBinary, databaseUrl, dumpFilePath);
 			return inspectDatabasePostgres(databaseUrl);
 		}
-		log(
-			"ℹ psql.exe не найден. Применяется потоковый транзакционный SQL-инжектор.",
-		);
-		return executeSqlFileViaPool(sqlFilePath, databaseUrl);
+		log("ℹ psql.exe не найден. Применяется потоковый транзакционный SQL-инжектор.");
+		return executeSqlFileViaPool(dumpFilePath, databaseUrl);
 	}
 
-	const contentStr = await fsPromises.readFile(sqlFilePath, "utf8");
+	// Legacy однофайловый JSON (DENTE_TENANT_BACKUP_V1) — с защитой от OOM по размеру
+	if (stat.size > MAX_LEGACY_PLAIN_JSON_BYTES) {
+		throw new Error(
+			`Устаревший однофайловый JSON-дамп размером ${Math.round(stat.size / (1024 * 1024))} МБ превышает предел 128 МБ для V8 Heap. Используйте потоковый формат DENTETB2.`,
+		);
+	}
+	const contentStr = await fsPromises.readFile(dumpFilePath, "utf8");
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(contentStr);
 	} catch {
-		return executeSqlFileViaPool(sqlFilePath, databaseUrl);
+		return executeSqlFileViaPool(dumpFilePath, databaseUrl);
 	}
 	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
 		throw new Error("Неверный формат JSON-снимка резервной копии");
 	}
-	log("✓ Распознан формат структурированного клинического слепка DENTE.");
-	return restoreJsonSnapshotViaPool(
-		parsed as Record<string, unknown>,
-		databaseUrl,
-	);
+	log("✓ Распознан устаревший JSON-слепок DENTE_TENANT_BACKUP_V1; батчевый импорт.");
+	const client = new pg.Client({ connectionString: databaseUrl });
+	await client.connect();
+	try {
+		const res = await restoreLegacySnapshotObjectToPg({
+			snapshot: parsed as Record<string, unknown>,
+			expectedOrganizationId,
+			pgClient: client,
+			tempDir: params.tempDir,
+		});
+		return { tablesCount: res.restoredTables, rowsCount: res.restoredRows };
+	} finally {
+		try {
+			await client.end();
+		} catch (endErr) {
+			logger.warn({ err: safeLogError(endErr) }, "Ошибка закрытия pg.Client после legacy JSON restore");
+		}
+	}
 }
 
 function resolvePsqlBinary(): string | null {
@@ -396,144 +483,21 @@ async function executeSqlFileViaPool(
 		}
 		await client.query("COMMIT");
 	} catch (e) {
-		await client.query("ROLLBACK").catch(() => {});
+		try {
+			await client.query("ROLLBACK");
+		} catch (rbErr) {
+			logger.warn({ err: safeLogError(rbErr) }, "Ошибка отката SQL-инжектора");
+		}
 		throw e;
 	} finally {
 		rl.close();
-		await client.end();
+		try {
+			await client.end();
+		} catch (endErr) {
+			logger.warn({ err: safeLogError(endErr) }, "Ошибка закрытия pg.Client SQL-инжектора");
+		}
 	}
 	return inspectDatabasePostgres(databaseUrl);
-}
-
-async function restoreJsonSnapshotViaPool(
-	snapshot: Record<string, unknown>,
-	databaseUrl: string,
-): Promise<{ tablesCount: number; rowsCount: number }> {
-	const tablesMap =
-		snapshot.tables &&
-		typeof snapshot.tables === "object" &&
-		!Array.isArray(snapshot.tables)
-			? (snapshot.tables as Record<string, unknown>)
-			: snapshot;
-	const snapshotOrgId =
-		typeof snapshot.organizationId === "string" ? snapshot.organizationId : null;
-
-	const client = new pg.Client({ connectionString: databaseUrl });
-	await client.connect();
-
-	let restoredTablesCount = 0;
-	let restoredRowsCount = 0;
-
-	try {
-		await client.query("BEGIN");
-		if (snapshotOrgId) {
-			await client.query("SELECT set_config('app.current_tenant', $1, true)", [
-				snapshotOrgId,
-			]);
-			await client.query(
-				"SELECT set_config('app.superuser_bypass', 'off', true)",
-			);
-		}
-
-		const restoredSqlTables = new Set<string>();
-
-		for (const [snapshotKey, sqlTable] of TENANT_SNAPSHOT_TABLE_ORDER) {
-			if (restoredSqlTables.has(sqlTable)) continue;
-			const rawEntry = tablesMap[snapshotKey];
-			if (!rawEntry) continue;
-			const rawRecords = Array.isArray(rawEntry) ? rawEntry : [rawEntry];
-			if (rawRecords.length === 0) continue;
-
-			// Для self-FK patients.merged_into_patient_id первыми восстанавливаем канонические (необъединённые) карты
-			const records =
-				sqlTable === "patients"
-					? [...rawRecords].sort((a, b) => {
-							const aObj = a && typeof a === "object" ? (a as Record<string, unknown>) : {};
-							const bObj = b && typeof b === "object" ? (b as Record<string, unknown>) : {};
-							const aMerged = Boolean(aObj.mergedIntoPatientId ?? aObj.merged_into_patient_id);
-							const bMerged = Boolean(bObj.mergedIntoPatientId ?? bObj.merged_into_patient_id);
-							if (aMerged === bMerged) return 0;
-							return aMerged ? 1 : -1;
-						})
-					: rawRecords;
-
-			const colRes = await client.query<{ column_name: string; data_type: string }>(
-				"SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1",
-				[sqlTable],
-			);
-			const validCols = new Map(
-				colRes.rows.map((r) => [r.column_name, r.data_type]),
-			);
-			if (validCols.size === 0) continue;
-
-			let tableInserted = 0;
-			for (const rec of records) {
-				if (!rec || typeof rec !== "object" || Array.isArray(rec)) continue;
-				const recordObj = rec as Record<string, unknown>;
-				const cols: string[] = [];
-				const values: unknown[] = [];
-
-				for (const [key, rawVal] of Object.entries(recordObj)) {
-					const sqlCol = camelToSnakeCase(key);
-					const colType = validCols.get(sqlCol);
-					if (!colType) continue;
-					if (snapshotOrgId && sqlCol === "organization_id") {
-						values.push(snapshotOrgId);
-					} else if (
-						rawVal !== null &&
-						typeof rawVal === "object" &&
-						!(rawVal instanceof Date) &&
-						(colType === "jsonb" || colType === "json")
-					) {
-						values.push(JSON.stringify(rawVal));
-					} else {
-						values.push(rawVal);
-					}
-					cols.push(sqlCol);
-				}
-
-				if (cols.length === 0) continue;
-
-				const quotedCols = cols.map((c) => `"${c}"`).join(", ");
-				const placeholders = cols.map((_, idx) => `$${idx + 1}`).join(", ");
-				const conflictCol = validCols.has("id") && cols.includes("id")
-					? `"id"`
-					: validCols.has("organization_id") && cols.includes("organization_id")
-						? `"organization_id"`
-						: null;
-
-				const updateAssignments = cols
-					.filter((c) => c !== "id" && c !== "organization_id")
-					.map((c) => `"${c}" = EXCLUDED."${c}"`)
-					.join(", ");
-
-				const conflictClause = conflictCol
-					? updateAssignments.length > 0
-						? ` ON CONFLICT (${conflictCol}) DO UPDATE SET ${updateAssignments}`
-						: ` ON CONFLICT (${conflictCol}) DO NOTHING`
-					: "";
-
-				const sqlQuery = `INSERT INTO "public"."${sqlTable}" (${quotedCols}) VALUES (${placeholders})${conflictClause}`;
-				const res = await client.query(sqlQuery, values);
-				tableInserted += res.rowCount ?? 0;
-			}
-
-			restoredSqlTables.add(sqlTable);
-			if (tableInserted > 0) {
-				restoredTablesCount += 1;
-				restoredRowsCount += tableInserted;
-			}
-		}
-
-		await client.query("COMMIT");
-	} catch (e) {
-		await client.query("ROLLBACK").catch(() => {});
-		throw e;
-	} finally {
-		await client.end();
-	}
-
-	return { tablesCount: restoredTablesCount, rowsCount: restoredRowsCount };
 }
 
 async function inspectDatabasePostgres(
@@ -560,7 +524,11 @@ async function inspectDatabasePostgres(
 		const rowsCount = Number.parseInt(rowsRes.rows[0]?.total_rows || "0", 10);
 		return { tablesCount, rowsCount };
 	} finally {
-		await client.end().catch(() => {});
+		try {
+			await client.end();
+		} catch (endErr) {
+			logger.warn({ err: safeLogError(endErr) }, "Ошибка закрытия pg.Client инспекции БД");
+		}
 	}
 }
 

@@ -57,15 +57,15 @@ export function formatPricelistToCsv(items: ServiceCatalogItem[]): string {
 /**
  * Resolves spreadsheet rows and sheet list from base64 or raw text.
  */
-export function resolveSpreadsheetRowsAndSheets(
+export async function resolveSpreadsheetRowsAndSheets(
 	fileBase64?: string,
 	rawText?: string,
 	filename = "pricelist.csv",
 	selectedSheetIndex = 0,
-): ParsedSpreadsheetBook {
+): Promise<ParsedSpreadsheetBook> {
 	if (fileBase64) {
 		const buffer = Buffer.from(fileBase64, "base64");
-		return parseSpreadsheetBuffer(buffer, filename, selectedSheetIndex);
+		return await parseSpreadsheetBuffer(buffer, filename, selectedSheetIndex);
 	}
 	if (rawText) {
 		return {
@@ -82,7 +82,7 @@ export function resolveSpreadsheetRowsAndSheets(
 /**
  * Resolves input for price list scanning from file or raw text.
  */
-export function resolveSpreadsheetScanInput(params: {
+export async function resolveSpreadsheetScanInput(params: {
 	fileBase64?: string | undefined;
 	rawContent?: string | undefined;
 	rawText?: string | undefined;
@@ -90,7 +90,7 @@ export function resolveSpreadsheetScanInput(params: {
 	selectedSheetIndex?: number | undefined;
 	commit?: boolean | undefined;
 	approvedItems?: ScanAndImportItem[] | undefined;
-}): string | string[][] {
+}): Promise<string | string[][]> {
 	const {
 		fileBase64,
 		rawContent,
@@ -103,7 +103,7 @@ export function resolveSpreadsheetScanInput(params: {
 
 	if (fileBase64) {
 		const buffer = Buffer.from(fileBase64, "base64");
-		return extractScanInputFromBuffer(buffer, filename, selectedSheetIndex);
+		return await extractScanInputFromBuffer(buffer, filename, selectedSheetIndex);
 	}
 	if (rawContent || rawText) {
 		return rawContent || rawText || "";

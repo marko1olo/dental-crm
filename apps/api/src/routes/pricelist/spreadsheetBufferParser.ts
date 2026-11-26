@@ -14,11 +14,11 @@ export interface ParsedSpreadsheetBook {
 /**
  * Parses XLSX / ODS buffer or CSV buffer into sheet matrix.
  */
-export function parseSpreadsheetBuffer(
+export async function parseSpreadsheetBuffer(
 	buffer: Buffer,
 	filename: string,
 	selectedSheetIndex = 0,
-): ParsedSpreadsheetBook {
+): Promise<ParsedSpreadsheetBook> {
 	const lowerName = filename.toLowerCase();
 	let sheets: string[] = ["Лист 1"];
 	let rows: string[][] = [];
@@ -29,7 +29,7 @@ export function parseSpreadsheetBuffer(
 		looksLikeZipContainer(buffer)
 	) {
 		const isOds = lowerName.endsWith(".ods");
-		const parsedBook = isOds ? parseOds(buffer) : parseXlsx(buffer);
+		const parsedBook = isOds ? await parseOds(buffer) : await parseXlsx(buffer);
 		if (parsedBook.sheets.length > 0) {
 			sheets = parsedBook.sheets.map((s) => s.name);
 			const sheetIdx = Math.min(
@@ -58,11 +58,11 @@ export function parseSpreadsheetBuffer(
 /**
  * Extracts raw text or matrix rows from buffer for scan-and-import.
  */
-export function extractScanInputFromBuffer(
+export async function extractScanInputFromBuffer(
 	buffer: Buffer,
 	filename: string,
 	selectedSheetIndex = 0,
-): string | string[][] {
+): Promise<string | string[][]> {
 	const lowerName = (filename || "").toLowerCase();
 	if (
 		lowerName.endsWith(".xlsx") ||
@@ -70,7 +70,7 @@ export function extractScanInputFromBuffer(
 		looksLikeZipContainer(buffer)
 	) {
 		const isOds = lowerName.endsWith(".ods");
-		const parsedBook = isOds ? parseOds(buffer) : parseXlsx(buffer);
+		const parsedBook = isOds ? await parseOds(buffer) : await parseXlsx(buffer);
 		if (parsedBook.sheets.length > 0) {
 			const sheetIdx = Math.min(
 				selectedSheetIndex,

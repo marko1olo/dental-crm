@@ -4,6 +4,8 @@ export type {
 	ZipEntry,
 } from "./types.js";
 export {
+	ByteLimitTransform,
+	ZipBombLimitError,
 	countRows,
 	decodeBase64,
 	decodeText,
@@ -11,9 +13,11 @@ export {
 	fingerprintText,
 	isIgnoredArchiveEntry,
 	isImagingEntry,
+	iterateZipEntries,
 	looksTabular,
 	normalizeText,
-	readZipEntries,
+	openZipEntryStream,
+	readLimitedStreamToBuffer,
 	readZipEntriesAsync,
 	safeFileLabel,
 	stripXmlTags,

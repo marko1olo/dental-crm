@@ -51,7 +51,7 @@ export async function registerIngestionRoutes(app: FastifyInstance) {
 				});
 			}
 			try {
-				return documentIngestionResponseSchema.parse(extractDocument(input));
+				return documentIngestionResponseSchema.parse(await extractDocument(input));
 			} catch (extractErr) {
 				request.log.warn(
 					{ err: extractErr },

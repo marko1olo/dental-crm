@@ -32,7 +32,7 @@ import {
 	sepaSitePatchSchema,
 	taxDeductionApplicationPayloadSchema,
 } from "@dental/shared";
-import { readZipEntries } from "../../ingestion/docExtractor/zipReader.js";
+import { readZipEntriesAsync } from "../../ingestion/docExtractor/zipReader.js";
 import { DEFAULT_IDEMPOTENCY_EXEMPT_PATHS } from "../../plugins/idempotencyPlugin.js";
 import { registerDiagnocatAnalyticsRoutes } from "../../routes/analytics/diagnocatRoutes.js";
 import { registerHardwareRoutes } from "../../routes/hardware.js";
@@ -517,7 +517,7 @@ describe("Wave 10 Red Team: Remaining Routes, Multi-Tenant Isolation & Strict Sc
 				{ name: "part2.txt", data: bigChunk },
 				{ name: "part3.txt", data: bigChunk },
 			]);
-			const zipResult = readZipEntries(zipBombBuffer);
+			const zipResult = await readZipEntriesAsync(zipBombBuffer);
 			assert.ok(zipResult.warnings.includes("zip_bomb_size_limit_exceeded"));
 			assert.equal(zipResult.entries.length, 2);
 		} finally {

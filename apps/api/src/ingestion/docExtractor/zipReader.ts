@@ -1,11 +1,59 @@
 import { createHash } from "node:crypto";
-import { inflateRawSync } from "node:zlib";
+import { type Readable, Transform, type TransformCallback } from "node:stream";
 import yauzl from "yauzl";
 import type { ZipEntry } from "./types.js";
 
 const textDecoder = new TextDecoder("utf-8", { fatal: false });
 const utf16LeDecoder = new TextDecoder("utf-16le", { fatal: false });
 const utf16BeDecoder = new TextDecoder("utf-16be", { fatal: false });
+
+export const DEFAULT_MAX_ZIP_ENTRY_BYTES = 20 * 1024 * 1024;
+export const DEFAULT_MAX_ZIP_TOTAL_BYTES = 50 * 1024 * 1024;
+export const DEFAULT_MAX_ZIP_ENTRIES = 1000;
+
+export class ZipBombLimitError extends Error {
+	constructor(message = "zip_bomb_size_limit_exceeded") {
+		super(message);
+		this.name = "ZipBombLimitError";
+	}
+}
+
+/**
+ * Потоковый трансформ-ограничитель байт (защита от Zip-Bomb CWE-409 на лету):
+ * контролирует как размер одной распаковываемой записи, так и общий бюджет архива
+ * без накопления данных в оперативной памяти.
+ */
+export class ByteLimitTransform extends Transform {
+	private entryBytes = 0;
+
+	constructor(
+		private readonly maxEntryBytes: number,
+		private readonly sharedBudget?: { used: number; maxTotal: number },
+	) {
+		super();
+	}
+
+	override _transform(
+		chunk: Buffer | string,
+		_encoding: BufferEncoding,
+		callback: TransformCallback,
+	): void {
+		const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+		this.entryBytes += buf.length;
+		if (this.entryBytes > this.maxEntryBytes) {
+			callback(new ZipBombLimitError("zip_bomb_size_limit_exceeded"));
+			return;
+		}
+		if (this.sharedBudget) {
+			this.sharedBudget.used += buf.length;
+			if (this.sharedBudget.used > this.sharedBudget.maxTotal) {
+				callback(new ZipBombLimitError("zip_bomb_size_limit_exceeded"));
+				return;
+			}
+		}
+		callback(null, buf);
+	}
+}
 
 export function decodeBase64(value: string | undefined): Buffer {
 	if (!value?.trim()) return Buffer.alloc(0);
@@ -120,163 +168,6 @@ export function countRows(text: string): number {
 	return text.split(/\r?\n/).filter((line) => line.trim()).length;
 }
 
-export function readZipEntries(buffer: Buffer): {
-	entries: ZipEntry[];
-	warnings: string[];
-} {
-	const warnings: string[] = [];
-	const entries: ZipEntry[] = [];
-
-	if (!buffer || buffer.length < 22) {
-		return { entries, warnings: ["zip_buffer_too_small"] };
-	}
-
-	try {
-		let eocdOffset = -1;
-
-		for (
-			let offset = buffer.length - 22;
-			offset >= Math.max(0, buffer.length - 66_000);
-			offset -= 1
-		) {
-			if (
-				offset + 4 <= buffer.length &&
-				buffer.readUInt32LE(offset) === 0x06054b50
-			) {
-				eocdOffset = offset;
-				break;
-			}
-		}
-
-		if (eocdOffset < 0 || eocdOffset + 22 > buffer.length) {
-			return { entries, warnings: ["zip_eocd_not_found"] };
-		}
-
-		const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
-		const centralOffset = buffer.readUInt32LE(eocdOffset + 16);
-
-		if (centralOffset < 0 || centralOffset >= buffer.length) {
-			return { entries, warnings: ["zip_invalid_central_offset"] };
-		}
-
-		let cursor = centralOffset;
-		let totalDecompressedBytes = 0;
-		const maxTotalZipBytes = 50 * 1024 * 1024;
-
-		for (
-			let index = 0;
-			index < totalEntries && cursor + 46 <= buffer.length;
-			index += 1
-		) {
-			if (buffer.readUInt32LE(cursor) !== 0x02014b50) {
-				warnings.push("zip_central_directory_truncated");
-				break;
-			}
-
-			const method = buffer.readUInt16LE(cursor + 10);
-			const compressedSize = buffer.readUInt32LE(cursor + 20);
-			const uncompressedSize = buffer.readUInt32LE(cursor + 24);
-			const fileNameLength = buffer.readUInt16LE(cursor + 28);
-			const extraLength = buffer.readUInt16LE(cursor + 30);
-			const commentLength = buffer.readUInt16LE(cursor + 32);
-			const localOffset = buffer.readUInt32LE(cursor + 42);
-
-			if (cursor + 46 + fileNameLength > buffer.length) {
-				warnings.push("zip_entry_name_out_of_bounds");
-				break;
-			}
-
-			const name = buffer
-				.subarray(cursor + 46, cursor + 46 + fileNameLength)
-				.toString("utf8")
-				.replace(/\\/g, "/");
-
-			const nextCursor =
-				cursor + 46 + fileNameLength + extraLength + commentLength;
-
-			if (localOffset < 0 || localOffset + 30 > buffer.length) {
-				warnings.push(
-					`zip_local_header_out_of_bounds:${safeFileLabel(name, "Файл архива")}`,
-				);
-				cursor = nextCursor;
-				continue;
-			}
-
-			if (buffer.readUInt32LE(localOffset) !== 0x04034b50) {
-				warnings.push(
-					`zip_local_header_missing:${safeFileLabel(name, "Файл архива")}`,
-				);
-				cursor = nextCursor;
-				continue;
-			}
-
-			const localNameLength = buffer.readUInt16LE(localOffset + 26);
-			const localExtraLength = buffer.readUInt16LE(localOffset + 28);
-			const dataStart = localOffset + 30 + localNameLength + localExtraLength;
-
-			if (dataStart < 0 || dataStart + compressedSize > buffer.length) {
-				warnings.push(
-					`zip_data_out_of_bounds:${safeFileLabel(name, "Файл архива")}`,
-				);
-				cursor = nextCursor;
-				continue;
-			}
-
-			const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
-			if (
-				uncompressedSize > 20 * 1024 * 1024 ||
-				totalDecompressedBytes + uncompressedSize > maxTotalZipBytes
-			) {
-				warnings.push("zip_bomb_size_limit_exceeded");
-				break;
-			}
-			try {
-				if (method === 0) {
-					if (totalDecompressedBytes + compressed.length > maxTotalZipBytes) {
-						warnings.push("zip_bomb_size_limit_exceeded");
-						break;
-					}
-					totalDecompressedBytes += compressed.length;
-					entries.push({ name, data: compressed });
-				} else if (method === 8) {
-					const remainingBudget = maxTotalZipBytes - totalDecompressedBytes;
-					if (remainingBudget <= 0) {
-						warnings.push("zip_bomb_size_limit_exceeded");
-						break;
-					}
-					const inflated = inflateRawSync(compressed, {
-						maxOutputLength: Math.min(20 * 1024 * 1024, remainingBudget),
-					});
-					totalDecompressedBytes += inflated.length;
-					entries.push({
-						name,
-						data: inflated,
-					});
-				} else {
-					warnings.push(
-						`zip_unsupported_compression:${safeFileLabel(name, "Файл архива")}:${method}`,
-					);
-				}
-			} catch (err: unknown) {
-				if (err instanceof RangeError) {
-					warnings.push("zip_bomb_size_limit_exceeded");
-					break;
-				}
-				const reason = err instanceof Error ? err.message : "inflate_error";
-				warnings.push(
-					`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}:${reason}`,
-				);
-			}
-
-			cursor = nextCursor;
-		}
-	} catch (err: unknown) {
-		warnings.push(`zip_read_error:${err instanceof Error ? err.message : "corrupted_zip"}`);
-	}
-
-	return { entries, warnings };
-}
-
 export function zipText(entries: ZipEntry[], pathPattern: RegExp): string[] {
 	return entries
 		.filter((entry) => pathPattern.test(entry.name))
@@ -284,95 +175,183 @@ export function zipText(entries: ZipEntry[], pathPattern: RegExp): string[] {
 		.filter(Boolean);
 }
 
+export interface IterateZipEntriesOptions {
+	readonly maxEntries?: number | undefined;
+	readonly maxEntryBytes?: number | undefined;
+	readonly maxTotalBytes?: number | undefined;
+	/** Если false, лимит maxEntryBytes проверяется только по фактическому потоку (без отбраковки по завышенному header). */
+	readonly checkDeclaredSize?: boolean | undefined;
+}
+
+export interface StreamedZipEntryHandle {
+	readonly name: string;
+	readonly uncompressedSize: number;
+	openStream(entryMaxBytes?: number): Promise<Readable>;
+}
+
 /**
- * Потоковое чтение ZIP-архива из файла на диске или буфера на базе yauzl (MIT)
- * с защитой от Zip-бомбы (20 МБ на запись, 50 МБ суммарно, макс. 1000 записей).
+ * Потоковый итератор записей ZIP на базе yauzl (`lazyEntries: true`) с защитой от
+ * Zip-Bomb CWE-409 (`ByteLimitTransform`). Не распаковывает пропущенные записи и
+ * читает архив с файлового пути на диске без загрузки всего ZIP в оперативную память.
  */
-export async function readZipEntriesAsync(source: Buffer | string): Promise<{
-	entries: ZipEntry[];
-	warnings: string[];
-}> {
+export async function iterateZipEntries(
+	source: Buffer | string,
+	visitor: (entry: StreamedZipEntryHandle) => Promise<void | "stop">,
+	options?: IterateZipEntriesOptions,
+): Promise<{ warnings: string[]; visitedCount: number }> {
 	const warnings: string[] = [];
-	const entries: ZipEntry[] = [];
-	const MAX_ENTRY_BYTES = 20 * 1024 * 1024;
-	const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
-	const MAX_ENTRIES = 1000;
+	const maxEntries = options?.maxEntries ?? DEFAULT_MAX_ZIP_ENTRIES;
+	const maxEntryBytes = options?.maxEntryBytes ?? DEFAULT_MAX_ZIP_ENTRY_BYTES;
+	const maxTotalBytes = options?.maxTotalBytes ?? DEFAULT_MAX_ZIP_TOTAL_BYTES;
+	const checkDeclaredSize = options?.checkDeclaredSize ?? true;
 
 	if (Buffer.isBuffer(source) && source.length < 22) {
-		return { entries, warnings: ["zip_buffer_too_small"] };
+		return { warnings: ["zip_buffer_too_small"], visitedCount: 0 };
 	}
 
+	let visitedCount = 0;
 	let zipfile: yauzl.ZipFile | undefined;
+	const sharedBudget = { used: 0, maxTotal: maxTotalBytes };
+
 	try {
 		zipfile = Buffer.isBuffer(source)
 			? await yauzl.fromBufferPromise(source, { lazyEntries: true })
 			: await yauzl.openPromise(source, { lazyEntries: true });
 
-		let totalDecompressedBytes = 0;
 		for await (const entry of zipfile.eachEntry()) {
 			const name = entry.fileName.replace(/\\/g, "/");
-			if (name.endsWith("/")) {
-				continue;
-			}
-			if (entries.length >= MAX_ENTRIES) {
+			if (name.endsWith("/")) continue;
+
+			if (visitedCount >= maxEntries) {
 				warnings.push("zip_entry_limit_reached");
 				break;
 			}
-			if (
-				entry.uncompressedSize > MAX_ENTRY_BYTES ||
-				totalDecompressedBytes + entry.uncompressedSize > MAX_TOTAL_BYTES
-			) {
-				warnings.push("zip_bomb_size_limit_exceeded");
-				break;
-			}
+			visitedCount += 1;
+
 			if (entry.isEncrypted()) {
 				warnings.push(`zip_encrypted_entry:${safeFileLabel(name, "Файл архива")}`);
 				continue;
 			}
 
+			if (
+				checkDeclaredSize &&
+				(entry.uncompressedSize > maxEntryBytes ||
+					sharedBudget.used + entry.uncompressedSize > maxTotalBytes)
+			) {
+				warnings.push("zip_bomb_size_limit_exceeded");
+				break;
+			}
+
+			const activeZip = zipfile;
+			const handle: StreamedZipEntryHandle = {
+				name,
+				uncompressedSize: entry.uncompressedSize,
+				openStream: async (overrideEntryMaxBytes?: number) => {
+					const rawStream = await activeZip.openReadStreamPromise(entry);
+					const limiter = new ByteLimitTransform(
+						overrideEntryMaxBytes ?? maxEntryBytes,
+						sharedBudget,
+					);
+					rawStream.on("error", (err) => limiter.destroy(err));
+					limiter.on("close", () => {
+						if (!rawStream.destroyed) rawStream.destroy();
+					});
+					return rawStream.pipe(limiter);
+				},
+			};
+
 			try {
-				const readStream = await zipfile.openReadStreamPromise(entry);
-				const chunks: Buffer[] = [];
-				let entryBytes = 0;
-				let abortedByBomb = false;
-
-				for await (const chunk of readStream) {
-					const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-					entryBytes += buf.length;
-					if (
-						entryBytes > MAX_ENTRY_BYTES ||
-						totalDecompressedBytes + entryBytes > MAX_TOTAL_BYTES
-					) {
-						abortedByBomb = true;
-						readStream.destroy();
-						break;
-					}
-					chunks.push(buf);
-				}
-
-				if (abortedByBomb) {
+				const decision = await visitor(handle);
+				if (decision === "stop") break;
+			} catch (visitorErr: unknown) {
+				if (visitorErr instanceof ZipBombLimitError) {
 					warnings.push("zip_bomb_size_limit_exceeded");
 					break;
 				}
-
-				totalDecompressedBytes += entryBytes;
-				entries.push({ name, data: Buffer.concat(chunks, entryBytes) });
-			} catch (entryErr: unknown) {
-				const reason = entryErr instanceof Error ? entryErr.message : "inflate_error";
+				const reason =
+					visitorErr instanceof Error ? visitorErr.message : "inflate_error";
 				warnings.push(
 					`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}:${reason}`,
 				);
 			}
 		}
 	} catch (err: unknown) {
-		warnings.push(`zip_read_error:${err instanceof Error ? err.message : "corrupted_zip"}`);
+		warnings.push(
+			`zip_read_error:${err instanceof Error ? err.message : "corrupted_zip"}`,
+		);
 	} finally {
 		try {
 			zipfile?.close();
 		} catch {
-			// игнорируем повторное закрытие yauzl
+			// yauzl уже закрыт
 		}
 	}
 
+	return { warnings, visitedCount };
+}
+
+/**
+ * Собирает небольшой поток в Buffer с жёстким лимитом байт (для служебных XML вроде styles.xml).
+ */
+export async function readLimitedStreamToBuffer(stream: Readable): Promise<Buffer> {
+	const chunks: Buffer[] = [];
+	let total = 0;
+	for await (const chunk of stream) {
+		const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+		total += buf.length;
+		chunks.push(buf);
+	}
+	return Buffer.concat(chunks, total);
+}
+
+/**
+ * Потоково находит первую подходящую запись в ZIP и передаёт её Readable-поток
+ * в consumer без полной буферизации архива.
+ */
+export async function openZipEntryStream<T>(
+	source: Buffer | string,
+	entryPredicate: (entryName: string) => boolean,
+	consumer: (stream: Readable, entryName: string) => Promise<T>,
+	options?: IterateZipEntriesOptions,
+): Promise<{ found: boolean; result?: T | undefined; warnings: string[] }> {
+	let found = false;
+	let result: T | undefined;
+
+	const { warnings } = await iterateZipEntries(
+		source,
+		async (entry) => {
+			if (!entryPredicate(entry.name)) return;
+			found = true;
+			const stream = await entry.openStream();
+			result = await consumer(stream, entry.name);
+			return "stop";
+		},
+		options,
+	);
+
+	return { found, result, warnings };
+}
+
+/**
+ * Потоковое чтение небольших/средних записей ZIP-архива из файла на диске или буфера
+ * на базе yauzl (MIT) с защитой от Zip-бомбы (20 МБ на запись, 50 МБ суммарно, макс. 1000 записей).
+ */
+export async function readZipEntriesAsync(
+	source: Buffer | string,
+	options?: IterateZipEntriesOptions,
+): Promise<{
+	entries: ZipEntry[];
+	warnings: string[];
+}> {
+	const entries: ZipEntry[] = [];
+	const { warnings } = await iterateZipEntries(
+		source,
+		async (entry) => {
+			const stream = await entry.openStream();
+			const data = await readLimitedStreamToBuffer(stream);
+			entries.push({ name: entry.name, data });
+		},
+		options,
+	);
 	return { entries, warnings };
 }

@@ -337,7 +337,7 @@ describe("чтение таблиц dBASE/FoxPro", () => {
 });
 
 describe("чтение книг Excel", () => {
-	test("адреса ячеек соблюдаются: пустая ячейка не сдвигает следующие колонки", () => {
+	test("адреса ячеек соблюдаются: пустая ячейка не сдвигает следующие колонки", async () => {
 		/**
 		 * Главная проверка модуля. В формате OpenXML пустая ячейка не записывается,
 		 * поэтому у второй строки нет ячейки B. Разбор по порядку тегов поставил бы
@@ -354,7 +354,7 @@ describe("чтение книг Excel", () => {
 			{ ref: "A3", value: "Петрова Мария" },
 			{ ref: "C3", value: "89161112233" },
 		]);
-		const result = parseXlsx(file);
+		const result = await parseXlsx(file);
 		assert.equal(result.sheets.length, 1);
 		assert.equal(result.sheets[0]?.name, "Пациенты");
 
@@ -365,7 +365,7 @@ describe("чтение книг Excel", () => {
 		assert.deepEqual(rows[2], ["Петрова Мария", "", "89161112233"]);
 	});
 
-	test("дата, сохранённая числом со стилем даты, превращается в дату, а не в серийный номер", () => {
+	test("дата, сохранённая числом со стилем даты, превращается в дату, а не в серийный номер", async () => {
 		const file = buildXlsxFile("Лист1", [
 			{ ref: "A1", value: "ФИО" },
 			{ ref: "B1", value: "Дата рождения" },
@@ -373,29 +373,29 @@ describe("чтение книг Excel", () => {
 			// 33678 — 15.03.1992 в системе Excel (дней от 30.12.1899).
 			{ ref: "B2", value: "33678", type: "date" },
 		]);
-		const rows = parseXlsx(file).sheets[0]?.rows;
+		const rows = (await parseXlsx(file)).sheets[0]?.rows;
 		assert.ok(rows, "rows must be defined");
 		assert.equal(rows[1]?.[1], "1992-03-15");
 	});
 
-	test("число без формата даты остаётся числом", () => {
+	test("число без формата даты остаётся числом", async () => {
 		const file = buildXlsxFile("Лист1", [
 			{ ref: "A1", value: "Услуга" },
 			{ ref: "B1", value: "Цена" },
 			{ ref: "A2", value: "Пломба" },
 			{ ref: "B2", value: "4500", type: "n" },
 		]);
-		assert.equal(parseXlsx(file).sheets[0]?.rows[1]?.[1], "4500");
+		assert.equal((await parseXlsx(file)).sheets[0]?.rows[1]?.[1], "4500");
 	});
 
-	test("пропущенная строка не сдвигает нумерацию", () => {
+	test("пропущенная строка не сдвигает нумерацию", async () => {
 		const file = buildXlsxFile("Лист1", [
 			{ ref: "A1", value: "ФИО" },
 			{ ref: "A2", value: "Иванов" },
 			// Строки 3 нет; следующая — 4.
 			{ ref: "A4", value: "Петрова" },
 		]);
-		const rows = parseXlsx(file).sheets[0]?.rows;
+		const rows = (await parseXlsx(file)).sheets[0]?.rows;
 		assert.ok(rows, "rows must be defined");
 		assert.equal(rows.length, 3);
 		assert.deepEqual(
@@ -523,7 +523,7 @@ describe("разбор структурированных выгрузок", () 
 });
 
 describe("выбор разбора по содержимому источника", () => {
-	test("DBF опознаётся по содержимому, даже если файл назван .txt", () => {
+	test("DBF опознаётся по содержимому, даже если файл назван .txt", async () => {
 		const dbf = buildDbfFile(
 			[
 				{ name: "FIO", type: "C", length: 30 },
@@ -532,14 +532,14 @@ describe("выбор разбора по содержимому источник
 			[["Иванов Иван", "89001234567"]],
 			{ languageDriver: 0xc9, encoding: "windows-1251" },
 		);
-		const parsed = parseSource({ sourceName: "patients.txt", content: dbf });
+		const parsed = await parseSource({ sourceName: "patients.txt", content: dbf });
 		assert.equal(parsed.sourceKind, "dbf");
 		assert.equal(parsed.detectedEncoding, "windows-1251");
 		assert.equal(parsed.tables[0]?.rows[0]?.[0], "Иванов Иван");
 	});
 
-	test("CSV в windows-1251 читается через определение кодировки", () => {
-		const parsed = parseSource({
+	test("CSV в windows-1251 читается через определение кодировки", async () => {
+		const parsed = await parseSource({
 			sourceName: "patients.csv",
 			content: encodeSingleByte(PATIENT_TEXT, "windows-1251"),
 		});
@@ -554,8 +554,8 @@ describe("выбор разбора по содержимому источник
 		]);
 	});
 
-	test("вставка из буфера обмена помечается своим видом источника", () => {
-		const parsed = parseSource({
+	test("вставка из буфера обмена помечается своим видом источника", async () => {
+		const parsed = await parseSource({
 			sourceName: "Вставка",
 			rawText: PATIENT_TEXT,
 		});
@@ -563,8 +563,8 @@ describe("выбор разбора по содержимому источник
 		assert.equal(parsed.totalRows, 4);
 	});
 
-	test("свободный текст не разбирается как таблица", () => {
-		const parsed = parseSource({
+	test("свободный текст не разбирается как таблица", async () => {
+		const parsed = await parseSource({
 			sourceName: "Журнал",
 			rawText:
 				"Иванов Иван Иванович 89001234567 01.01.1980 боль\nПетрова Мария 89161112233 плановый осмотр",
@@ -574,8 +574,8 @@ describe("выбор разбора по содержимому источник
 		assert.equal(parsed.totalRows, 2);
 	});
 
-	test("дамп SQL опознаётся и отклоняется, а не разбирается вслепую", () => {
-		assert.throws(
+	test("дамп SQL опознаётся и отклоняется, а не разбирается вслепую", async () => {
+		await assert.rejects(
 			() =>
 				parseSource({
 					sourceName: "backup.sql",
@@ -586,8 +586,8 @@ describe("выбор разбора по содержимому источник
 		);
 	});
 
-	test("книга Excel разбирается по листам с сохранением позиций колонок", () => {
-		const parsed = parseSource({
+	test("книга Excel разбирается по листам с сохранением позиций колонок", async () => {
+		const parsed = await parseSource({
 			sourceName: "База.xlsx",
 			content: buildXlsxFile("Пациенты", [
 				{ ref: "A1", value: "ФИО" },
@@ -606,8 +606,8 @@ describe("выбор разбора по содержимому источник
 		]);
 	});
 
-	test("пустой источник не роняет разбор", () => {
-		const parsed = parseSource({ sourceName: "empty.csv" });
+	test("пустой источник не роняет разбор", async () => {
+		const parsed = await parseSource({ sourceName: "empty.csv" });
 		assert.equal(parsed.totalRows, 0);
 		assert.ok(parsed.warnings.some((warning) => warning.includes("пуст")));
 	});

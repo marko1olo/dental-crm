@@ -189,7 +189,7 @@ function findSuspectRows(
 	return [...suspect].sort((left, right) => left - right);
 }
 
-export function parseSource(input: ParseSourceInput): ParsedSource {
+export async function parseSource(input: ParseSourceInput): Promise<ParsedSource> {
 	const warnings: string[] = [];
 
 	// ------------------------------------------------------------------
@@ -252,7 +252,7 @@ export function parseSource(input: ParseSourceInput): ParsedSource {
 			const isOds =
 				extension === "ods" ||
 				buffer.includes(Buffer.from("opendocument.spreadsheet"));
-			const result = isOds ? parseOds(buffer) : parseXlsx(buffer);
+			const result = isOds ? await parseOds(buffer) : await parseXlsx(buffer);
 
 			if (result.sheets.length > 0) {
 				const tables = result.sheets.map((sheet) => {

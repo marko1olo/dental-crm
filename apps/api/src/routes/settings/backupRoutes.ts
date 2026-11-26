@@ -3,21 +3,36 @@ import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
+import pg from "pg";
 import { z } from "zod";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
+import { requireDatabaseUrl } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	backupsDirectory,
 	createTenantEncryptedBackup,
+	resolveEncryptionKey,
+	restoreTenantSnapshotStreaming,
 } from "../../services/backupWorker.js";
 import {
 	requireSettingsMutationAccess,
 	requireSettingsSensitiveReadAccess,
 } from "./helpers.js";
 
-const createBackupBodySchema = z.object({}).strict().optional();
+const createBackupBodySchema = z
+	.object({
+		sanitizeForSupport: z.boolean().optional(),
+	})
+	.strict()
+	.optional();
+
+const restoreBackupBodySchema = z
+	.object({
+		filename: z.string().min(1).max(255),
+	})
+	.strict();
 
 async function pathExists(targetPath: string): Promise<boolean> {
 	try {
@@ -35,6 +50,19 @@ async function computeFileSha256Stream(filePath: string): Promise<string> {
 		hash.update(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
 	}
 	return hash.digest("hex");
+}
+
+async function readArchiveMagic(filePath: string): Promise<string> {
+	const fh = await fsPromises.open(filePath, "r");
+	const buf = Buffer.alloc(8);
+	try {
+		const { bytesRead } = await fh.read(buf, 0, 8, 0);
+		const ascii = buf.subarray(0, bytesRead).toString("ascii");
+		if (ascii === "DENTETB2" || ascii === "DENTETB1") return ascii;
+		return "legacy";
+	} finally {
+		await fh.close();
+	}
 }
 
 async function mapWithConcurrency<T, R>(
@@ -88,12 +116,16 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 					const fullPath = path.join(dir, filename);
 					const stat = await fsPromises.stat(fullPath);
 					let sha256 = "";
+					let format = "legacy";
 					try {
-						sha256 = await computeFileSha256Stream(fullPath);
+						[sha256, format] = await Promise.all([
+							computeFileSha256Stream(fullPath),
+							readArchiveMagic(fullPath),
+						]);
 					} catch (hashErr: unknown) {
 						request.log.warn(
 							{ err: safeLogError(hashErr), filename },
-							"[backup] Failed to compute backup SHA-256",
+							"[backup] Failed to compute backup metadata",
 						);
 						sha256 = "";
 					}
@@ -101,6 +133,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 						id: filename,
 						filename,
 						filePath: fullPath,
+						format,
 						sizeBytes: stat.size,
 						createdAt: stat.mtime.toISOString(),
 						sha256,
@@ -126,7 +159,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 	});
 
 	/**
-	 * Запустить реальное создание зашифрованной резервной копии базы клиники.
+	 * Запустить реальное создание зашифрованной резервной копии базы клиники (DENTETB2).
 	 */
 	app.post("/api/settings/backup/create", async (request, reply) => {
 		const orgId = await requireSettingsMutationAccess(request, reply);
@@ -151,7 +184,9 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			};
 		}
 
-		const outcome = await createTenantEncryptedBackup(orgId);
+		const outcome = await createTenantEncryptedBackup(orgId, {
+			sanitizeForSupport: bodyParsed.data?.sanitizeForSupport,
+		});
 		if (!outcome.success || !outcome.filePath) {
 			reply.code(500);
 			return {
@@ -210,9 +245,146 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			success: true,
 			filePath: finalPath,
 			filename: finalFilename,
+			format: "DENTETB2",
 			sizeBytes: stat.size,
 			createdAt: stat.mtime.toISOString(),
 			sha256,
 		};
 	});
+
+	/**
+	 * Потоково восстановить клинику из локальной зашифрованной резервной копии
+	 * (`DENTETB2` или legacy `DENTETB1`) с проверкой GCM AuthTag до `COMMIT`.
+	 */
+	app.post(
+		"/api/settings/backup/restore",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const orgId = await requireSettingsMutationAccess(request, reply);
+			if (!orgId) return;
+
+			const bodyParsed = restoreBackupBodySchema.safeParse(request.body);
+			if (!bodyParsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Укажите корректное имя файла резервной копии.",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			if (identity.userId && identity.role !== "owner") {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					message:
+						"Восстановление резервной копии базы данных доступно только владельцу клиники.",
+				});
+			}
+
+			const keyResult = resolveEncryptionKey();
+			if ("error" in keyResult) {
+				return reply.code(500).send({
+					error: "EncryptionKeyMissing",
+					message: keyResult.error,
+				});
+			}
+
+			const { filename } = bodyParsed.data;
+			const orgPrefix = `org_${orgId}_`;
+			if (
+				filename.includes("/") ||
+				filename.includes("\\") ||
+				filename.includes("..") ||
+				path.basename(filename) !== filename ||
+				!filename.startsWith(orgPrefix) ||
+				!filename.endsWith(".dentalbackup")
+			) {
+				return reply.code(400).send({
+					error: "InvalidBackupFilename",
+					message: "Недопустимое имя файла резервной копии для этой организации.",
+				});
+			}
+
+			const rootDir = path.resolve(backupsDirectory());
+			const resolvedPath = path.resolve(rootDir, filename);
+			if (!resolvedPath.startsWith(`${rootDir}${path.sep}`)) {
+				return reply.code(400).send({
+					error: "InvalidBackupPath",
+					message: "Путь к резервной копии выходит за пределы безопасной директории.",
+				});
+			}
+
+			if (!(await pathExists(resolvedPath))) {
+				return reply.code(404).send({
+					error: "BackupNotFound",
+					message: "Файл резервной копии не найден.",
+				});
+			}
+
+			const pgClient = new pg.Client({ connectionString: requireDatabaseUrl() });
+			try {
+				await pgClient.connect();
+				const result = await restoreTenantSnapshotStreaming({
+					archivePath: resolvedPath,
+					encryptionKey32Bytes: keyResult.key,
+					expectedOrganizationId: orgId,
+					pgClient,
+				});
+
+				try {
+					await withTenantCtx(orgId, async (tx) =>
+						recordAuditEventInDb(
+							orgId,
+							{
+								entityType: "backup",
+								entityId: filename,
+								action: "BACKUP_RESTORED",
+								actorUserId: identity.userId,
+								reason: `format=${result.format}, tables=${result.restoredTables}, rows=${result.restoredRows}`,
+							},
+							tx,
+						),
+					);
+				} catch (auditErr: unknown) {
+					request.log.warn(
+						{ err: safeLogError(auditErr), organizationId: orgId, filename },
+						"[backup] Failed to record BACKUP_RESTORED audit event",
+					);
+				}
+
+				return {
+					success: true,
+					filename,
+					format: result.format,
+					restoredTables: result.restoredTables,
+					restoredRows: result.restoredRows,
+				};
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				request.log.error(
+					{ err: safeLogError(err), organizationId: orgId, filename },
+					"[backup] Failed to restore tenant backup",
+				);
+				const isIntegrityOrTenantErr =
+					/Unsupported state|unable to authenticate|Tenant mismatch|Corrupted backup|Unsupported archive|Incomplete backup/i.test(
+						msg,
+					);
+				return reply.code(isIntegrityOrTenantErr ? 400 : 500).send({
+					success: false,
+					error: isIntegrityOrTenantErr ? "BackupIntegrityFailed" : "BackupRestoreFailed",
+					message: isIntegrityOrTenantErr
+						? "Архив повреждён, подделан или не принадлежит данной клинике; изменения в БД полностью отменены."
+						: "Ошибка восстановления резервной копии; изменения в БД отменены.",
+				});
+			} finally {
+				try {
+					await pgClient.end();
+				} catch (endErr) {
+					request.log.warn(
+						{ err: safeLogError(endErr) },
+						"[backup] Failed to close restore pg.Client",
+					);
+				}
+			}
+		},
+	);
 }

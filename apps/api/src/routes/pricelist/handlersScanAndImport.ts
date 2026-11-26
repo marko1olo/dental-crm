@@ -39,7 +39,7 @@ export async function handleScanAndImport(
 
 	let scanInput: string | string[][] = "";
 	try {
-		scanInput = resolveSpreadsheetScanInput({
+		scanInput = await resolveSpreadsheetScanInput({
 			fileBase64, rawContent, rawText, filename, selectedSheetIndex, commit, approvedItems,
 		});
 	} catch (err: unknown) {

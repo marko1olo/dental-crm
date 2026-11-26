@@ -90,7 +90,7 @@ export async function importPatientsStream(params: {
 
 	let matrix: string[][];
 	if (Buffer.isBuffer(bufferOrText)) {
-		matrix = parseSpreadsheetBufferToMatrix(bufferOrText, filename).rows;
+		matrix = (await parseSpreadsheetBufferToMatrix(bufferOrText, filename)).rows;
 	} else {
 		matrix = parseDelimitedTextToMatrix(bufferOrText);
 	}
