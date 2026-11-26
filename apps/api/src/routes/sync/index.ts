@@ -9,6 +9,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
+import { SyncStreamTransport } from "../../services/sync/syncGateway/syncStreamTransport.js";
 import { SyncGatewayService } from "../../services/sync/syncGatewayService.js";
 import { SyncAdministrativeHandlers } from "./syncAdministrativeHandlers.js";
 import { RouteSyncQueueManager } from "./syncQueueManager.js";
@@ -138,7 +139,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 		}
 		const since = parsed.data.since;
 
-		const result = await SyncGatewayService.pullChanges(orgId, parsed.data.since, {
+		const result = await SyncStreamTransport.pullChanges(orgId, parsed.data.since, {
 			limit: parsed.data.limit,
 			cursor: parsed.data.cursor,
 		});
@@ -171,7 +172,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 				issues: parsed.error.issues,
 			});
 		}
-		const result = await SyncGatewayService.pullChanges(orgId, parsed.data.since, {
+		const result = await SyncStreamTransport.pullChanges(orgId, parsed.data.since, {
 			limit: parsed.data.limit,
 			cursor: parsed.data.cursor,
 		});
