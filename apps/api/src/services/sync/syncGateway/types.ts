@@ -109,10 +109,21 @@ export interface EntityMutationHandlerResult {
 }
 
 /**
+ * Options for paginated catch-up pull synchronization.
+ */
+export interface SyncPullOptions {
+	limit?: number | undefined;
+	cursor?: string | undefined;
+}
+
+/**
  * Comprehensive result of pulling changed records for offline catch-up.
  */
 export interface SyncPullResult {
 	serverTime: string;
+	nextCursor: string | null;
+	hasMore: boolean;
+	limit: number;
 	patients: unknown[];
 	visits: unknown[];
 	visitDiaries: unknown[];

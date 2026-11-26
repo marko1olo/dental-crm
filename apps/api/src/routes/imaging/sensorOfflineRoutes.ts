@@ -15,6 +15,7 @@ import { patients, xrayScans } from "../../db/schema.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { createImagingStudyInDb } from "../../db/imagingQuery.js";
 import { parseDicomHeader } from "./dicomParsing.js";
+import { registerChunkedUploadRoutes } from "./chunkedUploadRoutes.js";
 import type { DicomHeaderMetadata } from "./imagingConstants.js";
 import {
 	LocalPacsStorageService,
@@ -519,4 +520,6 @@ export async function registerSensorOfflineRoutes(app: FastifyInstance) {
 			total: pending.length,
 		});
 	});
+
+	await registerChunkedUploadRoutes(app);
 }

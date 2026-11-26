@@ -16,6 +16,8 @@ import { RouteSyncQueueManager } from "./syncQueueManager.js";
 const syncPullQuerySchema = z
 	.object({
 		since: z.string().optional(),
+		cursor: z.string().optional(),
+		limit: z.coerce.number().int().min(1).max(1000).optional(),
 	})
 	.strict();
 
@@ -136,7 +138,10 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 		}
 		const since = parsed.data.since;
 
-		const result = await SyncGatewayService.pullChanges(orgId, since);
+		const result = await SyncGatewayService.pullChanges(orgId, parsed.data.since, {
+			limit: parsed.data.limit,
+			cursor: parsed.data.cursor,
+		});
 		return reply.code(200).send(result);
 	});
 
@@ -166,7 +171,10 @@ export async function registerSyncRoutes(app: FastifyInstance) {
 				issues: parsed.error.issues,
 			});
 		}
-		const result = await SyncGatewayService.pullChanges(orgId, parsed.data.since);
+		const result = await SyncGatewayService.pullChanges(orgId, parsed.data.since, {
+			limit: parsed.data.limit,
+			cursor: parsed.data.cursor,
+		});
 		return reply.code(200).send(result);
 	});
 

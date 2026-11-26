@@ -16,11 +16,13 @@ import { withTenantCtx } from "../db/rls.js";
 import { users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../accessGuard.js";
 import {
+	browseMdnsDenteServers,
 	getLanServerDiscoveryMetadata,
 	getLocalLanAddresses,
 	getPrimaryLanIp,
@@ -32,6 +34,7 @@ import {
 	hasLanMeshAutoJoinServiceForOrg,
 } from "../services/lanMeshAutoJoinService.js";
 import { SyncGatewayService } from "../services/sync/syncGatewayService.js";
+import { wsBroker } from "../services/websocketBroker.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 import {
 	type MeshSyncExchangeResponse,
@@ -134,9 +137,18 @@ interface AutoJoinRouteRateLimitEntry {
 	lockedUntil: number;
 }
 
-const activePairingNonces = new Map<string, ActivePairingNonceEntry>();
-const usedPairingNonces = new Set<string>();
-const autoJoinRouteRateLimits = new Map<string, AutoJoinRouteRateLimitEntry>();
+const activePairingNonces = new BoundedTtlMap<string, ActivePairingNonceEntry>({
+	maxEntries: 1024,
+	ttlMs: DEFAULT_PAIRING_TTL_SECONDS * 1000,
+});
+const usedPairingNonces = new BoundedTtlMap<string, true>({
+	maxEntries: 4096,
+	ttlMs: DEFAULT_PAIRING_TTL_SECONDS * 1000,
+});
+const autoJoinRouteRateLimits = new BoundedTtlMap<string, AutoJoinRouteRateLimitEntry>({
+	maxEntries: 2048,
+	ttlMs: AUTO_JOIN_ROUTE_WINDOW_MS * 2,
+});
 
 function isPrivateOrLoopbackIp(rawIp: string): boolean {
 	const ip = rawIp.trim().replace(/^::ffff:/i, "");
@@ -200,12 +212,9 @@ export function clearAutoJoinRateLimitsForTest(): void {
 }
 
 export function purgeExpiredPairingNonces(): void {
-	const now = Date.now();
-	for (const [nonce, entry] of activePairingNonces.entries()) {
-		if (entry.expiresAt <= now) {
-			activePairingNonces.delete(nonce);
-		}
-	}
+	activePairingNonces.pruneExpired();
+	usedPairingNonces.pruneExpired();
+	autoJoinRouteRateLimits.pruneExpired();
 }
 
 export function getActivePairingNoncesCount(): number {
@@ -455,7 +464,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const nonceEntry = activePairingNonces.get(nonce);
 		if (!nonceEntry || nonceEntry.expiresAt <= Date.now()) {
 			if (nonceEntry) activePairingNonces.delete(nonce);
-			usedPairingNonces.add(nonce);
+			usedPairingNonces.set(nonce, true);
 			return reply.code(401).send({
 				error: "PairingTokenExpiredOrUsed",
 				message: "Данный QR-код уже был использован или срок его действия истек. Обновите QR-код на сервере.",
@@ -472,7 +481,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		// SINGLE-USE GUARANTEE: Invalidate nonce immediately so token can NEVER be reused!
 		activePairingNonces.delete(nonce);
-		usedPairingNonces.add(nonce);
+		usedPairingNonces.set(nonce, true);
 
 		// Issue valid clinic token
 		const clinicToken = signToken(
@@ -486,12 +495,15 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		);
 
 		// Lookup explicitly bound staff user only (never pick arbitrary first user)
+		// and persist a CSPRNG sessionId so verifyActiveStaffSession accepts the paired staffToken.
 		let matchedUser: { id: string; fullName: string; role: string } | null = null;
+		let pairedSessionId: string | null = null;
 
 		if (staffUserId) {
 			const targetStaffId = staffUserId;
-			const [user] = await withTenantCtx(orgId, async (tx) => {
-				return tx
+			const nextSessionId = crypto.randomUUID();
+			const userWithSession = await withTenantCtx(orgId, async (tx) => {
+				const [user] = await tx
 					.select({ id: users.id, fullName: users.fullName, role: users.role })
 					.from(users)
 					.where(
@@ -501,31 +513,44 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 						),
 					)
 					.limit(1);
+				if (!user) return null;
+				await tx
+					.update(users)
+					.set({ currentSessionId: nextSessionId })
+					.where(
+						and(
+							eq(users.id, user.id),
+							eq(users.organizationId, orgId),
+						),
+					);
+				return { user, sessionId: nextSessionId };
 			});
-			if (!user) {
+			if (!userWithSession) {
 				return reply.code(403).send({
 					ok: false,
 					error: "StaffUserNotFound",
 					message: "Указанный сотрудник не найден в этой клинике.",
 				});
 			}
-			matchedUser = user;
+			matchedUser = userWithSession.user;
+			pairedSessionId = userWithSession.sessionId;
 		}
 
-		// Issue signed staff token only for explicitly matched user
-		const staffToken = matchedUser
-			? signToken(
-					{
-						userId: matchedUser.id,
-						fullName: matchedUser.fullName,
-						role: matchedUser.role,
-						organizationId: orgId,
-						sessionId: `paired_${Date.now()}`,
-					},
-					authTokenSecret(),
-					60 * 60 * 12, // 12h shift
-				)
-			: null;
+		// Issue signed staff token only for explicitly matched user with persisted CSPRNG sessionId
+		const staffToken =
+			matchedUser && pairedSessionId
+				? signToken(
+						{
+							userId: matchedUser.id,
+							fullName: matchedUser.fullName,
+							role: matchedUser.role,
+							organizationId: orgId,
+							sessionId: pairedSessionId,
+						},
+						authTokenSecret(),
+						60 * 60 * 12, // 12h shift
+					)
+				: null;
 
 		return reply.send({
 			ok: true,
@@ -714,13 +739,9 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 				{ dbErr },
 				"[lanNetwork] Failed to persist mutations to Postgres; rejecting batch honestly instead of silent memory lie",
 			);
-			for (const mut of parseRes.data.mutations) {
-				meshService.getRingBuffer().push(mut);
-			}
 			return reply.code(503).send({
 				ok: false,
 				persisted: false,
-				queuedInMemory: true,
 				error: "DatabasePersistenceFailed",
 				message: "Не удалось сохранить мутации в PostgreSQL.",
 				processedCount: parseRes.data.mutations.length,
@@ -895,18 +916,30 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 				message: "Запрещена отправка P2P-сообщений для другой организации.",
 			});
 		}
+		const identity = getRequestIdentity(request);
+		wsBroker.broadcastToOrganization(context.organizationId, {
+			type: "LAN_P2P_EVENT",
+			payload: {
+				...msg,
+				organizationId: context.organizationId,
+				senderUserId: identity.userId ?? null,
+			},
+		});
+
 		request.log.info(
 			{
 				messageId: msg.messageId,
 				eventType: msg.eventType,
 				senderNodeId: msg.senderNodeId,
 				senderRole: msg.senderRole,
+				organizationId: context.organizationId,
 			},
-			`[lanNetwork] Received P2P LAN event: ${msg.eventType}`,
+			`[lanNetwork] Broadcast P2P LAN event to org WS clients: ${msg.eventType}`,
 		);
 
 		return reply.code(200).send({
 			ok: true,
+			broadcasted: true,
 			messageId: msg.messageId,
 			eventType: msg.eventType,
 			receivedAt: new Date().toISOString(),
@@ -923,11 +956,15 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		const meshService = getLanMeshService();
 		meshService.broadcastBeacon();
-		const discovered = await meshService.probeSubnetHttp();
+		const [discovered, mdnsServers] = await Promise.all([
+			meshService.probeSubnetHttp(),
+			browseMdnsDenteServers(800),
+		]);
 
 		return reply.send({
 			ok: true,
 			discoveredEndpoints: discovered,
+			mdnsServers,
 			peers: meshService.getKnownPeers(),
 			statusBadge: meshService.getStatusBadge(),
 		});
@@ -1149,6 +1186,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		resetAutoJoinRouteRateLimit(clientIp);
 		return reply.send({
 			ok: true,
+			clinicToken: joinResult.clinicToken,
 			join: joinResult,
 		});
 	});

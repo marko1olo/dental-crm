@@ -15,6 +15,7 @@ import * as childProcess from "node:child_process";
 import * as crypto from "node:crypto";
 import * as dgram from "node:dgram";
 import * as os from "node:os";
+import Bonjour, { type Browser, type Service } from "bonjour-service";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
 
 const logger = createApiLogger("lanDiscoveryService");
@@ -54,9 +55,73 @@ export interface LanEvaluationOptions {
 	readonly platform?: NodeJS.Platform;
 }
 
+export interface LanPublicDiscoverySummary {
+	readonly serverName: string;
+	readonly serverId: string;
+	readonly apiPort: number;
+	readonly webPort: number;
+	readonly primaryIp: string;
+	readonly version: string;
+	readonly status: "online" | "degraded";
+	readonly onlineSince: string;
+	readonly timestamp: string;
+}
+
+export interface MdnsDiscoveredServer {
+	readonly serverName: string;
+	readonly serverId: string | null;
+	readonly host: string;
+	readonly address: string;
+	readonly apiPort: number;
+	readonly webPort: number;
+	readonly version: string;
+}
+
+export type LanDiscoveryUdpListener = (msg: Buffer, rinfo: dgram.RemoteInfo) => void;
+
 const serverStartupTime = new Date().toISOString();
 const serverInstanceId = crypto.randomUUID();
 let activeUdpSocket: dgram.Socket | null = null;
+let activeBonjour: Bonjour | null = null;
+let activeMdnsService: Service | null = null;
+const udpMessageListeners = new Set<LanDiscoveryUdpListener>();
+
+export function getLanDiscoveryUdpSocket(): dgram.Socket | null {
+	return activeUdpSocket;
+}
+
+export function registerLanDiscoveryUdpListener(listener: LanDiscoveryUdpListener): () => void {
+	udpMessageListeners.add(listener);
+	return () => {
+		udpMessageListeners.delete(listener);
+	};
+}
+
+export function sendLanDiscoveryUdpPacket(
+	payload: Buffer | string,
+	port: number,
+	address: string,
+	useBroadcast = false,
+): Promise<void> {
+	return new Promise((resolve) => {
+		const sock = activeUdpSocket;
+		if (!sock) {
+			resolve();
+			return;
+		}
+		if (useBroadcast) {
+			try {
+				sock.setBroadcast(true);
+			} catch {
+				// Ignore broadcast toggle errors on restricted adapters
+			}
+		}
+		const buf = typeof payload === "string" ? Buffer.from(payload, "utf8") : payload;
+		sock.send(buf, 0, buf.length, port, address, () => {
+			resolve();
+		});
+	});
+}
 
 let macHardwarePortsCache: {
 	timestamp: number;
@@ -526,10 +591,122 @@ export function getLanServerDiscoveryMetadata(): LanDiscoveryMetadata {
 }
 
 /**
- * Starts UDP discovery responder on local network.
+ * Returns minimal public LAN server summary safe for unauthenticated discovery
+ * (no MAC addresses, no multi-NIC topology, no hostnames).
+ */
+export function getPublicLanDiscoverySummary(): LanPublicDiscoverySummary {
+	const apiPort = Number.parseInt(process.env.API_PORT || "4100", 10);
+	const webPort = Number.parseInt(process.env.WEB_PORT || "4000", 10);
+	const lanAddresses = getLocalLanAddresses();
+	const primaryIp = lanAddresses[0] || "127.0.0.1";
+
+	return {
+		serverName: "DENTE Dental CRM Server",
+		serverId: serverInstanceId,
+		apiPort,
+		webPort,
+		primaryIp,
+		version: "0.1.0",
+		status: "online",
+		onlineSince: serverStartupTime,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+function isPrivateOrLoopbackHost(address: string): boolean {
+	if (address === "127.0.0.1" || address === "::1" || address === "localhost") return true;
+	const parts = address.split(".");
+	if (parts.length !== 4) return false;
+	const o1 = Number.parseInt(parts[0] || "", 10);
+	const o2 = Number.parseInt(parts[1] || "", 10);
+	if (o1 === 10) return true;
+	if (o1 === 172 && o2 >= 16 && o2 <= 31) return true;
+	if (o1 === 192 && o2 === 168) return true;
+	return false;
+}
+
+function extractTxtRecordValue(txt: unknown, key: string): string | null {
+	if (!txt || typeof txt !== "object") return null;
+	const rec = txt as Record<string, unknown>;
+	const val = rec[key];
+	return typeof val === "string" && val.trim() ? val.trim() : null;
+}
+
+/**
+ * Discovers `_dente._tcp.local` clinic servers via real mDNS (Bonjour).
+ */
+export async function browseMdnsDenteServers(timeoutMs = 1500): Promise<MdnsDiscoveredServer[]> {
+	if (process.env.DENTE_DISABLE_MDNS === "1") {
+		return [];
+	}
+
+	return new Promise<MdnsDiscoveredServer[]>((resolve) => {
+		const found = new Map<string, MdnsDiscoveredServer>();
+		let browser: Browser | null = null;
+		let mdns: Bonjour | null = null;
+		let settled = false;
+
+		const finish = () => {
+			if (settled) return;
+			settled = true;
+			try {
+				browser?.stop();
+			} catch {
+				// Ignore cleanup errors
+			}
+			try {
+				mdns?.destroy();
+			} catch {
+				// Ignore cleanup errors
+			}
+			resolve(Array.from(found.values()));
+		};
+
+		const timer = setTimeout(finish, Math.max(200, Math.min(timeoutMs, 5000)));
+		timer.unref?.();
+
+		try {
+			mdns = new Bonjour(undefined, (err: unknown) => {
+				logger.warn({ err: safeLogError(err) }, "[LanDiscoveryService] mDNS browse error (non-critical)");
+			});
+			browser = mdns.find({ type: "dente", protocol: "tcp" }, (svc) => {
+				const candidates = Array.isArray(svc.addresses) ? svc.addresses : [];
+				const ipv4 =
+					candidates.find((addr) => addr.includes(".") && isPrivateOrLoopbackHost(addr)) ||
+					extractTxtRecordValue(svc.txt, "primaryIp") ||
+					(svc.referer?.address && isPrivateOrLoopbackHost(svc.referer.address) ? svc.referer.address : null);
+
+				if (!ipv4) return;
+				const apiPortStr = extractTxtRecordValue(svc.txt, "apiPort");
+				const webPortStr = extractTxtRecordValue(svc.txt, "webPort");
+				const apiPort = apiPortStr ? Number.parseInt(apiPortStr, 10) || svc.port : svc.port;
+				const webPort = webPortStr ? Number.parseInt(webPortStr, 10) || 5173 : 5173;
+				const key = `${ipv4}:${apiPort}`;
+
+				found.set(key, {
+					serverName: svc.name || "DENTE Dental CRM Server",
+					serverId: extractTxtRecordValue(svc.txt, "serverId"),
+					host: svc.host || `${ipv4}`,
+					address: ipv4,
+					apiPort,
+					webPort,
+					version: extractTxtRecordValue(svc.txt, "version") || "0.1.0",
+				});
+			});
+		} catch (err: unknown) {
+			logger.warn({ err: safeLogError(err) }, "[LanDiscoveryService] mDNS browse initialization skipped");
+			clearTimeout(timer);
+			finish();
+		}
+	});
+}
+
+/**
+ * Starts UDP discovery responder and mDNS `_dente._tcp.local` advertisement on local network.
  */
 export function startLanDiscoveryService(options: {
 	port?: number;
+	disableMdns?: boolean;
 	logger?: {
 		info: (...args: unknown[]) => void;
 		error: (...args: unknown[]) => void;
@@ -539,6 +716,47 @@ export function startLanDiscoveryService(options: {
 	const udpPort =
 		options.port || Number.parseInt(process.env.DENTE_DISCOVERY_UDP_PORT || "4101", 10);
 	const log = options.logger;
+	let mdnsInstance: Bonjour | null = null;
+	let mdnsService: Service | null = null;
+
+	if (!options.disableMdns && process.env.DENTE_DISABLE_MDNS !== "1") {
+		try {
+			const summary = getPublicLanDiscoverySummary();
+			mdnsInstance = new Bonjour(undefined, (err: unknown) => {
+				const message = err instanceof Error ? err.message : String(err);
+				if (log?.warn) {
+					log.warn(`[LanDiscoveryService] mDNS socket notice (port 5353): ${message}`);
+				}
+			});
+			activeBonjour = mdnsInstance;
+			mdnsService = mdnsInstance.publish({
+				name: `DENTE Dental CRM (${summary.primaryIp})`,
+				type: "dente",
+				protocol: "tcp",
+				port: summary.apiPort,
+				txt: {
+					serverId: summary.serverId,
+					primaryIp: summary.primaryIp,
+					apiPort: String(summary.apiPort),
+					webPort: String(summary.webPort),
+					version: summary.version,
+				},
+			});
+			mdnsService.on("error", (err: unknown) => {
+				const message = err instanceof Error ? err.message : String(err);
+				if (log?.warn) {
+					log.warn(`[LanDiscoveryService] mDNS advertisement notice: ${message}`);
+				}
+			});
+			activeMdnsService = mdnsService;
+			log?.info?.(`[LanDiscoveryService] mDNS advertisement active: _dente._tcp.local -> ${summary.primaryIp}:${summary.apiPort}`);
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			if (log?.warn) {
+				log.warn(`[LanDiscoveryService] Could not start mDNS (_dente._tcp.local): ${message}`);
+			}
+		}
+	}
 
 	try {
 		const socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
@@ -549,6 +767,14 @@ export function startLanDiscoveryService(options: {
 		});
 
 		socket.on("message", (msg, rinfo) => {
+			for (const listener of udpMessageListeners) {
+				try {
+					listener(msg, rinfo);
+				} catch {
+					// Keep discovery socket isolated from mesh listener errors
+				}
+			}
+
 			const query = msg.toString("utf8").trim();
 			if (
 				query.includes("DENTE_DISCOVERY_PROBE") ||
@@ -556,25 +782,25 @@ export function startLanDiscoveryService(options: {
 				query.includes("DISCOVER") ||
 				query.includes("ST: urn:dente")
 			) {
-				const metadata = getLanServerDiscoveryMetadata();
+				const summary = getPublicLanDiscoverySummary();
 				let responseBuffer: Buffer;
 
 				if (query.includes("M-SEARCH") || query.includes("ST:")) {
-					const primaryIp = metadata.primaryIp;
+					const primaryIp = summary.primaryIp;
 					const ssdpResponse = [
 						"HTTP/1.1 200 OK",
 						"CACHE-CONTROL: max-age=1800",
 						"EXT:",
-						`LOCATION: http://${primaryIp}:${metadata.apiPort}/api/health/discovery`,
+						`LOCATION: http://${primaryIp}:${summary.apiPort}/api/health/discovery`,
 						"SERVER: DENTE-Dental-CRM-Server/0.1.0 UPnP/1.1",
 						"ST: urn:dente:service:clinic-server:1",
-						`USN: uuid:${metadata.serverId}::urn:dente:service:clinic-server:1`,
+						`USN: uuid:${summary.serverId}::urn:dente:service:clinic-server:1`,
 						"",
 						"",
 					].join("\r\n");
 					responseBuffer = Buffer.from(ssdpResponse, "utf8");
 				} else {
-					responseBuffer = Buffer.from(JSON.stringify(metadata), "utf8");
+					responseBuffer = Buffer.from(JSON.stringify(summary), "utf8");
 				}
 
 				socket.send(
@@ -599,6 +825,7 @@ export function startLanDiscoveryService(options: {
 				log.info(`[LanDiscoveryService] Listening for LAN discovery queries on UDP port ${udpPort}`);
 			}
 			try {
+				socket.setBroadcast(true);
 				socket.addMembership("239.255.255.250");
 			} catch (err: unknown) {
 				if (log?.warn)
@@ -610,6 +837,18 @@ export function startLanDiscoveryService(options: {
 
 		return {
 			stop: () => {
+				try {
+					mdnsService?.stop?.();
+				} catch {
+					// Ignore mDNS stop errors
+				}
+				try {
+					mdnsInstance?.destroy?.();
+				} catch {
+					// Ignore mDNS destroy errors
+				}
+				if (activeMdnsService === mdnsService) activeMdnsService = null;
+				if (activeBonjour === mdnsInstance) activeBonjour = null;
 				try {
 					socket.close();
 				} catch (err: unknown) {
@@ -624,14 +863,41 @@ export function startLanDiscoveryService(options: {
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		if (log) log.error(`[LanDiscoveryService] Could not bind UDP discovery socket: ${message}`);
-		return { stop: () => {} };
+		return {
+			stop: () => {
+				try {
+					mdnsService?.stop?.();
+					mdnsInstance?.destroy?.();
+				} catch {
+					// Ignore cleanup errors
+				}
+				if (activeMdnsService === mdnsService) activeMdnsService = null;
+				if (activeBonjour === mdnsInstance) activeBonjour = null;
+			},
+		};
 	}
 }
 
 /**
- * Stops any active LAN discovery UDP socket.
+ * Stops any active LAN discovery UDP socket and mDNS advertisement.
  */
 export function stopLanDiscoveryService(): void {
+	if (activeMdnsService) {
+		try {
+			activeMdnsService.stop?.();
+		} catch {
+			// Ignore cleanup errors
+		}
+		activeMdnsService = null;
+	}
+	if (activeBonjour) {
+		try {
+			activeBonjour.destroy?.();
+		} catch {
+			// Ignore cleanup errors
+		}
+		activeBonjour = null;
+	}
 	if (activeUdpSocket) {
 		try {
 			activeUdpSocket.close();

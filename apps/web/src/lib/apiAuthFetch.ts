@@ -50,6 +50,11 @@ import {
 	safeLocalStorageSetItem,
 } from "./safeLocalStorage";
 import { resilientFetch } from "./resilience/apiClientResilience";
+import { isLocalOrLanHostname } from "../utils/networkConnectivity";
+import {
+	STORAGE_KEY_ACTIVE_BASE_URL,
+	STORAGE_KEY_LAN_SERVER,
+} from "../services/lanDiscovery/lanStorageState";
 
 const CLINIC_TOKEN_STORAGE_KEY = DENTE_CLINIC_TOKEN_KEY;
 const STAFF_TOKEN_STORAGE_KEY = DENTE_STAFF_TOKEN_KEY;
@@ -208,17 +213,86 @@ function requestUrlOf(input: RequestInfo | URL): string {
 	return input.url;
 }
 
+function resolveConfiguredLanBaseOrigin(): string | null {
+	const activeBase = safeLocalStorageGetItem(STORAGE_KEY_ACTIVE_BASE_URL)?.trim();
+	if (activeBase && activeBase !== "/api" && /^https?:\/\//i.test(activeBase)) {
+		return activeBase.replace(/\/api\/?$/, "");
+	}
+	const discoveredServer = safeLocalStorageGetItem(STORAGE_KEY_LAN_SERVER)?.trim();
+	if (discoveredServer && /^https?:\/\//i.test(discoveredServer)) {
+		return discoveredServer.replace(/\/+$/, "");
+	}
+	if (typeof window !== "undefined" && window.location?.search) {
+		const paramServer = new URLSearchParams(window.location.search).get("clinic_server");
+		if (paramServer && /^https?:\/\//i.test(paramServer)) {
+			return paramServer.replace(/\/+$/, "");
+		}
+	}
+	return null;
+}
+
+function rewriteRelativeApiInput(
+	input: RequestInfo | URL,
+	rawUrl: string,
+	headers: Headers,
+): { url: string; nextInput: RequestInfo | URL } {
+	if (!rawUrl.startsWith("/api/")) {
+		return {
+			url: rawUrl,
+			nextInput: input instanceof Request ? new Request(input, { headers }) : input,
+		};
+	}
+	const isFileProtocol = typeof window !== "undefined" && window.location?.protocol === "file:";
+	const activeBase = safeLocalStorageGetItem(STORAGE_KEY_ACTIVE_BASE_URL)?.trim();
+	const useConfiguredOrigin =
+		isFileProtocol ||
+		(Boolean(activeBase) && activeBase !== "/api" && /^https?:\/\//i.test(activeBase || ""));
+
+	if (!useConfiguredOrigin) {
+		return {
+			url: rawUrl,
+			nextInput: input instanceof Request ? new Request(input, { headers }) : input,
+		};
+	}
+
+	const lanOrigin = resolveConfiguredLanBaseOrigin();
+	if (!lanOrigin) {
+		return {
+			url: rawUrl,
+			nextInput: input instanceof Request ? new Request(input, { headers }) : input,
+		};
+	}
+
+	const rewrittenUrl = `${lanOrigin}${rawUrl}`;
+	if (input instanceof Request) {
+		return { url: rewrittenUrl, nextInput: new Request(rewrittenUrl, { method: input.method, headers, body: input.body }) };
+	}
+	return { url: rewrittenUrl, nextInput: rewrittenUrl };
+}
+
 /**
- * true — если запрос идёт к нашему собственному API и требует авторизации.
- * Токен не должен уходить на сторонние домены, поэтому абсолютные URL
- * проверяются на совпадение origin.
+ * true — если запрос идёт к нашему собственному API (или сопряжённому LAN-серверу) и требует авторизации.
+ * Токен никогда не отправляется на публичные/сторонние внешние домены.
  */
 export function shouldAttachApiAuth(rawUrl: string): boolean {
 	let pathname: string;
 	try {
-		const origin = typeof window !== "undefined" && window.location ? window.location.origin : "http://localhost";
-		const parsed = new URL(rawUrl, origin);
-		if (typeof window !== "undefined" && window.location && parsed.origin !== window.location.origin) {
+		const baseOrigin =
+			typeof window !== "undefined" &&
+			window.location &&
+			window.location.origin &&
+			window.location.origin !== "null"
+				? window.location.origin
+				: resolveConfiguredLanBaseOrigin() || "http://localhost";
+		const parsed = new URL(rawUrl, baseOrigin);
+		const configuredLanOrigin = resolveConfiguredLanBaseOrigin();
+		const sameWindowOrigin =
+			typeof window !== "undefined" && window.location && parsed.origin === window.location.origin;
+		const allowedLanOrigin =
+			isLocalOrLanHostname(parsed.hostname) &&
+			(parsed.origin === configuredLanOrigin || rawUrl.startsWith("/api/"));
+
+		if (!sameWindowOrigin && !allowedLanOrigin) {
 			return false;
 		}
 		pathname = parsed.pathname;
@@ -376,42 +450,44 @@ export function installApiAuthFetch(): void {
 			}
 		}
 
-		const requestInput = input instanceof Request && !init ? new Request(input, { headers }) : input;
+		const rewritten = rewriteRelativeApiInput(input, rawUrl, headers);
+		const requestInput = rewritten.nextInput;
+		const effectiveRawUrl = rewritten.url;
 		const requestInit = input instanceof Request && !init ? undefined : { ...(init ?? {}), headers };
 
 		// Проверяем кэш для безопасных GET-запросов регламентных справочников
 		const cacheControl = init?.cache ?? (input instanceof Request ? input.cache : undefined);
 		const bypassCache = cacheControl === "no-store" || cacheControl === "no-cache";
 
-		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(rawUrl, method)) {
-			const cached = getCachedApiResponse(rawUrl);
+		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(effectiveRawUrl, method)) {
+			const cached = getCachedApiResponse(effectiveRawUrl);
 			if (cached) {
 				// True Stale-While-Revalidate: return 0ms cached response immediately,
 				// and revalidate in background idle if older than 60s
 				if (Date.now() - cached.timestamp > 60_000) {
-					scheduleBackgroundCatalogRevalidation(rawUrl, requestInput, requestInit, originalFetch);
+					scheduleBackgroundCatalogRevalidation(effectiveRawUrl, requestInput, requestInit, originalFetch);
 				}
 				return createResponseFromCachedEntry(cached);
 			}
 
 			// Если в оперативной памяти промах (например, после открытия вкладки),
 			// проверяем persistent IndexedDB кэш (0 мс сетевых затрат)
-			const persistent = await readCatalogFromPersistentStorage(rawUrl);
+			const persistent = await readCatalogFromPersistentStorage(effectiveRawUrl);
 			if (persistent) {
-				setCachedApiResponse(rawUrl, persistent.data, {
+				setCachedApiResponse(effectiveRawUrl, persistent.data, {
 					status: persistent.status,
 					statusText: persistent.statusText,
 					headers: persistent.headers,
 					ttlMs: persistent.ttlMs,
 				});
 				if (Date.now() - persistent.timestamp > 60_000) {
-					scheduleBackgroundCatalogRevalidation(rawUrl, requestInput, requestInit, originalFetch);
+					scheduleBackgroundCatalogRevalidation(effectiveRawUrl, requestInput, requestInit, originalFetch);
 				}
 				return createResponseFromCachedEntry(persistent);
 			}
 
 			// Защита от Cache Stampede: если такой же справочник уже загружается — ждем его
-			const normalizedKey = normalizeApiUrl(rawUrl);
+			const normalizedKey = normalizeApiUrl(effectiveRawUrl);
 			const inFlight = catalogInFlight.get(normalizedKey);
 			if (inFlight) {
 				const sharedResponse = await inFlight;
@@ -420,8 +496,8 @@ export function installApiAuthFetch(): void {
 		}
 
 		// Если это кэшируемый справочник — оборачиваем запрос для кэширования ответа в RAM
-		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(rawUrl, method)) {
-			const normalizedKey = normalizeApiUrl(rawUrl);
+		if (method === "GET" && !bypassCache && isCacheableCatalogUrl(effectiveRawUrl, method)) {
+			const normalizedKey = normalizeApiUrl(effectiveRawUrl);
 
 			const fetchOperation = (async () => {
 				const response = await resilientFetch(requestInput, requestInit, { fetchFn: originalFetch });
@@ -464,6 +540,6 @@ export function installApiAuthFetch(): void {
 		if (input instanceof Request && !init) {
 			return resilientFetch(requestInput, undefined, { fetchFn: originalFetch });
 		}
-		return resilientFetch(input, requestInit, { fetchFn: originalFetch });
+		return resilientFetch(requestInput, requestInit, { fetchFn: originalFetch });
 	};
 }

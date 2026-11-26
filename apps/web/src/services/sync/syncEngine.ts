@@ -38,6 +38,11 @@ import {
 import type { OfflineMutation } from "../offline/types";
 import { recordConflictAudit } from "./conflictResolver";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { denteQueryClient } from "../../lib/queryClient";
+import {
+	cachePatientCard,
+	savePatientClinicalCache,
+} from "../offline/storage/idbClinicalCache";
 import type {
 	BidirectionalSyncResult,
 	SyncEngineEventListener,
@@ -302,7 +307,18 @@ export class SyncEngine {
 					});
 
 					if (pullRes.ok) {
-						const pullData = (await pullRes.json()) as {
+						const rawPullData = (await pullRes.json()) as {
+							data?: {
+								serverTime?: string;
+								patients?: unknown[];
+								visits?: unknown[];
+								visitDiaries?: unknown[];
+								payments?: unknown[];
+								appointments?: unknown[];
+								toothStates?: unknown[];
+								vectors?: unknown[];
+								invoices?: unknown[];
+							};
 							serverTime?: string;
 							patients?: unknown[];
 							visits?: unknown[];
@@ -313,27 +329,81 @@ export class SyncEngine {
 							vectors?: unknown[];
 							invoices?: unknown[];
 						};
+						const pullData = rawPullData?.data ?? rawPullData;
 
-						const patientsCount = Array.isArray(pullData.patients) ? pullData.patients.length : 0;
-						const visitsCount = Array.isArray(pullData.visits) ? pullData.visits.length : 0;
-						const diariesCount = Array.isArray(pullData.visitDiaries) ? pullData.visitDiaries.length : 0;
-						const paymentsCount = Array.isArray(pullData.payments) ? pullData.payments.length : 0;
-						const appointmentsCount = Array.isArray(pullData.appointments) ? pullData.appointments.length : 0;
-						const toothStatesCount = Array.isArray(pullData.toothStates) ? pullData.toothStates.length : 0;
-						const invoicesCount = Array.isArray(pullData.invoices) ? pullData.invoices.length : 0;
+						const patientsList = Array.isArray(pullData.patients) ? pullData.patients : [];
+						const visitsList = Array.isArray(pullData.visits) ? pullData.visits : [];
+						const diariesList = Array.isArray(pullData.visitDiaries) ? pullData.visitDiaries : [];
+						const paymentsList = Array.isArray(pullData.payments) ? pullData.payments : [];
+						const appointmentsList = Array.isArray(pullData.appointments) ? pullData.appointments : [];
+						const toothStatesList = Array.isArray(pullData.toothStates) ? pullData.toothStates : [];
+						const invoicesList = Array.isArray(pullData.invoices) ? pullData.invoices : [];
+
+						let hydratedCount = 0;
+						const hydrateItems = async (
+							entityKind: string,
+							items: unknown[],
+							onItem?: (rec: Record<string, unknown>, entityId: string) => Promise<void>,
+						) => {
+							for (let idx = 0; idx < items.length; idx++) {
+								const raw = items[idx];
+								if (!raw || typeof raw !== "object") continue;
+								const rec = raw as Record<string, unknown>;
+								const entityId = typeof rec.id === "string" ? rec.id : `${entityKind}-${idx}`;
+								const orgId = typeof rec.organizationId === "string" ? rec.organizationId : undefined;
+								if (onItem) {
+									await onItem(rec, entityId);
+								} else {
+									await savePatientClinicalCache(`${entityKind}_${entityId}`, entityKind, entityId, rec, orgId);
+								}
+								hydratedCount++;
+							}
+						};
+
+						await Promise.all([
+							hydrateItems("patient", patientsList, async (rec, patientId) => {
+								const fullName =
+									typeof rec.fullName === "string"
+										? rec.fullName
+										: [rec.lastName, rec.firstName, rec.middleName].filter(Boolean).join(" ") || "Пациент";
+								await cachePatientCard({
+									patientId,
+									organizationId: typeof rec.organizationId === "string" ? rec.organizationId : undefined,
+									personalInfo: {
+										fullName,
+										phone: typeof rec.phone === "string" ? rec.phone : "",
+										birthDate: typeof rec.birthDate === "string" ? rec.birthDate : undefined,
+									},
+								});
+							}),
+							hydrateItems("visit", visitsList),
+							hydrateItems("visit_diary", diariesList),
+							hydrateItems("payment", paymentsList),
+							hydrateItems("appointment", appointmentsList),
+							hydrateItems("tooth_state", toothStatesList),
+							hydrateItems("invoice", invoicesList),
+						]);
 
 						const totalReceived =
-							patientsCount +
-							visitsCount +
-							diariesCount +
-							paymentsCount +
-							appointmentsCount +
-							toothStatesCount +
-							invoicesCount;
+							patientsList.length +
+							visitsList.length +
+							diariesList.length +
+							paymentsList.length +
+							appointmentsList.length +
+							toothStatesList.length +
+							invoicesList.length;
+
+						if (totalReceived > 0) {
+							try {
+								await denteQueryClient.invalidateQueries();
+							} catch (invErr) {
+								logger.warn("[SyncEngine] QueryClient invalidation warning:", invErr);
+							}
+						}
 
 						result.pulledChanges = {
 							receivedCount: totalReceived,
-							appliedLocallyCount: totalReceived,
+							appliedLocallyCount: hydratedCount,
 							conflicts: [],
 						};
 

@@ -14,7 +14,7 @@ export function ClinicControlPillView({
 	className = "",
 }: ClinicControlPillViewProps) {
 	const {
-		isOnline, syncLatencyMs, isSyncing, pendingMutationCount, l2PatientSnapshotsCount,
+		isOnline, isReconnecting, connectionLabel, syncLatencyMs, isSyncing, pendingMutationCount, l2PatientSnapshotsCount,
 		isShiftOpen, formattedShiftTime, activeCall, agentState, agentStateLabel,
 	} = status;
 
@@ -76,18 +76,20 @@ export function ClinicControlPillView({
 
 			<span className="dnt-pill-divider hidden sm:block" />
 
-			{/* 3. Database Sync / Offline Queue */}
+			{/* 3. Server & Sync Status */}
 			<span
 				className="dnt-pill-segment hidden sm:flex"
-				title={`Синхронизация БД: PostgreSQL 18.4 (${syncLatencyMs !== null ? `${syncLatencyMs} ms` : "Офлайн"}, ${pendingMutationCount} в очереди)`}
+				title={`${connectionLabel} (${syncLatencyMs !== null ? `${syncLatencyMs} мс` : isReconnecting ? "Повторное подключение..." : "Офлайн"}, ${pendingMutationCount} в очереди)`}
 			>
 				<Zap
 					size={12}
-					className={`${isSyncing ? "animate-spin text-amber-400" : isOnline ? "text-emerald-500" : "text-rose-500"}`}
+					className={`${isSyncing ? "animate-spin text-amber-400" : isOnline ? "text-emerald-500" : isReconnecting ? "animate-pulse text-amber-500" : "text-rose-500"}`}
 				/>
-				<span className="hidden 2xl:inline">{isOnline ? "БД" : "Офлайн"}</span>
+				<span className="hidden 2xl:inline">
+					{isOnline ? "Сеть" : isReconnecting ? "Повтор…" : "Офлайн"}
+				</span>
 				<span
-					className={`dnt-pill-dot ${isOnline ? (pendingMutationCount > 0 ? "dnt-pill-dot--busy" : "dnt-pill-dot--online") : "dnt-pill-dot--offline"}`}
+					className={`dnt-pill-dot ${isOnline ? (pendingMutationCount > 0 ? "dnt-pill-dot--busy" : "dnt-pill-dot--online") : isReconnecting ? "dnt-pill-dot--busy" : "dnt-pill-dot--offline"}`}
 				/>
 				{isOnline && syncLatencyMs !== null && (
 					<span className="font-mono text-[10px] opacity-80 hidden 2xl:inline">
@@ -100,12 +102,12 @@ export function ClinicControlPillView({
 					</span>
 				)}
 				<span
-					className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 ml-0.5"
-					title={`Офлайн-буфер сохранен локально (L2 IndexedDB, снимков: ${l2PatientSnapshotsCount})`}
+					className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary)] border border-[var(--line)] ml-0.5"
+					title={`Офлайн-буфер (IndexedDB, сохранено карт: ${l2PatientSnapshotsCount})`}
 					data-testid="header-l2-offline-buffer-badge"
 				>
-					<span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block" />
-					<span>L2</span>
+					<span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] inline-block" />
+					<span>Кэш: {l2PatientSnapshotsCount}</span>
 				</span>
 			</span>
 

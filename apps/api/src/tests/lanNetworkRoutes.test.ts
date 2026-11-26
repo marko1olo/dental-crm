@@ -346,7 +346,7 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		if (res.statusCode === 503) {
 			assert.strictEqual(json.ok, false);
 			assert.strictEqual(json.persisted, false);
-			assert.strictEqual(json.queuedInMemory, true);
+			assert.strictEqual(json.error, "DatabasePersistenceFailed");
 			assert.strictEqual(json.rejectedCount, 1);
 		} else {
 			assert.strictEqual(res.statusCode, 200);

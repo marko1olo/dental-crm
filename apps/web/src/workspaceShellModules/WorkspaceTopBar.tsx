@@ -7,10 +7,12 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { LanQrConnectionModal } from "../components/network/LanQrConnectionModal";
+import { LanCitoEmergencyBanner } from "../components/sync/LanCitoEmergencyBanner";
 import {
 	IncomingCallPopup,
 	resolveTelephonyWsUrl,
 } from "../components/telephony/IncomingCallPopup";
+import { useLanP2P } from "../hooks/useLanP2P";
 import { staffRoleChoices } from "../lib/clinicCapabilities";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
@@ -81,6 +83,7 @@ export function WorkspaceTopbar({
 	);
 
 	const [isLanQrOpen, setIsLanQrOpen] = useState(false);
+	const { activeCitoAlerts, dismissCitoAlert } = useLanP2P();
 
 	useEffect(() => {
 		const handleOpen = () => setIsLanQrOpen(true);
@@ -144,6 +147,15 @@ export function WorkspaceTopbar({
 				<Suspense fallback={null}>
 					<IncomingCallPopup />
 				</Suspense>
+			) : null}
+
+			{/* Экстренные CITO-вызовы по локальной сети */}
+			{activeCitoAlerts.length > 0 ? (
+				<LanCitoEmergencyBanner
+					alerts={activeCitoAlerts}
+					onDismiss={dismissCitoAlert}
+					onAcknowledge={dismissCitoAlert}
+				/>
 			) : null}
 		</header>
 	);

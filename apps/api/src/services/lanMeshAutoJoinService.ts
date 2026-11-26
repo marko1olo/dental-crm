@@ -27,6 +27,8 @@ import {
 	scanClinicSubnets,
 	timingSafeStringEqual,
 } from "@dental/shared";
+import { authTokenSecret } from "../security/authSecret.js";
+import { signToken } from "../utils/cryptoHelper.js";
 import { getPrimaryLanIp } from "./lanDiscoveryService.js";
 import { type LanMeshService, getLanMeshService } from "./lanMeshService.js";
 
@@ -87,6 +89,7 @@ export interface JoinSuccessResult {
 	readonly assignedNodeId: string;
 	readonly assignedRole: LanMeshRole;
 	readonly meshToken: string;
+	readonly clinicToken: string;
 	readonly schemaVersion: number | string;
 	readonly appVersion: string;
 	readonly authorizedAt: string;
@@ -159,7 +162,7 @@ export class LanMeshAutoJoinService {
 
 		this.pinTtlMs = config.pinTtlMs || 15 * 60 * 1000; // 15 minutes
 		this.graceTtlMs = config.graceTtlMs || 60 * 1000; // 60 seconds grace on old PIN
-		this.secret = config.secret || process.env.DENTE_MESH_SECRET || `dente-mesh-salt-${this.clinicId}`;
+		this.secret = config.secret || process.env.DENTE_MESH_SECRET || authTokenSecret();
 		this.maxAttemptsPerWindow = config.maxAttemptsPerWindow || 5;
 		this.maxGlobalFailedAttempts = Math.max(this.maxAttemptsPerWindow * 3, 15);
 		this.rateLimitWindowMs = config.rateLimitWindowMs || 5 * 60 * 1000; // 5 minutes
@@ -172,6 +175,7 @@ export class LanMeshAutoJoinService {
 		this.rotationTimer = setInterval(() => {
 			this.ensureValidPin();
 		}, 30000);
+		this.rotationTimer.unref?.();
 	}
 
 	/**
@@ -344,6 +348,17 @@ export class LanMeshAutoJoinService {
 		const peerPort = request.port || this.apiPort;
 
 		const meshToken = this.signPeerMeshToken(assignedNodeId, assignedRole, clientIp, now);
+		const clinicToken = signToken(
+			{
+				organizationId: this.clinicId,
+				role: "clinic",
+				nodeId: assignedNodeId,
+				pairedRole: assignedRole,
+				clientIp,
+			},
+			authTokenSecret(),
+			12 * 3600,
+		);
 
 		// 7. Record joined node
 		const record: JoinedNodeRecord = {
@@ -389,6 +404,7 @@ export class LanMeshAutoJoinService {
 			assignedNodeId,
 			assignedRole,
 			meshToken,
+			clinicToken,
 			schemaVersion,
 			appVersion,
 			authorizedAt: record.joinedAt,

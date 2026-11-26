@@ -1,3 +1,5 @@
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { lanMeshReplicationService } from "../lanMeshReplicationService";
 
@@ -19,7 +21,10 @@ export function relayMessageToPeers(
 			const url = `${peer.baseUrl}/api/lan/p2p/dispatch`;
 			fetchFn(url, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify(message),
 			}).catch((err: unknown) => {
 				logger.warn("[LanP2PDispatcher] Peer relay fetch failed", err);

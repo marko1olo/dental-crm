@@ -13,7 +13,7 @@ export const LanDeviceRoleTabs: React.FC<LanDeviceRoleTabsProps> = ({
 }) => {
 	return (
 		<div
-			className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/70 p-1 rounded-xl border border-[var(--line,#e2e8f0)]"
+			className="flex items-center justify-between bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] gap-1"
 			role="tablist"
 			aria-label="Выбор роли устройства"
 		>
@@ -23,10 +23,10 @@ export const LanDeviceRoleTabs: React.FC<LanDeviceRoleTabsProps> = ({
 				aria-selected={role === "doctor"}
 				onClick={() => onRoleChange("doctor")}
 				data-testid="lan-qr-role-doctor-btn"
-				className={`flex-1 min-h-[44px] py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer ${
+				className={`flex-1 min-h-[44px] py-1.5 px-2.5 rounded-lg text-xs text-center leading-tight flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
 					role === "doctor"
-						? "bg-teal-600 text-white shadow-xs font-semibold"
-						: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+						? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs font-semibold"
+						: "bg-transparent border border-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] font-medium"
 				}`}
 			>
 				<Tablet className="w-4 h-4 shrink-0" />
@@ -38,10 +38,10 @@ export const LanDeviceRoleTabs: React.FC<LanDeviceRoleTabsProps> = ({
 				aria-selected={role === "assistant"}
 				onClick={() => onRoleChange("assistant")}
 				data-testid="lan-qr-role-assistant-btn"
-				className={`flex-1 min-h-[44px] py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer ${
+				className={`flex-1 min-h-[44px] py-1.5 px-2.5 rounded-lg text-xs text-center leading-tight flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
 					role === "assistant"
-						? "bg-teal-600 text-white shadow-xs font-semibold"
-						: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+						? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs font-semibold"
+						: "bg-transparent border border-transparent text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] font-medium"
 				}`}
 			>
 				<Smartphone className="w-4 h-4 shrink-0" />

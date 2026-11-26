@@ -6,6 +6,7 @@ export interface LanQrCodeSvgProps {
 	readonly qrSvg: string;
 	readonly role: DeviceRole;
 	readonly pairingPin?: string | null | undefined;
+	readonly autoJoinPin?: string | null | undefined;
 	readonly requiresAuth: boolean;
 	readonly loading: boolean;
 }
@@ -14,30 +15,31 @@ export const LanQrCodeSvg: React.FC<LanQrCodeSvgProps> = ({
 	qrSvg,
 	role,
 	pairingPin,
+	autoJoinPin,
 	requiresAuth,
 	loading,
 }) => {
 	return (
-		<div className="flex flex-col items-center justify-center p-2.5 sm:p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] shadow-inner">
-			<div className="relative p-2.5 sm:p-3.5 bg-white rounded-2xl shadow-md border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+		<div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
+			<div className="relative p-2.5 sm:p-3 bg-white rounded-2xl shadow-sm border border-[var(--line)] flex items-center justify-center">
 				{requiresAuth ? (
-					<div className="w-[190px] h-[190px] sm:w-[210px] sm:h-[210px] flex flex-col items-center justify-center text-center p-3 text-slate-800">
-						<ShieldCheck className="w-10 h-10 text-amber-500 mb-2" />
-						<p className="text-xs font-semibold text-slate-900 mb-1">
+					<div className="w-[156px] h-[156px] sm:w-[168px] sm:h-[168px] flex flex-col items-center justify-center text-center p-2 text-[#090d16]">
+						<ShieldCheck className="w-9 h-9 text-amber-500 mb-1.5" />
+						<p className="text-xs font-semibold text-[#090d16] mb-1">
 							Требуется авторизация
 						</p>
-						<p className="text-[11px] text-slate-600 leading-snug">
+						<p className="text-[11px] text-[#475569] leading-snug">
 							Для генерации QR-кода сопряжения планшетов выполните вход на сервере клиники.
 						</p>
 					</div>
 				) : loading ? (
-					<div className="w-[190px] h-[190px] sm:w-[210px] sm:h-[210px] flex flex-col items-center justify-center text-slate-700">
-						<RefreshCw className="w-7 h-7 animate-spin text-teal-600 mb-2" />
+					<div className="w-[156px] h-[156px] sm:w-[168px] sm:h-[168px] flex flex-col items-center justify-center text-[#090d16]">
+						<RefreshCw className="w-7 h-7 animate-spin text-[var(--primary)] mb-2" />
 						<p className="text-xs font-medium">Определение LAN IP...</p>
 					</div>
 				) : (
 					<div
-						className="w-[190px] h-[190px] sm:w-[210px] sm:h-[210px] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>img]:w-full [&>img]:h-full"
+						className="w-[156px] h-[156px] sm:w-[168px] sm:h-[168px] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>img]:w-full [&>img]:h-full"
 						data-testid="lan-qr-svg-container"
 					>
 						<img
@@ -48,22 +50,39 @@ export const LanQrCodeSvg: React.FC<LanQrCodeSvgProps> = ({
 					</div>
 				)}
 
-				<div className="absolute -top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-teal-300 border border-slate-700 shadow-xs">
+				<div className="absolute -top-3 right-3 h-6 px-2.5 rounded-full text-xs font-medium inline-flex items-center bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs">
 					{role === "doctor" ? "Врач у кресла" : "Ассистент"}
 				</div>
 			</div>
 
-			{pairingPin && !requiresAuth && (
-				<div
-					data-testid="lan-qr-pin-display"
-					className="mt-2.5 sm:mt-3.5 px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--teal,#0d9488)]/40 flex items-center gap-2 shadow-xs"
-				>
-					<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">
-						ПИН:
-					</span>
-					<span className="font-mono text-sm sm:text-base font-bold text-[var(--teal,#0d9488)] tracking-widest">
-						{pairingPin}
-					</span>
+			{(pairingPin || autoJoinPin) && !requiresAuth && (
+				<div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+					{pairingPin && (
+						<div
+							data-testid="lan-qr-pin-display"
+							className="px-3.5 py-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-2 shadow-xs"
+						>
+							<span className="text-xs font-medium text-[var(--ink-muted,var(--muted))]">
+								ПИН:
+							</span>
+							<span className="font-mono text-sm sm:text-base font-semibold text-[var(--primary)] tracking-widest tabular-nums">
+								{pairingPin}
+							</span>
+						</div>
+					)}
+					{autoJoinPin && (
+						<div
+							data-testid="lan-auto-join-pin-display"
+							className="px-3.5 py-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center gap-2 shadow-xs"
+						>
+							<span className="text-xs font-medium text-[var(--ink-muted,var(--muted))]">
+								Код сети:
+							</span>
+							<span className="font-mono text-sm sm:text-base font-semibold text-[var(--ink)] tracking-widest tabular-nums">
+								{autoJoinPin}
+							</span>
+						</div>
+					)}
 				</div>
 			)}
 		</div>

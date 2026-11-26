@@ -15,7 +15,7 @@ export function SidebarClinicControlPillView({
 	collapsed = false,
 }: ClinicControlPillViewProps) {
 	const {
-		isOnline, l2PatientSnapshotsCount, isShiftOpen, formattedShiftTime, activeCall,
+		isOnline, isReconnecting, connectionLabel, l2PatientSnapshotsCount, isShiftOpen, formattedShiftTime, activeCall,
 	} = status;
 
 	if (collapsed) {
@@ -53,11 +53,13 @@ export function SidebarClinicControlPillView({
 		>
 			<div className="sidebar-pill-info flex items-center gap-2 min-w-0">
 				<span
-					className={`w-2 h-2 rounded-full shrink-0 ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}
-					title={isOnline ? "БД на связи" : "Офлайн"}
+					className={`w-2 h-2 rounded-full shrink-0 ${
+						isOnline ? "bg-emerald-500 animate-pulse" : isReconnecting ? "bg-amber-500 animate-pulse" : "bg-rose-500"
+					}`}
+					title={connectionLabel}
 				/>
 				<span className="sidebar-pill-label font-medium text-[11px] truncate text-[var(--ink)]">
-					{isOnline ? "Клиника онлайн" : "Офлайн-режим"}
+					{connectionLabel}
 				</span>
 			</div>
 			<div className="sidebar-pill-badges flex items-center gap-1.5 shrink-0 text-[10px] text-[var(--muted)]">

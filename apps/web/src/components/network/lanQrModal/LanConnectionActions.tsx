@@ -40,11 +40,9 @@ export const LanConnectionActions: React.FC<LanConnectionActionsProps> = ({
 						type="button"
 						onClick={onCopyUrl}
 						data-testid="lan-qr-copy-url-btn"
-						className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer ${
-							copied ? "bg-emerald-600 text-white" : "bg-teal-600 hover:bg-teal-700 text-white"
-						}`}
+						className="min-h-[44px] sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center justify-center gap-2 shrink-0 transition-colors cursor-pointer"
 					>
-						{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+						{copied ? <Check className="w-4 h-4 shrink-0" /> : <Copy className="w-4 h-4 shrink-0" />}
 						<span>{copied ? "Скопировано" : "Скопировать"}</span>
 					</button>
 					{!requiresAuth && (

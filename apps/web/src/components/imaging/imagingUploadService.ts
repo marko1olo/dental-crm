@@ -8,7 +8,10 @@ import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { showToast } from "../GlobalToast.js";
 import { inferStudyKind, type InferredImagingKind } from "./upload/inferStudyKind.js";
 import { createLocalFallbackStudy } from "./upload/localFallbackStudy.js";
+import { uploadImagingScanChunked } from "./upload/chunkedImagingUpload.js";
 import type { ImagingStudy } from "./types.js";
+
+const CHUNKED_UPLOAD_THRESHOLD_BYTES = 2 * 1024 * 1024;
 
 export { inferStudyKind };
 export type { InferredImagingKind };
@@ -44,6 +47,33 @@ export async function uploadImagingScanFile(
 	}
 
 	try {
+		if (
+			file.size > CHUNKED_UPLOAD_THRESHOLD_BYTES &&
+			typeof crypto !== "undefined" &&
+			typeof crypto.subtle?.digest === "function"
+		) {
+			const chunkRes = await uploadImagingScanChunked({
+				file,
+				patientId: effectivePatientId,
+				visitId: options.visitId,
+				kind,
+				title,
+				toothCode: options.toothCode,
+				region: options.region,
+				onProgress: options.onProgress,
+			});
+			if (chunkRes.success && chunkRes.study) {
+				showToast(`Снимок «${title}» успешно загружен`, "success");
+				return { success: true, study: chunkRes.study };
+			}
+			if (!isDemoShowcaseMode() && navigator.onLine) {
+				const errText = chunkRes.error || "Ошибка чанковой передачи снимка";
+				showToast(`Не удалось загрузить снимок: ${errText}`, "error");
+				return { success: false, error: errText };
+			}
+		}
+
+		options.onProgress?.(25);
 		const formData = new FormData();
 		formData.append("file", file, file.name);
 		formData.append("patientId", effectivePatientId);
@@ -67,7 +97,9 @@ export async function uploadImagingScanFile(
 		});
 
 		if (res.ok) {
-			const data = await res.json();
+			const rawData = await res.json();
+			const data = rawData?.data ?? rawData;
+			options.onProgress?.(100);
 			showToast(`Снимок «${title}» успешно загружен`, "success");
 			return { success: true, study: data.study };
 		}
@@ -78,8 +110,15 @@ export async function uploadImagingScanFile(
 			return { success: true, study: fallbackStudy };
 		}
 
-		const errData = await res.json().catch(() => null);
-		const errorMsg = errData?.message || `Ошибка сервера (${res.status})`;
+		let rawErrData: { data?: { message?: string }; message?: string } | null = null;
+		let parseDetail = "";
+		try {
+			rawErrData = (await res.json()) as { data?: { message?: string }; message?: string };
+		} catch (parseErr) {
+			parseDetail = parseErr instanceof Error ? `: ${parseErr.message}` : "";
+		}
+		const errData = rawErrData?.data ?? rawErrData;
+		const errorMsg = errData?.message || `Ошибка сервера (${res.status})${parseDetail}`;
 		showToast(`Не удалось загрузить снимок: ${errorMsg}`, "error");
 		return { success: false, error: errorMsg };
 	} catch (err: unknown) {

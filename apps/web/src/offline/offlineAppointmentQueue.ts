@@ -18,7 +18,7 @@ import {
 	type OfflineMutation,
 } from "../services/offline/offlineStorage.js";
 import { logger } from "../utils/logger.js";
-import { getDenteAuthHeaders } from "../lib/denteRequestHeaders.js";
+import { offlineSyncService } from "../services/offline/offlineSyncService.js";
 
 export type AppointmentMutationAction = "CREATE_APPOINTMENT" | "UPDATE_APPOINTMENT" | "CANCEL_APPOINTMENT";
 
@@ -218,8 +218,8 @@ export async function syncAppointmentQueue(
 }
 
 /**
- * Standard server dispatcher to flush offline appointment mutations to /api/appointments.
- * Protected by mutual exclusion to prevent parallel race conditions with Sync Gateway.
+ * Flushes offline appointment mutations through the single SSOT Sync Gateway outbox (`OfflineSyncService`),
+ * eliminating competing direct POST/PATCH flushes and duplicate online listeners.
  */
 let isAppointmentFlushing = false;
 export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount: number; failedCount: number }> {
@@ -228,89 +228,22 @@ export async function flushOfflineAppointmentsToServer(): Promise<{ syncedCount:
 	}
 	isAppointmentFlushing = true;
 	try {
-		return await syncAppointmentQueue(async (mutation) => {
-		const appt = mutation.appointment;
-		const clientMutationId = resolveValidSyncUuid(appt.clientReferenceId, mutation.id);
-		let url = "/api/appointments";
-		let method = "POST";
-		let body: Record<string, unknown> = {};
-
-		if (mutation.action === "CREATE_APPOINTMENT") {
-			url = "/api/appointments";
-			method = "POST";
-			body = {
-				patientId: appt.patientId,
-				doctorUserId: appt.doctorId,
-				chairId: appt.chairId,
-				startsAt: appt.startTime,
-				endsAt: appt.endTime,
-				reason: appt.notes || "Приём (офлайн)",
-				clientMutationId,
-			};
-		} else if (mutation.action === "UPDATE_APPOINTMENT") {
-			url = `/api/appointments/${encodeURIComponent(appt.id)}`;
-			method = "PATCH";
-			body = {
-				startsAt: appt.startTime,
-				endsAt: appt.endTime,
-				status: appt.status,
-				reason: appt.notes,
-				chairId: appt.chairId,
-				doctorUserId: appt.doctorId,
-				clientMutationId,
-			};
-		} else if (mutation.action === "CANCEL_APPOINTMENT") {
-			url = `/api/appointments/${encodeURIComponent(appt.id)}/status`;
-			method = "PATCH";
-			body = {
-				status: "cancelled",
-				clientMutationId,
-			};
-		}
-
-		const res = await fetch(url, {
-			method,
-			headers: getDenteAuthHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": clientMutationId,
-			}),
-			body: JSON.stringify(body),
-		});
-
-		if (res.ok) {
-			const data = (await res.json().catch(() => null)) as { id?: string; appointment?: { id?: string } } | null;
-			return { success: true, serverId: data?.id || data?.appointment?.id };
-		}
-		if (res.status === 409) {
-			// Idempotent duplicate: already registered on server
-			return { success: true };
-		}
-		return { success: false };
-	});
+		const drain = await offlineSyncService.drainOutbox();
+		return {
+			syncedCount: drain.appliedCount + drain.duplicateCount + drain.mergedCount,
+			failedCount: drain.failedCount + drain.rejectedCount,
+		};
 	} finally {
 		isAppointmentFlushing = false;
 	}
 }
 
 /**
- * Online event listener for automatic offline appointment flushing.
+ * Legacy compatibility hook: lifecycle online sync is managed centrally by OfflineSyncService.
  */
-let isAppointmentOnlineListenerInit = false;
 export function initOfflineAppointmentAutoSync(): void {
-	if (typeof window !== "undefined" && !isAppointmentOnlineListenerInit) {
-		window.addEventListener("online", () => {
-			void flushOfflineAppointmentsToServer().then((result) => {
-				if (result.syncedCount > 0) {
-					logger.info(`[offlineAppointmentQueue] Synced ${result.syncedCount} queued appointments to server on network restore.`);
-				}
-			});
-		});
-		isAppointmentOnlineListenerInit = true;
-	}
+	// Managed centrally by OfflineSyncService to prevent duplicate online flushes.
 }
-
-// Auto-initialize online sync listener
-initOfflineAppointmentAutoSync();
 
 /**
  * Clears schedule cache memory.

@@ -30,7 +30,7 @@ export const LanTroubleshootingGuide: React.FC<LanTroubleshootingGuideProps> = (
 			</div>
 
 			<div className="space-y-2">
-				<h3 className="text-xs font-semibold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+				<h3 className="text-xs font-semibold text-[var(--ink,#0f172a)]">
 					Пошаговая инструкция для Windows
 				</h3>
 				{diagnostics.steps.map((step) => (

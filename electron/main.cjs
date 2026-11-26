@@ -3107,10 +3107,16 @@ function createWindow() {
 	});
 
 	const distIndex = path.join(__dirname, "../apps/web/dist/index.html");
+	const configuredClinicServerUrl = (process.env.DENTE_CLINIC_SERVER_URL || process.env.DENTE_API_URL || "").trim();
 	if (fs.existsSync(distIndex)) {
-		mainWindow.loadFile(distIndex);
+		if (configuredClinicServerUrl) {
+			const encodedUrl = encodeURIComponent(configuredClinicServerUrl);
+			mainWindow.loadFile(distIndex, { search: `clinic_server=${encodedUrl}` });
+		} else {
+			mainWindow.loadFile(distIndex);
+		}
 	} else {
-		mainWindow.loadURL("http://127.0.0.1:5173");
+		mainWindow.loadURL(process.env.DENTE_WEB_URL || "http://127.0.0.1:5173");
 	}
 
 	mainWindow.on("closed", () => {
@@ -3340,29 +3346,55 @@ async function probePostgresTcpSocket(host = "127.0.0.1", port = 5432, timeoutMs
 	});
 }
 
+const VALID_LOCAL_DB_MODES = new Set(["postgres_native", "sqlite_standalone"]);
+let activeLocalDbMode = "postgres_native";
+
 async function getLocalServerStatus() {
-	const probe = await probePostgresTcpSocket("127.0.0.1", 5432, 250);
+	const pgHost = process.env.DENTE_PG_HOST || "127.0.0.1";
+	const pgPort = Number.parseInt(process.env.DENTE_PG_PORT || "5432", 10) || 5432;
+	const probe = await probePostgresTcpSocket(pgHost, pgPort, 250);
+	const pgReachable = probe.connected;
+	const isOfflineFallback = !pgReachable && activeLocalDbMode === "sqlite_standalone";
 	return {
-		isRunning: true,
-		engine: "postgres_native",
-		host: "127.0.0.1",
-		port: 5432,
-		databaseName: "dente_clinic",
-		latencyMs: probe.connected ? probe.latencyMs : 4,
-		canAcceptWrites: true,
+		isRunning: pgReachable,
+		engine: activeLocalDbMode,
+		host: pgHost,
+		port: pgPort,
+		databaseName: process.env.DENTE_PG_DATABASE || "dente_clinic",
+		latencyMs: probe.connected ? probe.latencyMs : null,
+		canAcceptWrites: pgReachable || isOfflineFallback,
 		isOfflineCapable: true,
 		pendingMutationsCount: 0,
-		syncMode: "lan_primary_sync",
-		tcpSocketReachable: probe.connected,
+		syncMode: pgReachable ? "lan_primary_sync" : "offline_buffer",
+		tcpSocketReachable: pgReachable,
 	};
 }
 
 async function switchLocalDatabaseMode(mode) {
-	const validMode = mode || "postgres_native";
+	const normalized = typeof mode === "string" ? mode.trim() : "";
+	if (normalized && !VALID_LOCAL_DB_MODES.has(normalized)) {
+		return {
+			success: false,
+			activeMode: activeLocalDbMode,
+			message: `Неподдерживаемый режим локальной базы данных: ${normalized}`,
+		};
+	}
+	activeLocalDbMode = normalized || "postgres_native";
+	try {
+		const configFile = path.join(app.getPath("userData"), "local-db-mode.json");
+		fs.mkdirSync(path.dirname(configFile), { recursive: true });
+		fs.writeFileSync(
+			configFile,
+			JSON.stringify({ mode: activeLocalDbMode, updatedAt: new Date().toISOString() }),
+			"utf8",
+		);
+	} catch {
+		// Best-effort persistence when called outside Electron lifecycle (unit harness)
+	}
 	return {
 		success: true,
-		activeMode: validMode,
-		message: `Режим локальной базы данных переключен на ${validMode}`,
+		activeMode: activeLocalDbMode,
+		message: `Режим локальной базы данных переключен на ${activeLocalDbMode}`,
 	};
 }
 

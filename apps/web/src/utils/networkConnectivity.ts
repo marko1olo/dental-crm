@@ -11,7 +11,7 @@
 
 import { logger } from "./logger";
 
-export type ConnectivityMode = "cloud_online" | "lan_online" | "offline";
+export type ConnectivityMode = "cloud_online" | "lan_online" | "reconnecting" | "offline";
 export type RttQuality = "good" | "moderate" | "poor" | "offline";
 
 /**
@@ -35,6 +35,9 @@ export function getRttQuality(rttMs: number | null, isOnline: boolean): RttQuali
  * - «Офлайн (0 мс)»
  */
 export function formatRttLabel(mode: ConnectivityMode, rttMs: number | null): string {
+	if (mode === "reconnecting") {
+		return "Повторное подключение...";
+	}
 	if (mode === "offline" || rttMs === null) {
 		return "Офлайн (0 мс)";
 	}
@@ -48,9 +51,13 @@ export function formatRttLabel(mode: ConnectivityMode, rttMs: number | null): st
  * Форматирование сетевого статуса кристально понятным русским языком для врачей и администраторов:
  * - 🟢 «Связь отличная (Облако онлайн)» / «Связь стабильная (Облако онлайн)»
  * - 🟡 «Работаем по локальной сети клиники (Wi-Fi)»
+ * - 🟠 «Повторное подключение к серверу клиники...»
  * - 🔴 «Нет интернета. Все записи сохраняются на этот компьютер, ничего не пропадет!»
  */
 export function formatHumanStatusText(mode: ConnectivityMode, rttMs: number | null): string {
+	if (mode === "reconnecting") {
+		return "Повторное подключение к серверу клиники...";
+	}
 	if (mode === "offline" || rttMs === null) {
 		return "Нет интернета. Все записи сохраняются на этот компьютер, ничего не пропадет!";
 	}
@@ -92,6 +99,7 @@ export function pluralizeChanges(count: number): string {
 export const NETWORK_STATE_LABELS: Record<ConnectivityMode, string> = {
 	cloud_online: "В сети (Облако DENTE)",
 	lan_online: "Локальная сеть клиники (Wi-Fi)",
+	reconnecting: "Повторное подключение...",
 	offline: "Офлайн-режим • Данные сохранены в памяти",
 };
 
@@ -107,6 +115,12 @@ export function getNetworkSyncStatusLabel(options: {
 		return pendingCount > 0
 			? `Синхронизация... (${pluralizeOperations(pendingCount)} в очереди)`
 			: "Синхронизация...";
+	}
+
+	if (mode === "reconnecting") {
+		return pendingCount > 0
+			? `Повторное подключение... • В очереди ${pluralizeOperations(pendingCount)}`
+			: "Повторное подключение...";
 	}
 
 	if (mode === "cloud_online") {

@@ -18,12 +18,16 @@ export function ClinicControlPill({
 }: ClinicControlPillProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
+	const popoverRef = useRef<HTMLElement | null>(null);
 	const status = useClinicSystemStatus();
 
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
-			if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+			const target = e.target as Node;
+			const insideWrapper = Boolean(wrapperRef.current?.contains(target));
+			const insidePopover = Boolean(popoverRef.current?.contains(target));
+			if (!insideWrapper && !insidePopover) {
 				setIsOpen(false);
 			}
 		};
@@ -69,6 +73,8 @@ export function ClinicControlPill({
 				onClose={() => setIsOpen(false)}
 				onLockSession={onLockSession}
 				onOpenShiftModal={onOpenShiftModal}
+				isSidebar={isSidebar}
+				popoverRef={popoverRef}
 			/>
 		</div>
 	);

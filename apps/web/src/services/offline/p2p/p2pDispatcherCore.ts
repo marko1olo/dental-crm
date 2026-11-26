@@ -72,8 +72,15 @@ export class LanP2PDispatcher {
 	public disconnectWebSocket(): void { this.wsManager.disconnect(); }
 
 	public handleIncomingRawMessage(raw: unknown, src: "broadcast_channel" | "websocket" | "http_peer" = "broadcast_channel"): boolean {
+		const unwrapped =
+			raw &&
+			typeof raw === "object" &&
+			(raw as { type?: unknown }).type === "LAN_P2P_EVENT" &&
+			(raw as { payload?: unknown }).payload
+				? (raw as { payload: unknown }).payload
+				: raw;
 		const msg = validateIncomingP2PMessage({
-			raw,
+			raw: unwrapped,
 			sourceTransport: src,
 			currentNodeId: this.nodeId,
 			organizationId: this.organizationId,

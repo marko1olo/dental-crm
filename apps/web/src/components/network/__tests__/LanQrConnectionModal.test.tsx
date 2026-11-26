@@ -8,10 +8,12 @@ import { describe, expect, it } from "vitest";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { LanConnectionActions } from "../lanQrModal/LanConnectionActions";
+import { LanClientJoinWizard } from "../lanQrModal/LanClientJoinWizard";
 import { LanDeviceRoleTabs } from "../lanQrModal/LanDeviceRoleTabs";
 import { LanQrCodeSvg } from "../lanQrModal/LanQrCodeSvg";
 import { LanTelemetryStatus } from "../lanQrModal/LanTelemetryStatus";
 import { LanTroubleshootingGuide } from "../lanQrModal/LanTroubleshootingGuide";
+import { LanWizardModeTabs } from "../lanQrModal/LanWizardModeTabs";
 import { formatSecondsToTimer } from "../lanQrModal/lanConnectionHelpers";
 import type { LanServerInterfaceItem } from "../lanQrEngine";
 
@@ -46,7 +48,7 @@ describe("LanQrConnectionModal Decomposed Submodules & Ergonomics", () => {
 			<LanDeviceRoleTabs role="assistant" onRoleChange={() => {}} />,
 		);
 		expect(htmlAssistant).toContain("Ассистент (Телефон)");
-		expect(htmlAssistant).toContain("bg-teal-600");
+		expect(htmlAssistant).toContain("bg-[var(--paper)]");
 	});
 
 	it("3. LanQrCodeSvg renders high-contrast SVG and displays confirmation PIN", () => {
@@ -157,5 +159,22 @@ describe("LanQrConnectionModal Decomposed Submodules & Ergonomics", () => {
 		expect(formatSecondsToTimer(65)).toBe("01:05");
 		expect(formatSecondsToTimer(0)).toBe("00:00");
 		expect(formatSecondsToTimer(-10)).toBe("00:00");
+	});
+
+	it("8. 2-Mode Pairing Wizard renders Host/Client mode switch and unlocked Client Join CTA", () => {
+		const modeHtml = renderToString(
+			<LanWizardModeTabs mode="client" onChange={() => {}} />,
+		);
+		expect(modeHtml).toContain("Главный ПК клиники");
+		expect(modeHtml).toContain("Подключиться к клинике");
+		expect(modeHtml).toContain("min-h-[44px]");
+
+		const clientHtml = renderToString(
+			<LanClientJoinWizard initialOrigin="http://192.168.1.50:4100" />,
+		);
+		expect(clientHtml).toContain("6-значный PIN с главного ПК");
+		expect(clientHtml).toContain("Подключить устройство");
+		expect(clientHtml).toContain("bg-[var(--primary)]");
+		expect(clientHtml).not.toContain("disabled");
 	});
 });

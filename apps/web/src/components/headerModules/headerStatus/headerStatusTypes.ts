@@ -12,6 +12,8 @@ export type AgentTelephonyState = "online" | "dnd" | "pause" | "offline";
 
 export interface ClinicSystemStatus {
 	readonly isOnline: boolean;
+	readonly isReconnecting: boolean;
+	readonly connectionLabel: string;
 	readonly syncLatencyMs: number | null;
 	readonly isSyncing: boolean;
 	readonly lastSyncTime: Date;
@@ -48,6 +50,8 @@ export interface ClinicControlCenterPopoverProps {
 	readonly onClose: () => void;
 	readonly onLockSession?: (() => void) | undefined;
 	readonly onOpenShiftModal?: (() => void) | undefined;
+	readonly isSidebar?: boolean | undefined;
+	readonly popoverRef?: React.RefObject<HTMLElement | null> | undefined;
 }
 
 export interface StatusBlockCashboxShiftProps {

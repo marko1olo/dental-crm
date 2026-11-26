@@ -4,6 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { globalCircuitBreaker } from "../../../lib/resilience/apiClientResilience.js";
 import { useOfflineStore } from "../../../store/offlineStore.js";
 import { useTelephonyStore } from "../../../store/telephonyStore.js";
 import { useL2StorageStatus } from "../../../services/storage/clinicalIndexedDbL2.js";
@@ -12,9 +13,12 @@ import { executeCloseShiftDbTransaction, executeOpenShiftDbTransaction } from ".
 import type { AgentTelephonyState, ClinicSystemStatus } from "./headerStatusTypes.js";
 
 const SHIFT_STORAGE_KEY = "dente_active_shift";
+const HEARTBEAT_INTERVAL_MS = 15_000;
 
 export function useClinicSystemStatus(): ClinicSystemStatus {
-	const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
+	const [isBrowserOnline, setIsBrowserOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
+	const [isServerReachable, setIsServerReachable] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
+	const [isReconnecting, setIsReconnecting] = useState(false);
 	const [syncLatencyMs, setSyncLatencyMs] = useState<number | null>(null);
 	const [isLocalSyncing, setIsLocalSyncing] = useState(false);
 	const [lastSyncTime, setLastSyncTime] = useState<Date>(() => new Date());
@@ -32,16 +36,48 @@ export function useClinicSystemStatus(): ClinicSystemStatus {
 	const tel = useTelephonyStore();
 
 	const measureLatency = useCallback(async () => {
+		if (typeof navigator !== "undefined" && navigator.onLine === false) {
+			setIsBrowserOnline(false);
+			setIsServerReachable(false);
+			setIsReconnecting(false);
+			setSyncLatencyMs(null);
+			return;
+		}
 		const start = performance.now();
 		try {
 			const res = await fetch("/api/health", { cache: "no-store" });
-			if (res.ok) setSyncLatencyMs(Math.max(1, Math.round(performance.now() - start)));
-		} catch { setSyncLatencyMs(null); }
+			if (res.ok) {
+				setSyncLatencyMs(Math.max(1, Math.round(performance.now() - start)));
+				setIsServerReachable(true);
+				setIsReconnecting(false);
+				return;
+			}
+			setIsServerReachable(false);
+			setIsReconnecting(true);
+		} catch {
+			setSyncLatencyMs(null);
+			setIsServerReachable(false);
+			setIsReconnecting(typeof navigator === "undefined" || navigator.onLine);
+		}
 	}, []);
 
 	useEffect(() => {
 		void refreshQueue();
 		void measureLatency();
+		const heartbeatTimer = setInterval(() => {
+			void measureLatency();
+		}, HEARTBEAT_INTERVAL_MS);
+		const unsubscribeBreaker = globalCircuitBreaker.subscribe((cb) => {
+			if (cb.state === "half-open") {
+				setIsReconnecting(true);
+			} else if (cb.state === "open" || cb.state === "offline-cache") {
+				setIsServerReachable(false);
+				setIsReconnecting(true);
+			} else if (cb.state === "closed" && cb.lastSuccessTime) {
+				setIsServerReachable(true);
+				setIsReconnecting(false);
+			}
+		});
 		try {
 			const raw = localStorage.getItem(SHIFT_STORAGE_KEY);
 			const parsed = raw ? JSON.parse(raw) : null;
@@ -49,12 +85,27 @@ export function useClinicSystemStatus(): ClinicSystemStatus {
 				setIsShiftOpen(true); setShiftNumber(parsed.shiftNumber || 1); setShiftOpenedAtMs(parsed.openedAtMs);
 			}
 		} catch { /* storage fallback */ }
+		return () => {
+			clearInterval(heartbeatTimer);
+			unsubscribeBreaker();
+		};
 	}, [refreshQueue, measureLatency]);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		const onOnline = () => { setIsOnline(true); void measureLatency(); showToast("Связь с сервером активна", "success"); };
-		const onOffline = () => { setIsOnline(false); setSyncLatencyMs(null); showToast("Офлайн режим. Данные сохраняются", "warning"); };
+		const onOnline = () => {
+			setIsBrowserOnline(true);
+			setIsReconnecting(true);
+			void measureLatency();
+			showToast("Связь с сервером активна", "success");
+		};
+		const onOffline = () => {
+			setIsBrowserOnline(false);
+			setIsServerReachable(false);
+			setIsReconnecting(false);
+			setSyncLatencyMs(null);
+			showToast("Офлайн режим. Данные сохраняются", "warning");
+		};
 		window.addEventListener("online", onOnline);
 		window.addEventListener("offline", onOffline);
 		return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
@@ -107,10 +158,18 @@ export function useClinicSystemStatus(): ClinicSystemStatus {
 		}
 	}, [isShiftOpen, shiftNumber]);
 
+	const isOnline = isBrowserOnline && isServerReachable;
+	const connectionLabel = !isBrowserOnline
+		? "Офлайн"
+		: isReconnecting
+			? "Повторное подключение..."
+			: isOnline
+				? "Клиника онлайн"
+				: "Офлайн-режим";
 	const agentStateLabel = tel.agentState === "online" ? "Онлайн" : tel.agentState === "dnd" ? "Занят" : tel.agentState === "pause" ? "Пауза" : "Офлайн";
 
 	return {
-		isOnline, syncLatencyMs, isSyncing: isLocalSyncing || isStoreSyncing, lastSyncTime,
+		isOnline, isReconnecting, connectionLabel, syncLatencyMs, isSyncing: isLocalSyncing || isStoreSyncing, lastSyncTime,
 		formattedLastSync, pendingMutationCount, l2PatientSnapshotsCount: l2Status.patientSnapshotsCount,
 		isShiftOpen, shiftNumber, shiftDurationSeconds, formattedShiftTime, activeCall: tel.activeCall,
 		agentState: tel.agentState as AgentTelephonyState, agentStateLabel, activeLineId: tel.activeLineId, isMuted: tel.isMuted,

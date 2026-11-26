@@ -19,6 +19,8 @@ export function ClinicControlCenterPopover({
 	onClose,
 	onLockSession,
 	onOpenShiftModal,
+	isSidebar = false,
+	popoverRef,
 }: ClinicControlCenterPopoverProps) {
 	const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
 	const ctx = useOptionalAppLogicContext();
@@ -33,9 +35,14 @@ export function ClinicControlCenterPopover({
 
 	if (!isOpen) return null;
 
+	const desktopPositionClass = isSidebar
+		? "fixed bottom-16 left-4 z-[9999] w-[360px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-96px)] overflow-y-auto rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] border border-[var(--line-strong,var(--line))] p-4 shadow-2xl overflow-x-clip"
+		: "fixed top-14 right-4 z-[9999] w-[372px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] overflow-y-auto rounded-2xl bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink)] border border-[var(--line-strong,var(--line))] p-4 shadow-2xl overflow-x-clip";
+
 	const content = (
 		<section
-			className={isMobile ? "dnt-cc-mobile-sheet fixed bottom-0 left-0 right-0 z-50 rounded-t-[24px] bg-[var(--paper-strong,var(--paper,#ffffff))] max-h-[85vh] overflow-y-auto p-4 border-t border-[var(--line)] shadow-2xl overflow-x-clip" : "dnt-control-center-popover"}
+			ref={popoverRef}
+			className={isMobile ? "dnt-cc-mobile-sheet fixed bottom-0 left-0 right-0 z-[9999] rounded-t-[24px] bg-[var(--paper-strong,var(--paper,#ffffff))] max-h-[85vh] overflow-y-auto p-4 border-t border-[var(--line)] shadow-2xl overflow-x-clip" : desktopPositionClass}
 			aria-label="Центр управления клиникой"
 		>
 			{isMobile && (
@@ -51,8 +58,8 @@ export function ClinicControlCenterPopover({
 						<Activity size={16} />
 					</div>
 					<div className="min-w-0">
-						<h3 className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] truncate">
-							Пульт Клиники
+						<h3 className="text-xs font-semibold tracking-tight text-[var(--ink,#0f172a)] truncate">
+							Пульт клиники
 						</h3>
 						<p className="text-[10px] text-[var(--muted,#475569)] truncate">
 							{dashboard?.clinicName || "Клиника DENTE"} · {ctx?.selectedWorkspaceRole ? String(ctx.selectedWorkspaceRole) : "Администратор"}
@@ -76,14 +83,16 @@ export function ClinicControlCenterPopover({
 		</section>
 	);
 
-	if (isMobile && typeof document !== "undefined") {
+	if (typeof document !== "undefined") {
 		return createPortal(
 			<>
-				<div
-					className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 transition-opacity"
-					onClick={onClose}
-					aria-hidden="true"
-				/>
+				{isMobile && (
+					<div
+						className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[9998] transition-opacity"
+						onClick={onClose}
+						aria-hidden="true"
+					/>
+				)}
 				{content}
 			</>,
 			document.body,

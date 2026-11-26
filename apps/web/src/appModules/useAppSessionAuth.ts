@@ -51,30 +51,107 @@ export function useAppSessionAuth(setSelectedWorkspaceRole?: (r: StaffRole) => v
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const s = window.location.search || "";
-		if (s && (s.includes("pair=") || s.includes("token="))) {
-			const params = new URLSearchParams(s);
+		if (!s) return;
+		const params = new URLSearchParams(s);
+
+		const clinicServer = params.get("clinic_server");
+		if (clinicServer && /^https?:\/\//i.test(clinicServer)) {
+			const normalized = clinicServer.replace(/\/+$/, "");
+			safeLocalStorageSetItem("dente_lan_server_url", normalized, true);
+			safeLocalStorageSetItem("dente_active_api_base_url", `${normalized}/api`, true);
+		}
+
+		if (s.includes("pair=") || s.includes("token=")) {
 			const token = params.get("pair") || params.get("token");
 			if (token) {
 				fetch("/api/network/pair/verify", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ token, pin: params.get("pin") || undefined, deviceName: "Mobile / Tablet at chair" }),
+					body: JSON.stringify({
+						token,
+						pin: params.get("pin") || undefined,
+						deviceName: "Mobile / Tablet at chair",
+					}),
 				})
 					.then((res) => (res.ok ? res.json() : null))
-					.then((data) => {
-						if (data?.ok && data.clinicToken && data.staffToken) {
+					.then((raw) => {
+						const data = raw?.data ?? raw;
+						if (data?.ok && data.clinicToken) {
 							setApiCacheScope(null);
 							clearApiCache();
 							safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
-							safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
 							setClinicAuthed(true);
-							setStaffAuthed(true);
+							if (data.staffToken) {
+								safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
+								setStaffAuthed(true);
+							} else {
+								safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+								setStaffAuthed(false);
+								setShowStaffPinPad(true);
+							}
 							if (data.role) setSelectedWorkspaceRole?.(data.role);
 							window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
 						}
 					})
 					.catch((err: unknown) => {
 						logger.warn("Failed to verify pairing token:", err);
+					});
+			}
+		} else if (s.includes("pair_pin=")) {
+			const pin = (params.get("pair_pin") || "").trim();
+			const clinicId = (params.get("clinic_id") || "").trim() || undefined;
+			const masterIp = (params.get("master_ip") || "").trim();
+			const apiPort = (params.get("api_port") || "4100").trim();
+			if (/^\d{6}$/.test(pin)) {
+				const targetOrigin =
+					masterIp && /^(\d{1,3}\.){3}\d{1,3}$/.test(masterIp)
+						? `http://${masterIp}:${apiPort}`
+						: "";
+				if (targetOrigin) {
+					safeLocalStorageSetItem("dente_lan_server_url", targetOrigin, true);
+					safeLocalStorageSetItem("dente_active_api_base_url", `${targetOrigin}/api`, true);
+				}
+				const endpoint = targetOrigin
+					? `${targetOrigin}/api/network/mesh/auto-join/verify`
+					: "/api/network/mesh/auto-join/verify";
+				const idemKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+					? crypto.randomUUID()
+					: undefined;
+				fetch(endpoint, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(idemKey ? { "Idempotency-Key": idemKey } : {}),
+					},
+					body: JSON.stringify({
+						pin,
+						...(clinicId ? { organizationId: clinicId } : {}),
+						clientName: "Планшет / Рабочее место клиники",
+					}),
+				})
+					.then((res) => (res.ok ? res.json() : null))
+					.then((raw) => {
+						const data = raw?.data ?? raw;
+						const clinicToken = data?.clinicToken || data?.join?.clinicToken;
+						if (data?.ok && clinicToken) {
+							setApiCacheScope(null);
+							clearApiCache();
+							safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, clinicToken);
+							if (data?.join?.meshToken) {
+								safeLocalStorageSetItem("dente_mesh_token", data.join.meshToken);
+							}
+							safeLocalStorageRemoveItem(DENTE_STAFF_TOKEN_KEY);
+							setClinicAuthed(true);
+							setStaffAuthed(false);
+							setShowStaffPinPad(true);
+							if (data?.join?.assignedRole === "doctor" || data?.join?.assignedRole === "assistant") {
+								setSelectedWorkspaceRole?.(data.join.assignedRole);
+							}
+							window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+						}
+					})
+					.catch((err: unknown) => {
+						logger.warn("Failed to verify auto-join PIN:", err);
 					});
 			}
 		}

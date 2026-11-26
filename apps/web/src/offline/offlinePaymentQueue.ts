@@ -21,7 +21,7 @@ import {
 import { routeFiscalReceiptPrint } from "../utils/runtimeRouter.js";
 import { isLowSpecDevice } from "../utils/lowSpecHddOptimizer.js";
 import { logger } from "../utils/logger.js";
-import { getDenteAuthHeaders } from "../lib/denteRequestHeaders.js";
+import { offlineSyncService } from "../services/offline/offlineSyncService.js";
 
 export type PaymentMethodKind = "cash" | "card" | "sbp" | "deposit" | "mixed";
 export type PaymentQueueStatus = "queued" | "processing" | "synced" | "failed";
@@ -308,8 +308,8 @@ export async function syncOfflinePaymentQueue(
 }
 
 /**
- * Standard server dispatcher to flush offline payments to /api/cashbox/payments.
- * Protected by mutual exclusion to prevent parallel race conditions with Sync Gateway.
+ * Flushes offline payment mutations through the single SSOT Sync Gateway outbox (`OfflineSyncService`),
+ * preventing double-flush races with direct /api/cashbox/payments posts.
  */
 let isPaymentFlushing = false;
 export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: number; failedCount: number }> {
@@ -318,88 +318,22 @@ export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: num
 	}
 	isPaymentFlushing = true;
 	try {
-		return await syncOfflinePaymentQueue(async (payment) => {
-		const validIdempotencyKey = UUID_PATTERN.test(payment.idempotencyKey)
-			? payment.idempotencyKey
-			: generateUuidV7();
-		const payload: Record<string, unknown> = {
-			patientId: payment.patientId && payment.patientId !== "pat-walkin" ? payment.patientId : undefined,
-			visitId: payment.visitId,
-			invoiceId: payment.invoiceId,
-			amountKopecks: payment.totalKopecks,
-			amountRub: payment.totalRub,
-			method: payment.paymentType === "mixed" ? "split" : payment.paymentType,
-			isWarranty: payment.paymentType === "cash" && payment.totalKopecks === 0,
-			cashierFullName: payment.cashierName || "Кассир",
-			clientType: "physical_person",
-			clientMutationId: validIdempotencyKey,
-			note: "Синхронизация из офлайн-очереди кассы DENTE",
+		const drain = await offlineSyncService.drainOutbox();
+		return {
+			syncedCount: drain.appliedCount + drain.duplicateCount + drain.mergedCount,
+			failedCount: drain.failedCount + drain.rejectedCount,
 		};
-
-		if (payment.splitDetails) {
-			if (payment.splitDetails.cashKopecks !== undefined) {
-				payload.cashAmountKopecks = payment.splitDetails.cashKopecks;
-			}
-			if (payment.splitDetails.cardKopecks !== undefined || payment.splitDetails.sbpKopecks !== undefined) {
-				payload.electronicAmountKopecks = (payment.splitDetails.cardKopecks || 0) + (payment.splitDetails.sbpKopecks || 0);
-			}
-			if (payment.splitDetails.depositKopecks !== undefined) {
-				payload.depositAmountKopecks = payment.splitDetails.depositKopecks;
-			}
-			if (payment.splitDetails.bonusKopecks !== undefined) {
-				payload.bonusAmountKopecks = payment.splitDetails.bonusKopecks;
-			}
-			if (payment.splitDetails.certificateKopecks !== undefined) {
-				payload.certificateAmountKopecks = payment.splitDetails.certificateKopecks;
-			}
-			if (payment.splitDetails.certificateNumber !== undefined) {
-				payload.certificateNumber = payment.splitDetails.certificateNumber;
-			}
-		}
-
-		const res = await fetch("/api/cashbox/payments", {
-			method: "POST",
-			headers: getDenteAuthHeaders({
-				"Content-Type": "application/json",
-				"Idempotency-Key": validIdempotencyKey,
-			}),
-			body: JSON.stringify(payload),
-		});
-
-		if (res.ok) {
-			const data = (await res.json().catch(() => null)) as { success?: boolean; paymentId?: string } | null;
-			return { success: true, ...(data?.paymentId ? { serverPaymentId: data.paymentId } : {}) };
-		}
-		if (res.status === 409) {
-			// Idempotency duplicate — already registered on server
-			return { success: true };
-		}
-		return { success: false };
-	});
 	} finally {
 		isPaymentFlushing = false;
 	}
 }
 
 /**
- * Online event listener for automatic offline payment flushing.
+ * Legacy compatibility hook: lifecycle online sync is managed centrally by OfflineSyncService.
  */
-let isPaymentOnlineListenerInit = false;
 export function initOfflinePaymentAutoSync(): void {
-	if (typeof window !== "undefined" && !isPaymentOnlineListenerInit) {
-		window.addEventListener("online", () => {
-			void flushOfflinePaymentsToServer().then((result) => {
-				if (result.syncedCount > 0) {
-					logger.info(`[offlinePaymentQueue] Synced ${result.syncedCount} queued payments to server on network restore.`);
-				}
-			});
-		});
-		isPaymentOnlineListenerInit = true;
-	}
+	// Managed centrally by OfflineSyncService to prevent duplicate online flushes.
 }
-
-// Auto-initialize online sync listener
-initOfflinePaymentAutoSync();
 
 /**
  * Clears in-memory payment cache (useful during testing or logout).

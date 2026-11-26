@@ -26,11 +26,11 @@ export async function registerHealthRoutes(app: FastifyInstance): Promise<void> 
 
 	/**
 	 * LAN Server Discovery & mDNS Beacon.
-	 * Returns clinic LAN server metadata for auto-discovery and offline failover.
+	 * Returns minimal public LAN server summary without leaking MAC addresses or interface topology.
 	 */
 	app.get("/api/health/discovery", async () => {
-		const { getLanServerDiscoveryMetadata } = await import("../services/lanDiscoveryService.js");
-		return getLanServerDiscoveryMetadata();
+		const { getPublicLanDiscoverySummary } = await import("../services/lanDiscoveryService.js");
+		return getPublicLanDiscoverySummary();
 	});
 
 	/**

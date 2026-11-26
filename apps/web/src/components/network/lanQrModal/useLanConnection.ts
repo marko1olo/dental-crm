@@ -1,38 +1,40 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type DeviceRole, type LanServerInfoResponse, generateLanPairingQr, isWindowsHotspotIp } from "../lanQrEngine";
 import { copyTextSafely, formatSecondsToTimer, getClinicAuthHeaders } from "./lanConnectionHelpers";
+import type { LanWizardMode } from "./LanWizardModeTabs";
 
 export function useLanConnection(isOpen: boolean, initialRole: DeviceRole = "doctor", onClose: () => void) {
-	const [role, setRole] = useState<DeviceRole>(initialRole);
-	const [lanInfo, setLanInfo] = useState<LanServerInfoResponse | null>(null);
-	const [selectedIp, setSelectedIp] = useState<string>("");
-	const [activePairingToken, setActivePairingToken] = useState<string>("");
-	const [pairingPin, setPairingPin] = useState<string | null>(null);
+	const [wizardMode, setWizardMode] = useState<LanWizardMode>("host"), [role, setRole] = useState<DeviceRole>(initialRole);
+	const [lanInfo, setLanInfo] = useState<LanServerInfoResponse | null>(null), [selectedIp, setSelectedIp] = useState("");
+	const [activePairingToken, setActivePairingToken] = useState(""), [pairingPin, setPairingPin] = useState<string | null>(null);
+	const [autoJoinPin, setAutoJoinPin] = useState<string | null>(null);
 	const [requiresAuth, setRequiresAuth] = useState(false), [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null), [copied, setCopied] = useState(false);
 	const [isRefreshing, setIsRefreshing] = useState(false), [showHotspotDetails, setShowHotspotDetails] = useState(false);
-	const [activeTab, setActiveTab] = useState<"qr" | "diagnostics">("qr");
-	const [timeRemainingSeconds, setTimeRemainingSeconds] = useState(900);
+	const [activeTab, setActiveTab] = useState<"qr" | "diagnostics">("qr"), [timeRemainingSeconds, setTimeRemainingSeconds] = useState(900);
 	const [pingMs, setPingMs] = useState<number | null>(null), [connectedPeersCount, setConnectedPeersCount] = useState(0);
 
 	const fetchLanInfo = useCallback(async (targetRole?: DeviceRole) => {
 		try {
 			setLoading(true); setError(null);
-			const r = targetRole || role;
-			const res = await fetch("/api/network/lan-info", { headers: getClinicAuthHeaders() });
+			const r = targetRole || role, headers = getClinicAuthHeaders();
+			const res = await fetch("/api/network/lan-info", { headers });
 			if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
-			const data: LanServerInfoResponse = await res.json();
+			let autoRes: Response | null = null;
+			try { autoRes = await fetch("/api/network/mesh/auto-join/status", { headers }); } catch (autoErr) { if (autoErr instanceof Error && autoErr.name === "AbortError") throw autoErr; }
+			const rawInfo = await res.json();
+			const data: LanServerInfoResponse = rawInfo?.data ?? rawInfo;
 			setLanInfo(data); setRequiresAuth(Boolean(data.requiresAuth || !data.pairingToken));
 			setSelectedIp(data.primaryIp || "127.0.0.1"); setActivePairingToken(data.pairingToken || "");
 			setPairingPin(data.pairingPin || null); setTimeRemainingSeconds(data.pairingExpiresInSeconds || 900);
+			if (autoRes?.ok) {
+				const rawAj = await autoRes.json();
+				const aj = (rawAj?.data ?? rawAj) as { ok?: boolean; status?: { currentPin?: string } };
+				if (aj?.ok && aj.status?.currentPin) setAutoJoinPin(aj.status.currentPin);
+			}
 			if (r !== "doctor" && data.pairingToken) {
-				const pr = await fetch("/api/network/pair/generate", {
-					method: "POST", headers: getClinicAuthHeaders(), body: JSON.stringify({ role: r, targetIp: data.primaryIp }),
-				});
-				if (pr.ok) {
-					const pd = await pr.json();
-					setActivePairingToken(pd.pairingToken); setPairingPin(pd.pairingPin || null);
-				}
+				const pr = await fetch("/api/network/pair/generate", { method: "POST", headers, body: JSON.stringify({ role: r, targetIp: data.primaryIp }) });
+				if (pr.ok) { const rawPd = await pr.json(); const pd = rawPd?.data ?? rawPd; setActivePairingToken(pd.pairingToken); setPairingPin(pd.pairingPin || null); }
 			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
@@ -80,7 +82,8 @@ export function useLanConnection(isOpen: boolean, initialRole: DeviceRole = "doc
 				method: "POST", headers: getClinicAuthHeaders(), body: JSON.stringify({ role: newRole, targetIp: selectedIp }),
 			});
 			if (res.ok) {
-				const d = await res.json();
+				const rawD = await res.json();
+				const d = rawD?.data ?? rawD;
 				setActivePairingToken(d.pairingToken); setPairingPin(d.pairingPin || null);
 			}
 		} finally { setIsRefreshing(false); }
@@ -107,7 +110,7 @@ export function useLanConnection(isOpen: boolean, initialRole: DeviceRole = "doc
 	const formattedTime = useMemo(() => formatSecondsToTimer(timeRemainingSeconds), [timeRemainingSeconds]);
 
 	return {
-		role, lanInfo, selectedIp, activePairingToken, pairingPin, requiresAuth, loading, error, copied,
+		wizardMode, setWizardMode, role, lanInfo, selectedIp, activePairingToken, pairingPin, autoJoinPin, requiresAuth, loading, error, copied,
 		isRefreshing, activeTab, setActiveTab, showHotspotDetails, setShowHotspotDetails, pingMs, connectedPeersCount,
 		qrResult, physicalInterfaces, hasActiveHotspot, formattedTime,
 		handleRefreshToken, handleRoleChange, handleCopyUrl, handleSelectAdapter: setSelectedIp,

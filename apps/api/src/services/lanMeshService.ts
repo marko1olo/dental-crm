@@ -39,14 +39,63 @@ import {
 	type MeshSyncStatusBadge,
 	type QueuedMeshMutation,
 	type SchemaCompatibilityResult,
+	type SyncMutationEntityKind,
+	type SyncMutationEnvelope,
 	VectorClockEngine,
+	computePayloadHash,
 	createMeshDiscoveryBeacon,
 	createMeshLeaseHeartbeatPacket,
 	parseMeshDiscoveryBeacon,
 	parseMeshLeaseHeartbeatPacket,
 	verifyMeshSchemaCompatibility,
 } from "@dental/shared";
-import { getLocalLanAddresses, getPrimaryLanIp } from "./lanDiscoveryService.js";
+import { authTokenSecret } from "../security/authSecret.js";
+import { signToken } from "../utils/cryptoHelper.js";
+import {
+	browseMdnsDenteServers,
+	getLanDiscoveryUdpSocket,
+	getLocalLanAddresses,
+	getPrimaryLanIp,
+	registerLanDiscoveryUdpListener,
+	sendLanDiscoveryUdpPacket,
+} from "./lanDiscoveryService.js";
+import { SyncGatewayService } from "./sync/syncGatewayService.js";
+
+function generateUuidV7(): string {
+	const bytes = crypto.randomBytes(16);
+	const now = BigInt(Date.now());
+	bytes[0] = Number((now >> 40n) & 0xffn);
+	bytes[1] = Number((now >> 32n) & 0xffn);
+	bytes[2] = Number((now >> 24n) & 0xffn);
+	bytes[3] = Number((now >> 16n) & 0xffn);
+	bytes[4] = Number((now >> 8n) & 0xffn);
+	bytes[5] = Number(now & 0xffn);
+	bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x70;
+	bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+	const hex = bytes.toString("hex");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+function toSyncEntityKind(kind: string): SyncMutationEntityKind {
+	const normalized = kind.toLowerCase().trim();
+	if (normalized === "appointment") return "appointment";
+	if (normalized === "visit") return "visit";
+	if (
+		normalized === "tooth_status" ||
+		normalized === "odontogram" ||
+		normalized === "odontogram_status" ||
+		normalized === "odontogram_state"
+	) {
+		return "odontogram_state";
+	}
+	if (normalized === "payment" || normalized === "receipt") return "payment";
+	if (normalized === "invoice" || normalized === "patient_invoice") return "patient_invoice";
+	if (normalized === "visit_diary" || normalized === "diary") return "visit_diary";
+	if (normalized === "treatment_item" || normalized === "service") return "treatment_item";
+	if (normalized === "clinical_task") return "clinical_task";
+	if (normalized === "patient_administrative_profile") return "patient_administrative_profile";
+	return "patient";
+}
 
 export interface LanMeshServiceConfig {
 	readonly nodeId?: string;
@@ -91,6 +140,8 @@ export class LanMeshService {
 	private readonly leaseFailoverCheckIntervalMs: number;
 
 	private udpSocket: dgram.Socket | null = null;
+	private sharedUdpUnsubscribe: (() => void) | null = null;
+	private usingSharedUdpSocket = false;
 	private beaconTimer: NodeJS.Timeout | null = null;
 	private pruneTimer: NodeJS.Timeout | null = null;
 	private flushTimer: NodeJS.Timeout | null = null;
@@ -164,6 +215,7 @@ export class LanMeshService {
 		this.beaconTimer = setInterval(() => {
 			this.broadcastBeacon();
 		}, 3000);
+		this.beaconTimer.unref?.();
 
 		// If Master role: broadcast lease heartbeat immediately and schedule every leaseHeartbeatIntervalMs
 		if (this.role === "master") {
@@ -171,6 +223,7 @@ export class LanMeshService {
 			this.leaseHeartbeatTimer = setInterval(() => {
 				this.broadcastLeaseHeartbeat();
 			}, this.leaseHeartbeatIntervalMs);
+			this.leaseHeartbeatTimer.unref?.();
 		}
 
 		// If lease failover enabled: schedule lease health checks (every 2.5s)
@@ -178,17 +231,20 @@ export class LanMeshService {
 			this.leaseHealthCheckTimer = setInterval(() => {
 				this.checkMasterLeaseHealth();
 			}, this.leaseFailoverCheckIntervalMs);
+			this.leaseHealthCheckTimer.unref?.();
 		}
 
 		// Schedule peer pruning (every 5 seconds)
 		this.pruneTimer = setInterval(() => {
 			this.topologyManager.pruneStalePeers();
 		}, 5000);
+		this.pruneTimer.unref?.();
 
 		// Schedule offline mutation flush retry (every 4 seconds)
 		this.flushTimer = setInterval(() => {
 			void this.flushOfflineMutationQueue();
 		}, 4000);
+		this.flushTimer.unref?.();
 
 		// Run subnet HTTP active probe non-blockingly
 		void this.probeSubnetHttp();
@@ -225,51 +281,75 @@ export class LanMeshService {
 			clearInterval(this.flushTimer);
 			this.flushTimer = null;
 		}
-		if (this.udpSocket) {
+		if (this.sharedUdpUnsubscribe) {
+			this.sharedUdpUnsubscribe();
+			this.sharedUdpUnsubscribe = null;
+		}
+		if (this.udpSocket && !this.usingSharedUdpSocket) {
 			try {
 				this.udpSocket.close();
 			} catch (err) {
 				this.logger?.warn?.(`[LanMeshService] Error closing UDP socket: ${err instanceof Error ? err.message : String(err)}`);
 			}
-			this.udpSocket = null;
 		}
+		this.udpSocket = null;
+		this.usingSharedUdpSocket = false;
 		this.logger?.info?.(`[LanMeshService] Stopped LAN Mesh Node '${this.nodeId}'`);
+	}
+
+	private handleIncomingUdpPacket(msgBuffer: Buffer): void {
+		// 1. Check for cryptographically signed Master Lease Heartbeat
+		const lease = parseMeshLeaseHeartbeatPacket(msgBuffer);
+		if (lease) {
+			if (lease.masterNodeId !== this.nodeId) {
+				this.topologyManager.processMasterLeaseHeartbeat(lease, this.leaseSecret);
+			}
+			return;
+		}
+
+		// 2. Fall back to standard discovery beacon
+		const beacon = parseMeshDiscoveryBeacon(msgBuffer);
+		if (!beacon) return;
+		if (beacon.nodeId === this.nodeId) return; // Ignore own beacons
+
+		const isNew = !this.topologyManager.getPeer(beacon.nodeId);
+		this.topologyManager.processIncomingBeacon(beacon);
+
+		// Fast sub-second handshake trigger (<500ms)
+		if (isNew) {
+			void this.performHandshakeWithPeer(beacon.ip, beacon.port);
+		}
 	}
 
 	/**
 	 * Initializes UDP discovery socket for multicast and subnet broadcast.
+	 * Reuses the shared LanDiscoveryService UDP socket on port 4101 if already bound.
 	 */
 	private initUdpSocket(): void {
+		const sharedSocket = getLanDiscoveryUdpSocket();
+		if (sharedSocket) {
+			this.udpSocket = sharedSocket;
+			this.usingSharedUdpSocket = true;
+			this.sharedUdpUnsubscribe = registerLanDiscoveryUdpListener((msgBuffer) => {
+				this.handleIncomingUdpPacket(msgBuffer);
+			});
+			this.logger?.info?.(
+				`[LanMeshService] Attached to shared UDP discovery socket on port ${this.udpPort}`,
+			);
+			return;
+		}
+
 		try {
 			const socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
 			this.udpSocket = socket;
+			this.usingSharedUdpSocket = false;
 
 			socket.on("error", (err) => {
 				this.logger?.error?.(`[LanMeshService] UDP Socket error: ${err.message}`);
 			});
 
-			socket.on("message", (msgBuffer, rinfo) => {
-				// 1. Check for cryptographically signed Master Lease Heartbeat
-				const lease = parseMeshLeaseHeartbeatPacket(msgBuffer);
-				if (lease) {
-					if (lease.masterNodeId !== this.nodeId) {
-						this.topologyManager.processMasterLeaseHeartbeat(lease, this.leaseSecret);
-					}
-					return;
-				}
-
-				// 2. Fall back to standard discovery beacon
-				const beacon = parseMeshDiscoveryBeacon(msgBuffer);
-				if (!beacon) return;
-				if (beacon.nodeId === this.nodeId) return; // Ignore own beacons
-
-				const isNew = !this.topologyManager.getPeer(beacon.nodeId);
-				this.topologyManager.processIncomingBeacon(beacon);
-
-				// Fast sub-second handshake trigger (<500ms)
-				if (isNew) {
-					void this.performHandshakeWithPeer(beacon.ip, beacon.port);
-				}
+			socket.on("message", (msgBuffer) => {
+				this.handleIncomingUdpPacket(msgBuffer);
 			});
 
 			socket.bind(this.udpPort, () => {
@@ -293,11 +373,18 @@ export class LanMeshService {
 	 * Emits a cryptographically signed Master Lease Heartbeat over UDP multicast & local subnet broadcast.
 	 */
 	broadcastLeaseHeartbeat(): void {
-		if (!this.udpSocket) return;
+		if (!this.udpSocket && !this.usingSharedUdpSocket) return;
 		if (this.role !== "master" && !this.topologyManager.isTemporaryMasterActive()) return;
 
 		const lease = this.topologyManager.createLeaseHeartbeat();
 		const packetBuffer = createMeshLeaseHeartbeatPacket(lease);
+
+		if (this.usingSharedUdpSocket) {
+			void sendLanDiscoveryUdpPacket(packetBuffer, this.udpPort, "239.255.255.250");
+			void sendLanDiscoveryUdpPacket(packetBuffer, this.udpPort, "255.255.255.255", true);
+			return;
+		}
+		if (!this.udpSocket) return;
 
 		// 1. Multicast group
 		try {
@@ -333,6 +420,7 @@ export class LanMeshService {
 				this.leaseHeartbeatTimer = setInterval(() => {
 					this.broadcastLeaseHeartbeat();
 				}, this.leaseHeartbeatIntervalMs);
+				this.leaseHeartbeatTimer.unref?.();
 			}
 		} else if (!this.topologyManager.isTemporaryMasterActive() && this.role !== "master" && this.leaseHeartbeatTimer) {
 			clearInterval(this.leaseHeartbeatTimer);
@@ -368,7 +456,7 @@ export class LanMeshService {
 	 * Broadcasts discovery beacon via UDP multicast & local subnet broadcast.
 	 */
 	broadcastBeacon(): void {
-		if (!this.udpSocket) return;
+		if (!this.udpSocket && !this.usingSharedUdpSocket) return;
 
 		const beaconBuffer = createMeshDiscoveryBeacon({
 			nodeId: this.nodeId,
@@ -379,6 +467,13 @@ export class LanMeshService {
 			appVersion: this.appVersion,
 			schemaVersion: this.schemaVersion,
 		});
+
+		if (this.usingSharedUdpSocket) {
+			void sendLanDiscoveryUdpPacket(beaconBuffer, this.udpPort, "239.255.255.250");
+			void sendLanDiscoveryUdpPacket(beaconBuffer, this.udpPort, "255.255.255.255", true);
+			return;
+		}
+		if (!this.udpSocket) return;
 
 		// 1. Multicast group
 		try {
@@ -395,18 +490,36 @@ export class LanMeshService {
 		}
 	}
 
+	private buildInternalAuthHeaders(extra: Record<string, string | number> = {}): Record<string, string | number> {
+		const clinicToken = signToken(
+			{
+				organizationId: this.clinicId,
+				role: "clinic",
+				nodeId: this.nodeId,
+			},
+			authTokenSecret(),
+			300,
+		);
+		return {
+			"x-dente-clinic-token": clinicToken,
+			"Idempotency-Key": generateUuidV7(),
+			...extra,
+		};
+	}
+
 	/**
-	 * Subnet HTTP probe scanner:
-	 * Probes candidate IPs on ports 4100-4105 with fast timeout (<300ms)
-	 * to bypass AP-isolation and discover peers instantly even if UDP is filtered.
+	 * Subnet HTTP & mDNS active probe scanner:
+	 * Scans full /24 subnet (1..254) with bounded concurrency=16 and fast 250ms timeout
+	 * plus `_dente._tcp.local` mDNS peers to bypass AP-isolation when UDP broadcast is filtered.
 	 */
 	async probeSubnetHttp(targetPorts: readonly number[] = DEFAULT_MESH_HTTP_PORTS): Promise<string[]> {
 		const discovered: string[] = [];
 		const localAddresses = getLocalLanAddresses();
 		const primaryIp = localAddresses[0] || "127.0.0.1";
 
-		// Generate candidate IP list
+		// Generate full /24 candidate IP list
 		const candidates: string[] = ["127.0.0.1"];
+		const candidateSet = new Set<string>(candidates);
 
 		if (primaryIp !== "127.0.0.1") {
 			const parts = primaryIp.split(".");
@@ -414,37 +527,62 @@ export class LanMeshService {
 				const prefix = `${parts[0]}.${parts[1]}.${parts[2]}`;
 				const currentOctet = Number.parseInt(parts[3] || "0", 10);
 
-				// Probe gateway (.1) and nearby neighbors (+- 10 IPs)
-				candidates.push(`${prefix}.1`);
-				for (let offset = -10; offset <= 10; offset++) {
-					const octet = currentOctet + offset;
-					if (octet > 1 && octet < 255 && octet !== currentOctet) {
-						candidates.push(`${prefix}.${octet}`);
+				for (const octet of [1]) {
+					const ip = `${prefix}.${octet}`;
+					if (!candidateSet.has(ip)) {
+						candidateSet.add(ip);
+						candidates.push(ip);
+					}
+				}
+				for (let octet = 2; octet <= 254; octet++) {
+					if (octet === currentOctet) continue;
+					const ip = `${prefix}.${octet}`;
+					if (!candidateSet.has(ip)) {
+						candidateSet.add(ip);
+						candidates.push(ip);
 					}
 				}
 			}
 		}
 
-		const uniqueCandidates = Array.from(new Set(candidates));
+		const targets: Array<{ ip: string; port: number }> = [];
+		try {
+			const mdnsServers = await browseMdnsDenteServers(400);
+			for (const svc of mdnsServers) {
+				if (svc.address === primaryIp && svc.apiPort === this.apiPort) continue;
+				if (!targets.some((t) => t.ip === svc.address && t.port === svc.apiPort)) {
+					targets.push({ ip: svc.address, port: svc.apiPort });
+				}
+			}
+		} catch {
+			// Best-effort mDNS enrichment before HTTP probe
+		}
 
-		// Probe candidate hosts in parallel batches with fast timeout
-		const probeTasks: Promise<void>[] = [];
-
-		for (const ip of uniqueCandidates) {
+		for (const ip of candidates) {
 			for (const port of targetPorts) {
-				if (ip === "127.0.0.1" && port === this.apiPort) continue; // Skip self
-
-				probeTasks.push(
-					this.probeHttpEndpoint(ip, port).then((success) => {
-						if (success) {
-							discovered.push(`${ip}:${port}`);
-						}
-					}),
-				);
+				if ((ip === "127.0.0.1" || ip === primaryIp) && port === this.apiPort) continue;
+				if (!targets.some((t) => t.ip === ip && t.port === port)) {
+					targets.push({ ip, port });
+				}
 			}
 		}
 
-		await Promise.allSettled(probeTasks);
+		const concurrency = 16;
+		for (let i = 0; i < targets.length; i += concurrency) {
+			const batch = targets.slice(i, i + concurrency);
+			const results = await Promise.all(
+				batch.map(async (target) => ({
+					target,
+					ok: await this.probeHttpEndpoint(target.ip, target.port),
+				})),
+			);
+			for (const item of results) {
+				if (item.ok) {
+					discovered.push(`${item.target.ip}:${item.target.port}`);
+				}
+			}
+		}
+
 		return discovered;
 	}
 
@@ -454,13 +592,12 @@ export class LanMeshService {
 				{
 					hostname: ip,
 					port,
-					path: "/api/network/lan-mesh/handshake",
+					path: "/api/health/discovery",
 					method: "GET",
-					timeout: 300,
+					timeout: 250,
 				},
 				(res) => {
-					// Any HTTP response (even 405 Method Not Allowed or 200) confirms a DENTE node exists!
-					if (res.statusCode && res.statusCode < 500) {
+					if (res.statusCode && res.statusCode >= 200 && res.statusCode < 400) {
 						void this.performHandshakeWithPeer(ip, port);
 						resolve(true);
 					} else {
@@ -480,7 +617,7 @@ export class LanMeshService {
 	}
 
 	/**
-	 * Initiates HTTP handshake with a discovered peer.
+	 * Initiates authenticated HTTP handshake with a discovered peer.
 	 */
 	async performHandshakeWithPeer(peerIp: string, peerPort: number): Promise<boolean> {
 		const payload = this.topologyManager.createHandshakePayload();
@@ -493,10 +630,10 @@ export class LanMeshService {
 					port: peerPort,
 					path: "/api/network/lan-mesh/handshake",
 					method: "POST",
-					headers: {
+					headers: this.buildInternalAuthHeaders({
 						"Content-Type": "application/json",
 						"Content-Length": payloadBytes.length,
-					},
+					}),
 					timeout: 800,
 				},
 				(res) => {
@@ -582,15 +719,62 @@ export class LanMeshService {
 			originNodeId: this.nodeId,
 		};
 
-		// 1. Local Node is Master or Temporary Master: apply directly
+		// 1. Local Node is Master or Temporary Master: persist durably via SyncGatewayService
 		if (this.role === "master" || this.topologyManager.isTemporaryMasterActive()) {
 			this.vectorClockEngine.incrementVector(params.entityKind, params.entityId, this.nodeId);
-			this.topologyManager.getRingBuffer().push(mutation);
+			const envelope: SyncMutationEnvelope = {
+				mutationId: mutation.id,
+				idempotencyKey: mutation.idempotencyKey,
+				payloadHash: computePayloadHash(mutation.payload),
+				entityKind: toSyncEntityKind(mutation.entityKind),
+				entityId: mutation.entityId,
+				action: mutation.action === "delete" ? "delete" : mutation.action === "create" ? "create" : "update",
+				payload: mutation.payload,
+				updatedAt: new Date(mutation.timestamp).toISOString(),
+				clientId: this.nodeId,
+			};
+			try {
+				const syncOptions = this.logger
+					? {
+							logger: {
+								info: (...args: unknown[]) => this.logger?.info(...args),
+								warn: (...args: unknown[]) =>
+									this.logger?.warn ? this.logger.warn(...args) : this.logger?.info(...args),
+								error: (...args: unknown[]) => this.logger?.error(...args),
+							},
+						}
+					: undefined;
+				const pushResult = await SyncGatewayService.processPushBatch(
+					this.clinicId,
+					{
+						syncBatchId: `mesh-local-${Date.now()}`,
+						clientId: this.nodeId,
+						mutations: [envelope],
+						sentAt: new Date().toISOString(),
+					},
+					undefined,
+					syncOptions,
+				);
+				if (pushResult.rejectedCount === 0) {
+					return {
+						applied: true,
+						queuedOffline: false,
+						mode: this.topologyManager.isTemporaryMasterActive() ? "temporary_master_active" : "direct_master",
+						mutationId,
+					};
+				}
+			} catch (err) {
+				this.logger?.warn?.(
+					`[LanMeshService] Master persistence failed, queuing mutation '${mutationId}' for retry: ${err instanceof Error ? err.message : String(err)}`,
+				);
+			}
+			this.topologyManager.getMutationQueue().enqueue(mutation);
 			return {
-				applied: true,
-				queuedOffline: false,
-				mode: this.topologyManager.isTemporaryMasterActive() ? "temporary_master_active" : "direct_master",
+				applied: false,
+				queuedOffline: true,
+				mode: "offline_queued",
 				mutationId,
+				reason: "Master database persistence failed; queued for durable retry.",
 			};
 		}
 
@@ -657,10 +841,10 @@ export class LanMeshService {
 					port: master.port,
 					path: "/api/network/lan-mesh/mutations",
 					method: "POST",
-					headers: {
+					headers: this.buildInternalAuthHeaders({
 						"Content-Type": "application/json",
 						"Content-Length": bodyBytes.length,
-					},
+					}),
 					timeout: 1000,
 				},
 				(res) => {
@@ -706,10 +890,10 @@ export class LanMeshService {
 					port: master.port,
 					path: "/api/network/lan-mesh/mutations",
 					method: "POST",
-					headers: {
+					headers: this.buildInternalAuthHeaders({
 						"Content-Type": "application/json",
 						"Content-Length": bodyBytes.length,
-					},
+					}),
 					timeout: 2000,
 				},
 				(res) => {
