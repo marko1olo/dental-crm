@@ -44,7 +44,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
 			aria-label={`Анатомический зуб ${num}`} role="img"
 		>
-			<Tooth46ShaderDefs />
+			<Tooth46ShaderDefs toothNumber={num} />
 			<g transform={isFlipped ? "translate(100, 0) scale(-1, 1)" : undefined}>
 				<Tooth46PeriapicalArea condition={a.periapicalCondition} halo={a.periapicalHalo} isDark={isDark} />
 				{a.roots && !a.implant && (
@@ -53,6 +53,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 				{a.implant && <Tooth46SurgeryOverlay showImplant implantStage={a.implantStage} isDark={isDark} />}
 				{a.crown && !noCrown && (
 					<Tooth46EnamelCrown
+						toothNumber={num}
 						stroke={stroke} crownOpacity="1.0" showCusps={a.cusps ?? true} showFissures={a.fissures ?? true}
 						showAbfraction={Boolean(a.abfraction)} isDark={isDark} destructive={isDestruct} cariesType={cariesType}
 					/>

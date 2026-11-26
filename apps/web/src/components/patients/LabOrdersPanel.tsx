@@ -39,7 +39,11 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 	const effectivePatientId = patientId ?? undefined;
 	if (!effectivePatientId) return <DentalLabOrdersView />;
 
-	const logic = useLabOrdersPanelLogic(effectivePatientId);
+	return <LabOrdersPanelContent patientId={effectivePatientId} />;
+}
+
+function LabOrdersPanelContent({ patientId }: { readonly patientId: string }): React.JSX.Element {
+	const logic = useLabOrdersPanelLogic(patientId);
 	const portalBasePath = "/#/portal/lab-order/";
 
 	return (

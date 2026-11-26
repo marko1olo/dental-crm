@@ -75,19 +75,16 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 					<span className="inline xs:hidden sm:hidden">План</span>
 				</a>
 
-				{/* Desktop View Mode Switcher (Horizontal Swimlanes vs Kanban Columns) */}
+				{/* Desktop View Mode Switcher (Apple Segmented Control) */}
 				<div className="hidden md:flex items-center gap-1 p-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shadow-xs">
 					<button
 						type="button"
 						onClick={() => onViewModeChange("horizontal")}
-						className="h-8 px-3.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-						style={{
-							backgroundColor: viewMode === "horizontal" ? "var(--teal, #0d9488)" : "transparent",
-							color: viewMode === "horizontal" ? "#ffffff" : "var(--ink-muted)",
-							padding: "0 14px",
-							height: "32px",
-							borderRadius: "8px",
-						}}
+						className={`h-8 px-3.5 rounded-lg text-xs transition flex items-center gap-1.5 cursor-pointer ${
+							viewMode === "horizontal"
+								? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+						}`}
 						title="Горизонтальный режим дорожек (просторные карточки)"
 						data-testid="pipeline-view-mode-horizontal"
 					>
@@ -97,14 +94,11 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 					<button
 						type="button"
 						onClick={() => onViewModeChange("kanban")}
-						className="h-8 px-3.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-						style={{
-							backgroundColor: viewMode === "kanban" ? "var(--teal, #0d9488)" : "transparent",
-							color: viewMode === "kanban" ? "#ffffff" : "var(--ink-muted)",
-							padding: "0 14px",
-							height: "32px",
-							borderRadius: "8px",
-						}}
+						className={`h-8 px-3.5 rounded-lg text-xs transition flex items-center gap-1.5 cursor-pointer ${
+							viewMode === "kanban"
+								? "bg-[var(--paper)] text-[var(--ink)] font-medium shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+						}`}
 						title="Режим колонок (Канбан)"
 						data-testid="pipeline-view-mode-kanban"
 					>

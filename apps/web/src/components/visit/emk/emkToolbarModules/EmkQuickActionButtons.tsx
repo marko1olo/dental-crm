@@ -21,6 +21,8 @@ export interface EmkQuickActionButtonsProps {
 	hasUnsavedChanges?: boolean | undefined;
 	voicePilotNode?: React.ReactNode | undefined;
 	specialtyFocusNode?: React.ReactNode | undefined;
+	recentVisitActionNode?: React.ReactNode | undefined;
+	followupScheduleNode?: React.ReactNode | undefined;
 	canUndo: boolean; canRedo: boolean;
 	handleUndo: () => void; handleRedo: () => void;
 }
@@ -30,6 +32,7 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 		onApplyPhysiologicalNorm, onApplyNorm, onApplyOrthoNorm, onApplySurgeryNorm,
 		onOpenProtocolsCatalog, onToggleStarProtocols, onOpenConsent, onPrintMedicalCard, onPrint043,
 		handleSchedule, hasUnsavedChanges = false, voicePilotNode, specialtyFocusNode,
+		recentVisitActionNode, followupScheduleNode,
 		canUndo, canRedo, handleUndo, handleRedo,
 	} = props;
 	const resolvedPrintMedicalCard = onPrintMedicalCard ?? onPrint043;
@@ -125,10 +128,12 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 						{voicePilotNode}
 					</div>
 				)}
+				{recentVisitActionNode}
 			</div>
 
 			<EmkScheduleAndAutosaveBadges
 				specialtyFocusNode={specialtyFocusNode}
+				followupScheduleNode={followupScheduleNode}
 				handleSchedule={handleSchedule}
 				hasUnsavedChanges={hasUnsavedChanges}
 			/>

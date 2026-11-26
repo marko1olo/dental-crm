@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { OdontogramViewContainerProps } from "./OdontogramViewTypes";
 import type { useOdontogramContainerBatchActions } from "./useOdontogramContainerBatchActions";
 import type { useOdontogramContainerState } from "./useOdontogramContainerState";
@@ -26,6 +26,12 @@ export function useSharedViewProps({
 	st,
 	batch,
 }: UseSharedViewPropsParams) {
+	const { setActiveJawModalTarget } = st;
+	const handleJawClick = useCallback(
+		(target: "JU" | "JL" | "C") => setActiveJawModalTarget(target),
+		[setActiveJawModalTarget],
+	);
+
 	return useMemo(
 		() => ({
 			teethData: props.teethData,
@@ -51,12 +57,36 @@ export function useSharedViewProps({
 			onSelectTeethGroup: props.onSelectTeethGroup,
 			onClearSelection: batch.handleClearSelection,
 			onInvertSelection: batch.handleInvertSelection,
-			onJawClick: (target: "JU" | "JL" | "C") =>
-				st.setActiveJawModalTarget(target),
+			onJawClick: handleJawClick,
 			showWisdomTeeth: st.showWisdomTeeth,
 			showPulpAndCanals: st.showPulpAndCanals,
 			className: "",
 		}),
-		[props, dent, handleToothClickIntercept, st, batch],
+		[
+			props.teethData,
+			dent.isPediatricEffective,
+			dent.isMixedEffective,
+			dent.effectiveDentition,
+			props.onDentitionModeChange,
+			props.topTeeth,
+			props.bottomTeeth,
+			props.selectedTeeth,
+			handleToothClickIntercept,
+			props.onQuickStateChange,
+			props.useSurfaces,
+			props.hideHeader,
+			props.hideLegend,
+			props.activeQuadrant,
+			props.onQuadrantChange,
+			st.activeStampTool,
+			batch.handleMarkIntactDentition,
+			batch.handleMarkWisdomTeethMissing,
+			props.onSelectTeethGroup,
+			batch.handleClearSelection,
+			batch.handleInvertSelection,
+			handleJawClick,
+			st.showWisdomTeeth,
+			st.showPulpAndCanals,
+		],
 	);
 }

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { FinanceOperationsToolbar } from "./FinanceOperationsToolbar";
 import { FinanceSummaryCards } from "./FinanceSummaryCards";
 import { FinanceCashboxSection } from "./FinanceCashboxSection";
@@ -12,8 +14,11 @@ import { useFinanceView } from "./useFinanceView";
 
 export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const s = useFinanceView(rawProps);
+	const { hasPayrollModule } = useWorkspaceProfile();
+	const canShowPayroll = hasPayrollModule || isDemoShowcaseMode();
 	const [activeTab, setActiveTab] = useState<"cashbox" | "doctor_payroll" | "shift_journal">("cashbox");
 	const [isDoctorPayrollOpen, setIsDoctorPayrollOpen] = useState(false);
+	const effectiveActiveTab = activeTab === "doctor_payroll" && !canShowPayroll ? "cashbox" : activeTab;
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none pb-32 max-sm:pb-48 max-w-full min-w-0 overflow-x-hidden" id="finance">
@@ -64,11 +69,11 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				onPrintXReport={s.handlePrintXReport}
 			/>
 
-			<FinanceTabsNavBar activeTab={activeTab} onSelectTab={setActiveTab} />
+			<FinanceTabsNavBar activeTab={effectiveActiveTab} onSelectTab={setActiveTab} />
 
-			{activeTab === "doctor_payroll" ? (
+			{effectiveActiveTab === "doctor_payroll" ? (
 				<DoctorPayrollTab clinicName={s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName} />
-			) : activeTab === "shift_journal" ? (
+			) : effectiveActiveTab === "shift_journal" ? (
 				<div className="pt-2">
 					<CashShiftJournalView
 						clinicName={s.dashboard?.clinicSettings?.profile?.clinicName ?? s.dashboard?.clinicName}

@@ -36,6 +36,7 @@ import { generateUuidV7, type FastImplantPassportData } from "@dental/shared";
 import { SurgeryHubHeader } from "./modules/SurgeryHubHeader";
 import { SurgeryHubNavigation, type SurgeryHubTab } from "./modules/SurgeryHubNavigation";
 import { SurgeryGeneralProtocolSection } from "./modules/SurgeryGeneralProtocolSection";
+import type { ToothImplantSpec } from "./SurgeryImplantParametersSection";
 import { SurgeryHubFooter } from "./modules/SurgeryHubFooter";
 import "./surgeryHub.css";
 
@@ -202,6 +203,13 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	const [stockImplants, setStockImplants] = useState<readonly StockImplantRecord[]>([]);
 	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string | null>(null);
 	const [apiPassportData, setApiPassportData] = useState<Record<string, unknown> | null>(null);
+	const [activeEditingTooth, setActiveEditingTooth] = useState<number>(() => {
+		const raw = initialTeeth?.[0] ?? initialTooth ?? 46;
+		if (initialScenario === "implant" && raw >= 51 && raw <= 85) return 46;
+		return raw;
+	});
+	const [perToothSpecs, setPerToothSpecs] = useState<Record<number, ToothImplantSpec>>({});
+	const isSavingRef = useRef<boolean>(false);
 
 	useEffect(() => {
 		if (!isOpen || typeof fetch !== "function") return;
@@ -394,7 +402,74 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		setCatalogArticle(sys.defaultArticle || "TS3S4010S");
 		setSelectedInventoryItemId(null);
 		setApiPassportData(null);
+		setActiveEditingTooth(resetTooth);
+		setPerToothSpecs({});
 	}, [initialTooth, initialScenario, initialTab, initialTeeth, initialBrand, initialDiameterMm, initialLengthMm, initialTorqueNcm, initialLotNumber]);
+
+	const buildCurrentFlatSpec = useCallback((): ToothImplantSpec => ({
+		diameterMm,
+		lengthMm,
+		torqueNcm,
+		isqValue,
+		capType,
+		lotNumber,
+		serialNumber,
+		catalogArticle,
+	}), [diameterMm, lengthMm, torqueNcm, isqValue, capType, lotNumber, serialNumber, catalogArticle]);
+
+	const getToothSpec = useCallback((toothNum: number): ToothImplantSpec => {
+		const stored = perToothSpecs[toothNum];
+		if (stored) return stored;
+		return {
+			...buildCurrentFlatSpec(),
+			lotNumber: toothNum === activeEditingTooth ? lotNumber : generateSystemSurgeryLot(toothNum),
+			serialNumber: toothNum === activeEditingTooth ? serialNumber : "",
+		};
+	}, [perToothSpecs, buildCurrentFlatSpec, activeEditingTooth, lotNumber, serialNumber]);
+
+	const updateActiveImplantSpec = useCallback((patch: Partial<ToothImplantSpec>) => {
+		if (patch.diameterMm !== undefined) setDiameterMm(patch.diameterMm);
+		if (patch.lengthMm !== undefined) setLengthMm(patch.lengthMm);
+		if (patch.torqueNcm !== undefined) setTorqueNcm(patch.torqueNcm);
+		if (patch.isqValue !== undefined) setIsqValue(patch.isqValue);
+		if (patch.capType !== undefined) setCapType(patch.capType);
+		if (patch.lotNumber !== undefined) setLotNumber(patch.lotNumber);
+		if (patch.serialNumber !== undefined) setSerialNumber(patch.serialNumber);
+		if (patch.catalogArticle !== undefined) setCatalogArticle(patch.catalogArticle);
+		setPerToothSpecs((prev) => {
+			const base = prev[activeEditingTooth] ?? buildCurrentFlatSpec();
+			return {
+				...prev,
+				[activeEditingTooth]: {
+					...base,
+					...patch,
+				},
+			};
+		});
+	}, [activeEditingTooth, buildCurrentFlatSpec]);
+
+	const handleSelectActiveEditingTooth = useCallback((targetTooth: number) => {
+		setPerToothSpecs((prev) => {
+			const withCurrent = prev[activeEditingTooth]
+				? prev
+				: { ...prev, [activeEditingTooth]: buildCurrentFlatSpec() };
+			const nextSpec = withCurrent[targetTooth] ?? {
+				...buildCurrentFlatSpec(),
+				lotNumber: generateSystemSurgeryLot(targetTooth),
+				serialNumber: "",
+			};
+			setDiameterMm(nextSpec.diameterMm);
+			setLengthMm(nextSpec.lengthMm);
+			setTorqueNcm(nextSpec.torqueNcm);
+			setIsqValue(nextSpec.isqValue);
+			setCapType(nextSpec.capType);
+			setLotNumber(nextSpec.lotNumber);
+			setSerialNumber(nextSpec.serialNumber);
+			setCatalogArticle(nextSpec.catalogArticle);
+			return withCurrent[targetTooth] ? withCurrent : { ...withCurrent, [targetTooth]: nextSpec };
+		});
+		setActiveEditingTooth(targetTooth);
+	}, [activeEditingTooth, buildCurrentFlatSpec]);
 
 	const handleSelectScenario = useCallback((scen: SurgeryScenarioType) => {
 		setActiveScenario(scen);
@@ -444,6 +519,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		setDiameterMm(sys.defaultDiameterMm); setLengthMm(sys.defaultLengthMm);
 		setCatalogArticle(sys.defaultArticle); setLotNumber(sys.defaultLotNumber);
 		setSerialNumber(sys.defaultSerialNumber); setTorqueNcm(sys.defaultTorqueNcm);
+		setPerToothSpecs({});
 	}, []);
 
 	const handleApplyPhysiologicalNorm = useCallback(() => {
@@ -463,10 +539,19 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		const nowStr = new Date().toLocaleDateString("ru-RU");
 		if (activeScenario === "implant") {
 			const capStr = capType === "plug" ? "винт-заглушка (ушивание наглухо)" : "формирователь десны (ФДМ)";
-			return `МЕДИЦИНСКАЯ КАРТА ПРИЁМА · ХИРУРГИЧЕСКИЙ ПРОТОКОЛ (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХОД ОПЕРАЦИИ (SOAP):\nИнфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа фрезами с охлаждением физраствором. Плотность кости: ${boneDensity}. Установлен имплантат ${selectedBrand} Ø ${diameterMm} × ${lengthMm} мм (REF: ${catalogArticle}, LOT: ${lotNumber}). Первичная стабильность: ${torqueNcm} Н·см (ISQ ${isqValue}). Установлен ${capStr}. Наложены швы (${selectedSuture}). Гемостаз полный. Паспорт выдан пациенту.\n\nНАЗНАЧЕНИЯ И РЕКОМЕНДАЦИИ:\n${scenarioConfig.defaultRecommendationsRu}`;
+			if (selectedTeeth.length > 1) {
+				const perToothText = selectedTeeth.map((t) => {
+					const s = getToothSpec(t);
+					const tCap = s.capType === "plug" ? "заглушка" : "ФДМ";
+					const snSuffix = s.serialNumber ? `, SN: ${s.serialNumber}` : "";
+					return `#${t}: ${selectedBrand} Ø ${s.diameterMm} × ${s.lengthMm} мм (REF: ${s.catalogArticle}, LOT: ${s.lotNumber}${snSuffix}, торк ${s.torqueNcm} Н·см, ISQ ${s.isqValue}, ${tCap})`;
+				}).join("; ");
+				return `МЕДИЦИНСКАЯ КАРТА ПРИЁМА · ХИРУРГИЧЕСКИЙ ПРОТОКОЛ (Зубы FDI #${selectedTeeth.join(", #")})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХОД ОПЕРАЦИИ:\nИнфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа фрезами с охлаждением физраствором. Плотность кости: ${boneDensity}. Установлены имплантаты: ${perToothText}. Наложены швы (${selectedSuture}). Гемостаз полный. Паспорт выдан пациенту.\n\nНАЗНАЧЕНИЯ И РЕКОМЕНДАЦИИ:\n${scenarioConfig.defaultRecommendationsRu}`;
+			}
+			return `МЕДИЦИНСКАЯ КАРТА ПРИЁМА · ХИРУРГИЧЕСКИЙ ПРОТОКОЛ (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХОД ОПЕРАЦИИ:\nИнфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен лоскут. Препарирование костного ложа фрезами с охлаждением физраствором. Плотность кости: ${boneDensity}. Установлен имплантат ${selectedBrand} Ø ${diameterMm} × ${lengthMm} мм (REF: ${catalogArticle}, LOT: ${lotNumber}). Первичная стабильность: ${torqueNcm} Н·см (ISQ ${isqValue}). Установлен ${capStr}. Наложены швы (${selectedSuture}). Гемостаз полный. Паспорт выдан пациенту.\n\nНАЗНАЧЕНИЯ И РЕКОМЕНДАЦИИ:\n${scenarioConfig.defaultRecommendationsRu}`;
 		}
-		return `МЕДИЦИНСКАЯ КАРТА ПРИЁМА · ${scenarioConfig.titleRu.toUpperCase()} (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХОД ОПЕРАЦИИ (SOAP):\n${scenarioConfig.defaultProtocolRu}\n\nНАЗНАЧЕНИЯ И РЕКОМЕНДАЦИИ:\n${scenarioConfig.defaultRecommendationsRu}`;
-	}, [activeScenario, scenarioConfig, toothFdi, doctorName, patientName, selectedBrand, diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture]);
+		return `МЕДИЦИНСКАЯ КАРТА ПРИЁМА · ${scenarioConfig.titleRu.toUpperCase()} (Зуб FDI #${toothFdi})\nДата: ${nowStr} · Врач: ${doctorName} · Пациент: ${patientName}\nДиагноз: ${scenarioConfig.icd10} ${scenarioConfig.icd10Label}.\n\nХОД ОПЕРАЦИИ:\n${scenarioConfig.defaultProtocolRu}\n\nНАЗНАЧЕНИЯ И РЕКОМЕНДАЦИИ:\n${scenarioConfig.defaultRecommendationsRu}`;
+	}, [activeScenario, scenarioConfig, toothFdi, selectedTeeth, getToothSpec, doctorName, patientName, selectedBrand, diameterMm, lengthMm, catalogArticle, lotNumber, torqueNcm, isqValue, boneDensity, capType, selectedSuture]);
 
 	const financials = useMemo(() => {
 		return calculateSurgeryFinancials({
@@ -510,45 +595,23 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	}, [toothFdi, currentSystem, catalogArticle, diameterMm, lengthMm, torqueNcm, lotNumber, serialNumber, boneDensity, capType, patientName, patientId, doctorName, doctorId, inventoryOverdraftActive, selectedBrand, financials, selectedGraft, selectedMembrane, selectedSuture, apiPassportData]);
 
 	const handleSaveOperationAndCommit = useCallback(async () => {
-		onSaveProtocol?.({ activeScenario, toothFdi, passportData, diaryText, selectedTeeth });
-		onInsertIntoDiary?.(diaryText);
+		if (isSavingRef.current) return;
+		isSavingRef.current = true;
 
 		const teethToProcess = selectedTeeth.length > 0 ? selectedTeeth : [toothFdi];
 		const dateIso = new Date().toISOString();
 		const baseLot = lotNumber || generateSystemSurgeryLot(toothFdi, dateIso);
+		let committedTeeth: number[] = [...teethToProcess];
+		let partialFailureMessage: string | null = null;
 
-		if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente:cart-add-items", {
-				detail: {
-					items: teethToProcess.map((t) => ({
-						code: scenarioConfig.serviceCode,
-						name: `${scenarioConfig.serviceNameRu} (#${t})`,
-						priceRub: scenarioConfig.defaultPriceRub,
-						quantity: 1,
-					})),
-				},
-			}));
-			window.dispatchEvent(new CustomEvent("dente:diary-update", { detail: { diaryText, toothFdi, teeth: teethToProcess, scenario: activeScenario } }));
-			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: { treatmentDescription: diaryText },
-					text: diaryText,
-					protocolText: diaryText,
-					mode: "smart_append",
-					tooth: toothFdi,
-					teeth: teethToProcess,
-					scenario: activeScenario,
-				},
-			}));
-		}
+		try {
+			if (typeof fetch === "function") {
+				const targetId = await resolveEffectiveSurgeryPatientId(patientId, patientName);
+				if (!targetId) {
+					showToast("Пациент не выбран. Выберите пациента для сохранения протокола.", "error");
+					return;
+				}
 
-		if (typeof fetch === "function") {
-			const targetId = await resolveEffectiveSurgeryPatientId(patientId, patientName);
-			if (!targetId) {
-				showToast("Пациент не выбран. Выберите пациента для сохранения протокола.", "error");
-				return;
-			}
-			try {
 				let saveError: string | null = null;
 				const idempKey = generateUuidV7();
 				const headers = getDenteAuthHeaders({
@@ -558,63 +621,129 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 
 				if (activeScenario === "implant") {
 					if (teethToProcess.length > 1) {
-						// Неделимый пакетный запрос для All-on-4 / множественной имплантации (Мандат 8bo)
-						const batchPayload = JSON.stringify({
-							patientId: targetId,
-							teeth: teethToProcess,
-							toothNumberFdi: teethToProcess[0],
-							implantBrand: currentSystem.id,
-							inventoryItemId: effectiveInventoryItemId,
-							implantDiameterMm: diameterMm,
-							implantLengthMm: lengthMm,
-							catalogArticle: catalogArticle || undefined,
-							lotNumber: baseLot,
-							serialNumber,
-							isGuidedSurgery,
-							guidedSleeveDiameterMm: isGuidedSurgery ? guidedSleeveDiameterMm : undefined,
-							guidedSleeveOffsetMm: isGuidedSurgery ? guidedSleeveOffsetMm : undefined,
-							surgicalGuideTemplateId: isGuidedSurgery && surgicalGuideTemplateId ? surgicalGuideTemplateId : undefined,
-							boneDensityClass: boneDensity,
-							finalInsertionTorqueNcm: torqueNcm,
-							baselineIsqMesiodistal: isqValue,
-							baselineIsqBuccolingual: isqValue,
-							boneGraftMaterial: selectedGraft,
-							membraneUsed: selectedMembrane,
-							sutureMaterial: selectedSuture,
-							operationPriceRub: financials.operationPriceRub,
-							operationPriceKopecks: financials.operationPriceKopecks.toString(),
-							notes: diaryText,
-							idempotencyKey: idempKey,
-						});
-						const apiRes = await fetch("/api/clinical/implants/installations/batch", {
-							method: "POST",
-							headers,
-							body: batchPayload,
-						});
-						if (!apiRes.ok) {
-							const errBody = await apiRes.json().catch(() => null);
-							saveError = errBody?.message || errBody?.error || `Ошибка сохранения имплантатов (${apiRes.status})`;
+						const toothSpecs = teethToProcess.map((t) => ({ tooth: t, spec: getToothSpec(t) }));
+						const firstSpec = toothSpecs[0]?.spec ?? buildCurrentFlatSpec();
+						const allSpecsUniform = toothSpecs.every(({ tooth, spec }) => (
+							spec.diameterMm === firstSpec.diameterMm
+							&& spec.lengthMm === firstSpec.lengthMm
+							&& spec.torqueNcm === firstSpec.torqueNcm
+							&& spec.isqValue === firstSpec.isqValue
+							&& spec.serialNumber === firstSpec.serialNumber
+							&& spec.catalogArticle === firstSpec.catalogArticle
+							&& (perToothSpecs[tooth] === undefined || spec.lotNumber === firstSpec.lotNumber)
+						));
+
+						if (allSpecsUniform) {
+							const batchPayload = JSON.stringify({
+								patientId: targetId,
+								teeth: teethToProcess,
+								toothNumberFdi: teethToProcess[0],
+								implantBrand: currentSystem.id,
+								inventoryItemId: effectiveInventoryItemId,
+								implantDiameterMm: firstSpec.diameterMm,
+								implantLengthMm: firstSpec.lengthMm,
+								catalogArticle: firstSpec.catalogArticle || undefined,
+								lotNumber: baseLot,
+								serialNumber: firstSpec.serialNumber,
+								isGuidedSurgery,
+								guidedSleeveDiameterMm: isGuidedSurgery ? guidedSleeveDiameterMm : undefined,
+								guidedSleeveOffsetMm: isGuidedSurgery ? guidedSleeveOffsetMm : undefined,
+								surgicalGuideTemplateId: isGuidedSurgery && surgicalGuideTemplateId ? surgicalGuideTemplateId : undefined,
+								boneDensityClass: boneDensity,
+								finalInsertionTorqueNcm: firstSpec.torqueNcm,
+								baselineIsqMesiodistal: firstSpec.isqValue,
+								baselineIsqBuccolingual: firstSpec.isqValue,
+								boneGraftMaterial: selectedGraft,
+								membraneUsed: selectedMembrane,
+								sutureMaterial: selectedSuture,
+								operationPriceRub: financials.operationPriceRub,
+								operationPriceKopecks: financials.operationPriceKopecks.toString(),
+								notes: diaryText,
+								idempotencyKey: idempKey,
+							});
+							const apiRes = await fetch("/api/clinical/implants/installations/batch", {
+								method: "POST",
+								headers,
+								body: batchPayload,
+							});
+							if (!apiRes.ok) {
+								const errBody = await apiRes.json().catch(() => null);
+								saveError = errBody?.message || errBody?.error || `Ошибка сохранения имплантатов (${apiRes.status})`;
+							}
+						} else {
+							const succeeded: number[] = [];
+							const failedReasons: string[] = [];
+							for (const { tooth, spec } of toothSpecs) {
+								const toothIdempKey = generateUuidV7();
+								const toothPayload = JSON.stringify({
+									patientId: targetId,
+									toothNumberFdi: tooth,
+									implantBrand: currentSystem.id,
+									inventoryItemId: effectiveInventoryItemId,
+									implantDiameterMm: spec.diameterMm,
+									implantLengthMm: spec.lengthMm,
+									catalogArticle: spec.catalogArticle || undefined,
+									lotNumber: spec.lotNumber || generateSystemSurgeryLot(tooth, dateIso),
+									serialNumber: spec.serialNumber,
+									isGuidedSurgery,
+									guidedSleeveDiameterMm: isGuidedSurgery ? guidedSleeveDiameterMm : undefined,
+									guidedSleeveOffsetMm: isGuidedSurgery ? guidedSleeveOffsetMm : undefined,
+									surgicalGuideTemplateId: isGuidedSurgery && surgicalGuideTemplateId ? surgicalGuideTemplateId : undefined,
+									boneDensityClass: boneDensity,
+									finalInsertionTorqueNcm: spec.torqueNcm,
+									baselineIsqMesiodistal: spec.isqValue,
+									baselineIsqBuccolingual: spec.isqValue,
+									boneGraftMaterial: selectedGraft,
+									membraneUsed: selectedMembrane,
+									sutureMaterial: selectedSuture,
+									operationPriceRub: financials.operationPriceRub,
+									operationPriceKopecks: financials.operationPriceKopecks.toString(),
+									notes: diaryText,
+									idempotencyKey: toothIdempKey,
+								});
+								const apiRes = await fetch("/api/clinical/implants/installations", {
+									method: "POST",
+									headers: getDenteAuthHeaders({
+										"Content-Type": "application/json",
+										"Idempotency-Key": toothIdempKey,
+									}),
+									body: toothPayload,
+								});
+								if (apiRes.ok) {
+									succeeded.push(tooth);
+								} else {
+									const errBody = await apiRes.json().catch(() => null);
+									failedReasons.push(`#${tooth}: ${errBody?.message || errBody?.error || apiRes.status}`);
+								}
+							}
+							committedTeeth = succeeded;
+							if (succeeded.length === 0) {
+								saveError = failedReasons[0] || "Ошибка сохранения имплантатов";
+							} else if (failedReasons.length > 0) {
+								partialFailureMessage = `Часть имплантатов не сохранена: ${failedReasons.join("; ")}`;
+							}
 						}
 					} else {
 						const currentTooth = teethToProcess[0] ?? toothFdi;
+						const spec = getToothSpec(currentTooth);
 						const implantPayload = JSON.stringify({
 							patientId: targetId,
 							toothNumberFdi: currentTooth,
 							implantBrand: currentSystem.id,
 							inventoryItemId: effectiveInventoryItemId,
-							implantDiameterMm: diameterMm,
-							implantLengthMm: lengthMm,
-							catalogArticle: catalogArticle || undefined,
-							lotNumber: baseLot,
-							serialNumber,
+							implantDiameterMm: spec.diameterMm,
+							implantLengthMm: spec.lengthMm,
+							catalogArticle: spec.catalogArticle || undefined,
+							lotNumber: spec.lotNumber || baseLot,
+							serialNumber: spec.serialNumber,
 							isGuidedSurgery,
 							guidedSleeveDiameterMm: isGuidedSurgery ? guidedSleeveDiameterMm : undefined,
 							guidedSleeveOffsetMm: isGuidedSurgery ? guidedSleeveOffsetMm : undefined,
 							surgicalGuideTemplateId: isGuidedSurgery && surgicalGuideTemplateId ? surgicalGuideTemplateId : undefined,
 							boneDensityClass: boneDensity,
-							finalInsertionTorqueNcm: torqueNcm,
-							baselineIsqMesiodistal: isqValue,
-							baselineIsqBuccolingual: isqValue,
+							finalInsertionTorqueNcm: spec.torqueNcm,
+							baselineIsqMesiodistal: spec.isqValue,
+							baselineIsqBuccolingual: spec.isqValue,
 							boneGraftMaterial: selectedGraft,
 							membraneUsed: selectedMembrane,
 							sutureMaterial: selectedSuture,
@@ -687,20 +816,58 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						}
 					}
 				}
+
 				if (saveError) {
 					showToast(saveError, "error");
 					return;
 				}
-			} catch (err: unknown) {
-				const msg = err instanceof Error ? err.message : "Ошибка связи с сервером при фиксации операции";
-				showToast(msg, "error");
+			}
+
+			// Диспатчим события в ЭМК и корзину СТРОГО ПОСЛЕ успешного сохранения на сервере (без гонок и фантомных записей)
+			if (committedTeeth.length > 0) {
+				onSaveProtocol?.({ activeScenario, toothFdi, passportData, diaryText, selectedTeeth: committedTeeth });
+				onInsertIntoDiary?.(diaryText);
+
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:cart-add-items", {
+						detail: {
+							items: committedTeeth.map((t) => ({
+								code: scenarioConfig.serviceCode,
+								name: `${scenarioConfig.serviceNameRu} (#${t})`,
+								priceRub: scenarioConfig.defaultPriceRub,
+								quantity: 1,
+							})),
+						},
+					}));
+					window.dispatchEvent(new CustomEvent("dente:diary-update", { detail: { diaryText, toothFdi, teeth: committedTeeth, scenario: activeScenario } }));
+					window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							soap: { treatmentDescription: diaryText },
+							text: diaryText,
+							protocolText: diaryText,
+							mode: "smart_append",
+							tooth: toothFdi,
+							teeth: committedTeeth,
+							scenario: activeScenario,
+						},
+					}));
+				}
+			}
+
+			if (partialFailureMessage) {
+				showToast(partialFailureMessage, "error");
 				return;
 			}
-		}
 
-		showToast(`✓ Операция «${scenarioConfig.titleRu} #${teethToProcess.join(", #")}» зафиксирована в карте приёма`, "success");
-		handleClose();
-	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, diameterMm, lengthMm, lotNumber, serialNumber, boneDensity, torqueNcm, selectedGraft, selectedMembrane, selectedSuture, financials, selectedBrand, patientId, patientName, handleClose, effectiveInventoryItemId, isqValue]);
+			showToast(`✓ Операция «${scenarioConfig.titleRu} #${committedTeeth.join(", #")}» зафиксирована в карте приёма`, "success");
+			handleClose();
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка связи с сервером при фиксации операции";
+			showToast(msg, "error");
+		} finally {
+			isSavingRef.current = false;
+		}
+	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, lotNumber, boneDensity, selectedGraft, selectedMembrane, selectedSuture, financials, patientId, patientName, handleClose, effectiveInventoryItemId, getToothSpec, buildCurrentFlatSpec, perToothSpecs, isGuidedSurgery, guidedSleeveDiameterMm, guidedSleeveOffsetMm, surgicalGuideTemplateId]);
 
 	const memoText = useMemo((): string => {
 		return buildSurgicalPostOpMemoText(activeScenario, {
@@ -750,13 +917,33 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			return;
 		}
 		setSelectedTeeth((prev) => {
-			const next = prev.includes(t)
+			const exists = prev.includes(t);
+			const next = exists
 				? (prev.length > 1 ? prev.filter((x) => x !== t) : prev)
 				: [...prev, t];
 			setToothFdi(next[0] ?? t);
+			if (!exists && activeScenario === "implant") {
+				const base = buildCurrentFlatSpec();
+				const newSpec: ToothImplantSpec = {
+					...base,
+					lotNumber: generateSystemSurgeryLot(t),
+					serialNumber: "",
+				};
+				setPerToothSpecs((specs) => ({
+					...specs,
+					...(specs[activeEditingTooth] ? {} : { [activeEditingTooth]: base }),
+					[t]: specs[t] ?? newSpec,
+				}));
+				setActiveEditingTooth(t);
+				setLotNumber(newSpec.lotNumber);
+				setSerialNumber("");
+			} else if (exists && next.length > 0 && activeEditingTooth === t) {
+				const fallbackTooth = next[0] ?? t;
+				handleSelectActiveEditingTooth(fallbackTooth);
+			}
 			return next;
 		});
-	}, [activeScenario]);
+	}, [activeScenario, activeEditingTooth, buildCurrentFlatSpec, handleSelectActiveEditingTooth]);
 
 	if (!isOpen) return null;
 
@@ -833,7 +1020,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 					) : activeTab === "diary" ? (
 						<div className="flex flex-col gap-3 min-h-0" data-testid="surgery-diary-content">
 							<div className="text-xs font-semibold text-[var(--muted)]">
-								Автоматический протокол SOAP для внесения в медицинскую карту приёма:
+								Автоматический протокол приёма для внесения в медицинскую карту:
 							</div>
 							<textarea
 								readOnly
@@ -858,14 +1045,19 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							selectedSuture={selectedSuture}
 							selectedTeeth={selectedTeeth}
 							onSelectTooth={handleSelectTooth}
+							activeEditingTooth={activeEditingTooth}
+							onSelectActiveEditingTooth={handleSelectActiveEditingTooth}
+							perToothSpecs={perToothSpecs}
 							onSelectBrand={handleSelectBrand}
-							onSelectDiameter={setDiameterMm}
-							onSelectLength={setLengthMm}
-							onSelectTorque={setTorqueNcm}
-							onSelectIsq={setIsqValue}
-							onSelectCapType={setCapType}
+							onSelectDiameter={(d) => updateActiveImplantSpec({ diameterMm: d })}
+							onSelectLength={(l) => updateActiveImplantSpec({ lengthMm: l })}
+							onSelectTorque={(t) => updateActiveImplantSpec({ torqueNcm: t })}
+							onSelectIsq={(isq) => updateActiveImplantSpec({ isqValue: isq })}
+							onSelectCapType={(cap) => updateActiveImplantSpec({ capType: cap })}
 							lotNumber={lotNumber}
 							serialNumber={serialNumber}
+							onChangeLotNumber={(lot) => updateActiveImplantSpec({ lotNumber: lot })}
+							onChangeSerialNumber={(sn) => updateActiveImplantSpec({ serialNumber: sn })}
 							isGuidedSurgery={isGuidedSurgery}
 							onToggleGuidedSurgery={setIsGuidedSurgery}
 							guidedSleeveDiameterMm={guidedSleeveDiameterMm}

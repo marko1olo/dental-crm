@@ -6,6 +6,7 @@ import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "../../Tooth46CariesSpectrumGeo
 import type { CariesType } from "../../tooth46PresetTypes";
 
 export interface Tooth46EnamelCrownProps {
+	toothNumber?: number | undefined;
 	stroke: string;
 	crownOpacity: string;
 	showCusps?: boolean | undefined;
@@ -21,6 +22,7 @@ export interface Tooth46EnamelCrownProps {
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
+	toothNumber = 46,
 	stroke,
 	crownOpacity,
 	showCusps = true,
@@ -55,24 +57,27 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.class5.destructiveCutout
 		: TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutout;
 
+	const maskId = `tooth${toothNumber}-crown-destruct-mask`;
+	const clipId = `tooth${toothNumber}-crown-clip`;
+
 	return (
 		<g
-			id="tooth46-natural-crown-group"
-			mask={destructive ? "url(#tooth46-crown-destruct-mask)" : undefined}
+			id={`tooth${toothNumber}-natural-crown-group`}
+			mask={destructive ? `url(#${maskId})` : undefined}
 		>
 			<defs>
 				{destructive && (
-					<mask id="tooth46-crown-destruct-mask">
+					<mask id={maskId}>
 						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
 						<path d={cutout} fill="#000000" />
 					</mask>
 				)}
 			</defs>
-			<clipPath id="tooth46-crown-clip">
+			<clipPath id={clipId}>
 				<path d={crownPath} />
 			</clipPath>
 			<path
-				id="tooth46-crown-monolith"
+				id={`tooth${toothNumber}-crown-monolith`}
 				d={crownPath}
 				fill="url(#dente-enamel-porcelain)"
 				fillOpacity={crownOpacity}
@@ -82,7 +87,7 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{/* Unified 3D Cylindrical Proximal Contour Volume */}
-			<g clipPath="url(#tooth46-crown-clip)">
+			<g clipPath={`url(#${clipId})`}>
 				<path
 					d={crownPath}
 					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}

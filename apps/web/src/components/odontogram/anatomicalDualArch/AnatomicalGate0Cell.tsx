@@ -4,7 +4,7 @@
  * Mandate 8b <= 120 lines.
  */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import type { ToothData } from "../ToothChart";
 import { AnatomicalTooth } from "../gate0/AnatomicalTooth";
 import { toothDataToGate0Flags } from "../gate0/gate0ToothAdapter";
@@ -75,7 +75,10 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 	zoom,
 	onClick,
 }) => {
-	const flags = toothDataToGate0Flags(toothData ?? { toothNumber, state: "Healthy" });
+	const flags = useMemo(
+		() => toothDataToGate0Flags(toothData ?? { toothNumber, state: "Healthy" }),
+		[toothData, toothNumber],
+	);
 	const widthClass = getWheelerToothWidthClass(toothNumber);
 	const isUpper = toothNumber < 30 || (toothNumber >= 50 && toothNumber < 70);
 

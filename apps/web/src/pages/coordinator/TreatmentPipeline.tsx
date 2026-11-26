@@ -59,6 +59,16 @@ export const TreatmentPipeline: React.FC = () => {
 				onRefresh={state.fetchPipeline}
 			/>
 
+			{areRequisitesMissing && (
+				<div
+					className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--warning-soft,rgba(245,158,11,0.1))] border border-[var(--warning-line,rgba(245,158,11,0.35))] text-xs text-[var(--ink)]"
+					data-testid="pipeline-requisites-inline-notice"
+				>
+					<AlertCircle className="w-4 h-4 shrink-0 text-[var(--warning,#f59e0b)]" />
+					<span>Реквизиты клиники не заполнены в профиле организации (Настройки → Клиника)</span>
+				</div>
+			)}
+
 			{/* KPI Summary & Interactive Stage Selector */}
 			{state.data && (
 				<PipelineKpiSummary
@@ -130,71 +140,36 @@ export const TreatmentPipeline: React.FC = () => {
 				dropoutRiskCount={dropoutRiskCount}
 				isRunningDropout={state.isRunningDropout}
 				isLoading={state.isLoading}
+				isHidden={Boolean(state.selectedCardForPresenter)}
 				onRunDropoutPrevention={state.handleRunDropoutPrevention}
 				onRefresh={state.fetchPipeline}
 			/>
 
-			{/* Presenter Modal with Clinic Requisites Guard */}
+			{/* Presenter Modal */}
 			{state.selectedCardForPresenter && (
-				<>
-					{(areRequisitesMissing || (!state.selectedCardForPresenter.doctorName && !presenterDoctorOverride)) && (
-						<div
-							className="fixed top-2 left-1/2 -translate-x-1/2 z-[10000] max-w-xl w-[92vw] flex flex-col gap-1.5 p-2.5 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-amber-500/40 shadow-2xl text-xs text-[var(--ink,#0f172a)] backdrop-blur-md"
-							data-testid="pipeline-presenter-warning-bar"
-						>
-							{areRequisitesMissing && (
-								<div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-semibold">
-									<AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
-									<span>⚠️ Реквизиты клиники не заполнены в профиле организации (Настройки -&gt; Клиника)</span>
-								</div>
-							)}
-							{(!state.selectedCardForPresenter.doctorName && !presenterDoctorOverride) && (
-								<div className="flex items-center justify-between gap-2 flex-wrap">
-									<span className="text-amber-800 dark:text-amber-200 font-medium">
-										Врач не назначен для данного плана:
-									</span>
-									<select
-										value={presenterDoctorOverride}
-										onChange={(e) => setPresenterDoctorOverride(e.target.value)}
-										className="h-7 px-2 text-xs rounded-md border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] cursor-pointer"
-										data-testid="pipeline-doctor-assign-select"
-									>
-										<option value="">-- Выбрать врача из персонала --</option>
-										{state.accumulatedDoctors.map((doc) => (
-											<option key={doc.id} value={doc.name}>
-												{doc.name}
-											</option>
-										))}
-									</select>
-								</div>
-							)}
-						</div>
-					)}
-
-					<TreatmentPlanStudioModal
-						key={state.selectedCardForPresenter.patientId || "draft"}
-						isOpen={Boolean(state.selectedCardForPresenter)}
-						onClose={() => {
-							state.setSelectedCardForPresenter(null);
-							setPresenterDoctorOverride("");
-						}}
-						patientName={state.selectedCardForPresenter.patientName}
-						patientId={state.selectedCardForPresenter.patientId}
-						patientPhone={state.selectedCardForPresenter.patientPhone || ""}
-						doctorFullName={effectiveDoctorName}
-						doctorSpecialty={appLogic?.activeDoctor && "specialty" in appLogic.activeDoctor ? String((appLogic.activeDoctor as { specialty?: unknown }).specialty ?? "") : ""}
-						clinicName={clinicName}
-						clinicAddress={clinicAddress}
-						planId={state.selectedCardForPresenter.id}
-						onConfirmSelection={async () => {
-							await state.fetchPipeline();
-						}}
-						onApproveAndSign={async () => {
-							await state.fetchPipeline();
-						}}
-						isDemoMode={isDemoShowcaseMode()}
-					/>
-				</>
+				<TreatmentPlanStudioModal
+					key={state.selectedCardForPresenter.patientId || "draft"}
+					isOpen={Boolean(state.selectedCardForPresenter)}
+					onClose={() => {
+						state.setSelectedCardForPresenter(null);
+						setPresenterDoctorOverride("");
+					}}
+					patientName={state.selectedCardForPresenter.patientName}
+					patientId={state.selectedCardForPresenter.patientId}
+					patientPhone={state.selectedCardForPresenter.patientPhone || ""}
+					doctorFullName={effectiveDoctorName}
+					doctorSpecialty={appLogic?.activeDoctor && "specialty" in appLogic.activeDoctor ? String((appLogic.activeDoctor as { specialty?: unknown }).specialty ?? "") : ""}
+					clinicName={clinicName}
+					clinicAddress={clinicAddress}
+					planId={state.selectedCardForPresenter.id}
+					onConfirmSelection={async () => {
+						await state.fetchPipeline();
+					}}
+					onApproveAndSign={async () => {
+						await state.fetchPipeline();
+					}}
+					isDemoMode={isDemoShowcaseMode()}
+				/>
 			)}
 		</div>
 	);

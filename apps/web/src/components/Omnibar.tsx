@@ -2,20 +2,27 @@ import { AnimatePresence, motion } from "framer-motion";
 import { clientLogger } from "../services/logging/clientLogger";
 import {
 	Banknote,
+	BarChart3,
 	BookOpen,
 	Calendar,
 	Camera,
 	CheckCircle2,
 	FileText,
+	FlaskConical,
 	Keyboard,
+	Layers,
+	Megaphone,
 	MessageSquare,
 	Mic,
 	MicOff,
+	Package,
+	ScanLine,
 	Search,
 	Settings,
 	Sliders,
 	Sparkles,
 	Stethoscope,
+	UserPlus,
 	Users,
 	X,
 } from "lucide-react";
@@ -23,6 +30,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Patient } from "@dental/shared";
 import { useAppStore } from "../store/appStore";
+import { useSettingsStore } from "../store/settingsStore";
+import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
+import { hasCapability } from "../lib/clinicCapabilities";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import { useUnifiedDictation } from "../hooks/useUnifiedDictation";
 import { searchPatientsQuick } from "./patients/patientSearchFuzzy";
 import { WorkspaceActionsSlot } from "./workspaceActions/WorkspaceActions";
@@ -30,6 +41,9 @@ import { workspaceActionsLabels } from "./workspaceActions/workspaceActionsLabel
 
 export function Omnibar() {
 	const { isOmnibarOpen, setOmnibarOpen, setCurrentView, dashboard, setActivePatientId } = useAppStore();
+	const clinicMode = useSettingsStore((s) => s.clinicMode);
+	const featureFlags = useWorkspaceProfile();
+	const isDemo = isDemoShowcaseMode();
 	const [query, setQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [remotePatients, setRemotePatients] = useState<Patient[]>([]);
@@ -136,167 +150,267 @@ export function Omnibar() {
 		return Array.from(map.values());
 	}, [dashboard?.patients, remotePatients]);
 
-	const commands = [
-		{
-			id: "nav-shift",
-			title: "Смена",
-			icon: <Calendar />,
-			category: "Навигация",
-			action: () => setCurrentView("shift"),
-		},
-		{
-			id: "nav-schedule",
-			title: "Расписание",
-			icon: <Calendar />,
-			category: "Навигация",
-			action: () => setCurrentView("schedule"),
-		},
-		{
-			id: "nav-patients",
-			title: "Пациенты",
-			icon: <Users />,
-			category: "Навигация",
-			action: () => setCurrentView("patients"),
-		},
-		{
-			id: "nav-imaging",
-			title: "Снимки",
-			icon: <Camera />,
-			category: "Навигация",
-			action: () => setCurrentView("imaging"),
-		},
-		{
-			id: "nav-visit",
-			title: "Прием",
-			icon: <Stethoscope />,
-			category: "Навигация",
-			action: () => setCurrentView("visit"),
-		},
-		{
-			id: "nav-documents",
-			title: "Документы",
-			icon: <FileText />,
-			category: "Навигация",
-			action: () => setCurrentView("documents"),
-		},
-		{
-			id: "nav-finance",
-			title: "Финансы",
-			icon: <Banknote />,
-			category: "Навигация",
-			action: () => setCurrentView("finance"),
-		},
-		{
-			id: "nav-communications",
-			title: "Связь",
-			icon: <MessageSquare />,
-			category: "Навигация",
-			action: () => setCurrentView("communications"),
-		},
-		{
-			id: "nav-settings",
-			title: "Настройки",
-			icon: <Settings />,
-			category: "Навигация",
-			action: () => setCurrentView("settings"),
-		},
+	const commands = useMemo(() => {
+		const allowMarketingSection = hasCapability(clinicMode, "marketingSection");
+		const showPayroll = featureFlags.hasPayrollModule || isDemo;
+		const showLeads = (featureFlags.hasLeadsKanban && allowMarketingSection) || isDemo;
+		const showMarketing = (featureFlags.hasMarketingModule && allowMarketingSection) || isDemo;
+		const showLab = featureFlags.hasDentalLab || isDemo;
+		const showInventory = featureFlags.hasInventoryModule || isDemo;
+		const showAnalytics = featureFlags.hasAnalyticsModule || isDemo;
+		const showScanner = featureFlags.hasCsoScanner || isDemo;
 
-		{
-			id: "action-new-patient",
-			title: "Создать карточку пациента",
-			icon: <Users />,
-			category: "Быстрые действия",
-			action: () => {
-				setCurrentView("patients");
+		const list = [
+			{
+				id: "nav-shift",
+				title: "Смена",
+				icon: <Calendar />,
+				category: "Навигация",
+				action: () => setCurrentView("shift"),
 			},
-		},
-		{
-			id: "action-new-appointment",
-			title: "Новая запись на прием",
-			icon: <Calendar />,
-			category: "Быстрые действия",
-			action: () => {
-				setCurrentView("schedule");
+			{
+				id: "nav-schedule",
+				title: "Расписание",
+				icon: <Calendar />,
+				category: "Навигация",
+				action: () => setCurrentView("schedule"),
 			},
-		},
-		{
-			id: "action-waitlist-quickfill",
-			title: "Лист ожидания и быстрая запись (Автозаполнение)",
-			icon: <Calendar />,
-			category: "Быстрые действия",
-			action: () => {
-				setCurrentView("schedule");
+			{
+				id: "nav-patients",
+				title: "Пациенты",
+				icon: <Users />,
+				category: "Навигация",
+				action: () => setCurrentView("patients"),
 			},
-		},
-		{
-			id: "action-start-shift",
-			title: "Начать смену (Владелец)",
-			icon: <CheckCircle2 />,
-			category: "Быстрые действия",
-			action: () => {
-				setCurrentView("shift");
+			{
+				id: "nav-pipeline",
+				title: "Планы лечения (Воронка)",
+				icon: <Layers />,
+				category: "Навигация",
+				action: () => setCurrentView("pipeline"),
 			},
-		},
-		{
-			id: "action-copilot",
-			title: "Клинический Copilot (ИИ-ассистент)",
-			icon: <Sparkles className="text-[var(--teal)]" />,
-			category: "Быстрые действия",
-			action: () => {
-				if (typeof window !== "undefined") {
-					if (window.__denteCopilot) {
-						window.__denteCopilot.open();
-					} else {
-						window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+			{
+				id: "nav-imaging",
+				title: "Снимки",
+				icon: <Camera />,
+				category: "Навигация",
+				action: () => setCurrentView("imaging"),
+			},
+			{
+				id: "nav-visit",
+				title: "Прием",
+				icon: <Stethoscope />,
+				category: "Навигация",
+				action: () => setCurrentView("visit"),
+			},
+			{
+				id: "nav-documents",
+				title: "Документы",
+				icon: <FileText />,
+				category: "Навигация",
+				action: () => setCurrentView("documents"),
+			},
+			{
+				id: "nav-finance",
+				title: "Финансы",
+				icon: <Banknote />,
+				category: "Навигация",
+				action: () => setCurrentView("finance"),
+			},
+			...(showAnalytics
+				? [
+						{
+							id: "nav-analytics",
+							title: "Аналитика",
+							icon: <BarChart3 />,
+							category: "Навигация",
+							action: () => setCurrentView("analytics"),
+						},
+					]
+				: []),
+			{
+				id: "nav-communications",
+				title: "Связь",
+				icon: <MessageSquare />,
+				category: "Навигация",
+				action: () => setCurrentView("communications"),
+			},
+			...(showInventory
+				? [
+						{
+							id: "nav-inventory",
+							title: "Склад",
+							icon: <Package />,
+							category: "Навигация",
+							action: () => setCurrentView("inventory"),
+						},
+					]
+				: []),
+			...(showLab
+				? [
+						{
+							id: "nav-lab",
+							title: "Лаборатория (ЗТЛ)",
+							icon: <FlaskConical />,
+							category: "Навигация",
+							action: () => setCurrentView("lab"),
+						},
+					]
+				: []),
+			...(showScanner
+				? [
+						{
+							id: "nav-scanner",
+							title: "Стерилизация",
+							icon: <ScanLine />,
+							category: "Навигация",
+							action: () => setCurrentView("scanner"),
+						},
+					]
+				: []),
+			...(showLeads
+				? [
+						{
+							id: "nav-leads",
+							title: "Обращения (Лиды)",
+							icon: <UserPlus />,
+							category: "Навигация",
+							action: () => setCurrentView("leads"),
+						},
+					]
+				: []),
+			...(showMarketing
+				? [
+						{
+							id: "nav-marketing",
+							title: "Маркетинг",
+							icon: <Megaphone />,
+							category: "Навигация",
+							action: () => setCurrentView("marketing"),
+						},
+					]
+				: []),
+			{
+				id: "nav-settings",
+				title: "Настройки",
+				icon: <Settings />,
+				category: "Навигация",
+				action: () => setCurrentView("settings"),
+			},
+
+			{
+				id: "action-new-patient",
+				title: "Создать карточку пациента",
+				icon: <Users />,
+				category: "Быстрые действия",
+				action: () => {
+					setCurrentView("patients");
+				},
+			},
+			{
+				id: "action-new-appointment",
+				title: "Новая запись на прием",
+				icon: <Calendar />,
+				category: "Быстрые действия",
+				action: () => {
+					setCurrentView("schedule");
+				},
+			},
+			{
+				id: "action-waitlist-quickfill",
+				title: "Лист ожидания и быстрая запись (Автозаполнение)",
+				icon: <Calendar />,
+				category: "Быстрые действия",
+				action: () => {
+					setCurrentView("schedule");
+				},
+			},
+			...(showPayroll
+				? [
+						{
+							id: "action-start-shift",
+							title: "Начать смену (Владелец)",
+							icon: <CheckCircle2 />,
+							category: "Быстрые действия",
+							action: () => {
+								setCurrentView("shift");
+							},
+						},
+					]
+				: []),
+			{
+				id: "action-copilot",
+				title: "Клинический Copilot (ИИ-ассистент)",
+				icon: <Sparkles className="text-[var(--teal)]" />,
+				category: "Быстрые действия",
+				action: () => {
+					if (typeof window !== "undefined") {
+						if (window.__denteCopilot) {
+							window.__denteCopilot.open();
+						} else {
+							window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+						}
 					}
-				}
+				},
 			},
-		},
-		{
-			id: "action-chairside-hud",
-			title: "Кресельный HUD ИИ-копилота (В кресле)",
-			icon: <Sparkles className="text-[var(--teal)]" />,
-			category: "Быстрые действия",
-			action: () => {
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(new CustomEvent("dente:toggle-chairside-hud"));
-				}
+			{
+				id: "action-chairside-hud",
+				title: "Кресельный HUD ИИ-копилота (В кресле)",
+				icon: <Sparkles className="text-[var(--teal)]" />,
+				category: "Быстрые действия",
+				action: () => {
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(new CustomEvent("dente:toggle-chairside-hud"));
+					}
+				},
 			},
-		},
-		{
-			id: "action-cbct-tuner",
-			title: "Тюнер контраста и срезов КЛКТ (Ползунки W/L, Gamma, ОПТГ)",
-			icon: <Sliders className="text-[var(--teal)]" />,
-			category: "Быстрые действия",
-			action: () => {
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(new CustomEvent("dente:open-cbct-tuner"));
-				}
+			{
+				id: "action-cbct-tuner",
+				title: "Тюнер контраста и срезов КЛКТ (Ползунки W/L, Gamma, ОПТГ)",
+				icon: <Sliders className="text-[var(--teal)]" />,
+				category: "Быстрые действия",
+				action: () => {
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(new CustomEvent("dente:open-cbct-tuner"));
+					}
+				},
 			},
-		},
-		{
-			id: "action-shortcuts-overlay",
-			title: "Горячие клавиши врача (Шпаргалка ? / F1)",
-			icon: <Keyboard className="text-[var(--teal)]" />,
-			category: "Справка и обучение",
-			action: () => {
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(new CustomEvent("dente:open-shortcuts-overlay"));
-				}
+			{
+				id: "action-shortcuts-overlay",
+				title: "Горячие клавиши врача (Шпаргалка ? / F1)",
+				icon: <Keyboard className="text-[var(--teal)]" />,
+				category: "Справка и обучение",
+				action: () => {
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(new CustomEvent("dente:open-shortcuts-overlay"));
+					}
+				},
 			},
-		},
-		{
-			id: "action-clinical-help-drawer",
-			title: "Клинические руководства (Шторка быстрых правил)",
-			icon: <BookOpen className="text-[var(--teal)]" />,
-			category: "Справка и обучение",
-			action: () => {
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(new CustomEvent("dente:open-help"));
-				}
+			{
+				id: "action-clinical-help-drawer",
+				title: "Клинические руководства (Шторка быстрых правил)",
+				icon: <BookOpen className="text-[var(--teal)]" />,
+				category: "Справка и обучение",
+				action: () => {
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(new CustomEvent("dente:open-help"));
+					}
+				},
 			},
-		},
-	];
+		];
+		return list;
+	}, [
+		clinicMode,
+		featureFlags.hasAnalyticsModule,
+		featureFlags.hasCsoScanner,
+		featureFlags.hasDentalLab,
+		featureFlags.hasInventoryModule,
+		featureFlags.hasLeadsKanban,
+		featureFlags.hasMarketingModule,
+		featureFlags.hasPayrollModule,
+		isDemo,
+		setCurrentView,
+	]);
 
 	const patientResults = useMemo(() => {
 		const q = query.trim();
@@ -469,8 +583,8 @@ export function Omnibar() {
 									<input
 										ref={inputRef}
 										type="text"
-										className="dente-search-input omnibar-search-input omnibar-input !h-14 !min-h-[56px] !max-h-[56px] !pl-12 !pr-24 !bg-transparent !border-none !outline-none !text-lg !text-[var(--ink)] placeholder:!text-[var(--muted)]"
-										placeholder={isRecording ? "Слушаю вас..." : "Поиск по разделам или действиям..."}
+										className="dente-search-input omnibar-search-input omnibar-input !h-14 !min-h-[56px] !max-h-[56px] !pl-11 sm:!pl-12 !pr-28 !bg-transparent !border-none !outline-none !text-sm sm:!text-base !text-[var(--ink)] placeholder:!text-[var(--muted)]"
+										placeholder={isRecording ? "Слушаю вас..." : "Поиск разделов и действий..."}
 										value={query}
 										id="omnibar-input"
 										data-tour="global-search-input"
@@ -479,7 +593,7 @@ export function Omnibar() {
 											setSelectedIndex(0);
 										}}
 									/>
-									<div className="absolute right-3 flex items-center gap-1.5 z-10">
+									<div className="absolute right-2 sm:right-3 flex items-center gap-1.5 z-10">
 										<button
 											type="button"
 											onClick={async () => {
@@ -489,7 +603,7 @@ export function Omnibar() {
 													clientLogger.warn("[Omnibar] Dictation toggle error:", err);
 												}
 											}}
-											className={`w-9 h-9 min-h-[36px] min-w-[36px] rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
+											className={`w-11 h-11 min-h-[44px] min-w-[44px] sm:w-9 sm:h-9 sm:min-h-[36px] sm:min-w-[36px] rounded-xl sm:rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
 												isRecording
 													? "bg-rose-500/15 border-rose-500/40 text-rose-600 animate-pulse"
 													: "border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -515,7 +629,7 @@ export function Omnibar() {
 												}
 												setOmnibarOpen(false);
 											}}
-											className="w-9 h-9 min-h-[36px] min-w-[36px] flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+											className="w-11 h-11 min-h-[44px] min-w-[44px] sm:w-9 sm:h-9 sm:min-h-[36px] sm:min-w-[36px] border-0 bg-transparent flex items-center justify-center hover:bg-[var(--paper-soft)] rounded-xl sm:rounded-lg transition-colors text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
 											aria-label="Закрыть омнибар"
 										>
 											<X className="w-5 h-5" />
@@ -548,10 +662,10 @@ export function Omnibar() {
 														)}
 														<button
 															type="button"
-															className={`w-full text-left flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl cursor-pointer transition-colors ${
+															className={`w-full justify-start text-left flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-xl border-0 cursor-pointer transition-colors ${
 																idx === selectedIndex
-																	? "bg-[var(--teal-surface)] text-[var(--teal-dark)]"
-																	: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+																	? "bg-[var(--paper-soft)] text-[var(--ink)] ring-1 ring-[var(--primary)]/30"
+																	: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 															}`}
 															onClick={() => {
 																cmd.action();
@@ -560,16 +674,16 @@ export function Omnibar() {
 															onMouseEnter={() => setSelectedIndex(idx)}
 														>
 															<div
-																className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? "bg-[var(--teal-soft)] text-[var(--teal-dark)]" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}
+																className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${idx === selectedIndex ? "bg-[var(--primary)] text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}
 															>
 																{React.isValidElement<{ size?: number }>(cmd.icon)
 																	? React.cloneElement(cmd.icon, { size: 16 })
 																	: cmd.icon}
 															</div>
-															<span className="font-medium">{cmd.title}</span>
+															<span className="font-medium text-sm text-left truncate">{cmd.title}</span>
 
 															{idx === selectedIndex && (
-																<span className="ml-auto text-xs text-[var(--teal)] font-medium">
+																<span className="hidden sm:inline ml-auto text-xs text-[var(--primary)] font-medium shrink-0">
 																	↵ Выбрать
 																</span>
 															)}
@@ -581,8 +695,8 @@ export function Omnibar() {
 									)}
 								</div>
 
-								{/* Footer */}
-								<div className="bg-[var(--paper-soft)] px-4 py-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
+								{/* Footer (desktop keyboard hints only) */}
+								<div className="hidden sm:flex bg-[var(--paper-soft)] px-4 py-2 border-t border-[var(--line)] items-center justify-between text-xs text-[var(--muted)]">
 									<div className="flex items-center gap-4">
 										<span className="flex items-center gap-1">
 											<kbd className="font-sans px-1.5 py-0.5 bg-[var(--paper)] border border-[var(--line)] rounded text-[10px] font-semibold text-[var(--ink)] shadow-sm">

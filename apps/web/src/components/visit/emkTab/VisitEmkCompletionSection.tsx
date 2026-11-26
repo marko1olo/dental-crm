@@ -17,6 +17,7 @@ export function VisitEmkCompletionSection({
 	setIsSbpQrModalOpen,
 	activeEmkTab,
 	setActiveEmkTab,
+	followupSlotChipsNode,
 }: VisitEmkCompletionSectionProps) {
 	return (
 		<>
@@ -53,6 +54,7 @@ export function VisitEmkCompletionSection({
 										: ""}
 								</span>
 							)}
+							{followupSlotChipsNode}
 						</div>
 					</div>
 					<div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">

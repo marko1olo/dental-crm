@@ -7,9 +7,11 @@ import { Tooth46CrownShaders } from "../../Tooth46CrownShaders";
 import { Tooth46PeriapicalShaders } from "../../Tooth46PeriapicalShaders";
 import { Tooth46RestorationShaders } from "../../Tooth46RestorationShaders";
 import { Tooth46PathologyShaders } from "../../Tooth46PathologyShaders";
+import { useOdontogramSharedDefs } from "../../OdontogramSharedDefsContext";
 import { TOOTH15_GEOMETRY } from "./tooth15GeometryConstants";
 
 export const Tooth15ShaderDefs: React.FC = () => {
+	const hasGlobalSharedDefs = useOdontogramSharedDefs();
 	return (
 		<defs>
 			<clipPath id="tooth15-crown-clip"><path d={TOOTH15_GEOMETRY.crownMonolithPath} /></clipPath>
@@ -64,14 +66,18 @@ export const Tooth15ShaderDefs: React.FC = () => {
 				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.10" />
 			</linearGradient>
 
-			<ToothAnteriorShaders />
-			<Tooth46CuspShaders />
-			<Tooth46EndoShaders />
-			<Tooth46CariesShaders />
-			<Tooth46CrownShaders />
-			<Tooth46PeriapicalShaders />
-			<Tooth46RestorationShaders />
-			<Tooth46PathologyShaders />
+			{!hasGlobalSharedDefs && (
+				<>
+					<ToothAnteriorShaders />
+					<Tooth46CuspShaders />
+					<Tooth46EndoShaders />
+					<Tooth46CariesShaders />
+					<Tooth46CrownShaders />
+					<Tooth46PeriapicalShaders />
+					<Tooth46RestorationShaders />
+					<Tooth46PathologyShaders />
+				</>
+			)}
 		</defs>
 	);
 };

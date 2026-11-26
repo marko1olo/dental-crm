@@ -20,7 +20,6 @@ import {
 import { showToast } from "../GlobalToast";
 import { clientLogger } from "../../services/logging/clientLogger";
 import { useVisitStore } from "../../store/visitStore";
-import { useDraftStore } from "../../store/patientStore";
 import { denteQueryClient } from "../../lib/queryClient";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
@@ -129,9 +128,6 @@ export function usePerioStudioState({
 			safeLocalStorageRemoveItem(`dente_perio_draft_v2_${cleanPatientId}`);
 			safeLocalStorageRemoveItem(`dente_perio_draft_${cleanPatientId}`);
 		}
-		try {
-			useDraftStore.getState().resetDraft();
-		} catch { /* safe */ }
 		setTeeth(normalizePerioDentition(initialTeeth));
 		setScreeningMap({ ...DEFAULT_SEXTANTS_MAP });
 		setSelectedProtocolId("prophy_airflow_ultrasound");

@@ -34,6 +34,8 @@ export interface EmkToolbarProps {
 	hasUnsavedChanges?: boolean | undefined;
 	voicePilotNode?: React.ReactNode | undefined;
 	specialtyFocusNode?: React.ReactNode | undefined;
+	recentVisitActionNode?: React.ReactNode | undefined;
+	followupScheduleNode?: React.ReactNode | undefined;
 	noteForm?: Record<string, unknown> | undefined;
 	onUndo?: (() => boolean) | undefined;
 	onRedo?: (() => boolean) | undefined;

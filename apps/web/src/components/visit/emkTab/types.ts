@@ -116,6 +116,7 @@ export interface VisitEmkCompletionSectionProps {
 	setIsSbpQrModalOpen: (open: boolean) => void;
 	activeEmkTab: string;
 	setActiveEmkTab: (tab: string) => void;
+	followupSlotChipsNode?: React.ReactNode | undefined;
 }
 
 export interface VisitEmkServicesBillingProps {

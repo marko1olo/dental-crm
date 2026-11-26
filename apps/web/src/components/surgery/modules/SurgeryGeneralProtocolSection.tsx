@@ -11,7 +11,7 @@ import type {
 	SurgeryScenarioConfig,
 	SurgeryScenarioType,
 } from "../surgeryCatalogData";
-import { SurgeryImplantParametersSection } from "../SurgeryImplantParametersSection";
+import { SurgeryImplantParametersSection, type ToothImplantSpec } from "../SurgeryImplantParametersSection";
 
 export const FREQUENT_SURGERY_TEETH = [16, 26, 36, 46, 11, 21, 14, 24, 34, 44, 18, 28, 38, 48] as const;
 
@@ -30,6 +30,9 @@ export interface SurgeryGeneralProtocolSectionProps {
 	readonly selectedSuture: string;
 	readonly selectedTeeth: readonly number[];
 	readonly onSelectTooth: (t: number) => void;
+	readonly activeEditingTooth?: number | undefined;
+	readonly onSelectActiveEditingTooth?: ((t: number) => void) | undefined;
+	readonly perToothSpecs?: Readonly<Record<number, ToothImplantSpec>> | undefined;
 	readonly onSelectBrand: (brand: string) => void;
 	readonly onSelectDiameter: (d: number) => void;
 	readonly onSelectLength: (l: number) => void;
@@ -38,6 +41,8 @@ export interface SurgeryGeneralProtocolSectionProps {
 	readonly onSelectCapType: (cap: SurgeryCapType) => void;
 	readonly lotNumber: string;
 	readonly serialNumber: string;
+	readonly onChangeLotNumber?: ((lot: string) => void) | undefined;
+	readonly onChangeSerialNumber?: ((serial: string) => void) | undefined;
 	readonly isGuidedSurgery?: boolean;
 	readonly onToggleGuidedSurgery?: (val: boolean) => void;
 	readonly guidedSleeveDiameterMm?: number;
@@ -63,6 +68,9 @@ export const SurgeryGeneralProtocolSection: React.FC<SurgeryGeneralProtocolSecti
 	selectedSuture,
 	selectedTeeth,
 	onSelectTooth,
+	activeEditingTooth,
+	onSelectActiveEditingTooth,
+	perToothSpecs,
 	onSelectBrand,
 	onSelectDiameter,
 	onSelectLength,
@@ -71,6 +79,8 @@ export const SurgeryGeneralProtocolSection: React.FC<SurgeryGeneralProtocolSecti
 	onSelectCapType,
 	lotNumber,
 	serialNumber,
+	onChangeLotNumber,
+	onChangeSerialNumber,
 	isGuidedSurgery,
 	onToggleGuidedSurgery,
 	guidedSleeveDiameterMm,
@@ -197,6 +207,12 @@ export const SurgeryGeneralProtocolSection: React.FC<SurgeryGeneralProtocolSecti
 					catalogArticle={catalogArticle}
 					lotNumber={lotNumber}
 					serialNumber={serialNumber}
+					onChangeLotNumber={onChangeLotNumber}
+					onChangeSerialNumber={onChangeSerialNumber}
+					selectedTeeth={selectedTeeth}
+					activeToothFdi={activeEditingTooth}
+					onSelectActiveTooth={onSelectActiveEditingTooth}
+					perToothSpecs={perToothSpecs}
 					isGuidedSurgery={isGuidedSurgery}
 					onToggleGuidedSurgery={onToggleGuidedSurgery}
 					guidedSleeveDiameterMm={guidedSleeveDiameterMm}

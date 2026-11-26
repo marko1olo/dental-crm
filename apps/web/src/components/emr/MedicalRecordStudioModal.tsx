@@ -14,6 +14,7 @@ import {
 	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy, Loader2,
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { clientLogger } from "../../services/logging/clientLogger";
 import type {
 	MedicalRecordData, ClinicalVisitDiaryEntry, ClinicalPassportData, ClinicalAnamnesisData,
@@ -68,6 +69,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		visitId, patientId, activeTooth,
 	}) {
 		const dashboard = useAppStore((s) => s.dashboard);
+		const appActivePatientId = useAppStore((s) => s.activePatientId);
+		const storeSelectedPatientId = usePatientStore((s) => s.selectedPatientId);
+		const effectivePatientId = patientId || storeSelectedPatientId || appActivePatientId || undefined;
 		const profile = dashboard?.clinicSettings?.profile;
 		const staff = dashboard?.clinicSettings?.staff;
 
@@ -87,41 +91,48 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		const buildInitialFormData = useCallback((): MedicalRecordData => {
 			let draft: Partial<MedicalRecordData> | null = null;
-			if (patientId) {
-				const syncDraft = getSynchronousDraft<Partial<MedicalRecordData>>(`draft:emk:${patientId}`);
+			if (effectivePatientId) {
+				const syncDraft = getSynchronousDraft<Partial<MedicalRecordData>>(`draft:emk:${effectivePatientId}`);
 				if (syncDraft?.data) {
 					draft = syncDraft.data;
 				} else if (typeof sessionStorage !== "undefined") {
 					try {
-						const raw = sessionStorage.getItem(`dente:medical_card_autosave:${patientId}`);
+						const raw = sessionStorage.getItem(`dente:medical_card_autosave:${effectivePatientId}`);
 						if (raw) draft = JSON.parse(raw);
-					} catch { /* ignore fallback draft parse error */ }
+					} catch (err) {
+						clientLogger.warn("[MedicalRecordStudioModal] Ошибка разбора fallback-черновика из sessionStorage", err, {
+							module: "MedicalRecordStudioModal",
+							patientId: effectivePatientId,
+						});
+					}
 				}
 			}
 			const base = mergeRecordSections(DEFAULT_MEDICAL_CARD_DATA, { clinic: resolvedClinic });
 			return mergeRecordSections(mergeRecordSections(base, draft), initialData);
-		}, [initialData, resolvedClinic, patientId]);
+		}, [initialData, resolvedClinic, effectivePatientId]);
 
 		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
 
 		// Async IndexedDB Draft Hydration: восстановление при сбое браузера / Ctrl+W / OOM
 		useEffect(() => {
-			if (!patientId) return;
+			if (!effectivePatientId) return;
 			let cancelled = false;
-			void loadOfflineDraft<Partial<MedicalRecordData>>(`draft:emk:${patientId}`).then((idbDraft) => {
+			void loadOfflineDraft<Partial<MedicalRecordData>>(`draft:emk:${effectivePatientId}`).then((idbDraft) => {
 				if (!cancelled && idbDraft?.data) setFormData((prev) => mergeRecordSections(prev, idbDraft.data));
 			});
 			return () => { cancelled = true; };
-		}, [patientId]);
+		}, [effectivePatientId]);
 
-		// Zero-Leak Draft (Мандаты 8zq/8bn): Сброс и гидратация formData при смене patientId
-		const lastPatientIdRef = useRef<string | undefined>(patientId);
+		// Zero-Leak Draft (Мандаты 8zq/8bn): Сброс и гидратация formData при смене effectivePatientId
+		const lastPatientIdRef = useRef<string | undefined>(effectivePatientId);
+		const buildInitialRef = useRef(buildInitialFormData);
+		buildInitialRef.current = buildInitialFormData;
 		useEffect(() => {
-			if (lastPatientIdRef.current !== patientId) {
-				lastPatientIdRef.current = patientId;
-				setFormData(buildInitialFormData());
+			if (lastPatientIdRef.current !== effectivePatientId) {
+				lastPatientIdRef.current = effectivePatientId;
+				setFormData(buildInitialRef.current());
 			}
-		}, [patientId, buildInitialFormData]);
+		}, [effectivePatientId]);
 
 		const [activeTab, setActiveTab] = useState<RecordTabType>(initialTab || "overview");
 		const [zoomScale, setZoomScale] = useState<number>(1.0);
@@ -148,14 +159,14 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		// Debounced 3-tier автосейв всей карты в IndexedDB + LocalStorage (Zero Keystroke Loss & Zero-Leak Draft)
 		const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		useEffect(() => {
-			if (!patientId) return;
+			if (!effectivePatientId) return;
 			if (autosaveRef.current) clearTimeout(autosaveRef.current);
 			autosaveRef.current = setTimeout(() => {
 				try {
 					saveOfflineDraftDebounced(
-						`draft:emk:${patientId}`,
+						`draft:emk:${effectivePatientId}`,
 						"DIARY_043_DRAFT",
-						patientId,
+						effectivePatientId,
 						formData,
 						profile?.organizationId,
 						600,
@@ -165,7 +176,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 				}
 			}, 600);
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-		}, [formData, patientId, profile?.organizationId]);
+		}, [formData, effectivePatientId, profile?.organizationId]);
 
 		// Закрытие выпадающего меню по клику вне
 		useEffect(() => {
@@ -177,10 +188,20 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			return () => document.removeEventListener("mousedown", handleClickOutside);
 		}, [isMoreMenuOpen]);
 
-		const resetDraft = useCallback(() => setFormData(buildInitialFormData()), [buildInitialFormData]);
+		const resetDraft = useCallback(() => setFormData(buildInitialRef.current()), []);
 
-		// Zero-Leak Draft (Мандаты 8zq/8bn): сброс локального состояния черновика при unmount и закрытии
-		useEffect(() => resetDraft, [resetDraft]);
+		// Zero-Leak Draft (Мандаты 8zq/8bn): сброс только при реальном unmount и переходе isOpen true -> false (не при ре-рендере родителя)
+		const wasOpenRef = useRef<boolean>(isOpen);
+		useEffect(() => {
+			if (wasOpenRef.current && !isOpen) {
+				resetDraft();
+			}
+			wasOpenRef.current = isOpen;
+		}, [isOpen, resetDraft]);
+
+		useEffect(() => () => {
+			resetDraft();
+		}, [resetDraft]);
 
 		const handleClose = useCallback(() => {
 			resetDraft();
@@ -189,13 +210,15 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		useEffect(() => {
 			if (!isOpen) return;
-			const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
+			const handleKeyDown = (e: KeyboardEvent) => {
+				if (e.key === "Escape" && !isProtocolGeneratorOpen) handleClose();
+			};
 			window.addEventListener("keydown", handleKeyDown);
 			return () => window.removeEventListener("keydown", handleKeyDown);
-		}, [isOpen, handleClose]);
+		}, [isOpen, isProtocolGeneratorOpen, handleClose]);
 
 		const { handlePrint, handleExportXml, handleExportJson, handleCopyText } = useRecordExports({ formData, effectiveIsDraft, setCopiedToast });
-		const { isSaving, handleSaveForm } = useMedicalRecordSave({ formData, onSave, visitId, patientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft });
+		const { isSaving, handleSaveForm } = useMedicalRecordSave({ formData, onSave, visitId, patientId: effectivePatientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft });
 
 		const applyFormUpdate = useCallback((updater: (prev: MedicalRecordData) => MedicalRecordData) => {
 			setFormData((prev) => { const updated = updater(prev); onSave?.(updated); return updated; });

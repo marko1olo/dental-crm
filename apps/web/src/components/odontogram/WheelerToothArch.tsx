@@ -9,6 +9,10 @@
 import React, { useCallback, useMemo, useState } from "react";
 import type { ToothData, ToothState } from "./ToothChart";
 import { AnatomicalGate0Row } from "./anatomicalDualArch/AnatomicalGate0Row";
+import {
+	OdontogramGlobalSharedDefs,
+	OdontogramSharedDefsContext,
+} from "./gate0/OdontogramSharedDefsContext";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { History, Sparkles } from "lucide-react";
 
@@ -166,40 +170,43 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 				</div>
 			)}
 
-			<div className="w-full max-w-[1080px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
-				<AnatomicalGate0Row
-					isUpper={true}
-					leftTeeth={q1}
-					rightTeeth={q2}
-					teethDataMap={map}
-					selectedTeeth={selectedTeeth}
-					isDark={dark}
-					zoom={zoom}
-					onToothClick={handleToothClickInternal}
-					archTitle={upperArchTitle}
-				/>
+			<OdontogramSharedDefsContext.Provider value={true}>
+				<OdontogramGlobalSharedDefs />
+				<div className="w-full max-w-[1080px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
+					<AnatomicalGate0Row
+						isUpper={true}
+						leftTeeth={q1}
+						rightTeeth={q2}
+						teethDataMap={map}
+						selectedTeeth={selectedTeeth}
+						isDark={dark}
+						zoom={zoom}
+						onToothClick={handleToothClickInternal}
+						archTitle={upperArchTitle}
+					/>
 
-				{/* Окклюзионная плоскость смыкания */}
-				<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5 order-2" title="Окклюзионная плоскость смыкания">
-					<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
-					<span className="text-[10px] font-medium tracking-wide text-slate-400/90 dark:text-slate-500/90 select-none">
-						Окклюзионная линия
-					</span>
-					<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
+					{/* Окклюзионная плоскость смыкания */}
+					<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5 order-2" title="Окклюзионная плоскость смыкания">
+						<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
+						<span className="text-[10px] font-medium tracking-wide text-slate-400/90 dark:text-slate-500/90 select-none">
+							Окклюзионная линия
+						</span>
+						<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
+					</div>
+
+					<AnatomicalGate0Row
+						isUpper={false}
+						leftTeeth={q4}
+						rightTeeth={q3}
+						teethDataMap={map}
+						selectedTeeth={selectedTeeth}
+						isDark={dark}
+						zoom={zoom}
+						onToothClick={handleToothClickInternal}
+						archTitle={lowerArchTitle}
+					/>
 				</div>
-
-				<AnatomicalGate0Row
-					isUpper={false}
-					leftTeeth={q4}
-					rightTeeth={q3}
-					teethDataMap={map}
-					selectedTeeth={selectedTeeth}
-					isDark={dark}
-					zoom={zoom}
-					onToothClick={handleToothClickInternal}
-					archTitle={lowerArchTitle}
-				/>
-			</div>
+			</OdontogramSharedDefsContext.Provider>
 
 			{/* Контекстная шторка истории зуба при клике в режиме панорамы */}
 			{activeHistoryTooth !== null && patientId && (

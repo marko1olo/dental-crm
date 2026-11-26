@@ -14,6 +14,7 @@ export interface TreatmentPipelineMobileFloatingBarProps {
 	dropoutRiskCount: number;
 	isRunningDropout: boolean;
 	isLoading: boolean;
+	isHidden?: boolean | undefined;
 	onRunDropoutPrevention: () => void;
 	onRefresh: () => void;
 }
@@ -24,10 +25,11 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 	dropoutRiskCount,
 	isRunningDropout,
 	isLoading,
+	isHidden = false,
 	onRunDropoutPrevention,
 	onRefresh,
 }) => {
-	if (!data || typeof document === "undefined" || !document.body) {
+	if (!data || isHidden || typeof document === "undefined" || !document.body) {
 		return null;
 	}
 
@@ -37,7 +39,7 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 
 	return createPortal(
 		<div
-			className="md:hidden fixed left-0 right-0 z-[9990] px-3.5 py-2 backdrop-blur-xl shadow-lg flex items-center justify-between gap-3"
+			className="md:hidden fixed left-0 right-0 z-40 px-3.5 py-2 backdrop-blur-xl shadow-lg flex items-center justify-between gap-3"
 			style={{
 				bottom: "calc(56px + env(safe-area-inset-bottom, 0px))",
 				backgroundColor: "var(--paper)",
@@ -86,10 +88,10 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 					onClick={() => {
 						if (!isLoading) onRefresh();
 					}}
-					className="primary-button min-h-[44px] h-11 px-4 font-bold text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
+					className="min-h-[44px] h-11 px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
 					data-testid="pipeline-mobile-refresh-btn"
 				>
-					<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+					<RefreshCw className={`w-4 h-4 shrink-0 ${isLoading ? "animate-spin" : ""}`} />
 					<span>Обновить</span>
 				</button>
 			</div>

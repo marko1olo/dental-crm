@@ -37,6 +37,8 @@ export function EmkToolbar({
 	hasUnsavedChanges = false,
 	voicePilotNode,
 	specialtyFocusNode,
+	recentVisitActionNode,
+	followupScheduleNode,
 	noteForm = {},
 	onUndo,
 	onRedo,
@@ -82,6 +84,8 @@ export function EmkToolbar({
 				hasUnsavedChanges={hasUnsavedChanges}
 				voicePilotNode={voicePilotNode}
 				specialtyFocusNode={specialtyFocusNode}
+				recentVisitActionNode={recentVisitActionNode}
+				followupScheduleNode={followupScheduleNode}
 				canUndo={canUndo}
 				canRedo={canRedo}
 				handleUndo={handleUndo}

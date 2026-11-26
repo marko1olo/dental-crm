@@ -44,7 +44,30 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 	patientData,
 	onUpdatePatientField,
 	onSave,
-}) => (
+}) => {
+	const medicalRecordInitialData = React.useMemo(() => ({
+		passport: {
+			patientFullName: patientData.fullName || "",
+			patientBirthDate: patientData.birthDate || "",
+			patientPhone: patientData.phone || "",
+			patientSex: (patientData.gender === "female" ? "female" : "male") as "female" | "male",
+			patientAddressRegistration: patientData.address || "",
+			patientAddressResidence: patientData.address || "",
+			medicalCardNumber: patientData.cardNumber || patientData.medicalCardNumber || "",
+			cardOpenedDate: patientData.createdAt ? String(patientData.createdAt).slice(0, 10) : "",
+		},
+	}), [
+		patientData.fullName,
+		patientData.birthDate,
+		patientData.phone,
+		patientData.gender,
+		patientData.address,
+		patientData.cardNumber,
+		patientData.medicalCardNumber,
+		patientData.createdAt,
+	]);
+
+	return (
 	<>
 		{isDiplomaModalOpen && (
 			<PediatricBraveryDiplomaModal
@@ -89,6 +112,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 		)}
 		{isPhotoModalOpen && setIsPhotoModalOpen && (
 			<ClinicalPhotoProtocolModal
+				key={patientData.id || "card-photo-modal"}
 				isOpen={isPhotoModalOpen}
 				onClose={() => setIsPhotoModalOpen(false)}
 				patientId={patientData.id ?? undefined}
@@ -114,19 +138,9 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 					}
 					showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
 				}}
-				initialData={{
-					passport: {
-						patientFullName: patientData.fullName || "",
-						patientBirthDate: patientData.birthDate || "",
-						patientPhone: patientData.phone || "",
-						patientSex: patientData.gender === "female" ? "female" : "male",
-						patientAddressRegistration: patientData.address || "",
-						patientAddressResidence: patientData.address || "",
-						medicalCardNumber: patientData.cardNumber || patientData.medicalCardNumber || "",
-						cardOpenedDate: patientData.createdAt ? String(patientData.createdAt).slice(0, 10) : "",
-					},
-				}}
+				initialData={medicalRecordInitialData}
 			/>
 		)}
 	</>
-);
+	);
+};

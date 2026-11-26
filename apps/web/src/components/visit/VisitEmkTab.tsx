@@ -14,6 +14,11 @@ import { EmkDiagnosisAndProtocolSection } from "./emkTabModules/EmkDiagnosisAndP
 import type { VisitEmkTabProps } from "./emkTabModules/emkTabTypes";
 import type { VisitDoctorEntity, VisitPatientEntity } from "./view/VisitViewProps";
 import { useVisitEmkTabController } from "./emkTabModules/useVisitEmkTabController";
+import {
+	EmkFollowupSlotsPopoverButton,
+	EmkInlineFollowupChips,
+	EmkRecentVisitCopyButton,
+} from "./emkTabModules/VisitEmkHabitsControls";
 
 export * from "./emkTab";
 export * from "./emkTabModules/emkTabTypes";
@@ -49,7 +54,13 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 		setIsOdontogramCollapsed: _setIsOdontogramCollapsed,
 		isSpecialtyCollapsed,
 		setIsSpecialtyCollapsed,
-		handleScheduleNextVisit,
+		nextFreeSlots,
+		isLoadingSlots,
+		bookingSlotKey,
+		loadNextFreeSlots,
+		handleBookFollowupSlot,
+		recentVisits,
+		handleCopyRecentVisit,
 		isSignedVisit,
 		isLocked,
 		selectedInlineTooth: _selectedInlineTooth,
@@ -117,11 +128,23 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 					onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
-					onScheduleNextVisit={(days: number) =>
-						handleScheduleNextVisit(days, `Через ${days} дн.`)
-					}
 					autosaveState={soloAutosaveState}
 					lastSavedAt={soloLastSavedAt}
+					recentVisitActionNode={
+						<EmkRecentVisitCopyButton
+							recentVisits={recentVisits}
+							onCopyRecentVisit={handleCopyRecentVisit}
+						/>
+					}
+					followupScheduleNode={
+						<EmkFollowupSlotsPopoverButton
+							slots={nextFreeSlots}
+							isLoadingSlots={isLoadingSlots}
+							bookingSlotKey={bookingSlotKey}
+							onOpenPopover={() => void loadNextFreeSlots()}
+							onBookSlot={handleBookFollowupSlot}
+						/>
+					}
 					specialtyFocusNode={
 						<VisitSpecialtyFocus
 							compact
@@ -189,6 +212,13 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 				setIsSbpQrModalOpen={setIsSbpQrModalOpen}
 				activeEmkTab={activeEmkTab}
 				setActiveEmkTab={setActiveEmkTab}
+				followupSlotChipsNode={
+					<EmkInlineFollowupChips
+						slots={nextFreeSlots}
+						bookingSlotKey={bookingSlotKey}
+						onBookSlot={handleBookFollowupSlot}
+					/>
+				}
 			/>
 
 			<VisitEmkModals

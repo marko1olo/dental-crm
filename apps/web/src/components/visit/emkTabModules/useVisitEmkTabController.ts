@@ -9,6 +9,7 @@ import React from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { executeSaveOrReviseDiary } from "./saveOrReviseDiaryAction";
+import { useVisitChairsideHabits } from "./visitChairsideHabitsApi";
 import {
 	inferProcedureServiceFromStamp, inferCatalogServiceFromStamp, infer804nServiceFromStamp,
 } from "../clinicalProcedureCatalogService";
@@ -38,37 +39,8 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 	const [isOdontogramCollapsed, setIsOdontogramCollapsed] = React.useState<boolean>(true);
 	const [isSpecialtyCollapsed, setIsSpecialtyCollapsed] = React.useState<boolean>(true);
 
-	const handleScheduleNextVisit = React.useCallback(
-		(offsetDays: number, label: string = "через 5 дней") => {
-			const targetDate = new Date();
-			targetDate.setDate(targetDate.getDate() + offsetDays);
-			const dateStr = targetDate.toLocaleDateString("ru-RU", {
-				day: "2-digit",
-				month: "2-digit",
-				year: "numeric",
-			});
-			const scheduleLine = `Повторный приём (${label}): ориентировочно ${dateStr}`;
-			updateVisitNoteField(
-				"recommendations",
-				appendClinicalText(String(visitNoteForm?.recommendations || ""), scheduleLine, "\n"),
-			);
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(
-					new CustomEvent("dente-schedule-followup", {
-						detail: {
-							patientId: activePatient?.id,
-							patientName: activePatient?.fullName,
-							offsetDays,
-							targetDateIso: targetDate.toISOString(),
-							label,
-						},
-					}),
-				);
-			}
-			showToast(`Назначен повторный визит (${label} — ${dateStr})`, "success", 3000);
-		},
-		[activePatient?.fullName, activePatient?.id, updateVisitNoteField, visitNoteForm?.recommendations],
-	);
+	const effectiveHabitPatientId = activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null;
+	const effectiveHabitDoctorId = props.activeDoctor?.id ?? dashboard?.activeDoctor?.id ?? null;
 
 	const isSignedVisit =
 		visitNoteForm?.status === "completed" ||
@@ -396,6 +368,27 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		[isRevisingVisitNote, isSignedVisit, triggerDebouncedAutosave, updateVisitNoteField],
 	);
 
+	const {
+		nextFreeSlots,
+		isLoadingSlots,
+		bookingSlotKey,
+		loadNextFreeSlots,
+		handleBookFollowupSlot,
+		recentVisits,
+		handleCopyRecentVisit,
+	} = useVisitChairsideHabits({
+		patientId: effectiveHabitPatientId,
+		doctorId: effectiveHabitDoctorId,
+		visitId: openVisitId || dashboard?.activeVisit?.id || null,
+		isSignedVisit,
+		isRevisingVisitNote,
+		setIsRevisingVisitNote,
+		recommendationsValue: String(visitNoteForm?.recommendations || ""),
+		updateVisitNoteField,
+		triggerDebouncedAutosave,
+		hasCompletionResult: Boolean(completionResult),
+	});
+
 	return {
 		activeEmkTab,
 		setActiveEmkTab,
@@ -413,7 +406,13 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		setIsOdontogramCollapsed,
 		isSpecialtyCollapsed,
 		setIsSpecialtyCollapsed,
-		handleScheduleNextVisit,
+		nextFreeSlots,
+		isLoadingSlots,
+		bookingSlotKey,
+		loadNextFreeSlots,
+		handleBookFollowupSlot,
+		recentVisits,
+		handleCopyRecentVisit,
 		isSignedVisit,
 		isLocked,
 		selectedInlineTooth,

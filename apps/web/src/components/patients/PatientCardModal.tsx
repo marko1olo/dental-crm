@@ -18,6 +18,8 @@ import {
 	HeartPulse, History, Scan, ShieldAlert, ShieldCheck, Users, Wallet,
 } from "lucide-react";
 import { usePatientStore } from "../../store/patientStore";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { PerioStudioModal } from "../perio/PerioStudioModal";
@@ -81,6 +83,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	}, [effectiveInitialMode]);
 
 	const isCreateMode = activeMode === "create" || Boolean(createPatient);
+	const { hasDentalLab } = useWorkspaceProfile();
+	const showDentalLabTab = hasDentalLab || isDemoShowcaseMode();
+	const visibleTabs = useMemo(
+		() => (showDentalLabTab ? TABS : TABS.filter((tab) => tab.id !== "labOrders")),
+		[showDentalLabTab],
+	);
 
 	// Состояние для режима карты пациента
 	const cardState = usePatientCardModalState(props);
@@ -192,7 +200,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								aria-label="Разделы карты пациента"
 								className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto flex-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
 							>
-								{TABS.map((tab) => {
+								{visibleTabs.map((tab) => {
 									const isActive = activeTab === tab.id;
 									const Icon = tab.Icon;
 									return (
@@ -279,7 +287,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								}}
 								onPrintPlan={handlePrint}
 							/>
-						) : activeTab === "labOrders" ? (
+						) : activeTab === "labOrders" && showDentalLabTab ? (
 							<div className="p-2 sm:p-3">
 								<LabOrdersPanel patientId={patientData.id ?? undefined} />
 							</div>

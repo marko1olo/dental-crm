@@ -7,7 +7,7 @@
  * себестоимость в копейках, быстрые действия ортопеда, ровно 1 Primary CTA #0d9488 и Apple HIG (Мандаты 8b: 400–480 строк, 8e, 8am, 8ze).
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Award } from "lucide-react";
 if (typeof document !== "undefined") { void import("./styles/dentalLabStudio.css"); }
 import { generateUuidV7, rublesToKopecks, kopecksToRubles } from "@dental/shared";
@@ -93,7 +93,13 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const effectiveDoctorId = (targetOrder as DentalLabOrderData)?.doctorId || doctorId || currentAuthDoctor?.id || undefined;
 
 	const [patientInput, setPatientInput] = useState<string>(() => targetOrder?.patientName || effectivePatientName);
+	const lastPatientContextRef = useRef<string>(`${effectivePatientId || ""}|${effectivePatientName || ""}|${targetOrder?.id || ""}`);
 	useEffect(() => {
+		const nextContextKey = `${effectivePatientId || ""}|${effectivePatientName || ""}|${targetOrder?.id || ""}`;
+		const contextChanged = lastPatientContextRef.current !== nextContextKey;
+		if (contextChanged) {
+			lastPatientContextRef.current = nextContextKey;
+		}
 		if (targetOrder) {
 			const ordPatName = targetOrder.patientName || (targetOrder as DentalLabOrderData).patient_name;
 			if (typeof ordPatName === "string" && ordPatName.trim()) {
@@ -101,8 +107,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				return;
 			}
 		}
-		if (effectivePatientName && !patientInput) setPatientInput(effectivePatientName);
-	}, [targetOrder, effectivePatientName]);
+		if (contextChanged) {
+			setPatientInput(effectivePatientName || "");
+		} else if (effectivePatientName && !patientInput) {
+			setPatientInput(effectivePatientName);
+		}
+	}, [targetOrder, effectivePatientId, effectivePatientName, patientInput]);
 
 	const availablePatients = useMemo(() => (!dashboard?.patients || !Array.isArray(dashboard.patients)) ? [] :
 		(dashboard.patients as Array<{ id: string; fullName?: string; name?: string; lastName?: string; firstName?: string }>)
@@ -387,6 +397,20 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		useUiSurfaceStore.getState().closePrimaryModal("lab");
 	}, [onClose, resetDraftFields]);
 
+	useEffect(() => {
+		if (!isOpen || typeof window === "undefined") return;
+		const hasSubModalOpen = Boolean(
+			(isReadyInClinicOpen && readyInClinicOrder) || is3DViewerOpen || (isPassportModalOpen && targetOrder),
+		);
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && !hasSubModalOpen) {
+				handleCloseModal();
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [isOpen, isReadyInClinicOpen, readyInClinicOrder, is3DViewerOpen, isPassportModalOpen, targetOrder, handleCloseModal]);
+
 	// Создание/сохранение наряда — кнопка НИКОГДА не заблокирована (Мандат 8e: Автономия врача)
 	const handleCreateOrder = useCallback(async () => {
 		const teethToSave = selectedTeeth.length > 0 ? selectedTeeth : [];
@@ -634,8 +658,18 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 	if (!isOpen || (!hasDentalLab && !isDemoShowcaseMode())) return null;
 
+	const hasSubModalOpen = Boolean(
+		(isReadyInClinicOpen && readyInClinicOrder) || is3DViewerOpen || (isPassportModalOpen && targetOrder),
+	);
+
 	return (
-		<div data-testid="dental-lab-studio-modal-root" className="dental-lab-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>
+		<>
+		<div
+			data-testid="dental-lab-studio-modal-root"
+			className={hasSubModalOpen ? "hidden" : "dental-lab-modal-backdrop"}
+			aria-hidden={hasSubModalOpen || undefined}
+			onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}
+		>
 			<div className="dental-lab-modal-container max-sm:rounded-t-[24px]" data-testid="dental-lab-order-drawer">
 				<div className="sm:hidden flex justify-center pt-2">
 					<div className="dental-lab-drag-handle w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)]" />
@@ -765,31 +799,32 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						</section>
 					</div>
 				)}
-				{isReadyInClinicOpen && readyInClinicOrder && (
-					<DentalLabReadyInClinicModal isOpen={isReadyInClinicOpen} onClose={() => setIsReadyInClinicOpen(false)} order={readyInClinicOrder} />
-				)}
-				{is3DViewerOpen && (
-					<IntraoralScan3DViewerModal isOpen={is3DViewerOpen} onClose={() => setIs3DViewerOpen(false)} modelUrl={scanViewerOrder?.attachedImageUrl || undefined} patientName={scanViewerOrder?.patientName || currentPatientName} toothCode={scanViewerOrder?.teeth?.[0] || selectedTeeth[0]} orderId={scanViewerOrder?.id} scanTitle={scanViewerOrder ? `3D-скан челюсти: ${scanViewerOrder.orderNumber} (${scanViewerOrder.patientName})` : `3D-скан челюсти: ${currentPatientName}`} />
-				)}
-				{isPassportModalOpen && targetOrder && (
-					<OrthopedicPassportA4Modal
-						isOpen={isPassportModalOpen}
-						onClose={() => { setIsPassportModalOpen(false); setLivePassport(null); }}
-						passport={livePassport || {
-							orderNumber: String(targetOrder.orderNumber || (targetOrder.id ? `ЗТЛ-${targetOrder.id.slice(0, 8).toUpperCase()}` : "Б/Н")),
-							batchCode: `LOT-${new Date().getFullYear()}-${targetOrder.id ? targetOrder.id.slice(0, 6).toUpperCase() : "0001"}`,
-							patientFullName: currentPatientName, clinicName: "Стоматологическая клиника «DENTE»", doctorFullName: effectiveDoctorName, technicianLabName: selectedLab,
-							toothFdi: Array.isArray(selectedTeeth) && selectedTeeth.length > 0 ? selectedTeeth.join(", ") : (currentToothNumber ? String(currentToothNumber) : "—"),
-							restorationType: selectedMaterial.titleRu, frameworkMaterial: selectedMaterial.titleRu, shade: selectedShade, shadeStump: null,
-							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)", warrantyYears: 2,
-							fixationDate: new Date().toISOString().slice(0, 10), expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-							gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
-							sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
-						}}
-					/>
-				)}
 			</div>
 		</div>
+		{isReadyInClinicOpen && readyInClinicOrder && (
+			<DentalLabReadyInClinicModal isOpen={isReadyInClinicOpen} onClose={() => setIsReadyInClinicOpen(false)} order={readyInClinicOrder} />
+		)}
+		{is3DViewerOpen && (
+			<IntraoralScan3DViewerModal isOpen={is3DViewerOpen} onClose={() => setIs3DViewerOpen(false)} modelUrl={scanViewerOrder?.attachedImageUrl || undefined} patientName={scanViewerOrder?.patientName || currentPatientName} toothCode={scanViewerOrder?.teeth?.[0] || selectedTeeth[0]} orderId={scanViewerOrder?.id} scanTitle={scanViewerOrder ? `3D-скан челюсти: ${scanViewerOrder.orderNumber} (${scanViewerOrder.patientName})` : `3D-скан челюсти: ${currentPatientName}`} />
+		)}
+		{isPassportModalOpen && targetOrder && (
+			<OrthopedicPassportA4Modal
+				isOpen={isPassportModalOpen}
+				onClose={() => { setIsPassportModalOpen(false); setLivePassport(null); }}
+				passport={livePassport || {
+					orderNumber: String(targetOrder.orderNumber || (targetOrder.id ? `ЗТЛ-${targetOrder.id.slice(0, 8).toUpperCase()}` : "Б/Н")),
+					batchCode: `LOT-${new Date().getFullYear()}-${targetOrder.id ? targetOrder.id.slice(0, 6).toUpperCase() : "0001"}`,
+					patientFullName: currentPatientName, clinicName: "Стоматологическая клиника «DENTE»", doctorFullName: effectiveDoctorName, technicianLabName: selectedLab,
+					toothFdi: Array.isArray(selectedTeeth) && selectedTeeth.length > 0 ? selectedTeeth.join(", ") : (currentToothNumber ? String(currentToothNumber) : "—"),
+					restorationType: selectedMaterial.titleRu, frameworkMaterial: selectedMaterial.titleRu, shade: selectedShade, shadeStump: null,
+					cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)", warrantyYears: 2,
+					fixationDate: new Date().toISOString().slice(0, 10), expirationDate: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+					gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
+					sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
+				}}
+			/>
+		)}
+		</>
 	);
 };
 

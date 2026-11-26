@@ -12,6 +12,17 @@ import {
 	type SurgeryCapType,
 } from "./surgeryCatalogData";
 
+export interface ToothImplantSpec {
+	readonly diameterMm: number;
+	readonly lengthMm: number;
+	readonly torqueNcm: number;
+	readonly isqValue: number;
+	readonly capType: SurgeryCapType;
+	readonly lotNumber: string;
+	readonly serialNumber: string;
+	readonly catalogArticle: string;
+}
+
 export interface SurgeryImplantParametersSectionProps {
 	readonly selectedBrand: string;
 	readonly onSelectBrand: (brand: string) => void;
@@ -28,6 +39,12 @@ export interface SurgeryImplantParametersSectionProps {
 	readonly catalogArticle: string;
 	readonly lotNumber: string;
 	readonly serialNumber: string;
+	readonly onChangeLotNumber?: ((lot: string) => void) | undefined;
+	readonly onChangeSerialNumber?: ((serial: string) => void) | undefined;
+	readonly selectedTeeth?: readonly number[] | undefined;
+	readonly activeToothFdi?: number | undefined;
+	readonly onSelectActiveTooth?: ((tooth: number) => void) | undefined;
+	readonly perToothSpecs?: Readonly<Record<number, ToothImplantSpec>> | undefined;
 	readonly isGuidedSurgery?: boolean | undefined;
 	readonly onToggleGuidedSurgery?: ((val: boolean) => void) | undefined;
 	readonly guidedSleeveDiameterMm?: number | undefined;
@@ -54,6 +71,12 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 	catalogArticle,
 	lotNumber,
 	serialNumber,
+	onChangeLotNumber,
+	onChangeSerialNumber,
+	selectedTeeth,
+	activeToothFdi,
+	onSelectActiveTooth,
+	perToothSpecs,
 	isGuidedSurgery = false,
 	onToggleGuidedSurgery,
 	guidedSleeveDiameterMm = 5.0,
@@ -73,10 +96,42 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 
 	return (
 		<div className="flex flex-col gap-3 p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
-			<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-				<Wrench size={14} className="text-[var(--primary)]" />
-				<span>Имплантационная система &amp; параметры изделия:</span>
+			<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between gap-2 flex-wrap">
+				<div className="flex items-center gap-1.5">
+					<Wrench size={14} className="text-[var(--primary)]" />
+					<span>Имплантационная система &amp; параметры изделия:</span>
+				</div>
+				{selectedTeeth && selectedTeeth.length > 1 && (
+					<span className="text-[11px] font-medium text-[var(--primary)]">
+						Настройка зуба #{activeToothFdi ?? selectedTeeth[0]}
+					</span>
+				)}
 			</div>
+			{selectedTeeth && selectedTeeth.length > 1 && onSelectActiveTooth && (
+				<div className="flex items-center gap-1.5 flex-wrap" data-testid="implant-per-tooth-tabs">
+					{selectedTeeth.map((t) => {
+						const spec = perToothSpecs?.[t];
+						const isActive = (activeToothFdi ?? selectedTeeth[0]) === t;
+						const sizeBadge = spec ? `Ø${spec.diameterMm}×${spec.lengthMm}` : `Ø${diameterMm}×${lengthMm}`;
+						return (
+							<button
+								key={t}
+								type="button"
+								onClick={() => onSelectActiveTooth(t)}
+								className={`min-h-[36px] h-9 px-2.5 text-xs font-medium rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+									isActive
+										? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+								}`}
+								data-testid={`implant-tooth-tab-${t}`}
+							>
+								<span className="font-mono font-bold">#{t}</span>
+								<span className="text-[11px] opacity-90">{sizeBadge}</span>
+							</button>
+						);
+					})}
+				</div>
+			)}
 			<div className="flex items-center gap-1.5 flex-wrap">
 				{SURGERY_IMPLANT_SYSTEMS.map((sys) => (
 					<button
@@ -299,18 +354,41 @@ export const SurgeryImplantParametersSection: React.FC<SurgeryImplantParametersS
 				)}
 			</div>
 
-			<div className="grid grid-cols-3 gap-2 text-xs pt-1">
+			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 					<div className="text-[10px] text-[var(--muted)]">Артикул (REF)</div>
 					<div className="font-mono font-bold">{catalogArticle}</div>
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-					<div className="text-[10px] text-[var(--muted)]">Партия (LOT)</div>
-					<div className="font-mono font-bold">{lotNumber}</div>
+					<label htmlFor="implant-lot-input" className="block text-[10px] text-[var(--muted)]">Партия (LOT)</label>
+					{onChangeLotNumber ? (
+						<input
+							id="implant-lot-input"
+							type="text"
+							value={lotNumber}
+							onChange={(e) => onChangeLotNumber(e.target.value)}
+							className="w-full h-7 px-1.5 mt-0.5 text-xs font-mono font-bold rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+							data-testid="input-implant-lot"
+						/>
+					) : (
+						<div className="font-mono font-bold">{lotNumber}</div>
+					)}
 				</div>
 				<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-					<div className="text-[10px] text-[var(--muted)]">Серийный номер (SN)</div>
-					<div className="font-mono font-bold">{serialNumber}</div>
+					<label htmlFor="implant-serial-input" className="block text-[10px] text-[var(--muted)]">Серийный номер (SN)</label>
+					{onChangeSerialNumber ? (
+						<input
+							id="implant-serial-input"
+							type="text"
+							value={serialNumber}
+							onChange={(e) => onChangeSerialNumber(e.target.value)}
+							placeholder="SN-..."
+							className="w-full h-7 px-1.5 mt-0.5 text-xs font-mono font-bold rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] focus:outline-none focus:border-[var(--primary)]"
+							data-testid="input-implant-serial"
+						/>
+					) : (
+						<div className="font-mono font-bold">{serialNumber}</div>
+					)}
 				</div>
 			</div>
 		</div>

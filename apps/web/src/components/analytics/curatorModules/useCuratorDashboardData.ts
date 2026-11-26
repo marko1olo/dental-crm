@@ -3,6 +3,7 @@ import { generateUuidV7, type CuratorFunnelStage, type CuratorPatientQueueItem }
 import { showToast } from "../../GlobalToast";
 import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
+import { normalizeToCuratorFunnelStage } from "../../treatment-plans/curatorStageMapping";
 
 export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQueueItem[]) {
 	const [queueItems, setQueueItems] = useState<CuratorPatientQueueItem[]>([]);
@@ -18,7 +19,12 @@ export function useCuratorDashboardData(dashboardContextQueue: CuratorPatientQue
 				const json = await res.json();
 				const payload = json?.data ?? json;
 				if (Array.isArray(payload?.queue) && payload.queue.length > 0) {
-					setQueueItems(payload.queue);
+					setQueueItems(
+						(payload.queue as CuratorPatientQueueItem[]).map((item) => ({
+							...item,
+							funnelStage: normalizeToCuratorFunnelStage(item.funnelStage),
+						})),
+					);
 					return;
 				}
 			} else {

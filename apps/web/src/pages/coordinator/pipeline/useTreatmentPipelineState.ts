@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders, denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import type {
 	PipelineCard,
@@ -80,13 +81,14 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 			if (selectedDoctorId !== "all") params.set("doctorId", selectedDoctorId);
 
 			const res = await fetch(`/api/v1/treatment-plans/pipeline?${params.toString()}`, {
-				headers: getDenteAuthHeaders(),
+				headers: denteClinicalReadHeaders(),
 			});
 			if (!res.ok) {
 				throw new Error("Не удалось загрузить воронку планов лечения");
 			}
 
-			const json: PipelineResponse = await res.json();
+			const raw = await res.json();
+			const json: PipelineResponse = raw?.data ?? raw;
 			setData(json);
 		} catch (err) {
 			setError((err as Error).message || "Ошибка загрузки данных");
@@ -146,7 +148,10 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 		try {
 			const res = await fetch(`/api/v1/treatment-plans/${card.id}/transition-stage`, {
 				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ targetStage }),
 			});
 			if (!res.ok) {
@@ -166,15 +171,19 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 			setIsRunningDropout(true);
 			const res = await fetch("/api/v1/treatment-plans/dropout-prevention/run", {
 				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ minDays: 14 }),
 			});
 			if (!res.ok) {
 				throw new Error("Не удалось выполнить контроль отвала");
 			}
 			const json = await res.json();
-			const created = json.data?.tasksCreated ?? 0;
-			const atRisk = json.data?.dropoutRiskCount ?? 0;
+			const payload = json?.data ?? json;
+			const created = payload?.tasksCreated ?? 0;
+			const atRisk = payload?.dropoutRiskCount ?? 0;
 			setDropoutMessage(
 				`Контроль отвала завершен: ${atRisk} пациентов в зоне риска (без записи >14д), сформировано ${created} новых задач на звонок куратора.`,
 			);
@@ -194,7 +203,10 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 		try {
 			const res = await fetch(`/api/v1/treatment-plans/${card.id}/create-dropout-recall`, {
 				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ notes: "Создано куратором из воронки планов лечения." }),
 			});
 			if (!res.ok) {
@@ -219,15 +231,30 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 				setIsGeneratingLink(card.id);
 				const res = await fetch(`/api/v1/treatment-plans/${card.id}/create-budget-link`, {
 					method: "POST",
-					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({}),
 				});
 				if (!res.ok) {
 					throw new Error("Не удалось создать ссылку на смету");
 				}
 				const created = await res.json();
-				token = created.token;
-				card.budgetToken = token;
+				const createdPayload = created?.data ?? created;
+				token = (createdPayload?.token ?? created?.token) as string | null | undefined;
+				if (token) {
+					setData((prev) => {
+						if (!prev) return prev;
+						const nextPipeline = { ...prev.pipeline };
+						for (const stageKey of Object.keys(nextPipeline) as PipelineStage[]) {
+							nextPipeline[stageKey] = nextPipeline[stageKey].map((item) =>
+								item.id === card.id ? { ...item, budgetToken: token } : item,
+							);
+						}
+						return { ...prev, pipeline: nextPipeline };
+					});
+				}
 			}
 
 			if (token) {

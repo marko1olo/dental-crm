@@ -4,6 +4,7 @@ import {
 	type CuratorPatientQueueItem,
 	rublesToKopecks,
 } from "@dental/shared";
+import { normalizeToCuratorFunnelStage } from "../../treatment-plans/curatorStageMapping";
 
 export interface ContextTreatmentPlan {
 	readonly id: string;
@@ -70,7 +71,7 @@ export function mapDashboardContextToQueue(
 
 		let stage: CuratorFunnelStage = "consultation";
 		if (adminProf?.curatorFunnelStage) {
-			stage = adminProf.curatorFunnelStage;
+			stage = normalizeToCuratorFunnelStage(adminProf.curatorFunnelStage);
 		} else if (plan.status === "Completed") {
 			stage = "completed";
 		} else if (plan.status === "Active") {
