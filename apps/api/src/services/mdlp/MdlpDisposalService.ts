@@ -137,7 +137,7 @@ export class MdlpDisposalService {
 					.limit(1);
 
 				if (existing) {
-					return existing as Record<string, unknown>;
+					return toSerializableMdlpItem(existing);
 				}
 				if (!autoRegister) {
 					return null;
@@ -552,20 +552,25 @@ export class MdlpDisposalService {
 			}
 		}
 
-		const itemsList = await db
-			.select()
-			.from(mdlpItems)
-			.where(and(...conditions))
-			.orderBy(desc(mdlpItems.createdAt))
-			.limit(limit)
-			.offset(offset);
+		const { itemsList, totalCount } = await withTenantCtx(orgId, async (tx) => {
+			const rows = await tx
+				.select()
+				.from(mdlpItems)
+				.where(and(...conditions))
+				.orderBy(desc(mdlpItems.createdAt))
+				.limit(limit)
+				.offset(offset);
 
-		const countRows = await db
-			.select({ count: sql<number>`count(*)::int` })
-			.from(mdlpItems)
-			.where(and(...conditions));
+			const countRows = await tx
+				.select({ count: sql<number>`count(*)::int` })
+				.from(mdlpItems)
+				.where(and(...conditions));
 
-		const totalCount = countRows[0]?.count ?? itemsList.length;
+			return {
+				itemsList: rows,
+				totalCount: countRows[0]?.count ?? rows.length,
+			};
+		});
 
 		return {
 			total: totalCount,
@@ -597,17 +602,22 @@ export class MdlpDisposalService {
 		const tokenConfigured = Boolean(process.env.MDLP_CLIENT_TOKEN || process.env.CRPT_API_KEY);
 		const registrarConfigured = Boolean(process.env.MDLP_REGISTRAR_IP || process.env.MDLP_REGISTRAR_PORT);
 
-		const inStockRows = await db
-			.select({ count: sql<number>`count(*)::int` })
-			.from(mdlpItems)
-			.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "in_stock")));
-		const registeredCount = inStockRows[0]?.count ?? 0;
+		const { registeredCount, disposedCount } = await withTenantCtx(orgId, async (tx) => {
+			const inStockRows = await tx
+				.select({ count: sql<number>`count(*)::int` })
+				.from(mdlpItems)
+				.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "in_stock")));
 
-		const disposedRows = await db
-			.select({ count: sql<number>`count(*)::int` })
-			.from(mdlpItems)
-			.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "disposed")));
-		const disposedCount = disposedRows[0]?.count ?? 0;
+			const disposedRows = await tx
+				.select({ count: sql<number>`count(*)::int` })
+				.from(mdlpItems)
+				.where(and(eq(mdlpItems.organizationId, orgId), eq(mdlpItems.status, "disposed")));
+
+			return {
+				registeredCount: inStockRows[0]?.count ?? 0,
+				disposedCount: disposedRows[0]?.count ?? 0,
+			};
+		});
 
 		if (tokenConfigured || registrarConfigured) {
 			return {

@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { outpatientVerifications, patients, users, visits } from "../../db/schema.js";
 import { getVerifyQueueQuerySchema } from "./outpatientTypes.js";
 
@@ -23,32 +23,34 @@ export async function getVerifyQueueHandler(request: FastifyRequest, reply: Fast
 	if (parsed.data.doctorId) conditions.push(eq(outpatientVerifications.doctorId, parsed.data.doctorId));
 	if (parsed.data.patientId) conditions.push(eq(outpatientVerifications.patientId, parsed.data.patientId));
 
-	const queue = await db
-		.select({
-			id: outpatientVerifications.id,
-			visitId: outpatientVerifications.visitId,
-			patientId: outpatientVerifications.patientId,
-			patientFullName: patients.fullName,
-			doctorId: outpatientVerifications.doctorId,
-			doctorFullName: users.fullName,
-			cmoUserId: outpatientVerifications.cmoUserId,
-			status: outpatientVerifications.status,
-			rejectionReason: outpatientVerifications.rejectionReason,
-			submittedAt: outpatientVerifications.submittedAt,
-			verifiedAt: outpatientVerifications.verifiedAt,
-			editableDeadline: outpatientVerifications.editableDeadline,
-			visitComplaint: visits.complaint,
-			visitDiagnosis: visits.diagnosis,
-			visitStatus: visits.status,
-		})
-		.from(outpatientVerifications)
-		.innerJoin(patients, eq(outpatientVerifications.patientId, patients.id))
-		.innerJoin(users, eq(outpatientVerifications.doctorId, users.id))
-		.innerJoin(visits, eq(outpatientVerifications.visitId, visits.id))
-		.where(and(...conditions))
-		.orderBy(desc(outpatientVerifications.editableDeadline))
-		.limit(parsed.data.limit)
-		.offset(parsed.data.offset);
+	const queue = await withTenantCtx(orgId, async (tx) =>
+		tx
+			.select({
+				id: outpatientVerifications.id,
+				visitId: outpatientVerifications.visitId,
+				patientId: outpatientVerifications.patientId,
+				patientFullName: patients.fullName,
+				doctorId: outpatientVerifications.doctorId,
+				doctorFullName: users.fullName,
+				cmoUserId: outpatientVerifications.cmoUserId,
+				status: outpatientVerifications.status,
+				rejectionReason: outpatientVerifications.rejectionReason,
+				submittedAt: outpatientVerifications.submittedAt,
+				verifiedAt: outpatientVerifications.verifiedAt,
+				editableDeadline: outpatientVerifications.editableDeadline,
+				visitComplaint: visits.complaint,
+				visitDiagnosis: visits.diagnosis,
+				visitStatus: visits.status,
+			})
+			.from(outpatientVerifications)
+			.innerJoin(patients, eq(outpatientVerifications.patientId, patients.id))
+			.innerJoin(users, eq(outpatientVerifications.doctorId, users.id))
+			.innerJoin(visits, eq(outpatientVerifications.visitId, visits.id))
+			.where(and(...conditions))
+			.orderBy(desc(outpatientVerifications.editableDeadline))
+			.limit(parsed.data.limit)
+			.offset(parsed.data.offset),
+	);
 
 	const now = Date.now();
 	const itemsWithLockStatus = queue.map((item) => ({

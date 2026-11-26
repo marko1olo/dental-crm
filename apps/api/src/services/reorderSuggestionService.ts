@@ -15,7 +15,7 @@ import {
 	computeReorderSuggestions,
 } from "@dental/shared";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { inventoryItems, inventoryTransactions } from "../db/schema.js";
 
 export class ReorderSuggestionService {
@@ -34,11 +34,41 @@ export class ReorderSuggestionService {
 		const coverDays = options.coverDays ?? REORDER_COVER_DAYS;
 		const cutoffDate = new Date(Date.now() - lookbackDays * 86_400_000);
 
-		// 1. Fetch active inventory items
-		const items = await db
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.organizationId, organizationId));
+		const { items, consumptionRows } = await withTenantCtx(organizationId, async (tx) => {
+			// 1. Fetch active inventory items
+			const fetchedItems = await tx
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.organizationId, organizationId));
+
+			if (fetchedItems.length === 0) {
+				return {
+					items: fetchedItems,
+					consumptionRows: [] as Array<{ itemId: string; totalConsumed: string }>,
+				};
+			}
+
+			// 2. Fetch 90-day historical consumption
+			// Sum negative movements (consumption / auto-deductions)
+			const fetchedConsumptionRows = await tx
+				.select({
+					itemId: sql<string>`coalesce(${inventoryTransactions.inventoryItemId}, ${inventoryTransactions.itemId})`,
+					totalConsumed: sql<string>`sum(abs(cast(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0) as numeric)))`,
+				})
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.organizationId, organizationId),
+						gte(inventoryTransactions.createdAt, cutoffDate),
+						sql`(cast(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0) as numeric) < 0 or ${inventoryTransactions.transactionType} in ('auto_deduct', 'consumption', 'writeoff', 'manual_writeoff'))`,
+					),
+				)
+				.groupBy(
+					sql`coalesce(${inventoryTransactions.inventoryItemId}, ${inventoryTransactions.itemId})`,
+				);
+
+			return { items: fetchedItems, consumptionRows: fetchedConsumptionRows };
+		});
 
 		if (items.length === 0) {
 			return {
@@ -52,25 +82,6 @@ export class ReorderSuggestionService {
 				suggestions: [],
 			};
 		}
-
-		// 2. Fetch 90-day historical consumption
-		// Sum negative movements (consumption / auto-deductions)
-		const consumptionRows = await db
-			.select({
-				itemId: sql<string>`coalesce(${inventoryTransactions.inventoryItemId}, ${inventoryTransactions.itemId})`,
-				totalConsumed: sql<string>`sum(abs(cast(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0) as numeric)))`,
-			})
-			.from(inventoryTransactions)
-			.where(
-				and(
-					eq(inventoryTransactions.organizationId, organizationId),
-					gte(inventoryTransactions.createdAt, cutoffDate),
-					sql`(cast(coalesce(${inventoryTransactions.qty}, ${inventoryTransactions.quantityChanged}, 0) as numeric) < 0 or ${inventoryTransactions.transactionType} in ('auto_deduct', 'consumption', 'writeoff', 'manual_writeoff'))`,
-				),
-			)
-			.groupBy(
-				sql`coalesce(${inventoryTransactions.inventoryItemId}, ${inventoryTransactions.itemId})`,
-			);
 
 		const consumptionMap = new Map<string, number>();
 		for (const row of consumptionRows) {

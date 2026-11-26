@@ -1,4 +1,4 @@
-import { kopecksToRubles } from "@dental/shared";
+import { isValidUuid, kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
@@ -28,6 +28,12 @@ async function handleStockAdjustment(
 	if (!resolvedOrgId) return;
 
 	const organizationId = explicitOrgId ?? request.params.organizationId ?? resolvedOrgId;
+	if (!isValidUuid(organizationId) || !isValidUuid(request.params.itemId)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Некорректный UUID организации или материала",
+		});
+	}
 	if (resolvedOrgId !== organizationId) {
 		return reply.code(403).send({ error: "Forbidden" });
 	}
@@ -129,50 +135,6 @@ async function handleStockAdjustment(
 		const newStock = currentStock + actualAdjustment;
 		const isOverdraft = newStock < 0;
 		const identity = getRequestIdentity(request);
-		const isClinicalRole =
-			identity.role === "doctor" ||
-			identity.role === "assistant" ||
-			identity.role === "nurse" ||
-			identity.role === "senior_nurse" ||
-			identity.role === "owner" ||
-			identity.role === "admin" ||
-			identity.role === "chief_doctor" ||
-			request.user?.role === "doctor" ||
-			request.user?.role === "assistant" ||
-			request.user?.role === "nurse" ||
-			request.user?.role === "senior_nurse" ||
-			request.user?.role === "owner" ||
-			request.user?.role === "admin" ||
-			request.user?.role === "chief_doctor";
-		const isClinicalCategory =
-			item.category === "anesthesia" ||
-			item.category === "anesthetic" ||
-			item.category === "consumable" ||
-			item.category === "consumables" ||
-			item.category === "ppe" ||
-			item.category === "composite" ||
-			item.category === "surgery" ||
-			item.category === "hygiene" ||
-			item.category === "auxiliary" ||
-			item.category === "material" ||
-			item.category === "medication" ||
-			item.category === "dental" ||
-			item.category === "general" ||
-			item.category === "orthodontic" ||
-			item.category === "orthopedic" ||
-			item.category === "endodontic" ||
-			item.category === "disinfection" ||
-			item.category === "Расходные материалы" ||
-			item.category === "Анестетики" ||
-			item.category === "Медикаменты" ||
-			item.category === "Шовный материал" ||
-			item.category === "Перевязочные средства" ||
-			item.category === "СИЗ" ||
-			item.category === "Дезинфекция" ||
-			item.category === "Пломбировочные материалы" ||
-			item.category === "Эндодонтия" ||
-			item.category === "Ортопедия" ||
-			item.category === "Хирургия";
 		const hasClinicalReason = Boolean(
 			parsedStock.data.isClinicalOperation === true ||
 				parsedStock.data.visitId,
@@ -263,12 +225,6 @@ async function handleStockAdjustment(
 			error: "ItemNotFound",
 			message:
 				"Этот материал на складе клиники не найден: возможно, его уже удалили из списка. Обновите список склада и повторите — если материал нужен, добавьте его заново.",
-		});
-	if ("failed" in result)
-		return reply.status(500).send({
-			error: "StockNotSaved",
-			message:
-				"Остаток не сохранён: сервер не смог записать движение по складу. Проверьте остаток в списке склада и повторите операцию; если повторится, сообщите администратору клиники.",
 		});
 	const stockQtyNum = Number(result.updated.stockQuantity ?? 0);
 	if (result.isOverdraft || stockQtyNum < 0) {

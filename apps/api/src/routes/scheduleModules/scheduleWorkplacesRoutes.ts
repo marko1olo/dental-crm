@@ -2,7 +2,7 @@ import { and, asc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { appointments, chairs } from "../../db/schema.js";
 import {
 	DEFAULT_CLINIC_TIME_ZONE,
@@ -10,6 +10,24 @@ import {
 } from "../../services/reports/managerReports/timezone.js";
 import { resolveScheduleDateBounds } from "../appointments/appointmentsQueryRoutes.js";
 import { requireClinicOrganizationId } from "../scheduleAuthGuard.js";
+
+function formatDateInTimeZone(date: Date, timeZone: string): string {
+	try {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(date);
+	} catch {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone: DEFAULT_CLINIC_TIME_ZONE,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(date);
+	}
+}
 
 const scheduleSlotsQuerySchema = z.object({
 	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
@@ -38,24 +56,26 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const dbChairs = await db
-			.select({
-				id: chairs.id,
-				name: chairs.name,
-				clinicId: chairs.clinicId,
-				isActive: chairs.isActive,
-				equipment: chairs.equipment,
-				specializations: chairs.specializations,
-				workingHours: chairs.workingHours,
-			})
-			.from(chairs)
-			.where(
-				and(
-					eq(chairs.organizationId, orgId),
-					eq(chairs.isActive, true),
-				),
-			)
-			.orderBy(asc(chairs.name));
+		const dbChairs = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select({
+					id: chairs.id,
+					name: chairs.name,
+					clinicId: chairs.clinicId,
+					isActive: chairs.isActive,
+					equipment: chairs.equipment,
+					specializations: chairs.specializations,
+					workingHours: chairs.workingHours,
+				})
+				.from(chairs)
+				.where(
+					and(
+						eq(chairs.organizationId, orgId),
+						eq(chairs.isActive, true),
+					),
+				)
+				.orderBy(asc(chairs.name)),
+		);
 
 		const isSoloPractice = dbChairs.length <= 1;
 
@@ -97,54 +117,68 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 		const doctorIdParam = (parsedQuery.data.doctorId || "").trim();
 
 		const now = new Date();
-		const targetDateStr = dateParam || now.toISOString().slice(0, 10);
-		const zone = (await clinicTimeZone(orgId)) || DEFAULT_CLINIC_TIME_ZONE;
-		const { dayStart, dayEnd } = resolveScheduleDateBounds(targetDateStr, zone);
+		const { targetDateStr, dbChairs, apptRows, effectiveChairId } = await withTenantCtx(
+			orgId,
+			async (tx) => {
+				const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+				const resolvedDateStr = dateParam || formatDateInTimeZone(now, zone);
+				const { dayStart, dayEnd } = resolveScheduleDateBounds(resolvedDateStr, zone);
 
-		// Проверяем количество кресел для соло-режима
-		const dbChairs = await db
-			.select({ id: chairs.id, name: chairs.name })
-			.from(chairs)
-			.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)));
+				// Проверяем количество кресел для соло-режима
+				const chairsRows = await tx
+					.select({ id: chairs.id, name: chairs.name })
+					.from(chairs)
+					.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)));
+
+				const soloPractice = chairsRows.length <= 1;
+				const chosenChairId =
+					chairIdParam ||
+					(soloPractice && chairsRows.length === 1 && chairsRows[0]?.id
+						? chairsRows[0].id
+						: undefined);
+
+				// Условия выборки приёмов
+				const conditions = [
+					eq(appointments.organizationId, orgId),
+					gte(appointments.startsAt, dayStart),
+					lte(appointments.startsAt, dayEnd),
+				];
+
+				if (chosenChairId) {
+					conditions.push(eq(appointments.chairId, chosenChairId));
+				}
+				if (doctorIdParam) {
+					conditions.push(eq(appointments.doctorUserId, doctorIdParam));
+				}
+
+				const rows = await tx
+					.select({
+						id: appointments.id,
+						patientId: appointments.patientId,
+						doctorUserId: appointments.doctorUserId,
+						assistantUserId: appointments.assistantUserId,
+						chairId: appointments.chairId,
+						status: appointments.status,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+						reason: appointments.reason,
+						comment: appointments.comment,
+						isOverbooking: appointments.isOverbooking,
+					})
+					.from(appointments)
+					.where(and(...conditions))
+					.orderBy(asc(appointments.startsAt));
+
+				return {
+					targetDateStr: resolvedDateStr,
+					dbChairs: chairsRows,
+					apptRows: rows,
+					effectiveChairId: chosenChairId,
+				};
+			},
+		);
 
 		const isSoloPractice = dbChairs.length <= 1;
-		const effectiveChairId =
-			chairIdParam ||
-			(isSoloPractice && dbChairs.length === 1 && dbChairs[0]?.id
-				? dbChairs[0].id
-				: undefined);
-
-		// Условия выборки приёмов
-		const conditions = [
-			eq(appointments.organizationId, orgId),
-			gte(appointments.startsAt, dayStart),
-			lte(appointments.startsAt, dayEnd),
-		];
-
-		if (effectiveChairId) {
-			conditions.push(eq(appointments.chairId, effectiveChairId));
-		}
-		if (doctorIdParam) {
-			conditions.push(eq(appointments.doctorUserId, doctorIdParam));
-		}
-
-		const apptRows = await db
-			.select({
-				id: appointments.id,
-				patientId: appointments.patientId,
-				doctorUserId: appointments.doctorUserId,
-				assistantUserId: appointments.assistantUserId,
-				chairId: appointments.chairId,
-				status: appointments.status,
-				startsAt: appointments.startsAt,
-				endsAt: appointments.endsAt,
-				reason: appointments.reason,
-				comment: appointments.comment,
-				isOverbooking: appointments.isOverbooking,
-			})
-			.from(appointments)
-			.where(and(...conditions))
-			.orderBy(asc(appointments.startsAt));
 
 		const slots = apptRows.map((a) => ({
 			id: a.id,

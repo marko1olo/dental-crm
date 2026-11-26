@@ -1,7 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { inventoryQuery } from "../../../db/inventoryQuery.js";
+import {
+	inventoryQuery,
+	serializeInventoryItem,
+	type SerializedInventoryItem,
+} from "../../../db/inventoryQuery.js";
 import type { inventoryItems } from "../../../db/schema.js";
 import { ReorderSuggestionService } from "../../../services/reorderSuggestionService.js";
 
@@ -13,21 +17,22 @@ export const calculateAlertsFromItems = (
 	const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 	const in30DaysStr = in30Days.toISOString().slice(0, 10);
 
-	const lowStockItems: typeof items = [];
-	const outOfStockItems: typeof items = [];
-	const expiredItems: typeof items = [];
-	const expiringSoonItems: typeof items = [];
+	const lowStockItems: SerializedInventoryItem[] = [];
+	const outOfStockItems: SerializedInventoryItem[] = [];
+	const expiredItems: SerializedInventoryItem[] = [];
+	const expiringSoonItems: SerializedInventoryItem[] = [];
 
 	let totalValuationKopecks = 0n;
 
-	for (const item of items) {
+	for (const rawItem of items) {
+		const item = serializeInventoryItem(rawItem);
 		const stock = Number(item.stockQuantity ?? 0);
 		const threshold = Number(item.criticalThreshold ?? 0);
 		const costKopecks =
 			item.unitCostKopecks != null
-				? Number(item.unitCostKopecks)
+				? item.unitCostKopecks
 				: item.pricePerUnitKopecks != null
-					? Number(item.pricePerUnitKopecks)
+					? item.pricePerUnitKopecks
 					: rublesToKopecks(Number(item.unitCostRub ?? item.pricePerUnit ?? 0));
 
 		if (Number.isFinite(stock) && stock > 0 && costKopecks > 0) {
@@ -54,7 +59,7 @@ export const calculateAlertsFromItems = (
 		summary: {
 			totalItems: items.length,
 			totalValuationRub: kopecksToRubles(totalValuationKopecks),
-			totalValuationKopecks,
+			totalValuationKopecks: Number(totalValuationKopecks),
 			lowStockCount: lowStockItems.length,
 			outOfStockCount: outOfStockItems.length,
 			expiredCount: expiredItems.length,
@@ -89,7 +94,7 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 			}
 
 			const items = await inventoryQuery.getInventoryItems(effectiveOrgId);
-			return items;
+			return items.map(serializeInventoryItem);
 		},
 	);
 
@@ -114,7 +119,7 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 			}
 
 			const items = await inventoryQuery.getInventoryItems(effectiveOrgId);
-			return reply.send(items);
+			return reply.send(items.map(serializeInventoryItem));
 		},
 	);
 
@@ -128,7 +133,7 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 		if (!resolvedOrgId) return;
 
 		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
-		return reply.send(items);
+		return reply.send(items.map(serializeInventoryItem));
 	});
 
 	// GET /:organizationId/stock — алиас реестра остатков для складского модуля
@@ -148,7 +153,7 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 			}
 
 			const items = await inventoryQuery.getInventoryItems(organizationId);
-			return items;
+			return items.map(serializeInventoryItem);
 		},
 	);
 
@@ -162,7 +167,7 @@ export const registerItemCatalogQueries = (server: FastifyInstance): void => {
 		if (!resolvedOrgId) return;
 
 		const items = await inventoryQuery.getInventoryItems(resolvedOrgId);
-		return items;
+		return items.map(serializeInventoryItem);
 	});
 
 	// GET /reorder-suggestions — Предиктивные рекомендации к закупкам (DentalPin Reorder Point)

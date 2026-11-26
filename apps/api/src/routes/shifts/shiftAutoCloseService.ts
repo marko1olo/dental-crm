@@ -16,6 +16,29 @@ import {
 	cashBoxShifts,
 } from "../../db/schema.js";
 import { reconcileSingleShift } from "../cashbox/cashboxShiftModules/shiftReconciliationEngine.js";
+import {
+	DEFAULT_CLINIC_TIME_ZONE,
+	clinicTimeZone,
+} from "../../services/reports/managerReports/timezone.js";
+import { resolveScheduleDateBounds } from "../appointments/appointmentsQueryRoutes.js";
+
+function formatShiftDateInTimeZone(date: Date, timeZone: string): string {
+	try {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(date);
+	} catch {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone: DEFAULT_CLINIC_TIME_ZONE,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(date);
+	}
+}
 
 export const DEFAULT_SHIFT_BUFFER_MINUTES = 30;
 export const DEFAULT_MAX_SHIFT_HOURS = 12;
@@ -64,11 +87,15 @@ export async function checkAndAutoCloseExpiredShifts(
 				eq(cashBoxShifts.organizationId, orgId),
 				eq(cashBoxShifts.status, "open"),
 			),
-		);
+		)
+		.for("update");
 
 	if (openShifts.length === 0) {
 		return { closedShifts: [], hasExpiredShifts: false };
 	}
+
+	const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+	const nowDateStr = formatShiftDateInTimeZone(now, zone);
 
 	const boxIds = [...new Set(openShifts.map((s) => s.cashBoxId))];
 	const boxes = boxIds.length > 0
@@ -86,9 +113,9 @@ export async function checkAndAutoCloseExpiredShifts(
 		const elapsedMs = now.getTime() - openedAt.getTime();
 		const elapsedHours = elapsedMs / (1000 * 60 * 60);
 
-		// Condition 1: Past midnight rollover (opened on a previous calendar day)
-		const isPastMidnight =
-			openedAt.toISOString().slice(0, 10) < now.toISOString().slice(0, 10);
+		// Condition 1: Past midnight rollover (opened on a previous calendar day in clinic timezone)
+		const shiftDateStr = formatShiftDateInTimeZone(openedAt, zone);
+		const isPastMidnight = shiftDateStr < nowDateStr;
 
 		// Condition 2: Max duration exceeded (>= 12 hours)
 		const isMaxDurationExceeded = elapsedHours >= maxHours;
@@ -96,10 +123,11 @@ export async function checkAndAutoCloseExpiredShifts(
 		// Condition 3: Schedule ended with buffer check
 		let isScheduleEnded = false;
 		if (!isPastMidnight && !isMaxDurationExceeded && elapsedHours >= 2) {
-			// Query latest appointment on the shift's calendar day
-			const shiftDateStr = openedAt.toISOString().slice(0, 10);
-			const startOfDay = new Date(`${shiftDateStr}T00:00:00.000Z`);
-			const endOfDay = new Date(`${shiftDateStr}T23:59:59.999Z`);
+			// Query latest appointment on the shift's calendar day in clinic timezone
+			const { dayStart: startOfDay, dayEnd: endOfDay } = resolveScheduleDateBounds(
+				shiftDateStr,
+				zone,
+			);
 
 			const dayAppointments = await tx
 				.select({

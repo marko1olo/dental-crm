@@ -13,6 +13,7 @@ import {
 	type ReceiveBatchInput,
 } from "../services/inventory/fefoStockService.js";
 import { db } from "./client.js";
+import { withTenantCtx } from "./rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
@@ -65,6 +66,27 @@ export interface StockBatchesQueryOptions {
 	offset?: number | undefined;
 }
 
+export interface SerializedInventoryItem
+	extends Omit<typeof inventoryItems.$inferSelect, "pricePerUnitKopecks" | "unitCostKopecks"> {
+	pricePerUnitKopecks: number | null;
+	unitCostKopecks: number | null;
+}
+
+export function serializeInventoryItem<T extends typeof inventoryItems.$inferSelect>(
+	item: T,
+): Omit<T, "pricePerUnitKopecks" | "unitCostKopecks"> & {
+	pricePerUnitKopecks: number | null;
+	unitCostKopecks: number | null;
+} {
+	return {
+		...item,
+		pricePerUnitKopecks:
+			item.pricePerUnitKopecks != null ? Number(item.pricePerUnitKopecks) : null,
+		unitCostKopecks:
+			item.unitCostKopecks != null ? Number(item.unitCostKopecks) : null,
+	};
+}
+
 export const inventoryQuery = {
 	/**
 	 * Получение списка номенклатуры склада клиники.
@@ -73,11 +95,13 @@ export const inventoryQuery = {
 		organizationId: string,
 		executor: DbTransaction = db,
 	): Promise<Array<typeof inventoryItems.$inferSelect>> {
-		return executor
-			.select()
-			.from(inventoryItems)
-			.where(eq(inventoryItems.organizationId, organizationId))
-			.orderBy(asc(inventoryItems.name));
+		const run = async (exec: DbTransaction) =>
+			exec
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.organizationId, organizationId))
+				.orderBy(asc(inventoryItems.name));
+		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
 	},
 
 	/**
@@ -88,17 +112,20 @@ export const inventoryQuery = {
 		itemId: string,
 		executor: DbTransaction = db,
 	): Promise<typeof inventoryItems.$inferSelect | null> {
-		const [item] = await executor
-			.select()
-			.from(inventoryItems)
-			.where(
-				and(
-					eq(inventoryItems.id, itemId),
-					eq(inventoryItems.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-		return item ?? null;
+		const run = async (exec: DbTransaction) => {
+			const [item] = await exec
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.id, itemId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			return item ?? null;
+		};
+		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
 	},
 
 	/**
@@ -109,56 +136,59 @@ export const inventoryQuery = {
 		options: StockBatchesQueryOptions = {},
 		executor: DbTransaction = db,
 	) {
-		const conditions = [eq(stockBatches.organizationId, organizationId)];
+		const run = async (exec: DbTransaction) => {
+			const conditions = [eq(stockBatches.organizationId, organizationId)];
 
-		if (options.itemIds && options.itemIds.length > 0) {
-			conditions.push(inArray(stockBatches.inventoryItemId, options.itemIds));
-		} else if (options.itemId) {
-			conditions.push(eq(stockBatches.inventoryItemId, options.itemId));
-		}
-		if (options.status && options.status !== "all") {
-			conditions.push(eq(stockBatches.status, options.status));
-		}
-		if (options.warehouseId) {
-			conditions.push(eq(stockBatches.warehouseId, options.warehouseId));
-		}
+			if (options.itemIds && options.itemIds.length > 0) {
+				conditions.push(inArray(stockBatches.inventoryItemId, options.itemIds));
+			} else if (options.itemId) {
+				conditions.push(eq(stockBatches.inventoryItemId, options.itemId));
+			}
+			if (options.status && options.status !== "all") {
+				conditions.push(eq(stockBatches.status, options.status));
+			}
+			if (options.warehouseId) {
+				conditions.push(eq(stockBatches.warehouseId, options.warehouseId));
+			}
 
-		let query = executor
-			.select({
-				id: stockBatches.id,
-				organizationId: stockBatches.organizationId,
-				warehouseId: stockBatches.warehouseId,
-				inventoryItemId: stockBatches.inventoryItemId,
-				itemName: inventoryItems.name,
-				itemCategory: inventoryItems.category,
-				itemUnit: inventoryItems.unit,
-				batchNumber: stockBatches.batchNumber,
-				expirationDate: stockBatches.expirationDate,
-				manufactureDate: stockBatches.manufactureDate,
-				initialQty: stockBatches.initialQty,
-				remainingQty: stockBatches.remainingQty,
-				purchasePricePerUnit: stockBatches.purchasePricePerUnit,
-				status: stockBatches.status,
-				barcode: stockBatches.barcode,
-				createdAt: stockBatches.createdAt,
-				updatedAt: stockBatches.updatedAt,
-			})
-			.from(stockBatches)
-			.innerJoin(
-				inventoryItems,
-				eq(stockBatches.inventoryItemId, inventoryItems.id),
-			)
-			.where(and(...conditions))
-			.orderBy(asc(stockBatches.expirationDate), asc(stockBatches.createdAt));
+			let query = exec
+				.select({
+					id: stockBatches.id,
+					organizationId: stockBatches.organizationId,
+					warehouseId: stockBatches.warehouseId,
+					inventoryItemId: stockBatches.inventoryItemId,
+					itemName: inventoryItems.name,
+					itemCategory: inventoryItems.category,
+					itemUnit: inventoryItems.unit,
+					batchNumber: stockBatches.batchNumber,
+					expirationDate: stockBatches.expirationDate,
+					manufactureDate: stockBatches.manufactureDate,
+					initialQty: stockBatches.initialQty,
+					remainingQty: stockBatches.remainingQty,
+					purchasePricePerUnit: stockBatches.purchasePricePerUnit,
+					status: stockBatches.status,
+					barcode: stockBatches.barcode,
+					createdAt: stockBatches.createdAt,
+					updatedAt: stockBatches.updatedAt,
+				})
+				.from(stockBatches)
+				.innerJoin(
+					inventoryItems,
+					eq(stockBatches.inventoryItemId, inventoryItems.id),
+				)
+				.where(and(...conditions))
+				.orderBy(asc(stockBatches.expirationDate), asc(stockBatches.createdAt));
 
-		if (options.limit && options.limit > 0) {
-			query = query.limit(options.limit) as typeof query;
-		}
-		if (options.offset && options.offset > 0) {
-			query = query.offset(options.offset) as typeof query;
-		}
+			if (options.limit && options.limit > 0) {
+				query = query.limit(options.limit) as typeof query;
+			}
+			if (options.offset && options.offset > 0) {
+				query = query.offset(options.offset) as typeof query;
+			}
 
-		return query;
+			return query;
+		};
+		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
 	},
 
 	/**
@@ -170,36 +200,37 @@ export const inventoryQuery = {
 		executor: DbTransaction = db,
 	) {
 		const now = new Date();
-		const todayIso = now.toISOString().slice(0, 10);
 		const targetDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 		const targetIso = targetDate.toISOString().slice(0, 10);
 
-		return executor
-			.select({
-				id: stockBatches.id,
-				inventoryItemId: stockBatches.inventoryItemId,
-				itemName: inventoryItems.name,
-				batchNumber: stockBatches.batchNumber,
-				expirationDate: stockBatches.expirationDate,
-				remainingQty: stockBatches.remainingQty,
-				itemUnit: inventoryItems.unit,
-				purchasePricePerUnit: stockBatches.purchasePricePerUnit,
-				status: stockBatches.status,
-			})
-			.from(stockBatches)
-			.innerJoin(
-				inventoryItems,
-				eq(stockBatches.inventoryItemId, inventoryItems.id),
-			)
-			.where(
-				and(
-					eq(stockBatches.organizationId, organizationId),
-					eq(stockBatches.status, "active"),
-					gt(sql`CAST(${stockBatches.remainingQty} AS numeric)`, 0),
-					lte(stockBatches.expirationDate, targetIso),
-				),
-			)
-			.orderBy(asc(stockBatches.expirationDate));
+		const run = async (exec: DbTransaction) =>
+			exec
+				.select({
+					id: stockBatches.id,
+					inventoryItemId: stockBatches.inventoryItemId,
+					itemName: inventoryItems.name,
+					batchNumber: stockBatches.batchNumber,
+					expirationDate: stockBatches.expirationDate,
+					remainingQty: stockBatches.remainingQty,
+					itemUnit: inventoryItems.unit,
+					purchasePricePerUnit: stockBatches.purchasePricePerUnit,
+					status: stockBatches.status,
+				})
+				.from(stockBatches)
+				.innerJoin(
+					inventoryItems,
+					eq(stockBatches.inventoryItemId, inventoryItems.id),
+				)
+				.where(
+					and(
+						eq(stockBatches.organizationId, organizationId),
+						eq(stockBatches.status, "active"),
+						gt(sql`CAST(${stockBatches.remainingQty} AS numeric)`, 0),
+						lte(stockBatches.expirationDate, targetIso),
+					),
+				)
+				.orderBy(asc(stockBatches.expirationDate));
+		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
 	},
 
 	/**
@@ -237,22 +268,25 @@ export const inventoryQuery = {
 		);
 		if (uniqueIds.length === 0) return resultMap;
 
-		const rows = await executor
-			.select({
-				inventoryItemId: stockBatches.inventoryItemId,
-				totalRemaining: sql<string>`COALESCE(SUM(${stockBatches.remainingQty}::numeric), 0)`,
-				batchesCount: sql<number>`COUNT(*)::int`,
-				minExpDate: sql<string | null>`MIN(${stockBatches.expirationDate})`,
-			})
-			.from(stockBatches)
-			.where(
-				and(
-					eq(stockBatches.organizationId, organizationId),
-					inArray(stockBatches.inventoryItemId, uniqueIds),
-					eq(stockBatches.status, "active"),
-				),
-			)
-			.groupBy(stockBatches.inventoryItemId);
+		const run = async (exec: DbTransaction) =>
+			exec
+				.select({
+					inventoryItemId: stockBatches.inventoryItemId,
+					totalRemaining: sql<string>`COALESCE(SUM(${stockBatches.remainingQty}::numeric), 0)`,
+					batchesCount: sql<number>`COUNT(*)::int`,
+					minExpDate: sql<string | null>`MIN(${stockBatches.expirationDate})`,
+				})
+				.from(stockBatches)
+				.where(
+					and(
+						eq(stockBatches.organizationId, organizationId),
+						inArray(stockBatches.inventoryItemId, uniqueIds),
+						eq(stockBatches.status, "active"),
+					),
+				)
+				.groupBy(stockBatches.inventoryItemId);
+
+		const rows = executor === db ? await withTenantCtx(organizationId, run) : await run(executor);
 
 		for (const r of rows) {
 			resultMap.set(r.inventoryItemId, {
@@ -479,31 +513,35 @@ export const inventoryQuery = {
 		options: { itemId?: string; limit?: number; offset?: number } = {},
 		executor: DbTransaction = db,
 	) {
-		const conditions = [
-			eq(inventoryTransactions.organizationId, organizationId),
-		];
-		if (options.itemId) {
-			conditions.push(
-				or(
+		const run = async (exec: DbTransaction) => {
+			const conditions = [
+				eq(inventoryTransactions.organizationId, organizationId),
+			];
+			if (options.itemId) {
+				const itemMatch = or(
 					eq(inventoryTransactions.itemId, options.itemId),
 					eq(inventoryTransactions.inventoryItemId, options.itemId),
-				)!,
-			);
-		}
+				);
+				if (itemMatch) {
+					conditions.push(itemMatch);
+				}
+			}
 
-		let query = executor
-			.select()
-			.from(inventoryTransactions)
-			.where(and(...conditions))
-			.orderBy(desc(inventoryTransactions.createdAt));
+			let query = exec
+				.select()
+				.from(inventoryTransactions)
+				.where(and(...conditions))
+				.orderBy(desc(inventoryTransactions.createdAt));
 
-		if (options.limit && options.limit > 0) {
-			query = query.limit(options.limit) as typeof query;
-		}
-		if (options.offset && options.offset > 0) {
-			query = query.offset(options.offset) as typeof query;
-		}
+			if (options.limit && options.limit > 0) {
+				query = query.limit(options.limit) as typeof query;
+			}
+			if (options.offset && options.offset > 0) {
+				query = query.offset(options.offset) as typeof query;
+			}
 
-		return query;
+			return query;
+		};
+		return executor === db ? withTenantCtx(organizationId, run) : run(executor);
 	},
 };

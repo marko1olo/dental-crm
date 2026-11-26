@@ -473,6 +473,15 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					.map((idx) => planItems[idx]?.id)
 					.filter((id): id is string => Boolean(id));
 
+				onTenantTxCommit(() => {
+					wsBroker.broadcastToPatient(organizationId, patientId, {
+						type: "treatment_plan_updated",
+						planId,
+						completedItemCount: targetIndices.size,
+						totalItemCount: planItems.length,
+					});
+				});
+
 				return {
 					success: true as const,
 					allCompleted,
@@ -487,8 +496,8 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 			}
 
 			if ("empty" in result) {
-				const updatedPlans = await withTenantCtx(organizationId, async () =>
-					loadTreatmentPlansForPatient(patientId, organizationId),
+				const updatedPlans = await withTenantCtx(organizationId, async (tx) =>
+					loadTreatmentPlansForPatient(patientId, organizationId, tx),
 				);
 				return reply.send({
 					success: true,
@@ -499,17 +508,8 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				});
 			}
 
-			onTenantTxCommit(() => {
-				wsBroker.broadcastToPatient(organizationId, patientId, {
-					type: "treatment_plan_updated",
-					planId,
-					completedItemCount: result.targetCount,
-					totalItemCount: result.totalCount,
-				});
-			});
-
-			const updatedPlans = await withTenantCtx(organizationId, async () =>
-				loadTreatmentPlansForPatient(patientId, organizationId),
+			const updatedPlans = await withTenantCtx(organizationId, async (tx) =>
+				loadTreatmentPlansForPatient(patientId, organizationId, tx),
 			);
 			const updatedPlan = updatedPlans.find((p) => p.id === planId) ?? null;
 

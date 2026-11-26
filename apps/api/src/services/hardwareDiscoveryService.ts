@@ -98,9 +98,11 @@ export async function probeRawTcpPrinterStatus(
 
 		socket.on("data", (data: Buffer) => {
 			if (data.length > 0) {
-				const firstByte = data[0]!;
-				const report = parseEscPosStatusByte(4, firstByte);
-				finish(report);
+				const firstByte = data[0];
+				if (firstByte !== undefined) {
+					const report = parseEscPosStatusByte(4, firstByte);
+					finish(report);
+				}
 			}
 		});
 
@@ -518,11 +520,23 @@ export class HardwareDiscoveryService {
 			if (process.platform === "win32") {
 				let isInstalled = false;
 				try {
-					const escaped = target.systemPrinterName.replace(/'/g, "''");
 					const checkOutput = childProcess
-						.execSync(
-							`powershell.exe -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; (Get-CimInstance Win32_Printer | Where-Object { $_.Name -eq '${escaped}' }).Name" 2>$null`,
-							{ timeout: 2500, windowsHide: true, encoding: "utf8" },
+						.execFileSync(
+							"powershell.exe",
+							[
+								"-NoProfile",
+								"-Command",
+								"$ErrorActionPreference = 'SilentlyContinue'; (Get-CimInstance Win32_Printer | Where-Object { $_.Name -eq $env:DENTE_PRINTER_NAME }).Name",
+							],
+							{
+								timeout: 2500,
+								windowsHide: true,
+								encoding: "utf8",
+								env: {
+									...process.env,
+									DENTE_PRINTER_NAME: target.systemPrinterName,
+								},
+							},
 						)
 						.trim();
 					isInstalled = checkOutput.length > 0;
@@ -531,19 +545,26 @@ export class HardwareDiscoveryService {
 				}
 
 				if (isInstalled) {
+					const tempFile = path.join(os.tmpdir(), `dente_spool_${Date.now()}.bin`);
 					try {
-						const tempFile = path.join(os.tmpdir(), `dente_spool_${Date.now()}.bin`);
 						fs.writeFileSync(tempFile, Buffer.from(buffer));
-						const escapedPrinter = target.systemPrinterName.replace(/'/g, "''");
-						childProcess.execSync(
-							`powershell.exe -NoProfile -Command "Get-Content -LiteralPath '${tempFile}' -Raw -Encoding Byte | Out-Printer -Name '${escapedPrinter}'"`,
-							{ timeout: 4000, windowsHide: true },
+						childProcess.execFileSync(
+							"powershell.exe",
+							[
+								"-NoProfile",
+								"-Command",
+								"Get-Content -LiteralPath $env:DENTE_SPOOL_FILE -Raw -Encoding Byte | Out-Printer -Name $env:DENTE_PRINTER_NAME",
+							],
+							{
+								timeout: 4000,
+								windowsHide: true,
+								env: {
+									...process.env,
+									DENTE_PRINTER_NAME: target.systemPrinterName,
+									DENTE_SPOOL_FILE: tempFile,
+								},
+							},
 						);
-						try {
-							fs.unlinkSync(tempFile);
-						} catch {
-							// Ignore temp cleanup error
-						}
 						return {
 							success: true,
 							bytesSent: buffer.length,

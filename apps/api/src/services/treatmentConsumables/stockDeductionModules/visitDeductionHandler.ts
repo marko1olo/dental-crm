@@ -61,7 +61,8 @@ export async function deductForVisit(
 		const isAnes = (m: RawRequiredMaterial) =>
 			m.key === "mat-anes-art-100k" || m.unit === "carpule" || m.unit === "карпула" || (m.name != null && m.name.toLowerCase().includes("артикаин"));
 		for (let i = rawRequiredMaterials.length - 1; i >= 0; i--) {
-			if (rawRequiredMaterials[i] && isAnes(rawRequiredMaterials[i]!)) rawRequiredMaterials.splice(i, 1);
+			const mat = rawRequiredMaterials[i];
+			if (mat && isAnes(mat)) rawRequiredMaterials.splice(i, 1);
 		}
 		if (params.carpulesCount > 0) {
 			rawRequiredMaterials.push({

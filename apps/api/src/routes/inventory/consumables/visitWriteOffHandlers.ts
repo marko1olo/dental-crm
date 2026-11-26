@@ -193,9 +193,15 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		const parsedQuery = alertsQuerySchema.safeParse(request.query ?? {});
-		const expiringWithinDays = parsedQuery.success
-			? parsedQuery.data.expiringWithinDays
-			: 30;
+		if (!parsedQuery.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message:
+					parsedQuery.error.errors[0]?.message ??
+					"Некорректные параметры запроса уведомлений",
+			});
+		}
+		const expiringWithinDays = parsedQuery.data.expiringWithinDays;
 
 		const alerts = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.getInventoryAlerts(

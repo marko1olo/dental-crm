@@ -28,12 +28,17 @@ import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.j
 import { extractIdempotencyKey, isValidUuid } from "../../../utils/httpIdempotency.js";
 import { recordStudySanpinDose } from "../../../services/dicom/ingest/metadataParser.js";
 
+const studyIdParamSchema = z.object({
+	id: z.string().uuid("Некорректный идентификатор снимка (ожидается UUID)."),
+});
+
 export async function bindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind patient"))) return;
-	const { id } = request.params as { id: string };
-	if (!isValidUuid(id)) {
+	const paramParsed = studyIdParamSchema.safeParse(request.params);
+	if (!paramParsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 	}
+	const { id } = paramParsed.data;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -108,10 +113,11 @@ export async function bindPatientHandler(request: FastifyRequest, reply: Fastify
 
 export async function bindToothHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind tooth"))) return;
-	const { id } = request.params as { id: string };
-	if (!isValidUuid(id)) {
+	const paramParsed = studyIdParamSchema.safeParse(request.params);
+	if (!paramParsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 	}
+	const { id } = paramParsed.data;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -164,10 +170,11 @@ export async function bindToothHandler(request: FastifyRequest, reply: FastifyRe
 
 export async function bindVisitHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging bind visit"))) return;
-	const { id } = request.params as { id: string };
-	if (!isValidUuid(id)) {
+	const paramParsed = studyIdParamSchema.safeParse(request.params);
+	if (!paramParsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 	}
+	const { id } = paramParsed.data;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 
@@ -254,10 +261,11 @@ export async function bindVisitHandler(request: FastifyRequest, reply: FastifyRe
 
 export async function unbindPatientHandler(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging unbind patient"))) return;
-	const { id } = request.params as { id: string };
-	if (!isValidUuid(id)) {
+	const paramParsed = studyIdParamSchema.safeParse(request.params);
+	if (!paramParsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 	}
+	const { id } = paramParsed.data;
 	const orgId = getImagingOrganizationId(request, reply);
 	if (!orgId) return;
 

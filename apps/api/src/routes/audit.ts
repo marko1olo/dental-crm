@@ -8,7 +8,7 @@ import {
 } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { auditFromRequest } from "../clinicalAuditService.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { ADMIN_ROLES, getRequestIdentity, requireStaffIdentity } from "../security/identity.js";
 import { clinicalAuditLogs, auditEvents } from "../db/schema.js";
 import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
@@ -127,12 +127,14 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 				conditions.push(lte(auditEvents.createdAt, end));
 			}
 
-			const logs = await db
-				.select()
-				.from(auditEvents)
-				.where(and(...conditions))
-				.orderBy(desc(auditEvents.createdAt))
-				.limit(query.limit);
+			const logs = await withTenantCtx(orgId, async (tx) =>
+				tx
+					.select()
+					.from(auditEvents)
+					.where(and(...conditions))
+					.orderBy(desc(auditEvents.createdAt))
+					.limit(query.limit),
+			);
 
 			/*
 			 * ЧТЕНИЕ ЖУРНАЛА — САМО ПО СЕБЕ СОБЫТИЕ, И ЕГО НАДО ЗАПИСАТЬ.
@@ -241,25 +243,17 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		let rawList: unknown[] | null = null;
 		if (Array.isArray(body)) {
 			rawList = body;
-		} else if (
-			body &&
-			typeof body === "object" &&
-			"events" in body &&
-			Array.isArray((body as Record<string, unknown>).events)
-		) {
-			rawList = (body as { events: unknown[] }).events;
-		} else if (body && typeof body === "object" && !("events" in body)) {
+		} else if (body && typeof body === "object" && "events" in body) {
+			if (Array.isArray(body.events)) {
+				rawList = body.events;
+			} else {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Поле events должно быть массивом событий аудита.",
+				});
+			}
+		} else if (body && typeof body === "object") {
 			rawList = [body];
-		} else if (
-			body &&
-			typeof body === "object" &&
-			"events" in body &&
-			!Array.isArray((body as Record<string, unknown>).events)
-		) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: "Поле events должно быть массивом событий аудита.",
-			});
 		}
 
 		if (!rawList || rawList.length === 0) {
@@ -299,7 +293,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			const reason =
 				entry.reason ??
 				(typeof sanitizedDetails.reason === "string"
-					? (sanitizedDetails.reason as string)
+					? sanitizedDetails.reason
 					: null);
 			const occurredAt = entry.clientTimestamp
 				? new Date(entry.clientTimestamp)
@@ -335,7 +329,7 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			});
 		}
 
-		await db.transaction(async (tx) => {
+		await withTenantCtx(orgId, async (tx) => {
 			await tx.insert(auditEvents).values(validAuditEvents);
 			await tx.insert(clinicalAuditLogs).values(validClinicalAuditRows);
 		});

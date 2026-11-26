@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -16,49 +16,58 @@ export async function fetchToothPeriodontalEvents(
 	patientId: string,
 	toothNum: number,
 	logger?: FastifyBaseLogger,
+	tx?: TenantDb,
 ): Promise<ToothHistoryTimelineEvent[]> {
 	try {
-		const perioRecords = await db
-			.select({
-				snapshotId: periodontogramSnapshots.id,
-				status: periodontogramSnapshots.status,
-				recordedAt: periodontogramSnapshots.recordedAt,
-				createdAt: periodontogramSnapshots.createdAt,
-				recordedByUserId: periodontogramSnapshots.recordedByUserId,
-				notes: periodontogramSnapshots.notes,
-				isPresent: periodontogramTeeth.isPresent,
-				isImplant: periodontogramTeeth.isImplant,
-				mobility: periodontogramTeeth.mobility,
-				prognosis: periodontogramTeeth.prognosis,
-				furcationBuccal: periodontogramTeeth.furcationBuccal,
-				furcationLingual: periodontogramTeeth.furcationLingual,
-			})
-			.from(periodontogramTeeth)
-			.innerJoin(periodontogramSnapshots, eq(periodontogramTeeth.snapshotId, periodontogramSnapshots.id))
-			.where(and(
-				eq(periodontogramSnapshots.organizationId, orgId),
-				eq(periodontogramSnapshots.patientId, patientId),
-				eq(periodontogramTeeth.toothNumber, toothNum),
-			))
-			.orderBy(desc(periodontogramSnapshots.recordedAt));
+		const run = async (exec: TenantDb) => {
+			const perioRecords = await exec
+				.select({
+					snapshotId: periodontogramSnapshots.id,
+					status: periodontogramSnapshots.status,
+					recordedAt: periodontogramSnapshots.recordedAt,
+					createdAt: periodontogramSnapshots.createdAt,
+					recordedByUserId: periodontogramSnapshots.recordedByUserId,
+					notes: periodontogramSnapshots.notes,
+					isPresent: periodontogramTeeth.isPresent,
+					isImplant: periodontogramTeeth.isImplant,
+					mobility: periodontogramTeeth.mobility,
+					prognosis: periodontogramTeeth.prognosis,
+					furcationBuccal: periodontogramTeeth.furcationBuccal,
+					furcationLingual: periodontogramTeeth.furcationLingual,
+				})
+				.from(periodontogramTeeth)
+				.innerJoin(periodontogramSnapshots, eq(periodontogramTeeth.snapshotId, periodontogramSnapshots.id))
+				.where(and(
+					eq(periodontogramSnapshots.organizationId, orgId),
+					eq(periodontogramSnapshots.patientId, patientId),
+					eq(periodontogramTeeth.toothNumber, toothNum),
+				))
+				.orderBy(desc(periodontogramSnapshots.recordedAt));
 
+			if (perioRecords.length === 0) return { perioRecords, allSites: [] };
+			const snapshotIds = perioRecords.map((r) => r.snapshotId);
+			const allSites = await exec
+				.select({
+					snapshotId: periodontogramSites.snapshotId,
+					siteCode: periodontogramSites.siteCode,
+					probingDepthMm: periodontogramSites.probingDepthMm,
+					gingivalMarginMm: periodontogramSites.gingivalMarginMm,
+					bleedingOnProbing: periodontogramSites.bleedingOnProbing,
+					suppuration: periodontogramSites.suppuration,
+					plaque: periodontogramSites.plaque,
+				})
+				.from(periodontogramSites)
+				.where(and(
+					inArray(periodontogramSites.snapshotId, snapshotIds),
+					eq(periodontogramSites.toothNumber, toothNum),
+				));
+			return { perioRecords, allSites };
+		};
+
+		const { perioRecords, allSites } = tx
+			? await run(tx)
+			: await withTenantCtx(orgId, run);
 		if (perioRecords.length === 0) return [];
-		const snapshotIds = perioRecords.map((r) => r.snapshotId);
-		const allSites = await db
-			.select({
-				snapshotId: periodontogramSites.snapshotId,
-				siteCode: periodontogramSites.siteCode,
-				probingDepthMm: periodontogramSites.probingDepthMm,
-				gingivalMarginMm: periodontogramSites.gingivalMarginMm,
-				bleedingOnProbing: periodontogramSites.bleedingOnProbing,
-				suppuration: periodontogramSites.suppuration,
-				plaque: periodontogramSites.plaque,
-			})
-			.from(periodontogramSites)
-			.where(and(
-				inArray(periodontogramSites.snapshotId, snapshotIds),
-				eq(periodontogramSites.toothNumber, toothNum),
-			));
 
 		const sitesBySnapshot = new Map<string, Array<{
 			siteCode: string;

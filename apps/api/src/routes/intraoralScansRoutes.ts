@@ -277,8 +277,20 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 						}
 						vendor = parsedVendor.data;
 					}
-					if (fields?.scannerModel?.value) scannerModel = fields.scannerModel.value;
-					if (fields?.vitaShade?.value) vitaShade = fields.vitaShade.value;
+					if (fields?.scannerModel?.value) {
+						const parsedModel = z.string().trim().min(1).max(120).safeParse(fields.scannerModel.value);
+						if (!parsedModel.success) {
+							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректная модель сканера (макс. 120 символов)." });
+						}
+						scannerModel = parsedModel.data;
+					}
+					if (fields?.vitaShade?.value) {
+						const parsedShade = z.string().trim().min(1).max(32).safeParse(fields.vitaShade.value);
+						if (!parsedShade.success) {
+							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный оттенок VITA (макс. 32 символа)." });
+						}
+						vitaShade = parsedShade.data;
+					}
 				}
 			} catch (multipartErr: unknown) {
 				request.log.warn({ err: multipartErr }, "Multipart stream parse fallback in intraoralScansRoutes");
@@ -310,7 +322,7 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 				if (rawBuffer.length >= 4 && rawBuffer.readUInt32LE(0) === 0x04034b50) {
 					zipBuffer = rawBuffer;
 				} else {
-					const rawName = (query.fileName as string) || "scan_model.stl";
+					const rawName = query.fileName || "scan_model.stl";
 					inputFiles.push({ name: rawName, buffer: rawBuffer });
 				}
 			}

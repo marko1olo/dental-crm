@@ -18,35 +18,70 @@ import {
 	requireScheduleMutationAccess,
 } from "../scheduleAuthGuard.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
+import {
+	DEFAULT_CLINIC_TIME_ZONE,
+	clinicTimeZone,
+} from "../../services/reports/managerReports/timezone.js";
+
+function formatDoctorShiftDateInTimeZone(date: Date, timeZone: string): string {
+	try {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(date);
+	} catch {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone: DEFAULT_CLINIC_TIME_ZONE,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(date);
+	}
+}
 
 const urgentRequestParamsSchema = z.object({
 	id: z.string().uuid("Некорректный UUID экстренного запроса"),
 });
 
-const scheduleShiftsSchema = z.object({
-	shifts: z.array(
-		z
-			.object({
-				id: z.string().optional(),
-				clinicId: z.string().nullable().optional(),
-				branchId: z.string().nullable().optional(),
-				doctorId: z.string(),
-				doctorName: z.string(),
-				cabinetId: z.string().nullable().optional(),
-				chairId: z.string().nullable().optional(),
-				dateIso: z.string().optional(),
-				shiftDateIso: z.string().optional(),
-				startTime: z.string().optional(),
-				endTime: z.string().optional(),
-				role: z.string().nullable().optional(),
-				doctorRole: z.string().nullable().optional(),
-				specialty: z.string().nullable().optional(),
-			})
-			.passthrough(),
-	),
-	dateIso: z.string().optional(),
-	replaceAll: z.boolean().optional(),
-});
+const scheduleShiftsQuerySchema = z
+	.object({
+		clinicId: z.string().uuid("Некорректный UUID филиала (clinicId)").optional(),
+		branchId: z.string().uuid("Некорректный UUID филиала (branchId)").optional(),
+	})
+	.strict();
+
+const scheduleShiftsSchema = z
+	.object({
+		shifts: z.array(
+			z
+				.object({
+					id: z.string().optional(),
+					clinicId: z.string().nullable().optional(),
+					branchId: z.string().nullable().optional(),
+					doctorId: z.string(),
+					doctorName: z.string(),
+					cabinetId: z.string().nullable().optional(),
+					chairId: z.string().nullable().optional(),
+					dateIso: z.string().optional(),
+					shiftDateIso: z.string().optional(),
+					startTime: z.string().optional(),
+					endTime: z.string().optional(),
+					role: z.string().nullable().optional(),
+					doctorRole: z.string().nullable().optional(),
+					specialty: z.string().nullable().optional(),
+					protocolHash: z.string().optional(),
+					signedAtIso: z.string().optional(),
+					signedAppointmentIds: z.array(z.string()).optional(),
+					appointments: z.array(z.unknown()).optional(),
+				})
+				.strict(),
+		),
+		dateIso: z.string().optional(),
+		replaceAll: z.boolean().optional(),
+	})
+	.strict();
 
 /**
  * Управление графиками смен врачей, учет подмен,
@@ -111,9 +146,16 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 			requireClinicOrganizationId(req, reply);
 		if (!orgId) return;
 
-		const queryClinicId =
-			(req.query as { clinicId?: string; branchId?: string })?.clinicId ||
-			(req.query as { clinicId?: string; branchId?: string })?.branchId;
+		const parsedQuery = scheduleShiftsQuerySchema.safeParse(req.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					parsedQuery.error.issues[0]?.message ??
+					"Некорректные параметры фильтрации смен (ожидается UUID).",
+			});
+		}
+		const queryClinicId = parsedQuery.data.clinicId || parsedQuery.data.branchId;
 
 		const condition = queryClinicId
 			? and(
@@ -190,9 +232,12 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				.where(eq(clinics.organizationId, orgId));
 			const branchMap = new Map<string, string>(clinicRows.map((c) => [c.id, c.name]));
 
+			const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_CLINIC_TIME_ZONE;
+			const todayDateStr = formatDoctorShiftDateInTimeZone(new Date(), zone);
+
 			// Проверка кросс-филиальных коллизий смен врача (Мандат Домена 30)
 			const shiftsToCheck: DoctorBranchShift[] = shifts.map((s) => {
-				const resolvedDate = s.dateIso || s.shiftDateIso || dateIso || new Date().toISOString().slice(0, 10);
+				const resolvedDate = s.dateIso || s.shiftDateIso || dateIso || todayDateStr;
 				const bId = s.clinicId || s.branchId || "default";
 				return {
 					id: s.id || randomUUID(),
@@ -266,9 +311,10 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 
 			if (shifts.length > 0) {
 				const now = new Date();
+				const nowDateStr = formatDoctorShiftDateInTimeZone(now, zone);
 				await tx.insert(doctorShiftRosters).values(
 					shifts.map((s) => {
-						const resolvedDate = s.dateIso || s.shiftDateIso || now.toISOString().split("T")[0]!;
+						const resolvedDate = s.dateIso || s.shiftDateIso || nowDateStr;
 						return {
 							id: s.id || randomUUID(),
 							organizationId: orgId,

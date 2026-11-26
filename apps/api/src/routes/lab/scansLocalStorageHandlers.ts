@@ -278,5 +278,3 @@ export async function handleLocalStorageDownload(
 // Aliases for backward compatibility and direct storage names
 export const handleDirectStorageUpload = handleLocalStorageUpload;
 export const handleDirectStorageDownload = handleLocalStorageDownload;
-export const handleMockStorageUpload = handleLocalStorageUpload;
-export const handleMockStorageDownload = handleLocalStorageDownload;

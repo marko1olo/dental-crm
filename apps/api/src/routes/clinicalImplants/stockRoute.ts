@@ -1,6 +1,7 @@
 import { and, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { serializeInventoryItem } from "../../db/inventoryQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { inventoryItems } from "../../db/schema.js";
 
@@ -31,26 +32,28 @@ export function registerStockRoute(app: FastifyInstance) {
 				),
 		);
 
-		const implants = items.filter(
+		const serializedItems = items.map(serializeInventoryItem);
+
+		const implants = serializedItems.filter(
 			(i) =>
 				i.category === "Имплантология" ||
 				i.name.toLowerCase().includes("имплант"),
 		);
 
-		const grafts = items.filter(
+		const grafts = serializedItems.filter(
 			(i) =>
 				i.name.toLowerCase().includes("графт") ||
 				i.name.toLowerCase().includes("костн") ||
 				i.name.toLowerCase().includes("ксенографт"),
 		);
 
-		const membranes = items.filter(
+		const membranes = serializedItems.filter(
 			(i) =>
 				i.name.toLowerCase().includes("мембран") ||
 				i.name.toLowerCase().includes("коллаген"),
 		);
 
-		const sutures = items.filter(
+		const sutures = serializedItems.filter(
 			(i) =>
 				i.name.toLowerCase().includes("шовн") ||
 				i.name.toLowerCase().includes("полиглактин") ||

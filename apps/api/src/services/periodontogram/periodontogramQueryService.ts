@@ -6,8 +6,8 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import type { TenantDb } from "../../db/rls.js";
+import type { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
 	periodontogramSites,
 	periodontogramSnapshots,
@@ -64,49 +64,54 @@ export async function fetchSnapshotTeethAndSites(
 export async function fetchPatientLatestPeriodontogram(
 	orgId: string,
 	patientId: string,
+	tx?: TenantDb,
 ) {
-	// 1. Check for active draft first
-	const [draft] = await db
-		.select()
-		.from(periodontogramSnapshots)
-		.where(
-			and(
-				eq(periodontogramSnapshots.organizationId, orgId),
-				eq(periodontogramSnapshots.patientId, patientId),
-				eq(periodontogramSnapshots.status, "draft"),
-			),
-		)
-		.limit(1);
+	const run = async (exec: TenantDb) => {
+		// 1. Check for active draft first
+		const [draft] = await exec
+			.select()
+			.from(periodontogramSnapshots)
+			.where(
+				and(
+					eq(periodontogramSnapshots.organizationId, orgId),
+					eq(periodontogramSnapshots.patientId, patientId),
+					eq(periodontogramSnapshots.status, "draft"),
+				),
+			)
+			.limit(1);
 
-	if (draft) {
-		const { formattedTeeth } = await fetchSnapshotTeethAndSites(draft.id);
-		return {
-			...draft,
-			teeth: formattedTeeth,
-		};
-	}
+		if (draft) {
+			const { formattedTeeth } = await fetchSnapshotTeethAndSites(draft.id, exec);
+			return {
+				...draft,
+				teeth: formattedTeeth,
+			};
+		}
 
-	// 2. Fall back to latest closed examination
-	const [latestClosed] = await db
-		.select()
-		.from(periodontogramSnapshots)
-		.where(
-			and(
-				eq(periodontogramSnapshots.organizationId, orgId),
-				eq(periodontogramSnapshots.patientId, patientId),
-				eq(periodontogramSnapshots.status, "closed"),
-			),
-		)
-		.orderBy(desc(periodontogramSnapshots.recordedAt))
-		.limit(1);
+		// 2. Fall back to latest closed examination
+		const [latestClosed] = await exec
+			.select()
+			.from(periodontogramSnapshots)
+			.where(
+				and(
+					eq(periodontogramSnapshots.organizationId, orgId),
+					eq(periodontogramSnapshots.patientId, patientId),
+					eq(periodontogramSnapshots.status, "closed"),
+				),
+			)
+			.orderBy(desc(periodontogramSnapshots.recordedAt))
+			.limit(1);
 
-	if (latestClosed) {
-		const { formattedTeeth } = await fetchSnapshotTeethAndSites(latestClosed.id);
-		return {
-			...latestClosed,
-			teeth: formattedTeeth,
-		};
-	}
+		if (latestClosed) {
+			const { formattedTeeth } = await fetchSnapshotTeethAndSites(latestClosed.id, exec);
+			return {
+				...latestClosed,
+				teeth: formattedTeeth,
+			};
+		}
 
-	return null;
+		return null;
+	};
+
+	return tx ? run(tx) : withTenantCtx(orgId, run);
 }

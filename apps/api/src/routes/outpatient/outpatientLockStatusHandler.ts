@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { outpatientVerifications } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { checkLockParamsSchema } from "./outpatientTypes.js";
@@ -19,16 +19,18 @@ export async function checkLockStatusHandler(request: FastifyRequest, reply: Fas
 		});
 	}
 
-	const [verif] = await db
-		.select()
-		.from(outpatientVerifications)
-		.where(
-			and(
-				eq(outpatientVerifications.visitId, paramsParsed.data.visitId),
-				eq(outpatientVerifications.organizationId, orgId),
-			),
-		)
-		.limit(1);
+	const [verif] = await withTenantCtx(orgId, async (tx) =>
+		tx
+			.select()
+			.from(outpatientVerifications)
+			.where(
+				and(
+					eq(outpatientVerifications.visitId, paramsParsed.data.visitId),
+					eq(outpatientVerifications.organizationId, orgId),
+				),
+			)
+			.limit(1),
+	);
 
 	const identity = getRequestIdentity(request);
 	const isDirectorOrCmo =

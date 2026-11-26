@@ -14,120 +14,137 @@ import { mdlpDisposalService, mdlpQueueService } from "../services/mdlp/index.js
 
 // ─── Input Validation Schemas ───────────────────────────────────────────────
 
-const mdlpScanBodySchema = z.object({
-	rawBarcode: z.string().trim().optional(),
-	barcode: z.string().trim().optional(),
-	searchHint: z.string().trim().optional().nullable(),
-	autoRegister: z.boolean().optional().default(true),
-}).refine((data) => Boolean(data.rawBarcode || data.barcode), {
-	message: "Строка штрихкода DataMatrix (rawBarcode или barcode) обязательна для сканирования.",
-});
+const mdlpScanBodySchema = z
+	.object({
+		rawBarcode: z.string().trim().optional(),
+		barcode: z.string().trim().optional(),
+		searchHint: z.string().trim().optional().nullable(),
+		autoRegister: z.boolean().optional().default(true),
+	})
+	.strict()
+	.refine((data) => Boolean(data.rawBarcode || data.barcode), {
+		message: "Строка штрихкода DataMatrix (rawBarcode или barcode) обязательна для сканирования.",
+	});
 
-const mdlpDisposeBodySchema = z.object({
-	sgtin: z.string().trim().optional().nullable(),
-	rawBarcode: z.string().trim().optional().nullable(),
-	barcode: z.string().trim().optional().nullable(),
-	gtin: z.string().trim().optional().nullable(),
-	serialNumber: z.string().trim().optional().nullable(),
-	series: z.string().trim().optional().nullable(),
-	lot: z.string().trim().optional().nullable(),
-	patientId: z.string().uuid("Некорректный UUID пациента.").optional().nullable(),
-	patientName: z.string().trim().optional().nullable(),
-	visitId: z.string().uuid("Некорректный UUID приёма/визита.").optional().nullable(),
-	doctorId: z.string().uuid("Некорректный UUID врача.").optional().nullable(),
-	doctorName: z.string().trim().optional().nullable(),
-	docNum: z.string().trim().optional().nullable(),
-	docDate: z.string().trim().optional().nullable(),
-	costRub: nonNegativeMoneyRubSchema.optional().nullable(),
-	costKopecks: z.number().int().nonnegative().optional().nullable(),
-	reason: z.string().trim().optional().nullable(),
-});
+const mdlpDisposeBodySchema = z
+	.object({
+		sgtin: z.string().trim().optional().nullable(),
+		rawBarcode: z.string().trim().optional().nullable(),
+		barcode: z.string().trim().optional().nullable(),
+		gtin: z.string().trim().optional().nullable(),
+		serialNumber: z.string().trim().optional().nullable(),
+		series: z.string().trim().optional().nullable(),
+		lot: z.string().trim().optional().nullable(),
+		patientId: z.string().uuid("Некорректный UUID пациента.").optional().nullable(),
+		patientName: z.string().trim().optional().nullable(),
+		visitId: z.string().uuid("Некорректный UUID приёма/визита.").optional().nullable(),
+		doctorId: z.string().uuid("Некорректный UUID врача.").optional().nullable(),
+		doctorName: z.string().trim().optional().nullable(),
+		docNum: z.string().trim().optional().nullable(),
+		docDate: z.string().trim().optional().nullable(),
+		costRub: nonNegativeMoneyRubSchema.optional().nullable(),
+		costKopecks: z.number().int().nonnegative().optional().nullable(),
+		reason: z.string().trim().optional().nullable(),
+	})
+	.strict();
 
-const mdlpBatchDisposeBodySchema = z.object({
-	docNum: z.string().trim().optional().nullable(),
-	docDate: z.string().trim().optional().nullable(),
-	patientId: z.string().uuid().optional().nullable(),
-	patientName: z.string().trim().optional().nullable(),
-	visitId: z.string().uuid().optional().nullable(),
-	doctorId: z.string().uuid().optional().nullable(),
-	doctorName: z.string().trim().optional().nullable(),
-	reason: z.string().trim().optional().nullable(),
-	approverRole: z.string().trim().optional().nullable(),
-	approverName: z.string().trim().optional().nullable(),
-	paperJournalAcknowledged: z.boolean().optional().default(true),
-	useQueue: z.boolean().optional().default(false),
-	items: z.array(mdlpDisposeBodySchema).optional(),
-});
+const mdlpBatchDisposeBodySchema = z
+	.object({
+		docNum: z.string().trim().optional().nullable(),
+		docDate: z.string().trim().optional().nullable(),
+		patientId: z.string().uuid().optional().nullable(),
+		patientName: z.string().trim().optional().nullable(),
+		visitId: z.string().uuid().optional().nullable(),
+		doctorId: z.string().uuid().optional().nullable(),
+		doctorName: z.string().trim().optional().nullable(),
+		reason: z.string().trim().optional().nullable(),
+		approverRole: z.string().trim().optional().nullable(),
+		approverName: z.string().trim().optional().nullable(),
+		paperJournalAcknowledged: z.boolean().optional().default(true),
+		useQueue: z.boolean().optional().default(false),
+		items: z.array(mdlpDisposeBodySchema).optional(),
+	})
+	.strict();
 
-const mdlpQueueAddBodySchema = z.object({
-	rawBarcode: z.string().trim().min(1, "Штрихкод DataMatrix обязателен."),
-	costRub: nonNegativeMoneyRubSchema.optional().nullable(),
-	costKopecks: z.number().int().nonnegative().optional().nullable(),
-	patientId: z.string().uuid().optional().nullable(),
-	patientName: z.string().trim().optional().nullable(),
-	visitId: z.string().uuid().optional().nullable(),
-	doctorId: z.string().uuid().optional().nullable(),
-	doctorName: z.string().trim().optional().nullable(),
-	cabinetId: z.string().trim().optional().nullable(),
-});
+const mdlpQueueAddBodySchema = z
+	.object({
+		rawBarcode: z.string().trim().min(1, "Штрихкод DataMatrix обязателен."),
+		costRub: nonNegativeMoneyRubSchema.optional().nullable(),
+		costKopecks: z.number().int().nonnegative().optional().nullable(),
+		patientId: z.string().uuid().optional().nullable(),
+		patientName: z.string().trim().optional().nullable(),
+		visitId: z.string().uuid().optional().nullable(),
+		doctorId: z.string().uuid().optional().nullable(),
+		doctorName: z.string().trim().optional().nullable(),
+		cabinetId: z.string().trim().optional().nullable(),
+	})
+	.strict();
 
-const mdlpQueueRemoveBodySchema = z.object({
-	itemId: z.string().trim().min(1, "Идентификатор позиции в очереди обязателен."),
-});
+const mdlpQueueRemoveBodySchema = z
+	.object({
+		itemId: z.string().trim().min(1, "Идентификатор позиции в очереди обязателен."),
+	})
+	.strict();
 
-const mdlpActItemSchema = z.object({
-	id: z.string().trim().optional(),
-	rawBarcode: z.string().trim().optional().nullable(),
-	sgtin: z.string().trim().optional().nullable(),
-	gtin: z.string().trim().optional().nullable(),
-	serialNumber: z.string().trim().optional().nullable(),
-	series: z.string().trim().optional().nullable(),
-	expirationDate: z.string().trim().optional().nullable(),
-	costRub: nonNegativeMoneyRubSchema.optional().nullable(),
-	costKopecks: z.number().int().nonnegative().optional().nullable(),
-	tradeName: z.string().trim().optional().nullable(),
-	inn: z.string().trim().optional().nullable(),
-	patientId: z.string().uuid().optional().nullable(),
-	patientName: z.string().trim().optional().nullable(),
-	visitId: z.string().uuid().optional().nullable(),
-	doctorId: z.string().uuid().optional().nullable(),
-	doctorName: z.string().trim().optional().nullable(),
-	cabinetId: z.string().trim().optional().nullable(),
-	status: z.string().trim().optional().nullable(),
-});
+const mdlpActItemSchema = z
+	.object({
+		id: z.string().trim().optional(),
+		rawBarcode: z.string().trim().optional().nullable(),
+		sgtin: z.string().trim().optional().nullable(),
+		gtin: z.string().trim().optional().nullable(),
+		serialNumber: z.string().trim().optional().nullable(),
+		series: z.string().trim().optional().nullable(),
+		expirationDate: z.string().trim().optional().nullable(),
+		costRub: nonNegativeMoneyRubSchema.optional().nullable(),
+		costKopecks: z.number().int().nonnegative().optional().nullable(),
+		tradeName: z.string().trim().optional().nullable(),
+		inn: z.string().trim().optional().nullable(),
+		patientId: z.string().uuid().optional().nullable(),
+		patientName: z.string().trim().optional().nullable(),
+		visitId: z.string().uuid().optional().nullable(),
+		doctorId: z.string().uuid().optional().nullable(),
+		doctorName: z.string().trim().optional().nullable(),
+		cabinetId: z.string().trim().optional().nullable(),
+		status: z.string().trim().optional().nullable(),
+	})
+	.strict();
 
-const mdlpActGenerateBodySchema = z.object({
-	actNumber: z.string().trim().optional(),
-	actDate: z.string().trim().optional(),
-	organizationName: z.string().trim().optional(),
-	organizationInn: z.string().trim().optional(),
-	organizationAddress: z.string().trim().optional(),
-	departmentName: z.string().trim().optional(),
-	cabinetName: z.string().trim().optional(),
-	seniorNurseName: z.string().trim().optional(),
-	chiefDoctorName: z.string().trim().optional(),
-	dentistName: z.string().trim().optional(),
-	approverRole: z
-		.enum(["senior_nurse", "doctor", "administrator", "authorized_staff"])
-		.optional(),
-	approverName: z.string().trim().optional(),
-	approvedByFullName: z.string().trim().optional(),
-	approvedByPositionRu: z.string().trim().optional(),
-	paperJournalAcknowledged: z.boolean().optional().default(true),
-	crptReceiptNumber: z.string().trim().optional(),
-	notes: z.string().trim().optional(),
-	useQueue: z.boolean().optional().default(true),
-	items: z.array(mdlpActItemSchema).optional(),
-});
+const mdlpActGenerateBodySchema = z
+	.object({
+		actNumber: z.string().trim().optional(),
+		actDate: z.string().trim().optional(),
+		organizationName: z.string().trim().optional(),
+		organizationInn: z.string().trim().optional(),
+		organizationAddress: z.string().trim().optional(),
+		departmentName: z.string().trim().optional(),
+		cabinetName: z.string().trim().optional(),
+		seniorNurseName: z.string().trim().optional(),
+		chiefDoctorName: z.string().trim().optional(),
+		dentistName: z.string().trim().optional(),
+		approverRole: z
+			.enum(["senior_nurse", "doctor", "administrator", "authorized_staff"])
+			.optional(),
+		approverName: z.string().trim().optional(),
+		approvedByFullName: z.string().trim().optional(),
+		approvedByPositionRu: z.string().trim().optional(),
+		paperJournalAcknowledged: z.boolean().optional().default(true),
+		crptReceiptNumber: z.string().trim().optional(),
+		notes: z.string().trim().optional(),
+		useQueue: z.boolean().optional().default(true),
+		items: z.array(mdlpActItemSchema).optional(),
+	})
+	.strict();
 
-const mdlpItemsQuerySchema = z.object({
-	status: z.enum(["in_stock", "disposed", "all"]).optional().default("all"),
-	search: z.string().trim().optional().nullable(),
-	patientId: z.string().uuid().optional().nullable(),
-	visitId: z.string().uuid().optional().nullable(),
-	limit: z.coerce.number().int().min(1).max(200).optional().default(50),
-	offset: z.coerce.number().int().min(0).optional().default(0),
-});
+const mdlpItemsQuerySchema = z
+	.object({
+		status: z.enum(["in_stock", "disposed", "all"]).optional().default("all"),
+		search: z.string().trim().optional().nullable(),
+		patientId: z.string().uuid().optional().nullable(),
+		visitId: z.string().uuid().optional().nullable(),
+		limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+		offset: z.coerce.number().int().min(0).optional().default(0),
+	})
+	.strict();
 
 // ─── Route Registration ─────────────────────────────────────────────────────
 

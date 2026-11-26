@@ -30,11 +30,25 @@ import {
 
 export * from "./shiftAutoCloseService.js";
 
-const autoCloseCheckSchema = z.object({
-	maxHours: z.number().min(1).max(24).optional(),
-	bufferMinutes: z.number().min(0).max(180).optional(),
-	force: z.boolean().optional(),
-});
+const autoCloseCheckSchema = z
+	.object({
+		maxHours: z.number().min(1).max(24).optional(),
+		bufferMinutes: z.number().min(0).max(180).optional(),
+		force: z.boolean().optional(),
+	})
+	.strict();
+
+const sendShiftSummarySchema = z
+	.object({
+		doctorFullName: z.string().trim().min(1).max(200).optional(),
+		doctorSpecialtyRu: z.string().trim().max(200).optional(),
+		shiftDateLabel: z.string().trim().max(100).optional(),
+		totalRevenueRub: z.number().finite().min(0).max(100_000_000).optional(),
+		calculatedPayoutRub: z.number().finite().min(0).max(100_000_000).optional(),
+		completedCount: z.number().int().min(0).max(10_000).optional(),
+		channel: z.enum(["telegram", "journal", "email"]).default("telegram"),
+	})
+	.strict();
 
 export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -53,13 +67,18 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			if (reply.sent) return reply;
 			if (!orgId) return reply;
 
-			const parsed = autoCloseCheckSchema.safeParse(request.body || {});
-			const options: AutoCloseExpiredShiftsOptions = {};
-			if (parsed.success) {
-				if (typeof parsed.data.maxHours === "number") options.maxHours = parsed.data.maxHours;
-				if (typeof parsed.data.bufferMinutes === "number") options.bufferMinutesAfterSchedule = parsed.data.bufferMinutes;
-				if (typeof parsed.data.force === "boolean") options.force = parsed.data.force;
+			const parsed = autoCloseCheckSchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры проверки закрытия смен.",
+					details: parsed.error.issues,
+				});
 			}
+			const options: AutoCloseExpiredShiftsOptions = {};
+			if (typeof parsed.data.maxHours === "number") options.maxHours = parsed.data.maxHours;
+			if (typeof parsed.data.bufferMinutes === "number") options.bufferMinutesAfterSchedule = parsed.data.bufferMinutes;
+			if (typeof parsed.data.force === "boolean") options.force = parsed.data.force;
 
 			const result = await withTenantCtx(orgId, async (tx) => {
 				return await checkAndAutoCloseExpiredShifts(tx, orgId, options);
@@ -92,11 +111,7 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			if (reply.sent) return reply;
 			if (!orgId) return reply;
 
-			const now = new Date();
-
 			const statusData = await withTenantCtx(orgId, async (tx) => {
-				const autoCloseResult = await checkAndAutoCloseExpiredShifts(tx, orgId, { now });
-
 				const openShifts = await tx
 					.select()
 					.from(cashBoxShifts)
@@ -122,7 +137,7 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 								startBalanceRub: primaryShift.startBalanceRub,
 							}
 						: null,
-					autoClosedShiftsCount: autoCloseResult.closedShifts.length,
+					autoClosedShiftsCount: 0,
 					defaultBufferMinutes: DEFAULT_SHIFT_BUFFER_MINUTES,
 					defaultMaxShiftHours: DEFAULT_MAX_SHIFT_HOURS,
 				};
@@ -151,18 +166,31 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			if (reply.sent) return reply;
 			if (!orgId) return reply;
 
-			const body = (request.body as Record<string, unknown>) || {};
-			const doctorFullName = String(body.doctorFullName || "Лечащий врач");
-			const shiftDateLabel = String(body.shiftDateLabel || new Date().toLocaleDateString("ru-RU"));
-			const totalRevenueRub = Number(body.totalRevenueRub) || 0;
-			const calculatedPayoutRub = Number(body.calculatedPayoutRub) || 0;
-			const completedCount = Number(body.completedCount) || 0;
-			const channel = String(body.channel || "telegram");
+			const parsed = sendShiftSummarySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные данные сводки смены.",
+					details: parsed.error.issues,
+				});
+			}
+
+			const doctorFullName = parsed.data.doctorFullName || "Лечащий врач";
+			const shiftDateLabel =
+				parsed.data.shiftDateLabel || new Date().toLocaleDateString("ru-RU");
+			const totalRevenueRub = parsed.data.totalRevenueRub ?? 0;
+			const calculatedPayoutRub = parsed.data.calculatedPayoutRub ?? 0;
+			const completedCount = parsed.data.completedCount ?? 0;
+			const channel = parsed.data.channel;
 
 			if (channel === "telegram") {
 				const runtime = runtimeSettingsForRequestedOrganization(orgId);
-				const botToken = runtime?.settings ? (configuredBotToken(runtime.settings) || process.env.TELEGRAM_BOT_TOKEN) : process.env.TELEGRAM_BOT_TOKEN;
-				const targetChatId = body.chatId ? String(body.chatId) : (process.env.TELEGRAM_MANAGEMENT_CHAT_ID || process.env.TELEGRAM_CLINIC_CHAT_ID);
+				const botToken = runtime?.settings
+					? configuredBotToken(runtime.settings) || process.env.TELEGRAM_BOT_TOKEN
+					: process.env.TELEGRAM_BOT_TOKEN;
+				const targetChatId =
+					process.env.TELEGRAM_MANAGEMENT_CHAT_ID ||
+					process.env.TELEGRAM_CLINIC_CHAT_ID;
 
 				if (botToken && targetChatId) {
 					const summaryText = [

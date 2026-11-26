@@ -429,7 +429,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(result1.serviceAdded, true);
 		assert.equal(result1.priceRub, 2500.5);
 		assert.equal(result1.priceKopecks, 250050);
-		assert.equal(result1.amountKopecks, 250050n);
+		assert.equal(result1.amountKopecks, 250050);
 
 		const result2 = await linkOrthoServiceToBillingSafely({
 			organizationId: ORG_ID,
@@ -443,7 +443,7 @@ describe("Orthodontics Routes & 1-Click Autonomy API (Mandates 8e, 8k, 8s)", () 
 		assert.equal(result2.serviceAdded, true);
 		assert.equal(result2.priceRub, 1499.5);
 		assert.equal(result2.priceKopecks, 149950);
-		assert.equal(result2.amountKopecks, 149950n);
+		assert.equal(result2.amountKopecks, 149950);
 	});
 
 	it("12. DEF-ORTHO-API-01: Idempotency-Key validation & replay caching on archwire-change and ligatures-activate (Mandates 8bo, 8zp)", async (t) => {

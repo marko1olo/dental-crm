@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { periodontogramSnapshots } from "../../db/schema.js";
@@ -14,6 +15,10 @@ import {
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const snapshotIdParamSchema = z.object({
+	id: z.string().regex(UUID_REGEX, "Некорректный идентификатор осмотра"),
+});
+
 export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance) {
 	/**
 	 * 7. POST /api/periodontogram/snapshots/:id/close
@@ -26,14 +31,16 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 			"periodontogram close",
 		);
 		if (!orgId) return;
-		const { id } = req.params as { id: string };
-		if (!UUID_REGEX.test(id)) {
+		const paramParsed = snapshotIdParamSchema.safeParse(req.params);
+		if (!paramParsed.success) {
 			return reply.code(400).send({
 				error: "InvalidSnapshotId",
 				message: "Некорректный идентификатор осмотра",
 			});
 		}
-		const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+		const { id } = paramParsed.data;
+		const rawIdemHeader = req.headers["idempotency-key"] ?? req.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawIdemHeader === "string" ? rawIdemHeader : undefined;
 		if (idempotencyKey) {
 			if (!UUID_REGEX.test(idempotencyKey)) {
 				return reply.code(400).send({
@@ -68,14 +75,14 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 
 			const notes = parsedNotes !== undefined ? parsedNotes : snapshot.notes;
 			const rawUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
-			const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId);
+			const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId, tx);
 
 			const { teeth, sites, formattedTeeth } = await fetchSnapshotTeethAndSites(id, tx);
 			const computedIndices = computeSnapshotIndices(teeth, sites);
 
-			const existingIndices =
-				snapshot.indices && typeof snapshot.indices === "object"
-					? (snapshot.indices as Record<string, unknown>)
+			const existingIndices: Record<string, unknown> =
+				snapshot.indices && typeof snapshot.indices === "object" && !Array.isArray(snapshot.indices)
+					? { ...snapshot.indices }
 					: {};
 
 			const [closed] = await tx
@@ -131,13 +138,14 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 			"periodontogram discard",
 		);
 		if (!orgId) return;
-		const { id } = req.params as { id: string };
-		if (!UUID_REGEX.test(id)) {
+		const paramParsed = snapshotIdParamSchema.safeParse(req.params);
+		if (!paramParsed.success) {
 			return reply.code(400).send({
 				error: "InvalidSnapshotId",
 				message: "Некорректный идентификатор осмотра",
 			});
 		}
+		const { id } = paramParsed.data;
 
 		const deleteResult = await withTenantCtx(orgId, async (tx) => {
 			const [snapshot] = await tx

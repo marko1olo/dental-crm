@@ -34,19 +34,25 @@ const clipboardCopyValidationMessage =
 const clipboardPasteResourcesMissingMessage =
 	"Вставка не выполнена: у исходной записи не назначен врач или кресло.";
 
-const clipboardCopySchema = z.object({
-	appointmentId: z.string().uuid({ message: clipboardCopyValidationMessage }),
-});
+const clipboardCopySchema = z
+	.object({
+		appointmentId: z.string().uuid({ message: clipboardCopyValidationMessage }),
+	})
+	.strict();
 
-const clipboardParamsSchema = z.object({
-	id: z.string().uuid({ message: clipboardItemMissingMessage }),
-});
+const clipboardParamsSchema = z
+	.object({
+		id: z.string().uuid({ message: clipboardItemMissingMessage }),
+	})
+	.strict();
 
-const clipboardPasteSchema = z.object({
-	startsAt: z.string().min(1, clipboardPasteValidationMessage),
-	doctorUserId: z.string().uuid().optional().nullable(),
-	chairId: z.string().uuid().or(z.literal("default-chair")).optional().nullable(),
-});
+const clipboardPasteSchema = z
+	.object({
+		startsAt: z.string().min(1, clipboardPasteValidationMessage),
+		doctorUserId: z.string().uuid().optional().nullable(),
+		chairId: z.string().uuid().or(z.literal("default-chair")).optional().nullable(),
+	})
+	.strict();
 
 /**
  * Операции с буфером обмена расписания (копирование, вставка приёма в 1 клик,
@@ -263,6 +269,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/schedule/clipboard-items/:id/paste",
+		clipboardMutationOptions,
 		async (request, reply) => {
 			const context = await requireScheduleMutationContext(
 				request,

@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import type { z } from "zod";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -12,6 +12,22 @@ import {
 	getDefaultExpirationDate,
 } from "../../services/inventory/fefoStockService.js";
 import { inventoryReceiveBatchBodySchema } from "./types.js";
+
+const batchListQuerySchema = z.object({
+	itemId: z.string().uuid("Некорректный UUID материала").optional(),
+	status: z.enum(["active", "depleted", "expired", "quarantine", "all"]).optional(),
+	warehouseId: z.string().uuid("Некорректный UUID склада").optional(),
+	limit: z.coerce.number().int().min(1).max(1000).optional(),
+	offset: z.coerce.number().int().min(0).max(100_000).optional(),
+});
+
+const expiringBatchesQuerySchema = z.object({
+	daysAhead: z.coerce.number().int().min(0).max(3650).default(30),
+});
+
+const organizationIdParamSchema = z.object({
+	organizationId: z.string().uuid("Некорректный UUID организации"),
+});
 
 export const batchTrackingRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -36,20 +52,33 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 			);
 			if (!resolvedOrgId) return;
 
-			const { organizationId } = request.params;
+			const orgParamParsed = organizationIdParamSchema.safeParse(request.params);
+			if (!orgParamParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: orgParamParsed.error.issues[0]?.message ?? "Некорректный UUID организации",
+				});
+			}
+			const { organizationId } = orgParamParsed.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const limit = request.query.limit ? Number(request.query.limit) : undefined;
-			const offset = request.query.offset ? Number(request.query.offset) : undefined;
+			const queryParsed = batchListQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: queryParsed.error.issues[0]?.message ?? "Некорректные параметры запроса партий",
+					details: queryParsed.error.issues,
+				});
+			}
 
 			const batches = await inventoryQuery.getStockBatches(organizationId, {
-				itemId: request.query.itemId,
-				status: request.query.status,
-				warehouseId: request.query.warehouseId,
-				limit,
-				offset,
+				itemId: queryParsed.data.itemId,
+				status: queryParsed.data.status,
+				warehouseId: queryParsed.data.warehouseId,
+				limit: queryParsed.data.limit,
+				offset: queryParsed.data.offset,
 			});
 			return batches;
 		},
@@ -74,15 +103,21 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 			);
 			if (!resolvedOrgId) return;
 
-			const limit = request.query.limit ? Number(request.query.limit) : undefined;
-			const offset = request.query.offset ? Number(request.query.offset) : undefined;
+			const queryParsed = batchListQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: queryParsed.error.issues[0]?.message ?? "Некорректные параметры запроса партий",
+					details: queryParsed.error.issues,
+				});
+			}
 
 			const batches = await inventoryQuery.getStockBatches(resolvedOrgId, {
-				itemId: request.query.itemId,
-				status: request.query.status,
-				warehouseId: request.query.warehouseId,
-				limit,
-				offset,
+				itemId: queryParsed.data.itemId,
+				status: queryParsed.data.status,
+				warehouseId: queryParsed.data.warehouseId,
+				limit: queryParsed.data.limit,
+				offset: queryParsed.data.offset,
 			});
 			return batches;
 		},
@@ -102,13 +137,31 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 			);
 			if (!resolvedOrgId) return;
 
-			const { organizationId } = request.params;
+			const orgParamParsed = organizationIdParamSchema.safeParse(request.params);
+			if (!orgParamParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: orgParamParsed.error.issues[0]?.message ?? "Некорректный UUID организации",
+				});
+			}
+			const { organizationId } = orgParamParsed.data;
 			if (resolvedOrgId !== organizationId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const daysAhead = request.query.daysAhead ? Number(request.query.daysAhead) : 30;
-			const batches = await inventoryQuery.getExpiringBatches(organizationId, daysAhead);
+			const queryParsed = expiringBatchesQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: queryParsed.error.issues[0]?.message ?? "Некорректный параметр daysAhead",
+					details: queryParsed.error.issues,
+				});
+			}
+
+			const batches = await inventoryQuery.getExpiringBatches(
+				organizationId,
+				queryParsed.data.daysAhead,
+			);
 			return batches;
 		},
 	);
@@ -126,8 +179,19 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 			);
 			if (!resolvedOrgId) return;
 
-			const daysAhead = request.query.daysAhead ? Number(request.query.daysAhead) : 30;
-			const batches = await inventoryQuery.getExpiringBatches(resolvedOrgId, daysAhead);
+			const queryParsed = expiringBatchesQuerySchema.safeParse(request.query ?? {});
+			if (!queryParsed.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: queryParsed.error.issues[0]?.message ?? "Некорректный параметр daysAhead",
+					details: queryParsed.error.issues,
+				});
+			}
+
+			const batches = await inventoryQuery.getExpiringBatches(
+				resolvedOrgId,
+				queryParsed.data.daysAhead,
+			);
 			return batches;
 		},
 	);
@@ -204,7 +268,14 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 		);
 		if (!resolvedOrgId) return;
 
-		const { organizationId } = request.params;
+		const orgParamParsed = organizationIdParamSchema.safeParse(request.params);
+		if (!orgParamParsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: orgParamParsed.error.issues[0]?.message ?? "Некорректный UUID организации",
+			});
+		}
+		const { organizationId } = orgParamParsed.data;
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
@@ -225,12 +296,24 @@ export const batchTrackingRoutes: FastifyPluginAsync = async (
 		);
 		if (!resolvedOrgId) return;
 
-		const body = (request.body as { organizationId?: string } | undefined) ?? {};
-		const targetOrgId = body.organizationId || resolvedOrgId;
-		if (targetOrgId !== resolvedOrgId) {
-			return reply.code(403).send({ error: "Forbidden" });
+		const rawBody = request.body;
+		const bodyOrgId =
+			rawBody && typeof rawBody === "object" && "organizationId" in rawBody && typeof rawBody.organizationId === "string"
+				? rawBody.organizationId
+				: undefined;
+		if (bodyOrgId) {
+			const orgCheck = organizationIdParamSchema.safeParse({ organizationId: bodyOrgId });
+			if (!orgCheck.success) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный UUID организации",
+				});
+			}
+			if (bodyOrgId !== resolvedOrgId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
 		}
 
-		return handleReceiveBatchRequest(targetOrgId, request.body, request, reply);
+		return handleReceiveBatchRequest(resolvedOrgId, request.body, request, reply);
 	});
 };

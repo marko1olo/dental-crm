@@ -497,12 +497,6 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 					message: "Недопустимый путь к сетевой папке (Hot Folder).",
 				});
 			}
-			if (body.hotFolderPath && !isSafeHotFolderPath(body.hotFolderPath)) {
-				return reply.status(400).send({
-					error: "InvalidHotFolderPath",
-					message: "Недопустимый путь к сетевой папке (Hot Folder).",
-				});
-			}
 			const inserted = await withTenantCtx(context.organizationId, async (tx) =>
 				tx
 					.insert(clinicHardwareDevices)
@@ -544,13 +538,14 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const context = await requireClinicalMutationContext(request, reply, "update hardware device");
 			if (!context) return;
 
-			const { id } = request.params as { id: string };
-			if (!HARDWARE_DEVICE_ID_SCHEMA.safeParse(id).success) {
+			const paramsParsed = z.object({ id: HARDWARE_DEVICE_ID_SCHEMA }).safeParse(request.params);
+			if (!paramsParsed.success) {
 				return reply.status(400).send({
 					error: "ValidationError",
 					message: "Некорректный UUID устройства.",
 				});
 			}
+			const { id } = paramsParsed.data;
 
 			const parsed = hardwareDeviceUpdateSchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
@@ -621,13 +616,14 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const context = await requireClinicalMutationContext(request, reply, "delete hardware device");
 			if (!context) return;
 
-			const { id } = request.params as { id: string };
-			if (!HARDWARE_DEVICE_ID_SCHEMA.safeParse(id).success) {
+			const paramsParsed = z.object({ id: HARDWARE_DEVICE_ID_SCHEMA }).safeParse(request.params);
+			if (!paramsParsed.success) {
 				return reply.status(400).send({
 					error: "ValidationError",
 					message: "Некорректный UUID устройства.",
 				});
 			}
+			const { id } = paramsParsed.data;
 
 			const deleted = await withTenantCtx(context.organizationId, async (tx) =>
 				tx

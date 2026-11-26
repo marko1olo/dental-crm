@@ -30,9 +30,21 @@ const createImagingStudyBodySchema = createImagingStudySchema
 	})
 	.strict();
 
+const studyIdParamSchema = z.object({
+	id: z.string().uuid("Некорректный идентификатор снимка (ожидается UUID)."),
+});
+
+const patientOptionalParamSchema = z.object({
+	patientId: z.string().optional(),
+});
+
 export async function createStudyHandler(request: FastifyRequest, reply: FastifyReply) {
-	const rawBody = (request.body && typeof request.body === "object" ? { ...request.body } : {}) as Record<string, unknown>;
-	const paramPatientId = (request.params as { patientId?: string })?.patientId;
+	const rawBody: Record<string, unknown> =
+		request.body && typeof request.body === "object" && !Array.isArray(request.body)
+			? { ...request.body }
+			: {};
+	const paramParsed = patientOptionalParamSchema.safeParse(request.params ?? {});
+	const paramPatientId = paramParsed.success ? paramParsed.data.patientId : undefined;
 	if (paramPatientId && !rawBody.patientId) rawBody.patientId = paramPatientId;
 
 	const parsed = parseImagingPayload(createImagingStudyBodySchema, rawBody, "Снимок не создан: выберите пациента, вид снимка и название.");
@@ -87,10 +99,9 @@ export async function createStudyHandler(request: FastifyRequest, reply: Fastify
 	let storagePath = input.storagePath;
 	let storedRelativeName: string | null = null;
 	let storedMimeType = "image/jpeg";
-	const imageBody = (request.body && typeof request.body === "object" ? request.body : {}) as { imageBase64?: unknown };
-	if (typeof imageBody.imageBase64 === "string" && imageBody.imageBase64.trim()) {
+	if (typeof input.imageBase64 === "string" && input.imageBase64.trim()) {
 		try {
-			let base64Data = imageBody.imageBase64.trim();
+			let base64Data = input.imageBase64.trim();
 			if (base64Data.startsWith("data:")) {
 				const match = base64Data.match(/^data:([^;]+);base64,/);
 				if (match?.[1]) storedMimeType = match[1];
@@ -193,10 +204,11 @@ export async function updateStudyHandler(request: FastifyRequest, reply: Fastify
 		reply.header("Idempotency-Key", idempotencyKey);
 	}
 
-	const { id } = request.params as { id: string };
-	if (!isValidUuid(id)) {
+	const paramParsed = studyIdParamSchema.safeParse(request.params);
+	if (!paramParsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 	}
+	const { id } = paramParsed.data;
 	const parsed = updateImagingStudyBodySchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректные параметры обновления снимка", issues: parsed.error.issues });
@@ -243,7 +255,7 @@ export async function deleteStudyHandler(request: FastifyRequest, reply: Fastify
 	if (!(await requireClinicalMutationAccess(request, reply, "imaging study delete"))) return reply;
 
 	const identity = getRequestIdentity(request);
-	const staffRole = identity.role ?? (request as { user?: { role?: string | null } }).user?.role ?? null;
+	const staffRole = identity.role ?? request.user?.role ?? null;
 	const allowed = new Set(["chief_doctor", "chiefdoctor", "head_doctor", "owner", "admin"]);
 	if (!staffRole || !allowed.has(staffRole)) {
 		return reply.code(403).send({
@@ -254,10 +266,11 @@ export async function deleteStudyHandler(request: FastifyRequest, reply: Fastify
 		});
 	}
 
-	const { id } = request.params as { id: string };
-	if (!isValidUuid(id)) {
+	const paramParsed = studyIdParamSchema.safeParse(request.params);
+	if (!paramParsed.success) {
 		return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 	}
+	const { id } = paramParsed.data;
 	const deleted = await withTenantCtx(orgId, async (tx) => {
 		const [studyRes] = await tx
 			.delete(imagingStudies)

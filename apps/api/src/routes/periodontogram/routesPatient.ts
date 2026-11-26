@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -19,8 +20,26 @@ import {
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const patientParamsSchema = z.object({
+	patientId: z.string().trim().min(1),
+});
+
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readPerioError(err: unknown): {
+	statusCode?: number | undefined;
+	code?: string | undefined;
+	message?: string | undefined;
+} {
+	if (!err || typeof err !== "object") return {};
+	const rec = err as Record<string, unknown>;
+	return {
+		statusCode: typeof rec.statusCode === "number" ? rec.statusCode : undefined,
+		code: typeof rec.code === "string" ? rec.code : undefined,
+		message: typeof rec.message === "string" ? rec.message : undefined,
+	};
 }
 
 export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) {
@@ -28,29 +47,31 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { patientId: rawPatientId } = request.params as { patientId: string };
-		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
+		const paramsParsed = patientParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
+		const rawPatientId = paramsParsed.data.patientId;
 
 		let patientId: string;
 		let data: Awaited<ReturnType<typeof fetchPatientLatestPeriodontogram>>;
 		try {
-			const result = await withTenantCtx(orgId, async () => {
-				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId);
+			const result = await withTenantCtx(orgId, async (tx) => {
+				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
 				const latestData = await fetchPatientLatestPeriodontogram(
 					orgId,
 					resolvedPatientId,
+					tx,
 				);
 				return { patientId: resolvedPatientId, data: latestData };
 			});
 			patientId = result.patientId;
 			data = result.data;
 		} catch (err: unknown) {
-			const e = err as { statusCode?: number; code?: string; message?: string };
+			const e = readPerioError(err);
 			if (e.statusCode === 404 || e.code === "PatientNotFound") {
 				return reply.code(404).send({
 					error: "PatientNotFound",
@@ -100,15 +121,17 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		);
 		if (!orgId) return;
 
-		const { patientId: rawPatientId } = request.params as { patientId: string };
-		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
+		const paramsParsed = patientParamsSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
+		const rawPatientId = paramsParsed.data.patientId;
 
-		const idempotencyKey = (request.headers["idempotency-key"] || request.headers["x-idempotency-key"]) as string | undefined;
+		const rawIdemHeader = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawIdemHeader === "string" ? rawIdemHeader : undefined;
 		if (idempotencyKey) {
 			if (!UUID_REGEX.test(idempotencyKey)) {
 				return reply.code(400).send({
@@ -139,8 +162,8 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				: undefined;
 
 		try {
-			const { patientId, result } = await withTenantCtx(orgId, async () => {
-				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId);
+			const { patientId, result } = await withTenantCtx(orgId, async (tx) => {
+				const resolvedPatientId = await resolvePerioPatientId(orgId, rawPatientId, tx);
 				const upsertResult = await upsertPatientFullPeriodontogram({
 					orgId,
 					patientId: resolvedPatientId,
@@ -178,7 +201,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				},
 			});
 		} catch (err: unknown) {
-			const e = err as { statusCode?: number; code?: string; message?: string };
+			const e = readPerioError(err);
 			if (e.statusCode === 404 || e.code === "PatientNotFound") {
 				return reply.code(404).send({
 					error: "PatientNotFound",

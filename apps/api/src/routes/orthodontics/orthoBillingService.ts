@@ -23,7 +23,7 @@ export interface OrthoBillingResult {
 	serviceName: string;
 	priceRub: number;
 	priceKopecks: number;
-	amountKopecks?: bigint | undefined;
+	amountKopecks?: number | undefined;
 	error?: string | undefined;
 }
 
@@ -58,7 +58,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceName,
 			priceRub,
 			priceKopecks: exactItemKopecks,
-			amountKopecks: itemKopecks,
+			amountKopecks: exactItemKopecks,
 		};
 	}
 
@@ -128,7 +128,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 				serviceName,
 				priceRub,
 				priceKopecks: exactItemKopecks,
-				amountKopecks: itemKopecks,
+				amountKopecks: exactItemKopecks,
 			};
 		};
 
@@ -154,7 +154,7 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceName,
 			priceRub,
 			priceKopecks: exactItemKopecks,
-			amountKopecks: itemKopecks,
+			amountKopecks: exactItemKopecks,
 			error: err instanceof Error ? err.message : String(err),
 		};
 	}

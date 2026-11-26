@@ -329,6 +329,26 @@ export const handleAcceptanceWaybillRequest = async (
 						),
 					);
 
+				// Обновляем предзагруженный кэш после каждой партии, чтобы повторный приход
+				// той же позиции в одной накладной не затирал остаток (Lost Update fix)
+				const refreshedItem: typeof inventoryItems.$inferSelect = {
+					...existingItem,
+					stockQuantity: String(newStock),
+					currentQty: String(newStock),
+					packageMultiplier: String(multiplier),
+					unitCostRub: String(effectivePricePerUnitRub),
+					pricePerUnit: String(effectivePricePerUnitRub),
+					unitCostKopecks: BigInt(effectiveUnitPriceKopecks),
+					pricePerUnitKopecks: BigInt(effectiveUnitPriceKopecks),
+					expirationDate: shouldUpdateCardDate ? expirationDate : existingItem.expirationDate,
+					barcode: item.barcode ? item.barcode.trim() : existingItem.barcode,
+					sku: item.sku ? item.sku.trim() : existingItem.sku,
+					lotNumber: batchNumber,
+					updatedAt: new Date(),
+				};
+				preloadedById.set(refreshedItem.id, refreshedItem);
+				preloadedByName.set(refreshedItem.name.toLowerCase().trim(), refreshedItem);
+
 				// 5. Фиксируем транзакцию прихода в inventory_transactions
 				await tx.insert(inventoryTransactions).values({
 					organizationId: targetOrgId,

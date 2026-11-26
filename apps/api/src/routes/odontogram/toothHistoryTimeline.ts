@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
 	imagingStudies,
 	toothStateHistory,
@@ -144,11 +144,13 @@ export async function fetchToothHistoryTimeline(
 	patientId: string,
 	toothNum: number,
 	log?: FastifyBaseLogger,
+	tx?: TenantDb,
 ): Promise<ToothHistoryTimelineEvent[]> {
-	const events: ToothHistoryTimelineEvent[] = [];
+	const run = async (txDb: TenantDb): Promise<ToothHistoryTimelineEvent[]> => {
+		const events: ToothHistoryTimelineEvent[] = [];
 
 	// 1. Fetch Visit Diaries (Form 043/u) and join with Visit status and Doctor full name
-	const diariesWithVisits = await db
+	const diariesWithVisits = await txDb
 		.select({
 			diaryId: visitDiaries.id,
 			visitId: visitDiaries.visitId,
@@ -214,7 +216,7 @@ export async function fetchToothHistoryTimeline(
 	// 2. Fetch Diary Revisions (Audit Forensic Log for Form 043/u changes)
 	if (matchedDiaryIds.length > 0) {
 		try {
-			const revisions = await db
+			const revisions = await txDb
 				.select({
 					id: visitDiaryRevisions.id,
 					diaryId: visitDiaryRevisions.diaryId,
@@ -258,7 +260,7 @@ export async function fetchToothHistoryTimeline(
 	}
 
 	// 3. Fetch Treatment Plan Items
-	const planItems = await db
+	const planItems = await txDb
 		.select({
 			createdAt: treatmentPlans.createdAt,
 			name: treatmentPlans.name,
@@ -291,7 +293,7 @@ export async function fetchToothHistoryTimeline(
 
 	// 4. Fetch Completed Performed Clinical Procedures (treatment_items)
 	try {
-		const procedures = await db
+		const procedures = await txDb
 			.select({
 				id: treatmentItems.id,
 				title: treatmentItems.title,
@@ -345,7 +347,7 @@ export async function fetchToothHistoryTimeline(
 	}> = [];
 
 	try {
-		historyRows = await db
+		historyRows = await txDb
 			.select({
 				previousState: toothStateHistory.previousState,
 				newState: toothStateHistory.newState,
@@ -389,7 +391,7 @@ export async function fetchToothHistoryTimeline(
 		}
 	} else {
 		// Fallback to current tooth states
-		const states = await db
+		const states = await txDb
 			.select()
 			.from(toothStates)
 			.where(
@@ -437,7 +439,7 @@ export async function fetchToothHistoryTimeline(
 
 	// 6. Fetch Linked Radiology Studies & X-Ray Scans (Mandate 8e: 1-click RVG/DICOM to FDI)
 	try {
-		const studies = await db
+		const studies = await txDb
 			.select({
 				id: imagingStudies.id,
 				title: imagingStudies.title,
@@ -475,7 +477,7 @@ export async function fetchToothHistoryTimeline(
 			}
 		}
 
-		const scans = await db
+		const scans = await txDb
 			.select({
 				id: xrayScans.id,
 				toothCode: xrayScans.toothCode,
@@ -518,20 +520,25 @@ export async function fetchToothHistoryTimeline(
 		throw err;
 	}
 
-	// 7. Periodontogram snapshot measurements (PD, BOP, mobility, furcations)
-	const perioEvents = await fetchToothPeriodontalEvents(
-		orgId,
-		patientId,
-		toothNum,
-	);
-	if (perioEvents.length > 0) {
-		events.push(...perioEvents);
-	}
+		// 7. Periodontogram snapshot measurements (PD, BOP, mobility, furcations)
+		const perioEvents = await fetchToothPeriodontalEvents(
+			orgId,
+			patientId,
+			toothNum,
+			log,
+			txDb,
+		);
+		if (perioEvents.length > 0) {
+			events.push(...perioEvents);
+		}
 
-	// Sort chronologically descending (newest events first)
-	events.sort(
-		(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-	);
+		// Sort chronologically descending (newest events first)
+		events.sort(
+			(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+		);
 
-	return events;
+		return events;
+	};
+
+	return tx ? run(tx) : withTenantCtx(orgId, run);
 }

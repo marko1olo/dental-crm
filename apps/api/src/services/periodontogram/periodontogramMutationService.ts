@@ -42,11 +42,10 @@ export async function createDraftWithInitialTeeth(
 	rawPatientId?: string | null,
 	executor: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
 ) {
-	const validUserId = await resolveExistingPerioUserId(orgId, recordedByUserId);
-
 	const executeDraftCreation = async (
 		tx: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	) => {
+		const validUserId = await resolveExistingPerioUserId(orgId, recordedByUserId, tx);
 		const existingStates = await tx
 			.select({
 				toothNumber: toothStates.toothNumber,
@@ -138,12 +137,12 @@ export async function upsertPatientFullPeriodontogram({
 	psrData,
 }: UpsertPatientFullPeriodontogramParams) {
 	try {
-		const validRecordedByUserId = await resolveExistingPerioUserId(
-			orgId,
-			recordedByUserId,
-		);
-
 		return await withTenantCtx(orgId, async (tx) => {
+			const validRecordedByUserId = await resolveExistingPerioUserId(
+				orgId,
+				recordedByUserId,
+				tx,
+			);
 			// Проверяем существование пациента в базе данных (Мандаты 8z / 8wy)
 			const [existingPatient] = await tx
 				.select({ id: patients.id })

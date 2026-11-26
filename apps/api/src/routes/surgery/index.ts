@@ -127,19 +127,13 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			effectiveNormId.toLowerCase().includes("implant") || norm?.category === "implant";
 
 		// [SEV-1] Анатомический гейт: блокировка имплантации в молочные зубы (FDI 51–85)
-		const rawBody =
-			typeof request.body === "object" && request.body !== null
-				? (request.body as Record<string, unknown>)
-				: {};
 		const targetTeeth: number[] = [];
 		if (input.toothNumberFdi) {
 			targetTeeth.push(input.toothNumberFdi);
 		}
-		if (Array.isArray(rawBody.teeth)) {
-			for (const t of rawBody.teeth) {
-				if (typeof t === "number" && Number.isInteger(t) && !targetTeeth.includes(t)) {
-					targetTeeth.push(t);
-				}
+		for (const t of input.teeth) {
+			if (!targetTeeth.includes(t)) {
+				targetTeeth.push(t);
 			}
 		}
 
@@ -229,7 +223,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 					.limit(1);
 
 				const existingSurfaces = Array.isArray(existingTooth?.surfaces)
-					? (existingTooth.surfaces as string[])
+					? existingTooth.surfaces.filter((s): s is string => typeof s === "string")
 					: [];
 				const mergedSurfaces = Array.from(new Set([...existingSurfaces, ...newSurfaces]));
 

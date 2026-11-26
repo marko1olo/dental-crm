@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	patients,
 	treatmentItems,
@@ -27,21 +27,25 @@ export function ledgerRowId(_planId?: string, _slot?: number): string {
 export async function ensurePatientInOrganization(
 	patientId: string,
 	organizationId: string,
+	tx?: TenantDb,
 ): Promise<{ id: string } | null> {
 	if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(organizationId)) {
 		return null;
 	}
-	const [patient] = await db
-		.select({ id: patients.id })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	return patient ?? null;
+	const run = async (exec: TenantDb) => {
+		const [patient] = await exec
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		return patient ?? null;
+	};
+	return tx ? run(tx) : withTenantCtx(organizationId, run);
 }
 
 export function numeric(value: unknown): number {
@@ -137,132 +141,137 @@ export function serializeTreatmentPlan(
 export async function loadTreatmentPlansForPatient(
 	patientId: string,
 	organizationId: string,
+	tx?: TenantDb,
 ) {
-	const plans = await db
-		.select()
-		.from(treatmentPlans)
-		.where(
-			and(
-				eq(treatmentPlans.patientId, patientId),
-				eq(treatmentPlans.organizationId, organizationId),
-			),
-		)
-		.orderBy(desc(treatmentPlans.updatedAt));
-
-	if (plans.length === 0) return [];
-
-	const planIds = plans.map((plan) => plan.id);
-	const items = await db
-		.select()
-		.from(treatmentPlanItemsNew)
-		.where(
-			and(
-				inArray(treatmentPlanItemsNew.planId, planIds),
-				eq(treatmentPlanItemsNew.organizationId, organizationId),
-			),
-		)
-		.orderBy(treatmentPlanItemsNew.createdAt);
-
-	const itemsByPlanId = new Map<string, TreatmentPlanItemRow[]>();
-	for (const item of items) {
-		const group = itemsByPlanId.get(item.planId) ?? [];
-		group.push(item);
-		itemsByPlanId.set(item.planId, group);
-	}
-
-	const stagesRows = await db
-		.select()
-		.from(treatmentPlanStages)
-		.where(
-			and(
-				inArray(treatmentPlanStages.planId, planIds),
-				eq(treatmentPlanStages.organizationId, organizationId),
-			),
-		)
-		.orderBy(treatmentPlanStages.stageOrder);
-
-	const stagesByPlanId = new Map<string, Array<typeof treatmentPlanStages.$inferSelect>>();
-	for (const stg of stagesRows) {
-		const group = stagesByPlanId.get(stg.planId) ?? [];
-		group.push(stg);
-		stagesByPlanId.set(stg.planId, group);
-	}
-
-	const doctorIds = [
-		...new Set(
-			items
-				.map((item) => item.doctorId)
-				.filter((id): id is string => Boolean(id)),
-		),
-	];
-	const doctorsById = new Map<
-		string,
-		{ fullName: string; specialty: string | null }
-	>();
-	if (doctorIds.length > 0) {
-		const docRows = await db
-			.select({
-				id: users.id,
-				fullName: users.fullName,
-				role: users.role,
-				specialties: users.specialties,
-			})
-			.from(users)
+	const run = async (exec: TenantDb) => {
+		const plans = await exec
+			.select()
+			.from(treatmentPlans)
 			.where(
 				and(
-					eq(users.organizationId, organizationId),
-					inArray(users.id, doctorIds),
+					eq(treatmentPlans.patientId, patientId),
+					eq(treatmentPlans.organizationId, organizationId),
+				),
+			)
+			.orderBy(desc(treatmentPlans.updatedAt));
+
+		if (plans.length === 0) return [];
+
+		const planIds = plans.map((plan) => plan.id);
+		const items = await exec
+			.select()
+			.from(treatmentPlanItemsNew)
+			.where(
+				and(
+					inArray(treatmentPlanItemsNew.planId, planIds),
+					eq(treatmentPlanItemsNew.organizationId, organizationId),
+				),
+			)
+			.orderBy(treatmentPlanItemsNew.createdAt);
+
+		const itemsByPlanId = new Map<string, TreatmentPlanItemRow[]>();
+		for (const item of items) {
+			const group = itemsByPlanId.get(item.planId) ?? [];
+			group.push(item);
+			itemsByPlanId.set(item.planId, group);
+		}
+
+		const stagesRows = await exec
+			.select()
+			.from(treatmentPlanStages)
+			.where(
+				and(
+					inArray(treatmentPlanStages.planId, planIds),
+					eq(treatmentPlanStages.organizationId, organizationId),
+				),
+			)
+			.orderBy(treatmentPlanStages.stageOrder);
+
+		const stagesByPlanId = new Map<string, Array<typeof treatmentPlanStages.$inferSelect>>();
+		for (const stg of stagesRows) {
+			const group = stagesByPlanId.get(stg.planId) ?? [];
+			group.push(stg);
+			stagesByPlanId.set(stg.planId, group);
+		}
+
+		const doctorIds = [
+			...new Set(
+				items
+					.map((item) => item.doctorId)
+					.filter((id): id is string => Boolean(id)),
+			),
+		];
+		const doctorsById = new Map<
+			string,
+			{ fullName: string; specialty: string | null }
+		>();
+		if (doctorIds.length > 0) {
+			const docRows = await exec
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					role: users.role,
+					specialties: users.specialties,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.organizationId, organizationId),
+						inArray(users.id, doctorIds),
+					),
+				);
+			for (const doc of docRows) {
+				const specList = Array.isArray(doc.specialties)
+					? doc.specialties.join(", ")
+					: null;
+				doctorsById.set(doc.id, {
+					fullName: doc.fullName,
+					specialty:
+						specList ||
+						(doc.role === "doctor" ? "Врач-стоматолог" : doc.role),
+				});
+			}
+		}
+
+		// Загружаем записи из книги лечения (treatment_items) для определения статуса выполнения позиций
+		const ledgerRows = await exec
+			.select({
+				id: treatmentItems.id,
+				status: treatmentItems.status,
+				visitId: treatmentItems.visitId,
+				treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
+			})
+			.from(treatmentItems)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					eq(treatmentItems.patientId, patientId),
 				),
 			);
-		for (const doc of docRows) {
-			const specList = Array.isArray(doc.specialties)
-				? doc.specialties.join(", ")
-				: null;
-			doctorsById.set(doc.id, {
-				fullName: doc.fullName,
-				specialty:
-					specList ||
-					(doc.role === "doctor" ? "Врач-стоматолог" : doc.role),
-			});
-		}
-	}
 
-	// Загружаем записи из книги лечения (treatment_items) для определения статуса выполнения позиций
-	const ledgerRows = await db
-		.select({
-			id: treatmentItems.id,
-			status: treatmentItems.status,
-			visitId: treatmentItems.visitId,
-			treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
-		})
-		.from(treatmentItems)
-		.where(
-			and(
-				eq(treatmentItems.organizationId, organizationId),
-				eq(treatmentItems.patientId, patientId),
+		const ledgerMap = new Map<string, { status: string; visitId: string | null }>();
+		const ledgerByPlanItemId = new Map<string, { status: string; visitId: string | null }>();
+		for (const lr of ledgerRows) {
+			const entry = { status: lr.status, visitId: lr.visitId };
+			ledgerMap.set(lr.id.toLowerCase(), entry);
+			if (lr.treatmentPlanItemId) {
+				ledgerByPlanItemId.set(lr.treatmentPlanItemId.toLowerCase(), entry);
+			}
+		}
+
+		return plans.map((plan) =>
+			serializeTreatmentPlan(
+				plan,
+				itemsByPlanId.get(plan.id) ?? [],
+				doctorsById,
+				ledgerMap,
+				stagesByPlanId.get(plan.id) ?? [],
+				ledgerByPlanItemId,
 			),
 		);
+	};
 
-	const ledgerMap = new Map<string, { status: string; visitId: string | null }>();
-	const ledgerByPlanItemId = new Map<string, { status: string; visitId: string | null }>();
-	for (const lr of ledgerRows) {
-		const entry = { status: lr.status, visitId: lr.visitId };
-		ledgerMap.set(lr.id.toLowerCase(), entry);
-		if (lr.treatmentPlanItemId) {
-			ledgerByPlanItemId.set(lr.treatmentPlanItemId.toLowerCase(), entry);
-		}
-	}
-
-	return plans.map((plan) =>
-		serializeTreatmentPlan(
-			plan,
-			itemsByPlanId.get(plan.id) ?? [],
-			doctorsById,
-			ledgerMap,
-			stagesByPlanId.get(plan.id) ?? [],
-			ledgerByPlanItemId,
-		),
-	);
+	return tx ? run(tx) : withTenantCtx(organizationId, run);
 }
 
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";

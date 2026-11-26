@@ -222,7 +222,14 @@ export async function registerTechCardNormHandlers(
 		);
 		if (!orgId) return;
 
-		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const idParsed = z.object({ id: z.string().uuid() }).safeParse(request.params);
+		if (!idParsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный UUID нормы расхода",
+			});
+		}
+		const { id } = idParsed.data;
 		return await withTenantCtx(orgId, async (tx) => {
 			const [toDelete] = await tx
 				.select()
@@ -248,19 +255,43 @@ export async function registerTechCardNormHandlers(
 					),
 				);
 
-			// Also remove from canonical procedure_tech_card_items if techCard exists
-			const [techCard] = await tx
+			// Also remove from canonical procedure_tech_card_items if techCard exists (resolve serviceId/serviceCode like POST /)
+			const isCodeUuid = isValidUuid(toDelete.catalogItemCode);
+			const [service] = await tx
+				.select({ id: serviceCatalogItems.id, code: serviceCatalogItems.code })
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.organizationId, orgId),
+						isCodeUuid
+							? or(
+									eq(serviceCatalogItems.code, toDelete.catalogItemCode),
+									eq(serviceCatalogItems.id, toDelete.catalogItemCode),
+								)
+							: eq(serviceCatalogItems.code, toDelete.catalogItemCode),
+					),
+				)
+				.limit(1);
+
+			const matchedCards = await tx
 				.select({ id: procedureTechCards.id })
 				.from(procedureTechCards)
 				.where(
 					and(
 						eq(procedureTechCards.organizationId, orgId),
-						eq(procedureTechCards.serviceCode, toDelete.catalogItemCode),
+						or(
+							eq(procedureTechCards.serviceCode, toDelete.catalogItemCode),
+							...(service
+								? [
+										eq(procedureTechCards.serviceId, service.id),
+										eq(procedureTechCards.serviceCode, service.code),
+									]
+								: []),
+						),
 					),
-				)
-				.limit(1);
+				);
 
-			if (techCard) {
+			for (const techCard of matchedCards) {
 				await tx
 					.delete(procedureTechCardItems)
 					.where(
@@ -322,12 +353,21 @@ export async function registerTechCardNormHandlers(
 		if (!resolvedOrgId) return;
 
 		const { organizationId } = request.params;
+		if (!isValidUuid(organizationId)) {
+			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+		}
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
 		const parsedQuery = listLinksQuerySchema.safeParse(request.query ?? {});
-		const query = parsedQuery.success ? parsedQuery.data : {};
+		if (!parsedQuery.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+		const query = parsedQuery.data;
 
 		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.listLinks(
@@ -351,6 +391,9 @@ export async function registerTechCardNormHandlers(
 		if (!resolvedOrgId) return;
 
 		const { organizationId, linkId } = request.params;
+		if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+		}
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
@@ -437,6 +480,9 @@ export async function registerTechCardNormHandlers(
 		if (!resolvedOrgId) return;
 
 		const { organizationId, linkId } = request.params;
+		if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+		}
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
@@ -482,6 +528,9 @@ export async function registerTechCardNormHandlers(
 		if (!resolvedOrgId) return;
 
 		const { organizationId, linkId } = request.params;
+		if (!isValidUuid(organizationId) || !isValidUuid(linkId)) {
+			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+		}
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
@@ -518,6 +567,9 @@ export async function registerTechCardNormHandlers(
 		if (!resolvedOrgId) return;
 
 		const { organizationId, serviceId } = request.params;
+		if (!isValidUuid(organizationId) || !isValidUuid(serviceId)) {
+			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID параметра" });
+		}
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
@@ -555,13 +607,22 @@ export async function registerTechCardNormHandlers(
 		if (!resolvedOrgId) return;
 
 		const { organizationId } = request.params;
+		if (!isValidUuid(organizationId)) {
+			return reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации" });
+		}
 		if (resolvedOrgId !== organizationId) {
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
 		const parsedQuery = linkOptionsQuerySchema.safeParse(request.query ?? {});
-		const q = parsedQuery.success ? parsedQuery.data.q : undefined;
-		const limit = parsedQuery.success ? parsedQuery.data.limit : 30;
+		if (!parsedQuery.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedQuery.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+		const q = parsedQuery.data.q;
+		const limit = parsedQuery.data.limit;
 
 		const options = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.getLinkOptions(

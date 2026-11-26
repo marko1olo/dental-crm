@@ -70,8 +70,8 @@ const pairRoleSchema = z.enum(["doctor", "assistant"]);
 const generatePairSchema = z
 	.object({
 		role: pairRoleSchema.default("doctor"),
-		organizationId: z.string().optional(),
-		staffUserId: z.string().optional(),
+		organizationId: z.string().uuid().optional(),
+		staffUserId: z.string().uuid().optional(),
 		targetIp: z.string().ip({ version: "v4" }).optional(),
 	})
 	.strict();
@@ -273,7 +273,13 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			});
 		}
 
-		const { role, staffUserId, targetIp } = parseRes.data;
+		const { role, organizationId: bodyOrgId, staffUserId, targetIp } = parseRes.data;
+		if (bodyOrgId && bodyOrgId !== identity.organizationId) {
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Переданный organizationId не соответствует текущей организации клиники.",
+			});
+		}
 		const metadata = getLanServerDiscoveryMetadata();
 		const activeLanAddresses = getLocalLanAddresses();
 
@@ -548,7 +554,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		if (!context) return;
 
 		const parseRes = z
-			.object({ mutations: z.array(queuedMeshMutationSchema) })
+			.object({ mutations: z.array(queuedMeshMutationSchema).max(500) })
 			.strict()
 			.safeParse(request.body);
 		if (!parseRes.success) {
@@ -898,11 +904,33 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const identity = getRequestIdentity(request);
+		if (
+			identity.verified &&
+			identity.organizationId &&
+			parseRes.data.organizationId &&
+			parseRes.data.organizationId !== identity.organizationId
+		) {
+			return reply.code(403).send({
+				ok: false,
+				error: "Forbidden",
+				message: "Несоответствие организации клиники для сопряжения.",
+			});
+		}
+		const envClinicId =
+			process.env.DENTE_CLINIC_ID && z.string().uuid().safeParse(process.env.DENTE_CLINIC_ID).success
+				? process.env.DENTE_CLINIC_ID
+				: null;
 		const orgId =
-			identity.organizationId ??
+			(identity.verified ? identity.organizationId : null) ??
 			parseRes.data.organizationId ??
-			process.env.DENTE_CLINIC_ID ??
-			"clinic-default";
+			envClinicId;
+		if (!orgId) {
+			return reply.code(400).send({
+				ok: false,
+				error: "OrganizationRequired",
+				message: "Не указан корректный UUID организации клиники для сопряжения.",
+			});
+		}
 		const clientIp = request.ip || "127.0.0.1";
 		const autoJoin = getLanMeshAutoJoinServiceForOrg(orgId);
 		const joinResult = autoJoin.verifyAndJoin({

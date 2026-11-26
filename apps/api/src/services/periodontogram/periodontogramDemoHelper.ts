@@ -8,8 +8,8 @@
 import crypto from "node:crypto";
 import { isDemoEntityId, isDemoOrganizationId } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import type { TenantDb } from "../../db/rls.js";
+import type { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { patients, users } from "../../db/schema.js";
 
 const UUID_REGEX =
@@ -85,6 +85,7 @@ export async function ensurePerioPatientExists(
 export async function resolvePerioPatientId(
 	orgId: string,
 	rawPatientId?: string | null,
+	tx?: TenantDb,
 ): Promise<string> {
 	const trimmed = typeof rawPatientId === "string" ? rawPatientId.trim() : "";
 	if (!trimmed) {
@@ -102,11 +103,15 @@ export async function resolvePerioPatientId(
 
 	if (UUID_REGEX.test(trimmed)) {
 		// BOLA/IDOR Guard: проверяем физическое существование пациента в текущей организации
-		const [existing] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(and(eq(patients.id, trimmed), eq(patients.organizationId, orgId)))
-			.limit(1);
+		const run = async (exec: TenantDb) => {
+			const [row] = await exec
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, trimmed), eq(patients.organizationId, orgId)))
+				.limit(1);
+			return row ?? null;
+		};
+		const existing = tx ? await run(tx) : await withTenantCtx(orgId, run);
 
 		if (existing) {
 			return existing.id;
@@ -148,16 +153,20 @@ export async function resolvePerioPatientId(
 export async function resolveExistingPerioUserId(
 	orgId: string,
 	rawUserId?: string | null,
+	tx?: TenantDb,
 ): Promise<string | null> {
 	const trimmed = typeof rawUserId === "string" ? rawUserId.trim() : "";
 	if (!trimmed) return null;
 	try {
-		const [user] = await db
-			.select({ id: users.id })
-			.from(users)
-			.where(and(eq(users.id, trimmed), eq(users.organizationId, orgId)))
-			.limit(1);
-		return user?.id ?? null;
+		const run = async (exec: TenantDb) => {
+			const [user] = await exec
+				.select({ id: users.id })
+				.from(users)
+				.where(and(eq(users.id, trimmed), eq(users.organizationId, orgId)))
+				.limit(1);
+			return user?.id ?? null;
+		};
+		return tx ? await run(tx) : await withTenantCtx(orgId, run);
 	} catch {
 		return null;
 	}
