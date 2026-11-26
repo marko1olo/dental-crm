@@ -5,6 +5,7 @@
  */
 
 import React from "react";
+import { Send } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 import { ToolbarTitleBadge } from "./threeTierToolbar/ToolbarTitleBadge";
 import { ToolbarPaymentModeSelector } from "./threeTierToolbar/ToolbarPaymentModeSelector";
@@ -22,6 +23,8 @@ export interface TreatmentPlan3TierToolbarProps {
 	readonly activeTier: TreatmentPlanTier;
 	readonly copiedMessengerTierId: TreatmentPlanTierId | null;
 	readonly onCopyEstimateToMessenger: (e: React.MouseEvent, tier: TreatmentPlanTier) => void;
+	readonly isSendingTelegram?: boolean | undefined;
+	readonly onSendTelegramFollowup?: ((e: React.MouseEvent, tier: TreatmentPlanTier) => void) | undefined;
 	readonly onOpenComparatorStudio?: (() => void) | undefined;
 	readonly onOpenStagePaymentStudio?: (() => void) | undefined;
 	readonly onOpenPriceValidatorStudio?: (() => void) | undefined;
@@ -38,6 +41,8 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 	activeTier,
 	copiedMessengerTierId,
 	onCopyEstimateToMessenger,
+	isSendingTelegram = false,
+	onSendTelegramFollowup,
 	onOpenComparatorStudio,
 	onOpenStagePaymentStudio,
 	onOpenPriceValidatorStudio,
@@ -65,6 +70,19 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 					copiedMessengerTierId={copiedMessengerTierId}
 					onCopyEstimateToMessenger={onCopyEstimateToMessenger}
 				/>
+
+				{onSendTelegramFollowup && (
+					<button
+						type="button"
+						onClick={(e) => onSendTelegramFollowup(e, activeTier)}
+						className="secondary-button h-9 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer transition-colors whitespace-nowrap shrink-0"
+						title="Отправить интерактивный план лечения пациенту в Telegram"
+						data-testid="top-send-telegram-followup-btn"
+					>
+						<Send className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" aria-hidden="true" />
+						<span>{isSendingTelegram ? "Отправка..." : "Telegram"}</span>
+					</button>
+				)}
 
 				<ToolbarParamsDropdown
 					showNdflBreakdown={showNdflBreakdown}

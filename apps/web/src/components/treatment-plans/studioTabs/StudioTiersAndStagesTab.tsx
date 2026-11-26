@@ -31,6 +31,7 @@ export interface StudioTiersAndStagesTabProps {
 	readonly onAddCustomStage?: () => void;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
 	readonly treatmentPlanId?: string | undefined;
 	readonly onOpenLabOrderForStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 }
@@ -62,6 +63,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 	onAddCustomStage,
 	patientId,
 	patientName,
+	patientPhone,
 	treatmentPlanId,
 	onOpenLabOrderForStage,
 }) => {
@@ -128,6 +130,8 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 			<TreatmentPlan3TierComparison
 				tiers={computedTiers}
 				selectedTierId={selectedTierId}
+				planId={treatmentPlanId ?? null}
+				patientPhone={patientPhone ?? null}
 				onSelectTier={(tier) => onSelectTierId(tier.tierId)}
 				hideMobileThumbBar={true}
 			/>

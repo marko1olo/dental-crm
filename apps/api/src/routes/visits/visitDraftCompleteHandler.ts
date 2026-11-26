@@ -12,6 +12,7 @@ import { acceptVisitDraftInDb } from "../../db/visitsQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { buildEffectiveDraft } from "./buildEffectiveDraft.js";
+import { computeDoctorTodayEarningsInTx } from "../doctorPortal/todaySummaryQuery.js";
 import { executeVisitCompletionSideEffects } from "./visitCompletionEffects.js";
 import {
 	noActiveVisitId,
@@ -151,6 +152,9 @@ export async function handleCompleteVisit(
 
 		const result = await acceptVisitDraftInDb(orgId, acceptInput);
 
+		let doctorEarningsDeltaKopecks: number | undefined;
+		let doctorTodayTotalKopecks: number | undefined;
+
 		if (result?.visit) {
 			const identity = getRequestIdentity(request);
 			await executeVisitCompletionSideEffects({
@@ -159,6 +163,45 @@ export async function handleCompleteVisit(
 				doctorId: identity.userId ?? null,
 				log: request.log,
 			});
+
+			let doctorUserIdForSummary = identity.userId ?? null;
+			if (!doctorUserIdForSummary && result.visit.appointmentId) {
+				const apptRow = await withTenantCtx(orgId, async (tx) =>
+					tx
+						.select({ doctorUserId: appointments.doctorUserId })
+						.from(appointments)
+						.where(
+							and(
+								eq(appointments.organizationId, orgId),
+								eq(appointments.id, result.visit.appointmentId as string),
+							),
+						)
+						.limit(1),
+				);
+				doctorUserIdForSummary = apptRow[0]?.doctorUserId ?? null;
+			}
+
+			if (doctorUserIdForSummary) {
+				try {
+					const todayIso = new Date().toISOString().slice(0, 10);
+					const computed = await withTenantCtx(orgId, async (tx) =>
+						computeDoctorTodayEarningsInTx({
+							tx,
+							organizationId: orgId,
+							doctorId: doctorUserIdForSummary,
+							dateIso: todayIso,
+							visitIdForDelta: trimmedVisitId,
+						}),
+					);
+					doctorEarningsDeltaKopecks = computed.visitEarningsDeltaKopecks;
+					doctorTodayTotalKopecks = computed.summary.earnedTodayKopecks;
+				} catch (earningsErr) {
+					request.log.warn(
+						{ err: earningsErr, visitId: trimmedVisitId },
+						"Не удалось рассчитать дневной заработок врача после завершения приёма",
+					);
+				}
+			}
 		}
 
 		return {
@@ -166,6 +209,8 @@ export async function handleCompleteVisit(
 			status: "completed",
 			visit: result.visit,
 			saveReceipt: result.saveReceipt,
+			...(doctorEarningsDeltaKopecks !== undefined ? { doctorEarningsDeltaKopecks } : {}),
+			...(doctorTodayTotalKopecks !== undefined ? { doctorTodayTotalKopecks } : {}),
 		};
 	} catch (error) {
 		request.log.error(error, "Ошибка в обработчике завершения приёма /complete");

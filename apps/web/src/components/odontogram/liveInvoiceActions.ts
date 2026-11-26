@@ -2,6 +2,7 @@ import { showToast } from "../GlobalToast";
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 import type {
+	ClinicServiceCatalogEntry,
 	LiveInvoiceCashierExport,
 	LiveInvoiceItem,
 } from "./odontogramLiveInvoiceCalculations";
@@ -9,6 +10,7 @@ import type { ToothData } from "./ToothChart";
 
 export interface UseLiveInvoiceStateParams {
 	readonly teethData: readonly ToothData[];
+	readonly clinicServiceCatalog?: readonly ClinicServiceCatalogEntry[] | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly onGenerateTreatmentPlan?:

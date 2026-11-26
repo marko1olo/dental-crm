@@ -26,6 +26,7 @@ export interface DoctorMobileShiftModalProps {
 	readonly rawAppointments?: readonly any[] | undefined;
 	readonly patients?: readonly any[] | undefined;
 	readonly chairs?: readonly any[] | undefined;
+	readonly commissionPercent?: number | undefined;
 	readonly onAppointmentUpdate?: ((appointments: readonly DoctorShiftAppointment[]) => void) | undefined;
 	readonly onEmergencyVisit?: (() => void) | undefined;
 	readonly onShiftClose?: (() => void) | undefined;

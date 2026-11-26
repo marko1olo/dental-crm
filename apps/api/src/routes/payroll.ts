@@ -7,6 +7,7 @@ import type { FastifyInstance } from "fastify";
 import { isValidUuid } from "@dental/shared";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import { handleGetDoctorMyEarnings } from "./doctorMyEarningsHandler.js";
+import { handleGetDoctorTodaySummary } from "./doctorPortal/todaySummaryHandler.js";
 import {
 	getPayrollCalculationsHandler,
 	handleGetDoctorsList,
@@ -62,6 +63,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	app.get("/api/doctor/my-earnings", handleGetDoctorMyEarnings);
 	app.get("/api/v1/doctor/my-earnings", handleGetDoctorMyEarnings);
 	app.get("/api/my-earnings", handleGetDoctorMyEarnings);
+
+	// Живой счётчик заработка врача за смену (Doctor Today Earnings Hook)
+	app.get("/api/doctor-portal/today-summary", handleGetDoctorTodaySummary);
+	app.get("/api/v1/doctor-portal/today-summary", handleGetDoctorTodaySummary);
 }
 
 export default registerPayrollRoutes;

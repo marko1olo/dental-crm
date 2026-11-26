@@ -1,5 +1,6 @@
 import type { OdontogramViewMode } from "@dental/shared";
 import React, { useState, useEffect, useCallback } from "react";
+import { useAppStore } from "../../store/appStore";
 import { WheelerToothArch } from "./WheelerToothArch";
 import { OdontogramBatchBar } from "./OdontogramBatchBar";
 
@@ -8,7 +9,7 @@ import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
 import {
-	ORDER_804N_PROCEDURES,
+	resolveClinicProcedureForState,
 	type LiveInvoiceCashierExport,
 	type LiveInvoiceItem,
 } from "./odontogramLiveInvoiceCalculations";
@@ -72,6 +73,7 @@ export const OdontogramActiveViewSlot: React.FC<
 	onGenerateTreatmentPlan,
 	onCreateInvoice,
 }) => {
+	const clinicServiceCatalog = useAppStore((s) => s.dashboard?.serviceCatalog);
 	const [liveEstimateToast, setLiveEstimateToast] = useState<{
 		toothNumbers: number[];
 		state: ToothState;
@@ -97,8 +99,8 @@ export const OdontogramActiveViewSlot: React.FC<
 		) => {
 			onQuickStateChange?.(targets, state, surfaces);
 
-			// Реактивное предложение добавить услугу в смету (Мандат 8ba / Дефект №3)
-			const procedure = ORDER_804N_PROCEDURES[state];
+			// Реактивное предложение добавить услугу в смету по актуальному прайсу клиники
+			const procedure = resolveClinicProcedureForState(state, clinicServiceCatalog);
 			if (procedure && targets.length > 0) {
 				const totalPrice = procedure.price * targets.length;
 				setLiveEstimateToast({
@@ -109,7 +111,7 @@ export const OdontogramActiveViewSlot: React.FC<
 				});
 			}
 		},
-		[onQuickStateChange],
+		[onQuickStateChange, clinicServiceCatalog],
 	);
 
 	const sharedSelectTeethGroup = typeof sharedViewProps?.onSelectTeethGroup === "function"
@@ -248,6 +250,7 @@ export const OdontogramActiveViewSlot: React.FC<
 			{isLiveInvoiceOpen && (
 				<OdontogramLiveInvoice
 					teethData={teethData}
+					clinicServiceCatalog={clinicServiceCatalog}
 					isOpen={isLiveInvoiceOpen}
 					onClose={() => setIsLiveInvoiceOpen(false)}
 					patientId={patientId ?? (sharedViewProps?.patientId as string | undefined)}

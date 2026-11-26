@@ -19,6 +19,7 @@ import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage } from 
 import type { ToothData } from "./types";
 import { CANONICAL_CLINICAL_STAGES, buildAdaptiveCanonicalStages } from "./treatmentPlanCatalogData";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { useAppStore } from "../../store/appStore";
 import { StudioTiersAndStagesTab } from "./studioTabs/StudioTiersAndStagesTab";
 import { StudioInstallmentTab } from "./studioTabs/StudioInstallmentTab";
 import { StudioClinicalBundlesTab } from "./studioTabs/StudioClinicalBundlesTab";
@@ -74,6 +75,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	onClose,
 	patientName: propPatientName,
 	patientId: propPatientId,
+	patientPhone: propPatientPhone,
 	doctorFullName: propDoctorFullName,
 	initialSelectedTierId = "optimum",
 	initialDepthMode = "express",
@@ -92,6 +94,12 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	const isDemo = explicitDemoMode ?? isDemoShowcaseMode();
 	const patientName = propPatientName ?? (isDemo ? "Демо-пациент" : "");
 	const patientId = propPatientId ?? undefined;
+	const storePatientPhone = useAppStore((s) =>
+		patientId
+			? s.dashboard?.patients?.find((p) => p.id === patientId)?.phone
+			: undefined,
+	);
+	const patientPhone = propPatientPhone ?? storePatientPhone ?? undefined;
 	const doctorFullName = propDoctorFullName ?? (isDemo ? "Дежурный врач" : "");
 	const mainRef = useRef<HTMLElement | null>(null);
 
@@ -116,6 +124,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		computedTiers,
 		activeTier,
 		sanitizedActiveTitle,
+		currentPlanId,
 		resetScrollTop,
 		handleSelectDiagnosisPreset,
 		handleGenerateFromTeeth,
@@ -351,7 +360,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							onAddCustomStage={handleAddCustomStage}
 							patientId={patientId}
 							patientName={patientName}
-							treatmentPlanId={propPlanId ?? undefined}
+							patientPhone={patientPhone}
+							treatmentPlanId={currentPlanId ?? propPlanId ?? undefined}
 						/>
 					)}
 

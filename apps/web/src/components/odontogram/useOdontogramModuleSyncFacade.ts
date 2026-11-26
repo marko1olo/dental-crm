@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAppStore } from "../../store/appStore";
 import { calculateLiveInvoiceItems } from "./OdontogramLiveInvoice";
 import type {
 	OdontogramActiveDoctorContext,
@@ -66,9 +67,10 @@ export function useOdontogramModuleSyncFacade({
 		}
 	}, [patientId, safety.initialSmartMode]);
 
+	const clinicServiceCatalog = useAppStore((s) => s.dashboard?.serviceCatalog);
 	const liveInvoiceItems = useMemo(
-		() => calculateLiveInvoiceItems(sync.teethData),
-		[sync.teethData],
+		() => calculateLiveInvoiceItems(sync.teethData, { clinicServiceCatalog }),
+		[sync.teethData, clinicServiceCatalog],
 	);
 	const liveGrossTotalRub = useMemo(
 		() => liveInvoiceItems.reduce((acc, it) => acc + it.price * it.quantity, 0),

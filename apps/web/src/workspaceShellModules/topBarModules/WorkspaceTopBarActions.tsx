@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import { formatKopecksToRub } from "@dental/shared";
 import {
 	Activity,
 	AlertOctagon,
@@ -18,10 +19,12 @@ import {
 	QrCode,
 	Shield,
 	Sparkles,
+	TrendingUp,
 	User,
 	UserCheck,
 } from "lucide-react";
 import { NotificationBell } from "../../components/notifications/NotificationBell";
+import { useDoctorTodayEarnings } from "../../hooks/useDoctorTodayEarnings";
 import { togglePatientPrivacyShield } from "../../lib/chairsideErgonomics";
 import { workspaceTopbarLabels } from "../../workspaceUiLabels";
 import type { WorkspaceTopBarActionsProps } from "./workspaceTopBarTypes";
@@ -72,6 +75,9 @@ export function WorkspaceTopBarActions({
 	const [isQuickSwitchOpen, setIsQuickSwitchOpen] = useState(false);
 	const profileRef = useRef<HTMLDivElement | null>(null);
 	const activeCall = useTelephonyStore((s) => s.activeCall);
+	const { summary: doctorTodaySummary } = useDoctorTodayEarnings(
+		selectedWorkspaceRole === "doctor",
+	);
 
 	useEffect(() => {
 		if (!isProfileOpen) return;
@@ -162,6 +168,27 @@ export function WorkspaceTopBarActions({
 				<AlertOctagon className="w-3.5 h-3.5 text-[var(--bad-fg)] shrink-0" aria-hidden="true" />
 				<span className="hidden md:inline font-bold">{workspaceTopbarLabels.emergency.label}</span>
 			</button>
+
+			{/* 2.58. Живой счётчик дневного заработка врача */}
+			{selectedWorkspaceRole === "doctor" ? (
+				<button
+					className="secondary-button compact-top-button hidden sm:inline-flex h-9 px-3.5 rounded-lg text-sm font-medium items-center gap-2 shrink-0 font-mono tracking-tight tabular-nums cursor-pointer"
+					type="button"
+					id="topbar-doctor-today-earnings-btn"
+					data-testid="topbar-doctor-today-earnings-btn"
+					title={workspaceTopbarLabels.todayEarnings.title}
+					onClick={() => {
+						onOpenDoctorShiftCockpit?.();
+					}}
+				>
+					<TrendingUp className="w-4 h-4 text-[var(--primary)] shrink-0" aria-hidden="true" />
+					<span>
+						{workspaceTopbarLabels.todayEarnings.formatLabel(
+							formatKopecksToRub(doctorTodaySummary?.earnedTodayKopecks ?? 0),
+						)}
+					</span>
+				</button>
+			) : null}
 
 			{/* 2.6. Единая Ambient Header Capsule телефонии и софтфона (Zero Floating Blobs) */}
 			{/* topbar-chairside-telephony-btn min-h-[32px] h-8 */}

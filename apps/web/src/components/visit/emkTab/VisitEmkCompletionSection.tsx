@@ -1,4 +1,5 @@
 import React from "react";
+import { formatKopecksToRub } from "@dental/shared";
 import { AlertTriangle, Check, ChevronRight, FileCheck, Loader2, QrCode, RefreshCw } from "lucide-react";
 import { useAppStore } from "../../../store/appStore";
 import type { VisitEmkCompletionSectionProps } from "./types";
@@ -37,6 +38,21 @@ export function VisitEmkCompletionSection({
 							<span className="text-[11px] text-[var(--ink-muted)]">
 								Протокол и смета сохранены. К оплате: {completionResult.totalNetRub.toLocaleString("ru-RU")} ₽. Вы можете остаться в карте или перейти в кассу.
 							</span>
+							{(completionResult.doctorEarningsDeltaKopecks !== undefined ||
+								completionResult.doctorTodayTotalKopecks !== undefined) && (
+								<span
+									className="text-xs font-mono tracking-tight tabular-nums text-[var(--ink)] mt-0.5"
+									data-testid="visit-completion-doctor-earnings"
+								>
+									{completionResult.doctorEarningsDeltaKopecks !== undefined &&
+									completionResult.doctorEarningsDeltaKopecks > 0
+										? `Ваш доход за приём: +${formatKopecksToRub(completionResult.doctorEarningsDeltaKopecks)}`
+										: "Ваш доход за смену обновлён"}
+									{completionResult.doctorTodayTotalKopecks !== undefined
+										? ` · Итого за сегодня: ${formatKopecksToRub(completionResult.doctorTodayTotalKopecks)}`
+										: ""}
+								</span>
+							)}
 						</div>
 					</div>
 					<div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">

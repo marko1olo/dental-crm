@@ -17,6 +17,8 @@ import {
 	verifyBodySchema,
 } from "../services/budget/budgetSchemas.js";
 import { completeBudgetSigning } from "../services/budget/budgetSigningService.js";
+import { loadPublicBudgetTiersSummary } from "../services/budget/budgetTiersSummary.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 export { maskPhone };
 
@@ -79,15 +81,14 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				);
 			}
 
-			const isSigned = budget.status === "accepted";
-			let isVerified = budget.authMethod === "none" || isSigned;
+			let isVerified = budget.authMethod === "none";
 			if (!isVerified && sessionToken) {
 				isVerified = validateSessionToken(sessionToken, budget.patientId, budget.token);
 			}
 
 			const masked = maskPhone(budget.patientPhone);
 
-			// ФИКСАЦИЯ ПЕРВОГО ОТКРЫТИЯ (viewed)
+			// ФИКСАЦИЯ ПЕРВОГО ОТКРЫТИЯ (viewed) И УВЕДОМЛЕНИЕ КЛИНИКИ В РЕАЛЬНОМ ВРЕМЕНИ
 			if (!budget.viewedAt) {
 				const viewedIso = new Date();
 				await withSuperuserBypass(async (tx) =>
@@ -100,6 +101,21 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 						})
 						.where(eq(portalBudgetTokens.token, token)),
 				);
+				wsBroker.broadcastToOrganization(budget.organizationId, {
+					type: "TREATMENT_PLAN_VIEWED",
+					payload: {
+						token: budget.token,
+						planId: budget.planId,
+						patientId: budget.patientId,
+						patientFirstName: budget.patientFirstName,
+						clinicName: budget.clinicName,
+						viewedAt: viewedIso.toISOString(),
+						netTotalKopecks:
+							typeof budget.netTotalKopecks === "bigint" || typeof budget.netTotalKopecks === "number"
+								? Number(budget.netTotalKopecks)
+								: rublesToKopecks(Number(budget.netTotalRub) || 0),
+					},
+				});
 			}
 
 			// ЕСЛИ ЛИЧНОСТЬ НЕ ВЕРИФИЦИРОВАНА — НОЛЬ УТЕЧЕК!
@@ -152,6 +168,14 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 					? Number(budget.netTotalKopecks)
 					: rublesToKopecks(Number(budget.netTotalRub) || 0);
 
+			const { tiersSummary, selectedTierId } =
+				await loadPublicBudgetTiersSummary({
+					organizationId: budget.organizationId,
+					planId: budget.planId,
+					baseNetTotalKopecks: netTotalKopecks,
+					baseDiscountKopecks: discountKopecks,
+				});
+
 			return reply.code(200).send({
 				token: budget.token,
 				planId: budget.planId,
@@ -169,6 +193,8 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 				totalPriceKopecks,
 				discountKopecks,
 				netTotalKopecks,
+				tiersSummary,
+				selectedTierId,
 				currency: budget.currency || "RUB",
 				requiresVerification: false,
 				isVerified: true,
@@ -274,10 +300,11 @@ export const publicBudgetRoutes: FastifyPluginAsync = async (server) => {
 		if (budget.authMethod === "none") {
 			isMatch = true;
 		} else if (cleanPatientPhone.length >= 4 && inputDigits.length === 4) {
-			isMatch = timingSafeEqual(
-				Buffer.from(inputDigits),
-				Buffer.from(expectedLast4),
-			);
+			const inputBuf = Buffer.from(inputDigits);
+			const expectedBuf = Buffer.from(expectedLast4);
+			isMatch =
+				inputBuf.length === expectedBuf.length &&
+				timingSafeEqual(inputBuf, expectedBuf);
 		}
 
 		if (!isMatch) {

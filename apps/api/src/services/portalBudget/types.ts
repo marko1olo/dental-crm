@@ -79,6 +79,21 @@ export interface PublicBudgetDto {
 	readonly signerName?: string | null | undefined;
 	readonly documentHash?: string | null | undefined;
 	readonly validUntil?: string | null | undefined;
+	readonly tiersSummary?: readonly PublicBudgetTierSummary[] | undefined;
+	readonly selectedTierId?: "economy" | "optimum" | "premium" | undefined;
+}
+
+export interface PublicBudgetTierSummary {
+	readonly tierId: "economy" | "optimum" | "premium";
+	readonly title: string;
+	readonly badgeText?: string | undefined;
+	readonly planId?: string | undefined;
+	readonly netTotalKopecks: number;
+	readonly discountKopecks: number;
+	readonly monthly12mKopecks: number;
+	readonly taxDeduction13Kopecks: number;
+	readonly description?: string | undefined;
+	readonly isRecommended?: boolean | undefined;
 }
 
 export const MAX_PORTAL_VERIFY_ATTEMPTS = 5;
@@ -133,6 +148,7 @@ export interface SignBudgetPayload {
 	signerName?: string | undefined;
 	signatureSvg?: string | undefined;
 	relationship?: string | undefined;
+	selectedTierId?: "economy" | "optimum" | "premium" | "standard" | undefined;
 }
 
 export interface SignBudgetReqMeta {

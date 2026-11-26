@@ -7,8 +7,11 @@ import {
 	X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { useWebsocket } from "../../hooks/useWebsocket";
 import { useTelephonyStore } from "../../store/telephonyStore";
+import { showToast } from "../GlobalToast";
 import {
 	PatientNotificationCenter,
 	type PatientNotificationItem,
@@ -34,7 +37,86 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 	onOpenFullCenter,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const [livePlanEvents, setLivePlanEvents] = useState<PatientNotificationItem[]>([]);
+	const seenWsKeysRef = useRef<Set<string>>(new Set());
 	const popoverRef = useRef<HTMLDivElement | null>(null);
+
+	const wsUrl = useMemo(() => {
+		if (typeof window === "undefined" || isDemoShowcaseMode()) return "";
+		const viteMeta = import.meta as { env?: Record<string, string | undefined> };
+		const configured = viteMeta.env?.VITE_WS_URL;
+		if (configured) return configured;
+		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+		return `${protocol}//${window.location.host}/api/ws/schedule`;
+	}, []);
+	const { lastMessage } = useWebsocket(wsUrl);
+
+	useEffect(() => {
+		if (!lastMessage?.type) return;
+		if (
+			lastMessage.type !== "TREATMENT_PLAN_VIEWED" &&
+			lastMessage.type !== "TREATMENT_PLAN_BUDGET_SIGNED"
+		) {
+			return;
+		}
+		const payload = (lastMessage.payload ?? {}) as Record<string, unknown>;
+		const token = typeof payload.token === "string" ? payload.token : "";
+		const dedupKey = `${lastMessage.type}:${token}`;
+		if (token && seenWsKeysRef.current.has(dedupKey)) {
+			return;
+		}
+		if (token) {
+			seenWsKeysRef.current.add(dedupKey);
+		}
+		const patientName =
+			(typeof payload.patientFirstName === "string" && payload.patientFirstName) ||
+			(typeof payload.signerName === "string" && payload.signerName) ||
+			"Пациент";
+		const patientId =
+			typeof payload.patientId === "string" ? payload.patientId : null;
+
+		if (lastMessage.type === "TREATMENT_PLAN_VIEWED") {
+			showToast(`${patientName} открыл интерактивный план лечения`, "info", 5500);
+			setLivePlanEvents((prev) => [
+				{
+					id: `plan-viewed-${token || Date.now()}`,
+					category: "financial",
+					title: "Пациент просматривает план лечения",
+					description: `${patientName} открыл отправленную смету и сравнивает варианты`,
+					timestamp:
+						typeof payload.viewedAt === "string"
+							? payload.viewedAt
+							: new Date().toISOString(),
+					isRead: false,
+					patientId,
+					patientName,
+					priority: "urgent",
+					actionType: "patient_card",
+				},
+				...prev.slice(0, 14),
+			]);
+		} else {
+			showToast(`${patientName} подписал план лечения`, "success", 6000);
+			setLivePlanEvents((prev) => [
+				{
+					id: `plan-signed-${token || Date.now()}`,
+					category: "financial",
+					title: "План лечения согласован пациентом",
+					description: `${patientName} подписал смету онлайн`,
+					timestamp:
+						typeof payload.signedAt === "string"
+							? payload.signedAt
+							: new Date().toISOString(),
+					isRead: false,
+					patientId,
+					patientName,
+					priority: "critical",
+					actionType: "patient_card",
+				},
+				...prev.slice(0, 14),
+			]);
+		}
+	}, [lastMessage]);
 
 	const callHistory = useTelephonyStore((s) => s.callHistory);
 	const ctx = useOptionalAppLogicContext();
@@ -60,8 +142,10 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 			count += patients.filter((p) => Number(p.balanceRub) < 0).length;
 		}
 
+		count += livePlanEvents.filter((item) => !item.isRead).length;
+
 		return count;
-	}, [callHistory, appointments, patients]);
+	}, [callHistory, appointments, patients, livePlanEvents]);
 
 	// Закрытие по клику вне компонента и Escape
 	useEffect(() => {
@@ -130,6 +214,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
 				>
 					<PatientNotificationCenter
 						compactMode={true}
+						extraNotifications={livePlanEvents}
 						onClose={() => setIsOpen(false)}
 						className="border-none shadow-none rounded-none"
 					/>

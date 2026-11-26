@@ -2,6 +2,28 @@ import { isDeciduousTooth } from "../treatment-plans/treatmentPlanStagesEngine";
 import { basisPointsFromPercent, kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 import type { ToothData } from "./ToothChart";
 
+export interface ClinicServiceCatalogEntry {
+	readonly code?: string | null | undefined;
+	readonly order804nCode?: string | null | undefined;
+	readonly standardCode?: string | null | undefined;
+	readonly catalogCode?: string | null | undefined;
+	readonly title?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly priceKopecks?: number | bigint | null | undefined;
+	readonly basePriceRub?: number | null | undefined;
+	readonly priceRub?: number | null | undefined;
+	readonly active?: boolean | null | undefined;
+	readonly isActive?: boolean | null | undefined;
+}
+
+export interface LiveInvoiceProcedureSpec {
+	code: string;
+	title: string;
+	price: number;
+	amountKopecks: number;
+	category: string;
+}
+
 export interface LiveInvoiceItem {
 	toothNumber: number;
 	code: string;
@@ -411,6 +433,99 @@ export function getEndoObturationProcedure(canalsCount: number): {
 }
 
 /**
+ * Строит быстрый индекс услуг клиники по коду прайса (804н / внутренний код).
+ */
+export function buildClinicCatalogLookupMap(
+	clinicServiceCatalog?: readonly ClinicServiceCatalogEntry[] | undefined,
+): Map<string, ClinicServiceCatalogEntry> {
+	const map = new Map<string, ClinicServiceCatalogEntry>();
+	if (!Array.isArray(clinicServiceCatalog) || clinicServiceCatalog.length === 0) {
+		return map;
+	}
+	for (const entry of clinicServiceCatalog) {
+		if (!entry) continue;
+		if (entry.active === false || entry.isActive === false) continue;
+		const keys = [
+			entry.order804nCode,
+			entry.standardCode,
+			entry.catalogCode,
+			entry.code,
+		];
+		for (const rawKey of keys) {
+			if (typeof rawKey === "string" && rawKey.trim() !== "") {
+				const normalized = rawKey.trim().toUpperCase();
+				if (!map.has(normalized)) {
+					map.set(normalized, entry);
+				}
+			}
+		}
+	}
+	return map;
+}
+
+function resolveCatalogEntryPriceKopecks(entry: ClinicServiceCatalogEntry): number | null {
+	if (entry.priceKopecks !== null && entry.priceKopecks !== undefined) {
+		const kop = Number(entry.priceKopecks);
+		if (Number.isFinite(kop) && kop > 0) {
+			return Math.round(kop);
+		}
+	}
+	const rubCandidate = entry.priceRub ?? entry.basePriceRub;
+	if (rubCandidate !== null && rubCandidate !== undefined) {
+		const rub = Number(rubCandidate);
+		if (Number.isFinite(rub) && rub > 0) {
+			return rublesToKopecks(rub);
+		}
+	}
+	return null;
+}
+
+/**
+ * Разрешает цену и наименование процедуры по реальному прайсу клиники,
+ * сохраняя базовую ставку ORDER_804N_PROCEDURES строго как fallback.
+ */
+export function resolveProcedureWithClinicCatalog(
+	baseProcedure: LiveInvoiceProcedureSpec,
+	catalogMap?: ReadonlyMap<string, ClinicServiceCatalogEntry> | undefined,
+): LiveInvoiceProcedureSpec {
+	if (!catalogMap || catalogMap.size === 0) {
+		return baseProcedure;
+	}
+	const matched = catalogMap.get(baseProcedure.code.trim().toUpperCase());
+	if (!matched) {
+		return baseProcedure;
+	}
+	const resolvedKopecks = resolveCatalogEntryPriceKopecks(matched);
+	const resolvedTitle = (matched.title || matched.name || "").trim();
+	const amountKopecks =
+		resolvedKopecks !== null ? resolvedKopecks : baseProcedure.amountKopecks;
+	const price =
+		resolvedKopecks !== null
+			? kopecksToRubles(amountKopecks)
+			: baseProcedure.price;
+
+	return {
+		...baseProcedure,
+		title: resolvedTitle || baseProcedure.title,
+		price,
+		amountKopecks,
+	};
+}
+
+/**
+ * Разрешает процедуру для состояния зуба с учётом актуального прайса клиники.
+ */
+export function resolveClinicProcedureForState(
+	state: string,
+	clinicServiceCatalog?: readonly ClinicServiceCatalogEntry[] | undefined,
+): LiveInvoiceProcedureSpec | undefined {
+	const base = ORDER_804N_PROCEDURES[state];
+	if (!base) return undefined;
+	const catalogMap = buildClinicCatalogLookupMap(clinicServiceCatalog);
+	return resolveProcedureWithClinicCatalog(base, catalogMap);
+}
+
+/**
  * Чистый клинико-финансовый расчет позиций живой сметы по одонтограмме.
  */
 export function calculateLiveInvoiceItems(
@@ -419,11 +534,19 @@ export function calculateLiveInvoiceItems(
 		excludedKeys?: ReadonlySet<string> | undefined;
 		quantities?: Record<string, number> | undefined;
 		discountPercent?: number | undefined;
+		clinicServiceCatalog?: readonly ClinicServiceCatalogEntry[] | undefined;
 	},
 ): LiveInvoiceItem[] {
 	const excludedKeys = options?.excludedKeys ?? new Set<string>();
 	const quantities = options?.quantities ?? {};
 	const discountPercent = options?.discountPercent ?? 0;
+	const catalogMap = buildClinicCatalogLookupMap(options?.clinicServiceCatalog);
+	const resolveProc = (base: LiveInvoiceProcedureSpec): LiveInvoiceProcedureSpec =>
+		resolveProcedureWithClinicCatalog(base, catalogMap);
+	const resolveCatalogProc = (key: string): LiveInvoiceProcedureSpec | undefined => {
+		const base = ORDER_804N_PROCEDURES[key];
+		return base ? resolveProcedureWithClinicCatalog(base, catalogMap) : undefined;
+	};
 
 	const items: LiveInvoiceItem[] = [];
 
@@ -438,35 +561,12 @@ export function calculateLiveInvoiceItems(
 		const hasFurcation = Boolean(t.furcationGrade && t.furcationGrade > 0);
 
 		if (hasBoneLoss || hasMobility || hasFurcation) {
-			const prSrp = ORDER_804N_PROCEDURES.PeriodontalScaling!;
-			const srpKey = `${num}-${prSrp.code}`;
-			if (!excludedKeys.has(srpKey)) {
-				const qty = quantities[srpKey] ?? 1;
-				const grossKopecks = prSrp.amountKopecks * qty;
-				const discKopecks =
-					discountPercent > 0
-						? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
-						: 0;
-				const netKopecks = grossKopecks - discKopecks;
-				const disc = kopecksToRubles(discKopecks);
-				items.push({
-					toothNumber: num,
-					code: prSrp.code,
-					title: `Зуб ${num}: ${prSrp.title}`,
-					category: prSrp.category,
-					price: prSrp.price,
-					amountKopecks: netKopecks,
-					quantity: qty,
-					discountRub: disc,
-				});
-			}
-
-			if (t.boneLossLevel && t.boneLossLevel >= 2) {
-				const prCur = ORDER_804N_PROCEDURES.PeriodontalCurettage!;
-				const curKey = `${num}-${prCur.code}`;
-				if (!excludedKeys.has(curKey)) {
-					const qty = quantities[curKey] ?? 1;
-					const grossKopecks = prCur.amountKopecks * qty;
+			const prSrp = resolveCatalogProc("PeriodontalScaling");
+			if (prSrp) {
+				const srpKey = `${num}-${prSrp.code}`;
+				if (!excludedKeys.has(srpKey)) {
+					const qty = quantities[srpKey] ?? 1;
+					const grossKopecks = prSrp.amountKopecks * qty;
 					const discKopecks =
 						discountPercent > 0
 							? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
@@ -475,10 +575,10 @@ export function calculateLiveInvoiceItems(
 					const disc = kopecksToRubles(discKopecks);
 					items.push({
 						toothNumber: num,
-						code: prCur.code,
-						title: `Зуб ${num}: ${prCur.title}`,
-						category: prCur.category,
-						price: prCur.price,
+						code: prSrp.code,
+						title: `Зуб ${num}: ${prSrp.title}`,
+						category: prSrp.category,
+						price: prSrp.price,
 						amountKopecks: netKopecks,
 						quantity: qty,
 						discountRub: disc,
@@ -486,28 +586,57 @@ export function calculateLiveInvoiceItems(
 				}
 			}
 
+			if (t.boneLossLevel && t.boneLossLevel >= 2) {
+				const prCur = resolveCatalogProc("PeriodontalCurettage");
+				if (prCur) {
+					const curKey = `${num}-${prCur.code}`;
+					if (!excludedKeys.has(curKey)) {
+						const qty = quantities[curKey] ?? 1;
+						const grossKopecks = prCur.amountKopecks * qty;
+						const discKopecks =
+							discountPercent > 0
+								? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
+								: 0;
+						const netKopecks = grossKopecks - discKopecks;
+						const disc = kopecksToRubles(discKopecks);
+						items.push({
+							toothNumber: num,
+							code: prCur.code,
+							title: `Зуб ${num}: ${prCur.title}`,
+							category: prCur.category,
+							price: prCur.price,
+							amountKopecks: netKopecks,
+							quantity: qty,
+							discountRub: disc,
+						});
+					}
+				}
+			}
+
 			if (t.mobility && t.mobility >= 2) {
-				const prSplint = ORDER_804N_PROCEDURES.PeriodontalSplinting!;
-				const splintKey = `${num}-${prSplint.code}`;
-				if (!excludedKeys.has(splintKey)) {
-					const qty = quantities[splintKey] ?? 1;
-					const grossKopecks = prSplint.amountKopecks * qty;
-					const discKopecks =
-						discountPercent > 0
-							? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
-							: 0;
-					const netKopecks = grossKopecks - discKopecks;
-					const disc = kopecksToRubles(discKopecks);
-					items.push({
-						toothNumber: num,
-						code: prSplint.code,
-						title: `Зуб ${num}: ${prSplint.title}`,
-						category: prSplint.category,
-						price: prSplint.price,
-						amountKopecks: netKopecks,
-						quantity: qty,
-						discountRub: disc,
-					});
+				const prSplint = resolveCatalogProc("PeriodontalSplinting");
+				if (prSplint) {
+					const splintKey = `${num}-${prSplint.code}`;
+					if (!excludedKeys.has(splintKey)) {
+						const qty = quantities[splintKey] ?? 1;
+						const grossKopecks = prSplint.amountKopecks * qty;
+						const discKopecks =
+							discountPercent > 0
+								? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
+								: 0;
+						const netKopecks = grossKopecks - discKopecks;
+						const disc = kopecksToRubles(discKopecks);
+						items.push({
+							toothNumber: num,
+							code: prSplint.code,
+							title: `Зуб ${num}: ${prSplint.title}`,
+							category: prSplint.category,
+							price: prSplint.price,
+							amountKopecks: netKopecks,
+							quantity: qty,
+							discountRub: disc,
+						});
+					}
 				}
 			}
 		}
@@ -530,14 +659,16 @@ export function calculateLiveInvoiceItems(
 			if (state === "Missing") {
 				continue;
 			}
-			let pedPr = ORDER_804N_PROCEDURES.PediatricCaries!;
+			let pedKeyName = "PediatricCaries";
 			if (state === "Pulpitis") {
-				pedPr = ORDER_804N_PROCEDURES.PediatricPulpitis!;
+				pedKeyName = "PediatricPulpitis";
 			} else if (state === "Periodontitis") {
-				pedPr = ORDER_804N_PROCEDURES.PediatricExtraction!;
+				pedKeyName = "PediatricExtraction";
 			} else if (state === "Crown") {
-				pedPr = ORDER_804N_PROCEDURES.PediatricCrown!;
+				pedKeyName = "PediatricCrown";
 			}
+			const pedPr = resolveCatalogProc(pedKeyName);
+			if (!pedPr) continue;
 
 			const pedKey = `${num}-${pedPr.code}`;
 			if (!excludedKeys.has(pedKey)) {
@@ -574,8 +705,8 @@ export function calculateLiveInvoiceItems(
 					: undefined;
 
 			const canalsCount = getAnatomicalRootCanalCount(num, clinicalCanals);
-			const prepProc = getEndoPreparationProcedure(canalsCount);
-			const obtProc = getEndoObturationProcedure(canalsCount);
+			const prepProc = resolveProc(getEndoPreparationProcedure(canalsCount));
+			const obtProc = resolveProc(getEndoObturationProcedure(canalsCount));
 
 			// 3a. Инструментальная и медикаментозная обработка корневых каналов (A16.07.030.001..004)
 			const prepKey = `${num}-${prepProc.code}`;
@@ -645,10 +776,10 @@ export function calculateLiveInvoiceItems(
 				).defectSurfaces.length;
 			}
 
-			const pr =
-				surfaceCount >= 2
-					? ORDER_804N_PROCEDURES.CariesMultiSurfaces!
-					: ORDER_804N_PROCEDURES.Caries1Surface!;
+			const pr = resolveCatalogProc(
+				surfaceCount >= 2 ? "CariesMultiSurfaces" : "Caries1Surface",
+			);
+			if (!pr) continue;
 
 			const itemKey = `${num}-${pr.code}`;
 			const qty = quantities[itemKey] ?? 1;
@@ -684,14 +815,14 @@ export function calculateLiveInvoiceItems(
 		}
 
 		// 5. Взрослая ортопедия, хирургия (Crown, Implant, Missing...)
-		if (ORDER_804N_PROCEDURES[state]) {
-			const pr = ORDER_804N_PROCEDURES[state]!;
-			const itemKey = `${num}-${pr.code}`;
+		const stateProc = resolveCatalogProc(state);
+		if (stateProc) {
+			const itemKey = `${num}-${stateProc.code}`;
 			const qty = quantities[itemKey] ?? 1;
 
 			if (!excludedKeys.has(itemKey)) {
-				const itemPrice = pr.price;
-				const grossKopecks = pr.amountKopecks * qty;
+				const itemPrice = stateProc.price;
+				const grossKopecks = stateProc.amountKopecks * qty;
 				const discKopecks =
 					discountPercent > 0
 						? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
@@ -701,9 +832,9 @@ export function calculateLiveInvoiceItems(
 
 				items.push({
 					toothNumber: num,
-					code: pr.code,
-					title: `Зуб ${num}: ${pr.title}`,
-					category: pr.category,
+					code: stateProc.code,
+					title: `Зуб ${num}: ${stateProc.title}`,
+					category: stateProc.category,
 					price: itemPrice,
 					amountKopecks: netKopecks,
 					quantity: qty,
@@ -715,11 +846,38 @@ export function calculateLiveInvoiceItems(
 		// Для отсутствующих зубов при планировании имплантации добавляем костную пластику (при атрофии) и протезирование
 		if (state === "Missing" || state === "Planned_Implant") {
 			if (t.boneLossLevel && t.boneLossLevel > 0) {
-				const prGraft = ORDER_804N_PROCEDURES.BoneGrafting!;
-				const graftKey = `${num}-${prGraft.code}`;
-				if (!excludedKeys.has(graftKey)) {
-					const qty = quantities[graftKey] ?? 1;
-					const grossKopecks = prGraft.amountKopecks * qty;
+				const prGraft = resolveCatalogProc("BoneGrafting");
+				if (prGraft) {
+					const graftKey = `${num}-${prGraft.code}`;
+					if (!excludedKeys.has(graftKey)) {
+						const qty = quantities[graftKey] ?? 1;
+						const grossKopecks = prGraft.amountKopecks * qty;
+						const discKopecks =
+							discountPercent > 0
+								? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
+								: 0;
+						const netKopecks = grossKopecks - discKopecks;
+						const disc = kopecksToRubles(discKopecks);
+						items.push({
+							toothNumber: num,
+							code: prGraft.code,
+							title: `Зуб ${num}: ${prGraft.title}`,
+							category: prGraft.category,
+							price: prGraft.price,
+							amountKopecks: netKopecks,
+							quantity: qty,
+							discountRub: disc,
+						});
+					}
+				}
+			}
+
+			const prProsth = resolveCatalogProc("ImplantProsthetics");
+			if (prProsth) {
+				const prosthKey = `${num}-${prProsth.code}`;
+				if (!excludedKeys.has(prosthKey)) {
+					const qty = quantities[prosthKey] ?? 1;
+					const grossKopecks = prProsth.amountKopecks * qty;
 					const discKopecks =
 						discountPercent > 0
 							? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
@@ -728,38 +886,15 @@ export function calculateLiveInvoiceItems(
 					const disc = kopecksToRubles(discKopecks);
 					items.push({
 						toothNumber: num,
-						code: prGraft.code,
-						title: `Зуб ${num}: ${prGraft.title}`,
-						category: prGraft.category,
-						price: prGraft.price,
+						code: prProsth.code,
+						title: `Зуб ${num}: ${prProsth.title}`,
+						category: prProsth.category,
+						price: prProsth.price,
 						amountKopecks: netKopecks,
 						quantity: qty,
 						discountRub: disc,
 					});
 				}
-			}
-
-			const prProsth = ORDER_804N_PROCEDURES.ImplantProsthetics!;
-			const prosthKey = `${num}-${prProsth.code}`;
-			if (!excludedKeys.has(prosthKey)) {
-				const qty = quantities[prosthKey] ?? 1;
-				const grossKopecks = prProsth.amountKopecks * qty;
-				const discKopecks =
-					discountPercent > 0
-						? percentageOfKopecks(toExactKopecks(grossKopecks), basisPointsFromPercent(discountPercent))
-						: 0;
-				const netKopecks = grossKopecks - discKopecks;
-				const disc = kopecksToRubles(discKopecks);
-				items.push({
-					toothNumber: num,
-					code: prProsth.code,
-					title: `Зуб ${num}: ${prProsth.title}`,
-					category: prProsth.category,
-					price: prProsth.price,
-					amountKopecks: netKopecks,
-					quantity: qty,
-					discountRub: disc,
-				});
 			}
 		}
 	}

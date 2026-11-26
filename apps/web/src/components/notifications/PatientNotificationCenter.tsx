@@ -53,6 +53,7 @@ export interface PatientNotificationCenterProps {
 	className?: string;
 	onClose?: () => void;
 	compactMode?: boolean;
+	extraNotifications?: readonly PatientNotificationItem[] | undefined;
 }
 
 /**
@@ -70,6 +71,7 @@ export function PatientNotificationCenter({
 	className = "",
 	onClose,
 	compactMode = false,
+	extraNotifications = [],
 }: PatientNotificationCenterProps) {
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
@@ -176,12 +178,22 @@ export function PatientNotificationCenter({
 			}
 		}
 
+		// 4. Живые события из WS (просмотр и подпись планов лечения)
+		for (const ext of extraNotifications) {
+			const ts = ext.timestamp ? new Date(ext.timestamp).getTime() : 0;
+			if (ts < clearedAt) continue;
+			items.push({
+				...ext,
+				isRead: ext.isRead || readIds.has(ext.id),
+			});
+		}
+
 		// Сортировка: сначала непрочитанные, затем по времени поступления
 		return items.sort((a, b) => {
 			if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
 			return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
 		});
-	}, [callHistory, dashboard?.appointments, dashboard?.patients, readIds, clearedAt]);
+	}, [callHistory, dashboard?.appointments, dashboard?.patients, extraNotifications, readIds, clearedAt]);
 
 	const unreadCount = useMemo(
 		() => notifications.filter((n) => !n.isRead).length,

@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useState } from "react";
-import { generateUuidV7 } from "@dental/shared";
+import { formatKopecksToRub, generateUuidV7 } from "@dental/shared";
 import {
 	completeClinicalVisitAndAssembleEstimate,
 	type ClinicalEstimateItem,
@@ -194,7 +194,7 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 				});
 
 				// Запуск фонового пайплайна пост-завершения (BOM списание, черновик, наряд, план, одонтограмма)
-				const materialsDeduction = await executeVisitPostCompletionPipeline({
+				const pipelineResult = await executeVisitPostCompletionPipeline({
 					effectiveVisitId,
 					effectivePatientId,
 					effectivePatientName,
@@ -207,6 +207,9 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					dashboard,
 					result,
 				});
+				const materialsDeduction = pipelineResult.materialsDeduction;
+				const doctorEarningsDeltaKopecks = pipelineResult.doctorEarningsDeltaKopecks;
+				const doctorTodayTotalKopecks = pipelineResult.doctorTodayTotalKopecks;
 
 				const effectiveDoctorId =
 					(activeVisit && "doctorId" in activeVisit && typeof (activeVisit as { doctorId?: unknown }).doctorId === "string"
@@ -248,6 +251,12 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					emkSaved: true,
 					medicalCardSaved: true,
 					...(materialsDeduction ? { materialsDeduction } : {}),
+					...(doctorEarningsDeltaKopecks !== undefined
+						? { doctorEarningsDeltaKopecks }
+						: {}),
+					...(doctorTodayTotalKopecks !== undefined
+						? { doctorTodayTotalKopecks }
+						: {}),
 				};
 
 				if (createdInvoice?.invoiceId) {
@@ -301,10 +310,33 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 					}
 				}
 
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente:visit-completed", {
+							detail: {
+								visitId: effectiveVisitId,
+								patientId: effectivePatientId,
+								doctorEarningsDeltaKopecks,
+								doctorTodayTotalKopecks,
+							},
+						}),
+					);
+				}
+
 				setCompletionResult(finalResult);
+				const earningsSuffix =
+					doctorEarningsDeltaKopecks !== undefined && doctorEarningsDeltaKopecks > 0
+						? ` Ваш доход: +${formatKopecksToRub(doctorEarningsDeltaKopecks)}${
+								doctorTodayTotalKopecks !== undefined
+									? ` · Сегодня: ${formatKopecksToRub(doctorTodayTotalKopecks)}`
+									: ""
+							}`
+						: doctorTodayTotalKopecks !== undefined
+							? ` Заработок сегодня: ${formatKopecksToRub(doctorTodayTotalKopecks)}`
+							: "";
 				const toastMessage = createdInvoice?.invoiceNumber
-					? `Приём завершён. Счёт №${createdInvoice.invoiceNumber}: ${finalResult.totalNetRub.toLocaleString("ru-RU")} ₽ сформирован.`
-					: `Приём завершён! ${finalResult.statusBannerText}`;
+					? `Приём завершён. Счёт №${createdInvoice.invoiceNumber}: ${finalResult.totalNetRub.toLocaleString("ru-RU")} ₽ сформирован.${earningsSuffix}`
+					: `Приём завершён! ${finalResult.statusBannerText}${earningsSuffix}`;
 				showToast(toastMessage, "success", 4500);
 				options?.onCompleteSuccess?.(finalResult);
 

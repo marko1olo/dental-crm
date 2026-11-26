@@ -28,6 +28,19 @@ export interface BudgetItem {
 	totalKopecks?: number;
 }
 
+export interface PublicBudgetTierSummary {
+	tierId: "economy" | "optimum" | "premium";
+	title: string;
+	badgeText?: string | undefined;
+	planId?: string | undefined;
+	netTotalKopecks: number;
+	discountKopecks: number;
+	monthly12mKopecks: number;
+	taxDeduction13Kopecks: number;
+	description?: string | undefined;
+	isRecommended?: boolean | undefined;
+}
+
 export interface BudgetData {
 	token: string;
 	planId?: string | null;
@@ -44,6 +57,8 @@ export interface BudgetData {
 	totalPriceKopecks?: number;
 	discountKopecks?: number;
 	netTotalKopecks?: number;
+	tiersSummary?: readonly PublicBudgetTierSummary[];
+	selectedTierId?: "economy" | "optimum" | "premium";
 	currency?: string;
 	items?: BudgetItem[];
 	requiresVerification: boolean;
@@ -136,6 +151,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 	// Signature Submission state
 	const [signerName, setSignerName] = useState<string>("");
+	const [selectedTierId, setSelectedTierId] = useState<"economy" | "optimum" | "premium">("optimum");
 	const [isSubmittingSign, setIsSubmittingSign] = useState<boolean>(false);
 	const [signError, setSignError] = useState<string | null>(null);
 
@@ -182,6 +198,9 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 
 				const data: BudgetData = await res.json();
 				setBudget(data);
+				if (data.selectedTierId) {
+					setSelectedTierId(data.selectedTierId);
+				}
 				if (data.patientFirstName && !signerName) {
 					setSignerName(data.patientFirstName);
 				}
@@ -303,6 +322,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 				body: JSON.stringify({
 					signaturePng: effectiveSignaturePng,
 					signerName: effectiveSignerName,
+					selectedTierId,
 				}),
 			});
 
@@ -313,6 +333,7 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 					body: JSON.stringify({
 						signaturePng: effectiveSignaturePng,
 						signerName: effectiveSignerName,
+						selectedTierId,
 					}),
 				});
 			}
@@ -522,6 +543,86 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 							)}
 						</div>
 
+						{/* Apple HIG 3-Tier Interactive Comparison (Эконом / ★ Оптимум / Премиум) */}
+						{budget.tiersSummary && budget.tiersSummary.length > 0 && (() => {
+							const activeTier =
+								budget.tiersSummary.find((t) => t.tierId === selectedTierId) ??
+								budget.tiersSummary[0];
+							if (!activeTier) return null;
+							return (
+								<section
+									className="bg-[var(--paper,white)] border border-[var(--line,rgb(226,232,240))] rounded-2xl p-4 sm:p-5 shadow-lg space-y-3"
+									aria-label="Выбор варианта плана лечения"
+									data-testid="public-budget-tiers-section"
+								>
+									<div
+										role="tablist"
+										aria-label="Тарифы лечения"
+										className="p-1 bg-[var(--paper-soft,rgb(241,245,249))] rounded-xl border border-[var(--line,rgb(226,232,240))] grid grid-cols-3 gap-1"
+										data-testid="public-budget-tier-segmented"
+									>
+										{budget.tiersSummary.map((tier) => {
+											const isActive = tier.tierId === activeTier.tierId;
+											const label =
+												tier.tierId === "optimum"
+													? tier.badgeText || "★ Оптимум"
+													: tier.title;
+											return (
+												<button
+													key={tier.tierId}
+													type="button"
+													role="tab"
+													aria-selected={isActive}
+													data-testid={`public-budget-tier-tab-${tier.tierId}`}
+													onClick={() => setSelectedTierId(tier.tierId)}
+													className={`min-h-[44px] px-2.5 rounded-lg text-xs sm:text-sm transition-all cursor-pointer inline-flex items-center justify-center text-center ${
+														isActive
+															? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold shadow-xs"
+															: "text-[var(--ink-muted,#64748b)] font-medium hover:text-[var(--ink,#0f172a)]"
+													}`}
+												>
+													<span>{label}</span>
+												</button>
+											);
+										})}
+									</div>
+
+									<div className="rounded-xl border border-[var(--line,rgb(226,232,240))] bg-[var(--paper-soft,rgb(248,250,252))] p-3.5 space-y-2">
+										<div className="flex items-baseline justify-between gap-2">
+											<span className="text-sm font-semibold text-[var(--ink,#0f172a)]">
+												Вариант «{activeTier.title}»
+											</span>
+											<span
+												className="text-base sm:text-lg font-mono tracking-tight font-bold text-[var(--primary)] tabular-nums"
+												data-testid="public-budget-selected-tier-total"
+											>
+												{formatKopecksToRub(activeTier.netTotalKopecks)}
+											</span>
+										</div>
+										{activeTier.description && (
+											<p className="text-xs text-[var(--ink-muted,#64748b)] leading-relaxed">
+												{activeTier.description}
+											</p>
+										)}
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+											<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,rgb(226,232,240))] px-3 py-2 flex items-center justify-between gap-2">
+												<span className="text-[var(--ink-muted,#64748b)]">Рассрочка 0% (12 мес):</span>
+												<span className="font-mono tracking-tight font-medium text-[var(--ink,#0f172a)] tabular-nums">
+													от {formatKopecksToRub(activeTier.monthly12mKopecks)}/мес
+												</span>
+											</div>
+											<div className="rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,rgb(226,232,240))] px-3 py-2 flex items-center justify-between gap-2">
+												<span className="text-[var(--ink-muted,#64748b)]">Вычет 13% НДФЛ:</span>
+												<span className="font-mono tracking-tight font-medium text-[var(--ink,#0f172a)] tabular-nums">
+													+{formatKopecksToRub(activeTier.taxDeduction13Kopecks)}
+												</span>
+											</div>
+										</div>
+									</div>
+								</section>
+							);
+						})()}
+
 						{/* Items list */}
 						<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
 							<div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
@@ -584,9 +685,10 @@ export const PublicBudgetSignPage: React.FC<PublicBudgetSignPageProps> = ({
 								)}
 								<div className="flex justify-between items-baseline pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-sm text-slate-900 dark:text-white">
 									<span>Итого к оплате:</span>
-									<span className="text-base text-[var(--primary)] font-bold font-mono">
+									<span className="text-base text-[var(--primary)] font-bold font-mono tabular-nums">
 										{formatKopecksToRub(
-											budget.netTotalKopecks ??
+											budget.tiersSummary?.find((t) => t.tierId === selectedTierId)?.netTotalKopecks ??
+												budget.netTotalKopecks ??
 												(budget.netTotalRub !== undefined
 													? rublesToKopecks(budget.netTotalRub)
 													: (budget.totalPriceKopecks ?? rublesToKopecks(budget.totalPriceRub || 0))),

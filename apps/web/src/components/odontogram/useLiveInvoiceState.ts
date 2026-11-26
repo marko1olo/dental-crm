@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAppStore } from "../../store/appStore";
 import {
 	exportLiveInvoiceToCashier,
 	exportLiveInvoiceToPlan,
@@ -15,11 +16,14 @@ export type { UseLiveInvoiceStateParams };
 
 export function useLiveInvoiceState({
 	teethData,
+	clinicServiceCatalog,
 	patientId,
 	patientName = "Пациент",
 	onGenerateTreatmentPlan,
 	onCreateInvoice,
 }: UseLiveInvoiceStateParams) {
+	const storeCatalog = useAppStore((s) => s.dashboard?.serviceCatalog);
+	const effectiveCatalog = clinicServiceCatalog ?? storeCatalog;
 	const [excludedKeys, setExcludedKeys] = useState<Set<string>>(
 		() => new Set(),
 	);
@@ -34,8 +38,9 @@ export function useLiveInvoiceState({
 				excludedKeys,
 				quantities,
 				discountPercent,
+				clinicServiceCatalog: effectiveCatalog,
 			}),
-		[teethData, excludedKeys, quantities, discountPercent],
+		[teethData, excludedKeys, quantities, discountPercent, effectiveCatalog],
 	);
 
 	const visibleBaseItems = useMemo(

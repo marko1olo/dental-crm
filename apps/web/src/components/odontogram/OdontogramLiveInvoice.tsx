@@ -7,6 +7,7 @@ import { LiveInvoiceHeader } from "./LiveInvoiceHeader";
 import { LiveInvoiceItemsList } from "./LiveInvoiceItemsList";
 import { LiveInvoiceSummaryFooter } from "./LiveInvoiceSummaryFooter";
 import type {
+	ClinicServiceCatalogEntry,
 	LiveInvoiceCashierExport,
 	LiveInvoiceItem,
 } from "./odontogramLiveInvoiceCalculations";
@@ -17,6 +18,7 @@ export * from "./odontogramLiveInvoiceCalculations";
 
 export interface OdontogramLiveInvoiceProps {
 	teethData: readonly ToothData[];
+	clinicServiceCatalog?: readonly ClinicServiceCatalogEntry[] | undefined;
 	isOpen: boolean;
 	onClose: () => void;
 	onGenerateTreatmentPlan?: ((items: LiveInvoiceItem[]) => void) | undefined;
@@ -29,6 +31,7 @@ export interface OdontogramLiveInvoiceProps {
 
 export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 	teethData,
+	clinicServiceCatalog,
 	isOpen,
 	onClose,
 	onGenerateTreatmentPlan,
@@ -40,6 +43,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 }) => {
 	const invoice = useLiveInvoiceState({
 		teethData,
+		clinicServiceCatalog,
 		patientId,
 		patientName,
 		onGenerateTreatmentPlan,

@@ -1,5 +1,10 @@
 import { useMemo } from "react";
-import { calculateDoctorShiftEarnings, kopecksToRubles } from "@dental/shared";
+import {
+	calculateDoctorShiftEarnings,
+	DEFAULT_CATEGORY_COMMISSION_PERCENT,
+	kopecksToRubles,
+} from "@dental/shared";
+import { useDoctorTodayEarnings } from "../../../hooks/useDoctorTodayEarnings";
 import type { DoctorShiftStats } from "../../shift/DoctorShiftControlBar";
 import type { DoctorShiftEmrSummary } from "../../shift/doctorShiftClose/doctorShiftCloseTypes";
 import type { DoctorMobileShiftModalProps, UseDoctorMobileShiftReturn } from "./types";
@@ -23,11 +28,20 @@ export function useDoctorMobileShift(props: DoctorMobileShiftModalProps): UseDoc
 		rawAppointments,
 		patients,
 		chairs,
+		commissionPercent,
 		onAppointmentUpdate,
 		onEmergencyVisit,
 		onShiftClose,
 		onClose,
 	} = props;
+
+	const { summary: doctorTodaySummary } = useDoctorTodayEarnings(
+		Boolean(props.isOpen && commissionPercent === undefined),
+	);
+	const resolvedCommissionPercent =
+		commissionPercent ??
+		doctorTodaySummary?.commissionPercent ??
+		(DEFAULT_CATEGORY_COMMISSION_PERCENT.therapy ?? 25);
 
 	const flow = useShiftAppointmentsFlow({
 		initialDoctorId,
@@ -68,19 +82,19 @@ export function useDoctorMobileShift(props: DoctorMobileShiftModalProps): UseDoc
 			flow.doctorAppointments,
 			initialDoctorId,
 			initialShiftDateIso,
-			25,
+			resolvedCommissionPercent,
 		);
-	}, [flow.doctorAppointments, initialDoctorId, initialShiftDateIso]);
+	}, [flow.doctorAppointments, initialDoctorId, initialShiftDateIso, resolvedCommissionPercent]);
 
 	const shiftStats: DoctorShiftStats = useMemo(() => ({
 		totalAppointments: earnings.totalAppointmentsCount,
 		completedCount: earnings.completedAppointmentsCount,
 		inProgressCount: earnings.inChairAppointmentsCount,
 		totalRevenueRub: Math.round(kopecksToRubles(earnings.grossRevenueKop)),
-		doctorCommissionPct: 25,
+		doctorCommissionPct: resolvedCommissionPercent,
 		estimatedDoctorPayoutRub: Math.round(kopecksToRubles(earnings.totalEarnedDealKop)),
 		hasActiveOvertime: new Date().getHours() >= 21,
-	}), [earnings]);
+	}), [earnings, resolvedCommissionPercent]);
 
 	const emrSummary: DoctorShiftEmrSummary = useMemo(() => ({
 		signedCount: earnings.signedEmr043Count,

@@ -22,6 +22,7 @@ import type {
 } from "../portalBudget/types.js";
 import { wsBroker } from "../websocketBroker.js";
 import type { SignBody } from "./budgetSchemas.js";
+import { buildDerived3TierSummary } from "./budgetTiersSummary.js";
 
 export interface CompleteBudgetSigningInput {
 	budget: typeof portalBudgetTokens.$inferSelect;
@@ -65,12 +66,20 @@ export async function completeBudgetSigning({
 		signatureSvg: parsedSignData.signatureSvg,
 		signedByName: signer,
 		relationshipToPatient: parsedSignData.relationship || "patient",
+		selectedTierId: parsedSignData.selectedTierId === "standard" ? "optimum" : parsedSignData.selectedTierId,
 		ipAddress: clientIp,
 		ipHash: clientIpHash,
 		userAgent,
 		signedAtIso: signedAt.toISOString(),
 		documentHash,
 	};
+
+	const normalizedSelectedTier =
+		parsedSignData.selectedTierId === "standard"
+			? "optimum"
+			: parsedSignData.selectedTierId;
+
+	let approvedPlanId = budget.planId;
 
 	// Единая неделимая ACID-транзакция Postgres (tx)
 	await withTenantCtx(budget.organizationId, async (tx) => {
@@ -87,7 +96,7 @@ export async function completeBudgetSigning({
 			})
 			.where(eq(portalBudgetTokens.token, budget.token));
 
-		// 2. Если смета привязана к плану лечения в БД — синхронизируем статус Approved, позиции и создаем инвойс
+		// 2. Если смета привязана к плану лечения в БД — синхронизируем статус Approved, выбранный тариф и создаем инвойс
 		if (budget.planId) {
 			const [planToLock] = await tx
 				.select()
@@ -102,17 +111,72 @@ export async function completeBudgetSigning({
 				.limit(1);
 
 			if (planToLock) {
+				let targetPlan = planToLock;
+				if (normalizedSelectedTier && planToLock.planGroupId) {
+					const siblings = await tx
+						.select()
+						.from(treatmentPlans)
+						.where(
+							and(
+								eq(treatmentPlans.organizationId, budget.organizationId),
+								eq(treatmentPlans.planGroupId, planToLock.planGroupId),
+							),
+						)
+						.for("update");
+					const matchingSibling = siblings.find((sib) => {
+						const tier = (sib.alternativeTier ?? "").trim().toLowerCase();
+						return (
+							tier === normalizedSelectedTier ||
+							(normalizedSelectedTier === "optimum" && tier === "standard")
+						);
+					});
+					if (matchingSibling) {
+						targetPlan = matchingSibling;
+					}
+				}
+				approvedPlanId = targetPlan.id;
+
+				const anchorRawTier = (planToLock.alternativeTier ?? "").trim().toLowerCase();
+				const anchorTier =
+					anchorRawTier === "economy" || anchorRawTier === "premium"
+						? anchorRawTier
+						: "optimum";
+				const baseNetKopecks =
+					budget.netTotalKopecks != null
+						? Number(budget.netTotalKopecks)
+						: rublesToKopecks(Number(budget.netTotalRub) || 0);
+				const baseDiscountKopecks =
+					budget.discountKopecks != null
+						? Number(budget.discountKopecks)
+						: rublesToKopecks(Number(budget.discountRub) || 0);
+
+				let overrideTotalRub: string | number | undefined;
+				if (normalizedSelectedTier && targetPlan.id === planToLock.id && normalizedSelectedTier !== anchorTier) {
+					const derived = buildDerived3TierSummary(
+						baseNetKopecks,
+						baseDiscountKopecks,
+						anchorTier,
+					);
+					const chosenSummary = derived.tiersSummary.find(
+						(t) => t.tierId === normalizedSelectedTier,
+					);
+					if (chosenSummary) {
+						overrideTotalRub = kopecksToNumericString(chosenSummary.netTotalKopecks);
+					}
+				}
+
 				const [updatedPlan] = await tx
 					.update(treatmentPlans)
 					.set({
 						status: "Approved",
+						...(normalizedSelectedTier ? { alternativeTier: normalizedSelectedTier } : {}),
 						patientSignature: parsedSignData.signaturePng,
 						approvedAt: signedAt,
 						updatedAt: signedAt,
 					})
 					.where(
 						and(
-							eq(treatmentPlans.id, budget.planId),
+							eq(treatmentPlans.id, targetPlan.id),
 							eq(treatmentPlans.organizationId, budget.organizationId),
 						),
 					)
@@ -123,7 +187,7 @@ export async function completeBudgetSigning({
 					.update(treatmentItems)
 					.set({
 						status: "approved",
-						treatmentPlanId: budget.planId,
+						treatmentPlanId: targetPlan.id,
 					})
 					.where(
 						and(
@@ -131,8 +195,8 @@ export async function completeBudgetSigning({
 							eq(treatmentItems.patientId, budget.patientId),
 							eq(treatmentItems.status, "proposed"),
 							or(
-								eq(treatmentItems.treatmentPlanId, budget.planId),
-								sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${budget.planId} AND organization_id = ${budget.organizationId})`,
+								eq(treatmentItems.treatmentPlanId, targetPlan.id),
+								sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${targetPlan.id} AND organization_id = ${budget.organizationId})`,
 							),
 						),
 					);
@@ -141,17 +205,21 @@ export async function completeBudgetSigning({
 				await cancelRejectedPlanTierLedgerItems(tx, {
 					organizationId: budget.organizationId,
 					patientId: budget.patientId,
-					approvedPlanId: budget.planId,
-					planGroupId: planToLock.planGroupId,
+					approvedPlanId: targetPlan.id,
+					planGroupId: targetPlan.planGroupId,
 				});
 
 				// Создаем реальный счет/наряд в кассе в целочисленных копейках
 				await createInvoiceForApprovedPlan(tx, {
 					organizationId: budget.organizationId,
 					patientId: budget.patientId,
-					planId: budget.planId,
-					planName: updatedPlan?.name || planToLock.name || "План лечения (подписан пациентом)",
-					planTotalPriceRub: updatedPlan?.totalPriceRub || updatedPlan?.totalPrice || budget.netTotalRub,
+					planId: targetPlan.id,
+					planName: updatedPlan?.name || targetPlan.name || "План лечения (подписан пациентом)",
+					planTotalPriceRub:
+						overrideTotalRub ??
+						updatedPlan?.totalPriceRub ??
+						updatedPlan?.totalPrice ??
+						budget.netTotalRub,
 					discountMode: updatedPlan?.discountMode ?? "plan_fixed",
 					planDiscountPercent: updatedPlan?.planDiscountPercent ? Number(updatedPlan.planDiscountPercent) : 0,
 					planDiscountRub: updatedPlan?.planDiscountRub ? Number(updatedPlan.planDiscountRub) : 0,
@@ -162,9 +230,9 @@ export async function completeBudgetSigning({
 					organizationId: budget.organizationId,
 					actorUserId: null,
 					entityType: "treatment_plan",
-					entityId: budget.planId,
+					entityId: targetPlan.id,
 					action: "BUDGET_SIGNED_REMOTE",
-					reason: `Дистанционное согласование сметы пациентом ${signer} (IP hash: ${clientIpHash.slice(0, 8)}...)`,
+					reason: `Дистанционное согласование сметы пациентом ${signer}${normalizedSelectedTier ? ` (тариф: ${normalizedSelectedTier})` : ""} (IP hash: ${clientIpHash.slice(0, 8)}...)`,
 				});
 			} else {
 				log.warn({ planId: budget.planId }, "План лечения для утверждения не найден в организации");
@@ -186,8 +254,9 @@ export async function completeBudgetSigning({
 		type: "TREATMENT_PLAN_BUDGET_SIGNED",
 		payload: {
 			token: budget.token,
-			planId: budget.planId,
+			planId: approvedPlanId,
 			patientId: budget.patientId,
+			selectedTierId: normalizedSelectedTier ?? null,
 			signedAt: signedAt.toISOString(),
 			signerName: signer,
 			documentHash,

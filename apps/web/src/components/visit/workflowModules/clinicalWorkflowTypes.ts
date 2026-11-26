@@ -113,6 +113,8 @@ export interface ClinicalVisitCompletionResult {
 	readonly medicalCardSaved?: boolean | undefined;
 	readonly completedAtIso: string;
 	readonly materialsDeduction?: AutoVisitBomDeductionResult | undefined;
+	readonly doctorEarningsDeltaKopecks?: number | undefined;
+	readonly doctorTodayTotalKopecks?: number | undefined;
 	readonly isAbortedOrRescheduled?: boolean | undefined;
 	readonly interruptionReason?: string | undefined;
 	readonly rescheduledDateIso?: string | undefined;

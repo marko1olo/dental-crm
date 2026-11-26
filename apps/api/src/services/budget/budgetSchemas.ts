@@ -41,6 +41,9 @@ export const signBodySchema = z
 				message: "Поле содержит недопустимые символы",
 			})
 			.optional(),
+		selectedTierId: z
+			.enum(["economy", "optimum", "premium", "standard"])
+			.optional(),
 	})
 	.strict();
 

@@ -194,13 +194,24 @@ export async function executeWorkOrderCompletion(
 	await executeVisitCompletionEndpoint(ctx);
 }
 
+export interface VisitCompletionEndpointEarnings {
+	readonly doctorEarningsDeltaKopecks?: number | undefined;
+	readonly doctorTodayTotalKopecks?: number | undefined;
+}
+
+export interface VisitPostCompletionPipelineResult {
+	readonly materialsDeduction?: AutoVisitBomDeductionResult | undefined;
+	readonly doctorEarningsDeltaKopecks?: number | undefined;
+	readonly doctorTodayTotalKopecks?: number | undefined;
+}
+
 /**
  * 3.1. Сквозное завершение приёма в Fastify API / PostgreSQL 18 (/api/v1/visits/:visitId/complete)
  */
 export async function executeVisitCompletionEndpoint(
 	ctx: VisitPostCompletionContext,
-): Promise<void> {
-	if (!isUuid(ctx.effectiveVisitId)) return;
+): Promise<VisitCompletionEndpointEarnings | undefined> {
+	if (!isUuid(ctx.effectiveVisitId)) return undefined;
 
 	const payload = {
 		diary: ctx.effectiveDiary,
@@ -210,22 +221,38 @@ export async function executeVisitCompletionEndpoint(
 
 	const completionIdempotencyKey = generateUuidV7();
 
+	const extractEarnings = async (
+		res: Response,
+	): Promise<VisitCompletionEndpointEarnings | undefined> => {
+		try {
+			const rawJson = (await res.json()) as { data?: Record<string, unknown> } & Record<string, unknown>;
+			const data = rawJson?.data ?? rawJson;
+			const delta =
+				typeof data?.doctorEarningsDeltaKopecks === "number" &&
+				Number.isFinite(data.doctorEarningsDeltaKopecks)
+					? Math.round(data.doctorEarningsDeltaKopecks)
+					: undefined;
+			const total =
+				typeof data?.doctorTodayTotalKopecks === "number" &&
+				Number.isFinite(data.doctorTodayTotalKopecks)
+					? Math.round(data.doctorTodayTotalKopecks)
+					: undefined;
+			if (delta === undefined && total === undefined) {
+				return undefined;
+			}
+			return {
+				...(delta !== undefined ? { doctorEarningsDeltaKopecks: delta } : {}),
+				...(total !== undefined ? { doctorTodayTotalKopecks: total } : {}),
+			};
+		} catch {
+			return undefined;
+		}
+	};
+
 	try {
-		await fetchWithHandling(
-			`/api/v1/visits/${ctx.effectiveVisitId}/complete`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"Idempotency-Key": completionIdempotencyKey,
-					...getDenteAuthHeaders(),
-				},
-				body: JSON.stringify(payload),
-			},
-		).catch(async (primaryErr) => {
-			logger.warn("[visitCompletionPipeline] Primary complete failed, trying fallback:", primaryErr);
-			await fetchWithHandling(
-				`/api/visits/${ctx.effectiveVisitId}/complete`,
+		try {
+			const primaryRes = await fetchWithHandling(
+				`/api/v1/visits/${ctx.effectiveVisitId}/complete`,
 				{
 					method: "POST",
 					headers: {
@@ -233,12 +260,30 @@ export async function executeVisitCompletionEndpoint(
 						"Idempotency-Key": completionIdempotencyKey,
 						...getDenteAuthHeaders(),
 					},
-					body: JSON.stringify({
-						diary: ctx.effectiveDiary,
-						status: "completed",
-					}),
+					body: JSON.stringify(payload),
 				},
-			).catch((fallbackErr) => {
+			);
+			return await extractEarnings(primaryRes);
+		} catch (primaryErr) {
+			logger.warn("[visitCompletionPipeline] Primary complete failed, trying fallback:", primaryErr);
+			try {
+				const fallbackRes = await fetchWithHandling(
+					`/api/visits/${ctx.effectiveVisitId}/complete`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Idempotency-Key": completionIdempotencyKey,
+							...getDenteAuthHeaders(),
+						},
+						body: JSON.stringify({
+							diary: ctx.effectiveDiary,
+							status: "completed",
+						}),
+					},
+				);
+				return await extractEarnings(fallbackRes);
+			} catch (fallbackErr) {
 				logger.warn("[visitCompletionPipeline] Fallback completion failed, enqueuing to offlineStore:", fallbackErr);
 				void useOfflineStore.getState().enqueue({
 					entityType: "visit",
@@ -248,8 +293,9 @@ export async function executeVisitCompletionEndpoint(
 				}).catch((enqueueErr) => {
 					logger.error("[visitCompletionPipeline] Failed to enqueue visit completion to offlineStore:", enqueueErr);
 				});
-			});
-		});
+				return undefined;
+			}
+		}
 	} catch (err) {
 		logger.warn("[visitCompletionPipeline] executeVisitCompletionEndpoint exception, enqueuing to offlineStore:", err);
 		void useOfflineStore.getState().enqueue({
@@ -260,6 +306,7 @@ export async function executeVisitCompletionEndpoint(
 		}).catch((enqueueErr) => {
 			logger.error("[visitCompletionPipeline] Failed to enqueue visit completion to offlineStore:", enqueueErr);
 		});
+		return undefined;
 	}
 }
 
@@ -661,14 +708,15 @@ export async function executeOdontogramToothHistorySync(
  */
 export async function executeVisitPostCompletionPipeline(
 	ctx: VisitPostCompletionContext,
-): Promise<AutoVisitBomDeductionResult | undefined> {
+): Promise<VisitPostCompletionPipelineResult> {
 	// 1. Сохранение черновика приёма выполняется ДО закрытия наряда
 	await executeDraftAutosave(ctx);
 
-	// 2. Завершение визита в API/БД (где сервер выполняет каноническое BOM-списание 1 раз в транзакции RLS),
+	// 2. Завершение визита в API/БД (где сервер выполняет каноническое BOM-списание 1 раз в транзакции RLS и возвращает доход врача),
 	// блокировка дневника ПЭП (/api/diaries/:id/lock), закрытие позиций плана лечения и синхронизация одонтограммы
-	Promise.allSettled([
-		executeVisitCompletionEndpoint(ctx),
+	const completionPromise = executeVisitCompletionEndpoint(ctx);
+	void Promise.allSettled([
+		completionPromise,
 		executeDiaryLockUponVisitCompletion(ctx),
 		executeTreatmentPlanItemCompletion(ctx),
 		executeOdontogramToothHistorySync(ctx),
@@ -679,5 +727,13 @@ export async function executeVisitPostCompletionPipeline(
 		);
 	});
 
-	return undefined;
+	const earnings = await completionPromise.catch(() => undefined);
+	return {
+		...(earnings?.doctorEarningsDeltaKopecks !== undefined
+			? { doctorEarningsDeltaKopecks: earnings.doctorEarningsDeltaKopecks }
+			: {}),
+		...(earnings?.doctorTodayTotalKopecks !== undefined
+			? { doctorTodayTotalKopecks: earnings.doctorTodayTotalKopecks }
+			: {}),
+	};
 }

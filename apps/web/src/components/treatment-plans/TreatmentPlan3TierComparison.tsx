@@ -13,7 +13,11 @@ import { TreatmentPlan3TierAgeWarning } from "./TreatmentPlan3TierAgeWarning";
 import { TreatmentPlan3TierMobileSegmented } from "./TreatmentPlan3TierMobileSegmented";
 import { TreatmentPlan3TierMobileThumbBar } from "./TreatmentPlan3TierMobileThumbBar";
 import { TreatmentPlan3TierEmptyState } from "./TreatmentPlan3TierEmptyState";
-import { createAndSharePlanBudgetLink } from "./treatmentPlanMessengerHelper";
+import {
+	createAndSharePlanBudgetLink,
+	sendTreatmentPlanTelegramFollowup,
+} from "./treatmentPlanMessengerHelper";
+import { showToast } from "../GlobalToast";
 
 export { formatServiceLifeYearsText } from "./tierCard";
 
@@ -68,6 +72,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	const [expandedStagesTierId, setExpandedStagesTierId] = useState<TreatmentPlanTierId | null>(selectedTierId);
 	const [activePaymentMode, setActivePaymentMode] = useState<"installment" | "staged" | "discount">("installment");
 	const [copiedMessengerTierId, setCopiedMessengerTierId] = useState<TreatmentPlanTierId | null>(null);
+	const [isSendingTelegram, setIsSendingTelegram] = useState<boolean>(false);
 
 	const effectivePlanAgeDays = typeof planAgeDays === "number" ? planAgeDays : planCreatedAtIso ? Math.floor((Date.now() - new Date(planCreatedAtIso).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -92,6 +97,25 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 		setTimeout(() => setCopiedMessengerTierId(null), 2500);
 	};
 
+	const handleSendTelegramFollowup = async (e: React.MouseEvent, _t: TreatmentPlanTier) => {
+		e.stopPropagation();
+		if (!props.planId) {
+			showToast("Сохраните план лечения перед отправкой в Telegram", "info", 3500);
+			return;
+		}
+		setIsSendingTelegram(true);
+		try {
+			const res = await sendTreatmentPlanTelegramFollowup(props.planId);
+			if (res.ok) {
+				showToast(res.message || "План лечения отправлен пациенту в Telegram", "success", 3500);
+			} else {
+				showToast(res.message || "Не удалось отправить план в Telegram", "error", 4500);
+			}
+		} finally {
+			setIsSendingTelegram(false);
+		}
+	};
+
 	if (!tiers || tiers.length === 0) return null;
 	if (tiers.every((t) => (t.itemsCount ?? 0) === 0 && (t.totalRub ?? 0) === 0)) {
 		return (
@@ -112,7 +136,7 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	return (
 		<div className={`treatment-3tier-comparison flex flex-col gap-3 w-full ${hideMobileThumbBar ? "pb-4" : "pb-44"} sm:pb-2 ${className}`.trim()} data-testid="treatment-3tier-comparison">
 			<TreatmentPlan3TierAgeWarning effectivePlanAgeDays={effectivePlanAgeDays} />
-			<TreatmentPlan3TierToolbar activePaymentMode={activePaymentMode} onPaymentModeChange={setActivePaymentMode} installmentMonths={installmentMonths} onInstallmentMonthsChange={setInstallmentMonths} showNdflBreakdown={showNdflBreakdown} onToggleNdflBreakdown={() => setShowNdflBreakdown((p) => !p)} activeTier={activeTier} copiedMessengerTierId={copiedMessengerTierId} onCopyEstimateToMessenger={handleCopyEstimateToMessenger} onOpenComparatorStudio={onOpenComparatorStudio} onOpenStagePaymentStudio={onOpenStagePaymentStudio} onOpenPriceValidatorStudio={onOpenPriceValidatorStudio} />
+			<TreatmentPlan3TierToolbar activePaymentMode={activePaymentMode} onPaymentModeChange={setActivePaymentMode} installmentMonths={installmentMonths} onInstallmentMonthsChange={setInstallmentMonths} showNdflBreakdown={showNdflBreakdown} onToggleNdflBreakdown={() => setShowNdflBreakdown((p) => !p)} activeTier={activeTier} copiedMessengerTierId={copiedMessengerTierId} onCopyEstimateToMessenger={handleCopyEstimateToMessenger} isSendingTelegram={isSendingTelegram} onSendTelegramFollowup={props.planId ? handleSendTelegramFollowup : undefined} onOpenComparatorStudio={onOpenComparatorStudio} onOpenStagePaymentStudio={onOpenStagePaymentStudio} onOpenPriceValidatorStudio={onOpenPriceValidatorStudio} />
 			<TreatmentPlan3TierMobileSegmented tiers={tiers} activeTierId={activeTierId} onSelectTier={handleCardClick} getTierShortLabel={getTierShortLabel} />
 			<div className="sm:hidden flex flex-col w-full min-w-0">{renderSingleTierCard(activeTier, true)}</div>
 			<div className="hidden sm:grid sm:grid-cols-3 gap-3 sm:gap-4 items-stretch min-h-[460px]">{tiers.map((t) => renderSingleTierCard(t, false))}</div>
