@@ -103,6 +103,7 @@ export function ScheduleViewFilterStripSection({ props }: { props: ScheduleViewT
       onAddChair={handleAddChairFromSchedule}
       onOpenDoctorShiftDrawer={onOpenDoctorShiftDrawer}
       onOpenChairDateRangeModal={onOpenChairDateRangeModal}
+      onOpenTimeReservation={props.onOpenTimeReservation}
       pendingOnlineBookingsCount={pendingOnlineBookingsCount}
       onOpenPendingOnlineBookings={onOpenPendingOnlineBookings}
       onQuickBooking={() => {

@@ -1,10 +1,15 @@
 import React from "react";
-import type { Appointment } from "@dental/shared";
+import type { Appointment, UrgentScheduleRequest } from "@dental/shared";
+import {
+  safeLocalStorageGetItem,
+  safeLocalStorageSetItem,
+} from "../../../lib/safeLocalStorage";
 import { ScheduleDayZeroBanner, ScheduleGridCompatibilityTriggers } from "./ScheduleGridToolbar";
 import { ScheduleGridChairsHeaderRow } from "./ScheduleGridChairsHeaderRow";
 import { ScheduleAppointmentTrack } from "./ScheduleAppointmentTrack";
 import { ScheduleGridFooter } from "./ScheduleGridFooter";
 import { ScheduleGridModalsAndSheet } from "./ScheduleGridModalsAndSheet";
+import { ScheduleCockpitLeftPanel } from "./ScheduleCockpitLeftPanel";
 import { ScheduleAppointmentInspector } from "../inspector";
 import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";
 import type { ScheduleGridDesktopLayoutProps } from "./scheduleGridDesktopLayoutTypes";
@@ -22,6 +27,8 @@ export function ScheduleGridDesktopLayout({
   currentHour,
   timezone,
   patientName,
+  effectiveMaintenanceBlocksOverride,
+  onDeleteTimeReservation,
 }: ScheduleGridDesktopLayoutProps) {
   const {
     dashboard,
@@ -38,6 +45,54 @@ export function ScheduleGridDesktopLayout({
 
   const [selectedInspectorAppt, setSelectedInspectorAppt] = React.useState<Appointment | null>(null);
   const [isInspectorOpen, setIsInspectorOpen] = React.useState<boolean>(true);
+  const [isCockpitOpen, setIsCockpitOpen] = React.useState<boolean>(() => {
+    const saved = safeLocalStorageGetItem("dente_schedule_left_cockpit_open");
+    return saved === "false" ? false : true;
+  });
+
+  const handleToggleCockpit = React.useCallback(() => {
+    setIsCockpitOpen((prev) => {
+      const next = !prev;
+      safeLocalStorageSetItem("dente_schedule_left_cockpit_open", next ? "true" : "false");
+      return next;
+    });
+  }, []);
+
+  const handleRemoveMaintenanceBlock = React.useCallback(
+    (blockId: string) => {
+      if (blockId.startsWith("res::") && onDeleteTimeReservation) {
+        void onDeleteTimeReservation(blockId);
+        return;
+      }
+      interactions.handleRemoveMaintenance(blockId);
+    },
+    [interactions, onDeleteTimeReservation],
+  );
+
+  const handleBookUrgentRequest = React.useCallback(
+    (req: UrgentScheduleRequest) => {
+      const timeMatch = req.preferredSlotTime?.match(/(\d{2}:\d{2})/);
+      const startTime = timeMatch?.[1] ?? "10:00";
+      const firstChair = duty.effectiveChairs[0];
+      const normalizedDoc = req.doctorName?.trim().toLowerCase() ?? "";
+      const matchedDoctor = normalizedDoc
+        ? duty.doctors.find((d) => d.fullName.toLowerCase().includes(normalizedDoc))
+        : undefined;
+      onSlotClick?.({
+        dateKey,
+        startTime,
+        chairId: firstChair?.id ?? null,
+        chairName: firstChair?.name ?? null,
+        doctorUserId: matchedDoctor?.id ?? selectedDoctorId ?? duty.doctors[0]?.id ?? null,
+        doctorName: matchedDoctor?.fullName ?? (req.doctorName || null),
+        patientName: req.patientName,
+        reason: req.requestType || "Острая боль",
+        durationMinutes: 30,
+        isCitoEmergency: true,
+      });
+    },
+    [dateKey, duty.doctors, duty.effectiveChairs, onSlotClick, selectedDoctorId],
+  );
 
   // Keep selectedInspectorAppt synced with latest appointments data
   const effectiveSelectedAppt = React.useMemo(() => {
@@ -99,6 +154,17 @@ export function ScheduleGridDesktopLayout({
       />
 
       <div className="flex flex-row items-stretch gap-2 w-full min-w-0">
+        <ScheduleCockpitLeftPanel
+          isOpen={isCockpitOpen}
+          onToggleOpen={handleToggleCockpit}
+          dateKey={dateKey}
+          onDateChange={handleDateChange}
+          appointments={appointments as Appointment[]}
+          toDateTimeLocalValue={toDateTimeLocalValue}
+          timezone={timezone}
+          onBookUrgentRequest={handleBookUrgentRequest}
+        />
+
         <div
           ref={interactions.gridContainerRef}
           className="schedule-grid-container flex-1 min-w-0 overflow-x-auto overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-xs select-none"
@@ -131,7 +197,7 @@ export function ScheduleGridDesktopLayout({
             }}
             patientName={patientName}
             dashboard={dashboard}
-            handleRemoveMaintenance={interactions.handleRemoveMaintenance}
+            handleRemoveMaintenance={handleRemoveMaintenanceBlock}
             doctors={duty.doctors}
             patientLookupMap={gridData.patientLookupMap}
             staffLookupMap={gridData.staffLookupMap}
@@ -162,7 +228,9 @@ export function ScheduleGridDesktopLayout({
             getDoctorForChairAndHour={duty.getDoctorForChairAndHour}
             selectedDoctorId={selectedDoctorId}
             effectiveChairAssignments={duty.effectiveChairAssignments}
-            effectiveMaintenanceBlocks={interactions.effectiveMaintenanceBlocks}
+            effectiveMaintenanceBlocks={
+              effectiveMaintenanceBlocksOverride ?? interactions.effectiveMaintenanceBlocks
+            }
             onAppointmentMove={onAppointmentMove}
             onSlotClick={onSlotClick}
             emergencyReserveSlots={gridData.emergencyReserveSlots}
@@ -198,6 +266,7 @@ export function ScheduleGridDesktopLayout({
             onSelectAppointment={(appt) => setSelectedInspectorAppt(appt)}
             isOpen={isInspectorOpen}
             onToggleOpen={() => setIsInspectorOpen((prev) => !prev)}
+            hideMiniCalendar={isCockpitOpen}
           />
         )}
       </div>

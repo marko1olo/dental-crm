@@ -8,6 +8,7 @@ import {
 	Search,
 	AlertCircle,
 	Bell,
+	Lock,
 } from "lucide-react";
 
 export interface ScheduleOptionsMenuProps {
@@ -43,6 +44,7 @@ export interface ScheduleOptionsMenuProps {
 	preventiveInspectionCount?: number | undefined;
 	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 	gridStepMinutes?: number | undefined;
+	onOpenTimeReservation?: (() => void) | undefined;
 }
 
 export function ScheduleOptionsMenu({
@@ -73,6 +75,7 @@ export function ScheduleOptionsMenu({
 	preventiveInspectionCount,
 	onGridStepChange,
 	gridStepMinutes,
+	onOpenTimeReservation,
 }: ScheduleOptionsMenuProps) {
 	return (
 		<div className="relative inline-flex items-center shrink-0" ref={menuRef}>
@@ -337,6 +340,24 @@ export function ScheduleOptionsMenu({
 							<span className="flex items-center gap-1.5 font-semibold">
 								<AlertCircle size={13} />
 								<span>Острая боль (срочно)</span>
+							</span>
+						</button>
+					)}
+
+					{/* Резерв времени (технологический блок) */}
+					{onOpenTimeReservation && (
+						<button
+							type="button"
+							onClick={() => {
+								onClose();
+								onOpenTimeReservation();
+							}}
+							className="w-full py-1.5 px-2.5 rounded-md hover:bg-[var(--paper-soft)] text-left flex items-center justify-between text-[var(--ink)] cursor-pointer"
+							data-testid="schedule-options-time-reservation-btn"
+						>
+							<span className="flex items-center gap-1.5">
+								<Lock size={13} className="text-[var(--muted)]" />
+								<span>Резерв времени</span>
 							</span>
 						</button>
 					)}

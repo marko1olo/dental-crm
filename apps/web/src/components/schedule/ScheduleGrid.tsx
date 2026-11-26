@@ -80,6 +80,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
       currentHour={ctrl.currentHour}
       timezone={ctrl.timezone}
       patientName={ctrl.patientName}
+      effectiveMaintenanceBlocksOverride={ctrl.mergedMaintenanceBlocks}
+      onDeleteTimeReservation={ctrl.deleteTimeReservation}
     />
   );
 });

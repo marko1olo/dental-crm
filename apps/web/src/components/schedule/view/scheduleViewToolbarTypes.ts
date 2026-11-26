@@ -58,6 +58,7 @@ export interface ScheduleViewToolbarProps {
   openScheduleWarning?: ((w: ScheduleShiftWarning) => void) | undefined;
   onOpenDoctorShiftDrawer?: ((shiftToEdit?: Partial<DoctorShift> | null) => void) | undefined;
   onOpenChairDateRangeModal?: (() => void) | undefined;
+  onOpenTimeReservation?: (() => void) | undefined;
   pendingOnlineBookingsCount?: number;
   onOpenPendingOnlineBookings?: () => void;
 }

@@ -22,6 +22,7 @@ export interface ScheduleAppointmentInspectorProps {
   onSelectAppointment: (appointment: Appointment) => void;
   isOpen?: boolean | undefined;
   onToggleOpen?: (() => void) | undefined;
+  hideMiniCalendar?: boolean | undefined;
 }
 
 /**
@@ -50,6 +51,7 @@ export const ScheduleAppointmentInspector: React.FC<ScheduleAppointmentInspector
   onSelectAppointment,
   isOpen = true,
   onToggleOpen,
+  hideMiniCalendar = false,
 }) => {
   if (!isOpen) return null;
 
@@ -61,11 +63,16 @@ export const ScheduleAppointmentInspector: React.FC<ScheduleAppointmentInspector
       aria-label="Инспектор выбранной записи"
     >
       {/* 1. Mini Month Calendar for instant date navigation */}
-      <ScheduleMiniMonthCalendar
-        selectedDate={dateKey}
-        appointments={appointments}
-        onSelectDate={onDateChange}
-      />
+      {!hideMiniCalendar && (
+        <ScheduleMiniMonthCalendar
+          selectedDate={dateKey}
+          appointments={appointments}
+          onSelectDate={onDateChange}
+          toDateTimeLocalValue={toDateTimeLocalValue}
+          timezone={timezone}
+          showClinicLoad={true}
+        />
+      )}
 
       {/* 2. Main Content: Details or Empty State */}
       {selectedAppointment ? (

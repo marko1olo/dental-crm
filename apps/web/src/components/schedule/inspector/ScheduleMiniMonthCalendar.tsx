@@ -4,8 +4,11 @@ import type { Appointment } from "@dental/shared";
 
 export interface ScheduleMiniMonthCalendarProps {
   selectedDate: string; // YYYY-MM-DD
-  appointments?: Appointment[];
+  appointments?: readonly Appointment[] | undefined;
   onSelectDate: (date: string) => void;
+  toDateTimeLocalValue?: ((iso: string, tz?: string) => string) | undefined;
+  timezone?: string | undefined;
+  showClinicLoad?: boolean | undefined;
 }
 
 const MONTH_NAMES_RU = [
@@ -19,6 +22,9 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
   selectedDate,
   appointments = [],
   onSelectDate,
+  toDateTimeLocalValue,
+  timezone,
+  showClinicLoad = true,
 }) => {
   const [initialYear, initialMonth] = useMemo(() => {
     if (selectedDate && selectedDate.includes("-")) {
@@ -39,16 +45,20 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
     setViewMonth(initialMonth);
   }, [initialYear, initialMonth]);
 
-  // Days with appointments map for fast O(1) lookup
-  const apptDatesMap = useMemo(() => {
-    const set = new Set<string>();
+  // Clinic load per day (active appointment counts) for fast O(1) lookup
+  const clinicLoadMap = useMemo(() => {
+    const counts = new Map<string, number>();
     for (const a of appointments) {
-      if (a.startsAt) {
-        set.add(a.startsAt.slice(0, 10));
+      if (!a.startsAt || a.status === "cancelled" || a.status === "no_show") continue;
+      const dayIso = toDateTimeLocalValue
+        ? toDateTimeLocalValue(a.startsAt, timezone).slice(0, 10)
+        : a.startsAt.slice(0, 10);
+      if (dayIso) {
+        counts.set(dayIso, (counts.get(dayIso) ?? 0) + 1);
       }
     }
-    return set;
-  }, [appointments]);
+    return counts;
+  }, [appointments, toDateTimeLocalValue, timezone]);
 
   const handlePrevMonth = () => {
     if (viewMonth === 0) {
@@ -85,7 +95,16 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
       isToday: boolean;
       isSelected: boolean;
       hasAppointments: boolean;
+      clinicLoadCount: number;
+      loadLevel: "none" | "low" | "medium" | "high";
     }[] = [];
+
+    const resolveLoadLevel = (count: number): "none" | "low" | "medium" | "high" => {
+      if (count <= 0) return "none";
+      if (count <= 3) return "low";
+      if (count <= 7) return "medium";
+      return "high";
+    };
 
     const todayIso = new Date().toISOString().slice(0, 10);
 
@@ -97,13 +116,16 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
       const mStr = String(prevM + 1).padStart(2, "0");
       const dStr = String(dayNum).padStart(2, "0");
       const iso = `${prevY}-${mStr}-${dStr}`;
+      const clinicLoadCount = clinicLoadMap.get(iso) ?? 0;
       cells.push({
         dateIso: iso,
         dayNumber: dayNum,
         isCurrentMonth: false,
         isToday: iso === todayIso,
         isSelected: iso === selectedDate,
-        hasAppointments: apptDatesMap.has(iso),
+        hasAppointments: clinicLoadCount > 0,
+        clinicLoadCount,
+        loadLevel: resolveLoadLevel(clinicLoadCount),
       });
     }
 
@@ -112,13 +134,16 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
       const mStr = String(viewMonth + 1).padStart(2, "0");
       const dStr = String(dayNum).padStart(2, "0");
       const iso = `${viewYear}-${mStr}-${dStr}`;
+      const clinicLoadCount = clinicLoadMap.get(iso) ?? 0;
       cells.push({
         dateIso: iso,
         dayNumber: dayNum,
         isCurrentMonth: true,
         isToday: iso === todayIso,
         isSelected: iso === selectedDate,
-        hasAppointments: apptDatesMap.has(iso),
+        hasAppointments: clinicLoadCount > 0,
+        clinicLoadCount,
+        loadLevel: resolveLoadLevel(clinicLoadCount),
       });
     }
 
@@ -130,18 +155,21 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
       const mStr = String(nextM + 1).padStart(2, "0");
       const dStr = String(dayNum).padStart(2, "0");
       const iso = `${nextY}-${mStr}-${dStr}`;
+      const clinicLoadCount = clinicLoadMap.get(iso) ?? 0;
       cells.push({
         dateIso: iso,
         dayNumber: dayNum,
         isCurrentMonth: false,
         isToday: iso === todayIso,
         isSelected: iso === selectedDate,
-        hasAppointments: apptDatesMap.has(iso),
+        hasAppointments: clinicLoadCount > 0,
+        clinicLoadCount,
+        loadLevel: resolveLoadLevel(clinicLoadCount),
       });
     }
 
     return cells;
-  }, [viewYear, viewMonth, selectedDate, apptDatesMap]);
+  }, [viewYear, viewMonth, selectedDate, clinicLoadMap]);
 
   return (
     <div
@@ -205,33 +233,75 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
       {/* Days Grid */}
       <div className="grid grid-cols-7 gap-1 text-center">
         {calendarCells.map((cell) => {
+          const loadBarColor =
+            cell.isSelected
+              ? "bg-white"
+              : cell.loadLevel === "high"
+                ? "bg-[var(--danger)]"
+                : cell.loadLevel === "medium"
+                  ? "bg-amber-500"
+                  : "bg-[var(--primary)]";
+          const loadTintClass =
+            showClinicLoad && !cell.isSelected && cell.isCurrentMonth
+              ? cell.loadLevel === "high"
+                ? "bg-[var(--danger-soft)]/50"
+                : cell.loadLevel === "medium"
+                  ? "bg-amber-500/10"
+                  : cell.loadLevel === "low"
+                    ? "bg-[var(--primary-soft)]/40"
+                    : ""
+              : "";
           return (
             <button
               key={cell.dateIso}
               type="button"
               onClick={() => onSelectDate(cell.dateIso)}
+              data-clinic-load={cell.loadLevel}
               className={`h-7 rounded-md flex flex-col items-center justify-center relative cursor-pointer transition-all ${
                 cell.isSelected
-                  ? "bg-[var(--teal)] text-white font-bold shadow-xs hover:opacity-90"
+                  ? "bg-[var(--primary)] text-white font-bold shadow-xs hover:opacity-90"
                   : cell.isCurrentMonth
-                    ? "bg-transparent hover:bg-[var(--paper)] text-[var(--ink)]"
+                    ? `${loadTintClass || "bg-transparent"} hover:bg-[var(--paper)] text-[var(--ink)]`
                     : "bg-transparent text-[var(--muted)]/40 hover:bg-[var(--paper)]/50"
-              } ${cell.isToday && !cell.isSelected ? "ring-1 ring-[var(--teal)]/60 font-bold" : ""}`}
-              title={`${cell.dateIso}${cell.hasAppointments ? " (есть приёмы)" : ""}`}
+              } ${cell.isToday && !cell.isSelected ? "ring-1 ring-[var(--primary)]/60 font-bold" : ""}`}
+              title={`${cell.dateIso}${cell.clinicLoadCount > 0 ? ` · записей: ${cell.clinicLoadCount}` : ""}`}
               aria-label={`Дата ${cell.dateIso}`}
             >
-              <span className="text-[11px] leading-none">{cell.dayNumber}</span>
+              <span className="text-[11px] leading-none tabular-nums">{cell.dayNumber}</span>
               {cell.hasAppointments && (
                 <span
-                  className={`w-1 h-1 rounded-full mt-0.5 ${
-                    cell.isSelected ? "bg-white" : "bg-[var(--teal)]"
-                  }`}
+                  className={`mt-0.5 rounded-full ${
+                    showClinicLoad ? "w-3 h-[3px]" : "w-1 h-1"
+                  } ${loadBarColor}`}
                 />
               )}
             </button>
           );
         })}
       </div>
+
+      {showClinicLoad && (
+        <div
+          className="mt-2 pt-1.5 border-t border-[var(--line)] flex items-center justify-between text-[10px] text-[var(--ink-muted)]"
+          data-testid="schedule-mini-calendar-load-legend"
+        >
+          <span>Загрузка дня:</span>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-1 rounded-full bg-[var(--primary)]" />
+              мало
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-1 rounded-full bg-amber-500" />
+              средне
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2 h-1 rounded-full bg-[var(--danger)]" />
+              плотно
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

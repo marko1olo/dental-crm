@@ -41,6 +41,7 @@ import {
 	prepareUpdateAppointmentRawBody,
 	sendDashboardResponseAfterCreate,
 } from "./appointmentsQueryRoutes.js";
+import { handleGetNextFreeSlots } from "./appointmentsNextFreeSlotsRoutes.js";
 import {
 	APPOINTMENT_ID_UUID_PATTERN,
 	appointmentCreateValidationMessage,
@@ -639,6 +640,7 @@ const appointmentMutationOptions = {
 
 export async function registerAppointmentsRoutes(app: FastifyInstance) {
 	app.get("/api/appointments", handleGetAppointments);
+	app.get("/api/appointments/next-free-slots", handleGetNextFreeSlots);
 	app.get("/api/schedule", handleGetAppointments);
 	app.get("/api/appointments/:appointmentId", handleGetAppointmentById);
 	app.post("/api/appointments", createAppointmentHandler);

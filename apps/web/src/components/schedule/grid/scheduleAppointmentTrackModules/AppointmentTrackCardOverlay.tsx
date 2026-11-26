@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, Lock, X } from "lucide-react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { GridAppointmentCard } from "../../AppointmentGridCard";
 import type { ChairMaintenanceBlock } from "../../../../utils/scheduleCollisionUtils";
@@ -20,8 +20,45 @@ export function ChairMaintenanceCard({
   chairId: string;
   onRemove: (id: string) => void;
 }) {
-  const mReasonLabel = getMaintenanceReasonLabel(mBlock);
+  const mReasonLabel = mBlock.note?.trim() || getMaintenanceReasonLabel(mBlock);
   const mDuration = calcMaintenanceDuration(mBlock);
+
+  if (mBlock.isReservation) {
+    const hatchVariant =
+      mBlock.hatchingStyle === "diagonal_red"
+        ? "schedule-reservation-hatched--red"
+        : mBlock.hatchingStyle === "diagonal_amber"
+          ? "schedule-reservation-hatched--amber"
+          : "";
+
+    return (
+      <div
+        key={mBlock.id}
+        className={`w-full p-2 rounded-xl text-xs text-[var(--ink)] flex items-center justify-between gap-1.5 select-none z-10 schedule-reservation-hatched ${hatchVariant}`}
+        data-testid={`chair-reservation-block-${chairId}`}
+      >
+        <div className="flex items-center gap-1.5 truncate min-w-0">
+          <Lock className="w-3.5 h-3.5 shrink-0 text-[var(--ink-muted)]" aria-hidden="true" />
+          <span className="truncate font-medium">
+            {mReasonLabel} ({mDuration} мин)
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(mBlock.id);
+          }}
+          className="h-7 w-7 rounded-md flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] cursor-pointer shrink-0 transition-colors"
+          title="Удалить резерв времени"
+          aria-label="Удалить резерв времени"
+          data-testid={`btn-remove-reservation-${chairId}`}
+        >
+          <X className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

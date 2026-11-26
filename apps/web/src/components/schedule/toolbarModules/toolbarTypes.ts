@@ -74,6 +74,7 @@ export interface ScheduleFilterStripProps {
 	onOpenShiftRoster?: (() => void) | undefined;
 	onOpenDoctorShiftDrawer?: (() => void) | undefined;
 	onOpenChairDateRangeModal?: (() => void) | undefined;
+	onOpenTimeReservation?: (() => void) | undefined;
 	onOpenWaitlist?: (() => void) | undefined;
 	waitlistCount?: number | undefined;
 	onToggleConfirmations?: (() => void) | undefined;

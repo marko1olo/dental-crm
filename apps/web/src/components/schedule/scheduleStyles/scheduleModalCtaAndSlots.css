@@ -76,3 +76,40 @@
 	opacity: 0.95;
 	background-color: var(--paper-subtle, var(--paper)) !important;
 }
+
+/* ─── HATCHED BACKGROUND FOR SCHEDULE TIME RESERVATIONS (LUNCH / REPAIR / MEETING) ─── */
+.schedule-reservation-hatched {
+	background-color: var(--paper-soft);
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent,
+		transparent 6px,
+		var(--line-strong) 6px,
+		var(--line-strong) 8px
+	);
+	border: 1px solid var(--line-strong);
+}
+
+.schedule-reservation-hatched--amber {
+	background-color: color-mix(in srgb, var(--warning, #d97706) 10%, var(--paper));
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent,
+		transparent 6px,
+		color-mix(in srgb, var(--warning, #d97706) 22%, transparent) 6px,
+		color-mix(in srgb, var(--warning, #d97706) 22%, transparent) 8px
+	);
+	border-color: color-mix(in srgb, var(--warning, #d97706) 35%, var(--line));
+}
+
+.schedule-reservation-hatched--red {
+	background-color: color-mix(in srgb, var(--danger) 10%, var(--paper));
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent,
+		transparent 6px,
+		color-mix(in srgb, var(--danger) 20%, transparent) 6px,
+		color-mix(in srgb, var(--danger) 20%, transparent) 8px
+	);
+	border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+}

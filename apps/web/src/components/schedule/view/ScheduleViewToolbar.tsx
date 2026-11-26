@@ -1,6 +1,7 @@
 import React from "react";
 import { ScheduleToolbarPanels } from "./ScheduleToolbarPanels";
 import { ScheduleViewFilterStripSection } from "./ScheduleViewFilterStripSection";
+import { ScheduleTimeReservationModal } from "../ScheduleTimeReservationModal";
 import type { ScheduleViewToolbarProps } from "./scheduleViewToolbarTypes";
 
 export type { ScheduleViewToolbarProps };
@@ -20,9 +21,17 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
     onOpenChairDateRangeModal,
   } = props;
 
+  const [isTimeReservationOpen, setIsTimeReservationOpen] = React.useState(false);
+
   return (
     <>
-      <ScheduleViewFilterStripSection props={props} />
+      <ScheduleViewFilterStripSection
+        props={{
+          ...props,
+          onOpenTimeReservation:
+            props.onOpenTimeReservation ?? (() => setIsTimeReservationOpen(true)),
+        }}
+      />
 
       <ScheduleToolbarPanels
         showConfirmationsPanel={showConfirmationsPanel}
@@ -36,6 +45,13 @@ export function ScheduleViewToolbar(props: ScheduleViewToolbarProps) {
         openScheduleWarning={openScheduleWarning}
         onOpenDoctorShiftDrawer={onOpenDoctorShiftDrawer}
         onOpenChairDateRangeModal={onOpenChairDateRangeModal}
+      />
+
+      <ScheduleTimeReservationModal
+        isOpen={isTimeReservationOpen}
+        onClose={() => setIsTimeReservationOpen(false)}
+        defaultDateKey={props.scheduleDateFilter}
+        chairs={props.dashboard?.clinicSettings?.chairs}
       />
     </>
   );

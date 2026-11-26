@@ -53,6 +53,9 @@ export type ChairMaintenanceBlock = {
 	endsAt: string;
 	reason: "sanitation" | "maintenance" | "disinfection" | "tech_break" | string;
 	note?: string;
+	isReservation?: boolean | undefined;
+	reservationId?: string | undefined;
+	hatchingStyle?: string | undefined;
 };
 
 export type ResourceCollisionOptions = {

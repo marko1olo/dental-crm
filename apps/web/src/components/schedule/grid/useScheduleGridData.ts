@@ -115,10 +115,20 @@ export function useScheduleGridData({
           : "13:00";
         const [mH, mM] = mTime.split(":").map(Number);
         const startMin = (mH ?? 0) * 60 + (mM ?? 0);
+        const mEndTime = m.endsAt
+          ? toDateTimeLocalValue
+            ? toDateTimeLocalValue(m.endsAt, timezone).slice(11, 16)
+            : m.endsAt.slice(11, 16)
+          : "";
+        const [eH, eM] = mEndTime ? mEndTime.split(":").map(Number) : [NaN, NaN];
+        const parsedEndMin =
+          Number.isFinite(eH) && Number.isFinite(eM) ? (eH ?? 0) * 60 + (eM ?? 0) : startMin + 60;
+        const endMin = parsedEndMin > startMin ? parsedEndMin : startMin + gridStep;
         return {
           block: m,
           chairId: m.chairId,
           startMin,
+          endMin,
         };
       });
   }, [effectiveMaintenanceBlocks, dateKey, toDateTimeLocalValue, timezone]);
@@ -210,7 +220,10 @@ export function useScheduleGridData({
         const slotStartMin = (sH ?? 0) * 60 + (sM ?? 0);
         const slotEndMin = slotStartMin + gridStep;
 
-        if (m.startMin >= slotStartMin && m.startMin < slotEndMin) {
+        const matchesSlot = m.block.isReservation
+          ? m.startMin < slotEndMin && m.endMin > slotStartMin
+          : m.startMin >= slotStartMin && m.startMin < slotEndMin;
+        if (matchesSlot) {
           const cell = chairMap.get(`${m.chairId}_${slotStartMin}`);
           if (cell) cell.cellMaintenance.push(m.block);
         }

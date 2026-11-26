@@ -1,4 +1,5 @@
 import type { Dashboard } from "@dental/shared";
+import type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtils";
 import type { ScheduleGridProps } from "./gridTypes";
 import type { useScheduleChairDuty } from "./useScheduleChairDuty";
 import type { useScheduleAppointmentInteractions } from "./useScheduleAppointmentInteractions";
@@ -15,4 +16,6 @@ export interface ScheduleGridDesktopLayoutProps {
   currentHour: number;
   timezone: string;
   patientName: (patients: Dashboard["patients"] | undefined, id: string | null) => string;
+  effectiveMaintenanceBlocksOverride?: ChairMaintenanceBlock[] | undefined;
+  onDeleteTimeReservation?: ((blockId: string) => Promise<void> | void) | undefined;
 }

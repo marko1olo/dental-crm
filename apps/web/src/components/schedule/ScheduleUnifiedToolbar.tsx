@@ -20,7 +20,7 @@
 
 import React, { useRef, useState, useEffect, useMemo, type ReactElement } from "react";
 import type { Appointment } from "@dental/shared";
-import { Plus } from "lucide-react";
+import { Plus, Lock } from "lucide-react";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { QuickAddChairModal } from "./QuickAddChairModal";
 import { DEFAULT_CLINIC_CHAIRS } from "./toolbarModules/toolbarConstants";
@@ -243,6 +243,21 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						</button>
 					)}
 
+					{/* Вторичная кнопка: технологический резерв времени */}
+					{props.onOpenTimeReservation && (
+						<button
+							type="button"
+							onClick={props.onOpenTimeReservation}
+							className="dente-btn h-9 min-h-[36px] px-2.5 rounded-xl text-xs font-medium inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
+							data-testid="schedule-toolbar-time-reservation-btn"
+							title="Резерв времени (Обед, Планёрка, Ремонт кресла)"
+							aria-label="Резерв времени"
+						>
+							<Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+							<span className="hidden lg:inline whitespace-nowrap">Резерв</span>
+						</button>
+					)}
+
 					{/* Меню «... Ещё / Опции» (куда убраны все вторичные действия) */}
 					<ScheduleOptionsMenu
 						isOpen={isOptionsMenuOpen}
@@ -270,6 +285,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						recallsCount={props.recallsCount ?? props.preventiveInspectionCount}
 						onGridStepChange={props.onGridStepChange}
 						gridStepMinutes={props.gridStepMinutes}
+						onOpenTimeReservation={props.onOpenTimeReservation}
 					/>
 				</div>
 			</section>

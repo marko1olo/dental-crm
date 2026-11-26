@@ -4,6 +4,7 @@ import { generateTimeSlots } from "./gridSlotMath";
 import { useScheduleChairDuty } from "./useScheduleChairDuty";
 import { useScheduleAppointmentInteractions } from "./useScheduleAppointmentInteractions";
 import { useScheduleGridData } from "./useScheduleGridData";
+import { useScheduleTimeReservations } from "./useScheduleTimeReservations";
 import type { ScheduleGridProps } from "./gridTypes";
 
 export function useScheduleGridController(props: ScheduleGridProps) {
@@ -54,6 +55,16 @@ export function useScheduleGridController(props: ScheduleGridProps) {
     onOpenWaitlistForSlot: props.onOpenWaitlistForSlot,
   });
 
+  const { reservationBlocks, deleteTimeReservation } = useScheduleTimeReservations(
+    dateKey,
+    duty.effectiveChairs,
+  );
+
+  const mergedMaintenanceBlocks = useMemo(
+    () => [...interactions.effectiveMaintenanceBlocks, ...reservationBlocks],
+    [interactions.effectiveMaintenanceBlocks, reservationBlocks],
+  );
+
   const timeSlots = useMemo(() => generateTimeSlots(interactions.gridStep), [interactions.gridStep]);
 
   const gridData = useScheduleGridData({
@@ -64,7 +75,7 @@ export function useScheduleGridController(props: ScheduleGridProps) {
     timeSlots,
     effectiveChairs: duty.effectiveChairs,
     gridStep: interactions.gridStep,
-    effectiveMaintenanceBlocks: interactions.effectiveMaintenanceBlocks,
+    effectiveMaintenanceBlocks: mergedMaintenanceBlocks,
     selectedDoctorId,
     doctors: duty.doctors,
     dashboard,
@@ -78,6 +89,8 @@ export function useScheduleGridController(props: ScheduleGridProps) {
   return {
     duty,
     interactions,
+    mergedMaintenanceBlocks,
+    deleteTimeReservation,
     gridData,
     timeSlots,
     patientName,
