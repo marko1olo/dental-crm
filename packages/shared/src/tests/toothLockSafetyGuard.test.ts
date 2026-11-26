@@ -20,47 +20,68 @@ import {
 	type EstimateRenderData,
 } from "../index.js";
 
-test("Tooth-Lock Invariant 1: Dental-dependent service strictly retains toothNumber from clinical EMR", () => {
-	const diaryTooth = 16;
-	const serviceItem = {
-		id: "serv-composite-16",
-		code804n: "A16.07.002.001",
-		name: "Восстановление зуба пломбой",
-		quantity: 1,
-		priceRub: 4800,
+test("Tooth-Lock Invariant 1: createPaymentSchema rejects non-integer toothNumber and negative amountRub while preserving valid toothNumber", () => {
+	const ok = createPaymentSchema.safeParse({
+		patientId: "0192d6e0-0000-7000-8000-000000000001",
 		amountRub: 4800,
-		toothNumber: diaryTooth,
-	};
+		method: "card",
+		toothNumber: 16,
+	});
+	assert.equal(ok.success, true);
+	if (ok.success) {
+		assert.equal(ok.data.toothNumber, 16);
+	}
 
-	assert.equal(serviceItem.toothNumber, 16);
-	assert.equal(serviceItem.code804n, "A16.07.002.001");
-	assert.equal(serviceItem.amountRub, 4800);
+	const invalidFractionTooth = createPaymentSchema.safeParse({
+		patientId: "0192d6e0-0000-7000-8000-000000000001",
+		amountRub: 4800,
+		method: "card",
+		toothNumber: 16.5,
+	});
+	assert.equal(invalidFractionTooth.success, false, "Fractional toothNumber must fail integer validation");
+
+	const invalidNegativeAmount = createPaymentSchema.safeParse({
+		patientId: "0192d6e0-0000-7000-8000-000000000001",
+		amountRub: -100,
+		method: "card",
+		toothNumber: 16,
+	});
+	assert.equal(invalidNegativeAmount.success, false, "Negative amountRub must fail validation");
 });
 
-test("Tooth-Lock Invariant 2: Receipt text and line items render exact statutory format", () => {
-	const item = {
-		code804n: "A16.07.002.001",
-		name: "Восстановление зуба пломбой",
-		toothNumber: 16,
-		quantity: 1,
-		priceRub: 4800,
-		amountRub: 4800,
-	};
-
-	// Standard formatting function matching ReceiptPreview
-	const formatReceiptLine = (it: typeof item, idx: number) => {
-		const code = it.code804n || "A16.07.002.001";
-		const tooth = it.toothNumber ? ` (Зуб ${it.toothNumber})` : "";
-		const priceStr = it.amountRub.toLocaleString("ru-RU");
-		return `${code} ${it.name}${tooth} · ${it.quantity} шт · ${priceStr} ₽`;
-	};
-
-	const formatted = formatReceiptLine(item, 1).replace(/\u00a0/g, " ");
-	assert.equal(
-		formatted,
-		"A16.07.002.001 Восстановление зуба пломбой (Зуб 16) · 1 шт · 4 800 ₽",
-		"Receipt line must match exact statutory standard: A16.07.002.001 Восстановление зуба пломбой (Зуб 16) · 1 шт · 4 800 ₽",
-	);
+test("Tooth-Lock Invariant 2: Act HTML omits (Зуб X) only when toothNumber is absent and isolates teeth per line item", () => {
+	const html = renderActOfCompletedWorksHtml({
+		actNumber: "АКТ-2026/105",
+		actDate: "2026-10-10",
+		contractNumber: "ДОГ-2026/044",
+		contractDate: "2026-10-10",
+		clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+		patientFullName: "Иванов Иван Иванович",
+		customerFullName: "Иванов Иван Иванович",
+		attendingDoctorFullName: "Смирнов Алексей Петрович",
+		attendingDoctorSpecialty: "Врач-стоматолог терапевт",
+		items: [
+			{
+				code804n: "A16.07.002.001",
+				serviceName: "Восстановление зуба пломбой",
+				toothNumber: 16,
+				quantity: 1,
+				unitPriceRub: 4800,
+				totalRub: 4800,
+			},
+			{
+				code804n: "A16.07.051",
+				serviceName: "Профессиональная гигиена полости рта",
+				quantity: 1,
+				unitPriceRub: 3500,
+				totalRub: 3500,
+			},
+		],
+		totalAmountRub: 8300,
+	});
+	assert.equal(html.includes("(Зуб 16)"), true);
+	assert.equal(html.includes("Профессиональная гигиена"), true);
+	assert.equal(html.includes("(Зуб undefined)"), false);
 });
 
 test("Tooth-Lock Invariant 3: Act of Completed Works (804n) includes (Зуб 16) with zero desynchronization", () => {
@@ -171,20 +192,34 @@ test("Tooth-Lock Invariant 5: createPaymentSchema validates toothNumber and invo
 	}
 });
 
-test("Tooth-Lock Invariant 6: Prevents tooth mismatch between clinical note and billing line", () => {
-	const clinicalTooth = 16;
-	const billedTooth = 26; // Simulated human clerical error
-
-	// Verify detector identifies mismatch
-	const hasToothMismatch = (clinical: number, billed: number) => clinical !== billed;
-	assert.ok(hasToothMismatch(clinicalTooth, billedTooth), "Must detect tooth mismatch 16 vs 26");
-
-	// Self-healing: Tooth-Lock forces clinicalTooth as the immutable authoritative source
-	const resolveToothLock = (clinical: number, _humanInputTooth?: number) => {
-		// Law: clinical diagnosis tooth is supreme invariant
-		return clinical;
-	};
-
-	const correctedTooth = resolveToothLock(clinicalTooth, billedTooth);
-	assert.equal(correctedTooth, 16, "Authoritative clinical tooth 16 overrides mismatched human input 26");
+test("Tooth-Lock Invariant 6: createPaymentSchema preserves distinct invoice item toothNumber independent of header", () => {
+	const multiTooth = createPaymentSchema.safeParse({
+		patientId: "0192d6e0-0000-7000-8000-000000000001",
+		amountRub: 9600,
+		method: "card",
+		toothNumber: 16,
+		invoiceItems: [
+			{
+				code804n: "A16.07.002.001",
+				name: "Пломба",
+				toothNumber: 16,
+				quantity: 1,
+				priceRub: 4800,
+				amountRub: 4800,
+			},
+			{
+				code804n: "A16.07.002.001",
+				name: "Пломба",
+				toothNumber: 26,
+				quantity: 1,
+				priceRub: 4800,
+				amountRub: 4800,
+			},
+		],
+	});
+	assert.equal(multiTooth.success, true);
+	if (multiTooth.success) {
+		assert.equal(multiTooth.data.invoiceItems?.[0]?.toothNumber, 16);
+		assert.equal(multiTooth.data.invoiceItems?.[1]?.toothNumber, 26);
+	}
 });

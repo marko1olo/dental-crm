@@ -322,24 +322,16 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 			assert.equal(axisString, "Ось [1.2, -4.7, -7.7]", "Axis coordinates match Ez3D-i telemetry");
 		});
 
-		it("enforces Ez3D-i cross-section orientation badges: Buccal (B) on Left, Lingual (L) on Right", () => {
-			// In Ez3D-i transverse cross-sections (screenshot 222517), exterior buccal side is on the left
-			const crossSectionLeftBadge = "B";
-			const crossSectionRightBadge = "L";
+		it("enforces Ez3D-i cross-section orientation badges via getViewportOrientationLabels: Buccal (B) Left, Lingual (L) Right", () => {
+			const cross = getViewportOrientationLabels("cross_section");
+			assert.equal(cross.left, "B", "Left must be Buccal (Щёчная сторона)");
+			assert.equal(cross.right, "L", "Right must be Lingual (Язычная сторона)");
+			assert.equal(cross.top, "S");
+			assert.equal(cross.bottom, "I");
 
-			assert.equal(crossSectionLeftBadge, "B", "Left must be Buccal (Щёчная сторона)");
-			assert.equal(crossSectionRightBadge, "L", "Right must be Lingual (Язычная сторона)");
-		});
-
-		it("enforces Ez3D-i «РАЗДЕЛ» 2-column layout contract (Left: Axial + Panorama, Right: 3x3 Matrix)", () => {
-			const ez3dSectionsLayout = {
-				leftColumn: ["axial_scout", "panoramic_opg"],
-				rightColumn: "cross_sections_matrix_3x3",
-			} as const;
-
-			assert.equal(ez3dSectionsLayout.leftColumn[0], "axial_scout", "Left column top must be Scout Axial");
-			assert.equal(ez3dSectionsLayout.leftColumn[1], "panoramic_opg", "Left column bottom must be Panorama OPG");
-			assert.equal(ez3dSectionsLayout.rightColumn, "cross_sections_matrix_3x3", "Right column must be 3x3 Section Matrix");
+			const pano = getViewportOrientationLabels("panoramic");
+			assert.equal(pano.left, "R", "Panoramic Right side of patient sits on Left of viewport");
+			assert.equal(pano.right, "L");
 		});
 	});
 
@@ -356,59 +348,25 @@ describe("CBCT Clinical UI/UX Ergonomics & Measurement HUD Suite", () => {
 		});
 	});
 
-	describe("9. Panoramic Layout 50/50 Minimum Parity & Interactive Splitter Engine", () => {
-		it("enforces 50/50 minimum parity between Left (Scout Axial + Panorama OPG) and Right (Cross-Sections)", () => {
-			// Default split ratio must strictly be 0.50 (50/50 parity)
-			const defaultSplitRatio = 0.50;
-			assert.equal(defaultSplitRatio, 0.5, "Default split ratio must be exactly 50%");
-
-			// Left column width formula
-			const leftWidthCss = `calc(${(defaultSplitRatio * 100).toFixed(2)}% - 3px)`;
-			assert.equal(leftWidthCss, "calc(50.00% - 3px)");
-
-			// Right column width formula
-			const rightWidthCss = `calc(${((1 - defaultSplitRatio) * 100).toFixed(2)}% - 3px)`;
-			assert.equal(rightWidthCss, "calc(50.00% - 3px)");
-
-			// Prohibit squeezed 38% / 35% hardcodes
-			const legacyNarrowWidths = [0.38, 0.35];
-			for (const narrow of legacyNarrowWidths) {
-				assert.ok(defaultSplitRatio > narrow, `Default split ratio ${defaultSplitRatio} must strictly exceed legacy ${narrow}`);
+	describe("9. Radiological Presets & Ruler Summary Precision", () => {
+		it("exposes clinically distinct quick W/L presets with positive window widths", () => {
+			assert.ok(CBCT_QUICK_WL_PRESETS.length >= 3, "Must define multiple quick W/L presets");
+			const seenIds = new Set<string>();
+			for (const preset of CBCT_QUICK_WL_PRESETS) {
+				assert.ok(preset.windowWidth > 0, `Preset ${preset.id} must have positive windowWidth`);
+				assert.equal(seenIds.has(preset.id), false, `Duplicate preset id ${preset.id}`);
+				seenIds.add(preset.id);
 			}
 		});
 
-		it("constrains interactive splitter bounds between 35% and 75% with double-click reset to 50%", () => {
-			const clampSplit = (relX: number) => Math.max(0.35, Math.min(0.75, relX));
-
-			// Below lower bound clamped to 0.35
-			assert.equal(clampSplit(0.10), 0.35);
-			assert.equal(clampSplit(0.30), 0.35);
-
-			// Above upper bound clamped to 0.75
-			assert.equal(clampSplit(0.85), 0.75);
-			assert.equal(clampSplit(0.99), 0.75);
-
-			// Within valid range preserved
-			assert.equal(clampSplit(0.50), 0.50);
-			assert.equal(clampSplit(0.60), 0.60);
-
-			// Double click reset returns to 0.50 parity
-			let currentSplit = clampSplit(0.70);
-			const handleSplitterDoubleClick = () => {
-				currentSplit = 0.5;
-			};
-			handleSplitterDoubleClick();
-			assert.equal(currentSplit, 0.5, "Double click on splitter must reset to 50/50 parity");
-		});
-
-		it("guarantees 50% vertical height allocation for Panorama OPG in pano_top layout mode", () => {
-			const panoTopAllocation = {
-				topOpgHeight: "min-h-[48%] max-h-[52%]",
-				bottomGridHeight: "min-h-[48%]",
-			};
-			assert.ok(panoTopAllocation.topOpgHeight.includes("min-h-[48%]"));
-			assert.ok(panoTopAllocation.topOpgHeight.includes("max-h-[52%]"));
-			assert.ok(panoTopAllocation.bottomGridHeight.includes("min-h-[48%]"));
+		it("formats ruler summary counts and distances strictly from real measurements", () => {
+			const rulers: CbctMeasurementRuler[] = [
+				{ id: "r1", plane: "axial", startMm: { x: 0, y: 0, z: 0 }, endMm: { x: 3, y: 4, z: 0 }, distanceMm: 5.0 },
+				{ id: "r2", plane: "axial", startMm: { x: 0, y: 0, z: 0 }, endMm: { x: 0, y: 10, z: 0 }, distanceMm: 10.0 },
+			];
+			const summary = getRulerSummary(rulers, "axial");
+			assert.equal(summary.count, 2);
+			assert.equal(getRulerSummary(rulers, "coronal").count, 0);
 		});
 	});
 

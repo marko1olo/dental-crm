@@ -17,6 +17,7 @@ import { db } from "../../db/client.js";
 import {
 	familyGroups,
 	organizations,
+	patientConsents,
 	patientRelationships,
 	patients,
 	payments,
@@ -185,18 +186,36 @@ describe("Red Team Fixer Surgeon: Patient Profile, Consents, Family Wallet & Tax
 
 	it("DEFECT 2: syncDocumentToPatientConsent works with explicit transaction tx without any", async () => {
 		const docId = fixtureUuid(NAMESPACE, 20);
+		const grantedAt = new Date("2026-10-15T10:00:00.000Z");
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await syncDocumentToPatientConsent(
 				ORG_ID,
 				ADULT_PATIENT_ID,
 				"informed_consent",
 				docId,
-				new Date(),
+				grantedAt,
 				tx,
 			);
 		});
 
-		assert.ok(true);
+		const [synced] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(patientConsents)
+				.where(
+					and(
+						eq(patientConsents.organizationId, ORG_ID),
+						eq(patientConsents.patientId, ADULT_PATIENT_ID),
+						eq(patientConsents.kind, "informed_consent"),
+					),
+				)
+				.limit(1),
+		);
+
+		assert.ok(synced, "syncDocumentToPatientConsent обязан записать строку в patient_consents внутри tx");
+		assert.strictEqual(synced.documentId, docId);
+		assert.strictEqual(synced.revokedAt, null);
+		assert.strictEqual(synced.grantedAt?.toISOString(), grantedAt.toISOString());
 	});
 
 	it("DEFECT 3: Portal tax certificate is strictly scoped to requesting patient without mixing other family members", async () => {

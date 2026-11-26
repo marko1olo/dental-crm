@@ -85,14 +85,43 @@ describe("Журнал контроля очистки инструментов 
 		assert.ok(!html.includes("366/у"));
 	});
 
-	it("поддерживает пакетное списание дезинфицирующих средств по Soft Negative Stock (Мандат 8n)", () => {
-		const remaining = 2.0 - 5.0;
-		assert.equal(remaining, -3.0);
-		assert.equal(true, true, "Soft Negative Stock не блокирует списание моющих средств");
+	it("отбраковывает партию при недостаточном объёме пробы и при положительном Судане III", () => {
+		const lowSample = evaluatePsoTrialResult({
+			batchCount: 500,
+			testedSampleCount: 3, // требуется 1% = 5 шт.
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isSudanNegative: true,
+		});
+		assert.equal(lowSample.samplingSatisfied, false);
+		assert.equal(lowSample.minSampleRequired, 5);
+		assert.equal(lowSample.isBatchApproved, false);
+		assert.ok(lowSample.rejectionReason?.includes("5 шт"));
+
+		const fatFailed = evaluatePsoTrialResult({
+			batchCount: 50,
+			testedSampleCount: 3,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isSudanNegative: false,
+		});
+		assert.equal(fatFailed.isBatchApproved, false);
+		assert.ok(fatFailed.rejectionReason?.includes("Суданом III"));
 	});
 
-	it("сохраняет полную автономию врача у кресла: лотки стерильны по умолчанию (Мандат 8e)", () => {
-		const doctorCheckBlocked = false;
-		assert.equal(doctorCheckBlocked, false, "Врач не занимается предстерилизационной очисткой у кресла");
+	it("проверяет хирургический минимум 5 проб и отбраковку при скрытом нарушении вне зависимости от отрицательного азопирама", () => {
+		const surgicalReq = calculatePsoSampleRequirements(120, true);
+		assert.equal(surgicalReq.minSampleCount, 5);
+
+		const rejectedSurgical = evaluatePsoTrialResult({
+			batchCount: 120,
+			testedSampleCount: 3, // ниже минимума 5 для хирургии
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isCriticalSurgical: true,
+		});
+		assert.equal(rejectedSurgical.isBatchApproved, false);
+		assert.equal(rejectedSurgical.minSampleRequired, 5);
+		assert.equal(rejectedSurgical.samplingSatisfied, false);
 	});
 });

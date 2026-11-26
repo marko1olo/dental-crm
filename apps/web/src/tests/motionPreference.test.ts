@@ -6,100 +6,107 @@ import {
 	prefersReducedMotion,
 } from "../motionPreference.js";
 
+type MockMatchMedia = (query: string) => { matches: boolean };
+interface MockWindow {
+	matchMedia?: MockMatchMedia | undefined;
+}
+
+function getGlobalWindow(): MockWindow | undefined {
+	return Reflect.get(globalThis, "window") as MockWindow | undefined;
+}
+
+function setGlobalWindow(win: MockWindow | undefined): void {
+	if (win === undefined) {
+		Reflect.deleteProperty(globalThis, "window");
+	} else {
+		Reflect.set(globalThis, "window", win);
+	}
+}
+
 describe("motionPreference", () => {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	let originalWindow: any;
+	let originalWindow: MockWindow | undefined;
 
 	beforeEach(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		originalWindow = (global as any).window;
+		originalWindow = getGlobalWindow();
 	});
 
 	afterEach(() => {
-		if (originalWindow === undefined) {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			delete (global as any).window;
-		} else {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = originalWindow;
-		}
+		setGlobalWindow(originalWindow);
 	});
 
 	describe("prefersReducedMotion", () => {
 		it("returns false when window is undefined", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			delete (global as any).window;
+			setGlobalWindow(undefined);
 			assert.strictEqual(prefersReducedMotion(), false);
 		});
 
 		it("returns false when window.matchMedia is undefined", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {};
+			setGlobalWindow({});
 			assert.strictEqual(prefersReducedMotion(), false);
 		});
 
 		it("returns false when prefers-reduced-motion: reduce does not match", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {
+			setGlobalWindow({
 				matchMedia: (query: string) => {
 					assert.strictEqual(query, "(prefers-reduced-motion: reduce)");
 					return { matches: false };
 				},
-			};
+			});
 			assert.strictEqual(prefersReducedMotion(), false);
 		});
 
 		it("returns true when prefers-reduced-motion: reduce matches", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {
+			setGlobalWindow({
 				matchMedia: (query: string) => {
 					assert.strictEqual(query, "(prefers-reduced-motion: reduce)");
 					return { matches: true };
 				},
-			};
+			});
 			assert.strictEqual(prefersReducedMotion(), true);
 		});
 	});
 
 	describe("motionSafeScrollBehavior", () => {
 		it("returns 'smooth' when prefersReducedMotion is false", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {};
+			setGlobalWindow({});
 			assert.strictEqual(motionSafeScrollBehavior(), "smooth");
 		});
 
 		it("returns 'auto' when prefersReducedMotion is true", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {
+			setGlobalWindow({
 				matchMedia: () => ({ matches: true }),
-			};
+			});
 			assert.strictEqual(motionSafeScrollBehavior(), "auto");
 		});
 	});
 
 	describe("motionSafeScrollIntoView", () => {
-		it("does nothing when target is null or undefined", () => {
-			// Should not throw
-			motionSafeScrollIntoView(null);
-			motionSafeScrollIntoView(undefined);
+		it("does nothing and returns undefined when target is null or undefined", () => {
+			let matchMediaCalls = 0;
+			setGlobalWindow({
+				matchMedia: () => {
+					matchMediaCalls++;
+					return { matches: false };
+				},
+			});
+			assert.strictEqual(motionSafeScrollIntoView(null), undefined);
+			assert.strictEqual(motionSafeScrollIntoView(undefined), undefined);
+			assert.strictEqual(matchMediaCalls, 0, "null/undefined target must short-circuit before calling matchMedia");
 		});
 
 		it("calls scrollIntoView with behavior 'smooth' and merges options when prefersReducedMotion is false", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {};
+			setGlobalWindow({});
 			let scrollIntoViewCalled = false;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let passedOptions: any;
+			let passedOptions: ScrollIntoViewOptions | undefined;
 
-			const mockTarget = {
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				scrollIntoView: (options: any) => {
+			const mockTarget: Pick<Element, "scrollIntoView"> = {
+				scrollIntoView: (options?: boolean | ScrollIntoViewOptions) => {
 					scrollIntoViewCalled = true;
-					passedOptions = options;
+					passedOptions = typeof options === "object" ? options : undefined;
 				},
 			};
 
-			motionSafeScrollIntoView(mockTarget as unknown as Element, {
+			motionSafeScrollIntoView(mockTarget as Element, {
 				block: "start",
 			});
 			assert.strictEqual(scrollIntoViewCalled, true);
@@ -110,23 +117,20 @@ describe("motionPreference", () => {
 		});
 
 		it("calls scrollIntoView with behavior 'auto' and merges options when prefersReducedMotion is true", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {
+			setGlobalWindow({
 				matchMedia: () => ({ matches: true }),
-			};
+			});
 			let scrollIntoViewCalled = false;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let passedOptions: any;
+			let passedOptions: ScrollIntoViewOptions | undefined;
 
-			const mockTarget = {
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				scrollIntoView: (options: any) => {
+			const mockTarget: Pick<Element, "scrollIntoView"> = {
+				scrollIntoView: (options?: boolean | ScrollIntoViewOptions) => {
 					scrollIntoViewCalled = true;
-					passedOptions = options;
+					passedOptions = typeof options === "object" ? options : undefined;
 				},
 			};
 
-			motionSafeScrollIntoView(mockTarget as unknown as Element, {
+			motionSafeScrollIntoView(mockTarget as Element, {
 				block: "end",
 				inline: "nearest",
 			});
@@ -139,18 +143,15 @@ describe("motionPreference", () => {
 		});
 
 		it("defaults to empty options except behavior if not provided", () => {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(global as any).window = {};
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			let passedOptions: any;
-			const mockTarget = {
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				scrollIntoView: (options: any) => {
-					passedOptions = options;
+			setGlobalWindow({});
+			let passedOptions: ScrollIntoViewOptions | undefined;
+			const mockTarget: Pick<Element, "scrollIntoView"> = {
+				scrollIntoView: (options?: boolean | ScrollIntoViewOptions) => {
+					passedOptions = typeof options === "object" ? options : undefined;
 				},
 			};
 
-			motionSafeScrollIntoView(mockTarget as unknown as Element);
+			motionSafeScrollIntoView(mockTarget as Element);
 			assert.deepStrictEqual(passedOptions, { behavior: "smooth" });
 		});
 	});

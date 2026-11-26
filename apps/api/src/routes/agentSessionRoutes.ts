@@ -124,6 +124,14 @@ export function clearFallbackSessionsForTesting(): void {
 	fallbackMessages.clear();
 }
 
+export function getFallbackSessionsCountForTesting(): number {
+	return fallbackSessions.size;
+}
+
+export function getFallbackMessagesForTesting(sessionId: string): readonly MemoryMessage[] {
+	return fallbackMessages.get(sessionId) ?? [];
+}
+
 const createSessionBodySchema = z
 	.object({
 		id: z.string().optional(),

@@ -14,6 +14,7 @@ import {
 	LAB_ORDER_TECHNICIAN_TRANSITIONS,
 	type LabOrderStatus,
 } from "../../db/labQuery.js";
+import { CANONICAL_EXPENSE_REASONS } from "../../db/seeds/seed_cash_and_reasons.js";
 
 describe("Dental Laboratory VITA Shades & FDI Tooth Validation", () => {
 	it("validates all 16 VITA Classical shades (A1–D4)", () => {
@@ -204,10 +205,11 @@ describe("Dental Lab Order State Machine Transitions", () => {
 		assert.ok(order.installedAt instanceof Date);
 	});
 
-	it("validates cashbox payment reason code 11 for lab orders", () => {
-		const reasonCode = 11;
-		const reasonName = "Оплата услуг лаборатории";
-		assert.equal(reasonCode, 11);
-		assert.equal(reasonName, "Оплата услуг лаборатории");
+	it("validates canonical cashbox payment reason code 11 for lab orders", () => {
+		const reason11 = CANONICAL_EXPENSE_REASONS.find((r) => r.code === 11);
+		assert.ok(reason11, "Статья расхода с кодом 11 должна присутствовать в CANONICAL_EXPENSE_REASONS");
+		assert.equal(reason11.name, "Оплата услуг лаборатории");
+		assert.equal(reason11.isLocked, true);
+		assert.equal(reason11.type, "expense");
 	});
 });

@@ -13,86 +13,136 @@ import {
 	ASSISTANT_SHIFT_RULE,
 	type AssistantShiftLogItem,
 	calculateAssistantPeriodPayroll,
+	calculateDoctorPeriodPayroll,
+	kopecksToRubles,
 } from "@dental/shared";
 
 describe("Red Team Inquisition: Doctor & Assistant Payroll", () => {
 	describe("[PAY-03] Custom Doctor Rates Preservation", () => {
-		test("индивидуальная ставка врача из doctor_commissions (userId или doctorId) не сбрасывается на 25%", () => {
-			// Симуляция выборки commissionRateMap
-			const mockCommissions = [
-				{
-					doctorId: null,
-					userId: "doc-uuid-1",
-					commissionPercent: null,
-					commissionPct: "35.0",
-				},
-				{
-					doctorId: "doc-uuid-2",
-					userId: null,
-					commissionPercent: "28.5",
-					commissionPct: null,
-				},
-			];
+		test("calculateDoctorPeriodPayroll preserves customBasePercentage (35% / 28.5%) and uses preset only when undefined", () => {
+			const svc = {
+				id: "svc-1",
+				dateIso: "2026-11-10",
+				patientName: "Пациент А.",
+				medicalCardNumber: "МК-101",
+				serviceNameRu: "Восстановление зуба пломбой",
+				category: "therapy" as const,
+				grossRevenueKop: 1000000, // 10 000 ₽
+				labCostKop: 0,
+				materialCostKop: 0,
+				doctorId: "doc-uuid-1",
+			};
 
-			const commissionRateMap = new Map<string, number>();
-			for (const comm of mockCommissions) {
-				const rate = Number(comm.commissionPct ?? comm.commissionPercent);
-				if (!Number.isNaN(rate) && rate > 0) {
-					if (comm.userId) commissionRateMap.set(comm.userId, rate);
-					if (comm.doctorId) commissionRateMap.set(comm.doctorId, rate);
-				}
-			}
+			const res35 = calculateDoctorPeriodPayroll({
+				doctorId: "doc-uuid-1",
+				doctorName: "Врач 1",
+				specialtyId: "therapist",
+				periodStartIso: "2026-11-01",
+				periodEndIso: "2026-11-30",
+				services: [svc],
+				customBasePercentage: 35,
+				taxRegime: "self_employed",
+			});
+			assert.equal(res35.baseCommissionPercent, 35);
+			assert.equal(res35.earnedBaseCommissionKop, 350000);
 
-			// Проверка для врача с userId
-			const rate1 = commissionRateMap.get("doc-uuid-1") ?? 25.0;
-			assert.equal(rate1, 35.0, "Ставка врача 1 должна быть 35%, а не 25% дефолт");
-
-			// Проверка для врача с doctorId
-			const rate2 = commissionRateMap.get("doc-uuid-2") ?? 25.0;
-			assert.equal(rate2, 28.5, "Ставка врача 2 должна быть 28.5%, а не 25% дефолт");
-
-			// Врач без индивидуальной ставки получает 25% дефолт
-			const defaultRate = commissionRateMap.get("doc-uuid-3") ?? 25.0;
-			assert.equal(defaultRate, 25.0, "Врач без записи комиссии получает дефолтные 25%");
+			const res285 = calculateDoctorPeriodPayroll({
+				doctorId: "doc-uuid-1",
+				doctorName: "Врач 2",
+				specialtyId: "therapist",
+				periodStartIso: "2026-11-01",
+				periodEndIso: "2026-11-30",
+				services: [svc],
+				customBasePercentage: 28.5,
+				taxRegime: "self_employed",
+			});
+			assert.equal(res285.baseCommissionPercent, 28.5);
+			assert.equal(res285.earnedBaseCommissionKop, 285000);
 		});
 	});
 
 	describe("[PAY-04] Ликвидация моков 10% материалов и 30% лаборатории", () => {
-		test("при отсутствии складских списаний себестоимость материалов строго 0 ₽, а не 10% от выручки", () => {
-			const revRub = 100000;
-			// Ранее: Math.round(revRub * 0.1) -> 10000 ₽ налога из воздуха!
-			// Теперь: при пустом materialsMap -> 0 ₽
-			const materialsMap = new Map<string, number>();
-			const statementsMap = new Map<string, { materialsCostRub: number }>();
+		test("при нулевом списании материалов calculateDoctorPeriodPayroll удерживает строго 0 коп, без фиктивных 10%", () => {
+			const result = calculateDoctorPeriodPayroll({
+				doctorId: "doc-clean",
+				doctorName: "Врач Чистый",
+				specialtyId: "therapist",
+				periodStartIso: "2026-11-01",
+				periodEndIso: "2026-11-30",
+				services: [
+					{
+						id: "svc-clean",
+						dateIso: "2026-11-12",
+						patientName: "Пациент Б.",
+						medicalCardNumber: "МК-102",
+						serviceNameRu: "Профессиональная гигиена",
+						category: "therapy",
+						grossRevenueKop: 10000000, // 100 000 ₽
+						labCostKop: 0,
+						materialCostKop: 0,
+						doctorId: "doc-clean",
+					},
+				],
+				customBasePercentage: 30,
+				taxRegime: "self_employed",
+			});
 
-			const docId = "doc-clean";
-			const st = statementsMap.get(docId);
-			const materialsCostRub =
-				st && st.materialsCostRub > 0 ? st.materialsCostRub : (materialsMap.get(docId) ?? 0);
-
-			assert.equal(materialsCostRub, 0, "Себестоимость материалов обязана быть 0 ₽ при отсутствии списаний");
-
-			const netRevenueRub = Math.max(0, revRub - materialsCostRub);
-			assert.equal(netRevenueRub, 100000, "Чистая база выручки не урезается на выдуманные 10%");
+			assert.equal(result.totalMaterialDeductionsKop, 0);
+			assert.equal(result.totalLabDeductionsKop, 0);
+			assert.equal(result.totalNetBaseKop, 10000000);
+			assert.equal(result.earnedBaseCommissionKop, 3000000);
 		});
 
-		test("расходы ЗТЛ при отсутствии labCostRub строго 0 ₽, а не 30% от priceRub", () => {
-			// Ранее: coalesce(labCostRub, priceRub * 0.3)
-			// Теперь: coalesce(labCostRub, 0)
-			const labOrderWithoutCost = {
-				labCostRub: null as number | null,
-				priceRub: 50000,
-			};
+		test("расходы ЗТЛ берутся строго по фактическому labCostKop, а при 0 не вычитаются фиктивные 30%", () => {
+			const noLab = calculateDoctorPeriodPayroll({
+				doctorId: "doc-lab",
+				doctorName: "Ортопед",
+				specialtyId: "orthopedist",
+				periodStartIso: "2026-11-01",
+				periodEndIso: "2026-11-30",
+				services: [
+					{
+						id: "svc-nolab",
+						dateIso: "2026-11-12",
+						patientName: "Пациент В.",
+						medicalCardNumber: "МК-103",
+						serviceNameRu: "Фиксация коронки",
+						category: "orthopedics",
+						grossRevenueKop: 5000000,
+						labCostKop: 0,
+						materialCostKop: 0,
+						doctorId: "doc-lab",
+					},
+				],
+				customBasePercentage: 25,
+			});
+			assert.equal(noLab.totalLabDeductionsKop, 0);
+			assert.equal(noLab.totalNetBaseKop, 5000000);
 
-			const calculatedCost = labOrderWithoutCost.labCostRub ?? 0;
-			assert.equal(calculatedCost, 0, "Себестоимость лаборатории без наряда ЗТЛ строго 0 ₽");
-
-			const labOrderWithActualCost = {
-				labCostRub: 14500,
-				priceRub: 50000,
-			};
-			const actualCost = labOrderWithActualCost.labCostRub ?? 0;
-			assert.equal(actualCost, 14500, "Себестоимость лаборатории берется по фактическому наряду ЗТЛ");
+			const withActualLab = calculateDoctorPeriodPayroll({
+				doctorId: "doc-lab",
+				doctorName: "Ортопед",
+				specialtyId: "orthopedist",
+				periodStartIso: "2026-11-01",
+				periodEndIso: "2026-11-30",
+				services: [
+					{
+						id: "svc-withlab",
+						dateIso: "2026-11-12",
+						patientName: "Пациент В.",
+						medicalCardNumber: "МК-103",
+						serviceNameRu: "Коронка цирконий",
+						category: "orthopedics",
+						grossRevenueKop: 5000000,
+						labCostKop: 1450000,
+						materialCostKop: 0,
+						doctorId: "doc-lab",
+					},
+				],
+				customBasePercentage: 25,
+			});
+			assert.equal(withActualLab.totalLabDeductionsKop, 1450000);
+			assert.equal(withActualLab.totalNetBaseKop, 3550000);
 		});
 	});
 

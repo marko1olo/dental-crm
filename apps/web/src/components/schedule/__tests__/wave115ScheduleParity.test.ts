@@ -176,7 +176,7 @@ describe("Wave 115: PatientBillingModal Touch Targets >= 44x44px", () => {
 	);
 	if (!fs.existsSync(billingModalPath)) {
 		it("legacy PatientBillingModal is decommissioned in favor of CashRegisterStudioModal", () => {
-			assert.ok(true);
+			assert.equal(fs.existsSync(billingModalPath), false);
 		});
 		return;
 	}

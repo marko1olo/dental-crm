@@ -25,7 +25,9 @@
  *   npm run check:diff                             # Запуск в любое время
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { scanTestSource } from "./lib/code-health-ast.mjs";
 import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
 
 const isAll = process.argv.includes("--all") || process.argv.includes("-a");
@@ -137,12 +139,22 @@ export const RAW_MONEY_MATH_RE = new RegExp(`(?:${LEFT_MONEY_MATH}|${RIGHT_MONEY
 export const FORBIDDEN_DIFF_PATTERNS = [
 	{
 		rule: "ANTI_BLIND_AS_ANY",
-		regex: /(?:\bas\s*\(\s*any\s*\)|\bas\s+any\b|:\s*any\b|<any>|=\s*any\b|\bany\[\]|\bRecord\s*<\s*[^,>]+\s*,\s*any\s*>|\btype\s+[A-Za-z0-9_$]+\s*=\s*any\s*;?)/,
+		regex: /(?:\bas\s*\(\s*any\s*\)|\bas\s+any\b|:\s*any\b|<any>|=\s*any\b|\bany\[\]|\|\s*any\b|\bany\s*\||\bRecord\s*<\s*[^,>]+\s*,\s*any\s*>|\btype\s+[A-Za-z0-9_$]+\s*=\s*any\s*;?)/,
 		onlyCode: true,
 		onlyExt: TS_FILE_RE,
 		severity: "CRITICAL",
-		title: "Явный тип или каст 'any' (: any, as any, as (any), Record<string, any>, type X = any, any[])",
+		title: "Явный тип или каст 'any' (: any, as any, as (any), Record<string, any>, | any, type X = any, any[])",
 		message: "Ты добавил 'any' вместо строгой типизации. Запрещено вести себя как слепой котёнок — объяви строгий DTO-интерфейс или Zod-схему!",
+		gateKey: "TYPE_RATCHET",
+	},
+	{
+		rule: "ANTI_BLIND_ZOD_ANY",
+		regex: /\bz\.any\s*\(/,
+		onlyCode: true,
+		onlyExt: TS_FILE_RE,
+		severity: "CRITICAL",
+		title: "Дыра в валидации Zod: z.any()",
+		message: "Запрещено использовать z.any() в схемах валидации. Используй строгий контракт или z.unknown() с дальнейшей валидацией!",
 		gateKey: "TYPE_RATCHET",
 	},
 	{
@@ -168,8 +180,27 @@ export const FORBIDDEN_DIFF_PATTERNS = [
 		regex: /catch\s*(?:\([^)]*\))?\s*\{\s*\}/,
 		severity: "CRITICAL",
 		title: "Глухое проглатывание ошибки (empty catch {})",
-		message: "Ты оставил пустой блок catch {}. Ошибки обязаны логироваться через req.log/console или обрабатываться с человеческим тостом!",
+		message: "Ты оставил пустой блок catch {}. Ошибки обязаны логироваться через req.log/logger или обрабатываться с человеческим тостом!",
 		gateKey: "TYPESCRIPT_COMPILER",
+	},
+	{
+		rule: "ANTI_BLIND_SWALLOWED_PROMISE",
+		regex: /\.catch\s*\(\s*(?:\([^)]*\)|[a-zA-Z_$][\w$]*)\s*=>\s*(?:\{\s*\}|undefined|null)\s*\)/,
+		onlyCode: true,
+		severity: "CRITICAL",
+		title: "Тихое проглатывание rejected Promise (.catch(() => {} / null / undefined))",
+		message: "Запрещено глотать ошибки промисов молча! Логируй ошибку через logger/req.log или возвращай явный отказ пользователю.",
+		gateKey: "TYPESCRIPT_COMPILER",
+	},
+	{
+		rule: "ANTI_BLIND_TEST_ENV_SNIFF",
+		regex: /\bprocess\.env\.(?:VITEST|VITEST_WORKER_ID|JEST_WORKER_ID|NODE_TEST_CONTEXT)\b/,
+		onlyCode: true,
+		onlyExt: TS_FILE_RE,
+		severity: "CRITICAL",
+		title: "Боевой код нюхает тест-раннер (process.env.VITEST / NODE_TEST_CONTEXT)",
+		message: "Боевой код не имеет права менять поведение под тест-раннер! Передавай зависимости через DI/параметры, а не проверяй VITEST в рантайме.",
+		gateKey: "UNIT_TESTS",
 	},
 	{
 		rule: "ANTI_BLIND_WINDOW_DIALOG",
@@ -264,11 +295,30 @@ export const FORBIDDEN_TEST_PATTERNS = [
 		message: "Запрещено отключать тесты (.skip / .todo) или изолировать (.only)! Чини причину падения теста, а не глуши его.",
 		gateKey: "UNIT_TESTS",
 	},
+	{
+		rule: "ANTI_GOODHART_TAUTOLOGY",
+		regex: /\bassert\.ok\s*\(\s*true\b|\bassert\.(?:strict)?[Ee]qual\s*\(\s*(true|false)\s*,\s*\1\b|\bexpect\s*\(\s*(true|false)\s*\)\.(?:toBe|toEqual)\s*\(\s*\2\s*\)/,
+		onlyCode: true,
+		severity: "CRITICAL",
+		title: "Тест-пустышка / тавтология (assert.ok(true) / expect(true).toBe(true))",
+		message: "Тест, который физически не может упасть — это саботаж (Закон Гудхарта). Проверяй реальное поведение кода!",
+		gateKey: "UNIT_TESTS",
+	},
+	{
+		rule: "ANTI_GOODHART_LINE_COUNT",
+		regex: /(?:lineCount|lines|Lines|LineCount)\s*>=\s*\d{2,4}\s*&&\s*\w*(?:lineCount|lines|Lines|LineCount)\s*<=|\.split\s*\(\s*(?:""|''|\/\\r\?\\n\/)\s*\)\.length\s*(?:<=|>=)/,
+		onlyCode: true,
+		severity: "HIGH",
+		title: "Гудхарт-тест на количество строк исходника в юнит-тесте",
+		message: "Запрещено добавлять проверки числа строк файлов в юнит-тесты! Лимит размера файлов контролирует единый шлюз npm run check:limits.",
+		gateKey: "UNIT_TESTS",
+	},
 ];
 
 /**
- * Проверка файла scripts/config/sanitary-baseline.json на попытки ослабления лимитов долга.
- * Лимиты могут только монотонно убывать или оставаться на нуле (Мандат 8ai / 8bq).
+ * Проверка файла scripts/config/sanitary-baseline.json на попытки ослабления лимитов долга
+ * или тихого снижения порогов количества тестов (floors) без записи в ratchet-ledger.jsonl.
+ * Поддерживает как плоский v1 формат, так и структурированный v2 ({ limits, floors }).
  */
 export function checkBaselineDiff(diffText) {
 	const violations = [];
@@ -277,22 +327,53 @@ export function checkBaselineDiff(diffText) {
 	if (!match) return violations;
 
 	const hunk = match[0];
+	const floorKeys = new Set(["prodFiles", "testFiles", "tests"]);
 	const oldVals = {};
 	const newVals = {};
+	let hasV2Section = false;
+	let inFloorsSection = false;
 
 	for (const line of hunk.split("\n")) {
+		if (/"limits"\s*:/.test(line)) { hasV2Section = true; inFloorsSection = false; }
+		else if (/"floors"\s*:/.test(line)) { hasV2Section = true; inFloorsSection = true; }
+		else if (/^\s*\}/.test(line.slice(1))) { inFloorsSection = false; }
+
 		if (line.startsWith("-") && !line.startsWith("---")) {
 			const m = line.match(/"([^"]+)":\s*(\d+)/);
-			if (m) oldVals[m[1]] = Number.parseInt(m[2], 10);
+			if (m && m[1] !== "version") oldVals[m[1]] = { val: Number.parseInt(m[2], 10), isFloor: inFloorsSection || floorKeys.has(m[1]) };
 		} else if (line.startsWith("+") && !line.startsWith("+++")) {
 			const m = line.match(/"([^"]+)":\s*(\d+)/);
-			if (m) newVals[m[1]] = Number.parseInt(m[2], 10);
+			if (m && m[1] !== "version") newVals[m[1]] = { val: Number.parseInt(m[2], 10), isFloor: inFloorsSection || floorKeys.has(m[1]) };
 		}
 	}
 
-	for (const [key, newVal] of Object.entries(newVals)) {
-		const oldVal = oldVals[key] ?? 0;
-		if (newVal > oldVal) {
+	const hasLedgerAddition = /diff --git a\/scripts\/config\/ratchet-ledger\.jsonl b\/scripts\/config\/ratchet-ledger\.jsonl[\s\S]*?\n\+\{/.test(diffText);
+
+	for (const [key, entry] of Object.entries(newVals)) {
+		const oldEntry = oldVals[key];
+		const oldVal = oldEntry ? oldEntry.val : 0;
+		const isFloor = entry.isFloor || (oldEntry?.isFloor ?? false);
+
+		if (isFloor) {
+			if (oldEntry && entry.val < oldVal && !hasLedgerAddition) {
+				violations.push({
+					file: "scripts/config/sanitary-baseline.json",
+					lineNum: 1,
+					pattern: {
+						rule: "ANTI_BLIND_BASELINE_FLOOR_DROP",
+						severity: "CRITICAL",
+						title: "Тихое снижение порога числа тестов/файлов (Floor Drop без Ledger)",
+						message: `Запрещено снижать порог "${key}" (${oldVal} ➔ ${entry.val}) без записи в scripts/config/ratchet-ledger.jsonl! Используй --accept-test-removal с --reason.`,
+						gateKey: "TYPE_RATCHET",
+					},
+					codeSnippet: `"${key}": ${entry.val} (было: ${oldVal})`,
+				});
+			}
+			continue;
+		}
+
+		if (hasV2Section && !oldEntry) continue;
+		if (entry.val > oldVal) {
 			violations.push({
 				file: "scripts/config/sanitary-baseline.json",
 				lineNum: 1,
@@ -300,10 +381,10 @@ export function checkBaselineDiff(diffText) {
 					rule: "ANTI_BLIND_BASELINE_REGRESSION",
 					severity: "CRITICAL",
 					title: "Попытка ослабления санитарного храповика (Sanitary Baseline Regression)",
-					message: `Запрещено увеличивать лимиты долга в sanitary-baseline.json (${key}: ${oldVal} ➔ ${newVal})! Закон Храповика (Мандат 8ai / 8bq) допускает только монотонное убывание или 0.`,
+					message: `Запрещено увеличивать лимиты долга в sanitary-baseline.json (${key}: ${oldVal} ➔ ${entry.val})! Закон Храповика (Мандат 8ai / 8bq) допускает только монотонное убывание или 0.`,
 					gateKey: "TYPE_RATCHET",
 				},
-				codeSnippet: `"${key}": ${newVal} (было: ${oldVal})`,
+				codeSnippet: `"${key}": ${entry.val} (было: ${oldVal})`,
 			});
 		}
 	}
@@ -425,6 +506,114 @@ export function analyzeDiff(diffText) {
 	return violations;
 }
 
+const HARD_ZERO_TEST_AST_RULES = new Set([
+	"test-no-assertion",
+	"test-tautology",
+	"test-swallowed-assertion",
+	"test-self-mock",
+	"test-skipped",
+	"test-only-left",
+]);
+const NO_GROWTH_TEST_AST_RULES = new Set([
+	"test-phantom-no-sut",
+	"test-source-grep",
+	"test-size-assertion",
+	"test-weak-only",
+]);
+
+function countTestFindingsByRule(text, file) {
+	if (!text) return {};
+	const res = scanTestSource(text, file);
+	const grouped = {};
+	for (const f of res.findings) {
+		if (!grouped[f.rule]) grouped[f.rule] = [];
+		grouped[f.rule].push(f);
+	}
+	return grouped;
+}
+
+function defaultReadHeadText(file) {
+	try {
+		return execFileSync("git", ["show", `HEAD:${file}`], {
+			encoding: "utf8",
+			maxBuffer: 16 * 1024 * 1024,
+			stdio: ["ignore", "pipe", "ignore"],
+		});
+	} catch {
+		return "";
+	}
+}
+
+function defaultReadTargetText(file, stagedOnly) {
+	if (stagedOnly) {
+		try {
+			return execFileSync("git", ["show", `:${file}`], {
+				encoding: "utf8",
+				maxBuffer: 16 * 1024 * 1024,
+				stdio: ["ignore", "pipe", "ignore"],
+			});
+		} catch {
+			// fallback to working tree below
+		}
+	}
+	return existsSync(file) ? readFileSync(file, "utf8") : null;
+}
+
+/**
+ * AST-инспекция всех затронутых в диффе тест-файлов (per-file ratchet):
+ * 1. Жесткий 0 на фейки/проглатывание/скипы (`HARD_ZERO_TEST_AST_RULES`).
+ * 2. Запрет добавлять новые фантомы, source-grep, size-assertion и weak-only даже при наличии старого долга в репо.
+ */
+export function checkTestFilesAstRegression(diffText, io = {}) {
+	const violations = [];
+	const chunks = diffText.split(/(?=^diff --git )/m).filter((c) => c.startsWith("diff --git "));
+	const readBefore = io.readBefore ?? defaultReadHeadText;
+	const useStaged = io.stagedOnly ?? !isAll;
+	const readAfter = io.readAfter ?? ((file) => defaultReadTargetText(file, useStaged));
+	const seen = new Set();
+
+	for (const chunk of chunks) {
+		const header = chunk.match(/^diff --git a\/.+ b\/(.+)/);
+		if (!header) continue;
+		const file = header[1].trim();
+		if (seen.has(file) || !isTestFile(file) || !/\.[cm]?[jt]sx?$/.test(file)) continue;
+		seen.add(file);
+		if (/^deleted file mode /m.test(chunk)) continue;
+
+		const afterText = readAfter(file);
+		if (!afterText) continue;
+		const beforeText = readBefore(file) ?? "";
+
+		const beforeGrouped = countTestFindingsByRule(beforeText, file);
+		const afterGrouped = countTestFindingsByRule(afterText, file);
+
+		for (const [rule, list] of Object.entries(afterGrouped)) {
+			const beforeCount = beforeGrouped[rule]?.length ?? 0;
+			const afterCount = list.length;
+			const isHardZero = HARD_ZERO_TEST_AST_RULES.has(rule);
+			const isRegressed = NO_GROWTH_TEST_AST_RULES.has(rule) && afterCount > beforeCount;
+			if (!isHardZero && !isRegressed) continue;
+
+			const sample = list[list.length - 1];
+			violations.push({
+				file,
+				lineNum: sample?.line ?? 1,
+				pattern: {
+					rule: `ANTI_GOODHART_AST_${rule.toUpperCase().replace(/-/g, "_")}`,
+					severity: "CRITICAL",
+					title: `AST-ПВО тестов: ${rule} (${beforeCount} -> ${afterCount})`,
+					message: isHardZero
+						? `В тест-файле обнаружено недопустимое нарушение "${rule}". Вызови реальный код проекта с проверяемым ассертом!`
+						: `В тест-файле выросло число плохих тестов "${rule}" (${beforeCount} -> ${afterCount}). Запрещено добавлять новые фантомные/source-grep/typeof-only/line-count тесты!`,
+					gateKey: "UNIT_TESTS",
+				},
+				codeSnippet: sample?.text ?? rule,
+			});
+		}
+	}
+	return violations;
+}
+
 export function runDiffSafetyAudit() {
 	console.log(`\n🔎 [DIFF SAFETY GUARD] Инспекция изменений ${isAll ? "(все незакоммиченные файлы)" : "(staged diff)"}...`);
 	const diffText = getDiff();
@@ -434,7 +623,7 @@ export function runDiffSafetyAudit() {
 		return 0;
 	}
 
-	const violations = analyzeDiff(diffText);
+	const violations = [...analyzeDiff(diffText), ...checkTestFilesAstRegression(diffText)];
 
 	if (violations.length === 0) {
 		console.log("✅ [DIFF SAFETY PASSED] В добавляемом коде нет запрещённых костылей (as any, !, suppressions, float money). Чисто!\n");

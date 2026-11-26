@@ -11,6 +11,7 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import {
 	VisitWorkOrderError,
 	VisitWorkOrderService,
@@ -129,56 +130,43 @@ describe("VisitWorkOrderService — Input Validation & Statutory Guards", () => 
 	});
 });
 
-describe("VisitWorkOrderService — Kopeck-Exact Financial Arithmetic", () => {
-	it("2.1 Accurately calculates line price with kopeck precision (fractional rubles without drift)", () => {
-		// unitPrice: 1500.50 ₽, quantity: 2, discount: 200.25 ₽
-		// Expected: (150050 * 2) - 20025 = 300100 - 20025 = 280075 kopecks = 2800.75 ₽
-		const unitPriceRub = 1500.5;
+describe("VisitWorkOrderService — Kopeck-Exact Financial Arithmetic via @dental/shared", () => {
+	it("2.1 Accurately converts fractional rubles via rublesToKopecks and kopecksToRubles without float drift", () => {
+		const unitPriceKopecks = rublesToKopecks(1500.5);
 		const quantity = 2;
-		const discountRub = 200.25;
-
-		const unitPriceKopecks = Math.round(unitPriceRub * 100);
-		const discountKopecks = Math.round(discountRub * 100);
-		const lineTotalKopecks = Math.max(
-			0,
-			unitPriceKopecks * quantity - discountKopecks,
-		);
+		const discountKopecks = rublesToKopecks(200.25);
+		const lineTotalKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);
 
 		assert.equal(unitPriceKopecks, 150050);
 		assert.equal(discountKopecks, 20025);
 		assert.equal(lineTotalKopecks, 280075);
-		assert.equal(lineTotalKopecks / 100, 2800.75);
+		assert.equal(kopecksToRubles(lineTotalKopecks), 2800.75);
 	});
 
-	it("2.2 Never yields negative line price when discount exceeds price", () => {
-		const unitPriceKopecks = 50000; // 500.00 ₽
-		const quantity = 1;
-		const discountKopecks = 60000; // 600.00 ₽ (скидка больше цены)
-
-		const lineTotalKopecks = Math.max(
-			0,
-			unitPriceKopecks * quantity - discountKopecks,
-		);
+	it("2.2 Converts negative or excessive discounts safely with floor clamping", () => {
+		const unitPriceKopecks = rublesToKopecks(500);
+		const discountKopecks = rublesToKopecks(600);
+		const lineTotalKopecks = Math.max(0, unitPriceKopecks - discountKopecks);
 		assert.equal(lineTotalKopecks, 0);
+		assert.equal(kopecksToRubles(lineTotalKopecks), 0);
 	});
 
-	it("2.3 Correctly handles multi-item sum in kopecks", () => {
+	it("2.3 Handles IEEE-754 tricky decimal rubles (1250.33, 890.99, 19.99) losslessly via rublesToKopecks", () => {
 		const items = [
-			{ price: 1250.33, qty: 3, discount: 50.0 }, // 125033 * 3 - 5000 = 375099 - 5000 = 370099
-			{ price: 890.99, qty: 1, discount: 0.0 }, // 89099
-			{ price: 4500.0, qty: 2, discount: 500.5 }, // 450000 * 2 - 50050 = 900000 - 50050 = 849950
+			{ price: 1250.33, qty: 3, discount: 50.0 }, // 125033 * 3 - 5000 = 370099
+			{ price: 890.99, qty: 1, discount: 0.0 },   // 89099
+			{ price: 4500.0, qty: 2, discount: 500.5 }, // 900000 - 50050 = 849950
 		];
 
 		let totalKopecks = 0;
 		for (const it of items) {
-			const uKop = Math.round(it.price * 100);
-			const dKop = Math.round(it.discount * 100);
+			const uKop = rublesToKopecks(it.price);
+			const dKop = rublesToKopecks(it.discount);
 			totalKopecks += Math.max(0, uKop * it.qty - dKop);
 		}
 
-		assert.equal(totalKopecks, 370099 + 89099 + 849950);
 		assert.equal(totalKopecks, 1309148);
-		assert.equal(totalKopecks / 100, 13091.48);
+		assert.equal(kopecksToRubles(totalKopecks), 13091.48);
 	});
 });
 

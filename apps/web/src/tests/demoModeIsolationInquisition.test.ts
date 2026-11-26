@@ -237,7 +237,7 @@ describe("Production Zero-Mock & Demo Mode Quarantine Inquisitor (8c, 8f, 8y)", 
 		);
 		if (!fs.existsSync(validatorPath)) {
 			// Legacy validation modal eradicated per Red Team inquisition
-			assert.ok(true, "Obsolete usePriceValidatorData successfully eradicated");
+			assert.equal(fs.existsSync(validatorPath), false, "Obsolete usePriceValidatorData must remain eradicated");
 			return;
 		}
 		const validatorSource = fs.readFileSync(validatorPath, "utf-8");

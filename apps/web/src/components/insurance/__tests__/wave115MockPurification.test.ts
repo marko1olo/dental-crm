@@ -21,15 +21,9 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		assert.equal(content.includes("Иванов И.И."), false);
 	});
 
-	it("2. ChairsidePreFlightChecklist.tsx: purged per Reality Simulator & Mandate 8e purge", () => {
+	it("2. ChairsidePreFlightChecklist.tsx: remains purged per Mandate 8e", () => {
 		const filePath = path.resolve(webSrcRoot, "components/chairside/ChairsidePreFlightChecklist.tsx");
-		if (!fs.existsSync(filePath)) {
-			assert.ok(true, "Purged per Mandate 8e");
-			return;
-		}
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.equal(content.includes("Смирнова Е. В."), false);
-		assert.equal(content.includes("Иванова М. А."), false);
+		assert.equal(fs.existsSync(filePath), false, "ChairsidePreFlightChecklist.tsx must remain purged per Mandate 8e");
 	});
 
 	it("3. DmsStudioModal.tsx: must NOT contain synthetic names", () => {
@@ -49,14 +43,11 @@ describe("Wave 115: Mocks & Dev Leaks Purification Suite", () => {
 		assert.equal(content.includes("⚖️"), false);
 	});
 
-	it("5. PublicBookingWidget.tsx: must NOT contain '+7 (999) 123-45-67'", () => {
+	it("5. PublicBookingWidget.tsx: exists and does NOT contain '+7 (999) 123-45-67'", () => {
 		const filePath = fs.existsSync(path.resolve(webSrcRoot, "components/booking/PublicBookingWidget.tsx"))
 			? path.resolve(webSrcRoot, "components/booking/PublicBookingWidget.tsx")
 			: path.resolve(webSrcRoot, "pages/PublicBookingWidget.tsx");
-		if (!fs.existsSync(filePath)) {
-			assert.ok(true, "Purged or relocated");
-			return;
-		}
+		assert.equal(fs.existsSync(filePath), true, "PublicBookingWidget.tsx must exist");
 		const content = fs.readFileSync(filePath, "utf-8");
 		assert.equal(content.includes("+7 (999) 123-45-67"), false);
 	});

@@ -17,7 +17,7 @@ const CHECKS = [
 	{ id: "ENCODING_UTF8", name: "UTF-8 Encoding", cmd: "node --max-old-space-size=2048 scripts/check-encoding.mjs" },
 	{ id: "DYNAMIC_IMPORTS", name: "Dynamic Imports", cmd: "node --max-old-space-size=2048 scripts/check-dynamic-imports.mjs" },
 	{ id: "TYPE_RATCHET", name: "Type Ratchet (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-type-ratchet.mjs" },
-	{ id: "TYPE_RATCHET", name: "Sanitary Quality Ratchet (0 any, 0 suppressions, 0 uppercase, <=21 float)", cmd: "node --max-old-space-size=2048 scripts/quality-ratchet.mjs" },
+	{ id: "TYPE_RATCHET", name: "Quality Ratchet v2 (AST: prod + tests + floors)", cmd: "node --max-old-space-size=2048 scripts/quality-ratchet.mjs --no-tighten" },
 	{ id: "MOCK_DEFAULTS", name: "Mock Defaults Hunter (Mandate 8bh)", cmd: "node --max-old-space-size=2048 scripts/check-mock-defaults.mjs" },
 	{ id: "SINGLE_DOORS", name: "Single-Door SSOT Guardian", cmd: "node --max-old-space-size=2048 scripts/check-single-doors.mjs" },
 	{ id: "DICE_AUDIT", name: "Monte Carlo Dice Reality Audit (Кубик Тимаэрта)", cmd: "node --max-old-space-size=2048 scripts/dice-audit.mjs" },

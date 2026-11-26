@@ -56,17 +56,26 @@ describe("Telephony: CRM Themes & Multi-Provider Invariants", () => {
 		}
 	});
 
-	test("mobile launcher and touch target invariants adhere to clinical ergonomics", () => {
-		const mobileLauncherSize = 48;
-		const standardTouchTargetMin = 44;
-		const primaryActionTouchTargetMin = 48;
-		const mobileBottomOffset = 72;
-		const mobileRightOffset = 12;
+	test("volume clamping, playback speed cycling, and drawer state transitions work cleanly in telephonyStore", () => {
+		const store = useTelephonyStore.getState();
+		store.setVolumeLevel(-0.5);
+		assert.equal(useTelephonyStore.getState().volumeLevel, 0, "Negative volume clamps to 0");
+		store.setVolumeLevel(1.8);
+		assert.equal(useTelephonyStore.getState().volumeLevel, 1, "Volume above 1 clamps to 1");
 
-		assert.ok(mobileLauncherSize >= 48, "Mobile launcher FAB must be at least 48x48px");
-		assert.ok(standardTouchTargetMin >= 44, "Standard touch target must be at least 44x44px");
-		assert.ok(primaryActionTouchTargetMin >= 48, "Call action buttons must be at least 48x48px");
-		assert.equal(mobileBottomOffset, 72, "Mobile bottom offset above navigation bar must be 72px");
-		assert.equal(mobileRightOffset, 12, "Mobile right offset must be 12px");
+		useTelephonyStore.getState().setPlaybackSpeed(1);
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1.25);
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1.5);
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 2);
+		useTelephonyStore.getState().cyclePlaybackSpeed();
+		assert.equal(useTelephonyStore.getState().playbackSpeed, 1);
+
+		useTelephonyStore.getState().closeCallDrawer();
+		assert.equal(useTelephonyStore.getState().isCallDrawerOpen, false);
+		useTelephonyStore.getState().toggleCallDrawer();
+		assert.equal(useTelephonyStore.getState().isCallDrawerOpen, true);
 	});
 });

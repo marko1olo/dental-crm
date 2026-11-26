@@ -60,7 +60,7 @@ describe("Milestone 3: Data Purity & Zero Hardcoded Fallbacks Inquisition", () =
 		const filePath = path.resolve(webSrcDir, "components/treatment-plans/validation/TreatmentPlanPriceValidatorModal.tsx");
 		if (!fs.existsSync(filePath)) {
 			// Legacy validation modal eradicated per Red Team inquisition
-			assert.ok(true, "Obsolete TreatmentPlanPriceValidatorModal successfully eradicated");
+			assert.equal(fs.existsSync(filePath), false, "Obsolete TreatmentPlanPriceValidatorModal must remain eradicated");
 			return;
 		}
 		const dataPath = path.resolve(webSrcDir, "components/treatment-plans/validation/modal/usePriceValidatorData.ts");

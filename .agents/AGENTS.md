@@ -1,54 +1,29 @@
 # AGENTS.md — Clinic MVP / DENTE Dental CRM (.agents Router)
 
-> 🏛️ SSOT: Все 46 мандатов (8e–8bq) и DoD в [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md). Конституция + Claim Protocol + P0→P3 очередь: [`.agents/THE_HAMMER_MASTER_PROMPT.md §XL–XLV`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md). Навигация: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md).
+> 🏛️ Полные 46 мандатов (8e–8bq), CSS-классы кнопок/модалок и 15 DoD гейтов — в [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md). Архитектурная карта: [`.agents/architecture/GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md`](file:///C:/Clinic_MVP/dental-crm/.agents/architecture/GLOBAL_ARCHITECTURAL_REMEDIATION_PLAN.md) | Навигация: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md).
 
-## 🚨 ПРОТОКОЛ ЗАЗЕМЛЕНИЯ (ЗАКОН №0):
-1. Старт субагента: Обязательный `read_file` на [THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и профильный стандарт чанками по 800 строк до конца.
-2. In-Flight: читаем JIT целевой код. Перед модификацией файл читается ПОЛНОСТЬЮ ОТ 1 ДО ПОСЛЕДНЕЙ СТРОКИ через `read_file`. Запрещены слепые патчи!
-3. Перед мутацией: проверка `git status` и `git diff --stat`.
-4. Со-развитие спецификаций и кода (Мандат 8az): Проблема -> реестр -> `read_file` -> правка в коде -> тест/скриншот -> обновление статуса.
-5. Мандат 8bi/8am (Геометрия кнопок, типографика и выравнивание):
-   - Кнопки: Desktop Standard `h-9 px-3.5 rounded-lg text-sm font-medium gap-2 items-center inline-flex`; Compact `h-8 px-2.5 rounded-md text-xs font-medium gap-1.5`; Mobile `min-h-[44px] h-11 px-4 rounded-xl text-base`; Mobile Sticky `min-h-[52px] w-full font-semibold`. Иконки: строго `w-4 h-4` (compact `w-3.5 h-3.5`), `currentColor`.
-   - Иерархия: ровно 1 Primary CTA `bg-[var(--primary)] text-white`. Secondary `border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]`.
-   - UPPERCASE BAN: строго Sentence case без капслока на кнопках, чипах, табах. Деньги: `font-mono tracking-tight text-right tabular-nums`.
-   - Модалки и инпуты: шапка `h-14 px-6`, тело `p-6 space-y-4`, футер `h-16 px-6 border-t` («Отмена» ВСЕГДА слева от Primary CTA). Инпуты зеркалят кнопки (Desktop `h-9 px-3`, Mobile `min-h-[44px] h-11 px-3.5`).
-   - Бейджи: `h-6 px-2 text-xs font-medium rounded-full inline-flex gap-1` (`var(--success-soft)`). Apple Segmented: `p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]`. 0px скролла (`overflow-x: clip; max-width: 100vw;`), Empty State: `py-12 flex flex-col items-center gap-2.5` с иконкой `w-10 h-10` и действием. CLS = 0.
-6. Мандат 8bj (Селекция сирот и ядро): Токсичный шлак (симуляторы, советский бэк-офис М-11, вымышленные законы) — в утиль (`git rm`). Столпы клиники неприкосновенны (дозы анестезии, каналы Wheeler, молочные зубы, МКБ-10, сплит-чеки, 100% гарантии, согласия ИДС, справки ФНС 1151156) — монтировать в боевой UI!
-7. Мандат 8bk (Разминирование, двойной счётчик и exactOptionalPropertyTypes):
-   - Разминирование СТРОГО в боевом коде (`web/src`, `api/src`, `shared/src`), а не в моках тестов.
-   - Закон двойного счётчика: замер `npm run typecheck -w @dental/web` ДО и ПОСЛЕ. Рост или стагнация ошибок `tsc` при падении `any` = БРАК И САБОТАЖ!
-   - **exactOptionalPropertyTypes:** опциональные поля, принимающие `undefined`, объявляются как `prop?: Type | undefined;`. Запрещен каст `as any` для TS2379!
-   - Компилятор: канонически `npm run typecheck -w @dental/web` (`--max-old-space-size=8192`), точечно: `npx tsc -p apps/web/tsconfig.json --noEmit 2>&1 | Select-String "путь"`. Гейт сапёра — `tsc --noEmit` с 0 ошибок.
-8. Мандат 8bh/8zq (React 19 Hooks, Keyed Remount, Zero-Leak Draft):
-   - React 19: ноль условных хуков (`useX()` внутри `&&`, `||`, `if`). Платформенное ветвление изолируется через раздельные компоненты (`<DesktopView />` vs `<MobileView />`).
-   - Keyed Remount: модалки монтируются с ключом `<PatientStudioModal key={patientId} ... />`.
-   - Zero-Leak Draft: при закрытии модалок/шторок (Cancel/Escape/Swipe) гарантирован сброс локального черновика (`resetDraft()`), исключающий утечку данных чужого пациента.
-9. Мандат 8bm/8bo (Копеечные DTO, ACID Транзакции и Idempotency):
-   - Деньги: строго суффикс `Kopecks` (`amountKopecks: bigint` / `priceKopecks: integer`). Запрещены вычисления рублей в UI (`/ 100`). Форматирование через `money.ts`.
-   - Конверт API: безопасный анпакер `const payload = json?.data ?? json;`.
-   - Идемпотентность и ACID: мутации несут заголовок `Idempotency-Key` (UUIDv7). Мутации 2+ таблиц — строго внутри `await db.transaction(async tx => ...)`. Запрещен глобальный `db` внутри транзакции!
-10. Мандат 8ar/8as (Одонтограмма Wheeler 2.5D и MODBL): Изоляция поверхностей. Wheeler-пропорции (резцы 48px, клыки 54px, моляры 68px), молочные зубы 51–85. Реактивный SVG 120 FPS. → полное: [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md)
-11. Мандат 8v/8e (Soft Negative Stock, Сплит-Касса и 100% Скидки): Склад: тихое списание по BOM, мягкий овердрафт (`< 0`). Касса: сплиты до копейки, скидки до 100%, 0 ИНН физлиц. → полное: [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)
-12. Мандат 8bq (Храповик, Кубик, Failure Manifestos и Трёхзвенная Цепь):
-    - Звено А: `check:diff` — 0 костылей (`as any`, `!`, `// @ts-ignore`, `catch {}`, `window.alert`, `/ 100`). Блокировка намертво!
-    - Звено Б: `check:ratchet` (потолки монотонно вниз), `check:doors` (0 клонов модалок, 100% Zod дверей API).
-    - Звено В: `audit:dice` (175 точек), Failure Manifestos, Red Team субагент-инквизитор. Презумпция брака 100%!
-    → полное: [`SYSTEMIC_ROT_RATCHET.md`](file:///C:/Clinic_MVP/dental-crm/SYSTEMIC_ROT_RATCHET.md) + [`docs/quality/FAILURE_MANIFESTOS.md`](file:///C:/Clinic_MVP/dental-crm/docs/quality/FAILURE_MANIFESTOS.md)
+## 🚨 КАНОНИЧЕСКИЕ ИНВАРИАНТЫ РЕАЛИЗАЦИИ (ОБНОВЛЕНО ПО ПЛАНУ)
+1. **Закон №0 & Со-развитие (8az):** Перед кодом читать ПОЛНОСТЬЮ `THE_HAMMER_MASTER_PROMPT.md`, профильный стандарт и КАЖДЫЙ целевой файл (`1..EOF`) + `git status`. Нашёл баг -> `SYSTEMIC_ROT_RATCHET.md` -> код -> тест/пруф -> статус.
+2. **3-Shell UI, CSS DAG & Матрёшка = 0:**
+   - Единый 3-контурный роутер (`routeResolver.ts` + `WorkspaceStudioOverlayHost`) без `isStandaloneActive()` и сиротских `Direct*Launcher` модалок вне каркаса.
+   - `Max Modal Depth = 1` (без `opacity-0` `SubModals` матрёшек, без двойных баров сохранения; каталог шаблонов ЭМК — встроенная 380px боковая шторка; при смене пациента — `key={patientId}` + `resetDraft()`).
+   - 6-слойный CSS DAG (`styles/index.css`), неизменяемые `--palette-*` примитивы vs `:root[data-theme="..."]` (0,2,0), **запрет глобального `(pointer: coarse)`** на ПК >=1024px (`44px` только `<=768px`), `.low-spec-mode` (0 GPU blur на 4 ГБ ОЗУ, `AbortController`, `purgeDicomImageLoader`, V8 heap `<= 2048/3072 MB`).
+   - Одонтограмма Wheeler 2.5D: `const archUid = useId().replace(/:/g, "")` для изоляции `#id`/`url(#...)` (11–18 vs 21–28 и 2 дуги), батчевые обновления вместо `for`-циклов, 0 радужных иконок (`currentColor`).
+3. **UI-язык, Кнопки и RBAC (8am, 8n, 8zg):**
+   - Кнопки, бейджи, инпуты, сетка модалок — строго по `GEMINI.md §10` (1 Primary `var(--primary)`, 0 капслока/`...`/градиентов/`#334155`, `tabular-nums`, 0 «1 клик», 0 `043/804н/54-ФЗ/257/у` в видимом UI).
+   - 12-ролевой RBAC + Solo-суверенитет (`solo_doctor`: без ассистента, без ЗП/лидов/ИНН физлиц; ресепшен без `analytics.pnl`; `my-earnings` и `EmkToolbar` без дублей «Нормы»).
+4. **PG18 `pg.Pool` (`max: 10` / `LOW_SPEC: 5`) & Фабрики маршрутов:**
+   - Запрещено сносить глобальный хук `onRoute` до перевода 100% маршрутов: под `FORCE ROW LEVEL SECURITY` запрос вне транзакции с `SET LOCAL app.current_tenant` не падает на `SELECT`, а молча возвращает пустоту `[]`.
+   - 5 типизированных фабрик маршрутов (`routeFactories` с `tenantTxSelfManaged: true`): `READ ONLY` для быстрых выборок (без XID/нагрузки на WAL), ACID `READ WRITE` для мутаций, раздельные короткие транзакции для стримов/внешнего I/O (0 удержания соединений PG во время LLM `fetch` и передачи файлов), публичные и вебхуки; в `db` Proxy — fail-fast трап нецелевых обращений вне контекста тенанта.
+   - Передавать `tx` явно (0 лишних `SELECT current_setting` при вложенности, 0 глобального `db` внутри `tx` против self-deadlock пула), а `try/catch` вокруг `withSavepoint` ставить ТОЛЬКО внутри TX (никогда не возвращать `200 OK` после отката транзакции!).
+5. **Auth, Финансовый Леджер и Бэкап/LAN:**
+   - Проверка активной отозванной сессии (`verifyActiveStaffSession` + `BoundedTtlMap` с мгновенной инвалидацией при logout) на всех клинических роутах, 0 небезопасных заголовочных обходов в prod, строгий приоритет `staffToken || clinicToken` (никогда `clinicToken` первым!).
+   - Возвраты: статус `"refunded"` (не `"draft"`), карточные/СБП возвраты мимо наличного ящика `"main"`, атомарный откат позиций плана при полном возврате; ЗП врачей поддерживает все модели скидки/авансов, аренду кресла, обязательный перенос отрицательного долга (`priorDebtCarryOverKop`) и `LEFT JOIN visits`; пакетная имплантация под 1 `Idempotency-Key`, 0 `*Rub` float.
+   - Резервное копирование (`DENTETB2`): динамический реестр всех таблиц схемы + FK-DAG и 2-проходная отложенная привязка циклов (ЗАПРЕТ `SET session_replication_role = 'replica'`, т.к. падает с `42501` под ролью приложения!), сохранение хэшей входа в DR, keyset-курсор внутри `REPEATABLE READ` с батчами под предел `65 535` параметров PG, проверка `AES-256-GCM AuthTag` строго ДО `COMMIT`; потоки `yauzl`/SAX без `readFileSync`, `BoundedTtlMap` на серверных кэшах; единый IndexedDB Outbox + `sync_tombstones` + чанки с `concurrency = 1` на HDD; Electron loopback `127.0.0.1` + честный протокол ККТ.
+6. **Типы, Честные Тесты (6Г) и Сдача:**
+   - 0 `as any`/`!`/`as unknown as`, `prop?: T | undefined` (`exactOptionalPropertyTypes`), двойной счётчик `any` + `tsc` (воркеры гоняют таргетный `tsc | Select-String`, глобальный — только L1), `check:diff`, `check:ratchet v2`, `check:doors`, `audit:dice`, 0 `source-grep`/`typeof`-пустышек/фантомов в тестах, Claim Protocol + пофайловый `git add <file>` в `main`.
 
-## ⚡ ОПЕРАЦИОННЫЙ ПРОТОКОЛ РОЯ (Claim, P0→P3, Worktree, ДО/ПОСЛЕ)
-
-> Полная спецификация — в [THE_HAMMER_MASTER_PROMPT.md §XL–XLV](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md). Здесь — операционная выдержка для быстрого старта субагента.
-
-### Приоритетная очередь — читать перед стартом:
-- **P0 БЛОКЕР:** `tsc` ошибки в `@dental/web`, незакоммиченный worktree → стоп, сначала сюда.
-- **P1 ГНИЛЬ:** route без `organizationId` (387+), без `db.transaction()` (170+), `console.log` (760+) → системный риск.
-- **P2 ДОЛГ:** `as any` (85, двойной счётчик!), кубик-дефекты (18-19 из 175) → берём после P0.
-- **P3 ПЛАНОВОЕ:** DDL-сквош, мусор `scripts/` → только при чистых P0+P1.
-
-**Claim:** Старт → `🔒 [AgentId] — [скоуп] — [HH:MM DD.MM]` в RATCHET.md. Готово → `✅ [AgentId] — DONE — commit <hash> — [ДО→ПОСЛЕ]`. Брошен >60 мин — снимает оркестратор.
-
-**Worktree:** `git status` при старте. `git add <file>` пофайлово — запрет `git add .`. Отчёт без коммита = БРАК.
-
-**ДО/ПОСЛЕ:** `npm run typecheck -w @dental/web` + `rg "as any" apps/ --count-matches` — оба вниз. Иначе САБОТАЖ.
-
-**Scout→Fixer:** Scout Read-Only → досье `[ФАЙЛ:СТРОКА]` → 1:1 Verbatim → Fixer мутирует SSOT, `git rm` дубликаты. `[ПРОВЕРЕНО: ЧИСТО]` — неприкосновенно.
+## 🔥 ТОП-ПРАВИЛА ПРОТИВ ЧАСТЫХ СРЫВОВ (ЧИНИТЬ СРАЗУ ПРИ ОБНАРУЖЕНИИ)
+- **Фронт — CSS-слои и макет:** неслойный CSS (`.flex-1` вне `@layer`) ломает Tailwind `sm:flex-none`/`md:hidden` и режет кнопки; `overflow-hidden` на тулбаре режет меню (`createPortal` обязателен!); мобильный/десктоп закрывается **одной** кнопкой `[X]` (`order-*`), без дубля; скриншоты снимаются строго ПОСЛЕ последней правки и лично проверяются на клиппинг, дубли и наложение бейджей.
+- **Фронт — Модалки, Стейт и Токены:** ноль матрёшек (`Max Modal Depth = 1`), ноль сброса черновика из `useEffect` при inline-пропсах (`key={id}` + reset на `onClose`), приоритет `staffToken || clinicToken` (никогда `clinicToken` первым!), `Idempotency-Key` + анпакер `{ data }` без молчаливых `.catch(() => null)`, префикс `useId()` в SVG `#id` и батчевые мутации массивом, 0 `(pointer: coarse)` на ПК `>=1024px`.
+- **Бэк — Пул PG18, RLS, Сейвпойнты и Леджер:** не сносить глобальную обёртку до 100% перевода роутов (`FORCE RLS` иначе молча вернёт `[]`); долгий `fetch`/стрим — строго вне PG TX (`READ ONLY` для `GET`, короткие `runReadTx`/`runWriteTx`); внутри `tx` не звать `db`; `withSavepoint` ловить только ВНУТРИ TX; проверять `verifyActiveStaffSession`; возвраты — `"refunded"` мимо наличного ящика при безнале; ЗП с переносом долга и `LEFT JOIN`; DR без `session_replication_role`, с хэшами, `AuthTag` до `COMMIT`, `<=250` строк/INSERT, `yauzl`/SAX стримами и `BoundedTtlMap`.

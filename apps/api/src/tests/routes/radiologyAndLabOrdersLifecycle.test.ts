@@ -485,20 +485,23 @@ describe("Section 2: Dental Technical Laboratory (ЗТЛ наряды-заказ
 		assert.equal(mapStageToLabOrderStatus("unknown_stage"), null);
 	});
 
-	it("verifies Mandate 8e: treatment plan age >30 days does not block lab orders or workflow", () => {
-		const planCreatedAt = new Date(Date.now() - 45 * 24 * 3600 * 1000);
-		const planAgeDays = Math.floor((Date.now() - planCreatedAt.getTime()) / (24 * 3600 * 1000));
-		assert.ok(planAgeDays >= 45, "Plan is older than 30 days");
+	it("verifies Mandate 8e: createLabItemSchema and schedule estimator accept lab orders without treatment-plan age limit", () => {
+		const parsed = createLabItemSchema.safeParse({
+			toothFdi: 16,
+			restorationType: "crown_monolithic",
+			material: "zirconia_multilayer_gradient",
+			shadeSystem: "VITA_CLASSICAL",
+			shadeFinal: "A2",
+			priceRub: 24000,
+		});
+		assert.equal(parsed.success, true);
 
-		// Mandate 8e doctor autonomy:
-		// Older treatment plans MUST NOT block lab order creation, payment or scheduling.
-		const isBlocked = false;
-		const requiresChiefDoctorPermission = false;
-		const allowLabOrderDispatch = true;
-
-		assert.equal(isBlocked, false);
-		assert.equal(requiresChiefDoctorPermission, false);
-		assert.equal(allowLabOrderDispatch, true);
+		const planCreatedAt = new Date("2026-01-01T10:00:00Z");
+		const orderDispatchedAt = new Date(planCreatedAt.getTime() + 45 * 24 * 3600 * 1000);
+		const schedule = estimateDeliveryAndFittingSchedule(orderDispatchedAt, 5);
+		assert.ok(schedule.productionDueDate.getTime() > orderDispatchedAt.getTime());
+		assert.ok(schedule.clinicDeliveryDate.getTime() > schedule.productionDueDate.getTime());
+		assert.ok(schedule.suggestedFittingDate.getTime() > schedule.clinicDeliveryDate.getTime());
 	});
 });
 

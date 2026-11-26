@@ -45,8 +45,18 @@ describe("Red Team Inquisitor: Стерилизация и пакетное ав
 			assert.ok(!fs.existsSync(filePath), "Сиротский хук useVisitDiaryTrayHandlers.ts ликвидирован по Мандатам 8e/8n");
 		});
 
-		it("проверяет автономию врача у кресла: подписание дневника визита не блокируется лотками", () => {
-			assert.ok(true, "Врач свободен от поштучного сканирования крафт-пакетов у кресла (Мандат 8e)");
+		it("проверяет пакетный цикл и отсутствие ложных отказов при соблюдении нормы (и отказ при недогреве)", () => {
+			const ok = validateSterilizationCycleParameters("standard_134", 134, 2.1, 5);
+			assert.equal(ok.valid, true);
+			assert.equal(ok.reason, undefined);
+
+			const badTemp = validateSterilizationCycleParameters("standard_134", 129, 2.1, 5);
+			assert.equal(badTemp.valid, false);
+			assert.ok(badTemp.reason?.includes("134°C"));
+
+			const batch = createOneClickShiftBatch({ packagesCount: 6 });
+			assert.equal(batch.sterilizationCycle.status, "completed");
+			assert.equal(batch.psoRecord.totalProcessedItems, 24);
 		});
 	});
 

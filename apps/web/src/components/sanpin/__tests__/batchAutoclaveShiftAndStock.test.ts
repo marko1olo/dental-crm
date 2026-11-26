@@ -19,6 +19,7 @@ import {
 } from "../sterilizationModules";
 import { SANPIN_CANONICAL_TABS } from "../sanpinNavigationConfig";
 import { SANPIN_REGISTERS_TOAST_MESSAGES } from "../sanpinToastMessages";
+import { calculateBatchStockDeduction, createOneClickShiftBatch } from "../sanpinCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,27 +73,22 @@ describe("Пакетная стерилизация смены и автомат
 
 	describe("2. Пакетное списание расходников со склада (Soft Negative Stock, Мандат 8n)", () => {
 		it("автоматически рассчитывает списание пакетов и индикаторов 5 класса на цикл", () => {
-			const batchCount = 27;
-			const deductionSpec = [
-				{ name: "Крафт-пакеты самоклеящиеся 100x200", qty: batchCount, unit: "шт" },
-				{ name: "Химический индикатор 5 класса Интест", qty: 1, unit: "шт" },
-			];
+			const deductionSpec = calculateBatchStockDeduction(27);
+			const kraft = deductionSpec.find((d) => d.sku === "KRAFT-100X200");
+			const indicator = deductionSpec.find((d) => d.sku === "IND-CLASS5-MEDIS");
 
-			assert.equal(deductionSpec[0]?.qty, 27);
-			assert.equal(deductionSpec[1]?.qty, 1);
+			assert.equal(kraft?.quantity, 27);
+			assert.equal(indicator?.quantity, 7); // Math.max(2, Math.ceil(27 / 4))
+			assert.equal(deductionSpec.length, 4);
 		});
 
-		it("применяет мягкий овердрафт при недостаточном остатке (бизнес клиники не блокируется)", () => {
-			const currentStock = 10;
-			const requiredDeduction = 27;
-			const nextStock = currentStock - requiredDeduction;
-			const isOverdraft = nextStock < 0;
-
-			assert.equal(nextStock, -17);
-			assert.equal(isOverdraft, true);
-			// Критический инвариант: овердрафт фиксируется, но кнопка и транзакция не отменяются
-			const transactionCommitted = true;
-			assert.equal(transactionCommitted, true, "Списание в минус разрешено, клиника не встает");
+		it("формирует полный пакет смены (цикл + ПСО + УФ + списание) без блокировок при малых партиях", () => {
+			const batch = createOneClickShiftBatch({ packagesCount: 27, programId: "standard_134" });
+			assert.equal(batch.sterilizationCycle.packagesCount, 27);
+			assert.equal(batch.sterilizationCycle.temperatureCelsius, 134);
+			assert.equal(batch.psoRecord.verdict, "ГОДНО");
+			assert.equal(batch.psoRecord.testedItemsCount, 3);
+			assert.equal(batch.deductedStock[0]?.quantity, 27);
 		});
 	});
 

@@ -4,12 +4,30 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import {
 	configuredClinicalAccessSecret,
 	configuredClinicalMutationSecret,
+	configuredSuperadminSecret,
 	denteAdminSecretHeader,
+	isDemoShowcaseMode,
 	namedDevelopmentModeActive,
+	requireAuthTokenSecret,
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
+	requireNonDoctorAccess,
+	requireSuperadmin,
+	resolveOrganizationId,
 	unguardedBypassAllowed,
 } from "../accessGuard.js";
+import { signToken } from "../utils/cryptoHelper.js";
+
+function createTestReply(): {
+	reply: FastifyReply;
+	sendMock: ReturnType<typeof mock.fn>;
+	codeMock: ReturnType<typeof mock.fn>;
+} {
+	const sendMock = mock.fn();
+	const codeMock = mock.fn((_code: number) => ({ send: sendMock }));
+	const reply = { code: codeMock } as unknown as FastifyReply;
+	return { reply, sendMock, codeMock };
+}
 
 describe("accessGuard", () => {
 	const MOCK_SECRET =
@@ -18,22 +36,19 @@ describe("accessGuard", () => {
 		process.env.TEST_WRONG_SECRET || `wrong-admin-secret-${Date.now()}`;
 
 	let mockRequest: Partial<FastifyRequest>;
-	let mockReply: Partial<FastifyReply>;
+	let mockReply: FastifyReply;
 	let sendMock: ReturnType<typeof mock.fn>;
 	let codeMock: ReturnType<typeof mock.fn>;
 
 	const originalEnv = { ...process.env };
 
 	beforeEach(() => {
-		sendMock = mock.fn();
-		codeMock = mock.fn((_code: number) => ({ send: sendMock }));
-
+		const created = createTestReply();
+		sendMock = created.sendMock;
+		codeMock = created.codeMock;
+		mockReply = created.reply;
 		mockRequest = {
 			headers: {},
-		};
-		mockReply = {
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			code: codeMock as any,
 		};
 	});
 
@@ -493,6 +508,164 @@ describe("accessGuard", () => {
 					`значение «${value}» не должно включать обход`,
 				);
 			}
+		});
+	});
+
+	describe("isDemoShowcaseMode and demo token gating", () => {
+		test("isDemoShowcaseMode requires development/test AND explicit demo flag", () => {
+			process.env.NODE_ENV = "production";
+			process.env.DENTE_DEMO_MODE = "1";
+			process.env.DENTE_DEMO_SHOWCASE = "true";
+			process.env.DENTE_ALLOW_DEMO_LOGIN = "1";
+			assert.strictEqual(isDemoShowcaseMode(), false);
+
+			process.env.NODE_ENV = "development";
+			delete process.env.DENTE_DEMO_MODE;
+			delete process.env.DENTE_DEMO_SHOWCASE;
+			delete process.env.DENTE_ALLOW_DEMO_LOGIN;
+			assert.strictEqual(isDemoShowcaseMode(), false);
+
+			process.env.DENTE_DEMO_MODE = "1";
+			assert.strictEqual(isDemoShowcaseMode(), true);
+
+			delete process.env.DENTE_DEMO_MODE;
+			process.env.DENTE_DEMO_SHOWCASE = "true";
+			assert.strictEqual(isDemoShowcaseMode(), true);
+		});
+
+		test("demo showcase clinic/staff tokens allow clinical access only when demo showcase is active", async () => {
+			process.env.NODE_ENV = "test";
+			process.env.DENTE_DEMO_SHOWCASE = "true";
+			delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+
+			const demoClinicReq = {
+				headers: { "x-dente-clinic-token": "demo-showcase-token-org1" },
+			} as unknown as FastifyRequest;
+			const demoStaffReq = {
+				headers: { "x-dente-staff-token": "demo-showcase-staff-token-owner" },
+			} as unknown as FastifyRequest;
+			const unrelatedReq = {
+				headers: { "x-dente-clinic-token": "real-invalid-token" },
+			} as unknown as FastifyRequest;
+
+			assert.strictEqual(await requireClinicalMutationAccess(demoClinicReq, mockReply), true);
+			assert.strictEqual(await requireClinicalReadAccess(demoStaffReq, mockReply), true);
+			assert.strictEqual(await requireClinicalMutationAccess(unrelatedReq, mockReply), false);
+			assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 503);
+		});
+	});
+
+	describe("Signed token identity, requireSuperadmin, and requireNonDoctorAccess", () => {
+		test("requireClinicalMutationAccess and requireClinicalReadAccess accept verified clinic+staff tokens without admin secret", async () => {
+			process.env.NODE_ENV = "test";
+			delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+			delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
+			delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+			const secret = requireAuthTokenSecret();
+			const orgId = "11111111-1111-4111-8111-111111111111";
+			const clinicToken = signToken({ organizationId: orgId, role: "owner" }, secret);
+			const staffToken = signToken({ organizationId: orgId, userId: "user-1", role: "doctor" }, secret);
+
+			const reqWithBoth = {
+				headers: {
+					"x-dente-clinic-token": clinicToken,
+					"x-dente-staff-token": staffToken,
+				},
+			} as unknown as FastifyRequest;
+
+			assert.strictEqual(await requireClinicalMutationAccess(reqWithBoth, mockReply), true);
+			assert.strictEqual(await requireClinicalReadAccess(reqWithBoth, mockReply), true);
+			assert.strictEqual(await resolveOrganizationId(reqWithBoth), orgId);
+
+			const anonymousReq = { headers: {} } as unknown as FastifyRequest;
+			assert.strictEqual(await resolveOrganizationId(anonymousReq), null);
+
+			const clinicNoRoleToken = signToken({ organizationId: orgId }, secret);
+			const reqMissingRoleAndUser = {
+				headers: { "x-dente-clinic-token": clinicNoRoleToken },
+			} as unknown as FastifyRequest;
+			assert.strictEqual(await requireClinicalMutationAccess(reqMissingRoleAndUser, mockReply), false);
+		});
+
+		test("configuredSuperadminSecret prefers DENTE_SUPERADMIN_SECRET and falls back to clinical secret", () => {
+			process.env.DENTE_CLINICAL_ADMIN_SECRET = "clin-sec";
+			delete process.env.DENTE_SUPERADMIN_SECRET;
+			assert.strictEqual(configuredSuperadminSecret(), "clin-sec");
+
+			process.env.DENTE_SUPERADMIN_SECRET = "  super-sec  ";
+			assert.strictEqual(configuredSuperadminSecret(), "super-sec");
+		});
+
+		test("requireSuperadmin enforces secret headers, superadmin/owner roles, 503/403 separation, and dev bypass", async () => {
+			process.env.NODE_ENV = "test";
+			process.env.DENTE_SUPERADMIN_SECRET = "super-secret-xyz";
+			delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
+
+			const okHeaderReq = {
+				headers: { "x-dente-superadmin-secret": "super-secret-xyz" },
+			} as unknown as FastifyRequest;
+			assert.strictEqual(await requireSuperadmin(okHeaderReq, mockReply), true);
+
+			const badHeaderReq = {
+				headers: { "x-dente-superadmin-secret": "wrong" },
+			} as unknown as FastifyRequest;
+			assert.strictEqual(await requireSuperadmin(badHeaderReq, mockReply), false);
+			assert.strictEqual(codeMock.mock.calls.at(-1)?.arguments[0], 403);
+
+			const authSecret = requireAuthTokenSecret();
+			const orgId = "11111111-1111-4111-8111-111111111111";
+			const ownerReq = {
+				headers: {
+					"x-dente-clinic-token": signToken({ organizationId: orgId }, authSecret),
+					"x-dente-staff-token": signToken({ organizationId: orgId, userId: "u1", role: "owner" }, authSecret),
+				},
+			} as unknown as FastifyRequest;
+			// Explicit DENTE_SUPERADMIN_SECRET set -> clinic owner is NOT superadmin
+			assert.strictEqual(await requireSuperadmin(ownerReq, mockReply), false);
+			assert.strictEqual(codeMock.mock.calls.at(-1)?.arguments[0], 403);
+
+			// Without explicit DENTE_SUPERADMIN_SECRET -> owner is allowed
+			delete process.env.DENTE_SUPERADMIN_SECRET;
+			process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+			const ownerReqFresh = {
+				headers: {
+					"x-dente-clinic-token": signToken({ organizationId: orgId }, authSecret),
+					"x-dente-staff-token": signToken({ organizationId: orgId, userId: "u1", role: "owner" }, authSecret),
+				},
+			} as unknown as FastifyRequest;
+			assert.strictEqual(await requireSuperadmin(ownerReqFresh, mockReply), true);
+
+			// Missing secrets & unguarded off -> 503; unguarded on in test -> true
+			delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+			assert.strictEqual(await requireSuperadmin({ headers: {} } as unknown as FastifyRequest, mockReply), false);
+			assert.strictEqual(codeMock.mock.calls.at(-1)?.arguments[0], 503);
+
+			process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
+			assert.strictEqual(await requireSuperadmin({ headers: {} } as unknown as FastifyRequest, mockReply), true);
+		});
+
+		test("requireNonDoctorAccess blocks role doctor with 403 DoctorsNotAllowed and delegates non-doctors", async () => {
+			process.env.NODE_ENV = "test";
+			process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+			const secret = requireAuthTokenSecret();
+			const orgId = "11111111-1111-4111-8111-111111111111";
+
+			const doctorReq = {
+				headers: {
+					"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+					"x-dente-staff-token": signToken({ organizationId: orgId, userId: "d1", role: "doctor" }, secret),
+				},
+			} as unknown as FastifyRequest;
+			assert.strictEqual(await requireNonDoctorAccess(doctorReq, mockReply, "billing"), false);
+			assert.strictEqual(codeMock.mock.calls.at(-1)?.arguments[0], 403);
+
+			const adminReq = {
+				headers: {
+					"x-dente-clinic-token": signToken({ organizationId: orgId }, secret),
+					"x-dente-staff-token": signToken({ organizationId: orgId, userId: "a1", role: "administrator" }, secret),
+				},
+			} as unknown as FastifyRequest;
+			assert.strictEqual(await requireNonDoctorAccess(adminReq, mockReply, "billing"), true);
 		});
 	});
 });

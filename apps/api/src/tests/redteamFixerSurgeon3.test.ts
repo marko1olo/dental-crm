@@ -21,6 +21,8 @@ import {
 import {
 	cleanupExpiredFallbackSessions,
 	clearFallbackSessionsForTesting,
+	getFallbackMessagesForTesting,
+	getFallbackSessionsCountForTesting,
 	MAX_FALLBACK_MESSAGES_PER_SESSION,
 	MAX_FALLBACK_SESSIONS,
 	saveFallbackSession,
@@ -195,7 +197,7 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 			}
 
 			// Добавляем сообщения в одну сессию сверх лимита на сессию
-			const targetId = "00000000-0000-0000-0000-000000000500";
+			const targetId = `00000000-0000-0000-0000-${String(MAX_FALLBACK_SESSIONS + 10).padStart(12, "0")}`;
 			for (let m = 0; m < MAX_FALLBACK_MESSAGES_PER_SESSION + 30; m++) {
 				appendFallbackMessage(targetId, {
 					id: `msg-${m}`,
@@ -207,7 +209,29 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 				});
 			}
 
+			const sessionCount = getFallbackSessionsCountForTesting();
+			assert.ok(
+				sessionCount <= MAX_FALLBACK_SESSIONS,
+				`fallbackSessions (${sessionCount}) обязан не превышать лимит ${MAX_FALLBACK_SESSIONS}`,
+			);
+			const retainedMessages = getFallbackMessagesForTesting(targetId);
+			assert.strictEqual(
+				retainedMessages.length,
+				MAX_FALLBACK_MESSAGES_PER_SESSION,
+				"Сообщения сверх MAX_FALLBACK_MESSAGES_PER_SESSION обязаны усекаться",
+			);
+			assert.strictEqual(
+				retainedMessages[0]?.id,
+				"msg-30",
+				"Первые 30 устаревших сообщений должны быть вытеснены (FIFO)",
+			);
+			assert.strictEqual(
+				retainedMessages[retainedMessages.length - 1]?.id,
+				`msg-${MAX_FALLBACK_MESSAGES_PER_SESSION + 29}`,
+			);
+
 			clearFallbackSessionsForTesting();
+			assert.strictEqual(getFallbackSessionsCountForTesting(), 0);
 		});
 	});
 

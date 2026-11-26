@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
 	analyzeDiff,
+	checkTestFilesAstRegression,
 	codeOnly,
 	FORBIDDEN_DIFF_PATTERNS,
 	FORBIDDEN_TEST_PATTERNS,
@@ -275,4 +276,127 @@ test("мультилинейные обходы: блокировка as any и 
 	].join("\n");
 	const doubleHits = analyzeDiff(multilineDoubleCastDiff).map((v) => v.pattern.rule);
 	assert.ok(doubleHits.includes("ANTI_BLIND_DOUBLE_CAST"), "мультилинейный double cast обязан блокироваться");
+});
+
+test("v2 усиления: z.any(), | any, .catch(()=>{}), process.env.VITEST и Гудхарт-тесты строго блокируются", () => {
+	assert.ok(hits("apps/api/src/a.ts", "const s = z.object({ raw: z.any() });").includes("ANTI_BLIND_ZOD_ANY"));
+	assert.ok(hits("packages/shared/src/a.ts", "export function f(p: Foo | any) {}").includes("ANTI_BLIND_AS_ANY"));
+	assert.ok(hits("apps/web/src/a.ts", "fetch('/api/x').catch(() => {});").includes("ANTI_BLIND_SWALLOWED_PROMISE"));
+	assert.ok(hits("apps/web/src/a.ts", "fetch('/api/x').catch(() => null);").includes("ANTI_BLIND_SWALLOWED_PROMISE"));
+	assert.ok(hits("apps/api/src/a.ts", "if (process.env.VITEST) return true;").includes("ANTI_BLIND_TEST_ENV_SNIFF"));
+
+	// Анти-Гудхарт на входе в тестах
+	assert.ok(hits("apps/api/src/a.test.ts", "assert.ok(true);").includes("ANTI_GOODHART_TAUTOLOGY"));
+	assert.ok(hits("apps/api/src/a.test.ts", "expect(true).toBe(true);").includes("ANTI_GOODHART_TAUTOLOGY"));
+	assert.ok(hits("apps/web/src/a.test.ts", "assert.ok(lineCount >= 200 && lineCount <= 350);").includes("ANTI_GOODHART_LINE_COUNT"));
+});
+
+test("sanitary baseline v2: запрет роста limits и запрет тихого падения floors без записи в ratchet-ledger.jsonl", () => {
+	const v2FloorDropWithoutLedger = `
+diff --git a/scripts/config/sanitary-baseline.json b/scripts/config/sanitary-baseline.json
+--- a/scripts/config/sanitary-baseline.json
++++ b/scripts/config/sanitary-baseline.json
+@@ -18,4 +18,4 @@
+   "floors": {
+     "prodFiles": 11400,
+-    "tests": 20299
++    "tests": 20250
+   }
+`;
+	const dropHits = analyzeDiff(v2FloorDropWithoutLedger).map((v) => v.pattern.rule);
+	assert.ok(dropHits.includes("ANTI_BLIND_BASELINE_FLOOR_DROP"));
+
+	const v2FloorDropWithLedger = `${v2FloorDropWithoutLedger}
+diff --git a/scripts/config/ratchet-ledger.jsonl b/scripts/config/ratchet-ledger.jsonl
+--- a/scripts/config/ratchet-ledger.jsonl
++++ b/scripts/config/ratchet-ledger.jsonl
+@@ -0,0 +1,1 @@
++{"at":"2026-11-26T00:00:00Z","kind":"test-removal","testsFloorFrom":20299,"testsFloorTo":20250,"reason":"Purged 49 dead facade tautology tests"}
+`;
+	assert.deepEqual(analyzeDiff(v2FloorDropWithLedger), []);
+});
+
+test("checkTestFilesAstRegression: блокирует новые phantom/source-grep/typeof-only тесты и пропускает честные улучшения", () => {
+	const diffPhantom = [
+		"diff --git a/apps/api/src/tests/newFake.test.ts b/apps/api/src/tests/newFake.test.ts",
+		"new file mode 100644",
+		"--- /dev/null",
+		"+++ b/apps/api/src/tests/newFake.test.ts",
+	].join("\n");
+
+	const phantomText = `
+import assert from "node:assert/strict";
+import { it } from "node:test";
+it("fakes logic locally", () => {
+  const sum = 10 + 20;
+  assert.equal(sum, 30);
+});
+`;
+	const phantomHits = checkTestFilesAstRegression(diffPhantom, {
+		readBefore: () => "",
+		readAfter: () => phantomText,
+	}).map((v) => v.pattern.rule);
+	assert.ok(phantomHits.includes("ANTI_GOODHART_AST_TEST_PHANTOM_NO_SUT"));
+
+	const typeofText = `
+import assert from "node:assert/strict";
+import { it } from "node:test";
+import { calcTotal } from "../billing.js";
+it("checks typeof only", () => {
+  assert.equal(typeof calcTotal, "function");
+});
+`;
+	const typeofHits = checkTestFilesAstRegression(diffPhantom, {
+		readBefore: () => "",
+		readAfter: () => typeofText,
+	}).map((v) => v.pattern.rule);
+	assert.ok(typeofHits.includes("ANTI_GOODHART_AST_TEST_WEAK_ONLY"));
+
+	const grepText = `
+import assert from "node:assert/strict";
+import { it } from "node:test";
+import fs from "node:fs";
+it("greps source instead of running", () => {
+  const code = fs.readFileSync("src/billing.ts", "utf8");
+  assert.equal(code.includes("calcTotal"), true);
+});
+`;
+	const grepHits = checkTestFilesAstRegression(diffPhantom, {
+		readBefore: () => "",
+		readAfter: () => grepText,
+	}).map((v) => v.pattern.rule);
+	assert.ok(grepHits.includes("ANTI_GOODHART_AST_TEST_SOURCE_GREP"));
+
+	const realText = `
+import assert from "node:assert/strict";
+import { it } from "node:test";
+import { calcTotal } from "../billing.js";
+it("executes real SUT", () => {
+  assert.equal(calcTotal(100, 20), 120);
+});
+`;
+	const cleanHits = checkTestFilesAstRegression(diffPhantom, {
+		readBefore: () => "",
+		readAfter: () => realText,
+	});
+	assert.deepEqual(cleanHits, []);
+
+	// Existing file reducing phantoms (2 -> 1) passes; adding another phantom (1 -> 2) blocks!
+	const diffMod = [
+		"diff --git a/apps/api/src/tests/existing.test.ts b/apps/api/src/tests/existing.test.ts",
+		"--- a/apps/api/src/tests/existing.test.ts",
+		"+++ b/apps/api/src/tests/existing.test.ts",
+	].join("\n");
+	const twoPhantoms = `${phantomText}\nit("second fake", () => { const a = 2 + 3; assert.equal(a, 5); });\n`;
+	const reducedHits = checkTestFilesAstRegression(diffMod, {
+		readBefore: () => twoPhantoms,
+		readAfter: () => `${phantomText}\n${realText}`,
+	});
+	assert.deepEqual(reducedHits, []);
+
+	const grewHits = checkTestFilesAstRegression(diffMod, {
+		readBefore: () => phantomText,
+		readAfter: () => twoPhantoms,
+	}).map((v) => v.pattern.rule);
+	assert.ok(grewHits.includes("ANTI_GOODHART_AST_TEST_PHANTOM_NO_SUT"));
 });

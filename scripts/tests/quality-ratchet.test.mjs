@@ -1,20 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * quality-ratchet.test.mjs — Comprehensive unit test suite for the Quality Ratchet system.
- *
- * Authority: MANDATE 8ai (Type Ratchet Doctrine), MANDATE 8bk (Demining & Dual-Counter)
- *
- * Test Coverage:
- *   1. isTestFile: Strict isolation of production code vs test fixtures/helpers.
- *   2. scanExplicitAny: Accurate detection of (: any, as any, <any>), exclusion of company/many/anyhow/has any,
- *                       and ignoring comments.
- *   3. scanLinterSuppressions: Accurate detection of biome-ignore and eslint-disable.
- *   4. scanRawFloatDivisions: Accurate detection of / 100 in UI, ignoring comments and string literals ("100%").
- *   5. scanUppercaseButtons: Accurate detection of uppercase on buttons, chips, tabs in TSX and CSS rules.
- *   6. evaluateRatchet: Verification of pass, regression detection (count > limit), and improvement detection.
- *   7. Ratchet Baseline Management: Reading, writing, and monotonic decrement of sanitary-baseline.json.
- *   8. CLI Integration: Spawning scripts/quality-ratchet.mjs in isolated environment (exit code 0 vs 1 on regression).
+ * quality-ratchet.test.mjs — tests for Quality Ratchet v2 (AST, production + tests + anti-gaming).
  *
  * Runs via:
  *   node --test scripts/tests/quality-ratchet.test.mjs
@@ -22,28 +9,24 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { scanProductionSource, scanTestSource } from "../lib/code-health-ast.mjs";
 import {
+	buildBaselineFrom,
+	checkBaselineIntegrity,
+	DEBT_RULES,
 	DEFAULT_BASELINE_PATH,
 	evaluateRatchet,
+	FLOOR_KEYS,
 	getBaseline,
+	HARD_ZERO_RULES,
 	isTestFile,
 	saveBaseline,
-	scanExplicitAny,
-	scanLinterSuppressions,
-	scanRawFloatDivisions,
 	scanUppercaseButtons,
-	stripStringLiterals,
 } from "../quality-ratchet.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,270 +34,268 @@ const __dirname = dirname(__filename);
 const repoRoot = join(__dirname, "..", "..");
 const ratchetScriptPath = join(__dirname, "..", "quality-ratchet.mjs");
 
-test("isTestFile: distinguishes test files, helpers, and mocks from production code", () => {
-	// Must identify as test files
+const rulesIn = (findings) => findings.map((f) => f.rule);
+
+test("isTestFile: isolates tests/helpers/mocks from production files", () => {
 	assert.equal(isTestFile("apps/web/src/components/Button.test.tsx"), true);
 	assert.equal(isTestFile("packages/shared/src/money.spec.ts"), true);
 	assert.equal(isTestFile("apps/api/src/routes/patientTestHelpers.ts"), true);
 	assert.equal(isTestFile("apps/api/src/ai/__tests__/copilot.test.ts"), true);
-	assert.equal(isTestFile("apps/api/src/ai/__tests__/nested/testRunner.ts"), true);
 	assert.equal(isTestFile("packages/shared/src/tests/clinicalPricelist.test.ts"), true);
 	assert.equal(isTestFile("apps/api/src/services/__mocks__/storageMock.ts"), true);
 	assert.equal(isTestFile("apps/web/src/testUtils.ts"), true);
 	assert.equal(isTestFile("apps/web/src/setupTests.ts"), true);
 
-	// Must identify as production code (false)
 	assert.equal(isTestFile("packages/shared/src/money.ts"), false);
 	assert.equal(isTestFile("apps/api/src/routes/visits.ts"), false);
 	assert.equal(isTestFile("apps/web/src/components/Button.tsx"), false);
-	assert.equal(isTestFile("apps/web/src/components/finance/ledger.ts"), false);
-	assert.equal(isTestFile("apps/api/src/db/schema/patients.ts"), false);
 });
 
-test("scanExplicitAny: detects TypeScript any constructs and ignores comments & false words", () => {
-	const tempDir = mkdtempSync(join(repoRoot, "scratch", "ratchet-test-any-"));
-	try {
-		const sampleFile = join(tempDir, "sample.ts");
-		const content = `
-      // Normal code
-      const company = "Dental Tech";
-      const manyPatients = 42;
-      const anyhow = true;
-      const hasAnyRights = false;
-      
-      // Comments mentioning any should NOT trigger
-      // Note: we should avoid foo: any here
-      /* Legacy note: param as any was removed */
-      
-      // Real violations
-      const val1: any = 1;
-      const val2 = data as any;
-      function parse(): Promise<any> { return Promise.resolve(); }
-      const arr = <any>[1, 2];
-    `;
-		writeFileSync(sampleFile, content, "utf8");
+test("scanProductionSource: catches every form of any, z.any(), double-cast, as-never, non-null", () => {
+	const code = `
+		import { z } from "zod";
+		const company = "Dental Tech"; // must NOT trigger
+		const a: any = 1;
+		const b: any[] = [];
+		const c: Record<string, any> = {};
+		function f(x: string | any) { return x; }
+		const d = (company as unknown as number);
+		const e = (company as never);
+		const g = z.object({ raw: z.any() });
+		const h = (b[0]!).toString();
+		const safeConst = ["a", "b"] as const; // must NOT trigger type-assertion
+	`;
+	const findings = scanProductionSource(code, "apps/api/src/sample.ts");
+	const rules = rulesIn(findings);
 
-		const matches = scanExplicitAny([sampleFile], tempDir);
-		assert.equal(matches.length, 4, `Expected 4 violations, found ${matches.length}`);
-
-		assert.ok(matches.some((m) => m.text.includes("val1: any")));
-		assert.ok(matches.some((m) => m.text.includes("data as any")));
-		assert.ok(matches.some((m) => m.text.includes("Promise<any>")));
-		assert.ok(matches.some((m) => m.text.includes("<any>[1, 2]")));
-
-		// None of the comments or false words should match
-		assert.ok(!matches.some((m) => m.text.includes("company")));
-		assert.ok(!matches.some((m) => m.text.includes("manyPatients")));
-		assert.ok(!matches.some((m) => m.text.includes("anyhow")));
-		assert.ok(!matches.some((m) => m.text.includes("hasAnyRights")));
-	} finally {
-		rmSync(tempDir, { recursive: true, force: true });
-	}
+	assert.equal(rules.filter((r) => r === "explicit-any").length, 4, `expected 4 explicit-any, got: ${JSON.stringify(findings)}`);
+	assert.equal(rules.filter((r) => r === "z-any").length, 1);
+	assert.equal(rules.filter((r) => r === "double-cast").length, 1);
+	assert.equal(rules.filter((r) => r === "as-never").length, 1);
+	assert.equal(rules.filter((r) => r === "non-null-assertion").length, 1);
+	// `as const` must never be counted as a type assertion
+	assert.ok(!findings.some((f) => f.text.includes("as const")));
 });
 
-test("scanLinterSuppressions: detects biome-ignore and eslint-disable", () => {
-	const tempDir = mkdtempSync(join(repoRoot, "scratch", "ratchet-test-linter-"));
-	try {
-		const sampleFile = join(tempDir, "linterSample.ts");
-		const content = `
-      // Clean code
-      export const a = 1;
+test("scanProductionSource: catches suppressions, empty/silent catch, swallowed promises, console noise, test-env sniff", () => {
+	const code = `
+		import { helper } from "./__tests__/helpers";
+		// @ts-expect-error legacy
+		// biome-ignore lint/suspicious/noExplicitAny: old
+		try { run(); } catch {}
+		try { run(); } catch (e) { const x = 1; }
+		try { run(); } catch { /* swallow-ok: browser optional wakeLock API unavailable */ }
+		Promise.resolve().catch(() => {});
+		Promise.resolve().catch(() => null);
+		console.debug("noise");
+		if (process.env.VITEST || process.env.NODE_ENV === "test") { run(); }
+		const rub = priceKopecks / 100;
+		const pct = progressPercent * 0.01; // non-money, must NOT trigger
+	`;
+	const findings = scanProductionSource(code, "apps/web/src/comp.ts", { isWeb: true });
+	const rules = rulesIn(findings);
 
-      // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-      const legacy: any = {};
-
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      const other: any = {};
-    `;
-		writeFileSync(sampleFile, content, "utf8");
-
-		const matches = scanLinterSuppressions([sampleFile], tempDir);
-		assert.equal(matches.length, 2, `Expected 2 suppressions, found ${matches.length}`);
-		assert.ok(matches.some((m) => m.text.includes("biome-ignore")));
-		assert.ok(matches.some((m) => m.text.includes("eslint-disable")));
-	} finally {
-		rmSync(tempDir, { recursive: true, force: true });
-	}
+	assert.equal(rules.filter((r) => r === "prod-imports-test-code").length, 1);
+	assert.equal(rules.filter((r) => r === "ts-suppression").length, 1);
+	assert.equal(rules.filter((r) => r === "linter-suppression").length, 1);
+	assert.equal(rules.filter((r) => r === "empty-catch").length, 1);
+	assert.equal(rules.filter((r) => r === "silent-catch").length, 1);
+	assert.equal(rules.filter((r) => r === "documented-swallow").length, 1);
+	assert.equal(rules.filter((r) => r === "swallowed-promise").length, 2);
+	assert.equal(rules.filter((r) => r === "console-noise").length, 1);
+	assert.equal(rules.filter((r) => r === "test-env-sniff").length, 2);
+	assert.equal(rules.filter((r) => r === "float-money-division").length, 1);
 });
 
-test("scanRawFloatDivisions: detects / 100 in code, ignores string literals and comments", () => {
-	const tempDir = mkdtempSync(join(repoRoot, "scratch", "ratchet-test-div-"));
-	try {
-		const sampleFile = join(tempDir, "divSample.ts");
-		const content = `
-      // Comment mentioning / 100 should not trigger
-      // const rub = kop / 100;
-      
-      // String with slash 100% should not trigger
-      const label = "Лечение персонала / 100% скидка";
-      const otherLabel = 'Скидка / 100% гарантия';
-      
-      // Division by 1000 should not trigger
-      const thousands = val / 1000;
-      
-      // Real violations
-      const rub1 = amountKopecks / 100;
-      const rub2 = Math.round(total / 100);
-      const rub3 = (gross * 5) / 100;
-    `;
-		writeFileSync(sampleFile, content, "utf8");
+test("scanTestSource: catches test lies while NOT false-positiving on determinism checks or test.mock", () => {
+	const code = `
+		import assert from "node:assert/strict";
+		import fs from "node:fs";
+		import { describe, it, test } from "node:test";
+		import { computeFee } from "../billing/fee";
 
-		const matches = scanRawFloatDivisions([sampleFile], tempDir);
-		assert.equal(matches.length, 3, `Expected 3 divisions, found ${matches.length}`);
-		assert.ok(matches.some((m) => m.text.includes("amountKopecks / 100")));
-		assert.ok(matches.some((m) => m.text.includes("total / 100")));
-		assert.ok(matches.some((m) => m.text.includes("(gross * 5) / 100")));
-	} finally {
-		rmSync(tempDir, { recursive: true, force: true });
-	}
+		describe("suite", () => {
+			test.mock.method(process, "cwd", () => "/tmp"); // NOT a test!
+
+			it("honest determinism test", () => {
+				assert.equal(computeFee(100), computeFee(100));
+				assert.equal(computeFee(100), 15);
+			});
+
+			it("no assertion test", () => {
+				computeFee(100);
+			});
+
+			it("tautology and phantom test", () => {
+				const blocked = false;
+				assert.equal(blocked, false);
+				assert.ok(true);
+			});
+
+			it("weak-only test", () => {
+				const out = computeFee(100);
+				assert.ok(out);
+			});
+
+			it.skip("skipped test", () => {
+				assert.equal(computeFee(1), 1);
+			});
+
+			it.only("focused test", () => {
+				assert.equal(computeFee(1), 1);
+			});
+
+			it("size Goodhart test", () => {
+				const lines = fs.readFileSync("apps/web/src/a.ts", "utf8").split("\\n").length;
+				assert.ok(lines <= 300);
+			});
+
+			it("source grep test", () => {
+				const src = fs.readFileSync("apps/web/src/a.ts", "utf8");
+				assert.ok(src.includes("export function"));
+			});
+
+			it("swallowed assertion", () => {
+				try {
+					assert.equal(computeFee(100), 999);
+				} catch {}
+			});
+		});
+	`;
+	const res = scanTestSource(code, "packages/shared/src/billing/fee.test.ts");
+	const rules = rulesIn(res.findings);
+
+	assert.equal(res.tests, 9, `expected 9 real tests (excluding test.mock.method), got ${res.tests}`);
+	assert.equal(rules.filter((r) => r === "test-no-assertion").length, 1);
+	assert.equal(rules.filter((r) => r === "test-tautology").length, 2, "must flag both local literal equality and assert.ok(true), NOT computeFee(100)===computeFee(100)");
+	assert.equal(rules.filter((r) => r === "test-phantom-no-sut").length, 1);
+	assert.equal(rules.filter((r) => r === "test-weak-only").length, 1);
+	assert.equal(rules.filter((r) => r === "test-skipped").length, 1);
+	assert.equal(rules.filter((r) => r === "test-only-left").length, 1);
+	assert.equal(rules.filter((r) => r === "test-size-assertion").length, 1);
+	assert.equal(rules.filter((r) => r === "test-source-grep").length, 1);
+	assert.equal(rules.filter((r) => r === "test-swallowed-assertion").length, 1);
 });
 
-test("stripStringLiterals: properly replaces single, double, and template strings", () => {
-	const raw = 'const x = "text / 100%" + \'other / 100\' + `template / 100`;';
-	const stripped = stripStringLiterals(raw);
-	assert.equal(stripped, 'const x = "" + \'\' + ``;');
+test("scanTestSource: detects vi.mock of the module under test (test-self-mock)", () => {
+	const code = `
+		import { describe, it, expect, vi } from "vitest";
+		vi.mock("./splitPayment");
+		import { splitPayment } from "./splitPayment";
+		describe("self mock", () => {
+			it("runs mock", () => { expect(splitPayment()).toBe(1); });
+		});
+	`;
+	const res = scanTestSource(code, "packages/shared/src/billing/splitPayment.test.ts");
+	assert.ok(rulesIn(res.findings).includes("test-self-mock"));
 });
 
 test("scanUppercaseButtons: detects uppercase on buttons/chips/tabs in TSX and CSS", () => {
 	const tempDir = mkdtempSync(join(repoRoot, "scratch", "ratchet-test-upper-"));
 	try {
 		const tsxFile = join(tempDir, "Buttons.tsx");
-		const tsxContent = `
-      export function Buttons() {
-        return (
-          <div>
-            {/* Violation: button with uppercase */}
-            <button className="h-9 px-3 dente-btn uppercase">Сохранить</button>
-            {/* Violation: role="button" with uppercase */}
-            <div role="button" className="pill uppercase">Выбрать</div>
-            {/* Allowed: standard button without uppercase */}
-            <button className="h-9 px-3 dente-btn">Отмена</button>
-            {/* Allowed: non-button label with uppercase */}
-            <label className="text-xs uppercase text-slate-500">Заголовок</label>
-          </div>
-        );
-      }
-    `;
-		writeFileSync(tsxFile, tsxContent, "utf8");
-
+		writeFileSync(
+			tsxFile,
+			`export function Buttons() { return (<div><button className="dente-btn uppercase">Save</button><div role="button" className="pill uppercase">Pick</div><button className="dente-btn">Ok</button><label className="uppercase">Title</label></div>); }`,
+			"utf8",
+		);
 		const cssFile = join(tempDir, "styles.css");
-		const cssContent = `
-      /* Violation: pill with text-transform: uppercase */
-      .status-pill {
-        text-transform: uppercase;
-        font-weight: bold;
-      }
-      /* Violation: button with text-transform: uppercase */
-      .dente-btn-custom {
-        text-transform: uppercase;
-      }
-      /* Allowed: table header with uppercase */
-      .my-table th {
-        text-transform: uppercase;
-      }
-    `;
-		writeFileSync(cssFile, cssContent, "utf8");
-
+		writeFileSync(
+			cssFile,
+			`.status-pill { text-transform: uppercase; }\n.dente-btn-custom { text-transform: uppercase; }\n.my-table th { text-transform: uppercase; }\n`,
+			"utf8",
+		);
 		const matches = scanUppercaseButtons([tsxFile], [cssFile], tempDir);
-		assert.equal(matches.length, 4, `Expected 4 violations (2 TSX + 2 CSS), found ${matches.length}`);
+		assert.equal(matches.length, 4);
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
 });
 
-test("evaluateRatchet: passes when all metrics are <= baseline limits", () => {
-	const baseline = {
-		maxExplicitAny: 10,
-		maxLinterSuppressions: 5,
-		maxRawFloatDivisions: 20,
-		maxUppercaseButtons: 2,
-	};
+test("evaluateRatchet: enforces debt ceilings, hard-zero rules, and file/test floors", () => {
+	const zeroCounts = Object.fromEntries(DEBT_RULES.map((r) => [r, 0]));
+	const baseline = buildBaselineFrom({ ...zeroCounts, "explicit-any": 5 }, { prodFiles: 100, testFiles: 20, tests: 200 });
 
-	const currentCounts = {
-		maxExplicitAny: 10,
-		maxLinterSuppressions: 4, // improved
-		maxRawFloatDivisions: 20,
-		maxUppercaseButtons: 1, // improved
-	};
+	const clean = evaluateRatchet({ ...zeroCounts, "explicit-any": 3 }, { prodFiles: 100, testFiles: 20, tests: 205 }, baseline);
+	assert.equal(clean.ok, true);
+	assert.equal(clean.improvements.length, 1);
+	assert.equal(clean.improvements[0].rule, "explicit-any");
 
-	const result = evaluateRatchet(currentCounts, baseline);
-	assert.equal(result.ok, true);
-	assert.equal(result.regressions.length, 0);
-	assert.equal(result.improvements.length, 2);
-	assert.equal(result.improvements[0].metric, "maxLinterSuppressions");
-	assert.equal(result.improvements[1].metric, "maxUppercaseButtons");
+	const regressed = evaluateRatchet({ ...zeroCounts, "explicit-any": 6 }, { prodFiles: 100, testFiles: 20, tests: 200 }, baseline);
+	assert.equal(regressed.ok, false);
+	assert.equal(regressed.regressions[0].rule, "explicit-any");
+
+	const floorDrop = evaluateRatchet({ ...zeroCounts, "explicit-any": 5 }, { prodFiles: 100, testFiles: 20, tests: 199 }, baseline);
+	assert.equal(floorDrop.ok, false);
+	assert.equal(floorDrop.floorBreaches[0].key, "tests");
+
+	// Hard-zero rule cannot pass even if tampered in baseline
+	const tampered = structuredClone(baseline);
+	tampered.limits["test-skipped"] = 10;
+	const skipped = evaluateRatchet({ ...zeroCounts, "test-skipped": 1 }, { prodFiles: 100, testFiles: 20, tests: 200 }, tampered);
+	assert.equal(skipped.ok, false);
+	assert.equal(skipped.regressions[0].rule, "test-skipped");
 });
 
-test("evaluateRatchet: detects regression when any metric exceeds baseline limit", () => {
-	const baseline = {
-		maxExplicitAny: 10,
-		maxLinterSuppressions: 5,
-		maxRawFloatDivisions: 20,
-		maxUppercaseButtons: 2,
-	};
-
-	const currentCounts = {
-		maxExplicitAny: 11, // +1 regression!
-		maxLinterSuppressions: 5,
-		maxRawFloatDivisions: 20,
-		maxUppercaseButtons: 2,
-	};
-
-	const result = evaluateRatchet(currentCounts, baseline);
-	assert.equal(result.ok, false);
-	assert.equal(result.regressions.length, 1);
-	assert.equal(result.regressions[0].metric, "maxExplicitAny");
-	assert.equal(result.regressions[0].current, 11);
-	assert.equal(result.regressions[0].limit, 10);
-	assert.equal(result.regressions[0].delta, 1);
-});
-
-test("saveBaseline: saves and updates baseline monotonically", () => {
+test("saveBaseline & checkBaselineIntegrity: forbid raising limits and forbid lowering floors without a ledger entry", () => {
 	const tempDir = mkdtempSync(join(repoRoot, "scratch", "ratchet-test-io-"));
 	try {
 		const configPath = join(tempDir, "sanitary-baseline.json");
-		const initial = {
-			maxExplicitAny: 100,
-			maxLinterSuppressions: 50,
-			maxRawFloatDivisions: 200,
-			maxUppercaseButtons: 10,
-		};
+		const zeroCounts = Object.fromEntries(DEBT_RULES.map((r) => [r, 0]));
+		const initial = buildBaselineFrom({ ...zeroCounts, "explicit-any": 10 }, { prodFiles: 100, testFiles: 20, tests: 200 });
 		saveBaseline(configPath, initial);
 
-		const loaded = getBaseline(configPath);
-		assert.deepEqual(loaded, initial);
+		assert.deepEqual(getBaseline(configPath), initial);
 
-		const updated = {
-			...loaded,
-			maxExplicitAny: 95,
-			maxLinterSuppressions: 48,
-		};
-		saveBaseline(configPath, updated);
+		// Tightening limit and raising floor is allowed
+		const tighter = structuredClone(initial);
+		tighter.limits["explicit-any"] = 8;
+		tighter.floors.tests = 210;
+		saveBaseline(configPath, tighter);
+		assert.equal(getBaseline(configPath).limits["explicit-any"], 8);
 
-		const reloaded = getBaseline(configPath);
-		assert.equal(reloaded.maxExplicitAny, 95);
-		assert.equal(reloaded.maxLinterSuppressions, 48);
+		// Raising a limit throws
+		const looser = structuredClone(tighter);
+		looser.limits["explicit-any"] = 9;
+		assert.throws(() => saveBaseline(configPath, looser), /may not rise/);
+
+		// Lowering a floor throws
+		const fewerTests = structuredClone(tighter);
+		fewerTests.floors.tests = 205;
+		assert.throws(() => saveBaseline(configPath, fewerTests), /may not fall/);
+
+		// Integrity check against git HEAD detects raised limits and unlogged floor drops
+		assert.ok(checkBaselineIntegrity(looser, tighter).violations.length > 0);
+		assert.ok(checkBaselineIntegrity(fewerTests, tighter, { workingLedger: "", committedLedger: "" }).violations.length > 0);
+		assert.equal(
+			checkBaselineIntegrity(fewerTests, tighter, { workingLedger: '{"kind":"test-removal"}\n', committedLedger: "" }).violations.length,
+			0,
+		);
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
 });
 
-test("CLI integration: quality-ratchet.mjs runs cleanly on repository baseline", () => {
-	const res = spawnSync(process.execPath, [ratchetScriptPath], {
+test("Current sanitary-baseline.json is valid v2 with all rules and floors", () => {
+	const baseline = getBaseline(DEFAULT_BASELINE_PATH);
+	assert.equal(baseline.version, 2);
+	for (const rule of DEBT_RULES) {
+		assert.ok(typeof baseline.limits[rule] === "number" && baseline.limits[rule] >= 0, `missing limit for ${rule}`);
+	}
+	for (const rule of HARD_ZERO_RULES) {
+		assert.equal(baseline.limits[rule], 0, `hard-zero rule ${rule} must be 0`);
+	}
+	for (const key of FLOOR_KEYS) {
+		assert.ok(typeof baseline.floors[key] === "number" && baseline.floors[key] > 0, `missing floor for ${key}`);
+	}
+});
+
+test("CLI integration: quality-ratchet.mjs --no-tighten runs cleanly on repository baseline", () => {
+	const res = spawnSync(process.execPath, [ratchetScriptPath, "--no-tighten"], {
 		cwd: repoRoot,
 		encoding: "utf8",
 		env: { ...process.env, NODE_ENV: "test" },
 	});
-
-	assert.equal(res.status, 0, `Expected CLI to exit with code 0. Stderr: ${res.stderr}\nStdout: ${res.stdout}`);
-	assert.match(res.stdout, /САНИТАРНЫЙ ХРАПОВИК КАЧЕСТВА/);
-	assert.match(res.stdout, /(?:САНИТАРНЫЙ ХРАПОВИК|АВТО-ХРАПОВИК ЗАКРУЧЕН)/);
-});
-
-test("Current sanitary-baseline.json contains valid non-negative integer limits", () => {
-	const baseline = getBaseline(DEFAULT_BASELINE_PATH);
-	assert.ok(typeof baseline.maxExplicitAny === "number" && baseline.maxExplicitAny >= 0);
-	assert.ok(typeof baseline.maxLinterSuppressions === "number" && baseline.maxLinterSuppressions >= 0);
-	assert.ok(typeof baseline.maxRawFloatDivisions === "number" && baseline.maxRawFloatDivisions >= 0);
-	assert.ok(typeof baseline.maxUppercaseButtons === "number" && baseline.maxUppercaseButtons >= 0);
+	assert.equal(res.status, 0, `Expected exit 0. Stderr:\n${res.stderr}\nStdout:\n${res.stdout}`);
+	assert.match(res.stdout, /QUALITY RATCHET v2/);
 });

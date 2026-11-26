@@ -18,6 +18,7 @@ import {
 	type ToothState,
 } from "../components/odontogram/ToothChart";
 import { getToothConfig, getToothPath } from "../utils/math/toothGeometry";
+import { getPathologyToothColors } from "../components/odontogram/chart/colors/toothPathologyColors";
 
 test("ToothChart Geometry — handles adult and pediatric FDI teeth", () => {
 	// Adult upper and lower teeth
@@ -142,9 +143,10 @@ test("Анатомическая верность — пульпа зуба ст
 	const t46 = getToothPath(46);
 	assert.ok(t46.core, "Tooth 46 must have pulp chamber core path");
 
-	// In VisitOdontogramToothItem, pulp chamber fill and stroke are strictly #ef4444
-	const ANATOMICAL_PULP_COLOR = "#ef4444";
-	assert.equal(ANATOMICAL_PULP_COLOR, "#ef4444", "Pulp color is strictly anatomical red #ef4444");
+	const pulpitisColors = getPathologyToothColors("Pulpitis");
+	assert.ok(pulpitisColors, "Pulpitis tooth visual colors must be defined");
+	assert.equal(pulpitisColors.stroke, "#ef4444", "Pulpitis stroke color must be anatomical red #ef4444");
+	assert.equal(pulpitisColors.badgeColor, "#ef4444", "Pulpitis badge color must be anatomical red #ef4444");
 });
 
 test("0-Клик выбор патологии — панель быстрых штампов без тяжелых модальных окон (Мандат 8c, 8e)", () => {

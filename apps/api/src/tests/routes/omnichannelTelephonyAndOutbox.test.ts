@@ -730,10 +730,19 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 			assert.equal(receptionSchedule.mode, "ambient_capsule");
 		});
 
-		it("prohibits full-screen modal lock (fixed inset-0 bg-black/60) during incoming call", () => {
-			// Contract check: IncomingCallPopup renders top ambient badge without backdrop
-			const hasBackdropOverlay = false; // verified in IncomingCallPopup.tsx: createPortal badge container only
-			assert.equal(hasBackdropOverlay, false, "Telephony popup must NEVER lock user input with full-screen backdrop");
+		it("normalizes incoming CTI caller phone numbers consistently for ambient caller lookup", () => {
+			const plus7 = normalizePhoneNumber("+7 (916) 111-22-33");
+			assert.equal(plus7.isValid, true);
+			assert.equal(plus7.e164, "+79161112233");
+			assert.equal(plus7.national10, "9161112233");
+
+			const eight = normalizePhoneNumber("8 (916) 111-22-33");
+			assert.equal(eight.isValid, true);
+			assert.equal(eight.e164, "+79161112233");
+
+			assert.equal(normalizePhoneNumber("invalid").isValid, false);
+			assert.equal(isWebhookPath("/api/telephony/mango/webhook"), true);
+			assert.equal(isWebhookPath("/api/patients"), false);
 		});
 	});
 

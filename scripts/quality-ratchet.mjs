@@ -1,589 +1,509 @@
 #!/usr/bin/env node
 
 /**
- * quality-ratchet.mjs — Monotonic Quality Ratchet for DENTE Dental CRM.
+ * quality-ratchet.mjs — zero-trust monotonic quality ratchet for DENTE Dental CRM.
  *
- * Authority: MANDATE 8ai (Type Ratchet Doctrine), MANDATE 8bk (Demining & Dual-Counter),
- *            MANDATE 8am (Uppercase Ban & Design Tokens), MANDATE 8bm (Money DTOs)
+ * What changed and why (read this before "improving" the numbers):
+ *   v1 counted four regex hits and printed "IDEAL: 0". Real counts at the time of the
+ *   rewrite, measured on the AST: 24 explicit any, 1524 non-null assertions, 581 empty
+ *   catch blocks, 480 silent catches, 464 swallowed promises, 124 `as unknown as`,
+ *   44 places where production code detects the test runner, and, in the tests,
+ *   128 tests asserting how many lines a source file has, 681 tests that grep source
+ *   text instead of running it, 156 tests whose assertions cannot fail. A ratchet that
+ *   cannot see a defect class rewards moving debt into that class (Goodhart).
  *
- * Principles (The Timaert Experience):
- *   "Даже один незаметный костыль убивает архитектуру в долгосрочном каскаде сессий с агентом.
- *    Пора перестать писать промпты в .md и начинать физически закручивать гайки в коде."
+ * Rules (see scripts/lib/code-health-ast.mjs for the exact detectors):
+ *   production  — any, casts that launder types, non-null `!`, suppressions, empty and
+ *                 silent catches, swallowed promises, console noise, test-runner sniffing,
+ *                 production importing test code, float money maths in the UI, uppercase UI.
+ *   tests       — no assertion, weak-only assertions, tautologies, skipped/.only,
+ *                 source-line-count assertions, source-text grepping, swallowed assertions.
  *
- * Enforced Sanitary Invariants (Production Code Only: shared/src, api/src, web/src):
- *   1. maxExplicitAny: Explicit TypeScript `any` (`:\s*any\b`, `as\s+any\b`, `<any>`).
- *   2. maxLinterSuppressions: Linter suppressions (`biome-ignore`, `eslint-disable`).
- *   3. maxRawFloatDivisions: Raw float divisions by 100 in UI (`/ 100`) instead of money.ts.
- *   4. maxUppercaseButtons: Uppercase classes/styles on buttons, chips, tabs (UPPERCASE BAN).
+ * Anti-gaming integrity checks (run on every verification):
+ *   1. A limit in the working-tree baseline may never be higher than the one in git HEAD.
+ *   2. The number of production files, test files and individual tests may not fall below
+ *      the recorded floor. Removing tests is allowed only through an explicit, logged act:
+ *        --accept-test-removal=<newFloor> --reason "<at least 25 chars>"
+ *      which appends to scripts/config/ratchet-ledger.jsonl (visible in review).
+ *   3. skipped tests and committed `.only` are hard zero: they cannot be baselined.
  *
  * Usage:
- *   node scripts/quality-ratchet.mjs               # Verify against sanitary-baseline.json
- *   node scripts/quality-ratchet.mjs --update      # Ratchet down baseline when metrics improve
- *   node scripts/quality-ratchet.mjs --json        # Machine-readable output
+ *   node scripts/quality-ratchet.mjs                 verify, and tighten the baseline on improvement
+ *   node scripts/quality-ratchet.mjs --no-tighten    verify only
+ *   node scripts/quality-ratchet.mjs --json          machine readable
+ *   node scripts/quality-ratchet.mjs --list <rule> [--limit=40]   show findings of one rule
+ *   node scripts/quality-ratchet.mjs --accept-test-removal=N --reason "..."
  *
- * Exit code:
- *   0: All indicators <= baseline limits.
- *   1: Regression detected (technical debt increased).
+ * Exit code: 0 clean, 1 regression or integrity violation.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+	PRODUCTION_RULES,
+	TEST_RULES,
+	collectFiles,
+	isTestFile,
+	parseSource,
+	readText,
+	scanProductionSource,
+	scanTestSource,
+} from "./lib/code-health-ast.mjs";
 import { printFailureManifesto } from "./manifests/failure-manifestos.mjs";
+
+export { collectFiles, isTestFile };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export const DEFAULT_REPO_ROOT = resolve(__dirname, "..");
 export const DEFAULT_BASELINE_PATH = join(__dirname, "config", "sanitary-baseline.json");
+export const DEFAULT_LEDGER_PATH = join(__dirname, "config", "ratchet-ledger.jsonl");
+
+export const UPPERCASE_RULE = "uppercase-button";
+export const DEBT_RULES = [...PRODUCTION_RULES, UPPERCASE_RULE, ...TEST_RULES];
+/** Can never be baselined above zero. */
+export const HARD_ZERO_RULES = ["test-skipped", "test-only-left"];
+export const FLOOR_KEYS = ["prodFiles", "testFiles", "tests"];
+
+const SCAN_ROOTS = ["packages/shared/src", "apps/api/src", "apps/web/src"];
+const CONSOLE_ALLOWED_FILE = /(?:clientLogger|\/logger)\.[cm]?[jt]sx?$/;
+const FLOAT_MONEY_ALLOWED_FILE = /(?:money|kopecks)[^/]*\.[cm]?[jt]sx?$/i;
+
+/* ----------------------------------------------------------- uppercase UI */
 
 /**
- * Exclude test files, test mocks, test fixtures and helpers.
- * In accordance with Mandate 8bk: demining is tracked STRICTLY in production code.
- */
-export function isTestFile(relPath) {
-	const norm = relPath.replace(/\\/g, "/");
-	if (/\.test\.[cm]?[jt]sx?$/.test(norm)) return true;
-	if (/\.spec\.[cm]?[jt]sx?$/.test(norm)) return true;
-	if (/[Tt]estHelpers?\.[cm]?[jt]sx?$/.test(norm)) return true;
-	if (/\/__tests__\//.test(norm)) return true;
-	if (/\/tests\//.test(norm)) return true;
-	if (/\/__mocks__\//.test(norm)) return true;
-	if (/\/testUtils\.[cm]?[jt]sx?$/.test(norm)) return true;
-	if (/\/setupTests\.[cm]?[jt]sx?$/.test(norm)) return true;
-	if (/vitest\.d\.ts$/.test(norm)) return true;
-	return false;
-}
-
-/**
- * Recursively collect files with specified extensions.
- */
-export function collectFiles(dir, extensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]) {
-	const files = [];
-	try {
-		const entries = readdirSync(dir, { withFileTypes: true });
-		for (const entry of entries) {
-			const full = join(dir, entry.name);
-			if (entry.isDirectory()) {
-				if (
-					entry.name !== "node_modules" &&
-					entry.name !== "dist" &&
-					entry.name !== ".git" &&
-					entry.name !== ".data" &&
-					entry.name !== ".vite" &&
-					entry.name !== "build" &&
-					entry.name !== "scratch"
-				) {
-					files.push(...collectFiles(full, extensions));
-				}
-			} else if (entry.isFile()) {
-				if (extensions.some((ext) => entry.name.endsWith(ext))) {
-					files.push(full);
-				}
-			}
-		}
-	} catch {
-		// Directory does not exist or is unreadable
-	}
-	return files;
-}
-
-/**
- * Strip string literals to prevent matching inside quotes.
- */
-export function stripStringLiterals(line) {
-	return line
-		.replace(/"(?:[^"\\]|\\.)*"/g, '""')
-		.replace(/'(?:[^'\\]|\\.)*'/g, "''")
-		.replace(/`(?:[^`\\]|\\.)*`/g, "``");
-}
-
-/**
- * Indicator 1: Scan for explicit TypeScript `any` in production code.
- * Matches: `:\s*any\b`, `\bas\s+any\b`, `<\s*any\s*>`
- * Excludes comments and non-any words like company, many, anyhow.
- */
-export function scanExplicitAny(files, repoRoot = DEFAULT_REPO_ROOT) {
-	const anyRegex = /(:\s*any\b|\bas\s+any\b|<\s*any\s*>)/;
-	const matches = [];
-
-	for (const file of files) {
-		const relPath = relative(repoRoot, file).replace(/\\/g, "/");
-		const content = readFileSync(file, "utf8");
-		const lines = content.split("\n");
-		let inBlockComment = false;
-
-		for (let i = 0; i < lines.length; i++) {
-			const rawLine = lines[i];
-			const trimmed = rawLine.trim();
-
-			if (inBlockComment) {
-				if (trimmed.includes("*/")) inBlockComment = false;
-				continue;
-			}
-			if (trimmed.startsWith("/*")) {
-				if (!trimmed.includes("*/")) inBlockComment = true;
-				continue;
-			}
-			if (trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
-
-			const codePart = rawLine.split("//")[0];
-			if (anyRegex.test(codePart)) {
-				matches.push({
-					file: relPath,
-					line: i + 1,
-					text: codePart.trim(),
-					rule: "explicit-any",
-				});
-			}
-		}
-	}
-
-	return matches;
-}
-
-/**
- * Indicator 2: Scan for linter suppressions (biome-ignore, eslint-disable).
- */
-export function scanLinterSuppressions(files, repoRoot = DEFAULT_REPO_ROOT) {
-	const linterRegex = /(?:biome-ignore|eslint-disable)/;
-	const matches = [];
-
-	for (const file of files) {
-		const relPath = relative(repoRoot, file).replace(/\\/g, "/");
-		const content = readFileSync(file, "utf8");
-		const lines = content.split("\n");
-
-		for (let i = 0; i < lines.length; i++) {
-			const rawLine = lines[i];
-			if (linterRegex.test(rawLine)) {
-				matches.push({
-					file: relPath,
-					line: i + 1,
-					text: rawLine.trim(),
-					rule: "linter-suppression",
-				});
-			}
-		}
-	}
-
-	return matches;
-}
-
-/**
- * Indicator 3: Scan for raw float divisions by 100 (`/ 100`) in UI code (apps/web/src).
- * Code must use canonical `@dental/shared/src/money.ts` utilities.
- */
-export function scanRawFloatDivisions(webFiles, repoRoot = DEFAULT_REPO_ROOT) {
-	const divRegex = /\/\s*100(?![0-9.])/;
-	const matches = [];
-
-	for (const file of webFiles) {
-		const relPath = relative(repoRoot, file).replace(/\\/g, "/");
-		const content = readFileSync(file, "utf8");
-		const lines = content.split("\n");
-		let inBlockComment = false;
-
-		for (let i = 0; i < lines.length; i++) {
-			const rawLine = lines[i];
-			const trimmed = rawLine.trim();
-
-			if (inBlockComment) {
-				if (trimmed.includes("*/")) inBlockComment = false;
-				continue;
-			}
-			if (trimmed.startsWith("/*")) {
-				if (!trimmed.includes("*/")) inBlockComment = true;
-				continue;
-			}
-			if (trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
-
-			// Strip quotes so that strings like "100% скидка" don't match
-			const codeWithoutComments = rawLine.split("//")[0];
-			const codePart = stripStringLiterals(codeWithoutComments);
-
-			if (divRegex.test(codePart)) {
-				matches.push({
-					file: relPath,
-					line: i + 1,
-					text: codeWithoutComments.trim(),
-					rule: "raw-float-division",
-				});
-			}
-		}
-	}
-
-	return matches;
-}
-
-/**
- * Indicator 4: Scan for uppercase on buttons, chips, tabs (Mandate 8am UPPERCASE BAN).
- * Evaluates both CSS rules and TSX element classes.
+ * Uppercase on buttons, chips and tabs (CSS rules and TSX class lists).
+ * Kept from v1: this one is about presentation, so it stays text based.
  */
 export function scanUppercaseButtons(webCodeFiles, webCssFiles, repoRoot = DEFAULT_REPO_ROOT) {
 	const matches = [];
-	const buttonTabChipSelectorRegex =
-		/(?:^|[^\w-])(?:button|\.dente-btn|\.primary-button|\.secondary-button|\.cw-btn|\[role=["']button["']|\[role=["']tab["']|\.tab(?:-[a-z0-9_-]+)?|\.chip(?:-[a-z0-9_-]+)?|\.pill(?:-[a-z0-9_-]+)?|[a-z0-9_-]+-(?:pill|chip|tab|btn|button))(?:[^\w-]|$)/i;
+	const selectorRe =
+		/(?:^|[^\w-])(?:button|\[role=["']button["']|\[role=["']tab["']|\.(?:dente-btn|primary-button|secondary-button|cw-btn|tab|chip|pill|btn|button)(?:-[a-z0-9_-]+)?|[a-z0-9_-]+-(?:pill|chip|tab|btn|button)(?:-[a-z0-9_-]+)?)(?:[^\w-]|$)/i;
 
-	// Check CSS files
 	for (const file of webCssFiles) {
 		const relPath = relative(repoRoot, file).replace(/\\/g, "/");
 		const content = readFileSync(file, "utf8");
 		const clean = content.replace(/\/\*[\s\S]*?\*\//g, "");
-		const ruleRegex = /([^{}]+)\{([^}]+)\}/g;
-		let m;
-		while ((m = ruleRegex.exec(clean)) !== null) {
+		const ruleRe = /([^{}]+)\{([^}]+)\}/g;
+		let m = ruleRe.exec(clean);
+		while (m !== null) {
 			const selector = m[1].trim();
-			const body = m[2];
-			if (/text-transform\s*:\s*uppercase/i.test(body)) {
+			if (/text-transform\s*:\s*uppercase/i.test(m[2])) {
 				const cleanSel = selector.replace(/\b(?:table|tbody|thead|tfoot|th|td)\b/gi, "");
-				if (buttonTabChipSelectorRegex.test(cleanSel)) {
-					const lineNum = content.slice(0, m.index).split("\n").length;
+				if (selectorRe.test(cleanSel)) {
 					matches.push({
+						rule: UPPERCASE_RULE,
 						file: relPath,
-						line: lineNum,
-						text: `${selector} { text-transform: uppercase; }`,
-						element: selector.replace(/\s+/g, " "),
-						rule: "uppercase-button-css",
+						line: content.slice(0, m.index).split("\n").length,
+						text: `${selector.replace(/\s+/g, " ")} { text-transform: uppercase; }`,
 					});
 				}
 			}
+			m = ruleRe.exec(clean);
 		}
 	}
 
-	// Check TSX / JSX files
+	// Scan JSX/TSX opening tags (handles multi-line buttons and multiple buttons per line)
+	const jsxBtnTagRe = /<(?:button|Button|Tab|TabsTrigger|Chip)\b[^>]*>|<\w+(?=[^>]*\b(?:role\s*=\s*["'](?:button|tab)["']|\b(?:dente-btn|cw-btn|primary-button|secondary-button)\b))[^>]*>/g;
 	for (const file of webCodeFiles) {
 		if (!file.endsWith(".tsx") && !file.endsWith(".jsx")) continue;
 		const relPath = relative(repoRoot, file).replace(/\\/g, "/");
 		const content = readFileSync(file, "utf8");
-		const lines = content.split("\n");
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			if (/\buppercase\b/.test(line)) {
-				if (
-					/<button\b|role=["'](?:button|tab)["']|\b(?:dente-btn|cw-btn|primary-button|secondary-button)\b|<(?:Button|Tab|TabsTrigger|Chip)\b/i.test(
-						line,
-					)
-				) {
-					matches.push({
-						file: relPath,
-						line: i + 1,
-						text: line.trim(),
-						rule: "uppercase-button-tsx",
-					});
-				}
+		let m = jsxBtnTagRe.exec(content);
+		while (m !== null) {
+			const tag = m[0];
+			if (/\buppercase\b/.test(tag)) {
+				const line = content.slice(0, m.index).split("\n").length;
+				matches.push({ rule: UPPERCASE_RULE, file: relPath, line, text: tag.replace(/\s+/g, " ").slice(0, 120) });
 			}
+			m = jsxBtnTagRe.exec(content);
 		}
 	}
-
 	return matches;
 }
 
-/**
- * Load baseline limits from JSON file.
- */
-export function getBaseline(baselinePath = DEFAULT_BASELINE_PATH) {
-	if (!existsSync(baselinePath)) {
-		throw new Error(`Sanitary baseline configuration file not found at: ${baselinePath}`);
-	}
-	const content = readFileSync(baselinePath, "utf8");
-	return JSON.parse(content);
-}
+/* ----------------------------------------------------------------- scan */
 
 /**
- * Save updated baseline limits to JSON file.
- * Enforces monotonic ratchet: limits can only decrease or stay the same, NEVER increase!
+ * Scan the monorepo. Returns counts per rule, every finding, and the file/test totals
+ * that feed the anti-evasion floors.
  */
-export function saveBaseline(baselinePath = DEFAULT_BASELINE_PATH, newBaseline) {
-	if (existsSync(baselinePath)) {
-		try {
-			const existing = JSON.parse(readFileSync(baselinePath, "utf8"));
-			for (const [key, val] of Object.entries(newBaseline)) {
-				if (typeof existing[key] === "number" && typeof val === "number" && val > existing[key]) {
-					throw new Error(
-						`[quality-ratchet] Запрещено увеличивать лимит санитарного храповика для ${key}: ${existing[key]} ➔ ${val}. Храповик может только закручиваться вниз!`,
-					);
-				}
+export function countMetrics(options = {}) {
+	const repoRoot = options.repoRoot ?? DEFAULT_REPO_ROOT;
+	const roots = (options.scanRoots ?? SCAN_ROOTS).map((r) => join(repoRoot, r));
+
+	const findings = Object.fromEntries(DEBT_RULES.map((r) => [r, []]));
+	const totals = { prodFiles: 0, testFiles: 0, tests: 0 };
+	const webCode = [];
+	const failedToParse = [];
+
+	for (const root of roots) {
+		for (const file of collectFiles(root)) {
+			const rel = relative(repoRoot, file).replace(/\\/g, "/");
+			let text;
+			try {
+				text = readText(file);
+			} catch (error) {
+				failedToParse.push({ file: rel, error: String(error) });
+				continue;
 			}
-		} catch (err) {
-			if (err.message.includes("Храповик может только закручиваться")) throw err;
+			if (isTestFile(rel)) {
+				totals.testFiles++;
+				const result = scanTestSource(text, rel);
+				totals.tests += result.tests;
+				for (const f of result.findings) findings[f.rule]?.push({ ...f, file: rel });
+			} else {
+				totals.prodFiles++;
+				const isWeb = rel.startsWith("apps/web/src/");
+				if (isWeb) webCode.push(file);
+				const result = scanProductionSource(text, rel, {
+					isWeb,
+					allowConsole: CONSOLE_ALLOWED_FILE.test(rel),
+					allowFloatMoney: FLOAT_MONEY_ALLOWED_FILE.test(rel),
+				});
+				for (const f of result) findings[f.rule]?.push({ ...f, file: rel });
+			}
+		}
+	}
+
+	const webCss = collectFiles(join(repoRoot, "apps", "web", "src"), [".css"]);
+	findings[UPPERCASE_RULE] = scanUppercaseButtons(webCode, webCss, repoRoot);
+
+	const counts = Object.fromEntries(DEBT_RULES.map((r) => [r, findings[r].length]));
+	return { counts, findings, totals, failedToParse };
+}
+
+/* ------------------------------------------------------------- baseline */
+
+export function getBaseline(baselinePath = DEFAULT_BASELINE_PATH) {
+	if (!existsSync(baselinePath)) throw new Error(`Ratchet baseline not found: ${baselinePath}`);
+	const parsed = JSON.parse(readFileSync(baselinePath, "utf8"));
+	if (parsed.version !== 2 || typeof parsed.limits !== "object" || typeof parsed.floors !== "object") {
+		throw new Error(`Ratchet baseline ${baselinePath} is not version 2 (limits + floors).`);
+	}
+	return parsed;
+}
+
+/** Writes the baseline. Debt limits may only go down, floors may only go up, here. */
+export function saveBaseline(baselinePath, next) {
+	if (existsSync(baselinePath)) {
+		const existing = JSON.parse(readFileSync(baselinePath, "utf8"));
+		for (const [rule, value] of Object.entries(next.limits ?? {})) {
+			const old = existing.limits?.[rule];
+			if (typeof old === "number" && value > old) {
+				throw new Error(`[quality-ratchet] limit of "${rule}" may not rise: ${old} -> ${value}. The ratchet only turns one way.`);
+			}
+		}
+		for (const [key, value] of Object.entries(next.floors ?? {})) {
+			const old = existing.floors?.[key];
+			if (typeof old === "number" && value < old) {
+				throw new Error(`[quality-ratchet] floor "${key}" may not fall through saveBaseline: ${old} -> ${value}. Use --accept-test-removal.`);
+			}
 		}
 	}
 	const dir = dirname(baselinePath);
-	if (!existsSync(dir)) {
-		mkdirSync(dir, { recursive: true });
-	}
-	const formatted = `${JSON.stringify(newBaseline, null, 2)}\n`;
-	writeFileSync(baselinePath, formatted, "utf8");
+	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+	writeFileSync(baselinePath, `${JSON.stringify(next, null, 2)}\n`, "utf8");
 }
 
-/**
- * Count all 4 sanitary metrics in the monorepo.
- */
-export function countSanitaryMetrics(options = {}) {
-	const repoRoot = options.repoRoot || DEFAULT_REPO_ROOT;
-	const scanRoots = [
-		join(repoRoot, "packages", "shared", "src"),
-		join(repoRoot, "apps", "api", "src"),
-		join(repoRoot, "apps", "web", "src"),
-	];
-
-	const prodCodeFiles = [];
-	for (const root of scanRoots) {
-		const files = collectFiles(root, [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
-		for (const file of files) {
-			const rel = relative(repoRoot, file);
-			if (!isTestFile(rel)) {
-				prodCodeFiles.push(file);
-			}
-		}
-	}
-
-	const webCodeFiles = prodCodeFiles.filter((f) =>
-		relative(repoRoot, f).replace(/\\/g, "/").startsWith("apps/web/src/"),
-	);
-
-	const webCssFiles = collectFiles(join(repoRoot, "apps", "web", "src"), [".css"]);
-
-	const anyMatches = scanExplicitAny(prodCodeFiles, repoRoot);
-	const linterMatches = scanLinterSuppressions(prodCodeFiles, repoRoot);
-	const divMatches = scanRawFloatDivisions(webCodeFiles, repoRoot);
-	const uppercaseMatches = scanUppercaseButtons(webCodeFiles, webCssFiles, repoRoot);
-
-	return {
-		counts: {
-			maxExplicitAny: anyMatches.length,
-			maxLinterSuppressions: linterMatches.length,
-			maxRawFloatDivisions: divMatches.length,
-			maxUppercaseButtons: uppercaseMatches.length,
-		},
-		matches: {
-			maxExplicitAny: anyMatches,
-			maxLinterSuppressions: linterMatches,
-			maxRawFloatDivisions: divMatches,
-			maxUppercaseButtons: uppercaseMatches,
-		},
-		stats: {
-			prodCodeFilesCount: prodCodeFiles.length,
-			webCodeFilesCount: webCodeFiles.length,
-			webCssFilesCount: webCssFiles.length,
-		},
-	};
-}
+/* ----------------------------------------------------------- evaluation */
 
 /**
- * Core Ratchet Logic:
- * Compare current metrics against baseline limits.
- * Returns { ok, regressions, improvements, current, baseline }.
+ * Pure comparison. Never touches the disk or git.
+ * @returns {{ ok: boolean, regressions: object[], improvements: object[], floorBreaches: object[] }}
  */
-export function evaluateRatchet(currentCounts, baseline) {
-	const metrics = [
-		"maxExplicitAny",
-		"maxLinterSuppressions",
-		"maxRawFloatDivisions",
-		"maxUppercaseButtons",
-	];
-
+export function evaluateRatchet(counts, totals, baseline) {
 	const regressions = [];
 	const improvements = [];
+	const floorBreaches = [];
 
-	for (const key of metrics) {
-		const current = currentCounts[key] ?? 0;
-		const limit = baseline[key] ?? 0;
-		const delta = current - limit;
+	for (const rule of DEBT_RULES) {
+		const current = counts[rule] ?? 0;
+		const hard = HARD_ZERO_RULES.includes(rule);
+		const limit = hard ? 0 : baseline.limits[rule];
+		if (limit === undefined) {
+			// A rule the baseline has never heard of is not "free": it starts at its present count
+			// only through --tighten on a clean tree, never silently as unlimited.
+			regressions.push({ rule, current, limit: 0, delta: current, reason: "rule missing from baseline" });
+			continue;
+		}
+		if (current > limit) regressions.push({ rule, current, limit, delta: current - limit });
+		else if (current < limit) improvements.push({ rule, current, limit, delta: current - limit });
+	}
 
-		if (delta > 0) {
-			regressions.push({
-				metric: key,
-				current,
-				limit,
-				delta,
-			});
-		} else if (delta < 0) {
-			improvements.push({
-				metric: key,
-				current,
-				limit,
-				delta,
-			});
+	for (const key of FLOOR_KEYS) {
+		const floor = baseline.floors[key];
+		const current = totals[key] ?? 0;
+		if (typeof floor === "number" && current < floor) floorBreaches.push({ key, current, floor, delta: current - floor });
+	}
+
+	return { ok: regressions.length === 0 && floorBreaches.length === 0, regressions, improvements, floorBreaches };
+}
+
+/* ------------------------------------------------------------ integrity */
+
+function gitShow(repoRoot, relPath) {
+	try {
+		return execFileSync("git", ["show", `HEAD:${relPath}`], { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+	} catch {
+		return null;
+	}
+}
+
+function countLedgerLines(text) {
+	return text ? text.split("\n").filter((l) => l.trim().length > 0).length : 0;
+}
+
+/**
+ * Compares the working-tree baseline with the committed one. Pure given its inputs.
+ * @param {object} working  baseline in the working tree
+ * @param {object|null} committed  baseline at git HEAD (null = unavailable)
+ * @param {{ workingLedger: string|null, committedLedger: string|null }} ledgers
+ */
+export function checkBaselineIntegrity(working, committed, ledgers = { workingLedger: null, committedLedger: null }) {
+	const violations = [];
+	if (!committed) return { violations, skipped: true };
+
+	for (const [rule, value] of Object.entries(working.limits ?? {})) {
+		const old = committed.limits?.[rule];
+		if (typeof old === "number" && value > old) {
+			violations.push(`limit "${rule}" raised in the working tree: ${old} (HEAD) -> ${value}. Limits only go down.`);
 		}
 	}
-
-	return {
-		ok: regressions.length === 0,
-		regressions,
-		improvements,
-		current: currentCounts,
-		baseline,
-	};
-}
-
-/**
- * Main execution routine.
- */
-export function checkRatchet(options = {}) {
-	const repoRoot = options.repoRoot || DEFAULT_REPO_ROOT;
-	const baselinePath = options.baselinePath || DEFAULT_BASELINE_PATH;
-	const autoRatchet = options.autoRatchet ?? false;
-
-	const baseline = getBaseline(baselinePath);
-	const { counts, matches, stats } = countSanitaryMetrics({ repoRoot });
-	const result = evaluateRatchet(counts, baseline);
-
-	let updated = false;
-	if (result.improvements.length > 0 && autoRatchet) {
-		const newBaseline = { ...baseline };
-		for (const imp of result.improvements) {
-			newBaseline[imp.metric] = imp.current;
+	const loweredFloors = [];
+	for (const [key, value] of Object.entries(working.floors ?? {})) {
+		const old = committed.floors?.[key];
+		if (typeof old === "number" && value < old) loweredFloors.push(`${key}: ${old} -> ${value}`);
+	}
+	if (loweredFloors.length > 0) {
+		const added = countLedgerLines(ledgers.workingLedger) - countLedgerLines(ledgers.committedLedger);
+		if (added < 1) {
+			violations.push(`floor lowered without a ledger entry (${loweredFloors.join(", ")}). Use --accept-test-removal with --reason.`);
 		}
-		saveBaseline(baselinePath, newBaseline);
-		updated = true;
 	}
-
-	return {
-		...result,
-		matches,
-		stats,
-		updated,
-	};
+	return { violations, skipped: false };
 }
 
-/**
- * Format metric label for human display.
- */
-function formatMetricLabel(metric) {
-	switch (metric) {
-		case "maxExplicitAny":
-			return "Явные any (: any, as any, <any>)";
-		case "maxLinterSuppressions":
-			return "Супрессии линтера (biome / eslint)";
-		case "maxRawFloatDivisions":
-			return "Голые деления / 100 в UI";
-		case "maxUppercaseButtons":
-			return "Uppercase на кнопках/чипах/табах";
-		default:
-			return metric;
-	}
+function loadLedger(path) {
+	return existsSync(path) ? readFileSync(path, "utf8") : null;
 }
 
-/**
- * CLI runner.
- */
+export function checkIntegrity(options = {}) {
+	const repoRoot = options.repoRoot ?? DEFAULT_REPO_ROOT;
+	const baselinePath = options.baselinePath ?? DEFAULT_BASELINE_PATH;
+	const ledgerPath = options.ledgerPath ?? DEFAULT_LEDGER_PATH;
+	const working = getBaseline(baselinePath);
+	const committedText = gitShow(repoRoot, relative(repoRoot, baselinePath).replace(/\\/g, "/"));
+	let committed = null;
+	if (committedText) {
+		try {
+			const parsed = JSON.parse(committedText);
+			committed = parsed.version === 2 ? parsed : null;
+		} catch {
+			committed = null;
+		}
+	}
+	return checkBaselineIntegrity(working, committed, {
+		workingLedger: loadLedger(ledgerPath),
+		committedLedger: gitShow(repoRoot, relative(repoRoot, ledgerPath).replace(/\\/g, "/")),
+	});
+}
+
+/* ------------------------------------------------------------- baseline io */
+
+export function buildBaselineFrom(counts, totals, previous = null) {
+	const limits = {};
+	for (const rule of DEBT_RULES) {
+		const now = HARD_ZERO_RULES.includes(rule) ? 0 : counts[rule];
+		const old = previous?.limits?.[rule];
+		limits[rule] = typeof old === "number" ? Math.min(old, now) : now;
+	}
+	const floors = {};
+	for (const key of FLOOR_KEYS) {
+		const old = previous?.floors?.[key];
+		floors[key] = typeof old === "number" ? Math.max(old, totals[key]) : totals[key];
+	}
+	return { version: 2, description: "DENTE ratchet baseline. Debt limits only fall; floors only rise (floors fall only via the ledger).", limits, floors };
+}
+
+export function appendLedger(ledgerPath, entry) {
+	const dir = dirname(ledgerPath);
+	if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+	appendFileSync(ledgerPath, `${JSON.stringify(entry)}\n`, "utf8");
+}
+
+/* ---------------------------------------------------------------- labels */
+
+const LABELS = {
+	"explicit-any": "any (any[], Record<_, any>, | any ...)",
+	"z-any": "Zod z.any() in schemas",
+	"double-cast": "as unknown/any as T",
+	"as-never": "as never",
+	"record-cast": "as Record<string, unknown>",
+	"type-assertion": "type assertions (as T, not const)",
+	"non-null-assertion": "non-null assertion x!",
+	"ts-suppression": "@ts-ignore / expect-error / nocheck",
+	"linter-suppression": "biome-ignore / eslint-disable",
+	"empty-catch": "empty catch {}",
+	"documented-swallow": "catch swallowed WITH a swallow-ok reason",
+	"silent-catch": "catch with no call and no throw",
+	"swallowed-promise": ".catch(() => {} / null / [])",
+	"console-noise": "console.log/debug/info/trace",
+	"prod-imports-test-code": "prod imports test code",
+	"test-env-sniff": "prod code detects the test runner",
+	"float-money-division": "money / 100 in the UI",
+	[UPPERCASE_RULE]: "uppercase on buttons/chips/tabs",
+	"test-no-assertion": "test without any assertion",
+	"test-weak-only": "test with only weak assertions",
+	"test-tautology": "tautological assertion (true===true)",
+	"test-phantom-no-sut": "phantom test (never touches project code)",
+	"test-skipped": "skipped / todo test (hard 0)",
+	"test-only-left": ".only left in (hard 0)",
+	"test-size-assertion": "test asserts a source file's line count",
+	"test-source-grep": "test greps source text, runs nothing",
+	"test-swallowed-assertion": "assertion inside try/catch that swallows",
+	"test-self-mock": "test mocks the module under test",
+};
+
+export function labelOf(rule) {
+	return LABELS[rule] ?? rule;
+}
+
+/* ------------------------------------------------------------------ CLI */
+
+function parseArgs(argv) {
+	const args = { tighten: true, json: false, list: null, limit: 40, acceptRemoval: null, reason: null };
+	for (let i = 0; i < argv.length; i++) {
+		const a = argv[i];
+		if (a === "--no-tighten" || a === "--dry-run" || a === "--no-auto-ratchet") args.tighten = false;
+		else if (a === "--json") args.json = true;
+		else if (a === "--list") args.list = argv[++i] ?? null;
+		else if (a.startsWith("--limit=")) args.limit = Number(a.slice(8)) || 40;
+		else if (a.startsWith("--accept-test-removal=")) args.acceptRemoval = Number(a.slice("--accept-test-removal=".length));
+		else if (a === "--reason") args.reason = argv[++i] ?? null;
+	}
+	return args;
+}
+
 function runCli() {
-	const args = process.argv.slice(2);
-	const noAutoRatchet = args.includes("--no-auto-ratchet") || args.includes("--dry-run");
-	const autoRatchet = !noAutoRatchet;
-	const jsonOutput = args.includes("--json");
+	const args = parseArgs(process.argv.slice(2));
+	const started = Date.now();
+	const baseline = getBaseline();
+	const { counts, findings, totals, failedToParse } = countMetrics();
+	const elapsed = ((Date.now() - started) / 1000).toFixed(1);
 
-	const startTime = Date.now();
-	const baseline = getBaseline(DEFAULT_BASELINE_PATH);
-	const { counts, matches, stats } = countSanitaryMetrics();
-	const evaluation = evaluateRatchet(counts, baseline);
-	const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-
-	if (jsonOutput) {
-		console.log(JSON.stringify({ ...evaluation, elapsedSeconds: elapsed }, null, 2));
-		if (!evaluation.ok) {
+	if (args.list) {
+		const items = findings[args.list];
+		if (!items) {
+			console.error(`Unknown rule "${args.list}". Rules: ${DEBT_RULES.join(", ")}`);
 			process.exit(1);
 		}
+		console.log(`${args.list}: ${items.length}`);
+		for (const f of items.slice(0, args.limit)) console.log(`  ${f.file}:${f.line}  ${f.text}`);
 		process.exit(0);
 	}
 
-	console.log("\n================================================================================");
-	console.log("🏛️  DENTE CRM — САНИТАРНЫЙ ХРАПОВИК КАЧЕСТВА (QUALITY RATCHET DOCTRINE)");
-	console.log("================================================================================");
-	console.log(`Базовый снимок:       scripts/config/sanitary-baseline.json`);
-	console.log(`Боевых файлов ядра:   ${stats.prodCodeFilesCount} (UI: ${stats.webCodeFilesCount}, CSS: ${stats.webCssFilesCount})`);
-	console.log(`Время проверки:       ${elapsed}s | Режим: ${autoRatchet ? "Авто-подгонка (Monotonic Auto-Ratchet)" : "Без авто-подгонки"}`);
-	console.log("--------------------------------------------------------------------------------");
-	console.log(
-		"Метрика                                  | Факт | Лимит | Статус                 ",
-	);
-	console.log("-----------------------------------------+------+-------+------------------------");
-
-	const metricKeys = [
-		"maxExplicitAny",
-		"maxLinterSuppressions",
-		"maxRawFloatDivisions",
-		"maxUppercaseButtons",
-	];
-
-	for (const key of metricKeys) {
-		const current = counts[key];
-		const limit = baseline[key];
-		const delta = current - limit;
-		const label = formatMetricLabel(key).padEnd(40);
-		const curStr = String(current).padStart(4);
-		const limStr = String(limit).padStart(5);
-
-		let status = "";
-		if (delta > 0) {
-			status = `❌ НАСРАНО СВЕРХУ (+${delta} новых косяков!)`;
-		} else if (delta < 0) {
-			status = `✨ СТАЛО ЧИЩЕ (-${Math.abs(delta)}, потолок закручен)`;
-		} else if (current === 0) {
-			status = `💎 ИДЕАЛ (0)`;
-		} else {
-			status = `⚠️ НЕ НАСРАНО, НО ${current} КОСЯКОВ ЖДУТ ЗАЧИСТКИ`;
+	if (args.acceptRemoval !== null) {
+		if (!Number.isInteger(args.acceptRemoval) || !args.reason || args.reason.trim().length < 25) {
+			console.error('--accept-test-removal=<newTestFloor> needs --reason "<at least 25 characters, say WHY these tests are gone>"');
+			process.exit(1);
 		}
-
-		console.log(`${label} | ${curStr} | ${limStr} | ${status}`);
+		if (totals.tests < args.acceptRemoval) {
+			console.error(`Cannot lower the floor to ${args.acceptRemoval}: only ${totals.tests} tests exist.`);
+			process.exit(1);
+		}
+		const next = structuredClone(baseline);
+		appendLedger(DEFAULT_LEDGER_PATH, {
+			at: new Date().toISOString(),
+			kind: "test-removal",
+			testsFloorFrom: baseline.floors.tests,
+			testsFloorTo: args.acceptRemoval,
+			reason: args.reason.trim(),
+		});
+		next.floors.tests = args.acceptRemoval;
+		writeFileSync(DEFAULT_BASELINE_PATH, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+		console.log(`Test floor ${baseline.floors.tests} -> ${args.acceptRemoval} recorded in ${relative(DEFAULT_REPO_ROOT, DEFAULT_LEDGER_PATH)}. Commit both files together.`);
+		process.exit(0);
 	}
 
-	console.log("================================================================================");
+	const evaluation = evaluateRatchet(counts, totals, baseline);
+	const integrity = checkIntegrity();
+	const totalDebt = DEBT_RULES.reduce((sum, r) => sum + counts[r], 0);
 
-	// If there are regressions, report failure and list offending lines
+	if (args.json) {
+		console.log(JSON.stringify({ ...evaluation, integrity, counts, totals, totalDebt, failedToParse, elapsedSeconds: elapsed }, null, 2));
+		process.exit(evaluation.ok && integrity.violations.length === 0 ? 0 : 1);
+	}
+
+	const line = "=".repeat(86);
+	console.log(`\n${line}\nDENTE CRM — QUALITY RATCHET v2 (AST, production + tests)\n${line}`);
+	console.log(`Scanned: ${totals.prodFiles} production files, ${totals.testFiles} test files, ${totals.tests} tests in ${elapsed}s`);
+	console.log(`Baseline: scripts/config/sanitary-baseline.json (tighten: ${args.tighten ? "on" : "off"})`);
+	console.log("-".repeat(86));
+	console.log("Rule                                           now   limit   status");
+	for (const rule of DEBT_RULES) {
+		const now = counts[rule];
+		const limit = HARD_ZERO_RULES.includes(rule) ? 0 : (baseline.limits[rule] ?? "?");
+		const status = typeof limit !== "number" ? "NEW RULE, NOT IN BASELINE" : now > limit ? `REGRESSION +${now - limit}` : now < limit ? `better (${now - limit})` : now === 0 ? "clean" : "debt";
+		console.log(`${labelOf(rule).padEnd(44)} ${String(now).padStart(6)} ${String(limit).padStart(7)}   ${status}`);
+	}
+	for (const key of FLOOR_KEYS) {
+		const floor = baseline.floors[key];
+		const now = totals[key];
+		console.log(`${`floor: ${key}`.padEnd(44)} ${String(now).padStart(6)} ${String(floor).padStart(7)}   ${now < floor ? "BELOW FLOOR" : "ok"}`);
+	}
+	console.log("-".repeat(86));
+	console.log(`TOTAL DEBT: ${totalDebt} findings. ${totalDebt === 0 ? "Nothing found by these detectors." : "This is what the codebase owes, not what is allowed to grow."}`);
+	console.log("Blind spots (read them): detectors are syntactic. They do not prove tests are good (see the mutation");
+	console.log("probe), do not see logic errors, and 'weak/no-assertion' treats helpers not named assert*/expect*/verify*");
+	console.log("as non-assertions. A zero here is a floor, never a certificate.");
+	console.log(line);
+
+	let failed = false;
+	if (failedToParse.length > 0) {
+		failed = true;
+		console.error(`\nFILES THE SCANNER COULD NOT READ (a file nobody scans is a hiding place):`);
+		for (const f of failedToParse.slice(0, 10)) console.error(`  ${f.file}: ${f.error}`);
+	}
+	if (integrity.skipped) console.log("\nNote: git HEAD baseline unavailable, anti-raise integrity check skipped.");
+	for (const v of integrity.violations) {
+		failed = true;
+		console.error(`\nINTEGRITY VIOLATION: ${v}`);
+	}
 	if (!evaluation.ok) {
-		console.error("\n❌ ОШИБКА: ОБНАРУЖЕНА РЕГРЕССИЯ САНИТАРНОГО ХРАПОВИКА!");
-		console.error("Закон Храповика (Мандат 8ai / Опыт Тимаэрта) категорически запрещает рост долга:\n");
-
-		for (const reg of evaluation.regressions) {
-			console.error(`🔴 ${formatMetricLabel(reg.metric)}: факт ${reg.current} > лимит ${reg.limit} (+${reg.delta})`);
-			const fileMatches = matches[reg.metric] || [];
-			const sample = fileMatches.slice(-Math.min(fileMatches.length, Math.max(reg.delta, 5)));
-			for (const m of sample) {
-				console.error(`   - ${m.file}:${m.line} -> ${m.text || m.element}`);
-			}
+		failed = true;
+		console.error("\nREGRESSION:");
+		for (const r of evaluation.regressions) {
+			console.error(`  ${labelOf(r.rule)}: ${r.current} > limit ${r.limit} (+${r.delta})${r.reason ? ` [${r.reason}]` : ""}`);
+			for (const f of findings[r.rule].slice(-Math.min(Math.max(r.delta, 3), 8))) console.error(`    ${f.file}:${f.line}  ${f.text}`);
 		}
-
+		for (const b of evaluation.floorBreaches) {
+			console.error(`  floor ${b.key}: ${b.current} < ${b.floor}. Files or tests disappeared. If tests were removed on purpose: --accept-test-removal=${b.current} --reason "..."`);
+		}
+	}
+	if (failed) {
 		printFailureManifesto("TYPE_RATCHET", {
-			details: evaluation.regressions
-				.map((r) => `${formatMetricLabel(r.metric)}: факт ${r.current} > лимит ${r.limit} (+${r.delta})`)
-				.join("; "),
+			details: [
+				...integrity.violations,
+				...evaluation.regressions.map((r) => `${labelOf(r.rule)}: ${r.current} > ${r.limit}`),
+				...evaluation.floorBreaches.map((b) => `floor ${b.key}: ${b.current} < ${b.floor}`),
+			].join("; "),
 		});
 		process.exit(1);
 	}
 
-	const totalLegacyDebt = counts.maxExplicitAny + counts.maxLinterSuppressions + counts.maxRawFloatDivisions + counts.maxUppercaseButtons;
-
-	// If improvements occurred, automatically ratchet down the baseline
-	if (evaluation.improvements.length > 0) {
-		if (autoRatchet) {
-			const newBaseline = { ...baseline, ...counts };
-			saveBaseline(DEFAULT_BASELINE_PATH, newBaseline);
-			console.log("\n🔒 АВТО-ХРАПОВИК ЗАКРУЧЕН: Базовые лимиты автоматически снижены и навечно зафиксированы:");
-			for (const imp of evaluation.improvements) {
-				console.log(`   ✓ ${imp.metric}: ${imp.limit} ➔ ${imp.current} (-${Math.abs(imp.delta)})`);
-			}
-			console.log(`Обновлён файл: ${DEFAULT_BASELINE_PATH}`);
-			console.log(`Остаток старого техдолга: ${totalLegacyDebt} косяков. Не расслабляться, продолжать зачистку по правилу бойскаута!\n`);
-		} else {
-			console.log("\n💡 ЗАМЕЧЕН ПРОГРЕСС: Кодовая база стала чище (auto-ratchet отключен):");
-			for (const imp of evaluation.improvements) {
-				console.log(`   - ${imp.metric}: ${imp.current} < ${imp.limit} (чище на ${Math.abs(imp.delta)})`);
-			}
+	if (args.tighten) {
+		const next = buildBaselineFrom(counts, totals, baseline);
+		if (JSON.stringify(next) !== JSON.stringify(baseline)) {
+			saveBaseline(DEFAULT_BASELINE_PATH, next);
+			console.log("\nBaseline tightened to the current measurements. Commit scripts/config/sanitary-baseline.json.");
+			for (const imp of evaluation.improvements) console.log(`  ${imp.rule}: ${imp.limit} -> ${imp.current}`);
 		}
-	} else {
-		console.log(`\n🛡️ САНИТАРНЫЙ ХРАПОВИК: Нового говна не добавлено (число косяков не увеличено, Exit Code 0).`);
-		console.log(`⚠️  НАПОМИНАНИЕ АГЕНТУ: в проекте остаётся ${totalLegacyDebt} старых косяков (${counts.maxExplicitAny} any, ${counts.maxLinterSuppressions} супрессий, ${counts.maxRawFloatDivisions} делений / 100, ${counts.maxUppercaseButtons} капслоков).`);
-		console.log(`   Не будь слепым котёнком: если правишь файл — ликвидируй в нём старый техдолг по правилу бойскаута!\n`);
 	}
-
 	process.exit(0);
 }
 
-// Execute CLI when run directly
-if (process.argv[1] && resolve(process.argv[1]) === resolve(__filename)) {
-	runCli();
-}
+if (process.argv[1] && resolve(process.argv[1]) === resolve(__filename)) runCli();
