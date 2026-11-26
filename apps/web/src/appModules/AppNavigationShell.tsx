@@ -15,9 +15,10 @@ import {
 } from "../components/appLayout";
 import { TelephonyDrawer } from "../components/telephony/TelephonyDrawer";
 import { preloadWorkspaceView } from "../workspacePreload";
-import { getFilteredAppViews, type AppView } from "../workspaceShell";
+import { type AppView } from "../workspaceShell";
 import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
-import { viewsHiddenByFeatureFlags } from "../workspaceShellModules/sidebarNavigationData";
+import { resolveClinicMode } from "../lib/clinicCapabilities";
+import { getVisibleRailViews, viewsHiddenByFeatureFlags } from "../workspaceShellModules/sidebarNavigationData";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 import type { useAppLogic } from "../useAppLogic";
 import type { CommunicationTask, GeneratedDocument, ImagingSourceKind, ImagingStudy, StaffRole } from "@dental/shared";
@@ -183,8 +184,9 @@ export function AppNavigationShell({ appLogic, sessionAuth, routing }: AppNaviga
 	};
 
 	const featureFlags = useWorkspaceProfile();
+	const clinicMode = resolveClinicMode(dashboard?.clinicSettings?.profile?.mode);
 	const hiddenByModules = viewsHiddenByFeatureFlags(featureFlags);
-	const allowedMobileViews = getFilteredAppViews(selectedWorkspaceRole).filter(
+	const allowedMobileViews = getVisibleRailViews(selectedWorkspaceRole, clinicMode).filter(
 		(v) => !hiddenByModules.includes(v),
 	);
 

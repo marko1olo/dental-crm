@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Columns, Layers, List, Plus, RefreshCw, ShieldAlert } from "lucide-react";
+import { useAppStore } from "../../../store/appStore";
 import type { PipelineViewMode } from "./types";
 
 export interface TreatmentPipelineHeaderProps {
@@ -45,35 +46,35 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 					onClick={() => {
 						if (!isRunningDropout) onRunDropoutPrevention();
 					}}
-					className={`h-9 min-h-[36px] px-2.5 sm:px-3 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
+					className={`h-9 min-h-[36px] px-2.5 sm:px-3.5 rounded-lg border text-sm font-medium transition inline-flex items-center gap-2 shrink-0 cursor-pointer ${
 						dropoutRiskCount > 0
-							? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
-							: "bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] border-[var(--line)]"
+							? "bg-[var(--warning-soft)] text-[var(--warning-ink)] border-[var(--warning-line)]"
+							: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 					}`}
 					title="Проверить зависшие планы (>14 дней без записи) и создать задачи на звонок куратора"
 					data-testid="pipeline-dropout-prevention-btn"
 				>
-					<ShieldAlert className={`w-3.5 h-3.5 ${isRunningDropout ? "animate-spin text-amber-500" : "text-amber-500"}`} />
+					<ShieldAlert className={`w-4 h-4 shrink-0 ${isRunningDropout ? "animate-spin" : ""}`} />
 					<span className="hidden sm:inline">Анти-отвал (14–21д)</span>
 					{dropoutRiskCount > 0 && (
-						<span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500 text-white font-bold leading-none">
+						<span className="px-1.5 py-0.5 rounded-full text-xs font-mono bg-[var(--warning)] text-white font-medium leading-none tabular-nums">
 							{dropoutRiskCount}
 						</span>
 					)}
 				</button>
 
 				{/* Mandate 8am: Single Primary CTA in the visible context */}
-				<a
-					href="#/patients"
-					className="primary-button h-9 min-h-[36px] px-3 sm:px-3.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-					style={{ borderRadius: "10px" }}
+				<button
+					type="button"
+					onClick={() => useAppStore.getState().setCurrentView("patients")}
+					className="primary-button bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] h-9 min-h-[36px] px-3.5 rounded-lg text-sm font-medium transition inline-flex items-center gap-2 shadow-sm shrink-0 cursor-pointer"
 					title="Перейти к пациентам для составления нового плана"
 					data-testid="pipeline-new-plan-btn"
 				>
-					<Plus className="w-3.5 h-3.5" />
+					<Plus className="w-4 h-4 shrink-0" />
 					<span className="hidden xs:inline sm:inline">Новый план</span>
 					<span className="inline xs:hidden sm:hidden">План</span>
-				</a>
+				</button>
 
 				{/* Desktop View Mode Switcher (Apple Segmented Control) */}
 				<div className="hidden md:flex items-center gap-1 p-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] shadow-xs">

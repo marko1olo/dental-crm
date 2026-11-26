@@ -18,7 +18,11 @@ import { PipelineBoard } from "./pipeline/PipelineBoard";
 import { TreatmentPlanStudioModal } from "../../components/treatment-plans/TreatmentPlanStudioModal";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useDocumentBrandingStore } from "../../store/documentBrandingStore";
+import { useAppStore } from "../../store/appStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+
+const hasDoctorSpecialty = (doc: unknown): doc is { specialty?: unknown } =>
+	typeof doc === "object" && doc !== null && "specialty" in doc;
 
 export type { PipelineStage, PipelineCard, PipelineResponse, PipelineStageFilter, PipelineViewMode };
 
@@ -103,9 +107,9 @@ export const TreatmentPipeline: React.FC = () => {
 
 			{/* Board Content */}
 			{state.error ? (
-				<div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-center space-y-2">
-					<AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
-					<h3 className="text-sm font-semibold text-rose-500">Ошибка загрузки воронки</h3>
+				<div className="p-6 bg-[var(--danger-soft)] border border-[var(--danger-line)] rounded-2xl text-center space-y-2">
+					<AlertCircle className="w-8 h-8 text-[var(--danger)] mx-auto" />
+					<h3 className="text-sm font-semibold text-[var(--danger)]">Ошибка загрузки воронки</h3>
 					<p className="text-xs text-[var(--muted)]">{state.error}</p>
 				</div>
 			) : (
@@ -124,9 +128,7 @@ export const TreatmentPipeline: React.FC = () => {
 							onTransitionStage={state.handleTransitionStage}
 							onCreateRecallTask={state.handleCreatePlanRecall}
 							onCreateNewPlan={() => {
-								if (typeof window !== "undefined") {
-									window.location.hash = "#/patients";
-								}
+								useAppStore.getState().setCurrentView("patients");
 							}}
 						/>
 					</div>
@@ -158,7 +160,7 @@ export const TreatmentPipeline: React.FC = () => {
 					patientId={state.selectedCardForPresenter.patientId}
 					patientPhone={state.selectedCardForPresenter.patientPhone || ""}
 					doctorFullName={effectiveDoctorName}
-					doctorSpecialty={appLogic?.activeDoctor && "specialty" in appLogic.activeDoctor ? String((appLogic.activeDoctor as { specialty?: unknown }).specialty ?? "") : ""}
+					doctorSpecialty={hasDoctorSpecialty(appLogic?.activeDoctor) ? String(appLogic.activeDoctor.specialty ?? "") : ""}
 					clinicName={clinicName}
 					clinicAddress={clinicAddress}
 					planId={state.selectedCardForPresenter.id}

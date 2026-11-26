@@ -53,12 +53,14 @@ export function viewsHiddenByFeatureFlags(flags: {
 	hasAnalyticsModule?: boolean;
 	hasPayrollModule?: boolean;
 	hasMarketingModule?: boolean;
+	hasLeadsKanban?: boolean;
 	hasDentalLab?: boolean;
 }): AppView[] {
 	const hidden: AppView[] = [];
 	if (flags?.hasInventoryModule === false) hidden.push("inventory");
 	if (flags?.hasAnalyticsModule === false) hidden.push("analytics");
 	if (flags?.hasMarketingModule === false) hidden.push("marketing");
+	if (flags?.hasLeadsKanban === false) hidden.push("leads");
 	if (flags?.hasDentalLab === false) hidden.push("lab");
 	return hidden;
 }

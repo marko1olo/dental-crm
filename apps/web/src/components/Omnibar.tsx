@@ -32,7 +32,8 @@ import type { Patient } from "@dental/shared";
 import { useAppStore } from "../store/appStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
-import { hasCapability } from "../lib/clinicCapabilities";
+import { hasCapability, resolveClinicMode } from "../lib/clinicCapabilities";
+import { getVisibleRailViews, viewsHiddenByFeatureFlags } from "../workspaceShellModules/sidebarNavigationData";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { useUnifiedDictation } from "../hooks/useUnifiedDictation";
 import { searchPatientsQuick } from "./patients/patientSearchFuzzy";
@@ -40,8 +41,16 @@ import { WorkspaceActionsSlot } from "./workspaceActions/WorkspaceActions";
 import { workspaceActionsLabels } from "./workspaceActions/workspaceActionsLabels";
 
 export function Omnibar() {
-	const { isOmnibarOpen, setOmnibarOpen, setCurrentView, dashboard, setActivePatientId } = useAppStore();
+	const {
+		isOmnibarOpen,
+		setOmnibarOpen,
+		setCurrentView,
+		dashboard,
+		setActivePatientId,
+		selectedWorkspaceRole,
+	} = useAppStore();
 	const clinicMode = useSettingsStore((s) => s.clinicMode);
+	const effectiveClinicMode = resolveClinicMode(dashboard?.clinicSettings?.profile?.mode) ?? clinicMode;
 	const featureFlags = useWorkspaceProfile();
 	const isDemo = isDemoShowcaseMode();
 	const [query, setQuery] = useState("");
@@ -151,72 +160,79 @@ export function Omnibar() {
 	}, [dashboard?.patients, remotePatients]);
 
 	const commands = useMemo(() => {
-		const allowMarketingSection = hasCapability(clinicMode, "marketingSection");
-		const showPayroll = featureFlags.hasPayrollModule || isDemo;
-		const showLeads = (featureFlags.hasLeadsKanban && allowMarketingSection) || isDemo;
-		const showMarketing = (featureFlags.hasMarketingModule && allowMarketingSection) || isDemo;
-		const showLab = featureFlags.hasDentalLab || isDemo;
-		const showInventory = featureFlags.hasInventoryModule || isDemo;
-		const showAnalytics = featureFlags.hasAnalyticsModule || isDemo;
-		const showScanner = featureFlags.hasCsoScanner || isDemo;
+		const hiddenByModules = viewsHiddenByFeatureFlags(featureFlags);
+		const allowedViewSet = new Set(
+			getVisibleRailViews(selectedWorkspaceRole, effectiveClinicMode).filter(
+				(v) => !hiddenByModules.includes(v),
+			),
+		);
+		const allowMarketingSection = hasCapability(effectiveClinicMode, "marketingSection");
+		const isSoloMode = effectiveClinicMode === "solo_doctor";
+		const showPayroll = (featureFlags.hasPayrollModule || isDemo) && !isSoloMode && allowedViewSet.has("finance");
+		const showLeads = allowedViewSet.has("leads") && allowMarketingSection && (featureFlags.hasLeadsKanban || isDemo);
+		const showMarketing = allowedViewSet.has("marketing") && allowMarketingSection && (featureFlags.hasMarketingModule || isDemo);
+		const showLab = allowedViewSet.has("lab") && (featureFlags.hasDentalLab || isDemo);
+		const showInventory = allowedViewSet.has("inventory") && (featureFlags.hasInventoryModule || isDemo);
+		const showAnalytics = allowedViewSet.has("analytics") && (featureFlags.hasAnalyticsModule || isDemo);
+		const showScanner = allowedViewSet.has("scanner") && (featureFlags.hasCsoScanner || isDemo);
 
 		const list = [
-			{
+			...(allowedViewSet.has("shift") ? [{
 				id: "nav-shift",
 				title: "Смена",
 				icon: <Calendar />,
 				category: "Навигация",
 				action: () => setCurrentView("shift"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("schedule") ? [{
 				id: "nav-schedule",
 				title: "Расписание",
 				icon: <Calendar />,
 				category: "Навигация",
 				action: () => setCurrentView("schedule"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("patients") ? [{
 				id: "nav-patients",
 				title: "Пациенты",
 				icon: <Users />,
 				category: "Навигация",
 				action: () => setCurrentView("patients"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("pipeline") ? [{
 				id: "nav-pipeline",
 				title: "Планы лечения (Воронка)",
 				icon: <Layers />,
 				category: "Навигация",
 				action: () => setCurrentView("pipeline"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("imaging") ? [{
 				id: "nav-imaging",
 				title: "Снимки",
 				icon: <Camera />,
 				category: "Навигация",
 				action: () => setCurrentView("imaging"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("visit") ? [{
 				id: "nav-visit",
 				title: "Прием",
 				icon: <Stethoscope />,
 				category: "Навигация",
 				action: () => setCurrentView("visit"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("documents") ? [{
 				id: "nav-documents",
 				title: "Документы",
 				icon: <FileText />,
 				category: "Навигация",
 				action: () => setCurrentView("documents"),
-			},
-			{
+			}] : []),
+			...(allowedViewSet.has("finance") ? [{
 				id: "nav-finance",
 				title: "Финансы",
 				icon: <Banknote />,
 				category: "Навигация",
 				action: () => setCurrentView("finance"),
-			},
+			}] : []),
 			...(showAnalytics
 				? [
 						{
@@ -228,13 +244,13 @@ export function Omnibar() {
 						},
 					]
 				: []),
-			{
+			...(allowedViewSet.has("communications") ? [{
 				id: "nav-communications",
 				title: "Связь",
 				icon: <MessageSquare />,
 				category: "Навигация",
 				action: () => setCurrentView("communications"),
-			},
+			}] : []),
 			...(showInventory
 				? [
 						{
@@ -290,15 +306,15 @@ export function Omnibar() {
 						},
 					]
 				: []),
-			{
+			...(allowedViewSet.has("settings") ? [{
 				id: "nav-settings",
 				title: "Настройки",
 				icon: <Settings />,
 				category: "Навигация",
 				action: () => setCurrentView("settings"),
-			},
+			}] : []),
 
-			{
+			...(allowedViewSet.has("patients") ? [{
 				id: "action-new-patient",
 				title: "Создать карточку пациента",
 				icon: <Users />,
@@ -306,25 +322,27 @@ export function Omnibar() {
 				action: () => {
 					setCurrentView("patients");
 				},
-			},
-			{
-				id: "action-new-appointment",
-				title: "Новая запись на прием",
-				icon: <Calendar />,
-				category: "Быстрые действия",
-				action: () => {
-					setCurrentView("schedule");
+			}] : []),
+			...(allowedViewSet.has("schedule") ? [
+				{
+					id: "action-new-appointment",
+					title: "Новая запись на прием",
+					icon: <Calendar />,
+					category: "Быстрые действия",
+					action: () => {
+						setCurrentView("schedule");
+					},
 				},
-			},
-			{
-				id: "action-waitlist-quickfill",
-				title: "Лист ожидания и быстрая запись (Автозаполнение)",
-				icon: <Calendar />,
-				category: "Быстрые действия",
-				action: () => {
-					setCurrentView("schedule");
+				{
+					id: "action-waitlist-quickfill",
+					title: "Лист ожидания и быстрая запись (Автозаполнение)",
+					icon: <Calendar />,
+					category: "Быстрые действия",
+					action: () => {
+						setCurrentView("schedule");
+					},
 				},
-			},
+			] : []),
 			...(showPayroll
 				? [
 						{
@@ -401,13 +419,9 @@ export function Omnibar() {
 		return list;
 	}, [
 		clinicMode,
-		featureFlags.hasAnalyticsModule,
-		featureFlags.hasCsoScanner,
-		featureFlags.hasDentalLab,
-		featureFlags.hasInventoryModule,
-		featureFlags.hasLeadsKanban,
-		featureFlags.hasMarketingModule,
-		featureFlags.hasPayrollModule,
+		effectiveClinicMode,
+		selectedWorkspaceRole,
+		featureFlags,
 		isDemo,
 		setCurrentView,
 	]);

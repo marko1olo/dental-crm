@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
+import { useAppStore } from "../../../store/appStore";
+import { usePatientStore } from "../../../store/patientStore";
 import type { PipelineCard, PipelineStage, PipelineViewMode } from "./types";
 import { formatRub, STAGE_CONFIG } from "./types";
 
@@ -140,7 +142,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						{formatRub(card.netTotalRub || 0)}
 					</span>
 					{Boolean(card.discountRub) && (
-						<span className="text-[11px] text-emerald-500 font-mono block whitespace-nowrap">
+						<span className="text-[11px] text-[var(--success-ink)] font-mono tabular-nums block whitespace-nowrap">
 							-{formatRub(card.discountRub)}
 						</span>
 					)}
@@ -170,8 +172,8 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 
 					{/* Status & Visit Badges */}
 					{card.hasFutureAppointment && card.nextAppointmentDate && (
-						<span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-medium flex items-center gap-1 shrink-0">
-							<Calendar className="w-3 h-3 shrink-0" />
+						<span className="h-6 px-2 rounded-full bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+							<Calendar className="w-3.5 h-3.5 shrink-0" />
 							<span>
 								Запись:{" "}
 								{new Date(card.nextAppointmentDate).toLocaleDateString("ru-RU")}
@@ -180,57 +182,57 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 					)}
 
 					{isApproved && (
-						<span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[11px] font-medium flex items-center gap-1 shrink-0">
-							<CheckCircle2 className="w-3 h-3 shrink-0" />
-							<span>✓ Одобрено пациентом</span>
+						<span className="h-6 px-2 rounded-full bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+							<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+							<span>Одобрено пациентом</span>
 						</span>
 					)}
 
 					{card.budgetStatus === "viewed" && !isApproved && (
-						<span className="px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-500 text-[11px] font-medium flex items-center gap-1 shrink-0">
-							<Eye className="w-3 h-3 shrink-0" />
+						<span className="h-6 px-2 rounded-full bg-[var(--primary-soft)] border border-[var(--line)] text-[var(--primary)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+							<Eye className="w-3.5 h-3.5 shrink-0" />
 							<span>Открыта пациентом</span>
 						</span>
 					)}
 
 					{stageKey === "no_appointment" && (
-						<span className="px-2 py-0.5 rounded-md bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300 text-[11px] font-medium flex items-center gap-1 shrink-0">
-							<AlertTriangle className="w-3 h-3 shrink-0" />
+						<span className="h-6 px-2 rounded-full bg-[var(--primary-soft)] border border-[var(--line)] text-[var(--primary)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+							<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
 							<span>Без записи</span>
 						</span>
 					)}
 
 					{stageKey === "in_progress_abandoned" && (
-						<span className="px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-medium flex items-center gap-1 shrink-0">
-							<Clock className="w-3 h-3 shrink-0" />
+						<span className="h-6 px-2 rounded-full bg-[var(--danger-soft)] border border-[var(--danger-line)] text-[var(--danger-ink)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+							<Clock className="w-3.5 h-3.5 shrink-0" />
 							<span>Пауза {daysInactive} дн.</span>
 						</span>
 					)}
 
 					{/* Анти-отвал: Предупреждение и кнопка реколла */}
 					{card.isDropoutRisk && (
-						<span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-1 shrink-0">
-							<AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-							<span>⚠️ Риск отвала ({daysInactive} дн.)</span>
+						<span className="h-6 px-2 rounded-full bg-[var(--warning-soft)] border border-[var(--warning-line)] text-[var(--warning-ink)] text-xs font-medium inline-flex items-center gap-1 shrink-0">
+							<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+							<span>Риск отвала ({daysInactive} дн.)</span>
 						</span>
 					)}
 				</div>
 
 				{/* Action Buttons */}
 				<div className="flex flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-2 shrink-0 pt-1 lg:pt-0 w-full sm:w-auto">
-					{/* Drop-out recall task 1-click generator */}
+					{/* Drop-out recall task generator */}
 					{card.isDropoutRisk && onCreateRecallTask && (
 						<button
 							type="button"
 							onClick={handleRecallClick}
-							className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg border text-sm font-medium transition inline-flex items-center justify-center gap-1.5 touch-manipulation whitespace-nowrap cursor-pointer ${
 								recallCreated
-									? "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-									: "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/40 text-amber-700 dark:text-amber-300"
+									? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)]"
+									: "bg-[var(--warning-soft)] border-[var(--warning-line)] text-[var(--warning-ink)]"
 							}`}
 							title="Создать контрольный звонок куратора для предотвращения отвала"
 						>
-							<PhoneCall className="w-3.5 h-3.5 shrink-0" />
+							<PhoneCall className="w-4 h-4 shrink-0" />
 							<span>{recallCreated ? "Звонок назначен" : isCreatingRecall ? "Создание..." : "Звонок куратора"}</span>
 						</button>
 					)}
@@ -241,7 +243,7 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 							value={stageKey}
 							onClick={(e) => e.stopPropagation()}
 							onChange={(e) => handleStageSelect(e.target.value as PipelineStage)}
-							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 text-xs rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--text)] font-medium outline-none focus:border-[var(--teal,#0d9488)] transition cursor-pointer"
+							className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 text-sm rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium outline-none focus:border-[var(--primary)] transition cursor-pointer"
 							title="Переместить план на другой этап"
 						>
 							<option value="requires_budget">1. Требуется смета</option>
@@ -269,23 +271,25 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 							}
 							onOpenPlan?.(card);
 						}}
-						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-[11px] sm:text-[13px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer"
-						style={{ borderRadius: "10px" }}
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-medium transition inline-flex items-center justify-center gap-2 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer"
 						title="Открыть студию презентации плана лечения и сметы"
 					>
-						<Tablet className="w-3.5 h-3.5 shrink-0" />
+						<Tablet className="w-4 h-4 shrink-0" />
 						<span>Презентация</span>
 					</button>
 
-					<a
-						href={`#/schedule?patientId=${card.patientId}`}
-						onClick={(e) => e.stopPropagation()}
-						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border border-[var(--line)] text-[11px] sm:text-[13px] font-medium text-[var(--text)] transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap"
-						style={{ borderRadius: "10px" }}
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							usePatientStore.getState().setSelectedPatientId(card.patientId);
+							useAppStore.getState().setCurrentView("schedule");
+						}}
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-sm font-medium text-[var(--ink)] transition inline-flex items-center justify-center gap-1.5 touch-manipulation whitespace-nowrap cursor-pointer"
 					>
-						<CalendarPlus className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+						<CalendarPlus className="w-4 h-4 shrink-0" />
 						<span>Записать</span>
-					</a>
+					</button>
 
 					<button
 						type="button"
@@ -294,24 +298,23 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 							if (isGeneratingLink === card.id) return;
 							onCopyOrGenerateLink(card);
 						}}
-						className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-medium transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer ${
+						className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg border text-sm font-medium transition inline-flex items-center justify-center gap-1.5 touch-manipulation whitespace-nowrap cursor-pointer ${
 							copiedToken === card.id
-								? "bg-emerald-500/20 border-emerald-500/40 text-emerald-500"
-								: "bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border-[var(--line)] text-[var(--ink)]"
+								? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)]"
+								: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
 						}`}
-						style={{ borderRadius: "10px" }}
 						title="Скопировать ссылку для согласования сметы"
 					>
 						{copiedToken === card.id ? (
 							<>
-								<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-								<span>Скопировано!</span>
+								<CheckCircle2 className="w-4 h-4 shrink-0" />
+								<span>Скопировано</span>
 							</>
 						) : isGeneratingLink === card.id ? (
-							<div className="w-3.5 h-3.5 border-2 border-[var(--teal,#0d9488)] border-t-transparent rounded-full animate-spin shrink-0" />
+							<div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin shrink-0" />
 						) : (
 							<>
-								<Link2 className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+								<Link2 className="w-4 h-4 shrink-0" />
 								<span>Ссылка</span>
 							</>
 						)}

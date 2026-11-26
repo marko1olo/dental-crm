@@ -9,6 +9,9 @@ import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 import { viewLabels } from "../../../workspaceShell";
 import { AppLoadingState } from "../../../AppBootState";
 import { WorkspaceRouteErrorBoundary } from "../../../workspaceRouteErrorBoundary";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
+import { hasCapability, resolveClinicMode } from "../../../lib/clinicCapabilities";
+import { useAppStore } from "../../../store/appStore";
 import type { AppViewRouterProps } from "../types";
 
 const SettingsView = lazyWithRetry(() =>
@@ -32,6 +35,10 @@ export function BusinessOperationsViewRouter({
 	clinicProfileDraft,
 	appLogicValue,
 }: AppViewRouterProps) {
+	const featureFlags = useWorkspaceProfile();
+	const clinicMode = resolveClinicMode(dashboard?.clinicSettings?.profile?.mode);
+	const allowMarketing = hasCapability(clinicMode, "marketingSection") && featureFlags.hasMarketingModule !== false;
+
 	if (currentView === "settings") {
 		const rawStaff =
 			activeStaffUser ??
@@ -60,6 +67,21 @@ export function BusinessOperationsViewRouter({
 	}
 
 	if (currentView === "marketing") {
+		if (!allowMarketing) {
+			return (
+				<div className="m-6 rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-6 shadow-xs flex flex-col items-start gap-3 max-w-lg" role="alert">
+					<h2 className="text-base font-semibold text-[var(--ink)]">Раздел маркетинга отключён</h2>
+					<p className="text-sm text-[var(--ink-muted)]">Продвижение и массовые кампании скрыты в режиме соло-врача или настройках модулей.</p>
+					<button
+						type="button"
+						onClick={() => useAppStore.getState().setCurrentView("schedule")}
+						className="h-9 px-3.5 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center justify-center shrink-0 cursor-pointer"
+					>
+						Перейти в расписание
+					</button>
+				</div>
+			);
+		}
 		return (
 			<WorkspaceRouteErrorBoundary view="marketing" label="Маркетинг/SEO" panelClassName="panel marketing-panel" panelId="marketing">
 				<Suspense fallback={<AppLoadingState message="Загрузка маркетинга..." />}>

@@ -1,8 +1,4 @@
 import type { Appointment } from "@dental/shared";
-import {
-	LayoutGrid,
-	ListFilter,
-} from "lucide-react";
 import React, { memo, useState } from "react";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import "../scheduleMobileAgenda.css";
@@ -45,12 +41,10 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 			selectedMobileAppt,
 			setSelectedMobileAppt,
 			todayKey,
-			tomorrowKey,
 			effectiveDateKey,
 			weekDays,
 			monthHeaderTitle,
 			handleShiftWeek,
-			handleShiftDay,
 			doctors,
 			chairs,
 			timelineItems,
@@ -77,99 +71,15 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 				aria-label="Расписание: мобильная повестка дня (Agenda View)"
 				style={{ maxWidth: "100vw", overflowX: "clip" }}
 			>
-				{/* 1. Month Navigation Bar */}
+				{/* 1. Compact Header Bar: Month Nav + [ Лента | Сетка ] */}
 				<ScheduleMobileMonthNav
 					monthHeaderTitle={monthHeaderTitle}
 					isDifferentFromToday={effectiveDateKey !== todayKey}
+					viewMode={viewMode}
+					onViewModeChange={setViewMode}
 					onTodayClick={() => onDateChange(todayKey)}
 					onShiftWeek={handleShiftWeek}
 				/>
-
-				{/* 1.1 Apple HIG Segmented Controls: [ Сетка | Лента ] & [ Сегодня | Завтра | + День ] */}
-				<div className="schedule-mobile-segmented-bar px-3 py-1 bg-[var(--paper)] border-b border-[var(--line-subtle)] flex flex-col items-center gap-1">
-					<div
-						className="flex w-full max-w-sm p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 shadow-2xs"
-						role="tablist"
-						aria-label="Режим отображения"
-					>
-						<button
-							type="button"
-							role="tab"
-							aria-selected={viewMode === "agenda"}
-							onClick={() => setViewMode("agenda")}
-							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-								viewMode === "agenda"
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-bold border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
-							data-testid="schedule-mobile-view-mode-agenda"
-						>
-							<ListFilter size={15} className="shrink-0" />
-							<span>Лента</span>
-						</button>
-						<button
-							type="button"
-							role="tab"
-							aria-selected={viewMode === "grid"}
-							onClick={() => setViewMode("grid")}
-							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-								viewMode === "grid"
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-bold border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
-							data-testid="schedule-mobile-view-mode-grid"
-						>
-							<LayoutGrid size={15} className="shrink-0" />
-							<span>Сетка</span>
-						</button>
-					</div>
-
-					<div
-						className="flex w-full max-w-sm p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 shadow-2xs"
-						role="group"
-						aria-label="Быстрый выбор дня"
-					>
-						<button
-							type="button"
-							onClick={() => {
-								useScheduleStore.getState().setScheduleDateFilter(todayKey);
-								onDateChange(todayKey);
-							}}
-							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-								effectiveDateKey === todayKey
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-bold border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
-							data-testid="schedule-mobile-segment-today"
-						>
-							Сегодня
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								useScheduleStore.getState().setScheduleDateFilter(tomorrowKey);
-								onDateChange(tomorrowKey);
-							}}
-							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-								effectiveDateKey === tomorrowKey
-									? "bg-[var(--paper)] text-[var(--ink)] shadow-sm font-bold border border-[var(--line)]"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-							}`}
-							data-testid="schedule-mobile-segment-tomorrow"
-						>
-							Завтра
-						</button>
-						<button
-							type="button"
-							onClick={() => handleShiftDay(1)}
-							className="flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] active:scale-95 flex items-center justify-center gap-1"
-							data-testid="schedule-mobile-segment-plus-day"
-							title="Сдвиг на +1 день вперед"
-						>
-							<span>+ День</span>
-						</button>
-					</div>
-				</div>
 
 				{/* 2. Apple iOS 7-Day Week Strip */}
 				<ScheduleMobileWeekStrip

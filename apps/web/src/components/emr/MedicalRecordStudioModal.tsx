@@ -211,7 +211,12 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		useEffect(() => {
 			if (!isOpen) return;
 			const handleKeyDown = (e: KeyboardEvent) => {
-				if (e.key === "Escape" && !isProtocolGeneratorOpen) handleClose();
+				if (e.key !== "Escape") return;
+				if (isProtocolGeneratorOpen) {
+					setIsProtocolGeneratorOpen(false);
+					return;
+				}
+				handleClose();
 			};
 			window.addEventListener("keydown", handleKeyDown);
 			return () => window.removeEventListener("keydown", handleKeyDown);
@@ -231,24 +236,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		if (!isOpen) return null;
 
-		if (isProtocolGeneratorOpen) {
-			const numTooth = typeof protocolGeneratorTooth === "number" ? protocolGeneratorTooth : parseInt(String(protocolGeneratorTooth), 10) || 11;
-			return (
-				<ClinicalProtocolsCatalogModal
-					isOpen={true} onClose={() => setIsProtocolGeneratorOpen(false)} activeTooth={numTooth}
-					onApplyPatch={(patch) => {
-						handleAddDiary({
-							id: generateUuidV7(), entryDate: new Date().toISOString().split("T")[0] || "", entryTime: new Date().toTimeString().slice(0, 5),
-							doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач", doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Стоматолог-терапевт",
-							toothNumber: String(protocolGeneratorTooth || 11), subjectiveComplaints: patch.complaint || "", objectiveStatusLocalis: patch.objectiveStatus || "",
-							assessmentDiagnosisText: patch.diagnosis || "", assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
-							procedureProtocol: patch.treatmentPlan || "", homeCareRecommendations: patch.recommendations || "",
-						});
-						setIsProtocolGeneratorOpen(false);
-					}}
-				/>
-			);
-		}
+		const numTooth = typeof protocolGeneratorTooth === "number" ? protocolGeneratorTooth : parseInt(String(protocolGeneratorTooth), 10) || 11;
 
 		const modalElement = (
 			<div
@@ -322,10 +310,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								</button>
 								{isMoreMenuOpen && (
 									<div className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong)] border border-[var(--line)] rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink)] min-w-[210px]">
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleApplyNorm(); setIsMoreMenuOpen(false); }}>
-											<Sparkles className="w-3.5 h-3.5 text-current shrink-0" /><span>Физиологическая норма</span>
-										</button>
-										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer border-t border-[var(--line)]" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
+										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
 											<Download className="w-3.5 h-3.5 text-current shrink-0" /><span>Электронная медкарта (XML)</span>
 										</button>
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleExportJson(); setIsMoreMenuOpen(false); }}>
@@ -383,50 +368,55 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						})}
 					</nav>
 
-					{/* Шкала полноты карты приёма */}
-					<div className="emr-studio-completeness emr-studio-non-printable">
-						<ShieldCheck className={`w-5 h-5 ${validation.isComplete ? "text-[var(--success)]" : "text-[var(--warning)]"}`} />
-						<div className="text-xs font-semibold">Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
-						<div className="emr-studio-progress-track">
-							<div
-								className={`emr-studio-progress-fill ${validation.completenessScore >= 80 ? "green" : "yellow"}`}
-								style={{ width: `${validation.completenessScore}%` }}
+					{/* Тело активной вкладки + встроенный боковой каталог протоколов без размонтирования DOM */}
+					<div className="flex flex-1 min-h-0 overflow-hidden relative">
+						<main className="emr-studio-body flex-1 min-w-0">
+							{activeTab === "overview" && (
+								<div className="space-y-4">
+									<div className="emr-studio-completeness emr-studio-non-printable rounded-xl border border-[var(--line)]">
+										<ShieldCheck className={`w-5 h-5 shrink-0 ${validation.isComplete ? "text-[var(--success)]" : "text-[var(--warning)]"}`} />
+										<div className="text-xs font-semibold">Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
+										<div className="emr-studio-progress-track">
+											<div className={`emr-studio-progress-fill ${validation.completenessScore >= 80 ? "green" : "yellow"}`} style={{ width: `${validation.completenessScore}%` }} />
+										</div>
+										{validation.missingFields.length > 0 && (
+											<span className="text-[11px] text-[var(--muted,#64748b)]">Рекомендации: {validation.missingFields.map((m) => m.label).join(", ")}</span>
+										)}
+									</div>
+									<div className="emr-studio-preview-container flex flex-col items-center">
+										<div
+											className="emr-studio-a4-sheet print-paper-sheet pro-a4-physical-sheet"
+											data-paper-sheet="true"
+											data-preserve-white="true"
+											style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
+											dangerouslySetInnerHTML={{ __html: generateMedicalRecordPrintHtml(formData, { isLocked: !effectiveIsDraft, isDraft: effectiveIsDraft, status: effectiveIsDraft ? "draft" : "signed" }) }}
+										/>
+									</div>
+								</div>
+							)}
+							{activeTab === "passport" && <RecordPassportTab formData={formData} ageText={ageText} onUpdatePassport={handleUpdatePassport} />}
+							{activeTab === "anamnesis" && <RecordAnamnesisTab formData={formData} onApplyNorm={handleApplyNorm} onUpdateAnamnesis={handleUpdateAnamnesis} />}
+							{activeTab === "odontogram" && <RecordOdontogramTab formData={formData} dmft={dmft} cpitn={cpitn} onApplyNorm={handleApplyNorm} />}
+							{activeTab === "diaries" && <RecordDiariesTab formData={formData} activeTooth={activeTooth} onOpenProtocolGenerator={onOpenProtocolGenerator} onOpenInternalProtocolGenerator={handleOpenProtocolGenerator} onAddDiary={handleAddDiary} onDeleteDiary={handleDeleteDiary} />}
+							{activeTab === "epicrisis" && <RecordEpicrisisTab formData={formData} />}
+						</main>
+
+						{isProtocolGeneratorOpen && (
+							<ClinicalProtocolsCatalogModal
+								embedded={true} isOpen={true} onClose={() => setIsProtocolGeneratorOpen(false)} activeTooth={numTooth}
+								onApplyPatch={(patch) => {
+									handleAddDiary({
+										id: generateUuidV7(), entryDate: new Date().toISOString().split("T")[0] || "", entryTime: new Date().toTimeString().slice(0, 5),
+										doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач", doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Стоматолог-терапевт",
+										toothNumber: String(protocolGeneratorTooth || 11), subjectiveComplaints: patch.complaint || "", objectiveStatusLocalis: patch.objectiveStatus || "",
+										assessmentDiagnosisText: patch.diagnosis || "", assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
+										procedureProtocol: patch.treatmentPlan || "", homeCareRecommendations: patch.recommendations || "",
+									});
+									setIsProtocolGeneratorOpen(false);
+								}}
 							/>
-						</div>
-						{validation.missingFields.length > 0 && (
-							<div className="flex items-center gap-2 flex-wrap">
-								<span className="text-[11px] text-[var(--muted,#64748b)]">
-									Рекомендации: {validation.missingFields.map((m) => m.label).join(", ")}
-								</span>
-							</div>
 						)}
 					</div>
-
-					{/* Тело активной вкладки */}
-					<main className="emr-studio-body">
-						{activeTab === "overview" && (
-							<div className="emr-studio-preview-container flex flex-col items-center">
-								<div
-									className="emr-studio-a4-sheet print-paper-sheet pro-a4-physical-sheet"
-									data-paper-sheet="true"
-									data-preserve-white="true"
-									style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
-									dangerouslySetInnerHTML={{
-										__html: generateMedicalRecordPrintHtml(formData, {
-											isLocked: !effectiveIsDraft,
-											isDraft: effectiveIsDraft,
-											status: effectiveIsDraft ? "draft" : "signed",
-										}),
-									}}
-								/>
-							</div>
-						)}
-						{activeTab === "passport" && <RecordPassportTab formData={formData} ageText={ageText} onUpdatePassport={handleUpdatePassport} />}
-						{activeTab === "anamnesis" && <RecordAnamnesisTab formData={formData} onApplyNorm={handleApplyNorm} onUpdateAnamnesis={handleUpdateAnamnesis} />}
-						{activeTab === "odontogram" && <RecordOdontogramTab formData={formData} dmft={dmft} cpitn={cpitn} onApplyNorm={handleApplyNorm} />}
-						{activeTab === "diaries" && <RecordDiariesTab formData={formData} activeTooth={activeTooth} onOpenProtocolGenerator={onOpenProtocolGenerator} onOpenInternalProtocolGenerator={handleOpenProtocolGenerator} onAddDiary={handleAddDiary} onDeleteDiary={handleDeleteDiary} />}
-						{activeTab === "epicrisis" && <RecordEpicrisisTab formData={formData} />}
-					</main>
 
 					{/* Мобильная нижняя плашка в Natural Thumb Zone (Apple HIG) */}
 					<footer className="emr-studio-bottom-bar sm:hidden">
@@ -447,12 +437,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 );
 
 export const DEFAULT_CLINICAL_RECORD_DATA = DEFAULT_MEDICAL_CARD_DATA;
-/** @deprecated Используйте DEFAULT_MEDICAL_CARD_DATA («Медицинская карта приёма», Мандаты 8x/8ap) */
-export const DEFAULT_043_DATA = DEFAULT_MEDICAL_CARD_DATA;
 export type ClinicalRecordPrintModalProps = MedicalRecordStudioModalProps;
 export const ClinicalRecordPrintModal = MedicalRecordStudioModal;
-/** @deprecated Используйте MedicalRecordStudioModal («Медицинская карта приёма», Мандаты 8x/8ap) */
-export type Form043PrintModalProps = MedicalRecordStudioModalProps;
-export const Form043PrintModal = MedicalRecordStudioModal;
 
 export default MedicalRecordStudioModal;

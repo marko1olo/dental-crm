@@ -20,6 +20,10 @@ export const ScheduleMobileFilterChips: React.FC<ScheduleMobileFilterChipsProps>
   onSelectDoctor,
   onSelectChair,
 }) => {
+  if (doctors.length <= 1 && chairs.length <= 1) {
+    return null;
+  }
+
   return (
     <div className="schedule-mobile-chips-wrapper">
       <div className="schedule-mobile-chips-scroller">

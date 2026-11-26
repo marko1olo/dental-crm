@@ -9,10 +9,12 @@ import { AdministrativeViewRouter } from "./AdministrativeViewRouter";
 import { ManagementViewRouter } from "./ManagementViewRouter";
 import { GlobalDoctorPayrollModal } from "./GlobalDoctorPayrollModal";
 import { useAppStore } from "../../../store/appStore";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
+import { resolveClinicMode } from "../../../lib/clinicCapabilities";
+import { getVisibleRailViews, viewsHiddenByFeatureFlags } from "../../../workspaceShellModules/sidebarNavigationData";
 import {
 	type AppView,
 	getFallbackAppView,
-	getFilteredAppViews,
 	viewLabels,
 } from "../../../utils/routeUtils";
 import type { AppViewRouterProps } from "../types";
@@ -32,9 +34,14 @@ export function ViewRouterContainer(props: AppViewRouterProps) {
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const parsedUserRole = staffRoleSchema.safeParse(activeStaffUser?.role);
 	const effectiveRole = parsedUserRole.success ? parsedUserRole.data : selectedWorkspaceRole;
-	const allowedViews = getFilteredAppViews(effectiveRole);
+	const clinicMode = resolveClinicMode(dashboard?.clinicSettings?.profile?.mode);
+	const featureFlags = useWorkspaceProfile();
+	const hiddenByModules = viewsHiddenByFeatureFlags(featureFlags);
+	const allowedViews = getVisibleRailViews(effectiveRole, clinicMode).filter(
+		(v) => !hiddenByModules.includes(v),
+	);
 	const isAllowedView = allowedViews.includes(currentView as AppView);
-	const fallbackView = getFallbackAppView(effectiveRole);
+	const fallbackView = allowedViews[0] ?? getFallbackAppView(effectiveRole);
 
 	useEffect(() => {
 		if (!isAllowedView) {

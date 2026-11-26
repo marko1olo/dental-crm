@@ -75,10 +75,10 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 						onClick={() => {
 							if (!isRunningDropout) onRunDropoutPrevention();
 						}}
-						className="min-h-[44px] h-11 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1 touch-manipulation cursor-pointer"
+						className="min-h-[44px] h-11 px-3 rounded-xl border border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)] font-semibold text-xs flex items-center gap-1.5 touch-manipulation cursor-pointer"
 						title="Контроль отвала"
 					>
-						<ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+						<ShieldAlert className="w-4 h-4 shrink-0" />
 						<span>{dropoutRiskCount}</span>
 					</button>
 				)}

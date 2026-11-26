@@ -14,7 +14,6 @@ export {
 	DEFAULT_CLINICAL_RECORD_DATA,
 	type ClinicalRecordPrintModalProps,
 	ClinicalRecordPrintModal,
-	type Form043PrintModalProps,
 } from "./MedicalRecordStudioModal";
 export * from "./types/recordDataTypes";
 export * from "./types/recordConfigTypes";
@@ -28,9 +27,8 @@ export * from "./record/tabs/RecordOdontogramTab";
 export * from "./record/tabs/RecordDiariesTab";
 export * from "./record/tabs/RecordEpicrisisTab";
 
-// Обратная совместимость имен компонентов
+// Алиасы клинического домена
 export {
-	MedicalRecordStudioModal as Form043PrintModal,
 	MedicalRecordStudioModal as ClinicalDiaryPrintModal,
 	MedicalRecordStudioModal as MedicalCardPrintModal,
 } from "./MedicalRecordStudioModal";

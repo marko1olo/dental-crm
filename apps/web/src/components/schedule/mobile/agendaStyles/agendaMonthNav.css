@@ -16,21 +16,33 @@
   position: relative;
 }
 
-/* Weekly Header Strip (Month + Nav) */
+/* Weekly Header Strip (Month + Nav + View Segmented) */
 .schedule-mobile-month-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 12px;
+  gap: 6px;
+  padding: 6px 8px;
   background: var(--paper, #ffffff);
   border-bottom: 1px solid var(--line-subtle, #f1f5f9);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.schedule-mobile-month-cluster {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
 }
 
 .schedule-mobile-month-title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--ink, #0f172a);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  padding: 0 2px;
 }
 
 .schedule-mobile-nav-buttons {
@@ -49,34 +61,36 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line, #e2e8f0);
-  background: var(--paper-soft, #f8fafc);
+  background: var(--paper, #ffffff);
   color: var(--ink, #0f172a);
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
 .schedule-mobile-nav-btn:hover {
-  background: var(--paper, #ffffff);
-  border-color: var(--teal, #0d9488);
-  color: var(--teal, #0d9488);
+  background: var(--paper-soft, #f8fafc);
+  border-color: var(--primary, var(--teal, #0d9488));
+  color: var(--primary, var(--teal, #0d9488));
 }
 
 .schedule-mobile-today-chip {
   min-height: 44px;
-  padding: 0 12px;
-  font-size: 13px;
+  padding: 0 10px;
+  font-size: 12px;
   font-weight: 600;
   border-radius: 12px;
   border: 1px solid var(--line, #e2e8f0);
-  background: var(--paper-soft, #f8fafc);
+  background: var(--paper, #ffffff);
   color: var(--ink, #0f172a);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .schedule-mobile-today-chip:hover {
-  border-color: var(--teal, #0d9488);
-  color: var(--teal, #0d9488);
+  border-color: var(--primary, var(--teal, #0d9488));
+  color: var(--primary, var(--teal, #0d9488));
 }

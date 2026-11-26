@@ -13,10 +13,10 @@ import {
 export interface UseClinicalCatalogModalStateProps {
 	isOpen: boolean;
 	onClose: () => void;
-	activeTooth?: number | null;
+	activeTooth?: number | null | undefined;
 	onApplyPatch: (patch: VisitNoteFieldsPatch, successMessage: string) => void;
-	currentNoteForm?: Record<string, unknown>;
-	initialSpecialty?: SpecialtyCategoryKey;
+	currentNoteForm?: Record<string, unknown> | undefined;
+	initialSpecialty?: SpecialtyCategoryKey | undefined;
 }
 
 export function useClinicalCatalogModalState({

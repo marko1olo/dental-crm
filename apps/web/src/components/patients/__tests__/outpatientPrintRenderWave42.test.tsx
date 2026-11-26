@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { Form043PrintModal } from "../../emr/MedicalRecordStudioModal.js";
+import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal.js";
 import { DEFAULT_MEDICAL_CARD_DATA } from "../../emr/medicalCardCatalogData.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -41,9 +41,9 @@ describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 		assert.strictEqual(hasCartoonEmojis(consentSource), false);
 	});
 
-	it("1.7. renders Form043PrintModal with non-disabled print button and draft badge", () => {
+	it("1.7. renders MedicalRecordStudioModal with non-disabled print button and draft badge", () => {
 		const html = renderToString(
-			React.createElement(Form043PrintModal, {
+			React.createElement(MedicalRecordStudioModal, {
 				isOpen: true,
 				onClose: () => {},
 				initialData: { passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, patientFullName: "Кузнецов Д. И." } },
@@ -63,9 +63,9 @@ describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 		);
 	});
 
-	it("1.8. renders Form043PrintModal with signed status badge when closed", () => {
+	it("1.8. renders MedicalRecordStudioModal with signed status badge when closed", () => {
 		const html = renderToString(
-			React.createElement(Form043PrintModal, {
+			React.createElement(MedicalRecordStudioModal, {
 				isOpen: true,
 				onClose: () => {},
 				initialData: { passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, patientFullName: "Кузнецов Д. И." } },

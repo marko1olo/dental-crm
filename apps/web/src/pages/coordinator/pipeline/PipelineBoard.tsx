@@ -85,9 +85,6 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 					<button
 						type="button"
 						onClick={() => {
-							if (typeof window !== "undefined") {
-								window.location.hash = "#/patients";
-							}
 							onCreateNewPlan?.();
 						}}
 						className="primary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-4 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
