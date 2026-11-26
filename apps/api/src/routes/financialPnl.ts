@@ -10,6 +10,7 @@ import {
 	type CalculateManagerialPnlInput,
 	calculateManagerialPnl,
 	kopecksToRubles,
+	classifyPaymentFlowRecord,
 	rublesToKopecks,
 	splitKopecks,
 } from "@dental/shared";
@@ -17,7 +18,6 @@ import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireExecutiveAccess } from "./analytics/executiveAccessGuard.js";
-import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	clinicTimeZone,
@@ -27,8 +27,6 @@ import { doctorPayrollReport } from "../services/reports/managerReports/financia
 import { CALENDAR_DATE_PATTERN, resolvePeriodBoundary } from "./reports/reportsShared.js";
 import {
 	appointments,
-	cashBoxes,
-	cashExpenseReasons,
 	cashOperations,
 	chairs,
 	clinics,
@@ -37,7 +35,6 @@ import {
 	payments,
 	services,
 	treatmentItems,
-	visits,
 } from "../db/schema.js";
 
 const periodBoundarySchema = z.union([
@@ -48,7 +45,52 @@ const periodBoundarySchema = z.union([
 const pnlQuerySchema = z.object({
 	from: periodBoundarySchema.optional(),
 	to: periodBoundarySchema.optional(),
-});
+}).strict();
+
+type PnlCashBoxType = "main" | "extra" | "cashless" | "dms" | "account" | "expenses";
+
+function resolveSplitTenderTenders(
+	method: string,
+	fiscalReceipt: unknown,
+	absPaymentKop: number,
+): Array<{ cashBoxType: PnlCashBoxType; kopecks: number }> {
+	if (method === "cash") return [{ cashBoxType: "main", kopecks: absPaymentKop }];
+	if (method === "insurance") return [{ cashBoxType: "dms", kopecks: absPaymentKop }];
+	if (method === "bank_transfer") return [{ cashBoxType: "account", kopecks: absPaymentKop }];
+	if (
+		method === "deposit" ||
+		method === "family_wallet" ||
+		method === "advance" ||
+		method === "certificate" ||
+		method === "other"
+	) {
+		return [{ cashBoxType: "extra", kopecks: absPaymentKop }];
+	}
+	if (method !== "split" || !fiscalReceipt || typeof fiscalReceipt !== "object") {
+		return [{ cashBoxType: "cashless", kopecks: absPaymentKop }];
+	}
+
+	const receipt = fiscalReceipt as Record<string, unknown>;
+	const toNonNegInt = (val: unknown): number => {
+		const n = Number(val ?? 0);
+		return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+	};
+	const cashKop = toNonNegInt(receipt.cashKopecks);
+	const sbpKop = toNonNegInt(receipt.sbpKopecks);
+	const advanceKop = toNonNegInt(receipt.advanceOffsetKopecks ?? receipt.depositKopecks);
+	const dmsKop = toNonNegInt(receipt.dmsKopecks);
+	const explicitCardKop = receipt.cardKopecks != null || receipt.electronicKopecks != null
+		? toNonNegInt(receipt.cardKopecks ?? receipt.electronicKopecks)
+		: Math.max(0, absPaymentKop - cashKop - sbpKop - advanceKop - dmsKop);
+	const cashlessKop = explicitCardKop + sbpKop;
+
+	const parts: Array<{ cashBoxType: PnlCashBoxType; kopecks: number }> = [];
+	if (cashKop > 0) parts.push({ cashBoxType: "main", kopecks: cashKop });
+	if (cashlessKop > 0) parts.push({ cashBoxType: "cashless", kopecks: cashlessKop });
+	if (advanceKop > 0) parts.push({ cashBoxType: "extra", kopecks: advanceKop });
+	if (dmsKop > 0) parts.push({ cashBoxType: "dms", kopecks: dmsKop });
+	return parts.length > 0 ? parts : [{ cashBoxType: "cashless", kopecks: absPaymentKop }];
+}
 
 export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 	/**
@@ -67,36 +109,39 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const orgTimeZone = await clinicTimeZone(orgId);
-		const defaultPeriod = currentMonthPeriod(new Date(), orgTimeZone);
-		const fromDate = parsed.data.from
-			? resolvePeriodBoundary(parsed.data.from, "from", orgTimeZone) ?? defaultPeriod.from
-			: defaultPeriod.from;
-		const toDate = parsed.data.to
-			? resolvePeriodBoundary(parsed.data.to, "to", orgTimeZone) ?? defaultPeriod.to
-			: defaultPeriod.to;
-
-		const fromDateStr = parsed.data.from && CALENDAR_DATE_PATTERN.test(parsed.data.from)
-			? parsed.data.from
-			: fromDate.toISOString().slice(0, 10);
-		const toDateStr = parsed.data.to && CALENDAR_DATE_PATTERN.test(parsed.data.to)
-			? parsed.data.to
-			: toDate.toISOString().slice(0, 10);
-
 		return withTenantCtx(orgId, async (tx) => {
+			const orgTimeZone = await clinicTimeZone(orgId, tx);
+			const defaultPeriod = currentMonthPeriod(new Date(), orgTimeZone);
+			const fromDate = parsed.data.from
+				? resolvePeriodBoundary(parsed.data.from, "from", orgTimeZone) ?? defaultPeriod.from
+				: defaultPeriod.from;
+			const toDate = parsed.data.to
+				? resolvePeriodBoundary(parsed.data.to, "to", orgTimeZone) ?? defaultPeriod.to
+				: defaultPeriod.to;
+
+			const fromDateStr = parsed.data.from && CALENDAR_DATE_PATTERN.test(parsed.data.from)
+				? parsed.data.from
+				: fromDate.toISOString().slice(0, 10);
+			const toDateStr = parsed.data.to && CALENDAR_DATE_PATTERN.test(parsed.data.to)
+				? parsed.data.to
+				: toDate.toISOString().slice(0, 10);
+
 			const [clinic] = await tx
 				.select({ name: clinics.name })
 				.from(clinics)
 				.where(eq(clinics.organizationId, orgId))
 				.limit(1);
 
-			// 1. Получаем все оплаченные платежи за период
+			// 1. Получаем все оплаченные и возвращенные платежи за период, исключая аннулированные счета
+			const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
 			const periodPayments = await tx
 				.select({
 					id: payments.id,
 					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 					method: payments.method,
+					status: payments.status,
+					fiscalReceipt: payments.fiscalReceipt,
 					visitId: payments.visitId,
 					paidAt: payments.paidAt,
 				})
@@ -104,9 +149,10 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
-						eq(payments.status, "paid"),
-						gte(payments.paidAt, fromDate),
-						lte(payments.paidAt, toDate),
+						inArray(payments.status, ["paid", "refunded"]),
+						gte(paymentTimestamp, fromDate),
+						lte(paymentTimestamp, toDate),
+						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 					),
 				);
 
@@ -119,18 +165,22 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 				),
 			);
 
-			let visitItems: Array<{
+			let visitItemsRaw: Array<{
 				visitId: string | null;
 				category: string | null;
-				priceKopecks: number;
+				priceKopecks: number | bigint | null;
+				priceRub: number | string | null;
+				discountKopecks: number | bigint | null;
 			}> = [];
 
 			if (periodVisitIds.length > 0) {
-				visitItems = await tx
+				visitItemsRaw = await tx
 					.select({
 						visitId: treatmentItems.visitId,
 						category: services.category,
-						priceKopecks: sql<number>`coalesce(nullif(${treatmentItems.priceKopecks}, 0), round(${treatmentItems.priceRub} * 100)::bigint)::bigint`,
+						priceKopecks: treatmentItems.priceKopecks,
+						priceRub: treatmentItems.priceRub,
+						discountKopecks: treatmentItems.discountKopecks,
 					})
 					.from(treatmentItems)
 					.innerJoin(services, eq(services.id, treatmentItems.serviceId))
@@ -144,78 +194,99 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 
 			// Группируем услуги по визитам для предотвращения category clobbering
 			const visitItemsMap = new Map<string, Array<{ category: string; priceKopecks: number }>>();
-			for (const vi of visitItems) {
+			for (const vi of visitItemsRaw) {
 				if (vi.visitId && vi.category) {
 					let cat = vi.category;
 					if (cat === "pediatric_dentistry") cat = "pediatric";
 					if (cat === "preventive") cat = "hygiene";
 
+					const grossKop =
+						vi.priceKopecks != null && Number(vi.priceKopecks) !== 0
+							? Number(vi.priceKopecks)
+							: rublesToKopecks(Number(vi.priceRub ?? 0));
+					const netKop = Math.max(0, grossKop - Number(vi.discountKopecks ?? 0));
+
 					const list = visitItemsMap.get(vi.visitId) || [];
-					list.push({ category: cat, priceKopecks: Number(vi.priceKopecks || 0) });
+					list.push({ category: cat, priceKopecks: netKop });
 					visitItemsMap.set(vi.visitId, list);
 				}
 			}
 
-			// Определяем тип кассового счета и пропорционально атрибутируем платеж по направлениям
+			// Определяем тип кассового счета, распаковываем split-чеки, сальдируем возвраты
+			const aggregatedPaymentBuckets = new Map<
+				string,
+				{ department: string; cashBoxType: PnlCashBoxType; netKopecks: number }
+			>();
+			const addBucketKopecks = (department: string, cashBoxType: PnlCashBoxType, signedKop: number) => {
+				if (signedKop === 0) return;
+				const key = `${department}::${cashBoxType}`;
+				const existing = aggregatedPaymentBuckets.get(key);
+				if (existing) {
+					existing.netKopecks += signedKop;
+				} else {
+					aggregatedPaymentBuckets.set(key, { department, cashBoxType, netKopecks: signedKop });
+				}
+			};
+
+			for (const p of periodPayments) {
+				const flow = classifyPaymentFlowRecord(p, "flow");
+				if (flow.kind === "ignored") continue;
+				const absPaymentKop = Number(flow.absKopecks);
+				const sign = flow.kind === "refund" ? -1 : 1;
+				const tenders = resolveSplitTenderTenders(p.method, p.fiscalReceipt, absPaymentKop);
+				const items = p.visitId ? visitItemsMap.get(p.visitId) : undefined;
+
+				for (const tender of tenders) {
+					const totalSignedKop = sign * tender.kopecks;
+					if (items && items.length > 0) {
+						const catTotalsKop = new Map<string, number>();
+						let sumPricesKop = 0;
+						for (const it of items) {
+							catTotalsKop.set(it.category, (catTotalsKop.get(it.category) || 0) + it.priceKopecks);
+							sumPricesKop += it.priceKopecks;
+						}
+
+						if (sumPricesKop > 0) {
+							let allocatedKop = 0;
+							const entries = Array.from(catTotalsKop.entries());
+							for (let i = 0; i < entries.length; i++) {
+								const entry = entries[i];
+								if (!entry) continue;
+								const [cat, catPriceKop] = entry;
+								const isLast = i === entries.length - 1;
+								const catKop = isLast
+									? totalSignedKop - allocatedKop
+									: Math.round((totalSignedKop * catPriceKop) / sumPricesKop);
+								allocatedKop += catKop;
+								addBucketKopecks(cat, tender.cashBoxType, catKop);
+							}
+						} else {
+							const categories = Array.from(catTotalsKop.keys());
+							const splitParts = splitKopecks(Math.abs(totalSignedKop), categories.length);
+							for (let i = 0; i < categories.length; i++) {
+								const cat = categories[i];
+								const catKop = splitParts[i];
+								if (cat === undefined || catKop === undefined) continue;
+								addBucketKopecks(cat, tender.cashBoxType, sign * catKop);
+							}
+						}
+					} else {
+						addBucketKopecks("unassigned", tender.cashBoxType, totalSignedKop);
+					}
+				}
+			}
+
 			const paymentRows: Array<{
 				amountRub: number;
 				department: string;
-				cashBoxType: "main" | "extra" | "cashless" | "dms" | "account" | "expenses";
+				cashBoxType: PnlCashBoxType;
 			}> = [];
-
-			for (const p of periodPayments) {
-				let boxType: "main" | "extra" | "cashless" | "dms" | "account" | "expenses" = "cashless";
-				if (p.method === "cash") boxType = "main";
-				else if (p.method === "insurance") boxType = "dms";
-				else if (p.method === "bank_transfer") boxType = "account";
-
-				const items = p.visitId ? visitItemsMap.get(p.visitId) : undefined;
-				if (items && items.length > 0) {
-					const catTotalsKop = new Map<string, number>();
-					let sumPricesKop = 0;
-					for (const it of items) {
-						const itPriceKop = it.priceKopecks;
-						catTotalsKop.set(it.category, (catTotalsKop.get(it.category) || 0) + itPriceKop);
-						sumPricesKop += itPriceKop;
-					}
-
-					const totalPaymentKop = p.amountKopecks != null ? Number(p.amountKopecks) : rublesToKopecks(p.amountRub);
-					if (sumPricesKop > 0) {
-						let allocatedKop = 0;
-						const entries = Array.from(catTotalsKop.entries());
-						for (let i = 0; i < entries.length; i++) {
-							const entry = entries[i];
-							if (!entry) continue;
-							const [cat, catPriceKop] = entry;
-							const isLast = i === entries.length - 1;
-							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round((totalPaymentKop * catPriceKop) / sumPricesKop);
-							allocatedKop += catKop;
-							paymentRows.push({
-								amountRub: kopecksToRubles(catKop),
-								department: cat,
-								cashBoxType: boxType,
-							});
-						}
-					} else {
-						const categories = Array.from(catTotalsKop.keys());
-						const count = categories.length;
-						const splitParts = splitKopecks(totalPaymentKop, count);
-						for (let i = 0; i < count; i++) {
-							const cat = categories[i];
-							const catKop = splitParts[i];
-							if (cat === undefined || catKop === undefined) continue;
-							paymentRows.push({
-								amountRub: kopecksToRubles(catKop),
-								department: cat,
-								cashBoxType: boxType,
-							});
-						}
-					}
-				} else {
+			for (const bucket of aggregatedPaymentBuckets.values()) {
+				if (bucket.netKopecks > 0) {
 					paymentRows.push({
-						amountRub: p.amountKopecks != null ? kopecksToRubles(Number(p.amountKopecks)) : p.amountRub,
-						department: "unassigned",
-						cashBoxType: boxType,
+						amountRub: kopecksToRubles(bucket.netKopecks),
+						department: bucket.department,
+						cashBoxType: bucket.cashBoxType,
 					});
 				}
 			}
@@ -369,9 +440,11 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 						organizationId: orgId,
 						from: fromDate,
 						to: toDate,
+						timeZone: orgTimeZone,
 					},
 					undefined,
 					req.log,
+					tx,
 				);
 				doctorPieceRatePayrollRub = Number(doctorPayroll?.totals?.totalClinicPayrollRub || doctorPayroll?.totals?.totalPayoutRub || 0);
 			} catch (err) {

@@ -28,6 +28,7 @@ export * from "./cashFlowCatalogs.js";
 export * from "./cashFlowCategories.js";
 export * from "./treatmentBudgetEngine.js";
 export * from "./accountingExportEngine.js";
+export * from "./paymentRefundNormalization.js";
 export {
 	clinicOperatingExpenseCategorySchema,
 	type ClinicOperatingExpenseCategory,

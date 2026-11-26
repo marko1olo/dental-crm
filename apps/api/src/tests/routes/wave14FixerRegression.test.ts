@@ -30,7 +30,6 @@ describe("Wave 14 Fixer Surgeon Regression Guard", () => {
 		const fakeItem: typeof import("../../db/schema.js").inventoryItems.$inferSelect = {
 			id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 			organizationId: ORG_A,
-			clinicId: null,
 			name: "Ультракаин Д-С форте",
 			category: "anesthesia",
 			sku: "ULT-01",
@@ -44,10 +43,11 @@ describe("Wave 14 Fixer Surgeon Regression Guard", () => {
 			unitCostRub: "420.50",
 			pricePerUnitKopecks: 42050n,
 			unitCostKopecks: 42050n,
+			notes: null,
 			lotNumber: "LOT-2026",
 			expirationDate: "2027-06-01",
 			barcode: "4600000000012",
-			storageZone: null,
+			isOverhead: false,
 			createdAt: new Date("2026-01-01T00:00:00Z"),
 			updatedAt: new Date("2026-01-01T00:00:00Z"),
 		};

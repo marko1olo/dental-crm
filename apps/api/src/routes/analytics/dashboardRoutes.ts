@@ -2,11 +2,13 @@ import { and, eq, gte, inArray, lte, sql, type Column } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import {
-	requireClinicalReadAccess,
-	requireResolvedOrganizationId,
-} from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
+import {
+	isIncomePaymentRowSql,
+	paymentAbsKopecksSql,
+	paymentFlowSignSql,
+	paymentSignedFlowKopecksSql,
+} from "../../db/paymentRefundSql.js";
 import {
 	appointments,
 	patients,
@@ -24,7 +26,8 @@ import {
 	currentMonthPeriod,
 } from "../../services/reports/managerReports.js";
 import { resolvePeriod } from "../reports/reportsShared.js";
-import { calculateCohortLtv } from "./cohortRoutes.js";
+import { calculateCohortLtv } from "./cohortLtvCalculator.js";
+import { requireExecutiveAccess } from "./executiveAccessGuard.js";
 import type { TierKey } from "./types.js";
 import {
 	calculateChairUtilization,
@@ -49,18 +52,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 		// Типизация это не ловит — сравнение typeof у boolean легально.
 		// Теперь два шага явно разделены: гейт по секрету и получение арендатора
 		// из подписанного токена.
-		const readAllowed = await requireClinicalReadAccess(
-			request,
-			reply,
-			"analytics dashboard",
-		);
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"analytics dashboard",
-		);
+		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
 		const queryParse = dashboardQuerySchema.safeParse(request.query ?? {});
@@ -76,9 +68,6 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 
 		try {
 			const { range, branchId } = queryParse.data;
-			const timeZone = await clinicTimeZone(orgId);
-			let startDate: Date | undefined;
-
 			const now = new Date();
 			let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
 			if (range === "today") mappedPeriod = "day";
@@ -87,87 +76,33 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			else if (range === "quarter" || range === "last_3_months") mappedPeriod = "quarter";
 			else if (range === "year" || range === "this_year") mappedPeriod = "year";
 
-			if (mappedPeriod) {
-				const periodRes = resolvePeriod({ period: mappedPeriod }, timeZone);
-				if (periodRes.ok) {
-					startDate = periodRes.from;
-				}
-			} else if (range === "last_month") {
-				const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
-				const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
-				startDate = prevMonth.from;
-			}
-
-			const withDate = (orgCol: Column, dateCol?: Column) =>
-				startDate && dateCol
-					? and(eq(orgCol, orgId), gte(dateCol, startDate))
-					: eq(orgCol, orgId);
-
-			/*
-			 * 1. ВОРОНКА ПЛАНОВ ЛЕЧЕНИЯ. ЗДЕСЬ СЧИТАЛИСЬ ПРИЁМЫ.
-			 *
-			 * Поле называется `planFunnelJson`, экран рисует его под заголовком
-			 * «Воронка планов лечения» и подписывает числа склонением «план / плана /
-			 * планов» (`AnalyticsDashboardView.tsx:412` и `:66-69`), а расчёт брал
-			 * `appointments.status` — четыре ветви `planned / confirmed / completed /
-			 * cancelled` под подписями «Запланированы, Подтверждены, Завершены,
-			 * Отменены». Планов лечения он не касался вовсе.
-			 *
-			 * ЗАМЕРЕНО на живой базе 2026-07-29 (демонстрационная клиника
-			 * `d0000000-…-d001`: 27 приёмов, НОЛЬ планов лечения):
-			 *   [{Запланированы 8}, {Подтверждены 2}, {Завершены 13}, {Отменены 4}],
-			 *   сумма 27 — ровно `kpis.totalAppointments`.
-			 * То есть владельцу клиники предъявлялось 27 «планов лечения», из них 13
-			 * «завершённых», при полном отсутствии планов. Пустое состояние виджета
-			 * («Планов лечения ещё нет. Составьте план в карточке пациента») не
-			 * показывалось НИКОГДА, пока в клинике есть хоть один приём: указание,
-			 * которое оператору и надо было выполнить, оказалось недостижимо.
-			 *
-			 * ВТОРАЯ ПОЛОВИНА ДЕФЕКТА — ветка `else`. Карта знала четыре статуса приёма
-			 * из семи (`appointment_status`: planned, confirmed, arrived, in_treatment,
-			 * completed, cancelled, no_show), а незнакомые молча прибавлялись к
-			 * «Запланированы»: в том же замере 8 = 5 `planned` + 3 `no_show`, то есть
-			 * три НЕЯВИВШИХСЯ пациента предъявлялись как приёмы, которые ещё
-			 * состоятся. `st.toLowerCase()` был заряженным ружьём рядом: регистр
-			 * совпадал случайно — `appointment_status` в базе строчный, в отличие от
-			 * `treatment_plan_status`, — и в день смены регистра перечисления все семь
-			 * статусов ушли бы в ту же ветку `else` одной строкой «Запланированы».
-			 *
-			 * ПОЧЕМУ ВЫБРАНЫ ПЛАНЫ, А НЕ ПЕРЕИМЕНОВАНИЕ ПОЛЯ В «воронку приёмов».
-			 * Решает то, что видит оператор: заголовок, пустое состояние, указание
-			 * «составьте план в карточке пациента» и единица измерения в подсказке —
-			 * всё это про планы лечения, и на том же экране приёмы показаны уже дважды
-			 * (плитка «Приёмов за период» и «Загруженность кресел» со своим склонением
-			 * «приём / приёма / приёмов»). Плюс состояние `Rejected` — отказ пациента
-			 * от сметы — среди статусов приёма не имеет соответствия вовсе, а это
-			 * единственное место в продукте, где владелец видит, продаётся ли смета.
-			 * И колонка снимка `plan_funnel_json` теперь считается по планам у обоих
-			 * писателей (d1ff7ab21): оставить здесь приёмы значило бы дать одному имени
-			 * поля два разных смысла в одном продукте.
-			 *
-			 * АРЕНДАТОР — из `treatment_plans.organization_id`, собственной колонки
-			 * таблицы, как у всех остальных запросов этого файла и как в
-			 * `services/biAnalyticsWorker.ts`. Колонка `NOT NULL` с миграции 0146,
-			 * поэтому план не может выпасть из воронки из-за отсутствия арендатора.
-			 * `scripts/cronAnalyticsWorker.ts` идёт к организации соединением с
-			 * `patients` — это ДРУГОЕ правило: план, чей пациент заведён в соседней
-			 * клинике, уходит по нему к соседям и исчезает из своей воронки, а сумма
-			 * ветвей перестаёт сходиться с числом планов. Расхождение оставлено как
-			 * есть и не приведено к единому виду тихой правкой: это вопрос правила
-			 * аренды, а не оформления, и файл воркера принадлежит другой задаче.
-			 *
-			 * ПЕРИОД — по `createdAt` плана, как у всех виджетов этого экрана
-			 * (приёмы по `startsAt`, платежи и пациенты по `createdAt`). Даты смены
-			 * состояния в схеме нет (есть только `approvedAt`), поэтому иначе воронка
-			 * перестала бы слушаться переключателя периода.
-			 */
-			// 4. Cohort LTV — payments grouped by patient creation month (строгий учет таймзоны клиники)
-			const { cohortLtvJson, cohortZone } = await calculateCohortLtv(
-				orgId,
-				now,
-			);
-
 			const data = await withTenantCtx(orgId, async (tx) => {
+				const timeZone = await clinicTimeZone(orgId, tx);
+				let startDate: Date | undefined;
+
+				if (mappedPeriod) {
+					const periodRes = resolvePeriod({ period: mappedPeriod }, timeZone);
+					if (periodRes.ok) {
+						startDate = periodRes.from;
+					}
+				} else if (range === "last_month") {
+					const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+					const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
+					startDate = prevMonth.from;
+				}
+
+				const withDate = (orgCol: Column, dateCol?: Column) =>
+					startDate && dateCol
+						? and(eq(orgCol, orgId), gte(dateCol, startDate))
+						: eq(orgCol, orgId);
+
+				// 4. Cohort LTV — payments grouped by patient creation month (строгий учет таймзоны клиники)
+				const { cohortLtvJson, cohortZone } = await calculateCohortLtv(
+					orgId,
+					now,
+					tx,
+				);
+
 				const planCounts = await tx
 					.select({
 						status: treatmentPlans.status,
@@ -200,11 +135,12 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			const doctorProfitabilityJson = await calculateDoctorProfitability(
 				orgId,
 				startDate,
+				tx,
 			);
 
 			// 3. Chair Utilization (% времени в кресле от доступного рабочего времени смены)
 			const { chairUtilizationJson, chairOccupancyRate } =
-				await calculateChairUtilization(orgId, startDate, now, branchId);
+				await calculateChairUtilization(orgId, startDate, now, branchId, tx);
 
 			const [patientCountRow] = await tx
 				.select({ count: sql<number>`count(*)` })
@@ -216,19 +152,25 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			// 2) Распаковка комбинированных сплит-чеков ('split') по тендерам (касса, карты, СБП, аванс, ДМС)
 			// 3) Строгая сходимость сумм всех тендеров с totalKopecks
 			// 4) Прямое чтение целочисленных копеек coalesce(amountKopecks, round(amountRub * 100))
-			const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
-			const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
-			const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
+			const absPaymentKopExpr = paymentAbsKopecksSql();
+			const signExpr = paymentFlowSignSql();
+			const signedFlowKopExpr = paymentSignedFlowKopecksSql();
+			const incomePaymentPred = isIncomePaymentRowSql();
 			const methodText = sql`${payments.method}::text`;
+			const splitCashKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0))`;
+			const splitSbpKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0))`;
+			const splitAdvanceKopExpr = sql`abs(coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0))`;
+			const splitDmsKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))`;
+			const splitCardKopExpr = sql`coalesce(abs(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint)), greatest(0, ${absPaymentKopExpr} - ${splitCashKopExpr} - ${splitSbpKopExpr} - ${splitAdvanceKopExpr} - ${splitDmsKopExpr}), 0)`;
 			const [revenueRow] = await tx
 				.select({
-					totalKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -${absPaymentKopExpr} else 0 end)::bigint, 0)`,
-					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'card' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${absPaymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) else 0 end)), 0)::bigint`,
-					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('deposit', 'family_wallet', 'advance', 'other') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
-					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					totalKopecks: sql<number>`coalesce(sum(${signedFlowKopExpr})::bigint, 0)`,
+					cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitCashKopExpr} else 0 end)), 0)::bigint`,
+					cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'card' then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitCardKopExpr} else 0 end)), 0)::bigint`,
+					advanceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('deposit', 'family_wallet', 'advance', 'other') then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitAdvanceKopExpr} else 0 end)), 0)::bigint`,
+					sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitSbpKopExpr} else 0 end)), 0)::bigint`,
 					bankTransferKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'bank_transfer' then ${absPaymentKopExpr} else 0 end)), 0)::bigint`,
-					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'insurance' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
+					insuranceKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'insurance' then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitDmsKopExpr} else 0 end)), 0)::bigint`,
 				})
 				.from(payments)
 				// [ANL-02] Только фактически полученные деньги: чистый приход минус возвраты по фактическому времени проведения платежа, исключая аннулированные счета
@@ -253,7 +195,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						eq(payments.organizationId, orgId),
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
 						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
-						eq(payments.status, "paid"),
+						incomePaymentPred,
 						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 					),
 				);
@@ -268,7 +210,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 						eq(payments.organizationId, orgId),
 						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
 						lte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, now),
-						eq(payments.status, "paid"),
+						incomePaymentPred,
 						sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 						startDate
 							? sql`(${patients.createdAt} < ${startDate} or exists (select 1 from appointments a where a.patient_id = ${payments.patientId} and a.organization_id = ${orgId} and a.starts_at < ${startDate}))`
@@ -307,7 +249,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				.where(
 					and(
 						withDate(appointments.organizationId, appointments.startsAt),
-						sql`(${appointments.reason} ilike '%конс%' or ${appointments.reason} ilike '%первич%' or not exists (select 1 from appointments a2 where a2.patient_id = ${appointments.patientId} and a2.status = 'completed' and a2.starts_at < ${appointments.startsAt}))`,
+						sql`(${appointments.reason} ilike '%конс%' or ${appointments.reason} ilike '%первич%' or not exists (select 1 from appointments a2 where a2.patient_id = ${appointments.patientId} and a2.organization_id = ${orgId} and a2.status = 'completed' and a2.starts_at < ${appointments.startsAt}))`,
 					),
 				);
 
@@ -428,6 +370,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				orgId,
 				startDate,
 				cohortZone,
+				tx,
 			);
 
 			const totalPayingPatients = Number(payingPatientRow?.count ?? 0);

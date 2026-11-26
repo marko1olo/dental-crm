@@ -1,9 +1,9 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import {
+	classifyPaymentFlowRecord,
 	type OneCChartOfAccounts,
 	type OneCClinicProfile,
 	type OneCPaymentBreakdownItem,
-	rublesToKopecks,
 } from "@dental/shared";
 import type { TenantDb } from "../../../../db/rls.js";
 import { payments } from "../../../../db/schema.js";
@@ -30,36 +30,45 @@ export async function fetchAndReconcilePayments(
 		.select({
 			id: payments.id,
 			method: payments.method,
+			status: payments.status,
 			amountRub: payments.amountRub,
 			amountKopecks: payments.amountKopecks,
+			fiscalReceipt: payments.fiscalReceipt,
 		})
 		.from(payments)
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
+				inArray(payments.status, ["paid", "refunded"]),
 				gte(payments.paidAt, startTimestamp),
 				lte(payments.paidAt, endTimestamp),
 			),
 		);
 
-	let cashKop = 0;
-	let acquiringKop = 0;
-	let sbpKop = 0;
-	let advanceKop = 0;
+	let cashKopBig = 0n;
+	let acquiringKopBig = 0n;
+	let sbpKopBig = 0n;
+	let advanceKopBig = 0n;
 
 	for (const p of paymentRows) {
-		const kop = p.amountKopecks != null ? Number(p.amountKopecks) : 0;
-		const amountKop = kop !== 0 ? kop : rublesToKopecks(Number(p.amountRub) || 0);
+		const flow = classifyPaymentFlowRecord(p, "flow");
+		if (flow.kind === "ignored") continue;
+		const signedKopBig = flow.signedKopecks;
 		if (p.method === "cash") {
-			cashKop += amountKop;
+			cashKopBig += signedKopBig;
 		} else if (p.method === "card") {
-			acquiringKop += amountKop;
+			acquiringKopBig += signedKopBig;
 		} else if (p.method === "bank_transfer" || p.method === "online") {
-			sbpKop += amountKop;
+			sbpKopBig += signedKopBig;
 		} else {
-			advanceKop += amountKop;
+			advanceKopBig += signedKopBig;
 		}
 	}
+
+	const cashKop = Number(cashKopBig);
+	const acquiringKop = Number(acquiringKopBig);
+	const sbpKop = Number(sbpKopBig);
+	const advanceKop = Number(advanceKopBig);
 
 	const breakdowns: OneCPaymentBreakdownItem[] = [];
 

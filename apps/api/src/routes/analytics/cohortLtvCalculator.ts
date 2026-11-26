@@ -1,6 +1,10 @@
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
-import { kopecksToRubles, sumKopecks, toExactKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../db/rls.js";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import {
+	paymentSignedExactFlowKopecksSql,
+	paymentSignedLegacyFlowRubSql,
+} from "../../db/paymentRefundSql.js";
 import { patients, payments } from "../../db/schema.js";
 import {
 	clinicTimeZone,
@@ -24,20 +28,20 @@ export interface CohortCalculationResult {
 export async function calculateCohortLtv(
 	orgId: string,
 	now: Date = new Date(),
+	executor?: TenantDb,
 ): Promise<CohortCalculationResult> {
 	const ltvStartDate = new Date(now);
 	ltvStartDate.setMonth(ltvStartDate.getMonth() - 12);
 
-	const cohortZone = await postgresKnowsTimeZone(await clinicTimeZone(orgId));
-	const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
+	const runInTx = async (tx: TenantDb) => {
+		const cohortZone = await postgresKnowsTimeZone(
+			await clinicTimeZone(orgId, tx),
+			tx,
+		);
+		const cohortMonthBucket = sql`date_trunc('month', ${inClinicZone(patients.createdAt, cohortZone)})`;
+		const monthOffsetExpr = sql<number>`greatest(0, (date_part('year', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})) * 12 + date_part('month', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})))::int)`;
 
-	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
-
-	// 1. Пациенты по когортам & 2. Платежи пациентов когорт под RLS-контекстом клиники
-	const monthOffsetExpr = sql<number>`greatest(0, (date_part('year', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})) * 12 + date_part('month', age(coalesce(${payments.paidAt}, ${payments.createdAt}), ${patients.createdAt})))::int)`;
-
-	const [cohortPatientsRaw, cohortPaymentsRaw] = await withTenantCtx(orgId, async (tx) =>
-		Promise.all([
+		const [cohortPatientsRaw, cohortPaymentsRaw] = await Promise.all([
 			tx
 				.select({
 					cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
@@ -56,7 +60,8 @@ export async function calculateCohortLtv(
 				.select({
 					cohortMonth: sql<string>`to_char(${cohortMonthBucket}, 'YYYY-MM')`,
 					monthOffset: monthOffsetExpr,
-					netKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`,
+					exactNetKopecks: sql<number>`coalesce(sum(${paymentSignedExactFlowKopecksSql()}), 0)::bigint`,
+					legacyNetRub: sql<string>`coalesce(sum(${paymentSignedLegacyFlowRubSql()}), 0)`,
 				})
 				.from(patients)
 				.innerJoin(
@@ -75,8 +80,14 @@ export async function calculateCohortLtv(
 					),
 				)
 				.groupBy(cohortMonthBucket, monthOffsetExpr),
-		]),
-	);
+		]);
+
+		return { cohortZone, cohortPatientsRaw, cohortPaymentsRaw };
+	};
+
+	const { cohortZone, cohortPatientsRaw, cohortPaymentsRaw } = executor
+		? await runInTx(executor)
+		: await withTenantCtx(orgId, runInTx);
 
 	const paymentsMap = new Map<string, number>();
 	for (const row of cohortPaymentsRaw) {
@@ -84,7 +95,10 @@ export async function calculateCohortLtv(
 		if (!cm) continue;
 		const offset = Number(row.monthOffset || 0);
 		const key = `${cm}:${offset}`;
-		paymentsMap.set(key, Number(row.netKopecks || 0));
+		const netKopecks =
+			Number(row.exactNetKopecks || 0) +
+			rublesToKopecks(Number(row.legacyNetRub || 0));
+		paymentsMap.set(key, netKopecks);
 	}
 
 	const cohortLtvJson: CohortLtvItem[] = cohortPatientsRaw

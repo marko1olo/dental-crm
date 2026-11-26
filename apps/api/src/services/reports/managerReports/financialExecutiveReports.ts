@@ -13,6 +13,11 @@ import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
+	isIncomePaymentRowSql,
+	paymentAbsKopecksSql,
+	paymentFlowSignSql,
+} from "../../../db/paymentRefundSql.js";
+import {
 	appointments,
 	invoices,
 	payments,
@@ -125,34 +130,39 @@ export async function financialExecutiveSummary(
 		// 1. [ANL-02] Честные платежи за период (чистый приход минус возвраты строго по времени оплаты)
 		// Распаковка комбинированных сплит-чеков ('split') по тендерам без искажения ДДС
 		const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-		const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
-		const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
+		const absPaymentKopExpr = paymentAbsKopecksSql();
+		const signExpr = paymentFlowSignSql();
+		const incomePaymentPred = isIncomePaymentRowSql();
 		const methodText = sql`${payments.method}::text`;
-		const splitCardKopExpr = sql`coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${paymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0)`;
+		const splitCashKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0))`;
+		const splitSbpKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0))`;
+		const splitAdvanceKopExpr = sql`abs(coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0))`;
+		const splitDmsKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))`;
+		const splitCardKopExpr = sql`coalesce(abs(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint)), greatest(0, ${absPaymentKopExpr} - ${splitCashKopExpr} - ${splitSbpKopExpr} - ${splitAdvanceKopExpr} - ${splitDmsKopExpr}), 0)`;
 
 		const [paymentTotals] = await tx
 			.select({
 				cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-					when ${methodText} = 'cash' then ${paymentKopExpr} 
-					when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) 
+					when ${methodText} = 'cash' then ${absPaymentKopExpr} 
+					when ${methodText} = 'split' then ${splitCashKopExpr} 
 					else 0 end)), 0)::bigint`,
-				cashCount: sql<number>`count(case when ${payments.status} = 'paid' and (${methodText} = 'cash' or (${methodText} = 'split' and coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) > 0)) then 1 end)::int`,
+				cashCount: sql<number>`count(case when ${incomePaymentPred} and (${methodText} = 'cash' or (${methodText} = 'split' and ${splitCashKopExpr} > 0)) then 1 end)::int`,
 				cardKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-					when ${methodText} = 'card' then ${paymentKopExpr} 
+					when ${methodText} = 'card' then ${absPaymentKopExpr} 
 					when ${methodText} = 'split' then ${splitCardKopExpr}
-					when ${methodText} not in ('cash', 'online', 'sbp', 'deposit', 'advance', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split') then ${paymentKopExpr}
+					when ${methodText} not in ('cash', 'online', 'sbp', 'deposit', 'advance', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split') then ${absPaymentKopExpr}
 					else 0 end)), 0)::bigint`,
-				cardCount: sql<number>`count(case when ${payments.status} = 'paid' and ((${methodText} = 'card' or ${methodText} not in ('cash', 'online', 'sbp', 'deposit', 'advance', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split')) or (${methodText} = 'split' and ${splitCardKopExpr} > 0)) then 1 end)::int`,
+				cardCount: sql<number>`count(case when ${incomePaymentPred} and ((${methodText} = 'card' or ${methodText} not in ('cash', 'online', 'sbp', 'deposit', 'advance', 'family_wallet', 'other', 'certificate', 'insurance', 'bank_transfer', 'split')) or (${methodText} = 'split' and ${splitCardKopExpr} > 0)) then 1 end)::int`,
 				sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-					when ${methodText} in ('sbp', 'online') then ${paymentKopExpr} 
-					when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) 
+					when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} 
+					when ${methodText} = 'split' then ${splitSbpKopExpr} 
 					else 0 end)), 0)::bigint`,
-				sbpCount: sql<number>`count(case when ${payments.status} = 'paid' and (${methodText} in ('sbp', 'online') or (${methodText} = 'split' and coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) > 0)) then 1 end)::int`,
+				sbpCount: sql<number>`count(case when ${incomePaymentPred} and (${methodText} in ('sbp', 'online') or (${methodText} = 'split' and ${splitSbpKopExpr} > 0)) then 1 end)::int`,
 				depositKopecks: sql<number>`coalesce(sum(${signExpr} * (case 
-					when ${methodText} in ('deposit', 'advance', 'family_wallet', 'other', 'certificate') then ${paymentKopExpr} 
-					when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) 
+					when ${methodText} in ('deposit', 'advance', 'family_wallet', 'other', 'certificate') then ${absPaymentKopExpr} 
+					when ${methodText} = 'split' then ${splitAdvanceKopExpr} 
 					else 0 end)), 0)::bigint`,
-				depositCount: sql<number>`count(case when ${payments.status} = 'paid' and (${methodText} in ('deposit', 'advance', 'family_wallet', 'other', 'certificate') or (${methodText} = 'split' and coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) > 0)) then 1 end)::int`,
+				depositCount: sql<number>`count(case when ${incomePaymentPred} and (${methodText} in ('deposit', 'advance', 'family_wallet', 'other', 'certificate') or (${methodText} = 'split' and ${splitAdvanceKopExpr} > 0)) then 1 end)::int`,
 			})
 			.from(payments)
 			.where(
@@ -229,7 +239,7 @@ export async function financialExecutiveSummary(
 			.where(
 				and(
 					eq(payments.organizationId, scope.organizationId),
-					inArray(payments.status, ["paid"]),
+					incomePaymentPred,
 					gte(paymentTimestamp, scope.from),
 					lte(paymentTimestamp, scope.to),
 					sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,

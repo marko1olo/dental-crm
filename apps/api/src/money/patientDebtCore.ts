@@ -256,7 +256,11 @@ export interface PaymentRow {
 	readonly organizationId?: string | null;
 	/** Только `"paid"` считается полученными деньгами. */
 	readonly status: string;
+	readonly type?: string | null | undefined;
+	readonly operationType?: string | null | undefined;
 	readonly amountRub: MoneyInput;
+	readonly amountKopecks?: bigint | number | string | null | undefined;
+	readonly fiscalReceipt?: unknown;
 	/**
 	 * Опциональная детальная разбивка сплит-оплаты (нал + безнал + аванс + сертификат).
 	 * При наличии проверяется строжайшее равенство: сумма тендеров в копейках === сумма платежа в копейках.

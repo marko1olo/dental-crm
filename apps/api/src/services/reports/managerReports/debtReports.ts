@@ -2,9 +2,9 @@
  * Расчёт дебиторки и переплат пациентов в точных копейках без float drift.
  */
 
-import { kopecksToRubles, sumKopecks } from "@dental/shared";
-import { and, eq, ne, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { kopecksToRubles, resolvePaymentNetSignedKopecksBigInt, sumKopecks } from "@dental/shared";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	patients,
 	payments,
@@ -141,248 +141,235 @@ export async function receivables(
 		readonly minDebtRub?: number;
 		readonly limit?: number;
 	} = {},
+	executor?: TenantDb,
 ): Promise<ReceivablesReport> {
-	const now = options.now ?? new Date();
-	/*
-	 * Порог тоже в копейках: сравнивать целые копейки с рублями числом значило бы
-	 * вернуть плавающую точку в отбор строк. Маршрут пропускает только целые рубли
-	 * (`reports.ts`, `minDebtRub: z.coerce.number().int().min(1)`), поэтому здесь
-	 * перевод точный; порог с третьим знаком после запятой отвергается, а не
-	 * округляется молча.
-	 */
-	const minDebtKopecks = toKopecks(
-		Math.max(1, options.minDebtRub ?? 1),
-		"порог долга",
-	);
-	const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
+	const runQuery = async (tx: TenantDb): Promise<ReceivablesReport> => {
+		const now = options.now ?? new Date();
+		const minDebtKopecks = toKopecks(
+			Math.max(1, options.minDebtRub ?? 1),
+			"порог долга",
+		);
+		const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 
-	const plannedRows = await db
-		.select({
-			patientId: treatmentItems.patientId,
-			/*
-			 * Тип объявлен `string | number`, потому что таким это и приходит:
-			 * `db/moneyTypeParsers.ts` переводит `numeric` в число ТОЛЬКО когда оно
-			 * возвращается в ту же строку байт в байт, иначе отдаёт текст как есть.
-			 * Оба варианта точны на входе, и `toKopecks` принимает оба; прежнее
-			 * `sql<number>` было неправдой о втором из них.
-			 */
-			/*
-			 * `greatest(quantity, 1)` УБРАН — та же тихая догадка, что и в
-			 * `serviceSales` выше, разбор целиком стоит там. Коротко: канон
-			 * (`money/patientDebt.ts`, `assertContractQuantity`) на количестве ≤ 0
-			 * ОТКАЗЫВАЕТ со словами «позицию без объёма надо отменять статусом
-			 * cancelled, а не считать как одну единицу», и он же называет прежнее
-			 * выражение этого отчёта тихой правкой данных. На законном количестве
-			 * (`>= 1`) `greatest(quantity, 1) = quantity` побитово, поэтому дебиторка
-			 * на контрактных данных не изменилась ни на копейку; изменилось только
-			 * то, что позиция без объёма больше не приписывает пациенту долг за
-			 * единицу, которой ему не оказывали.
-			 */
-			plannedKopecks: sql<
-				string | number
-			>`coalesce(sum(greatest(round(coalesce(nullif(${treatmentItems.unitPriceKopecks}, 0), round(${treatmentItems.unitPriceRub} * 100)) * ${treatmentItems.quantity} - coalesce(nullif(${treatmentItems.discountKopecks}, 0), round(${treatmentItems.discountRub} * 100))), 0)), 0)::bigint`,
-			oldestChargeAt: sql<Date | null>`min(${visits.createdAt})`,
-			undatedItems: sql<number>`count(*) filter (where ${visits.createdAt} is null)::int`,
-		})
-		.from(treatmentItems)
-		.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
-		.where(
-			and(
-				eq(treatmentItems.organizationId, organizationId),
-				ne(treatmentItems.status, "cancelled"),
-			),
-		)
-		.groupBy(treatmentItems.patientId);
-
-	const paidRows = await db
-		.select({
-			patientId: payments.patientId,
-			paidKopecks: sql<
-				string | number
-			>`coalesce(sum(coalesce(${payments.amountKopecks}, round(${payments.amountRub} * 100)::bigint)), 0)::bigint`,
-		})
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, organizationId),
-				eq(payments.status, "paid"),
-			),
-		)
-		.groupBy(payments.patientId);
-	/*
-	 * ПЕРЕВОД В КОПЕЙКИ НА ПЕРВОМ КАСАНИИ, а не перед выдачей. Здесь стояло
-	 * `Number(row.paidRub)`: само по себе оно точно, но дальше это число попадало
-	 * в вычитание рублей, и копейка терялась там. Целые копейки закрывают вопрос
-	 * для всех последующих действий сразу.
-	 */
-	const paidByPatient = new Map(
-		paidRows.map((row) => {
-			const kop = Number(row.paidKopecks);
-			assertKopecks(kop, "оплачено пациентом");
-			return [row.patientId, kop] as const;
-		}),
-	);
-
-	// Баланс по каждому пациенту, который есть хотя бы в одной из двух таблиц.
-	// Положительный — долг, отрицательный — переплата.
-	const plannedByPatient = new Map(
-		plannedRows.map((row) => [row.patientId, row]),
-	);
-	const balances = [
-		...new Set<string>([...plannedByPatient.keys(), ...paidByPatient.keys()]),
-	].map((patientId) => {
-		const planned = plannedByPatient.get(patientId);
-		const oldestChargeAt = planned?.oldestChargeAt
-			? new Date(planned.oldestChargeAt)
-			: null;
-		const plannedKopecks =
-			planned === undefined ? 0 : Number(planned.plannedKopecks);
-		if (planned !== undefined) {
-			assertKopecks(plannedKopecks, "назначено пациенту");
-		}
-		return {
-			patientId,
-			// ЗДЕСЬ БЫЛ ДЕФЕКТ: `Number(planned) - paid` в рублях давало
-			// 41300.99 − 14800 = 26500.989999999998. В целых копейках то же
-			// вычитание — 4130099 − 1480000 = 2650099, то есть ровно 26 500,99 ₽.
-			debtKopecks: plannedKopecks - (paidByPatient.get(patientId) ?? 0),
-			oldestChargeAt,
-			hasUndated: Number(planned?.undatedItems ?? 0) > 0,
-		};
-	});
-
-	const debtors = balances
-		.filter((row) => row.debtKopecks >= minDebtKopecks)
-		.sort((left, right) => right.debtKopecks - left.debtKopecks)
-		.slice(0, limit);
-
-	// Порог тот же, что у долга: копеечные хвосты округления не выдаём за
-	// обязательство клиники вернуть деньги.
-	const overpaid = balances
-		.filter((row) => -row.debtKopecks >= minDebtKopecks)
-		.sort((left, right) => left.debtKopecks - right.debtKopecks)
-		.slice(0, limit);
-	/*
-	 * Сумма целых копеек через `sumKopecks`: он проверяет КАЖДОЕ слагаемое на
-	 * целость, поэтому испорченное значение падает на сложении, а не расползается
-	 * в итог. Здесь стояло `reduce` по рублям с `Math.round(… * 100) / 100`
-	 * снаружи — и именно это округление молча принимало 1600.0000000000002 за
-	 * 1 600,00 вместо того, чтобы сказать, что деньги уже потеряли точность.
-	 */
-	const totalPrepaidKopecks = sumKopecks(
-		overpaid.map((row) => -row.debtKopecks),
-	);
-
-	if (debtors.length === 0 && overpaid.length === 0) {
-		return {
-			rows: [],
-			totalDebtRub: 0,
-			byBucket: {
-				current: 0,
-				up_to_30: 0,
-				up_to_90: 0,
-				over_90: 0,
-				undated: 0,
-			},
-			prepayments: [],
-			totalPrepaidRub: 0,
-			note: "Долгов нет, переплат тоже нет.",
-			isEmpty: true,
-		};
-	}
-
-	const names = new Map<string, string>();
-	const nameRows = await db
-		.select({ id: patients.id, fullName: patients.fullName })
-		.from(patients)
-		.where(eq(patients.organizationId, organizationId));
-	for (const row of nameRows) names.set(row.id, row.fullName);
-
-	/*
-	 * Корзины копятся В КОПЕЙКАХ. Здесь стояло `byBucket[bucket] += row.debtRub`
-	 * по рублям, и это было ХУЖЕ строки: у корзины не было даже того округления,
-	 * которое стояло на итоге, то есть грязь плавающей точки уходила в ответ
-	 * ничем не прикрытая. Сегодня она вышла чистой случайно — сумма двух живых
-	 * долгов попала ровно в представимое значение.
-	 */
-	const byBucketKopecks: Record<ReceivablesBucket, Kopecks> = {
-		current: 0,
-		up_to_30: 0,
-		up_to_90: 0,
-		over_90: 0,
-		undated: 0,
-	};
-
-	const rows: ReceivablesRow[] = debtors.map((row) => {
-		let bucket: ReceivablesBucket;
-		if (!row.oldestChargeAt) {
-			bucket = "undated";
-		} else {
-			const ageDays = Math.floor(
-				(now.getTime() - row.oldestChargeAt.getTime()) / 86_400_000,
+		const rawPlannedItems = await tx
+			.select({
+				patientId: treatmentItems.patientId,
+				unitPriceKopecks: treatmentItems.unitPriceKopecks,
+				unitPriceRub: treatmentItems.unitPriceRub,
+				quantity: treatmentItems.quantity,
+				discountKopecks: treatmentItems.discountKopecks,
+				discountRub: treatmentItems.discountRub,
+				visitCreatedAt: visits.createdAt,
+			})
+			.from(treatmentItems)
+			.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					ne(treatmentItems.status, "cancelled"),
+				),
 			);
-			bucket =
-				ageDays <= 7
-					? "current"
-					: ageDays <= 30
-						? "up_to_30"
-						: ageDays <= 90
-							? "up_to_90"
-							: "over_90";
-		}
-		byBucketKopecks[bucket] += row.debtKopecks;
 
-		return {
+		const plannedByPatient = new Map<
+			string,
+			{ plannedKopecks: number; oldestChargeAt: Date | null; undatedItems: number }
+		>();
+		for (const item of rawPlannedItems) {
+			const unitKop =
+				item.unitPriceKopecks != null && Number(item.unitPriceKopecks) !== 0
+					? Number(item.unitPriceKopecks)
+					: toKopecks(item.unitPriceRub ?? 0, "цена позиции лечения");
+			const discKop =
+				item.discountKopecks != null && Number(item.discountKopecks) !== 0
+					? Number(item.discountKopecks)
+					: toKopecks(item.discountRub ?? 0, "скидка позиции лечения");
+			const qty = Number(item.quantity ?? 0);
+			const grossKopBig = Number.isInteger(qty)
+				? BigInt(unitKop) * BigInt(qty)
+				: BigInt(Math.round(unitKop * qty));
+			const netKopBig = grossKopBig - BigInt(discKop);
+			const itemKop = netKopBig > 0n ? Number(netKopBig) : 0;
+			const visitDate = item.visitCreatedAt ? new Date(item.visitCreatedAt) : null;
+
+			const existing = plannedByPatient.get(item.patientId);
+			if (!existing) {
+				plannedByPatient.set(item.patientId, {
+					plannedKopecks: itemKop,
+					oldestChargeAt: visitDate,
+					undatedItems: visitDate === null ? 1 : 0,
+				});
+			} else {
+				existing.plannedKopecks += itemKop;
+				if (visitDate === null) {
+					existing.undatedItems += 1;
+				} else if (
+					existing.oldestChargeAt === null ||
+					visitDate.getTime() < existing.oldestChargeAt.getTime()
+				) {
+					existing.oldestChargeAt = visitDate;
+				}
+			}
+		}
+
+		const rawPayments = await tx
+			.select({
+				patientId: payments.patientId,
+				status: payments.status,
+				amountKopecks: payments.amountKopecks,
+				amountRub: payments.amountRub,
+				fiscalReceipt: payments.fiscalReceipt,
+			})
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					inArray(payments.status, ["paid", "refunded"]),
+					sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${organizationId} and pi.status in ('voided', 'cancelled')))`,
+				),
+			);
+
+		const paidBigIntByPatient = new Map<string, bigint>();
+		for (const row of rawPayments) {
+			const signedKop = resolvePaymentNetSignedKopecksBigInt(row, "ledger");
+			if (signedKop === 0n) continue;
+			paidBigIntByPatient.set(row.patientId, (paidBigIntByPatient.get(row.patientId) ?? 0n) + signedKop);
+		}
+		const paidByPatient = new Map<string, number>();
+		for (const [patientId, totalKopBig] of paidBigIntByPatient.entries()) {
+			const totalKop = Number(totalKopBig);
+			assertKopecks(totalKop, "оплачено пациентом");
+			paidByPatient.set(patientId, totalKop);
+		}
+
+		const balances = [
+			...new Set<string>([...plannedByPatient.keys(), ...paidByPatient.keys()]),
+		].map((patientId) => {
+			const planned = plannedByPatient.get(patientId);
+			const oldestChargeAt = planned?.oldestChargeAt ?? null;
+			const plannedKopecks = planned?.plannedKopecks ?? 0;
+			if (planned !== undefined) {
+				assertKopecks(plannedKopecks, "назначено пациенту");
+			}
+			return {
+				patientId,
+				debtKopecks: plannedKopecks - (paidByPatient.get(patientId) ?? 0),
+				oldestChargeAt,
+				hasUndated: (planned?.undatedItems ?? 0) > 0,
+			};
+		});
+
+		const debtors = balances
+			.filter((row) => row.debtKopecks >= minDebtKopecks)
+			.sort((left, right) => right.debtKopecks - left.debtKopecks)
+			.slice(0, limit);
+
+		const overpaid = balances
+			.filter((row) => -row.debtKopecks >= minDebtKopecks)
+			.sort((left, right) => left.debtKopecks - right.debtKopecks)
+			.slice(0, limit);
+
+		const totalPrepaidKopecks = sumKopecks(
+			overpaid.map((row) => -row.debtKopecks),
+		);
+
+		if (debtors.length === 0 && overpaid.length === 0) {
+			return {
+				rows: [],
+				totalDebtRub: 0,
+				byBucket: {
+					current: 0,
+					up_to_30: 0,
+					up_to_90: 0,
+					over_90: 0,
+					undated: 0,
+				},
+				prepayments: [],
+				totalPrepaidRub: 0,
+				note: "Долгов нет, переплат тоже нет.",
+				isEmpty: true,
+			};
+		}
+
+		const names = new Map<string, string>();
+		const nameRows = await tx
+			.select({ id: patients.id, fullName: patients.fullName })
+			.from(patients)
+			.where(eq(patients.organizationId, organizationId));
+		for (const row of nameRows) names.set(row.id, row.fullName);
+
+		const byBucketKopecks: Record<ReceivablesBucket, Kopecks> = {
+			current: 0,
+			up_to_30: 0,
+			up_to_90: 0,
+			over_90: 0,
+			undated: 0,
+		};
+
+		const rows: ReceivablesRow[] = debtors.map((row) => {
+			let bucket: ReceivablesBucket;
+			if (!row.oldestChargeAt) {
+				bucket = "undated";
+			} else {
+				const ageDays = Math.floor(
+					(now.getTime() - row.oldestChargeAt.getTime()) / 86_400_000,
+				);
+				bucket =
+					ageDays <= 7
+						? "current"
+						: ageDays <= 30
+							? "up_to_30"
+							: ageDays <= 90
+								? "up_to_90"
+								: "over_90";
+			}
+			byBucketKopecks[bucket] += row.debtKopecks;
+
+			return {
+				patientId: row.patientId,
+				patientName: names.get(row.patientId) ?? "Пациент вне картотеки",
+				debtRub: rublesFromKopecks(row.debtKopecks),
+				oldestChargeAt: row.oldestChargeAt
+					? row.oldestChargeAt.toISOString()
+					: null,
+				bucket,
+			};
+		});
+
+		const prepayments: ReceivablesPrepaymentRow[] = overpaid.map((row) => ({
 			patientId: row.patientId,
 			patientName: names.get(row.patientId) ?? "Пациент вне картотеки",
-			// Границу контракта деньги переходят один раз и в самом конце:
-			// `ReceivablesRow.debtRub` объявлен числом, потому что его проверяет
-			// `moneyRubSchema`. Складывать это число обратно нельзя.
-			debtRub: rublesFromKopecks(row.debtKopecks),
-			oldestChargeAt: row.oldestChargeAt
-				? row.oldestChargeAt.toISOString()
-				: null,
-			bucket,
+			prepaidRub: rublesFromKopecks(-row.debtKopecks),
+		}));
+
+		const totalDebtKopecks = sumKopecks(debtors.map((row) => row.debtKopecks));
+		const byBucket: Record<ReceivablesBucket, number> = {
+			current: rublesFromKopecks(byBucketKopecks.current),
+			up_to_30: rublesFromKopecks(byBucketKopecks.up_to_30),
+			up_to_90: rublesFromKopecks(byBucketKopecks.up_to_90),
+			over_90: rublesFromKopecks(byBucketKopecks.over_90),
+			undated: rublesFromKopecks(byBucketKopecks.undated),
 		};
-	});
 
-	const prepayments: ReceivablesPrepaymentRow[] = overpaid.map((row) => ({
-		patientId: row.patientId,
-		patientName: names.get(row.patientId) ?? "Пациент вне картотеки",
-		prepaidRub: rublesFromKopecks(-row.debtKopecks),
-	}));
-
-	/*
-	 * ИТОГ — СУММА ТЕХ ЖЕ САМЫХ СТРОК, а не второй расчёт по тем же данным:
-	 * `rows` получены из `debtors` один к одному, и складываются здесь их же
-	 * копейки. Поэтому «сумма строк = итог» и «сумма строк корзины = корзина»
-	 * выполняются по построению, а не по совпадению округлений.
-	 */
-	const totalDebtKopecks = sumKopecks(debtors.map((row) => row.debtKopecks));
-	const byBucket: Record<ReceivablesBucket, number> = {
-		current: rublesFromKopecks(byBucketKopecks.current),
-		up_to_30: rublesFromKopecks(byBucketKopecks.up_to_30),
-		up_to_90: rublesFromKopecks(byBucketKopecks.up_to_90),
-		over_90: rublesFromKopecks(byBucketKopecks.over_90),
-		undated: rublesFromKopecks(byBucketKopecks.undated),
+		return {
+			rows,
+			totalDebtRub: rublesFromKopecks(totalDebtKopecks),
+			byBucket,
+			prepayments,
+			totalPrepaidRub: rublesFromKopecks(totalPrepaidKopecks),
+			note:
+				"Долг = назначено минус оплачено, на дату отчёта. Срок — по самой ранней позиции лечения; " +
+				"позиции без привязки к приёму датировать нечем, они в отдельной корзине. " +
+				(totalPrepaidKopecks > 0
+					? `Переплаты показаны отдельно: клиника должна вернуть ${rubToKopeckText(totalPrepaidKopecks)} ₽ ` +
+						`${prepayments.length} пациент(ам). На главном экране сумма к оплате считается по всей клинике одним ` +
+						`вычитанием, поэтому там переплаты уже зачтены в долг других пациентов: ` +
+						`${rubToKopeckText(totalDebtKopecks)} − ${rubToKopeckText(totalPrepaidKopecks)} = ` +
+						`${rubToKopeckText(totalDebtKopecks - totalPrepaidKopecks)} ₽.`
+					: "Переплат нет: ни один пациент не заплатил больше назначенного."),
+			isEmpty: false,
+		};
 	};
 
-	return {
-		rows,
-		totalDebtRub: rublesFromKopecks(totalDebtKopecks),
-		byBucket,
-		prepayments,
-		totalPrepaidRub: rublesFromKopecks(totalPrepaidKopecks),
-		note:
-			"Долг = назначено минус оплачено, на дату отчёта. Срок — по самой ранней позиции лечения; " +
-			"позиции без привязки к приёму датировать нечем, они в отдельной корзине. " +
-			(totalPrepaidKopecks > 0
-				? `Переплаты показаны отдельно: клиника должна вернуть ${rubToKopeckText(totalPrepaidKopecks)} ₽ ` +
-					`${prepayments.length} пациент(ам). На главном экране сумма к оплате считается по всей клинике одним ` +
-					`вычитанием, поэтому там переплаты уже зачтены в долг других пациентов: ` +
-					`${rubToKopeckText(totalDebtKopecks)} − ${rubToKopeckText(totalPrepaidKopecks)} = ` +
-					`${rubToKopeckText(totalDebtKopecks - totalPrepaidKopecks)} ₽.`
-				: "Переплат нет: ни один пациент не заплатил больше назначенного."),
-		isEmpty: false,
-	};
+	if (executor) return runQuery(executor);
+	return withTenantCtx(organizationId, runQuery);
 }

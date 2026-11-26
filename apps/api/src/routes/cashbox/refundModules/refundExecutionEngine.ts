@@ -5,6 +5,8 @@
 
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import {
+	buildCanonicalRefundPaymentAmounts,
+	classifyPaymentFlowRecord,
 	kopecksToNumericString,
 	kopecksToRub,
 	normalizePaymentMethod,
@@ -404,6 +406,7 @@ export async function executeCashRefundTransaction(
 		let queuedReceiptId: string | undefined;
 
 		if (effectivePatientId) {
+			const canonicalRefundAmounts = buildCanonicalRefundPaymentAmounts(BigInt(refundKop));
 			const [insertedPayment] = await tx
 				.insert(payments)
 				.values({
@@ -412,10 +415,10 @@ export async function executeCashRefundTransaction(
 					visitId: linkedPayment?.visitId || linkedInvoice?.visitId || null,
 					documentId: linkedInvoice?.id || (linkedPayment?.documentId ?? null),
 					clientMutationId: effectiveMutationId,
-					amountRub: -exactAmountRub,
-					amountKopecks: -BigInt(refundKop),
+					amountRub: canonicalRefundAmounts.amountRub,
+					amountKopecks: canonicalRefundAmounts.amountKopecks,
 					method: normalizePaymentMethod(refundMethod),
-					status: "refunded",
+					status: canonicalRefundAmounts.status,
 					paidAt: new Date(),
 					fiscalReceiptNumber: refundReceiptNumber,
 					fiscalReceiptIssuedAt: null,
@@ -497,6 +500,7 @@ export async function executeCashRefundTransaction(
 					status: payments.status,
 					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
+					fiscalReceipt: payments.fiscalReceipt,
 				})
 				.from(payments)
 				.where(
@@ -508,16 +512,11 @@ export async function executeCashRefundTransaction(
 			let totalPaidKop = 0n;
 			let totalRefundedKop = 0n;
 			for (const row of invoicePayments) {
-				const signed =
-					row.amountKopecks !== null &&
-					row.amountKopecks !== undefined &&
-					(row.amountKopecks !== 0n || Number(row.amountRub || 0) === 0)
-						? row.amountKopecks
-						: BigInt(rublesToKopecks(Number(row.amountRub || 0)));
-				if (row.status === "refunded" || signed < 0n) {
-					totalRefundedKop += signed < 0n ? -signed : signed;
-				} else if (row.status === "paid") {
-					totalPaidKop += signed;
+				const flow = classifyPaymentFlowRecord(row, "ledger");
+				if (flow.kind === "payment") {
+					totalPaidKop += flow.absKopecks;
+				} else if (flow.kind === "refund") {
+					totalRefundedKop += flow.absKopecks;
 				}
 			}
 			const netPaidKop = totalPaidKop > totalRefundedKop ? totalPaidKop - totalRefundedKop : 0n;

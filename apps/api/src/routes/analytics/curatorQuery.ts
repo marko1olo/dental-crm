@@ -1,7 +1,11 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
+import {
+	paymentSignedExactFlowKopecksSql,
+	paymentSignedLegacyFlowRubSql,
+} from "../../db/paymentRefundSql.js";
 import { installmentContracts, patients, payments, treatmentPlans, users } from "../../db/schema.js";
-import { calculateCuratorMetrics, kopecksToRubles } from "@dental/shared";
+import { calculateCuratorMetrics, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { buildCuratorQueueItem } from "./curatorQueueBuilder.js";
 import type { CuratorStaffUser } from "./curatorTypes.js";
 
@@ -19,6 +23,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 					id: treatmentPlans.id,
 					name: treatmentPlans.name,
 					status: treatmentPlans.status,
+					alternativeTier: treatmentPlans.alternativeTier,
 					totalPriceKopecks: treatmentPlans.totalPriceKopecks,
 					planDiscountKopecks: treatmentPlans.planDiscountKopecks,
 					totalPriceRub: treatmentPlans.totalPriceRub,
@@ -40,13 +45,14 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 			const directRows = await tx
 				.select({
 					planId: payments.documentId,
-					totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
+					exactNetKopecks: sql<number>`coalesce(sum(${paymentSignedExactFlowKopecksSql()}), 0)::bigint`,
+					legacyNetRub: sql<number>`coalesce(sum(${paymentSignedLegacyFlowRubSql()}), 0)`,
 				})
 				.from(payments)
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
-						eq(payments.status, "paid"),
+						inArray(payments.status, ["paid", "refunded"]),
 						sql`${payments.documentId} is not null`,
 					),
 				)
@@ -56,7 +62,8 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 			const installmentRows = await tx
 				.select({
 					planId: installmentContracts.treatmentPlanId,
-					totalPaidKopecks: sql<number>`coalesce(sum(coalesce(nullif(${installmentContracts.paidAmountKopecks}, 0), round(coalesce(${installmentContracts.paidAmountRub}, 0) * 100)::bigint, 0)), 0)::bigint`,
+					exactPaidKopecks: sql<number>`coalesce(sum(case when ${installmentContracts.paidAmountKopecks} is not null and ${installmentContracts.paidAmountKopecks} <> 0 then ${installmentContracts.paidAmountKopecks} else 0 end), 0)::bigint`,
+					legacyPaidRub: sql<number>`coalesce(sum(case when (${installmentContracts.paidAmountKopecks} is null or ${installmentContracts.paidAmountKopecks} = 0) then coalesce(${installmentContracts.paidAmountRub}, 0) else 0 end), 0)`,
 				})
 				.from(installmentContracts)
 				.where(
@@ -83,12 +90,14 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const planPaymentKopecksMap = new Map<string, number>();
 	for (const p of directPlanPayments) {
 		if (p.planId) {
-			planPaymentKopecksMap.set(p.planId, (planPaymentKopecksMap.get(p.planId) || 0) + Number(p.totalPaidKopecks));
+			const kop = Number(p.exactNetKopecks || 0) + rublesToKopecks(Number(p.legacyNetRub || 0));
+			planPaymentKopecksMap.set(p.planId, Math.max(0, (planPaymentKopecksMap.get(p.planId) || 0) + kop));
 		}
 	}
 	for (const p of installmentPlanPayments) {
 		if (p.planId) {
-			planPaymentKopecksMap.set(p.planId, (planPaymentKopecksMap.get(p.planId) || 0) + Number(p.totalPaidKopecks));
+			const kop = Number(p.exactPaidKopecks || 0) + rublesToKopecks(Number(p.legacyPaidRub || 0));
+			planPaymentKopecksMap.set(p.planId, (planPaymentKopecksMap.get(p.planId) || 0) + kop);
 		}
 	}
 
@@ -101,7 +110,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const defaultCurator: CuratorStaffUser | null = curatorUsers[0] ?? null;
 
 	const queueItems = plans.map((plan) =>
-		buildCuratorQueueItem(plan, planPaymentMap, doctorMap, defaultCurator),
+		buildCuratorQueueItem(plan, planPaymentMap, doctorMap, defaultCurator, planPaymentKopecksMap),
 	);
 	const overallMetrics = calculateCuratorMetrics(queueItems, "all", "Все кураторы");
 	const perCuratorMetrics = curatorUsers.map((cur) =>

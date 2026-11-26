@@ -7,6 +7,10 @@ import {
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
+	paymentSignedExactFlowKopecksSql,
+	paymentSignedLegacyFlowRubSql,
+} from "../../db/paymentRefundSql.js";
+import {
 	appointments,
 	doctorCommissions,
 	doctorPayrollStatements,
@@ -69,8 +73,8 @@ export async function calculateDoctorProfitability(
 		const docProfRes = await tx
 			.select({
 				doctorId: appointments.doctorUserId,
-				exactRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.amountKopecks} is not null and ${payments.amountKopecks} <> 0 then (case when ${payments.status} = 'paid' then ${payments.amountKopecks} when ${payments.status} = 'refunded' then -abs(${payments.amountKopecks}) else 0 end) else 0 end), 0)::bigint`,
-				legacyRevenueRub: sql<number>`coalesce(sum(case when (${payments.amountKopecks} is null or ${payments.amountKopecks} = 0) then (case when ${payments.status} = 'paid' then coalesce(${payments.amountRub}, 0) when ${payments.status} = 'refunded' then -abs(coalesce(${payments.amountRub}, 0)) else 0 end) else 0 end), 0)`,
+				exactRevenueKopecks: sql<number>`coalesce(sum(${paymentSignedExactFlowKopecksSql()}), 0)::bigint`,
+				legacyRevenueRub: sql<number>`coalesce(sum(${paymentSignedLegacyFlowRubSql()}), 0)`,
 			})
 			.from(payments)
 			.leftJoin(

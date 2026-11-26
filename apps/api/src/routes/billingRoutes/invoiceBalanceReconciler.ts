@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { rublesToKopecks, sumKopecks } from "@dental/shared";
+import { rublesToKopecks, sumPaymentFlowBigInt } from "@dental/shared";
 import type { TenantDb } from "../../db/rls.js";
 import { installmentContracts, patientInvoices, payments } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
@@ -103,6 +103,7 @@ export async function reconcileInvoiceBalanceInDb(
 			amountRub: payments.amountRub,
 			amountKopecks: payments.amountKopecks,
 			status: payments.status,
+			fiscalReceipt: payments.fiscalReceipt,
 		})
 		.from(payments)
 		.where(
@@ -114,35 +115,8 @@ export async function reconcileInvoiceBalanceInDb(
 			),
 		);
 
-	const paidRows = invoicePayments.filter((p) => p.status === "paid");
-	const refundRows = invoicePayments.filter((p) => p.status === "refunded");
-
-	const grossPaidKopecks = sumKopecks(
-		paidRows.map((p) =>
-			p.amountKopecks !== null &&
-			p.amountKopecks !== undefined &&
-			p.amountKopecks > 0n
-				? Number(p.amountKopecks)
-				: rublesToKopecks(p.amountRub),
-		),
-	);
-
-	// Negative refunded rows represent cashbox reversals written alongside the original "paid" row.
-	// Positive refunded rows were transitioned in-place from "paid" -> "refunded" and are already excluded from paidRows.
-	const negativeRefundKopecks = sumKopecks(
-		refundRows.map((p) => {
-			if (p.amountKopecks !== null && p.amountKopecks !== undefined && p.amountKopecks < 0n) {
-				return Math.abs(Number(p.amountKopecks));
-			}
-			const rubNum = Number(p.amountRub ?? 0);
-			if (p.amountKopecks === null && rubNum < 0) {
-				return Math.abs(rublesToKopecks(rubNum));
-			}
-			return 0;
-		}),
-	);
-
-	const paidKopecks = Math.max(0, grossPaidKopecks - negativeRefundKopecks);
+	const flowSummary = sumPaymentFlowBigInt(invoicePayments, "ledger");
+	const paidKopecks = flowSummary.netKopecks > 0n ? Number(flowSummary.netKopecks) : 0;
 	const remainingKopecks = Math.max(0, invoiceTotalKopecks - paidKopecks);
 	const isFullyPaid = paidKopecks >= invoiceTotalKopecks;
 

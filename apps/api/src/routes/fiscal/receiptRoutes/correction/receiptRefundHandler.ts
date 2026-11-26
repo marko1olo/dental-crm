@@ -8,6 +8,7 @@
  */
 
 import {
+	buildCanonicalRefundPaymentAmounts,
 	buildFiscalRefundPayloadSignature,
 	type CreateFiscalReceiptPayloadInput,
 	createFiscalReceiptPayloadSchema,
@@ -17,7 +18,7 @@ import {
 	parseKopecks,
 	verifyFiscalCompositeIdempotencyKey,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../../accessGuard.js";
 import { withTenantCtx } from "../../../../db/rls.js";
@@ -223,11 +224,24 @@ async function updateRefundedPaymentRecord(
 	orgId: string,
 	originalPaymentId: string,
 	refundKopecks: number,
+	details: {
+		readonly mutationId: string;
+		readonly reason: string;
+		readonly refundCashKopecks: number;
+		readonly refundElectronicKopecks: number;
+		readonly refundPrepaidKopecks: number;
+		readonly fiscalDocumentNumber?: string | undefined;
+		readonly ofdVerificationUrl?: string | undefined;
+	},
 ): Promise<{ id: string; documentId: string | null } | null> {
 	const [existingPayment] = await tx
 		.select({
 			id: payments.id,
+			patientId: payments.patientId,
+			visitId: payments.visitId,
 			documentId: payments.documentId,
+			method: payments.method,
+			status: payments.status,
 			amountRub: payments.amountRub,
 			amountKopecks: payments.amountKopecks,
 		})
@@ -244,21 +258,65 @@ async function updateRefundedPaymentRecord(
 		existingPayment.amountKopecks !== 0n
 			? Number(existingPayment.amountKopecks)
 			: parseKopecks(existingPayment.amountRub);
-	if (refundKopecks >= origKop) {
-		await tx
-			.update(payments)
-			.set({ status: "refunded" })
-			.where(and(eq(payments.id, existingPayment.id), eq(payments.organizationId, orgId)));
-	} else {
-		const remainingKop = Math.max(0, origKop - refundKopecks);
-		await tx
-			.update(payments)
-			.set({
-				amountRub: kopecksToRub(remainingKop),
-				amountKopecks: BigInt(remainingKop),
-			})
-			.where(and(eq(payments.id, existingPayment.id), eq(payments.organizationId, orgId)));
+
+	if (existingPayment.status === "refunded" || origKop <= 0) {
+		return { id: existingPayment.id, documentId: existingPayment.documentId };
 	}
+
+	const existingRefunds = await tx
+		.select({
+			amountKopecks: payments.amountKopecks,
+			amountRub: payments.amountRub,
+		})
+		.from(payments)
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				eq(payments.patientId, existingPayment.patientId),
+				inArray(payments.status, ["refunded", "paid"]),
+				sql`${payments.note} LIKE ${`%[ref:${existingPayment.id}]%`}`,
+			),
+		);
+
+	let alreadyRefundedKop = 0;
+	for (const refRow of existingRefunds) {
+		const kop =
+			refRow.amountKopecks !== null && refRow.amountKopecks !== undefined && refRow.amountKopecks !== 0n
+				? Math.abs(Number(refRow.amountKopecks))
+				: Math.abs(parseKopecks(refRow.amountRub));
+		alreadyRefundedKop += kop;
+	}
+
+	const remainingRefundableKop = Math.max(0, origKop - alreadyRefundedKop);
+	const effectiveRefundKop = Math.min(refundKopecks, remainingRefundableKop);
+	if (effectiveRefundKop <= 0) {
+		return { id: existingPayment.id, documentId: existingPayment.documentId };
+	}
+
+	const canonical = buildCanonicalRefundPaymentAmounts(BigInt(effectiveRefundKop));
+	const now = new Date();
+	await tx.insert(payments).values({
+		organizationId: orgId,
+		patientId: existingPayment.patientId,
+		visitId: existingPayment.visitId,
+		documentId: existingPayment.documentId,
+		clientMutationId: `${details.mutationId}:return`,
+		amountRub: canonical.amountRub,
+		amountKopecks: canonical.amountKopecks,
+		method: existingPayment.method,
+		status: canonical.status,
+		paidAt: now,
+		fiscalReceiptNumber: details.fiscalDocumentNumber ?? null,
+		fiscalReceiptIssuedAt: details.fiscalDocumentNumber ? now.toISOString() : null,
+		fiscalReceiptUrl: details.ofdVerificationUrl ?? null,
+		fiscalReceipt: {
+			operationType: "income_return",
+			cashKopecks: details.refundCashKopecks,
+			cardKopecks: details.refundElectronicKopecks,
+			advanceOffsetKopecks: details.refundPrepaidKopecks,
+		},
+		note: `Возврат по чеку (${details.reason}) [ref:${existingPayment.id}]`,
+	});
 
 	return { id: existingPayment.id, documentId: existingPayment.documentId };
 }
@@ -324,7 +382,7 @@ export async function handleFiscalRefund(
 		clientMutationId: data.clientMutationId,
 		patientId: data.patientId,
 		operationType: "income_return",
-		customerContact: patientContact || "+79990000000",
+		customerContact: patientContact || null,
 		cashierFullName: data.cashierFullName,
 		items: data.items,
 		cashKopecks: data.refundCashKopecks,
@@ -449,6 +507,15 @@ export async function handleFiscalRefund(
 				orgId,
 				data.originalPaymentId,
 				data.totalRefundKopecks,
+				{
+					mutationId: effectiveMutationId,
+					reason: data.reason,
+					refundCashKopecks: data.refundCashKopecks,
+					refundElectronicKopecks: data.refundElectronicKopecks,
+					refundPrepaidKopecks: data.refundPrepaidKopecks,
+					fiscalDocumentNumber: printResult.fiscalDocumentNumber ?? undefined,
+					ofdVerificationUrl: printResult.ofdVerificationUrl ?? undefined,
+				},
 			);
 			validPaymentId = updatedPayment?.id ?? null;
 			if (updatedPayment?.documentId && isValidUuid(updatedPayment.documentId)) {

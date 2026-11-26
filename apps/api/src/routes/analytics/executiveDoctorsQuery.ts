@@ -8,7 +8,8 @@ import {
 	kopecksToRubles,
 } from "@dental/shared";
 import { and, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { paymentSignedFlowKopecksSql } from "../../db/paymentRefundSql.js";
 import {
 	appointments,
 	organizations,
@@ -16,6 +17,7 @@ import {
 	payments,
 	serviceCatalogItems,
 	treatmentItems,
+	treatmentPlans,
 	users,
 	visits,
 } from "../../db/schema.js";
@@ -46,31 +48,37 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	orgId: string,
 	startDate: Date,
 	endDate?: Date | undefined,
+	executor?: TenantDb,
 ): Promise<ExecutiveDepartmentsAndDoctorsResult> {
 	const effectiveEndDate = endDate ?? new Date();
 
-	return withTenantCtx(orgId, async (tx) => {
-		// 1. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems
+	const runQuery = async (tx: TenantDb): Promise<ExecutiveDepartmentsAndDoctorsResult> => {
+		const itemEffectiveDate = sql`coalesce(${visits.createdAt}, ${patientInvoices.createdAt}, ${treatmentPlans.createdAt})`;
+		const itemNetKopecksExpr = sql`greatest(coalesce(nullif(${treatmentItems.unitPriceKopecks}, 0), ${treatmentItems.priceKopecks}, 0)::bigint * coalesce(${treatmentItems.quantity}, 1) - coalesce(${treatmentItems.discountKopecks}, 0)::bigint, 0)`;
+
+		// 1. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems (с вычетом скидок, сохраняя позиции без визита)
 		const departmentRows = await tx
-		.select({
-			category: serviceCatalogItems.category,
-			specialty: serviceCatalogItems.specialty,
-			revenueKopecks: sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, 0)::bigint * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`,
-			visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
-			patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
-		})
-		.from(treatmentItems)
-		.leftJoin(serviceCatalogItems, and(eq(treatmentItems.serviceId, serviceCatalogItems.id), eq(serviceCatalogItems.organizationId, orgId)))
-		.leftJoin(visits, and(eq(treatmentItems.visitId, visits.id), eq(visits.organizationId, orgId)))
-		.where(
-			and(
-				eq(treatmentItems.organizationId, orgId),
-				ne(treatmentItems.status, "cancelled"),
-				gte(visits.createdAt, startDate),
-				lte(visits.createdAt, effectiveEndDate),
-			),
-		)
-		.groupBy(serviceCatalogItems.category, serviceCatalogItems.specialty);
+			.select({
+				category: serviceCatalogItems.category,
+				specialty: serviceCatalogItems.specialty,
+				revenueKopecks: sql<number>`coalesce(sum(${itemNetKopecksExpr}), 0)::bigint`,
+				visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
+				patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
+			})
+			.from(treatmentItems)
+			.leftJoin(serviceCatalogItems, and(eq(treatmentItems.serviceId, serviceCatalogItems.id), eq(serviceCatalogItems.organizationId, orgId)))
+			.leftJoin(visits, and(eq(treatmentItems.visitId, visits.id), eq(visits.organizationId, orgId)))
+			.leftJoin(patientInvoices, and(eq(treatmentItems.invoiceId, patientInvoices.id), eq(patientInvoices.organizationId, orgId)))
+			.leftJoin(treatmentPlans, and(eq(treatmentItems.treatmentPlanId, treatmentPlans.id), eq(treatmentPlans.organizationId, orgId)))
+			.where(
+				and(
+					eq(treatmentItems.organizationId, orgId),
+					ne(treatmentItems.status, "cancelled"),
+					gte(itemEffectiveDate, startDate),
+					lte(itemEffectiveDate, effectiveEndDate),
+				),
+			)
+			.groupBy(serviceCatalogItems.category, serviceCatalogItems.specialty);
 
 	const deptMap: Record<
 		ExecutiveDepartmentKey,
@@ -229,11 +237,10 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	// Платежи врача группируются строго по времени проведения платежа coalesce(payments.paidAt, payments.createdAt),
 	// а не отсекаются по дате appointments.startsAt.
 	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopecks = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
 	const doctorRevenueSubquery = tx
 		.select({
 			doctorUserId: appointments.doctorUserId,
-			revenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -abs(${paymentKopecks}) else 0 end), 0)::bigint`.as("revenue_kopecks"),
+			revenueKopecks: sql<number>`coalesce(sum(${paymentSignedFlowKopecksSql()}), 0)::bigint`.as("revenue_kopecks"),
 		})
 		.from(payments)
 		.leftJoin(
@@ -265,6 +272,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				gte(paymentTimestamp, startDate),
 				lte(paymentTimestamp, effectiveEndDate),
 				sql`${appointments.doctorUserId} is not null`,
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${orgId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.groupBy(appointments.doctorUserId)
@@ -351,7 +359,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		});
 
 	// 4. Топ процедур по выручке и популярности
-	const procRevenueExpr = sql<number>`coalesce(sum(coalesce(${treatmentItems.priceKopecks}, 0)::bigint * coalesce(${treatmentItems.quantity}, 1)), 0)::bigint`;
+	const procRevenueExpr = sql<number>`coalesce(sum(${itemNetKopecksExpr}), 0)::bigint`;
 	const procedureStats = await tx
 		.select({
 			id: treatmentItems.serviceId,
@@ -363,12 +371,14 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.from(treatmentItems)
 		.leftJoin(serviceCatalogItems, and(eq(treatmentItems.serviceId, serviceCatalogItems.id), eq(serviceCatalogItems.organizationId, orgId)))
 		.leftJoin(visits, and(eq(treatmentItems.visitId, visits.id), eq(visits.organizationId, orgId)))
+		.leftJoin(patientInvoices, and(eq(treatmentItems.invoiceId, patientInvoices.id), eq(patientInvoices.organizationId, orgId)))
+		.leftJoin(treatmentPlans, and(eq(treatmentItems.treatmentPlanId, treatmentPlans.id), eq(treatmentPlans.organizationId, orgId)))
 		.where(
 			and(
 				eq(treatmentItems.organizationId, orgId),
 				ne(treatmentItems.status, "cancelled"),
-				gte(visits.createdAt, startDate),
-				lte(visits.createdAt, effectiveEndDate),
+				gte(itemEffectiveDate, startDate),
+				lte(itemEffectiveDate, effectiveEndDate),
 			),
 		)
 		.groupBy(treatmentItems.serviceId, treatmentItems.title, serviceCatalogItems.category)
@@ -409,5 +419,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			topDoctors,
 			topProcedures,
 		};
-	});
+	};
+
+	return executor ? runQuery(executor) : withTenantCtx(orgId, runQuery);
 }

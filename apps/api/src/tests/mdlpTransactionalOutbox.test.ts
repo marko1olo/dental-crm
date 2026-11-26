@@ -453,13 +453,13 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 		const prevThumb = process.env.MDLP_CERT_THUMBPRINT;
 		const prevAllowUnsigned = process.env.MDLP_ALLOW_UNSIGNED_SANDBOX;
 
-		let receivedBody: Record<string, unknown> | null = null;
+		const receivedBodies: Record<string, unknown>[] = [];
 		const mockCrptServer = http.createServer((req, res) => {
 			const chunks: Buffer[] = [];
 			req.on("data", (c: Buffer) => chunks.push(c));
 			req.on("end", () => {
 				const raw = Buffer.concat(chunks).toString("utf8");
-				receivedBody = JSON.parse(raw) as Record<string, unknown>;
+				receivedBodies.push(JSON.parse(raw) as Record<string, unknown>);
 				res.writeHead(200, { "Content-Type": "application/json" });
 				res.end(JSON.stringify({ operation_id: "CRPT-SIGNED-OP-001" }));
 			});
@@ -513,7 +513,7 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 				() => defaultCrptTransport(sampleRecord, new AbortController().signal),
 				/УКЭП|MDLP_CERT_THUMBPRINT/,
 			);
-			assert.strictEqual(receivedBody, null);
+			assert.strictEqual(receivedBodies.length, 0);
 
 			// C. With CRPT token + CryptoPro thumbprint + signFn -> attaches real detached signature and sends
 			const thumb = "38F8B1029384756A1029384756A1029384756A10";
@@ -538,9 +538,10 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 
 			assert.strictEqual(signedThumb, thumb);
 			assert.strictEqual(signedRes.crptOperationId, "CRPT-SIGNED-OP-001");
-			assert.ok(receivedBody);
-			assert.strictEqual(receivedBody.sign, expectedCmsBase64);
-			assert.notStrictEqual(receivedBody.sign, "");
+			const lastReceivedBody = receivedBodies[0];
+			assert.ok(lastReceivedBody);
+			assert.strictEqual(lastReceivedBody.sign, expectedCmsBase64);
+			assert.notStrictEqual(lastReceivedBody.sign, "");
 		} finally {
 			mockCrptServer.close();
 			if (prevToken !== undefined) process.env.MDLP_CLIENT_TOKEN = prevToken;

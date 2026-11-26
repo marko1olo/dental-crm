@@ -1,6 +1,8 @@
 import {
+	classifyPaymentFlowRecord,
 	type Kopecks,
 	sumKopecks,
+	toExactKopecks,
 } from "@dental/shared";
 import {
 	CANCELLED_ITEM_STATUS,
@@ -78,22 +80,39 @@ export function buildPatientLedgers(
 	}
 
 	const paymentLines = new Map<string, Kopecks[]>();
+	const resolveLedgerPaymentKop = (row: PaymentRow): Kopecks => {
+		const normalizedStatus = row.status.trim().toLowerCase();
+		if (normalizedStatus !== PAID_PAYMENT_STATUS && normalizedStatus !== "refunded") {
+			return toExactKopecks(0);
+		}
+		const validatedKop =
+			row.amountKopecks === undefined || (row.splitTenders && row.splitTenders.length > 0)
+				? validateSplitPaymentRow(row)
+				: undefined;
+		const flow = classifyPaymentFlowRecord(
+			{
+				status: row.status,
+				type: row.type,
+				operationType: row.operationType,
+				amountKopecks: validatedKop !== undefined ? BigInt(validatedKop) : row.amountKopecks,
+				amountRub:
+					typeof row.amountRub === "number" || typeof row.amountRub === "string"
+						? row.amountRub
+						: null,
+				fiscalReceipt: row.fiscalReceipt,
+			},
+			"ledger",
+		);
+		return toExactKopecks(flow.signedKopecks);
+	};
+
 	for (const row of payments) {
 		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
-		if (row.status === PAID_PAYMENT_STATUS) {
+		const kop = resolveLedgerPaymentKop(row);
+		if (kop !== 0) {
 			const lines = paymentLines.get(row.patientId) ?? [];
-			lines.push(validateSplitPaymentRow(row));
+			lines.push(kop);
 			paymentLines.set(row.patientId, lines);
-			continue;
-		}
-		// Include only negative counter-entry refund rows; legacy positive "refunded" rows stay excluded.
-		if (row.status === "refunded") {
-			const kop = validateSplitPaymentRow(row);
-			if (kop < 0) {
-				const lines = paymentLines.get(row.patientId) ?? [];
-				lines.push(kop);
-				paymentLines.set(row.patientId, lines);
-			}
 		}
 	}
 
@@ -357,16 +376,28 @@ export function buildVisitLedger(
 		if (row.visitId !== visitId) continue;
 		if (filterOrg && !matchesOrganization(row.organizationId, filterOrg)) continue;
 		paymentRowCount += 1;
-		if (row.status === PAID_PAYMENT_STATUS) {
-			paymentLines.push(validateSplitPaymentRow(row));
-			continue;
-		}
-		// Include only negative counter-entry refund rows; legacy positive "refunded" rows stay excluded.
-		if (row.status === "refunded") {
-			const kop = validateSplitPaymentRow(row);
-			if (kop < 0) {
-				paymentLines.push(kop);
-			}
+		const normalizedStatus = row.status.trim().toLowerCase();
+		if (normalizedStatus !== PAID_PAYMENT_STATUS && normalizedStatus !== "refunded") continue;
+		const validatedKop =
+			row.amountKopecks === undefined || (row.splitTenders && row.splitTenders.length > 0)
+				? validateSplitPaymentRow(row)
+				: undefined;
+		const flow = classifyPaymentFlowRecord(
+			{
+				status: row.status,
+				type: row.type,
+				operationType: row.operationType,
+				amountKopecks: validatedKop !== undefined ? BigInt(validatedKop) : row.amountKopecks,
+				amountRub:
+					typeof row.amountRub === "number" || typeof row.amountRub === "string"
+						? row.amountRub
+						: null,
+				fiscalReceipt: row.fiscalReceipt,
+			},
+			"ledger",
+		);
+		if (flow.signedKopecks !== 0n) {
+			paymentLines.push(toExactKopecks(flow.signedKopecks));
 		}
 	}
 

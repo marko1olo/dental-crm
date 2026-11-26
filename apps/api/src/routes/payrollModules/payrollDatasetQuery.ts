@@ -21,9 +21,15 @@ import {
 import {
 	type DoctorCompletedServiceItem,
 	type DoctorRefundDeductionItem,
+	classifyPaymentFlowRecord,
 	multiplyKopecksFractional,
 	rublesToKopecks,
 } from "@dental/shared";
+import {
+	isIncomePaymentRowSql,
+	isPaymentInPlaceRefundedSql,
+	isPaymentRefundFlowSql,
+} from "../../db/paymentRefundSql.js";
 import {
 	buildPayrollServicesAndAllocateLabOrders,
 	type TrackedDoctorLabOrder,
@@ -75,7 +81,7 @@ export async function fetchDoctorPayrollDataset(params: {
 				and(
 					eq(payments.organizationId, orgId),
 					eq(appointments.doctorUserId, resolvedDocId),
-					eq(payments.status, "paid"),
+					isIncomePaymentRowSql(),
 					gte(payments.paidAt, fromDate),
 					lte(payments.paidAt, toDate),
 				),
@@ -87,9 +93,11 @@ export async function fetchDoctorPayrollDataset(params: {
 			.select({
 				id: payments.id,
 				visitId: payments.visitId,
+				status: payments.status,
 				amountRub: payments.amountRub,
 				amountKopecks: payments.amountKopecks,
 				fiscalReceiptNumber: payments.fiscalReceiptNumber,
+				fiscalReceipt: payments.fiscalReceipt,
 				paidAt: payments.paidAt,
 				updatedAt: payments.updatedAt,
 				note: payments.note,
@@ -101,7 +109,9 @@ export async function fetchDoctorPayrollDataset(params: {
 				and(
 					eq(payments.organizationId, orgId),
 					eq(appointments.doctorUserId, resolvedDocId),
-					eq(payments.status, "refunded"),
+					inArray(payments.status, ["paid", "refunded"]),
+					isPaymentRefundFlowSql(),
+					sql`not (${isPaymentInPlaceRefundedSql()})`,
 					gte(sql`coalesce(${payments.updatedAt}, ${payments.paidAt})`, fromDate),
 					lte(sql`coalesce(${payments.updatedAt}, ${payments.paidAt})`, toDate),
 				),
@@ -109,22 +119,19 @@ export async function fetchDoctorPayrollDataset(params: {
 
 		const refundDeductions: DoctorRefundDeductionItem[] = [];
 		for (const ref of refundedPaymentRows) {
-			const refKop =
-				ref.amountKopecks != null && ref.amountKopecks !== 0n
-					? Math.abs(Number(ref.amountKopecks))
-					: Math.abs(rublesToKopecks(Number(ref.amountRub || 0)));
-			if (refKop > 0) {
-				refundDeductions.push({
-					serviceId: ref.id,
-					serviceNameRu: "Возврат пациенту по чеку",
-					refundedGrossKop: refKop,
-					receiptNumber: ref.fiscalReceiptNumber ?? undefined,
-					reasonRu: ref.note ?? "Возврат денежных средств пациенту",
-					dateIso: (ref.updatedAt || ref.paidAt || fromDate).toISOString().slice(0, 10),
-					doctorId: resolvedDocId,
-					performerId: resolvedDocId,
-				});
-			}
+			const flow = classifyPaymentFlowRecord(ref, "flow");
+			if (flow.kind !== "refund" || flow.absKopecks <= 0n) continue;
+			const refKop = Number(flow.absKopecks);
+			refundDeductions.push({
+				serviceId: ref.id,
+				serviceNameRu: "Возврат пациенту по чеку",
+				refundedGrossKop: refKop,
+				receiptNumber: ref.fiscalReceiptNumber ?? undefined,
+				reasonRu: ref.note ?? "Возврат денежных средств пациенту",
+				dateIso: (ref.updatedAt || ref.paidAt || fromDate).toISOString().slice(0, 10),
+				doctorId: resolvedDocId,
+				performerId: resolvedDocId,
+			});
 		}
 
 		const cashMethodApptIds = Array.from(
@@ -193,31 +200,36 @@ export async function fetchDoctorPayrollDataset(params: {
 			? await dbClient
 				.select({
 					visitId: payments.visitId,
+					status: payments.status,
 					amountRub: payments.amountRub,
 					amountKopecks: payments.amountKopecks,
 					fiscalReceiptNumber: payments.fiscalReceiptNumber,
+					fiscalReceipt: payments.fiscalReceipt,
 				})
 				.from(payments)
 				.where(
 					and(
 						eq(payments.organizationId, orgId),
 						inArray(payments.visitId, visitIds),
-						eq(payments.status, "paid"),
+						inArray(payments.status, ["paid", "refunded"]),
 					),
 				)
 			: [];
 
-		const paidKopByVisit = new Map<string, number>();
+		const paidKopBigByVisit = new Map<string, bigint>();
 		const fiscalReceiptByVisit = new Map<string, string>();
 		for (const p of paidVisitRows) {
 			if (!p.visitId) continue;
-			const amtKop = p.amountKopecks != null && Number(p.amountKopecks) > 0
-				? Number(p.amountKopecks)
-				: rublesToKopecks(Number(p.amountRub || 0));
-			paidKopByVisit.set(p.visitId, (paidKopByVisit.get(p.visitId) || 0) + amtKop);
+			const flow = classifyPaymentFlowRecord(p, "flow");
+			if (flow.kind !== "payment" || flow.absKopecks <= 0n) continue;
+			paidKopBigByVisit.set(p.visitId, (paidKopBigByVisit.get(p.visitId) ?? 0n) + flow.absKopecks);
 			if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.visitId)) {
 				fiscalReceiptByVisit.set(p.visitId, p.fiscalReceiptNumber);
 			}
+		}
+		const paidKopByVisit = new Map<string, number>();
+		for (const [visitId, kopBig] of paidKopBigByVisit.entries()) {
+			paidKopByVisit.set(visitId, Number(kopBig));
 		}
 
 		// , 

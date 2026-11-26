@@ -12,6 +12,14 @@ import {
 import { and, eq, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
+	isIncomePaymentRowSql,
+	isPaymentInPlaceRefundedSql,
+	isPaymentRefundFlowSql,
+	paymentAbsKopecksSql,
+	paymentFlowSignSql,
+	paymentSignedFlowKopecksSql,
+} from "../../db/paymentRefundSql.js";
+import {
 	appointments,
 	cashOperations,
 	chairs,
@@ -196,12 +204,16 @@ export async function queryExecutiveKpiAndFunnel(
 
 		// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа, исключая аннулированные счета)
 		// (Мандат 8bm: прямое суммирование копеек без float-дрейфа)
-		const paymentKopExpr = sql`coalesce(${payments.amountKopecks}, 0)::bigint`;
+		const absPaymentKopExpr = paymentAbsKopecksSql();
+		const incomePaymentPred = isIncomePaymentRowSql();
+		const refundFlowPred = isPaymentRefundFlowSql();
+		const inPlaceRefundPred = isPaymentInPlaceRefundedSql();
+		const signedFlowKopExpr = paymentSignedFlowKopecksSql();
 		const [paymentsSummary] = await tx
 			.select({
-				paidRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} else 0 end), 0)::bigint`,
-				refundedRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
-				payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
+				paidRevenueKopecks: sql<number>`coalesce(sum(case when ${incomePaymentPred} then ${absPaymentKopExpr} else 0 end), 0)::bigint`,
+				refundedRevenueKopecks: sql<number>`coalesce(sum(case when not (${inPlaceRefundPred}) and (${refundFlowPred}) then ${absPaymentKopExpr} else 0 end), 0)::bigint`,
+				payingPatientsCount: sql<number>`count(distinct case when ${incomePaymentPred} then ${payments.patientId} end)::int`,
 			})
 			.from(payments)
 			.where(
@@ -220,15 +232,19 @@ export async function queryExecutiveKpiAndFunnel(
 		const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
 		// 5b. Честное распределение по способам оплат (Касса наличные / Карты и ДМС / СБП QR / Депозиты)
-		const signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)`;
-		const absPaymentKopExpr = sql`abs(${paymentKopExpr})`;
+		const signExpr = paymentFlowSignSql();
 		const methodText = sql`${payments.method}::text`;
+		const splitCashKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0))`;
+		const splitSbpKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0))`;
+		const splitAdvanceKopExpr = sql`abs(coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0))`;
+		const splitDmsKopExpr = sql`abs(coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))`;
+		const splitCardKopExpr = sql`coalesce(abs(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint)), greatest(0, ${absPaymentKopExpr} - ${splitCashKopExpr} - ${splitSbpKopExpr} - ${splitAdvanceKopExpr} - ${splitDmsKopExpr}), 0)`;
 		const [paymentMethodsRow] = await tx
 			.select({
-				cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-				cardDmsKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('card', 'insurance', 'bank_transfer') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'cardKopecks')::bigint, (${payments.fiscalReceipt}->>'electronicKopecks')::bigint, greatest(0, ${absPaymentKopExpr} - coalesce((${payments.fiscalReceipt}->>'cashKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'depositKopecks')::bigint, 0) - coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0))), 0) + coalesce((${payments.fiscalReceipt}->>'dmsKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-				sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce((${payments.fiscalReceipt}->>'sbpKopecks')::bigint, 0) else 0 end)), 0)::bigint`,
-				depositKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('deposit', 'family_wallet', 'advance', 'other', 'certificate') then ${absPaymentKopExpr} when ${methodText} = 'split' then coalesce(coalesce((${payments.fiscalReceipt}->>'advanceOffsetKopecks')::bigint, (${payments.fiscalReceipt}->>'depositKopecks')::bigint), 0) else 0 end)), 0)::bigint`,
+				cashKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} = 'cash' then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitCashKopExpr} else 0 end)), 0)::bigint`,
+				cardDmsKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('card', 'insurance', 'bank_transfer') then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitCardKopExpr} + ${splitDmsKopExpr} else 0 end)), 0)::bigint`,
+				sbpKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('sbp', 'online') then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitSbpKopExpr} else 0 end)), 0)::bigint`,
+				depositKopecks: sql<number>`coalesce(sum(${signExpr} * (case when ${methodText} in ('deposit', 'family_wallet', 'advance', 'other', 'certificate') then ${absPaymentKopExpr} when ${methodText} = 'split' then ${splitAdvanceKopExpr} else 0 end)), 0)::bigint`,
 			})
 			.from(payments)
 			.where(
@@ -418,8 +434,8 @@ export async function queryExecutiveKpiAndFunnel(
 		// 8. Исторический когортный LTV и первичная/повторная выручка (исключая аннулированные счета)
 		const [historicalLtvRow] = await tx
 			.select({
-				totalRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
-				payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
+				totalRevenueKopecks: sql<number>`coalesce(sum(${signedFlowKopExpr}), 0)::bigint`,
+				payingPatientsCount: sql<number>`count(distinct case when ${incomePaymentPred} then ${payments.patientId} end)::int`,
 			})
 			.from(payments)
 			.where(
@@ -437,8 +453,8 @@ export async function queryExecutiveKpiAndFunnel(
 
 		const [primaryRevenueRow] = await tx
 			.select({
-				totalRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
-				patientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
+				totalRevenueKopecks: sql<number>`coalesce(sum(${signedFlowKopExpr}), 0)::bigint`,
+				patientsCount: sql<number>`count(distinct case when ${incomePaymentPred} then ${payments.patientId} end)::int`,
 			})
 			.from(payments)
 			.innerJoin(patients, eq(payments.patientId, patients.id))
@@ -456,8 +472,8 @@ export async function queryExecutiveKpiAndFunnel(
 
 		const [repeatRevenueRow] = await tx
 			.select({
-				totalRevenueKopecks: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopExpr} when ${payments.status} = 'refunded' then -abs(${paymentKopExpr}) else 0 end), 0)::bigint`,
-				patientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
+				totalRevenueKopecks: sql<number>`coalesce(sum(${signedFlowKopExpr}), 0)::bigint`,
+				patientsCount: sql<number>`count(distinct case when ${incomePaymentPred} then ${payments.patientId} end)::int`,
 			})
 			.from(payments)
 			.innerJoin(patients, eq(payments.patientId, patients.id))

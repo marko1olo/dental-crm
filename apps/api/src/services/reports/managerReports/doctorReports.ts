@@ -1,37 +1,31 @@
 /**
- * Отчёты по выработке врачей, загрузке кресел, воронке приёмов, напоминаниям и расписанию.
+ * Отчёты по выработке врачей и реэкспорт модульных сервисов загрузки/воронки/напоминаний/расписания.
  */
 
-import { and, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
-import { kopecksToRubles } from "@dental/shared";
-import { db } from "../../../db/client.js";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
+import {
+	paymentSignedExactFlowKopecksSql,
+	paymentSignedLegacyFlowRubSql,
+} from "../../../db/paymentRefundSql.js";
 import {
 	appointments,
-	chairs,
-	communicationOutbox,
-	organizations,
 	patientInvoices,
 	payments,
 	users,
 	visits,
 } from "../../../db/schema.js";
-import {
-	calculateWorkingMinutesInPeriod,
-	resolveClinicScheduleWorkHours,
-} from "../../../routes/analytics/executiveKpiQuery.js";
-import { inClinicZone, postgresKnowsTimeZone } from "./timezone.js";
 import type {
-	AppointmentFunnelReport,
-	ChairLoadReport,
-	ChairLoadRow,
 	DoctorPerformanceReport,
 	DoctorPerformanceRow,
-	ReminderEffectGroup,
-	ReminderEffectReport,
 	ReportScope,
-	ScheduleLoadCell,
-	ScheduleLoadReport,
 } from "./types.js";
+
+export { appointmentFunnel } from "./appointmentFunnelService.js";
+export { chairLoad } from "./chairLoadService.js";
+export { reminderEffect } from "./reminderEffectService.js";
+export { scheduleLoad } from "./scheduleLoadService.js";
 
 /**
  * Выручка и загрузка по врачам.
@@ -43,608 +37,190 @@ import type {
  */
 export async function doctorPerformance(
 	scope: ReportScope,
+	executor?: TenantDb,
 ): Promise<DoctorPerformanceReport> {
-	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
-	const paymentKopecks = sql`coalesce(nullif(${payments.amountKopecks}, 0), round(coalesce(${payments.amountRub}, 0) * 100)::bigint, 0)::bigint`;
-	// Устранение декартова произведения при сплит-чеках и множественных позициях счетов:
-	// первичная агрегация оплат по визиту в изолированном подзапросе
-	const visitPaymentsSubquery = db
-		.select({
-			visitId: sql<string>`coalesce(${payments.visitId}, ${patientInvoices.visitId})`.as("visit_id"),
-			revenueKopecks: sql<string>`coalesce(sum(case when ${payments.status} = 'paid' then ${paymentKopecks} when ${payments.status} = 'refunded' then -(${paymentKopecks}) else 0 end), 0)::bigint`.as("revenue_kopecks"),
-		})
-		.from(payments)
-		.leftJoin(
-			patientInvoices,
-			and(
-				eq(payments.documentId, patientInvoices.id),
-				eq(patientInvoices.organizationId, scope.organizationId),
-				sql`${payments.visitId} is null`,
-			),
-		)
-		.where(
-			and(
-				eq(payments.organizationId, scope.organizationId),
-				inArray(payments.status, ["paid", "refunded"]),
-				gte(paymentTimestamp, scope.from),
-				lte(paymentTimestamp, scope.to),
-				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
-			),
-		)
-		.groupBy(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`)
-		.as("vp");
-
-	const revenueRows = await db
-		.select({
-			doctorUserId: appointments.doctorUserId,
-			revenueKopecks: sql<string>`coalesce(sum(${visitPaymentsSubquery.revenueKopecks}), 0)::bigint`,
-		})
-		.from(visitPaymentsSubquery)
-		.leftJoin(visits, and(eq(visitPaymentsSubquery.visitId, visits.id), eq(visits.organizationId, scope.organizationId)))
-		.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, scope.organizationId)))
-		.groupBy(appointments.doctorUserId);
-
-	const appointmentRows = await db
-		.select({
-			doctorUserId: appointments.doctorUserId,
-			status: appointments.status,
-			total: sql<number>`count(*)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(appointments.doctorUserId, appointments.status);
-
-	const staff = await db
-		.select({ id: users.id, fullName: users.fullName })
-		.from(users)
-		.where(eq(users.organizationId, scope.organizationId));
-	const staffNames = new Map(staff.map((row) => [row.id, row.fullName]));
-
-	type Accumulator = {
-		revenueRub: number;
-		revenueKopecks: number;
-		total: number;
-		completed: number;
-		cancelled: number;
-		noShow: number;
-	};
-	const byDoctor = new Map<string, Accumulator>();
-	const ensure = (key: string): Accumulator => {
-		const existing = byDoctor.get(key);
-		if (existing) return existing;
-		const fresh = {
-			revenueRub: 0,
-			revenueKopecks: 0,
-			total: 0,
-			completed: 0,
-			cancelled: 0,
-			noShow: 0,
-		};
-		byDoctor.set(key, fresh);
-		return fresh;
-	};
-
-	let rawUnattributedRevenueKopecks = 0;
-	let unlinkedRefundsSumKopecks = 0;
-	const doctorRevenueKopecksMap = new Map<string, number>();
-
-	for (const row of revenueRows) {
-		const kopecks = Number(row.revenueKopecks);
-		if (!row.doctorUserId) {
-			rawUnattributedRevenueKopecks += kopecks;
-			if (kopecks < 0) {
-				unlinkedRefundsSumKopecks += Math.abs(kopecks);
-			}
-			continue;
-		}
-		const currentKop = (doctorRevenueKopecksMap.get(row.doctorUserId) ?? 0) + kopecks;
-		doctorRevenueKopecksMap.set(row.doctorUserId, currentKop);
-		const acc = ensure(row.doctorUserId);
-		acc.revenueKopecks = currentKop;
-		acc.revenueRub = kopecksToRubles(currentKop);
-	}
-
-	const rawUnattributedRevenueRub = kopecksToRubles(rawUnattributedRevenueKopecks);
-	const unlinkedRefundsSumRub = kopecksToRubles(unlinkedRefundsSumKopecks);
-
-	// [ANL-01] Защита от отрицательной нераспределённой выручки при непривязанных к врачам возвратах
-	const hasNegativeUnattributed = rawUnattributedRevenueRub < 0;
-	if (hasNegativeUnattributed && scope.logger?.warn) {
-		scope.logger.warn(
-			{
-				organizationId: scope.organizationId,
-				rawUnattributedRevenueRub,
-				unlinkedRefundsSumRub,
-			},
-			`[ANL-01][Audit] Negative unattributed revenue (${rawUnattributedRevenueRub} руб) detected due to doctor-unlinked refunds for org ${scope.organizationId}. Clamped to 0. Total unlinked refunds: ${unlinkedRefundsSumRub} руб.`,
-		);
-	}
-	const unattributedRevenueRub = Math.max(0, rawUnattributedRevenueRub);
-
-	for (const row of appointmentRows) {
-		if (!row.doctorUserId) continue;
-		const accumulator = ensure(row.doctorUserId);
-		const count = Number(row.total);
-		accumulator.total += count;
-		if (row.status === "completed") accumulator.completed += count;
-		else if (row.status === "cancelled") accumulator.cancelled += count;
-		else if (row.status === "no_show") accumulator.noShow += count;
-	}
-
-	const rows: DoctorPerformanceRow[] = [...byDoctor.entries()]
-		.map(([doctorUserId, accumulator]) => {
-			const averageTicketKopecks =
-				accumulator.completed > 0
-					? Math.round(accumulator.revenueKopecks / accumulator.completed)
-					: null;
-			return {
-				doctorUserId,
-				doctorName: staffNames.get(doctorUserId) ?? "Сотрудник вне списка",
-				revenueRub: accumulator.revenueRub,
-				revenueKopecks: accumulator.revenueKopecks,
-				appointmentsTotal: accumulator.total,
-				appointmentsCompleted: accumulator.completed,
-				appointmentsCancelled: accumulator.cancelled,
-				appointmentsNoShow: accumulator.noShow,
-				completionRate:
-					accumulator.total > 0
-						? accumulator.completed / accumulator.total
-						: null,
-				noShowRate:
-					accumulator.total > 0 ? accumulator.noShow / accumulator.total : null,
-				averageTicketRub:
-					averageTicketKopecks != null
-						? kopecksToRubles(averageTicketKopecks)
-						: null,
-				averageTicketKopecks,
-				marginRub: null as null,
-			};
-		})
-		.sort((left, right) => (right.revenueKopecks ?? 0) - (left.revenueKopecks ?? 0));
-
-	return {
-		rows,
-		unattributedRevenueRub,
-		unattributedRevenueKopecks: rawUnattributedRevenueKopecks,
-		// У визита нет поля «врач»: единственная связь платежа с врачом идёт
-		// через приём (payments.visit_id → visits.appointment_id →
-		// appointments.doctor_user_id). Платёж без визита или визит без приёма
-		// отнести не к чему, и такая сумма показывается отдельно, а не
-		// размазывается по врачам.
-		attributionNote:
-			hasNegativeUnattributed
-				? `Обнаружены не привязанные к приёмам возвраты на сумму ${Math.round(unlinkedRefundsSumRub).toLocaleString("ru-RU")} ₽. Нераспределённая выручка скорректирована до 0 ₽.`
-				: unattributedRevenueRub > 0
-					? "Часть выручки не отнесена к врачу: платёж не связан с приёмом. " +
-						"Связь идёт через приём, у визита отдельного поля «врач» нет. " +
-						"Чтобы выручка попадала врачу, оплату нужно оформлять из визита, созданного из записи в расписании."
-					: "Вся выручка периода отнесена к врачам.",
-		isEmpty: rows.length === 0 && unattributedRevenueRub === 0 && !hasNegativeUnattributed,
-	};
-}
-
-/**
- * Занятость кресел.
- *
- * ПОЧЕМУ НЕ ПРОСТО «СЧЁТ ЗАПИСЕЙ». Существующий дашборд отдавал число записей
- * на кресло и подписывал это как загрузку. Тридцать коротких приёмов и десять
- * длинных дают одинаково бессмысленное сравнение. Здесь считаются занятые
- * минуты, а процент — от явно названной базы: рабочих дней в периоде на длину
- * рабочего дня.
- */
-export async function chairLoad(
-	scope: ReportScope,
-	options: {
-		readonly minutesPerDay?: number;
-		readonly workingDaysPerWeek?: number;
-	} = {},
-): Promise<ChairLoadReport> {
-	let minutesPerDay: number;
-	let workingDays: number;
-	let totalMinutesPerChair: number;
-
-	if (options.minutesPerDay !== undefined || options.workingDaysPerWeek !== undefined) {
-		const mPerDay = Math.max(
-			60,
-			Math.min(24 * 60, options.minutesPerDay ?? 8 * 60),
-		);
-		const daysPerWeek = Math.max(
-			1,
-			Math.min(7, options.workingDaysPerWeek ?? 5),
-		);
-		const spanDays = Math.max(
-			1,
-			Math.ceil((scope.to.getTime() - scope.from.getTime()) / 86_400_000),
-		);
-		workingDays = Math.max(
-			1,
-			Math.round((spanDays * daysPerWeek) / 7),
-		);
-		minutesPerDay = mPerDay;
-		totalMinutesPerChair = Math.max(60, workingDays * minutesPerDay);
-	} else {
-		// [ANL-04] Честный расчет от реального графика работы клиники из organizations.clinicSchedule (40ч/нед по умолчанию)
-		const [org] = await db
-			.select({ clinicSchedule: organizations.clinicSchedule })
-			.from(organizations)
-			.where(eq(organizations.id, scope.organizationId));
-		const spec = resolveClinicScheduleWorkHours(org?.clinicSchedule);
-		const workingCalculation = calculateWorkingMinutesInPeriod(scope.from, scope.to, spec);
-		workingDays = Math.max(1, workingCalculation.workingDays);
-		totalMinutesPerChair = Math.max(60, workingCalculation.availableMinutesPerChair);
-		minutesPerDay = Math.max(60, Math.round(totalMinutesPerChair / workingDays));
-	}
-
-	const allChairs = await db
-		.select({ id: chairs.id, name: chairs.name })
-		.from(chairs)
-		.where(
-			and(
-				eq(chairs.organizationId, scope.organizationId),
-				ne(chairs.isActive, false),
-			),
-		);
-	const chairNames = new Map(allChairs.map((row) => [row.id, row.name]));
-
-	const appRows = await db
-		.select({
-			chairId: appointments.chairId,
-			appointments: sql<number>`count(*)::int`,
-			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				// Отменённые и неявки кресло не занимали.
-				ne(appointments.status, "cancelled"),
-				ne(appointments.status, "no_show"),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(appointments.chairId);
-
-	const statsByChair = new Map<string | null, { appointments: number; bookedMinutes: number }>();
-	for (const r of appRows) {
-		statsByChair.set(r.chairId, {
-			appointments: Number(r.appointments || 0),
-			bookedMinutes: Number(r.bookedMinutes || 0),
-		});
-	}
-
-	const result: ChairLoadRow[] = [];
-
-	if (allChairs.length > 0) {
-		for (const c of allChairs) {
-			const stat = statsByChair.get(c.id) ?? { appointments: 0, bookedMinutes: 0 };
-			result.push({
-				chairId: c.id,
-				chairName: c.name,
-				appointments: stat.appointments,
-				bookedMinutes: stat.bookedMinutes,
-				utilization: Math.max(0, Math.min(1, stat.bookedMinutes / totalMinutesPerChair)),
-			});
-		}
-	} else {
-		for (const r of appRows) {
-			const bookedMinutes = Number(r.bookedMinutes || 0);
-			result.push({
-				chairId: r.chairId,
-				chairName: r.chairId ? (chairNames.get(r.chairId) ?? "Кресло вне списка") : "Без указания кресла",
-				appointments: Number(r.appointments || 0),
-				bookedMinutes,
-				utilization: r.chairId
-					? Math.max(0, Math.min(1, bookedMinutes / totalMinutesPerChair))
-					: null,
-			});
-		}
-	}
-
-	const unassigned = statsByChair.get(null);
-	if (unassigned && unassigned.appointments > 0 && allChairs.length > 0) {
-		result.push({
-			chairId: null,
-			chairName: "Без указания кресла",
-			appointments: unassigned.appointments,
-			bookedMinutes: unassigned.bookedMinutes,
-			utilization: null,
-		});
-	}
-
-	result.sort((left, right) => {
-		if (left.chairId === null) return 1;
-		if (right.chairId === null) return -1;
-		return right.bookedMinutes - left.bookedMinutes;
-	});
-
-	return {
-		rows: result,
-		basis: {
-			workingDays,
-			minutesPerDay,
-			totalMinutesPerChair,
-			note:
-				`Знаменатель: ${workingDays} рабочих дн. × ${Math.round(minutesPerDay / 60)} ч. ` +
-				"Отменённые приёмы и неявки в занятые минуты не входят.",
-		},
-		isEmpty: result.length === 0 || result.every((r) => r.appointments === 0),
-	};
-}
-
-export async function appointmentFunnel(
-	scope: ReportScope,
-): Promise<AppointmentFunnelReport> {
-	const rows = await db
-		.select({ status: appointments.status, total: sql<number>`count(*)::int` })
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(appointments.status);
-
-	const byStatus: Record<string, number> = {};
-	let total = 0;
-	for (const row of rows) {
-		byStatus[row.status] = Number(row.total);
-		total += Number(row.total);
-	}
-
-	const share = (value: number) => (total > 0 ? value / total : null);
-	const arrived =
-		(byStatus.arrived ?? 0) +
-		(byStatus.in_treatment ?? 0) +
-		(byStatus.completed ?? 0);
-	const cancelled = byStatus.cancelled ?? 0;
-	const noShow = byStatus.no_show ?? 0;
-
-	return {
-		byStatus,
-		total,
-		arrivalRate: share(arrived),
-		completionRate: share(byStatus.completed ?? 0),
-		cancellationRate: share(cancelled),
-		noShowRate: share(noShow),
-		lostAppointments: cancelled + noShow,
-		isEmpty: total === 0,
-	};
-}
-
-// ─── Эффект напоминаний ──────────────────────────────────────────────────────
-
-/**
- * Ниже этого числа приёмов в группе разница долей — шум. Порог не статистический
- * критерий, а граница здравого смысла: на тридцати приёмах одна неявка меняет
- * долю на три процентных пункта, на трёх — на тридцать три.
- */
-const RELIABLE_GROUP_SIZE = 30;
-
-/**
- * Работают ли напоминания.
- *
- * ЧТО БЫЛО. В appointmentFunnel стоял комментарий «именно этот показатель
- * клиника может уменьшить напоминаниями, и именно его нужно смотреть до и
- * после» — а самого сравнения не было. Руководитель видел долю неявок и не мог
- * узнать, меняют ли её напоминания, за которые он платит по SMS.
- *
- * ПОЧЕМУ СРАВНИВАЮТСЯ ГРУППЫ, А НЕ ПЕРИОДЫ «ДО» И «ПОСЛЕ». История изменения
- * настроек в базе не хранится: момент включения напоминаний восстановить
- * нечем. Сравнение «месяц назад против этого месяца» приписало бы напоминаниям
- * заодно и сезон, и рекламу, и смену администратора. Сравнение внутри одного
- * периода от этого свободно.
- *
- * Приём считается напомненным, если хотя бы одно напоминание по нему получило
- * состояние «отправлено» или «доставлено». Подавленное и упавшее напоминание —
- * это НЕ напоминание: пациент его не видел.
- */
-export async function reminderEffect(
-	scope: ReportScope,
-): Promise<ReminderEffectReport> {
-	/*
-	 * Связь приёма с напоминанием — через ключ повтора вида
-	 * `reminder:<приём>:<часов>`: отдельной колонки под приём в очереди нет.
-	 * Разбор ключа делается в SQL через split_part, а не в JavaScript, чтобы не
-	 * тащить в память всю очередь клиники за период.
-	 */
-	const reminded = db.$with("reminded").as(
-		db
+	const runQuery = async (tx: TenantDb): Promise<DoctorPerformanceReport> => {
+		const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
+		const visitPaymentsSubquery = tx
 			.select({
-				appointmentId:
-					sql<string>`split_part(${communicationOutbox.dedupeKey}, ':', 2)::uuid`.as(
-						"appointment_id",
-					),
+				visitId: sql<string>`coalesce(${payments.visitId}, ${patientInvoices.visitId})`.as("visit_id"),
+				exactRevenueKopecks: sql<string>`coalesce(sum(${paymentSignedExactFlowKopecksSql()}), 0)::bigint`.as("exact_revenue_kopecks"),
+				legacyRevenueRub: sql<string>`coalesce(sum(${paymentSignedLegacyFlowRubSql()}), 0)`.as("legacy_revenue_rub"),
 			})
-			.from(communicationOutbox)
-			.where(
+			.from(payments)
+			.leftJoin(
+				patientInvoices,
 				and(
-					eq(communicationOutbox.organizationId, scope.organizationId),
-					sql`${communicationOutbox.dedupeKey} LIKE 'reminder:%'`,
-					// Только то, что пациент реально мог увидеть.
-					sql`${communicationOutbox.status} IN ('sent', 'delivered')`,
-					// Ключ должен содержать корректный идентификатор: испорченная
-					// строка не должна ронять весь отчёт приведением типа.
-					sql`split_part(${communicationOutbox.dedupeKey}, ':', 2) ~ '^[0-9a-fA-F-]{36}$'`,
+					eq(payments.documentId, patientInvoices.id),
+					eq(patientInvoices.organizationId, scope.organizationId),
+					sql`${payments.visitId} is null`,
 				),
 			)
-			.groupBy(sql`split_part(${communicationOutbox.dedupeKey}, ':', 2)`),
-	);
-
-	const rows = await db
-		.with(reminded)
-		.select({
-			wasReminded:
-				sql<boolean>`(${appointments.id} IN (SELECT appointment_id FROM reminded))`.as(
-					"was_reminded",
+			.where(
+				and(
+					eq(payments.organizationId, scope.organizationId),
+					inArray(payments.status, ["paid", "refunded"]),
+					gte(paymentTimestamp, scope.from),
+					lte(paymentTimestamp, scope.to),
+					sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${scope.organizationId} and pi.status in ('voided', 'cancelled')))`,
 				),
-			status: appointments.status,
-			total: sql<number>`count(*)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(sql`was_reminded`, appointments.status);
+			)
+			.groupBy(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`)
+			.as("vp");
 
-	const empty = (): {
-		appointments: number;
-		completed: number;
-		cancelled: number;
-		noShow: number;
-	} => ({
-		appointments: 0,
-		completed: 0,
-		cancelled: 0,
-		noShow: 0,
-	});
-	const tally = { reminded: empty(), notReminded: empty() };
+		const revenueRows = await tx
+			.select({
+				doctorUserId: appointments.doctorUserId,
+				exactRevenueKopecks: sql<string>`coalesce(sum(${visitPaymentsSubquery.exactRevenueKopecks}), 0)::bigint`,
+				legacyRevenueRub: sql<string>`coalesce(sum(${visitPaymentsSubquery.legacyRevenueRub}), 0)`,
+			})
+			.from(visitPaymentsSubquery)
+			.leftJoin(visits, and(eq(visitPaymentsSubquery.visitId, visits.id), eq(visits.organizationId, scope.organizationId)))
+			.leftJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, scope.organizationId)))
+			.groupBy(appointments.doctorUserId);
 
-	for (const row of rows) {
-		const bucket = row.wasReminded ? tally.reminded : tally.notReminded;
-		const count = Number(row.total);
-		bucket.appointments += count;
-		if (row.status === "completed") bucket.completed += count;
-		if (row.status === "cancelled") bucket.cancelled += count;
-		if (row.status === "no_show") bucket.noShow += count;
-	}
+		const appointmentRows = await tx
+			.select({
+				doctorUserId: appointments.doctorUserId,
+				status: appointments.status,
+				total: sql<number>`count(*)::int`,
+			})
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, scope.organizationId),
+					gte(appointments.startsAt, scope.from),
+					lte(appointments.startsAt, scope.to),
+				),
+			)
+			.groupBy(appointments.doctorUserId, appointments.status);
 
-	const finish = (bucket: ReturnType<typeof empty>): ReminderEffectGroup => {
-		const lost = bucket.cancelled + bucket.noShow;
+		const staff = await tx
+			.select({ id: users.id, fullName: users.fullName })
+			.from(users)
+			.where(eq(users.organizationId, scope.organizationId));
+		const staffNames = new Map(staff.map((row) => [row.id, row.fullName]));
+
+		type Accumulator = {
+			revenueRub: number;
+			revenueKopecks: number;
+			total: number;
+			completed: number;
+			cancelled: number;
+			noShow: number;
+		};
+		const byDoctor = new Map<string, Accumulator>();
+		const ensure = (key: string): Accumulator => {
+			const existing = byDoctor.get(key);
+			if (existing) return existing;
+			const fresh = {
+				revenueRub: 0,
+				revenueKopecks: 0,
+				total: 0,
+				completed: 0,
+				cancelled: 0,
+				noShow: 0,
+			};
+			byDoctor.set(key, fresh);
+			return fresh;
+		};
+
+		let rawUnattributedRevenueKopecks = 0;
+		let unlinkedRefundsSumKopecks = 0;
+		const doctorRevenueKopecksMap = new Map<string, number>();
+
+		for (const row of revenueRows) {
+			const kopecks =
+				Number(row.exactRevenueKopecks || 0) +
+				rublesToKopecks(Number(row.legacyRevenueRub || 0));
+			if (!row.doctorUserId) {
+				rawUnattributedRevenueKopecks += kopecks;
+				if (kopecks < 0) {
+					unlinkedRefundsSumKopecks += Math.abs(kopecks);
+				}
+				continue;
+			}
+			const currentKop = (doctorRevenueKopecksMap.get(row.doctorUserId) ?? 0) + kopecks;
+			doctorRevenueKopecksMap.set(row.doctorUserId, currentKop);
+			const acc = ensure(row.doctorUserId);
+			acc.revenueKopecks = currentKop;
+			acc.revenueRub = kopecksToRubles(currentKop);
+		}
+
+		const rawUnattributedRevenueRub = kopecksToRubles(rawUnattributedRevenueKopecks);
+		const unlinkedRefundsSumRub = kopecksToRubles(unlinkedRefundsSumKopecks);
+
+		// [ANL-01] Защита от отрицательной нераспределённой выручки при непривязанных к врачам возвратах
+		const hasNegativeUnattributed = rawUnattributedRevenueRub < 0;
+		if (hasNegativeUnattributed && scope.logger?.warn) {
+			scope.logger.warn(
+				{
+					organizationId: scope.organizationId,
+					rawUnattributedRevenueRub,
+					unlinkedRefundsSumRub,
+				},
+				`[ANL-01][Audit] Negative unattributed revenue (${rawUnattributedRevenueRub} руб) detected due to doctor-unlinked refunds for org ${scope.organizationId}. Clamped to 0. Total unlinked refunds: ${unlinkedRefundsSumRub} руб.`,
+			);
+		}
+		const unattributedRevenueRub = Math.max(0, rawUnattributedRevenueRub);
+
+		for (const row of appointmentRows) {
+			if (!row.doctorUserId) continue;
+			const accumulator = ensure(row.doctorUserId);
+			const count = Number(row.total);
+			accumulator.total += count;
+			if (row.status === "completed") accumulator.completed += count;
+			else if (row.status === "cancelled") accumulator.cancelled += count;
+			else if (row.status === "no_show") accumulator.noShow += count;
+		}
+
+		const rows: DoctorPerformanceRow[] = [...byDoctor.entries()]
+			.map(([doctorUserId, accumulator]) => {
+				const averageTicketKopecks =
+					accumulator.completed > 0
+						? Math.round(accumulator.revenueKopecks / accumulator.completed)
+						: null;
+				return {
+					doctorUserId,
+					doctorName: staffNames.get(doctorUserId) ?? "Сотрудник вне списка",
+					revenueRub: accumulator.revenueRub,
+					revenueKopecks: accumulator.revenueKopecks,
+					appointmentsTotal: accumulator.total,
+					appointmentsCompleted: accumulator.completed,
+					appointmentsCancelled: accumulator.cancelled,
+					appointmentsNoShow: accumulator.noShow,
+					completionRate:
+						accumulator.total > 0
+							? accumulator.completed / accumulator.total
+							: null,
+					noShowRate:
+						accumulator.total > 0 ? accumulator.noShow / accumulator.total : null,
+					averageTicketRub:
+						averageTicketKopecks != null
+							? kopecksToRubles(averageTicketKopecks)
+							: null,
+					averageTicketKopecks,
+					marginRub: null as null,
+				};
+			})
+			.sort((left, right) => (right.revenueKopecks ?? 0) - (left.revenueKopecks ?? 0));
+
 		return {
-			...bucket,
-			lost,
-			lostRate: bucket.appointments > 0 ? lost / bucket.appointments : null,
+			rows,
+			unattributedRevenueRub,
+			unattributedRevenueKopecks: rawUnattributedRevenueKopecks,
+			attributionNote:
+				hasNegativeUnattributed
+					? `Обнаружены не привязанные к приёмам возвраты на сумму ${Math.round(unlinkedRefundsSumRub).toLocaleString("ru-RU")} ₽. Нераспределённая выручка скорректирована до 0 ₽.`
+					: unattributedRevenueRub > 0
+						? "Часть выручки не отнесена к врачу: платёж не связан с приёмом. " +
+							"Связь идёт через приём, у визита отдельного поля «врач» нет. " +
+							"Чтобы выручка попадала врачу, оплату нужно оформлять из визита, созданного из записи в расписании."
+						: "Вся выручка периода отнесена к врачам.",
+			isEmpty: rows.length === 0 && unattributedRevenueRub === 0 && !hasNegativeUnattributed,
 		};
 	};
 
-	const remindedGroup = finish(tally.reminded);
-	const notRemindedGroup = finish(tally.notReminded);
-	const comparable =
-		remindedGroup.lostRate !== null && notRemindedGroup.lostRate !== null;
-	const smallestGroupSize = Math.min(
-		remindedGroup.appointments,
-		notRemindedGroup.appointments,
-	);
-	const enoughData = smallestGroupSize >= RELIABLE_GROUP_SIZE;
-
-	const caveat = enoughData
-		? "Это сравнение групп, а не доказательство причины: напоминание не уходит пациентам без телефона, " +
-			"без согласия и записанным на сегодня, а они и без напоминаний приходят иначе."
-		: `Данных мало: в меньшей группе ${smallestGroupSize} приём(ов), а разница становится осмысленной ` +
-			`примерно от ${RELIABLE_GROUP_SIZE}. Одна неявка здесь меняет вывод на противоположный — ` +
-			"смотрите на состав групп, а не на разницу долей.";
-
-	return {
-		reminded: remindedGroup,
-		notReminded: notRemindedGroup,
-		lostRateDifference: comparable
-			? (notRemindedGroup.lostRate as number) -
-				(remindedGroup.lostRate as number)
-			: null,
-		caveat,
-		smallestGroupSize,
-		enoughData,
-		isEmpty: remindedGroup.appointments + notRemindedGroup.appointments === 0,
-	};
-}
-
-/**
- * Загрузка по дням недели и часам. Нужна для решения, когда открывать смены и
- * куда ставить дополнительное кресло: «в среду с 10 до 13 очередь, а в субботу
- * пусто» из общей цифры за месяц не видно.
- */
-export async function scheduleLoad(
-	scope: ReportScope,
-): Promise<ScheduleLoadReport> {
-	/*
-	 * ТЕПЛОВАЯ КАРТА СЧИТАЛАСЬ В ПОЯСЕ СЕССИИ POSTGRESQL, А НЕ КЛИНИКИ.
-	 *
-	 * `extract(isodow …)` и `extract(hour …)` для колонки с часовым поясом берут
-	 * пояс СЕССИИ. Значит день недели и час приёма съезжали на всю величину
-	 * смещения: вечерние приёмы уезжали на предыдущие сутки, а карта «когда
-	 * открывать смены» советовала клинике не те часы. Для Камчатки это половина
-	 * суток. Измерено прогоном на живой базе: один и тот же момент при
-	 * `SET TIME ZONE 'UTC'` даёт isodow=3 hour=22, при `Europe/Samara` —
-	 * isodow=4 hour=2, при `Asia/Kamchatka` — isodow=4 hour=10.
-	 *
-	 * Приведение делается только к поясу, который PostgreSQL знает: иначе
-	 * `AT TIME ZONE` бросает 22023 и восемь рабочих отчётов руководителя
-	 * превращаются в 500. Пояс неизвестен — поведение прежнее, и это честнее
-	 * подставленного наугад московского.
-	 */
-	const zone = await postgresKnowsTimeZone(scope.timeZone);
-	const localStart = inClinicZone(appointments.startsAt, zone);
-	const rows = await db
-		.select({
-			weekday: sql<number>`extract(isodow from ${localStart})::int`,
-			hour: sql<number>`extract(hour from ${localStart})::int`,
-			appointments: sql<number>`count(*)::int`,
-			bookedMinutes: sql<number>`coalesce(sum(extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60), 0)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, scope.organizationId),
-				ne(appointments.status, "cancelled"),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-			),
-		)
-		.groupBy(
-			sql`extract(isodow from ${localStart})`,
-			sql`extract(hour from ${localStart})`,
-		);
-
-	const cells: ScheduleLoadCell[] = rows
-		.map((row) => ({
-			weekday: Number(row.weekday),
-			hour: Number(row.hour),
-			appointments: Number(row.appointments),
-			bookedMinutes: Number(row.bookedMinutes),
-		}))
-		.sort(
-			(left, right) => left.weekday - right.weekday || left.hour - right.hour,
-		);
-
-	const byWeekday = new Map<number, number>();
-	const byHour = new Map<number, number>();
-	for (const cell of cells) {
-		byWeekday.set(
-			cell.weekday,
-			(byWeekday.get(cell.weekday) ?? 0) + cell.bookedMinutes,
-		);
-		byHour.set(cell.hour, (byHour.get(cell.hour) ?? 0) + cell.bookedMinutes);
-	}
-
-	const peak = (source: Map<number, number>): number | null => {
-		let best: number | null = null;
-		let bestValue = -1;
-		for (const [key, value] of source) {
-			if (value > bestValue) {
-				best = key;
-				bestValue = value;
-			}
-		}
-		return best;
-	};
-
-	return {
-		cells,
-		busiestWeekday: peak(byWeekday),
-		busiestHour: peak(byHour),
-		isEmpty: cells.length === 0,
-	};
+	if (executor) return runQuery(executor);
+	return withTenantCtx(scope.organizationId, runQuery);
 }
