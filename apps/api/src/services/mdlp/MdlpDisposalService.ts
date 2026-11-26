@@ -18,7 +18,9 @@ function toSerializableMdlpItem(row: typeof mdlpItems.$inferSelect): Record<stri
 		costKopecks: row.costKopecks != null ? Number(row.costKopecks) : null,
 	};
 }
+import * as net from "node:net";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { getCryptoProCliStatus } from "../../crypto/cryptoProCliEngine.js";
 import { db } from "../../db/client.js";
 import { withSavepoint, withTenantCtx } from "../../db/rls.js";
 import { mdlpItems } from "../../db/schema.js";
@@ -26,6 +28,135 @@ import { inventoryItems } from "../../db/schema/inventory.js";
 import { fefoStockService } from "../inventory/fefoStockService.js";
 import { mdlpLogger } from "./logger.js";
 import { mdlpQueueService } from "./MdlpQueueService.js";
+
+export type MdlpVerificationStatus =
+	| "verified"
+	| "configured_unverified"
+	| "unreachable"
+	| "not_configured";
+
+export interface MdlpStatusReport {
+	status: "online" | "degraded" | "offline";
+	mode: "direct_crpt" | "registrar_disposal" | "offline_autonomous";
+	isConnected: boolean;
+	verificationStatus: MdlpVerificationStatus;
+	message: string;
+	registeredItemsCount: number;
+	disposedItemsCount: number;
+	pendingQueueCount: number;
+	lastCheckAt: string;
+	tokenConfigured: boolean;
+	registrarConfigured: boolean;
+	cryptoProSigningAvailable: boolean;
+	error?: string | undefined;
+}
+
+async function probeTcpEndpoint(
+	host: string,
+	port: number,
+	timeoutMs = 1200,
+): Promise<{ reachable: boolean; error?: string | undefined }> {
+	return new Promise((resolve) => {
+		const socket = new net.Socket();
+		let settled = false;
+		const finish = (reachable: boolean, error?: string) => {
+			if (settled) return;
+			settled = true;
+			socket.destroy();
+			resolve({ reachable, ...(error ? { error } : {}) });
+		};
+		socket.setTimeout(timeoutMs);
+		socket.once("connect", () => finish(true));
+		socket.once("timeout", () =>
+			finish(false, `Таймаут TCP-соединения с ${host}:${port} (${timeoutMs}мс)`),
+		);
+		socket.once("error", (err: Error) => finish(false, err.message));
+		try {
+			socket.connect(port, host);
+		} catch (err: unknown) {
+			finish(false, err instanceof Error ? err.message : String(err));
+		}
+	});
+}
+
+async function probeCrptGatewayHttp(
+	crptApiUrl: string,
+	token: string,
+	timeoutMs = 1500,
+): Promise<{
+	reachable: boolean;
+	authorized: boolean;
+	verificationStatus: MdlpVerificationStatus;
+	error?: string | undefined;
+}> {
+	const baseUrl = crptApiUrl.replace(/\/+$/, "");
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), timeoutMs);
+	try {
+		const response = await fetch(`${baseUrl}/auth/users/current`, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: "application/json",
+			},
+			signal: controller.signal,
+		});
+
+		if (response.ok) {
+			return {
+				reachable: true,
+				authorized: true,
+				verificationStatus: "verified",
+			};
+		}
+		if (response.status === 401 || response.status === 403) {
+			return {
+				reachable: true,
+				authorized: false,
+				verificationStatus: "unreachable",
+				error: `Шлюз ЦРПТ отклонил токен авторизации (HTTP ${response.status})`,
+			};
+		}
+		if (response.status === 404 || response.status === 405) {
+			const headResp = await fetch(baseUrl, {
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					Accept: "application/json",
+				},
+				signal: controller.signal,
+			});
+			if (headResp.ok) {
+				return {
+					reachable: true,
+					authorized: true,
+					verificationStatus: "verified",
+				};
+			}
+			return {
+				reachable: true,
+				authorized: false,
+				verificationStatus: "configured_unverified",
+				error: `Шлюз ЦРПТ ответил HTTP ${headResp.status}; готовность приёма документов не подтверждена`,
+			};
+		}
+		return {
+			reachable: false,
+			authorized: false,
+			verificationStatus: "unreachable",
+			error: `Шлюз ЦРПТ вернул ошибку HTTP ${response.status}`,
+		};
+	} catch (err: unknown) {
+		return {
+			reachable: false,
+			authorized: false,
+			verificationStatus: "unreachable",
+			error: err instanceof Error ? err.message : String(err),
+		};
+	} finally {
+		clearTimeout(timer);
+	}
+}
 
 export interface MdlpScanResult {
 	parsed: MdlpParsedBarcode;
@@ -580,27 +711,29 @@ export class MdlpDisposalService {
 
 	/**
 	 * Health-check и статус интеграции со шлюзом МДЛП Честный Знак ЦРПТ.
-	 * Честно сообщает о состоянии шлюза без ложных захардкоженных статусов.
+	 * Честно сообщает о состоянии шлюза: `online` + `isConnected: true` возвращаются
+	 * только после реальной проверки доступности шлюза ЦРПТ или TCP-пинга Регистратора Выбытия.
 	 */
-	public async getStatus(orgId: string): Promise<{
-		status: "online" | "degraded" | "offline";
-		mode: "direct_crpt" | "registrar_disposal" | "offline_autonomous";
-		isConnected: boolean;
-		message: string;
-		registeredItemsCount: number;
-		disposedItemsCount: number;
-		pendingQueueCount: number;
-		lastCheckAt: string;
-		tokenConfigured: boolean;
-		registrarConfigured: boolean;
-	}> {
+	public async getStatus(
+		orgId: string,
+		options?: {
+			probeTimeoutMs?: number | undefined;
+			forceLiveProbe?: boolean | undefined;
+		},
+	): Promise<MdlpStatusReport> {
 		const now = new Date().toISOString();
 		const queue = await mdlpQueueService.getQueueAsync(orgId);
 		const pendingQueueCount = queue.items.length;
 
-		// Проверяем наличие боевого токена или настроек шлюза в окружении
-		const tokenConfigured = Boolean(process.env.MDLP_CLIENT_TOKEN || process.env.CRPT_API_KEY);
-		const registrarConfigured = Boolean(process.env.MDLP_REGISTRAR_IP || process.env.MDLP_REGISTRAR_PORT);
+		// Проверяем наличие боевого токена или настроек регистратора в окружении
+		const token = (process.env.MDLP_CLIENT_TOKEN || process.env.CRPT_API_KEY || "").trim();
+		const tokenConfigured = token.length > 0;
+		const registrarHost = (process.env.MDLP_REGISTRAR_IP || "").trim();
+		const registrarPortRaw = (process.env.MDLP_REGISTRAR_PORT || "").trim();
+		const registrarPort = registrarPortRaw ? Number.parseInt(registrarPortRaw, 10) : 8080;
+		const registrarConfigured = Boolean(registrarHost || registrarPortRaw);
+		const cryptoProStatus = await getCryptoProCliStatus();
+		const probeTimeoutMs = options?.probeTimeoutMs ?? 1500;
 
 		const { registeredCount, disposedCount } = await withTenantCtx(orgId, async (tx) => {
 			const inStockRows = await tx
@@ -619,20 +752,121 @@ export class MdlpDisposalService {
 			};
 		});
 
-		if (tokenConfigured || registrarConfigured) {
+		if (registrarConfigured) {
+			if (!registrarHost || Number.isNaN(registrarPort) || registrarPort <= 0 || registrarPort > 65535) {
+				return {
+					status: "degraded",
+					mode: "registrar_disposal",
+					isConnected: false,
+					verificationStatus: "configured_unverified",
+					message: "Регистратор Выбытия настроен не полностью (проверьте IP-адрес и порт)",
+					registeredItemsCount: registeredCount,
+					disposedItemsCount: disposedCount,
+					pendingQueueCount,
+					lastCheckAt: now,
+					tokenConfigured,
+					registrarConfigured,
+					cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
+				};
+			}
+
+			const probe = await probeTcpEndpoint(registrarHost, registrarPort, probeTimeoutMs);
+			if (probe.reachable) {
+				return {
+					status: "online",
+					mode: "registrar_disposal",
+					isConnected: true,
+					verificationStatus: "verified",
+					message: "Аппаратный Регистратор Выбытия (РВ) доступен по сети",
+					registeredItemsCount: registeredCount,
+					disposedItemsCount: disposedCount,
+					pendingQueueCount,
+					lastCheckAt: now,
+					tokenConfigured,
+					registrarConfigured,
+					cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
+				};
+			}
+
 			return {
-				status: "online",
-				mode: registrarConfigured ? "registrar_disposal" : "direct_crpt",
-				isConnected: true,
-				message: registrarConfigured
-					? "Аппаратный Регистратор Выбытия (РВ) активен"
-					: "Шлюз Честный Знак ЦРПТ подключен",
+				status: "degraded",
+				mode: "registrar_disposal",
+				isConnected: false,
+				verificationStatus: "unreachable",
+				message: `Регистратор Выбытия настроен, но не отвечает по сети (${registrarHost}:${registrarPort})`,
 				registeredItemsCount: registeredCount,
 				disposedItemsCount: disposedCount,
 				pendingQueueCount,
 				lastCheckAt: now,
 				tokenConfigured,
 				registrarConfigured,
+				cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
+				error: probe.error,
+			};
+		}
+
+		if (tokenConfigured) {
+			const explicitApiUrl = (process.env.CRPT_API_URL || process.env.MDLP_API_URL || "").trim();
+			const crptApiUrl = explicitApiUrl || "https://api.mdlp.crpt.ru/api/v1";
+			const skipLiveProbe =
+				process.env.MDLP_SKIP_LIVE_PROBE === "1" ||
+				(process.env.NODE_ENV === "test" && !explicitApiUrl && !options?.forceLiveProbe);
+
+			if (skipLiveProbe) {
+				return {
+					status: "degraded",
+					mode: "direct_crpt",
+					isConnected: false,
+					verificationStatus: "configured_unverified",
+					message:
+						"Токен ЦРПТ настроен, доступность шлюза Честный Знак не подтверждена проверкой",
+					registeredItemsCount: registeredCount,
+					disposedItemsCount: disposedCount,
+					pendingQueueCount,
+					lastCheckAt: now,
+					tokenConfigured,
+					registrarConfigured: false,
+					cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
+				};
+			}
+
+			const probe = await probeCrptGatewayHttp(crptApiUrl, token, probeTimeoutMs);
+			if (probe.authorized) {
+				return {
+					status: "online",
+					mode: "direct_crpt",
+					isConnected: true,
+					verificationStatus: "verified",
+					message: cryptoProStatus.signingAvailable
+						? "Шлюз Честный Знак ЦРПТ доступен, УКЭП КриптоПро готова"
+						: "Шлюз Честный Знак ЦРПТ доступен (требуется КриптоПро УКЭП для отправки Схемы 10560)",
+					registeredItemsCount: registeredCount,
+					disposedItemsCount: disposedCount,
+					pendingQueueCount,
+					lastCheckAt: now,
+					tokenConfigured,
+					registrarConfigured: false,
+					cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
+				};
+			}
+
+			return {
+				status: "degraded",
+				mode: "direct_crpt",
+				isConnected: false,
+				verificationStatus: probe.verificationStatus,
+				message:
+					probe.verificationStatus === "configured_unverified"
+						? "Токен ЦРПТ настроен, но шлюз не подтвердил готовность приёма"
+						: "Токен ЦРПТ настроен, но шлюз Честный Знак недоступен (списания буферизуются в очереди)",
+				registeredItemsCount: registeredCount,
+				disposedItemsCount: disposedCount,
+				pendingQueueCount,
+				lastCheckAt: now,
+				tokenConfigured,
+				registrarConfigured: false,
+				cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
+				error: probe.error,
 			};
 		}
 
@@ -641,6 +875,7 @@ export class MdlpDisposalService {
 			status: "offline",
 			mode: "offline_autonomous",
 			isConnected: false,
+			verificationStatus: "not_configured",
 			message: "Автономный контур клиники (шлюз ЦРПТ не настроен, выгрузка по актам и схемам 531/444)",
 			registeredItemsCount: registeredCount,
 			disposedItemsCount: disposedCount,
@@ -648,6 +883,7 @@ export class MdlpDisposalService {
 			lastCheckAt: now,
 			tokenConfigured: false,
 			registrarConfigured: false,
+			cryptoProSigningAvailable: cryptoProStatus.signingAvailable,
 		};
 	}
 }

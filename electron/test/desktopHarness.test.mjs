@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import net from "node:net";
 import test from "node:test";
 import path from "node:path";
 import fs from "node:fs";
@@ -92,27 +93,71 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 	});
 
 	await t.test("Direct ATOL Driver 10 and Shtrikh-M fiscal print execution", async () => {
-		const atolRes = await printAtol10FiscalReceipt({
-			host: "127.0.0.1",
-			port: 16732,
-			payloadJson: JSON.stringify({
-				cashierName: "Иванова А. С.",
-				totalRub: 3500,
-			}),
+		const atolServer = net.createServer((socket) => {
+			socket.once("data", () => {
+				socket.end(
+					JSON.stringify({
+						results: [
+							{
+								errorCode: 0,
+								fiscalParams: {
+									fiscalDocumentNumber: 401,
+									fiscalDocumentSign: "3456789012",
+									fnNumber: "9960440302145896",
+									registrationNumber: "0010670000012345",
+								},
+							},
+						],
+					}),
+				);
+			});
 		});
-		assert.equal(atolRes.success, true);
-		assert.ok(atolRes.fiscalSign);
+		await new Promise((r) => atolServer.listen(0, "127.0.0.1", r));
+		const atolPort = atolServer.address().port;
 
-		const shtrihRes = await printShtrihMFiscalReceipt({
-			host: "127.0.0.1",
-			port: 5555,
-			payloadJson: JSON.stringify({
-				cashierName: "Иванова А. С.",
-				totalRub: 3500,
-			}),
+		const shtrihServer = net.createServer((socket) => {
+			socket.once("data", () => {
+				const frame = Buffer.alloc(15, 0);
+				frame[0] = 0x02;
+				frame[1] = 13;
+				frame[2] = 0x85;
+				frame[3] = 0x00;
+				frame[4] = 30;
+				frame.writeUInt32LE(502, 5);
+				frame.writeUInt32LE(192837465, 9);
+				frame[14] = 0x55;
+				socket.end(frame);
+			});
 		});
-		assert.equal(shtrihRes.success, true);
-		assert.ok(shtrihRes.fiscalDocNum);
+		await new Promise((r) => shtrihServer.listen(0, "127.0.0.1", r));
+		const shtrihPort = shtrihServer.address().port;
+
+		try {
+			const atolRes = await printAtol10FiscalReceipt({
+				host: "127.0.0.1",
+				port: atolPort,
+				payloadJson: JSON.stringify({
+					cashierName: "Иванова А. С.",
+					totalRub: 3500,
+				}),
+			});
+			assert.equal(atolRes.success, true);
+			assert.ok(atolRes.fiscalSign);
+
+			const shtrihRes = await printShtrihMFiscalReceipt({
+				host: "127.0.0.1",
+				port: shtrihPort,
+				payloadJson: JSON.stringify({
+					cashierName: "Иванова А. С.",
+					totalRub: 3500,
+				}),
+			});
+			assert.equal(shtrihRes.success, true);
+			assert.ok(shtrihRes.fiscalDocNum);
+		} finally {
+			atolServer.close();
+			shtrihServer.close();
+		}
 	});
 
 	await t.test("Enumerates system printers and detects thermal label printers", async () => {
@@ -169,25 +214,51 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 		assert.ok(result.printedAt);
 	});
 
-	await t.test("Direct TCP socket fiscal receipt printing on localhost simulator", async () => {
-		const result = await printFiscalReceiptTcpSocket({
-			host: "127.0.0.1",
-			port: 5555,
-			protocol: "atol",
-			payloadJson: JSON.stringify({
-				cashierName: "Иванова А. С.",
-				items: [
-					{ name: "Лечение кариеса (А16.07.002)", priceRub: 4500, quantity: 1 },
-				],
-				totalRub: 4500,
-				paymentType: "card",
-			}),
+	await t.test("Direct TCP socket fiscal receipt printing on local TCP KKT server", async () => {
+		const kktServer = net.createServer((socket) => {
+			socket.once("data", () => {
+				socket.end(
+					JSON.stringify({
+						results: [
+							{
+								errorCode: 0,
+								fiscalParams: {
+									fiscalDocumentNumber: 615,
+									fiscalDocumentSign: "1122334455",
+									fnNumber: "9960440302145896",
+									kktSerialNumber: "0010670000012345",
+								},
+							},
+						],
+					}),
+				);
+			});
 		});
+		await new Promise((r) => kktServer.listen(0, "127.0.0.1", r));
+		const kktPort = kktServer.address().port;
 
-		assert.equal(result.success, true);
-		assert.ok(result.fiscalSign);
-		assert.ok(result.fiscalDocNum);
-		assert.ok(result.kktSerialNumber);
+		try {
+			const result = await printFiscalReceiptTcpSocket({
+				host: "127.0.0.1",
+				port: kktPort,
+				protocol: "atol",
+				payloadJson: JSON.stringify({
+					cashierName: "Иванова А. С.",
+					items: [
+						{ name: "Лечение кариеса (А16.07.002)", priceRub: 4500, quantity: 1 },
+					],
+					totalRub: 4500,
+					paymentType: "card",
+				}),
+			});
+
+			assert.equal(result.success, true);
+			assert.ok(result.fiscalSign);
+			assert.ok(result.fiscalDocNum);
+			assert.ok(result.kktSerialNumber);
+		} finally {
+			kktServer.close();
+		}
 	});
 
 	await t.test("Local DICOM folder watcher detects directory and unwatch", async () => {

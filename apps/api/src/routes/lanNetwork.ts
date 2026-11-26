@@ -27,7 +27,10 @@ import {
 	getRankedLanInterfaces,
 } from "../services/lanDiscoveryService.js";
 import { getLanMeshService } from "../services/lanMeshService.js";
-import { getLanMeshAutoJoinServiceForOrg } from "../services/lanMeshAutoJoinService.js";
+import {
+	getLanMeshAutoJoinServiceForOrg,
+	hasLanMeshAutoJoinServiceForOrg,
+} from "../services/lanMeshAutoJoinService.js";
 import { SyncGatewayService } from "../services/sync/syncGatewayService.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 import {
@@ -122,9 +125,79 @@ export interface ActivePairingNonceEntry {
 }
 
 const DEFAULT_PAIRING_TTL_SECONDS = 15 * 60; // 15 minutes fresh pairing window
+const AUTO_JOIN_ROUTE_MAX_FAILURES = 5;
+const AUTO_JOIN_ROUTE_WINDOW_MS = 5 * 60 * 1000;
+
+interface AutoJoinRouteRateLimitEntry {
+	failedAttempts: number;
+	lastFailedAt: number;
+	lockedUntil: number;
+}
 
 const activePairingNonces = new Map<string, ActivePairingNonceEntry>();
 const usedPairingNonces = new Set<string>();
+const autoJoinRouteRateLimits = new Map<string, AutoJoinRouteRateLimitEntry>();
+
+function isPrivateOrLoopbackIp(rawIp: string): boolean {
+	const ip = rawIp.trim().replace(/^::ffff:/i, "");
+	if (!ip || ip === "127.0.0.1" || ip === "::1" || ip === "localhost") {
+		return true;
+	}
+	if (ip.startsWith("127.") || ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("169.254.")) {
+		return true;
+	}
+	if (ip.startsWith("172.")) {
+		const secondOctet = Number.parseInt(ip.split(".")[1] ?? "", 10);
+		if (!Number.isNaN(secondOctet) && secondOctet >= 16 && secondOctet <= 31) {
+			return true;
+		}
+	}
+	const lower = ip.toLowerCase();
+	return lower.startsWith("fc") || lower.startsWith("fd") || lower.startsWith("fe80:");
+}
+
+function checkAutoJoinRouteRateLimit(clientIp: string): { locked: boolean; retryAfterSeconds?: number | undefined } {
+	const now = Date.now();
+	const entry = autoJoinRouteRateLimits.get(clientIp);
+	if (!entry) return { locked: false };
+	if (entry.lockedUntil > now) {
+		return {
+			locked: true,
+			retryAfterSeconds: Math.max(1, Math.ceil((entry.lockedUntil - now) / 1000)),
+		};
+	}
+	if (now - entry.lastFailedAt > AUTO_JOIN_ROUTE_WINDOW_MS) {
+		autoJoinRouteRateLimits.delete(clientIp);
+	}
+	return { locked: false };
+}
+
+function recordAutoJoinRouteFailure(clientIp: string): { locked: boolean; retryAfterSeconds?: number | undefined } {
+	const now = Date.now();
+	let entry = autoJoinRouteRateLimits.get(clientIp);
+	if (!entry || (entry.lockedUntil <= now && now - entry.lastFailedAt > AUTO_JOIN_ROUTE_WINDOW_MS)) {
+		entry = { failedAttempts: 0, lastFailedAt: now, lockedUntil: 0 };
+		autoJoinRouteRateLimits.set(clientIp, entry);
+	}
+	entry.failedAttempts++;
+	entry.lastFailedAt = now;
+	if (entry.failedAttempts >= AUTO_JOIN_ROUTE_MAX_FAILURES) {
+		entry.lockedUntil = now + AUTO_JOIN_ROUTE_WINDOW_MS;
+		return {
+			locked: true,
+			retryAfterSeconds: Math.ceil(AUTO_JOIN_ROUTE_WINDOW_MS / 1000),
+		};
+	}
+	return { locked: false };
+}
+
+function resetAutoJoinRouteRateLimit(clientIp: string): void {
+	autoJoinRouteRateLimits.delete(clientIp);
+}
+
+export function clearAutoJoinRateLimitsForTest(): void {
+	autoJoinRouteRateLimits.clear();
+}
 
 export function purgeExpiredPairingNonces(): void {
 	const now = Date.now();
@@ -142,6 +215,7 @@ export function getActivePairingNoncesCount(): number {
 export function clearPairingNoncesForTest(): void {
 	activePairingNonces.clear();
 	usedPairingNonces.clear();
+	autoJoinRouteRateLimits.clear();
 }
 
 function createPairingTokenRecord(options: {
@@ -880,6 +954,19 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * verifies mutual authentication, and joins the local clinic mesh.
 	 */
 	app.post("/api/network/mesh/auto-join/verify", { schema: { description: "LAN mesh auto-join verify with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
+		const clientIp = request.ip || "127.0.0.1";
+		const preCheckLimit = checkAutoJoinRouteRateLimit(clientIp);
+		if (preCheckLimit.locked) {
+			const retryAfter = preCheckLimit.retryAfterSeconds ?? 300;
+			reply.header("Retry-After", String(retryAfter));
+			return reply.code(429).send({
+				ok: false,
+				error: "RATE_LIMITED",
+				message: `Превышено количество попыток сопряжения. Повторите через ${retryAfter} сек.`,
+				retryAfterSeconds: retryAfter,
+			});
+		}
+
 		const autoJoinVerifySchema = z
 			.object({
 				pin: z.string().min(6).max(6),
@@ -895,6 +982,17 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 
 		const parseRes = autoJoinVerifySchema.safeParse(request.body);
 		if (!parseRes.success) {
+			const failLimit = recordAutoJoinRouteFailure(clientIp);
+			if (failLimit.locked) {
+				const retryAfter = failLimit.retryAfterSeconds ?? 300;
+				reply.header("Retry-After", String(retryAfter));
+				return reply.code(429).send({
+					ok: false,
+					error: "RATE_LIMITED",
+					message: `Превышено количество попыток сопряжения. Повторите через ${retryAfter} сек.`,
+					retryAfterSeconds: retryAfter,
+				});
+			}
 			return reply.code(400).send({
 				ok: false,
 				error: "InvalidRequest",
@@ -904,34 +1002,105 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		}
 
 		const identity = getRequestIdentity(request);
-		if (
-			identity.verified &&
-			identity.organizationId &&
-			parseRes.data.organizationId &&
-			parseRes.data.organizationId !== identity.organizationId
-		) {
-			return reply.code(403).send({
-				ok: false,
-				error: "Forbidden",
-				message: "Несоответствие организации клиники для сопряжения.",
-			});
-		}
 		const envClinicId =
 			process.env.DENTE_CLINIC_ID && z.string().uuid().safeParse(process.env.DENTE_CLINIC_ID).success
 				? process.env.DENTE_CLINIC_ID
 				: null;
-		const orgId =
-			(identity.verified ? identity.organizationId : null) ??
-			parseRes.data.organizationId ??
-			envClinicId;
+
+		let orgId: string | null = null;
+
+		if (identity.verified && identity.organizationId) {
+			if (
+				parseRes.data.organizationId &&
+				parseRes.data.organizationId !== identity.organizationId
+			) {
+				const failLimit = recordAutoJoinRouteFailure(clientIp);
+				if (failLimit.locked) {
+					const retryAfter = failLimit.retryAfterSeconds ?? 300;
+					reply.header("Retry-After", String(retryAfter));
+					return reply.code(429).send({
+						ok: false,
+						error: "RATE_LIMITED",
+						message: `Превышено количество попыток сопряжения. Повторите через ${retryAfter} сек.`,
+						retryAfterSeconds: retryAfter,
+					});
+				}
+				return reply.code(403).send({
+					ok: false,
+					error: "Forbidden",
+					message: "Несоответствие организации клиники для сопряжения.",
+				});
+			}
+			orgId = identity.organizationId;
+		} else {
+			// Unauthenticated LAN auto-join is restricted to private/loopback clinic subnet
+			// and MUST NOT instantiate or enumerate arbitrary organizationId tenants.
+			if (!isPrivateOrLoopbackIp(clientIp)) {
+				const failLimit = recordAutoJoinRouteFailure(clientIp);
+				if (failLimit.locked) {
+					const retryAfter = failLimit.retryAfterSeconds ?? 300;
+					reply.header("Retry-After", String(retryAfter));
+					return reply.code(429).send({
+						ok: false,
+						error: "RATE_LIMITED",
+						message: `Превышено количество попыток сопряжения. Повторите через ${retryAfter} сек.`,
+						retryAfterSeconds: retryAfter,
+					});
+				}
+				return reply.code(403).send({
+					ok: false,
+					error: "Forbidden",
+					message: "Сопряжение по PIN доступно только из локальной сети клиники или с авторизованной сессией.",
+				});
+			}
+
+			const requestedOrgId = parseRes.data.organizationId ?? null;
+			if (requestedOrgId) {
+				const isConfiguredLocalClinic = envClinicId !== null && requestedOrgId === envClinicId;
+				const hasActivePairingSession = hasLanMeshAutoJoinServiceForOrg(requestedOrgId);
+				if (!isConfiguredLocalClinic && !hasActivePairingSession) {
+					const failLimit = recordAutoJoinRouteFailure(clientIp);
+					if (failLimit.locked) {
+						const retryAfter = failLimit.retryAfterSeconds ?? 300;
+						reply.header("Retry-After", String(retryAfter));
+						return reply.code(429).send({
+							ok: false,
+							error: "RATE_LIMITED",
+							message: `Превышено количество попыток сопряжения. Повторите через ${retryAfter} сек.`,
+							retryAfterSeconds: retryAfter,
+						});
+					}
+					return reply.code(403).send({
+						ok: false,
+						error: "AutoJoinOrganizationNotActive",
+						message: "Сопряжение для указанной организации не активировано на этом сервере.",
+					});
+				}
+				orgId = requestedOrgId;
+			} else if (envClinicId) {
+				orgId = envClinicId;
+			}
+		}
+
 		if (!orgId) {
+			const failLimit = recordAutoJoinRouteFailure(clientIp);
+			if (failLimit.locked) {
+				const retryAfter = failLimit.retryAfterSeconds ?? 300;
+				reply.header("Retry-After", String(retryAfter));
+				return reply.code(429).send({
+					ok: false,
+					error: "RATE_LIMITED",
+					message: `Превышено количество попыток сопряжения. Повторите через ${retryAfter} сек.`,
+					retryAfterSeconds: retryAfter,
+				});
+			}
 			return reply.code(400).send({
 				ok: false,
 				error: "OrganizationRequired",
 				message: "Не указан корректный UUID организации клиники для сопряжения.",
 			});
 		}
-		const clientIp = request.ip || "127.0.0.1";
+
 		const autoJoin = getLanMeshAutoJoinServiceForOrg(orgId);
 		const joinResult = autoJoin.verifyAndJoin({
 			...parseRes.data,
@@ -939,15 +1108,24 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		});
 
 		if (!joinResult.success) {
-			const statusCode = joinResult.error === "RATE_LIMITED" ? 429 : 403;
+			const failLimit = recordAutoJoinRouteFailure(clientIp);
+			const isRateLimited = joinResult.error === "RATE_LIMITED" || failLimit.locked;
+			const statusCode = isRateLimited ? 429 : 403;
+			const retryAfter = joinResult.retryAfterSeconds ?? failLimit.retryAfterSeconds;
+			if (isRateLimited && retryAfter !== undefined) {
+				reply.header("Retry-After", String(retryAfter));
+			}
 			return reply.code(statusCode).send({
 				ok: false,
-				error: joinResult.error,
-				message: joinResult.message,
-				retryAfterSeconds: joinResult.retryAfterSeconds,
+				error: isRateLimited ? "RATE_LIMITED" : joinResult.error,
+				message: isRateLimited && !joinResult.retryAfterSeconds
+					? `Превышено количество попыток сопряжения. Повторите через ${retryAfter ?? 300} сек.`
+					: joinResult.message,
+				retryAfterSeconds: retryAfter,
 			});
 		}
 
+		resetAutoJoinRouteRateLimit(clientIp);
 		return reply.send({
 			ok: true,
 			join: joinResult,

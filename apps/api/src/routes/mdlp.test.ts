@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import http from "node:http";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { getRequestIdentity } from "../security/identity.js";
@@ -140,22 +141,83 @@ describe("MDLP / Chestny Znak API Routes", () => {
 		assert(disposeJson.disposalDocument.xmlContent.includes("<sgtin>03400930000038DISPOSE123456</sgtin>"));
 	});
 
-	test("GET /api/mdlp/status returns honest gateway connection status and statistics", async () => {
-		const response = await app.inject({
-			method: "GET",
-			url: "/api/mdlp/status",
-			headers: clinicHeaders,
-		});
+	test("GET /api/mdlp/status returns honest gateway connection status without false online when unverified or unreachable", async () => {
+		const prevToken = process.env.MDLP_CLIENT_TOKEN;
+		const prevUrl = process.env.CRPT_API_URL;
+		const prevSkip = process.env.MDLP_SKIP_LIVE_PROBE;
 
-		assert.strictEqual(response.statusCode, 200);
-		const json = response.json();
-		assert.strictEqual(json.success, true);
-		assert(["online", "degraded", "offline"].includes(json.status));
-		assert(typeof json.mode === "string");
-		assert(typeof json.message === "string");
-		assert(typeof json.registeredItemsCount === "number");
-		assert(typeof json.disposedItemsCount === "number");
-		assert(typeof json.pendingQueueCount === "number");
+		try {
+			// 1. Offline autonomous (no token, no registrar)
+			delete process.env.MDLP_CLIENT_TOKEN;
+			delete process.env.CRPT_API_KEY;
+			delete process.env.CRPT_API_URL;
+			delete process.env.MDLP_API_URL;
+			const offlineRes = await app.inject({
+				method: "GET",
+				url: "/api/mdlp/status",
+				headers: clinicHeaders,
+			});
+			assert.strictEqual(offlineRes.statusCode, 200);
+			const offlineJson = offlineRes.json();
+			assert.strictEqual(offlineJson.success, true);
+			assert.strictEqual(offlineJson.status, "offline");
+			assert.strictEqual(offlineJson.isConnected, false);
+			assert.strictEqual(offlineJson.verificationStatus, "not_configured");
+			assert(typeof offlineJson.registeredItemsCount === "number");
+			assert(typeof offlineJson.disposedItemsCount === "number");
+			assert(typeof offlineJson.pendingQueueCount === "number");
+
+			// 2. Token configured without verified gateway -> MUST NOT report "online" / isConnected: true
+			process.env.MDLP_CLIENT_TOKEN = "token-configured-only";
+			process.env.MDLP_SKIP_LIVE_PROBE = "1";
+			const unverifiedRes = await app.inject({
+				method: "GET",
+				url: "/api/mdlp/status",
+				headers: clinicHeaders,
+			});
+			assert.strictEqual(unverifiedRes.statusCode, 200);
+			const unverifiedJson = unverifiedRes.json();
+			assert.strictEqual(unverifiedJson.status, "degraded");
+			assert.strictEqual(unverifiedJson.isConnected, false);
+			assert.strictEqual(unverifiedJson.verificationStatus, "configured_unverified");
+
+			// 3. Token configured + reachable live CRPT health endpoint -> online + verified
+			delete process.env.MDLP_SKIP_LIVE_PROBE;
+			const crptMock = http.createServer((req, res) => {
+				if (req.url?.includes("/auth/users/current")) {
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ user_id: "clinic-user-1" }));
+					return;
+				}
+				res.writeHead(404);
+				res.end();
+			});
+			await new Promise<void>((resolve) => crptMock.listen(0, "127.0.0.1", resolve));
+			const addr = crptMock.address();
+			const port = typeof addr === "object" && addr ? addr.port : 0;
+			try {
+				process.env.CRPT_API_URL = `http://127.0.0.1:${port}/api/v1`;
+				const liveRes = await app.inject({
+					method: "GET",
+					url: "/api/mdlp/status",
+					headers: clinicHeaders,
+				});
+				assert.strictEqual(liveRes.statusCode, 200);
+				const liveJson = liveRes.json();
+				assert.strictEqual(liveJson.status, "online");
+				assert.strictEqual(liveJson.isConnected, true);
+				assert.strictEqual(liveJson.verificationStatus, "verified");
+			} finally {
+				crptMock.close();
+			}
+		} finally {
+			if (prevToken !== undefined) process.env.MDLP_CLIENT_TOKEN = prevToken;
+			else delete process.env.MDLP_CLIENT_TOKEN;
+			if (prevUrl !== undefined) process.env.CRPT_API_URL = prevUrl;
+			else delete process.env.CRPT_API_URL;
+			if (prevSkip !== undefined) process.env.MDLP_SKIP_LIVE_PROBE = prevSkip;
+			else delete process.env.MDLP_SKIP_LIVE_PROBE;
+		}
 	});
 
 	test("GET /api/mdlp/catalog/anesthetics returns catalog of dental anesthetics", async () => {

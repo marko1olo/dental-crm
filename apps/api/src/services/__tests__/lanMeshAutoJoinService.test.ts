@@ -195,6 +195,43 @@ describe("LanMeshAutoJoinService: 6-Digit PIN & QR Pairing Protocol", () => {
 		}
 	});
 
+	it("rotates PIN and triggers global lockout on distributed brute-force across multiple IPs", () => {
+		const initialPin = service.getActivePinInfo().pin;
+
+		// 14 distributed failures across distinct IPs (below 5 per IP, building up to 15 global)
+		for (let i = 1; i <= 14; i++) {
+			const res = service.verifyAndJoin({
+				pin: "999999",
+				clientIp: `192.168.10.${i}`,
+			});
+			assert.equal(res.success, false);
+			if (!res.success) {
+				assert.equal(res.error, "INVALID_PIN");
+			}
+		}
+
+		// 15th failure triggers global lockout and rotates PIN
+		const lockRes = service.verifyAndJoin({
+			pin: "999999",
+			clientIp: "192.168.10.200",
+		});
+		assert.equal(lockRes.success, false);
+		if (!lockRes.success) {
+			assert.equal(lockRes.error, "RATE_LIMITED");
+		}
+
+		// Even a clean IP is blocked during global lockout and PIN was rotated
+		const afterLockRes = service.verifyAndJoin({
+			pin: initialPin,
+			clientIp: "192.168.10.250",
+		});
+		assert.equal(afterLockRes.success, false);
+		if (!afterLockRes.success) {
+			assert.equal(afterLockRes.error, "RATE_LIMITED");
+		}
+		assert.notEqual(service.getActivePinInfo().pin, initialPin);
+	});
+
 	it("getPairingStatus() returns comprehensive diagnostic telemetry", () => {
 		const status = service.getPairingStatus();
 		assert.equal(status.clinicId, "test-clinic-42");

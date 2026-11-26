@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import http from "node:http";
 import { after, before, describe, it } from "node:test";
 import { eq, inArray, sql } from "drizzle-orm";
 import { generateUuidV7 } from "@dental/shared";
@@ -6,7 +7,10 @@ import { db } from "../db/client.js";
 import { organizations } from "../db/schema/auth.js";
 import { mdlpOutboxTable } from "../db/schema/inventory/mdlpOutboxTable.js";
 import { mdlpOutboxService } from "../services/mdlp/mdlpOutboxService.js";
-import { runMdlpOutboxDaemon } from "../services/daemons/mdlpOutboxDaemon.js";
+import {
+	defaultCrptTransport,
+	runMdlpOutboxDaemon,
+} from "../services/daemons/mdlpOutboxDaemon.js";
 
 describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () => {
 	const testOrg1 = "dce70000-546f-4147-878f-3bcf77790001";
@@ -441,5 +445,112 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 			`DAEMON-CRPT-${taskId.slice(0, 8)}`,
 		);
 		assert.strictEqual(completedTask.lockedBy, null);
+	});
+
+	it("9. defaultCrptTransport fails closed when token is set without UKEP thumbprint and signs payload via CryptoPro when thumbprint is provided", async () => {
+		const prevToken = process.env.MDLP_CLIENT_TOKEN;
+		const prevUrl = process.env.CRPT_API_URL;
+		const prevThumb = process.env.MDLP_CERT_THUMBPRINT;
+		const prevAllowUnsigned = process.env.MDLP_ALLOW_UNSIGNED_SANDBOX;
+
+		let receivedBody: Record<string, unknown> | null = null;
+		const mockCrptServer = http.createServer((req, res) => {
+			const chunks: Buffer[] = [];
+			req.on("data", (c: Buffer) => chunks.push(c));
+			req.on("end", () => {
+				const raw = Buffer.concat(chunks).toString("utf8");
+				receivedBody = JSON.parse(raw) as Record<string, unknown>;
+				res.writeHead(200, { "Content-Type": "application/json" });
+				res.end(JSON.stringify({ operation_id: "CRPT-SIGNED-OP-001" }));
+			});
+		});
+
+		await new Promise<void>((resolve) => mockCrptServer.listen(0, "127.0.0.1", resolve));
+		const addr = mockCrptServer.address();
+		const port = typeof addr === "object" && addr ? addr.port : 0;
+
+		try {
+			const sampleRecord = {
+				id: generateUuidV7(),
+				organizationId: testOrg1,
+				entityType: "visit",
+				entityId: generateUuidV7(),
+				documentType: "10560",
+				idempotencyKey: `idem_sign_${Date.now()}`,
+				payload: {
+					schemaDoc: {
+						xmlContent: '<documents version="1.38"><withdrawal action_id="10560"/></documents>',
+					},
+				},
+				status: "in_flight" as const,
+				attempts: 0,
+				maxAttempts: 5,
+				nextRetryAt: new Date(),
+				lockedAt: new Date(),
+				lockedBy: "worker_test",
+				lastError: null,
+				crptOperationId: null,
+				crptResponsePayload: null,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+
+			// A. Autonomous mode without token continues to work without blocking
+			delete process.env.MDLP_CLIENT_TOKEN;
+			delete process.env.CRPT_API_KEY;
+			const autoRes = await defaultCrptTransport(sampleRecord, new AbortController().signal);
+			assert.ok(autoRes.crptOperationId.startsWith("CRPT-AUTONOMOUS-"));
+
+			// B. With CRPT token but WITHOUT thumbprint / pre-signature -> must fail closed (never send sign: "")
+			process.env.MDLP_CLIENT_TOKEN = "test-crpt-token";
+			process.env.CRPT_API_URL = `http://127.0.0.1:${port}/api/v1`;
+			delete process.env.MDLP_CERT_THUMBPRINT;
+			delete process.env.CRPT_CERT_THUMBPRINT;
+			delete process.env.CRYPTOPRO_THUMBPRINT;
+			delete process.env.MDLP_ALLOW_UNSIGNED_SANDBOX;
+
+			await assert.rejects(
+				() => defaultCrptTransport(sampleRecord, new AbortController().signal),
+				/УКЭП|MDLP_CERT_THUMBPRINT/,
+			);
+			assert.strictEqual(receivedBody, null);
+
+			// C. With CRPT token + CryptoPro thumbprint + signFn -> attaches real detached signature and sends
+			const thumb = "38F8B1029384756A1029384756A1029384756A10";
+			const expectedCmsBase64 = Buffer.from("PKCS7-GOST-3410-2012-DETACHED-SIGNATURE").toString("base64");
+			let signedThumb = "";
+			const signedRes = await defaultCrptTransport(
+				sampleRecord,
+				new AbortController().signal,
+				{
+					certThumbprint: thumb,
+					signFn: async (_buf, tp) => {
+						signedThumb = tp;
+						return {
+							success: true,
+							signature: Buffer.from(expectedCmsBase64, "base64"),
+							signatureBase64: expectedCmsBase64,
+							thumbprint: tp,
+						};
+					},
+				},
+			);
+
+			assert.strictEqual(signedThumb, thumb);
+			assert.strictEqual(signedRes.crptOperationId, "CRPT-SIGNED-OP-001");
+			assert.ok(receivedBody);
+			assert.strictEqual(receivedBody.sign, expectedCmsBase64);
+			assert.notStrictEqual(receivedBody.sign, "");
+		} finally {
+			mockCrptServer.close();
+			if (prevToken !== undefined) process.env.MDLP_CLIENT_TOKEN = prevToken;
+			else delete process.env.MDLP_CLIENT_TOKEN;
+			if (prevUrl !== undefined) process.env.CRPT_API_URL = prevUrl;
+			else delete process.env.CRPT_API_URL;
+			if (prevThumb !== undefined) process.env.MDLP_CERT_THUMBPRINT = prevThumb;
+			else delete process.env.MDLP_CERT_THUMBPRINT;
+			if (prevAllowUnsigned !== undefined) process.env.MDLP_ALLOW_UNSIGNED_SANDBOX = prevAllowUnsigned;
+			else delete process.env.MDLP_ALLOW_UNSIGNED_SANDBOX;
+		}
 	});
 });

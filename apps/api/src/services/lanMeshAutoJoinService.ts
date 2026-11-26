@@ -132,6 +132,7 @@ export class LanMeshAutoJoinService {
 	private readonly graceTtlMs: number;
 	private readonly secret: string;
 	private readonly maxAttemptsPerWindow: number;
+	private readonly maxGlobalFailedAttempts: number;
 	private readonly rateLimitWindowMs: number;
 	private readonly meshService?: LanMeshService | undefined;
 
@@ -145,6 +146,8 @@ export class LanMeshAutoJoinService {
 
 	private rotationTimer: NodeJS.Timeout | null = null;
 	private readonly rateLimits = new Map<string, RateLimitEntry>();
+	private consecutiveFailedAttemptsAllIps = 0;
+	private globalLockedUntil = 0;
 	private readonly joinedNodes = new Map<string, JoinedNodeRecord>();
 
 	constructor(config: LanMeshAutoJoinConfig = {}) {
@@ -158,6 +161,7 @@ export class LanMeshAutoJoinService {
 		this.graceTtlMs = config.graceTtlMs || 60 * 1000; // 60 seconds grace on old PIN
 		this.secret = config.secret || process.env.DENTE_MESH_SECRET || `dente-mesh-salt-${this.clinicId}`;
 		this.maxAttemptsPerWindow = config.maxAttemptsPerWindow || 5;
+		this.maxGlobalFailedAttempts = Math.max(this.maxAttemptsPerWindow * 3, 15);
 		this.rateLimitWindowMs = config.rateLimitWindowMs || 5 * 60 * 1000; // 5 minutes
 		this.meshService = config.lanMeshService;
 
@@ -248,8 +252,18 @@ export class LanMeshAutoJoinService {
 			};
 		}
 
-		// 2. Brute-force rate limiting check
+		// 2. Brute-force rate limiting check (global clinic lockout + per-IP lockout)
 		const now = Date.now();
+		if (this.globalLockedUntil > now) {
+			const retryAfter = Math.ceil((this.globalLockedUntil - now) / 1000);
+			return {
+				success: false,
+				error: "RATE_LIMITED",
+				message: `Превышено суммарное число неудачных попыток сопряжения. Повторите через ${retryAfter} сек.`,
+				retryAfterSeconds: retryAfter,
+			};
+		}
+
 		const rateLimit = this.getOrCreateRateLimit(clientIp);
 
 		if (rateLimit.lockedUntil > now) {
@@ -281,6 +295,22 @@ export class LanMeshAutoJoinService {
 		if (!pinValid) {
 			rateLimit.failedAttempts++;
 			rateLimit.lastFailedAt = now;
+			this.consecutiveFailedAttemptsAllIps++;
+
+			if (this.consecutiveFailedAttemptsAllIps >= this.maxGlobalFailedAttempts) {
+				this.rotatePin(true);
+				this.previousPin = null;
+				this.previousExpiresAt = 0;
+				this.globalLockedUntil = now + this.rateLimitWindowMs;
+				this.consecutiveFailedAttemptsAllIps = 0;
+				const retryAfter = Math.ceil(this.rateLimitWindowMs / 1000);
+				return {
+					success: false,
+					error: "RATE_LIMITED",
+					message: `Обнаружен перебор PIN-кода. Код автоматически перевыпущен, сопряжение заблокировано на ${retryAfter} сек.`,
+					retryAfterSeconds: retryAfter,
+				};
+			}
 
 			if (rateLimit.failedAttempts >= this.maxAttemptsPerWindow) {
 				rateLimit.lockedUntil = now + this.rateLimitWindowMs;
@@ -300,8 +330,10 @@ export class LanMeshAutoJoinService {
 			};
 		}
 
-		// 5. Successful authentication: reset rate limit for this IP
+		// 5. Successful authentication: reset rate limit for this IP and global counter
 		this.resetRateLimitForIp(clientIp);
+		this.consecutiveFailedAttemptsAllIps = 0;
+		this.globalLockedUntil = 0;
 
 		// 6. Assign node ID, role, and generate session mesh token
 		const assignedNodeId = request.nodeId?.trim() || `tablet-${crypto.randomUUID().slice(0, 8)}`;
@@ -414,6 +446,8 @@ export class LanMeshAutoJoinService {
 
 	resetAllRateLimits(): void {
 		this.rateLimits.clear();
+		this.consecutiveFailedAttemptsAllIps = 0;
+		this.globalLockedUntil = 0;
 	}
 
 	stop(): void {
@@ -495,6 +529,12 @@ export class LanMeshAutoJoinService {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const autoJoinServicesByOrg = new Map<string, LanMeshAutoJoinService>();
+
+export function hasLanMeshAutoJoinServiceForOrg(organizationId: string): boolean {
+	const orgKey = organizationId.trim();
+	if (!orgKey) return false;
+	return autoJoinServicesByOrg.has(orgKey);
+}
 
 export function getLanMeshAutoJoinServiceForOrg(
 	organizationId: string,

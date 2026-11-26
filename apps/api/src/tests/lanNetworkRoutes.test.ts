@@ -18,8 +18,13 @@ import Fastify from "fastify";
 import {
 	registerLanNetworkRoutes,
 	clearPairingNoncesForTest,
+	clearAutoJoinRateLimitsForTest,
 	getActivePairingNoncesCount,
 } from "../routes/lanNetwork.js";
+import {
+	hasLanMeshAutoJoinServiceForOrg,
+	resetLanMeshAutoJoinServiceForTest,
+} from "../services/lanMeshAutoJoinService.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER } from "../security/identity.js";
 import { signToken } from "../utils/cryptoHelper.js";
@@ -31,6 +36,8 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 
 	beforeEach(async () => {
 		clearPairingNoncesForTest();
+		clearAutoJoinRateLimitsForTest();
+		resetLanMeshAutoJoinServiceForTest();
 		app = Fastify();
 		await registerLanNetworkRoutes(app);
 		await app.ready();
@@ -422,5 +429,136 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 		assert.strictEqual(json.eventType, "chair_status_changed");
 		assert.ok(json.messageId);
 		assert.ok(json.receivedAt);
+	});
+
+	it("15. POST /api/network/mesh/auto-join/verify rejects unauthenticated arbitrary organizationId without instantiating tenant service", async () => {
+		const arbitraryOrgId = "99999999-8888-4777-8666-555555555555";
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/network/mesh/auto-join/verify",
+			payload: {
+				pin: "123456",
+				organizationId: arbitraryOrgId,
+			},
+		});
+
+		assert.strictEqual(res.statusCode, 403);
+		const json = res.json();
+		assert.strictEqual(json.ok, false);
+		assert.strictEqual(json.error, "AutoJoinOrganizationNotActive");
+		assert.strictEqual(hasLanMeshAutoJoinServiceForOrg(arbitraryOrgId), false);
+	});
+
+	it("16. POST /api/network/mesh/auto-join/verify allows LAN tablet join after clinic activates pairing status", async () => {
+		const statusRes = await app.inject({
+			method: "GET",
+			url: "/api/network/mesh/auto-join/status",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
+		});
+		assert.strictEqual(statusRes.statusCode, 200);
+		const activePin = statusRes.json().status.currentPin as string;
+		assert.match(activePin, /^\d{6}$/);
+
+		const joinRes = await app.inject({
+			method: "POST",
+			url: "/api/network/mesh/auto-join/verify",
+			payload: {
+				pin: activePin,
+				organizationId: testOrgId,
+				nodeId: "tablet-cabinet-2",
+				clientName: "iPad Врача 2",
+				role: "doctor",
+			},
+		});
+		assert.strictEqual(joinRes.statusCode, 200);
+		const joinJson = joinRes.json();
+		assert.strictEqual(joinJson.ok, true);
+		assert.strictEqual(joinJson.join.success, true);
+		assert.strictEqual(joinJson.join.clinicId, testOrgId);
+		assert.ok(joinJson.join.meshToken);
+	});
+
+	it("17. POST /api/network/mesh/auto-join/verify rate-limits PIN brute force (429 + Retry-After)", async () => {
+		const statusRes = await app.inject({
+			method: "GET",
+			url: "/api/network/mesh/auto-join/status",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
+		});
+		const activePin = statusRes.json().status.currentPin as string;
+		const wrongPin = activePin === "000000" ? "111111" : "000000";
+
+		for (let i = 0; i < 4; i++) {
+			const failRes = await app.inject({
+				method: "POST",
+				url: "/api/network/mesh/auto-join/verify",
+				payload: { pin: wrongPin, organizationId: testOrgId },
+			});
+			assert.strictEqual(failRes.statusCode, 403);
+		}
+
+		// 5th invalid attempt triggers 429 RATE_LIMITED
+		const lockRes = await app.inject({
+			method: "POST",
+			url: "/api/network/mesh/auto-join/verify",
+			payload: { pin: wrongPin, organizationId: testOrgId },
+		});
+		assert.strictEqual(lockRes.statusCode, 429);
+		assert.strictEqual(lockRes.json().error, "RATE_LIMITED");
+		assert.ok(lockRes.headers["retry-after"]);
+
+		// Correct PIN is also blocked while locked out
+		const blockedCorrectRes = await app.inject({
+			method: "POST",
+			url: "/api/network/mesh/auto-join/verify",
+			payload: { pin: activePin, organizationId: testOrgId },
+		});
+		assert.strictEqual(blockedCorrectRes.statusCode, 429);
+		assert.strictEqual(blockedCorrectRes.json().error, "RATE_LIMITED");
+	});
+
+	it("18. POST /api/network/mesh/auto-join/verify rate-limits enumeration across arbitrary organizationIds", async () => {
+		for (let i = 1; i <= 4; i++) {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/network/mesh/auto-join/verify",
+				payload: {
+					pin: "123456",
+					organizationId: `99999999-8888-4777-8666-55555555550${i}`,
+				},
+			});
+			assert.strictEqual(res.statusCode, 403);
+		}
+
+		const lockedRes = await app.inject({
+			method: "POST",
+			url: "/api/network/mesh/auto-join/verify",
+			payload: {
+				pin: "123456",
+				organizationId: "99999999-8888-4777-8666-555555555509",
+			},
+		});
+		assert.strictEqual(lockedRes.statusCode, 429);
+		assert.strictEqual(lockedRes.json().error, "RATE_LIMITED");
+		assert.ok(lockedRes.headers["retry-after"]);
+	});
+
+	it("19. POST /api/network/mesh/auto-join/verify rejects authenticated cross-tenant organizationId mismatch with 403", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/network/mesh/auto-join/verify",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+			},
+			payload: {
+				pin: "123456",
+				organizationId: "88888888-7777-4666-8555-444444444444",
+			},
+		});
+		assert.strictEqual(res.statusCode, 403);
+		assert.strictEqual(res.json().error, "Forbidden");
 	});
 });

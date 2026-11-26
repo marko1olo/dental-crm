@@ -229,11 +229,271 @@ function checkKktStatusTcpSocket({ host, port, protocol = "atol", timeoutMs = 20
 	});
 }
 
+function mapAtolKktErrorCode(code) {
+	switch (code) {
+		case 0:
+			return "Ошибок нет (OK)";
+		case 1:
+			return "Нет связи с фискальным регистратором (порт недоступен)";
+		case 2:
+			return "Закончилась чековая лента (Out of Paper)";
+		case 3:
+			return "Открыта крышка фискального регистратора";
+		case 4:
+			return "Смена превысила 24 часа (требуется снятие Z-отчета)";
+		case 5:
+			return "Ошибка фискального накопителя (ФН)";
+		case 6:
+			return "Неверный пароль кассира/администратора";
+		case 7:
+			return "Недопустимый режим налогообложения";
+		default:
+			return `Ошибка АТОЛ (код 0x${code.toString(16)})`;
+	}
+}
+
+function mapShtrikhKktErrorCode(code) {
+	switch (code) {
+		case 0x00:
+			return "Ошибок нет (OK)";
+		case 0x01:
+			return "Выдача данных: нет данных";
+		case 0x02:
+			return "Команда не поддерживается в данном режиме";
+		case 0x03:
+			return "Ошибка контрольной ленты или датчика бумаги";
+		case 0x04:
+			return "Отсутствует бумага (Out of Paper)";
+		case 0x05:
+			return "Снята крышка принтера";
+		case 0x08:
+			return "Исчерпан ресурс фискального накопителя";
+		case 0x4a:
+			return "Ошибка контрольной суммы XOR пакета";
+		default:
+			return `Ошибка ШТРИХ-М (код 0x${code.toString(16)})`;
+	}
+}
+
+function tryExtractJsonFromKktBuffer(buf) {
+	if (!buf || buf.length === 0) return null;
+	const text = buf.toString("utf8").trim();
+	if (!text) return null;
+
+	const headerSepIdx = text.indexOf("\r\n\r\n");
+	const bodyCandidate = headerSepIdx !== -1 ? text.slice(headerSepIdx + 4).trim() : text;
+	const firstBrace = bodyCandidate.indexOf("{");
+	const lastBrace = bodyCandidate.lastIndexOf("}");
+	if (firstBrace === -1 || lastBrace <= firstBrace) return null;
+
+	const slice = bodyCandidate.slice(firstBrace, lastBrace + 1);
+	try {
+		const parsed = JSON.parse(slice);
+		return parsed && typeof parsed === "object" ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+function build54FzQrString({ fnSerial, fiscalDocNum, fiscalSign, totalRub, operationType }) {
+	if (!fnSerial || !fiscalDocNum || !fiscalSign) return undefined;
+	const ts = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15);
+	const sum = typeof totalRub === "number" && Number.isFinite(totalRub) ? totalRub.toFixed(2) : "0.00";
+	const n = operationType === "income_return" || operationType === 2 ? 2 : 1;
+	return `t=${ts}&s=${sum}&fn=${fnSerial}&i=${fiscalDocNum}&fp=${fiscalSign}&n=${n}`;
+}
+
+function isKktTcpResponseComplete(protocol, responseData) {
+	if (!responseData || responseData.length === 0) return false;
+
+	// JSON or HTTP+JSON response (ATOL Web Server / JSON TCP / local bridge)
+	const trimmedStart = responseData.toString("utf8").trimStart();
+	if (trimmedStart.startsWith("{") || trimmedStart.startsWith("HTTP/")) {
+		return tryExtractJsonFromKktBuffer(responseData) !== null;
+	}
+	if (responseData.includes(0x7b) && tryExtractJsonFromKktBuffer(responseData) !== null) {
+		return true;
+	}
+
+	// Binary framing (Shtrikh-M STX=0x02, length byte at [1], total length + 2; or short ATOL frame)
+	if (responseData[0] === 0x02) {
+		if (responseData.length < 4) return false;
+		const frameLen = responseData[1];
+		if (protocol === "shtrih") {
+			if (frameLen >= 2) {
+				return responseData.length >= frameLen + 2;
+			}
+			return responseData.length >= 4;
+		}
+		if (frameLen >= 2 && responseData.length >= frameLen + 2) {
+			return true;
+		}
+		return responseData.length >= 4;
+	}
+
+	// ACK byte (0x06) or short status frame
+	if (responseData[0] === 0x06) {
+		return true;
+	}
+
+	return responseData.length >= 4;
+}
+
+function parseKktTcpResponse(protocol, responseData, requestPayload) {
+	const jsonObj = tryExtractJsonFromKktBuffer(responseData);
+	if (jsonObj) {
+		const firstResult = Array.isArray(jsonObj.results)
+			? (jsonObj.results[0] || {})
+			: jsonObj;
+		const errorCode =
+			typeof firstResult.errorCode === "number"
+				? firstResult.errorCode
+				: typeof jsonObj.errorCode === "number"
+					? jsonObj.errorCode
+					: 0;
+
+		if (errorCode !== 0 || firstResult.success === false || jsonObj.success === false) {
+			const errorText =
+				firstResult.errorDescription ||
+				firstResult.error ||
+				jsonObj.error ||
+				(protocol === "shtrih" ? mapShtrikhKktErrorCode(errorCode) : mapAtolKktErrorCode(errorCode));
+			return {
+				success: false,
+				status: "hardware_offline",
+				errorCode: `${protocol === "shtrih" ? "SHTRIKH" : "ATOL"}_ERR_${errorCode}`,
+				error: errorText,
+			};
+		}
+
+		const fiscalParams =
+			(firstResult.fiscalParams && typeof firstResult.fiscalParams === "object"
+				? firstResult.fiscalParams
+				: null) ||
+			(jsonObj.fiscalParams && typeof jsonObj.fiscalParams === "object"
+				? jsonObj.fiscalParams
+				: null) ||
+			firstResult;
+
+		const rawFd =
+			fiscalParams.fiscalDocumentNumber ??
+			fiscalParams.fiscalDocNum ??
+			fiscalParams.fd;
+		const rawFpd =
+			fiscalParams.fiscalDocumentSign ??
+			fiscalParams.fiscalSign ??
+			fiscalParams.fpd;
+		const rawFn = fiscalParams.fnNumber ?? fiscalParams.fnSerial;
+		const rawKktSerial =
+			fiscalParams.kktSerialNumber ??
+			fiscalParams.registrationNumber ??
+			fiscalParams.serialNumber;
+		const rawShift = fiscalParams.shiftNumber ?? fiscalParams.shiftNum;
+
+		const fiscalDocNum = rawFd !== undefined && rawFd !== null ? String(rawFd) : undefined;
+		const fiscalSign = rawFpd !== undefined && rawFpd !== null ? String(rawFpd) : undefined;
+		const fnSerial = rawFn !== undefined && rawFn !== null ? String(rawFn) : undefined;
+		const kktSerialNumber =
+			rawKktSerial !== undefined && rawKktSerial !== null ? String(rawKktSerial) : undefined;
+		const shiftNum =
+			rawShift !== undefined && rawShift !== null && !Number.isNaN(Number(rawShift))
+				? Number(rawShift)
+				: undefined;
+		const qrString =
+			typeof fiscalParams.qrString === "string" && fiscalParams.qrString.length > 0
+				? fiscalParams.qrString
+				: typeof jsonObj.qrString === "string" && jsonObj.qrString.length > 0
+					? jsonObj.qrString
+					: build54FzQrString({
+							fnSerial,
+							fiscalDocNum,
+							fiscalSign,
+							totalRub: requestPayload?.totalRub,
+							operationType: requestPayload?.operationType,
+						});
+
+		return {
+			success: true,
+			status: "printed",
+			errorCode: 0,
+			...(fiscalSign !== undefined ? { fiscalSign } : {}),
+			...(fiscalDocNum !== undefined ? { fiscalDocNum, fiscalDocumentNumber: fiscalDocNum } : {}),
+			...(shiftNum !== undefined ? { shiftNum } : {}),
+			...(kktSerialNumber !== undefined ? { kktSerialNumber } : {}),
+			...(fnSerial !== undefined ? { fnSerial } : {}),
+			...(qrString !== undefined ? { qrString } : {}),
+			printedAt: new Date().toISOString(),
+		};
+	}
+
+	if (!responseData || responseData.length === 0) {
+		return {
+			success: false,
+			status: "hardware_offline",
+			error: "ККТ закрыла TCP-соединение без ответа",
+		};
+	}
+
+	if (responseData[0] === 0x06) {
+		return {
+			success: true,
+			status: "printed",
+			errorCode: 0,
+			printedAt: new Date().toISOString(),
+		};
+	}
+
+	if (responseData.length < 4) {
+		return {
+			success: false,
+			status: "hardware_offline",
+			error: `Неполный ответ от ККТ (${responseData.length} байт)`,
+		};
+	}
+
+	const errorCode = responseData[3] !== undefined ? responseData[3] : 0;
+	if (errorCode !== 0) {
+		const mappedMsg =
+			protocol === "shtrih"
+				? mapShtrikhKktErrorCode(errorCode)
+				: mapAtolKktErrorCode(errorCode);
+		return {
+			success: false,
+			status: "hardware_offline",
+			errorCode: `${protocol === "shtrih" ? "SHTRIKH" : "ATOL"}_ERR_${errorCode}`,
+			error: mappedMsg,
+		};
+	}
+
+	// Binary response with errorCode === 0: extract FD/FPD if firmware returned them (offsets 5 and 9 per kktReceiptPrinter.ts)
+	const fiscalDocNum = responseData.length >= 10 ? String(responseData.readUInt32LE(5)) : undefined;
+	const fiscalSign = responseData.length >= 14 ? String(responseData.readUInt32LE(9)) : undefined;
+	const shiftNum = responseData.length >= 16 ? responseData.readUInt16LE(13) : undefined;
+
+	return {
+		success: true,
+		status: "printed",
+		errorCode: 0,
+		...(fiscalSign !== undefined ? { fiscalSign } : {}),
+		...(fiscalDocNum !== undefined ? { fiscalDocNum, fiscalDocumentNumber: fiscalDocNum } : {}),
+		...(shiftNum !== undefined ? { shiftNum } : {}),
+		printedAt: new Date().toISOString(),
+	};
+}
+
 /**
  * Direct TCP/IP socket printing to АТОЛ / Штрих-М KKT (54-ФЗ)
  */
-function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs = 3000, payloadJson }) {
+function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs = 3000, payloadJson } = {}) {
 	return new Promise((resolve) => {
+		if (!host || !port) {
+			return resolve({
+				success: false,
+				status: "hardware_offline",
+				error: "Не указаны host и port фискального регистратора",
+			});
+		}
+
 		let payload = {};
 		try {
 			payload = typeof payloadJson === "string" ? JSON.parse(payloadJson) : (payloadJson || {});
@@ -245,11 +505,17 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 		let responseData = Buffer.alloc(0);
 		let resolved = false;
 
+		const finish = (result) => {
+			if (resolved) return;
+			resolved = true;
+			clearTimeout(timeout);
+			resolve(result);
+		};
+
 		const timeout = setTimeout(() => {
 			if (!resolved) {
-				resolved = true;
 				socket.destroy();
-				resolve({
+				finish({
 					success: false,
 					status: "hardware_offline",
 					error: `Таймаут подключения к фискальному регистратору ${host}:${port}`,
@@ -269,38 +535,27 @@ function printFiscalReceiptTcpSocket({ host, port, protocol = "atol", timeoutMs 
 		});
 
 		socket.on("data", (chunk) => {
+			if (resolved) return;
 			responseData = Buffer.concat([responseData, chunk]);
-			if (responseData.length >= 4 && !resolved) {
-				resolved = true;
-				clearTimeout(timeout);
+			if (isKktTcpResponseComplete(protocol, responseData)) {
+				const parsedResult = parseKktTcpResponse(protocol, responseData, payload);
 				socket.end();
+				finish(parsedResult);
+			}
+		});
 
-				if (protocol === "shtrih") {
-					const errorCode = responseData[3] !== undefined ? responseData[3] : 0;
-					if (errorCode !== 0) {
-						return resolve({
-							success: false,
-							status: "hardware_offline",
-							error: `ШТРИХ-М возвратил ошибку команды: 0x${errorCode.toString(16)}`,
-						});
-					}
-				}
-
-				// Check if response contains valid physical FN confirmation
-				resolve({
-					success: false,
-					status: "hardware_offline",
-					error: "ШТРИХ-М не вернул фискальные реквизиты (ФД / ФПД) из ФН. Чек поставлен в очередь фискализации.",
-				});
+		socket.on("end", () => {
+			if (!resolved) {
+				const parsedResult = parseKktTcpResponse(protocol, responseData, payload);
+				socket.destroy();
+				finish(parsedResult);
 			}
 		});
 
 		socket.on("error", (err) => {
 			if (!resolved) {
-				resolved = true;
-				clearTimeout(timeout);
 				socket.destroy();
-				resolve({
+				finish({
 					success: false,
 					status: "hardware_offline",
 					error: `Ошибка соединения с ККТ (${host}:${port}): ${err.message}`,
