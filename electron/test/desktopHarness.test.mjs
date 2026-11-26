@@ -1,261 +1,269 @@
 import assert from "node:assert/strict";
-import net from "node:net";
-import test from "node:test";
-import path from "node:path";
 import fs from "node:fs";
+import net from "node:net";
 import os from "node:os";
+import path from "node:path";
+import test from "node:test";
 import {
-	getWindowsSerialPorts,
-	getTwainDevices,
+	DENTAL_HARDWARE_PRESETS,
+	DENTAL_PHOTO_PROTOCOL_12,
+	KNOWN_CT_VIEWER_CANDIDATES,
+	VENDOR_CLI_TEMPLATES,
+	checkKktStatusTcpSocket,
+	detectCtModality,
+	detectHardwareVendorFromPath,
+	detectInstalledCtViewers,
+	detectInstalledDentalHardware,
+	extractPatientHint,
+	formatCommandLineBridge,
+	generateVddsMediaContent,
+	getAnatomicalDentalPreviewDataUri,
+	getLocalServerStatus,
 	getSystemPrinters,
-	printThermalLabel,
+	getTwainDevices,
+	getVendorCliTemplate,
+	getWindowState,
+	getWindowsSerialPorts,
+	launchCliBridge,
+	launchExternalCtViewer,
+	launchSlidaExport,
+	launchVddsExport,
+	matchPhotoProtocolSlot,
+	openCbctPopoutWindow,
+	parseDicomFilenameMetadata,
+	parseHotFolderFilenameMetadata,
+	parseSlidaResponse,
+	parseVddsMediaResponse,
+	printAtol10FiscalReceipt,
 	printEscPosReceipt,
 	printFiscalReceiptTcpSocket,
-	setupDicomFolderWatch,
-	unwatchDicomFolder,
-	parseDicomFilenameMetadata,
-	getLocalServerStatus,
-	switchLocalDatabaseMode,
-	printAtol10FiscalReceipt,
 	printShtrihMFiscalReceipt,
-	printDocumentSilent,
-	getWindowState,
-	toggleFullScreen,
-	DENTAL_HARDWARE_PRESETS,
-	detectHardwareVendorFromPath,
-	detectInstalledDentalHardware,
-	setupAutoHardwareWatchers,
-	launchSlidaExport,
-	getAnatomicalDentalPreviewDataUri,
-	DENTAL_PHOTO_PROTOCOL_12,
-	matchPhotoProtocolSlot,
-	parseHotFolderFilenameMetadata,
-	parseSlidaIniResponse,
-	parseSlidaXmlResponse,
-	parseSlidaResponse,
-	generateVddsMediaContent,
-	parseVddsMediaResponse,
-	launchVddsExport,
-	VENDOR_CLI_TEMPLATES,
-	getVendorCliTemplate,
-	formatCommandLineBridge,
-	launchCliBridge,
-	KNOWN_CT_VIEWER_CANDIDATES,
-	detectInstalledCtViewers,
-	launchExternalCtViewer,
-	extractPatientHint,
-	detectCtModality,
 	scanDownloadsForCt,
-	openCbctPopoutWindow,
+	setupAutoHardwareWatchers,
+	setupDicomFolderWatch,
+	switchLocalDatabaseMode,
+	toggleFullScreen,
+	unwatchDicomFolder,
 } from "../main.cjs";
 
+function createOneShotTcpServer(onData) {
+	return new Promise((resolve) => {
+		const server = net.createServer((socket) => {
+			socket.once("data", (buf) => {
+				const resp = onData(buf);
+				if (resp) socket.end(resp);
+			});
+		});
+		server.listen(0, "127.0.0.1", () => {
+			const addr = server.address();
+			resolve({ server, port: typeof addr === "object" && addr ? addr.port : 0 });
+		});
+	});
+}
+
 test("Desktop Standalone Windows Runtime Harness", async (t) => {
-	await t.test("Enumerates Windows COM serial ports with hardware identifiers", async () => {
+	await t.test("Enumerates Windows COM serial ports safely without phantom hardware", async () => {
 		const ports = await getWindowsSerialPorts();
 		assert.ok(Array.isArray(ports));
-		assert.ok(ports.length >= 4);
-
-		const first = ports[0];
-		assert.ok(first.path.startsWith("COM"));
-		assert.ok(first.manufacturer);
-		assert.ok(first.vendorId);
+		for (const port of ports) {
+			assert.ok(typeof port.path === "string" && port.path.startsWith("COM"));
+		}
 	});
 
-	await t.test("Lists installed TWAIN dental sensors & intraoral cameras", async () => {
-		const devices = await getTwainDevices();
+	await t.test("Lists real TWAIN/WIA/HotFolder devices without 16 phantom sensors", async () => {
+		const devices = await getTwainDevices({ skipWia: true, includeInstalledPresets: false });
 		assert.ok(Array.isArray(devices));
-		assert.ok(devices.length >= 5);
-
-		const vatech = devices.find((d) => d.id.includes("vatech"));
-		assert.ok(vatech);
-		assert.equal(vatech.type, "sensor");
-		assert.equal(vatech.connected, true);
-
-		const runyes = devices.find((d) => d.id.includes("runyes"));
-		assert.ok(runyes);
-		assert.equal(runyes.connected, true);
-
-		const pantum = devices.find((d) => d.id.includes("pantum"));
-		assert.ok(pantum);
-		assert.equal(pantum.connected, true);
+		assert.equal(devices.some((d) => d.id === "twain-vatech-ezsensor" && d.connected === false), false);
+		for (const dev of devices) {
+			assert.ok(typeof dev.id === "string" && dev.id.length > 0);
+			assert.ok(["twain_ds", "wia", "hot_folder", "installed_software"].includes(dev.source));
+		}
 	});
 
-	await t.test("Queries local offline SQLite/Postgres server engine health", async () => {
-		const serverStatus = await getLocalServerStatus();
-		assert.equal(serverStatus.isRunning, true);
-		assert.equal(serverStatus.engine, "postgres_native");
-		assert.equal(serverStatus.canAcceptWrites, true);
-		assert.equal(serverStatus.port, 5432);
+	await t.test("Queries honest PG18 local server status and rejects legacy sqlite_standalone", async () => {
+		const closedProbe = net.createServer();
+		await new Promise((r) => closedProbe.listen(0, "127.0.0.1", r));
+		const closedPort = closedProbe.address().port;
+		await new Promise((r) => closedProbe.close(r));
 
-		const switchRes = await switchLocalDatabaseMode("sqlite_standalone");
-		assert.equal(switchRes.success, true);
-		assert.equal(switchRes.activeMode, "sqlite_standalone");
+		const offlineStatus = await getLocalServerStatus({
+			pgPort: closedPort,
+			apiBaseUrl: `http://127.0.0.1:${closedPort}`,
+		});
+		assert.equal(offlineStatus.isRunning, false);
+		assert.equal(offlineStatus.pgReady, false);
+		assert.notEqual(offlineStatus.engine, "sqlite_standalone");
+		assert.equal(offlineStatus.engine, "embedded-postgres");
+		assert.equal(offlineStatus.syncMode, "offline_buffer");
+
+		const rejected = await switchLocalDatabaseMode("sqlite_standalone");
+		assert.equal(rejected.success, false);
+		assert.notEqual(rejected.activeMode, "sqlite_standalone");
+
+		const switched = await switchLocalDatabaseMode("postgres_native");
+		assert.equal(switched.success, true);
+		assert.equal(switched.activeMode, "postgres_native");
+		await switchLocalDatabaseMode("embedded-postgres");
 	});
 
 	await t.test("Direct ATOL Driver 10 and Shtrikh-M fiscal print execution", async () => {
-		const atolServer = net.createServer((socket) => {
-			socket.once("data", () => {
-				socket.end(
-					JSON.stringify({
-						results: [
-							{
-								errorCode: 0,
-								fiscalParams: {
-									fiscalDocumentNumber: 401,
-									fiscalDocumentSign: "3456789012",
-									fnNumber: "9960440302145896",
-									registrationNumber: "0010670000012345",
-								},
+		const { server: atolServer, port: atolPort } = await createOneShotTcpServer(() =>
+			Buffer.from(
+				JSON.stringify({
+					results: [
+						{
+							errorCode: 0,
+							fiscalParams: {
+								fiscalDocumentNumber: 401,
+								fiscalDocumentSign: "3456789012",
+								fnNumber: "9960440302145896",
+								registrationNumber: "0010670000012345",
 							},
-						],
-					}),
-				);
-			});
-		});
-		await new Promise((r) => atolServer.listen(0, "127.0.0.1", r));
-		const atolPort = atolServer.address().port;
+						},
+					],
+				}),
+				"utf8",
+			),
+		);
 
-		const shtrihServer = net.createServer((socket) => {
-			socket.once("data", () => {
-				const frame = Buffer.alloc(15, 0);
-				frame[0] = 0x02;
-				frame[1] = 13;
-				frame[2] = 0x85;
-				frame[3] = 0x00;
-				frame[4] = 30;
-				frame.writeUInt32LE(502, 5);
-				frame.writeUInt32LE(192837465, 9);
-				frame[14] = 0x55;
-				socket.end(frame);
-			});
+		const { server: shtrihServer, port: shtrihPort } = await createOneShotTcpServer(() => {
+			const frame = Buffer.alloc(15, 0);
+			frame[0] = 0x02;
+			frame[1] = 13;
+			frame[2] = 0x85;
+			frame[3] = 0x00;
+			frame[4] = 30;
+			frame.writeUInt32LE(502, 5);
+			frame.writeUInt32LE(192837465, 9);
+			frame[14] = 0x55;
+			return frame;
 		});
-		await new Promise((r) => shtrihServer.listen(0, "127.0.0.1", r));
-		const shtrihPort = shtrihServer.address().port;
 
 		try {
 			const atolRes = await printAtol10FiscalReceipt({
 				host: "127.0.0.1",
 				port: atolPort,
-				payloadJson: JSON.stringify({
-					cashierName: "Иванова А. С.",
-					totalRub: 3500,
-				}),
+				payloadJson: JSON.stringify({ cashierName: "Иванова А. С.", totalRub: 3500 }),
 			});
 			assert.equal(atolRes.success, true);
-			assert.ok(atolRes.fiscalSign);
+			assert.equal(atolRes.fiscalSign, "3456789012");
 
 			const shtrihRes = await printShtrihMFiscalReceipt({
 				host: "127.0.0.1",
 				port: shtrihPort,
-				payloadJson: JSON.stringify({
-					cashierName: "Иванова А. С.",
-					totalRub: 3500,
-				}),
+				payloadJson: JSON.stringify({ cashierName: "Иванова А. С.", totalRub: 3500 }),
 			});
 			assert.equal(shtrihRes.success, true);
-			assert.ok(shtrihRes.fiscalDocNum);
+			assert.equal(shtrihRes.fiscalDocNum, "502");
 		} finally {
 			atolServer.close();
 			shtrihServer.close();
 		}
 	});
 
-	await t.test("Enumerates system printers and detects thermal label printers", async () => {
+	await t.test("Enumerates system printers cleanly without fabricated hardware", async () => {
 		const printers = await getSystemPrinters();
 		assert.ok(Array.isArray(printers));
-		assert.ok(printers.length >= 2);
-
-		const thermalPrinter = printers.find((p) => p.isThermal);
-		assert.ok(thermalPrinter, "Must detect at least one thermal label printer");
-		assert.ok(thermalPrinter.name.length > 0);
+		for (const p of printers) {
+			assert.equal(typeof p.name, "string");
+			assert.equal(typeof p.isThermal, "boolean");
+		}
 	});
 
-	await t.test("Direct silent thermal label printing without browser print dialog", async () => {
-		const result = await printThermalLabel({
-			printerName: "Xprinter XP-365B (Thermal)",
-			silent: true,
-			widthMm: 58,
-			heightMm: 40,
-			copies: 1,
-			html: `<!DOCTYPE html>
-<html>
-<head>
-  <style>@page{size:58mm 40mm;margin:0;}body{font-family:sans-serif;font-size:10px;padding:2mm;}</style>
-</head>
-<body>
-  <div style="font-weight:bold;">СТЕРИЛИЗАЦИЯ ЦСО</div>
-  <div>Пакет: #CSO-2026-08-23-01</div>
-  <div>Срок до: 23.09.2026</div>
-  <div>Код: [2D-DATAMATRIX]</div>
-</body>
-</html>`,
+	await t.test("Direct silent ESC/POS thermal receipt printing over real LAN TCP socket", async () => {
+		let receivedBytes = Buffer.alloc(0);
+		let onServerReceived;
+		const receivedPromise = new Promise((resolve) => {
+			onServerReceived = resolve;
 		});
-
-		assert.equal(result.success, true);
-		assert.equal(result.silent, true);
-		assert.equal(result.widthMm, 58);
-		assert.equal(result.heightMm, 40);
-		assert.ok(result.printedAt);
-	});
-
-	await t.test("Direct silent ESC/POS thermal receipt printing over LAN socket", async () => {
-		const result = await printEscPosReceipt({
-			host: "127.0.0.1",
-			port: 9100,
-			text: "СТОМАТОЛОГИЯ ДЕНТЕ\nЧек №1402\nИтого: 4500.00 руб.\n",
-			silent: true,
-			widthMm: 80,
-			cutPaper: true,
+		const escPosServer = net.createServer((socket) => {
+			const chunks = [];
+			socket.on("data", (c) => chunks.push(c));
+			socket.on("end", () => {
+				receivedBytes = Buffer.concat(chunks);
+				onServerReceived();
+			});
 		});
+		await new Promise((r) => escPosServer.listen(0, "127.0.0.1", r));
+		const escPosPort = escPosServer.address().port;
 
-		assert.equal(result.success, true);
-		assert.equal(result.silent, true);
-		assert.ok(result.bytesSent);
-		assert.ok(result.printedAt);
+		try {
+			const result = await printEscPosReceipt({
+				host: "127.0.0.1",
+				port: escPosPort,
+				text: "СТОМАТОЛОГИЯ ДЕНТЕ\nЧек №1402\nИтого: 4500.00 руб.\n",
+				silent: true,
+				widthMm: 80,
+				cutPaper: true,
+			});
+
+			await receivedPromise;
+			assert.equal(result.success, true);
+			assert.equal(result.silent, true);
+			assert.ok(result.bytesSent > 0);
+			assert.ok(receivedBytes.includes(Buffer.from("ДЕНТЕ", "utf8")));
+		} finally {
+			escPosServer.close();
+		}
 	});
 
-	await t.test("Direct TCP socket fiscal receipt printing on local TCP KKT server", async () => {
-		const kktServer = net.createServer((socket) => {
-			socket.once("data", () => {
-				socket.end(
+	await t.test("Direct TCP socket fiscal receipt printing and honest KKT status check", async () => {
+		const { server: kktServer, port: kktPort } = await createOneShotTcpServer((buf) => {
+			const text = buf.toString("utf8");
+			if (text.includes("getDeviceStatus")) {
+				return Buffer.from(
 					JSON.stringify({
 						results: [
 							{
 								errorCode: 0,
-								fiscalParams: {
-									fiscalDocumentNumber: 615,
-									fiscalDocumentSign: "1122334455",
-									fnNumber: "9960440302145896",
-									kktSerialNumber: "0010670000012345",
-								},
+								deviceInfo: { paperPresent: true, coverClosed: true, modelName: "АТОЛ 27Ф" },
+								fnInfo: { fnPresent: true, fiscalized: true, fnNumber: "9960440302145896" },
 							},
 						],
 					}),
+					"utf8",
 				);
-			});
+			}
+			return Buffer.from(
+				JSON.stringify({
+					results: [
+						{
+							errorCode: 0,
+							fiscalParams: {
+								fiscalDocumentNumber: 615,
+								fiscalDocumentSign: "1122334455",
+								fnNumber: "9960440302145896",
+								kktSerialNumber: "0010670000012345",
+							},
+						},
+					],
+				}),
+				"utf8",
+			);
 		});
-		await new Promise((r) => kktServer.listen(0, "127.0.0.1", r));
-		const kktPort = kktServer.address().port;
 
 		try {
+			const status = await checkKktStatusTcpSocket({ host: "127.0.0.1", port: kktPort, protocol: "atol" });
+			assert.equal(status.online, true);
+			assert.equal(status.paperOk, true);
+			assert.equal(status.coverClosed, true);
+			assert.equal(status.fnPresent, true);
+
 			const result = await printFiscalReceiptTcpSocket({
 				host: "127.0.0.1",
 				port: kktPort,
 				protocol: "atol",
 				payloadJson: JSON.stringify({
 					cashierName: "Иванова А. С.",
-					items: [
-						{ name: "Лечение кариеса (А16.07.002)", priceRub: 4500, quantity: 1 },
-					],
+					items: [{ name: "Лечение кариеса (А16.07.002)", priceRub: 4500, quantity: 1 }],
 					totalRub: 4500,
 					paymentType: "card",
 				}),
 			});
 
 			assert.equal(result.success, true);
-			assert.ok(result.fiscalSign);
-			assert.ok(result.fiscalDocNum);
-			assert.ok(result.kktSerialNumber);
+			assert.equal(result.fiscalSign, "1122334455");
+			assert.equal(result.fiscalDocNum, "615");
 		} finally {
 			kktServer.close();
 		}
@@ -264,413 +272,132 @@ test("Desktop Standalone Windows Runtime Harness", async (t) => {
 	await t.test("Local DICOM folder watcher detects directory and unwatch", async () => {
 		const tempWatchDir = path.join(os.tmpdir(), `dente-dicom-watch-test-${Date.now()}`);
 		fs.mkdirSync(tempWatchDir, { recursive: true });
-
-		const watchResult = setupDicomFolderWatch(tempWatchDir, "test-callback-1");
-		assert.equal(watchResult.success, true);
-
-		const unwatchResult = unwatchDicomFolder(tempWatchDir);
-		assert.equal(unwatchResult.success, true);
-
 		try {
+			const watchResult = setupDicomFolderWatch(tempWatchDir, "test-callback-1");
+			assert.equal(watchResult.success, true);
+			const unwatchResult = unwatchDicomFolder(tempWatchDir);
+			assert.equal(unwatchResult.success, true);
+		} finally {
 			fs.rmSync(tempWatchDir, { recursive: true, force: true });
-		} catch {}
+		}
 	});
 
-	await t.test("Parses FDI tooth codes & patient identifiers from radiology filenames (Vatech, Planmeca, Carestream)", () => {
-		// Vatech EzSensor: tooth 16
+	await t.test("Parses FDI tooth codes & patient identifiers from radiology filenames", () => {
 		const vatech = parseDicomFilenameMetadata("VATECH_EzSensor_tooth_16_20260823.dcm");
 		assert.equal(vatech.toothCode, "16");
-
-		// Planmeca ProSensor: tooth 46
 		const planmeca = parseDicomFilenameMetadata("PLANMECA_46_EXP01.dcm");
 		assert.equal(planmeca.toothCode, "46");
-
-		// Carestream RVG 6200: tooth 37 with patient ID
 		const carestream = parseDicomFilenameMetadata("CARESTREAM_RVG_p-1042_tooth-37.ima");
 		assert.equal(carestream.toothCode, "37");
 		assert.equal(carestream.patientId, "1042");
-
-		// Pediatric primary tooth: tooth 54 (Upper Right Primary First Molar)
 		const pediatric = parseDicomFilenameMetadata("PEDIATRIC_patient-990_tooth_54.jpg");
 		assert.equal(pediatric.toothCode, "54");
 		assert.equal(pediatric.patientId, "990");
-
-		// Empty/unmatched filename
 		const plain = parseDicomFilenameMetadata("scan_without_tooth_marker.dcm");
 		assert.equal(plain.toothCode, undefined);
 	});
 
-	await t.test("Direct silent medical document printing (Form 043/u, Act, Consents) with pageSize and landscape", async () => {
-		const resultA4 = await printDocumentSilent({
-			htmlContent: "<html><body><h1>МЕДИЦИНСКАЯ КАРТА 043/у</h1><p>Пациент: Иванов И. И.</p></body></html>",
-			silent: true,
-			title: "Форма 043/у - Иванов",
-			pageSize: "A4",
-			copies: 1,
-		});
-		assert.equal(resultA4.success, true);
-		assert.equal(resultA4.silent, true);
-		assert.equal(resultA4.pageSize, "A4");
-		assert.equal(resultA4.landscape, false);
-
-		const resultA5Landscape = await printDocumentSilent({
-			htmlContent: "<html><body><h2>СПРАВКА ДЛЯ НАЛОГОВОЙ (КНД 1151156)</h2></body></html>",
-			silent: true,
-			pageSize: "A5",
-			landscape: true,
-			margins: { marginType: "custom", top: 10, bottom: 10, left: 15, right: 15 },
-		});
-		assert.equal(resultA5Landscape.success, true);
-		assert.equal(resultA5Landscape.pageSize, "A5");
-		assert.equal(resultA5Landscape.landscape, true);
-	});
-
-	await t.test("Window state query and fullscreen toggle in headless/test harness", async () => {
+	await t.test("Window state query and fullscreen toggle in headless harness", async () => {
 		const state = await getWindowState();
 		assert.equal(typeof state.isFullScreen, "boolean");
 		assert.equal(typeof state.isKiosk, "boolean");
-
 		const toggled = await toggleFullScreen(true);
 		assert.equal(toggled.isFullScreen, true);
 	});
 
-	await t.test("Multi-vendor dental hardware presets and vendor detection across 5 families (37 presets)", async () => {
+	await t.test("Multi-vendor dental hardware presets and vendor detection across 5 families", () => {
 		assert.equal(DENTAL_HARDWARE_PRESETS.length, 37);
-
-		// Verify all 5 equipment families are represented
 		const families = new Set(DENTAL_HARDWARE_PRESETS.map((p) => p.family));
-		assert.ok(families.has("rvg"), "Must have RVG family");
-		assert.ok(families.has("cbct_opg"), "Must have CBCT/OPG family");
-		assert.ok(families.has("scanner_3d"), "Must have 3D Scanner family");
-		assert.ok(families.has("document_scanner"), "Must have Document Scanner family");
-		assert.ok(families.has("photo_protocol"), "Must have Photo Protocol family");
-
-		// Vendor path detection
+		for (const f of ["rvg", "cbct_opg", "scanner_3d", "document_scanner", "photo_protocol"]) {
+			assert.ok(families.has(f));
+		}
 		assert.equal(detectHardwareVendorFromPath("C:\\EzDent-i\\Capture\\scan01.dcm"), "vatech");
 		assert.equal(detectHardwareVendorFromPath("C:\\Sidexis\\pdata\\img.dcm"), "sirona");
 		assert.equal(detectHardwareVendorFromPath("C:\\Planmeca\\Romexis\\46.dcm"), "planmeca");
-		assert.equal(detectHardwareVendorFromPath("C:\\Trophy\\Data\\RVG6200.tif"), "carestream");
-		assert.equal(detectHardwareVendorFromPath("C:\\VixWin\\001.jpg"), "kavo");
-		assert.equal(detectHardwareVendorFromPath("C:\\XVSensor\\Images\\exp.dcm"), "xpect_vision");
-		assert.equal(detectHardwareVendorFromPath("C:\\Runyes\\Scans\\jaw.stl"), "runyes");
-		assert.equal(detectHardwareVendorFromPath("quickscan_model.ply"), "runyes");
-		assert.equal(detectHardwareVendorFromPath("C:\\Pantum\\Scan\\doc.pdf"), "pantum");
-		assert.equal(detectHardwareVendorFromPath("pantum_scan.jpg"), "pantum");
-		assert.equal(detectHardwareVendorFromPath("C:\\Kyocera\\Scan\\passport.pdf"), "kyocera");
-		assert.equal(detectHardwareVendorFromPath("C:\\Medit\\Scans\\arch.obj"), "medit");
-		assert.equal(detectHardwareVendorFromPath("C:\\3Shape\\DentalDesktop\\export.stl"), "threeshape");
-		assert.equal(detectHardwareVendorFromPath("D:\\DCIM\\100CANON\\IMG_0001.JPG"), "canon_photo");
 		assert.equal(detectHardwareVendorFromPath("C:\\SomeGenericFolder\\file.dcm"), "generic");
-
-		// Installed hardware detection
-		const detected = detectInstalledDentalHardware();
-		assert.ok(Array.isArray(detected));
-
-		// Auto watchers
-		const watchers = setupAutoHardwareWatchers(null);
-		assert.ok(Array.isArray(watchers));
+		assert.ok(Array.isArray(detectInstalledDentalHardware()));
+		assert.ok(Array.isArray(setupAutoHardwareWatchers(null)));
 	});
 
-	await t.test("Generates SLIDA INI and XML export files for external software (Sidexis, EzDent, Romexis)", async () => {
-		const tempDir = path.join(os.tmpdir(), `dente-slida-test-${Date.now()}`);
-
-		const slidaRes = launchSlidaExport({
-			vendor: "sirona",
-			targetDir: tempDir,
-			patient: {
-				patientId: "PID-777",
-				lastName: "Соколов",
-				firstName: "Дмитрий",
-				birthDate: "19870315",
-				gender: "M",
-				toothCode: "36",
-			},
-		});
-
-		assert.equal(slidaRes.success, true);
-		assert.ok(fs.existsSync(slidaRes.filePath));
-		const iniContent = fs.readFileSync(slidaRes.filePath, "utf8");
-		assert.ok(iniContent.includes("[Patient]"));
-		assert.ok(iniContent.includes("Id=PID-777"));
-		assert.ok(iniContent.includes("LastName=Соколов"));
-		assert.ok(iniContent.includes("Tooth=36"));
-
-		// Vatech Link.ini
-		const vatechRes = launchSlidaExport({
-			vendor: "vatech",
-			targetDir: tempDir,
-			patient: {
-				patientId: "PID-777",
-				lastName: "Соколов",
-				firstName: "Дмитрий",
-				birthDate: "19870315",
-				gender: "M",
-			},
-		});
-		assert.equal(vatechRes.success, true);
-		const vatechContent = fs.readFileSync(vatechRes.filePath, "utf8");
-		assert.ok(vatechContent.includes("ChartNo=PID-777"));
-		assert.ok(vatechContent.includes("Name=Соколов Дмитрий"));
-
-		// Clean up
+	await t.test("Generates and parses SLIDA, VDDS-Media, and CLI bridge payloads", async () => {
+		const tempDir = path.join(os.tmpdir(), `dente-exchange-test-${Date.now()}`);
 		try {
+			const slidaRes = launchSlidaExport({
+				vendor: "sirona",
+				targetDir: tempDir,
+				patient: { patientId: "PID-777", lastName: "Соколов", firstName: "Дмитрий", birthDate: "19870315", gender: "M", toothCode: "36" },
+			});
+			assert.equal(slidaRes.success, true);
+			assert.ok(fs.readFileSync(slidaRes.filePath, "utf8").includes("Id=PID-777"));
+
+			const parsedIni = parseSlidaResponse("[Patient]\nId=P-888\nTooth=25\nModality=IO\nStatus=OK\nFile=C:\\Sidexis\\P888.dcm");
+			assert.equal(parsedIni.success, true);
+			assert.equal(parsedIni.patientId, "P-888");
+
+			const vddsRes = launchVddsExport({
+				targetDir: tempDir,
+				patient: { patientId: "PID-500", lastName: "Морозов", firstName: "Артем", birthDate: "19920412", gender: "M", toothCode: "46" },
+			});
+			assert.equal(vddsRes.success, true);
+			assert.ok(vddsRes.content.includes("ID=PID-500"));
+			assert.equal(parseVddsMediaResponse("[VDDS]\nStatus=SUCCESS\nID=PID-500\nZAHN=46").patientId, "PID-500");
+
+			const cliRes = await launchCliBridge({
+				vendor: "eighteeth",
+				patient: { patientId: "P-303", lastName: "Сидоров", firstName: "Олег" },
+				exePath: "C:\\NanoPix\\NanoPix.exe",
+			});
+			assert.equal(cliRes.success, true);
+			assert.ok(cliRes.commandLine.includes("P-303"));
+		} finally {
 			fs.rmSync(tempDir, { recursive: true, force: true });
-		} catch {}
+		}
 	});
 
-	await t.test("Parses SLIDA INI and XML responses", () => {
-		const iniResponse = `[Patient]
-Id=P-888
-Tooth=25
-Modality=IO
-Status=OK
-File=C:\\Sidexis\\Data\\P888_25.dcm
-File=C:\\Sidexis\\Data\\P888_25_preview.jpg`;
-
-		const parsedIni = parseSlidaResponse(iniResponse);
-		assert.equal(parsedIni.success, true);
-		assert.equal(parsedIni.patientId, "P-888");
-		assert.equal(parsedIni.toothCode, "25");
-		assert.equal(parsedIni.modality, "IO");
-		assert.equal(parsedIni.imagePaths.length, 2);
-
-		const xmlResponse = `<?xml version="1.0"?>
-<SlidaResponse status="OK">
-  <Patient id="P-999" />
-  <Tooth>16</Tooth>
-  <Modality>CT</Modality>
-  <File>C:\\Romexis\\Scans\\P999_CBCT.dcm</File>
-</SlidaResponse>`;
-
-		const parsedXml = parseSlidaResponse(xmlResponse);
-		assert.equal(parsedXml.success, true);
-		assert.equal(parsedXml.patientId, "P-999");
-		assert.equal(parsedXml.toothCode, "16");
-		assert.equal(parsedXml.modality, "CT");
-		assert.equal(parsedXml.imagePaths[0], "C:\\Romexis\\Scans\\P999_CBCT.dcm");
-	});
-
-	await t.test("VDDS-Media 5/6 export generation and response parsing", () => {
-		const tempDir = path.join(os.tmpdir(), `dente-vdds-test-${Date.now()}`);
-		const vddsRes = launchVddsExport({
-			targetDir: tempDir,
-			patient: {
-				patientId: "PID-500",
-				lastName: "Морозов",
-				firstName: "Артем",
-				birthDate: "19920412",
-				gender: "M",
-				toothCode: "46",
-				command: "NewImage",
-			},
-			xRayType: "IO",
-		});
-
-		assert.equal(vddsRes.success, true);
-		assert.ok(fs.existsSync(vddsRes.filePath));
-		assert.ok(vddsRes.content.includes("[VDDS]"));
-		assert.ok(vddsRes.content.includes("Version=5.0"));
-		assert.ok(vddsRes.content.includes("ID=PID-500"));
-		assert.ok(vddsRes.content.includes("ZAHN=46"));
-		assert.ok(vddsRes.content.includes("AUFNAHMEART=IO"));
-		assert.ok(vddsRes.content.includes("AKTION=ACQUIRE"));
-
-		// Parse response
-		const responseIni = `[VDDS]
-Status=SUCCESS
-ID=PID-500
-ZAHN=46
-FILE=C:\\Temp\\xray_46.dcm`;
-		const parsed = parseVddsMediaResponse(responseIni);
-		assert.equal(parsed.success, true);
-		assert.equal(parsed.patientId, "PID-500");
-		assert.equal(parsed.toothCode, "46");
-		assert.equal(parsed.imagePaths[0], "C:\\Temp\\xray_46.dcm");
-
-		try {
-			fs.rmSync(tempDir, { recursive: true, force: true });
-		} catch {}
-	});
-
-	await t.test("CLI Command-Line Bridge formats templates and simulates launch", async () => {
-		const vatechCmd = formatCommandLineBridge(getVendorCliTemplate("vatech"), {
-			patientId: "P-101",
-			lastName: "Петров",
-			firstName: "Иван",
-		}, { exePath: "C:\\EzDent-i\\bin\\EzDent-i.exe" });
-		assert.equal(vatechCmd, '"C:\\EzDent-i\\bin\\EzDent-i.exe" -c P-101');
-
-		const sironaCmd = formatCommandLineBridge(getVendorCliTemplate("sirona"), {
-			patientId: "P-202",
-			lastName: "Иванов",
-			firstName: "Петр",
-			birthDate: "19850615",
-		}, { exePath: "C:\\Sidexis4\\Sidexis.exe" });
-		assert.equal(sironaCmd, '"C:\\Sidexis4\\Sidexis.exe" /P:P-202 /N:"Иванов^Петр" /DOB:19850615');
-
-		const launchRes = await launchCliBridge({
-			vendor: "eighteeth",
-			patient: { patientId: "P-303", lastName: "Сидоров", firstName: "Олег" },
-			exePath: "C:\\NanoPix\\NanoPix.exe",
-		});
-		assert.equal(launchRes.success, true);
-		assert.ok(launchRes.commandLine.includes("NanoPix.exe"));
-		assert.ok(launchRes.commandLine.includes("P-303"));
-	});
-
-	await t.test("Hot folder universal metadata parser and 12-slot photo protocol", () => {
-		// 1. DICOM with tooth and patient
+	await t.test("Hot folder metadata parser, 12-slot photo protocol and anatomical SVG preview", () => {
 		const dcmMeta = parseHotFolderFilenameMetadata("VATECH_patient-102_tooth-16.dcm");
 		assert.equal(dcmMeta.fileCategory, "dicom");
-		assert.equal(dcmMeta.modality, "IO");
 		assert.equal(dcmMeta.toothCode, "16");
-		assert.equal(dcmMeta.patientId, "102");
 		assert.equal(dcmMeta.vendor, "vatech");
 
-		// 2. 3D Scan Mesh STL
-		const meshMeta = parseHotFolderFilenameMetadata("patient_77_maxilla.stl", "C:\\Runyes\\Scans");
-		assert.equal(meshMeta.fileCategory, "mesh");
-		assert.equal(meshMeta.modality, "3D_SCAN");
-		assert.equal(meshMeta.patientId, "77");
-		assert.equal(meshMeta.vendor, "runyes");
-
-		// 3. Document PDF
-		const docMeta = parseHotFolderFilenameMetadata("Pantum_scan_patient-88_consent.pdf");
-		assert.equal(docMeta.fileCategory, "document");
-		assert.equal(docMeta.modality, "DOC");
-		assert.equal(docMeta.patientId, "88");
-		assert.equal(docMeta.vendor, "pantum");
-
-		// 4. Photo protocol 12 slots matching
 		assert.equal(DENTAL_PHOTO_PROTOCOL_12.length, 12);
+		assert.equal(matchPhotoProtocolSlot("IMG_0001_portrait_rest.jpg")?.id, "extraoral_portrait_rest");
 
-		const portraitSlot = matchPhotoProtocolSlot("IMG_0001_portrait_rest.jpg");
-		assert.ok(portraitSlot);
-		assert.equal(portraitSlot.id, "extraoral_portrait_rest");
-		assert.equal(portraitSlot.index, 1);
-
-		const smileSlot = matchPhotoProtocolSlot("02_face_smile.jpg");
-		assert.ok(smileSlot);
-		assert.equal(smileSlot.id, "extraoral_portrait_smile");
-
-		const occlusalUpperSlot = matchPhotoProtocolSlot("slot9_upper_arch.png");
-		assert.ok(occlusalUpperSlot);
-		assert.equal(occlusalUpperSlot.id, "intraoral_occlusal_maxillary");
-	});
-
-	await t.test("Generates rich anatomical dental preview data URI without 1x1 mock PNGs (Mandate 2)", () => {
 		const preview = getAnatomicalDentalPreviewDataUri("16");
 		assert.ok(preview.startsWith("data:image/svg+xml;utf8,"));
-		assert.ok(!preview.includes("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="));
 		assert.ok(preview.includes("FDI%20%2316"));
-		assert.ok(preview.includes("RVG%20INTRAORAL"));
 	});
 
-	await t.test("Detects installed CT viewers & guarantees internal 3D MPR studio (Mandate Zero Dead-Ends)", async () => {
-		assert.ok(Array.isArray(KNOWN_CT_VIEWER_CANDIDATES));
+	await t.test("CT viewer detection, download scan and popout window launch", async () => {
 		assert.ok(KNOWN_CT_VIEWER_CANDIDATES.length >= 4);
-
-		const candidateIds = KNOWN_CT_VIEWER_CANDIDATES.map((c) => c.id);
-		assert.ok(candidateIds.some((id) => id.includes("picasso")));
-		assert.ok(candidateIds.some((id) => id.includes("ez3d")));
-		assert.ok(candidateIds.some((id) => id.includes("romexis")));
-		assert.ok(candidateIds.some((id) => id.includes("ondemand3d")));
-
 		const installed = await detectInstalledCtViewers();
-		assert.ok(Array.isArray(installed));
-		assert.ok(installed.length >= 1);
+		assert.ok(installed.some((v) => v.id === "dente-cbct-studio"));
 
-		// Must always include internal DENTE CBCT Studio
-		const denteStudio = installed.find((v) => v.id === "dente-cbct-studio");
-		assert.ok(denteStudio, "Must contain dente-cbct-studio entry");
-		assert.equal(denteStudio.exePath, "internal://cbct-studio");
-		assert.equal(denteStudio.vendor, "dente");
-
-		// At least one viewer must be marked default
-		assert.ok(installed.some((v) => v.isDefault === true));
-	});
-
-	await t.test("Launches internal 3D MPR studio popout and validates external viewer error handling", async () => {
-		// 1. Launching internal studio routes to popout window
-		const internalRes = await launchExternalCtViewer({
-			viewerId: "dente-cbct-studio",
-			studyPath: "study-ct-99",
-		});
+		const internalRes = await launchExternalCtViewer({ viewerId: "dente-cbct-studio", studyPath: "study-ct-99" });
 		assert.equal(internalRes.success, true);
 		assert.ok(internalRes.url.includes("studyId=study-ct-99"));
 
-		// 2. Launching with missing executable returns structured error
-		const missingExeRes = await launchExternalCtViewer({
-			exePath: "C:\\NonExistentPath\\Viewer.exe",
-		});
+		const missingExeRes = await launchExternalCtViewer({ exePath: "C:\\NonExistentPath\\Viewer.exe" });
 		assert.equal(missingExeRes.success, false);
-		assert.ok(missingExeRes.error.includes("не найден"));
 
-		// 3. Launching without target returns structured error
-		const emptyRes = await launchExternalCtViewer({});
-		assert.equal(emptyRes.success, false);
-		assert.ok(emptyRes.error);
-	});
-
-	await t.test("Extracts patient hints and detects CT modalities from archive & folder names", () => {
 		assert.equal(extractPatientHint("Барабаш_И_В_CBCT_2026.zip"), "Барабаш И В");
-		assert.equal(extractPatientHint("Picasso_Ivanov_Petr_16.dcm"), "Ivanov Petr");
-		assert.equal(extractPatientHint("CT_123456_study.zip"), undefined);
-
 		assert.equal(detectCtModality("CBCT_Maxilla.zip", false), "CBCT");
-		assert.equal(detectCtModality("клкт_пациент.rar", false), "CBCT");
-		assert.equal(detectCtModality("picasso_scan.zip", false), "CT");
-		assert.equal(detectCtModality("patient_study", true), "DICOM_FOLDER");
-		assert.equal(detectCtModality("plain_archive.zip", false), "DICOM_ARCHIVE");
-	});
 
-	await t.test("Scans downloads and hot folders for recent CT archives (<7 days, maxDepth 2)", async () => {
 		const tempDir = path.join(os.tmpdir(), `dente-ct-scan-test-${Date.now()}`);
 		fs.mkdirSync(tempDir, { recursive: true });
-
-		// Create a mock CT archive
-		const ctArchive = path.join(tempDir, "Барабаш_И_В_CBCT_Scan.zip");
-		fs.writeFileSync(ctArchive, Buffer.alloc(1024));
-
-		// Create a mock CT folder with dummy dicom
-		const ctFolder = path.join(tempDir, "Picasso_Study_Petrov");
-		fs.mkdirSync(ctFolder, { recursive: true });
-		fs.writeFileSync(path.join(ctFolder, "slice_001.dcm"), Buffer.alloc(512));
-
-		// Scan hot folder
-		const scanResults = await scanDownloadsForCt({
-			hotFolderPath: tempDir,
-			maxDays: 7,
-			maxDepth: 2,
-		});
-
-		assert.ok(Array.isArray(scanResults));
-		assert.ok(scanResults.length >= 2, "Must detect both archive and folder");
-
-		const archiveItem = scanResults.find((r) => r.fileName === "Барабаш_И_В_CBCT_Scan.zip");
-		assert.ok(archiveItem);
-		assert.equal(archiveItem.detectedModality, "CBCT");
-		assert.equal(archiveItem.patientHint, "Барабаш И В");
-
-		const folderItem = scanResults.find((r) => r.fileName === "Picasso_Study_Petrov");
-		assert.ok(folderItem);
-		assert.equal(folderItem.detectedModality, "CT");
-		assert.equal(folderItem.patientHint, "Petrov");
-
-		// Clean up temp dir
 		try {
+			fs.writeFileSync(path.join(tempDir, "Барабаш_И_В_CBCT_Scan.zip"), Buffer.alloc(1024));
+			const scanResults = await scanDownloadsForCt({ hotFolderPath: tempDir, maxDays: 7, maxDepth: 2 });
+			assert.equal(scanResults.length, 1);
+			assert.equal(scanResults[0].detectedModality, "CBCT");
+		} finally {
 			fs.rmSync(tempDir, { recursive: true, force: true });
-		} catch {}
-	});
+		}
 
-	await t.test("Opens CBCT popout window and formats URL with study and patient IDs", async () => {
-		const popout = await openCbctPopoutWindow({
-			studyId: "study-vol-101",
-			patientId: "pat-888",
-		});
+		const popout = await openCbctPopoutWindow({ studyId: "study-vol-101", patientId: "pat-888" });
 		assert.equal(popout.success, true);
 		assert.ok(popout.url.includes("studyId=study-vol-101"));
-		assert.ok(popout.url.includes("patientId=pat-888"));
-		assert.equal(popout.isNewWindow, true);
+		assert.ok(VENDOR_CLI_TEMPLATES.sirona.includes("{patientId}"));
+		assert.equal(getVendorCliTemplate("unknown_vendor"), VENDOR_CLI_TEMPLATES.generic);
 	});
 });

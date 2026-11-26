@@ -11,7 +11,22 @@
     "main.cjs",
     "preload.cjs",
     "package.json",
+    "src/**/*.cjs",
     "../apps/web/dist/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "../apps/api/dist",
+      "to": "api/dist"
+    },
+    {
+      "from": "../apps/web/dist",
+      "to": "web/dist"
+    },
+    {
+      "from": "../packages/shared/dist",
+      "to": "shared/dist"
+    }
   ],
   "win": {
     "target": [
@@ -58,7 +73,7 @@
   "protocols": [
     {
       "name": "DENTE Clinical Protocol Handler",
-      "schemes": ["dente"]
+      "schemes": ["dente", "dental-dicom", "dente-ct"]
     }
   ]
 }

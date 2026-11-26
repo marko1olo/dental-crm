@@ -9,57 +9,75 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const electronDir = path.resolve(__dirname, "..");
-const webDistDir = path.resolve(electronDir, "../apps/web/dist");
 
 console.log("[Desktop Packaging] Validating Windows Desktop standalone runtime assets...");
 
-// 1. Check electron main, preload and builder config
 const mainPath = path.join(electronDir, "main.cjs");
 const preloadPath = path.join(electronDir, "preload.cjs");
 const builderConfigPath = path.join(electronDir, "electron-builder.json");
 const packageJsonPath = path.join(electronDir, "package.json");
 
-if (!fs.existsSync(mainPath)) {
-	throw new Error(`Missing Electron main process file: ${mainPath}`);
+const requiredModules = [
+	"src/desktopLogger.cjs",
+	"src/loopbackHttpServer.cjs",
+	"src/embeddedServerSupervisor.cjs",
+	"src/kktProtocolFramingCjs.cjs",
+	"src/kktHardwareDriver.cjs",
+	"src/printerAndSerialBridge.cjs",
+	"src/twainWiaScannerBridge.cjs",
+	"src/dentalHardwareCatalog.cjs",
+	"src/dentalHardwarePresets.cjs",
+	"src/imagingExchangeProtocols.cjs",
+	"src/ctDownloadsScanner.cjs",
+	"src/ctViewerBridge.cjs",
+	"src/lanBeaconDesktopBridge.cjs",
+	"src/autoBackupVaultRunner.cjs",
+	"src/windowLifecycleAndUpdater.cjs",
+	"src/ipcHandlers.cjs",
+];
+
+for (const filePath of [mainPath, preloadPath, builderConfigPath, packageJsonPath]) {
+	if (!fs.existsSync(filePath)) {
+		throw new Error(`Missing required Electron file: ${filePath}`);
+	}
 }
-if (!fs.existsSync(preloadPath)) {
-	throw new Error(`Missing Electron preload script: ${preloadPath}`);
-}
-if (!fs.existsSync(builderConfigPath)) {
-	throw new Error(`Missing Electron builder config: ${builderConfigPath}`);
-}
-if (!fs.existsSync(packageJsonPath)) {
-	throw new Error(`Missing Electron package.json: ${packageJsonPath}`);
+for (const relMod of requiredModules) {
+	const modPath = path.join(electronDir, relMod);
+	if (!fs.existsSync(modPath)) {
+		throw new Error(`Missing decomposed Electron module: ${modPath}`);
+	}
 }
 
-// 2. Validate electron-builder.json structure
+const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+if (!pkgJson.devDependencies?.electron || !pkgJson.devDependencies?.["electron-builder"]) {
+	throw new Error("electron/package.json must declare electron and electron-builder in devDependencies");
+}
+
 const builderConfig = JSON.parse(fs.readFileSync(builderConfigPath, "utf8"));
 if (!builderConfig.appId || !builderConfig.win) {
 	throw new Error("Invalid electron-builder.json: missing appId or win target definition");
 }
 
-const requiredWinTargets = ["nsis", "portable"];
 const winTargetNames = (builderConfig.win.target || []).map((t) => (typeof t === "string" ? t : t.target));
-for (const target of requiredWinTargets) {
+for (const target of ["nsis", "portable"]) {
 	if (!winTargetNames.includes(target)) {
 		throw new Error(`Missing required Windows build target: ${target}`);
 	}
 }
 
-// Validate file associations
-const requiredExts = ["dcm", "dicom", "dente"];
 const associatedExts = (builderConfig.win.fileAssociations || []).map((f) => f.ext.replace(/^\./, ""));
-for (const ext of requiredExts) {
+for (const ext of ["dcm", "dicom", "dente"]) {
 	if (!associatedExts.includes(ext)) {
 		throw new Error(`Missing file association for .${ext}`);
 	}
 }
 
-// 3. Validate main.cjs hardware exports
 const mainModule = await import(pathToFileURL(mainPath).href);
 const requiredExports = [
 	"getWindowsSerialPorts",
 	"getTwainDevices",
+	"acquireTwainImage",
+	"validateHotFolderPath",
 	"getSystemPrinters",
 	"printThermalLabel",
 	"printEscPosReceipt",
@@ -75,17 +93,19 @@ const requiredExports = [
 	"getWindowState",
 	"getLocalServerStatus",
 	"switchLocalDatabaseMode",
+	"startLoopbackHttpServer",
+	"stopLoopbackHttpServer",
 	"checkForDesktopUpdates",
 	"installDesktopUpdate",
 ];
 
 for (const fnName of requiredExports) {
-	if (typeof mainModule[fnName] !== "function" && typeof mainModule.default?.[fnName] !== "function") {
+	const exportCandidate = mainModule[fnName] ?? mainModule.default?.[fnName];
+	if (typeof exportCandidate !== "function") {
 		throw new Error(`Missing required desktop hardware export in main.cjs: ${fnName}`);
 	}
 }
 
-// 4. Verify IPC channels alignment in preload.cjs
 const preloadContent = fs.readFileSync(preloadPath, "utf8");
 const expectedChannels = [
 	"dente:list-serial-ports",
@@ -119,6 +139,5 @@ for (const ch of expectedChannels) {
 
 console.log(`[Desktop Packaging] Verified builder config: ${builderConfig.appId} (${builderConfig.productName})`);
 console.log(`[Desktop Packaging] Targets: ${winTargetNames.join(", ")}`);
-console.log(`[Desktop Packaging] File associations: ${associatedExts.map((e) => `.${e}`).join(", ")}`);
-console.log(`[Desktop Packaging] Validated ${requiredExports.length} native hardware drivers & ${expectedChannels.length} IPC channels.`);
+console.log(`[Desktop Packaging] Validated ${requiredModules.length} CJS modules, ${requiredExports.length} exports & ${expectedChannels.length} IPC channels.`);
 console.log("[Desktop Packaging] SUCCESS: Desktop standalone runtime configuration is valid.");
