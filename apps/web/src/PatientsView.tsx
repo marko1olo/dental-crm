@@ -128,6 +128,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	);
 
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [createModalKey, setCreateModalKey] = useState(0);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
 	const [isFamilyWalletModalOpen, setIsFamilyWalletModalOpen] = useState(false);
@@ -452,11 +453,12 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{isCreateModalOpen && (
 				<Suspense fallback={null}>
 					<CreatePatientModal
-						key={`create-patient-${Date.now()}`}
+						key={`create-patient-${createModalKey}`}
 						isOpen={isCreateModalOpen}
 						onClose={() => {
 							setIsCreateModalOpen(false);
 							usePatientStore.getState().resetDraft();
+							setCreateModalKey((prev) => prev + 1);
 						}}
 						createPatient={createPatient}
 					/>

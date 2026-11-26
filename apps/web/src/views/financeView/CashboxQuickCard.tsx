@@ -19,7 +19,7 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 		<div className="payment-quick-card mb-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-sm">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 				<div className="min-w-0">
-					<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+					<div className="text-xs font-semibold text-[var(--muted)]">
 						Быстрый расчёт пациента
 					</div>
 					<div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-[var(--ink)] my-0.5">

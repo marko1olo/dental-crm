@@ -4,7 +4,6 @@ import { TaxDeductionCertificateModal } from "../../documents/DocumentsStudioMod
 import { ClinicalPhotoProtocolModal } from "../../photography/ClinicalPhotoProtocolModal";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { PatientGeneralInfo, PatientGeneralInfoFieldValue } from "../tabs/PatientGeneralInfoTab";
 
 const DmsStudioModal = React.lazy(() =>

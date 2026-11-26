@@ -7,6 +7,10 @@
 
 import React, { useState, useEffect } from "react";
 import { type StaffProfileExtended, staffProfileExtendedSchema } from "@dental/shared";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { useAppStore } from "../../store/appStore";
+import { logger } from "../../utils/logger";
 import { SettingsAccessTab } from "./SettingsAccessTab";
 import { SettingsStaffTab } from "./SettingsStaffTab";
 
@@ -52,6 +56,10 @@ function checkSettingsMode(): "access" | "staff" | null {
 
 export const DirectSettingsLauncher: React.FC = () => {
 	const [mode, setMode] = useState<"access" | "staff" | null>(checkSettingsMode);
+	const dashboard = useAppStore((s) => s.dashboard);
+	const isDemo = isDemoShowcaseMode();
+	const [remoteStaff, setRemoteStaff] = useState<StaffProfileExtended[] | null>(null);
+	const [staffFetchDone, setStaffFetchDone] = useState(false);
 
 	useEffect(() => {
 		const update = () => setMode(checkSettingsMode());
@@ -63,7 +71,70 @@ export const DirectSettingsLauncher: React.FC = () => {
 		};
 	}, []);
 
+	useEffect(() => {
+		if (mode !== "staff" || isDemo || dashboard?.clinicSettings?.staff) return;
+		let cancelled = false;
+		const loadStaff = async () => {
+			try {
+				const res = await fetch("/api/staff/extended", {
+					headers: getDenteAuthHeaders(),
+				});
+				if (!res.ok) {
+					logger.warn(`[DirectSettingsLauncher] Failed to load staff: HTTP ${res.status}`);
+					if (!cancelled) {
+						setRemoteStaff([]);
+						setStaffFetchDone(true);
+					}
+					return;
+				}
+				const raw: unknown = await res.json();
+				const payload = (raw as { data?: unknown } | null)?.data ?? raw;
+				const parsed = Array.isArray(payload) ? (payload as StaffProfileExtended[]) : [];
+				if (!cancelled) {
+					setRemoteStaff(parsed);
+					setStaffFetchDone(true);
+				}
+			} catch (err) {
+				logger.warn("[DirectSettingsLauncher] Staff fetch error:", err);
+				if (!cancelled) {
+					setRemoteStaff([]);
+					setStaffFetchDone(true);
+				}
+			}
+		};
+		void loadStaff();
+		return () => {
+			cancelled = true;
+		};
+	}, [mode, isDemo, dashboard?.clinicSettings?.staff]);
+
 	if (!mode) return null;
+
+	const storeStaff = dashboard?.clinicSettings?.staff as StaffProfileExtended[] | undefined;
+	const resolvedClinicName =
+		dashboard?.clinicSettings?.name ||
+		dashboard?.clinicName ||
+		(isDemo ? "Клиника ДЕНТЕ" : "");
+
+	const staffTabProps = isDemo
+		? {
+				dashboard: {
+					clinicSettings: {
+						staff: storeStaff?.length ? storeStaff : DEMO_STAFF_MEMBERS,
+						name: resolvedClinicName,
+					},
+				},
+			}
+		: Boolean(dashboard?.clinicSettings) || staffFetchDone
+			? {
+					dashboard: {
+						clinicSettings: {
+							staff: storeStaff ?? remoteStaff ?? [],
+							name: resolvedClinicName,
+						},
+					},
+				}
+			: {};
 
 	return (
 		<main
@@ -72,7 +143,7 @@ export const DirectSettingsLauncher: React.FC = () => {
 		>
 			<div className="max-w-6xl mx-auto w-full">
 				{mode === "staff" ? (
-					<SettingsStaffTab props={{ dashboard: { clinicSettings: { staff: DEMO_STAFF_MEMBERS, name: "Клиника ДЕНТЕ" } } }} />
+					<SettingsStaffTab props={staffTabProps} />
 				) : (
 					<SettingsAccessTab />
 				)}

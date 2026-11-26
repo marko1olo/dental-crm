@@ -247,11 +247,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								data-legacy-testid="badge-emr-draft-status"
 								className={`px-2 py-0.5 rounded border text-[11px] font-medium flex items-center gap-1 shrink-0 ${
 									effectiveIsDraft
-										? "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-										: "border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+										? "border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+										: "border-[var(--success-line)] bg-[var(--success-soft)] text-[var(--success-ink)]"
 								}`}
 							>
-								{effectiveIsDraft ? <FileText className="w-3 h-3 text-amber-600" /> : <Check className="w-3 h-3 text-emerald-600" />}
+								{effectiveIsDraft ? <FileText className="w-3 h-3 text-current shrink-0" /> : <Check className="w-3 h-3 text-current shrink-0" />}
 								{effectiveIsDraft ? "Черновик (приём не закрыт)" : "Подписано врачом"}
 							</span>
 							<div className="min-w-0 w-full">
@@ -285,31 +285,31 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							)}
 
 							<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary" onClick={handleApplyNorm} disabled={false} data-testid="btn-emr-apply-norm" title="Заполнить физиологической нормой / Интактные зубы">
-								<Sparkles className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" /><span className="hidden sm:inline">Физиологическая норма</span><span className="sm:hidden">Норма</span>
+								<Sparkles className="w-4 h-4 shrink-0 text-current" /><span className="hidden sm:inline">Физиологическая норма</span><span className="sm:hidden">Норма</span>
 							</button>
 
 							<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary" onClick={handlePrint} disabled={false} data-testid="btn-emr-print-card" data-legacy-testid="btn-print-medical-record" title="Печать или экспорт в PDF (A4)">
-								<Printer className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" /><span className="hidden sm:inline">Печать A4</span><span className="sm:hidden">Печать</span>
+								<Printer className="w-4 h-4 shrink-0 text-current" /><span className="hidden sm:inline">Печать A4</span><span className="sm:hidden">Печать</span>
 							</button>
 
 							{/* Меню дополнительных действий */}
 							<div className="relative inline-flex items-center" ref={moreMenuRef}>
 								<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only" onClick={() => setIsMoreMenuOpen((v) => !v)} title="Дополнительные действия" data-testid="btn-emr-more-actions">
-									<MoreHorizontal className="w-4 h-4" />
+									<MoreHorizontal className="w-4 h-4 text-current" />
 								</button>
 								{isMoreMenuOpen && (
-									<div className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong,#ffffff)] dark:bg-slate-900 border border-[var(--glass-border,#cbd5e1)] dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink,#0f172a)] dark:text-slate-100 min-w-[210px]">
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { handleApplyNorm(); setIsMoreMenuOpen(false); }}>
-											<Sparkles className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" /><span>Физиологическая норма</span>
+									<div className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong)] border border-[var(--line)] rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink)] min-w-[210px]">
+										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleApplyNorm(); setIsMoreMenuOpen(false); }}>
+											<Sparkles className="w-3.5 h-3.5 text-current shrink-0" /><span>Физиологическая норма</span>
 										</button>
-										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
-											<Download className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" /><span>Электронная медкарта (XML)</span>
+										<button type="button" title="Экспорт в XML для электронной медкарты (Госуслуги)" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer border-t border-[var(--line)]" onClick={() => { handleExportXml(); setIsMoreMenuOpen(false); }}>
+											<Download className="w-3.5 h-3.5 text-current shrink-0" /><span>Электронная медкарта (XML)</span>
 										</button>
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { handleExportJson(); setIsMoreMenuOpen(false); }}>
-											<Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" /><span>Экспорт в JSON</span>
+										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer" onClick={() => { handleExportJson(); setIsMoreMenuOpen(false); }}>
+											<Download className="w-3.5 h-3.5 text-current shrink-0" /><span>Экспорт в JSON</span>
 										</button>
-										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleCopyText(); setIsMoreMenuOpen(false); }}>
-											{copiedToast ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />}<span>{copiedToast ? "Скопировано!" : "Копировать текст карты"}</span>
+										<button type="button" className="w-full text-left px-3 py-2 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer border-t border-[var(--line)]" onClick={() => { handleCopyText(); setIsMoreMenuOpen(false); }}>
+											{copiedToast ? <Check className="w-3.5 h-3.5 text-[var(--success)] shrink-0" /> : <Copy className="w-3.5 h-3.5 text-current shrink-0" />}<span>{copiedToast ? "Скопировано!" : "Копировать текст карты"}</span>
 										</button>
 									</div>
 								)}
@@ -362,7 +362,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 					{/* Шкала полноты карты приёма */}
 					<div className="emr-studio-completeness emr-studio-non-printable">
-						<ShieldCheck className={`w-5 h-5 ${validation.isComplete ? "text-emerald-600" : "text-amber-500"}`} />
+						<ShieldCheck className={`w-5 h-5 ${validation.isComplete ? "text-[var(--success)]" : "text-[var(--warning)]"}`} />
 						<div className="text-xs font-semibold">Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
 						<div className="emr-studio-progress-track">
 							<div

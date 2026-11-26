@@ -21,9 +21,9 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 
 		if (!activePatient?.id) {
 			return (
-				<div className="text-center py-12 px-6 text-slate-500 dark:text-slate-400">
-					<Sparkles className="w-8 h-8 text-teal-400 opacity-40 mx-auto mb-2" />
-					<h4 className="text-base font-semibold text-slate-900 dark:text-white">
+				<div className="text-center py-12 px-6 text-[var(--ink-muted)]">
+					<Sparkles className="w-8 h-8 text-[var(--primary)] opacity-50 mx-auto mb-2" />
+					<h4 className="text-base font-semibold text-[var(--ink)]">
 						Пациент не выбран
 					</h4>
 					<p className="text-sm m-0">

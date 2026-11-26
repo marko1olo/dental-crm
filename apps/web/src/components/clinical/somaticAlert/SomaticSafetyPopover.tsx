@@ -31,8 +31,8 @@ export const SomaticSafetyPopover: React.FC<SomaticSafetyPopoverProps> = ({
 		>
 			<div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
 				<div className="flex items-center gap-1.5">
-					<ShieldAlert size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
-					<span className="font-bold text-xs uppercase tracking-wider text-[var(--ink)]">
+					<ShieldAlert size={16} className="text-[var(--danger)] shrink-0" />
+					<span className="font-semibold text-xs text-[var(--ink)]">
 						Стоп-факторы у кресла ({evaluation.stopFactors.length})
 					</span>
 				</div>

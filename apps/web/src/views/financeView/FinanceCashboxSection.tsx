@@ -15,7 +15,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 
-	const patient = s.effectivePatient ?? s.documentPatient ?? s.activePatient ?? s.dashboard?.patients?.[0] ?? null;
+	const patient = s.effectivePatient ?? s.documentPatient ?? s.activePatient ?? null;
 	const patientRecord = patient as Record<string, unknown> | null;
 	const patientDepositRub = typeof patientRecord?.depositRub === "number" ? patientRecord.depositRub : 0;
 	const patientFamilyBalanceRub = typeof patientRecord?.familyBalanceRub === "number" ? patientRecord.familyBalanceRub : 0;

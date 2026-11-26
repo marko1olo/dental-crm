@@ -18,7 +18,11 @@ import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { useOfflineStore } from "../../../store/offlineStore";
-import type { AutoVisitBomDeductionResult, Dashboard } from "@dental/shared";
+import {
+	generateUuidV7,
+	type AutoVisitBomDeductionResult,
+	type Dashboard,
+} from "@dental/shared";
 import {
 	useVisitStore,
 	mapVisitUiStateToToothDataState,
@@ -136,7 +140,7 @@ export async function executeDraftAutosave(
 			method: "PUT",
 			headers: {
 				"Content-Type": "application/json",
-				"Idempotency-Key": `autosave-completion-${targetVisitId}-${ctx.activeVisit?.revision ?? 0}`,
+				"Idempotency-Key": generateUuidV7(),
 				...getDenteAuthHeaders(),
 			},
 			body: JSON.stringify({
@@ -204,6 +208,8 @@ export async function executeVisitCompletionEndpoint(
 		status: "completed",
 	};
 
+	const completionIdempotencyKey = generateUuidV7();
+
 	try {
 		await fetchWithHandling(
 			`/api/v1/visits/${ctx.effectiveVisitId}/complete`,
@@ -211,7 +217,7 @@ export async function executeVisitCompletionEndpoint(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					"Idempotency-Key": `complete-visit-${ctx.effectiveVisitId}`,
+					"Idempotency-Key": completionIdempotencyKey,
 					...getDenteAuthHeaders(),
 				},
 				body: JSON.stringify(payload),
@@ -224,7 +230,7 @@ export async function executeVisitCompletionEndpoint(
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"Idempotency-Key": `complete-visit-fallback-${ctx.effectiveVisitId}`,
+						"Idempotency-Key": completionIdempotencyKey,
 						...getDenteAuthHeaders(),
 					},
 					body: JSON.stringify({
@@ -295,7 +301,7 @@ export async function executeDiaryLockUponVisitCompletion(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					"Idempotency-Key": `create-diary-complete-${ctx.effectiveVisitId}`,
+					"Idempotency-Key": generateUuidV7(),
 					...getDenteAuthHeaders(),
 				},
 				body: JSON.stringify({
@@ -333,7 +339,7 @@ export async function executeDiaryLockUponVisitCompletion(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					"Idempotency-Key": `lock-diary-${targetDiaryId}`,
+					"Idempotency-Key": generateUuidV7(),
 					...getDenteAuthHeaders(),
 				},
 				body: JSON.stringify({}),

@@ -216,7 +216,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								onClick={handleApplyNorm}
 								title="Зафиксировать физиологическую норму: соматически здоров / интактные зубы"
 							>
-								<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+								<ShieldCheck className="w-4 h-4 text-current shrink-0" />
 								<span className="shrink-0 whitespace-nowrap">Норма</span>
 							</button>
 						</div>
