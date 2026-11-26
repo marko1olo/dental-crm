@@ -14,8 +14,13 @@ import {
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
-import { reconcileInvoiceBalanceInDb } from "../payments/sberWebhook/paymentStateTransition.js";
+import { reconcileInvoiceBalanceInDb } from "../billingRoutes/invoiceBalanceReconciler.js";
 import { verifySberbankChecksum } from "./sberbankSecurityHelpers.js";
+import {
+	findUniqueSberbankTxInTenant,
+	isSberSettledOrPaid,
+	isSberTerminalRefundedOrReversed,
+} from "./sberbankUtils.js";
 
 /**
  * Registers Sberbank acquiring asynchronous callback webhook endpoints:
@@ -92,15 +97,22 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 			});
 		}
 
-		const targetTx = await withSuperuserBypass(async (tx) => {
-			const [found] = await tx
+		const lookupRows = await withSuperuserBypass(async (tx) => {
+			return await tx
 				.select()
 				.from(sberbankTransactions)
 				.where(eq(sberbankTransactions.orderId, String(orderId)))
-				.limit(1);
-			return found;
+				.limit(2);
 		});
 
+		if (lookupRows.length > 1) {
+			return reply.status(409).send({
+				error: "AmbiguousOrderId",
+				message: "Обнаружено несколько транзакций с одинаковым orderId.",
+			});
+		}
+
+		const targetTx = lookupRows[0];
 		if (!targetTx) {
 			return reply.status(404).send({
 				error: "TransactionNotFound",
@@ -109,24 +121,25 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 		}
 
 		return await withTenantCtx(targetTx.organizationId, async (tx) => {
-			const [lockedTx] = await tx
-				.select()
-				.from(sberbankTransactions)
-				.where(
-					and(
-						eq(sberbankTransactions.orderId, String(orderId)),
-						eq(sberbankTransactions.organizationId, targetTx.organizationId),
-					),
-				)
-				.for("update")
-				.limit(1);
-
-			if (!lockedTx) {
+			const lockedLookup = await findUniqueSberbankTxInTenant(
+				tx,
+				targetTx.organizationId,
+				String(orderId),
+				true,
+			);
+			if (lockedLookup.kind === "ambiguous") {
+				return reply.status(409).send({
+					error: "AmbiguousOrderId",
+					message: "Обнаружено несколько транзакций с одинаковым orderId.",
+				});
+			}
+			if (lockedLookup.kind === "not_found") {
 				return reply.status(404).send({
 					error: "TransactionNotFound",
 					message: "Транзакция не найдена в контексте организации.",
 				});
 			}
+			const lockedTx = lockedLookup.txRow;
 
 			// Pessimistically lock payments row for this order (support both sberbank: and sberpos: mutations)
 			const [lockedPayment] = await tx
@@ -293,12 +306,11 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 			}
 
 			// Prevent state machine inversion on terminal states (case-insensitive + payment status check)
-			const lockedStatusLower = lockedTx.status.toLowerCase();
 			if (
-				lockedStatusLower === "refunded" ||
-				lockedStatusLower === "reversed" ||
+				isSberTerminalRefundedOrReversed(lockedTx.status) ||
 				lockedPayment?.status === "refunded"
 			) {
+				const lockedStatusLower = lockedTx.status.toLowerCase();
 				return reply.status(200).send({
 					success: true,
 					processed: false,
@@ -307,8 +319,18 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				});
 			}
 
-			// 3. Approved (Hold) handling
+			// 3. Approved (Hold) handling — forbid downgrading already-settled/paid transaction
 			if (operation === "approved" || rawStatus === "approved") {
+				if (isSberSettledOrPaid(lockedTx.status) || lockedPayment?.status === "paid") {
+					return reply.status(200).send({
+						success: true,
+						processed: false,
+						reason: "already_processed",
+						status: lockedTx.status,
+						paymentId: lockedPayment?.id,
+					});
+				}
+
 				await tx
 					.update(sberbankTransactions)
 					.set({
@@ -341,8 +363,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 
 			if (isSuccess) {
 				const isAlreadyProcessed =
-					lockedTx.status === "success" ||
-					lockedTx.status === "SETTLED" ||
+					isSberSettledOrPaid(lockedTx.status) ||
 					(lockedPayment !== undefined && lockedPayment.status === "paid");
 
 				if (isAlreadyProcessed) {
@@ -501,7 +522,17 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 				});
 			}
 
-			// 5. Failed / Declined
+			// 5. Failed / Declined — never roll back already settled/paid transaction
+			if (isSberSettledOrPaid(lockedTx.status) || lockedPayment?.status === "paid") {
+				return reply.status(200).send({
+					success: true,
+					processed: false,
+					reason: "already_processed",
+					status: lockedTx.status,
+					paymentId: lockedPayment?.id,
+				});
+			}
+
 			await tx
 				.update(sberbankTransactions)
 				.set({

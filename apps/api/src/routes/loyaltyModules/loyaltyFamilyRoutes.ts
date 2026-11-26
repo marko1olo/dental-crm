@@ -17,18 +17,24 @@ const familyLinkSchema = z
 	})
 	.strict();
 
+const familyPatientParamSchema = z
+	.object({
+		patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
+	})
+	.strict();
+
 export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 	app.get("/api/loyalty/family/:patientId", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { patientId } = request.params as { patientId: string };
-		if (!patientId || !isValidUuid(patientId.trim())) {
+		const paramsParsed = familyPatientParamSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
 			return reply.status(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор пациента (ожидается UUID)",
 			});
 		}
-		const cleanPatientId = patientId.trim();
+		const cleanPatientId = paramsParsed.data.patientId;
 
 		return withTenantCtx(orgId, async (tx) => {
 			const [patient] = await tx
@@ -183,8 +189,10 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				invoiceAmountRub: pointsToDebit,
 				clientMutationId: idempotencyKey ?? undefined,
 				description: `${description} (семейный пул в пользу ${targetPatientId})`,
+				txClient: tx,
 			});
 			if ("notFound" in res) return reply.status(404).send({ message: "Участники семейной группы не найдены" });
+			if ("invalidInvoice" in res) return reply.status(res.code ?? 400).send({ message: res.message });
 			if ("insufficientPoints" in res) return reply.status(400).send({ message: "Недостаточно бонусов в семейном кошельке" });
 
 			if ("replayed" in res && res.replayed) {
@@ -253,6 +261,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 						name: `Семья ${primary.fullName.split(" ")[0]}`,
 						headPatientId: primary.id,
 					},
+					txClient: tx,
 				});
 				if (!createRes.success) {
 					return reply.status(createRes.status).send({ message: createRes.message });
@@ -265,6 +274,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				familyGroupId: targetGroupId,
 				patientId: relative.id,
 				canSpendFamilyWallet: true,
+				txClient: tx,
 			});
 
 			if (!addRes.success) {

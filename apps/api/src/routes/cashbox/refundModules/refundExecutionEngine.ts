@@ -3,7 +3,7 @@
  * Stage 2: Atomic ACID cashbox refund, deposit restoration, 54-FZ queue & invoice recalculation.
  */
 
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import {
 	kopecksToNumericString,
 	kopecksToRub,
@@ -18,6 +18,7 @@ import {
 	familyGroups,
 	fiscalReceiptQueue,
 	patientInvoices,
+	patientRelationships,
 	patients,
 	payments,
 	users,
@@ -235,13 +236,74 @@ export async function executeCashRefundTransaction(
 							.from(familyGroups)
 							.where(
 								and(
-									eq(familyGroups.headPatientId, effectivePatientId),
+									or(
+										eq(familyGroups.headPatientId, effectivePatientId),
+										eq(familyGroups.primaryPatientId, effectivePatientId),
+									),
 									eq(familyGroups.organizationId, orgId),
 								),
 							)
 							.for("update")
 							.limit(1);
 						if (headFg) targetFamilyGroupId = headFg.id;
+					}
+					if (!targetFamilyGroupId) {
+						const relRows = await tx
+							.select({
+								patientId: patientRelationships.patientId,
+								relatedPatientId: patientRelationships.relatedPatientId,
+							})
+							.from(patientRelationships)
+							.where(
+								and(
+									eq(patientRelationships.organizationId, orgId),
+									eq(patientRelationships.canSpendFamilyWallet, true),
+									or(
+										eq(patientRelationships.patientId, effectivePatientId),
+										eq(patientRelationships.relatedPatientId, effectivePatientId),
+									),
+								),
+							);
+						const otherIds = Array.from(
+							new Set(
+								relRows
+									.map((r) =>
+										r.patientId === effectivePatientId ? r.relatedPatientId : r.patientId,
+									)
+									.filter((id): id is string => Boolean(id)),
+							),
+						);
+						if (otherIds.length > 0) {
+							const [relFg] = await tx
+								.select({ id: familyGroups.id })
+								.from(familyGroups)
+								.where(
+									and(
+										eq(familyGroups.organizationId, orgId),
+										or(
+											inArray(familyGroups.headPatientId, otherIds),
+											inArray(familyGroups.primaryPatientId, otherIds),
+										),
+									),
+								)
+								.for("update")
+								.limit(1);
+							if (relFg) {
+								targetFamilyGroupId = relFg.id;
+							} else {
+								const relPats = await tx
+									.select({ familyGroupId: patients.familyGroupId })
+									.from(patients)
+									.where(
+										and(
+											eq(patients.organizationId, orgId),
+											inArray(patients.id, otherIds),
+										),
+									);
+								targetFamilyGroupId =
+									relPats.find((rp) => Boolean(rp.familyGroupId))?.familyGroupId ?? null;
+							}
+						}
 					}
 
 					let lockedFg: { id: string; balanceKopecks: number; balance: string } | null = null;
@@ -266,7 +328,9 @@ export async function executeCashRefundTransaction(
 
 					if (lockedFg) {
 						const currentKop =
-							lockedFg.balanceKopecks !== null && lockedFg.balanceKopecks !== undefined && lockedFg.balanceKopecks > 0
+							lockedFg.balanceKopecks !== null &&
+							lockedFg.balanceKopecks !== undefined &&
+							(lockedFg.balanceKopecks !== 0 || Number(lockedFg.balance || 0) === 0)
 								? Number(lockedFg.balanceKopecks)
 								: rublesToKopecks(Number(lockedFg.balance || 0));
 						const newBalanceKop = currentKop + refundKop;
@@ -428,8 +492,9 @@ export async function executeCashRefundTransaction(
 
 		if (linkedInvoice) {
 			const invoiceTotalKop = resolveInvoiceTotalKopecks(linkedInvoice);
-			const refundRows = await tx
+			const invoicePayments = await tx
 				.select({
+					status: payments.status,
 					amountKopecks: payments.amountKopecks,
 					amountRub: payments.amountRub,
 				})
@@ -438,22 +503,31 @@ export async function executeCashRefundTransaction(
 					and(
 						eq(payments.organizationId, orgId),
 						eq(payments.documentId, linkedInvoice.id),
-						or(sql`${payments.amountKopecks} < 0`, sql`${payments.amountRub} < 0`),
 					),
 				);
+			let totalPaidKop = 0n;
 			let totalRefundedKop = 0n;
-			for (const row of refundRows) {
+			for (const row of invoicePayments) {
 				const signed =
-					row.amountKopecks !== null && row.amountKopecks !== undefined && row.amountKopecks !== 0n
+					row.amountKopecks !== null &&
+					row.amountKopecks !== undefined &&
+					(row.amountKopecks !== 0n || Number(row.amountRub || 0) === 0)
 						? row.amountKopecks
 						: BigInt(rublesToKopecks(Number(row.amountRub || 0)));
-				totalRefundedKop += signed < 0n ? -signed : signed;
+				if (row.status === "refunded" || signed < 0n) {
+					totalRefundedKop += signed < 0n ? -signed : signed;
+				} else if (row.status === "paid") {
+					totalPaidKop += signed;
+				}
 			}
-			const nextStatus = totalRefundedKop >= invoiceTotalKop ? "refunded" : "partially_refunded";
+			const netPaidKop = totalPaidKop > totalRefundedKop ? totalPaidKop - totalRefundedKop : 0n;
+			const nextStatus =
+				netPaidKop <= 0n || totalRefundedKop >= invoiceTotalKop ? "refunded" : "partially_refunded";
 			await tx
 				.update(patientInvoices)
 				.set({
 					status: nextStatus,
+					paidAt: null,
 					version: sql`${patientInvoices.version} + 1`,
 				})
 				.where(

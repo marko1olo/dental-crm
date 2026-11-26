@@ -1,7 +1,6 @@
-import { and, asc, eq, gt, isNotNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull, lte, sql } from "drizzle-orm";
 import { getLoyaltyTierDefinition, type LoyaltyTierId, kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
-import type { TenantDb } from "../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { bonusTransactions, patientBonusBalances, patients } from "../../db/schema.js";
 
 type DatabaseTransaction = TenantDb;
@@ -194,7 +193,7 @@ export async function executeBonusAccrual(params: AccruePointsParams, txClient?:
 	if (txClient) {
 		return await execute(txClient);
 	}
-	return db.transaction(execute);
+	return withTenantCtx(orgId, execute);
 }
 
 /**
@@ -251,6 +250,51 @@ export async function deductUnspentPointsFifo(
 
 	const totalDeductedKop = parseKopecks(pointsToDeduct) - remainingToDeductKop;
 	return { deductedPoints: Number(kopecksToNumericString(totalDeductedKop)) };
+}
+
+/**
+ * Restore unspent points back onto active positive accrual batches when a hold is released.
+ * Restores in latest-expiring order first so earlier batches remain prioritized for FIFO usage.
+ */
+export async function restoreUnspentPointsOnRelease(
+	tx: DatabaseTransaction,
+	params: {
+		readonly orgId: string;
+		readonly patientId: string;
+		readonly pointsToRestore: number;
+	},
+): Promise<void> {
+	const { orgId, patientId, pointsToRestore } = params;
+	if (pointsToRestore <= 0) return;
+
+	const accrualBatches = await tx
+		.select()
+		.from(bonusTransactions)
+		.where(
+			and(
+				eq(bonusTransactions.organizationId, orgId),
+				eq(bonusTransactions.patientId, patientId),
+				gt(sql`cast(${bonusTransactions.amountPoints} as numeric)`, 0),
+			),
+		)
+		.orderBy(desc(bonusTransactions.expiresAt), desc(bonusTransactions.createdAt))
+		.for("update");
+
+	let remainingKop = parseKopecks(pointsToRestore);
+	for (const batch of accrualBatches) {
+		if (remainingKop <= 0) break;
+		const totalKop = parseKopecks(batch.amountPoints ?? 0);
+		const curUnspentKop = parseKopecks(batch.unspentPoints ?? 0);
+		const capacityKop = Math.max(0, totalKop - curUnspentKop);
+		if (capacityKop <= 0) continue;
+
+		const addKop = Math.min(capacityKop, remainingKop);
+		remainingKop -= addKop;
+		await tx
+			.update(bonusTransactions)
+			.set({ unspentPoints: kopecksToNumericString(curUnspentKop + addKop) })
+			.where(and(eq(bonusTransactions.organizationId, orgId), eq(bonusTransactions.id, batch.id)));
+	}
 }
 
 /**
@@ -354,48 +398,51 @@ export async function processPatientExpiredBonuses(
 export async function processExpiredBonuses(
 	orgId: string,
 	asOfDate: Date = new Date(),
+	txClient?: DatabaseTransaction | undefined,
 ): Promise<{
 	readonly processedPatients: number;
 	readonly totalExpiredPoints: number;
 	readonly expiredTransactionsCount: number;
 }> {
-	// Find all distinct patientIds with expired unspent bonuses
-	const expiredCandidates = await db
-		.selectDistinct({ patientId: bonusTransactions.patientId })
-		.from(bonusTransactions)
-		.where(
-			and(
-				eq(bonusTransactions.organizationId, orgId),
-				isNotNull(bonusTransactions.expiresAt),
-				lte(bonusTransactions.expiresAt, asOfDate),
-				gt(sql`cast(${bonusTransactions.unspentPoints} as numeric)`, 0),
-			),
-		);
+	const run = async (tx: DatabaseTransaction) => {
+		// Find all distinct patientIds with expired unspent bonuses
+		const expiredCandidates = await tx
+			.selectDistinct({ patientId: bonusTransactions.patientId })
+			.from(bonusTransactions)
+			.where(
+				and(
+					eq(bonusTransactions.organizationId, orgId),
+					isNotNull(bonusTransactions.expiresAt),
+					lte(bonusTransactions.expiresAt, asOfDate),
+					gt(sql`cast(${bonusTransactions.unspentPoints} as numeric)`, 0),
+				),
+			);
 
-	if (expiredCandidates.length === 0) {
-		return { processedPatients: 0, totalExpiredPoints: 0, expiredTransactionsCount: 0 };
-	}
-
-	let totalExpiredPointsKop = 0;
-	let totalExpiredCount = 0;
-	let processedPatients = 0;
-
-	for (const candidate of expiredCandidates) {
-		const res = await db.transaction(async (tx) => {
-			return processPatientExpiredBonuses(tx, orgId, candidate.patientId, asOfDate);
-		});
-		if (res.expiredPoints > 0 || res.expiredTransactionsCount > 0) {
-			processedPatients += 1;
-			totalExpiredPointsKop = sumKopecks([totalExpiredPointsKop, parseKopecks(res.expiredPoints)]);
-			totalExpiredCount += res.expiredTransactionsCount;
+		if (expiredCandidates.length === 0) {
+			return { processedPatients: 0, totalExpiredPoints: 0, expiredTransactionsCount: 0 };
 		}
-	}
 
-	return {
-		processedPatients,
-		totalExpiredPoints: Number(kopecksToNumericString(totalExpiredPointsKop)),
-		expiredTransactionsCount: totalExpiredCount,
+		let totalExpiredPointsKop = 0;
+		let totalExpiredCount = 0;
+		let processedPatients = 0;
+
+		for (const candidate of expiredCandidates) {
+			const res = await processPatientExpiredBonuses(tx, orgId, candidate.patientId, asOfDate);
+			if (res.expiredPoints > 0 || res.expiredTransactionsCount > 0) {
+				processedPatients += 1;
+				totalExpiredPointsKop = sumKopecks([totalExpiredPointsKop, parseKopecks(res.expiredPoints)]);
+				totalExpiredCount += res.expiredTransactionsCount;
+			}
+		}
+
+		return {
+			processedPatients,
+			totalExpiredPoints: Number(kopecksToNumericString(totalExpiredPointsKop)),
+			expiredTransactionsCount: totalExpiredCount,
+		};
 	};
+
+	return txClient ? run(txClient) : withTenantCtx(orgId, run);
 }
 
 /**
@@ -406,10 +453,11 @@ export async function getPatientBonusBalance(params: {
 	readonly orgId: string;
 	readonly patientId: string;
 	readonly asOfDate?: Date | undefined;
+	readonly txClient?: DatabaseTransaction | undefined;
 }) {
-	const { orgId, patientId, asOfDate = new Date() } = params;
+	const { orgId, patientId, asOfDate = new Date(), txClient } = params;
 
-	return db.transaction(async (tx) => {
+	const run = async (tx: DatabaseTransaction) => {
 		const [patient] = await tx
 			.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 			.from(patients)
@@ -490,5 +538,7 @@ export async function getPatientBonusBalance(params: {
 			maxInvoiceCoveragePercent: tierDef.maxInvoiceCoveragePercent,
 			pointRateRub: 1.0,
 		};
-	});
+	};
+
+	return txClient ? run(txClient) : withTenantCtx(orgId, run);
 }

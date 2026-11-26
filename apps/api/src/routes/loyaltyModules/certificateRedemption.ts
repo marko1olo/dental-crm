@@ -9,21 +9,21 @@ import {
 	parseKopecks,
 	kopecksToNumericString,
 	kopecksToRubles,
-	rublesToKopecks,
-	toExactKopecks,
 	type RedeemCertificateBody,
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
-import type { TenantDb } from "../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	cashBoxes,
+	cashBoxShifts,
 	cashOperations,
 	fiscalReceiptQueue,
 	giftCertificates,
 	patientInvoices,
 	payments,
 } from "../../db/schema.js";
+import { reconcileInvoiceBalanceInDb } from "../billingRoutes/invoiceBalanceReconciler.js";
+import { resolveCanonicalInvoiceTotalKop } from "./bonusRedemptionUtils.js";
 import type { FormattedCertificateDto, RedeemCertificateResult } from "./certificateTypes.js";
 
 function isPgUniqueViolation(err: unknown): boolean {
@@ -31,6 +31,105 @@ function isPgUniqueViolation(err: unknown): boolean {
 	if (candidate?.code === "23505") return true;
 	if (candidate?.cause) return isPgUniqueViolation(candidate.cause);
 	return false;
+}
+
+async function buildCertificateRedeemReplay(
+	tx: TenantDb,
+	params: {
+		orgId: string;
+		cleanedSerial: string;
+		invoiceId: string | null | undefined;
+		fallbackInvoiceAmountRub: number | undefined;
+		existingPayment: typeof payments.$inferSelect;
+	},
+): Promise<RedeemCertificateResult | null> {
+	const [existingCert] = await tx
+		.select()
+		.from(giftCertificates)
+		.where(
+			and(
+				eq(giftCertificates.organizationId, params.orgId),
+				sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${params.cleanedSerial}`,
+			),
+		)
+		.limit(1);
+	if (!existingCert) return null;
+
+	const existingRedeemedKop =
+		params.existingPayment.amountKopecks != null
+			? Number(params.existingPayment.amountKopecks)
+			: parseKopecks(params.existingPayment.amountRub);
+	const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
+	const currentBalKop =
+		existingCert.currentBalanceKopecks != null
+			? existingCert.currentBalanceKopecks
+			: parseKopecks(existingCert.currentBalanceRub);
+	const currentBalRub = kopecksToRubles(currentBalKop);
+
+	let remainingInvoiceKop = 0;
+	const targetInvoiceId = params.invoiceId ?? params.existingPayment.documentId;
+	if (targetInvoiceId) {
+		const [inv] = await tx
+			.select({
+				totalPriceKopecks: patientInvoices.totalPriceKopecks,
+				totalAmountRub: patientInvoices.totalAmountRub,
+				totalRub: patientInvoices.totalRub,
+			})
+			.from(patientInvoices)
+			.where(
+				and(
+					eq(patientInvoices.organizationId, params.orgId),
+					eq(patientInvoices.id, targetInvoiceId),
+				),
+			)
+			.limit(1);
+		if (inv) {
+			const invTotalKop = resolveCanonicalInvoiceTotalKop(inv);
+			const paidRows = await tx
+				.select({ amountKopecks: payments.amountKopecks, amountRub: payments.amountRub })
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, params.orgId),
+						eq(payments.documentId, targetInvoiceId),
+						eq(payments.status, "paid"),
+					),
+				);
+			const paidKop = paidRows.reduce(
+				(acc, r) =>
+					acc +
+					(r.amountKopecks != null && r.amountKopecks > 0n
+						? Number(r.amountKopecks)
+						: parseKopecks(r.amountRub)),
+				0,
+			);
+			remainingInvoiceKop = Math.max(0, invTotalKop - paidKop);
+		}
+	} else {
+		const invoiceAmountKop =
+			params.fallbackInvoiceAmountRub !== undefined
+				? parseKopecks(params.fallbackInvoiceAmountRub)
+				: existingRedeemedKop;
+		remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
+	}
+
+	return {
+		success: true as const,
+		replayed: true as const,
+		certificateId: existingCert.id,
+		serialNumber: existingCert.serialNumber,
+		previousBalanceRub: kopecksToRubles(currentBalKop + existingRedeemedKop),
+		redeemedAmountRub: existingRedeemedRub,
+		newBalanceRub: currentBalRub,
+		remainingInvoiceAmountRub: kopecksToRubles(remainingInvoiceKop),
+		status: existingCert.status,
+		paymentId: params.existingPayment.id,
+		invoicePaid: remainingInvoiceKop <= 0,
+		fiscal54FzSplit: {
+			tag1215AdvanceOffsetKop: existingRedeemedKop,
+			tag1081ElectronicKop: remainingInvoiceKop,
+		},
+	};
 }
 
 /**
@@ -57,6 +156,9 @@ export async function executeRedeemGiftCertificate(
 
 	const execute = async (tx: TenantDb): Promise<RedeemCertificateResult> => {
 		if (clientMutationId) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cert_redeem:' || ${clientMutationId}))`,
+			);
 			const [existingPayment] = await tx
 				.select()
 				.from(payments)
@@ -70,49 +172,85 @@ export async function executeRedeemGiftCertificate(
 				.for("update");
 
 			if (existingPayment) {
-				const [existingCert] = await tx
-					.select()
-					.from(giftCertificates)
-					.where(
-						and(
-							eq(giftCertificates.organizationId, orgId),
-							sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
-						),
-					)
-					.limit(1)
-					.for("update");
+				const replayed = await buildCertificateRedeemReplay(tx, {
+					orgId,
+					cleanedSerial: cleaned,
+					invoiceId,
+					fallbackInvoiceAmountRub: invoiceAmountRub,
+					existingPayment,
+				});
+				if (replayed) return replayed;
+			}
+		}
 
-				if (existingCert) {
-					const existingRedeemedKop =
-						existingPayment.amountKopecks != null
-							? Number(existingPayment.amountKopecks)
-							: parseKopecks(existingPayment.amountRub);
-					const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
-					const currentBalKop = existingCert.currentBalanceKopecks != null
-						? existingCert.currentBalanceKopecks
-						: parseKopecks(existingCert.currentBalanceRub);
-					const currentBalRub = kopecksToRubles(currentBalKop);
-					const invoiceAmountKop = invoiceAmountRub !== undefined ? parseKopecks(invoiceAmountRub) : existingRedeemedKop;
-					const remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
-					const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
-					return {
-						success: true as const,
-						replayed: true as const,
-						certificateId: existingCert.id,
-						serialNumber: existingCert.serialNumber,
-						previousBalanceRub: kopecksToRubles(currentBalKop + existingRedeemedKop),
-						redeemedAmountRub: existingRedeemedRub,
-						newBalanceRub: currentBalRub,
-						remainingInvoiceAmountRub,
-						status: existingCert.status,
-						paymentId: existingPayment.id,
-						invoicePaid: remainingInvoiceKop <= 0,
-						fiscal54FzSplit: {
-							tag1215AdvanceOffsetKop: existingRedeemedKop,
-							tag1081ElectronicKop: remainingInvoiceKop,
-						},
-					};
-				}
+		let lockedInvoice: {
+			id: string;
+			patientId: string;
+			status: string;
+			totalPriceKopecks: bigint | null;
+			totalAmountRub: number | null;
+			totalRub: string | null;
+		} | null = null;
+		let serverInvoiceRemainingKop = 0;
+
+		if (invoiceId) {
+			const [inv] = await tx
+				.select({
+					id: patientInvoices.id,
+					patientId: patientInvoices.patientId,
+					status: patientInvoices.status,
+					totalPriceKopecks: patientInvoices.totalPriceKopecks,
+					totalAmountRub: patientInvoices.totalAmountRub,
+					totalRub: patientInvoices.totalRub,
+				})
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.organizationId, orgId),
+						eq(patientInvoices.id, invoiceId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!inv) {
+				return { error: true, message: "Счёт не найден", code: 404 };
+			}
+			if (patientId && inv.patientId !== patientId) {
+				return { error: true, message: "Счёт принадлежит другому пациенту", code: 403 };
+			}
+			if (
+				inv.status === "paid" ||
+				inv.status === "refunded" ||
+				inv.status === "voided" ||
+				inv.status === "cancelled"
+			) {
+				return { error: true, message: "Счёт уже оплачен или аннулирован", code: 409 };
+			}
+			lockedInvoice = inv;
+
+			const invoiceTotalKop = resolveCanonicalInvoiceTotalKop(inv);
+			const existingPaidRows = await tx
+				.select({ amountKopecks: payments.amountKopecks, amountRub: payments.amountRub })
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.documentId, invoiceId),
+						eq(payments.status, "paid"),
+					),
+				);
+			const alreadyPaidKop = existingPaidRows.reduce(
+				(acc, r) =>
+					acc +
+					(r.amountKopecks != null && r.amountKopecks > 0n
+						? Number(r.amountKopecks)
+						: parseKopecks(r.amountRub)),
+				0,
+			);
+			serverInvoiceRemainingKop = Math.max(0, invoiceTotalKop - alreadyPaidKop);
+			if (invoiceTotalKop > 0 && serverInvoiceRemainingKop <= 0) {
+				return { error: true, message: "Счёт уже полностью оплачен", code: 409 };
 			}
 		}
 
@@ -153,7 +291,11 @@ export async function executeRedeemGiftCertificate(
 			return { error: true, message: "Баланс сертификата равен 0 ₽", code: 400 };
 		}
 
-		const invoiceAmountKop = invoiceAmountRub !== undefined ? parseKopecks(invoiceAmountRub) : 0;
+		const invoiceAmountKop = lockedInvoice
+			? serverInvoiceRemainingKop
+			: invoiceAmountRub !== undefined
+				? parseKopecks(invoiceAmountRub)
+				: 0;
 		const requestedDeductionKop =
 			amountKopecks !== undefined
 				? amountKopecks
@@ -186,18 +328,14 @@ export async function executeRedeemGiftCertificate(
 
 		let paymentId: string | null = null;
 		let invoicePaid = false;
+		let remainingInvoiceKop = Math.max(0, invoiceAmountKop - redeemedKop);
 
-		let targetPatientId = patientId || cert.recipientPatientId || cert.purchaserPatientId || null;
-		if (invoiceId && !targetPatientId) {
-			const [invoice] = await tx
-				.select({ patientId: patientInvoices.patientId })
-				.from(patientInvoices)
-				.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)))
-				.limit(1);
-			if (invoice?.patientId) {
-				targetPatientId = invoice.patientId;
-			}
-		}
+		const targetPatientId =
+			patientId ||
+			lockedInvoice?.patientId ||
+			cert.recipientPatientId ||
+			cert.purchaserPatientId ||
+			null;
 
 		if (invoiceId && !targetPatientId) {
 			return {
@@ -232,24 +370,37 @@ export async function executeRedeemGiftCertificate(
 				.select()
 				.from(cashBoxes)
 				.where(eq(cashBoxes.organizationId, orgId))
-				.limit(1);
+				.limit(1)
+				.for("update");
 
 			if (cashDeskBox) {
-				const deskBalKop =
-					cashDeskBox.balanceKopecks != null
-						? Number(cashDeskBox.balanceKopecks)
-						: parseKopecks(cashDeskBox.balanceRub || 0);
+				const kopBal = Number(cashDeskBox.balanceKopecks ?? 0);
+				const rubKopBal = parseKopecks(cashDeskBox.balanceRub || 0);
+				const deskBalKop = kopBal !== 0 || rubKopBal === 0 ? kopBal : rubKopBal;
+				const [openShift] = await tx
+					.select({ id: cashBoxShifts.id })
+					.from(cashBoxShifts)
+					.where(
+						and(
+							eq(cashBoxShifts.organizationId, orgId),
+							eq(cashBoxShifts.cashBoxId, cashDeskBox.id),
+							eq(cashBoxShifts.status, "open"),
+						),
+					)
+					.limit(1);
 				await tx.insert(cashOperations).values({
 					organizationId: orgId,
 					cashBoxId: cashDeskBox.id,
+					shiftId: openShift?.id ?? null,
 					operationType: "income",
 					amountRub: redeemedRub,
 					amountKopecks: Number(redeemedKop),
-					balanceBeforeRub: cashDeskBox.balanceRub || 0,
+					balanceBeforeRub: kopecksToRubles(deskBalKop),
 					balanceBeforeKopecks: BigInt(deskBalKop),
-					balanceAfterRub: cashDeskBox.balanceRub || 0,
+					balanceAfterRub: kopecksToRubles(deskBalKop),
 					balanceAfterKopecks: BigInt(deskBalKop),
 					patientId: targetPatientId,
+					invoiceId: invoiceId || null,
 					kkmDocNumber: `CERT-${Date.now()}`,
 					reasonText: `Зачёт аванса (сертификат №${cert.serialNumber}): оплата стоматологических услуг`,
 					operatorName: "Администратор",
@@ -284,39 +435,12 @@ export async function executeRedeemGiftCertificate(
 			});
 
 			if (invoiceId) {
-				const existingPayments = await tx
-					.select({
-						amountRub: payments.amountRub,
-						amountKopecks: payments.amountKopecks,
-					})
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, orgId),
-							eq(payments.documentId, invoiceId),
-							eq(payments.status, "paid"),
-						),
-					);
-
-				const totalPaidKop = existingPayments.reduce(
-					(acc, p) =>
-						acc +
-						(p.amountKopecks != null
-							? Number(p.amountKopecks)
-							: parseKopecks(p.amountRub)),
-					0,
-				);
-				if (totalPaidKop >= invoiceAmountKop) {
-					await tx
-						.update(patientInvoices)
-						.set({ status: "paid", paidAt: new Date() })
-						.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)));
-					invoicePaid = true;
-				}
+				const rec = await reconcileInvoiceBalanceInDb(tx, orgId, invoiceId);
+				invoicePaid = rec.isFullyPaid;
+				remainingInvoiceKop = rec.remainingKopecks;
 			}
 		}
 
-		const remainingInvoiceKop = Math.max(0, invoiceAmountKop - redeemedKop);
 		const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
 
 		return {
@@ -337,109 +461,78 @@ export async function executeRedeemGiftCertificate(
 		};
 	};
 
+	const execTenant = () => (txClient ? execute(txClient) : withTenantCtx(orgId, execute));
+
 	if (clientMutationId) {
 		try {
-			if (txClient) {
-				return await execute(txClient);
-			}
-			return await db.transaction(execute);
+			return await execTenant();
 		} catch (err) {
 			if (isPgUniqueViolation(err)) {
-				const queryClient = txClient ?? db;
-				const [existingPayment] = await queryClient
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, orgId),
-							eq(payments.clientMutationId, clientMutationId),
-						),
-					)
-					.limit(1);
-
-				if (existingPayment) {
-					const [existingCert] = await queryClient
+				const lookupReplay = async (tx: TenantDb): Promise<RedeemCertificateResult | null> => {
+					const [existingPayment] = await tx
 						.select()
-						.from(giftCertificates)
+						.from(payments)
 						.where(
 							and(
-								eq(giftCertificates.organizationId, orgId),
-								sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
+								eq(payments.organizationId, orgId),
+								eq(payments.clientMutationId, clientMutationId),
 							),
 						)
 						.limit(1);
-
-					if (existingCert) {
-						const existingRedeemedKop =
-							existingPayment.amountKopecks != null
-								? Number(existingPayment.amountKopecks)
-								: parseKopecks(existingPayment.amountRub);
-						const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
-						const currentBalKop = existingCert.currentBalanceKopecks != null
-							? existingCert.currentBalanceKopecks
-							: parseKopecks(existingCert.currentBalanceRub);
-						const currentBalRub = kopecksToRubles(currentBalKop);
-						const invoiceAmountKop = invoiceAmountRub !== undefined ? parseKopecks(invoiceAmountRub) : existingRedeemedKop;
-						const remainingInvoiceKop = Math.max(0, invoiceAmountKop - existingRedeemedKop);
-						const remainingInvoiceAmountRub = kopecksToRubles(remainingInvoiceKop);
-						return {
-							success: true as const,
-							replayed: true as const,
-							certificateId: existingCert.id,
-							serialNumber: existingCert.serialNumber,
-							previousBalanceRub: kopecksToRubles(currentBalKop + existingRedeemedKop),
-							redeemedAmountRub: existingRedeemedRub,
-							newBalanceRub: currentBalRub,
-							remainingInvoiceAmountRub,
-							status: existingCert.status,
-							paymentId: existingPayment.id,
-							invoicePaid: remainingInvoiceKop <= 0,
-							fiscal54FzSplit: {
-								tag1215AdvanceOffsetKop: existingRedeemedKop,
-								tag1081ElectronicKop: remainingInvoiceKop,
-							},
-						};
-					}
-				}
+					if (!existingPayment) return null;
+					return buildCertificateRedeemReplay(tx, {
+						orgId,
+						cleanedSerial: cleaned,
+						invoiceId,
+						fallbackInvoiceAmountRub: invoiceAmountRub,
+						existingPayment,
+					});
+				};
+				const replayed = await withTenantCtx(orgId, lookupReplay);
+				if (replayed) return replayed;
 			}
 			throw err;
 		}
 	}
 
-	if (txClient) {
-		return execute(txClient);
-	}
-	return db.transaction(execute);
+	return execTenant();
 }
 
 /**
  * Получение списка выпущенных сертификатов клиники.
  */
-export async function listGiftCertificates(orgId: string): Promise<readonly FormattedCertificateDto[]> {
-	const rows = await db
-		.select()
-		.from(giftCertificates)
-		.where(eq(giftCertificates.organizationId, orgId))
-		.orderBy(desc(giftCertificates.createdAt))
-		.limit(100);
+export async function listGiftCertificates(
+	orgId: string,
+	txClient?: TenantDb | undefined,
+): Promise<readonly FormattedCertificateDto[]> {
+	const run = async (tx: TenantDb) => {
+		const rows = await tx
+			.select()
+			.from(giftCertificates)
+			.where(eq(giftCertificates.organizationId, orgId))
+			.orderBy(desc(giftCertificates.createdAt))
+			.limit(100);
 
-	return rows.map((r) => {
-		const nomKop = Number(r.nominalKopecks != null ? r.nominalKopecks : parseKopecks(r.nominalRub));
-		const curBalKop = Number(r.currentBalanceKopecks != null ? r.currentBalanceKopecks : parseKopecks(r.currentBalanceRub));
-		return {
-			id: r.id,
-			serialNumber: r.serialNumber,
-			nominalRub: kopecksToRubles(nomKop),
-			currentBalanceRub: kopecksToRubles(curBalKop),
-			nominalKop: nomKop,
-			currentBalanceKop: curBalKop,
-			purchaserName: r.purchaserName,
-			recipientName: r.recipientName,
-			recipientPhone: r.recipientPhone,
-			status: r.status,
-			issuedAtIso: r.issuedAt.toISOString(),
-			expiresAtIso: r.expiresAt.toISOString(),
-			notes: r.notes,
-		};
-	});
+		return rows.map((r) => {
+			const nomKop = Number(r.nominalKopecks != null ? r.nominalKopecks : parseKopecks(r.nominalRub));
+			const curBalKop = Number(r.currentBalanceKopecks != null ? r.currentBalanceKopecks : parseKopecks(r.currentBalanceRub));
+			return {
+				id: r.id,
+				serialNumber: r.serialNumber,
+				nominalRub: kopecksToRubles(nomKop),
+				currentBalanceRub: kopecksToRubles(curBalKop),
+				nominalKop: nomKop,
+				currentBalanceKop: curBalKop,
+				purchaserName: r.purchaserName,
+				recipientName: r.recipientName,
+				recipientPhone: r.recipientPhone,
+				status: r.status,
+				issuedAtIso: r.issuedAt.toISOString(),
+				expiresAtIso: r.expiresAt.toISOString(),
+				notes: r.notes,
+			};
+		});
+	};
+
+	return txClient ? run(txClient) : withTenantCtx(orgId, run);
 }

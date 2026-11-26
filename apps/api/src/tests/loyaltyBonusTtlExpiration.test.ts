@@ -318,4 +318,70 @@ describe("Loyalty Bonus TTL Expiration & FIFO Red Team Inquest [LOY-04]", () => 
 		assert.ok(typeof body.totalExpiredPoints === "number");
 		assert.ok(typeof body.expiredTransactionsCount === "number");
 	});
+
+	test("5. [W12-FIN-03] Холд баллов резервирует unspentPoints и защищает их от сгорания при processExpiredBonuses", async () => {
+		if (!databaseAvailable) return;
+
+		const PATIENT_HOLD = fixtureUuid(NAMESPACE, 5);
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(patients).values({
+				id: PATIENT_HOLD,
+				organizationId: ORG_ID,
+				fullName: "Пациент Г (Защита холда от TTL)",
+				phone: "+79009998877",
+				status: "active",
+			});
+		});
+
+		const soonExp = new Date(Date.now() + 2 * 86400000);
+		await executeBonusAccrual({
+			orgId: ORG_ID,
+			patientId: PATIENT_HOLD,
+			amountPoints: 500,
+			description: "Скоро сгорающие баллы",
+			txType: "accrual_promo",
+			expiresAt: soonExp,
+		});
+
+		// Холдируем 300 из 500 баллов
+		const holdRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/hold",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": "00000000-0000-7000-8000-000000000801",
+			},
+			payload: {
+				patientId: PATIENT_HOLD,
+				invoiceAmountRub: 1000,
+				pointsToHold: 300,
+				allowFullCoverage: true,
+				description: "Холд 300 б.",
+			},
+		});
+		assert.equal(holdRes.statusCode, 200, holdRes.body);
+		const holdId = holdRes.json().holdId;
+
+		// Наступает дата после soonExp -> сгореть должны только свободные 200 б., а 300 б. в холде защищены
+		const afterExp = new Date(soonExp.getTime() + 86400000);
+		await processExpiredBonuses(ORG_ID, afterExp);
+
+		const [balAfterExp] = await db
+			.select()
+			.from(patientBonusBalances)
+			.where(and(eq(patientBonusBalances.organizationId, ORG_ID), eq(patientBonusBalances.patientId, PATIENT_HOLD)));
+		assert.equal(Number(balAfterExp?.activePoints), 0);
+		assert.equal(Number(balAfterExp?.pendingPoints), 300);
+		assert.equal(Number(balAfterExp?.lifetimeExpiredPoints), 200, "Сгореть должны только свободные 200 баллов, но не 300 в холде");
+
+		// Подтверждаем холд -> pendingPoints становится 0, lifetimeSpentPoints = 300
+		const confirmRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/confirm",
+			headers: ORG_HEADERS,
+			payload: { holdId },
+		});
+		assert.equal(confirmRes.statusCode, 200, confirmRes.body);
+		assert.equal(confirmRes.json().newPendingPoints, 0);
+	});
 });

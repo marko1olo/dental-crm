@@ -439,4 +439,48 @@ describe("Sber POS Webhook & Acquiring Endpoints Integration Suite", () => {
 		assert.equal(response.statusCode, 404);
 		assert.equal(response.json().error, "TransactionNotFound");
 	});
+
+	test("8. [W12-FIN-05] SETTLED transaction refuses downgrade back to AUTHORIZED or FAILED", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		const orderId = "pos-order-lock-settled-008";
+		const amountKopecks = 250000;
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(sberbankTransactions).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				orderId,
+				amountKopecks: BigInt(amountKopecks),
+				status: "SETTLED",
+			});
+		});
+
+		const authParams = { orderId, status: "AUTHORIZED", amount: String(amountKopecks) };
+		const authRes = await app.inject({
+			method: "POST",
+			url: "/api/payments/sberbank/pos/webhook",
+			payload: { ...authParams, checksum: generatePosChecksum(authParams, SECRET_KEY) },
+		});
+		assert.equal(authRes.statusCode, 200);
+		assert.equal(authRes.json().processed, false);
+		assert.equal(authRes.json().reason, "already_processed");
+
+		const failParams = { orderId, status: "FAILED" };
+		const failRes = await app.inject({
+			method: "POST",
+			url: "/api/payments/sberbank/pos/webhook",
+			payload: { ...failParams, checksum: generatePosChecksum(failParams, SECRET_KEY) },
+		});
+		assert.equal(failRes.statusCode, 200);
+		assert.equal(failRes.json().processed, false);
+		assert.equal(failRes.json().reason, "already_processed");
+
+		const [txAfter] = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(sberbankTransactions)
+				.where(and(eq(sberbankTransactions.organizationId, ORG_ID), eq(sberbankTransactions.orderId, orderId))),
+		);
+		assert.equal(txAfter?.status, "SETTLED");
+	});
 });

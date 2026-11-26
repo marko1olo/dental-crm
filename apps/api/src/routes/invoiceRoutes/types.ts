@@ -102,11 +102,13 @@ export const generateInvoiceFromPlanSchema = z.object({
 	clientMutationId: z.string().optional(),
 }).strict();
 
-export const invoiceListQuerySchema = z.object({
-	patientId: z.string().uuid().optional(),
-	status: z.string().optional(),
-	limit: z.coerce.number().int().min(1).max(500).optional().default(100),
-});
+export const invoiceListQuerySchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		status: z.string().optional(),
+		limit: z.coerce.number().int().min(1).max(500).optional().default(100),
+	})
+	.strict();
 
 export const createInvoiceItemSchema = z.object({
 	serviceId: z.string().optional().nullable(),

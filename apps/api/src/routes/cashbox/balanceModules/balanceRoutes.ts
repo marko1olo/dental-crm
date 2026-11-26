@@ -64,8 +64,7 @@ function extractValidatedIdempotencyKey(
 		return null;
 	}
 
-	const baseKey = keyStr.includes("#") ? keyStr.split("#")[0] : keyStr;
-	if (!isValidUuid(baseKey || "")) {
+	if (!isValidUuid(keyStr)) {
 		void reply.code(400).send({
 			error: "ValidationError",
 			message: "Заголовок Idempotency-Key должен содержать валидный UUID/UUIDv7.",

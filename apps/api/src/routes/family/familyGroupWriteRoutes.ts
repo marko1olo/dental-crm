@@ -102,10 +102,11 @@ export type ExecuteCreateFamilyGroupResult =
 export async function executeCreateFamilyGroup(params: {
 	organizationId: string;
 	data: CreateFamilyGroupData;
+	txClient?: TenantDb | undefined;
 }): Promise<ExecuteCreateFamilyGroupResult> {
-	const { organizationId, data } = params;
+	const { organizationId, data, txClient } = params;
 
-	const txResult = await withTenantCtx(organizationId, async (tx): Promise<ExecuteCreateFamilyGroupResult> => {
+	const runInTx = async (tx: TenantDb): Promise<ExecuteCreateFamilyGroupResult> => {
 		if (data.headPatientId) {
 			const [head] = await tx
 				.select({ id: patients.id, familyGroupId: patients.familyGroupId })
@@ -172,9 +173,9 @@ export async function executeCreateFamilyGroup(params: {
 		}
 
 		return { success: true, status: 200, family: created };
-	});
+	};
 
-	return txResult;
+	return txClient ? runInTx(txClient) : withTenantCtx(organizationId, runInTx);
 }
 
 export type ExecuteAddFamilyMemberResult =
@@ -187,10 +188,11 @@ export async function executeAddFamilyMember(params: {
 	patientId: string;
 	canSpendFamilyWallet?: boolean | undefined;
 	relationshipType?: string | undefined;
+	txClient?: TenantDb | undefined;
 }): Promise<ExecuteAddFamilyMemberResult> {
-	const { organizationId, familyGroupId, patientId, canSpendFamilyWallet = true, relationshipType } = params;
+	const { organizationId, familyGroupId, patientId, canSpendFamilyWallet = true, relationshipType, txClient } = params;
 
-	return withTenantCtx(organizationId, async (tx) => {
+	const runInTx = async (tx: TenantDb): Promise<ExecuteAddFamilyMemberResult> => {
 		const [family] = await tx.select().from(familyGroups)
 			.where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).for("update").limit(1);
 		if (!family) return { success: false, status: 404, body: { error: "FamilyNotFound", message: "Семейная группа не найдена" } };
@@ -212,7 +214,9 @@ export async function executeAddFamilyMember(params: {
 		}
 
 		return { success: true, status: 200, body: { success: true, patientId, familyGroupId, canSpendFamilyWallet } };
-	});
+	};
+
+	return txClient ? runInTx(txClient) : withTenantCtx(organizationId, runInTx);
 }
 
 export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {

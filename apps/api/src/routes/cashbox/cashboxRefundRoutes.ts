@@ -66,10 +66,7 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 		});
 	}
 
-	const baseMutationId = effectiveMutationId.includes("#")
-		? effectiveMutationId.split("#")[0]
-		: effectiveMutationId;
-	if (!isValidUuid(baseMutationId || "")) {
+	if (!isValidUuid(effectiveMutationId)) {
 		return reply.code(400).send({
 			error: "ValidationError",
 			message:

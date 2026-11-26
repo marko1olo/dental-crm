@@ -58,8 +58,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				message: "Для проведения операции внесения обязателен заголовок Idempotency-Key (UUIDv7).",
 			});
 		}
-		const baseKey = idempotencyKey.includes("#") ? idempotencyKey.split("#")[0] : idempotencyKey;
-		if (!isValidUuid(baseKey || "")) {
+		if (!isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
@@ -279,8 +278,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				message: "Для проведения операции изъятия обязателен заголовок Idempotency-Key (UUIDv7).",
 			});
 		}
-		const baseKey = idempotencyKey.includes("#") ? idempotencyKey.split("#")[0] : idempotencyKey;
-		if (!isValidUuid(baseKey || "")) {
+		if (!isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",

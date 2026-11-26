@@ -31,6 +31,7 @@ import {
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
+import { reconcileInvoiceBalanceInDb } from "../../billingRoutes/invoiceBalanceReconciler.js";
 import {
 	parseHeaderIdempotencyKey,
 	resolveCashBoxPaymentMethod,
@@ -120,8 +121,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const baseKey = rawKey.includes("#") ? rawKey.split("#")[0] : rawKey;
-		if (!isValidUuid(baseKey || "")) {
+		if (!isValidUuid(rawKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
@@ -241,7 +241,8 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 
 			const now = new Date();
 			const contractNumber = `РАСС-${now.getFullYear()}-${randomInt(100000, 1000000)}`;
-			const compositeNotes = `[idempotency:${idempotencyKey}] ${notes || ""}`.trim();
+			const invoiceTag = lockedInvoice ? ` [invoice:${lockedInvoice.id}]` : "";
+			const compositeNotes = `[idempotency:${idempotencyKey}]${invoiceTag} ${notes || ""}`.trim();
 
 			const [contract] = await tx
 				.insert(installmentContracts)
@@ -255,8 +256,8 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 					downPaymentRub,
 					downPaymentKopecks: BigInt(downPaymentKop),
 					monthsCount,
-					paidAmountRub: 0,
-					paidAmountKopecks: 0n,
+					paidAmountRub: downPaymentRub,
+					paidAmountKopecks: BigInt(downPaymentKop),
 					remainingAmountRub: kopecksToRubles(remainingKop),
 					remainingAmountKopecks: BigInt(remainingKop),
 					status: "active",
@@ -267,29 +268,6 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 
 			if (!contract) {
 				throw new Error("Не удалось создать договор рассрочки");
-			}
-
-			if (lockedInvoice && downPaymentKop > 0) {
-				const invoiceTotalKop = resolveSafeKopecks(
-					lockedInvoice.totalPriceKopecks,
-					lockedInvoice.totalAmountRub ?? lockedInvoice.totalRub,
-				);
-				const nextInvoiceStatus =
-					invoiceTotalKop > 0 && downPaymentKop >= invoiceTotalKop
-						? "paid"
-						: "partially_paid";
-				await tx
-					.update(patientInvoices)
-					.set({
-						status: nextInvoiceStatus,
-						...(nextInvoiceStatus === "paid" ? { paidAt: now } : {}),
-					})
-					.where(
-						and(
-							eq(patientInvoices.id, lockedInvoice.id),
-							eq(patientInvoices.organizationId, orgId),
-						),
-					);
 			}
 
 			const tranchesToInsert: Array<typeof installmentTranches.$inferInsert> = [];
@@ -392,6 +370,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 						balanceAfterKopecks: BigInt(afterKop),
 						reasonText,
 						patientId,
+						invoiceId: lockedInvoice?.id ?? null,
 						operatorId: operatorId ?? null,
 						metadata: {
 							contractId: contract.id,
@@ -482,6 +461,10 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				if (tr0) {
 					tr0.cashOperationId = downPaymentOperation.id;
 				}
+			}
+
+			if (lockedInvoice && downPaymentKop > 0) {
+				await reconcileInvoiceBalanceInDb(tx, orgId, lockedInvoice.id);
 			}
 
 			return {

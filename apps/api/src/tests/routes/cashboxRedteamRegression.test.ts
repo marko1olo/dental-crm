@@ -30,6 +30,7 @@ import {
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { registerCashboxRoutes } from "../../routes/cashbox.js";
 import { processCashboxPayment } from "../../routes/cashbox/cashboxPaymentProcessor.js";
+import { registerExpensesRoutes } from "../../routes/expenses.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/receiptRoutes/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
@@ -72,6 +73,7 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 
 		app = await createIdempotentTenantTestApp();
 		await registerCashboxRoutes(app);
+		await registerExpensesRoutes(app);
 		await registerFiscalReceiptRoutes(app);
 		await app.ready();
 
@@ -467,6 +469,134 @@ describe("Cashbox / Fiscal / Shifts Red Team Regressions", () => {
 				),
 		);
 		assert.ok(refundReceipts.length >= 1, "Refund must enqueue income_return receipt");
+	});
+
+	test("6. [W12-FIN-06] Expenses create/delete syncs cashBoxShifts.expenseTotalKopecks and close-shift isolates countedCashRub to cash shifts", async () => {
+		const openRes = await app.inject({
+			method: "POST",
+			url: "/api/cashbox/shift/open",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				openedByUserId: STAFF_ID,
+				cashierFullName: "Старший Кассир Регресс",
+			},
+		});
+		assert.equal(openRes.statusCode, 200, `Open shift failed: ${openRes.body}`);
+
+		const boxes = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx.select().from(cashBoxes).where(eq(cashBoxes.organizationId, ORG_ID)),
+		);
+		const mainBox = boxes.find((b) => b.type === "main" || (b.isMain && !b.isCashless));
+		const cashlessBox = boxes.find((b) => b.type === "cashless" || b.isCashless);
+		assert.ok(mainBox, "Main cashbox required");
+
+		const createExpRes = await app.inject({
+			method: "POST",
+			url: "/api/expenses",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				category: "supplies",
+				amountKopecks: 50000,
+				expenseDate: new Date().toISOString().slice(0, 10),
+				description: "Перчатки смотровые W12-FIN-06",
+				paymentMethod: "cash_register",
+			},
+		});
+		assert.equal(createExpRes.statusCode, 201, `Create expense failed: ${createExpRes.body}`);
+		const expBody = JSON.parse(createExpRes.body) as { data: { id: string } };
+
+		const [shiftAfterCreate] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, ORG_ID),
+						eq(cashBoxShifts.cashBoxId, mainBox.id),
+						eq(cashBoxShifts.status, "open"),
+					),
+				)
+				.limit(1),
+		);
+		assert.ok(shiftAfterCreate);
+		assert.equal(Number(shiftAfterCreate.expenseTotalKopecks), 50000);
+
+		const delRes = await app.inject({
+			method: "DELETE",
+			url: `/api/expenses/${expBody.data.id}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+		});
+		assert.equal(delRes.statusCode, 200, `Delete expense failed: ${delRes.body}`);
+
+		const [shiftAfterDelete] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(cashBoxShifts)
+				.where(eq(cashBoxShifts.id, shiftAfterCreate.id))
+				.limit(1),
+		);
+		assert.ok(shiftAfterDelete);
+		assert.equal(Number(shiftAfterDelete.expenseTotalKopecks), 0);
+
+		// Close shifts with countedCashRub matching mainBox startBalance; cashless shift must not mismatch!
+		const expectedCashRub = kopecksToRub(Number(shiftAfterDelete.startBalanceKopecks));
+		const closeRes = await app.inject({
+			method: "POST",
+			url: "/api/cashbox/shifts/close",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				closedByUserId: STAFF_ID,
+				cashierFullName: "Старший Кассир Регресс",
+				countedCashRub: expectedCashRub,
+			},
+		});
+		assert.equal(closeRes.statusCode, 200, `Close shift failed: ${closeRes.body}`);
+		const closeBody = JSON.parse(closeRes.body) as {
+			success: boolean;
+			reconciliation?: { differenceRub: number; isBalanced: boolean };
+		};
+		assert.equal(closeBody.success, true);
+		assert.equal(closeBody.reconciliation?.differenceRub, 0);
+		assert.equal(closeBody.reconciliation?.isBalanced, true);
+
+		if (cashlessBox) {
+			const [closedCashlessShift] = await withFixtureTenant(ORG_ID, async (tx) =>
+				tx
+					.select()
+					.from(cashBoxShifts)
+					.where(
+						and(
+							eq(cashBoxShifts.organizationId, ORG_ID),
+							eq(cashBoxShifts.cashBoxId, cashlessBox.id),
+							eq(cashBoxShifts.status, "closed"),
+						),
+					)
+					.limit(1),
+			);
+			if (closedCashlessShift) {
+				assert.equal(
+					Number(closedCashlessShift.endBalanceKopecks),
+					Number(closedCashlessShift.expectedEndBalanceKopecks),
+					"Cashless shift endBalanceKopecks must stay at ledger balance instead of physical countedCashRub",
+				);
+			}
+		}
 	});
 });
 

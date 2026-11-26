@@ -312,6 +312,10 @@ export async function handleCreateInvoice(
 				patientName: result.patientName,
 				visitId: result.invoice.visitId,
 				totalAmountRub: Number(result.invoice.totalAmountRub),
+				totalAmountKopecks: Number(
+					result.invoice.totalPriceKopecks ??
+						rublesToKopecks(Number(result.invoice.totalAmountRub ?? 0)),
+				),
 				status: result.invoice.status,
 				issuedAt: result.invoice.issuedAt?.toISOString() || null,
 				createdAt: result.invoice.createdAt.toISOString(),

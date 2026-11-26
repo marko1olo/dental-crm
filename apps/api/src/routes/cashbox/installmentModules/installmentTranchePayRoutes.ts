@@ -19,6 +19,7 @@ import {
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
+import { reconcileInvoiceBalanceInDb } from "../../billingRoutes/invoiceBalanceReconciler.js";
 import {
 	parseHeaderIdempotencyKey,
 	resolveCashBoxPaymentMethod,
@@ -71,10 +72,7 @@ export function registerInstallmentTranchePayRoutes(app: FastifyInstance): void 
 					"Для проведения оплаты транша рассрочки обязателен заголовок Idempotency-Key (UUIDv7).",
 			});
 		}
-		const baseKey = idempotencyKey.includes("#")
-			? idempotencyKey.split("#")[0]
-			: idempotencyKey;
-		if (!isValidUuid(baseKey || "")) {
+		if (!isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
@@ -410,6 +408,28 @@ export function registerInstallmentTranchePayRoutes(app: FastifyInstance): void 
 
 			if (!updatedContract) {
 				throw new Error("Не удалось обновить баланс договора рассрочки");
+			}
+
+			const noteInvoiceMatch = /\[invoice:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\]/.exec(
+				contract.notes || "",
+			);
+			let linkedInvoiceId = noteInvoiceMatch?.[1];
+			if (!linkedInvoiceId) {
+				const [contractOp] = await tx
+					.select({ invoiceId: cashOperations.invoiceId })
+					.from(cashOperations)
+					.where(
+						and(
+							eq(cashOperations.organizationId, orgId),
+							sql`${cashOperations.metadata}->>'contractId' = ${contract.id}`,
+							sql`${cashOperations.invoiceId} IS NOT NULL`,
+						),
+					)
+					.limit(1);
+				linkedInvoiceId = contractOp?.invoiceId ?? undefined;
+			}
+			if (linkedInvoiceId) {
+				await reconcileInvoiceBalanceInDb(tx, orgId, linkedInvoiceId);
 			}
 
 			return {

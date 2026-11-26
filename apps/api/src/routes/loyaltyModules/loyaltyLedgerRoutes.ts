@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { bonusTransactions } from "../../db/schema.js";
 import {
@@ -13,14 +13,27 @@ import {
 import { executeBonusRedeem, executeBonusHold, executeBonusConfirm, executeBonusRelease } from "./bonusRedemptionService.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 
+const patientIdParamSchema = z
+	.object({
+		patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
+	})
+	.strict();
+
 export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 	app.get("/api/loyalty/transactions/:patientId", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
-		const { patientId } = request.params as { patientId: string };
+		const paramsParsed = patientIdParamSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID)",
+			});
+		}
+		const { patientId } = paramsParsed.data;
 
-		return withTenantCtx(orgId, async () => {
-			const rows = await db
+		return withTenantCtx(orgId, async (tx) => {
+			const rows = await tx
 				.select()
 				.from(bonusTransactions)
 				.where(and(eq(bonusTransactions.organizationId, orgId), eq(bonusTransactions.patientId, patientId)))
@@ -57,11 +70,12 @@ export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 		const parsed = redeemPointsBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры списания", errors: parsed.error.format() });
 
-		return withTenantCtx(orgId, async () => {
+		return withTenantCtx(orgId, async (tx) => {
 			const res = await executeBonusRedeem({
 				orgId,
 				...parsed.data,
 				clientMutationId: idempotencyKey ?? undefined,
+				txClient: tx,
 			});
 			if ("notFound" in res) return reply.status(404).send({ message: "Пациент не найден" });
 			if ("invalidInvoice" in res) return reply.status(res.code ?? 400).send({ message: res.message });
@@ -92,11 +106,12 @@ export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 		const parsed = holdPointsBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры холдирования", errors: parsed.error.format() });
 
-		return withTenantCtx(orgId, async () => {
+		return withTenantCtx(orgId, async (tx) => {
 			const res = await executeBonusHold({
 				orgId,
 				...parsed.data,
 				clientMutationId: idempotencyKey ?? undefined,
+				txClient: tx,
 			});
 			if ("notFound" in res) return reply.status(404).send({ message: "Пациент не найден" });
 			if ("invalidInvoice" in res) return reply.status(res.code ?? 400).send({ message: res.message });
@@ -127,11 +142,12 @@ export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 		const parsed = confirmHoldBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры подтверждения", errors: parsed.error.format() });
 
-		return withTenantCtx(orgId, async () => {
+		return withTenantCtx(orgId, async (tx) => {
 			const res = await executeBonusConfirm({
 				orgId,
 				...parsed.data,
 				clientMutationId: idempotencyKey ?? undefined,
+				txClient: tx,
 			});
 			if ("holdNotFound" in res) return reply.status(404).send({ message: res.message });
 			if ("replayed" in res && res.replayed) {
@@ -159,11 +175,12 @@ export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {
 		const parsed = releaseHoldBodySchema.safeParse(request.body);
 		if (!parsed.success) return reply.status(400).send({ message: "Некорректные параметры снятия резерва", errors: parsed.error.format() });
 
-		return withTenantCtx(orgId, async () => {
+		return withTenantCtx(orgId, async (tx) => {
 			const res = await executeBonusRelease({
 				orgId,
 				...parsed.data,
 				clientMutationId: idempotencyKey ?? undefined,
+				txClient: tx,
 			});
 			if ("holdNotFound" in res) return reply.status(404).send({ message: res.message });
 			if ("replayed" in res && res.replayed) {

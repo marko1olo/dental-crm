@@ -399,4 +399,73 @@ describe("Loyalty Gift Certificates — Statutory 54-FZ & Luhn Modulo-10 Integra
 		const updatedPoolBody = updatedPoolRes.json();
 		assert.equal(updatedPoolBody.totalPooledPoints, 800, "В семейном пуле должно остаться ровно 800 бонусов");
 	});
+
+	test("7. [W12-FIN-03] Розничный выпуск сертификата идемпотентен без purchaserPatientId, а списание по invoiceId игнорирует поддельный invoiceAmountRub", async () => {
+		if (!databaseAvailable) return;
+
+		const retailKey = "00000000-0000-7000-8000-000000000701";
+		const retailIssue1 = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/certificates/issue",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": retailKey,
+			},
+			payload: {
+				nominalRub: 4000,
+				recipientName: "Розничный Покупатель",
+			},
+		});
+		assert.equal(retailIssue1.statusCode, 201, retailIssue1.body);
+		const cert1 = retailIssue1.json().certificate;
+
+		const retailIssue2 = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/certificates/issue",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": retailKey,
+			},
+			payload: {
+				nominalRub: 4000,
+				recipientName: "Розничный Покупатель",
+			},
+		});
+		assert.equal(retailIssue2.statusCode, 201, retailIssue2.body);
+		const cert2 = retailIssue2.json().certificate;
+		assert.equal(cert2.id, cert1.id, "Повторный розничный выпуск с тем же Idempotency-Key не должен плодить дубликаты");
+
+		const spoofInvoiceId = fixtureUuid(NAMESPACE, 77);
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx.insert(patientInvoices).values({
+				id: spoofInvoiceId,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				totalPriceKopecks: 120000n, // 1 200 ₽
+				totalAmountRub: 1200,
+				totalRub: "1200.00",
+				status: "issued",
+			});
+		});
+
+		const redeemSpoofRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/certificates/redeem",
+			headers: {
+				...ORG_HEADERS,
+				"Idempotency-Key": "00000000-0000-7000-8000-000000000702",
+			},
+			payload: {
+				serialNumber: cert1.serialNumber,
+				invoiceId: spoofInvoiceId,
+				invoiceAmountRub: 99999, // Попытка подмены суммы счета на клиенте
+				patientId: PATIENT_ID,
+			},
+		});
+		assert.equal(redeemSpoofRes.statusCode, 200, redeemSpoofRes.body);
+		const redeemSpoofBody = redeemSpoofRes.json();
+		assert.equal(redeemSpoofBody.redeemedAmountRub, 1200, "Сервер обязан списать сумму реального счета (1200), игнорируя invoiceAmountRub");
+		assert.equal(redeemSpoofBody.newBalanceRub, 2800);
+		assert.equal(redeemSpoofBody.invoicePaid, true);
+	});
 });

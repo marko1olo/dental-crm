@@ -189,4 +189,26 @@ describe("Sberbank Acquiring Routes", () => {
 		assert.equal(response.statusCode, 501, response.body);
 		assert.equal(response.json().error, "PaymentGatewayNotConfigured");
 	});
+
+	test("[W12-FIN-05] POST /api/sberbank/pay validates invoiceId BEFORE gateway check", async (context) => {
+		if (!databaseAvailable) {
+			return context.skip("database unavailable");
+		}
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/sberbank/pay",
+			headers: {
+				"x-dente-staff-token": staffToken,
+				"idempotency-key": randomUUID(),
+			},
+			payload: {
+				patientId: PATIENT_ID,
+				invoiceId: fixtureUuid(TEST_NS, 999),
+				amount: 1500,
+			},
+		});
+		assert.equal(response.statusCode, 404, response.body);
+		assert.equal(response.json().error, "InvoiceNotFound");
+	});
 });

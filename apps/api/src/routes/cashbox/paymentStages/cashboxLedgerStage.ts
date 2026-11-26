@@ -134,10 +134,17 @@ export async function processCashboxLedgerStage(
 	ctx.dmsShift = dmsShift;
 
 	// 3. Кассовые проводки в cashOperations (целые копейки без float-дрейфа)
+	const resolveSafeKop = (
+		kopVal: number | bigint | null | undefined,
+		rubVal: number | string | null | undefined,
+	): number => {
+		const kop = kopVal != null ? Number(kopVal) : 0;
+		const rubKop = rubToKopecks(Number(rubVal || 0));
+		return kop !== 0 || rubKop === 0 ? kop : rubKop;
+	};
+
 	let currentCashDeskBalKop = BigInt(
-		cashDeskBox?.balanceKopecks !== undefined && cashDeskBox?.balanceKopecks !== null
-			? cashDeskBox.balanceKopecks
-			: rubToKopecks(cashDeskBox?.balanceRub || 0),
+		resolveSafeKop(cashDeskBox?.balanceKopecks, cashDeskBox?.balanceRub),
 	);
 	let currentCashDeskBalRub = kopecksToRub(Number(currentCashDeskBalKop));
 	if (resolvedCashKop > 0 && cashDeskBox) {
@@ -193,10 +200,10 @@ export async function processCashboxLedgerStage(
 		currentCashDeskBalRub = newBal;
 
 		if (cashDeskShift && resolvedCashKop > 0) {
-			const prevIncomeKop =
-				cashDeskShift.incomeTotalKopecks !== undefined && cashDeskShift.incomeTotalKopecks !== null
-					? Number(cashDeskShift.incomeTotalKopecks)
-					: rubToKopecks(Number(cashDeskShift.incomeTotalRub || 0));
+			const prevIncomeKop = resolveSafeKop(
+				cashDeskShift.incomeTotalKopecks,
+				cashDeskShift.incomeTotalRub,
+			);
 			const newIncomeKop = prevIncomeKop + resolvedCashKop;
 			const newIncomeRub = kopecksToRubles(newIncomeKop);
 			cashDeskShift.incomeTotalKopecks = newIncomeKop;
@@ -219,10 +226,10 @@ export async function processCashboxLedgerStage(
 	}
 
 	if (resolvedElecKop > 0 && cashlessBox) {
-		const curBalKop =
-			cashlessBox.balanceKopecks !== undefined && cashlessBox.balanceKopecks !== null
-				? Number(cashlessBox.balanceKopecks)
-				: rubToKopecks(cashlessBox.balanceRub || 0);
+		const curBalKop = resolveSafeKop(
+			cashlessBox.balanceKopecks,
+			cashlessBox.balanceRub,
+		);
 		const newBalKop = curBalKop + resolvedElecKop;
 		const curBal = kopecksToRub(curBalKop);
 		const addRub = kopecksToRub(resolvedElecKop);
@@ -276,10 +283,10 @@ export async function processCashboxLedgerStage(
 		}
 
 		if (cashlessShift && resolvedElecKop > 0) {
-			const prevIncomeKop =
-				cashlessShift.incomeTotalKopecks !== undefined && cashlessShift.incomeTotalKopecks !== null
-					? Number(cashlessShift.incomeTotalKopecks)
-					: rubToKopecks(Number(cashlessShift.incomeTotalRub || 0));
+			const prevIncomeKop = resolveSafeKop(
+				cashlessShift.incomeTotalKopecks,
+				cashlessShift.incomeTotalRub,
+			);
 			const newIncomeKop = prevIncomeKop + resolvedElecKop;
 			const newIncomeRub = kopecksToRubles(newIncomeKop);
 			cashlessShift.incomeTotalKopecks = newIncomeKop;
@@ -383,10 +390,7 @@ export async function processCashboxLedgerStage(
 	if (requiredDmsKopecks > 0n && dmsBox) {
 		const dmsKop = Number(requiredDmsKopecks);
 		const dmsRub = kopecksToRubles(dmsKop);
-		const dmsBeforeKop =
-			dmsBox.balanceKopecks != null
-				? Number(dmsBox.balanceKopecks)
-				: rubToKopecks(dmsBox.balanceRub || 0);
+		const dmsBeforeKop = resolveSafeKop(dmsBox.balanceKopecks, dmsBox.balanceRub);
 		const dmsAfterKop = dmsBeforeKop + dmsKop;
 		const dmsBeforeRub = kopecksToRub(dmsBeforeKop);
 		const dmsAfterRub = kopecksToRub(dmsAfterKop);
@@ -423,10 +427,10 @@ export async function processCashboxLedgerStage(
 			.where(and(eq(cashBoxes.id, dmsBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		if (dmsShift) {
-			const prevDmsIncomeKop =
-				dmsShift.incomeTotalKopecks != null
-					? Number(dmsShift.incomeTotalKopecks)
-					: rubToKopecks(Number(dmsShift.incomeTotalRub || 0));
+			const prevDmsIncomeKop = resolveSafeKop(
+				dmsShift.incomeTotalKopecks,
+				dmsShift.incomeTotalRub,
+			);
 			const newDmsIncomeKop = prevDmsIncomeKop + dmsKop;
 			const newDmsIncomeRub = kopecksToRubles(newDmsIncomeKop);
 			dmsShift.incomeTotalKopecks = newDmsIncomeKop;

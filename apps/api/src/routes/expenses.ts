@@ -25,6 +25,7 @@ import { recordAuditEventInDb } from "../db/auditQuery.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	cashBoxes,
+	cashBoxShifts,
 	cashExpenseReasons,
 	cashOperations,
 	payments,
@@ -36,32 +37,47 @@ import {
 } from "../db/seeds/seed_cash_and_reasons.js";
 import { ADMIN_ROLES, requireStaffIdentity } from "../security/identity.js";
 
-const createExpenseBodySchema = z.object({
-	organizationId: z.string().uuid().optional(),
-	clinicId: z.string().uuid().optional().nullable(),
-	category: expenseCategorySchema,
-	amountKopecks: z.number().int().positive(),
-	expenseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-	description: z.string().max(2000).optional().nullable(),
-	vendorName: z.string().max(255).optional().nullable(),
-	periodicity: expensePeriodicitySchema.default("one_time"),
-	paymentMethod: expensePaymentMethodSchema.default("cashless_invoice"),
-	receiptUrl: z.string().url().optional().nullable(),
-	createdBy: z.string().uuid().optional().nullable(),
-});
+function resolveSafeKop(
+	kopecksVal: number | bigint | null | undefined,
+	rubVal: number | string | null | undefined,
+): number {
+	const kop = kopecksVal != null ? Number(kopecksVal) : 0;
+	const rubKop = rubToKopecks(Number(rubVal || 0));
+	return kop !== 0 || rubKop === 0 ? kop : rubKop;
+}
 
-const listExpensesQuerySchema = z.object({
-	organizationId: z.string().optional(),
-	startDate: z.string().optional(),
-	endDate: z.string().optional(),
-	category: expenseCategorySchema.optional(),
-});
+const createExpenseBodySchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		clinicId: z.string().uuid().optional().nullable(),
+		category: expenseCategorySchema,
+		amountKopecks: z.number().int().positive(),
+		expenseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		description: z.string().max(2000).optional().nullable(),
+		vendorName: z.string().max(255).optional().nullable(),
+		periodicity: expensePeriodicitySchema.default("one_time"),
+		paymentMethod: expensePaymentMethodSchema.default("cashless_invoice"),
+		receiptUrl: z.string().url().optional().nullable(),
+		createdBy: z.string().uuid().optional().nullable(),
+	})
+	.strict();
 
-const summaryQuerySchema = z.object({
-	organizationId: z.string().optional(),
-	month: z.string().optional(), // YYYY-MM
-	revenueRub: z.coerce.number().min(0).optional(),
-});
+const listExpensesQuerySchema = z
+	.object({
+		organizationId: z.string().optional(),
+		startDate: z.string().optional(),
+		endDate: z.string().optional(),
+		category: expenseCategorySchema.optional(),
+	})
+	.strict();
+
+const summaryQuerySchema = z
+	.object({
+		organizationId: z.string().optional(),
+		month: z.string().optional(), // YYYY-MM
+		revenueRub: z.coerce.number().min(0).optional(),
+	})
+	.strict();
 
 function mapCategoryToReasonCode(category: ExpenseCategory): number {
 	switch (category) {
@@ -241,11 +257,24 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				return { kind: "no_cash_box" as const };
 			}
 
-			const balanceBefore = targetBox.balanceRub ?? 0;
-			const balanceBeforeKop = targetBox.balanceKopecks ?? rubToKopecks(balanceBefore);
+			const balanceBeforeKop = resolveSafeKop(targetBox.balanceKopecks, targetBox.balanceRub);
+			const balanceBefore = kopecksToRub(balanceBeforeKop);
 			const expenseKop = data.amountKopecks;
 			const balanceAfterKop = balanceBeforeKop - expenseKop;
 			const balanceAfter = kopecksToRub(balanceAfterKop);
+
+			const [activeShift] = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, organizationId),
+						eq(cashBoxShifts.cashBoxId, targetBox.id),
+						eq(cashBoxShifts.status, "open"),
+					),
+				)
+				.for("update")
+				.limit(1);
 
 			await tx
 				.update(cashBoxes)
@@ -255,6 +284,22 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
+
+			if (activeShift) {
+				const prevExpenseKop = resolveSafeKop(
+					activeShift.expenseTotalKopecks,
+					activeShift.expenseTotalRub,
+				);
+				const nextExpenseKop = prevExpenseKop + expenseKop;
+				await tx
+					.update(cashBoxShifts)
+					.set({
+						expenseTotalRub: kopecksToRub(nextExpenseKop),
+						expenseTotalKopecks: nextExpenseKop,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, organizationId)));
+			}
 
 			const metadata: ExpenseMetadata = {
 				category: data.category,
@@ -272,6 +317,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				.values({
 					organizationId,
 					cashBoxId: targetBox.id,
+					shiftId: activeShift?.id ?? null,
 					operationType: "expense",
 					amountRub,
 					amountKopecks: expenseKop,
@@ -347,7 +393,10 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 					const monthStart = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
 					const monthEnd = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
 					const paidPayments = await tx
-						.select({ amountRub: payments.amountRub })
+						.select({
+							amountKopecks: payments.amountKopecks,
+							amountRub: payments.amountRub,
+						})
 						.from(payments)
 						.where(
 							and(
@@ -357,7 +406,11 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 								lte(payments.paidAt, monthEnd),
 							),
 						);
-					monthRevenue = paidPayments.reduce((acc, p) => acc + (p.amountRub || 0), 0);
+					const monthRevenueKop = paidPayments.reduce(
+						(acc, p) => acc + resolveSafeKop(p.amountKopecks, p.amountRub),
+						0,
+					);
+					monthRevenue = kopecksToRub(monthRevenueKop);
 				}
 			}
 
@@ -399,7 +452,12 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 		if (!identity || !identity.organizationId) return;
 		const organizationId = identity.organizationId;
 
-		const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+		const paramsParsed = z.object({ id: z.string().uuid() }).safeParse(request.params);
+		if (!paramsParsed.success) {
+			reply.status(400);
+			return { error: "ValidationError", message: "Некорректный идентификатор расхода (ожидается UUID)." };
+		}
+		const { id } = paramsParsed.data;
 
 		const deletedOp = await withTenantCtx(organizationId, async (tx) => {
 			const [op] = await tx
@@ -412,20 +470,23 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 						eq(cashOperations.operationType, "expense"),
 					),
 				)
+				.for("update")
 				.limit(1);
 
 			if (!op) return null;
 
-			// Возвращаем средства обратно на кассовый счет
+			// Возвращаем средства обратно на кассовый счет под блокировкой
 			const [box] = await tx
 				.select()
 				.from(cashBoxes)
 				.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, organizationId)))
+				.for("update")
 				.limit(1);
 
+			const refundKop = resolveSafeKop(op.amountKopecks, op.amountRub);
+
 			if (box) {
-				const refundKop = op.amountKopecks != null ? Number(op.amountKopecks) : rubToKopecks(op.amountRub);
-				const restoredKop = (box.balanceKopecks ?? rubToKopecks(box.balanceRub)) + refundKop;
+				const restoredKop = resolveSafeKop(box.balanceKopecks, box.balanceRub) + refundKop;
 				const restoredBalance = kopecksToRub(restoredKop);
 				await tx
 					.update(cashBoxes)
@@ -435,6 +496,36 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 						updatedAt: new Date(),
 					})
 					.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));
+			}
+
+			if (op.shiftId) {
+				const [shiftRow] = await tx
+					.select()
+					.from(cashBoxShifts)
+					.where(
+						and(
+							eq(cashBoxShifts.id, op.shiftId),
+							eq(cashBoxShifts.organizationId, organizationId),
+							eq(cashBoxShifts.status, "open"),
+						),
+					)
+					.for("update")
+					.limit(1);
+				if (shiftRow) {
+					const curExpKop = resolveSafeKop(
+						shiftRow.expenseTotalKopecks,
+						shiftRow.expenseTotalRub,
+					);
+					const nextExpKop = Math.max(0, curExpKop - refundKop);
+					await tx
+						.update(cashBoxShifts)
+						.set({
+							expenseTotalRub: kopecksToRub(nextExpKop),
+							expenseTotalKopecks: nextExpKop,
+							updatedAt: new Date(),
+						})
+						.where(and(eq(cashBoxShifts.id, shiftRow.id), eq(cashBoxShifts.organizationId, organizationId)));
+				}
 			}
 
 			await tx

@@ -14,7 +14,6 @@ import {
 	type IssueCertificateBody,
 } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	cashBoxes,
@@ -32,6 +31,129 @@ function isPgUniqueViolation(err: unknown): boolean {
 	if (candidate?.code === "23505") return true;
 	if (candidate?.cause) return isPgUniqueViolation(candidate.cause);
 	return false;
+}
+
+function formatIssuedCertificateDto(
+	cert: typeof giftCertificates.$inferSelect,
+): FormattedCertificateDto {
+	const nomKop =
+		cert.nominalKopecks != null
+			? Number(cert.nominalKopecks)
+			: Number(parseKopecks(cert.nominalRub));
+	const initBalKop =
+		cert.initialBalanceKopecks != null
+			? Number(cert.initialBalanceKopecks)
+			: Number(parseKopecks(cert.initialBalanceRub));
+	const curBalKop =
+		cert.currentBalanceKopecks != null
+			? Number(cert.currentBalanceKopecks)
+			: Number(parseKopecks(cert.currentBalanceRub));
+	return {
+		id: cert.id,
+		serialNumber: cert.serialNumber,
+		nominalRub: kopecksToRubles(nomKop),
+		initialBalanceRub: kopecksToRubles(initBalKop),
+		currentBalanceRub: kopecksToRubles(curBalKop),
+		nominalKop: nomKop,
+		initialBalanceKop: initBalKop,
+		currentBalanceKop: curBalKop,
+		purchaserPatientId: cert.purchaserPatientId,
+		purchaserName: cert.purchaserName,
+		recipientPatientId: cert.recipientPatientId,
+		recipientName: cert.recipientName,
+		recipientPhone: cert.recipientPhone,
+		status: cert.status,
+		issuedAtIso: cert.issuedAt.toISOString(),
+		expiresAtIso: cert.expiresAt.toISOString(),
+		notes: cert.notes,
+		relatedPaymentId: cert.relatedPaymentId,
+	};
+}
+
+async function findIssuedCertificateByMutationId(
+	tx: TenantDb,
+	orgId: string,
+	clientMutationId: string,
+	lockRows: boolean,
+): Promise<typeof giftCertificates.$inferSelect | null> {
+	const paymentQuery = tx
+		.select()
+		.from(payments)
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				eq(payments.clientMutationId, clientMutationId),
+			),
+		)
+		.limit(1);
+	const [existingPayment] = lockRows ? await paymentQuery.for("update") : await paymentQuery;
+
+	if (existingPayment) {
+		const certQuery = tx
+			.select()
+			.from(giftCertificates)
+			.where(
+				and(
+					eq(giftCertificates.organizationId, orgId),
+					eq(giftCertificates.relatedPaymentId, existingPayment.id),
+				),
+			)
+			.limit(1);
+		const [existingCert] = lockRows ? await certQuery.for("update") : await certQuery;
+		if (existingCert) return existingCert;
+	}
+
+	const [existingOp] = await tx
+		.select({ metadata: cashOperations.metadata })
+		.from(cashOperations)
+		.where(
+			and(
+				eq(cashOperations.organizationId, orgId),
+				sql`${cashOperations.metadata}->>'idempotencyKey' = ${clientMutationId}`,
+			),
+		)
+		.limit(1);
+	const opMeta = existingOp?.metadata as { serialNumber?: unknown } | null | undefined;
+	if (typeof opMeta?.serialNumber === "string" && opMeta.serialNumber.length > 0) {
+		const [certByOp] = await tx
+			.select()
+			.from(giftCertificates)
+			.where(
+				and(
+					eq(giftCertificates.organizationId, orgId),
+					eq(giftCertificates.serialNumber, opMeta.serialNumber),
+				),
+			)
+			.limit(1);
+		if (certByOp) return certByOp;
+	}
+
+	const [existingQueue] = await tx
+		.select({ payloadJson: fiscalReceiptQueue.payloadJson })
+		.from(fiscalReceiptQueue)
+		.where(
+			and(
+				eq(fiscalReceiptQueue.organizationId, orgId),
+				sql`${fiscalReceiptQueue.payloadJson}->>'clientMutationId' = ${clientMutationId}`,
+			),
+		)
+		.limit(1);
+	const queuePayload = existingQueue?.payloadJson as { certificateNumber?: unknown } | null | undefined;
+	if (typeof queuePayload?.certificateNumber === "string" && queuePayload.certificateNumber.length > 0) {
+		const [certByQueue] = await tx
+			.select()
+			.from(giftCertificates)
+			.where(
+				and(
+					eq(giftCertificates.organizationId, orgId),
+					eq(giftCertificates.serialNumber, queuePayload.certificateNumber),
+				),
+			)
+			.limit(1);
+		if (certByQueue) return certByQueue;
+	}
+
+	return null;
 }
 
 /**
@@ -69,56 +191,17 @@ export async function executeIssueGiftCertificate(
 
 	const execute = async (tx: TenantDb) => {
 		if (clientMutationId) {
-			const [existingPayment] = await tx
-				.select()
-				.from(payments)
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						eq(payments.clientMutationId, clientMutationId),
-					),
-				)
-				.limit(1)
-				.for("update");
-
-			if (existingPayment) {
-				const [existingCert] = await tx
-					.select()
-					.from(giftCertificates)
-					.where(
-						and(
-							eq(giftCertificates.organizationId, orgId),
-							eq(giftCertificates.relatedPaymentId, existingPayment.id),
-						),
-					)
-					.limit(1)
-					.for("update");
-
-				if (existingCert) {
-					const nomKop = existingCert.nominalKopecks != null ? Number(existingCert.nominalKopecks) : Number(parseKopecks(existingCert.nominalRub));
-					const initBalKop = existingCert.initialBalanceKopecks != null ? Number(existingCert.initialBalanceKopecks) : Number(parseKopecks(existingCert.initialBalanceRub));
-					const curBalKop = existingCert.currentBalanceKopecks != null ? Number(existingCert.currentBalanceKopecks) : Number(parseKopecks(existingCert.currentBalanceRub));
-					return {
-						id: existingCert.id,
-						serialNumber: existingCert.serialNumber,
-						nominalRub: kopecksToRubles(nomKop),
-						initialBalanceRub: kopecksToRubles(initBalKop),
-						currentBalanceRub: kopecksToRubles(curBalKop),
-						nominalKop: nomKop,
-						initialBalanceKop: initBalKop,
-						currentBalanceKop: curBalKop,
-						purchaserPatientId: existingCert.purchaserPatientId,
-						purchaserName: existingCert.purchaserName,
-						recipientPatientId: existingCert.recipientPatientId,
-						recipientName: existingCert.recipientName,
-						recipientPhone: existingCert.recipientPhone,
-						status: existingCert.status,
-						issuedAtIso: existingCert.issuedAt.toISOString(),
-						expiresAtIso: existingCert.expiresAt.toISOString(),
-						notes: existingCert.notes,
-						relatedPaymentId: existingCert.relatedPaymentId,
-					};
-				}
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cert_issue:' || ${clientMutationId}))`,
+			);
+			const existingCert = await findIssuedCertificateByMutationId(
+				tx,
+				orgId,
+				clientMutationId,
+				true,
+			);
+			if (existingCert) {
+				return formatIssuedCertificateDto(existingCert);
 			}
 		}
 
@@ -166,7 +249,9 @@ export async function executeIssueGiftCertificate(
 			.for("update");
 
 		if (cashDeskBox) {
-			const currentBalKop = cashDeskBox.balanceKopecks != null ? cashDeskBox.balanceKopecks : parseKopecks(cashDeskBox.balanceRub || 0);
+			const kopBal = Number(cashDeskBox.balanceKopecks ?? 0);
+			const rubKopBal = parseKopecks(cashDeskBox.balanceRub || 0);
+			const currentBalKop = kopBal !== 0 || rubKopBal === 0 ? kopBal : rubKopBal;
 			const newBalanceKop = currentBalKop + Number(nominalKopExact);
 			const newBalanceRub = Number(kopecksToNumericString(newBalanceKop));
 			const shiftId = await addCashBoxShiftDelta({
@@ -183,7 +268,7 @@ export async function executeIssueGiftCertificate(
 				operationType: "income",
 				amountRub: nominalRubNum,
 				amountKopecks: Number(nominalKopExact),
-				balanceBeforeRub: cashDeskBox.balanceRub || 0,
+				balanceBeforeRub: kopecksToRubles(currentBalKop),
 				balanceBeforeKopecks: BigInt(currentBalKop),
 				balanceAfterRub: newBalanceRub,
 				balanceAfterKopecks: BigInt(newBalanceKop),
@@ -191,6 +276,11 @@ export async function executeIssueGiftCertificate(
 				kkmDocNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
 				reasonText: `Продажа подарочного сертификата №${serialNumber} (тег 1214: Аванс, предмет расчета 1212 = 10)`,
 				operatorName: "Администратор",
+				metadata: {
+					tenderType: "certificate_sale",
+					serialNumber,
+					...(clientMutationId ? { idempotencyKey: clientMutationId } : {}),
+				},
 			});
 			await tx
 				.update(cashBoxes)
@@ -220,6 +310,7 @@ export async function executeIssueGiftCertificate(
 				fiscalReceiptNumber: `CERT-SALE-${Date.now().toString().slice(-6)}`,
 				patientId: effectivePurchaserId,
 				patientName: displayName,
+				clientMutationId: clientMutationId ?? null,
 				note: `Продажа подарочного сертификата ${serialNumber} (тег 1214: Аванс, тег 1212: 10)`,
 			},
 			retryCount: 0,
@@ -249,98 +340,33 @@ export async function executeIssueGiftCertificate(
 			.returning();
 
 		if (!created) return null;
-
-		const createdNomKop = created.nominalKopecks != null ? created.nominalKopecks : Number(parseKopecks(created.nominalRub));
-		const createdCurBalKop = created.currentBalanceKopecks != null ? created.currentBalanceKopecks : Number(parseKopecks(created.currentBalanceRub));
-
-		return {
-			id: created.id,
-			serialNumber: created.serialNumber,
-			nominalRub: kopecksToRubles(createdNomKop),
-			initialBalanceRub: kopecksToRubles(createdNomKop),
-			currentBalanceRub: kopecksToRubles(createdCurBalKop),
-			nominalKop: createdNomKop,
-			initialBalanceKop: createdNomKop,
-			currentBalanceKop: createdCurBalKop,
-			purchaserPatientId: created.purchaserPatientId,
-			purchaserName: created.purchaserName,
-			recipientPatientId: created.recipientPatientId,
-			recipientName: created.recipientName,
-			recipientPhone: created.recipientPhone,
-			status: created.status,
-			issuedAtIso: created.issuedAt.toISOString(),
-			expiresAtIso: created.expiresAt.toISOString(),
-			notes: created.notes,
-			relatedPaymentId: created.relatedPaymentId,
-		};
+		return formatIssuedCertificateDto(created);
 	};
+
+	const execTenant = () => (txClient ? execute(txClient) : withTenantCtx(orgId, execute));
 
 	if (clientMutationId) {
 		try {
-			if (txClient) {
-				return await execute(txClient);
-			}
-			return await db.transaction(execute);
+			return await execTenant();
 		} catch (err) {
 			if (isPgUniqueViolation(err)) {
-				const [existingPayment] = await db
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, orgId),
-							eq(payments.clientMutationId, clientMutationId),
-						),
-					)
-					.limit(1);
-
-				if (existingPayment) {
-					const [existingCert] = await db
-						.select()
-						.from(giftCertificates)
-						.where(
-							and(
-								eq(giftCertificates.organizationId, orgId),
-								eq(giftCertificates.relatedPaymentId, existingPayment.id),
-							),
-						)
-						.limit(1);
-
-					if (existingCert) {
-						const nomKop = existingCert.nominalKopecks != null ? Number(existingCert.nominalKopecks) : Number(parseKopecks(existingCert.nominalRub));
-						const initBalKop = existingCert.initialBalanceKopecks != null ? Number(existingCert.initialBalanceKopecks) : Number(parseKopecks(existingCert.initialBalanceRub));
-						const curBalKop = existingCert.currentBalanceKopecks != null ? Number(existingCert.currentBalanceKopecks) : Number(parseKopecks(existingCert.currentBalanceRub));
-						return {
-							id: existingCert.id,
-							serialNumber: existingCert.serialNumber,
-							nominalRub: kopecksToRubles(nomKop),
-							initialBalanceRub: kopecksToRubles(initBalKop),
-							currentBalanceRub: kopecksToRubles(curBalKop),
-							nominalKop: nomKop,
-							initialBalanceKop: initBalKop,
-							currentBalanceKop: curBalKop,
-							purchaserPatientId: existingCert.purchaserPatientId,
-							purchaserName: existingCert.purchaserName,
-							recipientPatientId: existingCert.recipientPatientId,
-							recipientName: existingCert.recipientName,
-							recipientPhone: existingCert.recipientPhone,
-							status: existingCert.status,
-							issuedAtIso: existingCert.issuedAt.toISOString(),
-							expiresAtIso: existingCert.expiresAt.toISOString(),
-							notes: existingCert.notes,
-							relatedPaymentId: existingCert.relatedPaymentId,
-						};
-					}
-				}
+				const lookupReplay = async (tx: TenantDb) => {
+					const existingCert = await findIssuedCertificateByMutationId(
+						tx,
+						orgId,
+						clientMutationId,
+						false,
+					);
+					return existingCert ? formatIssuedCertificateDto(existingCert) : null;
+				};
+				const replayed = await withTenantCtx(orgId, lookupReplay);
+				if (replayed) return replayed;
 			}
 			throw err;
 		}
 	}
 
-	if (txClient) {
-		return execute(txClient);
-	}
-	return db.transaction(execute);
+	return execTenant();
 }
 
 /**
@@ -349,11 +375,12 @@ export async function executeIssueGiftCertificate(
 export async function lookupGiftCertificateBySerial(
 	orgId: string,
 	rawSerial: string,
+	txClient?: TenantDb | undefined,
 ): Promise<{ readonly found: boolean; readonly certificate?: FormattedCertificateDto | undefined }> {
 	const cleaned = rawSerial.replace(/[\s-]/g, "");
 	const canonicalFormatted = `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8, 12)}-${cleaned.slice(12, 16)}`;
 
-	return withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const [cert] = await tx
 			.select()
 			.from(giftCertificates)
@@ -400,5 +427,7 @@ export async function lookupGiftCertificateBySerial(
 				notes: cert.notes,
 			},
 		};
-	});
+	};
+
+	return txClient ? run(txClient) : withTenantCtx(orgId, run);
 }

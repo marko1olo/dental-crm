@@ -140,23 +140,23 @@ export function parseClosedPeriodRange(periodStr: string): { start: Date; end: D
 }
 
 export const SPECIALTY_TITLES: Record<string, string> = {
-	therapy: "value -value -value",
-	orthopedics: "value -value -value",
-	surgery: "value -value -value",
-	orthodontics: "value -value",
-	hygiene: "value",
-	pediatric: "value",
-	general_dentist: "value -value",
+	therapy: "Врач-стоматолог-терапевт",
+	orthopedics: "Врач-стоматолог-ортопед",
+	surgery: "Врач-стоматолог-хирург",
+	orthodontics: "Врач-ортодонт",
+	hygiene: "Гигиенист стоматологический",
+	pediatric: "Детский стоматолог",
+	general_dentist: "Врач-стоматолог общей практики",
 };
 
 export const CATEGORY_LABELS_RU: Record<string, string> = {
-	therapy: "value",
-	orthopedics: "value",
-	surgery: "value",
-	orthodontics: "value",
-	hygiene: "value",
-	retail_hygiene: "value",
-	pediatric: "value",
+	therapy: "Терапия",
+	orthopedics: "Ортопедия",
+	surgery: "Хирургия",
+	orthodontics: "Ортодонтия",
+	hygiene: "Гигиена",
+	retail_hygiene: "Товары профгигиены",
+	pediatric: "Детская стоматология",
 };
 
 export function normalizeClinicalCategory(
@@ -230,11 +230,11 @@ export async function fetchActiveDoctorProfiles(
 		}
 
 		return docUsers.map((u) => {
-			const name = u.fullName || "value -value";
+			const name = u.fullName || "Врач-стоматолог";
 			const parts = name.trim().split(/\s+/);
-			const initials = parts.length >= 2 ? `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase() : "value";
+			const initials = parts.length >= 2 ? `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase() : "ВС";
 			const specId = Array.isArray(u.specialties) && u.specialties[0] ? String(u.specialties[0]) : "therapy";
-			const specTitle = SPECIALTY_TITLES[specId] || "value -value";
+			const specTitle = SPECIALTY_TITLES[specId] || "Врач-стоматолог";
 
 			return {
 				id: u.id,
@@ -286,7 +286,7 @@ export async function fetchClosedPayrollStatements(
 			periodLabelRu: s.period,
 			dateClosedIso: s.createdAt.toISOString().slice(0, 10),
 			doctorName: isAll ? (s.doctorId || doctorName) : doctorName,
-			rkoReceiptNumber: isAll ? "" : (s.rkoNumber || `-${s.id.slice(0, 8).toUpperCase()}`),
+			rkoReceiptNumber: isAll ? "" : (s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`),
 			grossKopecks: Number(s.grossRevenueKopecks != null ? s.grossRevenueKopecks : rublesToKopecks(Number(s.grossRevenueRub || 0))),
 			labCostKopecks: Number(s.labCostKopecks != null ? s.labCostKopecks : rublesToKopecks(Number(s.labCostRub || 0))),
 			materialCostKopecks: Number(s.materialsCostKopecks != null ? s.materialsCostKopecks : rublesToKopecks(Number(s.materialsCostRub || 0))),

@@ -45,13 +45,23 @@ export function sendBillingPaymentScopeError(
 }
 
 export function paymentRetryMatchesExisting(
-	existingPayment: Payment,
+	existingPayment: Payment & { amountKopecks?: number | bigint | null | undefined },
 	input: CreatePaymentInput,
 ): boolean {
 	if (existingPayment.patientId !== input.patientId) return false;
 	if ((existingPayment.visitId ?? null) !== (input.visitId ?? null)) return false;
 	if ((existingPayment.documentId ?? null) !== (input.documentId ?? null)) return false;
-	if (rublesToKopecks(Number(existingPayment.amountRub)) !== rublesToKopecks(Number(input.amountRub))) return false;
+	const existingKop =
+		existingPayment.amountKopecks !== undefined &&
+		existingPayment.amountKopecks !== null &&
+		Number(existingPayment.amountKopecks) !== 0
+			? Number(existingPayment.amountKopecks)
+			: rublesToKopecks(Number(existingPayment.amountRub));
+	const inputKop =
+		typeof input.amountKopecks === "number" && Number.isInteger(input.amountKopecks) && input.amountKopecks > 0
+			? input.amountKopecks
+			: rublesToKopecks(Number(input.amountRub ?? 0));
+	if (existingKop !== inputKop) return false;
 
 	const methodsMatch =
 		existingPayment.method === input.method ||

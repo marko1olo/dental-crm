@@ -239,7 +239,7 @@ describe("RED TEAM ACID: Loyalty & Certificate Double-Spend Defense", () => {
 
 		// Все 15 возвращают 200 OK
 		for (const r of responses) {
-			assert.equal(r.statusCode, 200);
+			assert.equal(r.statusCode, 200, r.body);
 			const b = JSON.parse(r.body);
 			assert.equal(b.redeemedAmountRub, 1500);
 			assert.equal(b.newBalanceRub, 8500);

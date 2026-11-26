@@ -11,9 +11,10 @@ import {
 	redeemCertificateSchema,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { extractIdempotencyKey } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import {
 	executeIssueGiftCertificate,
 	lookupGiftCertificateBySerial,
@@ -22,6 +23,19 @@ import {
 	executeRedeemGiftCertificate,
 	listGiftCertificates,
 } from "./certificateRedemption.js";
+
+const serialParamSchema = z
+	.object({
+		serial: z.string().trim().min(1),
+	})
+	.strict();
+
+const validateCertificateBodySchema = z
+	.object({
+		serialNumber: z.string().trim().optional(),
+		serial: z.string().trim().optional(),
+	})
+	.strict();
 
 export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 	/**
@@ -32,6 +46,14 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = issueCertificateSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -40,10 +62,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const idempotencyKey = extractIdempotencyKey(request);
-
-		return withTenantCtx(orgId, async () => {
-			const certDto = await executeIssueGiftCertificate(orgId, parsed.data, idempotencyKey);
+		return withTenantCtx(orgId, async (tx) => {
+			const certDto = await executeIssueGiftCertificate(orgId, parsed.data, idempotencyKey, tx);
 			if (!certDto) {
 				return reply.status(500).send({ message: "Не удалось выпустить сертификат" });
 			}
@@ -66,8 +86,14 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { serial } = request.params as { serial: string };
-		const formattedSerial = serial.trim();
+		const paramsParsed = serialParamSchema.safeParse(request.params);
+		if (!paramsParsed.success) {
+			return reply.status(400).send({
+				valid: false,
+				message: "Некорректный номер сертификата",
+			});
+		}
+		const formattedSerial = paramsParsed.data.serial;
 
 		if (!validateLuhn16Certificate(formattedSerial)) {
 			return reply.status(400).send({
@@ -76,8 +102,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		return withTenantCtx(orgId, async () => {
-			const res = await lookupGiftCertificateBySerial(orgId, formattedSerial);
+		return withTenantCtx(orgId, async (tx) => {
+			const res = await lookupGiftCertificateBySerial(orgId, formattedSerial, tx);
 			if (!res.found || !res.certificate) {
 				return reply.status(404).send({
 					valid: false,
@@ -99,8 +125,15 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const body = (request.body as { serialNumber?: string; serial?: string }) || {};
-		const rawSerial = (body.serialNumber || body.serial || "").trim();
+		const parsedBody = validateCertificateBodySchema.safeParse(request.body ?? {});
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				valid: false,
+				exists: false,
+				message: "Некорректные параметры запроса валидации сертификата",
+			});
+		}
+		const rawSerial = (parsedBody.data.serialNumber || parsedBody.data.serial || "").trim();
 
 		if (!validateLuhn16Certificate(rawSerial)) {
 			return reply.status(400).send({
@@ -110,8 +143,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		return withTenantCtx(orgId, async () => {
-			const res = await lookupGiftCertificateBySerial(orgId, rawSerial);
+		return withTenantCtx(orgId, async (tx) => {
+			const res = await lookupGiftCertificateBySerial(orgId, rawSerial, tx);
 			if (!res.found || !res.certificate) {
 				return reply.status(404).send({
 					valid: true,
@@ -136,6 +169,14 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
+		const idempotencyKey = extractIdempotencyKey(request);
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7)",
+			});
+		}
+
 		const parsed = redeemCertificateSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({
@@ -150,10 +191,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const idempotencyKey = extractIdempotencyKey(request);
-
-		return withTenantCtx(orgId, async () => {
-			const result = await executeRedeemGiftCertificate(orgId, parsed.data, idempotencyKey);
+		return withTenantCtx(orgId, async (tx) => {
+			const result = await executeRedeemGiftCertificate(orgId, parsed.data, idempotencyKey, tx);
 
 			if ("notFound" in result) {
 				return reply.status(404).send({ message: result.message });
@@ -177,8 +216,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		return withTenantCtx(orgId, async () => {
-			const certificates = await listGiftCertificates(orgId);
+		return withTenantCtx(orgId, async (tx) => {
+			const certificates = await listGiftCertificates(orgId, tx);
 			return reply.send({ certificates });
 		});
 	});

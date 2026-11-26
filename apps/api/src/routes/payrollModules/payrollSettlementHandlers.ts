@@ -34,7 +34,7 @@ export async function closeSettlementHandler(
 	if (!parsed.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
-			message: "value",
+			message: "Некорректные параметры закрытия расчетного периода",
 			details: parsed.error.format(),
 		});
 	}
@@ -49,7 +49,7 @@ export async function closeSettlementHandler(
 				error: "PermissionDenied",
 				permission: "payroll.read",
 				role: payoutAccess.role,
-				message: "value",
+				message: "Врач может подтверждать акт сверки только по собственным начислениям",
 			});
 		}
 
@@ -58,7 +58,7 @@ export async function closeSettlementHandler(
 				error: "PermissionDenied",
 				permission: "payroll.read",
 				role: payoutAccess.role,
-				message: "value",
+				message: "Подтверждение начислений других врачей клиники запрещено",
 			});
 		}
 	}
@@ -72,7 +72,7 @@ export async function closeSettlementHandler(
 		if (!isValidUuid(idempotencyKey)) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: "value Idempotency-Key value UUID (value UUIDv7).",
+				message: "Заголовок Idempotency-Key должен содержать корректный UUID (рекомендуется UUIDv7).",
 			});
 		}
 		reply.header("Idempotency-Key", idempotencyKey);
@@ -122,7 +122,7 @@ export async function closeSettlementHandler(
 				});
 
 				const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
-				const rkoNumber = body.rkoNumber || `-${doc.id.slice(0, 4).toUpperCase()}-${periodKey}`;
+				const rkoNumber = body.rkoNumber || `РКО-${doc.id.slice(0, 4).toUpperCase()}-${periodKey}`;
 
 				const res = await closeSettlementPeriodInDb({
 					organizationId: orgId,
@@ -159,13 +159,13 @@ export async function closeSettlementHandler(
 			statements: batchStatements,
 			count: batchStatements.length,
 			closedAppointmentsCount: totalClosedAppts,
-			message: `:  ${batchStatements.length} `,
+			message: `Пакетное утверждение ведомостей клиники: зафиксированы расчетные периоды для ${batchStatements.length} врачей`,
 		});
 	}
 
 	const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId ?? undefined);
 	if (!resolvedDocId) {
-		return reply.code(404).send({ error: "DoctorNotFoundError", message: "value" });
+		return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
 	}
 
 	if (isOwnDoctor && resolvedDocId !== payoutAccess.userId) {
@@ -173,7 +173,7 @@ export async function closeSettlementHandler(
 			error: "PermissionDenied",
 			permission: "payroll.read",
 			role: payoutAccess.role,
-			message: "value",
+			message: "Врач может утверждать только собственную ведомость",
 		});
 	}
 
@@ -226,7 +226,7 @@ export async function closeSettlementHandler(
 			.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
 			.limit(1);
 
-		const doctorName = docUser?.fullName || "value -value";
+		const doctorName = docUser?.fullName || "Врач-стоматолог";
 		const specId = Array.isArray(docUser?.specialties) && docUser.specialties[0]
 			? String(docUser.specialties[0])
 			: "therapy";
@@ -323,7 +323,9 @@ export async function closeSettlementHandler(
 			statementId: result.statementId,
 			statement: result.statement,
 			closedAppointmentsCount: result.closedAppointmentsCount,
-			message: isOwnDoctor ? "value" : "value PostgreSQL value",
+			message: isOwnDoctor
+				? "Акт сверки смены успешно подтвержден врачом"
+				: "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
 		};
 	});
 
@@ -346,7 +348,7 @@ export async function reopenSettlementHandler(
 	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
 		return reply.code(400).send({
 			error: "ValidationError",
-			message: "value Idempotency-Key value UUID.",
+			message: "Заголовок Idempotency-Key должен содержать валидный UUID.",
 		});
 	}
 
@@ -356,7 +358,7 @@ export async function reopenSettlementHandler(
 	if (!orgId) {
 		return reply.code(403).send({
 			error: "TenantContextRequired",
-			message: "value",
+			message: "Требуется контекст организации",
 		});
 	}
 
@@ -365,7 +367,7 @@ export async function reopenSettlementHandler(
 			error: "PermissionDenied",
 			permission: "payroll.read",
 			role: payoutAccess.role,
-			message: "value",
+			message: "Открытие расчетных периодов доступно только управляющему клиникой",
 		});
 	}
 
@@ -373,14 +375,14 @@ export async function reopenSettlementHandler(
 	if (!parsed.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
-			message: "value",
+			message: "Не указаны параметры периода",
 			details: parsed.error.format(),
 		});
 	}
 	const body = parsed.data;
 	const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId ?? undefined);
 	if (!resolvedDocId) {
-		return reply.code(404).send({ error: "DoctorNotFoundError", message: "value" });
+		return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
 	}
 	const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
 		? body.periodStart.slice(0, 7)
@@ -390,7 +392,7 @@ export async function reopenSettlementHandler(
 	if (!reopened) {
 		return reply.code(404).send({
 			error: "SettlementNotFound",
-			message: ` ${periodKey} `,
+			message: `Расчетная ведомость за период ${periodKey} не найдена`,
 		});
 	}
 	if (idempotencyKey) {

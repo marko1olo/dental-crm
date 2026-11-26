@@ -1,11 +1,10 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { and, eq, isNull, or, sql } from "drizzle-orm";
-import { kopecksToRubles, rublesToKopecks, sumKopecks } from "@dental/shared";
+import { and, eq, or } from "drizzle-orm";
+import { kopecksToRubles } from "@dental/shared";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	generatedDocuments,
-	patientInvoices,
 	payments,
 	sberbankTransactions,
 	visits,
@@ -14,123 +13,16 @@ import { namedDevelopmentModeActive } from "../../../accessGuard.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { applyAcquiringCashboxLedgerInTx } from "../../cashbox/cashlessAcquiringLedger.js";
+import { reconcileInvoiceBalanceInDb } from "../../billingRoutes/invoiceBalanceReconciler.js";
+import {
+	findUniqueSberbankTxInTenant,
+	isSberSettledOrPaid,
+	isSberTerminalRefundedOrReversed,
+} from "../../sberbankRoutes/sberbankUtils.js";
 import { verifySberPosWebhookChecksum } from "./signatureVerifier.js";
 import type { SberPosTransactionStatus } from "./types.js";
 
-/**
- * Reconciles invoice balance and updates invoice status atomically within a tenant transaction.
- */
-export async function reconcileInvoiceBalanceInDb(
-	tx: Parameters<Parameters<typeof withTenantCtx>[1]>[0],
-	organizationId: string,
-	invoiceId: string,
-): Promise<{
-	invoiceTotalKopecks: number;
-	paidKopecks: number;
-	remainingKopecks: number;
-	isFullyPaid: boolean;
-}> {
-	const [invoice] = await tx
-		.select()
-		.from(patientInvoices)
-		.where(
-			and(
-				eq(patientInvoices.organizationId, organizationId),
-				eq(patientInvoices.id, invoiceId),
-			),
-		)
-		.for("update")
-		.limit(1);
-
-	if (!invoice) {
-		return {
-			invoiceTotalKopecks: 0,
-			paidKopecks: 0,
-			remainingKopecks: 0,
-			isFullyPaid: false,
-		};
-	}
-
-	const rawTotal = invoice.totalAmountRub || invoice.totalRub || "0";
-	const invoiceTotalKopecks =
-		invoice.totalPriceKopecks !== null &&
-		invoice.totalPriceKopecks !== undefined &&
-		invoice.totalPriceKopecks > 0n
-			? Number(invoice.totalPriceKopecks)
-			: rublesToKopecks(Number(rawTotal));
-
-	// Scope strictly to payments linked to this invoice (only allow legacy documentId IS NULL when visit has 1 invoice).
-	let useLegacyVisitFallback = false;
-	if (invoice.visitId) {
-		const [visitInvCount] = await tx
-			.select({ cnt: sql<number>`count(*)::int` })
-			.from(patientInvoices)
-			.where(
-				and(
-					eq(patientInvoices.organizationId, organizationId),
-					eq(patientInvoices.visitId, invoice.visitId),
-				),
-			);
-		useLegacyVisitFallback = (visitInvCount?.cnt ?? 0) === 1;
-	}
-
-	const linkScope =
-		invoice.visitId && useLegacyVisitFallback
-			? or(
-					eq(payments.documentId, invoice.id),
-					and(eq(payments.visitId, invoice.visitId), isNull(payments.documentId)),
-				)
-			: eq(payments.documentId, invoice.id);
-
-	const invoicePayments = await tx
-		.select({
-			amountRub: payments.amountRub,
-			amountKopecks: payments.amountKopecks,
-			status: payments.status,
-		})
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, organizationId),
-				eq(payments.patientId, invoice.patientId),
-				eq(payments.status, "paid"),
-				linkScope,
-			),
-		);
-
-	const paidKopecks = sumKopecks(
-		invoicePayments.map((p) =>
-			p.amountKopecks !== null &&
-			p.amountKopecks !== undefined &&
-			p.amountKopecks > 0n
-				? Number(p.amountKopecks)
-				: rublesToKopecks(p.amountRub),
-		),
-	);
-
-	const remainingKopecks = Math.max(0, invoiceTotalKopecks - paidKopecks);
-	const isFullyPaid = paidKopecks >= invoiceTotalKopecks;
-
-	await tx
-		.update(patientInvoices)
-		.set({
-			status: isFullyPaid ? "paid" : paidKopecks > 0 ? "partially_paid" : "draft",
-			paidAt: isFullyPaid ? new Date() : null,
-		})
-		.where(
-			and(
-				eq(patientInvoices.organizationId, organizationId),
-				eq(patientInvoices.id, invoiceId),
-			),
-		);
-
-	return {
-		invoiceTotalKopecks,
-		paidKopecks,
-		remainingKopecks,
-		isFullyPaid,
-	};
-}
+export { reconcileInvoiceBalanceInDb };
 
 export const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 	const secret =
@@ -199,15 +91,22 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 	}
 
 	// Find transaction in superuser bypass first to discover tenant context
-	const targetTx = await withSuperuserBypass(async (tx) => {
-		const [found] = await tx
+	const lookupRows = await withSuperuserBypass(async (tx) => {
+		return await tx
 			.select()
 			.from(sberbankTransactions)
 			.where(eq(sberbankTransactions.orderId, String(orderId)))
-			.limit(1);
-		return found;
+			.limit(2);
 	});
 
+	if (lookupRows.length > 1) {
+		return reply.status(409).send({
+			error: "AmbiguousOrderId",
+			message: "Обнаружено несколько транзакций с одинаковым orderId.",
+		});
+	}
+
+	const targetTx = lookupRows[0];
 	if (!targetTx) {
 		return reply.status(404).send({
 			error: "TransactionNotFound",
@@ -216,19 +115,22 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 	}
 
 	const result = await withTenantCtx(targetTx.organizationId, async (tx) => {
-		const [lockedTx] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.orderId, String(orderId)),
-					eq(sberbankTransactions.organizationId, targetTx.organizationId),
-				),
-			)
-			.for("update")
-			.limit(1);
-
-		if (!lockedTx) {
+		const lockedLookup = await findUniqueSberbankTxInTenant(
+			tx,
+			targetTx.organizationId,
+			String(orderId),
+			true,
+		);
+		if (lockedLookup.kind === "ambiguous") {
+			return {
+				statusCode: 409,
+				body: {
+					error: "AmbiguousOrderId",
+					message: "Обнаружено несколько транзакций с одинаковым orderId.",
+				},
+			};
+		}
+		if (lockedLookup.kind === "not_found") {
 			return {
 				statusCode: 404,
 				body: {
@@ -237,6 +139,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 				},
 			};
 		}
+		const lockedTx = lockedLookup.txRow;
 
 		// Validate incoming amount in kopecks if provided
 		if (payload.amount !== undefined && payload.amount !== null) {
@@ -414,8 +317,8 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 
 		// 2. AUTHORIZATION (HOLD) HANDLING
 		if (rawStatus === "AUTHORIZED" || rawStatus === "APPROVED" || rawStatus === "1") {
-			const txUpper = lockedTx.status.toUpperCase();
-			if (txUpper === "REFUNDED" || txUpper === "REVERSED" || lockedPayment?.status === "refunded") {
+			if (isSberTerminalRefundedOrReversed(lockedTx.status) || lockedPayment?.status === "refunded") {
+				const txUpper = lockedTx.status.toUpperCase();
 				return {
 					statusCode: 200,
 					body: {
@@ -423,6 +326,20 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 						processed: false,
 						reason: "already_refunded",
 						status: txUpper === "REVERSED" ? "REVERSED" : "REFUNDED",
+						orderId: lockedTx.orderId,
+					},
+				};
+			}
+
+			if (isSberSettledOrPaid(lockedTx.status) || lockedPayment?.status === "paid") {
+				return {
+					statusCode: 200,
+					body: {
+						success: true,
+						processed: false,
+						reason: "already_processed",
+						status: lockedTx.status,
+						paymentId: lockedPayment?.id,
 						orderId: lockedTx.orderId,
 					},
 				};
@@ -459,12 +376,11 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			rawStatus === "0";
 
 		if (isSettled) {
-			const currentUpper = lockedTx.status.toUpperCase();
 			if (
-				currentUpper === "REFUNDED" ||
-				currentUpper === "REVERSED" ||
+				isSberTerminalRefundedOrReversed(lockedTx.status) ||
 				lockedPayment?.status === "refunded"
 			) {
+				const currentUpper = lockedTx.status.toUpperCase();
 				return {
 					statusCode: 200,
 					body: {
@@ -479,9 +395,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			}
 
 			const isAlreadyProcessed =
-				lockedTx.status === "SETTLED" ||
-				lockedTx.status.toLowerCase() === "success" ||
-				lockedTx.status.toLowerCase() === "paid" ||
+				isSberSettledOrPaid(lockedTx.status) ||
 				(lockedPayment !== undefined && lockedPayment.status === "paid");
 
 			if (isAlreadyProcessed) {
@@ -562,7 +476,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			}
 
 			// Reconcile patient invoice balance if invoiceId is attached
-			if (lockedTx.invoiceId) {
+			if (lockedTx.invoiceId && isValidUuid(lockedTx.invoiceId)) {
 				await reconcileInvoiceBalanceInDb(
 					tx,
 					lockedTx.organizationId,
@@ -649,7 +563,33 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 			};
 		}
 
-		// 4. FAILED / DECLINED
+		// 4. FAILED / DECLINED — never overwrite terminal refunded/reversed or already settled/paid state
+		if (isSberTerminalRefundedOrReversed(lockedTx.status) || lockedPayment?.status === "refunded") {
+			return {
+				statusCode: 200,
+				body: {
+					success: true,
+					processed: false,
+					reason: "already_refunded",
+					status: lockedTx.status,
+					orderId: lockedTx.orderId,
+				},
+			};
+		}
+		if (isSberSettledOrPaid(lockedTx.status) || lockedPayment?.status === "paid") {
+			return {
+				statusCode: 200,
+				body: {
+					success: true,
+					processed: false,
+					reason: "already_processed",
+					status: lockedTx.status,
+					paymentId: lockedPayment?.id,
+					orderId: lockedTx.orderId,
+				},
+			};
+		}
+
 		await tx
 			.update(sberbankTransactions)
 			.set({ status: "FAILED", updatedAt: new Date() })

@@ -130,11 +130,13 @@ export async function getDetailedPatientBalance(
 				);
 
 			const preferredRel =
-				relRows.find(
-					(r) =>
-						headOrPrimaryIds.includes(r.patientId) ||
-						headOrPrimaryIds.includes(r.relatedPatientId),
-				) ?? relRows[0];
+				headOrPrimaryIds.length > 0
+					? relRows.find(
+							(r) =>
+								headOrPrimaryIds.includes(r.patientId) ||
+								headOrPrimaryIds.includes(r.relatedPatientId),
+						)
+					: relRows[0];
 
 			if (preferredRel) {
 				canSpend = true;

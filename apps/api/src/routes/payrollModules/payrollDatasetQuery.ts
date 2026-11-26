@@ -25,10 +25,12 @@ import {
 	rublesToKopecks,
 } from "@dental/shared";
 import {
-	CATEGORY_LABELS_RU,
+	buildPayrollServicesAndAllocateLabOrders,
+	type TrackedDoctorLabOrder,
+} from "./payrollLabAllocation.js";
+import {
 	type DoctorPayrollDatasetResult,
 	getTreatmentItemGrossKopecks,
-	normalizeClinicalCategory,
 	type PayrollOrderDto,
 	parseClosedPeriodRange,
 } from "./payrollTypesAndQueries.js";
@@ -114,10 +116,10 @@ export async function fetchDoctorPayrollDataset(params: {
 			if (refKop > 0) {
 				refundDeductions.push({
 					serviceId: ref.id,
-					serviceNameRu: "value",
+					serviceNameRu: "Возврат пациенту по чеку",
 					refundedGrossKop: refKop,
 					receiptNumber: ref.fiscalReceiptNumber ?? undefined,
-					reasonRu: ref.note ?? "value",
+					reasonRu: ref.note ?? "Возврат денежных средств пациенту",
 					dateIso: (ref.updatedAt || ref.paidAt || fromDate).toISOString().slice(0, 10),
 					doctorId: resolvedDocId,
 					performerId: resolvedDocId,
@@ -154,7 +156,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		const cardNumSql = sql<string>`coalesce(
 			${patients.administrativeProfile}->>'cardNumber',
 			${patients.administrativeProfile}->>'medicalCardNumber',
-			'-0'
+			'К-0'
 		)`;
 
 		const appts = await dbClient
@@ -282,7 +284,8 @@ export async function fetchDoctorPayrollDataset(params: {
 				),
 			);
 
-		// let eligibleLabOrders = docLabOrders;
+		// Защита от повторного списания ЗТЛ по закрытым ведомостям врача
+		let eligibleLabOrders = docLabOrders;
 		const closedStatements = await dbClient
 			.select({
 				period: doctorPayrollStatements.period,
@@ -322,15 +325,6 @@ export async function fetchDoctorPayrollDataset(params: {
 					return !closedRanges.some((cr) => t >= cr.start && t <= cr.end);
 				});
 			}
-		}
-
-		interface TrackedDoctorLabOrder {
-			id: string;
-			patientId: string;
-			toothFdi: string | null;
-			appointmentId: string | null;
-			treatmentPlanId: string | null;
-			remainingCostKop: number;
 		}
 
 		const trackedLabOrders: TrackedDoctorLabOrder[] = eligibleLabOrders.map((lo) => ({
@@ -392,7 +386,8 @@ export async function fetchDoctorPayrollDataset(params: {
 			matCostByVisit.set(inv.visitId, (matCostByVisit.get(inv.visitId) || 0) + cKop);
 		}
 
-		// const matCostByTreatmentId = new Map<string, number>();
+		// Детерминированное пропорциональное распределение затрат материалов по услугам визита
+		const matCostByTreatmentId = new Map<string, number>();
 		const treatsByVisit = new Map<string, typeof treats>();
 		for (const t of treats) {
 			if (t.visitId) {
@@ -427,200 +422,31 @@ export async function fetchDoctorPayrollDataset(params: {
 			}
 		}
 
-		for (const t of treats) {
-			const grossKop = getTreatmentItemGrossKopecks(t);
-			const visitId = t.visitId;
-			const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
-			const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
-
-			let actuallyPaidGrossKop = 0;
-			if (visitId && visitTotalGross > 0 && visitPaidTotal > 0) {
-				if (visitPaidTotal >= visitTotalGross) {
-					actuallyPaidGrossKop = grossKop;
-				} else {
-					const remaining = remainingPaidKopByVisit.get(visitId) || 0;
-					actuallyPaidGrossKop = Math.min(grossKop, remaining);
-					remainingPaidKopByVisit.set(visitId, Math.max(0, remaining - actuallyPaidGrossKop));
-				}
-			}
-
-			const isPaid = actuallyPaidGrossKop > 0;
-			const isDebt = actuallyPaidGrossKop <= 0 && grossKop > 0;
-			const invoiceStatus: "paid" | "partially_paid" | "unpaid" = actuallyPaidGrossKop >= grossKop
-				? "paid"
-				: actuallyPaidGrossKop > 0
-					? "partially_paid"
-					: "unpaid";
-			const receiptNum = visitId ? fiscalReceiptByVisit.get(visitId) : undefined;
-			const isPaid54Fz = Boolean(receiptNum) && actuallyPaidGrossKop > 0;
-
-			const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
-			const appt = appts.find((a) => a.id === linkedApptId);
-			const patientId = appt?.patientId;
-
-			const cat = normalizeClinicalCategory(t.category, t.specialty);
-			const catLabelRu = CATEGORY_LABELS_RU[cat] || "value";
-			const serviceTitle = t.title || "value";
-			const isOrthoService = cat === "orthopedics" || /||||||/i.test(serviceTitle);
-
-			let labKop = 0;
-			if (patientId) {
-				const candidateOrder = trackedLabOrders.find((lo) => {
-					if (lo.patientId !== patientId || lo.remainingCostKop <= 0) return false;
-					const targetTooth = t.toothCode?.trim();
-					const toothList = lo.toothFdi ? lo.toothFdi.split(/[\s,;-]+/).map((s) => s.trim()).filter(Boolean) : [];
-					if (targetTooth && toothList.includes(targetTooth)) {
-						return true;
-					}
-					if (lo.appointmentId && lo.appointmentId === linkedApptId && isOrthoService) {
-						return true;
-					}
-					return isOrthoService;
-				});
-
-				if (candidateOrder) {
-					labKop = Math.min(candidateOrder.remainingCostKop, grossKop);
-					candidateOrder.remainingCostKop -= labKop;
-				}
-			}
-
-			const matKop = matCostByTreatmentId.get(t.id) ?? 0;
-
-			completedServices.push({
-				id: t.id,
-				dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
-				patientName: appt?.patientName || "value",
-				medicalCardNumber: appt?.cardNumber || "value",
-				serviceNameRu: serviceTitle,
-				category: cat,
-				grossRevenueKop: grossKop,
-				labCostKop: labKop,
-				materialCostKop: matKop,
-				doctorId: resolvedDocId,
-				order804nCode: t.order804nCode ?? undefined,
-				serviceCode: t.code ?? undefined,
-				isPaid,
-				isDebt,
-				invoiceStatus,
-				paidAmountKop: actuallyPaidGrossKop,
-				actuallyPaidGrossKop,
-				fiscalReceiptNumber: receiptNum,
-			});
-
-			const apptStartIso = appt?.startsAt ? appt.startsAt.toISOString() : undefined;
-			const apptEndIso = appt?.startsAt ? new Date(appt.startsAt.getTime() + 60 * 60 * 1000).toISOString() : undefined;
-
-			orders.push({
-				id: t.id,
-				orderNumber: `-${t.id.slice(0, 6).toUpperCase()}`,
-				dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
-				startsAtIso: apptStartIso,
-				endsAtIso: apptEndIso,
-				appointmentId: linkedApptId ?? undefined,
-				visitId: visitId ?? undefined,
-				patientId: patientId ?? undefined,
-				patientName: appt?.patientName || "value",
-				medicalCardNumber: appt?.cardNumber || "value",
-				serviceNameRu: serviceTitle,
-				serviceCode: t.code ?? undefined,
-				category: cat,
-				categoryLabelRu: catLabelRu,
-				grossKopecks: grossKop,
-				labCostKopecks: labKop,
-				materialCostKopecks: matKop,
-				doctorId: resolvedDocId,
-				isPaid54Fz,
-				paidKopecks: Math.max(0, actuallyPaidGrossKop),
-			});
-		}
-
-		// let remainingUnallocatedLabKop = trackedLabOrders.reduce((sum, lo) => sum + Math.max(0, lo.remainingCostKop), 0);
-
-		if (remainingUnallocatedLabKop > 0) {
-			for (let i = 0; i < completedServices.length && remainingUnallocatedLabKop > 0; i++) {
-				const cs = completedServices[i];
-				if (!cs) continue;
-				if (cs.category === "orthopedics") {
-					const availableMargin = Math.max(0, cs.grossRevenueKop - cs.labCostKop - cs.materialCostKop);
-					const toDeduct = Math.min(availableMargin, remainingUnallocatedLabKop);
-					if (toDeduct > 0) {
-						const updatedLabKop = cs.labCostKop + toDeduct;
-						completedServices[i] = {
-							...cs,
-							labCostKop: updatedLabKop,
-						};
-						const ord = orders.find((o) => o.id === cs.id);
-						if (ord) ord.labCostKopecks = updatedLabKop;
-						remainingUnallocatedLabKop -= toDeduct;
-					}
-				}
-			}
-
-			if (remainingUnallocatedLabKop > 0) {
-				for (let i = completedServices.length - 1; i >= 0; i--) {
-					const cs = completedServices[i];
-					if (!cs) continue;
-					if (cs.category === "orthopedics") {
-						const updatedLabKop = cs.labCostKop + remainingUnallocatedLabKop;
-						completedServices[i] = {
-							...cs,
-							labCostKop: updatedLabKop,
-						};
-						const ord = orders.find((o) => o.id === cs.id);
-						if (ord) ord.labCostKopecks = updatedLabKop;
-						remainingUnallocatedLabKop = 0;
-						break;
-					}
-				}
-			}
-
-			if (remainingUnallocatedLabKop > 0) {
-				const labItemDateIso = toStr.slice(0, 10);
-				const labItemId = `lab-balance-${resolvedDocId}-${labItemDateIso}`;
-				completedServices.push({
-					id: labItemId,
-					dateIso: labItemDateIso,
-					patientName: "value",
-					medicalCardNumber: "value",
-					serviceNameRu: "value",
-					category: "orthopedics",
-					grossRevenueKop: 0,
-					labCostKop: remainingUnallocatedLabKop,
-					materialCostKop: 0,
-					doctorId: resolvedDocId,
-					isPaid: true,
-					isDebt: false,
-					invoiceStatus: "paid",
-					paidAmountKop: 0,
-					actuallyPaidGrossKop: 0,
-				});
-
-				orders.push({
-					id: labItemId,
-					orderNumber: "value -value",
-					dateIso: labItemDateIso,
-					patientName: "value",
-					medicalCardNumber: "value",
-					serviceNameRu: "value",
-					category: "orthopedics",
-					categoryLabelRu: "value",
-					grossKopecks: 0,
-					labCostKopecks: remainingUnallocatedLabKop,
-					materialCostKopecks: 0,
-					doctorId: resolvedDocId,
-					isPaid54Fz: true,
-					paidKopecks: 0,
-				});
-				remainingUnallocatedLabKop = 0;
-			}
-		}
+		const {
+			orders: builtOrders,
+			completedServices: builtServices,
+			unallocatedLabKop,
+		} = buildPayrollServicesAndAllocateLabOrders({
+			treats,
+			appts,
+			visitToAppt,
+			totalGrossByVisit,
+			paidKopByVisit,
+			remainingPaidKopByVisit,
+			fiscalReceiptByVisit,
+			trackedLabOrders,
+			matCostByTreatmentId,
+			resolvedDocId,
+			fromStr,
+			toStr,
+		});
 
 		return {
 			shiftsCount,
-			orders,
-			completedServices,
+			orders: builtOrders,
+			completedServices: builtServices,
 			refundDeductions,
-			unallocatedLabKop: remainingUnallocatedLabKop,
+			unallocatedLabKop,
 		};
 	};
 

@@ -231,7 +231,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 			assert.equal(payTrancheRes.statusCode, 200);
 			const payTrancheJson = payTrancheRes.json();
 			assert.equal(payTrancheJson.tranche.isPaid, true);
-			assert.equal(payTrancheJson.contract.paidAmountRub, firstTranche.amountRub);
+			assert.equal(payTrancheJson.contract.paidAmountRub, 15000 + firstTranche.amountRub);
 
 			// 9b. Replay identical request with same Idempotency-Key -> returns cached 200 without double spend
 			const replayPayRes = await app.inject({

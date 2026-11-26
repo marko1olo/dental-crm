@@ -78,8 +78,7 @@ export async function handleCloseCashShift(
 		});
 	}
 
-	const baseKey = parsedKey.includes("#") ? parsedKey.split("#")[0] : parsedKey;
-	if (!isValidUuid(baseKey || "")) {
+	if (!isValidUuid(parsedKey)) {
 		return reply.code(400).send({
 			error: "ValidationError",
 			message:
@@ -242,7 +241,9 @@ export async function handleCloseCashShift(
 					closedByUserId: preflight.effectiveUserId ?? null,
 					closingBalanceRub: finalBalance,
 					closingBalanceKopecks: closingBalanceKop,
+					incomeTotalRub: kopecksToRub(incomeTotalKop),
 					incomeTotalKopecks: incomeTotalKop,
+					expenseTotalRub: kopecksToRub(expenseTotalKop),
 					expenseTotalKopecks: expenseTotalKop,
 					zReportNumber: reconciliationResult.zReportNumber,
 					zReportData: reconciliationResult.zReportData,

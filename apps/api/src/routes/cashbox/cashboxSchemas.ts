@@ -49,7 +49,7 @@ export const closeShiftBodySchema = z.object({
 			parityCheck: closeShiftParityCheckSchema.optional(),
 			note: z.string().trim().max(500).optional(),
 		})
-		.passthrough()
+		.strict()
 		.optional(),
 	isKktConnected: z.boolean().optional(),
 	kktReportData: z

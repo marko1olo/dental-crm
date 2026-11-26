@@ -342,12 +342,23 @@ export async function reconcileSingleShift(
 ): Promise<ShiftReconciliationResult> {
 	const calculatedTotals = await calculateShiftTenderTotals(tx, orgId, shift, targetBox, now);
 
-	const isMainBox = targetBox?.type === "main";
-	const expectedCash = isMainBox ? calculatedTotals.expectedCashInDrawerRub : (targetBox?.balanceRub ?? 0);
+	const isPhysicalCashBox = targetBox?.type === "main" || targetBox?.type === "extra";
+	const boxBalanceKop = targetBox
+		? targetBox.balanceKopecks != null &&
+			(Number(targetBox.balanceKopecks) !== 0 || Number(targetBox.balanceRub || 0) === 0)
+			? Number(targetBox.balanceKopecks)
+			: rubToKopecks(targetBox.balanceRub ?? 0)
+		: 0;
+	const boxBalanceRubSafe = kopecksToRub(boxBalanceKop);
+	const expectedCash = isPhysicalCashBox
+		? targetBox?.type === "main"
+			? calculatedTotals.expectedCashInDrawerRub
+			: boxBalanceRubSafe
+		: boxBalanceRubSafe;
 
-	// If cashier provided physical counted cash, use it; otherwise default to expected
+	// Physical counted cash applies strictly to cash drawer boxes; cashless/other accounts reconcile at ledger balance.
 	const countedCashRub =
-		typeof input.countedCashRub === "number" && !isNaN(input.countedCashRub)
+		isPhysicalCashBox && typeof input.countedCashRub === "number" && !Number.isNaN(input.countedCashRub)
 			? input.countedCashRub
 			: expectedCash;
 
@@ -397,7 +408,7 @@ export async function reconcileSingleShift(
 		now,
 	);
 
-	const finalBalanceRub = targetBox?.balanceRub ?? 0;
+	const finalBalanceRub = boxBalanceRubSafe;
 
 	const zReportData = buildZReportDataPayload({
 		now,

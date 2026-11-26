@@ -12,7 +12,7 @@
  */
 
 import type { FastifyBaseLogger } from "fastify";
-import { withSavepoint, withTenantCtx } from "../../db/rls.js";
+import { withSavepoint, withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	acquireLockAndResolvePatient,
 	processCashboxLedgerStage,
@@ -46,6 +46,7 @@ export async function processCashboxPayment(
 	rawBody: unknown,
 	headerIdemp?: string,
 	logger?: FastifyBaseLogger,
+	txClient?: TenantDb,
 ): Promise<CashboxPaymentOutcome> {
 	// 1. Валидация входных данных, парсинг тендеров и сумм
 	const validation = validatePaymentInput(orgId, rawBody, headerIdemp, logger);
@@ -65,7 +66,7 @@ export async function processCashboxPayment(
 	);
 
 	// 2. Исполнение транзакции в контексте тенанта (ACID)
-	const outcome = await withTenantCtx(orgId, async (tx) => {
+	const runInTx = async (tx: TenantDb): Promise<CashboxPaymentOutcome> => {
 		try {
 			return await withSavepoint(tx, async (spTx) => {
 				// Стадия 1: Advisory Lock и проверка идемпотентного повтора
@@ -155,7 +156,7 @@ export async function processCashboxPayment(
 			}
 			throw err;
 		}
-	});
+	};
 
-	return outcome;
+	return txClient ? runInTx(txClient) : withTenantCtx(orgId, runInTx);
 }

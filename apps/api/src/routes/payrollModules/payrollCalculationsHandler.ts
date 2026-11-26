@@ -32,7 +32,7 @@ export async function handleGetDoctorsList(
 	if (!identity.organizationId) {
 		return reply.code(401).send({
 			error: "AuthRequired",
-			message: "value",
+			message: "Не указан идентификатор организации",
 		});
 	}
 	const orgId = identity.organizationId;
@@ -68,7 +68,7 @@ export async function getPayrollCalculationsHandler(
 	if (!parsedQuery.success) {
 		return reply.code(400).send({
 			error: "ValidationError",
-			message: "value",
+			message: "Некорректные параметры запроса расчёта зарплаты.",
 			details: parsedQuery.error.format(),
 		});
 	}
@@ -82,7 +82,7 @@ export async function getPayrollCalculationsHandler(
 				error: "PermissionDenied",
 				permission: "payroll.read",
 				role: payoutAccess.role,
-				message: "value",
+				message: "Врач может просматривать расчеты только по собственным начислениям",
 			});
 		}
 
@@ -91,7 +91,7 @@ export async function getPayrollCalculationsHandler(
 				error: "PermissionDenied",
 				permission: "payroll.read",
 				role: payoutAccess.role,
-				message: "value",
+				message: "Доступ к начислениям других врачей клиники запрещен",
 			});
 		}
 		rawDocId = payoutAccess.userId;
@@ -197,7 +197,7 @@ export async function getPayrollCalculationsHandler(
 				shiftsCount: totalClinicShifts,
 				summary: {
 					doctorId: "all",
-					doctorName: "value",
+					doctorName: "Все врачи клиники",
 					schemeType: "clinic_consolidated",
 					totalGrossKopecks: totalClinicGrossKop,
 					totalLabCostKopecks: totalClinicLabKop,
@@ -224,7 +224,7 @@ export async function getPayrollCalculationsHandler(
 
 	const resolvedDocId = await resolveDoctorUserUuid(orgId, rawDocId, payoutAccess.userId ?? undefined);
 	if (!resolvedDocId) {
-		return reply.code(404).send({ error: "DoctorNotFound", message: "value" });
+		return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден" });
 	}
 
 	const singleDoctorPayload = await withTenantCtx(orgId, async (tx) => {
@@ -238,7 +238,7 @@ export async function getPayrollCalculationsHandler(
 			.where(and(eq(users.id, resolvedDocId), eq(users.organizationId, orgId)))
 			.limit(1);
 
-		const doctorName = docUser?.fullName || "value -value";
+		const doctorName = docUser?.fullName || "Врач-стоматолог";
 		const specId = Array.isArray(docUser?.specialties) && docUser.specialties[0]
 			? String(docUser.specialties[0])
 			: "therapy";

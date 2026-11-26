@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { and, eq, or, sql } from "drizzle-orm";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
@@ -17,6 +18,11 @@ import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHead
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 import { applyAcquiringCashboxLedgerInTx } from "../../cashbox/cashlessAcquiringLedger.js";
 import {
+	findUniqueSberbankTxInTenant,
+	isSberSettledOrPaid,
+	isSberTerminalRefundedOrReversed,
+} from "../../sberbankRoutes/sberbankUtils.js";
+import {
 	formatSberBankSlip,
 	isValidAuthCode,
 	isValidRrn,
@@ -25,6 +31,27 @@ import {
 import type { SberPosOperationType, SberPosTransactionResponse } from "@dental/shared";
 import { initiateSberPosPaymentSchema, executeSberPosTransactionSchema } from "./types.js";
 import { reconcileInvoiceBalanceInDb } from "./paymentStateTransition.js";
+
+const sberPosOrderIdParamSchema = z
+	.object({
+		orderId: z.string().trim().min(1),
+	})
+	.strict();
+
+const reconcileRrnBodySchema = z
+	.object({
+		rrn: z.string().trim().min(1),
+		orderId: z.string().trim().min(1),
+	})
+	.strict();
+
+const voidSberPosBodySchema = z
+	.object({
+		orderId: z.string().trim().min(1),
+		rrn: z.string().trim().optional(),
+		reason: z.string().trim().max(500).optional(),
+	})
+	.strict();
 
 export const initiateSberPosPaymentHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 	const perm = await requirePermission(request, reply, "finance.write");
@@ -83,18 +110,15 @@ export const initiateSberPosPaymentHandler = async (request: FastifyRequest, rep
 		}
 
 		// Check idempotency: if transaction already exists for this client mutation / orderId
-		const [existingTx] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.organizationId, orgId),
-					eq(sberbankTransactions.orderId, orderId),
-				),
-			)
-			.limit(1);
-
-		if (existingTx) {
+		const lookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, false);
+		if (lookup.kind === "ambiguous") {
+			return reply.code(409).send({
+				error: "AmbiguousOrderId",
+				message: "Обнаружено несколько транзакций с одинаковым orderId.",
+			});
+		}
+		if (lookup.kind === "ok") {
+			const existingTx = lookup.txRow;
 			return reply.code(200).send({
 				success: true,
 				isDuplicate: true,
@@ -144,32 +168,30 @@ export const getSberPosStatusHandler = async (request: FastifyRequest, reply: Fa
 	);
 	if (!orgId) return;
 
-	const { orderId } = request.params as { orderId: string };
-	if (!orderId) {
+	const paramsParsed = sberPosOrderIdParamSchema.safeParse(request.params);
+	if (!paramsParsed.success) {
 		return reply.code(400).send({
 			error: "MissingOrderId",
 			message: "Идентификатор заказа обязателен.",
 		});
 	}
+	const { orderId } = paramsParsed.data;
 
 	return await withTenantCtx(orgId, async (tx) => {
-		const [txRow] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.organizationId, orgId),
-					eq(sberbankTransactions.orderId, orderId),
-				),
-			)
-			.limit(1);
-
-		if (!txRow) {
+		const lookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, false);
+		if (lookup.kind === "ambiguous") {
+			return reply.code(409).send({
+				error: "AmbiguousOrderId",
+				message: "Обнаружено несколько транзакций с одинаковым orderId.",
+			});
+		}
+		if (lookup.kind === "not_found") {
 			return reply.code(404).send({
 				error: "TransactionNotFound",
 				message: `Транзакция POS-терминала с orderId '${orderId}' не найдена.`,
 			});
 		}
+		const txRow = lookup.txRow;
 
 		return reply.code(200).send({
 			success: true,
@@ -192,30 +214,25 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 	const orgId = await requireResolvedOrganizationId(request, reply, "sberbank pos reconcile");
 	if (!orgId) return;
 
-	const body = (request.body as Record<string, unknown> | null) ?? {};
-	const rrn = String(body.rrn || "").trim();
-	const orderId = typeof body.orderId === "string" ? body.orderId.trim() : "";
-
-	if (!rrn || !orderId) {
+	const parsed = reconcileRrnBodySchema.safeParse(request.body ?? {});
+	if (!parsed.success) {
 		return reply.code(400).send({
 			error: "MissingRrnOrOrderId",
 			message: "Номер RRN и orderId обязательны для сверки транзакции.",
 		});
 	}
+	const { rrn, orderId } = parsed.data;
 
 	return await withTenantCtx(orgId, async (tx) => {
-		const [txRow] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.organizationId, orgId),
-					eq(sberbankTransactions.orderId, orderId),
-				),
-			)
-			.limit(1);
-
-		if (txRow) {
+		const lookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, false);
+		if (lookup.kind === "ambiguous") {
+			return reply.code(409).send({
+				error: "AmbiguousOrderId",
+				message: "Обнаружено несколько транзакций с одинаковым orderId.",
+			});
+		}
+		if (lookup.kind === "ok") {
+			const txRow = lookup.txRow;
 			return reply.code(200).send({
 				success: true,
 				status: txRow.status,
@@ -241,36 +258,30 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 	const orgId = await requireResolvedOrganizationId(request, reply, "sberbank pos void");
 	if (!orgId) return;
 
-	const body = (request.body as Record<string, unknown> | null) ?? {};
-	const orderId = typeof body.orderId === "string" ? body.orderId.trim() : "";
-	const rrn = typeof body.rrn === "string" ? body.rrn.trim() : "";
-
-	if (!orderId) {
+	const parsed = voidSberPosBodySchema.safeParse(request.body ?? {});
+	if (!parsed.success) {
 		return reply.code(400).send({
 			error: "MissingOrderId",
 			message: "Требуется указать orderId для отмены транзакции.",
 		});
 	}
+	const { orderId, rrn = "" } = parsed.data;
 
 	return await withTenantCtx(orgId, async (tx) => {
-		const [lockedTx] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.organizationId, orgId),
-					eq(sberbankTransactions.orderId, orderId),
-				),
-			)
-			.for("update")
-			.limit(1);
-
-		if (!lockedTx) {
+		const lookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, true);
+		if (lookup.kind === "ambiguous") {
+			return reply.code(409).send({
+				error: "AmbiguousOrderId",
+				message: "Обнаружено несколько транзакций с одинаковым orderId.",
+			});
+		}
+		if (lookup.kind === "not_found") {
 			return reply.code(404).send({
 				error: "TransactionNotFound",
 				message: `Транзакция с идентификатором '${orderId || rrn}' не найдена для отмены.`,
 			});
 		}
+		const lockedTx = lookup.txRow;
 
 		const [lockedPayment] = await tx
 			.select()
@@ -286,6 +297,20 @@ export const voidSberPosHandler = async (request: FastifyRequest, reply: Fastify
 			)
 			.for("update")
 			.limit(1);
+
+		if (
+			isSberTerminalRefundedOrReversed(lockedTx.status) &&
+			lockedPayment?.status !== "paid"
+		) {
+			return reply.code(200).send({
+				success: true,
+				processed: false,
+				reason: "already_refunded",
+				status: lockedTx.status,
+				orderId: lockedTx.orderId,
+				message: "Операция уже отменена или возвращена.",
+			});
+		}
 
 		await tx
 			.update(sberbankTransactions)
@@ -423,17 +448,14 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 	const op = (input.operation || "sale") as SberPosOperationType;
 
 	return await withTenantCtx(orgId, async (tx) => {
-		const [existingTx] = await tx
-			.select()
-			.from(sberbankTransactions)
-			.where(
-				and(
-					eq(sberbankTransactions.organizationId, orgId),
-					eq(sberbankTransactions.orderId, orderId),
-				),
-			)
-			.for("update")
-			.limit(1);
+		const lookup = await findUniqueSberbankTxInTenant(tx, orgId, orderId, true);
+		if (lookup.kind === "ambiguous") {
+			return reply.code(409).send({
+				error: "AmbiguousOrderId",
+				message: "Обнаружено несколько транзакций с одинаковым orderId.",
+			});
+		}
+		const existingTx = lookup.kind === "ok" ? lookup.txRow : undefined;
 
 		const status =
 			op === "refund" ? "REFUNDED" : op === "void" ? "REVERSED" : "SETTLED";
@@ -441,13 +463,23 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 		if (
 			status === "SETTLED" &&
 			existingTx &&
-			(existingTx.status.toUpperCase() === "REFUNDED" ||
-				existingTx.status.toUpperCase() === "REVERSED")
+			isSberTerminalRefundedOrReversed(existingTx.status)
 		) {
 			return reply.code(200).send({
 				success: true,
 				processed: false,
 				reason: "already_refunded",
+				status: existingTx.status.toUpperCase(),
+				orderId,
+			});
+		}
+
+		if (status === "SETTLED" && existingTx && isSberSettledOrPaid(existingTx.status)) {
+			// Keep already-settled amount intact on repeat terminal confirmation
+			return reply.code(200).send({
+				success: true,
+				processed: false,
+				reason: "already_processed",
 				status: existingTx.status.toUpperCase(),
 				orderId,
 			});

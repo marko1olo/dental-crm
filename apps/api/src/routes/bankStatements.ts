@@ -158,24 +158,36 @@ export const registerBankStatementsRoutes: FastifyPluginAsync = async (server) =
 		const sourceHash = sha256Hex(normalizedForHash);
 		const sourceFilename = parsed.data.filename?.trim() || "1c_bank_statement.txt";
 
+		const orgMeta = await withTenantCtx(organizationId, async (tx) => {
+			const [org] = await tx
+				.select({
+					name: organizations.name,
+					inn: organizations.inn,
+					kpp: organizations.kpp,
+				})
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+			return org ?? null;
+		});
+
+		let registry: ReturnType<typeof parse1CBankStatement>;
 		try {
-			const txResult = await withTenantCtx(organizationId, async (tx) => {
-				const [org] = await tx
-					.select({
-						name: organizations.name,
-						inn: organizations.inn,
-						kpp: organizations.kpp,
-					})
-					.from(organizations)
-					.where(eq(organizations.id, organizationId))
-					.limit(1);
+			registry = parse1CBankStatement(decodedContent, {
+				clinicName: orgMeta?.name,
+				clinicInn: orgMeta?.inn ?? undefined,
+				clinicKpp: orgMeta?.kpp,
+			});
+		} catch (err: unknown) {
+			const msg =
+				err instanceof Error ? err.message : "Ошибка синтаксического разбора файла выписки 1С";
+			return reply.status(400).send({
+				error: "InvalidBankStatement",
+				message: msg,
+			});
+		}
 
-				const registry = parse1CBankStatement(decodedContent, {
-					clinicName: org?.name,
-					clinicInn: org?.inn ?? undefined,
-					clinicKpp: org?.kpp,
-				});
-
+		const txResult = await withTenantCtx(organizationId, async (tx) => {
 				const [existingStatement] = await tx
 					.select()
 					.from(bankStatements)
@@ -386,13 +398,6 @@ export const registerBankStatementsRoutes: FastifyPluginAsync = async (server) =
 				},
 				transactions: txResult.transactions.map(serializeStatementTx),
 			};
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Ошибка синтаксического разбора файла выписки 1С";
-			return reply.status(400).send({
-				error: "InvalidBankStatement",
-				message: msg,
-			});
-		}
 	};
 
 	const handleListBankStatements = async (request: FastifyRequest, reply: FastifyReply) => {

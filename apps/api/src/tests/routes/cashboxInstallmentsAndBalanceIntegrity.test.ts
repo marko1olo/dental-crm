@@ -21,9 +21,12 @@ import {
 	cashBoxes,
 	cashBoxShifts,
 	fiscalReceiptQueue,
+	familyGroups,
 	installmentContracts,
 	installmentTranches,
 	organizations,
+	patientInvoices,
+	patientRelationships,
 	patients,
 	payments,
 	users,
@@ -488,6 +491,275 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			const balAfterDebit = balAfterDebitJson.data ?? balAfterDebitJson.balance;
 			assert.equal(balAfterDebit.personalAdvanceKopecks, 1000000);
 			assert.equal(balAfterDebit.personalAdvanceRub, 10000);
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+
+	it("[W12-FIN-02] closes installment contract with down payment into completed and reconciles linked patientInvoice from partially_paid to paid", async () => {
+		const app = await buildTestApp();
+		const orgId = fixtureUuid("installDownComplete", 1);
+		const userId = fixtureUuid("installDownComplete", 2);
+		const patientId = fixtureUuid("installDownComplete", 3);
+		const invoiceId = fixtureUuid("installDownComplete", 4);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		await withFixtureTenant(orgId, async (tx) => {
+			await tx.insert(organizations).values({
+				id: orgId,
+				name: `Клиника Закрытия Рассрочки-${Date.now()}`,
+			});
+			await tx.insert(users).values({
+				id: userId,
+				organizationId: orgId,
+				fullName: "Врач Кассир",
+				role: "admin",
+				email: `cashier-w12-fin02-${Date.now()}@dental.ru`,
+			});
+			await tx.insert(patients).values({
+				id: patientId,
+				organizationId: orgId,
+				fullName: "Орлов Денис Сергеевич",
+				phone: "+79991112233",
+			});
+			await tx.insert(patientInvoices).values({
+				id: invoiceId,
+				organizationId: orgId,
+				patientId,
+				totalRub: "40000.00",
+				totalAmountRub: 40000,
+				totalPriceKopecks: 4000000n,
+				status: "draft",
+			});
+		});
+
+		try {
+			const headers = createStaffHeaders(orgId, userId, "admin");
+			const boxesRes = await app.inject({ method: "GET", url: "/api/cash/cash-box", headers });
+			assert.equal(boxesRes.statusCode, 200);
+			const mainBox = boxesRes.json().data.find((b: { type: string }) => b.type === "main");
+			assert.ok(mainBox);
+
+			await app.inject({
+				method: "POST",
+				url: "/api/cash/cash-box-all-open",
+				headers,
+				payload: { openedByUserId: userId },
+			});
+
+			const createRes = await app.inject({
+				method: "POST",
+				url: "/api/installments",
+				headers: { ...headers, "idempotency-key": randomUUID() },
+				payload: {
+					patientId,
+					invoiceId,
+					totalAmountRub: 40000,
+					downPaymentRub: 10000,
+					monthsCount: 3,
+					cashBoxId: mainBox.id,
+					operatorId: userId,
+				},
+			});
+			assert.equal(createRes.statusCode, 201, createRes.body);
+			const createJson = createRes.json();
+			assert.equal(Number(createJson.contract.paidAmountRub), 10000);
+			assert.equal(Number(createJson.contract.remainingAmountRub), 30000);
+			assert.equal(createJson.contract.status, "active");
+
+			const invAfterDown = await withFixtureTenant(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.id, invoiceId), eq(patientInvoices.organizationId, orgId)));
+				return row;
+			});
+			assert.equal(invAfterDown?.status, "partially_paid");
+
+			const monthlyTranches = createJson.tranches
+				.filter((t: { trancheNumber: number }) => t.trancheNumber > 0)
+				.sort((a: { trancheNumber: number }, b: { trancheNumber: number }) => a.trancheNumber - b.trancheNumber);
+			assert.equal(monthlyTranches.length, 3);
+
+			let lastPayJson: { contract: { status: string; paidAmountRub: number; remainingAmountRub: number } } | undefined;
+			for (const tranche of monthlyTranches) {
+				const payRes = await app.inject({
+					method: "POST",
+					url: `/api/installments/tranches/${tranche.id}/pay`,
+					headers: { ...headers, "idempotency-key": randomUUID() },
+					payload: { cashBoxId: mainBox.id, operatorId: userId },
+				});
+				assert.equal(payRes.statusCode, 200, payRes.body);
+				lastPayJson = payRes.json();
+			}
+
+			assert.equal(lastPayJson?.contract.status, "completed");
+			assert.equal(Number(lastPayJson?.contract.paidAmountRub), 40000);
+			assert.equal(Number(lastPayJson?.contract.remainingAmountRub), 0);
+
+			const invAfterFinal = await withFixtureTenant(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.id, invoiceId), eq(patientInvoices.organizationId, orgId)));
+				return row;
+			});
+			assert.equal(invAfterFinal?.status, "paid");
+			assert.ok(invAfterFinal?.paidAt);
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+
+	it("[W12-FIN-06] reconciles patientInvoice on advance debit and prevents balanceQueryService non-head fallback leak", async () => {
+		const app = await buildTestApp();
+		const orgId = fixtureUuid("fin06AdvReconcile", 1);
+		const userId = fixtureUuid("fin06AdvReconcile", 2);
+		const patientId = fixtureUuid("fin06AdvReconcile", 3);
+		const otherHeadId = fixtureUuid("fin06AdvReconcile", 4);
+		const nonHeadMemberId = fixtureUuid("fin06AdvReconcile", 5);
+		const outsiderId = fixtureUuid("fin06AdvReconcile", 6);
+		const familyId = fixtureUuid("fin06AdvReconcile", 7);
+		const invoiceId = fixtureUuid("fin06AdvReconcile", 8);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: `Клиника W12-FIN-06-${Date.now()}`,
+				});
+				await tx.insert(users).values({
+					id: userId,
+					organizationId: orgId,
+					fullName: "Кассир Аванс",
+					role: "admin",
+					email: `cashier-fin06-${Date.now()}@dental.ru`,
+				});
+				await tx.insert(familyGroups).values({
+					id: familyId,
+					organizationId: orgId,
+					name: "Семья Тест",
+					balance: "50000.00",
+					balanceKopecks: 5000000,
+					headPatientId: otherHeadId,
+				});
+				await tx.insert(patients).values([
+					{
+						id: patientId,
+						organizationId: orgId,
+						fullName: "Авансовый Пациент",
+						phone: "+79001000001",
+					},
+					{
+						id: otherHeadId,
+						organizationId: orgId,
+						fullName: "Глава Семьи",
+						phone: "+79001000002",
+						familyGroupId: familyId,
+					},
+					{
+						id: nonHeadMemberId,
+						organizationId: orgId,
+						fullName: "Член Семьи Не Глава",
+						phone: "+79001000003",
+						familyGroupId: familyId,
+					},
+					{
+						id: outsiderId,
+						organizationId: orgId,
+						fullName: "Связанный Сосед Не Глава",
+						phone: "+79001000004",
+					},
+				]);
+				await tx.insert(patientRelationships).values({
+					organizationId: orgId,
+					patientId: outsiderId,
+					relatedPatientId: nonHeadMemberId,
+					relationshipType: "spouse",
+					canSpendFamilyWallet: true,
+				});
+				await tx.insert(advanceDepositTaggings).values({
+					organizationId: orgId,
+					patientId,
+					patientName: "Авансовый Пациент",
+					depositAmountRub: "10000.00",
+					depositAmountKopecks: 1000000n,
+					taggedTargetType: "deposit",
+					taggedTargetName: "Личный аванс",
+					allocationStatus: "unallocated",
+				});
+				await tx.insert(patientInvoices).values({
+					id: invoiceId,
+					organizationId: orgId,
+					patientId,
+					invoiceNumber: "INV-FIN06-1",
+					totalAmountRub: "10000.00",
+					totalRub: "10000.00",
+					totalPriceKopecks: 1000000n,
+					status: "draft",
+				});
+			});
+
+			const headers = createStaffHeaders(orgId, userId, "admin");
+
+			// outsiderId связан только с nonHeadMemberId (не head/primary), баланс семьи НЕ должен утекать
+			const outsiderBalRes = await app.inject({
+				method: "GET",
+				url: `/api/cashbox/patients/${outsiderId}/balance`,
+				headers,
+			});
+			assert.equal(outsiderBalRes.statusCode, 200);
+			const outsiderBal = outsiderBalRes.json().data ?? outsiderBalRes.json().balance;
+			assert.equal(outsiderBal.familyWallet.hasFamily, false);
+			assert.equal(outsiderBal.familyWallet.familyGroupId, null);
+
+			// Частичный зачет аванса 4 000 ₽ по счету 10 000 ₽ -> partially_paid
+			const debit1 = await app.inject({
+				method: "POST",
+				url: `/api/cashbox/patients/${patientId}/advance/debit`,
+				headers: { ...headers, "idempotency-key": randomUUID() },
+				payload: {
+					amountKopecks: 400000,
+					invoiceId,
+					notes: "Частичный зачёт аванса по счёту",
+				},
+			});
+			assert.equal(debit1.statusCode, 200, debit1.body);
+
+			const invAfter1 = await withFixtureTenant(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.id, invoiceId), eq(patientInvoices.organizationId, orgId)));
+				return row;
+			});
+			assert.equal(invAfter1?.status, "partially_paid");
+
+			// Остаток 6 000 ₽ по счету -> paid
+			const debit2 = await app.inject({
+				method: "POST",
+				url: `/api/cashbox/patients/${patientId}/advance/debit`,
+				headers: { ...headers, "idempotency-key": randomUUID() },
+				payload: {
+					amountKopecks: 600000,
+					invoiceId,
+					notes: "Финальный зачёт аванса по счёту",
+				},
+			});
+			assert.equal(debit2.statusCode, 200, debit2.body);
+
+			const invAfter2 = await withFixtureTenant(orgId, async (tx) => {
+				const [row] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.id, invoiceId), eq(patientInvoices.organizationId, orgId)));
+				return row;
+			});
+			assert.equal(invAfter2?.status, "paid");
+			assert.ok(invAfter2?.paidAt);
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

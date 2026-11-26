@@ -12,8 +12,7 @@ import {
 import { recordAuditEventInDb } from "../../../db/auditQuery.js";
 import { findPaymentByClientMutationIdInDb } from "../../../db/billingQuery.js";
 import { narrowTaxDeductionCode } from "../../../db/billing/types.js";
-import { db } from "../../../db/client.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
 import { processCashboxPayment } from "../../../routes/cashbox/cashboxPaymentProcessor.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -198,33 +197,65 @@ export async function handleCreatePayment(
 	const paymentInput = preflight.paymentInput;
 
 	try {
-		const cashboxResult = await processCashboxPayment(
-			orgId,
-			buildCashboxPaymentPayload(paymentInput, effectiveMutationId),
-			effectiveMutationId,
-		);
+		const txBundle = await withTenantCtx(orgId, async (tx) => {
+			const cashboxResult = await processCashboxPayment(
+				orgId,
+				buildCashboxPaymentPayload(paymentInput, effectiveMutationId),
+				effectiveMutationId,
+				request.log,
+				tx,
+			);
 
-		if (cashboxResult.statusCode !== 200) {
-			return reply.code(cashboxResult.statusCode).send(cashboxResult.body);
-		}
+			if (cashboxResult.statusCode !== 200) {
+				return { kind: "error" as const, cashboxResult };
+			}
 
-		const resultData = cashboxResult.body.data as Record<string, unknown>;
-		const paymentId = typeof resultData.id === "string" ? resultData.id : "";
-		const [paymentRow] = await withTenantCtx(orgId, async (tx) => {
-			return await tx
+			const resultData = cashboxResult.body.data as Record<string, unknown>;
+			const paymentId = typeof resultData.id === "string" ? resultData.id : "";
+			const [paymentRow] = await tx
 				.select()
 				.from(payments)
 				.where(and(eq(payments.organizationId, orgId), eq(payments.id, paymentId)))
 				.limit(1);
+
+			if (!paymentRow) {
+				return { kind: "missing_row" as const, paymentId };
+			}
+
+			if (!resultData.isReplay) {
+				const identity = getRequestIdentity(request);
+				onTenantTxCommit(async () => {
+					try {
+						await recordAuditEventInDb(orgId, {
+							entityType: "payment",
+							entityId: paymentRow.id,
+							action: "payment_receive",
+							reason: paymentInput.note ?? null,
+							actorUserId: identity.userId ?? null,
+						});
+					} catch (auditErr) {
+						request.log.warn(
+							{ err: auditErr, paymentId: paymentRow.id, orgId },
+							"[billing] Ошибка аудита оплаты",
+						);
+					}
+				});
+			}
+
+			return { kind: "ok" as const, paymentRow, resultData };
 		});
 
-		if (!paymentRow) {
+		if (txBundle.kind === "error") {
+			return reply.code(txBundle.cashboxResult.statusCode).send(txBundle.cashboxResult.body);
+		}
+		if (txBundle.kind === "missing_row") {
 			return reply.code(500).send({
 				error: "PaymentNotFoundAfterCreation",
-				message: `Платеж ${paymentId} не найден после проведения`,
+				message: `Платеж ${txBundle.paymentId} не найден после проведения`,
 			});
 		}
 
+		const { paymentRow, resultData } = txBundle;
 		const isSplit =
 			paymentInput.method === "split" ||
 			paymentInput.method === "mixed" ||
@@ -260,18 +291,6 @@ export async function handleCreatePayment(
 			reply.header("idempotency-replayed", "true");
 			reply.header("x-idempotency-replayed", "true");
 			return reply.code(200).send(paymentSchema.parse(formattedPayment));
-		}
-		try {
-			const identity = getRequestIdentity(request);
-			await recordAuditEventInDb(orgId, {
-				entityType: "payment",
-				entityId: formattedPayment.id,
-				action: "payment_receive",
-				reason: paymentInput.note ?? null,
-				actorUserId: identity.userId ?? null,
-			});
-		} catch (auditErr) {
-			request.log.warn({ err: auditErr, paymentId: formattedPayment.id, orgId }, "[billing] Ошибка аудита оплаты");
 		}
 		return reply.code(201).send(paymentSchema.parse(formattedPayment));
 	} catch (error) {
