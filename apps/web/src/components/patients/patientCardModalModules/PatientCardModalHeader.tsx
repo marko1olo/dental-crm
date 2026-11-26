@@ -91,11 +91,11 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 
 		return (
 			<div
-				className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 min-h-14 py-2.5 border-b border-[var(--line)] bg-[var(--paper)] gap-2.5 sm:gap-3 min-w-0 shrink-0 print:hidden ${
+				className={`flex flex-wrap sm:flex-nowrap items-center justify-between px-4 sm:px-6 min-h-14 py-2.5 border-b border-[var(--line)] bg-[var(--paper)] gap-2.5 sm:gap-3 min-w-0 shrink-0 print:hidden ${
 					isAnySubModalOpen ? "max-sm:hidden" : ""
 				}`}
 			>
-				<div className="flex items-start sm:items-center gap-3 min-w-0 flex-1 w-full">
+				<div className="flex items-start sm:items-center gap-3 min-w-0 flex-1 order-1">
 					<div className="w-9 h-9 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center shrink-0">
 						<User className="w-4 h-4 shrink-0" />
 					</div>
@@ -154,26 +154,29 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 							)}
 						</div>
 					</div>
-					<button
-						type="button"
-						data-testid="btn-close-patient-card-modal-mobile"
-						onClick={onClose}
-						className="sm:hidden border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] h-11 w-11 min-h-[44px] rounded-xl flex items-center justify-center transition-colors cursor-pointer shrink-0"
-						aria-label="Закрыть окно"
-					>
-						<X className="w-4 h-4 shrink-0" />
-					</button>
 				</div>
 
-				{/* Шапка действий: 1 контекстная Primary CTA + 1 Secondary + меню «... Ещё» + закрытие */}
-				<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+				{/* Единая кнопка закрытия в DOM: на mobile справа в 1-й строке (order-2), на desktop в правом краю (sm:order-3) */}
+				<button
+					type="button"
+					data-testid="btn-close-patient-card-modal"
+					onClick={onClose}
+					className="order-2 sm:order-3 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] h-11 w-11 sm:h-9 sm:w-9 rounded-xl sm:rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer shrink-0"
+					aria-label="Закрыть окно"
+				>
+					<span data-testid="patient-studio-close-btn" className="sr-only">Закрыть</span>
+					<X className="w-4 h-4 shrink-0" />
+				</button>
+
+				{/* Шапка действий: 1 контекстная Primary CTA + 1 Secondary + меню «... Ещё» */}
+				<div className="order-3 sm:order-2 flex items-center gap-2 shrink-0 w-full sm:w-auto">
 					{!isCreateMode ? (
 						<>
 							<button
 								type="button"
 								data-testid="btn-patient-open-emr-studio"
 								onClick={onOpenMedicalRecordStudio}
-								className="bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer flex-1 sm:flex-initial shrink-0 shadow-sm transition-colors"
+								className="bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer max-sm:flex-1 sm:flex-none shrink-0 shadow-sm transition-colors"
 								title="Открыть электронную карту (ЭМК)"
 							>
 								<ClipboardList className="w-4 h-4 shrink-0" />
@@ -184,7 +187,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 								type="button"
 								data-testid="patient-studio-new-btn"
 								onClick={() => onSetActiveMode("create")}
-								className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer flex-1 sm:flex-initial shrink-0 transition-colors"
+								className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer max-sm:flex-1 sm:flex-none shrink-0 transition-colors"
 								title="Регистрация нового пациента"
 							>
 								<Plus className="w-4 h-4 shrink-0" />
@@ -199,7 +202,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 									onClick={() => setIsMoreOpen((prev) => !prev)}
 									aria-expanded={isMoreOpen}
 									aria-haspopup="menu"
-									className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] min-w-[44px] sm:min-h-0 px-3 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+									className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] min-w-[44px] sm:min-h-0 px-3 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 transition-colors"
 									title="Дополнительные действия с картой пациента"
 								>
 									<MoreHorizontal className="w-4 h-4 shrink-0" />
@@ -328,17 +331,6 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 							</button>
 						</>
 					)}
-
-					<button
-						type="button"
-						data-testid="btn-close-patient-card-modal"
-						onClick={onClose}
-						className="max-sm:hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] h-9 w-9 rounded-lg items-center justify-center transition-colors cursor-pointer shrink-0"
-						aria-label="Закрыть окно"
-					>
-						<span data-testid="patient-studio-close-btn" className="sr-only">Закрыть</span>
-						<X className="w-4 h-4 shrink-0" />
-					</button>
 				</div>
 			</div>
 		);
