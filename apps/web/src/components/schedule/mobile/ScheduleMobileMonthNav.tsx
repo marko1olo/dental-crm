@@ -1,6 +1,28 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, LayoutGrid, ListFilter } from "lucide-react";
 
+const COMPACT_MONTH_NAMES: Record<string, string> = {
+  Январь: "Янв",
+  Февраль: "Фев",
+  Март: "Мар",
+  Апрель: "Апр",
+  Май: "Май",
+  Июнь: "Июн",
+  Июль: "Июл",
+  Август: "Авг",
+  Сентябрь: "Сен",
+  Октябрь: "Окт",
+  Ноябрь: "Ноя",
+  Декабрь: "Дек",
+};
+
+function formatCompactMonthTitle(title: string): string {
+  const parts = title.trim().split(/\s+/);
+  const monthWord = parts[0] ?? "";
+  const compactMonth = COMPACT_MONTH_NAMES[monthWord] ?? monthWord;
+  return parts.length > 1 ? `${compactMonth} ${parts.slice(1).join(" ")}` : compactMonth;
+}
+
 export interface ScheduleMobileMonthNavProps {
   monthHeaderTitle: string;
   isDifferentFromToday: boolean;
@@ -18,6 +40,8 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
   onTodayClick,
   onShiftWeek,
 }) => {
+  const compactTitle = formatCompactMonthTitle(monthHeaderTitle);
+
   return (
     <div className="schedule-mobile-month-nav">
       <div className="schedule-mobile-month-cluster">
@@ -31,7 +55,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
           <ChevronLeft className="w-4 h-4 shrink-0" />
         </button>
         <div className="schedule-mobile-month-title" title={monthHeaderTitle}>
-          {monthHeaderTitle}
+          {compactTitle}
         </div>
         <button
           type="button"
@@ -65,7 +89,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
             role="tab"
             aria-selected={viewMode === "agenda"}
             onClick={() => onViewModeChange("agenda")}
-            className={`min-h-[38px] px-2.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+            className={`min-h-[38px] px-2 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
               viewMode === "agenda"
                 ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
@@ -79,7 +103,7 @@ export const ScheduleMobileMonthNav: React.FC<ScheduleMobileMonthNavProps> = ({
             role="tab"
             aria-selected={viewMode === "grid"}
             onClick={() => onViewModeChange("grid")}
-            className={`min-h-[38px] px-2.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
+            className={`min-h-[38px] px-2 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 cursor-pointer transition-all ${
               viewMode === "grid"
                 ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
                 : "text-[var(--ink-muted)] hover:text-[var(--ink)]"

@@ -91,20 +91,20 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 
 		return (
 			<div
-				className={`flex items-center justify-between px-4 sm:px-6 min-h-14 py-2.5 border-b border-[var(--line)] bg-[var(--paper)] gap-3 min-w-0 print:hidden ${
+				className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 min-h-14 py-2.5 border-b border-[var(--line)] bg-[var(--paper)] gap-2.5 sm:gap-3 min-w-0 shrink-0 print:hidden ${
 					isAnySubModalOpen ? "max-sm:hidden" : ""
 				}`}
 			>
-				<div className="flex items-center gap-3 min-w-0 flex-1">
+				<div className="flex items-start sm:items-center gap-3 min-w-0 flex-1 w-full">
 					<div className="w-9 h-9 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center shrink-0">
 						<User className="w-4 h-4 shrink-0" />
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+						<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 							<h2
 								id="patient-card-modal-title"
 								data-testid="patient-card-modal-title"
-								className="text-base font-semibold tracking-tight text-[var(--ink)] m-0 leading-tight truncate"
+								className="text-base font-semibold tracking-tight text-[var(--ink)] m-0 leading-tight truncate min-w-0"
 								title={
 									isCreateMode
 										? "Первичная регистрация пациента"
@@ -132,21 +132,21 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 								</span>
 							)}
 						</div>
-						<div className="text-xs text-[var(--ink-muted)] m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 leading-normal">
+						<div className="text-xs text-[var(--ink-muted)] m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 leading-normal truncate">
 							{isCreateMode ? (
 								<span>Быстрое оформление пациента без лишних полей</span>
 							) : (
 								<>
 									{patientData.phone ? (
-										<span className="font-mono font-medium text-[var(--ink)]">
+										<span className="font-mono font-medium text-[var(--ink)] whitespace-nowrap">
 											Тел: {patientData.phone}
 										</span>
 									) : (
 										<span>Паспортная карточка и клинический статус</span>
 									)}
-									{patientData.birthDate && <span>• {patientData.birthDate}</span>}
+									{patientData.birthDate && <span className="whitespace-nowrap">• {patientData.birthDate}</span>}
 									{(patientData.medicalCardNumber || patientData.cardNumber) && (
-										<span>
+										<span className="whitespace-nowrap">
 											• Карта: №{patientData.medicalCardNumber || patientData.cardNumber}
 										</span>
 									)}
@@ -154,17 +154,26 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 							)}
 						</div>
 					</div>
+					<button
+						type="button"
+						data-testid="btn-close-patient-card-modal-mobile"
+						onClick={onClose}
+						className="sm:hidden border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] h-11 w-11 min-h-[44px] rounded-xl flex items-center justify-center transition-colors cursor-pointer shrink-0"
+						aria-label="Закрыть окно"
+					>
+						<X className="w-4 h-4 shrink-0" />
+					</button>
 				</div>
 
 				{/* Шапка действий: 1 контекстная Primary CTA + 1 Secondary + меню «... Ещё» + закрытие */}
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
 					{!isCreateMode ? (
 						<>
 							<button
 								type="button"
 								data-testid="btn-patient-open-emr-studio"
 								onClick={onOpenMedicalRecordStudio}
-								className="bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 cursor-pointer shrink-0 shadow-sm transition-colors"
+								className="bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer flex-1 sm:flex-initial shrink-0 shadow-sm transition-colors"
 								title="Открыть электронную карту (ЭМК)"
 							>
 								<ClipboardList className="w-4 h-4 shrink-0" />
@@ -175,21 +184,22 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 								type="button"
 								data-testid="patient-studio-new-btn"
 								onClick={() => onSetActiveMode("create")}
-								className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-colors"
+								className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer flex-1 sm:flex-initial shrink-0 transition-colors"
 								title="Регистрация нового пациента"
 							>
 								<Plus className="w-4 h-4 shrink-0" />
+								<span className="sm:hidden">Новый</span>
 								<span className="hidden sm:inline">Новый пациент</span>
 							</button>
 
-							<div className="relative" ref={moreRef}>
+							<div className="relative shrink-0" ref={moreRef}>
 								<button
 									type="button"
 									data-testid="btn-patient-header-more"
 									onClick={() => setIsMoreOpen((prev) => !prev)}
 									aria-expanded={isMoreOpen}
 									aria-haspopup="menu"
-									className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+									className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] h-11 sm:h-9 min-h-[44px] min-w-[44px] sm:min-h-0 px-3 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-colors"
 									title="Дополнительные действия с картой пациента"
 								>
 									<MoreHorizontal className="w-4 h-4 shrink-0" />
@@ -323,7 +333,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = Rea
 						type="button"
 						data-testid="btn-close-patient-card-modal"
 						onClick={onClose}
-						className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0 rounded-xl sm:rounded-lg flex items-center justify-center transition-colors cursor-pointer shrink-0"
+						className="max-sm:hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] h-9 w-9 rounded-lg items-center justify-center transition-colors cursor-pointer shrink-0"
 						aria-label="Закрыть окно"
 					>
 						<span data-testid="patient-studio-close-btn" className="sr-only">Закрыть</span>

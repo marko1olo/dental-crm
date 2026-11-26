@@ -97,7 +97,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 		if (embedded) {
 			return (
 				<aside
-					className="bg-[var(--paper-strong)] border-l border-[var(--line)] text-[var(--ink)] w-full md:w-[380px] shrink-0 flex flex-col overflow-hidden max-md:absolute max-md:inset-0 max-md:z-30"
+					className="bg-[var(--paper-strong)] border-l border-[var(--line)] text-[var(--ink)] w-full md:w-[440px] shrink-0 flex flex-col overflow-hidden max-md:absolute max-md:inset-0 max-md:z-30 [&>div:nth-child(2)]:!flex-col [&>div:nth-child(2)]:!items-stretch [&_.dente-search-wrap]:w-full [&_.dente-segmented-bar]:w-full [&_.dente-segmented-bar]:overflow-x-auto [&_.dente-segmented-item]:flex-1 [&_.dente-segmented-item]:justify-center [&_[data-testid='protocols-catalog-list']_.grid]:!grid-cols-1 [&_[data-testid='btn-close-protocols-catalog-modal']]:shrink-0"
 					aria-label="Каталог клинических протоколов"
 					data-testid="clinical-protocols-catalog-drawer"
 				>

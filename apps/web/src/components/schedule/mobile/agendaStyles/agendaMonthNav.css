@@ -42,7 +42,8 @@
   color: var(--ink, #0f172a);
   letter-spacing: -0.01em;
   white-space: nowrap;
-  padding: 0 2px;
+  flex-shrink: 0;
+  padding: 0 4px;
 }
 
 .schedule-mobile-nav-buttons {
