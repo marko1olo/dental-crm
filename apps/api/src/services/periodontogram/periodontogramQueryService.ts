@@ -6,7 +6,7 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import type { db } from "../../db/client.js";
+import { db } from "../../db/client.js";
 import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
 	periodontogramSites,
