@@ -25,7 +25,8 @@ import {
 	commitHygieneVisitProtocol,
 } from "../hygieneCatalogData";
 import { HygieneStudioModal } from "../HygieneStudioModal";
-import { DirectHygieneLauncher } from "../DirectHygieneLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", () => {
 	const resolveExisting = (relPath: string) => {
@@ -46,10 +47,8 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 		it("hygiene catalog and studio modules exist with valid exports", () => {
 			const catalogPath = path.join(hygieneDir, "hygieneCatalogData.ts");
 			const studioPath = path.join(hygieneDir, "HygieneStudioModal.tsx");
-			const launcherPath = path.join(hygieneDir, "DirectHygieneLauncher.tsx");
 			assert.ok(fs.existsSync(catalogPath), "hygieneCatalogData.ts must exist");
 			assert.ok(fs.existsSync(studioPath), "HygieneStudioModal.tsx must exist");
-			assert.ok(fs.existsSync(launcherPath), "DirectHygieneLauncher.tsx must exist");
 		});
 	});
 
@@ -304,35 +303,17 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 		});
 	});
 
-	describe("4. Direct Deep-Link Mounting & Architecture Integration (Mandate 8aq)", () => {
-		it("DirectHygieneLauncher mounts into AppShell.tsx", () => {
-			assert.ok(fs.existsSync(appShellPath), "AppShell.tsx must exist");
-			const content = fs.readFileSync(appShellPath, "utf-8");
+	describe("4. Single-Shell Routing & Studio Integration (Mandate 8aq)", () => {
+		it("WorkspaceStudioOverlayHost mounts into AppModalsContainer.tsx and routes #hygiene", () => {
+			const modalsPath = path.join(path.dirname(appShellPath), "components/appLayout/AppModalsContainer.tsx");
+			assert.ok(fs.existsSync(modalsPath), "AppModalsContainer.tsx must exist");
+			const content = fs.readFileSync(modalsPath, "utf-8");
 			assert.ok(
-				content.includes("DirectHygieneLauncher"),
-				"AppShell must import DirectHygieneLauncher",
+				content.includes("WorkspaceStudioOverlayHost"),
+				"AppModalsContainer must mount WorkspaceStudioOverlayHost",
 			);
-			assert.ok(
-				content.includes("<DirectHygieneLauncher />"),
-				"AppShell must render <DirectHygieneLauncher />",
-			);
-		});
-
-		it("DirectHygieneLauncher mounts into StandaloneLaunchers.tsx under deep links", () => {
-			assert.ok(fs.existsSync(standalonePath), "StandaloneLaunchers.tsx must exist");
-			const content = fs.readFileSync(standalonePath, "utf-8");
-			assert.ok(
-				content.includes("DirectHygieneLauncher"),
-				"StandaloneLaunchers must import DirectHygieneLauncher",
-			);
-			assert.ok(
-				content.includes("hygiene=1") && content.includes("#hygiene"),
-				"StandaloneLaunchers must route hygiene=1 and #hygiene",
-			);
-			assert.ok(
-				content.includes("cleaning=1") && content.includes("#cleaning"),
-				"StandaloneLaunchers must route cleaning=1 and #cleaning",
-			);
+			assert.equal(resolveClinicRoute("?hygiene=1", "#hygiene").studio?.kind, "hygiene");
+			assert.equal(resolveClinicRoute("?cleaning=1", "#cleaning").studio?.kind, "hygiene");
 		});
 	});
 });

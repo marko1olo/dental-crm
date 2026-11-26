@@ -35,7 +35,7 @@ import {
 	getMaterialMeta,
 	isOrderOverdue,
 } from "../dentalLabCatalogData";
-import { checkIsLabActive } from "../DirectDentalLabLauncher";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -208,7 +208,6 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 		const targetFiles = [
 			path.resolve(labDir, "DentalLabStudioModal.tsx"),
 			path.resolve(labDir, "dentalLabCatalogData.ts"),
-			path.resolve(labDir, "DirectDentalLabLauncher.tsx"),
 		];
 
 		for (const file of targetFiles) {
@@ -225,50 +224,22 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 	// =========================================================================
 	// 10. МАРШРУТИЗАЦИЯ И МОНТИРОВАНИЕ В APPSHELL (МАНДАТ 8aq)
 	// =========================================================================
-	it("3.1. checkIsLabActive detects deep-link signatures correctly", () => {
-		const originalWindow = globalThis.window;
-		try {
-			(globalThis as any).window = { location: { hash: "#lab", search: "" } };
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = { hash: "#dental-lab", search: "" };
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = { hash: "#lab-orders", search: "" };
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = { hash: "", search: "?lab=1" };
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = { hash: "", search: "?standalone=dental_lab" };
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = { hash: "", search: "" };
-			assert.equal(checkIsLabActive(), false);
-		} finally {
-			globalThis.window = originalWindow;
-		}
+	it("3.1. resolveClinicRoute detects lab deep-link signatures correctly", () => {
+		assert.equal(resolveClinicRoute("", "#lab").view, "lab");
+		assert.equal(resolveClinicRoute("", "#dental-lab").view, "lab");
+		assert.equal(resolveClinicRoute("", "#lab-orders").view, "lab");
+		assert.equal(resolveClinicRoute("?lab=1", "").view, "lab");
+		assert.equal(resolveClinicRoute("?standalone=dental_lab", "").view, "lab");
+		assert.notEqual(resolveClinicRoute("", "").view, "lab");
 	});
 
-	it("3.2. Mandate 8aq: DirectDentalLabLauncher is mounted in AppShell.tsx and StandaloneLaunchers.tsx", () => {
-		const appShellPath = path.resolve(webSrcDir, "AppShell.tsx");
-		const launchersPath = path.resolve(webSrcDir, "components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx");
-		const registryPath = path.resolve(webSrcDir, "components/appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
-
-		assert.ok(fs.existsSync(appShellPath), "AppShell.tsx must exist");
-		assert.ok(fs.existsSync(launchersPath), "StandaloneLaunchers.tsx must exist");
-		assert.ok(fs.existsSync(registryPath), "administrativeLaunchersRegistry.tsx must exist");
-
-		const appShellContent = fs.readFileSync(appShellPath, "utf-8");
-		assert.ok(appShellContent.includes("DirectDentalLabLauncher"), "AppShell.tsx must import and render DirectDentalLabLauncher");
-
-		const launchersContent = fs.readFileSync(launchersPath, "utf-8");
-		assert.ok(launchersContent.includes("DirectDentalLabLauncher"), "StandaloneLaunchers.tsx must export DirectDentalLabLauncher");
-
-		const registryContent = fs.readFileSync(registryPath, "utf-8");
-		assert.ok(registryContent.includes("DirectDentalLabLauncher"), "administrativeLaunchersRegistry.tsx must render DirectDentalLabLauncher");
-		assert.ok(registryContent.includes("#lab"), "Registry must handle #lab");
-		assert.ok(registryContent.includes("#dental-lab"), "Registry must handle #dental-lab");
+	it("3.2. Mandate 8aq: DentalLab routes resolve cleanly via App.tsx & AppModalsContainer", () => {
+		const appPath = path.resolve(webSrcDir, "App.tsx");
+		const containerPath = path.resolve(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
+		assert.ok(fs.existsSync(appPath), "App.tsx must exist");
+		assert.ok(fs.existsSync(containerPath), "AppModalsContainer.tsx must exist");
+		assert.ok(fs.readFileSync(appPath, "utf-8").includes("resolveClinicRoute"));
+		assert.ok(fs.readFileSync(containerPath, "utf-8").includes("WorkspaceStudioOverlayHost"));
 	});
 
 	// =========================================================================
@@ -277,13 +248,10 @@ describe("DENTE Dental Laboratory & Orthopedic Orders Canonical SSOT Suite", () 
 	it("3.3. Mandate 8b: Enforces Sweet Spot file sizes against micro-shredder", () => {
 		const catalogLines = fs.readFileSync(path.resolve(labDir, "dentalLabCatalogData.ts"), "utf-8").split("\n").length;
 		const modalLines = fs.readFileSync(path.resolve(labDir, "DentalLabStudioModal.tsx"), "utf-8").split("\n").length;
-		const launcherLines = fs.readFileSync(path.resolve(labDir, "DirectDentalLabLauncher.tsx"), "utf-8").split("\n").length;
 		const cssLines = fs.readFileSync(path.resolve(labDir, "styles/dentalLabStudio.css"), "utf-8").split("\n").length;
 
-		// Мандат 8b: Разумный диапазон без микро-шредера (<100 строк) и без гигантских мега-монолитов (>1000 строк)
 		assert.ok(catalogLines >= 200 && catalogLines <= 600, `dentalLabCatalogData.ts lines (${catalogLines}) must be 200-600`);
 		assert.ok(modalLines >= 300 && modalLines <= 850, `DentalLabStudioModal.tsx lines (${modalLines}) must be 300-850`);
-		assert.ok(launcherLines >= 40 && launcherLines <= 120, `DirectDentalLabLauncher.tsx lines (${launcherLines}) must be 40-120`);
 		assert.ok(cssLines >= 200 && cssLines <= 500, `dentalLabStudio.css lines (${cssLines}) must be 200-500`);
 	});
 });

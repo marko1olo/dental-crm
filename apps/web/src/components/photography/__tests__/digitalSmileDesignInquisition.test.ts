@@ -161,7 +161,7 @@ describe('Digital Smile Design (DSD) Inquisition Suite [PHO-02]', () => {
 		const photoDir = path.resolve(__dirname, '..');
 		assert.ok(fs.existsSync(path.join(photoDir, 'ClinicalPhotoProtocolModal.tsx')), 'ClinicalPhotoProtocolModal must exist');
 		assert.ok(fs.existsSync(path.join(photoDir, 'ClinicalPhotoProtocolHeader.tsx')), 'ClinicalPhotoProtocolHeader must exist');
-		assert.ok(fs.existsSync(path.join(photoDir, 'DirectPhotoProtocolLauncher.tsx')), 'DirectPhotoProtocolLauncher must exist');
+		assert.strictEqual(fs.existsSync(path.join(photoDir, 'DirectPhotoProtocolLauncher.tsx')), false, 'Obsolete DirectPhotoProtocolLauncher must stay removed');
 		assert.strictEqual(typeof DsdAestheticStudioModal, 'function', 'DsdAestheticStudioModal must be a function');
 	});
 });

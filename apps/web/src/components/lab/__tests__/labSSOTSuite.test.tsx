@@ -29,7 +29,7 @@ import {
 	getMaterialMeta,
 	isOrderOverdue,
 } from "../dentalLabCatalogData";
-import { checkIsLabActive } from "../DirectDentalLabLauncher";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -231,7 +231,6 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 			path.resolve(labDir, "DentalLabStudioModal.tsx"),
 			path.resolve(labDir, "DentalLabOrdersView.tsx"),
 			path.resolve(labDir, "dentalLabCatalogData.ts"),
-			path.resolve(labDir, "DirectDentalLabLauncher.tsx"),
 		];
 
 		for (const file of targetFiles) {
@@ -249,73 +248,21 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 		}
 	});
 
-	it("3.1. checkIsLabActive detects deep-link signatures correctly", () => {
-		const originalWindow = globalThis.window;
-		try {
-			(globalThis as any).window = {
-				location: {
-					hash: "#lab",
-					search: "",
-				},
-			};
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = {
-				hash: "#dental-lab",
-				search: "",
-			};
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = {
-				hash: "",
-				search: "?standalone=dental_lab",
-			};
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = {
-				hash: "",
-				search: "?lab=1",
-			};
-			assert.equal(checkIsLabActive(), true);
-
-			(globalThis as any).window.location = {
-				hash: "",
-				search: "",
-			};
-			assert.equal(checkIsLabActive(), false);
-		} finally {
-			globalThis.window = originalWindow;
-		}
+	it("3.1. resolveClinicRoute detects deep-link signatures correctly", () => {
+		assert.equal(resolveClinicRoute("", "#lab").view, "lab");
+		assert.equal(resolveClinicRoute("", "#dental-lab").view, "lab");
+		assert.equal(resolveClinicRoute("?standalone=dental_lab", "").view, "lab");
+		assert.equal(resolveClinicRoute("?lab=1", "").view, "lab");
+		assert.notEqual(resolveClinicRoute("", "").view, "lab");
 	});
 
-	it("3.2. Mandate 8aq: DirectLabLauncher is mounted in AppShell.tsx and StandaloneLaunchers.tsx", () => {
-		const appShellPath = path.resolve(webSrcDir, "AppShell.tsx");
-		const launchersPath = path.resolve(
-			webSrcDir,
-			"components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
-		);
+	it("3.2. Mandate 8aq: DentalLab routes cleanly via App.tsx and AppModalsContainer", () => {
+		const appPath = path.resolve(webSrcDir, "App.tsx");
+		const containerPath = path.resolve(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
 
-		assert.ok(fs.existsSync(appShellPath), "AppShell.tsx must exist");
-		assert.ok(fs.existsSync(launchersPath), "StandaloneLaunchers.tsx must exist");
-
-		const appShellContent = fs.readFileSync(appShellPath, "utf-8");
-		assert.ok(
-			appShellContent.includes("DirectDentalLabLauncher") || appShellContent.includes("DirectLabLauncher"),
-			"AppShell.tsx must import DirectDentalLabLauncher or DirectLabLauncher",
-		);
-
-		const launchersContent = fs.readFileSync(launchersPath, "utf-8");
-		assert.ok(
-			launchersContent.includes("DirectDentalLabLauncher") || launchersContent.includes("DirectLabLauncher"),
-			"StandaloneLaunchers.tsx must import lab launcher",
-		);
-		assert.ok(
-			launchersContent.includes("#lab"),
-			"StandaloneLaunchers.tsx must handle #lab deep link",
-		);
-		assert.ok(
-			launchersContent.includes("#dental-lab"),
-			"StandaloneLaunchers.tsx must handle #dental-lab deep link",
-		);
+		assert.ok(fs.existsSync(appPath), "App.tsx must exist");
+		assert.ok(fs.existsSync(containerPath), "AppModalsContainer.tsx must exist");
+		assert.ok(fs.readFileSync(appPath, "utf-8").includes("resolveClinicRoute"));
+		assert.ok(fs.readFileSync(containerPath, "utf-8").includes("WorkspaceStudioOverlayHost"));
 	});
 });

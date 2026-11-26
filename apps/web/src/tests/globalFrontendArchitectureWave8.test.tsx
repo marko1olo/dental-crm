@@ -11,6 +11,7 @@ import { denteQueryClient, DenteQueryClientProvider } from "../lib/queryClient";
 import { useAppStore } from "../store/appStore";
 import { usePatientStore } from "../store/patientStore";
 import { isStandaloneActive, isStandalonePatientCardActive } from "../appModules/appRoutingHelpers";
+import { resolveClinicRoute } from "../router/routeResolver";
 import { PatientCardModal } from "../components/patients/PatientCardModal";
 import { VisitEmkTab } from "../components/visit/VisitEmkTab";
 import { DEMO_PATIENT_CATALOG } from "../components/patients/patientCatalogData";
@@ -19,15 +20,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webSrcRoot = path.resolve(__dirname, "..");
 
 describe("Global Frontend Architecture Surgical Fixes", () => {
-	it("1. Root QueryClientProvider mounted in AppShell/main/App and DocumentsStudioModal uses DenteQueryClientProvider without orphan provider", () => {
+	it("1. Root DenteQueryClientProvider mounted strictly once in main.tsx without duplicates in AppShell/App", () => {
 		const appShellSrc = fs.readFileSync(path.join(webSrcRoot, "AppShell.tsx"), "utf8");
 		const appSrc = fs.readFileSync(path.join(webSrcRoot, "App.tsx"), "utf8");
 		const mainSrc = fs.readFileSync(path.join(webSrcRoot, "main.tsx"), "utf8");
 		const docsModalSrc = fs.readFileSync(path.join(webSrcRoot, "components/documents/DocumentsStudioModal.tsx"), "utf8");
 
-		assert.ok(appShellSrc.includes("<QueryClientProvider client={denteQueryClient}>"), "AppShell must wrap tree with QueryClientProvider");
-		assert.ok(mainSrc.includes("<QueryClientProvider client={denteQueryClient}>"), "main.tsx must wrap roots with QueryClientProvider");
-		assert.ok(appSrc.includes("<DenteQueryClientProvider>"), "App.tsx must ensure DenteQueryClientProvider");
+		assert.ok(!appShellSrc.includes("<QueryClientProvider"), "AppShell must not duplicate QueryClientProvider");
+		assert.ok(mainSrc.includes("<DenteQueryClientProvider>"), "main.tsx must wrap root with single DenteQueryClientProvider");
+		assert.ok(!appSrc.includes("<DenteQueryClientProvider>"), "App.tsx must not duplicate DenteQueryClientProvider");
 		assert.ok(!docsModalSrc.includes("<QueryClientProvider"), "DocumentsStudioModal must not mount orphan QueryClientProvider");
 
 		function ProbeClient() {
@@ -61,13 +62,14 @@ describe("Global Frontend Architecture Surgical Fixes", () => {
 		assert.ok(routingEventsSrc.includes("dente-apply-dsd-to-treatment-plan"), "Must handle DSD handoff event");
 	});
 
-	it("4. AppShell strict URL/hash routing does not false-trigger on query values containing substrings", () => {
+	it("4. Single-shell routing keeps workspace active and resolves studio overlays without query false-positives", () => {
 		assert.equal(isStandaloneActive("?patientId=pat-lab-123&filter=photo", "#patients"), false);
 		assert.equal(isStandaloneActive("?tab=settings&patient=1", "#visit"), false);
 		assert.equal(isStandalonePatientCardActive("?patientId=123", "#visit"), false);
 
-		assert.equal(isStandaloneActive("?stand=cashbox", ""), true);
-		assert.equal(isStandaloneActive("", "#odontogram?patientId=123"), true);
+		assert.equal(isStandaloneActive("?stand=cashbox", ""), false);
+		assert.equal(resolveClinicRoute("?stand=cashbox", "").studio?.kind, "cashbox");
+		assert.equal(resolveClinicRoute("", "#odontogram?patientId=123").studio?.kind, "odontogram_fullscreen");
 		assert.equal(isStandalonePatientCardActive("", "#patient-card?id=123"), true);
 	});
 

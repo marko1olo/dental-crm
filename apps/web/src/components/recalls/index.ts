@@ -12,8 +12,6 @@ export {
 	type RecallCallingScript,
 } from "./recallInvitationTemplates";
 
-export { DirectRecallLauncher } from "./DirectRecallLauncher";
-
 export {
 	PatientRecallsHubModal,
 	type PatientRecallsHubModalProps,

@@ -315,4 +315,5 @@ export {
 	fdiToothNumberSchema,
 	VALID_FDI_TOOTH_NUMBERS,
 } from "./schemas/installmentAndLabOrderSchemas.js";
+export * from "./navigation/workspaceRoutes.js";
 

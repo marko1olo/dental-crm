@@ -33,7 +33,8 @@ import {
 	getOrthoPatientMemoText,
 } from "../orthodonticsCatalogData";
 import { OrthodonticsStudioModal } from "../OrthodonticsStudioModal";
-import { DirectOrthodonticsLauncher } from "../DirectOrthodonticsLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 import {
 	CEPHALOMETRIC_LANDMARKS,
 	DEFAULT_CEPH_LANDMARKS_PRESET,
@@ -229,44 +230,42 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		);
 	});
 
-	it("13. Verifies DirectOrthodonticsLauncher functional contract and clean exports", () => {
+	it("13. Verifies WorkspaceStudioOverlayHost & routeResolver contract for orthodontics", () => {
 		const directOrthoClone = path.join(orthoDir, "directOrtho/DirectOrthoLauncher.tsx");
 		assert.ok(!fs.existsSync(directOrthoClone), "Clone directOrtho/DirectOrthoLauncher.tsx must be purged");
 
 		const cephModalPath = path.join(orthoDir, "CephAnalysisModal.tsx");
 		assert.ok(fs.existsSync(cephModalPath), "Canonical CephAnalysisModal.tsx must exist");
 
-		assert.equal(typeof DirectOrthodonticsLauncher, "function", "DirectOrthodonticsLauncher must be a React component");
-		const html = renderToString(<DirectOrthodonticsLauncher />);
-		assert.ok(html !== undefined, "Launcher renders without errors");
+		assert.equal(resolveClinicRoute("", "#orthodontics").studio?.kind, "orthodontics");
+		assert.equal(resolveClinicRoute("", "#ortho-protocol").studio?.kind, "orthodontics");
+		assert.equal(typeof WorkspaceStudioOverlayHost, "function", "WorkspaceStudioOverlayHost must be a React component");
+		const html = renderToString(<WorkspaceStudioOverlayHost />);
+		assert.ok(html !== undefined, "Overlay host renders without errors");
 	});
 
-	it("14. Verifies DirectOrthodonticsLauncher is mounted in AppShell.tsx (Mandate 8aq)", () => {
-		const appShellPath = path.join(webSrcDir, "AppShell.tsx");
-		assert.ok(fs.existsSync(appShellPath), "AppShell.tsx must exist");
+	it("14. Verifies WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx (Mandate 8aq)", () => {
+		const containerPath = path.join(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
+		assert.ok(fs.existsSync(containerPath), "AppModalsContainer.tsx must exist");
 
-		const content = fs.readFileSync(appShellPath, "utf-8");
+		const content = fs.readFileSync(containerPath, "utf-8");
 		assert.ok(
-			content.includes("DirectOrthodonticsLauncher"),
-			"AppShell.tsx must import and render DirectOrthodonticsLauncher",
+			content.includes("WorkspaceStudioOverlayHost"),
+			"AppModalsContainer.tsx must import and render WorkspaceStudioOverlayHost",
 		);
 	});
 
-	it("15. Verifies DirectOrthodonticsLauncher is mounted in StandaloneLaunchers.tsx (Mandate 8aq)", () => {
-		const launchersPath = path.join(
+	it("15. Verifies WorkspaceStudioOverlayHost mounts OrthodonticsStudioModal (Mandate 8aq)", () => {
+		const hostPath = path.join(
 			webSrcDir,
-			"components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
+			"components/appLayout/WorkspaceStudioOverlayHost.tsx",
 		);
-		assert.ok(fs.existsSync(launchersPath), "StandaloneLaunchers.tsx must exist");
+		assert.ok(fs.existsSync(hostPath), "WorkspaceStudioOverlayHost.tsx must exist");
 
-		const content = fs.readFileSync(launchersPath, "utf-8");
+		const content = fs.readFileSync(hostPath, "utf-8");
 		assert.ok(
-			content.includes("DirectOrthodonticsLauncher"),
-			"StandaloneLaunchers.tsx must import DirectOrthodonticsLauncher",
-		);
-		assert.ok(
-			content.includes("orthodontics") && content.includes("ortho-protocol"),
-			"StandaloneLaunchers.tsx must handle deep links #orthodontics and #ortho-protocol",
+			content.includes("OrthodonticsStudioModal"),
+			"WorkspaceStudioOverlayHost.tsx must import and render OrthodonticsStudioModal",
 		);
 	});
 

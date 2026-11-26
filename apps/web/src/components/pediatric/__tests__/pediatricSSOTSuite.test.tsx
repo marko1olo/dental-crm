@@ -23,7 +23,8 @@ import {
 import { generateBraveryDiplomaHtml } from "../diploma/diplomaPrint";
 import { PediatricBraveryDiplomaModal } from "../PediatricBraveryDiplomaModal";
 import { PediatricMixedDentitionModal } from "../../odontogram/PediatricMixedDentitionModal";
-import { DirectPediatricLauncher } from "../DirectPediatricLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 describe("1. Pediatric Clinical EBM & Dentition SSOT", () => {
 	it("provides 4 Frankl behavior presets with clinical tactics and symbols", () => {
@@ -221,8 +222,9 @@ describe("4. Canonical Pediatric Dentition Modal Ergonomics & Autonomy (Mandates
 		assert.equal(html, "");
 	});
 
-	it("mounts DirectPediatricLauncher without crash", () => {
-		const html = renderToString(createElement(DirectPediatricLauncher));
+	it("mounts WorkspaceStudioOverlayHost & resolves #pediatric without crash", () => {
+		assert.equal(resolveClinicRoute("", "#pediatric").studio?.kind, "pediatric");
+		const html = renderToString(createElement(WorkspaceStudioOverlayHost));
 		assert.ok(typeof html === "string");
 	});
 

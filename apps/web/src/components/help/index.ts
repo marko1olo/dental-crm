@@ -1,14 +1,19 @@
 /**
  * DENTE CRM — Clinical Quick Guides & Knowledge Base Facade
- * Authority: Mandate 8b (Facade <= 15 lines), Mandate 8l
+ * Authority: Mandate 8b (Facade <= 30 lines), Mandate 8bf (SSOT)
  */
-export * from "./helpCatalog/helpTypes";
-export * from "./helpCatalog/helpCategoriesData";
-export * from "./helpCatalog/helpHotkeysCatalog";
-export * from "./helpCatalog/helpArticlesData";
-export * from "./helpCatalog/helpSearchEngine";
+export * from "./clinicalHelpCatalog";
 export * from "./helpCatalog/ClinicalHelpHotkeyBadge";
-export * from "./helpCatalog/ClinicalHelpSearchFilter";
-export * from "./helpCatalog/ClinicalHelpCardsGrid";
-export * from "./helpCatalog/ClinicalHelpContainer";
-export * from "./helpCatalog/helpGuidesExport";
+export * from "./helpCatalog/ClinicalGuideRenderer";
+export * from "./ScheduleGuide";
+export * from "./OdontogramGuide";
+export * from "./MedicalRecordGuide";
+export * from "./CashierGuide";
+export * from "./Imaging3DGuide";
+export * from "./TreatmentPlansGuide";
+export * from "./DentalLabGuide";
+export * from "./InventoryWarehouseGuide";
+export * from "./SanPiNAutoclaveGuide";
+export * from "./LeadsTelephonyGuide";
+export * from "./LanMeshGuide";
+export * from "./AnalyticsReportsGuide";

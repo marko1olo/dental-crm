@@ -28,7 +28,7 @@ import {
 	formatKopecksToRubles,
 	calcNetRevenueKopecks,
 } from "../dentalLabCatalogData";
-import { checkIsLabActive } from "../DirectDentalLabLauncher";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,16 +110,9 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			);
 		});
 
-		it("2.3. DirectDentalLabLauncher also guards against hasDentalLab === false", () => {
-			const content = fs.readFileSync(path.resolve(labDir, "DirectDentalLabLauncher.tsx"), "utf-8");
-			assert.ok(
-				content.includes("hasDentalLab"),
-				"Launcher must inspect hasDentalLab",
-			);
-			assert.ok(
-				content.includes("if (!isActive || (!hasDentalLab && !isDemoShowcaseMode())) return null;"),
-				"Launcher must return null if lab is disabled in clinic",
-			);
+		it("2.3. resolveClinicRoute routes #lab and #dental-lab to canonical lab primary view", () => {
+			assert.equal(resolveClinicRoute("", "#lab").view, "lab");
+			assert.equal(resolveClinicRoute("", "#dental-lab").view, "lab");
 		});
 
 		it("2.4. Chairside AppointmentModalLabSection hides lab order CTA when hasDentalLab === false", () => {
@@ -194,12 +187,19 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			assert.ok(!content.includes("export const DentalLabOrderModal"));
 		});
 
-		it("3.3. DirectDentalLabLauncher exports DirectDentalLabOrderLauncher and eliminates dead alias DirectLabLauncher", () => {
-			const launcherFile = path.resolve(labDir, "DirectDentalLabLauncher.tsx");
-			assert.ok(fs.existsSync(launcherFile));
-			const content = fs.readFileSync(launcherFile, "utf-8");
-			assert.ok(!content.includes("export const DirectLabLauncher"), "Must eliminate obsolete DirectLabLauncher alias");
-			assert.ok(content.includes("export const DirectDentalLabOrderLauncher = DirectDentalLabLauncher;"));
+		it("3.3. Obsolete DirectDentalLabLauncher & dead aliases remain deleted (Mandate 8bf)", () => {
+			for (const obsolete of [
+				"DirectDentalLabLauncher.tsx",
+				"DirectLabLauncher.tsx",
+				"DirectDentalLabOrderLauncher.tsx",
+			]) {
+				assert.equal(
+					fs.existsSync(path.resolve(labDir, obsolete)),
+					false,
+					`Obsolete ${obsolete} must remain removed`,
+				);
+			}
+			assert.equal(resolveClinicRoute("", "#lab").view, "lab");
 		});
 
 		it("3.4. DentalLabShadePicker is canonical SSOT exporting DentalLabShadePicker and DentalLabShadeSelector", () => {

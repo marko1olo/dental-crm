@@ -4,7 +4,6 @@
  * Мандаты 8b/8zi, 8am, 8e.
  */
 
-export * from "./DirectMarketingLauncher.js";
 export * from "./MarketingRomiTable.js";
 export * from "./MarketingPromosList.js";
 export * from "./MarketingCampaignDetail.js";

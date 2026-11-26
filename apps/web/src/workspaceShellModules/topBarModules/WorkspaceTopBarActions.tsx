@@ -82,7 +82,11 @@ export function WorkspaceTopBarActions({
 	useEffect(() => {
 		if (!isProfileOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
-			if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+			if (
+				profileRef.current &&
+				e.target instanceof Node &&
+				!profileRef.current.contains(e.target)
+			) {
 				setIsProfileOpen(false);
 			}
 		};

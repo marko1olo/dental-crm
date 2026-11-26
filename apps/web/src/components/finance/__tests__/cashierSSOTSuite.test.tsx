@@ -70,8 +70,8 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 	before(async () => {
 		const modalMod = await import("../../cashbox/CashRegisterStudioModal.js");
 		CashierStudioModal = modalMod.CashRegisterStudioModal;
-		const launcherMod = await import("../../cashbox/DirectCashboxLauncher.js");
-		DirectCashboxLauncher = launcherMod.DirectCashboxLauncher;
+		const hostMod = await import("../../appLayout/WorkspaceStudioOverlayHost.js");
+		DirectCashboxLauncher = hostMod.WorkspaceStudioOverlayHost;
 	});
 
 	// ТЕСТ 1: Точная сходимость сплит-платежей без потери копеек
@@ -88,16 +88,27 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		assert.equal(kopecksToRub(sumSplitKop), totalDueRub, "Converted sum must equal original total in rubles");
 	});
 
-	// ТЕСТ 2: DirectCashboxLauncher.tsx делегирует напрямую канонической CashRegisterStudioModal.tsx
-	it("2. DirectCashboxLauncher.tsx delegates directly to canonical CashRegisterStudioModal SSOT", () => {
-		const filePath = path.resolve(financeDir, "../cashbox/DirectCashboxLauncher.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert.ok(content.includes("CashRegisterStudioModal"), "Must delegate to canonical CashRegisterStudioModal SSOT");
+	// ТЕСТ 2: DirectCashboxLauncher.tsx снесён, канонический фасад cashbox/index.ts ведёт на CashRegisterStudioModal SSOT
+	it("2. legacy DirectCashboxLauncher is decommissioned and cashbox facade exports CashRegisterStudioModal", () => {
+		const legacyPath = path.resolve(financeDir, "../cashbox/DirectCashboxLauncher.tsx");
+		const facadePath = path.resolve(financeDir, "../cashbox/index.ts");
+		assert.equal(fs.existsSync(legacyPath), false, "Legacy DirectCashboxLauncher.tsx must stay decommissioned");
+		const content = fs.readFileSync(facadePath, "utf-8");
+		assert.equal(content.includes("CashRegisterStudioModal"), true, "Facade must export canonical CashRegisterStudioModal SSOT");
 	});
 
-	// ТЕСТ 3: DirectCashboxLauncher.tsx экспорт и интерфейс
-	it("3. DirectCashboxLauncher.tsx exports a valid functional component", () => {
-		assert.equal(typeof DirectCashboxLauncher, "function", "DirectCashboxLauncher must be a React FC");
+	// ТЕСТ 3: CashRegisterStudioModal экспорт и SSR-рендер
+	it("3. CashRegisterStudioModal renders checkout heading when open", () => {
+		const html = renderToString(
+			<CashierStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTab="checkout"
+				totalDueRub={1500}
+				patientName="Тестов Пациент"
+			/>,
+		);
+		assert.equal(html.includes("Студия кассы и чеков"), true);
 	});
 
 	// ТЕСТ 3b: Сходимость сдачи и балансировка при наличных с переплатой
@@ -328,10 +339,18 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		assert.ok(html.includes("Способ оплаты"));
 	});
 
-	// ТЕСТ 16: DirectCashboxLauncher монтируется в DOM без крашей
-	it("16. DirectCashboxLauncher SSR mounts cleanly and handles event contracts", () => {
-		const html = renderToString(<DirectCashboxLauncher />);
-		assert.ok(typeof html === "string");
+	// ТЕСТ 16: Закрытая CashRegisterStudioModal не рендерит видимую шторку в DOM
+	it("16. CashierStudioModal renders empty output cleanly when closed", () => {
+		const html = renderToString(
+			<CashierStudioModal
+				isOpen={false}
+				onClose={() => {}}
+				initialTab="checkout"
+				totalDueRub={0}
+				patientName=""
+			/>,
+		);
+		assert.equal(html, "");
 	});
 
 	// ТЕСТ 17: SSOT способов оплаты содержит понятные ярлыки

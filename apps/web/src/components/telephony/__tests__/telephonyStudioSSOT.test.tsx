@@ -19,7 +19,7 @@ const expect = (actual: unknown) => ({
 	toBeNull: () => assert.strictEqual(actual, null),
 });
 import { TelephonyStudioModal } from "../TelephonyStudioModal";
-import { DirectTelephonyLauncher } from "../DirectTelephonyLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 import { setRuntimeDemoMode } from "../../../lib/demoMode.js";
 import {
 	TELEPHONY_CATALOG_DATA,
@@ -132,8 +132,8 @@ describe("TelephonyStudioModal & SSOT Architecture", () => {
 		playSafeWebAudioTone(500, 100);
 	});
 
-	it("DirectTelephonyLauncher renders without error", () => {
-		const html = renderToString(<DirectTelephonyLauncher />);
+	it("WorkspaceStudioOverlayHost renders without error", () => {
+		const html = renderToString(<WorkspaceStudioOverlayHost />);
 		expect(typeof html).toBe("string");
 	});
 });

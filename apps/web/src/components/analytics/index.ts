@@ -7,7 +7,6 @@
 export * from "./analyticsCatalogData";
 export { useClinicAnalyticsSSOT } from "./useAnalyticsDashboardData";
 export * from "./ExecutiveAnalyticsStudioModal";
-export * from "./DirectAnalyticsLauncher";
 export * from "./studio/index";
 export * from "./ExecutiveFinancialSummary";
 export * from "./doctorPayrollExportUtils";

@@ -1,51 +1,99 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Activity, FileText, Pill, Printer, Redo2, ShieldCheck, Sparkles, Undo2 } from "lucide-react";
-import { EmkDropdownNormItems } from "./EmkDropdownNormItems";
+import { Activity, FileText, Pill, Printer, Redo2, ShieldCheck, Sparkles, Star, Undo2 } from "lucide-react";
+import { CLINICAL_SOAP_PRESETS } from "../../clinicalSoapPresets";
+import type { ClinicalSoapPreset } from "../../clinicalSoapTypes";
+import { emitClinicEvent } from "../../../../lib/clinicEventBus";
+import { useDoctorPreferencesStore } from "../../../../store/doctorPreferencesStore";
 
 export interface EmkProtocolsDropdownMenuProps {
 	isOpen: boolean;
-	dropdownPos: { top: number; left: number } | null;
+	dropdownPos: { top: number; left: number };
 	menuRef: React.RefObject<HTMLDivElement | null>;
 	onClose: () => void;
-	onApplyNorm?: (() => void) | undefined;
-	onApplyPhysiologicalNorm?: (() => void) | undefined;
-	onApplyOrthoNorm?: (() => void) | undefined;
-	onApplySurgeryNorm?: (() => void) | undefined;
+	onApplySoapPreset?: ((preset: ClinicalSoapPreset) => void) | undefined;
+	updateVisitNoteField?: ((field: string, value: string) => void) | undefined;
 	onToggleStarProtocols?: (() => void) | undefined;
 	onOpenConsent?: (() => void) | undefined;
 	onPrintMedicalCard?: (() => void) | undefined;
-	onPrint043?: (() => void) | undefined;
-	canUndo: boolean; canRedo: boolean;
-	handleUndo: () => void; handleRedo: () => void;
+	canUndo: boolean;
+	canRedo: boolean;
+	handleUndo: () => boolean | void;
+	handleRedo: () => boolean | void;
+}
+
+function applyPresetFallback(
+	preset: ClinicalSoapPreset,
+	updateField?: (field: string, value: string) => void,
+): void {
+	if (!updateField) return;
+	if (preset.complaint) updateField("complaint", preset.complaint);
+	if (preset.anamnesis) updateField("anamnesis", preset.anamnesis);
+	if (preset.statusLocalis) updateField("objectiveStatus", preset.statusLocalis);
+	if (preset.icd10) updateField("diagnosis", `${preset.icd10}${preset.icd10Label ? ` ${preset.icd10Label}` : ""}`);
+	if (preset.treatmentDescription) updateField("treatmentPlan", preset.treatmentDescription);
 }
 
 export function EmkProtocolsDropdownMenu({
-	isOpen, dropdownPos, menuRef, onClose, onApplyNorm, onApplyPhysiologicalNorm,
-	onApplyOrthoNorm, onApplySurgeryNorm, onToggleStarProtocols, onOpenConsent,
-	onPrintMedicalCard, onPrint043, canUndo, canRedo, handleUndo, handleRedo,
+	isOpen,
+	dropdownPos,
+	menuRef,
+	onClose,
+	onApplySoapPreset,
+	updateVisitNoteField,
+	onToggleStarProtocols,
+	onOpenConsent,
+	onPrintMedicalCard,
+	canUndo,
+	canRedo,
+	handleUndo,
+	handleRedo,
 }: EmkProtocolsDropdownMenuProps) {
-	if (!isOpen || !dropdownPos || typeof document === "undefined") return null;
+	const quickProtocolIds = useDoctorPreferencesStore((s) => s.preferences.quickProtocolIds);
+
+	const personalMacros = useMemo(() => {
+		const resolved = quickProtocolIds
+			.map((id) => CLINICAL_SOAP_PRESETS.find((p) => p.id === id))
+			.filter((p): p is ClinicalSoapPreset => Boolean(p));
+		return resolved.slice(0, 4);
+	}, [quickProtocolIds]);
+
+	if (!isOpen || typeof document === "undefined") return null;
 
 	return createPortal(
 		<div
 			ref={menuRef}
-			className="fixed z-[9999] flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[260px] text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
+			className="fixed z-[9999] flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper))] border border-[var(--line)] rounded-xl shadow-2xl min-w-[268px] max-w-[calc(100vw-24px)] text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
 			style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
 			role="menu"
 			aria-hidden={!isOpen}
 		>
-			<EmkDropdownNormItems
-				onClose={onClose}
-				onApplyNorm={onApplyNorm}
-				onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
-				onApplyOrthoNorm={onApplyOrthoNorm}
-				onApplySurgeryNorm={onApplySurgeryNorm}
-			/>
+			{personalMacros.length > 0 && (
+				<>
+					<div className="px-2 py-1 text-[11px] font-medium text-[var(--ink-muted)]">
+						Личные макросы врача
+					</div>
+					{personalMacros.map((macro) => (
+						<button
+							key={macro.id}
+							type="button"
+							data-testid={`btn-doctor-macro-${macro.id}`}
+							onClick={() => {
+								if (onApplySoapPreset) onApplySoapPreset(macro);
+								else applyPresetFallback(macro, updateVisitNoteField);
+								onClose();
+							}}
+							className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+						>
+							<Star className="w-3.5 h-3.5 shrink-0 text-[var(--primary)]" />
+							<span className="truncate">{macro.title}</span>
+						</button>
+					))}
+					<div className="h-px bg-[var(--line)] my-1" />
+				</>
+			)}
 
-			<div className="h-px bg-[var(--line)] my-1" />
-
-			<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+			<div className="px-2 py-1 text-[11px] font-medium text-[var(--ink-muted)]">
 				Клинические пространства
 			</div>
 
@@ -53,25 +101,25 @@ export function EmkProtocolsDropdownMenu({
 				type="button"
 				data-testid="btn-open-perio-chart-toolbar"
 				onClick={() => {
-					window.dispatchEvent(new CustomEvent("dente:open-perio-modal"));
+					emitClinicEvent("studio:open", { studio: { kind: "perio" } });
 					onClose();
 				}}
-				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 			>
-				<Activity className="w-3.5 h-3.5 shrink-0 opacity-70" />
-				<span>Пародонтограмма и скрининг PSR</span>
+				<Activity className="w-3.5 h-3.5 shrink-0 text-[var(--ink-muted)]" />
+				<span>Пародонтограмма и скрининг</span>
 			</button>
 
 			<button
 				type="button"
 				data-testid="btn-open-prescriptions-toolbar"
 				onClick={() => {
-					window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
+					emitClinicEvent("studio:open", { studio: { kind: "prescriptions" } });
 					onClose();
 				}}
-				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 			>
-				<Pill className="w-3.5 h-3.5 shrink-0 opacity-70" />
+				<Pill className="w-3.5 h-3.5 shrink-0 text-[var(--ink-muted)]" />
 				<span>Выписать рецепт на лекарства</span>
 			</button>
 
@@ -79,29 +127,32 @@ export function EmkProtocolsDropdownMenu({
 				type="button"
 				data-testid="btn-open-implant-passport-toolbar"
 				onClick={() => {
-					window.dispatchEvent(new CustomEvent("dente:open-implant-passport"));
+					emitClinicEvent("studio:open", { studio: { kind: "surgery", initialTab: "passport" } });
 					onClose();
 				}}
-				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 			>
-				<FileText className="w-3.5 h-3.5 shrink-0 opacity-70" />
+				<FileText className="w-3.5 h-3.5 shrink-0 text-[var(--ink-muted)]" />
 				<span>Паспорт имплантата</span>
 			</button>
 
 			<div className="h-px bg-[var(--line)] my-1" />
 
-			<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-				Справочники и согласие
+			<div className="px-2 py-1 text-[11px] font-medium text-[var(--ink-muted)]">
+				Документы и протоколы
 			</div>
 
 			{onToggleStarProtocols && (
 				<button
 					type="button"
 					data-testid="btn-toggle-star-protocols-toolbar"
-					onClick={() => { onToggleStarProtocols(); onClose(); }}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal-ink,var(--teal))] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+					onClick={() => {
+						onToggleStarProtocols();
+						onClose();
+					}}
+					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--primary)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 				>
-					<Sparkles className="w-3.5 h-3.5 shrink-0 opacity-70" />
+					<Sparkles className="w-3.5 h-3.5 shrink-0" />
 					<span>Клинические протоколы</span>
 				</button>
 			)}
@@ -110,22 +161,28 @@ export function EmkProtocolsDropdownMenu({
 				<button
 					type="button"
 					data-testid="btn-open-consent-toolbar"
-					onClick={() => { onOpenConsent(); onClose(); }}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+					onClick={() => {
+						onOpenConsent();
+						onClose();
+					}}
+					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 				>
-					<ShieldCheck className="w-3.5 h-3.5 shrink-0 opacity-70" />
-					<span>Согласие пациента (ИДС)</span>
+					<ShieldCheck className="w-3.5 h-3.5 shrink-0 text-[var(--ink-muted)]" />
+					<span>Согласие пациента</span>
 				</button>
 			)}
 
-			{Boolean(onPrintMedicalCard || onPrint043) && (
+			{onPrintMedicalCard && (
 				<button
 					type="button"
 					data-testid="btn-print-medical-card-toolbar"
-					onClick={() => { (onPrintMedicalCard ?? onPrint043)?.(); onClose(); }}
-					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
+					onClick={() => {
+						onPrintMedicalCard();
+						onClose();
+					}}
+					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 				>
-					<Printer className="w-3.5 h-3.5 shrink-0 opacity-70" />
+					<Printer className="w-3.5 h-3.5 shrink-0 text-[var(--ink-muted)]" />
 					<span>Печать медицинской карты</span>
 				</button>
 			)}
@@ -134,28 +191,36 @@ export function EmkProtocolsDropdownMenu({
 
 			<button
 				type="button"
-				onClick={() => { handleUndo(); onClose(); }}
-				disabled={!canUndo}
-				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center justify-between cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+				onClick={() => {
+					if (canUndo) handleUndo();
+					onClose();
+				}}
+				className={`w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-between cursor-pointer transition-colors ${
+					!canUndo ? "opacity-50" : ""
+				}`}
 			>
 				<span className="flex items-center gap-2">
-					<Undo2 size={13} className="shrink-0" />
+					<Undo2 className="w-3.5 h-3.5 shrink-0" />
 					<span>Отменить ввод</span>
 				</span>
-				<kbd className="text-[10px] font-mono text-[var(--muted)]">Ctrl+Z</kbd>
+				<kbd className="text-[10px] font-mono text-[var(--ink-muted)]">Ctrl+Z</kbd>
 			</button>
 
 			<button
 				type="button"
-				onClick={() => { handleRedo(); onClose(); }}
-				disabled={!canRedo}
-				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center justify-between cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+				onClick={() => {
+					if (canRedo) handleRedo();
+					onClose();
+				}}
+				className={`w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-between cursor-pointer transition-colors ${
+					!canRedo ? "opacity-50" : ""
+				}`}
 			>
 				<span className="flex items-center gap-2">
-					<Redo2 size={13} className="shrink-0" />
+					<Redo2 className="w-3.5 h-3.5 shrink-0" />
 					<span>Вернуть ввод</span>
 				</span>
-				<kbd className="text-[10px] font-mono text-[var(--muted)]">Ctrl+Y</kbd>
+				<kbd className="text-[10px] font-mono text-[var(--ink-muted)]">Ctrl+Y</kbd>
 			</button>
 		</div>,
 		document.body,

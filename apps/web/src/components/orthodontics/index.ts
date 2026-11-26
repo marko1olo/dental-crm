@@ -10,7 +10,6 @@ export {
 	type OrthodonticPatientMemoParams,
 } from "./OrthodonticsStudioModal";
 
-export { DirectOrthodonticsLauncher } from "./DirectOrthodonticsLauncher";
 export {
 	AlignerCaseTracker,
 	type AlignerCaseTrackerProps,

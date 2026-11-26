@@ -22,7 +22,7 @@ import {
 	generateConsentPrintHtml,
 	getConsentDocumentById,
 } from "../../consents/consentCatalogData";
-import { isConsentTarget } from "../../consents/DirectConsentLauncher";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 import { setRuntimeDemoMode, isDemoShowcaseMode } from "../../../lib/demoMode";
 
 describe("Red Team Fixer Surgeon: Documents and Consents SSOT Integrity", () => {
@@ -34,9 +34,9 @@ describe("Red Team Fixer Surgeon: Documents and Consents SSOT Integrity", () => 
 		setRuntimeDemoMode(false);
 	});
 
-	it("DEF-DOC-01: Demo mock isolation in DirectConsentLauncher", () => {
+	it("DEF-DOC-01: Demo mock isolation & consents deep-link routing", () => {
 		expect(isDemoShowcaseMode()).toBe(false);
-		expect(typeof isConsentTarget).toBe("function");
+		expect(resolveClinicRoute("", "#consents").studio?.kind).toBe("consents");
 	});
 
 	it("DEF-DOC-02: ConsentStudioModal queries contract preserves distinct consentType", async () => {

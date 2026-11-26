@@ -75,7 +75,11 @@ export function BranchSelector({
 	// Закрытие по клику вне дропдауна
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
-			if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+			if (
+				dropdownRef.current &&
+				event.target instanceof Node &&
+				!dropdownRef.current.contains(event.target)
+			) {
 				setIsOpen(false);
 			}
 		}
@@ -90,11 +94,11 @@ export function BranchSelector({
 	const currentBranch = branches.find((b) => b.id === activeBranchId) || branches[0];
 	const displayName = currentBranch?.name || defaultClinicName || "Основное отделение";
 
-	// Если филиалов нет или ровно 1 — выводим компактный ненавязчивый индикатор
+	// Если филиалов нет или ровно 1 — на десктопе не дублируем название клиники из topbar-clinic (Мандат 8n)
 	if (branches.length <= 1) {
 		return (
 			<div
-				className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)] shrink-0 ${className}`}
+				className={`inline-flex sm:hidden items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)] max-w-[calc(100vw-80px)] shrink-0 ${className}`}
 				title={displayName}
 				data-testid="branch-single-badge"
 			>

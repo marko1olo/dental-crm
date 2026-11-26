@@ -12,4 +12,3 @@ export * from "./informedConsentGuiding";
 export * from "./taxApplicationGuiding";
 export * from "./photoVideoConsentGuiding";
 export * from "../consents/consentCatalogData";
-export * from "./DirectDocumentsLauncher";

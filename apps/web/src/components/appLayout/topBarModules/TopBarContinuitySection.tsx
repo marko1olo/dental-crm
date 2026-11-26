@@ -1,41 +1,59 @@
 /**
- * TopBarContinuitySection — Полоса непрерывности и синхронизации офлайн-мутаций (Мандат 8b, <= 120 строк).
+ * TopBarContinuitySection — Компактный чип состояния синхронизации (0px шума в норме).
+ * При потере сети или очереди несинхронизированных записей рендерится как h-8 чип внутри AppTopBar.
  */
 
 import React from "react";
-import { WorkspaceContinuityStrip } from "../../../workspaceContinuityStrip";
+import { RefreshCw, WifiOff } from "lucide-react";
 import type { TopBarEmergencyAndSyncProps } from "../types/topBarBaseTypes";
 
 export function TopBarContinuitySection({
 	browserContinuityCritical = false,
-	browserContinuity,
 	isOnline = true,
 	isPendingVisitSyncing = false,
-	refreshBrowserContinuity = async () => {},
-	flushPendingSpeechChunks = async () => {},
 	flushPendingVisitSaves = async () => {},
 	pendingSpeechChunkCount = 0,
 	pendingVisitSaveCount = 0,
-	networkState,
 	pendingMutationCount = 0,
 	syncOfflineMutations = async () => {},
 	isSyncingMutations = false,
 }: Partial<TopBarEmergencyAndSyncProps>) {
+	const totalPending = pendingMutationCount + pendingSpeechChunkCount + pendingVisitSaveCount;
+	const hasIssue = !isOnline || browserContinuityCritical || totalPending > 0;
+
+	if (!hasIssue) {
+		return null;
+	}
+
+	const busy = isPendingVisitSyncing || isSyncingMutations;
+	const label = !isOnline
+		? totalPending > 0
+			? `Офлайн · ${totalPending}`
+			: "Офлайн"
+		: busy
+			? "Синхронизация…"
+			: `В очереди: ${totalPending || 1}`;
+
 	return (
-		<WorkspaceContinuityStrip
-			browserContinuityCritical={browserContinuityCritical}
-			browserWarnings={browserContinuity?.warnings ?? []}
-			isOnline={isOnline}
-			isPendingVisitSyncing={isPendingVisitSyncing}
-			onCheckDevice={() => void refreshBrowserContinuity({ silent: false })}
-			onFlushSpeech={() => void flushPendingSpeechChunks({ silent: false })}
-			onFlushVisit={() => void flushPendingVisitSaves({ silent: false })}
-			pendingSpeechChunkCount={pendingSpeechChunkCount}
-			pendingVisitSaveCount={pendingVisitSaveCount}
-			{...(networkState ? { networkState } : {})}
-			pendingMutationCount={pendingMutationCount}
-			onSyncMutations={() => void syncOfflineMutations()}
-			isSyncingMutations={isSyncingMutations}
-		/>
+		<button
+			type="button"
+			data-testid="topbar-continuity-chip"
+			onClick={() => {
+				void syncOfflineMutations();
+				void flushPendingVisitSaves({ silent: false });
+			}}
+			className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+			title="Состояние подключения и очереди синхронизации"
+		>
+			{!isOnline ? (
+				<WifiOff className="w-3.5 h-3.5 text-[var(--danger)] shrink-0" aria-hidden="true" />
+			) : (
+				<RefreshCw
+					className={`w-3.5 h-3.5 text-[var(--primary)] shrink-0 ${busy ? "animate-spin" : ""}`}
+					aria-hidden="true"
+				/>
+			)}
+			<span>{label}</span>
+		</button>
 	);
 }

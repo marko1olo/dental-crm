@@ -7,4 +7,3 @@
 export * from "./pricelistCatalogData";
 export * from "./PricelistStudioModal";
 export { PriceItemEditModal } from "../settings/pricesTab/PriceItemEditModal";
-export * from "./DirectPricelistLauncher";

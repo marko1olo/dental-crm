@@ -12,6 +12,7 @@ import type { DenteTelegramHandoffTarget } from "../../../AppConstants";
 
 export interface TopBarNoticesProps {
 	clinicName?: string | undefined;
+	currentView?: string | undefined;
 	defaultClinicNoticeHidden?: boolean | undefined;
 	setDefaultClinicNoticeHidden?: Dispatch<SetStateAction<boolean>> | undefined;
 	reopenOnboarding?: (() => void) | undefined;
@@ -25,6 +26,7 @@ export interface TopBarNoticesProps {
 
 export function TopBarNotices({
 	clinicName,
+	currentView,
 	defaultClinicNoticeHidden,
 	setDefaultClinicNoticeHidden,
 	reopenOnboarding,
@@ -48,19 +50,24 @@ export function TopBarNotices({
 		}
 	};
 
+	const showDefaultClinicBanner =
+		currentView === "shift" &&
+		clinicName === "Стоматология, 1 кабинет" &&
+		!defaultClinicNoticeHidden;
+
 	return (
 		<>
-			{clinicName === "Стоматология, 1 кабинет" && !defaultClinicNoticeHidden && (
+			{showDefaultClinicBanner && (
 				<div className="default-clinic-banner" role="status">
 					<div className="banner-content">
 						<span className="banner-icon" aria-hidden="true">
-							<Rocket className="w-5 h-5 text-amber-500" aria-hidden="true" />
+							<Rocket className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 						</span>
 						<p>
 							<strong>Клиника ещё не настроена?</strong> Переименуйте её в настройках или пройдите быструю настройку.
 						</p>
 					</div>
-					<button className="primary-button banner-btn" type="button" onClick={reopenOnboarding}>
+					<button className="secondary-button banner-btn" type="button" onClick={reopenOnboarding}>
 						Пройти настройку
 					</button>
 					<button

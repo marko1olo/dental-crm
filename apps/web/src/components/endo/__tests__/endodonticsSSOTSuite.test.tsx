@@ -30,7 +30,7 @@ import {
 	sanitizeCanalsForSubmission,
 	getAnatomicalWorkingLength,
 } from "../endodonticsCatalogData";
-import { DirectEndodonticsLauncher } from "../DirectEndodonticsLauncher";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -256,32 +256,22 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 	});
 
 	describe("7. Live UI Mounting & Deep Links (Mandate 8aq & DEF-THER-02 Single SSOT)", () => {
-		it("Endodontics launcher is registered in canonical clinicalLaunchersRegistry.tsx and absent from duplicate AppShell root", () => {
-			const appShellPath = path.join(webSrc, "AppShell.tsx");
-			const appShellContent = fs.readFileSync(appShellPath, "utf-8");
-			assert.ok(!appShellContent.includes("<DirectEndodonticsLauncher />"), "DEF-THER-02: AppShell must NOT duplicate mount <DirectEndodonticsLauncher /> in root DOM");
-
-			const registryPath = path.join(webSrc, "components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx");
-			const registryContent = fs.readFileSync(registryPath, "utf-8");
-			assert.ok(registryContent.includes("endodontics-studio") || registryContent.includes("DirectEndodonticsLauncher"), "clinicalLaunchersRegistry must handle endodontics deep link");
-		});
-
-		it("DirectEndodonticsLauncher mounts in StandaloneLaunchers.tsx under deep links", () => {
-			const launchersPath = path.join(webSrc, "components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx");
-			const content = fs.readFileSync(launchersPath, "utf-8");
-			assert.ok(content.includes("DirectEndodonticsLauncher"), "StandaloneLaunchers must import DirectEndodonticsLauncher");
-			assert.ok(content.includes("endo=1") || content.includes("#endo"), "Must handle endo deep link");
-			assert.ok(content.includes("#root-canals") || content.includes("root_canals=1"), "Must handle root-canals deep link");
+		it("Endodontics studio mounts inside WorkspaceStudioOverlayHost and resolves #endo / #root-canals", () => {
+			const modalsPath = path.join(webSrc, "components/appLayout/AppModalsContainer.tsx");
+			const modalsContent = fs.readFileSync(modalsPath, "utf-8");
+			assert.ok(modalsContent.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer must mount WorkspaceStudioOverlayHost");
+			assert.equal(resolveClinicRoute("", "#endo").studio?.kind, "endo");
+			assert.equal(resolveClinicRoute("?root_canals=1", "#root-canals").studio?.kind, "endo");
 		});
 	});
 
 	describe("8. Keyed Remount & Draft Isolation (Mandates 8bn, 8d/8zq)", () => {
 		it("EndodonticStudioModal mounts with distinct keys across teeth/patients to prevent draft leakage", () => {
-			const directLauncherPath = path.join(endoDir, "DirectEndodonticsLauncher.tsx");
-			const directLauncherContent = fs.readFileSync(directLauncherPath, "utf-8");
+			const overlayPath = path.join(webSrc, "components/appLayout/WorkspaceStudioOverlayHost.tsx");
+			const overlayContent = fs.readFileSync(overlayPath, "utf-8");
 			assert.ok(
-				directLauncherContent.includes('key={`${patientId || "local"}-${toothNumber}`}'),
-				"DirectEndodonticsLauncher must mount EndodonticStudioModal with keyed remount",
+				overlayContent.includes('key={`${remountKey}:${studio.toothFdi ?? activeToothNumber ?? 16}`}'),
+				"WorkspaceStudioOverlayHost must mount EndodonticStudioModal with keyed remount",
 			);
 
 			const modalsLayerPath = path.join(webSrc, "components/odontogram/OdontogramModalsLayer.tsx");

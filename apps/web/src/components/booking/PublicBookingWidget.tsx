@@ -97,8 +97,6 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = (props) =
 	);
 };
 
-export { DirectPublicBookingLauncher } from "./DirectPublicBookingLauncher";
-
 export const PublicBookingWidgetSSOT = PublicBookingWidget;
 export const PublicOnlineBookingWidget = PublicBookingWidget;
 export default PublicBookingWidget;

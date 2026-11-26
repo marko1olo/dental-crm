@@ -48,10 +48,6 @@ export {
 	isOrderOverdue,
 	calcNetRevenueKopecks,
 } from "./dentalLabCatalogData";
-export {
-	DirectDentalLabLauncher,
-	DirectDentalLabOrderLauncher,
-} from "./DirectDentalLabLauncher";
 
 // SSOT 2: Clinical Kanban Board (5 Canonical Lifecycle Stages) & Cards
 export {

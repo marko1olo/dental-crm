@@ -22,7 +22,8 @@ import {
 	type ConsentSignStatus,
 } from "../consentCatalogData";
 import { ConsentStudioModal } from "../index";
-import { DirectConsentLauncher } from "../DirectConsentLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {
 	it("1.1. Registers exactly 15 statutory healthcare consent templates of Russian dentistry", () => {
@@ -183,43 +184,21 @@ describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {
 		assert.ok(html.includes("overflow-x-clip"), "Zero horizontal drift via overflow-x-clip");
 	});
 
-	it("3.1. DirectConsentLauncher mounts cleanly and renders without errors", () => {
-		const html = renderToStaticMarkup(<DirectConsentLauncher />);
+	it("3.1. WorkspaceStudioOverlayHost mounts cleanly and routes consents deep-links", () => {
+		const html = renderToStaticMarkup(<WorkspaceStudioOverlayHost />);
 		assert.equal(typeof html, "string");
+		assert.equal(resolveClinicRoute("?consents=1", "#consents").studio?.kind, "consents");
 	});
 
-	it("3.2. Mandate 8aq: DirectConsentLauncher is mounted in AppShell.tsx and StandaloneLaunchers.tsx", () => {
+	it("3.2. Mandate 8aq: WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx and App.tsx", () => {
 		const cwd = process.cwd();
-		const possibleAppShellPaths = [
-			path.resolve(cwd, "src/AppShell.tsx"),
-			path.resolve(cwd, "apps/web/src/AppShell.tsx"),
-		];
-		const possibleLauncherPaths = [
-			path.resolve(cwd, "src/components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx"),
-			path.resolve(cwd, "apps/web/src/components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx"),
-		];
-
-		const appShellPath = possibleAppShellPaths.find((p) => fs.existsSync(p));
-		const launchersPath = possibleLauncherPaths.find((p) => fs.existsSync(p));
-
-		assert.ok(appShellPath, "AppShell.tsx must exist");
-		assert.ok(launchersPath, "StandaloneLaunchers.tsx must exist");
-
-		const appShellContent = fs.readFileSync(appShellPath, "utf-8");
-		assert.ok(
-			appShellContent.includes("DirectConsentLauncher"),
-			"AppShell.tsx must import and render DirectConsentLauncher",
-		);
-
-		const launchersContent = fs.readFileSync(launchersPath, "utf-8");
-		assert.ok(
-			launchersContent.includes("DirectConsentLauncher"),
-			"StandaloneLaunchers.tsx must import DirectConsentLauncher",
-		);
-		assert.ok(
-			launchersContent.includes("#consents") && launchersContent.includes("consents=1"),
-			"StandaloneLaunchers.tsx must handle #consents and ?consents=1",
-		);
+		const appModalsPath = [
+			path.resolve(cwd, "src/components/appLayout/AppModalsContainer.tsx"),
+			path.resolve(cwd, "apps/web/src/components/appLayout/AppModalsContainer.tsx"),
+		].find((p) => fs.existsSync(p));
+		assert.ok(appModalsPath, "AppModalsContainer.tsx must exist");
+		const content = fs.readFileSync(appModalsPath, "utf-8");
+		assert.ok(content.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer must mount WorkspaceStudioOverlayHost");
 	});
 
 	it("4.1. Verifies testids for automation: consent-studio-modal, consent-signature-pad, print buttons", () => {

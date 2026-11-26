@@ -30,7 +30,7 @@ import {
 	generateSanpinPrintHtml,
 } from "../sanpinCatalogData";
 import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
-import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 
 const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "src/components/sanpin"))
 	? path.resolve(process.cwd(), "src/components/sanpin")
@@ -58,14 +58,9 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 			);
 		});
 
-		it("DirectSanpinLauncher.tsx находится строго в диапазоне 50–90 строк", () => {
+		it("устаревший DirectSanpinLauncher.tsx снесён", () => {
 			const filePath = path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx");
-			const content = fs.readFileSync(filePath, "utf-8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount >= 50 && lineCount <= 90,
-				`DirectSanpinLauncher.tsx содержит ${lineCount} строк (ожидалось 50–90)`,
-			);
+			assert.equal(fs.existsSync(filePath), false);
 		});
 	});
 
@@ -250,10 +245,10 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 		});
 	});
 
-	describe("6. Автономный лаунчер DirectSanpinLauncher", () => {
-		it("DirectSanpinLauncher корректно инициализируется", () => {
-			assert.ok(DirectSanpinLauncher);
-			assert.equal(typeof DirectSanpinLauncher, "function");
+	describe("6. Единый роутинг через WorkspaceStudioOverlayHost", () => {
+		it("WorkspaceStudioOverlayHost корректно инициализируется", () => {
+			assert.ok(WorkspaceStudioOverlayHost);
+			assert.equal(typeof WorkspaceStudioOverlayHost, "function");
 		});
 	});
 });

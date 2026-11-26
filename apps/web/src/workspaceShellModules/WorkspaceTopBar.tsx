@@ -94,7 +94,7 @@ export function WorkspaceTopbar({
 	const hash = typeof window !== "undefined" ? window.location.hash : "";
 	const isSterileZone =
 		selectedWorkspaceRole === "doctor" ||
-		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(effectiveView as string) ||
+		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(String(effectiveView)) ||
 		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
 	const isDndActive = agentState === "dnd";
 	const isIncomingCall = Boolean(

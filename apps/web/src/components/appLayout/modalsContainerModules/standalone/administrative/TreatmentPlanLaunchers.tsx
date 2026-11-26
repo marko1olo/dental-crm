@@ -1,33 +1,10 @@
 /**
- * TreatmentPlanLaunchers — Сравнение сценариев, сметы и планы лечения (Мандат 8b, <= 60 строк).
- * Тонкий URL-роутер: единый канонический лаунчер DirectTreatmentPlanLauncher (SSOT).
+ * TreatmentPlanLaunchers — Совместимый фасад (обработка перенесена в routeResolver).
  */
 
-import React from "react";
+import type React from "react";
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
-import { hasUrlToken } from "../deepLinkUrl";
-import { DirectTreatmentPlanLauncher } from "../../../../treatment-plans/DirectTreatmentPlanLauncher";
 
-export function renderTreatmentPlanLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
-	const { isPlanScenariosDirectModalOpen, isCasePresenterDirectModalOpen } = props;
-
-	if (
-		isPlanScenariosDirectModalOpen ||
-		isCasePresenterDirectModalOpen ||
-		hasUrlToken([
-			"scenarios",
-			"presenter",
-			"estimator",
-			"treatment-studio",
-			"treatment_studio",
-			"treatment-plans",
-			"treatment_plans",
-			"plans",
-			"estimates",
-		])
-	) {
-		return <DirectTreatmentPlanLauncher />;
-	}
-
+export function renderTreatmentPlanLaunchers(_props: StandaloneLaunchersProps): React.ReactElement | null {
 	return null;
 }

@@ -14,7 +14,6 @@ import {
 	PrescriptionWorkspaceModal,
 	PrescriptionCockpitModal,
 	PrescriptionPrintModal,
-	DirectPrescriptionLauncher,
 	CANONICAL_DENTAL_DRUGS,
 	CLINICAL_FAST_SETS,
 	DENTAL_PRESCRIPTION_CATEGORIES,
@@ -49,12 +48,10 @@ describe("Prescription Studio SSOT & Doctor Autonomy Red Team Suite", () => {
 	it("1.1 Sweet Spot File Sizing (Mandate 8b): zero monoliths, zero micro-shredder", () => {
 		const catalogLines = countFileLines("src/components/prescriptions/prescriptionCatalogData.ts");
 		const studioLines = countFileLines("src/components/prescriptions/PrescriptionStudioModal.tsx");
-		const launcherLines = countFileLines("src/components/prescriptions/DirectPrescriptionLauncher.tsx");
 		const cssLines = countFileLines("src/components/prescriptions/prescriptionStudio.css");
 
 		assert.ok(catalogLines >= 250 && catalogLines <= 500, `Catalog lines must be in sweet spot: ${catalogLines}`);
 		assert.ok(studioLines >= 250 && studioLines <= 500, `Studio modal lines must be in sweet spot: ${studioLines}`);
-		assert.ok(launcherLines >= 50 && launcherLines <= 100, `Launcher lines must be in 60-80 range: ${launcherLines}`);
 		assert.ok(cssLines >= 180 && cssLines <= 450, `CSS lines must be in 200-400 range: ${cssLines}`);
 	});
 
@@ -168,14 +165,14 @@ describe("Prescription Studio SSOT & Doctor Autonomy Red Team Suite", () => {
 		assert.ok(soap.includes("Холод к щеке на 15 минут"), "SOAP must include care advice");
 	});
 
-	it("3.2 Facade & Direct Launcher Parity: all facades point to same canonical studio", () => {
+	it("3.2 Facade & Overlay Host Parity: all facades point to same canonical studio", async () => {
 		assert.strictEqual(PrescriptionModal, PrescriptionStudioModal, "PrescriptionModal must be alias");
 		assert.strictEqual(PrescriptionWorkspaceModal, PrescriptionStudioModal, "PrescriptionWorkspaceModal must be alias");
 		assert.strictEqual(PrescriptionCockpitModal, PrescriptionStudioModal, "PrescriptionCockpitModal must be alias");
 		assert.strictEqual(PrescriptionPrintModal, PrescriptionStudioModal, "PrescriptionPrintModal must be alias");
 
-		const launcherHtml = renderToString(<DirectPrescriptionLauncher />);
-		// On non-browser SSR it returns null cleanly
-		assert.strictEqual(launcherHtml, "", "DirectPrescriptionLauncher returns null when no matching url");
+		const { WorkspaceStudioOverlayHost } = await import("../../appLayout/WorkspaceStudioOverlayHost");
+		const hostHtml = renderToString(<WorkspaceStudioOverlayHost />);
+		assert.strictEqual(hostHtml, "", "WorkspaceStudioOverlayHost returns null when no studio overlay is open");
 	});
 });

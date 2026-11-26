@@ -42,6 +42,7 @@ export function AppTopBar(props: AppTopBarProps) {
 		<>
 			<TopBarNotices
 				clinicName={dashboard?.clinicName}
+				currentView={currentView}
 				defaultClinicNoticeHidden={defaultClinicNoticeHidden}
 				setDefaultClinicNoticeHidden={setDefaultClinicNoticeHidden}
 				reopenOnboarding={reopenOnboarding}
@@ -53,52 +54,56 @@ export function AppTopBar(props: AppTopBarProps) {
 				setTelegramHandoffNotice={props.setTelegramHandoffNotice}
 			/>
 
-			<WorkspaceTopbar
-				clinicName={dashboard?.clinicName || "Стоматология"}
-				onGoToDictation={goToVisitDictation ?? (() => {})}
-				onGoToSchedule={() => {
-					if (typeof window !== "undefined") {
-						const isSchedule = window.location.hash === "#schedule" || window.location.hash === "schedule";
-						if (isSchedule) {
-							window.dispatchEvent(new CustomEvent("dente-open-quick-booking"));
-						} else {
-							window.location.hash = "schedule";
+			<div className="w-full min-w-0 flex items-center bg-[var(--paper)] border-b border-[var(--line)]">
+				<div className="flex-1 min-w-0">
+					<WorkspaceTopbar
+						clinicName={dashboard?.clinicName || "Стоматология"}
+						onGoToDictation={goToVisitDictation ?? (() => {})}
+						onGoToSchedule={() => {
+							if (typeof window !== "undefined") {
+								const isSchedule = window.location.hash === "#schedule" || window.location.hash === "schedule";
+								if (isSchedule) {
+									window.dispatchEvent(new CustomEvent("dente-open-quick-booking"));
+								} else {
+									window.location.hash = "schedule";
+								}
+							}
+						}}
+						onGoToVisit={() => {
+							if (typeof window !== "undefined") window.location.hash = "visit";
+						}}
+						onReopenOnboarding={reopenOnboarding ?? (() => {})}
+						onRoleChange={setSelectedWorkspaceRole ?? (() => {})}
+						onViewIntent={preloadWorkspaceView}
+						roleFocusOrder={roleFocusOrder ?? []}
+						selectedWorkspaceRole={selectedWorkspaceRole ?? "doctor"}
+						showAdministrationTopActions={showAdministrationTopActions ?? false}
+						showDoctorVisitShortcut={showDoctorVisitShortcut ?? false}
+						staffRoleLabels={
+							staffRoleLabels && Object.keys(staffRoleLabels).length > 0
+								? (staffRoleLabels as Record<StaffRole, string>)
+								: defaultStaffRoleLabels
 						}
-					}
-				}}
-				onGoToVisit={() => {
-					if (typeof window !== "undefined") window.location.hash = "visit";
-				}}
-				onReopenOnboarding={reopenOnboarding ?? (() => {})}
-				onRoleChange={setSelectedWorkspaceRole ?? (() => {})}
-				onViewIntent={preloadWorkspaceView}
-				roleFocusOrder={roleFocusOrder ?? []}
-				selectedWorkspaceRole={selectedWorkspaceRole ?? "doctor"}
-				showAdministrationTopActions={showAdministrationTopActions ?? false}
-				showDoctorVisitShortcut={showDoctorVisitShortcut ?? false}
-				staffRoleLabels={
-					staffRoleLabels && Object.keys(staffRoleLabels).length > 0
-						? (staffRoleLabels as Record<StaffRole, string>)
-						: defaultStaffRoleLabels
-				}
-				todayIso={dashboard?.todayIso || props.todayIso || ""}
-				onLockSession={handleLockSession ?? (() => {})}
-				onOpenDoctorShiftCockpit={openDoctorShiftCockpit ?? (() => {})}
-				onOpenCbctDemo={() => {
-					if (typeof setIsCbctDirectModalOpen === "function") {
-						setIsCbctDirectModalOpen(true);
-					}
-				}}
-				currentView={currentView}
-			/>
-
-			<TopBarEmergencyBell
-				activeCitoAlerts={activeCitoAlerts}
-				dismissCitoAlert={dismissCitoAlert}
-				showSosButton={false}
-			/>
-
-			<TopBarContinuitySection {...props} />
+						todayIso={dashboard?.todayIso || props.todayIso || ""}
+						onLockSession={handleLockSession ?? (() => {})}
+						onOpenDoctorShiftCockpit={openDoctorShiftCockpit ?? (() => {})}
+						onOpenCbctDemo={() => {
+							if (typeof setIsCbctDirectModalOpen === "function") {
+								setIsCbctDirectModalOpen(true);
+							}
+						}}
+						currentView={currentView}
+					/>
+				</div>
+				<div className="hidden md:flex items-center gap-1.5 pr-2 shrink-0">
+					<TopBarContinuitySection {...props} />
+					<TopBarEmergencyBell
+						activeCitoAlerts={activeCitoAlerts}
+						dismissCitoAlert={dismissCitoAlert}
+						showSosButton={false}
+					/>
+				</div>
+			</div>
 
 			<TopBarOnboardingStrips {...props} />
 

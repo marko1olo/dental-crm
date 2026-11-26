@@ -5,4 +5,3 @@
  */
 
 export * from "./DmsStudioModal.js";
-export * from "./DirectInsuranceLauncher.js";

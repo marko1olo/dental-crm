@@ -28,7 +28,8 @@ import {
 	CANONICAL_CLOSED_PERIODS,
 } from "../payrollCatalogData";
 import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
-import { DirectPayrollLauncher } from "../DirectPayrollLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import { useDoctorPayrollTabData } from "../../../views/financeView/payrollTabModules/useDoctorPayrollTabData";
 
@@ -187,26 +188,18 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 		it("3.1 Verifies Sweet Spot file limits across payroll canonical SSOT files", () => {
 			const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
 			const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
-			const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
 			const cssPath = path.join(baseDir, "styles/doctorPayrollStudio.css");
 
 			assert.ok(fs.existsSync(catalogPath));
 			assert.ok(fs.existsSync(studioPath));
-			assert.ok(fs.existsSync(launcherPath));
 			assert.ok(fs.existsSync(cssPath));
 
 			const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
 			const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
-			const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
 			const cssLines = fs.readFileSync(cssPath, "utf8").split("\n").length;
 
-			// SSOT Catalog: Sweet Spot 300–380 lines (and <= 350 for old test compatibility)
 			assert.ok(catalogLines >= 200 && catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (target 300–350)`);
-			// Studio Modal: Sweet Spot 400–480 lines
 			assert.ok(studioLines >= 380 && studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (target 400–480)`);
-			// Launcher: Sweet Spot 60–80 lines
-			assert.ok(launcherLines >= 55 && launcherLines <= 85, `DirectPayrollLauncher.tsx has ${launcherLines} lines (target 60–80)`);
-			// Studio CSS: Sweet Spot 250–350 lines
 			assert.ok(cssLines >= 250 && cssLines <= 350, `doctorPayrollStudio.css has ${cssLines} lines (target 250–350)`);
 		});
 
@@ -232,20 +225,15 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			assert.ok(content.includes("Закрытые периоды и выплаты"));
 		});
 
-		it("3.4 Verifies DirectPayrollLauncher is mounted in administrative registries (Mandate 8aq)", () => {
-			const registryPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
-			const registryContent = fs.readFileSync(registryPath, "utf8");
-			assert.ok(registryContent.includes("DirectPayrollLauncher"), "administrativeLaunchersRegistry must include DirectPayrollLauncher");
-			assert.ok(registryContent.includes("<DirectPayrollLauncher />"), "administrativeLaunchersRegistry must render <DirectPayrollLauncher />");
-
-			const specializedPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx");
-			const specializedContent = fs.readFileSync(specializedPath, "utf8");
-			assert.ok(specializedContent.includes("DirectPayrollLauncher"), "SpecializedAdministrativeLaunchers must include DirectPayrollLauncher");
+		it("3.4 Verifies Payroll Studio is mounted via WorkspaceStudioOverlayHost & routeResolver (Mandate 8aq)", () => {
+			const containerPath = path.resolve(__dirname, "../../appLayout/AppModalsContainer.tsx");
+			assert.ok(fs.readFileSync(containerPath, "utf8").includes("WorkspaceStudioOverlayHost"));
+			assert.equal(resolveClinicRoute("", "#payroll").studio?.kind, "doctor_payroll");
 		});
 
-		it("3.5 Verifies clean exports of Studio and Launcher components", () => {
+		it("3.5 Verifies clean exports of Studio and OverlayHost components", () => {
 			assert.ok(DoctorPayrollStudioModal);
-			assert.ok(DirectPayrollLauncher);
+			assert.ok(WorkspaceStudioOverlayHost);
 		});
 	});
 

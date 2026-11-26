@@ -209,20 +209,21 @@ describe("Odontogram Studio & Launchers Architecture Inquisition", () => {
 		assert.ok(html.length >= 0);
 	});
 
-	it("11. Verifies OdontogramModule is registered in clinicalLaunchersRegistry.tsx (Mandate 8aq)", () => {
-		const registryPath = path.join(
+	it("11. Verifies OdontogramModule is mounted in WorkspaceStudioOverlayHost.tsx & routeResolver (Mandate 8aq)", async () => {
+		const hostPath = path.join(
 			webSrcDir,
-			"components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx",
+			"components/appLayout/WorkspaceStudioOverlayHost.tsx",
 		);
-		const content = fs.readFileSync(registryPath, "utf8");
+		const content = fs.readFileSync(hostPath, "utf8");
 
 		assert.ok(
 			content.includes("OdontogramModule"),
-			"clinicalLaunchersRegistry.tsx must import and render OdontogramModule",
+			"WorkspaceStudioOverlayHost.tsx must import and render OdontogramModule",
 		);
-		assert.ok(
-			content.includes("odontogram"),
-			"clinicalLaunchersRegistry.tsx must handle odontogram token",
+		const { resolveClinicRoute } = await import("../../../router/routeResolver");
+		assert.equal(
+			resolveClinicRoute("", "#odontogram").studio?.kind,
+			"odontogram_fullscreen",
 		);
 	});
 

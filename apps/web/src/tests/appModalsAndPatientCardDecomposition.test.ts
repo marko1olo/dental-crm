@@ -35,7 +35,7 @@ describe("AppModalsContainer and PatientCard Decomposition Suite", () => {
 		assert.ok(launchersLines <= 500, `StandaloneLaunchers must be <= 500 lines, was ${launchersLines}`);
 
 		const facadeContent = fs.readFileSync(facadePath, "utf8");
-		assert.ok(facadeContent.includes("renderStandaloneLaunchers"), "Facade must export renderStandaloneLaunchers");
+		assert.ok(facadeContent.includes("WorkspaceStudioOverlayHost"), "Facade must mount WorkspaceStudioOverlayHost");
 		assert.ok(facadeContent.includes("ClinicalModalsSubcontainer"), "Facade must coordinate ClinicalModalsSubcontainer");
 		assert.ok(facadeContent.includes("AdministrativeModalsSubcontainer"), "Facade must coordinate AdministrativeModalsSubcontainer");
 	});

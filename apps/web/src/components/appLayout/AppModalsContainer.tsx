@@ -5,19 +5,16 @@
 
 import React from "react";
 import type { AppModalsContainerProps } from "./types";
-import { type StandaloneLaunchersProps, type LoyaltyModalContext } from "./modalsContainerModules/modalsContainerTypes";
-import { renderStandaloneLaunchers } from "./modalsContainerModules/StandaloneLaunchers";
+import type { LoyaltyModalContext } from "./modalsContainerModules/modalsContainerTypes";
 import { ClinicalModalsSubcontainer } from "./modalsContainerModules/ClinicalModalsSubcontainer";
 import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/AdministrativeModalsSubcontainer";
 import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModals";
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
+import { WorkspaceStudioOverlayHost } from "./WorkspaceStudioOverlayHost";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
 import { DentalLabStudioModal, type DentalLabStudioModalProps } from "../lab/DentalLabStudioModal";
 import { DicomViewerModal } from "../imaging/DicomViewerModal";
-
-export type { StandaloneLaunchersProps };
-export { renderStandaloneLaunchers };
 
 export function AppModalsContainer(props: AppModalsContainerProps) {
 	const bridge = useAppModalsEventBridge();
@@ -38,8 +35,6 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 
 	return (
 		<>
-			{renderStandaloneLaunchers(props)}
-
 			{isDicomFromStore && (() => {
 				const dicomPayload = primaryModal?.payload && typeof primaryModal.payload === "object"
 					? (primaryModal.payload as Record<string, unknown>)
@@ -133,6 +128,7 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				}}
 			/>
 
+			<WorkspaceStudioOverlayHost />
 		</>
 	);
 }

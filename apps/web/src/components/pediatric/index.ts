@@ -1,4 +1,3 @@
-export * from "./DirectPediatricLauncher";
 export * from "./FranklBehaviorBadge";
 export * from "./PediatricParentMemoModal";
 export * from "./VisitPediatricProtocolWidget";

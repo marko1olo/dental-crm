@@ -345,10 +345,10 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.ok(html.includes("Текущий этап воронки"));
 	});
 
-	it("19. DirectTreatmentPlanLauncher: ликвидация захардкоженных ФИО и реактивная гидратация", async () => {
+	it("19. WorkspaceStudioOverlayHost: ликвидация захардкоженных ФИО и реактивная гидратация", async () => {
 		const fs = await import("node:fs");
 		const path = await import("node:path");
-		const relPath = "src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx";
+		const relPath = "src/components/appLayout/WorkspaceStudioOverlayHost.tsx";
 		const fullPath = fs.existsSync(relPath) ? relPath : path.resolve(process.cwd(), "apps/web", relPath);
 		const code = fs.readFileSync(fullPath, "utf-8");
 

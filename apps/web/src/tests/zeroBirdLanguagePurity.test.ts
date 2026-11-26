@@ -282,10 +282,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!visitEmkCode.includes("услугам 804н"), "VisitEmkTab must not cite 804н in stepper step 3");
 		assert.ok(!visitEmkCode.includes("Норма: Z01.2"), "VisitEmkTab must not expose Z01.2 in mobile norm action button");
 
-		const tourCode = readComponent("components/tutorial/InteractiveGuideTour.tsx");
-		assert.ok(!tourCode.includes("54-ФЗ"), "InteractiveGuideTour must not cite 54-ФЗ");
-		assert.ok(!tourCode.includes("043/у"), "InteractiveGuideTour must not cite 043/у");
-		assert.ok(!tourCode.includes("804н"), "InteractiveGuideTour must not cite 804н");
+		const tourCode = readComponent("components/workspace/trainingTourModules/questCatalogTracks.ts");
+		assert.ok(!tourCode.includes("54-ФЗ"), "questCatalogTracks must not cite 54-ФЗ");
+		assert.ok(!tourCode.includes("043/у"), "questCatalogTracks must not cite 043/у");
+		assert.ok(!tourCode.includes("804н"), "questCatalogTracks must not cite 804н");
 
 		const visitViewCode = readComponent("VisitView.tsx");
 		assert.ok(!visitViewCode.includes("Форма 043/у"), "VisitView must not cite Форма 043/у in print title or menu");

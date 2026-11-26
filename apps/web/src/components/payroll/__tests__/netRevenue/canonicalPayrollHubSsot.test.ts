@@ -22,7 +22,8 @@ import {
 	CANONICAL_DEMO_ORDERS,
 } from "../../payrollCatalogData";
 import { DoctorPayrollStudioModal } from "../../DoctorPayrollStudioModal";
-import { DirectPayrollLauncher } from "../../DirectPayrollLauncher";
+import { WorkspaceStudioOverlayHost } from "../../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../../router/routeResolver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -135,31 +136,25 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 		const baseDir = path.resolve(__dirname, "../..");
 		const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
 		const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
-		const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
 
 		assert.ok(fs.existsSync(catalogPath));
 		assert.ok(fs.existsSync(studioPath));
-		assert.ok(fs.existsSync(launcherPath));
 
 		const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
 		const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
-		const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
 
 		assert.ok(catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (must be <= 350)`);
 		assert.ok(studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (must be <= 480)`);
-		assert.ok(launcherLines <= 90, `DirectPayrollLauncher.tsx has ${launcherLines} lines (must be <= 90)`);
 	});
 
-	it("3.2 Verifies DirectPayrollLauncher is mounted in administrative registry (Mandate 8aq)", () => {
-		const registryPath = path.resolve(__dirname, "../../../appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
-		const registryContent = fs.readFileSync(registryPath, "utf8");
-
-		assert.ok(registryContent.includes("DirectPayrollLauncher"), "administrativeLaunchersRegistry must import and mount DirectPayrollLauncher");
-		assert.ok(registryContent.includes("<DirectPayrollLauncher />"), "administrativeLaunchersRegistry must render <DirectPayrollLauncher />");
+	it("3.2 Verifies Payroll Studio is mounted via WorkspaceStudioOverlayHost & routeResolver (Mandate 8aq)", () => {
+		const containerPath = path.resolve(__dirname, "../../../appLayout/AppModalsContainer.tsx");
+		assert.ok(fs.readFileSync(containerPath, "utf8").includes("WorkspaceStudioOverlayHost"));
+		assert.equal(resolveClinicRoute("", "#payroll").studio?.kind, "doctor_payroll");
 	});
 
 	it("3.3 Components export cleanly without errors", () => {
 		assert.ok(DoctorPayrollStudioModal);
-		assert.ok(DirectPayrollLauncher);
+		assert.ok(WorkspaceStudioOverlayHost);
 	});
 });

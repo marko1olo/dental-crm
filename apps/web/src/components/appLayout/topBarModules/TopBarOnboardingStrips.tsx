@@ -51,7 +51,7 @@ export function TopBarOnboardingStrips(props: Partial<TopBarOnboardingStripsProp
 	} = props;
 
 	const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
-	const isClinicalView = currentView === "visit" || currentView === "shift" || currentView === "schedule";
+	const isShiftHome = currentView === "shift";
 	const isStripVisible =
 		!onboardingDismissed &&
 		!showFullOnboardingGuide &&
@@ -59,7 +59,7 @@ export function TopBarOnboardingStrips(props: Partial<TopBarOnboardingStripsProp
 		!isStripDismissedLocally &&
 		!isDemoShowcaseMode() &&
 		!isMobile &&
-		!isClinicalView;
+		isShiftHome;
 
 	return (
 		<>
@@ -74,14 +74,14 @@ export function TopBarOnboardingStrips(props: Partial<TopBarOnboardingStripsProp
 						{onboardingSteps?.length || 5} · готовность документов{" "}
 						{Number.isFinite(legalReadinessPercent) ? Math.round(legalReadinessPercent) : 0}%
 					</span>
-					<button className="primary-button" type="button" onClick={() => void continueOnboardingInDraftMode("visit")}>
-						<ClipboardCheck aria-hidden="true" /> Прием
+					<button className="secondary-button" type="button" onClick={() => void continueOnboardingInDraftMode("visit")}>
+						<ClipboardCheck className="w-4 h-4 shrink-0" aria-hidden="true" /> Прием
 					</button>
 					<button className="secondary-button" type="button" onClick={() => void continueOnboardingInDraftMode("schedule")}>
-						<CalendarDays aria-hidden="true" /> Расписание
+						<CalendarDays className="w-4 h-4 shrink-0" aria-hidden="true" /> Расписание
 					</button>
 					<button className="secondary-button" type="button" onClick={() => openOnboardingGuide()}>
-						<ShieldCheck aria-hidden="true" /> Настроить
+						<ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" /> Настроить
 					</button>
 					<button
 						className="secondary-button"
@@ -94,7 +94,7 @@ export function TopBarOnboardingStrips(props: Partial<TopBarOnboardingStripsProp
 						title="Скрыть подсказку"
 						aria-label="Скрыть подсказку"
 					>
-						<X aria-hidden="true" /> Скрыть
+						<X className="w-4 h-4 shrink-0" aria-hidden="true" /> Скрыть
 					</button>
 				</section>
 			)}

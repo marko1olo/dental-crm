@@ -131,5 +131,8 @@ The frontend is a Single Page Application (SPA) built with React 19 and Vite.
     *   `imagingStore.ts` — Selected DICOM series, active viewer layout.
 *   **God Context (`useAppLogic.tsx`):** Centralized state coordinator binding legacy clinical, schedule, and billing workflows into `AppLogicContext`.
 
-### ⚡ View Preloading (`apps/web/src/workspacePreload.ts`)
+### ⚡ View Preloading (`apps/web/src/workspacePreload.ts`) & Persistent Single-Shell Router
 To prevent route-change lags in the custom UI shell, all core views (Schedule, Patients, Documents, Finance, Communications, Settings) are imported at app initialization.
+* **Shared Route Contracts (`packages/shared/src/navigation/workspaceRoutes.ts`):** Defines `PrimaryWorkspaceView`, `WorkspaceOverlayStudio`, `ResolvedClinicRoute`, and `TopLevelSurface`.
+* **Unified URL Resolver & Top-Level Contours (`apps/web/src/router/routeResolver.ts`, `TopLevelSurfaceRouters.tsx`):** `main.tsx` mounts strictly 3 isolated top-level contours (`public_portal`, `aux_display`, `clinic_workspace`), keeping `AppShell` and `AppNavigationShell` persistent across deep-link studios.
+* **Event Bus & Depth-1 Studio Overlay Host (`apps/web/src/lib/clinicEventBus.ts`, `apps/web/src/components/appLayout/WorkspaceStudioOverlayHost.tsx`):** Replaces 35 standalone `<Direct*Launcher />` wrappers with a single flat `depth = 1` overlay host, keyed remount on `patientId`, and zero fake fallback patients (preserving `DirectShiftLauncher.tsx` for `#shift-closing`).

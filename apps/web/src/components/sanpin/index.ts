@@ -13,7 +13,6 @@ export * from "./sanpinCatalogData";
 export { SterilizationBatchCycleModal as SanpinStudioModal } from "./SterilizationBatchCycleModal";
 export type { SterilizationBatchCycleModalProps as SanpinStudioModalProps } from "./SterilizationBatchCycleModal";
 export type SanpinStudioTab = "autoclave" | "kraft" | "cleaning";
-export * from "./DirectSanpinLauncher";
 export * from "./SanpinRegisters";
 export * from "./SterilizationBatchCycleModal";
 export { UvAndCleaningTab as SanpinUvAndCleaningRegisterTab } from "./UvAndCleaningTab";

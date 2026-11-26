@@ -41,8 +41,8 @@ import {
 	DocumentsStudioModal,
 	NO_PATIENT_SELECTED_PLACEHOLDER,
 } from "../DocumentsStudioModal";
-import { DirectDocumentsLauncher } from "../DirectDocumentsLauncher";
-import { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webSrcDir = path.resolve(__dirname, "../../..");
@@ -191,45 +191,22 @@ describe("🏛️ DocumentsStudioModal: Mandates 8e, 8am & Apple HIG", () => {
 	});
 });
 
-describe("🏛️ Direct Launchers & Live UI Mounting (Mandate 8aq)", () => {
-	it("3.1. DirectDocumentsLauncher монтируется и рендерится без ошибок", () => {
-		const html = renderToString(<DirectDocumentsLauncher />);
+describe("🏛️ Single-Shell Studio Mounting & Deep Links (Mandate 8aq)", () => {
+	it("3.1. WorkspaceStudioOverlayHost монтируется и рендерится без ошибок", () => {
+		const html = renderToString(<WorkspaceStudioOverlayHost />);
 		assert.ok(html !== undefined);
 	});
 
-	it("3.2. DirectConsentLauncher перенаправлен на канонический SSOT", () => {
-		const html = renderToString(<DirectConsentLauncher />);
-		assert.ok(html !== undefined);
+	it("3.2. routeResolver маршрутизирует #documents и #consents в единый каркас", () => {
+		assert.equal(resolveClinicRoute("", "#documents").view, "documents");
+		assert.equal(resolveClinicRoute("", "#consents").studio?.kind, "consents");
 	});
 
-	it("3.3. DirectDocumentsLauncher смонтирован в AppShell.tsx", () => {
-		const appShellPath = path.join(webSrcDir, "AppShell.tsx");
-		assert.ok(fs.existsSync(appShellPath), "AppShell.tsx должен существовать");
-		const appShellContent = fs.readFileSync(appShellPath, "utf-8");
-		assert.ok(appShellContent.includes("DirectDocumentsLauncher"), "AppShell обязан монтировать DirectDocumentsLauncher");
-	});
-
-	it("3.4. DirectDocumentsLauncher смонтирован в SpecializedAdministrativeLaunchers.tsx", () => {
-		const specializedPath = path.join(
-			webSrcDir,
-			"components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx",
-		);
-		assert.ok(fs.existsSync(specializedPath), "SpecializedAdministrativeLaunchers.tsx должен существовать");
-		const specializedContent = fs.readFileSync(specializedPath, "utf-8");
-		assert.ok(specializedContent.includes("DirectDocumentsLauncher"), "SpecializedAdministrativeLaunchers обязан рендерить DirectDocumentsLauncher");
-		assert.ok(specializedContent.includes("#documents"), "Должен обрабатывать хеш #documents");
-		assert.ok(specializedContent.includes("#consents"), "Должен обрабатывать хеш #consents");
-	});
-
-	it("3.5. DirectDocumentsLauncher зарегистрирован в administrativeLaunchersRegistry.tsx", () => {
-		const registryPath = path.join(
-			webSrcDir,
-			"components/appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx",
-		);
-		assert.ok(fs.existsSync(registryPath), "administrativeLaunchersRegistry.tsx должен существовать");
-		const registryContent = fs.readFileSync(registryPath, "utf-8");
-		assert.ok(registryContent.includes("DirectDocumentsLauncher"), "administrativeLaunchersRegistry обязан импортировать DirectDocumentsLauncher");
-		assert.ok(registryContent.includes("documents-studio"), "administrativeLaunchersRegistry обязан содержать запись documents-studio");
+	it("3.3. WorkspaceStudioOverlayHost смонтирован в AppModalsContainer.tsx", () => {
+		const modalsPath = path.join(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
+		assert.ok(fs.existsSync(modalsPath), "AppModalsContainer.tsx должен существовать");
+		const content = fs.readFileSync(modalsPath, "utf-8");
+		assert.ok(content.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer обязан монтировать WorkspaceStudioOverlayHost");
 	});
 });
 

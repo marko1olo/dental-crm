@@ -1,20 +1,22 @@
 import React from "react";
-import { BookOpen, ChevronDown, ShieldCheck, Pill } from "lucide-react";
+import { BookOpen, ChevronDown, Pill, ShieldCheck } from "lucide-react";
+import type { ClinicalSoapPreset } from "../../clinicalSoapTypes";
+import { emitClinicEvent } from "../../../../lib/clinicEventBus";
 import { EmkProtocolsDropdownMenu } from "./EmkProtocolsDropdownMenu";
-import { useEmkDropdownMenu } from "./useEmkDropdownMenu";
 import { EmkScheduleAndAutosaveBadges } from "./EmkScheduleAndAutosaveBadges";
+import { useEmkDropdownMenu } from "./useEmkDropdownMenu";
 
 export interface EmkQuickActionButtonsProps {
 	onApplyPhysiologicalNorm?: (() => void) | undefined;
 	onApplyNorm?: (() => void) | undefined;
 	onApplyOrthoNorm?: (() => void) | undefined;
 	onApplySurgeryNorm?: (() => void) | undefined;
+	onApplySoapPreset?: ((preset: ClinicalSoapPreset) => void) | undefined;
+	updateVisitNoteField?: ((field: string, value: string) => void) | undefined;
 	onOpenProtocolsCatalog?: (() => void) | undefined;
 	onToggleStarProtocols?: (() => void) | undefined;
 	onOpenConsent?: (() => void) | undefined;
 	onPrintMedicalCard?: (() => void) | undefined;
-	/** @deprecated Используйте onPrintMedicalCard */
-	onPrint043?: (() => void) | undefined;
 	onToggleCopilot?: (() => void) | undefined;
 	isCopilotOpen?: boolean | undefined;
 	handleSchedule: () => void;
@@ -23,24 +25,38 @@ export interface EmkQuickActionButtonsProps {
 	specialtyFocusNode?: React.ReactNode | undefined;
 	recentVisitActionNode?: React.ReactNode | undefined;
 	followupScheduleNode?: React.ReactNode | undefined;
-	canUndo: boolean; canRedo: boolean;
-	handleUndo: () => void; handleRedo: () => void;
+	canUndo: boolean;
+	canRedo: boolean;
+	handleUndo: () => boolean | void;
+	handleRedo: () => boolean | void;
 }
 
 export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 	const {
-		onApplyPhysiologicalNorm, onApplyNorm, onApplyOrthoNorm, onApplySurgeryNorm,
-		onOpenProtocolsCatalog, onToggleStarProtocols, onOpenConsent, onPrintMedicalCard, onPrint043,
-		handleSchedule, hasUnsavedChanges = false, voicePilotNode, specialtyFocusNode,
-		recentVisitActionNode, followupScheduleNode,
-		canUndo, canRedo, handleUndo, handleRedo,
+		onApplyPhysiologicalNorm,
+		onApplyNorm,
+		onApplySoapPreset,
+		updateVisitNoteField,
+		onOpenProtocolsCatalog,
+		onToggleStarProtocols,
+		onOpenConsent,
+		onPrintMedicalCard,
+		handleSchedule,
+		hasUnsavedChanges,
+		voicePilotNode,
+		specialtyFocusNode,
+		recentVisitActionNode,
+		followupScheduleNode,
+		canUndo,
+		canRedo,
+		handleUndo,
+		handleRedo,
 	} = props;
-	const resolvedPrintMedicalCard = onPrintMedicalCard ?? onPrint043;
 	const { isExtraMenuOpen, setIsExtraMenuOpen, dropdownPos, buttonRef, menuRef } = useEmkDropdownMenu();
 
 	return (
 		<div
-			className="emk-tier1-quick-soap-bar flex items-center justify-between gap-1.5 sm:gap-2 px-2 w-full min-w-0 h-[34px] min-h-[34px] max-h-[34px] box-border"
+			className="emk-tier1-quick-soap-bar flex items-center justify-between gap-1.5 sm:gap-2 px-2 w-full min-w-0 h-[36px] min-h-[36px] max-h-[36px] box-border"
 			data-testid="emk-tier1-quick-soap-bar"
 		>
 			<div className="flex items-center gap-1.5 shrink-0 min-w-0">
@@ -52,10 +68,10 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 							if (onApplyNorm) onApplyNorm();
 							else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
 						}}
-						className="secondary-button border border-[var(--success-line)] bg-[var(--success-soft)] hover:bg-[var(--success-soft)]/80 text-[var(--success-ink)] font-bold text-xs h-[28px] px-2.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+						className="secondary-button border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 						title="Заполнить дневник физиологической нормой («Соматически здоров»)"
 					>
-						<ShieldCheck className="w-3.5 h-3.5 text-[var(--success-ink)] shrink-0" />
+						<ShieldCheck className="w-3.5 h-3.5 text-[var(--success-ink,var(--primary))] shrink-0" />
 						<span className="hidden sm:inline">Соматически здоров / Норма</span>
 						<span className="sm:hidden">Норма</span>
 					</button>
@@ -64,70 +80,67 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 				<button
 					type="button"
 					data-testid="btn-chairside-prescriptions-toolbar"
-					onClick={() => {
-						if (typeof window !== "undefined") {
-							window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
-						}
-					}}
-					className="secondary-button border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs h-[28px] px-2.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+					onClick={() => emitClinicEvent("studio:open", { studio: { kind: "prescriptions" } })}
+					className="secondary-button border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs h-8 px-2.5 rounded-md inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 					title="Выписать рецепты и назначения на лекарства"
 				>
-					<Pill className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
-					<span className="hidden md:inline">Рецепты и назначения</span>
+					<Pill className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
+					<span className="hidden md:inline">Рецепты</span>
 					<span className="md:hidden">Рецепты</span>
 				</button>
 
-				{onOpenProtocolsCatalog && (
-					<div className="inline-flex items-center shrink-0">
+				<div className="inline-flex items-center shrink-0">
+					{onOpenProtocolsCatalog && (
 						<button
 							type="button"
 							data-testid="btn-open-protocols-catalog-1142"
 							onClick={onOpenProtocolsCatalog}
-							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-l-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--primary)] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-							title="Открыть полный каталог клинических протоколов"
+							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-l-md h-8 px-2.5 text-xs hover:bg-[var(--paper-soft)] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							title="Открыть каталог клинических протоколов"
 						>
-							<BookOpen className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
-							<span className="hidden sm:inline">Каталог протоколов</span>
+							<BookOpen className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
+							<span className="hidden sm:inline">Протоколы</span>
 							<span className="sm:hidden">Протоколы</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[var(--primary)] text-white font-bold">
-								1 142
-							</span>
 						</button>
+					)}
 
-						<button
-							type="button"
-							ref={buttonRef}
-							data-testid="btn-toggle-extra-soap-menu"
-							onClick={() => setIsExtraMenuOpen((prev) => !prev)}
-							className={`border border-l-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] rounded-r-lg px-1.5 py-1 text-xs shadow-2xs hover:border-[var(--primary)] transition-colors cursor-pointer ${
-								isExtraMenuOpen ? "bg-[var(--paper-soft)]" : ""
-							}`}
-							title="Быстрые клинические нормы и бланки"
-							aria-haspopup="menu"
-							aria-expanded={isExtraMenuOpen}
-							aria-label="Быстрые нормы и согласие"
-						>
-							<ChevronDown size={12} className={`transition-transform duration-150 ${isExtraMenuOpen ? "rotate-180" : ""}`} />
-						</button>
-					</div>
-				)}
+					<button
+						type="button"
+						ref={buttonRef}
+						data-testid="btn-toggle-extra-soap-menu"
+						onClick={() => setIsExtraMenuOpen((prev) => !prev)}
+						className={`border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] h-8 px-2 text-xs inline-flex items-center gap-1 transition-colors cursor-pointer ${
+							onOpenProtocolsCatalog ? "border-l-0 rounded-r-md" : "rounded-md"
+						} ${isExtraMenuOpen ? "bg-[var(--paper-soft)]" : ""}`}
+						title="Личные макросы, клинические модули и печать карты"
+						aria-haspopup="menu"
+						aria-expanded={isExtraMenuOpen}
+						aria-label="Макросы и разделы приёма"
+					>
+						{!onOpenProtocolsCatalog && <span>Макросы</span>}
+						<ChevronDown
+							className={`w-3.5 h-3.5 shrink-0 transition-transform duration-150 ${isExtraMenuOpen ? "rotate-180" : ""}`}
+						/>
+					</button>
+				</div>
 
 				<EmkProtocolsDropdownMenu
-					isOpen={isExtraMenuOpen} dropdownPos={dropdownPos} menuRef={menuRef}
+					isOpen={isExtraMenuOpen}
+					dropdownPos={dropdownPos ?? { top: 0, left: 0 }}
+					menuRef={menuRef}
 					onClose={() => setIsExtraMenuOpen(false)}
-					onApplyNorm={onApplyNorm} onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
-					onApplyOrthoNorm={onApplyOrthoNorm} onApplySurgeryNorm={onApplySurgeryNorm}
-					onToggleStarProtocols={onToggleStarProtocols} onOpenConsent={onOpenConsent}
-					onPrintMedicalCard={resolvedPrintMedicalCard} onPrint043={resolvedPrintMedicalCard}
-					canUndo={canUndo} canRedo={canRedo}
-					handleUndo={handleUndo} handleRedo={handleRedo}
+					onApplySoapPreset={onApplySoapPreset}
+					updateVisitNoteField={updateVisitNoteField}
+					onToggleStarProtocols={onToggleStarProtocols}
+					onOpenConsent={onOpenConsent}
+					onPrintMedicalCard={onPrintMedicalCard}
+					canUndo={canUndo}
+					canRedo={canRedo}
+					handleUndo={handleUndo}
+					handleRedo={handleRedo}
 				/>
 
-				{voicePilotNode && (
-					<div className="flex items-center shrink-0">
-						{voicePilotNode}
-					</div>
-				)}
+				{voicePilotNode && <div className="flex items-center shrink-0">{voicePilotNode}</div>}
 				{recentVisitActionNode}
 			</div>
 

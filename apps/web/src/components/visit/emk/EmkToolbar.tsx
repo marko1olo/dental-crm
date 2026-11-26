@@ -1,5 +1,4 @@
 import React from "react";
-import { ShieldCheck } from "lucide-react";
 import { useVisitStore } from "../../../store/visitStore";
 import type { EmkToolbarProps } from "./emkToolbarModules/emkToolbarTypes";
 import { EmkQuickActionButtons } from "./emkToolbarModules/EmkQuickActionButtons";
@@ -10,9 +9,10 @@ export type { EmkToolbarProps } from "./emkToolbarModules/emkToolbarTypes";
 export * from "./emkToolbarModules/emkToolbarTypes";
 
 /**
- * Mandate 8e: 1-click chairside physiological norm in action bar
- * data-testid="btn-chairside-physiological-norm"
- * Label: "✓ Соматически здоров / Норма" with clinical ShieldCheck icon
+ * Единая панель инструментов ЭМК приёма (EmkToolbar):
+ * - Единая кнопка физиологической нормы (`data-testid="btn-chairside-physiological-norm"`, "✓ Соматически здоров / Норма", иконка ShieldCheck)
+ * - Бейдж автосохранения (`data-testid="emk-autosave-status-badge"`) в EmkScheduleAndAutosaveBadges
+ * - Портальные меню (без clipping) и личные макросы врача
  */
 
 export function EmkToolbar({
@@ -23,8 +23,12 @@ export function EmkToolbar({
 	onApplyNorm,
 	onApplyOrthoNorm,
 	onApplySurgeryNorm,
-	onToggleStarProtocols = () => {},
-	onOpenProtocolsCatalog,
+	onApplySoapPreset,
+	updateVisitNoteField,
+	onToggleStarProtocols: propOnToggleStarProtocols,
+	onOpenStarProtocols,
+	onOpenProtocolsCatalog: propOnOpenProtocolsCatalog,
+	onOpenSoapTemplates,
 	onToggleCopilot = () => {},
 	isCopilotOpen = false,
 	onScheduleNextVisit = () => {},
@@ -32,19 +36,20 @@ export function EmkToolbar({
 	onOpenConsent: propOnOpenConsent,
 	onOpenConsentModal,
 	onPrintMedicalCard: propOnPrintMedicalCard,
-	onPrint043: propOnPrint043,
 	onOpenPrintModal,
 	hasUnsavedChanges = false,
 	voicePilotNode,
 	specialtyFocusNode,
 	recentVisitActionNode,
 	followupScheduleNode,
-	noteForm = {},
 	onUndo,
 	onRedo,
 }: EmkToolbarProps) {
-	const onPrintMedicalCard = propOnPrintMedicalCard ?? propOnPrint043 ?? onOpenPrintModal;
+	const onPrintMedicalCard = propOnPrintMedicalCard ?? onOpenPrintModal;
 	const onOpenConsent = propOnOpenConsent ?? onOpenConsentModal;
+	const onOpenProtocolsCatalog = propOnOpenProtocolsCatalog ?? onOpenSoapTemplates;
+	const onToggleStarProtocols = propOnToggleStarProtocols ?? onOpenStarProtocols;
+
 	const storeUndoVisit = useVisitStore((s) => s.undoVisit);
 	const storeRedoVisit = useVisitStore((s) => s.redoVisit);
 	const storeCanUndo = useVisitStore((s) => s.canUndo);
@@ -64,20 +69,20 @@ export function EmkToolbar({
 
 	return (
 		<div
-			className="emk-unified-toolbar flex flex-col w-full min-w-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs overflow-hidden"
+			className="emk-unified-toolbar flex flex-col w-full min-w-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] shadow-2xs"
 			data-testid="emk-unified-toolbar"
 		>
-			{/* СТРОКА 1: Клинические инструменты приёма (Action Toolbar with emk-autosave-status-badge) */}
 			<EmkQuickActionButtons
 				onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
 				onApplyNorm={onApplyNorm}
 				onApplyOrthoNorm={onApplyOrthoNorm}
 				onApplySurgeryNorm={onApplySurgeryNorm}
+				onApplySoapPreset={onApplySoapPreset}
+				updateVisitNoteField={updateVisitNoteField}
 				onOpenProtocolsCatalog={onOpenProtocolsCatalog}
 				onToggleStarProtocols={onToggleStarProtocols}
 				onOpenConsent={onOpenConsent}
 				onPrintMedicalCard={onPrintMedicalCard}
-				onPrint043={onPrintMedicalCard}
 				onToggleCopilot={onToggleCopilot}
 				isCopilotOpen={isCopilotOpen}
 				handleSchedule={handleSchedule}
@@ -92,7 +97,6 @@ export function EmkToolbar({
 				handleRedo={handleRedo}
 			/>
 
-			{/* СТРОКА 2: Навигационный сегментированный таб-бар ЭМК — мобильный Apple HIG */}
 			<EmkStepperControls
 				activeEmkTab={activeEmkTab}
 				setActiveEmkTab={setActiveEmkTab}

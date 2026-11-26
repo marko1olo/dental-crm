@@ -19,7 +19,7 @@ import {
 	aggregateCrmMarketingMetrics,
 } from "@dental/shared";
 import { MarketingView, type MarketingTab } from "../../../MarketingView.js";
-import { DirectMarketingLauncher } from "../DirectMarketingLauncher.js";
+import { resolveClinicRoute } from "../../../router/routeResolver.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,46 +154,33 @@ test("2.4. Apple HIG Mobile ergonomics and 0px horizontal drift verified in CSS"
 	assert.ok(css.includes("min-height: 44px") || css.includes("min-height: 52px"), "Must adhere to Apple HIG >= 44px touch targets");
 });
 
-test("3.1. DirectMarketingLauncher listens to #marketing, #romi, #campaigns and dente:open-marketing", () => {
-	const launcherPath = path.join(marketingDir, "DirectMarketingLauncher.tsx");
-	const code = fs.readFileSync(launcherPath, "utf8");
-
-	assert.ok(code.includes("#marketing"), "Must match #marketing hash");
-	assert.ok(code.includes("#romi"), "Must match #romi hash");
-	assert.ok(code.includes("#campaigns"), "Must match #campaigns hash");
-	assert.ok(code.includes("marketing=1"), "Must match ?marketing=1 search param");
-	assert.ok(code.includes("dente:open-marketing"), "Must listen to dente:open-marketing event");
+test("3.1. resolveClinicRoute routes #marketing, #romi, #campaigns to analytics/marketing view", () => {
+	assert.equal(resolveClinicRoute("", "#marketing").view, "analytics");
+	assert.equal(resolveClinicRoute("", "#romi").view, "analytics");
+	assert.equal(resolveClinicRoute("", "#campaigns").view, "analytics");
+	assert.equal(resolveClinicRoute("", "#marketing").subTab, "marketing");
 });
 
-test("3.2. DirectMarketingLauncher is mounted in AppShell.tsx (Mandate 8aq)", () => {
-	const appShellPath = path.join(webSrcDir, "AppShell.tsx");
-	const code = fs.readFileSync(appShellPath, "utf8");
-
-	assert.ok(code.includes('import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher"'), "Must import DirectMarketingLauncher in AppShell");
-	assert.ok(code.includes("<DirectMarketingLauncher />"), "Must render <DirectMarketingLauncher /> in AppShell");
+test("3.2. WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx (Mandate 8aq)", () => {
+	const containerPath = path.join(webSrcDir, "components/appLayout/AppModalsContainer.tsx");
+	const code = fs.readFileSync(containerPath, "utf8");
+	assert.ok(code.includes("WorkspaceStudioOverlayHost"), "Must mount WorkspaceStudioOverlayHost in AppModalsContainer");
 });
 
-test("3.3. DirectMarketingLauncher is mounted in SpecializedAdministrativeLaunchers.tsx (Mandate 8aq)", () => {
-	const specializedPath = path.join(webSrcDir, "components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx");
-	const code = fs.readFileSync(specializedPath, "utf8");
-
-	assert.ok(code.includes("DirectMarketingLauncher"), "Must import and reference DirectMarketingLauncher");
-	assert.ok(code.includes("#marketing"), "Must handle #marketing in SpecializedAdministrativeLaunchers");
+test("3.3. MarketingView routes cleanly under App.tsx persistent shell (Mandate 8aq)", () => {
+	const appCode = fs.readFileSync(path.join(webSrcDir, "App.tsx"), "utf8");
+	assert.ok(appCode.includes("resolveClinicRoute"), "App.tsx must resolve #marketing routes");
 });
 
-test("3.4. DirectMarketingLauncher is registered in administrativeLaunchersRegistry.tsx (Mandate 8aq)", () => {
-	const registryPath = path.join(webSrcDir, "components/appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
-	const code = fs.readFileSync(registryPath, "utf8");
-
-	assert.ok(code.includes("DirectMarketingLauncher"), "Must import DirectMarketingLauncher in registry");
-	assert.ok(code.includes('id: "marketing-studio"'), "Must have entry id marketing-studio");
-	assert.ok(code.includes("Студия маркетинга, акций и ROMI"), "Must have title in registry");
+test("3.4. Obsolete DirectMarketingLauncher.tsx is purged (Mandate 8bf)", () => {
+	assert.equal(
+		fs.existsSync(path.join(marketingDir, "DirectMarketingLauncher.tsx")),
+		false,
+		"Obsolete DirectMarketingLauncher.tsx must stay removed",
+	);
 });
 
 test("4.1. File sizes conform to Mandate 8b/8zi (Sweet Spot limits)", () => {
 	const viewLines = fs.readFileSync(path.join(webSrcDir, "MarketingView.tsx"), "utf8").split("\n").length;
 	assert.ok(viewLines <= 120, `MarketingView.tsx must be <= 120 lines (got ${viewLines})`);
-
-	const launcherLines = fs.readFileSync(path.join(marketingDir, "DirectMarketingLauncher.tsx"), "utf8").split("\n").length;
-	assert.ok(launcherLines >= 50 && launcherLines <= 70, `DirectMarketingLauncher.tsx must be 50-70 lines (got ${launcherLines})`);
 });

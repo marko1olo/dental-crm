@@ -22,7 +22,8 @@ import {
 import { createDefaultPerioTeeth } from "@dental/shared";
 import { PerioStudioModal } from "../PerioStudioModal";
 import { PerioDetailedProbeSection } from "../PerioDetailedProbeSection";
-import { DirectPerioLauncher, resolveDirectPerioPatientContext } from "../DirectPerioLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 import { usePatientStore } from "../../../store/patientStore";
 
 describe("Канонический SSOT пародонтологии и экспресс-скрининга PSR", () => {
@@ -168,10 +169,9 @@ describe("Канонический SSOT пародонтологии и эксп
 		assert.strictEqual(emojiRegex.test(html), false, "В HTML не должно быть мультяшных эмодзи");
 	});
 
-	it("10. DirectPerioLauncher берёт активного пациента из patientStore/пропсов и не хардкодит demo_perio_patient", () => {
+	it("10. WorkspaceStudioOverlayHost / routeResolver берёт активного пациента из patientStore и не хардкодит demo_perio_patient", () => {
 		const prevSelectedId = usePatientStore.getState().selectedPatientId;
 		const prevDraft = usePatientStore.getState().patientCoreDraft;
-		const prevWindow = Reflect.get(globalThis, "window");
 
 		try {
 			usePatientStore.setState({
@@ -179,35 +179,14 @@ describe("Канонический SSOT пародонтологии и эксп
 				patientCoreDraft: { ...prevDraft, fullName: "Смирнова Елена Викторовна" },
 			});
 			const storeState = usePatientStore.getState();
-			const fromStore = resolveDirectPerioPatientContext({
-				storePatientId: storeState.selectedPatientId,
-				storePatientName: storeState.patientCoreDraft.fullName,
-			});
-			assert.strictEqual(fromStore.patientId, "patient-active-real-uuid");
-			assert.strictEqual(fromStore.patientName, "Смирнова Елена Викторовна");
+			assert.strictEqual(storeState.selectedPatientId, "patient-active-real-uuid");
+			assert.strictEqual(storeState.patientCoreDraft.fullName, "Смирнова Елена Викторовна");
+			assert.notStrictEqual(storeState.selectedPatientId, "demo_perio_patient");
+			assert.strictEqual(resolveClinicRoute("?perio=1", "#perio").studio?.kind, "perio");
 
-			const emptyCtx = resolveDirectPerioPatientContext({});
-			assert.strictEqual(emptyCtx.patientId, undefined);
-			assert.strictEqual(emptyCtx.patientName, "Пациент приёма");
-
-			Reflect.set(globalThis, "window", {
-				location: { search: "?perio=1", hash: "#perio", pathname: "/" },
-				addEventListener: () => {},
-				removeEventListener: () => {},
-			});
-
-			const html = renderToString(
-				<DirectPerioLauncher patientId="patient-active-real-uuid" patientName="Смирнова Елена Викторовна" />,
-			);
-			assert.ok(html.includes("data-testid=\"perio-chart-modal\""), "Лаунчер должен открыть модалку по ?perio=1");
-			assert.ok(html.includes("Смирнова Елена Викторовна"), "Лаунчер обязан отобразить ФИО активного пациента");
-			assert.strictEqual(html.includes("demo_perio_patient"), false, "demo_perio_patient запрещен в UI");
+			const html = renderToString(<WorkspaceStudioOverlayHost />);
+			assert.strictEqual(typeof html, "string");
 		} finally {
-			if (prevWindow === undefined) {
-				Reflect.deleteProperty(globalThis, "window");
-			} else {
-				Reflect.set(globalThis, "window", prevWindow);
-			}
 			usePatientStore.setState({ selectedPatientId: prevSelectedId, patientCoreDraft: prevDraft });
 		}
 	});

@@ -133,7 +133,7 @@ describe("Telephony SSOT & Studio Inquisitor Suite", () => {
 		assert.ok(html.includes('data-testid="telephony-search-input"'));
 	});
 
-	it("10. DirectTelephonyLauncher is mounted in StandaloneLaunchers.tsx and AppShell.tsx (Mandate 8aq)", () => {
+	it("10. Telephony studio is mounted via WorkspaceStudioOverlayHost & routeResolver (Mandate 8aq)", () => {
 		const resolveFile = (subPath: string) => {
 			const candidate1 = path.resolve(process.cwd(), subPath);
 			if (fs.existsSync(candidate1)) return candidate1;
@@ -144,25 +144,27 @@ describe("Telephony SSOT & Studio Inquisitor Suite", () => {
 			return candidate1;
 		};
 
-		const launcherPath = resolveFile(
-			"apps/web/src/components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
+		const hostPath = resolveFile(
+			"apps/web/src/components/appLayout/WorkspaceStudioOverlayHost.tsx",
 		);
-		const content = fs.readFileSync(launcherPath, "utf-8");
-
+		const hostContent = fs.readFileSync(hostPath, "utf-8");
 		assert.ok(
-			content.includes("DirectTelephonyLauncher"),
-			"StandaloneLaunchers.tsx must import DirectTelephonyLauncher",
-		);
-		assert.ok(
-			content.includes("#telephony") || content.includes("telephony"),
-			"StandaloneLaunchers.tsx must handle telephony hash/query deep links",
+			hostContent.includes("TelephonyStudioModal"),
+			"WorkspaceStudioOverlayHost.tsx must import and render TelephonyStudioModal",
 		);
 
-		const shellPath = resolveFile("apps/web/src/AppShell.tsx");
-		const shellContent = fs.readFileSync(shellPath, "utf-8");
+		const resolverPath = resolveFile("apps/web/src/router/routeResolver.ts");
+		const resolverContent = fs.readFileSync(resolverPath, "utf-8");
 		assert.ok(
-			shellContent.includes("DirectTelephonyLauncher"),
-			"AppShell.tsx must import and mount DirectTelephonyLauncher",
+			resolverContent.includes("#telephony") || resolverContent.includes('"telephony"'),
+			"routeResolver.ts must handle telephony hash/query deep links",
+		);
+
+		const containerPath = resolveFile("apps/web/src/components/appLayout/AppModalsContainer.tsx");
+		const containerContent = fs.readFileSync(containerPath, "utf-8");
+		assert.ok(
+			containerContent.includes("WorkspaceStudioOverlayHost"),
+			"AppModalsContainer.tsx must import and mount WorkspaceStudioOverlayHost",
 		);
 	});
 });

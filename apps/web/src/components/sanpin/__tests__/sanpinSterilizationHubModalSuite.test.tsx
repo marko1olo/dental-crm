@@ -40,13 +40,9 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 			);
 		});
 
-		it("DirectSanpinLauncher.tsx находится строго в диапазоне 50–90 строк", () => {
+		it("устаревший DirectSanpinLauncher.tsx снесён (SSOT роутинг через routeResolver)", () => {
 			const filePath = path.join(sanpinDir, "DirectSanpinLauncher.tsx");
-			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-			assert.ok(
-				lines >= 50 && lines <= 90,
-				`DirectSanpinLauncher.tsx должен быть 50–90 строк по Мандату 8b (факт: ${lines})`,
-			);
+			assert.equal(fs.existsSync(filePath), false);
 		});
 	});
 

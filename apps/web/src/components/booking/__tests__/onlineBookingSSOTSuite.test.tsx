@@ -67,46 +67,39 @@ describe("DENTE Public Online Booking SSOT Suite", () => {
 		assert.equal(isValidPatientName("A"), false);
 	});
 
-	it("2.1. Мандат 8e: Кнопка Primary CTA НИКОГДА НЕ DISABLED в DirectPublicBookingLauncher", () => {
-		const launcherPath = path.resolve(import.meta.dirname, "../DirectPublicBookingLauncher.tsx");
-		const source = fs.readFileSync(launcherPath, "utf-8");
-
-		// Проверяем, что нет disabled на кнопке закрытия или подтверждения
-		assert.ok(
-			!source.includes("disabled={true}"),
-			"Мандат 8e: Primary CTA кнопка не должна блокироваться через disabled",
+	it("2.1. Мандат 8e: Кнопка Primary CTA НИКОГДА НЕ DISABLED в WorkspaceStudioOverlayHost / PublicBookingWidget", () => {
+		const hostPath = path.resolve(
+			import.meta.dirname,
+			"../../appLayout/WorkspaceStudioOverlayHost.tsx",
 		);
+		const hostSource = fs.readFileSync(hostPath, "utf-8");
+
 		assert.ok(
-			source.includes("PublicBookingWidget"),
-			"DirectPublicBookingLauncher обязан рендерить канонический PublicBookingWidget",
+			hostSource.includes("PublicBookingWidget"),
+			"WorkspaceStudioOverlayHost обязан рендерить канонический PublicBookingWidget",
+		);
+		const widgetPath = path.resolve(import.meta.dirname, "../PublicBookingWidget.tsx");
+		const widgetSource = fs.readFileSync(widgetPath, "utf-8");
+		assert.ok(
+			!widgetSource.includes("disabled={true}"),
+			"Мандат 8e: Primary CTA кнопка не должна блокироваться через disabled",
 		);
 	});
 
-	it("2.2. Мандат 8aq: DirectPublicBookingLauncher смонтирован в AppShell.tsx и StandaloneLaunchers.tsx", () => {
-		const appShellPath = path.resolve(import.meta.dirname, "../../../AppShell.tsx");
-		const appShellSource = fs.readFileSync(appShellPath, "utf-8");
-		assert.ok(
-			appShellSource.includes("DirectPublicBookingLauncher"),
-			"AppShell.tsx обязан импортировать и рендерить DirectPublicBookingLauncher",
+	it("2.2. Мандат 8aq: PublicBookingWidget смонтирован в WorkspaceStudioOverlayHost и резолвится по #booking / #online-booking", async () => {
+		const containerPath = path.resolve(
+			import.meta.dirname,
+			"../../appLayout/AppModalsContainer.tsx",
 		);
+		const containerSource = fs.readFileSync(containerPath, "utf-8");
 		assert.ok(
-			appShellSource.includes("<DirectPublicBookingLauncher />"),
-			"AppShell.tsx обязан монтировать <DirectPublicBookingLauncher /> в дерево",
+			containerSource.includes("WorkspaceStudioOverlayHost"),
+			"AppModalsContainer.tsx обязан импортировать и рендерить WorkspaceStudioOverlayHost",
 		);
 
-		const launchersPath = path.resolve(
-			import.meta.dirname,
-			"../../appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
-		);
-		const launchersSource = fs.readFileSync(launchersPath, "utf-8");
-		assert.ok(
-			launchersSource.includes("DirectPublicBookingLauncher"),
-			"StandaloneLaunchers.tsx обязан импортировать DirectPublicBookingLauncher",
-		);
-		assert.ok(
-			launchersSource.includes("#booking") && launchersSource.includes("#online-booking"),
-			"StandaloneLaunchers.tsx обязан обрабатывать хэши #booking и #online-booking",
-		);
+		const { resolveClinicRoute } = await import("../../../router/routeResolver");
+		assert.equal(resolveClinicRoute("", "#booking").studio?.kind, "public_booking");
+		assert.equal(resolveClinicRoute("", "#online-booking").studio?.kind, "public_booking");
 	});
 
 	it("2.3. Мандат 8b: Размеры файлов находятся в целевом Sweet Spot", () => {
@@ -115,13 +108,6 @@ describe("DENTE Public Online Booking SSOT Suite", () => {
 		assert.ok(
 			widgetLines >= 80 && widgetLines <= 150,
 			`PublicBookingWidget.tsx lines must be 80-150, got ${widgetLines}`,
-		);
-
-		const launcherPath = path.resolve(import.meta.dirname, "../DirectPublicBookingLauncher.tsx");
-		const launcherLines = fs.readFileSync(launcherPath, "utf-8").split("\n").length;
-		assert.ok(
-			launcherLines >= 60 && launcherLines <= 130,
-			`DirectPublicBookingLauncher.tsx lines must be 60-130, got ${launcherLines}`,
 		);
 	});
 

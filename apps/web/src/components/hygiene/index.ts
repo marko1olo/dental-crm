@@ -6,7 +6,6 @@
  */
 
 export { HygieneStudioModal, type HygieneStudioModalProps } from "./HygieneStudioModal";
-export { default as DirectHygieneLauncher, DirectHygieneLauncher as HygieneLauncher } from "./DirectHygieneLauncher";
 
 export {
 	OHI_S_PRESETS,

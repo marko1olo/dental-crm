@@ -30,4 +30,3 @@ export {
 } from "./prescriptionCatalogData";
 export * from "./prescriptionPrintHtml";
 export * from "./usePrescriptionCockpit";
-export * from "./DirectPrescriptionLauncher";

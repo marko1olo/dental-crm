@@ -24,7 +24,8 @@ import {
 	sumKopecks,
 } from "../../consents/consentCatalogData";
 import { DocumentsStudioModal } from "../DocumentsStudioModal";
-import { DirectDocumentsLauncher } from "../DirectDocumentsLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
@@ -221,10 +222,10 @@ describe("🏛️ Documents Studio Modal & UI Architecture (Mandates 8am, 8e, Ap
 		assert.ok(html.includes("dente-a4-paper"), "Должен присутствовать A4 холст листа");
 	});
 
-	it("рендерит DirectDocumentsLauncher без крашей", () => {
-		const html = renderToString(<DirectDocumentsLauncher />);
-		// Лаунчер монтируется в дереве, если URL не совпадает — возвращает null или контент
+	it("рендерит WorkspaceStudioOverlayHost без крашей и маршрутизирует #documents", () => {
+		const html = renderToString(<WorkspaceStudioOverlayHost />);
 		assert.ok(html !== undefined);
+		assert.equal(resolveClinicRoute("", "#documents").view, "documents");
 	});
 
 	it("проверяет CSS файл на токены, Primary CTA #0d9488 и стили печати @media print", () => {

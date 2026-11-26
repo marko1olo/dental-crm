@@ -15,6 +15,3 @@ export {
 	type DocumentsStudioModalProps as ConsentStudioModalProps,
 	type DocumentsStudioModalProps as InformedConsentModalProps,
 } from "../documents/DocumentsStudioModal";
-
-// Автономный лаунчер deep links (#consents, #consent, ?consent=1, dente:open-consent)
-export { DirectConsentLauncher } from "./DirectConsentLauncher";

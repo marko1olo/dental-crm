@@ -5,11 +5,10 @@
  */
 
 import React, { useEffect } from "react";
-import { DenteQueryClientProvider } from "./lib/queryClient";
-import { AppLogicProvider } from "./contexts/AppLogicContext";
-import { renderStandaloneLaunchers } from "./components/appLayout";
 import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
 import { useAppLogic } from "./useAppLogic";
+import { useAppStore } from "./store/appStore";
+import { primaryViewToAppView, resolveClinicRoute } from "./router/routeResolver";
 import {
 	scheduleClinicalHotModulesWarmup,
 	scheduleIdleWorkspacePreload,
@@ -31,7 +30,7 @@ export function App() {
 		sessionAuth.setShowStaffPinPad,
 	);
 
-	const { currentView, dashboard, loadDashboard } = appLogicValue;
+	const { currentView, dashboard, loadDashboard, setCurrentView, setSettingsTab } = appLogicValue;
 
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 	useEffect(() => scheduleClinicalHotModulesWarmup(), []);
@@ -42,37 +41,41 @@ export function App() {
 		}
 	}, [sessionAuth.clinicAuthed, sessionAuth.staffAuthed, dashboard, loadDashboard]);
 
-	const standalone = renderStandaloneLaunchers(routing);
-	if (standalone) {
-		return (
-			<DenteQueryClientProvider>
-				<AppLogicProvider value={appLogicValue}>
-					<ClinicalErrorBoundary workspaceName="Автономный модуль" workspaceKey="standalone">
-						{standalone}
-					</ClinicalErrorBoundary>
-				</AppLogicProvider>
-			</DenteQueryClientProvider>
-		);
-	}
+	useEffect(() => {
+		const syncFromLocation = () => {
+			if (typeof window === "undefined") return;
+			const resolved = resolveClinicRoute(window.location.search, window.location.hash);
+			const nextAppView = primaryViewToAppView(resolved.view);
+			if (nextAppView !== useAppStore.getState().currentView) {
+				setCurrentView(nextAppView);
+			}
+			if (resolved.view === "pricelist") {
+				setSettingsTab("prices");
+			} else if (resolved.view === "settings" && resolved.subTab) {
+				setSettingsTab(resolved.subTab);
+			}
+		};
+		syncFromLocation();
+		window.addEventListener("hashchange", syncFromLocation);
+		window.addEventListener("popstate", syncFromLocation);
+		return () => {
+			window.removeEventListener("hashchange", syncFromLocation);
+			window.removeEventListener("popstate", syncFromLocation);
+		};
+	}, [setCurrentView, setSettingsTab]);
 
 	if (!sessionAuth.clinicAuthed || !sessionAuth.staffAuthed || sessionAuth.showStaffPinPad || !dashboard || appLogicValue.accessUnlockRequired || appLogicValue.error) {
-		return (
-			<DenteQueryClientProvider>
-				<AppBootScreens sessionAuth={sessionAuth} appLogic={appLogicValue} />
-			</DenteQueryClientProvider>
-		);
+		return <AppBootScreens sessionAuth={sessionAuth} appLogic={appLogicValue} />;
 	}
 
 	return (
-		<DenteQueryClientProvider>
-			<AppSessionProviders appLogic={appLogicValue}>
-				<ClinicalErrorBoundary workspaceName="Навигация приложения" workspaceKey="navigation">
-					<AppNavigationShell appLogic={appLogicValue} sessionAuth={sessionAuth} routing={routing} />
-				</ClinicalErrorBoundary>
-				<ClinicalErrorBoundary workspaceName="Модальные окна и студии" workspaceKey="modals">
-					<AppModalsContainer routing={routing} sessionAuth={sessionAuth} appLogic={appLogicValue} />
-				</ClinicalErrorBoundary>
-			</AppSessionProviders>
-		</DenteQueryClientProvider>
+		<AppSessionProviders appLogic={appLogicValue}>
+			<ClinicalErrorBoundary workspaceName="Навигация приложения" workspaceKey="navigation">
+				<AppNavigationShell appLogic={appLogicValue} sessionAuth={sessionAuth} routing={routing} />
+			</ClinicalErrorBoundary>
+			<ClinicalErrorBoundary workspaceName="Модальные окна и студии" workspaceKey="modals">
+				<AppModalsContainer routing={routing} sessionAuth={sessionAuth} appLogic={appLogicValue} />
+			</ClinicalErrorBoundary>
+		</AppSessionProviders>
 	);
 }

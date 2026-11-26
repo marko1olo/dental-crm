@@ -57,9 +57,9 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 			assert.ok(fs.existsSync(filePath), "LoyaltyStudioModal.tsx must exist");
 		});
 
-		it("verifies DirectLoyaltyLauncher.tsx exists", () => {
+		it("verifies obsolete DirectLoyaltyLauncher.tsx stays purged", () => {
 			const filePath = path.join(webSrcRoot, "components/loyalty/DirectLoyaltyLauncher.tsx");
-			assert.ok(fs.existsSync(filePath), "DirectLoyaltyLauncher.tsx must exist");
+			assert.equal(fs.existsSync(filePath), false, "DirectLoyaltyLauncher.tsx must remain removed");
 		});
 	});
 
@@ -283,19 +283,19 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 	});
 
 	// =========================================================================
-	// 8. MANDATE 8aq: LIVE UI MOUNTING IN APPSHELL & STANDALONELAUNCHERS
+	// 8. MANDATE 8aq: LIVE UI MOUNTING VIA ROUTER & OVERLAY HOST
 	// =========================================================================
 	describe("8. Mandate 8aq — Live UI Mounting", () => {
-		it("verifies DirectLoyaltyLauncher is mounted in AppShell.tsx", () => {
-			const shellCode = fs.readFileSync(path.join(webSrcRoot, "AppShell.tsx"), "utf8");
-			assert.ok(shellCode.includes("DirectLoyaltyLauncher"), "AppShell.tsx must import DirectLoyaltyLauncher");
-			assert.ok(shellCode.includes("<DirectLoyaltyLauncher />"), "AppShell.tsx must render <DirectLoyaltyLauncher />");
+		it("verifies App.tsx routes #loyalty via resolveClinicRoute", () => {
+			const appCode = fs.readFileSync(path.join(webSrcRoot, "App.tsx"), "utf8");
+			assert.ok(appCode.includes("resolveClinicRoute"), "App.tsx must resolve #loyalty routes");
 		});
 
-		it("verifies DirectLoyaltyLauncher is mounted in StandaloneLaunchers.tsx", () => {
-			const launchersCode = fs.readFileSync(path.join(webSrcRoot, "components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx"), "utf8");
-			assert.ok(launchersCode.includes("DirectLoyaltyLauncher"), "StandaloneLaunchers.tsx must import DirectLoyaltyLauncher");
-			assert.ok(launchersCode.includes("#loyalty"), "StandaloneLaunchers.tsx must handle #loyalty hash");
+		it("verifies WorkspaceStudioOverlayHost is mounted in AppModalsContainer.tsx and handles loyalty", () => {
+			const containerCode = fs.readFileSync(path.join(webSrcRoot, "components/appLayout/AppModalsContainer.tsx"), "utf8");
+			const hostCode = fs.readFileSync(path.join(webSrcRoot, "components/appLayout/WorkspaceStudioOverlayHost.tsx"), "utf8");
+			assert.ok(containerCode.includes("WorkspaceStudioOverlayHost"), "AppModalsContainer.tsx must mount WorkspaceStudioOverlayHost");
+			assert.ok(hostCode.includes("LoyaltyStudioModal"), "WorkspaceStudioOverlayHost must render LoyaltyStudioModal");
 		});
 	});
 

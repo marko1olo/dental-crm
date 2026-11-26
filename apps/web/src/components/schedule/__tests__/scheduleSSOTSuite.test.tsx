@@ -18,7 +18,7 @@ import {
   getStatusMeta,
 } from "../scheduleCatalogData";
 import { DoctorChairScheduleModal } from "../DoctorChairScheduleModal";
-import { DirectWaitlistMatchesLauncher } from "../DirectWaitlistMatchesLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
 
 describe("SSOT Schedule & Chair Grid Inquisition (Mandates 8e, 8n, 8am)", () => {
   it("verifies chair presets conform to Mandate 8n (Solo practitioner & 1-3 chairs sovereign scale)", () => {
@@ -119,9 +119,8 @@ describe("SSOT Schedule & Chair Grid Inquisition (Mandates 8e, 8n, 8am)", () => 
     assert.ok(!html.includes('disabled=""'), "No disabled buttons permitted in schedule");
   });
 
-  it("verifies DirectWaitlistMatchesLauncher renders when active or returns null cleanly", () => {
-    // In server environment without active hash, launcher returns null
-    const html = renderToString(<DirectWaitlistMatchesLauncher />);
+  it("verifies WorkspaceStudioOverlayHost renders cleanly when no overlay is open", () => {
+    const html = renderToString(<WorkspaceStudioOverlayHost />);
     assert.strictEqual(html, "");
   });
 });

@@ -22,7 +22,6 @@ export interface EmkToolbarProps {
 	onOpenConsent?: (() => void) | undefined;
 	onOpenConsentModal?: (() => void) | undefined;
 	onPrintMedicalCard?: (() => void) | undefined;
-	onPrint043?: (() => void) | undefined;
 	onOpenPrintModal?: (() => void) | undefined;
 	isSignedVisit?: boolean | undefined;
 	isRevisingVisitNote?: boolean | undefined;

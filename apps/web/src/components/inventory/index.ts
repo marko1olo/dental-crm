@@ -51,7 +51,6 @@ export * from "./warehouseInventoryEngine.js";
 export * from "./warehousePackageWriteOffEngine.js";
 export * from "./warehouseStockAlertsEngine.js";
 export * from "./waybillsTab/index.js";
-export * from "./DirectWarehouseLauncher.js";
 export {
 	ClinicalWriteoffModal,
 	type ClinicalWriteoffModalProps,

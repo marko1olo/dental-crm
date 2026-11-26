@@ -1,33 +1,24 @@
 /**
- * apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/SanPinStandaloneLauncher.tsx
- * Standalone лаунчер журнала стерилизации и дезинфекции (?sanpin=1, ?sterilization=1, #sanpin, #sterilization)
- * Мандат 8aq: Монтирование в живой UI. Мандат 8b: строго <= 120 строк.
+ * SanPinStandaloneLauncher — Совместимая обёртка над SterilizationBatchCycleModal.
  */
 
-import React from "react";
-import { DirectSanpinLauncher } from "../../../../sanpin/DirectSanpinLauncher";
+import type React from "react";
+import { SterilizationBatchCycleModal } from "../../../../sanpin/SterilizationBatchCycleModal";
 
 export function renderSanPinStandaloneLauncher(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
-	const search = new URLSearchParams(s);
-
-	const isSterilizationOrSanPin =
-		search.get("sterilization") === "1" ||
-		search.get("autoclave") === "1" ||
-		search.get("sanpin") === "1" ||
-		h.includes("sterilization") ||
-		h.includes("autoclave") ||
-		h.includes("sanpin");
-
-	if (!isSterilizationOrSanPin) return null;
-
-	return <DirectSanpinLauncher />;
+	if (h.includes("sterilization") || h.includes("sanpin") || s.includes("sanpin=1")) {
+		return (
+			<SterilizationBatchCycleModal
+				isOpen={true}
+				onClose={() => window.history.replaceState(null, "", window.location.pathname)}
+			/>
+		);
+	}
+	return null;
 }
 
-export const DirectSanPinStandaloneLauncher: React.FC = () => {
-	return renderSanPinStandaloneLauncher();
-};
-
+export const DirectSanPinStandaloneLauncher: React.FC = () => renderSanPinStandaloneLauncher();
 export default DirectSanPinStandaloneLauncher;

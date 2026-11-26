@@ -27,7 +27,7 @@
 
 ## 🧭 ОБЩИЙ РЕЕСТР ПРЕДСТАВЛЕНИЙ (APP VIEWS REGISTRY)
 
-Корневой роутер DENTE (`apps/web/src/workspaceShell.tsx` и `apps/web/src/App.tsx`) поддерживает 14 основных представлений, предзагружаемых через `workspacePreload.ts`, плюс модули пациентского портала и мобильной смены врача:
+Корневой роутер DENTE ([`packages/shared/src/navigation/workspaceRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/navigation/workspaceRoutes.ts), [`apps/web/src/router/routeResolver.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/router/routeResolver.ts), [`apps/web/src/App.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx)) работает в едином персистентном каркасе (`ClinicWorkspaceShell` + наложенные студии глубины `depth = 1` через [`WorkspaceStudioOverlayHost.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/WorkspaceStudioOverlayHost.tsx) и шину [`clinicEventBus.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/lib/clinicEventBus.ts)), предзагружает основные представления через `workspacePreload.ts` и изолирует публичный/вспомогательные контуры в `TopLevelSurfaceRouters.tsx`:
 
 | Идентификатор | Хеш роута | Название раздела | Основная роль | Корневой компонент |
 |---|---|---|---|---|

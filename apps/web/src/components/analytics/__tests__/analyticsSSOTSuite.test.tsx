@@ -185,41 +185,34 @@ test("2.3. ExecutiveAnalyticsStudioModal: Сенсорный минимум за
 	assert.ok(code.includes('data-testid="studio-modal-close-btn"'), "Close button must have testid");
 });
 
-test("3.1. DirectAnalyticsLauncher: Реагирует на hash #executive-studio и studio-параметры", () => {
-	const launcherPath = path.join(analyticsDir, "DirectAnalyticsLauncher.tsx");
-	const code = readFileSync(launcherPath, "utf8");
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
-	assert.ok(code.includes('h === "#executive-studio"'), "Listens for #executive-studio");
-	assert.ok(code.includes("executive_studio=1"), "Listens for executive_studio=1 query");
-	assert.ok(code.includes("dente-open-executive-studio"), "Listens for dente-open-executive-studio event");
-	assert.ok(code.includes("dente:open-executive-studio"), "Listens for dente:open-executive-studio event");
+test("3.1. resolveClinicRoute: Реагирует на hash #executive-studio и studio-параметры", () => {
+	assert.equal(resolveClinicRoute("", "#executive-studio").view, "analytics");
+	assert.equal(resolveClinicRoute("", "#analytics").view, "analytics");
+	assert.equal(resolveClinicRoute("?studio=analytics", "").view, "analytics");
+	assert.equal(resolveClinicRoute("", "#executive-studio").studio, null);
 });
 
-test("3.2. DirectAnalyticsLauncher смонтирован в StandaloneLaunchers.tsx (Мандат 8aq)", () => {
-	const launchersPath = path.join(
+test("3.2. WorkspaceStudioOverlayHost смонтирован в AppModalsContainer.tsx (Мандат 8aq)", () => {
+	const containerPath = path.join(
 		webSrcRoot,
-		"components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx",
+		"components/appLayout/AppModalsContainer.tsx",
 	);
-	const code = readFileSync(launchersPath, "utf8");
-
-	assert.ok(code.includes('from "../../analytics/DirectAnalyticsLauncher"'), "Must import DirectAnalyticsLauncher");
-	assert.ok(code.includes("<DirectAnalyticsLauncher />"), "Must render DirectAnalyticsLauncher");
-	assert.ok(code.includes('#executive-studio"'), "Must handle #executive-studio route");
+	const code = readFileSync(containerPath, "utf8");
+	assert.ok(code.includes("WorkspaceStudioOverlayHost"), "Must mount WorkspaceStudioOverlayHost");
 });
 
-test("3.3. DirectAnalyticsLauncher смонтирован в AppShell.tsx (Мандат 8aq)", () => {
-	const shellPath = path.join(webSrcRoot, "AppShell.tsx");
-	const code = readFileSync(shellPath, "utf8");
-
-	assert.ok(code.includes('from "./components/analytics/DirectAnalyticsLauncher"'), "Must import DirectAnalyticsLauncher");
-	assert.ok(code.includes("<DirectAnalyticsLauncher />"), "Must render DirectAnalyticsLauncher");
+test("3.3. ExecutiveAnalyticsStudioModal доступна через роутер App.tsx (Мандат 8aq)", () => {
+	const appCode = readFileSync(path.join(webSrcRoot, "App.tsx"), "utf8");
+	assert.ok(appCode.includes("resolveClinicRoute"), "App.tsx must resolve #executive-studio via resolveClinicRoute");
+	assert.ok(appCode.includes("<AppModalsContainer"), "App.tsx must mount AppModalsContainer");
 });
 
-test("3.4. index.ts реэкспортирует SSOT данные, Студию и Лаунчер", () => {
+test("3.4. index.ts реэкспортирует SSOT данные и Студию", () => {
 	const indexPath = path.join(analyticsDir, "index.ts");
 	const code = readFileSync(indexPath, "utf8");
 
 	assert.ok(code.includes('export * from "./analyticsCatalogData"'), "Exports analyticsCatalogData");
 	assert.ok(code.includes('export * from "./ExecutiveAnalyticsStudioModal"'), "Exports ExecutiveAnalyticsStudioModal");
-	assert.ok(code.includes('export * from "./DirectAnalyticsLauncher"'), "Exports DirectAnalyticsLauncher");
 });

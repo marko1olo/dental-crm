@@ -29,7 +29,8 @@ import {
 	type PayrollDoctorProfile,
 } from "../payrollCatalogData";
 import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
-import { DirectPayrollLauncher } from "../DirectPayrollLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -178,22 +179,17 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 		it("4.1 Verifies Sweet Spot file limits across payroll canonical SSOT files", () => {
 			const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
 			const studioPath = path.join(baseDir, "DoctorPayrollStudioModal.tsx");
-			const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
 
 			assert.ok(fs.existsSync(catalogPath));
 			assert.ok(fs.existsSync(studioPath));
-			assert.ok(fs.existsSync(launcherPath));
 
 			const catalogLines = fs.readFileSync(catalogPath, "utf8").split("\n").length;
 			const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
-			const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
 
 			// SSOT Catalog: Sweet Spot 250–350 lines
 			assert.ok(catalogLines >= 200 && catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (target 250–350)`);
 			// Studio Modal: Sweet Spot 350–480 lines
 			assert.ok(studioLines >= 300 && studioLines <= 480, `DoctorPayrollStudioModal.tsx has ${studioLines} lines (target 350–480)`);
-			// Launcher: <= 90 lines
-			assert.ok(launcherLines <= 90, `DirectPayrollLauncher.tsx has ${launcherLines} lines (must be <= 90)`);
 		});
 
 		it("4.2 Verifies DoctorPayrollStudioModal has exactly ONE Primary CTA button #0d9488 that is NEVER disabled (Mandate 8e, 8am)", () => {
@@ -210,23 +206,17 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			assert.ok(!studioContent.includes("disabled={!"), "Primary CTA must never be permanently disabled by inputs");
 		});
 
-		it("4.3 Verifies DirectPayrollLauncher responds to #payroll and #doctor-payroll and is mounted in administrative registries (Mandate 8aq)", () => {
-			const launcherPath = path.join(baseDir, "DirectPayrollLauncher.tsx");
-			const launcherContent = fs.readFileSync(launcherPath, "utf8");
+		it("4.3 Verifies routeResolver responds to #payroll and #doctor-payroll and mounts in WorkspaceStudioOverlayHost (Mandate 8aq)", () => {
+			assert.equal(resolveClinicRoute("", "#payroll").studio?.kind, "doctor_payroll");
+			assert.equal(resolveClinicRoute("", "#doctor-payroll").studio?.kind, "doctor_payroll");
 
-			assert.ok(launcherContent.includes("#payroll"), "Must handle #payroll");
-			assert.ok(launcherContent.includes("#doctor-payroll"), "Must handle #doctor-payroll");
-			assert.ok(launcherContent.includes("DoctorPayrollStudioModal"), "Must render DoctorPayrollStudioModal");
-
-			const registryPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/administrativeLaunchersRegistry.tsx");
-			const registryContent = fs.readFileSync(registryPath, "utf8");
-			assert.ok(registryContent.includes("DirectPayrollLauncher"), "administrativeLaunchersRegistry must import DirectPayrollLauncher");
-			assert.ok(registryContent.includes("<DirectPayrollLauncher />"), "administrativeLaunchersRegistry must render <DirectPayrollLauncher />");
+			const containerPath = path.resolve(__dirname, "../../appLayout/AppModalsContainer.tsx");
+			assert.ok(fs.readFileSync(containerPath, "utf8").includes("WorkspaceStudioOverlayHost"));
 		});
 
-		it("4.4 Verifies clean exports of Studio and Launcher components", () => {
+		it("4.4 Verifies clean exports of Studio and OverlayHost components", () => {
 			assert.ok(DoctorPayrollStudioModal);
-			assert.ok(DirectPayrollLauncher);
+			assert.ok(WorkspaceStudioOverlayHost);
 		});
 	});
 });

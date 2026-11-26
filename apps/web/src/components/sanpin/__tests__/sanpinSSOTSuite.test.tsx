@@ -37,7 +37,8 @@ import {
 	generateSanpinPrintHtml,
 } from "../sanpinCatalogData";
 import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
-import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SANPIN_DIR = path.resolve(__dirname, "..");
@@ -64,14 +65,10 @@ describe("SANPIN & STERILIZATION CANONICAL SSOT SUITE", () => {
 			);
 		});
 
-		it("DirectSanpinLauncher.tsx находится строго в диапазоне 70–90 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx");
-			const content = fs.readFileSync(filePath, "utf-8");
-			const lineCount = content.split("\n").length;
-			assert.ok(
-				lineCount >= 70 && lineCount <= 90,
-				`DirectSanpinLauncher.tsx содержит ${lineCount} строк (ожидалось 70–90 по Мандату 8b)`,
-			);
+		it("устаревший DirectSanpinLauncher.tsx снесён и заменён на WorkspaceStudioOverlayHost", () => {
+			assert.equal(fs.existsSync(path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx")), false);
+			assert.equal(resolveClinicRoute("", "#sanpin").studio?.kind, "sanpin");
+			assert.equal(resolveClinicRoute("?sanpin=1", "").studio?.kind, "sanpin");
 		});
 	});
 
@@ -261,9 +258,9 @@ describe("SANPIN & STERILIZATION CANONICAL SSOT SUITE", () => {
 		});
 	});
 
-	describe("6. Автономный лаунчер DirectSanpinLauncher", () => {
-		it("DirectSanpinLauncher корректно инициализируется и содержит студию", () => {
-			const markup = renderToStaticMarkup(<DirectSanpinLauncher />);
+	describe("6. Автономный роутинг СанПиН (WorkspaceStudioOverlayHost)", () => {
+		it("WorkspaceStudioOverlayHost корректно инициализируется", () => {
+			const markup = renderToStaticMarkup(<WorkspaceStudioOverlayHost />);
 			assert.ok(markup.length >= 0);
 		});
 	});

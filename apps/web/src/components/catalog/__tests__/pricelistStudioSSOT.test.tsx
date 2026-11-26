@@ -32,7 +32,8 @@ import {
 	type PricelistInputItem,
 } from "../PricelistStudioModal";
 import { PriceItemEditModal } from "../../settings/pricesTab/PriceItemEditModal";
-import { DirectPricelistLauncher } from "../DirectPricelistLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 describe("Канонический SSOT прейскуранта DENTE CRM", () => {
 	describe("1. Финансовая целочисленная математика (0 float-ошибок)", () => {
@@ -198,10 +199,11 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 		});
 	});
 
-	describe("5. DirectPricelistLauncher (Маршрутизация и Deep Links)", () => {
-		it("не рендерит модалку если URL не содержит прейскурантных токенов", () => {
-			const html = renderToString(<DirectPricelistLauncher />);
+	describe("5. Pricelist Deep Links & Studio Overlay Host", () => {
+		it("resolves #pricelist into persistent workspace view without orphan rendering", () => {
+			const html = renderToString(<WorkspaceStudioOverlayHost />);
 			assert.equal(html, "");
+			assert.equal(resolveClinicRoute("", "#pricelist").view, "pricelist");
 		});
 	});
 

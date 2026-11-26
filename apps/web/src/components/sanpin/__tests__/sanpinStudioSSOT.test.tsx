@@ -42,7 +42,8 @@ import {
 	generateKraftStickersHtml,
 } from "../sanpinCatalogData";
 import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
-import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 
 const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
 	? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
@@ -68,13 +69,10 @@ describe("SANPIN STUDIO CANONICAL SSOT SUITE (FIRST PRINCIPLES РФ 1–5 КРЕ
 			);
 		});
 
-		it("DirectSanpinLauncher.tsx находится строго в диапазоне 60–80 строк", () => {
-			const content = fs.readFileSync(path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx"), "utf-8");
-			const lines = content.split("\n").length;
-			assert.ok(
-				lines >= 60 && lines <= 80,
-				`DirectSanpinLauncher.tsx содержит ${lines} строк (ожидалось 60–80 по Мандату 8b)`,
-			);
+		it("устаревший DirectSanpinLauncher.tsx снесён и заменён на resolveClinicRoute", () => {
+			assert.equal(fs.existsSync(path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx")), false);
+			assert.equal(resolveClinicRoute("", "#sanpin").studio?.kind, "sanpin");
+			assert.equal(resolveClinicRoute("?sanpin=1", "").studio?.kind, "sanpin");
 		});
 
 		it("styles/sanpinStudio.css находится строго в диапазоне 250–350 строк", () => {
@@ -230,10 +228,11 @@ describe("SANPIN STUDIO CANONICAL SSOT SUITE (FIRST PRINCIPLES РФ 1–5 КРЕ
 		});
 	});
 
-	describe("6. Автономные лаунчеры и ликвидация конкурирующих модалок", () => {
-		it("DirectSanpinLauncher монтирует каноническую SanpinStudioModal", () => {
-			const html = renderToStaticMarkup(<DirectSanpinLauncher forceOpen={true} />);
-			assert.ok(html.includes("direct-sanpin-launcher") && html.includes("sanpin-studio-modal"));
+	describe("6. Единый роутер и оверлей СанПиН", () => {
+		it("WorkspaceStudioOverlayHost и SanpinStudioModal монтируются без сбоя", () => {
+			const hostHtml = renderToStaticMarkup(<WorkspaceStudioOverlayHost />);
+			const studioHtml = renderToStaticMarkup(<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />);
+			assert.ok(typeof hostHtml === "string" && studioHtml.includes("sanpin-studio-modal"));
 		});
 	});
 });
