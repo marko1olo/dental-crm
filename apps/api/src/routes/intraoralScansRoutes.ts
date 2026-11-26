@@ -12,8 +12,13 @@
  * Multitenant RLS isolation, Path Traversal Jail.
  */
 
-import { createReadStream } from "node:fs";
+import crypto from "node:crypto";
+import { createReadStream, createWriteStream } from "node:fs";
+import fsPromises from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
+import { Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -229,206 +234,268 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 			visitId = vHead.data;
 		}
 
-		// 1. Check for standard multipart file stream
-		const reqWithMultipart = request as FastifyRequest & FastifyWithMultipart;
-		if (typeof reqWithMultipart.file === "function") {
-			try {
-				const part = await reqWithMultipart.file();
-				if (part) {
-					const chunks: Buffer[] = [];
-					for await (const chunk of part.file) {
-						chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
-					}
-					const fileBuffer = Buffer.concat(chunks);
-					const partName = part.filename || "scan_session.zip";
-
-					if (partName.endsWith(".zip") || (fileBuffer.length >= 4 && fileBuffer.readUInt32LE(0) === 0x04034b50)) {
-						zipBuffer = fileBuffer;
-					} else {
-						inputFiles.push({ name: partName, buffer: fileBuffer });
-					}
-
-					const fields = part.fields;
-					if (fields?.patientId?.value) {
-						const parsedP = uuidHeaderSchema.safeParse(fields.patientId.value);
-						if (!parsedP.success) {
-							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID patientId в multipart." });
-						}
-						patientId = parsedP.data;
-					}
-					if (fields?.visitId?.value) {
-						const parsedV = uuidHeaderSchema.safeParse(fields.visitId.value);
-						if (!parsedV.success) {
-							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID visitId в multipart." });
-						}
-						visitId = parsedV.data;
-					}
-					if (fields?.labOrderId?.value) {
-						const parsedL = uuidHeaderSchema.safeParse(fields.labOrderId.value);
-						if (!parsedL.success) {
-							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID labOrderId в multipart." });
-						}
-						labOrderId = parsedL.data;
-					}
-					if (fields?.vendor?.value) {
-						const parsedVendor = z.enum(INTRAORAL_SCANNER_VENDORS).safeParse(fields.vendor.value);
-						if (!parsedVendor.success) {
-							return reply.code(400).send({ error: "InvalidPayload", message: "Неизвестный производитель сканера." });
-						}
-						vendor = parsedVendor.data;
-					}
-					if (fields?.scannerModel?.value) {
-						const parsedModel = z.string().trim().min(1).max(120).safeParse(fields.scannerModel.value);
-						if (!parsedModel.success) {
-							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректная модель сканера (макс. 120 символов)." });
-						}
-						scannerModel = parsedModel.data;
-					}
-					if (fields?.vitaShade?.value) {
-						const parsedShade = z.string().trim().min(1).max(32).safeParse(fields.vitaShade.value);
-						if (!parsedShade.success) {
-							return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный оттенок VITA (макс. 32 символа)." });
-						}
-						vitaShade = parsedShade.data;
-					}
-				}
-			} catch (multipartErr: unknown) {
-				request.log.warn({ err: multipartErr }, "Multipart stream parse fallback in intraoralScansRoutes");
-				if (!Buffer.isBuffer(request.body)) {
-					return reply.code(400).send({
-						error: "InvalidMultipartPayload",
-						message: "Не удалось прочитать multipart-поток файлов 3D-сканирования.",
-					});
-				}
-			}
-		}
-
-		// 2. Check for Buffer in request.body (Raw binary ZIP or multipart buffer)
-		if (!zipBuffer && inputFiles.length === 0 && Buffer.isBuffer(request.body)) {
-			const contentType = request.headers["content-type"] || "";
-			let rawBuffer = request.body;
-
-			if (contentType.includes("multipart/form-data")) {
-				const stripped = stripMultipartWrapperFromBuffer(rawBuffer);
-				rawBuffer = stripped.data;
-				const fileName = stripped.filename || "scan.zip";
-				if (fileName.endsWith(".zip") || (rawBuffer.length >= 4 && rawBuffer.readUInt32LE(0) === 0x04034b50)) {
-					zipBuffer = rawBuffer;
-				} else {
-					inputFiles.push({ name: fileName, buffer: rawBuffer });
-				}
-			} else {
-				// Pure binary stream
-				if (rawBuffer.length >= 4 && rawBuffer.readUInt32LE(0) === 0x04034b50) {
-					zipBuffer = rawBuffer;
-				} else {
-					const rawName = query.fileName || "scan_model.stl";
-					inputFiles.push({ name: rawName, buffer: rawBuffer });
-				}
-			}
-		}
-
-		// 3. Check for JSON Payload
-		if (!zipBuffer && inputFiles.length === 0 && request.body && typeof request.body === "object") {
-			const parsedResult = createScanSessionJsonSchema.safeParse(request.body);
-			if (!parsedResult.success) {
-				return reply.code(400).send({
-					error: "InvalidPayload",
-					message: "Некорректная структура параметров сессии сканирования.",
-					details: parsedResult.error.flatten(),
-				});
-			}
-
-			const data = parsedResult.data;
-			if (data.patientId) patientId = data.patientId;
-			if (data.visitId) visitId = data.visitId;
-			if (data.labOrderId) labOrderId = data.labOrderId;
-			if (data.vendor) vendor = data.vendor;
-			if (data.scannerModel) scannerModel = data.scannerModel;
-			if (data.folderPath) folderPath = data.folderPath;
-			if (data.preparationTeethFdi) preparationTeethFdi = data.preparationTeethFdi;
-			if (data.implantTeethFdi) implantTeethFdi = data.implantTeethFdi;
-			if (data.materialsPlanned) materialsPlanned = data.materialsPlanned;
-			if (data.vitaShade) vitaShade = data.vitaShade;
-
-			if (data.zipBase64) {
-				zipBuffer = Buffer.from(data.zipBase64, "base64");
-			} else if (data.files && data.files.length > 0) {
-				for (const f of data.files) {
-					inputFiles.push({
-						name: f.name,
-						buffer: Buffer.from(f.contentBase64, "base64"),
-					});
-				}
-			}
-		}
-
-		if (!zipBuffer && inputFiles.length === 0 && !folderPath) {
-			return reply.code(400).send({
-				error: "MissingScanFiles",
-				message:
-					"Файлы 3D-сканирования не получены. Передайте ZIP-архив, набор STL/PLY файлов или JSON base64 полезную нагрузку.",
-			});
-		}
+		const MAX_SCAN_UPLOAD_BYTES = 256 * 1024 * 1024;
+		let zipFilePath: string | undefined;
+		const tempFilesToCleanup: string[] = [];
 
 		try {
-			const session = await UniversalScannerHub.processIncomingScanSession({
-				organizationId: orgId,
-				patientId,
-				visitId,
-				labOrderId,
-				vendor,
-				scannerModel,
-				zipBuffer,
-				files: inputFiles.length > 0 ? inputFiles : undefined,
-				folderPath,
-				preparationTeethFdi,
-				implantTeethFdi,
-				materialsPlanned,
-				vitaShade,
-			});
+			// 1. Check for standard multipart file stream (потоковая запись во временный файл без накопления Buffer[])
+			const reqWithMultipart = request as FastifyRequest & FastifyWithMultipart;
+			if (typeof reqWithMultipart.file === "function") {
+				try {
+					const part = await reqWithMultipart.file();
+					if (part) {
+						const partName = part.filename || "scan_session.zip";
+						const tempPath = path.join(
+							os.tmpdir(),
+							`dente-scan-${crypto.randomUUID()}.bin`,
+						);
+						tempFilesToCleanup.push(tempPath);
 
-			return reply.code(201).send({
-				success: true,
-				session,
-			});
-		} catch (err: unknown) {
-			const errorMessage = err instanceof Error ? err.message : String(err);
-			request.log.error({ err }, "Failed to process intraoral scan session");
+						let bytesReceived = 0;
+						const magicChunks: Buffer[] = [];
+						let magicCaptured = 0;
+						const limiter = new Transform({
+							transform(chunk, _enc, cb) {
+								const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+								bytesReceived += buf.length;
+								if (bytesReceived > MAX_SCAN_UPLOAD_BYTES) {
+									return cb(
+										new Error(
+											"Размер загружаемого 3D-скана превышает допустимый лимит 256 МБ.",
+										),
+									);
+								}
+								if (magicCaptured < 4) {
+									const slice = buf.subarray(0, 4 - magicCaptured);
+									magicChunks.push(slice);
+									magicCaptured += slice.length;
+								}
+								cb(null, buf);
+							},
+						});
 
-			if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
-				return reply.code(403).send({
-					error: "PathTraversalDetected",
-					message: "Доступ к указанному пути сканирования запрещен.",
-				});
+						await pipeline(part.file, limiter, createWriteStream(tempPath));
+						const magicHead = Buffer.concat(magicChunks);
+						const isZipMagic =
+							magicHead.length >= 4 && magicHead.readUInt32LE(0) === 0x04034b50;
+
+						if (partName.toLowerCase().endsWith(".zip") || isZipMagic) {
+							zipFilePath = tempPath;
+						} else {
+							const fileBuffer = await fsPromises.readFile(tempPath);
+							inputFiles.push({ name: partName, buffer: fileBuffer });
+						}
+
+						const fields = part.fields;
+						if (fields?.patientId?.value) {
+							const parsedP = uuidHeaderSchema.safeParse(fields.patientId.value);
+							if (!parsedP.success) {
+								return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID patientId в multipart." });
+							}
+							patientId = parsedP.data;
+						}
+						if (fields?.visitId?.value) {
+							const parsedV = uuidHeaderSchema.safeParse(fields.visitId.value);
+							if (!parsedV.success) {
+								return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID visitId в multipart." });
+							}
+							visitId = parsedV.data;
+						}
+						if (fields?.labOrderId?.value) {
+							const parsedL = uuidHeaderSchema.safeParse(fields.labOrderId.value);
+							if (!parsedL.success) {
+								return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный UUID labOrderId в multipart." });
+							}
+							labOrderId = parsedL.data;
+						}
+						if (fields?.vendor?.value) {
+							const parsedVendor = z.enum(INTRAORAL_SCANNER_VENDORS).safeParse(fields.vendor.value);
+							if (!parsedVendor.success) {
+								return reply.code(400).send({ error: "InvalidPayload", message: "Неизвестный производитель сканера." });
+							}
+							vendor = parsedVendor.data;
+						}
+						if (fields?.scannerModel?.value) {
+							const parsedModel = z.string().trim().min(1).max(120).safeParse(fields.scannerModel.value);
+							if (!parsedModel.success) {
+								return reply.code(400).send({ error: "InvalidPayload", message: "Некорректная модель сканера (макс. 120 символов)." });
+							}
+							scannerModel = parsedModel.data;
+						}
+						if (fields?.vitaShade?.value) {
+							const parsedShade = z.string().trim().min(1).max(32).safeParse(fields.vitaShade.value);
+							if (!parsedShade.success) {
+								return reply.code(400).send({ error: "InvalidPayload", message: "Некорректный оттенок VITA (макс. 32 символа)." });
+							}
+							vitaShade = parsedShade.data;
+						}
+					}
+				} catch (multipartErr: unknown) {
+					const msg = multipartErr instanceof Error ? multipartErr.message : String(multipartErr);
+					if (msg.includes("лимит 256 МБ")) {
+						return reply.code(413).send({
+							error: "PayloadTooLarge",
+							message: msg,
+						});
+					}
+					request.log.warn({ err: multipartErr }, "Multipart stream parse fallback in intraoralScansRoutes");
+					if (!Buffer.isBuffer(request.body)) {
+						return reply.code(400).send({
+							error: "InvalidMultipartPayload",
+							message: "Не удалось прочитать multipart-поток файлов 3D-сканирования.",
+						});
+					}
+				}
 			}
 
-			if (errorMessage.includes("Zip-бомбы") || errorMessage.includes("лимит")) {
-				return reply.code(400).send({
-					error: "ZipBombLimitExceeded",
-					message: errorMessage,
-				});
+			// 2. Check for Buffer in request.body (Raw binary ZIP or multipart buffer)
+			if (!zipFilePath && !zipBuffer && inputFiles.length === 0 && Buffer.isBuffer(request.body)) {
+				const contentType = request.headers["content-type"] || "";
+				let rawBuffer = request.body;
+
+				if (contentType.includes("multipart/form-data")) {
+					const stripped = stripMultipartWrapperFromBuffer(rawBuffer);
+					rawBuffer = stripped.data;
+					const fileName = stripped.filename || "scan.zip";
+					if (fileName.endsWith(".zip") || (rawBuffer.length >= 4 && rawBuffer.readUInt32LE(0) === 0x04034b50)) {
+						zipBuffer = rawBuffer;
+					} else {
+						inputFiles.push({ name: fileName, buffer: rawBuffer });
+					}
+				} else {
+					if (rawBuffer.length >= 4 && rawBuffer.readUInt32LE(0) === 0x04034b50) {
+						zipBuffer = rawBuffer;
+					} else {
+						const rawName = query.fileName || "scan_model.stl";
+						inputFiles.push({ name: rawName, buffer: rawBuffer });
+					}
+				}
 			}
 
-			if (errorMessage.includes("Patient could not be linked") || errorMessage.includes("Missing patientId")) {
+			// 3. Check for JSON Payload
+			if (!zipFilePath && !zipBuffer && inputFiles.length === 0 && request.body && typeof request.body === "object") {
+				const parsedResult = createScanSessionJsonSchema.safeParse(request.body);
+				if (!parsedResult.success) {
+					return reply.code(400).send({
+						error: "InvalidPayload",
+						message: "Некорректная структура параметров сессии сканирования.",
+						details: parsedResult.error.flatten(),
+					});
+				}
+
+				const data = parsedResult.data;
+				if (data.patientId) patientId = data.patientId;
+				if (data.visitId) visitId = data.visitId;
+				if (data.labOrderId) labOrderId = data.labOrderId;
+				if (data.vendor) vendor = data.vendor;
+				if (data.scannerModel) scannerModel = data.scannerModel;
+				if (data.folderPath) folderPath = data.folderPath;
+				if (data.preparationTeethFdi) preparationTeethFdi = data.preparationTeethFdi;
+				if (data.implantTeethFdi) implantTeethFdi = data.implantTeethFdi;
+				if (data.materialsPlanned) materialsPlanned = data.materialsPlanned;
+				if (data.vitaShade) vitaShade = data.vitaShade;
+
+				if (data.zipBase64) {
+					if (Math.ceil((data.zipBase64.length * 3) / 4) > MAX_SCAN_UPLOAD_BYTES) {
+						return reply.code(413).send({
+							error: "PayloadTooLarge",
+							message: "Размер zipBase64 превышает допустимый лимит 256 МБ.",
+						});
+					}
+					zipBuffer = Buffer.from(data.zipBase64, "base64");
+				} else if (data.files && data.files.length > 0) {
+					let totalJsonBytes = 0;
+					for (const f of data.files) {
+						totalJsonBytes += Math.ceil((f.contentBase64.length * 3) / 4);
+						if (totalJsonBytes > MAX_SCAN_UPLOAD_BYTES) {
+							return reply.code(413).send({
+								error: "PayloadTooLarge",
+								message: "Суммарный размер файлов сканирования превышает 256 МБ.",
+							});
+						}
+						inputFiles.push({
+							name: f.name,
+							buffer: Buffer.from(f.contentBase64, "base64"),
+						});
+					}
+				}
+			}
+
+			if (!zipFilePath && !zipBuffer && inputFiles.length === 0 && !folderPath) {
 				return reply.code(400).send({
-					error: "MissingPatientId",
+					error: "MissingScanFiles",
 					message:
-						"Не удалось автоматически связать скан с пациентом. Укажите patientId явно.",
+						"Файлы 3D-сканирования не получены. Передайте ZIP-архив, набор STL/PLY файлов или JSON base64 полезную нагрузку.",
 				});
 			}
 
-			if (errorMessage.includes("not found in this organization")) {
-				return reply.code(404).send({
-					error: "PatientNotFound",
-					message: "Указанный пациент не найден в организации клиники.",
+			try {
+				const session = await UniversalScannerHub.processIncomingScanSession({
+					organizationId: orgId,
+					patientId,
+					visitId,
+					labOrderId,
+					vendor,
+					scannerModel,
+					zipFilePath,
+					zipBuffer,
+					files: inputFiles.length > 0 ? inputFiles : undefined,
+					folderPath,
+					preparationTeethFdi,
+					implantTeethFdi,
+					materialsPlanned,
+					vitaShade,
+				});
+
+				return reply.code(201).send({
+					success: true,
+					session,
+				});
+			} catch (err: unknown) {
+				const errorMessage = err instanceof Error ? err.message : String(err);
+				request.log.error({ err }, "Failed to process intraoral scan session");
+
+				if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+					return reply.code(403).send({
+						error: "PathTraversalDetected",
+						message: "Доступ к указанному пути сканирования запрещен.",
+					});
+				}
+
+				if (errorMessage.includes("Zip-бомбы") || errorMessage.includes("лимит")) {
+					return reply.code(400).send({
+						error: "ZipBombLimitExceeded",
+						message: errorMessage,
+					});
+				}
+
+				if (errorMessage.includes("Patient could not be linked") || errorMessage.includes("Missing patientId")) {
+					return reply.code(400).send({
+						error: "MissingPatientId",
+						message:
+							"Не удалось автоматически связать скан с пациентом. Укажите patientId явно.",
+					});
+				}
+
+				if (errorMessage.includes("not found in this organization")) {
+					return reply.code(404).send({
+						error: "PatientNotFound",
+						message: "Указанный пациент не найден в организации клиники.",
+					});
+				}
+
+				return reply.code(500).send({
+					error: "ScanProcessingError",
+					message: "Ошибка обработки интраорального 3D-скана.",
 				});
 			}
-
-			return reply.code(500).send({
-				error: "ScanProcessingError",
-				message: "Ошибка обработки интраорального 3D-скана.",
-			});
+		} finally {
+			for (const tmp of tempFilesToCleanup) {
+				await fsPromises.unlink(tmp).catch((unlinkErr) => {
+					request.log.debug({ err: unlinkErr, tmp }, "Temp intraoral scan file cleanup skipped");
+				});
+			}
 		}
 	};
 

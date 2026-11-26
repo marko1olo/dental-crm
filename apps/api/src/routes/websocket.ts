@@ -119,7 +119,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 
 	wsBroker.startHeartbeat(30_000);
 	app.addHook("onClose", () => {
-		wsBroker.stopHeartbeat();
+		wsBroker.clear();
 	});
 
 	const handleSecureWsConnection = (socket: WebSocket, request: FastifyRequest) => {
@@ -131,6 +131,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 		const authTimer = setTimeout(() => {
 			if (!authorized) socket.close(CLOSE_AUTH_TIMEOUT, "auth timeout");
 		}, AUTH_TIMEOUT_MS);
+		authTimer.unref();
 
 		const finish = () => {
 			clearTimeout(authTimer);

@@ -13,6 +13,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import { ZipFile } from "yazl";
 import {
 	type MobileOtaVersionQuery,
 	type MobileOtaVersionResponse,
@@ -26,6 +27,7 @@ import {
 	requireSuperadmin,
 	resolveOrganizationId,
 } from "../accessGuard.js";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { createApiLogger } from "../observability/logger.js";
 
 const otaLogger = createApiLogger("mobileOta");
@@ -68,7 +70,9 @@ function createDefaultOtaConfig(): OtaRuntimeConfig {
  */
 interface CachedBundle {
 	version: string;
-	buffer: Buffer;
+	buffer: Buffer | null;
+	filePath?: string | undefined;
+	mtimeMs?: number | undefined;
 	sha256: string;
 	sizeBytes: number;
 	generatedAt: string;
@@ -79,7 +83,10 @@ interface TenantOtaState {
 	cachedBundle: CachedBundle | null;
 }
 
-const otaStateByOrg = new Map<string, TenantOtaState>();
+const otaStateByOrg = new BoundedTtlMap<string, TenantOtaState>({
+	maxEntries: 200,
+	ttlMs: 24 * 60 * 60 * 1000,
+});
 
 function otaStateKey(orgId: string | null): string {
 	return orgId?.trim() || "__platform__";
@@ -113,8 +120,68 @@ export function calculateCrc32(buf: Buffer): number {
 	return (crc ^ 0xffffffff) >>> 0;
 }
 
+async function computeFileSha256Stream(filePath: string): Promise<string> {
+	const hash = crypto.createHash("sha256");
+	const stream = fs.createReadStream(filePath, { highWaterMark: 64 * 1024 });
+	for await (const chunk of stream) {
+		hash.update(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+	}
+	return hash.digest("hex");
+}
+
+function normalizeAndValidateZipEntryName(rawInput: string): string {
+	const rawName = rawInput.replace(/\\/g, "/");
+	const normalized = path.posix.normalize(rawName);
+	const cleanName = normalized.replace(/^\/+/, "");
+
+	if (
+		!cleanName ||
+		cleanName.includes("\0") ||
+		cleanName.startsWith("../") ||
+		cleanName === ".." ||
+		path.posix.isAbsolute(normalized) ||
+		cleanName.split("/").includes("..")
+	) {
+		throw new Error(
+			`Zip Slip Security Guard: некорректный или небезопасный путь записи в архив: "${rawInput}"`,
+		);
+	}
+	return cleanName;
+}
+
 /**
- * Чистый генератор PKZIP архива без сторонних бинарных зависимостей.
+ * Потоковый сборщик PKZIP на базе yazl (MIT) с Zip Slip защитой.
+ */
+export function createZipStream(
+	entries: Array<{ name: string; data: Buffer }>,
+): NodeJS.ReadableStream {
+	const zip = new ZipFile();
+	const deterministicDate = new Date(0);
+	for (const entry of entries) {
+		const cleanName = normalizeAndValidateZipEntryName(entry.name);
+		zip.addBuffer(entry.data, cleanName, {
+			compress: true,
+			compressionLevel: 6,
+			mtime: deterministicDate,
+		});
+	}
+	zip.end();
+	return zip.outputStream;
+}
+
+export async function createZipArchiveAsync(
+	entries: Array<{ name: string; data: Buffer }>,
+): Promise<Buffer> {
+	const stream = createZipStream(entries);
+	const chunks: Buffer[] = [];
+	for await (const chunk of stream) {
+		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+	}
+	return Buffer.concat(chunks);
+}
+
+/**
+ * Чистый генератор PKZIP архива без сторонних бинарных зависимостей (синхронный для unit-тестов).
  */
 export function createZipArchive(
 	entries: Array<{ name: string; data: Buffer }>,
@@ -124,22 +191,7 @@ export function createZipArchive(
 	let offset = 0;
 
 	for (const entry of entries) {
-		const rawName = entry.name.replace(/\\/g, "/");
-		const normalized = path.posix.normalize(rawName);
-		const cleanName = normalized.replace(/^\/+/, "");
-
-		if (
-			!cleanName ||
-			cleanName.includes("\0") ||
-			cleanName.startsWith("../") ||
-			cleanName === ".." ||
-			path.posix.isAbsolute(normalized) ||
-			cleanName.split("/").includes("..")
-		) {
-			throw new Error(
-				`Zip Slip Security Guard: некорректный или небезопасный путь записи в архив: "${entry.name}"`,
-			);
-		}
+		const cleanName = normalizeAndValidateZipEntryName(entry.name);
 
 		const nameBuffer = Buffer.from(cleanName, "utf-8");
 		const uncompressedSize = entry.data.length;
@@ -213,52 +265,11 @@ export function createZipArchive(
 	return Buffer.concat([...localHeaders, centralDirBuffer, eocd]);
 }
 
-/**
- * Получение или создание детерминированного бандла для раздачи клиентам.
- */
-export function getOrCreateOtaBundle(
-	version?: string,
+function buildDynamicBundleEntries(
+	state: TenantOtaState,
+	effectiveVersion: string,
 	customContent?: string,
-	orgId: string | null = null,
-): CachedBundle {
-	const state = getTenantOtaState(orgId);
-	const effectiveVersion = version ?? state.config.version;
-	if (
-		state.cachedBundle &&
-		state.cachedBundle.version === effectiveVersion &&
-		!customContent
-	) {
-		return state.cachedBundle;
-	}
-
-	// 1. Проверяем наличие реального zip файла на диске
-	if (
-		state.config.customBundleZipPath &&
-		fs.existsSync(state.config.customBundleZipPath)
-	) {
-		try {
-			const fileBuffer = fs.readFileSync(state.config.customBundleZipPath);
-			const sha256 = crypto
-				.createHash("sha256")
-				.update(fileBuffer)
-				.digest("hex");
-			state.cachedBundle = {
-				version: effectiveVersion,
-				buffer: fileBuffer,
-				sha256,
-				sizeBytes: fileBuffer.length,
-				generatedAt: new Date().toISOString(),
-			};
-			return state.cachedBundle;
-		} catch (err) {
-			otaLogger.warn(
-				{ err },
-				"Failed to read custom OTA bundle from disk, falling back to generator",
-			);
-		}
-	}
-
-	// 2. Детерминированная генерация бандла с манифестом
+): Array<{ name: string; data: Buffer }> {
 	const manifestContent = JSON.stringify(
 		{
 			app: "dente-crm",
@@ -284,7 +295,7 @@ export function getOrCreateOtaBundle(
 </body>
 </html>`;
 
-	const entries = [
+	return [
 		{
 			name: "manifest.json",
 			data: Buffer.from(manifestContent, "utf-8"),
@@ -298,7 +309,93 @@ export function getOrCreateOtaBundle(
 			data: Buffer.from(`DENTE_VERSION=${effectiveVersion}`, "utf-8"),
 		},
 	];
+}
 
+/**
+ * Потоковое получение или генерация бандла OTA (без загрузки кастомных ZIP с диска в RAM).
+ */
+export async function getOrCreateOtaBundleAsync(
+	version?: string,
+	customContent?: string,
+	orgId: string | null = null,
+): Promise<CachedBundle> {
+	const state = getTenantOtaState(orgId);
+	const effectiveVersion = version ?? state.config.version;
+	const customPath = state.config.customBundleZipPath;
+
+	if (customPath && !customContent) {
+		try {
+			const st = await fs.promises.stat(customPath);
+			if (
+				state.cachedBundle &&
+				state.cachedBundle.version === effectiveVersion &&
+				state.cachedBundle.filePath === customPath &&
+				state.cachedBundle.mtimeMs === st.mtimeMs &&
+				state.cachedBundle.sizeBytes === st.size
+			) {
+				return state.cachedBundle;
+			}
+			const sha256 = await computeFileSha256Stream(customPath);
+			state.cachedBundle = {
+				version: effectiveVersion,
+				buffer: null,
+				filePath: customPath,
+				mtimeMs: st.mtimeMs,
+				sha256,
+				sizeBytes: st.size,
+				generatedAt: new Date().toISOString(),
+			};
+			return state.cachedBundle;
+		} catch (err) {
+			otaLogger.warn(
+				{ err },
+				"Failed to stat/hash custom OTA bundle on disk, falling back to yazl generator",
+			);
+		}
+	}
+
+	if (
+		state.cachedBundle &&
+		state.cachedBundle.version === effectiveVersion &&
+		!customContent
+	) {
+		return state.cachedBundle;
+	}
+
+	const entries = buildDynamicBundleEntries(state, effectiveVersion, customContent);
+	const zipBuffer = await createZipArchiveAsync(entries);
+	const sha256 = crypto.createHash("sha256").update(zipBuffer).digest("hex");
+
+	state.cachedBundle = {
+		version: effectiveVersion,
+		buffer: zipBuffer,
+		sha256,
+		sizeBytes: zipBuffer.length,
+		generatedAt: new Date().toISOString(),
+	};
+
+	return state.cachedBundle;
+}
+
+/**
+ * Получение или создание детерминированного бандла для синхронных unit-тестов.
+ */
+export function getOrCreateOtaBundle(
+	version?: string,
+	customContent?: string,
+	orgId: string | null = null,
+): CachedBundle {
+	const state = getTenantOtaState(orgId);
+	const effectiveVersion = version ?? state.config.version;
+	if (
+		state.cachedBundle &&
+		state.cachedBundle.version === effectiveVersion &&
+		!customContent
+	) {
+		return state.cachedBundle;
+	}
+
+	const entries = buildDynamicBundleEntries(state, effectiveVersion, customContent);
 	const zipBuffer = createZipArchive(entries);
 	const sha256 = crypto
 		.createHash("sha256")
@@ -357,7 +454,7 @@ export async function registerMobileOtaRoutes(
 			const state = getTenantOtaState(requesterOrgId);
 			const clientVersion = parsedQuery.data.clientVersion;
 
-			const bundle = getOrCreateOtaBundle(
+			const bundle = await getOrCreateOtaBundleAsync(
 				state.config.version,
 				undefined,
 				requesterOrgId,
@@ -392,14 +489,14 @@ export async function registerMobileOtaRoutes(
 	);
 
 	/**
-	 * GET /api/mobile/bundle.zip — Раздача упакованного бандла.
+	 * GET /api/mobile/bundle.zip — Потоковая раздача упакованного бандла.
 	 */
 	app.get(
 		"/api/mobile/bundle.zip",
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const requesterOrgId = await resolveOrganizationId(request);
 			const state = getTenantOtaState(requesterOrgId);
-			const bundle = getOrCreateOtaBundle(
+			const bundle = await getOrCreateOtaBundleAsync(
 				state.config.version,
 				undefined,
 				requesterOrgId,
@@ -422,12 +519,20 @@ export async function registerMobileOtaRoutes(
 					"Content-Disposition",
 					`attachment; filename="dente-bundle-v${bundle.version}.zip"`,
 				)
-				.header("Content-Length", bundle.buffer.length)
+				.header("Content-Length", bundle.sizeBytes)
 				.header("X-Bundle-SHA256", bundle.sha256)
 				.header("ETag", `"${bundle.sha256}"`)
 				.header("Cache-Control", "public, max-age=300, must-revalidate");
 
-			return reply.send(bundle.buffer);
+			if (bundle.filePath) {
+				return reply.send(fs.createReadStream(bundle.filePath));
+			}
+			if (bundle.buffer) {
+				return reply.send(bundle.buffer);
+			}
+			return reply.send(
+				createZipStream(buildDynamicBundleEntries(state, bundle.version)),
+			);
 		},
 	);
 
@@ -468,7 +573,7 @@ export async function registerMobileOtaRoutes(
 
 			// Сбрасываем кэш и генерируем новый бандл строго для текущего тенанта/платформы
 			state.cachedBundle = null;
-			const newBundle = getOrCreateOtaBundle(
+			const newBundle = await getOrCreateOtaBundleAsync(
 				state.config.version,
 				body.customContent,
 				requesterOrgId,
@@ -500,7 +605,7 @@ export async function registerMobileOtaRoutes(
 	app.get("/api/mobile/health", async (request: FastifyRequest) => {
 		const requesterOrgId = await resolveOrganizationId(request);
 		const state = getTenantOtaState(requesterOrgId);
-		const bundle = getOrCreateOtaBundle(
+		const bundle = await getOrCreateOtaBundleAsync(
 			state.config.version,
 			undefined,
 			requesterOrgId,

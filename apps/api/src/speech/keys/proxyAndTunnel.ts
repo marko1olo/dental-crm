@@ -55,12 +55,22 @@ export function getProxyAgent(): Dispatcher | null {
 		process.env.LLM_PROXY?.trim() ||
 		undefined;
 	if (!proxyUrl) {
-		cachedProxyAgent = null;
+		if (cachedProxyAgent) {
+			void cachedProxyAgent.close().catch((closeErr) => {
+				logger.debug({ err: safeLogError(closeErr) }, "Failed to close previous ProxyAgent");
+			});
+			cachedProxyAgent = null;
+		}
 		cachedProxyUrl = undefined;
 		return null;
 	}
 	if (cachedProxyUrl !== proxyUrl) {
-		cachedProxyAgent = null;
+		if (cachedProxyAgent) {
+			void cachedProxyAgent.close().catch((closeErr) => {
+				logger.debug({ err: safeLogError(closeErr) }, "Failed to close stale ProxyAgent");
+			});
+			cachedProxyAgent = null;
+		}
 		cachedProxyUrl = proxyUrl;
 	}
 	if (!cachedProxyAgent) {
@@ -150,6 +160,7 @@ export function getProxyAgent(): Dispatcher | null {
 }
 
 let cachedWsAgent: https.Agent | http.Agent | null = null;
+let cachedWsProxyUrl: string | undefined;
 export function getWsProxyAgent(): https.Agent | http.Agent | null {
 	const proxyUrl =
 		process.env.GLOBAL_LLM_PROXY_URL?.trim() ||
@@ -158,7 +169,21 @@ export function getWsProxyAgent(): https.Agent | http.Agent | null {
 		process.env.HTTP_PROXY?.trim() ||
 		process.env.LLM_PROXY?.trim() ||
 		undefined;
-	if (!proxyUrl) return null;
+	if (!proxyUrl) {
+		if (cachedWsAgent) {
+			cachedWsAgent.destroy();
+			cachedWsAgent = null;
+		}
+		cachedWsProxyUrl = undefined;
+		return null;
+	}
+	if (cachedWsProxyUrl !== proxyUrl) {
+		if (cachedWsAgent) {
+			cachedWsAgent.destroy();
+			cachedWsAgent = null;
+		}
+		cachedWsProxyUrl = proxyUrl;
+	}
 	if (cachedWsAgent) return cachedWsAgent;
 
 	type CustomAgentOptions = https.AgentOptions & {
@@ -429,6 +454,9 @@ export async function fetchWithProviderTimeout(
 					logger.error({ err: safeLogError(retryError) }, "SOCKS5 retry also failed");
 				} finally {
 					clearTimeout(retryTimer);
+					void socksDispatcher.close().catch((closeErr) => {
+						logger.debug({ err: safeLogError(closeErr) }, "Failed to close SOCKS5 dispatcher");
+					});
 				}
 			}
 		}

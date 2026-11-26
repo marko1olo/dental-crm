@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
@@ -27,6 +28,37 @@ async function pathExists(targetPath: string): Promise<boolean> {
 	}
 }
 
+async function computeFileSha256Stream(filePath: string): Promise<string> {
+	const hash = crypto.createHash("sha256");
+	const stream = fs.createReadStream(filePath, { highWaterMark: 64 * 1024 });
+	for await (const chunk of stream) {
+		hash.update(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+	}
+	return hash.digest("hex");
+}
+
+async function mapWithConcurrency<T, R>(
+	items: readonly T[],
+	concurrency: number,
+	mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
+	const results: R[] = new Array(items.length);
+	let cursor = 0;
+	const workerCount = Math.min(Math.max(1, concurrency), items.length);
+	await Promise.all(
+		Array.from({ length: workerCount }, async () => {
+			while (cursor < items.length) {
+				const idx = cursor++;
+				const item = items[idx];
+				if (item !== undefined) {
+					results[idx] = await mapper(item);
+				}
+			}
+		}),
+	);
+	return results;
+}
+
 export function registerBackupRoutes(app: FastifyInstance): void {
 	/**
 	 * Получить список реальных зашифрованных копий на диске с SHA-256 и точным размером в байтах.
@@ -52,34 +84,28 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 			);
 
 			const backups = (
-				await Promise.all(
-					matchingFiles.map(async (filename) => {
-						const fullPath = path.join(dir, filename);
-						const stat = await fsPromises.stat(fullPath);
-						let sha256 = "";
-						try {
-							const fileBuffer = await fsPromises.readFile(fullPath);
-							sha256 = crypto
-								.createHash("sha256")
-								.update(fileBuffer)
-								.digest("hex");
-						} catch (hashErr: unknown) {
-							request.log.warn(
-								{ err: safeLogError(hashErr), filename },
-								"[backup] Failed to compute backup SHA-256",
-							);
-							sha256 = "";
-						}
-						return {
-							id: filename,
-							filename,
-							filePath: fullPath,
-							sizeBytes: stat.size,
-							createdAt: stat.mtime.toISOString(),
-							sha256,
-						};
-					}),
-				)
+				await mapWithConcurrency(matchingFiles, 4, async (filename) => {
+					const fullPath = path.join(dir, filename);
+					const stat = await fsPromises.stat(fullPath);
+					let sha256 = "";
+					try {
+						sha256 = await computeFileSha256Stream(fullPath);
+					} catch (hashErr: unknown) {
+						request.log.warn(
+							{ err: safeLogError(hashErr), filename },
+							"[backup] Failed to compute backup SHA-256",
+						);
+						sha256 = "";
+					}
+					return {
+						id: filename,
+						filename,
+						filePath: fullPath,
+						sizeBytes: stat.size,
+						createdAt: stat.mtime.toISOString(),
+						sha256,
+					};
+				})
 			).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
 			return { backups };
@@ -153,8 +179,7 @@ export function registerBackupRoutes(app: FastifyInstance): void {
 		}
 
 		const stat = await fsPromises.stat(finalPath);
-		const fileBuffer = await fsPromises.readFile(finalPath);
-		const sha256 = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+		const sha256 = await computeFileSha256Stream(finalPath);
 
 		try {
 			await withTenantCtx(orgId, async (tx) =>

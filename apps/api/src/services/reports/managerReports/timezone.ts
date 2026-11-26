@@ -8,6 +8,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import { clinics } from "../../../db/schema.js";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 
 /**
  * Канонический часовой пояс по умолчанию из схемы клиники (clinics.timezone default 'Europe/Samara').
@@ -81,7 +82,7 @@ export async function clinicTimeZone(
 	}
 }
 
-const knownTimeZoneCache = new Map<string, boolean>();
+const knownTimeZoneCache = new BoundedTtlMap<string, boolean>({ maxEntries: 1000 });
 
 export async function postgresKnowsTimeZone(
 	timeZone: string | null | undefined,

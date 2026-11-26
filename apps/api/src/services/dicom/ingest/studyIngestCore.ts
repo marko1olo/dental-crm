@@ -3,8 +3,10 @@
  * дедупликации срезов и регистрации DICOM-исследований в PostgreSQL 18.
  */
 
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
@@ -14,6 +16,7 @@ import {
 	toNormalizedRelativePacsStoragePath,
 } from "../../imaging/localPacsSanitizer.js";
 import { wsBroker } from "../../websocketBroker.js";
+import { readFilePrefixAsync } from "../../../routes/imaging/dicomParsingModules/dicomFileIoAndSafety.js";
 import { dicomIngestLogger } from "./dicomIngestLogger.js";
 import {
 	mapModalityKindToStudyKind,
@@ -197,7 +200,9 @@ export class DicomStudyIngestService {
 			});
 			({ patientBinding, studyId, seriesId, instanceId, isDuplicate, xrayScanId } = txResult);
 		} catch (txErr) {
-			await fs.unlink(fullFilePath).catch(() => undefined);
+			await fs.unlink(fullFilePath).catch((unlinkErr) => {
+				dicomIngestLogger.warn(`Не удалось удалить DICOM-файл при откате: ${fullFilePath}`, unlinkErr);
+			});
 			throw txErr;
 		}
 
@@ -419,7 +424,13 @@ export class DicomStudyIngestService {
 			});
 			({ patientBinding, studyId, seriesId, newSlicesInserted, duplicateSlicesSkipped, finalFileSizeBytes } = txResult);
 		} catch (txErr) {
-			await Promise.all(writtenFilePaths.map((p) => fs.unlink(p).catch(() => undefined)));
+			await Promise.all(
+				writtenFilePaths.map((p) =>
+					fs.unlink(p).catch((unlinkErr) => {
+						dicomIngestLogger.warn(`Не удалось удалить DICOM-файл при откате: ${p}`, unlinkErr);
+					}),
+				),
+			);
 			throw txErr;
 		}
 
@@ -477,8 +488,41 @@ export class DicomStudyIngestService {
 	}
 
 	/**
+	 * Потоковое чтение метаданных DICOM-среза с чтением только заголовка (64 КБ префикс)
+	 * без загрузки пиксельного объема КТ/КЛКТ в оперативную память.
+	 */
+	private async parseHeaderMetadataFromFile(filePath: string): Promise<{
+		filePath: string;
+		fileSizeBytes: number;
+		metadata: ReturnType<typeof parseDicomIngestBuffer>;
+	} | null> {
+		const DICOM_HEADER_PREFIX_BYTES = 64 * 1024;
+		const st = await fs.stat(filePath);
+		if (st.size < 132) return null;
+
+		const prefix = await readFilePrefixAsync(filePath, DICOM_HEADER_PREFIX_BYTES);
+		if (prefix.length < 132) return null;
+
+		try {
+			const meta = parseDicomIngestBuffer(prefix, { untilTag: "x7fe00010" });
+			if (
+				!meta.sopInstanceUid.startsWith("generated.sop.") &&
+				!meta.studyInstanceUid.startsWith("generated.study.")
+			) {
+				return { filePath, fileSizeBytes: st.size, metadata: meta };
+			}
+		} catch {
+			// Если заголовок > 64 КБ (крупные private tags) — безопасный fallback на полное чтение одного файла
+		}
+
+		const fullBuf = await fs.readFile(filePath);
+		const metadata = parseDicomIngestBuffer(fullBuf);
+		return { filePath, fileSizeBytes: st.size, metadata };
+	}
+
+	/**
 	 * Пакетный прием серии DICOM файлов напрямую из каталога на диске
-	 * (например, папка исследования томографа из 400 срезов).
+	 * (например, папка исследования томографа из 400+ срезов) без OOM.
 	 */
 	async ingestSeriesFolder(folderPath: string, options: IngestDicomOptions): Promise<IngestBatchResult> {
 		const safeFolder = await fs.realpath(this.validateIngestFilesystemPath(folderPath));
@@ -501,20 +545,255 @@ export class DicomStudyIngestService {
 			throw new Error(`В каталоге ${folderPath} не найдено ни одного файла DICOM.`);
 		}
 
-		const readResults = await Promise.all(
-			filePaths.map(async (fp) => {
-				try {
-					const buf = await fs.readFile(fp);
-					return buf.length >= 132 ? buf : null;
-				} catch (err) {
-					dicomIngestLogger.warn(`Не удалось прочитать файл ${fp}`, err);
-					return null;
-				}
-			}),
-		);
-		const buffers = readResults.filter((b): b is NonNullable<typeof b> => b !== null) as Buffer[];
+		const {
+			organizationId,
+			visitId = null,
+			doctorId = null,
+			sourceKind = "pacs",
+			sourceName = "Vatech Batch Receiver",
+			autoCreateDraftIfNotFound = true,
+			toothCode = null,
+			region = null,
+		} = options;
 
-		return this.ingestBatch(buffers, options);
+		if (!organizationId) {
+			throw new Error("Не передан обязательный organizationId для изоляции хранилища PACS.");
+		}
+
+		// 1. Потоковая индексация заголовков (батчи по 8 файлов, 64 КБ префикс -> 0 пиков RAM)
+		const INDEX_CHUNK_SIZE = 8;
+		const uniqueSliceFiles = new Map<
+			string,
+			{ filePath: string; fileSizeBytes: number; metadata: ReturnType<typeof parseDicomIngestBuffer> }
+		>();
+		let totalSlicesReceived = 0;
+
+		for (let i = 0; i < filePaths.length; i += INDEX_CHUNK_SIZE) {
+			const batchPaths = filePaths.slice(i, i + INDEX_CHUNK_SIZE);
+			const batchResults = await Promise.all(
+				batchPaths.map(async (fp) => {
+					try {
+						return await this.parseHeaderMetadataFromFile(fp);
+					} catch (err) {
+						dicomIngestLogger.warn(`Не удалось прочитать файл ${fp}`, err);
+						return null;
+					}
+				}),
+			);
+			for (const item of batchResults) {
+				if (!item) continue;
+				totalSlicesReceived++;
+				if (!uniqueSliceFiles.has(item.metadata.sopInstanceUid)) {
+					uniqueSliceFiles.set(item.metadata.sopInstanceUid, item);
+				}
+			}
+		}
+
+		const firstItem = uniqueSliceFiles.values().next().value;
+		if (uniqueSliceFiles.size === 0 || !firstItem) {
+			throw new Error("Ни один из переданных файлов не является валидным DICOM файлом.");
+		}
+
+		const baseMeta = firstItem.metadata;
+		const studyKind = mapModalityKindToStudyKind(baseMeta.modalityKind);
+		const tenantDir = getPacsTenantStorageDir(organizationId);
+		const safeStudyUid = sanitizeDicomUidForPath(baseMeta.studyInstanceUid);
+		const safeSeriesUid = sanitizeDicomUidForPath(baseMeta.seriesInstanceUid);
+		const targetDir = path.join(tenantDir, safeStudyUid, safeSeriesUid);
+		const studyRelPath = toNormalizedRelativePacsStoragePath(organizationId, targetDir, "pacs");
+
+		// 2. ACID Транзакция с потоковым копированием новых срезов без загрузки серии в RAM
+		const writtenFilePaths: string[] = [];
+		let patientBinding;
+		let studyId: string;
+		let seriesId: string;
+		let newSlicesInserted: number;
+		let duplicateSlicesSkipped: number;
+		let finalFileSizeBytes: number;
+		try {
+			const txResult = await withTenantCtx(organizationId, async (tx) => {
+				const binding = await bindPatientFromDicomMetadata(
+					organizationId,
+					baseMeta,
+					autoCreateDraftIfNotFound,
+					tx,
+				);
+
+				const { studyId: currentStudyId } = await ensureStudyRecord(
+					{
+						organizationId,
+						visitId,
+						doctorId,
+						sourceKind,
+						sourceName,
+						toothCode,
+						region,
+						studyKind,
+						storagePath: studyRelPath,
+						initialSliceCount: 0,
+						initialFileSizeBytes: 0,
+						metadata: baseMeta,
+						patientBinding: binding,
+					},
+					tx,
+				);
+
+				const currentSeriesId = await ensureSeriesRecord(organizationId, currentStudyId, baseMeta, tx);
+
+				const incomingUids = Array.from(uniqueSliceFiles.keys());
+				const existingInstances = await tx
+					.select({ sopUid: schema.imagingInstances.dicomSopInstanceUid })
+					.from(schema.imagingInstances)
+					.where(
+						and(
+							eq(schema.imagingInstances.organizationId, organizationId),
+							eq(schema.imagingInstances.seriesId, currentSeriesId),
+							inArray(schema.imagingInstances.dicomSopInstanceUid, incomingUids),
+						),
+					);
+
+				const existingUidSet = new Set(existingInstances.map((i) => i.sopUid));
+				await fs.mkdir(targetDir, { recursive: true });
+
+				const newInstancesRows: Array<typeof schema.imagingInstances.$inferInsert> = [];
+				let newBytesTotal = 0;
+
+				const pendingSlices = Array.from(uniqueSliceFiles.entries()).filter(
+					([sopUid]) => !existingUidSet.has(sopUid),
+				);
+				const COPY_CONCURRENCY = 4;
+				for (let i = 0; i < pendingSlices.length; i += COPY_CONCURRENCY) {
+					const chunk = pendingSlices.slice(i, i + COPY_CONCURRENCY);
+					await Promise.all(
+						chunk.map(async ([sopUid, item]) => {
+							const safeSopUid = sanitizeDicomUidForPath(sopUid);
+							const fullFilePath = path.join(targetDir, `${safeSopUid}.dcm`);
+							await pipeline(
+								fsSync.createReadStream(item.filePath, { highWaterMark: 64 * 1024 }),
+								fsSync.createWriteStream(fullFilePath),
+							);
+							writtenFilePaths.push(fullFilePath);
+
+							const relativePath = toNormalizedRelativePacsStoragePath(organizationId, fullFilePath, "pacs");
+							newBytesTotal += item.fileSizeBytes;
+
+							newInstancesRows.push({
+								organizationId,
+								seriesId: currentSeriesId,
+								dicomSopInstanceUid: sopUid,
+								sopInstanceUid: sopUid,
+								instanceNumber: item.metadata.instanceNumber ?? 1,
+								sopClassUid: item.metadata.sopClassUid,
+								storagePath: relativePath,
+								fileSizeBytes: item.fileSizeBytes,
+								sliceLocation: item.metadata.sliceLocation,
+								windowCenter: item.metadata.windowCenter,
+								windowWidth: item.metadata.windowWidth,
+								rows: item.metadata.rows,
+								columns: item.metadata.columns,
+								cols: item.metadata.columns,
+							});
+						}),
+					);
+				}
+
+				const insertedCount = newInstancesRows.length;
+				const skippedCount = totalSlicesReceived - insertedCount;
+
+				if (insertedCount > 0) {
+					const CHUNK_SIZE = 200;
+					for (let i = 0; i < newInstancesRows.length; i += CHUNK_SIZE) {
+						const chunk = newInstancesRows.slice(i, i + CHUNK_SIZE);
+						await tx.insert(schema.imagingInstances).values(chunk);
+					}
+
+					await tx
+						.update(schema.imagingStudies)
+						.set({
+							sliceCount: sql`COALESCE(${schema.imagingStudies.sliceCount}, 0) + ${insertedCount}`,
+							fileSizeBytes: sql`COALESCE(${schema.imagingStudies.fileSizeBytes}, 0) + ${newBytesTotal}`,
+						})
+						.where(
+							and(
+								eq(schema.imagingStudies.organizationId, organizationId),
+								eq(schema.imagingStudies.id, currentStudyId),
+							),
+						);
+
+					if (binding.patientId) {
+						await recordSanpinRadiationDose(organizationId, binding.patientId, baseMeta, doctorId, tx);
+					}
+				}
+
+				const [finalStudyRow] = await tx
+					.select({ fileSizeBytes: schema.imagingStudies.fileSizeBytes })
+					.from(schema.imagingStudies)
+					.where(
+						and(
+							eq(schema.imagingStudies.organizationId, organizationId),
+							eq(schema.imagingStudies.id, currentStudyId),
+						),
+					)
+					.limit(1);
+
+				return {
+					patientBinding: binding,
+					studyId: currentStudyId,
+					seriesId: currentSeriesId,
+					newSlicesInserted: insertedCount,
+					duplicateSlicesSkipped: skippedCount,
+					finalFileSizeBytes: finalStudyRow?.fileSizeBytes ?? newBytesTotal,
+				};
+			});
+			({ patientBinding, studyId, seriesId, newSlicesInserted, duplicateSlicesSkipped, finalFileSizeBytes } = txResult);
+		} catch (txErr) {
+			await Promise.all(
+				writtenFilePaths.map((p) =>
+					fs.unlink(p).catch((unlinkErr) => {
+						dicomIngestLogger.warn(`Не удалось удалить DICOM-файл при откате: ${p}`, unlinkErr);
+					}),
+				),
+			);
+			throw txErr;
+		}
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "IMAGING_STUDY_INGESTED",
+			payload: {
+				studyId,
+				seriesId,
+				patientId: patientBinding.patientId,
+				patientFullName: patientBinding.patientFullName,
+				studyInstanceUid: baseMeta.studyInstanceUid,
+				modality: baseMeta.modalityKind,
+				title: baseMeta.suggestedStudyTitle,
+				totalSlicesReceived,
+				newSlicesInserted,
+				duplicateSlicesSkipped,
+				isNewPatientCreated: patientBinding.isNewPatientCreated,
+				bindingStatus: patientBinding.bindingStatus,
+				sourceName,
+			},
+		});
+
+		return {
+			studyId,
+			seriesId,
+			patientId: patientBinding.patientId,
+			patientFullName: patientBinding.patientFullName,
+			studyInstanceUid: baseMeta.studyInstanceUid,
+			seriesInstanceUid: baseMeta.seriesInstanceUid,
+			modalityKind: baseMeta.modalityKind,
+			studyKind,
+			totalSlicesReceived,
+			newSlicesInserted,
+			duplicateSlicesSkipped,
+			totalFileSizeBytes: finalFileSizeBytes,
+			bindingStatus: patientBinding.bindingStatus,
+			bindingConfidence: patientBinding.bindingConfidence,
+			isNewPatientCreated: patientBinding.isNewPatientCreated,
+			metadata: baseMeta,
+		};
 	}
 
 	/**

@@ -12,6 +12,7 @@ import { isDemoShowcaseMode } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { denteWhatsappBotConfigs } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { OmnichannelTokenVault } from "../bots/OmnichannelTokenVault.js";
 
 const logger = createApiLogger("whatsappConnectionHub");
@@ -66,8 +67,12 @@ export interface WabaStatusResult {
 	updatedAt: string | null;
 }
 
-// In-memory хранилище активных QR-сессий для организаций
-const activeQrSessions = new Map<string, WhatsappQrSession>();
+// Ограниченное хранилище активных QR-сессий (LRU + TTL для неавторизованных сессий)
+const WA_QR_SESSION_TTL_MS = 10 * 60 * 1000;
+const activeQrSessions = new BoundedTtlMap<string, WhatsappQrSession>({
+	maxEntries: 500,
+	ttlMs: WA_QR_SESSION_TTL_MS,
+});
 
 /**
  * Детерминированный генератор матрицы QR-кода (29x29 модулей) на основе payload.
@@ -303,6 +308,8 @@ export class WhatsappConnectionHubService {
 		}
 
 		if (session.status === "authenticated") {
+			// Продлеваем удержание активной авторизованной сессии в кэше
+			activeQrSessions.set(organizationId, session, 24 * 60 * 60 * 1000);
 			return {
 				status: "authenticated",
 				qrDataUrl: null,

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { inflateRawSync } from "node:zlib";
+import yauzl from "yauzl";
 import type { ZipEntry } from "./types.js";
 
 const textDecoder = new TextDecoder("utf-8", { fatal: false });
@@ -281,4 +282,97 @@ export function zipText(entries: ZipEntry[], pathPattern: RegExp): string[] {
 		.filter((entry) => pathPattern.test(entry.name))
 		.map((entry) => stripXmlTags(decodeText(entry.data)))
 		.filter(Boolean);
+}
+
+/**
+ * Потоковое чтение ZIP-архива из файла на диске или буфера на базе yauzl (MIT)
+ * с защитой от Zip-бомбы (20 МБ на запись, 50 МБ суммарно, макс. 1000 записей).
+ */
+export async function readZipEntriesAsync(source: Buffer | string): Promise<{
+	entries: ZipEntry[];
+	warnings: string[];
+}> {
+	const warnings: string[] = [];
+	const entries: ZipEntry[] = [];
+	const MAX_ENTRY_BYTES = 20 * 1024 * 1024;
+	const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+	const MAX_ENTRIES = 1000;
+
+	if (Buffer.isBuffer(source) && source.length < 22) {
+		return { entries, warnings: ["zip_buffer_too_small"] };
+	}
+
+	let zipfile: yauzl.ZipFile | undefined;
+	try {
+		zipfile = Buffer.isBuffer(source)
+			? await yauzl.fromBufferPromise(source, { lazyEntries: true })
+			: await yauzl.openPromise(source, { lazyEntries: true });
+
+		let totalDecompressedBytes = 0;
+		for await (const entry of zipfile.eachEntry()) {
+			const name = entry.fileName.replace(/\\/g, "/");
+			if (name.endsWith("/")) {
+				continue;
+			}
+			if (entries.length >= MAX_ENTRIES) {
+				warnings.push("zip_entry_limit_reached");
+				break;
+			}
+			if (
+				entry.uncompressedSize > MAX_ENTRY_BYTES ||
+				totalDecompressedBytes + entry.uncompressedSize > MAX_TOTAL_BYTES
+			) {
+				warnings.push("zip_bomb_size_limit_exceeded");
+				break;
+			}
+			if (entry.isEncrypted()) {
+				warnings.push(`zip_encrypted_entry:${safeFileLabel(name, "Файл архива")}`);
+				continue;
+			}
+
+			try {
+				const readStream = await zipfile.openReadStreamPromise(entry);
+				const chunks: Buffer[] = [];
+				let entryBytes = 0;
+				let abortedByBomb = false;
+
+				for await (const chunk of readStream) {
+					const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+					entryBytes += buf.length;
+					if (
+						entryBytes > MAX_ENTRY_BYTES ||
+						totalDecompressedBytes + entryBytes > MAX_TOTAL_BYTES
+					) {
+						abortedByBomb = true;
+						readStream.destroy();
+						break;
+					}
+					chunks.push(buf);
+				}
+
+				if (abortedByBomb) {
+					warnings.push("zip_bomb_size_limit_exceeded");
+					break;
+				}
+
+				totalDecompressedBytes += entryBytes;
+				entries.push({ name, data: Buffer.concat(chunks, entryBytes) });
+			} catch (entryErr: unknown) {
+				const reason = entryErr instanceof Error ? entryErr.message : "inflate_error";
+				warnings.push(
+					`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}:${reason}`,
+				);
+			}
+		}
+	} catch (err: unknown) {
+		warnings.push(`zip_read_error:${err instanceof Error ? err.message : "corrupted_zip"}`);
+	} finally {
+		try {
+			zipfile?.close();
+		} catch {
+			// игнорируем повторное закрытие yauzl
+		}
+	}
+
+	return { entries, warnings };
 }

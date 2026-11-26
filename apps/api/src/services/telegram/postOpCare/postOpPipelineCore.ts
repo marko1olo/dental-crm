@@ -24,6 +24,7 @@ import {
 import { normalizeWhatsappRecipient } from "../../../whatsappTransport.js";
 import { resolveTelegramChatId } from "../../communications/channelRouter.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
+import { BoundedStringSet, BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import type { TriageScreenResult } from "../TelegramInteractiveTriageService.js";
 
 const logger = createApiLogger("telegramPostOpPipeline");
@@ -48,9 +49,13 @@ import {
 	type SchedulePostVisitSurveyResult,
 } from "./types.js";
 
-// In-memory хранилище активных планов теле-ухода (с поддержкой персистентности в communicationTasks)
-const activeCarePlans = new Map<string, PostOpCarePlan>();
-const scheduledVisitIds = new Set<string>();
+// Ограниченное хранилище активных планов теле-ухода (с персистентностью в communicationTasks)
+const POST_OP_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const activeCarePlans = new BoundedTtlMap<string, PostOpCarePlan>({
+	maxEntries: 2000,
+	ttlMs: POST_OP_CACHE_TTL_MS,
+});
+const scheduledVisitIds = new BoundedStringSet(5000, POST_OP_CACHE_TTL_MS);
 
 async function resolveOptimalPostVisitChannel(
 	tx: TenantDb,

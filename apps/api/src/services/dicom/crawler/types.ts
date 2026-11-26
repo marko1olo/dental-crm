@@ -75,14 +75,16 @@ export interface StudyUnpackMetadata {
 	[key: string]: unknown;
 }
 
+import type { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
+
 export interface ArchiveStatsCollector {
 	onJunkSkipped?: (bytes: number) => void;
 }
 
 export interface CrawlerPipelineContext {
 	config: DicomCrawlerDaemonConfig;
-	registeredStudies: Map<string, DicomCrawlerDiscoveredStudy>;
-	fingerprintIndex: Map<string, string>;
+	registeredStudies: BoundedTtlMap<string, DicomCrawlerDiscoveredStudy>;
+	fingerprintIndex: BoundedTtlMap<string, string>;
 	errors: string[];
 	incrementDuplicatesAvoided: () => void;
 	incrementJunkSkipped: (bytes: number) => void;

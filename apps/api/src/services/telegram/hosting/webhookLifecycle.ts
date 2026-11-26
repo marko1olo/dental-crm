@@ -24,10 +24,9 @@ export class TelegramWebhookLifecycle {
 			return { ok: false, error: "Некорректный формат токена бота." };
 		}
 
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), timeoutMs);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
 			const response = await fetch(
 				`https://api.telegram.org/bot${encodeURIComponent(trimmed)}/getMe`,
 				{
@@ -35,7 +34,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				const errorData = (await response.json().catch(() => ({}))) as { description?: string };
@@ -79,6 +77,8 @@ export class TelegramWebhookLifecycle {
 			const message =
 				err instanceof Error ? err.message : "Ошибка сети при проверке токена.";
 			return { ok: false, error: message };
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 
@@ -94,12 +94,12 @@ export class TelegramWebhookLifecycle {
 			return { ok: false, description: "Отсутствует токен бота или URL вебхука." };
 		}
 
+		const controller = new AbortController();
+		const timeout = setTimeout(
+			() => controller.abort(),
+			params.timeoutMs || 8000,
+		);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(
-				() => controller.abort(),
-				params.timeoutMs || 8000,
-			);
 
 			const bodyPayload: Record<string, unknown> = {
 				url: trimmedUrl,
@@ -121,7 +121,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				const errorData = (await response.json().catch(() => ({}))) as { description?: string };
@@ -146,6 +145,8 @@ export class TelegramWebhookLifecycle {
 			const description =
 				err instanceof Error ? err.message : "Ошибка вызова setWebhook";
 			return { ok: false, description };
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 
@@ -156,10 +157,9 @@ export class TelegramWebhookLifecycle {
 		botToken: string,
 		timeoutMs = 7000,
 	): Promise<TelegramWebhookInfoResult> {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), timeoutMs);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
 			const response = await fetch(
 				`https://api.telegram.org/bot${encodeURIComponent(botToken.trim())}/getWebhookInfo`,
 				{
@@ -167,7 +167,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				return {
@@ -228,13 +227,12 @@ export class TelegramWebhookLifecycle {
 			return { ok: false, description: "Отсутствует токен бота." };
 		}
 
+		const controller = new AbortController();
+		const timeout = setTimeout(
+			() => controller.abort(),
+			params.timeoutMs || 8000,
+		);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(
-				() => controller.abort(),
-				params.timeoutMs || 8000,
-			);
-
 			const bodyPayload: Record<string, unknown> = {
 				drop_pending_updates: params.dropPendingUpdates ?? false,
 			};
@@ -248,7 +246,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				const errorData = (await response.json().catch(() => ({}))) as { description?: string };
@@ -266,6 +263,8 @@ export class TelegramWebhookLifecycle {
 			const description =
 				err instanceof Error ? err.message : "Ошибка вызова deleteWebhook";
 			return { ok: false, description };
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 
@@ -277,10 +276,9 @@ export class TelegramWebhookLifecycle {
 		commands: TelegramBotCommandItem[] = DEFAULT_PATIENT_BOT_COMMANDS,
 		timeoutMs = 7000,
 	): Promise<boolean> {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), timeoutMs);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
 			const response = await fetch(
 				`https://api.telegram.org/bot${encodeURIComponent(botToken.trim())}/setMyCommands`,
 				{
@@ -290,7 +288,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				return false;
@@ -300,6 +297,8 @@ export class TelegramWebhookLifecycle {
 			return Boolean(data.ok);
 		} catch {
 			return false;
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 
@@ -311,10 +310,9 @@ export class TelegramWebhookLifecycle {
 		description: string,
 		timeoutMs = 7000,
 	): Promise<boolean> {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), timeoutMs);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
 			const response = await fetch(
 				`https://api.telegram.org/bot${encodeURIComponent(botToken.trim())}/setMyDescription`,
 				{
@@ -324,7 +322,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				return false;
@@ -334,6 +331,8 @@ export class TelegramWebhookLifecycle {
 			return Boolean(data.ok);
 		} catch {
 			return false;
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 
@@ -345,10 +344,9 @@ export class TelegramWebhookLifecycle {
 		shortDescription: string,
 		timeoutMs = 7000,
 	): Promise<boolean> {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), timeoutMs);
 		try {
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
 			const response = await fetch(
 				`https://api.telegram.org/bot${encodeURIComponent(botToken.trim())}/setMyShortDescription`,
 				{
@@ -358,7 +356,6 @@ export class TelegramWebhookLifecycle {
 					signal: controller.signal,
 				},
 			);
-			clearTimeout(timeout);
 
 			if (!response.ok) {
 				return false;
@@ -368,6 +365,8 @@ export class TelegramWebhookLifecycle {
 			return Boolean(data.ok);
 		} catch {
 			return false;
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 }

@@ -75,6 +75,16 @@ export class CrdtSyncEngine {
 					// heartbeat
 				}
 			}, options.autoSyncIntervalMs);
+			if (
+				typeof this.autoSyncTimer === "object" &&
+				this.autoSyncTimer !== null &&
+				"unref" in this.autoSyncTimer
+			) {
+				const maybeUnref = this.autoSyncTimer.unref;
+				if (typeof maybeUnref === "function") {
+					Reflect.apply(maybeUnref, this.autoSyncTimer, []);
+				}
+			}
 		}
 	}
 

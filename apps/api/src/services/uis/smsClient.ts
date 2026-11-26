@@ -47,6 +47,7 @@ export async function sendSmsViaUis(params: SendSmsParams): Promise<boolean> {
 			text: params.message,
 			source: "operator",
 		}),
+		signal: AbortSignal.timeout(10_000),
 	});
 
 	if (!response.ok) {

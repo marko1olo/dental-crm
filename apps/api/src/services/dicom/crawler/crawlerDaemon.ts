@@ -11,6 +11,7 @@ import type { FileHandle } from "node:fs/promises";
 import { db } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
 import { dicomStoragePackagingService } from "../DicomStoragePackagingService.js";
+import { BoundedTtlMap } from "../../../lib/boundedTtlMap.js";
 import {
 	DEBOUNCE_FILE_STABILIZE_MS,
 	type DicomCrawlerDiscoveredStudy,
@@ -40,6 +41,10 @@ import {
 } from "./ingestPipeline.js";
 import { dicomIngestLogger } from "../ingest/dicomIngestLogger.js";
 
+const MAX_CRAWLER_ERRORS = 200;
+const MAX_STUDY_REGISTRY_ENTRIES = 5000;
+const MAX_FILE_STABILITY_RETRIES = 40;
+
 export class DicomCrawlerDaemon extends EventEmitter {
 	private config: DicomCrawlerDaemonConfig;
 	private intervalTimer: NodeJS.Timeout | null = null;
@@ -50,11 +55,15 @@ export class DicomCrawlerDaemon extends EventEmitter {
 	private lastScanDurationMs = 0;
 	private errors: string[] = [];
 
-	// Реестр обнаруженных исследований: StudyInstanceUID -> Study
-	private registeredStudies = new Map<string, DicomCrawlerDiscoveredStudy>();
+	// Ограниченный реестр обнаруженных исследований: StudyInstanceUID -> Study
+	private registeredStudies = new BoundedTtlMap<string, DicomCrawlerDiscoveredStudy>({
+		maxEntries: MAX_STUDY_REGISTRY_ENTRIES,
+	});
 
-	// Индекс отпечатков: Fingerprint -> StudyInstanceUID
-	private fingerprintIndex = new Map<string, string>();
+	// Ограниченный индекс отпечатков: Fingerprint -> StudyInstanceUID
+	private fingerprintIndex = new BoundedTtlMap<string, string>({
+		maxEntries: MAX_STUDY_REGISTRY_ENTRIES,
+	});
 
 	// Статистика
 	private totalArchivesFound = 0;
@@ -212,6 +221,19 @@ export class DicomCrawlerDaemon extends EventEmitter {
 		}
 	}
 
+	private pushError(message: string): void {
+		if (this.errors.length >= MAX_CRAWLER_ERRORS) {
+			this.errors.splice(0, this.errors.length - MAX_CRAWLER_ERRORS + 1);
+		}
+		this.errors.push(message);
+	}
+
+	private trimErrors(): void {
+		if (this.errors.length > MAX_CRAWLER_ERRORS) {
+			this.errors.splice(0, this.errors.length - MAX_CRAWLER_ERRORS);
+		}
+	}
+
 	private handleHotFileEvent(targetPath: string): void {
 		const existingTimer = this.pendingFileChecks.get(targetPath);
 		if (existingTimer) {
@@ -222,6 +244,7 @@ export class DicomCrawlerDaemon extends EventEmitter {
 		const timer = setTimeout(() => {
 			void this.checkHotFileStabilityAndProcess(targetPath, 0, 0);
 		}, 150);
+		timer.unref();
 		this.pendingFileChecks.set(targetPath, timer);
 	}
 
@@ -241,6 +264,7 @@ export class DicomCrawlerDaemon extends EventEmitter {
 					const timer = setTimeout(() => {
 						void this.checkHotFileStabilityAndProcess(targetPath, 0, retryCount + 1);
 					}, 200);
+					timer.unref();
 					this.pendingFileChecks.set(targetPath, timer);
 				}
 				return;
@@ -248,9 +272,14 @@ export class DicomCrawlerDaemon extends EventEmitter {
 
 			// Если размер изменился с прошлой проверки — файл пишется аппаратом
 			if (lastSize === 0 || st.size !== lastSize) {
+				if (retryCount >= MAX_FILE_STABILITY_RETRIES) {
+					this.pushError(`DICOM Crawler stability retry ceiling reached for ${targetPath}`);
+					return;
+				}
 				const timer = setTimeout(() => {
 					void this.checkHotFileStabilityAndProcess(targetPath, st.size, retryCount + 1);
 				}, 150);
+				timer.unref();
 				this.pendingFileChecks.set(targetPath, timer);
 				return;
 			}
@@ -269,7 +298,7 @@ export class DicomCrawlerDaemon extends EventEmitter {
 			}
 		} catch (err) {
 			const errMsg = `DICOM Crawler failed to process candidate ${targetPath}: ${String(err)}`;
-			this.errors.push(errMsg);
+			this.pushError(errMsg);
 			dicomIngestLogger.error("DICOM Crawler failed to process candidate", err, { targetPath });
 		}
 	}
@@ -348,10 +377,11 @@ export class DicomCrawlerDaemon extends EventEmitter {
 						await new Promise((r) => setImmediate(r));
 					}
 				} catch (err) {
-					this.errors.push(`Ошибка обхода корня ${root}: ${String(err)}`);
+					this.pushError(`Ошибка обхода корня ${root}: ${String(err)}`);
 				}
 			}
 		} finally {
+			this.trimErrors();
 			this.lastScanAt = new Date();
 			this.lastScanDurationMs = Date.now() - startTime;
 			this.isScanning = false;

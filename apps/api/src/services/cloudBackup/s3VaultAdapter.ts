@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
-import { Readable } from "node:stream";
+import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type {
 	CloudBackupObjectInfo,
@@ -15,6 +15,21 @@ const DEFAULT_S3_TIMEOUT_MS = 30_000;
 
 function sha256Hex(data: string | Buffer): string {
 	return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+async function sha256FileStream(filePath: string): Promise<string> {
+	const hash = crypto.createHash("sha256");
+	const stream = fs.createReadStream(filePath, { highWaterMark: 64 * 1024 });
+	for await (const chunk of stream) {
+		hash.update(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+	}
+	return hash.digest("hex");
+}
+
+type StreamRequestInit = RequestInit & { duplex?: "half" };
+
+function toFetchStreamBody(stream: Readable): NonNullable<RequestInit["body"]> {
+	return Readable.toWeb(stream) as NonNullable<RequestInit["body"]>;
 }
 
 function getSigV4Key(
@@ -138,14 +153,39 @@ export class NativeS3Adapter implements IS3StorageAdapter {
 		const url = this.getEndpointUrl(key);
 		if (typeof data === "string") {
 			const stat = await fsPromises.stat(data);
-			const payloadBuf = await fsPromises.readFile(data);
-			const signedHeaders = this.signRequest("PUT", url, sha256Hex(payloadBuf));
+			const payloadSha = await sha256FileStream(data);
+			const signedHeaders = this.signRequest("PUT", url, payloadSha);
 			signedHeaders["content-type"] = contentType;
 			signedHeaders["content-length"] = String(stat.size);
+			const fileStream = fs.createReadStream(data);
+			try {
+				const init: StreamRequestInit = {
+					method: "PUT",
+					headers: signedHeaders,
+					body: toFetchStreamBody(fileStream),
+					duplex: "half",
+					signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS * 4),
+				};
+				const response = await fetch(url.toString(), init);
+				if (!response.ok) {
+					throw new Error(
+						`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
+					);
+				}
+				return { key, size: stat.size };
+			} finally {
+				fileStream.destroy();
+			}
+		}
+
+		if (Buffer.isBuffer(data)) {
+			const signedHeaders = this.signRequest("PUT", url, sha256Hex(data));
+			signedHeaders["content-type"] = contentType;
+			signedHeaders["content-length"] = String(data.length);
 			const response = await fetch(url.toString(), {
 				method: "PUT",
 				headers: signedHeaders,
-				body: new Uint8Array(payloadBuf),
+				body: new Uint8Array(data),
 				signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS),
 			});
 			if (!response.ok) {
@@ -153,48 +193,72 @@ export class NativeS3Adapter implements IS3StorageAdapter {
 					`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
 				);
 			}
-			return { key, size: stat.size };
+			return { key, size: data.length };
 		}
-		const payloadBuf = Buffer.isBuffer(data) ? data : await streamToBuffer(data);
-		const signedHeaders = this.signRequest("PUT", url, sha256Hex(payloadBuf));
+
+		let streamedBytes = 0;
+		const byteCounter = new Transform({
+			transform(chunk, _enc, cb) {
+				streamedBytes += Buffer.isBuffer(chunk)
+					? chunk.length
+					: Buffer.byteLength(String(chunk));
+				cb(null, chunk);
+			},
+		});
+		const countedStream = data.pipe(byteCounter);
+		const signedHeaders = this.signRequest("PUT", url, "UNSIGNED-PAYLOAD");
 		signedHeaders["content-type"] = contentType;
-		signedHeaders["content-length"] = String(payloadBuf.length);
-		const response = await fetch(url.toString(), {
+		const init: StreamRequestInit = {
 			method: "PUT",
 			headers: signedHeaders,
-			body: new Uint8Array(payloadBuf),
-			signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS),
-		});
+			body: toFetchStreamBody(countedStream),
+			duplex: "half",
+			signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS * 4),
+		};
+		const response = await fetch(url.toString(), init);
 		if (!response.ok) {
 			throw new Error(
 				`S3 upload failed HTTP ${response.status} for ${key}: ${await response.text()}`,
 			);
 		}
-		return { key, size: payloadBuf.length };
+		return { key, size: streamedBytes };
 	}
 
 	async download(key: string): Promise<Readable> {
-		return Readable.from(await this.downloadBuffer(key));
-	}
-
-	async downloadBuffer(key: string): Promise<Buffer> {
 		const url = this.getEndpointUrl(key);
 		const signedHeaders = this.signRequest("GET", url, "UNSIGNED-PAYLOAD");
 		const response = await fetch(url.toString(), {
 			method: "GET",
 			headers: signedHeaders,
-			signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS),
+			signal: AbortSignal.timeout(DEFAULT_S3_TIMEOUT_MS * 4),
 		});
 		if (!response.ok) {
 			throw new Error(`S3 download failed HTTP ${response.status} for ${key}`);
 		}
-		return Buffer.from(await response.arrayBuffer());
+		if (response.body) {
+			return Readable.fromWeb(response.body);
+		}
+		return Readable.from(Buffer.from(await response.arrayBuffer()));
+	}
+
+	async downloadBuffer(key: string): Promise<Buffer> {
+		const stream = await this.download(key);
+		return streamToBuffer(stream);
 	}
 
 	async downloadToFile(key: string, targetPath: string): Promise<number> {
-		const buf = await this.downloadBuffer(key);
-		await fsPromises.writeFile(targetPath, buf);
-		return buf.length;
+		const stream = await this.download(key);
+		let totalBytes = 0;
+		const counter = new Transform({
+			transform(chunk, _enc, cb) {
+				totalBytes += Buffer.isBuffer(chunk)
+					? chunk.length
+					: Buffer.byteLength(String(chunk));
+				cb(null, chunk);
+			},
+		});
+		await pipeline(stream, counter, fs.createWriteStream(targetPath));
+		return totalBytes;
 	}
 
 	async list(prefix: string): Promise<CloudBackupObjectInfo[]> {

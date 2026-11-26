@@ -34,13 +34,22 @@ import {
 	type NewIntraoralScanSessionRecord,
 } from "../../db/schema/intraoralScans.js";
 import { patients, visits } from "../../db/schema.js";
-import { extractScanFilesFromZip, type ScanFileInput } from "./scannerZipExtractor.js";
+import {
+	extractScanFilesFromZipAsync,
+	extractScanFilesFromZipPath,
+	type ScanFileInput,
+} from "./scannerZipExtractor.js";
 import { parseMetadataContent } from "./scannerMetadataParsers.js";
 import { generateLod1Mesh } from "./scannerLodGenerator.js";
 
 const scannerHubLogger = createApiLogger("universalScannerHub");
 
-export { extractScanFilesFromZip, type ScanFileInput } from "./scannerZipExtractor.js";
+export {
+	extractScanFilesFromZip,
+	extractScanFilesFromZipAsync,
+	extractScanFilesFromZipPath,
+	type ScanFileInput,
+} from "./scannerZipExtractor.js";
 export { parseMetadataContent, type ExtractedMetadata } from "./scannerMetadataParsers.js";
 export { generateLod1Mesh } from "./scannerLodGenerator.js";
 
@@ -55,6 +64,7 @@ export interface ProcessScanSessionOptions {
 	labOrderId?: string | undefined;
 	vendor?: IntraoralScannerVendor | undefined;
 	scannerModel?: string | undefined;
+	zipFilePath?: string | undefined;
 	zipBuffer?: Buffer | undefined;
 	files?: ScanFileInput[] | undefined;
 	folderPath?: string | undefined;
@@ -147,8 +157,10 @@ export class UniversalScannerHub {
 		// 1. Collect all input files
 		let scanFiles: ScanFileInput[] = [];
 
-		if (options.zipBuffer && options.zipBuffer.length > 0) {
-			scanFiles = extractScanFilesFromZip(options.zipBuffer);
+		if (options.zipFilePath) {
+			scanFiles = await extractScanFilesFromZipPath(options.zipFilePath);
+		} else if (options.zipBuffer && options.zipBuffer.length > 0) {
+			scanFiles = await extractScanFilesFromZipAsync(options.zipBuffer);
 		} else if (options.files && options.files.length > 0) {
 			scanFiles = [...options.files];
 		} else if (options.folderPath) {

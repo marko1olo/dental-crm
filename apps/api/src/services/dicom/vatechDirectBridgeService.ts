@@ -25,6 +25,7 @@ import {
 import { resolveOrAutoCreatePatientForDicom } from "./dicomPatientAutoBinder.js";
 import { getPacsTenantStorageDir, toNormalizedRelativePacsStoragePath } from "../imaging/localPacsSanitizer.js";
 import { wsBroker } from "../websocketBroker.js";
+import { BoundedStringSet } from "../../lib/boundedTtlMap.js";
 import { dicomIngestLogger } from "./ingest/dicomIngestLogger.js";
 
 export interface VatechTagMetadata {
@@ -149,14 +150,17 @@ export function parseVatechTagFileContent(content: string): VatechTagMetadata {
 	};
 }
 
+const MAX_VATECH_PROCESSED_FILES = 10_000;
+const MAX_VATECH_STABILITY_RETRIES = 40;
+
 export class VatechDirectBridgeService {
 	private watcher: FSWatcher | null = null;
 	private isWatching = false;
 	private watchDirectory: string | null = null;
 	private defaultOrganizationId: string | null = null;
 
-	// Дедупликация и отслеживание уже обработанных файлов
-	private processedFiles = new Set<string>();
+	// Ограниченный кэш дедупликации уже обработанных файлов
+	private processedFiles = new BoundedStringSet(MAX_VATECH_PROCESSED_FILES);
 	private pendingFileChecks = new Map<string, NodeJS.Timeout>();
 
 	// Статистика
@@ -314,8 +318,9 @@ export class VatechDirectBridgeService {
 
 		// Задержка проверки стабильности размера (150 мс)
 		const timer = setTimeout(() => {
-			this.checkFileStabilityAndIngest(normalized, 0, 0);
+			void this.checkFileStabilityAndIngest(normalized, 0, 0);
 		}, 150);
+		timer.unref();
 
 		this.pendingFileChecks.set(normalized, timer);
 	}
@@ -335,8 +340,9 @@ export class VatechDirectBridgeService {
 			if (stats.size === 0) {
 				if (retryCount < 10) {
 					const timer = setTimeout(() => {
-						this.checkFileStabilityAndIngest(filePath, 0, retryCount + 1);
+						void this.checkFileStabilityAndIngest(filePath, 0, retryCount + 1);
 					}, 200);
+					timer.unref();
 					this.pendingFileChecks.set(filePath, timer);
 				} else {
 					this.totalFilesSkipped++;
@@ -346,9 +352,20 @@ export class VatechDirectBridgeService {
 
 			// Если размер изменился с прошлой проверки — файл пишется аппаратом
 			if (lastSize === 0 || stats.size !== lastSize) {
+				if (retryCount >= MAX_VATECH_STABILITY_RETRIES) {
+					this.totalFilesSkipped++;
+					dicomIngestLogger.warn("Vatech file stability retry ceiling exceeded", {
+						filePath,
+						lastSize,
+						currentSize: stats.size,
+						retryCount,
+					});
+					return;
+				}
 				const timer = setTimeout(() => {
-					this.checkFileStabilityAndIngest(filePath, stats.size, retryCount + 1);
+					void this.checkFileStabilityAndIngest(filePath, stats.size, retryCount + 1);
 				}, 150);
+				timer.unref();
 				this.pendingFileChecks.set(filePath, timer);
 				return;
 			}

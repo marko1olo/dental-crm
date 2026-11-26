@@ -8,4 +8,5 @@ export type { ZipEntry } from "./docExtractor/index.js";
 export {
 	extractDocument,
 	readZipEntries,
+	readZipEntriesAsync,
 } from "./docExtractor/index.js";

@@ -30,6 +30,10 @@ export async function streamDicomPayloadToDisk(
 	const bodyObj = request.body as Record<string, unknown> | null;
 	if (bodyObj && typeof bodyObj.fileBase64 === "string") {
 		const b64 = bodyObj.fileBase64.replace(/^data:.*?;base64,/u, "");
+		const estimatedDecodedBytes = Math.ceil((b64.length * 3) / 4);
+		if (estimatedDecodedBytes > maxBytes) {
+			throw new Error(`Размер файла превышает лимит ${Math.round(maxBytes / (1024 * 1024))} МБ`);
+		}
 		return { bytesWritten: await writeSyncBufferPayload(targetPath, Buffer.from(b64, "base64"), maxBytes) };
 	}
 	if (bodyObj && Array.isArray(bodyObj.data)) {
@@ -57,12 +61,17 @@ export async function streamDicomPayloadToDisk(
 		try {
 			await pipeline(sourceStream, sizeLimiter, writeStream);
 		} catch (err) {
-			await fs.unlink(targetPath).catch(() => {});
+			try {
+				await fs.unlink(targetPath);
+			} catch (unlinkErr) {
+				request.log.debug({ err: unlinkErr, targetPath }, "Best-effort DICOM stream temp unlink failed");
+			}
 			throw err;
 		}
 		return { bytesWritten };
 	}
 
+	const MAX_PART_HEADER_BYTES = 64 * 1024;
 	let headersStripped = false;
 	let headerBuffer = Buffer.alloc(0);
 	const multipartStripper = new Transform({
@@ -70,6 +79,9 @@ export async function streamDicomPayloadToDisk(
 			bytesWritten += chunk.length;
 			if (bytesWritten > maxBytes) return cb(new Error(`Лимит ${Math.round(maxBytes / (1024 * 1024))} МБ`));
 			if (!headersStripped) {
+				if (headerBuffer.length + chunk.length > MAX_PART_HEADER_BYTES) {
+					return cb(new Error("Заголовки multipart-части превысили лимит 64 КБ"));
+				}
 				headerBuffer = Buffer.concat([headerBuffer, chunk]);
 				const endCrLf = headerBuffer.indexOf("\r\n\r\n");
 				const endLf = headerBuffer.indexOf("\n\n");
@@ -90,7 +102,11 @@ export async function streamDicomPayloadToDisk(
 	try {
 		await pipeline(sourceStream, multipartStripper, writeStream);
 	} catch (err) {
-		await fs.unlink(targetPath).catch(() => {});
+		try {
+			await fs.unlink(targetPath);
+		} catch (unlinkErr) {
+			request.log.debug({ err: unlinkErr, targetPath }, "Best-effort multipart DICOM temp unlink failed");
+		}
 		throw err;
 	}
 
@@ -111,8 +127,8 @@ export async function streamDicomPayloadToDisk(
 				await fd.close();
 			}
 		}
-	} catch {
-		// Non-fatal trailing boundary cleanup
+	} catch (boundaryErr) {
+		request.log.debug({ err: boundaryErr, targetPath }, "Non-fatal multipart trailing boundary trim skipped");
 	}
 
 	return { bytesWritten };

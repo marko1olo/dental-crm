@@ -546,6 +546,7 @@ export const wsBroker = {
 				}
 			}
 		}, intervalMs);
+		heartbeatTimer.unref();
 	},
 	stopHeartbeat(): void {
 		if (heartbeatTimer) {
@@ -555,6 +556,13 @@ export const wsBroker = {
 	},
 	clear(): void {
 		wsBroker.stopHeartbeat();
+		for (const client of clients) {
+			try {
+				client.ws.terminate();
+			} catch {
+				// ignore socket cleanup error during shutdown
+			}
+		}
 		clients.clear();
 	},
 };

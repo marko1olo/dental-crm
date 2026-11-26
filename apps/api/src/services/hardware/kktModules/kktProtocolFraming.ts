@@ -226,42 +226,41 @@ export async function dispatchAtolSyncTask(
 	const controller = new AbortController();
 	const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || defaultTimeoutMs);
 
-	let resp: Response;
 	try {
-		resp = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
+		const resp = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(task),
 			signal: controller.signal,
 		});
+
+		if (!resp.ok) {
+			return {
+				ok: false,
+				errorCode: `ATOL_HTTP_${resp.status}`,
+				errorMessage: `Ошибка связи с Web-сервером АТОЛ ${contextLabel}: HTTP ${resp.status}`,
+			};
+		}
+
+		const rawData = (await resp.json()) as Record<string, unknown>;
+		const results = Array.isArray(rawData.results)
+			? (rawData.results as Record<string, unknown>[])
+			: [rawData];
+		const firstResult = results[0] ?? {};
+		const errorCode = typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
+
+		if (errorCode !== 0) {
+			return {
+				ok: false,
+				errorCode: `ATOL_ERR_${errorCode}`,
+				errorMessage: mapAtolErrorCode(errorCode),
+			};
+		}
+
+		return { ok: true, firstResult, rawData };
 	} finally {
 		clearTimeout(timeoutTimer);
 	}
-
-	if (!resp.ok) {
-		return {
-			ok: false,
-			errorCode: `ATOL_HTTP_${resp.status}`,
-			errorMessage: `Ошибка связи с Web-сервером АТОЛ ${contextLabel}: HTTP ${resp.status}`,
-		};
-	}
-
-	const rawData = (await resp.json()) as Record<string, unknown>;
-	const results = Array.isArray(rawData.results)
-		? (rawData.results as Record<string, unknown>[])
-		: [rawData];
-	const firstResult = results[0] ?? {};
-	const errorCode = typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
-
-	if (errorCode !== 0) {
-		return {
-			ok: false,
-			errorCode: `ATOL_ERR_${errorCode}`,
-			errorMessage: mapAtolErrorCode(errorCode),
-		};
-	}
-
-	return { ok: true, firstResult, rawData };
 }
 
 export function formatShtrikhMCommandPacket(
@@ -320,7 +319,8 @@ export async function sendShtrikhCommand(
 			socket.write(packet);
 		});
 		socket.on("data", (chunk) => {
-			response = Buffer.concat([response, chunk]);
+			const chunkBuf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+			response = Buffer.concat([response, chunkBuf]);
 			if (response.length >= 4) {
 				const length = response[1] ?? 0;
 				if (response.length >= length + 2) {

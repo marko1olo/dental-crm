@@ -29,6 +29,10 @@ import { dicomCrawlerDaemon } from "../services/dicom/DicomCrawlerDaemon.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
 import { resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { stopCommunicationDispatchWorker } from "../services/communications/dispatchWorker.js";
+import { defaultSanpinDaemonScheduler } from "../services/daemons/sanpinDaemon/daemonScheduler.js";
+import { FiscalHealthChecker } from "../services/fiscalResilience/index.js";
+import { FiscalQueueRetryWorker } from "../services/hardware/queueModules/fiscalQueueWorker.js";
+import { telegramMultiTenantSupervisor } from "../services/telegram/TelegramMultiTenantSupervisor.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 import type { CreateDenteApiAppOptions, HttpErrorLike } from "./types.js";
 
@@ -263,6 +267,10 @@ export async function setupBackgroundWorkers(
 		}
 		await vatechDirectBridgeService.stop();
 		dicomCrawlerDaemon.stop();
+		defaultSanpinDaemonScheduler.stop();
+		FiscalHealthChecker.stopBackgroundWorker();
+		FiscalQueueRetryWorker.stopAutoRetryLoop();
+		await telegramMultiTenantSupervisor.shutdown();
 		stopCloudRelayClient();
 		stopCommunicationDispatchWorker();
 		stopBiAnalyticsWorker();

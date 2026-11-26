@@ -101,6 +101,13 @@ async function parseJsonBodySafe<T extends object>(
 	return {};
 }
 
+function createTimeoutSignal(ms: number): AbortSignal | undefined {
+	if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+		return AbortSignal.timeout(ms);
+	}
+	return undefined;
+}
+
 /**
  * Проверяет доступность нативного CLI-моста КриптоПро на бэкенде.
  */
@@ -109,9 +116,11 @@ export async function fetchCryptoProNativeStatus(
 ): Promise<CryptoProNativeStatusResponse> {
 	const url = `${baseUrl}/api/cryptopro/native/status`;
 	try {
+		const signal = createTimeoutSignal(15_000);
 		const res = await fetch(url, {
 			method: "GET",
 			headers: { Accept: "application/json" },
+			...(signal ? { signal } : {}),
 		});
 		const data = await parseJsonBodySafe<CryptoProNativeStatusResponse>(res);
 		if (!res.ok) {
@@ -159,9 +168,11 @@ export async function fetchCryptoProNativeCertificates(
 	baseUrl: string = "",
 ): Promise<DigitalCertificateInfo[]> {
 	const url = `${baseUrl}/api/cryptopro/native/certificates`;
+	const signal = createTimeoutSignal(15_000);
 	const res = await fetch(url, {
 		method: "GET",
 		headers: { Accept: "application/json" },
+		...(signal ? { signal } : {}),
 	});
 
 	const data = await parseJsonBodySafe<CryptoProNativeCertificatesResponse>(res);
@@ -189,6 +200,7 @@ export async function signWithCryptoProNative(
 	baseUrl: string = "",
 ): Promise<CryptoProNativeSignResponse> {
 	const url = `${baseUrl}/api/cryptopro/native/sign`;
+	const signal = createTimeoutSignal(30_000);
 	const res = await fetch(url, {
 		method: "POST",
 		headers: {
@@ -196,6 +208,7 @@ export async function signWithCryptoProNative(
 			Accept: "application/json",
 		},
 		body: JSON.stringify(params),
+		...(signal ? { signal } : {}),
 	});
 
 	const data = await parseJsonBodySafe<CryptoProNativeSignResponse>(res);

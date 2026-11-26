@@ -433,7 +433,7 @@ export async function exportZipHandler(request: FastifyRequest, reply: FastifyRe
 		clinicName = orgRecords[0].name;
 	}
 
-	const zipBuffer = BotSourceExporter.exportStandaloneBotPackage({
+	const zipStream = BotSourceExporter.exportStandaloneBotPackageStream({
 		botId,
 		organizationId: orgId,
 		clinicName,
@@ -450,8 +450,7 @@ export async function exportZipHandler(request: FastifyRequest, reply: FastifyRe
 		"Content-Disposition",
 		`attachment; filename="dente-bot-${safeSlug}-${channel}.zip"`,
 	);
-	reply.header("Content-Length", zipBuffer.length);
 	reply.header("Cache-Control", "no-cache, no-store, must-revalidate");
 
-	return reply.send(zipBuffer);
+	return reply.send(zipStream);
 }

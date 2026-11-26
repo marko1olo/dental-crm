@@ -111,6 +111,8 @@ function extractXmlText(xml: string, tag: RegExp): string | undefined {
 	return undefined;
 }
 
+const MAX_GZIP_SLICE_BYTES = 64 * 1024 * 1024;
+
 /**
  * Decompresses gzip buffer if magic bytes (0x1f, 0x8b) are present; otherwise returns raw buffer.
  */
@@ -119,7 +121,7 @@ export function decompressGzipSync(data: Uint8Array): Uint8Array {
 		return data;
 	}
 	try {
-		return new Uint8Array(zlib.gunzipSync(data));
+		return new Uint8Array(zlib.gunzipSync(data, { maxOutputLength: MAX_GZIP_SLICE_BYTES }));
 	} catch (err: unknown) {
 		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(`GALILEOS: failed to decompress gzip slice: ${msg}`);
@@ -181,7 +183,7 @@ export function parseGalileosHeader(
 
 	const num = (re: RegExp, def: number, label: string): number => {
 		const m = xmlText.match(re);
-		const v = m ? parseFloat(m[1]!) : NaN;
+		const v = m?.[1] ? parseFloat(m[1]) : NaN;
 		if (!Number.isFinite(v)) {
 			warnings.push(`${label} missing from header — assuming ${def}`);
 			return def;
@@ -284,7 +286,8 @@ export function assembleGalileosVolume(
 	let max = -32768;
 
 	for (let k = 0; k < depth; k++) {
-		const rawSlice = sortedSlices[k]!;
+		const rawSlice = sortedSlices[k];
+		if (!rawSlice) continue;
 		let buf = rawSlice.data;
 		if (buf[0] === 0x1f && buf[1] === 0x8b) {
 			buf = decompressGzipSync(buf);
@@ -300,7 +303,7 @@ export function assembleGalileosVolume(
 		if (buf.byteOffset % 2 === 0) {
 			const u16 = new Uint16Array(buf.buffer, buf.byteOffset, sliceLen);
 			for (let i = 0; i < sliceLen; i++) {
-				const val = u16[i]!;
+				const val = u16[i] ?? 0;
 				outData[sliceOffset + i] = val;
 				if (val < min) min = val;
 				if (val > max) max = val;
@@ -369,7 +372,7 @@ export function parseOneVolumeBinary(
 	const headBytes = new Uint8Array(arrayBuffer, baseOffset, scanLen);
 	let headText = "";
 	for (let i = 0; i < scanLen; i++) {
-		headText += String.fromCharCode(headBytes[i]!);
+		headText += String.fromCharCode(headBytes[i] ?? 0);
 	}
 
 	const vIdx = headText.indexOf(ONEVOLUME_VERSION_MARKER);
@@ -407,7 +410,7 @@ export function parseOneVolumeBinary(
 	// Geometry + scaling from XML
 	const parseXmlNum = (re: RegExp, def: number): number => {
 		const m = xml.match(re);
-		const v = m ? parseFloat(m[1]!) : NaN;
+		const v = m?.[1] ? parseFloat(m[1]) : NaN;
 		return Number.isFinite(v) ? v : def;
 	};
 
@@ -486,7 +489,7 @@ export function parseOneVolumeBinary(
 	let max = -32768;
 
 	for (let i = 0; i < voxels; i++) {
-		const raw = payload[i]!;
+		const raw = payload[i] ?? ONEVOLUME_SENTINEL;
 		let v: number;
 		if (raw === ONEVOLUME_SENTINEL) {
 			v = AIR_SENTINEL_HU;

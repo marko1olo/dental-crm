@@ -29,6 +29,9 @@
 		"@fastify/helmet": "^13.1.0",
 		"@fastify/rate-limit": "^11.2.0",
 		"@fastify/websocket": "^11.2.0",
+		"@types/yauzl": "3.4.0",
+		"@types/yazl": "3.3.1",
+		"bonjour-service": "^1.4.4",
 		"decimal.js": "^10.6.0",
 		"dicom-parser": "^1.8.21",
 		"dotenv": "^16.5.0",
@@ -39,6 +42,8 @@
 		"socks": "^2.8.9",
 		"undici": "^8.5.0",
 		"ws": "^8.21.0",
+		"yauzl": "3.4.0",
+		"yazl": "3.3.1",
 		"zod": "^3.24.4"
 	},
 	"devDependencies": {

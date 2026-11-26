@@ -21,6 +21,10 @@ import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
 import { getLanMeshService, resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
 import { startPoolWatchdog, stopPoolWatchdog } from "../db/poolWatchdog.js";
+import { defaultSanpinDaemonScheduler } from "../services/daemons/sanpinDaemon/daemonScheduler.js";
+import { FiscalHealthChecker } from "../services/fiscalResilience/index.js";
+import { FiscalQueueRetryWorker } from "../services/hardware/queueModules/fiscalQueueWorker.js";
+import { telegramMultiTenantSupervisor } from "../services/telegram/TelegramMultiTenantSupervisor.js";
 import {
 	assertSecurityConfiguration,
 	registerCorsAndSecurity,
@@ -74,18 +78,41 @@ export async function createDenteApiApp(
 /**
  * Основная точка входа запуска HTTP-сервера API, фоновых демонов и обработчиков сигналов завершения.
  */
-export async function startDenteApiServer(): Promise<void> {
+export async function startDenteApiServer(
+	options: CreateDenteApiAppOptions = {},
+): Promise<void> {
 	await setupProxyAndTunnels().catch((err) => {
 		process.stderr.write(
 			`[Proxy Boot] Failed to run proxy/tunnel diagnostics: ${err}\n`,
 		);
 	});
-	const app = await createDenteApiApp();
+	const app = await createDenteApiApp({
+		...options,
+		startDaemonScheduler: false,
+	});
+
+	const emergencyDrainTimeoutMs = 2_000;
+	const emergencyDrainAndExit = async () => {
+		const guardTimer = setTimeout(() => {
+			flushHddLogger();
+			process.exit(1);
+		}, emergencyDrainTimeoutMs);
+		guardTimer.unref();
+		try {
+			const { endPool } = await import("../db/client.js");
+			await endPool();
+		} catch {
+			// Игнорируем сбой закрытия пула при аварийном выходе
+		} finally {
+			clearTimeout(guardTimer);
+			flushHddLogger();
+			process.exit(1);
+		}
+	};
 
 	process.on("uncaughtException", (err) => {
 		app.log.fatal(err, "Uncaught Exception detected. Shutting down...");
-		flushHddLogger();
-		process.exit(1);
+		void emergencyDrainAndExit();
 	});
 	process.on("unhandledRejection", (reason, promise) => {
 		const reasonObj =
@@ -111,8 +138,7 @@ export async function startDenteApiServer(): Promise<void> {
 			{ reason, promise },
 			"Unhandled Rejection detected. Shutting down...",
 		);
-		flushHddLogger();
-		process.exit(1);
+		void emergencyDrainAndExit();
 	});
 
 	const host = process.env.API_HOST ?? "0.0.0.0";
@@ -122,49 +148,62 @@ export async function startDenteApiServer(): Promise<void> {
 		await app.listen({ host, port });
 
 		let taskQueueWorker: WorkerHandle | null = null;
+		let isShuttingDown = false;
+		let shutdownPromise: Promise<void> | null = null;
 
 		const gracefulShutdown = async (signal: string) => {
-			app.log.info(
-				`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`,
-			);
-			const forceKillTimeout = setTimeout(() => {
-				app.log.error(
-					`[Shutdown] Force killing process after 10s timeout. Pending connections or workers hung.`,
-				);
-				flushHddLogger();
-				process.exit(1);
-			}, 10000);
-			forceKillTimeout.unref();
-			try {
-				if (taskQueueWorker) {
-					await taskQueueWorker.stop();
-					taskQueueWorker = null;
-				}
-				stopBackupDaemon();
-				stopLanDiscoveryService();
-				defaultDaemonScheduler.stop();
-				dicomCrawlerDaemon.stop();
-				stopCloudRelayClient();
-				stopBiAnalyticsWorker();
-				stopPoolWatchdog();
-				resetLanMeshServiceForTest();
-				resetLanMeshAutoJoinServiceForTest();
-				await app.close();
-				// Единственное закрытие пула на процесс: владелец — процесс, не
-				// приложение. endPool идемпотентен, повторный вызов дожидается
-				// первого вместо отказа pg.
-				const { endPool } = await import("../db/client.js");
-				await endPool();
-				app.log.info("[Shutdown] Dente API server closed cleanly.");
-				flushHddLogger();
-				clearTimeout(forceKillTimeout);
-				process.exit(0);
-			} catch (err) {
-				app.log.error(err, "[Shutdown] Error during server shutdown:");
-				flushHddLogger();
-				clearTimeout(forceKillTimeout);
-				process.exit(1);
+			if (isShuttingDown && shutdownPromise) {
+				return shutdownPromise;
 			}
+			isShuttingDown = true;
+			shutdownPromise = (async () => {
+				app.log.info(
+					`[Shutdown] Received ${signal}, closing HTTP server and draining database pool...`,
+				);
+				const forceKillTimeout = setTimeout(() => {
+					app.log.error(
+						`[Shutdown] Force killing process after 10s timeout. Pending connections or workers hung.`,
+					);
+					flushHddLogger();
+					process.exit(1);
+				}, 10000);
+				forceKillTimeout.unref();
+				try {
+					if (taskQueueWorker) {
+						await taskQueueWorker.stop();
+						taskQueueWorker = null;
+					}
+					stopBackupDaemon();
+					stopLanDiscoveryService();
+					defaultDaemonScheduler.stop();
+					defaultSanpinDaemonScheduler.stop();
+					FiscalHealthChecker.stopBackgroundWorker();
+					FiscalQueueRetryWorker.stopAutoRetryLoop();
+					await telegramMultiTenantSupervisor.shutdown();
+					dicomCrawlerDaemon.stop();
+					stopCloudRelayClient();
+					stopBiAnalyticsWorker();
+					stopPoolWatchdog();
+					resetLanMeshServiceForTest();
+					resetLanMeshAutoJoinServiceForTest();
+					await app.close();
+					// Единственное закрытие пула на процесс: владелец — процесс, не
+					// приложение. endPool идемпотентен, повторный вызов дожидается
+					// первого вместо отказа pg.
+					const { endPool } = await import("../db/client.js");
+					await endPool();
+					app.log.info("[Shutdown] Dente API server closed cleanly.");
+					flushHddLogger();
+					clearTimeout(forceKillTimeout);
+					process.exit(0);
+				} catch (err) {
+					app.log.error(err, "[Shutdown] Error during server shutdown:");
+					flushHddLogger();
+					clearTimeout(forceKillTimeout);
+					process.exit(1);
+				}
+			})();
+			return shutdownPromise;
 		};
 
 		// Фоновый обработчик персистентных очередей задач (PostgreSQL FOR UPDATE SKIP LOCKED)
@@ -191,7 +230,9 @@ export async function startDenteApiServer(): Promise<void> {
 		}
 
 		// Фоновый шедулер клинических демонов (08:00 ZTL, 21:00 EMR Savior, Weekly Retention)
-		defaultDaemonScheduler.start({ logger: app.log });
+		if (options.startDaemonScheduler !== false) {
+			defaultDaemonScheduler.start({ logger: app.log });
+		}
 
 		process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 		process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

@@ -179,8 +179,6 @@ export class OiisGatewayClient {
 				signal: controller.signal,
 			});
 
-			clearTimeout(timeout);
-
 			if (!res.ok) {
 				const errorText = await res.text();
 				let parsedJson: Record<string, unknown> | null = null;
@@ -209,7 +207,6 @@ export class OiisGatewayClient {
 				rawResponse: json,
 			};
 		} catch (err: unknown) {
-			clearTimeout(timeout);
 			const msg = err instanceof Error ? err.message : String(err);
 			return {
 				success: false,
@@ -217,6 +214,8 @@ export class OiisGatewayClient {
 				status: "Error",
 				errorMessage: `Сбой сетевого соединения со шлюзом ЕГИСЗ: ${msg}`,
 			};
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 
@@ -255,8 +254,6 @@ export class OiisGatewayClient {
 				signal: controller.signal,
 			});
 
-			clearTimeout(timeout);
-
 			if (!res.ok) {
 				return {
 					transactionId,
@@ -275,12 +272,13 @@ export class OiisGatewayClient {
 				registrationDate: json.registrationDate ? String(json.registrationDate) : undefined,
 			};
 		} catch (err: unknown) {
-			clearTimeout(timeout);
 			return {
 				transactionId,
 				status: "Error",
 				statusDescription: err instanceof Error ? err.message : String(err),
 			};
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 }

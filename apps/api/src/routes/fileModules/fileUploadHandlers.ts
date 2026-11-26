@@ -170,9 +170,19 @@ export const decodeHeicHandler = async (
 			});
 		}
 
+		const MAX_HEIC_UPLOAD_BYTES = 32 * 1024 * 1024;
 		const chunks: Buffer[] = [];
+		let totalBytes = 0;
 		for await (const chunk of data.file) {
-			chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+			const buf = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+			totalBytes += buf.length;
+			if (totalBytes > MAX_HEIC_UPLOAD_BYTES) {
+				return reply.code(413).send({
+					error: "PayloadTooLarge",
+					message: "Файл HEIC превышает допустимый лимит 32 МБ.",
+				});
+			}
+			chunks.push(buf);
 		}
 		const inputBuffer = Buffer.concat(chunks);
 

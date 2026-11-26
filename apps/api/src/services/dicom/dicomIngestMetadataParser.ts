@@ -174,7 +174,10 @@ export function classifyDicomModality(
 /**
  * Парсинг буфера DICOM-файла в строгую клиническую структуру метаданных.
  */
-export function parseDicomIngestBuffer(buffer: Buffer): DicomIngestMetadata {
+export function parseDicomIngestBuffer(
+	buffer: Buffer,
+	options?: { untilTag?: string | undefined },
+): DicomIngestMetadata {
 	const warnings: string[] = [];
 
 	if (buffer.length < 132) {
@@ -183,7 +186,9 @@ export function parseDicomIngestBuffer(buffer: Buffer): DicomIngestMetadata {
 
 	let dataSet: dicomParser.DataSet;
 	try {
-		dataSet = dicomParser.parseDicom(buffer);
+		dataSet = options?.untilTag
+			? dicomParser.parseDicom(buffer, { untilTag: options.untilTag })
+			: dicomParser.parseDicom(buffer);
 	} catch (err) {
 		throw new Error(`Ошибка разбора заголовков DICOM: ${err instanceof Error ? err.message : String(err)}`);
 	}

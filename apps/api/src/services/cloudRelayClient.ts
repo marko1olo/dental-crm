@@ -288,6 +288,7 @@ export class CloudRelayClient {
 			this.missedPongs++;
 			this.sendMessage({ type: "PING", timestamp: Date.now() });
 		}, this.config.pingIntervalMs ?? 20000);
+		this.pingTimer.unref();
 	}
 
 	private stopHeartbeat(): void {
@@ -311,6 +312,7 @@ export class CloudRelayClient {
 			this.reconnectTimer = null;
 			this.connect();
 		}, delay);
+		this.reconnectTimer.unref();
 	}
 
 	private sendMessage(msg: RelayOutboundMessage): void {
@@ -460,6 +462,7 @@ export class CloudRelayClient {
 				const fetchOptions: RequestInit = {
 					method: req.method,
 					headers: sanitizedHeaders,
+					signal: AbortSignal.timeout(30_000),
 				};
 
 				if (req.body && req.method !== "GET" && req.method !== "HEAD") {

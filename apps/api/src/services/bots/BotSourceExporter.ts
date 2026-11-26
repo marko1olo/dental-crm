@@ -1,4 +1,5 @@
 import zlib from "node:zlib";
+import { ZipFile } from "yazl";
 
 /**
  * Простая, надежная реализация стандартного ZIP-архиватора (PKZIP 2.0 / RFC 1951)
@@ -126,23 +127,23 @@ for (let n = 0; n < 256; n++) {
  * Создает полностью независимый, готовый к деплою проект для клиники.
  */
 export class BotSourceExporter {
-	/**
-	 * Сборка ZIP-архива с исходным кодом демона бота клиники.
-	 */
-	static exportStandaloneBotPackage(params: {
+	private static buildPackageFiles(params: {
 		botId: string;
 		organizationId: string;
 		clinicName: string;
 		channel: "telegram" | "vk" | "whatsapp" | "max";
 		botTokenMasked?: string;
 		denteApiUrl?: string;
-	}): Buffer {
-		const builder = new ZipArchiveBuilder();
+	}): Array<{ path: string; content: string | Buffer }> {
+		const files: Array<{ path: string; content: string | Buffer }> = [];
+		const addFile = (path: string, content: string | Buffer) => {
+			files.push({ path: path.replace(/\\/g, "/"), content });
+		};
 		const clinicSlug = params.clinicName.toLowerCase().replace(/[^a-z0-9а-яё]+/gi, "-").slice(0, 30);
 		const apiUrl = params.denteApiUrl || "https://crm.dente.clinic";
 
 		// 1. package.json
-		builder.addFile(
+		addFile(
 			"package.json",
 			JSON.stringify(
 				{
@@ -173,7 +174,7 @@ export class BotSourceExporter {
 		);
 
 		// 2. tsconfig.json
-		builder.addFile(
+		addFile(
 			"tsconfig.json",
 			JSON.stringify(
 				{
@@ -196,7 +197,7 @@ export class BotSourceExporter {
 		);
 
 		// 3. .env.example
-		builder.addFile(
+		addFile(
 			".env.example",
 			[
 				`# Настройки автономного бота клиники "${params.clinicName}"`,
@@ -224,7 +225,7 @@ export class BotSourceExporter {
 		);
 
 		// 4. Dockerfile
-		builder.addFile(
+		addFile(
 			"Dockerfile",
 			[
 				"FROM node:20-alpine AS builder",
@@ -245,7 +246,7 @@ export class BotSourceExporter {
 		);
 
 		// 5. docker-compose.yml
-		builder.addFile(
+		addFile(
 			"docker-compose.yml",
 			[
 				"version: '3.8'",
@@ -266,7 +267,7 @@ export class BotSourceExporter {
 		);
 
 		// 6. src/bot.ts (Автономный демон)
-		builder.addFile(
+		addFile(
 			"src/bot.ts",
 			[
 				"import 'dotenv/config';",
@@ -296,7 +297,7 @@ export class BotSourceExporter {
 				"",
 				"  while (true) {",
 				"    try {",
-				"      const res = await fetch(`https://api.telegram.org/bot${tgToken}/getUpdates?offset=${offset}&timeout=25`);",
+				"      const res = await fetch(`https://api.telegram.org/bot${tgToken}/getUpdates?offset=${offset}&timeout=25`, { signal: AbortSignal.timeout(35_000) });",
 				"      const data = (await res.json()) as { ok?: boolean; result?: Array<{ update_id: number; message?: { chat?: { id?: number }; text?: string }; callback_query?: { data?: string; message?: { chat?: { id?: number } } } }> };",
 				"",
 				"      if (data.ok && Array.isArray(data.result)) {",
@@ -325,7 +326,7 @@ export class BotSourceExporter {
 				"  if (text.includes('запис') || payload === 'booking:start') {",
 				"    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);",
 				"    try {",
-				"      const slotsRes = await fetch(`${denteApiUrl}/api/public/booking/available-slots?organizationId=${orgId}&date=${tomorrow}`);",
+				"      const slotsRes = await fetch(`${denteApiUrl}/api/public/booking/available-slots?organizationId=${orgId}&date=${tomorrow}`, { signal: AbortSignal.timeout(10_000) });",
 				"      const slotsData = (await slotsRes.json()) as { slots?: Array<{ time: string; availableDoctorIds?: string[] }> };",
 				"      if (slotsRes.ok && Array.isArray(slotsData?.slots) && slotsData.slots.length > 0) {",
 				"        const buttons = slotsData.slots.slice(0, 5).map((s) => [",
@@ -376,6 +377,7 @@ export class BotSourceExporter {
 				"          source: 'telegram_bot',",
 				"          comment: `Запись через Telegram-бот (@${msg?.from?.username || chatId})`,",
 				"        }),",
+				"        signal: AbortSignal.timeout(10_000),",
 				"      });",
 				"      const bookData = (await bookRes.json()) as { success?: boolean; appointment?: unknown };",
 				"      if (bookRes.ok && (bookData?.success || bookData?.appointment)) {",
@@ -393,7 +395,7 @@ export class BotSourceExporter {
 				"  if (payload.startsWith('confirm_visit:')) {",
 				"    const visitId = payload.split(':')[1];",
 				"    try {",
-				"      const confirmRes = await fetch(`${denteApiUrl}/api/visits/${visitId}/confirm`, { method: 'POST' });",
+				"      const confirmRes = await fetch(`${denteApiUrl}/api/visits/${visitId}/confirm`, { method: 'POST', signal: AbortSignal.timeout(10_000) });",
 				"      if (!confirmRes.ok) {",
 				"        botLog('error', `Не удалось подтвердить визит ${visitId}: HTTP ${confirmRes.status}`);",
 				"      }",
@@ -443,6 +445,7 @@ export class BotSourceExporter {
 				"    method: 'POST',",
 				"    headers: { 'content-type': 'application/json' },",
 				"    body: JSON.stringify(body),",
+				"    signal: AbortSignal.timeout(10_000),",
 				"  });",
 				"}",
 				"",
@@ -451,7 +454,7 @@ export class BotSourceExporter {
 		);
 
 		// 7. README.md
-		builder.addFile(
+		addFile(
 			"README.md",
 			[
 				`# 🤖 Автономный демон бота: ${params.clinicName}`,
@@ -516,6 +519,45 @@ export class BotSourceExporter {
 			].join("\n"),
 		);
 
+		return files;
+	}
+
+	/**
+	 * Потоковая сборка ZIP-архива с исходным кодом демона бота на базе yazl.
+	 */
+	static exportStandaloneBotPackageStream(params: {
+		botId: string;
+		organizationId: string;
+		clinicName: string;
+		channel: "telegram" | "vk" | "whatsapp" | "max";
+		botTokenMasked?: string;
+		denteApiUrl?: string;
+	}): NodeJS.ReadableStream {
+		const zip = new ZipFile();
+		const files = BotSourceExporter.buildPackageFiles(params);
+		for (const f of files) {
+			const buf = typeof f.content === "string" ? Buffer.from(f.content, "utf8") : f.content;
+			zip.addBuffer(buf, f.path, { compress: true, compressionLevel: 6 });
+		}
+		zip.end();
+		return zip.outputStream;
+	}
+
+	/**
+	 * Сборка ZIP-архива с исходным кодом демона бота клиники (синхронный совместимый метод).
+	 */
+	static exportStandaloneBotPackage(params: {
+		botId: string;
+		organizationId: string;
+		clinicName: string;
+		channel: "telegram" | "vk" | "whatsapp" | "max";
+		botTokenMasked?: string;
+		denteApiUrl?: string;
+	}): Buffer {
+		const builder = new ZipArchiveBuilder();
+		for (const f of BotSourceExporter.buildPackageFiles(params)) {
+			builder.addFile(f.path, f.content);
+		}
 		return builder.build();
 	}
 }

@@ -82,6 +82,7 @@ export class TelegramPollingRunner {
 						resolve,
 						this.config.pollIntervalMs || 3000,
 					);
+					this.currentTimeoutId.unref();
 				});
 			}
 		}
@@ -99,15 +100,24 @@ export class TelegramPollingRunner {
 		url.searchParams.set("limit", "50");
 
 		const controller = new AbortController();
-		// Общий таймаут запроса = timeout + 5 сек запас
+		const runSignal = this.abortController?.signal;
+		const onParentAbort = () => controller.abort(runSignal?.reason);
+		if (runSignal) {
+			if (runSignal.aborted) {
+				controller.abort(runSignal.reason);
+			} else {
+				runSignal.addEventListener("abort", onParentAbort, { once: true });
+			}
+		}
+		// Общий таймаут запроса = timeout + 5 сек запас (охватывает и чтение тела ответа)
 		const timer = setTimeout(() => controller.abort(), (timeout + 5) * 1000);
+		timer.unref();
 
 		try {
 			const res = await fetch(url.toString(), {
 				method: "GET",
 				signal: controller.signal,
 			});
-			clearTimeout(timer);
 
 			if (!res.ok) {
 				throw new Error(
@@ -135,9 +145,9 @@ export class TelegramPollingRunner {
 			}
 
 			return data.result;
-		} catch (err) {
+		} finally {
 			clearTimeout(timer);
-			throw err;
+			runSignal?.removeEventListener("abort", onParentAbort);
 		}
 	}
 }

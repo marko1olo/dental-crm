@@ -14,6 +14,7 @@ export {
 	looksTabular,
 	normalizeText,
 	readZipEntries,
+	readZipEntriesAsync,
 	safeFileLabel,
 	stripXmlTags,
 	xmlDecode,

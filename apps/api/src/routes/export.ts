@@ -9,8 +9,9 @@
  *    аппаратно маскируются по 152-ФЗ.
  */
 
+import { Readable } from "node:stream";
 import { rublesToKopecks } from "@dental/shared";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { withTenantCtx } from "../db/rls.js";
@@ -22,6 +23,8 @@ import {
 	sanitizeClinicalString,
 	stripDiagnosisPayload,
 } from "../security/medicalSecrecyWarden.js";
+
+const EXPORT_BATCH_SIZE = 500;
 
 function escapeCsvField(value: unknown): string {
 	if (value === null || value === undefined) return "";
@@ -43,10 +46,11 @@ function escapeCsvField(value: unknown): string {
 export async function registerExportRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/export/patients
-	 * Экспорт картотеки пациентов.
+	 * Экспорт картотеки пациентов (потоковый CSV батчами по 500 строк).
 	 */
 	app.get<{ Querystring: { format?: string } }>(
 		"/api/export/patients",
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "export patients");
 			if (!orgId) return;
@@ -66,35 +70,62 @@ export async function registerExportRoutes(app: FastifyInstance) {
 			}
 
 			try {
-				const dbPatients = await getPatientsFromDb(orgId);
-				// Аппаратная очистка от медицинской тайны
-				const sanitizedPatients = stripDiagnosisPayload(dbPatients, { strict: true });
-
 				const format = (request.query?.format || "json").toLowerCase();
 				if (format === "csv") {
-					const headers = "id,fullName,phone,birthDate,status,notes,balanceRub\n";
-					const rows = sanitizedPatients
-						.map((p) => {
-							const notesSanitized = p.notes ? sanitizeClinicalString(p.notes, { strict: true }) : "";
-							return [
-								escapeCsvField(p.id),
-								escapeCsvField(p.fullName),
-								escapeCsvField(p.phone),
-								escapeCsvField(p.birthDate),
-								escapeCsvField(p.status),
-								escapeCsvField(notesSanitized),
-								escapeCsvField(p.balanceRub ?? 0),
-							].join(",");
-						})
-						.join("\n");
-
 					reply.header("Content-Type", "text/csv; charset=utf-8");
 					reply.header(
 						"Content-Disposition",
 						`attachment; filename="patients-export-${orgId}.csv"`,
 					);
-					return reply.send("\uFEFF" + headers + rows);
+
+					const csvStream = Readable.from(
+						(async function* () {
+							yield "\uFEFFid,fullName,phone,birthDate,status,notes,balanceRub\n";
+							let offset = 0;
+							let isFirstRow = true;
+
+							while (true) {
+								const batch = await getPatientsFromDb(orgId, {
+									limit: EXPORT_BATCH_SIZE,
+									offset,
+								});
+								if (batch.length === 0) break;
+
+								const sanitizedPatients = stripDiagnosisPayload(batch, {
+									strict: true,
+								});
+								const lines: string[] = [];
+								for (const p of sanitizedPatients) {
+									const notesSanitized = p.notes
+										? sanitizeClinicalString(p.notes, { strict: true })
+										: "";
+									const line = [
+										escapeCsvField(p.id),
+										escapeCsvField(p.fullName),
+										escapeCsvField(p.phone),
+										escapeCsvField(p.birthDate),
+										escapeCsvField(p.status),
+										escapeCsvField(notesSanitized),
+										escapeCsvField(p.balanceRub ?? 0),
+									].join(",");
+									lines.push(isFirstRow ? line : `\n${line}`);
+									isFirstRow = false;
+								}
+								if (lines.length > 0) {
+									yield lines.join("");
+								}
+
+								if (batch.length < EXPORT_BATCH_SIZE) break;
+								offset += batch.length;
+							}
+						})(),
+					);
+
+					return reply.send(csvStream);
 				}
+
+				const dbPatients = await getPatientsFromDb(orgId);
+				const sanitizedPatients = stripDiagnosisPayload(dbPatients, { strict: true });
 
 				return reply.code(200).send({
 					success: true,
@@ -121,48 +152,79 @@ export async function registerExportRoutes(app: FastifyInstance) {
 
 	/**
 	 * GET /api/export/leads
-	 * Экспорт CRM-лидов.
+	 * Экспорт CRM-лидов (потоковый CSV батчами по 500 строк).
 	 */
 	app.get<{ Querystring: { format?: string } }>(
 		"/api/export/leads",
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "export leads");
 			if (!orgId) return;
 
 			try {
+				const format = (request.query?.format || "json").toLowerCase();
+
+				if (format === "csv") {
+					reply.header("Content-Type", "text/csv; charset=utf-8");
+					reply.header(
+						"Content-Disposition",
+						`attachment; filename="leads-export-${orgId}.csv"`,
+					);
+
+					const csvStream = Readable.from(
+						(async function* () {
+							yield "\uFEFFid,name,phone,source,status,notes,expectedRevenue\n";
+							let offset = 0;
+							let isFirstRow = true;
+
+							while (true) {
+								const batch = await withTenantCtx(orgId, (tx) =>
+									tx
+										.select()
+										.from(crmLeads)
+										.where(eq(crmLeads.organizationId, orgId))
+										.orderBy(asc(crmLeads.createdAt), asc(crmLeads.id))
+										.limit(EXPORT_BATCH_SIZE)
+										.offset(offset),
+								);
+								if (batch.length === 0) break;
+
+								const lines: string[] = [];
+								for (const lead of batch) {
+									const notesClean = lead.notes
+										? sanitizeClinicalString(lead.notes, { strict: true })
+										: "";
+									const line = [
+										escapeCsvField(lead.id),
+										escapeCsvField(lead.name),
+										escapeCsvField(lead.phone),
+										escapeCsvField(lead.source),
+										escapeCsvField(lead.status),
+										escapeCsvField(notesClean),
+										escapeCsvField(lead.expectedRevenue),
+									].join(",");
+									lines.push(isFirstRow ? line : `\n${line}`);
+									isFirstRow = false;
+								}
+								if (lines.length > 0) {
+									yield lines.join("");
+								}
+
+								if (batch.length < EXPORT_BATCH_SIZE) break;
+								offset += batch.length;
+							}
+						})(),
+					);
+
+					return reply.send(csvStream);
+				}
+
 				const leads = await withTenantCtx(orgId, (tx) =>
 					tx
 						.select()
 						.from(crmLeads)
 						.where(eq(crmLeads.organizationId, orgId)),
 				);
-
-				const format = (request.query?.format || "json").toLowerCase();
-
-				if (format === "csv") {
-					const headers = "id,name,phone,source,status,notes,expectedRevenue\n";
-					const rows = leads
-						.map((lead) => {
-							const notesClean = lead.notes ? sanitizeClinicalString(lead.notes, { strict: true }) : "";
-							return [
-								escapeCsvField(lead.id),
-								escapeCsvField(lead.name),
-								escapeCsvField(lead.phone),
-								escapeCsvField(lead.source),
-								escapeCsvField(lead.status),
-								escapeCsvField(notesClean),
-								escapeCsvField(lead.expectedRevenue),
-							].join(",");
-						})
-						.join("\n");
-
-					reply.header("Content-Type", "text/csv; charset=utf-8");
-					reply.header(
-						"Content-Disposition",
-						`attachment; filename="leads-export-${orgId}.csv"`,
-					);
-					return reply.send("\uFEFF" + headers + rows);
-				}
 
 				return reply.code(200).send({
 					success: true,

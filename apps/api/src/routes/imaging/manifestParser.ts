@@ -16,6 +16,7 @@ import {
 } from "./imagingConstants.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 
 export const headerAliases: Record<
 	string,
@@ -172,7 +173,7 @@ export function normalizeDicomUid(value: string | null | undefined) {
 	return uid && uid.length <= 96 ? uid : null;
 }
 
-export const dicomUidPatternCache = new Map<string, RegExp>();
+export const dicomUidPatternCache = new BoundedTtlMap<string, RegExp>({ maxEntries: 256 });
 
 export function extractDicomUid(value: string, labels: string[]) {
 	for (const label of labels) {
@@ -236,7 +237,7 @@ export function parsePositiveInteger(value: string | null | undefined) {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-export const dicomFieldValuePatternCache = new Map<string, RegExp>();
+export const dicomFieldValuePatternCache = new BoundedTtlMap<string, RegExp>({ maxEntries: 256 });
 
 export function extractDicomFieldValue(line: string, labels: string[]) {
 	for (const label of labels) {
