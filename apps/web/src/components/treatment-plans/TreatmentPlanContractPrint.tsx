@@ -4,8 +4,11 @@
  * Декомпозирован строго по Мандату 8b (лимит <= 120 строк).
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { clientLogger } from "../../services/logging/clientLogger";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import type { ToothData, ToothState } from "../odontogram/ToothChart";
+import { loadStoredTeethData } from "../odontogram/odontogramStorage";
 import { formatWarrantyYearsText, type DigitalSignatureAgreementData, type TreatmentPlanStage, type TreatmentPlanTier } from "./types";
 import { type Kopecks, parseKopecks, kopecksToRubles, splitKopecks } from "@dental/shared";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
@@ -22,6 +25,7 @@ export interface TreatmentPlanContractPrintProps {
 	readonly isOpen: boolean;
 	readonly tier: TreatmentPlanTier;
 	readonly stages: readonly TreatmentPlanStage[];
+	readonly teethData?: readonly ToothData[] | undefined;
 	readonly patientName: string;
 	readonly patientId: string;
 	readonly patientPhone?: string | undefined;
@@ -43,16 +47,58 @@ export interface TreatmentPlanContractPrintProps {
 }
 
 export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProps> = (props) => {
-	const { isOpen, tier, stages, patientName, patientId, patientPhone = "+7 (___) ___-__-__", patientBirthDate, doctorFullName, clinicName, clinicLegalName = "Стоматологическая клиника", clinicInn = "", clinicOgrn = "", clinicAddress = "", clinicLicense = "", contractNumber, signedAgreement, discountPercent = 0, bonusPointsDeductedRub = 0, installmentMonths = 12, planAgeDays, onClose } = props;
+	const { isOpen, tier, stages, teethData: propTeethData, patientName, patientId, patientPhone = "+7 (___) ___-__-__", patientBirthDate, doctorFullName, clinicName, clinicLegalName = "Стоматологическая клиника", clinicInn = "", clinicOgrn = "", clinicAddress = "", clinicLicense = "", contractNumber, signedAgreement, discountPercent = 0, bonusPointsDeductedRub = 0, installmentMonths = 12, planAgeDays, onClose } = props;
 	const [showMicroConsumables, setShowMicroConsumables] = useState(false);
 	const [viewMode, setViewMode] = useState<"patient_friendly" | "official_appendix">("patient_friendly");
 	const [isCopiedMessenger, setIsCopiedMessenger] = useState(false);
+	const [hydratedTeethData, setHydratedTeethData] = useState<readonly ToothData[]>(() =>
+		patientId ? loadStoredTeethData(patientId) ?? [] : [],
+	);
+
+	useEffect(() => {
+		if (propTeethData) return;
+		const cached = patientId ? loadStoredTeethData(patientId) : null;
+		if (cached && cached.length > 0) setHydratedTeethData(cached);
+		if (!isOpen || !patientId || typeof fetch !== "function") return;
+		const controller = new AbortController();
+		void fetch(`/api/patients/${encodeURIComponent(patientId)}/tooth-states`, {
+			headers: getDenteAuthHeaders(),
+			signal: controller.signal,
+		})
+			.then(async (res) => {
+				if (!res.ok) return;
+				const rawJson = (await res.json()) as { states?: unknown; data?: { states?: unknown } };
+				const payload = rawJson.data ?? rawJson;
+				if (!Array.isArray(payload.states)) return;
+				const parsed: ToothData[] = payload.states
+					.filter((item): item is { toothNumber: number; state: ToothState; surfaces?: string[] } =>
+						typeof item === "object" && item !== null && typeof (item as { toothNumber?: unknown }).toothNumber === "number" && typeof (item as { state?: unknown }).state === "string",
+					)
+					.map((item) => ({
+						toothNumber: item.toothNumber,
+						state: item.state,
+						...(Array.isArray(item.surfaces) ? { surfaces: item.surfaces } : {}),
+					}));
+				if (parsed.length > 0) setHydratedTeethData(parsed);
+			})
+			.catch((err: unknown) => {
+				if (err instanceof DOMException && err.name === "AbortError") return;
+				clientLogger.warn("[TreatmentPlanContractPrint] Tooth states load failed", err, { module: "TreatmentPlans" });
+			});
+		return () => controller.abort();
+	}, [isOpen, patientId, propTeethData]);
+
+	const effectiveTeethData = propTeethData ?? hydratedTeethData;
 
 	const activeStages = useMemo(() => {
 		const withItems = stages.filter((s) => s.items && s.items.length > 0);
 		return withItems.length > 0 ? withItems : stages;
 	}, [stages]);
 	const allItems = useMemo(() => activeStages.flatMap((s) => s.items), [activeStages]);
+	const plannedToothNumbers = useMemo(
+		() => Array.from(new Set(allItems.map((it) => Number(it.toothNumber)).filter((n) => Number.isInteger(n) && n >= 11 && n <= 85))),
+		[allItems],
+	);
 
 	const grossTotalKopecks = allItems.reduce((acc, it) => (acc + parseKopecks(it.unitPriceRub || 0) * (it.quantity || 1)) as Kopecks, 0 as Kopecks);
 	const grossTotalRub = Math.round(kopecksToRubles(grossTotalKopecks));
@@ -88,7 +134,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 				<TreatmentPlanContractPrintHeader viewMode={viewMode} setViewMode={setViewMode} isCopiedMessenger={isCopiedMessenger} onCopyForMessenger={handleCopyForMessenger} onClose={onClose} />
 				<div className="relative p-6 sm:p-10 overflow-y-auto print:p-0 print:overflow-visible print:text-black print:bg-white bg-[var(--paper)] text-[var(--ink)] text-xs leading-relaxed space-y-6 premium-doc-sheet print-paper-sheet" data-paper-sheet>
 					<div className="doc-watermark" aria-hidden="true" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-32deg)", fontSize: signedAgreement ? "50pt" : "64pt", fontWeight: 900, color: signedAgreement ? "rgba(16, 185, 129, 0.045)" : "rgba(15, 23, 42, 0.045)", textTransform: "uppercase", letterSpacing: "0.12em", pointerEvents: "none", zIndex: 0, whiteSpace: "nowrap", userSelect: "none" }}>{signedAgreement ? "ПОДПИСАНО" : "ЧЕРНОВИК"}</div>
-					<TreatmentPlanContractClinicPatientInfo clinicName={clinicName} clinicLegalName={clinicLegalName} clinicInn={clinicInn} clinicOgrn={clinicOgrn} clinicAddress={clinicAddress} clinicLicense={clinicLicense} displayContractNumber={displayContractNumber} todayRu={todayRu} qrPayload={qrPayload} doctorFullName={doctorFullName} patientName={patientName} patientBirthDate={patientBirthDate} patientId={patientId} patientPhone={patientPhone} tier={tier} />
+					<TreatmentPlanContractClinicPatientInfo clinicName={clinicName} clinicLegalName={clinicLegalName} clinicInn={clinicInn} clinicOgrn={clinicOgrn} clinicAddress={clinicAddress} clinicLicense={clinicLicense} displayContractNumber={displayContractNumber} todayRu={todayRu} qrPayload={qrPayload} doctorFullName={doctorFullName} patientName={patientName} patientBirthDate={patientBirthDate} patientId={patientId} patientPhone={patientPhone} tier={tier} teethData={effectiveTeethData} plannedToothNumbers={plannedToothNumbers} />
 					<TreatmentPlanContractServicesTable activeStages={activeStages} allItemsCount={allItems.length} viewMode={viewMode} showMicroConsumables={showMicroConsumables} setShowMicroConsumables={setShowMicroConsumables} />
 					<TreatmentPlanContractFinancialSummary tier={tier} activeStages={activeStages} grossTotalRub={grossTotalRub} discountPercent={discountPercent} discountTotalRub={discountTotalRub} bonusPointsDeductedRub={bonusPointsDeductedRub} finalTotalKopecks={finalTotalKopecks} finalTotalRub={finalTotalRub} installmentMonths={installmentMonths} planAgeDays={planAgeDays} />
 					<TreatmentPlanContractSignatures tier={tier} doctorFullName={doctorFullName} qrPayload={qrPayload} signedAgreement={signedAgreement} patientName={patientName} />

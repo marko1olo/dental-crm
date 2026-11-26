@@ -113,6 +113,8 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 		data,
 		isSubmitting,
 		hasOverdraft,
+		handleToggleOmit,
+		handleAdjustQuantity,
 		handleConfirmWriteoff,
 		handlePrintAct,
 		handleQuickCarpules,
@@ -241,6 +243,8 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 							{/* Таблица списываемых материалов */}
 							<BatchWriteoffConsumablesTable
 								consumables={data.consumablesSummary}
+								onToggleOmit={handleToggleOmit}
+								onAdjustQuantity={handleAdjustQuantity}
 							/>
 						</>
 					)}

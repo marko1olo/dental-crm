@@ -7,12 +7,13 @@ import {
 	type PreviousToothStateRecord,
 	type ToothStateTransitionInput,
 } from "./odontogramStateMerge.js";
-import { parseClinicalDataFromNotes } from "./types.js";
+import { TOOTH_NUMBER_TO_JAW_CODE, parseClinicalDataFromNotes } from "./types.js";
 
 export type { ToothStateTransitionInput };
 
 export interface FormattedToothStateRow {
 	toothNumber: number;
+	jawCode?: "JU" | "JL" | "C" | undefined;
 	state: string;
 	surfaces: unknown;
 	notes: string | null;
@@ -42,8 +43,10 @@ export function formatToothStateRow(row: {
 		row.notes.trim().endsWith("}")
 			? null
 			: row.notes;
+	const jawCode = TOOTH_NUMBER_TO_JAW_CODE[row.toothNumber];
 	return {
 		toothNumber: row.toothNumber,
+		...(jawCode ? { jawCode } : {}),
 		state: row.state,
 		surfaces: row.surfaces,
 		notes: cleanNotes,

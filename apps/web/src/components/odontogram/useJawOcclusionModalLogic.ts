@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
 	LOWER_JAW_PRESETS,
@@ -6,17 +8,21 @@ import {
 	UPPER_JAW_PRESETS,
 } from "./jawOcclusionPresets";
 import {
+	JAW_CODE_TO_NUMBER,
 	type JawFindingPreset,
 	type JawOcclusionModalProps,
 	type JawOrOcclusionTarget,
 	resolveJawTargetLabels,
 } from "./jawOcclusionTypes";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function useJawOcclusionModalLogic(
 	isOpen: boolean,
 	initialTarget: JawOrOcclusionTarget = "JU",
 	onClose: () => void,
 	onApply?: JawOcclusionModalProps["onApply"],
+	patientId?: string | undefined,
 ) {
 	const [activeTab, setActiveTab] =
 		useState<JawOrOcclusionTarget>(initialTarget);
@@ -60,6 +66,7 @@ export function useJawOcclusionModalLogic(
 					new CustomEvent("dente-apply-soap-protocol", {
 						detail: {
 							targetCode: activeTab,
+							targetNumber: JAW_CODE_TO_NUMBER[activeTab],
 							targetNameRu: targetShortTitle,
 							title: preset.titleRu,
 							soap: {
@@ -76,6 +83,50 @@ export function useJawOcclusionModalLogic(
 				/* Fallback */
 			}
 
+			if (patientId && UUID_PATTERN.test(patientId) && typeof fetch === "function") {
+				const jawNumber = JAW_CODE_TO_NUMBER[activeTab];
+				void fetch("/api/odontogram/status", {
+					method: "POST",
+					headers: {
+						...getDenteAuthHeaders({ "Content-Type": "application/json" }),
+						"Idempotency-Key": generateUuidV7(),
+					},
+					body: JSON.stringify({
+						patientId,
+						toothNumber: jawNumber,
+						state: "Healthy",
+						notes: fullSoap,
+						reason: `Челюстной статус (${activeTab}): ${preset.titleRu}`,
+						clinicalData: {
+							toothNumber: jawNumber,
+							jawCode: activeTab,
+							presetId: preset.id,
+							titleRu: preset.titleRu,
+							mkb10Code: preset.mkb10Code ?? null,
+							isNorm: Boolean(preset.isNorm),
+							recommendedPlanRu: preset.recommendedPlanRu ?? null,
+							notes: fullSoap,
+						},
+					}),
+				})
+					.then(async (res) => {
+						if (!res.ok) {
+							const errJson = (await res.json().catch(() => null)) as {
+								data?: { message?: string };
+								message?: string;
+							} | null;
+							const errBody = errJson?.data ?? errJson;
+							showToast(
+								errBody?.message || "Не удалось сохранить челюстной статус в карту пациента",
+								"error",
+							);
+						}
+					})
+					.catch(() => {
+						showToast("Ошибка сети при сохранении челюстного статуса", "error");
+					});
+			}
+
 			onApply?.({
 				code: activeTab,
 				nameRu: targetShortTitle,
@@ -90,7 +141,7 @@ export function useJawOcclusionModalLogic(
 			);
 			onClose();
 		},
-		[activeTab, customComment, onApply, onClose, targetShortTitle],
+		[activeTab, customComment, onApply, onClose, patientId, targetShortTitle],
 	);
 
 	const handle1ClickNorm = useCallback(() => {

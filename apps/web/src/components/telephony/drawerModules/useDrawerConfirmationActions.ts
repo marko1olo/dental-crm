@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { Dashboard } from "@dental/shared";
+import { generateUuidV7, type Dashboard } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 import type { UseIncomingCallDataResult } from "../useIncomingCallData";
 import { generateAppointmentConfirmationMessage, openWhatsAppChat } from "../../../store/telephonyStore";
@@ -12,6 +13,53 @@ export function useDrawerConfirmationActions(params: {
 }) {
 	const { currentCall, callData, dashboard } = params;
 	const [smsCopied, setSmsCopied] = useState(false);
+	const [isConfirmingAppointment, setIsConfirmingAppointment] = useState(false);
+	const [confirmedAppointmentId, setConfirmedAppointmentId] = useState<string | null>(null);
+
+	const handleConfirmAppointment = async () => {
+		const upcoming = callData.upcomingAppointment;
+		if (!upcoming?.appointmentId) {
+			showToast("Нет предстоящих запланированных записей для подтверждения", "info");
+			return;
+		}
+		setIsConfirmingAppointment(true);
+		try {
+			const res = await fetch(`/api/appointments/${encodeURIComponent(upcoming.appointmentId)}/status`, {
+				method: "PATCH",
+				headers: {
+					...denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+					"Idempotency-Key": generateUuidV7(),
+				},
+				body: JSON.stringify({ status: "confirmed" }),
+			});
+			if (!res.ok) {
+				const errJson = (await res.json().catch(() => null)) as {
+					data?: { message?: string; error?: string };
+					message?: string;
+					error?: string;
+				} | null;
+				const errBody = errJson?.data ?? errJson;
+				const errMsg = errBody?.message || errBody?.error || "Не удалось подтвердить приём в расписании";
+				showToast(errMsg, "error");
+				return;
+			}
+			setConfirmedAppointmentId(upcoming.appointmentId);
+			showToast(
+				`Приём подтверждён в расписании (${upcoming.formattedTime}, ${upcoming.doctorName ?? "врач клиники"})`,
+				"success",
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente:appointment-status-updated", {
+					detail: { appointmentId: upcoming.appointmentId, status: "confirmed" },
+				}),
+			);
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Ошибка сети при подтверждении приёма";
+			showToast(errMsg, "error");
+		} finally {
+			setIsConfirmingAppointment(false);
+		}
+	};
 
 	const handleSendWhatsAppConfirmation = () => {
 		if (!callData.upcomingAppointment || !currentCall?.phone) {
@@ -46,5 +94,12 @@ export function useDrawerConfirmationActions(params: {
 		});
 	};
 
-	return { smsCopied, handleSendWhatsAppConfirmation, handleCopySmsConfirmation };
+	return {
+		smsCopied,
+		isConfirmingAppointment,
+		confirmedAppointmentId,
+		handleConfirmAppointment,
+		handleSendWhatsAppConfirmation,
+		handleCopySmsConfirmation,
+	};
 }

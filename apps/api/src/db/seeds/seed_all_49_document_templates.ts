@@ -18,9 +18,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Определение пути к каталогу с дампом шаблонов StomX
+ * Определение пути к каталогу с дампом шаблонов (возвращает null, если внешние дампы удалены)
  */
-function resolveStomxTemplatesDir(): string {
+function resolveStomxTemplatesDir(): string | null {
 	const candidates = [
 		path.resolve(process.cwd(), "РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/StomX_templates_full"),
 		path.resolve(__dirname, "../../../../../РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/StomX_templates_full"),
@@ -33,10 +33,20 @@ function resolveStomxTemplatesDir(): string {
 		}
 	}
 
-	throw new Error(
-		`Каталог StomX_templates_full не найден ни по одному из путей: ${candidates.join(", ")}`,
-	);
+	return null;
 }
+
+const FALLBACK_DOCUMENT_CATEGORIES: ReadonlyArray<{ id: number; name: string; order: number }> = [
+	{ id: 1, name: "Общие документы и договоры", order: 1 },
+	{ id: 2, name: "Терапевтическая стоматология", order: 2 },
+	{ id: 3, name: "Ортопедическая стоматология", order: 3 },
+	{ id: 4, name: "Хирургическая стоматология", order: 4 },
+	{ id: 5, name: "Имплантология", order: 5 },
+	{ id: 6, name: "Ортодонтия", order: 6 },
+	{ id: 7, name: "Пародонтология", order: 7 },
+	{ id: 8, name: "Детская стоматология", order: 8 },
+	{ id: 9, name: "Профессиональная гигиена и профилактика", order: 9 },
+];
 
 /**
  * Клиническое сопоставление 49 шаблонов по 10 профильным рубрикам Минздрава РФ
@@ -137,12 +147,11 @@ export async function seedAll49DocumentTemplates(): Promise<{
 		const stomxDir = resolveStomxTemplatesDir();
 
 		// ─── 1. СИДИРОВАНИЕ 10 КАТЕГОРИЙ ──────────────────────────────────────────
-		const categoriesPath = path.join(stomxDir, "categories.json");
-		const rawCategories = JSON.parse(fs.readFileSync(categoriesPath, "utf8")) as Array<{
-			id: number;
-			name: string;
-			order: number;
-		}>;
+		const rawCategories: ReadonlyArray<{ id: number; name: string; order: number }> = stomxDir
+			? (JSON.parse(
+					fs.readFileSync(path.join(stomxDir, "categories.json"), "utf8"),
+				) as Array<{ id: number; name: string; order: number }>)
+			: FALLBACK_DOCUMENT_CATEGORIES;
 
 		let categoriesCount = 0;
 		for (const cat of rawCategories) {
@@ -165,11 +174,14 @@ export async function seedAll49DocumentTemplates(): Promise<{
 	}
 
 	// ─── 2. СИДИРОВАНИЕ 74+ ПЕРЕМЕННЫХ ШАБЛОНИЗАТОРА ─────────────────────────
-	const variablesPath = path.join(stomxDir, "template_variables.json");
-	const rawVariables = JSON.parse(fs.readFileSync(variablesPath, "utf8")) as Array<{
-		name: string;
-		example?: unknown;
-	}>;
+	const variablesPath = stomxDir ? path.join(stomxDir, "template_variables.json") : null;
+	const rawVariables =
+		variablesPath && fs.existsSync(variablesPath)
+			? (JSON.parse(fs.readFileSync(variablesPath, "utf8")) as Array<{
+					name: string;
+					example?: unknown;
+				}>)
+			: [];
 
 	const variableSpecsMap = new Map(
 		ALL_DOCUMENT_TEMPLATE_VARIABLES.map((v) => [v.token, v]),
@@ -221,32 +233,49 @@ export async function seedAll49DocumentTemplates(): Promise<{
 	}
 
 	// ─── 3. СИДИРОВАНИЕ ВСЕХ 49 БЛАНКОВ ДОКУМЕНТОВ ────────────────────────────
-	const jsonDir = path.join(stomxDir, "json");
-	const jsonFiles = fs.readdirSync(jsonDir);
+	const rawTemplateItems: Array<{
+		id: number;
+		name: string;
+		system_alias: string;
+		type?: string;
+		is_block?: number;
+		category_id?: number;
+		is_egisz?: number;
+		esia_required?: number;
+		is_xray_ids?: number;
+	}> = [];
 
-	// Отфильтровываем именованные файлы с префиксом 001_..., исключая повторные числовые 1.json
-	const templateFiles = jsonFiles.filter((f) => f.endsWith(".json") && /^\d{3}_/.test(f));
-	// Если по какой-то причине нет с префиксом 001_, берем все уникальные по ID
-	const filesToProcess = templateFiles.length > 0 ? templateFiles : jsonFiles.filter((f) => f.endsWith(".json"));
+	if (stomxDir) {
+		const jsonDir = path.join(stomxDir, "json");
+		const jsonFiles = fs.existsSync(jsonDir) ? fs.readdirSync(jsonDir) : [];
+		const templateFiles = jsonFiles.filter((f) => f.endsWith(".json") && /^\d{3}_/.test(f));
+		const filesToProcess = templateFiles.length > 0 ? templateFiles : jsonFiles.filter((f) => f.endsWith(".json"));
+		for (const fileName of filesToProcess) {
+			const filePath = path.join(jsonDir, fileName);
+			const parsed = JSON.parse(fs.readFileSync(filePath, "utf8")) as (typeof rawTemplateItems)[number];
+			rawTemplateItems.push(parsed);
+		}
+	} else {
+		let fallbackId = 1;
+		for (const [alias, categoryId] of Object.entries(CLINICAL_CATEGORY_BY_ALIAS)) {
+			rawTemplateItems.push({
+				id: fallbackId++,
+				name: alias.replace(/[_-]+/g, " "),
+				system_alias: alias,
+				type: alias.startsWith("ids_") ? "consent" : "common",
+				category_id: categoryId,
+				is_egisz: alias === "otkaz_v_peredache_dannykh_v_egisz" ? 1 : 0,
+				esia_required: 0,
+				is_xray_ids: alias.includes("xray") || alias.includes("rentgen") ? 1 : 0,
+				is_block: 0,
+			});
+		}
+	}
 
 	const processedIds = new Set<number>();
 	let templatesCount = 0;
 
-	for (const fileName of filesToProcess) {
-		const filePath = path.join(jsonDir, fileName);
-		const item = JSON.parse(fs.readFileSync(filePath, "utf8")) as {
-			id: number;
-			name: string;
-			url?: string;
-			system_alias: string;
-			type?: string;
-			is_block?: number;
-			category_id?: number;
-			is_egisz?: number;
-			esia_required?: number;
-			is_xray_ids?: number;
-		};
-
+	for (const item of rawTemplateItems) {
 		if (!item.id || processedIds.has(item.id)) continue;
 		processedIds.add(item.id);
 

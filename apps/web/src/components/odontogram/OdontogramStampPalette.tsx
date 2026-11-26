@@ -13,10 +13,22 @@
  */
 
 import React, { useEffect, useCallback, useState, useMemo } from "react";
-import { MousePointer, Sparkles, X, Check } from "lucide-react";
+import { MousePointer, Sparkles, X, Check, ChevronDown, Search } from "lucide-react";
+import { findClinicalDefectByAlias, CLINICAL_TOOTH_DEFECTS } from "@dental/shared";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import type { ToothState } from "./ToothChart";
 import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+
+interface CatalogDefectOption {
+	readonly id: number;
+	readonly name: string;
+	readonly alias: string;
+	readonly type: string;
+	readonly key: string;
+	readonly color: string | null;
+	readonly mappedState: ToothState;
+}
 
 export interface OdontogramStampPaletteProps {
 	activeStampTool: ToothState | null;
@@ -222,6 +234,41 @@ export const STAMP_OPTIONS: readonly StampOption[] = [
 	},
 ];
 
+function mapDefectToToothState(raw: {
+	alias?: string | undefined;
+	name?: string | undefined;
+	key?: string | null | undefined;
+	crmToothState?: ToothState | undefined;
+}): ToothState {
+	if (raw.crmToothState) return raw.crmToothState;
+	if (raw.alias) {
+		const matched = findClinicalDefectByAlias(raw.alias);
+		if (matched?.crmToothState) return matched.crmToothState as ToothState;
+	}
+	const probe = `${raw.alias ?? ""} ${raw.name ?? ""}`.toLowerCase();
+	if (probe.includes("пульп")) return "Pulpitis";
+	if (probe.includes("периодонт") || probe.includes("пародонт") || probe.includes("кист")) return "Periodontitis";
+	if (probe.includes("пломб") || probe.includes("реставрац")) return "Filled";
+	if (probe.includes("корон")) return "Crown";
+	if (probe.includes("имплант")) return "Implant";
+	if (probe.includes("отсутств") || probe.includes("удален") || probe.includes("аденти")) return "Missing";
+	if (probe.includes("корен")) return "Root";
+	if (probe.includes("ретен") || probe.includes("полуретен")) return "Retained";
+	if (probe.includes("камен")) return "Calculus";
+	if (probe.includes("здоров") || probe.includes("норма")) return "Healthy";
+	return "Caries";
+}
+
+const FALLBACK_CATALOG_DEFECTS: readonly CatalogDefectOption[] = CLINICAL_TOOTH_DEFECTS.map((d) => ({
+	id: d.id,
+	name: d.name,
+	alias: d.alias,
+	type: d.type,
+	key: d.key ?? "common",
+	color: d.color,
+	mappedState: mapDefectToToothState({ alias: d.alias, name: d.name, crmToothState: d.crmToothState as ToothState | undefined }),
+}));
+
 export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = React.memo(({
 	activeStampTool,
 	setActiveStampTool,
@@ -231,17 +278,67 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 	className = "",
 }) => {
 	const [activeCategory, setActiveCategory] = useState<StampCategory>("all");
+	const [catalogDefects, setCatalogDefects] = useState<readonly CatalogDefectOption[]>(FALLBACK_CATALOG_DEFECTS);
+	const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+	const [catalogSearch, setCatalogSearch] = useState("");
 
-	// Dismiss active stamp tool on Escape key
+	useEffect(() => {
+		if (typeof fetch !== "function") return;
+		const controller = new AbortController();
+		void fetch("/api/catalogs/tooth-defects?activeOnly=true", {
+			headers: getDenteAuthHeaders(),
+			signal: controller.signal,
+		})
+			.then(async (res) => {
+				if (!res.ok) return;
+				const rawJson = (await res.json()) as {
+					defects?: unknown;
+					data?: { defects?: unknown };
+				};
+				const payload = rawJson.data ?? rawJson;
+				if (!Array.isArray(payload.defects) || payload.defects.length === 0) return;
+				const mapped: CatalogDefectOption[] = payload.defects
+					.filter((item): item is { id: number; name: string; alias: string; type?: string; key?: string | null; color?: string | null } =>
+						typeof item === "object" &&
+						item !== null &&
+						typeof (item as { name?: unknown }).name === "string" &&
+						typeof (item as { alias?: unknown }).alias === "string",
+					)
+					.map((item) => ({
+						id: item.id,
+						name: item.name,
+						alias: item.alias,
+						type: item.type ?? "outpatient",
+						key: item.key ?? "common",
+						color: item.color ?? null,
+						mappedState: mapDefectToToothState({ alias: item.alias, name: item.name, key: item.key }),
+					}));
+				if (mapped.length > 0) {
+					setCatalogDefects(mapped);
+				}
+			})
+			.catch(() => {
+				/* Fallback to FALLBACK_CATALOG_DEFECTS / STAMP_OPTIONS when offline or unseeded */
+			});
+		return () => controller.abort();
+	}, []);
+
+	// Dismiss active stamp tool and catalog popover on Escape key
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape" && activeStampTool) {
-				setActiveStampTool(null);
+			if (e.key === "Escape") {
+				if (isCatalogOpen) {
+					setIsCatalogOpen(false);
+					return;
+				}
+				if (activeStampTool) {
+					setActiveStampTool(null);
+				}
 			}
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [activeStampTool, setActiveStampTool]);
+	}, [activeStampTool, isCatalogOpen, setActiveStampTool]);
 
 	const handleResetStamp = useCallback(() => {
 		if (activeStampTool) {
@@ -254,6 +351,16 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 		if (activeCategory === "all") return STAMP_OPTIONS;
 		return STAMP_OPTIONS.filter((opt) => opt.categories.includes(activeCategory));
 	}, [activeCategory]);
+
+	const filteredCatalogDefects = useMemo(() => {
+		const q = catalogSearch.trim().toLowerCase();
+		if (!q) return catalogDefects;
+		return catalogDefects.filter(
+			(d) =>
+				d.name.toLowerCase().includes(q) ||
+				d.alias.toLowerCase().includes(q),
+		);
+	}, [catalogDefects, catalogSearch]);
 
 	const hasSelection = selectedTeeth.length > 0;
 
@@ -344,6 +451,76 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 							</button>
 						);
 					})}
+
+					{/* Full catalog defects selector (loaded from /api/catalogs/tooth-defects with shared fallback) */}
+					<div className="relative">
+						<button
+							type="button"
+							data-testid="odontogram-all-defects-trigger"
+							aria-expanded={isCatalogOpen}
+							onClick={() => setIsCatalogOpen((prev) => !prev)}
+							className="h-8 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0"
+							title="Полный клинический классификатор дефектов зубного ряда"
+						>
+							<span>Классификатор ({catalogDefects.length})</span>
+							<ChevronDown className="w-3.5 h-3.5 shrink-0" />
+						</button>
+
+						{isCatalogOpen && (
+							<div
+								data-testid="odontogram-all-defects-popover"
+								className="absolute left-0 top-full mt-1.5 z-50 w-72 sm:w-80 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-2.5 space-y-2"
+							>
+								<div className="relative flex items-center">
+									<Search className="w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-2.5 pointer-events-none" />
+									<input
+										type="text"
+										value={catalogSearch}
+										onChange={(e) => setCatalogSearch(e.target.value)}
+										placeholder="Поиск патологии или аномалии..."
+										className="w-full h-9 pl-8 pr-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none"
+									/>
+								</div>
+								<div className="max-h-60 overflow-y-auto divide-y divide-[var(--line-subtle)]">
+									{filteredCatalogDefects.map((defect) => (
+										<button
+											key={`${defect.id}-${defect.alias}`}
+											type="button"
+											data-testid={`catalog-defect-item-${defect.alias}`}
+											onClick={() => {
+												handleQuickTriggerState(defect.mappedState);
+												if (typeof window !== "undefined") {
+													window.dispatchEvent(
+														new CustomEvent("dente:apply-tooth-defect", {
+															detail: {
+																id: defect.id,
+																alias: defect.alias,
+																name: defect.name,
+																state: defect.mappedState,
+															},
+														}),
+													);
+												}
+												setIsCatalogOpen(false);
+												setCatalogSearch("");
+											}}
+											className="w-full px-2.5 py-2 text-left text-xs flex items-center justify-between gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] cursor-pointer rounded-md"
+										>
+											<span className="font-medium truncate">{defect.name}</span>
+											<span className="text-[11px] font-mono text-[var(--ink-muted)] shrink-0">
+												{TOOTH_STATE_LABELS[defect.mappedState] || defect.mappedState}
+											</span>
+										</button>
+									))}
+									{filteredCatalogDefects.length === 0 && (
+										<div className="py-4 text-center text-xs text-[var(--ink-muted)]">
+											Дефекты не найдены
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 

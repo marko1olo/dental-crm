@@ -1,5 +1,7 @@
 import React from "react";
 import { ShieldCheck } from "lucide-react";
+import type { ToothData } from "../odontogram/ToothChart";
+import { WheelerToothArch } from "../odontogram/WheelerToothArch";
 import { TreatmentPlanQrCode } from "./qr/TreatmentPlanQrCode";
 import type { TreatmentPlanTier } from "./types";
 
@@ -19,10 +21,13 @@ export interface TreatmentPlanContractClinicPatientInfoProps {
 	readonly patientId: string;
 	readonly patientPhone?: string | undefined;
 	readonly tier: TreatmentPlanTier;
+	readonly teethData?: readonly ToothData[] | undefined;
+	readonly plannedToothNumbers?: readonly number[] | undefined;
 }
 
 export const TreatmentPlanContractClinicPatientInfo: React.FC<TreatmentPlanContractClinicPatientInfoProps> = (props) => {
-	const { clinicName, clinicLegalName, clinicInn, clinicOgrn, clinicAddress, clinicLicense, displayContractNumber, todayRu, qrPayload, doctorFullName, patientName, patientBirthDate, patientId, patientPhone, tier } = props;
+	const { clinicName, clinicLegalName, clinicInn, clinicOgrn, clinicAddress, clinicLicense, displayContractNumber, todayRu, qrPayload, doctorFullName, patientName, patientBirthDate, patientId, patientPhone, tier, teethData = [], plannedToothNumbers = [] } = props;
+	const nonHealthyTeeth = teethData.filter((t) => t.toothNumber >= 11 && t.toothNumber <= 85 && t.state !== "Healthy");
 
 	return (
 		<>
@@ -102,6 +107,37 @@ export const TreatmentPlanContractClinicPatientInfo: React.FC<TreatmentPlanContr
 				<p className="text-slate-700 text-justify m-0">
 					1.2. До заключения Договора Пациент уведомлен о возможности получения бесплатной медицинской помощи в рамках государственных гарантий по полису ОМС в государственных и муниципальных учреждениях здравоохранения.
 				</p>
+			</div>
+
+			{/* Section 1.3: Patient Dental Formula / Odontogram from Examination */}
+			<div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2 break-inside-avoid" data-testid="contract-print-odontogram">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<h3 className="font-bold text-slate-900 tracking-normal text-[11px] m-0">
+						1.3. Зубная формула пациента по результатам осмотра
+					</h3>
+					<span className="text-[10px] text-slate-500 font-mono">
+						{nonHealthyTeeth.length > 0 ? `Выявлено изменений: ${nonHealthyTeeth.length}` : plannedToothNumbers.length > 0 ? `Плановые зубы: ${plannedToothNumbers.join(", ")}` : "Исходный клинический статус"}
+					</span>
+				</div>
+				<div className="overflow-x-auto py-1">
+					<WheelerToothArch
+						patientId={patientId}
+						teethData={teethData}
+						selectedTeeth={plannedToothNumbers.length > 0 ? [...plannedToothNumbers] : undefined}
+						mode="history"
+						zoom={0.44}
+						showHistoryChronicleOnSelect={false}
+					/>
+				</div>
+				{nonHealthyTeeth.length > 0 && (
+					<div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">
+						{nonHealthyTeeth.slice(0, 16).map((tooth) => (
+							<span key={tooth.toothNumber} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-mono">
+								{`Зуб ${tooth.toothNumber}: ${tooth.state}${tooth.surfaces && tooth.surfaces.length > 0 ? ` (${tooth.surfaces.join("")})` : ""}`}
+							</span>
+						))}
+					</div>
+				)}
 			</div>
 		</>
 	);

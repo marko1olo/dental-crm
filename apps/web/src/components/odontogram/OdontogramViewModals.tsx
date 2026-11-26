@@ -217,6 +217,7 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 				<React.Suspense fallback={null}>
 					<JawOcclusionModal
 						isOpen={activeJawModalTarget !== null}
+						patientId={patientId}
 						initialTarget={activeJawModalTarget}
 						onClose={onCloseJawModal}
 					/>

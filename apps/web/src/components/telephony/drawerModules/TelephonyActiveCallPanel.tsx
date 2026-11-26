@@ -19,9 +19,10 @@ export function TelephonyActiveCallPanel({
 	const {
 		currentCall, callData, showQuickBooking, setShowQuickBooking, showTransferPanel, setShowTransferPanel,
 		transferType, setTransferType, showOutcomePanel, setShowOutcomePanel, newPatientNameInput,
-		setNewPatientNameInput, isCreatingPatient, isCapturingLead, isCallAnswered, handleOpenFullPatientView,
-		handleQuickBook, handleQuickCreatePatient, handleCaptureLead, handleSendWhatsAppConfirmation,
-		handleCopySmsConfirmation, startCallTransfer, recordCallOutcome, handleClose,
+		setNewPatientNameInput, isCreatingPatient, isCapturingLead, isConfirmingAppointment, confirmedAppointmentId,
+		isCallAnswered, handleOpenFullPatientView, handleQuickBook, handleQuickCreatePatient, handleCaptureLead,
+		handleConfirmAppointment, handleSendWhatsAppConfirmation, handleCopySmsConfirmation, startCallTransfer,
+		recordCallOutcome, handleClose,
 	} = ctrl;
 
 	if (!currentCall) return <></>;
@@ -64,6 +65,12 @@ export function TelephonyActiveCallPanel({
 				financialSummary={financialSummary}
 				upcomingAppointment={upcomingAppointment}
 				lastVisitSummary={lastVisitSummary}
+				onConfirmAppointment={handleConfirmAppointment}
+				isConfirmingAppointment={isConfirmingAppointment}
+				isAppointmentConfirmed={Boolean(
+					upcomingAppointment &&
+					(upcomingAppointment.status === "confirmed" || confirmedAppointmentId === upcomingAppointment.appointmentId),
+				)}
 				onSendWhatsApp={handleSendWhatsAppConfirmation}
 				onCopySms={handleCopySmsConfirmation}
 			/>

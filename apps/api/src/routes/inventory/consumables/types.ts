@@ -4,6 +4,7 @@
  */
 
 import {
+	clinicalConsumableNormSchema,
 	consumableLinkCreateSchema,
 	consumableLinkUpdateSchema,
 	stockAvailabilityCheckRequestSchema,
@@ -15,6 +16,7 @@ import {
 import { z } from "zod";
 
 export {
+	clinicalConsumableNormSchema,
 	consumableLinkCreateSchema,
 	consumableLinkUpdateSchema,
 	stockAvailabilityCheckRequestSchema,
@@ -23,6 +25,47 @@ export {
 	treatmentConsumableLinkCreateSchema,
 	visitStockDeductionRequestSchema,
 };
+
+export const visitClinicalWriteoffRequestSchema = z.object({
+	visitId: z.string().min(1, { message: "Укажите ID приёма" }),
+	userId: z.string().nullable().optional(),
+	transactionType: z.enum(["auto_deduct", "manual_writeoff"]).optional(),
+	clientMutationId: z.string().nullable().optional(),
+	services: z
+		.array(
+			z
+				.object({
+					serviceId: z.string().min(1),
+					quantity: z.number().positive().optional(),
+				})
+				.strict(),
+		)
+		.optional(),
+	items: z
+		.array(
+			z
+				.object({
+					inventoryItemId: z.string().min(1),
+					quantity: z.number().positive(),
+					reason: z.string().nullable().optional(),
+				})
+				.strict(),
+		)
+		.optional(),
+	clinicalNorms: z.array(clinicalConsumableNormSchema).min(1),
+	treatmentServiceId: z.string().min(1).optional(),
+	treatmentServiceTitle: z.string().min(1).optional(),
+	carpulesCount: z.number().nonnegative().optional(),
+	drugName: z.string().optional(),
+	paperJournalAcknowledged: z.boolean().optional(),
+	allowOverdraft: z.boolean().optional(),
+	allowSoftOverdraft: z.boolean().optional(),
+}).strict();
+
+export const visitDeductWithOptionalNormsSchema = z.union([
+	visitClinicalWriteoffRequestSchema,
+	visitStockDeductionRequestSchema,
+]);
 
 /**
  * Query parameters for listing technological card consumable links.

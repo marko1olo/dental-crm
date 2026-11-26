@@ -12,6 +12,7 @@ export * from "./jawOcclusionPresets";
 export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 	isOpen,
 	onClose,
+	patientId,
 	initialTarget = "JU",
 	onApply,
 }) => {
@@ -20,6 +21,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 		initialTarget,
 		onClose,
 		onApply,
+		patientId,
 	);
 
 	if (!isOpen) return null;

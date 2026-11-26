@@ -189,7 +189,7 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 					{doctor.payoutModel === "chair_rental" ? (
 						<div className="flex items-center gap-2">
 							<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
-							<span className="text-[var(--muted)]">{shiftsCount} смен × 4 000 ₽ = {rub(summary.chairRentalKopecks)}</span>
+							<span className="text-[var(--muted)] font-mono tracking-tight tabular-nums">{shiftsCount} смен × {rub(doctor.defaultShiftRateKop)} = {rub(summary.chairRentalKopecks)}</span>
 							<button type="button" onClick={() => setShiftsCount((s) => Math.max(0, s - 1))} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Уменьшить количество смен">-</button>
 							<span className="font-bold px-1">{shiftsCount}</span>
 							<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Увеличить количество смен">+</button>

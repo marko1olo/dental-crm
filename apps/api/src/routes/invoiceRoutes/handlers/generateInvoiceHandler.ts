@@ -1,4 +1,14 @@
-import { kopecksToRubles, validatePlanToInvoice } from "@dental/shared";
+import {
+	PRICE_LOCK_POLICY_CONFIGS,
+	calculatePriceLockStatus,
+	kopecksToRubles,
+	priceLockPolicyKindSchema,
+	renderSupplementaryAgreementHtml,
+	toExactKopecks,
+	validatePlanToInvoice,
+	type PriceLockPolicyKind,
+	type SupplementaryAgreementDraft,
+} from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
@@ -39,7 +49,19 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	const targetPlanId = data.planId || approvedPlanIds[0];
 	const { targetPlan, freezeToken, targetPlanDbItems } = await fetchTargetPlanAndFreezeToken({ db, orgId, targetPlanId });
 
-	const isPriceLockedFinal = freezeToken ? freezeToken.isPriceLocked : Boolean(data.isSignedWithPatient === true || data.approvedAtIso || targetPlan?.status === "Approved");
+	const planCreatedAtIso = data.planCreatedAtIso || targetPlan?.createdAt?.toISOString() || new Date().toISOString();
+	const freezePolicyCandidate = freezeToken && "policyKind" in freezeToken
+		? (freezeToken as { policyKind?: unknown }).policyKind
+		: undefined;
+	const parsedPolicyKind = priceLockPolicyKindSchema.safeParse(freezePolicyCandidate);
+	const resolvedPolicyKind: PriceLockPolicyKind = parsedPolicyKind.success ? parsedPolicyKind.data : "standard_30_days";
+	const policyConfig = PRICE_LOCK_POLICY_CONFIGS[resolvedPolicyKind];
+	const isSignedOrApproved = Boolean(data.isSignedWithPatient === true || data.approvedAtIso || targetPlan?.status === "Approved");
+	const priceLockStatus = calculatePriceLockStatus(planCreatedAtIso, policyConfig, isSignedOrApproved);
+
+	const isPriceLockedFinal = freezeToken
+		? freezeToken.isPriceLocked
+		: priceLockStatus.isLocked || isSignedOrApproved;
 
 	const discountViolation = findDiscountLimitViolation(data.items, catalogRows, targetPlanDbItems);
 	if (discountViolation) {
@@ -51,8 +73,8 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	}
 
 	const planItemsForVal = buildPlanItemsForValidation({ items: data.items, catalogRows, freezeToken, targetPlanDbItems, targetPlan, isPriceLockedFinal, isAdminOverrideVerified });
-	const effectiveValidityDaysLimit = freezeToken ? freezeToken.daysRemaining || 30 : data.planCreatedAtIso ? 30 : undefined;
-	const effectiveInflationThreshold = freezeToken?.inflationThresholdPercent ?? 10;
+	const effectiveValidityDaysLimit = freezeToken ? freezeToken.daysRemaining || policyConfig.validityDays : policyConfig.validityDays;
+	const effectiveInflationThreshold = freezeToken?.inflationThresholdPercent ?? policyConfig.inflationThresholdPercent;
 	const effectiveItemResolutionOverrides = buildEffectiveItemResolutionOverrides(data.items);
 
 	const identity = getRequestIdentity(request);
@@ -74,10 +96,10 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 		planNumber: data.planNumber,
 		patientId: data.patientId,
 		patientName: patient.fullName,
-		planCreatedAtIso: data.planCreatedAtIso || targetPlan?.createdAt?.toISOString() || new Date().toISOString(),
+		planCreatedAtIso,
 		approvedAtIso: data.approvedAtIso || targetPlan?.approvedAt?.toISOString(),
 		isSignedWithPatient: isPriceLockedFinal,
-		isPlanExpired: freezeToken?.isExpired === true ? true : undefined,
+		isPlanExpired: freezeToken?.isExpired === true ? true : priceLockStatus.isExpired ? true : undefined,
 		validityDaysLimit: effectiveValidityDaysLimit,
 		inflationThresholdPercent: effectiveInflationThreshold,
 		items: planItemsForVal,
@@ -111,6 +133,45 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 		targetPlanDbItems,
 	});
 
+	const changedItems = validationReport.items.filter((item) => item.unitPriceDeltaKopecks !== 0);
+	let supplementaryAgreementHtml: string | null = null;
+	if (validationReport.supplementaryAgreementNeeded || changedItems.length > 0) {
+		const agreementDraft: SupplementaryAgreementDraft = {
+			agreementNumber: `DS-${invoiceNumber}`,
+			agreementDateIso: new Date().toISOString(),
+			contractNumber: data.planNumber || targetPlan?.id?.slice(0, 8).toUpperCase() || invoiceNumber,
+			contractDateIso: planCreatedAtIso,
+			planNumber: data.planNumber || targetPlan?.id || "PLAN-CUSTOM",
+			patientFullName: patient.fullName,
+			clinicBrandName: "DENTE",
+			clinicLegalName: "Стоматологическая клиника DENTE",
+			clinicAddress: "Согласно реквизитам договора",
+			clinicInn: "—",
+			clinicOgrn: "—",
+			doctorFullName: identity.fullName || "Лечащий врач",
+			modifiedItems: changedItems.map((item) => ({
+				toothNumber: item.toothNumber,
+				code804n: item.code804n,
+				serviceTitle: item.nameRu,
+				quantity: item.quantity,
+				oldUnitPriceKopecks: item.planUnitPriceKopecks,
+				newUnitPriceKopecks: item.effectiveUnitPriceKopecks,
+				deltaUnitPriceKopecks: toExactKopecks(item.effectiveUnitPriceKopecks - item.planUnitPriceKopecks),
+				lineOldTotalKopecks: toExactKopecks(Math.round(item.planUnitPriceKopecks * item.quantity)),
+				lineNewTotalKopecks: toExactKopecks(Math.round(item.effectiveUnitPriceKopecks * item.quantity)),
+				changeReasonRu: item.statusDescriptionRu,
+			})),
+			previousPlanTotalKopecks: validationReport.originalPlanNetKopecks,
+			newPlanTotalKopecks: validationReport.effectiveInvoiceNetKopecks,
+			deltaKopecks: toExactKopecks(validationReport.effectiveInvoiceNetKopecks - validationReport.originalPlanNetKopecks),
+			isClinicAbsorption: validationReport.totalClinicAbsorptionKopecks > 0,
+			clinicAbsorptionKopecks: validationReport.totalClinicAbsorptionKopecks,
+			patientPayableDeltaKopecks: validationReport.totalPatientSurchargeKopecks,
+			justificationRu: priceLockStatus.badgeText,
+		};
+		supplementaryAgreementHtml = renderSupplementaryAgreementHtml(agreementDraft);
+	}
+
 	return reply.code(201).send({
 		success: true,
 		invoiceId,
@@ -123,6 +184,11 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 		clinicAbsorptionRub: kopecksToRubles(validationReport.totalClinicAbsorptionKopecks),
 		createdTreatmentItemIds: createdItemIds,
 		isPriceLocked: validationReport.isPriceLocked,
+		priceLockStatus,
+		supplementaryAgreement: {
+			needed: validationReport.supplementaryAgreementNeeded,
+			html: supplementaryAgreementHtml,
+		},
 		validationReport,
 		issuedAt: new Date().toISOString(),
 	});

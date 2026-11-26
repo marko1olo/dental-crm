@@ -5,8 +5,16 @@
  * и пакетного списания расходных материалов по закрытым визитам (Мандаты 8e, 8n).
  */
 
-import { useEffect, useState } from "react";
-import { generateUuidV7 } from "@dental/shared";
+import { useEffect, useMemo, useState } from "react";
+import {
+	generateUuidV7,
+	processClinicalMaterialWriteoff,
+	formatClinicalMaterialWriteoffAct,
+	rublesToKopecks,
+	type ClinicalConsumableNorm,
+	type ClinicalMaterialWriteoffResult,
+	type MaterialWriteoffTier,
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useInventoryStore } from "../../../store/inventoryStore.js";
 
@@ -21,6 +29,51 @@ export interface ShiftConsumableItem {
 	isOverdraft: boolean;
 	deficit: number;
 	defaultCostRub?: string | number | undefined;
+	tier?: MaterialWriteoffTier | undefined;
+	canOmit?: boolean | undefined;
+	canAdjustQuantity?: boolean | undefined;
+	isOmitted?: boolean | undefined;
+	actualQuantity?: number | undefined;
+	baseQtyToDeduct?: number | undefined;
+}
+
+const OVERHEAD_NAME_RE = /перчат|салфет|бахил|маск|нагрудн|слюноотсос|пылесос|стакан|валик/i;
+
+export function resolveShiftItemTier(item: Pick<ShiftConsumableItem, "tier" | "itemName" | "category">): MaterialWriteoffTier {
+	if (item.tier === "cheap_overhead" || item.tier === "expensive_clinical") {
+		return item.tier;
+	}
+	const probe = `${item.itemName} ${item.category ?? ""}`;
+	return OVERHEAD_NAME_RE.test(probe) ? "cheap_overhead" : "expensive_clinical";
+}
+
+function normalizeShiftItemWithClinicalFlags(item: ShiftConsumableItem): ShiftConsumableItem {
+	const tier = resolveShiftItemTier(item);
+	const canOmit = item.canOmit ?? tier === "expensive_clinical";
+	const canAdjustQuantity = item.canAdjustQuantity ?? tier === "expensive_clinical";
+	const baseQtyToDeduct = item.baseQtyToDeduct ?? item.qtyToDeduct;
+	const isOmitted = Boolean(canOmit && item.isOmitted);
+	const effectiveQty = isOmitted
+		? 0
+		: canAdjustQuantity && item.actualQuantity !== undefined && item.actualQuantity > 0
+			? item.actualQuantity
+			: item.qtyToDeduct;
+	const projectedStock = Number((item.currentStock - effectiveQty).toFixed(2));
+	const isOverdraft = projectedStock < 0;
+	const deficit = isOverdraft ? Math.abs(projectedStock) : 0;
+
+	return {
+		...item,
+		tier,
+		canOmit,
+		canAdjustQuantity,
+		isOmitted,
+		baseQtyToDeduct,
+		qtyToDeduct: effectiveQty,
+		projectedStock,
+		isOverdraft,
+		deficit,
+	};
 }
 
 export interface ShiftBatchWriteoffData {
@@ -120,17 +173,95 @@ export function useConsumablesBatchWriteoff({
 		})) ||
 		data.consumablesSummary.some((c) => c.isOverdraft);
 
+	const twoLevelWriteoff: ClinicalMaterialWriteoffResult = useMemo(() => {
+		const norms: ClinicalConsumableNorm[] = data.consumablesSummary.map((raw) => {
+			const item = normalizeShiftItemWithClinicalFlags(raw);
+			const unitCostRub = Number(item.defaultCostRub ?? 0) || 0;
+			return {
+				inventoryItemId: item.itemId,
+				itemName: item.itemName,
+				tier: item.tier ?? "expensive_clinical",
+				defaultQuantity: item.baseQtyToDeduct ?? Math.max(0.01, item.qtyToDeduct || 1),
+				unit: item.unit || "шт.",
+				costPriceKopecks: rublesToKopecks(unitCostRub),
+				canOmit: Boolean(item.canOmit),
+				canAdjustQuantity: Boolean(item.canAdjustQuantity),
+				isOmitted: Boolean(item.isOmitted),
+				...(item.actualQuantity !== undefined && item.actualQuantity > 0
+					? { actualQuantity: item.actualQuantity }
+					: {}),
+			};
+		});
+		const currentStocks: Record<string, number> = {};
+		for (const item of data.consumablesSummary) {
+			currentStocks[item.itemId] = item.currentStock;
+		}
+		return processClinicalMaterialWriteoff({
+			visitId: `shift-${data.date}`,
+			treatmentServiceId: "shift-batch-bom",
+			treatmentServiceTitle: `Пакетное списание за смену (${data.shiftStats.completedVisitsCount} приёмов)`,
+			norms,
+			currentStocks,
+			allowOverdraft: true,
+		});
+	}, [data]);
+
+	const handleToggleOmit = (itemId: string) => {
+		setData((prev) => ({
+			...prev,
+			consumablesSummary: prev.consumablesSummary.map((raw) => {
+				if (raw.itemId !== itemId) return raw;
+				const normalized = normalizeShiftItemWithClinicalFlags(raw);
+				if (!normalized.canOmit) return normalized;
+				return normalizeShiftItemWithClinicalFlags({
+					...normalized,
+					isOmitted: !normalized.isOmitted,
+				});
+			}),
+		}));
+	};
+
+	const handleAdjustQuantity = (itemId: string, nextQty: number) => {
+		const clampedQty = Number(Math.max(0.1, nextQty).toFixed(2));
+		setData((prev) => ({
+			...prev,
+			consumablesSummary: prev.consumablesSummary.map((raw) => {
+				if (raw.itemId !== itemId) return raw;
+				const normalized = normalizeShiftItemWithClinicalFlags(raw);
+				if (!normalized.canAdjustQuantity) return normalized;
+				return normalizeShiftItemWithClinicalFlags({
+					...normalized,
+					isOmitted: false,
+					actualQuantity: clampedQty,
+					qtyToDeduct: clampedQty,
+				});
+			}),
+		}));
+	};
+
 	const handleConfirmWriteoff = async () => {
 		setIsSubmitting(true);
 		setStatusMessage(null);
 		try {
-			if (inventoryStore?.deductStock && data.consumablesSummary?.length) {
-				const deductions = data.consumablesSummary.map((item) => ({
+			const activeItems = data.consumablesSummary.filter((c) => !c.isOmitted && c.qtyToDeduct > 0);
+			const omittedCount = data.consumablesSummary.filter((c) => c.isOmitted).length;
+
+			if (inventoryStore?.deductStock && activeItems.length > 0) {
+				const deductions = activeItems.map((item) => ({
 					inventoryItemId: item.itemId,
 					itemName: item.itemName,
 					quantity: item.qtyToDeduct,
 				}));
 				await inventoryStore.deductStock(organizationId || "default", deductions, { skipNetworkSync: true });
+			}
+
+			if (activeItems.length === 0 && omittedCount > 0) {
+				const omitMsg = `Все вариативные позиции (${omittedCount}) отмечены как неиспользованные (ВН). Списание не требуется.`;
+				setStatusMessage(omitMsg);
+				showToast(omitMsg, "info");
+				if (onConfirmWriteoff) await onConfirmWriteoff(data);
+				setTimeout(() => onClose(), 300);
+				return;
 			}
 
 			const idempotencyKey = generateUuidV7();
@@ -141,8 +272,8 @@ export function useConsumablesBatchWriteoff({
 			const orgParam = organizationId ? `/${organizationId}` : "";
 			const payload = {
 				date: data.date,
-				notes: `Пакетное списание расходников за смену (${data.shiftStats.completedVisitsCount} приёмов)`,
-				items: data.consumablesSummary.map((c) => ({ itemId: c.itemId, qty: c.qtyToDeduct, name: c.itemName })),
+				notes: `Пакетное списание расходников за смену (${data.shiftStats.completedVisitsCount} приёмов${omittedCount > 0 ? `, исключено ВН: ${omittedCount}` : ""})`,
+				items: activeItems.map((c) => ({ itemId: c.itemId, qty: c.qtyToDeduct, name: c.itemName })),
 			};
 
 			// Реальный вызов Fastify API: /shift-batch-deduct с фоллбэком на /shift-deduct
@@ -186,18 +317,19 @@ export function useConsumablesBatchWriteoff({
 	const handlePrintAct = () => {
 		const printWin = window.open("", "_blank");
 		if (!printWin) return;
+		const actText = formatClinicalMaterialWriteoffAct(twoLevelWriteoff);
 		const rowsHtml = data.consumablesSummary.map((c, i) => `
 			<tr>
 				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${i + 1}</td>
-				<td style="border:1px solid #cbd5e1;padding:6px;text-align:left;">${c.itemName}</td>
+				<td style="border:1px solid #cbd5e1;padding:6px;text-align:left;">${c.itemName}${c.isOmitted ? " (ВН: не использован)" : ""}</td>
 				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${c.unit}</td>
-				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-weight:bold;">${c.qtyToDeduct}</td>
+				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-weight:bold;">${c.isOmitted ? 0 : c.qtyToDeduct}</td>
 				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;">${c.currentStock}</td>
-				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:${c.isOverdraft ? '#b45309' : '#0f172a'};">${c.projectedStock}${c.isOverdraft ? ' (овердрафт)' : ''}</td>
+				<td style="border:1px solid #cbd5e1;padding:6px;text-align:center;color:${c.isOverdraft ? "#b45309" : "#0f172a"};">${c.projectedStock}${c.isOverdraft ? " (овердрафт)" : ""}</td>
 			</tr>`).join("");
 		printWin.document.write(`<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Акт списания материалов — ${data.date}</title>
-			<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:24px;color:#0f172a}table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}th{background:#f8fafc;border:1px solid #cbd5e1;padding:8px}.footer{margin-top:32px;display:flex;justify-content:space-between;font-size:13px}</style>
-			</head><body><h2>Акт списания материалов смены (${data.date})</h2><p style="font-size:13px;color:#64748b">Завершено приёмов: <strong>${data.shiftStats.completedVisitsCount}</strong></p><table><thead><tr><th>№</th><th>Материал</th><th>Ед.</th><th>Списано</th><th>Было</th><th>Остаток</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="footer"><div>Отпустил со склада: _________</div><div>Принял в кабинете: _________</div></div><script>window.onload=function(){window.print();};</script></body></html>`);
+			<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:24px;color:#0f172a}table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}th{background:#f8fafc;border:1px solid #cbd5e1;padding:8px}pre{background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap}.footer{margin-top:32px;display:flex;justify-content:space-between;font-size:13px}</style>
+			</head><body><h2>Акт 2-уровневого списания материалов смены (${data.date})</h2><p style="font-size:13px;color:#64748b">Завершено приёмов: <strong>${data.shiftStats.completedVisitsCount}</strong></p><table><thead><tr><th>№</th><th>Материал</th><th>Ед.</th><th>Списано</th><th>Было</th><th>Остаток</th></tr></thead><tbody>${rowsHtml}</tbody></table><pre>${actText}</pre><div class="footer"><div>Отпустил со склада: _________</div><div>Принял в кабинете: _________</div></div><script>window.onload=function(){window.print();};</script></body></html>`);
 		printWin.document.close();
 	};
 
@@ -345,6 +477,9 @@ export function useConsumablesBatchWriteoff({
 		isSubmitting,
 		statusMessage,
 		hasOverdraft,
+		twoLevelWriteoff,
+		handleToggleOmit,
+		handleAdjustQuantity,
 		handleConfirmWriteoff,
 		handlePrintAct,
 		handleQuickCarpules,

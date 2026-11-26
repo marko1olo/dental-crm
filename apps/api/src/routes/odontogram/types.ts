@@ -154,8 +154,39 @@ export const toothEndoUpsertSchema = z
 export const UUID_SHAPE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const JAW_CODE_TO_TOOTH_NUMBER = {
+	JU: 100,
+	JL: 101,
+	C: 102,
+} as const;
+
+export const TOOTH_NUMBER_TO_JAW_CODE: Record<number, "JU" | "JL" | "C"> = {
+	100: "JU",
+	101: "JL",
+	102: "C",
+};
+
+export function isJawTargetNumber(toothNumber: number): boolean {
+	return toothNumber === 100 || toothNumber === 101 || toothNumber === 102;
+}
+
+export const odontogramTargetNumberSchema = z.preprocess(
+	(val) => {
+		if (typeof val === "string") {
+			const upper = val.trim().toUpperCase();
+			if (upper === "JU" || upper === "100") return 100;
+			if (upper === "JL" || upper === "101") return 101;
+			if (upper === "C" || upper === "102") return 102;
+			const parsedNum = Number(upper);
+			if (Number.isInteger(parsedNum)) return parsedNum;
+		}
+		return val;
+	},
+	z.union([fdiToothNumberSchema, z.literal(100), z.literal(101), z.literal(102)]),
+);
+
 export const individualToothUpdateSchema = z.object({
-	toothNumber: fdiToothNumberSchema,
+	toothNumber: odontogramTargetNumberSchema,
 	state: clinicalToothStateSchema.optional(),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	resorptionStage: z.number().optional().nullable(),
@@ -166,7 +197,7 @@ export const individualToothUpdateSchema = z.object({
 }).strict();
 
 export const batchToothStateSchema = z.object({
-	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64).optional(),
+	toothNumbers: z.array(odontogramTargetNumberSchema).min(1).max(64).optional(),
 	state: clinicalToothStateSchema.optional().default("Healthy"),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	notes: z.string().max(10000).optional().nullable(),
@@ -195,8 +226,8 @@ export const batchToothStateSchema = z.object({
 export const odontogramStatusMutationSchema = z
 	.object({
 		patientId: z.string().uuid().optional(),
-		toothNumber: fdiToothNumberSchema.optional(),
-		toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64).optional(),
+		toothNumber: odontogramTargetNumberSchema.optional(),
+		toothNumbers: z.array(odontogramTargetNumberSchema).min(1).max(64).optional(),
 		state: clinicalToothStateSchema,
 		surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 		notes: z.string().max(10000).optional().nullable(),

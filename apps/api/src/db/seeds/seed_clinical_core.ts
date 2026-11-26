@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { CLINICAL_TOOTH_DEFECTS } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import { loadAdditionalServerEnv } from "../../env/loadServerEnv.js";
 import { pool, db } from "../client.js";
@@ -17,8 +18,8 @@ loadAdditionalServerEnv();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper to resolve dump files across different cwd execution points
-function resolveDumpPath(relativePath: string): string {
+// Helper to resolve optional legacy dump files across different cwd execution points without throwing
+function resolveDumpPath(relativePath: string): string | null {
 	const candidates = [
 		path.resolve(process.cwd(), relativePath),
 		path.resolve(process.cwd(), "docs/reference_dumps", relativePath),
@@ -34,8 +35,29 @@ function resolveDumpPath(relativePath: string): string {
 			return candidate;
 		}
 	}
-	throw new Error(`Dump file not found: ${relativePath}. Checked: ${candidates.join("; ")}`);
+	return null;
 }
+
+const FALLBACK_DENTAL_MKB_CATEGORIES: ReadonlyArray<{
+	id: string;
+	parent_id: string | null;
+	name: string;
+	sort_order: number;
+}> = [
+	{ id: "K00-K14", parent_id: null, name: "Болезни полости рта, слюнных желёз и челюстей", sort_order: 1 },
+	{ id: "K02", parent_id: "K00-K14", name: "Кариес зубов", sort_order: 2 },
+	{ id: "K02.0", parent_id: "K02", name: "Кариес эмали", sort_order: 3 },
+	{ id: "K02.1", parent_id: "K02", name: "Кариес дентина", sort_order: 4 },
+	{ id: "K02.2", parent_id: "K02", name: "Кариес цемента", sort_order: 5 },
+	{ id: "K03", parent_id: "K00-K14", name: "Другие болезни твёрдых тканей зубов", sort_order: 6 },
+	{ id: "K04", parent_id: "K00-K14", name: "Болезни пульпы и периапикальных тканей", sort_order: 7 },
+	{ id: "K04.0", parent_id: "K04", name: "Пульпит", sort_order: 8 },
+	{ id: "K04.5", parent_id: "K04", name: "Хронический апикальный периодонтит", sort_order: 9 },
+	{ id: "K04.7", parent_id: "K04", name: "Периапикальный абсцесс без полости", sort_order: 10 },
+	{ id: "K05", parent_id: "K00-K14", name: "Гингивит и болезни пародонта", sort_order: 11 },
+	{ id: "K05.3", parent_id: "K05", name: "Хронический пародонтит", sort_order: 12 },
+	{ id: "K08.1", parent_id: "K00-K14", name: "Потеря зубов вследствие несчастного случая, удаления или локальной пародонтальной болезни", sort_order: 13 },
+];
 
 /**
  * 55 анатомических сущностей зубочелюстной системы
@@ -156,7 +178,7 @@ export async function seedClinicalCore(): Promise<{
 			});
 	}
 
-	// 2. Сидинг 91 дефекта из tooth-defects.json
+	// 2. Сидинг 91 дефекта из tooth-defects.json (с безопасным fallback на @dental/shared)
 	const defectsFilePath = resolveDumpPath(
 		"РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/full_dump22/full_dump/api/api/catalogs/tooth-defects.json",
 	);
@@ -168,7 +190,17 @@ export async function seedClinicalCore(): Promise<{
 		key: string | null;
 		color: string | null;
 		order: number;
-	}> = JSON.parse(fs.readFileSync(defectsFilePath, "utf8"));
+	}> = defectsFilePath
+		? JSON.parse(fs.readFileSync(defectsFilePath, "utf8"))
+		: CLINICAL_TOOTH_DEFECTS.map((d) => ({
+				id: d.id,
+				name: d.name,
+				alias: d.alias,
+				type: d.type,
+				key: d.key ?? null,
+				color: d.color ?? null,
+				order: d.order,
+			}));
 
 	for (const defect of rawDefects) {
 		await db
@@ -198,17 +230,17 @@ export async function seedClinicalCore(): Promise<{
 			});
 	}
 
-	// 3. Сидинг МКБ-10 (1 841 категория)
+	// 3. Сидинг МКБ-10 (с безопасным fallback на стоматологические коды K00-K14 при отсутствии внешнего дампа)
 	const mkbFilePath = resolveDumpPath(
 		"РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/full_dump22/full_dump/api/api/catalogs/mkb/categories.json",
 	);
-	const rawMkbJson = JSON.parse(fs.readFileSync(mkbFilePath, "utf8"));
+	const rawMkbJson = mkbFilePath ? JSON.parse(fs.readFileSync(mkbFilePath, "utf8")) : null;
 	const rawMkb: Array<{
 		id: string;
 		parent_id: string | null;
 		name: string;
 		sort_order: number;
-	}> = rawMkbJson.data || rawMkbJson;
+	}> = rawMkbJson ? (rawMkbJson.data || rawMkbJson) : [...FALLBACK_DENTAL_MKB_CATEGORIES];
 
 	// Вставляем порциями по 100 записей для ускорения
 	const BATCH_SIZE = 100;
@@ -244,16 +276,18 @@ export async function seedClinicalCore(): Promise<{
 			});
 	}
 
-	// 4. Сидинг рубрик шаблонов амбулаторной карты (33 рубрики)
+	// 4. Сидинг рубрик шаблонов амбулаторной карты (безопасный пропуск, если внешний архив дампов отсутствует)
 	const categoriesFilePath = resolveDumpPath(
 		"РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/full_dump22/full_dump/api/api/outpatient/templates-categories.json",
 	);
-	const rawCategoriesJson = JSON.parse(fs.readFileSync(categoriesFilePath, "utf8"));
+	const rawCategoriesJson = categoriesFilePath
+		? JSON.parse(fs.readFileSync(categoriesFilePath, "utf8"))
+		: null;
 	const rawCategories: Array<{
 		id: number;
 		name: string;
 		parent_id: number | null;
-	}> = rawCategoriesJson.data || rawCategoriesJson;
+	}> = rawCategoriesJson ? (rawCategoriesJson.data || rawCategoriesJson) : [];
 
 	const SPECIALTY_MAP: Record<number, string> = {
 		2: "general", // Объективное обследование
@@ -313,7 +347,7 @@ export async function seedClinicalCore(): Promise<{
 			});
 	}
 
-	// 5. Сидинг 448 клинических протоколов 043/у из outpatient_templates/list.json
+	// 5. Сидинг клинических протоколов осмотра (безопасный пропуск при отсутствии внешнего архива дампов)
 	const templatesListPath = resolveDumpPath(
 		"РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/full_dump22/full_dump/outpatient_templates/list.json",
 	);
@@ -324,7 +358,7 @@ export async function seedClinicalCore(): Promise<{
 		text: string;
 		order: number;
 		created_at?: string;
-	}> = JSON.parse(fs.readFileSync(templatesListPath, "utf8"));
+	}> = templatesListPath ? JSON.parse(fs.readFileSync(templatesListPath, "utf8")) : [];
 
 	// Сопоставление рубрик с каноническими МКБ-10 кодами
 	const CATEGORY_MKB_DEFAULTS: Record<number, string> = {

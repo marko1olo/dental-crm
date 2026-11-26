@@ -36,8 +36,14 @@ export function useDrawerBookingAndPatientActions(params: {
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const intake = useDrawerPatientIntake({ currentCall, callData, ctx });
-	const { smsCopied, handleSendWhatsAppConfirmation, handleCopySmsConfirmation } =
-		useDrawerConfirmationActions({ currentCall, callData, dashboard });
+	const {
+		smsCopied,
+		isConfirmingAppointment,
+		confirmedAppointmentId,
+		handleConfirmAppointment,
+		handleSendWhatsAppConfirmation,
+		handleCopySmsConfirmation,
+	} = useDrawerConfirmationActions({ currentCall, callData, dashboard });
 
 	const handleOpenFullPatientView = () => {
 		if (currentView === "visit") {
@@ -144,7 +150,8 @@ export function useDrawerBookingAndPatientActions(params: {
 	return {
 		newPatientNameInput: intake.newPatientNameInput, setNewPatientNameInput: intake.setNewPatientNameInput,
 		isCreatingPatient: intake.isCreatingPatient, isCapturingLead: intake.isCapturingLead, smsCopied,
-		handleSendWhatsAppConfirmation, handleCopySmsConfirmation, handleOpenFullPatientView,
+		isConfirmingAppointment, confirmedAppointmentId,
+		handleConfirmAppointment, handleSendWhatsAppConfirmation, handleCopySmsConfirmation, handleOpenFullPatientView,
 		handleQuickBook, handleQuickCreatePatient: intake.handleQuickCreatePatient, handleCaptureLead: intake.handleCaptureLead,
 	};
 }

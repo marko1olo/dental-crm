@@ -20,9 +20,17 @@ export type EstimatorSuggestionKey =
 	| "pulpitis"
 	| "periodontitis"
 	| "retained"
+	| "extraction"
 	| "implant"
 	| "implantGuide"
 	| "crown"
+	| "bridge"
+	| "veneer"
+	| "inlay"
+	| "denture"
+	| "hygiene"
+	| "perio"
+	| "resection"
 	| "anesthesia"
 	| "isolation"
 	| "radiology";
@@ -32,7 +40,7 @@ export interface EstimatorRule {
 	readonly key: EstimatorSuggestionKey;
 	/** I — терапия, II — хирургия, III — ортопедия. */
 	readonly phase: number;
-	/** Что искать в прайсе. Берётся из общего модуля, а не переписывается. */
+	/** Что искать в прайсе. Берётся из общего модуля или каталога правил. */
 	readonly match: PlanServiceRule;
 }
 
@@ -44,6 +52,49 @@ export const SURGICAL_GUIDE_RULE: PlanServiceRule = {
 	category: "surgery",
 	keywords: ["шаблон", "навигацион"],
 	humanName: "хирургический шаблон",
+};
+
+const EXTENDED_PATHOLOGY_RULES: Record<string, PlanServiceRule> = {
+	extraction: {
+		category: "surgery",
+		keywords: ["удаление", "экстракция", "корень"],
+		humanName: "удаление зуба / корня",
+	},
+	resection: {
+		category: "surgery",
+		keywords: ["резекц", "цистэкт", "киста"],
+		humanName: "резекция верхушки корня / цистэктомия",
+	},
+	bridge: {
+		category: "prosthetics",
+		keywords: ["мост", "мостовид", "коронка"],
+		humanName: "мостовидный протез",
+	},
+	veneer: {
+		category: "prosthetics",
+		keywords: ["винил", "винир", "керамич"],
+		humanName: "керамический винир",
+	},
+	inlay: {
+		category: "prosthetics",
+		keywords: ["вкладк", "штифт"],
+		humanName: "восстановительная вкладка / штифт",
+	},
+	denture: {
+		category: "prosthetics",
+		keywords: ["протез", "съемн", "бюгель"],
+		humanName: "съёмное протезирование",
+	},
+	hygiene: {
+		category: "therapy",
+		keywords: ["гигиен", "ультразвук", "чистк", "камень"],
+		humanName: "профессиональная гигиена / снятие отложений",
+	},
+	perio: {
+		category: "therapy",
+		keywords: ["пародонт", "вектор", "кюретаж", "десн", "шинир"],
+		humanName: "пародонтологическое лечение",
+	},
 };
 
 /**
@@ -139,18 +190,72 @@ export function estimatorRulesForTooth(
 
 	switch (state) {
 		case "Caries":
+		case "Secondary_Caries":
+		case "Filling_Caries":
 			return rule("caries", 1, PLAN_SERVICE_RULES.Caries);
 		case "Pulpitis":
 			return rule("pulpitis", 1, PLAN_SERVICE_RULES.Pulpitis);
 		case "Periodontitis":
+		case "Apical_Periodontitis":
 			return rule("periodontitis", 1, PLAN_SERVICE_RULES.Periodontitis);
+		case "Periapical_Lesion":
+		case "Granuloma":
+		case "Cyst":
+		case "Resection":
+			return rule("resection", 2, EXTENDED_PATHOLOGY_RULES.resection);
+		case "Root":
+		case "Fracture":
+		case "Extraction":
+		case "Planned_Extraction":
+			return rule("extraction", 2, EXTENDED_PATHOLOGY_RULES.extraction);
 		case "Retained":
 		case "Impacted":
+		case "Dystopia":
 			return rule("retained", 2, PLAN_SERVICE_RULES.Retained);
 		case "Crown":
+		case "Planned_Crown":
+		case "Temporary_Crown":
+		case "Defective_Crown":
 			return rule("crown", 3, PLAN_SERVICE_RULES.Crown);
+		case "Bridge":
+		case "Bridge_Abutment":
+			return rule("bridge", 3, EXTENDED_PATHOLOGY_RULES.bridge);
+		case "Veneer":
+			return rule("veneer", 3, EXTENDED_PATHOLOGY_RULES.veneer);
+		case "Inlay":
+		case "Onlay":
+		case "Pin":
+		case "Core_Inlay":
+			return rule("inlay", 3, EXTENDED_PATHOLOGY_RULES.inlay);
+		case "Partial_Denture":
+		case "Complete_Denture":
+		case "Clasp_Denture":
+			return rule("denture", 3, EXTENDED_PATHOLOGY_RULES.denture);
+		case "Defective_Restoration":
+			return rule("caries", 1, PLAN_SERVICE_RULES.Caries);
+		case "Calculus":
+		case "Plaque":
+			return rule("hygiene", 1, EXTENDED_PATHOLOGY_RULES.hygiene);
+		case "Gingivitis":
+		case "Bleeding":
+		case "Pocket":
+		case "Recession":
+		case "Periodontitis_Mild":
+		case "Periodontitis_Moderate":
+		case "Periodontitis_Severe":
+		case "Mobility":
+		case "Mobility_I":
+		case "Mobility_II":
+		case "Mobility_III":
+		case "Mobility_IV":
+		case "Furcation_I":
+		case "Furcation_II":
+		case "Furcation_III":
+			return rule("perio", 1, EXTENDED_PATHOLOGY_RULES.perio);
 		case "Planned_Implant":
 		case "Implant":
+		case "Missing":
+		case "Extracted":
 			if (isDeciduousFdiToothNumber(toothNumber)) return [];
 			return [
 				...rule("implant", 2, PLAN_SERVICE_RULES.Planned_Implant),

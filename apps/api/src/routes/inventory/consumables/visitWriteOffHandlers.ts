@@ -4,12 +4,19 @@
  * All mutations run inside withTenantCtx fail-closed RLS context.
  */
 
+import {
+	processClinicalMaterialWriteoff,
+	type ClinicalConsumableNorm,
+	type ClinicalMaterialWriteoffResult,
+} from "@dental/shared";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
+import * as schema from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
 import {
@@ -20,7 +27,7 @@ import {
 	quickWriteoffVisitBundleSchema,
 	stockAvailabilityCheckRequestSchema,
 	treatmentConsumableDeductionRequestSchema,
-	visitStockDeductionRequestSchema,
+	visitDeductWithOptionalNormsSchema,
 } from "./types.js";
 
 /**
@@ -56,7 +63,7 @@ export async function registerVisitWriteOffHandlers(
 		return reply.status(200).send(result);
 	});
 
-	// POST /:organizationId/deduct/visit — Auto-deduct consumables for visit (doctor instant solo writeoff)
+	// POST /:organizationId/deduct/visit — Auto-deduct consumables for visit (doctor instant solo writeoff + 2-tier VN/VI norms)
 	server.post<{
 		Params: { organizationId: string };
 		Body: {
@@ -65,6 +72,9 @@ export async function registerVisitWriteOffHandlers(
 			transactionType?: "auto_deduct" | "manual_writeoff";
 			services?: Array<{ serviceId: string; quantity?: number }>;
 			items?: Array<{ inventoryItemId: string; quantity: number; reason?: string | null }>;
+			clinicalNorms?: ClinicalConsumableNorm[];
+			treatmentServiceId?: string;
+			treatmentServiceTitle?: string;
 			carpulesCount?: number;
 			drugName?: string;
 			paperJournalAcknowledged?: boolean;
@@ -83,7 +93,7 @@ export async function registerVisitWriteOffHandlers(
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		const parsedBody = visitStockDeductionRequestSchema.safeParse(request.body);
+		const parsedBody = visitDeductWithOptionalNormsSchema.safeParse(request.body);
 		if (!parsedBody.success) {
 			return reply.status(400).send({
 				error: "ValidationError",
@@ -91,39 +101,88 @@ export async function registerVisitWriteOffHandlers(
 			});
 		}
 
+		const data = parsedBody.data;
+		const clinicalNorms = "clinicalNorms" in data ? data.clinicalNorms : undefined;
+
 		const result = await withTenantCtx(organizationId, async (tx) => {
-			return TreatmentConsumablesService.deductForVisit(tx, {
+			let twoLevelWriteoff: ClinicalMaterialWriteoffResult | undefined;
+			let mergedItems = data.items ? [...data.items] : [];
+
+			if (clinicalNorms && clinicalNorms.length > 0) {
+				const materialIds = clinicalNorms.map((n) => n.inventoryItemId);
+				const dbItems = materialIds.length > 0
+					? await tx
+						.select({ id: schema.inventoryItems.id, stockQuantity: schema.inventoryItems.stockQuantity })
+						.from(schema.inventoryItems)
+						.where(and(
+							eq(schema.inventoryItems.organizationId, organizationId),
+							inArray(schema.inventoryItems.id, materialIds),
+						))
+					: [];
+				const currentStocks: Record<string, number> = {};
+				for (const row of dbItems) {
+					currentStocks[row.id] = Number(row.stockQuantity ?? 0);
+				}
+
+				twoLevelWriteoff = processClinicalMaterialWriteoff({
+					visitId: data.visitId,
+					treatmentServiceId: ("treatmentServiceId" in data ? data.treatmentServiceId : undefined) ?? "visit-clinical-bom",
+					treatmentServiceTitle: ("treatmentServiceTitle" in data ? data.treatmentServiceTitle : undefined) ?? "Клиническое списание по приёму",
+					norms: clinicalNorms,
+					currentStocks,
+					allowOverdraft: data.allowOverdraft ?? true,
+				});
+
+				const activeNormItems = [
+					...twoLevelWriteoff.overheadItems,
+					...twoLevelWriteoff.clinicalItems,
+				]
+					.filter((line) => !line.isOmitted && line.quantity > 0)
+					.map((line) => ({
+						inventoryItemId: line.inventoryItemId,
+						quantity: line.quantity,
+						reason: line.tier === "cheap_overhead"
+							? "Уровень 1 · общеклинический норматив"
+							: "Уровень 2 · клинический расходник (ВН/ВИ)",
+					}));
+
+				mergedItems = [...mergedItems, ...activeNormItems];
+			}
+
+			const deductionRes = await TreatmentConsumablesService.deductForVisit(tx, {
 				organizationId,
-				visitId: parsedBody.data.visitId,
+				visitId: data.visitId,
 				clientMutationId:
-					parsedBody.data.clientMutationId ??
+					data.clientMutationId ??
 					(request.headers["idempotency-key"] as string | undefined) ??
 					null,
-				...(parsedBody.data.userId !== undefined
-					? { userId: parsedBody.data.userId }
+				...(data.userId !== undefined
+					? { userId: data.userId }
 					: { userId: getRequestIdentity(request).userId }),
-				...(parsedBody.data.transactionType !== undefined
-					? { transactionType: parsedBody.data.transactionType }
+				...(data.transactionType !== undefined
+					? { transactionType: data.transactionType }
 					: {}),
-				...(parsedBody.data.services !== undefined
-					? { services: parsedBody.data.services }
+				...(data.services !== undefined
+					? { services: data.services }
 					: {}),
-				...(parsedBody.data.items !== undefined
-					? { items: parsedBody.data.items }
+				...(mergedItems.length > 0
+					? { items: mergedItems }
 					: {}),
-				...(parsedBody.data.carpulesCount !== undefined
-					? { carpulesCount: parsedBody.data.carpulesCount }
+				...(data.carpulesCount !== undefined
+					? { carpulesCount: data.carpulesCount }
 					: {}),
-				...(parsedBody.data.drugName !== undefined
-					? { drugName: parsedBody.data.drugName }
+				...(data.drugName !== undefined
+					? { drugName: data.drugName }
 					: {}),
-				...(parsedBody.data.paperJournalAcknowledged !== undefined
-					? { paperJournalAcknowledged: parsedBody.data.paperJournalAcknowledged }
+				...(data.paperJournalAcknowledged !== undefined
+					? { paperJournalAcknowledged: data.paperJournalAcknowledged }
 					: {}),
-				...(parsedBody.data.allowOverdraft !== undefined
-					? { allowOverdraft: parsedBody.data.allowOverdraft }
-					: {}),
+				allowOverdraft: data.allowOverdraft ?? true,
 			});
+
+			return twoLevelWriteoff
+				? { ...deductionRes, twoLevelWriteoff }
+				: deductionRes;
 		});
 		return result;
 	});
