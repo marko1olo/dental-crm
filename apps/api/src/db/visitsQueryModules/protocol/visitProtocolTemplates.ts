@@ -1,10 +1,7 @@
 import type { VisitDraftAutosave } from "@dental/shared";
 import { eq } from "drizzle-orm";
-import { createApiLogger, safeLogError } from "../../../observability/logger.js";
-import { db } from "../../client.js";
+import { withTenantCtx } from "../../rls.js";
 import * as schema from "../../schema.js";
-
-const logger = createApiLogger("visitProtocolTemplates");
 
 /**
  * Тип клинического шаблона протокола приёма для терапевтического,
@@ -86,51 +83,37 @@ export const CORE_CLINICAL_PROTOCOL_TEMPLATES: ClinicalProtocolTemplate[] = [
 ];
 
 /**
- * Получение шаблонов протоколов для клиники из базы с fallback на дефолтные пресеты.
+ * Получение шаблонов протоколов для клиники из базы (честный пустой список, если записей нет).
  */
 export async function getClinicalProtocolTemplatesFromDb(
 	organizationId: string,
 	specialty?: string,
 ): Promise<ClinicalProtocolTemplate[]> {
-	try {
-		const query = db
+	const dbTemplates = await withTenantCtx(organizationId, (tx) =>
+		tx
 			.select()
 			.from(schema.protocolTemplates)
-			.where(eq(schema.protocolTemplates.organizationId, organizationId));
+			.where(eq(schema.protocolTemplates.organizationId, organizationId)),
+	);
 
-		const dbTemplates = await query;
-		if (dbTemplates.length > 0) {
-			const mapped: ClinicalProtocolTemplate[] = dbTemplates.map((t) => ({
-				id: t.id,
-				organizationId: t.organizationId,
-				specialty: t.specialty as ClinicalProtocolTemplate["specialty"],
-				title: t.title,
-				visitReason: t.visitReason,
-				complaintPrompt: t.complaintPrompt,
-				objectiveTemplate: t.objectiveTemplate,
-				treatmentPlanTemplate: t.treatmentPlanTemplate,
-				diagnosisHints: Array.isArray(t.diagnosisHints)
-					? (t.diagnosisHints as string[])
-					: [],
-				safetyWarnings: Array.isArray(t.safetyWarnings)
-					? (t.safetyWarnings as string[])
-					: [],
-			}));
+	const mapped: ClinicalProtocolTemplate[] = dbTemplates.map((t) => ({
+		id: t.id,
+		organizationId: t.organizationId,
+		specialty: t.specialty as ClinicalProtocolTemplate["specialty"],
+		title: t.title,
+		visitReason: t.visitReason,
+		complaintPrompt: t.complaintPrompt,
+		objectiveTemplate: t.objectiveTemplate,
+		treatmentPlanTemplate: t.treatmentPlanTemplate,
+		diagnosisHints: Array.isArray(t.diagnosisHints)
+			? (t.diagnosisHints as string[])
+			: [],
+		safetyWarnings: Array.isArray(t.safetyWarnings)
+			? (t.safetyWarnings as string[])
+			: [],
+	}));
 
-			return specialty
-				? mapped.filter((t) => t.specialty === specialty)
-				: mapped;
-		}
-	} catch (error) {
-		logger.warn(
-			{ err: safeLogError(error), organizationId },
-			"Ошибка чтения protocolTemplates из базы, отдаём встроенные пресеты",
-		);
-	}
-
-	return specialty
-		? CORE_CLINICAL_PROTOCOL_TEMPLATES.filter((t) => t.specialty === specialty)
-		: CORE_CLINICAL_PROTOCOL_TEMPLATES;
+	return specialty ? mapped.filter((t) => t.specialty === specialty) : mapped;
 }
 
 /**

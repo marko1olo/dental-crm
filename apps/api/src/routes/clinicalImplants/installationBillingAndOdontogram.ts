@@ -280,7 +280,7 @@ export async function linkBillingAndOdontogram(
 		.limit(1);
 
 	const existingSurfaces = Array.isArray(existingTooth?.surfaces)
-		? (existingTooth.surfaces as string[])
+		? existingTooth.surfaces.filter((s): s is string => typeof s === "string")
 		: [];
 	const mergedSurfaces = Array.from(new Set([...existingSurfaces, "implant_site"]));
 

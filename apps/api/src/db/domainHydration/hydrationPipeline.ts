@@ -6,12 +6,11 @@
 
 import { and, desc, eq } from "drizzle-orm";
 import { inMemoryDomainState } from "../../sampleData.js";
-import { db } from "../client.js";
 import {
 	projectServiceCatalogRows,
 	SERVICE_CATALOG_EMPTY_MESSAGE,
 } from "../pricelistQuery.js";
-import { withTenantCtx } from "../rls.js";
+import { type TenantDb, withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import {
 	extractAppointments,
@@ -58,8 +57,9 @@ export {
 export async function hydrateFromDatabase(
 	organizationId: string,
 	report: DomainStateHydrationReport,
+	tx?: TenantDb,
 ): Promise<HydratedDomainState> {
-	const slices = await executeHydrationQueries(organizationId, report);
+	const slices = await executeHydrationQueries(organizationId, report, tx);
 
 	if (!slices.organization) {
 		report.organizationFound = false;
@@ -167,8 +167,8 @@ export async function hydrateDomainStateFromDb(
 	if (report.mode === "in_memory") {
 		return { state: inMemoryDomainState, report };
 	}
-	return withTenantCtx(organizationId, async () => {
-		return hydrateFromDatabase(organizationId, report);
+	return withTenantCtx(organizationId, async (tx) => {
+		return hydrateFromDatabase(organizationId, report, tx);
 	});
 }
 
@@ -193,16 +193,18 @@ export async function _findLatestVisitIdForPatient(
 	options?: HydrationOptions,
 ): Promise<string | null> {
 	if (options?.isInMemory) return null;
-	const rows = await db
-		.select({ id: schema.visits.id })
-		.from(schema.visits)
-		.where(
-			and(
-				eq(schema.visits.organizationId, organizationId),
-				eq(schema.visits.patientId, patientId),
-			),
-		)
-		.orderBy(desc(schema.visits.updatedAt))
-		.limit(1);
-	return rows[0]?.id ?? null;
+	return withTenantCtx(organizationId, async (tx) => {
+		const rows = await tx
+			.select({ id: schema.visits.id })
+			.from(schema.visits)
+			.where(
+				and(
+					eq(schema.visits.organizationId, organizationId),
+					eq(schema.visits.patientId, patientId),
+				),
+			)
+			.orderBy(desc(schema.visits.updatedAt))
+			.limit(1);
+		return rows[0]?.id ?? null;
+	});
 }

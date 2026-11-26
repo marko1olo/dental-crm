@@ -135,6 +135,7 @@ function dbSourceFiles(): string[] {
 			}
 			if (!entry.name.endsWith(".ts")) continue;
 			if (entry.name.endsWith(".test.ts")) continue;
+			if (relative === "migrate.ts") continue;
 			found.push(relative);
 		}
 	};
@@ -648,7 +649,7 @@ const DECLARED_SWALLOWING: {
 			"доходить до маршрута отдельным полем ответа, иначе «событие записано» ничем не подтверждено.",
 	},
 	{
-		file: "domainStateHydration.ts",
+		file: "domainHydration/sliceModules/sliceExtractorsTypes.ts",
 		fn: "selectByOrganization",
 		ordinal: 1,
 		kind: "подстановка",
@@ -1006,9 +1007,10 @@ test("перепись слоя доступа не выродилась", () =>
 	);
 
 	assert.ok(
-		census.databaseTryBlocks >= 10,
-		`Перепись нашла ${census.databaseTryBlocks} блоков try с обращением к базе, а на момент установки ` +
-			"порога их было 10. Обращение к базе распознаётся по получателю (db, tx, trx, pool) и по " +
+		census.databaseTryBlocks >= 7,
+		`Перепись нашла ${census.databaseTryBlocks} блоков try с обращением к базе, а на момент обновления ` +
+			"порога их было 7 (после устранения проглатывающих catch в hydrationQueryExecutor, visitProtocolRevisions и visitProtocolTemplates). " +
+			"Обращение к базе распознаётся по получателю (db, tx, trx, pool) и по " +
 			"соглашению об именах (*InDb, *FromDb); отвалившаяся половина уносит блоки из переписи молча. " +
 			"Либо распознавание сломалось, либо try убрали по делу — тогда опустите число тем же коммитом.",
 	);

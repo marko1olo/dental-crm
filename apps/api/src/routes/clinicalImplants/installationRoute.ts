@@ -8,6 +8,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	implantCatalogItems,
 	implantIsqMeasurements,
 	patientImplantInstallations,
 	patients,
@@ -164,6 +165,44 @@ export function registerInstallationRoute(app: FastifyInstance) {
 					primaryFinancials = financials;
 				}
 
+				let resolvedImplantCatalogItemId: string | null = null;
+				if (currentItemInput.catalogItemId) {
+					const [catalogById] = await tx
+						.select({ id: implantCatalogItems.id })
+						.from(implantCatalogItems)
+						.where(
+							and(
+								eq(implantCatalogItems.id, currentItemInput.catalogItemId),
+								eq(implantCatalogItems.organizationId, orgId),
+							),
+						)
+						.limit(1);
+					if (catalogById) {
+						resolvedImplantCatalogItemId = catalogById.id;
+					}
+				}
+				if (!resolvedImplantCatalogItemId) {
+					const [matchedCatalog] = await tx
+						.select({ id: implantCatalogItems.id })
+						.from(implantCatalogItems)
+						.where(
+							and(
+								eq(implantCatalogItems.organizationId, orgId),
+								eq(implantCatalogItems.brand, currentItemInput.implantBrand),
+								eq(
+									implantCatalogItems.bodyDiameterMm,
+									String(currentItemInput.implantDiameterMm),
+								),
+								eq(
+									implantCatalogItems.lengthMm,
+									String(currentItemInput.implantLengthMm),
+								),
+							),
+						)
+						.limit(1);
+					resolvedImplantCatalogItemId = matchedCatalog?.id ?? null;
+				}
+
 				const [installation] = await tx
 					.insert(patientImplantInstallations)
 					.values({
@@ -171,7 +210,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 						patientId: currentItemInput.patientId,
 						surgeonDoctorId: identity.userId ?? null,
 						visitId: currentItemInput.visitId ?? null,
-						catalogItemId: null,
+						catalogItemId: resolvedImplantCatalogItemId,
 						toothNumberFdi: toothNum,
 						implantBrand: currentItemInput.implantBrand,
 						implantDiameterMm: String(currentItemInput.implantDiameterMm),

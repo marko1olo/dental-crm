@@ -10,9 +10,8 @@ import { visitCloseChecklistFactsFor } from "../../../sampleData.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumables/index.js";
 import { buildVisitCloseChecklist } from "../../../visitCloseChecklist.js";
 import { recordAuditEventInDb } from "../../auditQuery.js";
-import { db } from "../../client.js";
 import { hydrateDomainStateFromDb } from "../../domainStateHydration.js";
-import { withSavepoint, type TenantDb } from "../../rls.js";
+import { withSavepoint, withTenantCtx, type TenantDb } from "../../rls.js";
 import * as schema from "../../schema.js";
 import { projectVisitRow } from "../../visitsProjection.js";
 import { computeDiaryHash } from "../../../services/clinical/signingModules/diaryHashCalculator.js";
@@ -113,7 +112,7 @@ export async function acceptVisitDraftInDb(
 	organizationId: string,
 	input: AcceptVisitDraftInput,
 ): Promise<AcceptVisitDraftResponse> {
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(organizationId, async (tx) => {
 		const [visit] = await tx
 			.select()
 			.from(schema.visits)
@@ -382,31 +381,18 @@ export async function acceptVisitDraftInDb(
 				}
 			}
 
-			try {
-				await tx.transaction(async (subTx) => {
-					const deductionResult = await TreatmentConsumablesService.deductForVisit(subTx, {
-						organizationId,
-						visitId: input.visitId,
-						userId: signingDoctorId,
-						transactionType: "auto_deduct",
-					});
-					if (deductionResult?.isOverdraft) {
-						deductionWarning =
-							"Мягкий овердрафт склада: часть расходников списана с отрицательным остатком";
-					}
+			await withSavepoint(tx, async (subTx) => {
+				const deductionResult = await TreatmentConsumablesService.deductForVisit(subTx, {
+					organizationId,
+					visitId: input.visitId,
+					userId: signingDoctorId,
+					transactionType: "auto_deduct",
 				});
-			} catch (deductionError) {
-				deductionWarning =
-					"Предупреждение: автоматическое списание расходников со склада завершилось с ошибкой, карта сохранена";
-				logger.warn(
-					{
-						err: safeLogError(deductionError),
-						visitId: input.visitId,
-						organizationId,
-					},
-					"Списание материалов для визита завершилось с ошибкой, но подписание карты приёма продолжено",
-				);
-			}
+				if (deductionResult?.isOverdraft) {
+					deductionWarning =
+						"Мягкий овердрафт склада: часть расходников списана с отрицательным остатком";
+				}
+			});
 		}
 
 		const signedVisit = projectVisitRow(signedRow);

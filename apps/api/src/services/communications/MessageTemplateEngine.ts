@@ -27,6 +27,36 @@ import type {
 
 export * from "./templateEngine/index.js";
 
+function toMessageTemplateRecord(r: {
+	id: string;
+	organizationId: string;
+	channel: string;
+	intent: string;
+	title: string;
+	templateText: string;
+	variables?: string[] | null | undefined;
+	isActive: boolean;
+	createdAt?: Date | string | undefined;
+}): MessageTemplateRecord {
+	const createdAt =
+		r.createdAt instanceof Date
+			? r.createdAt
+			: r.createdAt !== undefined
+				? new Date(r.createdAt)
+				: new Date(0);
+	return {
+		id: r.id,
+		organizationId: r.organizationId,
+		channel: r.channel as MessageTemplateRecord["channel"],
+		intent: r.intent,
+		title: r.title,
+		templateText: r.templateText,
+		variables: r.variables ?? null,
+		isActive: r.isActive,
+		createdAt,
+	};
+}
+
 /**
  * Facade over canonical template rendering, 152-FZ secrecy checks,
  * and messageTemplateService CRUD SSOT (Mandate 8bf / W12-OPS-03).
@@ -81,10 +111,7 @@ export class MessageTemplateEngine {
 		tx?: TenantDb,
 	): Promise<MessageTemplateRecord[]> {
 		const rows = await getMessageTemplates(organizationId, filter, tx);
-		return rows.map((r) => ({
-			...r,
-			createdAt: r.createdAt instanceof Date ? r.createdAt : new Date(r.createdAt),
-		}));
+		return rows.map(toMessageTemplateRecord);
 	}
 
 	public static async getTemplateById(
@@ -93,12 +120,7 @@ export class MessageTemplateEngine {
 		tx?: TenantDb,
 	): Promise<MessageTemplateRecord | null> {
 		const row = await getMessageTemplateById(organizationId, templateId, tx);
-		if (!row) return null;
-		return {
-			...row,
-			createdAt:
-				row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt),
-		};
+		return row ? toMessageTemplateRecord(row) : null;
 	}
 
 	public static async createTemplate(
@@ -111,20 +133,14 @@ export class MessageTemplateEngine {
 			{
 				title: input.title,
 				channel: input.channel as Parameters<typeof createMessageTemplate>[1]["channel"],
-				intent: input.intent,
+				intent: input.intent ?? "custom",
 				templateText: input.templateText,
-				variables: input.variables,
-				isActive: input.isActive,
+				isActive: input.isActive ?? true,
+				...(input.variables !== undefined ? { variables: input.variables } : {}),
 			},
 			tx,
 		);
-		return {
-			...created,
-			createdAt:
-				created.createdAt instanceof Date
-					? created.createdAt
-					: new Date(created.createdAt),
-		};
+		return toMessageTemplateRecord(created);
 	}
 
 	public static async updateTemplate(
@@ -154,13 +170,7 @@ export class MessageTemplateEngine {
 			},
 			tx,
 		);
-		return {
-			...updated,
-			createdAt:
-				updated.createdAt instanceof Date
-					? updated.createdAt
-					: new Date(updated.createdAt),
-		};
+		return toMessageTemplateRecord(updated);
 	}
 
 	public static async deleteTemplate(

@@ -5,7 +5,7 @@ import type {
 } from "@dental/shared";
 import { and, eq, isNull } from "drizzle-orm";
 import { computeDiaryHash } from "../../../services/clinical/signingModules/diaryHashCalculator.js";
-import { db } from "../../client.js";
+import { withTenantCtx } from "../../rls.js";
 import * as schema from "../../schema.js";
 import type { VisitDraftAutosaveLookup } from "../types.js";
 
@@ -24,69 +24,80 @@ export async function getVisitDraftAutosaveFromDb(
 	organizationId: string,
 	visitId: string,
 ): Promise<VisitDraftAutosaveLookup> {
-	const [visit] = await db
-		.select()
-		.from(schema.visits)
-		.where(
-			and(
-				eq(schema.visits.id, visitId),
-				eq(schema.visits.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	return withTenantCtx(organizationId, async (tx) => {
+		const [visit] = await tx
+			.select()
+			.from(schema.visits)
+			.where(
+				and(
+					eq(schema.visits.id, visitId),
+					eq(schema.visits.organizationId, organizationId),
+				),
+			)
+			.limit(1);
 
-	if (!visit) return { outcome: "visit_absent" };
-	if (visit.status !== "draft") {
-		return {
-			outcome: "no_draft",
-			visitId: visit.id,
-			status: visit.status,
-			signedAt: visit.signedAt ? visit.signedAt.toISOString() : null,
-		};
-	}
+		if (!visit) return { outcome: "visit_absent" };
+		if (visit.status !== "draft") {
+			return {
+				outcome: "no_draft",
+				visitId: visit.id,
+				status: visit.status,
+				signedAt: visit.signedAt ? visit.signedAt.toISOString() : null,
+			};
+		}
 
-	if (visit.draftAutosave) {
+		if (visit.draftAutosave) {
+			const rawDraft = visit.draftAutosave as VisitDraftAutosave & {
+				lastAcceptedMutationId?: unknown;
+				lastAcceptedAt?: unknown;
+			};
+			const {
+				lastAcceptedMutationId: _ignoredMutationId,
+				lastAcceptedAt: _ignoredAcceptedAt,
+				...cleanDraft
+			} = rawDraft;
+			return {
+				outcome: "draft",
+				serverDraft: cleanDraft as VisitDraftAutosave,
+			};
+		}
+
+		const [existingDiary] = await tx
+			.select({ diagnosisTooth: schema.visitDiaries.diagnosisTooth })
+			.from(schema.visitDiaries)
+			.where(
+				and(
+					eq(schema.visitDiaries.visitId, visitId),
+					eq(schema.visitDiaries.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		// Черновик есть, автосохранения по нему ещё не было: заготовка собирается из полей самого визита
 		return {
 			outcome: "draft",
-			serverDraft: visit.draftAutosave as VisitDraftAutosave,
-		};
-	}
-
-	const [existingDiary] = await db
-		.select({ diagnosisTooth: schema.visitDiaries.diagnosisTooth })
-		.from(schema.visitDiaries)
-		.where(
-			and(
-				eq(schema.visitDiaries.visitId, visitId),
-				eq(schema.visitDiaries.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-
-	// Черновик есть, автосохранения по нему ещё не было: заготовка собирается из полей самого визита
-	return {
-		outcome: "draft",
-		serverDraft: {
-			visitId: visit.id,
-			patientId: visit.patientId,
-			selectedSpecialty: "therapist", // default fallback
-			transcript: visit.transcript || "",
-			draft: {
-				warnings: [],
-				complaint: visit.complaint || "",
-				anamnesis: visit.anamnesis || "",
-				objectiveStatus: visit.objectiveStatus || "",
-				diagnosis: visit.diagnosis || "",
-				treatmentPlan: visit.treatmentPlan || "",
-				diagnosisTooth: existingDiary?.diagnosisTooth || null,
+			serverDraft: {
+				visitId: visit.id,
+				patientId: visit.patientId,
+				selectedSpecialty: "therapist", // default fallback
+				transcript: visit.transcript || "",
+				draft: {
+					warnings: [],
+					complaint: visit.complaint || "",
+					anamnesis: visit.anamnesis || "",
+					objectiveStatus: visit.objectiveStatus || "",
+					diagnosis: visit.diagnosis || "",
+					treatmentPlan: visit.treatmentPlan || "",
+					diagnosisTooth: existingDiary?.diagnosisTooth || null,
+				},
+				baseRevision: visit.revision,
+				clientDraftId: null,
+				clientSavedAt: null,
+				serverSavedAt: visit.updatedAt.toISOString(),
+				transcriptHash: "",
 			},
-			baseRevision: visit.revision,
-			clientDraftId: null,
-			clientSavedAt: null,
-			serverSavedAt: visit.updatedAt.toISOString(),
-			transcriptHash: "",
-		},
-	};
+		};
+	});
 }
 
 /** Семантический алиас для медицинской карты приёма (Мандат 8ap) */
@@ -101,7 +112,7 @@ export async function upsertVisitDraftAutosaveInDb(
 	organizationId: string,
 	input: VisitDraftAutosaveRequest,
 ): Promise<VisitDraftAutosave> {
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(organizationId, async (tx) => {
 		const [visit] = await tx
 			.select()
 			.from(schema.visits)
@@ -122,10 +133,7 @@ export async function upsertVisitDraftAutosaveInDb(
 		const existingDraftAutosave =
 			(visit.draftAutosave as Record<string, unknown> | null) || {};
 
-		const serverDraft: VisitDraftAutosave & {
-			lastAcceptedMutationId?: string | null;
-			lastAcceptedAt?: string | null;
-		} = {
+		const serverDraft: VisitDraftAutosave = {
 			visitId: input.visitId,
 			patientId: input.patientId,
 			selectedSpecialty: input.selectedSpecialty,
@@ -147,6 +155,13 @@ export async function upsertVisitDraftAutosaveInDb(
 					.filter(Boolean)
 					.join("|"),
 			),
+		};
+
+		const persistedDraft: VisitDraftAutosave & {
+			lastAcceptedMutationId?: string | null;
+			lastAcceptedAt?: string | null;
+		} = {
+			...serverDraft,
 			...(existingDraftAutosave.lastAcceptedMutationId
 				? {
 						lastAcceptedMutationId: existingDraftAutosave.lastAcceptedMutationId as string,
@@ -178,7 +193,7 @@ export async function upsertVisitDraftAutosaveInDb(
 			const [saved] = await tx
 				.update(schema.visits)
 				.set({
-					draftAutosave: serverDraft,
+					draftAutosave: persistedDraft,
 					updatedAt: now,
 				})
 				.where(
@@ -196,7 +211,7 @@ export async function upsertVisitDraftAutosaveInDb(
 		const [saved] = await tx
 			.update(schema.visits)
 			.set({
-				draftAutosave: serverDraft,
+				draftAutosave: persistedDraft,
 				transcript: input.transcript,
 				complaint: nextComplaint,
 				anamnesis: nextAnamnesis,

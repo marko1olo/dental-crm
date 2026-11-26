@@ -14,22 +14,19 @@ import {
 	updateStaffMemberProfile as updateStaffMemberProfileInMemory,
 	updateStaffWorkingHours as updateStaffWorkingHoursInMemory,
 } from "../../sampleData.js";
-import { createApiLogger, safeLogError } from "../../observability/logger.js";
+import { staffAuthorityFlags } from "../../security/permissions.js";
+import { type TenantDb, withSavepoint, withTenantCtx } from "../rls.js";
+import * as schema from "../schema.js";
 import type {
 	DoctorCommissionRate,
 	UpdateStaffMemberProfileInput,
 } from "./types.js";
 import { useInMemory } from "./types.js";
-import { staffAuthorityFlags } from "../../security/permissions.js";
-import { db } from "../client.js";
-import { withSavepoint, withTenantCtx } from "../rls.js";
-import * as schema from "../schema.js";
-
-const logger = createApiLogger("staffQueries");
 
 export async function createStaffMemberInDb(
 	organizationId: string,
 	input: CreateStaffMemberInput,
+	externalTx?: TenantDb | undefined,
 ): Promise<StaffMember> {
 	if (useInMemory()) return createStaffMemberInMemory(input);
 
@@ -41,7 +38,7 @@ export async function createStaffMemberInDb(
 		}
 	}
 
-	const inserted = await withTenantCtx(organizationId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const existingUsers = await tx
 			.select({
 				id: schema.users.id,
@@ -80,7 +77,11 @@ export async function createStaffMemberInDb(
 			.returning();
 
 		return createdRow;
-	});
+	};
+
+	const inserted = externalTx
+		? await run(externalTx)
+		: await withTenantCtx(organizationId, run);
 
 	if (!inserted) {
 		throw new Error("Не удалось добавить сотрудника в базу данных.");
@@ -110,14 +111,16 @@ export async function updateStaffWorkingHoursInDb(
 	organizationId: string,
 	staffId: string,
 	input: UpdateStaffWorkingHoursInput | StaffMember["workingHours"] | null | undefined,
+	externalTx?: TenantDb | undefined,
 ) {
 	if (!input) return;
 	const workingHours = Array.isArray(input) ? input : input.workingHours;
 	if (!workingHours) return;
 	const workingHoursInput: UpdateStaffWorkingHoursInput = { workingHours };
-	if (useInMemory())
+	if (useInMemory()) {
 		return updateStaffWorkingHoursInMemory(staffId, workingHoursInput);
-	await withTenantCtx(organizationId, async (tx) => {
+	}
+	const run = async (tx: TenantDb) => {
 		await tx
 			.update(schema.users)
 			.set({ workingHours })
@@ -127,20 +130,18 @@ export async function updateStaffWorkingHoursInDb(
 					eq(schema.users.organizationId, organizationId),
 				),
 			);
-	});
+	};
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }
 
 /**
- * Правка карточки сотрудника. Пишутся только те поля, которые действительно
- * есть в таблице users и возвращаются назад через getClinicSettingsFromDb:
- * иначе интерфейс показывал бы «сохранено», а после перезагрузки — старое
- * значение. Специальности сюда не входят: столбец users.specialties есть, но
- * чтение жестко отдает ["universal"], так что запись была бы невидимой.
+ * Правка карточки сотрудника с атомарным обновлением ставки врача через savepoint.
  */
 export async function updateStaffMemberProfileInDb(
 	organizationId: string,
 	staffId: string,
 	input: UpdateStaffMemberProfileInput,
+	externalTx?: TenantDb | undefined,
 ) {
 	if (useInMemory()) {
 		updateStaffMemberProfileInMemory(staffId, input);
@@ -165,10 +166,17 @@ export async function updateStaffMemberProfileInDb(
 	if (input.active !== undefined) updateData.isActive = input.active;
 	if (input.specialties !== undefined) updateData.specialties = input.specialties;
 	if (input.snils !== undefined) updateData.snils = input.snils;
-	if (input.canSignMedicalRecords !== undefined) updateData.canSignMedicalRecords = input.canSignMedicalRecords;
-	if (input.canManageMoney !== undefined) updateData.canManageMoney = input.canManageMoney;
-	if (input.canManageImports !== undefined) updateData.canManageImports = input.canManageImports;
-	await withTenantCtx(organizationId, async (tx) => {
+	if (input.canSignMedicalRecords !== undefined) {
+		updateData.canSignMedicalRecords = input.canSignMedicalRecords;
+	}
+	if (input.canManageMoney !== undefined) {
+		updateData.canManageMoney = input.canManageMoney;
+	}
+	if (input.canManageImports !== undefined) {
+		updateData.canManageImports = input.canManageImports;
+	}
+
+	const run = async (tx: TenantDb) => {
 		if (Object.keys(updateData).length > 0) {
 			await tx
 				.update(schema.users)
@@ -182,38 +190,37 @@ export async function updateStaffMemberProfileInDb(
 		}
 		const commissionPct = input.commissionPct;
 		if (commissionPct !== undefined && commissionPct !== null) {
-			try {
-				await withSavepoint(tx, async () =>
-					setDoctorCommissionRateInDb(organizationId, staffId, commissionPct, {
+			await withSavepoint(tx, async (spTx) =>
+				setDoctorCommissionRateInDb(
+					organizationId,
+					staffId,
+					commissionPct,
+					{
 						materialCostDeductionPct: input.materialCostDeductionPct ?? undefined,
 						labCostDeductionPct: input.labCostDeductionPct ?? undefined,
-					}),
-				);
-			} catch (commErr) {
-				logger.warn(
-					{ err: safeLogError(commErr), organizationId, staffId },
-					"Не удалось синхронизировать ставку врача при обновлении профиля",
-				);
-			}
+					},
+					spTx,
+				),
+			);
 		}
-	});
+	};
+
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }
 
 /**
- * Мягкое отключение сотрудника вместо DELETE: на users.id ссылаются приемы
- * (appointments.doctor_user_id, appointments.assistant_user_id) и медицинские
- * записи. Физическое удаление либо упало бы на внешнем ключе, либо стерло
- * авторство лечения. Строка остается, is_active становится false.
+ * Мягкое отключение сотрудника (is_active = false).
  */
 export async function deactivateStaffMemberInDb(
 	organizationId: string,
 	staffId: string,
+	externalTx?: TenantDb | undefined,
 ) {
 	if (useInMemory()) {
 		deactivateStaffMemberInMemory(staffId);
 		return;
 	}
-	await withTenantCtx(organizationId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		await tx
 			.update(schema.users)
 			.set({ isActive: false })
@@ -223,7 +230,8 @@ export async function deactivateStaffMemberInDb(
 					eq(schema.users.organizationId, organizationId),
 				),
 			);
-	});
+	};
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }
 
 export async function updateStaffCredentialsInDb(
@@ -235,13 +243,16 @@ export async function updateStaffCredentialsInDb(
 		pinCodeHash?: string;
 		passwordEntropyBits?: number;
 	},
+	externalTx?: TenantDb | undefined,
 ) {
 	if (useInMemory()) return;
 
-	const userUpdates: Partial<typeof schema.users.$inferInsert> & { passwordEntropyBits?: number } = { ...updates };
+	const userUpdates: Partial<typeof schema.users.$inferInsert> & {
+		passwordEntropyBits?: number;
+	} = { ...updates };
 	delete userUpdates.passwordEntropyBits;
 
-	await withTenantCtx(organizationId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		if (updates.passwordEntropyBits !== undefined) {
 			const [user] = await tx
 				.select({ uiPreferences: schema.users.uiPreferences })
@@ -283,7 +294,9 @@ export async function updateStaffCredentialsInDb(
 		if (updatedRows.length === 0) {
 			throw new Error("Сотрудник не найден.");
 		}
-	});
+	};
+
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }
 
 const COMMISSION_STORAGE_UNAVAILABLE =
@@ -291,79 +304,57 @@ const COMMISSION_STORAGE_UNAVAILABLE =
 
 /**
  * Действующие ставки всех врачей организации, самая свежая первой.
- *
- * Отдаются только строки с is_active = true: отключённые остаются в таблице
- * ради истории, но платить по ним нельзя. Порядок совпадает с порядком, по
- * которому ставку выбирает расчёт выплат (свежая effective_from, при равенстве
- * — свежая created_at), поэтому первая строка на врача — та же, по которой
- * посчитаются деньги.
  */
 export async function listDoctorCommissionRatesInDb(
 	organizationId: string,
+	externalTx?: TenantDb | undefined,
 ): Promise<DoctorCommissionRate[]> {
 	if (useInMemory()) return [];
-	const rows = await db
-		.select({
-			userId: schema.doctorCommissions.userId,
-			doctorId: schema.doctorCommissions.doctorId,
-			commissionPct: schema.doctorCommissions.commissionPct,
-			commissionPercent: schema.doctorCommissions.commissionPercent,
-			materialCostDeductionPct:
-				schema.doctorCommissions.materialCostDeductionPct,
-			labCostDeductionPct: schema.doctorCommissions.labCostDeductionPct,
-			effectiveFrom: schema.doctorCommissions.effectiveFrom,
-		})
-		.from(schema.doctorCommissions)
-		.where(
-			and(
-				eq(schema.doctorCommissions.organizationId, organizationId),
-				eq(schema.doctorCommissions.isActive, true),
-			),
-		)
-		.orderBy(
-			desc(schema.doctorCommissions.effectiveFrom),
-			desc(schema.doctorCommissions.createdAt),
-		);
 
-	const rates: DoctorCommissionRate[] = [];
-	for (const row of rows) {
-		// user_id / doctor_id fallback для абсолютной надежности
-		const resolvedUserId = row.userId || row.doctorId;
-		if (!resolvedUserId) continue;
-		rates.push({
-			userId: resolvedUserId,
-			commissionPct: row.commissionPct || row.commissionPercent || "25.00",
-			materialCostDeductionPct: row.materialCostDeductionPct,
-			labCostDeductionPct: row.labCostDeductionPct ?? "0",
-			effectiveFrom: row.effectiveFrom.toISOString(),
-		});
-	}
-	return rates;
+	const run = async (tx: TenantDb): Promise<DoctorCommissionRate[]> => {
+		const rows = await tx
+			.select({
+				userId: schema.doctorCommissions.userId,
+				doctorId: schema.doctorCommissions.doctorId,
+				commissionPct: schema.doctorCommissions.commissionPct,
+				commissionPercent: schema.doctorCommissions.commissionPercent,
+				materialCostDeductionPct:
+					schema.doctorCommissions.materialCostDeductionPct,
+				labCostDeductionPct: schema.doctorCommissions.labCostDeductionPct,
+				effectiveFrom: schema.doctorCommissions.effectiveFrom,
+			})
+			.from(schema.doctorCommissions)
+			.where(
+				and(
+					eq(schema.doctorCommissions.organizationId, organizationId),
+					eq(schema.doctorCommissions.isActive, true),
+				),
+			)
+			.orderBy(
+				desc(schema.doctorCommissions.effectiveFrom),
+				desc(schema.doctorCommissions.createdAt),
+			);
+
+		const rates: DoctorCommissionRate[] = [];
+		for (const row of rows) {
+			const resolvedUserId = row.userId || row.doctorId;
+			if (!resolvedUserId) continue;
+			rates.push({
+				userId: resolvedUserId,
+				commissionPct: row.commissionPct || row.commissionPercent || "25.00",
+				materialCostDeductionPct: row.materialCostDeductionPct,
+				labCostDeductionPct: row.labCostDeductionPct ?? "0",
+				effectiveFrom: row.effectiveFrom.toISOString(),
+			});
+		}
+		return rates;
+	};
+
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }
 
 /**
- * Назначение ставки врачу.
- *
- * Три решения, каждое из которых иначе стоило бы клинике денег:
- *
- * 1. Пишутся ОБА процента — commission_pct и commission_percent. Рядом в
- *    таблице живёт commission_percent с DEFAULT '25'. Вставка без него
- *    оставила бы в ОДНОЙ строке два несогласованных числа (45 % в одной
- *    колонке, 25 % в другой), и первый же будущий читатель второй колонки
- *    заплатил бы врачу другую сумму — без ошибки и без расхождения в логах.
- *
- * 2. Прежние действующие ставки отключаются, а не остаются рядом. Уникальности
- *    в базе нет, и при нескольких активных строках расчёт берёт самую свежую,
- *    приписывая к выплате предупреждение о двоящейся настройке
- *    (doctorPayouts.ts:373). Ставка врача не должна зависеть от порядка строк.
- *
- * 3. Строки не удаляются: is_active = false сохраняет, что клиника назначала
- *    раньше. Прошлые периоды продолжают считаться по той ставке, которая
- *    действовала тогда, — новая начинает действовать с момента назначения.
- *
- * Доля себестоимости материалов (material_cost_deduction_pct) переносится из
- * прежней действующей строки, если не передана явно: это независимая
- * договорённость с врачом, и правка процента от кассы не имеет права её обнулять.
+ * Назначение ставки врачу — процента от кассы, по которому клиника платит за лечение.
  */
 export async function setDoctorCommissionRateInDb(
 	organizationId: string,
@@ -373,10 +364,11 @@ export async function setDoctorCommissionRateInDb(
 		materialCostDeductionPct?: number | undefined;
 		labCostDeductionPct?: number | undefined;
 	},
+	externalTx?: TenantDb | undefined,
 ): Promise<DoctorCommissionRate> {
 	if (useInMemory()) throw new Error(COMMISSION_STORAGE_UNAVAILABLE);
 
-	return withTenantCtx(organizationId, async (tx) => {
+	const run = async (tx: TenantDb): Promise<DoctorCommissionRate> => {
 		const [staffMember] = await tx
 			.select({ id: schema.users.id })
 			.from(schema.users)
@@ -461,10 +453,11 @@ export async function setDoctorCommissionRateInDb(
 					schema.doctorCommissions.labCostDeductionPct,
 				effectiveFrom: schema.doctorCommissions.effectiveFrom,
 			});
-		if (!inserted)
+		if (!inserted) {
 			throw new Error(
 				"Ставка врача не сохранена: строка ставки не записалась.",
 			);
+		}
 
 		return {
 			userId: staffId,
@@ -473,5 +466,7 @@ export async function setDoctorCommissionRateInDb(
 			labCostDeductionPct: inserted.labCostDeductionPct ?? "0",
 			effectiveFrom: inserted.effectiveFrom.toISOString(),
 		};
-	});
+	};
+
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }

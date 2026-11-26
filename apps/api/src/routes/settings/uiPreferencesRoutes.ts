@@ -9,6 +9,7 @@ import {
 	stampedUiPreferencesSavedAt,
 	UiPreferencesConcurrentSaveError,
 } from "../../db/settingsQuery.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import {
 	parseSettingsPayload,
 	requireSettingsAccess,
@@ -24,7 +25,8 @@ export function registerUiPreferencesRoutes(app: FastifyInstance): void {
 	app.get("/api/settings/preferences", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;
-		const prefs = await getUiPreferencesFromDb(orgId);
+		const userId = getRequestIdentity(request).userId;
+		const prefs = await getUiPreferencesFromDb(orgId, userId);
 		return { preferences: prefs ? uiPreferencesSchema.parse(prefs) : null };
 	});
 
@@ -59,9 +61,10 @@ export function registerUiPreferencesRoutes(app: FastifyInstance): void {
 			version: 1 as const,
 			savedAt: stampedUiPreferencesSavedAt(input.savedAt),
 		};
+		const userId = getRequestIdentity(request).userId;
 		let outcome: Awaited<ReturnType<typeof saveUiPreferencesInDb>>;
 		try {
-			outcome = await saveUiPreferencesInDb(orgId, updated);
+			outcome = await saveUiPreferencesInDb(orgId, updated, userId);
 		} catch (error) {
 			// Проигранная сверка прежнего значения — не ошибка оператора и не сбой
 			// базы: писали одновременно. Отвечать 500 значило бы отправить человека к

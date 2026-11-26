@@ -1,4 +1,4 @@
-import { createApiLogger, safeLogError } from "../observability/index.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
 import { resolveEncryptionKey } from "./backupCryptoUtils.js";
 import { createEncryptedBackup } from "./pgDumpClusterBackup.js";
 import { createTenantEncryptedBackup } from "./tenantSnapshotSerializer.js";

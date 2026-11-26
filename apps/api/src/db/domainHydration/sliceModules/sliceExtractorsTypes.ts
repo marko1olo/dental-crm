@@ -1,6 +1,6 @@
 import type { DomainStateHydrationReport } from "../types.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
-import { db } from "../../client.js";
+import { type TenantDb, withTenantCtx } from "../../rls.js";
 import { eq, type Column } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 
@@ -130,12 +130,21 @@ export async function selectByOrganization<T>(
 	organizationId: string,
 	label: string,
 	report: DomainStateHydrationReport,
+	externalTx?: TenantDb,
 ): Promise<T[]> {
 	try {
-		return (await db
-			.select()
-			.from(table)
-			.where(eq(table.organizationId, organizationId))) as T[];
+		if (externalTx) {
+			return (await externalTx
+				.select()
+				.from(table)
+				.where(eq(table.organizationId, organizationId))) as T[];
+		}
+		return (await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select()
+				.from(table)
+				.where(eq(table.organizationId, organizationId)),
+		)) as T[];
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		report.unavailable.push({ slice: label, message });

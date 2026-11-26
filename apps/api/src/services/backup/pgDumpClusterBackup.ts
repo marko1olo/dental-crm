@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Transform, type TransformCallback } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
-import { createApiLogger, safeLogError } from "../observability/index.js";
+import { createApiLogger, safeLogError } from "../../observability/index.js";
 import {
 	type BackupResult,
 	backupsDirectory,

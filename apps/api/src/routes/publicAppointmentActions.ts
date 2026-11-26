@@ -1,32 +1,7 @@
-/**
- * Подтверждение и отмена приёма пациентом в одно касание.
- *
- * ЗАЧЕМ
- * Напоминание уменьшает неявки, но не говорит, придёт ли человек. Тот, кто не
- * может прийти, обычно просто молчит: звонить неудобно, промолчать легко — и
- * клиника узнаёт об этом по пустому креслу. Одно касание меняет исход:
- * подтвердил — администратор не тратит утро на обзвон; отменил — слот
- * освобождается заранее, и его можно продать.
- *
- * ЭТО ЕДИНСТВЕННЫЙ ЗДЕСЬ АДРЕС БЕЗ АВТОРИЗАЦИИ, поэтому:
- *   • право на действие несёт короткий случайный код из таблицы, а не
- *     идентификатор приёма в адресе: /confirm/<uuid> позволял бы перебором
- *     трогать чужие записи. Само действие тоже задано кодом, а не путём, —
- *     ссылку подтверждения нельзя превратить в отмену, дописав /cancel;
- *   • адрес намеренно короткий (/api/p/<код>): он уходит в SMS, где кириллица
- *     даёт 70 знаков на сегмент, и каждый лишний символ клиника оплачивает;
- *   • ответ — страница на русском, а не JSON: пациент открывает ссылку в
- *     телефоне и должен увидеть понятный текст, а не структуру данных;
- *   • есть ограничение частоты запросов: адрес публичный;
- *   • отмена создаёт задачу администратору, а не молча освобождает слот, —
- *     клиника должна узнать об отказе и попробовать переставить пациента.
- */
-
+import { escapeHtml } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../db/client.js";
-import { withTenantCtx } from "../db/rls.js";
-import { escapeHtml } from "@dental/shared";
+import { type TenantDb, withSavepoint, withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
 	clinics,
@@ -41,8 +16,6 @@ import {
 import { invalidateAppointmentReminders } from "../services/communications/appointmentReminders.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
-// Публичная поверхность: без ограничения частоты по ней можно перебирать токены
-// и создавать задачи администратору пачками.
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
@@ -51,7 +24,6 @@ function isRateLimited(ip: string, now = Date.now()): boolean {
 	const entry = requestCounts.get(ip);
 	if (!entry || entry.resetAt <= now) {
 		requestCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-		// Карта не должна расти бесконечно на длинных запусках.
 		if (requestCounts.size > 5000) {
 			for (const [key, value] of requestCounts) {
 				if (value.resetAt <= now) requestCounts.delete(key);
@@ -63,11 +35,6 @@ function isRateLimited(ip: string, now = Date.now()): boolean {
 	return entry.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
-/**
- * Страница ответа. Разметка намеренно простая и самодостаточная: пациент
- * открывает её из SMS в любом браузере, включая старый, и внешние ресурсы могут
- * не загрузиться.
- */
 function renderPage(
 	title: string,
 	message: string,
@@ -108,16 +75,15 @@ function sendPage(
 		.send(renderPage(title, message, tone));
 }
 
-/** Название клиники для страницы. Пациент должен понимать, куда он попал. */
-async function clinicTitle(organizationId: string): Promise<string> {
-	const [clinic] = await db
+async function clinicTitle(tx: TenantDb, organizationId: string): Promise<string> {
+	const [clinic] = await tx
 		.select({ name: clinics.name })
 		.from(clinics)
 		.where(eq(clinics.organizationId, organizationId))
 		.limit(1);
 	if (clinic?.name) return clinic.name;
 
-	const [organization] = await db
+	const [organization] = await tx
 		.select({ name: organizations.name })
 		.from(organizations)
 		.where(eq(organizations.id, organizationId))
@@ -168,8 +134,6 @@ export async function registerPublicAppointmentActionRoutes(
 
 		const rawCode = (request.params as { code?: string }).code ?? "";
 		const resolved = await resolveActionCode(rawCode);
-		// Один и тот же ответ на неизвестный и на просроченный код: по разнице
-		// ответов можно было бы перебором находить существующие ссылки.
 		if (!resolved || resolved.expired) {
 			return sendPage(
 				reply,
@@ -180,31 +144,14 @@ export async function registerPublicAppointmentActionRoutes(
 			);
 		}
 
-		// Действие берётся из кода, а не из адреса: одну ссылку нельзя подменить
-		// другой, дописав к ней /cancel.
 		const payload = {
 			organizationId: resolved.organizationId,
 			appointmentId: resolved.appointmentId,
 		};
 		const expectedAction = resolved.action;
 
-		/*
-		 * КОНТЕКСТ АРЕНДАТОРА НА ЕДИНСТВЕННОМ ЗДЕСЬ АДРЕСЕ БЕЗ АВТОРИЗАЦИИ.
-		 *
-		 * Токена у пациента нет, поэтому `request.tenantId` не выставлен и
-		 * глобальная обёртка server.ts этот обработчик не оборачивает. Под FORCE
-		 * RLS ломалось всё, что ниже: поиск приёма отдавал ноль строк, и пациент
-		 * получал «Запись не найдена» на живую запись; название клиники не
-		 * читалось и заменялось словом «Клиника»; `UPDATE` статуса затрагивал
-		 * ноль строк; вставка задачи администратору отвергалась кодом 42501.
-		 *
-		 * Обхода здесь не нужно и он был бы дырой: арендатор УЖЕ известен — его
-		 * назвала строка кода, найденная выше единственным запросом под обходом.
-		 * Под контекстом чужой приём недоступен ни на чтение, ни на запись, и
-		 * подобранный чужой код ничего не откроет.
-		 */
-		return withTenantCtx(payload.organizationId, async () => {
-			const [appointment] = await db
+		return withTenantCtx(payload.organizationId, async (tx) => {
+			const [appointment] = await tx
 				.select({
 					id: appointments.id,
 					status: appointments.status,
@@ -221,7 +168,7 @@ export async function registerPublicAppointmentActionRoutes(
 				)
 				.limit(1);
 
-			const title = await clinicTitle(payload.organizationId);
+			const title = await clinicTitle(tx, payload.organizationId);
 			if (!appointment) {
 				return sendPage(
 					reply,
@@ -232,7 +179,7 @@ export async function registerPublicAppointmentActionRoutes(
 				);
 			}
 
-			const [clinic] = await db
+			const [clinic] = await tx
 				.select({ timezone: clinics.timezone })
 				.from(clinics)
 				.where(eq(clinics.organizationId, payload.organizationId))
@@ -243,8 +190,6 @@ export async function registerPublicAppointmentActionRoutes(
 				request.log,
 			);
 
-			// Прошедший приём подтверждать и отменять нечего, а сообщение об этом
-			// понятнее, чем «ссылка недействительна».
 			if (appointment.startsAt.getTime() < Date.now()) {
 				return sendPage(
 					reply,
@@ -257,7 +202,6 @@ export async function registerPublicAppointmentActionRoutes(
 
 			if (expectedAction === "confirm") {
 				if (appointment.status === "confirmed") {
-					// Повторное нажатие — обычное дело: пациент открыл ссылку дважды.
 					return sendPage(
 						reply,
 						200,
@@ -276,15 +220,7 @@ export async function registerPublicAppointmentActionRoutes(
 					);
 				}
 
-				/*
-				 * БЫЛО: UPDATE appointments SET status='confirmed' WHERE id=...
-				 * без organizationId. SELECT выше уже фильтровал по org, но
-				 * подтверждение по публичной ссылке — мутация статуса записи;
-				 * id-only UPDATE ломает multi-tenant defense-in-depth (тот же
-				 * класс, что visits/appointments staff path).
-				 * СТАЛО: organizationId + id; 0 строк → не помечаем код использованным.
-				 */
-				const [confirmed] = await db
+				const [confirmed] = await tx
 					.update(appointments)
 					.set({ status: "confirmed" })
 					.where(
@@ -303,7 +239,12 @@ export async function registerPublicAppointmentActionRoutes(
 						"error",
 					);
 				}
-				await markActionCodeUsed(resolved.code);
+				await markActionCodeUsed(
+					resolved.code,
+					new Date(),
+					payload.organizationId,
+					tx,
+				);
 				wsBroker.broadcastToOrganization(payload.organizationId, {
 					type: "APPOINTMENT_UPDATED",
 					payload: {
@@ -335,8 +276,8 @@ export async function registerPublicAppointmentActionRoutes(
 					? `${appointment.comment}\n[Запрос переноса пациентом]`
 					: "[Запрос переноса пациентом]";
 
-				await db.transaction(async (tx) => {
-					await tx
+				await withSavepoint(tx, async (spTx) => {
+					await spTx
 						.update(appointments)
 						.set({ comment: updatedComment })
 						.where(
@@ -347,7 +288,7 @@ export async function registerPublicAppointmentActionRoutes(
 						);
 
 					if (appointment.patientId) {
-						const [patient] = await tx
+						const [patient] = await spTx
 							.select({ fullName: patients.fullName })
 							.from(patients)
 							.where(
@@ -358,7 +299,7 @@ export async function registerPublicAppointmentActionRoutes(
 							)
 							.limit(1);
 
-						await tx.insert(communicationTasks).values({
+						await spTx.insert(communicationTasks).values({
 							organizationId: payload.organizationId,
 							patientId: appointment.patientId,
 							appointmentId: appointment.id,
@@ -377,7 +318,12 @@ export async function registerPublicAppointmentActionRoutes(
 					}
 				});
 
-				await markActionCodeUsed(resolved.code);
+				await markActionCodeUsed(
+					resolved.code,
+					new Date(),
+					payload.organizationId,
+					tx,
+				);
 
 				wsBroker.broadcastToOrganization(payload.organizationId, {
 					type: "APPOINTMENT_UPDATED",
@@ -418,12 +364,8 @@ export async function registerPublicAppointmentActionRoutes(
 				);
 			}
 
-			/*
-			 * organizationId + id + RETURNING внутри единой транзакции с communicationTasks;
-			 * если создание задачи администратору упадет, отмена не повиснет незамеченной.
-			 */
-			const cancelled = await db.transaction(async (tx) => {
-				const [res] = await tx
+			const cancelled = await withSavepoint(tx, async (spTx) => {
+				const [res] = await spTx
 					.update(appointments)
 					.set({ status: "cancelled" })
 					.where(
@@ -434,12 +376,10 @@ export async function registerPublicAppointmentActionRoutes(
 					)
 					.returning({ id: appointments.id });
 
-				if (!res) {
-					return null;
-				}
+				if (!res) return null;
 
 				if (appointment.patientId) {
-					const [patient] = await tx
+					const [patient] = await spTx
 						.select({ fullName: patients.fullName })
 						.from(patients)
 						.where(
@@ -450,7 +390,7 @@ export async function registerPublicAppointmentActionRoutes(
 						)
 						.limit(1);
 
-					await tx.insert(communicationTasks).values({
+					await spTx.insert(communicationTasks).values({
 						organizationId: payload.organizationId,
 						patientId: appointment.patientId,
 						appointmentId: appointment.id,
@@ -480,14 +420,18 @@ export async function registerPublicAppointmentActionRoutes(
 					"error",
 				);
 			}
-			await markActionCodeUsed(resolved.code);
+			await markActionCodeUsed(
+				resolved.code,
+				new Date(),
+				payload.organizationId,
+				tx,
+			);
 
-			// Напоминания об отменённом приёме снимаются сразу: иначе пациент,
-			// только что отказавшийся, получит «ждём вас завтра».
 			await invalidateAppointmentReminders(
 				payload.organizationId,
 				appointment.id,
 				"Приём отменён пациентом по ссылке",
+				tx,
 			);
 
 			wsBroker.broadcastToOrganization(payload.organizationId, {
@@ -508,10 +452,5 @@ export async function registerPublicAppointmentActionRoutes(
 		});
 	};
 
-	/**
-	 * Адрес намеренно короткий. Он уходит пациенту в SMS, где кириллица даёт
-	 * 70 знаков на сегмент: каждый лишний символ ссылки клиника оплачивает.
-	 * Действие определяется кодом, поэтому в пути его нет.
-	 */
 	app.get("/api/p/:code", async (request, reply) => handle(request, reply));
 }

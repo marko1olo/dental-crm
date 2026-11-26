@@ -1,14 +1,11 @@
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { eq } from "drizzle-orm";
-import { createApiLogger, safeLogError } from "../../../observability/logger.js";
-import { db } from "../../client.js";
 import type { ServiceCatalogRow } from "../../pricelistQuery.js";
+import { type TenantDb, withTenantCtx } from "../../rls.js";
 import * as schema from "../../schema.js";
 import { selectByOrganization } from "../sliceExtractors.js";
 import type { DomainStateHydrationReport } from "../types.js";
 import type { RawHydrationSlices } from "./hydrationPipelineTypes.js";
-
-const logger = createApiLogger("hydrationQueryExecutor");
 
 /**
  * Исполнитель параллельных и ступенчатых запросов срезов БД с поддержкой RLS и демо-сидирования (Layer 2/3).
@@ -16,68 +13,70 @@ const logger = createApiLogger("hydrationQueryExecutor");
 export async function executeHydrationQueries(
 	organizationId: string,
 	report: DomainStateHydrationReport,
+	externalTx?: TenantDb,
 ): Promise<RawHydrationSlices> {
-	let organizationRows = await db
-		.select()
-		.from(schema.organizations)
-		.where(eq(schema.organizations.id, organizationId))
-		.limit(1);
-
-	if (organizationRows.length === 0 && organizationId === DEMO_SHOWCASE_ORG_ID) {
-		const { ensureDemoShowcaseTenant } = await import(
-			"../../../services/demo/deepDemoSeeder.js"
-		);
-		await ensureDemoShowcaseTenant();
-		organizationRows = await db
+	const run = async (tx: TenantDb): Promise<RawHydrationSlices> => {
+		let organizationRows = await tx
 			.select()
 			.from(schema.organizations)
 			.where(eq(schema.organizations.id, organizationId))
 			.limit(1);
-	}
 
-	const clinicRows = await selectByOrganization<
-		typeof schema.clinics.$inferSelect
-	>(schema.clinics, organizationId, "clinics", report);
-	const userRows = await selectByOrganization<typeof schema.users.$inferSelect>(
-		schema.users,
-		organizationId,
-		"users",
-		report,
-	);
-	const chairRows = await selectByOrganization<
-		typeof schema.chairs.$inferSelect
-	>(schema.chairs, organizationId, "chairs", report);
-	const patientRows = await selectByOrganization<
-		typeof schema.patients.$inferSelect
-	>(schema.patients, organizationId, "patients", report);
-	const appointmentRows = await selectByOrganization<
-		typeof schema.appointments.$inferSelect
-	>(schema.appointments, organizationId, "appointments", report);
-	const visitRows = await selectByOrganization<
-		typeof schema.visits.$inferSelect
-	>(schema.visits, organizationId, "visits", report);
-	const treatmentItemRows = await selectByOrganization<
-		typeof schema.treatmentItems.$inferSelect
-	>(schema.treatmentItems, organizationId, "treatmentItems", report);
-	const paymentRows = await selectByOrganization<
-		typeof schema.payments.$inferSelect
-	>(schema.payments, organizationId, "payments", report);
-	const documentRows = await selectByOrganization<
-		typeof schema.generatedDocuments.$inferSelect
-	>(schema.generatedDocuments, organizationId, "documents", report);
-	let taskRows = await selectByOrganization<
-		typeof schema.communicationTasks.$inferSelect
-	>(schema.communicationTasks, organizationId, "communicationTasks", report);
-	let eventRows = await selectByOrganization<
-		typeof schema.communicationEvents.$inferSelect
-	>(schema.communicationEvents, organizationId, "communicationEvents", report);
+		if (organizationRows.length === 0 && organizationId === DEMO_SHOWCASE_ORG_ID) {
+			const { ensureDemoShowcaseTenant } = await import(
+				"../../../services/demo/deepDemoSeeder.js"
+			);
+			await ensureDemoShowcaseTenant();
+			organizationRows = await tx
+				.select()
+				.from(schema.organizations)
+				.where(eq(schema.organizations.id, organizationId))
+				.limit(1);
+		}
 
-	if (
-		organizationId === DEMO_SHOWCASE_ORG_ID &&
-		taskRows.length === 0 &&
-		patientRows.length > 0
-	) {
-		try {
+		const clinicRows = await selectByOrganization<
+			typeof schema.clinics.$inferSelect
+		>(schema.clinics, organizationId, "clinics", report, tx);
+		const userRows = await selectByOrganization<typeof schema.users.$inferSelect>(
+			schema.users,
+			organizationId,
+			"users",
+			report,
+			tx,
+		);
+		const chairRows = await selectByOrganization<
+			typeof schema.chairs.$inferSelect
+		>(schema.chairs, organizationId, "chairs", report, tx);
+		const patientRows = await selectByOrganization<
+			typeof schema.patients.$inferSelect
+		>(schema.patients, organizationId, "patients", report, tx);
+		const appointmentRows = await selectByOrganization<
+			typeof schema.appointments.$inferSelect
+		>(schema.appointments, organizationId, "appointments", report, tx);
+		const visitRows = await selectByOrganization<
+			typeof schema.visits.$inferSelect
+		>(schema.visits, organizationId, "visits", report, tx);
+		const treatmentItemRows = await selectByOrganization<
+			typeof schema.treatmentItems.$inferSelect
+		>(schema.treatmentItems, organizationId, "treatmentItems", report, tx);
+		const paymentRows = await selectByOrganization<
+			typeof schema.payments.$inferSelect
+		>(schema.payments, organizationId, "payments", report, tx);
+		const documentRows = await selectByOrganization<
+			typeof schema.generatedDocuments.$inferSelect
+		>(schema.generatedDocuments, organizationId, "documents", report, tx);
+		let taskRows = await selectByOrganization<
+			typeof schema.communicationTasks.$inferSelect
+		>(schema.communicationTasks, organizationId, "communicationTasks", report, tx);
+		let eventRows = await selectByOrganization<
+			typeof schema.communicationEvents.$inferSelect
+		>(schema.communicationEvents, organizationId, "communicationEvents", report, tx);
+
+		if (
+			organizationId === DEMO_SHOWCASE_ORG_ID &&
+			taskRows.length === 0 &&
+			patientRows.length > 0
+		) {
 			const now = new Date();
 			const dueSoon = new Date(now.getTime() + 90 * 60_000);
 			const dueLater = new Date(now.getTime() + 180 * 60_000);
@@ -88,7 +87,7 @@ export async function executeHydrationQueries(
 			const p2 = patientRows[2] ?? p0;
 			const p3 = patientRows[3] ?? p0;
 
-			await db.insert(schema.communicationTasks).values([
+			await tx.insert(schema.communicationTasks).values([
 				{
 					organizationId,
 					clinicId,
@@ -137,7 +136,7 @@ export async function executeHydrationQueries(
 			]);
 
 			if (eventRows.length === 0) {
-				await db.insert(schema.communicationEvents).values([
+				await tx.insert(schema.communicationEvents).values([
 					{
 						organizationId,
 						clinicId,
@@ -183,39 +182,37 @@ export async function executeHydrationQueries(
 
 			taskRows = await selectByOrganization<
 				typeof schema.communicationTasks.$inferSelect
-			>(schema.communicationTasks, organizationId, "communicationTasks", report);
+			>(schema.communicationTasks, organizationId, "communicationTasks", report, tx);
 			eventRows = await selectByOrganization<
 				typeof schema.communicationEvents.$inferSelect
-			>(schema.communicationEvents, organizationId, "communicationEvents", report);
-		} catch (seedErr) {
-			logger.warn({ err: safeLogError(seedErr), organizationId }, "Demo communications seed skipped");
+			>(schema.communicationEvents, organizationId, "communicationEvents", report, tx);
 		}
-	}
-	const imagingRows = await selectByOrganization<
-		typeof schema.imagingStudies.$inferSelect
-	>(schema.imagingStudies, organizationId, "imagingStudies", report);
-	const serviceRows = await selectByOrganization<ServiceCatalogRow>(
-		schema.serviceCatalogItems,
-		organizationId,
-		"serviceCatalog",
-		report,
-	);
-	const ruleRows = await selectByOrganization<
-		typeof schema.clinicalRules.$inferSelect
-	>(schema.clinicalRules, organizationId, "clinicalRules", report);
-	const protocolRows = await selectByOrganization<
-		typeof schema.protocolTemplates.$inferSelect
-	>(schema.protocolTemplates, organizationId, "protocolTemplates", report);
-	let labOrderRows = await selectByOrganization<
-		typeof schema.labOrders.$inferSelect
-	>(schema.labOrders, organizationId, "labOrders", report);
 
-	if (
-		organizationId === DEMO_SHOWCASE_ORG_ID &&
-		labOrderRows.length === 0 &&
-		patientRows.length > 0
-	) {
-		try {
+		const imagingRows = await selectByOrganization<
+			typeof schema.imagingStudies.$inferSelect
+		>(schema.imagingStudies, organizationId, "imagingStudies", report, tx);
+		const serviceRows = await selectByOrganization<ServiceCatalogRow>(
+			schema.serviceCatalogItems,
+			organizationId,
+			"serviceCatalog",
+			report,
+			tx,
+		);
+		const ruleRows = await selectByOrganization<
+			typeof schema.clinicalRules.$inferSelect
+		>(schema.clinicalRules, organizationId, "clinicalRules", report, tx);
+		const protocolRows = await selectByOrganization<
+			typeof schema.protocolTemplates.$inferSelect
+		>(schema.protocolTemplates, organizationId, "protocolTemplates", report, tx);
+		let labOrderRows = await selectByOrganization<
+			typeof schema.labOrders.$inferSelect
+		>(schema.labOrders, organizationId, "labOrders", report, tx);
+
+		if (
+			organizationId === DEMO_SHOWCASE_ORG_ID &&
+			labOrderRows.length === 0 &&
+			patientRows.length > 0
+		) {
 			const now = new Date();
 			const doc0 = userRows[0];
 			const p0 = patientRows[0];
@@ -224,7 +221,7 @@ export async function executeHydrationQueries(
 			const p2 = patientRows[2] ?? p0;
 			const p3 = patientRows[3] ?? p0;
 
-			await db.insert(schema.labOrders).values([
+			await tx.insert(schema.labOrders).values([
 				{
 					organizationId,
 					patientId: p0.id,
@@ -296,30 +293,30 @@ export async function executeHydrationQueries(
 
 			labOrderRows = await selectByOrganization<
 				typeof schema.labOrders.$inferSelect
-			>(schema.labOrders, organizationId, "labOrders", report);
-		} catch (seedErr) {
-			logger.warn({ err: safeLogError(seedErr), organizationId }, "Demo labOrders seed skipped");
+			>(schema.labOrders, organizationId, "labOrders", report, tx);
 		}
-	}
 
-	return {
-		organization: organizationRows[0],
-		clinic: clinicRows[0],
-		clinicRows,
-		userRows,
-		chairRows,
-		patientRows,
-		appointmentRows,
-		visitRows,
-		treatmentItemRows,
-		paymentRows,
-		documentRows,
-		taskRows,
-		eventRows,
-		imagingRows,
-		serviceRows,
-		ruleRows,
-		protocolRows,
-		labOrderRows,
+		return {
+			organization: organizationRows[0],
+			clinic: clinicRows[0],
+			clinicRows,
+			userRows,
+			chairRows,
+			patientRows,
+			appointmentRows,
+			visitRows,
+			treatmentItemRows,
+			paymentRows,
+			documentRows,
+			taskRows,
+			eventRows,
+			imagingRows,
+			serviceRows,
+			ruleRows,
+			protocolRows,
+			labOrderRows,
+		};
 	};
+
+	return externalTx ? run(externalTx) : withTenantCtx(organizationId, run);
 }

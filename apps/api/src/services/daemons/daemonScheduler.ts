@@ -1,32 +1,32 @@
 /**
  * daemonScheduler.ts — Unified Background Daemon & Audit Job Scheduler.
  *
- * Coordinates scheduled clinical, sanitary, and financial audit routines:
- * 1. 07:30 AM: `somaticRadarDaemon` — Morning Pre-Shift Somatic Risk & DDI Clinical Radar Scan.
- * 2. 08:00 AM: `ztlLookAheadDaemon` — Proactive ZTL (Dental Lab) upcoming appointment audit.
- * 3. 21:00 PM: `emrSaviorDaemon` — EMR Savior 043/у SOAP note drafting for shift closure.
- * 4. 21:30 PM: `sanpinAndInventoryDaemon` — SanPiN 3.3686-21 kraft pack 50-day monitor & high-cost surgical ТМЦ reconciliation.
- * 5. Weekly (Sunday 22:00 PM): `abandonedTreatmentHunterDaemon` — Retention & broken clinical funnels audit.
- * 6. Event-Driven: `smartGapFillerService` — Real-time gap filler when appointment is cancelled.
- *
- * Implements non-intrusive in-process scheduler with exact minute deduplication,
- * multi-tenant execution, and error isolation.
+ * Job definitions and option contracts live in `./daemonJobRegistry.ts`.
  */
 
-import { sql } from "drizzle-orm";
-import type { FastifyBaseLogger } from "fastify";
-import { db } from "../../db/client.js";
+import type pg from "pg";
+import { pool } from "../../db/client.js";
 import { createApiLogger } from "../../observability/index.js";
-
-const defaultDaemonLogger = createApiLogger("daemonScheduler");
 import {
 	runWeeklyRetentionScan,
 	type WeeklyRetentionSummary,
 } from "./abandonedTreatmentHunterDaemon.js";
 import {
+	buildScheduledDaemonJobs,
+	type DaemonJobName,
+	type DaemonSchedulerOptions,
+	type ProactiveAlertsAggregate,
+	type ScheduledDaemonJob,
+} from "./daemonJobRegistry.js";
+import {
 	type EmrSaviorDraftAlert,
 	runEmrSaviorScan,
 } from "./emrSaviorDaemon.js";
+import {
+	type MdlpOutboxDaemonDigest,
+	type MdlpOutboxDaemonOptions,
+	runMdlpOutboxDaemon,
+} from "./mdlpOutboxDaemon.js";
 import {
 	runSanpinAndInventoryAudit,
 	type SanpinAndInventoryAuditDigest,
@@ -43,59 +43,68 @@ import {
 	runZtlLookAheadScan,
 	type ZtlLookAheadAlert,
 } from "./ztlLookAheadDaemon.js";
-import {
+
+export type {
+	DaemonJobName,
+	DaemonSchedulerOptions,
+	ProactiveAlertsAggregate,
+	ScheduledDaemonJob,
+} from "./daemonJobRegistry.js";
+export {
 	runMdlpOutboxDaemon,
 	type MdlpOutboxDaemonDigest,
 	type MdlpOutboxDaemonOptions,
+	type MdlpTransportFn,
+	type MdlpTransportResult,
 } from "./mdlpOutboxDaemon.js";
 
-export type DaemonJobName =
-	| "somatic_radar_0730"
-	| "ztl_lookahead_0800"
-	| "emr_savior_2100"
-	| "sanpin_inventory_2130"
-	| "weekly_retention_sunday";
+const defaultDaemonLogger = createApiLogger("daemonScheduler");
 
-export interface ScheduledDaemonJob {
-	readonly name: DaemonJobName;
-	readonly description: string;
-	readonly scheduledTime: string; // "HH:MM" in 24-hour format
-	readonly daysOfWeek?: number[]; // [0 = Sun, 1 = Mon, ..., 6 = Sat]
-	readonly runner: (options?: {
-		organizationId?: string;
-		now?: Date;
-	}) => Promise<unknown>;
+async function acquireSessionAdvisoryLock(
+	jobName: DaemonJobName,
+): Promise<{ client: pg.PoolClient | null; acquired: boolean }> {
+	let client: pg.PoolClient | null = null;
+	try {
+		client = await pool.connect();
+		const lockResult = await client.query<{ acquired: boolean }>(
+			"SELECT pg_try_advisory_lock(hashtext($1)) AS acquired",
+			[`daemon_${jobName}`],
+		);
+		const acquired = lockResult.rows[0]?.acquired !== false;
+		if (!acquired) {
+			client.release();
+			return { client: null, acquired: false };
+		}
+		return { client, acquired: true };
+	} catch {
+		if (client) {
+			try {
+				client.release();
+			} catch {
+				// Ignore cleanup error on degraded pool
+			}
+		}
+		// Fallback for unit environments without live DB connection
+		return { client: null, acquired: true };
+	}
 }
 
-export interface DaemonSchedulerOptions {
-	organizationId?: string | undefined;
-	pollIntervalMs?: number | undefined;
-	enableSomaticRadar?: boolean | undefined;
-	enableZtlLookAhead?: boolean | undefined;
-	enableEmrSavior?: boolean | undefined;
-	enableSanpinAndInventory?: boolean | undefined;
-	enableWeeklyRetention?: boolean | undefined;
-	enableMdlpOutbox?: boolean | undefined;
-	logger?:
-		| FastifyBaseLogger
-		| {
-				info?: (msg: string) => void;
-				warn?: (msg: string) => void;
-				error?: (msg: string) => void;
-		  }
-		| ((msg: string) => void)
-		| undefined;
-	nowProvider?: (() => Date) | undefined;
-}
-
-export interface ProactiveAlertsAggregate {
-	readonly somaticAlerts: SomaticRadarAlert[];
-	readonly ztlAlerts: ZtlLookAheadAlert[];
-	readonly emrSaviorDrafts: EmrSaviorDraftAlert[];
-	readonly retentionSummaries: WeeklyRetentionSummary[];
-	readonly sanpinAndInventoryDigests: SanpinAndInventoryAuditDigest[];
-	readonly totalAlertsCount: number;
-	readonly scannedAt: string;
+async function releaseSessionAdvisoryLock(
+	client: pg.PoolClient | null,
+	jobName: DaemonJobName,
+): Promise<void> {
+	if (!client) return;
+	try {
+		await client.query("SELECT pg_advisory_unlock(hashtext($1))", [`daemon_${jobName}`]);
+	} catch {
+		// Safe ignore on connection drop (session ends anyway)
+	} finally {
+		try {
+			client.release();
+		} catch {
+			// Safe ignore
+		}
+	}
 }
 
 export class DaemonScheduler {
@@ -106,7 +115,6 @@ export class DaemonScheduler {
 	private options: DaemonSchedulerOptions;
 	private nowProvider: () => Date;
 
-	// In-memory caches for proactive alert aggregation
 	private cachedSomaticAlerts: SomaticRadarAlert[] = [];
 	private cachedZtlAlerts: ZtlLookAheadAlert[] = [];
 	private cachedEmrAlerts: EmrSaviorDraftAlert[] = [];
@@ -119,7 +127,7 @@ export class DaemonScheduler {
 	constructor(options?: DaemonSchedulerOptions) {
 		this.options = {
 			organizationId: options?.organizationId ?? "",
-			pollIntervalMs: options?.pollIntervalMs ?? 30000, // Check every 30 seconds
+			pollIntervalMs: options?.pollIntervalMs ?? 30000,
 			enableSomaticRadar: options?.enableSomaticRadar ?? true,
 			enableZtlLookAhead: options?.enableZtlLookAhead ?? true,
 			enableEmrSavior: options?.enableEmrSavior ?? true,
@@ -131,97 +139,23 @@ export class DaemonScheduler {
 
 		this.nowProvider = options?.nowProvider ?? (() => new Date());
 
-		this.jobs = [
-			{
-				name: "somatic_radar_0730",
-				description:
-					"07:30 AM Morning Pre-Shift Somatic Risk & DDI Clinical Radar Scan",
-				scheduledTime: "07:30",
-				runner: async (opts) => {
-					const scanOpts: {
-						organizationId?: string | undefined;
-						now?: Date | undefined;
-						targetDate?: Date | undefined;
-					} = {};
-					if (opts?.organizationId)
-						scanOpts.organizationId = opts.organizationId;
-					if (opts?.now) {
-						scanOpts.now = opts.now;
-						scanOpts.targetDate = opts.now;
-					}
-					const alerts = await runSomaticRadarScan(scanOpts);
-					this.cachedSomaticAlerts = alerts;
-					return alerts;
-				},
+		this.jobs = buildScheduledDaemonJobs({
+			setSomaticAlerts: (alerts) => {
+				this.cachedSomaticAlerts = alerts;
 			},
-			{
-				name: "ztl_lookahead_0800",
-				description: "08:00 AM Proactive ZTL Dental Lab Orders Look-Ahead Scan",
-				scheduledTime: "08:00",
-				runner: async (opts) => {
-					const args: {
-						organizationId?: string | undefined;
-						now?: Date | undefined;
-					} = {};
-					if (opts?.organizationId) args.organizationId = opts.organizationId;
-					if (opts?.now) args.now = opts.now;
-					const alerts = await runZtlLookAheadScan(args);
-					this.cachedZtlAlerts = alerts;
-					return alerts;
-				},
+			setZtlAlerts: (alerts) => {
+				this.cachedZtlAlerts = alerts;
 			},
-			{
-				name: "emr_savior_2100",
-				description: "21:00 PM EMR Savior 043/у Note Drafter for Shift Closure",
-				scheduledTime: "21:00",
-				runner: async (opts) => {
-					const args: {
-						organizationId?: string | undefined;
-						targetDate?: Date | undefined;
-					} = {};
-					if (opts?.organizationId) args.organizationId = opts.organizationId;
-					if (opts?.now) args.targetDate = opts.now;
-					const alerts = await runEmrSaviorScan(args);
-					this.cachedEmrAlerts = alerts;
-					return alerts;
-				},
+			setEmrAlerts: (alerts) => {
+				this.cachedEmrAlerts = alerts;
 			},
-			{
-				name: "sanpin_inventory_2130",
-				description:
-					"21:30 PM SanPiN 3.3686-21 Kraft Packs & Expensive Materials Inventory Reconciliation",
-				scheduledTime: "21:30",
-				runner: async (opts) => {
-					const args: {
-						organizationId?: string | undefined;
-						now?: Date | undefined;
-					} = {};
-					if (opts?.organizationId) args.organizationId = opts.organizationId;
-					if (opts?.now) args.now = opts.now;
-					const digests = await runSanpinAndInventoryAudit(args);
-					this.cachedSanpinDigests = digests;
-					return digests;
-				},
+			setSanpinDigests: (digests) => {
+				this.cachedSanpinDigests = digests;
 			},
-			{
-				name: "weekly_retention_sunday",
-				description:
-					"Weekly Sunday 22:00 PM Retention & Abandoned Treatment Hunter",
-				scheduledTime: "22:00",
-				daysOfWeek: [0], // Sunday
-				runner: async (opts) => {
-					const args: {
-						organizationId?: string | undefined;
-						now?: Date | undefined;
-					} = {};
-					if (opts?.organizationId) args.organizationId = opts.organizationId;
-					if (opts?.now) args.now = opts.now;
-					const summaries = await runWeeklyRetentionScan(args);
-					this.cachedRetentionSummaries = summaries;
-					return summaries;
-				},
+			setRetentionSummaries: (summaries) => {
+				this.cachedRetentionSummaries = summaries;
 			},
-		];
+		});
 	}
 
 	private log(msg: string): void {
@@ -235,9 +169,6 @@ export class DaemonScheduler {
 		}
 	}
 
-	/**
-	 * Starts the background polling loop.
-	 */
 	public start(startOptions?: { logger?: unknown }): void {
 		if (startOptions?.logger !== undefined) {
 			this.options.logger =
@@ -255,15 +186,11 @@ export class DaemonScheduler {
 		}, pollMs);
 		this.timer.unref();
 
-		// Trigger check immediately on startup
 		this.checkAndRunJobs().catch((err) => {
 			this.log(`Initial check error: ${err?.message || err}`);
 		});
 	}
 
-	/**
-	 * Stops the background loop.
-	 */
 	public stop(): void {
 		if (this.timer) {
 			clearInterval(this.timer);
@@ -301,8 +228,22 @@ export class DaemonScheduler {
 		return this.cachedGapFillerAlerts;
 	}
 
+	private isJobEnabled(name: DaemonJobName): boolean {
+		if (name === "somatic_radar_0730") return this.options.enableSomaticRadar !== false;
+		if (name === "ztl_lookahead_0800") return this.options.enableZtlLookAhead !== false;
+		if (name === "emr_savior_2100") return this.options.enableEmrSavior !== false;
+		if (name === "sanpin_inventory_2130") {
+			return this.options.enableSanpinAndInventory !== false;
+		}
+		if (name === "weekly_retention_sunday") {
+			return this.options.enableWeeklyRetention !== false;
+		}
+		return true;
+	}
+
 	/**
-	 * Evaluates current time against registered jobs and executes matching tasks.
+	 * Evaluates current time against registered jobs and executes matching tasks
+	 * with a dedicated-connection session advisory lock (preventing cross-connection unlock mismatch).
 	 */
 	public async checkAndRunJobs(now?: Date): Promise<DaemonJobName[]> {
 		if (this.isChecking) return [];
@@ -317,94 +258,44 @@ export class DaemonScheduler {
 			const dateKey = `${currentNow.getFullYear()}-${currentNow.getMonth() + 1}-${currentNow.getDate()}_${currentTimeStr}`;
 
 			for (const job of this.jobs) {
-				if (
-					job.name === "somatic_radar_0730" &&
-					this.options.enableSomaticRadar === false
-				)
-					continue;
-				if (
-					job.name === "ztl_lookahead_0800" &&
-					this.options.enableZtlLookAhead === false
-				)
-					continue;
-				if (
-					job.name === "emr_savior_2100" &&
-					this.options.enableEmrSavior === false
-				)
-					continue;
-				if (
-					job.name === "sanpin_inventory_2130" &&
-					this.options.enableSanpinAndInventory === false
-				)
-					continue;
-				if (
-					job.name === "weekly_retention_sunday" &&
-					this.options.enableWeeklyRetention === false
-				)
-					continue;
+				if (!this.isJobEnabled(job.name)) continue;
+				if (job.daysOfWeek && !job.daysOfWeek.includes(currentDayOfWeek)) continue;
+				if (job.scheduledTime !== currentTimeStr) continue;
 
-				if (job.daysOfWeek && !job.daysOfWeek.includes(currentDayOfWeek)) {
+				const lastRun = this.lastExecutedDateHourMinute.get(job.name);
+				if (lastRun === dateKey) continue;
+
+				const lock = await acquireSessionAdvisoryLock(job.name);
+				if (!lock.acquired) {
+					this.log(
+						`Job «${job.name}» skipped: advisory lock held by another cluster instance.`,
+					);
 					continue;
 				}
 
-				if (job.scheduledTime === currentTimeStr) {
-					const lastRun = this.lastExecutedDateHourMinute.get(job.name);
-					if (lastRun === dateKey) {
-						continue;
-					}
+				this.log(
+					`Executing scheduled job «${job.name}» (${job.description})...`,
+				);
+				this.lastExecutedDateHourMinute.set(job.name, dateKey);
 
-					let lockAcquired = true;
-					try {
-						const lockResult = await db.execute<{ acquired: boolean }>(
-							sql`SELECT pg_try_advisory_lock(hashtext(${`daemon_${job.name}`})) AS acquired`,
-						);
-						const row = lockResult.rows?.[0] as
-							| { acquired?: boolean }
-							| undefined;
-						if (row && row.acquired === false) {
-							lockAcquired = false;
-							this.log(
-								`Job «${job.name}» skipped: advisory lock held by another cluster instance.`,
-							);
-							continue;
-						}
-					} catch {
-						// Fallback in environments without live DB connection or mock test runners
+				try {
+					const runOpts: { organizationId?: string; now?: Date } = {
+						now: currentNow,
+					};
+					if (this.options.organizationId) {
+						runOpts.organizationId = this.options.organizationId;
 					}
-
-					this.log(
-						`Executing scheduled job «${job.name}» (${job.description})...`,
-					);
-					this.lastExecutedDateHourMinute.set(job.name, dateKey);
-
-					try {
-						const runOpts: { organizationId?: string; now?: Date } = {
-							now: currentNow,
-						};
-						if (this.options.organizationId) {
-							runOpts.organizationId = this.options.organizationId;
-						}
-						await job.runner(runOpts);
-						executedJobs.push(job.name);
-						this.log(`Successfully completed job «${job.name}».`);
-					} catch (err: unknown) {
-						const errorMsg = err instanceof Error ? err.message : String(err);
-						this.log(`Job «${job.name}» failed: ${errorMsg}`);
-					} finally {
-						if (lockAcquired) {
-							try {
-								await db.execute(
-									sql`SELECT pg_advisory_unlock(hashtext(${`daemon_${job.name}`}))`,
-								);
-							} catch {
-								// Safe ignore
-							}
-						}
-					}
+					await job.runner(runOpts);
+					executedJobs.push(job.name);
+					this.log(`Successfully completed job «${job.name}».`);
+				} catch (err: unknown) {
+					const errorMsg = err instanceof Error ? err.message : String(err);
+					this.log(`Job «${job.name}» failed: ${errorMsg}`);
+				} finally {
+					await releaseSessionAdvisoryLock(lock.client, job.name);
 				}
 			}
 
-			// Continuous background dispatch of MDLP Transactional Outbox (тиков раз в 20-30 сек)
 			if (this.options.enableMdlpOutbox !== false) {
 				try {
 					await runMdlpOutboxDaemon({
@@ -421,8 +312,6 @@ export class DaemonScheduler {
 			this.isChecking = false;
 		}
 	}
-
-	// ─── ROUTE-LEVEL ON-DEMAND TRIGGER METHODS (COPILOT & REST) ─────────────
 
 	public async triggerSomaticRadarScan(options?: {
 		organizationId?: string | undefined;
@@ -455,8 +344,9 @@ export class DaemonScheduler {
 			now?: Date;
 		} = {};
 		if (options?.organizationId) args.organizationId = options.organizationId;
-		if (options?.lookAheadHours !== undefined)
+		if (options?.lookAheadHours !== undefined) {
 			args.lookAheadHours = options.lookAheadHours;
+		}
 		if (options?.now) args.now = options.now;
 		return runZtlLookAheadScan(args);
 	}
@@ -496,8 +386,9 @@ export class DaemonScheduler {
 			maxCandidates?: number | undefined;
 		} = {};
 		if (options?.organizationId) args.organizationId = options.organizationId;
-		if (options?.maxCandidates !== undefined)
+		if (options?.maxCandidates !== undefined) {
 			args.maxCandidates = options.maxCandidates;
+		}
 		return triggerSmartGapFiller(cancelledAppointmentId, args);
 	}
 
@@ -515,16 +406,15 @@ export class DaemonScheduler {
 		} = {};
 		if (options?.organizationId) args.organizationId = options.organizationId;
 		if (options?.now) args.now = options.now;
-		if (options?.lookbackHours !== undefined)
+		if (options?.lookbackHours !== undefined) {
 			args.lookbackHours = options.lookbackHours;
-		if (options?.warningWindowDays !== undefined)
+		}
+		if (options?.warningWindowDays !== undefined) {
 			args.warningWindowDays = options.warningWindowDays;
+		}
 		return runSanpinAndInventoryAudit(args);
 	}
 
-	/**
-	 * Returns unified proactive alerts across all daemons.
-	 */
 	public async getProactiveAlerts(options?: {
 		organizationId?: string;
 		liveScan?: boolean;
@@ -539,21 +429,13 @@ export class DaemonScheduler {
 			retentionSummaries,
 			sanpinAndInventoryDigests,
 		] = await Promise.all([
-			this.triggerSomaticRadarScan(
-				orgId ? { organizationId: orgId, now } : { now },
-			),
+			this.triggerSomaticRadarScan(orgId ? { organizationId: orgId, now } : { now }),
 			this.triggerZtlScan(orgId ? { organizationId: orgId, now } : { now }),
 			this.triggerEmrSaviorScan(
-				orgId
-					? { organizationId: orgId, targetDate: now }
-					: { targetDate: now },
+				orgId ? { organizationId: orgId, targetDate: now } : { targetDate: now },
 			),
-			this.triggerRetentionScan(
-				orgId ? { organizationId: orgId, now } : { now },
-			),
-			this.triggerSanpinAndInventoryAudit(
-				orgId ? { organizationId: orgId, now } : { now },
-			),
+			this.triggerRetentionScan(orgId ? { organizationId: orgId, now } : { now }),
+			this.triggerSanpinAndInventoryAudit(orgId ? { organizationId: orgId, now } : { now }),
 		]);
 
 		let totalCount =
@@ -580,7 +462,8 @@ export class DaemonScheduler {
 		options?: MdlpOutboxDaemonOptions,
 	): Promise<MdlpOutboxDaemonDigest> {
 		const opts: MdlpOutboxDaemonOptions = {};
-		const effectiveOrgId = options?.organizationId ?? (this.options.organizationId || undefined);
+		const effectiveOrgId =
+			options?.organizationId ?? (this.options.organizationId || undefined);
 		if (effectiveOrgId !== undefined) opts.organizationId = effectiveOrgId;
 		if (options?.batchSize !== undefined) opts.batchSize = options.batchSize;
 		if (options?.timeoutMs !== undefined) opts.timeoutMs = options.timeoutMs;
@@ -589,14 +472,6 @@ export class DaemonScheduler {
 		return runMdlpOutboxDaemon(opts);
 	}
 }
-
-export {
-	runMdlpOutboxDaemon,
-	type MdlpOutboxDaemonDigest,
-	type MdlpOutboxDaemonOptions,
-	type MdlpTransportFn,
-	type MdlpTransportResult,
-} from "./mdlpOutboxDaemon.js";
 
 /**
  * Singleton instance of DaemonScheduler for API server runtime.

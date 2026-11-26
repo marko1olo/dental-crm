@@ -1,20 +1,23 @@
 import { and, eq } from "drizzle-orm";
 import { db, type TenantDb } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import type { OpenVisitForAppointmentResult } from "./types.js";
 
 export async function getVisitByIdInDb(organizationId: string, id: string) {
-	const [res] = await db
-		.select()
-		.from(schema.visits)
-		.where(
-			and(
-				eq(schema.visits.organizationId, organizationId),
-				eq(schema.visits.id, id),
-			),
-		)
-		.limit(1);
-	return res || null;
+	return withTenantCtx(organizationId, async (tx) => {
+		const [res] = await tx
+			.select()
+			.from(schema.visits)
+			.where(
+				and(
+					eq(schema.visits.organizationId, organizationId),
+					eq(schema.visits.id, id),
+				),
+			)
+			.limit(1);
+		return res || null;
+	});
 }
 
 /**
@@ -138,5 +141,7 @@ export async function openVisitForAppointmentInDb(
 	if (executor && executor !== db) {
 		return run(executor as Parameters<Parameters<typeof db.transaction>[0]>[0]);
 	}
-	return db.transaction(run);
+	return withTenantCtx(organizationId, (tx) =>
+		run(tx as Parameters<Parameters<typeof db.transaction>[0]>[0]),
+	);
 }
