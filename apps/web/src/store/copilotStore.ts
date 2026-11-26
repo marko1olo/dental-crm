@@ -8,18 +8,60 @@
 import { create } from "zustand";
 import { generateUuidV7 } from "@dental/shared";
 import { logger } from "../utils/logger";
+import { showToast } from "../components/GlobalToast";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson, readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { type ContextTelemetryData, PRODUCTION_TELEMETRY, SHOWCASE_TELEMETRY } from "../components/copilot/telemetry/telemetryTypes";
 import { SHOWCASE_MEMORY_FACTS, SHOWCASE_THREADS, SHOWCASE_TOOL_LOGS } from "./copilotShowcaseData";
 import {
-	appendRemoteMessage, createRemoteSession, deleteRemoteSession, fetchRemoteMessages,
+	createRemoteSession, deleteRemoteSession, fetchRemoteMessages,
 	fetchRemoteSessions, fetchRemoteMemoryFacts, saveRemoteMemoryFacts, fetchRemoteSettings,
 	saveRemoteSettings, generateSessionUuid, isSessionUuid, updateRemoteSession,
 } from "./copilotSessionApi";
 import { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState } from "./copilotStoreDefaults";
 
 export { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState };
+
+export function syncCopilotStreamThread(params: {
+	resolvedServerSessionId: string;
+	activeThreadId: string;
+	patientId?: string | null | undefined;
+	patientName?: string | null | undefined;
+	query: string;
+	timestamp: string;
+	cleanUuid: string | null | undefined;
+}): string {
+	const { resolvedServerSessionId, activeThreadId, patientName, query, timestamp, cleanUuid } = params;
+	if (resolvedServerSessionId && resolvedServerSessionId !== activeThreadId) {
+		useCopilotStore.setState((state) => {
+			const exists = state.threads.some((t) => t.id === resolvedServerSessionId);
+			const nextThreads = exists
+				? state.threads
+				: [
+						{
+							id: resolvedServerSessionId,
+							title: query.slice(0, 60) || "Клинический диалог",
+							updatedAt: timestamp,
+							createdAt: new Date().toISOString(),
+							patientName: patientName || "Пациент",
+							...(cleanUuid ? { patientId: cleanUuid } : {}),
+							messageCount: 0,
+						},
+						...state.threads,
+				  ];
+			return { threads: nextThreads, activeThreadId: resolvedServerSessionId };
+		});
+		return resolvedServerSessionId;
+	}
+	if (!resolvedServerSessionId && !isDemoShowcaseMode()) {
+		return useCopilotStore.getState().createThread(
+			patientName || "Новый пациент",
+			query.slice(0, 60) || "Клинический диалог",
+			cleanUuid ?? undefined,
+		);
+	}
+	return resolvedServerSessionId;
+}
 
 export * from "./copilotStoreTypes";
 import type {
@@ -89,6 +131,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			const next = { ...state.settings, ...patch };
 			safeLocalStorageSetJson("dente_copilot_settings", next);
 			if (!isDemoShowcaseMode()) {
+				const trimmedByokKey = next.byokApiKey?.trim();
 				void saveRemoteSettings({
 					trustLevel: next.trustLevel,
 					speedMode: next.speedMode,
@@ -98,16 +141,27 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 					provider: next.provider,
 					model: next.model,
 					modelRoutingMode: next.modelRoutingMode,
+					...(trimmedByokKey ? { byokApiKey: trimmedByokKey } : {}),
+					...(next.byokModel ? { byokModel: next.byokModel } : {}),
+					...(next.byokBaseUrl ? { byokBaseUrl: next.byokBaseUrl } : {}),
 					diaryTemplate: next.diaryTemplate,
 					clinicalSpecialization: next.clinicalSpecialization,
 					customDoctorInstructions: next.customDoctorInstructions,
 					showThinkingProcess: next.showThinkingProcess,
 					temperature: next.temperature,
+					contextLimitTokens: next.contextLimitTokens,
 					maskPhiData: next.maskPhiData,
 					speechEngine: next.speechEngine,
+					autoSaveDrafts: next.autoSaveDrafts,
 					webSpeechSensitivity: next.webSpeechSensitivity,
 					globalDictationHotkey: next.globalDictationHotkey,
 					autoMicOnAppointmentOpen: next.autoMicOnAppointmentOpen,
+					localDropzonePath: next.localDropzonePath,
+					gloveModeTouchTarget: next.gloveModeTouchTarget,
+					screenWakeLock: next.screenWakeLock,
+					hapticFeedbackEnabled: next.hapticFeedbackEnabled,
+					runtimeMode: next.runtimeMode,
+					...(next.pinnedThreadIds ? { pinnedThreadIds: next.pinnedThreadIds } : {}),
 				});
 			}
 			return { settings: next };
@@ -191,31 +245,61 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	},
 
 	deleteThread: (id) => {
+		let nextPinnedIds: string[] | null = null;
 		set((state) => {
 			const next = state.threads.filter((t) => t.id !== id);
 			safeLocalStorageSetJson("dente_copilot_threads", next);
 			const activeId = state.activeThreadId === id ? (next[0]?.id || "") : state.activeThreadId;
+			const pinnedIds = next.filter((t) => t.pinned).map((t) => t.id);
+			const prevPinned = state.settings.pinnedThreadIds ?? [];
+			if (pinnedIds.length !== prevPinned.length || pinnedIds.some((pid, i) => pid !== prevPinned[i])) {
+				nextPinnedIds = pinnedIds;
+				const nextSettings = { ...state.settings, pinnedThreadIds: pinnedIds };
+				safeLocalStorageSetJson("dente_copilot_settings", nextSettings);
+				return { threads: next, activeThreadId: activeId, settings: nextSettings };
+			}
 			return { threads: next, activeThreadId: activeId };
 		});
-		if (!isDemoShowcaseMode() && isSessionUuid(id)) {
-			void deleteRemoteSession(id);
+		if (!isDemoShowcaseMode()) {
+			if (nextPinnedIds !== null) {
+				void saveRemoteSettings({ pinnedThreadIds: nextPinnedIds });
+			}
+			if (isSessionUuid(id)) {
+				void deleteRemoteSession(id);
+			}
 		}
 	},
 
 	clearThreads: () => {
-		set(() => {
+		const uuidsToDelete = get().threads.map((t) => t.id).filter((id) => isSessionUuid(id));
+		set((state) => {
 			safeLocalStorageSetJson("dente_copilot_threads", []);
 			safeLocalStorageSetJson("dente_copilot_thread_messages", {});
-			return { threads: [], activeThreadId: "", threadMessages: {} };
+			const nextSettings = { ...state.settings, pinnedThreadIds: [] };
+			safeLocalStorageSetJson("dente_copilot_settings", nextSettings);
+			return { threads: [], activeThreadId: "", threadMessages: {}, settings: nextSettings };
 		});
+		if (!isDemoShowcaseMode()) {
+			void saveRemoteSettings({ pinnedThreadIds: [] });
+			for (const id of uuidsToDelete) {
+				void deleteRemoteSession(id);
+			}
+		}
 	},
 
 	togglePinThread: (id) => {
+		let nextPinnedIds: string[] = [];
 		set((state) => {
 			const next = state.threads.map((t) => (t.id === id ? { ...t, pinned: !t.pinned } : t));
 			safeLocalStorageSetJson("dente_copilot_threads", next);
-			return { threads: next };
+			nextPinnedIds = next.filter((t) => t.pinned).map((t) => t.id);
+			const nextSettings = { ...state.settings, pinnedThreadIds: nextPinnedIds };
+			safeLocalStorageSetJson("dente_copilot_settings", nextSettings);
+			return { threads: next, settings: nextSettings };
 		});
+		if (!isDemoShowcaseMode()) {
+			void saveRemoteSettings({ pinnedThreadIds: nextPinnedIds });
+		}
 	},
 
 	renameThread: (id, title) => {
@@ -235,22 +319,28 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 
 	saveThreadMessages: (threadId, messages) => {
 		set((state) => {
-			const next = { ...state.threadMessages, [threadId]: messages };
-			safeLocalStorageSetJson("dente_copilot_thread_messages", next);
-			return { threadMessages: next };
-		});
-		if (!isDemoShowcaseMode() && isSessionUuid(threadId) && Array.isArray(messages) && messages.length > 0) {
-			const last = messages[messages.length - 1];
-			if (!last) return;
-			const content = String(last.text || last.content || "").trim();
-			if (content && last.role) {
-				void appendRemoteMessage(threadId, {
-					role: last.role === "assistant" ? "assistant" : "user",
-					content,
-					toolCalls: last.actionProposal ? [last.actionProposal] : null,
-				});
+			const nextMessages = { ...state.threadMessages, [threadId]: messages };
+			safeLocalStorageSetJson("dente_copilot_thread_messages", nextMessages);
+			const last = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1] : undefined;
+			const lastPreview = last ? String(last.text || last.content || "").trim().slice(0, 120) : "";
+			const hasThread = state.threads.some((t) => t.id === threadId);
+			const nextThreads = hasThread
+				? state.threads.map((t) =>
+						t.id === threadId
+							? {
+									...t,
+									messageCount: messages.length,
+									updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+									...(lastPreview ? { previewText: lastPreview } : {}),
+								}
+							: t,
+					)
+				: state.threads;
+			if (hasThread) {
+				safeLocalStorageSetJson("dente_copilot_threads", nextThreads);
 			}
-		}
+			return { threadMessages: nextMessages, ...(hasThread ? { threads: nextThreads } : {}) };
+		});
 	},
 
 	hydrateSessionsFromBackend: async () => {
@@ -270,10 +360,11 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			if (!remote || remote.length === 0) return;
 			set((state) => {
 				const existingMap = new Map(state.threads.map((t) => [t.id, t]));
+				const pinnedSet = new Set(state.settings.pinnedThreadIds ?? []);
 				const merged: CopilotThread[] = [...remote];
 				for (const r of merged) {
 					const local = existingMap.get(r.id);
-					if (local?.pinned) r.pinned = true;
+					if (pinnedSet.has(r.id) || local?.pinned) r.pinned = true;
 				}
 				for (const local of state.threads) {
 					if (!merged.some((m) => m.id === local.id)) {
@@ -294,7 +385,23 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		try {
 			const remoteSettings = await fetchRemoteSettings();
 			if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length > 0) {
-				set((state) => { const merged = { ...state.settings, ...remoteSettings }; safeLocalStorageSetJson("dente_copilot_settings", merged); return { settings: merged }; });
+				set((state) => {
+					const merged = { ...state.settings, ...remoteSettings };
+					if (!remoteSettings.byokApiKey && state.settings.byokApiKey) {
+						merged.byokApiKey = state.settings.byokApiKey;
+					}
+					safeLocalStorageSetJson("dente_copilot_settings", merged);
+					if (Array.isArray((remoteSettings as { pinnedThreadIds?: unknown }).pinnedThreadIds)) {
+						const pinnedSet = new Set(
+							((remoteSettings as { pinnedThreadIds?: unknown }).pinnedThreadIds as unknown[])
+								.filter((x): x is string => typeof x === "string"),
+						);
+						const syncedThreads = state.threads.map((t) => ({ ...t, pinned: pinnedSet.has(t.id) }));
+						safeLocalStorageSetJson("dente_copilot_threads", syncedThreads);
+						return { settings: merged, threads: syncedThreads };
+					}
+					return { settings: merged };
+				});
 			}
 		} catch (err) { logger.info("[copilotStore] Offline fallback for remote settings:", err); }
 	},
@@ -343,7 +450,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	setActiveDiff: (diff) => set({ activeDiff: diff }),
 	applyActiveDiff: async () => {
 		const diff = get().activeDiff;
-		if (!diff || diff.applied) return;
+		if (!diff) return false;
+		if (diff.applied) return true;
 		const token = readDenteClinicToken() || readDenteStaffToken() || "";
 		const runtime = get().settings.runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 		const isReplace = Boolean(diff.beforeText && !diff.beforeText.startsWith("(") && diff.beforeText.trim().length > 0);
@@ -355,14 +463,41 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			const res = await fetch("/api/agent/action", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", "Idempotency-Key": generateUuidV7(), "x-agent-runtime": runtime, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-				body: JSON.stringify({ toolName, args, sessionId: get().activeThreadId || undefined, runtimeMode: runtime }),
+				body: JSON.stringify({
+					...(diff.callId ? { callId: diff.callId, decision: "confirm" } : {}),
+					toolName,
+					args,
+					confirmed: true,
+					sessionId: get().activeThreadId || undefined,
+					runtimeMode: runtime,
+				}),
 			});
-			const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-			const ok = res.ok && data?.ok !== false; set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: ok } : null }));
-			get().addToolLog({ toolName, category: "workstation", status: ok ? "success" : "rejected", args, resultSummary: ok ? `Применен дифф: ${diff.targetEntity.split(/[/\\]/).pop() || diff.targetEntity}` : `Сбой диффа: ${data?.error || res.statusText}` });
+			const raw = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string; data?: { ok?: boolean; error?: string; message?: string } };
+			const payload = raw?.data ?? raw;
+			const ok = res.ok && raw?.ok !== false && payload?.ok !== false;
+			const errorText = payload?.message || raw?.message || payload?.error || raw?.error || res.statusText || `HTTP ${res.status}`;
+			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: ok } : null }));
+			get().addToolLog({
+				toolName,
+				category: "workstation",
+				status: ok ? "success" : "rejected",
+				args,
+				resultSummary: ok
+					? `Применен дифф: ${diff.targetEntity.split(/[/\\]/).pop() || diff.targetEntity}`
+					: `Сбой диффа: ${errorText}`,
+			});
+			if (ok) {
+				showToast("Изменения файла успешно применены", "success");
+			} else {
+				showToast(`Не удалось применить изменения: ${errorText}`, "error");
+			}
+			return ok;
 		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
 			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: false } : null }));
-			get().addToolLog({ toolName, category: "workstation", status: "rejected", args, resultSummary: `Ошибка сети при диффе: ${err instanceof Error ? err.message : String(err)}` });
+			get().addToolLog({ toolName, category: "workstation", status: "rejected", args, resultSummary: `Ошибка сети при диффе: ${msg}` });
+			showToast(`Ошибка сети при применении изменений: ${msg}`, "error");
+			return false;
 		}
 	},
 	rejectActiveDiff: () => set({ activeDiff: null }),

@@ -62,17 +62,19 @@ export function CopilotSettingsModelRouting({
 
 	return (
 		<section className="space-y-2.5 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]" data-testid="copilot-model-routing-root">
-			<div className="flex items-center justify-between gap-2">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-					<Cpu size={14} className="text-[var(--teal,#0d9488)]" />
+					<Cpu size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Интеллект и маршрутизация модели</span>
 				</label>
-				<div className="flex items-center p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+				<div className="grid grid-cols-2 sm:inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] w-full sm:w-auto shrink-0">
 					<button
 						type="button"
 						onClick={() => setModelRoutingMode("server_managed")}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-							modelRoutingMode === "server_managed" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+						className={`h-8 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+							modelRoutingMode === "server_managed"
+								? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs font-semibold"
+								: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border border-transparent"
 						}`}
 						data-testid="copilot-routing-mode-server-btn"
 					>
@@ -81,8 +83,10 @@ export function CopilotSettingsModelRouting({
 					<button
 						type="button"
 						onClick={() => setModelRoutingMode("custom_byok")}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-							modelRoutingMode === "custom_byok" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+						className={`h-8 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+							modelRoutingMode === "custom_byok"
+								? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs font-semibold"
+								: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border border-transparent"
 						}`}
 						data-testid="copilot-routing-mode-byok-btn"
 					>
@@ -127,6 +131,8 @@ export function CopilotSettingsModelRouting({
 								<option value="anthropic">Anthropic Claude</option>
 								<option value="openai">OpenAI</option>
 								<option value="deepseek">DeepSeek</option>
+								<option value="groq">Groq</option>
+								<option value="custom">Свой OpenAI-совместимый URL</option>
 							</select>
 						</div>
 						<div>

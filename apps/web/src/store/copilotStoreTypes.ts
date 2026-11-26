@@ -6,7 +6,7 @@
 import type { ContextTelemetryData } from "../components/copilot/telemetry/telemetryTypes";
 
 export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
-export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
+export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "custom" | "groq";
 export type AiSpeedMode = "turbo" | "deep_reasoning";
 export type ModelRoutingMode = "server_managed" | "custom_byok";
 export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "perio" | "pediatric";
@@ -50,7 +50,7 @@ export interface CopilotMessage {
 }
 
 export interface ActiveDiff {
-	id: string; title: string; targetEntity: string; beforeText: string; afterText: string; applied?: boolean | undefined;
+	id: string; callId?: string | undefined; title: string; targetEntity: string; beforeText: string; afterText: string; applied?: boolean | undefined;
 }
 
 export type CopilotActiveDiff = ActiveDiff;
@@ -76,15 +76,16 @@ export interface CopilotUnconfirmedDraft {
 export interface CopilotSettings {
 	trustLevel: AiTrustLevel; provider: AiProvider; model: string;
 	modelRoutingMode: ModelRoutingMode; byokProvider: AiProvider; byokApiKey: string;
-	byokModel: string; byokBaseUrl?: string; speedMode: AiSpeedMode;
-	showThinkingProcess: boolean; showTypingAnimation?: boolean;
+	byokModel: string; byokBaseUrl?: string | undefined; speedMode: AiSpeedMode;
+	showThinkingProcess: boolean; showTypingAnimation?: boolean | undefined;
 	clinicalSpecialization: ClinicalSpecialization; diaryTemplate: DiaryTemplate;
 	customDoctorInstructions: string; granularPermissions: GranularAgentPermissions;
-	temperature: number; contextLimitTokens?: number; runtimeMode: CopilotRuntimeEnvironment;
-	speechEngine?: SpeechEngine; autoSaveDrafts: boolean; webSpeechSensitivity: WebSpeechSensitivity;
-	maskPhiData: boolean; apiKeyMasked?: string; globalDictationHotkey: string;
+	temperature: number; contextLimitTokens?: number | undefined; runtimeMode: CopilotRuntimeEnvironment;
+	speechEngine?: SpeechEngine | undefined; autoSaveDrafts: boolean; webSpeechSensitivity: WebSpeechSensitivity;
+	maskPhiData: boolean; apiKeyMasked?: string | undefined; globalDictationHotkey: string;
 	autoMicOnAppointmentOpen: boolean; localDropzonePath: string; gloveModeTouchTarget: boolean;
 	screenWakeLock: boolean; hapticFeedbackEnabled: boolean;
+	pinnedThreadIds?: string[] | undefined;
 }
 
 export interface CopilotStoreState {
@@ -105,7 +106,7 @@ export interface CopilotStoreState {
 	updateMemoryFact: (id: string, fact: string, category?: AiMemoryFact["category"]) => void;
 	removeMemoryFact: (id: string) => void;
 	clearMemory: () => void;
-	createThread: (patientName?: string, title?: string) => string;
+	createThread: (patientName?: string, title?: string, patientId?: string) => string;
 	selectThread: (id: string) => void;
 	deleteThread: (id: string) => void;
 	clearThreads: () => void;
@@ -118,7 +119,7 @@ export interface CopilotStoreState {
 	loadThreadMessages: (threadId: string) => Promise<CopilotMessage[]>;
 	addToolLog: (log: Omit<ToolExecutionLog, "id" | "timestamp">) => void;
 	setActiveDiff: (diff: ActiveDiff | null) => void;
-	applyActiveDiff: () => void;
+	applyActiveDiff: () => Promise<boolean>;
 	rejectActiveDiff: () => void;
 	setSettingsOpen: (open: boolean) => void;
 	setHistoryOpen: (open: boolean) => void;

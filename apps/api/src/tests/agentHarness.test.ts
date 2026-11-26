@@ -30,18 +30,29 @@ import {
 } from "../ai/agentRouterClient.js";
 import { registerAgentRoutes } from "../routes/agentRoutes.js";
 import { authTokenSecret } from "../security/authSecret.js";
-import { CLINIC_TOKEN_HEADER } from "../security/identity.js";
+import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../security/identity.js";
 import { signToken } from "../utils/cryptoHelper.js";
 
 describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 	const testOrgId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+	const testDoctorId = "01945000-0000-7000-8000-000000000099";
 	let validClinicToken: string;
+	let validStaffToken: string;
 
 	beforeEach(() => {
 		validClinicToken = signToken(
 			{
 				organizationId: testOrgId,
 				role: "clinic",
+			},
+			authTokenSecret(),
+			3600,
+		);
+		validStaffToken = signToken(
+			{
+				organizationId: testOrgId,
+				userId: testDoctorId,
+				role: "doctor",
 			},
 			authTokenSecret(),
 			3600,
@@ -491,6 +502,64 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 			},
 		});
 		assert.notEqual(actionRes.statusCode, 400, "patientId: null and visitId: null must be accepted by .nullish()");
+
+		await app.close();
+	});
+
+	it("13. /api/agent/action enforces 403 ConfirmationRequired without confirmed=true and /api/agent/settings validates custom provider + SSRF", async () => {
+		const app = Fastify();
+		await app.register(registerAgentRoutes);
+		await app.ready();
+
+		const unconfirmedActionRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validStaffToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				toolName: "update_tooth_status",
+				args: { patientId: "01945000-0000-7000-8000-000000000001", toothNumber: 16, status: "caries" },
+			},
+		});
+		assert.equal(unconfirmedActionRes.statusCode, 403);
+		assert.equal((unconfirmedActionRes.json() as { error?: string }).error, "ConfirmationRequired");
+
+		const confirmedActionRes = await app.inject({
+			method: "POST",
+			url: "/api/agent/action",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validStaffToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				toolName: "update_tooth_status",
+				args: { patientId: "01945000-0000-7000-8000-000000000001", toothNumber: 16, status: "caries" },
+				confirmed: true,
+			},
+		});
+		assert.notEqual(confirmedActionRes.statusCode, 403, "confirmed=true must pass confirmation gate");
+
+		const ssrfRes = await app.inject({
+			method: "PUT",
+			url: "/api/agent/settings",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: validClinicToken,
+				[STAFF_TOKEN_HEADER]: validStaffToken,
+				"Content-Type": "application/json",
+			},
+			payload: {
+				settings: {
+					byokProvider: "custom",
+					byokBaseUrl: "http://127.0.0.1:8080/v1",
+					pinnedThreadIds: ["01945000-0000-7000-8000-000000000111"],
+				},
+			},
+		});
+		assert.equal(ssrfRes.statusCode, 400, "byokProvider=custom & pinnedThreadIds pass Zod, SSRF URL fails with 400");
 
 		await app.close();
 	});

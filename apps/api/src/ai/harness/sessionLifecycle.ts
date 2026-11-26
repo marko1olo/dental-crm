@@ -327,6 +327,7 @@ export async function runAgentHarness(
 				byokProvider: params.byokProvider,
 				byokApiKey: params.byokApiKey,
 				byokModel: params.byokModel,
+				byokBaseUrl: params.byokBaseUrl,
 			});
 
 			const isStreamingRequested =

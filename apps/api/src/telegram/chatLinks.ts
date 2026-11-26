@@ -215,7 +215,7 @@ export async function revokeDenteTelegramChatLink(
  * сообщения не уйдут никому. Само смешение «филиал = организация» лечится в
  * telegram-пути, а не здесь.
  */
-async function persistableClinicId(
+export async function persistableClinicId(
 	tx: TenantDb | typeof db,
 	organizationId: string,
 	clinicId: string | null,

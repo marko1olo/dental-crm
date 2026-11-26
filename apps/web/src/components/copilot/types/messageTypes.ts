@@ -83,8 +83,13 @@ export interface CopilotActionProposal {
 }
 
 export interface DesktopHostWindow extends Window {
+	denteDesktopNative?: unknown;
 	electron?: unknown;
+	isElectron?: unknown;
 	__TAURI__?: unknown;
+	__TAURI_INTERNALS__?: unknown;
+	denteDesktop?: unknown;
+	denteNative?: unknown;
 }
 
 export function parseActionProposal(val: unknown): CopilotActionProposal | undefined {
@@ -105,7 +110,13 @@ export function parseJsonResponse(raw: unknown): { ok?: boolean | undefined; err
 		const r = raw as Record<string, unknown>;
 		const res: { ok?: boolean | undefined; error?: string | undefined } = {};
 		if (typeof r.ok === "boolean") res.ok = r.ok;
-		if (typeof r.error === "string") res.error = r.error;
+		if (typeof r.error === "string" && typeof r.message === "string" && r.error === "ConfirmationRequired") {
+			res.error = r.message;
+		} else if (typeof r.error === "string") {
+			res.error = r.error;
+		} else if (typeof r.message === "string") {
+			res.error = r.message;
+		}
 		return res;
 	}
 	return {};

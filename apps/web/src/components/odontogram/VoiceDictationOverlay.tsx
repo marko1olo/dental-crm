@@ -2,7 +2,9 @@ import { Check, Mic, MicOff, Sparkles, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { useAudioFeedback } from "../../hooks/useAudioFeedback";
+import type { UnifiedAudioMode } from "../../services/voice/UnifiedAudioClient";
 import { parseDentalVoiceSpeech } from "../../services/voice/dentalGrammarParser";
+import { useCopilotStore } from "../../store/copilotStore";
 import { voiceMeterHeights } from "../workspaceActions/voiceMeter";
 
 export function VoiceDictationOverlay({
@@ -14,6 +16,14 @@ export function VoiceDictationOverlay({
 	onClose: () => void;
 	onDictationSubmit: (text: string) => void;
 }) {
+	const speechEngine = useCopilotStore((state) => state.settings.speechEngine);
+	const preferredAudioMode: UnifiedAudioMode =
+		speechEngine === "whisper"
+			? "server_whisper"
+			: speechEngine === "web_speech"
+				? "browser_speech"
+				: "gemini_live";
+
 	const {
 		isRecording,
 		audioLevel,
@@ -24,6 +34,7 @@ export function VoiceDictationOverlay({
 		clearTranscript,
 		error,
 	} = useUnifiedDictation({
+		preferredMode: preferredAudioMode,
 		context: "visit",
 		specialty: "therapy",
 		autoFallback: true,
@@ -32,19 +43,27 @@ export function VoiceDictationOverlay({
 	const [liveIntentSummary, setLiveIntentSummary] = useState<string | null>(null);
 	const prevParsedCountRef = useRef(0);
 	const { playActionSuccess, playSpeechCaptured } = useAudioFeedback();
+	const preferredAudioModeRef = useRef<UnifiedAudioMode>(preferredAudioMode);
+	preferredAudioModeRef.current = preferredAudioMode;
+	const startDictationRef = useRef(startDictation);
+	startDictationRef.current = startDictation;
+	const stopDictationRef = useRef(stopDictation);
+	stopDictationRef.current = stopDictation;
+	const clearTranscriptRef = useRef(clearTranscript);
+	clearTranscriptRef.current = clearTranscript;
+	const isRecordingRef = useRef(isRecording);
+	isRecordingRef.current = isRecording;
 
 	useEffect(() => {
 		if (isOpen) {
-			clearTranscript();
+			clearTranscriptRef.current();
 			setLiveIntentSummary(null);
 			prevParsedCountRef.current = 0;
-			void startDictation();
-		} else {
-			if (isRecording) {
-				void stopDictation();
-			}
+			void startDictationRef.current(preferredAudioModeRef.current);
+		} else if (isRecordingRef.current) {
+			void stopDictationRef.current();
 		}
-	}, [isOpen, startDictation, stopDictation, clearTranscript]);
+	}, [isOpen]);
 
 	// Live parse intent for preview feedback
 	useEffect(() => {
@@ -72,13 +91,13 @@ export function VoiceDictationOverlay({
 	if (!isOpen) return null;
 
 	const handleStop = async () => {
-		const res = await stopDictation();
-		if (res && res.trim()) {
-			onDictationSubmit(res.trim());
-		}
+		await stopDictation();
 	};
 
-	const handleConfirm = () => {
+	const handleConfirm = async () => {
+		if (isRecording) {
+			await stopDictation();
+		}
 		const finalVal = (fullTranscript + " " + interimText).trim();
 		if (finalVal) {
 			void playActionSuccess();
@@ -137,8 +156,10 @@ export function VoiceDictationOverlay({
 						background: "var(--paper-soft)",
 						border: "1px solid var(--line)",
 						borderRadius: "50%",
-						width: 40,
-						height: 40,
+						minWidth: 44,
+						minHeight: 44,
+						width: 44,
+						height: 44,
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
@@ -355,7 +376,7 @@ export function VoiceDictationOverlay({
 				) : (
 					<button
 						type="button"
-						onClick={() => void startDictation("gemini_live")}
+						onClick={() => void startDictation(preferredAudioMode)}
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",

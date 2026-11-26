@@ -91,6 +91,7 @@ export const agentChatBodySchema = z
 		byokProvider: z.string().optional(),
 		byokApiKey: z.string().optional(),
 		byokModel: z.string().optional(),
+		byokBaseUrl: z.string().max(500).optional(),
 		temperature: z.number().min(0).max(2).optional(),
 		contextLimitTokens: z.number().int().positive().optional(),
 		showTypingAnimation: z.boolean().optional(),
@@ -180,6 +181,15 @@ async function loadAgentChatContextFromDb(params: {
 	defaultDoctorSpecialization: string | undefined;
 	defaultSpeedMode: "turbo" | "deep_reasoning" | undefined;
 	defaultMaskPhiData: boolean | undefined;
+	defaultModelRoutingMode: "server_managed" | "custom_byok" | undefined;
+	defaultByokProvider: string | undefined;
+	defaultByokApiKey: string | undefined;
+	defaultByokModel: string | undefined;
+	defaultByokBaseUrl: string | undefined;
+	defaultTemperature: number | undefined;
+	defaultContextLimitTokens: number | undefined;
+	defaultShowTypingAnimation: boolean | undefined;
+	defaultRuntimeMode: AgentRuntimeMode | undefined;
 }> {
 	const result: {
 		mergedMessages: AgentRouterChatMessage[];
@@ -191,6 +201,15 @@ async function loadAgentChatContextFromDb(params: {
 		defaultDoctorSpecialization: string | undefined;
 		defaultSpeedMode: "turbo" | "deep_reasoning" | undefined;
 		defaultMaskPhiData: boolean | undefined;
+		defaultModelRoutingMode: "server_managed" | "custom_byok" | undefined;
+		defaultByokProvider: string | undefined;
+		defaultByokApiKey: string | undefined;
+		defaultByokModel: string | undefined;
+		defaultByokBaseUrl: string | undefined;
+		defaultTemperature: number | undefined;
+		defaultContextLimitTokens: number | undefined;
+		defaultShowTypingAnimation: boolean | undefined;
+		defaultRuntimeMode: AgentRuntimeMode | undefined;
 	} = {
 		mergedMessages: params.incomingMessages,
 		initialSummary: undefined,
@@ -201,6 +220,15 @@ async function loadAgentChatContextFromDb(params: {
 		defaultDoctorSpecialization: undefined,
 		defaultSpeedMode: undefined,
 		defaultMaskPhiData: undefined,
+		defaultModelRoutingMode: undefined,
+		defaultByokProvider: undefined,
+		defaultByokApiKey: undefined,
+		defaultByokModel: undefined,
+		defaultByokBaseUrl: undefined,
+		defaultTemperature: undefined,
+		defaultContextLimitTokens: undefined,
+		defaultShowTypingAnimation: undefined,
+		defaultRuntimeMode: undefined,
 	};
 
 	try {
@@ -241,6 +269,45 @@ async function loadAgentChatContextFromDb(params: {
 				}
 				if (typeof copilotSettings.maskPhiData === "boolean") {
 					result.defaultMaskPhiData = copilotSettings.maskPhiData;
+				}
+				if (copilotSettings.modelRoutingMode === "server_managed" || copilotSettings.modelRoutingMode === "custom_byok") {
+					result.defaultModelRoutingMode = copilotSettings.modelRoutingMode;
+				}
+				if (typeof copilotSettings.byokProvider === "string" && copilotSettings.byokProvider.trim()) {
+					result.defaultByokProvider = copilotSettings.byokProvider.trim();
+				}
+				if (typeof copilotSettings.byokApiKey === "string" && copilotSettings.byokApiKey.trim()) {
+					result.defaultByokApiKey = copilotSettings.byokApiKey.trim();
+				}
+				if (typeof copilotSettings.byokModel === "string" && copilotSettings.byokModel.trim()) {
+					result.defaultByokModel = copilotSettings.byokModel.trim();
+				}
+				if (typeof copilotSettings.byokBaseUrl === "string" && copilotSettings.byokBaseUrl.trim()) {
+					result.defaultByokBaseUrl = copilotSettings.byokBaseUrl.trim();
+				}
+				if (
+					typeof copilotSettings.temperature === "number" &&
+					Number.isFinite(copilotSettings.temperature) &&
+					copilotSettings.temperature >= 0 &&
+					copilotSettings.temperature <= 2
+				) {
+					result.defaultTemperature = copilotSettings.temperature;
+				}
+				if (
+					typeof copilotSettings.contextLimitTokens === "number" &&
+					Number.isInteger(copilotSettings.contextLimitTokens) &&
+					copilotSettings.contextLimitTokens > 0
+				) {
+					result.defaultContextLimitTokens = copilotSettings.contextLimitTokens;
+				}
+				if (typeof copilotSettings.showTypingAnimation === "boolean") {
+					result.defaultShowTypingAnimation = copilotSettings.showTypingAnimation;
+				}
+				if (
+					copilotSettings.runtimeMode === "web_browser" ||
+					copilotSettings.runtimeMode === "desktop_native"
+				) {
+					result.defaultRuntimeMode = copilotSettings.runtimeMode;
 				}
 			}
 
@@ -339,7 +406,6 @@ export async function handleAgentChat(
 	}
 
 	const body = parseResult.data;
-	const runtimeMode = resolveRuntimeMode(request, body.runtimeMode);
 	const identity = getRequestIdentity(request);
 	const doctorId = identity.userId || undefined;
 	const rawSessionId = body.sessionId || body.conversationId;
@@ -352,6 +418,7 @@ export async function handleAgentChat(
 		incomingMessages: body.messages as AgentRouterChatMessage[],
 		logger: request.log,
 	});
+	const runtimeMode = resolveRuntimeMode(request, body.runtimeMode ?? hydratedContext.defaultRuntimeMode);
 
 	const firstUserContent = body.messages.find((m) => m.role === "user")?.content;
 	const initialSessionSummary =
@@ -380,6 +447,16 @@ export async function handleAgentChat(
 	const effectiveSpeedMode = body.speedMode ?? hydratedContext.defaultSpeedMode;
 	const effectiveMaskPhiData = body.maskPhiData ?? hydratedContext.defaultMaskPhiData;
 	const effectiveInitialSummary = body.initialSummary ?? hydratedContext.initialSummary;
+	const effectiveModelRoutingMode = body.modelRoutingMode ?? hydratedContext.defaultModelRoutingMode;
+	const effectiveByokProvider = body.byokProvider ?? hydratedContext.defaultByokProvider;
+	const effectiveByokApiKey =
+		(body.byokApiKey && body.byokApiKey.trim().length > 0 ? body.byokApiKey.trim() : undefined) ??
+		hydratedContext.defaultByokApiKey;
+	const effectiveByokModel = body.byokModel ?? hydratedContext.defaultByokModel;
+	const effectiveByokBaseUrl = body.byokBaseUrl ?? hydratedContext.defaultByokBaseUrl;
+	const effectiveTemperature = body.temperature ?? hydratedContext.defaultTemperature;
+	const effectiveContextLimitTokens = body.contextLimitTokens ?? hydratedContext.defaultContextLimitTokens;
+	const effectiveShowTypingAnimation = body.showTypingAnimation ?? hydratedContext.defaultShowTypingAnimation;
 
 	const isSseRequested =
 		body.stream === true ||
@@ -427,14 +504,15 @@ export async function handleAgentChat(
 				activeTooth: body.activeTooth,
 				swarmRole: body.swarmRole,
 				fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
-				modelRoutingMode: body.modelRoutingMode,
-				byokProvider: body.byokProvider,
-				byokApiKey: body.byokApiKey,
-				byokModel: body.byokModel,
+				modelRoutingMode: effectiveModelRoutingMode,
+				byokProvider: effectiveByokProvider,
+				byokApiKey: effectiveByokApiKey,
+				byokModel: effectiveByokModel,
+				byokBaseUrl: effectiveByokBaseUrl,
 				sessionId: effectiveSessionId,
-				temperature: body.temperature,
-				contextLimitTokens: body.contextLimitTokens,
-				showTypingAnimation: body.showTypingAnimation,
+				temperature: effectiveTemperature,
+				contextLimitTokens: effectiveContextLimitTokens,
+				showTypingAnimation: effectiveShowTypingAnimation,
 				signal: abortController.signal,
 				onEvent: (event: AgentHarnessEvent) => {
 					if (!reply.raw.writableEnded) {
@@ -539,14 +617,15 @@ export async function handleAgentChat(
 			activeTooth: body.activeTooth,
 			swarmRole: body.swarmRole,
 			fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
-			modelRoutingMode: body.modelRoutingMode,
-			byokProvider: body.byokProvider,
-			byokApiKey: body.byokApiKey,
-			byokModel: body.byokModel,
+			modelRoutingMode: effectiveModelRoutingMode,
+			byokProvider: effectiveByokProvider,
+			byokApiKey: effectiveByokApiKey,
+			byokModel: effectiveByokModel,
+			byokBaseUrl: effectiveByokBaseUrl,
 			sessionId: effectiveSessionId,
-			temperature: body.temperature,
-			contextLimitTokens: body.contextLimitTokens,
-			showTypingAnimation: body.showTypingAnimation,
+			temperature: effectiveTemperature,
+			contextLimitTokens: effectiveContextLimitTokens,
+			showTypingAnimation: effectiveShowTypingAnimation,
 			signal: abortController.signal,
 			onEvent: (event: AgentHarnessEvent) => {
 				if (event.type === "confirmation_required") {

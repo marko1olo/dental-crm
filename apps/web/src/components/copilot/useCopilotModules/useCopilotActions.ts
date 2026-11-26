@@ -57,7 +57,14 @@ export interface ExecuteCopilotConfirmationOptions {
 	runtimeMode?: string | undefined;
 }
 
-export async function executeCopilotConfirmation({
+export interface CopilotConfirmationResult {
+	ok: boolean;
+	status?: number | undefined;
+	error?: string | undefined;
+	result?: unknown | undefined;
+}
+
+export async function executeCopilotConfirmationWithResult({
 	callId,
 	decision,
 	actionName,
@@ -68,7 +75,7 @@ export async function executeCopilotConfirmation({
 	sessionId,
 	patientId,
 	runtimeMode = "web_browser",
-}: ExecuteCopilotConfirmationOptions): Promise<boolean> {
+}: ExecuteCopilotConfirmationOptions): Promise<CopilotConfirmationResult> {
 	const finalArgs = {
 		...actionArgs,
 		...(modifiedArgs || {}),
@@ -76,7 +83,6 @@ export async function executeCopilotConfirmation({
 	const baseUrl = apiBaseUrl.replace(/\/$/, "");
 	const token = readDenteClinicToken() || readDenteStaffToken() || "";
 
-	let apiOk = false;
 	try {
 		const res = await fetch(`${baseUrl}/api/agent/confirm`, {
 			method: "POST",
@@ -98,9 +104,10 @@ export async function executeCopilotConfirmation({
 				runtimeMode,
 			}),
 		});
-		apiOk = res.ok;
-		if (res.ok) {
-			const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+		const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+		const payload = (typeof json.data === "object" && json.data !== null ? json.data : json) as Record<string, unknown>;
+		const ok = res.ok && json.ok !== false && payload.ok !== false;
+		if (ok) {
 			// Reactive cache invalidation via canonical denteQueryClient (Мандат 8d/8zq)
 			void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
 			void denteQueryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -114,6 +121,7 @@ export async function executeCopilotConfirmation({
 			void denteQueryClient.invalidateQueries({ queryKey: ["invoices"] });
 			void denteQueryClient.invalidateQueries({ queryKey: ["warehouse"] });
 
+			const resultPayload = payload.result ?? json.result ?? payload;
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
 					new CustomEvent("dente:agent-action-confirmed", {
@@ -121,17 +129,32 @@ export async function executeCopilotConfirmation({
 							callId,
 							actionName,
 							decision,
-							result: json.result ?? json.data ?? json,
+							result: resultPayload,
 						},
 					}),
 				);
 			}
+			return { ok: true, status: res.status, result: resultPayload };
 		}
+		const errText =
+			(typeof json.message === "string" && json.message) ||
+			(typeof json.error === "string" && json.error) ||
+			(typeof payload.error === "string" && payload.error) ||
+			res.statusText ||
+			`HTTP ${res.status}`;
+		return { ok: false, status: res.status, error: errText };
 	} catch (apiErr) {
-		clientLogger.warn("[executeCopilotConfirmation] Fastify confirm fallback:", apiErr);
+		const message = apiErr instanceof Error ? apiErr.message : "Ошибка сети при подтверждении действия";
+		clientLogger.warn("[executeCopilotConfirmation] Fastify confirm failed:", apiErr);
+		return { ok: false, error: message };
 	}
+}
 
-	return apiOk;
+export async function executeCopilotConfirmation(
+	options: ExecuteCopilotConfirmationOptions,
+): Promise<boolean> {
+	const result = await executeCopilotConfirmationWithResult(options);
+	return result.ok;
 }
 
 export function useCopilotActions({
@@ -260,7 +283,7 @@ export function useCopilotActions({
 			};
 
 			try {
-				const ok = await executeCopilotConfirmation({
+				const res = await executeCopilotConfirmationWithResult({
 					callId,
 					decision,
 					actionName,
@@ -271,9 +294,9 @@ export function useCopilotActions({
 					sessionId: sessId,
 					patientId: (targetMsg?.args?.patientId as string) || undefined,
 				});
-				if (!ok) {
+				if (!res.ok) {
 					revertConfirmationUi();
-					showToast("Не удалось подтвердить действие на сервере", "error");
+					showToast(res.error || "Не удалось подтвердить действие на сервере", "error");
 				}
 			} catch (e) {
 				clientLogger.error("Error confirming copilot action:", e);
@@ -359,6 +382,7 @@ export function useCopilotActions({
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						Authorization: token ? `Bearer ${token}` : "",
 					},
 					body: JSON.stringify({ id }),
@@ -384,6 +408,7 @@ export function useCopilotActions({
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						Authorization: token ? `Bearer ${token}` : "",
 					},
 					body: JSON.stringify({ approvalId, modifiedReply, sendNow: true }),
@@ -425,6 +450,7 @@ export function useCopilotActions({
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						Authorization: token ? `Bearer ${token}` : "",
 					},
 					body: JSON.stringify({ approvalId, reason }),
@@ -461,6 +487,7 @@ export function useCopilotActions({
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						Authorization: token ? `Bearer ${token}` : "",
 					},
 					body: JSON.stringify({ alertId }),

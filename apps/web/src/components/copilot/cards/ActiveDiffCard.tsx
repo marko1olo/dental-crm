@@ -21,10 +21,9 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 	onReject,
 	disabled = false,
 }) => {
-	const [isApplied, setIsApplied] = useState(Boolean(diff.applied));
+	const isApplied = Boolean(diff.applied);
 
 	const handleApply = () => {
-		setIsApplied(true);
 		onApply?.();
 	};
 

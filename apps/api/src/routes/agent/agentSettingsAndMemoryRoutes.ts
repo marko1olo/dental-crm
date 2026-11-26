@@ -13,6 +13,7 @@ import {
 } from "../../security/tenantContext.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	maskApiKey,
 	validateSsrfSafeAiBaseUrl,
 	validateUniversalApiKeyLive,
 } from "../../ai/agentRouterClient.js";
@@ -20,6 +21,19 @@ import {
 	getDoctorPreferencesFromDb,
 	saveDoctorPreferencesInDb,
 } from "../../db/doctorPreferencesQuery.js";
+
+function sanitizeCopilotSettingsForClient(
+	rawSettings: unknown,
+): Record<string, unknown> | null {
+	if (!rawSettings || typeof rawSettings !== "object") return null;
+	const source = rawSettings as Record<string, unknown>;
+	const { byokApiKey, ...rest } = source;
+	const result: Record<string, unknown> = { ...rest };
+	if (typeof byokApiKey === "string" && byokApiKey.trim().length > 0) {
+		result.apiKeyMasked = maskApiKey(byokApiKey.trim());
+	}
+	return result;
+}
 
 const memoryFactItemSchema = z.union([
 	z.string(),
@@ -46,10 +60,10 @@ const granularPermissionsPatchSchema = z
 const copilotSettingsPatchSchema = z
 	.object({
 		trustLevel: z.enum(["confirm_all", "balanced", "autonomous"]).optional(),
-		provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "groq"]).optional(),
+		provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom", "groq"]).optional(),
 		model: z.string().max(200).optional(),
 		modelRoutingMode: z.enum(["server_managed", "custom_byok"]).optional(),
-		byokProvider: z.enum(["gemini", "openai", "anthropic", "deepseek", "groq"]).optional(),
+		byokProvider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom", "groq"]).optional(),
 		byokApiKey: z.string().max(500).optional(),
 		byokModel: z.string().max(200).optional(),
 		byokBaseUrl: z.string().max(500).optional(),
@@ -74,6 +88,7 @@ const copilotSettingsPatchSchema = z
 		gloveModeTouchTarget: z.boolean().optional(),
 		screenWakeLock: z.boolean().optional(),
 		hapticFeedbackEnabled: z.boolean().optional(),
+		pinnedThreadIds: z.array(z.string().max(128)).max(200).optional(),
 	})
 	.strict();
 
@@ -252,9 +267,7 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				),
 			);
 			const prefs = (record?.preferences || {}) as Record<string, unknown>;
-			const settings = (prefs.copilotSettings && typeof prefs.copilotSettings === "object")
-				? prefs.copilotSettings
-				: null;
+			const settings = sanitizeCopilotSettingsForClient(prefs.copilotSettings);
 
 			return reply.code(200).send({
 				ok: true,
@@ -291,6 +304,18 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				});
 			}
 
+			const { byokApiKey: incomingByokApiKey, apiKeyMasked: _ignoredMasked, ...incomingRest } =
+				parseResult.data.settings;
+			if (typeof incomingRest.byokBaseUrl === "string" && incomingRest.byokBaseUrl.trim().length > 0) {
+				const ssrfCheck = await validateSsrfSafeAiBaseUrl(incomingRest.byokBaseUrl.trim());
+				if (!ssrfCheck.valid) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: ssrfCheck.error ?? "Недопустимый URL провайдера ИИ",
+					});
+				}
+			}
+
 			const identity = getRequestIdentity(request);
 			const saved = await withTenantCtx(context.organizationId, async (tx) => {
 				const current = await getDoctorPreferencesFromDb(
@@ -302,12 +327,23 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				const currentSettings = (existingPrefs.copilotSettings && typeof existingPrefs.copilotSettings === "object")
 					? (existingPrefs.copilotSettings as Record<string, unknown>)
 					: {};
+				const nextCopilotSettings: Record<string, unknown> = {
+					...currentSettings,
+					...incomingRest,
+				};
+				if (typeof incomingByokApiKey === "string") {
+					const trimmedKey = incomingByokApiKey.trim();
+					if (trimmedKey.length > 0) {
+						nextCopilotSettings.byokApiKey = trimmedKey;
+						nextCopilotSettings.apiKeyMasked = maskApiKey(trimmedKey);
+					} else {
+						delete nextCopilotSettings.byokApiKey;
+						delete nextCopilotSettings.apiKeyMasked;
+					}
+				}
 				const nextPrefs = {
 					...existingPrefs,
-					copilotSettings: {
-						...currentSettings,
-						...parseResult.data.settings,
-					},
+					copilotSettings: nextCopilotSettings,
 				};
 
 				return saveDoctorPreferencesInDb(
@@ -319,9 +355,10 @@ export async function registerAgentSettingsAndMemoryRoutes(
 				);
 			});
 
+			const savedPrefs = (saved.preferences || {}) as Record<string, unknown>;
 			return reply.code(200).send({
 				ok: true,
-				settings: (saved.preferences as Record<string, unknown>).copilotSettings,
+				settings: sanitizeCopilotSettingsForClient(savedPrefs.copilotSettings),
 			});
 		},
 	);

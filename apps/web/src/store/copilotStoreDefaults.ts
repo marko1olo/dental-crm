@@ -35,6 +35,7 @@ export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
 	const w = window as unknown as Record<string, unknown>;
 	const ua = (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent.toLowerCase() : "";
 	if (
+		Boolean(w.denteDesktopNative) ||
 		Boolean(w.isElectron) ||
 		Boolean(w.__TAURI__) ||
 		Boolean(w.__TAURI_INTERNALS__) ||
@@ -93,6 +94,7 @@ export const DEFAULT_SETTINGS: CopilotSettings = {
 	gloveModeTouchTarget: true,
 	screenWakeLock: true,
 	hapticFeedbackEnabled: true,
+	pinnedThreadIds: [],
 };
 
 /**

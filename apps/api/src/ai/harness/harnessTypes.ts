@@ -135,6 +135,7 @@ export interface AgentHarnessParams {
 	byokProvider?: string | undefined;
 	byokApiKey?: string | undefined;
 	byokModel?: string | undefined;
+	byokBaseUrl?: string | undefined;
 	sessionId?: string | undefined;
 	temperature?: number | undefined;
 	contextLimitTokens?: number | undefined;

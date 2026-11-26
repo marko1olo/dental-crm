@@ -41,7 +41,7 @@ export function Omnibar() {
 		stopDictation,
 	} = useUnifiedDictation({
 		context: "general",
-		onResult: (text) => {
+		onFullTranscript: (text) => {
 			if (text && text.trim()) {
 				setQuery(text.trim());
 				setSelectedIndex(0);
@@ -103,8 +103,9 @@ export function Omnibar() {
 					signal: abortController.signal,
 				});
 				if (res.ok) {
-					const data = await res.json();
-					const items = Array.isArray(data) ? data : (data.patients || data.items || []);
+					const json = await res.json();
+					const payload = json?.data ?? json;
+					const items = Array.isArray(payload) ? payload : (payload?.patients || payload?.items || []);
 					setRemotePatients(items);
 				}
 			} catch (err) {
@@ -541,7 +542,7 @@ export function Omnibar() {
 												return (
 													<React.Fragment key={cmd.id}>
 														{showCategory && (
-															<div className="px-3 pt-3 pb-1 text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+															<div className="px-3 pt-3 pb-1 text-xs font-semibold text-[var(--muted)] tracking-wider">
 																{cmd.category}
 															</div>
 														)}
