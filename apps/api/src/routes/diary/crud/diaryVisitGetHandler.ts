@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, resolveOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { users, visitDiaries, visits } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
@@ -43,7 +43,7 @@ export async function handleDiaryVisitGet(req: FastifyRequest, reply: FastifyRep
 		});
 	}
 
-	const { visitRow, diary } = await withTenantCtx(orgId, async (tx) => {
+	const { visitRow, diary } = await withTenantReadCtx(orgId, async (tx) => {
 		const [loadedVisit] = await tx
 			.select()
 			.from(visits)
@@ -99,7 +99,7 @@ export async function handleDiaryVisitGet(req: FastifyRequest, reply: FastifyRep
 	let doctorFullName: string | null = null;
 	let doctorSpecialty: string | null = null;
 	if (typeof signingUserId === "string" && signingUserId.length > 0) {
-		const [docUser] = await withTenantCtx(orgId, (tx) =>
+		const [docUser] = await withTenantReadCtx(orgId, (tx) =>
 			tx
 				.select({ fullName: users.fullName, specialties: users.specialties })
 				.from(users)

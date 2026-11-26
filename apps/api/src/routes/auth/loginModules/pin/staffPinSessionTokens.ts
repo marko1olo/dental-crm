@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { withTenantCtx } from "../../../../db/rls.js";
 import { auditEvents, users } from "../../../../db/schema.js";
+import { invalidateStaffSessionCache } from "../../../../security/identity.js";
 import {
 	DEMO_ADMIN_ID,
 	DEMO_DOCTOR_1_ID,
@@ -58,6 +59,7 @@ export async function issueStaffSessionToken(params: {
 				.set({ currentSessionId: sessionId })
 				.where(and(eq(users.id, user.id), eq(users.organizationId, orgId)));
 		});
+		invalidateStaffSessionCache(user.id, orgId);
 	} catch (sessErr) {
 		request.log.warn({ sessErr }, "[STAFF_SESSION_UPDATE_WARN]");
 	}

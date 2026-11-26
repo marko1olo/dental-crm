@@ -1,8 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { labOrders } from "../../db/schema.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import {
+	getRequestIdentity,
+	verifyActiveStaffSession,
+} from "../../security/identity.js";
 import {
 	getLabScanDownloadPresignedUrl,
 	isS3DirectUploadConfigured,
@@ -24,6 +27,16 @@ export async function handleLabScanDownloadUrl(
 			message: "Требуется авторизация сотрудника клиники.",
 		});
 	}
+	if (identity.userId) {
+		const sessionValid = await verifyActiveStaffSession(
+			request,
+			reply,
+			orgId,
+			identity.userId,
+			identity.sessionId,
+		);
+		if (!sessionValid) return;
+	}
 
 	const query = request.query;
 	const storageKey = query?.storageKey;
@@ -34,7 +47,7 @@ export async function handleLabScanDownloadUrl(
 		});
 	}
 
-	const order = await withTenantCtx(orgId, async (tx) => {
+	const order = await withTenantReadCtx(orgId, async (tx) => {
 		const [found] = await tx
 			.select({ id: labOrders.id })
 			.from(labOrders)

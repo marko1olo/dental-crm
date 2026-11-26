@@ -15,6 +15,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
+import { invalidateStaffSessionCache } from "../../security/identity.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import type { ExtendedHrProfileStorage } from "./types.js";
 
@@ -614,7 +615,7 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 
 			await tx
 				.update(schema.users)
-				.set({ isActive: false })
+				.set({ isActive: false, currentSessionId: null })
 				.where(
 					and(
 						eq(schema.users.id, params.staffId),
@@ -639,6 +640,8 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				message: "Сотрудник не найден в этой клинике.",
 			};
 		}
+
+		invalidateStaffSessionCache(params.staffId, auth.orgId);
 
 		const { user } = result;
 		return {
@@ -717,6 +720,8 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 				reason: `Принудительное завершение активной сессии сотрудника (IP: ${request.ip})`,
 			}, tx);
 		});
+
+		invalidateStaffSessionCache(params.staffId, auth.orgId);
 
 		return {
 			ok: true,

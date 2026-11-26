@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
+import { withSavepoint } from "../../../db/rls.js";
 import { doctorCommissions } from "../../../db/schema.js";
 import { TreatmentConsumablesService } from "../../treatmentConsumables/index.js";
 import type { DiaryDbTransaction } from "./signatureTypeVerifier.js";
@@ -59,24 +60,29 @@ export async function dispatchDiarySigningSideEffects(
 	// 1. Списание расходников по техкартам и закрытие выполненных услуг
 	if (visitId) {
 		try {
-			const deductionResult = await TreatmentConsumablesService.deductForVisit(tx, {
-				organizationId,
-				visitId,
-				userId,
-				transactionType: "auto_deduct",
-			});
-			completedTreatmentItems = deductionResult.completedTreatmentItems;
-			for (const d of deductionResult.deductions) {
-				deductions.push({
-					inventoryItemId: d.inventoryItemId,
-					inventoryItemName: d.inventoryItemName,
-					quantityChanged: String(d.quantityChanged),
-					unitCostRub: d.unitCostRub != null ? String(d.unitCostRub) : null,
-					isOverdraft: Boolean(deductionResult.isOverdraft || (d.remainingStock != null && d.remainingStock < 0)),
+			await withSavepoint(tx, async (spTx) => {
+				const deductionResult = await TreatmentConsumablesService.deductForVisit(spTx, {
+					organizationId,
+					visitId,
+					userId,
+					transactionType: "auto_deduct",
 				});
-			}
+				completedTreatmentItems = deductionResult.completedTreatmentItems;
+				for (const d of deductionResult.deductions) {
+					deductions.push({
+						inventoryItemId: d.inventoryItemId,
+						inventoryItemName: d.inventoryItemName,
+						quantityChanged: String(d.quantityChanged),
+						unitCostRub: d.unitCostRub != null ? String(d.unitCostRub) : null,
+						isOverdraft: Boolean(
+							deductionResult.isOverdraft ||
+								(d.remainingStock != null && d.remainingStock < 0),
+						),
+					});
+				}
+			});
 		} catch (error) {
-			// Тихий бэк-офис: логируем через инжектированный логгер, не прерываем подписание дневника врачом
+			// Savepoint откачен безопасно (без отравления PG TX 25P02); дневник не прерывается (Мандаты 8e, 8v, 8aa)
 			log.warn("[DiarySigningSideEffects] Списание материалов пропущено:", error);
 		}
 	}
@@ -84,29 +90,31 @@ export async function dispatchDiarySigningSideEffects(
 	// 2. Ставка врача в doctor_commissions (если ещё не заведена)
 	if (userId) {
 		try {
-			const [existingCommission] = await tx
-				.select()
-				.from(doctorCommissions)
-				.where(
-					and(
-						eq(doctorCommissions.userId, userId),
-						eq(doctorCommissions.organizationId, organizationId),
-					),
-				)
-				.limit(1);
+			await withSavepoint(tx, async (spTx) => {
+				const [existingCommission] = await spTx
+					.select()
+					.from(doctorCommissions)
+					.where(
+						and(
+							eq(doctorCommissions.userId, userId),
+							eq(doctorCommissions.organizationId, organizationId),
+						),
+					)
+					.limit(1);
 
-			if (!existingCommission) {
-				await tx.insert(doctorCommissions).values({
-					organizationId,
-					userId,
-					specialty: "universal",
-					serviceCategory: "therapy",
-					commissionPct: "30.00",
-					commissionPercent: "30.00",
-					materialCostDeductionPct: "100.00",
-					isActive: true,
-				});
-			}
+				if (!existingCommission) {
+					await spTx.insert(doctorCommissions).values({
+						organizationId,
+						userId,
+						specialty: "universal",
+						serviceCategory: "therapy",
+						commissionPct: "30.00",
+						commissionPercent: "30.00",
+						materialCostDeductionPct: "100.00",
+						isActive: true,
+					});
+				}
+			});
 		} catch (error) {
 			log.warn("[DiarySigningSideEffects] Начисление комиссии пропущено:", error);
 		}

@@ -5,7 +5,7 @@ import { pipeline } from "node:stream/promises";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import { attachments, visitDiaries, visits } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
@@ -43,7 +43,7 @@ export const getVisitAttachmentsHandler = async (
 		 * visitId давал files:[] как «снимков нет». Врач не отличал пустой
 		 * приём от чужого UUID / опечатки. Пациентский GET уже 404.
 		 */
-		const [visitRow] = await withTenantCtx(orgId, (tx) =>
+		const [visitRow] = await withTenantReadCtx(orgId, (tx) =>
 			tx
 				.select({ id: visits.id, patientId: visits.patientId })
 				.from(visits)
@@ -80,7 +80,7 @@ export const getVisitAttachmentsHandler = async (
 			});
 		}
 
-		const visitAttachments = await withTenantCtx(orgId, (tx) =>
+		const visitAttachments = await withTenantReadCtx(orgId, (tx) =>
 			tx
 				.select()
 				.from(attachments)

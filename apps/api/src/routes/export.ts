@@ -13,18 +13,26 @@ import { Readable } from "node:stream";
 import { rublesToKopecks } from "@dental/shared";
 import { asc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { withTenantCtx } from "../db/rls.js";
+import { z } from "zod";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { getPatientsFromDb } from "../db/patientsQuery.js";
 import { handleExportPricelist } from "./pricelist/handlersExportAndReprice.js";
 import { crmLeads } from "../db/schema.js";
-import { getRequestIdentity } from "../security/identity.js";
+import {
+	fetchRoleMatrixOverrides,
+	permissionRefusalMessage,
+	roleHasPermissionWithOverrides,
+} from "../security/permissionsModules/index.js";
 import {
 	sanitizeClinicalString,
 	stripDiagnosisPayload,
 } from "../security/medicalSecrecyWarden.js";
 
 const EXPORT_BATCH_SIZE = 500;
+
+const exportFormatQuerySchema = z.object({
+	format: z.string().optional(),
+});
 
 function escapeCsvField(value: unknown): string {
 	if (value === null || value === undefined) return "";
@@ -48,29 +56,52 @@ export async function registerExportRoutes(app: FastifyInstance) {
 	 * GET /api/export/patients
 	 * Экспорт картотеки пациентов (потоковый CSV батчами по 500 строк).
 	 */
-	app.get<{ Querystring: { format?: string } }>(
-		"/api/export/patients",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
-			const orgId = await requireResolvedOrganizationId(request, reply, "export patients");
-			if (!orgId) return;
-
-			const identity = getRequestIdentity(request);
-			const staffRole = identity.role ?? request.user?.role ?? null;
-
-			// Маркетологам экспорт базы пациентов категорически запрещен
-			if (staffRole === "marketer" || staffRole === "marketing") {
-				return reply.code(403).send({
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/export/patients",
+		querySchema: exportFormatQuerySchema,
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		permission: {
+			customCheck: async (principal, _request, reply) => {
+				if (principal.role === "marketer" || principal.role === "marketing") {
+					reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.export",
+						role: principal.role,
+						message:
+							"Экспорт базы пациентов маркетологам категорически запрещен (152-ФЗ / 323-ФЗ ст. 13).",
+					});
+					return false;
+				}
+				if (
+					principal.authMode === "admin_secret" ||
+					principal.authMode === "clinic_token"
+				) {
+					return true;
+				}
+				const overrides = await fetchRoleMatrixOverrides(principal.organizationId);
+				if (roleHasPermissionWithOverrides(principal.role, "patients.read", overrides)) {
+					return true;
+				}
+				reply.code(403).send({
 					error: "PermissionDenied",
-					permission: "patients.export",
-					role: staffRole,
-					message:
-						"Экспорт базы пациентов маркетологам категорически запрещен (152-ФЗ / 323-ФЗ ст. 13).",
+					permission: "patients.read",
+					role: principal.role,
+					message: permissionRefusalMessage(principal.role, "patients.read"),
 				});
+				return false;
+			},
+		},
+		handler: async ({ organizationId, query, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized", message: "Контекст клиники не определён." });
 			}
-
+			const orgId = organizationId;
 			try {
-				const format = (request.query?.format || "json").toLowerCase();
+				const format = (query?.format || "json").toLowerCase();
 				if (format === "csv") {
 					reply.header("Content-Type", "text/csv; charset=utf-8");
 					reply.header(
@@ -85,10 +116,16 @@ export async function registerExportRoutes(app: FastifyInstance) {
 							let isFirstRow = true;
 
 							while (true) {
-								const batch = await getPatientsFromDb(orgId, {
-									limit: EXPORT_BATCH_SIZE,
-									offset,
-								});
+								const batch = await runReadTx((tx) =>
+									getPatientsFromDb(
+										orgId,
+										{
+											limit: EXPORT_BATCH_SIZE,
+											offset,
+										},
+										tx,
+									),
+								);
 								if (batch.length === 0) break;
 
 								const sanitizedPatients = stripDiagnosisPayload(batch, {
@@ -124,7 +161,9 @@ export async function registerExportRoutes(app: FastifyInstance) {
 					return reply.send(csvStream);
 				}
 
-				const dbPatients = await getPatientsFromDb(orgId);
+				const dbPatients = await runReadTx((tx) =>
+					getPatientsFromDb(orgId, {}, tx),
+				);
 				const sanitizedPatients = stripDiagnosisPayload(dbPatients, { strict: true });
 
 				return reply.code(200).send({
@@ -148,21 +187,53 @@ export async function registerExportRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * GET /api/export/leads
 	 * Экспорт CRM-лидов (потоковый CSV батчами по 500 строк).
 	 */
-	app.get<{ Querystring: { format?: string } }>(
-		"/api/export/leads",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request, reply) => {
-			const orgId = await requireResolvedOrganizationId(request, reply, "export leads");
-			if (!orgId) return;
-
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/export/leads",
+		querySchema: exportFormatQuerySchema,
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		permission: {
+			customCheck: async (principal, _request, reply) => {
+				if (
+					principal.role === "marketer" ||
+					principal.role === "marketing" ||
+					principal.authMode === "admin_secret" ||
+					principal.authMode === "clinic_token"
+				) {
+					return true;
+				}
+				const overrides = await fetchRoleMatrixOverrides(principal.organizationId);
+				if (
+					roleHasPermissionWithOverrides(principal.role, "communications.read", overrides) ||
+					roleHasPermissionWithOverrides(principal.role, "patients.read", overrides)
+				) {
+					return true;
+				}
+				reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "communications.read",
+					role: principal.role,
+					message: permissionRefusalMessage(principal.role, "communications.read"),
+				});
+				return false;
+			},
+		},
+		handler: async ({ organizationId, query, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized", message: "Контекст клиники не определён." });
+			}
+			const orgId = organizationId;
 			try {
-				const format = (request.query?.format || "json").toLowerCase();
+				const format = (query?.format || "json").toLowerCase();
 
 				if (format === "csv") {
 					reply.header("Content-Type", "text/csv; charset=utf-8");
@@ -178,7 +249,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 							let isFirstRow = true;
 
 							while (true) {
-								const batch = await withTenantCtx(orgId, (tx) =>
+								const batch = await runReadTx((tx) =>
 									tx
 										.select()
 										.from(crmLeads)
@@ -219,7 +290,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 					return reply.send(csvStream);
 				}
 
-				const leads = await withTenantCtx(orgId, (tx) =>
+				const leads = await runReadTx((tx) =>
 					tx
 						.select()
 						.from(crmLeads)
@@ -247,7 +318,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * GET /api/export/pricelist

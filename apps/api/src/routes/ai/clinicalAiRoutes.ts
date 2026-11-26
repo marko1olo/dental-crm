@@ -12,16 +12,8 @@ import {
 	visitNoteDraftSchema,
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import {
-	requireClinicalMutationAccess,
-	requireClinicalMutationContext,
-	requireClinicalReadAccess,
-	requireClinicalReadContext,
-	requireResolvedOrganizationId,
-	resolveOrganizationId,
-} from "../../accessGuard.js";
 import {
 	agentRouterClient,
 } from "../../ai/agentRouterClient.js";
@@ -37,8 +29,9 @@ import { personalizeTreatmentPlan } from "../../ai/treatmentPlanPersonalize.js";
 import { validateAndCommentTreatmentPlan } from "../../ai/treatmentPlanValidatorAndCommenter.js";
 import { buildVisitDraftFromTranscript } from "../../ai/visitDraft.js";
 import { runVisitFlow } from "../../ai/visitFlowOrchestrator.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import type { TenantDb } from "../../db/client.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { withTenantCtx } from "../../db/rls.js";
 import { clinics, imagingAnnotations } from "../../db/schema.js";
 
 const parseDictationSchema = z
@@ -84,14 +77,12 @@ function sendVisitNoteDraftScopeError(
 }
 
 async function resolveClinicTimeZone(
-	request: FastifyRequest,
-	explicitOrganizationId?: string | null,
+	runReadTx: <T>(fn: (tx: TenantDb) => Promise<T>) => Promise<T>,
+	organizationId: string,
+	logError: (obj: Record<string, unknown>, msg: string) => void,
 ): Promise<string | null> {
-	const organizationId =
-		explicitOrganizationId ?? (await resolveOrganizationId(request));
-	if (!organizationId) return null;
 	try {
-		return await withTenantCtx(organizationId, async (tx) => {
+		return await runReadTx(async (tx) => {
 			const [clinic] = await tx
 				.select({ timezone: clinics.timezone })
 				.from(clinics)
@@ -100,7 +91,7 @@ async function resolveClinicTimeZone(
 			return clinic?.timezone ?? null;
 		});
 	} catch (err: unknown) {
-		request.log.warn({ err }, "[Dente] resolveClinicTimeZone failed");
+		logError({ err }, "[Dente] resolveClinicTimeZone failed");
 		return null;
 	}
 }
@@ -139,206 +130,164 @@ async function parseDictationWithLlmFallback(
 export async function registerClinicalAiRoutes(
 	app: FastifyInstance,
 ): Promise<void> {
-	app.post("/api/ai/parse-dictation", async (request, reply) => {
-		const orgCtx = await requireClinicalMutationContext(
-			request,
-			reply,
-			"parse dictation with AI",
-		);
-		if (!orgCtx) {
-			return;
-		}
-
-		const parsedInput = parseDictationSchema.safeParse(request.body);
-		if (!parsedInput.success) {
-			return reply.code(400).send({
-				error: "ParseDictationValidationError",
-				message: "Неверный формат для AI-разбора.",
-			});
-		}
-
-		try {
-			const { text, type, volumeContext } = parsedInput.data;
-
-			let result: DictationParseResult | SmartAction | null = parseDictationLocally(text, type);
-			if (!result) {
-				result = await parseDictationWithLlmFallback(
-					text,
-					type,
-					await resolveClinicTimeZone(request, orgCtx.organizationId),
-				);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/ai/parse-dictation",
+		permission: "clinical.write",
+		authOptions: { allowAdminSecretBypass: true },
+		bodySchema: parseDictationSchema,
+		validationErrorCode: "ParseDictationValidationError",
+		validationErrorMessage: "Неверный формат для AI-разбора.",
+		handler: async ({ organizationId, body, runReadTx, runWriteTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized", message: "Контекст клиники не определён." });
 			}
-
-			const candidateResult = result as {
-				toothUpdates?: Array<{ code: string; state: string }>;
-				emkUpdates?: { complaint?: string };
-			} | null;
-
-			if (
-				volumeContext &&
-				candidateResult?.toothUpdates &&
-				candidateResult.toothUpdates.length > 0 &&
-				orgCtx.organizationId === volumeContext.organizationId
-			) {
-				const valuesToInsert = candidateResult.toothUpdates.map((update) => ({
-					organizationId: orgCtx.organizationId,
-					patientId: volumeContext.patientId,
-					studyId: volumeContext.studyId,
-					annotationType: "tooth" as const,
-					toothCode: update.code,
-					coordinates: volumeContext.coordinates || null,
-					notes: candidateResult.emkUpdates?.complaint || update.state,
-				}));
-				await withTenantCtx(orgCtx.organizationId, (tx) =>
-					tx.insert(imagingAnnotations).values(valuesToInsert),
-				);
-			}
-
-			return reply.send(result);
-		} catch (err: unknown) {
-			request.log.error(err);
-			const errMessage =
-				err instanceof Error ? err.message : "Неизвестная ошибка";
-			return reply.code(500).send({
-				error: "ParseDictationError",
-				message: errMessage || "Ошибка разбора диктовки",
-			});
-		}
-	});
-
-	app.post("/api/ai/visit-note-draft", async (request, reply) => {
-		try {
-			if (
-				!(await requireClinicalReadAccess(
-					request,
-					reply,
-					"ai visit note draft",
-				))
-			) {
-				return;
-			}
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"ai visit note draft",
-			);
-			if (!orgId) return;
-			const parsedInput = visitNoteDraftRequestSchema.safeParse(request.body);
-			if (!parsedInput.success) {
-				return reply.code(400).send({
-					error: "VisitNoteDraftValidationError",
-					message: visitNoteDraftValidationMessage,
-				});
-			}
-			const input = parsedInput.data;
-			const patient = await getPatientByIdFromDb(orgId, input.patientId);
-			if (!patient) {
-				return sendVisitNoteDraftScopeError(
-					reply,
-					404,
-					aiRecognitionPatientMissingMessage,
-				);
-			}
-
-			return visitNoteDraftSchema.parse(
-				await buildVisitDraftFromTranscript(input.transcript, input.specialty),
-			);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при генерации черновика дневника приёма.",
-			});
-		}
-	});
-
-	app.post("/api/ai/visit-flow", async (request, reply) => {
-		try {
-			if (
-				!(await requireClinicalMutationAccess(
-					request,
-					reply,
-					"ai visit flow",
-				))
-			) {
-				return;
-			}
-			const orgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"ai visit flow",
-			);
-			if (!orgId) return;
-			const parsedInput = visitFlowRequestSchema.safeParse(request.body);
-			if (!parsedInput.success) {
-				return reply.code(400).send({
-					error: "VisitFlowValidationError",
-					message: "Некорректные параметры для AI-оркестрации визита.",
-				});
-			}
-
-			const result = await runVisitFlow(parsedInput.data);
-			return reply.send(result);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при выполнении клинического AI-сценария.",
-			});
-		}
-	});
-
-	app.post("/api/ai/treatment-plan-personalize", async (request, reply) => {
-		try {
-			const orgCtx = await requireClinicalReadContext(
-				request,
-				reply,
-				"personalize treatment plan",
-			);
-			if (!orgCtx) {
-				return;
-			}
-			const parsedInput = treatmentPlanPayloadSchema.safeParse(request.body);
-			if (!parsedInput.success) {
-				return reply.code(400).send({
-					error: "TreatmentPlanValidationError",
-					message: "Некорректный план лечения для ИИ-персонализации.",
-				});
-			}
-			const result = await personalizeTreatmentPlan(parsedInput.data);
-			return reply.send(result);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при персонализации плана лечения.",
-			});
-		}
-	});
-
-	app.post(
-		"/api/ai/treatment-plan-validate-and-comment",
-		async (request, reply) => {
+			const orgId = organizationId;
 			try {
-				const orgCtx = await requireClinicalReadContext(
-					request,
-					reply,
-					"validate and comment treatment plan",
+				const { text, type, volumeContext } = body;
+
+				let result: DictationParseResult | SmartAction | null = parseDictationLocally(text, type);
+				if (!result) {
+					const timeZone = await resolveClinicTimeZone(
+						runReadTx,
+						orgId,
+						(obj, msg) => request.log.warn(obj, msg),
+					);
+					result = await parseDictationWithLlmFallback(text, type, timeZone);
+				}
+
+				const candidateResult = result as {
+					toothUpdates?: Array<{ code: string; state: string }>;
+					emkUpdates?: { complaint?: string };
+				} | null;
+
+				if (
+					volumeContext &&
+					candidateResult?.toothUpdates &&
+					candidateResult.toothUpdates.length > 0 &&
+					orgId === volumeContext.organizationId
+				) {
+					const valuesToInsert = candidateResult.toothUpdates.map((update) => ({
+						organizationId: orgId,
+						patientId: volumeContext.patientId,
+						studyId: volumeContext.studyId,
+						annotationType: "tooth" as const,
+						toothCode: update.code,
+						coordinates: volumeContext.coordinates || null,
+						notes: candidateResult.emkUpdates?.complaint || update.state,
+					}));
+					await runWriteTx((tx) =>
+						tx.insert(imagingAnnotations).values(valuesToInsert),
+					);
+				}
+
+				return reply.send(result);
+			} catch (err: unknown) {
+				request.log.error(err);
+				const errMessage =
+					err instanceof Error ? err.message : "Неизвестная ошибка";
+				return reply.code(500).send({
+					error: "ParseDictationError",
+					message: errMessage || "Ошибка разбора диктовки",
+				});
+			}
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/ai/visit-note-draft",
+		permission: "clinical.read",
+		authOptions: { allowAdminSecretBypass: true },
+		bodySchema: visitNoteDraftRequestSchema,
+		validationErrorCode: "VisitNoteDraftValidationError",
+		validationErrorMessage: visitNoteDraftValidationMessage,
+		handler: async ({ organizationId, body, runReadTx, request, reply }) => {
+			if (!organizationId) {
+				return reply.code(401).send({ error: "Unauthorized", message: "Контекст клиники не определён." });
+			}
+			const orgId = organizationId;
+			try {
+				const patient = await runReadTx((tx) =>
+					getPatientByIdFromDb(orgId, body.patientId, tx),
 				);
-				if (!orgCtx) {
-					return;
+				if (!patient) {
+					return sendVisitNoteDraftScopeError(
+						reply,
+						404,
+						aiRecognitionPatientMissingMessage,
+					);
 				}
-				const parsedInput =
-					treatmentPlanValidateAndCommentRequestSchema.safeParse(request.body);
-				if (!parsedInput.success) {
-					return reply.code(400).send({
-						error: "TreatmentPlanValidationError",
-						message:
-							"Некорректный формат плана лечения для клинической валидации и ИИ-комментария.",
-						details: parsedInput.error.format(),
-					});
-				}
-				const result = await validateAndCommentTreatmentPlan(parsedInput.data);
+
+				return visitNoteDraftSchema.parse(
+					await buildVisitDraftFromTranscript(body.transcript, body.specialty),
+				);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при генерации черновика дневника приёма.",
+				});
+			}
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/ai/visit-flow",
+		permission: "clinical.write",
+		authOptions: { allowAdminSecretBypass: true },
+		bodySchema: visitFlowRequestSchema,
+		validationErrorCode: "VisitFlowValidationError",
+		validationErrorMessage: "Некорректные параметры для AI-оркестрации визита.",
+		handler: async ({ body, request, reply }) => {
+			try {
+				const result = await runVisitFlow(body);
+				return reply.send(result);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при выполнении клинического AI-сценария.",
+				});
+			}
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/ai/treatment-plan-personalize",
+		permission: "clinical.read",
+		authOptions: { allowAdminSecretBypass: true },
+		bodySchema: treatmentPlanPayloadSchema,
+		validationErrorCode: "TreatmentPlanValidationError",
+		validationErrorMessage: "Некорректный план лечения для ИИ-персонализации.",
+		handler: async ({ body, request, reply }) => {
+			try {
+				const result = await personalizeTreatmentPlan(body);
+				return reply.send(result);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при персонализации плана лечения.",
+				});
+			}
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/ai/treatment-plan-validate-and-comment",
+		permission: "clinical.read",
+		authOptions: { allowAdminSecretBypass: true },
+		bodySchema: treatmentPlanValidateAndCommentRequestSchema,
+		validationErrorCode: "TreatmentPlanValidationError",
+		validationErrorMessage:
+			"Некорректный формат плана лечения для клинической валидации и ИИ-комментария.",
+		handler: async ({ body, request, reply }) => {
+			try {
+				const result = await validateAndCommentTreatmentPlan(body);
 				return reply.send(result);
 			} catch (error: unknown) {
 				request.log.error(error);
@@ -348,33 +297,27 @@ export async function registerClinicalAiRoutes(
 				});
 			}
 		},
-	);
+	});
 
-	app.post("/api/ai/post-visit-personalize", async (request, reply) => {
-		try {
-			const orgCtx = await requireClinicalReadContext(
-				request,
-				reply,
-				"personalize post visit recommendations",
-			);
-			if (!orgCtx) {
-				return;
-			}
-			const parsedInput = postVisitPersonalizeSchema.safeParse(request.body);
-			if (!parsedInput.success) {
-				return reply.code(400).send({
-					error: "PostVisitPersonalizeValidationError",
-					message: "Некорректные параметры для ИИ-рекомендаций после приема.",
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/ai/post-visit-personalize",
+		permission: "clinical.read",
+		authOptions: { allowAdminSecretBypass: true },
+		bodySchema: postVisitPersonalizeSchema,
+		validationErrorCode: "PostVisitPersonalizeValidationError",
+		validationErrorMessage: "Некорректные параметры для ИИ-рекомендаций после приема.",
+		handler: async ({ body, request, reply }) => {
+			try {
+				const result = await personalizePostVisitRecommendations(body);
+				return reply.send(result);
+			} catch (error: unknown) {
+				request.log.error(error);
+				return reply.status(500).send({
+					error: "InternalServerError",
+					message: "Ошибка при персонализации рекомендаций после приёма.",
 				});
 			}
-			const result = await personalizePostVisitRecommendations(parsedInput.data);
-			return reply.send(result);
-		} catch (error: unknown) {
-			request.log.error(error);
-			return reply.status(500).send({
-				error: "InternalServerError",
-				message: "Ошибка при персонализации рекомендаций после приёма.",
-			});
-		}
+		},
 	});
 }

@@ -6,6 +6,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import { authTokenSecret, clinicalAdminSecret } from "./authSecret.js";
@@ -259,10 +260,127 @@ function hasTrustedBypassForSessionCheck(request: FastifyRequest): boolean {
 	);
 }
 
+interface CachedStaffSessionState {
+	found: boolean;
+	currentSessionId: string | null;
+	isActive: boolean;
+}
+
+const STAFF_SESSION_CACHE_TTL_MS = 30_000;
+const STAFF_SESSION_CACHE_MAX_ENTRIES = 5_000;
+
+const staffSessionCache = new BoundedTtlMap<string, CachedStaffSessionState>({
+	maxEntries: STAFF_SESSION_CACHE_MAX_ENTRIES,
+	ttlMs: STAFF_SESSION_CACHE_TTL_MS,
+});
+
+function staffSessionCacheKey(organizationId: string | null, userId: string): string {
+	return `${organizationId ?? "__global__"}:${userId}`;
+}
+
 /**
- * Проверяет актуальность сессии сотрудника в БД.
- * Отклоняет не только несовпадающий sessionId, но и старые токены без sessionId,
- * если в БД у пользователя уже зафиксирована активная сессия (currentSessionId !== null).
+ * Немедленно сбрасывает 30s TTL-кэш активной сессии при логине, логауте,
+ * принудительном отзыве, деактивации сотрудника или смене пароля/PIN.
+ */
+export function invalidateStaffSessionCache(
+	userId?: string | null,
+	organizationId?: string | null,
+): void {
+	if (!userId && !organizationId) {
+		staffSessionCache.clear();
+		return;
+	}
+	if (userId) {
+		const suffix = `:${userId}`;
+		for (const key of Array.from(staffSessionCache.keys())) {
+			if (key.endsWith(suffix)) {
+				staffSessionCache.delete(key);
+			}
+		}
+		return;
+	}
+	if (organizationId) {
+		const prefix = `${organizationId}:`;
+		for (const key of Array.from(staffSessionCache.keys())) {
+			if (key.startsWith(prefix)) {
+				staffSessionCache.delete(key);
+			}
+		}
+	}
+}
+
+export function getStaffSessionCacheStatsForTest(): { size: number } {
+	return { size: staffSessionCache.size };
+}
+
+async function fetchStaffSessionState(
+	organizationId: string | null,
+	userId: string,
+	hasValidUuidOrg: boolean,
+): Promise<CachedStaffSessionState> {
+	const cacheKey = staffSessionCacheKey(
+		organizationId && hasValidUuidOrg ? organizationId : null,
+		userId,
+	);
+	const cached = staffSessionCache.get(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
+	const { withSuperuserBypass, withTenantReadCtx } = await import("../db/rls.js");
+	const { users } = await import("../db/schema.js");
+	const { eq, and } = await import("drizzle-orm");
+	const [user] =
+		organizationId && hasValidUuidOrg
+			? await withTenantReadCtx(organizationId, async (tx) =>
+					tx
+						.select({
+							currentSessionId: users.currentSessionId,
+							isActive: users.isActive,
+						})
+						.from(users)
+						.where(
+							and(
+								eq(users.id, userId),
+								eq(users.organizationId, organizationId),
+							),
+						)
+						.limit(1),
+				)
+			: await withSuperuserBypass(async (tx) =>
+					tx
+						.select({
+							currentSessionId: users.currentSessionId,
+							isActive: users.isActive,
+						})
+						.from(users)
+						.where(eq(users.id, userId))
+						.limit(1),
+				);
+
+	const state: CachedStaffSessionState = {
+		found: Boolean(user),
+		currentSessionId: user?.currentSessionId ?? null,
+		isActive: user?.isActive ?? true,
+	};
+	staffSessionCache.set(cacheKey, state);
+	return state;
+}
+
+function sendInvalidSession(reply: FastifyReply): false {
+	reply.code(401).send({
+		error: "invalid_session",
+		message:
+			"Выполнен вход с другого устройства. Текущая сессия завершена.",
+	});
+	return false;
+}
+
+/**
+ * Проверяет актуальность сессии сотрудника в БД (с 30s TTL-кэшем BoundedTtlMap
+ * и немедленной инвалидацией при logout/отзыве).
+ * Отклоняет не только несовпадающий sessionId и неактивных сотрудников, но и старые токены
+ * без sessionId, если в БД у пользователя уже зафиксирована активная сессия (currentSessionId !== null).
  */
 export async function verifyActiveStaffSession(
 	request: FastifyRequest,
@@ -278,44 +396,15 @@ export async function verifyActiveStaffSession(
 
 	if (sessionId) {
 		if (!hasValidUuidUser || (organizationId && !hasValidUuidOrg)) {
-			reply.code(401).send({
-				error: "invalid_session",
-				message:
-					"Выполнен вход с другого устройства. Текущая сессия завершена.",
-			});
-			return false;
+			return sendInvalidSession(reply);
 		}
-		const { withSuperuserBypass, withTenantCtx } = await import("../db/rls.js");
-		const { users } = await import("../db/schema.js");
-		const { eq, and } = await import("drizzle-orm");
-		const [user] = organizationId
-			? await withTenantCtx(organizationId, async (tx) =>
-					tx
-						.select({ currentSessionId: users.currentSessionId })
-						.from(users)
-						.where(
-							and(
-								eq(users.id, userId),
-								eq(users.organizationId, organizationId),
-							),
-						)
-						.limit(1),
-				)
-			: await withSuperuserBypass(async (tx) =>
-					tx
-						.select({ currentSessionId: users.currentSessionId })
-						.from(users)
-						.where(eq(users.id, userId))
-						.limit(1),
-				);
-
-		if (!user?.currentSessionId || user.currentSessionId !== sessionId) {
-			reply.code(401).send({
-				error: "invalid_session",
-				message:
-					"Выполнен вход с другого устройства. Текущая сессия завершена.",
-			});
-			return false;
+		const state = await fetchStaffSessionState(
+			organizationId,
+			userId,
+			hasValidUuidOrg,
+		);
+		if (!state.found || !state.isActive || !state.currentSessionId || state.currentSessionId !== sessionId) {
+			return sendInvalidSession(reply);
 		}
 		return true;
 	}
@@ -324,38 +413,13 @@ export async function verifyActiveStaffSession(
 		return true;
 	}
 
-	const { withSuperuserBypass, withTenantCtx } = await import("../db/rls.js");
-	const { users } = await import("../db/schema.js");
-	const { eq, and } = await import("drizzle-orm");
-	const [user] =
-		organizationId && hasValidUuidOrg
-			? await withTenantCtx(organizationId, async (tx) =>
-					tx
-						.select({ currentSessionId: users.currentSessionId })
-						.from(users)
-						.where(
-							and(
-								eq(users.id, userId),
-								eq(users.organizationId, organizationId),
-							),
-						)
-						.limit(1),
-				)
-			: await withSuperuserBypass(async (tx) =>
-					tx
-						.select({ currentSessionId: users.currentSessionId })
-						.from(users)
-						.where(eq(users.id, userId))
-						.limit(1),
-				);
-
-	if (user?.currentSessionId) {
-		reply.code(401).send({
-			error: "invalid_session",
-			message:
-				"Выполнен вход с другого устройства. Текущая сессия завершена.",
-		});
-		return false;
+	const state = await fetchStaffSessionState(
+		organizationId,
+		userId,
+		hasValidUuidOrg,
+	);
+	if (state.found && (!state.isActive || state.currentSessionId)) {
+		return sendInvalidSession(reply);
 	}
 	return true;
 }

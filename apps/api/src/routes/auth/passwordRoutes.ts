@@ -6,7 +6,11 @@ import {
 	organizations,
 	users,
 } from "../../db/schema.js";
-import { ADMIN_ROLES, getRequestIdentity } from "../../security/identity.js";
+import {
+	ADMIN_ROLES,
+	getRequestIdentity,
+	invalidateStaffSessionCache,
+} from "../../security/identity.js";
 import {
 	hashCredential,
 	verifyCredential,
@@ -298,6 +302,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 					message: "Сотрудник не найден в организации.",
 				});
 			}
+			invalidateStaffSessionCache(body.userId, pinOrganizationId);
 
 			return reply.send({ ok: true, message: "PIN сотрудника обновлён." });
 		},
@@ -385,6 +390,7 @@ export function registerPasswordRoutes(app: FastifyInstance): void {
 						),
 					);
 			});
+			invalidateStaffSessionCache(user.id, user.organizationId);
 
 			return reply.send({ ok: true, message: "Пароль успешно изменен." });
 		},

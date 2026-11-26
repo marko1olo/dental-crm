@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { MAX_SCAN_FILE_SIZE_BYTES } from "../../services/labScanDirectUpload.js";
 import {
 	handleDirectStorageDownload,
@@ -36,42 +37,62 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 	 * Генерация Presigned URL для прямой загрузки тяжелых 3D сканов (STL/PLY/OBJ) в S3 бакет.
 	 * Изоляция организации (organizationId) и заголовок Idempotency-Key (Мандат 8bo / RFC 9562).
 	 */
-	app.post("/api/lab/orders/:id/scans/upload-url", handleLabScanUploadUrl);
+	app.post(
+		"/api/lab/orders/:id/scans/upload-url",
+		{ config: { tenantTxSelfManaged: true } },
+		handleLabScanUploadUrl,
+	);
 
 	/**
 	 * GET /api/lab/orders/:id/scans/download-url
 	 * Получение Presigned URL на скачивание 3D скана для сотрудников клиники с изоляцией тенанта.
 	 */
-	app.get("/api/lab/orders/:id/scans/download-url", handleLabScanDownloadUrl);
+	app.get(
+		"/api/lab/orders/:id/scans/download-url",
+		{ config: { tenantTxSelfManaged: true } },
+		handleLabScanDownloadUrl,
+	);
 
 	/**
 	 * GET /api/portal/lab-order/:token/scans/download-url
 	 * Получение Presigned URL на скачивание 3D скана зубным техником по токену наряда без авторизации клиники.
 	 */
-	app.get("/api/portal/lab-order/:token/scans/download-url", handlePortalLabScanDownloadUrl);
+	app.get(
+		"/api/portal/lab-order/:token/scans/download-url",
+		{ config: { tenantTxSelfManaged: true } },
+		handlePortalLabScanDownloadUrl,
+	);
 
 	/**
 	 * PUT /api/portal/direct-storage/upload
 	 * Локальное защищенное хранилище сканов клиники при отсутствии S3 (защита от path traversal, потоковый стриминг на диск).
-	 * Изоляция организации (organizationId) и заголовок Idempotency-Key.
+	 * Потоковая запись без удержания PG-соединений (defineStreamRoute).
 	 */
-	app.put(
-		"/api/portal/direct-storage/upload",
-		{
-			bodyLimit: MAX_SCAN_FILE_SIZE_BYTES + 1024 * 1024,
-			schema: {
-				headers: {
-					type: "object",
-					description: "Локальная загрузка 3D скана с проверкой organizationId и поддержкой Idempotency-Key",
-				},
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/portal/direct-storage/upload",
+		permission: "public",
+		bodyLimit: MAX_SCAN_FILE_SIZE_BYTES + 1024 * 1024,
+		schema: {
+			headers: {
+				type: "object",
+				description:
+					"Локальная загрузка 3D скана с проверкой organizationId и поддержкой Idempotency-Key",
 			},
 		},
-		handleDirectStorageUpload,
-	);
+		handler: async ({ request, reply }) =>
+			handleDirectStorageUpload(request, reply),
+	});
 
 	/**
 	 * GET /api/portal/direct-storage/download
-	 * Локальная защищенная выдача сканов клиники зубному технику или врачу при отсутствии S3.
+	 * Локальная защищенная выдача сканов клиники зубному технику или врачу при отсутствии S3 (defineStreamRoute).
 	 */
-	app.get("/api/portal/direct-storage/download", handleDirectStorageDownload);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/portal/direct-storage/download",
+		permission: "public",
+		handler: async ({ request, reply }) =>
+			handleDirectStorageDownload(request, reply),
+	});
 }

@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { generateUuidV7, isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { labOrders } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -72,7 +72,7 @@ export async function handleLabScanUploadUrl(
 		});
 	}
 
-	const order = await withTenantCtx(orgId, async (tx) => {
+	const order = await withTenantReadCtx(orgId, async (tx) => {
 		const [res] = await tx
 			.select({ id: labOrders.id })
 			.from(labOrders)

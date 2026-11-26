@@ -41,13 +41,53 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
-import { dbRaw, transactionStorage, type TenantDb, type TenantTransaction } from "./client.js";
+import {
+	dbRaw,
+	strictUnscopedDbTrapStorage,
+	tenantAlsStorage,
+	transactionStorage,
+	type TenantAlsMode,
+	type TenantAlsStore,
+	type TenantDb,
+	type TenantTransaction,
+} from "./client.js";
 import type * as schema from "./schema.js";
 
 const logger = createApiLogger("dbRls");
 
 /** Drizzle database and transaction type scoped to this project's schema. */
-export type { TenantDb, TenantTransaction };
+export type { TenantAlsMode, TenantAlsStore, TenantDb, TenantTransaction };
+export type DbTransaction = TenantTransaction;
+export { tenantAlsStorage };
+
+const TENANT_UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export class TenantCtxModeEscalationError extends Error {
+	readonly code = "TENANT_CTX_MODE_ESCALATION";
+
+	constructor(message = "Cannot escalate read_only tenant transaction to read_write") {
+		super(message);
+		this.name = "TenantCtxModeEscalationError";
+	}
+}
+
+export class CrossTenantContextError extends Error {
+	readonly code = "CROSS_TENANT_CONTEXT_SWITCH";
+
+	constructor(expectedOrgId: string, requestedOrgId: string) {
+		super(
+			`Cross-tenant context switch inside active transaction is forbidden (${expectedOrgId} -> ${requestedOrgId})`,
+		);
+		this.name = "CrossTenantContextError";
+	}
+}
+
+export function assertValidTenantUuid(organizationId: string): void {
+	if (!organizationId || !TENANT_UUID_REGEX.test(organizationId)) {
+		throw new Error(`Invalid organizationId UUID for RLS context: "${organizationId}"`);
+	}
+}
 
 /**
  * Tracks whether a superuser-bypass scope is already active on the current
@@ -111,9 +151,13 @@ export async function runDetachedInTenantCtx<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
 	return bypassScope.run(false, () =>
-		postCommitStorage.run(undefined, () =>
-			transactionStorage.run(undefined, () =>
-				withTenantCtx(organizationId, callback),
+		strictUnscopedDbTrapStorage.run(false, () =>
+			tenantAlsStorage.run(undefined, () =>
+				postCommitStorage.run(undefined, () =>
+					transactionStorage.run(undefined, () =>
+						withTenantWriteCtx(organizationId, callback),
+					),
+				),
 			),
 		),
 	);
@@ -133,14 +177,21 @@ export async function withSavepoint<T>(
 		return callback(tx);
 	}
 	const parentHooks = postCommitStorage.getStore();
+	const currentAls = tenantAlsStorage.getStore();
 	const savepointHooks: PostCommitHook[] = [];
 	const result = await (tx as NodePgDatabase<typeof schema>).transaction(
-		async (spTx) =>
-			transactionStorage.run(spTx, () =>
-				parentHooks
-					? postCommitStorage.run(savepointHooks, () => callback(spTx))
-					: callback(spTx),
-			),
+		async (spTx) => {
+			const runScoped = () =>
+				transactionStorage.run(spTx, () =>
+					parentHooks
+						? postCommitStorage.run(savepointHooks, () => callback(spTx))
+						: callback(spTx),
+				);
+			if (currentAls) {
+				return tenantAlsStorage.run({ ...currentAls, tx: spTx }, runScoped);
+			}
+			return runScoped();
+		},
 	);
 	if (parentHooks && savepointHooks.length > 0) {
 		parentHooks.push(...savepointHooks);
@@ -194,98 +245,217 @@ export async function withSavepoint<T>(
  * @param callback        Receives the transaction handle. All database calls
  *                        inside it are protected by tenant RLS policies.
  */
+interface TenantSettingRow extends Record<string, unknown> {
+	tenant: string | null;
+}
+
+async function runLegacyReenteredTenantTx<T>(
+	existingTx: TenantDb,
+	organizationId: string,
+	mode: "read_only" | "read_write",
+	callback: (tx: TenantDb) => Promise<T>,
+): Promise<T> {
+	const previous = await existingTx.execute<TenantSettingRow>(
+		sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
+	);
+	const rawTenant = previous.rows[0]?.tenant ?? null;
+	const previousTenant = rawTenant === "" ? null : rawTenant;
+	const bypassActive = bypassScope.getStore() === true;
+	const tenantChanged = previousTenant !== organizationId;
+	if (!tenantChanged && !bypassActive) {
+		return tenantAlsStorage.run(
+			{ tx: existingTx, organizationId, mode },
+			() => callback(existingTx),
+		);
+	}
+	if (bypassActive && tenantChanged) {
+		await existingTx.execute(
+			sql`SELECT set_config('app.superuser_bypass', 'off', true), set_config('app.current_tenant', ${organizationId}, true)`,
+		);
+	} else if (bypassActive) {
+		await existingTx.execute(
+			sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
+		);
+	} else if (tenantChanged) {
+		await existingTx.execute(
+			sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
+		);
+	}
+	try {
+		return await tenantAlsStorage.run(
+			{ tx: existingTx, organizationId, mode },
+			() => callback(existingTx),
+		);
+	} finally {
+		if (tenantChanged) {
+			try {
+				await existingTx.execute(
+					sql`SELECT set_config('app.current_tenant', ${previousTenant}, true)`,
+				);
+			} catch (err) {
+				void err; // Transaction already aborted; setting dies with it.
+			}
+		}
+		if (bypassActive) {
+			try {
+				await existingTx.execute(
+					sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
+				);
+			} catch (err) {
+				void err; // Outer bypass scope handles cleanup; ignore on aborted tx.
+			}
+		}
+	}
+}
+
+/**
+ * Executes a strictly read-only tenant transaction (`READ COMMITTED`, `READ ONLY`).
+ * Reuses an active tenant transaction in RAM with 0 extra SQL round-trips when
+ * the active tenant matches. Forbids cross-tenant switching inside an active TX.
+ */
+export async function withTenantReadCtx<T>(
+	organizationId: string,
+	callback: (tx: TenantDb) => Promise<T>,
+): Promise<T> {
+	assertValidTenantUuid(organizationId);
+
+	const als = tenantAlsStorage.getStore();
+	if (als) {
+		const bypassActive =
+			als.mode === "superuser_bypass" || bypassScope.getStore() === true;
+		if (bypassActive) {
+			return runLegacyReenteredTenantTx(als.tx, organizationId, "read_only", callback);
+		}
+		if (als.organizationId !== organizationId) {
+			throw new CrossTenantContextError(als.organizationId, organizationId);
+		}
+		if (als.mode === "read_only") {
+			return callback(als.tx);
+		}
+		return tenantAlsStorage.run(
+			{ tx: als.tx, organizationId, mode: "read_only" },
+			() => callback(als.tx),
+		);
+	}
+
+	const existingTx = transactionStorage.getStore();
+	if (existingTx) {
+		return runLegacyReenteredTenantTx(existingTx, organizationId, "read_only", callback);
+	}
+
+	return dbRaw.transaction(
+		async (tx) => {
+			await tx.execute(
+				sql`SELECT set_config('app.current_tenant', ${organizationId}, true), set_config('app.superuser_bypass', 'off', true)`,
+			);
+			const store: TenantAlsStore = {
+				tx,
+				organizationId,
+				mode: "read_only",
+			};
+			return postCommitStorage.run(undefined, () =>
+				tenantAlsStorage.run(store, () =>
+					transactionStorage.run(tx, () => callback(tx)),
+				),
+			);
+		},
+		{ isolationLevel: "read committed", accessMode: "read only" },
+	);
+}
+
+/**
+ * Executes a read-write tenant transaction (`READ COMMITTED`, `READ WRITE`)
+ * with post-commit hook collection. Reuses an active `read_write` same-tenant
+ * transaction in RAM with 0 extra SQL round-trips, and rejects mode escalation
+ * from inside `withTenantReadCtx` or cross-tenant switching.
+ */
+export async function withTenantWriteCtx<T>(
+	organizationId: string,
+	callback: (tx: TenantDb) => Promise<T>,
+): Promise<T> {
+	assertValidTenantUuid(organizationId);
+
+	const als = tenantAlsStorage.getStore();
+	if (als) {
+		if (als.mode === "read_only") {
+			throw new TenantCtxModeEscalationError();
+		}
+		const bypassActive =
+			als.mode === "superuser_bypass" || bypassScope.getStore() === true;
+		if (bypassActive) {
+			return runLegacyReenteredTenantTx(als.tx, organizationId, "read_write", callback);
+		}
+		if (als.organizationId !== organizationId) {
+			throw new CrossTenantContextError(als.organizationId, organizationId);
+		}
+		return callback(als.tx);
+	}
+
+	const existingTx = transactionStorage.getStore();
+	if (existingTx) {
+		return runLegacyReenteredTenantTx(existingTx, organizationId, "read_write", callback);
+	}
+
+	const postCommitHooks: PostCommitHook[] = [];
+	const result = await dbRaw.transaction(
+		async (tx) => {
+			await tx.execute(
+				sql`SELECT set_config('app.current_tenant', ${organizationId}, true), set_config('app.superuser_bypass', 'off', true)`,
+			);
+			const store: TenantAlsStore = {
+				tx,
+				organizationId,
+				mode: "read_write",
+			};
+			return postCommitStorage.run(postCommitHooks, () =>
+				tenantAlsStorage.run(store, () =>
+					transactionStorage.run(tx, () => callback(tx)),
+				),
+			);
+		},
+		{ isolationLevel: "read committed", accessMode: "read write" },
+	);
+	await flushPostCommitHooks(postCommitHooks);
+	return result;
+}
+
 export async function withTenantCtx<T>(
 	organizationId: string,
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-	const existingTx = transactionStorage.getStore();
-	if (existingTx) {
-		// Re-assert the tenant on the existing transaction rather than opening a
-		// new one. This is not a no-op: the inner scope may target a different
-		// tenant than the outer, and the value must be restored afterwards so the
-		// remainder of the outer transaction keeps its own tenant context.
-		interface TenantSettingRow extends Record<string, unknown> {
-			tenant: string | null;
-		}
-		const previous = await existingTx.execute<TenantSettingRow>(
-			sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
-		);
-		const rawTenant = previous.rows[0]?.tenant ?? null;
-		// Reset value of a user-defined GUC is '' rather than NULL. Writing ''
-		// back would make the `::uuid` casts in the policies raise 22P02; NULL
-		// casts cleanly. Normalize on read so the restore below passes NULL.
-		const previousTenant = rawTenant === "" ? null : rawTenant;
-		// An enclosing withSuperuserBypass left `app.superuser_bypass = 'on'` on
-		// this transaction, which satisfies the permissive disjunct of every 0158
-		// policy for every row. Asking for a tenant context means asking for
-		// isolation, so the flag is suppressed for the callback and handed back to
-		// the outer scope in `finally`.
-		const bypassActive = bypassScope.getStore() === true;
-		const tenantChanged = previousTenant !== organizationId;
-		if (!tenantChanged && !bypassActive) {
-			// The transaction already carries exactly this tenant and no bypass to
-			// undo: set_config would write back the value that is already there, and
-			// the restore would write it a second time. Skip both.
-			return callback(existingTx);
-		}
-		if (bypassActive) {
-			await existingTx.execute(
-				sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
-			);
-		}
-		if (tenantChanged) {
-			await existingTx.execute(
-				sql`SELECT set_config('app.current_tenant', ${organizationId}, true)`,
-			);
-		}
-		try {
-			return await callback(existingTx);
-		} finally {
-			// Each restore gets its own try/catch: on an aborted transaction every
-			// statement fails, and a throw from here would replace the original error
-			// from the callback. Failing the first must not skip the second either.
-			if (tenantChanged) {
-				try {
-					await existingTx.execute(
-						sql`SELECT set_config('app.current_tenant', ${previousTenant}, true)`,
-					);
-				} catch {
-					// Transaction already aborted; the setting dies with it. Suppress so
-					// the original error from the callback is not masked.
-				}
-			}
-			if (bypassActive) {
-				try {
-					await existingTx.execute(
-						sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
-					);
-				} catch {
-					// Same reasoning: the outer bypass scope resets the flag itself, and
-					// on an aborted transaction nothing survives anyway.
-				}
-			}
-		}
+	assertValidTenantUuid(organizationId);
+
+	const als = tenantAlsStorage.getStore();
+	if (
+		als &&
+		als.mode !== "superuser_bypass" &&
+		als.organizationId === organizationId &&
+		bypassScope.getStore() !== true
+	) {
+		// RAM fast path: zero SQL round-trips on reentrant same-tenant call.
+		return callback(als.tx);
 	}
-	const postCommitHooks: PostCommitHook[] = [];
-	const result = await dbRaw.transaction(async (tx) => {
-		// is_local = true: the setting expires when this transaction commits or
-		// rolls back, preventing the setting from leaking to the next request that
-		// reuses the same pooled connection.
-		await tx.execute(
-			sql`SELECT set_config('app.current_tenant', ${organizationId}, true), set_config('app.superuser_bypass', 'off', true)`,
+
+	const existingTx = als?.tx ?? transactionStorage.getStore();
+	if (existingTx) {
+		const preservedMode: "read_only" | "read_write" =
+			als?.mode === "read_only" ? "read_only" : "read_write";
+		return runLegacyReenteredTenantTx(
+			existingTx,
+			organizationId,
+			preservedMode,
+			callback,
 		);
-		return postCommitStorage.run(postCommitHooks, () =>
-			transactionStorage.run(tx, () => callback(tx)),
-		);
-	});
-	await flushPostCommitHooks(postCommitHooks);
-	return result;
+	}
+
+	return withTenantWriteCtx(organizationId, callback);
 }
 
 export async function withSuperuserBypass<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-	const existingTx = transactionStorage.getStore();
+	const existingAls = tenantAlsStorage.getStore();
+	const existingTx = existingAls?.tx ?? transactionStorage.getStore();
 	if (existingTx) {
 		// A bypass scope is already open on this transaction; it owns the flag and
 		// its reset. Doing another set/reset pair here would turn the bypass off
@@ -296,8 +466,15 @@ export async function withSuperuserBypass<T>(
 		await existingTx.execute(
 			sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
 		);
+		const bypassAls: TenantAlsStore = {
+			tx: existingTx,
+			organizationId: existingAls?.organizationId ?? "__superuser_bypass__",
+			mode: "superuser_bypass",
+		};
 		try {
-			return await bypassScope.run(true, () => callback(existingTx));
+			return await tenantAlsStorage.run(bypassAls, () =>
+				bypassScope.run(true, () => callback(existingTx)),
+			);
 		} finally {
 			// Reset the flag even if the callback threw. If the transaction is already
 			// aborted, this cleanup will fail — suppress that error to preserve the
@@ -306,8 +483,8 @@ export async function withSuperuserBypass<T>(
 				await existingTx.execute(
 					sql`SELECT set_config('app.superuser_bypass', 'off', true)`,
 				);
-			} catch {
-				// Cleanup failed, likely because the transaction is aborted. Ignore.
+			} catch (err) {
+				void err; // Cleanup failed, likely because the transaction is aborted. Ignore.
 			}
 		}
 	}
@@ -315,8 +492,15 @@ export async function withSuperuserBypass<T>(
 		await tx.execute(
 			sql`SELECT set_config('app.superuser_bypass', 'on', true)`,
 		);
-		return transactionStorage.run(tx, () =>
-			bypassScope.run(true, () => callback(tx)),
+		const bypassAls: TenantAlsStore = {
+			tx,
+			organizationId: "__superuser_bypass__",
+			mode: "superuser_bypass",
+		};
+		return tenantAlsStorage.run(bypassAls, () =>
+			transactionStorage.run(tx, () =>
+				bypassScope.run(true, () => callback(tx)),
+			),
 		);
 	});
 }

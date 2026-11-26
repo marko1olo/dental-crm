@@ -3,6 +3,7 @@ import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { withTenantCtx } from "../../../db/rls.js";
 import { organizations, users } from "../../../db/schema.js";
+import { invalidateStaffSessionCache } from "../../../security/identity.js";
 import { resetRateLimit } from "../../../security/rateLimit.js";
 import {
 	DEMO_ADMIN_ID,
@@ -268,6 +269,7 @@ export async function handleUniversalLogin(
 							),
 						);
 				});
+				invalidateStaffSessionCache(ownerUser.id, matchedOrg.id);
 			} catch (sessErr) {
 				request.log.warn({ sessErr }, "[STAFF_SESSION_UPDATE_WARN]");
 			}
@@ -395,6 +397,7 @@ export async function handleUniversalLogin(
 					),
 				);
 		});
+		invalidateStaffSessionCache(user.id, user.organizationId as string);
 	} catch (sessErr) {
 		request.log.warn({ sessErr }, "[STAFF_SESSION_UPDATE_WARN]");
 	}

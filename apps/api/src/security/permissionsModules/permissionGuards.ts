@@ -4,7 +4,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { TenantDb } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import { auditEvents } from "../../db/schema/system.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { unguardedBypassAllowed } from "../bypass.js";
@@ -76,7 +76,7 @@ export async function fetchRoleMatrixOverrides(
 
 		const [org] = tx
 			? await readOrgFlags(tx)
-			: await withTenantCtx(organizationId, readOrgFlags);
+			: await withTenantReadCtx(organizationId, readOrgFlags);
 
 		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
 		const overrides =

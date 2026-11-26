@@ -499,8 +499,16 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		}
 	};
 
-	app.post("/api/v1/scans/session", handleCreateScanSession);
-	app.post("/api/scans/session", handleCreateScanSession);
+	app.post(
+		"/api/v1/scans/session",
+		{ config: { tenantTxSelfManaged: true } },
+		handleCreateScanSession,
+	);
+	app.post(
+		"/api/scans/session",
+		{ config: { tenantTxSelfManaged: true } },
+		handleCreateScanSession,
+	);
 
 	/**
 	 * GET /api/v1/scans/sessions/patient/:patientId (and /api/scans/sessions/patient/:patientId)
@@ -542,8 +550,16 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		});
 	};
 
-	app.get("/api/v1/scans/sessions/patient/:patientId", handleListPatientScans);
-	app.get("/api/scans/sessions/patient/:patientId", handleListPatientScans);
+	app.get(
+		"/api/v1/scans/sessions/patient/:patientId",
+		{ config: { tenantTxSelfManaged: true } },
+		handleListPatientScans,
+	);
+	app.get(
+		"/api/scans/sessions/patient/:patientId",
+		{ config: { tenantTxSelfManaged: true } },
+		handleListPatientScans,
+	);
 
 	/**
 	 * GET /api/v1/scans/sessions/:id (and /api/scans/sessions/:id)
@@ -591,8 +607,16 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		});
 	};
 
-	app.get("/api/v1/scans/sessions/:id", handleGetScanSession);
-	app.get("/api/scans/sessions/:id", handleGetScanSession);
+	app.get(
+		"/api/v1/scans/sessions/:id",
+		{ config: { tenantTxSelfManaged: true } },
+		handleGetScanSession,
+	);
+	app.get(
+		"/api/scans/sessions/:id",
+		{ config: { tenantTxSelfManaged: true } },
+		handleGetScanSession,
+	);
 
 	/**
 	 * GET /api/v1/scans/files/:sessionId/:fileName (and /api/scans/files/:sessionId/:fileName)
@@ -646,6 +670,14 @@ export async function registerIntraoralScansRoutes(app: FastifyInstance): Promis
 		return reply.send(createReadStream(resolved.filePath));
 	};
 
-	app.get("/api/v1/scans/files/:sessionId/:fileName", handleGetScanFile);
-	app.get("/api/scans/files/:sessionId/:fileName", handleGetScanFile);
+	app.get(
+		"/api/v1/scans/files/:sessionId/:fileName",
+		{ config: { tenantTxSelfManaged: true } },
+		handleGetScanFile,
+	);
+	app.get(
+		"/api/scans/files/:sessionId/:fileName",
+		{ config: { tenantTxSelfManaged: true } },
+		handleGetScanFile,
+	);
 }

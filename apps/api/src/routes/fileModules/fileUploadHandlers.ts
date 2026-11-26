@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { attachments, patients } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { decodeServerHeicImage } from "../../services/imaging/serverHeicDecoder.js";
@@ -43,7 +43,7 @@ export const downloadAttachmentHandler = async (
 		});
 	}
 
-	const [attachment] = await withTenantCtx(orgId, (tx) =>
+	const [attachment] = await withTenantReadCtx(orgId, (tx) =>
 		tx
 			.select()
 			.from(attachments)
@@ -82,7 +82,7 @@ export const downloadAttachmentHandler = async (
 	// Если вложение привязано к пациенту, проверяем архивный статус пациента
 	if (attachment.patientId) {
 		const attachmentPatientId = attachment.patientId;
-		const [patient] = await withTenantCtx(orgId, (tx) =>
+		const [patient] = await withTenantReadCtx(orgId, (tx) =>
 			tx
 				.select({ id: patients.id, status: patients.status })
 				.from(patients)

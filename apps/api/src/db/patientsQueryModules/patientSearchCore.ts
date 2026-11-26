@@ -126,12 +126,14 @@ export function rowToPatient(
 export async function getPatientByIdFromDb(
 	organizationId: string,
 	id: string,
+	tx?: TenantDb,
 ): Promise<Patient | null> {
 	if (useInMemory()) {
 		return inMemoryPatients.find((p) => p.id === id) ?? null;
 	}
+	const client = tx ?? db;
 	try {
-		const [p] = await db
+		const [p] = await client
 			.select()
 			.from(schema.patients)
 			.where(
@@ -141,7 +143,7 @@ export async function getPatientByIdFromDb(
 				),
 			);
 		if (!p) return null;
-		const balances = await patientAccountBalancesRub(organizationId, [p.id]);
+		const balances = await patientAccountBalancesRub(organizationId, [p.id], tx);
 		return rowToPatient(p, balances.get(p.id) ?? null);
 	} catch (error) {
 		/* БЫЛО: `catch { return inMemoryPatients.find(...) }`. Любой сбой базы

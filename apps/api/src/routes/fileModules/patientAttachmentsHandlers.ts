@@ -5,7 +5,7 @@ import { pipeline } from "node:stream/promises";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import { attachments, patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -46,7 +46,7 @@ export const getPatientAttachmentsHandler = async (
 			});
 		}
 
-		const loaded = await withTenantCtx(orgId, async (tx) => {
+		const loaded = await withTenantReadCtx(orgId, async (tx) => {
 			const [patient] = await tx
 				.select({ id: patients.id, status: patients.status })
 				.from(patients)

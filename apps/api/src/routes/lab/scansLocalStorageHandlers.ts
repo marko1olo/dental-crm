@@ -4,7 +4,10 @@ import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { getRequestIdentity } from "../../security/identity.js";
+import {
+	getRequestIdentity,
+	verifyActiveStaffSession,
+} from "../../security/identity.js";
 import {
 	ALLOWED_SCAN_EXTENSIONS,
 	createDirectStorageSignature,
@@ -51,19 +54,32 @@ function extractOrgFromKey(key: string): string | null {
 	return match ? (match[1] ?? null) : null;
 }
 
-interface LocalStorageQuery {
-	key?: string;
-	exp?: string;
-	sig?: string;
+export interface LocalStorageQuery {
+	key?: string | undefined;
+	exp?: string | undefined;
+	sig?: string | undefined;
 }
 
-function isLocalStorageAuthorized(
-	request: FastifyRequest<{ Querystring: LocalStorageQuery }>,
+function readLocalStorageQuery(request: FastifyRequest): LocalStorageQuery {
+	const raw = request.query;
+	if (!raw || typeof raw !== "object") return {};
+	const rec = raw as Record<string, unknown>;
+	return {
+		key: typeof rec.key === "string" ? rec.key : undefined,
+		exp: typeof rec.exp === "string" ? rec.exp : undefined,
+		sig: typeof rec.sig === "string" ? rec.sig : undefined,
+	};
+}
+
+async function isLocalStorageAuthorized(
+	request: FastifyRequest,
+	reply: FastifyReply,
 	rawKey: string,
 	action: "upload" | "download",
-): { authorized: boolean; reason?: string; statusCode?: number } {
-	const expStr = request.query?.exp;
-	const sig = request.query?.sig;
+): Promise<{ authorized: boolean; handled?: boolean; reason?: string; statusCode?: number }> {
+	const query = readLocalStorageQuery(request);
+	const expStr = query.exp;
+	const sig = query.sig;
 
 	// Check 1: Cryptographic presigned URL signature (HMAC-SHA256)
 	if (sig && expStr) {
@@ -89,9 +105,21 @@ function isLocalStorageAuthorized(
 		return { authorized: false, reason: "Недействительная цифровая подпись ссылки.", statusCode: 403 };
 	}
 
-	// Check 2: Authenticated clinic staff session with tenant isolation
+	// Check 2: Authenticated clinic staff session with tenant isolation + active session check
 	const identity = getRequestIdentity(request);
 	if (identity.organizationId && identity.verified) {
+		if (identity.userId) {
+			const sessionValid = await verifyActiveStaffSession(
+				request,
+				reply,
+				identity.organizationId,
+				identity.userId,
+				identity.sessionId,
+			);
+			if (!sessionValid) {
+				return { authorized: false, handled: true };
+			}
+		}
 		const keyOrg = extractOrgFromKey(rawKey);
 		const callerOrgClean = identity.organizationId.replace(/[^a-zA-Z0-9_-]/g, "");
 		if (keyOrg && keyOrg === callerOrgClean) {
@@ -153,10 +181,10 @@ async function streamPayloadToDisk(
 }
 
 export async function handleLocalStorageUpload(
-	request: FastifyRequest<{ Querystring: LocalStorageQuery }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const rawKey = request.query?.key;
+	const rawKey = readLocalStorageQuery(request).key;
 	if (!rawKey) {
 		return reply.code(400).send({ error: "BadRequest", message: "Параметр key обязателен." });
 	}
@@ -170,8 +198,9 @@ export async function handleLocalStorageUpload(
 	}
 
 	// Security gate: Authorization check
-	const authCheck = isLocalStorageAuthorized(request, rawKey, "upload");
+	const authCheck = await isLocalStorageAuthorized(request, reply, rawKey, "upload");
 	if (!authCheck.authorized) {
+		if (authCheck.handled) return;
 		return reply.code(authCheck.statusCode ?? 401).send({
 			error: authCheck.statusCode === 403 ? "Forbidden" : "Unauthorized",
 			message: authCheck.reason,
@@ -236,10 +265,10 @@ export async function handleLocalStorageUpload(
 }
 
 export async function handleLocalStorageDownload(
-	request: FastifyRequest<{ Querystring: LocalStorageQuery }>,
+	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const rawKey = request.query?.key;
+	const rawKey = readLocalStorageQuery(request).key;
 	if (!rawKey) {
 		return reply.code(400).send({ error: "BadRequest", message: "Параметр key обязателен." });
 	}
@@ -253,8 +282,9 @@ export async function handleLocalStorageDownload(
 	}
 
 	// Security gate: Authorization check
-	const authCheck = isLocalStorageAuthorized(request, rawKey, "download");
+	const authCheck = await isLocalStorageAuthorized(request, reply, rawKey, "download");
 	if (!authCheck.authorized) {
+		if (authCheck.handled) return;
 		return reply.code(authCheck.statusCode ?? 401).send({
 			error: authCheck.statusCode === 403 ? "Forbidden" : "Unauthorized",
 			message: authCheck.reason,

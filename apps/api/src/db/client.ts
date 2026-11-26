@@ -109,26 +109,92 @@ let poolEnding: Promise<void> | undefined;
 export const endPool = (): Promise<void> => (poolEnding ??= pool.end());
 
 export const dbRaw = drizzle(pool, { schema });
+export const dbSystemRaw = dbRaw;
 export type TenantTransaction = Parameters<Parameters<typeof dbRaw.transaction>[0]>[0];
 export type TenantDb = NodePgDatabase<typeof schema> | TenantTransaction;
 
+export type TenantAlsMode = "read_only" | "read_write" | "superuser_bypass";
+
+export interface TenantAlsStore {
+	tx: TenantDb;
+	organizationId: string;
+	mode: TenantAlsMode;
+}
+
 export const transactionStorage = new AsyncLocalStorage<TenantDb | undefined>();
+export const tenantAlsStorage = new AsyncLocalStorage<TenantAlsStore | undefined>();
+export const strictUnscopedDbTrapStorage = new AsyncLocalStorage<boolean>();
+
+export class UnscopedTenantDbAccessError extends Error {
+	readonly code = "UNSCOPED_TENANT_DB_ACCESS";
+
+	constructor(operation: string) {
+		super(
+			`Forbidden unscoped db.${operation}() call outside withTenantReadCtx/withTenantWriteCtx/withTenantCtx`,
+		);
+		this.name = "UnscopedTenantDbAccessError";
+	}
+}
+
+export async function runWithStrictUnscopedDbTrap<T>(
+	fn: () => Promise<T>,
+): Promise<T> {
+	return strictUnscopedDbTrapStorage.run(true, fn);
+}
+
+const DRIZZLE_DB_OPERATIONS = new Set<PropertyKey>([
+	"select",
+	"selectDistinct",
+	"selectDistinctOn",
+	"insert",
+	"update",
+	"delete",
+	"execute",
+	"query",
+	"transaction",
+	"$count",
+	"with",
+]);
+
+function handleUnscopedDbAccess(operation: string): void {
+	const isStrict =
+		strictUnscopedDbTrapStorage.getStore() === true ||
+		process.env.DENTE_STRICT_TENANT_DB_TRAP === "1";
+	if (isStrict) {
+		throw new UnscopedTenantDbAccessError(operation);
+	}
+	logger.error(
+		{
+			operation,
+			event: "UNSCOPED_DB_ACCESS_OUTSIDE_TENANT_CTX",
+		},
+		"UNSCOPED_DB_ACCESS_OUTSIDE_TENANT_CTX",
+	);
+}
 
 export const db = new Proxy(dbRaw, {
 	get(target, prop, receiver) {
-		const currentTx = transactionStorage.getStore();
+		const alsStore = tenantAlsStorage.getStore();
+		const currentTx = alsStore?.tx ?? transactionStorage.getStore();
 		const delegate = currentTx || target;
 		if (prop === "transaction") {
 			return (transactionFn: (tx: TenantDb) => Promise<unknown>, config?: unknown) => {
+				if (!currentTx) {
+					handleUnscopedDbAccess("transaction");
+				}
 				return (delegate as typeof dbRaw).transaction(async (innerTx) => {
-					return await transactionStorage.run(innerTx, () =>
-						transactionFn(innerTx),
+					const nextAls = alsStore ? { ...alsStore, tx: innerTx } : undefined;
+					return await tenantAlsStorage.run(nextAls, () =>
+						transactionStorage.run(innerTx, () => transactionFn(innerTx)),
 					);
 				}, config as Parameters<typeof dbRaw.transaction>[1]);
 			};
 		}
 		if (currentTx) {
 			return Reflect.get(currentTx, prop, currentTx);
+		}
+		if (DRIZZLE_DB_OPERATIONS.has(prop)) {
+			handleUnscopedDbAccess(String(prop));
 		}
 		return Reflect.get(target, prop, receiver);
 	},

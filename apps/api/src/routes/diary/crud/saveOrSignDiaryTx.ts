@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { type TenantDb, withSavepoint, withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantWriteCtx } from "../../../db/rls.js";
 import { visitDiaries, visitDiaryRevisions, visits } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
@@ -89,6 +89,9 @@ export async function executeSaveOrSignDiaryTx(params: {
 
 		let diaryId: string;
 		if (existing) {
+			if (existing.isLocked && isSigning) {
+				throw new DiarySigningError("AlreadyLocked", "Дневник уже подписан.");
+			}
 			if (existing.isLocked) {
 				// Автономия врача (Мандат 8e, «Исправленному верить»):
 				// Не кирпичим врача ошибкой AlreadyLocked, а фиксируем ревизию в истории
@@ -245,6 +248,6 @@ export async function executeSaveOrSignDiaryTx(params: {
 	};
 
 	return params.tx
-		? await withSavepoint(params.tx, runInTx)
-		: await withTenantCtx(orgId, (outerTx) => withSavepoint(outerTx, runInTx));
+		? await runInTx(params.tx)
+		: await withTenantWriteCtx(orgId, runInTx);
 }
