@@ -5,6 +5,7 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, or, sql } from "drizzle-orm";
+import { z } from "zod";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../../accessGuard.js";
 import { requireOrganizationId } from "../../../security/identity.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -12,6 +13,25 @@ import { egiszOutbox } from "../../../db/schema.js";
 import { N3EventLogClient, N3FhirTerminologyClient } from "@dental/shared";
 import { resolveN3HealthConfig } from "./n3Config.js";
 import { eventLogReexportBodySchema } from "./n3Schemas.js";
+
+const eventLogStatusParamsSchema = z
+	.object({
+		idDocumentMis: z.string().trim().min(1).max(200),
+	})
+	.strict();
+
+const nsiCodeSystemQuerySchema = z
+	.object({
+		oid: z.string().trim().min(1).max(120),
+	})
+	.strict();
+
+const nsiValueSetQuerySchema = z
+	.object({
+		url: z.string().trim().min(1).max(500),
+		filter: z.string().trim().max(200).optional(),
+	})
+	.strict();
 
 export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 	app.get(
@@ -21,8 +41,11 @@ export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 			if (!(await requireClinicalReadAccess(request, reply, "egisz n3health eventlog status"))) return;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
-			const { idDocumentMis } = request.params as { idDocumentMis: string };
-			if (!idDocumentMis) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр idDocumentMis обязателен." });
+			const parsedParams = eventLogStatusParamsSchema.safeParse(request.params);
+			if (!parsedParams.success) {
+				return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр idDocumentMis обязателен." });
+			}
+			const { idDocumentMis } = parsedParams.data;
 
 			const [doc] = await withTenantCtx(orgId, async (tx) =>
 				tx
@@ -120,8 +143,11 @@ export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 			if (!(await requireClinicalReadAccess(request, reply, "egisz n3health nsi fhir"))) return;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
-			const { oid } = request.query as { oid?: string };
-			if (!oid) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр oid обязателен." });
+			const parsedQuery = nsiCodeSystemQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр oid обязателен." });
+			}
+			const { oid } = parsedQuery.data;
 			const { config } = await resolveN3HealthConfig(orgId);
 			if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
 			const fhir = new N3FhirTerminologyClient(config);
@@ -138,8 +164,11 @@ export function registerN3EventLogAndNsiRoutes(app: FastifyInstance): void {
 			if (!(await requireClinicalReadAccess(request, reply, "egisz n3health nsi valueset"))) return;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
-			const { url, filter } = request.query as { url?: string; filter?: string };
-			if (!url) return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр url обязателен." });
+			const parsedQuery = nsiValueSetQuerySchema.safeParse(request.query ?? {});
+			if (!parsedQuery.success) {
+				return reply.status(400).send({ ok: false, error: "ValidationError", message: "Параметр url обязателен." });
+			}
+			const { url, filter } = parsedQuery.data;
 			const { config } = await resolveN3HealthConfig(orgId);
 			if (!config) return reply.status(400).send({ ok: false, error: "N3NotConfigured", message: "Шлюз N3.Health ViPNet не настроен." });
 			const fhir = new N3FhirTerminologyClient(config);

@@ -3,6 +3,7 @@
  * @description HTTP fetch wrapper and file helpers for Telegram Bot API.
  */
 
+import { createApiLogger } from "../observability/logger.js";
 import type {
 	DownloadTelegramFileInput,
 	DownloadTelegramFileResult,
@@ -10,6 +11,23 @@ import type {
 	TelegramFileInfoResult,
 	TelegramTransportErrorClass,
 } from "./types.js";
+
+const logger = createApiLogger("telegramTransport");
+
+export async function parseTelegramJsonResponse<T = unknown>(
+	response: Response,
+	method: string,
+): Promise<T> {
+	try {
+		return (await response.json()) as T;
+	} catch (err: unknown) {
+		logger.warn(
+			{ err, method, status: response.status },
+			`[telegramTransport] Failed to parse ${method} JSON response`,
+		);
+		return {} as T;
+	}
+}
 
 export function classifyTelegramError(status: number): TelegramTransportErrorClass {
 	if (status === 429) return "rate_limited";
@@ -63,7 +81,7 @@ export async function getTelegramFile(
 				signal: controller.signal,
 			},
 		);
-		const data = (await response.json().catch(() => ({}))) as {
+		const data = await parseTelegramJsonResponse<{
 			ok?: boolean;
 			result?: {
 				file_id: string;
@@ -72,7 +90,7 @@ export async function getTelegramFile(
 				file_path?: string;
 			};
 			description?: string;
-		};
+		}>(response, "getFile");
 
 		if (!response.ok || !data.ok || !data.result?.file_path) {
 			return {

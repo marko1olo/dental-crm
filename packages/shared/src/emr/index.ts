@@ -12,4 +12,4 @@ export * from "./medicationCatalog.js";
 export * from "./periodontogram.js";
 export * from "./periodontogramProtocolText.js";
 export * from "./patientTimeline.js";
-export * from "./patientRelationships.js";
+export * from "../patients/patientRelationshipsSchema.js";

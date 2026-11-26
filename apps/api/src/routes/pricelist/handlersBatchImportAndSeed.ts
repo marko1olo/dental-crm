@@ -54,7 +54,7 @@ export async function handleBatchImport(
 		request.log.error({ err: error }, "Ошибка транзакции при пакетном импорте прейскуранта");
 		return reply.code(500).send({
 			error: "PricelistBatchImportError",
-			message: (error as Error).message || "Ошибка транзакционного импорта прейскуранта",
+			message: "Ошибка транзакционного импорта прейскуранта.",
 		});
 	}
 }
@@ -91,7 +91,7 @@ export async function handleSeedBaseline804n(
 		request.log.error({ err: error }, "Ошибка при наполнении базового прейскуранта");
 		return reply.code(500).send({
 			error: "PricelistSeedBaselineError",
-			message: (error as Error).message || "Не удалось наполнить базовый прейскурант",
+			message: "Не удалось наполнить базовый прейскурант.",
 		});
 	}
 }

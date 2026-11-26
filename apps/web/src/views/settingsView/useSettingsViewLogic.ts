@@ -98,11 +98,20 @@ export function buildSettingsViewLogicBag(appLogic: Record<string, unknown> | nu
 		...(appLogic ?? {}),
 		telegramAdminSecretSession: Boolean(appLogic?.telegramAdminSecretSession),
 		pricelistImageNote: appLogic?.pricelistImageNote ?? undefined,
-		pricelistWarningsText: (w: unknown[]) =>
-			appLogic?.pricelistWarningsText ? appLogic.pricelistWarningsText(w.filter((x): x is string => typeof x === "string")) : "",
-		pricelistItemMaterialText: (it: unknown) =>
-			it && typeof it === "object" && appLogic?.pricelistItemMaterialText ? appLogic.pricelistItemMaterialText(it) : "",
-		pricelistMaterialSummaryText: (s: unknown) =>
-			s && typeof s === "object" && appLogic?.pricelistMaterialSummaryText ? appLogic.pricelistMaterialSummaryText(s) : "",
+		pricelistWarningsText: (w: unknown[]) => {
+			const fn = appLogic?.pricelistWarningsText;
+			if (typeof fn !== "function") return "";
+			return fn(w.filter((x): x is string => typeof x === "string")) as string;
+		},
+		pricelistItemMaterialText: (it: unknown) => {
+			const fn = appLogic?.pricelistItemMaterialText;
+			if (!it || typeof it !== "object" || typeof fn !== "function") return "";
+			return fn(it) as string;
+		},
+		pricelistMaterialSummaryText: (s: unknown) => {
+			const fn = appLogic?.pricelistMaterialSummaryText;
+			if (!s || typeof s !== "object" || typeof fn !== "function") return "";
+			return fn(s) as string;
+		},
 	};
 }

@@ -5,7 +5,7 @@
  */
 
 import { and, asc, eq } from "drizzle-orm";
-import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import { ensureOrganizationCashBoxes } from "../seeds/seed_cash_and_reasons.js";
 import { useInMemory } from "./types.js";
@@ -45,9 +45,9 @@ export interface ClinicFiscalSettingsDto {
 	allowAutonomousBuffer: boolean;
 	cashBoxId: string | null;
 	cashBoxName: string;
-	kkmModel: string;
-	kkmSerialNumber: string;
-	branchId: string;
+	kkmModel: string | null;
+	kkmSerialNumber: string | null;
+	branchId: string | null;
 	kkmActive: boolean;
 	cashBoxes: CashBoxHardwareSummary[];
 	updatedAt: string;
@@ -116,9 +116,9 @@ export async function getClinicFiscalSettingsFromDb(
 			allowAutonomousBuffer: true,
 			cashBoxId: null,
 			cashBoxName: "Основная",
-			kkmModel: "АТОЛ-55Ф",
-			kkmSerialNumber: "00108204958112",
-			branchId: "main",
+			kkmModel: null,
+			kkmSerialNumber: null,
+			branchId: null,
 			kkmActive: true,
 			cashBoxes: [],
 			updatedAt: new Date().toISOString(),
@@ -127,85 +127,87 @@ export async function getClinicFiscalSettingsFromDb(
 		return fallback;
 	}
 
-	const [org] = await db
-		.select()
-		.from(schema.organizations)
-		.where(eq(schema.organizations.id, organizationId))
-		.limit(1);
-	if (!org) {
-		throw new Error("Организация не найдена в базе данных.");
-	}
+	return await withTenantCtx(organizationId, async (tx) => {
+		const [org] = await tx
+			.select()
+			.from(schema.organizations)
+			.where(eq(schema.organizations.id, organizationId))
+			.limit(1);
+		if (!org) {
+			throw new Error("Организация не найдена в базе данных.");
+		}
 
-	await ensureOrganizationCashBoxes(db, organizationId);
+		await ensureOrganizationCashBoxes(tx, organizationId);
 
-	const boxes = await db
-		.select()
-		.from(schema.cashBoxes)
-		.where(eq(schema.cashBoxes.organizationId, organizationId))
-		.orderBy(asc(schema.cashBoxes.displayOrder), asc(schema.cashBoxes.createdAt));
+		const boxes = await tx
+			.select()
+			.from(schema.cashBoxes)
+			.where(eq(schema.cashBoxes.organizationId, organizationId))
+			.orderBy(asc(schema.cashBoxes.displayOrder), asc(schema.cashBoxes.createdAt));
 
-	const mainBox =
-		boxes.find((b) => b.isMain || b.type === "main") ?? boxes[0] ?? null;
+		const mainBox =
+			boxes.find((b) => b.isMain || b.type === "main") ?? boxes[0] ?? null;
 
-	const flags =
-		(org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+		const flags =
+			(org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
 
-	const taxationSystem = normalizeTaxationSystem(flags.taxationSystem);
-	const ofdProvider = normalizeOfdProvider(flags.ofdProvider);
-	const ffdVersion = flags.ffdVersion === "1.05" ? "1.05" : "1.2";
-	const autoSendReceipt =
-		typeof flags.autoSendReceipt === "boolean" ? flags.autoSendReceipt : true;
-	const allowAutonomousBuffer =
-		typeof flags.allowAutonomousBuffer === "boolean"
-			? flags.allowAutonomousBuffer
-			: true;
+		const taxationSystem = normalizeTaxationSystem(flags.taxationSystem);
+		const ofdProvider = normalizeOfdProvider(flags.ofdProvider);
+		const ffdVersion = flags.ffdVersion === "1.05" ? "1.05" : "1.2";
+		const autoSendReceipt =
+			typeof flags.autoSendReceipt === "boolean" ? flags.autoSendReceipt : true;
+		const allowAutonomousBuffer =
+			typeof flags.allowAutonomousBuffer === "boolean"
+				? flags.allowAutonomousBuffer
+				: true;
 
-	const kkmModel =
-		mainBox?.kkmModel ||
-		(typeof flags.kkmModel === "string" && flags.kkmModel.trim().length > 0
-			? flags.kkmModel.trim()
-			: "АТОЛ-55Ф");
-	const kkmSerialNumber =
-		mainBox?.kkmSerialNumber ||
-		(typeof flags.kkmSerialNumber === "string" &&
-		flags.kkmSerialNumber.trim().length > 0
-			? flags.kkmSerialNumber.trim()
-			: "00108204958112");
-	const branchId =
-		mainBox?.branchId ||
-		(typeof flags.branchId === "string" && flags.branchId.trim().length > 0
-			? flags.branchId.trim()
-			: "main");
-	const kkmActive =
-		mainBox?.kkmActive !== undefined ? Boolean(mainBox.kkmActive) : true;
+		const kkmModel =
+			mainBox?.kkmModel?.trim() ||
+			(typeof flags.kkmModel === "string" && flags.kkmModel.trim().length > 0
+				? flags.kkmModel.trim()
+				: null);
+		const kkmSerialNumber =
+			mainBox?.kkmSerialNumber?.trim() ||
+			(typeof flags.kkmSerialNumber === "string" &&
+			flags.kkmSerialNumber.trim().length > 0
+				? flags.kkmSerialNumber.trim()
+				: null);
+		const branchId =
+			mainBox?.branchId?.trim() ||
+			(typeof flags.branchId === "string" && flags.branchId.trim().length > 0
+				? flags.branchId.trim()
+				: null);
+		const kkmActive =
+			mainBox?.kkmActive !== undefined ? Boolean(mainBox.kkmActive) : true;
 
-	return {
-		organizationId: org.id,
-		taxationSystem,
-		ofdProvider,
-		ffdVersion,
-		autoSendReceipt,
-		allowAutonomousBuffer,
-		cashBoxId: mainBox?.id ?? null,
-		cashBoxName: mainBox?.name || "Основная",
-		kkmModel,
-		kkmSerialNumber,
-		branchId,
-		kkmActive,
-		cashBoxes: boxes.map((b) => ({
-			id: b.id,
-			name: b.name,
-			type: b.type,
-			isMain: Boolean(b.isMain),
-			isCashless: Boolean(b.isCashless),
-			kkmModel: b.kkmModel ?? null,
-			kkmSerialNumber: b.kkmSerialNumber ?? null,
-			kkmActive: Boolean(b.kkmActive),
-			branchId: b.branchId ?? null,
-			balanceRub: Number(b.balanceRub ?? 0),
-		})),
-		updatedAt: org.updatedAt.toISOString(),
-	};
+		return {
+			organizationId: org.id,
+			taxationSystem,
+			ofdProvider,
+			ffdVersion,
+			autoSendReceipt,
+			allowAutonomousBuffer,
+			cashBoxId: mainBox?.id ?? null,
+			cashBoxName: mainBox?.name || "Основная",
+			kkmModel,
+			kkmSerialNumber,
+			branchId,
+			kkmActive,
+			cashBoxes: boxes.map((b) => ({
+				id: b.id,
+				name: b.name,
+				type: b.type,
+				isMain: Boolean(b.isMain),
+				isCashless: Boolean(b.isCashless),
+				kkmModel: b.kkmModel ?? null,
+				kkmSerialNumber: b.kkmSerialNumber ?? null,
+				kkmActive: Boolean(b.kkmActive),
+				branchId: b.branchId ?? null,
+				balanceRub: Number(b.balanceRub ?? 0),
+			})),
+			updatedAt: org.updatedAt.toISOString(),
+		};
+	});
 }
 
 export async function updateClinicFiscalSettingsInDb(
@@ -239,9 +241,18 @@ export async function updateClinicFiscalSettingsInDb(
 					? Boolean(input.allowAutonomousBuffer)
 					: current.allowAutonomousBuffer,
 			cashBoxName: input.cashBoxName?.trim() || current.cashBoxName,
-			kkmModel: input.kkmModel?.trim() || current.kkmModel,
-			kkmSerialNumber: input.kkmSerialNumber?.trim() || current.kkmSerialNumber,
-			branchId: input.branchId?.trim() || current.branchId,
+			kkmModel:
+				input.kkmModel !== undefined
+					? (input.kkmModel?.trim() || null)
+					: current.kkmModel,
+			kkmSerialNumber:
+				input.kkmSerialNumber !== undefined
+					? (input.kkmSerialNumber?.trim() || null)
+					: current.kkmSerialNumber,
+			branchId:
+				input.branchId !== undefined
+					? (input.branchId?.trim() || null)
+					: current.branchId,
 			kkmActive:
 				input.kkmActive !== undefined ? Boolean(input.kkmActive) : current.kkmActive,
 			updatedAt: new Date().toISOString(),
@@ -250,7 +261,7 @@ export async function updateClinicFiscalSettingsInDb(
 		return updated;
 	}
 
-	await db.transaction(async (tx) => {
+	await withTenantCtx(organizationId, async (tx) => {
 		const [org] = await tx
 			.select()
 			.from(schema.organizations)

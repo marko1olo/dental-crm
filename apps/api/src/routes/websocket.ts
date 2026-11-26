@@ -139,7 +139,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 		socket.on("close", finish);
 		socket.on("error", finish);
 
-		socket.on("message", (raw) => {
+		socket.on("message", async (raw) => {
 			const text = raw.toString();
 
 			// Клиент шлёт PING текстом каждые 30 секунд, чтобы держать
@@ -221,24 +221,31 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 					if (identity.sessionId && identity.userId) {
 						const checkedUserId = identity.userId;
 						const checkedOrgId = identity.organizationId;
-						void (async () => {
-							try {
-								const { db } = await import("../db/client.js");
-								const { users } = await import("../db/schema.js");
-								const { eq, and } = await import("drizzle-orm");
-								const [user] = await db
+						try {
+							const { withTenantCtx } = await import("../db/rls.js");
+							const { users } = await import("../db/schema.js");
+							const { eq, and } = await import("drizzle-orm");
+							const [user] = await withTenantCtx(checkedOrgId, async (tx) =>
+								tx
 									.select({ currentSessionId: users.currentSessionId })
 									.from(users)
 									.where(and(eq(users.id, checkedUserId), eq(users.organizationId, checkedOrgId)))
-									.limit(1);
+									.limit(1),
+							);
 
-								if (user?.currentSessionId && user.currentSessionId !== identity.sessionId) {
-									socket.close(CLOSE_UNAUTHORIZED, "invalid_session");
-								}
-							} catch (sessionErr) {
-								request.log.warn({ sessionErr }, "Failed to verify session id against database");
+							if (!user?.currentSessionId || user.currentSessionId !== identity.sessionId) {
+								socket.close(CLOSE_UNAUTHORIZED, "invalid_session");
+								return;
 							}
-						})();
+						} catch (sessionErr) {
+							request.log.warn({ sessionErr }, "Failed to verify session id against database");
+							socket.close(CLOSE_UNAUTHORIZED, "session_check_failed");
+							return;
+						}
+					}
+
+					if (socket.readyState !== 1) {
+						return;
 					}
 
 					// Сотрудник может отслеживать обновления конкретного пациента у кресла

@@ -4,11 +4,13 @@
  * message text search, session switcher & pin manager (Mandate 8b <= 300 lines).
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Calendar, MessageSquare, Pin, Plus, Search, Trash2, User, X
 } from "lucide-react";
 import { useCopilotStore, type CopilotThread } from "../../store/copilotStore";
+import { fetchRemoteSessions } from "../../store/copilotSessionApi";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
 
 export interface CopilotHistoryDrawerProps {
@@ -52,30 +54,40 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 	const togglePinThread = useCopilotStore((s) => s.togglePinThread);
 
 	const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+	const [remoteThreads, setRemoteThreads] = useState<CopilotThread[]>([]);
 
-	React.useEffect(() => {
+	useEffect(() => {
+		const trimmed = searchQuery.trim();
+		if (!isOpen || isDemoShowcaseMode() || !trimmed) { setRemoteThreads([]); return; }
+		let active = true;
+		const timer = setTimeout(() => {
+			void fetchRemoteSessions({ q: trimmed }).then((res) => { if (active && Array.isArray(res)) setRemoteThreads(res); });
+		}, 250);
+		return () => { active = false; clearTimeout(timer); };
+	}, [isOpen, searchQuery]);
+
+	useEffect(() => {
 		if (!isOpen) return;
-		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
+		const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
 
-	const filteredThreads = threads.filter((t) => {
+	const localFiltered = threads.filter((t) => {
 		const q = searchQuery.toLowerCase().trim();
 		if (!q) return true;
 		const inTitle = t.title.toLowerCase().includes(q);
 		const inPatient = Boolean(t.patientName && t.patientName.toLowerCase().includes(q));
 		const inPreview = Boolean(t.previewText && t.previewText.toLowerCase().includes(q));
-		const msgs = threadMessages[t.id] || [];
-		const inMessages = msgs.some((m) =>
-			String(m.text || m.content || "").toLowerCase().includes(q)
-		);
+		const inMessages = (threadMessages[t.id] || []).some((m) => String(m.text || m.content || "").toLowerCase().includes(q));
 		return inTitle || inPatient || inPreview || inMessages;
 	});
+	const existingIds = new Set(localFiltered.map((t) => t.id));
+	const filteredThreads = searchQuery.trim()
+		? [...localFiltered, ...remoteThreads.filter((r) => !existingIds.has(r.id))]
+		: localFiltered;
 
 	const pinnedThreads = filteredThreads.filter((t) => t.pinned);
 	const unpinned = filteredThreads.filter((t) => !t.pinned);
@@ -118,33 +130,19 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 						</button>
 						<button
 							type="button"
-							onClick={() => {
-								deleteThread(thread.id);
-								showToast("Диалог удален из истории", "info");
-							}}
+							onClick={() => { deleteThread(thread.id); showToast("Диалог удален из истории", "info"); }}
 							className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-[var(--danger-soft)] text-[var(--muted)] hover:text-[var(--danger)] transition-colors cursor-pointer"
 							title="Удалить диалог"
 							aria-label="Удалить диалог"
 						>
-							<span className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent">
-								<Trash2 size={14} />
-							</span>
+							<span className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent"><Trash2 size={14} /></span>
 						</button>
 					</div>
 				</div>
-
-				{thread.previewText && (
-					<p className="text-[11px] text-[var(--muted)] m-0 truncate leading-relaxed">
-						{thread.previewText}
-					</p>
-				)}
-
+				{thread.previewText && <p className="text-[11px] text-[var(--muted)] m-0 truncate leading-relaxed">{thread.previewText}</p>}
 				<div className="flex items-center justify-between text-[10px] text-[var(--muted)] pt-1 border-t border-[var(--line)]/50">
 					{thread.patientName ? (
-						<span className="flex items-center gap-1 truncate font-medium">
-							<User size={10} className="text-[var(--teal)]" />
-							<span>{thread.patientName}</span>
-						</span>
+						<span className="flex items-center gap-1 truncate font-medium"><User size={10} className="text-[var(--teal)]" /><span>{thread.patientName}</span></span>
 					) : (
 						<span>Общий приём</span>
 					)}
@@ -158,10 +156,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 			<div className="relative z-10 w-full max-w-md max-h-[88vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
-				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
-					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
-				</div>
-
+				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" /></div>
 				<header className="px-5 py-3.5 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2 min-w-0">
 						<MessageSquare size={16} className="text-[var(--teal)]" />
@@ -169,20 +164,10 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 						<span className="text-[11px] text-[var(--muted)]">({threads.length})</span>
 					</div>
 					<div className="flex items-center gap-1.5">
-						<button
-							type="button"
-							onClick={handleCreateNew}
-							className="primary-button text-xs sm:text-sm font-medium h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs flex items-center gap-1.5 cursor-pointer"
-						>
-							<Plus size={14} />
-							<span>Новый диалог</span>
+						<button type="button" onClick={handleCreateNew} className="primary-button text-xs sm:text-sm font-medium h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-xs flex items-center gap-1.5 cursor-pointer">
+							<Plus size={14} /><span>Новый диалог</span>
 						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="icon-button min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
-							aria-label="Закрыть"
-						>
+						<button type="button" onClick={onClose} className="icon-button min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer" aria-label="Закрыть">
 							<X size={16} />
 						</button>
 					</div>

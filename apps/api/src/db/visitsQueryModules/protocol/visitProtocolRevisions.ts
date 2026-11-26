@@ -112,7 +112,7 @@ export async function acceptVisitDraftInDb(
 	organizationId: string,
 	input: AcceptVisitDraftInput,
 ): Promise<AcceptVisitDraftResponse> {
-	return await withTenantCtx(organizationId, async (tx) => {
+	const txResult = await withTenantCtx(organizationId, async (tx) => {
 		const [visit] = await tx
 			.select()
 			.from(schema.visits)
@@ -173,17 +173,10 @@ export async function acceptVisitDraftInDb(
 					"Повторный запрос: карта приёма уже подписана (дубликат предотвращён).",
 			};
 
-			const { state: clinicState } =
-				await hydrateDomainStateFromDb(organizationId);
-
-			const visitCloseChecklist = buildVisitCloseChecklist(
-				visitCloseChecklistFactsFor(signedVisit, clinicState),
-			);
-
 			return {
-				visit: signedVisit,
-				visitCloseChecklist,
+				signedVisit,
 				saveReceipt,
+				isReplay: true as const,
 			};
 		}
 
@@ -433,27 +426,36 @@ export async function acceptVisitDraftInDb(
 			);
 		});
 
-		try {
-			const { state: clinicState } =
-				await hydrateDomainStateFromDb(organizationId);
-
-			const visitCloseChecklist = buildVisitCloseChecklist(
-				visitCloseChecklistFactsFor(signedVisit, clinicState),
-			);
-
-			return {
-				visit: signedVisit,
-				visitCloseChecklist,
-				saveReceipt,
-			};
-		} catch (error) {
-			throw new VisitSignedResponseIncompleteError(
-				signedVisit.id,
-				signedVisit.revision,
-				error,
-			);
-		}
+		return {
+			signedVisit,
+			saveReceipt,
+			isReplay: false as const,
+		};
 	});
+
+	try {
+		const { state: clinicState } =
+			await hydrateDomainStateFromDb(organizationId);
+
+		const visitCloseChecklist = buildVisitCloseChecklist(
+			visitCloseChecklistFactsFor(txResult.signedVisit, clinicState),
+		);
+
+		return {
+			visit: txResult.signedVisit,
+			visitCloseChecklist,
+			saveReceipt: txResult.saveReceipt,
+		};
+	} catch (error) {
+		if (txResult.isReplay) {
+			throw error;
+		}
+		throw new VisitSignedResponseIncompleteError(
+			txResult.signedVisit.id,
+			txResult.signedVisit.revision,
+			error,
+		);
+	}
 }
 
 /** Семантический алиас для медицинской карты приёма (Мандат 8ap) */

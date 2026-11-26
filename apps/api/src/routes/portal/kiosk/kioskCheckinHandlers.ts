@@ -9,7 +9,6 @@ import { createHash } from "node:crypto";
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -19,6 +18,7 @@ import {
 	patients,
 	portalOtpCodes,
 } from "../../../db/schema.js";
+import { safeLogError } from "../../../observability/logger.js";
 import { verifyCredential } from "../../../utils/cryptoHelper.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { checkKioskRateLimit, maskPatientName } from "./kioskRateLimiter.js";
@@ -137,8 +137,8 @@ export async function handleKioskCheckinRequest(
 	let isCheckinCodeVerified = false;
 	if (rawCheckinCode && rawCheckinCode.length >= 4 && !targetPatient.isVirtualGuest) {
 		const now = new Date();
-		const [activeOtp] = await withTenantCtx(organizationId, async () => {
-			return db
+		const [activeOtp] = await withTenantCtx(organizationId, async (tx) => {
+			return tx
 				.select({
 					id: portalOtpCodes.id,
 					codeHash: portalOtpCodes.codeHash,
@@ -272,8 +272,11 @@ export async function handleKioskCheckinRequest(
 				updatedAt: new Date().toISOString(),
 			},
 		});
-	} catch {
-		// non-blocking broadcast
+	} catch (wsErr) {
+		request.log.warn(
+			{ err: safeLogError(wsErr), organizationId },
+			"Non-blocking kiosk WS broadcast failed",
+		);
 	}
 
 	// 7. Сохранение согласий с ПЭП аудитом (63-ФЗ)

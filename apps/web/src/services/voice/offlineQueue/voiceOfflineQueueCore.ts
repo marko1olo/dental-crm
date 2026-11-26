@@ -41,7 +41,9 @@ export class VoiceOfflineQueue {
 		};
 
 		const hasIdb = typeof window !== "undefined" && "indexedDB" in window && window.indexedDB !== null;
-		this.storage = hasIdb ? new IndexedDbStorageDriver(this.options.dbName!, this.options.dbVersion!) : new InMemoryStorageDriver();
+		const dbName = this.options.dbName ?? VOICE_OFFLINE_DB_NAME;
+		const dbVersion = this.options.dbVersion ?? VOICE_OFFLINE_DB_VERSION;
+		this.storage = hasIdb ? new IndexedDbStorageDriver(dbName, dbVersion) : new InMemoryStorageDriver();
 
 		if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
 			this.boundOnlineHandler = () => { void this.processQueue(); };

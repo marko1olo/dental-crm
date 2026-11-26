@@ -124,7 +124,7 @@ export class FiscalQueueManager {
 				taxationSystem: "usn_income",
 				cashierFullName,
 				cashierInn: cashierInn || undefined,
-				customerContact: clientContact || "+79990000000",
+				customerContact: clientContact?.trim() || null,
 				cashKopecks: splits.cashKopecks,
 				electronicCardKopecks: splits.electronicCardKopecks,
 				sbpKopecks: splits.sbpKopecks,

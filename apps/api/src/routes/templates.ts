@@ -144,17 +144,19 @@ function resolveTemplateSpecialty(val: unknown): DentalSpecialty {
  * POST /api/templates: тело раньше — bare cast `req.body as { title: string; … }`.
  * null/array → TypeError на body.title (500). Zod safeParse после AUTH/org → 400.
  */
-const templateCreateBodySchema = z.object({
-	title: z.unknown().optional(),
-	category: z.unknown().optional(),
-	specialty: z.unknown().optional(),
-	prefilledAnamnesis: z.unknown().optional(),
-	prefilledObjective: z.unknown().optional(),
-	prefilledTreatment: z.unknown().optional(),
-	defaultIcd10: z.unknown().optional(),
-	defaultIcd10Label: z.unknown().optional(),
-	suggestedProcedureIds: z.unknown().optional(),
-});
+const templateCreateBodySchema = z
+	.object({
+		title: z.unknown().optional(),
+		category: z.unknown().optional(),
+		specialty: z.unknown().optional(),
+		prefilledAnamnesis: z.unknown().optional(),
+		prefilledObjective: z.unknown().optional(),
+		prefilledTreatment: z.unknown().optional(),
+		defaultIcd10: z.unknown().optional(),
+		defaultIcd10Label: z.unknown().optional(),
+		suggestedProcedureIds: z.unknown().optional(),
+	})
+	.strict();
 
 export default async function registerTemplateRoutes(app: FastifyInstance) {
 	app.get("/api/templates", async (req, reply) => {

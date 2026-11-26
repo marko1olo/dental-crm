@@ -28,7 +28,7 @@ export const doctorPayrollReportQuerySchema = periodQuerySchema.extend({
 	doctorId: z.string().optional(),
 	startDate: periodBoundarySchema.optional(),
 	endDate: periodBoundarySchema.optional(),
-});
+}).strict();
 export type DoctorPayrollReportQuery = z.infer<typeof doctorPayrollReportQuerySchema>;
 
 export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstance) {

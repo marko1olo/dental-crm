@@ -109,8 +109,10 @@ export function generateDeterministicQrSvg(
 
 	let path = "";
 	for (let r = 0; r < matrixSize; r++) {
+		const row = matrix[r];
+		if (!row) continue;
 		for (let c = 0; c < matrixSize; c++) {
-			if (matrix[r]![c]) {
+			if (row[c]) {
 				const x = ((c + margin) * cellSize).toFixed(2);
 				const y = ((r + margin) * cellSize).toFixed(2);
 				const s = cellSize.toFixed(2);

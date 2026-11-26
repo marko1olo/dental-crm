@@ -4,12 +4,37 @@
  * HTTP-чанки Server Whisper (/api/speech/transcribe-chunk) + VoiceOfflineQueue и Web Speech API.
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import { AudioStreamManager } from "../../../components/audio/AudioStreamManager";
 import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import type { PendingTranscriptionRecord, VoiceOfflineQueue } from "../VoiceOfflineQueue";
 import { calculatePcmDurationMs, combineBufferedPcmChunks, encodeBlobToBase64, encodePcm16ToBase64 } from "./pcmAudioProcessor";
 import type { InternalUnifiedAudioClientOptions, PcmAudioChunk, UnifiedAudioMode, UnifiedAudioState } from "./types";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toCleanUuid(value?: string | null): string | null {
+	if (!value) return null;
+	const trimmed = value.trim();
+	return UUID_PATTERN.test(trimmed) ? trimmed : null;
+}
+
+function normalizeTranscriptionSource(
+	source?: string | null,
+	visitId?: string | null,
+): "visit" | "import" | "document" | "settings_lab" {
+	if (source === "visit") return visitId ? "visit" : "document";
+	if (source === "import" || source === "document" || source === "settings_lab") return source;
+	return visitId ? "visit" : "document";
+}
+
+function unwrapEnvelope<T>(json: unknown): T {
+	if (json && typeof json === "object" && "data" in json && (json as Record<string, unknown>).data !== undefined) {
+		return (json as Record<string, unknown>).data as T;
+	}
+	return json as T;
+}
 
 export interface AudioTransportHost {
 	getOptions(): InternalUnifiedAudioClientOptions;
@@ -168,15 +193,48 @@ export class AudioStreamTransport {
 		}
 	}
 
-	public startGeminiLiveWs(): Promise<boolean> {
-		return new Promise((resolve) => {
-			if (typeof window === "undefined") {
-				resolve(false);
-				return;
+	public async startGeminiLiveWs(): Promise<boolean> {
+		if (typeof window === "undefined") {
+			return false;
+		}
+		const opts = this.host.getOptions();
+		const patientUuid = toCleanUuid(opts.patientId);
+		const visitUuid = toCleanUuid(opts.visitId);
+
+		let ticket = "";
+		try {
+			const ticketResponse = await fetch("/api/v1/speech/live/ticket", {
+				method: "POST",
+				credentials: "include",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
+					...(opts.specialty ? { specialty: opts.specialty } : {}),
+					sampleRate: 16000,
+				}),
+			});
+			if (!ticketResponse.ok) {
+				logger.warn(`[DENTE Voice] Speech live ticket rejected with status ${ticketResponse.status}`);
+				return false;
 			}
+			const rawTicketJson: unknown = await ticketResponse.json();
+			const ticketPayload = unwrapEnvelope<{ ticket?: string }>(rawTicketJson);
+			ticket = typeof ticketPayload?.ticket === "string" ? ticketPayload.ticket.trim() : "";
+		} catch (ticketErr) {
+			logger.warn("[DENTE Voice] Speech live ticket request failed:", ticketErr);
+			return false;
+		}
+
+		if (!ticket) {
+			logger.warn("[DENTE Voice] Speech live ticket response did not contain a ticket");
+			return false;
+		}
+
+		return new Promise((resolve) => {
 			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-			const wsUrl = `${protocol}//${window.location.host}/api/speech/live`;
-			const opts = this.host.getOptions();
+			const wsUrl = `${protocol}//${window.location.host}/api/speech/live?ticket=${encodeURIComponent(ticket)}`;
 
 			try {
 				const ws = new WebSocket(wsUrl);
@@ -195,13 +253,12 @@ export class AudioStreamTransport {
 					ws.send(
 						JSON.stringify({
 							type: "session_init",
+							ticket,
 							recordingId: this.host.getRecordingId(),
-							organizationId: opts.organizationId,
-							patientId: opts.patientId,
-							visitId: opts.visitId,
+							patientId: patientUuid,
+							visitId: visitUuid,
 							specialty: opts.specialty,
 							language: opts.language,
-							adminSecret: opts.adminSecret,
 							sampleRate: 16000,
 						}),
 					);
@@ -212,6 +269,9 @@ export class AudioStreamTransport {
 				ws.onmessage = (event) => {
 					try {
 						const data = JSON.parse(event.data);
+						if (data.type === "session_ready" || data.type === "auth_ok") {
+							return;
+						}
 						if (INTERIM_MESSAGE_TYPES.has(data.type)) {
 							this.host.onInterimTranscript(data.text || "");
 						} else if (FINAL_MESSAGE_TYPES.has(data.type)) {
@@ -244,6 +304,13 @@ export class AudioStreamTransport {
 
 				ws.onclose = (event) => {
 					this.clearConnectTimeout();
+					if (event.code === 4001) {
+						logger.warn("[DENTE Voice] Gemini Live WebSocket unauthorized (4001)");
+						if (opts.autoFallback && this.host.getState() === "listening" && !this.host.getIsDisposed()) {
+							void this.host.onProviderFallback("Требуется повторная авторизация потока Gemini Live");
+						}
+						return;
+					}
 					if (
 						this.host.getState() === "listening" &&
 						this.host.getMode() === "gemini_live" &&
@@ -335,26 +402,35 @@ export class AudioStreamTransport {
 
 		try {
 			audioBase64 = await encodeBlobToBase64(wavBlob);
+			const orgUuid = toCleanUuid(opts.organizationId);
+			const patientUuid = toCleanUuid(opts.patientId);
+			const visitUuid = toCleanUuid(opts.visitId);
+			const normalizedSource = normalizeTranscriptionSource(opts.source, visitUuid);
 			const response = await fetch("/api/speech/transcribe-chunk", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+				credentials: "include",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
 					recordingId: this.host.getRecordingId(),
 					chunkIndex: currentChunkIdx,
 					mimeType: "audio/wav" as const,
 					audioBase64,
 					durationMs,
-					source: opts.source || (opts.visitId ? "visit" : "copilot"),
-					organizationId: opts.organizationId,
-					patientId: opts.patientId,
-					visitId: opts.visitId,
+					source: normalizedSource,
+					...(orgUuid ? { organizationId: orgUuid } : {}),
+					patientId: patientUuid,
+					visitId: visitUuid,
 					specialty: opts.specialty,
 					language: opts.language,
 				}),
 			});
 
 			if (!response.ok) throw new Error(`Server Whisper returned status ${response.status}`);
-			const data = await response.json();
+			const rawJson: unknown = await response.json();
+			const data = unwrapEnvelope<{ chunk?: { transcript?: string }; text?: string }>(rawJson);
 			const text = (data?.chunk?.transcript ?? data?.text ?? "").trim();
 			if (text) this.host.onFinalSegment(text);
 		} catch (error) {
@@ -369,10 +445,9 @@ export class AudioStreamTransport {
 						rawText: this.host.getAccumulatedText(),
 						specialty: opts.specialty,
 						context: {
-							organizationId: opts.organizationId,
-							patientId: opts.patientId,
-							visitId: opts.visitId,
-							adminSecret: opts.adminSecret,
+							organizationId: toCleanUuid(opts.organizationId),
+							patientId: toCleanUuid(opts.patientId),
+							visitId: toCleanUuid(opts.visitId),
 						},
 					})
 					.then((rec) => this.host.onOfflineRecordSaved(rec))

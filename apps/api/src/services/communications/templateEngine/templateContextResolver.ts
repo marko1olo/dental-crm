@@ -43,9 +43,7 @@ async function resolveContextVariablesWithTx(
 			ctx.patient_name = patient.fullName;
 			const parts = patient.fullName.trim().split(/\s+/);
 			ctx.patient_first_name = parts[1] || parts[0] || "";
-			if (!ctx.clinic_phone && patient.phone) ctx.patient_phone = patient.phone;
-			ctx.portal_link = `https://dente.clinic/portal/${patient.id.slice(0, 8)}`;
-			ctx.sbp_payment_link = `https://sbp.nspk.ru/pay?id=dente-${patient.id.slice(0, 8)}`;
+			if (patient.phone) ctx.patient_phone = patient.phone;
 		}
 	}
 

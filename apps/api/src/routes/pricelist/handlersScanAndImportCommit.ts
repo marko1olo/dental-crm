@@ -38,9 +38,7 @@ export async function processScanAndImportCommit(params: {
 		);
 		return reply.code(500).send({
 			error: "PricelistCommitTransactionError",
-			message:
-				(error as Error).message ||
-				"Ошибка транзакционного импорта прейскуранта",
+			message: "Ошибка транзакционного импорта прейскуранта.",
 		});
 	}
 }

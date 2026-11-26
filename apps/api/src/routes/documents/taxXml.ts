@@ -140,19 +140,23 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 		});
 	}
 
+	const patientPayments = await getPaymentsByPatientIdInDb(
+		orgId,
+		document.patientId,
+	);
 	const taxPaymentSnapshot =
 		document.taxPaymentSnapshot ??
 		(taxDocumentUsesPaymentSnapshot(document.kind)
 			? buildTaxPaymentSnapshotForIssue(
 					document,
-					await getPaymentsByPatientIdInDb(orgId, document.patientId),
+					patientPayments,
 					await getDocumentsByPatientId(orgId, document.patientId),
 				)
 			: null);
 	if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
 		const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
 			document,
-			[],
+			patientPayments,
 		);
 		if (duplicateTaxCertificate) {
 			return reply
@@ -225,7 +229,7 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 	}
 	const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
 		xmlDocument,
-		[],
+		patientPayments,
 	);
 	if (duplicateTaxCertificate) {
 		return reply

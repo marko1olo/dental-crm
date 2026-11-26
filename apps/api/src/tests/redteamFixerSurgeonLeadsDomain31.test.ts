@@ -143,7 +143,10 @@ describe("RED TEAM FIXER SURGEON — DOMAIN 31 LEADS & CONVERSION", () => {
 		});
 
 		assert.equal(resp1.statusCode, 201, resp1.body);
-		assert.equal(resp1.headers["x-idempotency-key"], idemKey);
+		assert.equal(
+			resp1.headers["idempotency-key"] ?? resp1.headers["x-idempotency-key"],
+			idemKey,
+		);
 		const json1 = JSON.parse(resp1.body);
 		assert.equal(json1.success, true);
 		assert.equal(json1.alreadyExisted, false);
@@ -164,7 +167,10 @@ describe("RED TEAM FIXER SURGEON — DOMAIN 31 LEADS & CONVERSION", () => {
 		});
 
 		assert.equal(resp2.statusCode, 200, resp2.body);
-		assert.equal(resp2.headers["x-idempotency-key"], idemKey);
+		assert.equal(
+			resp2.headers["idempotency-key"] ?? resp2.headers["x-idempotency-key"],
+			idemKey,
+		);
 		const json2 = JSON.parse(resp2.body);
 		assert.equal(json2.success, true);
 		assert.equal(json2.alreadyExisted, true);

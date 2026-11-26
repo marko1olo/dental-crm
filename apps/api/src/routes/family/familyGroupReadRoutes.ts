@@ -1,5 +1,6 @@
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patients } from "../../db/schema.js";
@@ -11,6 +12,24 @@ import {
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const familySearchQuerySchema = z
+	.object({
+		search: z.string().trim().max(200).optional(),
+	})
+	.strict();
+
+const familyPatientParamsSchema = z
+	.object({
+		patientId: z.string().trim().min(1),
+	})
+	.strict();
+
+const familyIdParamsSchema = z
+	.object({
+		familyGroupId: z.string().trim().min(1),
+	})
+	.strict();
+
 export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 	// GET /api/finance/family - search families
 	app.get("/api/finance/family", async (req, reply) => {
@@ -21,7 +40,15 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		);
 		if (!organizationId) return;
 
-		const { search } = req.query as { search?: string };
+		const queryParsed = familySearchQuerySchema.safeParse(req.query ?? {});
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры поиска семейных групп",
+				details: queryParsed.error.issues,
+			});
+		}
+		const { search } = queryParsed.data;
 		const families = await withTenantCtx(organizationId, async (tx) =>
 			tx
 				.select({
@@ -72,13 +99,14 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		);
 		if (!organizationId) return;
 
-		const { patientId } = req.params as { patientId: string };
-		if (!patientId || !UUID_REGEX.test(patientId)) {
+		const paramsParsed = familyPatientParamsSchema.safeParse(req.params);
+		if (!paramsParsed.success || !UUID_REGEX.test(paramsParsed.data.patientId)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор пациента (ожидается UUID)",
 			});
 		}
+		const { patientId } = paramsParsed.data;
 		const [patient] = await withTenantCtx(organizationId, async (tx) =>
 			tx
 				.select({ familyGroupId: patients.familyGroupId })
@@ -111,7 +139,14 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		);
 		if (!organizationId) return;
 
-		const { familyGroupId } = req.params as { familyGroupId: string };
+		const paramsParsed = familyIdParamsSchema.safeParse(req.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор семейной группы (ожидается UUID)",
+			});
+		}
+		const { familyGroupId } = paramsParsed.data;
 		if (familyGroupId === "patient" || familyGroupId === "pay" || familyGroupId === "topup") {
 			return reply.code(404).send({ error: "Family group not found" });
 		}

@@ -13,7 +13,7 @@ export function useRetroactiveSterilizers() {
 		try {
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
-			const res = await fetch("/api/registers/sterilizers/equipments", {
+			const res = await fetch("/api/sanpin/sterilization/equipments", {
 				headers: {
 					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 					...(staffToken ? { "X-Staff-Token": staffToken } : {}),

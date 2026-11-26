@@ -31,7 +31,9 @@ export function isValidSnilsChecksum(snilsInput: string): boolean {
 
 	let sum = 0;
 	for (let i = 0; i < 9; i++) {
-		sum += Number.parseInt(snils[i]!, 10) * (9 - i);
+		const digitChar = snils[i];
+		if (!digitChar) return false;
+		sum += Number.parseInt(digitChar, 10) * (9 - i);
 	}
 
 	let checkDigit = 0;

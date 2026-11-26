@@ -447,7 +447,11 @@ export const wsBroker = {
 		userId: string,
 		message: object,
 	) {
+		const isClinical = isClinicalWsEvent(message);
 		const rawData = JSON.stringify(message);
+		let sanitizedData: string | null = null;
+		let strictSanitizedData: string | null = null;
+
 		for (const client of clients) {
 			if (client.ws.readyState !== 1) {
 				if (client.ws.readyState === 2 || client.ws.readyState === 3) {
@@ -456,12 +460,37 @@ export const wsBroker = {
 				continue;
 			}
 			if (client.organizationId === organizationId && client.userId === userId) {
-				try {
-					client.ws.send(rawData, (err) => {
-						if (err) clients.delete(client);
-					});
-				} catch {
-					clients.delete(client);
+				if (client.isClinical) {
+					try {
+						client.ws.send(rawData, (err) => {
+							if (err) clients.delete(client);
+						});
+					} catch {
+						clients.delete(client);
+					}
+				} else {
+					if (isClinical) {
+						continue;
+					}
+					let payloadToSend: string;
+					if (isStrictSecrecyClient(client)) {
+						if (!strictSanitizedData) {
+							strictSanitizedData = JSON.stringify(stripDiagnosisPayload(message, { strict: true }));
+						}
+						payloadToSend = strictSanitizedData;
+					} else {
+						if (!sanitizedData) {
+							sanitizedData = JSON.stringify(stripDiagnosisPayload(message, { strict: false }));
+						}
+						payloadToSend = sanitizedData;
+					}
+					try {
+						client.ws.send(payloadToSend, (err) => {
+							if (err) clients.delete(client);
+						});
+					} catch {
+						clients.delete(client);
+					}
 				}
 			}
 		}

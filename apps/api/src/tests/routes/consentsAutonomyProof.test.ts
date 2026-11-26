@@ -349,4 +349,48 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 		assert.strictEqual(secondDoc.signatureSvg, updatedSvg, "Must update signature in existing document");
 		assert.strictEqual(secondDoc.integrityHash, "HASH-UPDATED-ZERO-DUPLICATE");
 	});
+
+	it("8. Rejects XSS signatureSvg payloads (400) and non-existent/foreign documentId (404)", async () => {
+		const app = Fastify();
+		await registerConsentRoutes(app);
+		const staffToken = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
+
+		for (const evilSvg of [
+			'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+			'<svg onload="alert(1)" xmlns="http://www.w3.org/2000/svg"><path d="M0,0"/></svg>',
+			'data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9ImFsZXJ0KDEpIi8+',
+		]) {
+			const xssRes = await app.inject({
+				method: "POST",
+				url: `/api/patients/${PATIENT_ID}/consents`,
+				headers: {
+					authorization: `Bearer ${staffToken}`,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					kind: "informed_consent",
+					title: "XSS Probe",
+					isSigned: true,
+					signatureSvg: evilSvg,
+				}),
+			});
+			assert.strictEqual(xssRes.statusCode, 400, `Expected 400 for dangerous SVG: ${evilSvg}`);
+		}
+
+		const missingDocRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${staffToken}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				documentId: "00000000-0000-4000-8000-000000009999",
+				kind: "informed_consent",
+				title: "Foreign Doc Probe",
+				isSigned: true,
+			}),
+		});
+		assert.strictEqual(missingDocRes.statusCode, 404);
+	});
 });

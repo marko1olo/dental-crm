@@ -155,6 +155,16 @@ function buildAvailablePortalSbpBanks(qrId: string, sbpNspkPayloadString: string
 	];
 }
 
+function resolveInvoiceTotalKopecks(inv: {
+	totalPriceKopecks?: bigint | number | null | undefined;
+	totalAmountRub?: string | number | null | undefined;
+	totalRub?: string | number | null | undefined;
+}): number {
+	const kopecksVal = inv.totalPriceKopecks != null ? Number(inv.totalPriceKopecks) : 0;
+	if (kopecksVal > 0) return kopecksVal;
+	return parseKopecks(inv.totalAmountRub || inv.totalRub || "0");
+}
+
 export async function registerPortalPaymentsRoutes(server: FastifyInstance): Promise<void> {
 	// 11. Create Dynamic SBP QR Code for Stage/Invoice Payment (Protected)
 	server.post<{
@@ -211,7 +221,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				}
 
 				invoiceNumber = `СЧ-${inv.id.slice(0, 8).toUpperCase()}`;
-				const invAmtKop = parseKopecks(inv.totalAmountRub || inv.totalRub || "0");
+				const invAmtKop = resolveInvoiceTotalKopecks(inv);
 				resolvedInvoiceKopecks = invAmtKop;
 				amountRub = explicitAmount !== undefined ? explicitAmount : kopecksToRubles(invAmtKop);
 			}
@@ -426,7 +436,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				if (!inv) {
 					return reply.code(404).send({ error: "InvoiceNotFound", message: "Счёт на оплату не найден в клинике или не принадлежит пациенту." });
 				}
-				const invoiceTotalKop = parseKopecks(inv.totalAmountRub || inv.totalRub || "0");
+				const invoiceTotalKop = resolveInvoiceTotalKopecks(inv);
 				if (invoiceTotalKop <= 0) {
 					return reply.code(400).send({ error: "InvalidInvoiceAmount", message: "Сумма счёта должна быть больше нуля." });
 				}
@@ -764,9 +774,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			}
 
 			const isPaid = inv.status === "paid";
-			const totalAmountRub = kopecksToRubles(
-				parseKopecks(inv.totalAmountRub || inv.totalRub || "0"),
-			);
+			const totalAmountRub = kopecksToRubles(resolveInvoiceTotalKopecks(inv));
 			return {
 				success: true,
 				status: inv.status,

@@ -21,6 +21,7 @@ import type {
 	FastifyRequest,
 } from "fastify";
 import fp from "fastify-plugin";
+import { getRequestIdentity } from "../security/identity.js";
 
 export interface RouteCacheConfig {
 	/** Время жизни в кэше браузера в секундах (по умолчанию 3600 — 1 час) */
@@ -139,9 +140,10 @@ export function matchesEtag(
 }
 
 /**
- * Определение ключа изоляции арендатора из запроса.
+ * Определение верифицированного ключа изоляции арендатора из запроса.
+ * Никогда не доверяет сырому заголовку x-organization-id до проверки подписи токена.
  */
-function extractTenantId(request: FastifyRequest): string {
+function extractTenantId(request: FastifyRequest): string | null {
 	const req = request as FastifyRequest & { tenantId?: string };
 	if (typeof req.tenantId === "string" && req.tenantId.length > 0) {
 		return req.tenantId;
@@ -149,12 +151,18 @@ function extractTenantId(request: FastifyRequest): string {
 	if (request.user?.organizationId) {
 		return request.user.organizationId;
 	}
-	const headerOrg = request.headers["x-organization-id"];
-	const orgStr = Array.isArray(headerOrg) ? headerOrg[0] : headerOrg;
-	if (typeof orgStr === "string" && orgStr.trim()) {
-		return orgStr.trim();
+	try {
+		const identity = getRequestIdentity(request);
+		if (
+			identity.organizationId &&
+			(identity.verified || identity.userId !== null)
+		) {
+			return identity.organizationId;
+		}
+	} catch {
+		return null;
 	}
-	return "global";
+	return null;
 }
 
 /**
@@ -307,7 +315,11 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 		}
 
 		const tenantId = extractTenantId(request);
-		const cacheKey = `${tenantId}::${request.method}::${request.url}`;
+		if (!tenantId && config.scope !== "public") {
+			return;
+		}
+		const cacheScope = tenantId ?? "public";
+		const cacheKey = `${cacheScope}::${request.method}::${request.url}`;
 		const entry = etagMemoryCache.get(cacheKey);
 
 		if (entry && Date.now() - entry.cachedAt < ttlMs) {
@@ -321,7 +333,7 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 					.header("Cache-Control", cacheControl)
 					.header(
 						"Vary",
-						"Accept-Encoding, Authorization, x-organization-id",
+						"Accept-Encoding, Authorization, x-dente-clinic-token, x-dente-staff-token",
 					)
 					.send();
 				return reply;
@@ -351,7 +363,11 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 			const etag = generateEtag(payload);
 			const cacheControl = buildCacheControlHeader(config);
 			const tenantId = extractTenantId(request);
-			const cacheKey = `${tenantId}::${request.method}::${request.url}`;
+			if (!tenantId && config.scope !== "public") {
+				return payload;
+			}
+			const cacheScope = tenantId ?? "public";
+			const cacheKey = `${cacheScope}::${request.method}::${request.url}`;
 
 			// Сохраняем в in-memory таблицу с контролем размера (LRU / FIFO)
 			if (etagMemoryCache.size >= maxEntries) {
@@ -373,7 +389,7 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 			reply.header("Cache-Control", cacheControl);
 			reply.header(
 				"Vary",
-				"Accept-Encoding, Authorization, x-organization-id",
+				"Accept-Encoding, Authorization, x-dente-clinic-token, x-dente-staff-token",
 			);
 
 			// Сверяем с If-None-Match клиента
@@ -401,6 +417,9 @@ const cacheHeadersPluginAsync: FastifyPluginAsync<
 			reply.statusCode < 400
 		) {
 			const tenantId = extractTenantId(request);
+			if (!tenantId) {
+				return;
+			}
 			const urlPath = request.url.split("?")[0] || "";
 
 			// Если мутация затрагивает шаблоны или справочники — сбрасываем кэш этого ресурса

@@ -52,6 +52,7 @@ export {
 	configuredWebhookSecret,
 	telegramBotConfigId,
 	resolveTelegramRuntimeContext,
+	resolveTelegramRuntimeContextWithDb,
 } from "./telegramRuntimeResolver.js";
 
 export {

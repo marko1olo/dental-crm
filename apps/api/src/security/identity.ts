@@ -251,19 +251,21 @@ export async function requireStaffIdentity(
 	if (identity.sessionId) {
 		const checkedUserId = identity.userId;
 		const checkedOrgId = identity.organizationId;
-		const { db } = await import("../db/client.js");
+		const { withTenantCtx } = await import("../db/rls.js");
 		const { users } = await import("../db/schema.js");
 		const { eq, and } = await import("drizzle-orm");
-		const [user] = await db
-			.select({ currentSessionId: users.currentSessionId })
-			.from(users)
-			.where(
-				and(
-					eq(users.id, checkedUserId),
-					eq(users.organizationId, checkedOrgId),
-				),
-			)
-			.limit(1);
+		const [user] = await withTenantCtx(checkedOrgId, async (tx) =>
+			tx
+				.select({ currentSessionId: users.currentSessionId })
+				.from(users)
+				.where(
+					and(
+						eq(users.id, checkedUserId),
+						eq(users.organizationId, checkedOrgId),
+					),
+				)
+				.limit(1),
+		);
 
 		if (
 			!user?.currentSessionId ||

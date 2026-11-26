@@ -27,7 +27,7 @@
  */
 
 import { and, eq, isNull } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
 import { patients } from "../../db/schema.js";
 export * from "./duplicateFuzzyMetrics.js";
@@ -335,25 +335,41 @@ export async function findDuplicateCandidates(
 	const minConfidence = Math.max(0, Math.min(1, options.minConfidence ?? 0.3));
 	const limit = Math.max(1, Math.min(500, options.limit ?? 100));
 
-	const rows: PatientRow[] = (
-		await db
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				phone: patients.phone,
-				email: patients.email,
-				birthDate: patients.birthDate,
-				administrativeProfile: patients.administrativeProfile,
-			})
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					eq(patients.status, "active"),
-					isNull(patients.mergedIntoPatientId),
-				),
-			)
-	).map((r) => ({
+	const { rows: rawRows, decisions } = await withTenantCtx(
+		organizationId,
+		async (tx) => {
+			const patientRows = await tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					phone: patients.phone,
+					email: patients.email,
+					birthDate: patients.birthDate,
+					administrativeProfile: patients.administrativeProfile,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.status, "active"),
+						isNull(patients.mergedIntoPatientId),
+					),
+				);
+
+			// Пары, про которые человек уже сказал «это не дубли» или которые объединены.
+			const decisionRows = await tx
+				.select({
+					leftPatientId: patientDuplicateDecisions.leftPatientId,
+					rightPatientId: patientDuplicateDecisions.rightPatientId,
+				})
+				.from(patientDuplicateDecisions)
+				.where(eq(patientDuplicateDecisions.organizationId, organizationId));
+
+			return { rows: patientRows, decisions: decisionRows };
+		},
+	);
+
+	const rows: PatientRow[] = rawRows.map((r) => ({
 		id: r.id,
 		fullName: r.fullName,
 		phone: r.phone,
@@ -363,15 +379,6 @@ export async function findDuplicateCandidates(
 			(r.administrativeProfile as { snils?: string | null } | null)?.snils ??
 			null,
 	}));
-
-	// Пары, про которые человек уже сказал «это не дубли» или которые объединены.
-	const decisions = await db
-		.select({
-			leftPatientId: patientDuplicateDecisions.leftPatientId,
-			rightPatientId: patientDuplicateDecisions.rightPatientId,
-		})
-		.from(patientDuplicateDecisions)
-		.where(eq(patientDuplicateDecisions.organizationId, organizationId));
 	const hidden = new Set(
 		decisions.map((row) => pairKey(row.leftPatientId, row.rightPatientId)),
 	);
@@ -574,17 +581,19 @@ export async function patientBelongsToOrganization(
 	organizationId: string,
 	patientId: string,
 ): Promise<boolean> {
-	const [row] = await db
-		.select({ id: patients.id })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	return Boolean(row);
+	return await withTenantCtx(organizationId, async (tx) => {
+		const [row] = await tx
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		return Boolean(row);
+	});
 }
 
 export type PatientDuplicateOptions = {

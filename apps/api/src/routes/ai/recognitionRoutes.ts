@@ -22,6 +22,7 @@ import {
 import { getImagingStudyById } from "../../db/imagingQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { registerClinicalAiRoutes } from "./clinicalAiRoutes.js";
 
 const aiRecognitionValidationMessage =
 	"AI-задача не создана: выберите пациента или снимок и тип черновика.";
@@ -151,4 +152,6 @@ export async function registerRecognitionRoutes(app: FastifyInstance): Promise<v
 			});
 		}
 	});
+
+	await registerClinicalAiRoutes(app);
 }

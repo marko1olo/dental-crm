@@ -199,14 +199,16 @@ export async function loadRowInSavepoint(
 		 * разрешался в тот же самый `tx`. Отдельной транзакции здесь никогда не было,
 		 * была лишь её видимость. Теперь зависимость названа явно.
 		 */
-		await tx
-			.update(migrationStagingRecords)
-			.set({ status: "quarantined", updatedAt: new Date() })
-			.where(eq(migrationStagingRecords.id, row.stagingId))
-			.catch(() => {
-				// Если и это не удалось, строка останется ready и попадёт в сверку как
-				// нерешённая — это верный сигнал, а не тихая потеря.
-			});
+		try {
+			await tx
+				.update(migrationStagingRecords)
+				.set({ status: "quarantined", updatedAt: new Date() })
+				.where(eq(migrationStagingRecords.id, row.stagingId));
+		} catch (quarantineUpdateErr) {
+			// Если и это не удалось, строка останется ready и попадёт в сверку как
+			// нерешённая — это верный сигнал, а не тихая потеря.
+			void quarantineUpdateErr;
+		}
 	}
 }
 

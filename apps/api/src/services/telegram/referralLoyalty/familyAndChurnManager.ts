@@ -5,6 +5,7 @@
  * and Smart Churn Resuscitation (Retention Radar 6+ months recall).
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { TenantDb } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -18,7 +19,6 @@ import {
 	visits,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
-import { isDbConnectionError } from "./webAppValidator.js";
 import type {
 	ChurnCandidateItem,
 	FamilyMemberItem,
@@ -117,11 +117,17 @@ export async function getFamilyProfile(
 			});
 		}
 
+		const balanceKop = Number(familyGroupRecord?.balanceKopecks || 0);
 		return {
 			familyGroupId: familyGroupRecord?.id || null,
 			familyGroupName: familyGroupRecord?.name || familyGroupRecord?.groupName || `Семья (${primary.fullName.split(" ")[0]})`,
 			headPatientId: familyGroupRecord?.headPatientId || primary.id,
-			familyBalanceRub: familyGroupRecord ? Number(familyGroupRecord.balance || 0) : 0,
+			familyBalanceRub:
+				balanceKop !== 0
+					? kopecksToRubles(balanceKop)
+					: familyGroupRecord
+						? Number(familyGroupRecord.balance || 0)
+						: 0,
 			members: memberItems,
 		};
 	};
@@ -140,64 +146,52 @@ export async function confirmFamilyAppointment(
 	parentPatientId: string,
 	appointmentId: string,
 ): Promise<{ success: boolean; appointmentId: string; message: string; newStatus?: string }> {
-	try {
-		return await withTenantCtx(organizationId, async (tx) => {
-			const familyProfile = await getFamilyProfile(organizationId, parentPatientId, tx);
-			const allowedPatientIds = familyProfile.members.map((m) => m.patientId);
+	return await withTenantCtx(organizationId, async (tx) => {
+		const familyProfile = await getFamilyProfile(organizationId, parentPatientId, tx);
+		const allowedPatientIds = familyProfile.members.map((m) => m.patientId);
 
-			const [appt] = await tx
-				.select()
-				.from(appointments)
-				.where(and(eq(appointments.organizationId, organizationId), eq(appointments.id, appointmentId)))
-				.limit(1);
+		const [appt] = await tx
+			.select()
+			.from(appointments)
+			.where(and(eq(appointments.organizationId, organizationId), eq(appointments.id, appointmentId)))
+			.limit(1);
 
-			if (!appt) {
-				return { success: false, appointmentId, message: "Запись на приём не найдена." };
-			}
+		if (!appt) {
+			return { success: false, appointmentId, message: "Запись на приём не найдена." };
+		}
 
-			if (!appt.patientId || !allowedPatientIds.includes(appt.patientId)) {
-				return {
-					success: false,
-					appointmentId,
-					message: "У вас нет прав подтверждать запись для пациента не из вашей семейной группы.",
-				};
-			}
-
-			await tx
-				.update(appointments)
-				.set({
-					status: "confirmed",
-				})
-				.where(and(eq(appointments.id, appointmentId), eq(appointments.organizationId, organizationId)));
-
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "appointment_confirmed_by_family",
-				organizationId,
-				payload: {
-					appointmentId,
-					parentPatientId,
-					patientId: appt.patientId,
-				},
-			});
-
+		if (!appt.patientId || !allowedPatientIds.includes(appt.patientId)) {
 			return {
-				success: true,
+				success: false,
 				appointmentId,
-				newStatus: "confirmed",
-				message: "Запись успешно подтверждена родительским профилем.",
-			};
-		});
-	} catch (err) {
-		if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)) {
-			return {
-				success: true,
-				appointmentId,
-				newStatus: "confirmed",
-				message: "Запись успешно подтверждена родительским профилем.",
+				message: "У вас нет прав подтверждать запись для пациента не из вашей семейной группы.",
 			};
 		}
-		throw err;
-	}
+
+		await tx
+			.update(appointments)
+			.set({
+				status: "confirmed",
+			})
+			.where(and(eq(appointments.id, appointmentId), eq(appointments.organizationId, organizationId)));
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "appointment_confirmed_by_family",
+			organizationId,
+			payload: {
+				appointmentId,
+				parentPatientId,
+				patientId: appt.patientId,
+			},
+		});
+
+		return {
+			success: true,
+			appointmentId,
+			newStatus: "confirmed",
+			message: "Запись успешно подтверждена родительским профилем.",
+		};
+	});
 }
 
 /**
@@ -209,119 +203,97 @@ export async function findChurnCandidates(
 	organizationId: string,
 	options: { minMonths?: number; limit?: number } = {},
 ): Promise<ChurnCandidateItem[]> {
-	try {
-		return await withTenantCtx(organizationId, async (tx) => {
-			const minMonths = options.minMonths ?? 6;
-			const limit = options.limit ?? 50;
+	return await withTenantCtx(organizationId, async (tx) => {
+		const minMonths = options.minMonths ?? 6;
+		const limit = options.limit ?? 50;
 
-			// Дата отсечки: ровно minMonths месяцев назад
-			const cutoffDate = new Date();
-			cutoffDate.setMonth(cutoffDate.getMonth() - minMonths);
+		// Дата отсечки: ровно minMonths месяцев назад
+		const cutoffDate = new Date();
+		cutoffDate.setMonth(cutoffDate.getMonth() - minMonths);
 
-			// Находим пациентов, у которых был завершенный визит до cutoffDate и нет будущих записей
-			const candidates = await tx
-				.select({
-					patientId: patients.id,
-					fullName: patients.fullName,
-					phone: patients.phone,
-					lastVisitDate: sql<string>`MAX(${visits.createdAt})`,
-					doctorName: sql<string>`MAX(${users.fullName})`,
-				})
-				.from(patients)
-				.innerJoin(visits, eq(visits.patientId, patients.id))
-				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-				.leftJoin(users, eq(appointments.doctorUserId, users.id))
-				.where(and(eq(patients.organizationId, organizationId), eq(patients.status, "active")))
-				.groupBy(patients.id, patients.fullName, patients.phone)
-				.having(sql`MAX(${visits.createdAt}) <= ${cutoffDate.toISOString()}`)
-				.limit(limit);
+		// Находим пациентов, у которых был завершенный визит до cutoffDate и нет будущих записей
+		const candidates = await tx
+			.select({
+				patientId: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				lastVisitDate: sql<string>`MAX(${visits.createdAt})`,
+				doctorName: sql<string>`MAX(${users.fullName})`,
+			})
+			.from(patients)
+			.innerJoin(visits, eq(visits.patientId, patients.id))
+			.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+			.leftJoin(users, eq(appointments.doctorUserId, users.id))
+			.where(and(eq(patients.organizationId, organizationId), eq(patients.status, "active")))
+			.groupBy(patients.id, patients.fullName, patients.phone)
+			.having(sql`MAX(${visits.createdAt}) <= ${cutoffDate.toISOString()}`)
+			.limit(limit);
 
-			const results: ChurnCandidateItem[] = [];
+		const results: ChurnCandidateItem[] = [];
 
-			for (const c of candidates) {
-				// Проверяем, нет ли будущих запланированных приёмов
-				const [futureAppt] = await tx
-					.select({ id: appointments.id })
-					.from(appointments)
-					.where(
-						and(
-							eq(appointments.organizationId, organizationId),
-							eq(appointments.patientId, c.patientId),
-							sql`${appointments.status} IN ('planned', 'confirmed')`,
-						),
-					)
-					.limit(1);
+		for (const c of candidates) {
+			// Проверяем, нет ли будущих запланированных приёмов
+			const [futureAppt] = await tx
+				.select({ id: appointments.id })
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, organizationId),
+						eq(appointments.patientId, c.patientId),
+						sql`${appointments.status} IN ('planned', 'confirmed')`,
+					),
+				)
+				.limit(1);
 
-				if (futureAppt) continue; // Пациент уже записан на будущее, пропускаем
+			if (futureAppt) continue; // Пациент уже записан на будущее, пропускаем
 
-				// Ищем telegram chat link
-				const [tgLink] = await tx
-					.select({ chatId: denteTelegramChatLinks.chatFingerprint })
-					.from(denteTelegramChatLinks)
-					.where(
-						and(
-							eq(denteTelegramChatLinks.organizationId, organizationId),
-							eq(denteTelegramChatLinks.subjectId, c.patientId),
-							eq(denteTelegramChatLinks.status, "active"),
-						),
-					)
-					.limit(1);
+			// Ищем telegram chat link
+			const [tgLink] = await tx
+				.select({ chatId: denteTelegramChatLinks.chatFingerprint })
+				.from(denteTelegramChatLinks)
+				.where(
+					and(
+						eq(denteTelegramChatLinks.organizationId, organizationId),
+						eq(denteTelegramChatLinks.subjectId, c.patientId),
+						eq(denteTelegramChatLinks.status, "active"),
+					),
+				)
+				.limit(1);
 
-				const lastDate = c.lastVisitDate ? new Date(c.lastVisitDate) : new Date();
-				const monthsElapsed = Math.max(
-					minMonths,
-					Math.floor((Date.now() - lastDate.getTime()) / (30.4375 * 24 * 3600 * 1000)),
-				);
+			const lastDate = c.lastVisitDate ? new Date(c.lastVisitDate) : new Date();
+			const monthsElapsed = Math.max(
+				minMonths,
+				Math.floor((Date.now() - lastDate.getTime()) / (30.4375 * 24 * 3600 * 1000)),
+			);
 
-				const firstName = c.fullName.split(" ")[0] || "Уважаемый пациент";
-				const doc = c.doctorName || "вашего лечащего врача";
+			const firstName = c.fullName.split(" ")[0] || "Уважаемый пациент";
+			const doc = c.doctorName || "вашего лечащего врача";
 
-				const inviteText = [
-					`🦷 <b>Плановый профилактический осмотр и гигиена</b>`,
-					``,
-					`Здравствуйте, <b>${firstName}</b>!`,
-					`Прошло уже <b>${monthsElapsed} месяцев</b> с вашего визита к доктору <b>${doc}</b>.`,
-					``,
-					`По клиническому стандарту Стоматологической Ассоциации России (СтАР), для сохранения здоровья десен и гарантии на установленные пломбы необходимо проходить профессиональную гигиену раз в 6 месяцев.`,
-					``,
-					`🎁 Для вас действует <b>персональная скидка 20%</b> на комплексную гигиену Air-Flow + ультразвук.`,
-					`Нажмите кнопку ниже, чтобы выбрать удобное время в 1 тап:`,
-				].join("\n");
+			const inviteText = [
+				`🦷 <b>Плановый профилактический осмотр и гигиена</b>`,
+				``,
+				`Здравствуйте, <b>${firstName}</b>!`,
+				`Прошло уже <b>${monthsElapsed} месяцев</b> с вашего визита к доктору <b>${doc}</b>.`,
+				``,
+				`По клиническому стандарту Стоматологической Ассоциации России (СтАР), для сохранения здоровья десен и гарантии на установленные пломбы необходимо проходить профессиональную гигиену раз в 6 месяцев.`,
+				``,
+				`🎁 Для вас действует <b>персональная скидка 20%</b> на комплексную гигиену Air-Flow + ультразвук.`,
+				`Нажмите кнопку ниже, чтобы выбрать удобное время в 1 тап:`,
+			].join("\n");
 
-				results.push({
-					patientId: c.patientId,
-					fullName: c.fullName,
-					phone: c.phone,
-					telegramChatId: tgLink?.chatId || null,
-					monthsSinceLastVisit: monthsElapsed,
-					lastVisitDate: c.lastVisitDate,
-					lastDoctorName: c.doctorName,
-					inviteText,
-					personalDiscountPercent: 20,
-				});
-			}
-
-			return results;
-		});
-	} catch (err) {
-		if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)) {
-			const lastVisitDate = new Date();
-			lastVisitDate.setMonth(lastVisitDate.getMonth() - 7);
-			const lastVisitStr = lastVisitDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-			return [
-				{
-					patientId: "churn-patient-1",
-					fullName: "Петров Петр Петрович",
-					phone: "+79007654321",
-					telegramChatId: "770011",
-					monthsSinceLastVisit: 7,
-					lastVisitDate: lastVisitDate.toISOString(),
-					lastDoctorName: "Доктор Смирнова Анна Павловна",
-					personalDiscountPercent: 20,
-					inviteText: `Здравствуйте, Петр Петрович! Прошло уже 7 месяцев с вашего визита ${lastVisitStr}. По клиническим стандартам СтАР рекомендуется проходить профессиональную гигиену каждые полгода. Дарим вам персональную скидку 20% на комплексную гигиену Air-Flow + ультразвук.`,
-				},
-			];
+			results.push({
+				patientId: c.patientId,
+				fullName: c.fullName,
+				phone: c.phone,
+				telegramChatId: tgLink?.chatId || null,
+				monthsSinceLastVisit: monthsElapsed,
+				lastVisitDate: c.lastVisitDate,
+				lastDoctorName: c.doctorName,
+				inviteText,
+				personalDiscountPercent: 20,
+			});
 		}
-		throw err;
-	}
+
+		return results;
+	});
 }

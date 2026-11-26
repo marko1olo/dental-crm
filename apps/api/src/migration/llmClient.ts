@@ -139,9 +139,12 @@ async function callOnce<T>(
 		numberFromEnv("DENTAL_MIGRATION_LLM_TIMEOUT_MS", 45_000),
 	);
 
-	const data = (await response
-		.json()
-		.catch(() => ({}))) as OpenAiCompletionResponse & OpenAiErrorResponse;
+	let data: OpenAiCompletionResponse & OpenAiErrorResponse = {};
+	try {
+		data = (await response.json()) as OpenAiCompletionResponse & OpenAiErrorResponse;
+	} catch {
+		data = {};
+	}
 	if (!response.ok) {
 		throw providerHttpError(
 			response.status,

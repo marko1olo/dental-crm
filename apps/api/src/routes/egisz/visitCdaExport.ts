@@ -17,7 +17,7 @@ import { fetchDiaryRow, fetchVisitRow, resolveDoctorFromAppointmentOrDiary } fro
 import { validateVisitCdaPrerequisites } from "./visitCda/validateVisitCdaData.js";
 import { assembleVisitCdaParams } from "./visitCda/buildVisitCdaParams.js";
 
-const visitCdaParamsSchema = z.object({ visitId: z.string().uuid() });
+const visitCdaParamsSchema = z.object({ visitId: z.string().uuid() }).strict();
 
 export function registerVisitCdaExportRoute(app: FastifyInstance): void {
 	app.get("/api/egisz/visits/:visitId/cda", async (request: FastifyRequest, reply: FastifyReply) => {

@@ -176,9 +176,21 @@ export function findCatalogService(
 			price: found.basePriceRub ? Number(found.basePriceRub) : fallbackPrice,
 		};
 	}
-	const anyItem = catalogRows[0];
+	const normalizedPrefix = fallbackTitle.trim().toLowerCase().slice(0, 28);
+	const byTitle = normalizedPrefix
+		? catalogRows.find((r) =>
+				r.title.trim().toLowerCase().startsWith(normalizedPrefix),
+			)
+		: undefined;
+	if (byTitle && byTitle.id) {
+		return {
+			id: byTitle.id,
+			title: byTitle.title,
+			price: byTitle.basePriceRub ? Number(byTitle.basePriceRub) : fallbackPrice,
+		};
+	}
 	return {
-		id: anyItem?.id ?? undefined,
+		id: undefined,
 		title: fallbackTitle,
 		price: fallbackPrice,
 	};
@@ -292,8 +304,8 @@ export function buildDeterministicTreatmentItems(
 			title: sTherapyConsult.title,
 			toothCode: "16",
 			quantity: "1.00",
-			priceRub: 1500,
-			unitPriceRub: 1500,
+			priceRub: sTherapyConsult.price,
+			unitPriceRub: sTherapyConsult.price,
 			discountRub: 0,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
@@ -309,8 +321,8 @@ export function buildDeterministicTreatmentItems(
 			title: sAnesthesia.title,
 			toothCode: "16",
 			quantity: "1.00",
-			priceRub: 950,
-			unitPriceRub: 950,
+			priceRub: sAnesthesia.price,
+			unitPriceRub: sAnesthesia.price,
 			discountRub: 0,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
@@ -326,8 +338,8 @@ export function buildDeterministicTreatmentItems(
 			title: sCofferdam.title,
 			toothCode: "16",
 			quantity: "1.00",
-			priceRub: 650,
-			unitPriceRub: 650,
+			priceRub: sCofferdam.price,
+			unitPriceRub: sCofferdam.price,
 			discountRub: 0,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
@@ -343,8 +355,8 @@ export function buildDeterministicTreatmentItems(
 			title: sFillingCaries.title,
 			toothCode: "16",
 			quantity: "1.00",
-			priceRub: 3500,
-			unitPriceRub: 3500,
+			priceRub: sFillingCaries.price,
+			unitPriceRub: sFillingCaries.price,
 			discountRub: 0,
 			status: "completed" as const,
 			plannedDoctorUserId: doctorUserId,
@@ -361,8 +373,8 @@ export function buildDeterministicTreatmentItems(
 			title: sEndoPrep.title,
 			toothCode: "36",
 			quantity: "1.00",
-			priceRub: 5500,
-			unitPriceRub: 5500,
+			priceRub: sEndoPrep.price,
+			unitPriceRub: sEndoPrep.price,
 			discountRub: 0,
 			status: "approved" as const,
 			plannedDoctorUserId: doctorUserId,
@@ -378,8 +390,8 @@ export function buildDeterministicTreatmentItems(
 			title: sEndoObturation.title,
 			toothCode: "36",
 			quantity: "1.00",
-			priceRub: 6400,
-			unitPriceRub: 6400,
+			priceRub: sEndoObturation.price,
+			unitPriceRub: sEndoObturation.price,
 			discountRub: 0,
 			status: "proposed" as const,
 			plannedDoctorUserId: doctorUserId,
@@ -397,8 +409,8 @@ export function buildDeterministicTreatmentItems(
 			title: sCrownZirconia.title,
 			toothCode: "11",
 			quantity: "1.00",
-			priceRub: 14500,
-			unitPriceRub: 14500,
+			priceRub: sCrownZirconia.price,
+			unitPriceRub: sCrownZirconia.price,
 			discountRub: 0,
 			status: "in_progress" as const,
 			plannedDoctorUserId: orthopedistUserId,
@@ -416,8 +428,8 @@ export function buildDeterministicTreatmentItems(
 			title: sImplant.title,
 			toothCode: "46",
 			quantity: "1.00",
-			priceRub: 45000,
-			unitPriceRub: 45000,
+			priceRub: sImplant.price,
+			unitPriceRub: sImplant.price,
 			discountRub: 0,
 			status: "proposed" as const,
 			plannedDoctorUserId: surgeonUserId,

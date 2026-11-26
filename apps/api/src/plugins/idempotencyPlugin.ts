@@ -189,6 +189,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 						payloadHash,
 						existingMem,
 						retryAfter,
+						() => deleteInMemoryIdempotencyRecord(memKey),
 					);
 				}
 			}
@@ -281,10 +282,10 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 					payloadHash,
 				);
 				if (!inFlightRes.success) {
+					deleteInMemoryIdempotencyRecord(memKey);
 					if (inFlightRes.isConflict) {
 						return sendConflict(reply, idempotencyKey, "in_flight", retryAfter);
 					}
-					deleteInMemoryIdempotencyRecord(memKey);
 					request.log.error(
 						{ error: inFlightRes.error, idempotencyKey },
 						"[IdempotencyPlugin] Failed to write in-flight record to DB",
@@ -347,6 +348,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			);
 
 			reply.header("X-Idempotency-Key", ctx.idempotencyKey);
+			reply.header("Idempotency-Key", ctx.idempotencyKey);
 			return payload;
 		},
 	);

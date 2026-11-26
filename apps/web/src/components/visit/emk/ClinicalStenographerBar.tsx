@@ -66,7 +66,7 @@ export function ClinicalStenographerBar({
 							<span className="absolute inline-flex h-full w-full rounded-full bg-[var(--danger,#ef4444)] opacity-75 animate-ping" />
 							<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--danger,#ef4444)]" />
 						</div>
-						<span className="text-[11px] font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider shrink-0">
+						<span className="text-xs font-semibold text-[var(--teal,var(--brand-primary))] shrink-0">
 							Диктовка:
 						</span>
 						<span
@@ -128,7 +128,7 @@ export function ClinicalStenographerBar({
 								<span className="absolute inline-flex h-full w-full rounded-full bg-[var(--danger,#ef4444)] opacity-75 animate-ping" />
 								<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--danger,#ef4444)]" />
 							</div>
-							<span className="text-xs font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider">
+							<span className="text-xs font-semibold text-[var(--teal,var(--brand-primary))]">
 								Стенографист у кресла
 							</span>
 						</div>
@@ -139,7 +139,7 @@ export function ClinicalStenographerBar({
 								if (onCancelVoice) onCancelVoice();
 								else if (onToggleVoice) onToggleVoice();
 							}}
-							className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--bad-fg,#ef4444)] border border-[var(--line-subtle)]"
+							className="inline-flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--bad-fg,#ef4444)] border border-[var(--line-subtle)]"
 							aria-label="Закрыть голосовую шторку"
 						>
 							<X size={16} />
@@ -203,7 +203,7 @@ export function ClinicalStenographerBar({
 						onToggleVoice();
 					}}
 					disabled={isProcessing}
-					className="inline-flex items-center gap-1 px-2 py-0.5 h-7 min-h-[28px] rounded-md bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-surface,#ccfbf1)] border border-[var(--teal,var(--brand-primary))] text-[var(--teal,var(--brand-primary))] text-[11px] font-bold shrink-0 transition-all select-none cursor-pointer"
+					className="inline-flex items-center gap-1.5 px-2.5 h-11 min-h-[44px] sm:h-8 sm:min-h-[32px] rounded-xl sm:rounded-md bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-surface,#ccfbf1)] border border-[var(--teal,var(--brand-primary))] text-[var(--teal,var(--brand-primary))] text-xs font-semibold shrink-0 transition-all select-none cursor-pointer"
 					title="Голосовой ввод у кресла в перчатках (Hands-Free FDI / СтАР)"
 					aria-label="Начать голосовую диктовку"
 					data-testid="btn-steno-mic-trigger"

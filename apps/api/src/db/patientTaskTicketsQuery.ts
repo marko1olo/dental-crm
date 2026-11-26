@@ -18,7 +18,7 @@
  */
 import { and, desc, eq } from "drizzle-orm";
 import type { ClinicalTaskStatus } from "@dental/shared";
-import { db } from "./client.js";
+import { withTenantCtx } from "./rls.js";
 import * as schema from "./schema.js";
 
 /** Ровно те состояния, которыми пользуются экран и бэкенд (SSOT: ClinicalTaskStatus). */
@@ -70,17 +70,19 @@ export async function getPatientTaskTicketsFromDb(
 	orgId: string,
 	patientId: string,
 ): Promise<PatientTaskTicket[]> {
-	const rows = await db
-		.select()
-		.from(schema.patientTaskTickets)
-		.where(
-			and(
-				eq(schema.patientTaskTickets.organizationId, orgId),
-				eq(schema.patientTaskTickets.patientId, patientId),
-			),
-		)
-		.orderBy(desc(schema.patientTaskTickets.createdAt));
-	return rows.map(toTicket);
+	return await withTenantCtx(orgId, async (tx) => {
+		const rows = await tx
+			.select()
+			.from(schema.patientTaskTickets)
+			.where(
+				and(
+					eq(schema.patientTaskTickets.organizationId, orgId),
+					eq(schema.patientTaskTickets.patientId, patientId),
+				),
+			)
+			.orderBy(desc(schema.patientTaskTickets.createdAt));
+		return rows.map(toTicket);
+	});
 }
 
 export class PatientTaskAssigneeNotFoundError extends Error {
@@ -101,63 +103,65 @@ export async function createPatientTaskTicketInDb(
 		priority: string;
 	},
 ): Promise<PatientTaskTicket> {
-	// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
-	const [ownedPatient] = await db
-		.select({ id: schema.patients.id })
-		.from(schema.patients)
-		.where(
-			and(
-				eq(schema.patients.organizationId, orgId),
-				eq(schema.patients.id, patientId),
-			),
-		)
-		.limit(1);
-	if (!ownedPatient) {
-		throw new Error(
-			"patient_task_tickets: patient does not belong to organization",
-		);
-	}
-	if (input.assignedToId) {
-		const [ownedStaff] = await db
-			.select({ id: schema.users.id })
-			.from(schema.users)
+	return await withTenantCtx(orgId, async (tx) => {
+		// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
+		const [ownedPatient] = await tx
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
 			.where(
 				and(
-					eq(schema.users.organizationId, orgId),
-					eq(schema.users.id, input.assignedToId),
+					eq(schema.patients.organizationId, orgId),
+					eq(schema.patients.id, patientId),
 				),
 			)
 			.limit(1);
-		if (!ownedStaff) {
-			throw new PatientTaskAssigneeNotFoundError(
-				"Выбранный ответственный сотрудник не найден в этой клинике.",
+		if (!ownedPatient) {
+			throw new Error(
+				"patient_task_tickets: patient does not belong to organization",
 			);
 		}
-	}
-	const [row] = await db
-		.insert(schema.patientTaskTickets)
-		.values({
-			organizationId: orgId,
-			patientId,
-			assignedToId: input.assignedToId,
-			title: input.title,
-			description: input.description,
-			priority: input.priority,
-			status: "pending",
-		})
-		.returning();
-	/*
-	 * Пустой ответ на вставку означает, что запись не создана. Приводить его к
-	 * типу через `!` нельзя: маршрут ответил бы 201, экран закрыл бы форму и
-	 * очистил поля, а поручение не существовало бы. Экран обещает человеку
-	 * «Введённый текст остался в форме» именно по коду отказа.
-	 */
-	if (!row) {
-		throw new Error(
-			"patient_task_tickets: вставка не вернула созданную строку",
-		);
-	}
-	return toTicket(row);
+		if (input.assignedToId) {
+			const [ownedStaff] = await tx
+				.select({ id: schema.users.id })
+				.from(schema.users)
+				.where(
+					and(
+						eq(schema.users.organizationId, orgId),
+						eq(schema.users.id, input.assignedToId),
+					),
+				)
+				.limit(1);
+			if (!ownedStaff) {
+				throw new PatientTaskAssigneeNotFoundError(
+					"Выбранный ответственный сотрудник не найден в этой клинике.",
+				);
+			}
+		}
+		const [row] = await tx
+			.insert(schema.patientTaskTickets)
+			.values({
+				organizationId: orgId,
+				patientId,
+				assignedToId: input.assignedToId,
+				title: input.title,
+				description: input.description,
+				priority: input.priority,
+				status: "pending",
+			})
+			.returning();
+		/*
+		 * Пустой ответ на вставку означает, что запись не создана. Приводить его к
+		 * типу через `!` нельзя: маршрут ответил бы 201, экран закрыл бы форму и
+		 * очистил поля, а поручение не существовало бы. Экран обещает человеку
+		 * «Введённый текст остался в форме» именно по коду отказа.
+		 */
+		if (!row) {
+			throw new Error(
+				"patient_task_tickets: вставка не вернула созданную строку",
+			);
+		}
+		return toTicket(row);
+	});
 }
 
 /**
@@ -175,18 +179,20 @@ export async function setPatientTaskTicketStatusInDb(
 	ticketId: string,
 	status: PatientTaskTicketStatus,
 ): Promise<PatientTaskTicket | null> {
-	const [row] = await db
-		.update(schema.patientTaskTickets)
-		.set({ status, updatedAt: new Date() })
-		.where(
-			and(
-				eq(schema.patientTaskTickets.organizationId, orgId),
-				eq(schema.patientTaskTickets.patientId, patientId),
-				eq(schema.patientTaskTickets.id, ticketId),
-			),
-		)
-		.returning();
-	return row ? toTicket(row) : null;
+	return await withTenantCtx(orgId, async (tx) => {
+		const [row] = await tx
+			.update(schema.patientTaskTickets)
+			.set({ status, updatedAt: new Date() })
+			.where(
+				and(
+					eq(schema.patientTaskTickets.organizationId, orgId),
+					eq(schema.patientTaskTickets.patientId, patientId),
+					eq(schema.patientTaskTickets.id, ticketId),
+				),
+			)
+			.returning();
+		return row ? toTicket(row) : null;
+	});
 }
 
 /**
@@ -202,17 +208,19 @@ export async function deletePatientTaskTicketFromDb(
 	patientId: string,
 	ticketId: string,
 ): Promise<boolean> {
-	const rows = await db
-		.delete(schema.patientTaskTickets)
-		.where(
-			and(
-				eq(schema.patientTaskTickets.organizationId, orgId),
-				eq(schema.patientTaskTickets.patientId, patientId),
-				eq(schema.patientTaskTickets.id, ticketId),
-			),
-		)
-		.returning({ id: schema.patientTaskTickets.id });
-	return rows.length > 0;
+	return await withTenantCtx(orgId, async (tx) => {
+		const rows = await tx
+			.delete(schema.patientTaskTickets)
+			.where(
+				and(
+					eq(schema.patientTaskTickets.organizationId, orgId),
+					eq(schema.patientTaskTickets.patientId, patientId),
+					eq(schema.patientTaskTickets.id, ticketId),
+				),
+			)
+			.returning({ id: schema.patientTaskTickets.id });
+		return rows.length > 0;
+	});
 }
 
 /**
@@ -238,12 +246,14 @@ export async function getAllTaskTicketsFromDb(
 			eq(schema.patientTaskTickets.assignedToId, filters.assignedToId),
 		);
 	}
-	const rows = await db
-		.select()
-		.from(schema.patientTaskTickets)
-		.where(and(...conditions))
-		.orderBy(desc(schema.patientTaskTickets.createdAt));
-	return rows.map(toTicket);
+	return await withTenantCtx(orgId, async (tx) => {
+		const rows = await tx
+			.select()
+			.from(schema.patientTaskTickets)
+			.where(and(...conditions))
+			.orderBy(desc(schema.patientTaskTickets.createdAt));
+		return rows.map(toTicket);
+	});
 }
 
 /**
@@ -254,17 +264,19 @@ export async function setTaskTicketStatusByIdInDb(
 	ticketId: string,
 	status: PatientTaskTicketStatus,
 ): Promise<PatientTaskTicket | null> {
-	const [row] = await db
-		.update(schema.patientTaskTickets)
-		.set({ status, updatedAt: new Date() })
-		.where(
-			and(
-				eq(schema.patientTaskTickets.organizationId, orgId),
-				eq(schema.patientTaskTickets.id, ticketId),
-			),
-		)
-		.returning();
-	return row ? toTicket(row) : null;
+	return await withTenantCtx(orgId, async (tx) => {
+		const [row] = await tx
+			.update(schema.patientTaskTickets)
+			.set({ status, updatedAt: new Date() })
+			.where(
+				and(
+					eq(schema.patientTaskTickets.organizationId, orgId),
+					eq(schema.patientTaskTickets.id, ticketId),
+				),
+			)
+			.returning();
+		return row ? toTicket(row) : null;
+	});
 }
 
 /**
@@ -274,15 +286,17 @@ export async function deleteTaskTicketByIdInDb(
 	orgId: string,
 	ticketId: string,
 ): Promise<boolean> {
-	const rows = await db
-		.delete(schema.patientTaskTickets)
-		.where(
-			and(
-				eq(schema.patientTaskTickets.organizationId, orgId),
-				eq(schema.patientTaskTickets.id, ticketId),
-			),
-		)
-		.returning({ id: schema.patientTaskTickets.id });
-	return rows.length > 0;
+	return await withTenantCtx(orgId, async (tx) => {
+		const rows = await tx
+			.delete(schema.patientTaskTickets)
+			.where(
+				and(
+					eq(schema.patientTaskTickets.organizationId, orgId),
+					eq(schema.patientTaskTickets.id, ticketId),
+				),
+			)
+			.returning({ id: schema.patientTaskTickets.id });
+		return rows.length > 0;
+	});
 }
 

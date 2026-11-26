@@ -1,14 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, desc, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
-import { db } from "../../db/client.js";
-import { denteTelegramBotConfigs } from "../../db/schema.js";
-import {
-	requireResolvedOrganizationId,
-} from "../../accessGuard.js";
+import { z } from "zod";
 import { getRequestIdentity } from "../../security/identity.js";
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
-import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 import type { PostOpSurveyInput, TelegramBotPresetId } from "@dental/shared";
 import {
 	applyLoadedTelegramBotSettings,
@@ -20,21 +13,46 @@ import {
 	TelegramBotPresetsEngine,
 } from "../../services/telegram/TelegramBotPresets.js";
 import {
-	isRecord,
-	parseTelegramClinicScopeQuery,
-	parseTelegramRouteBody,
-	sendTelegramValidationError,
-} from "./telegramUtils.js";
-import {
-	hydrateTelegramDomainState,
 	loadTelegramBotSettingsFromDatabase,
-	requireTelegramControlPlaneAccess,
 	resolveTelegramRuntimeContext,
 } from "./telegramRuntimeContext.js";
 import {
-	buildFeaturePlan,
 	buildStatus,
 } from "./telegramStatusService.js";
+
+const verifyBotTokenBodySchema = z
+	.object({ token: z.string().trim().min(1) })
+	.strict();
+
+const setupWebhookBodySchema = z
+	.object({
+		token: z.string().trim().min(1),
+		webhookUrl: z.string().trim().url(),
+		secretToken: z.string().trim().optional(),
+	})
+	.strict();
+
+const applyPresetBodySchema = z
+	.object({
+		organizationId: z.string().uuid().optional(),
+		presetId: z.string().trim().min(1),
+		botToken: z.string().trim().min(1),
+		webhookUrl: z.string().trim().url().optional(),
+		secretToken: z.string().trim().optional(),
+	})
+	.strict();
+
+const evaluatePostOpSurveyBodySchema = z
+	.object({
+		day: z.union([z.literal(1), z.literal(3)]),
+		painScore: z.number().finite(),
+		hasFever: z.boolean().optional(),
+		hasHeavyBleeding: z.boolean().optional(),
+		hasSevereSwelling: z.boolean().optional(),
+		patientId: z.string().uuid().optional(),
+		organizationId: z.string().uuid().optional(),
+	})
+	.strict();
 
 export function registerTelegramStatusRoutes(
 	app: FastifyInstance,
@@ -185,19 +203,20 @@ export function registerTelegramStatusRoutes(
 	/**
 	 * Проверка токена Telegram-бота через getMe.
 	 */
-	app.post<{ Body: { token: string } }>(
+	app.post(
 		"/api/telegram/bot/verify",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
-			const token = request.body?.token?.trim();
-			if (!token) {
+			const parsed = verifyBotTokenBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
 				return reply.code(400).send({
 					ok: false,
 					error: "TokenRequired",
 					message: "Не указан токен Telegram бота.",
+					details: parsed.error.issues,
 				});
 			}
-			const result = await TelegramBotHostingService.verifyBotToken(token);
+			const result = await TelegramBotHostingService.verifyBotToken(parsed.data.token);
 			return reply.code(result.ok ? 200 : 400).send(result);
 		},
 	);
@@ -205,22 +224,23 @@ export function registerTelegramStatusRoutes(
 	/**
 	 * Регистрация и настройка Webhook для бота через setWebhook.
 	 */
-	app.post<{ Body: { token: string; webhookUrl: string; secretToken?: string } }>(
+	app.post(
 		"/api/telegram/bot/setup-webhook",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
-			const { token, webhookUrl, secretToken } = request.body || {};
-			if (!token || !webhookUrl) {
+			const parsed = setupWebhookBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
 				return reply.code(400).send({
 					ok: false,
 					error: "ValidationFailed",
-					message: "Требуются token и webhookUrl.",
+					message: "Требуются корректные token и webhookUrl.",
+					details: parsed.error.issues,
 				});
 			}
 			const result = await TelegramBotHostingService.setupWebhook({
-				botToken: token,
-				webhookUrl,
-				secretToken: secretToken || null,
+				botToken: parsed.data.token,
+				webhookUrl: parsed.data.webhookUrl,
+				secretToken: parsed.data.secretToken || null,
 			});
 			return reply.code(result.ok ? 200 : 502).send(result);
 		},
@@ -288,26 +308,21 @@ export function registerTelegramStatusRoutes(
 	 * 4. Устанавливает краткое описание (setMyShortDescription)
 	 * 5. Настраивает Webhook при наличии webhookUrl
 	 */
-	app.post<{
-		Body: {
-			organizationId?: string;
-			presetId: string;
-			botToken: string;
-			webhookUrl?: string;
-			secretToken?: string;
-		};
-	}>(
+	app.post(
 		"/api/telegram/bot/apply-preset",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
-			const { presetId, botToken, webhookUrl, secretToken } = request.body || {};
-			if (!botToken?.trim() || !presetId?.trim()) {
+			const parsed = applyPresetBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
 				return reply.code(400).send({
 					ok: false,
 					error: "ValidationFailed",
-					message: "Необходимо передать botToken и presetId.",
+					message: "Необходимо передать корректные botToken и presetId.",
+					details: parsed.error.issues,
 				});
 			}
+			const { presetId, botToken, webhookUrl, secretToken, organizationId: requestedOrgId } =
+				parsed.data;
 
 			const targetPresetId = presetId as TelegramBotPresetId;
 			if (!(targetPresetId in TELEGRAM_BOT_PRESETS)) {
@@ -319,7 +334,6 @@ export function registerTelegramStatusRoutes(
 			}
 
 			const identity = getRequestIdentity(request);
-			const requestedOrgId = request.body?.organizationId?.trim();
 			if (
 				identity.verified &&
 				identity.organizationId &&
@@ -344,9 +358,9 @@ export function registerTelegramStatusRoutes(
 			const result = await TelegramBotHostingService.applyPresetToBot({
 				organizationId,
 				presetId: targetPresetId,
-				botToken: botToken.trim(),
-				webhookUrl: webhookUrl?.trim() || null,
-				secretToken: secretToken?.trim() || null,
+				botToken,
+				webhookUrl: webhookUrl || null,
+				secretToken: secretToken || null,
 			});
 
 			return reply.code(result.ok ? 200 : 400).send(result);
@@ -358,31 +372,23 @@ export function registerTelegramStatusRoutes(
 	 * При выявлении критических симптомов (боль >= 4, температура >38°C, кровотечение)
 	 * формирует срочный алерт врачу.
 	 */
-	app.post<{
-		Body: {
-			day: number;
-			painScore: number;
-			hasFever?: boolean;
-			hasHeavyBleeding?: boolean;
-			hasSevereSwelling?: boolean;
-			patientId?: string;
-			organizationId?: string;
-		};
-	}>(
+	app.post(
 		"/api/telegram/surveys/evaluate-post-op",
 		telegramControlPlaneRouteOptions,
 		async (request, reply) => {
-			const body = request.body;
-			if (!body || (body.day !== 1 && body.day !== 3) || typeof body.painScore !== "number") {
+			const parsed = evaluatePostOpSurveyBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
 				return reply.code(400).send({
 					ok: false,
 					error: "ValidationFailed",
 					message: "Требуются day (1 или 3) и painScore (от 1 до 5).",
+					details: parsed.error.issues,
 				});
 			}
+			const body = parsed.data;
 
 			const surveyInput: PostOpSurveyInput = {
-				day: body.day as 1 | 3,
+				day: body.day,
 				painScore: Math.max(1, Math.min(5, Math.round(body.painScore))),
 				hasFever: Boolean(body.hasFever),
 				hasHeavyBleeding: Boolean(body.hasHeavyBleeding),

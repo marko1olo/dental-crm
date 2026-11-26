@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import {
 	requireAuthTokenSecret,
 	requireClinicalMutationContext,
@@ -10,6 +11,7 @@ import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations, patients } from "../../db/schema.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
 import {
+	ConsentDocumentNotFoundError,
 	fetchPatientConsentsList,
 	PatientNotFoundError,
 	recordPatientConsentEntry,
@@ -23,8 +25,84 @@ import {
 	shareConsentLinkSchema,
 } from "./types.js";
 
-const UUID_REGEX =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const consentPatientParamsSchema = z
+	.object({
+		patientId: z.string().uuid(),
+	})
+	.strict();
+
+const consentShareInfoQuerySchema = z
+	.object({
+		token: z.string().trim().min(1).max(4096),
+	})
+	.strict();
+
+const DANGEROUS_SVG_PATTERNS: RegExp[] = [
+	/<\s*script\b/i,
+	/<\s*foreignObject\b/i,
+	/<\s*iframe\b/i,
+	/<\s*object\b/i,
+	/<\s*embed\b/i,
+	/<\s*animate\b/i,
+	/<\s*set\b/i,
+	/\bon[a-z]+\s*=/i,
+	/javascript\s*:/i,
+	/vbscript\s*:/i,
+	/data\s*:\s*text\/html/i,
+	/(?:xlink:)?href\s*=\s*["']\s*(?:https?:|\/\/|data\s*:\s*image\/svg\+xml)/i,
+];
+
+const RASTER_DATA_URI_PREFIX = /^data:image\/(png|jpeg|jpg|webp|gif);base64,([A-Za-z0-9+/=\r\n\s]+)$/i;
+
+function sanitizeConsentSignatureSvg(
+	rawSvg?: string | null,
+): { ok: true; value: string | undefined } | { ok: false; message: string } {
+	if (!rawSvg) {
+		return { ok: true, value: undefined };
+	}
+	const trimmed = rawSvg.trim();
+	if (!trimmed) {
+		return { ok: true, value: undefined };
+	}
+	for (const pattern of DANGEROUS_SVG_PATTERNS) {
+		if (pattern.test(trimmed)) {
+			return {
+				ok: false,
+				message: "Недопустимое содержимое SVG-подписи (обнаружены небезопасные теги или скрипты).",
+			};
+		}
+	}
+	if (trimmed.startsWith("data:image/")) {
+		const match = RASTER_DATA_URI_PREFIX.exec(trimmed);
+		if (!match) {
+			return {
+				ok: false,
+				message: "Недопустимый формат data:image подписи (разрешены только PNG/JPEG/WEBP/GIF base64).",
+			};
+		}
+		const subtype = (match[1] ?? "png").toLowerCase();
+		const base64Body = (match[2] ?? "").replace(/\s+/g, "");
+		if (!base64Body) {
+			return {
+				ok: false,
+				message: "Пустое изображение подписи.",
+			};
+		}
+		const safeDataUri = `data:image/${subtype};base64,${base64Body}`;
+		return {
+			ok: true,
+			value: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 155" width="360" height="155"><image href="${safeDataUri}" width="360" height="155"/></svg>`,
+		};
+	}
+	if (!/^<svg\b[^>]*>[\s\S]*<\/svg>$/i.test(trimmed)) {
+		return {
+			ok: false,
+			message: "Некорректная структура SVG-подписи.",
+		};
+	}
+	return { ok: true, value: trimmed };
+}
+
 const SAFE_HOST_REGEX = /^[a-zA-Z0-9.-]+(?::\d{1,5})?$/;
 
 function resolveSafeConsentOrigin(request: FastifyRequest): string {
@@ -52,14 +130,14 @@ export async function register(app: FastifyInstance) {
 		if (!context) return;
 		const orgId = context.organizationId;
 
-		const { patientId } = request.params as { patientId: string };
-		if (!patientId || !UUID_REGEX.test(patientId)) {
+		const parsedParams = consentPatientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор пациента (ожидается UUID)",
 			});
 		}
-		const consents = await fetchPatientConsentsList(orgId, patientId);
+		const consents = await fetchPatientConsentsList(orgId, parsedParams.data.patientId);
 		return reply.send({ consents });
 	});
 
@@ -68,13 +146,14 @@ export async function register(app: FastifyInstance) {
 		if (!context) return;
 		const orgId = context.organizationId;
 
-		const { patientId } = request.params as { patientId: string };
-		if (!patientId || !UUID_REGEX.test(patientId)) {
+		const parsedParams = consentPatientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор пациента (ожидается UUID)",
 			});
 		}
+		const { patientId } = parsedParams.data;
 		const parsed = saveConsentBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -84,13 +163,30 @@ export async function register(app: FastifyInstance) {
 			});
 		}
 
+		const safeSvg = sanitizeConsentSignatureSvg(parsed.data.signatureSvg);
+		if (!safeSvg.ok) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: safeSvg.message,
+			});
+		}
+
 		try {
-			const result = await recordPatientConsentEntry(orgId, patientId, parsed.data);
+			const result = await recordPatientConsentEntry(orgId, patientId, {
+				...parsed.data,
+				signatureSvg: safeSvg.value,
+			});
 			return reply.code(201).send(result);
 		} catch (error) {
 			if (error instanceof PatientNotFoundError) {
 				return reply.code(404).send({
 					error: "PatientNotFound",
+					message: error.message,
+				});
+			}
+			if (error instanceof ConsentDocumentNotFoundError) {
+				return reply.code(404).send({
+					error: "DocumentNotFound",
 					message: error.message,
 				});
 			}
@@ -103,13 +199,14 @@ export async function register(app: FastifyInstance) {
 		if (!context) return;
 		const orgId = context.organizationId;
 
-		const { patientId } = request.params as { patientId: string };
-		if (!patientId || !UUID_REGEX.test(patientId)) {
+		const parsedParams = consentPatientParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор пациента (ожидается UUID)",
 			});
 		}
+		const { patientId } = parsedParams.data;
 		const parsed = shareConsentLinkSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -127,13 +224,14 @@ export async function register(app: FastifyInstance) {
 
 	// Публичный шлюз верификации ссылки подписания согласия
 	app.get("/api/public/consents/share-info", async (request: FastifyRequest, reply: FastifyReply) => {
-		const { token } = (request.query as { token?: string }) || {};
-		if (!token) {
+		const parsedQuery = consentShareInfoQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Токен подписания обязателен",
 			});
 		}
+		const { token } = parsedQuery.data;
 
 		const payload = verifyToken(token, requireAuthTokenSecret());
 		const isValidScope = payload && (payload.scope === "cs" || payload.scope === "consent_share");
@@ -243,7 +341,10 @@ export async function register(app: FastifyInstance) {
 
 		const parsedKind = consentKindSchema.safeParse(payload.k || payload.kind);
 		const consentKind: ConsentKind = parsedKind.success ? parsedKind.data : "informed_consent";
-		const consentTitle = (payload.title as string) || "Информированное добровольное согласие";
+		const consentTitle =
+			typeof payload.title === "string" && payload.title.trim()
+				? payload.title.trim()
+				: "Информированное добровольное согласие";
 		const visitId = (payload.vid || payload.visitId) ? String(payload.vid || payload.visitId) : undefined;
 
 		// DEF-DOM-Q-01 / 63-ФЗ: Валидация и гарантированная фиксация SHA-256 хеша целостности снапшота
@@ -263,9 +364,12 @@ export async function register(app: FastifyInstance) {
 					)
 					.digest("hex");
 
-		let signatureSvg = parsed.data.signatureSvg?.trim();
-		if (signatureSvg && !signatureSvg.startsWith("<svg") && signatureSvg.startsWith("data:image/")) {
-			signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 155" width="360" height="155"><image href="${signatureSvg}" width="360" height="155"/></svg>`;
+		const safeSvg = sanitizeConsentSignatureSvg(parsed.data.signatureSvg);
+		if (!safeSvg.ok) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: safeSvg.message,
+			});
 		}
 
 		try {
@@ -277,7 +381,7 @@ export async function register(app: FastifyInstance) {
 				signedAt: new Date().toISOString(),
 				signatureType: parsed.data.signatureType || "digital_canvas",
 				verificationMethod: "patient_portal",
-				signatureSvg: signatureSvg ?? undefined,
+				signatureSvg: safeSvg.value,
 				integrityHash: effectiveHash,
 				visitId: visitId,
 				notes: parsed.data.notes || "Подписано пациентом онлайн по ссылке дистанционного подписания",
@@ -292,6 +396,12 @@ export async function register(app: FastifyInstance) {
 			if (error instanceof PatientNotFoundError) {
 				return reply.code(404).send({
 					error: "PatientNotFound",
+					message: error.message,
+				});
+			}
+			if (error instanceof ConsentDocumentNotFoundError) {
+				return reply.code(404).send({
+					error: "DocumentNotFound",
 					message: error.message,
 				});
 			}

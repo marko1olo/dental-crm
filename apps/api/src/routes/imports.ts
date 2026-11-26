@@ -20,6 +20,7 @@ import {
 	requireClinicalReadContext,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { auditEvents, importBatches, patients } from "../db/schema.js";
 
 const headerAliases: Record<
@@ -270,19 +271,26 @@ export async function buildPatientImportPreview(
 	);
 
 	const existingPatients = await db
-		.select()
+		.select({
+			fullName: patients.fullName,
+			phone: patients.phone,
+		})
 		.from(patients)
 		.where(eq(patients.organizationId, orgId));
 	const knownPhones = new Set(
 		existingPatients
 			.map((patient) => normalizePhone(patient.phone))
-			.filter(Boolean),
+			.filter((phone): phone is string => Boolean(phone)),
 	);
 	const knownNames = new Set(
 		existingPatients.map((patient) => patient.fullName.trim().toLowerCase()),
 	);
+	const seenFilePhones = new Set<string>();
+	const seenFileNames = new Set<string>();
 
-	const rows: ImportPreviewRow[] = lines.slice(1).map((line, index) => {
+	const rows: ImportPreviewRow[] = [];
+	for (let index = 0; index < lines.length - 1; index++) {
+		const line = lines[index + 1] ?? "";
 		const cells = splitLine(line, delimiter);
 		const row: ImportPreviewRow = {
 			rowNumber: index + 2,
@@ -313,16 +321,6 @@ export async function buildPatientImportPreview(
 
 		/**
 		 * Отсутствие телефона — предупреждение, а НЕ причина не переносить пациента.
-		 *
-		 * Раньше строка без телефона получала status "warning", а commitPatientImport
-		 * фильтровал `row.status === "ready"` — то есть пациент молча не заводился.
-		 * В журнале администратора без телефона записана половина пожилых пациентов,
-		 * и клиника теряла их, не получая об этом ни одного сообщения: preview
-		 * показывал «warning», а после импорта их просто не было.
-		 *
-		 * Теперь такие строки переносятся, а предупреждение остаётся: карточка без
-		 * телефона полезна (история лечения, снимки), а «потерянный пациент» —
-		 * нет. Строки со статусом warning импортируются, см. commitPatientImport.
 		 */
 		if (!row.phone) {
 			row.warnings.push(
@@ -331,27 +329,28 @@ export async function buildPatientImportPreview(
 		}
 
 		/**
-		 * Дубль — это причина НЕ создавать вторую карточку, поэтому статус warning
-		 * здесь оправдан: такие строки не импортируются (см. commitPatientImport).
-		 * Отличие от случая выше в том, что пропуск дубля — желаемое поведение, а
-		 * пропуск пациента без телефона был потерей данных.
+		 * Дедупликация как против уже существующей базы клиники, так и внутри самого загруженного файла.
 		 */
-		if (row.phone && knownPhones.has(row.phone)) {
+		const normalizedRowName = row.fullName?.trim().toLowerCase() ?? "";
+		if (row.phone && (knownPhones.has(row.phone) || seenFilePhones.has(row.phone))) {
 			row.status = row.status === "blocked" ? "blocked" : "warning";
 			row.warnings.push(
 				"Возможный дубль по телефону — карточка не будет создана повторно",
 			);
 		}
 
-		if (row.fullName && knownNames.has(row.fullName.trim().toLowerCase())) {
+		if (normalizedRowName && (knownNames.has(normalizedRowName) || seenFileNames.has(normalizedRowName))) {
 			row.status = row.status === "blocked" ? "blocked" : "warning";
 			row.warnings.push(
 				"Возможный дубль по ФИО — карточка не будет создана повторно",
 			);
 		}
 
-		return row;
-	});
+		if (row.phone) seenFilePhones.add(row.phone);
+		if (normalizedRowName) seenFileNames.add(normalizedRowName);
+
+		rows.push(row);
+	}
 
 	const response = {
 		sourceName: input.sourceName,
@@ -443,7 +442,7 @@ export async function commitPatientImport(
 ) {
 	const preview = await buildPatientImportPreview(orgId, input);
 
-	const result = await db.transaction(async (tx) => {
+	const result = await withTenantCtx(orgId, async (tx) => {
 		const importedPatientIds: string[] = [];
 		/**
 		 * Импортируются строки со статусом ready. Пациент без телефона теперь

@@ -527,22 +527,37 @@ export async function handleAppointmentCallback(
 		replyText = "Администратор клиники свяжется с вами по указанному телефону в ближайшее время.";
 	}
 
+	let eventStatus: "processed" | "rejected" = "processed";
 	if (shouldBroadcastStatus && appointmentId) {
 		try {
-			await updateAppointmentStatusFromTelegram(
+			const updated = await updateAppointmentStatusFromTelegram(
 				runtime.organizationId,
 				appointmentId,
 				shouldBroadcastStatus,
+				chatHash,
 			);
-			wsBroker.broadcastToOrganization(runtime.organizationId, {
-				type: "APPOINTMENT_UPDATED",
-				payload: {
-					id: appointmentId,
-					status: shouldBroadcastStatus,
-					source: "messenger_callback",
-				},
-			});
+			if (updated) {
+				wsBroker.broadcastToOrganization(runtime.organizationId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: {
+						id: appointmentId,
+						status: shouldBroadcastStatus,
+						source: "messenger_callback",
+					},
+				});
+			} else {
+				eventStatus = "rejected";
+				actionName = "telegram_appointment_callback_rejected";
+				toastText = "Не удалось обновить статус записи.";
+				replyText =
+					"⚠️ Не удалось обновить статус этой записи. Привяжите профиль пациента к Telegram и убедитесь, что визит актуален.";
+			}
 		} catch (mutationErr) {
+			eventStatus = "rejected";
+			actionName = "telegram_appointment_callback_failed";
+			toastText = "Ошибка обновления статуса записи.";
+			replyText =
+				"⚠️ Произошла ошибка при обновлении статуса записи. Пожалуйста, повторите попытку позже или свяжитесь с клиникой.";
 			request.log.error(
 				{ mutationErr, organizationId: runtime.organizationId, appointmentId, status: shouldBroadcastStatus },
 				"Не удалось обновить статус записи по Telegram callback",
@@ -628,7 +643,7 @@ export async function handleAppointmentCallback(
 		chatFingerprint: chatHash,
 		updateKind,
 		command: `/callback:${callbackData}`,
-		status: "processed",
+		status: eventStatus,
 		action: actionName,
 		warnings: [],
 	});

@@ -1,6 +1,7 @@
 import {
 	type DenteTelegramChatLink,
 	type DenteTelegramChatLinkListResponse,
+	type DenteTelegramChatLinkPublic,
 	type DenteTelegramChatLinkStatus,
 	type DenteTelegramSubjectType,
 	denteTelegramChatLinkListResponseSchema,
@@ -106,6 +107,13 @@ function toDenteTelegramChatLink(row: ChatLinkRow): DenteTelegramChatLink {
 		revokedAt: row.revokedAt?.toISOString() ?? null,
 		lastUpdateAt: row.lastUpdateAt.toISOString(),
 	};
+}
+
+export function toDenteTelegramChatLinkPublic(
+	link: DenteTelegramChatLink,
+): DenteTelegramChatLinkPublic {
+	const { chatTransportRef: _drop, ...pub } = link;
+	return pub;
 }
 
 /*
@@ -391,7 +399,9 @@ export async function buildDenteTelegramChatLinkList(
 		activeCount: totals?.activeCount ?? 0,
 		revokedCount: totals?.revokedCount ?? 0,
 		chatLinks: rows.map((row) =>
-			denteTelegramChatLinkPublicSchema.parse(toDenteTelegramChatLink(row)),
+			denteTelegramChatLinkPublicSchema.parse(
+				toDenteTelegramChatLinkPublic(toDenteTelegramChatLink(row)),
+			),
 		),
 	});
 }

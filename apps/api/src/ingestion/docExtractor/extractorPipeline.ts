@@ -189,7 +189,7 @@ export function extractByKind(
 		return {
 			text: "",
 			tableCount: 0,
-			warnings: [`extract_by_kind_error:${kind}:${(err as Error).message}`],
+			warnings: [`extract_by_kind_error:${kind}:${err instanceof Error ? err.message : String(err)}`],
 			parserNotes: [`Ошибка разбора формата ${kind}`],
 		};
 	}
@@ -651,7 +651,7 @@ export function extractDocument(
 			}
 		}
 	} catch (err: unknown) {
-		const msg = (err as Error).message || "corrupted_file";
+		const msg = err instanceof Error ? err.message : "corrupted_file";
 		warnings.push(`extraction_failed:${msg}`);
 		parserNotes.push(
 			`Не удалось разобрать внутреннюю структуру файла (${msg}). Попытка аварийного текстового декодирования.`,

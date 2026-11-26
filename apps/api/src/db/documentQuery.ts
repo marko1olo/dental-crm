@@ -15,9 +15,10 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getPaymentsByPatientIdInDb } from "./billing/index.js";
-import { db, type TenantDb } from "./client.js";
+import type { TenantDb } from "./client.js";
 import { getTreatmentPlanItemsForPatient } from "./clinicalQuery.js";
 import { getServiceCatalogForOrganization } from "./pricelistQuery.js";
+import { withTenantCtx } from "./rls.js";
 import * as schema from "./schema.js";
 import { getClinicSettingsFromDb } from "./settingsQuery.js";
 
@@ -141,28 +142,25 @@ function mapDocument(
 	} as GeneratedDocument;
 }
 
-export async function getDefaultOrganizationId(): Promise<string | null> {
-	const [org] = await db.select().from(schema.organizations).limit(1);
-	return org?.id || null;
-}
-
 export async function getDocumentsByPatientId(
 	organizationId: string,
 	patientId: string,
 	tx?: TenantDb | undefined,
 ): Promise<GeneratedDocument[]> {
-	const client = tx ?? db;
-	const records = await client
-		.select()
-		.from(schema.generatedDocuments)
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.patientId, patientId),
-			),
-		)
-		.orderBy(desc(schema.generatedDocuments.createdAt));
-	return records.map(mapDocument);
+	const run = async (client: TenantDb) => {
+		const records = await client
+			.select()
+			.from(schema.generatedDocuments)
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.patientId, patientId),
+				),
+			)
+			.orderBy(desc(schema.generatedDocuments.createdAt));
+		return records.map(mapDocument);
+	};
+	return tx ? run(tx) : withTenantCtx(organizationId, run);
 }
 
 const UUID_REGEX =
@@ -177,17 +175,19 @@ export async function getDocumentById(
 		return null;
 	}
 
-	const client = tx ?? db;
-	const [record] = await client
-		.select()
-		.from(schema.generatedDocuments)
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.id, id),
-			),
-		);
-	return record ? mapDocument(record) : null;
+	const run = async (client: TenantDb) => {
+		const [record] = await client
+			.select()
+			.from(schema.generatedDocuments)
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.id, id),
+				),
+			);
+		return record ? mapDocument(record) : null;
+	};
+	return tx ? run(tx) : withTenantCtx(organizationId, run);
 }
 
 const documentTitles: Record<string, string> = {
@@ -222,78 +222,79 @@ export async function createGeneratedDocumentInDb(
 		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument> {
-	const client = input.tx ?? db;
-
-	// Ownership assert: patient (and optional visit) must belong to caller org.
-	// Route-layer checks exist, but the query helper is callable from anywhere.
-	const [ownedPatient] = await client
-		.select({ id: schema.patients.id })
-		.from(schema.patients)
-		.where(
-			and(
-				eq(schema.patients.organizationId, organizationId),
-				eq(schema.patients.id, input.patientId),
-			),
-		)
-		.limit(1);
-	if (!ownedPatient) {
-		throw new Error("Пациент не принадлежит организации: создание документа отклонено");
-	}
-	if (input.visitId) {
-		const [ownedVisit] = await client
-			.select({ id: schema.visits.id })
-			.from(schema.visits)
+	const run = async (client: TenantDb): Promise<GeneratedDocument> => {
+		// Ownership assert: patient (and optional visit) must belong to caller org.
+		// Route-layer checks exist, but the query helper is callable from anywhere.
+		const [ownedPatient] = await client
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
 			.where(
 				and(
-					eq(schema.visits.organizationId, organizationId),
-					eq(schema.visits.id, input.visitId),
-					eq(schema.visits.patientId, input.patientId),
+					eq(schema.patients.organizationId, organizationId),
+					eq(schema.patients.id, input.patientId),
 				),
 			)
 			.limit(1);
-		if (!ownedVisit) {
-			throw new Error(
-				"Приём не принадлежит организации или пациенту: создание документа отклонено",
-			);
+		if (!ownedPatient) {
+			throw new Error("Пациент не принадлежит организации: создание документа отклонено");
 		}
-	}
-	const title = input.title?.trim() || documentTitles[input.kind] || "Документ";
-	const [record] = await client
-		.insert(schema.generatedDocuments)
-		.values({
+		if (input.visitId) {
+			const [ownedVisit] = await client
+				.select({ id: schema.visits.id })
+				.from(schema.visits)
+				.where(
+					and(
+						eq(schema.visits.organizationId, organizationId),
+						eq(schema.visits.id, input.visitId),
+						eq(schema.visits.patientId, input.patientId),
+					),
+				)
+				.limit(1);
+			if (!ownedVisit) {
+				throw new Error(
+					"Приём не принадлежит организации или пациенту: создание документа отклонено",
+				);
+			}
+		}
+		const title = input.title?.trim() || documentTitles[input.kind] || "Документ";
+		const [record] = await client
+			.insert(schema.generatedDocuments)
+			.values({
+				organizationId,
+				patientId: input.patientId,
+				visitId: input.visitId || null,
+				kind: input.kind,
+				title: title.length > 240 ? title.slice(0, 240) : title,
+				status: "draft",
+				totalAmountRub: input.totalAmountRub ?? null,
+				totalAmountKopecks:
+					input.totalAmountKopecks !== undefined && input.totalAmountKopecks !== null
+						? BigInt(input.totalAmountKopecks)
+						: (input.totalAmountRub !== undefined && input.totalAmountRub !== null
+							? BigInt(rublesToKopecks(input.totalAmountRub))
+							: null),
+				taxYear: input.taxYear ?? null,
+				taxPayerInn: input.taxPayerInn ?? null,
+				payloadJson: input.payload ? JSON.stringify(input.payload) : null,
+				signatureSvg: input.signatureSvg ?? null,
+			})
+			.returning();
+
+		if (!record) throw new Error("Не удалось создать документ в базе данных");
+
+		await recordAuditEvent({
 			organizationId,
-			patientId: input.patientId,
-			visitId: input.visitId || null,
-			kind: input.kind,
-			title: title.length > 240 ? title.slice(0, 240) : title,
-			status: "draft",
-			totalAmountRub: input.totalAmountRub ?? null,
-			totalAmountKopecks:
-				input.totalAmountKopecks !== undefined && input.totalAmountKopecks !== null
-					? BigInt(input.totalAmountKopecks)
-					: (input.totalAmountRub !== undefined && input.totalAmountRub !== null
-						? BigInt(rublesToKopecks(input.totalAmountRub))
-						: null),
-			taxYear: input.taxYear ?? null,
-			taxPayerInn: input.taxPayerInn ?? null,
-			payloadJson: input.payload ? JSON.stringify(input.payload) : null,
-			signatureSvg: input.signatureSvg ?? null,
-		})
-		.returning();
+			actorUserId: input.actorUserId ?? null,
+			entityType: "document",
+			entityId: record.id,
+			action: "document_created",
+			reason: null,
+			tx: client,
+		});
 
-	if (!record) throw new Error("Не удалось создать документ в базе данных");
-
-	await recordAuditEvent({
-		organizationId,
-		actorUserId: input.actorUserId ?? null,
-		entityType: "document",
-		entityId: record.id,
-		action: "document_created",
-		reason: null,
-		tx: input.tx,
-	});
-
-	return mapDocument(record);
+		return mapDocument(record);
+	};
+	return input.tx ? run(input.tx) : withTenantCtx(organizationId, run);
 }
 
 const signerUserIdSchema = z.string().uuid();
@@ -352,110 +353,112 @@ export async function issueGeneratedDocumentInDb(
 		tx?: TenantDb | undefined;
 	},
 ): Promise<GeneratedDocument | null> {
-	const client = options.tx ?? db;
 	const issuedByUserId = signerUserIdForColumn(
 		options.issuedByUserId,
 		"issued_by_user_id",
 	);
-	const [existing] = await client
-		.select()
-		.from(schema.generatedDocuments)
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.id, documentId),
-			),
-		);
+	const run = async (client: TenantDb): Promise<GeneratedDocument | null> => {
+		const [existing] = await client
+			.select()
+			.from(schema.generatedDocuments)
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.id, documentId),
+				),
+			);
 
-	if (!existing || existing.status === "voided") return null;
-	if (existing.status === "issued") return mapDocument(existing);
+		if (!existing || existing.status === "voided") return null;
+		if (existing.status === "issued") return mapDocument(existing);
 
-	const snapshotMeta = options.snapshotHtml
-		? {
-				sha256: createHash("sha256").update(options.snapshotHtml, "utf8").digest("hex"),
-				snapshotPath: documentSnapshotPath(existing.id),
-				createdAt: new Date().toISOString(),
-			}
-		: null;
+		const snapshotMeta = options.snapshotHtml
+			? {
+					sha256: createHash("sha256").update(options.snapshotHtml, "utf8").digest("hex"),
+					snapshotPath: documentSnapshotPath(existing.id),
+					createdAt: new Date().toISOString(),
+				}
+			: null;
 
-	const [updated] = await client
-		.update(schema.generatedDocuments)
-		.set({
-			status: "issued",
-			issuedAt: options.issuedAt ? new Date(options.issuedAt) : new Date(),
-			issuedByUserId,
-			releaseJournalEntry: options.releaseJournalEntry || null,
-			signatureAttestation: options.signatureAttestation || null,
-			signatureSvg: options.signatureSvg ?? existing.signatureSvg,
-			taxPaymentSnapshotJson: options.taxPaymentSnapshot
-				? JSON.stringify(options.taxPaymentSnapshot)
-				: existing.taxPaymentSnapshotJson,
-			taxXmlSourceSnapshot:
-				options.taxXmlSourceSnapshot || existing.taxXmlSourceSnapshot,
-			taxXmlSnapshot:
-				options.taxXmlSnapshot !== undefined
-					? options.taxXmlSnapshot
-					: existing.taxXmlSnapshot,
-			totalAmountRub: options.totalAmountRub ?? existing.totalAmountRub,
-			totalAmountKopecks:
-				options.totalAmountKopecks !== undefined && options.totalAmountKopecks !== null
-					? BigInt(options.totalAmountKopecks)
-					: (options.totalAmountRub !== undefined && options.totalAmountRub !== null
-						? BigInt(rublesToKopecks(options.totalAmountRub))
-						: existing.totalAmountKopecks),
-			...(snapshotMeta
-				? {
-						storagePath: snapshotMeta.snapshotPath,
-						issuedSnapshotSha256: snapshotMeta.sha256,
-						issuedSnapshotCreatedAt: new Date(snapshotMeta.createdAt),
-					}
-				: {}),
-		})
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.id, documentId),
-			),
-		)
-		.returning();
+		const [updated] = await client
+			.update(schema.generatedDocuments)
+			.set({
+				status: "issued",
+				issuedAt: options.issuedAt ? new Date(options.issuedAt) : new Date(),
+				issuedByUserId,
+				releaseJournalEntry: options.releaseJournalEntry || null,
+				signatureAttestation: options.signatureAttestation || null,
+				signatureSvg: options.signatureSvg ?? existing.signatureSvg,
+				taxPaymentSnapshotJson: options.taxPaymentSnapshot
+					? JSON.stringify(options.taxPaymentSnapshot)
+					: existing.taxPaymentSnapshotJson,
+				taxXmlSourceSnapshot:
+					options.taxXmlSourceSnapshot || existing.taxXmlSourceSnapshot,
+				taxXmlSnapshot:
+					options.taxXmlSnapshot !== undefined
+						? options.taxXmlSnapshot
+						: existing.taxXmlSnapshot,
+				totalAmountRub: options.totalAmountRub ?? existing.totalAmountRub,
+				totalAmountKopecks:
+					options.totalAmountKopecks !== undefined && options.totalAmountKopecks !== null
+						? BigInt(options.totalAmountKopecks)
+						: (options.totalAmountRub !== undefined && options.totalAmountRub !== null
+							? BigInt(rublesToKopecks(options.totalAmountRub))
+							: existing.totalAmountKopecks),
+				...(snapshotMeta
+					? {
+							storagePath: snapshotMeta.snapshotPath,
+							issuedSnapshotSha256: snapshotMeta.sha256,
+							issuedSnapshotCreatedAt: new Date(snapshotMeta.createdAt),
+						}
+					: {}),
+			})
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.id, documentId),
+				),
+			)
+			.returning();
 
-	if (!updated) return null;
+		if (!updated) return null;
 
-	if (options.snapshotHtml) {
-		writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml);
-	}
+		if (options.snapshotHtml) {
+			writeIssuedDocumentSnapshot(existing.id, options.snapshotHtml);
+		}
 
-	if (options.signatureAttestation || options.signatureSvg) {
-		await client.insert(schema.documentSignatures).values({
+		if (options.signatureAttestation || options.signatureSvg) {
+			await client.insert(schema.documentSignatures).values({
+				organizationId,
+				documentId: updated.id,
+				patientId: updated.patientId,
+				signerRole: "patient",
+				signerName:
+					options.signatureAttestation?.recipientFullName ||
+					"Пациент (ПЭП 63-ФЗ)",
+				signatureType: options.signatureSvg ? "pep_canvas" : "pep_sms",
+				signatureSvg: options.signatureSvg ?? updated.signatureSvg ?? null,
+				documentSha256:
+					updated.issuedSnapshotSha256 ||
+					createHash("sha256")
+						.update(`${updated.id}:${toSafeIsoString(updated.issuedAt, "") ?? ""}`)
+						.digest("hex"),
+				signedAt: updated.issuedAt ?? new Date(),
+			});
+		}
+
+		await recordAuditEvent({
 			organizationId,
-			documentId: updated.id,
-			patientId: updated.patientId,
-			signerRole: "patient",
-			signerName:
-				options.signatureAttestation?.recipientFullName ||
-				"Пациент (ПЭП 63-ФЗ)",
-			signatureType: options.signatureSvg ? "pep_canvas" : "pep_sms",
-			signatureSvg: options.signatureSvg ?? updated.signatureSvg ?? null,
-			documentSha256:
-				updated.issuedSnapshotSha256 ||
-				createHash("sha256")
-					.update(`${updated.id}:${toSafeIsoString(updated.issuedAt, "") ?? ""}`)
-					.digest("hex"),
-			signedAt: updated.issuedAt ?? new Date(),
+			actorUserId: issuedByUserId,
+			entityType: "document",
+			entityId: updated.id,
+			action: "document_issued",
+			reason: null,
+			tx: client,
 		});
-	}
 
-	await recordAuditEvent({
-		organizationId,
-		actorUserId: issuedByUserId,
-		entityType: "document",
-		entityId: updated.id,
-		action: "document_issued",
-		reason: null,
-		tx: options.tx,
-	});
-
-	return mapDocument(updated);
+		return mapDocument(updated);
+	};
+	return options.tx ? run(options.tx) : withTenantCtx(organizationId, run);
 }
 
 export async function voidGeneratedDocumentInDb(
@@ -478,49 +481,51 @@ export async function voidGeneratedDocumentInDb(
 		"voided_by_user_id",
 	);
 
-	const client = options.tx ?? db;
-	const [existing] = await client
-		.select()
-		.from(schema.generatedDocuments)
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.id, documentId),
-			),
-		);
+	const run = async (client: TenantDb): Promise<GeneratedDocument | null> => {
+		const [existing] = await client
+			.select()
+			.from(schema.generatedDocuments)
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.id, documentId),
+				),
+			);
 
-	if (!existing) return null;
-	if (existing.status === "voided") return mapDocument(existing);
+		if (!existing) return null;
+		if (existing.status === "voided") return mapDocument(existing);
 
-	const [updated] = await client
-		.update(schema.generatedDocuments)
-		.set({
-			status: "voided",
-			voidedAt: options.voidedAt ? new Date(options.voidedAt) : new Date(),
-			voidedByUserId,
-			voidAttestation: options.voidAttestation || null,
-		})
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.id, documentId),
-			),
-		)
-		.returning();
+		const [updated] = await client
+			.update(schema.generatedDocuments)
+			.set({
+				status: "voided",
+				voidedAt: options.voidedAt ? new Date(options.voidedAt) : new Date(),
+				voidedByUserId,
+				voidAttestation: options.voidAttestation || null,
+			})
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.id, documentId),
+				),
+			)
+			.returning();
 
-	if (!updated) return null;
+		if (!updated) return null;
 
-	await recordAuditEvent({
-		organizationId,
-		actorUserId: voidedByUserId,
-		entityType: "document",
-		entityId: updated.id,
-		action: "document_voided",
-		reason: options.voidAttestation?.reasonText || null,
-		tx: options.tx,
-	});
+		await recordAuditEvent({
+			organizationId,
+			actorUserId: voidedByUserId,
+			entityType: "document",
+			entityId: updated.id,
+			action: "document_voided",
+			reason: options.voidAttestation?.reasonText || null,
+			tx: client,
+		});
 
-	return mapDocument(updated);
+		return mapDocument(updated);
+	};
+	return options.tx ? run(options.tx) : withTenantCtx(organizationId, run);
 }
 
 export async function storeTaxXmlSnapshotInDb(
@@ -528,6 +533,7 @@ export async function storeTaxXmlSnapshotInDb(
 	documentId: string,
 	snapshot: Omit<TaxXmlSnapshot, "createdAt" | "sha256"> &
 		Partial<Pick<TaxXmlSnapshot, "createdAt" | "sha256">>,
+	tx?: TenantDb | undefined,
 ): Promise<GeneratedDocument | null> {
 	const completeSnapshot: TaxXmlSnapshot = {
 		...snapshot,
@@ -536,17 +542,20 @@ export async function storeTaxXmlSnapshotInDb(
 			snapshot.sha256 ||
 			createHash("sha256").update(snapshot.xml).digest("hex"),
 	};
-	const [doc] = await db
-		.update(schema.generatedDocuments)
-		.set({ taxXmlSnapshot: completeSnapshot })
-		.where(
-			and(
-				eq(schema.generatedDocuments.organizationId, organizationId),
-				eq(schema.generatedDocuments.id, documentId),
-			),
-		)
-		.returning();
-	return doc ? mapDocument(doc) : null;
+	const run = async (client: TenantDb): Promise<GeneratedDocument | null> => {
+		const [doc] = await client
+			.update(schema.generatedDocuments)
+			.set({ taxXmlSnapshot: completeSnapshot })
+			.where(
+				and(
+					eq(schema.generatedDocuments.organizationId, organizationId),
+					eq(schema.generatedDocuments.id, documentId),
+				),
+			)
+			.returning();
+		return doc ? mapDocument(doc) : null;
+	};
+	return tx ? run(tx) : withTenantCtx(organizationId, run);
 }
 
 export async function getDocumentRenderContextFromDb(
@@ -556,9 +565,13 @@ export async function getDocumentRenderContextFromDb(
 	const settings = await getClinicSettingsFromDb(organizationId);
 	const serviceCatalog = await getServiceCatalogForOrganization(organizationId);
 	let payments: Awaited<ReturnType<typeof getPaymentsByPatientIdInDb>> = [];
+	let documents: GeneratedDocument[] = [];
 	let treatmentPlanItems: TreatmentPlanItem[] = [];
 	if (patientId) {
-		payments = await getPaymentsByPatientIdInDb(organizationId, patientId);
+		[payments, documents] = await Promise.all([
+			getPaymentsByPatientIdInDb(organizationId, patientId),
+			getDocumentsByPatientId(organizationId, patientId),
+		]);
 		// Строки treatment_items — это форма базы, а не доменный тип: quantity там
 		// numeric (драйвер отдаёт строку), serviceId может быть NULL, а названия
 		// услуги на момент выдачи (snapshotServiceName) в таблице нет вообще.
@@ -590,6 +603,7 @@ export async function getDocumentRenderContextFromDb(
 		clinicProfile: settings.profile,
 		serviceCatalog,
 		payments,
+		documents,
 		treatmentPlanItems,
 	};
 }

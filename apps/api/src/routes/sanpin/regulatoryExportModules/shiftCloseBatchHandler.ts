@@ -6,6 +6,7 @@
 
 import crypto from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -16,6 +17,40 @@ import { saveShiftMicroclimateRecords } from "./shiftCloseMicroclimateSaver.js";
 import { saveShiftPsoRecords } from "./shiftClosePsoSaver.js";
 import { saveShiftWasteRecords } from "./shiftCloseWasteSaver.js";
 
+const sanpinShiftCloseBodySchema = z
+	.object({
+		shiftDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+		responsibleStaffName: z.string().trim().max(200).optional(),
+		operatorStaffFullName: z.string().trim().max(200).optional(),
+		digitalStampHash: z.string().trim().max(200).optional(),
+		psoRecords: z.array(z.record(z.string(), z.unknown())).optional(),
+		psoBatches: z.array(z.record(z.string(), z.unknown())).optional(),
+		autoclaveCycles: z.array(z.record(z.string(), z.unknown())).optional(),
+		sterilizationRecords: z.array(z.record(z.string(), z.unknown())).optional(),
+		form257Records: z.array(z.record(z.string(), z.unknown())).optional(),
+		form257: z.array(z.record(z.string(), z.unknown())).optional(),
+		wasteRecords: z.array(z.record(z.string(), z.unknown())).optional(),
+		waste: z.record(z.string(), z.unknown()).optional(),
+		microclimateRecords: z.array(z.record(z.string(), z.unknown())).optional(),
+		microclimate: z.record(z.string(), z.unknown()).optional(),
+		bactericidalRecords: z.array(z.record(z.string(), z.unknown())).optional(),
+		bactericidalLogs: z.array(z.record(z.string(), z.unknown())).optional(),
+		bactericidalIrradiatorLogs: z.array(z.record(z.string(), z.unknown())).optional(),
+	})
+	.strict();
+
+function isValidCalendarDateYmd(dateStr: string): boolean {
+	const [y, m, d] = dateStr.split("-").map((v) => Number.parseInt(v, 10));
+	if (!y || !m || !d) return false;
+	const probe = new Date(Date.UTC(y, m - 1, d));
+	return (
+		probe.getUTCFullYear() === y &&
+		probe.getUTCMonth() === m - 1 &&
+		probe.getUTCDate() === d
+	);
+}
+
 export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 		req,
@@ -24,19 +59,28 @@ export async function handlePostSanpinShiftClose(req: FastifyRequest, reply: Fas
 	);
 	if (!organizationId) return;
 
-	const body = (req.body as Record<string, unknown>) || {};
-	const dateStr = (body.shiftDate as string) || (body.date as string);
-	if (!dateStr || typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr.slice(0, 10))) {
+	const parsedBody = sanpinShiftCloseBodySchema.safeParse(req.body ?? {});
+	if (!parsedBody.success) {
 		return reply.status(400).send({
 			error: "ValidationError",
-			message: "Необходимо указать дату смены (shiftDate или date в формате YYYY-MM-DD)",
+			message: "Некорректные параметры закрытия смены СанПиН.",
+			details: parsedBody.error.issues,
+		});
+	}
+	const bodyData = parsedBody.data;
+	const dateStr = bodyData.shiftDate ?? bodyData.date;
+	if (!dateStr || !isValidCalendarDateYmd(dateStr)) {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Необходимо указать корректную дату смены (shiftDate или date в формате YYYY-MM-DD)",
 		});
 	}
 
-	const operatorName = (body.responsibleStaffName as string) || (body.operatorStaffFullName as string) || "Дежурная медсестра / ассистент";
+	const operatorName = bodyData.responsibleStaffName || bodyData.operatorStaffFullName || "Дежурная медсестра / ассистент";
 	const digitalStampHash =
-		(body.digitalStampHash as string) || `DENTE-SANPIN-${dateStr}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+		bodyData.digitalStampHash || `DENTE-SANPIN-${dateStr}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 	const operatorId = getRequestIdentity(req).userId || null;
+	const body: Record<string, unknown> = { ...bodyData };
 
 	try {
 		const result = await withTenantCtx(organizationId, async (tx) => {

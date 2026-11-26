@@ -23,7 +23,7 @@ import type { CashChangeResult } from "./types.js";
 /**
  * Schema for creating and queueing an FFD 1.2 fiscal receipt.
  */
-export const createFiscalReceiptPayloadSchema = z
+export const createFiscalReceiptObjectSchema = z
 	.object({
 		clientMutationId: z
 			.preprocess(
@@ -102,85 +102,87 @@ export const createFiscalReceiptPayloadSchema = z
 				z.string().trim().max(64).optional().nullable()
 			),
 	})
-	.strict()
-	.superRefine((val, ctx) => {
-		// 54-FZ Tag 1228: Buyer INN enforcement for B2B (Legal Entities and Sole Proprietors / IP)
-		// For physical persons (Mandate 8e), INN is strictly optional and never blocking.
-		if (val.isElectronicReceiptOnly) {
-			if (!val.customerContact || val.customerContact.trim().length < 5) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Для отправки электронного чека (без печати бумажного) укажите телефон или email (от 5 символов)",
-					path: ["customerContact"],
-				});
-			}
-		}
+	.strict();
 
-		if (val.payerType === "legal_entity") {
-			if (!val.customerInn) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Для юридического лица обязателен ИНН (10 цифр) по 54-ФЗ",
-					path: ["customerInn"],
-				});
-			} else if (val.customerInn.length !== 10) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "ИНН юридического лица должен содержать ровно 10 цифр",
-					path: ["customerInn"],
-				});
-			}
-		} else if (val.payerType === "individual_entrepreneur") {
-			if (!val.customerInn) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "Для ИП обязателен ИНН (12 цифр) по 54-ФЗ",
-					path: ["customerInn"],
-				});
-			} else if (val.customerInn.length !== 12) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "ИНН индивидуального предпринимателя должен содержать ровно 12 цифр",
-					path: ["customerInn"],
-				});
-			}
-		}
-
-		// Strict parity: Sum of payment tenders MUST EQUAL total receipt amount
-		const paymentsSum =
-			val.cashKopecks +
-			val.electronicCardKopecks +
-			val.sbpKopecks +
-			val.prepaidKopecks +
-			val.creditKopecks;
-
-		if (paymentsSum !== val.totalKopecks) {
+export function refineFiscalReceiptPayload(
+	val: z.infer<typeof createFiscalReceiptObjectSchema>,
+	ctx: z.RefinementCtx,
+): void {
+	if (val.isElectronicReceiptOnly) {
+		if (!val.customerContact || val.customerContact.trim().length < 5) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: `Сумма способов оплаты (${paymentsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
-				path: ["totalKopecks"],
+				message: "Для отправки электронного чека (без печати бумажного) укажите телефон или email (от 5 символов)",
+				path: ["customerContact"],
 			});
 		}
+	}
 
-		// Strict parity: Sum of line items MUST EQUAL total receipt amount
-		const itemsSum = val.items.reduce((sum, item) => sum + item.amountKopecks, 0);
-		if (itemsSum !== val.totalKopecks) {
+	if (val.payerType === "legal_entity") {
+		if (!val.customerInn) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: `Сумма позиций чека (${itemsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
-				path: ["items"],
+				message: "Для юридического лица обязателен ИНН (10 цифр) по 54-ФЗ",
+				path: ["customerInn"],
 			});
-		}
-
-		// If correction receipt is requested, base document data is mandatory
-		if (val.isCorrection && (!val.correctionDocDate || !val.correctionDocNumber)) {
+		} else if (val.customerInn.length !== 10) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: "Для чека коррекции по 54-ФЗ обязательно указание даты и номера документа-основания (Теги 1178, 1179).",
-				path: ["isCorrection"],
+				message: "ИНН юридического лица должен содержать ровно 10 цифр",
+				path: ["customerInn"],
 			});
 		}
-	});
+	} else if (val.payerType === "individual_entrepreneur") {
+		if (!val.customerInn) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Для ИП обязателен ИНН (12 цифр) по 54-ФЗ",
+				path: ["customerInn"],
+			});
+		} else if (val.customerInn.length !== 12) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "ИНН индивидуального предпринимателя должен содержать ровно 12 цифр",
+				path: ["customerInn"],
+			});
+		}
+	}
+
+	const paymentsSum =
+		val.cashKopecks +
+		val.electronicCardKopecks +
+		val.sbpKopecks +
+		val.prepaidKopecks +
+		val.creditKopecks;
+
+	if (paymentsSum !== val.totalKopecks) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: `Сумма способов оплаты (${paymentsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
+			path: ["totalKopecks"],
+		});
+	}
+
+	const itemsSum = val.items.reduce((sum, item) => sum + item.amountKopecks, 0);
+	if (itemsSum !== val.totalKopecks) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: `Сумма позиций чека (${itemsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
+			path: ["items"],
+		});
+	}
+
+	if (val.isCorrection && (!val.correctionDocDate || !val.correctionDocNumber)) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: "Для чека коррекции по 54-ФЗ обязательно указание даты и номера документа-основания (Теги 1178, 1179).",
+			path: ["isCorrection"],
+		});
+	}
+}
+
+export const createFiscalReceiptPayloadSchema =
+	createFiscalReceiptObjectSchema.superRefine(refineFiscalReceiptPayload);
 
 export type CreateFiscalReceiptPayloadInput = z.input<typeof createFiscalReceiptPayloadSchema>;
 export type CreateFiscalReceiptPayloadOutput = z.infer<typeof createFiscalReceiptPayloadSchema>;

@@ -438,5 +438,37 @@ describe("SanPiN & Medical Waste Fixer Surgeon — Invariants & SSOT", () => {
 			const foundMine = mineData.find((log: any) => log.cycleNumber === 42);
 			assert.ok(foundMine, "Mine clinic must see its own sterilization log");
 		});
+
+		test("GET /api/registers/sanpin rejects invalid calendar date (400) and reports honest allPassed", async () => {
+			if (!databaseReady) return;
+
+			const badDateRes = await injectWithAuth(
+				app,
+				"GET",
+				"/api/registers/sanpin?date=2026-02-30",
+			);
+			assert.equal(badDateRes.status, 400);
+
+			const badShiftDateRes = await injectWithAuth(
+				app,
+				"POST",
+				"/api/registers/sanpin/shift-close",
+				{
+					body: {
+						shiftDate: "2026-02-30",
+					},
+					idempotencyKey: "22222222-3333-4444-8555-666666666666",
+				},
+			);
+			assert.equal(badShiftDateRes.status, 400);
+
+			const registerRes = await injectWithAuth(
+				app,
+				"GET",
+				"/api/registers/sanpin?date=2026-11-24",
+			);
+			assert.equal(registerRes.status, 200, registerRes.body);
+			assert.equal(typeof registerRes.json?.allPassed, "boolean");
+		});
 	});
 });

@@ -67,8 +67,18 @@ export async function registerHealthRoutes(app: FastifyInstance): Promise<void> 
 
 	/**
 	 * Prometheus-совместимый эндпоинт метрик для scraping'а системами мониторинга (Prometheus / Grafana / VictoriaMetrics).
+	 * Защищен requireClinicalReadAccess (секрет администратора или верифицированный токен).
 	 */
 	app.get("/api/system/metrics", async (request: FastifyRequest, reply: FastifyReply) => {
+		const isAllowed = await requireClinicalReadAccess(
+			request,
+			reply,
+			"system metrics",
+		);
+		if (!isAllowed) {
+			return;
+		}
+
 		const metrics = await ServerHealthWatchdog.getSystemMetrics();
 		const prometheusText = ServerHealthWatchdog.toPrometheusMetrics(metrics);
 

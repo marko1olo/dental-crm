@@ -1,7 +1,7 @@
 import { type SQL, and, asc, eq, ilike, isNull, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { resolveOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	documentTemplateCategories,
 	documentTemplates,
@@ -12,9 +12,9 @@ import {
 	resolveFallbackStatutoryTemplateByIdentifier,
 } from "./defaultStatutoryTemplates.js";
 import {
-	type DocumentTemplateIdParams,
-	type DocumentTemplatesCatalogQuery,
 	UUID_REGEX,
+	documentTemplateIdParamsSchema,
+	documentTemplatesCatalogQuerySchema,
 } from "./typesAndSchemas.js";
 
 /**
@@ -29,15 +29,24 @@ export async function registerTemplateCrudRoutes(
 	 */
 	app.get(
 		"/api/document-templates/variables",
-		async (_request: FastifyRequest, reply: FastifyReply) => {
-			// Чтение переменных из базы
-			const dbVariables = await db
-				.select()
-				.from(documentTemplateVariables)
-				.orderBy(
-					asc(documentTemplateVariables.domain),
-					asc(documentTemplateVariables.name),
-				);
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"document template variables",
+			);
+			if (!organizationId) return;
+
+			// Чтение переменных из базы под tenant context
+			const dbVariables = await withTenantCtx(organizationId, async (tx) =>
+				tx
+					.select()
+					.from(documentTemplateVariables)
+					.orderBy(
+						asc(documentTemplateVariables.domain),
+						asc(documentTemplateVariables.name),
+					),
+			);
 
 			const list =
 				dbVariables.length > 0 ? dbVariables : ALL_DOCUMENT_TEMPLATE_VARIABLES;
@@ -72,89 +81,100 @@ export async function registerTemplateCrudRoutes(
 	app.get(
 		"/api/document-templates",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const query = request.query as DocumentTemplatesCatalogQuery;
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"document templates catalog",
+			);
+			if (!organizationId) return;
 
-			const organizationId = await resolveOrganizationId(request);
+			const parsedQuery = documentTemplatesCatalogQuerySchema.safeParse(
+				request.query ?? {},
+			);
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры фильтрации каталога шаблонов.",
+					details: parsedQuery.error.format(),
+				});
+			}
+			const query = parsedQuery.data;
 
-			// Загрузка 10 рубрик
-			const categories = await db
-				.select()
-				.from(documentTemplateCategories)
-				.orderBy(asc(documentTemplateCategories.order));
+			return await withTenantCtx(organizationId, async (tx) => {
+				// Загрузка 10 рубрик
+				const categories = await tx
+					.select()
+					.from(documentTemplateCategories)
+					.orderBy(asc(documentTemplateCategories.order));
 
-			// Построение условий фильтрации
-			const conditions: SQL[] = [];
-			if (organizationId) {
-				// Системные шаблоны (organizationId IS NULL) либо шаблоны данной клиники
+				// Построение условий фильтрации: системные (organizationId IS NULL) либо принадлежащие клинике
+				const conditions: SQL[] = [];
 				const orgOrSystem = or(
 					eq(documentTemplates.organizationId, organizationId),
 					isNull(documentTemplates.organizationId),
 				);
 				if (orgOrSystem) conditions.push(orgOrSystem);
-			} else {
-				// Если организация не указана, возвращаем только системные шаблоны
-				conditions.push(isNull(documentTemplates.organizationId));
-			}
 
-			if (query.categoryId) {
-				const catIdNum = Number.parseInt(query.categoryId, 10);
-				if (!Number.isNaN(catIdNum)) {
-					conditions.push(eq(documentTemplates.categoryId, catIdNum));
+				if (query.categoryId) {
+					const catIdNum = Number.parseInt(query.categoryId, 10);
+					if (!Number.isNaN(catIdNum)) {
+						conditions.push(eq(documentTemplates.categoryId, catIdNum));
+					}
 				}
-			}
 
-			if (query.systemAlias) {
-				conditions.push(
-					eq(documentTemplates.systemAlias, query.systemAlias.trim()),
-				);
-			}
+				if (query.systemAlias) {
+					conditions.push(
+						eq(documentTemplates.systemAlias, query.systemAlias.trim()),
+					);
+				}
 
-			if (query.type) {
-				conditions.push(eq(documentTemplates.type, query.type.trim()));
-			}
+				if (query.type) {
+					conditions.push(eq(documentTemplates.type, query.type.trim()));
+				}
 
-			if (query.isEgisz !== undefined) {
-				const egiszBool = query.isEgisz === "true" || query.isEgisz === "1";
-				conditions.push(eq(documentTemplates.isEgisz, egiszBool));
-			}
+				if (query.isEgisz !== undefined) {
+					const egiszBool = query.isEgisz === "true";
+					conditions.push(eq(documentTemplates.isEgisz, egiszBool));
+				}
 
-			if (query.search && query.search.trim()) {
-				const searchTerm = `%${query.search.trim()}%`;
-				const searchCondition = or(
-					ilike(documentTemplates.name, searchTerm),
-					ilike(documentTemplates.systemAlias, searchTerm),
-				);
-				if (searchCondition) conditions.push(searchCondition);
-			}
+				if (query.search && query.search.trim()) {
+					const searchTerm = `%${query.search.trim()}%`;
+					const searchCondition = or(
+						ilike(documentTemplates.name, searchTerm),
+						ilike(documentTemplates.systemAlias, searchTerm),
+					);
+					if (searchCondition) conditions.push(searchCondition);
+				}
 
-			const whereClause =
-				conditions.length > 0 ? and(...conditions) : undefined;
+				const whereClause =
+					conditions.length > 0 ? and(...conditions) : undefined;
 
-			const templatesList = await db
-				.select()
-				.from(documentTemplates)
-				.where(whereClause)
-				.orderBy(asc(documentTemplates.name));
+				const templatesList = await tx
+					.select()
+					.from(documentTemplates)
+					.where(whereClause)
+					.orderBy(asc(documentTemplates.name));
 
-			// Группировка по 10 категориям
-			const categoriesWithTemplates = categories.map((cat) => {
-				const catTemplates = templatesList.filter(
-					(t) => t.categoryId === cat.id,
-				);
-				return {
-					id: cat.id,
-					name: cat.name,
-					order: cat.order,
-					count: catTemplates.length,
-					templates: catTemplates,
-				};
-			});
+				// Группировка по 10 категориям
+				const categoriesWithTemplates = categories.map((cat) => {
+					const catTemplates = templatesList.filter(
+						(t) => t.categoryId === cat.id,
+					);
+					return {
+						id: cat.id,
+						name: cat.name,
+						order: cat.order,
+						count: catTemplates.length,
+						templates: catTemplates,
+					};
+				});
 
-			return reply.send({
-				ok: true,
-				totalCount: templatesList.length,
-				categories: categoriesWithTemplates,
-				templates: templatesList,
+				return reply.send({
+					ok: true,
+					totalCount: templatesList.length,
+					categories: categoriesWithTemplates,
+					templates: templatesList,
+				});
 			});
 		},
 	);
@@ -165,79 +185,88 @@ export async function registerTemplateCrudRoutes(
 	 */
 	app.get(
 		"/api/document-templates/:id",
-		async (
-			request: FastifyRequest<{ Params: DocumentTemplateIdParams }>,
-			reply: FastifyReply,
-		) => {
-			const identifier = request.params.id?.trim();
-			if (!identifier) {
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"document template get",
+			);
+			if (!organizationId) return;
+
+			const parsedParams = documentTemplateIdParamsSchema.safeParse(
+				request.params,
+			);
+			if (!parsedParams.success) {
 				return reply.code(400).send({
 					error: "MissingId",
-					message: "Не указан идентификатор шаблона документа.",
+					message: "Не указан или некорректен идентификатор шаблона документа.",
 				});
 			}
+			const identifier = parsedParams.data.id;
 
 			const conditions: SQL[] = [];
 			if (UUID_REGEX.test(identifier)) {
 				conditions.push(eq(documentTemplates.id, identifier));
 			} else if (/^\d+$/.test(identifier)) {
 				conditions.push(
-					eq(documentTemplates.externalTemplateId, Number.parseInt(identifier, 10)),
+					eq(
+						documentTemplates.externalTemplateId,
+						Number.parseInt(identifier, 10),
+					),
 				);
 			} else {
 				conditions.push(eq(documentTemplates.systemAlias, identifier));
 			}
 
-			const organizationId = await resolveOrganizationId(request);
 			const tenantFilter =
-				(organizationId
-					? or(
-							eq(documentTemplates.organizationId, organizationId),
-							isNull(documentTemplates.organizationId),
-						)
-					: undefined) ?? isNull(documentTemplates.organizationId);
+				or(
+					eq(documentTemplates.organizationId, organizationId),
+					isNull(documentTemplates.organizationId),
+				) ?? eq(documentTemplates.organizationId, organizationId);
 
-			const [template] = await db
-				.select()
-				.from(documentTemplates)
-				.where(and(or(...conditions), tenantFilter))
-				.limit(1);
+			return await withTenantCtx(organizationId, async (tx) => {
+				const [template] = await tx
+					.select()
+					.from(documentTemplates)
+					.where(and(or(...conditions), tenantFilter))
+					.limit(1);
 
-			if (!template) {
-				const fallbackTemplate =
-					resolveFallbackStatutoryTemplateByIdentifier(identifier);
-				if (fallbackTemplate) {
-					return reply.send({
-						ok: true,
-						template: fallbackTemplate,
+				if (!template) {
+					const fallbackTemplate =
+						resolveFallbackStatutoryTemplateByIdentifier(identifier);
+					if (fallbackTemplate) {
+						return reply.send({
+							ok: true,
+							template: fallbackTemplate,
+						});
+					}
+
+					return reply.code(404).send({
+						error: "TemplateNotFound",
+						message: `Шаблон документа с идентификатором «${identifier}» не найден в библиотеке клиники.`,
 					});
 				}
 
-				return reply.code(404).send({
-					error: "TemplateNotFound",
-					message: `Шаблон документа с идентификатором «${identifier}» не найден в библиотеке клиники.`,
+				// Получение названия категории
+				let categoryName = "Общее";
+				if (template.categoryId) {
+					const [cat] = await tx
+						.select()
+						.from(documentTemplateCategories)
+						.where(eq(documentTemplateCategories.id, template.categoryId))
+						.limit(1);
+					if (cat) categoryName = cat.name;
+				}
+
+				return reply.send({
+					ok: true,
+					template: {
+						...template,
+						externalTemplateId: template.externalTemplateId ?? null,
+						stomxId: template.externalTemplateId ?? null,
+						categoryName,
+					},
 				});
-			}
-
-			// Получение названия категории
-			let categoryName = "Общее";
-			if (template.categoryId) {
-				const [cat] = await db
-					.select()
-					.from(documentTemplateCategories)
-					.where(eq(documentTemplateCategories.id, template.categoryId))
-					.limit(1);
-				if (cat) categoryName = cat.name;
-			}
-
-			return reply.send({
-				ok: true,
-				template: {
-					...template,
-					externalTemplateId: template.externalTemplateId ?? null,
-					stomxId: template.externalTemplateId ?? null,
-					categoryName,
-				},
 			});
 		},
 	);

@@ -9,8 +9,8 @@
  */
 
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { parseKopecks } from "@dental/shared";
-import { db } from "../../db/client.js";
+import { rublesToKopecks } from "@dental/shared";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { appointments, patients, payments } from "../../db/schema.js";
 
 export interface RfmCohortSummary {
@@ -42,18 +42,22 @@ export interface MarketingCohortReport {
 
 export async function calculateRealMarketingCohorts(
 	organizationId: string,
+	executor?: TenantDb,
 ): Promise<MarketingCohortReport> {
 	// Subqueries for appointments and payments aggregates per patient
 	const lastCompletedAtSql = sql<Date | null>`(
 		SELECT max(a.starts_at)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
+		  AND a.status = 'completed'
 	)`;
 
 	const futureCountSql = sql<number>`(
 		SELECT count(*)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id"
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
 		  AND a.starts_at > now()
 		  AND a.status IN ('planned', 'confirmed', 'arrived', 'in_treatment')
 	)`;
@@ -61,7 +65,8 @@ export async function calculateRealMarketingCohorts(
 	const visitsPast12MonthsSql = sql<number>`(
 		SELECT count(*)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id"
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
 		  AND a.status = 'completed'
 		  AND a.starts_at >= now() - interval '1 year'
 	)`;
@@ -69,22 +74,66 @@ export async function calculateRealMarketingCohorts(
 	const totalCompletedVisitsSql = sql<number>`(
 		SELECT count(*)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id"
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
 		  AND a.status = 'completed'
 	)`;
 
-	const revenuePast12MonthsRubSql = sql<string | null>`(
-		SELECT coalesce(sum(p.amount_rub), 0)
+	const exactRevenuePast12MonthsKopSql = sql<string | number | null>`(
+		SELECT coalesce(sum(
+			CASE
+				WHEN p.amount_kopecks IS NOT NULL AND p.amount_kopecks <> 0 THEN
+					CASE
+						WHEN p.status = 'paid' THEN p.amount_kopecks
+						WHEN p.status = 'refunded' THEN -abs(p.amount_kopecks)
+						ELSE 0
+					END
+				ELSE 0
+			END
+		), 0)
 		FROM ${payments} p
-		WHERE p.patient_id = ${patients}."id"
-		  AND p.status = 'paid'
+		WHERE p.organization_id = ${organizationId}
+		  AND p.patient_id = ${patients}."id"
+		  AND p.status IN ('paid', 'refunded')
 		  AND (p.paid_at >= now() - interval '1 year' OR (p.paid_at IS NULL AND p.created_at >= now() - interval '1 year'))
+		  AND (p.document_id IS NULL OR NOT EXISTS (
+			SELECT 1 FROM patient_invoices pi
+			WHERE pi.id = p.document_id
+			  AND pi.organization_id = ${organizationId}
+			  AND pi.status IN ('voided', 'cancelled')
+		  ))
+	)`;
+
+	const legacyRevenuePast12MonthsRubSql = sql<string | null>`(
+		SELECT coalesce(sum(
+			CASE
+				WHEN (p.amount_kopecks IS NULL OR p.amount_kopecks = 0) THEN
+					CASE
+						WHEN p.status = 'paid' THEN coalesce(p.amount_rub, 0)
+						WHEN p.status = 'refunded' THEN -abs(coalesce(p.amount_rub, 0))
+						ELSE 0
+					END
+				ELSE 0
+			END
+		), 0)
+		FROM ${payments} p
+		WHERE p.organization_id = ${organizationId}
+		  AND p.patient_id = ${patients}."id"
+		  AND p.status IN ('paid', 'refunded')
+		  AND (p.paid_at >= now() - interval '1 year' OR (p.paid_at IS NULL AND p.created_at >= now() - interval '1 year'))
+		  AND (p.document_id IS NULL OR NOT EXISTS (
+			SELECT 1 FROM patient_invoices pi
+			WHERE pi.id = p.document_id
+			  AND pi.organization_id = ${organizationId}
+			  AND pi.status IN ('voided', 'cancelled')
+		  ))
 	)`;
 
 	const hasOrthoOrTherapySql = sql<number>`(
 		SELECT count(*)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id"
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
 		  AND (
 				lower(coalesce(a.reason, '')) LIKE '%ортодонт%' OR
 				lower(coalesce(a.reason, '')) LIKE '%брекет%' OR
@@ -97,7 +146,8 @@ export async function calculateRealMarketingCohorts(
 	const hasHygieneSql = sql<number>`(
 		SELECT count(*)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id"
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
 		  AND a.status = 'completed'
 		  AND (
 				lower(coalesce(a.reason, '')) LIKE '%гигиен%' OR
@@ -110,7 +160,8 @@ export async function calculateRealMarketingCohorts(
 	const lastHygieneAtSql = sql<Date | null>`(
 		SELECT max(a.starts_at)
 		FROM ${appointments} a
-		WHERE a.patient_id = ${patients}."id"
+		WHERE a.organization_id = ${organizationId}
+		  AND a.patient_id = ${patients}."id"
 		  AND a.status = 'completed'
 		  AND (
 				lower(coalesce(a.reason, '')) LIKE '%гигиен%' OR
@@ -120,26 +171,32 @@ export async function calculateRealMarketingCohorts(
 		  )
 	)`;
 
-	const rows = await db
-		.select({
-			id: patients.id,
-			lastCompletedAt: lastCompletedAtSql.as("last_completed_at"),
-			lastHygieneAt: lastHygieneAtSql.as("last_hygiene_at"),
-			futureCount: futureCountSql.as("future_count"),
-			visitsPast12m: visitsPast12MonthsSql.as("visits_past_12m"),
-			totalCompletedVisits: totalCompletedVisitsSql.as("total_completed_visits"),
-			revenuePast12mRub: revenuePast12MonthsRubSql.as("revenue_past_12m_rub"),
-			hasOrthoTherapy: hasOrthoOrTherapySql.as("has_ortho_therapy"),
-			hasHygiene: hasHygieneSql.as("has_hygiene"),
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, organizationId),
-				eq(patients.status, "active"),
-				isNull(patients.mergedIntoPatientId),
-			),
-		);
+	const queryRows = (tx: TenantDb) =>
+		tx
+			.select({
+				id: patients.id,
+				lastCompletedAt: lastCompletedAtSql.as("last_completed_at"),
+				lastHygieneAt: lastHygieneAtSql.as("last_hygiene_at"),
+				futureCount: futureCountSql.as("future_count"),
+				visitsPast12m: visitsPast12MonthsSql.as("visits_past_12m"),
+				totalCompletedVisits: totalCompletedVisitsSql.as("total_completed_visits"),
+				exactRevenuePast12mKop: exactRevenuePast12MonthsKopSql.as("exact_revenue_past_12m_kop"),
+				legacyRevenuePast12mRub: legacyRevenuePast12MonthsRubSql.as("legacy_revenue_past_12m_rub"),
+				hasOrthoTherapy: hasOrthoOrTherapySql.as("has_ortho_therapy"),
+				hasHygiene: hasHygieneSql.as("has_hygiene"),
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.status, "active"),
+					isNull(patients.mergedIntoPatientId),
+				),
+			);
+
+	const rows = executor
+		? await queryRows(executor)
+		: await withTenantCtx(organizationId, queryRows);
 
 	const now = Date.now();
 	let noVisit6mCount = 0;
@@ -165,7 +222,10 @@ export async function calculateRealMarketingCohorts(
 		const futureAppts = Number(r.futureCount || 0);
 		const visits12m = Number(r.visitsPast12m || 0);
 		const totalVisits = Number(r.totalCompletedVisits || 0);
-		const revenueKop = parseKopecks(r.revenuePast12mRub || "0");
+		const revenueKop = Math.max(
+			0,
+			Number(r.exactRevenuePast12mKop || 0) + rublesToKopecks(Number(r.legacyRevenuePast12mRub || 0)),
+		);
 
 		if (revenueKop > 0) {
 			totalRevenueKop += revenueKop;

@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { SpeechProviderRequestError } from "./keyPool.js";
+import {
+	clearSpeechKeyHealthMemoryForTests,
+	SpeechProviderRequestError,
+} from "./keyPool.js";
 import {
 	isHallucinatedWhisperTranscript,
 	transcribeWhisperCascade,
@@ -9,24 +12,30 @@ import {
 } from "./whisperCascade.js";
 
 const SPEECH_ENV_PATTERN =
-	/^(DENTAL_SPEECH_|DENTAL_WHISPER_|GROQ_|OPENAI_|CLOUDFLARE_|LOCAL_WHISPER_|WHISPER_CPP_|GOOGLE_|GEMINI_)/;
+	/^(DENTAL_SPEECH_|DENTAL_WHISPER_|GROQ_|OPENAI_|CLOUDFLARE_|LOCAL_WHISPER_|WHISPER_CPP_|GOOGLE_|GEMINI_|GLOBAL_LLM_PROXY_URL|PROXY_URL|HTTPS_PROXY|HTTP_PROXY|LLM_PROXY|https_proxy|http_proxy)/;
 
 describe("whisperCascade", () => {
 	let originalEnv: NodeJS.ProcessEnv;
 	let originalFetch: typeof globalThis.fetch;
 
 	beforeEach(() => {
-		originalEnv = process.env;
-		process.env = { ...originalEnv };
+		originalEnv = { ...process.env };
 		for (const name of Object.keys(process.env)) {
 			if (SPEECH_ENV_PATTERN.test(name)) delete process.env[name];
 		}
+		clearSpeechKeyHealthMemoryForTests();
 		originalFetch = globalThis.fetch;
 	});
 
 	afterEach(() => {
+		clearSpeechKeyHealthMemoryForTests();
 		for (const name of Object.keys(process.env)) {
 			if (SPEECH_ENV_PATTERN.test(name)) delete process.env[name];
+		}
+		for (const [name, value] of Object.entries(originalEnv)) {
+			if (SPEECH_ENV_PATTERN.test(name) && value !== undefined) {
+				process.env[name] = value;
+			}
 		}
 		globalThis.fetch = originalFetch;
 	});

@@ -413,10 +413,28 @@ describe("ServerHealthWatchdog — Integration with Database & HTTP Routes", () 
 		assert.ok(typeof body.queues.totalJobs === "number");
 	});
 
-	it("GET /api/system/metrics returns Prometheus exposition formatted text", async () => {
+	it("GET /api/system/metrics rejects unauthenticated requests and returns Prometheus text with valid admin secret", async () => {
+		const prevUnguarded = process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+		delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
+		try {
+			const unauthRes = await testApp.inject({
+				method: "GET",
+				url: "/api/system/metrics",
+			});
+			assert.ok([401, 403, 503].includes(unauthRes.statusCode));
+		} finally {
+			if (prevUnguarded !== undefined) {
+				process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = prevUnguarded;
+			}
+		}
+
+		const secret = clinicalAdminSecret() ?? "test-secret";
 		const res = await testApp.inject({
 			method: "GET",
 			url: "/api/system/metrics",
+			headers: {
+				"x-dente-admin-secret": secret,
+			},
 		});
 
 		assert.equal(res.statusCode, 200);

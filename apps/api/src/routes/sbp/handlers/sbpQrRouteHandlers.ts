@@ -56,8 +56,15 @@ export async function handleGenerateQr(
 		});
 	}
 
-	const response = await withTenantCtx(orgId, async (tx) => {
-		const result = generateSbpDynamicQrService(parsed.data);
+	const rawInvoiceId = parsed.data.invoiceId?.trim() || null;
+	if (rawInvoiceId && !isValidUuid(rawInvoiceId)) {
+		return reply.code(400).send({
+			error: "SbpQrValidationError",
+			message: "Некорректный формат UUID счёта (invoiceId).",
+		});
+	}
+
+	const outcome = await withTenantCtx(orgId, async (tx) => {
 		const rawBody =
 			request.body && typeof request.body === "object"
 				? (request.body as Record<string, unknown>)
@@ -66,9 +73,7 @@ export async function handleGenerateQr(
 			typeof rawBody?.patientId === "string" && isValidUuid(rawBody.patientId)
 				? rawBody.patientId
 				: null;
-		const rawInvoiceId = parsed.data.invoiceId ?? null;
-		const validInvoiceId =
-			typeof rawInvoiceId === "string" && isValidUuid(rawInvoiceId) ? rawInvoiceId : null;
+		const validInvoiceId = rawInvoiceId;
 
 		let resolvedPatientId = bodyPatientId;
 		let resolvedVisitId: string | null = null;
@@ -86,11 +91,14 @@ export async function handleGenerateQr(
 					),
 				)
 				.limit(1);
-			if (invoice) {
-				resolvedPatientId = resolvedPatientId ?? invoice.patientId;
-				resolvedVisitId = invoice.visitId ?? null;
+			if (!invoice) {
+				return { status: "invoice_not_found" as const };
 			}
+			resolvedPatientId = resolvedPatientId ?? invoice.patientId;
+			resolvedVisitId = invoice.visitId ?? null;
 		}
+
+		const result = generateSbpDynamicQrService(parsed.data);
 
 		if (resolvedPatientId) {
 			await tx
@@ -108,13 +116,20 @@ export async function handleGenerateQr(
 				.onConflictDoNothing();
 		}
 
-		return result;
+		return { status: "ok" as const, result };
 	});
+
+	if (outcome.status === "invoice_not_found") {
+		return reply.code(404).send({
+			error: "InvoiceNotFound",
+			message: "Счёт не найден в данной организации.",
+		});
+	}
 
 	reply.header("Idempotency-Key", idempotencyKey);
 	reply.header("X-Idempotency-Key", idempotencyKey);
 
-	return reply.code(201).send(response);
+	return reply.code(201).send(outcome.result);
 }
 
 /**

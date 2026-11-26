@@ -42,6 +42,13 @@ function getAuthHeaders(): Record<string, string> {
 	return headers;
 }
 
+function unwrapEnvelope<T>(json: unknown): T {
+	if (json && typeof json === "object" && "data" in json && (json as Record<string, unknown>).data !== undefined) {
+		return (json as Record<string, unknown>).data as T;
+	}
+	return json as T;
+}
+
 export async function fetchRemoteSessions(params?: { patientId?: string; q?: string }): Promise<CopilotThread[] | null> {
 	try {
 		const url = new URL("/api/agent/sessions", typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:3000");
@@ -50,12 +57,21 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 
 		const res = await fetch(url.pathname + url.search, {
 			method: "GET",
+			credentials: "include",
 			headers: getAuthHeaders(),
 		});
 
 		if (!res.ok) return null;
-		const data = await res.json();
-		const rawSessions = Array.isArray(data?.sessions) ? data.sessions : [];
+		const rawJson: unknown = await res.json();
+		const unwrapped = unwrapEnvelope<{ sessions?: unknown[] } | unknown[]>(rawJson);
+		const rootObj = rawJson as { sessions?: unknown[] } | null;
+		const rawSessions = Array.isArray(unwrapped)
+			? unwrapped
+			: Array.isArray(unwrapped?.sessions)
+				? unwrapped.sessions
+				: Array.isArray(rootObj?.sessions)
+					? rootObj.sessions
+					: [];
 
 		return rawSessions.map((s: unknown): CopilotThread => {
 			const item = typeof s === "object" && s !== null ? (s as Record<string, unknown>) : {};
@@ -160,11 +176,16 @@ export async function fetchRemoteMessages(sessionId: string): Promise<unknown[] 
 	try {
 		const res = await fetch(`/api/agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
 			method: "GET",
+			credentials: "include",
 			headers: getAuthHeaders(),
 		});
 		if (!res.ok) return null;
-		const data = await res.json();
-		return Array.isArray(data?.messages) ? data.messages : [];
+		const rawJson: unknown = await res.json();
+		const unwrapped = unwrapEnvelope<{ messages?: unknown[] } | unknown[]>(rawJson);
+		const rootObj = rawJson as { messages?: unknown[] } | null;
+		if (Array.isArray(unwrapped)) return unwrapped;
+		if (Array.isArray(unwrapped?.messages)) return unwrapped.messages;
+		return Array.isArray(rootObj?.messages) ? rootObj.messages : [];
 	} catch (err) {
 		logger.error("[copilotSessionApi] fetchRemoteMessages failed:", err);
 		return null;
@@ -200,11 +221,16 @@ export async function fetchRemoteMemoryFacts(): Promise<AiMemoryFact[] | null> {
 	try {
 		const res = await fetch("/api/agent/memory", {
 			method: "GET",
+			credentials: "include",
 			headers: getAuthHeaders(),
 		});
 		if (!res.ok) return null;
-		const data = await res.json();
-		return Array.isArray(data?.memoryFacts) ? data.memoryFacts : null;
+		const rawJson: unknown = await res.json();
+		const unwrapped = unwrapEnvelope<{ memoryFacts?: AiMemoryFact[] } | AiMemoryFact[]>(rawJson);
+		const rootObj = rawJson as { memoryFacts?: AiMemoryFact[] } | null;
+		if (Array.isArray(unwrapped)) return unwrapped;
+		if (Array.isArray(unwrapped?.memoryFacts)) return unwrapped.memoryFacts;
+		return Array.isArray(rootObj?.memoryFacts) ? rootObj.memoryFacts : null;
 	} catch (err) {
 		logger.error("[copilotSessionApi] fetchRemoteMemoryFacts failed:", err);
 		return null;
@@ -235,11 +261,19 @@ export async function fetchRemoteSettings(): Promise<Record<string, unknown> | n
 	try {
 		const res = await fetch("/api/agent/settings", {
 			method: "GET",
+			credentials: "include",
 			headers: getAuthHeaders(),
 		});
 		if (!res.ok) return null;
-		const data = (await res.json()) as { ok?: boolean; settings?: Record<string, unknown> };
-		return (data?.settings && typeof data.settings === "object") ? data.settings : null;
+		const rawJson: unknown = await res.json();
+		const unwrapped = unwrapEnvelope<{ settings?: Record<string, unknown> }>(rawJson);
+		const rootObj = rawJson as { settings?: Record<string, unknown> } | null;
+		const candidate = (unwrapped && typeof unwrapped === "object" && "settings" in unwrapped && unwrapped.settings && typeof unwrapped.settings === "object")
+			? unwrapped.settings
+			: (rootObj?.settings && typeof rootObj.settings === "object")
+				? rootObj.settings
+				: (unwrapped && typeof unwrapped === "object" && !("ok" in unwrapped) && !("settings" in unwrapped) ? unwrapped as Record<string, unknown> : null);
+		return candidate;
 	} catch (err) {
 		logger.error("[copilotSessionApi] fetchRemoteSettings failed:", err);
 		return null;

@@ -1,23 +1,23 @@
-import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { type TenantDb, withTenantCtx } from "../../../../db/rls.js";
+import { isValidUuid } from "@dental/shared";
+import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
-	invoiceItems,
-	patientInvoices,
-	patients,
 	treatmentItems,
-	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../../db/schema.js";
-import { formatKopecksToRubles, kopecksToRubles, rublesToKopecks, sumKopecks } from "@dental/shared";
 import { wsBroker } from "../../../../services/websocketBroker.js";
-import { formatInvoiceNumber } from "../../../invoiceRoutes/invoiceCalculationHelpers.js";
-import { calculateEffectivePlanDiscount } from "../treatmentPlanTotalsCalculator.js";
+import {
+	createInvoiceForApprovedPlan,
+	type CreatedInvoiceSummary,
+} from "./planApprovedInvoiceService.js";
 import { cancelRejectedPlanTierLedgerItems } from "./planLedgerSync.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
+
+export type { CreatedInvoiceSummary };
+export { createInvoiceForApprovedPlan };
 
 const approveTreatmentPlanBodySchema = z.object({
 	selectedTier: z.string().trim().optional(),
@@ -27,322 +27,20 @@ const approveTreatmentPlanBodySchema = z.object({
 /**
  * statusTreatmentPlanHandler.ts — Утверждение, смена статуса и жизненный цикл плана лечения.
  * Мандат 8b/8zi: строгое транзакционное управление статусами с обновлением книги лечения.
- * DEF-PLAN-01: При утверждении плана создается реальный счет/наряд в кассе и возвращается объект инвойса.
  */
-
-export interface CreatedInvoiceSummary {
-	id: string;
-	number: string;
-	invoiceNumber: string;
-	patientId: string;
-	patientName: string;
-	treatmentPlanId: string | null;
-	visitId: string | null;
-	totalAmountRub: number;
-	status: string;
-	issuedAt: string;
-	createdAt: string;
-	items: Array<{
-		id: string;
-		name: string;
-		quantity: number;
-		unitPriceRub: number;
-		priceRub: number;
-		serviceCode?: string | undefined;
-		toothCode?: string | undefined;
-	}>;
-}
-
-export async function createInvoiceForApprovedPlan(
-	tx: TenantDb,
-	params: {
-		organizationId: string;
-		patientId: string;
-		planId: string;
-		planName: string;
-		planTotalPriceRub?: string | number | null;
-		discountMode?: string | null | undefined;
-		planDiscountPercent?: number | null | undefined;
-		planDiscountRub?: number | null | undefined;
-		planDiscountKopecks?: bigint | number | null | undefined;
-		totalPriceKopecks?: bigint | number | null | undefined;
-	},
-): Promise<CreatedInvoiceSummary> {
-	const { organizationId, patientId, planId, planName, planTotalPriceRub } = params;
-	const now = new Date();
-
-	// DEF-02: Идемпотентность создания счета при повторном утверждении плана
-	const [existingInvoice] = await tx
-		.select()
-		.from(patientInvoices)
-		.where(
-			and(
-				eq(patientInvoices.organizationId, organizationId),
-				eq(patientInvoices.treatmentPlanId, planId),
-			),
-		)
-		.for("update")
-		.limit(1);
-
-	if (existingInvoice) {
-		if (existingInvoice.totalPriceKopecks === 0n && (existingInvoice.totalAmountRub > 0 || Number(existingInvoice.totalRub || 0) > 0)) {
-			const recoveredKop = BigInt(rublesToKopecks(existingInvoice.totalAmountRub ?? Number(existingInvoice.totalRub || 0)));
-			await tx
-				.update(patientInvoices)
-				.set({ totalPriceKopecks: recoveredKop })
-				.where(and(eq(patientInvoices.id, existingInvoice.id), eq(patientInvoices.organizationId, organizationId)));
-			existingInvoice.totalPriceKopecks = recoveredKop;
-		}
-
-		const existingItems = await tx
-			.select()
-			.from(invoiceItems)
-			.where(
-				and(
-					eq(invoiceItems.organizationId, organizationId),
-					eq(invoiceItems.invoiceId, existingInvoice.id),
-				),
-			);
-
-		const [patient] = await tx
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
-			.limit(1);
-
-		const existingInvoiceNumber = formatInvoiceNumber("invoice", patientId) || existingInvoice.id;
-
-		return {
-			id: existingInvoice.id,
-			number: existingInvoiceNumber,
-			invoiceNumber: existingInvoiceNumber,
-			patientId,
-			patientName: patient?.fullName || "Пациент",
-			treatmentPlanId: planId,
-			visitId: existingInvoice.visitId,
-			totalAmountRub: existingInvoice.totalAmountRub ?? Number(existingInvoice.totalRub || 0),
-			status: existingInvoice.status || "draft",
-			issuedAt: existingInvoice.issuedAt ? new Date(existingInvoice.issuedAt).toISOString() : now.toISOString(),
-			createdAt: existingInvoice.createdAt ? new Date(existingInvoice.createdAt).toISOString() : now.toISOString(),
-			items: existingItems.map((it) => ({
-				id: it.id,
-				name: it.name,
-				quantity: Number(it.quantity || 1),
-				unitPriceRub: kopecksToRubles(it.unitPriceKopecks || 0),
-				priceRub: kopecksToRubles(it.totalPriceKopecks || 0),
-				serviceCode: it.serviceCode || undefined,
-				toothCode: it.toothCode || undefined,
-			})),
-		};
-	}
-
-	const invoiceId = randomUUID();
-
-	const planItems = await tx
-		.select()
-		.from(treatmentPlanItemsNew)
-		.where(
-			and(
-				eq(treatmentPlanItemsNew.planId, planId),
-				eq(treatmentPlanItemsNew.organizationId, organizationId),
-			),
-		);
-
-	const [patient] = await tx
-		.select({ id: patients.id, fullName: patients.fullName })
-		.from(patients)
-		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
-		.limit(1);
-
-	const patientName = patient?.fullName || "Пациент";
-	const invoiceNumber =
-		formatInvoiceNumber("invoice", patientId) ||
-		`СЧ-${now.getFullYear()}-${invoiceId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
-
-	let totalAmountKopecks = 0;
-	const returnedItems: CreatedInvoiceSummary["items"] = [];
-	const itemsToInsert: Array<typeof invoiceItems.$inferInsert> = [];
-
-	if (planItems.length > 0) {
-		const rawLineData = planItems.map((it) => {
-			const qty = Math.max(1, it.quantity || 1);
-			const unitPrice = Number(it.price || 0);
-			const lineDiscountRub = Number(it.discount || 0);
-			const unitPriceKopecks = it.priceKopecks != null
-				? Number(it.priceKopecks)
-				: rublesToKopecks(unitPrice);
-			const lineDiscountKopecks = it.discountKopecks != null
-				? Number(it.discountKopecks)
-				: rublesToKopecks(lineDiscountRub);
-			const lineBaseKopecks = Math.max(0, unitPriceKopecks * qty - lineDiscountKopecks);
-			return {
-				it,
-				qty,
-				unitPrice,
-				lineDiscountRub,
-				unitPriceKopecks,
-				lineBaseKopecks,
-			};
-		});
-
-		const sumOfLinesKopecks = sumKopecks(rawLineData.map((l) => l.lineBaseKopecks));
-
-		// Мандат 8e: Полный учет скидки плана (вплоть до 100% гарантии врача = 0 ₽)
-		const effectiveDiscount = calculateEffectivePlanDiscount({
-			baseTotalKopecks: sumOfLinesKopecks,
-			discountMode: params.discountMode ?? "plan_fixed",
-			planDiscountPercent: Number(params.planDiscountPercent ?? 0),
-			planDiscountRub: Number(params.planDiscountRub ?? 0),
-			planDiscountKopecks: params.planDiscountKopecks,
-		});
-
-		const targetFinalTotalKopecks = effectiveDiscount.finalTotalKopecks;
-		const totalDiscountToApplyKopecks = effectiveDiscount.discountKopecks;
-		let remainingDiscountKopecks = totalDiscountToApplyKopecks;
-
-		for (let i = 0; i < rawLineData.length; i++) {
-			const line = rawLineData[i]!;
-			let lineAdditionalDiscountKopecks = 0;
-
-			if (totalDiscountToApplyKopecks > 0 && sumOfLinesKopecks > 0) {
-				if (i === rawLineData.length - 1) {
-					lineAdditionalDiscountKopecks = Math.min(line.lineBaseKopecks, remainingDiscountKopecks);
-				} else {
-					lineAdditionalDiscountKopecks = Math.min(
-						line.lineBaseKopecks,
-						Math.round((line.lineBaseKopecks * totalDiscountToApplyKopecks) / sumOfLinesKopecks),
-					);
-					lineAdditionalDiscountKopecks = Math.min(lineAdditionalDiscountKopecks, remainingDiscountKopecks);
-				}
-				remainingDiscountKopecks -= lineAdditionalDiscountKopecks;
-			}
-
-			const lineFinalKopecks = Math.max(0, line.lineBaseKopecks - lineAdditionalDiscountKopecks);
-			const lineFinalRub = kopecksToRubles(lineFinalKopecks);
-			const fullLinePriceKopecks = line.unitPriceKopecks * line.qty;
-			const totalLineDiscountKopecks = Math.max(0, fullLinePriceKopecks - lineFinalKopecks);
-			const effectiveDiscountPercent = fullLinePriceKopecks > 0
-				? Math.min(100, Math.round((totalLineDiscountKopecks / fullLinePriceKopecks) * 100))
-				: 0;
-
-			const itemId = randomUUID();
-
-			itemsToInsert.push({
-				id: itemId,
-				organizationId,
-				invoiceId,
-				priceListItemId:
-					line.it.priceId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(line.it.priceId)
-						? line.it.priceId
-						: null,
-				name: line.it.name || "Стоматологическая услуга плана лечения",
-				quantity: String(line.qty),
-				unitPriceKopecks: line.unitPriceKopecks,
-				discountPercent: String(effectiveDiscountPercent),
-				totalPriceKopecks: lineFinalKopecks,
-				serviceCode: line.it.priceId || null,
-				toothCode: line.it.toothNumber ? String(line.it.toothNumber) : null,
-				createdAt: now,
-			});
-
-			returnedItems.push({
-				id: itemId,
-				name: line.it.name || "Стоматологическая услуга плана лечения",
-				quantity: line.qty,
-				unitPriceRub: line.unitPrice,
-				priceRub: lineFinalRub,
-				serviceCode: line.it.priceId || undefined,
-				toothCode: line.it.toothNumber ? String(line.it.toothNumber) : undefined,
-			});
-		}
-
-		totalAmountKopecks = targetFinalTotalKopecks;
-	} else {
-		const rawTotalRub = Number(planTotalPriceRub || 0);
-		const baseTotalKopecks = params.totalPriceKopecks != null
-			? Number(params.totalPriceKopecks)
-			: rublesToKopecks(rawTotalRub);
-		const effectiveDiscount = calculateEffectivePlanDiscount({
-			baseTotalKopecks,
-			discountMode: params.discountMode ?? "plan_fixed",
-			planDiscountPercent: Number(params.planDiscountPercent ?? 0),
-			planDiscountRub: Number(params.planDiscountRub ?? 0),
-			planDiscountKopecks: params.planDiscountKopecks,
-		});
-
-		const finalTotalKopecks = effectiveDiscount.finalTotalKopecks;
-		totalAmountKopecks = finalTotalKopecks;
-		const totalAmountRub = kopecksToRubles(finalTotalKopecks);
-		const itemId = randomUUID();
-		const discountPercent = baseTotalKopecks > 0
-			? Math.min(100, Math.round((effectiveDiscount.discountKopecks / baseTotalKopecks) * 100))
-			: 0;
-
-		itemsToInsert.push({
-			id: itemId,
-			organizationId,
-			invoiceId,
-			name: `План лечения: «${planName}»`,
-			quantity: "1",
-			unitPriceKopecks: baseTotalKopecks,
-			discountPercent: String(discountPercent),
-			totalPriceKopecks: finalTotalKopecks,
-			createdAt: now,
-		});
-
-		returnedItems.push({
-			id: itemId,
-			name: `План лечения: «${planName}»`,
-			quantity: 1,
-			unitPriceRub: rawTotalRub,
-			priceRub: totalAmountRub,
-		});
-	}
-
-	const finalTotalAmountRub = kopecksToRubles(totalAmountKopecks);
-	const totalRubText = formatKopecksToRubles(totalAmountKopecks);
-
-	// SEV-1 FK Invariant: Сначала создаём родительский счёт в patientInvoices, затем дочерние строки в invoiceItems!
-	await tx.insert(patientInvoices).values({
-		id: invoiceId,
-		organizationId,
-		patientId,
-		treatmentPlanId: planId,
-		visitId: null,
-		totalRub: totalRubText,
-		totalAmountRub: finalTotalAmountRub,
-		totalPriceKopecks: BigInt(totalAmountKopecks),
-		status: "draft",
-		issuedAt: now,
-		createdAt: now,
-	});
-
-	if (itemsToInsert.length > 0) {
-		await tx.insert(invoiceItems).values(itemsToInsert);
-	}
-
-	return {
-		id: invoiceId,
-		number: invoiceNumber,
-		invoiceNumber,
-		patientId,
-		patientName,
-		treatmentPlanId: planId,
-		visitId: null,
-		totalAmountRub: finalTotalAmountRub,
-		status: "draft",
-		issuedAt: now.toISOString(),
-		createdAt: now.toISOString(),
-		items: returnedItems,
-	};
-}
-
 export async function handleApproveTreatmentPlan(
 	request: FastifyRequest<{ Params: { id: string } }>,
 	reply: FastifyReply,
 	organizationId: string,
 ) {
 	const { id } = request.params;
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор плана лечения.",
+		});
+	}
+
 	const parsed = approveTreatmentPlanBodySchema.safeParse(request.body ?? {});
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -399,7 +97,6 @@ export async function handleApproveTreatmentPlan(
 					),
 				);
 
-			// SEV-2.4: Аннулируем позиции отвергнутых альтернативных тарифов в той же группе планов
 			await cancelRejectedPlanTierLedgerItems(tx, {
 				organizationId,
 				patientId: planToLock.patientId,
@@ -407,7 +104,6 @@ export async function handleApproveTreatmentPlan(
 				planGroupId: planToLock.planGroupId,
 			});
 
-			// DEF-PLAN-01: Создаем реальный счет/наряд в БД при утверждении плана
 			invoice = await createInvoiceForApprovedPlan(tx, {
 				organizationId,
 				patientId: planToLock.patientId,
@@ -421,7 +117,6 @@ export async function handleApproveTreatmentPlan(
 				totalPriceKopecks: updated.totalPriceKopecks != null ? BigInt(updated.totalPriceKopecks) : null,
 			});
 
-			// Мандат 8bo: Аудит пишется строго внутри единой ACID-транзакции tx
 			await tx.insert(auditEvents).values({
 				organizationId,
 				actorUserId: null,
@@ -483,6 +178,13 @@ export async function handleUpdateTreatmentPlanStatus(
 	organizationId: string,
 ) {
 	const { id } = request.params;
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор плана лечения.",
+		});
+	}
+
 	const parsed = updateTreatmentPlanStatusSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -560,7 +262,6 @@ export async function handleUpdateTreatmentPlanStatus(
 		}
 
 		if (updated) {
-			// Мандат 8bo: Аудит пишется строго внутри единой ACID-транзакции tx
 			await tx.insert(auditEvents).values({
 				organizationId,
 				actorUserId: null,

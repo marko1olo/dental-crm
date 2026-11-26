@@ -31,9 +31,14 @@ describe("CloudRelayClient (Clinic Edge NAT Traversal)", () => {
 
 		httpServer.on("upgrade", (req: IncomingMessage, socket, head) => {
 			const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-			const token = url.searchParams.get("token");
+			const queryToken = url.searchParams.get("token");
+			const authHeader = req.headers.authorization;
+			const bearerToken =
+				typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+					? authHeader.slice(7).trim()
+					: null;
 
-			if (token !== testSecret) {
+			if (queryToken || bearerToken !== testSecret) {
 				socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
 				socket.destroy();
 				return;

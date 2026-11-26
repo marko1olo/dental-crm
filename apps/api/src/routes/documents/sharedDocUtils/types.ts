@@ -1,5 +1,47 @@
-import type { TaxDeductionApplicationRelationship } from "@dental/shared";
+import {
+	publicGeneratedDocumentSchema,
+	type GeneratedDocument,
+	type PublicGeneratedDocument,
+	type TaxDeductionApplicationRelationship,
+} from "@dental/shared";
 import { repairMojibakeText } from "../../../text/repairMojibake.js";
+
+/**
+ * Проекция документа для публичного ответа API с исключением внутренних
+ * полей хранения и сырых налоговых/XML снимков перед .strict() валидацией.
+ */
+export function toPublicGeneratedDocument(
+	doc: GeneratedDocument,
+): PublicGeneratedDocument {
+	return publicGeneratedDocumentSchema.parse({
+		id: doc.id,
+		organizationId: doc.organizationId,
+		patientId: doc.patientId,
+		visitId: doc.visitId,
+		kind: doc.kind,
+		title: doc.title,
+		status: doc.status,
+		issuedAt: doc.issuedAt,
+		totalAmountRub: doc.totalAmountRub,
+		totalAmountKopecks: doc.totalAmountKopecks,
+		taxYear: doc.taxYear,
+		taxPayerInn: doc.taxPayerInn,
+		signatureAttestation: doc.signatureAttestation,
+		voidAttestation: doc.voidAttestation,
+		releaseJournalEntry: doc.releaseJournalEntry,
+		issuedSnapshotSha256: doc.issuedSnapshotSha256,
+		issuedSnapshotCreatedAt: doc.issuedSnapshotCreatedAt,
+		issuedByUserId: doc.issuedByUserId,
+		voidedAt: doc.voidedAt,
+		voidedByUserId: doc.voidedByUserId,
+		signatureSvg: doc.signatureSvg,
+		cryptoSignaturePkcs7: doc.cryptoSignaturePkcs7,
+		doctorSignaturePkcs7: doc.doctorSignaturePkcs7,
+		doctorCertSerial: doc.doctorCertSerial,
+		doctorCertSubject: doc.doctorCertSubject,
+		doctorSignedAt: doc.doctorSignedAt,
+	});
+}
 
 export const issuedArchiveIntegrityError =
 	"Архивная копия выданного документа отсутствует или не прошла проверку целостности.";

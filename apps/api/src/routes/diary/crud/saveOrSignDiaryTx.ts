@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withSavepoint, withTenantCtx } from "../../../db/rls.js";
 import { visitDiaries, visitDiaryRevisions, visits } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
@@ -28,7 +28,8 @@ export async function executeSaveOrSignDiaryTx(params: {
 	const { data, orgId, userId } = params;
 	const isSigning = data.status === "signed";
 
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(orgId, (outerTx) =>
+		withSavepoint(outerTx, async (tx) => {
 		const targetTooth = data.diagnosisTooth?.trim() || null;
 		const toothCondition = targetTooth
 			? eq(visitDiaries.diagnosisTooth, targetTooth)
@@ -241,5 +242,6 @@ export async function executeSaveOrSignDiaryTx(params: {
 		}
 		const signing = await runDiarySigningCeremony(tx, { diaryId, organizationId: orgId, userId, pkcs7Signature: resolvedPost.stored });
 		return { diaryId, signing, draftHash: null };
-	});
+		}),
+	);
 }

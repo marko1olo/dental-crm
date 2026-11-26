@@ -270,7 +270,7 @@ export function readZipEntries(buffer: Buffer): {
 			cursor = nextCursor;
 		}
 	} catch (err: unknown) {
-		warnings.push(`zip_read_error:${(err as Error).message || "corrupted_zip"}`);
+		warnings.push(`zip_read_error:${err instanceof Error ? err.message : "corrupted_zip"}`);
 	}
 
 	return { entries, warnings };

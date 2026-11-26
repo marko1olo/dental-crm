@@ -3,7 +3,7 @@
  */
 
 import { eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	type AdvertisingChannelInput,
@@ -11,16 +11,19 @@ import {
 	buildDenteDefaultAdvertisingChannels,
 } from "@dental/shared";
 
-export async function readOrSeedOrganizationRomiChannels(orgId: string): Promise<{
+export async function readOrSeedOrganizationRomiChannels(
+	orgId: string,
+	executor?: TenantDb,
+): Promise<{
 	flags: Record<string, unknown>;
 	channels: AdvertisingChannelInput[];
 }> {
-	return withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const [org] = await tx
 			.select({ flags: organizations.workspaceFeatureFlags })
 			.from(organizations)
 			.where(eq(organizations.id, orgId))
-			.for("update");
+			.limit(1);
 
 		const existingFlags = (org?.flags as Record<string, unknown>) || {};
 		const rawChannels = existingFlags.marketingRomiChannels;
@@ -41,21 +44,15 @@ export async function readOrSeedOrganizationRomiChannels(orgId: string): Promise
 			}
 		}
 
-		// Первичное авто-сидирование канонических каналов DENTE в PostgreSQL 18
-		const seeded = buildDenteDefaultAdvertisingChannels();
-		const updatedFlags = {
-			...existingFlags,
-			marketingRomiChannels: seeded,
-		};
-
-		await tx
-			.update(organizations)
-			.set({ workspaceFeatureFlags: updatedFlags })
-			.where(eq(organizations.id, orgId));
-
+		// Read-only GET fallback без мутации organizations при чтении
 		return {
-			flags: updatedFlags,
-			channels: seeded,
+			flags: existingFlags,
+			channels: buildDenteDefaultAdvertisingChannels(),
 		};
-	});
+	};
+
+	if (executor) {
+		return run(executor);
+	}
+	return withTenantCtx(orgId, run);
 }

@@ -7,7 +7,7 @@ import {
 	extractIdempotencyKey,
 	isValidUuid,
 } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { crmLeads, crmLeadStageHistory } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -47,7 +47,7 @@ export async function registerLeadBatchOperationsRoutes(app: FastifyInstance): P
 				: null;
 		const now = new Date();
 
-		const updatedLeads = await db.transaction(async (tx) => {
+		const updatedLeads = await withTenantCtx(organizationId, async (tx) => {
 			const leadsToUpdate = await tx
 				.select()
 				.from(crmLeads)

@@ -61,11 +61,6 @@
 			"import": "./dist/radiology/fastMarching/index.js",
 			"default": "./dist/radiology/fastMarching/index.js"
 		},
-		"./radiology/cpr": {
-			"types": "./dist/radiology/cpr/index.d.ts",
-			"import": "./dist/radiology/cpr/index.js",
-			"default": "./dist/radiology/cpr/index.js"
-		},
 		"./hardware": {
 			"types": "./dist/hardware/index.d.ts",
 			"import": "./dist/hardware/index.js",
@@ -121,11 +116,6 @@
 			"import": "./dist/messaging/index.js",
 			"default": "./dist/messaging/index.js"
 		},
-		"./portal": {
-			"types": "./dist/portal/index.d.ts",
-			"import": "./dist/portal/index.js",
-			"default": "./dist/portal/index.js"
-		},
 		"./recalls": {
 			"types": "./dist/recalls/index.d.ts",
 			"import": "./dist/recalls/index.js",
@@ -150,11 +140,6 @@
 			"types": "./dist/branches/index.d.ts",
 			"import": "./dist/branches/index.js",
 			"default": "./dist/branches/index.js"
-		},
-		"./warehouse": {
-			"types": "./dist/warehouse/index.d.ts",
-			"import": "./dist/warehouse/index.js",
-			"default": "./dist/warehouse/index.js"
 		},
 		"./mobile": {
 			"types": "./dist/mobile/index.d.ts",

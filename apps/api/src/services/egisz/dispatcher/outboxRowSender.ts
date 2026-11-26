@@ -169,15 +169,15 @@ export async function processOutboxRow(
 					doctorFamilyName = surnameMatch[1].trim();
 					if (givenNameMatch?.[1]) {
 						const gnParts = givenNameMatch[1].trim().split(/\s+/);
-						doctorGivenName = gnParts[0] || "Врач";
+						doctorGivenName = gnParts[0] || "";
 						doctorMiddleName = gnParts.slice(1).join(" ") || undefined;
 					}
 				} else {
 					const cnMatch = certSubject.match(/CN\s*=\s*([^,]+)/i);
 					const nameToSplit = cnMatch?.[1] ? cnMatch[1].trim() : certSubject;
 					const parts = splitFullName(nameToSplit);
-					doctorFamilyName = parts.last || "Врач";
-					doctorGivenName = parts.first || "Врач";
+					doctorFamilyName = parts.last || "";
+					doctorGivenName = parts.first || "";
 					doctorMiddleName = parts.middle;
 				}
 			}
@@ -197,9 +197,6 @@ export async function processOutboxRow(
 				if (givenMatch?.[1]) patientGivenName = givenMatch[1].trim();
 			}
 
-			patientFamilyName = patientFamilyName || "Пациент";
-			patientGivenName = patientGivenName || "Пациент";
-
 			let patientBirthDate = patientRow?.birthDate ? patientRow.birthDate.trim() : "";
 			if (/^\d{2}\.\d{2}\.\d{4}$/.test(patientBirthDate)) {
 				const [d, m, y] = patientBirthDate.split(".");
@@ -210,9 +207,6 @@ export async function processOutboxRow(
 				if (birthMatch?.[1] && birthMatch[2] && birthMatch[3]) {
 					patientBirthDate = `${birthMatch[1]}-${birthMatch[2]}-${birthMatch[3]}`;
 				}
-			}
-			if (!patientBirthDate) {
-				patientBirthDate = "1980-01-01";
 			}
 
 			let patientGender: "1" | "2" = "1";
@@ -228,60 +222,76 @@ export async function processOutboxRow(
 				}
 			}
 
-			const soapRes = await vipnet.emkAddDocument({
-				idDocumentMis: pkg.documentId,
-				documentType: pkg.metadata.docTypeNsiCode || "108",
-				documentName: "Протокол стоматологической консультации",
-				documentDate: new Date().toISOString(),
-				cdaXmlContent: pkg.xmlCanonicalPayload,
-				patient: {
-					idPatientMis: row.patientId,
-					snils: snils || "00000000000",
-					familyName: patientFamilyName,
-					givenName: patientGivenName,
-					...(patientMiddleName ? { middleName: patientMiddleName } : {}),
-					birthDate: patientBirthDate,
-					gender: patientGender,
-				},
-				doctor: {
-					snils: doctorSnils || "00000000000",
-					familyName: doctorFamilyName || "Врач",
-					givenName: doctorGivenName || "Врач",
-					...(doctorMiddleName ? { middleName: doctorMiddleName } : {}),
-				},
-				signatures: [
-					{
-						signatureType: "Doctor",
-						signatureBase64: pkg.doctorSignature.signatureBase64,
-					},
-					...(pkg.moSignature
-						? [
-								{
-									signatureType: "Clinic" as const,
-									signatureBase64: pkg.moSignature.signatureBase64,
-								},
-							]
-						: []),
-				],
-			});
-			if (!soapRes.success) {
+			const missingVipnetFields: string[] = [];
+			if (!snils || !isValidSnils(snils)) missingVipnetFields.push("СНИЛС пациента");
+			if (!patientFamilyName || !patientGivenName) missingVipnetFields.push("ФИО пациента");
+			if (!patientBirthDate) missingVipnetFields.push("дата рождения пациента");
+			if (!doctorSnils || !isValidSnils(doctorSnils)) missingVipnetFields.push("СНИЛС врача");
+			if (!doctorFamilyName || !doctorGivenName) missingVipnetFields.push("ФИО врача");
+
+			if (missingVipnetFields.length > 0) {
 				submissionRes = {
 					success: false,
 					transactionId: `ERR-${Date.now()}`,
 					status: "Rejected",
-					errorMessage: soapRes.faultString || "SOAP Fault при обращении к ViPNet N3.Health",
-					rawResponse: soapRes.rawResponseBody,
+					errorMessage: `Отправка через N3.Health ViPNet невозможна: отсутствуют достоверные реквизиты (${missingVipnetFields.join(", ")}).`,
 				};
 			} else {
-				const txId = soapRes.idDocumentGlobal || `N3-${Date.now()}-${pkg.documentId.slice(0, 8)}`;
-				submissionRes = {
-					success: true,
-					transactionId: txId,
-					status: "Sent",
-					remdDocumentId: soapRes.idDocumentGlobal,
-					registrationDate: new Date().toISOString(),
-					rawResponse: soapRes,
-				};
+				const soapRes = await vipnet.emkAddDocument({
+					idDocumentMis: pkg.documentId,
+					documentType: pkg.metadata.docTypeNsiCode || "108",
+					documentName: "Протокол стоматологической консультации",
+					documentDate: new Date().toISOString(),
+					cdaXmlContent: pkg.xmlCanonicalPayload,
+					patient: {
+						idPatientMis: row.patientId,
+						snils,
+						familyName: patientFamilyName,
+						givenName: patientGivenName,
+						...(patientMiddleName ? { middleName: patientMiddleName } : {}),
+						birthDate: patientBirthDate,
+						gender: patientGender,
+					},
+					doctor: {
+						snils: doctorSnils,
+						familyName: doctorFamilyName,
+						givenName: doctorGivenName,
+						...(doctorMiddleName ? { middleName: doctorMiddleName } : {}),
+					},
+					signatures: [
+						{
+							signatureType: "Doctor",
+							signatureBase64: pkg.doctorSignature.signatureBase64,
+						},
+						...(pkg.moSignature
+							? [
+									{
+										signatureType: "Clinic" as const,
+										signatureBase64: pkg.moSignature.signatureBase64,
+									},
+								]
+							: []),
+					],
+				});
+				if (!soapRes.success) {
+					submissionRes = {
+						success: false,
+						transactionId: `ERR-${Date.now()}`,
+						status: "Rejected",
+						errorMessage: soapRes.faultString || "SOAP Fault при обращении к ViPNet N3.Health",
+						rawResponse: soapRes.rawResponseBody,
+					};
+				} else {
+					const txId = soapRes.idDocumentGlobal || `N3-${Date.now()}-${pkg.documentId.slice(0, 8)}`;
+					submissionRes = {
+						success: true,
+						transactionId: txId,
+						status: "Sent",
+						remdDocumentId: soapRes.idDocumentGlobal,
+						registrationDate: new Date().toISOString(),
+						rawResponse: soapRes,
+					};
+				}
 			}
 		} else {
 			submissionRes = await activeClient.sendRemdDocument(pkg);
@@ -336,26 +346,28 @@ export async function processOutboxRow(
 					})
 					.where(and(eq(egiszOutbox.id, row.id), eq(egiszOutbox.organizationId, row.organizationId)));
 
-				await tx
-					.update(egiszLogs)
-					.set({
-						status: isRegistered ? "Accepted" : "Sent",
-						transactionId: submissionRes.transactionId,
-						errorDetails: {
-							outboxId: row.id,
-							remdDocumentId: resolvedRemdDocId,
-							registrationDate: submissionRes.registrationDate,
-							dispatchedAt: new Date().toISOString(),
-							rawResponse: submissionRes.rawResponse,
-							...(receipt ? { receipt } : {}),
-						},
-					})
-					.where(
-						and(
-							eq(egiszLogs.organizationId, row.organizationId),
-							eq(egiszLogs.visitId, row.visitId),
-						),
-					);
+				if (row.visitId) {
+					await tx
+						.update(egiszLogs)
+						.set({
+							status: isRegistered ? "Accepted" : "Sent",
+							transactionId: submissionRes.transactionId,
+							errorDetails: {
+								outboxId: row.id,
+								remdDocumentId: resolvedRemdDocId,
+								registrationDate: submissionRes.registrationDate,
+								dispatchedAt: new Date().toISOString(),
+								rawResponse: submissionRes.rawResponse,
+								...(receipt ? { receipt } : {}),
+							},
+						})
+						.where(
+							and(
+								eq(egiszLogs.organizationId, row.organizationId),
+								eq(egiszLogs.visitId, row.visitId),
+							),
+						);
+				}
 
 				if (receipt) {
 					await appendEgiszAuditLog(tx, {
@@ -425,26 +437,28 @@ export async function processOutboxRow(
 					})
 					.where(and(eq(egiszOutbox.id, row.id), eq(egiszOutbox.organizationId, row.organizationId)));
 
-				await tx
-					.update(egiszLogs)
-					.set({
-						status: "Error",
-						errorDetails: {
-							outboxId: row.id,
-							attempts: nextAttempt,
-							nextAttemptAt: isTerminal ? null : new Date(Date.now() + delayMs).toISOString(),
-							errorMessage: errorText,
-							validationIssues: submissionRes.validationIssues,
-							failedAt: new Date().toISOString(),
-							isDeadLetterQueue: isExhausted && !isRejected,
-						},
-					})
-					.where(
-						and(
-							eq(egiszLogs.organizationId, row.organizationId),
-							eq(egiszLogs.visitId, row.visitId),
-						),
-					);
+				if (row.visitId) {
+					await tx
+						.update(egiszLogs)
+						.set({
+							status: "Error",
+							errorDetails: {
+								outboxId: row.id,
+								attempts: nextAttempt,
+								nextAttemptAt: isTerminal ? null : new Date(Date.now() + delayMs).toISOString(),
+								errorMessage: errorText,
+								validationIssues: submissionRes.validationIssues,
+								failedAt: new Date().toISOString(),
+								isDeadLetterQueue: isExhausted && !isRejected,
+							},
+						})
+						.where(
+							and(
+								eq(egiszLogs.organizationId, row.organizationId),
+								eq(egiszLogs.visitId, row.visitId),
+							),
+						);
+				}
 
 				await appendEgiszAuditLog(tx, {
 					organizationId: row.organizationId,

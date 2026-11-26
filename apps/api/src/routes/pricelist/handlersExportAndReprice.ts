@@ -92,7 +92,7 @@ export async function handleBatchReprice(
 		request.log.error({ err: error }, "Ошибка при пакетной переоценке услуг");
 		return reply.code(500).send({
 			error: "PricelistBatchRepriceError",
-			message: (error as Error).message || "Не удалось выполнить переоценку услуг",
+			message: "Не удалось выполнить пакетную переоценку услуг.",
 		});
 	}
 }

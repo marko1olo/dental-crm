@@ -20,6 +20,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createApiLogger } from "../observability/logger.js";
+import { namedDevelopmentModeActive } from "./bypass.js";
 
 const logger = createApiLogger("authSecret");
 
@@ -38,7 +39,7 @@ const BANNED_SECRETS = new Set([
 let cachedSecret: string | null = null;
 
 function isProduction(): boolean {
-	return process.env.NODE_ENV === "production";
+	return !namedDevelopmentModeActive();
 }
 
 function devSecretFilePath(): string {

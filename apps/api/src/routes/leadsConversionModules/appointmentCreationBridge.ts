@@ -21,8 +21,9 @@ import { resolveOrCreatePatientFromLead } from "./patientCreationBridge.js";
 
 export async function resolveDoctorAndChair(tx: TenantDb, orgId: string, payload: ConvertLeadPayload) {
 	let doctor: { id: string } | undefined;
-	const candDoc = payload.doctorId;
-	if (candDoc && z.string().uuid().safeParse(candDoc).success) {
+	const candDoc = payload.doctorId?.trim();
+	const hasExplicitDoctorUuid = Boolean(candDoc && z.string().uuid().safeParse(candDoc).success);
+	if (hasExplicitDoctorUuid && candDoc) {
 		const [found] = await tx
 			.select({ id: users.id })
 			.from(users)
@@ -36,8 +37,7 @@ export async function resolveDoctorAndChair(tx: TenantDb, orgId: string, payload
 			)
 			.limit(1);
 		doctor = found;
-	}
-	if (!doctor) {
+	} else {
 		const [fallback] = await tx
 			.select({ id: users.id })
 			.from(users)
@@ -48,25 +48,40 @@ export async function resolveDoctorAndChair(tx: TenantDb, orgId: string, payload
 					eq(users.isActive, true),
 				),
 			)
+			.orderBy(users.createdAt)
 			.limit(1);
 		doctor = fallback;
 	}
 
 	let resolvedChairId: string | null = null;
-	const candChair = payload.chairId;
-	if (candChair && z.string().uuid().safeParse(candChair).success) {
-		const [c2] = await tx.select({ id: chairs.id }).from(chairs).where(
-			and(eq(chairs.id, candChair), eq(chairs.organizationId, orgId)),
-		).limit(1);
-		if (c2) resolvedChairId = c2.id;
-	}
-	if (!resolvedChairId) {
-		const [c3] = await tx.select({ id: chairs.id }).from(chairs).where(
-			and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)),
-		).limit(1);
+	const candChair = payload.chairId?.trim();
+	const hasExplicitChairUuid = Boolean(candChair && z.string().uuid().safeParse(candChair).success);
+	if (hasExplicitChairUuid && candChair) {
+		const [c2] = await tx
+			.select({ id: chairs.id })
+			.from(chairs)
+			.where(
+				and(
+					eq(chairs.id, candChair),
+					eq(chairs.organizationId, orgId),
+					eq(chairs.isActive, true),
+				),
+			)
+			.limit(1);
+		if (!c2) {
+			return { doctor, resolvedChairId: null, chairNotFound: true as const };
+		}
+		resolvedChairId = c2.id;
+	} else {
+		const [c3] = await tx
+			.select({ id: chairs.id })
+			.from(chairs)
+			.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
+			.orderBy(chairs.id)
+			.limit(1);
 		if (c3) resolvedChairId = c3.id;
 	}
-	return { doctor, resolvedChairId };
+	return { doctor, resolvedChairId, chairNotFound: false as const };
 }
 
 export async function convertLeadToAppointment(params: {
@@ -96,20 +111,29 @@ export async function convertLeadToAppointment(params: {
 			return { alreadyConverted: true as const };
 		}
 
-		const { doctor, resolvedChairId } = hasDates ? await resolveDoctorAndChair(tx, organizationId, payload) : {};
-		if (hasDates && !doctor) return { doctorNotFound: true as const };
+		const resolved = hasDates ? await resolveDoctorAndChair(tx, organizationId, payload) : undefined;
+		if (hasDates && !resolved?.doctor) return { doctorNotFound: true as const };
+		if (hasDates && resolved?.chairNotFound) return { chairNotFound: true as const };
+		const doctor = resolved?.doctor;
+		const resolvedChairId = resolved?.resolvedChairId ?? null;
 
-		const { patient } = await resolveOrCreatePatientFromLead(tx, organizationId, lead, payload.comment);
+		const { patient, alreadyExisted } = await resolveOrCreatePatientFromLead(tx, organizationId, lead, payload.comment);
 		const identity = getRequestIdentity(req);
 		const changedByUserId = identity?.userId && z.string().uuid().safeParse(identity.userId).success ? identity.userId : null;
 
-		await saveLeadCommunicationConsents(tx, {
-			organizationId,
-			patientId: patient.id,
-			consentMedical: payload.consentMedical,
-			consentMarketing: payload.consentMarketing,
-			decidedByUserId: changedByUserId,
-		});
+		const hasExplicitConsentOverride =
+			payload.consentMedical !== undefined && payload.consentMedical !== null
+				? true
+				: payload.consentMarketing !== undefined && payload.consentMarketing !== null;
+		if (!alreadyExisted || hasExplicitConsentOverride) {
+			await saveLeadCommunicationConsents(tx, {
+				organizationId,
+				patientId: patient.id,
+				consentMedical: payload.consentMedical,
+				consentMarketing: payload.consentMarketing,
+				decidedByUserId: changedByUserId,
+			});
+		}
 
 		let appointment: Appointment | null = null;
 		const existingMeta = (lead.metadata as Record<string, unknown> | null) || {};
@@ -151,6 +175,7 @@ export async function convertLeadToAppointment(params: {
 	if ("notFound" in result) return reply.status(404).send({ error: "Lead not found" });
 	if ("alreadyConverted" in result) return reply.status(409).send({ error: "LeadAlreadyConverted", message: "Лид уже был сконвертирован другим администратором." });
 	if ("doctorNotFound" in result) return reply.code(400).send({ error: "DoctorNotFound" });
+	if ("chairNotFound" in result) return reply.code(400).send({ error: "ChairNotFound", message: "Указанный кабинет не найден в клинике." });
 
 	broadcastLeadConversion({ wsBroker, organizationId, leadId, toStage: result.hasAppointmentDates ? "consult_booked" : "converted", patient: result.patient, appointment: result.appointment });
 	return result;

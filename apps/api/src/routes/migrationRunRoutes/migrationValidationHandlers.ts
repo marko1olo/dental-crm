@@ -55,6 +55,21 @@ function isInsideRoot(target: string, root: string): boolean {
 	);
 }
 
+function getConfiguredMigrationAllowedRoots(): string[] {
+	const configuredRootsRaw = process.env.DENTAL_MIGRATION_ALLOWED_ROOTS?.trim();
+	if (configuredRootsRaw) {
+		const parsed = configuredRootsRaw
+			.split(/[;,]/)
+			.map((r) => r.trim())
+			.filter(Boolean)
+			.map((r) => path.resolve(r));
+		if (parsed.length > 0) {
+			return parsed;
+		}
+	}
+	return [path.resolve(process.cwd(), ".data", "migration-sources")];
+}
+
 async function resolveSafeMigrationPath(rawPath: string): Promise<string> {
 	if (!rawPath || rawPath.includes("\0")) {
 		throw new Error("Некорректный путь к файлу или каталогу.");
@@ -84,21 +99,11 @@ async function resolveSafeMigrationPath(rawPath: string): Promise<string> {
 		throw new Error("Прямое чтение внутреннего хранилища загрузок запрещено.");
 	}
 
-	const configuredRootsRaw = process.env.DENTAL_MIGRATION_ALLOWED_ROOTS?.trim();
-	if (configuredRootsRaw) {
-		const allowedRoots = configuredRootsRaw
-			.split(/[;,]/)
-			.map((r) => r.trim())
-			.filter(Boolean)
-			.map((r) => path.resolve(r));
-		if (
-			allowedRoots.length > 0 &&
-			!allowedRoots.some((root) => isInsideRoot(canonical, root))
-		) {
-			throw new Error(
-				"Указанный путь выходит за пределы разрешённых каталогов миграции (DENTAL_MIGRATION_ALLOWED_ROOTS).",
-			);
-		}
+	const allowedRoots = getConfiguredMigrationAllowedRoots();
+	if (!allowedRoots.some((root) => isInsideRoot(canonical, root))) {
+		throw new Error(
+			"Указанный путь выходит за пределы разрешённых каталогов миграции (DENTAL_MIGRATION_ALLOWED_ROOTS).",
+		);
 	}
 
 	return canonical;
@@ -308,7 +313,7 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 			);
 		}
 
-		let validatedRoots: string[] = [];
+		let validatedRoots: string[] = getConfiguredMigrationAllowedRoots();
 		if (parsed.data.roots.length > 0) {
 			try {
 				validatedRoots = await Promise.all(
@@ -328,7 +333,7 @@ export function registerMigrationValidationRoutes(app: FastifyInstance): void {
 
 		try {
 			const result = await discoverLocalSources({
-				...(validatedRoots.length > 0 ? { roots: validatedRoots } : {}),
+				roots: validatedRoots,
 				maxDepth: parsed.data.maxDepth,
 				timeBudgetMs: parsed.data.timeBudgetMs,
 			});

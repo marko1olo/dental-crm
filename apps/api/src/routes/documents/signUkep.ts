@@ -10,7 +10,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { recordAuditEvent } from "../../audit.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	readIssuedDocumentSnapshot,
 	writeStampedDocumentSnapshot,
@@ -88,27 +88,29 @@ export async function register(app: FastifyInstance) {
 
 		try {
 			// First verify the document exists and is in a state that allows signing
-			const [doc] = await db
-				.select({
-					id: generatedDocuments.id,
-					kind: generatedDocuments.kind,
-					status: generatedDocuments.status,
-					cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
-					issuedSnapshotSha256: generatedDocuments.issuedSnapshotSha256,
-					storagePath: generatedDocuments.storagePath,
-					issuedAt: generatedDocuments.issuedAt,
-					signatureAttestation: generatedDocuments.signatureAttestation,
-					doctorCertSerial: generatedDocuments.doctorCertSerial,
-					doctorCertSubject: generatedDocuments.doctorCertSubject,
-				})
-				.from(generatedDocuments)
-				.where(
-					and(
-						eq(generatedDocuments.id, id),
-						eq(generatedDocuments.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			const [doc] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({
+						id: generatedDocuments.id,
+						kind: generatedDocuments.kind,
+						status: generatedDocuments.status,
+						cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
+						issuedSnapshotSha256: generatedDocuments.issuedSnapshotSha256,
+						storagePath: generatedDocuments.storagePath,
+						issuedAt: generatedDocuments.issuedAt,
+						signatureAttestation: generatedDocuments.signatureAttestation,
+						doctorCertSerial: generatedDocuments.doctorCertSerial,
+						doctorCertSubject: generatedDocuments.doctorCertSubject,
+					})
+					.from(generatedDocuments)
+					.where(
+						and(
+							eq(generatedDocuments.id, id),
+							eq(generatedDocuments.organizationId, orgId),
+						),
+					)
+					.limit(1),
+			);
 
 			if (!doc) {
 				return reply.code(404).send({
@@ -207,16 +209,18 @@ export async function register(app: FastifyInstance) {
 			// Prevent replay of the exact same PKCS#7 signature.
 			// Поиск ограничен своей организацией: раньше он шёл по всей базе и
 			// сообщал о существовании подписи в ЧУЖОЙ клинике.
-			const [replayed] = await db
-				.select({ id: generatedDocuments.id })
-				.from(generatedDocuments)
-				.where(
-					and(
-						eq(generatedDocuments.organizationId, orgId),
-						eq(generatedDocuments.cryptoSignaturePkcs7, pkcs7Signature),
-					),
-				)
-				.limit(1);
+			const [replayed] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select({ id: generatedDocuments.id })
+					.from(generatedDocuments)
+					.where(
+						and(
+							eq(generatedDocuments.organizationId, orgId),
+							eq(generatedDocuments.cryptoSignaturePkcs7, pkcs7Signature),
+						),
+					)
+					.limit(1),
+			);
 
 			if (replayed) {
 				return reply.code(409).send({
@@ -262,7 +266,7 @@ export async function register(app: FastifyInstance) {
 				? new Date(parsedBody.data.signedAt)
 				: now;
 
-			const signResult = await db.transaction(async (tx) => {
+			const signResult = await withTenantCtx(orgId, async (tx) => {
 				const updated = await tx
 					.update(generatedDocuments)
 					.set({

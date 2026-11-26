@@ -62,8 +62,8 @@ export async function submitSterilizerData(
 		};
 
 		const url = isEditing && editingEquipment
-			? `/api/registers/sterilizers/equipments/${editingEquipment.id}`
-			: "/api/registers/sterilizers/equipments";
+			? `/api/sanpin/sterilization/equipments/${editingEquipment.id}`
+			: "/api/sanpin/sterilization/equipments";
 		const method = isEditing ? "PUT" : "POST";
 
 		const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
@@ -86,7 +86,7 @@ export async function submitSterilizerStatusChange(
 	successMsg: string,
 ): Promise<boolean> {
 	try {
-		const res = await fetch(`/api/registers/sterilizers/equipments/${equipmentId}`, {
+		const res = await fetch(`/api/sanpin/sterilization/equipments/${equipmentId}`, {
 			method: "PUT",
 			headers: {
 				...getSterilizerAuthHeaders(),

@@ -3,7 +3,7 @@
  */
 
 import { eq } from "drizzle-orm";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import { organizations } from "../../../db/schema.js";
 import {
 	marketingPromoSchema,
@@ -170,16 +170,19 @@ export const DEFAULT_SERVER_MARKETING_PROMOS: StoredMarketingPromo[] = [
 	},
 ];
 
-export async function readOrSeedOrganizationPromos(orgId: string): Promise<{
+export async function readOrSeedOrganizationPromos(
+	orgId: string,
+	executor?: TenantDb,
+): Promise<{
 	flags: Record<string, unknown>;
 	promos: StoredMarketingPromo[];
 }> {
-	return withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const [org] = await tx
 			.select({ flags: organizations.workspaceFeatureFlags })
 			.from(organizations)
 			.where(eq(organizations.id, orgId))
-			.for("update");
+			.limit(1);
 
 		const existingFlags = (org?.flags as Record<string, unknown>) || {};
 		const rawPromos = existingFlags.marketingPromos;
@@ -195,21 +198,15 @@ export async function readOrSeedOrganizationPromos(orgId: string): Promise<{
 			};
 		}
 
-		// Первичное авто-сидирование в PostgreSQL 18
-		const seeded = [...DEFAULT_SERVER_MARKETING_PROMOS];
-		const updatedFlags = {
-			...existingFlags,
-			marketingPromos: seeded,
-		};
-
-		await tx
-			.update(organizations)
-			.set({ workspaceFeatureFlags: updatedFlags })
-			.where(eq(organizations.id, orgId));
-
+		// Read-only GET fallback без мутации organizations при чтении
 		return {
-			flags: updatedFlags,
-			promos: seeded,
+			flags: existingFlags,
+			promos: [...DEFAULT_SERVER_MARKETING_PROMOS],
 		};
-	});
+	};
+
+	if (executor) {
+		return run(executor);
+	}
+	return withTenantCtx(orgId, run);
 }

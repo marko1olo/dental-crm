@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { basisPointsFromPercent, kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
 	patients,
@@ -77,7 +77,9 @@ export async function handleCreateTreatmentPlan(
 					? Math.round(it.unitPriceKopecks)
 					: rublesToKopecks(it.price);
 				const discountKopecks = rublesToKopecks(it.discount);
-				const lineTotal = Math.max(0, unitKopecks * it.quantity - discountKopecks);
+				const lineTotal = typeof it.totalPriceKopecks === "number" && it.totalPriceKopecks >= 0
+					? Math.round(it.totalPriceKopecks)
+					: Math.max(0, unitKopecks * it.quantity - discountKopecks);
 				itemsTotalKopecks += lineTotal;
 			}
 		}
@@ -90,11 +92,14 @@ export async function handleCreateTreatmentPlan(
 	if (itemsTotalKopecks > 0) {
 		let discountedKopecks = itemsTotalKopecks;
 		if (typeof data.planDiscountRub === "number" && data.planDiscountRub > 0) {
-			computedPlanDiscountKopecks = rublesToKopecks(data.planDiscountRub);
+			computedPlanDiscountKopecks = Math.min(itemsTotalKopecks, rublesToKopecks(data.planDiscountRub));
 			discountedKopecks = Math.max(0, discountedKopecks - computedPlanDiscountKopecks);
 		} else if (typeof data.planDiscountPercent === "number" && data.planDiscountPercent > 0) {
 			const basisPoints = basisPointsFromPercent(data.planDiscountPercent);
-			computedPlanDiscountKopecks = percentageOfKopecks(toExactKopecks(discountedKopecks), basisPoints);
+			computedPlanDiscountKopecks = Math.min(
+				itemsTotalKopecks,
+				percentageOfKopecks(toExactKopecks(discountedKopecks), basisPoints),
+			);
 			discountedKopecks = Math.max(0, discountedKopecks - computedPlanDiscountKopecks);
 		}
 		totalKopecks = discountedKopecks;
@@ -229,7 +234,9 @@ export async function handleCreateTreatmentPlan(
 							? Math.round(meta.item.unitPriceKopecks)
 							: rublesToKopecks(meta.item.price);
 						const itemDiscountKopecks = rublesToKopecks(meta.item.discount);
-						const lineTotalKopecks = Math.max(0, itemPriceKopecks * meta.item.quantity - itemDiscountKopecks);
+						const lineTotalKopecks = typeof meta.item.totalPriceKopecks === "number" && meta.item.totalPriceKopecks >= 0
+							? Math.round(meta.item.totalPriceKopecks)
+							: Math.max(0, itemPriceKopecks * meta.item.quantity - itemDiscountKopecks);
 
 						allItemsFlat.push({
 							...meta.item,
@@ -258,13 +265,15 @@ export async function handleCreateTreatmentPlan(
 		}
 
 		try {
-			await tx.insert(auditEvents).values({
-				organizationId,
-				actorUserId: null,
-				entityType: "treatment_plan",
-				entityId: newPlan.id,
-				action: "TREATMENT_PLAN_CREATED",
-				reason: `Создан план комплексного лечения «${newPlan.name}» на сумму ${calculatedTotalRub} ₽`,
+			await withSavepoint(tx, async (spTx) => {
+				await spTx.insert(auditEvents).values({
+					organizationId,
+					actorUserId: null,
+					entityType: "treatment_plan",
+					entityId: newPlan.id,
+					action: "TREATMENT_PLAN_CREATED",
+					reason: `Создан план комплексного лечения «${newPlan.name}» на сумму ${calculatedTotalRub} ₽`,
+				});
 			});
 		} catch (auditErr) {
 			request.log.warn({ err: auditErr }, "Не удалось записать аудит создания плана лечения");

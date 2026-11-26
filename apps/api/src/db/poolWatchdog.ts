@@ -417,6 +417,9 @@ export function getPoolWatchdog(
 	options?: PoolWatchdogOptions,
 ): ConnectionPoolWatchdog {
 	if (!defaultWatchdogInstance || options) {
+		if (defaultWatchdogInstance) {
+			defaultWatchdogInstance.stop();
+		}
 		defaultWatchdogInstance = new ConnectionPoolWatchdog(options);
 	}
 	return defaultWatchdogInstance;

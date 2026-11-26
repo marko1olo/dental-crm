@@ -19,6 +19,7 @@
 
 .ai-section-header {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 16px;
 	margin-bottom: 4px;
@@ -39,7 +40,8 @@
 }
 
 .ai-section-title {
-	flex: 1;
+	flex: 1 1 200px;
+	min-width: 0;
 }
 
 .ai-section-title h3 {

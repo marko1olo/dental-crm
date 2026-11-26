@@ -48,6 +48,7 @@ export interface UseUnifiedDictationOptions {
 	patientId?: string | null | undefined;
 	visitId?: string | null | undefined;
 	onResult?: ((text: string) => void) | undefined;
+	onFullTranscript?: ((fullText: string) => void) | undefined;
 	onInterim?: ((interim: string) => void) | undefined;
 	autoFallback?: boolean | undefined;
 }
@@ -102,8 +103,12 @@ export function useUnifiedDictation(
 	const [error, setError] = useState<string | null>(null);
 
 	const clientRef = useRef<UnifiedAudioClient | null>(null);
+	const fullTranscriptRef = useRef(fullTranscript);
+	fullTranscriptRef.current = fullTranscript;
 	const onResultRef = useRef(options.onResult);
 	onResultRef.current = options.onResult;
+	const onFullTranscriptRef = useRef(options.onFullTranscript);
+	onFullTranscriptRef.current = options.onFullTranscript;
 	const onInterimRef = useRef(options.onInterim);
 	onInterimRef.current = options.onInterim;
 
@@ -152,8 +157,10 @@ export function useUnifiedDictation(
 			},
 			onFinalText: (text, accumulated) => {
 				setFinalText(text);
+				fullTranscriptRef.current = accumulated;
 				setFullTranscript(accumulated);
-				onResultRef.current?.(accumulated);
+				onResultRef.current?.(text);
+				onFullTranscriptRef.current?.(accumulated);
 			},
 			onTwoLayerTranscript: (data) => {
 				setFinalText((prev) => (prev !== data.finalized ? data.finalized : prev));
@@ -226,15 +233,15 @@ export function useUnifiedDictation(
 	);
 
 	const stopDictation = useCallback(async (): Promise<string> => {
-		if (!clientRef.current) return fullTranscript;
+		if (!clientRef.current) return fullTranscriptRef.current;
 		try {
 			const finalRes = await clientRef.current.stop();
 			return finalRes;
 		} catch (err) {
 			logger.warn("[useUnifiedDictation] Error stopping dictation:", err);
-			return fullTranscript;
+			return fullTranscriptRef.current;
 		}
-	}, [fullTranscript]);
+	}, []);
 
 	const toggleDictation = useCallback(async () => {
 		if (state === "listening" || state === "connecting") {
@@ -248,6 +255,7 @@ export function useUnifiedDictation(
 		if (clientRef.current) {
 			clientRef.current.clearTranscript();
 		}
+		fullTranscriptRef.current = "";
 		setInterimText("");
 		setFinalText("");
 		setFullTranscript("");

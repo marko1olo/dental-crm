@@ -423,7 +423,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 				if (!orgId) return;
 				const preview = await buildSmartImportPreview(orgId, input);
 
-				const { patientCommit, imagingCommit } = await withTenantCtx(orgId, async (_tx) => {
+				const { patientCommit, imagingCommit } = await withTenantCtx(orgId, async () => {
 					const pCommit =
 						preview.patientPreview.totalRows > 0
 							? await commitPatientImport(orgId, {

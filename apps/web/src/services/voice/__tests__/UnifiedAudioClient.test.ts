@@ -15,6 +15,9 @@ import {
 	updateAdaptiveNoiseFloor,
 	VadDetector,
 } from "../UnifiedAudioClient";
+import { AudioStreamTransport, type AudioTransportHost } from "../audioClient/audioStreamTransport";
+import { resolveUnifiedAudioClientOptions } from "../audioClient/types";
+import { VoiceOfflineQueue } from "../VoiceOfflineQueue";
 
 describe("UnifiedAudioClient: State, Modes & Fallback Engine", () => {
 	it("initializes in idle state with preferred mode 'gemini_live'", () => {
@@ -202,5 +205,84 @@ describe("UnifiedAudioClient: State, Modes & Fallback Engine", () => {
 		assert.strictEqual(speechEnded, 1);
 
 		detector.dispose();
+	});
+
+	it("authenticates Gemini Live WS via POST /api/v1/speech/live/ticket without adminSecret", async () => {
+		const origWindow = (globalThis as { window?: unknown }).window;
+		const origWebSocket = (globalThis as { WebSocket?: unknown }).WebSocket;
+		const origFetch = globalThis.fetch;
+
+		const sentFrames: string[] = [];
+		let connectedUrl = "";
+		let ticketHeaders: Record<string, string> = {};
+
+		class FakeWs {
+			static OPEN = 1;
+			readyState = 1;
+			onopen: (() => void) | null = null;
+			onmessage: ((ev: { data: string }) => void) | null = null;
+			onerror: ((err: unknown) => void) | null = null;
+			onclose: ((ev: { code: number }) => void) | null = null;
+			constructor(url: string) {
+				connectedUrl = url;
+				queueMicrotask(() => this.onopen?.());
+			}
+			send(data: string) {
+				sentFrames.push(data);
+			}
+			close() {}
+		}
+
+		(globalThis as { window?: unknown }).window = {
+			location: { protocol: "http:", host: "127.0.0.1:5173" },
+		};
+		(globalThis as { WebSocket?: unknown }).WebSocket = FakeWs;
+		globalThis.fetch = (async (_url: RequestInfo | URL, init?: RequestInit) => {
+			ticketHeaders = (init?.headers ?? {}) as Record<string, string>;
+			return new Response(JSON.stringify({ data: { ok: true, ticket: "ws-ticket-xyz" } }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const queue = new VoiceOfflineQueue({ autoSyncIntervalMs: 0 });
+			const host: AudioTransportHost = {
+				getOptions: () =>
+					resolveUnifiedAudioClientOptions({
+						preferredMode: "gemini_live",
+						specialty: "therapy",
+						adminSecret: "must-never-leak-over-ws",
+					}),
+				getState: () => "listening",
+				getMode: () => "gemini_live",
+				getIsDisposed: () => false,
+				getRecordingId: () => "01945000-0000-7000-8000-000000000010",
+				nextChunkIndex: () => 0,
+				getAccumulatedText: () => "",
+				getStreamManager: () => null,
+				getOfflineQueue: () => queue,
+				onInterimTranscript: () => {},
+				onFinalSegment: () => {},
+				onProviderFallback: async () => {},
+				onFatalSpeechError: () => {},
+				onOfflineRecordSaved: () => {},
+			};
+			const transport = new AudioStreamTransport(host);
+			const ok = await transport.startGeminiLiveWs();
+			assert.strictEqual(ok, true);
+			assert.ok(Boolean(ticketHeaders["Idempotency-Key"]));
+			assert.ok(connectedUrl.includes("/api/speech/live?ticket=ws-ticket-xyz"));
+			const initPayload = JSON.parse(sentFrames[0] || "{}") as Record<string, unknown>;
+			assert.strictEqual(initPayload.type, "session_init");
+			assert.strictEqual(initPayload.ticket, "ws-ticket-xyz");
+			assert.strictEqual(initPayload.adminSecret, undefined);
+			transport.cleanupBackend();
+			queue.dispose();
+		} finally {
+			(globalThis as { window?: unknown }).window = origWindow;
+			(globalThis as { WebSocket?: unknown }).WebSocket = origWebSocket;
+			globalThis.fetch = origFetch;
+		}
 	});
 });

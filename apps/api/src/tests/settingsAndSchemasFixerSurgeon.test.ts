@@ -930,5 +930,26 @@ describe("Settings & Schemas Fixer Surgeon Suite (Zod Strict Deficit & Idempoten
 		const commitJson = JSON.parse(resCommit.body);
 		assert.equal(commitJson.phase, "commit");
 		assert.equal(commitJson.importedRows, 1);
+
+		// 8e. RFC 4180 CSV с кавычками и пропуском дублей при фиксации
+		const rfcKey = fixtureUuid("migrIdem", 802);
+		const resRfcCommit = await app.inject({
+			method: "POST",
+			url: "/api/migration/import",
+			headers: {
+				"x-dente-staff-token": tokenAdmin,
+				"idempotency-key": rfcKey,
+			},
+			payload: {
+				phase: "commit",
+				confirm: true,
+				rawText:
+					'ФИО,Телефон\n"Сидоров, Алексей",+79993334455\n"Сидоров, Алексей",+79993334455\nПетров Петр,+79992223344',
+			},
+		});
+		assert.equal(resRfcCommit.statusCode, 200);
+		const rfcJson = JSON.parse(resRfcCommit.body);
+		assert.equal(rfcJson.importedRows, 1);
+		assert.equal(rfcJson.skippedDuplicatesCount, 2);
 	});
 });

@@ -18,7 +18,7 @@ export const marketingUtmSchema = z.object({
 	utm_campaign: z.string().optional().default(""),
 	utm_content: z.string().optional().default(""),
 	utm_term: z.string().optional().default(""),
-});
+}).strict();
 
 export type MarketingUtmParams = z.infer<typeof marketingUtmSchema>;
 
@@ -68,7 +68,7 @@ export const channelStatsSchema = z.object({
 	spentKopecks: z.number().int().nonnegative(),
 	romiPercent: z.number(),
 	cacKopecks: z.number().int().nonnegative(),
-});
+}).strict();
 
 export type ChannelStats = z.infer<typeof channelStatsSchema>;
 
@@ -85,7 +85,7 @@ export const telephonyAdminFunnelSchema = z.object({
 	avgCallDurationSeconds: z.number().int().nonnegative(),
 	attendanceRatePercent: z.number(),
 	conversionCallToBookingPercent: z.number(),
-});
+}).strict();
 
 export type TelephonyAdminFunnel = z.infer<typeof telephonyAdminFunnelSchema>;
 
@@ -105,7 +105,7 @@ export const patientAttributionItemSchema = z.object({
 	totalPaidKopecks: z.number().int().nonnegative(),
 	treatmentPlanTitle: z.string(),
 	notes: z.string().optional(),
-});
+}).strict();
 
 export type PatientAttributionItem = z.infer<typeof patientAttributionItemSchema>;
 
@@ -118,7 +118,7 @@ export const marketingAttributionSummarySchema = z.object({
 	onlineSharePercent: z.number(),
 	adminSharePercent: z.number(),
 	savedAdminHours: z.number(),
-});
+}).strict();
 
 export type MarketingAttributionSummary = z.infer<typeof marketingAttributionSummarySchema>;
 
@@ -129,7 +129,7 @@ export const marketingAttributionResponseSchema = z.object({
 	telephonyAdminFunnel: telephonyAdminFunnelSchema,
 	attributions: z.array(patientAttributionItemSchema),
 	summary: marketingAttributionSummarySchema,
-});
+}).strict();
 
 export type MarketingAttributionResponse = z.infer<typeof marketingAttributionResponseSchema>;
 
@@ -139,7 +139,7 @@ export const funnelStepSchema = z.object({
 	title: z.string(),
 	count: z.number().int().nonnegative(),
 	dropoffPercent: z.number(),
-});
+}).strict();
 
 export type FunnelStep = z.infer<typeof funnelStepSchema>;
 
@@ -149,14 +149,14 @@ export const onlineBookingFunnelResponseSchema = z.object({
 	overallConversionPercent: z.number(),
 	attendanceRatePercent: z.number(),
 	totalRevenueKopecks: z.number().int().nonnegative(),
-});
+}).strict();
 
 export type OnlineBookingFunnelResponse = z.infer<typeof onlineBookingFunnelResponseSchema>;
 
 /** Параметры запроса сводных маркетинговых отчетов */
 export const marketingReportsQuerySchema = z.object({
 	format: z.enum(["json", "csv"]).optional().default("json"),
-});
+}).strict();
 
 export type MarketingReportsQuery = z.infer<typeof marketingReportsQuerySchema>;
 
@@ -173,6 +173,6 @@ export const marketingCohortSchema = z.object({
 	ltvKopecks: z.number().int().nonnegative(),
 	cacKopecks: z.number().int().nonnegative(),
 	romiPercent: z.number(),
-});
+}).strict();
 
 export type MarketingCohort = z.infer<typeof marketingCohortSchema>;

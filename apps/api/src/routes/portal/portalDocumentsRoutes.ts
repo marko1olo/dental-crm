@@ -174,7 +174,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return {
 				error: "ValidationError",
 				message: "Некорректные параметры подписания согласия.",
-				details: parsedBody.error.format(),
+				details: parsedBody.error.issues,
 			};
 		}
 
@@ -478,7 +478,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return {
 				error: "ValidationError",
 				message: "Некорректные параметры выбора тарифа лечения.",
-				details: parsedBody.error.format(),
+				details: parsedBody.error.issues,
 			};
 		}
 
@@ -584,7 +584,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return {
 				error: "ValidationError",
 				message: "Некорректные параметры утверждения плана лечения.",
-				details: parsedBody.error.format(),
+				details: parsedBody.error.issues,
 			};
 		}
 

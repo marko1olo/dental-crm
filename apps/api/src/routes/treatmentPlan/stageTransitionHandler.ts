@@ -1,6 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { isValidUuid } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents, treatmentItems, treatmentPlans } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
@@ -30,6 +31,12 @@ export async function handleStageTransition(
 	organizationId: string,
 ) {
 	const { id } = request.params;
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор плана лечения.",
+		});
+	}
 	const parsed = stageTransitionSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -52,6 +59,7 @@ export async function handleStageTransition(
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.for("update")
 			.limit(1);
 
 		if (!existing) {
@@ -122,7 +130,10 @@ export async function handleStageTransition(
 						eq(treatmentItems.organizationId, organizationId),
 						eq(treatmentItems.patientId, existing.patientId),
 						eq(treatmentItems.status, "proposed"),
-						eq(treatmentItems.treatmentPlanId, id),
+						or(
+							eq(treatmentItems.treatmentPlanId, id),
+							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
+						),
 					),
 				);
 
@@ -142,6 +153,8 @@ export async function handleStageTransition(
 				discountMode: plan.discountMode,
 				planDiscountPercent: plan.planDiscountPercent ? Number(plan.planDiscountPercent) : 0,
 				planDiscountRub: plan.planDiscountRub ? Number(plan.planDiscountRub) : 0,
+				planDiscountKopecks: plan.planDiscountKopecks != null ? BigInt(plan.planDiscountKopecks) : null,
+				totalPriceKopecks: plan.totalPriceKopecks != null ? BigInt(plan.totalPriceKopecks) : null,
 			});
 		}
 

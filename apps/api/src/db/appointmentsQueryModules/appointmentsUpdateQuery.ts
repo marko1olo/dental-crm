@@ -8,6 +8,7 @@ import {
 	updateAppointment as updateAppointmentInMemory,
 } from "../../sampleData.js";
 import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import {
 	isEmergencyBookingOverride,
@@ -38,7 +39,7 @@ export async function updateAppointmentInDb(
 	// Перенос приёма — та же гонка, что и создание: между проверкой занятости
 	// и записью другой администратор успевает занять слот. Всё внутри одной
 	// транзакции с блокировкой строк ресурсов.
-	const run = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
+	const run = async (tx: DbClientOrTransaction) => {
 		// Шаг 1: Чтение исходной записи без FOR UPDATE (MVCC snapshot).
 		// Это исключает deadlock инверсии appointments <-> chairs/users/patients.
 		const [existing] = await tx
@@ -290,8 +291,8 @@ export async function updateAppointmentInDb(
 
 	const updated =
 		executor && executor !== db
-			? await run(executor as Parameters<Parameters<typeof db.transaction>[0]>[0])
-			: await db.transaction(run);
+			? await run(executor)
+			: await withTenantCtx(organizationId, run);
 
 	if (!updated) throw new Error("Не удалось обновить запись на приём");
 

@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
 import { communicationOutbox } from "../../../db/schema.js";
 import { portalOtpCodes } from "../../../db/schema/auth.js";
 import { hashCredential, verifyCredential } from "../../../utils/cryptoHelper.js";
@@ -63,15 +63,19 @@ export async function handleOtpRequest(
 			});
 		} catch (dbErr) {
 			request.log.error({ err: dbErr }, "[PEP-SMS] Ошибка записи OTP кода в portal_otp_codes");
+			return reply.code(503).send({
+				success: false,
+				error: "OtpPersistenceUnavailable",
+				message: "Не удалось сформировать и отправить код подтверждения ПЭП. Повторите позже.",
+			});
 		}
+	} else {
+		activeOtpCache.set(planId, {
+			code: generatedCode,
+			expiresAt: expiresAt.getTime(),
+			phone: targetPhone,
+		});
 	}
-
-	// Кеширование в памяти для мгновенного доступа
-	activeOtpCache.set(planId, {
-		code: generatedCode,
-		expiresAt: expiresAt.getTime(),
-		phone: targetPhone,
-	});
 
 	const maskedPhone = targetPhone ? `${targetPhone.slice(0, 4)}***${targetPhone.slice(-2)}` : "";
 	request.log.info(
@@ -93,14 +97,15 @@ export async function verifyOtpCode(
 	code?: string,
 	organizationId?: string,
 	patientId?: string,
+	executor?: TenantDb,
 ): Promise<boolean> {
 	if (!code) return false;
 	const enteredCode = code.trim();
 
-	// 1. Проверка в PostgreSQL 18 (portal_otp_codes)
+	// 1. Авторитативная проверка в PostgreSQL 18 (portal_otp_codes) для тенантного контекста
 	if (organizationId && patientId) {
 		const now = new Date();
-		const isMatched = await withTenantCtx(organizationId, async (tx) => {
+		const runVerify = async (tx: TenantDb): Promise<boolean> => {
 			const [candidate] = await tx
 				.select({ id: portalOtpCodes.id, codeHash: portalOtpCodes.codeHash })
 				.from(portalOtpCodes)
@@ -114,6 +119,7 @@ export async function verifyOtpCode(
 					),
 				)
 				.orderBy(desc(portalOtpCodes.createdAt))
+				.for("update")
 				.limit(1);
 
 			if (!candidate) return false;
@@ -123,17 +129,26 @@ export async function verifyOtpCode(
 			await tx
 				.update(portalOtpCodes)
 				.set({ consumedAt: now })
-				.where(eq(portalOtpCodes.id, candidate.id));
+				.where(
+					and(
+						eq(portalOtpCodes.id, candidate.id),
+						eq(portalOtpCodes.organizationId, organizationId),
+					),
+				);
 			return true;
-		});
+		};
+
+		const isMatched = executor
+			? await runVerify(executor)
+			: await withTenantCtx(organizationId, runVerify);
 
 		if (isMatched) {
 			activeOtpCache.delete(planId);
-			return true;
 		}
+		return isMatched;
 	}
 
-	// 2. Fallback проверка в in-memory кеше
+	// 2. Fallback для чисто локального без-БД контекста
 	const cachedOtp = activeOtpCache.get(planId);
 	if (cachedOtp && cachedOtp.code === enteredCode && cachedOtp.expiresAt > Date.now()) {
 		activeOtpCache.delete(planId);

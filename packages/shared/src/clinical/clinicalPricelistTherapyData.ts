@@ -6,7 +6,7 @@
  */
 
 import type { StomxProcedureItem, StomxPricelistCategory } from "./clinicalPricelistTypes.js";
-import { getStomxCategoryTitle } from "./clinicalPricelistCategories.js";
+import { getClinicalCategoryTitle } from "./clinicalPricelistCategories.js";
 import { rublesToKopecks } from "../money.js";
 
 function p(
@@ -28,7 +28,7 @@ function p(
 		code,
 		name,
 		category,
-		categoryName: getStomxCategoryTitle(category),
+		categoryName: getClinicalCategoryTitle(category),
 		price,
 		priceKopecks: rublesToKopecks(price),
 		durationMinutes,

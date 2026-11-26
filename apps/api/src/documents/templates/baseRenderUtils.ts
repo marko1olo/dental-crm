@@ -1,5 +1,6 @@
 import type {
 	ClinicProfile,
+	GeneratedDocument,
 	Payment,
 	ServiceCatalogItem,
 	TreatmentPlanItem,
@@ -8,6 +9,7 @@ import type {
 export type DocumentRenderContext = {
 	clinicProfile?: ClinicProfile;
 	payments?: Payment[];
+	documents?: GeneratedDocument[];
 	serviceCatalog?: ServiceCatalogItem[];
 	treatmentPlanItems?: TreatmentPlanItem[];
 	isDraft?: boolean;

@@ -214,11 +214,11 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerStaffChatRoutes(app);
 	await registerSpeechRoutes(app);
 	await registerSpeechLiveRoutes(app);
-	void registerSmartImportRoutes(app);
-	void registerYandexCalendarRoutes(app);
+	await registerSmartImportRoutes(app);
+	await registerYandexCalendarRoutes(app);
 	await registerClinicWorkflowsRoutes(app);
 	await registerSyncRoutes(app);
-	void registerSystemRoutes(app);
+	await registerSystemRoutes(app);
 	// Живые обновления. Раньше плагин не регистрировался вовсе, поэтому
 	// /api/ws/schedule отвечал 404, а все wsBroker.broadcast* были пустышками.
 	await registerWebsocketRoutes(app);

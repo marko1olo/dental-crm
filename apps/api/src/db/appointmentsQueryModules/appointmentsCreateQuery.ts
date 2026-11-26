@@ -8,6 +8,7 @@ import {
 	createAppointment as createAppointmentInMemory,
 } from "../../sampleData.js";
 import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import {
 	assertPatientNotBlocked,
@@ -129,32 +130,6 @@ export async function createAppointmentInDb(
 	if (useInMemory()) {
 		return createAppointmentInMemory(input);
 	}
-	if (input.patientId) {
-		const client = tx || db;
-		const [patient] = await client
-			.select({ id: schema.patients.id, status: schema.patients.status })
-			.from(schema.patients)
-			.where(
-				and(
-					eq(schema.patients.id, input.patientId),
-					eq(schema.patients.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-
-		// Ст. 124 УК РФ (Неоказание помощи больному): экстренная запись не
-		// блокируется черным списком/архивом и допускает овербукинг — но только
-		// по явному флагу администратора, а не по словам в причине (SSOT:
-		// isEmergencyBookingOverride).
-		const isEmergencyOverride = isEmergencyBookingOverride(input);
-		await assertPatientNotBlocked(
-			organizationId,
-			input.patientId,
-			patient?.status,
-			isEmergencyOverride,
-		);
-	}
-
 	const startsAtMs = Date.parse(input.startsAt);
 	const endsAtMs = Date.parse(input.endsAt);
 	if (
@@ -171,6 +146,31 @@ export async function createAppointmentInDb(
 	const isEmergencyOverrideOverall = isEmergencyBookingOverride(input);
 
 	const insertChecked = async (executor: DbClientOrTransaction) => {
+		if (input.patientId) {
+			const [patient] = await executor
+				.select({ id: schema.patients.id, status: schema.patients.status })
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.id, input.patientId),
+						eq(schema.patients.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			// Ст. 124 УК РФ (Неоказание помощи больному): экстренная запись не
+			// блокируется черным списком/архивом и допускает овербукинг — но только
+			// по явному флагу администратора, а не по словам в причине (SSOT:
+			// isEmergencyBookingOverride).
+			await assertPatientNotBlocked(
+				organizationId,
+				input.patientId,
+				patient?.status,
+				isEmergencyOverrideOverall,
+				executor,
+			);
+		}
+
 		// Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
 		// строку незачем, а отказ обязан прийти раньше любой записи.
 		await assertAppointmentResourcesBelongToOrganization(
@@ -497,6 +497,6 @@ export async function createAppointmentInDb(
 	// Блокировки живут только внутри транзакции. Если вызывающий код уже
 	// открыл свою — работаем в ней, иначе открываем собственную, иначе
 	// проверка и вставка снова окажутся двумя независимыми операциями.
-	if (tx) return insertChecked(tx);
-	return db.transaction(insertChecked);
+	if (tx && tx !== db) return insertChecked(tx);
+	return withTenantCtx(organizationId, insertChecked);
 }

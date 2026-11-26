@@ -20,7 +20,7 @@ import { stopCloudRelayClient } from "../services/cloudRelayClient.js";
 import { stopBiAnalyticsWorker } from "../services/biAnalyticsWorker.js";
 import { getLanMeshService, resetLanMeshServiceForTest } from "../services/lanMeshService.js";
 import { resetLanMeshAutoJoinServiceForTest } from "../services/lanMeshAutoJoinService.js";
-import { startWatchdog } from "../watchdog.js";
+import { startPoolWatchdog, stopPoolWatchdog } from "../db/poolWatchdog.js";
 import {
 	assertSecurityConfiguration,
 	registerCorsAndSecurity,
@@ -37,7 +37,7 @@ import type { CreateDenteApiAppOptions } from "./types.js";
 
 loadAdditionalServerEnv();
 applyHddPerformanceDefaults();
-startWatchdog();
+startPoolWatchdog();
 assertSecurityConfiguration();
 
 /**
@@ -146,6 +146,7 @@ export async function startDenteApiServer(): Promise<void> {
 				dicomCrawlerDaemon.stop();
 				stopCloudRelayClient();
 				stopBiAnalyticsWorker();
+				stopPoolWatchdog();
 				resetLanMeshServiceForTest();
 				resetLanMeshAutoJoinServiceForTest();
 				await app.close();

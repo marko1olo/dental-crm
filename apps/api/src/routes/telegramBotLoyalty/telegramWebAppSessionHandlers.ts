@@ -1,14 +1,26 @@
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { withSavepoint, withTenantCtx } from "../../db/rls.js";
-import { appointments, patients, portalOtpCodes, users, visits } from "../../db/schema.js";
+import {
+	appointments,
+	denteTelegramBotConfigs,
+	denteTelegramChatLinks,
+	patients,
+	portalOtpCodes,
+	users,
+	visits,
+} from "../../db/schema.js";
 import {
 	isDbConnectionError,
 	TelegramReferralLoyaltyService,
 } from "../../services/telegram/TelegramReferralLoyaltyService.js";
+import { TelegramTokenVault } from "../../services/telegram/TelegramTokenVault.js";
 import { signToken, verifyCredential } from "../../utils/cryptoHelper.js";
+import { hashTelegramChatFingerprint } from "../../utils/telegramChatHash.js";
 import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSpamGate.js";
+import { extractPortalPatient } from "../portal/portalAuthStore.js";
 import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "../portal/types.js";
 import { calculateAvailableSlots } from "../publicBooking/bookingModules/publicBookingSlotEngine.js";
 import {
@@ -16,6 +28,169 @@ import {
 	webAppBookingSchema,
 	webAppSessionSchema,
 } from "./telegramLoyaltySchemas.js";
+
+const webAppSlotsQuerySchema = z.object({
+	organizationId: z.string().uuid("Некорректный идентификатор организации (ожидается UUID)"),
+});
+
+async function resolveWebAppBotToken(organizationId: string): Promise<string | null> {
+	try {
+		const [botConfig] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, organizationId),
+						eq(denteTelegramBotConfigs.isActive, true),
+					),
+				)
+				.orderBy(desc(denteTelegramBotConfigs.updatedAt))
+				.limit(1),
+		);
+		const dbToken = TelegramTokenVault.resolveOperationalToken(
+			botConfig?.tokenSecretRef,
+			organizationId,
+		);
+		if (dbToken) return dbToken;
+	} catch (err) {
+		if (!isDbConnectionError(err)) {
+			throw err;
+		}
+	}
+
+	const envToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
+	if (envToken) return envToken;
+	if (process.env.NODE_ENV === "test") return "test_bot_token";
+	return null;
+}
+
+async function authorizeWebAppPatientAction(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	params: {
+		organizationId: string;
+		patientId: string;
+		familyMemberPatientId?: string | undefined;
+		bodyInitData?: string | undefined;
+	},
+): Promise<{ callerPatientId: string } | null> {
+	const portalAuth = extractPortalPatient(request);
+	let callerPatientId: string | null = null;
+
+	if (portalAuth) {
+		if (portalAuth.organizationId !== params.organizationId) {
+			reply.status(403).send({
+				error: "Forbidden",
+				message: "Токен портала принадлежит другой клинике.",
+			});
+			return null;
+		}
+		callerPatientId = portalAuth.patientId;
+	} else {
+		const headerInitData =
+			typeof request.headers["x-telegram-init-data"] === "string"
+				? request.headers["x-telegram-init-data"]
+				: undefined;
+		const rawInitData = headerInitData || params.bodyInitData;
+		if (!rawInitData) {
+			reply.status(401).send({
+				error: "Unauthorized",
+				message: "Требуется авторизация Telegram WebApp или токен личного кабинета.",
+			});
+			return null;
+		}
+
+		const botToken = await resolveWebAppBotToken(params.organizationId);
+		if (!botToken) {
+			reply.status(503).send({
+				error: "TELEGRAM_INTEGRATION_NOT_CONFIGURED",
+				message: "Интеграция с Telegram не сконфигурирована на сервере.",
+			});
+			return null;
+		}
+
+		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
+			rawInitData,
+			botToken,
+			{ allowDevBypass: false },
+		);
+		if (!validation.isValid || !validation.user) {
+			reply.status(401).send({
+				error: "Unauthorized",
+				message: "Недействительная подпись данных Telegram WebApp (HMAC-SHA256).",
+			});
+			return null;
+		}
+
+		const tgUserId = String(validation.user.id);
+		const chatFp = hashTelegramChatFingerprint(tgUserId);
+
+		const linkedPatientId = await withTenantCtx(params.organizationId, async (tx) => {
+			const [byProfile] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, params.organizationId),
+						sql`${patients.administrativeProfile}->>'telegramUserId' = ${tgUserId}`,
+					),
+				)
+				.limit(1);
+			if (byProfile) return byProfile.id;
+
+			const [byChatLink] = await tx
+				.select({
+					subjectType: denteTelegramChatLinks.subjectType,
+					subjectId: denteTelegramChatLinks.subjectId,
+				})
+				.from(denteTelegramChatLinks)
+				.where(
+					and(
+						eq(denteTelegramChatLinks.organizationId, params.organizationId),
+						eq(denteTelegramChatLinks.chatFingerprint, chatFp),
+						eq(denteTelegramChatLinks.status, "active"),
+					),
+				)
+				.limit(1);
+
+			return byChatLink?.subjectType === "patient" ? byChatLink.subjectId : null;
+		});
+
+		if (!linkedPatientId) {
+			reply.status(403).send({
+				error: "Forbidden",
+				message: "Профиль Telegram не привязан к карте пациента в этой клинике.",
+			});
+			return null;
+		}
+		callerPatientId = linkedPatientId;
+	}
+
+	const targetsToVerify = [
+		params.patientId,
+		...(params.familyMemberPatientId ? [params.familyMemberPatientId] : []),
+	];
+	const needsFamilyCheck = targetsToVerify.some((targetId) => targetId !== callerPatientId);
+	if (needsFamilyCheck) {
+		const familyProfile = await TelegramReferralLoyaltyService.getFamilyProfile(
+			params.organizationId,
+			callerPatientId,
+		);
+		const allowedIds = new Set(familyProfile.members.map((m) => m.patientId));
+		allowedIds.add(callerPatientId);
+		const unauthorized = targetsToVerify.some((targetId) => !allowedIds.has(targetId));
+		if (unauthorized) {
+			reply.status(403).send({
+				error: "Forbidden",
+				message: "Доступ запрещён: указанный пациент не принадлежит вам или вашей семейной группе.",
+			});
+			return null;
+		}
+	}
+
+	return { callerPatientId };
+}
 
 interface TelegramPatientAdministrativeProfile {
 	telegramUserId?: string | undefined;
@@ -50,9 +225,9 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		}
 
 		const { initData, organizationId, patientId, phone, verificationCode } = parsed.data;
-		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
+		const botToken = await resolveWebAppBotToken(organizationId);
 
-		if (!botToken && process.env.NODE_ENV !== "test") {
+		if (!botToken) {
 			return reply.status(503).send({
 				error: "TELEGRAM_INTEGRATION_NOT_CONFIGURED",
 				message: "Интеграция с Telegram не сконфигурирована на сервере.",
@@ -61,7 +236,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 
 		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
 			initData,
-			botToken || "test_bot_token",
+			botToken,
 			{
 				allowDevBypass: false,
 			},
@@ -147,7 +322,11 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 
 					if (!isOtpValid) {
 						const targetPhone = candidate.phone || phone || "";
-						const otpCheck = bookingVerificationEngine.verifyPhoneOtp(targetPhone, verificationCode);
+						const otpCheck = bookingVerificationEngine.verifyPhoneOtp(
+							targetPhone,
+							verificationCode,
+							organizationId,
+						);
 						if (otpCheck.valid) {
 							isOtpValid = true;
 						}
@@ -362,7 +541,23 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			});
 		}
 
-		const { organizationId, patientId, toothNumber, symptom, painIntensity, notes, urgency } = parsed.data;
+		const {
+			organizationId,
+			patientId,
+			toothNumber,
+			symptom,
+			painIntensity,
+			notes,
+			urgency,
+			initData,
+		} = parsed.data;
+
+		const authorized = await authorizeWebAppPatientAction(request, reply, {
+			organizationId,
+			patientId,
+			bodyInitData: initData,
+		});
+		if (!authorized) return;
 
 		const result = await TelegramReferralLoyaltyService.submitToothComplaint(organizationId, patientId, {
 			toothNumber,
@@ -379,10 +574,15 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 	 * 3. Доступные слоты врачей на ближайшую неделю для онлайн-календаря WebApp:
 	 */
 	app.get("/api/telegram/webapp/slots", async (request: FastifyRequest, reply: FastifyReply) => {
-		const { organizationId } = request.query as { organizationId?: string };
-		if (!organizationId) {
-			return reply.status(400).send({ error: "MissingOrgId", message: "organizationId обязателен." });
+		const queryParse = webAppSlotsQuerySchema.safeParse(request.query);
+		if (!queryParse.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный organizationId (ожидается UUID).",
+				details: queryParse.error.issues,
+			});
 		}
+		const { organizationId } = queryParse.data;
 
 		try {
 			return await withTenantCtx(organizationId, async (tx) => {
@@ -492,7 +692,16 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			serviceName,
 			familyMemberPatientId,
 			complaintNotes,
+			initData,
 		} = parsed.data;
+
+		const authorized = await authorizeWebAppPatientAction(request, reply, {
+			organizationId,
+			patientId,
+			familyMemberPatientId,
+			bodyInitData: initData,
+		});
+		if (!authorized) return;
 
 		const result = await TelegramReferralLoyaltyService.bookAppointmentFromWebApp(
 			organizationId,

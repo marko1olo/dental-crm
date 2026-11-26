@@ -16,20 +16,22 @@ import {
 	users,
 } from "../../../db/schema.js";
 
-export const kioskCheckinSchema = z.object({
-	organizationId: z.string().uuid("Некорректный формат идентификатора клиники (UUID)").optional().nullable(),
-	phoneLast4: z.string().regex(/^\d{4}$/, "Требуются 4 цифры").optional().nullable(),
-	patientPhone: z.string().max(30).optional().nullable(),
-	patientId: z.string().uuid("Некорректный идентификатор пациента").optional().nullable(),
-	checkinCode: z.string().max(20).optional().nullable(),
-	signedConsents: z.array(z.string()).optional().nullable(),
-	somaticProfile: z.record(z.unknown()).optional().nullable(),
-	isEmergency: z.boolean().optional().nullable(),
-	emergencyChiefComplaint: z.string().max(500).optional().nullable(),
-	isFirstTime: z.boolean().optional().nullable(),
-	patientFullName: z.string().max(200).optional().nullable(),
-	kioskMode: z.string().max(50).optional().nullable(),
-});
+export const kioskCheckinSchema = z
+	.object({
+		organizationId: z.string().uuid("Некорректный формат идентификатора клиники (UUID)").optional().nullable(),
+		phoneLast4: z.string().regex(/^\d{4}$/, "Требуются 4 цифры").optional().nullable(),
+		patientPhone: z.string().max(30).optional().nullable(),
+		patientId: z.string().uuid("Некорректный идентификатор пациента").optional().nullable(),
+		checkinCode: z.string().max(20).optional().nullable(),
+		signedConsents: z.array(z.string()).optional().nullable(),
+		somaticProfile: z.record(z.unknown()).optional().nullable(),
+		isEmergency: z.boolean().optional().nullable(),
+		emergencyChiefComplaint: z.string().max(500).optional().nullable(),
+		isFirstTime: z.boolean().optional().nullable(),
+		patientFullName: z.string().max(200).optional().nullable(),
+		kioskMode: z.string().max(50).optional().nullable(),
+	})
+	.strict();
 
 export type SelfCheckinBody = z.infer<typeof kioskCheckinSchema>;
 

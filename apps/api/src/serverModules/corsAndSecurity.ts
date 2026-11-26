@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import type { FastifyInstance } from "fastify";
 import { authTokenSecret } from "../security/authSecret.js";
+import { namedDevelopmentModeActive } from "../security/bypass.js";
 import { getProxyAgent } from "../speech/keyPool.js";
 import { ensureSshTunnel } from "../speech/tunnel.js";
 
@@ -16,7 +17,7 @@ export function assertSecurityConfiguration(): void {
 	// Бросит исключение в production, если AUTH_TOKEN_SECRET не задан или слабый.
 	authTokenSecret();
 
-	const isProduction = process.env.NODE_ENV === "production";
+	const isProduction = !namedDevelopmentModeActive();
 	const unsafeFlags = [
 		"DENTE_CLINICAL_ALLOW_UNGUARDED_READS",
 		"DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS",
@@ -120,7 +121,7 @@ export async function setupProxyAndTunnels() {
 export function resolveWebOrigins(): (string | RegExp)[] {
 	let rawWebOrigin = process.env.WEB_ORIGIN;
 	if (!rawWebOrigin) {
-		if (process.env.NODE_ENV === "production") {
+		if (!namedDevelopmentModeActive()) {
 			throw new Error(
 				"WEB_ORIGIN environment variable is required in production",
 			);
@@ -134,7 +135,7 @@ export function resolveWebOrigins(): (string | RegExp)[] {
 		.filter(Boolean)
 		.map((origin) => {
 			if (origin === "*" || origin === "null") {
-				if (process.env.NODE_ENV === "production") {
+				if (!namedDevelopmentModeActive()) {
 					throw new Error(
 						`Insecure WEB_ORIGIN configured: "${origin}" is not allowed in production`,
 					);

@@ -31,6 +31,8 @@ import {
 	clearInMemoryIdempotencyCache,
 	idempotencyPlugin,
 } from "../../plugins/idempotencyPlugin.js";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -569,7 +571,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				method: "POST",
 				url: "/api/test/patients",
 				headers: {
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { name: "Missing Key Rejected" },
 			});
@@ -581,7 +583,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				method: "POST",
 				url: "/api/test/non-idempotent",
 				headers: {
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { name: "Non-Idempotent Call 1" },
 			});
@@ -591,7 +593,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				method: "POST",
 				url: "/api/test/non-idempotent",
 				headers: {
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { name: "Non-Idempotent Call 2" },
 			});
@@ -609,7 +611,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/patients",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload,
 			});
@@ -631,7 +633,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/patients",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload,
 			});
@@ -645,7 +647,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/patients",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload,
 			});
@@ -671,7 +673,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/slow-mutation",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload,
 			});
@@ -685,7 +687,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/slow-mutation",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload,
 			});
@@ -711,7 +713,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/patients",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { name: "Original Payload" },
 			});
@@ -723,7 +725,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/patients",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { name: "Different Payload Tamper Attack" },
 			});
@@ -743,7 +745,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/fail-then-succeed",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { data: "test" },
 			});
@@ -755,7 +757,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/fail-then-succeed",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload: { data: "test" },
 			});
@@ -787,7 +789,7 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 				url: "/api/test/patients",
 				headers: {
 					"x-idempotency-key": key,
-					"x-organization-id": FIXTURE_ORG,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_ORG }, authTokenSecret(), 3600),
 				},
 				payload,
 			});

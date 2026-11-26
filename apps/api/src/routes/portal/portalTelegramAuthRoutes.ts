@@ -3,8 +3,15 @@ import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
-import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
+import { withSavepoint, withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import {
+	denteTelegramBotConfigs,
+	organizations,
+	patients,
+	portalOtpCodes,
+} from "../../db/schema.js";
+import { safeLogError } from "../../observability/logger.js";
+import { TelegramTokenVault } from "../../services/telegram/TelegramTokenVault.js";
 import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSpamGate.js";
 import { signToken, verifyCredential } from "../../utils/cryptoHelper.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
@@ -112,7 +119,27 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 		const phone = parsed.data.phone?.trim();
 		const verificationCode = parsed.data.verificationCode?.trim();
 
-		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
+		let dbBotToken: string | null = null;
+		const [botConfig] = await withTenantCtx(orgId, async (tx) =>
+			tx
+				.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
+				.from(denteTelegramBotConfigs)
+				.where(
+					and(
+						eq(denteTelegramBotConfigs.organizationId, orgId),
+						eq(denteTelegramBotConfigs.isActive, true),
+					),
+				)
+				.orderBy(desc(denteTelegramBotConfigs.updatedAt))
+				.limit(1),
+		);
+		dbBotToken = TelegramTokenVault.resolveOperationalToken(
+			botConfig?.tokenSecretRef,
+			orgId,
+		);
+
+		const botToken =
+			dbBotToken || process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
 		if (!botToken) {
 			reply.status(503);
 			return {
@@ -187,44 +214,54 @@ export async function registerPortalTelegramAuthRoutes(server: FastifyInstance):
 
 						let isOtpValid = false;
 						const now = new Date();
+						const targetPatientId = foundPatient.id;
 
 						// 1. Проверяем в PostgreSQL portal_otp_codes (каноническое персистентное хранилище)
 						try {
-							const activeOtps = await tx
-								.select({
-									id: portalOtpCodes.id,
-									codeHash: portalOtpCodes.codeHash,
-								})
-								.from(portalOtpCodes)
-								.where(
-									and(
-										eq(portalOtpCodes.organizationId, orgId),
-										eq(portalOtpCodes.patientId, foundPatient.id),
-										eq(portalOtpCodes.deliveryStatus, "sent"),
-										isNull(portalOtpCodes.consumedAt),
-										gte(portalOtpCodes.expiresAt, now),
-									),
-								)
-								.orderBy(desc(portalOtpCodes.createdAt))
-								.limit(1);
+							await withSavepoint(tx, async (spTx) => {
+								const activeOtps = await spTx
+									.select({
+										id: portalOtpCodes.id,
+										codeHash: portalOtpCodes.codeHash,
+									})
+									.from(portalOtpCodes)
+									.where(
+										and(
+											eq(portalOtpCodes.organizationId, orgId),
+											eq(portalOtpCodes.patientId, targetPatientId),
+											eq(portalOtpCodes.deliveryStatus, "sent"),
+											isNull(portalOtpCodes.consumedAt),
+											gte(portalOtpCodes.expiresAt, now),
+										),
+									)
+									.orderBy(desc(portalOtpCodes.createdAt))
+									.limit(1);
 
-							if (activeOtps.length > 0 && activeOtps[0]) {
-								const candidate = activeOtps[0];
-								if (await verifyCredential(verificationCode, candidate.codeHash)) {
-									isOtpValid = true;
-									await tx
-										.update(portalOtpCodes)
-										.set({ consumedAt: now })
-										.where(eq(portalOtpCodes.id, candidate.id));
+								if (activeOtps.length > 0 && activeOtps[0]) {
+									const candidate = activeOtps[0];
+									if (await verifyCredential(verificationCode, candidate.codeHash)) {
+										isOtpValid = true;
+										await spTx
+											.update(portalOtpCodes)
+											.set({ consumedAt: now })
+											.where(eq(portalOtpCodes.id, candidate.id));
+									}
 								}
-							}
-						} catch {
-							// fallback to in-memory check below
+							});
+						} catch (otpErr) {
+							request.log.warn(
+								{ err: safeLogError(otpErr), orgId, patientId: targetPatientId },
+								"[portalTelegramAuth] DB portal OTP verification failed inside savepoint, falling back to in-memory check",
+							);
 						}
 
 						// 2. Если в БД не найден или сбой соединения — fallback на bookingVerificationEngine
 						if (!isOtpValid) {
-							const otpCheck = bookingVerificationEngine.verifyPhoneOtp(phone, verificationCode);
+							const otpCheck = bookingVerificationEngine.verifyPhoneOtp(
+								phone,
+								verificationCode,
+								orgId,
+							);
 							if (otpCheck.valid) {
 								isOtpValid = true;
 							}

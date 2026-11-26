@@ -38,7 +38,7 @@ export class FiscalRetryPolicy {
 	 */
 	public static calculateRetryDelayMs(retryCount: number): number {
 		const index = Math.min(Math.max(0, retryCount), FISCAL_RETRY_SCHEDULE_MS.length - 1);
-		return FISCAL_RETRY_SCHEDULE_MS[index]!;
+		return FISCAL_RETRY_SCHEDULE_MS[index] ?? 300000;
 	}
 
 	/**
@@ -373,10 +373,17 @@ export class FiscalRetryPolicy {
 				data: result,
 			});
 		} catch (err: unknown) {
+			const rawStatus =
+				typeof err === "object" && err !== null && "statusCode" in err
+					? err.statusCode
+					: undefined;
 			const statusCode =
-				(typeof err === "object" && err !== null && "statusCode" in err
-					? (err as { statusCode: number }).statusCode
-					: 500) || 500;
+				typeof rawStatus === "number" &&
+				Number.isInteger(rawStatus) &&
+				rawStatus >= 400 &&
+				rawStatus <= 599
+					? rawStatus
+					: 500;
 			const msg = err instanceof Error ? err.message : String(err);
 			return reply.code(statusCode).send({
 				error: "RetryFiscalizeFailed",

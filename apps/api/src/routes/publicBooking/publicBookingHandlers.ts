@@ -438,8 +438,11 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						kind: "personal_data_processing",
 						grantedAt: new Date(),
 					});
-				} catch {
-					// Non-blocking
+				} catch (consentErr: unknown) {
+					request.log.warn(
+						{ err: consentErr, organizationId, patientId },
+						"Non-blocking waitlist privacy consent insert failed",
+					);
 				}
 			}
 

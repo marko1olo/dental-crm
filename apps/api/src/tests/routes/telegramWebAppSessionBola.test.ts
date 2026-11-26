@@ -66,7 +66,7 @@ test("Telegram WebApp Session BOLA Defense & Scans Security Suite", async (t) =>
 				url: "/api/telegram/webapp/session",
 				payload: {
 					initData: "user=%7B%22id%22%3A12345%7D&hash=invalid_hash",
-					organizationId: "org-1",
+					organizationId: "00000000-0000-4000-8000-000000000001",
 					phone: "+79991234567",
 				},
 			});
@@ -103,7 +103,7 @@ test("Telegram WebApp Session BOLA Defense & Scans Security Suite", async (t) =>
 				url: "/api/telegram/webapp/session",
 				payload: {
 					initData: "user=%7B%22id%22%3A12345%7D&hash=somehash",
-					organizationId: "org-1",
+					organizationId: "00000000-0000-4000-8000-000000000001",
 					phone: "+79991234567",
 				},
 			});

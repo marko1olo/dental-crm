@@ -100,17 +100,27 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 			);
 			return;
 		}
+		if (!patientId?.trim()) {
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				await navigator.clipboard.writeText(linkData.formattedSmsText);
+			}
+			showToast(
+				`СМС-отправка доступна из карты пациента. Текст со ссылкой для ${cleanPhone} скопирован в буфер обмена`,
+				"info",
+				4000,
+			);
+			return;
+		}
 		try {
-			const res = await fetch("/api/v1/communications/send-sms", {
+			const res = await fetch("/api/chat/sms/send", {
 				method: "POST",
 				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
 				}),
 				body: JSON.stringify({
-					phone: cleanPhone,
-					message: linkData.formattedSmsText,
 					patientId,
+					message: linkData.formattedSmsText,
 				}),
 			});
 			if (res.ok) {

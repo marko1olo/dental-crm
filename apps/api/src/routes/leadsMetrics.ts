@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { kopecksToRubles, parseKopecks } from "@dental/shared";
+import type { TenantDb } from "../db/rls.js";
 import { crmLeads, crmLeadStageHistory } from "../db/schema.js";
 
 export interface PipelineMetricsResult {
@@ -18,7 +19,7 @@ export interface PipelineMetricsResult {
  * Computes consolidated speed-to-lead SLA, stage conversions and duration metrics for CRM pipeline.
  */
 export async function calculateLeadPipelineMetrics(
-	db: NodePgDatabase<Record<string, unknown>>,
+	db: TenantDb | NodePgDatabase<Record<string, unknown>>,
 	organizationId: string,
 ): Promise<PipelineMetricsResult> {
 	const leads = await db

@@ -1,11 +1,18 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { withTenantCtx } from "../../db/rls.js";
-import { patients } from "../../db/schema.js";
+import {
+	appointments,
+	denteTelegramBotConfigs,
+	denteTelegramChatLinks,
+	patients,
+} from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { TelegramReferralLoyaltyService } from "../../services/telegram/TelegramReferralLoyaltyService.js";
+import { TelegramTokenVault } from "../../services/telegram/TelegramTokenVault.js";
 import { isDbConnectionError } from "../../services/telegram/referralLoyalty/webAppValidator.js";
+import { hashTelegramChatFingerprint } from "../../utils/telegramChatHash.js";
 import { isExplicitlyUnguardedControlPlaneAllowed } from "../telegram/telegramControlPlaneGuard.js";
 import {
 	familyConfirmSchema,
@@ -81,10 +88,55 @@ async function resolveAuthorizedOrg(
 		(request.body as { initData?: string })?.initData;
 
 	if (options?.allowTelegramWebApp && rawInitData) {
+		const orgId =
+			(request.query as { organizationId?: string })?.organizationId ||
+			(request.body as { organizationId?: string })?.organizationId ||
+			process.env.DENTE_TELEGRAM_ORGANIZATION_ID;
+
+		if (!orgId) {
+			reply.status(400).send({ error: "MissingOrgId", message: "organizationId обязателен." });
+			return null;
+		}
+		if (!UUID_REGEX.test(orgId)) {
+			reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации." });
+			return null;
+		}
+
+		let dbBotToken: string | null = null;
+		try {
+			const [botConfig] = await withTenantCtx(orgId, async (tx) =>
+				tx
+					.select({ tokenSecretRef: denteTelegramBotConfigs.tokenSecretRef })
+					.from(denteTelegramBotConfigs)
+					.where(
+						and(
+							eq(denteTelegramBotConfigs.organizationId, orgId),
+							eq(denteTelegramBotConfigs.isActive, true),
+						),
+					)
+					.orderBy(desc(denteTelegramBotConfigs.updatedAt))
+					.limit(1),
+			);
+			dbBotToken = TelegramTokenVault.resolveOperationalToken(botConfig?.tokenSecretRef, orgId);
+		} catch (err) {
+			if (!isDbConnectionError(err)) {
+				throw err;
+			}
+		}
+
 		const botToken =
+			dbBotToken ||
 			process.env.TELEGRAM_BOT_TOKEN ||
 			process.env.DENTE_TELEGRAM_BOT_TOKEN ||
-			"test_bot_token";
+			(process.env.NODE_ENV === "test" ? "test_bot_token" : null);
+		if (!botToken) {
+			reply.status(503).send({
+				error: "TELEGRAM_INTEGRATION_NOT_CONFIGURED",
+				message: "Интеграция с Telegram не сконфигурирована на сервере.",
+			});
+			return null;
+		}
+
 		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
 			rawInitData,
 			botToken,
@@ -96,19 +148,6 @@ async function resolveAuthorizedOrg(
 		);
 		if (validation.isValid && validation.user) {
 			const tgUser = validation.user;
-			const orgId =
-				(request.query as { organizationId?: string })?.organizationId ||
-				(request.body as { organizationId?: string })?.organizationId ||
-				process.env.DENTE_TELEGRAM_ORGANIZATION_ID;
-
-			if (!orgId) {
-				reply.status(400).send({ error: "MissingOrgId", message: "organizationId обязателен." });
-				return null;
-			}
-			if (!UUID_REGEX.test(orgId)) {
-				reply.status(400).send({ error: "ValidationError", message: "Некорректный UUID организации." });
-				return null;
-			}
 
 			// BOLA-проверка: принадлежит ли patientId данному пользователю Telegram или его семье
 			if (options.requiredPatientId) {
@@ -269,9 +308,31 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 		if (!auth) return;
 
 		const { minMonths, limit } = request.query as { minMonths?: string; limit?: string };
+		let parsedMonths = 6;
+		if (minMonths !== undefined) {
+			const n = Number.parseInt(minMonths, 10);
+			if (!Number.isFinite(n) || Number.isNaN(n) || n < 1 || n > 120) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный параметр minMonths (ожидается целое число от 1 до 120).",
+				});
+			}
+			parsedMonths = n;
+		}
+		let parsedLimit = 50;
+		if (limit !== undefined) {
+			const n = Number.parseInt(limit, 10);
+			if (!Number.isFinite(n) || Number.isNaN(n) || n < 1 || n > 200) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Некорректный параметр limit (ожидается целое число от 1 до 200).",
+				});
+			}
+			parsedLimit = n;
+		}
 		const candidates = await TelegramReferralLoyaltyService.findChurnCandidates(auth.organizationId, {
-			minMonths: minMonths ? Number.parseInt(minMonths, 10) : 6,
-			limit: limit ? Number.parseInt(limit, 10) : 50,
+			minMonths: parsedMonths,
+			limit: parsedLimit,
 		});
 
 		return reply.send({ success: true, count: candidates.length, candidates });
@@ -300,6 +361,97 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 				error: "Forbidden",
 				message: "Несоответствие организации в NPS-запросе.",
 			});
+		}
+
+		if (auth.tgUserId !== undefined) {
+			const tgUserIdStr = String(auth.tgUserId);
+			const chatFp = hashTelegramChatFingerprint(tgUserIdStr);
+			const ownership = await withTenantCtx(auth.organizationId, async (tx) => {
+				const [appt] = await tx
+					.select({ id: appointments.id, patientId: appointments.patientId })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, auth.organizationId),
+							eq(appointments.id, appointmentId),
+						),
+					)
+					.limit(1);
+				if (!appt) return { found: false as const, allowed: false as const };
+
+				const [apptPatient] = await tx
+					.select({
+						id: patients.id,
+						familyGroupId: patients.familyGroupId,
+						administrativeProfile: patients.administrativeProfile,
+					})
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, auth.organizationId),
+							eq(patients.id, appt.patientId),
+						),
+					)
+					.limit(1);
+
+				const directTgId = (apptPatient?.administrativeProfile as Record<string, unknown> | null)
+					?.telegramUserId;
+				if (directTgId && String(directTgId) === tgUserIdStr) {
+					return { found: true as const, allowed: true as const };
+				}
+
+				const [linkedPatient] = await tx
+					.select({ id: patients.id, familyGroupId: patients.familyGroupId })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, auth.organizationId),
+							sql`${patients.administrativeProfile}->>'telegramUserId' = ${tgUserIdStr}`,
+						),
+					)
+					.limit(1);
+				if (
+					linkedPatient &&
+					(linkedPatient.id === appt.patientId ||
+						(linkedPatient.familyGroupId &&
+							linkedPatient.familyGroupId === apptPatient?.familyGroupId))
+				) {
+					return { found: true as const, allowed: true as const };
+				}
+
+				const [chatLink] = await tx
+					.select({
+						subjectType: denteTelegramChatLinks.subjectType,
+						subjectId: denteTelegramChatLinks.subjectId,
+					})
+					.from(denteTelegramChatLinks)
+					.where(
+						and(
+							eq(denteTelegramChatLinks.organizationId, auth.organizationId),
+							eq(denteTelegramChatLinks.chatFingerprint, chatFp),
+							eq(denteTelegramChatLinks.status, "active"),
+						),
+					)
+					.limit(1);
+				if (chatLink?.subjectType === "patient" && chatLink.subjectId === appt.patientId) {
+					return { found: true as const, allowed: true as const };
+				}
+
+				return { found: true as const, allowed: false as const };
+			});
+
+			if (!ownership.found) {
+				return reply.status(404).send({
+					error: "AppointmentNotFound",
+					message: "Запись на приём не найдена.",
+				});
+			}
+			if (!ownership.allowed) {
+				return reply.status(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещён: оценка может быть отправлена только по собственной записи.",
+				});
+			}
 		}
 
 		const result = await TelegramReferralLoyaltyService.handleNpsFeedback(auth.organizationId, {

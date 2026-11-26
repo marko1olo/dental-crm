@@ -9,16 +9,197 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
 import {
 	fiscalReceiptQueue,
 	patientInvoices,
+	patients,
 	payments,
 	sberbankTransactions,
 } from "../../../db/schema.js";
 import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
+import { applyAcquiringCashboxLedgerInTx } from "../../cashbox/cashlessAcquiringLedger.js";
+import { reconcileInvoiceBalanceInDb } from "../../payments/sberWebhook/paymentStateTransition.js";
 import { sbpStatusInputSchema } from "./types.js";
+
+async function resolvePatientContactInTx(
+	tx: TenantDb,
+	orgId: string,
+	patientId: string,
+): Promise<string | null> {
+	const [p] = await tx
+		.select({ phone: patients.phone, email: patients.email })
+		.from(patients)
+		.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
+		.limit(1);
+	const phone = p?.phone?.trim();
+	if (phone) return phone;
+	const email = p?.email?.trim();
+	return email || null;
+}
+
+async function settleManualSbpPaymentInTx(params: {
+	tx: TenantDb;
+	orgId: string;
+	patientId: string;
+	visitId: string | null;
+	invoiceId: string | null;
+	amountKopecks: number;
+	clientMutationId: string | undefined;
+	sourceTag: string;
+	note: string;
+	now: Date;
+}): Promise<{
+	paymentId: string | null;
+	fiscalReceiptId: string | null;
+	isPaid: boolean;
+	paidAtIso: string | null;
+}> {
+	const {
+		tx,
+		orgId,
+		patientId,
+		visitId,
+		invoiceId,
+		amountKopecks,
+		clientMutationId,
+		sourceTag,
+		note,
+		now,
+	} = params;
+
+	const [insertedPay] = await tx
+		.insert(payments)
+		.values({
+			organizationId: orgId,
+			patientId,
+			visitId,
+			documentId: invoiceId,
+			amountRub: kopecksToRub(amountKopecks),
+			amountKopecks: BigInt(amountKopecks),
+			method: "online",
+			status: "paid",
+			clientMutationId: clientMutationId ?? null,
+			paidAt: now,
+			note,
+		})
+		.onConflictDoNothing({
+			target: [payments.organizationId, payments.clientMutationId],
+		})
+		.returning({ id: payments.id });
+
+	if (!insertedPay) {
+		if (clientMutationId) {
+			const [existingPay] = await tx
+				.select({
+					id: payments.id,
+					status: payments.status,
+					paidAt: payments.paidAt,
+					createdAt: payments.createdAt,
+				})
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, clientMutationId),
+					),
+				)
+				.limit(1);
+			if (existingPay) {
+				if (existingPay.status === "paid" && invoiceId && isValidUuid(invoiceId)) {
+					await reconcileInvoiceBalanceInDb(tx, orgId, invoiceId);
+				}
+				return {
+					paymentId: existingPay.id,
+					fiscalReceiptId: null,
+					isPaid: existingPay.status === "paid",
+					paidAtIso:
+						existingPay.status === "paid"
+							? (existingPay.paidAt || existingPay.createdAt).toISOString()
+							: null,
+				};
+			}
+		}
+		return {
+			paymentId: null,
+			fiscalReceiptId: null,
+			isPaid: false,
+			paidAtIso: null,
+		};
+	}
+
+	await applyAcquiringCashboxLedgerInTx(tx, {
+		organizationId: orgId,
+		direction: "income",
+		amountKopecks,
+		paymentMethod: "online",
+		patientId,
+		paymentId: insertedPay.id,
+		invoiceId,
+		reasonText: note,
+		sourceTag,
+	});
+
+	if (invoiceId && isValidUuid(invoiceId)) {
+		await reconcileInvoiceBalanceInDb(tx, orgId, invoiceId);
+	}
+
+	const customerContact = await resolvePatientContactInTx(tx, orgId, patientId);
+	const itemName = invoiceId
+		? `Оплата медицинских услуг по СБП (счёт ${invoiceId.slice(0, 8)})`
+		: "Оплата медицинских услуг по СБП";
+	const sbpFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
+		patientId,
+		operationType: "income",
+		taxationSystem: "usn_income",
+		cashierFullName: "Кассир-администратор",
+		customerContact,
+		totalKopecks: amountKopecks,
+		cashKopecks: 0,
+		electronicCardKopecks: 0,
+		sbpKopecks: amountKopecks,
+		prepaidKopecks: 0,
+		items: [
+			{
+				name: itemName,
+				priceKopecks: amountKopecks,
+				quantity: 1,
+				amountKopecks,
+				subject: "service",
+				method: "full_payment",
+				vatRate: "vat_none",
+				measure: "piece",
+			},
+		],
+	});
+
+	const [queuedReceipt] = await tx
+		.insert(fiscalReceiptQueue)
+		.values({
+			organizationId: orgId,
+			paymentId: insertedPay.id,
+			visitId,
+			receiptType: "income",
+			status: "pending_print",
+			payloadJson: {
+				...sbpFfdPayload,
+				method: "online",
+				patientId,
+				...(invoiceId ? { invoiceId } : {}),
+				...(clientMutationId ? { clientMutationId } : {}),
+			},
+			retryCount: 0,
+		})
+		.returning({ id: fiscalReceiptQueue.id });
+
+	return {
+		paymentId: insertedPay.id,
+		fiscalReceiptId: queuedReceipt?.id ?? null,
+		isPaid: true,
+		paidAtIso: now.toISOString(),
+	};
+}
 
 /**
  * GET /api/fiscal/sbp-status & POST /api/fiscal/sbp-status (also /api/payments/status)
@@ -107,34 +288,73 @@ export async function handleSbpStatus(
 				clientMutationId ? eq(sberbankTransactions.orderId, clientMutationId) : undefined,
 			].filter((c): c is NonNullable<typeof c> => Boolean(c));
 
+			const txQuery = tx
+				.select()
+				.from(sberbankTransactions)
+				.where(and(eq(sberbankTransactions.organizationId, orgId), or(...txConds)))
+				.limit(1);
 			const txRows =
 				txConds.length > 0
-					? await tx
-							.select()
-							.from(sberbankTransactions)
-							.where(and(eq(sberbankTransactions.organizationId, orgId), or(...txConds)))
-							.limit(1)
+					? await (isConfirmManual ? txQuery.for("update") : txQuery)
 					: [];
 
 			const sbTx = txRows[0];
 			if (sbTx) {
 				resolvedOrderId = sbTx.orderId;
 				amountKopecks = Number(sbTx.amountKopecks);
-				if (sbTx.status === "paid" || sbTx.status === "completed" || sbTx.status === "PAID") {
+				const sbStatusLower = sbTx.status.toLowerCase();
+				if (sbStatusLower === "refunded" || sbStatusLower === "reversed") {
+					if (isConfirmManual) {
+						return reply.code(409).send({
+							error: "SbpTransactionAlreadyRefunded",
+							message: "Операция СБП уже возвращена и не может быть подтверждена повторно.",
+						});
+					}
+				} else if (
+					sbStatusLower === "success" ||
+					sbStatusLower === "paid" ||
+					sbStatusLower === "completed"
+				) {
 					isPaid = true;
 					paidAtIso = (sbTx.updatedAt || sbTx.createdAt).toISOString();
 				} else if (isConfirmManual) {
+					const now = new Date();
 					await tx
 						.update(sberbankTransactions)
-						.set({ status: "paid", updatedAt: new Date() })
+						.set({ status: "success", updatedAt: now })
 						.where(
 							and(
 								eq(sberbankTransactions.id, sbTx.id),
 								eq(sberbankTransactions.organizationId, orgId),
 							),
 						);
-					isPaid = true;
-					paidAtIso = new Date().toISOString();
+
+					const sbAmountKop = Number(sbTx.amountKopecks);
+					const settlement = await settleManualSbpPaymentInTx({
+						tx,
+						orgId,
+						patientId: sbTx.patientId,
+						visitId: sbTx.visitId ?? null,
+						invoiceId:
+							sbTx.invoiceId && isValidUuid(sbTx.invoiceId)
+								? sbTx.invoiceId
+								: null,
+						amountKopecks: sbAmountKop,
+						clientMutationId,
+						sourceTag: clientMutationId || `sbp:${sbTx.orderId}`,
+						note: sbTx.invoiceId
+							? `Ручное подтверждение оплаты СБП по счёту ${sbTx.invoiceId} (${sbTx.orderId})`
+							: `Ручное подтверждение оплаты СБП (${sbTx.orderId})`,
+						now,
+					});
+					if (settlement.paymentId) {
+						resolvedPaymentId = settlement.paymentId;
+					}
+					if (settlement.fiscalReceiptId) {
+						resolvedFiscalReceiptId = settlement.fiscalReceiptId;
+					}
+					isPaid = settlement.isPaid;
+					paidAtIso = settlement.paidAtIso;
 				}
 			}
 		}
@@ -202,84 +422,26 @@ export async function handleSbpStatus(
 						paidAtIso = inv.paidAt ? inv.paidAt.toISOString() : new Date().toISOString();
 					} else if (isConfirmManual) {
 						const now = new Date();
-						const [insertedPay] = await tx
-							.insert(payments)
-							.values({
-								organizationId: orgId,
-								patientId: inv.patientId,
-								visitId: inv.visitId ?? null,
-								documentId: inv.id,
-								amountRub: kopecksToRub(invKop),
-								amountKopecks: BigInt(invKop),
-								method: "online",
-								status: "paid",
-								clientMutationId: clientMutationId ?? null,
-								paidAt: now,
-								note: `Ручное подтверждение оплаты СБП по счёту ${inv.id}`,
-							})
-							.onConflictDoNothing()
-							.returning({ id: payments.id });
-
-						if (insertedPay) {
-							resolvedPaymentId = insertedPay.id;
-							const sbpFfdPayload = FiscalReceiptFactory.buildFfd12Receipt({
-								patientId: inv.patientId,
-								operationType: "income",
-								taxationSystem: "usn_income",
-								cashierFullName: "Кассир-администратор",
-								customerContact: "",
-								totalKopecks: invKop,
-								cashKopecks: 0,
-								electronicCardKopecks: 0,
-								sbpKopecks: invKop,
-								prepaidKopecks: 0,
-								items: [
-									{
-										name: `Оплата медицинских услуг по СБП (счёт ${inv.id.slice(0, 8)})`,
-										priceKopecks: invKop,
-										quantity: 1,
-										amountKopecks: invKop,
-										subject: "service",
-										method: "full_payment",
-										vatRate: "vat_none",
-										measure: "piece",
-									},
-								],
-							});
-							const [queuedReceipt] = await tx
-								.insert(fiscalReceiptQueue)
-								.values({
-									organizationId: orgId,
-									paymentId: insertedPay.id,
-									visitId: inv.visitId ?? null,
-									receiptType: "income",
-									status: "pending_print",
-									payloadJson: {
-										...sbpFfdPayload,
-										method: "online",
-										patientId: inv.patientId,
-										invoiceId: inv.id,
-										...(clientMutationId ? { clientMutationId } : {}),
-									},
-									retryCount: 0,
-								})
-								.returning({ id: fiscalReceiptQueue.id });
-							if (queuedReceipt) {
-								resolvedFiscalReceiptId = queuedReceipt.id;
-							}
+						const settlement = await settleManualSbpPaymentInTx({
+							tx,
+							orgId,
+							patientId: inv.patientId,
+							visitId: inv.visitId ?? null,
+							invoiceId: inv.id,
+							amountKopecks: invKop,
+							clientMutationId,
+							sourceTag: clientMutationId || `sbp-invoice:${inv.id}`,
+							note: `Ручное подтверждение оплаты СБП по счёту ${inv.id}`,
+							now,
+						});
+						if (settlement.paymentId) {
+							resolvedPaymentId = settlement.paymentId;
 						}
-
-						await tx
-							.update(patientInvoices)
-							.set({ status: "paid", paidAt: now })
-							.where(
-								and(
-									eq(patientInvoices.id, inv.id),
-									eq(patientInvoices.organizationId, orgId),
-								),
-							);
-						isPaid = true;
-						paidAtIso = now.toISOString();
+						if (settlement.fiscalReceiptId) {
+							resolvedFiscalReceiptId = settlement.fiscalReceiptId;
+						}
+						isPaid = settlement.isPaid;
+						paidAtIso = settlement.paidAtIso;
 					}
 				}
 			}
@@ -306,7 +468,7 @@ export async function handleSbpStatus(
 			const q = queueRows[0];
 			if (q) {
 				resolvedFiscalReceiptId = q.id;
-				if ((q.status as string) === "completed" || q.status === "printed") {
+				if (q.status === "printed" || String(q.status) === "completed") {
 					isPaid = true;
 					paidAtIso = q.printedAt ? q.printedAt.toISOString() : q.createdAt.toISOString();
 				}

@@ -5,7 +5,7 @@
  */
 
 import { and, eq, gte, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	bactericidalEquipments,
 	emergencyBiohazardLogs,
@@ -20,55 +20,75 @@ export async function collectSanpinSummary(organizationId: string, todayStr: str
 	const startOfDay = new Date(todayStr);
 	const startOfMonth = new Date(todayStr.slice(0, 7) + "-01");
 
-	const [psoStats] = await db.select({
-		totalToday: sql<number>`count(*)::int`,
-		approvedToday: sql<number>`count(*) filter (where ${preSterilizationCleaningLogs.isBatchApproved} = true)::int`,
-	}).from(preSterilizationCleaningLogs).where(
-		and(eq(preSterilizationCleaningLogs.organizationId, organizationId), gte(preSterilizationCleaningLogs.timestamp, startOfDay)),
-	);
+	const {
+		psoStats,
+		sterilStats,
+		sterilizerFleetStats,
+		lampStats,
+		wasteStats,
+		tempStats,
+		emergencyStats,
+	} = await withTenantCtx(organizationId, async (tx) => {
+		const [pso] = await tx.select({
+			totalToday: sql<number>`count(*)::int`,
+			approvedToday: sql<number>`count(*) filter (where ${preSterilizationCleaningLogs.isBatchApproved} = true)::int`,
+		}).from(preSterilizationCleaningLogs).where(
+			and(eq(preSterilizationCleaningLogs.organizationId, organizationId), gte(preSterilizationCleaningLogs.timestamp, startOfDay)),
+		);
 
-	const [sterilStats] = await db.select({
-		totalCyclesToday: sql<number>`count(*)::int`,
-		passedToday: sql<number>`count(*) filter (where ${sterilizationLogs.status} = 'passed')::int`,
-	}).from(sterilizationLogs).where(
-		and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, startOfDay)),
-	);
+		const [steril] = await tx.select({
+			totalCyclesToday: sql<number>`count(*)::int`,
+			passedToday: sql<number>`count(*) filter (where ${sterilizationLogs.status} = 'passed')::int`,
+		}).from(sterilizationLogs).where(
+			and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, startOfDay)),
+		);
 
-	const [sterilizerFleetStats] = await db.select({
-		totalEquipments: sql<number>`count(*)::int`,
-		activeEquipments: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'active')::int`,
-		inMaintenance: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'in_maintenance')::int`,
-		decommissioned: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'decommissioned')::int`,
-		verificationExpired: sql<number>`count(*) filter (where ${sterilizerEquipments.verificationExpiryDate} < ${todayStr} and ${sterilizerEquipments.status} = 'active')::int`,
-	}).from(sterilizerEquipments).where(eq(sterilizerEquipments.organizationId, organizationId));
+		const [sterilizerFleet] = await tx.select({
+			totalEquipments: sql<number>`count(*)::int`,
+			activeEquipments: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'active')::int`,
+			inMaintenance: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'in_maintenance')::int`,
+			decommissioned: sql<number>`count(*) filter (where ${sterilizerEquipments.status} = 'decommissioned')::int`,
+			verificationExpired: sql<number>`count(*) filter (where ${sterilizerEquipments.verificationExpiryDate} < ${todayStr} and ${sterilizerEquipments.status} = 'active')::int`,
+		}).from(sterilizerEquipments).where(eq(sterilizerEquipments.organizationId, organizationId));
 
-	const [lampStats] = await db.select({
-		totalEquipments: sql<number>`count(*)::int`,
-		warningLamps: sql<number>`count(*) filter (where ${bactericidalEquipments.lampStatus} = 'warning_replace_soon')::int`,
-		expiredLamps: sql<number>`count(*) filter (where ${bactericidalEquipments.lampStatus} = 'expired_replace_now')::int`,
-	}).from(bactericidalEquipments).where(
-		and(eq(bactericidalEquipments.organizationId, organizationId), eq(bactericidalEquipments.isCommissioned, true)),
-	);
+		const [lamp] = await tx.select({
+			totalEquipments: sql<number>`count(*)::int`,
+			warningLamps: sql<number>`count(*) filter (where ${bactericidalEquipments.lampStatus} = 'warning_replace_soon')::int`,
+			expiredLamps: sql<number>`count(*) filter (where ${bactericidalEquipments.lampStatus} = 'expired_replace_now')::int`,
+		}).from(bactericidalEquipments).where(
+			and(eq(bactericidalEquipments.organizationId, organizationId), eq(bactericidalEquipments.isCommissioned, true)),
+		);
 
-	const wasteStats = await db.select({
-		wasteClass: medicalWasteLogs.wasteClass,
-		totalKg: sql<string>`coalesce(sum(${medicalWasteLogs.weightKg}), 0)`,
-		totalPackages: sql<number>`coalesce(sum(${medicalWasteLogs.packageCount}), 0)::int`,
-	}).from(medicalWasteLogs).where(
-		and(eq(medicalWasteLogs.organizationId, organizationId), gte(medicalWasteLogs.logDate, startOfMonth)),
-	).groupBy(medicalWasteLogs.wasteClass);
+		const waste = await tx.select({
+			wasteClass: medicalWasteLogs.wasteClass,
+			totalKg: sql<string>`coalesce(sum(${medicalWasteLogs.weightKg}), 0)`,
+			totalPackages: sql<number>`coalesce(sum(${medicalWasteLogs.packageCount}), 0)::int`,
+		}).from(medicalWasteLogs).where(
+			and(eq(medicalWasteLogs.organizationId, organizationId), gte(medicalWasteLogs.logDate, startOfMonth)),
+		).groupBy(medicalWasteLogs.wasteClass);
 
-	const [tempStats] = await db.select({
-		totalChecksToday: sql<number>`count(*)::int`,
-		deviationsToday: sql<number>`count(*) filter (where ${temperatureHumidityLogs.isWithinNorm} = false)::int`,
-	}).from(temperatureHumidityLogs).where(
-		and(eq(temperatureHumidityLogs.organizationId, organizationId), eq(temperatureHumidityLogs.measurementDate, todayStr)),
-	);
+		const [temp] = await tx.select({
+			totalChecksToday: sql<number>`count(*)::int`,
+			deviationsToday: sql<number>`count(*) filter (where ${temperatureHumidityLogs.isWithinNorm} = false)::int`,
+		}).from(temperatureHumidityLogs).where(
+			and(eq(temperatureHumidityLogs.organizationId, organizationId), eq(temperatureHumidityLogs.measurementDate, todayStr)),
+		);
 
-	const [emergencyStats] = await db.select({
-		totalIncidents: sql<number>`count(*)::int`,
-		criticalArvPending: sql<number>`count(*) filter (where ${emergencyBiohazardLogs.arvProphylaxisRecommended} = true and ${emergencyBiohazardLogs.arvProphylaxisStartedWithin72h} = false)::int`,
-	}).from(emergencyBiohazardLogs).where(eq(emergencyBiohazardLogs.organizationId, organizationId));
+		const [emergency] = await tx.select({
+			totalIncidents: sql<number>`count(*)::int`,
+			criticalArvPending: sql<number>`count(*) filter (where ${emergencyBiohazardLogs.arvProphylaxisRecommended} = true and ${emergencyBiohazardLogs.arvProphylaxisStartedWithin72h} = false)::int`,
+		}).from(emergencyBiohazardLogs).where(eq(emergencyBiohazardLogs.organizationId, organizationId));
+
+		return {
+			psoStats: pso,
+			sterilStats: steril,
+			sterilizerFleetStats: sterilizerFleet,
+			lampStats: lamp,
+			wasteStats: waste,
+			tempStats: temp,
+			emergencyStats: emergency,
+		};
+	});
 
 	return {
 		date: todayStr,

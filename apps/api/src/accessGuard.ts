@@ -24,7 +24,7 @@ import {
 export { namedDevelopmentModeActive, unguardedBypassAllowed };
 
 export function isDemoShowcaseMode(): boolean {
-	if (!namedDevelopmentModeActive() && process.env.NODE_ENV === "production") {
+	if (!namedDevelopmentModeActive()) {
 		return false;
 	}
 	return (
@@ -294,19 +294,21 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 	}
 
 	if (sessionId) {
-		const { db } = await import("./db/client.js");
+		const { withTenantCtx } = await import("./db/rls.js");
 		const { users } = await import("./db/schema.js");
 		const { eq, and } = await import("drizzle-orm");
-		const [user] = await db
-			.select({ currentSessionId: users.currentSessionId })
-			.from(users)
-			.where(
-				and(
-					eq(users.id, userId),
-					eq(users.organizationId, organizationId),
-				),
-			)
-			.limit(1);
+		const [user] = await withTenantCtx(organizationId, async (tx) =>
+			tx
+				.select({ currentSessionId: users.currentSessionId })
+				.from(users)
+				.where(
+					and(
+						eq(users.id, userId),
+						eq(users.organizationId, organizationId),
+					),
+				)
+				.limit(1),
+		);
 
 		if (
 			!user?.currentSessionId ||
@@ -342,17 +344,29 @@ async function _requireResolvedStaffUserId(
 	}
 
 	if (sessionId) {
-		const { db } = await import("./db/client.js");
+		const { withSuperuserBypass, withTenantCtx } = await import("./db/rls.js");
 		const { users } = await import("./db/schema.js");
 		const { eq, and } = await import("drizzle-orm");
-		const whereClause = organizationId
-			? and(eq(users.id, userId), eq(users.organizationId, organizationId))
-			: eq(users.id, userId);
-		const [user] = await db
-			.select({ currentSessionId: users.currentSessionId })
-			.from(users)
-			.where(whereClause)
-			.limit(1);
+		const [user] = organizationId
+			? await withTenantCtx(organizationId, async (tx) =>
+					tx
+						.select({ currentSessionId: users.currentSessionId })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, userId),
+								eq(users.organizationId, organizationId),
+							),
+						)
+						.limit(1),
+				)
+			: await withSuperuserBypass(async (tx) =>
+					tx
+						.select({ currentSessionId: users.currentSessionId })
+						.from(users)
+						.where(eq(users.id, userId))
+						.limit(1),
+				);
 
 		if (
 			!user?.currentSessionId ||

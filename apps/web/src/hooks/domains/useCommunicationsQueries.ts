@@ -193,10 +193,10 @@ export function useCommunicationsQueries(
 		});
 
 	async function fetchRecordingDetails(recordingId: string) {
-		await fetch(`/api/communications/recordings/${recordingId}`);
+		await fetch(`/api/telephony/recordings/${recordingId}`);
 	}
 	async function fetchRecordingStream(recordingId: string) {
-		await fetch(`/api/communications/recordings/${recordingId}/stream`);
+		await fetch(`/api/telephony/recordings/${recordingId}/stream`);
 	}
 	return {
 		fetchRecordingDetails,

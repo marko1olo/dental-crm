@@ -83,6 +83,38 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 
 	React.useEffect(() => {
 		if (!isOpen) return;
+		setTrustLevelState(settings.trustLevel);
+		setModelState(settings.model);
+		setModelRoutingMode(settings.modelRoutingMode || "server_managed");
+		setByokProvider(settings.byokProvider || "gemini");
+		setByokApiKey(settings.byokApiKey || "");
+		setByokModel(settings.byokModel || "gemini-3.6-flash");
+		setSpeedModeState(settings.speedMode);
+		setShowThinkingState(settings.showThinkingProcess);
+		setShowTypingAnimation(settings.showTypingAnimation ?? true);
+		setTemperatureState(settings.temperature ?? 0.2);
+		setContextLimitTokensState(settings.contextLimitTokens ?? 32768);
+		setSpecState(settings.clinicalSpecialization);
+		setDiaryTemplateState(settings.diaryTemplate);
+		setCustomDoctorInstructions(settings.customDoctorInstructions || "");
+		setGranularPermissions(settings.granularPermissions || {
+			autoApproveFileReads: true,
+			autoApproveFileWrites: false,
+			autoApproveClinicalMutations: true,
+			autoApproveFinancialDrafts: true,
+			autoApproveExternalSoftware: false,
+		});
+		setSpeechEngine(settings.speechEngine || "gemini_live");
+		setAutoSaveDrafts(settings.autoSaveDrafts);
+		setSpeechSensitivity(settings.webSpeechSensitivity || "normal");
+		setMaskPhiData(settings.maskPhiData ?? true);
+		setAutoMic(settings.autoMicOnAppointmentOpen ?? false);
+		setGlobalHotkey(settings.globalDictationHotkey || "F9");
+		setLocalDropzonePath(settings.localDropzonePath || "C:\\Radiology\\Export");
+	}, [isOpen, settings]);
+
+	React.useEffect(() => {
+		if (!isOpen) return;
 		const onKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
 		};
@@ -150,7 +182,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={onClose}
-						className="icon-button w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
+						className="icon-button w-11 h-11 sm:w-9 sm:h-9 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
 						aria-label="Закрыть"
 					>
 						<X size={16} />
@@ -243,95 +275,46 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				<div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
 					{activeTab === "intelligence" && (
 						<CopilotSettingsIntelligenceTab
-							modelRoutingMode={modelRoutingMode}
-							setModelRoutingMode={setModelRoutingMode}
-							byokProvider={byokProvider}
-							setByokProvider={setByokProvider}
-							byokApiKey={byokApiKey}
-							setByokApiKey={setByokApiKey}
-							byokModel={byokModel}
-							setByokModel={setByokModel}
-							speedMode={speedMode}
-							setSpeedMode={setSpeedModeState}
-							showThinkingProcess={showThinkingProcess}
-							setShowThinkingProcess={setShowThinkingState}
-							showTypingAnimation={showTypingAnimation}
-							setShowTypingAnimation={setShowTypingAnimation}
-							temperature={temperature}
-							setTemperature={setTemperatureState}
-							contextLimitTokens={contextLimitTokens}
-							setContextLimitTokens={setContextLimitTokensState}
+							modelRoutingMode={modelRoutingMode} setModelRoutingMode={setModelRoutingMode}
+							byokProvider={byokProvider} setByokProvider={setByokProvider}
+							byokApiKey={byokApiKey} setByokApiKey={setByokApiKey}
+							byokModel={byokModel} setByokModel={setByokModel}
+							speedMode={speedMode} setSpeedMode={setSpeedModeState}
+							showThinkingProcess={showThinkingProcess} setShowThinkingProcess={setShowThinkingState}
+							showTypingAnimation={showTypingAnimation} setShowTypingAnimation={setShowTypingAnimation}
+							temperature={temperature} setTemperature={setTemperatureState}
+							contextLimitTokens={contextLimitTokens} setContextLimitTokens={setContextLimitTokensState}
 						/>
 					)}
-
 					{activeTab === "trust" && (
-						<CopilotSettingsTrustTab
-							trustLevel={trustLevel}
-							setTrustLevel={setTrustLevelState}
-							granularPermissions={granularPermissions}
-							setGranularPermissions={setGranularPermissions}
-						/>
+						<CopilotSettingsTrustTab trustLevel={trustLevel} setTrustLevel={setTrustLevelState} granularPermissions={granularPermissions} setGranularPermissions={setGranularPermissions} />
 					)}
-
 					{activeTab === "persona" && (
-						<CopilotSettingsPersonaTab
-							clinicalSpecialization={clinicalSpecialization}
-							setClinicalSpecialization={setSpecState}
-							diaryTemplate={diaryTemplate}
-							setDiaryTemplate={setDiaryTemplateState}
-							customInstructions={customDoctorInstructions}
-							setCustomInstructions={setCustomDoctorInstructions}
-						/>
+						<CopilotSettingsPersonaTab clinicalSpecialization={clinicalSpecialization} setClinicalSpecialization={setSpecState} diaryTemplate={diaryTemplate} setDiaryTemplate={setDiaryTemplateState} customInstructions={customDoctorInstructions} setCustomInstructions={setCustomDoctorInstructions} />
 					)}
-
 					{activeTab === "voice_privacy" && (
 						<CopilotSettingsVoicePrivacyTab
-							speechEngine={speechEngine}
-							setSpeechEngine={setSpeechEngine}
-							webSpeechSensitivity={webSpeechSensitivity}
-							setSpeechSensitivity={setSpeechSensitivity}
-							autoSaveDrafts={autoSaveDrafts}
-							setAutoSaveDrafts={setAutoSaveDrafts}
-							maskPhiData={maskPhiData}
-							setMaskPhiData={setMaskPhiData}
-							autoMicOnAppointmentOpen={autoMicOnAppointmentOpen}
-							setAutoMic={setAutoMic}
-							globalDictationHotkey={globalDictationHotkey}
-							setGlobalHotkey={setGlobalHotkey}
-							localDropzonePath={localDropzonePath}
-							setLocalDropzonePath={setLocalDropzonePath}
+							speechEngine={speechEngine} setSpeechEngine={setSpeechEngine}
+							webSpeechSensitivity={webSpeechSensitivity} setSpeechSensitivity={setSpeechSensitivity}
+							autoSaveDrafts={autoSaveDrafts} setAutoSaveDrafts={setAutoSaveDrafts}
+							maskPhiData={maskPhiData} setMaskPhiData={setMaskPhiData}
+							autoMicOnAppointmentOpen={autoMicOnAppointmentOpen} setAutoMic={setAutoMic}
+							globalDictationHotkey={globalDictationHotkey} setGlobalHotkey={setGlobalHotkey}
+							localDropzonePath={localDropzonePath} setLocalDropzonePath={setLocalDropzonePath}
 						/>
 					)}
-
-					{activeTab === "memory" && (
-						<CopilotSettingsMemoryTab
-							onOpenFullMemory={() => { onClose(); onOpenMemoryTab?.(); }}
-						/>
-					)}
-
-					{activeTab === "matrix" && (
-						<CopilotSettingsCapabilitiesTable runtimeMode={runtimeMode} />
-					)}
+					{activeTab === "memory" && <CopilotSettingsMemoryTab onOpenFullMemory={() => { onClose(); onOpenMemoryTab?.(); }} />}
+					{activeTab === "matrix" && <CopilotSettingsCapabilitiesTable runtimeMode={runtimeMode} />}
 				</div>
-
-				{/* Нижняя панель действий */}
 				<footer className="px-5 py-3 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-2 shrink-0">
 					<div className="text-[11px] text-[var(--muted)]">
 						Устройство: <strong className="text-[var(--ink)]">{runtimeMode === "desktop_native" ? "Рабочая станция ОС" : isChairside ? "Сенсорный планшет" : "Веб-браузер"}</strong>
 					</div>
 					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={onClose}
-							className="secondary-button h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium hover:bg-[var(--paper-soft)] cursor-pointer"
-						>
+						<button type="button" onClick={onClose} className="secondary-button h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium hover:bg-[var(--paper-soft)] cursor-pointer">
 							Отмена
 						</button>
-						<button
-							type="button"
-							onClick={handleSave}
-							className="primary-button h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white text-sm font-medium shadow-sm hover:bg-[var(--primary-hover)] cursor-pointer"
-						>
+						<button type="button" onClick={handleSave} className="primary-button h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-[var(--primary)] text-white text-sm font-medium shadow-sm hover:bg-[var(--primary-hover)] cursor-pointer">
 							Сохранить настройки
 						</button>
 					</div>

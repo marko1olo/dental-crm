@@ -5,6 +5,7 @@ import {
 	readIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	escapeHtml,
 	renderDocumentHtml,
@@ -75,121 +76,124 @@ export async function register(app: FastifyInstance) {
 				return reply.code(400).send(apiError("Некорректные параметры запроса HTML-версии документа"));
 			}
 			const { id } = parsedParams.data;
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
-			const document = await getDocumentById(orgId, id);
-			if (!document) {
-				return reply.code(404).send(apiError("Документ не найден"));
-			}
-
-			// BOLA / IDOR проверка: если запрос от пациента личного кабинета (63-ФЗ / 152-ФЗ)
+			// BOLA / IDOR проверка: портальный токен пациента разрешает tenant context до requireOrganizationId
 			const portalPatient = extractPortalPatient(request);
-			const identity = getRequestIdentity(request);
-			const access = evaluateClinicalAccess(identity.role, {
-				clinicalRole: identity.clinicalRole ?? null,
-				canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
-				specialties: identity.specialties ?? null,
-			});
-			if (portalPatient) {
-				if (document.patientId !== portalPatient.patientId) {
-					return reply
-						.code(403)
-						.send(apiError("Доступ к документам другого пациента запрещен (152-ФЗ / BOLA)"));
+			const orgId = portalPatient?.organizationId ?? requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			return await withTenantCtx(orgId, async () => {
+				const document = await getDocumentById(orgId, id);
+				if (!document) {
+					return reply.code(404).send(apiError("Документ не найден"));
 				}
-			} else {
-				// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах для персонала клиники
-				if (clinicalDocKinds.has(document.kind)) {
-					if (
-						!access.hasClinicalAccess &&
-						!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
-					) {
-						return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
+
+				const identity = getRequestIdentity(request);
+				const access = evaluateClinicalAccess(identity.role, {
+					clinicalRole: identity.clinicalRole ?? null,
+					canSignMedicalRecords: identity.canSignMedicalRecords ?? false,
+					specialties: identity.specialties ?? null,
+				});
+				if (portalPatient) {
+					if (document.patientId !== portalPatient.patientId) {
+						return reply
+							.code(403)
+							.send(apiError("Доступ к документам другого пациента запрещен (152-ФЗ / BOLA)"));
+					}
+				} else {
+					// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах для персонала клиники
+					if (clinicalDocKinds.has(document.kind)) {
+						if (
+							!access.hasClinicalAccess &&
+							!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+						) {
+							return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
+						}
 					}
 				}
-			}
 
-			const patient = await getPatientByIdFromDb(orgId, document.patientId);
-			if (!patient) {
-				return reply.code(404).send(apiError("Пациент не найден"));
-			}
-			if (!portalPatient && patient.status === "archived" && !access.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "patients.archived.read",
-					message: "Доступ к документам архивного пациента разрешён только клиническому персоналу.",
+				const patient = await getPatientByIdFromDb(orgId, document.patientId);
+				if (!patient) {
+					return reply.code(404).send(apiError("Пациент не найден"));
+				}
+				if (!portalPatient && patient.status === "archived" && !access.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.archived.read",
+						message: "Доступ к документам архивного пациента разрешён только клиническому персоналу.",
+					});
+				}
+
+				// 152-ФЗ / 323-ФЗ: Аудит просмотра медицинского документа
+				await auditMedicalAccessFromRequest(request, {
+					organizationId: orgId,
+					patientId: document.patientId,
+					action: "VIEW_MEDICAL_DOCUMENT_HTML",
+					diagnosis: document.title,
 				});
-			}
 
-			// 152-ФЗ / 323-ФЗ: Аудит просмотра медицинского документа
-			await auditMedicalAccessFromRequest(request, {
-				organizationId: orgId,
-				patientId: document.patientId,
-				action: "VIEW_MEDICAL_DOCUMENT_HTML",
-				diagnosis: document.title,
-			});
-
-			const issuedSnapshot = readIssuedDocumentSnapshot(document);
-			if (documentRequiresIssuedArchive(document)) {
-				if (!documentHasIssuedArchiveMetadata(document)) {
-					return reply.code(409).send(apiError(issuedArchiveIntegrityError));
-				}
-				if (!issuedSnapshot) {
-					return reply
-						.code(409)
-						.send(
-							apiError(
-								"Архивная копия выданного документа отсутствует или не прошла проверку целостности.",
-							),
+				const issuedSnapshot = readIssuedDocumentSnapshot(document);
+				if (documentRequiresIssuedArchive(document)) {
+					if (!documentHasIssuedArchiveMetadata(document)) {
+						return reply.code(409).send(apiError(issuedArchiveIntegrityError));
+					}
+					if (!issuedSnapshot) {
+						return reply
+							.code(409)
+							.send(
+								apiError(
+									"Архивная копия выданного документа отсутствует или не прошла проверку целостности.",
+								),
+							);
+					}
+					if (
+						parsedQuery.data.download === "1" ||
+						parsedQuery.data.download === "true"
+					) {
+						reply.header(
+							"Content-Disposition",
+							`attachment; filename="${documentAttachmentFileName(document, "html")}"`,
 						);
+					}
+					let renderedHtml = applySignatureStampIfSigned(document, issuedSnapshot);
+					if (document.status === "voided") {
+						renderedHtml = injectVoidWatermarkIntoHtml(
+							renderedHtml,
+							document.voidAttestation?.reasonText || null,
+							document.voidedAt,
+						);
+					}
+					return reply
+						.type("text/html; charset=utf-8")
+						.send(renderedHtml);
 				}
-				if (
-					parsedQuery.data.download === "1" ||
-					parsedQuery.data.download === "true"
-				) {
-					reply.header(
-						"Content-Disposition",
-						`attachment; filename="${documentAttachmentFileName(document, "html")}"`,
-					);
-				}
-				let renderedHtml = applySignatureStampIfSigned(document, issuedSnapshot);
+
+				const requestHost = request.headers.host ?? "127.0.0.1:4100";
+				const requestProto =
+					(request.headers["x-forwarded-proto"] as string) ?? "http";
+				const origin = `${requestProto}://${requestHost}`;
+
+				// Реальный контекст вместо пустой заглушки (см. documents.ts).
+				const renderContext = {
+					...(await resolveDocumentRenderContext(orgId, document.patientId, request.log)),
+					origin,
+				};
+
+				let rendered = applySignatureStampIfSigned(
+					document,
+					renderDocumentHtml(document, patient, renderContext),
+				);
 				if (document.status === "voided") {
-					renderedHtml = injectVoidWatermarkIntoHtml(
-						renderedHtml,
+					rendered = injectVoidWatermarkIntoHtml(
+						rendered,
 						document.voidAttestation?.reasonText || null,
 						document.voidedAt,
 					);
 				}
+
 				return reply
 					.type("text/html; charset=utf-8")
-					.send(renderedHtml);
-			}
-
-			const requestHost = request.headers.host ?? "127.0.0.1:4100";
-			const requestProto =
-				(request.headers["x-forwarded-proto"] as string) ?? "http";
-			const origin = `${requestProto}://${requestHost}`;
-
-			// Реальный контекст вместо пустой заглушки (см. documents.ts).
-			const renderContext = {
-				...(await resolveDocumentRenderContext(orgId, document.patientId, request.log)),
-				origin,
-			};
-
-			let rendered = applySignatureStampIfSigned(
-				document,
-				renderDocumentHtml(document, patient, renderContext),
-			);
-			if (document.status === "voided") {
-				rendered = injectVoidWatermarkIntoHtml(
-					rendered,
-					document.voidAttestation?.reasonText || null,
-					document.voidedAt,
-				);
-			}
-
-			return reply
-				.type("text/html; charset=utf-8")
-				.send(rendered);
+					.send(rendered);
+			});
 		},
 	);
 }

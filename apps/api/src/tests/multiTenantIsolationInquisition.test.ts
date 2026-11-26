@@ -339,25 +339,35 @@ test("RED-TEAM INQUISITION: Multi-Tenancy & Database Cross-Tenant Isolation Gate
 	);
 
 	await suite.test(
-		"ATTACK 4: Unauthenticated template list returns ONLY system templates (no private templates)",
+		"ATTACK 4: Unauthenticated template list returns 401 and Tenant B list returns ONLY system/own templates",
 		async () => {
 			if (!databaseReady) return;
+
+			const unauthRes = await app.inject({
+				method: "GET",
+				url: "/api/document-templates",
+			});
+			assert.equal(unauthRes.statusCode, 401);
 
 			const res = await app.inject({
 				method: "GET",
 				url: "/api/document-templates",
+				headers: authHeadersB,
 			});
 
 			assert.equal(res.statusCode, 200);
 			const json = res.json();
 			assert.ok(Array.isArray(json.templates));
 			const leakedPrivateTemplates = json.templates.filter(
-				(t: { organizationId?: string | null }) => t.organizationId !== null && t.organizationId !== undefined,
+				(t: { organizationId?: string | null }) =>
+					t.organizationId !== null &&
+					t.organizationId !== undefined &&
+					t.organizationId !== ORG_B_ID,
 			);
 			assert.equal(
 				leakedPrivateTemplates.length,
 				0,
-				`Unauthenticated endpoint leaked ${leakedPrivateTemplates.length} private templates!`,
+				`Tenant B template list leaked ${leakedPrivateTemplates.length} private templates!`,
 			);
 		},
 	);

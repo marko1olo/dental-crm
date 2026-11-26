@@ -5,18 +5,19 @@
  * anti-self-referral validation, and /start ref_... onboarding pipeline.
  */
 
-import { createHash } from "node:crypto";
 import { rublesToKopecks } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { onTenantTxCommit, withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
+	denteTelegramBotConfigs,
 	denteTelegramChatLinks,
 	patientReferralCodes,
 	patientReferrals,
 	patients,
 } from "../../../db/schema.js";
 import { executeBonusAccrual } from "../../../routes/loyaltyModules/bonusBalanceService.js";
+import { hashTelegramChatFingerprint } from "../../../utils/telegramChatHash.js";
 import { wsBroker } from "../../websocketBroker.js";
 import {
 	DEFAULT_REFERRAL_CONFIG,
@@ -155,7 +156,7 @@ export async function processReferralStart(
 		const chatIdStr = String(refereeTelegramChatId);
 
 		// Ищем по telegram chat link
-		const chatFingerprint = createHash("sha256").update(chatIdStr).digest("hex").slice(0, 32);
+		const chatFingerprint = hashTelegramChatFingerprint(chatIdStr);
 		const [existingChatLink] = await tx
 			.select()
 			.from(denteTelegramChatLinks)
@@ -201,8 +202,20 @@ export async function processReferralStart(
 
 			// Привязываем telegram chat link
 			if (refereePatient) {
+				const [activeBotConfig] = await tx
+					.select({ botConfigId: denteTelegramBotConfigs.botConfigId })
+					.from(denteTelegramBotConfigs)
+					.where(
+						and(
+							eq(denteTelegramBotConfigs.organizationId, organizationId),
+							eq(denteTelegramBotConfigs.isActive, true),
+						),
+					)
+					.orderBy(desc(denteTelegramBotConfigs.updatedAt))
+					.limit(1);
 				await tx.insert(denteTelegramChatLinks).values({
 					organizationId,
+					botConfigId: activeBotConfig?.botConfigId ?? "default",
 					chatFingerprint,
 					subjectType: "patient",
 					subjectId: refereePatient.id,

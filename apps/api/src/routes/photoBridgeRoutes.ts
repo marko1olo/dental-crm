@@ -232,7 +232,10 @@ async function savePhotoBridgeSessionToDb(session: PhotoBridgeSession): Promise<
 	}
 }
 
-async function loadPhotoBridgeSession(token: string): Promise<PhotoBridgeSession | null> {
+async function loadPhotoBridgeSession(
+	token: string,
+	log?: FastifyRequest["log"],
+): Promise<PhotoBridgeSession | null> {
 	const cached = sessionsMap.get(token);
 	if (cached) {
 		if (cached.expiresAt <= Date.now()) {
@@ -246,7 +249,9 @@ async function loadPhotoBridgeSession(token: string): Promise<PhotoBridgeSession
 							eq(systemBackgroundJobs.taskName, token),
 						),
 					);
-			}).catch(() => undefined);
+			}).catch((err) => {
+				log?.warn({ err: safeLogError(err), token }, "[photo-bridge] Failed to prune expired cached session");
+			});
 			return null;
 		}
 		return cached;
@@ -273,7 +278,9 @@ async function loadPhotoBridgeSession(token: string): Promise<PhotoBridgeSession
 	if (!parsed.success || !parsed.data.token || parsed.data.expiresAt <= Date.now()) {
 		await withSuperuserBypass(async (tx) => {
 			await tx.delete(systemBackgroundJobs).where(eq(systemBackgroundJobs.id, row.id));
-		}).catch(() => undefined);
+		}).catch((err) => {
+			log?.warn({ err: safeLogError(err), token }, "[photo-bridge] Failed to prune expired DB session");
+		});
 		return null;
 	}
 
@@ -518,7 +525,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const session = await loadPhotoBridgeSession(token);
+		const session = await loadPhotoBridgeSession(token, request.log);
 
 		if (!session || session.expiresAt <= Date.now()) {
 			return reply.code(410).send({
@@ -554,7 +561,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const session = await loadPhotoBridgeSession(token);
+		const session = await loadPhotoBridgeSession(token, request.log);
 
 		if (!session || session.expiresAt <= Date.now()) {
 			return reply.code(410).send({
@@ -691,12 +698,36 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 		let persistedPhotoItem: PhotoBridgeUploadedItem | undefined;
 		try {
 			const txResult = await withTenantCtx(session.organizationId, async (tx) => {
+				const [lockedJob] = await tx
+					.select({
+						id: systemBackgroundJobs.id,
+						payload: systemBackgroundJobs.payload,
+					})
+					.from(systemBackgroundJobs)
+					.where(
+						and(
+							eq(systemBackgroundJobs.queueName, PHOTO_BRIDGE_QUEUE),
+							eq(systemBackgroundJobs.taskName, session.token),
+						),
+					)
+					.for("update")
+					.limit(1);
+
+				const parsedLocked =
+					lockedJob?.payload && typeof lockedJob.payload === "object"
+						? photoBridgeSessionSchema.safeParse(lockedJob.payload)
+						: null;
+				const currentSession = parsedLocked?.success ? parsedLocked.data : session;
+				if (currentSession.expiresAt <= Date.now()) {
+					return { expired: true as const };
+				}
+
 				const [row] = await tx
 					.insert(attachments)
 					.values({
-						organizationId: session.organizationId,
-						patientId: UUID_REGEX.test(session.patientId) ? session.patientId : null,
-						visitId: session.visitId && UUID_REGEX.test(session.visitId) ? session.visitId : null,
+						organizationId: currentSession.organizationId,
+						patientId: UUID_REGEX.test(currentSession.patientId) ? currentSession.patientId : null,
+						visitId: currentSession.visitId && UUID_REGEX.test(currentSession.visitId) ? currentSession.visitId : null,
 						fileName: path.basename(filename).slice(0, 255),
 						mimeType: normalizedMime,
 						storagePath: storageFilename,
@@ -715,8 +746,8 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					uploadedAt: new Date().toISOString(),
 				};
 				const updatedSession: PhotoBridgeSession = {
-					...session,
-					photos: [...session.photos, nextPhoto],
+					...currentSession,
+					photos: [...currentSession.photos, nextPhoto],
 				};
 				await tx
 					.update(systemBackgroundJobs)
@@ -726,15 +757,23 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 					.where(
 						and(
 							eq(systemBackgroundJobs.queueName, PHOTO_BRIDGE_QUEUE),
-							eq(systemBackgroundJobs.taskName, session.token),
+							eq(systemBackgroundJobs.taskName, currentSession.token),
 						),
 					);
 				onTenantTxCommit(() => {
-					session.photos.push(nextPhoto);
-					sessionsMap.set(session.token, session);
+					sessionsMap.set(currentSession.token, updatedSession);
 				});
-				return { row, nextPhoto };
+				return { expired: false as const, row, nextPhoto };
 			});
+			if (txResult?.expired) {
+				await fs.rm(storagePath, { force: true }).catch((rmErr) => {
+					request.log.warn({ err: safeLogError(rmErr) }, "[photo-bridge] Failed to remove photo file for expired session");
+				});
+				return reply.code(410).send({
+					error: "SessionExpired",
+					message: "Время сессии истекло. Обновите QR-код на экране монитора врача.",
+				});
+			}
 			attachment = txResult?.row;
 			persistedPhotoItem = txResult?.nextPhoto;
 		} catch (dbErr) {
@@ -781,7 +820,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const session = await loadPhotoBridgeSession(token);
+		const session = await loadPhotoBridgeSession(token, request.log);
 
 		if (!session || session.expiresAt <= Date.now()) {
 			return reply.code(410).send({
@@ -821,7 +860,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 		const { token } = paramParse.data;
-		const existing = await loadPhotoBridgeSession(token);
+		const existing = await loadPhotoBridgeSession(token, request.log);
 		if (existing && existing.organizationId !== orgId) {
 			return reply.code(403).send({
 				error: "Forbidden",

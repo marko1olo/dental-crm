@@ -333,11 +333,6 @@ export async function renderMessageTemplate(
 	let templateText = input.templateText ?? "";
 	let channel = input.channel ?? "telegram";
 
-	const resolved = await (tx
-		? Promise.resolve(tx)
-		: withTenantCtx(organizationId, async (t) => t));
-	void resolved;
-
 	const { dbContext, resolvedText, resolvedChannel } = await (async () => {
 		const run = async (tenantTx: TenantDb) => {
 			let nextText = templateText;

@@ -48,7 +48,11 @@ export function taxPaymentsForDocument(
 	document: GeneratedDocument,
 	context: DocumentRenderContext,
 ): Payment[] {
-	return taxPaymentsForDocumentScope(document, context.payments ?? []);
+	return taxPaymentsForDocumentScope(
+		document,
+		context.payments ?? [],
+		context.documents,
+	);
 }
 
 export function taxPaymentCode(payment: Payment): "1" | "2" | null {
@@ -73,7 +77,14 @@ export function taxPaymentSumKopecks(payments: Payment[], code: "1" | "2"): numb
 	return sumKopecks(
 		payments
 			.filter((payment) => taxPaymentCode(payment) === code)
-			.map((payment) => parseKopecks(payment.amountRub)),
+			.map((payment) => {
+				const rawKop = (
+					payment as Payment & { amountKopecks?: number | bigint | null }
+				).amountKopecks;
+				if (typeof rawKop === "bigint") return Number(rawKop);
+				if (typeof rawKop === "number") return Math.round(rawKop);
+				return parseKopecks(payment.amountRub);
+			}),
 	);
 }
 

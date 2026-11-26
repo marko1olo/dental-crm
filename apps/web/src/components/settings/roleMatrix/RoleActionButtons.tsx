@@ -27,7 +27,7 @@ export const RoleActionButtons: React.FC<RoleActionButtonsProps> = ({
 }) => {
 	return (
 		<div
-			className="sticky bottom-0 z-20 -mx-4 sm:mx-0 p-3 sm:p-3.5 mt-2 rounded-none sm:rounded-xl bg-[var(--paper-strong)]/90 backdrop-blur-md border-t sm:border border-[var(--line)] shadow-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 min-w-0"
+			className="sticky bottom-0 z-20 -mx-4 sm:mx-0 p-3 pb-4 sm:p-3.5 mt-2 rounded-none sm:rounded-xl bg-[var(--paper-strong)]/95 backdrop-blur-md border-t sm:border border-[var(--line)] shadow-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 min-w-0"
 			data-testid="role-action-buttons-bar"
 		>
 			<div className="flex items-center gap-2">
@@ -45,14 +45,14 @@ export const RoleActionButtons: React.FC<RoleActionButtonsProps> = ({
 				)}
 			</div>
 
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
 				<button
 					type="button"
 					onClick={onReset}
-					className="px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer touch-manipulation flex items-center justify-center gap-1.5 flex-1 sm:flex-initial"
+					className="h-11 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium whitespace-nowrap shrink-0 bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer touch-manipulation inline-flex items-center justify-center gap-2 flex-1 sm:flex-initial"
 					title="Сбросить права выбранной роли к заводскому стандарту DENTE"
 				>
-					<RotateCcw size={14} className="text-[var(--muted)]" />
+					<RotateCcw className="w-4 h-4 shrink-0 text-[var(--muted)]" />
 					<span>Сбросить к стандарту</span>
 				</button>
 
@@ -60,10 +60,10 @@ export const RoleActionButtons: React.FC<RoleActionButtonsProps> = ({
 				<button
 					type="button"
 					onClick={onSave}
-					className="px-4 py-2 min-h-[44px] rounded-lg text-xs font-bold bg-[var(--teal)] text-[var(--on-teal)] hover:bg-[var(--teal-dark)] shadow-xs cursor-pointer touch-manipulation flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+					className="h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg text-sm font-medium whitespace-nowrap shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer touch-manipulation inline-flex items-center justify-center gap-2 flex-1 sm:flex-initial"
 					data-testid="save-role-permissions-button"
 				>
-					<Save size={14} />
+					<Save className="w-4 h-4 shrink-0" />
 					<span>{isSaving ? "Сохранение..." : "Сохранить права"}</span>
 				</button>
 			</div>

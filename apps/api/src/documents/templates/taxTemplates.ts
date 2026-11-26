@@ -10,6 +10,7 @@ import {
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 	type TaxDeductionRelationship,
+	kopecksToRubles,
 	rublesToKopecks,
 } from "@dental/shared";
 import { TaxPayerRequisitesRequiredError } from "../../services/documents/ndflTaxService.js";
@@ -97,8 +98,16 @@ export function taxDeductionCertificate(
 		const isCode2 = p.taxDeductionCode === "2" || (p as { deductionCode?: string }).deductionCode === "2";
 		const dateIso = p.fiscalReceiptIssuedAt || p.paidAt || (typeof document.issuedAt === "string" ? document.issuedAt : new Date().toISOString());
 		const receiptNumber = p.fiscalReceiptNumber?.trim() || (p.id ? `ПЛ-${p.id.slice(0, 8)}` : "—");
-		const amountRub = typeof p.amountRub === "number" ? p.amountRub : 0;
-		const amountKopecks = rublesToKopecks(amountRub);
+		const rawKop = (
+			p as Payment & { amountKopecks?: number | bigint | null }
+		).amountKopecks;
+		const amountKopecks =
+			typeof rawKop === "bigint"
+				? Number(rawKop)
+				: typeof rawKop === "number"
+					? Math.round(rawKop)
+					: rublesToKopecks(typeof p.amountRub === "number" ? p.amountRub : 0);
+		const amountRub = kopecksToRubles(amountKopecks);
 		const rawFiscalSign = (p as { fiscalSign?: string | null }).fiscalSign;
 		const fiscalSign = typeof rawFiscalSign === "string" && rawFiscalSign.trim() ? rawFiscalSign.trim() : "—";
 		const fiscalDocumentNumber = p.fiscalReceiptNumber?.trim() || "—";
@@ -122,9 +131,19 @@ export function taxDeductionCertificate(
 			? rawIssueDate
 			: new Date().toISOString();
 
-	if (items.length === 0 && document.totalAmountRub && document.totalAmountRub > 0) {
-		const amountRub = document.totalAmountRub;
-		const amountKopecks = rublesToKopecks(amountRub);
+	const docTotalKopecks = (
+		document as GeneratedDocument & { totalAmountKopecks?: number | bigint | null }
+	).totalAmountKopecks;
+	if (
+		items.length === 0 &&
+		((docTotalKopecks != null && Number(docTotalKopecks) > 0) ||
+			(document.totalAmountRub && document.totalAmountRub > 0))
+	) {
+		const amountKopecks =
+			docTotalKopecks != null
+				? Number(docTotalKopecks)
+				: rublesToKopecks(document.totalAmountRub ?? 0);
+		const amountRub = kopecksToRubles(amountKopecks);
 		items.push({
 			id: document.id,
 			dateIso: issueDateIso,

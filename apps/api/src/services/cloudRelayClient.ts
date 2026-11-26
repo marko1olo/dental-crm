@@ -3,6 +3,7 @@ import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { WebSocket } from "ws";
 import { createApiLogger, safeLogError } from "../observability/logger.js";
+import { namedDevelopmentModeActive } from "../security/bypass.js";
 
 const fallbackLogger = createApiLogger("cloudRelayClient");
 
@@ -77,7 +78,6 @@ export const ALLOWED_TUNNEL_ROUTES: readonly { readonly path: string; readonly e
 	{ path: "/api/lab/portal", exact: false },
 	{ path: "/api/portal/scans", exact: false },
 	{ path: "/api/portal/direct-storage", exact: false },
-	{ path: "/api/portal/mock-storage", exact: false },
 	{ path: "/api/public/booking", exact: false },
 ];
 
@@ -128,13 +128,18 @@ export function getCalibratedNow(): Date {
 
 export function loadCloudRelayConfigFromEnv(): CloudRelayConfig {
 	const relayUrl = process.env.CLOUD_RELAY_URL || "";
-	const authToken = process.env.CLOUD_RELAY_TOKEN || process.env.EDGE_AUTH_TOKEN || "dev-edge-relay-secret-token";
+	const rawToken =
+		process.env.CLOUD_RELAY_TOKEN ||
+		process.env.EDGE_AUTH_TOKEN ||
+		(namedDevelopmentModeActive() ? "dev-edge-relay-secret-token" : "");
+	const authToken = rawToken.trim();
 	const clinicId = process.env.CLOUD_RELAY_CLINIC_ID || process.env.CLINIC_ID || "default-clinic";
 	const enabled =
-		process.env.CLOUD_RELAY_ENABLED === "true" ||
-		(Boolean(relayUrl) && process.env.CLOUD_RELAY_ENABLED !== "false");
+		Boolean(authToken) &&
+		(process.env.CLOUD_RELAY_ENABLED === "true" ||
+			(Boolean(relayUrl) && process.env.CLOUD_RELAY_ENABLED !== "false"));
 
-	const port = process.env.PORT || "3000";
+	const port = process.env.API_PORT || process.env.PORT || "4100";
 	const localBaseUrl = process.env.CLOUD_RELAY_LOCAL_API_URL || `http://127.0.0.1:${port}`;
 
 	return {
@@ -179,7 +184,7 @@ export class CloudRelayClient {
 	}
 
 	public start(): void {
-		if (!this.config.enabled || !this.config.relayUrl) {
+		if (!this.config.enabled || !this.config.relayUrl || !this.config.authToken) {
 			return;
 		}
 		this.isRunning = true;
@@ -208,13 +213,15 @@ export class CloudRelayClient {
 	}
 
 	private connect(): void {
-		if (!this.isRunning) return;
-
-		const separator = this.config.relayUrl.includes("?") ? "&" : "?";
-		const fullUrl = `${this.config.relayUrl}${separator}token=${encodeURIComponent(this.config.authToken)}&clinicId=${encodeURIComponent(this.config.clinicId)}`;
+		if (!this.isRunning || !this.config.authToken) return;
 
 		try {
-			this.ws = new WebSocket(fullUrl);
+			this.ws = new WebSocket(this.config.relayUrl, {
+				headers: {
+					authorization: `Bearer ${this.config.authToken}`,
+					"x-dente-clinic-id": this.config.clinicId,
+				},
+			});
 
 			this.ws.on("open", () => {
 				this.reconnectAttempts = 0;
@@ -342,6 +349,22 @@ export class CloudRelayClient {
 	}
 
 	private async processTunnelRequest(req: TunnelRequestPayload): Promise<void> {
+		if (req.clinicId !== this.config.clinicId) {
+			const clinicMismatchResponse: TunnelResponsePayload = {
+				type: "HTTP_RESPONSE",
+				id: req.id,
+				statusCode: 403,
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					error: "ForbiddenTunnelClinic",
+					message:
+						"Идентификатор клиники в запросе туннеля не совпадает с текущей клиникой.",
+				}),
+			};
+			this.sendMessage(clinicMismatchResponse);
+			return;
+		}
+
 		// Защита от SSRF: проверяем, что запрошенный путь входит в список разрешенных для лабораторий
 		if (!isRouteAllowedForTunnel(req.url)) {
 			const forbiddenResponse: TunnelResponsePayload = {
@@ -357,6 +380,28 @@ export class CloudRelayClient {
 			};
 			this.sendMessage(forbiddenResponse);
 			return;
+		}
+
+		const blockedHeaders = new Set([
+			"host",
+			"connection",
+			"content-length",
+			"transfer-encoding",
+			"keep-alive",
+			"upgrade",
+			"x-organization-id",
+			"x-dente-admin-secret",
+			"x-admin-secret",
+			"x-dente-superadmin-secret",
+			"x-forwarded-for",
+			"x-real-ip",
+		]);
+		const sanitizedHeaders: Record<string, string> = {};
+		for (const [k, v] of Object.entries(req.headers ?? {})) {
+			const lower = k.toLowerCase();
+			if (!blockedHeaders.has(lower) && typeof v === "string") {
+				sanitizedHeaders[lower] = v;
+			}
 		}
 
 		try {
@@ -375,7 +420,7 @@ export class CloudRelayClient {
 				} = {
 					method: req.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
 					url: req.url,
-					headers: req.headers,
+					headers: sanitizedHeaders,
 				};
 
 				if (req.body) {
@@ -393,13 +438,28 @@ export class CloudRelayClient {
 					}
 				}
 
-				responseBody = res.body;
+				const contentType = String(res.headers["content-type"] ?? "");
+				if (
+					contentType.includes("image/") ||
+					contentType.includes("octet-stream") ||
+					contentType.includes("model/") ||
+					contentType.includes("application/pdf")
+				) {
+					responseBody = res.rawPayload.toString("base64");
+					isBase64 = true;
+				} else {
+					responseBody = res.body;
+				}
 			} else {
 				// Запасной вариант через fetch на локальный порт
-				const targetUrl = new URL(req.url, this.config.localBaseUrl || "http://127.0.0.1:3000").toString();
+				const defaultPort = process.env.API_PORT || process.env.PORT || "4100";
+				const targetUrl = new URL(
+					req.url,
+					this.config.localBaseUrl || `http://127.0.0.1:${defaultPort}`,
+				).toString();
 				const fetchOptions: RequestInit = {
 					method: req.method,
-					headers: req.headers,
+					headers: sanitizedHeaders,
 				};
 
 				if (req.body && req.method !== "GET" && req.method !== "HEAD") {

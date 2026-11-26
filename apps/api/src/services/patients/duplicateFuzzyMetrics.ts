@@ -334,6 +334,41 @@ export function snilsKey(raw: string | null | undefined): string | null {
 	return digits.length === 11 ? digits : null;
 }
 
+/** Нормализация номера телефона в формат E.164 (+7... для РФ/КЗ), null для невалидных строк. */
+export function normalizePhoneE164(raw: string | null | undefined): string | null {
+	const key = phoneKey(raw ?? null);
+	if (!key) return null;
+	if (key.length === 10) return `+7${key}`;
+	return `+${key}`;
+}
+
+/** Нормализация даты рождения (DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD) в ISO YYYY-MM-DD. */
+export function normalizeBirthDateIso(raw: string | null | undefined): string | null {
+	const value = (raw ?? "").trim();
+	if (!value) return null;
+	const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (isoMatch) {
+		return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+	}
+	const ruMatch = value.match(/^(\d{2})[./](\d{2})[./](\d{4})$/);
+	if (ruMatch) {
+		return `${ruMatch[3]}-${ruMatch[2]}-${ruMatch[1]}`;
+	}
+	return null;
+}
+
+/** Нормализация серии и номера паспорта РФ (10 цифр). */
+export function passportKey(raw: string | null | undefined): string | null {
+	const digits = (raw ?? "").replace(/\D/g, "");
+	return digits.length === 10 ? digits : null;
+}
+
+/** Нормализация номера полиса ОМС (16 цифр). */
+export function omsKey(raw: string | null | undefined): string | null {
+	const digits = (raw ?? "").replace(/\D/g, "");
+	return digits.length === 16 ? digits : null;
+}
+
 /** Сходство СНИЛС (1.0 при точном совпадении 11 цифр, 0.85 при опечатке в 1 цифру, иначе 0.0). */
 export function snilsFuzzySimilarity(
 	snilsA: string | null | undefined,
@@ -377,9 +412,11 @@ export function birthDateFuzzySimilarity(
 	dobA: string | null | undefined,
 	dobB: string | null | undefined,
 ): number | null {
-	const a = (dobA ?? "").trim();
-	const b = (dobB ?? "").trim();
-	if (!a || !b) return null;
+	const rawA = (dobA ?? "").trim();
+	const rawB = (dobB ?? "").trim();
+	if (!rawA || !rawB) return null;
+	const a = normalizeBirthDateIso(rawA) ?? rawA;
+	const b = normalizeBirthDateIso(rawB) ?? rawB;
 	if (a === b) return 1.0;
 	// День и месяц перепутаны (YYYY-MM-DD vs YYYY-DD-MM)
 	const matchA = a.match(/^(\d{4})-(\d{2})-(\d{2})$/);

@@ -523,10 +523,7 @@ describe("Frontend-Backend API Wiring & Orphan Discovery Verification", () => {
 					differenceRub: 0,
 					isBalanced: true,
 					reconciliation: {
-						cashCounted: 0,
-						cashExpected: 0,
-						cardTotal: 25000,
-						sbpTotal: 10000,
+						note: "Сверка смены завершена",
 					},
 				},
 			});

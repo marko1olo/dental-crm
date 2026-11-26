@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Appointment } from "@dental/shared";
 import { createAppointmentInDb } from "../../../db/appointmentsQuery.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	chairs,
 	clinics,
@@ -55,87 +55,114 @@ export async function handleBookAppointment(
 		};
 	}
 
-	// 1. Проверяем пациента
-	const [patient] = await db
-		.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
-		.from(patients)
-		.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
-		.limit(1);
-
-	if (!patient) {
-		return { ok: false, statusCode: 404, error: "PatientNotFound", message: "Пациент не найден." };
-	}
-
-	// 2. Определяем врача (строго с ролью 'doctor', исключая неврачебный персонал)
-	let selectedDoctorId = doctorUserId;
-	let doctorName = "Дежурный врач";
-	if (selectedDoctorId) {
-		const [doc] = await db
-			.select({ id: users.id, fullName: users.fullName, role: users.role })
-			.from(users)
-			.where(
-				and(
-					eq(users.organizationId, orgId),
-					eq(users.id, selectedDoctorId),
-					eq(users.role, "doctor"),
-				),
-			)
+	const preflight = await withTenantCtx(orgId, async (tx) => {
+		// 1. Проверяем пациента
+		const [patientRow] = await tx
+			.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+			.from(patients)
+			.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
 			.limit(1);
-		if (doc) {
-			doctorName = doc.fullName;
-		} else {
+
+		if (!patientRow) {
 			return {
-				ok: false,
-				statusCode: 400,
-				error: "DoctorNotFound",
-				message: "Указанный сотрудник не найден или не является лечащим врачом клиники.",
+				ok: false as const,
+				response: { ok: false, statusCode: 404, error: "PatientNotFound", message: "Пациент не найден." },
 			};
 		}
-	} else {
-		const [firstDoc] = await db
-			.select({ id: users.id, fullName: users.fullName })
-			.from(users)
-			.where(
-				and(
-					eq(users.organizationId, orgId),
-					eq(users.role, "doctor"),
-					eq(users.isActive, true),
-				),
-			)
-			.limit(1);
-		if (firstDoc) {
-			selectedDoctorId = firstDoc.id;
-			doctorName = firstDoc.fullName;
+
+		// 2. Определяем врача (строго с ролью 'doctor', исключая неврачебный персонал)
+		let docId = doctorUserId;
+		let docName = "Дежурный врач";
+		if (docId) {
+			const [doc] = await tx
+				.select({ id: users.id, fullName: users.fullName, role: users.role })
+				.from(users)
+				.where(
+					and(
+						eq(users.organizationId, orgId),
+						eq(users.id, docId),
+						eq(users.role, "doctor"),
+					),
+				)
+				.limit(1);
+			if (doc) {
+				docName = doc.fullName;
+			} else {
+				return {
+					ok: false as const,
+					response: {
+						ok: false,
+						statusCode: 400,
+						error: "DoctorNotFound",
+						message: "Указанный сотрудник не найден или не является лечащим врачом клиники.",
+					},
+				};
+			}
 		} else {
-			const [anyDoc] = await db
+			const [firstDoc] = await tx
 				.select({ id: users.id, fullName: users.fullName })
 				.from(users)
-				.where(and(eq(users.organizationId, orgId), eq(users.role, "doctor")))
+				.where(
+					and(
+						eq(users.organizationId, orgId),
+						eq(users.role, "doctor"),
+						eq(users.isActive, true),
+					),
+				)
 				.limit(1);
-			if (anyDoc) {
-				selectedDoctorId = anyDoc.id;
-				doctorName = anyDoc.fullName;
+			if (firstDoc) {
+				docId = firstDoc.id;
+				docName = firstDoc.fullName;
+			} else {
+				const [anyDoc] = await tx
+					.select({ id: users.id, fullName: users.fullName })
+					.from(users)
+					.where(and(eq(users.organizationId, orgId), eq(users.role, "doctor")))
+					.limit(1);
+				if (anyDoc) {
+					docId = anyDoc.id;
+					docName = anyDoc.fullName;
+				}
 			}
 		}
-	}
 
-	const startDate = new Date(startsAt);
-	const endDate = new Date(endsAt);
-	if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || startDate >= endDate) {
+		const startDate = new Date(startsAt);
+		const endDate = new Date(endsAt);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || startDate >= endDate) {
+			return {
+				ok: false as const,
+				response: {
+					ok: false,
+					statusCode: 400,
+					error: "ValidationError",
+					message: "Некорректный временной интервал приёма.",
+				},
+			};
+		}
+
+		// 3. Определяем кресло
+		const [chairRow] = await tx
+			.select({ id: chairs.id })
+			.from(chairs)
+			.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
+			.limit(1);
+
 		return {
-			ok: false,
-			statusCode: 400,
-			error: "ValidationError",
-			message: "Некорректный временной интервал приёма.",
+			ok: true as const,
+			patient: patientRow,
+			selectedDoctorId: docId,
+			doctorName: docName,
+			startDate,
+			endDate,
+			chairId: chairRow?.id || null,
 		};
+	});
+
+	if (!preflight.ok) {
+		return preflight.response;
 	}
 
-	// 3. Определяем кресло
-	const [chair] = await db
-		.select({ id: chairs.id })
-		.from(chairs)
-		.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
-		.limit(1);
+	const { patient, selectedDoctorId, doctorName, startDate, endDate, chairId } = preflight;
 
 	// 4. Создаем запись через канонический SSOT createAppointmentInDb
 	let createdAppt: Appointment | undefined;
@@ -143,7 +170,7 @@ export async function handleBookAppointment(
 		createdAppt = await createAppointmentInDb(orgId, {
 			patientId: patient.id,
 			doctorUserId: selectedDoctorId || null,
-			chairId: chair?.id || null,
+			chairId,
 			startsAt: startDate.toISOString(),
 			endsAt: endDate.toISOString(),
 			status: "planned",
@@ -180,21 +207,24 @@ export async function handleBookAppointment(
 		const formattedDate = startDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" });
 		const formattedTime = startDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
-		const [clinic] = await db
-			.select({ name: clinics.name, address: clinics.address })
-			.from(clinics)
-			.where(eq(clinics.organizationId, orgId))
-			.limit(1);
-
-		let clinicAddress = clinic?.address?.trim();
-		if (!clinicAddress) {
-			const [org] = await db
-				.select({ name: organizations.name, legalAddress: organizations.legalAddress })
-				.from(organizations)
-				.where(eq(organizations.id, orgId))
+		const clinicAddress = await withTenantCtx(orgId, async (tx) => {
+			const [clinic] = await tx
+				.select({ name: clinics.name, address: clinics.address })
+				.from(clinics)
+				.where(eq(clinics.organizationId, orgId))
 				.limit(1);
-			clinicAddress = org?.legalAddress?.trim();
-		}
+
+			let addr = clinic?.address?.trim();
+			if (!addr) {
+				const [org] = await tx
+					.select({ name: organizations.name, legalAddress: organizations.legalAddress })
+					.from(organizations)
+					.where(eq(organizations.id, orgId))
+					.limit(1);
+				addr = org?.legalAddress?.trim();
+			}
+			return addr;
+		});
 
 		const addressLine = clinicAddress ? `\nАдрес: ${clinicAddress}` : "";
 		const confirmText = `Здравствуйте, ${patient.fullName}! Вы успешно записаны на приём в клинику.\n\nДата: ${formattedDate}\nВремя: ${formattedTime}\nВрач: ${doctorName}\nПричина: ${reason}${addressLine}\n\nЕсли потребуется перенести или отменить визит, ответьте в этот чат.`;

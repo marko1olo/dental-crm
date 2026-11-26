@@ -346,6 +346,7 @@ export class TelegramVoiceIntakeService {
 		}
 
 		let savedLocalPath: string | undefined;
+		let audioFileName: string | undefined;
 		if (downloadResult.ok) {
 			try {
 				const uploadsBase =
@@ -360,10 +361,11 @@ export class TelegramVoiceIntakeService {
 					.slice(0, 16);
 				const fileName = `voice_${Date.now()}_${fileHash}${ext}`;
 				savedLocalPath = path.join(uploadsBase, fileName);
+				audioFileName = fileName;
 				await fs.promises.writeFile(savedLocalPath, downloadResult.buffer);
 			} catch (writeErr) {
 				logger.warn(
-					{ err: safeLogError(writeErr), savedLocalPath },
+					{ err: safeLogError(writeErr), audioFileName },
 					"Ошибка асинхронной записи аудиофайла на диск",
 				);
 			}
@@ -436,7 +438,7 @@ export class TelegramVoiceIntakeService {
 				source: "voice_intake",
 				redFlagResult: redFlags,
 				rawMessageText: cleanedTranscript,
-				audioRecordingUrl: savedLocalPath,
+				audioRecordingUrl: audioFileName,
 				botToken,
 			});
 		} else {
@@ -455,7 +457,7 @@ export class TelegramVoiceIntakeService {
 						rawPayload: {
 							fileId,
 							duration,
-							savedLocalPath,
+							audioFileName,
 							transcription: cleanedTranscript,
 							symptoms,
 						},
@@ -484,7 +486,7 @@ export class TelegramVoiceIntakeService {
 									`РАСШИФРОВКА ГОЛОСА: "${cleanedTranscript}"`,
 									symptoms.categories.length > 0 ? `СИМПТОМЫ: ${symptoms.categories.join(", ")}` : "",
 									symptoms.painIntensity ? `БОЛЬ: ${symptoms.painIntensity}` : "",
-									savedLocalPath ? `АУДИОФАЙЛ: ${savedLocalPath}` : "",
+									audioFileName ? `АУДИОФАЙЛ: ${audioFileName}` : "",
 								]
 									.filter(Boolean)
 									.join("\n"),
@@ -502,7 +504,7 @@ export class TelegramVoiceIntakeService {
 							direction: "inbound" as const,
 							status: "delivered" as const,
 							message: cleanedTranscript || "[Голосовое сообщение]",
-							recordingUrl: savedLocalPath ?? null,
+							recordingUrl: audioFileName ?? null,
 							durationSeconds: duration ?? null,
 							audioFormat: "audio/ogg",
 						});
@@ -526,7 +528,7 @@ export class TelegramVoiceIntakeService {
 						chatId,
 						transcription: cleanedTranscript,
 						symptoms,
-						savedLocalPath,
+						audioFileName: audioFileName ?? null,
 						duration: duration ?? null,
 						timestamp: new Date().toISOString(),
 					},

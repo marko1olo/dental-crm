@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { calculateLeadPipelineMetrics, type PipelineMetricsResult } from "../leadsMetrics.js";
 
 export type { PipelineMetricsResult };
@@ -14,6 +14,8 @@ export async function registerLeadSourceAnalyticsRoutes(app: FastifyInstance): P
 		);
 		if (!organizationId) return;
 
-		return await calculateLeadPipelineMetrics(db, organizationId);
+		return await withTenantCtx(organizationId, (tx) =>
+			calculateLeadPipelineMetrics(tx, organizationId),
+		);
 	});
 }

@@ -301,7 +301,7 @@ export async function registerConnectionHubRoutes(
 			return {
 				ok: false,
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Некорректные параметры запуска QR-сессии.",
+				message: parsed.error.issues[0]?.message || "Некорректные параметры запуска QR-сессии.",
 			};
 		}
 		const input = parsed.data;
@@ -436,7 +436,7 @@ export async function registerConnectionHubRoutes(
 			return {
 				error: "WabaValidationError",
 				message:
-					parsed.error.errors[0]?.message ||
+					parsed.error.issues[0]?.message ||
 					"Проверьте параметры подключения WABA",
 			};
 		}
@@ -494,7 +494,7 @@ export async function registerConnectionHubRoutes(
 				return {
 					ok: false,
 					error: "ValidationError",
-					message: parsed.error.errors[0]?.message || "Некорректные параметры проверки WABA.",
+					message: parsed.error.issues[0]?.message || "Некорректные параметры проверки WABA.",
 				};
 			}
 			let phoneNumberId = parsed.data.phoneNumberId;

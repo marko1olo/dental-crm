@@ -102,4 +102,19 @@ describe("buildPatientImportIntake", () => {
 		const result = await buildPatientImportIntake(ORG_ID, input);
 		assert.strictEqual(result.preview.totalRows, 0);
 	});
+
+	test("flags intra-file duplicate patients in preview so commit skips duplicates", async () => {
+		const input: ImportPreviewRequest = {
+			sourceName: "dup-file.csv",
+			sourceKind: "csv_text",
+			rawText:
+				"ФИО;Телефон\nИванов Иван Иванович;+79001112233\nИванов Иван Иванович;+79001112233",
+		};
+
+		const result = await buildPatientImportIntake(ORG_ID, input);
+		assert.strictEqual(result.preview.totalRows, 2);
+		assert.strictEqual(result.preview.readyRows, 1);
+		assert.strictEqual(result.preview.warningRows, 1);
+		assert.strictEqual(result.preview.rows[1]?.status, "warning");
+	});
 });

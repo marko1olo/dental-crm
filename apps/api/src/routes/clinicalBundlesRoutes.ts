@@ -18,7 +18,6 @@ import {
 import { withTenantCtx } from "../db/rls.js";
 import {
 	treatmentPlanItemsNew,
-	treatmentPlanStages,
 	treatmentPlans,
 } from "../db/schema.js";
 
@@ -150,9 +149,12 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 		// Если передан существующий planId, привязываем позиции напрямую в PostgreSQL 18
 		const targetPlanId = data.planId;
 		if (targetPlanId) {
-			const planFound = await withTenantCtx(context.organizationId, async (tx) => {
+			const planStatus = await withTenantCtx(context.organizationId, async (tx) => {
 				const [plan] = await tx
-					.select({ id: treatmentPlans.id })
+					.select({
+						id: treatmentPlans.id,
+						patientId: treatmentPlans.patientId,
+					})
 					.from(treatmentPlans)
 					.where(
 						and(
@@ -163,7 +165,10 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 					.limit(1);
 
 				if (!plan) {
-					return false;
+					return "not_found" as const;
+				}
+				if (data.patientId && plan.patientId !== data.patientId) {
+					return "patient_mismatch" as const;
 				}
 
 				// Транзакционная вставка в treatmentPlanItemsNew
@@ -184,13 +189,19 @@ export const clinicalBundlesRoutes: FastifyPluginAsync = async (server) => {
 						doctorId: data.doctorId || null,
 					});
 				}
-				return true;
+				return "ok" as const;
 			});
 
-			if (!planFound) {
+			if (planStatus === "not_found") {
 				return reply.code(404).send({
 					error: "TreatmentPlanNotFound",
 					message: "Указанный план лечения не найден в вашей клинике",
+				});
+			}
+			if (planStatus === "patient_mismatch") {
+				return reply.code(409).send({
+					error: "PatientPlanMismatch",
+					message: "Указанный план лечения принадлежит другому пациенту",
 				});
 			}
 		}

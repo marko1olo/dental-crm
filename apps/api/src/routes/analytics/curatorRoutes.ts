@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalMutationAccess,
-	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import { fetchCuratorAnalyticsPayload } from "./curatorQuery.js";
@@ -10,16 +9,14 @@ import {
 	type UpdateCuratorStagePayload,
 	updateCuratorStagePayloadSchema,
 } from "./curatorTypes.js";
+import { requireExecutiveAccess } from "./executiveAccessGuard.js";
 
 /**
  * ФИЧА #27 — ВЫДЕЛЕННАЯ РОЛЬ «КУРАТОР ПАЦИЕНТОВ» И АНАЛИТИКА ВОРОНКИ
  */
 export async function registerCuratorRoutes(app: FastifyInstance) {
 	app.get("/api/analytics/curators", async (request, reply) => {
-		const readAllowed = await requireClinicalReadAccess(request, reply, "curator analytics");
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "curator analytics");
+		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
 		try {

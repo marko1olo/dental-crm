@@ -1,4 +1,4 @@
-import { type ExecutivePeriod } from "@dental/shared";
+import { type ExecutivePeriod, rublesToKopecks } from "@dental/shared";
 
 /**
  * Канонические типизированные коды регламентированных статей расходов РКО (Мандат 8ap & 8bm).
@@ -205,4 +205,55 @@ export function calculateWorkingMinutesInPeriod(
 	}
 	const availableMinutesPerChair = workingDays * dailyMinutes;
 	return { workingDays, availableMinutesPerChair };
+}
+
+/**
+ * [ANL-01 / Мандат 8bm] Честный расчет плановой выручки клиники за период.
+ */
+export function resolveExecutiveRevenuePlanKopecks(params: {
+	readonly clinicScheduleRaw: unknown;
+	readonly totalAvailableMinutes: number;
+	readonly daysCount: number;
+	readonly execPeriod: ExecutivePeriod;
+}): number {
+	const raw =
+		params.clinicScheduleRaw && typeof params.clinicScheduleRaw === "object"
+			? (params.clinicScheduleRaw as Record<string, unknown>)
+			: null;
+
+	const explicitPlanKopecks =
+		typeof raw?.revenuePlanKopecks === "number" && raw.revenuePlanKopecks > 0
+			? raw.revenuePlanKopecks
+			: typeof raw?.revenuePlanRub === "number" && raw.revenuePlanRub > 0
+				? rublesToKopecks(raw.revenuePlanRub)
+				: null;
+
+	if (explicitPlanKopecks !== null) {
+		switch (params.execPeriod) {
+			case "month":
+				return Math.round(explicitPlanKopecks);
+			case "quarter":
+				return Math.round(explicitPlanKopecks * 3);
+			case "year":
+				return Math.round(explicitPlanKopecks * 12);
+			case "week":
+				return Math.round((explicitPlanKopecks * 7) / 30);
+			case "day":
+			case "yesterday":
+				return Math.round(explicitPlanKopecks / 30);
+			case "custom":
+			default:
+				return Math.round((explicitPlanKopecks * Math.max(1, params.daysCount)) / 30);
+		}
+	}
+
+	const hourlyTargetKopecks =
+		typeof raw?.targetHourlyRevenueKopecks === "number" && raw.targetHourlyRevenueKopecks > 0
+			? raw.targetHourlyRevenueKopecks
+			: typeof raw?.targetHourlyRevenueRub === "number" && raw.targetHourlyRevenueRub > 0
+				? rublesToKopecks(raw.targetHourlyRevenueRub)
+				: 350_000; // 3 500 ₽/час доступного фонда кресла
+
+	const availableHours = Math.max(1, params.totalAvailableMinutes / 60);
+	return Math.round(availableHours * hourlyTargetKopecks);
 }

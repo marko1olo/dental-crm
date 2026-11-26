@@ -6,6 +6,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
+	requireClinicalReadAccess,
+	requireResolvedOrganizationId,
+} from "../../accessGuard.js";
+import {
 	createServiceCatalogItemInDb,
 	deactivateServiceCatalogItemInDb,
 	getServiceBomFromDb,
@@ -99,7 +103,14 @@ export async function handleGetCatalogItem(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const orgId = await requireCatalogMutationAccess(request, reply);
+	if (!(await requireClinicalReadAccess(request, reply, "pricelist item get"))) {
+		return;
+	}
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"pricelist item get",
+	);
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };
@@ -229,7 +240,14 @@ export async function handleGetServiceBom(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const orgId = await requireCatalogMutationAccess(request, reply);
+	if (!(await requireClinicalReadAccess(request, reply, "pricelist bom get"))) {
+		return;
+	}
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"pricelist bom get",
+	);
 	if (!orgId) return;
 
 	const params = request.params as { serviceId?: string };

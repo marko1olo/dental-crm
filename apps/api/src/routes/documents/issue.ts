@@ -1,14 +1,13 @@
 import { createHash } from "node:crypto";
 import {
 	issueDocumentSchema,
-	publicGeneratedDocumentSchema,
 	type TaxXmlSnapshot,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	getDocumentById,
 	getDocumentsByPatientId,
@@ -24,6 +23,7 @@ import {
 } from "../../documents/renderDocument.js";
 import {
 	buildTaxPaymentSnapshotForIssue,
+	taxDocumentDuplicateSensitive,
 	taxDocumentUsesPaymentSnapshot,
 } from "../../documents/taxPaymentSnapshot.js";
 import {
@@ -51,6 +51,7 @@ import {
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
 	taxXmlSourceSnapshotSha256,
+	toPublicGeneratedDocument,
 } from "./shared.js";
 
 const documentIdParamsSchema = z
@@ -134,17 +135,22 @@ export async function register(app: FastifyInstance) {
 					"Отказ в доступе к документам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
 			});
 		}
+		const patientPayments =
+			taxDocumentUsesPaymentSnapshot(existing.kind) ||
+			taxDocumentDuplicateSensitive(existing.kind)
+				? await getPaymentsByPatientIdInDb(orgId, existing.patientId)
+				: [];
 		const taxPaymentSnapshot = taxDocumentUsesPaymentSnapshot(existing.kind)
 			? buildTaxPaymentSnapshotForIssue(
 					existing,
-					await getPaymentsByPatientIdInDb(orgId, existing.patientId),
+					patientPayments,
 					await getDocumentsByPatientId(orgId, existing.patientId),
 				)
 			: null;
 		if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
 			const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
 				existing,
-				[],
+				patientPayments,
 			);
 			if (duplicateTaxCertificate) {
 				return reply
@@ -210,7 +216,7 @@ export async function register(app: FastifyInstance) {
 		}
 		const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(
 			issueCandidate,
-			[],
+			patientPayments,
 		);
 		if (duplicateTaxCertificate) {
 			return reply
@@ -298,7 +304,7 @@ export async function register(app: FastifyInstance) {
 		// подставляем чужой идентификатор.
 		// Неделимая ACID транзакция (Мандат 8bo): атомарная выдача документа,
 		// погашение возвратов и синхронизация выданных медицинских согласий.
-		const document = await db.transaction(async (tx) => {
+		const document = await withTenantCtx(orgId, async (tx) => {
 			const issuedDoc = await issueGeneratedDocumentInDb(orgId, id, {
 				issuedByUserId: getRequestIdentity(request).userId,
 				issuedAt,
@@ -365,6 +371,6 @@ export async function register(app: FastifyInstance) {
 				.send(apiError("Статус документа нельзя изменить."));
 		}
 
-		return reply.send(publicGeneratedDocumentSchema.parse(document));
+		return reply.send(toPublicGeneratedDocument(document));
 	});
 }

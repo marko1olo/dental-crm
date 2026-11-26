@@ -22,7 +22,7 @@ export function registerTelegramAccountRequestCodeRoute(app: FastifyInstance) {
 			return reply.code(400).send({
 				ok: false,
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Укажите корректный номер телефона.",
+				message: parsed.error.issues[0]?.message || "Укажите корректный номер телефона.",
 			});
 		}
 

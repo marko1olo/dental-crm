@@ -17,7 +17,7 @@
  */
 
 import { and, eq, inArray } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import { patientCommunicationConsents } from "../../db/schema.js";
 import type {
 	CommunicationChannelCode,
@@ -36,24 +36,28 @@ import type { ConsentRecord } from "./deliveryPolicy.js";
 export async function loadConsentsByPatient(
 	organizationId: string,
 	patientIds: readonly string[],
+	tx?: TenantDb | undefined,
 ): Promise<Map<string, ConsentRecord[]>> {
 	const result = new Map<string, ConsentRecord[]>();
 	if (patientIds.length === 0) return result;
 
-	const rows = await db
-		.select({
-			patientId: patientCommunicationConsents.patientId,
-			channel: patientCommunicationConsents.channel,
-			scope: patientCommunicationConsents.scope,
-			state: patientCommunicationConsents.state,
-		})
-		.from(patientCommunicationConsents)
-		.where(
-			and(
-				eq(patientCommunicationConsents.organizationId, organizationId),
-				inArray(patientCommunicationConsents.patientId, [...patientIds]),
-			),
-		);
+	const run = async (client: TenantDb) =>
+		client
+			.select({
+				patientId: patientCommunicationConsents.patientId,
+				channel: patientCommunicationConsents.channel,
+				scope: patientCommunicationConsents.scope,
+				state: patientCommunicationConsents.state,
+			})
+			.from(patientCommunicationConsents)
+			.where(
+				and(
+					eq(patientCommunicationConsents.organizationId, organizationId),
+					inArray(patientCommunicationConsents.patientId, [...patientIds]),
+				),
+			);
+
+	const rows = tx ? await run(tx) : await withTenantCtx(organizationId, run);
 
 	for (const row of rows) {
 		const list = result.get(row.patientId) ?? [];

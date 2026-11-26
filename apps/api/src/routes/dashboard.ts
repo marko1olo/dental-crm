@@ -74,7 +74,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			);
 			return reply.code(500).send({
 				error: "DatabaseError",
-				message: error instanceof Error ? error.message : String(error),
+				message: "Не удалось загрузить сводные данные клиники.",
 			});
 		}
 	});

@@ -5,7 +5,6 @@
  */
 
 import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
 import { type TenantDb, withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import { communicationOutbox, communicationTasks } from "../../../db/schema.js";
 import {
@@ -273,31 +272,33 @@ export async function processRow(
 	);
 
 	if (result.ok) {
-		await db
-			.update(communicationOutbox)
-			.set({
-				status: "sent",
-				attempts: attempt,
-				sentAt: now,
-				lockedAt: null,
-				lockedBy: null,
-				providerMessageId: result.providerMessageId,
-				segments: result.segments,
-				lastErrorClass: null,
-				lastErrorMessage: null,
-				updatedAt: now,
-			})
-			.where(eq(communicationOutbox.id, row.id));
-
-		if (row.taskId) {
-			await db
-				.update(communicationTasks)
+		await withTenantCtx(row.organizationId, async (tx) => {
+			await tx
+				.update(communicationOutbox)
 				.set({
 					status: "sent",
-					lastEventAt: now,
+					attempts: attempt,
+					sentAt: now,
+					lockedAt: null,
+					lockedBy: null,
+					providerMessageId: result.providerMessageId,
+					segments: result.segments,
+					lastErrorClass: null,
+					lastErrorMessage: null,
+					updatedAt: now,
 				})
-				.where(eq(communicationTasks.id, row.taskId));
-		}
+				.where(eq(communicationOutbox.id, row.id));
+
+			if (row.taskId) {
+				await tx
+					.update(communicationTasks)
+					.set({
+						status: "sent",
+						lastEventAt: now,
+					})
+					.where(eq(communicationTasks.id, row.taskId));
+			}
+		});
 
 		if (row.patientId) {
 			context.sentToday.set(
@@ -318,19 +319,21 @@ export async function processRow(
 	});
 
 	if (outcome.kind === "retry") {
-		await db
-			.update(communicationOutbox)
-			.set({
-				status: "queued",
-				attempts: attempt,
-				lockedAt: null,
-				lockedBy: null,
-				nextAttemptAt: new Date(now.getTime() + outcome.delaySeconds * 1000),
-				lastErrorClass: outcome.errorClass,
-				lastErrorMessage: outcome.errorMessage,
-				updatedAt: now,
-			})
-			.where(eq(communicationOutbox.id, row.id));
+		await withTenantCtx(row.organizationId, (tx) =>
+			tx
+				.update(communicationOutbox)
+				.set({
+					status: "queued",
+					attempts: attempt,
+					lockedAt: null,
+					lockedBy: null,
+					nextAttemptAt: new Date(now.getTime() + outcome.delaySeconds * 1000),
+					lastErrorClass: outcome.errorClass,
+					lastErrorMessage: outcome.errorMessage,
+					updatedAt: now,
+				})
+				.where(eq(communicationOutbox.id, row.id)),
+		);
 		return "retried";
 	}
 
@@ -359,24 +362,27 @@ export async function processRow(
 					nextChannel,
 					row.patientId,
 				);
-				if (nextAddr.address) {
+				const fallbackAddress = nextAddr.address;
+				if (fallbackAddress) {
 					const fit = checkChannelFit(nextChannel, row.body);
 					if (fit.ok) {
-						await db
-							.update(communicationOutbox)
-							.set({
-								channel: nextChannel,
-								recipientAddress: nextAddr.address,
-								status: "queued",
-								attempts: 0,
-								lockedAt: null,
-								lockedBy: null,
-								nextAttemptAt: now,
-								lastErrorClass: outcome.errorClass,
-								lastErrorMessage: `Каскад доставки: сбой канала ${channel} (${outcome.errorMessage ?? "ошибка"}), эскалация на ${nextChannel}`,
-								updatedAt: now,
-							})
-							.where(eq(communicationOutbox.id, row.id));
+						await withTenantCtx(row.organizationId, (tx) =>
+							tx
+								.update(communicationOutbox)
+								.set({
+									channel: nextChannel,
+									recipientAddress: fallbackAddress,
+									status: "queued",
+									attempts: 0,
+									lockedAt: null,
+									lockedBy: null,
+									nextAttemptAt: now,
+									lastErrorClass: outcome.errorClass,
+									lastErrorMessage: `Каскад доставки: сбой канала ${channel} (${outcome.errorMessage ?? "ошибка"}), эскалация на ${nextChannel}`,
+									updatedAt: now,
+								})
+								.where(eq(communicationOutbox.id, row.id)),
+						);
 						return "retried";
 					}
 				}
@@ -384,29 +390,31 @@ export async function processRow(
 		}
 	}
 
-	await db
-		.update(communicationOutbox)
-		.set({
-			status: outcome.kind === "suppressed" ? "suppressed" : "failed",
-			attempts: attempt,
-			lockedAt: null,
-			lockedBy: null,
-			lastErrorClass: outcome.errorClass,
-			lastErrorMessage: outcome.errorMessage,
-			updatedAt: now,
-		})
-		.where(eq(communicationOutbox.id, row.id));
-
-	if (row.taskId) {
-		await db
-			.update(communicationTasks)
+	await withTenantCtx(row.organizationId, async (tx) => {
+		await tx
+			.update(communicationOutbox)
 			.set({
-				status: "failed",
-				lastErrorMessage: outcome.errorMessage ?? outcome.errorClass,
-				lastEventAt: now,
+				status: outcome.kind === "suppressed" ? "suppressed" : "failed",
+				attempts: attempt,
+				lockedAt: null,
+				lockedBy: null,
+				lastErrorClass: outcome.errorClass,
+				lastErrorMessage: outcome.errorMessage,
+				updatedAt: now,
 			})
-			.where(eq(communicationTasks.id, row.taskId));
-	}
+			.where(eq(communicationOutbox.id, row.id));
+
+		if (row.taskId) {
+			await tx
+				.update(communicationTasks)
+				.set({
+					status: "failed",
+					lastErrorMessage: outcome.errorMessage ?? outcome.errorClass,
+					lastEventAt: now,
+				})
+				.where(eq(communicationTasks.id, row.taskId));
+		}
+	});
 
 	return outcome.kind === "suppressed" ? "not_configured" : "failed";
 }
@@ -560,19 +568,21 @@ export async function dispatchForOrganization(input: {
 
 		for (const [errorMessage, ids] of unknownFailures) {
 			if (ids.length > 0) {
-				await db
-					.update(communicationOutbox)
-					.set({
-						status: "queued",
-						attempts: sql`${communicationOutbox.attempts} + 1`,
-						lockedAt: null,
-						lockedBy: null,
-						nextAttemptAt: new Date(now.getTime() + 60_000),
-						lastErrorClass: "unknown",
-						lastErrorMessage: errorMessage,
-						updatedAt: now,
-					})
-					.where(inArray(communicationOutbox.id, ids));
+				await withTenantCtx(organizationId, (tx) =>
+					tx
+						.update(communicationOutbox)
+						.set({
+							status: "queued",
+							attempts: sql`${communicationOutbox.attempts} + 1`,
+							lockedAt: null,
+							lockedBy: null,
+							nextAttemptAt: new Date(now.getTime() + 60_000),
+							lastErrorClass: "unknown",
+							lastErrorMessage: errorMessage,
+							updatedAt: now,
+						})
+						.where(inArray(communicationOutbox.id, ids)),
+				);
 			}
 		}
 	}

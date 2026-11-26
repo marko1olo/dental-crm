@@ -13,6 +13,20 @@ import { type ConfigureClinicSetupInput, configureClinicSetupSchema } from "./cl
 export * from "./clinicSetupTypes.js";
 export * from "./clinicSetupServices.js";
 
+function toCanonicalClinicSchedule(schedule: {
+	startHour: number;
+	endHour: number;
+	workDays: number[];
+}) {
+	const padHour = (h: number) => `${String(Math.max(0, Math.min(23, Math.trunc(h)))).padStart(2, "0")}:00`;
+	return {
+		workdayStart: padHour(schedule.startHour),
+		workdayEnd: schedule.endHour >= 24 ? "23:59" : padHour(schedule.endHour),
+		workingDays: schedule.workDays,
+		appointmentBufferMinutes: 10,
+	};
+}
+
 export async function handleConfigureClinicSetup(args: ConfigureClinicSetupInput, context: DentalToolContext) {
 	const parsedArgs = configureClinicSetupSchema.parse(args);
 	const orgId = context.organizationId;
@@ -37,7 +51,7 @@ export async function handleConfigureClinicSetup(args: ConfigureClinicSetupInput
 				ogrn: parsedArgs.ogrn ?? null,
 				email: parsedArgs.email ?? null,
 				clinicMode: calculatedMode,
-				clinicSchedule: parsedArgs.schedule,
+				clinicSchedule: toCanonicalClinicSchedule(parsedArgs.schedule),
 				workspaceFeatureFlags: { schedule: true, emr: true, billing: true, imaging: true, kkm: true, inventory: true, analytics: true },
 				updatedAt: now,
 			})

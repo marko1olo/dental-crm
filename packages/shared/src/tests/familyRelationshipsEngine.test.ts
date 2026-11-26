@@ -12,7 +12,7 @@ import {
 	PATIENT_RELATIONSHIP_LABELS_RU,
 	resolveFamilyPrimaryPayer,
 	validateRelationshipLink,
-} from "../patients/familyRelationshipsEngine.js";
+} from "../patients/patientRelationshipsSchema.js";
 
 const ORG_ID = "00000000-0000-7000-8000-000000000001";
 const MOTHER_ID = "00000000-0000-7000-8000-000000000010";

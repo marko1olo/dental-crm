@@ -38,7 +38,7 @@ import {
 	resolveEmergencyContacts,
 	resolveFamilyPayers,
 	updateRelationshipInputSchema,
-} from "../patientRelationshipsEngine.js";
+} from "../../patients/patientRelationshipsSchema.js";
 import {
 	createRelationshipPair as createRelationshipPairFromClinicalIndex,
 	formatKinshipSummaryA4 as formatKinshipSummaryA4FromClinicalIndex,

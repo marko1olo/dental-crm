@@ -20,7 +20,7 @@ export const n3ConfigUpdateBodySchema = z.object({
 	eventLogToken: z.string().min(1).optional(),
 	isVipnetChannelActive: z.boolean().optional(),
 	timeoutMs: z.number().int().positive().optional(),
-});
+}).strict();
 
 export async function resolveN3HealthConfig(
 	orgId: string,

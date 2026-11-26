@@ -9,6 +9,7 @@ export {
 	documentVoidValidationMessage,
 	issuedArchiveIntegrityError,
 	normalizedDocumentChainValue,
+	toPublicGeneratedDocument,
 } from "./types.js";
 
 export {

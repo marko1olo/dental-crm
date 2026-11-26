@@ -6,9 +6,11 @@ import {
 	updateClinicalRuleSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireClinicalMutationAccess,
 	requireClinicalReadAccess,
+	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
 import {
 	createClinicalRuleInDb,
@@ -307,15 +309,42 @@ export async function registerClinicalProtocolRoutes(app: FastifyInstance) {
 		}
 	});
 
+	const emrTemplatesQuerySchema = z
+		.object({
+			q: z.string().trim().max(200).optional(),
+			category: z.string().trim().max(120).optional(),
+		})
+		.strict();
+
 	app.get(
 		"/api/emr/templates",
-		async (
-			request: FastifyRequest<{
-				Querystring: { q?: string; category?: string };
-			}>,
-			reply: FastifyReply,
-		) => {
-			const { q, category } = request.query ?? {};
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"emr templates read",
+				))
+			) {
+				return;
+			}
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"emr templates read",
+			);
+			if (!orgId) return;
+
+			const parsed = emrTemplatesQuerySchema.safeParse(request.query ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры фильтрации шаблонов ЭМК.",
+					details: parsed.error.issues,
+				});
+			}
+
+			const { q, category } = parsed.data;
 			const { getStatutoryEmrTemplates } = await import(
 				"../../services/clinical/statutoryCatalogs.js"
 			);

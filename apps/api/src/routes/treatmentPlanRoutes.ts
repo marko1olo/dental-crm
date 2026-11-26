@@ -188,8 +188,14 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 		const context = await requireClinicalMutationContext(request, reply, "run treatment plan dropout prevention");
 		if (!context) return;
 		const parsed = dropoutPreventionRunBodySchema.safeParse(request.body ?? {});
-		const minDays = parsed.success ? parsed.data.minDays : 14;
-		const result = await checkAndGenerateDropoutRecalls(context.organizationId, minDays);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запуска профилактики отвала.",
+				issues: parsed.error.issues,
+			});
+		}
+		const result = await checkAndGenerateDropoutRecalls(context.organizationId, parsed.data.minDays);
 		return reply.code(200).send({
 			success: true,
 			data: result,
@@ -203,8 +209,14 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 			const context = await requireClinicalMutationContext(request, reply, "create dropout recall for plan");
 			if (!context) return;
 			const parsed = dropoutRecallBodySchema.safeParse(request.body ?? {});
-			const notes = parsed.success ? parsed.data.notes : undefined;
-			const result = await createSinglePlanDropoutRecall(context.organizationId, request.params.id, notes);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры создания задачи куратору.",
+					issues: parsed.error.issues,
+				});
+			}
+			const result = await createSinglePlanDropoutRecall(context.organizationId, request.params.id, parsed.data.notes);
 			const statusCode = result.success ? 200 : 400;
 			return reply.code(statusCode).send(result);
 		},

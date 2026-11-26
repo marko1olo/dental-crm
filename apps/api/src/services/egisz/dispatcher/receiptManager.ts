@@ -6,7 +6,7 @@
  */
 
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { egiszLogs, egiszOutbox } from "../../../db/schema.js";
 import type { OiisGatewayClient } from "../OiisGatewayClient.js";
 import type { EgiszRemdRegistrationReceipt } from "./types.js";
@@ -26,31 +26,33 @@ export async function getReceiptByOutboxId(
 		return null;
 	}
 
-	const [row] = await db
-		.select({
-			gatewayResponseJson: egiszOutbox.gatewayResponseJson,
-			status: egiszOutbox.status,
-			remdDocumentId: egiszOutbox.remdDocumentId,
-			remdTransactionId: egiszOutbox.remdTransactionId,
-			organizationId: egiszOutbox.organizationId,
-			patientId: egiszOutbox.patientId,
-			visitId: egiszOutbox.visitId,
-			documentId: egiszOutbox.documentId,
-			docTypeNsiCode: egiszOutbox.docTypeNsiCode,
-			payloadHashSha256: egiszOutbox.payloadHashSha256,
-			doctorCertSerial: egiszOutbox.doctorCertSerial,
-			doctorCertSubject: egiszOutbox.doctorCertSubject,
-			moCertSerial: egiszOutbox.moCertSerial,
-			updatedAt: egiszOutbox.updatedAt,
-		})
-		.from(egiszOutbox)
-		.where(
-			and(
-				eq(egiszOutbox.id, outboxId),
-				eq(egiszOutbox.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	const [row] = await withTenantCtx(organizationId, async (tx) =>
+		tx
+			.select({
+				gatewayResponseJson: egiszOutbox.gatewayResponseJson,
+				status: egiszOutbox.status,
+				remdDocumentId: egiszOutbox.remdDocumentId,
+				remdTransactionId: egiszOutbox.remdTransactionId,
+				organizationId: egiszOutbox.organizationId,
+				patientId: egiszOutbox.patientId,
+				visitId: egiszOutbox.visitId,
+				documentId: egiszOutbox.documentId,
+				docTypeNsiCode: egiszOutbox.docTypeNsiCode,
+				payloadHashSha256: egiszOutbox.payloadHashSha256,
+				doctorCertSerial: egiszOutbox.doctorCertSerial,
+				doctorCertSubject: egiszOutbox.doctorCertSubject,
+				moCertSerial: egiszOutbox.moCertSerial,
+				updatedAt: egiszOutbox.updatedAt,
+			})
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.id, outboxId),
+					eq(egiszOutbox.organizationId, organizationId),
+				),
+			)
+			.limit(1),
+	);
 
 	if (!row) return null;
 
@@ -95,40 +97,42 @@ export async function getReceiptByVisitId(
 		return null;
 	}
 
-	const [row] = await db
-		.select({ id: egiszOutbox.id })
-		.from(egiszOutbox)
-		.where(
-			and(
-				eq(egiszOutbox.visitId, visitId),
-				eq(egiszOutbox.organizationId, organizationId),
-				eq(egiszOutbox.status, "registered_in_remd"),
-			),
-		)
-		.orderBy(desc(egiszOutbox.createdAt))
-		.limit(1);
+	return withTenantCtx(organizationId, async (tx) => {
+		const [row] = await tx
+			.select({ id: egiszOutbox.id })
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.visitId, visitId),
+					eq(egiszOutbox.organizationId, organizationId),
+					eq(egiszOutbox.status, "registered_in_remd"),
+				),
+			)
+			.orderBy(desc(egiszOutbox.createdAt))
+			.limit(1);
 
-	if (row) {
-		return getReceiptByOutboxId(client, organizationId, row.id);
-	}
+		if (row) {
+			return getReceiptByOutboxId(client, organizationId, row.id);
+		}
 
-	// Check legacy egiszLogs
-	const [logRow] = await db
-		.select({ errorDetails: egiszLogs.errorDetails, status: egiszLogs.status })
-		.from(egiszLogs)
-		.where(
-			and(
-				eq(egiszLogs.visitId, visitId),
-				eq(egiszLogs.organizationId, organizationId),
-			),
-		)
-		.orderBy(desc(egiszLogs.createdAt))
-		.limit(1);
+		// Check legacy egiszLogs
+		const [logRow] = await tx
+			.select({ errorDetails: egiszLogs.errorDetails, status: egiszLogs.status })
+			.from(egiszLogs)
+			.where(
+				and(
+					eq(egiszLogs.visitId, visitId),
+					eq(egiszLogs.organizationId, organizationId),
+				),
+			)
+			.orderBy(desc(egiszLogs.createdAt))
+			.limit(1);
 
-	const details = logRow?.errorDetails as Record<string, unknown> | null;
-	if (details?.receipt && typeof details.receipt === "object") {
-		return details.receipt as EgiszRemdRegistrationReceipt;
-	}
+		const details = logRow?.errorDetails as Record<string, unknown> | null;
+		if (details?.receipt && typeof details.receipt === "object") {
+			return details.receipt as EgiszRemdRegistrationReceipt;
+		}
 
-	return null;
+		return null;
+	});
 }

@@ -392,23 +392,30 @@ export async function registerTemplateRenderAndPreviewRoutes(
 							and(
 								eq(payments.visitId, body.visitId),
 								eq(payments.organizationId, currentOrg.id),
+								eq(payments.status, "paid"),
 							),
 						);
 
-					if (visitPayments.length > 0) {
-						const totalKop = visitPayments.reduce(
-							(sum, p) =>
-								sum +
-								(p.amountKopecks != null
+					const paidAmounts = visitPayments
+						.map((p) => ({
+							payment: p,
+							kopecks:
+								p.amountKopecks != null
 									? Number(p.amountKopecks)
-									: parseKopecks(p.amountRub ?? 0)),
+									: parseKopecks(p.amountRub ?? 0),
+						}))
+						.filter((entry) => entry.kopecks > 0);
+
+					if (paidAmounts.length > 0) {
+						const totalKop = paidAmounts.reduce(
+							(sum, entry) => sum + entry.kopecks,
 							0,
 						);
 						financialContextData = {
 							amountRubles: kopecksToRubles(totalKop),
 							amountKopecks: totalKop,
-							actNumber: visitPayments[0]?.documentId ?? undefined,
-							actDate: visitPayments[0]?.createdAt ?? undefined,
+							actNumber: paidAmounts[0]?.payment.documentId ?? undefined,
+							actDate: paidAmounts[0]?.payment.createdAt ?? undefined,
 						};
 					}
 				}
@@ -500,25 +507,45 @@ export async function registerTemplateRenderAndPreviewRoutes(
 							}
 						: undefined;
 
-				// Объединение контекста
+				// Объединение контекста: БД-подтверждённые сущности, финансовые и системные поля документа не перезаписываются overrides
+				const overrides = body.overrides;
+				const allowDoctorOverride =
+					!body.doctorId || doctorContextData.fullName === "___________________";
 				const executionContext: TemplateExecutionContext = {
-					clinic: clinicData,
-					patient: patientContextData,
-					representative: representativeContextData,
-					authorizedPerson: authorizedPersonContextData,
-					doctor: doctorContextData,
-					administrator: administratorContextData,
+					clinic: !org && overrides?.clinic
+						? (overrides.clinic as TemplateExecutionContext["clinic"])
+						: clinicData,
+					patient:
+						patientContextData ??
+						(overrides?.patient as TemplateExecutionContext["patient"]),
+					representative:
+						representativeContextData ??
+						(overrides?.representative as TemplateExecutionContext["representative"]),
+					authorizedPerson:
+						authorizedPersonContextData ??
+						(overrides?.authorizedPerson as TemplateExecutionContext["authorizedPerson"]),
+					doctor: allowDoctorOverride && overrides?.doctor
+						? (overrides.doctor as TemplateExecutionContext["doctor"])
+						: doctorContextData,
+					administrator:
+						administratorContextData ??
+						(overrides?.administrator as TemplateExecutionContext["administrator"]),
 					currentUser: currentUserContextData,
-					appointment: appointmentContextData,
+					appointment:
+						appointmentContextData ??
+						(overrides?.appointment as TemplateExecutionContext["appointment"]),
 					financial: financialContextData,
-					clinicalExamination: clinicalExamContextData,
-					dentalFormula: dentalFormulaContextData,
+					clinicalExamination:
+						clinicalExamContextData ??
+						(overrides?.clinicalExamination as TemplateExecutionContext["clinicalExamination"]),
+					dentalFormula:
+						dentalFormulaContextData ??
+						(overrides?.dentalFormula as TemplateExecutionContext["dentalFormula"]),
 					currentDate: new Date(),
 					document: {
 						number: `БЛ-${randomInt(1000, 10000)}`,
 						createdAt: new Date(),
 					},
-					...(body.overrides as Partial<TemplateExecutionContext>),
 				};
 
 				// Рендеринг HTML

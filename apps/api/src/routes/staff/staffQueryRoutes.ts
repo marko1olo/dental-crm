@@ -5,7 +5,7 @@ import {
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import { evaluatePasswordBodySchema, staffCandidateSchema } from "./staffSchemas.js";
@@ -21,15 +21,22 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 		const auth = await resolveOrganizationId(request, reply);
 		if (!auth) return;
 
-		const staffRows = await db
-			.select()
-			.from(schema.users)
-			.where(eq(schema.users.organizationId, auth.orgId));
+		const { staffRows, commissions } = await withTenantCtx(
+			auth.orgId,
+			async (tx) => {
+				const rows = await tx
+					.select()
+					.from(schema.users)
+					.where(eq(schema.users.organizationId, auth.orgId));
 
-		const commissions = await db
-			.select()
-			.from(schema.doctorCommissions)
-			.where(eq(schema.doctorCommissions.organizationId, auth.orgId));
+				const commRows = await tx
+					.select()
+					.from(schema.doctorCommissions)
+					.where(eq(schema.doctorCommissions.organizationId, auth.orgId));
+
+				return { staffRows: rows, commissions: commRows };
+			},
+		);
 
 		const commissionMap = new Map<string, (typeof commissions)[0]>();
 		for (const comm of commissions) {
@@ -64,16 +71,33 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 				message: "Некорректный идентификатор сотрудника.",
 			};
 		}
-		const [user] = await db
-			.select()
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			)
-			.limit(1);
+		const { user, commissionRow } = await withTenantCtx(auth.orgId, async (tx) => {
+			const [u] = await tx
+				.select()
+				.from(schema.users)
+				.where(
+					and(
+						eq(schema.users.id, params.staffId),
+						eq(schema.users.organizationId, auth.orgId),
+					),
+				)
+				.limit(1);
+
+			if (!u) return { user: null, commissionRow: undefined };
+
+			const [comm] = await tx
+				.select()
+				.from(schema.doctorCommissions)
+				.where(
+					and(
+						eq(schema.doctorCommissions.organizationId, auth.orgId),
+						eq(schema.doctorCommissions.userId, params.staffId),
+					),
+				)
+				.limit(1);
+
+			return { user: u, commissionRow: comm };
+		});
 
 		if (!user) {
 			reply.code(404);
@@ -82,17 +106,6 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 				message: "Сотрудник не найден в этой клинике.",
 			};
 		}
-
-		const [commissionRow] = await db
-			.select()
-			.from(schema.doctorCommissions)
-			.where(
-				and(
-					eq(schema.doctorCommissions.organizationId, auth.orgId),
-					eq(schema.doctorCommissions.userId, params.staffId),
-				),
-			)
-			.limit(1);
 
 		return assembleStaffProfile(
 			user,
@@ -118,17 +131,19 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 			};
 		}
 
-		const staffRows = await db
-			.select({
-				id: schema.users.id,
-				fullName: schema.users.fullName,
-				snils: schema.users.snils,
-				email: schema.users.email,
-				phone: schema.users.phone,
-				uiPreferences: schema.users.uiPreferences,
-			})
-			.from(schema.users)
-			.where(eq(schema.users.organizationId, auth.orgId));
+		const staffRows = await withTenantCtx(auth.orgId, (tx) =>
+			tx
+				.select({
+					id: schema.users.id,
+					fullName: schema.users.fullName,
+					snils: schema.users.snils,
+					email: schema.users.email,
+					phone: schema.users.phone,
+					uiPreferences: schema.users.uiPreferences,
+				})
+				.from(schema.users)
+				.where(eq(schema.users.organizationId, auth.orgId)),
+		);
 
 		const candidateList: StaffMemberSearchCandidate[] = staffRows.map((u) => {
 			const ui = (u.uiPreferences as Record<string, unknown>) || {};
@@ -194,21 +209,47 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 				message: "Некорректный идентификатор сотрудника.",
 			};
 		}
-		const [user] = await db
-			.select({
-				id: schema.users.id,
-				fullName: schema.users.fullName,
-				currentSessionId: schema.users.currentSessionId,
-				createdAt: schema.users.createdAt,
-			})
-			.from(schema.users)
-			.where(
-				and(
-					eq(schema.users.id, params.staffId),
-					eq(schema.users.organizationId, auth.orgId),
-				),
-			)
-			.limit(1);
+		const { user, liveEnforcements } = await withTenantCtx(
+			auth.orgId,
+			async (tx) => {
+				const [u] = await tx
+					.select({
+						id: schema.users.id,
+						fullName: schema.users.fullName,
+						currentSessionId: schema.users.currentSessionId,
+						createdAt: schema.users.createdAt,
+					})
+					.from(schema.users)
+					.where(
+						and(
+							eq(schema.users.id, params.staffId),
+							eq(schema.users.organizationId, auth.orgId),
+						),
+					)
+					.limit(1);
+
+				if (!u) return { user: null, liveEnforcements: [] };
+
+				const enforcements = await tx
+					.select({
+						id: schema.singleSessionEnforcements.id,
+						activeSessionToken:
+							schema.singleSessionEnforcements.activeSessionToken,
+						clientIp: schema.singleSessionEnforcements.clientIp,
+						userAgent: schema.singleSessionEnforcements.userAgent,
+						lastActiveAt: schema.singleSessionEnforcements.lastActiveAt,
+					})
+					.from(schema.singleSessionEnforcements)
+					.where(
+						and(
+							eq(schema.singleSessionEnforcements.userId, params.staffId),
+							eq(schema.singleSessionEnforcements.organizationId, auth.orgId),
+						),
+					);
+
+				return { user: u, liveEnforcements: enforcements };
+			},
+		);
 
 		if (!user) {
 			reply.code(404);
@@ -217,22 +258,6 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 				message: "Сотрудник не найден.",
 			};
 		}
-
-		const liveEnforcements = await db
-			.select({
-				id: schema.singleSessionEnforcements.id,
-				activeSessionToken: schema.singleSessionEnforcements.activeSessionToken,
-				clientIp: schema.singleSessionEnforcements.clientIp,
-				userAgent: schema.singleSessionEnforcements.userAgent,
-				lastActiveAt: schema.singleSessionEnforcements.lastActiveAt,
-			})
-			.from(schema.singleSessionEnforcements)
-			.where(
-				and(
-					eq(schema.singleSessionEnforcements.userId, params.staffId),
-					eq(schema.singleSessionEnforcements.organizationId, auth.orgId),
-				),
-			);
 
 		const activeSessions: StaffSessionTelemetry[] = liveEnforcements.map((s) => ({
 			sessionId: s.activeSessionToken || s.id,

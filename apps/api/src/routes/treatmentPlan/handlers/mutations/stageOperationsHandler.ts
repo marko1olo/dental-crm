@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { isValidUuid } from "@dental/shared";
 import { withTenantCtx } from "../../../../db/rls.js";
 import { treatmentPlanStages, treatmentPlans } from "../../../../db/schema.js";
 import { updateTreatmentPlanStageSchema } from "./schemas.js";
@@ -14,6 +15,12 @@ export async function handleUpdateTreatmentPlanStage(
 	organizationId: string,
 ) {
 	const { id: planId, stageId } = request.params;
+	if (!isValidUuid(planId)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор плана лечения.",
+		});
+	}
 	const parsed = updateTreatmentPlanStageSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -72,7 +79,12 @@ export async function handleUpdateTreatmentPlanStage(
 				autoArchived: isCompleted ? true : targetStage.autoArchived,
 				archivedAt: isCompleted ? new Date() : targetStage.archivedAt,
 			})
-			.where(eq(treatmentPlanStages.id, targetStage.id))
+			.where(
+				and(
+					eq(treatmentPlanStages.id, targetStage.id),
+					eq(treatmentPlanStages.organizationId, organizationId),
+				),
+			)
 			.returning();
 
 		return updatedStage ? { kind: "ok" as const, stage: updatedStage } : { kind: "stage_not_found" as const };

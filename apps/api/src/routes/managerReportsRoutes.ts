@@ -13,6 +13,8 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
+import { withTenantCtx } from "../db/rls.js";
 import { calculateCohortLtv } from "./analytics/cohortLtvCalculator.js";
 import { requireExecutiveAccess } from "./analytics/executiveAccessGuard.js";
 import { queryExecutiveDepartmentsAndDoctors } from "./analytics/executiveDoctorsQuery.js";
@@ -28,13 +30,13 @@ import {
 	type ReportScope,
 } from "../services/reports/managerReports.js";
 
-interface ManagerReportQuery {
-	readonly period?: string;
-	readonly from?: string;
-	readonly to?: string;
-	readonly minutesPerDay?: number;
-	readonly workingDaysPerWeek?: number;
-}
+const managerReportQuerySchema = z.object({
+	period: z.string().trim().min(1).max(32).optional(),
+	from: z.string().trim().min(1).max(64).optional(),
+	to: z.string().trim().min(1).max(64).optional(),
+	minutesPerDay: z.coerce.number().int().min(60).max(1440).optional(),
+	workingDaysPerWeek: z.coerce.number().int().min(1).max(7).optional(),
+}).strict();
 
 export async function registerManagerReportsRoutes(app: FastifyInstance): Promise<void> {
 	/**
@@ -44,28 +46,39 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
+		const parsedQuery = managerReportQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				success: false,
+				error: "ValidationError",
+				message: "Некорректные параметры запроса финансового отчёта.",
+			});
+		}
+
 		try {
-			const query = request.query as ManagerReportQuery;
+			const query = parsedQuery.data;
 			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
-			const timeZone = await clinicTimeZone(orgId);
+			return await withTenantCtx(orgId, async (tx) => {
+				const timeZone = await clinicTimeZone(orgId, tx);
 
-			const scope: ReportScope = {
-				organizationId: orgId,
-				from: range.startDate,
-				to: range.endDate,
-				timeZone,
-			};
+				const scope: ReportScope = {
+					organizationId: orgId,
+					from: range.startDate,
+					to: range.endDate,
+					timeZone,
+				};
 
-			const summary = await financialExecutiveSummary(scope);
+				const summary = await financialExecutiveSummary(scope, tx);
 
-			return {
-				success: true,
-				data: {
-					...summary,
-					amountKopecks: summary.totalRevenueKopecks,
-					periodKey: range.execPeriod,
-				},
-			};
+				return {
+					success: true,
+					data: {
+						...summary,
+						amountKopecks: summary.totalRevenueKopecks,
+						periodKey: range.execPeriod,
+					},
+				};
+			});
 		} catch (err) {
 			request.log.error({ err }, "Ошибка формирования финансового отчета руководителя");
 			return reply.code(500).send({
@@ -83,58 +96,69 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
+		const parsedQuery = managerReportQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				success: false,
+				error: "ValidationError",
+				message: "Некорректные параметры запроса загрузки кресел.",
+			});
+		}
+
 		try {
-			const query = request.query as ManagerReportQuery;
+			const query = parsedQuery.data;
 			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
-			const timeZone = await clinicTimeZone(orgId);
+			return await withTenantCtx(orgId, async (tx) => {
+				const timeZone = await clinicTimeZone(orgId, tx);
 
-			const scope: ReportScope = {
-				organizationId: orgId,
-				from: range.startDate,
-				to: range.endDate,
-				timeZone,
-			};
+				const scope: ReportScope = {
+					organizationId: orgId,
+					from: range.startDate,
+					to: range.endDate,
+					timeZone,
+				};
 
-			const options: { minutesPerDay?: number; workingDaysPerWeek?: number } = {};
-			if (typeof query.minutesPerDay === "number") options.minutesPerDay = query.minutesPerDay;
-			if (typeof query.workingDaysPerWeek === "number") options.workingDaysPerWeek = query.workingDaysPerWeek;
+				const options: { minutesPerDay?: number; workingDaysPerWeek?: number } = {};
+				if (typeof query.minutesPerDay === "number") options.minutesPerDay = query.minutesPerDay;
+				if (typeof query.workingDaysPerWeek === "number") options.workingDaysPerWeek = query.workingDaysPerWeek;
 
-			const report = await chairLoad(scope, options);
+				const report = await chairLoad(scope, options, tx);
 
-			// Расчет агрегированной загрузки по клинике в целом
-			const bookedMinutes = report.rows.reduce((sum, r) => sum + r.bookedMinutes, 0);
-			const chairsWithId = report.rows.filter((r) => r.chairId !== null);
-			const totalChairsCount = Math.max(1, chairsWithId.length || 1);
-			const totalAvailableMinutes = totalChairsCount * report.basis.totalMinutesPerChair;
-			const overallOccupancyPercent = totalAvailableMinutes > 0
-				? Math.min(100, Math.round((bookedMinutes / totalAvailableMinutes) * 100))
-				: 0;
+				// Расчет агрегированной загрузки по клинике в целом
+				const bookedMinutes = report.rows.reduce((sum, r) => sum + r.bookedMinutes, 0);
+				const chairsWithId = report.rows.filter((r) => r.chairId !== null);
+				const totalChairsCount = Math.max(1, chairsWithId.length || 1);
+				const totalAvailableMinutes = totalChairsCount * report.basis.totalMinutesPerChair;
+				const overallOccupancyPercent = totalAvailableMinutes > 0
+					? Math.min(100, Math.round((bookedMinutes / totalAvailableMinutes) * 100))
+					: 0;
 
-			const overallStatus: "low" | "optimal" | "high" =
-				overallOccupancyPercent < 65
-					? "low"
-					: overallOccupancyPercent <= 85
-						? "optimal"
-						: "high";
+				const overallStatus: "low" | "optimal" | "high" =
+					overallOccupancyPercent < 65
+						? "low"
+						: overallOccupancyPercent <= 85
+							? "optimal"
+							: "high";
 
-			return {
-				success: true,
-				data: {
-					period: {
-						from: range.startDate.toISOString(),
-						to: range.endDate.toISOString(),
+				return {
+					success: true,
+					data: {
+						period: {
+							from: range.startDate.toISOString(),
+							to: range.endDate.toISOString(),
+						},
+						periodKey: range.execPeriod,
+						chairOccupancyPercent: overallOccupancyPercent,
+						chairOccupancyStatus: overallStatus,
+						occupiedMinutes: bookedMinutes,
+						availableMinutes: totalAvailableMinutes,
+						totalChairsCount,
+						chairs: report.rows,
+						basis: report.basis,
+						isEmpty: report.isEmpty,
 					},
-					periodKey: range.execPeriod,
-					chairOccupancyPercent: overallOccupancyPercent,
-					chairOccupancyStatus: overallStatus,
-					occupiedMinutes: bookedMinutes,
-					availableMinutes: totalAvailableMinutes,
-					totalChairsCount,
-					chairs: report.rows,
-					basis: report.basis,
-					isEmpty: report.isEmpty,
-				},
-			};
+				};
+			});
 		} catch (err) {
 			request.log.error({ err }, "Ошибка формирования отчета по загрузке кресел");
 			return reply.code(500).send({
@@ -152,51 +176,60 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
+		const parsedQuery = managerReportQuerySchema.safeParse(request.query ?? {});
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				success: false,
+				error: "ValidationError",
+				message: "Некорректные параметры запроса KPI отчёта.",
+			});
+		}
+
 		try {
-			const query = request.query as ManagerReportQuery;
+			const query = parsedQuery.data;
 			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
-			const timeZone = await clinicTimeZone(orgId);
+			return await withTenantCtx(orgId, async (tx) => {
+				const timeZone = await clinicTimeZone(orgId, tx);
 
-			const { departments, activeDoctorsCount, topDoctors, topProcedures } =
-				await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate, range.endDate);
+				const { departments, activeDoctorsCount, topDoctors, topProcedures } =
+					await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate, range.endDate, tx);
 
-			const {
-				kpis,
-				funnelStages,
-				totalRevenueKopecks,
-				totalAppointments,
-				plansPresentedCount,
-			} = await queryExecutiveKpiAndFunnel(orgId, range, activeDoctorsCount);
-
-			// [DEF-2.1] Подключение полного аналитического среза клиники к единому SSOT-фасаду руководителя
-			const [cohortLtvRes, noShowHeatmap] = await Promise.all([
-				calculateCohortLtv(orgId, range.endDate),
-				calculateNoShowHeatmap(orgId, range.startDate, timeZone),
-			]);
-
-			const isEmpty =
-				totalRevenueKopecks === 0 &&
-				totalAppointments === 0 &&
-				plansPresentedCount === 0;
-
-			return {
-				success: true,
-				data: {
+				const {
 					kpis,
 					funnelStages,
-					departments,
-					topDoctors,
-					topProcedures,
-					cohortLtv: cohortLtvRes.cohortLtvJson,
-					cohortLtvJson: cohortLtvRes.cohortLtvJson,
-					noShowHeatmap,
-					period: range.execPeriod,
-					dateRangeStartIso: range.startDate.toISOString(),
-					dateRangeEndIso: range.endDate.toISOString(),
-					updatedAtIso: range.endDate.toISOString(),
-					isEmpty,
-				},
-			};
+					totalRevenueKopecks,
+					totalAppointments,
+					plansPresentedCount,
+				} = await queryExecutiveKpiAndFunnel(orgId, range, activeDoctorsCount, tx);
+
+				// [DEF-2.1] Подключение полного аналитического среза клиники к единому SSOT-фасаду руководителя
+				const cohortLtvRes = await calculateCohortLtv(orgId, range.endDate, tx);
+				const noShowHeatmap = await calculateNoShowHeatmap(orgId, range.startDate, timeZone, tx);
+
+				const isEmpty =
+					totalRevenueKopecks === 0 &&
+					totalAppointments === 0 &&
+					plansPresentedCount === 0;
+
+				return {
+					success: true,
+					data: {
+						kpis,
+						funnelStages,
+						departments,
+						topDoctors,
+						topProcedures,
+						cohortLtv: cohortLtvRes.cohortLtvJson,
+						cohortLtvJson: cohortLtvRes.cohortLtvJson,
+						noShowHeatmap,
+						period: range.execPeriod,
+						dateRangeStartIso: range.startDate.toISOString(),
+						dateRangeEndIso: range.endDate.toISOString(),
+						updatedAtIso: range.endDate.toISOString(),
+						isEmpty,
+					},
+				};
+			});
 		} catch (err) {
 			request.log.error({ err }, "Ошибка формирования сводного KPI отчета");
 			return reply.code(500).send({

@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, gt, or } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { and, eq, gt, or, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { communicationEvents } from "../../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
@@ -56,47 +55,6 @@ export async function processSendMessage(
 		}
 	}
 
-	const fifteenSecAgo = new Date(Date.now() - 15 * 1000);
-	const duplicateConditions = [
-		and(
-			eq(communicationEvents.message, messageToSend),
-			gt(communicationEvents.createdAt, fifteenSecAgo),
-		),
-	];
-	if (idempotencyKey) {
-		duplicateConditions.push(
-			eq(communicationEvents.idempotencyKey, idempotencyKey),
-		);
-	}
-
-	const recentEvents = await db
-		.select({
-			id: communicationEvents.id,
-			createdAt: communicationEvents.createdAt,
-		})
-		.from(communicationEvents)
-		.where(
-			and(
-				eq(communicationEvents.organizationId, orgId),
-				eq(communicationEvents.patientId, patientId),
-				eq(communicationEvents.channel, resolvedChannel),
-				eq(communicationEvents.direction, "outbound"),
-				or(...duplicateConditions),
-			),
-		)
-		.limit(1);
-
-	if (recentEvents.length > 0) {
-		return {
-			success: true,
-			duplicate: true,
-			event: recentEvents[0],
-			message: "Сообщение уже отправлено (защита от повторной отправки)",
-			warning,
-			hasMedicalSecrecyWarning: Boolean(warning),
-		};
-	}
-
 	// 1. Проверяем наличие адреса получателя (телефон, email, telegram chatId, MAX)
 	const recipient = await resolveRecipientAddress(
 		orgId,
@@ -104,36 +62,7 @@ export async function processSendMessage(
 		patientId,
 	);
 
-	if (!recipient.address) {
-		const [failedEvent] = await withTenantCtx(orgId, async (tx) =>
-			tx
-				.insert(communicationEvents)
-				.values({
-					organizationId: orgId,
-					patientId,
-					channel: resolvedChannel,
-					direction: "outbound",
-					status: "failed",
-					message: messageToSend,
-					idempotencyKey: idempotencyKey ?? null,
-				})
-				.returning(),
-		);
-
-		return {
-			success: false,
-			status: 422,
-			error: "RecipientAddressMissing",
-			message:
-				recipient.reason ||
-				"Не удалось определить контактные данные получателя для выбранного канала связи.",
-			event: failedEvent,
-			warning,
-			hasMedicalSecrecyWarning: Boolean(warning),
-		};
-	}
-
-	// 2. Постановка в PostgreSQL Transactional Outbox (DEF-17-03 / Mandate 8bo)
+	// 2. Постановка в PostgreSQL Transactional Outbox (DEF-17-03 / Mandate 8bo) с RLS + advisory lock
 	const contentHash = createHash("sha256")
 		.update(`${orgId}:${patientId}:${resolvedChannel}:${messageToSend}`)
 		.digest("hex")
@@ -144,11 +73,68 @@ export async function processSendMessage(
 	const intentCode: CommunicationIntentCode =
 		(data.intent as CommunicationIntentCode) || "general";
 
+	let duplicateEvent: { id: string; createdAt: Date | null } | undefined;
 	let enqueueRes: EnqueueMessageResult | undefined;
 	let insertedEvent: typeof communicationEvents.$inferSelect | undefined;
 	let failedEvent: typeof communicationEvents.$inferSelect | undefined;
+	let recipientFailedEvent: typeof communicationEvents.$inferSelect | undefined;
 
 	await withTenantCtx(orgId, async (tx) => {
+		const lockKey = `${orgId}:${patientId}:${resolvedChannel}`;
+		await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+
+		const fifteenSecAgo = new Date(Date.now() - 15 * 1000);
+		const duplicateConditions = [
+			and(
+				eq(communicationEvents.message, messageToSend),
+				gt(communicationEvents.createdAt, fifteenSecAgo),
+			),
+		];
+		if (idempotencyKey) {
+			duplicateConditions.push(
+				eq(communicationEvents.idempotencyKey, idempotencyKey),
+			);
+		}
+
+		const recentEvents = await tx
+			.select({
+				id: communicationEvents.id,
+				createdAt: communicationEvents.createdAt,
+			})
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.organizationId, orgId),
+					eq(communicationEvents.patientId, patientId),
+					eq(communicationEvents.channel, resolvedChannel),
+					eq(communicationEvents.direction, "outbound"),
+					or(...duplicateConditions),
+				),
+			)
+			.limit(1);
+
+		if (recentEvents.length > 0) {
+			duplicateEvent = recentEvents[0];
+			return;
+		}
+
+		if (!recipient.address) {
+			const [failed] = await tx
+				.insert(communicationEvents)
+				.values({
+					organizationId: orgId,
+					patientId,
+					channel: resolvedChannel,
+					direction: "outbound",
+					status: "failed",
+					message: messageToSend,
+					idempotencyKey: idempotencyKey ?? null,
+				})
+				.returning();
+			recipientFailedEvent = failed;
+			return;
+		}
+
 		enqueueRes = await enqueueMessage(
 			{
 				organizationId: orgId,
@@ -195,6 +181,31 @@ export async function processSendMessage(
 			.returning();
 		insertedEvent = inserted;
 	});
+
+	if (duplicateEvent) {
+		return {
+			success: true,
+			duplicate: true,
+			event: duplicateEvent,
+			message: "Сообщение уже отправлено (защита от повторной отправки)",
+			warning,
+			hasMedicalSecrecyWarning: Boolean(warning),
+		};
+	}
+
+	if (recipientFailedEvent || !recipient.address) {
+		return {
+			success: false,
+			status: 422,
+			error: "RecipientAddressMissing",
+			message:
+				recipient.reason ||
+				"Не удалось определить контактные данные получателя для выбранного канала связи.",
+			event: recipientFailedEvent,
+			warning,
+			hasMedicalSecrecyWarning: Boolean(warning),
+		};
+	}
 
 	if (!enqueueRes || !enqueueRes.ok) {
 		return {

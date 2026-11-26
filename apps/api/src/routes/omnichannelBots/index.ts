@@ -219,7 +219,7 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Некорректные параметры перехвата диалога.",
+				message: parsed.error.issues[0]?.message || "Некорректные параметры перехвата диалога.",
 			});
 		}
 
@@ -246,7 +246,7 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Некорректные параметры возврата диалога.",
+				message: parsed.error.issues[0]?.message || "Некорректные параметры возврата диалога.",
 			});
 		}
 
@@ -292,7 +292,7 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Некорректные параметры привязки пациента.",
+				message: parsed.error.issues[0]?.message || "Некорректные параметры привязки пациента.",
 			});
 		}
 
@@ -336,7 +336,7 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 		if (!parsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Не заполнены параметры записи на приём.",
+				message: parsed.error.issues[0]?.message || "Не заполнены параметры записи на приём.",
 			});
 		}
 

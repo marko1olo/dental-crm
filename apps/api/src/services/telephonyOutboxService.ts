@@ -637,16 +637,29 @@ export class TelephonyOutboxService {
 	/**
 	 * Purges a dead-lettered call from the queue.
 	 */
-	public async purgeDlqCall(eventId: string): Promise<boolean> {
+	public async purgeDlqCall(eventId: string, organizationId?: string): Promise<boolean> {
 		try {
-			await withSuperuserBypass(async (tx) => {
-				await tx.delete(systemBackgroundJobs).where(eq(systemBackgroundJobs.id, eventId));
-			});
+			if (organizationId && UUID_REGEX.test(organizationId)) {
+				await withTenantCtx(organizationId, async (tx) => {
+					await tx
+						.delete(systemBackgroundJobs)
+						.where(
+							and(
+								eq(systemBackgroundJobs.id, eventId),
+								eq(systemBackgroundJobs.organizationId, organizationId),
+							),
+						);
+				});
+			} else {
+				await withSuperuserBypass(async (tx) => {
+					await tx.delete(systemBackgroundJobs).where(eq(systemBackgroundJobs.id, eventId));
+				});
+			}
 			return true;
 		} catch (err) {
 			const activeLogger = this.logger || defaultStructuredLogger;
 			activeLogger.warn(
-				{ err: err instanceof Error ? err.message : String(err), eventId },
+				{ err: err instanceof Error ? err.message : String(err), eventId, organizationId },
 				"[TelephonyOutboxService] Failed to purge DLQ call",
 			);
 			return false;

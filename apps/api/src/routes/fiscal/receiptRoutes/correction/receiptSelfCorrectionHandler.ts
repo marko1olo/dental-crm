@@ -95,7 +95,7 @@ export async function handleFiscalSelfCorrection(
 	const preparedInput: CreateFiscalReceiptPayloadInput = {
 		...data,
 		clientMutationId,
-		customerContact: patientContact || data.customerContact || "+79990000000",
+		customerContact: patientContact || data.customerContact || null,
 		isCorrection: true,
 		correctionType: "self_initiated",
 		correctionDocDate: data.correctionDocDate,

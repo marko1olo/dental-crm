@@ -10,10 +10,13 @@ import {
 	normalizePhoneToE164,
 } from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withSuperuserBypass } from "../../db/rls.js";
 import { organizations } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import type { TelephonyWebhookPayload } from "../../routes/telephony/types.js";
 import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
+
+const logger = createApiLogger("telephonySecurity");
 
 export type { TelephonyWebhookPayload };
 
@@ -34,11 +37,13 @@ export async function resolveOrgTelephonySecrets(organizationId: string): Promis
 		return {};
 	}
 	try {
-		const orgRows = await db
-			.select({ flags: organizations.workspaceFeatureFlags })
-			.from(organizations)
-			.where(eq(organizations.id, organizationId))
-			.limit(1);
+		const orgRows = await withSuperuserBypass((tx) =>
+			tx
+				.select({ flags: organizations.workspaceFeatureFlags })
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1),
+		);
 		const flags = (orgRows[0]?.flags as Record<string, unknown> | null) ?? {};
 		const telephony =
 			(flags.telephony as Record<string, unknown> | null) ??
@@ -82,7 +87,11 @@ export async function resolveOrgTelephonySecrets(organizationId: string): Promis
 						? telephony.mtsExolveSecret
 						: undefined,
 		};
-	} catch {
+	} catch (err: unknown) {
+		logger.warn(
+			{ err: safeLogError(err), organizationId },
+			"Failed to resolve org telephony secrets",
+		);
 		return {};
 	}
 }

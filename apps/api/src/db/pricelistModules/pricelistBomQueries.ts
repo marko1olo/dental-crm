@@ -49,6 +49,24 @@ export interface UpsertServiceBomInput {
 	}>;
 }
 
+function resolveInventoryUnitCostKopecks(inv: {
+	pricePerUnit?: string | number | null | undefined;
+	pricePerUnitKopecks?: bigint | number | null | undefined;
+	unitCostRub?: string | number | null | undefined;
+	unitCostKopecks?: bigint | number | null | undefined;
+}): number {
+	const priceKopecks = Number(inv.pricePerUnitKopecks ?? 0);
+	if (Number.isFinite(priceKopecks) && priceKopecks > 0) {
+		return priceKopecks;
+	}
+	const unitKopecks = Number(inv.unitCostKopecks ?? 0);
+	if (Number.isFinite(unitKopecks) && unitKopecks > 0) {
+		return unitKopecks;
+	}
+	const fallbackRub = Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0);
+	return rublesToKopecks(Number.isFinite(fallbackRub) ? fallbackRub : 0);
+}
+
 export async function getServiceBomFromDb(
 	organizationId: string,
 	serviceId: string,
@@ -104,14 +122,7 @@ export async function getServiceBomFromDb(
 			let totalCostKopecks = 0;
 			const items: ServiceBomItemPayload[] = cardItems.map((ci) => {
 				const qty = Number(ci.quantity) || 1;
-				const unitCostKopecks =
-					ci.pricePerUnitKopecks != null
-						? Number(ci.pricePerUnitKopecks)
-						: ci.unitCostKopecks != null
-							? Number(ci.unitCostKopecks)
-							: rublesToKopecks(
-									Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0),
-								);
+				const unitCostKopecks = resolveInventoryUnitCostKopecks(ci);
 				const lineCostKopecks = multiplyKopecksFractional(unitCostKopecks, qty);
 				totalCostKopecks += lineCostKopecks;
 				return {
@@ -291,13 +302,7 @@ export async function upsertServiceBomInDb(
 				)
 				.limit(1);
 
-			const unitKopecks = inv
-				? inv.pricePerUnitKopecks != null
-					? Number(inv.pricePerUnitKopecks)
-					: inv.unitCostKopecks != null
-						? Number(inv.unitCostKopecks)
-						: rublesToKopecks(Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0))
-				: 0;
+			const unitKopecks = inv ? resolveInventoryUnitCostKopecks(inv) : 0;
 			const lineCostKopecks = multiplyKopecksFractional(unitKopecks, qty);
 			totalCostKopecks += lineCostKopecks;
 

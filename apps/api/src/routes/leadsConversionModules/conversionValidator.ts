@@ -10,7 +10,6 @@ export const convertLeadSchema = z.object({
 	appointmentEnd: z.string().datetime().or(z.literal("")).optional().nullable(),
 	chairId: z.string().optional().nullable(),
 	doctorId: z.string().optional().nullable(),
-	organizationId: z.string().uuid().optional(),
 	reason: z.string().optional().nullable(),
 	comment: z.string().optional().nullable(),
 	consentMedical: z.boolean().optional().nullable(),

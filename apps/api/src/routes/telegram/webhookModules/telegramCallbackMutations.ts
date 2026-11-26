@@ -11,6 +11,7 @@ import {
 	appointments,
 	denteTelegramChatLinks,
 	messengerInboundEvents,
+	patients,
 } from "../../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../../observability/logger.js";
 import { processInboundEvents } from "../../../services/messengerIngestion.js";
@@ -118,15 +119,89 @@ export async function recordPostOpCriticalAlertInDb(
 
 /**
  * Транзакционное обновление статуса записи на приём из бота (подтверждение / перенос / отмена).
+ * Обязательно проверяет привязку chatHash -> пациент (или его семейная группа) через denteTelegramChatLinks.
  */
 export async function updateAppointmentStatusFromTelegram(
 	organizationId: string,
 	appointmentId: string,
 	status: "confirmed" | "cancelled" | "planned",
+	chatHash: string | null = null,
 	tx?: DatabaseTransaction,
 ): Promise<boolean> {
+	if (!chatHash) {
+		return false;
+	}
+
 	const execute = async (client: DatabaseTransaction) => {
-		await client
+		const [chatLink] = await client
+			.select({
+				subjectType: denteTelegramChatLinks.subjectType,
+				subjectId: denteTelegramChatLinks.subjectId,
+			})
+			.from(denteTelegramChatLinks)
+			.where(
+				and(
+					eq(denteTelegramChatLinks.organizationId, organizationId),
+					eq(denteTelegramChatLinks.chatFingerprint, chatHash),
+					eq(denteTelegramChatLinks.status, "active"),
+				),
+			)
+			.limit(1);
+
+		const linkedPatientId =
+			chatLink?.subjectType === "patient" ? chatLink.subjectId : null;
+		if (!linkedPatientId) {
+			return false;
+		}
+
+		const [appt] = await client
+			.select({
+				id: appointments.id,
+				patientId: appointments.patientId,
+			})
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, organizationId),
+					eq(appointments.id, appointmentId),
+				),
+			)
+			.limit(1);
+
+		if (!appt) {
+			return false;
+		}
+
+		if (appt.patientId !== linkedPatientId) {
+			const [linkedPatient] = await client
+				.select({ familyGroupId: patients.familyGroupId })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.id, linkedPatientId),
+					),
+				)
+				.limit(1);
+			const [apptPatient] = await client
+				.select({ familyGroupId: patients.familyGroupId })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.id, appt.patientId),
+					),
+				)
+				.limit(1);
+			const sameFamily =
+				Boolean(linkedPatient?.familyGroupId) &&
+				linkedPatient?.familyGroupId === apptPatient?.familyGroupId;
+			if (!sameFamily) {
+				return false;
+			}
+		}
+
+		const updated = await client
 			.update(appointments)
 			.set({ status })
 			.where(
@@ -134,8 +209,9 @@ export async function updateAppointmentStatusFromTelegram(
 					eq(appointments.organizationId, organizationId),
 					eq(appointments.id, appointmentId),
 				),
-			);
-		return true;
+			)
+			.returning({ id: appointments.id });
+		return updated.length > 0;
 	};
 
 	if (tx) {

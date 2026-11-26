@@ -46,6 +46,8 @@ import {
 	idempotencyPlugin,
 	STALE_LOCK_THRESHOLD_MS,
 } from "../plugins/idempotencyPlugin.js";
+import { authTokenSecret } from "../security/authSecret.js";
+import { signToken } from "../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,
@@ -247,7 +249,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 				url: "/api/finance/payments",
 				headers: {
 					"x-idempotency-key": idempotencyKey,
-					"x-organization-id": FIXTURE_CLINIC_A,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 				},
 				payload,
 			}),
@@ -312,7 +314,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": idempotencyKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload,
 		});
@@ -326,7 +328,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": idempotencyKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload,
 		});
@@ -367,7 +369,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": idempotencyKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload: originalPayload,
 		});
@@ -379,7 +381,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": idempotencyKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload: tamperedPayload,
 		});
@@ -501,7 +503,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 				url: "/api/finance/receipts",
 				headers: {
 					"x-idempotency-key": fiscalKey,
-					"x-organization-id": FIXTURE_CLINIC_A,
+					"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 				},
 				payload,
 			}),
@@ -522,7 +524,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/receipts",
 			headers: {
 				"x-idempotency-key": fiscalKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload,
 		});
@@ -545,7 +547,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/flaky-transaction",
 			headers: {
 				"x-idempotency-key": key,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 		});
 		assert.equal(res1.statusCode, 500);
@@ -556,7 +558,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/flaky-transaction",
 			headers: {
 				"x-idempotency-key": key,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 		});
 		assert.equal(res2.statusCode, 200);
@@ -577,7 +579,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": sharedKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload: payloadA,
 		});
@@ -589,7 +591,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": sharedKey,
-				"x-organization-id": FIXTURE_CLINIC_B,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_B }, authTokenSecret(), 3600),
 			},
 			payload: payloadB,
 		});
@@ -613,7 +615,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": dbKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload,
 		});
@@ -741,7 +743,7 @@ describe("Totipotency & Idempotency Concurrency Stress Suite", () => {
 			url: "/api/finance/payments",
 			headers: {
 				"x-idempotency-key": zombieKey,
-				"x-organization-id": FIXTURE_CLINIC_A,
+				"x-dente-clinic-token": signToken({ organizationId: FIXTURE_CLINIC_A }, authTokenSecret(), 3600),
 			},
 			payload: { amount: 8888, purpose: "Zombie lock recovery" },
 		});

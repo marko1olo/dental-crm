@@ -14,6 +14,7 @@ import {
 	buildFnsKnd1151156Xml as sharedBuildFnsKnd1151156Xml,
 	cleanDigits,
 	generateFnsFileNameAndId as sharedGenerateFnsFileNameAndId,
+	isNonMedicalGood,
 	kopecksToNumericString,
 	parseFio,
 	parseKopecks,
@@ -66,6 +67,7 @@ function paymentAnnualTaxpayerScope(
 
 function annualTaxpayerScopesForDocument(
 	document: GeneratedDocument,
+	payments: readonly Payment[] = [],
 ): TaxCertificateAnnualTaxpayerScope[] {
 	const scopes = new Map<string, TaxCertificateAnnualTaxpayerScope>();
 	const addScope = (scope: TaxCertificateAnnualTaxpayerScope) => {
@@ -76,7 +78,7 @@ function annualTaxpayerScopesForDocument(
 			scopes.set(key, scope);
 	};
 
-	for (const payment of taxPaymentsForDocumentScope(document, [])) {
+	for (const payment of taxPaymentsForDocumentScope(document, payments)) {
 		addScope(paymentAnnualTaxpayerScope(payment));
 	}
 
@@ -111,7 +113,7 @@ function annualTaxpayerScopesOverlap(
 
 export async function findIssuedDuplicateTaxCertificate(
 	document: GeneratedDocument,
-	_payments: import("@dental/shared").Payment[],
+	payments: readonly Payment[],
 ): Promise<GeneratedDocument | null> {
 	const allDocuments = await getDocumentsByPatientId(
 		document.organizationId,
@@ -119,9 +121,9 @@ export async function findIssuedDuplicateTaxCertificate(
 	);
 	if (!taxDocumentDuplicateSensitive(document.kind) || !document.taxYear)
 		return null;
-	const targetAnnualScopes = annualTaxpayerScopesForDocument(document);
-	const targetReceiptKeys = receiptKeysForTaxDocument(document, []);
-	const targetPaymentIds = paymentIdsForTaxDocument(document, []);
+	const targetAnnualScopes = annualTaxpayerScopesForDocument(document, payments);
+	const targetReceiptKeys = receiptKeysForTaxDocument(document, payments);
+	const targetPaymentIds = paymentIdsForTaxDocument(document, payments);
 	if (
 		!targetAnnualScopes.length &&
 		!targetReceiptKeys.size &&
@@ -137,11 +139,11 @@ export async function findIssuedDuplicateTaxCertificate(
 		if (candidate.organizationId !== document.organizationId) continue;
 		if (candidate.id === document.id) continue;
 
-		const candidateAnnualScopes = annualTaxpayerScopesForDocument(candidate);
+		const candidateAnnualScopes = annualTaxpayerScopesForDocument(candidate, payments);
 		if (annualTaxpayerScopesOverlap(targetAnnualScopes, candidateAnnualScopes))
 			return candidate;
 
-		const candidateReceiptKeys = receiptKeysForTaxDocument(candidate, []);
+		const candidateReceiptKeys = receiptKeysForTaxDocument(candidate, payments);
 		let hasReceiptKey = false;
 		for (const key of candidateReceiptKeys) {
 			if (targetReceiptKeys.has(key)) {
@@ -151,7 +153,7 @@ export async function findIssuedDuplicateTaxCertificate(
 		}
 		if (hasReceiptKey) return candidate;
 
-		const candidatePaymentIds = paymentIdsForTaxDocument(candidate, []);
+		const candidatePaymentIds = paymentIdsForTaxDocument(candidate, payments);
 		let hasPaymentId = false;
 		for (const id of candidatePaymentIds) {
 			if (targetPaymentIds.has(id)) {
@@ -475,7 +477,7 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	// Проверка единого плательщика по чекам
+	// Проверка единого плательщика по ВСЕМ выбранным чекам
 	const firstPayment = scopedPayments[0];
 	if (!firstPayment) {
 		return {
@@ -485,10 +487,61 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	const isSelfPayer =
-		!firstPayment.payerFullName ||
-		firstPayment.payerRelationship === "self" ||
-		firstPayment.payerRelationship === "patient";
+	const resolveEffectivePayer = (p: Payment) => {
+		const selfPayer =
+			!p.payerFullName ||
+			p.payerRelationship === "self" ||
+			p.payerRelationship === "patient";
+		return {
+			selfPayer,
+			fullName: normalizedDocumentChainValue(
+				cleanString(p.payerFullName) || cleanString(patient.fullName),
+			),
+			inn: normalizedTaxpayerInn(
+				cleanString(p.payerInn) ||
+					(selfPayer && p.payerInn === undefined
+						? cleanString(patient.administrativeProfile?.taxpayerInn)
+						: undefined),
+			),
+			birthDate: normalizedDocumentChainValue(
+				cleanString(p.payerBirthDate) || cleanString(patient.birthDate),
+			),
+			identityDoc: normalizedDocumentChainValue(
+				cleanString(p.payerIdentityDocument) ||
+					(selfPayer && p.payerIdentityDocument === undefined
+						? cleanString(patient.administrativeProfile?.identityDocument)
+						: undefined),
+			),
+			kinship: mapRelationshipToKinshipCode(p.payerRelationship),
+		};
+	};
+
+	const firstEffective = resolveEffectivePayer(firstPayment);
+	for (const paymentItem of scopedPayments.slice(1)) {
+		const curr = resolveEffectivePayer(paymentItem);
+		const innMismatch =
+			curr.inn && firstEffective.inn && curr.inn !== firstEffective.inn;
+		const identityMismatch =
+			curr.identityDoc &&
+			firstEffective.identityDoc &&
+			curr.identityDoc !== firstEffective.identityDoc;
+		if (
+			curr.kinship !== firstEffective.kinship ||
+			curr.fullName !== firstEffective.fullName ||
+			curr.birthDate !== firstEffective.birthDate ||
+			Boolean(innMismatch) ||
+			Boolean(identityMismatch)
+		) {
+			return {
+				ok: false,
+				statusCode: 409,
+				error:
+					"Налоговый документ не может смешивать платежи разных налогоплательщиков. Разделите чеки по разным справкам.",
+			};
+		}
+	}
+
+	const isSelfPayer = firstEffective.selfPayer;
 
 	const payerFullNameStr = cleanString(firstPayment.payerFullName) || cleanString(patient.fullName);
 	if (!payerFullNameStr) {
@@ -582,11 +635,39 @@ export function buildKnd1151156Xml(
 			: undefined;
 		const items = pAny.items || pAny.fiscalReceipt?.items || [];
 
+		if (rawAmountKop <= 0) continue;
+
 		if (c1Explicit !== undefined || c2Explicit !== undefined) {
-			code1Kopecks += c1Explicit ?? Math.max(0, rawAmountKop - (c2Explicit ?? 0));
-			code2Kopecks += c2Explicit ?? Math.max(0, rawAmountKop - (c1Explicit ?? 0));
+			const c1Raw = Math.max(0, c1Explicit ?? 0);
+			const c2Raw = Math.max(0, c2Explicit ?? 0);
+			if (c1Explicit !== undefined && c2Explicit !== undefined) {
+				const explicitSum = c1Raw + c2Raw;
+				if (explicitSum > rawAmountKop && explicitSum > 0) {
+					const scaled2 =
+						c1Raw === 0
+							? rawAmountKop
+							: Number((BigInt(c2Raw) * BigInt(rawAmountKop)) / BigInt(explicitSum));
+					const scaled1 = c1Raw > 0 ? rawAmountKop - scaled2 : 0;
+					code1Kopecks += scaled1;
+					code2Kopecks += scaled2;
+				} else {
+					code1Kopecks += c1Raw;
+					code2Kopecks += c2Raw;
+				}
+			} else if (c1Explicit !== undefined) {
+				const capped1 = Math.min(c1Raw, rawAmountKop);
+				code1Kopecks += capped1;
+				code2Kopecks += Math.max(0, rawAmountKop - capped1);
+			} else {
+				const capped2 = Math.min(c2Raw, rawAmountKop);
+				code2Kopecks += capped2;
+				code1Kopecks += Math.max(0, rawAmountKop - capped2);
+			}
 		} else if (items.length > 0) {
+			let medCode1Kop = 0;
+			let medCode2Kop = 0;
 			for (const it of items) {
+				if (isNonMedicalGood(it.name, it.category)) continue;
 				const itKop = typeof it.amountKopecks === "bigint"
 					? Number(it.amountKopecks)
 					: typeof it.amountKopecks === "number"
@@ -597,16 +678,38 @@ export function buildKnd1151156Xml(
 				if (itKop <= 0) continue;
 				const isCode2 = it.category === "2" || (it.category !== "1" && resolveTaxDeductionCategoryShared(it.code804n, it.name) === "2");
 				if (isCode2) {
-					code2Kopecks += itKop;
+					medCode2Kop += itKop;
 				} else {
-					code1Kopecks += itKop;
+					medCode1Kop += itKop;
 				}
+			}
+			const medTotalKop = medCode1Kop + medCode2Kop;
+			if (medTotalKop > rawAmountKop && medTotalKop > 0) {
+				const scaled2 =
+					medCode1Kop === 0
+						? rawAmountKop
+						: Number((BigInt(medCode2Kop) * BigInt(rawAmountKop)) / BigInt(medTotalKop));
+				const scaled1 = medCode1Kop > 0 ? rawAmountKop - scaled2 : 0;
+				code1Kopecks += scaled1;
+				code2Kopecks += scaled2;
+			} else {
+				code1Kopecks += medCode1Kop;
+				code2Kopecks += medCode2Kop;
 			}
 		} else if (pAny.taxDeductionCode === "2" || (!pAny.taxDeductionCode && resolveTaxDeductionCategoryShared(pAny.code804n, pAny.serviceName) === "2")) {
 			code2Kopecks += rawAmountKop;
 		} else {
 			code1Kopecks += rawAmountKop;
 		}
+	}
+
+	if (code1Kopecks + code2Kopecks <= 0) {
+		return {
+			ok: false,
+			statusCode: 409,
+			error:
+				"После исключения сопутствующих нелечебных товаров и возвратов сумма медицинских расходов равна нулю.",
+		};
 	}
 
 	const clinicKpp = cleanDigits(clinicProfileAny.kpp) || undefined;

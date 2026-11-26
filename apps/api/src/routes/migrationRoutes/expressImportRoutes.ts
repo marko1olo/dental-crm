@@ -6,12 +6,14 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, parseKopecks } from "@dental/shared";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { patients, serviceCatalogItems } from "../../db/schema.js";
+import { auditEvents, patients, serviceCatalogItems } from "../../db/schema.js";
+import { parseDelimited } from "../../migration/parsers/delimited.js";
 import {
 	extractIdempotencyKey,
 	isValidUuid,
@@ -71,26 +73,26 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			typeof body.rawText === "string" &&
 			body.rawText.trim().length > 0
 		) {
-			const lines = body.rawText
-				.split(/\r?\n/)
-				.map((l: string) => l.trim())
-				.filter((l: string) => l.length > 0);
-			if (lines.length > 0) {
-				const delimiter = lines[0]?.includes("\t")
-					? "\t"
-					: lines[0]?.includes(";")
-						? ";"
-						: ",";
-				const header = lines[0]!
-					.split(delimiter)
-					.map((h: string) => h.trim().replace(/^["']|["']$/g, ""));
-				for (let i = 1; i < lines.length; i++) {
-					const parts = lines[i]!
-						.split(delimiter)
-						.map((p: string) => p.trim().replace(/^["']|["']$/g, ""));
+			const delimited = parseDelimited(body.rawText);
+			if (delimited.rows.length > 0) {
+				let headers = delimited.columns;
+				let dataRows = delimited.rows;
+				if (!delimited.hasHeader && delimited.rows.length >= 2) {
+					const firstCandidate = delimited.rows[0] ?? [];
+					const looksLikeExpressHeader = firstCandidate.some((cell) =>
+						/ф.?и.?о|имя|пациент|клиент|тел|phone|баланс|код|услуга|цена|title|name/i.test(
+							cell.trim(),
+						),
+					);
+					if (looksLikeExpressHeader) {
+						headers = firstCandidate.map((h, idx) => h.trim() || `col_${idx}`);
+						dataRows = delimited.rows.slice(1);
+					}
+				}
+				for (const parts of dataRows) {
 					const row: Record<string, string> = {};
-					for (let j = 0; j < header.length; j++) {
-						row[header[j] || `col_${j}`] = parts[j] ?? "";
+					for (let j = 0; j < headers.length; j++) {
+						row[headers[j] || `col_${j}`] = (parts[j] ?? "").trim();
 					}
 					rawRows.push(row);
 				}
@@ -195,76 +197,164 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 		}
 
 		let importedRows = 0;
+		let skippedDuplicatesCount = 0;
 		if (entityKind === "patients") {
 			const nameCol = detectedColumns.find((c) => c.field === "fullName")?.key;
 			const phoneCol = detectedColumns.find((c) => c.field === "phone")?.key;
 			const birthCol = detectedColumns.find((c) => c.field === "birthDate")?.key;
 			const balanceCol = detectedColumns.find((c) => c.field === "balanceRub")?.key;
 
-			const patientRowsToInsert = rawRows.map((r) => {
-				const fullName =
-					(nameCol ? String(r[nameCol] ?? "") : "").trim() ||
-					"Пациент из импорта";
-				const phone = phoneCol ? String(r[phoneCol] ?? "").trim() : null;
-				const birthDate = birthCol ? String(r[birthCol] ?? "").trim() : null;
-				const balanceRub = balanceCol ? Number(r[balanceCol]) || 0 : 0;
-				const notes =
-					balanceRub !== 0 ? `Баланс при переносе: ${balanceRub} руб.` : null;
-
-				return {
-					id: randomUUID(),
-					organizationId: context.organizationId,
-					fullName,
-					phone: phone || null,
-					birthDate: birthDate || null,
-					notes,
-					status: "active" as const,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				};
-			});
-
+			const batchAuditId = randomUUID();
 			await withTenantCtx(context.organizationId, async (tx) => {
+				const existingPatients = await tx
+					.select({ fullName: patients.fullName, phone: patients.phone })
+					.from(patients)
+					.where(eq(patients.organizationId, context.organizationId));
+
+				const knownPhones = new Set(
+					existingPatients
+						.map((p) => (p.phone ?? "").replace(/\D/g, ""))
+						.filter(Boolean),
+				);
+				const knownNames = new Set(
+					existingPatients.map((p) => p.fullName.trim().toLowerCase()),
+				);
+
+				const patientRowsToInsert: Array<typeof patients.$inferInsert & { id: string }> = [];
+				for (const r of rawRows) {
+					const fullName =
+						(nameCol ? String(r[nameCol] ?? "") : "").trim() ||
+						"Пациент из импорта";
+					const phone = phoneCol ? String(r[phoneCol] ?? "").trim() : null;
+					const normPhone = phone ? phone.replace(/\D/g, "") : "";
+					const normName = fullName.toLowerCase();
+
+					if (
+						(normPhone && knownPhones.has(normPhone)) ||
+						(normName && knownNames.has(normName))
+					) {
+						skippedDuplicatesCount++;
+						continue;
+					}
+					if (normPhone) knownPhones.add(normPhone);
+					if (normName) knownNames.add(normName);
+
+					const birthDate = birthCol ? String(r[birthCol] ?? "").trim() : null;
+					const rawBal = balanceCol ? String(r[balanceCol] ?? "").trim() : "";
+					let balanceRub = 0;
+					if (rawBal) {
+						try {
+							balanceRub = kopecksToRubles(parseKopecks(rawBal));
+						} catch {
+							balanceRub = 0;
+						}
+					}
+					const notes =
+						balanceRub !== 0 ? `Баланс при переносе: ${balanceRub} руб.` : null;
+
+					patientRowsToInsert.push({
+						id: randomUUID(),
+						organizationId: context.organizationId,
+						fullName,
+						phone: phone || null,
+						birthDate: birthDate || null,
+						notes,
+						status: "active" as const,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					});
+				}
+
 				const BATCH_SIZE = 100;
 				for (let i = 0; i < patientRowsToInsert.length; i += BATCH_SIZE) {
 					const batch = patientRowsToInsert.slice(i, i + BATCH_SIZE);
 					if (batch.length > 0) {
 						await tx.insert(patients).values(batch);
+						await tx.insert(auditEvents).values(
+							batch.map((p) => ({
+								organizationId: context.organizationId,
+								entityType: "patient" as const,
+								entityId: p.id,
+								action: "express_patient_imported" as const,
+								reason: `Экспресс-импорт из «${sourceName}»`,
+							})),
+						);
 					}
 				}
+				importedRows = patientRowsToInsert.length;
+
+				await tx.insert(auditEvents).values({
+					organizationId: context.organizationId,
+					entityType: "import_batch",
+					entityId: batchAuditId,
+					action: "express_import_committed",
+					reason: `Экспресс-импорт пациентов «${sourceName}»: перенесено ${importedRows}, пропущено дублей ${skippedDuplicatesCount}.`,
+				});
 			});
-			importedRows = patientRowsToInsert.length;
 		} else if (entityKind === "price_list") {
 			const codeCol = detectedColumns.find((c) => c.field === "code")?.key;
 			const titleCol = detectedColumns.find((c) => c.field === "title")?.key;
 			const priceCol = detectedColumns.find((c) => c.field === "priceRub")?.key;
 
-			const catalogRowsToInsert = rawRows.map((r, idx) => {
-				const title =
-					(titleCol ? String(r[titleCol] ?? "") : "").trim() ||
-					`Услуга ${idx + 1}`;
-				const code =
-					(codeCol ? String(r[codeCol] ?? "") : "").trim() ||
-					`IMP-${idx + 1}`;
-				const priceNum = priceCol ? Math.max(0, Number(r[priceCol]) || 0) : 0;
-				const priceKop = BigInt(rublesToKopecks(priceNum));
-
-				return {
-					organizationId: context.organizationId,
-					code,
-					title,
-					category: "therapy" as const,
-					specialty: "universal" as const,
-					basePriceRub: priceNum,
-					priceRub: priceNum,
-					basePriceKopecks: priceKop,
-					priceKopecks: priceKop,
-					durationMinutes: 30,
-					isActive: true,
-				};
-			});
-
+			const batchAuditId = randomUUID();
 			await withTenantCtx(context.organizationId, async (tx) => {
+				const existingItems = await tx
+					.select({ code: serviceCatalogItems.code, title: serviceCatalogItems.title })
+					.from(serviceCatalogItems)
+					.where(eq(serviceCatalogItems.organizationId, context.organizationId));
+
+				const knownCodes = new Set(
+					existingItems.map((i) => i.code.trim().toLowerCase()).filter(Boolean),
+				);
+				const knownTitles = new Set(
+					existingItems.map((i) => i.title.trim().toLowerCase()).filter(Boolean),
+				);
+
+				const catalogRowsToInsert: Array<typeof serviceCatalogItems.$inferInsert> = [];
+				for (let idx = 0; idx < rawRows.length; idx++) {
+					const r = rawRows[idx] ?? {};
+					const title =
+						(titleCol ? String(r[titleCol] ?? "") : "").trim() ||
+						`Услуга ${idx + 1}`;
+					const code =
+						(codeCol ? String(r[codeCol] ?? "") : "").trim() ||
+						`IMP-${idx + 1}`;
+					const normCode = code.toLowerCase();
+					const normTitle = title.toLowerCase();
+
+					if (knownCodes.has(normCode) || knownTitles.has(normTitle)) {
+						skippedDuplicatesCount++;
+						continue;
+					}
+					knownCodes.add(normCode);
+					knownTitles.add(normTitle);
+
+					const rawPrice = priceCol ? String(r[priceCol] ?? "").trim() : "";
+					let priceKopNum = 0;
+					if (rawPrice) {
+						try {
+							priceKopNum = Math.max(0, parseKopecks(rawPrice));
+						} catch {
+							priceKopNum = 0;
+						}
+					}
+					const priceNum = kopecksToRubles(priceKopNum);
+
+					catalogRowsToInsert.push({
+						organizationId: context.organizationId,
+						code,
+						title,
+						category: "therapy" as const,
+						specialty: "universal" as const,
+						basePriceRub: priceNum,
+						priceRub: priceNum,
+						basePriceKopecks: BigInt(priceKopNum),
+						priceKopecks: BigInt(priceKopNum),
+						durationMinutes: 30,
+						isActive: true,
+					});
+				}
+
 				const BATCH_SIZE = 100;
 				for (let i = 0; i < catalogRowsToInsert.length; i += BATCH_SIZE) {
 					const batch = catalogRowsToInsert.slice(i, i + BATCH_SIZE);
@@ -272,8 +362,16 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 						await tx.insert(serviceCatalogItems).values(batch);
 					}
 				}
+				importedRows = catalogRowsToInsert.length;
+
+				await tx.insert(auditEvents).values({
+					organizationId: context.organizationId,
+					entityType: "import_batch",
+					entityId: batchAuditId,
+					action: "express_pricelist_import_committed",
+					reason: `Экспресс-импорт прейскуранта «${sourceName}»: перенесено ${importedRows}, пропущено дублей ${skippedDuplicatesCount}.`,
+				});
 			});
-			importedRows = catalogRowsToInsert.length;
 		}
 
 		return {
@@ -283,7 +381,8 @@ export async function registerExpressImportRoutes(app: FastifyInstance) {
 			entityKind,
 			totalRows: rawRows.length,
 			importedRows,
-			duplicatesCount,
+			duplicatesCount: Math.max(duplicatesCount, skippedDuplicatesCount),
+			skippedDuplicatesCount,
 			message: `Импорт успешно завершен: перенесено ${importedRows} записей в базу данных клиники.`,
 		};
 	});

@@ -10,14 +10,15 @@
  */
 
 import {
+	createFiscalReceiptObjectSchema,
 	type CreateFiscalReceiptPayloadInput,
-	createFiscalReceiptPayloadSchema,
 	type Ffd12CorrectionType,
 	ffd12CorrectionTypeSchema,
 	ffd12OperationTypeSchema,
 	ffd12TaxationSystemSchema,
 	fiscalRefundPayloadSchema,
 	type FiscalRefundPayloadInput,
+	refineFiscalReceiptPayload,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -28,33 +29,33 @@ import { patients } from "../../../../db/schema.js";
  * Payload schema for 54-FZ Correction Receipts.
  * Both self-initiated (after power outage / cash register offline) and tax authority prescription.
  */
-export const fiscalCorrectionPayloadSchema = createFiscalReceiptPayloadSchema
-	.and(
-		z.object({
-			isCorrection: z.boolean().default(true),
-			correctionType: ffd12CorrectionTypeSchema.default("self_initiated"),
-			correctionDescription: z.string().trim().max(256).optional().nullable(),
-		}),
-	)
+export const fiscalCorrectionPayloadSchema = createFiscalReceiptObjectSchema
+	.extend({
+		isCorrection: z.boolean().default(true),
+		correctionType: ffd12CorrectionTypeSchema.default("self_initiated"),
+		correctionDescription: z.string().trim().max(256).optional().nullable(),
+	})
+	.strict()
 	.superRefine((val, ctx) => {
-	// For prescription from tax inspection (Tag 1173 = 1), document number and date are strictly required
-	if (val.correctionType === "by_instruction") {
-		if (!val.correctionDocNumber || val.correctionDocNumber.trim().length === 0) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "Для чека коррекции по предписанию налогового органа укажите номер предписания.",
-				path: ["correctionDocNumber"],
-			});
+		refineFiscalReceiptPayload(val, ctx);
+		// For prescription from tax inspection (Tag 1173 = 1), document number and date are strictly required
+		if (val.correctionType === "by_instruction") {
+			if (!val.correctionDocNumber || val.correctionDocNumber.trim().length === 0) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Для чека коррекции по предписанию налогового органа укажите номер предписания.",
+					path: ["correctionDocNumber"],
+				});
+			}
+			if (!val.correctionDocDate || !/^\d{4}-\d{2}-\d{2}$/.test(val.correctionDocDate.trim())) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Для чека коррекции по предписанию укажите дату предписания в формате ГГГГ-ММ-ДД.",
+					path: ["correctionDocDate"],
+				});
+			}
 		}
-		if (!val.correctionDocDate || !/^\d{4}-\d{2}-\d{2}$/.test(val.correctionDocDate.trim())) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "Для чека коррекции по предписанию укажите дату предписания в формате ГГГГ-ММ-ДД.",
-				path: ["correctionDocDate"],
-			});
-		}
-	}
-});
+	});
 
 export type FiscalCorrectionPayloadInput = z.infer<typeof fiscalCorrectionPayloadSchema>;
 

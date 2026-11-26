@@ -45,6 +45,7 @@ export async function assertPatientNotBlocked(
 	patientId: string,
 	patientStatus?: string | null,
 	isEmergencyOverride = false,
+	tx?: Parameters<typeof checkPatientBookingBlockDetails>[2],
 ): Promise<void> {
 	if (isEmergencyOverride) {
 		return;
@@ -54,6 +55,7 @@ export async function assertPatientNotBlocked(
 		const details = await checkPatientBookingBlockDetails(
 			organizationId,
 			patientId,
+			tx,
 		);
 		const reasonText = details.reason ? ` Причина: ${details.reason}.` : "";
 		const legalText = details.legalBasis
@@ -67,6 +69,7 @@ export async function assertPatientNotBlocked(
 	const blockDetails = await checkPatientBookingBlockDetails(
 		organizationId,
 		patientId,
+		tx,
 	);
 	if (blockDetails.isBlocked) {
 		const reasonText = blockDetails.reason

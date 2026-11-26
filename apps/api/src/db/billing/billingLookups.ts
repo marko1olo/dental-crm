@@ -49,16 +49,21 @@ export async function findPaymentByClientMutationIdInDb(
 	if (!payment) return null;
 	const isSplitMatch = matchedPayments.length > 1 || (payment.clientMutationId?.includes(":") ?? false);
 	const totalAmountKop = matchedPayments.reduce((acc, p) => {
-		const kop =
-			p.amountKopecks !== undefined && p.amountKopecks !== null && p.amountKopecks !== 0n
-				? Number(p.amountKopecks)
-				: rublesToKopecks(Number(p.amountRub || 0));
+		const hasStoredKopecks =
+			p.amountKopecks !== undefined &&
+			p.amountKopecks !== null &&
+			(p.amountKopecks !== 0n || !p.amountRub);
+		const kop = hasStoredKopecks
+			? Number(p.amountKopecks)
+			: rublesToKopecks(Number(p.amountRub || 0));
 		return acc + kop;
 	}, 0);
-	const totalAmountRub = isSplitMatch
-		? kopecksToRub(totalAmountKop)
-		: payment.amountKopecks !== undefined && payment.amountKopecks !== null && payment.amountKopecks !== 0n
-			? kopecksToRub(Number(payment.amountKopecks))
+	const totalAmountRub =
+		isSplitMatch ||
+		(payment.amountKopecks !== undefined &&
+			payment.amountKopecks !== null &&
+			(payment.amountKopecks !== 0n || !payment.amountRub))
+			? kopecksToRub(totalAmountKop)
 			: payment.amountRub;
 	return {
 		id: payment.id,

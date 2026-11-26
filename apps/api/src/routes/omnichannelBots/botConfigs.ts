@@ -115,7 +115,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 		return reply.code(400).send({
 			error: "ValidationError",
 			message: "Некорректные параметры настройки бота.",
-			details: parseResult.error.format(),
+			details: parseResult.error.issues,
 		});
 	}
 
@@ -189,10 +189,16 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 				});
 			}
 		} else if (body.channel === "whatsapp") {
+			const waProvider = body.provider || "cloud_api";
 			const existing = await tx
 				.select({ id: denteWhatsappBotConfigs.id })
 				.from(denteWhatsappBotConfigs)
-				.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+				.where(
+					and(
+						eq(denteWhatsappBotConfigs.organizationId, orgId),
+						eq(denteWhatsappBotConfigs.provider, waProvider),
+					),
+				)
 				.limit(1);
 
 			const existingRecord = existing[0];
@@ -201,7 +207,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 					.update(denteWhatsappBotConfigs)
 					.set({
 						phoneNumberId: body.phoneNumberId,
-						provider: body.provider || "cloud_api",
+						provider: waProvider,
 						greenApiInstanceId: body.greenApiInstanceId,
 						...(encryptedGreenApiToken ? { greenApiToken: encryptedGreenApiToken } : {}),
 						...(encryptedToken ? { accessToken: encryptedToken, tokenSecretRef: encryptedToken } : {}),
@@ -219,7 +225,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 				await tx.insert(denteWhatsappBotConfigs).values({
 					organizationId: orgId,
 					phoneNumberId: body.phoneNumberId,
-					provider: body.provider || "cloud_api",
+					provider: waProvider,
 					greenApiInstanceId: body.greenApiInstanceId,
 					greenApiToken: encryptedGreenApiToken,
 					accessToken: encryptedToken,
@@ -308,7 +314,7 @@ export async function saveBotConfigHandler(request: FastifyRequest, reply: Fasti
 		organizationId: orgId,
 		clinicId: body.clinicId ?? null,
 		botConfigId: body.botConfigId,
-		token: encryptedToken || "encrypted_token",
+		token: encryptedToken ?? "",
 		secretToken: encryptedSecretKey ?? null,
 		isActive: body.isActive,
 		enabledPlugins: body.enabledPlugins,
@@ -415,11 +421,13 @@ export async function exportZipHandler(request: FastifyRequest, reply: FastifyRe
 	}
 
 	let clinicName = "Клиника ДЕНТЕ";
-	const orgRecords = await db
-		.select({ name: organizations.name })
-		.from(organizations)
-		.where(eq(organizations.id, orgId))
-		.limit(1);
+	const orgRecords = await withTenantCtx(orgId, (tx) =>
+		tx
+			.select({ name: organizations.name })
+			.from(organizations)
+			.where(eq(organizations.id, orgId))
+			.limit(1),
+	);
 
 	if (orgRecords.length > 0 && orgRecords[0]?.name) {
 		clinicName = orgRecords[0].name;

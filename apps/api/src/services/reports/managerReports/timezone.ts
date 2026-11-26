@@ -6,6 +6,7 @@
 
 import { eq, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import { clinics } from "../../../db/schema.js";
 
 /**
@@ -63,14 +64,18 @@ export function inClinicZone(column: unknown, zone: string | null) {
  */
 export async function clinicTimeZone(
 	organizationId: string,
+	executor?: TenantDb,
 ): Promise<string | null> {
 	try {
-		const [clinic] = await db
-			.select({ timezone: clinics.timezone })
-			.from(clinics)
-			.where(eq(clinics.organizationId, organizationId))
-			.limit(1);
-		return clinic?.timezone ?? null;
+		const run = async (tx: TenantDb) => {
+			const [clinic] = await tx
+				.select({ timezone: clinics.timezone })
+				.from(clinics)
+				.where(eq(clinics.organizationId, organizationId))
+				.limit(1);
+			return clinic?.timezone ?? null;
+		};
+		return executor ? await run(executor) : await withTenantCtx(organizationId, run);
 	} catch {
 		return null;
 	}
@@ -80,12 +85,14 @@ const knownTimeZoneCache = new Map<string, boolean>();
 
 export async function postgresKnowsTimeZone(
 	timeZone: string | null | undefined,
+	executor?: TenantDb,
 ): Promise<string | null> {
 	if (!timeZone) return null;
 	const cached = knownTimeZoneCache.get(timeZone);
 	if (cached !== undefined) return cached ? timeZone : null;
 	try {
-		const found = await db.execute(
+		const targetDb = executor ?? db;
+		const found = await targetDb.execute(
 			sql`select 1 as ok from pg_timezone_names where name = ${timeZone} limit 1`,
 		);
 		const known = found.rows.length > 0;

@@ -16,7 +16,7 @@
  * ложь из возможных на этом экране.
  */
 import { and, desc, eq } from "drizzle-orm";
-import { db } from "./client.js";
+import { withTenantCtx } from "./rls.js";
 import * as schema from "./schema.js";
 
 /** Ровно те два состояния, которыми пользуется экран. */
@@ -69,17 +69,19 @@ export async function getPatientReclamationsFromDb(
 	orgId: string,
 	patientId: string,
 ): Promise<PatientReclamation[]> {
-	const rows = await db
-		.select()
-		.from(schema.patientReclamations)
-		.where(
-			and(
-				eq(schema.patientReclamations.organizationId, orgId),
-				eq(schema.patientReclamations.patientId, patientId),
-			),
-		)
-		.orderBy(desc(schema.patientReclamations.createdAt));
-	return rows.map(toReclamation);
+	return await withTenantCtx(orgId, async (tx) => {
+		const rows = await tx
+			.select()
+			.from(schema.patientReclamations)
+			.where(
+				and(
+					eq(schema.patientReclamations.organizationId, orgId),
+					eq(schema.patientReclamations.patientId, patientId),
+				),
+			)
+			.orderBy(desc(schema.patientReclamations.createdAt));
+		return rows.map(toReclamation);
+	});
 }
 
 export async function createPatientReclamationInDb(
@@ -94,64 +96,66 @@ export async function createPatientReclamationInDb(
 		defectType?: string | null | undefined;
 	},
 ): Promise<PatientReclamation> {
-	// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
-	const [ownedPatient] = await db
-		.select({ id: schema.patients.id })
-		.from(schema.patients)
-		.where(
-			and(
-				eq(schema.patients.organizationId, orgId),
-				eq(schema.patients.id, patientId),
-			),
-		)
-		.limit(1);
-	if (!ownedPatient) {
-		throw new Error(
-			"patient_reclamations: patient does not belong to organization",
-		);
-	}
-	if (input.doctorId) {
-		const [ownedDoctor] = await db
-			.select({ id: schema.users.id })
-			.from(schema.users)
+	return await withTenantCtx(orgId, async (tx) => {
+		// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
+		const [ownedPatient] = await tx
+			.select({ id: schema.patients.id })
+			.from(schema.patients)
 			.where(
 				and(
-					eq(schema.users.organizationId, orgId),
-					eq(schema.users.id, input.doctorId),
+					eq(schema.patients.organizationId, orgId),
+					eq(schema.patients.id, patientId),
 				),
 			)
 			.limit(1);
-		if (!ownedDoctor) {
+		if (!ownedPatient) {
 			throw new Error(
-				"patient_reclamations: doctor does not belong to organization",
+				"patient_reclamations: patient does not belong to organization",
 			);
 		}
-	}
-	const [row] = await db
-		.insert(schema.patientReclamations)
-		.values({
-			organizationId: orgId,
-			patientId,
-			doctorId: input.doctorId,
-			toothNumber: input.toothNumber ?? null,
-			warrantyCertificateId: input.warrantyCertificateId ?? null,
-			defectType: input.defectType ?? null,
-			complicationDetails: input.complicationDetails,
-			proposedAction: input.proposedAction,
-			status: "under_review",
-		})
-		.returning();
-	/*
-	 * Пустой ответ на вставку означает, что запись не создана. Приводить его к типу
-	 * через `!` нельзя: маршрут ответил бы 201 и экран очистил бы форму, потеряв
-	 * набранный врачом текст жалобы. Пусть лучше отказ дойдёт до человека.
-	 */
-	if (!row) {
-		throw new Error(
-			"patient_reclamations: вставка не вернула созданную строку",
-		);
-	}
-	return toReclamation(row);
+		if (input.doctorId) {
+			const [ownedDoctor] = await tx
+				.select({ id: schema.users.id })
+				.from(schema.users)
+				.where(
+					and(
+						eq(schema.users.organizationId, orgId),
+						eq(schema.users.id, input.doctorId),
+					),
+				)
+				.limit(1);
+			if (!ownedDoctor) {
+				throw new Error(
+					"patient_reclamations: doctor does not belong to organization",
+				);
+			}
+		}
+		const [row] = await tx
+			.insert(schema.patientReclamations)
+			.values({
+				organizationId: orgId,
+				patientId,
+				doctorId: input.doctorId,
+				toothNumber: input.toothNumber ?? null,
+				warrantyCertificateId: input.warrantyCertificateId ?? null,
+				defectType: input.defectType ?? null,
+				complicationDetails: input.complicationDetails,
+				proposedAction: input.proposedAction,
+				status: "under_review",
+			})
+			.returning();
+		/*
+		 * Пустой ответ на вставку означает, что запись не создана. Приводить его к типу
+		 * через `!` нельзя: маршрут ответил бы 201 и экран очистил бы форму, потеряв
+		 * набранный врачом текст жалобы. Пусть лучше отказ дойдёт до человека.
+		 */
+		if (!row) {
+			throw new Error(
+				"patient_reclamations: вставка не вернула созданную строку",
+			);
+		}
+		return toReclamation(row);
+	});
 }
 
 /**
@@ -172,22 +176,24 @@ export async function setPatientReclamationStatusInDb(
 	reclamationId: string,
 	status: ReclamationStatus,
 ): Promise<PatientReclamation | null> {
-	const [row] = await db
-		.update(schema.patientReclamations)
-		.set({
-			status,
-			resolvedAt: status === "resolved" ? new Date() : null,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(schema.patientReclamations.organizationId, orgId),
-				eq(schema.patientReclamations.patientId, patientId),
-				eq(schema.patientReclamations.id, reclamationId),
-			),
-		)
-		.returning();
-	return row ? toReclamation(row) : null;
+	return await withTenantCtx(orgId, async (tx) => {
+		const [row] = await tx
+			.update(schema.patientReclamations)
+			.set({
+				status,
+				resolvedAt: status === "resolved" ? new Date() : null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(schema.patientReclamations.organizationId, orgId),
+					eq(schema.patientReclamations.patientId, patientId),
+					eq(schema.patientReclamations.id, reclamationId),
+				),
+			)
+			.returning();
+		return row ? toReclamation(row) : null;
+	});
 }
 
 /**
@@ -203,15 +209,17 @@ export async function deletePatientReclamationFromDb(
 	patientId: string,
 	reclamationId: string,
 ): Promise<boolean> {
-	const rows = await db
-		.delete(schema.patientReclamations)
-		.where(
-			and(
-				eq(schema.patientReclamations.organizationId, orgId),
-				eq(schema.patientReclamations.patientId, patientId),
-				eq(schema.patientReclamations.id, reclamationId),
-			),
-		)
-		.returning({ id: schema.patientReclamations.id });
-	return rows.length > 0;
+	return await withTenantCtx(orgId, async (tx) => {
+		const rows = await tx
+			.delete(schema.patientReclamations)
+			.where(
+				and(
+					eq(schema.patientReclamations.organizationId, orgId),
+					eq(schema.patientReclamations.patientId, patientId),
+					eq(schema.patientReclamations.id, reclamationId),
+				),
+			)
+			.returning({ id: schema.patientReclamations.id });
+		return rows.length > 0;
+	});
 }

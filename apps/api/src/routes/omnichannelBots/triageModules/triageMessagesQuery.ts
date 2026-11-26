@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	communicationEvents,
 	denteTelegramChatLinks,
@@ -9,6 +8,7 @@ import {
 } from "../../../db/schema.js";
 import { omnichannelBotEngine } from "../../../services/bots/OmnichannelBotEngine.js";
 import type { BotChannel } from "../../../services/bots/types.js";
+import { hashTelegramChatFingerprint } from "../../../utils/telegramChatHash.js";
 import type { ChatMessageItem } from "../types.js";
 
 interface InboundMessageRawPayload {
@@ -32,91 +32,99 @@ export async function fetchInboxMessages(
 	patient: { id: string; fullName: string; phone: string | null } | null;
 	intercept: { isIntercepted: boolean; interceptedBy: string | null; interceptedAt: string | null };
 }> {
-	// 1. Входящие сообщения
-	const inbounds = await db
-		.select()
-		.from(messengerInboundEvents)
-		.where(
-			and(
-				eq(messengerInboundEvents.organizationId, orgId),
-				eq(messengerInboundEvents.externalChatId, senderId),
-			),
-		)
-		.orderBy(desc(messengerInboundEvents.createdAt))
-		.limit(100);
-
-	// 2. Ищем пациента для получения исходящих ответов.
-	// Связывание выполняется строго через messenger_inbound_events или dente_telegram_chat_links,
-	// без поиска по техническим маркерам в клинических заметках patients.notes (Мандат 8ap).
-	const inboundsWithPatient = inbounds.filter((ib) => ib.patientId);
-	let resolvedPatientId = inboundsWithPatient[0]?.patientId ?? null;
-
-	if (!resolvedPatientId && channel === "telegram") {
-		const chatFingerprint = createHash("sha256").update(senderId).digest("hex");
-		const [link] = await db
-			.select({ subjectId: denteTelegramChatLinks.subjectId })
-			.from(denteTelegramChatLinks)
+	const { inbounds, patient, outbounds } = await withTenantCtx(orgId, async (tx) => {
+		// 1. Входящие сообщения
+		const inboundRows = await tx
+			.select()
+			.from(messengerInboundEvents)
 			.where(
 				and(
-					eq(denteTelegramChatLinks.organizationId, orgId),
-					or(
-						eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
-						eq(denteTelegramChatLinks.chatTransportRef, senderId),
-					),
-					eq(denteTelegramChatLinks.status, "active"),
+					eq(messengerInboundEvents.organizationId, orgId),
+					eq(messengerInboundEvents.externalChatId, senderId),
 				),
 			)
-			.limit(1);
-		if (link) {
-			resolvedPatientId = link.subjectId;
-		}
-	}
-
-	const phoneDigits = senderId.replace(/\D/g, "");
-	const national10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
-
-	let patient: (typeof patients.$inferSelect) | null = null;
-	if (resolvedPatientId) {
-		const [matched] = await db
-			.select()
-			.from(patients)
-			.where(and(eq(patients.organizationId, orgId), eq(patients.id, resolvedPatientId)))
-			.limit(1);
-		patient = matched || null;
-	} else if (national10) {
-		const [matched] = await db
-			.select()
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, orgId),
-					or(
-						eq(patients.phone, senderId),
-						sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
-					),
-				),
-			)
-			.limit(1);
-		patient = matched || null;
-	}
-
-	let outbounds: (typeof communicationEvents.$inferSelect)[] = [];
-	if (patient) {
-		outbounds = await db
-			.select()
-			.from(communicationEvents)
-			.where(
-				and(
-					eq(communicationEvents.organizationId, orgId),
-					eq(communicationEvents.patientId, patient.id),
-					// В тред конкретного мессенджера попадают только его же каналы,
-					// иначе SMS-уведомления загрязняют переписку в Telegram/WhatsApp.
-					eq(communicationEvents.channel, channel),
-				),
-			)
-			.orderBy(desc(communicationEvents.createdAt))
+			.orderBy(desc(messengerInboundEvents.createdAt))
 			.limit(100);
-	}
+
+		// 2. Ищем пациента для получения исходящих ответов.
+		// Связывание выполняется строго через messenger_inbound_events или dente_telegram_chat_links,
+		// без поиска по техническим маркерам в клинических заметках patients.notes (Мандат 8ap).
+		const inboundsWithPatient = inboundRows.filter((ib) => ib.patientId);
+		let resolvedPatientId = inboundsWithPatient[0]?.patientId ?? null;
+
+		if (!resolvedPatientId && channel === "telegram") {
+			const chatFingerprint = hashTelegramChatFingerprint(senderId);
+			const [link] = await tx
+				.select({ subjectId: denteTelegramChatLinks.subjectId })
+				.from(denteTelegramChatLinks)
+				.where(
+					and(
+						eq(denteTelegramChatLinks.organizationId, orgId),
+						or(
+							eq(denteTelegramChatLinks.chatFingerprint, chatFingerprint),
+							eq(denteTelegramChatLinks.chatTransportRef, senderId),
+						),
+						eq(denteTelegramChatLinks.status, "active"),
+					),
+				)
+				.limit(1);
+			if (link) {
+				resolvedPatientId = link.subjectId;
+			}
+		}
+
+		const phoneDigits = senderId.replace(/\D/g, "");
+		const national10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+
+		let resolvedPatient: (typeof patients.$inferSelect) | null = null;
+		if (resolvedPatientId) {
+			const [matched] = await tx
+				.select()
+				.from(patients)
+				.where(and(eq(patients.organizationId, orgId), eq(patients.id, resolvedPatientId)))
+				.limit(1);
+			resolvedPatient = matched || null;
+		} else if (national10) {
+			const [matched] = await tx
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, orgId),
+						or(
+							eq(patients.phone, senderId),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${national10}%`}`,
+						),
+					),
+				)
+				.limit(1);
+			resolvedPatient = matched || null;
+		}
+
+		let outboundRows: (typeof communicationEvents.$inferSelect)[] = [];
+		if (resolvedPatient) {
+			outboundRows = await tx
+				.select()
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, orgId),
+						eq(communicationEvents.patientId, resolvedPatient.id),
+						// В тред конкретного мессенджера попадают только его же каналы,
+						// иначе SMS-уведомления загрязняют переписку в Telegram/WhatsApp.
+						eq(communicationEvents.channel, channel),
+					),
+				)
+				.orderBy(desc(communicationEvents.createdAt))
+				.limit(100);
+		}
+
+		return {
+			inbounds: inboundRows,
+			patient: resolvedPatient,
+			outbounds: outboundRows,
+		};
+	});
 
 	// 3. Формируем единый упорядоченный таймлайн
 	const messages: ChatMessageItem[] = [];

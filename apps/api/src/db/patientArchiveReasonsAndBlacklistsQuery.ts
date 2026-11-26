@@ -124,6 +124,7 @@ export async function isPatientBookingBlocked(
 export async function checkPatientBookingBlockDetails(
 	orgId: string,
 	patientId: string,
+	tx?: TenantDb | typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] | undefined,
 ): Promise<{ isBlocked: boolean; reason?: string; legalBasis?: string }> {
 	if (inMemoryBlacklist.has(`${orgId}:${patientId}`)) {
 		return {
@@ -132,9 +133,10 @@ export async function checkPatientBookingBlockDetails(
 			legalBasis: "Федеральный закон от 21.11.2011 № 323-ФЗ",
 		};
 	}
+	const executor = tx ?? db;
 	try {
 		let fullName = "";
-		const [patientRow] = await db
+		const [patientRow] = await executor
 			.select({ fullName: patients.fullName, status: patients.status })
 			.from(patients)
 			.where(
@@ -151,7 +153,7 @@ export async function checkPatientBookingBlockDetails(
 			eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
 		];
 
-		const rows = await db
+		const rows = await executor
 			.select()
 			.from(patientArchiveReasonsAndBlacklists)
 			.where(and(...conditions));

@@ -1,5 +1,5 @@
 import { and, eq, gte, sql, type Column } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { appointments } from "../../db/schema.js";
 import { inClinicZone } from "../../services/reports/managerReports.js";
 
@@ -33,6 +33,7 @@ export async function calculateNoShowHeatmap(
 	orgId: string,
 	startDate?: Date,
 	cohortZone?: string | null,
+	executor?: TenantDb,
 ): Promise<NoShowHeatmap> {
 	const noShowTimeBucket = inClinicZone(
 		appointments.startsAt,
@@ -41,21 +42,26 @@ export async function calculateNoShowHeatmap(
 	const dowExpr = sql`extract(isodow from ${noShowTimeBucket})::int`;
 	const hourExpr = sql`extract(hour from ${noShowTimeBucket})::int`;
 
-	const noShowRaw = await db
-		.select({
-			dayOfWeek: dowExpr,
-			hour: hourExpr,
-			status: appointments.status,
-			count: sql<number>`count(*)::int`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				withDateFilter(orgId, appointments.organizationId, appointments.startsAt, startDate),
-				sql`${appointments.status} in ('cancelled', 'no_show')`,
-			),
-		)
-		.groupBy(dowExpr, hourExpr, appointments.status);
+	const runQuery = (tx: TenantDb) =>
+		tx
+			.select({
+				dayOfWeek: dowExpr,
+				hour: hourExpr,
+				status: appointments.status,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(appointments)
+			.where(
+				and(
+					withDateFilter(orgId, appointments.organizationId, appointments.startsAt, startDate),
+					sql`${appointments.status} in ('cancelled', 'no_show')`,
+				),
+			)
+			.groupBy(dowExpr, hourExpr, appointments.status);
+
+	const noShowRaw = executor
+		? await runQuery(executor)
+		: await withTenantCtx(orgId, runQuery);
 
 	const DAY_NAMES = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 	const DAY_FULL_NAMES = [

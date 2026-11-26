@@ -6,6 +6,7 @@ import { toothStateHistory } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { ensurePatientInOrganization } from "./planHelpers.js";
+import { fetchToothHistoryTimeline } from "./toothHistoryTimeline.js";
 import { UUID_SHAPE } from "./types.js";
 
 interface ToothHistoryParams {
@@ -161,6 +162,50 @@ export function registerHistoryRoutes(app: FastifyInstance) {
 					changedAt: r.changedAt ? new Date(r.changedAt).toISOString() : null,
 				})),
 			});
+		},
+	);
+
+	/**
+	 * Получение полной хронологии зуба (дневники, снимки, планы, периодонтограмма, статусы)
+	 */
+	app.get<{ Params: { patientId: string; toothId: string } }>(
+		"/api/odontogram/tooth-history/:patientId/:toothId",
+		async (request, reply) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"read tooth history",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole = identity.role ?? request.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.history.read",
+					role: staffRole,
+					message: `Отказ в доступе к истории зуба (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId, toothId } = request.params;
+			const toothNum = parseInt(toothId, 10);
+			if (!UUID_SHAPE.test(patientId) || Number.isNaN(toothNum)) {
+				return reply.code(400).send({ error: "InvalidParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const events = await fetchToothHistoryTimeline(
+				organizationId,
+				patientId,
+				toothNum,
+				request.log,
+			);
+			return reply.send({ success: true, events });
 		},
 	);
 }

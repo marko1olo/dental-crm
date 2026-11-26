@@ -43,7 +43,7 @@ export {
 	groupTimelineEntriesByDate,
 	filterTimelineEntries,
 } from "./patientTimelineEngine.js";
-export * from "./patientRelationshipsEngine.js";
+export * from "../patients/patientRelationshipsSchema.js";
 export * from "./dentalFormulaSsot.js";
 export * from "./dentalFormulaSurfaces.js";
 export * from "./odontogramTreatmentEngine.js";

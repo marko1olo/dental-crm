@@ -1,8 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import {
-	requireClinicalReadAccess,
-	requireResolvedOrganizationId,
-} from "../../accessGuard.js";
+import { requireExecutiveAccess } from "./executiveAccessGuard.js";
 import {
 	calculateCohortLtv,
 	type CohortCalculationResult,
@@ -14,10 +11,7 @@ export { calculateCohortLtv };
 
 export async function registerCohortRoutes(app: FastifyInstance) {
 	app.get("/api/analytics/cohorts", async (request, reply) => {
-		const readAllowed = await requireClinicalReadAccess(request, reply, "cohort analytics");
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "cohort analytics");
+		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
 		try {

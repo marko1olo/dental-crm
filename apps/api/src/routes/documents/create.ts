@@ -1,7 +1,4 @@
-import {
-	createDocumentSchema,
-	publicGeneratedDocumentSchema,
-} from "@dental/shared";
+import { createDocumentSchema } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
@@ -32,6 +29,7 @@ import {
 import {
 	apiError,
 	documentCreateValidationMessageForRequest,
+	toPublicGeneratedDocument,
 } from "./shared.js";
 import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 
@@ -162,6 +160,6 @@ export async function register(app: FastifyInstance) {
 		}
 
 		const document = await createGeneratedDocumentInDb(orgId, validation.input);
-		return reply.code(201).send(publicGeneratedDocumentSchema.parse(document));
+		return reply.code(201).send(toPublicGeneratedDocument(document));
 	});
 }

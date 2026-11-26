@@ -4,10 +4,27 @@ import type {
 	TaxPaymentSnapshot,
 } from "@dental/shared";
 import {
+	isDmsInsurancePayment,
 	kopecksToNumericString,
 	parseKopecks,
 	sumKopecks,
 } from "@dental/shared";
+import { alreadyRefundedKopecksForPayment } from "./documentGuards/paymentReceiptAndRefundGuards.js";
+
+type PaymentWithOptionalKopecks = Payment & {
+	amountKopecks?: number | bigint | null | undefined;
+};
+
+function paymentAmountKopecks(payment: Payment): number {
+	const rawKop = (payment as PaymentWithOptionalKopecks).amountKopecks;
+	if (typeof rawKop === "bigint") {
+		return Number(rawKop);
+	}
+	if (typeof rawKop === "number") {
+		return Math.round(rawKop);
+	}
+	return parseKopecks(payment.amountRub);
+}
 
 const taxDocumentSnapshotKinds = new Set<GeneratedDocument["kind"]>([
 	"tax_deduction_certificate",
@@ -83,9 +100,11 @@ function paymentMatchesDocumentTaxScope(
 	return (
 		payment.patientId === document.patientId &&
 		payment.status === "paid" &&
-		payment.amountRub > 0 &&
+		paymentAmountKopecks(payment) > 0 &&
+		!isDmsInsurancePayment(payment.method, payment.note ?? undefined) &&
 		taxPaymentYear(payment) === document.taxYear &&
 		(!normalizedInn(document.taxPayerInn) ||
+			!normalizedInn(payment.payerInn) ||
 			normalizedInn(payment.payerInn) === normalizedInn(document.taxPayerInn))
 	);
 }
@@ -93,21 +112,45 @@ function paymentMatchesDocumentTaxScope(
 function baseTaxPaymentsForDocument(
 	document: GeneratedDocument,
 	payments: readonly Payment[],
+	documents: readonly GeneratedDocument[] = [],
 ): Payment[] {
 	if (!document.taxYear) return [];
 	const selectedPaymentIds = selectedPaymentIdsForTaxDocument(document);
 	const matchingPayments = payments.filter((payment) =>
 		paymentMatchesDocumentTaxScope(document, payment),
 	);
+	let scoped: Payment[];
 	if (taxDocumentUsesPaymentSnapshot(document.kind)) {
-		return selectedPaymentIds.size
+		scoped = selectedPaymentIds.size
 			? matchingPayments.filter((payment) => selectedPaymentIds.has(payment.id))
 			: matchingPayments;
+	} else {
+		const linkedPayments = matchingPayments.filter(
+			(payment) => payment.documentId === document.id,
+		);
+		scoped = linkedPayments.length ? linkedPayments : matchingPayments;
 	}
-	const linkedPayments = matchingPayments.filter(
-		(payment) => payment.documentId === document.id,
-	);
-	return linkedPayments.length ? linkedPayments : matchingPayments;
+
+	const netPayments: Payment[] = [];
+	for (const payment of scoped) {
+		const grossKop = paymentAmountKopecks(payment);
+		const refundedKop = documents.length
+			? alreadyRefundedKopecksForPayment(payment.id, documents)
+			: 0;
+		const netKop = Math.max(0, grossKop - refundedKop);
+		if (netKop <= 0) continue;
+		const hasExplicitKopecks =
+			(payment as PaymentWithOptionalKopecks).amountKopecks != null;
+		if (refundedKop > 0 || hasExplicitKopecks) {
+			const cloned = clonePayment(payment) as PaymentWithOptionalKopecks;
+			cloned.amountKopecks = netKop;
+			cloned.amountRub = Number(kopecksToNumericString(netKop));
+			netPayments.push(cloned);
+		} else {
+			netPayments.push(payment);
+		}
+	}
+	return netPayments;
 }
 
 function snapshotPaymentsForDocument(
@@ -121,10 +164,11 @@ function snapshotPaymentsForDocument(
 export function taxPaymentsForDocumentScope(
 	document: GeneratedDocument,
 	payments: readonly Payment[],
+	documents: readonly GeneratedDocument[] = [],
 ): Payment[] {
 	return (
 		snapshotPaymentsForDocument(document) ??
-		baseTaxPaymentsForDocument(document, payments)
+		baseTaxPaymentsForDocument(document, payments, documents)
 	);
 }
 
@@ -184,7 +228,11 @@ export function taxPaymentsForIssueSnapshot(
 	payments: readonly Payment[],
 	documents: readonly GeneratedDocument[],
 ): Payment[] {
-	const selectedPayments = baseTaxPaymentsForDocument(document, payments);
+	const selectedPayments = baseTaxPaymentsForDocument(
+		document,
+		payments,
+		documents,
+	);
 	if (!taxDocumentDuplicateSensitive(document.kind)) {
 		return selectedPayments;
 	}
@@ -258,7 +306,7 @@ export function taxPaymentSnapshotTotalRub(
 	snapshot: TaxPaymentSnapshot,
 ): number {
 	const totalKopecks = sumKopecks(
-		snapshot.payments.map((payment) => parseKopecks(payment.amountRub)),
+		snapshot.payments.map((payment) => paymentAmountKopecks(payment)),
 	);
 	return Number(kopecksToNumericString(totalKopecks));
 }

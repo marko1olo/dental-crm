@@ -2,7 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { rublesToKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import {
 	patients,
 	treatmentItems,
@@ -58,111 +58,121 @@ export async function handleGetTreatmentPlanById(
 		return reply.code(400).send({ error: "InvalidTreatmentPlanId" });
 	}
 
-	const [plan] = await db
-		.select()
-		.from(treatmentPlans)
-		.where(
-			and(
-				eq(treatmentPlans.id, id),
-				eq(treatmentPlans.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	const queryResult = await withTenantCtx(organizationId, async (tx) => {
+		const [plan] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.id, id),
+					eq(treatmentPlans.organizationId, organizationId),
+				),
+			)
+			.limit(1);
 
-	if (!plan) {
+		if (!plan) {
+			return null;
+		}
+
+		const [patientRow] = await tx
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, plan.patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		const items = await tx
+			.select()
+			.from(treatmentPlanItemsNew)
+			.where(
+				and(
+					eq(treatmentPlanItemsNew.planId, plan.id),
+					eq(treatmentPlanItemsNew.organizationId, organizationId),
+				),
+			)
+			.orderBy(treatmentPlanItemsNew.createdAt);
+
+		const doctorIds = [
+			...new Set(
+				items
+					.map((item) => item.doctorId)
+					.filter((dId): dId is string => Boolean(dId)),
+			),
+		];
+		const doctorsById = new Map<
+			string,
+			{ fullName: string; specialty: string | null }
+		>();
+		if (doctorIds.length > 0) {
+			const docRows = await tx
+				.select({
+					id: users.id,
+					fullName: users.fullName,
+					role: users.role,
+					specialties: users.specialties,
+				})
+				.from(users)
+				.where(
+					and(
+						eq(users.organizationId, organizationId),
+						inArray(users.id, doctorIds),
+					),
+				);
+			for (const doc of docRows) {
+				const specList = Array.isArray(doc.specialties)
+					? doc.specialties.join(", ")
+					: null;
+				doctorsById.set(doc.id, {
+					fullName: doc.fullName,
+					specialty:
+						specList ||
+						(doc.role === "doctor" ? "Врач-стоматолог" : doc.role),
+				});
+			}
+		}
+
+		const ledgerRows = await tx
+			.select({
+				id: treatmentItems.id,
+				status: treatmentItems.status,
+				visitId: treatmentItems.visitId,
+			})
+			.from(treatmentItems)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					eq(treatmentItems.patientId, plan.patientId),
+				),
+			);
+
+		const ledgerMap = new Map<string, { status: string; visitId: string | null }>();
+		for (const lr of ledgerRows) {
+			ledgerMap.set(lr.id.toLowerCase(), { status: lr.status, visitId: lr.visitId });
+		}
+
+		const stagesRows = await tx
+			.select()
+			.from(treatmentPlanStages)
+			.where(
+				and(
+					eq(treatmentPlanStages.planId, plan.id),
+					eq(treatmentPlanStages.organizationId, organizationId),
+				),
+			)
+			.orderBy(treatmentPlanStages.stageOrder);
+
+		return { plan, patientRow, items, doctorIds, doctorsById, ledgerMap, stagesRows };
+	});
+
+	if (!queryResult) {
 		return reply.code(404).send({ error: "TreatmentPlanNotFound" });
 	}
 
-	const [patientRow] = await db
-		.select()
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, plan.patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-
-	const items = await db
-		.select()
-		.from(treatmentPlanItemsNew)
-		.where(
-			and(
-				eq(treatmentPlanItemsNew.planId, plan.id),
-				eq(treatmentPlanItemsNew.organizationId, organizationId),
-			),
-		)
-		.orderBy(treatmentPlanItemsNew.createdAt);
-
-	const doctorIds = [
-		...new Set(
-			items
-				.map((item) => item.doctorId)
-				.filter((dId): dId is string => Boolean(dId)),
-		),
-	];
-	const doctorsById = new Map<
-		string,
-		{ fullName: string; specialty: string | null }
-	>();
-	if (doctorIds.length > 0) {
-		const docRows = await db
-			.select({
-				id: users.id,
-				fullName: users.fullName,
-				role: users.role,
-				specialties: users.specialties,
-			})
-			.from(users)
-			.where(
-				and(
-					eq(users.organizationId, organizationId),
-					inArray(users.id, doctorIds),
-				),
-			);
-		for (const doc of docRows) {
-			const specList = Array.isArray(doc.specialties)
-				? doc.specialties.join(", ")
-				: null;
-			doctorsById.set(doc.id, {
-				fullName: doc.fullName,
-				specialty:
-					specList ||
-					(doc.role === "doctor" ? "Врач-стоматолог" : doc.role),
-			});
-		}
-	}
-
-	const ledgerRows = await db
-		.select({
-			id: treatmentItems.id,
-			status: treatmentItems.status,
-			visitId: treatmentItems.visitId,
-		})
-		.from(treatmentItems)
-		.where(
-			and(
-				eq(treatmentItems.organizationId, organizationId),
-				eq(treatmentItems.patientId, plan.patientId),
-			),
-		);
-
-	const ledgerMap = new Map<string, { status: string; visitId: string | null }>();
-	for (const lr of ledgerRows) {
-		ledgerMap.set(lr.id.toLowerCase(), { status: lr.status, visitId: lr.visitId });
-	}
-
-	const stagesRows = await db
-		.select()
-		.from(treatmentPlanStages)
-		.where(
-			and(
-				eq(treatmentPlanStages.planId, plan.id),
-				eq(treatmentPlanStages.organizationId, organizationId),
-			),
-		)
-		.orderBy(treatmentPlanStages.stageOrder);
+	const { plan, patientRow, items, doctorIds, doctorsById, ledgerMap, stagesRows } = queryResult;
 
 	const serialized = serializeTreatmentPlan(
 		plan,

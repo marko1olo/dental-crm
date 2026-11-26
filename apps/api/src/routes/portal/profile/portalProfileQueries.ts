@@ -4,6 +4,7 @@
  */
 
 import type { PatientAdministrativeProfile } from "@dental/shared";
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
@@ -125,12 +126,16 @@ export async function fetchPatientFamilyData(
 			)
 			.limit(1);
 		if (fg) {
+			const balanceKop = Number(fg.balanceKopecks || 0);
 			familyGroupData = {
 				id: fg.id,
 				name: fg.name,
 				groupName: fg.groupName,
-				balanceRub: Number(fg.balance || 0),
-				balanceKopecks: Number(fg.balanceKopecks || 0),
+				balanceRub:
+					balanceKop !== 0
+						? kopecksToRubles(balanceKop)
+						: Number(fg.balance || 0),
+				balanceKopecks: balanceKop,
 			};
 		}
 	}

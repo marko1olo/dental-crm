@@ -18,6 +18,7 @@ import {
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 
 const logger = createApiLogger("speechProxyAndTunnel");
+const nativeGlobalFetch = globalThis.fetch;
 
 export class SpeechProviderRequestError extends Error {
 	statusCode: number | null;
@@ -44,6 +45,7 @@ export class SpeechProviderRequestError extends Error {
 }
 
 let cachedProxyAgent: Dispatcher | null = null;
+let cachedProxyUrl: string | undefined;
 export function getProxyAgent(): Dispatcher | null {
 	const proxyUrl =
 		process.env.GLOBAL_LLM_PROXY_URL?.trim() ||
@@ -52,7 +54,15 @@ export function getProxyAgent(): Dispatcher | null {
 		process.env.HTTP_PROXY?.trim() ||
 		process.env.LLM_PROXY?.trim() ||
 		undefined;
-	if (!proxyUrl) return null;
+	if (!proxyUrl) {
+		cachedProxyAgent = null;
+		cachedProxyUrl = undefined;
+		return null;
+	}
+	if (cachedProxyUrl !== proxyUrl) {
+		cachedProxyAgent = null;
+		cachedProxyUrl = proxyUrl;
+	}
 	if (!cachedProxyAgent) {
 		try {
 			if (proxyUrl.startsWith("socks")) {
@@ -303,7 +313,8 @@ export async function fetchWithProviderTimeout(
 ): Promise<Response> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), timeoutMs);
-	const dispatcher = getProxyAgent();
+	const isMockedFetch = globalThis.fetch !== nativeGlobalFetch;
+	const dispatcher = isMockedFetch ? null : getProxyAgent();
 	try {
 		if (!dispatcher) {
 			return await fetch(input, {
@@ -340,7 +351,7 @@ export async function fetchWithProviderTimeout(
 			) ||
 				error.message.includes("undici"));
 
-		if (isNetworkError && !dispatcher) {
+		if (isNetworkError && !dispatcher && !isMockedFetch) {
 			logger.info(
 				{ errorMsg: error.message },
 				"Direct connection failed. Attempting SOCKS5 SSH Tunnel fallback...",

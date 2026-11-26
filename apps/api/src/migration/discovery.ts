@@ -327,32 +327,26 @@ export interface DiscoveryOptions {
  * туда стоит смотреть в первую очередь.
  */
 async function defaultRoots(): Promise<string[]> {
-	const roots: string[] = [];
-	const home = process.env.USERPROFILE ?? process.env.HOME;
-	if (home) roots.push(home);
-
-	if (process.platform === "win32") {
-		for (const letter of "CDEFGH") {
-			const drive = `${letter}:\\`;
-			try {
-				const info = await stat(drive);
-				if (info.isDirectory()) roots.push(drive);
-			} catch {
-				// Диска нет.
-			}
-		}
-	} else {
-		for (const candidate of ["/srv", "/opt", "/var/lib", "/media", "/mnt"]) {
-			try {
-				const info = await stat(candidate);
-				if (info.isDirectory()) roots.push(candidate);
-			} catch {
-				// Каталога нет.
-			}
+	const configuredRaw = process.env.DENTAL_MIGRATION_ALLOWED_ROOTS?.trim();
+	if (configuredRaw) {
+		const configured = configuredRaw
+			.split(/[;,]/)
+			.map((r) => r.trim())
+			.filter(Boolean)
+			.map((r) => path.resolve(r));
+		if (configured.length > 0) {
+			return configured;
 		}
 	}
 
-	return roots;
+	const safeDefaultDir = path.resolve(process.cwd(), ".data", "migration-sources");
+	try {
+		const info = await stat(safeDefaultDir);
+		if (info.isDirectory()) return [safeDefaultDir];
+	} catch {
+		// Каталог источников по умолчанию ещё не создан.
+	}
+	return [];
 }
 
 /**

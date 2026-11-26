@@ -15,10 +15,24 @@ test("Document templates Fastify API routes suite", async (t) => {
 		3600,
 	);
 
+	await t.test("Unauthenticated GET catalog/variables/template endpoints reject with 401", async () => {
+		for (const url of [
+			"/api/document-templates/variables",
+			"/api/document-templates",
+			"/api/document-templates/1",
+		]) {
+			const res = await app.inject({ method: "GET", url });
+			assert.equal(res.statusCode, 401, `Expected 401 for unauthenticated GET ${url}`);
+		}
+	});
+
 	await t.test("GET /api/document-templates/variables returns all 74+ substitution variables", async () => {
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/document-templates/variables",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
 		});
 
 		assert.equal(res.statusCode, 200);
@@ -41,6 +55,9 @@ test("Document templates Fastify API routes suite", async (t) => {
 		const res = await app.inject({
 			method: "GET",
 			url: "/api/document-templates",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
 		});
 
 		assert.equal(res.statusCode, 200);
@@ -69,6 +86,9 @@ test("Document templates Fastify API routes suite", async (t) => {
 		const res1 = await app.inject({
 			method: "GET",
 			url: "/api/document-templates/1",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
 		});
 		assert.equal(res1.statusCode, 200);
 		const json1 = res1.json();
@@ -81,6 +101,9 @@ test("Document templates Fastify API routes suite", async (t) => {
 		const resAlias = await app.inject({
 			method: "GET",
 			url: "/api/document-templates/ids_implant",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
 		});
 		assert.equal(resAlias.statusCode, 200);
 		const jsonAlias = resAlias.json();
@@ -93,6 +116,9 @@ test("Document templates Fastify API routes suite", async (t) => {
 		const res404 = await app.inject({
 			method: "GET",
 			url: "/api/document-templates/non_existing_random_xyz_9999",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
 		});
 		assert.equal(res404.statusCode, 404);
 	});
@@ -163,5 +189,22 @@ test("Document templates Fastify API routes suite", async (t) => {
 		assert.ok(!json.renderedHtml.includes("{{"), "No unrendered {{ token }} must remain");
 		assert.ok(!json.renderedHtml.includes("[object Object]"), "No [object Object] leaks");
 		assert.ok(!json.renderedHtml.includes("NaN"), "No NaN in rendered output");
+	});
+
+	await t.test("POST /api/document-templates/:id/render rejects financial and document overrides with 400", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/document-templates/ids_implant/render",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
+			payload: {
+				overrides: {
+					financial: { amountRubles: 1 },
+					document: { number: "FAKE-000" },
+				},
+			},
+		});
+		assert.equal(res.statusCode, 400);
 	});
 });

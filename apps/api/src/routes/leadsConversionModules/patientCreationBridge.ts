@@ -111,13 +111,15 @@ export async function createPatientFromLead(params: {
 				? identity.userId
 				: null;
 
-		await saveLeadCommunicationConsents(tx, {
-			organizationId,
-			patientId: res.patient.id,
-			consentMedical: true,
-			consentMarketing: false,
-			decidedByUserId: changedByUserId,
-		});
+		if (!res.alreadyExisted) {
+			await saveLeadCommunicationConsents(tx, {
+				organizationId,
+				patientId: res.patient.id,
+				consentMedical: true,
+				consentMarketing: false,
+				decidedByUserId: changedByUserId,
+			});
+		}
 
 		if (lead.status !== "converted") {
 			await recordLeadStageTransition({

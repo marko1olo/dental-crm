@@ -129,10 +129,7 @@ export async function withSavepoint<T>(
 	tx: TenantDb,
 	callback: (savepointTx: TenantDb) => Promise<T>,
 ): Promise<T> {
-	if (
-		process.env.DENTAL_STATE_PERSISTENCE === "off" ||
-		typeof (tx as { transaction?: unknown }).transaction !== "function"
-	) {
+	if (typeof (tx as { transaction?: unknown }).transaction !== "function") {
 		return callback(tx);
 	}
 	const parentHooks = postCommitStorage.getStore();
@@ -201,14 +198,6 @@ export async function withTenantCtx<T>(
 	organizationId: string,
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		const postCommitHooks: PostCommitHook[] = [];
-		const result = await postCommitStorage.run(postCommitHooks, () =>
-			callback(dbRaw),
-		);
-		await flushPostCommitHooks(postCommitHooks);
-		return result;
-	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// Re-assert the tenant on the existing transaction rather than opening a
@@ -296,14 +285,6 @@ export async function withTenantCtx<T>(
 export async function withSuperuserBypass<T>(
 	callback: (tx: TenantDb) => Promise<T>,
 ): Promise<T> {
-	if (process.env.DENTAL_STATE_PERSISTENCE === "off") {
-		const postCommitHooks: PostCommitHook[] = [];
-		const result = await postCommitStorage.run(postCommitHooks, () =>
-			callback(dbRaw),
-		);
-		await flushPostCommitHooks(postCommitHooks);
-		return result;
-	}
 	const existingTx = transactionStorage.getStore();
 	if (existingTx) {
 		// A bypass scope is already open on this transaction; it owns the flag and

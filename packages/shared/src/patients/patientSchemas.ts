@@ -145,7 +145,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 				updatedAt: z.string(),
 				notes: z.string().nullable().optional(),
 				curatorId: z.string().nullable().optional(),
-			}),
+			}).strict(),
 		)
 		.nullable()
 		.optional()
@@ -177,7 +177,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	somaticAlerts: z.array(z.unknown()).nullable().optional(),
 	somaticRiskLevel: z.string().nullable().optional(),
 	somaticUpdatedAt: z.string().nullable().optional(),
-});
+}).strict();
 
 export const patientAdministrativeProfileSchema =
 	patientAdministrativeProfileBaseSchema.superRefine((value, context) => {
@@ -279,7 +279,7 @@ export const patientSchema = z.object({
 	somaticNotes: z.string().nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
-});
+}).strict();
 
 export type Patient = z.infer<typeof patientSchema>;
 

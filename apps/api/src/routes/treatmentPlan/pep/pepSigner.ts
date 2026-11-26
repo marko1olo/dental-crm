@@ -43,47 +43,62 @@ export async function handleSignTreatmentPlanPep(
 	}
 
 	const data = parsed.data;
-	const initialData = await withTenantCtx(organizationId, async (tx) => {
-		const [planRow] = await tx
+
+	if (data.action === "request_code") {
+		const initialData = await withTenantCtx(organizationId, async (tx) => {
+			const [planRow] = await tx
+				.select()
+				.from(treatmentPlans)
+				.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+				.limit(1);
+
+			if (!planRow) return null;
+
+			const [patientRow] = await tx
+				.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+				.from(patients)
+				.where(and(eq(patients.id, planRow.patientId), eq(patients.organizationId, organizationId)))
+				.limit(1);
+
+			return { plan: planRow, patient: patientRow ?? null };
+		});
+
+		if (!initialData) {
+			return reply.code(404).send({ error: "TreatmentPlanNotFound", message: "План лечения не найден." });
+		}
+
+		const targetPhone = data.phone || initialData.patient?.phone || "";
+		return handleOtpRequest(planId, targetPhone, request, reply, organizationId, initialData.plan.patientId);
+	}
+
+	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
+	const pepMethodKey = data.method === "sms" ? "pep_sms" : data.method === "qr_touch" ? "pep_qr_touch" : "paper_physical";
+
+	const txResult = await withTenantCtx(organizationId, async (tx) => {
+		const [planToLock] = await tx
 			.select()
 			.from(treatmentPlans)
 			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.for("update")
 			.limit(1);
 
-		if (!planRow) {
-			return null;
+		if (!planToLock) {
+			return { kind: "not_found" as const };
 		}
 
-		const [patientRow] = await tx
-			.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
-			.from(patients)
-			.where(and(eq(patients.id, planRow.patientId), eq(patients.organizationId, organizationId)))
-			.limit(1);
+		if (data.method === "sms") {
+			const otpValid = await verifyOtpCode(planId, data.code, organizationId, planToLock.patientId, tx);
+			if (!otpValid) {
+				return { kind: "invalid_code" as const };
+			}
+		}
 
-		return { plan: planRow, patient: patientRow ?? null };
-	});
-
-	if (!initialData) {
-		return reply.code(404).send({ error: "TreatmentPlanNotFound", message: "План лечения не найден." });
-	}
-
-	const { plan, patient } = initialData;
-	const patientFullName = data.signerName || patient?.fullName || "Пациент";
-	const targetPhone = data.phone || patient?.phone || "";
-
-	if (data.action === "request_code") {
-		return handleOtpRequest(planId, targetPhone, request, reply, organizationId, plan.patientId);
-	}
-
-	if (data.method === "sms" && !(await verifyOtpCode(planId, data.code, organizationId, plan.patientId))) {
-		return reply.code(400).send({
-			error: "InvalidVerificationCode",
-			message: "Неверный код подтверждения СМС или срок его действия истек.",
-		});
-	}
-
-	const { items, stages } = await withTenantCtx(organizationId, async (tx) => {
-		const [loadedItems, loadedStages] = await Promise.all([
+		const [[patientRow], loadedItems, loadedStages] = await Promise.all([
+			tx
+				.select({ id: patients.id, fullName: patients.fullName, phone: patients.phone })
+				.from(patients)
+				.where(and(eq(patients.id, planToLock.patientId), eq(patients.organizationId, organizationId)))
+				.limit(1),
 			tx
 				.select()
 				.from(treatmentPlanItemsNew)
@@ -103,73 +118,57 @@ export async function handleSignTreatmentPlanPep(
 					),
 				),
 		]);
-		return { items: loadedItems, stages: loadedStages };
-	});
 
-	// Юридическая чистота ПЭП 63-ФЗ: полный канонический снимок сметы, позиций и этапов
-	const canonicalPlanSnapshot = {
-		planId: plan.id,
-		patientId: plan.patientId,
-		organizationId,
-		name: plan.name,
-		diagnosisIcd10: plan.diagnosisIcd10 ?? null,
-		priceFreezePolicy: plan.priceFreezePolicy ?? "standard_30_days",
-		discountMode: plan.discountMode ?? "plan_fixed",
-		totalPriceKopecks: plan.totalPriceKopecks ? String(plan.totalPriceKopecks) : null,
-		planDiscountKopecks: plan.planDiscountKopecks ? String(plan.planDiscountKopecks) : null,
-		totalPriceRub: plan.totalPriceRub || plan.totalPrice,
-		signerName: patientFullName,
-		signerPhone: targetPhone,
-		stages: stages
-			.map((s) => ({
-				stageOrder: s.stageOrder,
-				stageName: s.stageName,
-				completionPercentage: s.completionPercentage,
-			}))
-			.sort((a, b) => a.stageOrder - b.stageOrder),
-		items: items
-			.map((it) => ({
-				id: it.id,
-				toothNumber: it.toothNumber,
-				phase: it.phase,
-				priceId: it.priceId,
-				name: it.name,
-				quantity: it.quantity,
-				priceKopecks: it.priceKopecks ? String(it.priceKopecks) : null,
-				discountKopecks: it.discountKopecks ? String(it.discountKopecks) : null,
-			}))
-			.sort((a, b) => (a.phase - b.phase) || (a.toothNumber || 0) - (b.toothNumber || 0) || a.id.localeCompare(b.id)),
-	};
+		const patientFullName = data.signerName || patientRow?.fullName || "Пациент";
+		const targetPhone = data.phone || patientRow?.phone || "";
 
-	const documentHash = createHash("sha256").update(JSON.stringify(canonicalPlanSnapshot)).digest("hex");
-	const pepMethodKey = data.method === "sms" ? "pep_sms" : data.method === "qr_touch" ? "pep_qr_touch" : "paper_physical";
+		// Юридическая чистота ПЭП 63-ФЗ: полный канонический снимок под блокировкой FOR UPDATE
+		const canonicalPlanSnapshot = {
+			planId: planToLock.id,
+			patientId: planToLock.patientId,
+			organizationId,
+			name: planToLock.name,
+			diagnosisIcd10: planToLock.diagnosisIcd10 ?? null,
+			priceFreezePolicy: planToLock.priceFreezePolicy ?? "standard_30_days",
+			discountMode: planToLock.discountMode ?? "plan_fixed",
+			totalPriceKopecks: planToLock.totalPriceKopecks ? String(planToLock.totalPriceKopecks) : null,
+			planDiscountKopecks: planToLock.planDiscountKopecks ? String(planToLock.planDiscountKopecks) : null,
+			totalPriceRub: planToLock.totalPriceRub || planToLock.totalPrice,
+			signerName: patientFullName,
+			signerPhone: targetPhone,
+			stages: loadedStages
+				.map((s) => ({
+					stageOrder: s.stageOrder,
+					stageName: s.stageName,
+					completionPercentage: s.completionPercentage,
+				}))
+				.sort((a, b) => a.stageOrder - b.stageOrder),
+			items: loadedItems
+				.map((it) => ({
+					id: it.id,
+					toothNumber: it.toothNumber,
+					phase: it.phase,
+					priceId: it.priceId,
+					name: it.name,
+					quantity: it.quantity,
+					priceKopecks: it.priceKopecks ? String(it.priceKopecks) : null,
+					discountKopecks: it.discountKopecks ? String(it.discountKopecks) : null,
+				}))
+				.sort((a, b) => (a.phase - b.phase) || (a.toothNumber || 0) - (b.toothNumber || 0) || a.id.localeCompare(b.id)),
+		};
 
-	const pepRecord = {
-		method: pepMethodKey,
-		signedAtIso: new Date().toISOString(),
-		signerPhone: targetPhone,
-		signerName: patientFullName,
-		clientIp: request.ip || "127.0.0.1",
-		userAgent: request.headers["user-agent"] || "",
-		documentHash,
-		signatureBase64: data.signatureBase64 || null,
-		verified: true,
-	};
-
-	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
-	const { signedPlan, createdInvoice } = await withTenantCtx(
-		organizationId,
-		async (tx): Promise<{ signedPlan: typeof treatmentPlans.$inferSelect | undefined; createdInvoice: CreatedInvoiceSummary | null }> => {
-		const [planToLock] = await tx
-			.select()
-			.from(treatmentPlans)
-			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
-			.for("update")
-			.limit(1);
-
-		if (!planToLock) {
-			return { signedPlan: undefined, createdInvoice: null };
-		}
+		const documentHash = createHash("sha256").update(JSON.stringify(canonicalPlanSnapshot)).digest("hex");
+		const pepRecord = {
+			method: pepMethodKey,
+			signedAtIso: new Date().toISOString(),
+			signerPhone: targetPhone,
+			signerName: patientFullName,
+			clientIp: request.ip || "127.0.0.1",
+			userAgent: request.headers["user-agent"] || "",
+			documentHash,
+			signatureBase64: data.signatureBase64 || null,
+			verified: true,
+		};
 
 		const [updated] = await tx
 			.update(treatmentPlans)
@@ -190,7 +189,7 @@ export async function handleSignTreatmentPlanPep(
 				.where(
 					and(
 						eq(treatmentItems.organizationId, organizationId),
-						eq(treatmentItems.patientId, plan.patientId),
+						eq(treatmentItems.patientId, planToLock.patientId),
 						eq(treatmentItems.status, "proposed"),
 						or(
 							eq(treatmentItems.treatmentPlanId, planId),
@@ -199,28 +198,28 @@ export async function handleSignTreatmentPlanPep(
 					),
 				);
 
-			// SEV-2.4: Аннулируем позиции отвергнутых альтернативных тарифов в той же группе планов
 			await cancelRejectedPlanTierLedgerItems(tx, {
 				organizationId,
-				patientId: plan.patientId,
+				patientId: planToLock.patientId,
 				approvedPlanId: planId,
-				planGroupId: plan.planGroupId,
+				planGroupId: planToLock.planGroupId,
 			});
 
-			// DEF-PLAN-01 / ПЭП: Создаем счет/наряд в кассе при подписании плана через ПЭП
 			invoice = await createInvoiceForApprovedPlan(tx, {
 				organizationId,
-				patientId: plan.patientId,
+				patientId: planToLock.patientId,
 				planId,
-				planName: updated.name || plan.name || "Комплексный план лечения",
-				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice || plan.totalPriceRub || plan.totalPrice,
-				discountMode: updated.discountMode || plan.discountMode,
+				planName: updated.name || planToLock.name || "Комплексный план лечения",
+				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice || planToLock.totalPriceRub || planToLock.totalPrice,
+				discountMode: updated.discountMode || planToLock.discountMode,
 				planDiscountPercent: updated.planDiscountPercent
 					? Number(updated.planDiscountPercent)
-					: (plan.planDiscountPercent ? Number(plan.planDiscountPercent) : 0),
+					: (planToLock.planDiscountPercent ? Number(planToLock.planDiscountPercent) : 0),
 				planDiscountRub: updated.planDiscountRub
 					? Number(updated.planDiscountRub)
-					: (plan.planDiscountRub ? Number(plan.planDiscountRub) : 0),
+					: (planToLock.planDiscountRub ? Number(planToLock.planDiscountRub) : 0),
+				planDiscountKopecks: updated.planDiscountKopecks != null ? BigInt(updated.planDiscountKopecks) : (planToLock.planDiscountKopecks != null ? BigInt(planToLock.planDiscountKopecks) : null),
+				totalPriceKopecks: updated.totalPriceKopecks != null ? BigInt(updated.totalPriceKopecks) : (planToLock.totalPriceKopecks != null ? BigInt(planToLock.totalPriceKopecks) : null),
 			});
 
 			await tx.insert(auditEvents).values({
@@ -229,17 +228,36 @@ export async function handleSignTreatmentPlanPep(
 				entityType: "treatment_plan",
 				entityId: planId,
 				action: "TREATMENT_PLAN_SIGNED_PEP",
-				reason: `План лечения «${plan.name}» успешно утвержден и подписан через ПЭП (${pepMethodKey})`,
+				reason: `План лечения «${planToLock.name}» успешно утвержден и подписан через ПЭП (${pepMethodKey})`,
 			});
 		}
 
-		return { signedPlan: updated, createdInvoice: invoice };
+		return {
+			kind: "ok" as const,
+			signedPlan: updated,
+			createdInvoice: invoice,
+			patientId: planToLock.patientId,
+			pepRecord,
+			documentHash,
+		};
 	});
+
+	if (txResult.kind === "not_found") {
+		return reply.code(404).send({ error: "TreatmentPlanNotFound", message: "План лечения не найден." });
+	}
+	if (txResult.kind === "invalid_code") {
+		return reply.code(400).send({
+			error: "InvalidVerificationCode",
+			message: "Неверный код подтверждения СМС или срок его действия истек.",
+		});
+	}
+
+	const { signedPlan, createdInvoice, patientId, pepRecord, documentHash } = txResult;
 
 	activeOtpCache.delete(planId);
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "TREATMENT_PLAN_PEP_SIGNED",
-		payload: { planId, patientId: plan.patientId, signature: pepRecord },
+		payload: { planId, patientId, signature: pepRecord },
 	});
 
 	if (createdInvoice) {
@@ -249,7 +267,7 @@ export async function handleSignTreatmentPlanPep(
 				payload: {
 					invoiceId: createdInvoice.id,
 					invoiceNumber: createdInvoice.invoiceNumber,
-					patientId: plan.patientId,
+					patientId,
 					patientName: createdInvoice.patientName,
 					totalAmountRub: createdInvoice.totalAmountRub,
 					status: "draft",

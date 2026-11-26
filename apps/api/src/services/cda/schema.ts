@@ -4,7 +4,7 @@ export const personNameSchema = z.object({
 	first: z.string().min(1),
 	last: z.string().min(1),
 	middle: z.string().optional(),
-});
+}).strict();
 
 export type PersonName = z.infer<typeof personNameSchema>;
 
@@ -43,7 +43,7 @@ export const dentalStatusItemSchema = z.object({
 	conditionCode: z.string().optional(),
 	conditionName: z.string().optional(),
 	description: z.string().optional(),
-});
+}).strict();
 
 export type DentalStatusItem = z.infer<typeof dentalStatusItemSchema>;
 
@@ -52,7 +52,7 @@ export const serviceRenderedItemSchema = z.object({
 	name: z.string().min(1),
 	quantity: z.number().positive().optional().default(1),
 	tooth: z.union([z.string(), z.number()]).optional(),
-});
+}).strict();
 
 export type ServiceRenderedItem = z.infer<typeof serviceRenderedItemSchema>;
 
@@ -66,7 +66,7 @@ export const legalAuthenticatorSchema = z.object({
 		const d = v instanceof Date ? v : new Date(String(v));
 		return Number.isNaN(d.getTime()) ? undefined : d;
 	}, z.date().optional()),
-});
+}).strict();
 
 export type LegalAuthenticator = z.infer<typeof legalAuthenticatorSchema>;
 
@@ -121,6 +121,7 @@ export const egiszCdaParamsSchema = z.object({
 	instrumentTrayBarcode: z.string().optional(),
 	legalAuthenticator: legalAuthenticatorSchema.optional(),
 	visitDate: z.coerce.date(),
+	visitId: z.string().optional(),
 	documentId: z.string().min(1),
 	encounterId: z.string().optional(),
 	documentSetId: z.string().optional(),
@@ -131,6 +132,6 @@ export const egiszCdaParamsSchema = z.object({
 		const d = v instanceof Date ? v : new Date(String(v));
 		return Number.isNaN(d.getTime()) ? new Date() : d;
 	}, z.date().optional()),
-});
+}).strict();
 
 export type EgiszCdaParams = z.infer<typeof egiszCdaParamsSchema>;

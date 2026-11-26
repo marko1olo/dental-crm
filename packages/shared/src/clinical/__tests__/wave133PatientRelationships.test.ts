@@ -34,7 +34,7 @@ import {
 	relationshipTypeSchema,
 	resolvedPatientRelationshipSchema,
 	validateRelationshipPair,
-} from "../patientRelationshipsEngine.js";
+} from "../../patients/patientRelationshipsSchema.js";
 import {
 	buildBidirectionalRelationshipList as buildBidirectionalFromClinical,
 	evaluateFamilyPaymentAuthorization as evaluatePaymentFromClinical,

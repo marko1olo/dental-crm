@@ -35,7 +35,10 @@
  * образцах из документации.
  */
 
+import { createApiLogger } from "./observability/logger.js";
 import type { DeliveryErrorClass } from "./services/communications/deliveryPolicy.js";
+
+const logger = createApiLogger("maxTransport");
 
 /** Домен из действующей документации. Старые адреса помечены устаревшими. */
 const MAX_API_BASE = "https://platform-api2.max.ru";
@@ -193,7 +196,13 @@ export async function sendMaxTextMessage(
 			},
 		);
 
-		const payload: unknown = await response.json().catch(() => null);
+		const payload: unknown = await response.json().catch((err: unknown) => {
+			logger.warn(
+				{ err, status: response.status },
+				"[sendMaxText] Failed to parse MAX JSON response",
+			);
+			return null;
+		});
 
 		if (!response.ok) {
 			return {

@@ -7,7 +7,7 @@ import { signToken } from "../../utils/cryptoHelper.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 
 /**
@@ -94,39 +94,55 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 		await db
 			.delete(schema.doctorCommissions)
 			.where(eq(schema.doctorCommissions.userId, doctorUserId));
-		await db.delete(schema.users).where(eq(schema.users.id, doctorUserId));
-		await db.delete(schema.users).where(eq(schema.users.id, ownerUserId));
+		await db
+			.update(schema.users)
+			.set({ isActive: false })
+			.where(inArray(schema.users.id, [doctorUserId, ownerUserId]));
 	});
 
-	test("0. Врач получает внятный отказ (403) на мутации настроек", async () => {
+	test("0. Врач получает внятный отказ (403) на административных мутациях настроек", async () => {
 		await withFixtureTenant(orgId, async () => {
-			const res = await app.inject({
+			const chairRes = await app.inject({
 				method: "POST",
-				url: "/api/settings/catalog",
+				url: "/api/settings/chairs",
 				headers: {
 					"content-type": "application/json",
 					"x-dente-staff-token": doctorToken,
 				},
 				payload: {
-					title: "Попытка врача изменить прайс",
-					code: "A16.07.008.001",
-					order804nCode: "A16.07.008",
-					category: "therapy",
-					specialty: "therapist",
-					durationMinutes: 60,
-					basePriceRub: 4500,
-					active: true,
+					name: "Попытка врача создать кресло",
+					room: "Кабинет 99",
+					specialization: "therapist",
+					hasXraySensor: true,
+					hasMicroscope: false,
+					hasSurgeryKit: false,
 				},
 			});
-			assert.equal(res.statusCode, 403);
-			const body = JSON.parse(res.body);
-			assert.equal(body.error, "PermissionDenied");
-			assert.equal(body.permission, "settings.write");
+			assert.equal(chairRes.statusCode, 403);
+			const chairBody = JSON.parse(chairRes.body);
+			assert.equal(chairBody.error, "PermissionDenied");
+			assert.equal(chairBody.permission, "settings.write");
 			assert.ok(
-				body.message.toLowerCase().includes("врач"),
-				`Текст отказа должен называть роль, а не коды: ${body.message}`,
+				chairBody.message.toLowerCase().includes("врач"),
+				`Текст отказа должен называть роль, а не коды: ${chairBody.message}`,
 			);
-			assert.ok(!body.message.includes("undefined"));
+			assert.ok(!chairBody.message.includes("undefined"));
+
+			const commRes = await app.inject({
+				method: "PUT",
+				url: `/api/settings/staff/${doctorUserId}/commission`,
+				headers: {
+					"content-type": "application/json",
+					"x-dente-staff-token": doctorToken,
+				},
+				payload: {
+					commissionPct: 50,
+				},
+			});
+			assert.equal(commRes.statusCode, 403);
+			const commBody = JSON.parse(commRes.body);
+			assert.equal(commBody.error, "PermissionDenied");
+			assert.equal(commBody.permission, "settings.write");
 		});
 	});
 

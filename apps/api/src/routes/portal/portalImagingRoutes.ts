@@ -8,8 +8,11 @@ import {
 	xrayScans,
 } from "../../db/schema.js";
 import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 import { isValidUuid } from "@dental/shared";
+
+const logger = createApiLogger("portalImagingRoutes");
 
 /**
  * [DEF-PORTAL-01 / SEV-2 FIX] Безопасная отдача снимков из imagingStudies и xrayScans
@@ -56,8 +59,11 @@ async function servePatientScan(
 				);
 				return reply.send(createReadStream(resolved));
 			}
-		} catch {
-			// Fallback to xrayScans
+		} catch (pacsErr) {
+			logger.warn(
+				{ err: safeLogError(pacsErr), organizationId: auth.organizationId, scanId },
+				"PACS imagingStudy file path unavailable, falling back to xrayScans",
+			);
 		}
 	}
 
@@ -103,8 +109,11 @@ async function servePatientScan(
 				);
 				return reply.send(createReadStream(resolved));
 			}
-		} catch {
-			// not found
+		} catch (xrayErr) {
+			logger.warn(
+				{ err: safeLogError(xrayErr), organizationId: auth.organizationId, scanId },
+				"X-ray PACS file path unavailable",
+			);
 		}
 	}
 

@@ -33,7 +33,7 @@ import {
 	type SQL,
 	sql,
 } from "drizzle-orm";
-import { db } from "../../db/client.js";
+import { type TenantDb, withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	patients,
@@ -265,23 +265,26 @@ function daysUntilBirthday(
 
 async function lastVisitByPatient(
 	organizationId: string,
+	tx?: TenantDb | undefined,
 ): Promise<Map<string, Date>> {
 	// Последним приёмом считается последняя завершённая запись: черновик визита
 	// без записи в расписании — это ещё не состоявшийся приём.
-	const rows = await db
-		.select({
-			patientId: appointments.patientId,
-			lastAt: sql<Date>`max(${appointments.startsAt})`,
-		})
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, organizationId),
-				isNotNull(appointments.patientId),
-				inArray(appointments.status, ["completed", "arrived", "in_treatment"]),
-			),
-		)
-		.groupBy(appointments.patientId);
+	const run = async (client: TenantDb) =>
+		client
+			.select({
+				patientId: appointments.patientId,
+				lastAt: sql<Date>`max(${appointments.startsAt})`,
+			})
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, organizationId),
+					isNotNull(appointments.patientId),
+					inArray(appointments.status, ["completed", "arrived", "in_treatment"]),
+				),
+			)
+			.groupBy(appointments.patientId);
+	const rows = tx ? await run(tx) : await withTenantCtx(organizationId, run);
 
 	const map = new Map<string, Date>();
 	for (const row of rows) {
@@ -294,18 +297,21 @@ async function lastVisitByPatient(
 async function futureAppointmentPatientIds(
 	organizationId: string,
 	now: Date,
+	tx?: TenantDb | undefined,
 ): Promise<Set<string>> {
-	const rows = await db
-		.select({ patientId: appointments.patientId })
-		.from(appointments)
-		.where(
-			and(
-				eq(appointments.organizationId, organizationId),
-				isNotNull(appointments.patientId),
-				gte(appointments.startsAt, now),
-				inArray(appointments.status, ["planned", "confirmed"]),
-			),
-		);
+	const run = async (client: TenantDb) =>
+		client
+			.select({ patientId: appointments.patientId })
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.organizationId, organizationId),
+					isNotNull(appointments.patientId),
+					gte(appointments.startsAt, now),
+					inArray(appointments.status, ["planned", "confirmed"]),
+				),
+			);
+	const rows = tx ? await run(tx) : await withTenantCtx(organizationId, run);
 	return new Set(
 		rows.map((row) => row.patientId).filter((id): id is string => Boolean(id)),
 	);
@@ -325,72 +331,80 @@ async function futureAppointmentPatientIds(
  */
 async function debtByPatient(
 	organizationId: string,
+	tx?: TenantDb | undefined,
 ): Promise<Map<string, number>> {
-	const paidRows = await db
-		.select({
-			patientId: payments.patientId,
-			total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
-		})
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, organizationId),
-				eq(payments.status, "paid"),
-			),
-		)
-		.groupBy(payments.patientId);
+	const run = async (client: TenantDb) => {
+		const paidRows = await client
+			.select({
+				patientId: payments.patientId,
+				total: sql<number>`coalesce(sum(${payments.amountRub}), 0)::numeric(12,2)`,
+			})
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, organizationId),
+					eq(payments.status, "paid"),
+				),
+			)
+			.groupBy(payments.patientId);
 
-	const plannedRows = await db
-		.select({
-			patientId: treatmentItems.patientId,
-			/*
-			 * Было `::int`. Цена с миграции 0135 хранится с копейками, а приведение
-			 * к целому срезало их у суммы долга, по которой потом отбирают, кому
-			 * напомнить об оплате.
-			 */
-			/*
-			 * `greatest(quantity, 1)` УБРАН. Это было ПОСЛЕДНЕЕ производственное
-			 * зеркало выражения, которое 2026-08-06 убрали из
-			 * `services/reports/managerReports.ts` в трёх местах; полный разбор с
-			 * тремя опровергнутыми оправданиями стоит там, у `serviceSales`.
-			 *
-			 * ПОЧЕМУ ОНО ЗДЕСЬ ХУЖЕ, ЧЕМ В ОТЧЁТЕ. Там неверное число читал
-			 * руководитель, здесь оно решает, КОМУ УЙДЁТ СООБЩЕНИЕ: эта величина
-			 * сравнивается с признаком отбора `debtAtLeastRub`
-			 * (`routes/communicationsOutbox.ts`, вкладка кампаний в интерфейсе).
-			 * Позиция с количеством 0 добавляла пациенту полную цену одной единицы,
-			 * то есть могла перевести его через порог — и человек получал напоминание
-			 * о долге, которого у него нет. Отправленное сообщение не отзывается, как
-			 * строку отчёта.
-			 *
-			 * ДОКАЗАТЕЛЬСТВО ПОВТОРЕНО НА ЭТОМ ВЫРАЖЕНИИ, А НЕ ПЕРЕНЕСЕНО. Прогон в
-			 * живом PostgreSQL 18.4 на VALUES, цена 1000,00, скидка 100,00:
-			 *   кол-во 1, 2, 3, 1.5 — старое и новое выражения совпадают побитово;
-			 *   кол-во 0.5 — 400,00 против 900,00;
-			 *   кол-во 0    —   0,00 против 900,00;
-			 *   кол-во -1   —   0,00 против 900,00.
-			 * То есть расхождение начинается не только на нуле и отрицательном, а на
-			 * ЛЮБОМ количестве меньше единицы, и всюду старое выражение выставляло
-			 * полную цену за единицу, которой в позиции нет. Введено 2026-07-27
-			 * первым коммитом этого файла (b1fb7c38f) без единого слова объяснения.
-			 *
-			 * Прежний комментарий выше называл дробное количество нормой («половина
-			 * услуги, треть курса»). Это было неверно уже тогда — общий контракт
-			 * `packages/shared/src/index.ts` объявляет
-			 * `quantity: z.number().int().positive()` — а с миграции 0162 стало и
-			 * невозможным: у колонки есть ограничения `quantity > 0` и
-			 * `quantity = trunc(quantity)`.
-			 */
-			total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
-		})
-		.from(treatmentItems)
-		.where(
-			and(
-				eq(treatmentItems.organizationId, organizationId),
-				ne(treatmentItems.status, "cancelled"),
-			),
-		)
-		.groupBy(treatmentItems.patientId);
+		const plannedRows = await client
+			.select({
+				patientId: treatmentItems.patientId,
+				/*
+				 * Было `::int`. Цена с миграции 0135 хранится с копейками, а приведение
+				 * к целому срезало их у суммы долга, по которой потом отбирают, кому
+				 * напомнить об оплате.
+				 */
+				/*
+				 * `greatest(quantity, 1)` УБРАН. Это было ПОСЛЕДНЕЕ производственное
+				 * зеркало выражения, которое 2026-08-06 убрали из
+				 * `services/reports/managerReports.ts` в трёх местах; полный разбор с
+				 * тремя опровергнутыми оправданиями стоит там, у `serviceSales`.
+				 *
+				 * ПОЧЕМУ ОНО ЗДЕСЬ ХУЖЕ, ЧЕМ В ОТЧЁТЕ. Там неверное число читал
+				 * руководитель, здесь оно решает, КОМУ УЙДЁТ СООБЩЕНИЕ: эта величина
+				 * сравнивается с признаком отбора `debtAtLeastRub`
+				 * (`routes/communicationsOutbox.ts`, вкладка кампаний в интерфейсе).
+				 * Позиция с количеством 0 добавляла пациенту полную цену одной единицы,
+				 * то есть могла перевести его через порог — и человек получал напоминание
+				 * о долге, которого у него нет. Отправленное сообщение не отзывается, как
+				 * строку отчёта.
+				 *
+				 * ДОКАЗАТЕЛЬСТВО ПОВТОРЕНО НА ЭТОМ ВЫРАЖЕНИИ, А НЕ ПЕРЕНЕСЕНО. Прогон в
+				 * живом PostgreSQL 18.4 на VALUES, цена 1000,00, скидка 100,00:
+				 *   кол-во 1, 2, 3, 1.5 — старое и новое выражения совпадают побитово;
+				 *   кол-во 0.5 — 400,00 против 900,00;
+				 *   кол-во 0    —   0,00 против 900,00;
+				 *   кол-во -1   —   0,00 против 900,00.
+				 * То есть расхождение начинается не только на нуле и отрицательном, а на
+				 * ЛЮБОМ количестве меньше единицы, и всюду старое выражение выставляло
+				 * полную цену за единицу, которой в позиции нет. Введено 2026-07-27
+				 * первым коммитом этого файла (b1fb7c38f) без единого слова объяснения.
+				 *
+				 * Прежний комментарий выше называл дробное количество нормой («половина
+				 * услуги, треть курса»). Это было неверно уже тогда — общий контракт
+				 * `packages/shared/src/index.ts` объявляет
+				 * `quantity: z.number().int().positive()` — а с миграции 0162 стало и
+				 * невозможным: у колонки есть ограничения `quantity > 0` и
+				 * `quantity = trunc(quantity)`.
+				 */
+				total: sql<number>`coalesce(sum(greatest(${treatmentItems.unitPriceRub} * ${treatmentItems.quantity} - ${treatmentItems.discountRub}, 0)), 0)::numeric(12,2)`,
+			})
+			.from(treatmentItems)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					ne(treatmentItems.status, "cancelled"),
+				),
+			)
+			.groupBy(treatmentItems.patientId);
+
+		return { paidRows, plannedRows };
+	};
+	const { paidRows, plannedRows } = tx
+		? await run(tx)
+		: await withTenantCtx(organizationId, run);
 
 	const paid = new Map(
 		paidRows.map((row) => [row.patientId, Number(row.total)]),
@@ -417,6 +431,7 @@ export type ResolveAudienceInput = {
 	readonly timeZone?: string | null;
 	/** Ограничить размер выборки — предпросмотр не должен тянуть всю картотеку. */
 	readonly limit?: number;
+	readonly tx?: TenantDb | undefined;
 };
 
 /**
@@ -427,204 +442,210 @@ export type ResolveAudienceInput = {
 export async function resolveAudience(
 	input: ResolveAudienceInput,
 ): Promise<AudiencePreview> {
-	const now = input.now ?? new Date();
-	const limit = Math.max(1, Math.min(20_000, input.limit ?? 5000));
-	const criteria = input.criteria;
+	const run = async (tx: TenantDb): Promise<AudiencePreview> => {
+		const now = input.now ?? new Date();
+		const limit = Math.max(1, Math.min(20_000, input.limit ?? 5000));
+		const criteria = input.criteria;
 
-	/*
-	 * Пояс читается ТОЛЬКО когда он нужен — то есть когда отбор смотрит на день
-	 * рождения или на возраст. Лишний запрос к базе на каждый предпросмотр
-	 * рассылки не нужен: остальные признаки календарной даты не касаются.
-	 * Явно переданный пояс (`input.timeZone`) не перезапрашивается — так тест
-	 * может задать пояс, не заводя клинику.
-	 */
-	const needsCalendarDate =
-		criteria.birthdayWithinDays !== undefined ||
-		criteria.ageFrom !== undefined ||
-		criteria.ageTo !== undefined;
-	const timeZone = needsCalendarDate
-		? (input.timeZone ?? (await clinicTimeZone(input.organizationId)))
-		: (input.timeZone ?? null);
+		/*
+		 * Пояс читается ТОЛЬКО когда он нужен — то есть когда отбор смотрит на день
+		 * рождения или на возраст. Лишний запрос к базе на каждый предпросмотр
+		 * рассылки не нужен: остальные признаки календарной даты не касаются.
+		 * Явно переданный пояс (`input.timeZone`) не перезапрашивается — так тест
+		 * может задать пояс, не заводя клинику.
+		 */
+		const needsCalendarDate =
+			criteria.birthdayWithinDays !== undefined ||
+			criteria.ageFrom !== undefined ||
+			criteria.ageTo !== undefined;
+		const timeZone = needsCalendarDate
+			? (input.timeZone ?? (await clinicTimeZone(input.organizationId)))
+			: (input.timeZone ?? null);
 
-	const filters: SQL[] = [eq(patients.organizationId, input.organizationId)];
-	filters.push(eq(patients.status, criteria.status ?? "active"));
-	if (criteria.patientIds && criteria.patientIds.length > 0) {
-		filters.push(inArray(patients.id, criteria.patientIds));
-	}
-
-	// Канал определяет, какой контакт обязателен. Без этого условия выборка
-	// показала бы 400 подходящих пациентов, из которых сообщение получат 40.
-	if (input.channel === "email") {
-		filters.push(isNotNull(patients.email));
-		filters.push(ne(patients.email, ""));
-	} else if (input.channel === "sms" || input.channel === "whatsapp") {
-		filters.push(isNotNull(patients.phone));
-		filters.push(ne(patients.phone, ""));
-	}
-
-	const rows = await db
-		.select({
-			id: patients.id,
-			fullName: patients.fullName,
-			phone: patients.phone,
-			email: patients.email,
-			birthDate: patients.birthDate,
-		})
-		.from(patients)
-		.where(and(...filters))
-		.limit(limit);
-
-	const needsVisitData =
-		criteria.lastVisitBefore !== undefined ||
-		criteria.lastVisitAfter !== undefined ||
-		criteria.neverVisited === true;
-	const [lastVisits, futureAppointments, debts] = await Promise.all([
-		needsVisitData
-			? lastVisitByPatient(input.organizationId)
-			: Promise.resolve(new Map<string, Date>()),
-		criteria.hasFutureAppointment !== undefined
-			? futureAppointmentPatientIds(input.organizationId, now)
-			: Promise.resolve(new Set<string>()),
-		criteria.debtAtLeastRub !== undefined
-			? debtByPatient(input.organizationId)
-			: Promise.resolve(new Map<string, number>()),
-	]);
-
-	const excluded: Record<AudienceExclusionReason, number> = {
-		no_contact: 0,
-		no_consent: 0,
-		status_mismatch: 0,
-		excluded_by_criteria: 0,
-	};
-	const notes: string[] = [];
-	const matchedIds: string[] = [];
-	const matchedById = new Map<string, (typeof rows)[number]>();
-
-	for (const row of rows) {
-		if (criteria.neverVisited === true && lastVisits.has(row.id)) {
-			excluded.excluded_by_criteria += 1;
-			continue;
+		const filters: SQL[] = [eq(patients.organizationId, input.organizationId)];
+		filters.push(eq(patients.status, criteria.status ?? "active"));
+		if (criteria.patientIds && criteria.patientIds.length > 0) {
+			filters.push(inArray(patients.id, criteria.patientIds));
 		}
-		if (criteria.lastVisitBefore !== undefined) {
-			const lastVisit = lastVisits.get(row.id);
-			if (!lastVisit || lastVisit >= new Date(criteria.lastVisitBefore)) {
+
+		// Канал определяет, какой контакт обязателен. Без этого условия выборка
+		// показала бы 400 подходящих пациентов, из которых сообщение получат 40.
+		if (input.channel === "email") {
+			filters.push(isNotNull(patients.email));
+			filters.push(ne(patients.email, ""));
+		} else if (input.channel === "sms" || input.channel === "whatsapp") {
+			filters.push(isNotNull(patients.phone));
+			filters.push(ne(patients.phone, ""));
+		}
+
+		const rows = await tx
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				email: patients.email,
+				birthDate: patients.birthDate,
+			})
+			.from(patients)
+			.where(and(...filters))
+			.limit(limit);
+
+		const needsVisitData =
+			criteria.lastVisitBefore !== undefined ||
+			criteria.lastVisitAfter !== undefined ||
+			criteria.neverVisited === true;
+		const [lastVisits, futureAppointments, debts] = await Promise.all([
+			needsVisitData
+				? lastVisitByPatient(input.organizationId, tx)
+				: Promise.resolve(new Map<string, Date>()),
+			criteria.hasFutureAppointment !== undefined
+				? futureAppointmentPatientIds(input.organizationId, now, tx)
+				: Promise.resolve(new Set<string>()),
+			criteria.debtAtLeastRub !== undefined
+				? debtByPatient(input.organizationId, tx)
+				: Promise.resolve(new Map<string, number>()),
+		]);
+
+		const excluded: Record<AudienceExclusionReason, number> = {
+			no_contact: 0,
+			no_consent: 0,
+			status_mismatch: 0,
+			excluded_by_criteria: 0,
+		};
+		const notes: string[] = [];
+		const matchedIds: string[] = [];
+		const matchedById = new Map<string, (typeof rows)[number]>();
+
+		for (const row of rows) {
+			if (criteria.neverVisited === true && lastVisits.has(row.id)) {
 				excluded.excluded_by_criteria += 1;
 				continue;
 			}
-		}
-		if (criteria.lastVisitAfter !== undefined) {
-			const lastVisit = lastVisits.get(row.id);
-			if (!lastVisit || lastVisit <= new Date(criteria.lastVisitAfter)) {
+			if (criteria.lastVisitBefore !== undefined) {
+				const lastVisit = lastVisits.get(row.id);
+				if (!lastVisit || lastVisit >= new Date(criteria.lastVisitBefore)) {
+					excluded.excluded_by_criteria += 1;
+					continue;
+				}
+			}
+			if (criteria.lastVisitAfter !== undefined) {
+				const lastVisit = lastVisits.get(row.id);
+				if (!lastVisit || lastVisit <= new Date(criteria.lastVisitAfter)) {
+					excluded.excluded_by_criteria += 1;
+					continue;
+				}
+			}
+			if (
+				criteria.hasFutureAppointment !== undefined &&
+				futureAppointments.has(row.id) !== criteria.hasFutureAppointment
+			) {
 				excluded.excluded_by_criteria += 1;
 				continue;
 			}
-		}
-		if (
-			criteria.hasFutureAppointment !== undefined &&
-			futureAppointments.has(row.id) !== criteria.hasFutureAppointment
-		) {
-			excluded.excluded_by_criteria += 1;
-			continue;
-		}
-		if (
-			criteria.debtAtLeastRub !== undefined &&
-			(debts.get(row.id) ?? 0) < criteria.debtAtLeastRub
-		) {
-			excluded.excluded_by_criteria += 1;
-			continue;
-		}
-		if (criteria.birthdayWithinDays !== undefined) {
-			const days = daysUntilBirthday(row.birthDate, now, timeZone);
-			if (days === null || days > criteria.birthdayWithinDays) {
+			if (
+				criteria.debtAtLeastRub !== undefined &&
+				(debts.get(row.id) ?? 0) < criteria.debtAtLeastRub
+			) {
 				excluded.excluded_by_criteria += 1;
 				continue;
 			}
-		}
-		if (criteria.ageFrom !== undefined || criteria.ageTo !== undefined) {
-			const age = ageFromBirthDate(row.birthDate, now, timeZone);
-			if (age === null) {
-				excluded.excluded_by_criteria += 1;
-				continue;
+			if (criteria.birthdayWithinDays !== undefined) {
+				const days = daysUntilBirthday(row.birthDate, now, timeZone);
+				if (days === null || days > criteria.birthdayWithinDays) {
+					excluded.excluded_by_criteria += 1;
+					continue;
+				}
 			}
-			if (criteria.ageFrom !== undefined && age < criteria.ageFrom) {
-				excluded.excluded_by_criteria += 1;
-				continue;
+			if (criteria.ageFrom !== undefined || criteria.ageTo !== undefined) {
+				const age = ageFromBirthDate(row.birthDate, now, timeZone);
+				if (age === null) {
+					excluded.excluded_by_criteria += 1;
+					continue;
+				}
+				if (criteria.ageFrom !== undefined && age < criteria.ageFrom) {
+					excluded.excluded_by_criteria += 1;
+					continue;
+				}
+				if (criteria.ageTo !== undefined && age > criteria.ageTo) {
+					excluded.excluded_by_criteria += 1;
+					continue;
+				}
 			}
-			if (criteria.ageTo !== undefined && age > criteria.ageTo) {
-				excluded.excluded_by_criteria += 1;
-				continue;
-			}
-		}
 
-		matchedIds.push(row.id);
-		matchedById.set(row.id, row);
-	}
-
-	// Согласия читаются одним запросом на всю выборку: по одному на пациента —
-	// это тысяча запросов на тысячную рассылку.
-	const consentsByPatient = await loadConsents(
-		input.organizationId,
-		matchedIds,
-	);
-
-	const candidates: AudienceCandidate[] = [];
-	for (const patientId of matchedIds) {
-		const row = matchedById.get(patientId);
-		if (!row) continue;
-
-		if (
-			!decideConsent(
-				consentsByPatient.get(patientId) ?? [],
-				input.channel,
-				input.scope,
-			).allowed
-		) {
-			excluded.no_consent += 1;
-			continue;
+			matchedIds.push(row.id);
+			matchedById.set(row.id, row);
 		}
 
-		const address = await recipientAddressFor(
+		// Согласия читаются одним запросом на всю выборку: по одному на пациента —
+		// это тысяча запросов на тысячную рассылку.
+		const consentsByPatient = await loadConsents(
 			input.organizationId,
-			input.channel,
-			row,
+			matchedIds,
+			tx,
 		);
-		if (!address) {
-			excluded.no_contact += 1;
-			continue;
+
+		const candidates: AudienceCandidate[] = [];
+		for (const patientId of matchedIds) {
+			const row = matchedById.get(patientId);
+			if (!row) continue;
+
+			if (
+				!decideConsent(
+					consentsByPatient.get(patientId) ?? [],
+					input.channel,
+					input.scope,
+				).allowed
+			) {
+				excluded.no_consent += 1;
+				continue;
+			}
+
+			const address = await recipientAddressFor(
+				input.organizationId,
+				input.channel,
+				row,
+			);
+			if (!address) {
+				excluded.no_contact += 1;
+				continue;
+			}
+
+			candidates.push({
+				patientId,
+				fullName: row.fullName,
+				recipientAddress: address,
+			});
 		}
 
-		candidates.push({
-			patientId,
-			fullName: row.fullName,
-			recipientAddress: address,
-		});
-	}
+		if (excluded.no_consent > 0 && input.scope === "marketing") {
+			notes.push(
+				`${excluded.no_consent} пациент(ов) отсеяно без согласия на рекламные сообщения. ` +
+					"Согласие фиксируется в карточке пациента; без него отправка запрещена законом о рекламе.",
+			);
+		}
+		if (excluded.no_contact > 0) {
+			notes.push(
+				`${excluded.no_contact} пациент(ов) без пригодного контакта для этого канала.`,
+			);
+		}
+		if (rows.length >= limit) {
+			// Молчаливое усечение выборки выглядело бы как «столько и есть».
+			notes.push(
+				`Показаны первые ${limit} записей: выборка ограничена, уточните условия отбора.`,
+			);
+		}
 
-	if (excluded.no_consent > 0 && input.scope === "marketing") {
-		notes.push(
-			`${excluded.no_consent} пациент(ов) отсеяно без согласия на рекламные сообщения. ` +
-				"Согласие фиксируется в карточке пациента; без него отправка запрещена законом о рекламе.",
-		);
-	}
-	if (excluded.no_contact > 0) {
-		notes.push(
-			`${excluded.no_contact} пациент(ов) без пригодного контакта для этого канала.`,
-		);
-	}
-	if (rows.length >= limit) {
-		// Молчаливое усечение выборки выглядело бы как «столько и есть».
-		notes.push(
-			`Показаны первые ${limit} записей: выборка ограничена, уточните условия отбора.`,
-		);
-	}
-
-	return {
-		matched: matchedIds.length,
-		deliverable: candidates.length,
-		candidates,
-		excluded,
-		notes,
+		return {
+			matched: matchedIds.length,
+			deliverable: candidates.length,
+			candidates,
+			excluded,
+			notes,
+		};
 	};
+	return input.tx
+		? run(input.tx)
+		: withTenantCtx(input.organizationId, run);
 }
 
 /**
@@ -636,8 +657,9 @@ export async function resolveAudience(
 async function loadConsents(
 	organizationId: string,
 	patientIds: string[],
+	tx?: TenantDb | undefined,
 ): Promise<Map<string, ConsentRecord[]>> {
-	return loadConsentsByPatient(organizationId, patientIds);
+	return loadConsentsByPatient(organizationId, patientIds, tx);
 }
 
 async function recipientAddressFor(

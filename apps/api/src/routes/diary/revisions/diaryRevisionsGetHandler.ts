@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, resolveOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { users, visitDiaries, visitDiaryRevisions } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
@@ -44,14 +44,16 @@ export async function handleDiaryRevisionsGet(req: FastifyRequest, reply: Fastif
 		}
 	}
 
-	const [diary] = await db
-		.select({
-			id: visitDiaries.id,
-			patientId: visitDiaries.patientId,
-			diagnosisIcd10: visitDiaries.diagnosisIcd10,
-		})
-		.from(visitDiaries)
-		.where(and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)));
+	const [diary] = await withTenantCtx(orgId, (tx) =>
+		tx
+			.select({
+				id: visitDiaries.id,
+				patientId: visitDiaries.patientId,
+				diagnosisIcd10: visitDiaries.diagnosisIcd10,
+			})
+			.from(visitDiaries)
+			.where(and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId))),
+	);
 
 	if (!diary) {
 		return reply.code(404).send({
@@ -67,29 +69,34 @@ export async function handleDiaryRevisionsGet(req: FastifyRequest, reply: Fastif
 		diagnosis: diary.diagnosisIcd10 ?? "Ревизии дневника приёма",
 	});
 
-	const revisions = await db
-		.select()
-		.from(visitDiaryRevisions)
-		.where(and(eq(visitDiaryRevisions.diaryId, id), eq(visitDiaryRevisions.organizationId, orgId)))
-		.orderBy(desc(visitDiaryRevisions.revisedAt));
+	const { revisions, reviserRows } = await withTenantCtx(orgId, async (tx) => {
+		const revRows = await tx
+			.select()
+			.from(visitDiaryRevisions)
+			.where(and(eq(visitDiaryRevisions.diaryId, id), eq(visitDiaryRevisions.organizationId, orgId)))
+			.orderBy(desc(visitDiaryRevisions.revisedAt));
 
-	const reviserIds = Array.from(
-		new Set(
-			revisions
-				.map((r) => r.revisedByUserId)
-				.filter((uid): uid is string => typeof uid === "string" && uid.length > 0),
-		),
-	);
+		const ids = Array.from(
+			new Set(
+				revRows
+					.map((r) => r.revisedByUserId)
+					.filter((uid): uid is string => typeof uid === "string" && uid.length > 0),
+			),
+		);
+		const authors =
+			ids.length > 0
+				? await tx
+						.select({ id: users.id, fullName: users.fullName })
+						.from(users)
+						.where(and(inArray(users.id, ids), eq(users.organizationId, orgId)))
+				: [];
+		return { revisions: revRows, reviserRows: authors };
+	});
+
 	const reviserNameById = new Map<string, string>();
-	if (reviserIds.length > 0) {
-		const reviserRows = await db
-			.select({ id: users.id, fullName: users.fullName })
-			.from(users)
-			.where(and(inArray(users.id, reviserIds), eq(users.organizationId, orgId)));
-		for (const row of reviserRows) {
-			const name = typeof row.fullName === "string" ? row.fullName.trim() : "";
-			if (name) reviserNameById.set(row.id, name);
-		}
+	for (const row of reviserRows) {
+		const name = typeof row.fullName === "string" ? row.fullName.trim() : "";
+		if (name) reviserNameById.set(row.id, name);
 	}
 	const revisionsWithAuthor = revisions.map((r) => {
 		const uid = typeof r.revisedByUserId === "string" && r.revisedByUserId.length > 0 ? r.revisedByUserId : null;

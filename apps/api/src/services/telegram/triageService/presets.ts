@@ -97,11 +97,19 @@ export const WHITENING_PRESETS: WhiteningPreset[] = [
 ];
 
 export function findImplantPreset(code: string): ImplantSystemPreset {
-	return IMPLANT_PRESETS.find((p) => p.code === code) ?? IMPLANT_PRESETS[0]!;
+	const fallback = IMPLANT_PRESETS[0];
+	if (!fallback) {
+		throw new Error("IMPLANT_PRESETS catalog is empty");
+	}
+	return IMPLANT_PRESETS.find((p) => p.code === code) ?? fallback;
 }
 
 export function findCrownPreset(code: string): CrownTypePreset {
-	return CROWN_PRESETS.find((c) => c.code === code) ?? CROWN_PRESETS[0]!;
+	const fallback = CROWN_PRESETS[0];
+	if (!fallback) {
+		throw new Error("CROWN_PRESETS catalog is empty");
+	}
+	return CROWN_PRESETS.find((c) => c.code === code) ?? fallback;
 }
 
 export function findCariesPreset(code: string): CariesPreset | undefined {

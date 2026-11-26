@@ -103,7 +103,9 @@ export class ZipArchiveBuilder {
 	private computeCrc32(buf: Buffer): number {
 		let crc = ~0;
 		for (let i = 0; i < buf.length; i++) {
-			crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ buf[i]!) & 0xff]!;
+			const byteVal = buf[i] ?? 0;
+			const tableVal = CRC_TABLE[(crc ^ byteVal) & 0xff] ?? 0;
+			crc = (crc >>> 8) ^ tableVal;
 		}
 		return (~crc) >>> 0;
 	}

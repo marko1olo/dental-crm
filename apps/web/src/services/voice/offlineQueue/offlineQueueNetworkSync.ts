@@ -2,8 +2,24 @@
  * offlineQueueNetworkSync.ts — Обработчик сетевой синхронизации с Speech API Fastify
  */
 
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import type { PendingTranscriptionRecord } from "./types";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toCleanUuid(value?: string | null): string | null {
+	if (!value) return null;
+	const trimmed = value.trim();
+	return UUID_PATTERN.test(trimmed) ? trimmed : null;
+}
+
+function unwrapEnvelope<T>(json: unknown): T {
+	if (json && typeof json === "object" && "data" in json && (json as Record<string, unknown>).data !== undefined) {
+		return (json as Record<string, unknown>).data as T;
+	}
+	return json as T;
+}
 
 export async function executeDefaultSyncHandler(
 	record: PendingTranscriptionRecord,
@@ -13,27 +29,32 @@ export async function executeDefaultSyncHandler(
 		return { success: false, error: "fetch API is not available" };
 	}
 
-	const headers: Record<string, string> = {
+	const headers: Record<string, string> = denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-		...denteAdminSecretRequestHeaders({}, record.context?.adminSecret ?? undefined),
-	};
+		"Idempotency-Key": generateUuidV7(),
+	});
 
 	if (record.audioBase64) {
+		const visitId = toCleanUuid(record.context?.visitId);
+		const patientId = toCleanUuid(record.context?.patientId);
+		const organizationId = toCleanUuid(record.context?.organizationId);
 		const payload = {
 			recordingId: record.id,
 			chunkIndex: 0,
-			mimeType: "audio/wav",
+			mimeType: "audio/wav" as const,
 			audioBase64: record.audioBase64,
 			durationMs: record.durationMs,
-			organizationId: record.context.organizationId || null,
-			patientId: record.context.patientId || null,
-			visitId: record.context.visitId || null,
+			source: visitId ? ("visit" as const) : ("document" as const),
+			...(organizationId ? { organizationId } : {}),
+			patientId,
+			visitId,
 			specialty: record.specialty || "therapy",
 			language: "ru",
 		};
 
 		const response = await fetch(syncEndpoint, {
 			method: "POST",
+			credentials: "include",
 			headers,
 			body: JSON.stringify(payload),
 		});
@@ -45,8 +66,9 @@ export async function executeDefaultSyncHandler(
 			};
 		}
 
-		const data = (await response.json()) as { text?: string };
-		const textResult = data?.text || record.rawText;
+		const rawJson: unknown = await response.json();
+		const data = unwrapEnvelope<{ chunk?: { transcript?: string }; text?: string }>(rawJson);
+		const textResult = data?.chunk?.transcript ?? data?.text ?? record.rawText;
 		return {
 			success: true,
 			...(textResult ? { text: textResult } : {}),
@@ -55,25 +77,28 @@ export async function executeDefaultSyncHandler(
 
 	if (record.rawText && record.rawText.trim()) {
 		const polishPayload = {
-			transcript: record.rawText,
-			specialty: record.specialty || "therapy",
-			patientId: record.context.patientId || null,
-			visitId: record.context.visitId || null,
-			organizationId: record.context.organizationId || null,
+			transcript: record.rawText.trim(),
+			specialty: record.specialty || "universal",
+			source: "recording_chunk" as const,
 		};
 
 		try {
 			const response = await fetch("/api/speech/polish-transcript", {
 				method: "POST",
-				headers,
+				credentials: "include",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify(polishPayload),
 			});
 
 			if (response.ok) {
-				const data = (await response.json()) as { polishedTranscript?: string };
+				const rawJson: unknown = await response.json();
+				const data = unwrapEnvelope<{ normalizedTranscript?: string; polishedTranscript?: string; text?: string }>(rawJson);
 				return {
 					success: true,
-					text: data?.polishedTranscript || record.rawText,
+					text: data?.normalizedTranscript || data?.polishedTranscript || data?.text || record.rawText,
 				};
 			}
 		} catch {

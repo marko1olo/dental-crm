@@ -9,20 +9,18 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq, sql } from "drizzle-orm";
-import { db } from "../db/client.js";
+import { and, eq, inArray, notExists, sql } from "drizzle-orm";
+import { withTenantCtx } from "../db/rls.js";
 import {
 	appointments,
 	cashOperations,
 	communicationEvents,
 	crmLeads,
+	patientInvoices,
 	patients,
 	payments,
 } from "../db/schema.js";
-import {
-	requireClinicalReadAccess,
-	requireResolvedOrganizationId,
-} from "../accessGuard.js";
+import { requireMarketingReadAccess } from "./marketingModules/marketingAccessGuard.js";
 import {
 	aggregateCrmMarketingMetrics,
 	kopecksToRubles,
@@ -67,6 +65,46 @@ export {
 };
 export * from "./marketingModules/marketingSchemas.js";
 
+function buildNetPaidRowsForRomi(
+	rows: Array<{
+		id: string;
+		patientId: string;
+		amountKopecks: number | bigint | string | null;
+		amountRub: string | number | null;
+		status: string | null;
+	}>,
+) {
+	const netByPatient = new Map<string, number>();
+	for (const pay of rows) {
+		if (pay.status !== "paid" && pay.status !== "refunded") continue;
+		const rawKop =
+			pay.amountKopecks != null && Number(pay.amountKopecks) !== 0
+				? Number(pay.amountKopecks)
+				: rublesToKopecks(Number(pay.amountRub || 0));
+		const signed = pay.status === "refunded" ? -Math.abs(rawKop) : rawKop;
+		netByPatient.set(pay.patientId, (netByPatient.get(pay.patientId) ?? 0) + signed);
+	}
+	const result: Array<{
+		id: string;
+		patientId: string;
+		amountKopecks: number;
+		amount: number;
+		status: string;
+	}> = [];
+	for (const [patientId, netKop] of netByPatient.entries()) {
+		const clampedKop = Math.max(0, netKop);
+		if (clampedKop <= 0) continue;
+		result.push({
+			id: `net-${patientId}`,
+			patientId,
+			amountKopecks: clampedKop,
+			amount: kopecksToRubles(clampedKop),
+			status: "paid",
+		});
+	}
+	return result;
+}
+
 export async function registerMarketingRoutes(app: FastifyInstance) {
 	await registerMarketingPromosRoutes(app);
 
@@ -75,68 +113,84 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 	 * Сводная сквозная аналитика: онлайн-самозапись vs телефония регистратуры + каналы ROMI (Фича #28)
 	 */
 	app.get("/api/marketing/attribution", async (request: FastifyRequest, reply: FastifyReply) => {
-		const readAllowed = await requireClinicalReadAccess(request, reply, "marketing attribution");
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "marketing attribution");
+		const orgId = await requireMarketingReadAccess(request, reply, "marketing attribution");
 		if (!orgId) return;
 
 		try {
-			const [allLeads, allAppts, allPayments, allPatients, allCallEvents, allMarketingExpenses] = await Promise.all([
-				db.select({
-					id: crmLeads.id,
-					patientId: crmLeads.patientId,
-					phone: crmLeads.phone,
-					source: crmLeads.source,
-					status: crmLeads.status,
-					createdAt: crmLeads.createdAt,
-				}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-				db.select({
-					id: appointments.id,
-					patientId: appointments.patientId,
-					status: appointments.status,
-					startsAt: appointments.startsAt,
-				}).from(appointments).where(eq(appointments.organizationId, orgId)),
-				db.select({
-					id: payments.id,
-					patientId: payments.patientId,
-					amountKopecks: payments.amountKopecks,
-					amountRub: payments.amountRub,
-					status: payments.status,
-				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
-				db.select({
-					id: patients.id,
-					fullName: patients.fullName,
-					phone: patients.phone,
-					notes: patients.notes,
-					administrativeProfile: patients.administrativeProfile,
-					createdAt: patients.createdAt,
-				}).from(patients).where(eq(patients.organizationId, orgId)),
-				db.select({
-					id: communicationEvents.id,
-					channel: communicationEvents.channel,
-					direction: communicationEvents.direction,
-					durationSeconds: communicationEvents.durationSeconds,
-					status: communicationEvents.status,
-				}).from(communicationEvents).where(
-					and(
-						eq(communicationEvents.organizationId, orgId),
-						eq(communicationEvents.channel, "phone"),
-					),
-				),
-				db.select({
-					amountKopecks: cashOperations.amountKopecks,
-					amountRub: cashOperations.amountRub,
-					metadata: cashOperations.metadata,
-					reasonCode: cashOperations.reasonCode,
-				}).from(cashOperations).where(
-					and(
-						eq(cashOperations.organizationId, orgId),
-						eq(cashOperations.operationType, "expense"),
-						sql`(${cashOperations.reasonCode} = 6 or (${cashOperations.metadata}->>'category') = 'marketing')`,
-					),
-				),
-			]);
+			const [allLeads, allAppts, allPayments, allPatients, allCallEvents, allMarketingExpenses] =
+				await withTenantCtx(orgId, (tx) =>
+					Promise.all([
+						tx.select({
+							id: crmLeads.id,
+							patientId: crmLeads.patientId,
+							phone: crmLeads.phone,
+							source: crmLeads.source,
+							status: crmLeads.status,
+							createdAt: crmLeads.createdAt,
+						}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
+						tx.select({
+							id: appointments.id,
+							patientId: appointments.patientId,
+							status: appointments.status,
+							startsAt: appointments.startsAt,
+						}).from(appointments).where(eq(appointments.organizationId, orgId)),
+						tx.select({
+							id: payments.id,
+							patientId: payments.patientId,
+							amountKopecks: payments.amountKopecks,
+							amountRub: payments.amountRub,
+							status: payments.status,
+						}).from(payments).where(
+							and(
+								eq(payments.organizationId, orgId),
+								inArray(payments.status, ["paid", "refunded"]),
+								notExists(
+									tx.select({ id: patientInvoices.id })
+										.from(patientInvoices)
+										.where(
+											and(
+												eq(patientInvoices.id, payments.documentId),
+												eq(patientInvoices.organizationId, orgId),
+												inArray(patientInvoices.status, ["voided", "cancelled"]),
+											),
+										),
+								),
+							),
+						),
+						tx.select({
+							id: patients.id,
+							fullName: patients.fullName,
+							phone: patients.phone,
+							notes: patients.notes,
+							administrativeProfile: patients.administrativeProfile,
+							createdAt: patients.createdAt,
+						}).from(patients).where(eq(patients.organizationId, orgId)),
+						tx.select({
+							id: communicationEvents.id,
+							channel: communicationEvents.channel,
+							direction: communicationEvents.direction,
+							durationSeconds: communicationEvents.durationSeconds,
+							status: communicationEvents.status,
+						}).from(communicationEvents).where(
+							and(
+								eq(communicationEvents.organizationId, orgId),
+								eq(communicationEvents.channel, "phone"),
+							),
+						),
+						tx.select({
+							amountKopecks: cashOperations.amountKopecks,
+							amountRub: cashOperations.amountRub,
+							metadata: cashOperations.metadata,
+							reasonCode: cashOperations.reasonCode,
+						}).from(cashOperations).where(
+							and(
+								eq(cashOperations.organizationId, orgId),
+								eq(cashOperations.operationType, "expense"),
+								sql`(${cashOperations.reasonCode} = 6 or (${cashOperations.metadata}->>'category') = 'marketing')`,
+							),
+						),
+					]),
+				);
 
 			const report = calculateMarketingAttributionReport({
 				organizationId: orgId,
@@ -161,17 +215,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					patientId: a.patientId ?? "",
 					status: a.status ?? "",
 				})),
-				payments: allPayments.map((pay) => ({
-					id: pay.id,
-					patientId: pay.patientId,
-					amountKopecks: pay.amountKopecks != null
-						? Number(pay.amountKopecks)
-						: rublesToKopecks(Number(pay.amountRub || 0)),
-					amount: pay.amountKopecks != null
-						? kopecksToRubles(pay.amountKopecks)
-						: Number(pay.amountRub || 0),
-					status: pay.status ?? "paid",
-				})),
+				payments: buildNetPaidRowsForRomi(allPayments),
 				communicationEvents: allCallEvents.map((c) => ({
 					id: c.id,
 					channel: c.channel ?? "phone",
@@ -198,55 +242,79 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 	 * Прямая сводная таблица окупаемости маркетинга (ROMI) из реальных данных БД CRM.
 	 */
 	app.get("/api/marketing/romi", async (request: FastifyRequest, reply: FastifyReply) => {
-		const readAllowed = await requireClinicalReadAccess(request, reply, "marketing romi");
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "marketing romi");
+		const orgId = await requireMarketingReadAccess(request, reply, "marketing romi");
 		if (!orgId) return;
 
 		try {
-			const [allPatients, allAppts, allPayments, allCallEvents] = await Promise.all([
-				db.select({
-					id: patients.id,
-					fullName: patients.fullName,
-					phone: patients.phone,
-					notes: patients.notes,
-					administrativeProfile: patients.administrativeProfile,
-					createdAt: patients.createdAt,
-				}).from(patients).where(eq(patients.organizationId, orgId)),
-				db.select({
-					id: appointments.id,
-					patientId: appointments.patientId,
-					status: appointments.status,
-				}).from(appointments).where(eq(appointments.organizationId, orgId)),
-				db.select({
-					id: payments.id,
-					patientId: payments.patientId,
-					amountKopecks: payments.amountKopecks,
-					amountRub: payments.amountRub,
-					status: payments.status,
-				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
-				db.select({
-					id: communicationEvents.id,
-					channel: communicationEvents.channel,
-					direction: communicationEvents.direction,
-					durationSeconds: communicationEvents.durationSeconds,
-					status: communicationEvents.status,
-				}).from(communicationEvents).where(eq(communicationEvents.organizationId, orgId)),
-			]);
+			const { allPatients, allAppts, allPayments, allCallEvents, customBudgetsKopecks } =
+				await withTenantCtx(orgId, async (tx) => {
+					const [patientsRows, apptsRows, paymentsRows, callRows] = await Promise.all([
+						tx.select({
+							id: patients.id,
+							fullName: patients.fullName,
+							phone: patients.phone,
+							notes: patients.notes,
+							administrativeProfile: patients.administrativeProfile,
+							createdAt: patients.createdAt,
+						}).from(patients).where(eq(patients.organizationId, orgId)),
+						tx.select({
+							id: appointments.id,
+							patientId: appointments.patientId,
+							status: appointments.status,
+						}).from(appointments).where(eq(appointments.organizationId, orgId)),
+						tx.select({
+							id: payments.id,
+							patientId: payments.patientId,
+							amountKopecks: payments.amountKopecks,
+							amountRub: payments.amountRub,
+							status: payments.status,
+						}).from(payments).where(
+							and(
+								eq(payments.organizationId, orgId),
+								inArray(payments.status, ["paid", "refunded"]),
+								notExists(
+									tx.select({ id: patientInvoices.id })
+										.from(patientInvoices)
+										.where(
+											and(
+												eq(patientInvoices.id, payments.documentId),
+												eq(patientInvoices.organizationId, orgId),
+												inArray(patientInvoices.status, ["voided", "cancelled"]),
+											),
+										),
+								),
+							),
+						),
+						tx.select({
+							id: communicationEvents.id,
+							channel: communicationEvents.channel,
+							direction: communicationEvents.direction,
+							durationSeconds: communicationEvents.durationSeconds,
+							status: communicationEvents.status,
+						}).from(communicationEvents).where(eq(communicationEvents.organizationId, orgId)),
+					]);
 
-			let customBudgetsKopecks: Record<string, number> | undefined;
-			try {
-				const { channels: persistedChannels } = await readOrSeedOrganizationRomiChannels(orgId);
-				customBudgetsKopecks = {};
-				for (const ch of persistedChannels) {
-					if (ch.spentKopecks > 0) {
-						customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
+					let budgets: Record<string, number> | undefined;
+					try {
+						const { channels: persistedChannels } = await readOrSeedOrganizationRomiChannels(orgId, tx);
+						budgets = {};
+						for (const ch of persistedChannels) {
+							if (ch.spentKopecks > 0) {
+								budgets[ch.channelKey] = ch.spentKopecks;
+							}
+						}
+					} catch (romiSeedErr) {
+						request.log.warn({ romiSeedErr }, "[Marketing] Non-critical: could not load persisted custom budgets, using CRM default aggregation");
 					}
-				}
-			} catch (romiSeedErr) {
-				request.log.warn({ romiSeedErr }, "[Marketing] Non-critical: could not load persisted custom budgets, using CRM default aggregation");
-			}
+
+					return {
+						allPatients: patientsRows,
+						allAppts: apptsRows,
+						allPayments: paymentsRows,
+						allCallEvents: callRows,
+						customBudgetsKopecks: budgets,
+					};
+				});
 
 			const romiChannels = aggregateCrmMarketingMetrics({
 				patients: allPatients.map((p) => ({
@@ -261,17 +329,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					patientId: a.patientId ?? "",
 					status: a.status ?? "",
 				})),
-				payments: allPayments.map((pay) => ({
-					id: pay.id,
-					patientId: pay.patientId,
-					amountKopecks: pay.amountKopecks != null
-						? Number(pay.amountKopecks)
-						: rublesToKopecks(Number(pay.amountRub || 0)),
-					amount: pay.amountKopecks != null
-						? kopecksToRubles(pay.amountKopecks)
-						: Number(pay.amountRub || 0),
-					status: pay.status ?? "paid",
-				})),
+				payments: buildNetPaidRowsForRomi(allPayments),
 				communicationEvents: allCallEvents.map((c) => ({
 					id: c.id,
 					channel: c.channel ?? "",
@@ -298,42 +356,57 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 	 * Пошаговая воронка конверсии самозаписи (Фича №28)
 	 */
 	app.get("/api/marketing/online-booking/funnel", async (request: FastifyRequest, reply: FastifyReply) => {
-		const readAllowed = await requireClinicalReadAccess(request, reply, "online booking funnel");
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "online booking funnel");
+		const orgId = await requireMarketingReadAccess(request, reply, "online booking funnel");
 		if (!orgId) return;
 
 		try {
-			const [allLeads, allAppts, allPayments, allPatients] = await Promise.all([
-				db.select({
-					id: crmLeads.id,
-					patientId: crmLeads.patientId,
-					phone: crmLeads.phone,
-					source: crmLeads.source,
-					status: crmLeads.status,
-				}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
-				db.select({
-					id: appointments.id,
-					patientId: appointments.patientId,
-					status: appointments.status,
-				}).from(appointments).where(eq(appointments.organizationId, orgId)),
-				db.select({
-					id: payments.id,
-					patientId: payments.patientId,
-					amountKopecks: payments.amountKopecks,
-					amountRub: payments.amountRub,
-					status: payments.status,
-				}).from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
-				db.select({
-					id: patients.id,
-					fullName: patients.fullName,
-					phone: patients.phone,
-					notes: patients.notes,
-					administrativeProfile: patients.administrativeProfile,
-					createdAt: patients.createdAt,
-				}).from(patients).where(eq(patients.organizationId, orgId)),
-			]);
+			const [allLeads, allAppts, allPayments, allPatients] = await withTenantCtx(orgId, (tx) =>
+				Promise.all([
+					tx.select({
+						id: crmLeads.id,
+						patientId: crmLeads.patientId,
+						phone: crmLeads.phone,
+						source: crmLeads.source,
+						status: crmLeads.status,
+					}).from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
+					tx.select({
+						id: appointments.id,
+						patientId: appointments.patientId,
+						status: appointments.status,
+					}).from(appointments).where(eq(appointments.organizationId, orgId)),
+					tx.select({
+						id: payments.id,
+						patientId: payments.patientId,
+						amountKopecks: payments.amountKopecks,
+						amountRub: payments.amountRub,
+						status: payments.status,
+					}).from(payments).where(
+						and(
+							eq(payments.organizationId, orgId),
+							inArray(payments.status, ["paid", "refunded"]),
+							notExists(
+								tx.select({ id: patientInvoices.id })
+									.from(patientInvoices)
+									.where(
+										and(
+											eq(patientInvoices.id, payments.documentId),
+											eq(patientInvoices.organizationId, orgId),
+											inArray(patientInvoices.status, ["voided", "cancelled"]),
+										),
+									),
+							),
+						),
+					),
+					tx.select({
+						id: patients.id,
+						fullName: patients.fullName,
+						phone: patients.phone,
+						notes: patients.notes,
+						administrativeProfile: patients.administrativeProfile,
+						createdAt: patients.createdAt,
+					}).from(patients).where(eq(patients.organizationId, orgId)),
+				]),
+			);
 
 			const funnel = calculateOnlineBookingFunnel({
 				allLeads,
@@ -357,10 +430,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 	 * Честные когорты пациентов и 3D RFM матрица из реальной базы PostgreSQL 18 ([LOY-10 & LOY-11]).
 	 */
 	app.get("/api/marketing/cohort-segments", async (request: FastifyRequest, reply: FastifyReply) => {
-		const readAllowed = await requireClinicalReadAccess(request, reply, "marketing cohort segments");
-		if (!readAllowed) return;
-
-		const orgId = await requireResolvedOrganizationId(request, reply, "marketing cohort segments");
+		const orgId = await requireMarketingReadAccess(request, reply, "marketing cohort segments");
 		if (!orgId) return;
 
 		try {

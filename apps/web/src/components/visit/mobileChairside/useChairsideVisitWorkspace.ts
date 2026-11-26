@@ -52,7 +52,7 @@ export function useChairsideVisitWorkspace({
     onInterim: (text) => {
       if (text) setRecognizedVoiceSnippet(text);
     },
-    onResult: (transcript) => {
+    onFullTranscript: (transcript) => {
       if (!transcript) return;
       triggerHaptic("success");
       setRecognizedVoiceSnippet(transcript);

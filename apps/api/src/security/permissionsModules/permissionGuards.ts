@@ -3,8 +3,10 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db, type TenantDb } from "../../db/client.js";
+import type { TenantDb } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { auditEvents } from "../../db/schema/system.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { unguardedBypassAllowed } from "../bypass.js";
 import { getRequestIdentity } from "../identity.js";
 import {
@@ -13,6 +15,8 @@ import {
 	roleHasPermissionWithOverrides,
 } from "./permissionChecks.js";
 import type { Permission } from "./permissionMatrix.js";
+
+const permissionLogger = createApiLogger("permissionGuards");
 
 interface RoleMatrixCacheEntry {
 	overrides: Record<string, Record<string, string | boolean>>;
@@ -63,12 +67,16 @@ export async function fetchRoleMatrixOverrides(
 		const { organizations } = await import("../../db/schema.js");
 		const { eq } = await import("drizzle-orm");
 
-		const executor = tx ?? db;
-		const [org] = await executor
-			.select({ workspaceFeatureFlags: organizations.workspaceFeatureFlags })
-			.from(organizations)
-			.where(eq(organizations.id, organizationId))
-			.limit(1);
+		const readOrgFlags = async (executor: TenantDb) =>
+			executor
+				.select({ workspaceFeatureFlags: organizations.workspaceFeatureFlags })
+				.from(organizations)
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+
+		const [org] = tx
+			? await readOrgFlags(tx)
+			: await withTenantCtx(organizationId, readOrgFlags);
 
 		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
 		const overrides =
@@ -80,7 +88,11 @@ export async function fetchRoleMatrixOverrides(
 		});
 
 		return overrides;
-	} catch {
+	} catch (err: unknown) {
+		permissionLogger.warn(
+			{ err: safeLogError(err), organizationId },
+			"[fetchRoleMatrixOverrides] Failed to load role matrix overrides from DB",
+		);
 		return null;
 	}
 }
@@ -159,20 +171,30 @@ export async function requirePermission(
 		return null;
 	}
 
-	const overrides = await fetchRoleMatrixOverrides(identity.organizationId, tx);
-	const hasAccess = roleHasPermissionWithOverrides(identity.role, permission, overrides);
+	const orgId = identity.organizationId;
+	const actorUserId = identity.userId;
+	const actorRole = identity.role;
+
+	const overrides = await fetchRoleMatrixOverrides(orgId, tx);
+	const hasAccess = roleHasPermissionWithOverrides(actorRole, permission, overrides);
 
 	// ACID Transactional Audit Logging в единую таблицу audit_events
-	const targetDb = tx ?? db;
-	try {
-		await targetDb.insert(auditEvents).values({
-			organizationId: identity.organizationId,
-			actorUserId: identity.userId,
+	const writeAudit = async (executor: TenantDb) =>
+		executor.insert(auditEvents).values({
+			organizationId: orgId,
+			actorUserId,
 			entityType: "rbac_permission",
 			entityId: permission,
 			action: hasAccess ? "permission_granted" : "permission_denied",
-			reason: hasAccess ? null : permissionRefusalMessage(identity.role, permission),
+			reason: hasAccess ? null : permissionRefusalMessage(actorRole, permission),
 		});
+
+	try {
+		if (tx) {
+			await writeAudit(tx);
+		} else {
+			await withTenantCtx(orgId, writeAudit);
+		}
 	} catch (auditErr) {
 		request.log?.warn?.({ err: auditErr, permission }, "Failed to write rbac audit_event");
 	}

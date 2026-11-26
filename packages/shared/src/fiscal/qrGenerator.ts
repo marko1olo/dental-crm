@@ -546,10 +546,22 @@ export function generateQrMatrix(
 	qr.setupTimingPatterns();
 	qr.reserveFormatAreas();
 
-	// Select mask 0
-	const mask = 0;
-	qr.placeDataBits(interleaved, mask);
-	qr.applyFormatInfo(ecLevel, mask);
+	// ISO/IEC 18004 §7.8.3 optimal mask selection (0..7) minimizing penalty N1..N4
+	let bestMask = 0;
+	let lowestPenalty = Number.POSITIVE_INFINITY;
+	for (let candidateMask = 0; candidateMask < 8; candidateMask++) {
+		qr.placeDataBits(interleaved, candidateMask);
+		qr.applyFormatInfo(ecLevel, candidateMask);
+		const penalty = computeQrPenaltyScore(qr.modules);
+		if (penalty < lowestPenalty) {
+			lowestPenalty = penalty;
+			bestMask = candidateMask;
+		}
+	}
+	if (bestMask !== 7) {
+		qr.placeDataBits(interleaved, bestMask);
+		qr.applyFormatInfo(ecLevel, bestMask);
+	}
 
 	return {
 		matrix: qr.modules,
@@ -558,16 +570,146 @@ export function generateQrMatrix(
 	};
 }
 
+function computeQrPenaltyScore(modules: readonly (readonly boolean[])[]): number {
+	const size = modules.length;
+	let penalty = 0;
+
+	// N1: 5+ consecutive same-color modules in rows and columns
+	for (let r = 0; r < size; r++) {
+		let rowRun = 1;
+		let colRun = 1;
+		for (let i = 1; i < size; i++) {
+			if (modules[r]?.[i] === modules[r]?.[i - 1]) {
+				rowRun++;
+				if (rowRun === 5) penalty += 3;
+				else if (rowRun > 5) penalty += 1;
+			} else {
+				rowRun = 1;
+			}
+
+			if (modules[i]?.[r] === modules[i - 1]?.[r]) {
+				colRun++;
+				if (colRun === 5) penalty += 3;
+				else if (colRun > 5) penalty += 1;
+			} else {
+				colRun = 1;
+			}
+		}
+	}
+
+	// N2: 2x2 blocks of same-color modules
+	for (let r = 0; r < size - 1; r++) {
+		for (let c = 0; c < size - 1; c++) {
+			const v = Boolean(modules[r]?.[c]);
+			if (
+				Boolean(modules[r]?.[c + 1]) === v &&
+				Boolean(modules[r + 1]?.[c]) === v &&
+				Boolean(modules[r + 1]?.[c + 1]) === v
+			) {
+				penalty += 3;
+			}
+		}
+	}
+
+	// N3: 1:1:3:1:1 dark-light-dark-dark-dark-light-dark finder-like patterns
+	const matchesFinderRatio = (arr: boolean[], start: number): boolean => {
+		const a = Boolean(arr[start]);
+		const b = Boolean(arr[start + 1]);
+		const c = Boolean(arr[start + 2]);
+		const d = Boolean(arr[start + 3]);
+		const e = Boolean(arr[start + 4]);
+		const f = Boolean(arr[start + 5]);
+		const g = Boolean(arr[start + 6]);
+		if (!(a && !b && c && d && e && !f && g)) return false;
+		const leftClear =
+			start >= 4 && !arr[start - 1] && !arr[start - 2] && !arr[start - 3] && !arr[start - 4];
+		const rightClear =
+			start + 10 < arr.length &&
+			!arr[start + 7] &&
+			!arr[start + 8] &&
+			!arr[start + 9] &&
+			!arr[start + 10];
+		return leftClear || rightClear;
+	};
+	for (let r = 0; r < size; r++) {
+		const row = (modules[r] ?? []).map(Boolean);
+		const col: boolean[] = [];
+		for (let idx = 0; idx < size; idx++) {
+			col.push(Boolean(modules[idx]?.[r]));
+		}
+		for (let i = 0; i <= size - 7; i++) {
+			if (matchesFinderRatio(row, i)) penalty += 40;
+			if (matchesFinderRatio(col, i)) penalty += 40;
+		}
+	}
+
+	// N4: balance of dark modules vs 50%
+	let darkCount = 0;
+	for (let r = 0; r < size; r++) {
+		for (let c = 0; c < size; c++) {
+			if (modules[r]?.[c]) darkCount++;
+		}
+	}
+	const total = size * size;
+	if (total > 0) {
+		const percent = (darkCount * 100) / total;
+		const prev5 = Math.floor(Math.abs(percent - 50) / 5);
+		penalty += prev5 * 10;
+	}
+
+	return penalty;
+}
+
+function escapeXml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+function sanitizeSvgColor(value: string | undefined, fallback: string): string {
+	if (typeof value !== "string") return fallback;
+	const trimmed = value.trim();
+	if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmed)) {
+		return trimmed;
+	}
+	if (/^[a-zA-Z]{1,32}$/.test(trimmed)) {
+		return trimmed;
+	}
+	if (/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)$/.test(trimmed)) {
+		return trimmed;
+	}
+	return fallback;
+}
+
+function sanitizeBoundedNumber(
+	value: number | undefined,
+	fallback: number,
+	min: number,
+	max: number,
+): number {
+	if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+	return Math.min(max, Math.max(min, Math.round(value)));
+}
+
 /**
  * Generates an SVG string representation of a QR Code.
  */
 export function generateQrCodeSvg(text: string, options: QrSvgOptions = {}): string {
 	const { matrix, size } = generateQrMatrix(text, "M");
-	const margin = options.margin ?? 4;
-	const fg = options.colorDark ?? options.color ?? options.foregroundColor ?? options.fgColor ?? "#000000";
-	const bg = options.colorLight ?? options.background ?? options.backgroundColor ?? options.bgColor ?? "#ffffff";
+	const margin = sanitizeBoundedNumber(options.margin, 4, 0, 32);
+	const fg = sanitizeSvgColor(
+		options.colorDark ?? options.color ?? options.foregroundColor ?? options.fgColor,
+		"#000000",
+	);
+	const bg = sanitizeSvgColor(
+		options.colorLight ?? options.background ?? options.backgroundColor ?? options.bgColor,
+		"#ffffff",
+	);
 	const totalSize = size + margin * 2;
-	const renderSize = options.size ?? 160;
+	const renderSize = sanitizeBoundedNumber(options.size, 160, 16, 4096);
 
 	let path = "";
 	for (let r = 0; r < size; r++) {
@@ -578,7 +720,7 @@ export function generateQrCodeSvg(text: string, options: QrSvgOptions = {}): str
 		}
 	}
 
-	const titleEl = options.title ? `<title>${options.title}</title>` : "";
+	const titleEl = options.title ? `<title>${escapeXml(options.title)}</title>` : "";
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalSize} ${totalSize}" width="${renderSize}" height="${renderSize}" style="shape-rendering:crispEdges; display:block;">${titleEl}<rect width="${totalSize}" height="${totalSize}" fill="${bg}"/><path d="${path.trim()}" fill="${fg}"/></svg>`;
 }

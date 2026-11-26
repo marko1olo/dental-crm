@@ -72,6 +72,15 @@ export function resolveDemoTokenIdentity(
 	clinicToken: string | null,
 	staffToken: string | null,
 ): Partial<RequestIdentity> | null {
+	const demoAllowed =
+		namedDevelopmentModeActive() &&
+		(unguardedBypassAllowed("DENTE_ALLOW_DEMO_LOGIN") ||
+			process.env.DENTE_DEMO_MODE === "1" ||
+			process.env.DENTE_DEMO_SHOWCASE === "true");
+	if (!demoAllowed) {
+		return null;
+	}
+
 	const isDemoClinicToken =
 		typeof clinicToken === "string" &&
 		(clinicToken.startsWith("demo-showcase-token") ||

@@ -2,7 +2,6 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	requireResolvedStaffOrAdminOrganizationId,
-	resolveOrganizationId,
 } from "../../accessGuard.js";
 import { TelegramBotHostingService } from "../../services/telegram/TelegramBotHostingService.js";
 
@@ -27,7 +26,7 @@ export function registerTelegramBotConnectionRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				ok: false,
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Некорректные параметры подключения бота.",
+				message: parsed.error.issues[0]?.message || "Некорректные параметры подключения бота.",
 			});
 		}
 

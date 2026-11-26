@@ -66,20 +66,22 @@ export function CopilotSettingsIntelligenceTab({
 
 			{/* Режим скорости и консилиума: Chairside Flash (<300 мс) vs CoT Reasoning */}
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5">
-				<div className="flex items-center justify-between gap-2">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 					<div>
 						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Brain size={14} className="text-[var(--teal,#0d9488)]" />
+							<Brain size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 							<span>Режим клинического консилиума и скорость отклика</span>
 						</span>
 						<p className="text-[10px] text-[var(--muted)]">Быстрый Chairside Flash (&lt;300 мс) или глубокий CoT Reasoning</p>
 					</div>
-					<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+					<div className="grid grid-cols-2 sm:inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] w-full sm:w-auto shrink-0">
 						<button
 							type="button"
 							onClick={() => setSpeedMode("turbo")}
-							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-								speedMode === "turbo" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+							className={`h-8 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+								speedMode === "turbo"
+									? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs font-semibold"
+									: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border border-transparent"
 							}`}
 							title="Chairside Flash <300 мс"
 						>
@@ -88,8 +90,10 @@ export function CopilotSettingsIntelligenceTab({
 						<button
 							type="button"
 							onClick={() => setSpeedMode("deep_reasoning")}
-							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-								speedMode === "deep_reasoning" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
+							className={`h-8 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+								speedMode === "deep_reasoning"
+									? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs font-semibold"
+									: "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border border-transparent"
 							}`}
 							title="Экспертный CoT Reasoning"
 						>

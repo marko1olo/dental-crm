@@ -94,7 +94,7 @@ const SCALE_PRESET_SPECS: Record<
 			defaultVisitMinutes: 45,
 		},
 	},
-	enterprise_clinic: {
+	network_center: {
 		mode: "network_clinic",
 		flags: {
 			hasAssistants: true,
@@ -163,7 +163,7 @@ export async function applyClinicScalePresetInDb(
 		return applyClinicScalePresetInMemory(preset);
 	}
 
-	const spec = SCALE_PRESET_SPECS[preset] ?? SCALE_PRESET_SPECS.enterprise_clinic;
+	const spec = SCALE_PRESET_SPECS[preset] ?? SCALE_PRESET_SPECS.network_center;
 
 	const run = async (tx: TenantDb): Promise<ClinicSettings> => {
 		const [org] = await tx
@@ -208,8 +208,8 @@ export async function applyClinicScalePresetInDb(
 		for (let i = 0; i < currentChairs.length; i++) {
 			const chair = currentChairs[i];
 			if (!chair) continue;
-			const shouldActivate = preset === "enterprise_clinic" ? i < 5 || chair.isActive : i < activeLimit;
-			if (preset === "enterprise_clinic" && i >= 5) continue;
+			const shouldActivate = preset === "network_center" ? i < 5 || chair.isActive : i < activeLimit;
+			if (preset === "network_center" && i >= 5) continue;
 			await tx
 				.update(schema.chairs)
 				.set({ isActive: shouldActivate })

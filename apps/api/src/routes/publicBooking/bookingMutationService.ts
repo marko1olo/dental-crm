@@ -1,4 +1,5 @@
 import { and, eq, gt, ilike, lt, notInArray, or } from "drizzle-orm";
+import { withSavepoint } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -8,6 +9,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { isPatientBookingBlocked } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import {
 	nameFuzzySimilarity,
 	nameKey,
@@ -15,6 +17,8 @@ import {
 import { FREED_APPOINTMENT_STATUSES } from "../appointmentErrors.js";
 import { normalizePhone } from "@dental/shared";
 import { normalizePhoneDigits } from "./slotAvailabilityEngine.js";
+
+const logger = createApiLogger("bookingMutationService");
 
 export interface BookingMutationParams {
 	organizationId: string;
@@ -363,14 +367,19 @@ export async function executeBookingTransaction(
 	// 4b. Record patient consent under 152-FZ if explicitly granted (DEF-PB-01)
 	if (params.hasAgreedToPrivacy && patientId) {
 		try {
-			await tx.insert(patientConsents).values({
-				organizationId,
-				patientId,
-				kind: "personal_data_processing",
-				grantedAt: new Date(),
+			await withSavepoint(tx, async (spTx) => {
+				await spTx.insert(patientConsents).values({
+					organizationId,
+					patientId,
+					kind: "personal_data_processing",
+					grantedAt: new Date(),
+				});
 			});
-		} catch {
-			// Non-blocking if consent already recorded for this patient
+		} catch (consentErr) {
+			logger.warn(
+				{ err: safeLogError(consentErr), organizationId, patientId },
+				"Non-blocking patient consent insert failed inside savepoint",
+			);
 		}
 	}
 

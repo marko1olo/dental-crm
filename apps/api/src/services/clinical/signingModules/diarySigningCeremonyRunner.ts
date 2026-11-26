@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { visitDiaries } from "../../../db/schema.js";
 import { Icd10ClinicalValidator } from "../Icd10ClinicalValidator.js";
 import type { FastifyBaseLogger } from "fastify";
@@ -105,6 +105,6 @@ export class DiarySigningCeremonyService {
 	static parseAndValidateTeeth = Icd10ClinicalValidator.parseAndValidateTeeth;
 
 	static async signDiary(params: Parameters<typeof runDiarySigningCeremony>[1]): Promise<DiarySigningResult> {
-		return await db.transaction((tx) => runDiarySigningCeremony(tx, params));
+		return await withTenantCtx(params.organizationId, (tx) => runDiarySigningCeremony(tx, params));
 	}
 }

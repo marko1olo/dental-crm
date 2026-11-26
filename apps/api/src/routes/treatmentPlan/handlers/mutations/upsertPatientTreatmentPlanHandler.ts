@@ -1,19 +1,15 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { withTenantCtx } from "../../../../db/rls.js";
+import { withSavepoint, withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
-	treatmentPlanItemsNew,
-	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
 import { debtNumericText, rublesFromKopecks } from "../../../../money/patientDebt.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import {
 	ensurePatientInOrganization,
-	loadTreatmentPlansForPatient,
 	numeric,
 	serializeTreatmentPlan,
 	verifyPlanWriteAccess,
@@ -26,7 +22,7 @@ import {
 	calculateEffectivePlanDiscount,
 	calculateTreatmentPlanTotals,
 } from "../treatmentPlanTotalsCalculator.js";
-import { syncUpsertPlanLedgerItems } from "./planLedgerSync.js";
+import { syncUpsertPlanStagesAndItems } from "./upsertPlanStagesAndItems.js";
 
 interface CustomErrorWithStatus extends Error {
 	statusCode?: number;
@@ -34,12 +30,6 @@ interface CustomErrorWithStatus extends Error {
 
 /**
  * upsertPatientTreatmentPlanHandler.ts — Создание, обновление сметы и проведение плана лечения.
- *
- * Декомпозирован из patientTreatmentPlanHandlers.ts по Мандатам 8b и 8zi.
- * Обеспечивает:
- * - Мандат 8e (Автономия врача): ноль 409 блокировок при изменении сметы, мягкое создание ревизий.
- * - Мандат 8n: суверенитет соло-врача и отсутствие бюрократических преград.
- * - Целочисленная арифметика в копейках (amountKopecks) и синхронизация книги лечения.
  */
 export async function handleUpsertPatientTreatmentPlan(
 	request: FastifyRequest<{ Params: { patientId: string } }>,
@@ -121,9 +111,6 @@ export async function handleUpsertPatientTreatmentPlan(
 
 				if (!existing) return null;
 
-				// Мандат 8e (Автономия врача):
-				// При изменении ранее согласованного плана лечения НЕ БЛОКИРУЕМ врача 409 ошибкой!
-				// Врач у кресла обновляет смету, система автоматически создает ревизию с инкрементом версии.
 				if (existing.status === "Approved" || existing.patientSignature) {
 					isRevision = true;
 				}
@@ -220,14 +207,17 @@ export async function handleUpsertPatientTreatmentPlan(
 				if (!planUpdated) return null;
 
 				if (isRevision) {
+					const revisedPlanId = savedPlanId;
 					try {
-						await tx.insert(auditEvents).values({
-							organizationId,
-							actorUserId: identity.userId ?? null,
-							entityType: "treatment_plan",
-							entityId: savedPlanId,
-							action: "TREATMENT_PLAN_REVISED",
-							reason: `Создана новая ревизия плана лечения (версия ${planUpdated.version}) врачом у кресла на сумму ${rublesFromKopecks(totalPriceKopecks)} ₽`,
+						await withSavepoint(tx, async (spTx) => {
+							await spTx.insert(auditEvents).values({
+								organizationId,
+								actorUserId: identity.userId ?? null,
+								entityType: "treatment_plan",
+								entityId: revisedPlanId,
+								action: "TREATMENT_PLAN_REVISED",
+								reason: `Создана новая ревизия плана лечения (версия ${planUpdated.version}) врачом у кресла на сумму ${rublesFromKopecks(totalPriceKopecks)} ₽`,
+							});
 						});
 					} catch (auditErr) {
 						request.log.warn({ err: auditErr }, "Не удалось записать аудит ревизии плана лечения");
@@ -279,14 +269,17 @@ export async function handleUpsertPatientTreatmentPlan(
 				savedPlanId = created?.id ?? null;
 
 				if (savedPlanId) {
+					const createdPlanId = savedPlanId;
 					try {
-						await tx.insert(auditEvents).values({
-							organizationId,
-							actorUserId: identity.userId ?? null,
-							entityType: "treatment_plan",
-							entityId: savedPlanId,
-							action: "TREATMENT_PLAN_CREATED",
-							reason: `Создан план лечения «${input.name}» на сумму ${rublesFromKopecks(totalPriceKopecks)} ₽`,
+						await withSavepoint(tx, async (spTx) => {
+							await spTx.insert(auditEvents).values({
+								organizationId,
+								actorUserId: identity.userId ?? null,
+								entityType: "treatment_plan",
+								entityId: createdPlanId,
+								action: "TREATMENT_PLAN_CREATED",
+								reason: `Создан план лечения «${input.name}» на сумму ${rublesFromKopecks(totalPriceKopecks)} ₽`,
+							});
 						});
 					} catch (auditErr) {
 						request.log.warn({ err: auditErr }, "Не удалось записать аудит создания плана лечения");
@@ -296,171 +289,11 @@ export async function handleUpsertPatientTreatmentPlan(
 
 			if (!savedPlanId) return null;
 
-			// Синхронизация этапов treatment_plan_stages для сохранения stageId
-			const stageMap = new Map<number, string>();
-			const existingStages = await tx
-				.select()
-				.from(treatmentPlanStages)
-				.where(
-					and(
-						eq(treatmentPlanStages.planId, savedPlanId),
-						eq(treatmentPlanStages.organizationId, organizationId),
-					),
-				);
-			const existingByOrder = new Map(existingStages.map((s) => [s.stageOrder, s]));
-
-			// 1. Если явно переданы stages
-			if (input.stages && input.stages.length > 0) {
-				for (const stg of input.stages) {
-					const order = stg.stageOrder || 1;
-					const existing = existingByOrder.get(order);
-					if (existing) {
-						await tx
-							.update(treatmentPlanStages)
-							.set({
-								stageName: stg.stageName || existing.stageName,
-								completionPercentage: stg.completionPercentage ?? existing.completionPercentage,
-							})
-							.where(eq(treatmentPlanStages.id, existing.id));
-						stageMap.set(order, existing.id);
-					} else {
-						const [created] = await tx
-							.insert(treatmentPlanStages)
-							.values({
-								organizationId,
-								planId: savedPlanId,
-								stageOrder: order,
-								stageName: stg.stageName || `Этап ${order}`,
-								completionPercentage: stg.completionPercentage ?? 0,
-							})
-							.returning({ id: treatmentPlanStages.id });
-						if (created) stageMap.set(order, created.id);
-					}
-				}
-			}
-
-			// 2. Для всех фаз из элементов плана гарантируем наличие этапа в treatment_plan_stages
-			for (const item of input.items) {
-				const phaseNum = item.phase || 1;
-				if (!stageMap.has(phaseNum)) {
-					const existing = existingByOrder.get(phaseNum);
-					if (existing) {
-						stageMap.set(phaseNum, existing.id);
-					} else {
-						const [created] = await tx
-							.insert(treatmentPlanStages)
-							.values({
-								organizationId,
-								planId: savedPlanId,
-								stageOrder: phaseNum,
-								stageName: `Этап ${phaseNum}`,
-								completionPercentage: 0,
-							})
-							.returning({ id: treatmentPlanStages.id });
-						if (created) stageMap.set(phaseNum, created.id);
-					}
-				}
-			}
-
-			// Diff-based Upsert (ROT-004): Загружаем существующие элементы плана лечения
-			const existingPlanItems = savedPlanId
-				? await tx
-						.select()
-						.from(treatmentPlanItemsNew)
-						.where(
-							and(
-								eq(treatmentPlanItemsNew.planId, savedPlanId),
-								eq(treatmentPlanItemsNew.organizationId, organizationId),
-							),
-						)
-				: [];
-			const existingItemMap = new Map(existingPlanItems.map((it) => [it.id, it]));
-
-			// Находим элементы, которые были удалены пользователем
-			const incomingItemIds = new Set(
-				input.items
-					.map((item) => item.id)
-					.filter((id): id is string => Boolean(id && existingItemMap.has(id))),
-			);
-
-			const idsToDelete = existingPlanItems
-				.filter((it) => !incomingItemIds.has(it.id))
-				.map((it) => it.id);
-
-			if (idsToDelete.length > 0) {
-				await tx
-					.delete(treatmentPlanItemsNew)
-					.where(
-						and(
-							inArray(treatmentPlanItemsNew.id, idsToDelete),
-							eq(treatmentPlanItemsNew.organizationId, organizationId),
-						),
-					);
-			}
-
-			// Выполняем update для существующих строк или insert для новых
-			const createdItemsList: Array<{ id: string }> = [];
-			for (const item of input.items) {
-				const phaseNum = item.phase || 1;
-				const itemPriceKopecks =
-					typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
-						? Math.round(item.unitPriceKopecks)
-						: rublesToKopecks(item.price);
-				const itemDiscountKopecks = rublesToKopecks(item.discount);
-				const itemPayload = {
-					organizationId,
-					planId: savedPlanId,
-					stageId: stageMap.get(phaseNum) ?? null,
-					toothNumber: item.toothNumber ?? null,
-					priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
-					name: item.name ?? null,
-					quantity: item.quantity,
-					price: item.price.toString(),
-					discount: item.discount.toString(),
-					priceKopecks: BigInt(itemPriceKopecks),
-					discountKopecks: BigInt(itemDiscountKopecks),
-					commissionKopecks: 0n,
-					phase: phaseNum,
-					isBundle: Boolean(item.isAuto),
-					doctorId: item.doctorId ?? null,
-				};
-
-				if (item.id && existingItemMap.has(item.id)) {
-					await tx
-						.update(treatmentPlanItemsNew)
-						.set(itemPayload)
-						.where(
-							and(
-								eq(treatmentPlanItemsNew.id, item.id),
-								eq(treatmentPlanItemsNew.organizationId, organizationId),
-							),
-						);
-					createdItemsList.push({ id: item.id });
-				} else {
-					const [created] = await tx
-						.insert(treatmentPlanItemsNew)
-						.values(itemPayload)
-						.returning({ id: treatmentPlanItemsNew.id });
-					if (created) {
-						createdItemsList.push({ id: created.id });
-					}
-				}
-			}
-
-			// DEF-03: Синхронизация книги лечения (treatment_items) с сохранением FK treatmentPlanItemId
-			const itemsWithPlanItemId = input.items.map((item, idx) => ({
-				...item,
-				treatmentPlanItemId: createdItemsList[idx]?.id ?? null,
-			}));
-
-			await syncUpsertPlanLedgerItems(tx, {
+			await syncUpsertPlanStagesAndItems(tx, {
 				organizationId,
 				patientId,
 				savedPlanId,
-				items: itemsWithPlanItemId,
-				patientSignature: input.patientSignature,
-				allowClinicalBlockerOverride: input.allowClinicalBlockerOverride,
-				clinicalBlockerOverrideReason: input.clinicalBlockerOverrideReason,
+				input,
 				logger: request.log,
 			});
 

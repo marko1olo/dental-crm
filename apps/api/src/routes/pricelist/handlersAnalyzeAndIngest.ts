@@ -97,7 +97,7 @@ export async function handleIngestPricelist(
 			request.log.error({ err: commitError }, "Транзакционный сбой при сохранении прейскуранта");
 			return reply.code(500).send({
 				error: "PricelistCommitTransactionError",
-				message: `Не удалось зафиксировать изменения: ${(commitError as Error).message}`,
+				message: "Не удалось зафиксировать изменения прейскуранта в базе данных.",
 			});
 		}
 	}

@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { appointments, chairs } from "../../../db/schema.js";
 import type { BuildScheduleParams, BuildScheduleResult } from "./types.js";
 
@@ -32,25 +32,41 @@ export class TelegramStaffScheduleFormatter {
 						weekday: "short",
 					});
 
-		// Выбираем приёмы врача из PostgreSQL
-		const appts = await db
-			.select({
-				id: appointments.id,
-				startsAt: appointments.startsAt,
-				endsAt: appointments.endsAt,
-				status: appointments.status,
-				chairId: appointments.chairId,
-				reason: appointments.reason,
-			})
-			.from(appointments)
-			.where(
-				and(
-					eq(appointments.organizationId, params.organizationId),
-					eq(appointments.doctorUserId, params.staffUserId),
-					sql`${appointments.startsAt} >= ${startOfDay} AND ${appointments.startsAt} <= ${endOfDay}`,
-				),
-			)
-			.orderBy(sql`${appointments.startsAt} ASC`);
+		// Выбираем приёмы врача и названия кресел из PostgreSQL внутри withTenantCtx (FORCE RLS)
+		const { appts, chairRows } = await withTenantCtx(
+			params.organizationId,
+			async (tx) => {
+				const loadedAppts = await tx
+					.select({
+						id: appointments.id,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+						status: appointments.status,
+						chairId: appointments.chairId,
+						reason: appointments.reason,
+					})
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, params.organizationId),
+							eq(appointments.doctorUserId, params.staffUserId),
+							sql`${appointments.startsAt} >= ${startOfDay} AND ${appointments.startsAt} <= ${endOfDay}`,
+						),
+					)
+					.orderBy(sql`${appointments.startsAt} ASC`);
+
+				if (loadedAppts.length === 0) {
+					return { appts: loadedAppts, chairRows: [] };
+				}
+
+				const loadedChairs = await tx
+					.select({ id: chairs.id, name: chairs.name })
+					.from(chairs)
+					.where(eq(chairs.organizationId, params.organizationId));
+
+				return { appts: loadedAppts, chairRows: loadedChairs };
+			},
+		);
 
 		if (appts.length === 0) {
 			return {
@@ -58,12 +74,6 @@ export class TelegramStaffScheduleFormatter {
 				appointmentCount: 0,
 			};
 		}
-
-		// Загружаем названия кресел
-		const chairRows = await db
-			.select({ id: chairs.id, name: chairs.name })
-			.from(chairs)
-			.where(eq(chairs.organizationId, params.organizationId));
 
 		const chairMap = new Map(chairRows.map((c) => [c.id, c.name]));
 

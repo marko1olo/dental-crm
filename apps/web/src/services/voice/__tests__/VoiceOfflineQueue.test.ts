@@ -5,6 +5,7 @@ import {
 	formatRestoredDictationsBadge,
 	type PendingTranscriptionRecord,
 } from "../VoiceOfflineQueue";
+import { executeDefaultSyncHandler } from "../offlineQueue/offlineQueueNetworkSync";
 import { UnifiedAudioClient } from "../UnifiedAudioClient";
 
 describe("VoiceOfflineQueue: IndexedDB / In-Memory Resilient Storage", () => {
@@ -304,5 +305,70 @@ describe("VoiceOfflineQueue: IndexedDB / In-Memory Resilient Storage", () => {
 		unsub();
 		client.dispose();
 		customQueue.dispose();
+	});
+
+	it("executeDefaultSyncHandler sends Idempotency-Key, valid source, zero admin secret and unwraps chunk transcript", async () => {
+		const originalFetch = globalThis.fetch;
+		const calls: Array<{ url: string; headers: Record<string, string>; body: Record<string, unknown> }> = [];
+		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			calls.push({
+				url: String(input),
+				headers: (init?.headers ?? {}) as Record<string, string>,
+				body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
+			});
+			return new Response(
+				JSON.stringify({ data: { chunk: { transcript: "Кариес дентина 36 зуба" } } }),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		}) as typeof fetch;
+
+		try {
+			const record: PendingTranscriptionRecord = {
+				id: "01945000-0000-7000-8000-000000000001",
+				createdAt: Date.now(),
+				durationMs: 1200,
+				audioBase64: "UklGRg==",
+				rawText: "",
+				specialty: "therapy",
+				retryCount: 0,
+				status: "pending",
+				context: {
+					organizationId: "non-uuid-org",
+					patientId: "01945000-0000-7000-8000-000000000002",
+					visitId: null,
+					adminSecret: "secret-leak-should-not-send",
+				},
+			};
+			const res = await executeDefaultSyncHandler(record, "/api/speech/transcribe-chunk");
+			assert.strictEqual(res.success, true);
+			assert.strictEqual(res.text, "Кариес дентина 36 зуба");
+			assert.strictEqual(calls.length, 1);
+			const call = calls[0];
+			assert.ok(call, "Expected fetch call to /api/speech/transcribe-chunk");
+			assert.ok(Boolean(call.headers["Idempotency-Key"]), "Idempotency-Key must be present");
+			assert.strictEqual(call.headers["x-dente-admin-secret"], undefined);
+			assert.strictEqual(call.body.source, "document");
+			assert.strictEqual(call.body.organizationId, undefined);
+			assert.strictEqual(call.body.patientId, "01945000-0000-7000-8000-000000000002");
+
+			const polishCalls: Array<Record<string, unknown>> = [];
+			globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+				polishCalls.push(JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>);
+				return new Response(
+					JSON.stringify({ data: { normalizedTranscript: "Зуб 36: кариес дентина." } }),
+					{ status: 200, headers: { "Content-Type": "application/json" } },
+				);
+			}) as typeof fetch;
+			const polishRes = await executeDefaultSyncHandler(
+				{ ...record, audioBase64: undefined, rawText: "зуб 36 кариес" },
+				"/api/speech/transcribe-chunk",
+			);
+			assert.strictEqual(polishRes.success, true);
+			assert.strictEqual(polishRes.text, "Зуб 36: кариес дентина.");
+			assert.strictEqual(polishCalls[0]?.source, "recording_chunk");
+			assert.strictEqual(polishCalls[0]?.organizationId, undefined);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });

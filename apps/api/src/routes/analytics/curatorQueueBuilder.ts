@@ -12,6 +12,7 @@ export interface RawCuratorPlanRecord {
 	readonly id: string;
 	readonly name: string | null;
 	readonly status: string | null;
+	readonly alternativeTier?: string | null | undefined;
 	readonly totalPriceKopecks?: bigint | number | string | null | undefined;
 	readonly planDiscountKopecks?: bigint | number | string | null | undefined;
 	readonly totalPriceRub: number | string | null;
@@ -25,11 +26,19 @@ export interface RawCuratorPlanRecord {
 	readonly patientAdminProfile: Partial<PatientAdministrativeProfile> | null;
 }
 
+function resolveCuratorPlanTier(alternativeTier?: string | null): "basic" | "optimum" | "premium" {
+	const rawTier = (alternativeTier ?? "").toLowerCase().trim();
+	if (rawTier === "premium" || rawTier === "vip") return "premium";
+	if (rawTier === "basic" || rawTier === "economy" || rawTier === "compromise") return "basic";
+	return "optimum";
+}
+
 export function buildCuratorQueueItem(
 	plan: RawCuratorPlanRecord,
 	paymentMap: Map<string, number>,
 	doctorMap: Map<string, string>,
 	defaultCurator?: CuratorStaffUser | null,
+	paymentKopecksMap?: Map<string, number>,
 ): CuratorPatientQueueItem {
 	const adminProf = plan.patientAdminProfile;
 	const rawCuratorId =
@@ -46,14 +55,19 @@ export function buildCuratorQueueItem(
 
 	const totalPriceKopecksNum =
 		plan.totalPriceKopecks != null ? Number(plan.totalPriceKopecks) : 0;
-	const planPrice =
+	const planTotalKopecks =
 		totalPriceKopecksNum > 0
-			? kopecksToRubles(totalPriceKopecksNum)
-			: Number(plan.totalPriceRub || plan.totalPrice || 0);
+			? totalPriceKopecksNum
+			: rublesToKopecks(Number(plan.totalPriceRub || plan.totalPrice || 0));
+	const planPrice = kopecksToRubles(planTotalKopecks);
 	// PLN-05 [SEV-1]: Учет оплат строго по plan.id (treatmentPlanId) — ноль заражения чужими платежами из истории пациента
-	const paid = paymentMap.get(plan.id) || 0;
-	const planPaid = Math.min(planPrice, paid);
-	const remaining = Math.max(0, planPrice - planPaid);
+	const rawPaidKopecks = paymentKopecksMap
+		? (paymentKopecksMap.get(plan.id) ?? 0)
+		: rublesToKopecks(paymentMap.get(plan.id) || 0);
+	const planPaidKopecks = Math.min(planTotalKopecks, Math.max(0, rawPaidKopecks));
+	const remainingKopecks = Math.max(0, planTotalKopecks - planPaidKopecks);
+	const planPaid = kopecksToRubles(planPaidKopecks);
+	const remaining = kopecksToRubles(remainingKopecks);
 
 	const planStages = adminProf?.curatorPlanStages;
 	const planStageEntry =
@@ -73,7 +87,7 @@ export function buildCuratorQueueItem(
 		stage = "completed";
 	} else if (plan.status === "Active") {
 		stage = "treatment_start";
-	} else if (planPaid > 0) {
+	} else if (planPaidKopecks > 0) {
 		stage = "prepayment";
 	} else if (plan.status === "Approved") {
 		stage = "plan_negotiation";
@@ -87,7 +101,7 @@ export function buildCuratorQueueItem(
 		0,
 		Math.floor((Date.now() - validStageDate.getTime()) / (1000 * 60 * 60 * 24)),
 	);
-	const tier = planPrice >= 150_000 ? "premium" : planPrice < 50_000 ? "basic" : "optimum";
+	const tier = resolveCuratorPlanTier(plan.alternativeTier);
 	const isVip = adminProf?.loyaltyTier === "gold" || adminProf?.loyaltyTier === "platinum";
 	const urgency = evaluatePatientUrgency(daysInStage, stage, planPrice, planPaid, isVip);
 
@@ -100,11 +114,11 @@ export function buildCuratorQueueItem(
 		treatmentPlanTitle: plan.name || "План лечения",
 		planTier: tier,
 		planTotalPriceRub: planPrice,
-		planTotalPriceKopecks: rublesToKopecks(planPrice),
+		planTotalPriceKopecks: planTotalKopecks,
 		paidAmountRub: planPaid,
-		paidAmountKopecks: rublesToKopecks(planPaid),
+		paidAmountKopecks: planPaidKopecks,
 		remainingAmountRub: remaining,
-		remainingAmountKopecks: rublesToKopecks(remaining),
+		remainingAmountKopecks: remainingKopecks,
 		funnelStage: stage,
 		curatorId,
 		curatorFullName: curatorName,

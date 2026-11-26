@@ -1,4 +1,16 @@
-import crypto from "node:crypto";
+import {
+	deriveVaultMasterKey,
+	decryptVaultToken,
+	encryptVaultToken,
+	GCM_IV_LENGTH_BYTES,
+	GCM_TAG_LENGTH_BYTES,
+	isVaultTokenEncrypted,
+	resolveVaultOperationalToken,
+	TOKEN_VAULT_VERSION_PREFIX,
+	VaultCryptoAuthError,
+	VaultCryptoFormatError,
+} from "../../utils/tokenVaultCrypto.js";
+import { timingSafeSecretEqual } from "../../utils/timingSafeSecretEqual.js";
 
 /**
  * Ошибки крипто-хранилища токенов многоканальных ботов.
@@ -19,130 +31,67 @@ export class BotTokenVaultAuthenticationError extends BotTokenVaultError {
 	}
 }
 
-export const BOT_VAULT_VERSION_PREFIX = "enc:v1:";
-export const GCM_IV_LENGTH_BYTES = 12; // 96 бит - стандарт NIST для GCM
-export const GCM_TAG_LENGTH_BYTES = 16; // 128 бит - максимальная аутентификационная стойкость
+export const BOT_VAULT_VERSION_PREFIX = TOKEN_VAULT_VERSION_PREFIX;
+export { GCM_IV_LENGTH_BYTES, GCM_TAG_LENGTH_BYTES };
 
 /**
  * OmnichannelTokenVault — Универсальное защищенное крипто-хранилище токенов
  * для всех поддерживаемых каналов связи клиники (Telegram, VK, WhatsApp Cloud, Green-API, Max).
- *
- * МАНДАТ БЕЗОПАСНОСТИ:
- * 1. Категорический запрет на хранение открытых токенов в БД.
- * 2. Шифрование через AES-256-GCM с уникальной солью AAD организации (`organizationId`).
- * 3. Крипто-изоляция: зашифрованный токен одной клиники невозможно расшифровать под `organizationId` другой клиники.
- * 4. Безопасное маскирование при отдаче в UI (`vk1.a.****...` / `7123****...`).
  */
 export class OmnichannelTokenVault {
 	private static getMasterKey(): Buffer {
-		const rawKey =
-			process.env.OMNICHANNEL_BOT_VAULT_MASTER_KEY ||
-			process.env.TELEGRAM_TOKEN_VAULT_MASTER_KEY ||
-			process.env.APP_SECRET ||
-			"DENTE_CLINIC_OMNICHANNEL_VAULT_MASTER_KEY_2026";
-
-		return crypto.createHash("sha256").update(rawKey, "utf8").digest();
+		try {
+			return deriveVaultMasterKey(
+				[
+					"OMNICHANNEL_BOT_VAULT_MASTER_KEY",
+					"TELEGRAM_TOKEN_VAULT_MASTER_KEY",
+					"APP_SECRET",
+				],
+				"DENTE_CLINIC_OMNICHANNEL_VAULT_MASTER_KEY_2026",
+				"OmnichannelTokenVault",
+			);
+		} catch (err: unknown) {
+			throw new BotTokenVaultError(err instanceof Error ? err.message : String(err));
+		}
 	}
 
 	static isEncrypted(value: string | null | undefined): boolean {
-		if (!value || typeof value !== "string") return false;
-		return value.startsWith(BOT_VAULT_VERSION_PREFIX);
+		return isVaultTokenEncrypted(value);
 	}
 
 	/**
 	 * Шифрование токена или секрета бота через AES-256-GCM с привязкой к organizationId (AAD).
 	 */
 	static encrypt(rawToken: string, organizationId: string): string {
-		const trimmedToken = rawToken?.trim();
-		if (!trimmedToken) {
-			throw new BotTokenVaultError("Невозможно зашифровать пустой токен/секрет бота.");
-		}
-		const trimmedOrgId = organizationId?.trim();
-		if (!trimmedOrgId) {
-			throw new BotTokenVaultError(
-				"Для шифрования токена обязателен organizationId (крипто-изоляция арендатора).",
-			);
-		}
-
-		if (this.isEncrypted(trimmedToken)) {
-			try {
-				this.decrypt(trimmedToken, trimmedOrgId);
-				return trimmedToken;
-			} catch {
+		try {
+			return encryptVaultToken(rawToken, organizationId, this.getMasterKey());
+		} catch (err: unknown) {
+			if (err instanceof VaultCryptoAuthError) {
 				throw new BotTokenVaultAuthenticationError(
 					"Попытка повторного шифрования невалидного токена для текущей организации.",
 				);
 			}
+			if (err instanceof VaultCryptoFormatError) {
+				throw new BotTokenVaultError(err.message);
+			}
+			throw err;
 		}
-
-		const masterKey = this.getMasterKey();
-		const iv = crypto.randomBytes(GCM_IV_LENGTH_BYTES);
-		const cipher = crypto.createCipheriv("aes-256-gcm", masterKey, iv);
-
-		cipher.setAAD(Buffer.from(trimmedOrgId, "utf8"));
-
-		const ciphertext = Buffer.concat([
-			cipher.update(trimmedToken, "utf8"),
-			cipher.final(),
-		]);
-		const authTag = cipher.getAuthTag();
-
-		return `${BOT_VAULT_VERSION_PREFIX}${iv.toString("hex")}:${authTag.toString("hex")}:${ciphertext.toString("hex")}`;
 	}
 
 	/**
 	 * Дешифрование токена или секрета бота с обязательной проверкой подлинности и AAD (organizationId).
 	 */
 	static decrypt(encryptedValue: string, organizationId: string): string {
-		const trimmed = encryptedValue?.trim();
-		if (!trimmed) {
-			throw new BotTokenVaultError("Невозможно расшифровать пустую строку токена.");
-		}
-		const trimmedOrgId = organizationId?.trim();
-		if (!trimmedOrgId) {
-			throw new BotTokenVaultError("Для дешифрования токена обязателен organizationId.");
-		}
-
-		if (!this.isEncrypted(trimmed)) {
-			return trimmed;
-		}
-
-		const payload = trimmed.slice(BOT_VAULT_VERSION_PREFIX.length);
-		const parts = payload.split(":");
-		if (parts.length !== 3) {
-			throw new BotTokenVaultError("Некорректный формат зашифрованного токена (ожидалось 3 компонента).");
-		}
-
-		const [ivHex, tagHex, cipherHex] = parts;
-		if (!ivHex || !tagHex || !cipherHex) {
-			throw new BotTokenVaultError("Повреждены компоненты токена (IV, Tag или Ciphertext).");
-		}
-
 		try {
-			const masterKey = this.getMasterKey();
-			const iv = Buffer.from(ivHex, "hex");
-			const authTag = Buffer.from(tagHex, "hex");
-			const ciphertext = Buffer.from(cipherHex, "hex");
-
-			if (iv.length !== GCM_IV_LENGTH_BYTES || authTag.length !== GCM_TAG_LENGTH_BYTES) {
-				throw new BotTokenVaultError("Некорректная длина IV или AuthTag для AES-256-GCM.");
-			}
-
-			const decipher = crypto.createDecipheriv("aes-256-gcm", masterKey, iv);
-			decipher.setAAD(Buffer.from(trimmedOrgId, "utf8"));
-			decipher.setAuthTag(authTag);
-
-			const decrypted = Buffer.concat([
-				decipher.update(ciphertext),
-				decipher.final(),
-			]);
-
-			return decrypted.toString("utf8");
+			return decryptVaultToken(encryptedValue, organizationId, this.getMasterKey());
 		} catch (err: unknown) {
-			if (err instanceof BotTokenVaultError) throw err;
-			throw new BotTokenVaultAuthenticationError(
-				`Ошибка криптографической аутентификации токена для клиники ${trimmedOrgId}: ${err instanceof Error ? err.message : String(err)}`,
-			);
+			if (err instanceof VaultCryptoAuthError) {
+				throw new BotTokenVaultAuthenticationError(err.message);
+			}
+			if (err instanceof VaultCryptoFormatError) {
+				throw new BotTokenVaultError(err.message);
+			}
+			throw err;
 		}
 	}
 
@@ -173,22 +122,18 @@ export class OmnichannelTokenVault {
 		storedTokenOrRef: string | null | undefined,
 		organizationId: string,
 	): string | null {
-		if (!storedTokenOrRef || typeof storedTokenOrRef !== "string") {
-			return null;
-		}
+		return resolveVaultOperationalToken(
+			storedTokenOrRef,
+			organizationId,
+			(enc, orgId) => this.decrypt(enc, orgId),
+		);
+	}
 
-		const trimmed = storedTokenOrRef.trim();
-		if (!trimmed) return null;
-
-		if (this.isEncrypted(trimmed)) {
-			return this.decrypt(trimmed, organizationId);
-		}
-
-		if (process.env[trimmed]) {
-			return process.env[trimmed]!;
-		}
-
-		return trimmed;
+	static resolveOperationalToken(
+		storedTokenOrRef: string | null | undefined,
+		organizationId: string,
+	): string | null {
+		return this.resolveToken(storedTokenOrRef, organizationId);
 	}
 
 	/**
@@ -198,10 +143,6 @@ export class OmnichannelTokenVault {
 		a: string | null | undefined,
 		b: string | null | undefined,
 	): boolean {
-		if (!a || !b) return false;
-		const bufA = Buffer.from(a);
-		const bufB = Buffer.from(b);
-		if (bufA.length !== bufB.length) return false;
-		return crypto.timingSafeEqual(bufA, bufB);
+		return timingSafeSecretEqual(a ?? null, b ?? null);
 	}
 }

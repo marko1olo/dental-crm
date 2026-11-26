@@ -76,7 +76,9 @@ export class SlidingWindowCounter {
 
 	private evict(now: number): void {
 		const cutoff = now - this.windowMs;
-		while (this.timestamps.length > 0 && this.timestamps[0]! < cutoff) {
+		while (this.timestamps.length > 0) {
+			const oldest = this.timestamps[0];
+			if (oldest === undefined || oldest >= cutoff) break;
 			this.timestamps.shift();
 		}
 	}
@@ -113,6 +115,12 @@ export type TenantBotRegistrationInput = {
 	rateLimitMaxPerSec?: number;
 	rateLimitBurst?: number;
 	autoSetupWebhook?: boolean;
+	onPolledUpdate?: (params: {
+		organizationId: string;
+		botConfigId: string;
+		webhookSecret: string | null;
+		update: unknown;
+	}) => Promise<{ ok: boolean; action?: string }>;
 	metadata?: Record<string, unknown>;
 };
 
@@ -210,6 +218,25 @@ export class TelegramMultiTenantSupervisor {
 	private latencySumMs = 0;
 	private latencyCount = 0;
 	private readonly globalRpsCounter = new SlidingWindowCounter(60000);
+	private defaultPollingHandler:
+		| ((params: {
+				organizationId: string;
+				botConfigId: string;
+				webhookSecret: string | null;
+				update: unknown;
+		  }) => Promise<{ ok: boolean; action?: string }>)
+		| null = null;
+
+	public setDefaultPollingHandler(
+		handler: (params: {
+			organizationId: string;
+			botConfigId: string;
+			webhookSecret: string | null;
+			update: unknown;
+		}) => Promise<{ ok: boolean; action?: string }>,
+	): void {
+		this.defaultPollingHandler = handler;
+	}
 
 	/**
 	 * Регистрация нового бота клиники в супервизоре.
@@ -293,6 +320,7 @@ export class TelegramMultiTenantSupervisor {
 
 		// Режим graceful fallback (Long Polling)
 		if (mode === "polling") {
+			const pollingHandler = input.onPolledUpdate ?? this.defaultPollingHandler;
 			runtime.pollingRunner = new TelegramPollingRunner({
 				botToken,
 				organizationId: orgId,
@@ -304,7 +332,17 @@ export class TelegramMultiTenantSupervisor {
 						tokenHash: botTokenHash,
 						secretTokenHeader: webhookSecret,
 						update: rawUpdate,
-						handler: async () => ({ ok: true, action: "polled_update" }),
+						handler: async (validatedUpdate) => {
+							if (pollingHandler) {
+								return await pollingHandler({
+									organizationId: orgId,
+									botConfigId,
+									webhookSecret,
+									update: validatedUpdate,
+								});
+							}
+							return { ok: false, action: "polling_handler_unregistered" };
+						},
 					});
 				},
 				onError: (err: Error) => {
@@ -319,10 +357,12 @@ export class TelegramMultiTenantSupervisor {
 		this.botsById.set(botId, runtime);
 		this.botsByTokenHash.set(botTokenHash, runtime);
 
-		if (!this.botsByOrg.has(orgId)) {
-			this.botsByOrg.set(orgId, new Set<string>());
+		let orgBotsSet = this.botsByOrg.get(orgId);
+		if (!orgBotsSet) {
+			orgBotsSet = new Set<string>();
+			this.botsByOrg.set(orgId, orgBotsSet);
 		}
-		this.botsByOrg.get(orgId)!.add(botId);
+		orgBotsSet.add(botId);
 
 		return runtime;
 	}

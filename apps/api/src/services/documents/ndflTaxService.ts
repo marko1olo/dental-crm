@@ -29,6 +29,7 @@ import {
 	kopecksToNumericString,
 	parseKopecks,
 	rublesFromKopecks,
+	rublesToKopecks,
 	sumKopecks,
 	validateFnsFiscalReceiptsChecksums,
 	validateFnsNdflXmlStructure,
@@ -37,7 +38,6 @@ import {
 	validateRussianOgrn,
 	validateRussianSnils,
 } from "@dental/shared";
-import { Decimal } from "decimal.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getDocumentsByPatientId } from "../../db/documentQuery.js";
 import { alreadyRefundedKopecksForPayment } from "../../documents/documentGuards/index.js";
@@ -218,10 +218,6 @@ export class NdflTaxService {
 			return paidTime >= start.getTime() && paidTime <= end.getTime();
 		});
 
-		const hasExplicitNegativeRefunds = periodPayments.some(
-			(p) => parseKopecks(p.amountRub) < 0,
-		);
-
 		let code1Kopecks = 0;
 		let code2Kopecks = 0;
 		let code1RefundKopecks = 0;
@@ -245,6 +241,7 @@ export class NdflTaxService {
 				quantity?: number;
 			}
 			interface PaymentSplitMetadata {
+				amountKopecks?: number | bigint | null;
 				serviceName?: string;
 				category?: string;
 				code804n?: string;
@@ -273,7 +270,12 @@ export class NdflTaxService {
 				pay.fiscalReceiptNumber ||
 				null;
 
-			const rawAmountKop = parseKopecks(pay.amountRub);
+			const rawAmountKop =
+				typeof payMeta.amountKopecks === "bigint"
+					? Number(payMeta.amountKopecks)
+					: typeof payMeta.amountKopecks === "number"
+						? Math.round(payMeta.amountKopecks)
+						: parseKopecks(pay.amountRub);
 
 			// Отрицательные кассовые возвраты (54-ФЗ возврат прихода) уменьшают сумму соответствующего кода вычета
 			if (rawAmountKop < 0) {
@@ -301,8 +303,8 @@ export class NdflTaxService {
 				continue;
 			}
 
-			// Для положительных платежей со статусом 'refunded' при отсутствии отрицательных проводок — исключаем
-			if (pay.status === "refunded" && !hasExplicitNegativeRefunds) {
+			// Положительные платежи со статусом 'refunded' всегда исключаются
+			if (pay.status === "refunded") {
 				receipts.push({
 					id: pay.id,
 					receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
@@ -317,9 +319,10 @@ export class NdflTaxService {
 				continue;
 			}
 
-			const alreadyRefundedKop = hasExplicitNegativeRefunds
-				? 0
-				: alreadyRefundedKopecksForPayment(pay.id, patientDocuments);
+			const alreadyRefundedKop = alreadyRefundedKopecksForPayment(
+				pay.id,
+				patientDocuments,
+			);
 			const amountKop = Math.max(0, rawAmountKop - alreadyRefundedKop);
 
 			if (amountKop <= 0) {
@@ -381,9 +384,30 @@ export class NdflTaxService {
 			const items: ReceiptItemLike[] = payMeta.items || payMeta.positions || payMeta.serviceLines || payMeta.fiscalReceipt?.items || [];
 
 			if (c1Explicit !== undefined || c2Explicit !== undefined) {
-				// 1. Прямое указание сумм Код 1 и Код 2 в объекте платежа
-				const splitCode1Kop = c1Explicit ?? Math.max(0, amountKop - (c2Explicit ?? 0));
-				const splitCode2Kop = c2Explicit ?? Math.max(0, amountKop - splitCode1Kop);
+				// 1. Прямое указание сумм Код 1 и Код 2 с приведением к чистому оплаченному остатку amountKop
+				const c1Raw = Math.max(0, c1Explicit ?? 0);
+				const c2Raw = Math.max(0, c2Explicit ?? 0);
+				let splitCode1Kop = 0;
+				let splitCode2Kop = 0;
+				if (c1Explicit !== undefined && c2Explicit !== undefined) {
+					const explicitSum = c1Raw + c2Raw;
+					if (explicitSum > amountKop && explicitSum > 0) {
+						splitCode2Kop =
+							c1Raw === 0
+								? amountKop
+								: Number((BigInt(c2Raw) * BigInt(amountKop)) / BigInt(explicitSum));
+						splitCode1Kop = c1Raw > 0 ? amountKop - splitCode2Kop : 0;
+					} else {
+						splitCode1Kop = c1Raw;
+						splitCode2Kop = c2Raw;
+					}
+				} else if (c1Explicit !== undefined) {
+					splitCode1Kop = Math.min(c1Raw, amountKop);
+					splitCode2Kop = Math.max(0, amountKop - splitCode1Kop);
+				} else {
+					splitCode2Kop = Math.min(c2Raw, amountKop);
+					splitCode1Kop = Math.max(0, amountKop - splitCode2Kop);
+				}
 
 				if (splitCode1Kop > 0) {
 					code1Kopecks += splitCode1Kop;
@@ -412,19 +436,29 @@ export class NdflTaxService {
 					});
 				}
 			} else if (items.length > 0) {
-				// 2. Расщепление по детализированным позициям чека
-				let receiptHasItems = false;
+				// 2. Расщепление по детализированным позициям чека с исключением товаров и масштабированием при скидке/частичном возврате
+				const medicalItems: Array<{
+					idSuffix: string;
+					name: string;
+					code: "1" | "2";
+					kop: number;
+				}> = [];
+				let medicalTotalKop = 0;
+
 				for (const item of items) {
-					const itemKop = typeof item.amountKopecks === "number"
-						? item.amountKopecks
-						: item.amountRub != null
-							? parseKopecks(item.amountRub)
-							: typeof item.priceRub === "number"
-								? new Decimal(parseKopecks(item.priceRub))
-										.times(item.quantity ?? 1)
-										.toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
-										.toNumber()
-								: 0;
+					const itemKop =
+						typeof item.amountKopecks === "number"
+							? item.amountKopecks
+							: item.amountRub != null
+								? parseKopecks(item.amountRub)
+								: typeof item.priceRub === "number"
+									? Number(
+											(BigInt(parseKopecks(item.priceRub)) *
+												BigInt(Math.round((item.quantity ?? 1) * 1000)) +
+												500n) /
+												1000n,
+										)
+									: 0;
 					if (itemKop <= 0) continue;
 
 					if (isNonMedicalGood(item.name, item.category)) {
@@ -443,36 +477,49 @@ export class NdflTaxService {
 						});
 					} else {
 						const itCode = classifyNdflServiceCode(item.name, item.code804n);
-						if (itCode === "2") {
-							code2Kopecks += itemKop;
+						medicalTotalKop += itemKop;
+						medicalItems.push({
+							idSuffix: item.id || item.name || "item",
+							name: item.name || serviceName,
+							code: itCode,
+							kop: itemKop,
+						});
+					}
+				}
+
+				if (medicalItems.length > 0 && medicalTotalKop > 0) {
+					let remainingTargetKop =
+						medicalTotalKop > amountKop ? amountKop : medicalTotalKop;
+					const shouldScale = medicalTotalKop > amountKop;
+					for (let idx = 0; idx < medicalItems.length; idx++) {
+						const entry = medicalItems[idx];
+						if (!entry) continue;
+						const scaledKop = shouldScale
+							? idx === medicalItems.length - 1
+								? Math.max(0, remainingTargetKop)
+								: Number(
+										(BigInt(entry.kop) * BigInt(amountKop)) /
+											BigInt(medicalTotalKop),
+									)
+							: entry.kop;
+						remainingTargetKop -= scaledKop;
+						if (scaledKop <= 0) continue;
+						if (entry.code === "2") {
+							code2Kopecks += scaledKop;
 						} else {
-							code1Kopecks += itemKop;
+							code1Kopecks += scaledKop;
 						}
 						receipts.push({
-							id: `${pay.id}-${item.id || item.name}`,
+							id: `${pay.id}-${entry.idSuffix}`,
 							receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
 							fiscalDocumentNumber: fiscalDocNum,
 							receiptDate,
-							serviceName: item.name || serviceName,
-							deductionCode: itCode,
-							amountRub: rublesFromKopecks(itemKop),
+							serviceName: entry.name,
+							deductionCode: entry.code,
+							amountRub: rublesFromKopecks(scaledKop),
 							isExcluded: false,
 						});
 					}
-					receiptHasItems = true;
-				}
-				if (!receiptHasItems) {
-					code1Kopecks += amountKop;
-					receipts.push({
-						id: pay.id,
-						receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
-						fiscalDocumentNumber: fiscalDocNum,
-						receiptDate,
-						serviceName,
-						deductionCode: "1",
-						amountRub: rublesFromKopecks(amountKop),
-						isExcluded: false,
-					});
 				}
 			} else {
 				// 3. Честная классификация чека целиком по номенклатуре и фискальным признакам (без syntax mining заметок)
@@ -505,24 +552,23 @@ export class NdflTaxService {
 		const netCode2Kopecks = Math.max(0, code2Kopecks - code2RefundKopecks);
 		const code1TotalRub = rublesFromKopecks(netCode1Kopecks);
 		const code2TotalRub = rublesFromKopecks(netCode2Kopecks);
-		const totalEligibleRub = new Decimal(code1TotalRub)
-			.plus(code2TotalRub)
-			.toNumber();
+		const totalEligibleRub = rublesFromKopecks(
+			netCode1Kopecks + netCode2Kopecks,
+		);
 
 		const code1LimitRub = targetYear >= 2024 ? 150000 : 120000;
-		const code1EligibleRub = Math.min(code1TotalRub, code1LimitRub);
+		const code1LimitKopecks = rublesToKopecks(code1LimitRub);
+		const code1EligibleKopecks = Math.min(netCode1Kopecks, code1LimitKopecks);
+		const code1EligibleRub = rublesFromKopecks(code1EligibleKopecks);
+		const totalTaxableKopecksBi =
+			BigInt(code1EligibleKopecks) + BigInt(netCode2Kopecks);
 
-		const refund13 = new Decimal(code1EligibleRub)
-			.times(0.13)
-			.plus(new Decimal(code2TotalRub).times(0.13))
-			.toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
-			.toNumber();
-
-		const refund15 = new Decimal(code1EligibleRub)
-			.times(0.15)
-			.plus(new Decimal(code2TotalRub).times(0.15))
-			.toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
-			.toNumber();
+		const refund13 = rublesFromKopecks(
+			Number((totalTaxableKopecksBi * 13n + 50n) / 100n),
+		);
+		const refund15 = rublesFromKopecks(
+			Number((totalTaxableKopecksBi * 15n + 50n) / 100n),
+		);
 
 		const validationIssues: FnsPreflightIssue[] = [];
 

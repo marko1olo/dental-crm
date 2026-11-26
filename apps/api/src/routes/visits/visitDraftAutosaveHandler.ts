@@ -10,7 +10,7 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../security/tenantContext.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
 import {
 	getVisitDraftAutosaveFromDb,
@@ -70,16 +70,18 @@ export async function handleGetVisitDraft(
 			};
 		}
 		if (lookup.outcome === "no_draft") {
-			const [visit] = await db
-				.select()
-				.from(schema.visits)
-				.where(
-					and(
-						eq(schema.visits.id, trimmedVisitId),
-						eq(schema.visits.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			const [visit] = await withTenantCtx(orgId, (tx) =>
+				tx
+					.select()
+					.from(schema.visits)
+					.where(
+						and(
+							eq(schema.visits.id, trimmedVisitId),
+							eq(schema.visits.organizationId, orgId),
+						),
+					)
+					.limit(1),
+			);
 
 			if (!visit) {
 				reply.code(404);

@@ -71,8 +71,8 @@ export function roleHasPermissionWithOverrides(
 	if (!role) return false;
 	const normalizedRole = role.toLowerCase().trim();
 
-	// Владелец и суперадминистратор обладают безусловным доступом (Мандат 8e / 8n)
-	if (normalizedRole === "owner" || normalizedRole === "admin") {
+	// Владелец клиники обладает безусловным доступом (Мандат 8e / 8n)
+	if (normalizedRole === "owner") {
 		return true;
 	}
 
@@ -120,6 +120,15 @@ export function roleHasPermissionWithOverrides(
 				}
 			}
 		}
+	}
+
+	// Системный администратор без клинической роли не имеет права подписи ЭМК и отправки в ЕГИСЗ
+	// (согласовано с evaluateClinicalAccess("admin") в medicalSecrecyWarden.ts)
+	if (
+		normalizedRole === "admin" &&
+		(permission === "clinical.write" || permission === "egisz.submit")
+	) {
+		return false;
 	}
 
 	// По умолчанию проверяем базовую матрицу прав

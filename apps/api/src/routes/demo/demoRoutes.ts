@@ -172,11 +172,16 @@ export async function registerDemoRoutes(app: FastifyInstance): Promise<void> {
 		}
 
 		let forceReset = false;
-		if (request.body) {
+		if (request.body !== undefined) {
 			const parsed = demoSeedBodySchema.safeParse(request.body);
-			if (parsed.success && parsed.data?.forceReset) {
-				forceReset = true;
+			if (!parsed.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректные параметры запуска демо-контура.",
+					details: parsed.error.issues,
+				});
 			}
+			forceReset = Boolean(parsed.data?.forceReset);
 		}
 
 		try {
@@ -198,7 +203,13 @@ export async function registerDemoRoutes(app: FastifyInstance): Promise<void> {
 	 * GET /api/demo/state
 	 * Проверка статуса демо-контура в PostgreSQL 18.
 	 */
-	app.get("/api/demo/state", async (_request: FastifyRequest, reply: FastifyReply) => {
+	app.get("/api/demo/state", async (request: FastifyRequest, reply: FastifyReply) => {
+		if (!isDemoOperationAllowed(request)) {
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Демо-контур недоступен в данной конфигурации сервера.",
+			});
+		}
 		try {
 			const [orgRow] = await withSuperuserBypass(async (tx) =>
 				tx

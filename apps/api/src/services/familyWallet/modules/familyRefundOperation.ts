@@ -2,7 +2,7 @@ import { kopecksToNumericString, kopecksToRub, parseKopecks } from "@dental/shar
 import { Decimal } from "decimal.js";
 import { and, desc, eq } from "drizzle-orm";
 import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
-import { cashBoxes, cashOperations, familyGroups, fiscalReceiptQueue, payments } from "../../../db/schema.js";
+import { cashBoxes, cashBoxShifts, cashOperations, familyGroups, fiscalReceiptQueue, patients, payments } from "../../../db/schema.js";
 import { FiscalReceiptFactory } from "../../kkt/FiscalReceiptFactory.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { FamilyWalletError, type FamilyRefundParams, type FamilyRefundResult } from "../familyWalletTypes.js";
@@ -132,15 +132,60 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 				balanceKopecks: newBoxBalKop,
 				updatedAt: new Date(),
 			}).where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
+
+			const [activeShift] = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, organizationId),
+						eq(cashBoxShifts.cashBoxId, targetBox.id),
+						eq(cashBoxShifts.status, "open"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (activeShift) {
+				const prevExpenseKop =
+					activeShift.expenseTotalKopecks > 0 || Number(activeShift.expenseTotalRub || 0) === 0
+						? activeShift.expenseTotalKopecks
+						: parseKopecks(activeShift.expenseTotalRub);
+				const nextExpenseKop = prevExpenseKop + refundKopecks;
+				await tx
+					.update(cashBoxShifts)
+					.set({
+						expenseTotalRub: kopecksToRub(nextExpenseKop),
+						expenseTotalKopecks: nextExpenseKop,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, organizationId)));
+			}
+
 			const [createdOp] = await tx.insert(cashOperations).values({
-				organizationId, cashBoxId: targetBox.id, operationType: "expense", amountRub: refundRub,
+				organizationId,
+				cashBoxId: targetBox.id,
+				shiftId: activeShift?.id ?? null,
+				operationType: "expense",
+				amountRub: refundRub,
 				amountKopecks: refundKopecks,
-				balanceBeforeRub: targetBox.balanceRub, balanceAfterRub: kopecksToRub(newBoxBalKop),
+				balanceBeforeRub: kopecksToRub(boxBalKop),
+				balanceBeforeKopecks: BigInt(boxBalKop),
+				balanceAfterRub: kopecksToRub(newBoxBalKop),
+				balanceAfterKopecks: BigInt(newBoxBalKop),
 				reasonText: reasonText || `Возврат неиспользованного семейного депозита: ${family.name || "Семья"}`,
-				patientId: targetPatientId, operatorId: operatorId ?? null,
+				patientId: targetPatientId,
+				operatorId: operatorId ?? null,
 			}).returning();
 			cashOp = createdOp;
 		}
+
+		const [recipientPatient] = await tx
+			.select({ phone: patients.phone, email: patients.email })
+			.from(patients)
+			.where(and(eq(patients.organizationId, organizationId), eq(patients.id, targetPatientId)))
+			.limit(1);
+		const customerContact = recipientPatient?.phone?.trim() || recipientPatient?.email?.trim() || null;
 
 		const [payment] = await tx.insert(payments).values({
 			organizationId, patientId: targetPatientId, amountRub: -kopecksToRub(refundKopecks),
@@ -155,7 +200,7 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 			patientId: targetPatientId,
 			documentId: familyGroupId,
 			clientMutationId: `${clientMutationId.trim()}:return`,
-			customerContact: "patient@clinic.ru",
+			customerContact,
 			cashierFullName: "Кассир-администратор",
 			operationType: "income_return",
 			taxationSystem: "usn_income",

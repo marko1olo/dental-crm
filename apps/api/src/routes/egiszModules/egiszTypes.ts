@@ -196,23 +196,23 @@ export interface VimisReceipt {
 export const validateDoctorSnilsBodySchema = z.object({
 	snils: z.unknown().optional(),
 	doctorId: z.string().uuid().optional(),
-});
+}).strict();
 
 export const egiszLogsParamsSchema = z.object({
 	patientId: z.string().uuid(),
-});
+}).strict();
 
 export const egiszSendBodySchema = z.object({
 	patientId: z.string().uuid(),
 	visitId: z.string().uuid(),
 	pkg: z.record(z.string(), z.unknown()).optional(),
-});
+}).strict();
 
 export const egiszBlankPermissionsPatchSchema = z.object({
 	isExportAllowed: z.boolean().optional(),
 	patientOptOutRespect: z.boolean().optional(),
-});
+}).strict();
 
 export const egiszMultipleDiagnosesQuerySchema = z.object({
 	patientId: z.string().uuid("patientId обязателен и должен быть корректным UUID"),
-});
+}).strict();

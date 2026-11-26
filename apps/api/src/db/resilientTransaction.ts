@@ -192,6 +192,7 @@ export async function withResilientTransaction<T>(
 			: (currentClinicStorage.getStore() ?? null);
 
 	const isNestedTx = targetDb !== dbRaw && (targetDb as unknown) !== db;
+	const effectiveMaxRetries = isNestedTx ? 0 : maxRetries;
 	const txConfig =
 		!isNestedTx && options.isolationLevel
 			? { isolationLevel: options.isolationLevel }
@@ -199,7 +200,7 @@ export async function withResilientTransaction<T>(
 
 	let lastError: unknown;
 
-	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+	for (let attempt = 0; attempt <= effectiveMaxRetries; attempt++) {
 		try {
 			// Execute inside transaction (reusing connection via savepoint if nested)
 			const txResult = await targetDb.transaction(
@@ -209,7 +210,7 @@ export async function withResilientTransaction<T>(
 						// scopes the tenant to this transaction, preserving isolation.
 						// Sets both app.current_tenant and app.current_organization_id for unified RLS policy compatibility.
 						await tx.execute(
-							sql`SELECT set_config('app.current_tenant', ${effectiveTenantId}, true), set_config('app.current_organization_id', ${effectiveTenantId}, true)`,
+							sql`SELECT set_config('app.current_tenant', ${effectiveTenantId}, true), set_config('app.current_organization_id', ${effectiveTenantId}, true), set_config('app.superuser_bypass', 'off', true)`,
 						);
 					}
 					if (effectiveClinicId) {
@@ -235,7 +236,7 @@ export async function withResilientTransaction<T>(
 			const isRetryable =
 				options.isRetryable?.(error) ?? isRetryablePgError(error);
 
-			if (!isRetryable || attempt >= maxRetries) {
+			if (!isRetryable || attempt >= effectiveMaxRetries) {
 				throw error;
 			}
 

@@ -48,8 +48,9 @@ export function renderDrugSection(tool: string, obj: Obj, result: unknown): Reac
     ? (obj.alternatives as string[])
     : undefined;
 
+  const safeAllergies = Array.isArray(patientAllergies) ? patientAllergies : [];
   const hasInteractions = interactions.length > 0;
-  const hasAllergies = Array.isArray(patientAllergies) && patientAllergies.length > 0;
+  const hasAllergies = safeAllergies.length > 0;
   const hasDdiAlert = Boolean(obj.ddiAlert);
 
   // 0px visual noise invariant (Mandate 8ba / 8y):
@@ -73,7 +74,7 @@ export function renderDrugSection(tool: string, obj: Obj, result: unknown): Reac
   const description =
     interactions.map((i) => i.description).filter(Boolean).join('. ') ||
     (hasAllergies
-      ? `В анамнезе пациента зафиксированы аллергии: ${patientAllergies!.join(', ')}`
+      ? `В анамнезе пациента зафиксированы аллергии: ${safeAllergies.join(', ')}`
       : 'Клинические рекомендации по лекарственной безопасности');
   const clinicalRecommendation = first?.clinical_recommendation || first?.medical_advice;
   const contraindicatedDrug = first?.medicationA || first?.drugs?.[0];

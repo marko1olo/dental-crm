@@ -8,9 +8,9 @@ import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { getDocumentById } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { generatedDocuments } from "../../db/schema.js";
 import {
 	getRequestIdentity,
@@ -19,7 +19,7 @@ import {
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { extractPortalPatient } from "../portal/portalAuthStore.js";
-import { apiError } from "./shared.js";
+import { apiError, toPublicGeneratedDocument } from "./shared.js";
 
 const documentListQuerySchema = z
 	.object({
@@ -179,13 +179,15 @@ export async function registerQuery(app: FastifyInstance) {
 		const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 200);
 		const offset = Math.max(Number(query.offset) || 0, 0);
 
-		const records = await db
-			.select()
-			.from(generatedDocuments)
-			.where(and(...conditions))
-			.orderBy(desc(generatedDocuments.createdAt))
-			.limit(limit)
-			.offset(offset);
+		const records = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select()
+				.from(generatedDocuments)
+				.where(and(...conditions))
+				.orderBy(desc(generatedDocuments.createdAt))
+				.limit(limit)
+				.offset(offset),
+		);
 
 		// 152-ФЗ / 323-ФЗ: фильтрация клинических документов от неклинических глаз (пациент видит все свои)
 		const filteredRecords = records.filter((doc) => {
@@ -227,7 +229,6 @@ export async function registerQuery(app: FastifyInstance) {
 				doctorCertSerial: record.doctorCertSerial ?? null,
 				doctorCertSubject: record.doctorCertSubject ?? null,
 				doctorSignedAt: record.doctorSignedAt?.toISOString() ?? null,
-				createdAt: record.createdAt.toISOString(),
 			}),
 		);
 
@@ -320,7 +321,7 @@ export async function registerQuery(app: FastifyInstance) {
 
 		return reply.send({
 			success: true,
-			document: publicGeneratedDocumentSchema.parse(document),
+			document: toPublicGeneratedDocument(document),
 		});
 	});
 

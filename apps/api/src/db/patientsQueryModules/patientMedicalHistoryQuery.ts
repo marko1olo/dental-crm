@@ -2,7 +2,7 @@ import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { patients as inMemoryPatients } from "../../sampleData.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
-import { db } from "../client.js";
+import { withTenantCtx } from "../rls.js";
 import * as schema from "../schema.js";
 import { useInMemory } from "./patientSearchCore.js";
 import type { PatientConsentRecordInput } from "./types.js";
@@ -46,33 +46,34 @@ export async function recordPatientConsentInDb(
 		};
 	}
 
-	const [patientRow] = await db
-		.select()
-		.from(schema.patients)
-		.where(
-			and(
-				eq(schema.patients.id, patientId),
-				eq(schema.patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
+	const saved = await withTenantCtx(organizationId, async (tx) => {
+		const [patientRow] = await tx
+			.select()
+			.from(schema.patients)
+			.where(
+				and(
+					eq(schema.patients.id, patientId),
+					eq(schema.patients.organizationId, organizationId),
+				),
+			)
+			.for("update")
+			.limit(1);
 
-	if (!patientRow) return null;
+		if (!patientRow) return false;
 
-	const currentProfile =
-		(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
-	const currentConsentAudit =
-		(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
-	const updatedAudit = {
-		...currentConsentAudit,
-		[consentKind]: {
-			consentId: consentKind,
-			...input,
-			signedAtIso: now.toISOString(),
-		},
-	};
+		const currentProfile =
+			(patientRow.administrativeProfile as Record<string, unknown> | null) || {};
+		const currentConsentAudit =
+			(currentProfile.consentSignatures as Record<string, unknown> | undefined) || {};
+		const updatedAudit = {
+			...currentConsentAudit,
+			[consentKind]: {
+				consentId: consentKind,
+				...input,
+				signedAtIso: now.toISOString(),
+			},
+		};
 
-	await db.transaction(async (tx) => {
 		// 1. Insert into patientConsents table
 		await tx.insert(schema.patientConsents).values({
 			organizationId,
@@ -97,7 +98,11 @@ export async function recordPatientConsentInDb(
 					eq(schema.patients.organizationId, organizationId),
 				),
 			);
+
+		return true;
 	});
+
+	if (!saved) return null;
 
 	return {
 		success: true,

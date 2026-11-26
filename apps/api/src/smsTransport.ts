@@ -23,7 +23,25 @@
  * API, ни в текст ошибки.
  */
 
+import { createApiLogger } from "./observability/logger.js";
 import { MessageTemplateEngine } from "./services/communications/MessageTemplateEngine.js";
+
+const logger = createApiLogger("smsTransport");
+
+async function parseSmsJsonResponse<T>(
+	response: Response,
+	provider: string,
+): Promise<T> {
+	try {
+		return (await response.json()) as T;
+	} catch (err: unknown) {
+		logger.warn(
+			{ err, provider, status: response.status },
+			`[smsTransport] Failed to parse ${provider} JSON response`,
+		);
+		return {} as T;
+	}
+}
 
 type SmsProviderId = "smsru" | "smsc";
 
@@ -310,7 +328,7 @@ async function sendViaSmsRu(
 			};
 		}
 
-		const payload = (await response.json().catch(() => ({}))) as {
+		const payload = await parseSmsJsonResponse<{
 			status?: unknown;
 			status_code?: unknown;
 			status_text?: unknown;
@@ -323,7 +341,7 @@ async function sendViaSmsRu(
 					sms_id?: unknown;
 				}
 			>;
-		};
+		}>(response, "SMS.RU");
 
 		// Ответ двухуровневый: общий статус запроса и статус по каждому номеру.
 		// Общий OK при отказе по конкретному номеру — обычное дело.
@@ -413,12 +431,12 @@ async function sendViaSmsc(
 			};
 		}
 
-		const payload = (await response.json().catch(() => ({}))) as {
+		const payload = await parseSmsJsonResponse<{
 			id?: unknown;
 			cnt?: unknown;
 			error?: unknown;
 			error_code?: unknown;
-		};
+		}>(response, "SMSC");
 
 		if (payload.error !== undefined || typeof payload.error_code === "number") {
 			const errorCode =
@@ -568,10 +586,10 @@ export async function fetchSmsBalance(
 					errorMessage: `Шлюз SMS.RU вернул HTTP ${response.status}.`,
 				};
 			}
-			const payload = (await response.json().catch(() => ({}))) as {
+			const payload = await parseSmsJsonResponse<{
 				status_code?: unknown;
 				balance?: unknown;
-			};
+			}>(response, "SMS.RU");
 			if (payload.status_code !== 100 || typeof payload.balance !== "number") {
 				const statusCode =
 					typeof payload.status_code === "number" ? payload.status_code : null;
@@ -607,12 +625,12 @@ export async function fetchSmsBalance(
 				errorMessage: `Шлюз SMSC.RU вернул HTTP ${response.status}.`,
 			};
 		}
-		const payload = (await response.json().catch(() => ({}))) as {
+		const payload = await parseSmsJsonResponse<{
 			balance?: unknown;
 			currency?: unknown;
 			error_code?: unknown;
 			error?: unknown;
-		};
+		}>(response, "SMSC");
 		if (typeof payload.error_code === "number") {
 			return {
 				ok: false,

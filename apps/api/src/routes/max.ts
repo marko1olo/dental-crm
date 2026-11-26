@@ -33,6 +33,7 @@ import {
 import { resolveRecipientAddress } from "../services/communications/dispatch/channelAdapters.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 
 const updateMaxConfigSchema = z
 	.object({
@@ -90,6 +91,50 @@ function isWebhookPath(url: string): boolean {
 export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 	app.addHook("preHandler", async (request, reply) => {
 		if (isWebhookPath(request.url)) {
+			const hasGlobalSecret = Boolean(
+				process.env.MAX_WEBHOOK_SECRET?.trim() ||
+					process.env.DENTE_WEBHOOK_SECRET?.trim(),
+			);
+			if (!hasGlobalSecret) {
+				const botIdRaw =
+					request.headers["x-max-bot-id"] ??
+					(request.query as Record<string, string>)?.botId;
+				const botId = Array.isArray(botIdRaw) ? botIdRaw[0] : botIdRaw;
+				const secretHeader =
+					request.headers["x-dente-webhook-secret"] ??
+					request.headers["x-max-bot-api-secret"];
+				const providedSecret = Array.isArray(secretHeader)
+					? secretHeader[0]
+					: secretHeader;
+
+				if (botId?.trim() && providedSecret?.trim()) {
+					const [orgConfig] = await withSuperuserBypass(async (tx) =>
+						tx
+							.select({
+								organizationId: denteMaxBotConfigs.organizationId,
+								tokenSecretRef: denteMaxBotConfigs.tokenSecretRef,
+								maxBotToken: denteMaxBotConfigs.maxBotToken,
+							})
+							.from(denteMaxBotConfigs)
+							.where(eq(denteMaxBotConfigs.botId, botId.trim()))
+							.limit(1),
+					);
+					const storedSecret = OmnichannelTokenVault.resolveOperationalToken(
+						orgConfig?.tokenSecretRef ?? orgConfig?.maxBotToken,
+						orgConfig?.organizationId ?? "default",
+					);
+					if (storedSecret && timingSafeSecretEqual(providedSecret.trim(), storedSecret)) {
+						return;
+					}
+					if (orgConfig) {
+						return reply.code(401).send({
+							error: "UnauthorizedWebhook",
+							message: "Неверный секрет MAX вебхука.",
+						});
+					}
+				}
+			}
+
 			if (
 				!verifyWebhookSecret(request, reply, {
 					channel: "max",
@@ -282,14 +327,14 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		body: Record<string, unknown>,
 		botIdHeader: string,
 		request: FastifyRequest,
-	): Promise<void> {
+	): Promise<boolean> {
 		const payloadRaw = body.payload;
 		if (
 			!payloadRaw ||
 			typeof payloadRaw !== "object" ||
 			Array.isArray(payloadRaw)
 		) {
-			return;
+			return false;
 		}
 		const payload = payloadRaw as Record<string, unknown>;
 
@@ -311,7 +356,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				{ msgTsSec: freshness.msgTsSec, nowSec: freshness.nowSec },
 				"MAX webhook timestamp drift > 300s, skipping ingestion",
 			);
-			return;
+			return false;
 		}
 
 		const msgIdRaw =
@@ -334,7 +379,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				.limit(1),
 		);
 
-		if (!orgConfig) return;
+		if (!orgConfig) return false;
 
 		const inboundOrganizationId = orgConfig.organizationId;
 		await withTenantCtx(inboundOrganizationId, async (tx) => {
@@ -353,10 +398,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				);
 			}
 		});
-
-		void processInboundEvents().catch((err) =>
-			request.log.error({ err: safeLogError(err) }, "[Dente] MAX inbound ingestion error"),
-		);
+		return true;
 	}
 
 	/**
@@ -386,14 +428,18 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				? request.body
 				: [request.body];
 
+			let hasPersistedEvent = false;
 			for (const rawItem of rawEvents) {
 				if (rawItem && typeof rawItem === "object" && !Array.isArray(rawItem)) {
 					try {
-						await processMaxInboundEvent(
+						const persisted = await processMaxInboundEvent(
 							rawItem as Record<string, unknown>,
 							botIdHeader,
 							request,
 						);
+						if (persisted) {
+							hasPersistedEvent = true;
+						}
 					} catch (err) {
 						request.log.warn(
 							{ err: safeLogError(err), botIdHeader },
@@ -401,6 +447,12 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 						);
 					}
 				}
+			}
+
+			if (hasPersistedEvent) {
+				void processInboundEvents().catch((err) =>
+					request.log.error({ err: safeLogError(err) }, "[Dente] MAX inbound ingestion error"),
+				);
 			}
 		},
 	);

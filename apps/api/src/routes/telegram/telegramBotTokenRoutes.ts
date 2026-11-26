@@ -28,7 +28,7 @@ export function registerTelegramBotTokenRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				ok: false,
 				error: "ValidationError",
-				message: parsed.error.errors[0]?.message || "Некорректный формат токена бота.",
+				message: parsed.error.issues[0]?.message || "Некорректный формат токена бота.",
 			});
 		}
 

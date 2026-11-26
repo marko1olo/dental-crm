@@ -13,11 +13,13 @@ import {
 import { enqueueMessage } from "../services/communications/dispatch/dispatcherCore.js";
 import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
 
-const chatSendSchema = z.object({
-	patientId: z.string().uuid(),
-	message: z.string().min(1).max(2000),
-	idempotencyKey: z.string().min(1).max(128).optional(),
-});
+const chatSendSchema = z
+	.object({
+		patientId: z.string().uuid(),
+		message: z.string().min(1).max(2000),
+		idempotencyKey: z.string().min(1).max(128).optional(),
+	})
+	.strict();
 
 export async function registerChatRoutes(app: FastifyInstance) {
 	app.get("/api/chat/quota", async (request, reply) => {

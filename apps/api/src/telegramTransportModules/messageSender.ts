@@ -7,6 +7,7 @@ import { MessageTemplateEngine } from "../services/communications/MessageTemplat
 import { buildVisitReminderInlineKeyboard, buildVisitReminderText } from "./callbackHandler.js";
 import {
 	classifyTelegramError,
+	parseTelegramJsonResponse,
 	retryAfterSecondsFromPayload,
 	telegramMessageIdFromPayload,
 } from "./httpClient.js";
@@ -58,7 +59,7 @@ export async function sendTelegramTextMessage(
 				signal: controller.signal,
 			},
 		);
-		const payload = (await response.json().catch(() => ({}))) as unknown;
+		const payload = await parseTelegramJsonResponse(response, "send");
 
 		if (!response.ok) {
 			return {
@@ -130,7 +131,7 @@ export async function sendTelegramPhotoMessage(
 				signal: controller.signal,
 			},
 		);
-		const payload = (await response.json().catch(() => ({}))) as unknown;
+		const payload = await parseTelegramJsonResponse(response, "send");
 
 		if (!response.ok) {
 			return {
@@ -206,10 +207,10 @@ export async function editTelegramMessageText(
 				signal: controller.signal,
 			},
 		);
-		const payload = (await response.json().catch(() => ({}))) as {
+		const payload = await parseTelegramJsonResponse<{
 			description?: string;
 			ok?: boolean;
-		};
+		}>(response, "editMessage");
 
 		if (!response.ok) {
 			const desc = typeof payload?.description === "string" ? payload.description : "";
@@ -282,10 +283,10 @@ export async function editTelegramMessageReplyMarkup(
 				signal: controller.signal,
 			},
 		);
-		const payload = (await response.json().catch(() => ({}))) as {
+		const payload = await parseTelegramJsonResponse<{
 			description?: string;
 			ok?: boolean;
-		};
+		}>(response, "editMessage");
 
 		if (!response.ok) {
 			const desc = typeof payload?.description === "string" ? payload.description : "";

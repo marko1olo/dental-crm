@@ -13,7 +13,9 @@ import {
 	requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import {
-	buildDenteTelegramChatLinkList, revokeDenteTelegramChatLink,
+	buildDenteTelegramChatLinkList,
+	revokeDenteTelegramChatLink,
+	toDenteTelegramChatLinkPublic,
 } from "../../telegram/chatLinks.js";
 import {
 	buildDenteTelegramLinkCodeList, buildDenteTelegramOutbox,
@@ -480,7 +482,9 @@ export function registerTelegramLinkRoutes(
 					message: telegramChatLinkNotFoundMessage,
 				});
 			}
-			return denteTelegramChatLinkPublicSchema.parse(revoked);
+			return denteTelegramChatLinkPublicSchema.parse(
+				toDenteTelegramChatLinkPublic(revoked),
+			);
 		},
 	);
 }
@@ -582,6 +586,7 @@ export function registerTelegramBillingRoutes(
 				});
 			}
 
+			await TelegramBotBillingService.hydrateOrganizationBilling(organizationId);
 			const usage = TelegramBotBillingService.getBillingUsage(organizationId);
 			return usage;
 		},
@@ -648,10 +653,12 @@ export function registerTelegramBillingRoutes(
 				});
 			}
 
+			await TelegramBotBillingService.hydrateOrganizationBilling(organizationId);
 			const updated = TelegramBotBillingService.changePlan({
 				organizationId,
 				newPlanId: targetPlanId,
 			});
+			await TelegramBotBillingService.persistBillingRecord(organizationId);
 
 			return reply.code(200).send({
 				success: true,

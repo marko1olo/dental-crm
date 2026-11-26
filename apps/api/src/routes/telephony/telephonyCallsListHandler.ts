@@ -4,7 +4,7 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, patients } from "../../db/schema.js";
 
 export async function telephonyCallsListHandler(
@@ -51,32 +51,34 @@ export async function telephonyCallsListHandler(
 			? Math.floor(rawOffset)
 			: 0;
 
-	const calls = await db
-		.select({
-			id: communicationEvents.id,
-			patientId: communicationEvents.patientId,
-			channel: communicationEvents.channel,
-			direction: communicationEvents.direction,
-			status: communicationEvents.status,
-			message: communicationEvents.message,
-			recordingUrl: communicationEvents.recordingUrl,
-			durationSeconds: communicationEvents.durationSeconds,
-			callerPhone: communicationEvents.callerPhone,
-			createdAt: communicationEvents.createdAt,
-			patientName: patients.fullName,
-			patientPhone: patients.phone,
-		})
-		.from(communicationEvents)
-		.leftJoin(patients, eq(patients.id, communicationEvents.patientId))
-		.where(
-			and(
-				eq(communicationEvents.organizationId, orgId),
-				eq(communicationEvents.channel, "phone"),
-			),
-		)
-		.orderBy(desc(communicationEvents.createdAt))
-		.limit(limit)
-		.offset(offset);
+	const calls = await withTenantCtx(orgId, (tx) =>
+		tx
+			.select({
+				id: communicationEvents.id,
+				patientId: communicationEvents.patientId,
+				channel: communicationEvents.channel,
+				direction: communicationEvents.direction,
+				status: communicationEvents.status,
+				message: communicationEvents.message,
+				recordingUrl: communicationEvents.recordingUrl,
+				durationSeconds: communicationEvents.durationSeconds,
+				callerPhone: communicationEvents.callerPhone,
+				createdAt: communicationEvents.createdAt,
+				patientName: patients.fullName,
+				patientPhone: patients.phone,
+			})
+			.from(communicationEvents)
+			.leftJoin(patients, eq(patients.id, communicationEvents.patientId))
+			.where(
+				and(
+					eq(communicationEvents.organizationId, orgId),
+					eq(communicationEvents.channel, "phone"),
+				),
+			)
+			.orderBy(desc(communicationEvents.createdAt))
+			.limit(limit)
+			.offset(offset),
+	);
 
 	return reply.send({
 		success: true,

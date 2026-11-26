@@ -1,9 +1,7 @@
 import {
 	Activity,
-	Bot,
 	CheckCircle2,
 	Cpu,
-	ExternalLink,
 	ShieldAlert,
 	Sparkles,
 	UploadCloud,
@@ -25,6 +23,8 @@ import type { RecognitionPreset } from "../../settingsStaticData";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { speechGatewayCanUpload as canonicalSpeechGatewayCanUpload } from "../../helpers/speechHelpers";
 import { AiRecognitionJobsPanel } from "./AiRecognitionJobsPanel";
+import { SpeechGatewayStatusCard } from "./ai/SpeechGatewayStatusCard";
+import { SpeechProvidersGrid } from "./ai/SpeechProvidersGrid";
 import { showToast } from "../GlobalToast";
 /* Форматтер предупреждений — константа модуля, а не пропс. */
 import { aiRecognitionWarningText } from "./SettingsViewHelpers";
@@ -110,17 +110,12 @@ export function SettingsAiTab() {
 		<div className="ai-studio-container animate-fade-in">
 			{/* Speech Recognition Gateway */}
 			<section className="ai-section-card">
-				<div className="ai-section-header">
-					<div className="ai-section-icon">
-						<Bot size={24} />
-					</div>
-					<div className="ai-section-title">
-						<h3>Распознавание речи (Gateway)</h3>
-						<p>
-							Настройки локальных и облачных нейросетей для диктовки протоколов
-						</p>
-					</div>
-				</div>
+				<SpeechGatewayStatusCard
+					speechGatewayHealthReport={speechGatewayHealthReport}
+					speechGatewayStatus={speechGatewayStatus}
+					refreshSpeechRuntime={refreshSpeechRuntime}
+					speechGatewayCanUpload={canUpload}
+				/>
 
 				{speechGatewayStatus ? (
 					<div className="ai-gateway-status">
@@ -210,87 +205,13 @@ export function SettingsAiTab() {
 				<h4 style={{ margin: "12px 0 4px", fontSize: "15px" }}>
 					Доступные провайдеры
 				</h4>
-				<div className="ai-provider-grid">
-					{typedSpeechProviders.map((provider) => {
-						const runtime = speechProviderRuntimeById.get(provider.id);
-						const health = speechProviderHealthById.get(provider.id);
-						return (
-							<article className="premium-provider-card" key={provider.id}>
-								<div className="premium-provider-header">
-									<div className="premium-provider-title">
-										<h4>{provider.title}</h4>
-										<p>{speechProviderModeLabels[provider.mode]}</p>
-									</div>
-									{health && (
-										<span
-											className={`status-pill status-${health.healthLevel === "ready" ? "confirmed" : "cancelled"}`}
-										>
-											{speechProviderHealthLabels[health.healthLevel] ??
-												health.healthLevel}
-										</span>
-									)}
-								</div>
-
-								<div className="premium-provider-tags">
-									{provider.recommendedFor.slice(0, 3).map((item: string) => (
-										<span className="premium-provider-tag" key={item}>
-											{item}
-										</span>
-									))}
-								</div>
-
-								<ul className="premium-provider-strengths">
-									{provider.strengths.slice(0, 2).map((strength: string) => (
-										<li key={strength}>{strength}</li>
-									))}
-								</ul>
-
-								<div className="premium-provider-footer">
-									<span>
-										<strong>Лицензия:</strong> {provider.costNote}
-									</span>
-									{runtime && (
-										<span>
-											<strong>Интеграция:</strong>
-											<span
-												className={
-													runtime.configured
-														? "speech-runtime-ready"
-														: "speech-runtime-missing"
-												}
-											>
-												{runtime.canTranscribeChunks ? (
-													<span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-														<CheckCircle2 size={12} />
-														<span>Готов</span>
-													</span>
-												) : runtime.configured ? (
-													"Настроен"
-												) : (
-													"Не настроен"
-												)}
-											</span>
-										</span>
-									)}
-									<a
-										href={provider.sourceUrl}
-										target="_blank"
-										rel="noreferrer noopener"
-										style={{
-											fontSize: "12px",
-											display: "flex",
-											alignItems: "center",
-											gap: "4px",
-											marginTop: "4px",
-										}}
-									>
-										Документация <ExternalLink size={12} />
-									</a>
-								</div>
-							</article>
-						);
-					})}
-				</div>
+				<SpeechProvidersGrid
+					providers={typedSpeechProviders}
+					runtimeById={speechProviderRuntimeById}
+					healthById={speechProviderHealthById}
+					modeLabels={speechProviderModeLabels}
+					healthLabels={speechProviderHealthLabels}
+				/>
 			</section>
 
 			{/* AI Workbench */}
@@ -335,9 +256,30 @@ export function SettingsAiTab() {
 				 * закрытой.
 				 */}
 				<div
-					role="toolbar"
+					role="radiogroup"
 					className="ai-target-grid"
 					aria-label="Цель распознавания"
+					onKeyDown={(e) => {
+						if (typedRecognitionPresets.length === 0) return;
+						const currentIndex = typedRecognitionPresets.findIndex(
+							(p) => recognitionKind === p.kind && recognitionTarget === p.target,
+						);
+						let nextIndex = -1;
+						if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+							nextIndex = currentIndex >= 0 ? (currentIndex + 1) % typedRecognitionPresets.length : 0;
+						} else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+							nextIndex = currentIndex >= 0 ? (currentIndex - 1 + typedRecognitionPresets.length) % typedRecognitionPresets.length : 0;
+						}
+						if (nextIndex >= 0) {
+							e.preventDefault();
+							const nextPreset = typedRecognitionPresets[nextIndex];
+							if (nextPreset) {
+								chooseRecognitionPreset(nextPreset);
+								const radioButtons = e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+								radioButtons[nextIndex]?.focus();
+							}
+						}
+					}}
 				>
 					{typedRecognitionPresets.map((preset) => {
 						const selected =
@@ -345,7 +287,8 @@ export function SettingsAiTab() {
 							recognitionTarget === preset.target;
 						return (
 							<button
-								aria-pressed={selected}
+								role="radio"
+								aria-checked={selected}
 								className={`ai-target-card ${selected ? "active" : ""}`}
 								key={preset.key}
 								/*

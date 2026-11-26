@@ -117,7 +117,13 @@ export function readWhatsappCredentials(config: {
 	const appSecret = config.appSecret?.trim() || null;
 	if (!phoneNumberId || !accessToken) return null;
 
-	if (OmnichannelTokenVault.isEncrypted(accessToken) && config.organizationId) {
+	if (OmnichannelTokenVault.isEncrypted(accessToken)) {
+		if (!config.organizationId) {
+			logger.error(
+				"[readWhatsappCredentials] Encrypted WhatsApp access token has no organizationId",
+			);
+			return null;
+		}
 		try {
 			accessToken = OmnichannelTokenVault.decrypt(accessToken, config.organizationId);
 		} catch (err: unknown) {
@@ -125,7 +131,7 @@ export function readWhatsappCredentials(config: {
 				{ err, organizationId: config.organizationId },
 				"[readWhatsappCredentials] Failed to decrypt WhatsApp access token",
 			);
-			// fallback to raw value if decryption fails
+			return null;
 		}
 	}
 
@@ -228,7 +234,13 @@ export async function sendWhatsappTextMessage(
 			},
 		);
 
-		const payload = (await response.json().catch(() => ({}))) as {
+		const payload = (await response.json().catch((err: unknown) => {
+			logger.warn(
+				{ err, status: response.status },
+				"[sendWhatsappText] Failed to parse WhatsApp JSON response",
+			);
+			return {};
+		})) as {
 			messages?: { id?: unknown }[];
 			error?: { message?: unknown; code?: unknown };
 		};

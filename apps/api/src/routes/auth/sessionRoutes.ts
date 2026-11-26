@@ -12,11 +12,12 @@ import {
 	DEMO_SHOWCASE_ORG_ID,
 } from "../../services/demo/deepDemoSeeder.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
-import { readUnderBypass, TOKEN_SECRET } from "./tokenHelpers.js";
+import { demoLoginAllowed, readUnderBypass, TOKEN_SECRET } from "./tokenHelpers.js";
 
 function parseDemoStaffPayload(
 	staffToken: string | null | undefined,
 ): { userId: string; organizationId: string } | null {
+	if (!demoLoginAllowed()) return null;
 	if (!staffToken || typeof staffToken !== "string") return null;
 	const isDemoStaff =
 		staffToken.startsWith("demo-showcase-staff-token") ||
@@ -63,6 +64,7 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 				: staffHeader;
 
 			const clinicPayload =
+				demoLoginAllowed() &&
 				clinicToken &&
 				(clinicToken.startsWith("demo-showcase-token") ||
 					clinicToken.startsWith("demo-showcase-clinic-token"))
@@ -170,7 +172,11 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 					).row ?? null;
 
 			if (!user) {
-				if (staffToken && staffToken.startsWith("demo-showcase-staff-token")) {
+				if (
+					demoLoginAllowed() &&
+					staffToken &&
+					staffToken.startsWith("demo-showcase-staff-token")
+				) {
 					return reply.send({
 						ok: true,
 						user: {
@@ -189,7 +195,7 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 							organizationId: DEMO_SHOWCASE_ORG_ID,
 							isActive: true,
 							yandexCalendarId: null,
-							yandexCalendarToken: null,
+							hasYandexCalendar: false,
 						},
 					});
 				}
@@ -198,7 +204,14 @@ export function registerSessionRoutes(app: FastifyInstance): void {
 					.send({ error: "NotFound", message: "Пользователь не найден." });
 			}
 
-			return reply.send({ ok: true, user });
+			const { yandexCalendarToken: rawYandexCalendarToken, ...safeUser } = user;
+			return reply.send({
+				ok: true,
+				user: {
+					...safeUser,
+					hasYandexCalendar: Boolean(rawYandexCalendarToken),
+				},
+			});
 		},
 	);
 }

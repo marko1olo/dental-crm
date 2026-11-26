@@ -333,6 +333,7 @@ export async function rollbackRun(input: {
 			.where(
 				and(
 					eq(migrationStagingRecords.runId, input.runId),
+					eq(migrationStagingRecords.organizationId, input.organizationId),
 					inArray(migrationStagingRecords.status, ["loaded", "updated"]),
 				),
 			);
@@ -344,7 +345,12 @@ export async function rollbackRun(input: {
 				updatedAt: new Date(),
 				finishedAt: new Date(),
 			})
-			.where(eq(migrationRuns.id, input.runId));
+			.where(
+				and(
+					eq(migrationRuns.id, input.runId),
+					eq(migrationRuns.organizationId, input.organizationId),
+				),
+			);
 
 		await tx.insert(auditEvents).values({
 			organizationId: input.organizationId,

@@ -4,7 +4,11 @@
  */
 
 import { createHmac } from "node:crypto";
-import { classifyTelegramError, retryAfterSecondsFromPayload } from "./httpClient.js";
+import {
+	classifyTelegramError,
+	parseTelegramJsonResponse,
+	retryAfterSecondsFromPayload,
+} from "./httpClient.js";
 import type { AnswerTelegramCallbackQueryInput, TelegramTransportResult } from "./types.js";
 
 /**
@@ -31,7 +35,7 @@ export async function answerTelegramCallbackQuery(
 				signal: controller.signal,
 			},
 		);
-		const payload = (await response.json().catch(() => ({}))) as unknown;
+		const payload = await parseTelegramJsonResponse(response, "answerCallbackQuery");
 
 		if (!response.ok) {
 			return {

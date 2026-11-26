@@ -245,14 +245,15 @@ export class ServerHealthWatchdog {
 				options?.dbPingTimeoutMs ?? ServerHealthWatchdog.DEFAULT_DB_PING_TIMEOUT_MS;
 			const startTime = Date.now();
 
+			let timeoutId: ReturnType<typeof setTimeout> | undefined;
 			try {
 				const queryPromise = targetPool.query("SELECT 1 AS health_check;");
-				const timeoutPromise = new Promise<never>((_, reject) =>
-					setTimeout(
+				const timeoutPromise = new Promise<never>((_, reject) => {
+					timeoutId = setTimeout(
 						() => reject(new Error(`PostgreSQL ping timeout after ${timeoutMs}ms`)),
 						timeoutMs,
-					),
-				);
+					);
+				});
 
 				await Promise.race([queryPromise, timeoutPromise]);
 				responseTimeMs = Date.now() - startTime;
@@ -260,6 +261,10 @@ export class ServerHealthWatchdog {
 				isResponsive = false;
 				status = "critical";
 				lastError = err instanceof Error ? err.message : String(err);
+			} finally {
+				if (timeoutId !== undefined) {
+					clearTimeout(timeoutId);
+				}
 			}
 		}
 
@@ -283,17 +288,20 @@ export class ServerHealthWatchdog {
 	public static async collectQueueMetrics(options?: {
 		customDb?: typeof db | undefined;
 	}): Promise<QueueMetrics> {
-		const targetDb = options?.customDb ?? db;
-
 		try {
-			const rawCounts = await targetDb
-				.select({
-					queueName: systemBackgroundJobs.queueName,
-					status: systemBackgroundJobs.status,
-					count: sql<number>`count(*)::int`,
-				})
-				.from(systemBackgroundJobs)
-				.groupBy(systemBackgroundJobs.queueName, systemBackgroundJobs.status);
+			const queryCounts = (executor: typeof db | Parameters<Parameters<typeof withSuperuserBypass>[0]>[0]) =>
+				executor
+					.select({
+						queueName: systemBackgroundJobs.queueName,
+						status: systemBackgroundJobs.status,
+						count: sql<number>`count(*)::int`,
+					})
+					.from(systemBackgroundJobs)
+					.groupBy(systemBackgroundJobs.queueName, systemBackgroundJobs.status);
+
+			const rawCounts = options?.customDb
+				? await queryCounts(options.customDb)
+				: await withSuperuserBypass(queryCounts);
 
 			const queues: Record<string, QueueBreakdown> = {};
 			let totalJobs = 0;
@@ -565,11 +573,15 @@ export class ServerHealthWatchdog {
 		);
 
 		for (const [qName, qStats] of Object.entries(metrics.queues.queues)) {
+			const escapedQName = qName
+				.replace(/\\/g, "\\\\")
+				.replace(/"/g, '\\"')
+				.replace(/\n/g, "\\n");
 			lines.push(
-				`dente_queue_jobs{queue="${qName}",status="pending"} ${qStats.pending}`,
-				`dente_queue_jobs{queue="${qName}",status="processing"} ${qStats.processing}`,
-				`dente_queue_jobs{queue="${qName}",status="dead_letter"} ${qStats.deadLetter}`,
-				`dente_queue_jobs{queue="${qName}",status="failed"} ${qStats.failed}`,
+				`dente_queue_jobs{queue="${escapedQName}",status="pending"} ${qStats.pending}`,
+				`dente_queue_jobs{queue="${escapedQName}",status="processing"} ${qStats.processing}`,
+				`dente_queue_jobs{queue="${escapedQName}",status="dead_letter"} ${qStats.deadLetter}`,
+				`dente_queue_jobs{queue="${escapedQName}",status="failed"} ${qStats.failed}`,
 			);
 		}
 
@@ -590,17 +602,22 @@ export class ServerHealthWatchdog {
 
 		const mem = process.memoryUsage();
 		const toMb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(2);
+		const values = {
+			organizationId,
+			heapUsedMb: toMb(mem.heapUsed),
+			heapTotalMb: toMb(mem.heapTotal),
+			rssMb: toMb(mem.rss),
+			externalMb: toMb(mem.external),
+			gcCount: 0,
+		};
+
+		if (customDb) {
+			await customDb.insert(systemRamWatchdogs).values(values);
+			return;
+		}
 
 		await withTenantCtx(organizationId, async (tx) => {
-			const targetDb = customDb ?? tx;
-			await targetDb.insert(systemRamWatchdogs).values({
-				organizationId,
-				heapUsedMb: toMb(mem.heapUsed),
-				heapTotalMb: toMb(mem.heapTotal),
-				rssMb: toMb(mem.rss),
-				externalMb: toMb(mem.external),
-				gcCount: 0,
-			});
+			await tx.insert(systemRamWatchdogs).values(values);
 		});
 	}
 }

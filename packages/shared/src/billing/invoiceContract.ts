@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod";
+import { kopecksToRubles, rublesToKopecks } from "../money.js";
 
 export const INVOICE_STATUS_VALUES = [
 	"draft",
@@ -59,7 +60,7 @@ export const invoiceItemSchema = z.object({
 	totalRub: z.number().nonnegative(),
 	totalAmountRub: z.number().nonnegative().optional(),
 	status: z.string().optional(),
-});
+}).strict();
 
 export interface Invoice {
 	id: string;
@@ -110,7 +111,7 @@ export const invoiceSchema = z.object({
 	paidAt: z.string().nullable().optional(),
 	createdAt: z.string().min(1),
 	updatedAt: z.string().optional(),
-});
+}).strict();
 
 /**
  * Normalizes any raw status string into the canonical InvoiceStatus union.
@@ -200,20 +201,31 @@ export function normalizeInvoiceItem(
 	raw: Record<string, unknown>,
 	fallbackIndex = 0,
 ): InvoiceItem {
-	const quantity = Math.max(1, Number(raw.quantity ?? 1) || 1);
-	const unitPriceRub = Math.max(
-		0,
-		Number(raw.unitPriceRub ?? raw.priceRub ?? raw.totalRub ?? 0) || 0,
+	const rawQuantity = Number(raw.quantity ?? 1);
+	const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? rawQuantity : 1;
+	const rawUnitPrice = Number(raw.unitPriceRub ?? raw.priceRub ?? raw.totalRub ?? 0);
+	const unitPriceKopecks = rublesToKopecks(
+		Number.isFinite(rawUnitPrice) ? Math.max(0, rawUnitPrice) : 0,
 	);
-	const discountRub = Math.max(0, Number(raw.discountRub ?? 0) || 0);
+	const unitPriceRub = kopecksToRubles(unitPriceKopecks);
+
+	const rawDiscount = Number(raw.discountRub ?? 0);
+	const discountKopecks = rublesToKopecks(
+		Number.isFinite(rawDiscount) ? Math.max(0, rawDiscount) : 0,
+	);
+	const discountRub = kopecksToRubles(discountKopecks);
+
 	const discountPercent = Math.max(
 		0,
 		Math.min(100, Number(raw.discountPercent ?? 0) || 0),
 	);
-	const rawTotal = Number(
-		raw.totalAmountRub ?? raw.totalRub ?? quantity * unitPriceRub - discountRub,
-	);
-	const totalRub = Number.isFinite(rawTotal) ? Math.max(0, rawTotal) : 0;
+
+	const explicitTotal = raw.totalAmountRub ?? raw.totalRub;
+	const totalKopecks =
+		explicitTotal !== undefined && explicitTotal !== null && Number.isFinite(Number(explicitTotal))
+			? Math.max(0, rublesToKopecks(Number(explicitTotal)))
+			: Math.max(0, Math.round(quantity * unitPriceKopecks) - discountKopecks);
+	const totalRub = kopecksToRubles(totalKopecks);
 	const name = String(
 		raw.name ?? raw.serviceName ?? raw.title ?? "Стоматологическая услуга",
 	);

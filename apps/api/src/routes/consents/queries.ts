@@ -12,6 +12,14 @@ export class PatientNotFoundError extends Error {
 	}
 }
 
+export class ConsentDocumentNotFoundError extends Error {
+	public readonly statusCode = 404;
+	constructor(message = "Документ согласия не найден или не принадлежит пациенту") {
+		super(message);
+		this.name = "ConsentDocumentNotFoundError";
+	}
+}
+
 type DocumentKindEnum = typeof generatedDocuments.kind.enumValues[number];
 
 function mapConsentKindToDocumentKind(kind: string): DocumentKindEnum {
@@ -169,7 +177,7 @@ export async function recordPatientConsentEntry(
 			}
 		} else {
 			// Если documentId уже передан, обновляем подпись и хеш целостности строго у этого пациента (BOLA-guard)
-			await tx
+			const [updatedDoc] = await tx
 				.update(generatedDocuments)
 				.set({
 					status: "issued",
@@ -196,7 +204,11 @@ export async function recordPatientConsentEntry(
 						eq(generatedDocuments.organizationId, orgId),
 						eq(generatedDocuments.patientId, patientId),
 					),
-				);
+				)
+				.returning({ id: generatedDocuments.id });
+			if (!updatedDoc) {
+				throw new ConsentDocumentNotFoundError();
+			}
 		}
 
 		// 3. Записываем / обновляем согласие в patientConsents со связью на documentId

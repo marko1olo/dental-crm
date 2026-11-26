@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, resolveOrganizationId } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { users, visitDiaries, visits } from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
@@ -43,22 +43,27 @@ export async function handleDiaryVisitGet(req: FastifyRequest, reply: FastifyRep
 		});
 	}
 
-	const [visitRow] = await db
-		.select()
-		.from(visits)
-		.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-		.limit(1);
+	const { visitRow, diary } = await withTenantCtx(orgId, async (tx) => {
+		const [loadedVisit] = await tx
+			.select()
+			.from(visits)
+			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+			.limit(1);
+		if (!loadedVisit) {
+			return { visitRow: undefined, diary: undefined };
+		}
+		const [loadedDiary] = await tx
+			.select()
+			.from(visitDiaries)
+			.where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, orgId)));
+		return { visitRow: loadedVisit, diary: loadedDiary };
+	});
 	if (!visitRow) {
 		return reply.code(404).send({
 			error: "VisitNotFound",
 			message: "Приём не найден в этой клинике, дневник приёма открыть нельзя.",
 		});
 	}
-
-	const [diary] = await db
-		.select()
-		.from(visitDiaries)
-		.where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, orgId)));
 
 	const autosaveDraft = (((visitRow.draftAutosave as Record<string, unknown> | null)?.draft as Record<string, string | null | undefined> | undefined) ?? {});
 	const fallbackComplaint = visitRow.complaint || autosaveDraft.complaint || "";
@@ -94,11 +99,13 @@ export async function handleDiaryVisitGet(req: FastifyRequest, reply: FastifyRep
 	let doctorFullName: string | null = null;
 	let doctorSpecialty: string | null = null;
 	if (typeof signingUserId === "string" && signingUserId.length > 0) {
-		const [docUser] = await db
-			.select({ fullName: users.fullName, specialties: users.specialties })
-			.from(users)
-			.where(and(eq(users.id, signingUserId), eq(users.organizationId, orgId)))
-			.limit(1);
+		const [docUser] = await withTenantCtx(orgId, (tx) =>
+			tx
+				.select({ fullName: users.fullName, specialties: users.specialties })
+				.from(users)
+				.where(and(eq(users.id, signingUserId), eq(users.organizationId, orgId)))
+				.limit(1),
+		);
 		if (docUser) {
 			doctorFullName = typeof docUser.fullName === "string" && docUser.fullName.trim() ? docUser.fullName.trim() : null;
 			doctorSpecialty = formatDoctorSpecialtyLabel(docUser.specialties);

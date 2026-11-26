@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../db/rls.js";
-import { fiscalReceiptQueue, payments, sberbankTransactions } from "../../db/schema.js";
+import { fiscalReceiptQueue, patients, payments, sberbankTransactions } from "../../db/schema.js";
 import { isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import { applyAcquiringCashboxLedgerInTx } from "../cashbox/cashlessAcquiringLedger.js";
@@ -57,6 +57,19 @@ export async function handleSbpWebhookRefund(params: {
 					sourceTag: lockedPayment.clientMutationId ?? `sbp:${lockedPayment.id}`,
 				});
 
+				const [refundPatient] = await tx
+					.select({ phone: patients.phone, email: patients.email })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, orgId),
+							eq(patients.id, lockedPayment.patientId),
+						),
+					)
+					.limit(1);
+				const resolvedContact =
+					refundPatient?.phone?.trim() || refundPatient?.email?.trim() || null;
+
 				const ffdRefundPayload = FiscalReceiptFactory.buildFfd12Receipt({
 					patientId: lockedPayment.patientId,
 					visitId: lockedPayment.visitId ?? lockedSberTx?.visitId ?? undefined,
@@ -65,7 +78,7 @@ export async function handleSbpWebhookRefund(params: {
 					operationType: "income_return",
 					taxationSystem: "usn_income",
 					cashierFullName: "Кассир-администратор",
-					customerContact: "sbp@clinic.ru",
+					customerContact: resolvedContact,
 					sbpKopecks: refundKopecks,
 					totalKopecks: refundKopecks,
 					items: [

@@ -39,6 +39,7 @@ import {
 	type RecallReport,
 } from "@dental/shared/recalls";
 import { db } from "../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
 	appointments,
 	doctorPreferences,
@@ -142,6 +143,7 @@ export type RecallOptions = {
 export async function findRecallCandidates(
 	organizationId: string,
 	options: RecallOptions = {},
+	tx?: TenantDb,
 ): Promise<RecallReport> {
 	const minDays = options.minDays !== undefined
 		? Math.max(0, Math.min(1800, options.minDays))
@@ -217,83 +219,91 @@ export async function findRecallCandidates(
 		ORDER BY a.starts_at DESC LIMIT 1
 	)`;
 
-	const rows = await db
-		.select({
-			patientId: patients.id,
-			fullName: patients.fullName,
-			phone: patients.phone,
-			email: patients.email,
-			birthDate: patients.birthDate,
-			/*
-			 * Псевдонимы обязательны. Без .as() выражение возвращается драйвером под
-			 * служебным именем вида «?column?», и поле в объекте оказывается пустым.
-			 */
-			lastCompletedAt: lastCompleted.as("last_completed_at"),
-			lastDoctorId: lastDoctorId.as("last_doctor_id"),
-			lastReason: lastReason.as("last_reason"),
-			lastDiagnosisMkb: lastDiagnosisMkb.as("last_diagnosis_mkb"),
-			implantCount: implantCount.as("implant_count"),
-			futureAppointments: futureCount.as("future_appointments"),
-			totalAppointments: anyAppointment.as("total_appointments"),
-			lastRecallStatus: lastRecallStatus.as("last_recall_status"),
-			lastRecallNotes: lastRecallNotes.as("last_recall_notes"),
-			lastRecallChannel: lastRecallChannel.as("last_recall_channel"),
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, organizationId),
-				eq(patients.status, "active"),
-				// Объединённая карточка — это ссылка на другую, звать по ней некого.
-				isNull(patients.mergedIntoPatientId),
-				// Кто уже записан — не «потерянный»: его ждут (но если статус реколла 'scheduled', показываем его в колонке «Записан на приём» Канбана!).
-				or(
-					sql`${futureCount} = 0`,
-					sql`${lastRecallStatus} IN ('scheduled', 'completed')`,
-				),
-				// Либо завершённых приёмов не было вовсе, либо последний давно.
-				or(
-					sql`${lastCompleted} IS NULL`,
-					lte(
-						lastCompleted,
-						sql`now() - (${minDays} || ' days')::interval`,
+	const runWithDb = async (client: TenantDb | typeof db) => {
+		const rows = await client
+			.select({
+				patientId: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				email: patients.email,
+				birthDate: patients.birthDate,
+				/*
+				 * Псевдонимы обязательны. Без .as() выражение возвращается драйвером под
+				 * служебным именем вида «?column?», и поле в объекте оказывается пустым.
+				 */
+				lastCompletedAt: lastCompleted.as("last_completed_at"),
+				lastDoctorId: lastDoctorId.as("last_doctor_id"),
+				lastReason: lastReason.as("last_reason"),
+				lastDiagnosisMkb: lastDiagnosisMkb.as("last_diagnosis_mkb"),
+				implantCount: implantCount.as("implant_count"),
+				futureAppointments: futureCount.as("future_appointments"),
+				totalAppointments: anyAppointment.as("total_appointments"),
+				lastRecallStatus: lastRecallStatus.as("last_recall_status"),
+				lastRecallNotes: lastRecallNotes.as("last_recall_notes"),
+				lastRecallChannel: lastRecallChannel.as("last_recall_channel"),
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.status, "active"),
+					// Объединённая карточка — это ссылка на другую, звать по ней некого.
+					isNull(patients.mergedIntoPatientId),
+					// Кто уже записан — не «потерянный»: его ждут (но если статус реколла 'scheduled', показываем его в колонке «Записан на приём» Канбана!).
+					or(
+						sql`${futureCount} = 0`,
+						sql`${lastRecallStatus} IN ('scheduled', 'completed')`,
+					),
+					// Либо завершённых приёмов не было вовсе, либо последний давно.
+					or(
+						sql`${lastCompleted} IS NULL`,
+						lte(
+							lastCompleted,
+							sql`now() - (${minDays} || ' days')::interval`,
+						),
 					),
 				),
+			)
+			.limit(limit + 50);
+
+		const doctorIds = [
+			...new Set(
+				rows
+					.map((r) => r.lastDoctorId)
+					.filter((id): id is string => Boolean(id)),
 			),
-		)
-		.limit(limit + 50);
+		];
+		const doctorRows =
+			doctorIds.length > 0
+				? await client
+						.select({ id: users.id, fullName: users.fullName })
+						.from(users)
+						.where(inArray(users.id, doctorIds))
+				: [];
 
-	const doctorIds = [
-		...new Set(
-			rows
-				.map((r) => r.lastDoctorId)
-				.filter((id): id is string => Boolean(id)),
-		),
-	];
-	const doctorRows =
-		doctorIds.length > 0
-			? await db
-					.select({ id: users.id, fullName: users.fullName })
-					.from(users)
-					.where(inArray(users.id, doctorIds))
-			: [];
+		const doctorPrefRows =
+			doctorIds.length > 0
+				? await client
+						.select({
+							doctorId: doctorPreferences.doctorId,
+							specialty: doctorPreferences.specialty,
+						})
+						.from(doctorPreferences)
+						.where(
+							and(
+								eq(doctorPreferences.organizationId, organizationId),
+								inArray(doctorPreferences.doctorId, doctorIds),
+							),
+						)
+				: [];
+
+		return { rows, doctorRows, doctorPrefRows };
+	};
+
+	const { rows, doctorRows, doctorPrefRows } = tx
+		? await runWithDb(tx)
+		: await withTenantCtx(organizationId, async (tenantTx) => runWithDb(tenantTx));
 	const doctorById = new Map(doctorRows.map((d) => [d.id, d.fullName]));
-
-	const doctorPrefRows =
-		doctorIds.length > 0
-			? await db
-					.select({
-						doctorId: doctorPreferences.doctorId,
-						specialty: doctorPreferences.specialty,
-					})
-					.from(doctorPreferences)
-					.where(
-						and(
-							eq(doctorPreferences.organizationId, organizationId),
-							inArray(doctorPreferences.doctorId, doctorIds),
-						),
-					)
-			: [];
 	const doctorSpecialtyById = new Map(
 		doctorPrefRows
 			.filter((dp): dp is { doctorId: string; specialty: string } => Boolean(dp.doctorId))
@@ -490,18 +500,24 @@ function _recallBandLabel(band: RecallBand): string {
 export async function recallCandidateBelongsTo(
 	organizationId: string,
 	patientId: string,
+	tx?: TenantDb,
 ): Promise<boolean> {
-	const [row] = await db
-		.select({ id: patients.id })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	return Boolean(row);
+	const queryRow = async (client: TenantDb | typeof db) => {
+		const [row] = await client
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		return Boolean(row);
+	};
+	return tx
+		? queryRow(tx)
+		: withTenantCtx(organizationId, async (tenantTx) => queryRow(tenantTx));
 }
 
 /** Экспортируется для тестов: границы полос — часть договорённости, а не деталь. */

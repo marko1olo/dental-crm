@@ -10,7 +10,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { resolveTelegramRuntimeContext } from "./telegram/telegramRuntimeResolver.js";
+import { resolveTelegramRuntimeContextWithDb } from "./telegram/telegramRuntimeResolver.js";
 import {
 	TelegramTreatmentPlanCloserService,
 	formatRub,
@@ -28,11 +28,13 @@ const installmentCalcParamsSchema = z.object({
 	planId: z.string().uuid("Некорректный UUID плана лечения."),
 });
 
-const installmentCalcBodySchema = z.object({
-	monthsCount: z.union([z.literal(3), z.literal(6), z.literal(12), z.literal(24)]).default(12),
-	downPaymentRub: z.number().nonnegative().default(0),
-	bankProvider: z.enum(["tinkoff", "sberbank", "otp", "clinic_internal"]).default("tinkoff"),
-});
+const installmentCalcBodySchema = z
+	.object({
+		monthsCount: z.union([z.literal(3), z.literal(6), z.literal(12), z.literal(24)]).default(12),
+		downPaymentRub: z.number().nonnegative().default(0),
+		bankProvider: z.enum(["tinkoff", "sberbank", "otp", "clinic_internal"]).default("tinkoff"),
+	})
+	.strict();
 
 const sendFollowupParamsSchema = z.object({
 	planId: z.string().uuid("Некорректный UUID плана лечения."),
@@ -196,7 +198,7 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 			const { planId } = parsedParams.data;
 			const { force } = parsedBody.data;
 
-			const runtimeRes = resolveTelegramRuntimeContext(organizationId);
+			const runtimeRes = await resolveTelegramRuntimeContextWithDb(organizationId);
 			const orgToken = runtimeRes.ok ? runtimeRes.context.botToken : null;
 			const resolvedBotToken =
 				orgToken ||

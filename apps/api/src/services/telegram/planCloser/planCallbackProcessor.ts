@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	crmLeads,
@@ -108,6 +108,7 @@ export async function getPendingTreatmentPlansForPatient(
 					status: treatmentPlans.status,
 					totalPrice: treatmentPlans.totalPrice,
 					totalPriceRub: treatmentPlans.totalPriceRub,
+					totalPriceKopecks: treatmentPlans.totalPriceKopecks,
 					createdAt: treatmentPlans.createdAt,
 				})
 				.from(treatmentPlans)
@@ -162,10 +163,17 @@ export async function getPendingTreatmentPlansForPatient(
 
 				const teeth = parseTeethNumbers(items);
 
-				// Сумма плана
+				// Сумма плана (приоритет totalPriceKopecks)
+				const kopecksValue =
+					plan.totalPriceKopecks !== null && plan.totalPriceKopecks !== undefined
+						? Number(plan.totalPriceKopecks)
+						: 0;
 				const priceFromNumeric = plan.totalPrice ? Number.parseFloat(plan.totalPrice) : 0;
 				const priceFromRub = plan.totalPriceRub ? Number.parseFloat(plan.totalPriceRub) : 0;
-				const finalTotalRub = Math.max(priceFromRub, priceFromNumeric, 0);
+				const finalTotalRub =
+					kopecksValue > 0
+						? kopecksToRubles(kopecksValue)
+						: Math.max(priceFromRub, priceFromNumeric, 0);
 
 				// Этапы
 				const stages = buildDefaultStages(finalTotalRub);
@@ -394,7 +402,7 @@ export async function createInstallmentLead(input: CreateInstallmentLeadInput): 
 		});
 	} catch (err) {
 		logger.error({ err: safeLogError(err), planId: input.planId, orgId }, "createInstallmentLead error");
-		// В случае отсутствия соединения с реальной БД сохраняем мягко
+		throw err;
 	}
 
 	return { ok: true, leadId, plan };
@@ -461,6 +469,7 @@ export async function createCuratorCallRequest(input: CreateCuratorCallInput): P
 		});
 	} catch (err) {
 		logger.error({ err: safeLogError(err), planId: input.planId, orgId }, "createCuratorCallRequest error");
+		throw err;
 	}
 
 	return { ok: true, leadId, plan };

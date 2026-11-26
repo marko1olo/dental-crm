@@ -108,7 +108,7 @@ export async function handleFiscalPrescriptionCorrection(
 	const preparedInput: CreateFiscalReceiptPayloadInput = {
 		...data,
 		clientMutationId,
-		customerContact: patientContact || data.customerContact || "+79990000000",
+		customerContact: patientContact || data.customerContact || null,
 		isCorrection: true,
 		correctionType: "by_instruction",
 		correctionDocDate: data.correctionDocDate,

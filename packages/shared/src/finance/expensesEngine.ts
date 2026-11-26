@@ -55,7 +55,7 @@ export const expenseRecordSchema = z.object({
 	createdBy: z.string().uuid().optional().nullable(),
 	createdAt: z.string().datetime().optional(),
 	updatedAt: z.string().datetime().optional(),
-});
+}).strict();
 export type ExpenseRecord = z.infer<typeof expenseRecordSchema>;
 
 export const EXPENSE_CATEGORY_LABELS_RU: Record<ExpenseCategory, string> = {

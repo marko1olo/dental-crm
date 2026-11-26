@@ -136,17 +136,19 @@ export function calculateMarketingAttributionReport(params: {
 		}
 	}
 
-	// Patient revenue map (in kopecks)
+	// Patient revenue map (in kopecks, net of refunds)
 	const patientRevenueKop = new Map<string, number>();
 	for (const pay of allPayments) {
+		if (pay.status && pay.status !== "paid" && pay.status !== "refunded") continue;
 		const cur = patientRevenueKop.get(pay.patientId) || 0;
 		const kopecks =
-			pay.amountKopecks != null && Number(pay.amountKopecks) > 0
+			pay.amountKopecks != null && Number(pay.amountKopecks) !== 0
 				? Number(pay.amountKopecks)
 				: pay.amountRub != null
 					? rublesToKopecks(Number(pay.amountRub))
 					: 0;
-		patientRevenueKop.set(pay.patientId, cur + kopecks);
+		const signedKopecks = pay.status === "refunded" ? -Math.abs(kopecks) : kopecks;
+		patientRevenueKop.set(pay.patientId, cur + signedKopecks);
 	}
 
 	// Channel spend map

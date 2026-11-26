@@ -1,5 +1,6 @@
 import { kopecksToNumericString, parseKopecks } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -24,6 +25,19 @@ import { familyPaymentSchema } from "./familyFinanceTypes.js";
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const familyGroupParamsSchema = z
+	.object({
+		familyGroupId: z.string().trim().min(1),
+	})
+	.strict();
+
+const familyTaxCertificatesQuerySchema = z
+	.object({
+		taxYear: z.string().trim().optional(),
+		payerPatientId: z.string().trim().optional(),
+	})
+	.strict();
+
 function extractHeaderKey(rawHeader: string | string[] | undefined): string | undefined {
 	if (typeof rawHeader === "string") return rawHeader.trim();
 	if (Array.isArray(rawHeader) && rawHeader.length > 0 && typeof rawHeader[0] === "string") {
@@ -38,7 +52,14 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 		const organizationId = await requireResolvedOrganizationId(req, reply, "family finance history read");
 		if (!organizationId) return;
 
-		const { familyGroupId } = req.params as { familyGroupId: string };
+		const paramsParsed = familyGroupParamsSchema.safeParse(req.params);
+		if (!paramsParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор семейной группы (ожидается UUID)",
+			});
+		}
+		const { familyGroupId } = paramsParsed.data;
 		if (familyGroupId === "patient" || familyGroupId === "pay" || familyGroupId === "topup" || familyGroupId === "refund") {
 			return reply.code(404).send({ error: "Family group not found" });
 		}
@@ -144,19 +165,25 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 		);
 		if (!organizationId) return;
 
-		const { familyGroupId } = req.params as { familyGroupId: string };
-		if (!UUID_REGEX.test(familyGroupId)) {
+		const paramsParsed = familyGroupParamsSchema.safeParse(req.params);
+		if (!paramsParsed.success || !UUID_REGEX.test(paramsParsed.data.familyGroupId)) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор семейной группы (ожидается UUID)",
 			});
 		}
+		const { familyGroupId } = paramsParsed.data;
 
-		const query = req.query as {
-			taxYear?: string;
-			payerPatientId?: string;
-		};
-		const taxYear = query.taxYear?.trim() || String(new Date().getFullYear());
+		const queryParsed = familyTaxCertificatesQuerySchema.safeParse(req.query ?? {});
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса справки 1151156",
+				details: queryParsed.error.issues,
+			});
+		}
+		const query = queryParsed.data;
+		const taxYear = query.taxYear || String(new Date().getFullYear());
 		const parsedTaxYear = Number.parseInt(taxYear, 10);
 		if (!/^\d{4}$/.test(taxYear) || !Number.isInteger(parsedTaxYear) || parsedTaxYear < 2000 || parsedTaxYear > 2100) {
 			return reply.code(400).send({
@@ -164,7 +191,7 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 				message: "Некорректный налоговый период (taxYear должен быть 4-значным годом, например 2025)",
 			});
 		}
-		const payerPatientId = query.payerPatientId?.trim();
+		const payerPatientId = query.payerPatientId;
 		if (payerPatientId && !UUID_REGEX.test(payerPatientId)) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -175,12 +202,19 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 		try {
 			const settings = await getClinicSettingsFromDb(organizationId);
 			const profile = settings?.profile;
-			const profileRecord = profile as (typeof profile & { chiefDoctorName?: string; directorName?: string }) | undefined;
+			const chiefDoctorName =
+				profile && "chiefDoctorName" in profile && typeof profile.chiefDoctorName === "string"
+					? profile.chiefDoctorName
+					: undefined;
+			const directorName =
+				profile && "directorName" in profile && typeof profile.directorName === "string"
+					? profile.directorName
+					: undefined;
 
 			const inn = profile?.inn?.trim();
 			const ogrn = profile?.ogrn?.trim();
 			const clinicName = (profile?.legalName || profile?.clinicName)?.trim();
-			const rawSignatory = (profile?.signatoryName || profileRecord?.chiefDoctorName || profileRecord?.directorName)?.trim();
+			const rawSignatory = (profile?.signatoryName || chiefDoctorName || directorName)?.trim();
 
 			if (!inn || !ogrn || !clinicName || !rawSignatory) {
 				return reply.code(422).send({

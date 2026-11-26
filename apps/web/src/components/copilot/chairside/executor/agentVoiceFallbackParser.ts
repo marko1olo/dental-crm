@@ -7,6 +7,7 @@
  * - Zero mocks, 100% real parseDentalVoiceSpeech integration.
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { parseDentalVoiceSpeech } from "../../../../services/voice";
 import type { ClinicalProtocolMatchResult } from "../../../visit/clinicalCatalog/clinicalProtocolsTypes";
 import {
@@ -91,7 +92,7 @@ export function tryParseVoiceFallback(
         title: p.name || "Медицинская услуга",
         toothNumber: targetTooth ?? undefined,
         quantity: p.quantity || 1,
-        priceKopecks: priceRub * 100,
+        priceKopecks: rublesToKopecks(priceRub),
         priceRub,
         applied: false,
       };

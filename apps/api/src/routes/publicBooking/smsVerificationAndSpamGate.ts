@@ -127,6 +127,31 @@ export class BookingVerificationEngine {
 		return { allowed: true };
 	}
 
+	private getChallengeKey(cleanPhone: string, organizationId?: string): string {
+		const orgPart = organizationId && organizationId.trim() ? organizationId.trim() : "default";
+		return `${orgPart}:${cleanPhone}`;
+	}
+
+	private findChallengeByPhone(
+		cleanPhone: string,
+		organizationId?: string,
+	): { key: string; challenge: OtpChallenge } | undefined {
+		const exactKey = this.getChallengeKey(cleanPhone, organizationId);
+		const exact = this.otpChallenges.get(exactKey);
+		if (exact) {
+			return { key: exactKey, challenge: exact };
+		}
+		if (!organizationId) {
+			const suffix = `:${cleanPhone}`;
+			for (const [k, v] of this.otpChallenges.entries()) {
+				if (k.endsWith(suffix)) {
+					return { key: k, challenge: v };
+				}
+			}
+		}
+		return undefined;
+	}
+
 	public async requestPhoneVerification(
 		phone: string,
 		method: "sms" | "flash_call" = "sms",
@@ -148,8 +173,9 @@ export class BookingVerificationEngine {
 			};
 		}
 
-		const existing = this.otpChallenges.get(cleanPhone);
-		const phoneCheck = this.checkAndRecordPhone(cleanPhone, existing, now);
+		const challengeKey = this.getChallengeKey(cleanPhone, organizationId);
+		const existing = this.otpChallenges.get(challengeKey);
+		const phoneCheck = this.checkAndRecordPhone(challengeKey, existing, now);
 		if (!phoneCheck.allowed) {
 			return {
 				allowed: false,
@@ -163,7 +189,7 @@ export class BookingVerificationEngine {
 		const code = randomInt(100000, 1000000).toString();
 		const challengeId = randomUUID();
 
-		this.otpChallenges.set(cleanPhone, {
+		this.otpChallenges.set(challengeKey, {
 			phone: cleanPhone,
 			code,
 			expiresAt: now + OTP_TTL_MS,
@@ -178,7 +204,7 @@ export class BookingVerificationEngine {
 		try {
 			const targetOrgId = organizationId ? await resolveDefaultOrganizationId(organizationId) : null;
 			if (targetOrgId) {
-				await withTenantCtx(targetOrgId, async (tx) => {
+				const insertedOtp = await withTenantCtx(targetOrgId, async (tx) => {
 					const [pt] = await tx
 						.select({ id: patients.id })
 						.from(patients)
@@ -191,15 +217,19 @@ export class BookingVerificationEngine {
 						.limit(1);
 
 					const hashed = await hashCredential(code);
-					await tx.insert(portalOtpCodes).values({
-						organizationId: targetOrgId,
-						patientId: pt?.id ?? null,
-						phone: cleanPhone,
-						codeHash: hashed,
-						channel: method,
-						deliveryStatus: "sent",
-						expiresAt: new Date(now + OTP_TTL_MS),
-					});
+					const [row] = await tx
+						.insert(portalOtpCodes)
+						.values({
+							organizationId: targetOrgId,
+							patientId: pt?.id ?? null,
+							phone: cleanPhone,
+							codeHash: hashed,
+							channel: method,
+							deliveryStatus: "pending",
+							expiresAt: new Date(now + OTP_TTL_MS),
+						})
+						.returning({ id: portalOtpCodes.id });
+					return row;
 				});
 
 				// Real SMS provider dispatch via resolveChannelCredentials and sendThroughChannel (DEF-PB-02)
@@ -208,7 +238,7 @@ export class BookingVerificationEngine {
 						const credentials = await resolveChannelCredentials(targetOrgId);
 						if (credentials?.sms) {
 							const recipient = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
-							await sendThroughChannel(
+							const delivery = await sendThroughChannel(
 								{
 									channel: "sms",
 									recipientAddress: recipient,
@@ -218,8 +248,29 @@ export class BookingVerificationEngine {
 								},
 								credentials,
 							);
+							if (insertedOtp?.id) {
+								await withTenantCtx(targetOrgId, async (tx) => {
+									await tx
+										.update(portalOtpCodes)
+										.set({ deliveryStatus: delivery.ok ? "sent" : "failed" })
+										.where(eq(portalOtpCodes.id, insertedOtp.id));
+								});
+							}
 						}
 					} catch (smsErr) {
+						if (insertedOtp?.id) {
+							await withTenantCtx(targetOrgId, async (tx) => {
+								await tx
+									.update(portalOtpCodes)
+									.set({ deliveryStatus: "failed" })
+									.where(eq(portalOtpCodes.id, insertedOtp.id));
+							}).catch((statusErr) => {
+								logger.warn(
+									{ err: safeLogError(statusErr), organizationId: targetOrgId, otpId: insertedOtp.id },
+									"Failed to mark public booking OTP deliveryStatus as failed",
+								);
+							});
+						}
 						logger.warn(
 							{ err: safeLogError(smsErr), organizationId: targetOrgId, challengeId },
 							"Public booking SMS dispatch failed; in-memory OTP challenge remains active",
@@ -248,9 +299,9 @@ export class BookingVerificationEngine {
 		};
 	}
 
-	public getActiveCodeForTesting(phone: string): string | undefined {
+	public getActiveCodeForTesting(phone: string, organizationId?: string): string | undefined {
 		const cleanPhone = normalizePhoneDigits(phone);
-		return this.otpChallenges.get(cleanPhone)?.code;
+		return this.findChallengeByPhone(cleanPhone, organizationId)?.challenge.code;
 	}
 
 	public clearChallengesForTesting(): void {
@@ -266,10 +317,11 @@ export class BookingVerificationEngine {
 		const cleanPhone = normalizePhoneDigits(phone);
 		const trimmedCode = code.trim();
 
-		const challenge = this.otpChallenges.get(cleanPhone);
-		if (!challenge) {
+		const match = this.findChallengeByPhone(cleanPhone, organizationId);
+		if (!match) {
 			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };
 		}
+		const { key: challengeKey, challenge } = match;
 		if (
 			organizationId &&
 			challenge.organizationId &&
@@ -278,11 +330,11 @@ export class BookingVerificationEngine {
 			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };
 		}
 		if (Date.now() > challenge.expiresAt) {
-			this.otpChallenges.delete(cleanPhone);
+			this.otpChallenges.delete(challengeKey);
 			return { valid: false, error: "Срок действия кода подтверждения истёк" };
 		}
 		if (challenge.failedAttempts >= OTP_MAX_ATTEMPTS) {
-			this.otpChallenges.delete(cleanPhone);
+			this.otpChallenges.delete(challengeKey);
 			return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
 		}
 
@@ -294,13 +346,13 @@ export class BookingVerificationEngine {
 			challenge.failedAttempts++;
 			const remaining = Math.max(0, OTP_MAX_ATTEMPTS - challenge.failedAttempts);
 			if (remaining === 0) {
-				this.otpChallenges.delete(cleanPhone);
+				this.otpChallenges.delete(challengeKey);
 				return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
 			}
 			return { valid: false, error: `Неверный код подтверждения. Осталось попыток: ${remaining}` };
 		}
 
-		this.otpChallenges.delete(cleanPhone);
+		this.otpChallenges.delete(challengeKey);
 		return { valid: true };
 	}
 
@@ -414,7 +466,7 @@ export class BookingVerificationEngine {
 					return { valid: false, error: "Код подтверждения уже использован." };
 				}
 
-				this.otpChallenges.delete(cleanPhone);
+				this.otpChallenges.delete(this.getChallengeKey(cleanPhone, targetOrgId));
 				return { valid: true };
 			});
 
@@ -429,7 +481,12 @@ export class BookingVerificationEngine {
 
 	public clearChallenges(cleanPhone?: string): void {
 		if (cleanPhone) {
-			this.otpChallenges.delete(cleanPhone);
+			const suffix = `:${cleanPhone}`;
+			for (const key of this.otpChallenges.keys()) {
+				if (key === cleanPhone || key.endsWith(suffix)) {
+					this.otpChallenges.delete(key);
+				}
+			}
 		} else {
 			this.otpChallenges.clear();
 		}
@@ -465,8 +522,8 @@ export async function verifyPhoneOtpAsync(
 	return bookingVerificationEngine.verifyPhoneOtpAsync(phone, code, organizationId);
 }
 
-export function getActiveCodeForTesting(phone: string): string | undefined {
-	return bookingVerificationEngine.getActiveCodeForTesting(phone);
+export function getActiveCodeForTesting(phone: string, organizationId?: string): string | undefined {
+	return bookingVerificationEngine.getActiveCodeForTesting(phone, organizationId);
 }
 
 export function clearChallengesForTesting(): void {

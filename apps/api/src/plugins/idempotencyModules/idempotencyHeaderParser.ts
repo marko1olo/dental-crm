@@ -25,36 +25,18 @@ export function extractTenantId(request: FastifyRequest): string | null {
 	}
 	try {
 		const identity = getRequestIdentity(request);
-		if (identity?.organizationId && typeof identity.organizationId === "string" && identity.organizationId.trim()) {
+		if (
+			identity?.organizationId &&
+			typeof identity.organizationId === "string" &&
+			identity.organizationId.trim() &&
+			(identity.verified || identity.userId !== null)
+		) {
 			return identity.organizationId.trim();
 		}
 	} catch (err) {
 		request.log?.debug({ err }, "[IdempotencyHeaderParser] Could not resolve request identity");
 	}
 
-	// If request has authenticated user context, strictly deny falling back to untrusted headers or body
-	if (request.user) {
-		return null;
-	}
-
-	const headerOrg = request.headers["x-organization-id"];
-	const orgStr = Array.isArray(headerOrg) ? headerOrg[0] : headerOrg;
-	if (typeof orgStr === "string" && orgStr.trim()) {
-		return orgStr.trim();
-	}
-	const params = request.params as Record<string, unknown> | undefined;
-	if (params && typeof params.organizationId === "string" && params.organizationId.trim()) {
-		return params.organizationId.trim();
-	}
-	const body = request.body as Record<string, unknown> | undefined;
-	if (body && typeof body === "object") {
-		if (typeof body.organizationId === "string" && body.organizationId.trim()) {
-			return body.organizationId.trim();
-		}
-		if (typeof body.clinicId === "string" && body.clinicId.trim()) {
-			return body.clinicId.trim();
-		}
-	}
 	return null;
 }
 

@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { ArchwireChangePayloadSchema, type ArchwireChangePayload } from "@dental/shared";
 
-export const patientParamsSchema = z.object({
-	patientId: z.string().uuid(),
-});
+export const patientParamsSchema = z
+	.object({
+		patientId: z.string().uuid(),
+	})
+	.strict();
 
 export const issueAlignerSetSchema = z
 	.object({

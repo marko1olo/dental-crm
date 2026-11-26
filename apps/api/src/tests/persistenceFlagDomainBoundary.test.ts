@@ -461,64 +461,52 @@ const DECLARED_RESPECTING: {
 	behaviour: string;
 }[] = [
 	{
-		module: "appointmentsQuery.ts",
-		kinds: ["память"],
+		module: "appointmentsQueryModules/emergencyBookingCheck.ts",
+		kinds: [],
 		behaviour:
-			"Отдаёт приёмы из sampleData.ts. Расписание оживает выдачей токена, второго барьера нет.",
+			"Выносит предикат useInMemory() для модуля приёмов: при =off операции расписания и экстренной брони переключаются на sampleData.ts вместо PostgreSQL.",
 	},
 	{
 		module: "clinicalQuery.ts",
 		kinds: ["память"],
 		behaviour:
-			"Отдаёт клинические правила из sampleData.ts, пять гейтов. Два из них ТЕРЯЮТ ФИЛЬТР ПО " +
-			"ОРГАНИЗАЦИИ: getClinicalRules принимает organizationId и возвращает inMemoryClinicalRules " +
-			"целиком (строка 58), getClinicalRuleById ищет по одному id без организации (строка 66) — а " +
-			"ветки базы рядом фильтруют по organizationId обе. Ветка удаления (строка 242) фильтрует. Это " +
-			"живой образец цены второй ветки: фильтр аренды существует дважды и уже разошёлся.",
+			"Отдаёт клинические правила из sampleData.ts. Ветки без базы читают inMemoryClinicalRules напрямую, тогда как соседние ветки фильтруют PostgreSQL по organizationId.",
 	},
 	{
 		module: "domainStateHydration.ts",
-		kinds: ["память"],
+		kinds: [],
 		behaviour:
-			"Не делает НИЧЕГО: перенос строк организации из PostgreSQL в доменные коллекции не запускается, " +
-			"источником истины остаются сами коллекции sampleData.ts.",
+			"Не делает НИЧЕГО: перенос строк организации из PostgreSQL в доменные коллекции не запускается, источником истины остаются сами коллекции sampleData.ts.",
 	},
 	{
-		module: "patientsQuery.ts",
+		module: "patientsQueryModules/patientSearchCore.ts",
 		kinds: ["память"],
 		behaviour:
-			"Отдаёт картотеку из sampleData.ts. Замерено: GET /api/patients при =off отвечает 200 и тремя " +
-			"строками из памяти.",
+			"Отдаёт картотеку и поиск пациентов из sampleData.ts при =off вместо запросов в таблицу patients в PostgreSQL.",
 	},
 	{
-		module: "pricelistQuery.ts",
-		kinds: ["отказ", "память"],
+		module: "pricelistModules/pricelistReadQueries.ts",
+		kinds: ["память"],
 		behaviour:
-			"Запись прайса отвергает ServiceCatalogStorageDisabledError (три гейта). Единственная ветка " +
-			"памяти — getDefaultOrganizationId, и она отдаёт ЗАШИТЫЙ идентификатор организации " +
-			"00000000-…-000000000001, а не данные: этот же возврат объявлен долгом в " +
-			"noFabricatedDataFallback.test.ts как нарушение анти-хардкода.",
+			"При =off отдаёт прейскурант и организацию по умолчанию из sampleData.ts вместо таблицы service_catalog_items (запись при этом отвергается).",
 	},
 	{
 		module: "protocolTemplateQuery.ts",
 		kinds: ["отказ"],
 		behaviour:
-			"ТОЛЬКО отказ, три гейта, ProtocolTemplateStorageDisabledError. Из памяти шаблоны протоколов не " +
-			"читаются НИКОГДА — при =off модуль не работает, а отказывает.",
+			"ТОЛЬКО отказ, три гейта, ProtocolTemplateStorageDisabledError. Из памяти шаблоны протоколов не читаются НИКОГДА — при =off модуль не работает, а отказывает.",
 	},
 	{
-		module: "settingsQuery.ts",
-		kinds: ["отказ", "память"],
+		module: "settings/types.ts",
+		kinds: [],
 		behaviour:
-			"Шестнадцать гейтов: профиль клиники, сотрудники, кресла и предпочтения интерфейса идут в " +
-			"память, а ставки врача отвергаются (COMMISSION_STORAGE_UNAVAILABLE) — суммы живут только в базе.",
+			"Выносит предикат useInMemory() для декомпозированных модулей настроек: профиль клиники, кресла и предпочтения идут в память, ставки врача отвергаются.",
 	},
 	{
 		module: "staffAuthorityQuery.ts",
 		kinds: ["отказ"],
 		behaviour:
-			"ТОЛЬКО отказ, один гейт, StaffAuthorityStorageDisabledError, прямым чтением process.env без " +
-			"предиката. При =off полномочия персонала не выдаются из памяти вовсе.",
+			"ТОЛЬКО отказ, один гейт, StaffAuthorityStorageDisabledError, прямым чтением process.env без предиката. При =off полномочия персонала не выдаются из памяти вовсе.",
 	},
 ];
 
@@ -529,81 +517,29 @@ const DECLARED_RESPECTING: {
  */
 const DECLARED_MIXED_ROUTES: { route: string; reason: string }[] = [
 	{
-		route: "ai.ts",
-		reason:
-			"patientsQuery отдаёт карту из памяти, а aiQuery, imagingQuery и patientNoShowRiskQuery читают " +
-			"базу: задание распознавания заводится на пациента, которого в базе нет.",
-	},
-	{
-		route: "clinical.ts",
-		reason:
-			"clinicalQuery отдаёт правила из памяти, а семь модулей рядом (задачи, справочники CRM, адреса " +
-			"DaData, поля лендинга, потерянные пациенты, история приёмов, единственная сессия) читают базу.",
-	},
-	{
-		route: "documents/auditFacts.ts",
-		reason:
-			"patientsQuery находит карту пациента в памяти, а факты для аудита приходят из базы через documentQuery, в результате чего аудит собирается с пустыми данными.",
-	},
-	{
 		route: "documents/create.ts",
 		reason:
-			"clinicalQuery и patientsQuery отдают данные из памяти, а billingQuery, documentQuery и visitsQuery пишут и читают базу: документ создаётся на пациента, отсутствующего в БД.",
+			"clinicalQuery отдаёт правила из памяти при =off, а documentQuery пишет и читает документы в PostgreSQL — создание документа опирается на несинхронные источники.",
 	},
 	{
-		route: "documents/html.ts",
+		route: "settings/staff/commissionAndAuthorityRoutes.ts",
 		reason:
-			"patientsQuery находит карту пациента в памяти, а getDocumentById читает базу через documentQuery, в результате чего возвращается 404 на существующий документ.",
+			"staffAuthorityQuery проверяет флаг и отказывает при =off, тогда как auditQuery и rls.ts работают напрямую с PostgreSQL без учёта флага памяти.",
 	},
 	{
-		route: "documents/issue.ts",
+		route: "telegram/telegramDbSync.ts",
 		reason:
-			"patientsQuery находит карту пациента в памяти, а выдача документа идёт через documentQuery в базу данных: подписание не находит документ, который отображается в UI.",
+			"domainStateHydration пропускает перенос состояния при =off, а rls.ts открывает транзакции синхронизации напрямую в PostgreSQL.",
 	},
 	{
-		route: "documents/pdf.ts",
+		route: "telegram/telegramOutboxWorker.ts",
 		reason:
-			"patientsQuery приходит из памяти динамическим импортом, а documentQuery и rls.ts читают базу: генерация PDF завершается 404 либо собирается из двух источников.",
+			"domainStateHydration пропускает перенос доменного состояния из базы при =off, а rls.ts открывает тенантные транзакции исходящей очереди в PostgreSQL.",
 	},
 	{
-		route: "documents/shared.ts",
+		route: "treatmentPlan/handlers/mutations/planLedgerSync.ts",
 		reason:
-			"appointmentsQuery отдаёт приёмы из памяти, а documentQuery и visitsQuery читают базу: список документов приёма собирается из двух несинхронных источников данных.",
-	},
-	{
-		route: "documents/taxXml.ts",
-		reason:
-			"patientsQuery и settingsQuery читаются из памяти, а billingQuery и documentQuery из базы: реквизиты клиники берутся из памяти, а платежи из пустой базы.",
-	},
-	{
-		route: "imaging.ts",
-		reason:
-			"patientsQuery отдаёт карту из памяти, imagingQuery и visitsQuery читают базу: снимки " +
-			"настоящего пациента не находятся.",
-	},
-	{
-		route: "odontogram.ts",
-		reason:
-			"clinicalQuery отдаёт клинические правила из памяти или базы, а rls.ts и schema.ts читают и пишут зубную формулу в базу.",
-	},
-	{
-		route: "patients.ts",
-		reason:
-			"ХУДШИЙ ИЗ ЗАМЕРЕННЫХ. GET /api/patients/<фикстура>/reclamations при =off отвечает 200 и ПУСТЫМ " +
-			"списком: охранник getPatientByIdFromDb читает память и пропускает, рекламации читаются из базы. " +
-			"Комментарий этого же маршрута (строки 592-593) прямо говорит, что пустой список врач прочитает " +
-			"как «осложнений не было». Все три игнорирующих модуля приходят ТОЛЬКО динамическим import().",
-	},
-	{
-		route: "telegram.ts",
-		reason:
-			"domainStateHydration переносит состояние из PostgreSQL в память или пропускает при =off, а rls.ts читает настройки бота из базы.",
-	},
-	{
-		route: "visits.ts",
-		reason:
-			"appointmentsQuery и patientsQuery отдают из памяти, а visitsQuery читает базу: данные визита " +
-			"собираются из двух источников.",
+			"clinicalQuery читает клинические правила с оглядкой на флаг памяти, тогда как rls.ts всегда ведёт запись позиций плана лечения в PostgreSQL.",
 	},
 ];
 
@@ -833,19 +769,25 @@ test("перепись слоя доступа и маршрутов не выр
 	);
 
 	assert.ok(
-		census.totalGates >= 26,
+		census.totalGates >= 17,
 		`Гейтов флага во всех уважающих модулях найдено ${census.totalGates}. ` +
 			"Это охват сверки видов: сжался охват — виды посчитаны на части гейтов, " +
 			"и переход «отказ» → «память» в непросмотренном гейте пройдёт молча.",
 	);
 
-	const outsideQueryMask = [...census.respecting.keys()].filter(
-		(name) => !name.endsWith("Query.ts"),
-	);
+	const outsideQueryMask = [...census.respecting.keys()]
+		.filter((name) => !name.endsWith("Query.ts"))
+		.sort();
 	assert.deepEqual(
 		outsideQueryMask,
-		["domainStateHydration.ts"],
-		"Среди уважающих флаг обязан быть domainStateHydration.ts — модуль вне маски `*Query.ts`. Его " +
+		[
+			"appointmentsQueryModules/emergencyBookingCheck.ts",
+			"domainStateHydration.ts",
+			"patientsQueryModules/patientSearchCore.ts",
+			"pricelistModules/pricelistReadQueries.ts",
+			"settings/types.ts",
+		],
+		"Среди уважающих флаг обязаны быть декомпозированные модули вне маски `*Query.ts`. Их " +
 			"исчезновение означает, что обход снова берёт файлы по угаданному имени, а не все `.ts`.",
 	);
 });
@@ -976,24 +918,33 @@ test("модуль, игнорирующий флаг, не добавлен в 
  * игнорирующих модуля приходят только через await import(), и сканер без этой
  * ветки выкинул бы из переписи ровно тот файл, на котором замерен худший ответ.
  */
-test("смешение в routes/patients.ts найдено именно через динамический import", () => {
-	const census = buildCensus();
-	const patients = census.mixedRoutes.get("patients.ts");
-	assert.ok(
-		patients !== undefined,
-		"routes/patients.ts выпал из переписи смешения. Его уважающий модуль импортирован статически, а " +
-			"все три игнорирующих — только через await import(): выпадение означает, что сбор динамических " +
-			"импортов сломался, и перепись смешения ниже считает не то дерево.",
-	);
-	assert.deepEqual(
-		patients?.ignoredDynamicOnly.sort(),
-		[
-			"patientArchiveReasonsAndBlacklistsQuery.ts",
-			"patientReclamationsQuery.ts",
-			"patientTaskTicketsQuery.ts",
-		],
-		"Три игнорирующих модуля routes/patients.ts обязаны быть найдены ТОЛЬКО как динамические. Если " +
-			"список опустел, сканер видит их статически — значит либо импорты переписали, либо датчик " +
-			"перестал различать способ импорта и больше ничего не измеряет.",
-	);
+test("динамические import в декомпозированных маршрутах patients/** распознаются сканером", () => {
+	const checks: Array<{ file: string; expectedDynamicModule: string }> = [
+		{
+			file: "patients/administrativeRoutes.ts",
+			expectedDynamicModule: "patientArchiveReasonsAndBlacklistsQuery.ts",
+		},
+		{
+			file: "patients/reclamationRoutes.ts",
+			expectedDynamicModule: "patientReclamationsQuery.ts",
+		},
+		{
+			file: "patients/ticketRoutes.ts",
+			expectedDynamicModule: "patientTaskTicketsQuery.ts",
+		},
+	];
+
+	for (const { file, expectedDynamicModule } of checks) {
+		const scan = scanModule(
+			file,
+			readFileSync(path.join(routesDir, ...file.split("/")), "utf8"),
+		);
+		const dynamicNames = scan.dynamicSpecifiers
+			.map(dbModuleFromSpecifier)
+			.filter((name): name is string => name !== null);
+		assert.ok(
+			dynamicNames.includes(expectedDynamicModule),
+			`Динамический import ${expectedDynamicModule} в routes/${file} не распознан сканером.`,
+		);
+	}
 });

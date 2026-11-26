@@ -8,7 +8,7 @@ export async function recommissionSterilizerItem(
 	onLocalFallback: () => void,
 ): Promise<void> {
 	try {
-		const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
+		const res = await fetch(`/api/sanpin/sterilization/equipments/${item.id}`, {
 			method: "PUT",
 			headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ action: "recommission" }),
@@ -33,7 +33,7 @@ export async function decommissionSterilizerItem(
 	onLocalFallback: (reason: string) => void,
 ): Promise<void> {
 	try {
-		const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
+		const res = await fetch(`/api/sanpin/sterilization/equipments/${item.id}`, {
 			method: "PUT",
 			headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({ action: "decommission", decommissionReason: reason }),
@@ -57,7 +57,7 @@ export async function deleteSterilizerItem(
 	onLocalFallback: () => void,
 ): Promise<void> {
 	try {
-		const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
+		const res = await fetch(`/api/sanpin/sterilization/equipments/${item.id}`, {
 			method: "DELETE",
 			headers: getDenteAuthHeaders(),
 		}).catch(() => null);

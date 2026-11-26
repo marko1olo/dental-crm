@@ -1,8 +1,13 @@
-import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
-import { denteTelegramChatLinks, messengerInboundEvents, patients } from "../../../db/schema.js";
+import { and, desc, eq } from "drizzle-orm";
+import { withTenantCtx } from "../../../db/rls.js";
+import {
+	denteTelegramBotConfigs,
+	denteTelegramChatLinks,
+	messengerInboundEvents,
+	patients,
+} from "../../../db/schema.js";
 import type { BotChannel } from "../../../services/bots/types.js";
+import { hashTelegramChatFingerprint } from "../../../utils/telegramChatHash.js";
 
 /**
  * Привязка активного чата к существующей или новой карте пациента.
@@ -22,7 +27,7 @@ export async function handleLinkPatient(
 	message?: string;
 	patient?: { id: string; fullName: string; phone: string | null };
 }> {
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(orgId, async (tx) => {
 		let targetPatient: { id: string; fullName: string; phone: string | null } | null = null;
 
 		if (patientId) {
@@ -75,7 +80,7 @@ export async function handleLinkPatient(
 
 		// Если канал Telegram, сохраняем привязку в dente_telegram_chat_links
 		if (channel === "telegram") {
-			const chatFingerprint = createHash("sha256").update(senderId).digest("hex");
+			const chatFingerprint = hashTelegramChatFingerprint(senderId);
 			const [existingLink] = await tx
 				.select({ id: denteTelegramChatLinks.id })
 				.from(denteTelegramChatLinks)
@@ -104,11 +109,23 @@ export async function handleLinkPatient(
 						),
 					);
 			} else {
+				const [activeBotConfig] = await tx
+					.select({ botConfigId: denteTelegramBotConfigs.botConfigId })
+					.from(denteTelegramBotConfigs)
+					.where(
+						and(
+							eq(denteTelegramBotConfigs.organizationId, orgId),
+							eq(denteTelegramBotConfigs.isActive, true),
+						),
+					)
+					.orderBy(desc(denteTelegramBotConfigs.updatedAt))
+					.limit(1);
+
 				await tx
 					.insert(denteTelegramChatLinks)
 					.values({
 						organizationId: orgId,
-						botConfigId: "default",
+						botConfigId: activeBotConfig?.botConfigId ?? "default",
 						subjectType: "patient",
 						subjectId: targetPatient.id,
 						chatFingerprint,

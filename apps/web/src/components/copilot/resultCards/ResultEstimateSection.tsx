@@ -20,16 +20,19 @@ export function renderEstimateSection(tool: string, obj: Obj, result: unknown): 
 
   let rawTiers: EstimateTierOption[] | undefined;
   if (Array.isArray(obj.tiers)) {
-    rawTiers = obj.tiers as unknown as EstimateTierOption[];
+    rawTiers = obj.tiers.map(parseTierOption);
   } else if (obj.tiers && typeof obj.tiers === 'object') {
     rawTiers = Object.values(obj.tiers).map(parseTierOption);
   } else if (Array.isArray(obj.pricing_tiers)) {
-    rawTiers = obj.pricing_tiers as unknown as EstimateTierOption[];
-  } else if (Array.isArray(result) && result.length > 0 && ('tierKey' in (result[0] as Obj) || 'tierName' in (result[0] as Obj))) {
-    rawTiers = result as unknown as EstimateTierOption[];
+    rawTiers = obj.pricing_tiers.map(parseTierOption);
+  } else if (Array.isArray(result) && result.length > 0 && typeof result[0] === 'object' && result[0] !== null && ('tierKey' in result[0] || 'tierName' in result[0])) {
+    rawTiers = result.map(parseTierOption);
   }
 
   if (rawTiers || obj.items) {
+    const firstTier = rawTiers?.[0];
+    const isMultiTier = Boolean(rawTiers && (rawTiers.length > 1 || (firstTier !== undefined && Array.isArray(firstTier.stages))));
+    if (!isMultiTier && !obj.items) return null;
     const estimateData: EstimateTierData = {
       patientId: typeof obj.patientId === 'string' ? obj.patientId : undefined,
       patientName: typeof obj.patientName === 'string' ? obj.patientName : typeof obj.patientFullName === 'string' ? obj.patientFullName : undefined,

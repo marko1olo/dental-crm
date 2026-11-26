@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Calendar, Activity, Receipt, BookOpen, Sparkles, Brain } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import { CRM_FASTIFY_TOOLS_REGISTRY } from "./copilotCatalogData";
 import { showToast } from "../GlobalToast";
 import { ActiveDiffCard } from "./cards/ActiveDiffCard";
@@ -110,12 +111,12 @@ export const CopilotStudioActionsTab: React.FC<CopilotStudioActionsTabProps> = (
                 items: [
                   {
                     title: activeTooth ? `Лечение кариеса (Зуб ${activeTooth})` : "Лечение кариеса и нанокомпозитная реставрация",
-                    priceRub: 6500,
+                    priceKopecks: rublesToKopecks(6500),
                     quantity: 1,
                     toothCode: activeTooth ? String(activeTooth) : undefined,
                   },
                 ],
-                discountRub: 0,
+                discountKopecks: 0,
               }),
             },
             {

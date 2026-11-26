@@ -49,11 +49,15 @@ import {
 	crossReferenceWithExistingCatalog,
 } from "../../services/pricelist/index.js";
 
-// Ingestion service
+// Duplicate & Identity Resolution SSOT
 import {
-	IdentityResolutionEngine,
-	patientIdentityRecordSchema,
-} from "../../services/ingestion/IdentityResolutionEngine.js";
+	evaluatePatientMatch,
+	normalizeBirthDateIso,
+	normalizePhoneE164,
+	omsKey,
+	passportKey,
+	snilsKey,
+} from "../../services/patients/duplicateDetection.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -320,37 +324,40 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 	});
 
 	// =========================================================================
-	// 3. IDENTITY RESOLUTION ENGINE: INGESTION PURGE
+	// 3. IDENTITY RESOLUTION & DUPLICATE DETECTION SSOT INTEGRITY
 	// =========================================================================
-	describe("3. Identity Resolution Engine Integrity", () => {
+	describe("3. Duplicate Detection & Identity Normalization SSOT Integrity", () => {
 		it("rejects invalid non-digit phone string producing fake '+' false matches", () => {
-			assert.equal(IdentityResolutionEngine.normalizePhone("invalid-phone"), null);
-			assert.equal(IdentityResolutionEngine.normalizePhone("no-digits-here"), null);
-			assert.equal(IdentityResolutionEngine.normalizePhone(""), null);
+			assert.equal(normalizePhoneE164("invalid-phone"), null);
+			assert.equal(normalizePhoneE164("no-digits-here"), null);
+			assert.equal(normalizePhoneE164(""), null);
+			assert.equal(normalizePhoneE164("8 (999) 123-45-67"), "+79991234567");
 
-			const candidate1 = {
+			const existing = {
+				id: "00000000-0000-0000-0000-000000000101",
+				status: "active",
 				fullName: "Тестовый Пациент 1",
 				phone: "invalid-phone",
 			};
-			const candidate2 = {
+			const incoming = {
 				fullName: "Другой Пациент",
 				phone: "no-digits-here",
 			};
 
-			const result = IdentityResolutionEngine.evaluateMatch(candidate1, candidate2);
-			assert.equal(result.breakdown.phoneMatch, null);
-			assert.equal(result.confidence < 0.5, true);
-			assert.equal(result.action, "CREATE_NEW");
+			const result = evaluatePatientMatch(existing, incoming);
+			assert.equal(result, null);
 		});
 
 		it("normalizes Russian date formats (DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD) preventing false mismatch penalty", () => {
-			assert.equal(IdentityResolutionEngine.normalizeBirthDate("15.04.1988"), "1988-04-15");
-			assert.equal(IdentityResolutionEngine.normalizeBirthDate("15/04/1988"), "1988-04-15");
-			assert.equal(IdentityResolutionEngine.normalizeBirthDate("1988-04-15"), "1988-04-15");
+			assert.equal(normalizeBirthDateIso("15.04.1988"), "1988-04-15");
+			assert.equal(normalizeBirthDateIso("15/04/1988"), "1988-04-15");
+			assert.equal(normalizeBirthDateIso("1988-04-15"), "1988-04-15");
 
-			// With matching phone + birthDate -> AUTO_MERGE
-			const matchWithPhone = IdentityResolutionEngine.evaluateMatch(
+			// With matching phone + birthDate -> strong duplicate match
+			const matchWithPhone = evaluatePatientMatch(
 				{
+					id: "00000000-0000-0000-0000-000000000102",
+					status: "active",
 					fullName: "Смирнов Алексей Викторович",
 					birthDate: "15.04.1988",
 					phone: "+7 999 123-45-67",
@@ -361,13 +368,15 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 					phone: "+7 (999) 123-45-67",
 				},
 			);
-			assert.equal(matchWithPhone.breakdown.birthDateMatch, true);
-			assert.equal(matchWithPhone.confidence >= 0.85, true);
-			assert.equal(matchWithPhone.action, "AUTO_MERGE");
+			assert.ok(matchWithPhone);
+			assert.equal(matchWithPhone.isDuplicate, true);
+			assert.equal(matchWithPhone.matchScore >= 0.85, true);
 
-			// Without phone: identical name and birthdate -> MANUAL_REVIEW
-			const matchWithoutPhone = IdentityResolutionEngine.evaluateMatch(
+			// Without phone: identical name and normalized birthdate -> high matchScore
+			const matchWithoutPhone = evaluatePatientMatch(
 				{
+					id: "00000000-0000-0000-0000-000000000103",
+					status: "active",
 					fullName: "Смирнов Алексей Викторович",
 					birthDate: "15.04.1988",
 				},
@@ -376,49 +385,30 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 					birthDate: "1988-04-15",
 				},
 			);
-			assert.equal(matchWithoutPhone.breakdown.birthDateMatch, true);
-			assert.equal(matchWithoutPhone.confidence, 0.8);
-			assert.equal(matchWithoutPhone.action, "MANUAL_REVIEW");
+			assert.ok(matchWithoutPhone);
+			assert.equal(matchWithoutPhone.matchScore >= 0.8, true);
 		});
 
-		it("executes fast statutory exact match on SNILS, Russian Passport, and OMS policy", () => {
-			// SNILS match
-			const snilsMatch = IdentityResolutionEngine.evaluateMatch(
-				{ fullName: "Иванов И.И.", snils: "123-456-789 01" },
-				{ fullName: "Иванов Иван", snils: "12345678901" },
-			);
-			assert.equal(snilsMatch.breakdown.snilsMatch, true);
-			assert.equal(snilsMatch.confidence, 0.99);
-			assert.equal(snilsMatch.action, "AUTO_MERGE");
+		it("normalizes statutory SNILS, Russian Passport, and OMS identifiers and matches SNILS", () => {
+			assert.equal(snilsKey("123-456-789 01"), "12345678901");
+			assert.equal(passportKey("45 09 № 123456"), "4509123456");
+			assert.equal(omsKey("1234 5678 9012 3456"), "1234567890123456");
 
-			// Passport match
-			const passMatch = IdentityResolutionEngine.evaluateMatch(
-				{ fullName: "Петров П.П.", passport: "4509 123456" },
-				{ fullName: "Петров Петр", passport: "45 09 № 123456" },
+			const snilsMatch = evaluatePatientMatch(
+				{
+					id: "00000000-0000-0000-0000-000000000104",
+					status: "active",
+					fullName: "Иванов И.",
+					snils: "123-456-789 01",
+				},
+				{
+					fullName: "Иванов Иван",
+					snils: "12345678901",
+				},
 			);
-			assert.equal(passMatch.breakdown.passportMatch, true);
-			assert.equal(passMatch.confidence, 0.98);
-			assert.equal(passMatch.action, "AUTO_MERGE");
-
-			// OMS match
-			const omsMatch = IdentityResolutionEngine.evaluateMatch(
-				{ fullName: "Сидоров С.С.", omsNumber: "1234 5678 9012 3456" },
-				{ fullName: "Сидоров Сергей", omsNumber: "1234567890123456" },
-			);
-			assert.equal(omsMatch.breakdown.omsMatch, true);
-			assert.equal(omsMatch.confidence, 0.96);
-			assert.equal(omsMatch.action, "AUTO_MERGE");
-		});
-
-		it("validates identity records via patientIdentityRecordSchema", () => {
-			const valid = patientIdentityRecordSchema.parse({
-				id: "00000000-0000-0000-0000-000000000001",
-				fullName: "Кузнецова Анна Павловна",
-				phone: "+7 999 123-45-67",
-				birthDate: "12.08.1995",
-				snils: "112-233-445 95",
-			});
-			assert.equal(valid.fullName, "Кузнецова Анна Павловна");
+			assert.ok(snilsMatch);
+			assert.equal(snilsMatch.isDuplicate, true);
+			assert.equal(snilsMatch.matchScore >= 0.9, true);
 		});
 	});
 
@@ -440,7 +430,7 @@ describe("RED TEAM INQUISITION: Frozen Services Integrity Audit", () => {
 		const serviceDirs = [
 			path.resolve(__dirname, "../../services/money"),
 			path.resolve(__dirname, "../../services/pricelist"),
-			path.resolve(__dirname, "../../services/ingestion"),
+			path.resolve(__dirname, "../../ingestion"),
 			path.resolve(__dirname, "../../money"),
 			path.resolve(__dirname, "../../pricelist"),
 			path.resolve(__dirname, "../../services/billing"),

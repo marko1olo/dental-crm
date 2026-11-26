@@ -276,7 +276,15 @@ export async function startMigrationWorker(): Promise<void> {
 	// Уборка просроченных файлов: персональные данные не должны лежать на диске
 	// дольше необходимого.
 	const cleanup = async (): Promise<void> => {
-		const removed = await cleanupExpiredUploads().catch(() => 0);
+		let removed = 0;
+		try {
+			removed = await cleanupExpiredUploads();
+		} catch (error) {
+			logger.warn(
+				{ err: safeLogError(error) },
+				"Не удалось очистить просроченные файлы выгрузок миграции",
+			);
+		}
 		if (removed > 0)
 			logger.info(
 				{ removedFilesCount: removed },

@@ -31,20 +31,24 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { recordAuditEvent } from "../audit.js";
-import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { patientRelationships, patients } from "../db/schema.js";
 import { extractIdempotencyKey, isValidUuid } from "../utils/httpIdempotency.js";
 
-const patientRouteParamsSchema = z.object({
-	patientId: z.string().uuid("Некорректный UUID пациента").optional(),
-	id: z.string().uuid("Некорректный UUID пациента").optional(),
-});
+const patientRouteParamsSchema = z
+	.object({
+		patientId: z.string().uuid("Некорректный UUID пациента").optional(),
+		id: z.string().uuid("Некорректный UUID пациента").optional(),
+	})
+	.strict();
 
-const relationRouteParamsSchema = z.object({
-	patientId: z.string().uuid("Некорректный UUID пациента").optional(),
-	id: z.string().uuid("Некорректный UUID связи или пациента").optional(),
-	relationId: z.string().uuid("Некорректный UUID связи").optional(),
-});
+const relationRouteParamsSchema = z
+	.object({
+		patientId: z.string().uuid("Некорректный UUID пациента").optional(),
+		id: z.string().uuid("Некорректный UUID связи или пациента").optional(),
+		relationId: z.string().uuid("Некорректный UUID связи").optional(),
+	})
+	.strict();
 
 function resolvePatientId(params: {
 	patientId?: string | undefined;
@@ -107,43 +111,81 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Verify subject patient exists in organization
-		const [subjectPatient] = await db
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				birthDate: patients.birthDate,
-			})
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					eq(patients.id, patientId),
-				),
-			)
-			.limit(1);
+		const loaded = await withTenantCtx(organizationId, async (tx) => {
+			// Verify subject patient exists in organization
+			const [subjectPatient] = await tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					birthDate: patients.birthDate,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.id, patientId),
+					),
+				)
+				.limit(1);
 
-		if (!subjectPatient) {
+			if (!subjectPatient) {
+				return null;
+			}
+
+			// Query all relations where patient is either side
+			const rows = await tx
+				.select()
+				.from(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						or(
+							eq(patientRelationships.patientId, patientId),
+							eq(patientRelationships.relatedPatientId, patientId),
+						),
+					),
+				);
+
+			if (rows.length === 0) {
+				return { subjectPatient, rows, counterPatients: [] };
+			}
+
+			const counterPartyIds = new Set<string>();
+			for (const r of rows) {
+				const counterId =
+					r.patientId === patientId ? r.relatedPatientId : r.patientId;
+				counterPartyIds.add(counterId);
+			}
+
+			const counterPatients = await tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					phone: patients.phone,
+					birthDate: patients.birthDate,
+					status: patients.status,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						or(
+							...Array.from(counterPartyIds).map((cid) => eq(patients.id, cid)),
+						),
+					),
+				);
+
+			return { subjectPatient, rows, counterPatients };
+		});
+
+		if (!loaded) {
 			return reply.code(404).send({
 				error: "Not Found",
 				message: `Пациент с ID ${patientId} не найден`,
 			});
 		}
 
-		// Query all relations where patient is either side
-		const rows = await db
-			.select()
-			.from(patientRelationships)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, organizationId),
-					or(
-						eq(patientRelationships.patientId, patientId),
-						eq(patientRelationships.relatedPatientId, patientId),
-					),
-				),
-			);
-
+		const { subjectPatient, rows, counterPatients } = loaded;
 		if (rows.length === 0) {
 			return reply.code(200).send({
 				patientId,
@@ -152,32 +194,6 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				relationships: [],
 			});
 		}
-
-		// Collect counterparty IDs
-		const counterPartyIds = new Set<string>();
-		for (const r of rows) {
-			const counterId =
-				r.patientId === patientId ? r.relatedPatientId : r.patientId;
-			counterPartyIds.add(counterId);
-		}
-
-		const counterPatients = await db
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				phone: patients.phone,
-				birthDate: patients.birthDate,
-				status: patients.status,
-			})
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					or(
-						...Array.from(counterPartyIds).map((cid) => eq(patients.id, cid)),
-					),
-				),
-			);
 
 		const patientMap = new Map(counterPatients.map((p) => [p.id, p]));
 		const now = new Date();
@@ -303,68 +319,66 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Verify both patients belong to this organization
-		const existingPatients = await db
-			.select({
-				id: patients.id,
-				fullName: patients.fullName,
-				familyGroupId: patients.familyGroupId,
-			})
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, organizationId),
-					or(eq(patients.id, patientId), eq(patients.id, relatedPatientId)),
-				),
-			);
-
-		if (existingPatients.length < 2) {
-			return reply.code(400).send({
-				error: "Bad Request",
-				message: "Один или оба пациента не найдены в базе данных клиники",
-			});
-		}
-
-		// Check for existing relationship edge between this pair (targeted query to prevent OOM)
-		const existingLinks = await db
-			.select({
-				patientId: patientRelationships.patientId,
-				relatedPatientId: patientRelationships.relatedPatientId,
-				relationshipType: patientRelationships.relationshipType,
-			})
-			.from(patientRelationships)
-			.where(
-				and(
-					eq(patientRelationships.organizationId, organizationId),
-					or(
-						eq(patientRelationships.patientId, patientId),
-						eq(patientRelationships.relatedPatientId, patientId),
-						eq(patientRelationships.patientId, relatedPatientId),
-						eq(patientRelationships.relatedPatientId, relatedPatientId),
-					),
-				),
-			);
-
-		const validation = validateRelationshipLink(
-			patientId,
-			relatedPatientId,
-			existingLinks,
-			relationshipType,
-		);
-
-		if (!validation.isValid) {
-			return reply.code(409).send({
-				error: "Conflict",
-				message: validation.error,
-			});
-		}
-
-		// Insert into database in a single atomic ACID transaction (Mandates 8bo, 8bf)
 		const isCloseRelative = ["parent", "child", "spouse", "guardian", "ward"].includes(relationshipType);
 		const defaultCanSpend = isCloseRelative;
 		const effectiveCanSpend = canSpendFamilyWallet ?? defaultCanSpend;
 
-		const created = await db.transaction(async (tx) => {
+		const outcome = await withTenantCtx(organizationId, async (tx) => {
+			// Verify both patients belong to this organization inside tenant TX
+			const existingPatients = await tx
+				.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					familyGroupId: patients.familyGroupId,
+				})
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						or(eq(patients.id, patientId), eq(patients.id, relatedPatientId)),
+					),
+				)
+				.for("update");
+
+			if (existingPatients.length < 2) {
+				return { kind: "missing_patients" as const };
+			}
+
+			// Check for existing relationship edge inside the same ACID TX
+			const existingLinks = await tx
+				.select({
+					patientId: patientRelationships.patientId,
+					relatedPatientId: patientRelationships.relatedPatientId,
+					relationshipType: patientRelationships.relationshipType,
+				})
+				.from(patientRelationships)
+				.where(
+					and(
+						eq(patientRelationships.organizationId, organizationId),
+						or(
+							eq(patientRelationships.patientId, patientId),
+							eq(patientRelationships.relatedPatientId, patientId),
+							eq(patientRelationships.patientId, relatedPatientId),
+							eq(patientRelationships.relatedPatientId, relatedPatientId),
+						),
+					),
+				)
+				.for("update");
+
+			const validation = validateRelationshipLink(
+				patientId,
+				relatedPatientId,
+				existingLinks,
+				relationshipType,
+			);
+
+			if (!validation.isValid) {
+				return {
+					kind: "conflict" as const,
+					error: validation.error,
+				};
+			}
+
 			const [inserted] = await tx
 				.insert(patientRelationships)
 				.values({
@@ -427,19 +441,27 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				tx,
 			});
 
-			return inserted;
+			return {
+				kind: "created" as const,
+				created: inserted,
+				relatedPatient: p2,
+			};
 		});
 
-		if (!created) {
-			return reply.code(500).send({
-				error: "Internal Server Error",
-				message: "Не удалось сохранить связь родственников",
+		if (outcome.kind === "missing_patients") {
+			return reply.code(400).send({
+				error: "Bad Request",
+				message: "Один или оба пациента не найдены в базе данных клиники",
+			});
+		}
+		if (outcome.kind === "conflict") {
+			return reply.code(409).send({
+				error: "Conflict",
+				message: outcome.error,
 			});
 		}
 
-		const relatedPatient = existingPatients.find(
-			(p) => p.id === relatedPatientId,
-		);
+		const { created, relatedPatient } = outcome;
 
 		return reply.code(201).send({
 			success: true,
@@ -521,7 +543,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 
 		const updates = bodyParsed.data;
 
-		const updated = await db.transaction(async (tx) => {
+		const updated = await withTenantCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(patientRelationships)
@@ -535,6 +557,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 						),
 					),
 				)
+				.for("update")
 				.limit(1);
 
 			if (!existing) {
@@ -671,7 +694,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const deleted = await db.transaction(async (tx) => {
+		const deleted = await withTenantCtx(organizationId, async (tx) => {
 			const [existing] = await tx
 				.select()
 				.from(patientRelationships)
@@ -685,6 +708,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 						),
 					),
 				)
+				.for("update")
 				.limit(1);
 
 		if (!existing) {
@@ -766,10 +790,12 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 	// DELETE
 	app.delete(
 		"/api/patients/:patientId/relationships/:id",
+		relationshipMutationOptions,
 		deleteRelationshipHandler,
 	);
 	app.delete(
 		"/api/v1/patients/:id/relationships/:relationId",
+		relationshipMutationOptions,
 		deleteRelationshipHandler,
 	);
 }

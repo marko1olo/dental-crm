@@ -14,17 +14,29 @@ export interface ParsedPassportFields {
 	divisionCode?: string | undefined;
 }
 
-export interface DocumentTemplatesCatalogQuery {
-	categoryId?: string;
-	systemAlias?: string;
-	search?: string;
-	type?: string;
-	isEgisz?: string;
-}
+export const documentTemplatesCatalogQuerySchema = z
+	.object({
+		categoryId: z.string().trim().max(100).optional(),
+		systemAlias: z.string().trim().max(100).optional(),
+		search: z.string().trim().max(200).optional(),
+		type: z.string().trim().max(50).optional(),
+		isEgisz: z.enum(["true", "false"]).optional(),
+	})
+	.strict();
 
-export interface DocumentTemplateIdParams {
-	id: string;
-}
+export type DocumentTemplatesCatalogQuery = z.infer<
+	typeof documentTemplatesCatalogQuerySchema
+>;
+
+export const documentTemplateIdParamsSchema = z
+	.object({
+		id: z.string().trim().min(1).max(120),
+	})
+	.strict();
+
+export type DocumentTemplateIdParams = z.infer<
+	typeof documentTemplateIdParamsSchema
+>;
 
 export const renderDocumentBodySchema = z.object({
 	patientId: z.string().trim().optional(),
@@ -119,7 +131,20 @@ export const renderDocumentBodySchema = z.object({
 		})
 		.strict()
 		.optional(),
-	overrides: z.record(z.unknown()).optional(),
+	overrides: z
+		.object({
+			clinic: z.record(z.unknown()).optional(),
+			patient: z.record(z.unknown()).optional(),
+			doctor: z.record(z.unknown()).optional(),
+			representative: z.record(z.unknown()).optional(),
+			authorizedPerson: z.record(z.unknown()).optional(),
+			administrator: z.record(z.unknown()).optional(),
+			appointment: z.record(z.unknown()).optional(),
+			clinicalExamination: z.record(z.unknown()).optional(),
+			dentalFormula: z.record(z.unknown()).optional(),
+		})
+		.strict()
+		.optional(),
 	emptyPlaceholder: z.string().optional().default(""),
 }).strict();
 

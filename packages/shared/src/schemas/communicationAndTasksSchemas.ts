@@ -546,3 +546,18 @@ export const denteTelegramOutboxSendDueResponseSchema = z.object({
 export type DenteTelegramOutboxSendDueResponse = z.infer<
 	typeof denteTelegramOutboxSendDueResponseSchema
 >;
+
+/**
+ * Статусы массовой коммуникационной рассылки (PG enum `communication_campaign_status`).
+ */
+export const communicationCampaignStatusSchema = z.enum([
+	"draft",
+	"scheduled",
+	"running",
+	"completed",
+	"cancelled",
+]);
+
+export type CommunicationCampaignStatus = z.infer<
+	typeof communicationCampaignStatusSchema
+>;

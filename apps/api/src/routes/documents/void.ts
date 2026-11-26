@@ -1,11 +1,8 @@
-import {
-	publicGeneratedDocumentSchema,
-	voidDocumentSchema,
-} from "@dental/shared";
+import { voidDocumentSchema } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	getDocumentById,
 	voidGeneratedDocumentInDb,
@@ -22,7 +19,11 @@ import {
 	repairMojibakeText,
 } from "../../text/repairMojibake.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
-import { apiError, documentVoidValidationMessage } from "./shared.js";
+import {
+	apiError,
+	documentVoidValidationMessage,
+	toPublicGeneratedDocument,
+} from "./shared.js";
 
 const documentIdParamsSchema = z
 	.object({
@@ -150,7 +151,7 @@ export async function register(app: FastifyInstance) {
 		// остаётся null вместо выдуманного подписанта.
 		// Неделимая ACID транзакция (Мандат 8bo): атомарное аннулирование документа
 		// и возвращение покрытых возвратом платежей обратно в кассу.
-		const document = await db.transaction(async (tx) => {
+		const document = await withTenantCtx(orgId, async (tx) => {
 			const voidedDoc = await voidGeneratedDocumentInDb(orgId, id, {
 				voidedByUserId: getRequestIdentity(request).userId,
 				voidedAt,
@@ -188,6 +189,6 @@ export async function register(app: FastifyInstance) {
 				.send(apiError("Статус документа нельзя изменить."));
 		}
 
-		return reply.send(publicGeneratedDocumentSchema.parse(document));
+		return reply.send(toPublicGeneratedDocument(document));
 	});
 }

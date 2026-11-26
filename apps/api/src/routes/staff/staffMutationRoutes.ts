@@ -12,7 +12,6 @@ import {
 } from "@dental/shared";
 import { and, eq, ne } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import * as schema from "../../db/schema.js";
@@ -444,9 +443,15 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			const isSalaryOrCommissionChanged =
 				isBaseSalaryRubChanged ||
 				isBaseSalaryKopecksChanged ||
-				(data.commissionPct !== undefined && String(data.commissionPct) !== String(existingComm?.commissionPct ?? "")) ||
-				(data.materialCostDeductionPct !== undefined && String(data.materialCostDeductionPct) !== String(existingComm?.materialCostDeductionPct ?? "")) ||
-				(data.labCostDeductionPct !== undefined && String(data.labCostDeductionPct) !== String(existingComm?.labCostDeductionPct ?? ""));
+				(data.commissionPct !== undefined &&
+					(existingComm?.commissionPct == null ||
+						Number(existingComm.commissionPct) !== Number(data.commissionPct))) ||
+				(data.materialCostDeductionPct !== undefined &&
+					(existingComm?.materialCostDeductionPct == null ||
+						Number(existingComm.materialCostDeductionPct) !== Number(data.materialCostDeductionPct))) ||
+				(data.labCostDeductionPct !== undefined &&
+					(existingComm?.labCostDeductionPct == null ||
+						Number(existingComm.labCostDeductionPct) !== Number(data.labCostDeductionPct)));
 			const isAuthorityChanged =
 				(data.canSignMedicalRecords !== undefined && Boolean(data.canSignMedicalRecords) !== Boolean(existingUser.canSignMedicalRecords)) ||
 				(data.canManageMoney !== undefined && Boolean(data.canManageMoney) !== Boolean(existingUser.canManageMoney)) ||

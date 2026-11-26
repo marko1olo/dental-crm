@@ -209,38 +209,42 @@ export async function syncUpsertPlanLedgerItems(
 	const toInsert: (typeof treatmentItems.$inferInsert)[] = [];
 
 	for (const item of items) {
-		const lineTotalKopecksNumber = chargeLineKopecks({
-			patientId,
-			status: ledgerStatus,
-			unitPriceRub: item.price,
-			quantity: item.quantity,
-			discountRub: item.discount,
-		});
-		const lineTotalRub = rublesFromKopecks(lineTotalKopecksNumber);
-		const unitPriceRub = rublesFromKopecks(
-			chargeLineKopecks({
+		const unitPriceKopNum = item.unitPriceKopecks != null
+			? Math.round(item.unitPriceKopecks)
+			: chargeLineKopecks({
 				patientId,
 				status: ledgerStatus,
 				unitPriceRub: item.price,
 				quantity: 1,
 				discountRub: 0,
-			}),
-		);
+			});
+		const discountKopNum = item.discountKopecks != null
+			? Number(item.discountKopecks)
+			: chargeLineKopecks({
+				patientId,
+				status: ledgerStatus,
+				unitPriceRub: item.discount || 0,
+				quantity: 1,
+				discountRub: 0,
+			});
+		const lineTotalKopNum = item.totalPriceKopecks != null
+			? Math.round(item.totalPriceKopecks)
+			: item.priceKopecks != null
+				? Number(item.priceKopecks)
+				: Math.max(0, unitPriceKopNum * item.quantity - discountKopNum);
+
+		const lineTotalRub = rublesFromKopecks(lineTotalKopNum);
+		const unitPriceRub = rublesFromKopecks(unitPriceKopNum);
+		const discountRub = rublesFromKopecks(discountKopNum);
 		const resolvedServiceId =
 			(item.priceId ? serviceLookup.get(item.priceId.toLowerCase()) : null) ||
 			(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
 			(item.priceId && knownServiceIds.has(item.priceId) ? item.priceId : null);
 
 		// DEF-PLAN-02 / Мандат 8bm: Честный Line Total в копейках для treatment_items.priceKopecks (со скидкой)
-		const lineTotalKopecks = item.totalPriceKopecks != null
-			? BigInt(item.totalPriceKopecks)
-			: BigInt(lineTotalKopecksNumber);
-		const unitPriceKopecks = item.unitPriceKopecks != null
-			? BigInt(item.unitPriceKopecks)
-			: BigInt(rublesToKopecks(item.price));
-		const discountKopecks = item.discountKopecks != null
-			? BigInt(item.discountKopecks)
-			: BigInt(rublesToKopecks(item.discount || 0));
+		const lineTotalKopecks = BigInt(lineTotalKopNum);
+		const unitPriceKopecks = BigInt(unitPriceKopNum);
+		const discountKopecks = BigInt(discountKopNum);
 
 		let existingRow: (typeof ownedRows)[0] | undefined;
 		let rowId: string | undefined;
@@ -279,15 +283,7 @@ export async function syncUpsertPlanLedgerItems(
 					quantity: String(item.quantity),
 					priceRub: lineTotalRub,
 					unitPriceRub,
-					discountRub: rublesFromKopecks(
-						chargeLineKopecks({
-							patientId,
-							status: ledgerStatus,
-							unitPriceRub: item.discount,
-							quantity: 1,
-							discountRub: 0,
-						}),
-					),
+					discountRub,
 					priceKopecks: lineTotalKopecks,
 					unitPriceKopecks: unitPriceKopecks,
 					discountKopecks: discountKopecks,
@@ -318,15 +314,7 @@ export async function syncUpsertPlanLedgerItems(
 				quantity: String(item.quantity),
 				priceRub: lineTotalRub,
 				unitPriceRub,
-				discountRub: rublesFromKopecks(
-					chargeLineKopecks({
-						patientId,
-						status: ledgerStatus,
-						unitPriceRub: item.discount,
-						quantity: 1,
-						discountRub: 0,
-					}),
-				),
+				discountRub,
 				priceKopecks: lineTotalKopecks,
 				unitPriceKopecks: unitPriceKopecks,
 				discountKopecks: discountKopecks,

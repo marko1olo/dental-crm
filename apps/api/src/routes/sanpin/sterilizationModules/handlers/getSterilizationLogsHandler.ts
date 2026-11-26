@@ -8,7 +8,7 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 
 export async function handleGetSterilizationLogs(
@@ -50,37 +50,45 @@ export async function handleGetSterilizationLogs(
 		conditions.push(eq(sterilizationLogs.autoclaveId, autoclaveId));
 	}
 
-	const logs = await db
-		.select({
-			id: sterilizationLogs.id,
-			organizationId: sterilizationLogs.organizationId,
-			deviceName: sterilizationLogs.deviceName,
-			autoclaveId: sterilizationLogs.autoclaveId,
-			serialNumber: sterilizationLogs.autoclaveId,
-			cycleNumber: sterilizationLogs.cycleNumber,
-			temperatureCelsius: sterilizationLogs.temperatureCelsius,
-			pressureBar: sterilizationLogs.pressureBar,
-			itemsDescription: sql<string>`coalesce(nullif(split_part(${sterilizationLogs.itemsDescription}, ' | ', 1), ''), ${sterilizationLogs.itemsDescription})`,
-			operatorId: sterilizationLogs.operatorId,
-			operatorName: sql<string>`coalesce(${users.fullName}, 'Медсестра ЦСО')`,
-			barcode: sterilizationLogs.barcode,
-			status: sterilizationLogs.status,
-			passedIndicator: sterilizationLogs.passedIndicator,
-			packagingType: sterilizationLogs.packagingType,
-			expiresAt: sterilizationLogs.expiresAt,
-			indicatorType: sterilizationLogs.indicatorType,
-			cycleMode: sterilizationLogs.cycleMode,
-			temperatureSet: sterilizationLogs.temperatureSet,
-			pressureSet: sterilizationLogs.pressureSet,
-			durationMin: sterilizationLogs.durationMin,
-			notes: sql<string | null>`case when position(' | ' in coalesce(${sterilizationLogs.itemsDescription}, '')) > 0 then substring(${sterilizationLogs.itemsDescription} from position(' | ' in ${sterilizationLogs.itemsDescription}) + 3) else null end`,
-			timestamp: sterilizationLogs.timestamp,
-			createdAt: sterilizationLogs.createdAt,
-		})
-		.from(sterilizationLogs)
-		.leftJoin(users, eq(users.id, sterilizationLogs.operatorId))
-		.where(and(...conditions))
-		.orderBy(desc(sterilizationLogs.timestamp));
+	const logs = await withTenantCtx(organizationId, (tx) =>
+		tx
+			.select({
+				id: sterilizationLogs.id,
+				organizationId: sterilizationLogs.organizationId,
+				deviceName: sterilizationLogs.deviceName,
+				autoclaveId: sterilizationLogs.autoclaveId,
+				serialNumber: sterilizationLogs.autoclaveId,
+				cycleNumber: sterilizationLogs.cycleNumber,
+				temperatureCelsius: sterilizationLogs.temperatureCelsius,
+				pressureBar: sterilizationLogs.pressureBar,
+				itemsDescription: sql<string>`coalesce(nullif(split_part(${sterilizationLogs.itemsDescription}, ' | ', 1), ''), ${sterilizationLogs.itemsDescription})`,
+				operatorId: sterilizationLogs.operatorId,
+				operatorName: sql<string>`coalesce(${users.fullName}, 'Медсестра ЦСО')`,
+				barcode: sterilizationLogs.barcode,
+				status: sterilizationLogs.status,
+				passedIndicator: sterilizationLogs.passedIndicator,
+				packagingType: sterilizationLogs.packagingType,
+				expiresAt: sterilizationLogs.expiresAt,
+				indicatorType: sterilizationLogs.indicatorType,
+				cycleMode: sterilizationLogs.cycleMode,
+				temperatureSet: sterilizationLogs.temperatureSet,
+				pressureSet: sterilizationLogs.pressureSet,
+				durationMin: sterilizationLogs.durationMin,
+				notes: sql<string | null>`case when position(' | ' in coalesce(${sterilizationLogs.itemsDescription}, '')) > 0 then substring(${sterilizationLogs.itemsDescription} from position(' | ' in ${sterilizationLogs.itemsDescription}) + 3) else null end`,
+				timestamp: sterilizationLogs.timestamp,
+				createdAt: sterilizationLogs.createdAt,
+			})
+			.from(sterilizationLogs)
+			.leftJoin(
+				users,
+				and(
+					eq(users.id, sterilizationLogs.operatorId),
+					eq(users.organizationId, organizationId),
+				),
+			)
+			.where(and(...conditions))
+			.orderBy(desc(sterilizationLogs.timestamp)),
+	);
 
 	if (search && search.trim()) {
 		const q = search.trim().toLowerCase();

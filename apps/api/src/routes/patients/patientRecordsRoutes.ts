@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { visitDiaries, visits } from "../../db/schema.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -71,28 +71,32 @@ export function registerPatientRecordsRoutes(app: FastifyInstance) {
 				action: "VIEW_PATIENT_MEDICAL_RECORDS",
 			});
 
-			const patientVisits = await db
-				.select({
-					id: visits.id,
-					appointmentId: visits.appointmentId,
-					patientId: visits.patientId,
-					complaint: visits.complaint,
-					anamnesis: visits.anamnesis,
-					objectiveStatus: visits.objectiveStatus,
-					diagnosis: visits.diagnosis,
-					treatmentPlan: visits.treatmentPlan,
-					status: visits.status,
-					createdAt: visits.createdAt,
-				})
-				.from(visits)
-				.where(and(eq(visits.patientId, patientId), eq(visits.organizationId, orgId)))
-				.orderBy(desc(visits.createdAt));
+			const { patientVisits, patientDiaries } = await withTenantCtx(orgId, async (tx) => {
+				const visitsRows = await tx
+					.select({
+						id: visits.id,
+						appointmentId: visits.appointmentId,
+						patientId: visits.patientId,
+						complaint: visits.complaint,
+						anamnesis: visits.anamnesis,
+						objectiveStatus: visits.objectiveStatus,
+						diagnosis: visits.diagnosis,
+						treatmentPlan: visits.treatmentPlan,
+						status: visits.status,
+						createdAt: visits.createdAt,
+					})
+					.from(visits)
+					.where(and(eq(visits.patientId, patientId), eq(visits.organizationId, orgId)))
+					.orderBy(desc(visits.createdAt));
 
-			const patientDiaries = await db
-				.select()
-				.from(visitDiaries)
-				.where(and(eq(visitDiaries.patientId, patientId), eq(visitDiaries.organizationId, orgId)))
-				.orderBy(desc(visitDiaries.createdAt));
+				const diariesRows = await tx
+					.select()
+					.from(visitDiaries)
+					.where(and(eq(visitDiaries.patientId, patientId), eq(visitDiaries.organizationId, orgId)))
+					.orderBy(desc(visitDiaries.createdAt));
+
+				return { patientVisits: visitsRows, patientDiaries: diariesRows };
+			});
 
 			return reply.code(200).send({
 				patientId,

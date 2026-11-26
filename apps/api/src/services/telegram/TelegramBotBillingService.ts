@@ -9,6 +9,15 @@
  *    пропускаются ВСЕГДА, даже при 100% исчерпании квоты тарифа Free!
  */
 
+import { and, eq, sql } from "drizzle-orm";
+import { withTenantCtx } from "../../db/rls.js";
+import { organizations } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+import { isDbConnectionError } from "./referralLoyalty/webAppValidator.js";
+
+const logger = createApiLogger("TelegramBotBillingService");
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export type TelegramBotSaasTierId = "free" | "pro" | "enterprise";
 
 export interface TelegramBotTierFeature {
@@ -171,6 +180,108 @@ export interface RecordMessageSentResult {
  */
 export class TelegramBotBillingService {
 	private static billingStore = new Map<string, OrganizationBillingRecord>();
+
+	private static isPersistableOrgId(organizationId: string): boolean {
+		return (
+			UUID_REGEX.test(organizationId.trim()) &&
+			process.env.DENTAL_STATE_PERSISTENCE !== "off"
+		);
+	}
+
+	/**
+	 * Гидратирует биллинг клиники из PostgreSQL (`organizations.workspaceFeatureFlags.telegramBotBilling`).
+	 */
+	static async hydrateOrganizationBilling(
+		organizationId: string,
+	): Promise<OrganizationBillingRecord> {
+		const trimmedOrgId = organizationId.trim();
+		const fallback = this.getOrInitBillingRecord(trimmedOrgId);
+		if (!this.isPersistableOrgId(trimmedOrgId)) {
+			return fallback;
+		}
+		try {
+			const row = await withTenantCtx(trimmedOrgId, async (tx) => {
+				const [org] = await tx
+					.select({ flags: organizations.workspaceFeatureFlags })
+					.from(organizations)
+					.where(eq(organizations.id, trimmedOrgId))
+					.limit(1);
+				return org ?? null;
+			});
+			const flags = (row?.flags as Record<string, unknown> | null) ?? null;
+			const saved = flags?.telegramBotBilling as Partial<OrganizationBillingRecord> | undefined;
+			if (saved && typeof saved === "object" && typeof saved.planId === "string") {
+				const currentPeriod = this.getCurrentPeriodKey();
+				const samePeriod = saved.currentPeriodKey === currentPeriod;
+				const hydrated: OrganizationBillingRecord = {
+					organizationId: trimmedOrgId,
+					planId:
+						saved.planId === "pro" || saved.planId === "enterprise" || saved.planId === "free"
+							? saved.planId
+							: "free",
+					planActivatedAt:
+						typeof saved.planActivatedAt === "string"
+							? saved.planActivatedAt
+							: fallback.planActivatedAt,
+					currentPeriodKey: currentPeriod,
+					monthlyUsageCount:
+						samePeriod && typeof saved.monthlyUsageCount === "number"
+							? saved.monthlyUsageCount
+							: 0,
+					emergencyCitoCount:
+						samePeriod && typeof saved.emergencyCitoCount === "number"
+							? saved.emergencyCitoCount
+							: 0,
+					lastWarningTriggered: samePeriod ? (saved.lastWarningTriggered ?? null) : null,
+					lastWarningTimestamp: samePeriod ? (saved.lastWarningTimestamp ?? null) : null,
+					updatedAt:
+						typeof saved.updatedAt === "string" ? saved.updatedAt : fallback.updatedAt,
+				};
+				this.billingStore.set(trimmedOrgId, hydrated);
+				return hydrated;
+			}
+		} catch (err) {
+			if (!isDbConnectionError(err)) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId: trimmedOrgId },
+					"Failed to hydrate TelegramBotBillingService state from DB",
+				);
+			}
+		}
+		return fallback;
+	}
+
+	/**
+	 * Персистит состояние биллинга клиники в PostgreSQL (`organizations.workspaceFeatureFlags`).
+	 */
+	static async persistBillingRecord(organizationId: string): Promise<void> {
+		const trimmedOrgId = organizationId.trim();
+		if (!this.isPersistableOrgId(trimmedOrgId)) return;
+		const record = this.getOrInitBillingRecord(trimmedOrgId);
+		try {
+			await withTenantCtx(trimmedOrgId, async (tx) => {
+				const serialized = JSON.stringify(record);
+				await tx
+					.update(organizations)
+					.set({
+						workspaceFeatureFlags: sql`jsonb_set(coalesce(${organizations.workspaceFeatureFlags}, '{}'::jsonb), '{telegramBotBilling}', ${serialized}::jsonb, true)`,
+					})
+					.where(and(eq(organizations.id, trimmedOrgId)));
+			});
+		} catch (err) {
+			if (!isDbConnectionError(err)) {
+				logger.warn(
+					{ err: safeLogError(err), organizationId: trimmedOrgId },
+					"Failed to persist TelegramBotBillingService state to DB",
+				);
+			}
+		}
+	}
+
+	private static schedulePersistBillingRecord(organizationId: string): void {
+		if (!this.isPersistableOrgId(organizationId)) return;
+		void this.persistBillingRecord(organizationId);
+	}
 
 	/**
 	 * Получение текущего ключа расчетного периода (год-месяц).
@@ -388,6 +499,8 @@ export class TelegramBotBillingService {
 			}
 		}
 
+		this.schedulePersistBillingRecord(params.organizationId);
+
 		return {
 			success: true,
 			newUsageCount: record.monthlyUsageCount,
@@ -419,6 +532,8 @@ export class TelegramBotBillingService {
 		if (targetPlan.isUnlimited) {
 			record.lastWarningTriggered = null;
 		}
+
+		this.schedulePersistBillingRecord(params.organizationId);
 
 		return this.getBillingUsage(params.organizationId);
 	}

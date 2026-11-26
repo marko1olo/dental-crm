@@ -52,7 +52,7 @@ export const clinicalPricelistCategoryItemSchema = z.object({
 	id: z.number().int().positive(),
 	nameRu: clinicalPricelistCategoryNameSchema,
 	slug: z.string().min(1),
-});
+}).strict();
 
 // ============================================================================
 // Обратная совместимость для плавного перехода (Backward Compatibility Aliases)

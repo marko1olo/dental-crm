@@ -19,7 +19,9 @@ const logger = createApiLogger("egisz:statusSyncer");
  * Polls and synchronizes status of in-flight "Sent" / "sending" transactions from РЭМД Минздрава РФ.
  */
 export async function syncPendingStatuses(
-	client: OiisGatewayClient,
+	clientOrResolver:
+		| OiisGatewayClient
+		| ((orgId: string) => Promise<OiisGatewayClient>),
 	organizationId?: string,
 ): Promise<number> {
 	let updatedCount = 0;
@@ -49,6 +51,10 @@ export async function syncPendingStatuses(
 	for (const row of sendingOutboxRows) {
 		if (!row.remdTransactionId) continue;
 		try {
+			const client =
+				typeof clientOrResolver === "function"
+					? await clientOrResolver(row.organizationId)
+					: clientOrResolver;
 			const statusRes = await client.getRemdDocumentStatus(row.remdTransactionId);
 			if (statusRes.status === "Registered" || statusRes.status === "Rejected") {
 				const isRegistered = statusRes.status === "Registered";
@@ -101,25 +107,27 @@ export async function syncPendingStatuses(
 							),
 						);
 
-					await tx
-						.update(egiszLogs)
-						.set({
-							status: isRegistered ? "Accepted" : "Error",
-							errorDetails: {
-								outboxId: row.id,
-								remdDocumentId: resolvedRemdDocId,
-								statusDescription: statusRes.statusDescription,
-								statusCodeNsi: statusRes.statusCodeNsi,
-								syncedAt: new Date().toISOString(),
-								...(receipt ? { receipt } : {}),
-							},
-						})
-						.where(
-							and(
-								eq(egiszLogs.organizationId, row.organizationId),
-								eq(egiszLogs.visitId, row.visitId),
-							),
-						);
+					if (row.visitId) {
+						await tx
+							.update(egiszLogs)
+							.set({
+								status: isRegistered ? "Accepted" : "Error",
+								errorDetails: {
+									outboxId: row.id,
+									remdDocumentId: resolvedRemdDocId,
+									statusDescription: statusRes.statusDescription,
+									statusCodeNsi: statusRes.statusCodeNsi,
+									syncedAt: new Date().toISOString(),
+									...(receipt ? { receipt } : {}),
+								},
+							})
+							.where(
+								and(
+									eq(egiszLogs.organizationId, row.organizationId),
+									eq(egiszLogs.visitId, row.visitId),
+								),
+							);
+					}
 
 					if (receipt) {
 						await appendEgiszAuditLog(tx, {
@@ -184,6 +192,10 @@ export async function syncPendingStatuses(
 	for (const log of sentLogs) {
 		if (!log.transactionId) continue;
 		try {
+			const client =
+				typeof clientOrResolver === "function"
+					? await clientOrResolver(log.organizationId)
+					: clientOrResolver;
 			const statusRes = await client.getRemdDocumentStatus(log.transactionId);
 			if (statusRes.status === "Registered" || statusRes.status === "Rejected") {
 				await withTenantCtx(log.organizationId, async (tx) => {

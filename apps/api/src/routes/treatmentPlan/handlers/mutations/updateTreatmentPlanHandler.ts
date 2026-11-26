@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { formatKopecksToRub, formatKopecksToRubles, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { formatKopecksToRub, formatKopecksToRubles, isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
@@ -20,6 +20,12 @@ export async function handleUpdateTreatmentPlan(
 	organizationId: string,
 ) {
 	const { id } = request.params;
+	if (!isValidUuid(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор плана лечения.",
+		});
+	}
 	const parsed = updateTreatmentPlanSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({

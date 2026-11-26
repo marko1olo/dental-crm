@@ -28,6 +28,7 @@ import {
 	registerTelegramWebhookRoutes,
 } from "../routes/telegram.js";
 import { registerTelegramReferralLoyaltyRoutes } from "../routes/telegramReferralLoyalty.js";
+import { bookingVerificationEngine } from "../routes/publicBooking/smsVerificationAndSpamGate.js";
 import {
 	TelegramReferralLoyaltyService,
 	type ToothComplaintInput,
@@ -792,6 +793,8 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 	// ========================================================================
 	describe("7. Fastify REST Endpoints Integration", () => {
 		it("POST /api/telegram/webapp/session returns session data", async () => {
+			await bookingVerificationEngine.requestPhoneVerification("+79001234567", "sms", "127.0.0.1", TEST_ORG_ID);
+			const verificationCode = bookingVerificationEngine.getActiveCodeForTesting("+79001234567", TEST_ORG_ID);
 			const authDate = Math.floor(Date.now() / 1000).toString();
 			const initData = makeInitDataString(
 				{
@@ -808,6 +811,7 @@ describe("Telegram WebApp Mini-App & Referral Retention Suite", () => {
 					organizationId: TEST_ORG_ID,
 					patientId: REFERRER_PATIENT_ID,
 					initData,
+					...(verificationCode ? { verificationCode } : {}),
 				},
 			});
 

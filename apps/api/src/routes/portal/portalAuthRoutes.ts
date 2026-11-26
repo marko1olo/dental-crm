@@ -4,14 +4,7 @@ import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
-import {
-	resolveChannelCredentials,
-	sendThroughChannel,
-} from "../../services/communications/channelRouter.js";
-import {
-	normalizeRussianMsisdn,
-	readSmsCredentialsFromEnv,
-} from "../../smsTransport.js";
+import { readSmsCredentialsFromEnv } from "../../smsTransport.js";
 import {
 	hashCredential,
 	signToken,
@@ -20,15 +13,20 @@ import {
 } from "../../utils/cryptoHelper.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import {
+	dispatchPortalOtpSms,
 	findPatientsByPhone,
 	findPendingRegistrationOtp,
 	findUniquePatientByPhone,
+	getPendingRegistrationOtpKey,
+	hashPortalToken,
 	isIssuanceThrottled,
+	markPortalOtpDeliveryStatus,
 	otpIpRequestCounts,
 	otpPhoneRequestCounts,
 	pendingRegistrationOtpStore,
 	persistRevokedToken,
 	portalRevokedBeforeByPatient,
+	revokedPortalTokenHashes,
 	revokedPortalTokens,
 	setPendingRegistrationOtpAttemptOrConsumed,
 } from "./portalAuthStore.js";
@@ -114,7 +112,9 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			const clientIp =
 				typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
 
-			const rateLimitBypassed = process.env.DENTE_PORTAL_OTP_BYPASS_RATE_LIMIT === "1";
+			const rateLimitBypassed =
+				process.env.DENTE_PORTAL_OTP_BYPASS_RATE_LIMIT === "1" &&
+				process.env.NODE_ENV !== "production";
 
 			if (!rateLimitBypassed) {
 				const nowMs = Date.now();
@@ -204,7 +204,8 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 				const phoneDigits = rawPhone.replace(/\D/g, "");
 				const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
-				const existingPending = pendingRegistrationOtpStore.get(phoneSuffix);
+				const pendingKey = getPendingRegistrationOtpKey(phoneSuffix, effectiveOrgId);
+				const existingPending = pendingRegistrationOtpStore.get(pendingKey);
 				const now = new Date();
 
 				if (
@@ -221,20 +222,24 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				const regCodeHash = await hashCredential(regCode);
 				const otpExpiresAt = new Date(now.getTime() + policy.ttlSeconds * 1000);
 
-				await withTenantCtx(effectiveOrgId, async (tx) => {
-					await tx.insert(portalOtpCodes).values({
-						organizationId: effectiveOrgId,
-						patientId: null,
-						phone: phoneSuffix,
-						codeHash: regCodeHash,
-						channel: developerLogFallback ? "developer_log" : "sms",
-						deliveryStatus: "sent",
-						expiresAt: otpExpiresAt,
-						attemptCount: 0,
-					});
-				});
+				const [insertedRegOtp] = await withTenantCtx(effectiveOrgId, async (tx) =>
+					tx
+						.insert(portalOtpCodes)
+						.values({
+							organizationId: effectiveOrgId,
+							patientId: null,
+							phone: phoneSuffix,
+							codeHash: regCodeHash,
+							channel: developerLogFallback ? "developer_log" : "sms",
+							deliveryStatus: "pending",
+							expiresAt: otpExpiresAt,
+							attemptCount: 0,
+						})
+						.returning({ id: portalOtpCodes.id }),
+				);
+				const regOtpId = insertedRegOtp?.id;
 
-				pendingRegistrationOtpStore.set(phoneSuffix, {
+				pendingRegistrationOtpStore.set(pendingKey, {
 					phoneSuffix,
 					rawPhone,
 					codeHash: regCodeHash,
@@ -244,6 +249,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				});
 
 				if (developerLogFallback) {
+					await markPortalOtpDeliveryStatus(effectiveOrgId, regOtpId, "sent");
 					request.log.warn(
 						{ portalOtpDeveloperCode: regCode, rawPhone, isNewPatientRegistration: true },
 						"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код для регистрации нового пациента в личном кабинете выведен в журнал сервера и никому не отправлен.",
@@ -252,31 +258,17 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					return neutralAccepted;
 				}
 
-				const msisdn = normalizeRussianMsisdn(rawPhone);
-				const credentials = await withTenantCtx(
-					effectiveOrgId,
-					async () => resolveChannelCredentials(effectiveOrgId!),
-				);
-
-				const delivery =
-					msisdn === null
-						? {
-								ok: false as const,
-								errorClass: "recipient_unavailable" as const,
-								errorMessage: "Номер в запросе не приводится к формату оператора.",
-							}
-						: await sendThroughChannel(
-								{
-									channel: "sms",
-									recipientAddress: msisdn,
-									subject: null,
-									body: renderOtpMessage(policy, regCode),
-									idempotencyKey: `portal-reg-otp:${phoneSuffix}:${Date.now()}`,
-								},
-								credentials,
-							);
+				const delivery = await dispatchPortalOtpSms({
+					organizationId: effectiveOrgId,
+					otpId: regOtpId,
+					rawPhone,
+					invalidPhoneMessage: "Номер в запросе не приводится к формату оператора.",
+					messageBody: renderOtpMessage(policy, regCode),
+					idempotencyKey: `portal-reg-otp:${regOtpId ?? phoneSuffix}:${otpExpiresAt.getTime()}`,
+				});
 
 				if (!delivery.ok) {
+					pendingRegistrationOtpStore.delete(pendingKey);
 					request.log.error(
 						{ rawPhone, errorClass: delivery.errorClass },
 						"Код регистрации нового пациента в личный кабинет не отправлен: шлюз отказал",
@@ -381,61 +373,21 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					{ portalOtpDeveloperCode: code, patientId: patient.id },
 					"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код входа в личный кабинет выведен в журнал сервера и никому не отправлен. При NODE_ENV=production эта ветка недостижима.",
 				);
-				await withTenantCtx(patient.organizationId, async (tx) => {
-					await tx
-						.update(portalOtpCodes)
-						.set({ deliveryStatus: "sent" })
-						.where(
-							and(
-								eq(portalOtpCodes.id, issuedId),
-								eq(portalOtpCodes.organizationId, patient.organizationId),
-							),
-						);
-				});
+				await markPortalOtpDeliveryStatus(patient.organizationId, issuedId, "sent");
 				reply.status(202);
 				return neutralAccepted;
 			}
 
-			const msisdn = normalizeRussianMsisdn(patient.phone);
-			const credentials = await withTenantCtx(
-				patient.organizationId,
-				async () => resolveChannelCredentials(patient.organizationId),
-			);
-
-			const delivery =
-				msisdn === null
-					? {
-							ok: false as const,
-							errorClass: "recipient_unavailable" as const,
-							errorMessage:
-								"Номер в карточке пациента не приводится к формату оператора.",
-						}
-					: await sendThroughChannel(
-							{
-								channel: "sms",
-								recipientAddress: msisdn,
-								subject: null,
-								body: renderOtpMessage(policy, code),
-								idempotencyKey: `portal-otp:${issuedId}`,
-							},
-							credentials,
-						);
+			const delivery = await dispatchPortalOtpSms({
+				organizationId: patient.organizationId,
+				otpId: issuedId,
+				rawPhone: patient.phone,
+				invalidPhoneMessage: "Номер в карточке пациента не приводится к формату оператора.",
+				messageBody: renderOtpMessage(policy, code),
+				idempotencyKey: `portal-otp:${issuedId}`,
+			});
 
 			if (!delivery.ok) {
-				await withTenantCtx(patient.organizationId, async (tx) => {
-					await tx
-						.update(portalOtpCodes)
-						.set({
-							deliveryStatus: "failed",
-							deliveryErrorClass: delivery.errorClass,
-						})
-						.where(
-							and(
-								eq(portalOtpCodes.id, issuedId),
-								eq(portalOtpCodes.organizationId, patient.organizationId),
-							),
-						);
-				});
 				request.log.error(
 					{ patientId: patient.id, errorClass: delivery.errorClass },
 					"Код входа в личный кабинет не отправлен: шлюз отказал",
@@ -448,17 +400,6 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				};
 			}
 
-			await withTenantCtx(patient.organizationId, async (tx) => {
-				await tx
-					.update(portalOtpCodes)
-					.set({ deliveryStatus: "sent" })
-					.where(
-						and(
-							eq(portalOtpCodes.id, issuedId),
-							eq(portalOtpCodes.organizationId, patient.organizationId),
-						),
-					);
-			});
 			reply.status(202);
 			return neutralAccepted;
 		},
@@ -489,7 +430,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				return {
 					error: "ValidationError",
 					message: "Некорректные параметры проверки кода.",
-					details: parsedBody.error.format(),
+					details: parsedBody.error.issues,
 				};
 			}
 
@@ -513,9 +454,13 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 				// Persistent PostgreSQL 18 check first, fallback to memory
 				const pendingReg = await findPendingRegistrationOtp(phoneSuffix, targetOrgId, now);
+				const pendingKey = getPendingRegistrationOtpKey(
+					phoneSuffix,
+					pendingReg?.organizationId ?? targetOrgId,
+				);
 
 				if (!pendingReg || pendingReg.expiresAt.getTime() < now.getTime()) {
-					pendingRegistrationOtpStore.delete(phoneSuffix);
+					pendingRegistrationOtpStore.delete(pendingKey);
 					reply.status(401);
 					return invalidOtp;
 				}
@@ -524,7 +469,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 					if ("id" in pendingReg) {
 						await setPendingRegistrationOtpAttemptOrConsumed(pendingReg.organizationId, pendingReg.id, { consumedAt: now });
 					}
-					pendingRegistrationOtpStore.delete(phoneSuffix);
+					pendingRegistrationOtpStore.delete(pendingKey);
 					reply.status(401);
 					return invalidOtp;
 				}
@@ -544,7 +489,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				if ("id" in pendingReg) {
 					await setPendingRegistrationOtpAttemptOrConsumed(pendingReg.organizationId, pendingReg.id, { consumedAt: now });
 				}
-				pendingRegistrationOtpStore.delete(phoneSuffix);
+				pendingRegistrationOtpStore.delete(pendingKey);
 
 				// Предотвращение дубликатов и пустышек "Пациент" при повторной или семейной верификации
 				const existingPatients = await findPatientsByPhone(rawPhone, pendingReg.organizationId);
@@ -711,7 +656,10 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			return { error: "Unauthorized", message: "Токен авторизации не предоставлен." };
 		}
 
-		if (revokedPortalTokens.has(token)) {
+		if (
+			revokedPortalTokens.has(token) ||
+			revokedPortalTokenHashes.has(hashPortalToken(token))
+		) {
 			reply.status(401);
 			return { error: "SessionRevoked", message: "Сессия уже завершена." };
 		}

@@ -61,7 +61,7 @@ export const closerLeadCandidateSchema = z.object({
 	]),
 	sourceSystem: z.string(),
 	metadata: z.record(z.unknown()).default({}),
-});
+}).strict();
 
 export type CloserLeadCandidate = z.infer<typeof closerLeadCandidateSchema>;
 

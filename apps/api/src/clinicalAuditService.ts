@@ -5,7 +5,7 @@
  * Integrates with Fastify request context to capture IP + UserAgent automatically.
  */
 import type { FastifyRequest } from "fastify";
-import { db } from "./db/client.js";
+import { withTenantCtx } from "./db/rls.js";
 import { clinicalAuditLogs } from "./db/schema.js";
 import { createApiLogger, safeLogError } from "./observability/logger.js";
 
@@ -65,15 +65,17 @@ export interface ClinicalAuditInput {
  */
 async function writeClinicalAuditLog(input: ClinicalAuditInput): Promise<void> {
 	try {
-		await db.insert(clinicalAuditLogs).values({
-			organizationId: input.organizationId,
-			userId: input.userId ?? null,
-			patientId: input.patientId ?? null,
-			action: input.action,
-			entityType: input.entityType,
-			entityId: input.entityId,
-			ipAddress: input.ipAddress ?? null,
-			userAgent: input.userAgent ?? null,
+		await withTenantCtx(input.organizationId, async (tx) => {
+			await tx.insert(clinicalAuditLogs).values({
+				organizationId: input.organizationId,
+				userId: input.userId ?? null,
+				patientId: input.patientId ?? null,
+				action: input.action,
+				entityType: input.entityType,
+				entityId: input.entityId,
+				ipAddress: input.ipAddress ?? null,
+				userAgent: input.userAgent ?? null,
+			});
 		});
 	} catch (err) {
 		// Never propagate — audit failure must not crash the clinical flow,

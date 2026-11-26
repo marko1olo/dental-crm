@@ -32,11 +32,11 @@ export const remdSubmissionResponseSchema = z.object({
 				code: z.string(),
 				message: z.string(),
 				path: z.string().optional(),
-			}),
+			}).strict(),
 		)
 		.optional(),
 	rawResponse: z.unknown().optional(),
-});
+}).strict();
 
 export type RemdSubmissionResponse = z.infer<typeof remdSubmissionResponseSchema>;
 
@@ -44,12 +44,13 @@ export const remdStatusResponseSchema = z.object({
 	transactionId: z.string(),
 	status: z.enum(["Pending", "Sent", "Registered", "Rejected", "Error"]),
 	remdDocumentId: z.string().optional(),
+	receiptId: z.string().optional(),
 	statusCodeNsi: z.string().optional(),
 	statusDescription: z.string().optional(),
 	registrationDate: z.string().optional(),
 	errors: z.array(z.string()).optional(),
 	warnings: z.array(z.string()).optional(),
-});
+}).strict();
 
 export type RemdStatusResponse = z.infer<typeof remdStatusResponseSchema>;
 

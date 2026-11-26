@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { bactericidalEquipments } from "../../../../db/schema.js";
 import { calculateBactericidalLampResource } from "../bactericidalHoursCalculator.js";
 
@@ -16,11 +16,13 @@ export async function handleGetBactericidalEquipments(
 	);
 	if (!organizationId) return;
 
-	const list = await db
-		.select()
-		.from(bactericidalEquipments)
-		.where(eq(bactericidalEquipments.organizationId, organizationId))
-		.orderBy(bactericidalEquipments.roomName);
+	const list = await withTenantCtx(organizationId, (tx) =>
+		tx
+			.select()
+			.from(bactericidalEquipments)
+			.where(eq(bactericidalEquipments.organizationId, organizationId))
+			.orderBy(bactericidalEquipments.roomName),
+	);
 
 	return list.map((eqRow) => {
 		const totalHours = Number(eqRow.totalOperatingHours);

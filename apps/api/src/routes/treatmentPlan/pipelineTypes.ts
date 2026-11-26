@@ -62,6 +62,6 @@ export const treatmentPlanQuerySchema = z.object({
 	], { errorMap: () => ({ message: "Недопустимый этап воронки планов лечения" }) }).optional(),
 	startDate: z.string().datetime({ message: "Дата начала должна быть в формате ISO" }).optional(),
 	endDate: z.string().datetime({ message: "Дата окончания должна быть в формате ISO" }).optional(),
-});
+}).strict();
 
 export type TreatmentPlanQuery = z.infer<typeof treatmentPlanQuerySchema>;

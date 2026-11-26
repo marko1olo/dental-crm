@@ -3,14 +3,22 @@ import { and, desc, eq, gt, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
+import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { patients, portalOtpCodes, portalRevokedTokens } from "../../db/schema.js";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+import {
+	resolveChannelCredentials,
+	sendThroughChannel,
+} from "../../services/communications/channelRouter.js";
+import { normalizeRussianMsisdn } from "../../smsTransport.js";
 import { verifyToken } from "../../utils/cryptoHelper.js";
 import {
 	type AuthenticatedPortalPatient,
 	PORTAL_TOKEN_KIND,
 	type PortalOtpPolicy,
 } from "./types.js";
+
+const logger = createApiLogger("portalAuthStore");
 
 // In-memory revocation cache for synchronous token checks, backed by PostgreSQL portal_revoked_tokens
 export const revokedPortalTokens = new Set<string>();
@@ -49,8 +57,10 @@ export async function persistRevokedToken(
 				.onConflictDoNothing();
 		});
 	} catch (err) {
-		// Игнорируем конфликт дубликата или отсутствие БД в изолированных тестах
-		void err;
+		logger.warn(
+			{ err: safeLogError(err), patientId, organizationId },
+			"Failed to persist revoked portal token to PostgreSQL",
+		);
 	}
 }
 
@@ -85,6 +95,13 @@ export interface PendingRegistrationOtpEntry {
 }
 
 export const pendingRegistrationOtpStore = new Map<string, PendingRegistrationOtpEntry>();
+
+export function getPendingRegistrationOtpKey(
+	phoneSuffix: string,
+	organizationId?: string | undefined,
+): string {
+	return `${organizationId && organizationId.trim() ? organizationId.trim() : "default"}:${phoneSuffix}`;
+}
 
 export function resetPortalRevokedTokensForTesting(): void {
 	revokedPortalTokens.clear();
@@ -280,23 +297,29 @@ export async function isIssuanceThrottled(
 	patientId: string,
 	policy: PortalOtpPolicy,
 	now: Date,
+	tx?: TenantDb,
 ): Promise<boolean> {
 	const windowStart = new Date(now.getTime() - policy.windowSeconds * 1000);
-	const recent = await db
-		.select({
-			createdAt: portalOtpCodes.createdAt,
-			deliveryStatus: portalOtpCodes.deliveryStatus,
-		})
-		.from(portalOtpCodes)
-		.where(
-			and(
-				eq(portalOtpCodes.organizationId, organizationId),
-				eq(portalOtpCodes.patientId, patientId),
-				gte(portalOtpCodes.createdAt, windowStart),
-			),
-		)
-		.orderBy(desc(portalOtpCodes.createdAt))
-		.limit(50);
+	const queryRecent = (client: TenantDb | typeof db) =>
+		client
+			.select({
+				createdAt: portalOtpCodes.createdAt,
+				deliveryStatus: portalOtpCodes.deliveryStatus,
+			})
+			.from(portalOtpCodes)
+			.where(
+				and(
+					eq(portalOtpCodes.organizationId, organizationId),
+					eq(portalOtpCodes.patientId, patientId),
+					gte(portalOtpCodes.createdAt, windowStart),
+				),
+			)
+			.orderBy(desc(portalOtpCodes.createdAt))
+			.limit(50);
+
+	const recent = tx
+		? await queryRecent(tx)
+		: await withTenantCtx(organizationId, async (tenantTx) => queryRecent(tenantTx));
 
 	const newest = recent[0];
 	if (
@@ -364,7 +387,18 @@ export async function findPendingRegistrationOtp(
 			id: dbPendingReg.id,
 		};
 	}
-	return pendingRegistrationOtpStore.get(phoneSuffix);
+	const scoped = pendingRegistrationOtpStore.get(
+		getPendingRegistrationOtpKey(phoneSuffix, targetOrgId),
+	);
+	if (scoped) return scoped;
+	if (!targetOrgId) {
+		for (const entry of pendingRegistrationOtpStore.values()) {
+			if (entry.phoneSuffix === phoneSuffix) {
+				return entry;
+			}
+		}
+	}
+	return undefined;
 }
 
 export async function setPendingRegistrationOtpAttemptOrConsumed(
@@ -378,4 +412,67 @@ export async function setPendingRegistrationOtpAttemptOrConsumed(
 			.set(values)
 			.where(eq(portalOtpCodes.id, regId));
 	});
+}
+
+export async function markPortalOtpDeliveryStatus(
+	organizationId: string,
+	otpId: string | null | undefined,
+	deliveryStatus: "sent" | "failed",
+	deliveryErrorClass?: string | undefined,
+): Promise<void> {
+	if (!otpId) return;
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
+			.update(portalOtpCodes)
+			.set({
+				deliveryStatus,
+				...(deliveryErrorClass !== undefined ? { deliveryErrorClass } : {}),
+			})
+			.where(
+				and(
+					eq(portalOtpCodes.id, otpId),
+					eq(portalOtpCodes.organizationId, organizationId),
+				),
+			);
+	});
+}
+
+export async function dispatchPortalOtpSms(params: {
+	organizationId: string;
+	otpId: string | null | undefined;
+	rawPhone: string | null | undefined;
+	invalidPhoneMessage: string;
+	messageBody: string;
+	idempotencyKey: string;
+}) {
+	const msisdn = normalizeRussianMsisdn(params.rawPhone);
+	const credentials = await withTenantCtx(
+		params.organizationId,
+		async () => resolveChannelCredentials(params.organizationId),
+	);
+	const delivery =
+		msisdn === null
+			? {
+					ok: false as const,
+					errorClass: "recipient_unavailable" as const,
+					errorMessage: params.invalidPhoneMessage,
+				}
+			: await sendThroughChannel(
+					{
+						channel: "sms",
+						recipientAddress: msisdn,
+						subject: null,
+						body: params.messageBody,
+						idempotencyKey: params.idempotencyKey,
+					},
+					credentials,
+				);
+
+	await markPortalOtpDeliveryStatus(
+		params.organizationId,
+		params.otpId,
+		delivery.ok ? "sent" : "failed",
+		delivery.ok ? undefined : delivery.errorClass,
+	);
+	return delivery;
 }

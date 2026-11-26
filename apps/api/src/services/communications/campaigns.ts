@@ -24,7 +24,6 @@
  */
 
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db } from "../../db/client.js";
 import { communicationCampaigns } from "../../db/communicationsSchema.js";
 import {
 	type TenantDb,
@@ -125,55 +124,57 @@ export type CreateCampaignResult =
 export async function createCampaign(
 	input: CreateCampaignInput,
 ): Promise<CreateCampaignResult> {
-	const [template] = await db
-		.select()
-		.from(communicationTemplates)
-		.where(
-			and(
-				eq(communicationTemplates.id, input.templateId),
-				eq(communicationTemplates.organizationId, input.organizationId),
-			),
-		)
-		.limit(1);
-	if (!template)
-		return { ok: false, reason: "Шаблон не найден в этой клинике." };
-	if (!template.isActive)
-		return {
-			ok: false,
-			reason: "Шаблон отключён и не может использоваться для рассылки.",
-		};
-	if (!isMachineDeliverableChannel(template.channel)) {
-		return {
-			ok: false,
-			reason: `Канал «${template.channel}» не отправляется автоматически — рассылку по нему сделать нельзя.`,
-		};
-	}
+	return withTenantCtx(input.organizationId, async (tx) => {
+		const [template] = await tx
+			.select()
+			.from(communicationTemplates)
+			.where(
+				and(
+					eq(communicationTemplates.id, input.templateId),
+					eq(communicationTemplates.organizationId, input.organizationId),
+				),
+			)
+			.limit(1);
+		if (!template)
+			return { ok: false, reason: "Шаблон не найден в этой клинике." };
+		if (!template.isActive)
+			return {
+				ok: false,
+				reason: "Шаблон отключён и не может использоваться для рассылки.",
+			};
+		if (!isMachineDeliverableChannel(template.channel)) {
+			return {
+				ok: false,
+				reason: `Канал «${template.channel}» не отправляется автоматически — рассылку по нему сделать нельзя.`,
+			};
+		}
 
-	const variables = parseVariables(template.variablesJson);
-	const problems = campaignTemplateProblems(template.body, variables);
-	if (problems.length > 0) return { ok: false, reason: problems.join(" ") };
+		const variables = parseVariables(template.variablesJson);
+		const problems = campaignTemplateProblems(template.body, variables);
+		if (problems.length > 0) return { ok: false, reason: problems.join(" ") };
 
-	const fit = checkChannelFit(template.channel, template.body);
-	if (!fit.ok) return { ok: false, reason: fit.problems.join(" ") };
+		const fit = checkChannelFit(template.channel, template.body);
+		if (!fit.ok) return { ok: false, reason: fit.problems.join(" ") };
 
-	const [created] = await db
-		.insert(communicationCampaigns)
-		.values({
-			organizationId: input.organizationId,
-			clinicId: input.clinicId ?? null,
-			title: input.title,
-			templateId: template.id,
-			channel: template.channel,
-			scope: input.scope ?? "marketing",
-			status: input.scheduledAt ? "scheduled" : "draft",
-			audienceJson: JSON.stringify(input.criteria),
-			scheduledAt: input.scheduledAt ?? null,
-			createdByUserId: input.createdByUserId ?? null,
-		})
-		.returning();
+		const [created] = await tx
+			.insert(communicationCampaigns)
+			.values({
+				organizationId: input.organizationId,
+				clinicId: input.clinicId ?? null,
+				title: input.title,
+				templateId: template.id,
+				channel: template.channel,
+				scope: input.scope ?? "marketing",
+				status: input.scheduledAt ? "scheduled" : "draft",
+				audienceJson: JSON.stringify(input.criteria),
+				scheduledAt: input.scheduledAt ?? null,
+				createdByUserId: input.createdByUserId ?? null,
+			})
+			.returning();
 
-	if (!created) return { ok: false, reason: "Не удалось создать рассылку." };
-	return { ok: true, campaign: created };
+		if (!created) return { ok: false, reason: "Не удалось создать рассылку." };
+		return { ok: true, campaign: created };
+	});
 }
 
 function parseVariables(raw: string): string[] {
@@ -197,82 +198,90 @@ export async function previewCampaign(
 	campaignId: string,
 	options: { readonly sampleLimit?: number; readonly now?: Date } = {},
 ): Promise<CampaignPreview | null> {
-	const [campaign] = await db
-		.select()
-		.from(communicationCampaigns)
-		.where(
-			and(
-				eq(communicationCampaigns.id, campaignId),
-				eq(communicationCampaigns.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!campaign) return null;
-
-	const criteria = parseAudienceCriteria(campaign.audienceJson);
-	const audience = await resolveAudience({
-		organizationId,
-		channel: campaign.channel as CommunicationChannelCode,
-		scope: campaign.scope as CommunicationConsentScope,
-		criteria,
-		...(options.now ? { now: options.now } : {}),
-	});
-
-	const problems: string[] = [];
-	let sampleText: string | null = null;
-
-	if (campaign.templateId) {
-		const [template] = await db
+	return withTenantCtx(organizationId, async (tx) => {
+		const [campaign] = await tx
 			.select()
-			.from(communicationTemplates)
-			.where(eq(communicationTemplates.id, campaign.templateId))
-			.limit(1);
-		if (!template) {
-			problems.push("Шаблон рассылки удалён.");
-		} else {
-			problems.push(
-				...campaignTemplateProblems(
-					template.body,
-					parseVariables(template.variablesJson),
+			.from(communicationCampaigns)
+			.where(
+				and(
+					eq(communicationCampaigns.id, campaignId),
+					eq(communicationCampaigns.organizationId, organizationId),
 				),
-			);
-			const rendered = renderTemplate(
-				template.body,
-				{},
-				{ allowPhi: true, allowEmptyValues: true },
-			);
-			if (rendered.ok) sampleText = rendered.text;
-		}
-	} else {
-		problems.push("У рассылки не выбран шаблон.");
-	}
+			)
+			.limit(1);
+		if (!campaign) return null;
 
-	if (audience.deliverable === 0) {
-		problems.push(
-			"Получателей нет: проверьте условия отбора, контакты пациентов и согласия.",
-		);
-	}
-
-	return {
-		campaign,
-		criteria: describeCriteria(criteria),
-		audience: {
-			...audience,
-			// В предпросмотре достаточно короткого списка: администратору нужны
-			// не все 400 фамилий, а понимание, что отбор попал в цель.
-			candidates: audience.candidates.slice(
-				0,
-				Math.max(1, Math.min(50, options.sampleLimit ?? 10)),
-			),
-		},
-		cost: estimateAudienceCost({
+		const criteria = parseAudienceCriteria(campaign.audienceJson);
+		const audience = await resolveAudience({
+			organizationId,
 			channel: campaign.channel as CommunicationChannelCode,
-			recipients: audience.deliverable,
-			body: sampleText ?? "",
-		}),
-		sampleText,
-		problems,
-	};
+			scope: campaign.scope as CommunicationConsentScope,
+			criteria,
+			tx,
+			...(options.now ? { now: options.now } : {}),
+		});
+
+		const problems: string[] = [];
+		let sampleText: string | null = null;
+
+		if (campaign.templateId) {
+			const [template] = await tx
+				.select()
+				.from(communicationTemplates)
+				.where(
+					and(
+						eq(communicationTemplates.id, campaign.templateId),
+						eq(communicationTemplates.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!template) {
+				problems.push("Шаблон рассылки удалён.");
+			} else {
+				problems.push(
+					...campaignTemplateProblems(
+						template.body,
+						parseVariables(template.variablesJson),
+					),
+				);
+				const rendered = renderTemplate(
+					template.body,
+					{},
+					{ allowPhi: true, allowEmptyValues: true },
+				);
+				if (rendered.ok) sampleText = rendered.text;
+			}
+		} else {
+			problems.push("У рассылки не выбран шаблон.");
+		}
+
+		if (audience.deliverable === 0) {
+			problems.push(
+				"Получателей нет: проверьте условия отбора, контакты пациентов и согласия.",
+			);
+		}
+
+		return {
+			campaign,
+			criteria: describeCriteria(criteria),
+			audience: {
+				...audience,
+				// В предпросмотре достаточно короткого списка: администратору нужны
+				// не все 400 фамилий, а понимание, что отбор попал в цель.
+				candidates: audience.candidates.slice(
+					0,
+					Math.max(1, Math.min(50, options.sampleLimit ?? 10)),
+				),
+			},
+			cost: estimateAudienceCost({
+				channel: campaign.channel as CommunicationChannelCode,
+				recipients: audience.deliverable,
+				body: sampleText ?? "",
+			}),
+			sampleText,
+			problems,
+		};
+	});
 }
 
 export type LaunchCampaignResult =
@@ -299,150 +308,161 @@ export async function launchCampaign(input: {
 }): Promise<LaunchCampaignResult> {
 	const now = input.now ?? new Date();
 
-	const [campaign] = await db
-		.select()
-		.from(communicationCampaigns)
-		.where(
-			and(
-				eq(communicationCampaigns.id, input.campaignId),
-				eq(communicationCampaigns.organizationId, input.organizationId),
-			),
-		)
-		.limit(1);
-	if (!campaign)
-		return { ok: false, reason: "Рассылка не найдена в этой клинике." };
-	if (campaign.status === "cancelled")
-		return { ok: false, reason: "Отменённую рассылку запустить нельзя." };
-	if (campaign.status === "completed")
-		return { ok: false, reason: "Рассылка уже завершена." };
-	/*
-	 * Повторный запуск уже идущей рассылки. Двойных сообщений пациентам он не
-	 * даёт — ключ повтора `campaign:<рассылка>:<пациент>` второе не пустит, — но
-	 * заново снимает аудиторию и переписывает счётчики и время запуска, то есть
-	 * портит журнал: по нему потом нельзя ответить, скольким и когда ушло.
-	 * Найдено просмотром снимка экрана: у рассылки в состоянии «Выполняется»
-	 * кнопка «Запустить» была самой заметной в строке.
-	 */
-	if (campaign.status === "running") {
-		return {
-			ok: false,
-			reason: "Рассылка уже выполняется. Дождитесь окончания или отмените её.",
-		};
-	}
-	if (!campaign.templateId)
-		return { ok: false, reason: "У рассылки не выбран шаблон." };
-
-	const [template] = await db
-		.select()
-		.from(communicationTemplates)
-		.where(eq(communicationTemplates.id, campaign.templateId))
-		.limit(1);
-	if (!template) return { ok: false, reason: "Шаблон рассылки удалён." };
-	if (!template.isActive)
-		return { ok: false, reason: "Шаблон рассылки отключён." };
-
-	const channel = campaign.channel as CommunicationChannelCode;
-	const scope = campaign.scope as CommunicationConsentScope;
-	const criteria = parseAudienceCriteria(campaign.audienceJson);
-	const audience = await resolveAudience({
-		organizationId: input.organizationId,
-		channel,
-		scope,
-		criteria,
-		now,
-	});
-
-	if (audience.deliverable === 0) {
-		return {
-			ok: false,
-			reason:
-				"Получателей нет: проверьте условия отбора, контакты пациентов и согласия.",
-		};
-	}
-
-	let queued = 0;
-	let alreadyQueued = 0;
-	let skipped = 0;
-
-	for (const candidate of audience.candidates) {
-		// Каждому подставляется своё имя: рассылка «Здравствуйте!» без имени
-		// выглядит как спам и читается хуже.
-		const rendered = renderTemplate(
-			template.body,
-			{
-				patient: firstNameAndPatronymic(candidate.fullName),
-				patientFullName: candidate.fullName,
-			},
-			{ allowPhi: true, allowEmptyValues: true },
-		);
-		if (!rendered.ok) {
-			skipped += 1;
-			continue;
+	return withTenantCtx(input.organizationId, async (tx) => {
+		const [campaign] = await tx
+			.select()
+			.from(communicationCampaigns)
+			.where(
+				and(
+					eq(communicationCampaigns.id, input.campaignId),
+					eq(communicationCampaigns.organizationId, input.organizationId),
+				),
+			)
+			.limit(1);
+		if (!campaign)
+			return { ok: false, reason: "Рассылка не найдена в этой клинике." };
+		if (campaign.status === "cancelled")
+			return { ok: false, reason: "Отменённую рассылку запустить нельзя." };
+		if (campaign.status === "completed")
+			return { ok: false, reason: "Рассылка уже завершена." };
+		/*
+		 * Повторный запуск уже идущей рассылки. Двойных сообщений пациентам он не
+		 * даёт — ключ повтора `campaign:<рассылка>:<пациент>` второе не пустит, — но
+		 * заново снимает аудиторию и переписывает счётчики и время запуска, то есть
+		 * портит журнал: по нему потом нельзя ответить, скольким и когда ушло.
+		 * Найдено просмотром снимка экрана: у рассылки в состоянии «Выполняется»
+		 * кнопка «Запустить» была самой заметной в строке.
+		 */
+		if (campaign.status === "running") {
+			return {
+				ok: false,
+				reason: "Рассылка уже выполняется. Дождитесь окончания или отмените её.",
+			};
 		}
+		if (!campaign.templateId)
+			return { ok: false, reason: "У рассылки не выбран шаблон." };
 
-		const result = await enqueueMessage({
+		const [template] = await tx
+			.select()
+			.from(communicationTemplates)
+			.where(
+				and(
+					eq(communicationTemplates.id, campaign.templateId),
+					eq(communicationTemplates.organizationId, input.organizationId),
+				),
+			)
+			.limit(1);
+		if (!template) return { ok: false, reason: "Шаблон рассылки удалён." };
+		if (!template.isActive)
+			return { ok: false, reason: "Шаблон рассылки отключён." };
+
+		const channel = campaign.channel as CommunicationChannelCode;
+		const scope = campaign.scope as CommunicationConsentScope;
+		const criteria = parseAudienceCriteria(campaign.audienceJson);
+		const audience = await resolveAudience({
 			organizationId: input.organizationId,
-			clinicId: campaign.clinicId,
-			patientId: candidate.patientId,
-			templateId: template.id,
-			campaignId: campaign.id,
 			channel,
-			intent: input.intent ?? "general",
 			scope,
-			recipientAddress: candidate.recipientAddress,
-			subject: template.title,
-			body: rendered.text,
-			dedupeKey: `campaign:${campaign.id}:${candidate.patientId}`,
+			criteria,
+			now,
+			tx,
 		});
 
-		if (!result.ok) skipped += 1;
-		else if (result.duplicate) alreadyQueued += 1;
-		else queued += 1;
-	}
+		if (audience.deliverable === 0) {
+			return {
+				ok: false,
+				reason:
+					"Получателей нет: проверьте условия отбора, контакты пациентов и согласия.",
+			};
+		}
 
-	// БЫЛО: UPDATE статуса/снимка аудитории только по campaign.id после SELECT с org.
-	// СТАЛО: organizationId в WHERE + RETURNING; 0 строк — отказ, не ok:true с очередью.
-	const [launched] = await db
-		.update(communicationCampaigns)
-		.set({
-			status: "running",
-			launchedAt: campaign.launchedAt ?? now,
-			launchedByUserId: input.launchedByUserId ?? campaign.launchedByUserId,
-			// Снимок именно на момент запуска: позже эти числа не воспроизвести.
-			audienceSnapshotJson: JSON.stringify({
-				takenAt: now.toISOString(),
-				criteria: describeCriteria(criteria),
-				matched: audience.matched,
-				deliverable: audience.deliverable,
-				excluded: audience.excluded,
-				queued,
-				alreadyQueued,
-				skipped,
-			}),
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(communicationCampaigns.id, campaign.id),
-				eq(communicationCampaigns.organizationId, input.organizationId),
-			),
-		)
-		.returning({ id: communicationCampaigns.id });
+		let queued = 0;
+		let alreadyQueued = 0;
+		let skipped = 0;
 
-	if (!launched) {
+		for (const candidate of audience.candidates) {
+			// Каждому подставляется своё имя: рассылка «Здравствуйте!» без имени
+			// выглядит как спам и читается хуже.
+			const rendered = renderTemplate(
+				template.body,
+				{
+					patient: firstNameAndPatronymic(candidate.fullName),
+					patientFullName: candidate.fullName,
+				},
+				{ allowPhi: true, allowEmptyValues: true },
+			);
+			if (!rendered.ok) {
+				skipped += 1;
+				continue;
+			}
+
+			const result = await enqueueMessage(
+				{
+					organizationId: input.organizationId,
+					clinicId: campaign.clinicId,
+					patientId: candidate.patientId,
+					templateId: template.id,
+					campaignId: campaign.id,
+					channel,
+					intent: input.intent ?? "general",
+					scope,
+					recipientAddress: candidate.recipientAddress,
+					subject: template.title,
+					body: rendered.text,
+					dedupeKey: `campaign:${campaign.id}:${candidate.patientId}`,
+				},
+				tx,
+			);
+
+			if (!result.ok) skipped += 1;
+			else if (result.duplicate) alreadyQueued += 1;
+			else queued += 1;
+		}
+
+		// БЫЛО: UPDATE статуса/снимка аудитории только по campaign.id после SELECT с org.
+		// СТАЛО: organizationId в WHERE + RETURNING; 0 строк — отказ, не ok:true с очередью.
+		const [launched] = await tx
+			.update(communicationCampaigns)
+			.set({
+				status: "running",
+				launchedAt: campaign.launchedAt ?? now,
+				launchedByUserId: input.launchedByUserId ?? campaign.launchedByUserId,
+				// Снимок именно на момент запуска: позже эти числа не воспроизвести.
+				audienceSnapshotJson: JSON.stringify({
+					takenAt: now.toISOString(),
+					criteria: describeCriteria(criteria),
+					matched: audience.matched,
+					deliverable: audience.deliverable,
+					excluded: audience.excluded,
+					queued,
+					alreadyQueued,
+					skipped,
+				}),
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(communicationCampaigns.id, campaign.id),
+					eq(communicationCampaigns.organizationId, input.organizationId),
+				),
+			)
+			.returning({ id: communicationCampaigns.id });
+
+		if (!launched) {
+			return {
+				ok: false,
+				reason: "Не удалось зафиксировать запуск рассылки. Повторите попытку.",
+			};
+		}
+
 		return {
-			ok: false,
-			reason: "Не удалось зафиксировать запуск рассылки. Повторите попытку.",
+			ok: true,
+			queued,
+			alreadyQueued,
+			skipped,
+			matched: audience.matched,
 		};
-	}
-
-	return {
-		ok: true,
-		queued,
-		alreadyQueued,
-		skipped,
-		matched: audience.matched,
-	};
+	});
 }
 
 /** «Орлова Марина Петровна» → «Марина Петровна». */
@@ -462,52 +482,54 @@ export async function cancelCampaign(
 	campaignId: string,
 	now = new Date(),
 ): Promise<{ ok: boolean; cancelledMessages: number }> {
-	const [campaign] = await db
-		.select({ id: communicationCampaigns.id })
-		.from(communicationCampaigns)
-		.where(
-			and(
-				eq(communicationCampaigns.id, campaignId),
-				eq(communicationCampaigns.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!campaign) return { ok: false, cancelledMessages: 0 };
+	return withTenantCtx(organizationId, async (tx) => {
+		const [campaign] = await tx
+			.select({ id: communicationCampaigns.id })
+			.from(communicationCampaigns)
+			.where(
+				and(
+					eq(communicationCampaigns.id, campaignId),
+					eq(communicationCampaigns.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!campaign) return { ok: false, cancelledMessages: 0 };
 
-	const cancelled = await db
-		.update(communicationOutbox)
-		.set({
-			status: "cancelled",
-			lockedAt: null,
-			lockedBy: null,
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(communicationOutbox.organizationId, organizationId),
-				eq(communicationOutbox.campaignId, campaignId),
-				inArray(communicationOutbox.status, ["queued", "sending"]),
-			),
-		)
-		.returning({ id: communicationOutbox.id });
+		const cancelled = await tx
+			.update(communicationOutbox)
+			.set({
+				status: "cancelled",
+				lockedAt: null,
+				lockedBy: null,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, organizationId),
+					eq(communicationOutbox.campaignId, campaignId),
+					inArray(communicationOutbox.status, ["queued", "sending"]),
+				),
+			)
+			.returning({ id: communicationOutbox.id });
 
-	// БЫЛО: UPDATE cancelled только по id после SELECT с org.
-	// СТАЛО: and(id, organizationId) + RETURNING; 0 строк — ok:false.
-	const [cancelledCampaign] = await db
-		.update(communicationCampaigns)
-		.set({ status: "cancelled", completedAt: now, updatedAt: now })
-		.where(
-			and(
-				eq(communicationCampaigns.id, campaignId),
-				eq(communicationCampaigns.organizationId, organizationId),
-			),
-		)
-		.returning({ id: communicationCampaigns.id });
+		// БЫЛО: UPDATE cancelled только по id после SELECT с org.
+		// СТАЛО: and(id, organizationId) + RETURNING; 0 строк — ok:false.
+		const [cancelledCampaign] = await tx
+			.update(communicationCampaigns)
+			.set({ status: "cancelled", completedAt: now, updatedAt: now })
+			.where(
+				and(
+					eq(communicationCampaigns.id, campaignId),
+					eq(communicationCampaigns.organizationId, organizationId),
+				),
+			)
+			.returning({ id: communicationCampaigns.id });
 
-	if (!cancelledCampaign)
-		return { ok: false, cancelledMessages: cancelled.length };
+		if (!cancelledCampaign)
+			return { ok: false, cancelledMessages: cancelled.length };
 
-	return { ok: true, cancelledMessages: cancelled.length };
+		return { ok: true, cancelledMessages: cancelled.length };
+	});
 }
 
 export type CampaignProgress = {
@@ -521,31 +543,37 @@ export async function campaignProgress(
 	organizationId: string,
 	campaignId: string,
 ): Promise<CampaignProgress | null> {
-	const [campaign] = await db
-		.select()
-		.from(communicationCampaigns)
-		.where(
-			and(
-				eq(communicationCampaigns.id, campaignId),
-				eq(communicationCampaigns.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-	if (!campaign) return null;
+	const { campaign, rows } = await withTenantCtx(organizationId, async (tx) => {
+		const [found] = await tx
+			.select()
+			.from(communicationCampaigns)
+			.where(
+				and(
+					eq(communicationCampaigns.id, campaignId),
+					eq(communicationCampaigns.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!found) return { campaign: null, rows: [] };
 
-	const rows = await db
-		.select({
-			status: communicationOutbox.status,
-			total: sql<number>`count(*)::int`,
-		})
-		.from(communicationOutbox)
-		.where(
-			and(
-				eq(communicationOutbox.organizationId, organizationId),
-				eq(communicationOutbox.campaignId, campaignId),
-			),
-		)
-		.groupBy(communicationOutbox.status);
+		const outboxRows = await tx
+			.select({
+				status: communicationOutbox.status,
+				total: sql<number>`count(*)::int`,
+			})
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, organizationId),
+					eq(communicationOutbox.campaignId, campaignId),
+				),
+			)
+			.groupBy(communicationOutbox.status);
+
+		return { campaign: found, rows: outboxRows };
+	});
+
+	if (!campaign) return null;
 
 	const byStatus: Record<string, number> = {};
 	let total = 0;

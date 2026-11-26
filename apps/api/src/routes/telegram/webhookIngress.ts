@@ -44,7 +44,7 @@ import { repairMojibakeText } from "../../text/repairMojibake.js";
 import {
 	configuredSendTimeoutMs,
 	hydrateTelegramDomainState,
-	resolveTelegramRuntimeContext,
+	resolveTelegramRuntimeContextWithDb,
 	telegramSecretHeader,
 } from "./telegramRuntimeContext.js";
 import {
@@ -124,7 +124,7 @@ export async function handleWebhook(
 		targetBotConfigId = supervisorBot.botConfigId;
 	}
 
-	const runtimeResult = resolveTelegramRuntimeContext(
+	const runtimeResult = await resolveTelegramRuntimeContextWithDb(
 		targetOrgId,
 		targetBotConfigId,
 	);
@@ -550,6 +550,30 @@ export async function handleWebhook(
 }
 
 export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
+	telegramMultiTenantSupervisor.setDefaultPollingHandler(async ({
+		organizationId,
+		botConfigId,
+		webhookSecret,
+		update,
+	}) => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/telegram/webhook/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}`,
+			headers: webhookSecret ? { [telegramSecretHeader]: webhookSecret } : {},
+			payload: isRecord(update) ? update : {},
+		});
+		let resolved: { ok?: boolean; action?: string } | null = null;
+		try {
+			resolved = res.json() as { ok?: boolean; action?: string };
+		} catch {
+			resolved = null;
+		}
+		return {
+			ok: resolved?.ok ?? res.statusCode < 400,
+			...(resolved?.action ? { action: resolved.action } : {}),
+		};
+	});
+
 	const options = { bodyLimit: 256 * 1024, config: { tenantTxSelfManaged: true } };
 	app.post("/api/telegram/webhook", options, handleWebhook);
 	app.post(

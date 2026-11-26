@@ -169,7 +169,15 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		const toothParam = params.toothNumber ?? params.tooth;
 		const toothNumber = parseInt(String(toothParam), 10);
 
-		if (!patientId || typeof patientId !== "string" || patientId.trim().length === 0 || Number.isNaN(toothNumber) || toothNumber < 11 || toothNumber > 85) {
+		if (
+			!patientId ||
+			typeof patientId !== "string" ||
+			patientId.trim().length === 0 ||
+			!UUID_SHAPE.test(patientId.trim()) ||
+			Number.isNaN(toothNumber) ||
+			toothNumber < 11 ||
+			toothNumber > 85
+		) {
 			return reply.code(400).send({ error: "InvalidParameters", message: "Некорректный ID пациента или номер зуба" });
 		}
 
@@ -178,10 +186,12 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			patientExists = await ensurePatientInOrganization(patientId, organizationId);
 		} catch (dbErr) {
 			if (isDbUnavailable(dbErr)) {
-				patientExists = { id: patientId };
-			} else {
-				throw dbErr;
+				return reply.code(503).send({
+					error: "ServiceUnavailable",
+					message: "База данных временно недоступна. Параметры корневых каналов недоступны.",
+				});
 			}
+			throw dbErr;
 		}
 
 		if (!patientExists) {
@@ -233,9 +243,13 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 				};
 			}
 		} catch (dbErr) {
-			if (!isDbUnavailable(dbErr)) {
-				throw dbErr;
+			if (isDbUnavailable(dbErr)) {
+				return reply.code(503).send({
+					error: "ServiceUnavailable",
+					message: "База данных временно недоступна. Параметры корневых каналов недоступны.",
+				});
 			}
+			throw dbErr;
 		}
 
 		await auditMedicalAccessFromRequest(request, {
@@ -348,7 +362,15 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		const toothParam = params.toothNumber ?? params.tooth;
 		const toothNumber = parseInt(String(toothParam), 10);
 
-		if (!patientId || typeof patientId !== "string" || patientId.trim().length === 0 || Number.isNaN(toothNumber) || toothNumber < 11 || toothNumber > 85) {
+		if (
+			!patientId ||
+			typeof patientId !== "string" ||
+			patientId.trim().length === 0 ||
+			!UUID_SHAPE.test(patientId.trim()) ||
+			Number.isNaN(toothNumber) ||
+			toothNumber < 11 ||
+			toothNumber > 85
+		) {
 			return reply.code(400).send({ error: "InvalidParameters", message: "Некорректный ID пациента или номер зуба" });
 		}
 
