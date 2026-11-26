@@ -302,6 +302,7 @@ export const fiscalReceiptDetailsSchema = z.object({
 	advanceOffsetKopecks: z.number().int().nonnegative().nullable().optional(),
 	depositKopecks: z.number().int().nonnegative().nullable().optional(),
 	dmsKopecks: z.number().int().nonnegative().nullable().optional(),
+	refundedInPlace: z.boolean().nullable().optional(),
 }).strict();
 export type FiscalReceiptDetails = z.infer<typeof fiscalReceiptDetailsSchema>;
 

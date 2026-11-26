@@ -1,5 +1,5 @@
 import { and, eq, inArray, ne, or, sql, type SQL } from "drizzle-orm";
-import { rublesToKopecks, generateUuidV7 } from "@dental/shared";
+import { rublesToKopecks, generateUuidV7, multiplyKopecksFractional } from "@dental/shared";
 import { evaluateClinicalRulesInDb } from "../../../../db/clinicalQuery.js";
 import type { TenantDb } from "../../../../db/rls.js";
 import { serviceCatalogItems, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
@@ -187,7 +187,7 @@ export async function syncUpsertPlanLedgerItems(
 			.map((r) => r.serviceId)
 			.filter((id): id is string => Boolean(id)),
 		enforceBlockers: false,
-	});
+	}, tx);
 
 	const blockingRule = evaluation.evaluations.find(
 		(e) => !e.resolved && e.severity === "blocker",
@@ -231,7 +231,7 @@ export async function syncUpsertPlanLedgerItems(
 			? Math.round(item.totalPriceKopecks)
 			: item.priceKopecks != null
 				? Number(item.priceKopecks)
-				: Math.max(0, unitPriceKopNum * item.quantity - discountKopNum);
+				: Math.max(0, multiplyKopecksFractional(unitPriceKopNum, item.quantity) - discountKopNum);
 
 		const lineTotalRub = rublesFromKopecks(lineTotalKopNum);
 		const unitPriceRub = rublesFromKopecks(unitPriceKopNum);

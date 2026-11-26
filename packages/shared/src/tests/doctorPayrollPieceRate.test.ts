@@ -536,4 +536,207 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(resDay.minimumGuaranteeApplied, true);
 		assert.equal(resDay.grossPayoutBeforeTaxKop, 193548);
 	});
+
+	it("1.13 IDENT 3 salary models (gross_before_discount, 2A proportional, 2B doctor_bears_discount) with salaryPriceKop", () => {
+		// Service listPrice = 10,000 RUB (1,000,000 kop), salaryPrice = 8,000 RUB (800,000 kop), discount = 2,000 RUB (200,000 kop)
+		// Patient paid 8,000 RUB (800,000 kop), commission = 30%, self_employed (0 NDFL)
+		const baseItem = {
+			id: "srv-ident-1",
+			dateIso: "2026-10-15",
+			patientName: "Пациент ИДЕНТ",
+			medicalCardNumber: "043-901",
+			serviceNameRu: "Эндодонтия канала",
+			category: "therapy" as const,
+			grossRevenueKop: 800000,
+			listPriceKop: 1000000,
+			discountKop: 200000,
+			salaryPriceKop: 800000,
+			labCostKop: 0,
+			materialCostKop: 0,
+			doctorId: "doc-ident",
+			isPaid: true,
+			actuallyPaidGrossKop: 800000,
+		};
+
+		// Formula 1: Gross before discount -> base = salaryPriceKop (800,000) -> 30% = 240,000 kop
+		const f1 = calculateDoctorPeriodPayroll({
+			doctorId: "doc-ident",
+			doctorName: "Д-р Идентов И.И.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [baseItem],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			identSalaryModel: "gross_before_discount",
+		});
+		assert.equal(f1.totalGrossRevenueKop, 800000);
+		assert.equal(f1.earnedBaseCommissionKop, 240000);
+		assert.equal(f1.serviceSalaryPriceKop, 800000);
+
+		// Formula 2A: Proportional discount -> 800,000 * (1 - 200,000/1,000,000) = 640,000 -> 30% = 192,000 kop
+		const f2a = calculateDoctorPeriodPayroll({
+			doctorId: "doc-ident",
+			doctorName: "Д-р Идентов И.И.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [baseItem],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			identSalaryModel: "net_proportional_discount",
+		});
+		assert.equal(f2a.totalGrossRevenueKop, 640000);
+		assert.equal(f2a.earnedBaseCommissionKop, 192000);
+
+		// Formula 2B: Doctor bears full discount -> max(0, 800,000 - 200,000) = 600,000 -> 30% = 180,000 kop
+		const f2b = calculateDoctorPeriodPayroll({
+			doctorId: "doc-ident",
+			doctorName: "Д-р Идентов И.И.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [baseItem],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			identSalaryModel: "net_doctor_bears_discount",
+		});
+		assert.equal(f2b.totalGrossRevenueKop, 600000);
+		assert.equal(f2b.earnedBaseCommissionKop, 180000);
+	});
+
+	it("1.14 IDENT Cash Advance 3 policies (clinic_first, doctor_first, proportional) on partial payment", () => {
+		// listPrice = 10,000 RUB, salaryPrice = 7,000 RUB (clinic cost = 3,000 RUB), discount = 0, patient paid = 5,000 RUB
+		const partialItem = {
+			id: "srv-adv-1",
+			dateIso: "2026-10-16",
+			patientName: "Пациент Авансов",
+			medicalCardNumber: "043-902",
+			serviceNameRu: "Коронка металлокерамическая",
+			category: "orthopedics" as const,
+			grossRevenueKop: 1000000,
+			listPriceKop: 1000000,
+			discountKop: 0,
+			salaryPriceKop: 700000,
+			labCostKop: 0,
+			materialCostKop: 0,
+			doctorId: "doc-adv",
+			isPaid: true,
+			actuallyPaidGrossKop: 500000,
+		};
+
+		// clinic_first: max(0, 500,000 - 300,000) = 200,000 -> 30% = 60,000 kop
+		const clinicFirst = calculateDoctorPeriodPayroll({
+			doctorId: "doc-adv",
+			doctorName: "Д-р Авансов А.А.",
+			specialtyId: "orthopedist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [partialItem],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			identSalaryModel: "net_proportional_discount",
+			cashAdvancePolicy: "clinic_first",
+		});
+		assert.equal(clinicFirst.totalGrossRevenueKop, 200000);
+		assert.equal(clinicFirst.earnedBaseCommissionKop, 60000);
+
+		// doctor_first: min(500,000, 700,000) = 500,000 -> 30% = 150,000 kop
+		const doctorFirst = calculateDoctorPeriodPayroll({
+			doctorId: "doc-adv",
+			doctorName: "Д-р Авансов А.А.",
+			specialtyId: "orthopedist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [partialItem],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			identSalaryModel: "net_proportional_discount",
+			cashAdvancePolicy: "doctor_first",
+		});
+		assert.equal(doctorFirst.totalGrossRevenueKop, 500000);
+		assert.equal(doctorFirst.earnedBaseCommissionKop, 150000);
+
+		// proportional: 700,000 * (500,000 / 1,000,000) = 350,000 -> 30% = 105,000 kop
+		const proportional = calculateDoctorPeriodPayroll({
+			doctorId: "doc-adv",
+			doctorName: "Д-р Авансов А.А.",
+			specialtyId: "orthopedist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [partialItem],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			identSalaryModel: "net_proportional_discount",
+			cashAdvancePolicy: "proportional",
+		});
+		assert.equal(proportional.totalGrossRevenueKop, 350000);
+		assert.equal(proportional.earnedBaseCommissionKop, 105000);
+	});
+
+	it("1.15 Negative balance debt carries over into next period without silent Math.max(0) erasure", () => {
+		// Month 1: Earned 100,000 kop (30% of 333,333? Actually 1,000,000 * 30% = 300,000), clawback from 2,000,000 refund (600,000 clawback) -> -300,000 deficit!
+		const m1 = calculateDoctorPeriodPayroll({
+			doctorId: "doc-debt",
+			doctorName: "Д-р Долгов Д.Д.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-09-01",
+			periodEndIso: "2026-09-30",
+			services: [{
+				id: "s-m1",
+				dateIso: "2026-09-10",
+				patientName: "Пациент 1",
+				medicalCardNumber: "043-910",
+				serviceNameRu: "Лечение",
+				category: "therapy",
+				grossRevenueKop: 1000000,
+				labCostKop: 0,
+				materialCostKop: 0,
+				doctorId: "doc-debt",
+			}],
+			refundDeductions: [{
+				serviceId: "ref-m1",
+				serviceNameRu: "Возврат за прошлый месяц",
+				refundedGrossKop: 2000000,
+				dateIso: "2026-09-15",
+				reasonRu: "Гарантийный возврат",
+				doctorId: "doc-debt",
+			}],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			advancePayoutKop: 100000,
+		});
+		// Deficit = (300,000 - 600,000) - 100,000 advance = -400,000 kop
+		assert.equal(m1.signedNetBalanceKop, -400000);
+		assert.equal(m1.negativeCarryOverKop, 400000);
+		assert.equal(m1.mainPayoutKop, 0);
+
+		// Month 2: Earned 600,000 kop (30% of 2,000,000) minus carried-over 400,000 debt = 200,000 payout!
+		const m2 = calculateDoctorPeriodPayroll({
+			doctorId: "doc-debt",
+			doctorName: "Д-р Долгов Д.Д.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-10-01",
+			periodEndIso: "2026-10-31",
+			services: [{
+				id: "s-m2",
+				dateIso: "2026-10-05",
+				patientName: "Пациент 2",
+				medicalCardNumber: "043-911",
+				serviceNameRu: "Реставрация",
+				category: "therapy",
+				grossRevenueKop: 2000000,
+				labCostKop: 0,
+				materialCostKop: 0,
+				doctorId: "doc-debt",
+			}],
+			customBasePercentage: 30,
+			taxRegime: "self_employed",
+			priorDebtCarryOverKop: m1.negativeCarryOverKop,
+		});
+		assert.equal(m2.priorDebtDeductedKop, 400000);
+		assert.equal(m2.signedNetBalanceKop, 200000);
+		assert.equal(m2.negativeCarryOverKop, 0);
+		assert.equal(m2.mainPayoutKop, 200000);
+	});
 });

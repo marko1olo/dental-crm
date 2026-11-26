@@ -92,7 +92,7 @@ export async function closeSettlementHandler(
 		await withTenantCtx(orgId, async (tx) => {
 			const activeDoctors = await fetchActiveDoctorProfiles(orgId, tx);
 			for (const doc of activeDoctors) {
-				const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
+				const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 					orgId,
 					resolvedDocId: doc.id,
 					fromStr: body.periodStart,
@@ -119,9 +119,12 @@ export async function closeSettlementHandler(
 					taxRegime: doc.taxRegime,
 					refundDeductions,
 					unallocatedLabKop,
+					identSalaryModel: body.identSalaryModel,
+					cashAdvancePolicy: body.cashAdvancePolicy,
+					priorDebtCarryOverKop: body.carryOverDebtKopecks ?? priorDebtCarryOverKop,
 				});
 
-				const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
+				const signedPayoutKopecks = payrollResult.signedNetBalanceKop ?? (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop);
 				const rkoNumber = body.rkoNumber || `РКО-${doc.id.slice(0, 4).toUpperCase()}-${periodKey}`;
 
 				const res = await closeSettlementPeriodInDb({
@@ -138,13 +141,14 @@ export async function closeSettlementHandler(
 					categoryPercent: doc.commissionPercent,
 					calculatedPieceworkKopecks: payrollResult.grossPayoutBeforeTaxKop,
 					fixedSalaryKopecks: payrollResult.chairRentalKop || 0,
+					serviceSalaryPriceKopecks: payrollResult.serviceSalaryPriceKop ?? 0,
 					bonusesTotalKopecks: 0,
-					penaltiesTotalKopecks: 0,
+					penaltiesTotalKopecks: payrollResult.priorDebtDeductedKop ?? 0,
 					totalAccruedKopecks: payrollResult.grossPayoutBeforeTaxKop,
 					ndfl13Kopecks: payrollResult.ndfl13TaxKop || 0,
-					netPayoutKopecks: payoutKopecks,
+					netPayoutKopecks: signedPayoutKopecks,
 					rkoNumber,
-					markPaid: effectiveMarkPaid,
+					markPaid: signedPayoutKopecks > 0 ? effectiveMarkPaid : false,
 				}, tx);
 
 				if (res.statement) batchStatements.push(res.statement);
@@ -196,8 +200,8 @@ export async function closeSettlementHandler(
 			: Math.max(0, clientGrossKop - clientLabKop - clientMatKop);
 
 	const clientPayoutKop = (body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop) !== undefined
-		? Math.max(0, body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop ?? 0)
-		: rublesToKopecks(Math.max(0, body.netPayoutRub ?? 0));
+		? (body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop ?? 0)
+		: rublesToKopecks(body.netPayoutRub ?? 0);
 
 	const clientTotalAccruedKop = (body.totalAccruedKopecks ?? body.totalAccruedKop) !== undefined
 		? Math.max(0, body.totalAccruedKopecks ?? body.totalAccruedKop ?? 0)
@@ -259,7 +263,7 @@ export async function closeSettlementHandler(
 			? body.categoryPercent
 			: (dbCommPct ? Number(dbCommPct) : 25);
 
-		const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
+		const { shiftsCount, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 			orgId,
 			resolvedDocId,
 			fromStr: body.periodStart,
@@ -283,6 +287,9 @@ export async function closeSettlementHandler(
 			taxRegime: "employee",
 			refundDeductions,
 			unallocatedLabKop,
+			identSalaryModel: body.identSalaryModel,
+			cashAdvancePolicy: body.cashAdvancePolicy,
+			priorDebtCarryOverKop: body.carryOverDebtKopecks ?? priorDebtCarryOverKop,
 		});
 
 		const hasDbServices = completedServices.length > 0;
@@ -293,7 +300,13 @@ export async function closeSettlementHandler(
 		const totalAccruedKop = hasDbServices ? payrollResult.grossPayoutBeforeTaxKop : clientTotalAccruedKop;
 		const ndflKop = hasDbServices ? (payrollResult.ndfl13TaxKop || 0) : clientNdflKop;
 		const chairRentalKop = hasDbServices ? (payrollResult.chairRentalKop || 0) : clientChairRentalKop;
-		const payoutKop = hasDbServices ? (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop) : clientPayoutKop;
+		const serviceSalaryKop = hasDbServices
+			? (payrollResult.serviceSalaryPriceKop ?? 0)
+			: (body.serviceSalaryPriceKopecks ?? 0);
+		const priorDebtDeductedKop = hasDbServices ? (payrollResult.priorDebtDeductedKop ?? 0) : 0;
+		const payoutKop = hasDbServices
+			? (payrollResult.signedNetBalanceKop ?? (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop))
+			: clientPayoutKop;
 
 		const result = await closeSettlementPeriodInDb({
 			organizationId: orgId,
@@ -309,13 +322,14 @@ export async function closeSettlementHandler(
 			categoryPercent: resolvedPct,
 			calculatedPieceworkKopecks: totalAccruedKop,
 			fixedSalaryKopecks: chairRentalKop,
+			serviceSalaryPriceKopecks: serviceSalaryKop,
 			bonusesTotalKopecks: 0,
-			penaltiesTotalKopecks: 0,
+			penaltiesTotalKopecks: priorDebtDeductedKop,
 			totalAccruedKopecks: totalAccruedKop,
 			ndfl13Kopecks: ndflKop,
 			netPayoutKopecks: payoutKop,
 			rkoNumber: body.rkoNumber,
-			markPaid: effectiveMarkPaid,
+			markPaid: payoutKop > 0 ? effectiveMarkPaid : false,
 		}, tx);
 
 		return {

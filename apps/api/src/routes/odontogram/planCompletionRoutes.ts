@@ -88,9 +88,6 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 				return reply.code(400).send({ error: "InvalidParameters" });
 			}
-			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-				return reply.code(404).send({ error: "PatientNotFound" });
-			}
 
 			const completeItemsSchema = z.object({
 				itemIds: z.array(z.string()).optional(),
@@ -118,6 +115,9 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 			const body = parsed.data;
 
 			const result = await withTenantCtx(organizationId, async (tx) => {
+				if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+					return { patientNotFound: true as const };
+				}
 				const [plan] = await tx
 					.select()
 					.from(treatmentPlans)
@@ -312,9 +312,12 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					if (!item) continue;
 					const ledgerId = ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx);
 					if (!existingIdSet.has(ledgerId) && !existingPlanItemIdSet.has(item.id)) {
-						const { name } = splitStoredPriceId(item.priceId);
+						const { priceId: parsedPriceId, name } = splitStoredPriceId(item.priceId);
 						const money = resolvePlanItemMoney(item);
 						const title = item.name?.trim() || name || "Услуга плана лечения";
+						const resolvedServiceId = UUID_SHAPE.test(parsedPriceId)
+							? parsedPriceId
+							: (UUID_SHAPE.test(item.priceId) ? item.priceId : null);
 						itemsToInsert.push({
 							id: ledgerId,
 							organizationId,
@@ -322,7 +325,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							treatmentPlanId: planId,
 							treatmentPlanItemId: item.id,
 							visitId: validVisitId,
-							serviceId: UUID_SHAPE.test(item.priceId) ? item.priceId : null,
+							serviceId: resolvedServiceId,
 							toothCode:
 								item.toothNumber !== null && item.toothNumber !== undefined
 									? String(item.toothNumber)
@@ -482,14 +485,21 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					});
 				});
 
+				const updatedPlans = await loadTreatmentPlansForPatient(patientId, organizationId, tx);
+
 				return {
 					success: true as const,
 					allCompleted,
 					completedPlanItemIds,
 					targetCount: targetIndices.size,
 					totalCount: planItems.length,
+					updatedPlan: updatedPlans.find((p) => p.id === planId) ?? null,
 				};
 			});
+
+			if ("patientNotFound" in result) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
 
 			if ("notFound" in result) {
 				return reply.code(404).send({ error: "TreatmentPlanNotFound" });
@@ -508,10 +518,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const updatedPlans = await withTenantCtx(organizationId, async (tx) =>
-				loadTreatmentPlansForPatient(patientId, organizationId, tx),
-			);
-			const updatedPlan = updatedPlans.find((p) => p.id === planId) ?? null;
+			const updatedPlan = result.updatedPlan;
 
 			const completedPlanItemIds = result.completedPlanItemIds;
 

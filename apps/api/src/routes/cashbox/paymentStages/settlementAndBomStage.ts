@@ -27,6 +27,7 @@ import { TreatmentConsumablesService } from "../../../services/treatmentConsumab
 import { finalizeLoyaltyBonusDeduction } from "./loyaltyBonusStage.js";
 import { finalizeGiftCertificateDeduction } from "./giftCertificateStage.js";
 import { finalizeDmsDeduction } from "./dmsStage.js";
+import { reconcileInvoiceBalanceInDb } from "../../billingRoutes/invoiceBalanceReconciler.js";
 import {
 	type PaymentProcessingContext,
 	type StageStepResult,
@@ -52,44 +53,9 @@ export async function processSettlementAndBomStage(
 		logger,
 	} = ctx;
 
-	// 1. Обновление целевого инвойса
+	// 1. Обновление целевого инвойса через SSOT балансировщик (учитывает сплиты, рассрочки и возвраты)
 	if (body.invoiceId) {
-		const invoicePayments = await tx
-			.select({
-				amountKopecks: payments.amountKopecks,
-				amountRub: payments.amountRub,
-			})
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, orgId),
-					eq(payments.documentId, body.invoiceId),
-					eq(payments.status, "paid"),
-				),
-			);
-		const invoiceTotalKop =
-			ctx.lockedInvoice?.totalPriceKopecks && ctx.lockedInvoice.totalPriceKopecks > 0n
-				? Number(ctx.lockedInvoice.totalPriceKopecks)
-				: parseKopecks(ctx.lockedInvoice?.totalAmountRub ?? ctx.lockedInvoice?.totalRub ?? 0);
-		const totalPaidKop = sumKopecks(
-			invoicePayments.map((p) =>
-				p.amountKopecks !== 0n ? Number(p.amountKopecks) : parseKopecks(p.amountRub ?? 0),
-			),
-		);
-		const nextStatus = totalPaidKop >= invoiceTotalKop ? "paid" : "partially_paid";
-
-		await tx
-			.update(patientInvoices)
-			.set({
-				status: nextStatus,
-				paidAt: nextStatus === "paid" ? new Date() : null,
-			})
-			.where(
-				and(
-					eq(patientInvoices.id, body.invoiceId),
-					eq(patientInvoices.organizationId, orgId),
-				),
-			);
+		await reconcileInvoiceBalanceInDb(tx, orgId, body.invoiceId);
 	}
 
 	// 2. Обновление счетов визита и списание BOM
@@ -97,10 +63,6 @@ export async function processSettlementAndBomStage(
 		const visitInvoices = await tx
 			.select({
 				id: patientInvoices.id,
-				status: patientInvoices.status,
-				totalPriceKopecks: patientInvoices.totalPriceKopecks,
-				totalAmountRub: patientInvoices.totalAmountRub,
-				totalRub: patientInvoices.totalRub,
 			})
 			.from(patientInvoices)
 			.where(
@@ -111,51 +73,15 @@ export async function processSettlementAndBomStage(
 			);
 
 		for (const inv of visitInvoices) {
-			const invPayments = await tx
-				.select({
-					amountKopecks: payments.amountKopecks,
-					amountRub: payments.amountRub,
-				})
-				.from(payments)
-				.where(
-					and(
-						eq(payments.organizationId, orgId),
-						eq(payments.documentId, inv.id),
-						eq(payments.status, "paid"),
-					),
-				);
-			const totalDueKop =
-				inv.totalPriceKopecks > 0n
-					? Number(inv.totalPriceKopecks)
-					: parseKopecks(inv.totalAmountRub ?? inv.totalRub ?? 0);
-			const totalPaidKop = sumKopecks(
-				invPayments.map((p) =>
-					p.amountKopecks !== 0n ? Number(p.amountKopecks) : parseKopecks(p.amountRub ?? 0),
-				),
-			);
-			const invStatus =
-				totalPaidKop >= totalDueKop
-					? "paid"
-					: totalPaidKop > 0
-						? "partially_paid"
-						: inv.status;
-			await tx
-				.update(patientInvoices)
-				.set({
-					status: invStatus,
-					paidAt: invStatus === "paid" ? new Date() : null,
-				})
-				.where(
-					and(
-						eq(patientInvoices.id, inv.id),
-						eq(patientInvoices.organizationId, orgId),
-					),
-				);
+			await reconcileInvoiceBalanceInDb(tx, orgId, inv.id);
 		}
 
 		// Проверка переплаты по визиту и автоматическое зачисление сдачи на авансовый депозит (Мандат 8e)
 		const activeTreatmentItems = await tx
 			.select({
+				priceKopecks: treatmentItems.priceKopecks,
+				unitPriceKopecks: treatmentItems.unitPriceKopecks,
+				discountKopecks: treatmentItems.discountKopecks,
 				unitPriceRub: treatmentItems.unitPriceRub,
 				quantity: treatmentItems.quantity,
 				discountRub: treatmentItems.discountRub,
@@ -173,13 +99,23 @@ export async function processSettlementAndBomStage(
 
 		if (activeTreatmentItems.length > 0) {
 			const chargedVisitKopecks = sumKopecks(
-				activeTreatmentItems.map((item) =>
-					chargeLineKopecks({
+				activeTreatmentItems.map((item) => {
+					if (item.priceKopecks !== null && item.priceKopecks !== undefined && item.priceKopecks > 0n) {
+						return Number(item.priceKopecks);
+					}
+					if (item.unitPriceKopecks !== null && item.unitPriceKopecks !== undefined && item.unitPriceKopecks > 0n) {
+						const qty = Math.max(0, Number(item.quantity || 1));
+						const discKop = item.discountKopecks !== null && item.discountKopecks !== undefined
+							? Number(item.discountKopecks)
+							: 0;
+						return Math.max(0, Math.round(Number(item.unitPriceKopecks) * qty) - discKop);
+					}
+					return chargeLineKopecks({
 						unitPriceRub: item.unitPriceRub,
 						quantity: item.quantity,
 						discountRub: item.discountRub,
-					}),
-				),
+					});
+				}),
 			);
 
 			const existingVisitPayments = await tx

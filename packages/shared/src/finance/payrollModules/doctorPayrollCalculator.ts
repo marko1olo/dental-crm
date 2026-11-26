@@ -84,9 +84,18 @@ export function calculateDoctorPeriodPayroll(
 		? { ndfl13TaxKop: 0, ndfl15TaxKop: 0, ndflTaxKop: 0, isProgressiveApplied: false }
 		: calculateProgressiveNdflTax(grossPayout, input.cumulativeYtdGrossKop ?? 0);
 
-	const netToDoctor = Math.max(0, grossPayout - ndflCalculation.ndflTaxKop);
-	const advancePayoutKop = Math.max(0, input.advancePayoutKop ?? 0);
-	const mainPayoutKop = Math.max(0, netToDoctor - advancePayoutKop);
+	const priorDebtCarryOverKop = Math.max(0, Math.round(input.priorDebtCarryOverKop ?? 0));
+	const netAfterTaxKop = Math.max(0, grossPayout - ndflCalculation.ndflTaxKop);
+	const priorDebtDeductedKop = Math.min(netAfterTaxKop, priorDebtCarryOverKop);
+	const netToDoctor = Math.max(0, netAfterTaxKop - priorDebtDeductedKop);
+	const advancePayoutKop = Math.max(0, Math.round(input.advancePayoutKop ?? 0));
+	const preGuaranteeDeficitKop = !guaranteeApplied && preGuaranteePayout < 0 ? preGuaranteePayout : 0;
+	const signedNetBalanceKop =
+		preGuaranteeDeficitKop < 0
+			? preGuaranteeDeficitKop - advancePayoutKop - priorDebtCarryOverKop
+			: netAfterTaxKop - priorDebtCarryOverKop - advancePayoutKop;
+	const negativeCarryOverKop = signedNetBalanceKop < 0 ? -signedNetBalanceKop : 0;
+	const mainPayoutKop = Math.max(0, signedNetBalanceKop);
 	const npd6TaxKop = isSoloOrSelfEmployed ? percentageOfKopecks(grossPayout as Kopecks, 600) : 0;
 
 	return {
@@ -96,6 +105,12 @@ export function calculateDoctorPeriodPayroll(
 			? "Врач-стоматолог (Аренда кресла / Соло)"
 			: preset.titleRu,
 		periodLabelRu: `${input.periodStartIso} — ${input.periodEndIso}`,
+		identSalaryModel: input.identSalaryModel ?? "net_proportional_discount",
+		cashAdvancePolicy: input.cashAdvancePolicy ?? "proportional",
+		serviceSalaryPriceKop: serviceSummary.totalSalaryPriceKop,
+		priorDebtDeductedKop,
+		negativeCarryOverKop,
+		signedNetBalanceKop,
 		taxRegime: isSoloOrSelfEmployed ? "self_employed" : "employee",
 		payoutModel: isChairRental ? "chair_rental" : "percentage",
 		chairRentalMode: isChairRental ? chairRentalMode : undefined,

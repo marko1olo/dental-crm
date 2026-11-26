@@ -11,7 +11,7 @@ import {
 	type PayrollServiceOrder,
 	calculateDoctorPayrollSummary,
 } from "./payrollCatalogData";
-import { generateUuidV7, rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks, type CashAdvanceAllocationPolicy, type IdentSalaryModel } from "@dental/shared";
 import {
 	printDoctorPayslip,
 	copyPayslipToClipboard,
@@ -33,6 +33,10 @@ export interface DoctorPayrollTabPanelProps {
 	readonly isDemo: boolean;
 	readonly rub: (kop: number) => string;
 	readonly allDoctorsSummaries: readonly { readonly doctor: PayrollDoctorProfile; readonly summary: DoctorPayrollSummary }[];
+	readonly identSalaryModel?: IdentSalaryModel | undefined;
+	readonly onChangeIdentSalaryModel?: ((model: IdentSalaryModel) => void) | undefined;
+	readonly cashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
+	readonly onChangeCashAdvancePolicy?: ((policy: CashAdvanceAllocationPolicy) => void) | undefined;
 	readonly onSummaryCalculated?: ((summary: DoctorPayrollSummary, advanceRub: number, customPercent: number | null) => void) | undefined;
 }
 
@@ -48,6 +52,10 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 	isDemo,
 	rub,
 	allDoctorsSummaries,
+	identSalaryModel = "net_proportional_discount",
+	onChangeIdentSalaryModel,
+	cashAdvancePolicy = "proportional",
+	onChangeCashAdvancePolicy,
 	onSummaryCalculated,
 }) => {
 	const [shiftsCount, setShiftsCount] = useState<number>(0);
@@ -176,7 +184,17 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 				<div>
 					<div className="text-xs font-bold text-[var(--primary)]">Начислено врачу по ставке</div>
 					<div className="payroll-studio-hero-accrued mt-0.5">{rub(summary.doctorAccruedKopecks)}</div>
-					<div className="text-[11px] text-[var(--muted)] mt-1">{doctor.payoutModel === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? doctor.commissionPercent}% от чистой базы`}{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}</div>
+					<div className="text-[11px] text-[var(--muted)] mt-1">
+						{doctor.payoutModel === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? doctor.commissionPercent}% от чистой базы`}
+						{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}
+						{(summary.serviceSalaryPriceKopecks ?? 0) > 0 && ` • База по цене ЗП: ${rub(summary.serviceSalaryPriceKopecks ?? 0)}`}
+					</div>
+					{((summary.negativeCarryOverKopecks ?? 0) > 0 || (summary.priorDebtDeductedKopecks ?? 0) > 0) && (
+						<div className="text-[11px] font-medium text-[var(--danger)] mt-1">
+							{(summary.priorDebtDeductedKopecks ?? 0) > 0 && `Удержан долг прошлых периодов: −${rub(summary.priorDebtDeductedKopecks ?? 0)}`}
+							{(summary.negativeCarryOverKopecks ?? 0) > 0 && ` • Перенос долга на следующий период: ${rub(summary.negativeCarryOverKopecks ?? 0)}`}
+						</div>
+					)}
 				</div>
 				<div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--line)]">
 					<div className="text-xs text-[var(--muted)]">К выплате на руки (с учетом аванса и аренды):</div>
@@ -184,45 +202,73 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 				</div>
 			</div>
 
-			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
-				<div className="flex flex-wrap items-center gap-3">
-					{doctor.payoutModel === "chair_rental" ? (
-						<div className="flex items-center gap-2">
-							<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
-							<span className="text-[var(--muted)] font-mono tracking-tight tabular-nums">{shiftsCount} смен × {rub(doctor.defaultShiftRateKop)} = {rub(summary.chairRentalKopecks)}</span>
-							<button type="button" onClick={() => setShiftsCount((s) => Math.max(0, s - 1))} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Уменьшить количество смен">-</button>
-							<span className="font-bold px-1">{shiftsCount}</span>
-							<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Увеличить количество смен">+</button>
-						</div>
-					) : (
-						<div className="flex items-center gap-2">
-							<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
-							{[20, 25, 30, 35, 40].map((pct) => (
-								<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? doctor.commissionPercent ?? 25) === pct ? "bg-[var(--primary)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
+			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2.5 text-xs">
+				<div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--line)]">
+					<div className="flex flex-wrap items-center gap-1.5">
+						<span className="font-semibold text-[var(--ink)]">База начисления:</span>
+						<div className="p-1 bg-[var(--paper)] rounded-xl border border-[var(--line)] inline-flex items-center gap-1">
+							{([
+								{ id: "gross_before_discount", label: "От прайса" },
+								{ id: "net_proportional_discount", label: "Пропорционально скидке" },
+								{ id: "net_doctor_bears_discount", label: "Скидка с врача" },
+							] as const).map((m) => (
+								<button key={m.id} type="button" onClick={() => onChangeIdentSalaryModel?.(m.id)} className={`h-8 px-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${identSalaryModel === m.id ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{m.label}</button>
 							))}
 						</div>
-					)}
-					<div className="flex items-center gap-1.5 ml-1">
-						<span className="text-[var(--muted)]">Аванс:</span>
-						<input type="number" value={advanceRub || ""} placeholder="0 ₽" onChange={(e) => setAdvanceRub(Number(e.target.value) || 0)} className="w-20 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]" />
-						<button type="button" onClick={handlePayAdvance} className="min-h-[30px] px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" title="Выплатить аванс">Выплатить аванс</button>
+					</div>
+					<div className="flex flex-wrap items-center gap-1.5">
+						<span className="font-semibold text-[var(--ink)]">Частичная оплата:</span>
+						<div className="p-1 bg-[var(--paper)] rounded-xl border border-[var(--line)] inline-flex items-center gap-1">
+							{([
+								{ id: "clinic_first", label: "Сначала клиника" },
+								{ id: "doctor_first", label: "Сначала врач" },
+								{ id: "proportional", label: "Пропорционально" },
+							] as const).map((p) => (
+								<button key={p.id} type="button" onClick={() => onChangeCashAdvancePolicy?.(p.id)} className={`h-8 px-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${cashAdvancePolicy === p.id ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink-muted)] hover:text-[var(--ink)]"}`}>{p.label}</button>
+							))}
+						</div>
 					</div>
 				</div>
-				<div className="flex items-center gap-2">
-					<button type="button" onClick={handleExportExcel} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Экспорт ведомости в Excel"><FileSpreadsheet className="w-3.5 h-3.5" /><span>В Excel</span></button>
-					<button type="button" onClick={() => printDoctorPayslip(calcCompat, doctor, clinicName)} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать расчетный листок (А5)"><Printer className="w-3.5 h-3.5" /><span>Листок А5</span></button>
-					<button type="button" onClick={handleSendMessenger} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Отправить расчет в мессенджер"><Send className="w-3.5 h-3.5" /><span>В мессенджер</span></button>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="flex flex-wrap items-center gap-3">
+						{doctor.payoutModel === "chair_rental" ? (
+							<div className="flex items-center gap-2">
+								<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
+								<span className="text-[var(--muted)] font-mono tracking-tight tabular-nums">{shiftsCount} смен × {rub(doctor.defaultShiftRateKop)} = {rub(summary.chairRentalKopecks)}</span>
+								<button type="button" onClick={() => setShiftsCount((s) => Math.max(0, s - 1))} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Уменьшить количество смен">-</button>
+								<span className="font-bold px-1">{shiftsCount}</span>
+								<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="min-h-[36px] min-w-[36px] h-9 w-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold flex items-center justify-center hover:bg-[var(--paper-soft)] cursor-pointer" title="Увеличить количество смен">+</button>
+							</div>
+						) : (
+							<div className="flex items-center gap-2">
+								<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
+								{[20, 25, 30, 35, 40].map((pct) => (
+									<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? doctor.commissionPercent ?? 25) === pct ? "bg-[var(--primary)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
+								))}
+							</div>
+						)}
+						<div className="flex items-center gap-1.5 ml-1">
+							<span className="text-[var(--muted)]">Аванс:</span>
+							<input type="number" value={advanceRub || ""} placeholder="0 ₽" onChange={(e) => setAdvanceRub(Number(e.target.value) || 0)} className="w-20 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]" />
+							<button type="button" onClick={handlePayAdvance} className="min-h-[30px] px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" title="Выплатить аванс">Выплатить аванс</button>
+						</div>
+					</div>
+					<div className="flex items-center gap-2">
+						<button type="button" onClick={handleExportExcel} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Экспорт ведомости в Excel"><FileSpreadsheet className="w-3.5 h-3.5" /><span>В Excel</span></button>
+						<button type="button" onClick={() => printDoctorPayslip(calcCompat, doctor, clinicName)} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать расчетный листок (А5)"><Printer className="w-3.5 h-3.5" /><span>Листок А5</span></button>
+						<button type="button" onClick={handleSendMessenger} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Отправить расчет в мессенджер"><Send className="w-3.5 h-3.5" /><span>В мессенджер</span></button>
+					</div>
 				</div>
 			</div>
 
 			<div className="hidden sm:block payroll-studio-table-container">
 				<table className="payroll-studio-table">
 					<thead>
-						<tr><th>Наряд / Дата</th><th>Пациент</th><th>Услуга</th><th className="text-right">Кассовый чек</th><th className="text-right">ЗТЛ</th><th className="text-right">Материалы</th><th className="text-right">Чистая база</th><th className="text-right">Врачу</th></tr>
+						<tr><th>Наряд / Дата</th><th>Пациент</th><th>Услуга</th><th className="text-right">Кассовый чек</th><th className="text-right">Цена для ЗП</th><th className="text-right">ЗТЛ</th><th className="text-right">Материалы</th><th className="text-right">Чистая база</th><th className="text-right">Врачу</th></tr>
 					</thead>
 					<tbody>
 						{doctorOrders.length === 0 ? (
-							<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
+							<tr><td colSpan={9} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
 						) : (
 							doctorOrders.map((ord) => {
 								const { netBase, fee } = calculateOrderNetAndFee(ord, doctor, customPercent);
@@ -231,7 +277,9 @@ export const DoctorPayrollTabPanel: React.FC<DoctorPayrollTabPanelProps> = ({
 										<td className="font-mono font-medium"><div>{ord.orderNumber}</div><div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div></td>
 										<td className="font-medium"><div>{ord.patientName}</div><div className="text-[10px] text-[var(--muted)]">Карта: {ord.medicalCardNumber}</div></td>
 										<td><div className="truncate max-w-[200px]">{ord.serviceNameRu}</div><span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] text-[var(--muted)]">{ord.categoryLabelRu}</span></td>
-										<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td><td className="text-right text-[var(--danger)]">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
+										<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td>
+										<td className="text-right font-mono text-[var(--ink-muted)]">{ord.salaryPriceKopecks !== undefined ? rub(ord.salaryPriceKopecks) : "—"}</td>
+										<td className="text-right text-[var(--danger)]">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
 										<td className="text-right text-[var(--warning)]">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td><td className="text-right font-medium">{rub(netBase)}</td>
 										<td className="text-right font-bold text-[var(--primary)]">{rub(fee)}</td>
 									</tr>

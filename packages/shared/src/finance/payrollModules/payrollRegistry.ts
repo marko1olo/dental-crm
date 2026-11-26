@@ -11,6 +11,7 @@ export * from "./payrollRules.js";
 export * from "./progressiveNdflCalculator.js";
 export * from "./doctorFilterAndResolver.js";
 export * from "./doctorServiceCostHelper.js";
+export * from "./identSalaryModelHelper.js";
 export * from "./doctorServiceItemCalculator.js";
 export * from "./doctorRefundProcessor.js";
 export * from "./doctorRentalAndBonusEngine.js";

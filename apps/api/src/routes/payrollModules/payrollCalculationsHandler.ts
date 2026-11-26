@@ -102,6 +102,10 @@ export async function getPayrollCalculationsHandler(
 	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
 	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
 
+	const identSalaryModel = q.identSalaryModel ?? "net_proportional_discount";
+	const cashAdvancePolicy = q.cashAdvancePolicy ?? "proportional";
+	const manualCarryOverKop = q.carryOverDebtKopecks !== undefined ? Math.max(0, Number(q.carryOverDebtKopecks) || 0) : undefined;
+
 	if (rawDocId === "all") {
 		const consolidated = await withTenantCtx(orgId, async (tx) => {
 			const activeDoctors = await fetchActiveDoctorProfiles(orgId, tx);
@@ -118,7 +122,7 @@ export async function getPayrollCalculationsHandler(
 			const doctorSummaries: Record<string, unknown> = {};
 
 			for (const doc of activeDoctors) {
-				const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
+				const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 					orgId,
 					resolvedDocId: doc.id,
 					fromStr,
@@ -150,6 +154,9 @@ export async function getPayrollCalculationsHandler(
 					taxRegime: doc.taxRegime,
 					refundDeductions,
 					unallocatedLabKop,
+					identSalaryModel,
+					cashAdvancePolicy,
+					priorDebtCarryOverKop: manualCarryOverKop ?? priorDebtCarryOverKop,
 				});
 
 				const { closedPeriods, statements } = await fetchClosedPayrollStatements(orgId, doc.id, doc.name, tx);
@@ -169,7 +176,10 @@ export async function getPayrollCalculationsHandler(
 					doctorId: doc.id,
 					doctorName: doc.name,
 					schemeType: isRental ? "chair_rental" : "net_percentage",
+					identSalaryModel: payrollResult.identSalaryModel,
+					cashAdvancePolicy: payrollResult.cashAdvancePolicy,
 					totalGrossKopecks: payrollResult.totalGrossRevenueKop,
+					serviceSalaryPriceKopecks: payrollResult.serviceSalaryPriceKop ?? 0,
 					totalLabCostKopecks: payrollResult.totalLabDeductionsKop,
 					totalMaterialCostKopecks: payrollResult.totalMaterialDeductionsKop,
 					totalNetBaseKopecks: payrollResult.totalNetBaseKop,
@@ -177,6 +187,9 @@ export async function getPayrollCalculationsHandler(
 					chairRentalKopecks: payrollResult.chairRentalKop || 0,
 					advanceKopecks: payrollResult.advancePayoutKop || 0,
 					ndfl13TaxKopecks: payrollResult.ndfl13TaxKop || 0,
+					priorDebtDeductedKopecks: payrollResult.priorDebtDeductedKop ?? 0,
+					negativeCarryOverKopecks: payrollResult.negativeCarryOverKop ?? 0,
+					signedNetBalanceKopecks: payrollResult.signedNetBalanceKop ?? (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop),
 					payoutKopecks: payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop,
 					payoutStatus: isDocPaidRko ? "paid_rko" : "accrued",
 					rkoNumber: isDocPaidRko ? (statements[0]?.rkoNumber || null) : null,
@@ -268,7 +281,7 @@ export async function getPayrollCalculationsHandler(
 		const customRate = q.commissionPercent !== undefined ? Number(q.commissionPercent) : (q.percent !== undefined ? Number(q.percent) : undefined);
 		const basePercent = customRate !== undefined && !Number.isNaN(customRate) ? customRate : (resolvedPct ? Number(resolvedPct) : 25);
 
-		const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
+		const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 			orgId,
 			resolvedDocId,
 			fromStr,
@@ -299,6 +312,9 @@ export async function getPayrollCalculationsHandler(
 			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
 			refundDeductions,
 			unallocatedLabKop,
+			identSalaryModel,
+			cashAdvancePolicy,
+			priorDebtCarryOverKop: manualCarryOverKop ?? priorDebtCarryOverKop,
 		});
 
 		const { closedPeriods, statements } = await fetchClosedPayrollStatements(orgId, resolvedDocId, doctorName, tx);
@@ -310,7 +326,10 @@ export async function getPayrollCalculationsHandler(
 				doctorId: resolvedDocId,
 				doctorName,
 				schemeType: payrollResult.payoutModel === "chair_rental" ? "chair_rental" : "net_percentage",
+				identSalaryModel: payrollResult.identSalaryModel,
+				cashAdvancePolicy: payrollResult.cashAdvancePolicy,
 				totalGrossKopecks: payrollResult.totalGrossRevenueKop,
+				serviceSalaryPriceKopecks: payrollResult.serviceSalaryPriceKop ?? 0,
 				totalLabCostKopecks: payrollResult.totalLabDeductionsKop,
 				totalMaterialCostKopecks: payrollResult.totalMaterialDeductionsKop,
 				totalNetBaseKopecks: payrollResult.totalNetBaseKop,
@@ -318,6 +337,9 @@ export async function getPayrollCalculationsHandler(
 				chairRentalKopecks: payrollResult.chairRentalKop || 0,
 				advanceKopecks: payrollResult.advancePayoutKop || 0,
 				ndfl13TaxKopecks: payrollResult.ndfl13TaxKop || 0,
+				priorDebtDeductedKopecks: payrollResult.priorDebtDeductedKop ?? 0,
+				negativeCarryOverKopecks: payrollResult.negativeCarryOverKop ?? 0,
+				signedNetBalanceKopecks: payrollResult.signedNetBalanceKop ?? (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop),
 				payoutKopecks: payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop,
 				payoutStatus: statements[0]?.isFinalized ? "paid_rko" : "accrued",
 				servicesCount: orders.length,

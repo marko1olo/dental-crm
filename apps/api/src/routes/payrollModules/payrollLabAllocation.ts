@@ -2,13 +2,18 @@
  * payrollLabAllocation.ts — Service & dental lab (ZTL) cost allocation for doctor payroll.
  */
 
-import type { DoctorCompletedServiceItem } from "@dental/shared";
+import { rublesToKopecks, type DoctorCompletedServiceItem } from "@dental/shared";
 import {
 	CATEGORY_LABELS_RU,
-	getTreatmentItemGrossKopecks,
+	getTreatmentItemPricingKopecks,
 	normalizeClinicalCategory,
 	type PayrollOrderDto,
 } from "./payrollTypesAndQueries.js";
+
+export interface PricelistSalaryRuleMatch {
+	salaryPriceKop?: number | undefined;
+	customCommissionPercent?: number | undefined;
+}
 
 export interface TrackedDoctorLabOrder {
 	id: string;
@@ -44,6 +49,59 @@ export interface PayrollTreatmentRow {
 	specialty: string | null;
 	code: string | null;
 	order804nCode: string | null;
+	tierPrices?: unknown;
+}
+
+function resolveTierSalaryPriceKop(tierPrices: unknown): number | undefined {
+	if (!tierPrices || typeof tierPrices !== "object") return undefined;
+	const record = tierPrices as Record<string, unknown>;
+	if (typeof record.salaryPriceKopecks === "number" && Number.isFinite(record.salaryPriceKopecks) && record.salaryPriceKopecks >= 0) {
+		return Math.round(record.salaryPriceKopecks);
+	}
+	if (typeof record.salaryPriceRub === "number" && Number.isFinite(record.salaryPriceRub) && record.salaryPriceRub >= 0) {
+		return rublesToKopecks(record.salaryPriceRub);
+	}
+	return undefined;
+}
+
+function allocateVisitPaidProportional(
+	treats: PayrollTreatmentRow[],
+	totalGrossByVisit: Map<string, number>,
+	paidKopByVisit: Map<string, number>,
+): Map<string, number> {
+	const result = new Map<string, number>();
+	const byVisit = new Map<string, { id: string; grossKop: number }[]>();
+	for (const t of treats) {
+		if (!t.visitId) continue;
+		const gKop = getTreatmentItemPricingKopecks(t).grossKop;
+		const list = byVisit.get(t.visitId) ?? [];
+		list.push({ id: t.id, grossKop: gKop });
+		byVisit.set(t.visitId, list);
+	}
+
+	for (const [visitId, items] of byVisit) {
+		const visitTotalGross = totalGrossByVisit.get(visitId) || 0;
+		const visitPaidTotal = paidKopByVisit.get(visitId) || 0;
+		if (visitTotalGross <= 0 || visitPaidTotal <= 0) continue;
+		if (visitPaidTotal >= visitTotalGross) {
+			for (const it of items) result.set(it.id, it.grossKop);
+			continue;
+		}
+		let remainingPaid = Math.min(visitPaidTotal, visitTotalGross);
+		for (let i = 0; i < items.length; i++) {
+			const it = items[i];
+			if (!it) continue;
+			const share = i === items.length - 1
+				? Math.min(it.grossKop, remainingPaid)
+				: Math.min(
+					it.grossKop,
+					Math.min(remainingPaid, Number((BigInt(visitPaidTotal) * BigInt(it.grossKop)) / BigInt(visitTotalGross))),
+				);
+			remainingPaid = Math.max(0, remainingPaid - share);
+			result.set(it.id, share);
+		}
+	}
+	return result;
 }
 
 export function buildPayrollServicesAndAllocateLabOrders(params: {
@@ -56,6 +114,7 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 	fiscalReceiptByVisit: Map<string, string>;
 	trackedLabOrders: TrackedDoctorLabOrder[];
 	matCostByTreatmentId: Map<string, number>;
+	salaryRuleByServiceKey?: Map<string, PricelistSalaryRuleMatch> | undefined;
 	resolvedDocId: string;
 	fromStr: string;
 	toStr: string;
@@ -70,10 +129,10 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 		visitToAppt,
 		totalGrossByVisit,
 		paidKopByVisit,
-		remainingPaidKopByVisit,
 		fiscalReceiptByVisit,
 		trackedLabOrders,
 		matCostByTreatmentId,
+		salaryRuleByServiceKey,
 		resolvedDocId,
 		fromStr,
 		toStr,
@@ -81,23 +140,28 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 
 	const orders: PayrollOrderDto[] = [];
 	const completedServices: DoctorCompletedServiceItem[] = [];
+	const proportionalPaidByItemId = allocateVisitPaidProportional(treats, totalGrossByVisit, paidKopByVisit);
 
 	for (const t of treats) {
-		const grossKop = getTreatmentItemGrossKopecks(t);
+		const pricing = getTreatmentItemPricingKopecks(t);
+		const grossKop = pricing.grossKop;
 		const visitId = t.visitId;
 		const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
 		const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
+		const actuallyPaidGrossKop = proportionalPaidByItemId.get(t.id) ?? (
+			visitId && visitTotalGross > 0 && visitPaidTotal >= visitTotalGross ? grossKop : 0
+		);
 
-		let actuallyPaidGrossKop = 0;
-		if (visitId && visitTotalGross > 0 && visitPaidTotal > 0) {
-			if (visitPaidTotal >= visitTotalGross) {
-				actuallyPaidGrossKop = grossKop;
-			} else {
-				const remaining = remainingPaidKopByVisit.get(visitId) || 0;
-				actuallyPaidGrossKop = Math.min(grossKop, remaining);
-				remainingPaidKopByVisit.set(visitId, Math.max(0, remaining - actuallyPaidGrossKop));
-			}
-		}
+		const codeKey = t.code ? `code:${t.code.trim().toLowerCase()}` : "";
+		const orderCodeKey = t.order804nCode ? `code:${t.order804nCode.trim().toLowerCase()}` : "";
+		const titleKey = t.title ? `name:${t.title.trim().toLowerCase()}` : "";
+		const matchedRule =
+			(codeKey && salaryRuleByServiceKey?.get(codeKey)) ||
+			(orderCodeKey && salaryRuleByServiceKey?.get(orderCodeKey)) ||
+			(titleKey && salaryRuleByServiceKey?.get(titleKey)) ||
+			undefined;
+		const tierSalaryPriceKop = resolveTierSalaryPriceKop(t.tierPrices);
+		const salaryPriceKop = matchedRule?.salaryPriceKop ?? tierSalaryPriceKop;
 
 		const isPaid = actuallyPaidGrossKop > 0;
 		const isDebt = actuallyPaidGrossKop <= 0 && grossKop > 0;
@@ -155,6 +219,10 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 			serviceNameRu: serviceTitle,
 			category: cat,
 			grossRevenueKop: grossKop,
+			listPriceKop: pricing.listPriceKop,
+			discountKop: pricing.discountKop,
+			salaryPriceKop,
+			customCommissionPercent: matchedRule?.customCommissionPercent,
 			labCostKop: labKop,
 			materialCostKop: matKop,
 			doctorId: resolvedDocId,
@@ -189,6 +257,9 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 			category: cat,
 			categoryLabelRu: catLabelRu,
 			grossKopecks: grossKop,
+			listPriceKopecks: pricing.listPriceKop,
+			discountKopecks: pricing.discountKop,
+			salaryPriceKopecks: salaryPriceKop,
 			labCostKopecks: labKop,
 			materialCostKopecks: matKop,
 			doctorId: resolvedDocId,

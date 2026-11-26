@@ -14,6 +14,7 @@ import {
 	labOrders,
 	patients,
 	payments,
+	pricelistDoctorPayrolls,
 	serviceCatalogItems,
 	treatmentItems,
 	visits,
@@ -251,6 +252,7 @@ export async function fetchDoctorPayrollDataset(params: {
 					specialty: serviceCatalogItems.specialty,
 					code: serviceCatalogItems.code,
 					order804nCode: serviceCatalogItems.order804nCode,
+					tierPrices: serviceCatalogItems.tierPrices,
 				})
 				.from(treatmentItems)
 				.leftJoin(
@@ -262,6 +264,35 @@ export async function fetchDoctorPayrollDataset(params: {
 				)
 				.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.visitId, visitIds)))
 			: [];
+
+		const pricelistRules = await dbClient
+			.select({
+				serviceCode: pricelistDoctorPayrolls.serviceCode,
+				serviceName: pricelistDoctorPayrolls.serviceName,
+				doctorPayrollPercent: pricelistDoctorPayrolls.doctorPayrollPercent,
+				doctorPayrollKopecks: pricelistDoctorPayrolls.doctorPayrollKopecks,
+				doctorPayrollRub: pricelistDoctorPayrolls.doctorPayrollRub,
+			})
+			.from(pricelistDoctorPayrolls)
+			.where(eq(pricelistDoctorPayrolls.organizationId, orgId));
+
+		const salaryRuleByServiceKey = new Map<string, { salaryPriceKop?: number | undefined; customCommissionPercent?: number | undefined }>();
+		for (const pr of pricelistRules) {
+			const salaryPriceKopRaw = pr.doctorPayrollKopecks != null && Number(pr.doctorPayrollKopecks) > 0
+				? Number(pr.doctorPayrollKopecks)
+				: (Number(pr.doctorPayrollRub || 0) > 0 ? rublesToKopecks(Number(pr.doctorPayrollRub || 0)) : undefined);
+			const customPctRaw = Number(pr.doctorPayrollPercent || 0) > 0 ? Number(pr.doctorPayrollPercent) : undefined;
+			const ruleVal = {
+				salaryPriceKop: salaryPriceKopRaw,
+				customCommissionPercent: customPctRaw,
+			};
+			if (pr.serviceCode?.trim()) {
+				salaryRuleByServiceKey.set(`code:${pr.serviceCode.trim().toLowerCase()}`, ruleVal);
+			}
+			if (pr.serviceName?.trim()) {
+				salaryRuleByServiceKey.set(`name:${pr.serviceName.trim().toLowerCase()}`, ruleVal);
+			}
+		}
 
 		const totalGrossByVisit = new Map<string, number>();
 		for (const t of treats) {
@@ -296,11 +327,15 @@ export async function fetchDoctorPayrollDataset(params: {
 				),
 			);
 
-		// Защита от повторного списания ЗТЛ по закрытым ведомостям врача
+		// Защита от повторного списания ЗТЛ и учет переносимого долга по закрытым ведомостям врача
 		let eligibleLabOrders = docLabOrders;
+		let priorDebtCarryOverKop = 0;
 		const closedStatements = await dbClient
 			.select({
 				period: doctorPayrollStatements.period,
+				netPayoutKopecks: doctorPayrollStatements.netPayoutKopecks,
+				netPayoutRub: doctorPayrollStatements.netPayoutRub,
+				createdAt: doctorPayrollStatements.createdAt,
 			})
 			.from(doctorPayrollStatements)
 			.where(
@@ -309,16 +344,27 @@ export async function fetchDoctorPayrollDataset(params: {
 					eq(doctorPayrollStatements.doctorId, resolvedDocId),
 					eq(doctorPayrollStatements.isFinalized, true),
 				),
-			);
+			)
+			.orderBy(sql`${doctorPayrollStatements.period} desc, ${doctorPayrollStatements.createdAt} desc`);
 
 		if (closedStatements.length > 0) {
 			const currentMonthKey = fromStr.slice(0, 7);
 			const currentExactKey = `${fromStr.slice(0, 10)}..${toStr.slice(0, 10)}`;
 			const closedRanges: { start: number; end: number }[] = [];
+			let foundLatestPrior = false;
 
 			for (const cs of closedStatements) {
 				if (cs.period === currentMonthKey || cs.period === currentExactKey) {
 					continue;
+				}
+				if (!foundLatestPrior && cs.period < currentMonthKey) {
+					foundLatestPrior = true;
+					const priorPayoutKop = cs.netPayoutKopecks != null
+						? Number(cs.netPayoutKopecks)
+						: rublesToKopecks(Number(cs.netPayoutRub || 0));
+					if (priorPayoutKop < 0) {
+						priorDebtCarryOverKop = Math.abs(priorPayoutKop);
+					}
 				}
 				const parsed = parseClosedPeriodRange(cs.period);
 				if (parsed) {
@@ -448,6 +494,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			fiscalReceiptByVisit,
 			trackedLabOrders,
 			matCostByTreatmentId,
+			salaryRuleByServiceKey,
 			resolvedDocId,
 			fromStr,
 			toStr,
@@ -459,6 +506,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			completedServices: builtServices,
 			refundDeductions,
 			unallocatedLabKop,
+			priorDebtCarryOverKop,
 		};
 	};
 

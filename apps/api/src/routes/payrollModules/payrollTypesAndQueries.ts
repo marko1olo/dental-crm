@@ -33,6 +33,9 @@ export interface PayrollOrderDto {
 	category: string;
 	categoryLabelRu: string;
 	grossKopecks: number;
+	listPriceKopecks?: number | undefined;
+	discountKopecks?: number | undefined;
+	salaryPriceKopecks?: number | undefined;
 	labCostKopecks: number;
 	materialCostKopecks: number;
 	doctorId: string;
@@ -74,6 +77,38 @@ export interface DoctorPayrollDatasetResult {
 	completedServices: DoctorCompletedServiceItem[];
 	refundDeductions: DoctorRefundDeductionItem[];
 	unallocatedLabKop?: number;
+	priorDebtCarryOverKop?: number;
+}
+
+export interface TreatmentItemPricingKopecks {
+	grossKop: number;
+	listPriceKop: number;
+	discountKop: number;
+}
+
+export function getTreatmentItemPricingKopecks(t: {
+	priceKopecks?: bigint | number | null | undefined;
+	priceRub?: number | string | null | undefined;
+	unitPriceKopecks?: bigint | number | null | undefined;
+	unitPriceRub?: number | string | null | undefined;
+	discountKopecks?: bigint | number | null | undefined;
+	discountRub?: number | string | null | undefined;
+	quantity?: number | string | null | undefined;
+}): TreatmentItemPricingKopecks {
+	const parsedQty = Number(t.quantity ?? 1);
+	const qty = Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : 1;
+	const discKop =
+		t.discountKopecks != null && Number(t.discountKopecks) > 0
+			? Number(t.discountKopecks)
+			: rublesToKopecks(Math.max(0, Number(t.discountRub || 0)));
+	const unitKop =
+		t.unitPriceKopecks != null && Number(t.unitPriceKopecks) > 0
+			? Number(t.unitPriceKopecks)
+			: rublesToKopecks(Math.max(0, Number(t.unitPriceRub || 0)));
+	const grossKop = getTreatmentItemGrossKopecks(t);
+	const computedListKop = unitKop > 0 ? multiplyKopecksFractional(unitKop, qty) : 0;
+	const listPriceKop = Math.max(grossKop + discKop, computedListKop);
+	return { grossKop, listPriceKop, discountKop: discKop };
 }
 
 export function getTreatmentItemGrossKopecks(t: {

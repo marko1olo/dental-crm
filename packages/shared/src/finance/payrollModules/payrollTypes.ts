@@ -7,6 +7,16 @@
 import type { DoctorPayrollStornoLineItem, DoctorRefundDeductionItem } from "./payrollRefundTypes.js";
 export * from "./payrollRefundTypes.js";
 
+export type IdentSalaryModel =
+	| "gross_before_discount"
+	| "net_proportional_discount"
+	| "net_doctor_bears_discount";
+
+export type CashAdvanceAllocationPolicy =
+	| "clinic_first"
+	| "doctor_first"
+	| "proportional";
+
 export interface DoctorCompletedServiceItem {
 	readonly id: string;
 	readonly dateIso: string;
@@ -15,6 +25,9 @@ export interface DoctorCompletedServiceItem {
 	readonly serviceNameRu: string;
 	readonly category: "therapy" | "orthopedics" | "surgery" | "orthodontics" | "hygiene" | "retail_hygiene" | "pediatric";
 	readonly grossRevenueKop: number;
+	readonly listPriceKop?: number | undefined;
+	readonly discountKop?: number | undefined;
+	readonly salaryPriceKop?: number | undefined;
 	readonly labCostKop: number;
 	readonly materialCostKop: number;
 	readonly customCommissionPercent?: number | undefined;
@@ -69,6 +82,9 @@ export interface DoctorPayrollCalculationInput {
 	readonly applyMinimumGuarantee?: boolean | undefined;
 	readonly guaranteeDaysRatio?: number | undefined;
 	readonly unallocatedLabKop?: number | undefined;
+	readonly identSalaryModel?: IdentSalaryModel | undefined;
+	readonly cashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
+	readonly priorDebtCarryOverKop?: number | undefined;
 }
 
 export interface DoctorPayrollResult {
@@ -76,6 +92,12 @@ export interface DoctorPayrollResult {
 	readonly doctorName: string;
 	readonly specialtyTitleRu: string;
 	readonly periodLabelRu: string;
+	readonly identSalaryModel?: IdentSalaryModel | undefined;
+	readonly cashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
+	readonly serviceSalaryPriceKop?: number | undefined;
+	readonly priorDebtDeductedKop?: number | undefined;
+	readonly negativeCarryOverKop?: number | undefined;
+	readonly signedNetBalanceKop?: number | undefined;
 	readonly taxRegime?: "employee" | "self_employed" | undefined;
 	readonly payoutModel?: "percentage" | "chair_rental" | undefined;
 	readonly chairRentalMode?: "fixed" | "split_70_30" | undefined;

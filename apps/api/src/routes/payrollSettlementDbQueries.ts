@@ -177,7 +177,7 @@ export async function closeSettlementPeriodInDb(
 		const penaltiesKop = params.penaltiesTotalKopecks ?? rublesToKopecks(params.penaltiesTotalRub ?? 0);
 		const totalAccruedKop = params.totalAccruedKopecks ?? (pieceworkKop + fixedSalaryKop + serviceSalaryKop + bonusesKop - penaltiesKop);
 		const ndflKop = params.ndfl13Kopecks ?? rublesToKopecks(params.ndfl13Rub ?? 0);
-		const payoutKop = params.netPayoutKopecks ?? Math.max(0, totalAccruedKop - ndflKop);
+		const payoutKop = params.netPayoutKopecks ?? (totalAccruedKop - ndflKop - penaltiesKop);
 
 		const grossRub = params.grossRevenueRub ?? kopecksToRubles(grossKop);
 		const labRub = params.labCostRub ?? kopecksToRubles(labKop);
@@ -224,7 +224,7 @@ export async function closeSettlementPeriodInDb(
 					netPayoutKopecks: payoutKop,
 					isFinalized: true,
 					rkoNumber: rkoNumber,
-					paidAt: params.markPaid ? now : existingRows[0].paidAt,
+					paidAt: params.markPaid && payoutKop > 0 ? now : existingRows[0].paidAt,
 					updatedAt: now,
 				})
 				.where(
@@ -275,7 +275,7 @@ export async function closeSettlementPeriodInDb(
 					netPayoutKopecks: payoutKop,
 					isFinalized: true,
 					rkoNumber: rkoNumber,
-					paidAt: params.markPaid ? now : null,
+					paidAt: params.markPaid && payoutKop > 0 ? now : null,
 					createdAt: now,
 					updatedAt: now,
 				})

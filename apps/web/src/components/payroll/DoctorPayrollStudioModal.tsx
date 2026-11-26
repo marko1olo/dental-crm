@@ -4,8 +4,20 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Check, X, FileCheck, Coins, Users, ListFilter, History } from "lucide-react";
-import { type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus, type DoctorPayrollSummary, type PayrollServiceOrder, type ClosedPayrollPeriodItem, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS, CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary } from "./payrollCatalogData";
-import { kopecksToRubles } from "@dental/shared";
+import {
+	type PayrollDoctorProfile,
+	type PayrollPeriodPreset,
+	type PayrollPayoutStatus,
+	type DoctorPayrollSummary,
+	type PayrollServiceOrder,
+	type ClosedPayrollPeriodItem,
+	CANONICAL_PAYROLL_DOCTORS,
+	CANONICAL_DEMO_ORDERS,
+	CANONICAL_CLOSED_PERIODS,
+	getQuickPeriodDates,
+	calculateDoctorPayrollSummary,
+} from "./payrollCatalogData";
+import { kopecksToRubles, type CashAdvanceAllocationPolicy, type IdentSalaryModel } from "@dental/shared";
 import { printDoctorPayslip, buildDoctorPayrollCalculation, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
@@ -105,6 +117,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [activeTabDoctorSummary, setActiveTabDoctorSummary] = useState<DoctorPayrollSummary | null>(null);
 	const [activeTabAdvanceRub, setActiveTabAdvanceRub] = useState<number>(0);
 	const [activeTabCustomPercent, setActiveTabCustomPercent] = useState<number | null>(null);
+	const [identSalaryModel, setIdentSalaryModel] = useState<IdentSalaryModel>("net_proportional_discount");
+	const [cashAdvancePolicy, setCashAdvancePolicy] = useState<CashAdvanceAllocationPolicy>("proportional");
 	const [payoutStatus, setPayoutStatus] = useState<PayrollPayoutStatus>("accrued");
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -131,6 +145,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			doctorId: "all",
 			from: periodDates.startIso,
 			to: periodDates.endIso,
+			identSalaryModel,
+			cashAdvancePolicy,
 		};
 		if (activeTabCustomPercent !== null) {
 			queryObj.commissionPercent = String(activeTabCustomPercent);
@@ -161,7 +177,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			})
 			.catch(() => {});
 		return () => { cancelled = true; };
-	}, [isDemo, isOpen, periodDates, periodPreset, selectedDoctor, activeTabCustomPercent]);
+	}, [isDemo, isOpen, periodDates, periodPreset, selectedDoctor, activeTabCustomPercent, identSalaryModel, cashAdvancePolicy]);
 
 	const effectiveDoctorSummary: DoctorPayrollSummary = useMemo(() => {
 		if (activeTabDoctorSummary && selectedDoctor && activeTabDoctorSummary.doctorId === selectedDoctor.id) {
@@ -193,6 +209,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				advanceKopecks: cached.advanceKopecks ?? 0,
 				ndfl13TaxKopecks: cached.ndfl13TaxKopecks ?? 0,
 				payoutKopecks: cached.payoutKopecks ?? 0,
+				serviceSalaryPriceKopecks: cached.serviceSalaryPriceKopecks ?? 0,
+				priorDebtDeductedKopecks: cached.priorDebtDeductedKopecks ?? 0,
+				negativeCarryOverKopecks: cached.negativeCarryOverKopecks ?? 0,
 				payoutStatus,
 				servicesCount: cached.servicesCount ?? 0,
 				minimumGuaranteeApplied: Boolean(cached.minimumGuaranteeApplied),
@@ -228,7 +247,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			if (activeTab === "summary") {
 				await closeSettlementPeriodApi({
 					doctorId: "all", periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
-					payoutModel: "percentage", chairRentalRub: 0, advanceRub: 0, grossRevenueKop: clinicTotals.gross,
+					payoutModel: "percentage", identSalaryModel, cashAdvancePolicy, chairRentalRub: 0, advanceRub: 0, grossRevenueKop: clinicTotals.gross,
 					labCostKop: clinicTotals.lab, materialCostKop: clinicTotals.materials, netBaseKop: clinicTotals.netBase, categoryPercent: 0,
 					totalAccruedKop: clinicTotals.accrued, ndflKop: clinicTotals.ndfl, netPayoutKop: clinicTotals.payout, markPaid: true,
 				});
@@ -239,7 +258,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				}
 				await closeSettlementPeriodApi({
 					doctorId: selectedDoctor.id, periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
-					payoutModel: selectedDoctor.payoutModel, chairRentalKopecks: effectiveDoctorSummary.chairRentalKopecks, chairRentalRub: effectiveDoctorSummary.chairRentalKopecks > 0 ? kopecksToRubles(effectiveDoctorSummary.chairRentalKopecks) : 0,
+					payoutModel: selectedDoctor.payoutModel, identSalaryModel, cashAdvancePolicy, chairRentalKopecks: effectiveDoctorSummary.chairRentalKopecks, chairRentalRub: effectiveDoctorSummary.chairRentalKopecks > 0 ? kopecksToRubles(effectiveDoctorSummary.chairRentalKopecks) : 0,
 					advanceRub: activeTabAdvanceRub, grossRevenueKop: effectiveDoctorSummary.totalGrossKopecks, labCostKop: effectiveDoctorSummary.totalLabCostKopecks,
 					materialCostKop: effectiveDoctorSummary.totalMaterialCostKopecks, netBaseKop: effectiveDoctorSummary.totalNetBaseKopecks,
 					categoryPercent: activeTabCustomPercent ?? selectedDoctor.commissionPercent,
@@ -385,6 +404,10 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								isDemo={isDemo}
 								rub={rub}
 								allDoctorsSummaries={allDoctorsSummaries}
+								identSalaryModel={identSalaryModel}
+								onChangeIdentSalaryModel={setIdentSalaryModel}
+								cashAdvancePolicy={cashAdvancePolicy}
+								onChangeCashAdvancePolicy={setCashAdvancePolicy}
 								onSummaryCalculated={(s, adv, pct) => {
 									setActiveTabDoctorSummary(s);
 									setActiveTabAdvanceRub(adv);

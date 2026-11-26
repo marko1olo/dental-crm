@@ -21,6 +21,9 @@ export const payrollCalculationsQuerySchema = z
 		chairRentalKop: z.union([z.string(), z.number()]).optional(),
 		advanceRub: z.union([z.string(), z.number()]).optional(),
 		taxRegime: z.enum(["employee", "self_employed"]).optional(),
+		identSalaryModel: z.enum(["gross_before_discount", "net_proportional_discount", "net_doctor_bears_discount"]).optional(),
+		cashAdvancePolicy: z.enum(["clinic_first", "doctor_first", "proportional"]).optional(),
+		carryOverDebtKopecks: z.union([z.string(), z.number()]).optional(),
 	})
 	.strict();
 
@@ -69,6 +72,9 @@ export const closeSettlementSchema = z
 		ndflKopecks: z.number().int().optional(),
 		ndflKop: z.number().int().optional(),
 		ndfl13Rub: z.number().optional(),
+		identSalaryModel: z.enum(["gross_before_discount", "net_proportional_discount", "net_doctor_bears_discount"]).optional(),
+		cashAdvancePolicy: z.enum(["clinic_first", "doctor_first", "proportional"]).optional(),
+		carryOverDebtKopecks: z.number().int().min(0).optional(),
 		markPaid: z.boolean().optional().default(true),
 		doctorReconciled: z.boolean().optional(),
 		doctor_reconciled: z.boolean().optional(),

@@ -210,24 +210,23 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 				);
 
 			if (nextStatus === "REFUNDED" || nextStatus === "REVERSED") {
-				const [refundTargetPayment] = await tx
-					.select()
-					.from(payments)
-					.where(
-						and(
-							eq(payments.organizationId, lockedTx.organizationId),
-							or(
-								eq(payments.clientMutationId, clientMutationId),
-								eq(payments.clientMutationId, `sberbank:${lockedTx.orderId}`),
-							),
-						),
-					)
-					.for("update")
-					.limit(1);
+				const refundTargetPayment = lockedPayment;
+				const existingFiscalReceipt =
+					refundTargetPayment?.fiscalReceipt &&
+					typeof refundTargetPayment.fiscalReceipt === "object"
+						? refundTargetPayment.fiscalReceipt
+						: {};
 
 				await tx
 					.update(payments)
-					.set({ status: "refunded", updatedAt: new Date() })
+					.set({
+						status: "refunded",
+						fiscalReceipt: {
+							...existingFiscalReceipt,
+							refundedInPlace: true,
+						},
+						updatedAt: new Date(),
+					})
 					.where(
 						and(
 							eq(payments.organizationId, lockedTx.organizationId),

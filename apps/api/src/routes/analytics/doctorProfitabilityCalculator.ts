@@ -270,7 +270,7 @@ export async function calculateDoctorProfitability(
 			]),
 		);
 
-		// 2e. Оперативный расчет зарплаты врача за текущий период
+		// 2e. Оперативный расчет зарплаты врача за текущий период (строго в рамках открытой транзакции tx)
 		const missingDocIds = allDoctorIds.filter(
 			(id): id is string => Boolean(id && !finalizedPayrollKopMap.has(id) && !draftPayrollKopMap.has(id)),
 		);
@@ -282,52 +282,52 @@ export async function calculateDoctorProfitability(
 			const fromStr = fromDate.toISOString().slice(0, 10);
 			const toStr = toDate.toISOString().slice(0, 10);
 
-			await Promise.all(
-				missingDocIds.map(async (docId) => {
-					try {
-						const dataset = await fetchDoctorPayrollDataset({
-							orgId,
-							resolvedDocId: docId,
-							fromStr,
-							toStr,
-							fromDate,
-							toDate,
-						});
+			for (const docId of missingDocIds) {
+				try {
+					const dataset = await fetchDoctorPayrollDataset({
+						orgId,
+						resolvedDocId: docId,
+						fromStr,
+						toStr,
+						fromDate,
+						toDate,
+						tx,
+					});
 
-						const commissionRate = commMap.get(docId) ?? 25;
-						const docName = docMap.get(docId) || "Врач";
-						const specialtyId = docSpecialtyMap.get(docId) ?? "therapy";
+					const commissionRate = commMap.get(docId) ?? 25;
+					const docName = docMap.get(docId) || "Врач";
+					const specialtyId = docSpecialtyMap.get(docId) ?? "therapy";
 
-						const payrollResult = calculateDoctorPeriodPayroll({
+					const payrollResult = calculateDoctorPeriodPayroll({
+						doctorId: docId,
+						doctorName: docName,
+						specialtyId,
+						periodStartIso: fromStr,
+						periodEndIso: toStr,
+						services: dataset.completedServices,
+						customBasePercentage: commissionRate,
+						payoutModel: "percentage",
+						chairRentalKop: 0,
+						advancePayoutKop: 0,
+						...(dataset.refundDeductions !== undefined ? { refundDeductions: dataset.refundDeductions } : {}),
+						...(dataset.unallocatedLabKop !== undefined ? { unallocatedLabKop: dataset.unallocatedLabKop } : {}),
+						...(dataset.priorDebtCarryOverKop !== undefined ? { priorDebtCarryOverKop: dataset.priorDebtCarryOverKop } : {}),
+					});
+
+					const payoutKop = payrollResult.grossPayoutBeforeTaxKop;
+					operativePayrollKopMap.set(docId, payoutKop);
+				} catch (err: unknown) {
+					logger.error(
+						{
+							err: safeLogError(err),
+							organizationId: orgId,
 							doctorId: docId,
-							doctorName: docName,
-							specialtyId,
-							periodStartIso: fromStr,
-							periodEndIso: toStr,
-							services: dataset.completedServices,
-							customBasePercentage: commissionRate,
-							payoutModel: "percentage",
-							chairRentalKop: 0,
-							advancePayoutKop: 0,
-							...(dataset.refundDeductions !== undefined ? { refundDeductions: dataset.refundDeductions } : {}),
-							...(dataset.unallocatedLabKop !== undefined ? { unallocatedLabKop: dataset.unallocatedLabKop } : {}),
-						});
-
-						const payoutKop = payrollResult.earnedBaseCommissionKop || payrollResult.netPayoutToDoctorKop;
-						operativePayrollKopMap.set(docId, payoutKop);
-					} catch (err: unknown) {
-						logger.error(
-							{
-								err: safeLogError(err),
-								organizationId: orgId,
-								doctorId: docId,
-							},
-							"Operative doctor payroll calculation failed in doctorProfitabilityCalculator",
-						);
-						throw err;
-					}
-				}),
-			);
+						},
+						"Operative doctor payroll calculation failed in doctorProfitabilityCalculator",
+					);
+					throw err;
+				}
+			}
 		}
 
 		return allDoctorIds

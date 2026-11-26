@@ -17,6 +17,8 @@ export interface CloseSettlementPeriodParams {
 	readonly advanceKopecks?: number;
 	readonly advanceRub?: number;
 	readonly taxRegime?: "employee" | "self_employed";
+	readonly identSalaryModel?: "gross_before_discount" | "net_proportional_discount" | "net_doctor_bears_discount";
+	readonly cashAdvancePolicy?: "clinic_first" | "doctor_first" | "proportional";
 	readonly grossRevenueKop: number;
 	readonly labCostKop: number;
 	readonly materialCostKop: number;

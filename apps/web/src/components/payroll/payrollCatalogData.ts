@@ -43,6 +43,7 @@ export interface PayrollServiceOrder {
 	readonly category: "orthopedics" | "therapy" | "surgery" | "hygiene" | "orthodontics";
 	readonly categoryLabelRu: string;
 	readonly grossKopecks: number; // Выручка по кассовым чекам
+	readonly salaryPriceKopecks?: number | undefined; // Цена для ЗП (salary_price)
 	readonly labCostKopecks: number; // Зуботехническая лаборатория (ЗТЛ)
 	readonly materialCostKopecks: number; // Дорогие материалы (Импланты)
 	readonly isPaid54Fz: boolean;
@@ -85,6 +86,9 @@ export interface DoctorPayrollSummary {
 	readonly advanceKopecks: number;
 	readonly ndfl13TaxKopecks: number;
 	readonly payoutKopecks: number;
+	readonly serviceSalaryPriceKopecks?: number | undefined;
+	readonly priorDebtDeductedKopecks?: number | undefined;
+	readonly negativeCarryOverKopecks?: number | undefined;
 	readonly payoutStatus: PayrollPayoutStatus;
 	readonly servicesCount: number;
 	readonly minimumGuaranteeApplied: boolean;
