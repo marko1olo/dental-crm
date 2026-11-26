@@ -39,7 +39,7 @@ import {
 import { importProgressManager } from "../services/imports/smartImportsProgressStream.js";
 
 export async function registerSmartImportRoutes(app: FastifyInstance) {
-	app.get("/api/imports/smart/progress/stream", {}, async (request, reply) => {
+	app.get("/api/imports/smart/progress/stream", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		if (
 			!(await requireClinicalReadAccess(
 				request,
@@ -58,7 +58,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		importProgressManager.handleSseStream(request, reply, orgId);
 	});
 
-	app.post("/api/imports/smart/preview", {}, async (request, reply) => {
+	app.post("/api/imports/smart/preview", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		try {
 			if (
 				!(await requireClinicalReadAccess(
@@ -90,7 +90,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/local-source-discovery",
-		{},
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			try {
 				if (
@@ -124,7 +124,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/local-source-workup",
-		{},
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			try {
 				if (
@@ -158,7 +158,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/local-source-probe",
-		{},
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			try {
 				if (
@@ -192,7 +192,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/migration-autopilot",
-		{},
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			try {
 				if (
@@ -226,7 +226,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/migration-autopilot/report.csv",
-		{},
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			try {
 				if (
@@ -268,7 +268,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
 	app.post(
 		"/api/imports/smart/clinic-public-lookup",
-		{},
+		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			try {
 				if (
@@ -300,7 +300,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.post("/api/imports/smart/report.csv", {}, async (request, reply) => {
+	app.post("/api/imports/smart/report.csv", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		try {
 			if (
 				!(await requireClinicalReadAccess(
@@ -338,7 +338,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 		}
 	});
 
-	app.post("/api/imports/smart/report.safe.csv", {}, async (request, reply) => {
+	app.post("/api/imports/smart/report.safe.csv", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		try {
 			if (
 				!(await requireClinicalReadAccess(
@@ -379,6 +379,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 	app.post(
 		"/api/imports/smart/commit",
 		{
+			config: { tenantTxSelfManaged: true },
 			schema: {
 				headers: {
 					type: "object",

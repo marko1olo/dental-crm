@@ -26,8 +26,9 @@
  * автоматически нельзя ни при каких условиях.
  */
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
+import { queryPatientDuplicateCandidates } from "../../db/patientsQueryModules/patientMergeAndArchiveQuery.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
 import { patients } from "../../db/schema.js";
 export * from "./duplicateFuzzyMetrics.js";
@@ -560,19 +561,184 @@ export async function findDuplicateCandidates(
 	};
 }
 
-/** Сводка для карточки пациента: есть ли у него вероятные дубли. */
+/** Сводка для карточки пациента: есть ли у него вероятные дубли (O(candidates) вместо O(N²) полного дампа). */
 export async function duplicatesForPatient(
 	organizationId: string,
 	patientId: string,
 ): Promise<DuplicateCandidate[]> {
-	const report = await findDuplicateCandidates(organizationId, {
-		limit: 500,
-		minConfidence: 0.3,
+	const minConfidence = 0.3;
+
+	const loaded = await withTenantCtx(organizationId, async (tx) => {
+		const [targetRow] = await tx
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				email: patients.email,
+				birthDate: patients.birthDate,
+				administrativeProfile: patients.administrativeProfile,
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.id, patientId),
+					eq(patients.status, "active"),
+					isNull(patients.mergedIntoPatientId),
+				),
+			)
+			.limit(1);
+
+		if (!targetRow) {
+			return null;
+		}
+
+		const [decisionRows, candidateRows] = await Promise.all([
+			tx
+				.select({
+					leftPatientId: patientDuplicateDecisions.leftPatientId,
+					rightPatientId: patientDuplicateDecisions.rightPatientId,
+				})
+				.from(patientDuplicateDecisions)
+				.where(
+					and(
+						eq(patientDuplicateDecisions.organizationId, organizationId),
+						or(
+							eq(patientDuplicateDecisions.leftPatientId, patientId),
+							eq(patientDuplicateDecisions.rightPatientId, patientId),
+						),
+					),
+				),
+			queryPatientDuplicateCandidates(
+				organizationId,
+				{
+					fullName: targetRow.fullName,
+					phone: targetRow.phone,
+					email: targetRow.email,
+					birthDate: targetRow.birthDate,
+					administrativeProfile:
+						targetRow.administrativeProfile && typeof targetRow.administrativeProfile === "object"
+							? (targetRow.administrativeProfile as Record<string, unknown>)
+							: null,
+				},
+				tx,
+				patientId,
+			),
+		]);
+
+		return { targetRow, decisionRows, candidateRows };
 	});
-	return report.candidates.filter(
-		(candidate) =>
-			candidate.leftPatientId === patientId ||
-			candidate.rightPatientId === patientId,
+
+	if (!loaded || loaded.candidateRows.length === 0) {
+		return [];
+	}
+
+	const toRow = (r: {
+		id: string;
+		fullName: string;
+		phone?: string | null | undefined;
+		email?: string | null | undefined;
+		birthDate?: string | null | undefined;
+		administrativeProfile?: Record<string, unknown> | unknown | null | undefined;
+	}): PatientRow => ({
+		id: r.id,
+		fullName: r.fullName,
+		phone: r.phone ?? null,
+		email: r.email ?? null,
+		birthDate: r.birthDate ?? null,
+		snils:
+			r.administrativeProfile &&
+			typeof r.administrativeProfile === "object" &&
+			"snils" in r.administrativeProfile &&
+			typeof (r.administrativeProfile as { snils?: unknown }).snils === "string"
+				? (r.administrativeProfile as { snils: string }).snils
+				: null,
+	});
+
+	const target = toRow(loaded.targetRow);
+	const hidden = new Set(
+		loaded.decisionRows.map((row) => pairKey(row.leftPatientId, row.rightPatientId)),
+	);
+	const targetName = nameKey(target.fullName);
+	const targetPhones = new Set(phoneKeys(target.phone));
+	const targetEmail = target.email?.trim().toLowerCase() ?? "";
+	const targetSnils = snilsKey(target.snils);
+
+	const strongest = new Map<string, DuplicateCandidate>();
+	const consider = (right: PatientRow, reason: DuplicateReason) => {
+		const key = pairKey(target.id, right.id);
+		if (hidden.has(key)) return;
+		const meta = REASON_META[reason];
+		if (meta.confidence < minConfidence) return;
+		const existing = strongest.get(key);
+		if (existing && existing.confidence >= meta.confidence) return;
+
+		const [first, second] = target.id < right.id ? [target, right] : [right, target];
+		const side = (row: PatientRow): DuplicateSide => ({
+			patientId: row.id,
+			fullName: row.fullName,
+			phone: row.phone,
+			birthDate: row.birthDate,
+			email: row.email,
+			snils: row.snils ?? null,
+		});
+		strongest.set(key, {
+			leftPatientId: first.id,
+			leftName: first.fullName,
+			left: side(first),
+			rightPatientId: second.id,
+			rightName: second.fullName,
+			right: side(second),
+			reason,
+			confidence: meta.confidence,
+			explanation: meta.explanation,
+			caution: meta.caution,
+		});
+	};
+
+	for (const rawCandidate of loaded.candidateRows) {
+		const candidate = toRow(rawCandidate);
+		if (candidate.id === target.id) continue;
+
+		if (targetName && nameKey(candidate.fullName) === targetName) {
+			if (target.birthDate && candidate.birthDate) {
+				if (target.birthDate === candidate.birthDate) {
+					consider(candidate, "same_name_and_birth_date");
+				}
+			} else {
+				consider(candidate, "same_name_birth_date_unknown");
+			}
+		}
+
+		const candidatePhones = phoneKeys(candidate.phone);
+		if (
+			targetPhones.size > 0 &&
+			candidatePhones.some((p) => targetPhones.has(p)) &&
+			!(target.birthDate && candidate.birthDate && target.birthDate !== candidate.birthDate)
+		) {
+			const sameSurname = areSurnamesMatching(
+				surnameOf(target.fullName),
+				surnameOf(candidate.fullName),
+			);
+			consider(candidate, sameSurname ? "same_phone_and_surname" : "same_phone_only");
+		}
+
+		const candidateEmail = candidate.email?.trim().toLowerCase() ?? "";
+		if (
+			targetEmail &&
+			candidateEmail === targetEmail &&
+			!(target.birthDate && candidate.birthDate && target.birthDate !== candidate.birthDate)
+		) {
+			consider(candidate, "same_email");
+		}
+
+		if (targetSnils && snilsKey(candidate.snils) === targetSnils) {
+			consider(candidate, "same_snils");
+		}
+	}
+
+	return [...strongest.values()].sort(
+		(a, b) => b.confidence - a.confidence || a.leftName.localeCompare(b.leftName),
 	);
 }
 

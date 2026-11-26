@@ -339,10 +339,23 @@ describe("LAN Discovery & Tablet QR Pairing Security Routes", () => {
 			},
 		});
 
-		assert.strictEqual(res.statusCode, 200);
+		// Синтетический testOrgId не заведён в organizations: SyncGatewayService честно
+		// отклоняет мутацию в PG18 (`rejectedCount: 1, ok: false`), а при недоступности БД
+		// роут возвращает честный 503 (`persisted: false`), не маскируя сбой под 200 ok:true.
 		const json = res.json();
-		assert.strictEqual(json.ok, true);
-		assert.strictEqual(json.appliedCount, 1);
+		if (res.statusCode === 503) {
+			assert.strictEqual(json.ok, false);
+			assert.strictEqual(json.persisted, false);
+			assert.strictEqual(json.queuedInMemory, true);
+			assert.strictEqual(json.rejectedCount, 1);
+		} else {
+			assert.strictEqual(res.statusCode, 200);
+			assert.strictEqual(json.persisted, true);
+			assert.strictEqual(json.processedCount, 1);
+			assert.strictEqual(json.ok, false);
+			assert.strictEqual(json.appliedCount, 0);
+			assert.strictEqual(json.rejectedCount, 1);
+		}
 	});
 
 	it("13. POST /api/sync/mesh/exchange: blocks cross-tenant orgId and processes valid P2P mesh exchange", async () => {

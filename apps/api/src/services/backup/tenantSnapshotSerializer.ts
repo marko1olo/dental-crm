@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 import zlib from "node:zlib";
+
+const gzipAsync = promisify(zlib.gzip);
 import { createApiLogger, safeLogError } from "../../observability/index.js";
 import {
 	type BackupResult,
@@ -41,7 +44,7 @@ export async function createTenantEncryptedBackup(
 	let filePath = "";
 	try {
 		const backupsDir = backupsDirectory();
-		fs.mkdirSync(backupsDir, { recursive: true });
+		await fs.promises.mkdir(backupsDir, { recursive: true });
 
 		const [{ eq }, { withTenantCtx }, schema] = await Promise.all([
 			import("drizzle-orm"),
@@ -79,7 +82,6 @@ export async function createTenantEncryptedBackup(
 				treatmentItemsRows,
 				toothStatesRows,
 				toothStateHistoryRows,
-				invoicesRows,
 				patientInvoicesRows,
 				invoiceItemsRows,
 				paymentsRows,
@@ -188,10 +190,6 @@ export async function createTenantEncryptedBackup(
 					.select()
 					.from(schema.toothStateHistory)
 					.where(eq(schema.toothStateHistory.organizationId, organizationId)),
-				tx
-					.select()
-					.from(schema.invoices)
-					.where(eq(schema.invoices.organizationId, organizationId)),
 				tx
 					.select()
 					.from(schema.patientInvoices)
@@ -305,7 +303,6 @@ export async function createTenantEncryptedBackup(
 					treatmentItems: treatmentItemsRows,
 					toothStates: toothStatesRows,
 					toothStateHistory: toothStateHistoryRows,
-					invoices: invoicesRows,
 					patientInvoices: patientInvoicesRows,
 					invoiceItems: invoiceItemsRows,
 					payments: paymentsRows,
@@ -343,7 +340,7 @@ export async function createTenantEncryptedBackup(
 			`org_${organizationId}_backup_${timestamp}.dentalbackup`,
 		);
 
-		const compressed = zlib.gzipSync(
+		const compressed = await gzipAsync(
 			Buffer.from(serializeSnapshotJson(snapshot), "utf8"),
 		);
 		const iv = crypto.randomBytes(12);
@@ -358,7 +355,7 @@ export async function createTenantEncryptedBackup(
 		const authTag = cipher.getAuthTag();
 		const header = Buffer.from("DENTETB1", "ascii");
 
-		fs.writeFileSync(
+		await fs.promises.writeFile(
 			filePath,
 			Buffer.concat([header, iv, authTag, encrypted]),
 			{ mode: 0o600 },

@@ -270,7 +270,11 @@ export async function getPatientsFromDb(
 				searchOr.push(ilike(schema.patients.fullName, `%${translit}%`));
 			}
 			if (rawDigits.length >= 4) {
+				const phoneSearchDigits = rawDigits.length >= 10 ? rawDigits.slice(-10) : rawDigits;
 				searchOr.push(ilike(schema.patients.phone, `%${rawDigits}%`));
+				searchOr.push(
+					sql`regexp_replace(coalesce(${schema.patients.phone}, ''), '\\D', '', 'g') LIKE ${`%${phoneSearchDigits}%`}`,
+				);
 				searchOr.push(ilike(schema.patients.birthDate, `%${rawDigits}%`));
 				searchOr.push(sql`regexp_replace(coalesce(${schema.patients.administrativeProfile}->>'snils', ''), '\\D', '', 'g') ILIKE ${`%${rawDigits}%`}`);
 				searchOr.push(sql`regexp_replace(coalesce(${schema.patients.administrativeProfile}->>'insurancePolicyNumber', ''), '\\D', '', 'g') ILIKE ${`%${rawDigits}%`}`);

@@ -239,13 +239,20 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.post("/api/imaging/ai-analysis", async (request, reply) => {
-		// organizationId tenant context & Idempotency-Key validation
-		return aiAnalysisHandler(request, reply);
-	});
+	app.post(
+		"/api/imaging/ai-analysis",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			// organizationId tenant context & Idempotency-Key validation
+			return aiAnalysisHandler(request, reply);
+		},
+	);
 
 
-	app.post("/api/imaging/studies/:id/analyze", async (request, reply) => {
+	app.post(
+		"/api/imaging/studies/:id/analyze",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
 		if (
 			!(await requireClinicalMutationAccess(
 				request,

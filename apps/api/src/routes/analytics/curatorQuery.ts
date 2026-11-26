@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	paymentSignedExactFlowKopecksSql,
@@ -9,7 +9,10 @@ import { calculateCuratorMetrics, kopecksToRubles, rublesToKopecks } from "@dent
 import { buildCuratorQueueItem } from "./curatorQueueBuilder.js";
 import type { CuratorStaffUser } from "./curatorTypes.js";
 
-export async function fetchCuratorAnalyticsPayload(orgId: string) {
+export async function fetchCuratorAnalyticsPayload(
+	orgId: string,
+	options?: { queueLimit?: number; queueOffset?: number },
+) {
 	const { staffList, plans, directPlanPayments, installmentPlanPayments } = await withTenantCtx(
 		orgId,
 		async (tx) => {
@@ -38,7 +41,8 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 				})
 				.from(treatmentPlans)
 				.innerJoin(patients, and(eq(treatmentPlans.patientId, patients.id), eq(patients.organizationId, orgId)))
-				.where(eq(treatmentPlans.organizationId, orgId));
+				.where(eq(treatmentPlans.organizationId, orgId))
+				.orderBy(desc(treatmentPlans.createdAt));
 
 			// PLN-05 [SEV-1]: Учет оплат строго по planId / treatmentPlanId, ликвидация заражения планов старыми оплатами пациента.
 			// 1. Прямые оплаты, привязанные к плану лечения (documentId = treatment_plans.id)
@@ -109,13 +113,16 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	const doctorMap = new Map(staffList.map((u) => [u.id, u.fullName]));
 	const defaultCurator: CuratorStaffUser | null = curatorUsers[0] ?? null;
 
-	const queueItems = plans.map((plan) =>
+	const allQueueItems = plans.map((plan) =>
 		buildCuratorQueueItem(plan, planPaymentMap, doctorMap, defaultCurator, planPaymentKopecksMap),
 	);
-	const overallMetrics = calculateCuratorMetrics(queueItems, "all", "Все кураторы");
+	const overallMetrics = calculateCuratorMetrics(allQueueItems, "all", "Все кураторы");
 	const perCuratorMetrics = curatorUsers.map((cur) =>
-		calculateCuratorMetrics(queueItems, cur.id, cur.fullName),
+		calculateCuratorMetrics(allQueueItems, cur.id, cur.fullName),
 	);
+	const queueOffset = Math.max(0, options?.queueOffset ?? 0);
+	const queueLimit = Math.max(1, Math.min(1000, options?.queueLimit ?? 500));
+	const queueItems = allQueueItems.slice(queueOffset, queueOffset + queueLimit);
 
 	return {
 		curators: curatorUsers,

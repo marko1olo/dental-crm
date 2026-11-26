@@ -197,7 +197,7 @@ export async function registerOmnichannelBotRoutes(app: FastifyInstance): Promis
 	 * POST /api/bots/send-message
 	 * Отправка сообщения оператором пациенту с проверкой 152/323-ФЗ и фиксацией в БД.
 	 */
-	app.post("/api/bots/send-message", async (request, reply) => {
+	app.post("/api/bots/send-message", { config: { tenantTxSelfManaged: true } }, async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "bots send message");
 		if (!orgId) return;
 

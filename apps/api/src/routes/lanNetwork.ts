@@ -709,27 +709,32 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			duplicateCount = pushResult.duplicateCount;
 			mergedCount = pushResult.mergedCount;
 			rejectedCount = pushResult.rejectedCount;
-
-			// If mutations were rejected or not applied to DB directly,
-			// buffer in memory ring buffer to guarantee zero data loss and grant resilience
-			if (appliedCount === 0 && parseRes.data.mutations.length > 0 && duplicateCount === 0) {
-				for (const mut of parseRes.data.mutations) {
-					meshService.getRingBuffer().push(mut);
-				}
-				appliedCount = parseRes.data.mutations.length;
-				rejectedCount = 0;
-			}
 		} catch (dbErr) {
-			request.log.warn({ dbErr }, "[lanNetwork] Failed to persist mutations to Postgres; queued in memory ring buffer");
+			request.log.error(
+				{ dbErr },
+				"[lanNetwork] Failed to persist mutations to Postgres; rejecting batch honestly instead of silent memory lie",
+			);
 			for (const mut of parseRes.data.mutations) {
 				meshService.getRingBuffer().push(mut);
 			}
-			appliedCount = parseRes.data.mutations.length;
-			rejectedCount = 0;
+			return reply.code(503).send({
+				ok: false,
+				persisted: false,
+				queuedInMemory: true,
+				error: "DatabasePersistenceFailed",
+				message: "Не удалось сохранить мутации в PostgreSQL.",
+				processedCount: parseRes.data.mutations.length,
+				appliedCount: 0,
+				duplicateCount: 0,
+				mergedCount: 0,
+				rejectedCount: parseRes.data.mutations.length,
+				appliedAt: new Date().toISOString(),
+			});
 		}
 
 		return reply.send({
 			ok: rejectedCount === 0,
+			persisted: true,
 			processedCount: parseRes.data.mutations.length,
 			appliedCount,
 			duplicateCount,
@@ -772,7 +777,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		const responderNodeId = meshService.nodeId;
 		const responderTime = new Date().toISOString();
 
-		// 1. Process mutations through real SyncGatewayService if DB is available
+		// 1. Process mutations through real SyncGatewayService
 		let gatewayRes: Awaited<ReturnType<typeof SyncGatewayService.processPushBatch>> | null = null;
 		if (reqData.mutations.length > 0) {
 			try {
@@ -788,7 +793,23 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 					{ logger: request.log },
 				);
 			} catch (dbErr) {
-				request.log.warn({ dbErr }, "[lanNetwork] Mesh exchange DB write fallback");
+				request.log.error({ dbErr }, "[lanNetwork] Mesh exchange DB write failed");
+				return reply.code(503).send({
+					ok: false,
+					persisted: false,
+					error: "DatabasePersistenceFailed",
+					message: "Сбой сохранения mesh-мутаций в PostgreSQL.",
+					exchangeId: reqData.exchangeId,
+					responderNodeId,
+					responderVectorClock: reqData.senderVectorClock,
+					processedMutationsCount: reqData.mutations.length,
+					appliedMutationsCount: 0,
+					mergedMutationsCount: 0,
+					duplicateMutationsCount: 0,
+					returnMutations: [],
+					results: [],
+					responderTime,
+				});
 			}
 		}
 

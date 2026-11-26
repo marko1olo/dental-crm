@@ -11,6 +11,7 @@ import {
 	createPatientSafeInDb,
 	getPatientByIdFromDb,
 	getPatientsFromDb,
+	queryPatientDuplicateCandidates,
 	updatePatientInDb,
 } from "../../db/patientsQuery.js";
 import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
@@ -22,6 +23,7 @@ import {
 	stripDiagnosisPayload,
 } from "../../security/medicalSecrecyWarden.js";
 import {
+	canonicalizeHomoglyphs,
 	findPatientDuplicate,
 	type PatientDuplicateInput,
 	type PatientDuplicateResult,
@@ -325,8 +327,10 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 
 			if (isUniqueViolation) {
 				try {
-					const dbPatients = await getPatientsFromDb(orgId, { limit: 500 });
-					const duplicate = findPatientDuplicate(dbPatients, inputWithSnils, undefined, {
+					const candidatePatients = await withTenantCtx(orgId, (tx) =>
+						queryPatientDuplicateCandidates(orgId, inputWithSnils, tx),
+					);
+					const duplicate = findPatientDuplicate(candidatePatients, inputWithSnils, undefined, {
 						requireDistinguishingData: false,
 					});
 					if (duplicate) {
@@ -397,12 +401,48 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 			};
 
 			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const phoneDigits = (input.phone ?? "").replace(/\D/g, "");
+				const phoneKey = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
+				const snilsDigits = String(inputWithSnils.snils ?? "").replace(/\D/g, "");
+				const normalizedName = canonicalizeHomoglyphs(input.fullName ?? "")
+					.toLowerCase()
+					.replace(/ё/g, "е")
+					.replace(/-/g, " ")
+					.replace(/[^\p{L}\s]/gu, "")
+					.split(/\s+/)
+					.filter(Boolean)
+					.sort()
+					.join(" ");
+
+				// Гранулярная блокировка в том же порядке (phone -> snils -> name -> patientId),
+				// что и в createPatientSafeInDb: исключает org-wide lock и AB-BA дедлоки.
+				if (phoneKey) {
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${orgId}::text, 'phone', ${phoneKey}::text)))`,
+					);
+				}
+				if (snilsDigits.length >= 11) {
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${orgId}::text, 'snils', ${snilsDigits}::text)))`,
+					);
+				}
+				if (normalizedName) {
+					await tx.execute(
+						sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${orgId}::text, 'name', ${normalizedName}::text)))`,
+					);
+				}
 				await tx.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext(${`${orgId}:patient_dedup`}))`,
+					sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${orgId}::text, 'patient', ${targetPatientId}::text)))`,
 				);
-				const dbPatients = await getPatientsFromDb(orgId, {}, tx);
+
+				const candidatePatients = await queryPatientDuplicateCandidates(
+					orgId,
+					inputWithSnils,
+					tx,
+					targetPatientId,
+				);
 				const duplicate = findPatientDuplicate(
-					dbPatients,
+					candidatePatients,
 					inputWithSnils,
 					targetPatientId,
 				);

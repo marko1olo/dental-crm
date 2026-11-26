@@ -120,7 +120,13 @@ export function registerLifecycleHooks(app: FastifyInstance): void {
 	// Глобальная изоляция арендаторов: если у запроса есть tenantId (выставлен в onRequest выше),
 	// автоматически оборачиваем весь обработчик маршрута в withTenantCtx.
 	app.addHook("onRoute", (routeOptions) => {
-		if (routeOptions.config?.tenantTxSelfManaged === true) return;
+		if (
+			routeOptions.config?.tenantTxSelfManaged === true ||
+			("websocket" in routeOptions && routeOptions.websocket === true) ||
+			"wsHandler" in routeOptions
+		) {
+			return;
+		}
 		const originalHandler = routeOptions.handler;
 		if (originalHandler) {
 			routeOptions.handler = async function (request, reply) {

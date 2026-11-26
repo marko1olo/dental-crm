@@ -2,7 +2,7 @@
  * Расчёт дебиторки и переплат пациентов в точных копейках без float drift.
  */
 
-import { kopecksToRubles, resolvePaymentNetSignedKopecksBigInt, sumKopecks } from "@dental/shared";
+import { kopecksToRubles, sumKopecks } from "@dental/shared";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
@@ -151,15 +151,16 @@ export async function receivables(
 		);
 		const limit = Math.max(1, Math.min(1000, options.limit ?? 200));
 
-		const rawPlannedItems = await tx
+		const unitKopSql = sql`case when ${treatmentItems.unitPriceKopecks} is not null and ${treatmentItems.unitPriceKopecks} <> 0 then ${treatmentItems.unitPriceKopecks}::bigint else round(coalesce(${treatmentItems.unitPriceRub}, 0)::numeric * 100)::bigint end`;
+		const discountKopSql = sql`case when ${treatmentItems.discountKopecks} is not null and ${treatmentItems.discountKopecks} <> 0 then ${treatmentItems.discountKopecks}::bigint else round(coalesce(${treatmentItems.discountRub}, 0)::numeric * 100)::bigint end`;
+		const itemNetKopSql = sql`greatest(0::bigint, round((${unitKopSql})::numeric * coalesce(${treatmentItems.quantity}, 0)::numeric)::bigint - (${discountKopSql}))`;
+
+		const plannedRows = await tx
 			.select({
 				patientId: treatmentItems.patientId,
-				unitPriceKopecks: treatmentItems.unitPriceKopecks,
-				unitPriceRub: treatmentItems.unitPriceRub,
-				quantity: treatmentItems.quantity,
-				discountKopecks: treatmentItems.discountKopecks,
-				discountRub: treatmentItems.discountRub,
-				visitCreatedAt: visits.createdAt,
+				plannedKopecks: sql<string>`coalesce(sum(${itemNetKopSql}), 0)::bigint`,
+				oldestChargeAt: sql<Date | string | null>`min(${visits.createdAt})`,
+				undatedItems: sql<number>`count(*) filter (where ${visits.createdAt} is null)::int`,
 			})
 			.from(treatmentItems)
 			.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
@@ -168,56 +169,38 @@ export async function receivables(
 					eq(treatmentItems.organizationId, organizationId),
 					ne(treatmentItems.status, "cancelled"),
 				),
-			);
+			)
+			.groupBy(treatmentItems.patientId);
 
 		const plannedByPatient = new Map<
 			string,
 			{ plannedKopecks: number; oldestChargeAt: Date | null; undatedItems: number }
 		>();
-		for (const item of rawPlannedItems) {
-			const unitKop =
-				item.unitPriceKopecks != null && Number(item.unitPriceKopecks) !== 0
-					? Number(item.unitPriceKopecks)
-					: toKopecks(item.unitPriceRub ?? 0, "цена позиции лечения");
-			const discKop =
-				item.discountKopecks != null && Number(item.discountKopecks) !== 0
-					? Number(item.discountKopecks)
-					: toKopecks(item.discountRub ?? 0, "скидка позиции лечения");
-			const qty = Number(item.quantity ?? 0);
-			const grossKopBig = Number.isInteger(qty)
-				? BigInt(unitKop) * BigInt(qty)
-				: BigInt(Math.round(unitKop * qty));
-			const netKopBig = grossKopBig - BigInt(discKop);
-			const itemKop = netKopBig > 0n ? Number(netKopBig) : 0;
-			const visitDate = item.visitCreatedAt ? new Date(item.visitCreatedAt) : null;
-
-			const existing = plannedByPatient.get(item.patientId);
-			if (!existing) {
-				plannedByPatient.set(item.patientId, {
-					plannedKopecks: itemKop,
-					oldestChargeAt: visitDate,
-					undatedItems: visitDate === null ? 1 : 0,
-				});
-			} else {
-				existing.plannedKopecks += itemKop;
-				if (visitDate === null) {
-					existing.undatedItems += 1;
-				} else if (
-					existing.oldestChargeAt === null ||
-					visitDate.getTime() < existing.oldestChargeAt.getTime()
-				) {
-					existing.oldestChargeAt = visitDate;
-				}
-			}
+		for (const row of plannedRows) {
+			const plannedKopecks = Number(row.plannedKopecks ?? 0);
+			assertKopecks(plannedKopecks, "назначено пациенту");
+			plannedByPatient.set(row.patientId, {
+				plannedKopecks,
+				oldestChargeAt: row.oldestChargeAt ? new Date(row.oldestChargeAt) : null,
+				undatedItems: Number(row.undatedItems ?? 0),
+			});
 		}
 
-		const rawPayments = await tx
+		const rawPaymentKopSql = sql`case when ${payments.amountKopecks} is not null and ${payments.amountKopecks} <> 0 then ${payments.amountKopecks}::bigint else round(coalesce(${payments.amountRub}, 0)::numeric * 100)::bigint end`;
+		const explicitRefundMetaSql = sql`(
+			lower(coalesce(${payments.fiscalReceipt}->>'operationType', '')) in ('refund', 'income_return', 'advance_refund', 'return', 'refund_correction')
+			or lower(coalesce(${payments.fiscalReceipt}->>'type', '')) in ('refund', 'income_return', 'advance_refund', 'return', 'refund_correction')
+		)`;
+		const signedLedgerPaymentKopSql = sql<string>`coalesce(sum(case
+			when (${explicitRefundMetaSql} or (${rawPaymentKopSql}) < 0) then -abs(${rawPaymentKopSql})::bigint
+			when ${payments.status} = 'refunded' then 0::bigint
+			else abs(${rawPaymentKopSql})::bigint
+		end), 0)::bigint`;
+
+		const paidRows = await tx
 			.select({
 				patientId: payments.patientId,
-				status: payments.status,
-				amountKopecks: payments.amountKopecks,
-				amountRub: payments.amountRub,
-				fiscalReceipt: payments.fiscalReceipt,
+				paidKopecks: signedLedgerPaymentKopSql,
 			})
 			.from(payments)
 			.where(
@@ -226,19 +209,15 @@ export async function receivables(
 					inArray(payments.status, ["paid", "refunded"]),
 					sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.organization_id = ${organizationId} and pi.status in ('voided', 'cancelled')))`,
 				),
-			);
+			)
+			.groupBy(payments.patientId);
 
-		const paidBigIntByPatient = new Map<string, bigint>();
-		for (const row of rawPayments) {
-			const signedKop = resolvePaymentNetSignedKopecksBigInt(row, "ledger");
-			if (signedKop === 0n) continue;
-			paidBigIntByPatient.set(row.patientId, (paidBigIntByPatient.get(row.patientId) ?? 0n) + signedKop);
-		}
 		const paidByPatient = new Map<string, number>();
-		for (const [patientId, totalKopBig] of paidBigIntByPatient.entries()) {
-			const totalKop = Number(totalKopBig);
+		for (const row of paidRows) {
+			const totalKop = Number(row.paidKopecks ?? 0);
+			if (totalKop === 0) continue;
 			assertKopecks(totalKop, "оплачено пациентом");
-			paidByPatient.set(patientId, totalKop);
+			paidByPatient.set(row.patientId, totalKop);
 		}
 
 		const balances = [
@@ -290,12 +269,25 @@ export async function receivables(
 			};
 		}
 
+		const neededPatientIds = Array.from(
+			new Set<string>([
+				...debtors.map((d) => d.patientId),
+				...overpaid.map((o) => o.patientId),
+			]),
+		);
 		const names = new Map<string, string>();
-		const nameRows = await tx
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(eq(patients.organizationId, organizationId));
-		for (const row of nameRows) names.set(row.id, row.fullName);
+		if (neededPatientIds.length > 0) {
+			const nameRows = await tx
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						inArray(patients.id, neededPatientIds),
+					),
+				);
+			for (const row of nameRows) names.set(row.id, row.fullName);
+		}
 
 		const byBucketKopecks: Record<ReceivablesBucket, Kopecks> = {
 			current: 0,

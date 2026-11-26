@@ -15,6 +15,7 @@ import {
 	type DicomManifestField,
 } from "./imagingConstants.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
 
 export const headerAliases: Record<
 	string,
@@ -408,7 +409,7 @@ export async function parseImagingManifest(
 	const headers = splitLine(lines[0] ?? "", delimiter).map(
 		(cell) => headerAliases[normalizeHeader(cell)] ?? null,
 	);
-	const patients = await getPatientsFromDb(orgId);
+	const patients = await withTenantCtx(orgId, (tx) => getPatientsFromDb(orgId, {}, tx));
 	const hasHeader = headers.some(Boolean);
 	const rows: ImagingImportPreviewRow[] = await Promise.all(
 		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {

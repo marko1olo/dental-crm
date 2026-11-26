@@ -78,8 +78,9 @@ const TENANT_SNAPSHOT_TABLE_ORDER: ReadonlyArray<
 	["treatmentItems", "treatment_items"],
 	["toothStates", "tooth_states"],
 	["toothStateHistory", "tooth_state_history"],
-	["invoices", "invoices"],
 	["patientInvoices", "patient_invoices"],
+	// Обратная совместимость со старыми снимками, где алиас schema.invoices сериализовался отдельно
+	["invoices", "patient_invoices"],
 	["invoiceItems", "invoice_items"],
 	["payments", "payments"],
 	["inventoryItems", "inventory_items"],
@@ -434,11 +435,27 @@ async function restoreJsonSnapshotViaPool(
 			);
 		}
 
+		const restoredSqlTables = new Set<string>();
+
 		for (const [snapshotKey, sqlTable] of TENANT_SNAPSHOT_TABLE_ORDER) {
+			if (restoredSqlTables.has(sqlTable)) continue;
 			const rawEntry = tablesMap[snapshotKey];
 			if (!rawEntry) continue;
-			const records = Array.isArray(rawEntry) ? rawEntry : [rawEntry];
-			if (records.length === 0) continue;
+			const rawRecords = Array.isArray(rawEntry) ? rawEntry : [rawEntry];
+			if (rawRecords.length === 0) continue;
+
+			// Для self-FK patients.merged_into_patient_id первыми восстанавливаем канонические (необъединённые) карты
+			const records =
+				sqlTable === "patients"
+					? [...rawRecords].sort((a, b) => {
+							const aObj = a && typeof a === "object" ? (a as Record<string, unknown>) : {};
+							const bObj = b && typeof b === "object" ? (b as Record<string, unknown>) : {};
+							const aMerged = Boolean(aObj.mergedIntoPatientId ?? aObj.merged_into_patient_id);
+							const bMerged = Boolean(bObj.mergedIntoPatientId ?? bObj.merged_into_patient_id);
+							if (aMerged === bMerged) return 0;
+							return aMerged ? 1 : -1;
+						})
+					: rawRecords;
 
 			const colRes = await client.query<{ column_name: string; data_type: string }>(
 				"SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1",
@@ -501,6 +518,7 @@ async function restoreJsonSnapshotViaPool(
 				tableInserted += res.rowCount ?? 0;
 			}
 
+			restoredSqlTables.add(sqlTable);
 			if (tableInserted > 0) {
 				restoredTablesCount += 1;
 				restoredRowsCount += tableInserted;

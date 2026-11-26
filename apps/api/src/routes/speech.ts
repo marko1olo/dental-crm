@@ -501,20 +501,23 @@ async function handleSpeechPolishTranscript(
 }
 
 export async function registerSpeechRoutes(app: FastifyInstance) {
-	app.get("/api/speech/status", handleSpeechStatus);
-	app.get("/api/speech/gateway-health", handleSpeechGatewayHealth);
-	app.get("/api/speech/providers/runtime", handleSpeechProvidersRuntime);
-	app.post("/api/speech/recording-strategy", handleSpeechRecordingStrategy);
-	app.get("/api/speech/chunks", handleSpeechChunks);
-	app.get("/api/speech/recordings/recovery", handleSpeechRecordingsRecovery);
+	const selfManagedRouteConfig = { config: { tenantTxSelfManaged: true } } as const;
+
+	app.get("/api/speech/status", selfManagedRouteConfig, handleSpeechStatus);
+	app.get("/api/speech/gateway-health", selfManagedRouteConfig, handleSpeechGatewayHealth);
+	app.get("/api/speech/providers/runtime", selfManagedRouteConfig, handleSpeechProvidersRuntime);
+	app.post("/api/speech/recording-strategy", selfManagedRouteConfig, handleSpeechRecordingStrategy);
+	app.get("/api/speech/chunks", selfManagedRouteConfig, handleSpeechChunks);
+	app.get("/api/speech/recordings/recovery", selfManagedRouteConfig, handleSpeechRecordingsRecovery);
 	app.get(
 		"/api/speech/recordings/:recordingId/assemble",
+		selfManagedRouteConfig,
 		handleSpeechRecordingAssemble,
 	);
 	app.post(
 		"/api/speech/transcribe-chunk",
-		{ bodyLimit: speechJsonBodyLimitBytes() },
+		{ bodyLimit: speechJsonBodyLimitBytes(), config: { tenantTxSelfManaged: true } },
 		handleSpeechTranscribeChunk,
 	);
-	app.post("/api/speech/polish-transcript", handleSpeechPolishTranscript);
+	app.post("/api/speech/polish-transcript", selfManagedRouteConfig, handleSpeechPolishTranscript);
 }

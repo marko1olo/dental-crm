@@ -11,7 +11,7 @@
  * машине разработчика фоновые отправки не нужны.
  */
 
-import { and, eq, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, lte } from "drizzle-orm";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { communicationTasks } from "../../db/schema.js";
 import { processInboundEvents } from "../messengerIngestion.js";
@@ -112,8 +112,8 @@ export async function dispatchDueCareTasks(
 	let queued = 0;
 
 	try {
-		const dueTasks = await withSuperuserBypass(async (tx) => {
-			return tx
+		const claimedTasks = await withSuperuserBypass(async (tx) => {
+			const due = await tx
 				.select()
 				.from(communicationTasks)
 				.where(
@@ -122,39 +122,73 @@ export async function dispatchDueCareTasks(
 						lte(communicationTasks.dueAt, now),
 					),
 				)
+				.orderBy(asc(communicationTasks.dueAt))
+				.for("update", { skipLocked: true })
 				.limit(50);
+
+			if (due.length === 0) {
+				return [];
+			}
+
+			const claimedIds = due.map((row) => row.id);
+			await tx
+				.update(communicationTasks)
+				.set({ status: "queued", lastEventAt: now })
+				.where(
+					and(
+						eq(communicationTasks.status, "scheduled"),
+						inArray(communicationTasks.id, claimedIds),
+					),
+				);
+
+			return due;
 		});
 
-		for (const task of dueTasks) {
-			const res = await enqueueMessage({
-				organizationId: task.organizationId,
-				clinicId: task.clinicId,
-				patientId: task.patientId,
-				taskId: task.id,
-				channel: toChannelCode(task.channel),
-				intent: toIntentCode(task.intent),
-				scope: "service",
-				body: task.body || task.title,
-				dedupeKey: `care_task:${task.id}`,
-				scheduledAt: now,
-			});
-
-			if (res.ok) {
-				queued++;
-				await withSuperuserBypass(async (tx) => {
-					await tx
-						.update(communicationTasks)
-						.set({ status: "queued", lastEventAt: new Date() })
-						.where(eq(communicationTasks.id, task.id));
+		for (const task of claimedTasks) {
+			try {
+				const res = await enqueueMessage({
+					organizationId: task.organizationId,
+					clinicId: task.clinicId,
+					patientId: task.patientId,
+					taskId: task.id,
+					channel: toChannelCode(task.channel),
+					intent: toIntentCode(task.intent),
+					scope: "service",
+					body: task.body || task.title,
+					dedupeKey: `care_task:${task.id}`,
+					scheduledAt: now,
 				});
-			} else {
-				problems.push(`Task ${task.id}: ${res.reason}`);
+
+				if (res.ok) {
+					queued++;
+					await withSuperuserBypass(async (tx) => {
+						await tx
+							.update(communicationTasks)
+							.set({ status: "queued", lastEventAt: new Date() })
+							.where(eq(communicationTasks.id, task.id));
+					});
+				} else {
+					problems.push(`Task ${task.id}: ${res.reason}`);
+					await withSuperuserBypass(async (tx) => {
+						await tx
+							.update(communicationTasks)
+							.set({
+								status: "failed",
+								lastErrorMessage: res.reason,
+								lastEventAt: new Date(),
+							})
+							.where(eq(communicationTasks.id, task.id));
+					});
+				}
+			} catch (taskErr) {
+				const errMsg = taskErr instanceof Error ? taskErr.message : String(taskErr);
+				problems.push(`Task ${task.id}: ${errMsg}`);
 				await withSuperuserBypass(async (tx) => {
 					await tx
 						.update(communicationTasks)
 						.set({
 							status: "failed",
-							lastErrorMessage: res.reason,
+							lastErrorMessage: errMsg,
 							lastEventAt: new Date(),
 						})
 						.where(eq(communicationTasks.id, task.id));

@@ -31,6 +31,7 @@ export async function registerIngestionRoutes(app: FastifyInstance) {
 		"/api/ingestion/extract",
 		{
 			bodyLimit: 9 * 1024 * 1024,
+			config: { tenantTxSelfManaged: true },
 		},
 		async (request, reply) => {
 			const context = await requireClinicalMutationContext(

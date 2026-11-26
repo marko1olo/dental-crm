@@ -139,6 +139,7 @@ export async function registerSpeechLiveRoutes(
 	// Status & Diagnostic endpoint
 	app.get(
 		"/api/v1/speech/live/status",
+		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const context = await requireClinicalReadContext(
 				request,
@@ -230,8 +231,8 @@ export async function registerSpeechLiveRoutes(
 		});
 	};
 
-	app.post("/api/v1/speech/live/ticket", issueWsTicketHandler);
-	app.post("/api/speech/live/ticket", issueWsTicketHandler);
+	app.post("/api/v1/speech/live/ticket", { config: { tenantTxSelfManaged: true } }, issueWsTicketHandler);
+	app.post("/api/speech/live/ticket", { config: { tenantTxSelfManaged: true } }, issueWsTicketHandler);
 
 	// WebSocket Live Transcription Handler
 	const liveWsHandler = (clientSocket: WebSocket, request: FastifyRequest) => {
