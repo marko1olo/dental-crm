@@ -1,5 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { denteQueryClient } from "./lib/queryClient";
 const AppShell = React.lazy(() =>
 	import("./AppShell").then((m) => ({ default: m.AppShell })),
 );
@@ -418,6 +420,16 @@ if (!rootElement) {
 }
 const appRoot = createRoot(rootElement);
 
+function renderAppWithProviders(element: React.ReactNode): void {
+	appRoot.render(
+		<React.StrictMode>
+			<QueryClientProvider client={denteQueryClient}>
+				{element}
+			</QueryClientProvider>
+		</React.StrictMode>,
+	);
+}
+
 if (publicPortalRoute) {
 	// Тему на публичной странице выбирает не клиника, а сам посетитель: у
 	// зуботехника нет ни настроек кабинета, ни themeStore, а index.html жёстко
@@ -454,9 +466,8 @@ if (publicPortalRoute) {
 	// Граница накрывает и GlobalToast: если падает он, страница записи всё равно
 	// не должна исчезать молча. Она ловит только фазу рендера — сбои сетевых
 	// запросов внутри самих виджетов разбираются их собственными обработчиками.
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="public">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="public">
 				<React.Suspense fallback={null}>
 					{publicPortalRoute.kind === "booking" ? (
 						<PublicBookingPage
@@ -494,8 +505,7 @@ if (publicPortalRoute) {
 					) : null}
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (cbctStudioRoute.isCbctStudio) {
 	// АВТОНОМНЫЙ КОКПИТ 3D КЛКТ (ВТОРОЙ МОНИТОР / ПОПАУТ ОКНО / МАРШРУТ /cbct-studio)
@@ -503,9 +513,8 @@ if (publicPortalRoute) {
 	applyThemeToRoot(document.documentElement, resolveTheme("dark", true));
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense fallback={<div className="fixed inset-0 bg-zinc-950 flex items-center justify-center text-cyan-400 font-mono text-sm">Загрузка КЛКТ Студии...</div>}>
 					<CbctStandaloneStudioView
 						studyId={cbctStudioRoute.studyId}
@@ -516,8 +525,7 @@ if (publicPortalRoute) {
 					/>
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (cephStudioRoute.isCephStudio) {
 	// АВТОНОМНАЯ СТУДИЯ ТРГ И ЦЕФАЛОМЕТРИИ (ВТОРОЙ МОНИТОР / ПОПАУТ ОКНО / МАРШРУТ /radiology/ceph-studio)
@@ -525,9 +533,8 @@ if (publicPortalRoute) {
 	applyThemeToRoot(document.documentElement, resolveTheme("dark", true));
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка ТРГ Студии...</div>}>
 					<CephStandaloneStudioView
 						patientId={cephStudioRoute.patientId}
@@ -538,8 +545,7 @@ if (publicPortalRoute) {
 					/>
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (typeof window !== "undefined" && isPatientPresentationRoute()) {
 	// АВТОНОМНЫЙ ЭКРАН ПРЕЗЕНТАЦИИ ПАЦИЕНТУ (ВТОРОЙ МОНИТОР / ТВ В КАБИНЕТЕ / ?view=patient-presentation)
@@ -547,15 +553,13 @@ if (publicPortalRoute) {
 	applyThemeToRoot(document.documentElement, resolveTheme("dark", true));
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="public">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="public">
 				<React.Suspense fallback={<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">Загрузка презентации...</div>}>
 					<PatientPresentationStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -582,9 +586,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="public">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="public">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -595,8 +598,7 @@ if (publicPortalRoute) {
 					<WaitingLoungeSignage onExit={() => { window.location.hash = "shift"; }} />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -618,9 +620,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -631,8 +632,7 @@ if (publicPortalRoute) {
 					<EndodonticStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -654,9 +654,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -667,8 +666,7 @@ if (publicPortalRoute) {
 					<PerioStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -690,9 +688,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -703,8 +700,7 @@ if (publicPortalRoute) {
 					<HygieneStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -728,9 +724,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -741,8 +736,7 @@ if (publicPortalRoute) {
 					<OrthopedicStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -768,9 +762,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -781,8 +774,7 @@ if (publicPortalRoute) {
 					<SurgeryStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -813,9 +805,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -826,8 +817,7 @@ if (publicPortalRoute) {
 					<OrthodonticStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -848,9 +838,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -861,8 +850,7 @@ if (publicPortalRoute) {
 					<WaitlistStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -881,9 +869,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -894,8 +881,7 @@ if (publicPortalRoute) {
 					<QuickBookingStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -918,9 +904,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -931,8 +916,7 @@ if (publicPortalRoute) {
 					<OdontogramStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -957,9 +941,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -970,8 +953,7 @@ if (publicPortalRoute) {
 					<CashboxStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -995,9 +977,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1008,8 +989,7 @@ if (publicPortalRoute) {
 					<DmsStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1031,9 +1011,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1044,8 +1023,7 @@ if (publicPortalRoute) {
 					<LoyaltyStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1067,9 +1045,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1080,8 +1057,7 @@ if (publicPortalRoute) {
 					<EmrMedicalRecordStandaloneView onClose={() => {}} />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1113,9 +1089,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1126,8 +1101,7 @@ if (publicPortalRoute) {
 					<PayrollStandaloneStudioView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1145,9 +1119,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1158,8 +1131,7 @@ if (publicPortalRoute) {
 					<ChairsideHudStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1177,9 +1149,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1190,8 +1161,7 @@ if (publicPortalRoute) {
 					<CopilotStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1216,9 +1186,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1229,8 +1198,7 @@ if (publicPortalRoute) {
 					<RvgStandaloneStudioView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1253,9 +1221,8 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1266,8 +1233,7 @@ if (publicPortalRoute) {
 					<HardwareStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else if (
 	typeof window !== "undefined" &&
@@ -1296,13 +1262,11 @@ if (publicPortalRoute) {
 	);
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
+	renderAppWithProviders(
+		<BootErrorBoundary audience="clinic">
 				<DirectSettingsLauncher />
 				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
+			</BootErrorBoundary>,
 	);
 } else {
 	// Подставляет токены кабинета и сотрудника во все запросы к /api/.
@@ -1311,12 +1275,10 @@ if (publicPortalRoute) {
 	// больше не доверяет заголовку x-organization-id от клиента.
 	installApiAuthFetch();
 
-	appRoot.render(
-		<React.StrictMode>
-			<React.Suspense fallback={null}>
-				<AppShell />
-			</React.Suspense>
-		</React.StrictMode>,
+	renderAppWithProviders(
+		<React.Suspense fallback={null}>
+			<AppShell />
+		</React.Suspense>,
 	);
 }
 

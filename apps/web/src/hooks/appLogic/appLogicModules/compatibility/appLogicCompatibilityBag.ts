@@ -148,6 +148,7 @@ export function buildAppLogicCompatibilityBag(
 		activeChair: scheduleLogic.activeChair,
 		activeDoctor: scheduleLogic.activeDoctor,
 		activePatient: patientSelection.activePatient,
+		activePatientId: patientSelection.selectedPatientId ?? appStore.activePatientId ?? null,
 		activeVisitPatient: patientSelection.activeVisitPatient,
 		activePatientCallablePhone: patientSelection.activePatientCallablePhone,
 		activePatientHasCallablePhone: patientSelection.activePatientHasCallablePhone,

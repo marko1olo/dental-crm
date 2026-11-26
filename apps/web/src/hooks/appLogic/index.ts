@@ -4,6 +4,7 @@ import { loadUiPreferences } from "../../AppHelpers";
 import { showToast } from "../../components/GlobalToast";
 import { useAppStore } from "../../store/appStore";
 import { useImagingStore } from "../../store/imagingStore";
+import { usePatientStore } from "../../store/patientStore";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useAuthLogic } from "../domains/useAuthLogic";
 import { useCommunicationsQueries } from "../domains/useCommunicationsQueries";
@@ -28,82 +29,57 @@ import type { UseAppLogicReturn } from "./types";
 export type * from "./types";
 
 export function useAppLogic(): UseAppLogicReturn {
-	// Атомарные селекторы вместо useAppStore(), useSettingsStore(), useImagingStore() целиком.
-	// Исключает каскадный шторм ре-рендеров всего дерева приложения при вводе каждого символа в поиск (Мандат 8e, 8b).
+	// Реактивные подписки на Zustand-сторы без Proxy и без застывших getState() снэпшотов.
+	// query читается отдельно в usePatientSelectionState, здесь собираем единый срез без Proxy.
 	const dashboard = useAppStore((s) => s.dashboard);
 	const clinicProfileDraft = useAppStore((s) => s.clinicProfileDraft);
 	const error = useAppStore((s) => s.error);
 	const accessUnlockRequired = useAppStore((s) => s.accessUnlockRequired);
 	const accessUnlockMessage = useAppStore((s) => s.accessUnlockMessage);
 	const uiPreferencesHydrated = useAppStore((s) => s.uiPreferencesHydrated);
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setDashboard = useAppStore((s) => s.setDashboard);
 	const setError = useAppStore((s) => s.setError);
 	const setAccessUnlockRequired = useAppStore((s) => s.setAccessUnlockRequired);
 	const setAccessUnlockMessage = useAppStore((s) => s.setAccessUnlockMessage);
 	const setUiPreferencesSyncError = useAppStore((s) => s.setUiPreferencesSyncError);
+	const rawAppState = useAppStore.getState();
 
-	const appStore = useMemo(() => {
-		const raw = useAppStore.getState();
-		return new Proxy(raw, {
-			get(target, prop, receiver) {
-				if (prop === "dashboard") return dashboard;
-				if (prop === "clinicProfileDraft") return clinicProfileDraft;
-				if (prop === "error") return error;
-				if (prop === "accessUnlockRequired") return accessUnlockRequired;
-				if (prop === "accessUnlockMessage") return accessUnlockMessage;
-				if (prop === "uiPreferencesHydrated") return uiPreferencesHydrated;
-				if (prop === "setDashboard") return setDashboard;
-				if (prop === "setError") return setError;
-				if (prop === "setAccessUnlockRequired") return setAccessUnlockRequired;
-				if (prop === "setAccessUnlockMessage") return setAccessUnlockMessage;
-				if (prop === "setUiPreferencesSyncError") return setUiPreferencesSyncError;
-				return Reflect.get(useAppStore.getState(), prop, receiver);
-			},
-			has(_target, prop) {
-				return Reflect.has(useAppStore.getState(), prop);
-			},
-			ownKeys() {
-				return Reflect.ownKeys(useAppStore.getState());
-			},
-			getOwnPropertyDescriptor(_target, prop) {
-				return Reflect.getOwnPropertyDescriptor(useAppStore.getState(), prop);
-			},
-		});
-	}, [dashboard, clinicProfileDraft, error, accessUnlockRequired, accessUnlockMessage, uiPreferencesHydrated, setDashboard, setError, setAccessUnlockRequired, setAccessUnlockMessage, setUiPreferencesSyncError]);
+	const appStore = useMemo(
+		() => ({
+			...rawAppState,
+			dashboard,
+			clinicProfileDraft,
+			error,
+			accessUnlockRequired,
+			accessUnlockMessage,
+			uiPreferencesHydrated,
+			activePatientId: selectedPatientId,
+			setDashboard,
+			setError,
+			setAccessUnlockRequired,
+			setAccessUnlockMessage,
+			setUiPreferencesSyncError,
+		}),
+		[
+			rawAppState,
+			dashboard,
+			clinicProfileDraft,
+			error,
+			accessUnlockRequired,
+			accessUnlockMessage,
+			uiPreferencesHydrated,
+			selectedPatientId,
+			setDashboard,
+			setError,
+			setAccessUnlockRequired,
+			setAccessUnlockMessage,
+			setUiPreferencesSyncError,
+		],
+	);
 
-	const settingsStore = useMemo(() => {
-		return new Proxy(useSettingsStore.getState(), {
-			get(_target, prop, receiver) {
-				return Reflect.get(useSettingsStore.getState(), prop, receiver);
-			},
-			has(_target, prop) {
-				return Reflect.has(useSettingsStore.getState(), prop);
-			},
-			ownKeys() {
-				return Reflect.ownKeys(useSettingsStore.getState());
-			},
-			getOwnPropertyDescriptor(_target, prop) {
-				return Reflect.getOwnPropertyDescriptor(useSettingsStore.getState(), prop);
-			},
-		});
-	}, []);
-
-	const imagingStore = useMemo(() => {
-		return new Proxy(useImagingStore.getState(), {
-			get(_target, prop, receiver) {
-				return Reflect.get(useImagingStore.getState(), prop, receiver);
-			},
-			has(_target, prop) {
-				return Reflect.has(useImagingStore.getState(), prop);
-			},
-			ownKeys() {
-				return Reflect.ownKeys(useImagingStore.getState());
-			},
-			getOwnPropertyDescriptor(_target, prop) {
-				return Reflect.getOwnPropertyDescriptor(useImagingStore.getState(), prop);
-			},
-		});
-	}, []);
+	const settingsStore = useSettingsStore();
+	const imagingStore = useImagingStore();
 
 	const [soundNotificationsMuted, setSoundNotificationsMuted] = useState<boolean>(() => {
 		return loadUiPreferences().soundNotificationsMuted ?? false;

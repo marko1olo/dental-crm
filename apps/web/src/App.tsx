@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect } from "react";
+import { DenteQueryClientProvider } from "./lib/queryClient";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { renderStandaloneLaunchers } from "./components/appLayout";
 import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
@@ -44,26 +45,34 @@ export function App() {
 	const standalone = renderStandaloneLaunchers(routing);
 	if (standalone) {
 		return (
-			<AppLogicProvider value={appLogicValue}>
-				<ClinicalErrorBoundary workspaceName="Автономный модуль" workspaceKey="standalone">
-					{standalone}
-				</ClinicalErrorBoundary>
-			</AppLogicProvider>
+			<DenteQueryClientProvider>
+				<AppLogicProvider value={appLogicValue}>
+					<ClinicalErrorBoundary workspaceName="Автономный модуль" workspaceKey="standalone">
+						{standalone}
+					</ClinicalErrorBoundary>
+				</AppLogicProvider>
+			</DenteQueryClientProvider>
 		);
 	}
 
 	if (!sessionAuth.clinicAuthed || !sessionAuth.staffAuthed || sessionAuth.showStaffPinPad || !dashboard || appLogicValue.accessUnlockRequired || appLogicValue.error) {
-		return <AppBootScreens sessionAuth={sessionAuth} appLogic={appLogicValue} />;
+		return (
+			<DenteQueryClientProvider>
+				<AppBootScreens sessionAuth={sessionAuth} appLogic={appLogicValue} />
+			</DenteQueryClientProvider>
+		);
 	}
 
 	return (
-		<AppSessionProviders appLogic={appLogicValue}>
-			<ClinicalErrorBoundary workspaceName="Навигация приложения" workspaceKey="navigation">
-				<AppNavigationShell appLogic={appLogicValue} sessionAuth={sessionAuth} routing={routing} />
-			</ClinicalErrorBoundary>
-			<ClinicalErrorBoundary workspaceName="Модальные окна и студии" workspaceKey="modals">
-				<AppModalsContainer routing={routing} sessionAuth={sessionAuth} appLogic={appLogicValue} />
-			</ClinicalErrorBoundary>
-		</AppSessionProviders>
+		<DenteQueryClientProvider>
+			<AppSessionProviders appLogic={appLogicValue}>
+				<ClinicalErrorBoundary workspaceName="Навигация приложения" workspaceKey="navigation">
+					<AppNavigationShell appLogic={appLogicValue} sessionAuth={sessionAuth} routing={routing} />
+				</ClinicalErrorBoundary>
+				<ClinicalErrorBoundary workspaceName="Модальные окна и студии" workspaceKey="modals">
+					<AppModalsContainer routing={routing} sessionAuth={sessionAuth} appLogic={appLogicValue} />
+				</ClinicalErrorBoundary>
+			</AppSessionProviders>
+		</DenteQueryClientProvider>
 	);
 }

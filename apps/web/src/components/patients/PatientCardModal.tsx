@@ -10,11 +10,11 @@
  * 6. Zero-Leak Draft Invariant (Мандат 8d/8zq, 8bn): сброс черновика resetDraft() и очистка localStorage при закрытии.
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { rublesToKopecks } from "@dental/shared";
 import {
-	Activity, Camera, ClipboardList, FileCheck, FileText, FlaskConical,
+	Activity, Camera, ChevronRight, ClipboardList, FileCheck, FileText, FlaskConical,
 	HeartPulse, History, Scan, ShieldAlert, ShieldCheck, Users, Wallet,
 } from "lucide-react";
 import { usePatientStore } from "../../store/patientStore";
@@ -95,6 +95,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
 	const [isMedicalRecordStudioOpen, setIsMedicalRecordStudioOpen] = React.useState(false);
+	const tabsScrollRef = useRef<HTMLDivElement | null>(null);
 
 	const isAnySubModalOpen = Boolean(
 		isMedicalRecordStudioOpen ||
@@ -180,12 +181,17 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<PatientCardSomaticAlert safetyEvaluation={safetyEvaluation} isAnySubModalOpen={isAnySubModalOpen} onOpenAnamnesis={setActiveTab} />
 					)}
 
-					{/* ── ТАБЫ НАВИГАЦИИ КАРТОЧКИ (С ФИКСИРОВАННОЙ НОРМОЙ В 1 КЛИК) ── */}
+					{/* ── ТАБЫ НАВИГАЦИИ КАРТОЧКИ (СТРОГО 1 СТРОКА БЕЗ ПЕРЕНОСА И КЛИППИНГА) ── */}
 					{!isCreateMode && (
-						<div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden ${
+						<div className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 border-b border-[var(--glass-border)] bg-[var(--paper-soft)]/60 flex-nowrap overflow-hidden print:hidden ${
 							isAnySubModalOpen ? "max-sm:hidden" : ""
 						}`}>
-							<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:flex-wrap">
+							<div
+								ref={tabsScrollRef}
+								role="tablist"
+								aria-label="Разделы карты пациента"
+								className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto flex-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+							>
 								{TABS.map((tab) => {
 									const isActive = activeTab === tab.id;
 									const Icon = tab.Icon;
@@ -193,13 +199,18 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 										<button
 											key={tab.id}
 											type="button"
+											role="tab"
+											aria-selected={isActive}
 											data-testid={tab.testId}
-											className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
+											className={`min-h-[44px] sm:min-h-[32px] h-8 px-2.5 text-xs rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none border ${
 												isActive
-													? "border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] shadow-xs font-bold"
-													: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)] shadow-2xs font-semibold"
+													? "border-[var(--primary)]/40 bg-[var(--paper)] text-[var(--primary)] shadow-2xs font-semibold"
+													: "border-transparent bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/70 font-medium"
 											}`}
-											onClick={() => setActiveTab(tab.id as PatientCardTab)}
+											onClick={(e) => {
+												setActiveTab(tab.id as PatientCardTab);
+												e.currentTarget.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+											}}
 										>
 											<Icon className="w-3.5 h-3.5 shrink-0" />
 											<span>{tab.label}</span>
@@ -208,11 +219,23 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								})}
 							</div>
 
-							{/* 1-клик физиологическая норма (Мандат 8e, Мандат 8p §206) */}
+							<button
+								type="button"
+								onClick={() => {
+									tabsScrollRef.current?.scrollBy({ left: 220, behavior: "smooth" });
+								}}
+								className="hidden sm:inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+								title="Прокрутить вкладки"
+								aria-label="Прокрутить вкладки вправо"
+							>
+								<ChevronRight className="w-4 h-4 shrink-0" />
+							</button>
+
+							{/* Физиологическая норма */}
 							<button
 								type="button"
 								data-testid="btn-somatic-healthy-norm"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none ml-auto"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-lg px-2.5 shadow-2xs hover:bg-[var(--paper-soft)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none"
 								onClick={handleApplyNorm}
 								title="Зафиксировать физиологическую норму: соматически здоров / интактные зубы"
 							>

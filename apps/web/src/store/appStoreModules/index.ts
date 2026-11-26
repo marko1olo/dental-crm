@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { usePatientStore } from "../patientStore";
 import { createModalsAndSelectionSlice } from "./createModalsAndSelectionSlice";
 import { createNavigationAndThemeSlice } from "./createNavigationAndThemeSlice";
 import { createNotificationsAndSyncSlice } from "./createNotificationsAndSyncSlice";
@@ -11,6 +12,39 @@ export const useAppStore = create<AppStore>((...a) => ({
 	...createModalsAndSelectionSlice(...a),
 	...createNotificationsAndSyncSlice(...a),
 }));
+
+// Единый SSOT выбранного пациента (Мандат 8zq/8bn): двусторонняя синхронизация
+// без split-brain между usePatientStore.selectedPatientId и useAppStore.activePatientId.
+// Инициализация отложена через queueMicrotask во избежание TDZ цикла ESM
+// (patientStore -> visitStore -> billingInvoiceSlice -> appStoreModules -> patientStore).
+let patientSelectionBridgeInitialized = false;
+function initPatientSelectionBridge(): void {
+	if (patientSelectionBridgeInitialized) return;
+	patientSelectionBridgeInitialized = true;
+
+	const initialSelectedPatientId = usePatientStore.getState().selectedPatientId;
+	if (useAppStore.getState().activePatientId !== initialSelectedPatientId) {
+		useAppStore.setState({ activePatientId: initialSelectedPatientId });
+	}
+
+	usePatientStore.subscribe((state, prevState) => {
+		if (state.selectedPatientId !== prevState.selectedPatientId) {
+			if (useAppStore.getState().activePatientId !== state.selectedPatientId) {
+				useAppStore.setState({ activePatientId: state.selectedPatientId });
+			}
+		}
+	});
+
+	useAppStore.subscribe((state, prevState) => {
+		if (state.activePatientId !== prevState.activePatientId) {
+			if (usePatientStore.getState().selectedPatientId !== state.activePatientId) {
+				usePatientStore.getState().setSelectedPatientId(state.activePatientId);
+			}
+		}
+	});
+}
+
+queueMicrotask(initPatientSelectionBridge);
 
 declare global {
 	interface Window {

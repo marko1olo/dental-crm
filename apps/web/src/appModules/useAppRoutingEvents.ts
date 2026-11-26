@@ -70,12 +70,11 @@ export function useAppRoutingEvents(
 	}, []);
 
 	useEffect(() => {
-		const onRx = (e: Event) => {
-			const d = (e as CustomEvent<{ medicationId?: string; medicationIds?: string[] }>).detail;
+		const onRx = () => {
 			stateRef.current.setIsPrescriptionBlankOpen?.(true);
 			stateRef.current.setIsPrescriptionForm107Open?.(true);
 		};
-		const onTasks = (e?: Event) => {
+		const onTasks = () => {
 			stateRef.current.setIsClinicalTasksOpen(true);
 		};
 		const onEmrCard = () => {
@@ -90,38 +89,21 @@ export function useAppRoutingEvents(
 			}
 			stateRef.current.setIsDmsDirectModalOpen(true);
 		};
-		window.addEventListener("dente-open-medical-card", onEmrCard);
-		window.addEventListener("dente:open-medical-card", onEmrCard);
-		window.addEventListener("dente:open-prescriptions", onRx);
-		window.addEventListener("dente-open-cbct", () => stateRef.current.setIsCbctDirectModalOpen(true));
-		window.addEventListener("dente-open-tuner", () => stateRef.current.setIsCbctTunerOpen(true));
-		window.addEventListener("dente-open-consent", () => stateRef.current.setIsConsentDirectModalOpen(true));
-		window.addEventListener("dente:open-consent", () => stateRef.current.setIsConsentDirectModalOpen(true));
-		window.addEventListener("dente-open-documents", () => stateRef.current.setIsConsentDirectModalOpen(true));
-		window.addEventListener("dente:open-documents", () => stateRef.current.setIsConsentDirectModalOpen(true));
-		window.addEventListener("dente-open-ceph", () => stateRef.current.setIsCephDirectModalOpen(true));
-		window.addEventListener("dente-open-opg", () => stateRef.current.setIsSmartOpgDirectModalOpen(true));
-		window.addEventListener("dente-open-visiograph-comparison", () => stateRef.current.setIsVisiographDirectModalOpen(true));
-		window.addEventListener("dente-open-imaging-export", () => stateRef.current.setIsImagingExportDirectModalOpen(true));
-		window.addEventListener("dente-open-create-lab-order", () => stateRef.current.setIsLabCreateOrderDirectModalOpen(true));
-		window.addEventListener("dente-open-dms-letters", onDmsLetters);
-		window.addEventListener("dente:open-dms-letters", onDmsLetters);
-		window.addEventListener("dente-open-plan-scenarios", () => stateRef.current.setIsPlanScenariosDirectModalOpen(true));
-		window.addEventListener("dente-open-case-presenter", () => stateRef.current.setIsCasePresenterDirectModalOpen(true));
-		window.addEventListener("dente-open-treatment-plan-presenter", () => stateRef.current.setIsCasePresenterDirectModalOpen(true));
-		window.addEventListener("dente:open-treatment-plan-presenter", () => stateRef.current.setIsCasePresenterDirectModalOpen(true));
-		window.addEventListener("dente-open-emergency-rescue", () => stateRef.current.setIsEmergencyDirectModalOpen(true));
-		window.addEventListener("dente:open-emergency-rescue", () => stateRef.current.setIsEmergencyDirectModalOpen(true));
-		window.addEventListener("dente-open-recalls-hub", () => stateRef.current.setIsRecallsHubOpen(true));
-		window.addEventListener("dente:open-recalls-hub", () => stateRef.current.setIsRecallsHubOpen(true));
-		window.addEventListener("dente-open-warranty-passport", () => stateRef.current.setIsWarrantyPassportOpen(true));
-		window.addEventListener("dente:open-warranty-passport", () => stateRef.current.setIsWarrantyPassportOpen(true));
-		window.addEventListener("dente-open-clinical-tasks", onTasks);
-		window.addEventListener("dente:open-clinical-tasks", onTasks);
-		window.addEventListener("dente-open-loyalty", () => stateRef.current.setIsLoyaltyProgramOpen(true));
-		window.addEventListener("dente:open-loyalty", () => stateRef.current.setIsLoyaltyProgramOpen(true));
-		window.addEventListener("dente-open-loyalty-program", () => stateRef.current.setIsLoyaltyProgramOpen(true));
-		window.addEventListener("dente-open-fast-checkout", (e: Event) => {
+		const onOpenCbct = () => stateRef.current.setIsCbctDirectModalOpen(true);
+		const onOpenTuner = () => stateRef.current.setIsCbctTunerOpen(true);
+		const onOpenConsent = () => stateRef.current.setIsConsentDirectModalOpen(true);
+		const onOpenCeph = () => stateRef.current.setIsCephDirectModalOpen(true);
+		const onOpenOpg = () => stateRef.current.setIsSmartOpgDirectModalOpen(true);
+		const onOpenVisiograph = () => stateRef.current.setIsVisiographDirectModalOpen(true);
+		const onOpenImagingExport = () => stateRef.current.setIsImagingExportDirectModalOpen(true);
+		const onOpenLabCreate = () => stateRef.current.setIsLabCreateOrderDirectModalOpen(true);
+		const onOpenPlanScenarios = () => stateRef.current.setIsPlanScenariosDirectModalOpen(true);
+		const onOpenCasePresenter = () => stateRef.current.setIsCasePresenterDirectModalOpen(true);
+		const onOpenEmergency = () => stateRef.current.setIsEmergencyDirectModalOpen(true);
+		const onOpenRecallsHub = () => stateRef.current.setIsRecallsHubOpen(true);
+		const onOpenWarrantyPassport = () => stateRef.current.setIsWarrantyPassportOpen(true);
+		const onOpenLoyalty = () => stateRef.current.setIsLoyaltyProgramOpen(true);
+		const onOpenFastCheckout = (e: Event) => {
 			const d = (e as CustomEvent<{ amountRub?: number; amountKopecks?: number }>).detail;
 			if (typeof d?.amountKopecks === "number") {
 				stateRef.current.setFastCheckoutInitialAmountKopecks?.(d.amountKopecks);
@@ -131,52 +113,105 @@ export function useAppRoutingEvents(
 				stateRef.current.setFastCheckoutInitialAmountKopecks?.(rublesToKopecks(d.amountRub));
 			}
 			stateRef.current.setIsFastCheckoutDirectOpen(true);
-		});
-		window.addEventListener("dente:open-fast-checkout", (e: Event) => {
-			const d = (e as CustomEvent<{ amountRub?: number; amountKopecks?: number }>).detail;
-			if (typeof d?.amountKopecks === "number") {
-				stateRef.current.setFastCheckoutInitialAmountKopecks?.(d.amountKopecks);
-				stateRef.current.setFastCheckoutInitialAmountRub?.(kopecksToRub(d.amountKopecks));
-			} else if (typeof d?.amountRub === "number") {
-				stateRef.current.setFastCheckoutInitialAmountRub?.(d.amountRub);
-				stateRef.current.setFastCheckoutInitialAmountKopecks?.(rublesToKopecks(d.amountRub));
-			}
-			stateRef.current.setIsFastCheckoutDirectOpen(true);
-		});
-		window.addEventListener("dente-open-zreport", (e: Event) => {
+		};
+		const onOpenShiftCloseZReport = (e: Event) => {
 			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
 			if (typeof d?.shiftNumber === "number") {
 				stateRef.current.setShiftNumber?.(d.shiftNumber);
 			}
 			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
-		});
-		window.addEventListener("dente:open-zreport", (e: Event) => {
-			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
-			if (typeof d?.shiftNumber === "number") {
-				stateRef.current.setShiftNumber?.(d.shiftNumber);
+		};
+		const onApplyDsdToTreatmentPlan = (e: Event) => {
+			const d = (e as CustomEvent<{
+				patientId?: string;
+				patientName?: string;
+				doctorName?: string;
+				teeth?: number[];
+				material?: string;
+				colorVita?: string;
+				notes?: string;
+				dsdAnalysis?: Record<string, unknown>;
+			}>).detail;
+			if (typeof window !== "undefined") {
+				try {
+					window.sessionStorage.setItem(
+						"dente:dsd-treatment-plan-handoff",
+						JSON.stringify({
+							patientId: d?.patientId,
+							patientName: d?.patientName,
+							doctorName: d?.doctorName,
+							teeth: d?.teeth ?? [13, 12, 11, 21, 22, 23],
+							material: d?.material,
+							colorVita: d?.colorVita,
+							notes: d?.notes,
+						}),
+					);
+				} catch {
+					// Ignore storage restrictions
+				}
+				window.dispatchEvent(
+					new CustomEvent("dente:open-treatment-plan", {
+						detail: {
+							patientId: d?.patientId,
+							patientName: d?.patientName,
+							doctorFullName: d?.doctorName,
+							dsdDetail: d,
+						},
+					}),
+				);
 			}
-			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
-		});
-		window.addEventListener("dente-open-shift-close", (e: Event) => {
-			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
-			if (typeof d?.shiftNumber === "number") {
-				stateRef.current.setShiftNumber?.(d.shiftNumber);
-			}
-			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
-		});
-		window.addEventListener("dente:open-shift-close", (e: Event) => {
-			const d = (e as CustomEvent<{ shiftNumber?: number }>).detail;
-			if (typeof d?.shiftNumber === "number") {
-				stateRef.current.setShiftNumber?.(d.shiftNumber);
-			}
-			stateRef.current.setIsShiftCloseZReportDirectOpen(true);
-		});
+			stateRef.current.setIsCasePresenterDirectModalOpen(true);
+		};
+
+		const eventBindings: ReadonlyArray<readonly [string, EventListener]> = [
+			["dente-open-medical-card", onEmrCard],
+			["dente:open-medical-card", onEmrCard],
+			["dente:open-prescriptions", onRx],
+			["dente-open-cbct", onOpenCbct],
+			["dente-open-tuner", onOpenTuner],
+			["dente-open-consent", onOpenConsent],
+			["dente:open-consent", onOpenConsent],
+			["dente-open-documents", onOpenConsent],
+			["dente:open-documents", onOpenConsent],
+			["dente-open-ceph", onOpenCeph],
+			["dente-open-opg", onOpenOpg],
+			["dente-open-visiograph-comparison", onOpenVisiograph],
+			["dente-open-imaging-export", onOpenImagingExport],
+			["dente-open-create-lab-order", onOpenLabCreate],
+			["dente-open-dms-letters", onDmsLetters],
+			["dente:open-dms-letters", onDmsLetters],
+			["dente-open-plan-scenarios", onOpenPlanScenarios],
+			["dente-open-case-presenter", onOpenCasePresenter],
+			["dente-open-treatment-plan-presenter", onOpenCasePresenter],
+			["dente:open-treatment-plan-presenter", onOpenCasePresenter],
+			["dente-apply-dsd-to-treatment-plan", onApplyDsdToTreatmentPlan],
+			["dente:apply-dsd-to-treatment-plan", onApplyDsdToTreatmentPlan],
+			["dente-open-emergency-rescue", onOpenEmergency],
+			["dente:open-emergency-rescue", onOpenEmergency],
+			["dente-open-recalls-hub", onOpenRecallsHub],
+			["dente:open-recalls-hub", onOpenRecallsHub],
+			["dente-open-warranty-passport", onOpenWarrantyPassport],
+			["dente:open-warranty-passport", onOpenWarrantyPassport],
+			["dente-open-clinical-tasks", onTasks],
+			["dente:open-clinical-tasks", onTasks],
+			["dente-open-loyalty", onOpenLoyalty],
+			["dente:open-loyalty", onOpenLoyalty],
+			["dente-open-loyalty-program", onOpenLoyalty],
+			["dente-open-fast-checkout", onOpenFastCheckout],
+			["dente:open-fast-checkout", onOpenFastCheckout],
+			["dente-open-zreport", onOpenShiftCloseZReport],
+			["dente:open-zreport", onOpenShiftCloseZReport],
+			["dente-open-shift-close", onOpenShiftCloseZReport],
+			["dente:open-shift-close", onOpenShiftCloseZReport],
+		];
+
+		for (const [eventName, handler] of eventBindings) {
+			window.addEventListener(eventName, handler);
+		}
 		return () => {
-			window.removeEventListener("dente:open-prescriptions", onRx);
-			window.removeEventListener("dente-open-medical-card", onEmrCard);
-			window.removeEventListener("dente:open-medical-card", onEmrCard);
-			window.removeEventListener("dente-open-dms-letters", onDmsLetters);
-			window.removeEventListener("dente:open-dms-letters", onDmsLetters);
+			for (const [eventName, handler] of eventBindings) {
+				window.removeEventListener(eventName, handler);
+			}
 		};
 	}, []);
 }

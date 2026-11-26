@@ -1,5 +1,7 @@
 import { Stethoscope } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { denteQueryClient } from "./lib/queryClient";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLauncher";
@@ -44,7 +46,14 @@ import { useAppStore } from "./store/appStore";
 import { ThemeBackground } from "./components/theme";
 import { CopilotGlobalHost } from "./components/copilot/CopilotGlobalHost";
 import { Omnibar } from "./components/Omnibar";
+import {
+	extractHashRouteToken,
+	isStandaloneActive,
+	isStandalonePatientCardActive,
+} from "./appModules/appRoutingHelpers";
 import "./theme.css";
+
+export { extractHashRouteToken, isStandaloneActive, isStandalonePatientCardActive };
 
 const DentalWorkspace = lazy(() =>
 	import("./App").then((module) => ({ default: module.App })),
@@ -86,252 +95,6 @@ function ThemeController() {
 	return null;
 }
 
-function isStandaloneActive(): boolean {
-	if (typeof window === "undefined") return false;
-	const s = window.location.search || "";
-	const h = window.location.hash || "";
-	return (
-		s.includes("loyalty") ||
-		h.includes("loyalty") ||
-		s.includes("bonuses") ||
-		h.includes("bonuses") ||
-		s.includes("standalone") ||
-		h.includes("standalone") ||
-		h.includes("cashbox") ||
-		s.includes("cashbox") ||
-		h.includes("checkout") ||
-		s.includes("checkout") ||
-		h.includes("cashier") ||
-		s.includes("cashier") ||
-		h.includes("kassa") ||
-		s.includes("kassa") ||
-		h.includes("odontogram") ||
-		s.includes("odontogram") ||
-		h.includes("dental-chart") ||
-		s.includes("dental-chart") ||
-		h.includes("odontogram-gate0") ||
-		h.includes("odontogram-32") ||
-		h.includes("odontogram-mandible") ||
-		h.includes("arch32") ||
-		s.includes("stand=arch32") ||
-		s.includes("stand=module") ||
-		s.includes("stand=odontogram") ||
-		h.includes("appointment_booking") ||
-		h.includes("quick_booking") ||
-		h.includes("appointment") ||
-		s.includes("appointment") ||
-		h.includes("quick-book") ||
-		s.includes("quick-book") ||
-		h.includes("booking-modal") ||
-		h.includes("booking") ||
-		s.includes("booking") ||
-		h.includes("dental_lab") ||
-		h.includes("lab") ||
-		h.includes("ztl") ||
-		s.includes("lab") ||
-		s.includes("ztl") ||
-		s.includes("waitlist") ||
-		h.includes("waitlist") ||
-		h.includes("visit_standalone") ||
-		s.includes("visit_standalone") ||
-		h.includes("chairside-visit") ||
-		s.includes("chairside-visit") ||
-		s.includes("inventory") ||
-		h.includes("inventory") ||
-		s.includes("warehouse") ||
-		h.includes("warehouse") ||
-		s.includes("mdlp") ||
-		h.includes("mdlp") ||
-		s.includes("chestny_znak") ||
-		h.includes("chestny_znak") ||
-		s.includes("inbound") ||
-		h.includes("inbound") ||
-		s.includes("sanpin") ||
-		h.includes("sanpin") ||
-		s.includes("sterilization") ||
-		h.includes("sterilization") ||
-		s.includes("autoclave") ||
-		h.includes("autoclave") ||
-		s.includes("documents") ||
-		h.includes("documents") ||
-		s.includes("consents") ||
-		h.includes("consents") ||
-		s.includes("docs-studio") ||
-		h.includes("docs-studio") ||
-		s.includes("documents_catalog") ||
-		s.includes("document_templates") ||
-		h.includes("documents-catalog") ||
-		h.includes("documents_catalog") ||
-		h.includes("document-templates") ||
-		s.includes("consent_sign_drawer") ||
-		s.includes("patient_consent_drawer") ||
-		h.includes("consent-sign-drawer") ||
-		h.includes("patient-consent-drawer") ||
-		s.includes("radiology") ||
-		h.includes("radiology") ||
-		s.includes("visiograph") ||
-		h.includes("visiograph") ||
-		s.includes("rvg") ||
-		h.includes("rvg") ||
-		s.includes("hardware") ||
-		h.includes("hardware") ||
-		s.includes("equipment") ||
-		h.includes("equipment") ||
-		s.includes("implant-passport") ||
-		h.includes("implant-passport") ||
-		s.includes("implant_passport") ||
-		h.includes("implant_passport") ||
-		s.includes("implants") ||
-		h.includes("implants") ||
-		s.includes("surgery") ||
-		h.includes("surgery") ||
-		s.includes("extraction") ||
-		h.includes("extraction") ||
-		s.includes("resection") ||
-		h.includes("resection") ||
-		s.includes("sinus") ||
-		h.includes("sinus") ||
-		s.includes("copilot_standalone") ||
-		h.includes("copilot-standalone") ||
-		s.includes("copilot_workspace") ||
-		h.includes("copilot-workspace") ||
-		h.includes("chairside-hud") ||
-		s.includes("chairside-hud") ||
-		h.includes("hud") ||
-		s.includes("hud") ||
-		h === "#copilot" ||
-		h === "#ai" ||
-		s.includes("copilot=1") ||
-		s.includes("anesthesia") ||
-		h.includes("anesthesia") ||
-		s.includes("pediatric") ||
-		h.includes("pediatric") ||
-		s.includes("children") ||
-		h.includes("children") ||
-		s.includes("patient_card") ||
-		h.includes("patient_card") ||
-		s.includes("patient-card") ||
-		h.includes("patient-card") ||
-		s.includes("patient-studio") ||
-		h.includes("patient-studio") ||
-		s.includes("express-patient") ||
-		h.includes("express-patient") ||
-		s.includes("payroll") ||
-		h.includes("payroll") ||
-		s.includes("salary") ||
-		h.includes("salary") ||
-		s.includes("earnings") ||
-		h.includes("earnings") ||
-		s.includes("doctor-payout") ||
-		h.includes("doctor-payout") ||
-		s.includes("wallet") ||
-		h.includes("wallet") ||
-		s.includes("telephony") ||
-		h.includes("telephony") ||
-		s.includes("calls") ||
-		h.includes("calls") ||
-		s.includes("softphone") ||
-		h.includes("softphone") ||
-		s.includes("presenter") ||
-		h.includes("presenter") ||
-		s.includes("treatment-plan") ||
-		h.includes("treatment-plan") ||
-		s.includes("treatment-plans") ||
-		h.includes("treatment-plans") ||
-		s.includes("treatment-studio") ||
-		h.includes("treatment-studio") ||
-		h.includes("plans") ||
-		h.includes("estimates") ||
-		s.includes("executive_studio") ||
-		h.includes("executive-studio") ||
-		s.includes("analytics=direct") ||
-		s.includes("dashboard=direct") ||
-		s.includes("analytics=1") ||
-		h === "#analytics" ||
-		h.startsWith("#analytics?") ||
-		s.includes("reports") ||
-		h.includes("reports") ||
-		s.includes("doctor_payroll") ||
-		h.includes("doctor-payroll-report") ||
-		h.includes("executive-payroll") ||
-		s.includes("executive_payroll") ||
-		h.includes("assistant-payroll") ||
-		s.includes("assistant_payroll") ||
-		s.includes("leads") ||
-		h.includes("leads") ||
-		s.includes("recalls") ||
-		h.includes("recalls") ||
-		s.includes("prophylaxis") ||
-		h.includes("prophylaxis") ||
-		s.includes("recall-hub") ||
-		h.includes("recall-hub") ||
-		h.includes("photo") ||
-		s.includes("photo") ||
-		h.includes("dsd") ||
-		s.includes("dsd") ||
-		h.includes("smile-design") ||
-		s.includes("smile-design") ||
-		h.includes("crm-leads") ||
-		h.includes("kanban") ||
-		s.includes("standalone=settings") ||
-		h.includes("settings-studio") ||
-		s.includes("pricelist") ||
-		h.includes("pricelist") ||
-		s.includes("prices") ||
-		h.includes("prices") ||
-		s.includes("services-catalog") ||
-		h.includes("services-catalog") ||
-		s.includes("endo") ||
-		h.includes("endo") ||
-		s.includes("endodontics") ||
-		h.includes("endodontics") ||
-		s.includes("root-canals") ||
-		h.includes("root-canals") ||
-		s.includes("rootcanal") ||
-		h.includes("rootcanal") ||
-		s.includes("insurance") ||
-		h.includes("insurance") ||
-		s.includes("dms") ||
-		h.includes("dms") ||
-		s.includes("waitlist-matches") ||
-		h.includes("waitlist-matches") ||
-		s.includes("waitlist_matches") ||
-		h.includes("waitlist_matches") ||
-		s.includes("tomorrow-reminders") ||
-		h.includes("tomorrow-reminders") ||
-		s.includes("tomorrow_reminders") ||
-		h.includes("tomorrow_reminders") ||
-		s.includes("reminders") ||
-		h.includes("reminders") ||
-		s.includes("omnichannel") ||
-		h.includes("omnichannel") ||
-		s.includes("omnichannel_hub") ||
-		h.includes("omnichannel_hub") ||
-		s.includes("messaging_hub") ||
-		h.includes("messaging_hub") ||
-		s.includes("communications") ||
-		h.includes("communications") ||
-		s.includes("ortho") ||
-		h.includes("ortho") ||
-		s.includes("orthodontics") ||
-		h.includes("orthodontics") ||
-		s.includes("aligners") ||
-		h.includes("aligners") ||
-		s.includes("ceph") ||
-		h.includes("ceph") ||
-		s.includes("trg") ||
-		h.includes("trg") ||
-		s.includes("settings") ||
-		h.includes("settings") ||
-		s.includes("access") ||
-		h.includes("access") ||
-		s.includes("staff") ||
-		h.includes("staff") ||
-		s.includes("rbac") ||
-		h.includes("rbac")
-	);
-}
-
 function GlobalKeyboardShortcuts() {
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -359,7 +122,8 @@ export function AppShell() {
 		};
 	}, []);
 	return (
-		<BootErrorBoundary audience="clinic">
+		<QueryClientProvider client={denteQueryClient}>
+			<BootErrorBoundary audience="clinic">
 			<ThemeController />
 			<ThemeBackground />
 			<GlobalKeyboardShortcuts />
@@ -411,7 +175,7 @@ export function AppShell() {
 			<DirectRvgCaptureLauncher />
 			<DirectSettingsLauncher />
 			<DirectHardwareLauncher />
-			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
+			{standalone && isStandalonePatientCardActive() && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}
 			<GlobalToast />
@@ -420,6 +184,7 @@ export function AppShell() {
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
 			</Suspense>
-		</BootErrorBoundary>
+			</BootErrorBoundary>
+		</QueryClientProvider>
 	);
 }

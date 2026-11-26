@@ -1,3 +1,5 @@
+import type { DesktopNativeApi } from "../../../native/desktop/types";
+
 export interface TextUiMessage {
 	id?: string | undefined;
 	kind: "text";
@@ -83,7 +85,7 @@ export interface CopilotActionProposal {
 }
 
 export interface DesktopHostWindow extends Window {
-	denteDesktopNative?: unknown;
+	denteDesktopNative?: DesktopNativeApi | undefined;
 	electron?: unknown;
 	isElectron?: unknown;
 	__TAURI__?: unknown;

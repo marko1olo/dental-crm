@@ -6,11 +6,9 @@ import {
 	VisitEmkCanvas,
 	VisitEmkCompletionSection,
 	VisitEmkModals,
-	VisitEmkOdontogramBar,
 	VisitFlowProgress,
 	VisitSpecialtyFocus,
 } from "./emkTab";
-import { useVisitStore } from "../../store/visitStore";
 import { EmkComplaintsAndAnamnesisSection } from "./emkTabModules/EmkComplaintsAndAnamnesisSection";
 import { EmkDiagnosisAndProtocolSection } from "./emkTabModules/EmkDiagnosisAndProtocolSection";
 import type { VisitEmkTabProps } from "./emkTabModules/emkTabTypes";
@@ -47,18 +45,18 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 		setIsSoapTemplatesModalOpen,
 		isRevisingVisitNote,
 		setIsRevisingVisitNote,
-		isOdontogramCollapsed,
-		setIsOdontogramCollapsed,
+		isOdontogramCollapsed: _isOdontogramCollapsed,
+		setIsOdontogramCollapsed: _setIsOdontogramCollapsed,
 		isSpecialtyCollapsed,
 		setIsSpecialtyCollapsed,
 		handleScheduleNextVisit,
 		isSignedVisit,
 		isLocked,
-		selectedInlineTooth,
-		setSelectedInlineTooth,
-		appliedTeethStamps,
-		formulaSummary,
-		handleApplyInlineToothStamp,
+		selectedInlineTooth: _selectedInlineTooth,
+		setSelectedInlineTooth: _setSelectedInlineTooth,
+		appliedTeethStamps: _appliedTeethStamps,
+		formulaSummary: _formulaSummary,
+		handleApplyInlineToothStamp: _handleApplyInlineToothStamp,
 		effectiveActiveTooth,
 		soloAutosaveState,
 		soloLastSavedAt,
@@ -73,9 +71,6 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 		handleCompleteVisitAndGenerateReceipt,
 		handleApplyCatalogPatch,
 	} = useVisitEmkTabController(props);
-
-	const visitToothStateByCode = useVisitStore((s) => s.visitToothStateByCode);
-	const [_isOdontogramCollapsedDefault] = React.useState<boolean>(true);
 
 	const handleVoiceResult = React.useCallback((text: string) => {
 		if (!text.trim()) return;
@@ -97,90 +92,87 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 			className="surface-panel p-2 sm:p-2.5 max-w-full overflow-x-clip"
 			data-testid="visit-emk-tab"
 		>
-			<div className="mb-1.5 flex flex-col gap-1 pb-1.5 border-b border-[var(--line-subtle)]">
-				<div className="flex flex-wrap items-center justify-between gap-1.5">
-					<div className="flex items-center gap-1.5 min-w-0 shrink-0">
-						<h3
-							className="text-xs font-bold text-[var(--ink)] m-0 tracking-wide"
-							data-testid="emk-section-title"
-						>
-							Дневник приёма
-						</h3>
-						<span className="sr-only" data-testid="emk-section-eyebrow">
-							Медицинская карта приёма
-						</span>
-					</div>
+			{/* Компактный единый верхний контур (без 6-ярусного нагромождения и дубля одонтограммы) */}
+			<div className="mb-2 flex flex-col gap-1.5">
+				<h3
+					className="sr-only"
+					data-testid="emk-section-title"
+				>
+					Дневник приёма
+				</h3>
+				<span className="sr-only" data-testid="emk-section-eyebrow">
+					Медицинская карта приёма
+				</span>
 
-					<EmkToolbar
-						activeEmkTab={activeEmkTab}
-						setActiveEmkTab={(tabId) => setActiveEmkTab(tabId)}
-						isSignedVisit={isSignedVisit}
-						isRevisingVisitNote={isRevisingVisitNote}
-						onBeginRevise={() => setIsRevisingVisitNote(true)}
-						onOpenStarProtocols={() => setIsStarProtocolsOpen(true)}
-						onOpenSoapTemplates={() => setIsSoapTemplatesModalOpen(true)}
-						onOpenConsentModal={() => setIsConsentModalOpen(true)}
-						onOpenPrintModal={() => setIsPrintModalOpen(true)}
-						onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
-						visitNoteForm={visitNoteForm}
-						updateVisitNoteField={updateVisitNoteField}
-						onScheduleNextVisit={(days: number) =>
-							handleScheduleNextVisit(days, `Через ${days} дн.`)
-						}
-						autosaveState={soloAutosaveState}
-						lastSavedAt={soloLastSavedAt}
-						voicePilotNode={
-							<SmartMicrophoneButton
-								context="visit"
-								sterileMode={false}
-								className="h-[28px] px-2 rounded-lg"
-								title="Голосовая диктовка: надиктуйте жалобы, осмотр или лечение"
-								onResult={handleVoiceResult}
-							/>
-						}
-					/>
-				</div>
+				<EmkToolbar
+					activeEmkTab={activeEmkTab}
+					setActiveEmkTab={(tabId) => setActiveEmkTab(tabId)}
+					isSignedVisit={isSignedVisit}
+					isRevisingVisitNote={isRevisingVisitNote}
+					onBeginRevise={() => setIsRevisingVisitNote(true)}
+					onOpenStarProtocols={() => setIsStarProtocolsOpen(true)}
+					onOpenSoapTemplates={() => setIsSoapTemplatesModalOpen(true)}
+					onOpenConsentModal={() => setIsConsentModalOpen(true)}
+					onOpenPrintModal={() => setIsPrintModalOpen(true)}
+					onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
+					visitNoteForm={visitNoteForm}
+					updateVisitNoteField={updateVisitNoteField}
+					onScheduleNextVisit={(days: number) =>
+						handleScheduleNextVisit(days, `Через ${days} дн.`)
+					}
+					autosaveState={soloAutosaveState}
+					lastSavedAt={soloLastSavedAt}
+					specialtyFocusNode={
+						<VisitSpecialtyFocus
+							compact
+							renderBarOnly
+							activePatient={activePatient}
+							activeDoctor={activeDoctor}
+							isDrawerOpen={!isSpecialtyCollapsed}
+							onToggleDrawer={(open: boolean) => setIsSpecialtyCollapsed(!open)}
+						/>
+					}
+					voicePilotNode={
+						<SmartMicrophoneButton
+							context="visit"
+							sterileMode={false}
+							className="h-[28px] px-2 rounded-lg"
+							title="Голосовая диктовка: надиктуйте жалобы, осмотр или лечение"
+							onResult={handleVoiceResult}
+						/>
+					}
+				/>
+
+				<VisitSpecialtyFocus
+					compact
+					renderDrawerOnly
+					activePatient={activePatient}
+					activeDoctor={activeDoctor}
+					isDrawerOpen={!isSpecialtyCollapsed}
+					onToggleDrawer={(open: boolean) => setIsSpecialtyCollapsed(!open)}
+				/>
 
 				<VisitFlowProgress result={dashboard?.visitFlowResult ?? null} />
 			</div>
 
-			<VisitSpecialtyFocus
-				compact
-				activePatient={activePatient}
-				activeDoctor={activeDoctor}
-				isDrawerOpen={!isSpecialtyCollapsed}
-				onToggleDrawer={(open: boolean) => setIsSpecialtyCollapsed(!open)}
-			/>
-
-			{/* Встроенная интерактивная зубная формула FDI 11-48 с синхронизацией */}
-			<div className="mb-1.5">
-				<VisitEmkOdontogramBar
-					activePatient={activePatient}
-					patientHistory={props.patientHistory}
+			<React.Suspense fallback={null}>
+				<VisitEmkCanvas
+					activeEmkTab={activeEmkTab}
 					visitNoteForm={visitNoteForm}
 					updateVisitNoteField={updateVisitNoteField}
+					isLocked={isLocked}
 					effectiveActiveTooth={effectiveActiveTooth}
-					visitToothStateByCode={visitToothStateByCode}
-					draft={props.draft}
+					activePatient={activePatient}
+					dashboard={dashboard}
+					openVisitId={openVisitId || ""}
+					setIsSoapTemplatesModalOpen={setIsSoapTemplatesModalOpen}
+					handleCompleteVisitAndGenerateReceipt={async () => {
+						await handleCompleteVisitAndGenerateReceipt();
+					}}
+					isCompletingVisit={isCompletingVisit}
+					onApplySoapPreset={handleApplySoapPreset}
 				/>
-			</div>
-
-			<VisitEmkCanvas
-				activeEmkTab={activeEmkTab}
-				visitNoteForm={visitNoteForm}
-				updateVisitNoteField={updateVisitNoteField}
-				isLocked={isLocked}
-				effectiveActiveTooth={effectiveActiveTooth}
-				activePatient={activePatient}
-				dashboard={dashboard}
-				openVisitId={openVisitId || ""}
-				setIsSoapTemplatesModalOpen={setIsSoapTemplatesModalOpen}
-				handleCompleteVisitAndGenerateReceipt={async () => {
-					await handleCompleteVisitAndGenerateReceipt();
-				}}
-				isCompletingVisit={isCompletingVisit}
-				onApplySoapPreset={handleApplySoapPreset}
-			/>
+			</React.Suspense>
 
 			<VisitEmkCompletionSection
 				isSignedVisit={isSignedVisit}

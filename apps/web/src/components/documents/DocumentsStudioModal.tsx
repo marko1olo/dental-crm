@@ -23,8 +23,7 @@ import {
 	type ConsentSubKind,
 	type DocumentPackageKey,
 } from "../consents/consentCatalogData";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { denteQueryClient } from "../../lib/queryClient";
+import { DenteQueryClientProvider } from "../../lib/queryClient";
 import {
 	DocumentsStudioHeader,
 	DocumentsStudioFooter,
@@ -330,9 +329,9 @@ const DocumentsStudioModalContent: React.FC<DocumentsStudioModalProps> = ({
 export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = (props) => {
 	if (!props.isOpen) return null;
 	return (
-		<QueryClientProvider client={denteQueryClient}>
+		<DenteQueryClientProvider>
 			<DocumentsStudioModalContent {...props} />
-		</QueryClientProvider>
+		</DenteQueryClientProvider>
 	);
 };
 

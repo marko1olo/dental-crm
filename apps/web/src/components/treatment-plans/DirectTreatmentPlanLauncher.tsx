@@ -6,9 +6,63 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TreatmentPlanStudioModal } from "./TreatmentPlanStudioModal";
-import type { TreatmentPlanTierId } from "./treatmentPlanTypes";
+import {
+	rublesToKopecks,
+	type TreatmentPlanItem,
+	type TreatmentPlanStage,
+	type TreatmentPlanTierId,
+} from "./treatmentPlanTypes";
 import { usePatientStore } from "../../store/patientStore";
 import { useAppStore } from "../../store/appStore";
+
+interface DsdTreatmentPlanHandoffDetail {
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	doctorName?: string | undefined;
+	doctorFullName?: string | undefined;
+	teeth?: number[] | undefined;
+	material?: string | undefined;
+	colorVita?: string | undefined;
+	notes?: string | undefined;
+}
+
+function buildStagesFromDsdHandoff(dsd: DsdTreatmentPlanHandoffDetail): readonly TreatmentPlanStage[] {
+	const teethNumbers = Array.isArray(dsd.teeth) && dsd.teeth.length > 0 ? dsd.teeth : [13, 12, 11, 21, 22, 23];
+	const materialLabel = dsd.material || "Керамика E.max";
+	const shadeLabel = dsd.colorVita || "A1";
+	const unitPriceRub = 28500;
+	const items: readonly TreatmentPlanItem[] = teethNumbers.map((toothNumber) => ({
+		id: `dsd-item-${toothNumber}`,
+		serviceCode: "A16.07.003",
+		name: `Эстетическая реставрация / винир (${materialLabel}, оттенок ${shadeLabel})`,
+		toothNumber,
+		quantity: 1,
+		priceRub: unitPriceRub,
+		unitPriceRub,
+		priceKopecks: Number(rublesToKopecks(unitPriceRub)),
+		discountRub: 0,
+		category: "Ортопедия",
+		stageKind: "stage_3_orthopedics",
+		stageNumber: 1,
+	}));
+	const totalRub = items.length * unitPriceRub;
+	return [
+		{
+			id: "stage-dsd-aesthetics",
+			stageNumber: 1,
+			stageKind: "stage_3_orthopedics",
+			title: `Эстетическая реабилитация (DSD • ${materialLabel}, ${shadeLabel})`,
+			subtitle: `Цифровой дизайн улыбки: зубы ${teethNumbers.join(", ")}`,
+			clinicalGoal: dsd.notes || "Эстетическая реабилитация по цифровому дизайну улыбки",
+			status: "draft",
+			estimatedVisits: 2,
+			estimatedWeeks: 2,
+			totalRub,
+			totalKopecks: rublesToKopecks(totalRub),
+			items,
+		},
+	];
+}
 
 export interface DirectTreatmentPlanLauncherProps {
 	readonly className?: string;
@@ -55,6 +109,17 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 	const [customPatientName, setCustomPatientName] = useState<string | null>(null);
 	const [customDoctorFullName, setCustomDoctorFullName] = useState<string | null>(null);
 	const [customPatientId, setCustomPatientId] = useState<string | null>(null);
+	const [dsdInitialStages, setDsdInitialStages] = useState<readonly TreatmentPlanStage[] | undefined>(() => {
+		if (typeof window === "undefined") return undefined;
+		try {
+			const raw = window.sessionStorage.getItem("dente:dsd-treatment-plan-handoff");
+			if (!raw) return undefined;
+			const parsed = JSON.parse(raw) as DsdTreatmentPlanHandoffDetail;
+			return buildStagesFromDsdHandoff(parsed);
+		} catch {
+			return undefined;
+		}
+	});
 
 	// Реактивная гидратация из zustand сторов (usePatientStore, useAppStore)
 	const storePatientId = usePatientStore((s) => s.selectedPatientId);
@@ -90,23 +155,37 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		};
 
 		const handleCustomOpen = (evt: Event) => {
-			const d = (evt as CustomEvent<{ patientName?: string; doctorFullName?: string; patientId?: string; planId?: string; tier?: string }>).detail;
+			const d = (evt as CustomEvent<{
+				patientName?: string;
+				doctorFullName?: string;
+				doctorName?: string;
+				patientId?: string;
+				planId?: string;
+				tier?: string;
+				dsdDetail?: DsdTreatmentPlanHandoffDetail;
+			} & DsdTreatmentPlanHandoffDetail>).detail;
 			if (d?.patientName) setCustomPatientName(d.patientName);
-			if (d?.doctorFullName) setCustomDoctorFullName(d.doctorFullName);
+			if (d?.doctorFullName || d?.doctorName) setCustomDoctorFullName(d.doctorFullName ?? d.doctorName ?? null);
 			if (d?.patientId) setCustomPatientId(d.patientId);
 			if (d?.planId) setTargetPlanId(d.planId);
 			if (d?.tier) setTargetTier(d.tier);
+			const dsdSource = d?.dsdDetail ?? (d?.material || d?.colorVita ? d : undefined);
+			if (dsdSource) {
+				setDsdInitialStages(buildStagesFromDsdHandoff(dsdSource));
+			}
 			setIsOpen(true);
 		};
 
 		window.addEventListener("hashchange", handleHashOrPop);
 		window.addEventListener("popstate", handleHashOrPop);
 		window.addEventListener("dente:open-treatment-plan", handleCustomOpen);
+		window.addEventListener("dente-apply-dsd-to-treatment-plan", handleCustomOpen);
 
 		return () => {
 			window.removeEventListener("hashchange", handleHashOrPop);
 			window.removeEventListener("popstate", handleHashOrPop);
 			window.removeEventListener("dente:open-treatment-plan", handleCustomOpen);
+			window.removeEventListener("dente-apply-dsd-to-treatment-plan", handleCustomOpen);
 		};
 	}, [checkUrlTrigger, parseUrlParams]);
 
@@ -114,7 +193,13 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		setIsOpen(false);
 		setTargetPlanId(null);
 		setTargetTier(null);
+		setDsdInitialStages(undefined);
 		if (typeof window !== "undefined") {
+			try {
+				window.sessionStorage.removeItem("dente:dsd-treatment-plan-handoff");
+			} catch {
+				// Ignore storage cleanup error
+			}
 			const url = new URL(window.location.href);
 			url.searchParams.delete("plans");
 			url.searchParams.delete("plan");
@@ -141,6 +226,7 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 			doctorFullName={resolvedDoctorFullName}
 			planId={targetPlanId || undefined}
 			initialSelectedTierId={validTier}
+			initialStages={dsdInitialStages}
 		/>
 	);
 };

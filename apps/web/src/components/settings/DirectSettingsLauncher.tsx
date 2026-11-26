@@ -112,7 +112,7 @@ export const DirectSettingsLauncher: React.FC = () => {
 
 	const storeStaff = dashboard?.clinicSettings?.staff as StaffProfileExtended[] | undefined;
 	const resolvedClinicName =
-		dashboard?.clinicSettings?.name ||
+		dashboard?.clinicSettings?.profile?.clinicName ||
 		dashboard?.clinicName ||
 		(isDemo ? "Клиника ДЕНТЕ" : "");
 
