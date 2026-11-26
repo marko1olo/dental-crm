@@ -92,6 +92,7 @@ export const serviceCatalogItems = pgTable(
 		labCostKopecks: bigint("lab_cost_kopecks", { mode: "bigint" })
 			.notNull()
 			.default(sql`0`),
+		salaryPriceKopecks: bigint("salary_price_kopecks", { mode: "bigint" }),
 		tierPrices: jsonb("tier_prices").default(sql`'{}'::jsonb`),
 		isActive: boolean("is_active").notNull().default(true),
 	},

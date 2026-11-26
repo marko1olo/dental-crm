@@ -36,18 +36,9 @@ function isPgUniqueViolation(err: unknown): boolean {
 function formatIssuedCertificateDto(
 	cert: typeof giftCertificates.$inferSelect,
 ): FormattedCertificateDto {
-	const nomKop =
-		cert.nominalKopecks != null
-			? Number(cert.nominalKopecks)
-			: Number(parseKopecks(cert.nominalRub));
-	const initBalKop =
-		cert.initialBalanceKopecks != null
-			? Number(cert.initialBalanceKopecks)
-			: Number(parseKopecks(cert.initialBalanceRub));
-	const curBalKop =
-		cert.currentBalanceKopecks != null
-			? Number(cert.currentBalanceKopecks)
-			: Number(parseKopecks(cert.currentBalanceRub));
+	const nomKop = Number(cert.nominalKopecks ?? 0);
+	const initBalKop = Number(cert.initialBalanceKopecks ?? 0);
+	const curBalKop = Number(cert.currentBalanceKopecks ?? 0);
 	return {
 		id: cert.id,
 		serialNumber: cert.serialNumber,
@@ -321,11 +312,8 @@ export async function executeIssueGiftCertificate(
 			.values({
 				organizationId: orgId,
 				serialNumber,
-				nominalRub: String(nominalRubNum),
 				nominalKopecks: Number(nominalKopExact),
-				initialBalanceRub: String(nominalRubNum),
 				initialBalanceKopecks: Number(nominalKopExact),
-				currentBalanceRub: String(nominalRubNum),
 				currentBalanceKopecks: Number(nominalKopExact),
 				purchaserPatientId: effectivePurchaserId,
 				purchaserName: resolvedPurchaserName || displayName,
@@ -406,8 +394,8 @@ export async function lookupGiftCertificateBySerial(
 				.where(and(eq(giftCertificates.id, cert.id), eq(giftCertificates.organizationId, orgId)));
 		}
 
-		const nomKop = cert.nominalKopecks != null ? cert.nominalKopecks : parseKopecks(cert.nominalRub);
-		const curBalKop = cert.currentBalanceKopecks != null ? cert.currentBalanceKopecks : parseKopecks(cert.currentBalanceRub);
+		const nomKop = Number(cert.nominalKopecks ?? 0);
+		const curBalKop = Number(cert.currentBalanceKopecks ?? 0);
 
 		return {
 			found: true,

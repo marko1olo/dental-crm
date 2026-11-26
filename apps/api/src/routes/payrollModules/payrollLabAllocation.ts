@@ -5,6 +5,7 @@
 import { rublesToKopecks, type DoctorCompletedServiceItem } from "@dental/shared";
 import {
 	CATEGORY_LABELS_RU,
+	formatDateIsoInTimeZone,
 	getTreatmentItemPricingKopecks,
 	normalizeClinicalCategory,
 	type PayrollOrderDto,
@@ -49,6 +50,7 @@ export interface PayrollTreatmentRow {
 	specialty: string | null;
 	code: string | null;
 	order804nCode: string | null;
+	salaryPriceKopecks?: number | bigint | null;
 	tierPrices?: unknown;
 }
 
@@ -118,6 +120,7 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 	resolvedDocId: string;
 	fromStr: string;
 	toStr: string;
+	clinicTimeZone?: string | undefined;
 }): {
 	orders: PayrollOrderDto[];
 	completedServices: DoctorCompletedServiceItem[];
@@ -136,6 +139,7 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 		resolvedDocId,
 		fromStr,
 		toStr,
+		clinicTimeZone,
 	} = params;
 
 	const orders: PayrollOrderDto[] = [];
@@ -160,8 +164,12 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 			(orderCodeKey && salaryRuleByServiceKey?.get(orderCodeKey)) ||
 			(titleKey && salaryRuleByServiceKey?.get(titleKey)) ||
 			undefined;
+		const catalogSalaryPriceKop =
+			t.salaryPriceKopecks !== null && t.salaryPriceKopecks !== undefined
+				? Math.max(0, Math.round(Number(t.salaryPriceKopecks)))
+				: undefined;
 		const tierSalaryPriceKop = resolveTierSalaryPriceKop(t.tierPrices);
-		const salaryPriceKop = matchedRule?.salaryPriceKop ?? tierSalaryPriceKop;
+		const salaryPriceKop = matchedRule?.salaryPriceKop ?? catalogSalaryPriceKop ?? tierSalaryPriceKop;
 
 		const isPaid = actuallyPaidGrossKop > 0;
 		const isDebt = actuallyPaidGrossKop <= 0 && grossKop > 0;
@@ -211,9 +219,13 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 
 		const matKop = matCostByTreatmentId.get(t.id) ?? 0;
 
+		const resolvedDateIso = appt?.startsAt
+			? formatDateIsoInTimeZone(appt.startsAt, clinicTimeZone)
+			: fromStr.slice(0, 10);
+
 		completedServices.push({
 			id: t.id,
-			dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
+			dateIso: resolvedDateIso,
 			patientName: appt?.patientName || "Пациент",
 			medicalCardNumber: appt?.cardNumber || "К-0",
 			serviceNameRu: serviceTitle,
@@ -244,7 +256,7 @@ export function buildPayrollServicesAndAllocateLabOrders(params: {
 		orders.push({
 			id: t.id,
 			orderNumber: `ОРД-${t.id.slice(0, 6).toUpperCase()}`,
-			dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
+			dateIso: resolvedDateIso,
 			startsAtIso: apptStartIso,
 			endsAtIso: apptEndIso,
 			appointmentId: linkedApptId ?? undefined,

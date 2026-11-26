@@ -166,9 +166,9 @@ describe("RED TEAM ACID: Loyalty & Certificate Double-Spend Defense", () => {
 
 		assert.ok(certDb, "Сертификат должен быть в БД");
 		assert.equal(
-			Number(certDb.currentBalanceRub),
+			Number(certDb.currentBalanceKopecks),
 			0,
-			"Баланс сертификата в БД строго 0.00 ₽ (не отрицательный!)",
+			"Баланс сертификата в БД строго 0 копеек (не отрицательный!)",
 		);
 		assert.equal(certDb.status, "depleted", "Статус сертификата должен быть depleted");
 
@@ -256,7 +256,7 @@ describe("RED TEAM ACID: Loyalty & Certificate Double-Spend Defense", () => {
 				),
 			);
 
-		assert.equal(Number(certDb?.currentBalanceRub), 8500);
+		assert.equal(Number(certDb?.currentBalanceKopecks), 850000);
 
 		// В payments создана ровно 1 запись с данным clientMutationId
 		const paymentsWithKey = await db

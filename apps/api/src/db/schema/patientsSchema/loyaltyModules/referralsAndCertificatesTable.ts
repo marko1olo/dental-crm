@@ -42,12 +42,6 @@ export const referralCampaigns = pgTable(
 		})
 			.notNull()
 			.default("300.00"),
-		minFirstSpendThresholdRub: numeric("min_first_spend_threshold_rub", {
-			precision: 12,
-			scale: 2,
-		})
-			.notNull()
-			.default("1500.00"),
 		minFirstSpendThresholdKopecks: bigint("min_first_spend_threshold_kopecks", {
 			mode: "number",
 		})
@@ -125,10 +119,6 @@ export const patientReferrals = pgTable(
 		qualifyingPaymentId: uuid("qualifying_payment_id").references(
 			() => payments.id,
 		),
-		qualifyingAmountRub: numeric("qualifying_amount_rub", {
-			precision: 12,
-			scale: 2,
-		}),
 		qualifyingAmountKopecks: bigint("qualifying_amount_kopecks", {
 			mode: "number",
 		}),
@@ -160,19 +150,10 @@ export const giftCertificates = pgTable(
 			.notNull()
 			.references(() => organizations.id, { onDelete: "cascade" }),
 		serialNumber: text("serial_number").notNull(),
-		nominalRub: numeric("nominal_rub", { precision: 12, scale: 2 }).notNull(),
 		nominalKopecks: bigint("nominal_kopecks", { mode: "number" }).notNull().default(0),
-		initialBalanceRub: numeric("initial_balance_rub", {
-			precision: 12,
-			scale: 2,
-		}).notNull(),
 		initialBalanceKopecks: bigint("initial_balance_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),
-		currentBalanceRub: numeric("current_balance_rub", {
-			precision: 12,
-			scale: 2,
-		}).notNull(),
 		currentBalanceKopecks: bigint("current_balance_kopecks", { mode: "number" })
 			.notNull()
 			.default(0),

@@ -187,13 +187,17 @@ export async function computeDoctorTodayEarningsInTx(
 
 	for (const order of dataset.orders) {
 		const itemGross = Math.max(0, Math.round(order.grossKopecks));
+		const itemSalaryBasis = Math.max(
+			0,
+			Math.round(order.salaryPriceKopecks ?? order.grossKopecks),
+		);
 		const pct = resolveItemCommissionPercent(
 			order.category,
 			order.serviceNameRu,
 			order.serviceCode,
 		);
 		const itemEarned = percentageOfKopecks(
-			itemGross,
+			itemSalaryBasis,
 			basisPointsFromPercent(pct),
 		);
 		grossTodayKopecks += itemGross;

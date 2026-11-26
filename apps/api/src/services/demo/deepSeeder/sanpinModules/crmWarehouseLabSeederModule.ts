@@ -48,7 +48,7 @@ export async function seedLabOrders(
 			clinicalNotes:
 				"Одиночная анатомическая коронка ZrO2 Prettau на зуб 11. Культя витальная, расцветка культи ND2. Высокая прозрачность эмалевого края.",
 			labComments: "3D CAD-моделирование утверждено. Каркас отфрезерован, передан на синтеризацию.",
-			priceRub: 14500,
+			priceKopecks: 1450000,
 			isLockedInstalled: false,
 			sentAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
 		})
@@ -79,7 +79,7 @@ export async function seedLabOrders(
 					shadeStump: "ND2",
 					translucencyLevel: "HT",
 					cementGapMicrons: 30,
-					priceRub: "14500.00",
+					priceKopecks: 1450000,
 				})
 				.onConflictDoNothing();
 		}
@@ -155,7 +155,7 @@ export async function seedLabOrders(
 					dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
 					clinicalNotes: "Мостовидный протез 24–26 с опорой на 24, 26. Уступ круговой 0.8 мм, окклюзия по 1 классу.",
 					labComments: "Глазурование и полировка завершены, работа прошла ОТК и готова к курьерской доставке в клинику.",
-					priceRub: 28500,
+					priceKopecks: 2850000,
 					isLockedInstalled: false,
 					sentAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
 				},
@@ -172,7 +172,7 @@ export async function seedLabOrders(
 					dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
 					clinicalNotes: "Имплантат Osstem TSIII 4.5x10, шахта винта по центру жевательной фиссуры.",
 					labComments: "Передано в клинику с индивидуальным абатментом и динамометрическим винтом.",
-					priceRub: 19000,
+					priceKopecks: 1900000,
 					isLockedInstalled: true,
 					installedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
 					sentAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),

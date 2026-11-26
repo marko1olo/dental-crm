@@ -175,19 +175,20 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		assert.ok(saved.json.id, "маршрут не вернул id заказа");
 
 		const row = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
-			tx.execute<{ price_rub: string }>(sql`
-				select price_rub::text as price_rub from lab_orders
+			tx.execute<{ price_kopecks: string }>(sql`
+				select price_kopecks::text as price_kopecks from lab_orders
 				 where id = ${String(saved.json.id)}::uuid
 			`),
 		);
 		assert.equal(
-			row.rows[0]?.price_rub,
-			"1500.50",
-			`в базе ${row.rows[0]?.price_rub} вместо 1500.50`,
+			Number(row.rows[0]?.price_kopecks),
+			150050,
+			`в базе ${row.rows[0]?.price_kopecks} вместо 150050 копеек`,
 		);
+		assert.equal(saved.json.priceRub, 1500.5);
 	});
 
-	test("SEV-1: заказ ЗТЛ с patientPriceKopecks сохраняет точную цену для пациента в price_rub (не 0 ₽)", async (t) => {
+	test("SEV-1: заказ ЗТЛ с patientPriceKopecks сохраняет точную цену для пациента в price_kopecks (не 0 ₽)", async (t) => {
 		if (!databaseReady) return t.skip("база недоступна");
 
 		const created = await createOrder({
@@ -204,20 +205,20 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		const orderId = String(created.json.id);
 
 		const row = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
-			tx.execute<{ price_rub: string; lab_cost_rub: string }>(sql`
-				select price_rub::text as price_rub, lab_cost_rub::text as lab_cost_rub from lab_orders
+			tx.execute<{ price_kopecks: string; lab_cost_kopecks: string }>(sql`
+				select price_kopecks::text as price_kopecks, lab_cost_kopecks::text as lab_cost_kopecks from lab_orders
 				 where id = ${orderId}::uuid
 			`),
 		);
 		assert.equal(
-			row.rows[0]?.price_rub,
-			"24500.00",
-			`в базе ${row.rows[0]?.price_rub} вместо 24500.00 (цена не должна сбрасываться в 0 ₽)`,
+			Number(row.rows[0]?.price_kopecks),
+			2450000,
+			`в базе ${row.rows[0]?.price_kopecks} вместо 2450000 копеек (цена не должна сбрасываться в 0 ₽)`,
 		);
 		assert.equal(
-			row.rows[0]?.lab_cost_rub,
-			"8000.00",
-			`в базе себестоимость ${row.rows[0]?.lab_cost_rub} вместо 8000.00`,
+			Number(row.rows[0]?.lab_cost_kopecks),
+			800000,
+			`в базе себестоимость ${row.rows[0]?.lab_cost_kopecks} вместо 800000 копеек`,
 		);
 
 		const putResponse = await app.inject({
@@ -234,21 +235,19 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		assert.equal(putResponse.statusCode, 200, `PUT вернул ${putResponse.statusCode}: ${putResponse.body}`);
 
 		const updatedRow = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
-			tx.execute<{ price_rub: string; price_kopecks: number }>(sql`
-				select price_rub::text as price_rub, price_kopecks from lab_orders
+			tx.execute<{ price_kopecks: string }>(sql`
+				select price_kopecks::text as price_kopecks from lab_orders
 				 where id = ${orderId}::uuid
 			`),
 		);
 		assert.equal(
-			updatedRow.rows[0]?.price_rub,
-			"29000.00",
-			`в базе обновленная цена ${updatedRow.rows[0]?.price_rub} вместо 29000.00`,
-		);
-		assert.equal(
 			Number(updatedRow.rows[0]?.price_kopecks),
 			2900000,
-			"в базе price_kopecks синхронизирован с копейками",
+			"в базе price_kopecks синхронизирован с копейками (2900000)",
 		);
+		const putJson = JSON.parse(putResponse.body) as { priceRub?: number; priceKopecks?: number };
+		assert.equal(putJson.priceKopecks, 2900000);
+		assert.equal(putJson.priceRub, 29000);
 	});
 
 	test("отрицательная цена отклоняется", async (t) => {

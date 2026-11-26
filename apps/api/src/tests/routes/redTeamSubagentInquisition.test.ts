@@ -211,7 +211,7 @@ describe("RED TEAM PENTEST: ANESTHESIA, LAB ORDERS (ЗТЛ), PRESCRIPTIONS & TEN
 				material: "zirconia_multilayer_gradient",
 				colorVita: "A2",
 				status: "draft",
-				priceRub: 12000,
+				priceKopecks: 1200000,
 			}).onConflictDoNothing();
 
 			await tx.insert(electronicPrescriptions).values({
@@ -294,7 +294,7 @@ describe("RED TEAM PENTEST: ANESTHESIA, LAB ORDERS (ЗТЛ), PRESCRIPTIONS & TEN
 				material: "emax_press",
 				colorVita: "B1",
 				status: "draft",
-				priceRub: 18000,
+				priceKopecks: 1800000,
 			}).onConflictDoNothing();
 		});
 

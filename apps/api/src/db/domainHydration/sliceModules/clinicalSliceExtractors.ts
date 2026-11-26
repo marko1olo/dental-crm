@@ -8,6 +8,7 @@ import {
 	dentalSpecialtySchema,
 	type ImagingStudy,
 	imagingStudySchema,
+	kopecksToRubles,
 	type ProtocolTemplate,
 	protocolTemplateSchema,
 	type StaffMember,
@@ -199,7 +200,7 @@ export function extractAppointments(
 							dueDate: matchedOrder.dueDate ? iso(matchedOrder.dueDate) : null,
 							status: mappedStatus,
 							stage: mappedStatus,
-							priceRub: matchedOrder.priceRub ?? null,
+							priceRub: matchedOrder.priceKopecks != null ? kopecksToRubles(matchedOrder.priceKopecks) : null,
 						}
 					: null,
 			};

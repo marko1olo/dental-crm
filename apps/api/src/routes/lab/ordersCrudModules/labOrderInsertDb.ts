@@ -289,9 +289,7 @@ export async function insertLabOrderInDb(
 			dueDate: parsedDueDate,
 			clinicalNotes: structuredNotes.trim() || null,
 			attachedImageUrl: effectiveAttachedImage,
-			priceRub: finalPriceRub,
 			priceKopecks: finalPriceKopecks,
-			labCostRub: finalLabCostRub,
 			labCostKopecks: finalLabCostKopecks,
 			isWarranty,
 			parentLabOrderId: data.parentLabOrderId ?? data.originalOrderId ?? null,
@@ -329,7 +327,6 @@ export async function insertLabOrderInDb(
 				implantSystem: item.implantSystem ?? null,
 				implantPlatformDiameterMm: item.implantPlatformDiameterMm ?? null,
 				tiBaseHeightMm: item.tiBaseHeightMm ?? null,
-				priceRub: kopecksToNumericString(itemKopecks),
 				priceKopecks: itemKopecks,
 			});
 		}
@@ -350,7 +347,6 @@ export async function insertLabOrderInDb(
 				const toothNum = validTeeth[i];
 				if (toothNum === undefined) continue;
 				const toothKopecks = splits[i] ?? 0;
-				const itemPriceRub = kopecksToNumericString(toothKopecks);
 
 				await tx.insert(labItems).values({
 					organizationId: orgId,
@@ -361,7 +357,6 @@ export async function insertLabOrderInDb(
 					shadeSystem: effectiveShadeSystem,
 					shadeFinal: normalizedColor,
 					shadeStump: data.stumpShade || null,
-					priceRub: itemPriceRub,
 					priceKopecks: toothKopecks,
 				});
 			}
@@ -380,8 +375,10 @@ export async function insertLabOrderInDb(
 		priceKopecks: finalPriceKopecks,
 		amountKopecks: finalPriceKopecks,
 		patientPriceKopecks: finalPriceKopecks,
+		priceRub: finalPriceRub,
 		labCostKopecks: finalLabCostKopecks,
 		costKopecks: finalLabCostKopecks,
+		labCostRub: finalLabCostRub,
 	};
 
 	return { kind: "ok" as const, order: enrichedOrder };

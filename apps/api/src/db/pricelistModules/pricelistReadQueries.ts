@@ -128,6 +128,10 @@ export function projectServiceCatalogRows(
 				row.labCostRub !== null && row.labCostRub !== undefined
 					? Number(row.labCostRub)
 					: 0,
+			salaryPriceKopecks:
+				row.salaryPriceKopecks !== null && row.salaryPriceKopecks !== undefined
+					? Number(row.salaryPriceKopecks)
+					: null,
 			tierPrices:
 				row.tierPrices && typeof row.tierPrices === "object"
 					? (row.tierPrices as Record<string, unknown>)

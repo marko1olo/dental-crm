@@ -77,12 +77,8 @@ export async function validateAndLockGiftCertificate(
 		};
 	}
 
-	// [FLOAT-DEFECT FIX]: Чтение точных копеек из currentBalanceKopecks либо parseKopecks
-	const currentBalKop =
-		cert.currentBalanceKopecks != null &&
-		BigInt(cert.currentBalanceKopecks) !== 0n
-			? BigInt(cert.currentBalanceKopecks)
-			: BigInt(parseKopecks(cert.currentBalanceRub ?? 0));
+	// [FLOAT-DEFECT FIX]: Чтение точных копеек из currentBalanceKopecks
+	const currentBalKop = BigInt(cert.currentBalanceKopecks ?? 0);
 
 	if (currentBalKop < requiredCertificateKopecks) {
 		return {
@@ -126,7 +122,6 @@ export async function finalizeGiftCertificateDeduction(
 	await tx
 		.update(giftCertificates)
 		.set({
-			currentBalanceRub: newCertBalanceRub,
 			currentBalanceKopecks: newBalKop,
 			status: isDepleted ? "depleted" : "active",
 			notes: body.invoiceId

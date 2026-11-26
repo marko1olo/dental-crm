@@ -37,6 +37,10 @@ import {
 	fetchActiveDoctorProfiles,
 	fetchDoctorPayrollDataset,
 } from "../../../routes/doctorPayrollDbQueries.js";
+import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+} from "../../../routes/payrollModules/payrollTypesAndQueries.js";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -358,8 +362,13 @@ export async function doctorPayrollReport(
 		if (filterDoctorId) {
 			activeDoctors = activeDoctors.filter((doc) => doc.id === filterDoctorId);
 		}
-		const fromStr = scope.from.toISOString().slice(0, 10);
-		const toStr = scope.to.toISOString().slice(0, 10);
+		const clinicTimeZone = executor
+			? await resolveClinicTimeZone(executor, scope.organizationId)
+			: await withTenantCtx(scope.organizationId, (tx) =>
+					resolveClinicTimeZone(tx, scope.organizationId),
+				);
+		const fromStr = formatDateIsoInTimeZone(scope.from, clinicTimeZone);
+		const toStr = formatDateIsoInTimeZone(scope.to, clinicTimeZone);
 
 		const rows: DoctorPayrollRow[] = [];
 		let totalServicesRenderedKopecks = 0;

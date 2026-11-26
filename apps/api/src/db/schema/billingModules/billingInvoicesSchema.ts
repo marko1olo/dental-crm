@@ -167,7 +167,6 @@ export const pricelistDoctorPayrolls = pgTable(
 			.references(() => organizations.id),
 		serviceCode: text("service_code").notNull(),
 		serviceName: text("service_name").notNull(),
-		priceRub: numeric("price_rub", { precision: 10, scale: 2 }).notNull(),
 		priceKopecks: bigint("price_kopecks", { mode: "bigint" })
 			.notNull()
 			.default(sql`0`),
@@ -177,17 +176,9 @@ export const pricelistDoctorPayrolls = pgTable(
 		})
 			.default("25.00")
 			.notNull(),
-		doctorPayrollRub: numeric("doctor_payroll_rub", {
-			precision: 10,
-			scale: 2,
-		}).notNull(),
 		doctorPayrollKopecks: bigint("doctor_payroll_kopecks", { mode: "bigint" })
 			.notNull()
 			.default(sql`0`),
-		clinicMarginRub: numeric("clinic_margin_rub", {
-			precision: 10,
-			scale: 2,
-		}).notNull(),
 		clinicMarginKopecks: bigint("clinic_margin_kopecks", { mode: "bigint" })
 			.notNull()
 			.default(sql`0`),

@@ -278,7 +278,6 @@ export async function processReferralStart(
 				referrerPatientId: referrerId,
 				refereePatientId: refereeId,
 				status: "completed",
-				qualifyingAmountRub: String(config.refereeWelcomeBonusRub),
 				qualifyingAmountKopecks: rublesToKopecks(config.refereeWelcomeBonusRub),
 			});
 

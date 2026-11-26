@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { labItems, labOrders } from "../../db/schema.js";
-import { kopecksToNumericString, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { rublesToKopecks } from "@dental/shared";
 import type { z } from "zod";
 import type { createLabItemSchema, updateLabItemSchema } from "./types.js";
 
@@ -45,14 +45,12 @@ export async function recalculateLabOrderFromItemsTx(
 	const sumPriceKopecks = allItems.reduce((acc, it) => acc + Number(it.priceKopecks ?? 0), 0);
 
 	const priceKopecks = order.isWarranty ? 0 : sumPriceKopecks;
-	const priceRub = order.isWarranty ? 0 : kopecksToRubles(sumPriceKopecks);
 
 	const [updatedOrder] = await tx
 		.update(labOrders)
 		.set({
 			toothFdi: teethFdi,
 			priceKopecks,
-			priceRub,
 			updatedAt: new Date(),
 		})
 		.where(and(eq(labOrders.id, labOrderId), eq(labOrders.organizationId, orgId)))
@@ -93,7 +91,6 @@ export async function insertLabItemTx(
 			implantSystem: body.implantSystem ?? null,
 			implantPlatformDiameterMm: body.implantPlatformDiameterMm ?? null,
 			tiBaseHeightMm: body.tiBaseHeightMm ?? null,
-			priceRub: kopecksToNumericString(computedPriceKopecks),
 			priceKopecks: computedPriceKopecks,
 		})
 		.returning();
@@ -139,7 +136,6 @@ export async function updateLabItemTx(
 					? rublesToKopecks(body.priceRub)
 					: 0;
 		updatePayload.priceKopecks = computedPriceKopecks;
-		updatePayload.priceRub = kopecksToNumericString(computedPriceKopecks);
 	}
 
 

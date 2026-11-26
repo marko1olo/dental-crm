@@ -26,6 +26,11 @@ import {
 	fetchDoctorPayrollDataset,
 	SPECIALTY_TITLES,
 } from "./doctorPayrollDbQueries.js";
+import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+	resolvePeriodDateBoundsInTimeZone,
+} from "./payrollModules/payrollTypesAndQueries.js";
 
 const doctorMyEarningsQuerySchema = z
 	.object({
@@ -80,26 +85,32 @@ export async function handleGetDoctorMyEarnings(
 		return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден" });
 	}
 
-	let fromStr: string;
-	let toStr: string;
-	if (q.date) {
-		const cleanDate = q.date.slice(0, 10);
-		fromStr = cleanDate;
-		toStr = cleanDate;
-	} else {
-		fromStr = q.from || q.startDate || new Date().toISOString().slice(0, 10);
-		toStr = q.to || q.endDate || new Date().toISOString().slice(0, 10);
-	}
-
-	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
-	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
-
 	const {
+		fromStr,
+		toStr,
 		docUser,
 		commRecords,
 		pricelistRows,
 		dataset: { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop },
 	} = await withTenantCtx(orgId, async (tx) => {
+		const clinicTimeZone = await resolveClinicTimeZone(tx, orgId);
+		let resolvedFromStr: string;
+		let resolvedToStr: string;
+		if (q.date) {
+			const cleanDate = q.date.slice(0, 10);
+			resolvedFromStr = cleanDate;
+			resolvedToStr = cleanDate;
+		} else {
+			const todayInZone = formatDateIsoInTimeZone(new Date(), clinicTimeZone);
+			resolvedFromStr = q.from || q.startDate || todayInZone;
+			resolvedToStr = q.to || q.endDate || todayInZone;
+		}
+		const { fromDate, toDate } = resolvePeriodDateBoundsInTimeZone(
+			resolvedFromStr,
+			resolvedToStr,
+			clinicTimeZone,
+		);
+
 		const [u] = await tx
 			.select({
 				id: users.id,
@@ -142,14 +153,21 @@ export async function handleGetDoctorMyEarnings(
 		const dataset = await fetchDoctorPayrollDataset({
 			orgId,
 			resolvedDocId,
-			fromStr,
-			toStr,
+			fromStr: resolvedFromStr,
+			toStr: resolvedToStr,
 			fromDate,
 			toDate,
 			tx,
 		});
 
-		return { docUser: u, commRecords: comms, pricelistRows: prRows, dataset };
+		return {
+			fromStr: resolvedFromStr,
+			toStr: resolvedToStr,
+			docUser: u,
+			commRecords: comms,
+			pricelistRows: prRows,
+			dataset,
+		};
 	});
 
 	const doctorName = docUser?.fullName || "Врач-стоматолог";

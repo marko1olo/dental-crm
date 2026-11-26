@@ -20,6 +20,11 @@ import {
 	type PayrollOrderDto,
 } from "../doctorPayrollDbQueries.js";
 import {
+	formatDateIsoInTimeZone,
+	resolveClinicTimeZone,
+	resolvePeriodDateBoundsInTimeZone,
+} from "./payrollTypesAndQueries.js";
+import {
 	type PayrollCalculationsQuery,
 	payrollCalculationsQuerySchema,
 } from "./payrollSchemas.js";
@@ -97,17 +102,25 @@ export async function getPayrollCalculationsHandler(
 		rawDocId = payoutAccess.userId;
 	}
 
-	const fromStr = q.from || q.startDate || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-	const toStr = q.to || q.endDate || q.endDateIso || new Date().toISOString().slice(0, 10);
-	const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
-	const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
-
 	const identSalaryModel = q.identSalaryModel ?? "net_proportional_discount";
 	const cashAdvancePolicy = q.cashAdvancePolicy ?? "proportional";
 	const manualCarryOverKop = q.carryOverDebtKopecks !== undefined ? Math.max(0, Number(q.carryOverDebtKopecks) || 0) : undefined;
 
 	if (rawDocId === "all") {
 		const consolidated = await withTenantCtx(orgId, async (tx) => {
+			const clinicTimeZone = await resolveClinicTimeZone(tx, orgId);
+			const fromStr =
+				q.from ||
+				q.startDate ||
+				q.startDateIso ||
+				formatDateIsoInTimeZone(new Date(Date.now() - 30 * 86400000), clinicTimeZone);
+			const toStr =
+				q.to ||
+				q.endDate ||
+				q.endDateIso ||
+				formatDateIsoInTimeZone(new Date(), clinicTimeZone);
+			const { fromDate, toDate } = resolvePeriodDateBoundsInTimeZone(fromStr, toStr, clinicTimeZone);
+
 			const activeDoctors = await fetchActiveDoctorProfiles(orgId, tx);
 			const allOrders: PayrollOrderDto[] = [];
 			const allClosedPeriods: ClosedPayrollPeriodDto[] = [];
@@ -241,6 +254,19 @@ export async function getPayrollCalculationsHandler(
 	}
 
 	const singleDoctorPayload = await withTenantCtx(orgId, async (tx) => {
+		const clinicTimeZone = await resolveClinicTimeZone(tx, orgId);
+		const fromStr =
+			q.from ||
+			q.startDate ||
+			q.startDateIso ||
+			formatDateIsoInTimeZone(new Date(Date.now() - 30 * 86400000), clinicTimeZone);
+		const toStr =
+			q.to ||
+			q.endDate ||
+			q.endDateIso ||
+			formatDateIsoInTimeZone(new Date(), clinicTimeZone);
+		const { fromDate, toDate } = resolvePeriodDateBoundsInTimeZone(fromStr, toStr, clinicTimeZone);
+
 		const [docUser] = await tx
 			.select({
 				id: users.id,

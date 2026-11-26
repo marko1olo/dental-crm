@@ -1,4 +1,3 @@
-import { kopecksToRubles } from "@dental/shared";
 import type { TenantDb } from "../../../db/rls.js";
 import { labOrders, patients, users } from "../../../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -42,9 +41,7 @@ export async function seedDemoLabOrdersIfEmpty(tx: TenantDb, orgId: string) {
 				stage: "fitting_ready",
 				dueDate: new Date(now.getTime() + 2 * 86400_000),
 				priceKopecks: 2800000,
-				priceRub: kopecksToRubles(2800000),
 				labCostKopecks: 750000,
-				labCostRub: kopecksToRubles(750000),
 				clinicalNotes: "Цельнокерамическая коронка e.MAX на зуб 16. Работа доставлена из ЗТЛ в клинику, готова к примерке.",
 				sentAt: new Date(now.getTime() - 4 * 86400_000),
 			},
@@ -62,9 +59,7 @@ export async function seedDemoLabOrdersIfEmpty(tx: TenantDb, orgId: string) {
 				stage: "in_production",
 				dueDate: new Date(now.getTime() + 4 * 86400_000),
 				priceKopecks: 3200000,
-				priceRub: kopecksToRubles(3200000),
 				labCostKopecks: 850000,
-				labCostRub: kopecksToRubles(850000),
 				clinicalNotes: "Анатомическая коронка ZrO2 на зуб 21. Этап CAD/CAM фрезеровки и синтеризации.",
 				sentAt: new Date(now.getTime() - 2 * 86400_000),
 			},
@@ -82,9 +77,7 @@ export async function seedDemoLabOrdersIfEmpty(tx: TenantDb, orgId: string) {
 				stage: "scan_sent",
 				dueDate: new Date(now.getTime() + 5 * 86400_000),
 				priceKopecks: 2400000,
-				priceRub: kopecksToRubles(2400000),
 				labCostKopecks: 650000,
-				labCostRub: kopecksToRubles(650000),
 				clinicalNotes: "Цифровой слепок STL отправлен в лабораторию. Моделировка каркаса.",
 				sentAt: new Date(now.getTime() - 86400_000),
 			},
@@ -105,9 +98,7 @@ export async function seedDemoLabOrdersIfEmpty(tx: TenantDb, orgId: string) {
 				completedAt: new Date(now.getTime() - 86400_000),
 				dueDate: new Date(now.getTime() - 2 * 86400_000),
 				priceKopecks: 1850000,
-				priceRub: kopecksToRubles(1850000),
 				labCostKopecks: 450000,
-				labCostRub: kopecksToRubles(450000),
 				clinicalNotes: "Коронка 36 сдана и зафиксирована в полости рта пациента.",
 				sentAt: new Date(now.getTime() - 6 * 86400_000),
 			},

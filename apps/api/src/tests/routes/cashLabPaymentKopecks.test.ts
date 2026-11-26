@@ -78,8 +78,8 @@ describe("Связка наряда лаборатории с кассой (amou
 				secureToken: "sec-token-ztl-001",
 				toothFdi: "16",
 				material: "ZrO2 Katana",
-				priceRub: 24000,
-				labCostRub: 7500,
+				priceKopecks: 2400000,
+				labCostKopecks: 750000,
 				status: "received",
 			}).onConflictDoNothing();
 
@@ -92,8 +92,8 @@ describe("Связка наряда лаборатории с кассой (amou
 				secureToken: "sec-token-ztl-002",
 				toothFdi: "17",
 				material: "E.max Press",
-				priceRub: 28000,
-				labCostRub: 8000,
+				priceKopecks: 2800000,
+				labCostKopecks: 800000,
 				status: "received",
 			}).onConflictDoNothing();
 		});

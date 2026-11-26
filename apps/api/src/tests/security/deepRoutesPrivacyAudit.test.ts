@@ -214,8 +214,8 @@ describe("152-FZ / 323-ФЗ Deep Routes Privacy Audit & Multi-Tenant Isolation",
 					material: "e.max CAD",
 					colorVita: "A2",
 					status: "draft",
-					priceRub: 12000,
-					labCostRub: 5000,
+					priceKopecks: 1200000,
+					labCostKopecks: 500000,
 				})
 				.onConflictDoNothing();
 
@@ -316,8 +316,8 @@ describe("152-FZ / 323-ФЗ Deep Routes Privacy Audit & Multi-Tenant Isolation",
 					material: "Zirconia Multi-layer",
 					colorVita: "A3",
 					status: "draft",
-					priceRub: 25000,
-					labCostRub: 10000,
+					priceKopecks: 2500000,
+					labCostKopecks: 1000000,
 				})
 				.onConflictDoNothing();
 

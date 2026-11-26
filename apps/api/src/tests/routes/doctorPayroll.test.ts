@@ -12,26 +12,38 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { eq } from "drizzle-orm";
-import { resolveDoctorPreset } from "@dental/shared";
+import { calculateDoctorPeriodPayroll, resolveDoctorPreset } from "@dental/shared";
 import {
 	normalizeClinicalCategory,
 	fetchDoctorPayrollDataset,
 	fetchClosedPayrollStatements,
 } from "../../routes/doctorPayrollDbQueries.js";
+import {
+	formatDateIsoInTimeZone,
+	resolvePeriodDateBoundsInTimeZone,
+} from "../../routes/payrollModules/payrollTypesAndQueries.js";
+import {
+	createServiceCatalogItemInDb,
+	updateServiceCatalogItemInDb,
+} from "../../db/pricelistQuery.js";
+import { computeDoctorTodayEarningsInTx } from "../../routes/doctorPortal/todaySummaryQuery.js";
 import { closeSettlementPeriodInDb } from "../../routes/payrollSettlementDbQueries.js";
 import {
 	appointments,
 	cashBoxes,
 	cashOperations,
+	doctorCommissions,
 	doctorPayrollStatements,
 	inventoryItems,
 	inventoryTransactions,
 	labOrders,
 	organizations,
+	patientInvoices,
 	patients,
 	payments,
 	serviceCatalogItems,
 	treatmentItems,
+	treatmentPlans,
 	users,
 	visits,
 } from "../../db/schema.js";
@@ -767,5 +779,348 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}
+	});
+
+	it("7. Applies service_catalog_items.salary_price_kopecks when set and falls back to percentage when null", async () => {
+		const orgId = fixtureUuid("doctorPayrollTest", 70);
+		const doctorId = fixtureUuid("doctorPayrollTest", 71);
+		const patientId = fixtureUuid("doctorPayrollTest", 72);
+		const apptId = fixtureUuid("doctorPayrollTest", 73);
+		const visitId = fixtureUuid("doctorPayrollTest", 74);
+		const treatFixedId = fixtureUuid("doctorPayrollTest", 75);
+		const treatDefaultId = fixtureUuid("doctorPayrollTest", 76);
+		const paymentId = fixtureUuid("doctorPayrollTest", 77);
+
+		await purgeFixtureOrganizations([orgId]);
+		const testDate = new Date("2026-11-12T10:00:00Z");
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({ id: orgId, name: "Клиника SalaryPrice Тест" });
+				await tx.insert(users).values({
+					id: doctorId,
+					organizationId: orgId,
+					email: `doc-sal-${Date.now()}@dente.ru`,
+					passwordHash: "hash",
+					fullName: "Врач Расчетной Базы",
+					role: "doctor",
+					specialties: ["therapy"],
+					isActive: true,
+				});
+				await tx.insert(doctorCommissions).values({
+					organizationId: orgId,
+					userId: doctorId,
+					doctorId,
+					serviceCategory: null,
+					commissionPercent: "30.00",
+					commissionPct: "30.00",
+					isActive: true,
+				});
+				await tx.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Пациент Расчетной Базы",
+				});
+			});
+
+			const fixedSvc = await createServiceCatalogItemInDb(orgId, {
+				code: "SVC-FIXED-SAL",
+				title: "Коронка с фиксированной базой ЗП",
+				category: "therapy",
+				specialty: "therapist",
+				basePriceRub: 10000,
+				durationMinutes: 60,
+				taxDeductible: true,
+				active: true,
+				salaryPriceKopecks: 600000,
+			});
+			assert.equal(fixedSvc.salaryPriceKopecks, 600000);
+			assert.doesNotThrow(() => JSON.stringify(fixedSvc), "Service DTO must serialize without BigInt errors");
+
+			const nullSvc = await createServiceCatalogItemInDb(orgId, {
+				code: "SVC-NULL-SAL",
+				title: "Пломба без фиксированной базы (процентная)",
+				category: "therapy",
+				specialty: "therapist",
+				basePriceRub: 10000,
+				durationMinutes: 40,
+				taxDeductible: true,
+				active: true,
+				salaryPriceKopecks: 400000,
+			});
+			const clearedNullSvc = await updateServiceCatalogItemInDb(orgId, nullSvc.id, {
+				salaryPriceKopecks: null,
+			});
+			assert.equal(clearedNullSvc.salaryPriceKopecks, null);
+
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(appointments).values({
+					id: apptId,
+					organizationId: orgId,
+					patientId,
+					doctorUserId: doctorId,
+					startsAt: testDate,
+					endsAt: new Date("2026-11-12T11:00:00Z"),
+					status: "completed",
+				});
+				await tx.insert(visits).values({
+					id: visitId,
+					organizationId: orgId,
+					appointmentId: apptId,
+					patientId,
+					status: "signed",
+				});
+				await tx.insert(treatmentItems).values([
+					{
+						id: treatFixedId,
+						organizationId: orgId,
+						patientId,
+						visitId,
+						serviceId: fixedSvc.id,
+						title: fixedSvc.title,
+						priceKopecks: 1000000n,
+						unitPriceKopecks: 1000000n,
+						priceRub: 10000,
+						unitPriceRub: 10000,
+						quantity: "1",
+					},
+					{
+						id: treatDefaultId,
+						organizationId: orgId,
+						patientId,
+						visitId,
+						serviceId: clearedNullSvc.id,
+						title: clearedNullSvc.title,
+						priceKopecks: 1000000n,
+						unitPriceKopecks: 1000000n,
+						priceRub: 10000,
+						unitPriceRub: 10000,
+						quantity: "1",
+					},
+				]);
+				await tx.insert(payments).values({
+					id: paymentId,
+					organizationId: orgId,
+					patientId,
+					visitId,
+					amountRub: 20000,
+					amountKopecks: 2000000n,
+					status: "paid",
+					paidAt: testDate,
+					fiscalReceiptNumber: "ЧЕК-SAL-001",
+				});
+			});
+
+			const dataset = await fetchDoctorPayrollDataset({
+				orgId,
+				resolvedDocId: doctorId,
+				fromStr: "2026-11-01",
+				toStr: "2026-11-30",
+				fromDate: new Date("2026-11-01T00:00:00Z"),
+				toDate: new Date("2026-11-30T23:59:59Z"),
+			});
+
+			const fixedCompleted = dataset.completedServices.find((s) => s.id === treatFixedId);
+			const nullCompleted = dataset.completedServices.find((s) => s.id === treatDefaultId);
+			assert.ok(fixedCompleted && nullCompleted);
+			assert.equal(fixedCompleted.salaryPriceKop, 600000);
+			assert.equal(nullCompleted.salaryPriceKop, undefined);
+
+			const payroll = calculateDoctorPeriodPayroll({
+				doctorId,
+				doctorName: "Врач Расчетной Базы",
+				specialtyId: "therapy",
+				periodStartIso: "2026-11-01",
+				periodEndIso: "2026-11-30",
+				services: dataset.completedServices,
+				customBasePercentage: 30,
+				identSalaryModel: "net_proportional_discount",
+				cashAdvancePolicy: "proportional",
+			});
+
+			// 30% от 600 000 (180 000) + 30% от 1 000 000 (300 000) = 480 000 коп (вместо 600 000 без salaryPriceKopecks!)
+			assert.equal(payroll.grossPayoutBeforeTaxKop, 480000);
+
+			const todaySummary = await withFixtureTenant(orgId, async (tx) =>
+				computeDoctorTodayEarningsInTx({
+					tx,
+					organizationId: orgId,
+					doctorId,
+					dateIso: "2026-11-12",
+				}),
+			);
+			assert.equal(todaySummary.summary.grossTodayKopecks, 2000000);
+			assert.equal(todaySummary.summary.earnedTodayKopecks, 480000);
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+
+	it("8. Captures advances & refunds without payments.visit_id via LEFT JOIN visits and preserves priorDebtCarryOverKop when appts=0", async () => {
+		const orgId = fixtureUuid("doctorPayrollTest", 80);
+		const doctorId = fixtureUuid("doctorPayrollTest", 81);
+		const patientId = fixtureUuid("doctorPayrollTest", 82);
+		const planId = fixtureUuid("doctorPayrollTest", 83);
+		const apptJuneId = fixtureUuid("doctorPayrollTest", 84);
+		const visitJuneId = fixtureUuid("doctorPayrollTest", 85);
+		const invoiceId = fixtureUuid("doctorPayrollTest", 86);
+		const treatJuneId = fixtureUuid("doctorPayrollTest", 87);
+		const advanceJulyNoVisitId = fixtureUuid("doctorPayrollTest", 88);
+		const refundAugustNoVisitId = fixtureUuid("doctorPayrollTest", 89);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({ id: orgId, name: "Клиника LeftJoin Тест" });
+				await tx.insert(users).values({
+					id: doctorId,
+					organizationId: orgId,
+					email: `doc-lj-${Date.now()}@dente.ru`,
+					passwordHash: "hash",
+					fullName: "Врач Авансов и Возвратов",
+					role: "doctor",
+					specialties: ["therapy"],
+					isActive: true,
+				});
+				await tx.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Пациент Аванса Без Визита",
+				});
+				await tx.insert(treatmentPlans).values({
+					id: planId,
+					organizationId: orgId,
+					patientId,
+					doctorId,
+					name: "План терапии",
+					title: "План терапии",
+					status: "Approved",
+				});
+				await tx.insert(appointments).values({
+					id: apptJuneId,
+					organizationId: orgId,
+					patientId,
+					doctorUserId: doctorId,
+					treatmentPlanId: planId,
+					startsAt: new Date("2026-06-15T10:00:00Z"),
+					endsAt: new Date("2026-06-15T11:00:00Z"),
+					status: "completed",
+				});
+				await tx.insert(visits).values({
+					id: visitJuneId,
+					organizationId: orgId,
+					appointmentId: apptJuneId,
+					patientId,
+					status: "signed",
+				});
+				await tx.insert(treatmentItems).values({
+					id: treatJuneId,
+					organizationId: orgId,
+					patientId,
+					visitId: visitJuneId,
+					title: "Восстановление культи",
+					priceKopecks: 1500000n,
+					unitPriceKopecks: 1500000n,
+					priceRub: 15000,
+					unitPriceRub: 15000,
+					quantity: "1",
+				});
+				await tx.insert(patientInvoices).values({
+					id: invoiceId,
+					organizationId: orgId,
+					patientId,
+					visitId: visitJuneId,
+					treatmentPlanId: planId,
+					totalAmountRub: 15000,
+					totalRub: "15000.00",
+					totalPriceKopecks: 1500000n,
+					status: "paid",
+				});
+				// Аванс в июле: visitId = null, связан через documentId -> patientInvoices!
+				await tx.insert(payments).values({
+					id: advanceJulyNoVisitId,
+					organizationId: orgId,
+					patientId,
+					visitId: null,
+					documentId: invoiceId,
+					amountRub: 15000,
+					amountKopecks: 1500000n,
+					status: "paid",
+					paidAt: new Date("2026-07-05T12:00:00Z"),
+					fiscalReceiptNumber: "ЧЕК-АВАНС-НОЛЬ-ВИЗИТ",
+				});
+				// Закрытая ведомость за июль с отрицательным сальдо (-200 000 коп)
+				await tx.insert(doctorPayrollStatements).values({
+					organizationId: orgId,
+					doctorId,
+					period: "2026-07",
+					grossRevenueRub: "0.00",
+					grossRevenueKopecks: 0n,
+					materialsCostRub: "0.00",
+					materialsCostKopecks: 0n,
+					labCostRub: "2000.00",
+					labCostKopecks: 200000n,
+					netBaseRevenueRub: "0.00",
+					netBaseRevenueKopecks: 0n,
+					netPayoutRub: "-2000.00",
+					netPayoutKopecks: -200000n,
+					isFinalized: true,
+				});
+				// Возврат в августе (когда новых записей у врача вообще нет: appts.length === 0!), visitId = null!
+				await tx.insert(payments).values({
+					id: refundAugustNoVisitId,
+					organizationId: orgId,
+					patientId,
+					visitId: null,
+					documentId: invoiceId,
+					amountRub: 5000,
+					amountKopecks: 500000n,
+					status: "refunded",
+					paidAt: new Date("2026-08-10T10:00:00Z"),
+					updatedAt: new Date("2026-08-10T10:00:00Z"),
+					fiscalReceiptNumber: "ЧЕК-ВОЗВРАТ-НОЛЬ-ВИЗИТ",
+					note: "Возврат аванса без visit_id",
+				});
+			});
+
+			// 1. Июль: при INNER JOIN visits аванс с visitId=null терялся бы и июньский приём не попал бы в расчёт!
+			const julyDataset = await fetchDoctorPayrollDataset({
+				orgId,
+				resolvedDocId: doctorId,
+				fromStr: "2026-07-01",
+				toStr: "2026-07-31",
+				fromDate: new Date("2026-07-01T00:00:00Z"),
+				toDate: new Date("2026-07-31T23:59:59Z"),
+			});
+			assert.equal(julyDataset.orders.length, 1, "LEFT JOIN must pull June appointment via invoice advance in July");
+
+			// 2. Август: при appts.length === 0 обязан сохраниться возврат (без visit_id) И отрицательный перенос долга!
+			const augDataset = await fetchDoctorPayrollDataset({
+				orgId,
+				resolvedDocId: doctorId,
+				fromStr: "2026-08-01",
+				toStr: "2026-08-31",
+				fromDate: new Date("2026-08-01T00:00:00Z"),
+				toDate: new Date("2026-08-31T23:59:59Z"),
+			});
+			assert.equal(augDataset.orders.length, 0);
+			assert.equal(augDataset.refundDeductions.length, 1, "Refund without visit_id must survive even when appts.length === 0");
+			assert.equal(augDataset.refundDeductions[0]?.refundedGrossKop, 500000);
+			assert.equal(augDataset.priorDebtCarryOverKop, 200000, "Negative debt carry-over must survive when appts.length === 0");
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+
+	it("9. Formats payroll dates and period boundaries using clinicTimezone instead of UTC midnight shift", () => {
+		// 2026-11-26T22:30:00Z — это уже 2026-11-27 08:30 во Владивостоке (UTC+10)!
+		const moment = new Date("2026-11-26T22:30:00Z");
+		assert.equal(formatDateIsoInTimeZone(moment, "Asia/Vladivostok"), "2026-11-27");
+		assert.equal(formatDateIsoInTimeZone(moment, "UTC"), "2026-11-26");
+
+		const bounds = resolvePeriodDateBoundsInTimeZone("2026-11-27", "2026-11-27", "Asia/Vladivostok");
+		assert.ok(moment.getTime() >= bounds.fromDate.getTime(), "08:30 local Vladivostok must fall inside 2026-11-27 bounds");
+		assert.ok(moment.getTime() <= bounds.toDate.getTime(), "08:30 local Vladivostok must fall inside 2026-11-27 bounds");
 	});
 });

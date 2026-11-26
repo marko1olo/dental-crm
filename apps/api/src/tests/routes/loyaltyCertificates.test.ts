@@ -116,8 +116,8 @@ describe("Loyalty Gift Certificates — Statutory 54-FZ & Luhn Modulo-10 Integra
 					),
 				);
 			assert.ok(cert);
-			assert.equal(Number(cert.nominalRub), 5000);
-			assert.equal(Number(cert.currentBalanceRub), 5000);
+			assert.equal(Number(cert.nominalKopecks), 500000);
+			assert.equal(Number(cert.currentBalanceKopecks), 500000);
 			assert.equal(cert.recipientName, "Петров Сергей");
 
 			// Проверка создания авансового платежа по 54-ФЗ

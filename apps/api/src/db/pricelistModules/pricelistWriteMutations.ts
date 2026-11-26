@@ -27,6 +27,7 @@ export interface ServiceCatalogItemInput {
 	readonly order804nCode?: string | null | undefined;
 	readonly materialsCostRub?: number | null | undefined;
 	readonly labCostRub?: number | null | undefined;
+	readonly salaryPriceKopecks?: number | null | undefined;
 	readonly tierPrices?: Record<string, number> | null | undefined;
 }
 
@@ -103,6 +104,10 @@ export async function createServiceCatalogItemInDb(
 				labCostRub,
 				materialsCostKopecks,
 				labCostKopecks,
+				salaryPriceKopecks:
+					input.salaryPriceKopecks !== undefined && input.salaryPriceKopecks !== null
+						? BigInt(Math.round(input.salaryPriceKopecks))
+						: null,
 				tierPrices: input.tierPrices ?? {},
 			})
 			.returning();
@@ -156,6 +161,12 @@ export async function updateServiceCatalogItemInDb(
 			const rub = patch.labCostRub !== null ? patch.labCostRub : 0;
 			updates.labCostRub = rub;
 			updates.labCostKopecks = BigInt(rublesToKopecks(rub));
+		}
+		if (patch.salaryPriceKopecks !== undefined) {
+			updates.salaryPriceKopecks =
+				patch.salaryPriceKopecks !== null
+					? BigInt(Math.round(patch.salaryPriceKopecks))
+					: null;
 		}
 		if (patch.tierPrices !== undefined)
 			updates.tierPrices = patch.tierPrices ?? {};

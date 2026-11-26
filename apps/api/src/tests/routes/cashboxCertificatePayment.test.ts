@@ -65,9 +65,9 @@ describe("Cashbox 54-FZ Gift Certificate Payment & Fiscalization", () => {
 				await tx.insert(giftCertificates).values({
 					organizationId: orgId,
 					serialNumber: validSerial,
-					nominalRub: "5000.00",
-					initialBalanceRub: "5000.00",
-					currentBalanceRub: "5000.00",
+					nominalKopecks: 500000,
+					initialBalanceKopecks: 500000,
+					currentBalanceKopecks: 500000,
 					purchaserPatientId: patientId,
 					purchaserName: "Белова Анна Сергеевна",
 					status: "active",
@@ -92,7 +92,7 @@ describe("Cashbox 54-FZ Gift Certificate Payment & Fiscalization", () => {
 			assert.equal(paymentData.status, "paid");
 			assert.equal(paymentData.certificateAmountKopecks, 500000);
 
-			// Verify giftCertificates DB state: status -> depleted, currentBalance -> 0.00
+			// Verify giftCertificates DB state: status -> depleted, currentBalanceKopecks -> 0
 			await withFixtureTenant(orgId, async (tx) => {
 				const [updatedCert] = await tx
 					.select()
@@ -102,7 +102,7 @@ describe("Cashbox 54-FZ Gift Certificate Payment & Fiscalization", () => {
 
 				assert.ok(updatedCert);
 				assert.equal(updatedCert.status, "depleted", "Certificate status must be depleted");
-				assert.equal(Number(updatedCert.currentBalanceRub), 0, "Balance must be 0.00");
+				assert.equal(Number(updatedCert.currentBalanceKopecks), 0, "Balance must be 0 kopecks");
 
 				// Verify fiscalReceiptQueue payload
 				const [receipt] = await tx
@@ -182,9 +182,9 @@ describe("Cashbox 54-FZ Gift Certificate Payment & Fiscalization", () => {
 				await tx.insert(giftCertificates).values({
 					organizationId: orgId,
 					serialNumber: validSerial,
-					nominalRub: "3000.00",
-					initialBalanceRub: "3000.00",
-					currentBalanceRub: "3000.00",
+					nominalKopecks: 300000,
+					initialBalanceKopecks: 300000,
+					currentBalanceKopecks: 300000,
 					status: "active",
 					expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
 				});
@@ -213,7 +213,7 @@ describe("Cashbox 54-FZ Gift Certificate Payment & Fiscalization", () => {
 					.limit(1);
 
 				assert.equal(updatedCert?.status, "depleted");
-				assert.equal(Number(updatedCert?.currentBalanceRub), 0);
+				assert.equal(Number(updatedCert?.currentBalanceKopecks), 0);
 
 				const [receipt] = await tx
 					.select()

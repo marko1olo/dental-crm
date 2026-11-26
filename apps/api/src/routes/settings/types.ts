@@ -124,6 +124,7 @@ export const serviceCatalogItemFields = {
 	order804nCode: z.string().trim().max(60).optional().nullable(),
 	materialsCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
 	labCostRub: nonNegativeMoneyRubSchema.optional().nullable(),
+	salaryPriceKopecks: z.number().int().nonnegative().max(999_999_999_900).optional().nullable(),
 	tierPrices: z.record(z.string(), z.number()).optional().nullable(),
 };
 
@@ -141,6 +142,7 @@ export const createServiceCatalogItemSchema = z
 		order804nCode: serviceCatalogItemFields.order804nCode.default(null),
 		materialsCostRub: serviceCatalogItemFields.materialsCostRub.default(0),
 		labCostRub: serviceCatalogItemFields.labCostRub.default(0),
+		salaryPriceKopecks: serviceCatalogItemFields.salaryPriceKopecks.default(null),
 		tierPrices: serviceCatalogItemFields.tierPrices.default(null),
 	})
 	.strict();
@@ -159,6 +161,7 @@ export const updateServiceCatalogItemSchema = z
 		order804nCode: serviceCatalogItemFields.order804nCode.optional(),
 		materialsCostRub: serviceCatalogItemFields.materialsCostRub.optional(),
 		labCostRub: serviceCatalogItemFields.labCostRub.optional(),
+		salaryPriceKopecks: serviceCatalogItemFields.salaryPriceKopecks.optional(),
 		tierPrices: serviceCatalogItemFields.tierPrices.optional(),
 	})
 	.strict();

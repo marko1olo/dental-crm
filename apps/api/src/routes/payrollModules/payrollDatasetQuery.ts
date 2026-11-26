@@ -12,11 +12,14 @@ import {
 	inventoryItems,
 	inventoryTransactions,
 	labOrders,
+	organizations,
+	patientInvoices,
 	patients,
 	payments,
 	pricelistDoctorPayrolls,
 	serviceCatalogItems,
 	treatmentItems,
+	treatmentPlans,
 	visits,
 } from "../../db/schema.js";
 import {
@@ -37,9 +40,11 @@ import {
 } from "./payrollLabAllocation.js";
 import {
 	type DoctorPayrollDatasetResult,
+	formatDateIsoInTimeZone,
 	getTreatmentItemGrossKopecks,
 	type PayrollOrderDto,
 	parseClosedPeriodRange,
+	resolveClinicTimeZone,
 } from "./payrollTypesAndQueries.js";
 
 /**
@@ -56,6 +61,8 @@ export async function fetchDoctorPayrollDataset(params: {
 	const { orgId, resolvedDocId, fromStr, toStr, fromDate, toDate, tx } = params;
 
 	const run = async (dbClient: TenantDb): Promise<DoctorPayrollDatasetResult> => {
+		const clinicTimeZone = await resolveClinicTimeZone(dbClient, orgId);
+
 		// 1. 
 		const shifts = await dbClient
 			.select({ id: doctorShiftRosters.id })
@@ -70,26 +77,46 @@ export async function fetchDoctorPayrollDataset(params: {
 			);
 		const shiftsCount = shifts.length;
 
-		// 2.  ()
+		// 2. Кассовые поступления за период (LEFT JOIN visits/appointments/patient_invoices/treatment_plans — авансы без visit_id не теряются!)
 		const paidInPeriodRows = await dbClient
 			.select({
 				appointmentId: visits.appointmentId,
+				visitId: visits.id,
 			})
 			.from(payments)
-			.innerJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, orgId)))
-			.innerJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
+			.leftJoin(
+				patientInvoices,
+				and(eq(payments.documentId, patientInvoices.id), eq(patientInvoices.organizationId, orgId)),
+			)
+			.leftJoin(
+				visits,
+				and(
+					sql`${visits.id} = coalesce(${payments.visitId}, ${patientInvoices.visitId})`,
+					eq(visits.organizationId, orgId),
+				),
+			)
+			.leftJoin(
+				appointments,
+				and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)),
+			)
+			.leftJoin(
+				treatmentPlans,
+				and(eq(patientInvoices.treatmentPlanId, treatmentPlans.id), eq(treatmentPlans.organizationId, orgId)),
+			)
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(appointments.doctorUserId, resolvedDocId),
+					or(
+						eq(appointments.doctorUserId, resolvedDocId),
+						eq(treatmentPlans.doctorId, resolvedDocId),
+					),
 					isIncomePaymentRowSql(),
 					gte(payments.paidAt, fromDate),
 					lte(payments.paidAt, toDate),
 				),
 			);
 
-		// 3.  ( 8e / W12-FIN-01)
-		// refundExecutionEngine  amountKopecks  amountRub  status="refunded"
+		// 3. Возвраты пациентам за период (LEFT JOIN visits/appointments/patient_invoices/treatment_plans — возвраты без visit_id не теряются!)
 		const refundedPaymentRows = await dbClient
 			.select({
 				id: payments.id,
@@ -104,12 +131,32 @@ export async function fetchDoctorPayrollDataset(params: {
 				note: payments.note,
 			})
 			.from(payments)
-			.innerJoin(visits, and(eq(payments.visitId, visits.id), eq(visits.organizationId, orgId)))
-			.innerJoin(appointments, and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)))
+			.leftJoin(
+				patientInvoices,
+				and(eq(payments.documentId, patientInvoices.id), eq(patientInvoices.organizationId, orgId)),
+			)
+			.leftJoin(
+				visits,
+				and(
+					sql`${visits.id} = coalesce(${payments.visitId}, ${patientInvoices.visitId})`,
+					eq(visits.organizationId, orgId),
+				),
+			)
+			.leftJoin(
+				appointments,
+				and(eq(visits.appointmentId, appointments.id), eq(appointments.organizationId, orgId)),
+			)
+			.leftJoin(
+				treatmentPlans,
+				and(eq(patientInvoices.treatmentPlanId, treatmentPlans.id), eq(treatmentPlans.organizationId, orgId)),
+			)
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					eq(appointments.doctorUserId, resolvedDocId),
+					or(
+						eq(appointments.doctorUserId, resolvedDocId),
+						eq(treatmentPlans.doctorId, resolvedDocId),
+					),
 					inArray(payments.status, ["paid", "refunded"]),
 					isPaymentRefundFlowSql(),
 					sql`not (${isPaymentInPlaceRefundedSql()})`,
@@ -129,7 +176,7 @@ export async function fetchDoctorPayrollDataset(params: {
 				refundedGrossKop: refKop,
 				receiptNumber: ref.fiscalReceiptNumber ?? undefined,
 				reasonRu: ref.note ?? "Возврат денежных средств пациенту",
-				dateIso: (ref.updatedAt || ref.paidAt || fromDate).toISOString().slice(0, 10),
+				dateIso: formatDateIsoInTimeZone(ref.updatedAt || ref.paidAt || fromDate, clinicTimeZone),
 				doctorId: resolvedDocId,
 				performerId: resolvedDocId,
 			});
@@ -180,18 +227,13 @@ export async function fetchDoctorPayrollDataset(params: {
 			.leftJoin(patients, eq(appointments.patientId, patients.id))
 			.where(appointmentWhere);
 
-		const orders: PayrollOrderDto[] = [];
-		const completedServices: DoctorCompletedServiceItem[] = [];
-
-		if (appts.length === 0) {
-			return { shiftsCount, orders, completedServices, refundDeductions };
-		}
-
 		const apptIds = appts.map((a) => a.id);
-		const clinicVisits = await dbClient
-			.select({ id: visits.id, appointmentId: visits.appointmentId })
-			.from(visits)
-			.where(and(eq(visits.organizationId, orgId), inArray(visits.appointmentId, apptIds)));
+		const clinicVisits = apptIds.length > 0
+			? await dbClient
+				.select({ id: visits.id, appointmentId: visits.appointmentId })
+				.from(visits)
+				.where(and(eq(visits.organizationId, orgId), inArray(visits.appointmentId, apptIds)))
+			: [];
 
 		const visitIds = clinicVisits.map((v) => v.id);
 		const visitToAppt = new Map(clinicVisits.map((v) => [v.id, v.appointmentId]));
@@ -252,6 +294,7 @@ export async function fetchDoctorPayrollDataset(params: {
 					specialty: serviceCatalogItems.specialty,
 					code: serviceCatalogItems.code,
 					order804nCode: serviceCatalogItems.order804nCode,
+					salaryPriceKopecks: serviceCatalogItems.salaryPriceKopecks,
 					tierPrices: serviceCatalogItems.tierPrices,
 				})
 				.from(treatmentItems)
@@ -271,7 +314,6 @@ export async function fetchDoctorPayrollDataset(params: {
 				serviceName: pricelistDoctorPayrolls.serviceName,
 				doctorPayrollPercent: pricelistDoctorPayrolls.doctorPayrollPercent,
 				doctorPayrollKopecks: pricelistDoctorPayrolls.doctorPayrollKopecks,
-				doctorPayrollRub: pricelistDoctorPayrolls.doctorPayrollRub,
 			})
 			.from(pricelistDoctorPayrolls)
 			.where(eq(pricelistDoctorPayrolls.organizationId, orgId));
@@ -280,7 +322,7 @@ export async function fetchDoctorPayrollDataset(params: {
 		for (const pr of pricelistRules) {
 			const salaryPriceKopRaw = pr.doctorPayrollKopecks != null && Number(pr.doctorPayrollKopecks) > 0
 				? Number(pr.doctorPayrollKopecks)
-				: (Number(pr.doctorPayrollRub || 0) > 0 ? rublesToKopecks(Number(pr.doctorPayrollRub || 0)) : undefined);
+				: undefined;
 			const customPctRaw = Number(pr.doctorPayrollPercent || 0) > 0 ? Number(pr.doctorPayrollPercent) : undefined;
 			const ruleVal = {
 				salaryPriceKop: salaryPriceKopRaw,
@@ -498,6 +540,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			resolvedDocId,
 			fromStr,
 			toStr,
+			clinicTimeZone,
 		});
 
 		return {

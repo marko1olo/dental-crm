@@ -63,7 +63,6 @@ export async function executeLabOrderPatchTx(
 		// Для пациента рекламация ВСЕГДА бесплатна (0 ₽)
 		// Для ЗТЛ: при браке лаборатории — 0 ₽, при гарантии клиники — стандартная себестоимость ЗТЛ
 		const satelliteLabCostKopecks = liabilityType === "lab_defect" ? 0 : (currentOrder.labCostKopecks ?? 0);
-		const satelliteLabCostRub = liabilityType === "lab_defect" ? 0 : (currentOrder.labCostRub ?? 0);
 		const satelliteOrderNumber = currentOrder.orderNumber ? `${currentOrder.orderNumber}-РЕМ` : "ЗТЛ-РЕМ";
 		const satelliteToken = generateLabGuestPortalToken(satelliteOrderId, orgId);
 
@@ -102,9 +101,7 @@ export async function executeLabOrderPatchTx(
 				labComments: body.labComments ?? currentOrder.labComments,
 				attachedImageUrl: body.attachedImageUrl ?? currentOrder.attachedImageUrl,
 				priceKopecks: 0,
-				priceRub: 0,
 				labCostKopecks: satelliteLabCostKopecks,
-				labCostRub: satelliteLabCostRub,
 				isWarranty: true,
 				warrantyLiabilityType: liabilityType,
 				remakeReason: remakeReasonText,
@@ -148,7 +145,6 @@ export async function executeLabOrderPatchTx(
 					implantSystem: item.implantSystem,
 					implantPlatformDiameterMm: item.implantPlatformDiameterMm,
 					tiBaseHeightMm: item.tiBaseHeightMm,
-					priceRub: "0.00",
 					priceKopecks: 0,
 				})),
 			);
@@ -288,15 +284,13 @@ export async function executeLabOrderPatchTx(
 		updateValues.isLockedInstalled = false;
 		// Клинический стандарт: защита гарантий пациента: рекламация ВСЕГДА бесплатна для пациента (0 ₽)
 		updateValues.priceKopecks = 0;
-		updateValues.priceRub = 0;
 		if (body.warrantyLiabilityType === "lab_defect") {
 			updateValues.labCostKopecks = 0;
-			updateValues.labCostRub = 0;
 		}
 		// [ДЕФЕКТ 6]: Обнуление lab_items при рекламации
 		await tx
 			.update(labItems)
-			.set({ priceKopecks: 0, priceRub: "0.00" })
+			.set({ priceKopecks: 0 })
 			.where(and(eq(labItems.labOrderId, id), eq(labItems.organizationId, orgId)));
 		const liabilityLabel = body.warrantyLiabilityType === "lab_defect"
 			? "Брак лаборатории (0 ₽ ЗТЛ, 0 ₽ пациенту)"

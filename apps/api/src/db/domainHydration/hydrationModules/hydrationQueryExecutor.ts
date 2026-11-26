@@ -233,7 +233,7 @@ export async function executeHydrationQueries(
 					colorVita: "A2",
 					status: "received",
 					dueDate: new Date(now.getTime() + 2 * 86400_000),
-					priceRub: 28000,
+					priceKopecks: 2800000,
 					clinicalNotes:
 						"Цельнокерамическая коронка e.MAX на зуб 16. Работа доставлена из ЗТЛ в клинику, готова к примерке и фиксации.",
 					sentAt: new Date(now.getTime() - 4 * 86400_000),
@@ -249,7 +249,7 @@ export async function executeHydrationQueries(
 					colorVita: "A1",
 					status: "in_progress",
 					dueDate: new Date(now.getTime() + 4 * 86400_000),
-					priceRub: 32000,
+					priceKopecks: 3200000,
 					clinicalNotes:
 						"Анатомическая коронка ZrO2 на зуб 21. Этап CAD/CAM фрезеровки и синтеризации.",
 					sentAt: new Date(now.getTime() - 2 * 86400_000),
@@ -265,7 +265,7 @@ export async function executeHydrationQueries(
 					colorVita: "A3",
 					status: "sent",
 					dueDate: new Date(now.getTime() + 5 * 86400_000),
-					priceRub: 24000,
+					priceKopecks: 2400000,
 					clinicalNotes:
 						"Цифровой слепок STL отправлен в лабораторию. Моделировка анатомического каркаса.",
 					sentAt: new Date(now.getTime() - 86400_000),
@@ -284,7 +284,7 @@ export async function executeHydrationQueries(
 					installedAt: new Date(now.getTime() - 86400_000),
 					completedAt: new Date(now.getTime() - 86400_000),
 					dueDate: new Date(now.getTime() - 2 * 86400_000),
-					priceRub: 18500,
+					priceKopecks: 1850000,
 					clinicalNotes:
 						"Коронка 36 сдана и зафиксирована в полости рта пациента.",
 					sentAt: new Date(now.getTime() - 6 * 86400_000),

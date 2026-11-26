@@ -119,6 +119,7 @@ export const serviceCatalogItemSchema = z.object({
 	order804nCode: z.string().optional().nullable(),
 	materialsCostRub: z.number().optional().nullable(),
 	labCostRub: z.number().optional().nullable(),
+	salaryPriceKopecks: z.number().int().nonnegative().nullable().optional(),
 	tierPrices: z.record(z.string(), z.number()).optional().nullable(),
 	priceKopecks: z.number().int().optional().default(0),
 	standardCode: z.string().optional().nullable(),

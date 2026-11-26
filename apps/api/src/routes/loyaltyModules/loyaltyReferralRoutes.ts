@@ -6,6 +6,7 @@ import { requireOrganizationId } from "../../security/identity.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	bonusTransactions,
+	organizations,
 	patientReferrals,
 	patientReferralCodes,
 	patients,
@@ -21,6 +22,24 @@ import {
 } from "@dental/shared";
 import { executeBonusAccrual } from "./bonusBalanceService.js";
 import { extractIdempotencyKey, isValidUuid } from "../../plugins/idempotencyModules/idempotencyHeaderParser.js";
+
+const DEFAULT_TIER1_REWARD_KOPECKS = 100_000;
+const DEFAULT_TIER2_REWARD_KOPECKS = 30_000;
+const DEFAULT_WELCOME_REWARD_KOPECKS = 50_000;
+
+function resolveReferralInviteBaseUrl(request: { headers: Record<string, unknown>; protocol?: string; hostname?: string }): string {
+	const envUrl = process.env.APP_BASE_URL?.trim();
+	if (envUrl) return envUrl.replace(/\/+$/, "");
+	const originHeader = typeof request.headers.origin === "string" ? request.headers.origin.trim() : "";
+	if (originHeader && /^https?:\/\//i.test(originHeader)) {
+		return originHeader.replace(/\/+$/, "");
+	}
+	const proto = request.protocol || "https";
+	const host = typeof request.headers.host === "string" && request.headers.host.trim()
+		? request.headers.host.trim()
+		: request.hostname || "localhost";
+	return `${proto}://${host}`;
+}
 
 const creditReferralSchema = z
 	.object({
@@ -90,7 +109,6 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					refereePatientId: patientReferrals.refereePatientId,
 					refereeFullName: patients.fullName,
 					status: patientReferrals.status,
-					qualifyingAmountRub: patientReferrals.qualifyingAmountRub,
 					qualifyingAmountKopecks: patientReferrals.qualifyingAmountKopecks,
 					rewardedAt: patientReferrals.rewardedAt,
 					createdAt: patientReferrals.createdAt,
@@ -104,18 +122,35 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					),
 				);
 
+			const [activeCampaign] = await tx
+				.select({
+					referrerTier1Points: referralCampaigns.referrerTier1Points,
+				})
+				.from(referralCampaigns)
+				.where(
+					and(
+						eq(referralCampaigns.organizationId, orgId),
+						eq(referralCampaigns.isActive, true),
+					),
+				)
+				.limit(1);
+
+			const tier1RewardKopecks = activeCampaign?.referrerTier1Points != null
+				? parseKopecks(activeCampaign.referrerTier1Points)
+				: DEFAULT_TIER1_REWARD_KOPECKS;
+			const tier1RewardRub = kopecksToRubles(tier1RewardKopecks);
+
 			const formattedReferrals = realReferrals.map((r) => {
 				const qualifyingKop =
 					r.qualifyingAmountKopecks != null
 						? Number(r.qualifyingAmountKopecks)
-						: r.qualifyingAmountRub != null
-							? parseKopecks(r.qualifyingAmountRub)
-							: 100_000;
+						: DEFAULT_TIER1_REWARD_KOPECKS;
 				const qualifyingDisplayRub = kopecksToRubles(qualifyingKop);
 				return {
 					id: r.id,
 					invitedPatientName: r.refereeFullName || "Приглашённый пациент",
-					rewardRub: r.status === "rewarded" ? 1000 : 0,
+					rewardRub: r.status === "rewarded" ? tier1RewardRub : 0,
+					rewardKopecks: r.status === "rewarded" ? tier1RewardKopecks : 0,
 					status: r.status === "rewarded" ? "completed" : "pending",
 					isRewardCredited: r.status === "rewarded",
 					note: r.status === "rewarded"
@@ -314,7 +349,6 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 						.set({
 							status: "rewarded",
 							qualifyingPaymentId: verifiedPayment.id,
-							qualifyingAmountRub: kopecksToNumericString(qualifyingKop),
 							qualifyingAmountKopecks: qualifyingKop,
 							rewardedAt: new Date(),
 							updatedAt: new Date(),
@@ -369,6 +403,11 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { patientId } = request.params as { patientId: string };
+		if (!isValidUuid(patientId)) {
+			return reply.status(400).send({ message: "Некорректный идентификатор пациента" });
+		}
+
+		const baseInviteUrl = resolveReferralInviteBaseUrl(request);
 
 		return withTenantCtx(orgId, async (tx) => {
 			const [patient] = await tx
@@ -380,6 +419,26 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 			if (!patient) {
 				return reply.status(404).send({ message: "Пациент не найден" });
 			}
+
+			const [org] = await tx
+				.select({ name: organizations.name })
+				.from(organizations)
+				.where(eq(organizations.id, orgId))
+				.limit(1);
+
+			const [activeCampaign] = await tx
+				.select({
+					refereeWelcomePoints: referralCampaigns.refereeWelcomePoints,
+					shareMessageTemplate: referralCampaigns.shareMessageTemplate,
+				})
+				.from(referralCampaigns)
+				.where(
+					and(
+						eq(referralCampaigns.organizationId, orgId),
+						eq(referralCampaigns.isActive, true),
+					),
+				)
+				.limit(1);
 
 			let [refRecord] = await tx
 				.select()
@@ -408,8 +467,17 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 
 			const refCode = refRecord?.referralCode || `DENTE-${patientId.slice(0, 6).toUpperCase()}`;
 			const refToken = refRecord?.referralToken || "";
-			const inviteUrl = `https://dente.pro/invite/${refCode}`;
-			const shareText = `Привет! Дарю тебе 500 ₽ на первый визит в стоматологию DENTE. Запишись по ссылке: ${inviteUrl}`;
+			const inviteUrl = `${baseInviteUrl}/invite/${encodeURIComponent(refCode)}`;
+			const clinicName = org?.name?.trim() || "DENTE";
+			const welcomeKopecks = activeCampaign?.refereeWelcomePoints != null
+				? parseKopecks(activeCampaign.refereeWelcomePoints)
+				: DEFAULT_WELCOME_REWARD_KOPECKS;
+			const welcomeRub = kopecksToRubles(welcomeKopecks);
+			const shareText = activeCampaign?.shareMessageTemplate
+				? activeCampaign.shareMessageTemplate
+					.replace(/\{clinicName\}/g, clinicName)
+					.replace(/\{inviteLink\}/g, inviteUrl)
+				: `Привет! Дарю тебе ${welcomeRub} ₽ на первый визит в стоматологию ${clinicName}. Запишись по ссылке: ${inviteUrl}`;
 
 			return reply.send({
 				patientId,
@@ -615,7 +683,8 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 			const [activeCampaign] = await tx
 				.select({
 					minFirstSpendThresholdKopecks: referralCampaigns.minFirstSpendThresholdKopecks,
-					minFirstSpendThresholdRub: referralCampaigns.minFirstSpendThresholdRub,
+					referrerTier1Points: referralCampaigns.referrerTier1Points,
+					referrerTier2Points: referralCampaigns.referrerTier2Points,
 				})
 				.from(referralCampaigns)
 				.where(
@@ -627,9 +696,7 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			const minSpendKop = activeCampaign
-				? activeCampaign.minFirstSpendThresholdKopecks != null
-					? Number(activeCampaign.minFirstSpendThresholdKopecks)
-					: parseKopecks(activeCampaign.minFirstSpendThresholdRub)
+				? Number(activeCampaign.minFirstSpendThresholdKopecks ?? 0)
 				: 150_000;
 
 			if (verifiedAmountKop < minSpendKop) {
@@ -639,14 +706,22 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				});
 			}
 
-				// Award Level 1 Referrer (+1000 points) via canonical executeBonusAccrual (zero float math, FIFO expiry)
-				const referrerL1Points = 1000;
+				const tier1Kopecks = activeCampaign?.referrerTier1Points != null
+					? parseKopecks(activeCampaign.referrerTier1Points)
+					: DEFAULT_TIER1_REWARD_KOPECKS;
+				const tier2Kopecks = activeCampaign?.referrerTier2Points != null
+					? parseKopecks(activeCampaign.referrerTier2Points)
+					: DEFAULT_TIER2_REWARD_KOPECKS;
+				const referrerL1Points = kopecksToRubles(tier1Kopecks);
+				const referrerL2Points = kopecksToRubles(tier2Kopecks);
+
+				// Award Level 1 Referrer via canonical executeBonusAccrual (zero float math, FIFO expiry)
 				await executeBonusAccrual(
 					{
 						orgId,
 						patientId: referral.referrerPatientId,
 						amountPoints: referrerL1Points,
-						description: "Бонус за первую оплату лечения приглашённого друга (+1000 ₽)",
+						description: `Бонус за первую оплату лечения приглашённого друга (+${referrerL1Points} ₽)`,
 						txType: "accrual_referral_l1",
 						expiresInDays: 365,
 						relatedPaymentId: paymentId || undefined,
@@ -655,15 +730,14 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					tx,
 				);
 
-				// Award Level 2 Referrer (+300 points) if exists
+				// Award Level 2 Referrer if exists
 				if (referral.parentReferrerPatientId) {
-					const referrerL2Points = 300;
 					await executeBonusAccrual(
 						{
 							orgId,
 							patientId: referral.parentReferrerPatientId,
 							amountPoints: referrerL2Points,
-							description: "Бонус 2-го уровня за визит друга вашего друга (+300 ₽)",
+							description: `Бонус 2-го уровня за визит друга вашего друга (+${referrerL2Points} ₽)`,
 							txType: "accrual_referral_l2",
 							expiresInDays: 365,
 							relatedPaymentId: paymentId || undefined,
@@ -679,7 +753,6 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					.set({
 						status: "rewarded",
 						qualifyingPaymentId: paymentId || null,
-						qualifyingAmountRub: kopecksToNumericString(verifiedAmountKop),
 						qualifyingAmountKopecks: verifiedAmountKop,
 						rewardedAt: new Date(),
 						updatedAt: new Date(),
@@ -699,7 +772,9 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					success: true,
 					rewarded: true,
 					referrerTier1RewardedPoints: referrerL1Points,
-					referrerTier2RewardedPoints: referral.parentReferrerPatientId ? 300 : 0,
+					referrerTier1RewardedKopecks: tier1Kopecks,
+					referrerTier2RewardedPoints: referral.parentReferrerPatientId ? referrerL2Points : 0,
+					referrerTier2RewardedKopecks: referral.parentReferrerPatientId ? tier2Kopecks : 0,
 				});
 		});
 	});

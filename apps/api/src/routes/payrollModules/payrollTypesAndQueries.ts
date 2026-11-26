@@ -6,6 +6,7 @@
 import { and, eq, or, sql } from "drizzle-orm";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import {
+	clinics,
 	doctorCommissions,
 	doctorPayrollStatements,
 	users,
@@ -295,6 +296,103 @@ export async function fetchActiveDoctorProfiles(
 
 /**
  * */
+export const DEFAULT_PAYROLL_TIMEZONE = "Europe/Moscow";
+
+export function formatDateIsoInTimeZone(
+	moment: Date,
+	timeZone: string | null | undefined,
+): string {
+	const effectiveZone = timeZone?.trim() || DEFAULT_PAYROLL_TIMEZONE;
+	try {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone: effectiveZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(moment);
+	} catch {
+		try {
+			return new Intl.DateTimeFormat("en-CA", {
+				timeZone: DEFAULT_PAYROLL_TIMEZONE,
+				year: "numeric",
+				month: "2-digit",
+				day: "2-digit",
+			}).format(moment);
+		} catch {
+			return moment.toISOString().slice(0, 10);
+		}
+	}
+}
+
+function getTimeZoneOffsetMs(dateStr: string, timeZone: string): number {
+	const parts = dateStr.slice(0, 10).split("-").map((v) => Number.parseInt(v, 10));
+	const [year, month, day] = parts;
+	if (!year || !month || !day) return 0;
+	const probeUtc = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+	const formatter = new Intl.DateTimeFormat("en-US", {
+		timeZone,
+		year: "numeric",
+		month: "numeric",
+		day: "numeric",
+		hour: "numeric",
+		minute: "numeric",
+		second: "numeric",
+		hour12: false,
+	});
+	const map = Object.fromEntries(formatter.formatToParts(probeUtc).map((p) => [p.type, p.value]));
+	const localAsUtc = Date.UTC(
+		Number(map.year),
+		Number(map.month) - 1,
+		Number(map.day),
+		Number(map.hour === "24" ? 0 : map.hour),
+		Number(map.minute),
+		Number(map.second),
+	);
+	return localAsUtc - probeUtc.getTime();
+}
+
+export function resolvePeriodDateBoundsInTimeZone(
+	fromStr: string,
+	toStr: string,
+	timeZone: string | null | undefined,
+): { fromDate: Date; toDate: Date } {
+	const cleanFrom = fromStr.slice(0, 10);
+	const cleanTo = toStr.slice(0, 10);
+	const effectiveZone = timeZone?.trim() || DEFAULT_PAYROLL_TIMEZONE;
+	try {
+		const [fy, fm, fd] = cleanFrom.split("-").map((v) => Number.parseInt(v, 10));
+		const [ty, tm, td] = cleanTo.split("-").map((v) => Number.parseInt(v, 10));
+		if (!fy || !fm || !fd || !ty || !tm || !td) {
+			return {
+				fromDate: new Date(`${cleanFrom}T00:00:00.000Z`),
+				toDate: new Date(`${cleanTo}T23:59:59.999Z`),
+			};
+		}
+		const fromOffsetMs = getTimeZoneOffsetMs(cleanFrom, effectiveZone);
+		const toOffsetMs = getTimeZoneOffsetMs(cleanTo, effectiveZone);
+		const fromDate = new Date(Date.UTC(fy, fm - 1, fd, 0, 0, 0, 0) - fromOffsetMs);
+		const toDate = new Date(Date.UTC(ty, tm - 1, td, 23, 59, 59, 999) - toOffsetMs);
+		return { fromDate, toDate };
+	} catch {
+		return {
+			fromDate: new Date(`${cleanFrom}T00:00:00.000Z`),
+			toDate: new Date(`${cleanTo}T23:59:59.999Z`),
+		};
+	}
+}
+
+export async function resolveClinicTimeZone(
+	tx: TenantDb,
+	orgId: string,
+): Promise<string> {
+	const [clinicRow] = await tx
+		.select({ timezone: clinics.timezone })
+		.from(clinics)
+		.where(eq(clinics.organizationId, orgId))
+		.limit(1);
+	return clinicRow?.timezone?.trim() || DEFAULT_PAYROLL_TIMEZONE;
+}
+
 export async function fetchClosedPayrollStatements(
 	orgId: string,
 	resolvedDocId: string,
@@ -303,6 +401,7 @@ export async function fetchClosedPayrollStatements(
 ): Promise<{ closedPeriods: ClosedPayrollPeriodDto[]; statements: (typeof doctorPayrollStatements.$inferSelect)[] }> {
 	const run = async (dbClient: TenantDb) => {
 		const isAll = resolvedDocId === "all";
+		const clinicTimeZone = await resolveClinicTimeZone(dbClient, orgId);
 		const statements = await dbClient
 			.select()
 			.from(doctorPayrollStatements)
@@ -319,7 +418,7 @@ export async function fetchClosedPayrollStatements(
 		const closedPeriods: ClosedPayrollPeriodDto[] = statements.map((s) => ({
 			id: s.id,
 			periodLabelRu: s.period,
-			dateClosedIso: s.createdAt.toISOString().slice(0, 10),
+			dateClosedIso: formatDateIsoInTimeZone(s.createdAt, clinicTimeZone),
 			doctorName: isAll ? (s.doctorId || doctorName) : doctorName,
 			rkoReceiptNumber: isAll ? "" : (s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`),
 			grossKopecks: Number(s.grossRevenueKopecks != null ? s.grossRevenueKopecks : rublesToKopecks(Number(s.grossRevenueRub || 0))),

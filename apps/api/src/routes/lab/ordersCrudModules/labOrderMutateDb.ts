@@ -1,7 +1,7 @@
 import {
 	CANONICAL_PG_LAB_STATUSES,
 	isValidUuid,
-	kopecksToNumericString,
+	kopecksToRubles,
 	mapStageToCanonicalPgStatus,
 	normalizeVitaShade,
 	rublesToKopecks,
@@ -145,7 +145,6 @@ export async function updateLabOrderInDb(
 				: (updateData.priceRub == null ? 0 : rublesToKopecks(Number(updateData.priceRub)));
 
 		updatePayload.priceKopecks = effectivePriceKopecks;
-		updatePayload.priceRub = kopecksToNumericString(effectivePriceKopecks);
 	}
 
 	const rawUpdateLabCostKopecks = updateData.labCostKopecks !== undefined
@@ -160,7 +159,6 @@ export async function updateLabOrderInDb(
 				: (updateData.costRub == null ? 0 : rublesToKopecks(Number(updateData.costRub)));
 
 		updatePayload.labCostKopecks = effectiveCostKopecks;
-		updatePayload.labCostRub = kopecksToNumericString(effectiveCostKopecks);
 	}
 
 	if (targetStatus !== undefined) updatePayload.status = toLabOrderStatus(targetStatus);
@@ -187,8 +185,10 @@ export async function updateLabOrderInDb(
 		priceKopecks: enrichedPriceKopecks,
 		amountKopecks: enrichedPriceKopecks,
 		patientPriceKopecks: enrichedPriceKopecks,
+		priceRub: kopecksToRubles(enrichedPriceKopecks),
 		labCostKopecks: enrichedLabCostKopecks,
 		costKopecks: enrichedLabCostKopecks,
+		labCostRub: kopecksToRubles(enrichedLabCostKopecks),
 	};
 
 	return { kind: "ok" as const, updated: enriched };

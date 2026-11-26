@@ -60,10 +60,7 @@ async function buildCertificateRedeemReplay(
 			? Number(params.existingPayment.amountKopecks)
 			: parseKopecks(params.existingPayment.amountRub);
 	const existingRedeemedRub = kopecksToRubles(existingRedeemedKop);
-	const currentBalKop =
-		existingCert.currentBalanceKopecks != null
-			? existingCert.currentBalanceKopecks
-			: parseKopecks(existingCert.currentBalanceRub);
+	const currentBalKop = Number(existingCert.currentBalanceKopecks ?? 0);
 	const currentBalRub = kopecksToRubles(currentBalKop);
 
 	let remainingInvoiceKop = 0;
@@ -284,9 +281,7 @@ export async function executeRedeemGiftCertificate(
 			};
 		}
 
-		const currentBalanceKop = cert.currentBalanceKopecks != null
-			? Number(cert.currentBalanceKopecks)
-			: parseKopecks(cert.currentBalanceRub);
+		const currentBalanceKop = Number(cert.currentBalanceKopecks ?? 0);
 		if (currentBalanceKop <= 0) {
 			return { error: true, message: "Баланс сертификата равен 0 ₽", code: 400 };
 		}
@@ -307,14 +302,12 @@ export async function executeRedeemGiftCertificate(
 		const redeemedKop = Math.min(maxAllowedKop, requestedDeductionKop);
 		const redeemedRub = kopecksToRubles(redeemedKop);
 		const newBalanceKop = Math.max(0, currentBalanceKop - redeemedKop);
-		const newBalanceStr = kopecksToNumericString(newBalanceKop);
 		const newBalanceRub = kopecksToRubles(newBalanceKop);
 		const newStatus = newBalanceKop <= 0 ? "depleted" : "active";
 
 		await tx
 			.update(giftCertificates)
 			.set({
-				currentBalanceRub: newBalanceStr,
 				currentBalanceKopecks: newBalanceKop,
 				status: newStatus,
 				updatedAt: new Date(),
@@ -514,8 +507,8 @@ export async function listGiftCertificates(
 			.limit(100);
 
 		return rows.map((r) => {
-			const nomKop = Number(r.nominalKopecks != null ? r.nominalKopecks : parseKopecks(r.nominalRub));
-			const curBalKop = Number(r.currentBalanceKopecks != null ? r.currentBalanceKopecks : parseKopecks(r.currentBalanceRub));
+			const nomKop = Number(r.nominalKopecks ?? 0);
+			const curBalKop = Number(r.currentBalanceKopecks ?? 0);
 			return {
 				id: r.id,
 				serialNumber: r.serialNumber,

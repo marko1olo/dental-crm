@@ -75,9 +75,7 @@ export async function executeLabOrderPayment(
 		const orderCostKopecks =
 			order.labCostKopecks != null && Number(order.labCostKopecks) > 0
 				? Number(order.labCostKopecks)
-				: order.labCostRub != null && Number(order.labCostRub) > 0
-					? rubToKopecks(Number(order.labCostRub))
-					: 0;
+				: 0;
 
 		if (orderCostKopecks <= 0 || amountToPayKopecks > orderCostKopecks) {
 			return { kind: "amount_exceeds_cost" as const, maxAllowedKopecks: orderCostKopecks };
