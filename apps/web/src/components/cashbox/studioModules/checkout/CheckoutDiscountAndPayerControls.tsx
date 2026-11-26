@@ -2,10 +2,7 @@
  * apps/web/src/components/cashbox/studioModules/checkout/CheckoutDiscountAndPayerControls.tsx
  *
  * Dedicated Doctor Discounts & Payer Type Selection controls for CashRegisterCheckoutSection.
- * Governed by Mandates 8e, 8n, 8am, 8ap:
- * - 0 disabled buttons, soft-focus doctor presets.
- * - Zero forced INN for physical persons.
- * - Clean Russian clinical vocabulary.
+ * Governed by Mandates 8e, 8n, 8am, 8ap, 8bm.
  */
 
 import React from "react";
@@ -13,7 +10,6 @@ import {
 	type CashboxTenderType,
 	type ClientPayerType,
 	DOCTOR_DISCOUNT_PRESETS,
-	PAYER_TYPE_PRESETS,
 } from "../../cashRegisterCatalogData.js";
 
 export interface CheckoutDiscountAndPayerControlsProps {
@@ -21,9 +17,15 @@ export interface CheckoutDiscountAndPayerControlsProps {
 	readonly setIsWarranty: (val: boolean) => void;
 	readonly discountPercent: number;
 	readonly setDiscountPercent: (val: number) => void;
-	readonly setCashReceivedRub: (val: number) => void;
-	readonly setSplitCashRub: (val: number) => void;
-	readonly setSplitCardRub: (val: number) => void;
+	readonly setCashReceivedKopecks?: ((val: bigint) => void) | undefined;
+	readonly setSplitCashKopecks?: ((val: bigint) => void) | undefined;
+	readonly setSplitCardKopecks?: ((val: bigint) => void) | undefined;
+	/** @deprecated Legacy ruble callback bridge for out-of-scope callers */
+	readonly setCashReceivedRub?: ((val: number) => void) | undefined;
+	/** @deprecated Legacy ruble callback bridge for out-of-scope callers */
+	readonly setSplitCashRub?: ((val: number) => void) | undefined;
+	/** @deprecated Legacy ruble callback bridge for out-of-scope callers */
+	readonly setSplitCardRub?: ((val: number) => void) | undefined;
 	readonly setMethod: (val: CashboxTenderType) => void;
 	readonly payerType: ClientPayerType;
 	readonly setPayerType: (val: ClientPayerType) => void;
@@ -36,6 +38,9 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 	setIsWarranty,
 	discountPercent,
 	setDiscountPercent,
+	setCashReceivedKopecks,
+	setSplitCashKopecks,
+	setSplitCardKopecks,
 	setCashReceivedRub,
 	setSplitCashRub,
 	setSplitCardRub,
@@ -47,10 +52,9 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 }) => {
 	return (
 		<>
-			{/* Doctor Discounts Strip (No neon carnival, clean secondary chips, zero-clipping) */}
 			<div className="space-y-1.5" data-testid="payment-modal-presets-bar">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-semibold text-[var(--muted)]">
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">
 						Скидки врача:
 					</span>
 					{discountPercent > 0 && !isWarranty && (
@@ -74,13 +78,16 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 								setIsWarranty(Boolean(d.isWarranty));
 								setDiscountPercent(d.percent);
 								if (d.isWarranty) {
-									setCashReceivedRub(0);
-									setSplitCashRub(0);
-									setSplitCardRub(0);
+									setCashReceivedKopecks?.(0n);
+									setSplitCashKopecks?.(0n);
+									setSplitCardKopecks?.(0n);
+									setCashReceivedRub?.(0);
+									setSplitCashRub?.(0);
+									setSplitCardRub?.(0);
 									setMethod("warranty");
 								}
 							}}
-							className={`px-3 py-1.5 rounded-xl text-xs font-semibold border min-h-[36px] cursor-pointer transition-colors ${
+							className={`px-3 py-1.5 rounded-xl text-xs font-semibold border min-h-[44px] sm:min-h-[36px] cursor-pointer transition-colors ${
 								discountPercent === d.percent
 									? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)] font-semibold shadow-xs"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
@@ -101,11 +108,10 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 				/>
 			</div>
 
-			{/* Payer Type Selection (0px noise for 99% normal physical patients: Mandates 8bi & 8n) */}
 			<div className="space-y-1.5" data-testid="payer-selection-section">
 				<div className="flex items-center justify-between min-h-[32px]">
 					<div className="flex items-center gap-2">
-						<span className="text-xs font-semibold text-[var(--muted)]">
+						<span className="text-xs font-semibold text-[var(--ink-muted)]">
 							Плательщик:
 						</span>
 						<span className="text-xs font-semibold text-[var(--ink)]">
@@ -121,7 +127,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						<button
 							type="button"
 							onClick={() => setPayerType("legal_entity")}
-							className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--primary)] bg-[var(--primary-soft)] hover:opacity-90 border border-[var(--primary)]/25 transition-colors cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--primary)] bg-[var(--primary-soft)] hover:opacity-90 border border-[var(--primary)]/25 transition-colors cursor-pointer whitespace-nowrap shrink-0"
 							data-testid="toggle-corporate-payer"
 						>
 							Организация / ИП &rarr;
@@ -130,7 +136,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						<button
 							type="button"
 							onClick={() => setPayerType("physical_person")}
-							className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper-soft)] border border-[var(--line)] transition-colors cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] bg-[var(--paper-soft)] border border-[var(--line)] transition-colors cursor-pointer whitespace-nowrap shrink-0"
 							data-testid="toggle-physical-payer"
 						>
 							&larr; Пациент (физлицо)
@@ -138,17 +144,16 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 					)}
 				</div>
 
-				{/* Corporate / Sole Proprietor Mode: Compact Segmented Switch + INN Input */}
 				{payerType !== "physical_person" ? (
 					<div className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
 						<div className="p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] grid grid-cols-2 gap-1 max-w-xs">
 							<button
 								type="button"
 								onClick={() => setPayerType("legal_entity")}
-								className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer border-0 ${
 									payerType === "legal_entity"
 										? "bg-[var(--primary-soft)] text-[var(--primary)] shadow-xs font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Юрлицо (10 цифр)
@@ -156,10 +161,10 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 							<button
 								type="button"
 								onClick={() => setPayerType("sole_proprietor")}
-								className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+								className={`min-h-[44px] sm:min-h-[32px] px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer border-0 ${
 									payerType === "sole_proprietor"
 										? "bg-[var(--primary-soft)] text-[var(--primary)] shadow-xs font-semibold"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								ИП (12 цифр)
@@ -167,7 +172,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						</div>
 
 						<div>
-							<label className="text-[11px] font-medium text-[var(--muted)] mb-1 block">
+							<label className="text-xs font-medium text-[var(--ink-muted)] mb-1 block">
 								{payerType === "legal_entity"
 									? "ИНН организации (10 цифр для безналичного расчёта):"
 									: "ИНН индивидуального предпринимателя (12 цифр):"}

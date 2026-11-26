@@ -2,89 +2,90 @@
  * apps/web/src/components/cashbox/studioModules/checkout/CheckoutSplitPaymentPanel.tsx
  *
  * Dedicated Combined Split Tender Panel for CashRegisterCheckoutSection.
- * Governed by Mandates 8e, 8n, 8am, 8ap:
- * - 1-click allocation presets (50/50, 100% card, 100% cash, 100% SBP).
- * - BigInt exact kopeck balance checking without float drift.
- * - Real-time cash change helper for split cash tender.
+ * BigInt exact kopeck balance checking without float drift (Mandates 8e, 8n, 8am, 8ap, 8bm).
  */
 
 import React from "react";
 import { CreditCard, QrCode, Split, Banknote, Wallet, Gift, Sparkles } from "lucide-react";
-import { rublesToKopecks } from "@dental/shared";
+import { formatKopecksToRub, kopecksToRubles } from "@dental/shared";
 import {
 	type CashChangeResult,
-	formatRubles,
-	kopecksToRub,
+	rubToKopecks,
 } from "../../cashRegisterCatalogData.js";
 
 export interface CheckoutSplitPaymentPanelProps {
-	readonly effectiveTotalRub: number;
-	readonly effectiveTotalKop: bigint;
+	readonly effectiveTotalKopecks: bigint;
 	readonly isSplitBalanced: boolean;
-	readonly splitDiffKop: bigint;
-	readonly splitCardRub: number;
-	readonly setSplitCardRub: (val: number) => void;
-	readonly splitCashRub: number;
-	readonly setSplitCashRub: (val: number) => void;
-	readonly splitSbpRub: number;
-	readonly setSplitSbpRub: (val: number) => void;
-	readonly splitDepositRub: number;
-	readonly setSplitDepositRub: (val: number) => void;
-	readonly splitBonusRub?: number | undefined;
-	readonly setSplitBonusRub?: ((val: number) => void) | undefined;
-	readonly splitCertificateRub?: number | undefined;
-	readonly setSplitCertificateRub?: ((val: number) => void) | undefined;
+	readonly splitDiffKopecks: bigint;
+	readonly splitCardKopecks: bigint;
+	readonly setSplitCardKopecks: (val: bigint) => void;
+	readonly splitCashKopecks: bigint;
+	readonly setSplitCashKopecks: (val: bigint) => void;
+	readonly splitSbpKopecks: bigint;
+	readonly setSplitSbpKopecks: (val: bigint) => void;
+	readonly splitDepositKopecks: bigint;
+	readonly setSplitDepositKopecks: (val: bigint) => void;
+	readonly splitBonusKopecks?: bigint | undefined;
+	readonly setSplitBonusKopecks?: ((val: bigint) => void) | undefined;
+	readonly splitCertificateKopecks?: bigint | undefined;
+	readonly setSplitCertificateKopecks?: ((val: bigint) => void) | undefined;
 	readonly certificateNumber?: string | undefined;
 	readonly setCertificateNumber?: ((val: string) => void) | undefined;
 	readonly patientBonusPoints?: number | undefined;
-	readonly splitCashReceivedRub: number;
-	readonly setSplitCashReceivedRub: (val: number) => void;
+	readonly splitCashReceivedKopecks: bigint;
+	readonly setSplitCashReceivedKopecks: (val: bigint) => void;
 	readonly splitCashChange: CashChangeResult | null;
 	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit" | "bonus" | "certificate") => void;
-	readonly patientDepositRub?: number | undefined;
-	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly patientDepositKopecks?: bigint | undefined;
+	readonly patientFamilyBalanceKopecks?: bigint | undefined;
 }
 
 export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps> = ({
-	effectiveTotalRub,
-	effectiveTotalKop,
+	effectiveTotalKopecks,
 	isSplitBalanced,
-	splitDiffKop,
-	splitCardRub,
-	setSplitCardRub,
-	splitCashRub,
-	setSplitCashRub,
-	splitSbpRub,
-	setSplitSbpRub,
-	splitDepositRub,
-	setSplitDepositRub,
-	splitBonusRub = 0,
-	setSplitBonusRub,
-	splitCertificateRub = 0,
-	setSplitCertificateRub,
+	splitDiffKopecks,
+	splitCardKopecks,
+	setSplitCardKopecks,
+	splitCashKopecks,
+	setSplitCashKopecks,
+	splitSbpKopecks,
+	setSplitSbpKopecks,
+	splitDepositKopecks,
+	setSplitDepositKopecks,
+	splitBonusKopecks = 0n,
+	setSplitBonusKopecks,
+	splitCertificateKopecks = 0n,
+	setSplitCertificateKopecks,
 	certificateNumber = "",
 	setCertificateNumber,
 	patientBonusPoints = 0,
-	splitCashReceivedRub,
-	setSplitCashReceivedRub,
+	splitCashReceivedKopecks,
+	setSplitCashReceivedKopecks,
 	splitCashChange,
 	handleBalanceSplit,
-	patientDepositRub = 0,
-	patientFamilyBalanceRub = 0,
+	patientDepositKopecks = 0n,
+	patientFamilyBalanceKopecks = 0n,
 }) => {
-	const totalAvailableDepositRub = patientDepositRub + patientFamilyBalanceRub;
+	const totalAvailableDepositKopecks = patientDepositKopecks + patientFamilyBalanceKopecks;
+	const splitCardDisplay = splitCardKopecks > 0n ? kopecksToRubles(Number(splitCardKopecks)) : "";
+	const splitCashDisplay = splitCashKopecks > 0n ? kopecksToRubles(Number(splitCashKopecks)) : "";
+	const splitSbpDisplay = splitSbpKopecks > 0n ? kopecksToRubles(Number(splitSbpKopecks)) : "";
+	const splitDepositDisplay = splitDepositKopecks > 0n ? kopecksToRubles(Number(splitDepositKopecks)) : "";
+	const splitCertDisplay = splitCertificateKopecks > 0n ? kopecksToRubles(Number(splitCertificateKopecks)) : "";
+	const splitBonusDisplay = splitBonusKopecks > 0n ? kopecksToRubles(Number(splitBonusKopecks)) : "";
+
 	return (
 		<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="split-tender-panel">
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-2">
-					<Split className="w-4 h-4 text-[var(--primary)]" />
+					<Split className="w-4 h-4 text-[var(--primary)] shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)]">Комбинированная оплата (сплит)</span>
 				</div>
 				<span
-					className={`text-xs font-semibold ${
+					className={`text-xs font-semibold font-mono tabular-nums ${
 						isSplitBalanced
-							? "text-[var(--success-ink)]"
-							: splitDiffKop > 0n
+							? "text-[var(--success-ink)] font-sans"
+							: splitDiffKopecks > 0n
 								? "text-[var(--warning-ink)]"
 								: "text-[var(--danger-ink)]"
 					}`}
@@ -92,28 +93,26 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				>
 					{isSplitBalanced
 						? "Сумма сходится точно ✓"
-						: splitDiffKop > 0n
-							? `Осталось распределить: ${formatRubles(kopecksToRub(splitDiffKop))}`
-							: `Превышение: ${formatRubles(kopecksToRub(-splitDiffKop))}`}
+						: splitDiffKopecks > 0n
+							? `Осталось распределить: ${formatKopecksToRub(splitDiffKopecks)}`
+							: `Превышение: ${formatKopecksToRub(-splitDiffKopecks)}`}
 				</span>
 			</div>
 
-			{/* Quick split allocation presets */}
 			<div className="flex flex-wrap gap-1.5" data-testid="quick-presets-section">
 				<button
 					type="button"
 					data-testid="btn-checkout-split-50-50"
 					onClick={() => {
-						const halfKop = effectiveTotalKop / 2n;
-						const halfRub = kopecksToRub(halfKop);
-						const restRub = kopecksToRub(effectiveTotalKop - halfKop);
-						setSplitCardRub(halfRub);
-						setSplitCashRub(restRub);
-						setSplitCashReceivedRub(restRub);
-						setSplitSbpRub(0);
-						setSplitDepositRub(0);
-						setSplitBonusRub?.(0);
-						setSplitCertificateRub?.(0);
+						const halfKop = effectiveTotalKopecks / 2n;
+						const restKop = effectiveTotalKopecks - halfKop;
+						setSplitCardKopecks(halfKop);
+						setSplitCashKopecks(restKop);
+						setSplitCashReceivedKopecks(restKop);
+						setSplitSbpKopecks(0n);
+						setSplitDepositKopecks(0n);
+						setSplitBonusKopecks?.(0n);
+						setSplitCertificateKopecks?.(0n);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -123,12 +122,12 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					type="button"
 					data-testid="btn-checkout-100-card"
 					onClick={() => {
-						setSplitCardRub(effectiveTotalRub);
-						setSplitCashRub(0);
-						setSplitSbpRub(0);
-						setSplitDepositRub(0);
-						setSplitBonusRub?.(0);
-						setSplitCertificateRub?.(0);
+						setSplitCardKopecks(effectiveTotalKopecks);
+						setSplitCashKopecks(0n);
+						setSplitSbpKopecks(0n);
+						setSplitDepositKopecks(0n);
+						setSplitBonusKopecks?.(0n);
+						setSplitCertificateKopecks?.(0n);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -138,13 +137,13 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					type="button"
 					data-testid="btn-checkout-100-cash"
 					onClick={() => {
-						setSplitCashRub(effectiveTotalRub);
-						setSplitCashReceivedRub(effectiveTotalRub);
-						setSplitCardRub(0);
-						setSplitSbpRub(0);
-						setSplitDepositRub(0);
-						setSplitBonusRub?.(0);
-						setSplitCertificateRub?.(0);
+						setSplitCashKopecks(effectiveTotalKopecks);
+						setSplitCashReceivedKopecks(effectiveTotalKopecks);
+						setSplitCardKopecks(0n);
+						setSplitSbpKopecks(0n);
+						setSplitDepositKopecks(0n);
+						setSplitBonusKopecks?.(0n);
+						setSplitCertificateKopecks?.(0n);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -154,12 +153,12 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					type="button"
 					data-testid="btn-checkout-100-sbp"
 					onClick={() => {
-						setSplitSbpRub(effectiveTotalRub);
-						setSplitCardRub(0);
-						setSplitCashRub(0);
-						setSplitDepositRub(0);
-						setSplitBonusRub?.(0);
-						setSplitCertificateRub?.(0);
+						setSplitSbpKopecks(effectiveTotalKopecks);
+						setSplitCardKopecks(0n);
+						setSplitCashKopecks(0n);
+						setSplitDepositKopecks(0n);
+						setSplitBonusKopecks?.(0n);
+						setSplitCertificateKopecks?.(0n);
 					}}
 					className="dente-btn dente-btn-secondary px-2.5 py-1 min-h-[44px] sm:min-h-[36px] flex items-center justify-center rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
 				>
@@ -168,17 +167,16 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-				{/* Card Row */}
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<CreditCard className="w-3.5 h-3.5 text-[var(--primary)]" />
+							<CreditCard className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 							<span>Карта (POS)</span>
 						</span>
 						<button
 							type="button"
 							onClick={() => handleBalanceSplit("card")}
-							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -186,24 +184,23 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					<input
 						type="number"
 						data-testid="split-input-card"
-						value={splitCardRub || ""}
-						onChange={(e) => setSplitCardRub(Math.max(0, Number(e.target.value) || 0))}
+						value={splitCardDisplay}
+						onChange={(e) => setSplitCardKopecks(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
 						placeholder="0 ₽"
-						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-sm font-bold"
 					/>
 				</div>
 
-				{/* Cash Row */}
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Banknote className="w-3.5 h-3.5 text-[var(--success-ink)]" />
+							<Banknote className="w-3.5 h-3.5 text-[var(--success-ink)] shrink-0" />
 							<span>Наличные</span>
 						</span>
 						<button
 							type="button"
 							onClick={() => handleBalanceSplit("cash")}
-							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -211,28 +208,27 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					<input
 						type="number"
 						data-testid="split-input-cash"
-						value={splitCashRub || ""}
+						value={splitCashDisplay}
 						onChange={(e) => {
-							const val = Math.max(0, Number(e.target.value) || 0);
-							setSplitCashRub(val);
-							setSplitCashReceivedRub(val);
+							const nextKop = rubToKopecks(Math.max(0, Number(e.target.value) || 0));
+							setSplitCashKopecks(nextKop);
+							setSplitCashReceivedKopecks(nextKop);
 						}}
 						placeholder="0 ₽"
-						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-sm font-bold"
 					/>
 				</div>
 
-				{/* SBP QR Row */}
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<QrCode className="w-3.5 h-3.5 text-[var(--primary)]" />
+							<QrCode className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 							<span>СБП QR</span>
 						</span>
 						<button
 							type="button"
 							onClick={() => handleBalanceSplit("sbp")}
-							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -240,30 +236,27 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					<input
 						type="number"
 						data-testid="split-input-sbp"
-						value={splitSbpRub || ""}
-						onChange={(e) => setSplitSbpRub(Math.max(0, Number(e.target.value) || 0))}
+						value={splitSbpDisplay}
+						onChange={(e) => setSplitSbpKopecks(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
 						placeholder="0 ₽"
-						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-sm font-bold"
 					/>
 				</div>
 
-				{/* Deposit Row */}
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Wallet className="w-3.5 h-3.5 text-[var(--warning-ink)]" />
-							<span>Аванс / Семья ({formatRubles(totalAvailableDepositRub)})</span>
+							<Wallet className="w-3.5 h-3.5 text-[var(--warning-ink)] shrink-0" />
+							<span>Аванс / Семья ({formatKopecksToRub(totalAvailableDepositKopecks)})</span>
 						</span>
 						<button
 							type="button"
 							onClick={() => {
-								const maxAllowed = Math.min(
-									totalAvailableDepositRub,
-									kopecksToRub(BigInt(rublesToKopecks(splitDepositRub)) + splitDiffKop),
-								);
-								setSplitDepositRub(Math.max(0, maxAllowed));
+								const maxTargetKop = splitDepositKopecks + splitDiffKopecks;
+								const cappedKop = totalAvailableDepositKopecks < maxTargetKop ? totalAvailableDepositKopecks : maxTargetKop;
+								setSplitDepositKopecks(cappedKop > 0n ? cappedKop : 0n);
 							}}
-							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Макс
 						</button>
@@ -271,25 +264,24 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					<input
 						type="number"
 						data-testid="split-input-deposit"
-						value={splitDepositRub || ""}
-						onChange={(e) => setSplitDepositRub(Math.max(0, Number(e.target.value) || 0))}
+						value={splitDepositDisplay}
+						onChange={(e) => setSplitDepositKopecks(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
 						placeholder="0 ₽"
-						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-sm font-bold"
 					/>
 				</div>
 
-				{/* Gift Certificate Row */}
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5" data-testid="split-row-certificate">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Gift className="w-3.5 h-3.5 text-[var(--primary)]" />
+							<Gift className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 							<span>Сертификат</span>
 						</span>
 						<button
 							type="button"
 							data-testid="btn-split-balance-cert"
 							onClick={() => handleBalanceSplit("certificate")}
-							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							Остаток
 						</button>
@@ -308,38 +300,34 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 						<input
 							type="number"
 							data-testid="split-input-certificate"
-							value={splitCertificateRub || ""}
-							onChange={(e) => setSplitCertificateRub?.(Math.max(0, Number(e.target.value) || 0))}
+							value={splitCertDisplay}
+							onChange={(e) => setSplitCertificateKopecks?.(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
 							placeholder="0 ₽"
-							className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+							className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-sm font-bold"
 						/>
 					</div>
 				</div>
 
-				{/* Loyalty Bonus Row */}
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5" data-testid="split-row-bonus">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" />
-							<span>
-								Бонусы {patientBonusPoints > 0 ? `(${patientBonusPoints} б.)` : ""}
-							</span>
+							<Sparkles className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+							<span>Бонусы {patientBonusPoints > 0 ? `(${patientBonusPoints} б.)` : ""}</span>
 						</span>
 						<button
 							type="button"
 							data-testid="btn-split-balance-bonus"
 							onClick={() => {
 								if (patientBonusPoints > 0) {
-									const maxAllowed = Math.min(
-										patientBonusPoints,
-										kopecksToRub(BigInt(rublesToKopecks(splitBonusRub)) + splitDiffKop),
-									);
-									setSplitBonusRub?.(Math.max(0, maxAllowed));
+									const maxBonusKop = rubToKopecks(patientBonusPoints);
+									const targetKop = splitBonusKopecks + splitDiffKopecks;
+									const capped = maxBonusKop < targetKop ? maxBonusKop : targetKop;
+									setSplitBonusKopecks?.(capped > 0n ? capped : 0n);
 								} else {
 									handleBalanceSplit("bonus");
 								}
 							}}
-							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-[11px] font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
+							className="dente-btn dente-btn-secondary px-2 py-0.5 rounded text-xs font-medium border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] cursor-pointer"
 						>
 							{patientBonusPoints > 0 ? "Макс" : "Остаток"}
 						</button>
@@ -347,36 +335,35 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					<input
 						type="number"
 						data-testid="split-input-bonus"
-						value={splitBonusRub || ""}
-						onChange={(e) => setSplitBonusRub?.(Math.max(0, Number(e.target.value) || 0))}
+						value={splitBonusDisplay}
+						onChange={(e) => setSplitBonusKopecks?.(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
 						placeholder="0 ₽"
-						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono text-sm font-bold"
+						className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-sm font-bold"
 					/>
 				</div>
 			</div>
 
-			{/* Split cash change helper */}
-			{splitCashRub > 0 && (
+			{splitCashKopecks > 0n && (
 				<div className="pt-2 border-t border-[var(--line)] flex items-center gap-3">
-					<span className="text-[11px] text-[var(--muted)]">Внесено наличными:</span>
+					<span className="text-xs text-[var(--ink-muted)]">Внесено наличными:</span>
 					<input
 						type="number"
 						data-testid="split-input-cash-received"
-						value={splitCashReceivedRub}
-						onChange={(e) => setSplitCashReceivedRub(Math.max(0, Number(e.target.value)))}
-						className="w-28 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] font-mono text-xs font-bold"
+						value={kopecksToRubles(Number(splitCashReceivedKopecks))}
+						onChange={(e) => setSplitCashReceivedKopecks(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
+						className="w-28 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-xs font-bold"
 					/>
 					{splitCashChange && (
-						<span className="text-xs">
+						<span className="text-xs font-mono tabular-nums">
 							{splitCashChange.isSurplus && (
 								<span className="text-[var(--success-ink)] font-bold">
 									Сдача: {splitCashChange.formattedChange}
 								</span>
 							)}
-							{splitCashChange.isExact && <span className="text-[var(--muted)]">Без сдачи ✓</span>}
+							{splitCashChange.isExact && <span className="text-[var(--ink-muted)] font-sans">Без сдачи ✓</span>}
 							{splitCashChange.isShortage && (
 								<span className="text-[var(--danger-ink)]">
-									Не хватает: {formatRubles(splitCashRub - splitCashReceivedRub)}
+									Не хватает: {splitCashChange.formattedShortage}
 								</span>
 							)}
 						</span>

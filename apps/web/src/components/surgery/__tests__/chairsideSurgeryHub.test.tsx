@@ -16,7 +16,6 @@ import {
 	getImplantSystemById,
 } from "../surgeryCatalogData";
 import { ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal";
-import { DirectSurgeryLauncher } from "../DirectSurgeryLauncher";
 
 describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8am)", () => {
 	it("1. surgeryCatalogData contains all 4 canonical outpatient scenarios without Soviet order codes", () => {
@@ -133,10 +132,17 @@ describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8
 		assert.ok(html.includes("Мягкий овердрафт склада"), "Must display soft overdraft explanation");
 	});
 
-	it("8. DirectSurgeryLauncher mounts and renders without crash", () => {
-		const html = renderToString(<DirectSurgeryLauncher />);
-		// In non-browser environment without hash, returns empty string or renders clean
-		assert.equal(typeof html, "string");
+	it("8. ChairsideSurgeryHubModal renders honest patient/doctor selector without synthetic PAT-BLANK or DOC-SURG placeholders", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+			/>,
+		);
+		assert.ok(html.includes("surgery-context-selector"), "Must render live patient/doctor selector when unbound");
+		assert.ok(!html.includes("PAT-CURRENT"), "Must not expose PAT-CURRENT");
+		assert.ok(!html.includes("PAT-BLANK"), "Must not expose PAT-BLANK");
+		assert.ok(!html.includes("DOC-SURG"), "Must not expose DOC-SURG");
 	});
 
 	it("9. ChairsideSurgeryHubModal renders touch targets conforming to Apple HIG min-h-[44px]", () => {

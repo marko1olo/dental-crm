@@ -3,7 +3,6 @@
  * Ликвидация фейковых UUID и муляжей: опора на активный контекст врача (Мандаты 8e, 8n).
  */
 
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { useAppStore } from "../../store/appStore";
 
 export const isUuid = (val: string | null | undefined): val is string =>

@@ -2,21 +2,18 @@
  * apps/web/src/components/cashbox/studioModules/checkout/CheckoutPaymentMethods.tsx
  *
  * Dedicated Payment Method Selection & Tender Detail Panels for CashRegisterCheckoutSection.
- * Governed by Mandates 8e, 8n, 8am, 8ap:
- * - 0 disabled buttons, tactile >=44px tiles.
- * - SBP dynamic QR preview, POS guidance, installment breakdown, cash change calculation.
- * - Integer kopecks without float drift.
+ * Strictly integer kopecks (BigInt) without float drift (Mandates 8e, 8n, 8am, 8ap, 8bm).
  */
 
 import React from "react";
 import { CreditCard, Gift, ShieldCheck, Wallet } from "lucide-react";
-import { splitKopecks, rublesToKopecks, formatKopecksRu } from "@dental/shared";
+import { formatKopecksToRub, kopecksToRubles } from "@dental/shared";
 import {
 	type CashboxTenderType,
 	type CashChangeResult,
 	CASHBOX_TENDER_PRESETS,
 	CASH_STUDIO_QUICK_BILLS,
-	formatRubles,
+	rubToKopecks,
 } from "../../cashRegisterCatalogData.js";
 import { SbpDynamicQrCard } from "../../../billing/SbpDynamicQrCard.js";
 
@@ -27,18 +24,18 @@ export interface CheckoutPaymentMethodsProps {
 	readonly setIsWarranty: (val: boolean) => void;
 	readonly discountPercent: number;
 	readonly setDiscountPercent: (val: number) => void;
-	readonly baseDueRub: number;
-	readonly effectiveTotalRub: number;
+	readonly baseDueKopecks: bigint;
+	readonly effectiveTotalKopecks: bigint;
 	readonly onOpenSplitPayment?: (() => void) | undefined;
-	readonly cashReceivedRub: number;
-	readonly setCashReceivedRub: (val: number) => void;
+	readonly cashReceivedKopecks: bigint;
+	readonly setCashReceivedKopecks: (val: bigint) => void;
 	readonly changeResult: CashChangeResult;
-	readonly patientDepositRub?: number | undefined;
-	readonly patientFamilyBalanceRub?: number | undefined;
-	readonly setSplitCardRub: (val: number) => void;
-	readonly setSplitCashRub: (val: number) => void;
-	readonly setSplitSbpRub: (val: number) => void;
-	readonly setSplitDepositRub: (val: number) => void;
+	readonly patientDepositKopecks?: bigint | undefined;
+	readonly patientFamilyBalanceKopecks?: bigint | undefined;
+	readonly setSplitCardKopecks: (val: bigint) => void;
+	readonly setSplitCashKopecks: (val: bigint) => void;
+	readonly setSplitSbpKopecks: (val: bigint) => void;
+	readonly setSplitDepositKopecks: (val: bigint) => void;
 	readonly installmentMonths: 3 | 6 | 12;
 	readonly setInstallmentMonths: (val: 3 | 6 | 12) => void;
 	readonly onExecutePayment: () => void;
@@ -56,18 +53,18 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 	setIsWarranty,
 	discountPercent,
 	setDiscountPercent,
-	baseDueRub,
-	effectiveTotalRub,
+	baseDueKopecks,
+	effectiveTotalKopecks,
 	onOpenSplitPayment,
-	cashReceivedRub,
-	setCashReceivedRub,
+	cashReceivedKopecks,
+	setCashReceivedKopecks,
 	changeResult,
-	patientDepositRub = 0,
-	patientFamilyBalanceRub = 0,
-	setSplitCardRub,
-	setSplitCashRub,
-	setSplitSbpRub,
-	setSplitDepositRub,
+	patientDepositKopecks = 0n,
+	patientFamilyBalanceKopecks = 0n,
+	setSplitCardKopecks,
+	setSplitCashKopecks,
+	setSplitSbpKopecks,
+	setSplitDepositKopecks,
 	installmentMonths,
 	setInstallmentMonths,
 	onExecutePayment,
@@ -77,12 +74,14 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 	certificateNumber,
 	setCertificateNumber,
 }) => {
+	const availableBalanceKopecks = patientDepositKopecks + patientFamilyBalanceKopecks;
+	const cashReceivedDisplay = kopecksToRubles(Number(cashReceivedKopecks));
+
 	return (
 		<>
-			{/* Payment Method Selector */}
 			<div className="space-y-1">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-semibold text-[var(--muted)]">
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">
 						Способ оплаты:
 					</span>
 					{onOpenSplitPayment && (
@@ -107,29 +106,29 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 								if (t.id === "warranty") {
 									setIsWarranty(true);
 									setDiscountPercent(100);
-									setCashReceivedRub(0);
+									setCashReceivedKopecks(0n);
 								} else {
 									if (isWarranty || discountPercent === 100) {
 										setIsWarranty(false);
 										setDiscountPercent(0);
 									}
 									if (t.id === "cash") {
-										setCashReceivedRub(baseDueRub);
+										setCashReceivedKopecks(baseDueKopecks);
 									}
 								}
 							}}
 							className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 min-h-[52px] cursor-pointer transition-all ${
 								method === t.id
-									? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
+									? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-semibold shadow-xs"
 									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							<span className="text-sm font-semibold">{t.label}</span>
-							<span className="text-[11px] text-[var(--muted)]">{t.shortLabel}</span>
+							<span className="text-xs text-[var(--ink-muted)]">{t.shortLabel}</span>
 						</button>
 					))}
 				</div>
-				{/* Secondary Tenders: Split, Deposit & Certificate */}
+
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
 					{CASHBOX_TENDER_PRESETS.slice(5).map((t) => (
 						<button
@@ -143,105 +142,100 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 									setDiscountPercent(0);
 								}
 								if (t.id === "split") {
-									setSplitCardRub(baseDueRub);
-									setSplitCashRub(0);
-									setSplitSbpRub(0);
-									setSplitDepositRub(0);
-									if (onOpenSplitPayment) onOpenSplitPayment();
+									setSplitCardKopecks(baseDueKopecks);
+									setSplitCashKopecks(0n);
+									setSplitSbpKopecks(0n);
+									setSplitDepositKopecks(0n);
+									onOpenSplitPayment?.();
 								}
 							}}
-							className={`px-3 py-2 rounded-xl border flex items-center justify-between min-h-[44px] cursor-pointer transition-all ${
+							className={`px-3 py-2 rounded-xl border flex items-center justify-between gap-2 min-h-[44px] cursor-pointer transition-all ${
 								method === t.id
-									? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
+									? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-semibold shadow-xs"
 									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							<span className="text-xs font-semibold">{t.label}</span>
-							<span className="text-[11px] text-[var(--muted)]">{t.shortLabel || t.description}</span>
+							<span className="text-xs text-[var(--ink-muted)]">{t.shortLabel || t.description}</span>
 						</button>
 					))}
 				</div>
 			</div>
 
-			{/* Card Tender with POS Terminal Guidance */}
 			{method === "card" && (
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2" data-testid="card-pos-panel">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-2">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
-							<CreditCard className="w-4 h-4 text-[var(--primary)]" />
+							<CreditCard className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							<span>Оплата банковской картой через POS-терминал</span>
 						</span>
-						<span className="text-sm font-bold font-mono text-[var(--ink)]">{formatRubles(effectiveTotalRub)}</span>
+						<span className="text-sm font-semibold font-mono tabular-nums text-right text-[var(--ink)]">
+							{formatKopecksToRub(effectiveTotalKopecks)}
+						</span>
 					</div>
-					<p className="text-xs text-[var(--muted)]">
+					<p className="text-xs text-[var(--ink-muted)]">
 						Приложите карту, смартфон с Mir Pay или платёжный стикер к терминалу клиники. Чек распечатается автоматически.
 					</p>
 				</div>
 			)}
 
-			{/* SBP QR Dynamic Card */}
 			{method === "sbp" && (
 				<div className="space-y-2" data-testid="sbp-qr-embedded-container">
 					<SbpDynamicQrCard
-						sumRub={effectiveTotalRub}
+						sumRub={kopecksToRubles(Number(effectiveTotalKopecks))}
 						invoiceId={invoiceId}
 						orderId={orderId}
 						patientName={patientName}
-						onPaymentSuccess={() => {
-							onExecutePayment();
-						}}
+						onPaymentSuccess={onExecutePayment}
 					/>
 				</div>
 			)}
 
-			{/* Installments 0% Panel */}
 			{method === "installment" && (
 				<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="installment-tender-panel">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-2">
 						<div className="flex items-center gap-2">
-							<ShieldCheck className="w-4 h-4 text-[var(--primary)]" />
+							<ShieldCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							<span className="text-xs font-bold text-[var(--ink)]">Беспроцентная рассрочка 0% для пациента</span>
 						</div>
 						<span className="text-xs font-bold text-[var(--success-ink)]">0 ₽ переплаты</span>
 					</div>
-					<p className="text-xs text-[var(--muted)]">
+					<p className="text-xs text-[var(--ink-muted)]">
 						Клиника компенсирует банковскую комиссию. Пациент оплачивает лечение равными частями без переплаты.
 					</p>
 					<div className="grid grid-cols-3 gap-2">
 						{([3, 6, 12] as const).map((m) => {
-							const totalKop = rublesToKopecks(effectiveTotalRub);
-							const [monthlyKop] = splitKopecks(totalKop, m);
+							const monthlyKop = effectiveTotalKopecks / BigInt(m);
 							return (
 								<button
 									key={m}
 									type="button"
 									onClick={() => setInstallmentMonths(m)}
-									className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+									className={`p-2.5 min-h-[44px] rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
 										installmentMonths === m
-											? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
+											? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-semibold shadow-xs"
 											: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 									}`}
 								>
 									<span className="text-xs font-semibold">{m} месяцев</span>
-									<span className="text-sm font-bold font-mono mt-0.5">
-										{formatKopecksRu(monthlyKop)}/мес
+									<span className="text-sm font-bold font-mono tabular-nums mt-0.5">
+										{formatKopecksToRub(monthlyKop)}/мес
 									</span>
 								</button>
 							);
 						})}
 					</div>
-					<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs">
-						<span className="text-[var(--muted)]">Банки-партнёры: Т-Банк, Сбербанк, ОТП</span>
+					<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs gap-2">
+						<span className="text-[var(--ink-muted)]">Банки-партнёры: Т-Банк, Сбербанк, ОТП</span>
 						<span className="text-xs font-semibold text-[var(--primary)]">Одобрение онлайн за 2 минуты</span>
 					</div>
 				</div>
 			)}
 
-			{/* 100% Warranty Panel */}
 			{method === "warranty" && (
 				<div className="p-4 rounded-xl border border-[var(--success-line)] bg-[var(--success-soft)] space-y-2" data-testid="warranty-tender-panel">
 					<div className="flex items-center gap-2 text-[var(--success-ink)] font-bold text-sm">
-						<ShieldCheck className="w-5 h-5 shrink-0" />
+						<ShieldCheck className="w-4 h-4 shrink-0" />
 						<span>100% Гарантийная переделка врача</span>
 					</div>
 					<p className="text-xs text-[var(--ink)] leading-relaxed">
@@ -251,37 +245,35 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 				</div>
 			)}
 
-			{/* Deposit Tender Panel */}
 			{method === "deposit" && (
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2" data-testid="deposit-tender-panel">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-2">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
-							<Wallet className="w-4 h-4 text-[var(--warning-ink)]" />
+							<Wallet className="w-4 h-4 text-[var(--warning-ink)] shrink-0" />
 							<span>Списание с баланса / депозита</span>
 						</span>
-						<span className="text-xs font-mono font-bold text-[var(--success-ink)]">
-							Доступно: {formatRubles(patientDepositRub + patientFamilyBalanceRub)}
+						<span className="text-xs font-mono tabular-nums font-bold text-[var(--success-ink)]">
+							Доступно: {formatKopecksToRub(availableBalanceKopecks)}
 						</span>
 					</div>
-					<p className="text-xs text-[var(--muted)]">
+					<p className="text-xs text-[var(--ink-muted)]">
 						Средства будут автоматически списаны с персонального аванса пациента или общего семейного счёта.
 					</p>
 				</div>
 			)}
 
-			{/* Gift Certificate Tender Panel */}
 			{method === "certificate" && (
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5" data-testid="certificate-tender-panel">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-2">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
-							<Gift className="w-4 h-4 text-[var(--primary)]" />
+							<Gift className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							<span>Оплата подарочным сертификатом клиники</span>
 						</span>
-						<span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">
+						<span className="h-6 px-2 text-xs font-medium rounded-full inline-flex items-center bg-[var(--paper)] border border-[var(--line)] text-[var(--ink-muted)] shrink-0">
 							Зачёт аванса
 						</span>
 					</div>
-					<p className="text-xs text-[var(--muted)]">
+					<p className="text-xs text-[var(--ink-muted)]">
 						Введите 16-значный номер сертификата (алгоритм Луна). Сумма зачёта списывается с номинала сертификата.
 					</p>
 					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -298,7 +290,6 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 				</div>
 			)}
 
-			{/* Cash Tender with Real-Time Change Calculation */}
 			{method === "cash" && (
 				<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5" data-testid="cash-tender-panel">
 					<div className="flex flex-wrap items-center justify-between gap-2">
@@ -309,8 +300,8 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 									key={nom}
 									type="button"
 									data-testid={`btn-cash-${nom}`}
-									onClick={() => setCashReceivedRub(nom)}
-									className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
+									onClick={() => setCashReceivedKopecks(rubToKopecks(nom))}
+									className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold font-mono tabular-nums border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] min-h-[44px] sm:min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
 								>
 									+{nom} ₽
 								</button>
@@ -318,8 +309,8 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							<button
 								type="button"
 								data-testid="btn-cash-exact"
-								onClick={() => setCashReceivedRub(effectiveTotalRub)}
-								className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
+								onClick={() => setCashReceivedKopecks(effectiveTotalKopecks)}
+								className="dente-btn dente-btn-secondary px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] min-h-[44px] sm:min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
 							>
 								Без сдачи
 							</button>
@@ -329,21 +320,21 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 						<input
 							type="number"
 							data-testid="input-cash-received"
-							value={cashReceivedRub}
-							onChange={(e) => setCashReceivedRub(Math.max(0, Number(e.target.value)))}
-							className="w-36 px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] font-mono text-base font-bold min-h-[44px]"
+							value={cashReceivedDisplay}
+							onChange={(e) => setCashReceivedKopecks(rubToKopecks(Math.max(0, Number(e.target.value) || 0)))}
+							className="w-36 px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] font-mono tabular-nums text-base font-bold min-h-[44px]"
 							placeholder="Внесено"
 						/>
-						<div className="text-sm">
+						<div className="text-sm font-mono tabular-nums">
 							{changeResult.isSurplus && (
 								<span className="text-[var(--success-ink)] font-bold" data-testid="display-cash-change">
 									Сдача: {changeResult.formattedChange}
 								</span>
 							)}
-							{changeResult.isExact && <span className="text-[var(--muted)] font-medium">Без сдачи ✓</span>}
+							{changeResult.isExact && <span className="text-[var(--ink-muted)] font-sans font-medium">Без сдачи ✓</span>}
 							{changeResult.isShortage && (
 								<span className="text-[var(--danger-ink)] font-medium" data-testid="display-cash-shortage">
-									Не хватает: {formatRubles(effectiveTotalRub - cashReceivedRub)}
+									Не хватает: {changeResult.formattedShortage}
 								</span>
 							)}
 						</div>

@@ -15,7 +15,6 @@ import {
 } from "../surgeryCatalogData";
 import { CopilotSurgeryPassportCard, type CopilotSurgeryPassportData } from "../../copilot/cards/CopilotSurgeryPassportCard";
 import { ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal";
-import { DirectSurgeryLauncher } from "../DirectSurgeryLauncher";
 
 describe("Red Team Surgery & Stock Highway Inquisition (Mandates 8e, 8n, 8v, 8x)", () => {
 	it("1. generateSystemSurgeryLot creates ISO-grounded lot when batch number is missing (Trap A)", () => {
@@ -119,8 +118,21 @@ describe("Red Team Surgery & Stock Highway Inquisition (Mandates 8e, 8n, 8v, 8x)
 		assert.ok(result.warningRu.includes("овердрафт"));
 	});
 
-	it("7. DirectSurgeryLauncher mounts cleanly without crashing", () => {
-		const html = renderToString(<DirectSurgeryLauncher />);
-		assert.equal(typeof html, "string");
+	it("7. Multi-tooth implant hub renders per-tooth spec cards and clean diary without uppercase or mocks", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialTeeth={[46, 36]}
+				initialScenario="implant"
+				initialBrand="Straumann"
+			/>,
+		);
+		assert.ok(html.includes("implant-tooth-specs-list"), "Must render ImplantToothSpecsList container");
+		assert.ok(html.includes("implant-spec-card-46") && html.includes("implant-spec-card-36"), "Must render per-tooth spec cards");
+		assert.ok(html.includes("surgery-context-selector"), "Must render live patient/doctor selector when unbound");
+		assert.ok(!html.includes("PAT-CURRENT") && !html.includes("PAT-BLANK"), "No synthetic patient IDs");
+		assert.ok(!html.includes("DOC-SURG") && !html.includes("TS3S4010S"), "No synthetic doctor IDs or hardcoded TS3S4010S");
 	});
 });

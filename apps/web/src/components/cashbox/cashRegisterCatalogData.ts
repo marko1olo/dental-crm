@@ -2,7 +2,7 @@
  * apps/web/src/components/cashbox/cashRegisterCatalogData.ts
  *
  * Canonical SSOT Data Catalog & Integer Kopeck Finance Engine for DENTE Cash Register & POS.
- * Governed by Mandates 8e, 8n, 8am, 8bf, and Sweet Spot sizing (280-380 lines).
+ * Governed by Mandates 8e, 8n, 8am, 8bf, 8bm.
  */
 
 import {
@@ -17,6 +17,41 @@ export type ClientPayerType = "physical_person" | "legal_entity" | "sole_proprie
 export type ReceiptDeliveryChannel = "print" | "sms" | "email" | "electronic_only";
 export type ReceiptPrintFormat = "tape_58mm" | "tape_80mm" | "act_a4";
 export type CashRegisterStudioTab = "checkout" | "shift" | "tape";
+
+export const OFD_UNCONFIGURED_LABEL = "ОФД не настроен";
+export const KKT_UNCONFIGURED_LABEL = "Не подключен";
+
+const OFD_PROVIDER_LABELS: Readonly<Record<string, string>> = {
+	platforma_ofd: "Платформа ОФД",
+	first_ofd: "Первый ОФД",
+	taxcom: "Такском ОФД",
+	sbis: "СБИС (Тензор)",
+	kontur_ofd: "Контур ОФД",
+};
+
+export function resolveOfdDisplayName(providerOrName?: string | null): string {
+	const trimmed = typeof providerOrName === "string" ? providerOrName.trim() : "";
+	if (!trimmed) return OFD_UNCONFIGURED_LABEL;
+	return OFD_PROVIDER_LABELS[trimmed] ?? trimmed;
+}
+
+export function toKopecksBigInt(
+	kopecks?: bigint | number | string | null,
+	legacyRub?: number | null,
+): bigint {
+	if (typeof kopecks === "bigint") return kopecks > 0n ? kopecks : 0n;
+	if (typeof kopecks === "number" && Number.isFinite(kopecks)) {
+		const rounded = Math.round(kopecks);
+		return rounded > 0 ? BigInt(rounded) : 0n;
+	}
+	if (typeof kopecks === "string" && /^\d+$/.test(kopecks.trim())) {
+		return BigInt(kopecks.trim());
+	}
+	if (typeof legacyRub === "number" && Number.isFinite(legacyRub) && legacyRub > 0) {
+		return BigInt(rublesToKopecks(legacyRub));
+	}
+	return 0n;
+}
 
 export interface CashboxTenderPreset {
 	readonly id: CashboxTenderType;
@@ -42,14 +77,14 @@ export interface SplitPresetOption {
 export interface DoctorDiscountPreset {
 	readonly percent: number;
 	readonly label: string;
-	readonly isWarranty?: boolean;
+	readonly isWarranty?: boolean | undefined;
 }
 
 export interface PayerTypePreset {
 	readonly id: ClientPayerType;
 	readonly label: string;
 	readonly isInnRequired: boolean;
-	readonly innLength?: 10 | 12;
+	readonly innLength?: (10 | 12) | undefined;
 	readonly helperText: string;
 }
 
@@ -60,14 +95,17 @@ export interface DiscrepancyReasonOption {
 }
 
 export interface CashChangeResult {
+	readonly receivedKopecks: bigint;
+	readonly totalDueKopecks: bigint;
+	readonly changeKopecks: bigint;
 	readonly receivedRub: number;
 	readonly totalDueRub: number;
 	readonly changeRub: number;
-	readonly changeKopecks: bigint;
 	readonly isExact: boolean;
 	readonly isShortage: boolean;
 	readonly isSurplus: boolean;
 	readonly formattedChange: string;
+	readonly formattedShortage: string;
 }
 
 /* ========================================================================= */
@@ -80,7 +118,7 @@ export function rubToKopecks(rub: number): bigint {
 	return BigInt(rublesToKopecks(rub));
 }
 
-/** Converts integer kopecks to float rubles for display via canonical @dental/shared */
+/** Converts integer kopecks to rubles via canonical @dental/shared */
 export function kopecksToRub(kopecks: bigint | number): number {
 	const kop = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
 	return kopecksToRubles(kop);
@@ -95,39 +133,48 @@ export function formatKopecksToRubles(kopecks: bigint | number): string {
 export { formatRubles, formatKopecksToRub, rublesToKopecks, kopecksToRubles };
 
 /**
- * Calculates cash change with exact integer precision and status indicators.
+ * Calculates cash change directly in BigInt kopecks without float drift.
  */
-export function calculateExactCashChange(receivedRub: number, totalDueRub: number): CashChangeResult {
-	const receivedKop = rubToKopecks(receivedRub);
-	const dueKop = rubToKopecks(totalDueRub);
-	const diffKop = receivedKop - dueKop;
+export function calculateExactCashChangeKopecks(
+	receivedKop: bigint,
+	dueKop: bigint,
+): CashChangeResult {
+	const safeReceived = receivedKop > 0n ? receivedKop : 0n;
+	const safeDue = dueKop > 0n ? dueKop : 0n;
+	const diffKop = safeReceived - safeDue;
 
 	const isExact = diffKop === 0n;
 	const isShortage = diffKop < 0n;
 	const isSurplus = diffKop > 0n;
 	const changeKop = isSurplus ? diffKop : 0n;
-	const changeRub = kopecksToRub(changeKop);
+	const shortageKop = isShortage ? -diffKop : 0n;
 
 	return {
-		receivedRub,
-		totalDueRub,
-		changeRub,
+		receivedKopecks: safeReceived,
+		totalDueKopecks: safeDue,
 		changeKopecks: changeKop,
+		receivedRub: kopecksToRub(safeReceived),
+		totalDueRub: kopecksToRub(safeDue),
+		changeRub: kopecksToRub(changeKop),
 		isExact,
 		isShortage,
 		isSurplus,
 		formattedChange: formatKopecksToRubles(changeKop),
+		formattedShortage: formatKopecksToRubles(shortageKop),
 	};
+}
+
+/**
+ * Legacy-signature wrapper routing through calculateExactCashChangeKopecks.
+ */
+export function calculateExactCashChange(receivedRub: number, totalDueRub: number): CashChangeResult {
+	return calculateExactCashChangeKopecks(rubToKopecks(receivedRub), rubToKopecks(totalDueRub));
 }
 
 /* ========================================================================= */
 /* 2. CANONICAL PRESETS AND CATALOG DATA                                     */
 /* ========================================================================= */
 
-/**
- * Canonical Payment Tenders: Instant selection, 0 raw regulatory jargon, 0 cartoon emojis.
- * Matches: [ Наличные | Терминал (Карта) | СБП QR | Рассрочка | Гарантия 100% (0 ₽) ] + Сплит + Депозит.
- */
 export const CASHBOX_TENDER_PRESETS: readonly CashboxTenderPreset[] = [
 	{ id: "cash", label: "Наличные", shortLabel: "Наличные", description: "Приём наличных с авторасчётом сдачи", isInstant: true, testId: "tender-method-cash" },
 	{ id: "card", label: "Терминал (Карта)", shortLabel: "Карта", description: "Оплата банковской картой через POS-терминал", isInstant: true, testId: "tender-method-card" },
@@ -139,7 +186,6 @@ export const CASHBOX_TENDER_PRESETS: readonly CashboxTenderPreset[] = [
 	{ id: "certificate", label: "Подарочный сертификат", shortLabel: "Сертификат", description: "Оплата сертификатом клиники с проверкой номера Luhn-16", isInstant: false, testId: "tender-method-certificate" },
 ];
 
-/** Standard Russian Banknote Denominations for Cash Drawer & 1-Click Change */
 export const CASH_DENOMINATIONS: readonly CashDenominationBill[] = [
 	{ nominalRub: 100, nominalKopecks: 10000, label: "100 ₽" },
 	{ nominalRub: 200, nominalKopecks: 20000, label: "200 ₽" },
@@ -149,13 +195,9 @@ export const CASH_DENOMINATIONS: readonly CashDenominationBill[] = [
 	{ nominalRub: 5000, nominalKopecks: 500000, label: "5 000 ₽" },
 ];
 
-/** Quick 1-Click Cash Insertion Buttons: 1000 ₽, 2000 ₽, 5000 ₽ */
 export const QUICK_CASH_PRESET_BILLS: readonly number[] = [1000, 2000, 5000];
-
-/** Studio Quick Bills (Mandate 8e/8n): 500 ₽, 1000 ₽, 5000 ₽ */
 export const CASH_STUDIO_QUICK_BILLS: readonly number[] = [500, 1000, 5000];
 
-/** Doctor & Cashier Autonomous Discount Presets (Mandate 8e) */
 export const DOCTOR_DISCOUNT_PRESETS: readonly DoctorDiscountPreset[] = [
 	{ percent: 0, label: "0% (Без скидки)" },
 	{ percent: 5, label: "5%" },
@@ -173,10 +215,6 @@ export const SPLIT_PAYMENT_PRESETS: readonly SplitPresetOption[] = [
 	{ id: "card-sbp", title: "Карта + СБП", subtitle: "Часть картой, часть по QR" },
 ];
 
-/**
- * Payer / Client Classification (Mandate 8n).
- * CRITICAL LAW: Physical persons NEVER have forced INN requirements!
- */
 export const PAYER_TYPE_PRESETS: readonly PayerTypePreset[] = [
 	{
 		id: "physical_person",
@@ -200,14 +238,12 @@ export const PAYER_TYPE_PRESETS: readonly PayerTypePreset[] = [
 	},
 ];
 
-/** Receipt & Act Document Formats */
 export const RECEIPT_PRINT_FORMATS = [
 	{ id: "tape_80mm" as const, label: "Кассовая лента 80 мм", description: "Стандартный термочек" },
 	{ id: "tape_58mm" as const, label: "Компактная лента 58 мм", description: "Узкая чековая лента" },
 	{ id: "act_a4" as const, label: "Акт услуг А4", description: "Полноформатный акт оказанных услуг" },
 ];
 
-/** Shift Closing Discrepancy Reasons for Audit & Reconciliation */
 export const SHIFT_DISCREPANCY_REASONS: readonly DiscrepancyReasonOption[] = [
 	{ code: "none", label: "Без расхождений", description: "Фактическая наличность полностью совпадает" },
 	{ code: "change_mistake", label: "Ошибка при сдаче", description: "Неточность при выдаче сдачи" },
@@ -216,7 +252,6 @@ export const SHIFT_DISCREPANCY_REASONS: readonly DiscrepancyReasonOption[] = [
 	{ code: "technical_defect", label: "Сбой регистратора", description: "Аппаратное замятие ленты" },
 ];
 
-/** Returns demo fallback queue of unpaid invoices for showcase mode */
 export function getDemoUnpaidInvoices() {
 	return [
 		{
@@ -251,21 +286,34 @@ export function getDemoUnpaidInvoices() {
 export interface FiscalTapeOperationItem {
 	readonly id?: string | undefined;
 	readonly operationType?: string | undefined;
+	readonly amountKopecks?: bigint | number | string | undefined;
+	/** @deprecated Legacy ruble fallback */
 	readonly amountRub?: number | undefined;
 	readonly reasonText?: string | null | undefined;
 	readonly createdAt?: string | undefined;
 }
 
-/** Generates monospaced 54-FZ thermal receipt tape text for preview */
+/** Generates monospaced thermal receipt tape text for preview */
 export function generateFiscalTapeText(params: {
 	shiftNumber: number;
 	cashierFullName: string;
+	clinicLegalName?: string | undefined;
 	kktRegNumber?: string | undefined;
 	ofdName?: string | undefined;
+	netRevenueKopecks?: bigint | number | undefined;
+	cashInDrawerKopecks?: bigint | number | undefined;
+	cardSumKopecks?: bigint | number | undefined;
+	sbpSumKopecks?: bigint | number | undefined;
+	advanceOffsetKopecks?: bigint | number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	netRevenueRub?: number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	cashInDrawerRub?: number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	cardSumRub?: number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	sbpSumRub?: number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	advanceOffsetRub?: number | undefined;
 	operations?: readonly FiscalTapeOperationItem[] | undefined;
 	width?: "tape_80mm" | "tape_58mm" | undefined;
@@ -278,31 +326,42 @@ export function generateFiscalTapeText(params: {
 		return `${left}${" ".repeat(space)}${right}`;
 	};
 
+	const netKop = toKopecksBigInt(params.netRevenueKopecks, params.netRevenueRub);
+	const cashKop = toKopecksBigInt(params.cashInDrawerKopecks, params.cashInDrawerRub);
+	const cardKop = toKopecksBigInt(params.cardSumKopecks, params.cardSumRub);
+	const sbpKop = toKopecksBigInt(params.sbpSumKopecks, params.sbpSumRub);
+	const advanceKop = toKopecksBigInt(params.advanceOffsetKopecks, params.advanceOffsetRub);
+	const effectiveKkt = params.kktRegNumber?.trim() || KKT_UNCONFIGURED_LABEL;
+	const effectiveOfd = params.ofdName?.trim() || OFD_UNCONFIGURED_LABEL;
+
 	const tapeLines: string[] = [
 		div,
-		"        ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+		`        ${params.clinicLegalName?.trim() || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}`,
 		"        КАССОВЫЙ ЧЕК / СМЕННЫЙ ОТЧЕТ",
 		div,
-		pad("ККТ Рег. №:", params.kktRegNumber || "ФНС ККТ ЗАРЕГИСТРИРОВАНА"),
-		pad("ОФД:", params.ofdName || "АО «ПЕРВЫЙ ОФД»"),
+		pad("ККТ Рег. №:", effectiveKkt),
+		pad("ОФД:", effectiveOfd),
 		pad("Смена №:", String(params.shiftNumber)),
 		pad("Кассир:", params.cashierFullName),
 		line,
-		pad("НАЛИЧНЫЕ:", formatRubles(params.cashInDrawerRub ?? 0)),
-		pad("БЕЗНАЛ / КАРТЫ:", formatRubles(params.cardSumRub ?? 0)),
-		pad("СБП QR:", formatRubles(params.sbpSumRub ?? 0)),
-		pad("ЗАЧЕТ АВАНСА:", formatRubles(params.advanceOffsetRub ?? 0)),
+		pad("НАЛИЧНЫЕ:", formatKopecksToRub(cashKop)),
+		pad("БЕЗНАЛ / КАРТЫ:", formatKopecksToRub(cardKop)),
+		pad("СБП QR:", formatKopecksToRub(sbpKop)),
+		pad("ЗАЧЕТ АВАНСА:", formatKopecksToRub(advanceKop)),
 		line,
-		pad("ИТОГО ВЫРУЧКА:", formatRubles(params.netRevenueRub ?? 0)),
+		pad("ИТОГО ВЫРУЧКА:", formatKopecksToRub(netKop)),
 	];
 
 	if (params.operations && params.operations.length > 0) {
 		tapeLines.push(line);
 		tapeLines.push("ПОСЛЕДНИЕ ОПЕРАЦИИ (БД):");
 		for (const op of params.operations.slice(0, 5)) {
-			const timeStr = op.createdAt ? new Date(op.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
+			const timeStr = op.createdAt
+				? new Date(op.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+				: "";
 			const typeLabel = op.operationType === "income" ? "ПРИХОД" : "РАСХОД";
-			tapeLines.push(pad(`${timeStr} ${typeLabel}:`, formatRubles(op.amountRub ?? 0)));
+			const opKop = toKopecksBigInt(op.amountKopecks, op.amountRub);
+			tapeLines.push(pad(`${timeStr} ${typeLabel}:`, formatKopecksToRub(opKop)));
 			if (op.reasonText) {
 				tapeLines.push(`  ${op.reasonText.slice(0, w - 4)}`);
 			}
@@ -312,7 +371,7 @@ export function generateFiscalTapeText(params: {
 	}
 
 	tapeLines.push(line);
-	tapeLines.push(pad("РЕЖИМ ККТ:", "Касса онлайн"));
+	tapeLines.push(pad("РЕЖИМ ККТ:", effectiveOfd === OFD_UNCONFIGURED_LABEL ? "Автономный" : "Касса онлайн"));
 	tapeLines.push(div);
 	tapeLines.push("       СПАСИБО ЗА ДОВЕРИЕ КЛИНИКЕ!");
 	tapeLines.push(div);
@@ -320,9 +379,4 @@ export function generateFiscalTapeText(params: {
 	return tapeLines.join("\n");
 }
 
-/* ========================================================================= */
-/* 3. RECONCILIATION, SPLIT ALLOCATION & TENDER PRESETS (CANONICAL SSOT)      */
-/* ========================================================================= */
-
 export * from "./cashRegisterSplitsData.js";
-

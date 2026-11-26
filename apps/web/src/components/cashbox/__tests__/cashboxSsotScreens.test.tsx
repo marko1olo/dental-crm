@@ -16,7 +16,8 @@ import { renderToString } from "react-dom/server";
 import { CashRegisterStudioModal } from "../CashRegisterStudioModal";
 import { CashShiftClosingModal } from "../../shift/CashShiftClosingModal";
 import { CashShiftJournalView } from "../../shift/CashShiftJournalView";
-import { DirectCashboxLauncher } from "../DirectCashboxLauncher";
+import { WorkspaceStudioOverlayHost } from "../../appLayout/WorkspaceStudioOverlayHost";
+import { resolveClinicRoute } from "../../../router/routeResolver";
 import {
 	CASHBOX_TENDER_PRESETS,
 	CASH_DENOMINATIONS,
@@ -105,12 +106,44 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 					isOpen={false}
 					onClose={() => {}}
 					mode="checkout"
-					totalDueRub={5000}
+					totalDueKopecks={500000n}
 					patientId="pat-1"
 					patientName="Иванов Иван"
 				/>
 			);
 			assert.equal(html, "");
+		});
+
+		it("supports integer totalDueKopecks and displays honest OFD status when unconfigured", () => {
+			const unconfiguredHtml = renderToString(
+				<CashRegisterStudioModal
+					isOpen={true}
+					onClose={() => {}}
+					mode="shift"
+					initialTab="shift"
+					totalDueKopecks={1250050n}
+					cashInDrawerKopecks={500000n}
+					cardSumKopecks={750050n}
+					cashierFullName="Администратор Кассы"
+				/>
+			);
+			assert.ok(unconfiguredHtml.includes("ОФД не настроен"), "Must honestly show unconfigured OFD instead of hardcoded Платформа ОФД");
+			assert.ok(!unconfiguredHtml.includes("Платформа ОФД"), "Must NOT hardcode Платформа ОФД when not configured");
+			assert.ok(/12[\s\u00A0\u202F]?500/.test(unconfiguredHtml), "Must compute revenue from integer kopecks");
+
+			const configuredHtml = renderToString(
+				<CashRegisterStudioModal
+					isOpen={true}
+					onClose={() => {}}
+					mode="shift"
+					initialTab="shift"
+					kktRegNumber="KKT-991020"
+					ofdName="first_ofd"
+					cashierFullName="Администратор Кассы"
+				/>
+			);
+			assert.ok(configuredHtml.includes("Первый ОФД"), "Must resolve configured OFD provider label");
+			assert.ok(configuredHtml.includes("KKT-991020"), "Must render configured KKT reg number");
 		});
 	});
 
@@ -244,10 +277,11 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 		});
 	});
 
-	describe("5. DirectCashboxLauncher SSR & UI Tree Mounting", () => {
-		it("renders null on SSR when no hash/search is active", () => {
-			const html = renderToString(<DirectCashboxLauncher />);
+	describe("5. WorkspaceStudioOverlayHost & Cashbox Deep Links", () => {
+		it("renders null on SSR when no studio is active and resolves #cashbox cleanly", () => {
+			const html = renderToString(<WorkspaceStudioOverlayHost />);
 			assert.equal(html, "");
+			assert.equal(resolveClinicRoute("", "#cashbox").studio?.kind, "cashbox");
 		});
 	});
 });

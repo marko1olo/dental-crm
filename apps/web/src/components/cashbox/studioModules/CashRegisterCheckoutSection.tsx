@@ -2,22 +2,17 @@
  * apps/web/src/components/cashbox/studioModules/CashRegisterCheckoutSection.tsx
  *
  * Dedicated Checkout & Payment Tab Section for CashRegisterStudioModal.
- * Decomposed into clean modular subcomponents (<300 lines each) under ./checkout/
- * Governed by Mandates 8e, 8n, 8am, 8ap, 8bf:
- * - 0 disabled buttons, soft-focus defaults.
- * - Zero forced INN for physical persons.
- * - BigInt integer kopecks without float drift.
- * - Clean medical vocabulary (no raw FFD/FZ-54 codes).
- * - Exact prop signatures and testid preservation.
+ * Strictly BigInt integer kopecks without float drift (Mandates 8e, 8n, 8am, 8ap, 8bf, 8bm).
  */
 
 import React from "react";
-import {
-	type CashboxTenderType,
-	type ClientPayerType,
-	type CashChangeResult,
-	formatRubles,
+import { formatKopecksToRub } from "@dental/shared";
+import type {
+	CashboxTenderType,
+	ClientPayerType,
+	CashChangeResult,
 } from "../cashRegisterCatalogData.js";
+import type { AppliedDmsSplitKopecks } from "./useCashRegisterStudioState.js";
 import {
 	CheckoutDiscountAndPayerControls,
 	CheckoutPaymentMethods,
@@ -31,9 +26,10 @@ export interface CashRegisterCheckoutSectionProps {
 	readonly patientAllergies?: unknown;
 	readonly doctorFullName?: string | undefined;
 	readonly serviceTitle?: string | undefined;
-	readonly patientDepositRub?: number | undefined;
-	readonly patientFamilyBalanceRub?: number | undefined;
-	readonly effectiveTotalRub: number;
+	readonly patientDepositKopecks?: bigint | undefined;
+	readonly patientFamilyBalanceKopecks?: bigint | undefined;
+	readonly effectiveTotalKopecks: bigint;
+	readonly baseDueKopecks: bigint;
 	readonly isWarranty: boolean;
 	readonly setIsWarranty: (val: boolean) => void;
 	readonly discountPercent: number;
@@ -44,29 +40,27 @@ export interface CashRegisterCheckoutSectionProps {
 	readonly setBuyerInn: (val: string) => void;
 	readonly method: CashboxTenderType;
 	readonly setMethod: (val: CashboxTenderType) => void;
-	readonly baseDueRub: number;
 	readonly onOpenSplitPayment?: (() => void) | undefined;
-	readonly cashReceivedRub: number;
-	readonly setCashReceivedRub: (val: number) => void;
+	readonly cashReceivedKopecks: bigint;
+	readonly setCashReceivedKopecks: (val: bigint) => void;
 	readonly changeResult: CashChangeResult;
 	readonly isSplitBalanced: boolean;
-	readonly splitDiffKop: bigint;
-	readonly effectiveTotalKop: bigint;
-	readonly splitCardRub: number;
-	readonly setSplitCardRub: (val: number) => void;
-	readonly splitCashRub: number;
-	readonly setSplitCashRub: (val: number) => void;
-	readonly splitSbpRub: number;
-	readonly setSplitSbpRub: (val: number) => void;
-	readonly splitDepositRub: number;
-	readonly setSplitDepositRub: (val: number) => void;
-	readonly splitBonusRub?: number | undefined;
-	readonly setSplitBonusRub?: ((val: number) => void) | undefined;
-	readonly splitCertRub?: number | undefined;
-	readonly setSplitCertRub?: ((val: number) => void) | undefined;
+	readonly splitDiffKopecks: bigint;
+	readonly splitCardKopecks: bigint;
+	readonly setSplitCardKopecks: (val: bigint) => void;
+	readonly splitCashKopecks: bigint;
+	readonly setSplitCashKopecks: (val: bigint) => void;
+	readonly splitSbpKopecks: bigint;
+	readonly setSplitSbpKopecks: (val: bigint) => void;
+	readonly splitDepositKopecks: bigint;
+	readonly setSplitDepositKopecks: (val: bigint) => void;
+	readonly splitBonusKopecks?: bigint | undefined;
+	readonly setSplitBonusKopecks?: ((val: bigint) => void) | undefined;
+	readonly splitCertKopecks?: bigint | undefined;
+	readonly setSplitCertKopecks?: ((val: bigint) => void) | undefined;
 	readonly patientBonusPoints?: number | undefined;
-	readonly splitCashReceivedRub: number;
-	readonly setSplitCashReceivedRub: (val: number) => void;
+	readonly splitCashReceivedKopecks: bigint;
+	readonly setSplitCashReceivedKopecks: (val: bigint) => void;
 	readonly splitCashChange: CashChangeResult | null;
 	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit" | "bonus" | "certificate") => void;
 	readonly installmentMonths: 3 | 6 | 12;
@@ -78,13 +72,7 @@ export interface CashRegisterCheckoutSectionProps {
 	readonly onExecutePayment: () => void;
 	readonly certificateNumber?: string | undefined;
 	readonly setCertificateNumber?: ((val: string) => void) | undefined;
-	readonly appliedDmsSplit?: {
-		readonly totalDueRub: number;
-		readonly dmsRub: number;
-		readonly patientRub: number;
-		readonly insurerName?: string | undefined;
-		readonly letterNumber?: string | undefined;
-	} | null | undefined;
+	readonly appliedDmsSplit?: AppliedDmsSplitKopecks | null | undefined;
 	readonly invoiceId?: string | undefined;
 	readonly orderId?: string | undefined;
 }
@@ -95,9 +83,10 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 	patientAllergies,
 	doctorFullName,
 	serviceTitle,
-	patientDepositRub = 0,
-	patientFamilyBalanceRub = 0,
-	effectiveTotalRub,
+	patientDepositKopecks = 0n,
+	patientFamilyBalanceKopecks = 0n,
+	effectiveTotalKopecks,
+	baseDueKopecks,
 	isWarranty,
 	setIsWarranty,
 	discountPercent,
@@ -108,29 +97,27 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 	setBuyerInn,
 	method,
 	setMethod,
-	baseDueRub,
 	onOpenSplitPayment,
-	cashReceivedRub,
-	setCashReceivedRub,
+	cashReceivedKopecks,
+	setCashReceivedKopecks,
 	changeResult,
 	isSplitBalanced,
-	splitDiffKop,
-	effectiveTotalKop,
-	splitCardRub,
-	setSplitCardRub,
-	splitCashRub,
-	setSplitCashRub,
-	splitSbpRub,
-	setSplitSbpRub,
-	splitDepositRub,
-	setSplitDepositRub,
-	splitBonusRub = 0,
-	setSplitBonusRub,
-	splitCertRub = 0,
-	setSplitCertRub,
+	splitDiffKopecks,
+	splitCardKopecks,
+	setSplitCardKopecks,
+	splitCashKopecks,
+	setSplitCashKopecks,
+	splitSbpKopecks,
+	setSplitSbpKopecks,
+	splitDepositKopecks,
+	setSplitDepositKopecks,
+	splitBonusKopecks = 0n,
+	setSplitBonusKopecks,
+	splitCertKopecks = 0n,
+	setSplitCertKopecks,
 	patientBonusPoints = 0,
-	splitCashReceivedRub,
-	setSplitCashReceivedRub,
+	splitCashReceivedKopecks,
+	setSplitCashReceivedKopecks,
 	splitCashChange,
 	handleBalanceSplit,
 	installmentMonths,
@@ -168,24 +155,23 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 						<span className="font-bold text-[var(--primary)]">Полис ДМС:</span>
 						<span>
 							{appliedDmsSplit.insurerName || "Страховая компания"} покрывает{" "}
-							{formatRubles(appliedDmsSplit.dmsRub)}
+							<span className="font-mono tabular-nums">{formatKopecksToRub(appliedDmsSplit.dmsKopecks)}</span>
 						</span>
 						{appliedDmsSplit.letterNumber && (
-							<span className="text-[var(--muted)]">
+							<span className="text-[var(--ink-muted)]">
 								({appliedDmsSplit.letterNumber})
 							</span>
 						)}
 					</div>
 					<div className="font-semibold text-right">
 						Доплата на кассе:{" "}
-						<span className="font-bold text-[var(--primary)]">
-							{formatRubles(appliedDmsSplit.patientRub)}
+						<span className="font-bold font-mono tabular-nums text-[var(--primary)]">
+							{formatKopecksToRub(appliedDmsSplit.patientKopecks)}
 						</span>
 					</div>
 				</div>
 			)}
 
-			{/* Patient & Doctor Context Bar / Empty State */}
 			{patientName ? (
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs">
 					<div>
@@ -193,23 +179,23 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 							<span>{patientName}</span>
 							{allergiesList.length > 0 && (
 								<span
-									className="text-[var(--warning-ink)] font-medium text-[11px] flex items-center gap-1"
+									className="text-[var(--warning-ink)] font-medium text-xs flex items-center gap-1"
 									title="Аллергостатус пациента"
 								>
 									⚠️ Аллергия: {allergiesList.join(", ")}
 								</span>
 							)}
 						</div>
-						<div className="text-[var(--muted)]">
+						<div className="text-[var(--ink-muted)]">
 							{patientPhone ? `${patientPhone} · ` : ""}Врач: {doctorFullName || "Не назначен"}
 						</div>
 					</div>
 					<div className="text-right">
-						<div className="text-[var(--muted)]">{serviceTitle || "Приём стоматолога"}</div>
-						{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
-							<div className="text-[var(--success-ink)] font-medium">
-								{patientDepositRub > 0 ? `Аванс: ${formatRubles(patientDepositRub)} ` : ""}
-								{patientFamilyBalanceRub > 0 ? `· Семья: ${formatRubles(patientFamilyBalanceRub)}` : ""}
+						<div className="text-[var(--ink-muted)]">{serviceTitle || "Приём стоматолога"}</div>
+						{(patientDepositKopecks > 0n || patientFamilyBalanceKopecks > 0n) && (
+							<div className="text-[var(--success-ink)] font-medium font-mono tabular-nums">
+								{patientDepositKopecks > 0n ? `Аванс: ${formatKopecksToRub(patientDepositKopecks)} ` : ""}
+								{patientFamilyBalanceKopecks > 0n ? `· Семья: ${formatKopecksToRub(patientFamilyBalanceKopecks)}` : ""}
 							</div>
 						)}
 					</div>
@@ -219,8 +205,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 					className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-dashed border-[var(--line)] flex items-center justify-between gap-3 text-xs"
 					data-testid="cashbox-empty-patient-state"
 				>
-					<div className="flex items-center gap-2.5 text-[var(--muted)]">
-						<span className="text-base">👤</span>
+					<div className="flex items-center gap-2.5 text-[var(--ink-muted)]">
 						<span>Выберите пациента или счёт для расчёта (свободный чек кассы)</span>
 					</div>
 					<button
@@ -230,48 +215,46 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 								window.dispatchEvent(new CustomEvent("dente:open-patient-search"));
 							}
 						}}
-						className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer"
+						className="dente-btn dente-btn-secondary h-9 min-h-[36px] px-3 rounded-lg text-xs font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer whitespace-nowrap shrink-0"
 					>
 						Выбрать пациента
 					</button>
 				</div>
 			)}
 
-			{/* Total Due Prominent Display (36px bold centered, Mandate 8am & Universal Checkout) */}
 			<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
-				<span className="text-xs font-semibold text-[var(--muted)]">
+				<span className="text-xs font-semibold text-[var(--ink-muted)]">
 					Сумма счёта к оплате
 				</span>
 				<div
-					className="text-3xl sm:text-[36px] font-bold font-mono text-[var(--ink)] tracking-tight leading-none mt-1.5"
+					className="text-3xl sm:text-[36px] font-bold font-mono tabular-nums text-[var(--ink)] tracking-tight leading-none mt-1.5"
 					data-testid="checkout-total-amount"
 				>
-					<span data-testid="display-total-amount-due">{formatRubles(effectiveTotalRub)}</span>
+					<span data-testid="display-total-amount-due">{formatKopecksToRub(effectiveTotalKopecks)}</span>
 				</div>
 				{isWarranty ? (
 					<div className="mt-2.5 px-3 py-1 rounded-full bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] text-xs font-bold">
 						100% Гарантийный расчёт врача (0 ₽) · Чек не фискализируется
 					</div>
-				) : effectiveTotalRub === 0 ? (
-					<div className="text-[11px] text-[var(--muted)] mt-1.5">
+				) : effectiveTotalKopecks === 0n ? (
+					<div className="text-xs text-[var(--ink-muted)] mt-1.5">
 						Свободный чек кассы · Без скрытых комиссий
 					</div>
 				) : (
-					<div className="text-[11px] text-[var(--muted)] mt-1.5">
+					<div className="text-xs text-[var(--ink-muted)] mt-1.5">
 						Кассовый чек с фискализацией · Без скрытых комиссий
 					</div>
 				)}
 			</div>
 
-			{/* Doctor Discounts & Payer Type Selection */}
 			<CheckoutDiscountAndPayerControls
 				isWarranty={isWarranty}
 				setIsWarranty={setIsWarranty}
 				discountPercent={discountPercent}
 				setDiscountPercent={setDiscountPercent}
-				setCashReceivedRub={setCashReceivedRub}
-				setSplitCashRub={setSplitCashRub}
-				setSplitCardRub={setSplitCardRub}
+				setCashReceivedKopecks={setCashReceivedKopecks}
+				setSplitCashKopecks={setSplitCashKopecks}
+				setSplitCardKopecks={setSplitCardKopecks}
 				setMethod={setMethod}
 				payerType={payerType}
 				setPayerType={setPayerType}
@@ -279,7 +262,6 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				setBuyerInn={setBuyerInn}
 			/>
 
-			{/* Payment Method Selector & Tender Panels */}
 			<CheckoutPaymentMethods
 				method={method}
 				setMethod={setMethod}
@@ -287,18 +269,18 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				setIsWarranty={setIsWarranty}
 				discountPercent={discountPercent}
 				setDiscountPercent={setDiscountPercent}
-				baseDueRub={baseDueRub}
-				effectiveTotalRub={effectiveTotalRub}
+				baseDueKopecks={baseDueKopecks}
+				effectiveTotalKopecks={effectiveTotalKopecks}
 				onOpenSplitPayment={onOpenSplitPayment}
-				cashReceivedRub={cashReceivedRub}
-				setCashReceivedRub={setCashReceivedRub}
+				cashReceivedKopecks={cashReceivedKopecks}
+				setCashReceivedKopecks={setCashReceivedKopecks}
 				changeResult={changeResult}
-				patientDepositRub={patientDepositRub}
-				patientFamilyBalanceRub={patientFamilyBalanceRub}
-				setSplitCardRub={setSplitCardRub}
-				setSplitCashRub={setSplitCashRub}
-				setSplitSbpRub={setSplitSbpRub}
-				setSplitDepositRub={setSplitDepositRub}
+				patientDepositKopecks={patientDepositKopecks}
+				patientFamilyBalanceKopecks={patientFamilyBalanceKopecks}
+				setSplitCardKopecks={setSplitCardKopecks}
+				setSplitCashKopecks={setSplitCashKopecks}
+				setSplitSbpKopecks={setSplitSbpKopecks}
+				setSplitDepositKopecks={setSplitDepositKopecks}
 				installmentMonths={installmentMonths}
 				setInstallmentMonths={setInstallmentMonths}
 				onExecutePayment={onExecutePayment}
@@ -309,38 +291,35 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				setCertificateNumber={setCertificateNumber}
 			/>
 
-			{/* Integrated 1-Click Split Tender Panel */}
 			{method === "split" && (
 				<CheckoutSplitPaymentPanel
-					effectiveTotalRub={effectiveTotalRub}
-					effectiveTotalKop={effectiveTotalKop}
+					effectiveTotalKopecks={effectiveTotalKopecks}
 					isSplitBalanced={isSplitBalanced}
-					splitDiffKop={splitDiffKop}
-					splitCardRub={splitCardRub}
-					setSplitCardRub={setSplitCardRub}
-					splitCashRub={splitCashRub}
-					setSplitCashRub={setSplitCashRub}
-					splitSbpRub={splitSbpRub}
-					setSplitSbpRub={setSplitSbpRub}
-					splitDepositRub={splitDepositRub}
-					setSplitDepositRub={setSplitDepositRub}
-					splitBonusRub={splitBonusRub}
-					setSplitBonusRub={setSplitBonusRub}
-					splitCertificateRub={splitCertRub}
-					setSplitCertificateRub={setSplitCertRub}
+					splitDiffKopecks={splitDiffKopecks}
+					splitCardKopecks={splitCardKopecks}
+					setSplitCardKopecks={setSplitCardKopecks}
+					splitCashKopecks={splitCashKopecks}
+					setSplitCashKopecks={setSplitCashKopecks}
+					splitSbpKopecks={splitSbpKopecks}
+					setSplitSbpKopecks={setSplitSbpKopecks}
+					splitDepositKopecks={splitDepositKopecks}
+					setSplitDepositKopecks={setSplitDepositKopecks}
+					splitBonusKopecks={splitBonusKopecks}
+					setSplitBonusKopecks={setSplitBonusKopecks}
+					splitCertificateKopecks={splitCertKopecks}
+					setSplitCertificateKopecks={setSplitCertKopecks}
 					certificateNumber={certificateNumber}
 					setCertificateNumber={setCertificateNumber}
 					patientBonusPoints={patientBonusPoints}
-					splitCashReceivedRub={splitCashReceivedRub}
-					setSplitCashReceivedRub={setSplitCashReceivedRub}
+					splitCashReceivedKopecks={splitCashReceivedKopecks}
+					setSplitCashReceivedKopecks={setSplitCashReceivedKopecks}
 					splitCashChange={splitCashChange}
 					handleBalanceSplit={handleBalanceSplit}
-					patientDepositRub={patientDepositRub}
-					patientFamilyBalanceRub={patientFamilyBalanceRub}
+					patientDepositKopecks={patientDepositKopecks}
+					patientFamilyBalanceKopecks={patientFamilyBalanceKopecks}
 				/>
 			)}
 
-			{/* Fiscalization & Print Options */}
 			<CheckoutFiscalReceiptOptions
 				fiscalize={fiscalize}
 				setFiscalize={setFiscalize}

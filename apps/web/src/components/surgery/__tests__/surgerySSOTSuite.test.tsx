@@ -22,7 +22,6 @@ import {
 	computeOsteointegrationExpectedDate,
 } from "../surgeryCatalogData";
 import { SurgeryStudioModal, ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal";
-import { DirectSurgeryLauncher } from "../DirectSurgeryLauncher";
 
 describe("Surgery Studio SSOT & Clinical Sovereignty Suite", () => {
 	it("1. SurgeryStudioModal and ChairsideSurgeryHubModal are identical references", () => {
@@ -120,10 +119,39 @@ describe("Surgery Studio SSOT & Clinical Sovereignty Suite", () => {
 		assert.ok(html.includes("Мягкий овердрафт") || html.includes("списаны в овердрафт") || html.includes("overdraft"), "Renders overdraft indication without blocking");
 	});
 
-	it("7. DirectSurgeryLauncher mounts cleanly without crashing", () => {
-		const html = renderToStaticMarkup(<DirectSurgeryLauncher />);
-		// Initially not open in SSR unless URL has hash/search
-		assert.strictEqual(typeof html, "string");
+	it("7. buildImplantBatchPayload constructs single atomic installations array for heterogeneous teeth", async () => {
+		const { buildImplantBatchPayload } = await import("../useSurgeryHubState");
+		const payload = buildImplantBatchPayload({
+			patientId: "11111111-1111-4111-8111-111111111111",
+			teethToProcess: [46, 36],
+			getToothSpec: (tooth) => tooth === 46
+				? { diameterMm: 4.0, lengthMm: 10.0, torqueNcm: 35, isqValue: 74, capType: "fdm", lotNumber: "LOT-46", serialNumber: "SN-46", catalogArticle: "ART-46" }
+				: { diameterMm: 4.5, lengthMm: 11.5, torqueNcm: 40, isqValue: 78, capType: "plug", lotNumber: "LOT-36", serialNumber: "SN-36", catalogArticle: "ART-36" },
+			implantBrand: "osstem",
+			inventoryItemId: undefined,
+			boneDensity: "D2",
+			isGuidedSurgery: false,
+			guidedSleeveDiameterMm: 5.0,
+			guidedSleeveOffsetMm: 2.0,
+			surgicalGuideTemplateId: "",
+			selectedGraft: "Bio-Oss 0.5 г",
+			selectedMembrane: "Bio-Gide 16×22 мм",
+			selectedSuture: "ПГА 4-0",
+			operationPriceRub: 45000,
+			operationPriceKopecks: 4500000n,
+			diaryText: "Протокол операции",
+			idempotencyKey: "22222222-2222-7222-8222-222222222222",
+			dateIso: "2026-11-26T12:00:00.000Z",
+		});
+
+		assert.strictEqual(payload.installations.length, 2);
+		assert.strictEqual(payload.installations[0]?.toothNumberFdi, 46);
+		assert.strictEqual(payload.installations[0]?.implantDiameterMm, 4.0);
+		assert.strictEqual(payload.installations[1]?.toothNumberFdi, 36);
+		assert.strictEqual(payload.installations[1]?.implantDiameterMm, 4.5);
+		assert.strictEqual(payload.installations[1]?.implantLengthMm, 11.5);
+		assert.strictEqual(payload.installations[1]?.finalInsertionTorqueNcm, 40);
+		assert.strictEqual(payload.idempotencyKey, "22222222-2222-7222-8222-222222222222");
 	});
 
 	it("8. Osteointegration date is 3 months for mandible and 5 months for maxilla", () => {

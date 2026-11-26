@@ -1,17 +1,9 @@
 /**
  * apps/web/src/components/cashbox/CashRegisterStudioModal.tsx
  *
- * Canonical Unified SSOT Cash Register Studio & 54-FZ Fiscal Terminal Modal.
- * Consolidates checkout, shift management, Z-report, and thermal receipt tape.
- *
- * Governed by:
- * - Mandate 8e: Doctor & Staff Autonomy (0 disabled buttons on primary CTA actions).
- * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty (No forced citizen INN, 1-click presets).
- * - Mandate 8am: Exactly ONE Primary CTA button (#0d9488 / var(--teal)) per visible view.
- * - Mandate 8x & 8ap: Plain clinical Russian without raw FFD/FZ-54 codes in client UI.
- * - Mandate 8b & 8zi: Clean modular architecture (decomposed into studioModules subcomponents).
- * - Apple HIG: Native Mobile Bottom Sheet (rounded-t-[24px], Drag Handle 36x5px, Natural Thumb Zone).
- * - Integer Kopeck Math: Strict BigInt amountKopecks without floating-point errors.
+ * Canonical Unified SSOT Cash Register Studio & Fiscal Terminal Modal.
+ * Integer Kopeck Math (BigInt amountKopecks), live clinic KKT/OFD settings,
+ * native Mobile Bottom Sheet Apple HIG, single Primary CTA var(--primary).
  */
 
 import React, { useId } from "react";
@@ -30,7 +22,11 @@ import {
 export interface ZReportSummaryPayload {
 	readonly shiftNumber?: number | undefined;
 	readonly zReportNumber?: string | undefined;
+	readonly incomeTotalKopecks?: bigint | number | undefined;
+	readonly cashInDrawerKopecks?: bigint | number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	readonly incomeTotalRub?: number | undefined;
+	/** @deprecated Legacy ruble fallback */
 	readonly cashInDrawerRub?: number | undefined;
 	readonly closedAt?: string | undefined;
 	readonly [key: string]: unknown;
@@ -49,22 +45,42 @@ export interface CashRegisterStudioModalProps {
 	readonly kktRegNumber?: string | undefined;
 	readonly ofdName?: string | undefined;
 	readonly isShiftOpen?: boolean | undefined;
+	readonly initialChangeFundKopecks?: bigint | number | undefined;
+	readonly netRevenueKopecks?: bigint | number | undefined;
+	readonly cashInDrawerKopecks?: bigint | number | undefined;
+	readonly cardSumKopecks?: bigint | number | undefined;
+	readonly sbpSumKopecks?: bigint | number | undefined;
+	readonly advanceOffsetKopecks?: bigint | number | undefined;
+	readonly totalDueKopecks?: bigint | number | undefined;
+	readonly amountKopecks?: bigint | number | undefined;
+	readonly patientDepositKopecks?: bigint | number | undefined;
+	readonly patientFamilyBalanceKopecks?: bigint | number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
 	readonly initialChangeFundRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
 	readonly netRevenueRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
 	readonly cashInDrawerRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
 	readonly cardSumRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
 	readonly sbpSumRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
 	readonly advanceOffsetRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
+	readonly totalDueRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
+	readonly amountRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
+	readonly patientDepositRub?: number | undefined;
+	/** @deprecated Legacy ruble bridge for out-of-scope callers — prefer *Kopecks */
+	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly onOpenShiftAction?: (() => Promise<void> | void) | undefined;
 	readonly onOpenShift?: (() => Promise<void> | void) | undefined;
 	readonly onCloseShiftAction?: (() => Promise<void> | void) | undefined;
 	readonly onCloseShift?: ((zReportSummary?: ZReportSummaryPayload) => Promise<void> | void) | undefined;
 	readonly onPrintXReportAction?: (() => Promise<void> | void) | undefined;
 	readonly onPrintXReport?: (() => Promise<void> | void) | undefined;
-	readonly totalDueRub?: number | undefined;
-	readonly totalDueKopecks?: bigint | number | undefined;
-	readonly amountRub?: number | undefined;
-	readonly amountKopecks?: bigint | number | undefined;
 	readonly initialWarranty100?: boolean | undefined;
 	readonly invoiceId?: string | undefined;
 	readonly orderId?: string | undefined;
@@ -73,8 +89,6 @@ export interface CashRegisterStudioModalProps {
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientAllergies?: unknown;
-	readonly patientDepositRub?: number | undefined;
-	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly patientBonusPoints?: number | undefined;
 	readonly doctorFullName?: string | undefined;
 	readonly serviceTitle?: string | undefined;
@@ -93,22 +107,13 @@ export interface CashRegisterStudioModalProps {
 export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (props) => {
 	const {
 		isOpen,
-		onClose,
 		shiftNumber = 1,
 		cashierFullName = "Кассир",
-		kktRegNumber = "—",
-		ofdName = "Платформа ОФД",
-		cashInDrawerRub = 0,
-		cardSumRub = 0,
-		sbpSumRub = 0,
-		advanceOffsetRub = 0,
 		patientName,
 		patientPhone,
 		patientAllergies,
 		doctorFullName,
 		serviceTitle,
-		patientDepositRub = 0,
-		patientFamilyBalanceRub = 0,
 		containerTestId = "cash-register-studio-modal",
 		submitButtonTestId = "btn-confirm-checkout-payment",
 		title = "Студия кассы и чеков",
@@ -126,9 +131,11 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 			aria-modal="true"
 			aria-labelledby={modalTitleId}
 			data-testid={containerTestId}
+			onClick={(e) => {
+				if (e.target === e.currentTarget) state.handleClose();
+			}}
 		>
 			<div className="w-full max-w-full md:max-w-4xl lg:max-w-5xl rounded-t-[24px] md:rounded-2xl bg-[var(--paper)] border-t md:border border-[var(--line)] text-[var(--ink)] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] md:max-h-[90vh]">
-				{/* Top Header */}
 				<CashRegisterStudioHeader
 					modalTitleId={modalTitleId}
 					title={title}
@@ -137,10 +144,9 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 					cashierFullName={cashierFullName}
 					activeTab={state.activeTab}
 					onTabChange={state.setActiveTab}
-					onClose={onClose}
+					onClose={state.handleClose}
 				/>
 
-				{/* Scrollable Body */}
 				<div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 bg-[var(--paper)]">
 					{state.errorMessage && (
 						<div
@@ -176,9 +182,10 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							patientAllergies={patientAllergies}
 							doctorFullName={doctorFullName}
 							serviceTitle={serviceTitle}
-							patientDepositRub={patientDepositRub}
-							patientFamilyBalanceRub={patientFamilyBalanceRub}
-							effectiveTotalRub={state.effectiveTotalRub}
+							patientDepositKopecks={state.patientDepositKopecks}
+							patientFamilyBalanceKopecks={state.patientFamilyBalanceKopecks}
+							effectiveTotalKopecks={state.effectiveTotalKopecks}
+							baseDueKopecks={state.baseDueKopecks}
 							isWarranty={state.isWarranty}
 							setIsWarranty={state.setIsWarranty}
 							discountPercent={state.discountPercent}
@@ -189,29 +196,27 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							setBuyerInn={state.setBuyerInn}
 							method={state.method}
 							setMethod={state.setMethod}
-							baseDueRub={state.baseDueRub}
 							onOpenSplitPayment={props.onOpenSplitPayment}
-							cashReceivedRub={state.cashReceivedRub}
-							setCashReceivedRub={state.setCashReceivedRub}
+							cashReceivedKopecks={state.cashReceivedKopecks}
+							setCashReceivedKopecks={state.setCashReceivedKopecks}
 							changeResult={state.changeResult}
 							isSplitBalanced={state.isSplitBalanced}
-							splitDiffKop={state.splitDiffKop}
-							effectiveTotalKop={state.effectiveTotalKop}
-							splitCardRub={state.splitCardRub}
-							setSplitCardRub={state.setSplitCardRub}
-							splitCashRub={state.splitCashRub}
-							setSplitCashRub={state.setSplitCashRub}
-							splitSbpRub={state.splitSbpRub}
-							setSplitSbpRub={state.setSplitSbpRub}
-							splitDepositRub={state.splitDepositRub}
-							setSplitDepositRub={state.setSplitDepositRub}
-							splitBonusRub={state.splitBonusRub}
-							setSplitBonusRub={state.setSplitBonusRub}
-							splitCertRub={state.splitCertRub}
-							setSplitCertRub={state.setSplitCertRub}
+							splitDiffKopecks={state.splitDiffKopecks}
+							splitCardKopecks={state.splitCardKopecks}
+							setSplitCardKopecks={state.setSplitCardKopecks}
+							splitCashKopecks={state.splitCashKopecks}
+							setSplitCashKopecks={state.setSplitCashKopecks}
+							splitSbpKopecks={state.splitSbpKopecks}
+							setSplitSbpKopecks={state.setSplitSbpKopecks}
+							splitDepositKopecks={state.splitDepositKopecks}
+							setSplitDepositKopecks={state.setSplitDepositKopecks}
+							splitBonusKopecks={state.splitBonusKopecks}
+							setSplitBonusKopecks={state.setSplitBonusKopecks}
+							splitCertKopecks={state.splitCertKopecks}
+							setSplitCertKopecks={state.setSplitCertKopecks}
 							patientBonusPoints={props.patientBonusPoints}
-							splitCashReceivedRub={state.splitCashReceivedRub}
-							setSplitCashReceivedRub={state.setSplitCashReceivedRub}
+							splitCashReceivedKopecks={state.splitCashReceivedKopecks}
+							setSplitCashReceivedKopecks={state.setSplitCashReceivedKopecks}
 							splitCashChange={state.splitCashChange}
 							handleBalanceSplit={state.handleBalanceSplit}
 							installmentMonths={state.installmentMonths}
@@ -232,16 +237,16 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 					{state.activeTab === "shift" && (
 						<CashRegisterShiftSection
 							shiftNumber={shiftNumber}
-							kktRegNumber={kktRegNumber}
-							ofdName={ofdName}
+							kktRegNumber={state.effectiveKktRegNumber}
+							ofdName={state.effectiveOfdName}
 							cashierFullName={cashierFullName}
 							isShiftActive={state.isShiftActive}
 							isSubmitting={state.isSubmitting}
-							calculatedNetRevenue={state.calculatedNetRevenue}
-							initialCashDrawer={cashInDrawerRub}
-							initialCardSum={cardSumRub}
-							initialSbpSum={sbpSumRub}
-							initialAdvanceSum={advanceOffsetRub}
+							calculatedNetRevenueKopecks={state.calculatedNetRevenueKopecks}
+							initialCashDrawerKopecks={state.initialCashDrawerKopecks}
+							initialCardSumKopecks={state.initialCardSumKopecks}
+							initialSbpSumKopecks={state.initialSbpSumKopecks}
+							initialAdvanceSumKopecks={state.initialAdvanceSumKopecks}
 							countedCashInput={state.countedCashInput}
 							setCountedCashInput={state.setCountedCashInput}
 							onToggleShift={state.handleToggleShift}
@@ -257,17 +262,16 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 					)}
 				</div>
 
-				{/* Sticky Bottom Bar */}
 				<CashRegisterStudioFooter
 					activeTab={state.activeTab}
 					isShiftActive={state.isShiftActive}
 					isSubmitting={state.isSubmitting}
-					effectiveTotalRub={state.effectiveTotalRub}
-					calculatedNetRevenue={state.calculatedNetRevenue}
+					effectiveTotalKopecks={state.effectiveTotalKopecks}
+					calculatedNetRevenueKopecks={state.calculatedNetRevenueKopecks}
 					shiftNumber={shiftNumber}
 					isWarranty={state.isWarranty}
 					submitButtonTestId={submitButtonTestId}
-					onClose={onClose}
+					onClose={state.handleClose}
 					onExecutePayment={state.handleExecutePayment}
 					onToggleShift={state.handleToggleShift}
 					onPrintXReport={state.handlePrintXReport}
