@@ -2,6 +2,7 @@ import React from "react";
 import { Tooth15PulpChamber } from "./Tooth15PulpChamber";
 import { TOOTH15_PULP_GEOMETRY } from "./tooth15PulpGeometry";
 import { Tooth15SingleCanal } from "./Tooth15SingleCanal";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth15EndoCanalsProps {
 	showPulp?: boolean | undefined;
@@ -25,13 +26,16 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 15;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const p = TOOTH15_PULP_GEOMETRY;
 	const isNecrotic = canalCondition === "necrotic";
 	const isPulpitis = canalCondition === "pulpitis";
 	const isUnified = Boolean(showPulp && showCanals && !showGuttaPercha);
 
 	return (
-		<g id="tooth15-endodontics" {...(className ? { className } : {})}>
+		<g id={sid(`tooth${tNum}-endodontics`)} {...(className ? { className } : {})}>
 			{showPulp && (
 				<Tooth15PulpChamber
 					condition={canalCondition}
@@ -41,7 +45,7 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 			)}
 
 			{showCanals && (
-				<g id="tooth15-canals-tract">
+				<g id={sid(`tooth${tNum}-canals-tract`)}>
 					{p.canals.map((canal) => (
 						<Tooth15SingleCanal
 							key={canal.id}

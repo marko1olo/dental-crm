@@ -97,6 +97,7 @@
 
 [data-theme="dark"],
 [data-theme="night"],
+[data-theme="oled"],
 .dark {
 	--line-subtle: rgba(255, 255, 255, 0.08);
 	--shadow-elevation-1: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
@@ -201,12 +202,16 @@
 	}
 }
 
-.low-end-hardware-mode .backdrop-blur-xs,
-.low-end-hardware-mode .backdrop-blur-sm,
-.low-end-hardware-mode .backdrop-blur-md,
-.low-end-hardware-mode .backdrop-blur,
-.low-end-hardware-mode .backdrop-blur-lg,
-.low-end-hardware-mode .backdrop-blur-xl {
+:is(
+	.low-end-hardware-mode,
+	.low-spec-mode,
+	.low-spec-perf,
+	[data-low-spec="true"],
+	[data-hardware-tier="low"],
+	[data-hardware-tier="potato"],
+	[data-perf-state="degraded"],
+	[data-ct-active="true"]
+) :is(.backdrop-blur-xs, .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur, .backdrop-blur-lg, .backdrop-blur-xl) {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
 	background-color: var(--paper-strong, #ffffff) !important;

@@ -7,10 +7,12 @@
  * Мандат 8am: Семантические токены оформления без хардкодных цветов.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import { Calculator } from "lucide-react";
 import type { DoctorPayrollItem } from "./doctorPayrollExportUtils";
+
+const DEFAULT_VISIBLE_DOCTORS_LIMIT = 25;
 
 export interface DoctorPayrollTableProps {
 	readonly rows: readonly DoctorPayrollItem[];
@@ -23,6 +25,9 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 	loading,
 	onOpenStudio,
 }) => {
+	const [showAllRows, setShowAllRows] = useState(false);
+	const hasOverflowRows = rows.length > DEFAULT_VISIBLE_DOCTORS_LIMIT;
+	const visibleRows = hasOverflowRows && !showAllRows ? rows.slice(0, DEFAULT_VISIBLE_DOCTORS_LIMIT) : rows;
 	return (
 		<>
 			{/* Десктопная ведомость */}
@@ -69,7 +74,7 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 									</td>
 								</tr>
 							) : (
-								rows.map((row) => (
+								visibleRows.map((row) => (
 									<tr
 										key={row.doctorId}
 										data-testid="doctor-payroll-row"
@@ -97,7 +102,17 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 											{row.commissionPercent.toFixed(1)}%
 										</td>
 										<td data-label="К выплате" className="ops-num py-2.5 px-3 text-right tabular-nums font-bold text-[var(--primary)]">
-											{formatKopecksToRub(row.payoutKopecks ?? rublesToKopecks(row.payoutRub))}
+											<div>{formatKopecksToRub(row.payoutKopecks ?? rublesToKopecks(row.payoutRub))}</div>
+											{(row.priorDebtDeductedKopecks ?? 0) > 0 && (
+												<div className="text-[11px] font-normal text-[var(--danger)]">
+													Удержан долг −{formatKopecksToRub(row.priorDebtDeductedKopecks ?? 0)}
+												</div>
+											)}
+											{(row.negativeCarryOverKopecks ?? 0) > 0 && (
+												<div className="text-[11px] font-normal text-[var(--warning-ink,var(--warning))]">
+													Перенос долга {formatKopecksToRub(row.negativeCarryOverKopecks ?? 0)}
+												</div>
+											)}
 										</td>
 									</tr>
 								))
@@ -126,7 +141,7 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 						)}
 					</div>
 				) : (
-					rows.map((row) => (
+					visibleRows.map((row) => (
 						<div
 							key={row.doctorId}
 							data-testid="payroll-card-doctor"
@@ -165,14 +180,39 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 
 							<div className="flex items-center justify-between pt-2 border-t border-[var(--line-subtle)]">
 								<span className="text-xs font-medium text-[var(--ink-muted)]">Итого к выплате:</span>
-								<span className="text-sm font-bold text-[var(--primary)] tabular-nums">
-									{formatKopecksToRub(row.payoutKopecks ?? rublesToKopecks(row.payoutRub))}
-								</span>
+								<div className="text-right">
+									<span className="text-sm font-bold text-[var(--primary)] tabular-nums">
+										{formatKopecksToRub(row.payoutKopecks ?? rublesToKopecks(row.payoutRub))}
+									</span>
+									{(row.priorDebtDeductedKopecks ?? 0) > 0 && (
+										<div className="text-[11px] text-[var(--danger)] tabular-nums">
+											Удержан долг −{formatKopecksToRub(row.priorDebtDeductedKopecks ?? 0)}
+										</div>
+									)}
+									{(row.negativeCarryOverKopecks ?? 0) > 0 && (
+										<div className="text-[11px] text-[var(--warning-ink,var(--warning))] tabular-nums">
+											Перенос долга {formatKopecksToRub(row.negativeCarryOverKopecks ?? 0)}
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
 					))
 				)}
 			</div>
+			{hasOverflowRows && (
+				<div className="mt-3 flex justify-center">
+					<button
+						type="button"
+						onClick={() => setShowAllRows((prev) => !prev)}
+						className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
+					>
+						{showAllRows
+							? `Свернуть до ${DEFAULT_VISIBLE_DOCTORS_LIMIT} врачей`
+							: `Показать всех врачей (${rows.length})`}
+					</button>
+				</div>
+			)}
 		</>
 	);
 };

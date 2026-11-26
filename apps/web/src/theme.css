@@ -336,6 +336,7 @@ button[data-testid^="btn-slot-"]:hover {
 :is(
 	[data-theme="dark"],
 	[data-theme="night"],
+	[data-theme="oled"],
 	[data-theme="ocean"],
 	[data-theme="emerald"],
 	[data-theme="cyber_xray"],
@@ -417,7 +418,7 @@ button[data-testid^="btn-slot-"]:hover {
 	}
 }
 
-/* Low-spec hardware: disable intensive filter effects on weak GPUs */
+/* Low-spec hardware: disable intensive filter effects on weak GPUs without hiding shell/panels */
 [data-low-spec-tier="true"] .app-shell.dente-redesign,
 [data-low-spec-tier="true"] .panel,
 [data-low-spec-tier="true"] .card,
@@ -426,5 +427,5 @@ button[data-testid^="btn-slot-"]:hover {
 [data-low-spec-tier="true"] .dente-theme-background-layer {
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
-	display: none !important;
+	box-shadow: none !important;
 }

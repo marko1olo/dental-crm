@@ -9,6 +9,7 @@
  */
 
 import React from "react";
+import { formatKopecksToRub } from "@dental/shared";
 import { Banknote, Layers, Percent, Sparkles, HelpCircle } from "lucide-react";
 import { pluralizeRu, type EarningsDataState } from "./types.js";
 
@@ -102,6 +103,16 @@ export const WalletKpiLedger: React.FC<WalletKpiLedgerProps> = ({
 									: "Ожидает закрытия смены"}
 						</span>
 					</div>
+					{(summary.priorDebtDeductedKop ?? 0) > 0 && (
+						<div className="dpr-kpi-hint text-[var(--danger)]">
+							Удержан долг прошлых смен: −{formatKopecksToRub(summary.priorDebtDeductedKop ?? 0)}
+						</div>
+					)}
+					{(summary.negativeCarryOverKop ?? 0) > 0 && (
+						<div className="dpr-kpi-hint text-[var(--warning-ink,var(--warning))]">
+							Перенос долга: {formatKopecksToRub(summary.negativeCarryOverKop ?? 0)}
+						</div>
+					)}
 				</div>
 			</div>
 

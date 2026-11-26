@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH17_PERIAPICAL_GEOMETRY } from "./tooth17PeriapicalGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth17PeriapicalAreaProps {
 	condition?: string | undefined;
@@ -18,6 +19,10 @@ export const Tooth17PeriapicalArea: React.FC<Tooth17PeriapicalAreaProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 17;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+
 	if (condition === "none") return null;
 
 	const g = TOOTH17_PERIAPICAL_GEOMETRY;
@@ -31,16 +36,16 @@ export const Tooth17PeriapicalArea: React.FC<Tooth17PeriapicalAreaProps> = ({
 
 	if (isCyst) {
 		return (
-			<g id="tooth17-periapical-cyst" className={className}>
+			<g id={sid(`tooth${tNum}-periapical-cyst`)} className={className}>
 				{showP && (
 					<>
-						<path d={g.radicularCyst.palatal.lumen} fill="url(#dente-cyst-fluid)" />
+						<path d={g.radicularCyst.palatal.lumen} fill={`url(#${sid("dente-cyst-fluid")})`} />
 						<path d={g.radicularCyst.palatal.corticalRim} fill="none" stroke={rimStroke} strokeWidth="1.2" />
 					</>
 				)}
 				{showMB && (
 					<>
-						<path d={g.radicularCyst.mb.lumen} fill="url(#dente-cyst-fluid)" />
+						<path d={g.radicularCyst.mb.lumen} fill={`url(#${sid("dente-cyst-fluid")})`} />
 						<path d={g.radicularCyst.mb.corticalRim} fill="none" stroke={rimStroke} strokeWidth="1.2" />
 					</>
 				)}
@@ -49,23 +54,23 @@ export const Tooth17PeriapicalArea: React.FC<Tooth17PeriapicalAreaProps> = ({
 	}
 
 	return (
-		<g id="tooth17-periapical-granuloma" className={className}>
+		<g id={sid(`tooth${tNum}-periapical-granuloma`)} className={className}>
 			{showP && (
 				<>
 					<path d={g.granuloma.palatal.capsuleRim} fill={haloStroke} />
-					<path d={g.granuloma.palatal.core} fill="url(#dente-cyst-fluid)" stroke="rgba(239,68,68,0.6)" strokeWidth="0.6" />
+					<path d={g.granuloma.palatal.core} fill={`url(#${sid("dente-cyst-fluid")})`} stroke="rgba(239,68,68,0.6)" strokeWidth="0.6" />
 				</>
 			)}
 			{showMB && (
 				<>
 					<path d={g.granuloma.mb.capsuleRim} fill={haloStroke} />
-					<path d={g.granuloma.mb.core} fill="url(#dente-cyst-fluid)" stroke="rgba(239,68,68,0.6)" strokeWidth="0.6" />
+					<path d={g.granuloma.mb.core} fill={`url(#${sid("dente-cyst-fluid")})`} stroke="rgba(239,68,68,0.6)" strokeWidth="0.6" />
 				</>
 			)}
 			{showDB && (
 				<>
 					<path d={g.granuloma.db.capsuleRim} fill={haloStroke} />
-					<path d={g.granuloma.db.core} fill="url(#dente-cyst-fluid)" stroke="rgba(239,68,68,0.6)" strokeWidth="0.6" />
+					<path d={g.granuloma.db.core} fill={`url(#${sid("dente-cyst-fluid")})`} stroke="rgba(239,68,68,0.6)" strokeWidth="0.6" />
 				</>
 			)}
 		</g>

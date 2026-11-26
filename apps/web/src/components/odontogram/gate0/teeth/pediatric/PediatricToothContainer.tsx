@@ -3,7 +3,12 @@ import type { Tooth46ContainerProps } from "../../tooth46Types";
 import { DEFAULT_TOOTH46_LAYERS } from "../../tooth46Types";
 import { Tooth46ShaderDefs } from "../../Tooth46ShaderDefs";
 import { ToothStatusBadge } from "../../ToothStatusBadge";
-import { CROWN_FILL_MAP } from "../../Tooth46CrownMaps";
+import { getCrownFill } from "../../Tooth46CrownMaps";
+import {
+	scopeOdontogramId,
+	ToothNumberContext,
+	useOdontogramIdPrefix,
+} from "../../OdontogramSharedDefsContext";
 import type { AnatomicalTemplateData, RootResorptionStage } from "../../../anatomicalGeometriesTypes";
 import {
 	PEDIATRIC_UPPER_MOLAR_GEOMETRY,
@@ -51,6 +56,8 @@ export const PediatricToothContainer: React.FC<
 	if (showBadge === false) a.showBadge = false;
 
 	const num = toothNumber;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const quadrant = Math.floor(num / 10);
 	const isTop = quadrant === 5 || quadrant === 6;
 	const isFlipped = isFlippedProp ?? (quadrant === 6 || quadrant === 7);
@@ -64,17 +71,17 @@ export const PediatricToothContainer: React.FC<
 	const viewBox = "0 0 100 218";
 
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
-	const enamelFill = isDark ? "url(#dente-enamel-porcelain)" : "url(#dente-enamel-porcelain)";
-	const rootFill = isDark ? "url(#dente-root-dentin)" : "url(#dente-root-dentin)";
+	const enamelFill = `url(#${sid("dente-enamel-porcelain")})`;
+	const rootFill = `url(#${sid("dente-root-dentin")})`;
 
 	const isMetalCrown = a.crownMaterial === "metal";
 	const isZirconiaCrown = Boolean(a.zirconiaCrown || a.crownMaterial === "zirconia");
 	const isCrown = Boolean(isZirconiaCrown || isMetalCrown || a.crownMaterial);
 	const crownFill = isMetalCrown
-		? "url(#dente-crown-metal)"
-		: a.crownMaterial && CROWN_FILL_MAP[a.crownMaterial]
-			? CROWN_FILL_MAP[a.crownMaterial]
-			: "url(#dente-zirconia-crown)";
+		? `url(#${sid("dente-crown-metal")})`
+		: a.crownMaterial
+			? getCrownFill(a.crownMaterial, prefix)
+			: `url(#${sid("dente-zirconia-crown")})`;
 
 	// Физиологическая резорбция корней
 	const resorptionStage: RootResorptionStage = a.rootResorptionStage ?? (a.periapicalCondition === "resorption" ? 50 : 0);
@@ -86,17 +93,18 @@ export const PediatricToothContainer: React.FC<
 	const isEndo = Boolean(a.canals || a.pulp);
 
 	return (
-		<svg
-			viewBox={viewBox}
-			width={100 * zoom}
-			height={baseHeight * zoom}
-			{...(className ? { className } : {})}
-			style={{ display: "block", overflow: "visible", cursor: onClick ? "pointer" : "default", ...(style ?? {}) }}
-			aria-label={`Молочный анатомический зуб ${num}`}
-			role="img"
-			onClick={onClick}
-		>
-			<Tooth46ShaderDefs />
+		<ToothNumberContext.Provider value={num}>
+			<svg
+				viewBox={viewBox}
+				width={100 * zoom}
+				height={baseHeight * zoom}
+				{...(className ? { className } : {})}
+				style={{ display: "block", overflow: "visible", cursor: onClick ? "pointer" : "default", ...(style ?? {}) }}
+				aria-label={`Молочный анатомический зуб ${num}`}
+				role="img"
+				onClick={onClick}
+			>
+			<Tooth46ShaderDefs toothNumber={num} />
 			<g transform={isFlipped ? "translate(100, 0) scale(-1, 1)" : undefined}>
 				{/* 1. Периапикальная зона / верхушечные очаги */}
 				{a.periapicalHalo && (
@@ -168,7 +176,7 @@ export const PediatricToothContainer: React.FC<
 						{geom.pulpChamber && a.pulp && (
 							<path
 								d={geom.pulpChamber}
-								fill={a.guttaPercha ? "url(#dente-guttapercha-gradient)" : "rgba(244, 63, 94, 0.85)"}
+								fill={a.guttaPercha ? `url(#${sid("dente-guttapercha-cone")})` : "rgba(244, 63, 94, 0.85)"}
 								stroke="rgba(225, 29, 72, 0.9)"
 								strokeWidth={1}
 							/>
@@ -268,7 +276,7 @@ export const PediatricToothContainer: React.FC<
 								<path
 									key={`pediatric-comp-surf-${idx}`}
 									d={p}
-									fill="url(#dente-composite-gradient)"
+									fill={`url(#${sid("dente-composite-body")})`}
 									stroke="rgba(148, 163, 184, 0.8)"
 									strokeWidth={1.2}
 								/>
@@ -313,6 +321,7 @@ export const PediatricToothContainer: React.FC<
 				/>
 			)}
 		</svg>
+		</ToothNumberContext.Provider>
 	);
 };
 

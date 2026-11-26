@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_PERIAPICAL_GEOMETRY } from "./Tooth46PeriapicalGeometry";
 
 export interface Tooth46ResorptionOverlayProps {
@@ -14,6 +15,10 @@ export interface Tooth46ResorptionOverlayProps {
 export const Tooth46ResorptionOverlay: React.FC<
 	Tooth46ResorptionOverlayProps
 > = ({ isDark = false, className }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const haloFill = `url(#${sid("dente-resorption-halo")})`;
 	const { mesial, distal } = TOOTH46_PERIAPICAL_GEOMETRY.resorption;
 	const lacunaeStroke = isDark
 		? "rgba(248, 113, 113, 0.95)"
@@ -22,15 +27,15 @@ export const Tooth46ResorptionOverlay: React.FC<
 
 	return (
 		<g
-			id="tooth46-apical-resorption"
+			id={sid(`tooth${tNum}-apical-resorption`)}
 			data-testid="tooth46-resorption"
 			className={className}
 		>
 			{/* Mesial Root Apical Resorption Complex */}
-			<g id="tooth46-resorption-mesial">
+			<g id={sid(`tooth${tNum}-resorption-mesial`)}>
 				<path
 					d={mesial.resorptionHalo}
-					fill="url(#dente-resorption-halo)"
+					fill={haloFill}
 					stroke="none"
 				/>
 				<path
@@ -56,10 +61,10 @@ export const Tooth46ResorptionOverlay: React.FC<
 			</g>
 
 			{/* Distal Root Apical Resorption Complex */}
-			<g id="tooth46-resorption-distal">
+			<g id={sid(`tooth${tNum}-resorption-distal`)}>
 				<path
 					d={distal.resorptionHalo}
-					fill="url(#dente-resorption-halo)"
+					fill={haloFill}
 					stroke="none"
 				/>
 				<path

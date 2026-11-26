@@ -2,6 +2,7 @@ import React from "react";
 import { getStatusBadge, TOOTH_STATUS_MATRIX, type ToothStatusBadgeInfo } from "./ToothStatusBadgeMatrix";
 import type { Tooth46LayerFlags } from "./tooth46Types";
 import { resolveToothStatusBadge } from "./ToothStatusBadgeResolver";
+import { scopeOdontogramId, useOdontogramIdPrefix } from "./OdontogramSharedDefsContext";
 
 export type { ToothStatusBadgeInfo };
 export { TOOTH_STATUS_MATRIX, getStatusBadge, resolveToothStatusBadge };
@@ -24,6 +25,8 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 	r = 8.5,
 	toothNumber,
 }) => {
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const badge = resolveToothStatusBadge(presetId, layers, toothNumber);
 	const textContent = (badge.code === "✓" && toothNumber) ? String(toothNumber) : badge.code;
 	const isHealthy = badge.code === "✓";
@@ -44,7 +47,7 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 
 	return (
 		<g
-			id={toothNumber ? `tooth-${toothNumber}-status-badge` : undefined}
+			id={toothNumber ? sid(`tooth-${toothNumber}-status-badge`) : undefined}
 			data-testid="tooth-status-badge"
 			data-tooth-number={toothNumber}
 			role="status"

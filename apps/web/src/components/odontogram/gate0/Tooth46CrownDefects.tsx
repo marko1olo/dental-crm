@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_DEFECT_GEOMETRY } from "./Tooth46DefectGeometry";
 import type { CrownMaterial } from "./tooth46Types";
 
@@ -11,6 +12,9 @@ export const Tooth46CrownDefects: React.FC<Tooth46CrownDefectsProps> = ({
 	material,
 	isDark = false,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const d = TOOTH46_DEFECT_GEOMETRY.defectiveCrown;
 
 	// Authentic material-specific exposed core substructure (not slate-grey for ceramics!)
@@ -31,7 +35,7 @@ export const Tooth46CrownDefects: React.FC<Tooth46CrownDefectsProps> = ({
 
 	return (
 		<g
-			id="tooth46-crown-defective-manifestations"
+			id={sid(`tooth${tNum}-crown-defective-manifestations`)}
 			data-testid="tooth46-crown-defective-manifestations"
 		>
 			{/* Ceramic Chipping with True Material Substructure */}
@@ -46,7 +50,7 @@ export const Tooth46CrownDefects: React.FC<Tooth46CrownDefectsProps> = ({
 			{/* Cervical Margin Washout Gap / Recurrent Caries Infiltration (>50 microns) */}
 			<path
 				d={d.cervicalWashoutGap}
-				fill="url(#dente-caries-lesion)"
+				fill={`url(#${sid("dente-caries-lesion")})`}
 				stroke="#78350f"
 				strokeWidth="0.6"
 			/>

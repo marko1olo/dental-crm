@@ -55,15 +55,15 @@
    Solid teal var(--teal, #0d9488), white text, no circus rainbow
    ========================================================================== */
 .dente-btn-primary {
-	background: var(--teal, #0d9488);
-	border-color: var(--teal, #0d9488);
+	background: var(--primary, #0f766e);
+	border-color: var(--primary, #0f766e);
 	color: #ffffff !important;
 	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.28)), 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .dente-btn-primary:hover:not(:disabled) {
-	background: var(--teal-dark, #0f766e);
-	border-color: var(--teal-dark, #0f766e);
+	background: var(--primary-hover, #115e59);
+	border-color: var(--primary-hover, #115e59);
 	color: #ffffff !important;
 	box-shadow: 0 4px 12px var(--teal-glow, rgba(13, 148, 136, 0.38));
 }
@@ -189,9 +189,9 @@
 
 /* ==========================================================================
    RESPONSIVE TOUCH ERGONOMICS (Apple HIG / Mandate 8ze)
-   Desktop: 36px | Mobile (< 768px or pointer: coarse): >= 48px
+   Desktop: 36px | Mobile (< 768px): >= 48px
    ========================================================================== */
-@media (max-width: 768px), (pointer: coarse) {
+@media (max-width: 768px) {
 	.dente-btn {
 		height: 48px;
 		min-height: 48px;
@@ -222,16 +222,16 @@
 button.btn-primary,
 button.btn-primary-cta,
 button.primary-button:not(.dente-btn-danger):not(.danger-button) {
-	background: var(--teal, #0d9488) !important;
-	border-color: var(--teal, #0d9488) !important;
+	background: var(--primary, #0f766e) !important;
+	border-color: var(--primary, #0f766e) !important;
 	color: #ffffff !important;
 }
 
 button.btn-primary:hover:not(:disabled),
 button.btn-primary-cta:hover:not(:disabled),
 button.primary-button:hover:not(:disabled):not(.dente-btn-danger):not(.danger-button) {
-	background: var(--teal-dark, #0f766e) !important;
-	border-color: var(--teal-dark, #0f766e) !important;
+	background: var(--primary-hover, #115e59) !important;
+	border-color: var(--primary-hover, #115e59) !important;
 	color: #ffffff !important;
 }
 
@@ -292,22 +292,23 @@ button.btn-secondary:hover:not(:disabled):not(.dente-btn-primary):not([class*="d
 body:not(.odontogram-view) button[class*="bg-emerald-600"]:not(.dente-btn-secondary),
 body:not(.odontogram-view) button[class*="bg-sky-600"]:not(.dente-btn-secondary),
 body:not(.odontogram-view) button[class*="bg-cyan-600"]:not(.dente-btn-secondary) {
-	background: var(--teal, #0d9488) !important;
-	border-color: var(--teal, #0d9488) !important;
-	color: #ffffff !important;
+	background: var(--primary, #0f766e) !important;
+	border-color: var(--primary, #0f766e) !important;
+	color: var(--primary-fg, #ffffff) !important;
 }
 
 body:not(.odontogram-view) button[class*="bg-emerald-600"]:hover:not(:disabled):not(.dente-btn-secondary),
 body:not(.odontogram-view) button[class*="bg-sky-600"]:hover:not(:disabled):not(.dente-btn-secondary),
 body:not(.odontogram-view) button[class*="bg-cyan-600"]:hover:not(:disabled):not(.dente-btn-secondary) {
-	background: var(--teal-dark, #0f766e) !important;
-	border-color: var(--teal-dark, #0f766e) !important;
-	color: #ffffff !important;
+	background: var(--primary-hover, #115e59) !important;
+	border-color: var(--primary-hover, #115e59) !important;
+	color: var(--primary-fg, #ffffff) !important;
 }
 
 /* Dark theme support for canonical buttons */
 [data-theme="dark"] .dente-btn-secondary,
 [data-theme="night"] .dente-btn-secondary,
+[data-theme="oled"] .dente-btn-secondary,
 [data-theme="ocean"] .dente-btn-secondary,
 [data-theme="emerald"] .dente-btn-secondary,
 [data-theme="cyber_xray"] .dente-btn-secondary,
@@ -315,6 +316,7 @@ html.dark .dente-btn-secondary,
 .dark .dente-btn-secondary,
 [data-theme="dark"] button.secondary-button,
 [data-theme="night"] button.secondary-button,
+[data-theme="oled"] button.secondary-button,
 [data-theme="ocean"] button.secondary-button,
 [data-theme="emerald"] button.secondary-button,
 [data-theme="cyber_xray"] button.secondary-button,
@@ -327,6 +329,7 @@ html.dark button.secondary-button,
 
 [data-theme="dark"] .dente-btn-secondary:hover:not(:disabled),
 [data-theme="night"] .dente-btn-secondary:hover:not(:disabled),
+[data-theme="oled"] .dente-btn-secondary:hover:not(:disabled),
 [data-theme="ocean"] .dente-btn-secondary:hover:not(:disabled),
 [data-theme="emerald"] .dente-btn-secondary:hover:not(:disabled),
 [data-theme="cyber_xray"] .dente-btn-secondary:hover:not(:disabled),
@@ -334,6 +337,7 @@ html.dark .dente-btn-secondary:hover:not(:disabled),
 .dark .dente-btn-secondary:hover:not(:disabled),
 [data-theme="dark"] button.secondary-button:hover:not(:disabled),
 [data-theme="night"] button.secondary-button:hover:not(:disabled),
+[data-theme="oled"] button.secondary-button:hover:not(:disabled),
 [data-theme="ocean"] button.secondary-button:hover:not(:disabled),
 [data-theme="emerald"] button.secondary-button:hover:not(:disabled),
 [data-theme="cyber_xray"] button.secondary-button:hover:not(:disabled),
@@ -346,6 +350,7 @@ html.dark button.secondary-button:hover:not(:disabled),
 
 [data-theme="dark"] .dente-btn-danger,
 [data-theme="night"] .dente-btn-danger,
+[data-theme="oled"] .dente-btn-danger,
 [data-theme="ocean"] .dente-btn-danger,
 [data-theme="emerald"] .dente-btn-danger,
 [data-theme="cyber_xray"] .dente-btn-danger,
@@ -353,6 +358,7 @@ html.dark .dente-btn-danger,
 .dark .dente-btn-danger,
 [data-theme="dark"] .danger-button,
 [data-theme="night"] .danger-button,
+[data-theme="oled"] .danger-button,
 [data-theme="ocean"] .danger-button,
 [data-theme="emerald"] .danger-button,
 [data-theme="cyber_xray"] .danger-button,
@@ -365,6 +371,7 @@ html.dark .danger-button,
 
 [data-theme="dark"] .dente-btn-danger:hover:not(:disabled),
 [data-theme="night"] .dente-btn-danger:hover:not(:disabled),
+[data-theme="oled"] .dente-btn-danger:hover:not(:disabled),
 [data-theme="ocean"] .dente-btn-danger:hover:not(:disabled),
 [data-theme="emerald"] .dente-btn-danger:hover:not(:disabled),
 [data-theme="cyber_xray"] .dente-btn-danger:hover:not(:disabled),
@@ -372,6 +379,7 @@ html.dark .dente-btn-danger:hover:not(:disabled),
 .dark .dente-btn-danger:hover:not(:disabled),
 [data-theme="dark"] .danger-button:hover:not(:disabled),
 [data-theme="night"] .danger-button:hover:not(:disabled),
+[data-theme="oled"] .danger-button:hover:not(:disabled),
 [data-theme="ocean"] .danger-button:hover:not(:disabled),
 [data-theme="emerald"] .danger-button:hover:not(:disabled),
 [data-theme="cyber_xray"] .danger-button:hover:not(:disabled),

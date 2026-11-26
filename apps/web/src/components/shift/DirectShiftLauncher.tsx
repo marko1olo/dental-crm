@@ -14,7 +14,7 @@ import { ShiftStudioModal } from "./ShiftStudioModal";
 
 export const DirectShiftLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
-	const [launcherMode, setLauncherMode] = useState<"closing" | "studio">("studio");
+	const [launcherMode, setLauncherMode] = useState<"closing" | "current" | "journal">("current");
 
 	const checkUrl = useCallback(() => {
 		if (typeof window === "undefined") return;
@@ -27,6 +27,10 @@ export const DirectShiftLauncher: React.FC = () => {
 			s.includes("shift_closing") ||
 			s.includes("z_report");
 
+		const isJournal =
+			h.includes("shift-journal") ||
+			s.includes("shift_journal");
+
 		const isShift =
 			h === "#shift" ||
 			h.startsWith("#shift?") ||
@@ -35,10 +39,11 @@ export const DirectShiftLauncher: React.FC = () => {
 			h.includes("shift_studio") ||
 			s.includes("shift=1") ||
 			s.includes("shift_studio=1") ||
+			isJournal ||
 			isClosing;
 
 		if (isShift) {
-			setLauncherMode(isClosing ? "closing" : "studio");
+			setLauncherMode(isClosing ? "closing" : isJournal ? "journal" : "current");
 			setIsOpen(true);
 		}
 	}, []);
@@ -52,24 +57,29 @@ export const DirectShiftLauncher: React.FC = () => {
 			const customEvent = e as CustomEvent<{ tab?: "current" | "closing" | "journal" }>;
 			if (customEvent.detail?.tab === "closing") {
 				setLauncherMode("closing");
+			} else if (customEvent.detail?.tab === "journal") {
+				setLauncherMode("journal");
 			} else {
-				setLauncherMode("studio");
+				setLauncherMode("current");
 			}
+			setIsOpen(true);
+		};
+
+		const handleOpenZReport = () => {
+			setLauncherMode("closing");
 			setIsOpen(true);
 		};
 
 		window.addEventListener("dente:open-shift", handleCustomOpen);
 		window.addEventListener("dente-open-shift", handleCustomOpen);
-		window.addEventListener("dente:open-z-report", () => {
-			setLauncherMode("closing");
-			setIsOpen(true);
-		});
+		window.addEventListener("dente:open-z-report", handleOpenZReport);
 
 		return () => {
 			window.removeEventListener("hashchange", checkUrl);
 			window.removeEventListener("popstate", checkUrl);
 			window.removeEventListener("dente:open-shift", handleCustomOpen);
 			window.removeEventListener("dente-open-shift", handleCustomOpen);
+			window.removeEventListener("dente:open-z-report", handleOpenZReport);
 		};
 	}, [checkUrl]);
 
@@ -107,7 +117,7 @@ export const DirectShiftLauncher: React.FC = () => {
 		<ShiftStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			initialTab="current"
+			initialTab={launcherMode === "journal" ? "journal" : "current"}
 		/>
 	);
 };

@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { Tooth46OcclusalCusps } from "./Tooth46OcclusalCusps";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "../../Tooth46CariesSpectrumGeometry";
@@ -22,7 +23,7 @@ export interface Tooth46EnamelCrownProps {
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
-	toothNumber = 46,
+	toothNumber,
 	stroke,
 	crownOpacity,
 	showCusps = true,
@@ -32,6 +33,9 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 	destructive = false,
 	cariesType,
 }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const crownPath = showAbfraction
 		? TOOTH46_GEOMETRY.crownMonolithPathWithAbfraction
 		: TOOTH46_GEOMETRY.crownMonolithPath;
@@ -57,12 +61,12 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 		? TOOTH46_CARIES_SPECTRUM_GEOMETRY.class5.destructiveCutout
 		: TOOTH46_CARIES_SPECTRUM_GEOMETRY.destructiveCutout;
 
-	const maskId = `tooth${toothNumber}-crown-destruct-mask`;
-	const clipId = `tooth${toothNumber}-crown-clip`;
+	const maskId = sid(`tooth${tNum}-crown-destruct-mask`);
+	const clipId = sid(`tooth${tNum}-crown-clip`);
 
 	return (
 		<g
-			id={`tooth${toothNumber}-natural-crown-group`}
+			id={sid(`tooth${tNum}-natural-crown-group`)}
 			mask={destructive ? `url(#${maskId})` : undefined}
 		>
 			<defs>
@@ -73,13 +77,10 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 					</mask>
 				)}
 			</defs>
-			<clipPath id={clipId}>
-				<path d={crownPath} />
-			</clipPath>
 			<path
-				id={`tooth${toothNumber}-crown-monolith`}
+				id={sid(`tooth${tNum}-crown-monolith`)}
 				d={crownPath}
-				fill="url(#dente-enamel-porcelain)"
+				fill={`url(#${sid("dente-enamel-porcelain")})`}
 				fillOpacity={crownOpacity}
 				stroke={stroke}
 				strokeWidth="0.8"
@@ -90,7 +91,7 @@ export const Tooth46EnamelCrown: React.FC<Tooth46EnamelCrownProps> = ({
 			<g clipPath={`url(#${clipId})`}>
 				<path
 					d={crownPath}
-					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					fill={`url(#${sid(isDark ? "dente-proximal-contour-dark" : "dente-proximal-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

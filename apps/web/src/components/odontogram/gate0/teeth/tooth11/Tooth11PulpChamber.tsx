@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { TOOTH11_PULP_GEOMETRY } from "./tooth11PulpGeometry";
 
 export interface Tooth11PulpChamberProps {
@@ -19,6 +20,9 @@ export const Tooth11PulpChamber: React.FC<Tooth11PulpChamberProps> = ({
 	className,
 	unified = false,
 }) => {
+	const tNum = useToothNumber() ?? 11;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const p = TOOTH11_PULP_GEOMETRY;
 	const isNecrotic = condition === "necrotic";
 	const isPulpitis = condition === "pulpitis";
@@ -31,12 +35,12 @@ export const Tooth11PulpChamber: React.FC<Tooth11PulpChamberProps> = ({
 			: p.coronalPulpChamber;
 
 	const chamberFill = isNecrotic
-		? "url(#dente-pulp-necrotic)"
+		? `url(#${sid("dente-pulp-necrotic")})`
 		: isPulpitis
-			? "url(#dente-pulp-hyperemia)"
+			? `url(#${sid("dente-pulp-hyperemia")})`
 			: isObturated
-				? "url(#dente-pulp-chamber-obturated)"
-				: "url(#dente-pulp-vital)";
+				? `url(#${sid("dente-pulp-chamber-obturated")})`
+				: `url(#${sid("dente-pulp-vital")})`;
 
 	const chamberStroke = isNecrotic
 		? "rgba(68, 64, 60, 0.85)"
@@ -52,7 +56,7 @@ export const Tooth11PulpChamber: React.FC<Tooth11PulpChamberProps> = ({
 
 	return (
 		<g
-			id="tooth11-pulp-chamber"
+			id={sid(`tooth${tNum}-pulp-chamber`)}
 			data-testid="tooth11-pulp-chamber"
 			opacity={chamberOpacity}
 			{...(className ? { className } : {})}

@@ -1,5 +1,6 @@
 import React from "react";
 import type { Tooth12CuspDef } from "./tooth12CuspGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth12SingleCuspProps {
 	cusp: Tooth12CuspDef;
@@ -15,10 +16,13 @@ export const Tooth12SingleCusp: React.FC<Tooth12SingleCuspProps> = ({
 	cusp: c,
 	isDark = false,
 }) => {
+	const tNum = useToothNumber() ?? 12;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const rs = isDark ? "rgba(255, 255, 255, 0.40)" : "rgba(255, 255, 255, 0.70)";
 
 	return (
-		<g id={`tooth12-cusp-${c.id}`}>
+		<g id={sid(`tooth${tNum}-cusp-${c.id}`)}>
 			{/* Unified silky porcelain face — Zero origami facets, zero artificial center lines */}
 			<path
 				d={c.ridgePath}

@@ -22,6 +22,7 @@
 /* Принудительная тёмная боковая панель во всех тёмных темах */
 [data-theme="dark"] .sidebar,
 [data-theme="night"] .sidebar,
+[data-theme="oled"] .sidebar,
 [data-theme="ocean"] .sidebar,
 [data-theme="emerald"] .sidebar,
 [data-theme="cyber_xray"] .sidebar,
@@ -33,6 +34,7 @@ html.dark .sidebar,
 
 [data-theme="dark"] .sidebar .brand-mark,
 [data-theme="night"] .sidebar .brand-mark,
+[data-theme="oled"] .sidebar .brand-mark,
 html.dark .sidebar .brand-mark,
 .dark .sidebar .brand-mark {
 	color: var(--ink, #e9f2ef) !important;
@@ -40,6 +42,7 @@ html.dark .sidebar .brand-mark,
 
 [data-theme="dark"] .sidebar .nav-item,
 [data-theme="night"] .sidebar .nav-item,
+[data-theme="oled"] .sidebar .nav-item,
 html.dark .sidebar .nav-item,
 .dark .sidebar .nav-item {
 	color: var(--ink-2, #b9c9c4) !important;
@@ -47,6 +50,7 @@ html.dark .sidebar .nav-item,
 
 [data-theme="dark"] .sidebar .nav-item:hover,
 [data-theme="night"] .sidebar .nav-item:hover,
+[data-theme="oled"] .sidebar .nav-item:hover,
 html.dark .sidebar .nav-item:hover,
 .dark .sidebar .nav-item:hover {
 	background: var(--teal-surface, rgba(45, 212, 191, 0.08)) !important;
@@ -55,6 +59,7 @@ html.dark .sidebar .nav-item:hover,
 
 [data-theme="dark"] .sidebar .nav-item.active,
 [data-theme="night"] .sidebar .nav-item.active,
+[data-theme="oled"] .sidebar .nav-item.active,
 html.dark .sidebar .nav-item.active,
 .dark .sidebar .nav-item.active {
 	background: var(--teal-soft, rgba(45, 212, 191, 0.16)) !important;

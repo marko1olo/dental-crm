@@ -2,6 +2,8 @@ import React from "react";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 import {
 	OdontogramBaseToothShaders,
+	scopeOdontogramId,
+	useOdontogramIdPrefix,
 	useOdontogramSharedDefs,
 } from "./OdontogramSharedDefsContext";
 import { ToothAnteriorShaders } from "./ToothAnteriorShaders";
@@ -19,17 +21,19 @@ export interface Tooth46ShaderDefsProps {
 
 export const Tooth46ShaderDefs: React.FC<Tooth46ShaderDefsProps> = ({ toothNumber }) => {
 	const hasGlobalSharedDefs = useOdontogramSharedDefs();
+	const archPrefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(archPrefix, id);
+	const prefix = toothNumber === 36 ? "tooth36" : `tooth${toothNumber ?? 46}`;
 	if (hasGlobalSharedDefs) {
-		if (toothNumber !== undefined && toothNumber !== 46 && toothNumber !== 36) {
+		if (toothNumber !== 46 && toothNumber !== 36) {
 			return null;
 		}
-		const prefix = toothNumber === 36 ? "tooth36" : "tooth46";
 		return (
 			<defs>
-				<clipPath id={`${prefix}-crown-clip`}>
+				<clipPath id={sid(`${prefix}-crown-clip`)}>
 					<path d={TOOTH46_GEOMETRY.crownMonolithPath} />
 				</clipPath>
-				<clipPath id={`${prefix}-root-clip`}>
+				<clipPath id={sid(`${prefix}-root-clip`)}>
 					<path d={TOOTH46_GEOMETRY.rootMonolithPath} />
 				</clipPath>
 			</defs>
@@ -37,10 +41,10 @@ export const Tooth46ShaderDefs: React.FC<Tooth46ShaderDefsProps> = ({ toothNumbe
 	}
 	return (
 		<defs>
-			<clipPath id="tooth46-crown-clip">
+			<clipPath id={sid(`${prefix}-crown-clip`)}>
 				<path d={TOOTH46_GEOMETRY.crownMonolithPath} />
 			</clipPath>
-			<clipPath id="tooth46-root-clip">
+			<clipPath id={sid(`${prefix}-root-clip`)}>
 				<path d={TOOTH46_GEOMETRY.rootMonolithPath} />
 			</clipPath>
 

@@ -299,8 +299,8 @@
 }
 
 .create-patient-modal-actions .primary-button {
-	background: linear-gradient(180deg, var(--teal-fill, #0d9488), var(--teal-dark, #0f766e));
-	color: var(--on-teal, #ffffff);
+	background: var(--primary, #0f766e);
+	color: var(--primary-fg, #ffffff);
 	min-height: 44px;
 	height: 44px;
 	font-weight: 700;

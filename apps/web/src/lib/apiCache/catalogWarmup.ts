@@ -18,6 +18,8 @@ import {
 	getCachedApiResponse,
 	setCachedApiResponse,
 } from "./cacheEngineCore";
+import { getDenteAuthHeaders } from "../denteRequestHeaders";
+import { readDenteClinicToken, readDenteStaffToken } from "../safeLocalStorage";
 
 /**
  * Гидратирует сохраненные справочники из IndexedDB в оперативную память (L1 RAM кэш).
@@ -51,22 +53,22 @@ export async function hydrateCatalogsFromPersistentStorage(): Promise<number> {
 								try {
 									const { setStatutoryCatalogInRam } = await import("../../services/storage/statutoryCatalogCache");
 									setStatutoryCatalogInRam("804n", entry.data as unknown[]);
-								} catch {
-									// ignore
+								} catch (err) {
+									console.warn("[CatalogWarmup] 804n RAM hydration failed:", err);
 								}
 							} else if (entry.url === "/api/clinical/icd10" || entry.url === "/api/icd10") {
 								try {
 									const { setStatutoryCatalogInRam } = await import("../../services/storage/statutoryCatalogCache");
 									setStatutoryCatalogInRam("icd10", entry.data as unknown[]);
-								} catch {
-									// ignore
+								} catch (err) {
+									console.warn("[CatalogWarmup] ICD-10 RAM hydration failed:", err);
 								}
 							} else if (entry.url === "/api/templates" || entry.url === "/api/emr/templates") {
 								try {
 									const { setStatutoryCatalogInRam } = await import("../../services/storage/statutoryCatalogCache");
 									setStatutoryCatalogInRam("templates", entry.data as unknown[]);
-								} catch {
-									// ignore
+								} catch (err) {
+									console.warn("[CatalogWarmup] Templates RAM hydration failed:", err);
 								}
 							}
 						}
@@ -83,8 +85,8 @@ export async function hydrateCatalogsFromPersistentStorage(): Promise<number> {
 					});
 				}
 			}
-		} catch {
-			// ignore
+		} catch (err) {
+			console.warn("[CatalogWarmup] IndexedDB hydration failed:", err);
 		}
 	}
 
@@ -97,6 +99,60 @@ export async function hydrateCatalogsFromPersistentStorage(): Promise<number> {
  * Гарантирует, что переключение вкладок на бюджетных ПК с медленным 5400 RPM HDD
  * не вызывает дискового троттлинга (HDD Thrashing) и блокирующих ожиданий.
  */
+let activeWarmupController: AbortController | null = null;
+
+function refreshOnlineCatalogs(controller: AbortController): void {
+	const refreshOnline = async () => {
+		if (controller.signal.aborted) return;
+		// Skip online refresh before clinic & staff authentication tokens exist to avoid 401/403 console noise
+		if (!readDenteClinicToken() || !readDenteStaffToken()) {
+			return;
+		}
+		const headers = getDenteAuthHeaders();
+		const urlsToRefresh = [
+			"/api/clinical/804n",
+			"/api/clinical/icd10",
+			"/api/templates",
+			"/api/pricing/catalog",
+		];
+		for (const url of urlsToRefresh) {
+			if (controller.signal.aborted) return;
+			try {
+				const res = await fetch(url, {
+					cache: "no-cache",
+					headers,
+					signal: controller.signal,
+				});
+				if (res.ok && !controller.signal.aborted) {
+					const json = await res.json();
+					setCachedApiResponse(url, json);
+				}
+			} catch (err) {
+				if (controller.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
+					return;
+				}
+				// Офлайн или серверная ошибка — не прерываем работу
+			}
+			// Дозируем I/O на HDD 5400 RPM: пауза между запросами для сохранения отзывчивости диска
+			await new Promise((resolve) => setTimeout(resolve, 500));
+		}
+	};
+
+	const idleWin = window as Window & {
+		requestIdleCallback?: (
+			cb: () => void,
+			opts?: { timeout: number },
+		) => number;
+	};
+	if (idleWin.requestIdleCallback) {
+		idleWin.requestIdleCallback(() => void refreshOnline(), {
+			timeout: 12000,
+		});
+	} else {
+		window.setTimeout(() => void refreshOnline(), 6000);
+	}
+}
+
 export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 	// 1. Сначала поднимаем всё, что уже сохранено в IndexedDB, в L1 RAM кэш (0 мс доступ)
 	const hydratedFromStorage = await hydrateCatalogsFromPersistentStorage();
@@ -110,7 +166,7 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 		"/api/icd10",
 		"/api/templates",
 		"/api/emr/templates",
-		"/api/catalog",
+		"/api/pricing/catalog",
 		"/api/price-lists",
 		"/api/pharmacology/references",
 		"/api/pharmacology/medications",
@@ -129,7 +185,7 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 			if (
 				missingUrls.includes("/api/clinical/804n") ||
 				missingUrls.includes("/api/clinical/nomenclature") ||
-				missingUrls.includes("/api/catalog") ||
+				missingUrls.includes("/api/pricing/catalog") ||
 				missingUrls.includes("/api/price-lists")
 			) {
 				const { STATUTORY_804N_NOMENCLATURE } = await import(
@@ -148,8 +204,8 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 						});
 						newlySeeded++;
 					}
-					if (!getCachedApiResponse("/api/catalog")) {
-						setCachedApiResponse("/api/catalog", STATUTORY_804N_NOMENCLATURE, {
+					if (!getCachedApiResponse("/api/pricing/catalog")) {
+						setCachedApiResponse("/api/pricing/catalog", STATUTORY_804N_NOMENCLATURE, {
 							ttlMs: 15 * 60 * 1000,
 						});
 						newlySeeded++;
@@ -207,8 +263,8 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 					}
 				}
 			}
-		} catch {
-			// Игнорируем ошибку динамической загрузки fallback справочников
+		} catch (err) {
+			console.warn("[CatalogWarmup] Fallback static catalog preload failed:", err);
 		}
 
 		// 2.4 Гарантированное сохранение в хранилище IndexedDB для 0 мс запуска на 5400 RPM HDD
@@ -216,9 +272,11 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 			const { seedAllStatutoryCatalogsInIndexedDb } = await import(
 				"../../services/storage/statutoryCatalogCache"
 			);
-			void seedAllStatutoryCatalogsInIndexedDb().catch(() => {});
-		} catch {
-			// Игнорируем ошибку фонового сидирования
+			void seedAllStatutoryCatalogsInIndexedDb().catch((seedErr) => {
+				console.warn("[CatalogWarmup] Background IDB seeding failed:", seedErr);
+			});
+		} catch (err) {
+			console.warn("[CatalogWarmup] Dynamic import for IDB seeding failed:", err);
 		}
 	}
 
@@ -228,41 +286,11 @@ export async function warmupStatutoryCatalogs(): Promise<WarmupCatalogResult> {
 		typeof navigator !== "undefined" &&
 		navigator.onLine
 	) {
-		const refreshOnline = async () => {
-			const urlsToRefresh = [
-				"/api/clinical/804n",
-				"/api/clinical/icd10",
-				"/api/templates",
-				"/api/catalog",
-			];
-			for (const url of urlsToRefresh) {
-				try {
-					const res = await fetch(url, { cache: "no-cache" });
-					if (res.ok) {
-						const json = await res.json();
-						setCachedApiResponse(url, json);
-					}
-				} catch {
-					// Офлайн или серверная ошибка — не прерываем работу
-				}
-				// Дозируем I/O на HDD 5400 RPM: пауза между запросами для сохранения отзывчивости диска
-				await new Promise((resolve) => setTimeout(resolve, 500));
-			}
-		};
-
-		const idleWin = window as Window & {
-			requestIdleCallback?: (
-				cb: () => void,
-				opts?: { timeout: number },
-			) => number;
-		};
-		if (idleWin.requestIdleCallback) {
-			idleWin.requestIdleCallback(() => void refreshOnline(), {
-				timeout: 12000,
-			});
-		} else {
-			window.setTimeout(() => void refreshOnline(), 6000);
-		}
+		activeWarmupController?.abort();
+		const controller = new AbortController();
+		activeWarmupController = controller;
+		window.addEventListener("pagehide", () => controller.abort(), { once: true });
+		refreshOnlineCatalogs(controller);
 	}
 
 	return {

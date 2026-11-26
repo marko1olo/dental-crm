@@ -1,5 +1,6 @@
 import React from "react";
 import { Tooth46SurgeryOverlay, type Tooth46SurgeryOverlayProps } from "./Tooth46SurgeryOverlay";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 
 export type ToothUpperSurgeryOverlayProps = Tooth46SurgeryOverlayProps;
 
@@ -17,9 +18,12 @@ export const ToothUpperSurgeryOverlay: React.FC<ToothUpperSurgeryOverlayProps> =
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber();
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	return (
 		<g
-			id="tooth-upper-surgical-overlays"
+			id={sid(tNum !== undefined ? `tooth${tNum}-upper-surgical-overlays` : "tooth-upper-surgical-overlays")}
 			transform="translate(0, 158) scale(1, -1)"
 			className={className}
 		>

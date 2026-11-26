@@ -1,5 +1,6 @@
 import React from "react";
 import type { Tooth46CanalAnatomy } from "./teeth/tooth46/Tooth46PulpGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 
 export interface ToothCanalAnatomy {
 	id: string;
@@ -17,6 +18,7 @@ export interface Tooth46SingleCanalProps {
 	isUnderfill: boolean;
 	underfillData?: { lumen: string; emptyLumen: string } | undefined;
 	isUnifiedLumen?: boolean | undefined;
+	toothNumber?: number | undefined;
 }
 
 export const Tooth46SingleCanal: React.FC<Tooth46SingleCanalProps> = ({
@@ -26,7 +28,12 @@ export const Tooth46SingleCanal: React.FC<Tooth46SingleCanalProps> = ({
 	isUnderfill,
 	underfillData,
 	isUnifiedLumen = false,
+	toothNumber,
 }) => {
+	const resolvedToothNumber = useToothNumber(toothNumber);
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const canalPrefix = resolvedToothNumber !== undefined ? `tooth${resolvedToothNumber}-` : "";
 	const lumenD =
 		isUnderfill && underfillData ? underfillData.lumen : canal.taperedLumen;
 
@@ -37,11 +44,11 @@ export const Tooth46SingleCanal: React.FC<Tooth46SingleCanalProps> = ({
 		const apicalPlugD = `M ${ax - 0.8},${ay - 1.2} C ${ax - 0.8},${ay - 0.2} ${ax + 0.8},${ay - 0.2} ${ax + 0.8},${ay - 1.2} Z`;
 
 		return (
-			<g id={`canal-${canal.id}`}>
+			<g id={sid(`${canalPrefix}canal-${canal.id}`)}>
 				<path
 					d={lumenD}
-					fill="url(#dente-guttapercha-cone)"
-					stroke="url(#dente-guttapercha-sheath)"
+					fill={`url(#${sid("dente-guttapercha-cone")})`}
+					stroke={`url(#${sid("dente-guttapercha-sheath")})`}
 					strokeWidth="0.75"
 					strokeLinejoin="round"
 					vectorEffect="non-scaling-stroke"
@@ -76,13 +83,11 @@ export const Tooth46SingleCanal: React.FC<Tooth46SingleCanalProps> = ({
 	}
 
 	return (
-		<g id={`canal-${canal.id}`}>
+		<g id={sid(`${canalPrefix}canal-${canal.id}`)}>
 			{!isUnifiedLumen && (
 				<path
 					d={canal.taperedLumen}
-					fill={
-						isNecrotic ? "url(#dente-pulp-necrotic)" : "url(#dente-pulp-vital)"
-					}
+					fill={`url(#${sid(isNecrotic ? "dente-pulp-necrotic" : "dente-pulp-vital")})`}
 					stroke={
 						isNecrotic ? "rgba(87, 83, 78, 0.70)" : "rgba(153, 27, 27, 0.60)"
 					}

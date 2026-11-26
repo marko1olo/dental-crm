@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
 
 /**
@@ -6,12 +7,15 @@ import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
  * Mandate 8b <= 120 lines.
  */
 export const Tooth46CalculusOverlay: React.FC = () => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const c = TOOTH46_PATHOLOGY_GEOMETRY.calculus;
 	return (
-		<g id="tooth46-calculus-deposits" data-testid="tooth46-calculus">
+		<g id={sid(`tooth${tNum}-calculus-deposits`)} data-testid="tooth46-calculus">
 			<path
 				d={c.supragingival}
-				fill="url(#dente-calculus-supra)"
+				fill={`url(#${sid("dente-calculus-supra")})`}
 				stroke="rgba(140, 111, 68, 0.75)"
 				strokeWidth="0.5"
 				strokeLinejoin="round"
@@ -29,7 +33,7 @@ export const Tooth46CalculusOverlay: React.FC = () => {
 			))}
 			<path
 				d={c.subgingival}
-				fill="url(#dente-calculus-sub)"
+				fill={`url(#${sid("dente-calculus-sub")})`}
 				stroke="#2e1f10"
 				strokeWidth="0.5"
 				strokeLinejoin="round"

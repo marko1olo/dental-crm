@@ -4,6 +4,7 @@ import { Tooth46ImplantFixture } from "./Tooth46ImplantFixture";
 import { Tooth46ImplantSuprastructure } from "./Tooth46ImplantSuprastructure";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
 import type { ImplantStage } from "./tooth46Types";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 
 export interface Tooth46SurgeryOverlayProps {
 	showImplant?: boolean | undefined;
@@ -27,6 +28,9 @@ export const Tooth46SurgeryOverlay: React.FC<Tooth46SurgeryOverlayProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const g = TOOTH46_PATHOLOGY_GEOMETRY;
 
 	if (renderScrewAccessOnly && showImplant) {
@@ -40,10 +44,10 @@ export const Tooth46SurgeryOverlay: React.FC<Tooth46SurgeryOverlayProps> = ({
 	}
 
 	return (
-		<g id="tooth46-surgical-overlays" className={className}>
+		<g id={sid(`tooth${tNum}-surgical-overlays`)} className={className}>
 			{showImplant && (
 				<g
-					id="tooth46-titanium-implant"
+					id={sid(`tooth${tNum}-titanium-implant`)}
 					data-testid="tooth46-implant"
 					data-stage={implantStage}
 				>
@@ -53,7 +57,7 @@ export const Tooth46SurgeryOverlay: React.FC<Tooth46SurgeryOverlayProps> = ({
 				</g>
 			)}
 			{showMissing && (
-				<g id="tooth46-missing-cross" data-testid="tooth46-missing">
+				<g id={sid(`tooth${tNum}-missing-cross`)} data-testid="tooth46-missing">
 					<path
 						d={g.missing.socketGhost}
 						fill="none"

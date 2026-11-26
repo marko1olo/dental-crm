@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { Tooth46SingleCanal } from "../../Tooth46SingleCanal";
 import { ToothBrokenFileMarker } from "../../ToothBrokenFileMarker";
 import type { CanalCondition } from "../../tooth46Types";
@@ -22,6 +23,9 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 45;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const p = TOOTH45_PULP_GEOMETRY;
 	const isNecrotic = canalCondition === "necrotic";
 	const isUnderfill = canalCondition === "underfill";
@@ -29,7 +33,7 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 	const isBrokenFile = canalCondition === "broken_file";
 
 	return (
-		<g id="tooth45-endodontics" className={className}>
+		<g id={sid(`tooth${tNum}-endodontics`)} className={className}>
 			{/* Coronal Pulp Chamber with 3 horns */}
 			{showPulp && (
 				<Tooth45PulpChamber condition={canalCondition} isDark={isDark} />
@@ -37,7 +41,7 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 
 			{/* Single Wide Central Canal Tract */}
 			{showCanals && (
-				<g id="tooth45-canals-tract">
+				<g id={sid(`tooth${tNum}-canals-tract`)}>
 					{p.canals.map((canal) => (
 						<Tooth46SingleCanal
 							key={canal.id}
@@ -50,10 +54,10 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 
 					{/* Overfilled Apical Sealer Puff at Conical Root Apex */}
 					{showGuttaPercha && isOverfill && (
-						<g id="tooth45-overfill-puffs">
+						<g id={sid(`tooth${tNum}-overfill-puffs`)}>
 							<path
 								d="M 40.0,145.5 C 38.5,147.0 39.5,149.5 42.0,149.0 C 44.5,148.5 44.0,146.0 42.0,145.5 Z"
-								fill="url(#dente-sealer-puff)"
+								fill={`url(#${sid("dente-sealer-puff")})`}
 								stroke="#881337"
 								strokeWidth="0.6"
 							/>
@@ -63,7 +67,7 @@ export const Tooth45EndoCanals: React.FC<Tooth45EndoCanalsProps> = ({
 					{/* Broken Instrument in Apical Third of Root Canal */}
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
-							toothId="45"
+							toothId={String(tNum)}
 							path="M 44.5,134.0 L 42.0,145.5"
 							fracturePoint={{ x: 44.5, y: 134.0 }}
 							flutes={[

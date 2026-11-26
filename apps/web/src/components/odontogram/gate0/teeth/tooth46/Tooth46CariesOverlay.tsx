@@ -3,6 +3,7 @@ import { Tooth46CariesClass1 } from "../../Tooth46CariesClass1";
 import { Tooth46CariesClass2 } from "../../Tooth46CariesClass2";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "../../Tooth46CariesSpectrumGeometry";
 import type { CariesChronicity, CariesDepth, CariesType } from "../../tooth46PresetTypes";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth46CariesOverlayProps {
 	cariesType?: CariesType | undefined;
@@ -11,6 +12,7 @@ export interface Tooth46CariesOverlayProps {
 	isDark?: boolean | undefined;
 	showBuccalPit?: boolean | undefined;
 	className?: string | undefined;
+	toothNumber?: number | undefined;
 }
 
 /**
@@ -25,13 +27,15 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 	isDark = false,
 	showBuccalPit = true,
 	className,
+	toothNumber,
 }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const sp = TOOTH46_CARIES_SPECTRUM_GEOMETRY;
 	const isChronic = chronicity === "chronic";
-	const lesionFill = isChronic
-		? "url(#dente-caries-chronic)"
-		: "url(#dente-caries-lesion)";
-	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
+	const lesionFill = `url(#${sid(isChronic ? "dente-caries-chronic" : "dente-caries-lesion")})`;
+	const necroticFill = isChronic ? "#0c0a09" : `url(#${sid("dente-caries-necrotic")})`;
 	const haloStroke = isDark
 		? "rgba(245, 158, 11, 0.70)"
 		: "rgba(180, 83, 9, 0.85)";
@@ -42,18 +46,18 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 
 	return (
 		<g
-			id="tooth46-biological-caries"
+			id={sid(`tooth${tNum}-biological-caries`)}
 			data-caries-type={cariesType}
 			data-caries-depth={cariesDepth}
 			data-caries-chronicity={chronicity}
 			className={className}
-			clipPath="url(#tooth46-crown-clip)"
+			clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}
 		>
 			{cariesType === "white_spot" && (
-				<g id="tooth46-caries-white-spot">
+				<g id={sid(`tooth${tNum}-caries-white-spot`)}>
 					<path
 						d={sp.whiteSpot.halo}
-						fill="url(#dente-caries-white-spot)"
+						fill={`url(#${sid("dente-caries-white-spot")})`}
 						stroke="rgba(255, 255, 255, 0.75)"
 						strokeWidth="0.5"
 					/>
@@ -62,17 +66,17 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 			)}
 
 			{cariesType === "class5" && (
-				<g id="tooth46-caries-class5">
+				<g id={sid(`tooth${tNum}-caries-class5`)}>
 					{cariesDepth !== "destructive" ? (
 						<>
-							<path d={sp.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
+							<path d={sp.class5.halo} fill={`url(#${sid("dente-caries-demin")})`} stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && (
 								<path d={sp.class5.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />
 							)}
 							{showNecrotic && <path d={sp.class5.necrotic} fill={necroticFill} stroke="#0c0a09" />}
 						</>
 					) : (
-						<g id="tooth46-caries-class5-destructive">
+						<g id={sid(`tooth${tNum}-caries-class5-destructive`)}>
 							<path d={sp.class5.fractureMargin} fill="none" stroke="rgba(120, 53, 15, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
 							<path d={sp.class5.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
 							{sp.class5.fractureSteps.map((s, idx) => (

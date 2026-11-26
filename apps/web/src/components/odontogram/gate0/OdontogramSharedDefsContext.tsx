@@ -21,89 +21,121 @@ export function useOdontogramSharedDefs(): boolean {
 	return useContext(OdontogramSharedDefsContext);
 }
 
-export const OdontogramBaseToothShaders: React.FC = () => (
-	<>
-		<radialGradient id="dente-furcation-shadow" cx="50%" cy="30%" r="55%">
-			<stop offset="0%" stopColor="#334155" stopOpacity="0.45" />
-			<stop offset="60%" stopColor="#475569" stopOpacity="0.15" />
-			<stop offset="100%" stopColor="#64748b" stopOpacity="0" />
-		</radialGradient>
+export const ToothNumberContext = createContext<number | undefined>(undefined);
 
-		<linearGradient id="dente-enamel-porcelain" x1="0" y1="0" x2="1" y2="1">
-			<stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-			<stop offset="30%" stopColor="#f8fafc" stopOpacity="0.98" />
-			<stop offset="70%" stopColor="#f1f5f9" stopOpacity="0.95" />
-			<stop offset="100%" stopColor="#dbeafe" stopOpacity="0.92" />
-		</linearGradient>
+export function useToothNumber(explicit?: number): number | undefined {
+	const ctx = useContext(ToothNumberContext);
+	return explicit ?? ctx;
+}
 
-		<linearGradient id="dente-root-dentin" x1="0" y1="0" x2="1" y2="0.3">
-			<stop offset="0%" stopColor="#faf6ef" stopOpacity="1" />
-			<stop offset="25%" stopColor="#f2e6d6" stopOpacity="1" />
-			<stop offset="55%" stopColor="#e5d0b9" stopOpacity="1" />
-			<stop offset="85%" stopColor="#d2b390" stopOpacity="1" />
-			<stop offset="100%" stopColor="#b6946e" stopOpacity="1" />
-		</linearGradient>
+export const OdontogramIdPrefixContext = createContext<string>("");
 
-		<linearGradient id="dente-root-sulcus-shadow" x1="0" y1="0" x2="1" y2="0">
-			<stop offset="0%" stopColor="#8c6b46" stopOpacity="0.0" />
-			<stop offset="50%" stopColor="#735230" stopOpacity="0.22" />
-			<stop offset="100%" stopColor="#8c6b46" stopOpacity="0.0" />
-		</linearGradient>
+export function useOdontogramIdPrefix(explicit?: string): string {
+	const ctx = useContext(OdontogramIdPrefixContext);
+	return explicit ?? ctx;
+}
 
-		<linearGradient id="dente-root-sulcus-shadow-dark" x1="0" y1="0" x2="1" y2="0">
-			<stop offset="0%" stopColor="#0f172a" stopOpacity="0.0" />
-			<stop offset="50%" stopColor="#020617" stopOpacity="0.38" />
-			<stop offset="100%" stopColor="#0f172a" stopOpacity="0.0" />
-		</linearGradient>
+export function scopeOdontogramId(prefix: string, id: string): string {
+	return prefix ? `${prefix}-${id}` : id;
+}
 
-		<linearGradient id="dente-fossa-shadow" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stopColor="#334155" stopOpacity="0.30" />
-			<stop offset="60%" stopColor="#475569" stopOpacity="0.15" />
-			<stop offset="100%" stopColor="#64748b" stopOpacity="0.0" />
-		</linearGradient>
+export const OdontogramBaseToothShaders: React.FC = () => {
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	return (
+		<>
+			<radialGradient id={sid("dente-furcation-shadow")} cx="50%" cy="30%" r="55%">
+				<stop offset="0%" stopColor="#334155" stopOpacity="0.45" />
+				<stop offset="60%" stopColor="#475569" stopOpacity="0.15" />
+				<stop offset="100%" stopColor="#64748b" stopOpacity="0" />
+			</radialGradient>
 
-		<linearGradient id="dente-cervical-ridge" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
-			<stop offset="60%" stopColor="#fef3c7" stopOpacity="0.25" />
-			<stop offset="100%" stopColor="#f8fafc" stopOpacity="0.05" />
-		</linearGradient>
+			<linearGradient id={sid("dente-enamel-porcelain")} x1="0" y1="0" x2="1" y2="1">
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+				<stop offset="30%" stopColor="#f8fafc" stopOpacity="0.98" />
+				<stop offset="70%" stopColor="#f1f5f9" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#dbeafe" stopOpacity="0.92" />
+			</linearGradient>
 
-		<linearGradient id="dente-cervical-ridge-dark" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
-			<stop offset="60%" stopColor="#94a3b8" stopOpacity="0.12" />
-			<stop offset="100%" stopColor="#0f172a" stopOpacity="0.02" />
-		</linearGradient>
+			<linearGradient id={sid("dente-root-dentin")} x1="0" y1="0" x2="1" y2="0.3">
+				<stop offset="0%" stopColor="#faf6ef" stopOpacity="1" />
+				<stop offset="25%" stopColor="#f2e6d6" stopOpacity="1" />
+				<stop offset="55%" stopColor="#e5d0b9" stopOpacity="1" />
+				<stop offset="85%" stopColor="#d2b390" stopOpacity="1" />
+				<stop offset="100%" stopColor="#b6946e" stopOpacity="1" />
+			</linearGradient>
 
-		<linearGradient id="dente-ridge-highlight" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stopColor="#ffffff" stopOpacity="0.90" />
-			<stop offset="40%" stopColor="#f8fafc" stopOpacity="0.55" />
-			<stop offset="75%" stopColor="#cbd5e1" stopOpacity="0.15" />
-			<stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.0" />
-		</linearGradient>
-	</>
-);
+			<linearGradient id={sid("dente-root-sulcus-shadow")} x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#8c6b46" stopOpacity="0.0" />
+				<stop offset="50%" stopColor="#735230" stopOpacity="0.22" />
+				<stop offset="100%" stopColor="#8c6b46" stopOpacity="0.0" />
+			</linearGradient>
 
-export const OdontogramGlobalSharedDefs: React.FC = React.memo(() => (
-	<svg
-		aria-hidden="true"
-		focusable="false"
-		width="0"
-		height="0"
-		data-testid="wheeler-global-shader-defs"
-		style={{ position: "absolute", width: 0, height: 0, overflow: "hidden", pointerEvents: "none" }}
-	>
-		<defs id="dente-global-odontogram-defs">
-			<OdontogramBaseToothShaders />
-			<ToothAnteriorShaders />
-			<Tooth46CuspShaders />
-			<Tooth46CariesShaders />
-			<Tooth46EndoShaders />
-			<Tooth46CrownShaders />
-			<Tooth46RestorationShaders />
-			<Tooth46PathologyShaders />
-			<Tooth46PeriapicalShaders />
-		</defs>
-	</svg>
-));
+			<linearGradient id={sid("dente-root-sulcus-shadow-dark")} x1="0" y1="0" x2="1" y2="0">
+				<stop offset="0%" stopColor="#0f172a" stopOpacity="0.0" />
+				<stop offset="50%" stopColor="#020617" stopOpacity="0.38" />
+				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.0" />
+			</linearGradient>
+
+			<linearGradient id={sid("dente-fossa-shadow")} x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#334155" stopOpacity="0.30" />
+				<stop offset="60%" stopColor="#475569" stopOpacity="0.15" />
+				<stop offset="100%" stopColor="#64748b" stopOpacity="0.0" />
+			</linearGradient>
+
+			<linearGradient id={sid("dente-cervical-ridge")} x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
+				<stop offset="60%" stopColor="#fef3c7" stopOpacity="0.25" />
+				<stop offset="100%" stopColor="#f8fafc" stopOpacity="0.05" />
+			</linearGradient>
+
+			<linearGradient id={sid("dente-cervical-ridge-dark")} x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+				<stop offset="60%" stopColor="#94a3b8" stopOpacity="0.12" />
+				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.02" />
+			</linearGradient>
+
+			<linearGradient id={sid("dente-ridge-highlight")} x1="0" y1="0" x2="0" y2="1">
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.90" />
+				<stop offset="40%" stopColor="#f8fafc" stopOpacity="0.55" />
+				<stop offset="75%" stopColor="#cbd5e1" stopOpacity="0.15" />
+				<stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.0" />
+			</linearGradient>
+		</>
+	);
+};
+
+export interface OdontogramGlobalSharedDefsProps {
+	readonly idPrefix?: string | undefined;
+}
+
+export const OdontogramGlobalSharedDefs: React.FC<OdontogramGlobalSharedDefsProps> = React.memo(({ idPrefix }) => {
+	const effectivePrefix = useOdontogramIdPrefix(idPrefix);
+	const sid = (id: string) => scopeOdontogramId(effectivePrefix, id);
+	return (
+		<OdontogramIdPrefixContext.Provider value={effectivePrefix}>
+			<svg
+				aria-hidden="true"
+				focusable="false"
+				width="0"
+				height="0"
+				data-testid="wheeler-global-shader-defs"
+				style={{ position: "absolute", width: 0, height: 0, overflow: "hidden", pointerEvents: "none" }}
+			>
+				<defs id={sid("dente-global-odontogram-defs")}>
+					<OdontogramBaseToothShaders />
+					<ToothAnteriorShaders />
+					<Tooth46CuspShaders />
+					<Tooth46CariesShaders />
+					<Tooth46EndoShaders />
+					<Tooth46CrownShaders />
+					<Tooth46RestorationShaders />
+					<Tooth46PathologyShaders />
+					<Tooth46PeriapicalShaders />
+				</defs>
+			</svg>
+		</OdontogramIdPrefixContext.Provider>
+	);
+});
 
 OdontogramGlobalSharedDefs.displayName = "OdontogramGlobalSharedDefs";

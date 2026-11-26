@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
 import type { ImplantStage } from "./tooth46Types";
 
@@ -17,6 +18,9 @@ export const Tooth46GingivalCuff: React.FC<Tooth46GingivalCuffProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const cuff = TOOTH46_PATHOLOGY_GEOMETRY.implant.gingivalCuff;
 	if (!cuff) return null;
 
@@ -29,11 +33,11 @@ export const Tooth46GingivalCuff: React.FC<Tooth46GingivalCuffProps> = ({
 
 	return (
 		<g
-			id="tooth46-gingival-cuff"
+			id={sid(`tooth${tNum}-gingival-cuff`)}
 			data-component="implant-gingival-cuff"
 			className={className}
 		>
-			<path d={cuff.band} fill="url(#dente-gingival-cuff)" stroke="none" />
+			<path d={cuff.band} fill={`url(#${sid("dente-gingival-cuff")})`} stroke="none" />
 			<path
 				d={cuff.margin}
 				fill="none"

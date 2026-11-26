@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { clientLogger } from "../../utils/logger";
 import type {
 	HardwareProfile,
 	HardwareTier,
@@ -54,8 +55,8 @@ function notifyListeners(profile: HardwareProfile): void {
 	for (const listener of profileListeners) {
 		try {
 			listener(profile);
-		} catch {
-			// ignore subscriber errors
+		} catch (listenerErr) {
+			console.warn("[hardwareCapabilities] Profile listener error", listenerErr);
 		}
 	}
 
@@ -75,8 +76,8 @@ function notifyListeners(profile: HardwareProfile): void {
 	for (const listener of legacyListeners) {
 		try {
 			listener(legacyCaps);
-		} catch {
-			// ignore subscriber errors
+		} catch (listenerErr) {
+			console.warn("[hardwareCapabilities] Legacy listener error", listenerErr);
 		}
 	}
 }
@@ -259,7 +260,9 @@ export function initHardwareCapabilities(): HardwareProfile {
 					setDynamicPerfState(isDegraded ? "degraded" : "healthy");
 				});
 			})
-			.catch(() => {});
+			.catch((err) => {
+				clientLogger.debug("[hardwareCapabilities] Telemetry subscription unavailable", err);
+			});
 	}
 
 	// Dynamic battery watcher
@@ -279,9 +282,11 @@ export function initHardwareCapabilities(): HardwareProfile {
 							.then((mod) => {
 								mod.getRuntimePerformanceMonitor().setBatteryThrottling(isBatterySaving);
 							})
-							.catch(() => {});
-					} catch {
-						// ignore dynamic import errors
+							.catch((err) => {
+								clientLogger.debug("[hardwareCapabilities] Battery telemetry update skipped", err);
+							});
+					} catch (importErr) {
+						clientLogger.debug("[hardwareCapabilities] Dynamic telemetry import error", importErr);
 					}
 
 					const updatedProfile = evaluateHardwareProfile({
@@ -300,8 +305,8 @@ export function initHardwareCapabilities(): HardwareProfile {
 				battery.addEventListener?.("chargingchange", updateBattery);
 				battery.addEventListener?.("levelchange", updateBattery);
 			})
-			.catch(() => {
-				// Battery API unsupported or blocked
+			.catch((batteryErr) => {
+				clientLogger.debug("[hardwareCapabilities] Battery API unavailable", batteryErr);
 			});
 	}
 
@@ -319,8 +324,8 @@ export function initHardwareCapabilities(): HardwareProfile {
 			} else if (typeof mql.addListener === "function") {
 				mql.addListener(onMotionChange);
 			}
-		} catch {
-			// MatchMedia listener unsupported
+		} catch (mediaErr) {
+			clientLogger.debug("[hardwareCapabilities] MatchMedia listener unavailable", mediaErr);
 		}
 	}
 
@@ -344,12 +349,13 @@ export function initHardwareCapabilities(): HardwareProfile {
 						notifyListeners(updated);
 					}
 				})
-				.catch(() => {});
+				.catch((diskErr) => {
+					clientLogger.debug("[hardwareCapabilities] Disk benchmark skipped", diskErr);
+				});
 		};
-		if ("requestIdleCallback" in window) {
-			(
-				window as unknown as { requestIdleCallback: (cb: () => void) => void }
-			).requestIdleCallback(runDiskBenchmark);
+		const idleWindow: Window & { requestIdleCallback?: (cb: () => void) => void } = window;
+		if (typeof idleWindow.requestIdleCallback === "function") {
+			idleWindow.requestIdleCallback(runDiskBenchmark);
 		} else {
 			setTimeout(runDiskBenchmark, 1000);
 		}
@@ -377,7 +383,9 @@ export function initHardwareCapabilities(): HardwareProfile {
 					}
 				}
 			})
-			.catch(() => {});
+			.catch((gpuErr) => {
+				clientLogger.debug("[hardwareCapabilities] WebGPU adapter probe skipped", gpuErr);
+			});
 	}
 
 	return profile;
@@ -399,7 +407,4 @@ export function _resetHardwareProfileCacheForTests(): void {
 	legacyListeners.clear();
 }
 
-// Auto-run immediately when loaded in browser environment
-if (typeof window !== "undefined" && typeof document !== "undefined") {
-	initHardwareCapabilities();
-}
+// Initialization is explicitly invoked by main.tsx (initHardwareCapabilities()) to avoid import side-effects.

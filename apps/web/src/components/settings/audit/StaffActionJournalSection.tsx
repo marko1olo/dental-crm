@@ -5,7 +5,7 @@
  * Delegates filtering and event rendering to auditModules/AuditLogFilterBar and AuditLogEventsTable.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { History, RefreshCw } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import clientLogger from "../../../services/logging/clientLogger";
@@ -30,12 +30,19 @@ export function StaffActionJournalSection(): React.JSX.Element {
 	const [operationFilter, setOperationFilter] = useState<string>("all");
 	const [actorFilter, setActorFilter] = useState<string>("all");
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const abortControllerRef = useRef<AbortController | null>(null);
 
 	const loadJournal = useCallback(async () => {
+		abortControllerRef.current?.abort();
+		const controller = new AbortController();
+		abortControllerRef.current = controller;
 		setIsLoading(true);
 		try {
 			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
-			const response = await fetch("/api/audit/logs?limit=100", { headers });
+			const response = await fetch("/api/audit/logs?limit=100", {
+				headers,
+				signal: controller.signal,
+			});
 			const rawList: Array<Record<string, unknown>> = [];
 
 			if (response.ok) {
@@ -54,16 +61,26 @@ export function StaffActionJournalSection(): React.JSX.Element {
 			mapped.sort(
 				(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
 			);
-			setRows(mapped);
+			if (!controller.signal.aborted) {
+				setRows(mapped);
+			}
 		} catch (err) {
+			if (controller.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
+				return;
+			}
 			clientLogger.warn("[StaffActionJournalSection] Ошибка загрузки журнала:", err);
 		} finally {
-			setIsLoading(false);
+			if (!controller.signal.aborted) {
+				setIsLoading(false);
+			}
 		}
 	}, []);
 
 	useEffect(() => {
 		void loadJournal();
+		return () => {
+			abortControllerRef.current?.abort();
+		};
 	}, [loadJournal]);
 
 	const availableActors = useMemo(() => {
@@ -89,7 +106,8 @@ export function StaffActionJournalSection(): React.JSX.Element {
 		try {
 			const d = new Date(iso);
 			return `${d.toLocaleDateString("ru-RU")} ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
-		} catch {
+		} catch (err) {
+			console.warn("[StaffActionJournal] Failed to format audit timestamp:", err);
 			return iso;
 		}
 	};

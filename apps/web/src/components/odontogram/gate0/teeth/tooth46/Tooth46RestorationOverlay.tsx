@@ -4,6 +4,7 @@ import { TOOTH46_DEFECT_GEOMETRY } from "../../Tooth46DefectGeometry";
 import { TOOTH46_RESTORATION_GEOMETRY } from "../../Tooth46RestorationGeometry";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "../../Tooth46CariesSpectrumGeometry";
 import type { CrownMaterial, RestorationCondition } from "../../tooth46Types";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth46RestorationOverlayProps {
 	showComposite?: boolean | undefined;
@@ -17,6 +18,7 @@ export interface Tooth46RestorationOverlayProps {
 	isDark?: boolean | undefined;
 	isImplant?: boolean | undefined;
 	className?: string | undefined;
+	toothNumber?: number | undefined;
 }
 
 export const Tooth46RestorationOverlay: React.FC<
@@ -33,7 +35,12 @@ export const Tooth46RestorationOverlay: React.FC<
 	isDark = false,
 	isImplant = false,
 	className,
+	toothNumber,
 }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const compositeBodyFill = `url(#${sid("dente-composite-body")})`;
 	const r = TOOTH46_RESTORATION_GEOMETRY;
 	const d = TOOTH46_DEFECT_GEOMETRY.defectiveComposite;
 	const sp = TOOTH46_CARIES_SPECTRUM_GEOMETRY;
@@ -57,7 +64,7 @@ export const Tooth46RestorationOverlay: React.FC<
 	const renderOcclusal = !isPureM && !isPureD;
 
 	return (
-		<g id="tooth46-restorations" className={className}>
+		<g id={sid(`tooth${tNum}-restorations`)} className={className}>
 			{/* Orthopedic Crown (6 Clinical Materials with Milled Anatomy) */}
 			{showZirconiaCrown && (
 				<Tooth46CrownOverlay
@@ -71,13 +78,13 @@ export const Tooth46RestorationOverlay: React.FC<
 
 			{/* Light-Cured Nanohybrid Composite (A2/A3 Enamel-Dentin) */}
 			{showComposite && (
-				<g id="tooth46-composite-filling" clipPath="url(#tooth46-crown-clip)">
+				<g id={sid(`tooth${tNum}-composite-filling`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					{/* Окклюзионное тело пломбы (Class I / O / MO / DO / MOD) */}
 					{renderOcclusal && (
 						<>
 							<path
 								d={r.compositeFilling}
-								fill="url(#dente-composite-body)"
+								fill={compositeBodyFill}
 								stroke={compositeBorder}
 								strokeWidth="0.75"
 								strokeLinejoin="round"
@@ -113,7 +120,7 @@ export const Tooth46RestorationOverlay: React.FC<
 					{(isPureM || isMO || isMOD) && (
 						<path
 							d={sp.class2M.crater}
-							fill="url(#dente-composite-body)"
+							fill={compositeBodyFill}
 							stroke={compositeBorder}
 							strokeWidth="0.75"
 							strokeLinejoin="round"
@@ -125,7 +132,7 @@ export const Tooth46RestorationOverlay: React.FC<
 					{(isPureD || isDO || isMOD) && (
 						<path
 							d={sp.class2D.crater}
-							fill="url(#dente-composite-body)"
+							fill={compositeBodyFill}
 							stroke={compositeBorder}
 							strokeWidth="0.75"
 							strokeLinejoin="round"
@@ -135,7 +142,7 @@ export const Tooth46RestorationOverlay: React.FC<
 
 					{/* Defective Composite: Marginal Breakdown & Recurrent Caries */}
 					{compositeCondition === "defective" && (
-						<g id="tooth46-defective-composite-manifestations">
+						<g id={sid(`tooth${tNum}-defective-composite-manifestations`)}>
 							<path
 								d={d.marginalLeakageBorder}
 								fill="#78350f"
@@ -145,7 +152,7 @@ export const Tooth46RestorationOverlay: React.FC<
 							/>
 							<path
 								d={d.subFillingCariesInfiltration}
-								fill="url(#dente-caries-lesion)"
+								fill={`url(#${sid("dente-caries-lesion")})`}
 								stroke="#78350f"
 								strokeWidth="0.5"
 							/>

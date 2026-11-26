@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Dashboard } from "@dental/shared";
 import { WorkflowResponseError, responseErrorMessage } from "../../AppHelpers";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -45,6 +45,13 @@ export function useDashboardLoaderLogic({
 	refreshSpeechRuntimeRef,
 }: DashboardLoaderLogicProps) {
 	const dashboardRequestSeqRef = useRef(0);
+	const dashboardAbortRef = useRef<AbortController | null>(null);
+
+	useEffect(() => {
+		return () => {
+			dashboardAbortRef.current?.abort();
+		};
+	}, []);
 
 	const loadDashboard = useCallback(
 		async (options: { adminSecret?: string } = {}) => {
@@ -55,12 +62,17 @@ export function useDashboardLoaderLogic({
 			// данными ДО сохранения. Только что записанный приём исчезал с экрана
 			// до ручного обновления страницы.
 			// Применяем только ответ последнего по времени запроса.
+			dashboardAbortRef.current?.abort();
+			const controller = new AbortController();
+			dashboardAbortRef.current = controller;
 			const requestId = ++dashboardRequestSeqRef.current;
-			const isStaleResponse = () => requestId !== dashboardRequestSeqRef.current;
+			const isStaleResponse = () =>
+				controller.signal.aborted || requestId !== dashboardRequestSeqRef.current;
 			
 			try {
 				const response = await fetch("/api/dashboard", {
 					cache: "no-store",
+					signal: controller.signal,
 					headers: authRef.current
 						? authRef.current.denteClinicalReadHeaders({}, options.adminSecret)
 						: {},
@@ -82,7 +94,7 @@ export function useDashboardLoaderLogic({
 				setAccessUnlockRequired(false);
 				setAccessUnlockMessage("");
 			} catch (err) {
-				if (isStaleResponse()) return;
+				if (isStaleResponse() || (err instanceof Error && err.name === "AbortError")) return;
 				logger.error("[Dente] Не удалось загрузить данные клиники:", err);
 				const status = (err as { status?: number })?.status ?? null;
 				const isAuthError =

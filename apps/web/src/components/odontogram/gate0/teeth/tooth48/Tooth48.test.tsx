@@ -80,7 +80,7 @@ describe("Tooth48 Wheeler Ch. 11 Third Mandibular Molar Anatomical Invariants", 
 		);
 		assert.ok(html.includes("id=\"tooth48-endodontics\""));
 		assert.ok(html.includes("id=\"tooth48-overfill-puffs\""));
-		assert.ok(html.includes("id=\"canal-M\""));
-		assert.ok(html.includes("id=\"canal-D\""));
+		assert.ok(html.includes("id=\"tooth48-canal-M\""));
+		assert.ok(html.includes("id=\"tooth48-canal-D\""));
 	});
 });

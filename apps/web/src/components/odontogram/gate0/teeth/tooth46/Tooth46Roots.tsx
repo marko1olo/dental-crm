@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth46RootsProps {
 	showGrooves?: boolean | undefined;
@@ -7,6 +8,7 @@ export interface Tooth46RootsProps {
 	isDark?: boolean | undefined;
 	isEndo?: boolean | undefined;
 	className?: string | undefined;
+	toothNumber?: number | undefined;
 }
 
 /**
@@ -20,18 +22,22 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 	isDark = false,
 	isEndo = false,
 	className,
+	toothNumber,
 }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark
 		? "#94a3b8"
 		: "rgba(71, 85, 105, 0.45)";
 	const rootOpacity = "1.0";
 
 	return (
-		<g id="tooth46-roots" {...(className ? { className } : {})}>
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
 			{/* Monolithic Root Mass with Cylindrical Volume */}
 			<path
 				d={TOOTH46_GEOMETRY.rootMonolithPath}
-				fill="url(#dente-root-dentin)"
+				fill={`url(#${sid("dente-root-dentin")})`}
 				fillOpacity={rootOpacity}
 				stroke={strokeColor}
 				strokeWidth="0.8"
@@ -42,16 +48,16 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 			{/* Smooth Anatomical Bifurcation Ambient Shadow (Clipped to roots) */}
 			<path
 				d={TOOTH46_GEOMETRY.bifurcationShadowPath}
-				fill="url(#dente-furcation-shadow)"
-				clipPath="url(#tooth46-root-clip)"
+				fill={`url(#${sid("dente-furcation-shadow")})`}
+				clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}
 				pointerEvents="none"
 			/>
 
 			{/* Cylindrical Volume Shading & Highlights (Pure shader depth, zero artificial white strokes) */}
-			<g clipPath="url(#tooth46-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={TOOTH46_GEOMETRY.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

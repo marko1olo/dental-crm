@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { TOOTH44_GEOMETRY } from "./tooth44Geometry";
 
 export interface Tooth44RootsProps {
@@ -20,20 +21,23 @@ export const Tooth44Roots: React.FC<Tooth44RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 44;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark
 		? "rgba(203, 213, 225, 0.55)"
 		: "rgba(71, 85, 105, 0.40)";
 
 	return (
-		<g id="tooth44-roots" {...(className ? { className } : {})}>
-			<clipPath id="tooth44-root-clip">
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
+			<clipPath id={sid(`tooth${tNum}-root-clip`)}>
 				<path d={TOOTH44_GEOMETRY.rootMonolithPath} />
 			</clipPath>
 
 			{/* Monolithic Single Conical Root Mass */}
 			<path
 				d={TOOTH44_GEOMETRY.rootMonolithPath}
-				fill="url(#dente-root-dentin)"
+				fill={`url(#${sid("dente-root-dentin")})`}
 				fillOpacity="1.0"
 				stroke={strokeColor}
 				strokeWidth="0.8"
@@ -42,10 +46,10 @@ export const Tooth44Roots: React.FC<Tooth44RootsProps> = ({
 			/>
 
 			{/* Cylindrical Volume Shading & Highlights (Pure shader depth, zero artificial white strokes) */}
-			<g clipPath="url(#tooth44-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={TOOTH44_GEOMETRY.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

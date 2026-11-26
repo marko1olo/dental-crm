@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { ToothCrownOverlay } from "../../ToothCrownOverlay";
 import type { CrownMaterial, RestorationCondition } from "../../tooth46Types";
 import { TOOTH44_GEOMETRY } from "./tooth44Geometry";
@@ -32,19 +33,22 @@ export const Tooth44RestorationOverlay: React.FC<
 	isImplant = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 44;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const geo = TOOTH44_GEOMETRY;
 	const compositeBorder = isDark
 		? "rgba(226, 232, 240, 0.75)"
 		: "rgba(130, 95, 55, 0.65)";
 
 	return (
-		<g id="tooth44-restorations" className={className}>
+		<g id={sid(`tooth${tNum}-restorations`)} className={className}>
 			{/* Specific Post & Core Assembly */}
 			{(showPost || showCore) && (
-				<g id="tooth44-post-core">
+				<g id={sid(`tooth${tNum}-post-core`)}>
 					<path
 						d={geo.cervicalShoulderPath}
-						fill="url(#dente-root-dentin)"
+						fill={`url(#${sid("dente-root-dentin")})`}
 						stroke={isDark ? "rgba(203, 213, 225, 0.60)" : "rgba(71, 85, 105, 0.45)"}
 						strokeWidth="0.7"
 						strokeLinejoin="round"
@@ -53,7 +57,7 @@ export const Tooth44RestorationOverlay: React.FC<
 					{showPost && (
 						<path
 							d={geo.postShaft}
-							fill="url(#dente-fiber-post)"
+							fill={`url(#${sid("dente-fiber-post")})`}
 							stroke="rgba(148, 163, 184, 0.85)"
 							strokeWidth="0.6"
 							strokeLinejoin="round"
@@ -63,7 +67,7 @@ export const Tooth44RestorationOverlay: React.FC<
 					{showCore && (
 						<path
 							d={geo.coreStump}
-							fill="url(#dente-composite-core)"
+							fill={`url(#${sid("dente-composite-core")})`}
 							stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"}
 							strokeWidth="0.75"
 							strokeLinejoin="round"
@@ -76,7 +80,7 @@ export const Tooth44RestorationOverlay: React.FC<
 			{/* Specific First Premolar Orthopedic Crown */}
 			{showZirconiaCrown && (
 				<ToothCrownOverlay
-					toothId="44"
+					toothId={String(tNum)}
 					crownPath={geo.zirconiaCrownShell || geo.crownMonolithPath}
 					cervicalShoulderPath={geo.cervicalShoulderPath}
 					fissures={geo.fossaeAndGrooves}
@@ -93,10 +97,10 @@ export const Tooth44RestorationOverlay: React.FC<
 
 			{/* Light-Cured Composite Filling in Occlusal Fossae */}
 			{showComposite && (
-				<g id="tooth44-composite-filling">
+				<g id={sid(`tooth${tNum}-composite-filling`)}>
 					<path
 						d={geo.compositeFillingPath}
-						fill="url(#dente-composite-body)"
+						fill={`url(#${sid("dente-composite-body")})`}
 						stroke={compositeBorder}
 						strokeWidth="0.75"
 						strokeLinejoin="round"

@@ -1,4 +1,5 @@
 import type { CrownMaterial } from "./tooth46Types";
+import { scopeOdontogramId } from "./OdontogramSharedDefsContext";
 
 export const CROWN_FILL_MAP: Record<CrownMaterial, string> = {
 	zirconia: "url(#dente-zirconia-ceramic)",
@@ -8,6 +9,18 @@ export const CROWN_FILL_MAP: Record<CrownMaterial, string> = {
 	metal: "url(#dente-crown-metal)",
 	pmma: "url(#dente-crown-pmma)",
 };
+
+const CROWN_GRADIENT_ID_MAP: Record<CrownMaterial, string> = {
+	zirconia: "dente-zirconia-ceramic",
+	pfm: "dente-crown-pfm",
+	emax: "dente-crown-emax",
+	gold: "dente-crown-gold",
+	metal: "dente-crown-metal",
+	pmma: "dente-crown-pmma",
+};
+
+export const getCrownFill = (mat: CrownMaterial, prefix = ""): string =>
+	`url(#${scopeOdontogramId(prefix, CROWN_GRADIENT_ID_MAP[mat])})`;
 
 export const getCrownStroke = (mat: CrownMaterial, isDark: boolean): string => {
 	const darkMap: Record<CrownMaterial, string> = {

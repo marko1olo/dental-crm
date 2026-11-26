@@ -46,8 +46,8 @@
 	transform: translateX(4px);
 }
 .settings-tabs button.active {
-	background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
-	color: white;
+	background: var(--primary, #0f766e);
+	color: var(--primary-fg, #ffffff);
 	box-shadow: 0 4px 12px var(--teal-glow);
 	transform: translateX(6px);
 	font-weight: 600;

@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { TOOTH48_GEOMETRY } from "./tooth48Geometry";
 
 export interface Tooth48RootsProps {
@@ -20,20 +21,23 @@ export const Tooth48Roots: React.FC<Tooth48RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 48;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark
 		? "rgba(203, 213, 225, 0.55)"
 		: "rgba(71, 85, 105, 0.40)";
 
 	return (
-		<g id="tooth48-roots" {...(className ? { className } : {})}>
-			<clipPath id="tooth48-root-clip">
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
+			<clipPath id={sid(`tooth${tNum}-root-clip`)}>
 				<path d={TOOTH48_GEOMETRY.rootMonolithPath} />
 			</clipPath>
 
 			{/* Fused Conical Root Mass with Distal Curvature */}
 			<path
 				d={TOOTH48_GEOMETRY.rootMonolithPath}
-				fill="url(#dente-root-dentin)"
+				fill={`url(#${sid("dente-root-dentin")})`}
 				fillOpacity="1.0"
 				stroke={strokeColor}
 				strokeWidth="0.8"
@@ -42,10 +46,10 @@ export const Tooth48Roots: React.FC<Tooth48RootsProps> = ({
 			/>
 
 			{/* Cylindrical Volume Shading & Highlights on Fused Root (Pure shader depth, zero artificial white strokes) */}
-			<g clipPath="url(#tooth48-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={TOOTH48_GEOMETRY.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

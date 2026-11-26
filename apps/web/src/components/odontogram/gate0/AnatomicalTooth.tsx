@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import type { ToothSurfaceKey } from "@dental/shared";
 import type { Tooth46ContainerProps } from "./tooth46Types";
+import { ToothNumberContext } from "./OdontogramSharedDefsContext";
 import { Tooth11Container } from "./teeth/tooth11/Tooth11Container";
 import { Tooth12Container } from "./teeth/tooth12/Tooth12Container";
 import { Tooth13Container } from "./teeth/tooth13/Tooth13Container";
@@ -110,14 +111,16 @@ export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props
 		[onClick, toothNumber],
 	);
 	return (
-		<Component
-			{...rest}
-			toothNumber={toothNumber}
-			isFlipped={isFlipped}
-			badgeRadius={effectiveBadgeRadius}
-			badgeCy={effectiveBadgeCy}
-			onClick={onClick ? handleClick : undefined}
-			onSurfaceSelect={onSurfaceSelect}
-		/>
+		<ToothNumberContext.Provider value={toothNumber}>
+			<Component
+				{...rest}
+				toothNumber={toothNumber}
+				isFlipped={isFlipped}
+				badgeRadius={effectiveBadgeRadius}
+				badgeCy={effectiveBadgeCy}
+				onClick={onClick ? handleClick : undefined}
+				onSurfaceSelect={onSurfaceSelect}
+			/>
+		</ToothNumberContext.Provider>
 	);
 }, areAnatomicalToothPropsEqual);

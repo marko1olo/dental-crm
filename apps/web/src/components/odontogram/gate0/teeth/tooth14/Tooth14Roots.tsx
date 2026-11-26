@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH14_GEOMETRY, TOOTH14_ROOTS_GEOMETRY } from "./tooth14GeometryConstants";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth14RootsProps {
 	showGrooves?: boolean | undefined;
@@ -10,10 +11,8 @@ export interface Tooth14RootsProps {
 }
 
 /**
- * Anatomical 2.5D Bifurcated Roots for Upper First Premolar 14 (Wheeler Ch. 9).
- * Layer 1 (Background): Palatal root in lingual depth (Apex at 54.5, 10.5).
- * Layer 1.5: Saddle contact shadow at bifurcation crotch (Y ≈ 53.0).
- * Layer 2 (Foreground): Buccal root and root trunk monolith (Apex at 44.0, 12.0).
+ * Anatomical Bifurcated Roots for Upper First Premolar 14 (Wheeler Ch. 9).
+ * Palatal Root rendered BEHIND (lingual depth), Buccal Root in foreground.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 170".
  */
 export const Tooth14Roots: React.FC<Tooth14RootsProps> = ({
@@ -22,68 +21,74 @@ export const Tooth14Roots: React.FC<Tooth14RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 14;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark ? "#94a3b8" : "rgba(71, 85, 105, 0.45)";
-	const palatalStroke = isDark ? "rgba(148, 163, 184, 0.45)" : "rgba(71, 85, 105, 0.20)";
-	const grooveStroke = isDark ? "rgba(148, 163, 184, 0.30)" : "rgba(100, 116, 139, 0.10)";
+	const palatalStrokeColor = isDark ? "rgba(148, 163, 184, 0.45)" : "rgba(71, 85, 105, 0.30)";
+	const grooveStroke = isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(100, 116, 139, 0.16)";
+	const cejStroke = isDark ? "#cbd5e1" : "rgba(100, 116, 139, 0.35)";
 	const g = TOOTH14_ROOTS_GEOMETRY;
 
 	return (
-		<g id="tooth14-roots" {...(className ? { className } : {})}>
-			{/* LAYER 1 (BACKGROUND): Palatal Root in Lingual Depth */}
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
+			{/* LAYER 0: Deep Palatal Root (Recessed in lingual shadow plane) */}
 			<path
-				id="tooth14-root-palatal"
+				id={sid(`tooth${tNum}-palatal-root`)}
 				d={g.palatalRootPath}
-				fill={isDark ? "url(#dente-root-dentin-14)" : "url(#dente-root-palatal-dentin-14)"}
-				stroke={palatalStroke}
-				strokeWidth="0.7"
+				fill={`url(#${sid(`dente-root-palatal-dentin-${tNum}`)})`}
+				stroke={palatalStrokeColor}
+				strokeWidth="0.65"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
 
-			{/* Soft Natural Furcation Ambient Shadow (Seamless, Zero Hard Polygons) */}
-			<circle cx="50" cy="53" r="12" fill="url(#dente-crotch-shadow-soft)" pointerEvents="none" />
-
-			{/* LAYER 2 (FOREGROUND): Buccal Root & Root Trunk Monolith */}
+			{/* LAYER 1: Foreground Buccal Root Monolith (3D Trunk & Apex at Y=14.0) */}
 			<path
-				id="tooth14-root-buccal"
+				id={sid(`tooth${tNum}-buccal-root-monolith`)}
 				d={g.buccalRootMonolithPath}
-				fill="url(#dente-root-dentin-14)"
+				fill={`url(#${sid(`dente-root-dentin-${tNum}`)})`}
 				stroke={strokeColor}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
+			{/* Cylindrical Volume Shading */}
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
+				<path
+					d={g.buccalRootMonolithPath}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d={g.saddleShadowPath}
+					fill={`url(#${sid(isDark ? `dente-saddle-shadow-${tNum}-dark` : `dente-saddle-shadow-${tNum}`)})`}
+					vectorEffect="non-scaling-stroke"
+				/>
+			</g>
 
-			{/* LAYER 3: Longitudinal Developmental Grooves (Canine Fossa & Distal) */}
+			{/* LAYER 2: Longitudinal Developmental Depression (Canine Fossa Continuity) */}
 			{showGrooves && (
-				<g id="tooth14-root-grooves" pointerEvents="none">
+				<g id={sid(`tooth${tNum}-root-grooves`)} pointerEvents="none">
 					<path
 						d={g.mesialRadicularGroove}
 						fill="none"
 						stroke={grooveStroke}
-						strokeWidth="0.45"
+						strokeWidth="0.55"
 						strokeDasharray="1.2 0.8"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={g.distalRadicularGroove}
-						fill="none"
-						stroke={grooveStroke}
-						strokeWidth="0.45"
-						strokeDasharray="1.5 1.0"
 						vectorEffect="non-scaling-stroke"
 					/>
 				</g>
 			)}
 
-			{/* LAYER 4: Cementoenamel Junction (CEJ) */}
+			{/* LAYER 3: Cementoenamel Junction (CEJ) */}
 			{showCej && (
 				<path
-					id="tooth14-cej"
+					id={sid(`tooth${tNum}-cej`)}
 					d={TOOTH14_GEOMETRY.cejCurve}
 					fill="none"
-					stroke={strokeColor}
-					strokeWidth="0.8"
+					stroke={cejStroke}
+					strokeWidth="0.75"
 					strokeLinecap="round"
 					vectorEffect="non-scaling-stroke"
 				/>

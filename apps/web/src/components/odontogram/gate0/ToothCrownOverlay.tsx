@@ -1,11 +1,12 @@
 import React from "react";
 import {
-	CROWN_FILL_MAP,
+	getCrownFill,
 	getCrownFissureStroke,
 	getCrownStroke,
 	getCuspSlopeColors,
 	getGlazeStroke,
 } from "./Tooth46CrownMaps";
+import { scopeOdontogramId, useOdontogramIdPrefix } from "./OdontogramSharedDefsContext";
 import type { CrownMaterial, RestorationCondition } from "./tooth46Types";
 
 export interface ToothCrownOverlayProps {
@@ -42,48 +43,51 @@ export const ToothCrownOverlay: React.FC<ToothCrownOverlayProps> = ({
 	isImplant = false,
 	className,
 }) => {
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const stroke = getCrownStroke(material, isDark);
 	const fissureColor = getCrownFissureStroke(material, isDark);
 	const glazeStroke = getGlazeStroke(material);
 	const slopes = getCuspSlopeColors(material);
+	const highlightFill = material === "emax" ? `url(#${sid("dente-emax-opalescent")})` : slopes.highlight;
 
 	return (
 		<g
-			id={`tooth${toothId}-crown-overlay`}
+			id={sid(`tooth${toothId}-crown-overlay`)}
 			data-testid={`tooth${toothId}-crown`}
 			data-crown-material={material}
 			data-crown-condition={condition}
 			data-implant-crown={isImplant ? "true" : undefined}
 			className={className}
 		>
-			<clipPath id={`tooth${toothId}-crown-clip`}>
+			<clipPath id={sid(`tooth${toothId}-overlay-crown-clip`)}>
 				<path d={crownPath} />
 			</clipPath>
 			<path
-				id={`tooth${toothId}-crown-shell`}
+				id={sid(`tooth${toothId}-crown-shell`)}
 				d={crownPath}
-				fill={CROWN_FILL_MAP[material]}
+				fill={getCrownFill(material, prefix)}
 				fillOpacity={translucent ? "0.62" : undefined}
 				stroke={stroke}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			<g clipPath={`url(#tooth${toothId}-crown-clip)`}>
+			<g clipPath={`url(#${sid(`tooth${toothId}-overlay-crown-clip`)})`}>
 				<path
 					d={crownPath}
-					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					fill={`url(#${sid(isDark ? "dente-proximal-contour-dark" : "dente-proximal-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>
 			{material === "pfm" && cervicalShoulderPath && (
-				<path d={cervicalShoulderPath} fill="url(#dente-pfm-metal-collar)" stroke="none" />
+				<path d={cervicalShoulderPath} fill={`url(#${sid("dente-pfm-metal-collar")})`} stroke="none" />
 			)}
 			{(material === "zirconia" || material === "emax") && cervicalShoulderPath && (
-				<path d={cervicalShoulderPath} fill="url(#dente-zirconia-chamfer)" stroke="none" />
+				<path d={cervicalShoulderPath} fill={`url(#${sid("dente-zirconia-chamfer")})`} stroke="none" />
 			)}
 			{Array.isArray(cuspSlopes) && cuspSlopes.map((s) => (
-				<path key={`sl-${s.id}`} d={s.d} fill={s.type === "highlight" ? slopes.highlight : slopes.shadow} stroke="none" />
+				<path key={`sl-${s.id}`} d={s.d} fill={s.type === "highlight" ? highlightFill : slopes.shadow} stroke="none" />
 			))}
 			{Array.isArray(fissures) && fissures.map((f) => (
 				<path key={`fs-${f.id}`} d={f.d} fill="none" stroke={fissureColor} strokeWidth="0.55" strokeLinecap="round" vectorEffect="non-scaling-stroke" />

@@ -1,11 +1,13 @@
 import React from "react";
 import { TOOTH46_INLAY_ONLAY_GEOMETRY } from "./Tooth46InlayOnlayGeometry";
 import type { InlayOnlayType } from "./tooth46PresetTypes";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 
 export interface Tooth46InlayOnlayOverlayProps {
 	type?: InlayOnlayType | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
+	toothNumber?: number | undefined;
 }
 
 /**
@@ -14,7 +16,11 @@ export interface Tooth46InlayOnlayOverlayProps {
  */
 export const Tooth46InlayOnlayOverlay: React.FC<
 	Tooth46InlayOnlayOverlayProps
-> = ({ type = "inlay", isDark = false, className }) => {
+> = ({ type = "inlay", isDark = false, className, toothNumber }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const onlayFill = `url(#${sid("dente-onlay-ceramic")})`;
 	const g = TOOTH46_INLAY_ONLAY_GEOMETRY;
 	const stroke = isDark
 		? "rgba(226, 232, 240, 0.75)"
@@ -25,16 +31,16 @@ export const Tooth46InlayOnlayOverlay: React.FC<
 
 	return (
 		<g
-			id="tooth46-inlay-onlay-overlay"
+			id={sid(`tooth${tNum}-inlay-onlay-overlay`)}
 			data-restoration-type={type}
 			className={className}
-			clipPath="url(#tooth46-crown-clip)"
+			clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}
 		>
 			{type === "inlay" && (
-				<g id="tooth46-ceramic-inlay">
+				<g id={sid(`tooth${tNum}-ceramic-inlay`)}>
 					<path
 						d={g.inlay.shell}
-						fill="url(#dente-inlay-ceramic)"
+						fill={`url(#${sid("dente-inlay-ceramic")})`}
 						stroke={stroke}
 						strokeWidth="0.6"
 					/>
@@ -50,10 +56,10 @@ export const Tooth46InlayOnlayOverlay: React.FC<
 			)}
 
 			{type === "onlay" && (
-				<g id="tooth46-ceramic-onlay">
+				<g id={sid(`tooth${tNum}-ceramic-onlay`)}>
 					<path
 						d={g.onlay.shell}
-						fill="url(#dente-onlay-ceramic)"
+						fill={onlayFill}
 						stroke={stroke}
 						strokeWidth="0.7"
 					/>
@@ -76,10 +82,10 @@ export const Tooth46InlayOnlayOverlay: React.FC<
 			)}
 
 			{type === "overlay" && (
-				<g id="tooth46-ceramic-overlay">
+				<g id={sid(`tooth${tNum}-ceramic-overlay`)}>
 					<path
 						d={g.overlay.shell}
-						fill="url(#dente-onlay-ceramic)"
+						fill={onlayFill}
 						stroke={stroke}
 						strokeWidth="0.75"
 					/>

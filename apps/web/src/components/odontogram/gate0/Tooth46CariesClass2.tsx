@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "./Tooth46CariesSpectrumGeometry";
 import type { CariesDepth, CariesType } from "./tooth46PresetTypes";
 
@@ -20,6 +21,10 @@ export const Tooth46CariesClass2: React.FC<Tooth46CariesClass2Props> = ({
 	necroticFill,
 	cariesDepth,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const deminFill = `url(#${sid("dente-caries-demin")})`;
 	const sp = TOOTH46_CARIES_SPECTRUM_GEOMETRY;
 	const isSuperficial = cariesDepth === "superficial";
 	const isProfunda = cariesDepth === "profunda";
@@ -49,36 +54,36 @@ export const Tooth46CariesClass2: React.FC<Tooth46CariesClass2Props> = ({
 			{!isDestructive && (
 				<>
 					{isM && (
-						<g id="tooth46-caries-class2-m">
-							<path d={sp.class2M.halo} fill="url(#dente-caries-demin)" stroke={deminStroke} strokeWidth="0.8" />
+						<g id={sid(`tooth${tNum}-caries-class2-m`)}>
+							<path d={sp.class2M.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.8" />
 							{!isSuperficial && <path d={sp.class2M.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />}
 							{isProfunda && <path d={sp.class2M.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.7" />}
 						</g>
 					)}
 					{isD && (
-						<g id="tooth46-caries-class2-d">
-							<path d={sp.class2D.halo} fill="url(#dente-caries-demin)" stroke={deminStroke} strokeWidth="0.8" />
+						<g id={sid(`tooth${tNum}-caries-class2-d`)}>
+							<path d={sp.class2D.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.8" />
 							{!isSuperficial && <path d={sp.class2D.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />}
 							{isProfunda && <path d={sp.class2D.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.7" />}
 						</g>
 					)}
 					{isMO && (
-						<g id="tooth46-caries-class2-mo">
-							<path d={sp.class2Mo.halo} fill="url(#dente-caries-demin)" stroke={deminStroke} strokeWidth="0.8" />
+						<g id={sid(`tooth${tNum}-caries-class2-mo`)}>
+							<path d={sp.class2Mo.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.8" />
 							{!isSuperficial && <path d={sp.class2Mo.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />}
 							{isProfunda && <path d={sp.class2Mo.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.7" />}
 						</g>
 					)}
 					{isDO && (
-						<g id="tooth46-caries-class2-do">
-							<path d={sp.class2Do.halo} fill="url(#dente-caries-demin)" stroke={deminStroke} strokeWidth="0.8" />
+						<g id={sid(`tooth${tNum}-caries-class2-do`)}>
+							<path d={sp.class2Do.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.8" />
 							{!isSuperficial && <path d={sp.class2Do.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />}
 							{isProfunda && <path d={sp.class2Do.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.7" />}
 						</g>
 					)}
 					{isMOD && (
-						<g id="tooth46-caries-class2-mod" data-component="tooth46-caries-class2-mod-isthmus">
-							<path d={sp.class2Mod.halo} fill="url(#dente-caries-demin)" stroke={deminStroke} strokeWidth="0.8" />
+						<g id={sid(`tooth${tNum}-caries-class2-mod`)} data-component="tooth46-caries-class2-mod-isthmus">
+							<path d={sp.class2Mod.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.8" />
 							{!isSuperficial && <path d={sp.class2Mod.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />}
 							{isProfunda && <path d={sp.class2Mod.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.7" />}
 						</g>
@@ -87,7 +92,7 @@ export const Tooth46CariesClass2: React.FC<Tooth46CariesClass2Props> = ({
 			)}
 
 			{isDestructive && (
-				<g id="tooth46-caries-destructive">
+				<g id={sid(`tooth${tNum}-caries-destructive`)}>
 					<path d={dest.fractureMargin} fill="none" stroke="rgba(154, 52, 18, 0.95)" strokeWidth="2.4" strokeLinecap="round" />
 					<path d={dest.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.2" strokeLinecap="round" />
 					{dest.fractureSteps.map((s, idx) => (

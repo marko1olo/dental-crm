@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { TOOTH47_GEOMETRY } from "./tooth47Geometry";
 
 export interface Tooth47RootsProps {
@@ -20,20 +21,23 @@ export const Tooth47Roots: React.FC<Tooth47RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 47;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark
 		? "rgba(203, 213, 225, 0.55)"
 		: "rgba(71, 85, 105, 0.40)";
 
 	return (
-		<g id="tooth47-roots" {...(className ? { className } : {})}>
-			<clipPath id="tooth47-root-clip">
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
+			<clipPath id={sid(`tooth${tNum}-root-clip`)}>
 				<path d={TOOTH47_GEOMETRY.rootMonolithPath} />
 			</clipPath>
 
 			{/* Monolithic Parallel Root Mass */}
 			<path
 				d={TOOTH47_GEOMETRY.rootMonolithPath}
-				fill="url(#dente-root-dentin)"
+				fill={`url(#${sid("dente-root-dentin")})`}
 				fillOpacity="1.0"
 				stroke={strokeColor}
 				strokeWidth="0.8"
@@ -44,16 +48,16 @@ export const Tooth47Roots: React.FC<Tooth47RootsProps> = ({
 			{/* Smooth Anatomical Bifurcation Ambient Shadow at Y=104 */}
 			<path
 				d={TOOTH47_GEOMETRY.bifurcationShadowPath}
-				fill="url(#dente-furcation-shadow)"
-				clipPath="url(#tooth47-root-clip)"
+				fill={`url(#${sid("dente-furcation-shadow")})`}
+				clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}
 				pointerEvents="none"
 			/>
 
 			{/* Cylindrical Volume Shading & Highlights (Pure shader depth, zero artificial white strokes) */}
-			<g clipPath="url(#tooth47-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={TOOTH47_GEOMETRY.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

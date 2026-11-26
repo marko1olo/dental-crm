@@ -4,6 +4,7 @@ import React from "react";
 (globalThis as any).React = React;
 import { renderToString } from "react-dom/server";
 import { AnatomicalTooth, type AnatomicalToothProps } from "./AnatomicalTooth";
+import { WheelerToothArch } from "../WheelerToothArch";
 
 const ALL_32_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11,
@@ -52,5 +53,37 @@ describe("AnatomicalTooth - Full 32 Dentition & Bilateral Symmetry", () => {
 		});
 		assert.ok(React.isValidElement(elem));
 		assert.equal((elem.props as AnatomicalToothProps).toothNumber, 26);
+	});
+
+	it("renders two simultaneous WheelerToothArch instances with 0 duplicate SVG IDs and 0 unresolved url(#...) refs", () => {
+		const conditions: Record<number, Record<string, unknown>> = {};
+		const presets = [
+			{ caries: true, cariesType: "class2_mod", cariesDepth: "profunda", hasComposite: true },
+			{ endoCondition: "adequate", showEndo: true, hasCrown: true, crownMaterial: "zirconia", periapical: "cyst" },
+			{ isImplant: true, implantStage: "crown_screw", periapical: "granuloma", calculus: true },
+			{ endoCondition: "broken_file", showEndo: true, abfraction: true, crack: true },
+		];
+		ALL_32_TEETH.forEach((n, idx) => {
+			conditions[n] = presets[idx % presets.length]!;
+		});
+		const html = renderToString(
+			React.createElement(
+				"div",
+				null,
+				React.createElement(WheelerToothArch, { conditions, selectedTeeth: [11, 46], isDark: false, showPediatrics: true }),
+				React.createElement(WheelerToothArch, { conditions, selectedTeeth: [21, 36], isDark: true, showPediatrics: true }),
+			),
+		);
+		const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]!);
+		const seen = new Set<string>();
+		const dupes: string[] = [];
+		for (const id of ids) {
+			if (seen.has(id)) dupes.push(id);
+			seen.add(id);
+		}
+		assert.equal(dupes.length, 0, `Duplicate SVG IDs found: ${dupes.slice(0, 10).join(", ")}`);
+		const refs = [...html.matchAll(/url\(#([^)]+)\)/g)].map((m) => m[1]!);
+		const missing = refs.filter((r) => !seen.has(r));
+		assert.equal(missing.length, 0, `Unresolved url(#...) refs: ${missing.slice(0, 10).join(", ")}`);
 	});
 });

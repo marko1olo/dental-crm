@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { Tooth46SingleCusp } from "../../Tooth46SingleCusp";
 import { TOOTH48_CUSPS } from "./tooth48CuspGeometry";
 import { TOOTH48_GEOMETRY } from "./tooth48Geometry";
@@ -18,20 +19,23 @@ export const Tooth48OcclusalCusps: React.FC<Tooth48OcclusalCuspsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 48;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const fShadow = isDark ? "rgba(15, 23, 42, 0.50)" : "rgba(100, 116, 139, 0.22)";
 	const fCore = isDark ? "rgba(203, 213, 225, 0.65)" : "rgba(71, 85, 105, 0.45)";
-	const crFill = isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)";
+	const crFill = `url(#${sid(isDark ? "dente-cervical-ridge-dark" : "dente-cervical-ridge")})`;
 	const crStroke = isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)";
 	const crHighlight = isDark ? "rgba(255, 255, 255, 0.28)" : "rgba(255, 255, 255, 0.60)";
 	const fissures = TOOTH48_GEOMETRY.fissuresCrenulated.map((f) => f.d).join(" ");
 
 	return (
-		<g id="tooth48-crown" className={className}>
+		<g id={sid(`tooth${tNum}-crown`)} className={className}>
 			{renderBaseCrown && (
 				<path
 					d={TOOTH48_GEOMETRY.crownMonolithPath}
-					fill="url(#dente-enamel-porcelain)"
+					fill={`url(#${sid("dente-enamel-porcelain")})`}
 					stroke={stroke}
 					strokeWidth="0.8"
 					strokeLinejoin="round"
@@ -39,7 +43,7 @@ export const Tooth48OcclusalCusps: React.FC<Tooth48OcclusalCuspsProps> = ({
 				/>
 			)}
 			{showCusps && (
-				<g id="tooth48-cusp-ridges" clipPath="url(#tooth48-crown-clip)">
+				<g id={sid(`tooth${tNum}-cusp-ridges`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					{/* Buccal Cervical Ridge in cervical third */}
 					<path
 						d={TOOTH48_GEOMETRY.buccalCervicalRidge}
@@ -63,7 +67,7 @@ export const Tooth48OcclusalCusps: React.FC<Tooth48OcclusalCuspsProps> = ({
 				</g>
 			)}
 			{showFissures && (
-				<g id="tooth48-fissures" clipPath="url(#tooth48-crown-clip)">
+				<g id={sid(`tooth${tNum}-fissures`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					<path
 						d={fissures}
 						fill="none"

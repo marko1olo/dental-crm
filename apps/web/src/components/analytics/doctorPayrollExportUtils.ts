@@ -23,6 +23,10 @@ export interface DoctorPayrollItem {
 	readonly netRevenueRub: number;
 	readonly netRevenueKopecks: number;
 	readonly commissionPercent: number;
+	readonly payoutModel?: "percentage" | "chair_rental" | undefined;
+	readonly priorDebtCarryOverKop?: number | undefined;
+	readonly priorDebtDeductedKopecks?: number | undefined;
+	readonly negativeCarryOverKopecks?: number | undefined;
 	readonly payoutRub: number;
 	readonly payoutKopecks: number;
 	readonly appointmentsCompleted: number;

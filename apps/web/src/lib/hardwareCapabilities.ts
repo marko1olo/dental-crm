@@ -6,7 +6,7 @@
  *
  * Layer 0: types.ts, constants.ts
  * Layer 1: gpuProber.ts
- * Layer 2: imagingHardwareDriver.ts, hardwareDiscovery.ts, profileEvaluator.ts
+ * Layer 2: profileEvaluator.ts
  * Layer 3: domAdapter.ts
  * Layer 4: hooks.ts
  * Layer 5: index.ts

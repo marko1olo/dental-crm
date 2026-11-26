@@ -11,6 +11,7 @@ import { Tooth46Roots } from "./Tooth46Roots";
 import { Tooth46ShaderDefs } from "../../Tooth46ShaderDefs";
 import { ToothStatusBadge } from "../../ToothStatusBadge";
 import { Tooth46SurgeryOverlay } from "../../Tooth46SurgeryOverlay";
+import { ToothNumberContext } from "../../OdontogramSharedDefsContext";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 import { DEFAULT_TOOTH46_LAYERS } from "../../tooth46Types";
 
@@ -38,57 +39,59 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 	const viewBox = "0 0 100 218";
 
 	return (
-		<svg
-			viewBox={viewBox} width={100 * zoom} height={baseHeight * zoom}
-			{...(className ? { className } : {})}
-			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label={`Анатомический зуб ${num}`} role="img"
-		>
-			<Tooth46ShaderDefs toothNumber={num} />
-			<g transform={isFlipped ? "translate(100, 0) scale(-1, 1)" : undefined}>
-				<Tooth46PeriapicalArea condition={a.periapicalCondition} halo={a.periapicalHalo} isDark={isDark} />
-				{a.roots && !a.implant && (
-					<Tooth46Roots showGrooves={a.grooves ?? true} showCej={a.cej ?? true} isEndo={isEndo} isDark={isDark} />
-				)}
-				{a.implant && <Tooth46SurgeryOverlay showImplant implantStage={a.implantStage} isDark={isDark} />}
-				{a.crown && !noCrown && (
-					<Tooth46EnamelCrown
-						toothNumber={num}
-						stroke={stroke} crownOpacity="1.0" showCusps={a.cusps ?? true} showFissures={a.fissures ?? true}
-						showAbfraction={Boolean(a.abfraction)} isDark={isDark} destructive={isDestruct} cariesType={cariesType}
+		<ToothNumberContext.Provider value={num}>
+			<svg
+				viewBox={viewBox} width={100 * zoom} height={baseHeight * zoom}
+				{...(className ? { className } : {})}
+				style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
+				aria-label={`Анатомический зуб ${num}`} role="img"
+			>
+				<Tooth46ShaderDefs toothNumber={num} />
+				<g transform={isFlipped ? "translate(100, 0) scale(-1, 1)" : undefined}>
+					<Tooth46PeriapicalArea condition={a.periapicalCondition} halo={a.periapicalHalo} isDark={isDark} />
+					{a.roots && !a.implant && (
+						<Tooth46Roots showGrooves={a.grooves ?? true} showCej={a.cej ?? true} isEndo={isEndo} isDark={isDark} />
+					)}
+					{a.implant && <Tooth46SurgeryOverlay showImplant implantStage={a.implantStage} isDark={isDark} />}
+					{a.crown && !noCrown && (
+						<Tooth46EnamelCrown
+							toothNumber={num}
+							stroke={stroke} crownOpacity="1.0" showCusps={a.cusps ?? true} showFissures={a.fissures ?? true}
+							showAbfraction={Boolean(a.abfraction)} isDark={isDark} destructive={isDestruct} cariesType={cariesType}
+						/>
+					)}
+					{isEndo && !a.implant && (
+						<Tooth46EndoCanals
+							showPulp={Boolean(a.pulp)} showCanals={Boolean(a.canals)} showGuttaPercha={Boolean(a.guttaPercha)}
+							canalCondition={a.canalCondition ?? "vital"} isDark={isDark}
+						/>
+					)}
+					{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
+					{(a.composite || a.zirconiaCrown) && (
+						<Tooth46RestorationOverlay
+							showComposite={Boolean(a.composite)} showZirconiaCrown={Boolean(a.zirconiaCrown)}
+							compositeSurface={a.compositeSurface} compositeSurfaces={a.compositeSurfaces}
+							crownMaterial={a.crownMaterial ?? "zirconia"} compositeCondition={a.compositeCondition ?? "adequate"}
+							crownCondition={a.crownCondition ?? "adequate"} translucent={Boolean(a.zirconiaCrown && (isEndo || a.postCore || a.implant))}
+							isDark={isDark} isImplant={Boolean(a.implant)}
+						/>
+					)}
+					{a.caries && !a.zirconiaCrown && (
+						<Tooth46CariesOverlay cariesType={cariesType} chronicity={a.cariesChronicity} cariesDepth={cariesDepth} isDark={isDark} />
+					)}
+					{a.implant && a.implantStage === "crown_screw" && (
+						<Tooth46SurgeryOverlay showImplant implantStage="crown_screw" renderScrewAccessOnly isDark={isDark} />
+					)}
+					<Tooth46PathologyOverlay
+						showAbfraction={Boolean(a.abfraction)} showPostCore={Boolean(a.postCore)} postCoreType={a.postCoreType ?? "fiber"}
+						showCalculus={Boolean(a.calculus)} showCrack={Boolean(a.crack)} resorcinolFormalin={Boolean(a.resorcinolFormalin)}
+						calciumHydroxide={Boolean(a.calciumHydroxide)} attrition={Boolean(a.attrition)}
+						rootPerforation={Boolean(a.rootPerforation)} canalLedge={Boolean(a.canalLedge)} rootFracture={Boolean(a.rootFracture)} isDark={isDark}
 					/>
-				)}
-				{isEndo && !a.implant && (
-					<Tooth46EndoCanals
-						showPulp={Boolean(a.pulp)} showCanals={Boolean(a.canals)} showGuttaPercha={Boolean(a.guttaPercha)}
-						canalCondition={a.canalCondition ?? "vital"} isDark={isDark}
-					/>
-				)}
-				{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
-				{(a.composite || a.zirconiaCrown) && (
-					<Tooth46RestorationOverlay
-						showComposite={Boolean(a.composite)} showZirconiaCrown={Boolean(a.zirconiaCrown)}
-						compositeSurface={a.compositeSurface} compositeSurfaces={a.compositeSurfaces}
-						crownMaterial={a.crownMaterial ?? "zirconia"} compositeCondition={a.compositeCondition ?? "adequate"}
-						crownCondition={a.crownCondition ?? "adequate"} translucent={Boolean(a.zirconiaCrown && (isEndo || a.postCore || a.implant))}
-						isDark={isDark} isImplant={Boolean(a.implant)}
-					/>
-				)}
-				{a.caries && !a.zirconiaCrown && (
-					<Tooth46CariesOverlay cariesType={cariesType} chronicity={a.cariesChronicity} cariesDepth={cariesDepth} isDark={isDark} />
-				)}
-				{a.implant && a.implantStage === "crown_screw" && (
-					<Tooth46SurgeryOverlay showImplant implantStage="crown_screw" renderScrewAccessOnly isDark={isDark} />
-				)}
-				<Tooth46PathologyOverlay
-					showAbfraction={Boolean(a.abfraction)} showPostCore={Boolean(a.postCore)} postCoreType={a.postCoreType ?? "fiber"}
-					showCalculus={Boolean(a.calculus)} showCrack={Boolean(a.crack)} resorcinolFormalin={Boolean(a.resorcinolFormalin)}
-					calciumHydroxide={Boolean(a.calciumHydroxide)} attrition={Boolean(a.attrition)}
-					rootPerforation={Boolean(a.rootPerforation)} canalLedge={Boolean(a.canalLedge)} rootFracture={Boolean(a.rootFracture)} isDark={isDark}
-				/>
-				{a.missing && <Tooth46SurgeryOverlay showMissing />}
-			</g>
-			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} toothNumber={num} />}
-		</svg>
+					{a.missing && <Tooth46SurgeryOverlay showMissing />}
+				</g>
+				{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} toothNumber={num} />}
+			</svg>
+		</ToothNumberContext.Provider>
 	);
 };

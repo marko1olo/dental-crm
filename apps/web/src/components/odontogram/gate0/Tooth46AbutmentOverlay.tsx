@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
 import type { ImplantStage } from "./tooth46Types";
 
@@ -13,20 +14,25 @@ export interface Tooth46AbutmentOverlayProps {
 export const Tooth46AbutmentOverlay: React.FC<Tooth46AbutmentOverlayProps> = ({
 	stage,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const collarFill = `url(#${sid("dente-titanium-collar")})`;
+	const abutmentFill = `url(#${sid("dente-titanium-abutment")})`;
 	const imp = TOOTH46_PATHOLOGY_GEOMETRY.implant;
 
 	if (stage === "crown") {
 		return (
-			<g id="tooth46-custom-abutment" data-component="implant-custom-abutment">
+			<g id={sid(`tooth${tNum}-custom-abutment`)} data-component="implant-custom-abutment">
 				<path
 					d={imp.standardAbutment.shoulder}
-					fill="url(#dente-titanium-collar)"
+					fill={collarFill}
 					stroke="#475569"
 					strokeWidth="0.6"
 				/>
 				<path
 					d={imp.standardAbutment.stump}
-					fill="url(#dente-titanium-abutment)"
+					fill={abutmentFill}
 					stroke="#334155"
 					strokeWidth="0.8"
 				/>
@@ -48,18 +54,18 @@ export const Tooth46AbutmentOverlay: React.FC<Tooth46AbutmentOverlayProps> = ({
 	if (stage === "crown_screw") {
 		return (
 			<g
-				id="tooth46-screw-abutment"
+				id={sid(`tooth${tNum}-screw-abutment`)}
 				data-component="implant-screw-retained-abutment"
 			>
 				<path
 					d={imp.standardAbutment.shoulder}
-					fill="url(#dente-titanium-collar)"
+					fill={collarFill}
 					stroke="#475569"
 					strokeWidth="0.6"
 				/>
 				<path
 					d={imp.standardAbutment.stump}
-					fill="url(#dente-titanium-abutment)"
+					fill={abutmentFill}
 					stroke="#334155"
 					strokeWidth="0.8"
 				/>
@@ -81,16 +87,16 @@ export const Tooth46AbutmentOverlay: React.FC<Tooth46AbutmentOverlayProps> = ({
 	}
 
 	return (
-		<g id="tooth46-temp-abutment" data-component="implant-temporary-abutment">
+		<g id={sid(`tooth${tNum}-temp-abutment`)} data-component="implant-temporary-abutment">
 			<path
 				d={imp.temporaryAbutment.shoulder}
-				fill="url(#dente-titanium-collar)"
+				fill={collarFill}
 				stroke="#475569"
 				strokeWidth="0.6"
 			/>
 			<path
 				d={imp.temporaryAbutment.stump}
-				fill="url(#dente-titanium-abutment)"
+				fill={abutmentFill}
 				stroke="#334155"
 				strokeWidth="0.8"
 			/>

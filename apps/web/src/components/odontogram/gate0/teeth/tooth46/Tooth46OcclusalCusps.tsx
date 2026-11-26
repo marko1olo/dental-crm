@@ -1,6 +1,7 @@
 import React from "react";
 import { Tooth46SingleCusp } from "../../Tooth46SingleCusp";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth46OcclusalCuspsProps {
 	showCusps?: boolean | undefined;
@@ -8,6 +9,7 @@ export interface Tooth46OcclusalCuspsProps {
 	renderBaseCrown?: boolean | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
+	toothNumber?: number | undefined;
 }
 
 export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
@@ -16,7 +18,11 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	renderBaseCrown = true,
 	isDark = false,
 	className,
+	toothNumber,
 }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const stroke = isDark
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
@@ -24,9 +30,7 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	const fCore = isDark
 		? "rgba(203, 213, 225, 0.65)"
 		: "rgba(71, 85, 105, 0.45)";
-	const crFill = isDark
-		? "url(#dente-cervical-ridge-dark)"
-		: "url(#dente-cervical-ridge)";
+	const crFill = `url(#${sid(isDark ? "dente-cervical-ridge-dark" : "dente-cervical-ridge")})`;
 	const crStroke = isDark
 		? "rgba(255, 255, 255, 0.20)"
 		: "rgba(255, 255, 255, 0.40)";
@@ -36,11 +40,11 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 	const fissures = TOOTH46_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
 
 	return (
-		<g id="tooth46-crown" className={className}>
+		<g id={sid(`tooth${tNum}-crown`)} className={className}>
 			{renderBaseCrown && (
 				<path
 					d={TOOTH46_GEOMETRY.crownMonolithPath}
-					fill="url(#dente-enamel-porcelain)"
+					fill={`url(#${sid("dente-enamel-porcelain")})`}
 					stroke={stroke}
 					strokeWidth="0.8"
 					strokeLinejoin="round"
@@ -48,7 +52,7 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 				/>
 			)}
 			{showCusps && (
-				<g id="tooth46-cusp-ridges" clipPath="url(#tooth46-crown-clip)">
+				<g id={sid(`tooth${tNum}-cusp-ridges`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					{/* Wheeler Ch. 11 Cervical Ridge (Convexity in cervical third above CEJ) */}
 					<path
 						d={TOOTH46_GEOMETRY.buccalCervicalRidge}
@@ -71,7 +75,7 @@ export const Tooth46OcclusalCusps: React.FC<Tooth46OcclusalCuspsProps> = ({
 				</g>
 			)}
 			{showFissures && (
-				<g id="tooth46-fissures" clipPath="url(#tooth46-crown-clip)">
+				<g id={sid(`tooth${tNum}-fissures`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					<path
 						d={fissures}
 						fill="none"

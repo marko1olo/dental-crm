@@ -6,11 +6,12 @@
  * Мандаты 8ar, 8as, 8e (Автономия врача), 8b (Sweet spot <= 300 строк).
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useId, useMemo, useState } from "react";
 import type { ToothData, ToothState } from "./ToothChart";
 import { AnatomicalGate0Row } from "./anatomicalDualArch/AnatomicalGate0Row";
 import {
 	OdontogramGlobalSharedDefs,
+	OdontogramIdPrefixContext,
 	OdontogramSharedDefsContext,
 } from "./gate0/OdontogramSharedDefsContext";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
@@ -73,6 +74,8 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 	showHistoryChronicleOnSelect = true,
 }) => {
 	const [activeHistoryTooth, setActiveHistoryTooth] = useState<number | null>(null);
+	const rawArchId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+	const archPrefix = `w-${rawArchId}`;
 
 	const map = useMemo(() => {
 		if (teethDataMap) return teethDataMap;
@@ -142,9 +145,9 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 			data-dentition-mode={effectiveMode}
 		>
 			{mode === "history" && (
-				<div className="w-full flex items-center justify-between px-2 py-1 mb-1 border-b border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] text-xs text-[var(--muted,#64748b)]">
-					<div className="flex items-center gap-1.5 font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">
-						<History className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+				<div className="w-full flex items-center justify-between px-2 py-1 mb-1 border-b border-[var(--line)] text-xs text-[var(--ink-muted)]">
+					<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)]">
+						<History className="w-4 h-4 text-[var(--primary)]" />
 						<span>
 							{effectiveMode === "pediatric"
 								? "Историческая панорама Wheeler 2.5D (молочный прикус)"
@@ -155,58 +158,60 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 					</div>
 					<div className="flex items-center gap-3 text-[11px]">
 						<span className="flex items-center gap-1">
-							<span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-300 shadow-2xs inline-block" />
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--paper)] border border-[var(--line)] shadow-2xs inline-block" />
 							<span>Интактные (эмаль)</span>
 						</span>
 						<span className="flex items-center gap-1">
-							<span className="w-2.5 h-2.5 rounded-full bg-teal-600/70 border border-teal-700 inline-block" />
+							<span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)]/70 border border-[var(--primary)] inline-block" />
 							<span>Пролеченные (анамнез)</span>
 						</span>
 						<span className="flex items-center gap-1">
-							<span className="w-2.5 h-2.5 rounded-sm border border-dashed border-slate-400 inline-block" />
+							<span className="w-2.5 h-2.5 rounded-sm border border-dashed border-[var(--line-strong,var(--line))] inline-block" />
 							<span>Отсутствующие</span>
 						</span>
 					</div>
 				</div>
 			)}
 
-			<OdontogramSharedDefsContext.Provider value={true}>
-				<OdontogramGlobalSharedDefs />
-				<div className="w-full max-w-[1080px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
-					<AnatomicalGate0Row
-						isUpper={true}
-						leftTeeth={q1}
-						rightTeeth={q2}
-						teethDataMap={map}
-						selectedTeeth={selectedTeeth}
-						isDark={dark}
-						zoom={zoom}
-						onToothClick={handleToothClickInternal}
-						archTitle={upperArchTitle}
-					/>
+			<OdontogramIdPrefixContext.Provider value={archPrefix}>
+				<OdontogramSharedDefsContext.Provider value={true}>
+					<OdontogramGlobalSharedDefs idPrefix={archPrefix} />
+					<div className="w-full max-w-[1080px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
+						<AnatomicalGate0Row
+							isUpper={true}
+							leftTeeth={q1}
+							rightTeeth={q2}
+							teethDataMap={map}
+							selectedTeeth={selectedTeeth}
+							isDark={dark}
+							zoom={zoom}
+							onToothClick={handleToothClickInternal}
+							archTitle={upperArchTitle}
+						/>
 
-					{/* Окклюзионная плоскость смыкания */}
-					<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5 order-2" title="Окклюзионная плоскость смыкания">
-						<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
-						<span className="text-[10px] font-medium tracking-wide text-slate-400/90 dark:text-slate-500/90 select-none">
-							Окклюзионная линия
-						</span>
-						<div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-700/60" />
+						{/* Окклюзионная плоскость смыкания */}
+						<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5 order-2" title="Окклюзионная плоскость смыкания">
+							<div className="flex-1 h-px bg-[var(--line)] opacity-80" />
+							<span className="text-[10px] font-medium tracking-wide text-[var(--ink-muted)] select-none">
+								Окклюзионная линия
+							</span>
+							<div className="flex-1 h-px bg-[var(--line)] opacity-80" />
+						</div>
+
+						<AnatomicalGate0Row
+							isUpper={false}
+							leftTeeth={q4}
+							rightTeeth={q3}
+							teethDataMap={map}
+							selectedTeeth={selectedTeeth}
+							isDark={dark}
+							zoom={zoom}
+							onToothClick={handleToothClickInternal}
+							archTitle={lowerArchTitle}
+						/>
 					</div>
-
-					<AnatomicalGate0Row
-						isUpper={false}
-						leftTeeth={q4}
-						rightTeeth={q3}
-						teethDataMap={map}
-						selectedTeeth={selectedTeeth}
-						isDark={dark}
-						zoom={zoom}
-						onToothClick={handleToothClickInternal}
-						archTitle={lowerArchTitle}
-					/>
-				</div>
-			</OdontogramSharedDefsContext.Provider>
+				</OdontogramSharedDefsContext.Provider>
+			</OdontogramIdPrefixContext.Provider>
 
 			{/* Контекстная шторка истории зуба при клике в режиме панорамы */}
 			{activeHistoryTooth !== null && patientId && (

@@ -517,10 +517,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				if (realId) setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
 				if (typeof window !== "undefined") {
 					const eventDetail = { ...resPayload, id: effectiveSavedId };
-					// Единая каноническая шина событий ЗТЛ (Мандат 8zq / SSOT) + обратная совместимость
-					window.dispatchEvent(new CustomEvent(isEditMode ? "dente:lab:order-saved" : "dente:lab:order-created", { detail: eventDetail }));
-					window.dispatchEvent(new CustomEvent("dente:lab:order-saved", { detail: eventDetail }));
-					window.dispatchEvent(new CustomEvent(isEditMode ? "dente-lab-order-saved" : "dente-lab-order-created", { detail: eventDetail }));
+					// Единая каноническая шина событий ЗТЛ (Мандат 8zq / SSOT)
+					window.dispatchEvent(new CustomEvent(isEditMode ? "dente:lab:order-status-changed" : "dente:lab:order-created", { detail: eventDetail }));
 				}
 				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно ${isEditMode ? "обновлен" : "создан"} и сохранен в базе данных`);
 			} else {
@@ -553,7 +551,6 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		if (typeof window !== "undefined") {
 			const evtDetail = { orderId, stage: nextStage, status: STAGE_TO_DB_STATUS[nextStage] || "in_progress" };
 			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
-			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: evtDetail }));
 		}
 		try {
 			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, {
@@ -581,7 +578,6 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		if (typeof window !== "undefined") {
 			const evtDetail = { orderId, stage: "in_clinic", status: "received" };
 			window.dispatchEvent(new CustomEvent("dente:lab:order-status-changed", { detail: evtDetail }));
-			window.dispatchEvent(new CustomEvent("dente-lab-order-status-changed", { detail: evtDetail }));
 		}
 		if (foundOrder) {
 			setReadyInClinicOrder({

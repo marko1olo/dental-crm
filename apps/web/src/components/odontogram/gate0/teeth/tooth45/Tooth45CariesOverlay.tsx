@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import type { CariesChronicity, CariesDepth, CariesType } from "../../tooth46PresetTypes";
 import { Tooth45CariesClass2 } from "./Tooth45CariesClass2";
 import { TOOTH45_CARIES_GEOMETRY } from "./tooth45CariesGeometry";
@@ -22,10 +23,14 @@ export const Tooth45CariesOverlay: React.FC<Tooth45CariesOverlayProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 45;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const g = TOOTH45_CARIES_GEOMETRY;
 	const isChronic = chronicity === "chronic";
-	const lesionFill = isChronic ? "url(#dente-caries-chronic)" : "url(#dente-caries-lesion)";
-	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
+	const lesionFill = `url(#${sid(isChronic ? "dente-caries-chronic" : "dente-caries-lesion")})`;
+	const necroticFill = isChronic ? "#0c0a09" : `url(#${sid("dente-caries-necrotic")})`;
+	const deminFill = `url(#${sid("dente-caries-demin")})`;
 	const haloStroke = isDark ? "rgba(245, 158, 11, 0.70)" : "rgba(180, 83, 9, 0.85)";
 	const isSuperficial = cariesDepth === "superficial";
 	const isProfunda = cariesDepth === "profunda";
@@ -34,24 +39,24 @@ export const Tooth45CariesOverlay: React.FC<Tooth45CariesOverlayProps> = ({
 
 	return (
 		<g
-			id="tooth45-caries-overlay"
+			id={sid(`tooth${tNum}-caries-overlay`)}
 			data-caries-type={cariesType}
 			data-caries-depth={cariesDepth}
 			data-caries-chronicity={chronicity}
 			className={className}
-			clipPath="url(#tooth45-crown-clip)"
+			clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}
 		>
 			{/* Class I Y-Pattern Cavity */}
 			{cariesType === "class1" && (
-				<g id="tooth45-caries-class1">
+				<g id={sid(`tooth${tNum}-caries-class1`)}>
 					{!isDestructive ? (
 						<>
-							<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
+							<path d={g.class1.halo} fill={deminFill} stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class1.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}
 							{isProfunda && <path d={g.class1.profunda} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</>
 					) : (
-						<g id="tooth45-caries-class1-destructive">
+						<g id={sid(`tooth${tNum}-caries-class1-destructive`)}>
 							<path d={g.destructiveCutout} fill={lesionFill} stroke="none" />
 							<path d={g.destructive.fractureMargin} fill="none" stroke="rgba(154, 52, 18, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
 							<path d={g.destructive.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
@@ -77,15 +82,15 @@ export const Tooth45CariesOverlay: React.FC<Tooth45CariesOverlayProps> = ({
 
 			{/* Class V Cervical Cavity at CEJ */}
 			{cariesType === "class5" && (
-				<g id="tooth45-caries-cervical">
+				<g id={sid(`tooth${tNum}-caries-cervical`)}>
 					{!isDestructive ? (
 						<>
-							<path d={g.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
+							<path d={g.class5.halo} fill={deminFill} stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
 							{!isSuperficial && <path d={g.class5.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}
 							{isProfunda && <path d={g.class5.profunda} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</>
 					) : (
-						<g id="tooth45-caries-c5-destructive">
+						<g id={sid(`tooth${tNum}-caries-c5-destructive`)}>
 							<path d={g.class5.fractureMargin} fill="none" stroke="rgba(154, 52, 18, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
 							<path d={g.class5.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
 							{g.class5.fractureSteps.map((s, idx) => (

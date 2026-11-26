@@ -206,7 +206,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const expectedCashInDrawer =
 		cashInDrawerRub !== undefined
 			? cashInDrawerRub
-			: initialChangeFundRub + totalCashRevenue;
+			: kopecksToRub(rubToKopecks(initialChangeFundRub) + rubToKopecks(totalCashRevenue));
 
 	// Acquiring & KKT reconciliation engine (real POS / OFD records only, no synthetic card metadata)
 	const hasRealAcquiringData = Boolean(
@@ -255,21 +255,30 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose, isSubmitting]);
 
+	useEffect(() => {
+		if (!closedSuccessData || !isOpen) return;
+		const timer = setTimeout(() => {
+			onClose();
+		}, 900);
+		return () => clearTimeout(timer);
+	}, [closedSuccessData, isOpen, onClose]);
+
 	if (!isOpen) return null;
 
 	const diffKop = rubToKopecks(countedCashRub) - rubToKopecks(expectedCashInDrawer);
 	const discrepancyRub = kopecksToRub(diffKop);
-	const isCashMatched = Math.abs(discrepancyRub) < 0.01;
+	const isCashMatched = diffKop === 0;
 
 	const handleExecuteCloseShift = async () => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setErrorMessage(null);
 
-		const encashmentAmountRub =
+		const encashmentKop =
 			encashmentOption === "full"
-				? countedCashRub
-				: Math.max(0, countedCashRub - changeFundRetainRub);
+				? rubToKopecks(countedCashRub)
+				: Math.max(0, rubToKopecks(countedCashRub) - rubToKopecks(changeFundRetainRub));
+		const encashmentAmountRub = kopecksToRub(encashmentKop);
 
 		const idempotencyKey = generateUuidV7();
 
@@ -302,7 +311,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 			if (!res.ok) {
 				const errJson = await res.json().catch(() => null);
-				throw new Error(errJson?.error || errJson?.message || `HTTP error ${res.status}`);
+				throw new Error(errJson?.error || errJson?.message || `Ошибка закрытия смены (HTTP ${res.status})`);
 			}
 
 			const json = await res.json().catch(() => null);
@@ -321,9 +330,6 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 			setClosedSuccessData(zReport);
 			setIsSubmitting(false);
 			onShiftClosed?.(zReport);
-			setTimeout(() => {
-				onClose();
-			}, 900);
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Ошибка соединения с сервером";
 			setErrorMessage(`Сбой закрытия смены: ${message}. Проверьте подключение и повторите попытку.`);
@@ -358,7 +364,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-lg hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors shrink-0 cursor-pointer"
+						className="h-11 w-11 md:h-9 md:w-9 inline-flex items-center justify-center rounded-lg bg-transparent hover:bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors shrink-0 cursor-pointer"
 						aria-label="Закрыть окно"
 					>
 						<X className="w-4 h-4 shrink-0" />
@@ -368,7 +374,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 				{/* Body Content */}
 				<div className="p-6 overflow-y-auto space-y-4 max-w-full">
 					{autoFetchedData?.hasOpenShift === false && (
-						<div className="p-3 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/30 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+						<div className="p-3 rounded-xl border border-[var(--warning)]/40 bg-[var(--warning-soft)] text-xs text-[var(--warning-ink,var(--warning))] flex items-center gap-2">
 							<AlertTriangle className="w-4 h-4 shrink-0" />
 							<span>Активная кассовая смена на сервере не открыта. Отображены данные нулевой смены.</span>
 						</div>
@@ -535,7 +541,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors cursor-pointer ${
 									encashmentOption === "retain_change"
 										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-medium"
-										: "border-[var(--line)] text-[var(--ink-muted)]"
+										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								<span>Оставить размен на утро</span>
@@ -548,7 +554,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors cursor-pointer ${
 									encashmentOption === "full"
 										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-medium"
-										: "border-[var(--line)] text-[var(--ink-muted)]"
+										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								<span>Полная инкассация в сейф</span>
@@ -619,14 +625,14 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 				{/* Footer with exactly 1 Primary CTA */}
 				<div
-					className="h-16 px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0"
-					style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+					className="min-h-16 px-4 sm:px-6 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-2 sm:gap-3 shrink-0"
+					style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
 				>
 					<button
 						type="button"
 						onClick={onClose}
 						aria-busy={isSubmitting}
-						className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-base md:text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+						className="h-11 md:h-9 px-3.5 rounded-xl md:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer"
 					>
 						Отмена
 					</button>
@@ -636,16 +642,20 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						onClick={handleExecuteCloseShift}
 						aria-busy={isSubmitting}
 						data-testid="btn-confirm-close-shift-z-report"
-						className="h-11 md:h-9 px-4 md:px-3.5 rounded-xl md:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-base md:text-sm font-medium shadow-sm inline-flex items-center justify-center gap-2 shrink-0 transition-all cursor-pointer"
+						className="h-11 md:h-9 flex-1 sm:flex-initial px-3.5 rounded-xl md:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-medium shadow-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
 						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
 					>
 						{isSubmitting ? (
 							<>
 								<RefreshCw className="w-4 h-4 shrink-0 animate-spin" />
-								<span>Закрытие смены и печать Z-отчёта...</span>
+								<span className="hidden sm:inline">Закрытие смены и печать Z-отчёта...</span>
+								<span className="sm:hidden">Закрытие смены...</span>
 							</>
 						) : (
-							<span>Закрыть смену и напечатать Z-отчёт</span>
+							<>
+								<span className="hidden sm:inline">Закрыть смену и напечатать Z-отчёт</span>
+								<span className="sm:hidden">Закрыть смену и Z-отчёт</span>
+							</>
 						)}
 					</button>
 				</div>

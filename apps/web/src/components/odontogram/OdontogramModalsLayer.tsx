@@ -371,7 +371,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 								}
 								const message = dictationApplyMessage(plan);
 
-								// Разбор SOAP дневника 043/у и расширенных клинических статусов
+								// Разбор SOAP дневника приёма и расширенных клинических статусов
 								let payload: DictationResponsePayload | null = null;
 								try {
 									payload = JSON.parse(rawBody) as DictationResponsePayload;
@@ -571,7 +571,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 				</React.Suspense>
 			)}
 
-			{/* 1-Click Cash Register Studio for In-Chair Cockpit */}
+			{/* Cash Register Studio for In-Chair Cockpit */}
 			{isFastCheckoutOpen && (
 				<React.Suspense fallback={null}>
 					<CashRegisterStudioModal

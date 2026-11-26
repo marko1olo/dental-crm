@@ -20,7 +20,8 @@ export function estimateObjectByteSize(val: unknown): number {
 		try {
 			const json = JSON.stringify(val);
 			return json ? json.length * 2 : 128;
-		} catch {
+		} catch (err) {
+			console.warn("[MemoryLruCache] Object size estimation fallback:", err);
 			return 256;
 		}
 	}

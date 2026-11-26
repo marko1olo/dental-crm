@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { Tooth11OcclusalCusps } from "./Tooth11OcclusalCusps";
 import { TOOTH11_GEOMETRY } from "./tooth11GeometryConstants";
 
@@ -23,16 +24,19 @@ export const Tooth11EnamelCrown: React.FC<Tooth11EnamelCrownProps> = ({
 	showAbfraction = false,
 	isDark = false,
 }) => {
+	const tNum = useToothNumber() ?? 11;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const crownPath = showAbfraction
 		? TOOTH11_GEOMETRY.crownMonolithPathWithAbfraction
 		: TOOTH11_GEOMETRY.crownMonolithPath;
 
 	return (
-		<g id="tooth11-natural-crown-group">
+		<g id={sid(`tooth${tNum}-natural-crown-group`)}>
 			<path
-				id="tooth11-crown-monolith"
+				id={sid(`tooth${tNum}-crown-monolith`)}
 				d={crownPath}
-				fill="url(#dente-enamel-porcelain-11)"
+				fill={`url(#${sid(`dente-enamel-porcelain-${tNum}`)})`}
 				fillOpacity={crownOpacity}
 				stroke={stroke}
 				strokeWidth="0.8"
@@ -40,15 +44,15 @@ export const Tooth11EnamelCrown: React.FC<Tooth11EnamelCrownProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{/* Unified 3D Cylindrical Proximal Contour Volume & Cervical Ridge */}
-			<g clipPath="url(#tooth11-crown-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 				<path
 					d={crownPath}
-					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					fill={`url(#${sid(isDark ? "dente-proximal-contour-dark" : "dente-proximal-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 				<path
 					d={crownPath}
-					fill={isDark ? "url(#dente-cervical-ridge-11-dark)" : "url(#dente-cervical-ridge-11)"}
+					fill={`url(#${sid(isDark ? `dente-cervical-ridge-${tNum}-dark` : `dente-cervical-ridge-${tNum}`)})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

@@ -38,7 +38,8 @@
  * Стало: var(--warn-fg), в тёмной теме #fbbf24 — около 10:1.
  */
 [data-theme="dark"] .default-clinic-banner strong,
-[data-theme="night"] .default-clinic-banner strong {
+[data-theme="night"] .default-clinic-banner strong,
+[data-theme="oled"] .default-clinic-banner strong {
 	color: var(--warn-fg);
 }
 
@@ -274,22 +275,27 @@ html.dark .document-package-item-sub {
 }
 
 /* --- Контрастность плейсхолдеров в Cyber X-Ray и темных темах (WCAG AA >= 4.5:1) --- */
-:is([data-theme="cyber_xray"], [data-theme="dark"], [data-theme="night"], [data-theme="ocean"]) textarea::placeholder,
-:is([data-theme="cyber_xray"], [data-theme="dark"], [data-theme="night"], [data-theme="ocean"]) input::placeholder {
+:is([data-theme="cyber_xray"], [data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"]) textarea::placeholder,
+:is([data-theme="cyber_xray"], [data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"]) input::placeholder {
 	color: #94a3b8 !important; /* slate-400: идеальный контраст >= 4.5:1 на темных фонах #081026 / #030712 */
 }
 
 /* --- 10. Автоматическая контрастность текста на бирюзовых заливках (WCAG AAA) ---
- * В темах с ярким/неоновым фоном заливки (--teal в cyber_xray, emerald, night, contrast)
+ * В темах с ярким/неоновым фоном заливки (--teal в cyber_xray, emerald, night, oled, contrast)
  * класс .text-white даёт нечитаемый белый текст на ярком бирюзовом/циановом фоне.
  * Использование var(--on-teal) гарантирует идеальный контраст >= 7:1 во всех 10 темах.
  */
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
-	:is([class*="bg-[var(--teal"], [class*="bg-teal-"], .primary-button, .quick-chip.active):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *)
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
+	:is([class*="bg-[var(--teal"], [class*="bg-teal-"], .quick-chip.active):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *)
 	:is(.text-white, [class*="text-white"]),
-:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
-	:is([class*="bg-[var(--teal"].text-white, [class*="bg-teal-"].text-white, .primary-button.text-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *) {
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], [data-theme="contrast"], html.dark)
+	:is([class*="bg-[var(--teal"].text-white, [class*="bg-teal-"].text-white, .quick-chip.active.text-white):not(.premium-doc-sheet *):not(.emr043-a4-sheet *):not(.print-paper-sheet *):not([data-paper-sheet] *) {
 	color: var(--on-teal) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="cyber_xray"], [data-theme="emerald"], html.dark)
+	.text-\[var\(--primary\)\]:not(.bg-\[var\(--primary\)\]) {
+	color: var(--teal, #2dd4bf) !important;
 }
 
 /* DENTE Palette chair high contrast override for Olive badge (WCAG AAA) */

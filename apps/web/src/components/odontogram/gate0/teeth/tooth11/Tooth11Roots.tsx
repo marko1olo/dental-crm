@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { TOOTH11_GEOMETRY, TOOTH11_ROOTS_GEOMETRY } from "./tooth11GeometryConstants";
 
 export interface Tooth11RootsProps {
@@ -20,35 +21,38 @@ export const Tooth11Roots: React.FC<Tooth11RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 11;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark ? "#94a3b8" : "rgba(71, 85, 105, 0.45)";
 	const grooveStroke = isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(100, 116, 139, 0.16)";
 	const cejStroke = isDark ? "#cbd5e1" : "rgba(100, 116, 139, 0.35)";
 	const g = TOOTH11_ROOTS_GEOMETRY;
 
 	return (
-		<g id="tooth11-roots" {...(className ? { className } : {})}>
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
 			{/* LAYER 1: Straight Conical Root Monolith (Apex Y=12.5) */}
 			<path
-				id="tooth11-root-monolith"
+				id={sid(`tooth${tNum}-root-monolith`)}
 				d={g.rootMonolithPath}
-				fill="url(#dente-root-dentin-11)"
+				fill={`url(#${sid(`dente-root-dentin-${tNum}`)})`}
 				stroke={strokeColor}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
 			{/* Cylindrical Volume Shading (Pure shader depth, zero artificial white strokes) */}
-			<g clipPath="url(#tooth11-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={g.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>
 
 			{/* LAYER 2: Subtle Longitudinal Developmental Grooves */}
 			{showGrooves && (
-				<g id="tooth11-root-grooves" pointerEvents="none">
+				<g id={sid(`tooth${tNum}-root-grooves`)} pointerEvents="none">
 					<path
 						d={g.distalRadicularGroove}
 						fill="none"
@@ -71,7 +75,7 @@ export const Tooth11Roots: React.FC<Tooth11RootsProps> = ({
 			{/* LAYER 3: Cementoenamel Junction (CEJ) */}
 			{showCej && (
 				<path
-					id="tooth11-cej"
+					id={sid(`tooth${tNum}-cej`)}
 					d={TOOTH11_GEOMETRY.cejCurve}
 					fill="none"
 					stroke={cejStroke}

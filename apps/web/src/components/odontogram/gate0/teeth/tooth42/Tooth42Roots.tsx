@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { TOOTH42_GEOMETRY } from "./tooth42Geometry";
 
 export interface Tooth42RootsProps {
@@ -18,6 +19,9 @@ export const Tooth42Roots: React.FC<Tooth42RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 42;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const g = TOOTH42_GEOMETRY;
 	const stroke = isDark
 		? "rgba(203, 213, 225, 0.60)"
@@ -27,15 +31,15 @@ export const Tooth42Roots: React.FC<Tooth42RootsProps> = ({
 		: "rgba(120, 95, 65, 0.25)";
 
 	return (
-		<g id="tooth42-root-complex" className={className}>
+		<g id={sid(`tooth${tNum}-root-complex`)} className={className}>
 			<defs>
-				<clipPath id="tooth42-root-clip">
+				<clipPath id={sid(`tooth${tNum}-root-clip`)}>
 					<path d={g.rootMonolithPath} />
 				</clipPath>
 			</defs>
 			<path
 				d={g.rootMonolithPath}
-				fill="url(#dente-root-dentin)"
+				fill={`url(#${sid("dente-root-dentin")})`}
 				stroke={stroke}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
@@ -43,10 +47,10 @@ export const Tooth42Roots: React.FC<Tooth42RootsProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{/* Cylindrical Volume Shading & Highlights (Pure shader depth, zero artificial white strokes) */}
-			<g clipPath="url(#tooth42-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={g.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

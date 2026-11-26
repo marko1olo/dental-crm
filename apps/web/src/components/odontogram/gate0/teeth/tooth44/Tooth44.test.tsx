@@ -80,7 +80,7 @@ describe("Tooth44 Wheeler Ch. 11 First Mandibular Premolar Anatomical Invariants
 		);
 		assert.ok(htmlOverfill.includes("id=\"tooth44-endodontics\""));
 		assert.ok(htmlOverfill.includes("id=\"tooth44-overfill-puffs\""));
-		assert.ok(htmlOverfill.includes("id=\"canal-Main\""));
+		assert.ok(htmlOverfill.includes("id=\"tooth44-canal-Main\""));
 
 		const htmlBroken = renderToStaticMarkup(
 			React.createElement(Tooth44Container, {

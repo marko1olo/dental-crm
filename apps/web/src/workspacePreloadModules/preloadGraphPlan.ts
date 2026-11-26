@@ -63,7 +63,10 @@ export function isLowSpecDevice(): boolean {
 			docEl.getAttribute("data-perf-tier") === "potato" ||
 			docEl.getAttribute("data-perf-state") === "degraded" ||
 			docEl.getAttribute("data-ct-active") === "true" ||
-			docEl.classList.contains("low-spec-mode")
+			docEl.getAttribute("data-perf") === "low" ||
+			docEl.classList.contains("low-spec-mode") ||
+			docEl.classList.contains("low-spec-perf") ||
+			docEl.classList.contains("low-end-hardware-mode")
 		) {
 			return true;
 		}

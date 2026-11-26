@@ -61,15 +61,27 @@
 }
 .low-end-hardware-mode .tooth-svg-element,
 .low-spec-mode .tooth-svg-element,
+.low-spec-perf .tooth-svg-element,
 [data-hardware-tier="low"] .tooth-svg-element,
+[data-hardware-tier="potato"] .tooth-svg-element,
+[data-perf-state="degraded"] .tooth-svg-element,
+[data-ct-active="true"] .tooth-svg-element,
 [data-low-spec="true"] .tooth-svg-element,
 .low-end-hardware-mode .tooth-svg-wrapper:hover .tooth-svg-element,
 .low-spec-mode .tooth-svg-wrapper:hover .tooth-svg-element,
+.low-spec-perf .tooth-svg-wrapper:hover .tooth-svg-element,
 [data-hardware-tier="low"] .tooth-svg-wrapper:hover .tooth-svg-element,
+[data-hardware-tier="potato"] .tooth-svg-wrapper:hover .tooth-svg-element,
+[data-perf-state="degraded"] .tooth-svg-wrapper:hover .tooth-svg-element,
+[data-ct-active="true"] .tooth-svg-wrapper:hover .tooth-svg-element,
 [data-low-spec="true"] .tooth-svg-wrapper:hover .tooth-svg-element,
 .low-end-hardware-mode .tooth-svg-wrapper.selected .tooth-svg-element,
 .low-spec-mode .tooth-svg-wrapper.selected .tooth-svg-element,
+.low-spec-perf .tooth-svg-wrapper.selected .tooth-svg-element,
 [data-hardware-tier="low"] .tooth-svg-wrapper.selected .tooth-svg-element,
+[data-hardware-tier="potato"] .tooth-svg-wrapper.selected .tooth-svg-element,
+[data-perf-state="degraded"] .tooth-svg-wrapper.selected .tooth-svg-element,
+[data-ct-active="true"] .tooth-svg-wrapper.selected .tooth-svg-element,
 [data-low-spec="true"] .tooth-svg-wrapper.selected .tooth-svg-element {
 	filter: none !important;
 	will-change: auto !important;
@@ -78,7 +90,11 @@
 }
 .low-end-hardware-mode .tooth-svg-wrapper.selected,
 .low-spec-mode .tooth-svg-wrapper.selected,
+.low-spec-perf .tooth-svg-wrapper.selected,
 [data-hardware-tier="low"] .tooth-svg-wrapper.selected,
+[data-hardware-tier="potato"] .tooth-svg-wrapper.selected,
+[data-perf-state="degraded"] .tooth-svg-wrapper.selected,
+[data-ct-active="true"] .tooth-svg-wrapper.selected,
 [data-low-spec="true"] .tooth-svg-wrapper.selected {
 	box-shadow: none !important;
 	outline: 2px solid var(--teal, #0d9488) !important;

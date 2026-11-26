@@ -1,6 +1,7 @@
 import React from "react";
 import { Tooth12SingleCusp } from "./Tooth12SingleCusp";
 import { TOOTH12_GEOMETRY } from "./tooth12GeometryConstants";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth12OcclusalCuspsProps {
 	showCusps?: boolean | undefined;
@@ -22,26 +23,27 @@ export const Tooth12OcclusalCusps: React.FC<Tooth12OcclusalCuspsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 12;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const stroke = isDark
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
 	const fissureStroke = isDark
 		? "rgba(255, 255, 255, 0.12)"
 		: "rgba(148, 163, 184, 0.14)";
-	const crFill = isDark
-		? "url(#dente-cervical-ridge-12-dark)"
-		: "url(#dente-cervical-ridge-12)";
+	const crFill = `url(#${sid(isDark ? `dente-cervical-ridge-${tNum}-dark` : `dente-cervical-ridge-${tNum}`)})`;
 	const crHighlight = isDark
 		? "rgba(255, 255, 255, 0.16)"
 		: "rgba(255, 255, 255, 0.35)";
 	const fissures = TOOTH12_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
 
 	return (
-		<g id="tooth12-crown" className={className}>
+		<g id={sid(`tooth${tNum}-crown`)} className={className}>
 			{renderBaseCrown && (
 				<path
 					d={TOOTH12_GEOMETRY.crownMonolithPath}
-					fill="url(#dente-enamel-porcelain-12)"
+					fill={`url(#${sid(`dente-enamel-porcelain-${tNum}`)})`}
 					stroke={stroke}
 					strokeWidth="0.8"
 					strokeLinejoin="round"
@@ -49,7 +51,7 @@ export const Tooth12OcclusalCusps: React.FC<Tooth12OcclusalCuspsProps> = ({
 				/>
 			)}
 			{showCusps && (
-				<g id="tooth12-cusp-ridges" clipPath="url(#tooth12-crown-clip)">
+				<g id={sid(`tooth${tNum}-cusp-ridges`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					{/* Cervical Ridge Convexity below CEJ */}
 					<path
 						d={TOOTH12_GEOMETRY.buccalCervicalRidge}
@@ -72,7 +74,7 @@ export const Tooth12OcclusalCusps: React.FC<Tooth12OcclusalCuspsProps> = ({
 				</g>
 			)}
 			{showFissures && fissures.trim() !== "" && (
-				<g id="tooth12-fissures" pointerEvents="none">
+				<g id={sid(`tooth${tNum}-fissures`)} pointerEvents="none">
 					{/* Soft Anatomical Mamelon Developmental Grooves */}
 					<path
 						d={fissures}

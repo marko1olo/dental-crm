@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH15_RESTORATION_GEOMETRY } from "./tooth15RestorationGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth15RestorationOverlayProps {
 	showComposite?: boolean | undefined;
@@ -24,37 +25,41 @@ export const Tooth15RestorationOverlay: React.FC<Tooth15RestorationOverlayProps>
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 15;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const r = TOOTH15_RESTORATION_GEOMETRY;
 
-	const compositeFill = isDark ? "url(#dente-composite-filling-dark)" : "url(#dente-composite-filling)";
-	const ceramicFill = isDark ? "url(#dente-inlay-ceramic-dark)" : "url(#dente-inlay-ceramic)";
-	const crownFill =
+	const compositeFill = `url(#${sid(isDark ? "dente-composite-filling-dark" : "dente-composite-filling")})`;
+	const ceramicFill = `url(#${sid(isDark ? "dente-inlay-ceramic-dark" : "dente-inlay-ceramic")})`;
+	const crownFill = `url(#${sid(
 		crownMaterial === "gold"
-			? "url(#dente-crown-gold)"
+			? "dente-crown-gold"
 			: crownMaterial === "metal_ceramic"
-				? "url(#dente-crown-metal-ceramic)"
-				: "url(#dente-zirconia-ceramic-15)";
+				? "dente-crown-metal-ceramic"
+				: `dente-zirconia-ceramic-${tNum}`,
+	)})`;
 
 	const glazeColor = isDark ? "rgba(255, 255, 255, 0.70)" : "rgba(255, 255, 255, 0.85)";
 	const fissureColor = isDark ? "rgba(148, 163, 184, 0.55)" : "rgba(100, 116, 139, 0.50)";
 
 	return (
-		<g id="tooth15-restorations" className={className}>
+		<g id={sid(`tooth${tNum}-restorations`)} className={className}>
 			{/* 1. Single Central Post & Core with Ferrule and Prepared Stump */}
 			{showPostCore && (
-				<g id="tooth15-post-core">
-					<path d={r.ferruleCollar} fill="url(#dente-root-dentin-15)" stroke={isDark ? "#64748b" : "#94a3b8"} strokeWidth="0.7" />
+				<g id={sid(`tooth${tNum}-post-core`)}>
+					<path d={r.ferruleCollar} fill={`url(#${sid(`dente-root-dentin-${tNum}`)})`} stroke={isDark ? "#64748b" : "#94a3b8"} strokeWidth="0.7" />
 					<path d={r.chamferMarginLine} fill="none" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.6" />
-					<path d={r.postCore.palatalShaft} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.6" />
-					<path d={r.postCore.coreStump} fill="url(#dente-core-composite-15)" stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"} strokeWidth="0.75" strokeLinejoin="round" />
+					<path d={r.postCore.palatalShaft} fill={`url(#${sid("dente-fiber-post")})`} stroke="#94a3b8" strokeWidth="0.6" />
+					<path d={r.postCore.coreStump} fill={`url(#${sid(`dente-core-composite-${tNum}`)})`} stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"} strokeWidth="0.75" strokeLinejoin="round" />
 				</g>
 			)}
 
 			{/* 2. Milled Anatomical Zirconia / Ceramic Crown with Glaze and Slopes */}
 			{showZirconiaCrown && (
-				<g id="tooth15-zirconia-crown">
+				<g id={sid(`tooth${tNum}-zirconia-crown`)}>
 					<path
-						id="tooth15-crown-shell"
+						id={sid(`tooth${tNum}-crown-shell`)}
 						d={r.crownShell}
 						fill={crownFill}
 						fillOpacity={translucent ? 0.86 : 1.0}
@@ -64,11 +69,11 @@ export const Tooth15RestorationOverlay: React.FC<Tooth15RestorationOverlayProps>
 					/>
 					<path
 						d={r.crownShell}
-						fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+						fill={`url(#${sid(isDark ? "dente-proximal-contour-dark" : "dente-proximal-contour")})`}
 						vectorEffect="non-scaling-stroke"
 						pointerEvents="none"
 					/>
-					<path d={r.cervicalShoulder} fill="url(#dente-zirconia-chamfer)" stroke="none" />
+					<path d={r.cervicalShoulder} fill={`url(#${sid("dente-zirconia-chamfer")})`} stroke="none" />
 					{r.milledFissures.map((f) => (
 						<path key={f.id} d={f.d} fill="none" stroke={fissureColor} strokeWidth="0.6" strokeLinecap="round" />
 					))}
@@ -80,15 +85,15 @@ export const Tooth15RestorationOverlay: React.FC<Tooth15RestorationOverlayProps>
 
 			{/* 3. Inlay / Onlay */}
 			{showInlayOnlay === "inlay" && (
-				<path d={r.inlay} fill={ceramicFill} stroke="#94a3b8" strokeWidth="0.5" clipPath="url(#tooth15-crown-clip)" />
+				<path d={r.inlay} fill={ceramicFill} stroke="#94a3b8" strokeWidth="0.5" clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`} />
 			)}
 			{showInlayOnlay === "onlay" && (
-				<path d={r.onlay} fill={ceramicFill} stroke="#94a3b8" strokeWidth="0.6" clipPath="url(#tooth15-crown-clip)" />
+				<path d={r.onlay} fill={ceramicFill} stroke="#94a3b8" strokeWidth="0.6" clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`} />
 			)}
 
 			{/* 4. Composite Filling */}
 			{showComposite && (
-				<path d={r.compositeFilling} fill={compositeFill} stroke="rgba(130, 95, 55, 0.65)" strokeWidth="0.6" clipPath="url(#tooth15-crown-clip)" />
+				<path d={r.compositeFilling} fill={compositeFill} stroke="rgba(130, 95, 55, 0.65)" strokeWidth="0.6" clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`} />
 			)}
 
 			{/* 5. Cervical Abfraction */}

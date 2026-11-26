@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH15_GEOMETRY, TOOTH15_ROOTS_GEOMETRY } from "./tooth15GeometryConstants";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth15RootsProps {
 	showGrooves?: boolean | undefined;
@@ -20,26 +21,29 @@ export const Tooth15Roots: React.FC<Tooth15RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 15;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const strokeColor = isDark ? "#94a3b8" : "rgba(71, 85, 105, 0.45)";
 	const grooveStroke = isDark ? "rgba(148, 163, 184, 0.30)" : "rgba(100, 116, 139, 0.10)";
 	const g = TOOTH15_ROOTS_GEOMETRY;
 
 	return (
-		<g id="tooth15-roots" {...(className ? { className } : {})}>
+		<g id={sid(`tooth${tNum}-roots`)} {...(className ? { className } : {})}>
 			{/* Single Conical Root Monolith */}
 			<path
-				id="tooth15-root-monolith"
+				id={sid(`tooth${tNum}-root-monolith`)}
 				d={g.rootMonolithPath}
-				fill="url(#dente-root-dentin-15)"
+				fill={`url(#${sid(`dente-root-dentin-${tNum}`)})`}
 				stroke={strokeColor}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
-			<g clipPath="url(#tooth15-root-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-root-clip`)})`}>
 				<path
 					d={g.rootMonolithPath}
-					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
+					fill={`url(#${sid(isDark ? "dente-root-contour-dark" : "dente-root-contour")})`}
 					vectorEffect="non-scaling-stroke"
 					pointerEvents="none"
 				/>
@@ -48,15 +52,15 @@ export const Tooth15Roots: React.FC<Tooth15RootsProps> = ({
 			{/* Longitudinal Developmental Depressions */}
 			{showGrooves && (
 				<>
-					<path id="tooth15-mesial-groove" d={g.mesialRadicularGroove} fill="none" stroke={grooveStroke} strokeWidth="0.40" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-					<path id="tooth15-distal-groove" d={g.distalRadicularGroove} fill="none" stroke={grooveStroke} strokeWidth="0.40" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+					<path id={sid(`tooth${tNum}-mesial-groove`)} d={g.mesialRadicularGroove} fill="none" stroke={grooveStroke} strokeWidth="0.40" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+					<path id={sid(`tooth${tNum}-distal-groove`)} d={g.distalRadicularGroove} fill="none" stroke={grooveStroke} strokeWidth="0.40" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
 				</>
 			)}
 
 			{/* Cementoenamel Junction (CEJ) Cervical Curvature */}
 			{showCej && (
 				<path
-					id="tooth15-cej"
+					id={sid(`tooth${tNum}-cej`)}
 					d={TOOTH15_GEOMETRY.cejCurve}
 					fill="none"
 					stroke={strokeColor}

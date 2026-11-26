@@ -127,7 +127,7 @@
 	--switch-thumb: #ffffff;
 	--code-bg: var(--paper-strong);
 	--code-fg: var(--ink);
-	--primary-hover: var(--teal-dark);
+	--primary-hover: #115e59;
 	--primary-muted: var(--teal-surface);
 	--primary-light: var(--teal-soft);
 	--primary-soft: var(--teal-soft);
@@ -202,8 +202,8 @@
      (GuestLabPortal.css:50, запас #2563eb). --brand-500 держит синий в светлой
      (#0ea5e9) и тёмной (#38bdf8) теме и уходит в тёплый в ночной, то есть
      оттенок сохраняется там, где он был, а не заменяется бирюзой. */
-	--primary: var(--brand-500, var(--teal, #0d9488));
-	--brand-primary: var(--brand-500, var(--teal, #0d9488));
+	--primary: var(--teal-dark, #0f766e);
+	--brand-primary: var(--teal-dark, #0f766e);
 	--paper-subtle: var(--paper-soft);
 
 	/* --text-muted: «второстепенный текст на поверхности темы»
@@ -293,7 +293,7 @@
 	--info-ink: var(--info-fg);
 	--ink-subtle: var(--ink-2);
 	--ink-base: var(--ink);
-	--primary-shadow: rgba(14, 165, 233, 0.2);
+	--primary-shadow: rgba(13, 148, 136, 0.22);
 	--teal-hover: var(--teal-dark);
 	--teal-line: var(--teal-border);
 	--bad-surface: var(--bad-bg);
@@ -347,6 +347,9 @@
      (#04211c), и контраст около 9:1 уже достаточен. */
 	--teal-fill: var(--teal-dark);
 	--on-teal: #ffffff;
+	--primary: #0f766e;
+	--primary-hover: #115e59;
+	--primary-fg: #ffffff;
 	--srf-check-task: #faf7f1;
 	--srf-check-task-blocking: #fffaf0;
 	--srf-chip-soft: #f7fbf9;
@@ -370,6 +373,9 @@
 html.dark:not([data-theme]) {
 	--teal-fill: var(--teal);
 	--on-teal: #04211c;
+	--primary: #0f766e;
+	--primary-hover: #0d8075;
+	--primary-fg: #ffffff;
 	--srf-check-task: #16201e;
 	--srf-check-task-blocking: #2a2113;
 	--srf-chip-soft: #16211f;
@@ -388,9 +394,13 @@ html.dark:not([data-theme]) {
 	--violet-700: #c4b5fd;
 }
 
-:root[data-theme="night"] {
+:root[data-theme="night"],
+:root[data-theme="oled"] {
 	--teal-fill: var(--teal);
 	--on-teal: #000000;
+	--primary: #0f766e;
+	--primary-hover: #0d8075;
+	--primary-fg: #ffffff;
 	--srf-check-task: #121215;
 	--srf-check-task-blocking: #1f1608;
 	--srf-chip-soft: #121215;
@@ -408,6 +418,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="calm_teal"] {
 	--teal-fill: var(--teal-dark);
 	--on-teal: #ffffff;
+	--primary: #0f766e;
+	--primary-hover: #115e59;
+	--primary-fg: #ffffff;
 	--srf-check-task: #f0fdfa;
 	--srf-check-task-blocking: #fffbeb;
 	--srf-chip-soft: #e6fffa;
@@ -425,6 +438,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="contrast"] {
 	--teal-fill: #000000;
 	--on-teal: #ffffff;
+	--primary: #005f56;
+	--primary-hover: #003833;
+	--primary-fg: #ffffff;
 	--srf-check-task: #ffffff;
 	--srf-check-task-blocking: #ffffff;
 	--srf-chip-soft: #f4f4f5;
@@ -442,6 +458,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="sakura"] {
 	--teal-fill: var(--teal-dark);
 	--on-teal: #ffffff;
+	--primary: var(--teal-dark, #be185d);
+	--primary-hover: #9f1239;
+	--primary-fg: #ffffff;
 	--srf-check-task: #fff1f2;
 	--srf-check-task-blocking: #fffbeb;
 	--srf-chip-soft: #fce7f3;
@@ -459,6 +478,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="ocean"] {
 	--teal-fill: var(--teal);
 	--on-teal: #050b17;
+	--primary: #0369a1;
+	--primary-hover: #075985;
+	--primary-fg: #ffffff;
 	--srf-check-task: #0c1e3d;
 	--srf-check-task-blocking: #172554;
 	--srf-chip-soft: #0f2447;
@@ -476,6 +498,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="emerald"] {
 	--teal-fill: var(--teal);
 	--on-teal: #01140b;
+	--primary: #047857;
+	--primary-hover: #065f46;
+	--primary-fg: #ffffff;
 	--srf-check-task: #064e3b;
 	--srf-check-task-blocking: #14532d;
 	--srf-chip-soft: #065f46;
@@ -493,6 +518,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="cyber_xray"] {
 	--teal-fill: var(--teal);
 	--on-teal: #02040a;
+	--primary: #0e7490;
+	--primary-hover: #155e75;
+	--primary-fg: #ffffff;
 	--srf-check-task: #081026;
 	--srf-check-task-blocking: #1e1b4b;
 	--srf-chip-soft: #0d1a3a;
@@ -510,6 +538,9 @@ html.dark:not([data-theme]) {
 :root[data-theme="warm_sand"] {
 	--teal-fill: var(--teal-dark);
 	--on-teal: #ffffff;
+	--primary: var(--teal-dark, #92400e);
+	--primary-hover: #78350f;
+	--primary-fg: #ffffff;
 	--srf-check-task: #fefce8;
 	--srf-check-task-blocking: #fffbeb;
 	--srf-chip-soft: #fef3c7;

@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as fflate from "fflate";
 import { showToast } from "../../GlobalToast";
 import { logger } from "../../../utils/logger";
+import {
+	getDicomImageLoader,
+	purgeDicomImageLoader,
+} from "../../dicom/archiveUploader/dicomStowUploader";
 import {
 	isDicomEntry,
 	isDicomdirEntry,
@@ -20,27 +24,6 @@ import type { CtLaunchMode, CtRecentStudyItem, CtSelectorModalProps } from "./ty
 import type { ImagingStudy } from "@dental/shared";
 
 const BATCH_PROCESSING_CHUNK_SIZE = 50;
-
-interface DicomImageLoaderLike {
-	wadouri?: {
-		fileManager?: {
-			add: (file: File | Blob) => string;
-		};
-	};
-}
-
-async function getDicomImageLoader(): Promise<DicomImageLoaderLike | null> {
-	if (typeof window === "undefined") return null;
-	try {
-		const mod = (await import("@cornerstonejs/dicom-image-loader")) as {
-			default?: DicomImageLoaderLike;
-		} & DicomImageLoaderLike;
-		return mod.default || mod;
-	} catch (err) {
-		logger.warn("[CtSelectorModal] Could not load cornerstoneDICOMImageLoader:", err);
-		return null;
-	}
-}
 
 export function useCtSelector(props: CtSelectorModalProps) {
 	const {
@@ -101,13 +84,24 @@ export function useCtSelector(props: CtSelectorModalProps) {
 		}
 	}, []);
 
-	// Initial load
+	// Initial load + AbortController + DICOM memory cleanup on cancel/unmount
+	const launchedInCrmRef = useRef(false);
+
 	useEffect(() => {
-		if (!isOpen) return;
+		if (!isOpen) {
+			if (!launchedInCrmRef.current) {
+				purgeDicomImageLoader();
+			}
+			return;
+		}
+
+		launchedInCrmRef.current = false;
+		const abortController = new AbortController();
 
 		void refreshDownloads();
 
 		void detectExternalCtViewers().then((viewers) => {
+			if (abortController.signal.aborted) return;
 			setExternalViewers(viewers);
 			if (viewers.length > 0) {
 				const available = viewers.find((v) => v.isAvailable);
@@ -122,9 +116,12 @@ export function useCtSelector(props: CtSelectorModalProps) {
 		// Load patient studies if not passed via props
 		if (!propStudies && patientId) {
 			setIsLoadingStudies(true);
-			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`)
+			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`, {
+				signal: abortController.signal,
+			})
 				.then((res) => (res.ok ? res.json() : []))
 				.then((data) => {
+					if (abortController.signal.aborted) return;
 					if (Array.isArray(data)) {
 						const cbctOnly = data.filter(
 							(s) => s.kind === "cbct" || s.kind === "ct" || s.modality === "CT",
@@ -133,15 +130,32 @@ export function useCtSelector(props: CtSelectorModalProps) {
 					}
 				})
 				.catch((err) => {
+					if (abortController.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
+						return;
+					}
 					logger.warn("[CtSelectorModal] Failed to fetch patient studies:", err);
 				})
 				.finally(() => {
-					setIsLoadingStudies(false);
+					if (!abortController.signal.aborted) {
+						setIsLoadingStudies(false);
+					}
 				});
 		} else if (propStudies) {
 			setPatientStudies(propStudies);
 		}
+
+		return () => {
+			abortController.abort();
+		};
 	}, [isOpen, refreshDownloads, patientId, propStudies]);
+
+	useEffect(() => {
+		return () => {
+			if (!launchedInCrmRef.current) {
+				purgeDicomImageLoader();
+			}
+		};
+	}, []);
 
 	// Close on Escape
 	useEffect(() => {
@@ -161,6 +175,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 		async (study: unknown, imageIds?: string[], filePath?: string) => {
 			const studyRecord = study && typeof study === "object" ? (study as Record<string, unknown>) : null;
 			if (launchMode === "crm_window") {
+				launchedInCrmRef.current = true;
 				if (onSelectStudy) {
 					onSelectStudy(study, "crm_window");
 				}

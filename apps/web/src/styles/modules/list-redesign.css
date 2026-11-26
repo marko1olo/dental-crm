@@ -175,9 +175,8 @@
 
 .settings-tabs-group-header {
 	font-size: 11px;
-	font-weight: 800;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	font-weight: 700;
+	letter-spacing: 0.04em;
 	color: var(--ink-muted, var(--muted));
 	margin-bottom: 6px;
 	padding-left: 14px;
@@ -433,10 +432,9 @@
 	}
 
 	.settings-tabs-group-header {
-		font-size: 10px;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
 		color: var(--ink-muted, var(--muted));
 		margin-bottom: 0;
 		padding-left: 0;
@@ -466,8 +464,8 @@
 
 	.settings-tabs button.active {
 		order: 0;
-		background: linear-gradient(135deg, var(--teal-fill), var(--teal-dark));
-		color: white;
+		background: var(--primary, #0f766e);
+		color: var(--primary-fg, #ffffff);
 		box-shadow: 0 2px 8px var(--teal-glow);
 		transform: none;
 	}

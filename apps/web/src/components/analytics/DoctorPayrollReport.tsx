@@ -15,14 +15,19 @@
  * ДЕКОМПОЗИРОВАН В SWEET SPOT 200–260 СТРОК (МАНДАТ 8b).
  */
 
-import React, { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
 	Calculator,
 	Download,
 	Printer,
 	RefreshCw,
 } from "lucide-react";
-import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
+import {
+	formatKopecksToRub,
+	rublesToKopecks,
+	type CashAdvanceAllocationPolicy,
+	type IdentSalaryModel,
+} from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import { clientLogger } from "../../services/logging/clientLogger";
 import { showToast } from "../GlobalToast";
@@ -67,11 +72,14 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 }) => {
 	const [activePeriod, setActivePeriod] = useState<string>(period);
 	const [roleTab, setRoleTab] = useState<"doctors" | "assistants">("doctors");
+	const [identSalaryModel, setIdentSalaryModel] = useState<IdentSalaryModel>("net_proportional_discount");
+	const [cashAdvancePolicy, setCashAdvancePolicy] = useState<CashAdvanceAllocationPolicy>("proportional");
 	const [loading, setLoading] = useState<boolean>(true);
 	const [rows, setRows] = useState<DoctorPayrollItem[]>([]);
 	const [assistantRows, setAssistantRows] = useState<AssistantPayrollItem[]>([]);
 	const [totals, setTotals] = useState<DoctorPayrollTotals | null>(null);
 	const [isStudioOpen, setIsStudioOpen] = useState<boolean>(false);
+	const fetchAbortRef = useRef<AbortController | null>(null);
 
 	const handlePeriodSelect = useCallback(
 		(p: string) => {
@@ -81,17 +89,33 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 		[onPeriodChange],
 	);
 
-	const fetchPayroll = useCallback(async (p: string) => {
+	const fetchPayroll = useCallback(async (
+		p: string,
+		salaryModel: IdentSalaryModel = identSalaryModel,
+		advancePolicy: CashAdvanceAllocationPolicy = cashAdvancePolicy,
+	) => {
+		fetchAbortRef.current?.abort();
+		const controller = new AbortController();
+		fetchAbortRef.current = controller;
 		setLoading(true);
 		try {
+			const docQuery = new URLSearchParams({
+				period: p,
+				identSalaryModel: salaryModel,
+				cashAdvancePolicy: advancePolicy,
+			});
 			const [docRes, asstRes] = await Promise.allSettled([
-				fetch(`/api/reports/doctor-payroll?period=${encodeURIComponent(p)}`, {
+				fetch(`/api/reports/doctor-payroll?${docQuery.toString()}`, {
 					headers: denteClinicalReadHeaders(),
+					signal: controller.signal,
 				}),
 				fetch(`/api/reports/assistant-payroll?period=${encodeURIComponent(p)}`, {
 					headers: denteClinicalReadHeaders(),
+					signal: controller.signal,
 				}),
 			]);
+
+			if (controller.signal.aborted) return;
 
 			interface DocPayrollApiResponse {
 				rows?: DoctorPayrollItem[] | undefined;
@@ -146,19 +170,27 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				setTotals(null);
 			}
 		} catch (err: unknown) {
+			if (controller.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
+				return;
+			}
 			clientLogger.error("Failed to fetch payroll data", err, { module: "DoctorPayrollReport" });
 			showToast("Не удалось загрузить данные ведомости", "error");
 			setRows([]);
 			setAssistantRows([]);
 			setTotals(null);
 		} finally {
-			setLoading(false);
+			if (!controller.signal.aborted) {
+				setLoading(false);
+			}
 		}
-	}, []);
+	}, [identSalaryModel, cashAdvancePolicy]);
 
 	useEffect(() => {
-		fetchPayroll(activePeriod);
-	}, [activePeriod, fetchPayroll]);
+		void fetchPayroll(activePeriod, identSalaryModel, cashAdvancePolicy);
+		return () => {
+			fetchAbortRef.current?.abort();
+		};
+	}, [activePeriod, identSalaryModel, cashAdvancePolicy, fetchPayroll]);
 
 	const totalAssistantShifts = assistantRows.reduce((acc, r) => acc + r.shiftsCount, 0);
 	const totalAssistantHours = assistantRows.reduce((acc, r) => acc + r.hoursWorked, 0);
@@ -234,7 +266,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				<div className="flex items-center justify-end gap-2 shrink-0">
 					<button
 						type="button"
-						onClick={() => fetchPayroll(activePeriod)}
+						onClick={() => fetchPayroll(activePeriod, identSalaryModel, cashAdvancePolicy)}
 						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
 						title="Обновить ведомость"
 					>
@@ -272,6 +304,60 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					</button>
 				</div>
 			</div>
+
+			{/* Компактный фильтр IDENT-модели расчёта и политики распределения авансов */}
+			{roleTab === "doctors" && (
+				<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-xs">
+					<div className="flex flex-wrap items-center gap-1.5">
+						<span className="font-medium text-[var(--ink-muted)]">Модель базы:</span>
+						<div className="p-0.5 bg-[var(--paper-soft)] rounded-lg border border-[var(--line)] inline-flex items-center gap-0.5 flex-wrap">
+							{([
+								{ id: "gross_before_discount", label: "От прайса" },
+								{ id: "net_proportional_discount", label: "Пропорционально скидке" },
+								{ id: "net_doctor_bears_discount", label: "Скидка с врача" },
+							] as const).map((m) => (
+								<button
+									key={m.id}
+									type="button"
+									data-testid={`payroll-report-ident-${m.id}`}
+									onClick={() => setIdentSalaryModel(m.id)}
+									className={`h-7 px-2.5 rounded-md text-xs font-medium cursor-pointer transition-colors whitespace-nowrap ${
+										identSalaryModel === m.id
+											? "bg-[var(--primary)] text-white shadow-xs"
+											: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+									}`}
+								>
+									{m.label}
+								</button>
+							))}
+						</div>
+					</div>
+					<div className="flex flex-wrap items-center gap-1.5">
+						<span className="font-medium text-[var(--ink-muted)]">Частичная оплата:</span>
+						<div className="p-0.5 bg-[var(--paper-soft)] rounded-lg border border-[var(--line)] inline-flex items-center gap-0.5 flex-wrap">
+							{([
+								{ id: "clinic_first", label: "Сначала клиника" },
+								{ id: "doctor_first", label: "Сначала врач" },
+								{ id: "proportional", label: "Пропорционально" },
+							] as const).map((p) => (
+								<button
+									key={p.id}
+									type="button"
+									data-testid={`payroll-report-advance-${p.id}`}
+									onClick={() => setCashAdvancePolicy(p.id)}
+									className={`h-7 px-2.5 rounded-md text-xs font-medium cursor-pointer transition-colors whitespace-nowrap ${
+										cashAdvancePolicy === p.id
+											? "bg-[var(--primary)] text-white shadow-xs"
+											: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+									}`}
+								>
+									{p.label}
+								</button>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Сводные плитки фонда оплаты труда (ФОТ) */}
 			{roleTab === "doctors" ? (
@@ -429,9 +515,11 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				<Suspense fallback={null}>
 					<DoctorPayrollStudioModal
 						isOpen={isStudioOpen}
+						initialIdentSalaryModel={identSalaryModel}
+						initialCashAdvancePolicy={cashAdvancePolicy}
 						onClose={() => {
 							setIsStudioOpen(false);
-							void fetchPayroll(activePeriod);
+							void fetchPayroll(activePeriod, identSalaryModel, cashAdvancePolicy);
 						}}
 					/>
 				</Suspense>

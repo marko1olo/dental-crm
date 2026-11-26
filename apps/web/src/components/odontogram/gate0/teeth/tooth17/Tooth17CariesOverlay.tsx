@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH17_CARIES_GEOMETRY } from "./tooth17CariesGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth17CariesOverlayProps {
 	cariesType?: "class1" | "class2_mo" | "class2_do" | "class2_mod" | "class5" | "destructive" | undefined;
@@ -18,21 +19,24 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 17;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const g = TOOTH17_CARIES_GEOMETRY;
 	const isChronic = chronicity === "chronic";
 	const isProfunda = cariesDepth === "profunda";
 	const isSuperficial = cariesDepth === "superficial";
 
-	const deminFill = "url(#dente-caries-demin)";
-	const lesionFill = isChronic ? "url(#dente-caries-chronic)" : "url(#dente-caries-lesion)";
-	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
+	const deminFill = `url(#${sid("dente-caries-demin")})`;
+	const lesionFill = `url(#${sid(isChronic ? "dente-caries-chronic" : "dente-caries-lesion")})`;
+	const necroticFill = isChronic ? "#0c0a09" : `url(#${sid("dente-caries-necrotic")})`;
 	const stroke = isDark ? "rgba(245, 158, 11, 0.70)" : "rgba(180, 83, 9, 0.85)";
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 
 	return (
-		<g id="tooth17-caries" className={className} clipPath="url(#tooth17-crown-clip)">
+		<g id={sid(`tooth${tNum}-caries`)} className={className} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 			{cariesType === "class1" && (
-				<g id="tooth17-caries-class1">
+				<g id={sid(`tooth${tNum}-caries-class1`)}>
 					<path d={g.class1.demineralizedHalo} fill={deminFill} stroke={deminStroke} strokeWidth="0.5" />
 					{!isSuperficial && (
 						<path d={g.class1.dendriticCariesPath} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.7" />
@@ -45,7 +49,7 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 			)}
 
 			{cariesType === "class2_mo" && (
-				<g id="tooth17-caries-class2-mo">
+				<g id={sid(`tooth${tNum}-caries-class2-mo`)}>
 					<path d={g.class2.mesialBox.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.5" />
 					{!isSuperficial && <path d={g.class2.mesialBox.crater} fill={lesionFill} stroke={stroke} strokeWidth="0.6" />}
 					{isProfunda && <path d={g.class2.mesialBox.necrotic} fill={necroticFill} />}
@@ -53,7 +57,7 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 			)}
 
 			{cariesType === "class2_do" && (
-				<g id="tooth17-caries-class2-do">
+				<g id={sid(`tooth${tNum}-caries-class2-do`)}>
 					<path d={g.class2.distalBox.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.5" />
 					{!isSuperficial && <path d={g.class2.distalBox.crater} fill={lesionFill} stroke={stroke} strokeWidth="0.6" />}
 					{isProfunda && <path d={g.class2.distalBox.necrotic} fill={necroticFill} />}
@@ -61,7 +65,7 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 			)}
 
 			{cariesType === "class2_mod" && (
-				<g id="tooth17-caries-class2-mod">
+				<g id={sid(`tooth${tNum}-caries-class2-mod`)}>
 					<path d={g.class2.mesialBox.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.5" />
 					<path d={g.class2.distalBox.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.5" />
 					<path d={g.class2.modTunnel} fill={deminFill} stroke={deminStroke} strokeWidth="0.4" />
@@ -81,7 +85,7 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 			)}
 
 			{(cariesType === "class5" || showCervical) && (
-				<g id="tooth17-caries-class5">
+				<g id={sid(`tooth${tNum}-caries-class5`)}>
 					<path d={g.class5.halo} fill={deminFill} stroke={deminStroke} strokeWidth="0.6" />
 					{!isSuperficial && <path d={g.class5.crater} fill={lesionFill} stroke={stroke} strokeWidth="0.7" />}
 					{isProfunda && <path d={g.class5.necrotic} fill={necroticFill} />}
@@ -89,7 +93,7 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 			)}
 
 			{cariesType === "destructive" && (
-				<g id="tooth17-caries-destructive">
+				<g id={sid(`tooth${tNum}-caries-destructive`)}>
 					<path d={g.destructive} fill={lesionFill} stroke={stroke} strokeWidth="1.0" />
 				</g>
 			)}

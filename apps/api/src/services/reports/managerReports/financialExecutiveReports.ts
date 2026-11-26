@@ -30,6 +30,8 @@ import {
 	calculateDoctorPeriodPayroll,
 	calculateKopecksSharePercent,
 	kopecksToRubles,
+	type CashAdvanceAllocationPolicy,
+	type IdentSalaryModel,
 } from "@dental/shared";
 import {
 	fetchActiveDoctorProfiles,
@@ -89,6 +91,10 @@ export type DoctorPayrollRow = {
 	readonly netRevenueKopecks: number;
 	/** Процентная ставка врача (%) */
 	readonly commissionPercent: number;
+	readonly payoutModel?: "percentage" | "chair_rental" | undefined;
+	readonly priorDebtCarryOverKop?: number | undefined;
+	readonly priorDebtDeductedKopecks?: number | undefined;
+	readonly negativeCarryOverKopecks?: number | undefined;
 	/** Итого к выплате (руб.) */
 	readonly payoutRub: number;
 	readonly payoutKopecks: number;
@@ -97,6 +103,8 @@ export type DoctorPayrollRow = {
 
 export type DoctorPayrollReportData = {
 	readonly period: { readonly from: string; readonly to: string };
+	readonly identSalaryModel?: IdentSalaryModel | undefined;
+	readonly cashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
 	readonly rows: DoctorPayrollRow[];
 	readonly assistantRows: AssistantPayrollRow[];
 	readonly totals: {
@@ -338,7 +346,13 @@ export async function doctorPayrollReport(
 	filterDoctorId?: string | undefined,
 	logger?: FastifyBaseLogger | undefined,
 	executor?: TenantDb,
+	options?: {
+		readonly identSalaryModel?: IdentSalaryModel | undefined;
+		readonly cashAdvancePolicy?: CashAdvanceAllocationPolicy | undefined;
+	},
 ): Promise<DoctorPayrollReportData> {
+	const identSalaryModel: IdentSalaryModel = options?.identSalaryModel ?? "net_proportional_discount";
+	const cashAdvancePolicy: CashAdvanceAllocationPolicy = options?.cashAdvancePolicy ?? "proportional";
 	try {
 		let activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId);
 		if (filterDoctorId) {
@@ -356,7 +370,7 @@ export async function doctorPayrollReport(
 		let totalAppointmentsCompleted = 0;
 
 		for (const doc of activeDoctors) {
-			const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop } = await fetchDoctorPayrollDataset({
+			const { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop } = await fetchDoctorPayrollDataset({
 				orgId: scope.organizationId,
 				resolvedDocId: doc.id,
 				fromStr,
@@ -382,6 +396,9 @@ export async function doctorPayrollReport(
 				taxRegime: doc.taxRegime,
 				refundDeductions,
 				unallocatedLabKop,
+				identSalaryModel,
+				cashAdvancePolicy,
+				priorDebtCarryOverKop,
 			});
 
 			const servicesRenderedKopecks = payrollResult.totalGrossRevenueKop;
@@ -415,8 +432,12 @@ export async function doctorPayrollReport(
 				netRevenueRub,
 				netRevenueKopecks,
 				commissionPercent: doc.commissionPercent,
+				payoutModel: docPayoutModel,
 				payoutRub,
 				payoutKopecks,
+				priorDebtCarryOverKop,
+				priorDebtDeductedKopecks: payrollResult.priorDebtDeductedKop ?? 0,
+				negativeCarryOverKopecks: payrollResult.negativeCarryOverKop ?? 0,
 				appointmentsCompleted: orders.length,
 			});
 		}
@@ -434,6 +455,8 @@ export async function doctorPayrollReport(
 				from: scope.from.toISOString(),
 				to: scope.to.toISOString(),
 			},
+			identSalaryModel,
+			cashAdvancePolicy,
 			rows,
 			assistantRows: assistantReport.rows,
 			totals: {

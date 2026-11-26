@@ -77,6 +77,6 @@ describe("Tooth45 Wheeler Ch. 11 Second Mandibular Premolar Anatomical Invariant
 			}),
 		);
 		assert.ok(htmlEndo.includes("id=\"tooth45-endodontics\""));
-		assert.ok(htmlEndo.includes("id=\"canal-Main\""));
+		assert.ok(htmlEndo.includes("id=\"tooth45-canal-Main\""));
 	});
 });

@@ -71,9 +71,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		} else if (onQuickStateChange && selectedTeeth.length > 0) {
 			const targetSurface: ToothSurfaceKey =
 				(activeSurface ? (normalizeCanonicalSurfaces(activeSurface)[0] as ToothSurfaceKey | undefined) : undefined) ?? "O";
-			for (const toothNum of selectedTeeth) {
-				onQuickStateChange([toothNum], "Caries", [targetSurface]);
-			}
+			onQuickStateChange(selectedTeeth, "Caries", [targetSurface]);
 		}
 	}, [onApplyFastCariesK021, onQuickStateChange, selectedTeeth, activeSurface]);
 
@@ -96,7 +94,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 					className="w-full flex items-center justify-between gap-1.5 px-3 py-1 mb-2 bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line)] rounded-xl flex-nowrap overflow-x-auto h-[36px] text-xs"
 				>
 					<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)] shrink-0">
-						<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+						<Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" />
 						<span>Экспресс-действия:</span>
 					</div>
 					<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
@@ -107,7 +105,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							title="Отметить все зубы интактными (здоровыми)"
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
-							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+							<ShieldCheck className="w-3.5 h-3.5 text-current" />
 							<span>Санирован / Интактный</span>
 						</button>
 						<button
@@ -117,7 +115,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							title="Отметить зубы мудрости (18, 28, 38, 48) как отсутствующие"
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
-							<Sparkle className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
+							<Sparkle className="w-3.5 h-3.5 text-current" />
 							<span>Без 8-ок</span>
 						</button>
 						<button
@@ -127,7 +125,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							title="Провести комплексную профессиональную гигиену"
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
-							<Sparkles className="w-3.5 h-3.5 text-sky-600" />
+							<Sparkles className="w-3.5 h-3.5 text-current" />
 							<span>Профгигиена</span>
 						</button>
 						<button
@@ -137,7 +135,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							title="Лечение кариеса"
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
-							<HeartPulse className="w-3.5 h-3.5 text-amber-600" />
+							<HeartPulse className="w-3.5 h-3.5 text-current" />
 							<span>Лечение кариеса</span>
 						</button>
 					</div>

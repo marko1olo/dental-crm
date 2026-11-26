@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import type { IdentSalaryModel } from "@dental/shared";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import {
 	type DoctorPieceRateWalletViewProps,
@@ -73,6 +74,8 @@ export const DoctorPieceRateWalletView: React.FC<DoctorPieceRateWalletViewProps>
 				selectedDate={logic.selectedDate}
 				activePeriodFilter={logic.activePeriodFilter}
 				isLoading={logic.isLoading}
+				identSalaryModel={logic.identSalaryModel}
+				onIdentSalaryModelChange={(m: IdentSalaryModel) => logic.setIdentSalaryModel(m)}
 				onClose={onClose}
 				onSelectToday={logic.handleSelectToday}
 				onSelectYesterday={logic.handleSelectYesterday}

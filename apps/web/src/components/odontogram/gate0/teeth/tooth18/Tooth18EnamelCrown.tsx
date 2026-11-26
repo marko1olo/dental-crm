@@ -1,6 +1,7 @@
 import React from "react";
 import { Tooth18OcclusalCusps } from "./Tooth18OcclusalCusps";
 import { TOOTH18_GEOMETRY } from "./tooth18GeometryConstants";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth18EnamelCrownProps {
 	stroke: string;
@@ -23,16 +24,19 @@ export const Tooth18EnamelCrown: React.FC<Tooth18EnamelCrownProps> = ({
 	showAbfraction = false,
 	isDark = false,
 }) => {
+	const tNum = useToothNumber() ?? 18;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const crownPath = showAbfraction
 		? TOOTH18_GEOMETRY.crownMonolithPathWithAbfraction
 		: TOOTH18_GEOMETRY.crownMonolithPath;
 
 	return (
-		<g id="tooth18-natural-crown-group">
+		<g id={sid(`tooth${tNum}-natural-crown-group`)}>
 			<path
-				id="tooth18-crown-monolith"
+				id={sid(`tooth${tNum}-crown-monolith`)}
 				d={crownPath}
-				fill="url(#dente-enamel-porcelain-18)"
+				fill={`url(#${sid(`dente-enamel-porcelain-${tNum}`)})`}
 				fillOpacity={crownOpacity}
 				stroke={stroke}
 				strokeWidth="0.8"
@@ -40,10 +44,10 @@ export const Tooth18EnamelCrown: React.FC<Tooth18EnamelCrownProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{/* Unified 3D Cylindrical Proximal Contour Volume */}
-			<g clipPath="url(#tooth18-crown-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 				<path
 					d={crownPath}
-					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					fill={`url(#${sid(isDark ? "dente-proximal-contour-dark" : "dente-proximal-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

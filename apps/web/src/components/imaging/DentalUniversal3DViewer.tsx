@@ -134,6 +134,7 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 		if (!engine) return;
 
 		let isCancelled = false;
+		const abortController = new AbortController();
 
 		const loadInitialModels = async () => {
 			setIsLoading(true);
@@ -145,8 +146,10 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 				if (sessionId && typeof fetch !== "undefined") {
 					try {
 						setLoadingMessage("Загрузка сессии интраорального сканирования...");
-						const res = await fetch(`/api/v1/scans/sessions/${encodeURIComponent(sessionId)}`);
-						if (res.ok) {
+						const res = await fetch(`/api/v1/scans/sessions/${encodeURIComponent(sessionId)}`, {
+							signal: abortController.signal,
+						});
+						if (res.ok && !abortController.signal.aborted) {
 							const session = await res.json();
 							if (session.occlusionMatrix && Array.isArray(session.occlusionMatrix)) {
 								engine.setOcclusionMatrix(session.occlusionMatrix);
@@ -175,8 +178,9 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 								}
 							}
 						}
-					} catch {
+					} catch (manifestErr) {
 						// Non-fatal, fallback to direct URLs or procedural
+						console.warn("[DentalUniversal3DViewer] Study manifest fallback:", manifestErr);
 					}
 				}
 
@@ -225,12 +229,12 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 					setHasModelsLoaded(false);
 				}
 			} catch (err: unknown) {
-				if (!isCancelled) {
+				if (!isCancelled && !abortController.signal.aborted && !(err instanceof Error && err.name === "AbortError")) {
 					const msg = err instanceof Error ? err.message : "Не удалось загрузить 3D модель";
 					setErrorMessage(`Ошибка загрузки: ${msg}`);
 				}
 			} finally {
-				if (!isCancelled) {
+				if (!isCancelled && !abortController.signal.aborted) {
 					setIsLoading(false);
 				}
 			}
@@ -240,6 +244,7 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 
 		return () => {
 			isCancelled = true;
+			abortController.abort();
 		};
 	}, [sessionId, modelUrl, modelFormat, upperArchUrl, lowerArchUrl, biteRegistrationUrl, prepUrl, scanbodyUrl]);
 

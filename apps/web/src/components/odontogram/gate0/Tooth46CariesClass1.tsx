@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_CARIES_DESTRUCTIVE_GEOMETRY } from "./Tooth46CariesDestructiveGeometry";
 import { TOOTH46_CARIES_GEOMETRY } from "./Tooth46CariesGeometry";
 import type { CariesDepth } from "./tooth46PresetTypes";
@@ -26,6 +27,10 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	showBuccalPit = true,
 	isDestructive = false,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const deminFill = `url(#${sid("dente-caries-demin")})`;
 	const c1 = TOOTH46_CARIES_GEOMETRY;
 	const isSuperficial = cariesDepth === "superficial";
 	const isDestruct = isDestructive || cariesDepth === "destructive";
@@ -35,11 +40,11 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 
 	return (
-		<g id="tooth46-caries-class1">
+		<g id={sid(`tooth${tNum}-caries-class1`)}>
 			{/* Non-destructive depths: superficial, media, profunda */}
 			{!isDestruct && (
 				<>
-					<path d={c1.demineralizedHalo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.6"} />
+					<path d={c1.demineralizedHalo} fill={deminFill} stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.6"} />
 					{!isSuperficial && (
 						<path d={c1.dendriticCariesPath} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.8" />
 					)}
@@ -52,8 +57,8 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 						strokeWidth={isSuperficial ? "0.8" : "0.7"} strokeLinecap="round"
 					/>
 					{showBuccalPit && (
-						<g id="tooth46-buccal-caecum">
-							<path d={c1.buccalPitCavity.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth="0.5" />
+						<g id={sid(`tooth${tNum}-buccal-caecum`)}>
+							<path d={c1.buccalPitCavity.halo} fill={deminFill} stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth="0.5" />
 							{!isSuperficial && <path d={c1.buccalPitCavity.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.9)" strokeWidth="0.6" />}
 							{isProfunda && <path d={c1.buccalPitCavity.necroticCenter} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</g>
@@ -63,7 +68,7 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 
 			{/* Destructive Stage 4: exposed necrotic dentin crater + enamel fracture margin */}
 			{isDestruct && (
-				<g id="tooth46-caries-class1-destructive">
+				<g id={sid(`tooth${tNum}-caries-class1-destructive`)}>
 					<path d={TOOTH46_CARIES_DESTRUCTIVE_GEOMETRY.destructiveCutout} fill={lesionFill} stroke="rgba(120, 53, 15, 0.95)" strokeWidth="0.8" />
 					<path d={destr.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.2" strokeLinecap="round" />
 					{destr.fractureSteps.map((s, idx) => (

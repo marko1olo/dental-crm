@@ -1,5 +1,6 @@
 import React from "react";
 import { TOOTH13_PERIAPICAL_GEOMETRY } from "./tooth13PeriapicalGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth13PeriapicalAreaProps {
 	condition?: string | undefined;
@@ -17,6 +18,10 @@ export const Tooth13PeriapicalArea: React.FC<Tooth13PeriapicalAreaProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 13;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+
 	if (!condition || condition === "intact" || condition === "normal") return null;
 
 	const p = TOOTH13_PERIAPICAL_GEOMETRY;
@@ -28,9 +33,9 @@ export const Tooth13PeriapicalArea: React.FC<Tooth13PeriapicalAreaProps> = ({
 	const rimStroke = isDark ? "rgba(248, 250, 252, 0.85)" : "rgba(15, 23, 42, 0.75)";
 
 	return (
-		<g id="tooth13-periapical-area" {...(className ? { className } : {})}>
+		<g id={sid(`tooth${tNum}-periapical-area`)} {...(className ? { className } : {})}>
 			{isCyst && (
-				<g id="tooth13-radicular-cyst">
+				<g id={sid(`tooth${tNum}-radicular-cyst`)}>
 					<path
 						d={p.radicularCyst.canine.corticalRim}
 						fill="none"
@@ -40,13 +45,13 @@ export const Tooth13PeriapicalArea: React.FC<Tooth13PeriapicalAreaProps> = ({
 					/>
 					<path
 						d={p.radicularCyst.canine.lumen}
-						fill="url(#dente-periapical-cyst-13)"
+						fill={`url(#${sid(`dente-periapical-cyst-${tNum}`)})`}
 					/>
 				</g>
 			)}
 
 			{isGranuloma && (
-				<g id="tooth13-apical-granuloma">
+				<g id={sid(`tooth${tNum}-apical-granuloma`)}>
 					<path
 						d={p.granuloma.canine.capsuleRim}
 						fill="none"
@@ -57,7 +62,7 @@ export const Tooth13PeriapicalArea: React.FC<Tooth13PeriapicalAreaProps> = ({
 					/>
 					<path
 						d={p.granuloma.canine.core}
-						fill="url(#dente-granuloma-core)"
+						fill={`url(#${sid("dente-granuloma-core")})`}
 					/>
 				</g>
 			)}

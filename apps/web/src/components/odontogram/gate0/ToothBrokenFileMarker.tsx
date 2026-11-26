@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix } from "./OdontogramSharedDefsContext";
 
 export interface ToothBrokenFileMarkerProps {
 	toothId?: string | undefined;
@@ -11,11 +12,6 @@ export interface ToothBrokenFileMarkerProps {
 
 /**
  * Universal high-contrast separated endodontic instrument (сломанный файл NiTi) marker.
- * Conforms to Tooth46BrokenFileOverlay clinical visual invariant:
- * - Vivid amber-orange warning danger contour (rgba(217, 119, 6, 0.95) / rgba(251, 191, 36, 0.95))
- * - Dark surgical metallic NiTi core (#1e293b / url(#dente-niti-metal))
- * - Vivid red fracture notch (#ef4444) at torsional fatigue separation point
- * - High-luster spiral flutes (#ffffff)
  * Mandate 8b: Strictly <= 120 lines.
  */
 export const ToothBrokenFileMarker: React.FC<ToothBrokenFileMarkerProps> = ({
@@ -26,13 +22,15 @@ export const ToothBrokenFileMarker: React.FC<ToothBrokenFileMarkerProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const warningStroke = isDark
 		? "rgba(251, 191, 36, 0.95)"
 		: "rgba(217, 119, 6, 0.95)";
 
 	return (
 		<g
-			id={toothId ? `tooth${toothId}-broken-file` : "broken-file-marker"}
+			id={sid(toothId ? `tooth${toothId}-broken-file` : "broken-file-marker")}
 			data-testid={toothId ? `tooth${toothId}-broken-file` : "broken-file"}
 			className={className}
 		>
@@ -52,7 +50,7 @@ export const ToothBrokenFileMarker: React.FC<ToothBrokenFileMarkerProps> = ({
 			<path
 				d={path}
 				fill="none"
-				stroke="url(#dente-niti-metal)"
+				stroke={`url(#${sid("dente-niti-metal")})`}
 				strokeWidth="2.0"
 				strokeLinecap="round"
 				strokeLinejoin="round"

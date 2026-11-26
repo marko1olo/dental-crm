@@ -54,6 +54,17 @@
 	box-sizing: border-box;
 }
 
+@media (max-width: 767px) {
+	.dente-segmented-item,
+	.segmented-control-item {
+		height: 44px !important;
+		min-height: 44px !important;
+		max-height: none !important;
+		padding: 0 8px !important;
+		font-size: 11.5px !important;
+	}
+}
+
 .dente-segmented-item:hover:not(.active):not([data-active="true"]) {
 	color: var(--ink);
 	background: rgba(0, 0, 0, 0.04);

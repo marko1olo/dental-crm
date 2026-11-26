@@ -8,6 +8,7 @@ import { Tooth12RestorationOverlay } from "./Tooth12RestorationOverlay";
 import { Tooth12PeriapicalArea } from "./Tooth12PeriapicalArea";
 import { ToothStatusBadge } from "../../ToothStatusBadge";
 import { ToothUpperSurgeryOverlay } from "../../ToothUpperSurgeryOverlay";
+import { ToothNumberContext } from "../../OdontogramSharedDefsContext";
 import { TOOTH12_GEOMETRY } from "./tooth12GeometryConstants";
 import { DEFAULT_TOOTH46_LAYERS, type Tooth46ContainerProps } from "../../tooth46Types";
 
@@ -48,16 +49,17 @@ export const Tooth12Container: React.FC<Tooth12ContainerProps> = ({
 	const viewBox = "0 0 100 218";
 
 	return (
-		<svg
-			viewBox={viewBox}
-			width={100 * zoom}
-			height={baseHeight * zoom}
-			{...(className ? { className } : {})}
-			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label={`Анатомический верхний латеральный резец ${num}`}
-			role="img"
-		>
-			<Tooth12ShaderDefs />
+		<ToothNumberContext.Provider value={num}>
+			<svg
+				viewBox={viewBox}
+				width={100 * zoom}
+				height={baseHeight * zoom}
+				{...(className ? { className } : {})}
+				style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
+				aria-label={`Анатомический верхний латеральный резец ${num}`}
+				role="img"
+			>
+				<Tooth12ShaderDefs toothNumber={num} />
 			<g transform={isFlipped ? "translate(100, 0) scale(-1, 1)" : undefined}>
 				<Tooth12PeriapicalArea condition={a.periapicalCondition} isDark={isDark} />
 				{a.roots && !a.implant && (
@@ -110,5 +112,6 @@ export const Tooth12Container: React.FC<Tooth12ContainerProps> = ({
 				<ToothStatusBadge presetId={presetId} layers={a} isDark={isDark} cx={50} cy={cy} r={r} toothNumber={num} />
 			)}
 		</svg>
+		</ToothNumberContext.Provider>
 	);
 };

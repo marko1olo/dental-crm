@@ -31,11 +31,13 @@ a {
 	-webkit-tap-highlight-color: transparent;
 }
 
-button {
-	cursor: pointer;
-	color: inherit;
-	margin: 0;
-	font: inherit;
+@layer base {
+	button {
+		cursor: pointer;
+		color: inherit;
+		margin: 0;
+		font: inherit;
+	}
 }
 
 button:disabled {

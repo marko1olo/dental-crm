@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { Tooth46AbutmentOverlay } from "./Tooth46AbutmentOverlay";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
 import { Tooth46ScrewAccessPlug } from "./Tooth46ScrewAccessPlug";
@@ -18,6 +19,11 @@ export interface Tooth46ImplantSuprastructureProps {
 export const Tooth46ImplantSuprastructure: React.FC<
 	Tooth46ImplantSuprastructureProps
 > = ({ stage, renderScrewAccessOnly = false, className }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const collarFill = `url(#${sid("dente-titanium-collar")})`;
+	const abutmentFill = `url(#${sid("dente-titanium-abutment")})`;
 	const imp = TOOTH46_PATHOLOGY_GEOMETRY.implant;
 
 	if (renderScrewAccessOnly) {
@@ -25,12 +31,12 @@ export const Tooth46ImplantSuprastructure: React.FC<
 	}
 
 	return (
-		<g id="tooth46-implant-suprastructure-group" className={className}>
+		<g id={sid(`tooth${tNum}-implant-suprastructure-group`)} className={className}>
 			{stage === "pure" && (
-				<g id="tooth46-cover-screw" data-component="implant-cover-screw">
+				<g id={sid(`tooth${tNum}-cover-screw`)} data-component="implant-cover-screw">
 					<path
 						d={imp.coverScrew.cap}
-						fill="url(#dente-titanium-collar)"
+						fill={collarFill}
 						stroke="#334155"
 						strokeWidth="0.7"
 					/>
@@ -49,19 +55,19 @@ export const Tooth46ImplantSuprastructure: React.FC<
 			)}
 			{stage === "healing_abutment" && (
 				<g
-					id="tooth46-healing-abutment"
+					id={sid(`tooth${tNum}-healing-abutment`)}
 					data-component="implant-healing-abutment"
 				>
 					<path
 						d={imp.healingAbutment.body}
 						data-component="implant-abutment"
-						fill="url(#dente-titanium-abutment)"
+						fill={abutmentFill}
 						stroke="#334155"
 						strokeWidth="0.8"
 					/>
 					<path
 						d={imp.healingAbutment.topCap}
-						fill="url(#dente-titanium-collar)"
+						fill={collarFill}
 						opacity="0.6"
 					/>
 					<path

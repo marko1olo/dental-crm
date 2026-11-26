@@ -1,7 +1,7 @@
 import React from "react";
 import { Tooth46CrownDefects } from "./Tooth46CrownDefects";
 import {
-	CROWN_FILL_MAP,
+	getCrownFill,
 	getCrownFissureStroke,
 	getCrownStroke,
 	getCuspSlopeColors,
@@ -9,6 +9,7 @@ import {
 } from "./Tooth46CrownMaps";
 import { TOOTH46_RESTORATION_GEOMETRY } from "./Tooth46RestorationGeometry";
 import type { CrownMaterial, RestorationCondition } from "./tooth46Types";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 
 export interface Tooth46CrownOverlayProps {
 	material?: CrownMaterial;
@@ -27,6 +28,9 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 	isImplant = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const r = TOOTH46_RESTORATION_GEOMETRY;
 	const stroke = getCrownStroke(material, isDark);
 	const fissureColor = getCrownFissureStroke(material, isDark);
@@ -43,16 +47,16 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 
 	return (
 		<g
-			id="tooth46-zirconia-crown"
+			id={sid(`tooth${tNum}-zirconia-crown`)}
 			data-crown-material={material}
 			data-crown-condition={condition}
 			data-implant-crown={isImplant ? "true" : undefined}
 			className={className}
 		>
 			<path
-				id="tooth46-crown-shell"
+				id={sid(`tooth${tNum}-crown-shell`)}
 				d={shell}
-				fill={CROWN_FILL_MAP[material]}
+				fill={getCrownFill(material, prefix)}
 				fillOpacity={translucent ? "0.62" : undefined}
 				stroke={stroke}
 				strokeWidth="0.8"
@@ -60,15 +64,15 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{material === "pfm" && (
-				<path d={pfmCollar} fill="url(#dente-pfm-metal-collar)" stroke="none" />
+				<path d={pfmCollar} fill={`url(#${sid("dente-pfm-metal-collar")})`} stroke="none" />
 			)}
 			{(material === "zirconia" || material === "emax") && (
-				<path d={shoulder} fill="url(#dente-zirconia-chamfer)" stroke="none" />
+				<path d={shoulder} fill={`url(#${sid("dente-zirconia-chamfer")})`} stroke="none" />
 			)}
 			{r.zirconiaCuspSlopes.map((s) => (
 				<path
 					key={`slope-${s.id}`}
-					id={`tooth46-cusp-slope-${s.id}`}
+					id={sid(`tooth${tNum}-cusp-slope-${s.id}`)}
 					d={s.d}
 					fill={s.type === "highlight" ? slopes.highlight : slopes.shadow}
 					stroke="none"
@@ -89,7 +93,7 @@ export const Tooth46CrownOverlay: React.FC<Tooth46CrownOverlayProps> = ({
 				r.zirconiaSpecularRidges.map((g) => (
 					<path
 						key={`glaze-${g.id}`}
-						id={`tooth46-glaze-${g.id}`}
+						id={sid(`tooth${tNum}-glaze-${g.id}`)}
 						d={g.d}
 						fill="none"
 						stroke={glazeStroke}

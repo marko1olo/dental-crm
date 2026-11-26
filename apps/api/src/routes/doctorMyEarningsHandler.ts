@@ -11,8 +11,13 @@ import { doctorCommissions, pricelistDoctorPayrolls, users } from "../db/schema.
 import {
 	basisPointsFromPercent,
 	calculateDoctorPeriodPayroll,
+	computeEffectiveDoctorBaseAfterRefund,
 	kopecksToRubles,
 	percentageOfKopecks,
+	resolveIdentItemBasis,
+	type CashAdvanceAllocationPolicy,
+	type DoctorCompletedServiceItem,
+	type IdentSalaryModel,
 	type Kopecks,
 } from "@dental/shared";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
@@ -30,6 +35,11 @@ const doctorMyEarningsQuerySchema = z
 		to: z.string().optional(),
 		startDate: z.string().optional(),
 		endDate: z.string().optional(),
+		identSalaryModel: z.enum(["gross_before_discount", "net_proportional_discount", "net_doctor_bears_discount"]).optional(),
+		cashAdvancePolicy: z.enum(["clinic_first", "doctor_first", "proportional"]).optional(),
+		payoutModel: z.enum(["percentage", "chair_rental"]).optional(),
+		chairRentalKop: z.coerce.number().int().min(0).optional(),
+		taxRegime: z.enum(["employee", "self_employed"]).optional(),
 	})
 	.strict();
 
@@ -88,7 +98,7 @@ export async function handleGetDoctorMyEarnings(
 		docUser,
 		commRecords,
 		pricelistRows,
-		dataset: { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop },
+		dataset: { shiftsCount, orders, completedServices, refundDeductions, unallocatedLabKop, priorDebtCarryOverKop },
 	} = await withTenantCtx(orgId, async (tx) => {
 		const [u] = await tx
 			.select({
@@ -212,6 +222,13 @@ export async function handleGetDoctorMyEarnings(
 		};
 	});
 
+	const identSalaryModel: IdentSalaryModel = q.identSalaryModel ?? "net_proportional_discount";
+	const cashAdvancePolicy: CashAdvanceAllocationPolicy = q.cashAdvancePolicy ?? "proportional";
+	const resolvedPayoutModel: "percentage" | "chair_rental" = q.payoutModel ?? "percentage";
+	const resolvedChairRentalKop = resolvedPayoutModel === "chair_rental" ? (q.chairRentalKop ?? shiftsCount * 400000) : 0;
+	const resolvedTaxRegime: "employee" | "self_employed" =
+		q.taxRegime ?? (resolvedPayoutModel === "chair_rental" ? "self_employed" : "employee");
+
 	const payrollResult = calculateDoctorPeriodPayroll({
 		doctorId: resolvedDocId,
 		doctorName,
@@ -221,13 +238,63 @@ export async function handleGetDoctorMyEarnings(
 		services: enrichedCompletedServices,
 		customBasePercentage: basePercent,
 		categoryRates: categoryRatesMap,
-		payoutModel: "percentage",
-		chairRentalKop: 0,
+		payoutModel: resolvedPayoutModel,
+		chairRentalKop: resolvedChairRentalKop,
 		advancePayoutKop: 0,
-		taxRegime: "employee",
+		taxRegime: resolvedTaxRegime,
 		refundDeductions,
 		unallocatedLabKop,
+		identSalaryModel,
+		cashAdvancePolicy,
+		priorDebtCarryOverKop,
 	});
+
+	function computeOrderIdentItem(
+		ord: (typeof orders)[number],
+		itemCommPercent: number,
+	): { grossKop: number; netBaseKop: number; earnedKop: number; effectivePaidKop: number } {
+		const svcItem: DoctorCompletedServiceItem = {
+			id: ord.id,
+			dateIso: ord.dateIso,
+			patientName: ord.patientName,
+			medicalCardNumber: ord.medicalCardNumber,
+			serviceNameRu: ord.serviceNameRu,
+			category: (ord.category as DoctorCompletedServiceItem["category"]) || "therapy",
+			grossRevenueKop: ord.grossKopecks,
+			...(ord.listPriceKopecks !== undefined ? { listPriceKop: ord.listPriceKopecks } : {}),
+			...(ord.discountKopecks !== undefined ? { discountKop: ord.discountKopecks } : {}),
+			...(ord.salaryPriceKopecks !== undefined ? { salaryPriceKop: ord.salaryPriceKopecks } : {}),
+			labCostKop: ord.labCostKopecks,
+			materialCostKop: ord.materialCostKopecks,
+			isPaid: ord.isPaid54Fz,
+			paidAmountKop: ord.paidKopecks,
+			actuallyPaidGrossKop: ord.paidKopecks,
+		};
+		const basis = resolveIdentItemBasis(svcItem, identSalaryModel, cashAdvancePolicy);
+		if (!basis.shouldInclude) {
+			return { grossKop: ord.grossKopecks, netBaseKop: 0, earnedKop: 0, effectivePaidKop: Math.max(0, ord.paidKopecks || 0) };
+		}
+		const effectiveGrossKop = computeEffectiveDoctorBaseAfterRefund({
+			item: svcItem,
+			identSalaryModel,
+			cashAdvancePolicy,
+			salaryPriceKop: basis.salaryBaseConfiguredKop,
+			actualPaidKop: basis.actualPaidKop,
+			refundKop: 0,
+		});
+		const netBaseKop = ord.category === "retail_hygiene"
+			? effectiveGrossKop
+			: Math.max(0, effectiveGrossKop - ord.labCostKopecks - ord.materialCostKopecks);
+		const earnedKop = resolvedPayoutModel === "chair_rental"
+			? netBaseKop
+			: percentageOfKopecks(netBaseKop as Kopecks, basisPointsFromPercent(itemCommPercent));
+		return {
+			grossKop: effectiveGrossKop,
+			netBaseKop,
+			earnedKop,
+			effectivePaidKop: Math.max(0, ord.paidKopecks || 0),
+		};
+	}
 
 	// Группировка по реальным назначениям / визитам
 	type ApptAccumulator = {
@@ -310,15 +377,10 @@ export async function handleGetDoctorMyEarnings(
 		}
 
 		const itemCommPercent = resolveServiceCommissionPercent(ord.category, ord.serviceNameRu, ord.serviceCode);
-		const effectivePaidKop = Math.max(0, ord.paidKopecks || 0);
-		const netBaseItemKop = effectivePaidKop > 0
-			? (ord.category === "retail_hygiene"
-				? effectivePaidKop
-				: Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks))
-			: 0;
-		const earnedItemKop = effectivePaidKop > 0
-			? percentageOfKopecks(netBaseItemKop as Kopecks, basisPointsFromPercent(itemCommPercent))
-			: 0;
+		const computed = computeOrderIdentItem(ord, itemCommPercent);
+		const effectivePaidKop = computed.effectivePaidKop;
+		const netBaseItemKop = computed.netBaseKop;
+		const earnedItemKop = computed.earnedKop;
 
 		appt.totalCount += 1;
 		if (effectivePaidKop > 0) appt.paidCount += 1;
@@ -329,7 +391,7 @@ export async function handleGetDoctorMyEarnings(
 					? "partial"
 					: "unpaid";
 
-		appt.grossRevenueKop += ord.grossKopecks;
+		appt.grossRevenueKop += computed.grossKop;
 		appt.labCostKop += ord.labCostKopecks;
 		appt.materialsCostKop += ord.materialCostKopecks;
 		appt.netBaseKop += netBaseItemKop;
@@ -340,9 +402,9 @@ export async function handleGetDoctorMyEarnings(
 			nameRu: ord.serviceNameRu,
 			category: ord.category,
 			categoryRu: ord.categoryLabelRu,
-			priceRub: kopecksToRubles(ord.grossKopecks),
-			priceKop: ord.grossKopecks,
-			priceKopecks: ord.grossKopecks,
+			priceRub: kopecksToRubles(computed.grossKop),
+			priceKop: computed.grossKop,
+			priceKopecks: computed.grossKop,
 			labCostRub: kopecksToRubles(ord.labCostKopecks),
 			labCostKop: ord.labCostKopecks,
 			labCostKopecks: ord.labCostKopecks,
@@ -409,20 +471,11 @@ export async function handleGetDoctorMyEarnings(
 			};
 			catMap.set(ord.category, cat);
 		}
-		const effectivePaidKop = Math.max(0, ord.paidKopecks || 0);
-		const netBase = effectivePaidKop > 0
-			? (ord.category === "retail_hygiene"
-				? effectivePaidKop
-				: Math.max(0, effectivePaidKop - ord.labCostKopecks - ord.materialCostKopecks))
-			: 0;
-		const earned = effectivePaidKop > 0
-			? percentageOfKopecks(netBase as Kopecks, basisPointsFromPercent(itemCommPercent))
-			: 0;
-
-		cat.grossRevenueKop += ord.grossKopecks;
+		const computed = computeOrderIdentItem(ord, itemCommPercent);
+		cat.grossRevenueKop += computed.grossKop;
 		cat.labDeductionsKop += ord.labCostKopecks;
-		cat.netBaseKop += netBase;
-		cat.doctorEarnedKop += earned;
+		cat.netBaseKop += computed.netBaseKop;
+		cat.doctorEarnedKop += computed.earnedKop;
 		cat.servicesCount += 1;
 	}
 
@@ -450,6 +503,15 @@ export async function handleGetDoctorMyEarnings(
 
 	const summary = {
 		shiftsCount,
+		identSalaryModel: payrollResult.identSalaryModel,
+		cashAdvancePolicy: payrollResult.cashAdvancePolicy,
+		payoutModel: payrollResult.payoutModel,
+		chairRentalKop: payrollResult.chairRentalKop ?? 0,
+		taxRegime: payrollResult.taxRegime,
+		priorDebtCarryOverKop,
+		priorDebtDeductedKop: payrollResult.priorDebtDeductedKop ?? 0,
+		negativeCarryOverKop: payrollResult.negativeCarryOverKop ?? 0,
+		netPayoutToDoctorKop: payrollResult.netPayoutToDoctorKop,
 		totalGrossRevenueRub: kopecksToRubles(totalGrossRevenueKop),
 		totalGrossRevenueKop,
 		totalLabDeductionsRub: kopecksToRubles(totalLabDeductionsKop),
@@ -475,10 +537,23 @@ export async function handleGetDoctorMyEarnings(
 			| "pending_cashier",
 	};
 
+	const debtFormulaSuffix = (payrollResult.priorDebtDeductedKop ?? 0) > 0
+		? " − Долг прошлых периодов"
+		: "";
+
 	return reply.send({
 		doctorId: resolvedDocId,
 		doctorName,
 		doctorSpecialty,
+		identSalaryModel: payrollResult.identSalaryModel,
+		cashAdvancePolicy: payrollResult.cashAdvancePolicy,
+		payoutModel: payrollResult.payoutModel,
+		chairRentalKop: payrollResult.chairRentalKop ?? 0,
+		taxRegime: payrollResult.taxRegime,
+		priorDebtCarryOverKop,
+		priorDebtDeductedKop: payrollResult.priorDebtDeductedKop ?? 0,
+		negativeCarryOverKop: payrollResult.negativeCarryOverKop ?? 0,
+		netPayoutToDoctorKop: payrollResult.netPayoutToDoctorKop,
 		period: {
 			from: fromStr,
 			to: toStr,
@@ -487,6 +562,8 @@ export async function handleGetDoctorMyEarnings(
 		summary,
 		specialtyBreakdown,
 		appointments,
-		formulaExplanationRu: "Начислено = (Выручка − ЗТЛ − Материалы) × Ставка врача",
+		formulaExplanationRu: resolvedPayoutModel === "chair_rental"
+			? `Начислено = (Выручка − ЗТЛ − Материалы) − Аренда кресла${debtFormulaSuffix}`
+			: `Начислено = (Выручка − ЗТЛ − Материалы) × Ставка врача${debtFormulaSuffix}`,
 	});
 }

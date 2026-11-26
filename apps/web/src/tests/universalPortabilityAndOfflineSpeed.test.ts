@@ -356,11 +356,16 @@ test("Universal Portability & Offline Cold-Start (<500ms) Suite", async (t) => {
 	// 5. Desktop Windows (.EXE) & Android (.APK) Packaging Readiness
 	// ─────────────────────────────────────────────────────────────────────────
 	await t.test("5. Packaging configurations are valid for Desktop EXE (Electron/Tauri) and Android APK (Capacitor/PWA)", () => {
-		// 5.1. Android Capacitor config
+		// 5.1. Android Capacitor config (single root SSOT)
 		const capConfigCandidatePaths: readonly string[] = [
 			path.resolve(process.cwd(), "capacitor.config.ts"),
-			path.resolve(process.cwd(), "apps/web/capacitor.config.ts"),
+			path.resolve(process.cwd(), "../../capacitor.config.ts"),
 		];
+		assert.equal(
+			fs.existsSync(path.resolve(process.cwd(), "apps/web/capacitor.config.ts")),
+			false,
+			"Duplicate apps/web/capacitor.config.ts must not exist; keep single root capacitor.config.ts",
+		);
 		let capConfigPath = "capacitor.config.ts";
 		for (const p of capConfigCandidatePaths) {
 			if (fs.existsSync(p)) {

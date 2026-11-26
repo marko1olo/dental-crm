@@ -1,5 +1,6 @@
 import React from "react";
 import type { ApexPoint } from "./ToothAdaptivePeriapicalArea";
+import { scopeOdontogramId, useOdontogramIdPrefix } from "./OdontogramSharedDefsContext";
 
 export interface ToothPeriapicalCystProps {
 	apices: readonly ApexPoint[];
@@ -16,6 +17,8 @@ export const ToothPeriapicalCyst: React.FC<ToothPeriapicalCystProps> = ({
 	toothId,
 	className,
 }) => {
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const outerBorder = isDark ? "#ffffff" : "#f1f5f9";
 	const spiculeStroke = isDark
 		? "rgba(226, 232, 240, 0.5)"
@@ -28,7 +31,7 @@ export const ToothPeriapicalCyst: React.FC<ToothPeriapicalCystProps> = ({
 	if (condition === "resorption") {
 		return (
 			<g
-				id={toothId ? `tooth${toothId}-apical-resorption` : "tooth-apical-resorption"}
+				id={sid(toothId ? `tooth${toothId}-apical-resorption` : "tooth-apical-resorption")}
 				data-testid="tooth-resorption"
 				className={className}
 			>
@@ -36,7 +39,7 @@ export const ToothPeriapicalCyst: React.FC<ToothPeriapicalCystProps> = ({
 					const r = apex.r ?? 9.5;
 					return (
 						<g key={`resorp-apex-${i}-${apex.x}`}>
-							<ellipse cx={apex.x} cy={apex.y - 2} rx={r * 0.95} ry={r * 0.75} fill="url(#dente-resorption-halo)" />
+							<ellipse cx={apex.x} cy={apex.y - 2} rx={r * 0.95} ry={r * 0.75} fill={`url(#${sid("dente-resorption-halo")})`} />
 							<path
 								d={`M ${apex.x - r * 0.7},${apex.y - 3.5} C ${apex.x - r * 0.3},${apex.y - 1} ${apex.x + r * 0.3},${apex.y - 1} ${apex.x + r * 0.7},${apex.y - 3.5} Z`}
 								fill={craterFill}
@@ -72,7 +75,7 @@ export const ToothPeriapicalCyst: React.FC<ToothPeriapicalCystProps> = ({
 
 	return (
 		<g
-			id={toothId ? `tooth${toothId}-radicular-cyst` : "tooth-radicular-cyst"}
+			id={sid(toothId ? `tooth${toothId}-radicular-cyst` : "tooth-radicular-cyst")}
 			data-testid="tooth-radicular-cyst"
 			className={className}
 		>
@@ -80,7 +83,7 @@ export const ToothPeriapicalCyst: React.FC<ToothPeriapicalCystProps> = ({
 				const r = apex.r ?? 9.5;
 				return (
 					<g key={`cyst-apex-${i}-${apex.x}`}>
-						<ellipse cx={apex.x} cy={apex.y + 1} rx={r * 1.15} ry={r * 1.15} fill="url(#dente-cyst-fluid)" />
+						<ellipse cx={apex.x} cy={apex.y + 1} rx={r * 1.15} ry={r * 1.15} fill={`url(#${sid("dente-cyst-fluid")})`} />
 						<ellipse cx={apex.x} cy={apex.y + 1} rx={r * 1.15} ry={r * 1.15} fill="none" stroke="rgba(148, 163, 184, 0.40)" strokeWidth="0.8" />
 						<ellipse cx={apex.x} cy={apex.y + 1} rx={r * 1.25} ry={r * 1.25} fill="none" stroke={outerBorder} strokeWidth="1.2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
 						<path data-component="cyst-spicule" d={`M ${apex.x + r * 1.1},${apex.y - r * 0.5} L ${apex.x + r * 1.5},${apex.y - r * 0.7}`} fill="none" stroke={spiculeStroke} strokeWidth="0.6" strokeLinecap="round" />

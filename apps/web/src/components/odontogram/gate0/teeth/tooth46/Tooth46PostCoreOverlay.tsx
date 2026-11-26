@@ -1,6 +1,7 @@
 import React from "react";
 import { TOOTH46_POST_CORE_GEOMETRY } from "../../Tooth46PostCoreGeometry";
 import type { PostCoreType } from "../../tooth46Types";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth46PostCoreOverlayProps {
 	type?: PostCoreType | undefined;
@@ -20,6 +21,11 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
+	const rootFill = `url(#${sid("dente-root-dentin")})`;
+	const metalFill = `url(#${sid("dente-crown-metal")})`;
 	const g = TOOTH46_POST_CORE_GEOMETRY;
 	const ferruleStroke = isDark
 		? "rgba(203, 213, 225, 0.60)"
@@ -29,12 +35,12 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 		: "rgba(100, 116, 139, 0.70)";
 
 	return (
-		<g id="tooth46-post-core-assembly" className={className}>
+		<g id={sid(`tooth${tNum}-post-core-assembly`)} className={className}>
 			{/* Natural Prepared Tooth Ferrule Collar (1.5-2mm above CEJ) */}
 			<path
-				id="tooth46-prep-ferrule"
+				id={sid(`tooth${tNum}-prep-ferrule`)}
 				d={g.ferruleCollar}
-				fill="url(#dente-root-dentin)"
+				fill={rootFill}
 				stroke={ferruleStroke}
 				strokeWidth="0.8"
 				strokeLinejoin="round"
@@ -42,7 +48,7 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 			/>
 			{/* Circular Chamfer Margin Finish Line */}
 			<path
-				id="tooth46-prep-chamfer-margin"
+				id={sid(`tooth${tNum}-prep-chamfer-margin`)}
 				d={g.chamferMarginLine}
 				fill="none"
 				stroke={chamferStroke}
@@ -52,10 +58,10 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 			/>
 
 			{type === "cast" ? (
-				<g id="tooth46-cast-post-core" data-testid="tooth46-post-core-cast">
+				<g id={sid(`tooth${tNum}-cast-post-core`)} data-testid="tooth46-post-core-cast">
 					<path
 						d={g.castPostCore.mesialPin}
-						fill="url(#dente-crown-metal)"
+						fill={metalFill}
 						stroke={isDark ? "#94a3b8" : "#475569"}
 						strokeWidth="0.6"
 						strokeLinejoin="round"
@@ -63,7 +69,7 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 					/>
 					<path
 						d={g.castPostCore.distalPost}
-						fill="url(#dente-crown-metal)"
+						fill={metalFill}
 						stroke={isDark ? "#94a3b8" : "#475569"}
 						strokeWidth="0.6"
 						strokeLinejoin="round"
@@ -71,7 +77,7 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 					/>
 					<path
 						d={g.castPostCore.coreStump}
-						fill="url(#dente-crown-metal)"
+						fill={metalFill}
 						stroke={isDark ? "#94a3b8" : "#475569"}
 						strokeWidth="0.8"
 						strokeLinejoin="round"
@@ -79,10 +85,10 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 					/>
 				</g>
 			) : (
-				<g id="tooth46-fiber-post-core" data-testid="tooth46-post-core-fiber">
+				<g id={sid(`tooth${tNum}-fiber-post-core`)} data-testid="tooth46-post-core-fiber">
 					<path
 						d={g.fiberPostCore.postShaft}
-						fill="url(#dente-fiber-post)"
+						fill={`url(#${sid("dente-fiber-post")})`}
 						stroke="rgba(148, 163, 184, 0.85)"
 						strokeWidth="0.6"
 						strokeLinejoin="round"
@@ -90,7 +96,7 @@ export const Tooth46PostCoreOverlay: React.FC<Tooth46PostCoreOverlayProps> = ({
 					/>
 					<path
 						d={g.fiberPostCore.coreStump}
-						fill="url(#dente-composite-core)"
+						fill={`url(#${sid("dente-composite-core")})`}
 						stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"}
 						strokeWidth="0.75"
 						strokeLinejoin="round"

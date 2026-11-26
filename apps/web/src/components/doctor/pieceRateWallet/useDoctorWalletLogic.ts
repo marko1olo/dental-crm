@@ -3,8 +3,15 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { calculateProgressiveNdflTax, generateDoctorEarningsPayslipHtml, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+	calculateProgressiveNdflTax,
+	generateDoctorEarningsPayslipHtml,
+	kopecksToRubles,
+	rublesToKopecks,
+	type CashAdvanceAllocationPolicy,
+	type IdentSalaryModel,
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
 import { clientLogger } from "../../../services/logging/clientLogger.js";
@@ -19,46 +26,79 @@ export function useDoctorWalletLogic(
 	const initialTargetDate = initialDateIso.split("T")[0] ?? initialDateIso;
 	const [selectedDate, setSelectedDate] = useState<string>(initialTargetDate);
 	const [activePeriodFilter, setActivePeriodFilter] = useState<"today" | "yesterday" | "custom">("today");
+	const [identSalaryModel, setIdentSalaryModel] = useState<IdentSalaryModel>("net_proportional_discount");
+	const [cashAdvancePolicy, setCashAdvancePolicy] = useState<CashAdvanceAllocationPolicy>("proportional");
 	const [data, setData] = useState<EarningsDataState | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
 	const [isReconciliationModalOpen, setIsReconciliationModalOpen] = useState<boolean>(false);
 	const [isReconciledConfirmed, setIsReconciledConfirmed] = useState<boolean>(false);
+	const fetchAbortRef = useRef<AbortController | null>(null);
 
-	const fetchEarnings = useCallback(async (targetDate: string) => {
+	const fetchEarnings = useCallback(async (
+		targetDate: string,
+		salaryModel: IdentSalaryModel = identSalaryModel,
+		advancePolicy: CashAdvanceAllocationPolicy = cashAdvancePolicy,
+	) => {
 		if (!doctorId) {
 			setIsLoading(false);
 			return;
 		}
+		fetchAbortRef.current?.abort();
+		const controller = new AbortController();
+		fetchAbortRef.current = controller;
 		setIsLoading(true);
 		setError(null);
 		try {
+			const params = new URLSearchParams({
+				doctorId,
+				date: targetDate,
+				identSalaryModel: salaryModel,
+				cashAdvancePolicy: advancePolicy,
+			});
 			let lastRes: Response | null = null;
 			for (let attempt = 1; attempt <= 3; attempt++) {
-				const res = await fetch(`/api/doctor/my-earnings?doctorId=${encodeURIComponent(doctorId)}&date=${encodeURIComponent(targetDate)}`);
+				if (controller.signal.aborted) return;
+				const res = await fetch(`/api/doctor/my-earnings?${params.toString()}`, {
+					signal: controller.signal,
+				});
 				lastRes = res;
 				if (res.ok || res.status === 401 || res.status === 403 || res.status === 404) break;
 				if (attempt < 3) await new Promise((r) => setTimeout(r, 300 * attempt));
 			}
 
+			if (controller.signal.aborted) return;
 			if (!lastRes || !lastRes.ok) {
 				const errJson = await lastRes?.json().catch(() => null);
 				throw new Error(errJson?.message || `Ошибка сервера (${lastRes?.status || 500})`);
 			}
-			const json = await lastRes.json();
-			setData(json);
+			const json = (await lastRes.json()) as unknown;
+			const payload = (json != null && typeof json === "object" && "data" in json && json.data
+				? (json as { data: EarningsDataState }).data
+				: json) as EarningsDataState;
+			if (!controller.signal.aborted) {
+				setData(payload);
+			}
 		} catch (err: unknown) {
+			if (controller.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
+				return;
+			}
 			clientLogger.error("[DoctorWalletLogic] Fetch error:", err);
 			const message = err instanceof Error ? err.message : "Не удалось загрузить начисления врача";
 			setError(message);
 		} finally {
-			setIsLoading(false);
+			if (!controller.signal.aborted) {
+				setIsLoading(false);
+			}
 		}
-	}, [doctorId]);
+	}, [doctorId, identSalaryModel, cashAdvancePolicy]);
 
 	useEffect(() => {
-		fetchEarnings(selectedDate);
-	}, [selectedDate, fetchEarnings]);
+		void fetchEarnings(selectedDate, identSalaryModel, cashAdvancePolicy);
+		return () => {
+			fetchAbortRef.current?.abort();
+		};
+	}, [selectedDate, identSalaryModel, cashAdvancePolicy, fetchEarnings]);
 
 	const handleSelectToday = () => {
 		const today = new Date().toISOString().split("T")[0] ?? "";
@@ -82,8 +122,10 @@ export function useDoctorWalletLogic(
 
 		try {
 			const earnedKop = data.summary.totalDoctorEarnedKop ?? rublesToKopecks(data.summary.totalDoctorEarnedRub);
-			const ndflKop = calculateProgressiveNdflTax(earnedKop).ndflTaxKop;
-			const netPayoutKop = Math.max(0, earnedKop - ndflKop);
+			const isSelfEmployedOrRental = data.summary.taxRegime === "self_employed" || data.summary.payoutModel === "chair_rental";
+			const ndflKop = isSelfEmployedOrRental ? 0 : calculateProgressiveNdflTax(earnedKop).ndflTaxKop;
+			const priorDebtDeductedKop = data.summary.priorDebtDeductedKop ?? 0;
+			const netPayoutKop = data.summary.netPayoutToDoctorKop ?? Math.max(0, earnedKop - ndflKop - priorDebtDeductedKop);
 
 			const clinicName = useDocumentBrandingStore.getState().clinicName || "Стоматологическая клиника";
 			const html = generateDoctorEarningsPayslipHtml({
@@ -121,14 +163,18 @@ export function useDoctorWalletLogic(
 		if (!data) return;
 		try {
 			const earnedKop = data.summary.totalDoctorEarnedKop ?? rublesToKopecks(data.summary.totalDoctorEarnedRub);
-			const ndflKop = calculateProgressiveNdflTax(earnedKop).ndflTaxKop;
-			const netPayoutKop = Math.max(0, earnedKop - ndflKop);
+			const isSelfEmployedOrRental = data.summary.taxRegime === "self_employed" || data.summary.payoutModel === "chair_rental";
+			const ndflKop = isSelfEmployedOrRental ? 0 : calculateProgressiveNdflTax(earnedKop).ndflTaxKop;
+			const priorDebtDeductedKop = data.summary.priorDebtDeductedKop ?? 0;
+			const netPayoutKop = data.summary.netPayoutToDoctorKop ?? Math.max(0, earnedKop - ndflKop - priorDebtDeductedKop);
 
 			await closeSettlementPeriodApi({
 				doctorId: data.doctorId || doctorId,
 				periodStart: data.period.from || selectedDate,
 				periodEnd: data.period.to || selectedDate,
-				payoutModel: "percentage",
+				payoutModel: data.summary.payoutModel === "chair_rental" ? "chair_rental" : "percentage",
+				identSalaryModel,
+				cashAdvancePolicy,
 				grossRevenueKop: data.summary.totalGrossRevenueKop ?? rublesToKopecks(data.summary.totalGrossRevenueRub),
 				labCostKop: data.summary.totalLabDeductionsKop ?? rublesToKopecks(data.summary.totalLabDeductionsRub),
 				materialCostKop: data.summary.totalMaterialDeductionsKop ?? rublesToKopecks(data.summary.totalMaterialDeductionsRub),
@@ -144,7 +190,7 @@ export function useDoctorWalletLogic(
 			setIsReconciledConfirmed(true);
 			setIsReconciliationModalOpen(false);
 			showToast("Акт сверки зафиксирован и направлен в финансовый отдел.", "success");
-			await fetchEarnings(selectedDate);
+			await fetchEarnings(selectedDate, identSalaryModel, cashAdvancePolicy);
 		} catch (err: unknown) {
 			clientLogger.error("[DoctorWalletLogic] Settle period error:", err);
 			const message = err instanceof Error ? err.message : "Не удалось зафиксировать акт сверки";
@@ -157,6 +203,10 @@ export function useDoctorWalletLogic(
 		setSelectedDate,
 		activePeriodFilter,
 		setActivePeriodFilter,
+		identSalaryModel,
+		setIdentSalaryModel,
+		cashAdvancePolicy,
+		setCashAdvancePolicy,
 		data,
 		isLoading,
 		error,

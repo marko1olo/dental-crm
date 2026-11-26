@@ -1,5 +1,6 @@
 import React from "react";
 import type { Tooth14CuspDef } from "./tooth14CuspGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth14SingleCuspProps {
 	cusp: Tooth14CuspDef;
@@ -20,16 +21,15 @@ export const Tooth14SingleCusp: React.FC<Tooth14SingleCuspProps> = ({
 	cusp: c,
 	isDark = false,
 }) => {
+	const tNum = useToothNumber() ?? 14;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const rs = isDark ? "rgba(241, 245, 249, 0.65)" : "rgba(255, 255, 255, 0.80)";
-	const df = isDark
-		? "url(#dente-cusp-slope-distal-radial-dark)"
-		: "url(#dente-cusp-slope-distal-radial)";
-	const mf = isDark
-		? "url(#dente-cusp-slope-mesial-radial-dark)"
-		: "url(#dente-cusp-slope-mesial-radial)";
+	const df = `url(#${sid(isDark ? "dente-cusp-slope-distal-radial-dark" : "dente-cusp-slope-distal-radial")})`;
+	const mf = `url(#${sid(isDark ? "dente-cusp-slope-mesial-radial-dark" : "dente-cusp-slope-mesial-radial")})`;
 
 	return (
-		<g id={`tooth14-cusp-${c.id}`}>
+		<g id={sid(`tooth${tNum}-cusp-${c.id}`)}>
 			{c.id === "B" && (
 				<>
 					{/* Organic distal slope ambient shadow (fades to 0% at boundary, 0 seams) */}

@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import type { IdentSalaryModel } from "@dental/shared";
 import { Calendar, Clock, RefreshCw, Wallet, X } from "lucide-react";
 
 export interface DoctorWalletHeaderProps {
@@ -12,6 +13,8 @@ export interface DoctorWalletHeaderProps {
 	readonly selectedDate: string;
 	readonly activePeriodFilter: "today" | "yesterday" | "custom";
 	readonly isLoading: boolean;
+	readonly identSalaryModel?: IdentSalaryModel | undefined;
+	readonly onIdentSalaryModelChange?: ((model: IdentSalaryModel) => void) | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly onSelectToday: () => void;
 	readonly onSelectYesterday: () => void;
@@ -25,6 +28,8 @@ export const DoctorWalletHeader: React.FC<DoctorWalletHeaderProps> = ({
 	selectedDate,
 	activePeriodFilter,
 	isLoading,
+	identSalaryModel,
+	onIdentSalaryModelChange,
 	onClose,
 	onSelectToday,
 	onSelectYesterday,
@@ -99,6 +104,19 @@ export const DoctorWalletHeader: React.FC<DoctorWalletHeaderProps> = ({
 				>
 					<RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
 				</button>
+				{identSalaryModel && onIdentSalaryModelChange && (
+					<select
+						value={identSalaryModel}
+						onChange={(e) => onIdentSalaryModelChange(e.target.value as IdentSalaryModel)}
+						className="dpr-filter-chip"
+						aria-label="Модель расчёта скидок IDENT"
+						data-testid="dpr-ident-salary-model-select"
+					>
+						<option value="gross_before_discount">От прайса (до скидки)</option>
+						<option value="net_proportional_discount">Пропорционально скидке</option>
+						<option value="net_doctor_bears_discount">Скидка за счёт врача</option>
+					</select>
+				)}
 			</div>
 		</div>
 	);

@@ -55,6 +55,22 @@ const config: CapacitorAppConfig = {
 			resize: "body",
 			style: "DARK",
 		},
+		PushNotifications: {
+			presentationOptions: ["badge", "sound", "alert"],
+		},
+		LocalNotifications: {
+			smallIcon: "ic_stat_dente",
+			iconColor: "#0284c7",
+			sound: "custom_ringtone.wav",
+		},
+		BluetoothLe: {
+			displayStrings: {
+				scanning: "Поиск Bluetooth-принтеров чеков...",
+				cancel: "Отмена",
+				availableDevices: "Доступные термопринтеры",
+				noDeviceFound: "Термопринтеры не найдены",
+			},
+		},
 	},
 };
 

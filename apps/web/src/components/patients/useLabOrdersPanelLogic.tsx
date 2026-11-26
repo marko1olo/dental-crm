@@ -65,27 +65,44 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	const [promptState, setPromptState] = useState<LabOrderPromptState | null>(null);
 	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
 	const [showQuickForm, setShowQuickForm] = useState(false);
+	const fetchAbortRef = useRef<AbortController | null>(null);
 
 	const fetchOrders = useCallback(async () => {
+		fetchAbortRef.current?.abort();
+		const controller = new AbortController();
+		fetchAbortRef.current = controller;
 		setLoading(true);
 		setError(null);
 		try {
 			const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
-			const res = await fetch(`/api/lab/orders${query}`, { headers: denteClinicalReadHeaders() });
+			const res = await fetch(`/api/lab/orders${query}`, {
+				headers: denteClinicalReadHeaders(),
+				signal: controller.signal,
+			});
 			if (!res.ok) throw new Error("Не удалось загрузить заказы ЗТЛ");
 			const data = await res.json();
 			const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.orders) ? data.orders : []));
-			setOrders(list);
+			if (!controller.signal.aborted) {
+				setOrders(list);
+			}
 		} catch (err: unknown) {
+			if (controller.signal.aborted || (err instanceof Error && err.name === "AbortError")) {
+				return;
+			}
 			const msg = err instanceof Error ? err.message : "Ошибка загрузки заказов ЗТЛ";
 			setError(msg);
 		} finally {
-			setLoading(false);
+			if (!controller.signal.aborted) {
+				setLoading(false);
+			}
 		}
 	}, [patientId]);
 
 	useEffect(() => {
 		void fetchOrders();
+		return () => {
+			fetchAbortRef.current?.abort();
+		};
 	}, [fetchOrders]);
 
 	const filteredOrders = useMemo(() => {

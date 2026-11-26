@@ -311,10 +311,11 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 		setIsSubmitting(true);
 		setErrorMessage(null);
 
-		const closedRecord: CashShiftRecord = {
+		const closedAtIso = new Date().toISOString();
+		const baseClosedRecord: CashShiftRecord = {
 			...currentShift,
 			status: "closed",
-			closedAt: new Date().toISOString(),
+			closedAt: closedAtIso,
 			countedCashKopecks: countedCashKop,
 			expectedCashInDrawerKopecks: expectedCashInDrawerKop,
 			cashDiscrepancyKopecks: cashDiscrepancyKop,
@@ -323,7 +324,7 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 			encashmentKopecks: encashmentKop,
 			retainedChangeFundKopecks: rubToKopecks(retainedChangeRub),
 			zReportNumber: `Z-${currentShift.shiftNumber}`,
-			ofdStatus: "delivered",
+			ofdStatus: "pending",
 		};
 
 		try {
@@ -335,7 +336,7 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 				differenceRub: kopecksToRub(cashDiscrepancyKop),
 				isBalanced: isCashMatched,
 				force: true,
-				closedAt: new Date().toISOString(),
+				closedAt: closedAtIso,
 			};
 
 			const res = await fetch("/api/cashbox/shift/close", {
@@ -359,7 +360,29 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 			}
 
 			const rawSuccess = (await res.json().catch(() => null)) as unknown;
-			void rawSuccess; // Мандат 8bm: конверт Fastify распакован, данные не используются
+			const responseData = (
+				rawSuccess != null && typeof rawSuccess === "object" && "data" in rawSuccess
+					? (rawSuccess as { data?: unknown }).data
+					: rawSuccess
+			) as {
+				zReportNumber?: string;
+				ofdStatus?: string;
+				kktReportData?: { fiscalDocNumber?: string; zReportNumber?: string };
+			} | null;
+
+			const resolvedZReport =
+				responseData?.zReportNumber ||
+				responseData?.kktReportData?.zReportNumber ||
+				baseClosedRecord.zReportNumber;
+			const resolvedOfdStatus: CashShiftRecord["ofdStatus"] =
+				responseData?.ofdStatus === "delivered" || Boolean(responseData?.kktReportData?.fiscalDocNumber)
+					? "delivered"
+					: "pending";
+			const closedRecord: CashShiftRecord = {
+				...baseClosedRecord,
+				zReportNumber: resolvedZReport,
+				ofdStatus: resolvedOfdStatus,
+			};
 
 			setCurrentShift(closedRecord);
 			setShiftsJournal((prev) => [closedRecord, ...prev.filter((s) => s.id !== closedRecord.id)]);
@@ -468,17 +491,17 @@ export const ShiftStudioModal: React.FC<ShiftStudioModalProps> = ({
 							<ShiftZReportPreview shift={currentShift} onPrint={() => window.print()} />
 
 							{errorMessage && (
-								<div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 text-red-700 dark:text-red-300 text-xs flex items-center justify-between">
+								<div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger)]/30 text-[var(--danger)] text-xs flex items-center justify-between gap-2">
 									<span>{errorMessage}</span>
-									<button type="button" onClick={handleExecuteCloseShift} className="px-2 py-1 bg-red-600 text-white rounded font-semibold text-[11px]">
+									<button type="button" onClick={handleExecuteCloseShift} className="h-8 px-2.5 rounded-md bg-[var(--danger)] text-white font-medium text-xs shrink-0 cursor-pointer">
 										Повторить
 									</button>
 								</div>
 							)}
 
 							{successNotice && (
-								<div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
-									<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+								<div className="p-3 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line,var(--line))] text-[var(--success-ink,var(--success))] text-xs flex items-center gap-2">
+									<CheckCircle2 className="w-4 h-4 text-[var(--success-ink,var(--success))] shrink-0" />
 									<span>{successNotice}</span>
 								</div>
 							)}

@@ -86,7 +86,7 @@ describe("Tooth47 Wheeler Ch. 11 Second Mandibular Molar Anatomical Invariants",
 		);
 		assert.ok(html.includes("id=\"tooth47-endodontics\""));
 		assert.ok(html.includes("id=\"tooth47-overfill-puffs\""));
-		assert.ok(html.includes("id=\"canal-MB\""));
-		assert.ok(html.includes("id=\"canal-D\""));
+		assert.ok(html.includes("id=\"tooth47-canal-MB\""));
+		assert.ok(html.includes("id=\"tooth47-canal-D\""));
 	});
 });

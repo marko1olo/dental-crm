@@ -17,7 +17,6 @@
 @import "../components/copilot/actionStyles/actionConfirm.css";
 @import "../components/inventory/writeoff/clinicalWriteoff.css";
 @import "../components/visit/VisitAnamnesisTab.css";
-@import "./low-spec-hardware.css";
 @import "../components/radiology/mobileRadiology.css";
 @import "./modules/boot-state.css";
 @import "./modules/legacy-shell.css";

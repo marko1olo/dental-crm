@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { Tooth11SingleCusp } from "./Tooth11SingleCusp";
 import { TOOTH11_GEOMETRY } from "./tooth11GeometryConstants";
 
@@ -22,26 +23,27 @@ export const Tooth11OcclusalCusps: React.FC<Tooth11OcclusalCuspsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 11;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const stroke = isDark
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
 	const fissureStroke = isDark
 		? "rgba(255, 255, 255, 0.12)"
 		: "rgba(148, 163, 184, 0.14)";
-	const crFill = isDark
-		? "url(#dente-cervical-ridge-11-dark)"
-		: "url(#dente-cervical-ridge-11)";
+	const crFill = `url(#${sid(isDark ? `dente-cervical-ridge-${tNum}-dark` : `dente-cervical-ridge-${tNum}`)})`;
 	const crHighlight = isDark
 		? "rgba(255, 255, 255, 0.16)"
 		: "rgba(255, 255, 255, 0.35)";
 	const fissures = TOOTH11_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
 
 	return (
-		<g id="tooth11-crown" className={className}>
+		<g id={sid(`tooth${tNum}-crown`)} className={className}>
 			{renderBaseCrown && (
 				<path
 					d={TOOTH11_GEOMETRY.crownMonolithPath}
-					fill="url(#dente-enamel-porcelain-11)"
+					fill={`url(#${sid(`dente-enamel-porcelain-${tNum}`)})`}
 					stroke={stroke}
 					strokeWidth="0.8"
 					strokeLinejoin="round"
@@ -49,7 +51,7 @@ export const Tooth11OcclusalCusps: React.FC<Tooth11OcclusalCuspsProps> = ({
 				/>
 			)}
 			{showCusps && (
-				<g id="tooth11-cusp-ridges" clipPath="url(#tooth11-crown-clip)">
+				<g id={sid(`tooth${tNum}-cusp-ridges`)} clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 					{/* Cervical Ridge Convexity below CEJ */}
 					<path
 						d={TOOTH11_GEOMETRY.buccalCervicalRidge}
@@ -72,7 +74,7 @@ export const Tooth11OcclusalCusps: React.FC<Tooth11OcclusalCuspsProps> = ({
 				</g>
 			)}
 			{showFissures && fissures.trim() !== "" && (
-				<g id="tooth11-fissures" pointerEvents="none">
+				<g id={sid(`tooth${tNum}-fissures`)} pointerEvents="none">
 					{/* Soft Anatomical Mamelon Developmental Grooves */}
 					<path
 						d={fissures}

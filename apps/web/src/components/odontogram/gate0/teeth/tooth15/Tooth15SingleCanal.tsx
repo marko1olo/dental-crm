@@ -1,5 +1,6 @@
 import React from "react";
 import type { Tooth15CanalAnatomy } from "./tooth15PulpGeometry";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth15SingleCanalProps {
 	canal: Tooth15CanalAnatomy;
@@ -19,9 +20,11 @@ export const Tooth15SingleCanal: React.FC<Tooth15SingleCanalProps> = ({
 	showGuttaPercha = false,
 	isNecrotic = false,
 	isPulpitis = false,
-	isDark = false,
 	isUnifiedLumen = false,
 }) => {
+	const tNum = useToothNumber() ?? 15;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const ax = canal.apex.x;
 	const ay = canal.apex.y;
 
@@ -29,11 +32,11 @@ export const Tooth15SingleCanal: React.FC<Tooth15SingleCanalProps> = ({
 		const apicalPlugD = `M ${ax - 0.8},${ay + 1.2} C ${ax - 0.8},${ay + 0.2} ${ax + 0.8},${ay + 0.2} ${ax + 0.8},${ay + 1.2} Z`;
 
 		return (
-			<g id={`tooth15-canal-${canal.id}`} data-testid={`tooth15-canal-${canal.id}`}>
+			<g id={sid(`tooth${tNum}-canal-${canal.id}`)} data-testid={`tooth${tNum}-canal-${canal.id}`}>
 				<path
 					d={canal.taperedLumen}
-					fill="url(#dente-guttapercha-cone)"
-					stroke="url(#dente-guttapercha-sheath)"
+					fill={`url(#${sid("dente-guttapercha-cone")})`}
+					stroke={`url(#${sid("dente-guttapercha-sheath")})`}
 					strokeWidth="0.75"
 					strokeLinejoin="round"
 					vectorEffect="non-scaling-stroke"
@@ -59,7 +62,7 @@ export const Tooth15SingleCanal: React.FC<Tooth15SingleCanalProps> = ({
 
 	if (isUnifiedLumen) {
 		return (
-			<g id={`tooth15-canal-${canal.id}`} data-testid={`tooth15-canal-${canal.id}`}>
+			<g id={sid(`tooth${tNum}-canal-${canal.id}`)} data-testid={`tooth${tNum}-canal-${canal.id}`}>
 				<path
 					d={canal.centerLine}
 					fill="none"
@@ -74,10 +77,10 @@ export const Tooth15SingleCanal: React.FC<Tooth15SingleCanalProps> = ({
 	}
 
 	const canalFill = isNecrotic
-		? "url(#dente-pulp-necrotic)"
+		? `url(#${sid("dente-pulp-necrotic")})`
 		: isPulpitis
-			? "url(#dente-pulp-hyperemia)"
-			: "url(#dente-pulp-vital)";
+			? `url(#${sid("dente-pulp-hyperemia")})`
+			: `url(#${sid("dente-pulp-vital")})`;
 
 	const canalStroke = isNecrotic
 		? "rgba(68, 64, 60, 0.85)"
@@ -86,7 +89,7 @@ export const Tooth15SingleCanal: React.FC<Tooth15SingleCanalProps> = ({
 			: "rgba(159, 18, 57, 0.70)";
 
 	return (
-		<g id={`tooth15-canal-${canal.id}`} data-testid={`tooth15-canal-${canal.id}`}>
+		<g id={sid(`tooth${tNum}-canal-${canal.id}`)} data-testid={`tooth${tNum}-canal-${canal.id}`}>
 			<path
 				d={canal.taperedLumen}
 				fill={canalFill}

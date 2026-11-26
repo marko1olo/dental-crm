@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import type { CariesChronicity, CariesDepth, CariesType } from "../../tooth46PresetTypes";
 import { TOOTH11_CARIES_GEOMETRY } from "./tooth11CariesGeometry";
 
@@ -24,10 +25,13 @@ export const Tooth11CariesOverlay: React.FC<Tooth11CariesOverlayProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 11;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const g = TOOTH11_CARIES_GEOMETRY;
 	const isChronic = chronicity === "chronic";
-	const lesionFill = isChronic ? "url(#dente-caries-chronic)" : "url(#dente-caries-lesion)";
-	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
+	const lesionFill = `url(#${sid(isChronic ? "dente-caries-chronic" : "dente-caries-lesion")})`;
+	const necroticFill = isChronic ? "#0c0a09" : `url(#${sid("dente-caries-necrotic")})`;
 	const haloStroke = isDark ? "rgba(245, 158, 11, 0.70)" : "rgba(180, 83, 9, 0.85)";
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 	const isSuper = cariesDepth === "superficial" || cariesDepth === "superficialis";
@@ -46,15 +50,15 @@ export const Tooth11CariesOverlay: React.FC<Tooth11CariesOverlayProps> = ({
 		cariesSurface === "D" || cariesSurface === "distal";
 
 	return (
-		<g id="tooth11-caries-overlay" {...(className ? { className } : {})}>
+		<g id={sid(`tooth${tNum}-caries-overlay`)} {...(className ? { className } : {})}>
 			{isWhiteSpot && (
-				<g id="tooth11-caries-white-spot">
-					<path d={g.whiteSpot.halo} fill="url(#dente-caries-white-spot)" stroke="rgba(255, 255, 255, 0.75)" strokeWidth="0.5" />
+				<g id={sid(`tooth${tNum}-caries-white-spot`)}>
+					<path d={g.whiteSpot.halo} fill={`url(#${sid("dente-caries-white-spot")})`} stroke="rgba(255, 255, 255, 0.75)" strokeWidth="0.5" />
 					<path d={g.whiteSpot.core} fill="#ffffff" fillOpacity="0.80" />
 				</g>
 			)}
 			{isDestruct && (
-				<g id="tooth11-caries-destructive">
+				<g id={sid(`tooth${tNum}-caries-destructive`)}>
 					<path d={g.destructive.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.95)" strokeWidth="1.2" />
 					<path d={g.destructive.border} fill="none" stroke="#0c0a09" strokeWidth="1.2" strokeLinecap="round" />
 					{g.destructive.steps.map((s, i) => (
@@ -63,24 +67,24 @@ export const Tooth11CariesOverlay: React.FC<Tooth11CariesOverlayProps> = ({
 				</g>
 			)}
 			{cariesType === "class1" && (
-				<g id="tooth11-caries-class1">
-					<path d={g.class2.mesial.halo} fill={isSuper ? "url(#dente-caries-demin)" : "url(#dente-caries-halo-11)"} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
+				<g id={sid(`tooth${tNum}-caries-class1`)}>
+					<path d={g.class2.mesial.halo} fill={`url(#${sid(isSuper ? "dente-caries-demin" : `dente-caries-halo-${tNum}`)})`} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
 					{!isSuper && <path d={g.class2.mesial.core} fill={lesionFill} stroke="rgba(69, 26, 3, 0.90)" strokeWidth="0.75" />}
 					{isProfunda && <path d={g.class2.mesial.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 				</g>
 			)}
 			{isClass2or3 && cariesType !== "class1" && (
-				<g id="tooth11-caries-class2">
+				<g id={sid(`tooth${tNum}-caries-class2`)}>
 					{hasM && (
-						<g id="tooth11-c2-mesial">
-							<path d={g.class2.mesial.halo} fill={isSuper ? "url(#dente-caries-demin)" : "url(#dente-caries-halo-11)"} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
+						<g id={sid(`tooth${tNum}-c2-mesial`)}>
+							<path d={g.class2.mesial.halo} fill={`url(#${sid(isSuper ? "dente-caries-demin" : `dente-caries-halo-${tNum}`)})`} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
 							{!isSuper && <path d={g.class2.mesial.core} fill={lesionFill} stroke="rgba(69, 26, 3, 0.90)" strokeWidth="0.75" />}
 							{isProfunda && <path d={g.class2.mesial.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</g>
 					)}
 					{hasD && (
-						<g id="tooth11-c2-distal">
-							<path d={g.class2.distal.halo} fill={isSuper ? "url(#dente-caries-demin)" : "url(#dente-caries-halo-11)"} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
+						<g id={sid(`tooth${tNum}-c2-distal`)}>
+							<path d={g.class2.distal.halo} fill={`url(#${sid(isSuper ? "dente-caries-demin" : `dente-caries-halo-${tNum}`)})`} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
 							{!isSuper && <path d={g.class2.distal.core} fill={lesionFill} stroke="rgba(69, 26, 3, 0.90)" strokeWidth="0.75" />}
 							{isProfunda && <path d={g.class2.distal.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</g>
@@ -88,15 +92,15 @@ export const Tooth11CariesOverlay: React.FC<Tooth11CariesOverlayProps> = ({
 				</g>
 			)}
 			{isClass4 && (
-				<g id="tooth11-caries-class4">
-					<path d={g.class4.angleDefect.halo} fill={isSuper ? "url(#dente-caries-demin)" : "url(#dente-caries-halo-11)"} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
+				<g id={sid(`tooth${tNum}-caries-class4`)}>
+					<path d={g.class4.angleDefect.halo} fill={`url(#${sid(isSuper ? "dente-caries-demin" : `dente-caries-halo-${tNum}`)})`} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
 					{!isSuper && <path d={g.class4.angleDefect.core} fill={lesionFill} stroke="rgba(69, 26, 3, 0.90)" strokeWidth="0.75" />}
 					{isProfunda && <path d={g.class4.angleDefect.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 				</g>
 			)}
 			{isClass5 && (
-				<g id="tooth11-caries-class5">
-					<path d={isProfunda ? g.class5.profunda.halo : isSuper ? g.class5.superficial.halo : g.class5.media.halo} fill={isSuper ? "url(#dente-caries-demin)" : "url(#dente-caries-halo-11)"} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
+				<g id={sid(`tooth${tNum}-caries-class5`)}>
+					<path d={isProfunda ? g.class5.profunda.halo : isSuper ? g.class5.superficial.halo : g.class5.media.halo} fill={`url(#${sid(isSuper ? "dente-caries-demin" : `dente-caries-halo-${tNum}`)})`} stroke={isSuper ? deminStroke : haloStroke} strokeWidth="0.5" />
 					{!isSuper && <path d={isProfunda ? g.class5.profunda.crater : g.class5.media.crater} fill={lesionFill} stroke="rgba(69, 26, 3, 0.90)" strokeWidth="0.75" />}
 					{isProfunda && <path d={g.class5.profunda.necrotic} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 				</g>

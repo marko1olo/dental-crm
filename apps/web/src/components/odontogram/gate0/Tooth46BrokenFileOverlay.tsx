@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "./OdontogramSharedDefsContext";
 import { TOOTH46_ENDO_PATHOLOGY_GEOMETRY } from "./Tooth46EndoPathologyGeometry";
 
 export interface Tooth46BrokenFileOverlayProps {
@@ -14,6 +15,9 @@ export interface Tooth46BrokenFileOverlayProps {
 export const Tooth46BrokenFileOverlay: React.FC<
 	Tooth46BrokenFileOverlayProps
 > = ({ isDark = false, className }) => {
+	const tNum = useToothNumber() ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const bf = TOOTH46_ENDO_PATHOLOGY_GEOMETRY.brokenFile;
 	const outlineColor = isDark
 		? "rgba(251, 191, 36, 0.95)"
@@ -21,7 +25,7 @@ export const Tooth46BrokenFileOverlay: React.FC<
 
 	return (
 		<g
-			id="tooth46-broken-file-overlay"
+			id={sid(`tooth${tNum}-broken-file-overlay`)}
 			data-testid="tooth46-broken-file"
 			className={className}
 		>
@@ -35,7 +39,7 @@ export const Tooth46BrokenFileOverlay: React.FC<
 			/>
 			<path
 				d={bf.shaft}
-				fill="url(#dente-niti-metal)"
+				fill={`url(#${sid("dente-niti-metal")})`}
 				stroke="#334155"
 				strokeWidth="0.45"
 				strokeLinejoin="round"
@@ -61,7 +65,7 @@ export const Tooth46BrokenFileOverlay: React.FC<
 			{bf.flutes.map((flute, idx) => (
 				<path
 					key={`flute-${flute.slice(0, 14)}`}
-					id={`flute-${idx}`}
+					id={sid(`tooth${tNum}-flute-${idx}`)}
 					d={flute}
 					data-component="broken-file-flute"
 					fill="none"

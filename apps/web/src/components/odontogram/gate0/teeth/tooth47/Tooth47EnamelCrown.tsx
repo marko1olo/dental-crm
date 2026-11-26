@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import type { CariesType } from "../../tooth46PresetTypes";
 import { TOOTH47_GEOMETRY } from "./tooth47Geometry";
 import { TOOTH47_CARIES_GEOMETRY } from "./tooth47CariesGeometry";
@@ -29,6 +30,9 @@ export const Tooth47EnamelCrown: React.FC<Tooth47EnamelCrownProps> = ({
 	destructive = false,
 	cariesType,
 }) => {
+	const tNum = useToothNumber() ?? 47;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const crownPath = showAbfraction
 		? TOOTH47_GEOMETRY.crownMonolithPathWithAbfraction
 		: TOOTH47_GEOMETRY.crownMonolithPath;
@@ -56,24 +60,24 @@ export const Tooth47EnamelCrown: React.FC<Tooth47EnamelCrownProps> = ({
 
 	return (
 		<g
-			id="tooth47-natural-crown-group"
-			mask={destructive ? "url(#tooth47-crown-destruct-mask)" : undefined}
+			id={sid(`tooth${tNum}-natural-crown-group`)}
+			mask={destructive ? `url(#${sid(`tooth${tNum}-crown-destruct-mask`)})` : undefined}
 		>
 			<defs>
 				{destructive && (
-					<mask id="tooth47-crown-destruct-mask">
+					<mask id={sid(`tooth${tNum}-crown-destruct-mask`)}>
 						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
 						<path d={cutout} fill="#000000" />
 					</mask>
 				)}
 			</defs>
-			<clipPath id="tooth47-crown-clip">
+			<clipPath id={sid(`tooth${tNum}-crown-clip`)}>
 				<path d={crownPath} />
 			</clipPath>
 			<path
-				id="tooth47-crown-monolith"
+				id={sid(`tooth${tNum}-crown-monolith`)}
 				d={crownPath}
-				fill="url(#dente-enamel-porcelain)"
+				fill={`url(#${sid("dente-enamel-porcelain")})`}
 				fillOpacity={crownOpacity}
 				stroke={stroke}
 				strokeWidth="0.8"
@@ -81,10 +85,10 @@ export const Tooth47EnamelCrown: React.FC<Tooth47EnamelCrownProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			{/* Unified 3D Cylindrical Proximal Contour Volume */}
-			<g clipPath="url(#tooth47-crown-clip)">
+			<g clipPath={`url(#${sid(`tooth${tNum}-crown-clip`)})`}>
 				<path
 					d={crownPath}
-					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					fill={`url(#${sid(isDark ? "dente-proximal-contour-dark" : "dente-proximal-contour")})`}
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

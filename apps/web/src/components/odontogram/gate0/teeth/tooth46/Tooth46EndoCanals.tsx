@@ -5,6 +5,7 @@ import { Tooth46PulpChamber } from "./Tooth46PulpChamber";
 import { TOOTH46_PULP_GEOMETRY } from "./Tooth46PulpGeometry";
 import { Tooth46SingleCanal } from "../../Tooth46SingleCanal";
 import type { CanalCondition } from "../../tooth46Types";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 
 export interface Tooth46EndoCanalsProps {
 	showPulp?: boolean | undefined;
@@ -13,6 +14,7 @@ export interface Tooth46EndoCanalsProps {
 	canalCondition?: CanalCondition | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
+	toothNumber?: number | undefined;
 }
 
 export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
@@ -22,7 +24,11 @@ export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 	canalCondition = "vital",
 	isDark = false,
 	className,
+	toothNumber,
 }) => {
+	const tNum = useToothNumber(toothNumber) ?? 46;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const p = TOOTH46_PULP_GEOMETRY;
 	const pathGeo = TOOTH46_ENDO_PATHOLOGY_GEOMETRY;
 
@@ -33,7 +39,7 @@ export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 	const isUnified = Boolean(showPulp && showCanals);
 
 	return (
-		<g id="tooth46-endodontics" className={className}>
+		<g id={sid(`tooth${tNum}-endodontics`)} className={className}>
 			{/* Wheeler Ch. 11 Coronal Cavitas Pulparis Chamber (Monolithic seamless system) */}
 			{showPulp && (
 				<Tooth46PulpChamber
@@ -45,7 +51,7 @@ export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 
 			{/* 3 Radicular Canals (MB, ML, D) Seamlessly Integrated with Chamber Floor */}
 			{showCanals && (
-				<g id="tooth46-canals-tract">
+				<g id={sid(`tooth${tNum}-canals-tract`)}>
 					{p.canals.map((canal, idx) => (
 						<Tooth46SingleCanal
 							key={canal.id}
@@ -65,7 +71,7 @@ export const Tooth46EndoCanals: React.FC<Tooth46EndoCanalsProps> = ({
 							<path
 								key={puff.id}
 								d={puff.d}
-								fill="url(#dente-sealer-puff)"
+								fill={`url(#${sid("dente-sealer-puff")})`}
 								stroke="#881337"
 								strokeWidth="0.6"
 								vectorEffect="non-scaling-stroke"

@@ -1,4 +1,5 @@
 import React from "react";
+import { scopeOdontogramId, useOdontogramIdPrefix, useToothNumber } from "../../OdontogramSharedDefsContext";
 import { Tooth46SingleCanal } from "../../Tooth46SingleCanal";
 import { ToothBrokenFileMarker } from "../../ToothBrokenFileMarker";
 import type { CanalCondition } from "../../tooth46Types";
@@ -22,6 +23,9 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 	isDark = false,
 	className,
 }) => {
+	const tNum = useToothNumber() ?? 48;
+	const prefix = useOdontogramIdPrefix();
+	const sid = (id: string) => scopeOdontogramId(prefix, id);
 	const p = TOOTH48_PULP_GEOMETRY;
 	const isNecrotic = canalCondition === "necrotic";
 	const isUnderfill = canalCondition === "underfill";
@@ -29,7 +33,7 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 	const isBrokenFile = canalCondition === "broken_file";
 
 	return (
-		<g id="tooth48-endodontics" className={className}>
+		<g id={sid(`tooth${tNum}-endodontics`)} className={className}>
 			{/* Coronal Pulp Chamber with 4 rounded horns */}
 			{showPulp && (
 				<Tooth48PulpChamber condition={canalCondition} isDark={isDark} />
@@ -37,7 +41,7 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 
 			{/* Converging Canals into Distal Curved Apex */}
 			{showCanals && (
-				<g id="tooth48-canals-tract">
+				<g id={sid(`tooth${tNum}-canals-tract`)}>
 					{p.canals.map((canal) => (
 						<Tooth46SingleCanal
 							key={canal.id}
@@ -50,10 +54,10 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 
 					{/* Overfilled Apical Sealer Puff at Distally-Curved Apex */}
 					{showGuttaPercha && isOverfill && (
-						<g id="tooth48-overfill-puffs">
+						<g id={sid(`tooth${tNum}-overfill-puffs`)}>
 							<path
 								d="M 38.0,146.5 C 36.5,148.0 38.0,150.5 41.0,150.0 C 43.5,149.5 43.0,147.0 41.0,146.5 Z"
-								fill="url(#dente-sealer-puff)"
+								fill={`url(#${sid("dente-sealer-puff")})`}
 								stroke="#881337"
 								strokeWidth="0.6"
 							/>
@@ -63,7 +67,7 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 					{/* Broken Instrument in Distal Curvature of Apical Third */}
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
-							toothId="48"
+							toothId={String(tNum)}
 							path="M 44.0,132.0 C 43.0,138.0 42.0,142.0 41.5,146.0"
 							fracturePoint={{ x: 44.0, y: 132.0 }}
 							flutes={[

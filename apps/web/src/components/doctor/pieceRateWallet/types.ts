@@ -108,6 +108,14 @@ export interface EarningsDataState {
 			| "fully_reconciled"
 			| "discrepancy_found"
 			| "pending_cashier";
+		readonly payoutModel?: "percentage" | "chair_rental" | undefined;
+		readonly taxRegime?: "employee" | "self_employed" | undefined;
+		readonly identSalaryModel?: string | undefined;
+		readonly cashAdvancePolicy?: string | undefined;
+		readonly priorDebtCarryOverKop?: number | undefined;
+		readonly priorDebtDeductedKop?: number | undefined;
+		readonly negativeCarryOverKop?: number | undefined;
+		readonly netPayoutToDoctorKop?: number | undefined;
 	};
 	readonly specialtyBreakdown: readonly DoctorEarningsCategoryBreakdown[];
 	readonly appointments: readonly DoctorEarningsAppointmentItem[];
