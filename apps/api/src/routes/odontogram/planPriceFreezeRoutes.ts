@@ -108,9 +108,6 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 					return reply.code(400).send({ error: "InvalidRequestParameters" });
 				}
-				if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-					return reply.code(404).send({ error: "PatientNotFound" });
-				}
 
 				const parsedBody = priceFreezeBodySchema.safeParse(request.body ?? {});
 				if (!parsedBody.success) {
@@ -123,8 +120,11 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				const body = parsedBody.data;
 
 				try {
-					const result = await withTenantCtx(organizationId, async (tx) => {
-						return issuePriceFreezeToken(tx, {
+					const txResult = await withTenantCtx(organizationId, async (tx) => {
+						if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+							return { kind: "patient_not_found" as const };
+						}
+						const tokenResult = await issuePriceFreezeToken(tx, {
 							organizationId,
 							patientId,
 							planId,
@@ -135,7 +135,13 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 							...(identity.userId ? { actorUserId: identity.userId } : {}),
 							...(body.notes ? { notes: body.notes } : {}),
 						});
+						return { kind: "ok" as const, result: tokenResult };
 					});
+
+					if (txResult.kind === "patient_not_found") {
+						return reply.code(404).send({ error: "PatientNotFound" });
+					}
+					const { result } = txResult;
 
 					wsBroker.broadcastToOrganization(organizationId, {
 						type: "PRICE_FREEZE_TOKEN_ISSUED",
@@ -193,13 +199,13 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 					return reply.code(400).send({ error: "InvalidRequestParameters" });
 				}
-				if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-					return reply.code(404).send({ error: "PatientNotFound" });
-				}
 
-				const { planRow, tokenStatus } = await withTenantCtx(
+				const freezeState = await withTenantCtx(
 					organizationId,
 					async (tx) => {
+						if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+							return { kind: "patient_not_found" as const };
+						}
 						const [plan] = await tx
 							.select({ id: treatmentPlans.id })
 							.from(treatmentPlans)
@@ -212,7 +218,7 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 							)
 							.limit(1);
 
-						if (!plan) return { planRow: null, tokenStatus: null };
+						if (!plan) return { kind: "plan_not_found" as const };
 
 						const status = await getActivePriceFreezeToken(
 							tx,
@@ -220,16 +226,20 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 							planId,
 							patientId,
 						);
-						return { planRow: plan, tokenStatus: status };
+						return { kind: "ok" as const, tokenStatus: status };
 					},
 				);
 
-				if (!planRow) {
+				if (freezeState.kind === "patient_not_found") {
+					return reply.code(404).send({ error: "PatientNotFound" });
+				}
+				if (freezeState.kind === "plan_not_found") {
 					return reply.code(404).send({
 						error: "TreatmentPlanNotFound",
 						message: "План лечения не найден для указанного пациента",
 					});
 				}
+				const { tokenStatus } = freezeState;
 
 				return reply.send({
 					success: true,
@@ -267,9 +277,6 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
 					return reply.code(400).send({ error: "InvalidRequestParameters" });
 				}
-				if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-					return reply.code(404).send({ error: "PatientNotFound" });
-				}
 
 				const parsedBody = discountModeBodySchema.safeParse(request.body);
 				if (!parsedBody.success) {
@@ -283,8 +290,11 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 				const body = parsedBody.data;
 
 				try {
-					const result = await withTenantCtx(organizationId, async (tx) => {
-						return setPlanDiscountMode(tx, {
+					const txOutcome = await withTenantCtx(organizationId, async (tx) => {
+						if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+							return { kind: "patient_not_found" as const };
+						}
+						const discountResult = await setPlanDiscountMode(tx, {
 							organizationId,
 							patientId,
 							planId,
@@ -297,7 +307,13 @@ export function registerPlanPriceFreezeRoutes(app: FastifyInstance): void {
 								: {}),
 							...(identity.userId ? { actorUserId: identity.userId } : {}),
 						});
+						return { kind: "ok" as const, result: discountResult };
 					});
+
+					if (txOutcome.kind === "patient_not_found") {
+						return reply.code(404).send({ error: "PatientNotFound" });
+					}
+					const { result } = txOutcome;
 
 					wsBroker.broadcastToOrganization(organizationId, {
 						type: "TREATMENT_PLAN_DISCOUNT_MODE_CHANGED",

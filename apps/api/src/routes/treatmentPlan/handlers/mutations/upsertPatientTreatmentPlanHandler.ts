@@ -58,9 +58,6 @@ export async function handleUpsertPatientTreatmentPlan(
 	if (!UUID_SHAPE.test(patientId)) {
 		return reply.code(400).send({ error: "InvalidPatientId" });
 	}
-	if (!(await ensurePatientInOrganization(patientId, organizationId))) {
-		return reply.code(404).send({ error: "PatientNotFound" });
-	}
 
 	const parsed = treatmentPlanUpsertSchema.safeParse(request.body);
 	if (!parsed.success) {
@@ -73,10 +70,13 @@ export async function handleUpsertPatientTreatmentPlan(
 
 	const input = parsed.data;
 	const now = new Date();
-	let upsertResult: {
-		savedPlanId: string;
-		responseBody: Record<string, unknown>;
-	} | null = null;
+	let upsertResult:
+		| { patientNotFound: true }
+		| {
+				savedPlanId: string;
+				responseBody: Record<string, unknown>;
+		  }
+		| null = null;
 	let totalPriceKopecks = 0;
 
 	try {
@@ -84,6 +84,9 @@ export async function handleUpsertPatientTreatmentPlan(
 		totalPriceKopecks = calculatedTotals.totalPriceKopecks;
 
 		upsertResult = await withTenantCtx(organizationId, async (tx) => {
+			if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+				return { patientNotFound: true as const };
+			}
 			let savedPlanId = input.id ?? null;
 			let isRevision = false;
 
@@ -332,6 +335,10 @@ export async function handleUpsertPatientTreatmentPlan(
 			});
 		}
 		throw err;
+	}
+
+	if (upsertResult && "patientNotFound" in upsertResult) {
+		return reply.code(404).send({ error: "PatientNotFound" });
 	}
 
 	if (!upsertResult || !upsertResult.savedPlanId) {

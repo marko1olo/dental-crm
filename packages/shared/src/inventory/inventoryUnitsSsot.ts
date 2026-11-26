@@ -144,76 +144,78 @@ export interface UnitConversionOptions {
  * Deterministically converts material quantities between warehouse packaging and chairside dispensing units.
  */
 export function convertInventoryUnit(
-	amount: number,
+	quantity: number,
 	fromRawUnit: string,
 	toRawUnit: string,
 	options: UnitConversionOptions = {},
 ): number {
-	if (!Number.isFinite(amount) || amount <= 0) return 0;
+	if (!Number.isFinite(quantity) || quantity <= 0) return 0;
 
 	const fromUnit = normalizeInventoryUnit(fromRawUnit);
 	const toUnit = normalizeInventoryUnit(toRawUnit);
-	if (fromUnit === toUnit) return amount;
+	if (fromUnit === toUnit) return quantity;
 
 	const carpulesPerPack = options.packageMultiplier ?? options.carpulesPerPack ?? 100;
-	const itemsPerPack = options.packageMultiplier ?? 1;
 	const gramsPerSyringe = options.gramsPerSyringe ?? 4.0;
 	const mlPerBottle = options.mlPerBottle ?? 5.0;
 	const dosesPerMl = options.dosesPerMl ?? 20;
 	const mlPerCanister = options.mlPerCanister ?? 5000;
+	// Физические константы ОКЕИ/клиники для не-валютных единиц (объём карпулы, метр ↔ сантиметр).
+	const mlPerCarpule = 1.7;
+	const cmPerMeter = 100;
 
 	if (fromUnit === "pack" && (toUnit === "carpule" || toUnit === "pcs" || toUnit === "ampoule" || toUnit === "pair" || toUnit === "dose" || toUnit === "set" || Boolean(options.packageMultiplier))) {
 		const factor = (toUnit === "carpule" || toUnit === "ampoule") ? carpulesPerPack : (options.packageMultiplier ?? 1);
-		return Number((amount * factor).toFixed(4));
+		return Number((quantity * factor).toFixed(4));
 	}
 	if ((fromUnit === "carpule" || fromUnit === "pcs" || fromUnit === "ampoule" || fromUnit === "pair" || fromUnit === "dose" || fromUnit === "set" || Boolean(options.packageMultiplier)) && toUnit === "pack") {
 		const factor = (fromUnit === "carpule" || fromUnit === "ampoule") ? carpulesPerPack : (options.packageMultiplier ?? 1);
-		return Number((amount / factor).toFixed(4));
+		return Number((quantity / factor).toFixed(4));
 	}
 	if (fromUnit === "syringe_g" && toUnit === "gram") {
-		return Number((amount * gramsPerSyringe).toFixed(4));
+		return Number((quantity * gramsPerSyringe).toFixed(4));
 	}
 	if (fromUnit === "gram" && toUnit === "syringe_g") {
-		return Number((amount / gramsPerSyringe).toFixed(4));
+		return Number((quantity / gramsPerSyringe).toFixed(4));
 	}
 	if (fromUnit === "carpule" && toUnit === "ml") {
-		return Number((amount * 1.7).toFixed(4));
+		return Number((quantity * mlPerCarpule).toFixed(4));
 	}
 	if (fromUnit === "ml" && toUnit === "carpule") {
-		return Number((amount / 1.7).toFixed(4));
+		return Number((quantity / mlPerCarpule).toFixed(4));
 	}
 	if (fromUnit === "bottle" && toUnit === "ml") {
-		return Number((amount * mlPerBottle).toFixed(4));
+		return Number((quantity * mlPerBottle).toFixed(4));
 	}
 	if (fromUnit === "ml" && toUnit === "bottle") {
-		return Number((amount / mlPerBottle).toFixed(4));
+		return Number((quantity / mlPerBottle).toFixed(4));
 	}
 	if (fromUnit === "ml" && (toUnit === "dose" || toUnit === "drop")) {
-		return Number((amount * dosesPerMl).toFixed(4));
+		return Number((quantity * dosesPerMl).toFixed(4));
 	}
 	if ((fromUnit === "dose" || fromUnit === "drop") && toUnit === "ml") {
-		return Number((amount / dosesPerMl).toFixed(4));
+		return Number((quantity / dosesPerMl).toFixed(4));
 	}
 	if (fromUnit === "bottle" && (toUnit === "dose" || toUnit === "drop")) {
-		return Number((amount * mlPerBottle * dosesPerMl).toFixed(4));
+		return Number((quantity * mlPerBottle * dosesPerMl).toFixed(4));
 	}
 	if ((fromUnit === "dose" || fromUnit === "drop") && toUnit === "bottle") {
-		return Number((amount / (mlPerBottle * dosesPerMl)).toFixed(4));
+		return Number((quantity / (mlPerBottle * dosesPerMl)).toFixed(4));
 	}
 	if (fromUnit === "canister" && toUnit === "ml") {
-		return Number((amount * mlPerCanister).toFixed(4));
+		return Number((quantity * mlPerCanister).toFixed(4));
 	}
 	if (fromUnit === "ml" && toUnit === "canister") {
-		return Number((amount / mlPerCanister).toFixed(4));
+		return Number((quantity / mlPerCanister).toFixed(4));
 	}
 	if (fromUnit === "meter" && toUnit === "cm") {
-		return Number((amount * 100).toFixed(4));
+		return Number((quantity * cmPerMeter).toFixed(4));
 	}
 	if (fromUnit === "cm" && toUnit === "meter") {
-		return Number((amount / 100).toFixed(4));
+		return Number((quantity / cmPerMeter).toFixed(4));
 	}
 
-	return amount;
+	return quantity;
 }
 
 /**

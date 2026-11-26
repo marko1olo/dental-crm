@@ -6,16 +6,15 @@ import {
 	detectCrossBranchScheduleCollisions,
 	type DoctorBranchShift,
 } from "@dental/shared";
-import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../db/rls.js";
 import {
 	clinics,
 	doctorShiftRosters,
 	urgentScheduleRequests,
 } from "../../db/schema.js";
 import {
-	requireClinicOrganizationId,
-	requireScheduleMutationAccess,
+	requireScheduleMutationContext,
+	requireScheduleReadContext,
 } from "../scheduleAuthGuard.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
@@ -89,10 +88,11 @@ const scheduleShiftsSchema = z
  */
 export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 	app.get("/api/schedule/urgent-schedule-requests", async (request, reply) => {
-		const orgId = await requireOrganizationContext(request, reply);
-		if (!orgId) return reply;
+		const auth = await requireScheduleReadContext(request, reply);
+		if (!auth) return reply;
+		const orgId = auth.organizationId;
 
-		const requests = await withTenantCtx(orgId, async (tx) =>
+		const requests = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select()
 				.from(urgentScheduleRequests)
@@ -111,9 +111,13 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 	app.patch(
 		"/api/schedule/urgent-schedule-requests/:id/resolve",
 		async (request, reply) => {
-			if (!(await requireScheduleMutationAccess(request, reply))) return;
-			const orgId = await requireOrganizationContext(request, reply);
-			if (!orgId) return reply;
+			const auth = await requireScheduleMutationContext(
+				request,
+				reply,
+				"urgent schedule request resolve",
+			);
+			if (!auth) return reply;
+			const orgId = auth.organizationId;
 
 			const parsedParams = urgentRequestParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {
@@ -141,10 +145,9 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 	);
 
 	app.get("/api/schedule/shifts", async (req, reply) => {
-		const orgId =
-			(await requireOrganizationContext(req, reply)) ||
-			requireClinicOrganizationId(req, reply);
-		if (!orgId) return;
+		const auth = await requireScheduleReadContext(req, reply);
+		if (!auth) return reply;
+		const orgId = auth.organizationId;
 
 		const parsedQuery = scheduleShiftsQuerySchema.safeParse(req.query ?? {});
 		if (!parsedQuery.success) {
@@ -164,7 +167,7 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 				)
 			: eq(doctorShiftRosters.organizationId, orgId);
 
-		const rows = await withTenantCtx(orgId, async (tx) =>
+		const rows = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select()
 				.from(doctorShiftRosters)
@@ -188,11 +191,13 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 	});
 
 	app.post("/api/schedule/shifts", async (req, reply) => {
-		if (!(await requireScheduleMutationAccess(req, reply, "schedule shifts update"))) return;
-		const orgId =
-			(await requireOrganizationContext(req, reply)) ||
-			requireClinicOrganizationId(req, reply);
-		if (!orgId) return;
+		const auth = await requireScheduleMutationContext(
+			req,
+			reply,
+			"schedule shifts update",
+		);
+		if (!auth) return reply;
+		const orgId = auth.organizationId;
 
 		const rawIdempotencyKey = extractIdempotencyKey(req);
 		const idempotencyKey =

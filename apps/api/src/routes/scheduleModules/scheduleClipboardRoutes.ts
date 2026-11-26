@@ -19,8 +19,8 @@ import {
 	sendAppointmentRejection,
 } from "../appointmentErrors.js";
 import {
-	requireClinicOrganizationId,
 	requireScheduleMutationContext,
+	requireScheduleReadContext,
 } from "../scheduleAuthGuard.js";
 
 const clipboardItemMissingMessage =
@@ -78,8 +78,9 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 	} as const;
 
 	app.get("/api/schedule/clipboard-items", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
+		const context = await requireScheduleReadContext(request, reply);
+		if (!context) return reply;
+		const orgId = context.organizationId;
 
 		const items = await withTenantCtx(orgId, (tx) =>
 			tx
@@ -142,8 +143,20 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 					doctorName: users.fullName,
 				})
 				.from(appointments)
-				.leftJoin(patients, eq(patients.id, appointments.patientId))
-				.leftJoin(users, eq(users.id, appointments.doctorUserId))
+				.leftJoin(
+					patients,
+					and(
+						eq(patients.id, appointments.patientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.leftJoin(
+					users,
+					and(
+						eq(users.id, appointments.doctorUserId),
+						eq(users.organizationId, orgId),
+					),
+				)
 				.where(
 					and(
 						eq(appointments.id, appointmentId),

@@ -1,5 +1,5 @@
 import { and, eq, inArray, ne, or, sql, type SQL } from "drizzle-orm";
-import { rublesToKopecks, generateUuidV7, multiplyKopecksFractional } from "@dental/shared";
+import { generateUuidV7, multiplyKopecksFractional } from "@dental/shared";
 import { evaluateClinicalRulesInDb } from "../../../../db/clinicalQuery.js";
 import type { TenantDb } from "../../../../db/rls.js";
 import { serviceCatalogItems, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
@@ -8,6 +8,10 @@ import {
 	LEDGER_STATUSES_OWNED_BY_PLAN,
 	UUID_SHAPE,
 } from "../../../odontogram/types.js";
+import {
+	batchSyncUpdateTreatmentItems,
+	type TreatmentItemSyncUpdateRow,
+} from "./treatmentPlanBatchUpdate.js";
 
 export interface SyncPlanLedgerItemInput {
 	treatmentPlanItemId?: string | null | undefined;
@@ -207,6 +211,7 @@ export async function syncUpsertPlanLedgerItems(
 	const ledgerStatus: "proposed" | "approved" = patientSignature ? "approved" : "proposed";
 
 	const toInsert: (typeof treatmentItems.$inferInsert)[] = [];
+	const toUpdate: TreatmentItemSyncUpdateRow[] = [];
 
 	for (const item of items) {
 		const unitPriceKopNum = item.unitPriceKopecks != null
@@ -270,33 +275,26 @@ export async function syncUpsertPlanLedgerItems(
 		usedRowIds.add(rowId.toLowerCase());
 
 		if (existingRow && existingRow.visitId === null && LEDGER_STATUSES_OWNED_BY_PLAN.has(existingRow.status)) {
-			// Обновляем существующую незавершенную строку в книге лечения вместо слепого пересоздания / конфликта pkey
-			await tx
-				.update(treatmentItems)
-				.set({
-					serviceId: resolvedServiceId,
-					toothCode:
-						item.toothNumber === null || item.toothNumber === undefined
-							? null
-							: String(item.toothNumber),
-					title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
-					quantity: String(item.quantity),
-					priceRub: lineTotalRub,
-					unitPriceRub,
-					discountRub,
-					priceKopecks: lineTotalKopecks,
-					unitPriceKopecks: unitPriceKopecks,
-					discountKopecks: discountKopecks,
-					status: ledgerStatus,
-					plannedDoctorUserId: item.doctorId ?? null,
-					treatmentPlanItemId: item.treatmentPlanItemId ?? null,
-				})
-				.where(
-					and(
-						eq(treatmentItems.organizationId, organizationId),
-						eq(treatmentItems.id, existingRow.id),
-					),
-				);
+			// Накапливаем обновления для единого параметризованного батча UPDATE ... FROM (VALUES ...)
+			toUpdate.push({
+				id: existingRow.id,
+				serviceId: resolvedServiceId,
+				toothCode:
+					item.toothNumber === null || item.toothNumber === undefined
+						? null
+						: String(item.toothNumber),
+				title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
+				quantity: String(item.quantity),
+				priceRub: lineTotalRub,
+				unitPriceRub,
+				discountRub,
+				priceKopecks: lineTotalKopecks,
+				unitPriceKopecks: unitPriceKopecks,
+				discountKopecks: discountKopecks,
+				status: ledgerStatus,
+				plannedDoctorUserId: item.doctorId ?? null,
+				treatmentPlanItemId: item.treatmentPlanItemId ?? null,
+			});
 		} else {
 			toInsert.push({
 				id: rowId,
@@ -323,6 +321,10 @@ export async function syncUpsertPlanLedgerItems(
 				notes: null,
 			});
 		}
+	}
+
+	if (toUpdate.length > 0) {
+		await batchSyncUpdateTreatmentItems(tx, organizationId, toUpdate);
 	}
 
 	if (toInsert.length > 0) {

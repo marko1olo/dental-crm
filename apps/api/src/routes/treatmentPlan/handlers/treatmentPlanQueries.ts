@@ -263,10 +263,15 @@ export async function handleListPatientTreatmentPlans(
 	if (!UUID_SHAPE.test(patientId)) {
 		return reply.code(400).send({ error: "InvalidPatientId" });
 	}
-	if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+
+	const plansResult = await withTenantCtx(organizationId, async (tx) => {
+		if (!(await ensurePatientInOrganization(patientId, organizationId, tx))) {
+			return null;
+		}
+		return loadTreatmentPlansForPatient(patientId, organizationId, tx);
+	});
+	if (!plansResult) {
 		return reply.code(404).send({ error: "PatientNotFound" });
 	}
-
-	const plans = await loadTreatmentPlansForPatient(patientId, organizationId);
-	return reply.send({ success: true, plans });
+	return reply.send({ success: true, plans: plansResult });
 }

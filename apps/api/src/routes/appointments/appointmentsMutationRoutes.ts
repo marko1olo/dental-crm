@@ -158,9 +158,8 @@ export const createAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	return withTenantCtx(orgId, async (tx) => {
-
-		const zone = (await clinicTimeZone(orgId)) || DEFAULT_SCHEDULE_TIMEZONE;
+	const txOutcome = await withTenantCtx(orgId, async (tx) => {
+		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody = await prepareCreateAppointmentRawBody(
 			orgId,
 			request.body,
@@ -173,10 +172,9 @@ export const createAppointmentHandler = async (
 			rawBody ?? request.body,
 		);
 		if (!input) {
-			return reply.code(400).send({
-				code: "AppointmentValidationError",
-				message: appointmentCreateValidationMessage,
-			});
+			return {
+				kind: "validation_error" as const,
+			};
 		}
 
 		const allowOverride = Boolean(
@@ -195,13 +193,12 @@ export const createAppointmentHandler = async (
 		if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
 			const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
 			const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU");
-			return reply.code(409).send({
-				code: "AppointmentLabOrderConflict",
-				conflictType: "lab_order_not_ready",
-				message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
-				suggestedStartsAt: dueIso,
+			return {
+				kind: "lab_conflict" as const,
+				dueIso,
+				dueRu,
 				orderId: labCollisionCheck.conflictingOrder.id,
-			});
+			};
 		}
 
 		try {
@@ -261,22 +258,43 @@ export const createAppointmentHandler = async (
 				reason: input.reason,
 			});
 
-			return await sendDashboardResponseAfterCreate(
-				request,
-				reply,
-				orgId,
-				created.id,
-				created,
-			);
+			return { kind: "created" as const, created };
 		} catch (error) {
 			const conflictContext =
 				input && orgId ? buildConflictContext(orgId, input) : undefined;
-			return sendAppointmentRejection(
-				reply,
-				await appointmentRejectionResponse("create", error, conflictContext),
-			);
+			return {
+				kind: "rejected" as const,
+				rejection: await appointmentRejectionResponse("create", error, conflictContext),
+			};
 		}
 	});
+
+	if (txOutcome.kind === "validation_error") {
+		return reply.code(400).send({
+			code: "AppointmentValidationError",
+			message: appointmentCreateValidationMessage,
+		});
+	}
+	if (txOutcome.kind === "lab_conflict") {
+		return reply.code(409).send({
+			code: "AppointmentLabOrderConflict",
+			conflictType: "lab_order_not_ready",
+			message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${txOutcome.dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
+			suggestedStartsAt: txOutcome.dueIso,
+			orderId: txOutcome.orderId,
+		});
+	}
+	if (txOutcome.kind === "rejected") {
+		return sendAppointmentRejection(reply, txOutcome.rejection);
+	}
+
+	return await sendDashboardResponseAfterCreate(
+		request,
+		reply,
+		orgId,
+		txOutcome.created.id,
+		txOutcome.created,
+	);
 };
 
 export const updateAppointmentHandler = async (
@@ -311,8 +329,8 @@ export const updateAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	return withTenantCtx(orgId, async (tx) => {
-		const zone = (await clinicTimeZone(orgId)) || DEFAULT_SCHEDULE_TIMEZONE;
+	const txOutcome = await withTenantCtx(orgId, async (tx) => {
+		const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_SCHEDULE_TIMEZONE;
 		const rawBody =
 			(await prepareUpdateAppointmentRawBody(orgId, request.body, tx, zone)) ??
 			normalizeAppointmentUpdateRawBody(request.body, zone);
@@ -322,18 +340,12 @@ export const updateAppointmentHandler = async (
 			rawBody ?? request.body,
 		);
 		if (!input) {
-			return reply.code(400).send({
-				code: "AppointmentValidationError",
-				message: appointmentUpdateValidationMessage,
-			});
+			return { kind: "validation_error" as const };
 		}
 
 		const existingAppt = await getAppointmentByIdInDb(orgId, appointmentId, tx);
 		if (!existingAppt) {
-			return reply.code(404).send({
-				code: "AppointmentNotFound",
-				message: "Запись расписания не найдена.",
-			});
+			return { kind: "not_found" as const };
 		}
 		const previousStatus = existingAppt.status;
 
@@ -355,13 +367,12 @@ export const updateAppointmentHandler = async (
 			if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
 				const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
 				const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU");
-				return reply.code(409).send({
-					code: "AppointmentLabOrderConflict",
-					conflictType: "lab_order_not_ready",
-					message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
-					suggestedStartsAt: dueIso,
+				return {
+					kind: "lab_conflict" as const,
+					dueIso,
+					dueRu,
 					orderId: labCollisionCheck.conflictingOrder.id,
-				});
+				};
 			}
 		}
 
@@ -379,6 +390,7 @@ export const updateAppointmentHandler = async (
 					orgId,
 					appointmentId,
 					input.status,
+					previousStatus,
 				);
 				return updated;
 			});
@@ -432,11 +444,12 @@ export const updateAppointmentHandler = async (
 			}
 
 			try {
-				await withSavepoint(tx, async () => {
+				await withSavepoint(tx, async (spTx) => {
 					await invalidateAppointmentReminders(
 						orgId,
 						appointmentId,
 						"Приём изменён администратором",
+						spTx,
 					);
 				});
 			} catch (error: unknown) {
@@ -478,21 +491,48 @@ export const updateAppointmentHandler = async (
 				});
 			}
 
-			return await buildDashboardResponseAfterUpdate(
-				request,
-				orgId,
-				appointmentId,
-				updatedAppt,
-			);
+			return { kind: "updated" as const, updatedAppt };
 		} catch (error) {
 			const conflictContext =
 				input && orgId ? buildConflictContext(orgId, input) : undefined;
-			return sendAppointmentRejection(
-				reply,
-				await appointmentRejectionResponse("update", error, conflictContext),
-			);
+			return {
+				kind: "rejected" as const,
+				rejection: await appointmentRejectionResponse("update", error, conflictContext),
+			};
 		}
 	});
+
+	if (txOutcome.kind === "validation_error") {
+		return reply.code(400).send({
+			code: "AppointmentValidationError",
+			message: appointmentUpdateValidationMessage,
+		});
+	}
+	if (txOutcome.kind === "not_found") {
+		return reply.code(404).send({
+			code: "AppointmentNotFound",
+			message: "Запись расписания не найдена.",
+		});
+	}
+	if (txOutcome.kind === "lab_conflict") {
+		return reply.code(409).send({
+			code: "AppointmentLabOrderConflict",
+			conflictType: "lab_order_not_ready",
+			message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${txOutcome.dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
+			suggestedStartsAt: txOutcome.dueIso,
+			orderId: txOutcome.orderId,
+		});
+	}
+	if (txOutcome.kind === "rejected") {
+		return sendAppointmentRejection(reply, txOutcome.rejection);
+	}
+
+	return await buildDashboardResponseAfterUpdate(
+		request,
+		orgId,
+		appointmentId,
+		txOutcome.updatedAppt,
+	);
 };
 
 export const createNextStageAppointmentHandler = async (
@@ -509,22 +549,16 @@ export const createNextStageAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
-	return withTenantCtx(orgId, async (tx) => {
+	const txOutcome = await withTenantCtx(orgId, async (tx) => {
 		const params = request.params;
 		const appointmentId = params?.appointmentId || params?.id;
 		if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
-			return reply.code(400).send({
-				code: "AppointmentValidationError",
-				message: "Не указан ID родительского приёма",
-			});
+			return { kind: "missing_parent_id" as const };
 		}
 
 		const parent = await getAppointmentByIdInDb(orgId, appointmentId, tx);
 		if (!parent) {
-			return reply.code(404).send({
-				code: "AppointmentNotFound",
-				message: "Родительский приём не найден",
-			});
+			return { kind: "parent_not_found" as const };
 		}
 
 		const rawBody =
@@ -536,10 +570,7 @@ export const createNextStageAppointmentHandler = async (
 
 		const input = parseSchedulePayload(createAppointmentSchema, createPayload);
 		if (!input) {
-			return reply.code(400).send({
-				code: "AppointmentValidationError",
-				message: appointmentCreateValidationMessage,
-			});
+			return { kind: "validation_error" as const };
 		}
 
 		try {
@@ -602,24 +633,48 @@ export const createNextStageAppointmentHandler = async (
 				reason: input.reason,
 			});
 
-			const dashboard = await withSavepoint(tx, () =>
-				fetchDashboardAfterNextStage(request, orgId, created.id),
-			);
-
-			const responsePayload: Record<string, unknown> = {
-				success: true,
-				appointment: created,
-				dashboard: dashboard ?? undefined,
-			};
-
-			return reply.code(201).send(responsePayload);
+			return { kind: "created" as const, created };
 		} catch (error) {
 			const conflictContext = buildConflictContext(orgId, input);
-			return sendAppointmentRejection(
-				reply,
-				await appointmentRejectionResponse("create", error, conflictContext),
-			);
+			return {
+				kind: "rejected" as const,
+				rejection: await appointmentRejectionResponse("create", error, conflictContext),
+			};
 		}
+	});
+
+	if (txOutcome.kind === "missing_parent_id") {
+		return reply.code(400).send({
+			code: "AppointmentValidationError",
+			message: "Не указан ID родительского приёма",
+		});
+	}
+	if (txOutcome.kind === "parent_not_found") {
+		return reply.code(404).send({
+			code: "AppointmentNotFound",
+			message: "Родительский приём не найден",
+		});
+	}
+	if (txOutcome.kind === "validation_error") {
+		return reply.code(400).send({
+			code: "AppointmentValidationError",
+			message: appointmentCreateValidationMessage,
+		});
+	}
+	if (txOutcome.kind === "rejected") {
+		return sendAppointmentRejection(reply, txOutcome.rejection);
+	}
+
+	const dashboard = await fetchDashboardAfterNextStage(
+		request,
+		orgId,
+		txOutcome.created.id,
+	);
+
+	return reply.code(201).send({
+		success: true,
+		appointment: txOutcome.created,
+		dashboard: dashboard ?? undefined,
 	});
 };
 

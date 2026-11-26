@@ -1,14 +1,14 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getAppointmentByIdInDb } from "../../db/appointmentsQuery.js";
-import { db } from "../../db/client.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { appointments, chairs, patients, users } from "../../db/schema.js";
 import {
 	DEFAULT_CLINIC_TIME_ZONE,
 	clinicTimeZone,
 } from "../../services/reports/managerReports/timezone.js";
 import { instantOfLocalTime } from "../../services/reports/managerReports/periodBounds.js";
+import { requireScheduleReadContext } from "../scheduleAuthGuard.js";
 import { APPOINTMENT_ID_UUID_PATTERN } from "./appointmentsSchemas.js";
 import type {
 	AppointmentOptionalIdParams,
@@ -79,13 +79,10 @@ export async function handleGetAppointments(
 	}>,
 	reply: FastifyReply,
 ) {
-	const orgId = await requireResolvedOrganizationId(
-		request,
-		reply,
-		"get appointments",
-	);
+	const context = await requireScheduleReadContext(request, reply);
 	if (reply.sent) return reply;
-	if (!orgId) return reply;
+	if (!context) return reply;
+	const orgId = context.organizationId;
 
 	const { period, doctorId, date, patientId } = request.query ?? {};
 
@@ -108,6 +105,8 @@ export async function handleGetAppointments(
 		}
 		conditions.push(eq(appointments.patientId, patientId.trim()));
 	}
+
+	let cleanDateToResolve: string | null = null;
 	if (date) {
 		if (
 			!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ||
@@ -118,12 +117,7 @@ export async function handleGetAppointments(
 				message: "Некорректный формат даты (ожидается YYYY-MM-DD).",
 			});
 		}
-		const cleanDate = date.trim();
-		const clinicZone = (await clinicTimeZone(orgId)) ?? DEFAULT_CLINIC_TIME_ZONE;
-		const { dayStart, dayEnd } = resolveScheduleDateBounds(cleanDate, clinicZone);
-		conditions.push(
-			sql`${appointments.startsAt} >= ${dayStart} AND ${appointments.startsAt} <= ${dayEnd}`,
-		);
+		cleanDateToResolve = date.trim();
 	} else if (period) {
 		const now = new Date();
 		let dateThreshold: Date | undefined;
@@ -151,41 +145,51 @@ export async function handleGetAppointments(
 		'К-' || substring(${appointments.id}::text, 1, 8)
 	)`;
 
-	const rows = await db
-		.select({
-			appointment: appointments,
-			patientFullName: patients.fullName,
-			patientPhone: patients.phone,
-			patientBirthDate: patients.birthDate,
-			cardNumber: cardNumSql,
-			chairName: chairs.name,
-			doctorFullName: users.fullName,
-		})
-		.from(appointments)
-		.leftJoin(
-			patients,
-			and(
-				eq(patients.id, appointments.patientId),
-				eq(patients.organizationId, orgId),
-			),
-		)
-		.leftJoin(
-			chairs,
-			and(
-				eq(chairs.id, appointments.chairId),
-				eq(chairs.organizationId, orgId),
-			),
-		)
-		.leftJoin(
-			users,
-			and(
-				eq(users.id, appointments.doctorUserId),
-				eq(users.organizationId, orgId),
-			),
-		)
-		.where(and(...conditions))
-		.orderBy(asc(appointments.startsAt))
-		.limit(1000);
+	const rows = await withTenantReadCtx(orgId, async (tx) => {
+		if (cleanDateToResolve) {
+			const clinicZone = (await clinicTimeZone(orgId, tx)) ?? DEFAULT_CLINIC_TIME_ZONE;
+			const { dayStart, dayEnd } = resolveScheduleDateBounds(cleanDateToResolve, clinicZone);
+			conditions.push(
+				sql`${appointments.startsAt} >= ${dayStart} AND ${appointments.startsAt} <= ${dayEnd}`,
+			);
+		}
+
+		return tx
+			.select({
+				appointment: appointments,
+				patientFullName: patients.fullName,
+				patientPhone: patients.phone,
+				patientBirthDate: patients.birthDate,
+				cardNumber: cardNumSql,
+				chairName: chairs.name,
+				doctorFullName: users.fullName,
+			})
+			.from(appointments)
+			.leftJoin(
+				patients,
+				and(
+					eq(patients.id, appointments.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
+			.leftJoin(
+				chairs,
+				and(
+					eq(chairs.id, appointments.chairId),
+					eq(chairs.organizationId, orgId),
+				),
+			)
+			.leftJoin(
+				users,
+				and(
+					eq(users.id, appointments.doctorUserId),
+					eq(users.organizationId, orgId),
+				),
+			)
+			.where(and(...conditions))
+			.orderBy(asc(appointments.startsAt))
+			.limit(1000);
+	});
 
 	const formatted = rows.map((r) => ({
 		id: r.appointment.id,
@@ -230,13 +234,9 @@ export async function handleGetAppointmentById(
 	}>,
 	reply: FastifyReply,
 ) {
-	const orgId = await requireResolvedOrganizationId(
-		request,
-		reply,
-		"get appointment by id",
-	);
-	if (reply.sent) return reply;
-	if (!orgId) return reply;
+	const auth = await requireScheduleReadContext(request, reply);
+	if (!auth) return reply;
+	const orgId = auth.organizationId;
 
 	const { appointmentId, id } = request.params ?? {};
 	const targetId = appointmentId || id;
@@ -247,7 +247,9 @@ export async function handleGetAppointmentById(
 		});
 	}
 
-	const appt = await getAppointmentByIdInDb(orgId, targetId);
+	const appt = await withTenantReadCtx(orgId, (tx) =>
+		getAppointmentByIdInDb(orgId, targetId, tx),
+	);
 	if (!appt) {
 		return reply.code(404).send({
 			code: "AppointmentNotFound",

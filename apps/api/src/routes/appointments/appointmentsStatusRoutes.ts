@@ -130,6 +130,7 @@ export async function applyAppointmentStatusTransitions(
 	orgId: string,
 	appointmentId: string,
 	status: string | undefined,
+	previousStatus?: string,
 ): Promise<void> {
 	if (status === "in_treatment") {
 		try {
@@ -142,16 +143,6 @@ export async function applyAppointmentStatusTransitions(
 			throw err;
 		}
 	} else if (status === "completed") {
-		onTenantTxCommit(() => {
-			void runDetachedInTenantCtx(orgId, async () => {
-				await syncRecallOnAppointmentCompleted(orgId, appointmentId);
-			}).catch((err) => {
-				request.log.warn(
-					{ err, appointmentId, orgId },
-					"[scheduleRoutes] Фоновая синхронизация recall завершилась с ошибкой",
-				);
-			});
-		});
 		try {
 			const updatedVisits = await tx
 				.update(visits)
@@ -168,22 +159,38 @@ export async function applyAppointmentStatusTransitions(
 					patientId: visits.patientId,
 				});
 
+			const isTransitionToCompleted = previousStatus !== "completed";
+			if (isTransitionToCompleted || updatedVisits.length > 0) {
+				onTenantTxCommit(() => {
+					void runDetachedInTenantCtx(orgId, async () => {
+						await syncRecallOnAppointmentCompleted(orgId, appointmentId);
+					}).catch((err) => {
+						request.log.warn(
+							{ err, appointmentId, orgId },
+							"[scheduleRoutes] Фоновая синхронизация recall завершилась с ошибкой",
+						);
+					});
+				});
+			}
+
 			const targetVisits =
 				updatedVisits.length > 0
 					? updatedVisits
-					: await tx
-							.select({
-								id: visits.id,
-								patientId: visits.patientId,
-							})
-							.from(visits)
-							.where(
-								and(
-									eq(visits.appointmentId, appointmentId),
-									eq(visits.organizationId, orgId),
-								),
-							)
-							.limit(1);
+					: isTransitionToCompleted
+						? await tx
+								.select({
+									id: visits.id,
+									patientId: visits.patientId,
+								})
+								.from(visits)
+								.where(
+									and(
+										eq(visits.appointmentId, appointmentId),
+										eq(visits.organizationId, orgId),
+									),
+								)
+								.limit(1)
+						: [];
 
 			const identity = getRequestIdentity(request);
 			for (const visit of targetVisits) {

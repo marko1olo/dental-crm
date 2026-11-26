@@ -146,7 +146,7 @@ export async function prepareCreateAppointmentRawBody(
 	if (rawBody) {
 		const zone =
 			explicitTimeZone ||
-			(await clinicTimeZone(orgId)) ||
+			(await clinicTimeZone(orgId, tx)) ||
 			DEFAULT_SCHEDULE_TIMEZONE;
 		normalizeAppointmentFieldAliases(rawBody, zone);
 
@@ -185,7 +185,7 @@ export async function prepareUpdateAppointmentRawBody(
 	if (rawBody) {
 		const zone =
 			explicitTimeZone ||
-			(await clinicTimeZone(orgId)) ||
+			(await clinicTimeZone(orgId, tx)) ||
 			DEFAULT_SCHEDULE_TIMEZONE;
 		normalizeAppointmentFieldAliases(rawBody, zone);
 

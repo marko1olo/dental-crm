@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { rublesToKopecks } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks } from "@dental/shared";
 import type { TenantDb } from "../../../../db/rls.js";
 import {
 	treatmentPlanItemsNew,
@@ -9,6 +9,12 @@ import { debtNumericText } from "../../../../money/patientDebt.js";
 import type { treatmentPlanUpsertSchema } from "../../../odontogram/types.js";
 import type { z } from "zod";
 import { syncUpsertPlanLedgerItems } from "./planLedgerSync.js";
+import {
+	batchSyncUpdatePlanItemsNew,
+	batchSyncUpdatePlanStages,
+	type TreatmentPlanItemNewSyncUpdateRow,
+	type TreatmentPlanStageSyncUpdateRow,
+} from "./treatmentPlanBatchUpdate.js";
 
 type UpsertInput = z.infer<typeof treatmentPlanUpsertSchema>;
 
@@ -36,60 +42,64 @@ export async function syncUpsertPlanStagesAndItems(
 		);
 	const existingByOrder = new Map(existingStages.map((s) => [s.stageOrder, s]));
 
+	const stageUpdates: TreatmentPlanStageSyncUpdateRow[] = [];
+	const stageInserts: Array<typeof treatmentPlanStages.$inferInsert> = [];
+	const seenStageOrders = new Set<number>();
+
 	if (input.stages && input.stages.length > 0) {
 		for (const stg of input.stages) {
 			const order = stg.stageOrder || 1;
+			seenStageOrders.add(order);
 			const existing = existingByOrder.get(order);
 			if (existing) {
-				await tx
-					.update(treatmentPlanStages)
-					.set({
-						stageName: stg.stageName || existing.stageName,
-						completionPercentage: stg.completionPercentage ?? existing.completionPercentage,
-					})
-					.where(
-						and(
-							eq(treatmentPlanStages.id, existing.id),
-							eq(treatmentPlanStages.organizationId, organizationId),
-						),
-					);
+				stageUpdates.push({
+					id: existing.id,
+					stageName: stg.stageName || existing.stageName,
+					completionPercentage: stg.completionPercentage ?? existing.completionPercentage,
+				});
 				stageMap.set(order, existing.id);
 			} else {
-				const [created] = await tx
-					.insert(treatmentPlanStages)
-					.values({
-						organizationId,
-						planId: savedPlanId,
-						stageOrder: order,
-						stageName: stg.stageName || `Этап ${order}`,
-						completionPercentage: stg.completionPercentage ?? 0,
-					})
-					.returning({ id: treatmentPlanStages.id });
-				if (created) stageMap.set(order, created.id);
+				const newStageId = generateUuidV7();
+				stageInserts.push({
+					id: newStageId,
+					organizationId,
+					planId: savedPlanId,
+					stageOrder: order,
+					stageName: stg.stageName || `Этап ${order}`,
+					completionPercentage: stg.completionPercentage ?? 0,
+				});
+				stageMap.set(order, newStageId);
 			}
 		}
 	}
 
 	for (const item of input.items) {
 		const phaseNum = item.phase || 1;
-		if (!stageMap.has(phaseNum)) {
+		if (!stageMap.has(phaseNum) && !seenStageOrders.has(phaseNum)) {
+			seenStageOrders.add(phaseNum);
 			const existing = existingByOrder.get(phaseNum);
 			if (existing) {
 				stageMap.set(phaseNum, existing.id);
 			} else {
-				const [created] = await tx
-					.insert(treatmentPlanStages)
-					.values({
-						organizationId,
-						planId: savedPlanId,
-						stageOrder: phaseNum,
-						stageName: `Этап ${phaseNum}`,
-						completionPercentage: 0,
-					})
-					.returning({ id: treatmentPlanStages.id });
-				if (created) stageMap.set(phaseNum, created.id);
+				const newStageId = generateUuidV7();
+				stageInserts.push({
+					id: newStageId,
+					organizationId,
+					planId: savedPlanId,
+					stageOrder: phaseNum,
+					stageName: `Этап ${phaseNum}`,
+					completionPercentage: 0,
+				});
+				stageMap.set(phaseNum, newStageId);
 			}
 		}
+	}
+
+	if (stageUpdates.length > 0) {
+		await batchSyncUpdatePlanStages(tx, organizationId, stageUpdates);
+	}
+	if (stageInserts.length > 0) {
+		await tx.insert(treatmentPlanStages).values(stageInserts);
 	}
 
 	const existingPlanItems = await tx
@@ -125,6 +135,9 @@ export async function syncUpsertPlanStagesAndItems(
 	}
 
 	const createdItemsList: Array<{ id: string }> = [];
+	const planItemsToUpdate: TreatmentPlanItemNewSyncUpdateRow[] = [];
+	const planItemsToInsert: Array<typeof treatmentPlanItemsNew.$inferInsert> = [];
+
 	for (const item of input.items) {
 		const phaseNum = item.phase || 1;
 		const itemPriceKopecks =
@@ -132,44 +145,62 @@ export async function syncUpsertPlanStagesAndItems(
 				? Math.round(item.unitPriceKopecks)
 				: rublesToKopecks(item.price);
 		const itemDiscountKopecks = rublesToKopecks(item.discount);
-		const itemPayload = {
-			organizationId,
-			planId: savedPlanId,
-			stageId: stageMap.get(phaseNum) ?? null,
-			toothNumber: item.toothNumber ?? null,
-			priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
-			name: item.name ?? null,
-			quantity: item.quantity,
-			price: debtNumericText(itemPriceKopecks),
-			discount: debtNumericText(itemDiscountKopecks),
-			priceKopecks: BigInt(itemPriceKopecks),
-			discountKopecks: BigInt(itemDiscountKopecks),
-			commissionKopecks: 0n,
-			phase: phaseNum,
-			isBundle: Boolean(item.isAuto),
-			doctorId: item.doctorId ?? null,
-		};
+		const resolvedStageId = stageMap.get(phaseNum) ?? null;
+		const resolvedToothNumber = item.toothNumber ?? null;
+		const resolvedPriceId = item.priceId || (item.isCustom ? "custom" : "service-item");
+		const resolvedName = item.name ?? null;
+		const resolvedPriceStr = debtNumericText(itemPriceKopecks);
+		const resolvedDiscountStr = debtNumericText(itemDiscountKopecks);
+		const resolvedIsBundle = Boolean(item.isAuto);
+		const resolvedDoctorId = item.doctorId ?? null;
 
 		if (item.id && existingItemMap.has(item.id)) {
-			await tx
-				.update(treatmentPlanItemsNew)
-				.set(itemPayload)
-				.where(
-					and(
-						eq(treatmentPlanItemsNew.id, item.id),
-						eq(treatmentPlanItemsNew.organizationId, organizationId),
-					),
-				);
+			planItemsToUpdate.push({
+				id: item.id,
+				stageId: resolvedStageId,
+				toothNumber: resolvedToothNumber,
+				priceId: resolvedPriceId,
+				name: resolvedName,
+				quantity: item.quantity,
+				price: resolvedPriceStr,
+				discount: resolvedDiscountStr,
+				priceKopecks: BigInt(itemPriceKopecks),
+				discountKopecks: BigInt(itemDiscountKopecks),
+				commissionKopecks: 0n,
+				phase: phaseNum,
+				isBundle: resolvedIsBundle,
+				doctorId: resolvedDoctorId,
+			});
 			createdItemsList.push({ id: item.id });
 		} else {
-			const [created] = await tx
-				.insert(treatmentPlanItemsNew)
-				.values(itemPayload)
-				.returning({ id: treatmentPlanItemsNew.id });
-			if (created) {
-				createdItemsList.push({ id: created.id });
-			}
+			const newId = generateUuidV7();
+			planItemsToInsert.push({
+				id: newId,
+				organizationId,
+				planId: savedPlanId,
+				stageId: resolvedStageId,
+				toothNumber: resolvedToothNumber,
+				priceId: resolvedPriceId,
+				name: resolvedName,
+				quantity: item.quantity,
+				price: resolvedPriceStr,
+				discount: resolvedDiscountStr,
+				priceKopecks: BigInt(itemPriceKopecks),
+				discountKopecks: BigInt(itemDiscountKopecks),
+				commissionKopecks: 0n,
+				phase: phaseNum,
+				isBundle: resolvedIsBundle,
+				doctorId: resolvedDoctorId,
+			});
+			createdItemsList.push({ id: newId });
 		}
+	}
+
+	if (planItemsToUpdate.length > 0) {
+		await batchSyncUpdatePlanItemsNew(tx, organizationId, planItemsToUpdate);
+	}
+	if (planItemsToInsert.length > 0) {
+		await tx.insert(treatmentPlanItemsNew).values(planItemsToInsert);
 	}
 
 	const itemsWithPlanItemId = input.items.map((item, idx) => ({

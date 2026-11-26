@@ -1,15 +1,14 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { appointments, chairs } from "../../db/schema.js";
 import {
 	DEFAULT_CLINIC_TIME_ZONE,
 	clinicTimeZone,
 } from "../../services/reports/managerReports/timezone.js";
 import { resolveScheduleDateBounds } from "../appointments/appointmentsQueryRoutes.js";
-import { requireClinicOrganizationId } from "../scheduleAuthGuard.js";
+import { requireScheduleReadContext } from "../scheduleAuthGuard.js";
 
 function formatDateInTimeZone(date: Date, timeZone: string): string {
 	try {
@@ -45,18 +44,11 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 	 * Поддерживает соло-практику: если в клинике <= 1 кресло, возвращает флаг isSoloPractice: true.
 	 */
 	app.get("/api/schedule/workplaces", async (request, reply) => {
-		const orgId =
-			(await requireOrganizationContext(request, reply)) ||
-			requireClinicOrganizationId(request, reply);
-		if (reply.sent) return reply;
-		if (!orgId) {
-			return reply.code(401).send({
-				error: "Unauthorized",
-				message: "Не указан контекст организации.",
-			});
-		}
+		const auth = await requireScheduleReadContext(request, reply);
+		if (!auth) return reply;
+		const orgId = auth.organizationId;
 
-		const dbChairs = await withTenantCtx(orgId, async (tx) =>
+		const dbChairs = await withTenantReadCtx(orgId, async (tx) =>
 			tx
 				.select({
 					id: chairs.id,
@@ -93,16 +85,9 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 	 * Если клиника имеет всего 1 кабинет/кресло, не требует выбора кабинета, а сразу агрегирует слоты дня.
 	 */
 	app.get("/api/schedule/slots", async (request, reply) => {
-		const orgId =
-			(await requireOrganizationContext(request, reply)) ||
-			requireClinicOrganizationId(request, reply);
-		if (reply.sent) return reply;
-		if (!orgId) {
-			return reply.code(401).send({
-				error: "Unauthorized",
-				message: "Не указан контекст организации.",
-			});
-		}
+		const auth = await requireScheduleReadContext(request, reply);
+		if (!auth) return reply;
+		const orgId = auth.organizationId;
 
 		const parsedQuery = scheduleSlotsQuerySchema.safeParse(request.query ?? {});
 		if (!parsedQuery.success) {
@@ -117,7 +102,7 @@ export async function registerScheduleWorkplacesRoutes(app: FastifyInstance) {
 		const doctorIdParam = (parsedQuery.data.doctorId || "").trim();
 
 		const now = new Date();
-		const { targetDateStr, dbChairs, apptRows, effectiveChairId } = await withTenantCtx(
+		const { targetDateStr, dbChairs, apptRows, effectiveChairId } = await withTenantReadCtx(
 			orgId,
 			async (tx) => {
 				const zone = (await clinicTimeZone(orgId, tx)) || DEFAULT_CLINIC_TIME_ZONE;

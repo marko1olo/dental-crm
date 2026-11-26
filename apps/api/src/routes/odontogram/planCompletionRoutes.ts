@@ -1,13 +1,12 @@
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { multiplyKopecks, rublesToKopecks, toExactKopecks } from "@dental/shared";
+import { isValidUuid, multiplyKopecks, rublesToKopecks, toExactKopecks } from "@dental/shared";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { onTenantTxCommit, withTenantCtx } from "../../db/rls.js";
 import {
 	treatmentItems,
 	treatmentPlanItemsNew,
-	treatmentPlanStages,
 	treatmentPlans,
 	visits,
 } from "../../db/schema.js";
@@ -15,6 +14,13 @@ import { rublesFromKopecks } from "../../money/patientDebt.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { extractIdempotencyKey } from "../../utils/httpIdempotency.js";
+import {
+	batchCompleteTreatmentItems,
+	batchUpdateStageCompletion,
+	type TreatmentItemCompletionUpdateRow,
+	type TreatmentPlanStageCompletionUpdateRow,
+} from "../treatmentPlan/handlers/mutations/treatmentPlanBatchUpdate.js";
 import {
 	ensurePatientInOrganization,
 	ledgerRowId,
@@ -89,6 +95,18 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 				return reply.code(400).send({ error: "InvalidParameters" });
 			}
 
+			const rawIdempotencyKey = extractIdempotencyKey(request);
+			const idempotencyKey = rawIdempotencyKey?.trim() ? rawIdempotencyKey.trim() : null;
+			if (idempotencyKey) {
+				if (!isValidUuid(idempotencyKey)) {
+					return reply.code(400).send({
+						error: "InvalidIdempotencyKey",
+						message: "Заголовок Idempotency-Key должен быть валидным UUID.",
+					});
+				}
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const completeItemsSchema = z.object({
 				itemIds: z.array(z.string()).optional(),
 				phase: z.number().int().positive().optional(),
@@ -146,7 +164,11 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					.orderBy(treatmentPlanItemsNew.createdAt);
 
 				if (planItems.length === 0) {
-					return { empty: true as const };
+					const updatedPlans = await loadTreatmentPlansForPatient(patientId, organizationId, tx);
+					return {
+						empty: true as const,
+						updatedPlan: updatedPlans.find((p) => p.id === planId) ?? null,
+					};
 				}
 
 				// Определяем целевые индексы позиций плана
@@ -270,17 +292,23 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 						.filter((id): id is string => Boolean(id)),
 				);
 
+				const updatesToApply: TreatmentItemCompletionUpdateRow[] = [];
+				const itemsToInsert: (typeof treatmentItems.$inferInsert)[] = [];
+
 				for (const idx of targetIndices) {
 					const item = planItems[idx];
 					if (!item) continue;
 					const ledgerId = ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx);
-					if (existingIdSet.has(ledgerId) || existingPlanItemIdSet.has(item.id)) {
+					const matchingExistingRows = existingRows.filter(
+						(row) => row.id === ledgerId || row.treatmentPlanItemId === item.id,
+					);
+
+					if (matchingExistingRows.length > 0) {
 						const money = resolvePlanItemMoney(item);
-						await tx
-							.update(treatmentItems)
-							.set({
-								status: "completed",
-								...(validVisitId !== null ? { visitId: validVisitId } : {}),
+						for (const existingRow of matchingExistingRows) {
+							updatesToApply.push({
+								id: existingRow.id,
+								visitId: validVisitId,
 								treatmentPlanId: planId,
 								treatmentPlanItemId: item.id,
 								quantity: money.quantityStr,
@@ -290,28 +318,9 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 								priceKopecks: money.priceKopecks,
 								unitPriceKopecks: money.unitPriceKopecks,
 								discountKopecks: money.discountKopecks,
-								isSynced: false,
-								version: sql`${treatmentItems.version} + 1`,
-							})
-							.where(
-								and(
-									eq(treatmentItems.organizationId, organizationId),
-									ne(treatmentItems.status, "cancelled"),
-									or(
-										eq(treatmentItems.treatmentPlanItemId, item.id),
-										eq(treatmentItems.id, ledgerId),
-									),
-								),
-							);
-					}
-				}
-
-				const itemsToInsert: (typeof treatmentItems.$inferInsert)[] = [];
-				for (const idx of targetIndices) {
-					const item = planItems[idx];
-					if (!item) continue;
-					const ledgerId = ledgerIdByIdx.get(idx) ?? ledgerRowId(planId, idx);
-					if (!existingIdSet.has(ledgerId) && !existingPlanItemIdSet.has(item.id)) {
+							});
+						}
+					} else if (!existingIdSet.has(ledgerId) && !existingPlanItemIdSet.has(item.id)) {
 						const { priceId: parsedPriceId, name } = splitStoredPriceId(item.priceId);
 						const money = resolvePlanItemMoney(item);
 						const title = item.name?.trim() || name || "Услуга плана лечения";
@@ -345,6 +354,10 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							version: 1,
 						});
 					}
+				}
+
+				if (updatesToApply.length > 0) {
+					await batchCompleteTreatmentItems(tx, organizationId, updatesToApply);
 				}
 
 				if (itemsToInsert.length > 0) {
@@ -432,6 +445,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					}
 				}
 
+				const stageUpdates: TreatmentPlanStageCompletionUpdateRow[] = [];
 				for (const phaseNum of targetPhases) {
 					const phaseIndices = planItems
 						.map((it, idx) => (it.phase === phaseNum ? idx : -1))
@@ -456,20 +470,16 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							? Math.min(100, Math.round((completedPhaseCount / phaseIndices.length) * 100))
 							: 0;
 
-					await tx
-						.update(treatmentPlanStages)
-						.set({
-							completionPercentage: phasePercentage,
-							autoArchived: allPhaseCompleted,
-							archivedAt: allPhaseCompleted ? new Date() : null,
-						})
-						.where(
-							and(
-								eq(treatmentPlanStages.organizationId, organizationId),
-								eq(treatmentPlanStages.stageOrder, phaseNum),
-								eq(treatmentPlanStages.planId, planId),
-							),
-						);
+					stageUpdates.push({
+						stageOrder: phaseNum,
+						completionPercentage: phasePercentage,
+						autoArchived: allPhaseCompleted,
+						archivedAt: allPhaseCompleted ? new Date() : null,
+					});
+				}
+
+				if (stageUpdates.length > 0) {
+					await batchUpdateStageCompletion(tx, organizationId, planId, stageUpdates);
 				}
 
 				const completedPlanItemIds = Array.from(targetIndices)
@@ -506,15 +516,12 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 			}
 
 			if ("empty" in result) {
-				const updatedPlans = await withTenantCtx(organizationId, async (tx) =>
-					loadTreatmentPlansForPatient(patientId, organizationId, tx),
-				);
 				return reply.send({
 					success: true,
 					planId,
 					completedItemIds: [],
 					isFullyCompleted: true,
-					plan: updatedPlans.find((p) => p.id === planId) ?? null,
+					plan: result.updatedPlan,
 				});
 			}
 

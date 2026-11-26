@@ -1,3 +1,4 @@
+import { isValidUuid } from "@dental/shared";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -208,6 +209,13 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			const context = await requireClinicalMutationContext(request, reply, "create dropout recall for plan");
 			if (!context) return;
+			const planId = request.params.id?.trim();
+			if (!planId || !isValidUuid(planId)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Идентификатор плана лечения должен быть валидным UUID.",
+				});
+			}
 			const parsed = dropoutRecallBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.code(400).send({
@@ -216,7 +224,7 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 					issues: parsed.error.issues,
 				});
 			}
-			const result = await createSinglePlanDropoutRecall(context.organizationId, request.params.id, parsed.data.notes);
+			const result = await createSinglePlanDropoutRecall(context.organizationId, planId, parsed.data.notes);
 			const statusCode = result.success ? 200 : 400;
 			return reply.code(statusCode).send(result);
 		},

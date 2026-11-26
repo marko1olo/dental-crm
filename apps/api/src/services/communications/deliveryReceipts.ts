@@ -19,7 +19,8 @@
  *   SMSC   — https://smsc.ru/api/http/#callback
  */
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, inArray, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { communicationOutbox } from "../../db/schema.js";
 
@@ -255,6 +256,26 @@ export type ApplyReceiptsReport = {
 	readonly ignored: number;
 };
 
+const RECEIPT_STATE_PRIORITY: Readonly<Record<ReceiptState, number>> = {
+	unknown: 0,
+	in_transit: 1,
+	failed: 2,
+	delivered: 3,
+};
+
+const RECEIPT_BATCH_CHUNK_SIZE = 200;
+
+type BatchReceiptUpdateRow = {
+	readonly id: string;
+	readonly setStatus: boolean;
+	readonly newStatus: "delivered" | "failed" | "sent";
+	readonly setDeliveredAt: boolean;
+	readonly setFailedErr: boolean;
+	readonly errClass: string | null;
+	readonly errMsg: string | null;
+	readonly receiptDetail: string;
+};
+
 /**
  * Применение квитанций к очереди.
  *
@@ -270,6 +291,8 @@ export type ApplyReceiptsReport = {
  *    Иначе расхождение с документацией провайдера осталось бы невидимым.
  * 4. Организация не принимается извне: она берётся из найденной строки. Иначе
  *    вызывающий мог бы менять статусы чужой клиники, зная идентификатор.
+ * 5. Внутри каждой клиники обновление выполняется единым параметризованным
+ *    батчем `UPDATE ... FROM (VALUES ...)` в одной TX с блокировкой `ORDER BY id ASC FOR UPDATE`.
  */
 export async function applyReceipts(
 	receipts: readonly ParsedReceipt[],
@@ -285,7 +308,16 @@ export async function applyReceipts(
 	if (receipts.length === 0) return report;
 
 	const byId = new Map<string, ParsedReceipt>();
-	for (const receipt of receipts) byId.set(receipt.providerMessageId, receipt);
+	for (const receipt of receipts) {
+		const existing = byId.get(receipt.providerMessageId);
+		if (
+			!existing ||
+			RECEIPT_STATE_PRIORITY[receipt.state] >=
+				RECEIPT_STATE_PRIORITY[existing.state]
+		) {
+			byId.set(receipt.providerMessageId, receipt);
+		}
+	}
 
 	/*
 	 * ОПЕРАЦИЯ «ДО АРЕНДАТОРА». Квитанцию присылает шлюз связи на публичный
@@ -320,7 +352,8 @@ export async function applyReceipts(
 					// Провайдер знает только об отправленных сообщениях.
 					inArray(communicationOutbox.status, ["sent", "delivered"]),
 				),
-			),
+			)
+			.orderBy(asc(communicationOutbox.id)),
 	);
 
 	const matchedIds = new Set(
@@ -332,62 +365,155 @@ export async function applyReceipts(
 		(id) => !matchedIds.has(id),
 	).length;
 
+	const rowsByOrg = new Map<string, typeof rows>();
 	for (const row of rows) {
-		const receipt = row.providerMessageId
-			? byId.get(row.providerMessageId)
-			: undefined;
-		if (!receipt) continue;
+		const bucket = rowsByOrg.get(row.organizationId);
+		if (bucket) {
+			bucket.push(row);
+		} else {
+			rowsByOrg.set(row.organizationId, [row]);
+		}
+	}
 
-		// Одна квитанция — одна клиника. Контекст ставится по организации самой
-		// найденной строки, поэтому изменить чужую строку этот проход не может.
-		await withTenantCtx(row.organizationId, async (tx) => {
-			if (receipt.state === "delivered") {
-				await tx
-					.update(communicationOutbox)
-					.set({
-						status: "delivered",
-						deliveredAt: now,
-						receiptDetail: receipt.detail,
-						updatedAt: now,
+	const nowIso = now.toISOString();
+
+	for (const [orgId, orgRows] of rowsByOrg.entries()) {
+		await withTenantCtx(orgId, async (tx) => {
+			for (
+				let offset = 0;
+				offset < orgRows.length;
+				offset += RECEIPT_BATCH_CHUNK_SIZE
+			) {
+				const chunk = orgRows.slice(offset, offset + RECEIPT_BATCH_CHUNK_SIZE);
+				const chunkIds = chunk.map((row) => row.id);
+				const lockedRows = await tx
+					.select({
+						id: communicationOutbox.id,
+						status: communicationOutbox.status,
+						providerMessageId: communicationOutbox.providerMessageId,
 					})
-					.where(eq(communicationOutbox.id, row.id));
-				report.applied += 1;
-				report.delivered += 1;
-				return;
-			}
+					.from(communicationOutbox)
+					.where(
+						and(
+							eq(communicationOutbox.organizationId, orgId),
+							inArray(communicationOutbox.id, chunkIds),
+						),
+					)
+					.orderBy(asc(communicationOutbox.id))
+					.for("update");
 
-			if (receipt.state === "failed") {
-				// Доставленное не отменяется поздней квитанцией об ошибке: порядок
-				// запросов от провайдера не гарантирован.
-				if (row.status === "delivered") {
-					await tx
-						.update(communicationOutbox)
-						.set({ receiptDetail: receipt.detail, updatedAt: now })
-						.where(eq(communicationOutbox.id, row.id));
+				const batchUpdates: BatchReceiptUpdateRow[] = [];
+				for (const locked of lockedRows) {
+					const receipt = locked.providerMessageId
+						? byId.get(locked.providerMessageId)
+						: undefined;
+					if (!receipt) continue;
+
+					if (locked.status !== "sent" && locked.status !== "delivered") {
+						report.ignored += 1;
+						continue;
+					}
+
+					if (receipt.state === "delivered") {
+						batchUpdates.push({
+							id: locked.id,
+							setStatus: true,
+							newStatus: "delivered",
+							setDeliveredAt: true,
+							setFailedErr: false,
+							errClass: null,
+							errMsg: null,
+							receiptDetail: receipt.detail,
+						});
+						report.applied += 1;
+						report.delivered += 1;
+						continue;
+					}
+
+					if (receipt.state === "failed") {
+						// Доставленное не отменяется поздней квитанцией об ошибке: порядок
+						// запросов от провайдера не гарантирован.
+						if (locked.status === "delivered") {
+							batchUpdates.push({
+								id: locked.id,
+								setStatus: false,
+								newStatus: "delivered",
+								setDeliveredAt: false,
+								setFailedErr: false,
+								errClass: null,
+								errMsg: null,
+								receiptDetail: receipt.detail,
+							});
+							report.ignored += 1;
+							continue;
+						}
+						batchUpdates.push({
+							id: locked.id,
+							setStatus: true,
+							newStatus: "failed",
+							setDeliveredAt: false,
+							setFailedErr: true,
+							errClass: "not_delivered",
+							errMsg: receipt.detail,
+							receiptDetail: receipt.detail,
+						});
+						report.applied += 1;
+						report.failed += 1;
+						continue;
+					}
+
+					// in_transit и unknown статус не меняют, но текст сохраняют.
+					batchUpdates.push({
+						id: locked.id,
+						setStatus: false,
+						newStatus: locked.status === "delivered" ? "delivered" : "sent",
+						setDeliveredAt: false,
+						setFailedErr: false,
+						errClass: null,
+						errMsg: null,
+						receiptDetail: receipt.detail,
+					});
 					report.ignored += 1;
-					return;
 				}
-				await tx
-					.update(communicationOutbox)
-					.set({
-						status: "failed",
-						lastErrorClass: "not_delivered",
-						lastErrorMessage: receipt.detail,
-						receiptDetail: receipt.detail,
-						updatedAt: now,
-					})
-					.where(eq(communicationOutbox.id, row.id));
-				report.applied += 1;
-				report.failed += 1;
-				return;
-			}
 
-			// in_transit и unknown статус не меняют, но текст сохраняют.
-			await tx
-				.update(communicationOutbox)
-				.set({ receiptDetail: receipt.detail, updatedAt: now })
-				.where(eq(communicationOutbox.id, row.id));
-			report.ignored += 1;
+				if (batchUpdates.length === 0) continue;
+
+				const valuesRows = batchUpdates.map(
+					(row) => sql`(
+						${row.id}::uuid,
+						${row.setStatus}::boolean,
+						${row.newStatus}::communication_outbox_status,
+						${row.setDeliveredAt}::boolean,
+						${row.setFailedErr}::boolean,
+						${row.errClass}::text,
+						${row.errMsg}::text,
+						${row.receiptDetail}::text
+					)`,
+				);
+
+				await tx.execute(sql`
+					UPDATE communication_outbox AS c
+					SET
+						status = CASE WHEN v.set_status THEN v.new_status ELSE c.status END,
+						delivered_at = CASE WHEN v.set_delivered_at THEN ${nowIso}::timestamptz ELSE c.delivered_at END,
+						last_error_class = CASE WHEN v.set_failed_err THEN v.err_class ELSE c.last_error_class END,
+						last_error_message = CASE WHEN v.set_failed_err THEN v.err_msg ELSE c.last_error_message END,
+						receipt_detail = v.receipt_detail,
+						updated_at = ${nowIso}::timestamptz
+					FROM (VALUES ${sql.join(valuesRows, sql`, `)}) AS v(
+						id,
+						set_status,
+						new_status,
+						set_delivered_at,
+						set_failed_err,
+						err_class,
+						err_msg,
+						receipt_detail
+					)
+					WHERE c.id = v.id
+						AND c.organization_id = ${orgId}::uuid
+				`);
+			}
 		});
 	}
 

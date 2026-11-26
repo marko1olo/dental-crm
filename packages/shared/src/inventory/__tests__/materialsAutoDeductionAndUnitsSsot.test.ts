@@ -74,6 +74,19 @@ describe("Inventory Units SSOT (ОКЕИ & Medical Nomenclature)", () => {
 		// Сантиметры и метры шовного материала
 		assert.equal(convertInventoryUnit(1, "meter", "cm"), 100);
 		assert.equal(convertInventoryUnit(50, "cm", "meter"), 0.5);
+		assert.equal(convertInventoryUnit(1.5, "meter", "cm"), 150);
+		assert.equal(convertInventoryUnit(250, "cm", "meter"), 2.5);
+
+		// Карпулы <-> миллилитры (1 карпула = 1.7 мл)
+		assert.equal(convertInventoryUnit(2, "carpule", "ml"), 3.4);
+		assert.equal(convertInventoryUnit(3.4, "ml", "carpule"), 2);
+
+		// Границы: <= 0, NaN, Infinity, одинаковые единицы
+		assert.equal(convertInventoryUnit(0, "meter", "cm"), 0);
+		assert.equal(convertInventoryUnit(-5, "meter", "cm"), 0);
+		assert.equal(convertInventoryUnit(Number.NaN, "meter", "cm"), 0);
+		assert.equal(convertInventoryUnit(Number.POSITIVE_INFINITY, "meter", "cm"), 0);
+		assert.equal(convertInventoryUnit(7, "ml", "ml"), 7);
 	});
 
 	it("форматирует количество и единицу на чистом русском языке", () => {
