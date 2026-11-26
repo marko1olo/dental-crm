@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { showToast } from "../../GlobalToast";
 import { clientLogger } from "../../../services/logging/clientLogger";
-import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-	safeLocalStorageGetItem,
-} from "../../../lib/safeLocalStorage";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
+import { safeLocalStorageGetItem } from "../../../lib/safeLocalStorage";
 import type {
 	CopilotPhase,
 	CopilotUiMessage,
@@ -49,14 +46,25 @@ export function useCopilotStream({
 
 	const loadProactivePending = useCallback(async () => {
 		try {
-			const token = readDenteClinicToken() || readDenteStaffToken() || "";
 			const patientId = safeLocalStorageGetItem("dente_active_patient_id") || undefined;
 			if (patientId) {
 				const res = await fetch(`${apiBaseUrl}/api/patients/${encodeURIComponent(patientId)}`, {
-					headers: { Authorization: token ? `Bearer ${token}` : "" },
+					credentials: "include",
+					headers: denteClinicalReadHeaders(),
 				});
 				if (res.ok) {
-					const patient = await res.json();
+					const rawJson: unknown = await res.json();
+					const unwrapped =
+						rawJson && typeof rawJson === "object" && "data" in rawJson
+							? (rawJson as { data?: unknown }).data
+							: rawJson;
+					const patient =
+						unwrapped && typeof unwrapped === "object"
+							? (unwrapped as {
+									allergies?: unknown[];
+									somaticAlerts?: Array<string | { message?: string; description?: string; label?: string }>;
+								})
+							: null;
 					const alerts: ProactiveAlertCardData[] = [];
 					if (Array.isArray(patient?.allergies) && patient.allergies.length > 0) {
 						for (let i = 0; i < patient.allergies.length; i++) {
@@ -161,7 +169,7 @@ export function useCopilotStream({
 					return;
 				}
 			} catch (err: unknown) {
-				if ((err as Error).name !== "AbortError") {
+				if (!(err instanceof Error && err.name === "AbortError")) {
 					handleEvent("error", { detail: String(err) });
 					showToast(
 						"Сетевой сбой при обращении к ИИ-копайлоту. Нажмите «Повторить» для повторной отправки.",

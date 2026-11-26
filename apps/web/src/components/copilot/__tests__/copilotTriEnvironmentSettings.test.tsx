@@ -150,11 +150,11 @@ describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)",
 	it("6. renderCapabilityStatusBadge рендерит канонические бейджи возможностей", () => {
 		const htmlAvail = renderToString(renderCapabilityStatusBadge("available"));
 		assert.ok(htmlAvail.includes("Доступно"));
-		assert.ok(htmlAvail.includes("emerald"));
+		assert.ok(htmlAvail.includes("var(--success)"));
 
 		const htmlDesk = renderToString(renderCapabilityStatusBadge("desktop_required"));
 		assert.ok(htmlDesk.includes("Требуется приложение для ПК"));
-		assert.ok(htmlDesk.includes("slate"));
+		assert.ok(htmlDesk.includes("var(--paper-soft)"));
 	});
 
 	it("7. CopilotSettingsModal рендерит тихий авто-индикатор устройства и 6 логических клинических категорий", () => {

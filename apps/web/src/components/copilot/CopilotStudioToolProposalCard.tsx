@@ -89,7 +89,11 @@ export const CopilotStudioToolProposalCard: React.FC<CopilotStudioToolProposalCa
         <button
           type="button"
           onClick={onReject}
-          className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] font-medium cursor-pointer text-xs flex items-center justify-center transition-colors"
+          className={[
+            "h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)]",
+            "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]",
+            "font-medium cursor-pointer text-xs flex items-center justify-center transition-colors",
+          ].join(" ")}
         >
           Отклонить
         </button>
@@ -97,7 +101,11 @@ export const CopilotStudioToolProposalCard: React.FC<CopilotStudioToolProposalCa
           type="button"
           data-testid="copilot-primary-apply-cta"
           onClick={() => onApply(message.actionProposal)}
-          className="copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--primary)] text-white font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm hover:bg-[var(--primary-hover)] transition-all"
+          className={[
+            "copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--primary)] text-white",
+            "font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm",
+            "hover:bg-[var(--primary-hover)] transition-all",
+          ].join(" ")}
         >
           <Check size={14} />
           <span>Применить в карту</span>

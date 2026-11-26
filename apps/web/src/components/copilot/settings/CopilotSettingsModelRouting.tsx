@@ -5,23 +5,25 @@
  */
 
 import React, { useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { Check, Cpu, Eye, EyeOff, KeyRound, Loader2, Server, Sparkles, Zap, HardDrive } from "lucide-react";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import type { AiProvider, ModelRoutingMode } from "../../../store/copilotStore";
 
 export const MODERN_BYOK_MODELS: Array<{ id: string; provider: AiProvider; label: string; note: string }> = [
-	{ id: "gemini-3.6-flash", provider: "gemini", label: "Gemini 3.6 Flash", note: "Основной интеллект (SOTA Flash)" },
-	{ id: "gemini-3.5-flash-lite", provider: "gemini", label: "Gemini 3.5 Flash-Lite", note: "Сверхбыстрый chairside-отклик (<300 мс)" },
+	{ id: "gemini-3.6-flash", provider: "gemini", label: "Gemini 3.6 Flash", note: "Основной клинический интеллект" },
+	{ id: "gemini-3.5-flash-lite", provider: "gemini", label: "Gemini 3.5 Flash-Lite", note: "Быстрый отклик у кресла (<300 мс)" },
 	{ id: "gemini-3.8-flash", provider: "gemini", label: "Gemini 3.8 Flash", note: "Глубокий клинический анализ и КЛКТ" },
 	{ id: "gemini-3.5-flash", provider: "gemini", label: "Gemini 3.5 Flash", note: "Сбалансированный клинический анализ" },
-	{ id: "claude-3-5-sonnet", provider: "anthropic", label: "Claude 3.5 Sonnet", note: "Флагман Anthropic (CoT Reasoner)" },
+	{ id: "claude-3-5-sonnet", provider: "anthropic", label: "Claude 3.5 Sonnet", note: "Аналитическая модель Anthropic" },
 	{ id: "gpt-4o", provider: "openai", label: "OpenAI GPT-4o", note: "Мультимодальный клинический разбор" },
 	{ id: "deepseek-r1", provider: "deepseek", label: "DeepSeek R1", note: "Глубокая цепочка рассуждений" },
 ];
 
 export const SERVER_MANAGED_TIERS = [
-	{ id: "smart_flash", title: "Smart Flash Tier (Gemini 3.6 Flash)", badge: "Основной", note: "Максимальный интеллект, томография КЛКТ, дифдиагноз, хирургия, протоколы.", icon: Sparkles },
-	{ id: "chairside_lite", title: "Lite Fast Tier (Gemini 3.5 Flash-Lite)", badge: "<300 мс", note: "Сверхбыстрый отклик у кресла врача для разметки зубной формулы FDI и заметок (квота 500 RPD).", icon: Zap },
-	{ id: "local_fallback", title: "Локальный детерминированный роутер", badge: "Офлайн 100%", note: "Автономная работа без интернета и облака на базе стандартов СтАР.", icon: HardDrive },
+	{ id: "smart_flash", title: "Основной клинический профиль (Gemini)", badge: "Основной", note: "Глубокий клинический анализ, томография КЛКТ, дифдиагноз, хирургия, протоколы.", icon: Sparkles },
+	{ id: "chairside_lite", title: "Быстрый профиль у кресла (Gemini Lite)", badge: "<300 мс", note: "Мгновенный отклик у кресла врача для разметки зубной формулы и заметок.", icon: Zap },
+	{ id: "local_fallback", title: "Локальный клинический словарь", badge: "Офлайн 100%", note: "Автономная работа без интернета на базе клинических стандартов.", icon: HardDrive },
 ];
 
 export interface CopilotSettingsModelRoutingProps {
@@ -45,19 +47,56 @@ export function CopilotSettingsModelRouting({
 	const [testError, setTestError] = useState<string | null>(null);
 
 	const handleTestConnection = async () => {
-		if (!byokApiKey.trim()) { setTestStatus("error"); setTestError("Введите API-ключ"); return; }
-		setIsTesting(true); setTestStatus("idle"); setTestError(null);
+		if (!byokApiKey.trim()) {
+			setTestStatus("error");
+			setTestError("Введите API-ключ");
+			return;
+		}
+		setIsTesting(true);
+		setTestStatus("idle");
+		setTestError(null);
 		try {
 			const res = await fetch("/api/agent/validate-key", {
-				method: "POST", headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ provider: byokProvider, apiKey: byokApiKey.trim(), model: byokModel }),
+				method: "POST",
+				credentials: "include",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
+					provider: byokProvider,
+					apiKey: byokApiKey.trim(),
+					model: byokModel,
+				}),
 			});
-			const data = await res.json().catch(() => ({}));
-			if (res.ok && data.valid) { setTestStatus("success"); setTestLatency(typeof data.latencyMs === "number" ? data.latencyMs : 140); }
-			else { setTestStatus("error"); setTestError(data.error || data.message || "Недействительный ключ"); }
+			let rawJson: unknown = {};
+			try {
+				rawJson = await res.json();
+			} catch (parseErr) {
+				rawJson = { error: parseErr instanceof Error ? parseErr.message : "Ошибка ответа сервера" };
+			}
+			const unwrapped =
+				rawJson && typeof rawJson === "object" && "data" in rawJson
+					? (rawJson as { data?: unknown }).data
+					: rawJson;
+			const data = (
+				unwrapped && typeof unwrapped === "object"
+					? unwrapped
+					: {}
+			) as { valid?: boolean; latencyMs?: number; error?: string; message?: string };
+			if (res.ok && data.valid) {
+				setTestStatus("success");
+				setTestLatency(typeof data.latencyMs === "number" ? data.latencyMs : 140);
+			} else {
+				setTestStatus("error");
+				setTestError(data.error || data.message || "Недействительный ключ");
+			}
 		} catch (err) {
-			setTestStatus("error"); setTestError(err instanceof Error ? err.message : "Сетевой сбой");
-		} finally { setIsTesting(false); }
+			setTestStatus("error");
+			setTestError(err instanceof Error ? err.message : "Сетевой сбой");
+		} finally {
+			setIsTesting(false);
+		}
 	};
 
 	return (
@@ -126,7 +165,11 @@ export function CopilotSettingsModelRouting({
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 						<div>
 							<label className="text-[10px] font-semibold text-[var(--muted)] block mb-1">Провайдер ИИ</label>
-							<select value={byokProvider} onChange={(e) => setByokProvider(e.target.value as AiProvider)} className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]">
+							<select
+								value={byokProvider}
+								onChange={(e) => setByokProvider(e.target.value as AiProvider)}
+								className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--primary)]"
+							>
 								<option value="gemini">Google Gemini</option>
 								<option value="anthropic">Anthropic Claude</option>
 								<option value="openai">OpenAI</option>
@@ -137,30 +180,65 @@ export function CopilotSettingsModelRouting({
 						</div>
 						<div>
 							<label className="text-[10px] font-semibold text-[var(--muted)] block mb-1">Модель нейросети</label>
-							<select value={byokModel} onChange={(e) => setByokModel(e.target.value)} className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]">
-								{MODERN_BYOK_MODELS.map((m) => (<option key={m.id} value={m.id}>{m.label} ({m.note})</option>))}
+							<select
+								value={byokModel}
+								onChange={(e) => setByokModel(e.target.value)}
+								className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--primary)]"
+							>
+								{MODERN_BYOK_MODELS.map((m) => (
+									<option key={m.id} value={m.id}>{m.label} ({m.note})</option>
+								))}
 							</select>
 						</div>
 					</div>
 
 					<div>
 						<label className="text-[10px] font-semibold text-[var(--muted)] block mb-1 flex items-center justify-between">
-							<span className="flex items-center gap-1"><KeyRound size={11} className="text-[var(--teal,#0d9488)]" /><span>Персональный API-ключ</span></span>
+							<span className="flex items-center gap-1">
+								<KeyRound size={11} className="text-[var(--primary)]" />
+								<span>Персональный API-ключ</span>
+							</span>
 							<span className="text-[9px] font-normal text-[var(--muted)]">Хранится локально в браузере</span>
 						</label>
 						<div className="relative">
-							<input type={showKey ? "text" : "password"} value={byokApiKey} onChange={(e) => setByokApiKey(e.target.value)} placeholder="AIzaSy... / sk-ant-... / sk-..." className="w-full h-8 pl-2.5 pr-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)] outline-none" />
-							<button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1.5 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title={showKey ? "Скрыть ключ" : "Показать ключ"}>
-								{showKey ? <EyeOff size={13} /> : <Eye size={13} />}
+							<input
+								type={showKey ? "text" : "password"}
+								value={byokApiKey}
+								onChange={(e) => setByokApiKey(e.target.value)}
+								placeholder="AIzaSy... / sk-ant-... / sk-..."
+								className="w-full h-9 pl-3 pr-9 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-xs focus:ring-1 focus:ring-[var(--primary)] outline-none"
+							/>
+							<button
+								type="button"
+								onClick={() => setShowKey(!showKey)}
+								className="absolute right-2 top-2 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+								title={showKey ? "Скрыть ключ" : "Показать ключ"}
+							>
+								{showKey ? <EyeOff size={14} /> : <Eye size={14} />}
 							</button>
 						</div>
 						<div className="flex items-center justify-between gap-2 pt-1.5">
-							<button type="button" onClick={handleTestConnection} aria-busy={isTesting} className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1.5 cursor-pointer" data-testid="copilot-test-byok-btn">
-								{isTesting ? <Loader2 size={12} className="animate-spin text-[var(--teal,#0d9488)]" /> : <Sparkles size={12} className="text-[var(--teal,#0d9488)]" />}
+							<button
+								type="button"
+								onClick={handleTestConnection}
+								aria-busy={isTesting}
+								className="h-8 px-2.5 rounded-md border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer"
+								data-testid="copilot-test-byok-btn"
+							>
+								{isTesting ? <Loader2 size={14} className="animate-spin text-[var(--primary)]" /> : <Sparkles size={14} className="text-[var(--primary)]" />}
 								<span>{isTesting ? "Проверка..." : "Проверить ключ"}</span>
 							</button>
-							{testStatus === "success" && (<span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Check size={12} /><span>Активен ({testLatency} мс)</span></span>)}
-							{testStatus === "error" && (<span className="text-[10px] font-medium text-rose-500 truncate max-w-[200px]" title={testError || undefined}>{testError || "Ошибка ключа"}</span>)}
+							{testStatus === "success" && (
+								<span className="text-xs font-semibold text-[var(--success)] flex items-center gap-1">
+									<Check size={12} />
+									<span>Активен ({testLatency} мс)</span>
+								</span>
+							)}
+							{testStatus === "error" && (
+								<span className="text-xs font-medium text-[var(--danger)] truncate max-w-[200px]" title={testError || undefined}>
+									{testError || "Ошибка ключа"}
+								</span>
+							)}
 						</div>
 					</div>
 				</div>

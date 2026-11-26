@@ -120,66 +120,56 @@ export function CopilotSettingsVoicePrivacyTab({
 				</section>
 			)}
 
-			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
-				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-					<HardDrive size={14} className="text-[var(--teal,#0d9488)]" />
-					<span>Папка снимков и КЛКТ на ПК (DICOM Dropzone)</span>
-				</label>
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<HardDrive size={14} className="text-[var(--primary)]" />
+						<span>Папка снимков и КЛКТ на ПК (DICOM Dropzone)</span>
+					</label>
+					<span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">
+						Только приложение для ПК
+					</span>
+				</div>
 				<input
-					type="text"
-					value={localDropzonePath}
-					onChange={(e) => setLocalDropzonePath?.(e.target.value)}
-					placeholder="C:\Radiology\Export"
-					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-xs focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-					data-testid="copilot-dropzone-path-input"
+					type="text" value={localDropzonePath} onChange={(e) => setLocalDropzonePath?.(e.target.value)}
+					placeholder="C:\Radiology\Export" data-testid="copilot-dropzone-path-input"
+					className="w-full h-11 sm:h-9 px-3 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-xs"
 				/>
-				<div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-[var(--muted)]">
+				<div className="flex flex-wrap items-center gap-2 pt-0.5 text-[10px] text-[var(--muted)]">
 					<span>Быстрые пути:</span>
-					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Radiology\\Export")} className="text-[var(--teal,#0d9488)] hover:underline cursor-pointer bg-transparent">C:\Radiology\Export</button>
+					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Radiology\\Export")} className="text-[var(--primary)] hover:underline cursor-pointer bg-transparent">C:\Radiology\Export</button>
 					<span>•</span>
-					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Planmeca\\Romexis\\Export")} className="text-[var(--teal,#0d9488)] hover:underline cursor-pointer bg-transparent">Romexis</button>
+					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Planmeca\\Romexis\\Export")} className="text-[var(--primary)] hover:underline cursor-pointer bg-transparent">Romexis</button>
 					<span>•</span>
-					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Vatech\\Ez3D\\Export")} className="text-[var(--teal,#0d9488)] hover:underline cursor-pointer bg-transparent">Ez3D</button>
+					<button type="button" onClick={() => setLocalDropzonePath?.("C:\\Vatech\\Ez3D\\Export")} className="text-[var(--primary)] hover:underline cursor-pointer bg-transparent">Ez3D</button>
 				</div>
 				<p className="text-[10px] text-[var(--muted)] m-0">
-					Каталог сканирования и экспорта срезов КЛКТ, ортопантомограмм и радиовизиографа на рабочей станции.
+					Локальный автоимпорт КЛКТ доступен в десктопном приложении; в браузере используется ручная загрузка файлов.
 				</p>
 			</section>
 
-			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
-					<input type="checkbox" checked={autoSaveDrafts} onChange={(e) => setAutoSaveDrafts(e.target.checked)} className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]" />
+					<input type="checkbox" checked={autoSaveDrafts} onChange={(e) => setAutoSaveDrafts(e.target.checked)} className="rounded text-[var(--primary)]" />
 					<span>Автосохранение черновиков дневников SOAP</span>
 				</label>
-				<p className="text-[10px] text-[var(--muted)] pl-5">
-					Сохраняет набранный врачом текст при переключении вкладок с дебаунсом 500мс без риска потери данных.
-				</p>
+				<p className="text-[10px] text-[var(--muted)] pl-5 m-0">Сохраняет набранный врачом текст при переключении вкладок с дебаунсом 500мс.</p>
 			</section>
 
-			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
-					<input type="checkbox" checked={maskPhiData} onChange={(e) => setMaskPhiData(e.target.checked)} className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]" />
-					<span className="flex items-center gap-1.5">
-						<Shield size={13} className="text-[var(--teal,#0d9488)]" />
-						<span>Защита персональных данных пациента (Маскирование PHI)</span>
-					</span>
+					<input type="checkbox" checked={maskPhiData} onChange={(e) => setMaskPhiData(e.target.checked)} className="rounded text-[var(--primary)]" />
+					<span className="flex items-center gap-1.5"><Shield size={13} className="text-[var(--primary)]" /><span>Защита персональных данных пациента (Маскирование PHI)</span></span>
 				</label>
-				<p className="text-[10px] text-[var(--muted)] pl-5">
-					ФИО, телефоны и идентификаторы заменяются псевдонимами перед отправкой промптов в облачные LLM шлюзы.
-				</p>
+				<p className="text-[10px] text-[var(--muted)] pl-5 m-0">ФИО и телефоны заменяются псевдонимами перед отправкой промптов в облачные шлюзы.</p>
 			</section>
 
-			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
-					<input type="checkbox" checked={autoMicOnAppointmentOpen} onChange={(e) => setAutoMic(e.target.checked)} className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]" />
-					<span className="flex items-center gap-1.5">
-						<Mic size={13} className="text-[var(--teal,#0d9488)]" />
-						<span>Автоматический переход к микрофону в карте приёма</span>
-					</span>
+					<input type="checkbox" checked={autoMicOnAppointmentOpen} onChange={(e) => setAutoMic(e.target.checked)} className="rounded text-[var(--primary)]" />
+					<span className="flex items-center gap-1.5"><Mic size={13} className="text-[var(--primary)]" /><span>Автоматический переход к микрофону в карте приёма</span></span>
 				</label>
-				<p className="text-[10px] text-[var(--muted)] pl-5">
-					Сразу активирует голосовое стенографирование при переходе врача в активный визит.
-				</p>
+				<p className="text-[10px] text-[var(--muted)] pl-5 m-0">Сразу активирует голосовое стенографирование при переходе врача в активный визит.</p>
 			</section>
 		</div>
 	);

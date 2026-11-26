@@ -17,4 +17,8 @@ export const CLINICAL_PRESETS = [
 ];
 
 export type ClinicalPreset = (typeof CLINICAL_PRESETS)[number];
-export const defaultPreset: ClinicalPreset = CLINICAL_PRESETS[0]!;
+const firstPreset = CLINICAL_PRESETS[0];
+if (!firstPreset) {
+  throw new Error("CLINICAL_PRESETS must not be empty");
+}
+export const defaultPreset: ClinicalPreset = firstPreset;

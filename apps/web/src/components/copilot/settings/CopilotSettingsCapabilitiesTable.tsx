@@ -20,7 +20,7 @@ export interface CopilotSettingsCapabilitiesTableProps {
 export function renderCapabilityStatusBadge(status: CapabilityStatus) {
 	if (status === "available") {
 		return (
-			<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+			<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success)]/25">
 				<Check size={10} />
 				<span>Доступно</span>
 			</span>
@@ -28,7 +28,7 @@ export function renderCapabilityStatusBadge(status: CapabilityStatus) {
 	}
 	if (status === "desktop_required") {
 		return (
-			<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-500/10 text-slate-600 border border-slate-500/20">
+			<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]">
 				<Monitor size={10} />
 				<span>Требуется приложение для ПК</span>
 			</span>
@@ -36,7 +36,7 @@ export function renderCapabilityStatusBadge(status: CapabilityStatus) {
 	}
 	if (status === "mobile_specific") {
 		return (
-			<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-sky-500/10 text-sky-600 border border-sky-500/20">
+			<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]/25">
 				<Smartphone size={10} />
 				<span>Специфика мобильного планшета</span>
 			</span>

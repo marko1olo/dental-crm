@@ -32,15 +32,15 @@ import type {
  */
 export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
 	if (typeof window === "undefined") return "web_browser";
-	const w = window as unknown as Record<string, unknown>;
-	const ua = (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent.toLowerCase() : "";
+	const hasFlag = (key: string): boolean => Boolean(Reflect.get(window, key));
+	const ua = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent.toLowerCase() : "";
 	if (
-		Boolean(w.denteDesktopNative) ||
-		Boolean(w.isElectron) ||
-		Boolean(w.__TAURI__) ||
-		Boolean(w.__TAURI_INTERNALS__) ||
-		Boolean(w.denteDesktop) ||
-		Boolean(w.denteNative) ||
+		hasFlag("denteDesktopNative") ||
+		hasFlag("isElectron") ||
+		hasFlag("__TAURI__") ||
+		hasFlag("__TAURI_INTERNALS__") ||
+		hasFlag("denteDesktop") ||
+		hasFlag("denteNative") ||
 		ua.includes("electron") ||
 		ua.includes("tauri") ||
 		ua.includes("dente-desktop")
@@ -49,8 +49,12 @@ export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
 	}
 	const isCoarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
 	const isTouch = (typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints && navigator.maxTouchPoints > 0)) || ("ontouchstart" in window);
+	const isPhoneScreen = typeof window.innerWidth === "number" && window.innerWidth > 0 && window.innerWidth < 768;
 	const isSmallScreen = typeof window.innerWidth === "number" && window.innerWidth <= 1024;
 
+	if ((isCoarse || isTouch) && isPhoneScreen) {
+		return "mobile_tablet";
+	}
 	if (isCoarse || (isTouch && isSmallScreen)) {
 		return "chairside_tablet";
 	}
@@ -117,5 +121,40 @@ export function getInitialCopilotState() {
 		memoryFacts,
 		toolExecutionLogs: defaultLogs,
 		telemetry: defaultTelemetry,
+	};
+}
+
+export function buildRemoteSettingsPayload(next: CopilotSettings): Record<string, unknown> {
+	const trimmedByokKey = next.byokApiKey?.trim();
+	return {
+		trustLevel: next.trustLevel,
+		speedMode: next.speedMode,
+		granularPermissions: next.granularPermissions,
+		showTypingAnimation: next.showTypingAnimation,
+		byokProvider: next.byokProvider,
+		provider: next.provider,
+		model: next.model,
+		modelRoutingMode: next.modelRoutingMode,
+		...(trimmedByokKey ? { byokApiKey: trimmedByokKey } : {}),
+		...(next.byokModel ? { byokModel: next.byokModel } : {}),
+		...(next.byokBaseUrl ? { byokBaseUrl: next.byokBaseUrl } : {}),
+		diaryTemplate: next.diaryTemplate,
+		clinicalSpecialization: next.clinicalSpecialization,
+		customDoctorInstructions: next.customDoctorInstructions,
+		showThinkingProcess: next.showThinkingProcess,
+		temperature: next.temperature,
+		contextLimitTokens: next.contextLimitTokens,
+		maskPhiData: next.maskPhiData,
+		speechEngine: next.speechEngine,
+		autoSaveDrafts: next.autoSaveDrafts,
+		webSpeechSensitivity: next.webSpeechSensitivity,
+		globalDictationHotkey: next.globalDictationHotkey,
+		autoMicOnAppointmentOpen: next.autoMicOnAppointmentOpen,
+		localDropzonePath: next.localDropzonePath,
+		gloveModeTouchTarget: next.gloveModeTouchTarget,
+		screenWakeLock: next.screenWakeLock,
+		hapticFeedbackEnabled: next.hapticFeedbackEnabled,
+		runtimeMode: next.runtimeMode,
+		...(next.pinnedThreadIds ? { pinnedThreadIds: next.pinnedThreadIds } : {}),
 	};
 }

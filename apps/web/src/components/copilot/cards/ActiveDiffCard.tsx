@@ -99,7 +99,12 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 						type="button"
 						onClick={handleReject}
 						disabled={disabled}
-						className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--danger)] hover:border-[var(--danger-soft)] hover:bg-[var(--danger-soft)] text-sm font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+						className={[
+							"h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl sm:rounded-lg",
+							"border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)]",
+							"hover:text-[var(--danger)] hover:border-[var(--danger-soft)] hover:bg-[var(--danger-soft)]",
+							"text-sm font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors",
+						].join(" ")}
 						data-testid="active-diff-reject-btn"
 					>
 						<X className="w-4 h-4 shrink-0" />
@@ -111,7 +116,11 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 					type="button"
 					onClick={handleApply}
 					disabled={disabled}
-					className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl sm:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm"
+					className={[
+						"h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl sm:rounded-lg",
+						"bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-medium",
+						"inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-sm",
+					].join(" ")}
 					data-testid="active-diff-apply-btn"
 				>
 					{isApplied ? (

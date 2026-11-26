@@ -18,9 +18,19 @@ import {
 } from "../services/voice/UnifiedAudioClient";
 import { useAppStore } from "../store/appStore";
 import { useCopilotStore } from "../store/copilotStore";
+import { fetchSpeechGatewayHealth } from "../store/copilotSessionApi";
 import { useSettingsStore } from "../store/settingsStore";
 import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
+
+export interface SpeechGatewayHealthSummary {
+	checked: boolean;
+	cloudReady: boolean;
+	geminiReady: boolean;
+	whisperReady: boolean;
+	activeProviderLabel: string;
+	fallbackReason: string | null;
+}
 
 const DICTATION_MODE_LABELS: Record<UnifiedAudioMode, string> = {
 	gemini_live: "Gemini Live",
@@ -71,6 +81,7 @@ export interface UseUnifiedDictationReturn {
 	audioLevel: number;
 	rms: number;
 	error: string | null;
+	speechHealth: SpeechGatewayHealthSummary;
 	client: UnifiedAudioClient | null;
 	streamManager: ReturnType<UnifiedAudioClient["getStreamManager"]>;
 	startDictation: (overrideMode?: UnifiedAudioMode) => Promise<void>;
@@ -101,6 +112,55 @@ export function useUnifiedDictation(
 	const [rms, setRms] = useState(0);
 	const [isSpeaking, setIsSpeaking] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [speechHealth, setSpeechHealth] = useState<SpeechGatewayHealthSummary>({
+		checked: false,
+		cloudReady: true,
+		geminiReady: true,
+		whisperReady: false,
+		activeProviderLabel: DICTATION_MODE_LABELS[effectivePreferredMode],
+		fallbackReason: null,
+	});
+
+	useEffect(() => {
+		if (typeof window === "undefined" || (typeof process !== "undefined" && process.env?.NODE_ENV === "test")) {
+			return;
+		}
+		let cancelled = false;
+		void fetchSpeechGatewayHealth().then((report) => {
+			if (cancelled || !report) return;
+			const providers = Array.isArray(report.providers) ? (report.providers as Array<Record<string, unknown>>) : [];
+			const gemini = providers.find((p) => String(p.providerId || "").includes("gemini"));
+			const whisper = providers.find((p) => String(p.providerId || "").includes("whisper") || String(p.providerId || "").includes("groq"));
+			const geminiReady = Boolean(gemini && (gemini.healthLevel === "ready" || gemini.safeToUseInVisit));
+			const whisperReady = Boolean(whisper && (whisper.healthLevel === "ready" || whisper.safeToUseInVisit));
+			const availableKeys = typeof report.totalAvailableKeys === "number" ? report.totalAvailableKeys : 0;
+			const serverEnabled = report.serverTranscriptionEnabled !== false;
+			const cloudReady = serverEnabled && (geminiReady || whisperReady || availableKeys > 0);
+			const activeProviderLabel =
+				typeof report.activeProviderLabel === "string" && report.activeProviderLabel
+					? report.activeProviderLabel
+					: cloudReady
+						? "Google Gemini Live"
+						: "Браузерный резерв (Web Speech)";
+			const fallbackReason = cloudReady
+				? null
+				: "Облачные ключи распознавания не настроены или временно недоступны";
+			setSpeechHealth({
+				checked: true,
+				cloudReady,
+				geminiReady,
+				whisperReady,
+				activeProviderLabel,
+				fallbackReason,
+			});
+			if (!cloudReady && !options.preferredMode && options.autoFallback !== false && clientRef.current) {
+				clientRef.current.setMode("browser_speech");
+			}
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [options.preferredMode, options.autoFallback]);
 
 	const clientRef = useRef<UnifiedAudioClient | null>(null);
 	const fullTranscriptRef = useRef(fullTranscript);
@@ -302,6 +362,7 @@ export function useUnifiedDictation(
 		audioLevel,
 		rms,
 		error,
+		speechHealth,
 		client: clientRef.current,
 		streamManager: clientRef.current?.getStreamManager() ?? null,
 		startDictation,

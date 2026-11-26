@@ -86,7 +86,10 @@ describe("Copilot Studio SSOT & Voice Suite", () => {
     );
     assert.ok(html.includes('data-testid="copilot-primary-apply-cta"'), "Primary CTA кнопка обязана присутствовать с data-testid");
     assert.ok(html.includes("Применить в карту") || html.includes("Применить действие") || html.includes("Применено"), "Текст кнопки должен быть клиническим");
-    assert.ok(html.includes("var(--teal,#0d9488)") || html.includes("bg-[var(--teal,#0d9488)]"), "Цвет кнопки обязан быть #0d9488 (var(--teal))");
+    assert.ok(
+      html.includes("var(--primary)") || html.includes("var(--teal,#0d9488)"),
+      "Primary CTA кнопка обязана использовать канонический токен var(--primary)",
+    );
   });
 
   it("4. Apple HIG: нативный Drag Handle ровно 36x5px для выдвижного Bottom Sheet на мобильных", () => {

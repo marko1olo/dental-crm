@@ -43,136 +43,142 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	const tokenRatio = Math.min(1, Math.max(0, activeTokens / maxTokens));
 	const tokenPercent = Math.round(tokenRatio * 100);
 
-	const isLocal = settings.runtimeMode === "desktop_native" || telemetry.gatewayStatus === "local_deterministic";
-	const modelLabel = settings.modelRoutingMode === "custom_byok" ? (settings.byokModel || settings.model || "Кастомная модель") : "DENTE Интеллект";
-	const latencyLabel = isLocal ? "<5мс" : telemetry.latencyMs > 0 ? `~${telemetry.latencyMs}мс` : "<300мс";
+	const isLocal =
+		settings.runtimeMode === "desktop_native" ||
+		telemetry.gatewayStatus === "local_deterministic";
+	const modelLabel =
+		settings.modelRoutingMode === "custom_byok"
+			? settings.byokModel || settings.model || "Кастомная модель"
+			: "DENTE Интеллект";
+	const latencyLabel = isLocal
+		? "<5мс"
+		: telemetry.latencyMs > 0
+			? `~${telemetry.latencyMs}мс`
+			: "<300мс";
 
 	// Threshold status
 	const isSlidingWindow = tokenRatio >= 0.85;
 	const isPruning = tokenRatio >= 0.7 && !isSlidingWindow;
-	const progressColor = isSlidingWindow ? "var(--rose, #e11d48)" : isPruning ? "var(--amber, #d97706)" : "var(--teal, #0d9488)";
+	const progressColor = isSlidingWindow
+		? "var(--danger, #e11d48)"
+		: isPruning
+			? "var(--warn, #d97706)"
+			: "var(--primary, #0f766e)";
 
 	return (
 		<div
-			className={`copilot-context-bar copilot-context-telemetry-bar w-full px-3 py-1.5 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink,#0f172a)] flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors ${
-				compact ? "text-[11px] py-1.5" : ""
-			}`}
+			className={[
+				"copilot-context-bar copilot-context-telemetry-bar w-full px-3 py-1.5",
+				"border-b border-[var(--line)] bg-[var(--paper-soft)]",
+				"text-xs text-[var(--ink)] flex flex-wrap items-center gap-x-2 gap-y-1 transition-colors",
+				compact ? "text-[11px] py-1.5" : "",
+			].filter(Boolean).join(" ")}
 			data-testid="copilot-context-telemetry-bar"
 		>
-			{/* Активный экран / вид */}
 			{activeView && (
-				<span className="copilot-context-chip active-view px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--paper,#ffffff)] border border-[var(--line)] text-[var(--ink)] shrink-0">
+				<span className="copilot-context-chip active-view px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] shrink-0">
 					{activeView}
 				</span>
 			)}
-
-			{/* Пациент и Зуб FDI */}
 			<div className="flex items-center gap-1.5 min-w-0 max-w-full flex-wrap">
 				<div className="flex items-center gap-1 font-medium text-[var(--ink)] min-w-0">
-					<User size={12} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<User size={12} className="text-[var(--primary)] shrink-0" />
 					<span className="break-words">
-						{resolvedPatientName ? (<><span className="hidden sm:inline">Пациент: </span>{resolvedPatientName}</>) : <span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>}
+						{resolvedPatientName ? (<><span className="hidden sm:inline">Пациент: </span>{resolvedPatientName}</>) : <span className="text-[var(--muted)] font-normal">Пациент не выбран</span>}
 					</span>
-					{resolvedPatientId && (
-						<span className="sr-only" data-testid="telemetry-patient-id" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>{`#${resolvedPatientId}`}</span>
-					)}
+					{resolvedPatientId && <span className="sr-only" data-testid="telemetry-patient-id">{`#${resolvedPatientId}`}</span>}
 				</div>
 				{resolvedActiveTooth && (resolvedPatientName || propActiveTooth !== undefined) ? (
-					<span className="copilot-telemetry-tooth-badge px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,rgba(13,148,136,0.25))] shrink-0" title={`Зуб ${resolvedActiveTooth}`} data-tooth={`Зуб ${resolvedActiveTooth}`}>
+					<span
+						className="copilot-telemetry-tooth-badge px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]/25 shrink-0"
+						title={`Зуб ${resolvedActiveTooth}`}
+						data-tooth={`Зуб ${resolvedActiveTooth}`}
+					>
 						<span>{`Зуб ${resolvedActiveTooth}`}</span>
 						<span className="sr-only" aria-hidden="true">{`Зуб #${resolvedActiveTooth}`}</span>
 					</span>
 				) : null}
 			</div>
-
-			{/* Клинические аллергии — СТРОГО при подтвержденных аллергиях (ноль шума при норме) */}
 			{(() => {
 				const realAllergies = (allergies || []).filter((a) => !isNegativeAllergyStatement(a));
 				if (realAllergies.length === 0) return null;
 				return (
-					<span className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--danger-soft,rgba(244,63,94,0.1))] text-[var(--danger,#e11d48)] border border-[var(--danger-border,rgba(244,63,94,0.25))] flex items-center gap-1 shrink-0" title={realAllergies.join(", ")}>
+					<span
+						className={[
+							"copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px]",
+							"font-semibold bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger)]/25",
+							"flex items-center gap-1 shrink-0",
+						].join(" ")}
+						title={realAllergies.join(", ")}
+					>
 						<ShieldAlert size={11} className="shrink-0" />
 						<span>{`Аллергии (${realAllergies.length})`}</span>
 					</span>
 				);
 			})()}
-
-			{/* Врач на смене */}
 			{activeDoctor && (
-				<span className="copilot-context-chip doctor text-[10px] text-[var(--muted,#64748b)] font-medium shrink-0">{activeDoctor}</span>
+				<span className="copilot-context-chip doctor text-[10px] text-[var(--muted)] font-medium shrink-0">
+					{activeDoctor}
+				</span>
 			)}
-
-			<span className="hidden sm:inline text-[var(--line,rgba(15,118,110,0.2))] shrink-0 select-none">•</span>
-
-			{/* Клиническая модель и индикатор отклика */}
+			<span className="hidden sm:inline text-[var(--line)] shrink-0 select-none">•</span>
 			<div
-				className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,rgba(15,118,110,0.15))] text-[11px] font-semibold text-[var(--ink)] shrink-0 ml-auto sm:ml-0"
-				title={`Активная клиническая модель: ${settings.modelRoutingMode === "custom_byok" ? settings.byokModel : "Google Gemini"} • ${modelLabel}`}
+				className={[
+					"flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper)]",
+					"border border-[var(--line)] text-[11px] font-semibold text-[var(--ink)] shrink-0 ml-auto sm:ml-0",
+				].join(" ")}
+				title={`Активная модель: ${
+					settings.modelRoutingMode === "custom_byok" ? settings.byokModel : "Google Gemini"
+				} • ${modelLabel}`}
 			>
-				<Sparkles size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<Sparkles size={11} className="text-[var(--primary)] shrink-0" />
 				<span className="hidden sm:inline">{modelLabel}</span>
 				<span className="sm:hidden">Gemini</span>
-				<span className="text-[10px] text-[var(--muted,#64748b)] font-normal whitespace-nowrap">• {latencyLabel}</span>
+				<span className="text-[10px] text-[var(--muted)] font-normal whitespace-nowrap">• {latencyLabel}</span>
 			</div>
-
-			{/* В режиме compact для врача не захламляем экран сырыми токенами и шлюзами */}
 			{!compact && (
 				<>
-					<span className="text-[var(--line,rgba(15,118,110,0.2))] shrink-0 select-none">•</span>
-					{/* Бюджет токенов и пороги сжатия */}
+					<span className="text-[var(--line)] shrink-0 select-none">•</span>
 					<div
-						className="flex items-center gap-2 px-2 py-0.5 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,rgba(15,118,110,0.15))] text-[11px] shrink-0"
+						className="flex items-center gap-2 px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[11px] shrink-0"
 						title={`Контекст: ${activeTokens.toLocaleString("ru-RU")} из ${maxTokens.toLocaleString("ru-RU")} токенов`}
 					>
-						<Cpu size={11} className="text-[var(--muted,#64748b)] shrink-0" />
+						<Cpu size={11} className="text-[var(--muted)] shrink-0" />
 						<span className="font-mono text-[10px] text-[var(--ink)]">
-							{activeTokens === 0
-								? "0 / 128k токенов"
-								: `${activeTokens.toLocaleString("ru-RU")} / ${maxTokens.toLocaleString("ru-RU")} (${tokenPercent}%)`}
+							{activeTokens === 0 ? "0 / 128k токенов" : `${activeTokens.toLocaleString("ru-RU")} / ${maxTokens.toLocaleString("ru-RU")} (${tokenPercent}%)`}
 						</span>
-						{/* Прогресс-бар токенов */}
-						<div className="w-12 h-1.5 rounded-full bg-[var(--line,rgba(15,118,110,0.2))] overflow-hidden flex shrink-0">
-							<div
-								className="h-full rounded-full transition-all duration-300"
-								style={{ width: `${tokenPercent}%`, backgroundColor: progressColor }}
-							/>
+						<div className="w-12 h-1.5 rounded-full bg-[var(--line)] overflow-hidden flex shrink-0">
+							<div className="h-full rounded-full transition-all duration-300" style={{ width: `${tokenPercent}%`, backgroundColor: progressColor }} />
 						</div>
-
-						{/* Пороговые маркеры сжатия */}
 						{isSlidingWindow && (
 							<span
-								className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--danger-soft,rgba(244,63,94,0.12))] text-[var(--danger,#e11d48)] border border-[var(--danger-border,rgba(244,63,94,0.3))] animate-pulse shrink-0"
+								className={[
+									"px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--danger-soft)]",
+									"text-[var(--danger)] border border-[var(--danger)]/30 animate-pulse shrink-0",
+								].join(" ")}
 								data-testid="marker-sliding-window"
 							>
 								Скользящее окно
 							</span>
 						)}
 						{isPruning && (
-							<span
-								className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--warn-soft,rgba(245,158,11,0.12))] text-[var(--warn,#d97706)] border border-[var(--warn-border,rgba(245,158,11,0.3))] shrink-0"
-								data-testid="marker-pruning"
-							>
+							<span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--warn-soft)] text-[var(--warn)] border border-[var(--warn)]/30 shrink-0" data-testid="marker-pruning">
 								Сжатие контекста
 							</span>
 						)}
 					</div>
-
-					{/* Статус шлюза / контура */}
 					<div
-						className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,rgba(15,118,110,0.15))] text-[10px] font-medium shrink-0 ml-auto"
+						className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[10px] font-medium shrink-0 ml-auto"
 						data-testid="copilot-gateway-status"
 					>
 						{isLocal ? (
-							<>
-								<HardDrive size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
-								<span className="text-[var(--ink)]">Локальный детерминированный (&lt;5мс)</span>
-							</>
+							<><HardDrive size={11} className="text-[var(--primary)] shrink-0" /><span className="text-[var(--ink)]">Локальный детерминированный (&lt;5мс)</span></>
 						) : (
 							<>
-								<Globe size={11} className="text-emerald-600 shrink-0" />
+								<Globe size={11} className="text-[var(--success)] shrink-0" />
 								<span className="text-[var(--ink)] flex items-center gap-1">
 									Облачный шлюз (Active)
-									<span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+									<span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
 								</span>
 							</>
 						)}

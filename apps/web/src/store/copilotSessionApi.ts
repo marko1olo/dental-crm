@@ -7,7 +7,7 @@
  */
 
 import { generateUuidV7 } from "@dental/shared";
-import { readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../lib/denteRequestHeaders";
 import { showToast } from "../components/GlobalToast";
 import { logger } from "../utils/logger";
 import type { CopilotThread, AiMemoryFact } from "./copilotStore";
@@ -24,22 +24,9 @@ export function isSessionUuid(id: string): boolean {
 }
 
 function getAuthHeaders(): Record<string, string> {
-	const headers: Record<string, string> = {
+	return denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-	};
-	const staffToken = readDenteStaffToken();
-	const clinicToken = readDenteClinicToken();
-	const token = staffToken || clinicToken;
-	if (token) {
-		headers["Authorization"] = `Bearer ${token}`;
-	}
-	if (clinicToken) {
-		headers["x-dente-clinic-token"] = clinicToken;
-	}
-	if (staffToken) {
-		headers["x-dente-staff-token"] = staffToken;
-	}
-	return headers;
+	});
 }
 
 function unwrapEnvelope<T>(json: unknown): T {
@@ -297,5 +284,67 @@ export async function saveRemoteSettings(settings: Record<string, unknown>): Pro
 		logger.error("[copilotSessionApi] saveRemoteSettings failed:", err);
 		showToast("Не удалось сохранить настройки ассистента на сервере", "error");
 		return false;
+	}
+}
+
+export async function executeRemoteAgentAction(payload: {
+	callId?: string;
+	decision?: "confirm" | "reject";
+	toolName: string;
+	args: Record<string, unknown>;
+	confirmed: boolean;
+	sessionId?: string;
+	patientId?: string;
+	runtimeMode: "web_browser" | "desktop_native";
+}): Promise<{ ok: boolean; errorText?: string }> {
+	const res = await fetch("/api/agent/action", {
+		method: "POST",
+		credentials: "include",
+		headers: denteClinicalMutationHeaders({
+			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
+			"x-agent-runtime": payload.runtimeMode,
+		}),
+		body: JSON.stringify(payload),
+	});
+	let raw: {
+		ok?: boolean;
+		error?: string;
+		message?: string;
+		data?: { ok?: boolean; error?: string; message?: string };
+	} = {};
+	try {
+		raw = (await res.json()) as typeof raw;
+	} catch (parseErr) {
+		logger.warn("[copilotSessionApi] executeRemoteAgentAction invalid JSON:", parseErr);
+	}
+	const unwrapped = unwrapEnvelope<{ ok?: boolean; error?: string; message?: string }>(raw);
+	const ok = res.ok && raw?.ok !== false && unwrapped?.ok !== false;
+	const errorText =
+		unwrapped?.message ||
+		raw?.message ||
+		unwrapped?.error ||
+		raw?.error ||
+		res.statusText ||
+		`HTTP ${res.status}`;
+	return ok ? { ok: true } : { ok: false, errorText };
+}
+
+export async function fetchSpeechGatewayHealth(): Promise<Record<string, unknown> | null> {
+	try {
+		const res = await fetch("/api/speech/gateway-health", {
+			method: "GET",
+			credentials: "include",
+			headers: denteClinicalMutationHeaders({
+				Accept: "application/json",
+			}),
+		});
+		if (!res.ok) return null;
+		const rawJson: unknown = await res.json();
+		const unwrapped = unwrapEnvelope<Record<string, unknown> | null>(rawJson);
+		return unwrapped && typeof unwrapped === "object" ? unwrapped : null;
+	} catch (err) {
+		logger.info("[copilotSessionApi] Speech gateway health check offline:", err);
+		return null;
 	}
 }

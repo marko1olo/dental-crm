@@ -6,19 +6,18 @@
  */
 
 import { create } from "zustand";
-import { generateUuidV7 } from "@dental/shared";
 import { logger } from "../utils/logger";
 import { showToast } from "../components/GlobalToast";
-import { safeLocalStorageGetJson, safeLocalStorageSetJson, readDenteClinicToken, readDenteStaffToken } from "../lib/safeLocalStorage";
+import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import { type ContextTelemetryData, PRODUCTION_TELEMETRY, SHOWCASE_TELEMETRY } from "../components/copilot/telemetry/telemetryTypes";
 import { SHOWCASE_MEMORY_FACTS, SHOWCASE_THREADS, SHOWCASE_TOOL_LOGS } from "./copilotShowcaseData";
 import {
-	createRemoteSession, deleteRemoteSession, fetchRemoteMessages,
+	createRemoteSession, deleteRemoteSession, executeRemoteAgentAction, fetchRemoteMessages,
 	fetchRemoteSessions, fetchRemoteMemoryFacts, saveRemoteMemoryFacts, fetchRemoteSettings,
 	saveRemoteSettings, generateSessionUuid, isSessionUuid, updateRemoteSession,
 } from "./copilotSessionApi";
-import { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState } from "./copilotStoreDefaults";
+import { buildRemoteSettingsPayload, DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState } from "./copilotStoreDefaults";
 
 export { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState };
 
@@ -65,25 +64,11 @@ export function syncCopilotStreamThread(params: {
 
 export * from "./copilotStoreTypes";
 import type {
-	AiTrustLevel,
-	AiProvider,
-	AiSpeedMode,
-	ModelRoutingMode,
-	ClinicalSpecialization,
-	DiaryTemplate,
-	CopilotRuntimeEnvironment,
-	WebSpeechSensitivity,
-	SpeechEngine,
-	GranularAgentPermissions,
-	AiMemoryFact,
 	CopilotThread,
+	AiMemoryFact,
 	ToolExecutionLog,
-	CopilotToolExecutionLog,
 	CopilotMessage,
-	ActiveDiff,
-	CopilotActiveDiff,
 	CopilotUnconfirmedDraft,
-	CopilotSettings,
 	CopilotStoreState,
 } from "./copilotStoreTypes";
 
@@ -131,38 +116,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			const next = { ...state.settings, ...patch };
 			safeLocalStorageSetJson("dente_copilot_settings", next);
 			if (!isDemoShowcaseMode()) {
-				const trimmedByokKey = next.byokApiKey?.trim();
-				void saveRemoteSettings({
-					trustLevel: next.trustLevel,
-					speedMode: next.speedMode,
-					granularPermissions: next.granularPermissions,
-					showTypingAnimation: next.showTypingAnimation,
-					byokProvider: next.byokProvider,
-					provider: next.provider,
-					model: next.model,
-					modelRoutingMode: next.modelRoutingMode,
-					...(trimmedByokKey ? { byokApiKey: trimmedByokKey } : {}),
-					...(next.byokModel ? { byokModel: next.byokModel } : {}),
-					...(next.byokBaseUrl ? { byokBaseUrl: next.byokBaseUrl } : {}),
-					diaryTemplate: next.diaryTemplate,
-					clinicalSpecialization: next.clinicalSpecialization,
-					customDoctorInstructions: next.customDoctorInstructions,
-					showThinkingProcess: next.showThinkingProcess,
-					temperature: next.temperature,
-					contextLimitTokens: next.contextLimitTokens,
-					maskPhiData: next.maskPhiData,
-					speechEngine: next.speechEngine,
-					autoSaveDrafts: next.autoSaveDrafts,
-					webSpeechSensitivity: next.webSpeechSensitivity,
-					globalDictationHotkey: next.globalDictationHotkey,
-					autoMicOnAppointmentOpen: next.autoMicOnAppointmentOpen,
-					localDropzonePath: next.localDropzonePath,
-					gloveModeTouchTarget: next.gloveModeTouchTarget,
-					screenWakeLock: next.screenWakeLock,
-					hapticFeedbackEnabled: next.hapticFeedbackEnabled,
-					runtimeMode: next.runtimeMode,
-					...(next.pinnedThreadIds ? { pinnedThreadIds: next.pinnedThreadIds } : {}),
-				});
+				void saveRemoteSettings(buildRemoteSettingsPayload(next));
 			}
 			return { settings: next };
 		});
@@ -211,10 +165,11 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 
 	createThread: (patientName = "Новый пациент", title = "Новый клинический диалог", patientId?: string) => {
 		const newId = generateSessionUuid();
+		const nowTime = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 		const newThread: CopilotThread = {
 			id: newId,
 			title,
-			updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+			updatedAt: nowTime,
 			createdAt: new Date().toISOString(),
 			patientName,
 			...(patientId ? { patientId } : {}),
@@ -226,22 +181,14 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			return { threads: next, activeThreadId: newId };
 		});
 		if (!isDemoShowcaseMode()) {
-			void createRemoteSession({
-				id: newId,
-				patientId: patientId || null,
-				title,
-				summary: title,
-				activeView: "Одонтограмма",
-			});
+			void createRemoteSession({ id: newId, patientId: patientId || null, title, summary: title, activeView: "Одонтограмма" });
 		}
 		return newId;
 	},
 
 	selectThread: (id) => {
 		set({ activeThreadId: id, isHistoryOpen: false });
-		if (isSessionUuid(id)) {
-			void get().loadThreadMessages(id);
-		}
+		if (isSessionUuid(id)) void get().loadThreadMessages(id);
 	},
 
 	deleteThread: (id) => {
@@ -261,12 +208,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			return { threads: next, activeThreadId: activeId };
 		});
 		if (!isDemoShowcaseMode()) {
-			if (nextPinnedIds !== null) {
-				void saveRemoteSettings({ pinnedThreadIds: nextPinnedIds });
-			}
-			if (isSessionUuid(id)) {
-				void deleteRemoteSession(id);
-			}
+			if (nextPinnedIds !== null) void saveRemoteSettings({ pinnedThreadIds: nextPinnedIds });
+			if (isSessionUuid(id)) void deleteRemoteSession(id);
 		}
 	},
 
@@ -281,9 +224,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		});
 		if (!isDemoShowcaseMode()) {
 			void saveRemoteSettings({ pinnedThreadIds: [] });
-			for (const id of uuidsToDelete) {
-				void deleteRemoteSession(id);
-			}
+			for (const id of uuidsToDelete) void deleteRemoteSession(id);
 		}
 	},
 
@@ -297,9 +238,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			safeLocalStorageSetJson("dente_copilot_settings", nextSettings);
 			return { threads: next, settings: nextSettings };
 		});
-		if (!isDemoShowcaseMode()) {
-			void saveRemoteSettings({ pinnedThreadIds: nextPinnedIds });
-		}
+		if (!isDemoShowcaseMode()) void saveRemoteSettings({ pinnedThreadIds: nextPinnedIds });
 	},
 
 	renameThread: (id, title) => {
@@ -308,16 +247,13 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			safeLocalStorageSetJson("dente_copilot_threads", next);
 			return { threads: next };
 		});
-		if (!isDemoShowcaseMode() && isSessionUuid(id)) {
-			void updateRemoteSession(id, { summary: title });
-		}
+		if (!isDemoShowcaseMode() && isSessionUuid(id)) void updateRemoteSession(id, { summary: title });
 	},
 
-	setThreadSearchQuery: (query) => {
-		set({ threadSearchQuery: query });
-	},
+	setThreadSearchQuery: (query) => set({ threadSearchQuery: query }),
 
 	saveThreadMessages: (threadId, messages) => {
+		const nowTime = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 		set((state) => {
 			const nextMessages = { ...state.threadMessages, [threadId]: messages };
 			safeLocalStorageSetJson("dente_copilot_thread_messages", nextMessages);
@@ -326,19 +262,10 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			const hasThread = state.threads.some((t) => t.id === threadId);
 			const nextThreads = hasThread
 				? state.threads.map((t) =>
-						t.id === threadId
-							? {
-									...t,
-									messageCount: messages.length,
-									updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-									...(lastPreview ? { previewText: lastPreview } : {}),
-								}
-							: t,
+						t.id === threadId ? { ...t, messageCount: messages.length, updatedAt: nowTime, ...(lastPreview ? { previewText: lastPreview } : {}) } : t,
 					)
 				: state.threads;
-			if (hasThread) {
-				safeLocalStorageSetJson("dente_copilot_threads", nextThreads);
-			}
+			if (hasThread) safeLocalStorageSetJson("dente_copilot_threads", nextThreads);
 			return { threadMessages: nextMessages, ...(hasThread ? { threads: nextThreads } : {}) };
 		});
 	},
@@ -367,13 +294,10 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 					if (pinnedSet.has(r.id) || local?.pinned) r.pinned = true;
 				}
 				for (const local of state.threads) {
-					if (!merged.some((m) => m.id === local.id)) {
-						merged.push(local);
-					}
+					if (!merged.some((m) => m.id === local.id)) merged.push(local);
 				}
 				safeLocalStorageSetJson("dente_copilot_threads", merged);
-				const activeId = state.activeThreadId || (merged[0]?.id || "");
-				return { threads: merged, activeThreadId: activeId };
+				return { threads: merged, activeThreadId: state.activeThreadId || (merged[0]?.id || "") };
 			});
 		} catch (err) {
 			logger.info("[copilotStore] Offline fallback for remote sessions:", err);
@@ -387,15 +311,11 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length > 0) {
 				set((state) => {
 					const merged = { ...state.settings, ...remoteSettings };
-					if (!remoteSettings.byokApiKey && state.settings.byokApiKey) {
-						merged.byokApiKey = state.settings.byokApiKey;
-					}
+					if (!remoteSettings.byokApiKey && state.settings.byokApiKey) merged.byokApiKey = state.settings.byokApiKey;
 					safeLocalStorageSetJson("dente_copilot_settings", merged);
-					if (Array.isArray((remoteSettings as { pinnedThreadIds?: unknown }).pinnedThreadIds)) {
-						const pinnedSet = new Set(
-							((remoteSettings as { pinnedThreadIds?: unknown }).pinnedThreadIds as unknown[])
-								.filter((x): x is string => typeof x === "string"),
-						);
+					const rawPinned = (remoteSettings as { pinnedThreadIds?: unknown }).pinnedThreadIds;
+					if (Array.isArray(rawPinned)) {
+						const pinnedSet = new Set(rawPinned.filter((x): x is string => typeof x === "string"));
 						const syncedThreads = state.threads.map((t) => ({ ...t, pinned: pinnedSet.has(t.id) }));
 						safeLocalStorageSetJson("dente_copilot_threads", syncedThreads);
 						return { settings: merged, threads: syncedThreads };
@@ -403,7 +323,9 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 					return { settings: merged };
 				});
 			}
-		} catch (err) { logger.info("[copilotStore] Offline fallback for remote settings:", err); }
+		} catch (err) {
+			logger.info("[copilotStore] Offline fallback for remote settings:", err);
+		}
 	},
 
 	loadThreadMessages: async (threadId: string): Promise<CopilotMessage[]> => {
@@ -414,12 +336,21 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			const remoteMsgs = await fetchRemoteMessages(threadId);
 			if (remoteMsgs && remoteMsgs.length > 0) {
 				const parsed: CopilotMessage[] = (remoteMsgs as unknown[]).map((raw: unknown, idx: number): CopilotMessage => {
-					const m = (typeof raw === "object" && raw !== null ? raw : {}) as { id?: string; role?: "user" | "assistant" | "system"; content?: string; text?: string; createdAt?: string; toolCalls?: unknown };
+					const m = (typeof raw === "object" && raw !== null ? raw : {}) as {
+						id?: string;
+						role?: "user" | "assistant" | "system";
+						content?: string;
+						text?: string;
+						createdAt?: string;
+						toolCalls?: unknown;
+					};
 					return {
 						id: m.id || `msg-${idx}`,
-						role: (m.role === "assistant" || m.role === "system") ? m.role : "user",
+						role: m.role === "assistant" || m.role === "system" ? m.role : "user",
 						text: m.content || m.text || "",
-						timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
+						timestamp: m.createdAt
+							? new Date(m.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false })
+							: "10:00",
 						toolCalls: m.toolCalls,
 					};
 				});
@@ -440,11 +371,9 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		const newLog: ToolExecutionLog = {
 			...log,
 			id: `log-${Date.now()}`,
-			timestamp: new Date().toLocaleTimeString(),
+			timestamp: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false }),
 		};
-		set((state) => ({
-			toolExecutionLogs: [newLog, ...state.toolExecutionLogs.slice(0, 49)],
-		}));
+		set((state) => ({ toolExecutionLogs: [newLog, ...state.toolExecutionLogs.slice(0, 49)] }));
 	},
 
 	setActiveDiff: (diff) => set({ activeDiff: diff }),
@@ -452,46 +381,35 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		const diff = get().activeDiff;
 		if (!diff) return false;
 		if (diff.applied) return true;
-		const token = readDenteClinicToken() || readDenteStaffToken() || "";
-		const runtime = get().settings.runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
+		const runtime: "desktop_native" | "web_browser" = get().settings.runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 		const isReplace = Boolean(diff.beforeText && !diff.beforeText.startsWith("(") && diff.beforeText.trim().length > 0);
 		const toolName = isReplace ? "replace_file_content" : "write_clinical_file";
 		const args = isReplace
 			? { targetFile: diff.targetEntity, targetContent: diff.beforeText, replacementContent: diff.afterText }
 			: { filePath: diff.targetEntity, content: diff.afterText };
+		const fileLabel = diff.targetEntity.split(/[/\\]/).pop() || diff.targetEntity;
 		try {
-			const res = await fetch("/api/agent/action", {
-				method: "POST",
-				headers: { "Content-Type": "application/json", "Idempotency-Key": generateUuidV7(), "x-agent-runtime": runtime, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-				body: JSON.stringify({
-					...(diff.callId ? { callId: diff.callId, decision: "confirm" } : {}),
-					toolName,
-					args,
-					confirmed: true,
-					sessionId: get().activeThreadId || undefined,
-					runtimeMode: runtime,
-				}),
+			const res = await executeRemoteAgentAction({
+				...(diff.callId ? { callId: diff.callId, decision: "confirm" as const } : {}),
+				toolName,
+				args,
+				confirmed: true,
+				...(get().activeThreadId ? { sessionId: get().activeThreadId } : {}),
+				runtimeMode: runtime,
 			});
-			const raw = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string; data?: { ok?: boolean; error?: string; message?: string } };
-			const payload = raw?.data ?? raw;
-			const ok = res.ok && raw?.ok !== false && payload?.ok !== false;
-			const errorText = payload?.message || raw?.message || payload?.error || raw?.error || res.statusText || `HTTP ${res.status}`;
-			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: ok } : null }));
+			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: res.ok } : null }));
 			get().addToolLog({
 				toolName,
 				category: "workstation",
-				status: ok ? "success" : "rejected",
+				status: res.ok ? "success" : "rejected",
 				args,
-				resultSummary: ok
-					? `Применен дифф: ${diff.targetEntity.split(/[/\\]/).pop() || diff.targetEntity}`
-					: `Сбой диффа: ${errorText}`,
+				resultSummary: res.ok ? `Применен дифф: ${fileLabel}` : `Сбой диффа: ${res.errorText ?? "ошибка"}`,
 			});
-			if (ok) {
-				showToast("Изменения файла успешно применены", "success");
-			} else {
-				showToast(`Не удалось применить изменения: ${errorText}`, "error");
-			}
-			return ok;
+			showToast(
+				res.ok ? "Изменения файла успешно применены" : `Не удалось применить изменения: ${res.errorText ?? ""}`,
+				res.ok ? "success" : "error",
+			);
+			return res.ok;
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: false } : null }));

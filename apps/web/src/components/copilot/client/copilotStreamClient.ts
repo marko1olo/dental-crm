@@ -3,7 +3,8 @@
  * Mandates: 8b (< 200 lines), 8bf (Single Door / SSOT Client), 8e (Autonomous ReAct), 8be (Zero any).
  */
 
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { readEventStream } from "../useCopilotModules/copilotStreamReader";
 
 export const UUID_V1_TO_V8_REGEX =
@@ -80,6 +81,7 @@ export interface StreamCopilotChatOptions {
   byokProvider?: string | undefined;
   byokApiKey?: string | undefined;
   byokModel?: string | undefined;
+  byokBaseUrl?: string | undefined;
   headers?: Record<string, string> | undefined;
   signal?: AbortSignal | undefined;
   rawBody?: Record<string, unknown> | undefined;
@@ -99,14 +101,12 @@ export interface CopilotStreamResult {
 export async function streamCopilotChat(
   options: StreamCopilotChatOptions,
 ): Promise<CopilotStreamResult> {
-  const token = readDenteClinicToken() || readDenteStaffToken() || "";
-
-  const requestHeaders: Record<string, string> = {
+  const requestHeaders: Record<string, string> = denteClinicalMutationHeaders({
     "Content-Type": "application/json",
     Accept: "text/event-stream",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    "Idempotency-Key": generateUuidV7(),
     ...(options.headers || {}),
-  };
+  });
 
   const raw = options.rawBody || {};
 
@@ -183,6 +183,7 @@ export async function streamCopilotChat(
     byokProvider: options.byokProvider ?? (raw.byokProvider as string | undefined),
     byokApiKey: options.byokApiKey ?? (raw.byokApiKey as string | undefined),
     byokModel: options.byokModel ?? (raw.byokModel as string | undefined),
+    byokBaseUrl: options.byokBaseUrl ?? (raw.byokBaseUrl as string | undefined),
   };
 
   const baseUrl = (options.apiBaseUrl || "").replace(/\/+$/, "");

@@ -3,9 +3,9 @@ import { generateUuidV7 } from "@dental/shared";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 import {
-	readDenteClinicToken,
-	readDenteStaffToken,
-} from "../../../lib/safeLocalStorage";
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../lib/queryClient";
 import { useVisitStore } from "../../../store/visitStore";
 import { useCopilotStore } from "../../../store/copilotStore";
@@ -81,17 +81,16 @@ export async function executeCopilotConfirmationWithResult({
 		...(modifiedArgs || {}),
 	};
 	const baseUrl = apiBaseUrl.replace(/\/$/, "");
-	const token = readDenteClinicToken() || readDenteStaffToken() || "";
 
 	try {
 		const res = await fetch(`${baseUrl}/api/agent/confirm`, {
 			method: "POST",
-			headers: {
+			credentials: "include",
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"x-agent-runtime": runtimeMode,
 				"Idempotency-Key": generateUuidV7(),
-				...(token ? { Authorization: `Bearer ${token}` } : {}),
-			},
+			}),
 			body: JSON.stringify({
 				callId,
 				toolName: actionName,
@@ -104,7 +103,12 @@ export async function executeCopilotConfirmationWithResult({
 				runtimeMode,
 			}),
 		});
-		const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+		let json: Record<string, unknown> = {};
+		try {
+			json = (await res.json()) as Record<string, unknown>;
+		} catch (parseErr) {
+			clientLogger.warn("[useCopilotActions] Invalid JSON response from /api/agent/confirm:", parseErr);
+		}
 		const payload = (typeof json.data === "object" && json.data !== null ? json.data : json) as Record<string, unknown>;
 		const ok = res.ok && json.ok !== false && payload.ok !== false;
 		if (ok) {
@@ -359,13 +363,25 @@ export function useCopilotActions({
 
 	const loadNudges = useCallback(async () => {
 		try {
-			const token = readDenteClinicToken() || readDenteStaffToken() || "";
 			const res = await fetch(`${apiBaseUrl}/api/v1/copilot/nudges`, {
-				headers: { Authorization: token ? `Bearer ${token}` : "" },
+				credentials: "include",
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
-				const json = await res.json();
-				setNudges(json.nudges || json.data || json || []);
+				const rawJson: unknown = await res.json();
+				const unwrapped =
+					rawJson && typeof rawJson === "object" && "data" in rawJson
+						? (rawJson as { data?: unknown }).data
+						: rawJson;
+				const nudgesList = Array.isArray(unwrapped)
+					? unwrapped
+					: unwrapped &&
+						  typeof unwrapped === "object" &&
+						  "nudges" in unwrapped &&
+						  Array.isArray((unwrapped as { nudges?: unknown }).nudges)
+						? (unwrapped as { nudges: CopilotNudge[] }).nudges
+						: [];
+				setNudges(nudgesList as CopilotNudge[]);
 			}
 		} catch (err) {
 			clientLogger.info("[useCopilotActions] Load nudges offline fallback:", err);
@@ -377,16 +393,18 @@ export function useCopilotActions({
 		async (id: string) => {
 			setNudges((prev) => prev.filter((n) => n.id !== id));
 			try {
-				const token = readDenteClinicToken() || readDenteStaffToken() || "";
-				await fetch(`${apiBaseUrl}/api/v1/copilot/dismiss-nudge`, {
+				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/dismiss-nudge`, {
 					method: "POST",
-					headers: {
+					credentials: "include",
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
-						Authorization: token ? `Bearer ${token}` : "",
-					},
+					}),
 					body: JSON.stringify({ id }),
 				});
+				if (!res.ok) {
+					clientLogger.warn("[useCopilotActions] Dismiss nudge HTTP status:", res.status);
+				}
 			} catch (err) {
 				clientLogger.info("[useCopilotActions] Dismiss nudge offline fallback:", err);
 			}
@@ -403,14 +421,13 @@ export function useCopilotActions({
 			);
 
 			try {
-				const token = readDenteClinicToken() || readDenteStaffToken() || "";
 				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/approve`, {
 					method: "POST",
-					headers: {
+					credentials: "include",
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
-						Authorization: token ? `Bearer ${token}` : "",
-					},
+					}),
 					body: JSON.stringify({ approvalId, modifiedReply, sendNow: true }),
 				});
 				if (!res.ok) {
@@ -445,14 +462,13 @@ export function useCopilotActions({
 			);
 
 			try {
-				const token = readDenteClinicToken() || readDenteStaffToken() || "";
 				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/reject`, {
 					method: "POST",
-					headers: {
+					credentials: "include",
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
-						Authorization: token ? `Bearer ${token}` : "",
-					},
+					}),
 					body: JSON.stringify({ approvalId, reason }),
 				});
 				if (!res.ok) {
@@ -482,16 +498,18 @@ export function useCopilotActions({
 		async (alertId: string) => {
 			setProactiveAlerts((prev) => prev.filter((a) => a.id !== alertId));
 			try {
-				const token = readDenteClinicToken() || readDenteStaffToken() || "";
-				await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/dismiss-alert`, {
+				const res = await fetch(`${apiBaseUrl}/api/v1/copilot/proactive/dismiss-alert`, {
 					method: "POST",
-					headers: {
+					credentials: "include",
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": generateUuidV7(),
-						Authorization: token ? `Bearer ${token}` : "",
-					},
+					}),
 					body: JSON.stringify({ alertId }),
 				});
+				if (!res.ok) {
+					clientLogger.warn("[useCopilotActions] Dismiss alert HTTP status:", res.status);
+				}
 			} catch (err) {
 				clientLogger.info("[useCopilotActions] Dismiss proactive alert offline fallback:", err);
 			}

@@ -25,13 +25,13 @@ export const ENVIRONMENT_CAPABILITIES_MATRIX: EnvironmentCapability[] = [
   { id: "phi_masking", name: "Защита персональных данных", description: "Маскирование ФИО и телефонов перед отправкой в LLM", web: "available", desktop: "available", mobile: "available" },
   { id: "dicom_import", name: "Импорт DICOM и снимков КЛКТ", description: "Загрузка исследований с диска, дисковода или папки экспорта", web: "available", desktop: "available", mobile: "available" },
   { id: "fiscal_kassa", name: "Кассовые сметы и чеки", description: "Расчет скидок врача, сплит-оплата и печать кассовых чеков", web: "available", desktop: "available", mobile: "available" },
-  { id: "treatment_plans", name: "Многоэтапные планы лечения", description: "Формирование вариантов терапии с автоматическим расчетом стоимости", web: "available", desktop: "available", mobile: "available" },
-  { id: "odontogram_fdi", name: "Зубная формула FDI", description: "Интерактивная одонтограмма 11-48 / 51-85 с фиксацией патологий", web: "available", desktop: "available", mobile: "available" },
-  { id: "deterministic_nlp", name: "Детерминированные локальные эвристики", description: "Мгновенный разбор формулы FDI и протоколов (<5 мс, 0 ₽)", web: "available", desktop: "available", mobile: "available" },
+  { id: "treatment_plans", name: "Многоэтапные планы лечения", description: "Альтернативные планы терапии с расчётом стоимости", web: "available", desktop: "available", mobile: "available" },
+  { id: "dental_chart", name: "Зубная формула FDI", description: "Одонтограмма 11-48 / 51-85 с патологиями", web: "available", desktop: "available", mobile: "available" },
+  { id: "deterministic_nlp", name: "Локальные клинические эвристики", description: "Разбор формулы FDI и протоколов (<5 мс)", web: "available", desktop: "available", mobile: "available" },
   { id: "global_hotkeys", name: "Системные горячие клавиши ОС", description: "Мгновенная диктовка поверх всех окон Windows", web: "desktop_required", desktop: "available", mobile: "unavailable" },
   { id: "glove_mode", name: "Режим в перчатках (>= 48px)", description: "Увеличенные тач-таргеты для работы у кресла", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
   { id: "screen_wake_lock", name: "Удержание экрана (Wake Lock)", description: "Защита от засыпания экрана во время манипуляций", web: "available", desktop: "unavailable", mobile: "mobile_specific" },
-  { id: "haptic_feedback", name: "Тактильный виброотклик (Haptic)", description: "Вибрация при успешной фиксации голосовой команды", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
+  { id: "haptic_feedback", name: "Тактильный виброотклик (Haptic)", description: "Вибрация при фиксации голосовой команды", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
   { id: "auto_mic_open", name: "Авто-микрофон в карточке приёма", description: "Мгновенный старт записи при открытии визита", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
 ];
 
@@ -91,11 +91,16 @@ export const CRM_FASTIFY_TOOLS_REGISTRY = {
 
 /** Реестр быстрых клинических промптов (Мандат 8e & Voice-First) */
 export const CLINICAL_QUICK_PRESETS: ClinicalQuickPreset[] = [
-  { id: "preset-phys-norm", label: "Протокол осмотра (норма)", prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы", actionBadge: "Норма", category: "soap" },
-  { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
-  { id: "preset-caries-16-full", label: "Лечение кариеса 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
-  { id: "preset-extraction-38", label: "Удаление дистопированного 38", prompt: "Протокол операции: атипичное удаление ретинированного дистопированного зуба 38", actionBadge: "Хирургия", category: "soap" },
-  { id: "preset-implant-turnkey", label: "Смета на имплантацию под ключ", prompt: "Сформируй комплексную смету на дентальную имплантацию под ключ с коронкой", actionBadge: "Касса и сметы", category: "billing" },
+  { id: "preset-phys-norm", label: "Протокол осмотра (норма)", actionBadge: "Норма", category: "soap",
+    prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы" },
+  { id: "preset-caries-16", label: "Кариес 16", actionBadge: "Одонтограмма", category: "odontogram",
+    prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит" },
+  { id: "preset-caries-16-full", label: "Лечение кариеса 16", actionBadge: "Одонтограмма", category: "odontogram",
+    prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит" },
+  { id: "preset-extraction-38", label: "Удаление дистопированного 38", actionBadge: "Хирургия", category: "soap",
+    prompt: "Протокол операции: атипичное удаление ретинированного дистопированного зуба 38" },
+  { id: "preset-implant-turnkey", label: "Смета на имплантацию под ключ", actionBadge: "Касса и сметы", category: "billing",
+    prompt: "Сформируй комплексную смету на дентальную имплантацию под ключ с коронкой" },
   { id: "preset-septanest", label: "Анестезия септанест", prompt: "Инфильтрационная анестезия: Септанест 1:100 000, 1.7 мл, без осложнений", actionBadge: "Анестезия", category: "pharmacology" },
   { id: "preset-cofferdam", label: "Коффердам", prompt: "Изоляция операционного поля коффердамом с клампом, фиксация надежная", actionBadge: "Изоляция", category: "soap" },
   { id: "preset-book-tomorrow", label: "Запиши на завтра в 14:00", prompt: "Запиши пациента на завтра в 14:00 на контрольный осмотр и полировку", actionBadge: "Расписание", category: "schedule" },
@@ -264,11 +269,8 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
 ];
 
 export function getCatalogItemsByMode(mode: CopilotRuntimeMode): CopilotCatalogItem[] {
-  return COPILOT_CATALOG_CATEGORIES.flatMap((c) =>
-    c.items.filter((item) => item.mode === "both" || item.mode === "all" || item.mode === mode)
-  );
+  return COPILOT_CATALOG_CATEGORIES.flatMap((c) => c.items.filter((i) => i.mode === "both" || i.mode === "all" || i.mode === mode));
 }
-
 export function findCatalogItemById(id: string): CopilotCatalogItem | undefined {
   for (const cat of COPILOT_CATALOG_CATEGORIES) {
     const found = cat.items.find((it) => it.id === id);
@@ -276,17 +278,22 @@ export function findCatalogItemById(id: string): CopilotCatalogItem | undefined 
   }
   return undefined;
 }
-interface SpeechRecognitionWindow extends Window {
-  SpeechRecognition?: unknown;
-  webkitSpeechRecognition?: unknown;
-}
+interface SpeechRecognitionWindow extends Window { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown; }
 
-interface HealthPayloadStructure {
+interface GatewayHealthShape {
   health?: Record<string, { consecutiveFailures?: number; cooldownUntil?: number }>;
-}
-
-function isHealthPayloadStructure(payload: unknown): payload is HealthPayloadStructure {
-  return typeof payload === "object" && payload !== null && "health" in payload;
+  activeProviderLabel?: string;
+  providerLabel?: string;
+  serverTranscriptionEnabled?: boolean;
+  serverTranscriptionCurrentlyAvailable?: boolean;
+  keyConfigured?: boolean;
+  providers?: Array<{
+    providerId?: string;
+    providerLabel?: string;
+    healthLevel?: string;
+    safeToUseInVisit?: boolean;
+    keyHealth?: Array<{ available?: boolean }>;
+  }>;
 }
 
 /** Честная проверка статуса голосовых и ИИ-движков (Zero Fake) */
@@ -297,49 +304,42 @@ export function inspectSpeechEngineHealth(
   const audioStatus = getUnifiedAudioClientStatus(audioClient);
   const speechWin = typeof window !== "undefined" ? (window as SpeechRecognitionWindow) : undefined;
   const hasBrowserSpeech = Boolean(speechWin?.SpeechRecognition || speechWin?.webkitSpeechRecognition);
-  const healthObj = isHealthPayloadStructure(healthPayload) ? healthPayload.health : null;
-
-  let hasCloudOperational = false;
+  const shape = typeof healthPayload === "object" && healthPayload !== null ? (healthPayload as GatewayHealthShape) : null;
+  let hasCloud = false;
   let activeProvider = audioStatus.providerLabel;
-
-  if (healthObj) {
-    for (const [key, val] of Object.entries(healthObj)) {
+  if (shape?.providers?.length && shape.serverTranscriptionEnabled !== false) {
+    const ready = shape.providers.find(
+      (p) => (p.healthLevel === "ready" || p.safeToUseInVisit) && (p.keyHealth?.some((k) => k.available) ?? true),
+    );
+    if (ready) {
+      hasCloud = true;
+      activeProvider = ready.providerLabel || (ready.providerId?.includes("gemini") ? "Google Gemini Live" : "Серверный Whisper");
+    }
+  } else if (shape?.serverTranscriptionCurrentlyAvailable && shape.keyConfigured) {
+    hasCloud = true;
+    activeProvider = shape.providerLabel || "Google Gemini Live";
+  } else if (shape?.health) {
+    for (const [key, val] of Object.entries(shape.health)) {
       if ((val.consecutiveFailures ?? 0) === 0 && (val.cooldownUntil ?? 0) < Date.now()) {
-        hasCloudOperational = true;
+        hasCloud = true;
         activeProvider = key.startsWith("gemini") ? "Google Gemini Live" : "Groq Voice / Whisper";
         break;
       }
     }
   }
-
-  if (hasCloudOperational) {
+  if (hasCloud) {
     return {
-      engine: activeProvider.includes("Gemini") ? "gemini_cloud" : "groq_cloud",
-      status: "operational",
-      label: activeProvider,
-      isCloudActive: true,
-      activeProvider,
-      details: "Облачный нейросетевой шлюз активен со сквозным резервированием ключей",
+      engine: activeProvider.includes("Gemini") ? "gemini_cloud" : "groq_cloud", status: "operational",
+      label: activeProvider, isCloudActive: true, activeProvider, details: "Облачный шлюз активен",
     };
   }
-
   return {
-    engine: hasBrowserSpeech ? "webspeech" : "unsupported",
-    status: hasBrowserSpeech ? "operational" : "degraded",
+    engine: hasBrowserSpeech ? "webspeech" : "unsupported", status: hasBrowserSpeech ? "operational" : "degraded",
     label: hasBrowserSpeech ? "Web Speech API (Нативный)" : "Голосовой ввод недоступен",
-    isCloudActive: false,
-    activeProvider: hasBrowserSpeech ? audioStatus.providerLabel : "Локальный шаблонный ввод",
-    details: hasBrowserSpeech
-      ? "Автономное распознавание речи прямо в браузере (ноль задержек, офлайн-режим)"
-      : "Служба распознавания речи не поддерживается браузером",
+    isCloudActive: false, activeProvider: hasBrowserSpeech ? audioStatus.providerLabel : "Локальный шаблонный ввод",
+    details: hasBrowserSpeech ? "Крайний браузерный fallback" : "Служба распознавания речи не поддерживается браузером",
   };
 }
-
-export const DEFAULT_SUGGESTION_CATEGORIES: SuggestionCategory[] = COPILOT_CATALOG_CATEGORIES.map((cat) => ({
-  category: cat.title,
-  items: cat.items.map((item) => ({
-    label: item.label,
-    prompt: item.prompt,
-    icon: item.icon,
-  })),
+export const DEFAULT_SUGGESTION_CATEGORIES: SuggestionCategory[] = COPILOT_CATALOG_CATEGORIES.map((c) => ({
+  category: c.title, items: c.items.map((it) => ({ label: it.label, prompt: it.prompt, icon: it.icon })),
 }));

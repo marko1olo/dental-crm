@@ -4,9 +4,10 @@
  * Мандаты 8b (320-390 строк), 8e (автономия врача), 8am (единый дизайн-код).
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } from "lucide-react";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
+import { CanvasWaveform } from "../audio/CanvasWaveform";
 import { extractClinicalTerms, type ParsedClinicalSpeech } from "../../services/voice/clinicalTermsExtractor";
 import "./CopilotVoiceStenographer.css";
 
@@ -46,6 +47,10 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
 
   const {
     isRecording: isListening,
+    mode: activeAudioMode,
+    audioLevel,
+    streamManager,
+    speechHealth,
     interimText,
     finalText,
     fullTranscript,
@@ -91,33 +96,20 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     const toothNum = currentParsed?.teeth?.[0] || activeTooth || null;
     const diagnosis = currentParsed?.diagnoses?.[0] || null;
     let toothState: string | null = null;
-
     if (diagnosis) {
       const lower = diagnosis.toLowerCase();
       if (lower.includes("кариес")) toothState = "caries";
       else if (lower.includes("пульпит")) toothState = "pulpitis";
       else if (lower.includes("периодонтит")) toothState = "periodontitis";
     }
-
-    if (!toothState && currentParsed?.materials?.length) {
-      toothState = "filling";
-    }
-
+    if (!toothState && currentParsed?.materials?.length) toothState = "filling";
     let detectedSection: ParsedClinicalCommand["soapSection"] = null;
     if (currentParsed?.soap?.subjective) detectedSection = "complaint";
     else if (currentParsed?.soap?.plan) detectedSection = "treatmentPlan";
     else if (currentParsed?.soap?.objective) detectedSection = "objectiveStatus";
-
     if (toothNum || toothState || diagnosis || detectedSection) {
-      commands.push({
-        toothNumber: toothNum,
-        toothState,
-        diagnosis,
-        soapSection: detectedSection,
-        text: textToAnalyze,
-      });
+      commands.push({ toothNumber: toothNum, toothState, diagnosis, soapSection: detectedSection, text: textToAnalyze });
     }
-
     return commands;
   }, [fullText, manualDraft, isEditingManually, parsed, activeTooth]);
 
@@ -205,11 +197,15 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
             <h3 className="copilot-stenographer-title">Голосовой стенограф приёма</h3>
             <p className="copilot-stenographer-subtitle">
               {patientName} {activeTooth ? `• Зуб ${activeTooth}` : ""}
+              {" • "}
+              {activeAudioMode === "browser_speech" || (speechHealth.checked && !speechHealth.cloudReady)
+                ? "Браузерный резерв"
+                : speechHealth.activeProviderLabel}
             </p>
           </div>
         </div>
 
-        {/* Audio VU Wave with 1-click stop */}
+        {/* Audio VU Wave with real AnalyserNode / RMS audioLevel */}
         <div
           className={`copilot-stenographer-vu-meter ${isListening ? "copilot-stenographer-vu-meter--active" : ""}`}
           aria-label="Индикатор аудио-сигнала"
@@ -217,11 +213,29 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
           title={isListening ? "Остановить запись" : "Включить запись"}
           style={{ cursor: "pointer" }}
         >
-          <div className="copilot-vu-bar" />
-          <div className="copilot-vu-bar" />
-          <div className="copilot-vu-bar" />
-          <div className="copilot-vu-bar" />
-          <div className="copilot-vu-bar" />
+          {streamManager?.getAnalyserNode() && isListening ? (
+            <CanvasWaveform
+              analyserNode={streamManager.getAnalyserNode()}
+              isRecording={isListening}
+              width={64}
+              height={22}
+              mode="bars"
+              barCount={8}
+              showStatusBadge={false}
+            />
+          ) : null}
+          {[0.55, 0.85, 1.0, 0.75, 0.45].map((scale, idx) => {
+            const barHeight = isListening
+              ? Math.max(4, Math.min(20, Math.round(4 + audioLevel * 16 * scale)))
+              : 4;
+            return (
+              <div
+                key={idx}
+                className="copilot-vu-bar"
+                style={{ height: `${barHeight}px`, transition: "height 90ms ease-out" }}
+              />
+            );
+          })}
         </div>
 
         {onClose && !embedded && (
@@ -280,7 +294,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
             <button
               type="button"
               onClick={handleSendToSearch}
-              className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] cursor-pointer"
               title="Передать текст в глобальный поиск Ctrl+K"
             >
               <Search size={12} className="text-[var(--teal)]" />
@@ -289,7 +303,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
             <button
               type="button"
               onClick={handleSendToChat}
-              className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] cursor-pointer"
               title="Передать текст в окно чата с ассистентом"
             >
               <MessageSquare size={12} className="text-[var(--teal)]" />
