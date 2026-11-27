@@ -39,6 +39,13 @@ const COMMON_PRESETS = [
 
 const AMOUNT_PRESETS = [1000, 3000, 5000, 10000, 25000, 50000, 100000];
 
+function toLocalIsoDate(date = new Date()): string {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, "0");
+	const d = String(date.getDate()).padStart(2, "0");
+	return `${y}-${m}-${d}`;
+}
+
 export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 	isOpen,
 	onClose,
@@ -48,7 +55,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 	const appLogic = useAppLogicContext();
 	const auth = appLogic.auth;
 
-	const todayIso = new Date().toISOString().slice(0, 10);
+	const todayIso = toLocalIsoDate();
 
 	const [category, setCategory] = useState<ExpenseCategory>(initialCategory);
 	const [amountRubStr, setAmountRubStr] = useState<string>("");
@@ -62,7 +69,7 @@ export const QuickExpenseModal: React.FC<QuickExpenseModalProps> = ({
 	useEffect(() => {
 		if (isOpen) {
 			setCategory(initialCategory);
-			setExpenseDate(new Date().toISOString().slice(0, 10));
+			setExpenseDate(toLocalIsoDate());
 			setAmountRubStr("");
 			setVendorName("");
 			setDescription("");

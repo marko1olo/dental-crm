@@ -8,7 +8,7 @@
  */
 
 import { kopecksToRub, parseKopecks } from "@dental/shared";
-import { and, eq, like, or, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -51,16 +51,19 @@ export async function applyCashBoxFiscalReceipt(
 		data.clientMutationId.trim().length > 0
 	) {
 		const mutationId = data.clientMutationId.trim();
+		const baseMutationId = mutationId.split("#")[0]?.trim() || mutationId;
 		const [existingPayment] = await tx
 			.select({ id: payments.id })
 			.from(payments)
 			.where(
 				and(
 					eq(payments.organizationId, orgId),
-					or(
-						eq(payments.clientMutationId, mutationId),
-						like(payments.clientMutationId, `${mutationId}:%`),
-					),
+					sql`(
+						${payments.clientMutationId} = ${mutationId}
+						OR ${payments.clientMutationId} = ${baseMutationId}
+						OR starts_with(${payments.clientMutationId}, ${`${baseMutationId}#`})
+						OR starts_with(${payments.clientMutationId}, ${`${baseMutationId}:`})
+					)`,
 				),
 			)
 			.limit(1);

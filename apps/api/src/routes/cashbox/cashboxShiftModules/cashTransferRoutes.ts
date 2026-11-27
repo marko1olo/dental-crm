@@ -11,8 +11,9 @@
  * - Safe pessimistic locking for cash drawer concurrency
  */
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { kopecksToNumericString, kopecksToRub, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { defineStreamRoute } from "../../../core/routeFactories.js";
@@ -497,4 +498,313 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 			handler: async ({ request, reply }) => handleCashWithdrawal(request, reply),
 		});
 	}
+
+	/**
+	 * 3. POST /api/cash/cash-transfer
+	 * Межкассовое перемещение средств между двумя кассами одной клиники (в одной ACID-транзакции).
+	 */
+	const cashBoxTransferBodySchema = z
+		.object({
+			fromCashBoxId: z.string().uuid("Некорректный ID исходной кассы"),
+			toCashBoxId: z.string().uuid("Некорректный ID целевой кассы"),
+			amountRub: z
+				.number()
+				.positive("Сумма перевода должна быть строго больше 0")
+				.finite(),
+			reasonText: z
+				.string()
+				.trim()
+				.min(1, "Укажите основание перемещения")
+				.max(250)
+				.default("Межкассовое перемещение средств"),
+			operatorId: z.string().uuid().optional().nullable(),
+		})
+		.strict();
+
+	const handleCashBoxTransfer = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"cash box transfer",
+		);
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
+
+		const rawKey =
+			request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
+		const idempotencyKey =
+			typeof rawKey === "string"
+				? rawKey.trim()
+				: Array.isArray(rawKey)
+					? rawKey[0]?.trim()
+					: undefined;
+		if (!idempotencyKey) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для проведения межкассового перевода обязателен заголовок Idempotency-Key (UUIDv7).",
+			});
+		}
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+
+		reply.header("Idempotency-Key", idempotencyKey);
+		reply.header("X-Idempotency-Key", idempotencyKey);
+
+		const parsed = cashBoxTransferBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры межкассового перевода.",
+				details: parsed.error.issues,
+			});
+		}
+
+		const { fromCashBoxId, toCashBoxId, amountRub, reasonText, operatorId } =
+			parsed.data;
+		if (fromCashBoxId === toCashBoxId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Нельзя выполнить перевод в ту же самую кассу.",
+			});
+		}
+
+		const amountKopecks = rublesToKopecks(amountRub);
+		if (amountKopecks <= 0) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Сумма перевода должна быть больше 0 копеек.",
+			});
+		}
+
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_box_transfer:' || ${idempotencyKey}))`,
+			);
+			await ensureOrganizationCashBoxes(tx, orgId);
+
+			const [existingOutOp] = await tx
+				.select()
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						eq(cashOperations.operationType, "transfer"),
+						sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
+					),
+				)
+				.limit(1);
+
+			if (existingOutOp) {
+				const [existingInOp] = await tx
+					.select()
+					.from(cashOperations)
+					.where(
+						and(
+							eq(cashOperations.organizationId, orgId),
+							eq(cashOperations.operationType, "transfer"),
+							sql`${cashOperations.metadata}->>'parentIdempotencyKey' = ${idempotencyKey}`,
+						),
+					)
+					.limit(1);
+				const boxes = await tx
+					.select()
+					.from(cashBoxes)
+					.where(
+						and(
+							eq(cashBoxes.organizationId, orgId),
+							inArray(cashBoxes.id, [fromCashBoxId, toCashBoxId]),
+						),
+					);
+				const fromBox = boxes.find((b) => b.id === fromCashBoxId);
+				const toBox = boxes.find((b) => b.id === toCashBoxId);
+				return {
+					kind: "ok" as const,
+					isReplay: true,
+					outOperation: existingOutOp,
+					inOperation: existingInOp ?? null,
+					fromCashBox: fromBox ?? null,
+					toCashBox: toBox ?? null,
+				};
+			}
+
+			// Deterministic lock order (ORDER BY id ASC FOR UPDATE) prevents PG 40P01 deadlocks
+			const orderedIds = [fromCashBoxId, toCashBoxId].sort();
+			const lockedBoxes = await tx
+				.select()
+				.from(cashBoxes)
+				.where(
+					and(
+						eq(cashBoxes.organizationId, orgId),
+						inArray(cashBoxes.id, orderedIds),
+					),
+				)
+				.orderBy(cashBoxes.id)
+				.for("update");
+
+			const fromBox = lockedBoxes.find((b) => b.id === fromCashBoxId);
+			const toBox = lockedBoxes.find((b) => b.id === toCashBoxId);
+			if (!fromBox || !toBox) {
+				return { kind: "box_not_found" as const };
+			}
+
+			const resolveBoxBeforeKop = (box: typeof cashBoxes.$inferSelect): number =>
+				box.balanceKopecks !== undefined &&
+				box.balanceKopecks !== null &&
+				(box.balanceKopecks !== 0 || Number(box.balanceRub || 0) === 0)
+					? Number(box.balanceKopecks)
+					: rublesToKopecks(box.balanceRub);
+
+			const fromBeforeKop = resolveBoxBeforeKop(fromBox);
+			const fromBeforeRub = kopecksToRub(fromBeforeKop);
+			if (fromBeforeKop < amountKopecks) {
+				return {
+					kind: "insufficient_funds" as const,
+					balanceBefore: fromBeforeRub,
+					requestedAmount: amountRub,
+				};
+			}
+			const fromAfterKop = fromBeforeKop - amountKopecks;
+			const fromAfterRub = kopecksToRub(fromAfterKop);
+
+			const toBeforeKop = resolveBoxBeforeKop(toBox);
+			const toAfterKop = toBeforeKop + amountKopecks;
+			const toBeforeRub = kopecksToRub(toBeforeKop);
+			const toAfterRub = kopecksToRub(toAfterKop);
+
+			const now = new Date();
+			const [updatedFromBox] = await tx
+				.update(cashBoxes)
+				.set({
+					balanceRub: fromAfterRub,
+					balanceKopecks: fromAfterKop,
+					updatedAt: now,
+				})
+				.where(and(eq(cashBoxes.id, fromBox.id), eq(cashBoxes.organizationId, orgId)))
+				.returning();
+
+			const [updatedToBox] = await tx
+				.update(cashBoxes)
+				.set({
+					balanceRub: toAfterRub,
+					balanceKopecks: toAfterKop,
+					updatedAt: now,
+				})
+				.where(and(eq(cashBoxes.id, toBox.id), eq(cashBoxes.organizationId, orgId)))
+				.returning();
+
+			const openShifts = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, orgId),
+						inArray(cashBoxShifts.cashBoxId, [fromBox.id, toBox.id]),
+						eq(cashBoxShifts.status, "open"),
+					),
+				);
+			const fromShift = openShifts.find((s) => s.cashBoxId === fromBox.id);
+			const toShift = openShifts.find((s) => s.cashBoxId === toBox.id);
+
+			const [outOperation] = await tx
+				.insert(cashOperations)
+				.values({
+					organizationId: orgId,
+					cashBoxId: fromBox.id,
+					shiftId: fromShift?.id ?? null,
+					operationType: "transfer",
+					amountRub,
+					amountKopecks,
+					balanceBeforeRub: fromBeforeRub,
+					balanceBeforeKopecks: BigInt(fromBeforeKop),
+					balanceAfterRub: fromAfterRub,
+					balanceAfterKopecks: BigInt(fromAfterKop),
+					reasonText: `${reasonText} (→ ${toBox.name})`,
+					operatorId: operatorId ?? null,
+					metadata: {
+						idempotencyKey,
+						transferDirection: "out",
+						counterpartyCashBoxId: toBox.id,
+					},
+				})
+				.returning();
+
+			const [inOperation] = await tx
+				.insert(cashOperations)
+				.values({
+					organizationId: orgId,
+					cashBoxId: toBox.id,
+					shiftId: toShift?.id ?? null,
+					operationType: "transfer",
+					amountRub,
+					amountKopecks,
+					balanceBeforeRub: toBeforeRub,
+					balanceBeforeKopecks: BigInt(toBeforeKop),
+					balanceAfterRub: toAfterRub,
+					balanceAfterKopecks: BigInt(toAfterKop),
+					reasonText: `${reasonText} (← ${fromBox.name})`,
+					operatorId: operatorId ?? null,
+					metadata: {
+						idempotencyKey: `${idempotencyKey}:in`,
+						parentIdempotencyKey: idempotencyKey,
+						transferDirection: "in",
+						counterpartyCashBoxId: fromBox.id,
+					},
+				})
+				.returning();
+
+			if (!outOperation || !inOperation || !updatedFromBox || !updatedToBox) {
+				throw new Error("Не удалось завершить межкассовое перемещение средств.");
+			}
+
+			return {
+				kind: "ok" as const,
+				isReplay: false,
+				outOperation,
+				inOperation,
+				fromCashBox: updatedFromBox,
+				toCashBox: updatedToBox,
+			};
+		});
+
+		if (result.kind === "box_not_found") {
+			return reply.code(404).send({
+				error: "CashBoxNotFound",
+				message: "Исходный или целевой кассовый счёт не найден.",
+			});
+		}
+
+		if (result.kind === "insufficient_funds") {
+			return reply.code(400).send({
+				error: "InsufficientFunds",
+				message: `Недостаточно средств в исходной кассе для перевода. Доступно: ${kopecksToNumericString(rublesToKopecks(result.balanceBefore))} ₽, запрошено: ${kopecksToNumericString(rublesToKopecks(result.requestedAmount))} ₽.`,
+			});
+		}
+
+		if (result.isReplay) {
+			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
+		}
+
+		return reply.send({
+			success: true,
+			message: `Перевод ${kopecksToNumericString(amountKopecks)} ₽ между кассами успешно выполнен.`,
+			outOperation: result.outOperation,
+			inOperation: result.inOperation,
+			fromCashBox: result.fromCashBox,
+			toCashBox: result.toCashBox,
+		});
+	};
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/cash/cash-transfer",
+		permission: "public",
+		schema: cashTransferRouteSchema,
+		handler: async ({ request, reply }) => handleCashBoxTransfer(request, reply),
+	});
 }

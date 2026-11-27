@@ -95,19 +95,27 @@ describe("54-FZ FiscalResilienceService Modular Decomposition & Anti-Double-Char
 		}
 	});
 
-	it("1. Canonical facade exports all Layer 0-3 classes, methods, and constants with 100% parity", () => {
-		assert.equal(typeof FiscalResilienceService, "function");
-		assert.equal(typeof FiscalResilienceService.processFiscalCheckout, "function");
-		assert.equal(typeof FiscalResilienceService.retryFiscalizeTransaction, "function");
-		assert.equal(typeof FiscalResilienceService.handleRetryFiscalizeRoute, "function");
-		assert.equal(typeof FiscalResilienceService.startBackgroundWorker, "function");
-		assert.equal(typeof FiscalResilienceService.stopBackgroundWorker, "function");
+	it("1. Canonical facade exposes working Layer 0-3 retry & telemetry behavior (no typeof stubs)", async () => {
+		process.env.KKM_FORCE_OFFLINE = "0";
+		process.env.KKM_OUT_OF_PAPER = "0";
 
-		assert.equal(typeof FiscalQueueManager.processFiscalCheckout, "function");
-		assert.equal(typeof FiscalHealthChecker.checkDeviceStatus, "function");
-		assert.equal(typeof FiscalHealthChecker.inspectTelemetry, "function");
-		assert.equal(typeof FiscalRetryPolicy.retryFiscalizeTransaction, "function");
-		assert.equal(typeof FiscalRetryPolicy.calculateRetryDelayMs, "function");
+		const status = await FiscalHealthChecker.checkDeviceStatus();
+		assert.equal(status.online, true);
+		assert.equal(status.paperOk, true);
+
+		const telemetry = await FiscalHealthChecker.inspectTelemetry();
+		assert.equal(telemetry.online, true);
+		assert.ok(typeof telemetry.checkedAt === "string" && telemetry.checkedAt.length > 0);
+
+		const d0 = FiscalRetryPolicy.calculateRetryDelayMs(0);
+		const d1 = FiscalRetryPolicy.calculateRetryDelayMs(1);
+		assert.ok(d1 > d0, "Backoff delay must increase with retry attempt");
+
+		assert.equal(FiscalHealthChecker.isRunning(), false);
+		FiscalResilienceService.startBackgroundWorker(ORG_ID, 60000);
+		assert.equal(FiscalHealthChecker.isRunning(), true);
+		FiscalResilienceService.stopBackgroundWorker(ORG_ID);
+		assert.equal(FiscalHealthChecker.isRunning(), false);
 	});
 
 	it("2. FiscalRetryPolicy enforces exponential backoff schedule [1s, 5s, 15s, 60s, 300s]", () => {

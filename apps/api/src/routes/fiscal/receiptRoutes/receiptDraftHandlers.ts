@@ -144,7 +144,7 @@ export async function handleFiscalValidate(
 	if (!parsed.success) {
 		return reply.status(400).send({
 			error: "ValidationError",
-			message: "Некорректные параметры фискального чека 54-ФЗ",
+			message: "Некорректные параметры кассового чека",
 			details: parsed.error.issues,
 		});
 	}

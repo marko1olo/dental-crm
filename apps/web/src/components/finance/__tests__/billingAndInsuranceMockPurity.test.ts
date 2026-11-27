@@ -9,51 +9,57 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { registerHooks } from "node:module";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { FamilyWalletModal } from "../../patients/family/FamilyWalletModal";
-import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const webRoot = path.resolve(__dirname, "../../../..");
-
-describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
-	const targetFiles = [
-		{
-			name: "DmsStudioModal.tsx",
-			relPath: "src/components/insurance/DmsStudioModal.tsx",
-		},
-		{
-			name: "FamilyWalletModal.tsx",
-			relPath: "src/components/patients/family/FamilyWalletModal.tsx",
-		},
-		{
-			name: "BankInstallmentQrModal.tsx",
-			relPath: "src/components/payments/BankInstallmentQrModal.tsx",
-		},
-	];
-
-	for (const target of targetFiles) {
-		it(`Source code purity: ${target.name} must NOT contain synthetic clown name 'Иванов Иван Иванович'`, () => {
-			const absPath = path.resolve(webRoot, target.relPath);
-			assert.ok(fs.existsSync(absPath), `File must exist at ${absPath}`);
-			const content = fs.readFileSync(absPath, "utf-8");
-			assert.equal(
-				content.includes("Иванов Иван Иванович"),
-				false,
-				`File ${target.name} must NOT contain 'Иванов Иван Иванович'`,
-			);
+if (!process.env.VITEST) {
+	try {
+		registerHooks({
+			resolve(specifier, context, nextResolve) {
+				if (specifier.endsWith(".css") || specifier.includes(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						url: "data:text/javascript," + encodeURIComponent("export default {};"),
+					};
+				}
+				return nextResolve(specifier, context);
+			},
 		});
+	} catch {
+		// Hooks already registered by runner
 	}
+}
 
-	it("DmsStudioModal: verified pure without synthetic patient mock fallback", () => {
-		const absPath = path.resolve(webRoot, "src/components/insurance/DmsStudioModal.tsx");
-		const content = fs.readFileSync(absPath, "utf-8");
-		assert.equal(content.includes("Иванов Иван Иванович"), false, "DmsStudioModal must not contain synthetic patient name");
+const { FamilyWalletModal } = await import("../../patients/family/FamilyWalletModal.js");
+const { BankInstallmentQrModal } = await import("../../payments/BankInstallmentQrModal.js");
+const { DmsStudioModal } = await import("../../insurance/DmsStudioModal.js");
+const { PatientInstallmentsModal } = await import("../../billing/PatientInstallmentsModal.js");
+
+describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity (Real Component Renders)", () => {
+	it("DmsStudioModal: renders clean empty state without synthetic clown name 'Иванов Иван Иванович'", () => {
+		const html = renderToString(
+			React.createElement(DmsStudioModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+		assert.equal(html.includes("Иванов Иван Иванович"), false, "DmsStudioModal must not render synthetic patient name");
+		assert.ok(html.length > 50, "DmsStudioModal must render real markup");
+	});
+
+	it("PatientInstallmentsModal: renders honest empty state without fake aligners preset when no server plan exists", () => {
+		const html = renderToString(
+			React.createElement(PatientInstallmentsModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientName: "Кузнецова Ольга",
+			}),
+		);
+		assert.ok(html.includes('data-testid="installments-empty-state"'), "Must render honest empty state without fabricated 360 000 ₽ aligners preset");
+		assert.equal(html.includes("Элайнеры Spark"), false);
+		assert.equal(html.includes("Иванов Иван Иванович"), false);
 	});
 
 	it("FamilyWalletModal: renders with clean default empty state without synthetic Ivanov family members", () => {

@@ -18,6 +18,53 @@ import {
 	safeCheckDeviceStatus,
 } from "./queuePayloadUtils.js";
 
+export const MAX_FISCAL_RETRIES = 10;
+
+function isNextRetryDue(payloadJson: unknown, nowMs: number): boolean {
+	if (!payloadJson || typeof payloadJson !== "object" || !("nextRetryAt" in payloadJson)) {
+		return true;
+	}
+	const raw = payloadJson.nextRetryAt;
+	if (typeof raw !== "string" || !raw) return true;
+	const ts = Date.parse(raw);
+	if (Number.isNaN(ts)) return true;
+	return ts <= nowMs;
+}
+
+function buildRetryFailurePatch(
+	payloadJson: unknown,
+	currentRetryCount: number,
+	now: Date,
+): {
+	status: "hardware_offline" | "dead_letter";
+	payloadJson: Record<string, unknown>;
+} {
+	const nextRetryCount = currentRetryCount + 1;
+	const isDeadLetter = nextRetryCount >= MAX_FISCAL_RETRIES;
+	const nextRetryAt = isDeadLetter
+		? null
+		: new Date(
+				now.getTime() +
+					FiscalQueueRetryWorker.calculateNextAttemptDelayMs(
+						nextRetryCount,
+						5000,
+						300000,
+						true,
+					),
+			).toISOString();
+	const basePayload =
+		typeof payloadJson === "object" && payloadJson !== null
+			? (payloadJson as Record<string, unknown>)
+			: {};
+	return {
+		status: isDeadLetter ? "dead_letter" : "hardware_offline",
+		payloadJson: {
+			...basePayload,
+			nextRetryAt,
+		},
+	};
+}
+
 export class FiscalQueueRetryWorker {
 	private static orgTimers = new Map<string, NodeJS.Timeout>();
 	public static logger?: {
@@ -59,7 +106,7 @@ export class FiscalQueueRetryWorker {
 		config?: Partial<KktLanConfig>,
 	): Promise<{
 		success: boolean;
-		status: "printed" | "hardware_offline";
+		status: "printed" | "hardware_offline" | "dead_letter";
 		item: typeof fiscalReceiptQueue.$inferSelect | null;
 		retryCount: number;
 		error?: string | null | undefined;
@@ -155,13 +202,19 @@ export class FiscalQueueRetryWorker {
 					? "KKT connection timed out or printer offline in clinic LAN"
 					: "Отсутствует чековая лента (Out of Paper)");
 
+			const failurePatch = buildRetryFailurePatch(
+				queueItem.payloadJson,
+				queueItem.retryCount ?? 0,
+				now,
+			);
 			const updated = await withTenantCtx(organizationId, async (tx) => {
 				const targetDb = tx ?? db;
 				const [row] = await targetDb
 					.update(fiscalReceiptQueue)
 					.set({
-						status: "hardware_offline",
+						status: failurePatch.status,
 						lastError: errorMessage,
+						payloadJson: failurePatch.payloadJson,
 						retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 						updatedAt: now,
 					})
@@ -177,7 +230,7 @@ export class FiscalQueueRetryWorker {
 
 			return {
 				success: false,
-				status: "hardware_offline",
+				status: failurePatch.status,
 				item: updated,
 				retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
 				error: errorMessage,
@@ -204,11 +257,17 @@ export class FiscalQueueRetryWorker {
 
 			if (!printResult.success || printResult.status === "hardware_offline") {
 				const errorText = printResult.errorMessage || "KKT print execution failed";
+				const failurePatch = buildRetryFailurePatch(
+					queueItem.payloadJson,
+					queueItem.retryCount ?? 0,
+					now,
+				);
 				const [updated] = await targetDb
 					.update(fiscalReceiptQueue)
 					.set({
-						status: "hardware_offline",
+						status: failurePatch.status,
 						lastError: errorText,
+						payloadJson: failurePatch.payloadJson,
 						retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 						updatedAt: now,
 					})
@@ -222,7 +281,7 @@ export class FiscalQueueRetryWorker {
 
 				return {
 					success: false,
-					status: "hardware_offline",
+					status: failurePatch.status,
 					item: updated || null,
 					retryCount: updated?.retryCount ?? queueItem.retryCount + 1,
 					error: errorText,
@@ -335,7 +394,34 @@ export class FiscalQueueRetryWorker {
 					: selectQuery
 			);
 
-			const eligible = rows.filter((row) => !isFreshPrinting(row, claimTime.getTime()));
+			const exceededRows = rows.filter(
+				(row) => (row.retryCount ?? 0) >= MAX_FISCAL_RETRIES,
+			);
+			if (exceededRows.length > 0) {
+				await targetDb
+					.update(fiscalReceiptQueue)
+					.set({
+						status: "dead_letter",
+						lastError: "Превышен лимит попыток фискализации (dead_letter)",
+						updatedAt: claimTime,
+					})
+					.where(
+						and(
+							inArray(
+								fiscalReceiptQueue.id,
+								exceededRows.map((row) => row.id),
+							),
+							eq(fiscalReceiptQueue.organizationId, organizationId),
+						),
+					);
+			}
+
+			const eligible = rows.filter(
+				(row) =>
+					(row.retryCount ?? 0) < MAX_FISCAL_RETRIES &&
+					!isFreshPrinting(row, claimTime.getTime()) &&
+					isNextRetryDue(row.payloadJson, claimTime.getTime()),
+			);
 			if (eligible.length === 0) {
 				return [];
 			}
@@ -379,14 +465,20 @@ export class FiscalQueueRetryWorker {
 					(!deviceStatus.online
 						? "KKT hardware offline or connection timed out"
 						: "Отсутствует чековая лента (Out of Paper)");
+				const failurePatch = buildRetryFailurePatch(
+					item.payloadJson,
+					item.retryCount ?? 0,
+					now,
+				);
 
 				await withTenantCtx(organizationId, async (tx) => {
 					const targetDb = tx ?? db;
 					await targetDb
 						.update(fiscalReceiptQueue)
 						.set({
-							status: "hardware_offline",
+							status: failurePatch.status,
 							lastError: offlineError,
+							payloadJson: failurePatch.payloadJson,
 							retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 							updatedAt: now,
 						})
@@ -419,11 +511,17 @@ export class FiscalQueueRetryWorker {
 			await withTenantCtx(organizationId, async (tx) => {
 				const targetDb = tx ?? db;
 				if (!printResult.success || printResult.status === "hardware_offline") {
+					const failurePatch = buildRetryFailurePatch(
+						item.payloadJson,
+						item.retryCount ?? 0,
+						now,
+					);
 					await targetDb
 						.update(fiscalReceiptQueue)
 						.set({
-							status: "hardware_offline",
+							status: failurePatch.status,
 							lastError: printResult.errorMessage || "KKT print execution failed",
+							payloadJson: failurePatch.payloadJson,
 							retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 							updatedAt: now,
 						})

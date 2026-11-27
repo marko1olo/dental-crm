@@ -61,7 +61,7 @@ export interface FiscalCheckoutResult {
 
 export interface RetryFiscalizeResult {
 	success: boolean;
-	status: "printed" | "hardware_offline" | "already_fiscalized";
+	status: "printed" | "hardware_offline" | "already_fiscalized" | "dead_letter";
 	paymentId: string;
 	queueItemId?: string | undefined;
 	fiscalReceiptNumber?: string | undefined;

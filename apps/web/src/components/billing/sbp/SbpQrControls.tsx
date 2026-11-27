@@ -53,10 +53,10 @@ export const SbpQrControls: React.FC<SbpQrControlsProps> = ({
 						onClick={onManualConfirm}
 						className="w-full sm:flex-1 min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
 						data-testid="btn-confirm-sbp-payment"
-						title="Подтвердить зачисление средств на расчётный счёт клиники. Быстрое подтверждение — клавишей Enter"
+						title="Проверить зачисление средств банком и подтвердить оплату. Быстрая проверка — клавишей Enter"
 					>
 						<Check size={15} className="stroke-[2.5]" />
-						<span className="truncate">Деньги поступили на счёт клиники</span>
+						<span className="truncate">{isCheckingSbp ? "Проверяем поступление..." : "Проверить и подтвердить оплату"}</span>
 						<kbd className="hidden md:inline-block ml-1 px-1 py-0.5 text-[9px] font-mono bg-black/25 rounded border border-white/30">Enter</kbd>
 					</button>
 				)}
@@ -81,7 +81,7 @@ export const SbpQrControls: React.FC<SbpQrControlsProps> = ({
 				>
 					{isCopied ? (
 						<>
-							<Check size={13} className="text-[var(--success,var(--emerald,#16a34a))]" />
+							<Check size={13} className="text-[var(--success)]" />
 							<span>Скопировано</span>
 						</>
 					) : (

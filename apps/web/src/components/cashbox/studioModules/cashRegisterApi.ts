@@ -251,7 +251,9 @@ export async function toggleCashboxShiftApi(action: "open" | "close", cashierFul
 			method: "POST",
 			headers,
 			body: JSON.stringify(
-				action === "close" ? { force: true, cashierFullName } : { openedByUserId: undefined },
+				action === "close"
+					? { force: true, cashierFullName }
+					: { cashierFullName, openedByUserId: undefined },
 			),
 		},
 	);
@@ -264,6 +266,23 @@ export async function toggleCashboxShiftApi(action: "open" | "close", cashierFul
 	}
 	const okRaw = await parseJsonLogged<{ data?: unknown }>(res, `shift:${action}:ok`);
 	void okRaw?.data;
+}
+
+export async function printFiscalXReportApi(cashierFullName: string): Promise<void> {
+	const headers = denteClinicalMutationHeaders({
+		"Content-Type": "application/json",
+		"Idempotency-Key": generateUuidV7(),
+	});
+	const res = await fetch("/api/fiscal/x-report", {
+		method: "POST",
+		headers,
+		body: JSON.stringify({ cashierFullName }),
+	});
+	if (!res.ok) {
+		const errRaw = await parseJsonLogged<{ data?: { message?: string }; message?: string }>(res, "x-report:error");
+		const errBody = errRaw?.data ?? errRaw;
+		throw new Error(errBody?.message || `Ошибка формирования X-отчёта (код ${res.status})`);
+	}
 }
 
 export function buildPaymentPayload(params: {

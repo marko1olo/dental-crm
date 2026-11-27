@@ -13,6 +13,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { createAppointmentSchema } from "@dental/shared";
 import {
 	validateBuyerInn,
 	validateBuyerInn54Fz,
@@ -278,50 +279,29 @@ describe("1-Click Fast Payment Presets & Cash Change (Mandates 8e, 8k, 8n)", () 
 });
 
 describe("Registratura & Schedule Assistant Autonomy (Mandates 8e Item 8 & 8n)", () => {
-	it("Appointment booking draft allows assistantUserId to be null or empty string without errors", () => {
-		interface AppointmentDraft {
-			patientId: string;
-			doctorUserId: string;
-			assistantUserId?: string | null;
-			roomId: string;
-			startAt: string;
-			endAt: string;
-		}
+	it("createAppointmentSchema accepts null or undefined assistantUserId without errors", () => {
+		const basePayload = {
+			patientId: "01900000-0000-7000-8000-000000000101",
+			doctorUserId: "01900000-0000-7000-8000-000000000102",
+			roomId: "01900000-0000-7000-8000-000000000103",
+			startsAt: "2026-09-06T10:00:00.000Z",
+			endsAt: "2026-09-06T11:00:00.000Z",
+		};
 
-		const draftWithoutAssistant: AppointmentDraft = {
-			patientId: "pat-101",
-			doctorUserId: "doc-001",
+		const withNull = createAppointmentSchema.safeParse({
+			...basePayload,
 			assistantUserId: null,
-			roomId: "chair-1",
-			startAt: "2026-09-06T10:00:00.000Z",
-			endAt: "2026-09-06T11:00:00.000Z",
-		};
+		});
+		assert.equal(withNull.success, true, "Real Zod schema must accept assistantUserId: null");
 
-		// Required fields validator function simulating appointment form checks
-		const validateRequiredFields = (draft: AppointmentDraft) => {
-			const missing: string[] = [];
-			if (!draft.patientId) missing.push("patientId");
-			if (!draft.doctorUserId) missing.push("doctorUserId");
-			if (!draft.roomId) missing.push("roomId");
-			if (!draft.startAt) missing.push("startAt");
-			// assistantUserId is STRICTLY OPTIONAL under Mandate 8e Item 8
-			return { isValid: missing.length === 0, missing };
-		};
+		const withUndefined = createAppointmentSchema.safeParse(basePayload);
+		assert.equal(withUndefined.success, true, "Real Zod schema must accept omitted assistantUserId");
 
-		const validation = validateRequiredFields(draftWithoutAssistant);
-		assert.equal(validation.isValid, true);
-		assert.equal(validation.missing.length, 0);
-
-		// Solo doctor mode normalization
-		const isSoloDoctor = true;
-		const normalizedAssistant = isSoloDoctor ? null : (draftWithoutAssistant.assistantUserId || null);
-		assert.equal(normalizedAssistant, null);
-	});
-
-	it("Normalizes empty assistant string to null for clean PostgreSQL storage", () => {
-		const rawAssistantInput = "   ";
-		const cleaned = rawAssistantInput.trim() || null;
-		assert.equal(cleaned, null);
+		const missingTime = createAppointmentSchema.safeParse({
+			...basePayload,
+			startsAt: "",
+		});
+		assert.equal(missingTime.success, false, "Real Zod schema must reject empty startsAt");
 	});
 });
 

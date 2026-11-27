@@ -57,7 +57,7 @@ export const BankInstallmentFooter: React.FC<BankInstallmentFooterProps> = ({
 						type="button"
 						onClick={onApprove}
 						data-testid="approve-installment-btn"
-						className="min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] shadow-sm transition cursor-pointer"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 flex items-center justify-center px-4 rounded-lg text-sm font-medium text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm transition cursor-pointer"
 					>
 						Подтвердить одобрение банком
 					</button>
@@ -65,7 +65,7 @@ export const BankInstallmentFooter: React.FC<BankInstallmentFooterProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--border,#cbd5e1)] transition cursor-pointer"
+					className="min-h-[44px] sm:min-h-[36px] sm:h-9 flex items-center justify-center px-3.5 rounded-lg text-sm font-medium text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] transition cursor-pointer"
 				>
 					Закрыть
 				</button>

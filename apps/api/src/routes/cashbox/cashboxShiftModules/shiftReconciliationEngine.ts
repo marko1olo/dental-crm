@@ -36,8 +36,10 @@ export interface CalculatedShiftTotals {
 	incomeElectronicRub: number;
 	incomeSbpRub: number;
 	advanceOffsetRub: number;
+	advanceDepositsRub: number;
 	insuranceTotalRub: number;
 	returnTotalRub: number;
+	operationalExpenseRub: number;
 	netRevenueRub: number;
 	expectedCashInDrawerRub: number;
 	totalIntroductionsRub: number;
@@ -80,23 +82,66 @@ export async function calculateShiftTenderTotals(
 	const shiftStart = shift.openedAt;
 	const shiftEnd = now;
 
-	// 1. Fetch cash operations tied to this shift or created during shift timeframe
-	const ops = await tx
+	// 1. Fetch cash operations created during shift timeframe so we can both
+	//    aggregate this box's ops and exclude payments attributed to other cash boxes.
+	const orgShiftOps = await tx
 		.select()
 		.from(cashOperations)
 		.where(
 			and(
 				eq(cashOperations.organizationId, orgId),
-				eq(cashOperations.cashBoxId, shift.cashBoxId),
 				gte(cashOperations.createdAt, shiftStart),
 				lte(cashOperations.createdAt, shiftEnd),
 			),
 		);
 
+	const paymentBoxAttribution = new Map<string, string>();
+	const mutationBoxAttribution = new Map<string, string>();
+	const advanceDepositPaymentIds = new Set<string>();
+	const advanceDepositMutationIds = new Set<string>();
+
+	const ops: typeof orgShiftOps = [];
+	for (const op of orgShiftOps) {
+		const meta =
+			op.metadata && typeof op.metadata === "object"
+				? (op.metadata as Record<string, unknown>)
+				: null;
+		const linkedPaymentId =
+			typeof meta?.paymentId === "string" && meta.paymentId.trim()
+				? meta.paymentId.trim()
+				: null;
+		const linkedMutationId =
+			typeof meta?.idempotencyKey === "string" && meta.idempotencyKey.trim()
+				? meta.idempotencyKey.trim()
+				: typeof meta?.clientMutationId === "string" && meta.clientMutationId.trim()
+					? meta.clientMutationId.trim()
+					: null;
+		const isAdvanceDepositMeta =
+			meta?.isAdvanceDeposit === true || typeof meta?.depositTagId === "string";
+
+		if (op.cashBoxId) {
+			if (linkedPaymentId) {
+				paymentBoxAttribution.set(linkedPaymentId, op.cashBoxId);
+			}
+			if (linkedMutationId) {
+				mutationBoxAttribution.set(linkedMutationId, op.cashBoxId);
+			}
+		}
+		if (isAdvanceDepositMeta) {
+			if (linkedPaymentId) advanceDepositPaymentIds.add(linkedPaymentId);
+			if (linkedMutationId) advanceDepositMutationIds.add(linkedMutationId);
+		}
+		if (!op.cashBoxId || op.cashBoxId === shift.cashBoxId) {
+			ops.push(op);
+		}
+	}
+
 	let totalIntroductionsKop = 0;
 	let totalWithdrawalsKop = 0;
 	let opsIncomeCashKop = 0;
-	let opsExpenseCashKop = 0;
+	let opsAdvanceDepositCashKop = 0;
+	let opsReturnCashKop = 0;
+	let opsOperationalExpenseKop = 0;
 
 	for (const op of ops) {
 		const amtKop =
@@ -108,27 +153,49 @@ export async function calculateShiftTenderTotals(
 				? (op.metadata as Record<string, unknown>)
 				: null;
 		const isAdvanceOffsetOp = meta?.isAdvanceOffset === true;
+		const isAdvanceDepositOp =
+			meta?.isAdvanceDeposit === true || typeof meta?.depositTagId === "string";
 		const isDepositRefundOp = meta?.isDepositRefund === true;
 		const isDmsOp = meta?.tenderType === "dms";
+		const catalogAlias = typeof meta?.catalogAlias === "string" ? meta.catalogAlias : "";
+		const isExplicitReturnOp =
+			op.operationType === "income_return" ||
+			meta?.isRefund === true ||
+			meta?.refundId != null ||
+			meta?.refundCashKopecks != null ||
+			meta?.refundElectronicKopecks != null ||
+			catalogAlias === "return_appointment" ||
+			catalogAlias === "return_advance" ||
+			catalogAlias === "return_product" ||
+			(typeof op.reasonText === "string" &&
+				op.reasonText.trim().toLowerCase().startsWith("возврат"));
 
 		if (op.operationType === "introduction") {
 			totalIntroductionsKop += amtKop;
 		} else if (op.operationType === "withdrawal") {
 			totalWithdrawalsKop += amtKop;
 		} else if (op.operationType === "income") {
-			if (!isAdvanceOffsetOp && !isDmsOp) {
+			if (isAdvanceDepositOp) {
+				opsAdvanceDepositCashKop += amtKop;
+			} else if (!isAdvanceOffsetOp && !isDmsOp) {
 				opsIncomeCashKop += amtKop;
 			}
 		} else if (op.operationType === "expense" || op.operationType === "income_return") {
 			if (!isDepositRefundOp) {
-				opsExpenseCashKop += amtKop;
+				if (isExplicitReturnOp) {
+					opsReturnCashKop += amtKop;
+				} else {
+					opsOperationalExpenseKop += amtKop;
+				}
 			}
 		}
 	}
 
 	// 2. [ANL-03] Fetch payments made in this organization during shift timeframe with strict cashbox isolation
 	const boxType = targetBox?.type || "main";
-	const isCashlessBox = boxType === "cashless" || targetBox?.isCashless === true;
+	const isSbpBox = boxType === "sbp";
+	const isCashlessBox =
+		boxType === "cashless" || isSbpBox || targetBox?.isCashless === true;
 	const isMainBox = boxType === "main";
 	const isExtraBox = boxType === "extra";
 	const isDmsBox = boxType === "dms";
@@ -139,6 +206,8 @@ export async function calculateShiftTenderTotals(
 	let cardKop = 0;
 	let sbpKop = 0;
 	let advanceKop = 0;
+	let advanceDepositTotalKop = 0;
+	let advanceDepositCashKop = 0;
 	let insuranceKop = 0;
 	let returnKop = 0;
 
@@ -157,30 +226,78 @@ export async function calculateShiftTenderTotals(
 			);
 
 		for (const p of shiftPayments) {
+			const attributedBoxId =
+				(p.id ? paymentBoxAttribution.get(p.id) : undefined) ??
+				(p.clientMutationId ? mutationBoxAttribution.get(p.clientMutationId) : undefined);
+			if (attributedBoxId && attributedBoxId !== shift.cashBoxId) {
+				continue;
+			}
+
 			const amtKop =
 				p.amountKopecks !== undefined && p.amountKopecks !== null && p.amountKopecks !== 0n
 					? Number(p.amountKopecks)
 					: rubToKopecks(p.amountRub);
-			// Negative ledger rows (created by refundExecutionEngine) represent return outflows already captured in opsExpenseCashKop.
+			// Negative ledger rows represent return outflows already captured in opsReturnCashKop.
 			if (amtKop <= 0) {
 				continue;
 			}
-			const canonicalTender = normalizeTenderType(p.method);
 
-			if (canonicalTender === "cash") {
-				// Наличные учитываются ТОЛЬКО в кассе main
-				if (isMainBox) {
+			const fiscalMeta =
+				p.fiscalReceipt && typeof p.fiscalReceipt === "object"
+					? (p.fiscalReceipt as Record<string, unknown>)
+					: null;
+			const isAdvanceDepositPayment =
+				fiscalMeta?.calculationMethod === "advance" ||
+				fiscalMeta?.isAdvanceDeposit === true ||
+				fiscalMeta?.method === "advance" ||
+				(p.id ? advanceDepositPaymentIds.has(p.id) : false) ||
+				(p.clientMutationId ? advanceDepositMutationIds.has(p.clientMutationId) : false) ||
+				(p.documentId == null &&
+					typeof p.note === "string" &&
+					p.note.toLowerCase().includes("внесение аванса"));
+
+			const canonicalTender = normalizeTenderType(p.method);
+			const isAdvanceOffsetPayment =
+				Number(fiscalMeta?.advanceOffsetKopecks ?? 0) > 0 ||
+				fiscalMeta?.isAdvanceOffset === true ||
+				canonicalTender === "deposit" ||
+				canonicalTender === "family_wallet" ||
+				(p.method === "other" &&
+					typeof p.note === "string" &&
+					(p.note.toLowerCase().includes("зачет") ||
+						p.note.toLowerCase().includes("зачёт")));
+
+			if (isAdvanceDepositPayment) {
+				if (
+					(canonicalTender === "cash" && isMainBox) ||
+					(canonicalTender === "sbp" && isCashlessBox) ||
+					((canonicalTender === "card" || canonicalTender === "bank_transfer") &&
+						isCashlessBox &&
+						!isSbpBox) ||
+					(isExtraBox && attributedBoxId === shift.cashBoxId)
+				) {
+					advanceDepositTotalKop += amtKop;
+					if (canonicalTender === "cash" && (isMainBox || isExtraBox)) {
+						advanceDepositCashKop += amtKop;
+					}
+				}
+				continue;
+			}
+
+			if (isAdvanceOffsetPayment) {
+				// Зачёт аванса учитывается в безналичном/основном отчёте реализации, не дублируя кассу
+				if (isCashlessBox && !isSbpBox) {
+					advanceKop += amtKop;
+				}
+			} else if (canonicalTender === "cash") {
+				// Наличные учитываются ТОЛЬКО в кассе main (или явно привязанной к этой кассе операции)
+				if (isMainBox || (isExtraBox && attributedBoxId === shift.cashBoxId)) {
 					cashKop += amtKop;
 				}
 			} else if (canonicalTender === "sbp") {
-				// Безналичные СБП учитываются ТОЛЬКО в безналичной кассе
+				// Безналичные СБП учитываются в кассе СБП / безналичной кассе
 				if (isCashlessBox) {
 					sbpKop += amtKop;
-				}
-			} else if (canonicalTender === "deposit" || canonicalTender === "family_wallet") {
-				// Зачёт аванса учитывается ТОЛЬКО в безналичной кассе
-				if (isCashlessBox) {
-					advanceKop += amtKop;
 				}
 			} else if (canonicalTender === "insurance") {
 				// Страховые выплаты ДМС учитываются в кассе ДМС
@@ -189,12 +306,12 @@ export async function calculateShiftTenderTotals(
 				}
 			} else if (canonicalTender === "bank_transfer") {
 				// Банковский перевод на р/с
-				if (isAccountBox || isCashlessBox) {
+				if (isAccountBox || (isCashlessBox && !isSbpBox)) {
 					cardKop += amtKop;
 				}
 			} else {
 				// Эквайринг карты / прочие электронные платежи
-				if (isCashlessBox) {
+				if (isCashlessBox && !isSbpBox) {
 					cardKop += amtKop;
 				}
 			}
@@ -204,22 +321,32 @@ export async function calculateShiftTenderTotals(
 	// Для дополнительной кассы филиала (extra) наличный приход берется строго из ее собственных операций ops
 	if (isExtraBox) {
 		cashKop = opsIncomeCashKop;
-	} else if (isMainBox && opsIncomeCashKop > cashKop) {
-		// If cash operations had direct cash incomes not registered in payments, add them
-		cashKop = opsIncomeCashKop;
+		advanceDepositCashKop = Math.max(advanceDepositCashKop, opsAdvanceDepositCashKop);
+	} else if (isMainBox) {
+		if (opsIncomeCashKop > cashKop) {
+			cashKop = opsIncomeCashKop;
+		}
+		if (opsAdvanceDepositCashKop > advanceDepositCashKop) {
+			advanceDepositCashKop = opsAdvanceDepositCashKop;
+		}
+		if (advanceDepositCashKop > advanceDepositTotalKop) {
+			advanceDepositTotalKop = advanceDepositCashKop;
+		}
 	}
 
-	// Return operations recorded as refund/expense
-	if (opsExpenseCashKop > 0 && (isMainBox || isExtraBox || isCashlessBox)) {
-		returnKop = opsExpenseCashKop;
+	// Only explicit return/refund operations belong in returnKop (host/operational expenses stay separate)
+	if (opsReturnCashKop > 0 && (isMainBox || isExtraBox || isCashlessBox)) {
+		returnKop = opsReturnCashKop;
 	}
 
 	const incomeCashRub = kopecksToRub(cashKop);
 	const incomeElectronicRub = kopecksToRub(cardKop);
 	const incomeSbpRub = kopecksToRub(sbpKop);
 	const advanceOffsetRub = kopecksToRub(advanceKop);
+	const advanceDepositsRub = kopecksToRub(advanceDepositTotalKop);
 	const insuranceTotalRub = kopecksToRub(insuranceKop);
 	const returnTotalRub = kopecksToRub(returnKop);
+	const operationalExpenseRub = kopecksToRub(opsOperationalExpenseKop);
 	const totalIntroductionsRub = kopecksToRub(totalIntroductionsKop);
 	const totalWithdrawalsRub = kopecksToRub(totalWithdrawalsKop);
 
@@ -227,13 +354,19 @@ export async function calculateShiftTenderTotals(
 		cashKop + cardKop + sbpKop + advanceKop + insuranceKop - returnKop,
 	);
 
-	// In main cash box, expected cash = start + cashIncome + introductions - withdrawals - returns
+	// Expected physical cash in drawer = start + cashIncome + cashAdvanceDeposits + introductions - withdrawals - operationalExpenses - cashReturns
 	const startKop =
 		shift.startBalanceKopecks !== undefined && shift.startBalanceKopecks !== null && shift.startBalanceKopecks !== 0
 			? Number(shift.startBalanceKopecks)
 			: rubToKopecks(shift.startBalanceRub);
 	const expectedCashKop =
-		startKop + cashKop + totalIntroductionsKop - totalWithdrawalsKop - returnKop;
+		startKop +
+		cashKop +
+		advanceDepositCashKop +
+		totalIntroductionsKop -
+		totalWithdrawalsKop -
+		opsOperationalExpenseKop -
+		returnKop;
 	const expectedCashInDrawerRub = kopecksToRub(expectedCashKop);
 
 	return {
@@ -241,8 +374,10 @@ export async function calculateShiftTenderTotals(
 		incomeElectronicRub,
 		incomeSbpRub,
 		advanceOffsetRub,
+		advanceDepositsRub,
 		insuranceTotalRub,
 		returnTotalRub,
+		operationalExpenseRub,
 		netRevenueRub,
 		expectedCashInDrawerRub: targetBox?.type === "main" ? expectedCashInDrawerRub : targetBox?.balanceRub ?? 0,
 		totalIntroductionsRub,
@@ -415,8 +550,11 @@ export async function reconcileSingleShift(
 		cashierFullName: input.cashierFullName ?? null,
 		startingBalanceRub: shift.startBalanceRub,
 		finalBalanceRub,
-		incomeTotalRub: shift.incomeTotalRub,
-		expenseTotalRub: shift.expenseTotalRub,
+		incomeTotalRub:
+			netRevenueRub + returnTotalRub > 0
+				? kopecksToRub(rubToKopecks(netRevenueRub) + rubToKopecks(returnTotalRub))
+				: shift.incomeTotalRub,
+		expenseTotalRub: returnTotalRub > 0 ? returnTotalRub : shift.expenseTotalRub,
 		countedCashRub,
 		incomeCashRub,
 		incomeElectronicRub,

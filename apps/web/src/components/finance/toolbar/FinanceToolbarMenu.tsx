@@ -1,6 +1,8 @@
-import React from "react";
-import type { StaffRole } from "@dental/shared";
+import React, { useRef } from "react";
+import { generateUuidV7, type StaffRole } from "@dental/shared";
 import { MoreHorizontal } from "lucide-react";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { showToast } from "../../GlobalToast";
 import { FinanceToolbarMenuItems } from "./FinanceToolbarMenuItems.js";
 
 export interface FinanceToolbarMenuProps {
@@ -16,6 +18,7 @@ export interface FinanceToolbarMenuProps {
 	readonly onOpenT13Timesheet?: (() => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenSplitPayment?: (() => void) | undefined;
+	readonly onOpenCashFlow?: (() => void) | undefined;
 	readonly onOpenAccountingExport?: (() => void) | undefined;
 	readonly isCashShiftOpen: boolean;
 	readonly onToggleCashShift: () => void;
@@ -23,8 +26,56 @@ export interface FinanceToolbarMenuProps {
 }
 
 export function FinanceToolbarMenu(p: FinanceToolbarMenuProps): React.JSX.Element {
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const handleUploadBankStatementFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		try {
+			const content = await file.text();
+			const response = await fetch("/api/finance/bank-statements/upload", {
+				method: "POST",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({ content }),
+			});
+
+			if (!response.ok) {
+				const errJson = (await response.json().catch(() => null)) as { message?: string } | null;
+				throw new Error(errJson?.message || `Ошибка сервера: ${response.status}`);
+			}
+
+			const rawJson = (await response.json()) as {
+				data?: { count?: number; totalReceivedRub?: number };
+				count?: number;
+				totalReceivedRub?: number;
+			};
+			const data = rawJson?.data ?? rawJson;
+			showToast(
+				`Выписка 1С загружена: ${data?.count ?? 0} платежей на сумму ${data?.totalReceivedRub ?? 0} ₽`,
+				"success",
+			);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось разобрать файл выписки 1С";
+			showToast(msg, "error");
+		} finally {
+			if (e.target) e.target.value = "";
+		}
+	};
+
 	return (
 		<div className="relative shrink-0">
+			<input
+				type="file"
+				ref={fileInputRef}
+				accept=".txt,.csv"
+				className="hidden"
+				aria-hidden="true"
+				onChange={handleUploadBankStatementFile}
+			/>
 			<button
 				type="button"
 				onClick={p.onToggleFinanceOptions}
@@ -41,7 +92,10 @@ export function FinanceToolbarMenu(p: FinanceToolbarMenuProps): React.JSX.Elemen
 					className="absolute right-0 top-full mt-1 w-56 py-1.5 px-1 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 flex flex-col gap-1 text-left"
 					role="menu"
 				>
-					<FinanceToolbarMenuItems {...p} />
+					<FinanceToolbarMenuItems
+						{...p}
+						onTriggerBankStatementUpload={() => fileInputRef.current?.click()}
+					/>
 				</div>
 			)}
 		</div>

@@ -55,7 +55,13 @@
 	body:has([data-testid="refund-service-modal"]) .mobile-tab-bar,
 	body:has([data-testid="refund-service-modal"]) .dnt-bottom-nav,
 	body:has(.emr-studio-backdrop) .mobile-tab-bar,
-	body:has(.emr-studio-backdrop) .dnt-bottom-nav {
+	body:has(.emr-studio-backdrop) .dnt-bottom-nav,
+	body:has([data-testid="cash-register-studio-modal"]) .mobile-tab-bar,
+	body:has([data-testid="cash-register-studio-modal"]) .dnt-bottom-nav,
+	body:has([data-testid="cash-flow-modal"]) .mobile-tab-bar,
+	body:has([data-testid="cash-flow-modal"]) .dnt-bottom-nav,
+	body:has([data-testid="patient-installments-overlay"]) .mobile-tab-bar,
+	body:has([data-testid="patient-installments-overlay"]) .dnt-bottom-nav {
 		display: none !important;
 	}
 

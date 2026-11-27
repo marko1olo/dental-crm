@@ -105,8 +105,8 @@ export class FiscalRetryPolicy {
 				queueItem = q || null;
 			}
 
-			const targetPaymentId = matchedPayment?.id || queueItem?.paymentId;
-			if (!targetPaymentId) {
+			const targetPaymentId = matchedPayment?.id || queueItem?.paymentId || null;
+			if (!targetPaymentId && !queueItem) {
 				const notFoundErr = Object.assign(
 					new Error("Payment or transaction not found for retry-fiscalize"),
 					{ statusCode: 404 },
@@ -153,7 +153,7 @@ export class FiscalRetryPolicy {
 			return {
 				success: true,
 				status: "already_fiscalized",
-				paymentId: preflight.targetPaymentId,
+				paymentId: preflight.targetPaymentId ?? preflight.queueItem?.id ?? transactionOrPaymentId,
 				queueItemId: preflight.queueItem?.id,
 				fiscalReceiptNumber: preflight.fiscalReceiptNumber,
 				fiscalSign: preflight.fiscalSign,
@@ -164,6 +164,9 @@ export class FiscalRetryPolicy {
 		}
 
 		const { targetPaymentId, queueItem } = preflight;
+		const nextRetryCount = (queueItem?.retryCount ?? 0) + 1;
+		const isDeadLetter = nextRetryCount >= 10;
+		const failureStatus = isDeadLetter ? ("dead_letter" as const) : ("hardware_offline" as const);
 
 		// Phase 2: KKT network checks & printing strictly OUTSIDE PostgreSQL transaction
 		if (!deviceStatus.online || !deviceStatus.paperOk) {
@@ -179,7 +182,7 @@ export class FiscalRetryPolicy {
 					await targetDb
 						.update(fiscalReceiptQueue)
 						.set({
-							status: "hardware_offline",
+							status: failureStatus,
 							lastError: offlineMsg,
 							retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 							updatedAt: now,
@@ -195,8 +198,8 @@ export class FiscalRetryPolicy {
 
 			return {
 				success: false,
-				status: "hardware_offline",
-				paymentId: targetPaymentId,
+				status: failureStatus,
+				paymentId: targetPaymentId ?? queueItem?.id ?? transactionOrPaymentId,
 				queueItemId: queueItem?.id,
 				error: offlineMsg,
 				deviceStatus,
@@ -208,7 +211,7 @@ export class FiscalRetryPolicy {
 			return {
 				success: false,
 				status: "hardware_offline",
-				paymentId: targetPaymentId,
+				paymentId: targetPaymentId ?? queueItem?.id ?? transactionOrPaymentId,
 				queueItemId: queueItem?.id,
 				error: "Отсутствует корректный payload фискального чека в очереди",
 				deviceStatus,
@@ -244,7 +247,7 @@ export class FiscalRetryPolicy {
 					await targetDb
 						.update(fiscalReceiptQueue)
 						.set({
-							status: "hardware_offline",
+							status: failureStatus,
 							lastError: printError,
 							retryCount: sql`${fiscalReceiptQueue.retryCount} + 1`,
 							updatedAt: now,
@@ -259,8 +262,8 @@ export class FiscalRetryPolicy {
 
 				return {
 					success: false,
-					status: "hardware_offline",
-					paymentId: targetPaymentId,
+					status: failureStatus,
+					paymentId: targetPaymentId ?? queueItem?.id ?? transactionOrPaymentId,
 					queueItemId: queueItem?.id,
 					error: printError,
 					deviceStatus,
@@ -298,33 +301,51 @@ export class FiscalRetryPolicy {
 					);
 			}
 
-			await targetDb
-				.update(payments)
-				.set({
-					fiscalReceiptNumber: printResult.fiscalDocumentNumber || null,
-					fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
-					fiscalReceiptUrl: printResult.ofdVerificationUrl || null,
-					fiscalReceipt: {
-						fn: printResult.fnSerial ?? null,
-						fd: printResult.fiscalDocumentNumber ?? null,
-						fpd: printResult.fiscalSign ?? null,
-						receiptUrl: printResult.ofdVerificationUrl ?? null,
-						operationType: "income",
-					},
-					note: `[54-ФЗ] Фискализация успешно завершена повтором: ФД ${printResult.fiscalDocumentNumber}`,
-					updatedAt: now,
-				})
-				.where(
-					and(
-						eq(payments.id, targetPaymentId),
-						eq(payments.organizationId, organizationId),
-					),
-				);
+			const payloadMeta =
+				typeof queueItem?.payloadJson === "object" && queueItem?.payloadJson !== null
+					? (queueItem.payloadJson as Record<string, unknown>)
+					: null;
+			const rawOpType =
+				queueItem?.receiptType ||
+				(typeof payloadMeta?.operationType === "string"
+					? payloadMeta.operationType
+					: "income");
+			const resolvedOperationType: "income" | "income_return" | "expense" | "expense_return" =
+				rawOpType === "income_return" ||
+				rawOpType === "expense" ||
+				rawOpType === "expense_return"
+					? rawOpType
+					: "income";
+
+			if (targetPaymentId) {
+				await targetDb
+					.update(payments)
+					.set({
+						fiscalReceiptNumber: printResult.fiscalDocumentNumber || null,
+						fiscalReceiptIssuedAt: printResult.receiptIssuedAt,
+						fiscalReceiptUrl: printResult.ofdVerificationUrl || null,
+						fiscalReceipt: {
+							fn: printResult.fnSerial ?? null,
+							fd: printResult.fiscalDocumentNumber ?? null,
+							fpd: printResult.fiscalSign ?? null,
+							receiptUrl: printResult.ofdVerificationUrl ?? null,
+							operationType: resolvedOperationType,
+						},
+						note: `[54-ФЗ] Фискализация успешно завершена повтором: ФД ${printResult.fiscalDocumentNumber}`,
+						updatedAt: now,
+					})
+					.where(
+						and(
+							eq(payments.id, targetPaymentId),
+							eq(payments.organizationId, organizationId),
+						),
+					);
+			}
 
 			return {
 				success: true,
 				status: "printed",
-				paymentId: targetPaymentId,
+				paymentId: targetPaymentId ?? queueItem?.id ?? transactionOrPaymentId,
 				queueItemId: queueItem?.id,
 				fiscalReceiptNumber: printResult.fiscalDocumentNumber,
 				fiscalSign: printResult.fiscalSign,

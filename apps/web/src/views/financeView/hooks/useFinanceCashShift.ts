@@ -18,14 +18,40 @@ interface ServerCashBoxItem {
 	readonly balanceKopecks?: number | string | bigint | null | undefined;
 }
 
+function readNumericField(obj: object, key: string): number {
+	const value = Reflect.get(obj, key);
+	return typeof value === "number" ? value : 0;
+}
+
+function readMessageField(obj: object): string | undefined {
+	const message = Reflect.get(obj, "message");
+	if (typeof message === "string" && message.length > 0) return message;
+	const error = Reflect.get(obj, "error");
+	return typeof error === "string" && error.length > 0 ? error : undefined;
+}
+
 async function extractShiftMutationErrorMessage(res: Response, fallbackMsg: string): Promise<string> {
-	const raw = (await res.json().catch(() => null)) as {
-		data?: { message?: string; error?: string } | null;
-		message?: string;
-		error?: string;
-	} | null;
-	const payload = raw?.data ?? raw;
-	return payload?.message || payload?.error || raw?.message || raw?.error || `${fallbackMsg} (HTTP ${res.status})`;
+	try {
+		const rawText = await res.text();
+		if (rawText) {
+			const parsed: unknown = JSON.parse(rawText);
+			if (parsed && typeof parsed === "object") {
+				const nestedData = Reflect.get(parsed, "data");
+				const fromNested = nestedData && typeof nestedData === "object"
+					? readMessageField(nestedData)
+					: undefined;
+				const fromRoot = readMessageField(parsed);
+				if (fromNested) return fromNested;
+				if (fromRoot) return fromRoot;
+			}
+		}
+	} catch (err) {
+		clientLogger.warn("[useFinanceCashShift] Failed to parse shift mutation error JSON", {
+			status: res.status,
+			error: err instanceof Error ? err.message : String(err),
+		}, { module: "Finance" });
+	}
+	return `${fallbackMsg} (HTTP ${res.status})`;
 }
 
 export interface UseFinanceCashShiftParams {
@@ -115,35 +141,37 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			}
 
 			if (shiftRes.status === "fulfilled" && shiftRes.value.ok) {
-				const rawShiftJson = await shiftRes.value.json();
-				const shiftPayload =
-					rawShiftJson && typeof rawShiftJson === "object" && "data" in rawShiftJson
-						? ((rawShiftJson as { data?: unknown }).data ?? rawShiftJson)
-						: rawShiftJson;
-				const shiftRec =
+				const rawShiftJson: unknown = await shiftRes.value.json();
+				const nestedData =
+					rawShiftJson && typeof rawShiftJson === "object"
+						? Reflect.get(rawShiftJson, "data")
+						: undefined;
+				const shiftPayload: unknown = nestedData !== undefined && nestedData !== null ? nestedData : rawShiftJson;
+				const shiftObj =
 					shiftPayload && typeof shiftPayload === "object"
-						? (shiftPayload as Record<string, unknown>)
+						? shiftPayload
 						: null;
-				if (shiftRec) {
-					const openOnServer = shiftRec.hasOpenShift === true;
+				if (shiftObj) {
+					const openOnServer = Reflect.get(shiftObj, "hasOpenShift") === true;
 					setIsShiftOpen(openOnServer);
 					safeLocalStorageSetItem("dente_cash_shift_open", openOnServer ? "true" : "false");
 					if (openOnServer) {
-						if (typeof shiftRec.shiftNumber === "number" && shiftRec.shiftNumber > 0) {
-							setShiftNumber(shiftRec.shiftNumber);
-							safeLocalStorageSetItem("dente_cash_shift_number", String(shiftRec.shiftNumber));
+						const parsedShiftNumber = readNumericField(shiftObj, "shiftNumber");
+						if (parsedShiftNumber > 0) {
+							setShiftNumber(parsedShiftNumber);
+							safeLocalStorageSetItem("dente_cash_shift_number", String(parsedShiftNumber));
 						}
 						setServerShiftSnapshot({
 							hasOpenShift: true,
-							startingBalanceRub: typeof shiftRec.startingBalanceRub === "number" ? shiftRec.startingBalanceRub : 0,
-							expectedCashInDrawerRub: typeof shiftRec.expectedCashInDrawerRub === "number" ? shiftRec.expectedCashInDrawerRub : 0,
-							incomeCashRub: typeof shiftRec.incomeCashRub === "number" ? shiftRec.incomeCashRub : 0,
-							incomeElectronicRub: typeof shiftRec.incomeElectronicRub === "number" ? shiftRec.incomeElectronicRub : 0,
-							incomeSbpRub: typeof shiftRec.incomeSbpRub === "number" ? shiftRec.incomeSbpRub : 0,
-							advanceOffsetRub: typeof shiftRec.advanceOffsetRub === "number" ? shiftRec.advanceOffsetRub : 0,
-							returnTotalRub: typeof shiftRec.returnTotalRub === "number" ? shiftRec.returnTotalRub : 0,
-							insuranceTotalRub: typeof shiftRec.insuranceTotalRub === "number" ? shiftRec.insuranceTotalRub : 0,
-							netRevenueRub: typeof shiftRec.netRevenueRub === "number" ? shiftRec.netRevenueRub : 0,
+							startingBalanceRub: readNumericField(shiftObj, "startingBalanceRub"),
+							expectedCashInDrawerRub: readNumericField(shiftObj, "expectedCashInDrawerRub"),
+							incomeCashRub: readNumericField(shiftObj, "incomeCashRub"),
+							incomeElectronicRub: readNumericField(shiftObj, "incomeElectronicRub"),
+							incomeSbpRub: readNumericField(shiftObj, "incomeSbpRub"),
+							advanceOffsetRub: readNumericField(shiftObj, "advanceOffsetRub"),
+							returnTotalRub: readNumericField(shiftObj, "returnTotalRub"),
+							insuranceTotalRub: readNumericField(shiftObj, "insuranceTotalRub"),
+							netRevenueRub: readNumericField(shiftObj, "netRevenueRub"),
 						});
 					} else {
 						setServerShiftSnapshot({
@@ -249,7 +277,9 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			await propsOnCloseShift();
 		} else {
 			try {
-				const zNumber = `Z-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${shiftNumber}`;
+				const now = new Date();
+				const localDateCompact = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+				const zNumber = `Z-${localDateCompact}-${shiftNumber}`;
 				const res = await fetch("/api/cashbox/shift/close", {
 					method: "POST",
 					headers: denteClinicalMutationHeaders({

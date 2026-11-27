@@ -41,27 +41,21 @@ import {
 } from "../../routes/fiscal/fiscalReceiptRoutes.js";
 
 describe("54-FZ Fiscal Receipt Routes Decomposition Smoke & Parity Suite", () => {
-	it("1. Canonical facade exports all expected Layer 0, 1, 2, 3 symbols with zero regressions", () => {
-		assert.equal(typeof registerFiscalReceiptRoutes, "function");
-		assert.equal(typeof handleFiscalReceipt, "function");
-		assert.equal(typeof handleFiscalRefund, "function");
-		assert.equal(typeof handleFiscalValidate, "function");
-		assert.equal(typeof handleSbpStatus, "function");
-		assert.equal(typeof handleKktDeviceStatus, "function");
-		assert.equal(typeof handleKktTestConnection, "function");
-		assert.equal(typeof handleFiscalQueueList, "function");
-		assert.equal(typeof handleFiscalQueueRetry, "function");
-		assert.equal(typeof handleFiscalQueueRetryAll, "function");
-		assert.equal(typeof handleFiscalQueueAutoRetryStart, "function");
-		assert.equal(typeof handleFiscalQueueAutoRetryStop, "function");
-		assert.equal(typeof applyCashBoxFiscalReceipt, "function");
-		assert.equal(typeof applyCashBoxFiscalRefund, "function");
-		assert.equal(typeof verifyAndEnforceCatalogPrices, "function");
+	it("1. Canonical facade validates schemas, enforces dead_letter status & checks catalog prices", async () => {
+		const validSbp = sbpStatusInputSchema.safeParse({ operationId: "op-1", action: "check" });
+		assert.equal(validSbp.success, false, "Unknown strict field operationId must be rejected");
+		const validSbpInput = sbpStatusInputSchema.safeParse({ orderId: "ORD-1", action: "check" });
+		assert.equal(validSbpInput.success, true);
 
-		assert.ok(sbpStatusInputSchema);
-		assert.ok(kktDeviceTestConnectionSchema);
-		assert.ok(fiscalQueueQuerySchema);
-		assert.ok(fiscalQueueIdParamSchema);
+		const kktConn = kktDeviceTestConnectionSchema.safeParse({});
+		assert.equal(kktConn.success, true);
+		assert.equal(kktConn.data.host, "192.168.1.150");
+		assert.equal(kktConn.data.port, 16732);
+
+		const queueFilterDeadLetter = fiscalQueueQuerySchema.safeParse({ status: "dead_letter", limit: 25 });
+		assert.equal(queueFilterDeadLetter.success, true);
+		assert.equal(fiscalQueueIdParamSchema.safeParse({ id: "not-a-uuid" }).success, false);
+		assert.equal(fiscalQueueIdParamSchema.safeParse({ id: "01900000-0000-7000-8000-000000000001" }).success, true);
 
 		assert.equal(DEFAULT_KKT_PING_HOST, "192.168.1.150");
 		assert.equal(DEFAULT_KKT_PING_PORT, 16732);
@@ -72,6 +66,7 @@ describe("54-FZ Fiscal Receipt Routes Decomposition Smoke & Parity Suite", () =>
 			"offline_pending",
 			"printed",
 			"failed",
+			"dead_letter",
 			"all",
 		]);
 		assert.equal(FFD_12_OPERATION_TYPES.INCOME, 1);
@@ -79,6 +74,21 @@ describe("54-FZ Fiscal Receipt Routes Decomposition Smoke & Parity Suite", () =>
 		assert.equal(FFD_12_PAYMENT_METHODS.FULL_PAYMENT, 4);
 		assert.equal(FFD_12_PAYMENT_SUBJECTS.SERVICE, 4);
 		assert.equal(FFD_12_VAT_RATES.NO_VAT, 6);
+
+		const catalogCheck = await verifyAndEnforceCatalogPrices(
+			"01900000-0000-7000-8000-000000000001",
+			[
+				{
+					name: "Консультация терапевта",
+					priceKopecks: 150000,
+					quantity: 1,
+					amountKopecks: 150000,
+				},
+			],
+		);
+		assert.equal(catalogCheck.success, true);
+		assert.equal(Array.isArray(catalogCheck.normalizedItems), true);
+		assert.equal(catalogCheck.normalizedItems.length, 1);
 	});
 
 	it("2. Registers all 14 statutory FFD 1.2 routes on Fastify instance without router collisions", async () => {

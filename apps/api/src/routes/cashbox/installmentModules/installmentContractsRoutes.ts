@@ -17,7 +17,7 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../../db/rls.js";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -225,6 +225,19 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 					.limit(1);
 				if (!inv) {
 					return { kind: "invoice_not_found" as const, invoiceId };
+				}
+				if (
+					inv.status === "paid" ||
+					inv.status === "paid_warranty" ||
+					inv.status === "refunded" ||
+					inv.status === "voided" ||
+					inv.status === "cancelled"
+				) {
+					return {
+						kind: "invoice_already_settled" as const,
+						invoiceId: inv.id,
+						status: inv.status,
+					};
 				}
 				lockedInvoice = inv;
 			}
@@ -489,6 +502,12 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 				message: `Счёт (${result.invoiceId}) для привязки рассрочки не найден.`,
 			});
 		}
+		if (result.kind === "invoice_already_settled") {
+			return reply.code(409).send({
+				error: "InvoiceAlreadySettled",
+				message: `Невозможно оформить рассрочку на счёт со статусом «${result.status}».`,
+			});
+		}
 		if (result.kind === "explicit_box_not_found" || result.kind === "no_cash_box") {
 			return reply.code(404).send({
 				error: "CashBoxNotFound",
@@ -536,6 +555,10 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 	app.post("/api/installments", contractRouteOpts, handleCreateContract);
 	app.post("/api/installments/contracts", contractRouteOpts, handleCreateContract);
 
+	const readRouteOpts = {
+		config: { tenantTxSelfManaged: true },
+	};
+
 	const handleGetContracts = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "installments list");
 		if (reply.sent) return reply;
@@ -551,7 +574,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 		}
 		const filter = parsed.data;
 
-		const contractsList = await withTenantCtx(orgId, async (tx) => {
+		const contractsList = await withTenantReadCtx(orgId, async (tx) => {
 			const conditions = [eq(installmentContracts.organizationId, orgId)];
 			if (filter.patientId) {
 				conditions.push(eq(installmentContracts.patientId, filter.patientId));
@@ -581,11 +604,12 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 		return reply.send({ success: true, data: contractsList, total: contractsList.length });
 	};
 
-	app.get("/api/installments", handleGetContracts);
-	app.get("/api/installments/contracts", handleGetContracts);
+	app.get("/api/installments", readRouteOpts, handleGetContracts);
+	app.get("/api/installments/contracts", readRouteOpts, handleGetContracts);
 
 	app.get(
 		"/api/installments/:id",
+		readRouteOpts,
 		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
 			const orgId = await requireResolvedOrganizationId(request, reply, "installment contract read");
 			if (reply.sent) return reply;
@@ -603,7 +627,7 @@ export function registerInstallmentContractsRoutes(app: FastifyInstance): void {
 			}
 			const { id } = paramsParsed.data;
 
-			const result = await withTenantCtx(orgId, async (tx) => {
+			const result = await withTenantReadCtx(orgId, async (tx) => {
 				const [contract] = await tx
 					.select({
 						contract: installmentContracts,

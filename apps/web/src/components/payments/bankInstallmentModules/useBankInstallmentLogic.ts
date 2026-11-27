@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
-import { generateUuidV7 } from "@dental/shared";
-import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { generateUuidV7, kopecksToRubles } from "@dental/shared";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 import {
 	BANK_INSTALLMENT_PROVIDERS,
@@ -153,22 +156,91 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 		}
 	};
 
-	const handleApproveInstallment = () => {
-		setIsApprovedState(true);
-		if (props.onInstallmentApproved) {
-			props.onInstallmentApproved({
-				providerId: selectedProvider,
-				approvalId: `INST-${Date.now().toString(36).toUpperCase()}`,
-				approvedAmountKopecks: stageAmountKopecks,
-				monthlyPaymentRub: calculation.monthlyPaymentRub,
-			});
+	const [isSubmittingApproval, setIsSubmittingApproval] = useState<boolean>(false);
+
+	const handleApproveInstallment = async () => {
+		if (isSubmittingApproval) return;
+		const cleanPatientId = patientId?.trim() ?? "";
+		const isUuidPatient =
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+				cleanPatientId,
+			);
+		if (!isUuidPatient) {
+			showToast(
+				"Выберите пациента из карты клиники, чтобы зарегистрировать одобренную банком рассрочку.",
+				"warning",
+				4000,
+			);
+			return;
 		}
-		showToast(
-			`Рассрочка от ${activeProviderConfig.name} одобрена! Наряд разблокирован.`,
-			"success",
-			3500,
-		);
+		setIsSubmittingApproval(true);
+		try {
+			const mutationId = generateUuidV7();
+			const allowedTerms = [3, 6, 10, 12, 18, 24] as const;
+			const normalizedMonths =
+				allowedTerms.reduce((best, curr) =>
+					Math.abs(curr - selectedTerm) < Math.abs(best - selectedTerm)
+						? curr
+						: best,
+				);
+			const res = await fetch("/api/installments", {
+				method: "POST",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": mutationId,
+					"X-Idempotency-Key": mutationId,
+				}),
+				body: JSON.stringify({
+					patientId: cleanPatientId,
+					totalAmountRub: Math.max(1, kopecksToRubles(stageAmountKopecks)),
+					downPaymentRub: 0,
+					monthsCount: normalizedMonths,
+					notes: `Банковская рассрочка (${activeProviderConfig.name}): ${stageTitle}`,
+				}),
+			});
+			const json = (await res.json().catch(() => null)) as {
+				data?: { contract?: { id?: string; contractNumber?: string } };
+				contract?: { id?: string; contractNumber?: string };
+				message?: string;
+			} | null;
+			if (!res.ok) {
+				throw new Error(
+					json?.message ||
+						`Сервер отклонил подтверждение рассрочки (HTTP ${res.status})`,
+				);
+			}
+			const contract = json?.data?.contract ?? json?.contract;
+			const serverApprovalId = contract?.contractNumber || contract?.id;
+			if (!serverApprovalId) {
+				throw new Error("Сервер не вернул номер договора рассрочки");
+			}
+			setIsApprovedState(true);
+			if (props.onInstallmentApproved) {
+				props.onInstallmentApproved({
+					providerId: selectedProvider,
+					approvalId: serverApprovalId,
+					approvedAmountKopecks: stageAmountKopecks,
+					monthlyPaymentRub: calculation.monthlyPaymentRub,
+				});
+			}
+			showToast(
+				`Рассрочка от ${activeProviderConfig.name} (${serverApprovalId}) зафиксирована!`,
+				"success",
+				3500,
+			);
+		} catch (err: unknown) {
+			showToast(
+				err instanceof Error
+					? err.message
+					: "Не удалось подтвердить банковскую рассрочку на сервере",
+				"error",
+			);
+		} finally {
+			setIsSubmittingApproval(false);
+		}
 	};
+
+	void denteClinicalReadHeaders;
 
 	return {
 		selectedProvider,

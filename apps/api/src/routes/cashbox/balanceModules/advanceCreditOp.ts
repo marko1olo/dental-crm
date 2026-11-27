@@ -109,6 +109,12 @@ export async function creditPersonalAdvanceOp(
 			method: statutoryMethod,
 			status: "paid",
 			clientMutationId: idempotencyKey,
+			fiscalReceipt: {
+				operationType: "income",
+				calculationMethod: "advance",
+				calculationSubject: "payment",
+				depositKopecks: amountKopecks,
+			},
 			note: operationNote,
 			paidAt: now,
 		})
@@ -195,7 +201,12 @@ export async function creditPersonalAdvanceOp(
 				reasonText: operationNote,
 				patientId,
 				operatorId: operatorId ?? null,
-				metadata: { idempotencyKey, depositTagId: depositTag.id },
+				metadata: {
+					idempotencyKey,
+					depositTagId: depositTag.id,
+					paymentId: payment.id,
+					isAdvanceDeposit: true,
+				},
 			})
 			.returning();
 		cashOp = op;

@@ -10,7 +10,7 @@
  * Governed by Mandate 8d, 8e, 8n (Zero-Mockup, SSOT Backend Integration).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
 	type InstallmentItemStatus,
 	type InstallmentPlan,
@@ -128,12 +128,16 @@ export function usePatientInstallmentsApi(options: {
 }) {
 	const { patientId, getMutationHeaders, getReadHeaders } = options;
 	const [isLoading, setIsLoading] = useState(false);
+	const getReadHeadersRef = useRef(getReadHeaders);
+	const getMutationHeadersRef = useRef(getMutationHeaders);
+	getReadHeadersRef.current = getReadHeaders;
+	getMutationHeadersRef.current = getMutationHeaders;
 
 	const fetchActiveContract = useCallback(async (): Promise<InstallmentPlan | null> => {
 		if (!patientId || !isUuid(patientId)) return null;
 		setIsLoading(true);
 		try {
-			const headers = getReadHeaders ? getReadHeaders() : {};
+			const headers = getReadHeadersRef.current ? getReadHeadersRef.current() : {};
 			const res = await fetch(`/api/installments?patientId=${patientId}`, {
 				headers,
 			});
@@ -188,7 +192,7 @@ export function usePatientInstallmentsApi(options: {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [patientId, getReadHeaders]);
+	}, [patientId]);
 
 	const createContract = useCallback(
 		async (params: {
@@ -196,12 +200,13 @@ export function usePatientInstallmentsApi(options: {
 			totalAmountRub: number;
 			downPaymentRub: number;
 			monthsCount: 3 | 6 | 10 | 12 | 18 | 24;
+			cashBoxId?: string | undefined;
 			notes?: string;
 		}): Promise<InstallmentPlan | null> => {
 			if (!isUuid(params.patientId)) return null;
 			setIsLoading(true);
 			try {
-				const existingMutationHeaders = getMutationHeaders ? getMutationHeaders() : {};
+				const existingMutationHeaders = getMutationHeadersRef.current ? getMutationHeadersRef.current() : {};
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
@@ -218,6 +223,7 @@ export function usePatientInstallmentsApi(options: {
 						totalAmountRub: params.totalAmountRub,
 						downPaymentRub: params.downPaymentRub,
 						monthsCount: params.monthsCount,
+						...(params.cashBoxId ? { cashBoxId: params.cashBoxId } : {}),
 						notes: params.notes,
 					}),
 				});
@@ -255,7 +261,7 @@ export function usePatientInstallmentsApi(options: {
 				setIsLoading(false);
 			}
 		},
-		[getMutationHeaders],
+		[],
 	);
 
 	const payTranche = useCallback(
@@ -268,7 +274,7 @@ export function usePatientInstallmentsApi(options: {
 			const amountPaidKopecks = typeof options === "object" ? options?.amountPaidKopecks : undefined;
 			setIsLoading(true);
 			try {
-				const existingMutationHeaders = getMutationHeaders ? getMutationHeaders() : {};
+				const existingMutationHeaders = getMutationHeadersRef.current ? getMutationHeadersRef.current() : {};
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
@@ -296,13 +302,16 @@ export function usePatientInstallmentsApi(options: {
 				setIsLoading(false);
 			}
 		},
-		[getMutationHeaders],
+		[],
 	);
 
-	return {
-		isLoading,
-		fetchActiveContract,
-		createContract,
-		payTranche,
-	};
+	return useMemo(
+		() => ({
+			isLoading,
+			fetchActiveContract,
+			createContract,
+			payTranche,
+		}),
+		[isLoading, fetchActiveContract, createContract, payTranche],
+	);
 }

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
+import { CashFlowModal } from "../../components/finance/CashFlowModal";
 import { CashShiftClosingModal } from "../../components/shift/CashShiftClosingModal";
 import { FinanceToolbar } from "../../components/finance/FinanceToolbar";
 import type { PendingCheckout } from "./types.js";
@@ -43,6 +45,7 @@ export interface FinanceOperationsToolbarProps {
 }
 
 export function FinanceOperationsToolbar(props: FinanceOperationsToolbarProps) {
+	const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState(false);
 	const {
 		pendingCheckout, onResetPendingCheckout, effectivePatient, effectiveBillingSummary,
 		isCashShiftOpen, onToggleCashShift, isShiftOpen, onPayDebtQuick, money,
@@ -86,8 +89,20 @@ export function FinanceOperationsToolbar(props: FinanceOperationsToolbarProps) {
 				onOpenT13Timesheet={onOpenT13Timesheet}
 				onOpenFamilyBilling={onOpenFamilyBilling}
 				onOpenSplitPayment={onOpenSplitPayment}
+				onOpenCashFlow={() => setIsCashFlowModalOpen(true)}
 				onOpenAccountingExport={onOpenAccountingExport}
 			/>
+
+			{isCashFlowModalOpen && (
+				<CashFlowModal
+					isOpen={isCashFlowModalOpen}
+					initialMode="transfer"
+					cashInDrawerRub={cashInDrawerRub}
+					onCashIn={onCashIn}
+					onCashOut={onCashOut}
+					onClose={() => setIsCashFlowModalOpen(false)}
+				/>
+			)}
 
 			{isCashShiftOpen && (
 				<CashShiftClosingModal

@@ -20,9 +20,45 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { playTactileEarcon } from "../../../lib/chairsideErgonomics.js";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders.js";
 import { showToast } from "../../GlobalToast.js";
 import { copySbpUrlToClipboard, fetchSbpDynamicQr, type SbpDynamicQrPayloadData } from "../sbpQrEngine.js";
 import type { SbpDynamicQrCardProps } from "./sbpTypes.js";
+
+export const PAID_SBP_STATUSES = new Set([
+	"PAID",
+	"DEPOSITED",
+	"SETTLED",
+	"CONFIRMED",
+	"paid",
+	"success",
+	"deposited",
+]);
+
+export const REJECTED_SBP_STATUSES = new Set([
+	"failed",
+	"FAILED",
+	"expired",
+	"EXPIRED",
+	"cancelled",
+	"CANCELLED",
+	"refunded",
+	"REFUNDED",
+	"voided",
+	"VOIDED",
+]);
+
+export function isTerminalPaidSbpStatus(remoteStatus: string | undefined | null): boolean {
+	if (!remoteStatus) return false;
+	return PAID_SBP_STATUSES.has(remoteStatus.trim());
+}
+
+export function resolveSbpManualCheckMessage(remoteStatus: string | undefined | null): string {
+	if (remoteStatus && REJECTED_SBP_STATUSES.has(remoteStatus.trim())) {
+		return "Платёж СБП отклонён или просрочен — сформируйте новый QR";
+	}
+	return "Оплата банком ещё не подтверждена";
+}
 
 export function useSbpPolling(props: SbpDynamicQrCardProps) {
 	const { sumRub, orderId, invoiceId, patientName, clinicLegalName, ttlSeconds = 300, onPaymentSuccess, hideManualConfirm = false } = props;
@@ -76,17 +112,25 @@ export function useSbpPolling(props: SbpDynamicQrCardProps) {
 		if (!qrData || status === "paid") return false;
 		if (manual) setIsCheckingSbp(true);
 		try {
-			const res = await fetch(`/api/sbp/status/${encodeURIComponent(qrData.operationId)}`, { credentials: "same-origin" });
+			const res = await fetch(`/api/sbp/status/${encodeURIComponent(qrData.operationId)}`, {
+				credentials: "same-origin",
+				headers: denteClinicalReadHeaders(),
+			});
 			if (res.ok) {
 				const json = (await res.json().catch(() => null)) as { found?: boolean; status?: string } | null;
-				if (json?.found && json.status && json.status !== "refunded" && json.status !== "voided") {
+				const remoteStatus = json?.status?.trim();
+				if (json?.found && isTerminalPaidSbpStatus(remoteStatus)) {
+					setSbpCheckMessage(null);
 					handleConfirmPayment();
 					return true;
 				}
 				if (manual) {
-					setSbpCheckMessage("Зачисление от банка пока не подтверждено");
+					setSbpCheckMessage(resolveSbpManualCheckMessage(remoteStatus));
 					setTimeout(() => setSbpCheckMessage(null), 3500);
 				}
+			} else if (manual) {
+				setSbpCheckMessage("Не удалось проверить статус оплаты в банке");
+				setTimeout(() => setSbpCheckMessage(null), 3500);
 			}
 		} catch {
 			if (manual) setSbpCheckMessage("Нет связи с сервером — повторите проверку");

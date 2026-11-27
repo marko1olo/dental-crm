@@ -8,12 +8,10 @@ import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx } from "../../../db/rls.js";
 import { fiscalReceiptQueue } from "../../../db/schema.js";
-import {
-	FiscalQueueRetryWorker,
-	LanKktDriverService,
-} from "../../../services/hardware/index.js";
+import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
+import { FiscalQueueRetryWorker } from "../../../services/hardware/queueModules/fiscalQueueWorker.js";
 import {
 	fiscalQueueIdParamSchema,
 	fiscalQueueQuerySchema,
@@ -143,7 +141,7 @@ export async function handleFiscalQueueList(
 		conditions.push(statusFilter);
 	}
 
-	const items = await withTenantCtx(orgId, async (tx) => {
+	const items = await withTenantReadCtx(orgId, async (tx) => {
 		return tx
 			.select()
 			.from(fiscalReceiptQueue)

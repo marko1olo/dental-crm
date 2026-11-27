@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import {
 	TrendingUp,
 	FileText,
@@ -11,18 +11,16 @@ import {
 	Users,
 	UploadCloud,
 	FileSpreadsheet,
+	ArrowLeftRight,
 } from "lucide-react";
-import { generateUuidV7, type StaffRole } from "@dental/shared";
-import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import type { StaffRole } from "@dental/shared";
 import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
 import { resolveClinicMode } from "../../../lib/clinicCapabilities";
 import { useAppStore } from "../../../store/appStore";
 import type { FinanceToolbarMenuProps } from "./FinanceToolbarMenu";
-import { showToast } from "../../GlobalToast";
 
 const PNL_ALLOWED_ROLES: ReadonlySet<StaffRole> = new Set([
 	"owner",
-	"admin",
 	"manager",
 	"head_doctor",
 	"accountant",
@@ -30,7 +28,6 @@ const PNL_ALLOWED_ROLES: ReadonlySet<StaffRole> = new Set([
 
 const ACCOUNTING_ALLOWED_ROLES: ReadonlySet<StaffRole> = new Set([
 	"owner",
-	"admin",
 	"manager",
 	"accountant",
 ]);
@@ -66,9 +63,10 @@ function MenuItemBtn({ onClick, icon, label, testId, isDanger }: {
 	);
 }
 
-export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.Element {
+export function FinanceToolbarMenuItems(
+	p: FinanceToolbarMenuProps & { readonly onTriggerBankStatementUpload?: () => void },
+): React.JSX.Element {
 	const wrap = (fn: () => void) => () => { p.onCloseFinanceOptions(); fn(); };
-	const fileInputRef = useRef<HTMLInputElement>(null);
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const rawClinicMode = useAppStore((s) => s.dashboard?.clinicSettings?.profile?.mode);
 	const clinicMode = resolveClinicMode(rawClinicMode);
@@ -80,50 +78,8 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 	const canViewTimesheet =
 		TIMESHEET_ALLOWED_ROLES.has(effectiveRole) && !isSoloMode && featureFlags.hasPayrollModule !== false;
 
-	const handleUploadBankStatementFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-
-		try {
-			const content = await file.text();
-			const response = await fetch("/api/finance/bank-statements/upload", {
-				method: "POST",
-				headers: denteClinicalMutationHeaders({
-					"Content-Type": "application/json",
-					"Idempotency-Key": generateUuidV7(),
-				}),
-				body: JSON.stringify({ content }),
-			});
-
-			if (!response.ok) {
-				const errJson = await response.json().catch(() => null);
-				throw new Error(errJson?.message || `Ошибка сервера: ${response.status}`);
-			}
-
-			const rawJson = await response.json();
-			const data = rawJson?.data ?? rawJson;
-			showToast(
-				`Выписка 1С загружена: ${data?.count ?? 0} платежей на сумму ${data?.totalReceivedRub ?? 0} ₽`,
-				"success",
-			);
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Не удалось разобрать файл выписки 1С";
-			showToast(msg, "error");
-		} finally {
-			if (e.target) e.target.value = "";
-		}
-	};
-
 	return (
 		<>
-			<input
-				type="file"
-				ref={fileInputRef}
-				accept=".txt,.csv"
-				className="hidden"
-				aria-hidden="true"
-				onChange={handleUploadBankStatementFile}
-			/>
 			{p.onOpenQuickExpense && (
 				<MenuItemBtn
 					onClick={wrap(p.onOpenQuickExpense)}
@@ -144,11 +100,11 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 					testId="menuitem-accounting-export"
 				/>
 			)}
-			{canManageAccounting && (
+			{canManageAccounting && p.onTriggerBankStatementUpload && (
 				<MenuItemBtn
 					onClick={() => {
+						p.onTriggerBankStatementUpload?.();
 						p.onCloseFinanceOptions();
-						fileInputRef.current?.click();
 					}}
 					icon={<UploadCloud className="w-4 h-4 shrink-0 text-current" />}
 					label="Выписка 1С (Загрузка)"
@@ -164,6 +120,9 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 				<MenuItemBtn onClick={wrap(p.onOpenT13Timesheet)} icon={<Calendar className="w-4 h-4 shrink-0 text-current" />} label="Табель рабочего времени" testId="btn-finance-open-timesheet-t13" />
 			)}
 			<MenuItemBtn onClick={wrap(p.onOpenCashbox)} icon={<Banknote className="w-4 h-4 shrink-0 text-current" />} label="Касса и оплата" testId="btn-finance-open-cashbox" />
+			{p.onOpenCashFlow && (
+				<MenuItemBtn onClick={wrap(p.onOpenCashFlow)} icon={<ArrowLeftRight className="w-4 h-4 shrink-0 text-current" />} label="Кассовый ордер и перевод" testId="menuitem-cash-flow" />
+			)}
 			{p.onOpenSplitPayment && (
 				<MenuItemBtn onClick={wrap(p.onOpenSplitPayment)} icon={<Coins className="w-4 h-4 shrink-0 text-current" />} label="Сплит-оплата (Разделить чек)" testId="menuitem-split-payment" />
 			)}

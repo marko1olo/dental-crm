@@ -1,8 +1,9 @@
-import { MinusCircle, PlusCircle } from "lucide-react";
+import { ArrowLeftRight, MinusCircle, PlusCircle } from "lucide-react";
 import React from "react";
+import type { CashFlowMode } from "./types";
 
 interface CashFlowModalFooterProps {
-	readonly cashFlowMode: "cash_in" | "cash_out";
+	readonly cashFlowMode: CashFlowMode;
 	readonly isProcessing: boolean;
 	readonly onClose: () => void;
 	readonly onSubmit: () => void;
@@ -15,13 +16,14 @@ export const CashFlowModalFooter: React.FC<CashFlowModalFooterProps> = ({
 	onSubmit,
 }) => {
 	const isCashIn = cashFlowMode === "cash_in";
+	const isTransfer = cashFlowMode === "transfer";
 	return (
-		<div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--line,rgba(0,0,0,0.1))] bg-[var(--paper-soft,#f8fafc)] shrink-0">
+		<div className="flex items-center justify-end gap-3 min-h-16 py-3 px-4 sm:px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 shrink-0">
 			<button
 				type="button"
 				onClick={onClose}
 				data-testid="btn-cancel-cash-operation"
-				className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
+				className="h-11 sm:h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer shrink-0"
 			>
 				Отмена
 			</button>
@@ -33,17 +35,25 @@ export const CashFlowModalFooter: React.FC<CashFlowModalFooterProps> = ({
 				}}
 				aria-busy={isProcessing}
 				data-testid="btn-confirm-cash-operation"
-				className={`min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
-					isCashIn
-						? "bg-emerald-600 hover:bg-emerald-700"
-						: "bg-rose-600 hover:bg-rose-700"
+				className={`h-11 sm:h-9 px-4 rounded-lg text-sm font-medium text-white shadow-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 flex-1 sm:flex-initial whitespace-nowrap ${
+					cashFlowMode === "cash_out"
+						? "bg-[var(--danger)] hover:opacity-90"
+						: "bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
 				}`}
 			>
-				{isCashIn ? <PlusCircle size={16} /> : <MinusCircle size={16} />}
+				{isTransfer ? (
+					<ArrowLeftRight size={16} className="shrink-0" />
+				) : isCashIn ? (
+					<PlusCircle size={16} className="shrink-0" />
+				) : (
+					<MinusCircle size={16} className="shrink-0" />
+				)}
 				<span>
-					{isCashIn
-						? "Подтвердить внесение в кассу"
-						: "Подтвердить изъятие / инкассацию"}
+					{isTransfer
+						? "Перевести между кассами"
+						: isCashIn
+							? "Провести внесение"
+							: "Провести изъятие"}
 				</span>
 			</button>
 		</div>

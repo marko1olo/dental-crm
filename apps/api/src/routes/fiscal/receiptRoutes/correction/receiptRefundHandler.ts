@@ -80,13 +80,17 @@ export async function applyCashBoxFiscalRefund(
 	if (!firstBox) return;
 
 	const mainBox = allBoxes.find((b) => b.isMain || b.type === "main") ?? firstBox;
-	const cashlessBox = allBoxes.find((b) => b.isCashless || b.type === "cashless") ?? mainBox;
+	const sbpBox = allBoxes.find((b) => b.type === "sbp");
+	const cashlessBox =
+		allBoxes.find((b) => b.isCashless || b.type === "cashless") ?? sbpBox ?? mainBox;
+	const electronicTargetBox =
+		data.refundMethod === "online" ? (sbpBox ?? cashlessBox) : cashlessBox;
 
 	const cashKop = data.refundCashKopecks || 0;
 	if (cashKop > 0) {
 		const amountRub = kopecksToRub(cashKop);
 		const balanceBeforeKop = resolveSafeBoxBalanceKop(mainBox);
-		const balanceAfterKop = Math.max(0, balanceBeforeKop - cashKop);
+		const balanceAfterKop = balanceBeforeKop - cashKop;
 
 		await tx
 			.update(cashBoxes)
@@ -153,8 +157,8 @@ export async function applyCashBoxFiscalRefund(
 	const electronicKop = data.refundElectronicKopecks || 0;
 	if (electronicKop > 0) {
 		const amountRub = kopecksToRub(electronicKop);
-		const balanceBeforeKop = resolveSafeBoxBalanceKop(cashlessBox);
-		const balanceAfterKop = Math.max(0, balanceBeforeKop - electronicKop);
+		const balanceBeforeKop = resolveSafeBoxBalanceKop(electronicTargetBox);
+		const balanceAfterKop = balanceBeforeKop - electronicKop;
 
 		await tx
 			.update(cashBoxes)
@@ -163,7 +167,7 @@ export async function applyCashBoxFiscalRefund(
 				balanceKopecks: balanceAfterKop,
 				updatedAt: new Date(),
 			})
-			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
+			.where(and(eq(cashBoxes.id, electronicTargetBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [activeShift] = await tx
 			.select()
@@ -171,7 +175,7 @@ export async function applyCashBoxFiscalRefund(
 			.where(
 				and(
 					eq(cashBoxShifts.organizationId, orgId),
-					eq(cashBoxShifts.cashBoxId, cashlessBox.id),
+					eq(cashBoxShifts.cashBoxId, electronicTargetBox.id),
 					eq(cashBoxShifts.status, "open"),
 				),
 			)
@@ -196,7 +200,7 @@ export async function applyCashBoxFiscalRefund(
 
 		await tx.insert(cashOperations).values({
 			organizationId: orgId,
-			cashBoxId: cashlessBox.id,
+			cashBoxId: electronicTargetBox.id,
 			shiftId: activeShift?.id ?? null,
 			operationType: "expense",
 			amountRub,
@@ -233,7 +237,7 @@ async function updateRefundedPaymentRecord(
 		readonly fiscalDocumentNumber?: string | undefined;
 		readonly ofdVerificationUrl?: string | undefined;
 	},
-): Promise<{ id: string; documentId: string | null } | null> {
+): Promise<{ id: string; documentId: string | null; alreadyRefunded: boolean } | null> {
 	const [existingPayment] = await tx
 		.select({
 			id: payments.id,
@@ -260,7 +264,11 @@ async function updateRefundedPaymentRecord(
 			: parseKopecks(existingPayment.amountRub);
 
 	if (existingPayment.status === "refunded" || origKop <= 0) {
-		return { id: existingPayment.id, documentId: existingPayment.documentId };
+		return {
+			id: existingPayment.id,
+			documentId: existingPayment.documentId,
+			alreadyRefunded: true,
+		};
 	}
 
 	const existingRefunds = await tx
@@ -290,7 +298,11 @@ async function updateRefundedPaymentRecord(
 	const remainingRefundableKop = Math.max(0, origKop - alreadyRefundedKop);
 	const effectiveRefundKop = Math.min(refundKopecks, remainingRefundableKop);
 	if (effectiveRefundKop <= 0) {
-		return { id: existingPayment.id, documentId: existingPayment.documentId };
+		return {
+			id: existingPayment.id,
+			documentId: existingPayment.documentId,
+			alreadyRefunded: true,
+		};
 	}
 
 	const canonical = buildCanonicalRefundPaymentAmounts(BigInt(effectiveRefundKop));
@@ -312,13 +324,25 @@ async function updateRefundedPaymentRecord(
 		fiscalReceipt: {
 			operationType: "income_return",
 			cashKopecks: details.refundCashKopecks,
-			cardKopecks: details.refundElectronicKopecks,
+			cardKopecks: existingPayment.method === "online" ? 0 : details.refundElectronicKopecks,
+			sbpKopecks: existingPayment.method === "online" ? details.refundElectronicKopecks : 0,
 			advanceOffsetKopecks: details.refundPrepaidKopecks,
 		},
 		note: `Возврат по чеку (${details.reason}) [ref:${existingPayment.id}]`,
 	});
 
-	return { id: existingPayment.id, documentId: existingPayment.documentId };
+	if (alreadyRefundedKop + effectiveRefundKop >= origKop) {
+		await tx
+			.update(payments)
+			.set({ status: "refunded", updatedAt: now })
+			.where(and(eq(payments.id, existingPayment.id), eq(payments.organizationId, orgId)));
+	}
+
+	return {
+		id: existingPayment.id,
+		documentId: existingPayment.documentId,
+		alreadyRefunded: false,
+	};
 }
 
 /**
@@ -378,40 +402,68 @@ export async function handleFiscalRefund(
 
 	const patientContact = await resolvePatientCustomerContact(orgId, data.patientId);
 
-	const refundReceiptParsed = createFiscalReceiptPayloadSchema.safeParse({
-		clientMutationId: data.clientMutationId,
-		patientId: data.patientId,
-		operationType: "income_return",
-		customerContact: patientContact || null,
-		cashierFullName: data.cashierFullName,
-		items: data.items,
-		cashKopecks: data.refundCashKopecks,
-		electronicCardKopecks: data.refundElectronicKopecks,
-		sbpKopecks: 0,
-		prepaidKopecks: data.refundPrepaidKopecks,
-		creditKopecks: 0,
-		totalKopecks: data.totalRefundKopecks,
-		taxationSystem: "usn_income",
-		taxDeductionSummaryCode: "code_1_standard",
-		isCorrection: false,
-	});
-	if (!refundReceiptParsed.success) {
-		return reply.status(400).send({
-			error: "ValidationError",
-			message: "Сумма возврата по способам оплаты не совпадает с позициями чека",
-			details: refundReceiptParsed.error.issues,
-		});
-	}
-	const refundReceiptInput: CreateFiscalReceiptPayloadInput = refundReceiptParsed.data;
-
-	const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
-
-	// Phase 1: Advisory lock + idempotency check + pending buffer inside PostgreSQL TX
+	// Phase 1: Advisory lock + idempotency + already-refunded guard + pending buffer inside PostgreSQL TX
 	const preflight = await withTenantCtx(orgId, async (tx) => {
 		const mutationId = effectiveMutationId;
 		await tx.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
 		);
+
+		let originalPaymentMethod: string | null = null;
+		if (data.originalPaymentId && isValidUuid(data.originalPaymentId)) {
+			const [orig] = await tx
+				.select({
+					id: payments.id,
+					status: payments.status,
+					documentId: payments.documentId,
+					method: payments.method,
+				})
+				.from(payments)
+				.where(
+					and(
+						eq(payments.id, data.originalPaymentId),
+						eq(payments.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (orig) {
+				if (orig.status === "refunded") {
+					return {
+						kind: "already_refunded" as const,
+						paymentId: orig.id,
+						documentId: orig.documentId,
+					};
+				}
+				originalPaymentMethod = orig.method;
+			}
+		}
+
+		const isSbpOriginal = originalPaymentMethod === "online";
+		const refundReceiptParsed = createFiscalReceiptPayloadSchema.safeParse({
+			clientMutationId: data.clientMutationId,
+			patientId: data.patientId,
+			operationType: "income_return",
+			customerContact: patientContact || null,
+			cashierFullName: data.cashierFullName,
+			items: data.items,
+			cashKopecks: data.refundCashKopecks,
+			electronicCardKopecks: isSbpOriginal ? 0 : data.refundElectronicKopecks,
+			sbpKopecks: isSbpOriginal ? data.refundElectronicKopecks : 0,
+			prepaidKopecks: data.refundPrepaidKopecks,
+			creditKopecks: 0,
+			totalKopecks: data.totalRefundKopecks,
+			taxationSystem: "usn_income",
+			taxDeductionSummaryCode: "code_1_standard",
+			isCorrection: false,
+		});
+		if (!refundReceiptParsed.success) {
+			return {
+				kind: "validation_error" as const,
+				issues: refundReceiptParsed.error.issues,
+			};
+		}
+		const refundReceiptInput: CreateFiscalReceiptPayloadInput = refundReceiptParsed.data;
+		const compiled = FiscalReceiptFactory.buildFfd12Receipt(refundReceiptInput);
 
 		const [existingRow] = await tx
 			.select()
@@ -468,8 +520,33 @@ export async function handleFiscalRefund(
 			})
 			.returning();
 
-		return { kind: "buffered" as const, queueRow };
+		return {
+			kind: "buffered" as const,
+			queueRow,
+			compiled,
+			originalPaymentMethod,
+		};
 	});
+
+	if (preflight.kind === "validation_error") {
+		return reply.status(400).send({
+			error: "ValidationError",
+			message: "Сумма возврата по способам оплаты не совпадает с позициями чека",
+			details: preflight.issues,
+		});
+	}
+
+	if (preflight.kind === "already_refunded") {
+		return reply.status(200).send({
+			success: true,
+			replayed: true,
+			alreadyRefunded: true,
+			paymentId: preflight.paymentId,
+			status: "already_refunded",
+			originalReceiptNumber: data.originalReceiptNumber,
+			totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+		});
+	}
 
 	if (preflight.kind === "conflict") {
 		return reply.status(409).send({
@@ -492,6 +569,7 @@ export async function handleFiscalRefund(
 	}
 
 	const queueRow = preflight.queueRow;
+	const compiled = preflight.compiled;
 
 	// Phase 2: Physical KKT network I/O strictly OUTSIDE database transaction
 	const printResult = await LanKktDriverService.printFiscalReceipt(compiled);
@@ -499,8 +577,9 @@ export async function handleFiscalRefund(
 	const now = new Date();
 
 	// Phase 3: Atomic payment status reversal, queue finalization, invoice sync & cashbox/shift ledger
-	await withTenantCtx(orgId, async (tx) => {
+	const phase3Result = await withTenantCtx(orgId, async (tx) => {
 		let validPaymentId: string | null = null;
+		let alreadyRefunded = false;
 		if (data.originalPaymentId) {
 			const updatedPayment = await updateRefundedPaymentRecord(
 				tx,
@@ -518,6 +597,7 @@ export async function handleFiscalRefund(
 				},
 			);
 			validPaymentId = updatedPayment?.id ?? null;
+			alreadyRefunded = updatedPayment?.alreadyRefunded ?? false;
 			if (updatedPayment?.documentId && isValidUuid(updatedPayment.documentId)) {
 				await reconcileInvoiceBalanceInDb(tx, orgId, updatedPayment.documentId);
 			}
@@ -552,14 +632,33 @@ export async function handleFiscalRefund(
 				),
 			);
 
-		await applyCashBoxFiscalRefund(tx, orgId, data, printResult);
+		if (!alreadyRefunded) {
+			await applyCashBoxFiscalRefund(
+				tx,
+				orgId,
+				{
+					...data,
+					...(preflight.originalPaymentMethod
+						? { refundMethod: preflight.originalPaymentMethod }
+						: {}),
+				},
+				printResult,
+			);
+		}
+
+		return { alreadyRefunded };
 	});
 
 	return reply.status(200).send({
 		success: true,
-		replayed: false,
+		replayed: phase3Result.alreadyRefunded,
+		alreadyRefunded: phase3Result.alreadyRefunded,
 		refundQueueId: queueRow.id,
-		status: isOffline ? "hardware_offline" : "completed",
+		status: phase3Result.alreadyRefunded
+			? "already_refunded"
+			: isOffline
+				? "hardware_offline"
+				: "completed",
 		originalReceiptNumber: data.originalReceiptNumber,
 		fnSerial: printResult.fnSerial,
 		fiscalDocumentNumber: printResult.fiscalDocumentNumber,

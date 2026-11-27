@@ -1,7 +1,16 @@
+export type CashFlowMode = "cash_in" | "cash_out" | "transfer";
+
+export interface CashBoxSummary {
+	readonly id: string;
+	readonly name: string;
+	readonly type: string;
+	readonly balanceRub: number;
+}
+
 export interface CashFlowModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialMode?: "cash_in" | "cash_out" | undefined;
+	readonly initialMode?: CashFlowMode | undefined;
 	readonly cashInDrawerRub?: number | undefined;
 	readonly onCashIn?:
 		| ((
@@ -18,6 +27,7 @@ export interface CashFlowModalProps {
 				typeAlias?: string,
 		  ) => void | Promise<void>)
 		| undefined;
+	readonly onTransferComplete?: (() => void | Promise<void>) | undefined;
 }
 
 export function formatMoneyRu(value: number): string {

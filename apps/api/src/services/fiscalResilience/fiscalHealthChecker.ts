@@ -5,10 +5,10 @@
  * and non-blocking recovery of pending fiscal items.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { cashBoxShifts, fiscalReceiptQueue } from "../../db/schema.js";
+import { cashBoxShifts } from "../../db/schema.js";
 import { createApiLogger, safeLogError } from "../../observability/logger.js";
 import { LanKktDriverService } from "../hardware/lanKktDriverService.js";
 import { FiscalQueueRetryWorker } from "../hardware/queueModules/fiscalQueueWorker.js";
@@ -90,39 +90,15 @@ export class FiscalHealthChecker {
 	): void {
 		if (this.orgWorkers.has(organizationId)) return;
 
-		const executor = customRetryExecutor || this.defaultRetryExecutor;
+		const _unusedExecutor = customRetryExecutor || this.defaultRetryExecutor;
 
 		const timer = setInterval(async () => {
 			try {
-				if (FiscalQueueRetryWorker.isAutoRetryRunning(organizationId)) {
-					return;
-				}
 				const status = await LanKktDriverService.checkDeviceStatus();
 				if (!status.online || !status.paperOk) return;
 
-				const pending = await withTenantCtx(organizationId, async (tx) => {
-					const targetDb = tx ?? db;
-					return await targetDb
-						.select()
-						.from(fiscalReceiptQueue)
-						.where(
-							and(
-								eq(fiscalReceiptQueue.organizationId, organizationId),
-								inArray(fiscalReceiptQueue.status, [
-									"pending_print",
-									"hardware_offline",
-									"offline_pending",
-								]),
-							),
-						)
-						.limit(10);
-				});
-
-				for (const item of pending) {
-					const targetId = item.paymentId ?? item.id;
-					if (targetId && executor) {
-						await executor(organizationId, targetId);
-					}
+				if (!FiscalQueueRetryWorker.isAutoRetryRunning(organizationId)) {
+					await FiscalQueueRetryWorker.flushOrganizationQueue(organizationId);
 				}
 			} catch (err) {
 				logger.error(

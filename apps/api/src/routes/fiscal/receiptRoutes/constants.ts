@@ -6,12 +6,15 @@ export const DEFAULT_KKT_PING_HOST = "192.168.1.150";
 export const DEFAULT_KKT_PING_PORT = 16732;
 export const DEFAULT_KKT_PING_TIMEOUT_MS = 3000;
 
+export const MAX_FISCAL_RETRIES = 10;
+
 export const FISCAL_QUEUE_STATUSES = [
 	"pending_print",
 	"hardware_offline",
 	"offline_pending",
 	"printed",
 	"failed",
+	"dead_letter",
 	"all",
 ] as const;
 

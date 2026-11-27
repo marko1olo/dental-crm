@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { createPortal } from "react-dom";
 import {
 	CashFlowCatalogPresets,
 	CashFlowFormInputs,
@@ -29,6 +30,11 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = (props) => {
 		setCashFlowBasis,
 		cashFlowPerson,
 		setCashFlowPerson,
+		cashBoxes,
+		fromCashBoxId,
+		setFromCashBoxId,
+		toCashBoxId,
+		setToCashBoxId,
 		isProcessing,
 		handleSelectReceiptPreset,
 		handleSelectExpensePreset,
@@ -37,29 +43,33 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = (props) => {
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[rgba(15,23,42,0.52)] backdrop-blur-xs"
 			data-testid="cash-flow-modal"
 			role="dialog"
 			aria-modal="true"
 		>
-			<div className="bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,rgba(0,0,0,0.1))] w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+			<div className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] w-full max-w-2xl max-h-[92dvh] sm:max-h-[90vh] rounded-t-[24px] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 				<CashFlowModalHeader cashFlowMode={cashFlowMode} onClose={onClose} />
 
-				<div className="p-6 overflow-y-auto flex-1 space-y-5">
+				<div className="p-6 overflow-y-auto flex-1 space-y-4">
 					<CashFlowModeTabs
 						cashFlowMode={cashFlowMode}
 						onSelectMode={(mode) => {
 							setCashFlowMode(mode);
-							setSelectedTypeAlias(
-								mode === "cash_in" ? "cash_deposit" : "collection",
-							);
-							setCashFlowBasis(
-								mode === "cash_in"
-									? "Внесение разменной монеты"
-									: "Инкассация выручки в банк",
-							);
+							if (mode === "transfer") {
+								setCashFlowBasis("Межкассовое перемещение средств");
+							} else {
+								setSelectedTypeAlias(
+									mode === "cash_in" ? "cash_deposit" : "collection",
+								);
+								setCashFlowBasis(
+									mode === "cash_in"
+										? "Внесение разменной монеты"
+										: "Инкассация выручки в банк",
+								);
+							}
 						}}
 					/>
 
@@ -79,6 +89,11 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = (props) => {
 						setCashFlowBasis={setCashFlowBasis}
 						cashFlowPerson={cashFlowPerson}
 						setCashFlowPerson={setCashFlowPerson}
+						cashBoxes={cashBoxes}
+						fromCashBoxId={fromCashBoxId}
+						setFromCashBoxId={setFromCashBoxId}
+						toCashBoxId={toCashBoxId}
+						setToCashBoxId={setToCashBoxId}
 					/>
 				</div>
 
@@ -91,4 +106,8 @@ export const CashFlowModal: React.FC<CashFlowModalProps> = (props) => {
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };

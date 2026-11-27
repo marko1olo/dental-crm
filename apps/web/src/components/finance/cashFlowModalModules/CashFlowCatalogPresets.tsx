@@ -5,8 +5,10 @@ import {
 import { Check } from "lucide-react";
 import React from "react";
 
+import type { CashFlowMode } from "./types";
+
 interface CashFlowCatalogPresetsProps {
-	readonly cashFlowMode: "cash_in" | "cash_out";
+	readonly cashFlowMode: CashFlowMode;
 	readonly selectedTypeAlias: string;
 	readonly onSelectReceiptPreset: (alias: string) => void;
 	readonly onSelectExpensePreset: (alias: string) => void;
@@ -18,6 +20,9 @@ export const CashFlowCatalogPresets: React.FC<CashFlowCatalogPresetsProps> = ({
 	onSelectReceiptPreset,
 	onSelectExpensePreset,
 }) => {
+	if (cashFlowMode === "transfer") {
+		return null;
+	}
 	const isCashIn = cashFlowMode === "cash_in";
 	return (
 		<div>
@@ -93,7 +98,7 @@ export const CashFlowCatalogPresets: React.FC<CashFlowCatalogPresetsProps> = ({
 												? expense.alias === "collection"
 													? "Инкассация / Выемка"
 													: expense.ffdTag1054 === "возврат_прихода" || expense.ffdTag1054Code === 2
-														? "Кассовый ордер (возврат_прихода)"
+														? "Кассовый ордер (возврат прихода)"
 														: "Кассовый ордер (расход)"
 												: "Внутренний ордер"}
 										</span>

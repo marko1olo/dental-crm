@@ -282,7 +282,7 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 			);
 	}
 
-	const debitMethod = "family_wallet" as const;
+	const debitMethod = familyDebitedKop > 0 ? ("family_wallet" as const) : ("other" as const);
 	const debitSource =
 		familyDebitedKop > 0 && personalDebitedKop > 0
 			? "mixed_advance"
@@ -291,7 +291,12 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 				: "personal_advance";
 	const totalAmountRub = kopecksToRubles(amountKopecks);
 	const now = new Date();
-	const defaultNote = "Зачет ранее внесенного аванса (депозит)";
+	const defaultNote =
+		debitSource === "family_wallet"
+			? "Зачет средств семейного депозита"
+			: debitSource === "mixed_advance"
+				? "Зачет личного аванса и семейного депозита"
+				: "Зачет ранее внесенного личного аванса (депозит)";
 	const operationNote = notes?.trim() || defaultNote;
 
 	const [payment] = await tx
@@ -306,6 +311,13 @@ export async function debitAdvanceOp(tx: TenantDb, params: DebitAdvanceParams) {
 			method: debitMethod,
 			status: "paid",
 			clientMutationId: idempotencyKey,
+			fiscalReceipt: {
+				operationType: "income",
+				calculationMethod: "full_payment",
+				calculationSubject: "service",
+				advancePaymentRub: totalAmountRub,
+				advanceOffsetKopecks: amountKopecks,
+			},
 			note: operationNote,
 			paidAt: now,
 		})

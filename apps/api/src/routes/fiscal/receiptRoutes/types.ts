@@ -38,6 +38,7 @@ export const fiscalQueueQuerySchema = z.object({
 			"offline_pending",
 			"printed",
 			"failed",
+			"dead_letter",
 			"all",
 		])
 		.optional(),
@@ -72,6 +73,7 @@ export interface ApplyCashBoxRefundParams {
 	refundElectronicKopecks: number;
 	refundPrepaidKopecks: number;
 	totalRefundKopecks: number;
+	refundMethod?: string | undefined;
 	cashierFullName?: string | null | undefined;
 	originalReceiptNumber?: string | null | undefined;
 }

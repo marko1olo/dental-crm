@@ -216,22 +216,23 @@ export async function handleCloseCashShift(
 				primaryResult = reconciliationResult;
 			}
 
-			const grossShiftIncomeRub =
-				(reconciliationResult.totals.incomeCashRub || 0) +
-				(reconciliationResult.totals.incomeElectronicRub || 0) +
-				(reconciliationResult.totals.incomeSbpRub || 0) +
-				(reconciliationResult.totals.advanceOffsetRub || 0) +
-				(reconciliationResult.totals.insuranceTotalRub || 0);
-			const incomeTotalKop = resolveSafeKopecks(
-				shift.incomeTotalKopecks,
-				grossShiftIncomeRub > 0 ? grossShiftIncomeRub : shift.incomeTotalRub,
+			const grossShiftIncomeKop =
+				rublesToKopecks(reconciliationResult.totals.incomeCashRub || 0) +
+				rublesToKopecks(reconciliationResult.totals.incomeElectronicRub || 0) +
+				rublesToKopecks(reconciliationResult.totals.incomeSbpRub || 0) +
+				rublesToKopecks(reconciliationResult.totals.advanceOffsetRub || 0) +
+				rublesToKopecks(reconciliationResult.totals.insuranceTotalRub || 0);
+			const incomeTotalKop =
+				grossShiftIncomeKop > 0
+					? grossShiftIncomeKop
+					: resolveSafeKopecks(shift.incomeTotalKopecks, shift.incomeTotalRub);
+			const reconciledReturnKop = rublesToKopecks(
+				reconciliationResult.totals.returnTotalRub || 0,
 			);
-			const expenseTotalKop = resolveSafeKopecks(
-				shift.expenseTotalKopecks,
-				reconciliationResult.totals.returnTotalRub > 0
-					? reconciliationResult.totals.returnTotalRub
-					: shift.expenseTotalRub,
-			);
+			const expenseTotalKop =
+				reconciledReturnKop > 0
+					? reconciledReturnKop
+					: resolveSafeKopecks(shift.expenseTotalKopecks, shift.expenseTotalRub);
 
 			const [updatedShift] = await tx
 				.update(cashBoxShifts)

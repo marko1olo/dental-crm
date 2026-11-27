@@ -96,10 +96,10 @@ export const InstallmentsQuickPaySubView: React.FC<InstallmentsQuickPaySubViewPr
 				<button
 					type="button"
 					onClick={onExecutePayment}
-					className="h-8 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+					className="h-11 sm:h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm sm:text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm"
 					data-testid="btn-confirm-installment-payment"
 				>
-					<Check className="w-3.5 h-3.5" />
+					<Check className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
 					<span>Пробить чек и закрыть взнос</span>
 				</button>
 			</div>

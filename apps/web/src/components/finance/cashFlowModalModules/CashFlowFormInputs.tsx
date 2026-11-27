@@ -1,8 +1,8 @@
 import React from "react";
-import { formatMoneyRu } from "./types";
+import { type CashBoxSummary, type CashFlowMode, formatMoneyRu } from "./types";
 
 interface CashFlowFormInputsProps {
-	readonly cashFlowMode: "cash_in" | "cash_out";
+	readonly cashFlowMode: CashFlowMode;
 	readonly cashFlowAmount: string;
 	readonly setCashFlowAmount: (val: string) => void;
 	readonly cashInDrawerRub: number;
@@ -10,6 +10,11 @@ interface CashFlowFormInputsProps {
 	readonly setCashFlowBasis: (val: string) => void;
 	readonly cashFlowPerson: string;
 	readonly setCashFlowPerson: (val: string) => void;
+	readonly cashBoxes?: readonly CashBoxSummary[] | undefined;
+	readonly fromCashBoxId?: string | undefined;
+	readonly setFromCashBoxId?: ((val: string) => void) | undefined;
+	readonly toCashBoxId?: string | undefined;
+	readonly setToCashBoxId?: ((val: string) => void) | undefined;
 }
 
 export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
@@ -21,16 +26,81 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 	setCashFlowBasis,
 	cashFlowPerson,
 	setCashFlowPerson,
+	cashBoxes = [],
+	fromCashBoxId = "",
+	setFromCashBoxId,
+	toCashBoxId = "",
+	setToCashBoxId,
 }) => {
 	const isCashIn = cashFlowMode === "cash_in";
+	const isTransfer = cashFlowMode === "transfer";
+	const selectedSourceBox = cashBoxes.find((b) => b.id === fromCashBoxId);
+	const effectiveAvailableRub = isTransfer
+		? selectedSourceBox?.balanceRub ?? cashInDrawerRub
+		: cashInDrawerRub;
+
 	return (
-		<div className="space-y-5">
+		<div className="space-y-4">
+			{isTransfer && (
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					<div className="min-w-0">
+						<label
+							htmlFor="cash-flow-from-box"
+							className="block text-xs font-semibold text-[var(--ink)] mb-1.5"
+						>
+							Из кассы (откуда)
+						</label>
+						<select
+							id="cash-flow-from-box"
+							value={fromCashBoxId}
+							onChange={(e) => setFromCashBoxId?.(e.target.value)}
+							data-testid="select-cash-transfer-from"
+							className="w-full min-w-0 h-11 sm:h-9 pl-3 pr-8 truncate rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/30"
+						>
+							{cashBoxes.length === 0 && (
+								<option value="">Кассы загружаются…</option>
+							)}
+							{cashBoxes.map((box) => (
+								<option key={box.id} value={box.id}>
+									{box.name} ({formatMoneyRu(box.balanceRub)})
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div className="min-w-0">
+						<label
+							htmlFor="cash-flow-to-box"
+							className="block text-xs font-semibold text-[var(--ink)] mb-1.5"
+						>
+							В кассу (куда)
+						</label>
+						<select
+							id="cash-flow-to-box"
+							value={toCashBoxId}
+							onChange={(e) => setToCashBoxId?.(e.target.value)}
+							data-testid="select-cash-transfer-to"
+							className="w-full min-w-0 h-11 sm:h-9 pl-3 pr-8 truncate rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/30"
+						>
+							{cashBoxes.length === 0 && (
+								<option value="">Кассы загружаются…</option>
+							)}
+							{cashBoxes.map((box) => (
+								<option key={box.id} value={box.id}>
+									{box.name} ({formatMoneyRu(box.balanceRub)})
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
+			)}
+
 			<div>
 				<label
 					htmlFor="cash-flow-amount-input"
-					className="block text-xs font-bold text-[var(--ink)] mb-1.5"
+					className="block text-xs font-semibold text-[var(--ink)] mb-1.5"
 				>
-					Сумма операции (₽):
+					Сумма операции (₽)
 				</label>
 				<div className="relative">
 					<input
@@ -42,9 +112,9 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 						value={cashFlowAmount}
 						onChange={(e) => setCashFlowAmount(e.target.value)}
 						data-testid="input-cash-flow-amount"
-						className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper)] text-lg font-black font-mono text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+						className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-lg font-semibold font-mono tabular-nums text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/30"
 					/>
-					<span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--muted)] pointer-events-none">
+					<span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--ink-muted)] pointer-events-none">
 						₽
 					</span>
 				</div>
@@ -55,18 +125,18 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 							key={amt}
 							type="button"
 							onClick={() => setCashFlowAmount(String(amt))}
-							className="min-h-[44px] px-3 py-1 text-xs font-bold rounded-lg border border-[var(--line,rgba(0,0,0,0.1))] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-all cursor-pointer"
 						>
 							+{amt.toLocaleString("ru-RU")} ₽
 						</button>
 					))}
-					{!isCashIn && cashInDrawerRub > 0 && (
+					{!isCashIn && effectiveAvailableRub > 0 && (
 						<button
 							type="button"
-							onClick={() => setCashFlowAmount(String(cashInDrawerRub))}
-							className="min-h-[44px] px-3 py-1 text-xs font-bold rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-all cursor-pointer"
+							onClick={() => setCashFlowAmount(String(effectiveAvailableRub))}
+							className="min-h-[44px] sm:min-h-[32px] px-3 py-1 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--warning-soft)] text-[var(--ink)] hover:opacity-90 transition-all cursor-pointer"
 						>
-							Вся наличность ({formatMoneyRu(cashInDrawerRub)})
+							Вся сумма ({formatMoneyRu(effectiveAvailableRub)})
 						</button>
 					)}
 				</div>
@@ -75,40 +145,46 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 			<div>
 				<label
 					htmlFor="cash-flow-basis-input"
-					className="block text-xs font-bold text-[var(--ink)] mb-1.5"
+					className="block text-xs font-semibold text-[var(--ink)] mb-1.5"
 				>
-					Основание операции / Назначение платежа:
+					Основание операции / Назначение платежа
 				</label>
 				<input
 					id="cash-flow-basis-input"
 					type="text"
-					placeholder="Например: Внесение разменной монеты на начало смены"
+					placeholder={
+						isTransfer
+							? "Например: Перевод выручки на расчётный счёт"
+							: "Например: Внесение разменной монеты на начало смены"
+					}
 					value={cashFlowBasis}
 					onChange={(e) => setCashFlowBasis(e.target.value)}
 					data-testid="input-cash-flow-basis"
-					className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+					className="w-full h-11 sm:h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/30"
 				/>
 			</div>
 
-			<div>
-				<label
-					htmlFor="cash-flow-person-input"
-					className="block text-xs font-bold text-[var(--ink)] mb-1.5"
-				>
-					{isCashIn
-						? "ФИО плательщика / сотрудника (опционально):"
-						: "ФИО получателя / инкассатора (опционально):"}
-				</label>
-				<input
-					id="cash-flow-person-input"
-					type="text"
-					placeholder={isCashIn ? "ФИО вносителя" : "ФИО получателя"}
-					value={cashFlowPerson}
-					onChange={(e) => setCashFlowPerson(e.target.value)}
-					data-testid="input-cash-flow-person"
-					className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
-				/>
-			</div>
+			{!isTransfer && (
+				<div>
+					<label
+						htmlFor="cash-flow-person-input"
+						className="block text-xs font-semibold text-[var(--ink)] mb-1.5"
+					>
+						{isCashIn
+							? "ФИО плательщика / сотрудника (необязательно)"
+							: "ФИО получателя / инкассатора (необязательно)"}
+					</label>
+					<input
+						id="cash-flow-person-input"
+						type="text"
+						placeholder={isCashIn ? "ФИО вносителя" : "ФИО получателя"}
+						value={cashFlowPerson}
+						onChange={(e) => setCashFlowPerson(e.target.value)}
+						data-testid="input-cash-flow-person"
+						className="w-full h-11 sm:h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/30"
+					/>
+				</div>
+			)}
 		</div>
 	);
 };

@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import {
 	type InstallmentPlan, type FiscalReceipt54FzResult, type TreatmentPresetType,
-	createDefaultInternalInstallmentsPreset, generateInstallmentReminder,
+	generateInstallmentReminder,
 	recordInstallmentPayment, TREATMENT_INSTALLMENT_PRESETS,
 } from "../installmentsEngine.js";
 import { rublesToKopecks, kopecksToRubles, percentageOfKopecks, basisPointsFromPercent } from "@dental/shared";
@@ -27,14 +27,41 @@ function toInstallmentMonths(months: number): 3 | 6 | 10 | 12 | 18 | 24 {
 	return 24;
 }
 
+interface ClinicCashBoxItem {
+	readonly id: string;
+	readonly type: string;
+	readonly isMain?: boolean | undefined;
+	readonly isCashless?: boolean | undefined;
+}
+
+function pickCashBoxIdForMethod(
+	boxes: readonly ClinicCashBoxItem[],
+	method: "card" | "cash" | "sbp",
+): string | undefined {
+	if (boxes.length === 0) return undefined;
+	if (method === "cash") {
+		return boxes.find((b) => b.isMain || b.type === "main" || b.type === "extra")?.id ?? boxes[0]?.id;
+	}
+	if (method === "sbp") {
+		return (
+			boxes.find((b) => b.type === "sbp")?.id ??
+			boxes.find((b) => b.isCashless || b.type === "cashless")?.id ??
+			boxes[0]?.id
+		);
+	}
+	return boxes.find((b) => b.isCashless || b.type === "cashless")?.id ?? boxes[0]?.id;
+}
+
 export function usePatientInstallmentsState(props: PatientInstallmentsModalProps) {
 	const {
 		isOpen, patientId = "", patientName = "",
-		patientPhone = "", clinicName = "",
+		clinicName = "",
 		initialPlan, onPlanUpdate,
 	} = props;
 
-	const [plan, setPlan] = useState<InstallmentPlan>(() => initialPlan || createDefaultInternalInstallmentsPreset(patientId, patientName, "aligners", new Date().toISOString(), patientPhone));
+	const [plan, setPlan] = useState<InstallmentPlan | null>(() => initialPlan ?? null);
+	const [isContractLoading, setIsContractLoading] = useState<boolean>(false);
+	const [cashBoxes, setCashBoxes] = useState<readonly ClinicCashBoxItem[]>([]);
 	const [activeSubView, setActiveSubView] = useState<InstallmentsSubView>("schedule");
 	const [selectedPaymentItemId, setSelectedPaymentItemId] = useState<string | null>(null);
 	const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"card" | "cash" | "sbp">("card");
@@ -57,25 +84,78 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		setSelectedPaymentItemId(null);
 		setCustomPayAmountRub("");
 		setLastReceipt(null);
-		if (initialPlan) {
-			setPlan(initialPlan);
-		} else {
-			setPlan(createDefaultInternalInstallmentsPreset(patientId, patientName, "aligners", new Date().toISOString(), patientPhone));
-		}
-	}, [isOpen, patientId, patientName, patientPhone, initialPlan]);
+		setPlan(initialPlan ?? null);
+	}, [isOpen, patientId, initialPlan]);
 
 	useEffect(() => {
-		if (isOpen && patientId && isUuid(patientId) && !initialPlan) {
-			let cancelled = false;
-			installmentsApi.fetchActiveContract().then((serverPlan) => {
-				if (!cancelled && serverPlan) { setPlan(serverPlan); onPlanUpdate?.(serverPlan); }
-			});
-			return () => { cancelled = true; };
+		if (!isOpen || !patientId || !isUuid(patientId) || initialPlan) {
+			return undefined;
 		}
-		return undefined;
+		let cancelled = false;
+		setIsContractLoading(true);
+		installmentsApi
+			.fetchActiveContract()
+			.then((serverPlan) => {
+				if (!cancelled) {
+					setPlan(serverPlan ?? null);
+					if (serverPlan) {
+						onPlanUpdate?.(serverPlan);
+					}
+				}
+			})
+			.finally(() => {
+				if (!cancelled) {
+					setIsContractLoading(false);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, [isOpen, patientId, initialPlan, installmentsApi, onPlanUpdate]);
 
+	useEffect(() => {
+		if (!isOpen) return undefined;
+		let cancelled = false;
+		const headers = appLogic?.auth?.denteClinicalReadHeaders?.() ?? {};
+		fetch("/api/cash/cash-box", { credentials: "same-origin", headers })
+			.then(async (res) => {
+				if (!res.ok) return;
+				const json = (await res.json()) as { data?: unknown } | unknown;
+				const raw =
+					json && typeof json === "object" && "data" in json
+						? (json as { data?: unknown }).data
+						: json;
+				if (!cancelled && Array.isArray(raw)) {
+					setCashBoxes(
+						raw
+							.filter(
+								(b): b is Record<string, unknown> =>
+									Boolean(b) && typeof b === "object",
+							)
+							.map((b) => ({
+								id: String(b.id ?? ""),
+								type: String(b.type ?? "main"),
+								isMain: Boolean(b.isMain),
+								isCashless: Boolean(b.isCashless),
+							}))
+							.filter((b) => b.id.length > 0),
+					);
+				}
+			})
+			.catch(() => {
+				// Best-effort cashbox lookup
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [isOpen, appLogic?.auth]);
+
 	const handleInitiateQuickPay = (itemId?: string) => {
+		if (!plan) {
+			showToast("Сначала оформите договор рассрочки для пациента", "info");
+			setActiveSubView("create_preset");
+			return;
+		}
 		const target = itemId ? plan.schedule.find((s) => s.id === itemId) : plan.nextPaymentDueItem || plan.schedule.find((s) => s.paidKopecks < s.amountKopecks);
 		if (!target) { showToast("Все платежи по рассрочке уже оплачены!", "success"); return; }
 		setSelectedPaymentItemId(target.id);
@@ -84,17 +164,21 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 	};
 
 	const handleExecutePayment = async () => {
-		if (!selectedPaymentItemId) return;
+		if (!plan || !selectedPaymentItemId) return;
 		const target = plan.schedule.find((s) => s.id === selectedPaymentItemId);
 		if (!target) return;
 		const enteredKop = customPayAmountRub ? rublesToKopecks(Math.max(1, Number(customPayAmountRub))) : (target.amountKopecks - target.paidKopecks);
 		try {
-			// PLN-03 [SEV-1]: Передаем фактическую сумму частичной оплаты amountPaidKopecks на бэкенд
-			if (isUuid(selectedPaymentItemId)) {
-				const ok = await installmentsApi.payTranche(selectedPaymentItemId, { amountPaidKopecks: enteredKop });
-				if (!ok) {
-					throw new Error("Не удалось зафиксировать оплату транша на сервере.");
-				}
+			if (!isUuid(selectedPaymentItemId)) {
+				throw new Error("Оплата возможна только по сохранённому серверному договору рассрочки.");
+			}
+			const cashBoxId = pickCashBoxIdForMethod(cashBoxes, selectedPaymentMethod);
+			const ok = await installmentsApi.payTranche(selectedPaymentItemId, {
+				amountPaidKopecks: enteredKop,
+				...(cashBoxId ? { cashBoxId } : {}),
+			});
+			if (!ok) {
+				throw new Error("Не удалось зафиксировать оплату транша на сервере.");
 			}
 			const { updatedPlan, receipt } = recordInstallmentPayment({
 				plan, paymentItemId: selectedPaymentItemId, paidAmountKopecks: enteredKop,
@@ -107,7 +191,9 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		}
 	};
 
-	const reminderData = generateInstallmentReminder({ patientName, clinicName, plan, sbpQrUrl: "https://qr.nspk.ru/pay-installment-0pct" });
+	const reminderData = plan
+		? generateInstallmentReminder({ patientName, clinicName, plan, sbpQrUrl: "https://qr.nspk.ru/pay-installment-0pct" })
+		: null;
 
 	const handleCreateNewPlan = async () => {
 		const totalKop = rublesToKopecks(newTotalRubles);
@@ -121,11 +207,13 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		}
 
 		try {
+			const cashBoxId = pickCashBoxIdForMethod(cashBoxes, selectedPaymentMethod);
 			const serverPlan = await installmentsApi.createContract({
 				patientId,
 				totalAmountRub: newTotalRubles,
 				downPaymentRub: kopecksToRubles(downPaymentKop),
 				monthsCount: validMonths,
+				...(cashBoxId ? { cashBoxId } : {}),
 				notes: presetCfg.notes,
 			});
 			if (serverPlan) {
@@ -143,7 +231,7 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 	};
 
 	return {
-		plan, setPlan, activeSubView, setActiveSubView, selectedPaymentItemId, setSelectedPaymentItemId,
+		plan, setPlan, isContractLoading, activeSubView, setActiveSubView, selectedPaymentItemId, setSelectedPaymentItemId,
 		selectedPaymentMethod, setSelectedPaymentMethod, customPayAmountRub, setCustomPayAmountRub,
 		lastReceipt, setLastReceipt, selectedPreset, setSelectedPreset, newTotalRubles, setNewTotalRubles,
 		newDownPaymentPercent, setNewDownPaymentPercent, newMonthsCount, setNewMonthsCount,
