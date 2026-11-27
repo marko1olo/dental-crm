@@ -29,7 +29,7 @@
 | **Волна 6-A** (Electron Windows `.exe` + ККТ/WIA) | Декомпозиция `electron/main.cjs` на 16 модулей, loopback `http://127.0.0.1:<port>` вместо `file://`, честный ATOL/Shtrikh-M ККТ и TWAIN/WIA/HotFolder | ✅ **DONE** | `a70806082a` (`23` файла, `23+7 = 30/30` тестов PASS, Zero-Trust принят) |
 | **Волна 6-B** (Capacitor Android `.apk`) | Единый `capacitor.config.ts` в корне (✅ `dd0c91d5ce`); `@capacitor/*` и сборка `android/` APK | ⏳ **OPEN** | В очереди после закрытия Electron/Wave 6 |
 | **Волна 7** *(P3 Final Hygiene)* | Baseline-сквош 289+ миграций (`ROT-014`), ревизия 1324 API роутов и `scripts/`, зачистка остаточного worktree + `settingsHardening #3` | ⏭️ **DEFERRED (P3)** | Строго после стабилизации Волн 1–6 |
-| **Санитарный Сапёр** *(Wave 6 Ratchet)* | Зачистка `as never`, `@ts-expect-error`, `any`, `as unknown as T`, `as T`, `x!`, `empty/silent catch`, `prod-imports-test-code` в `packages/shared/src/**` и чистых узлах | 🔒 **IN PROGRESS** | `Wave6-Sanitary-Deminer-Ratchet-Types-And-SilentCatches` (`01:09 27.11`) |
+| **Санитарный Сапёр** *(Wave 6 Ratchet)* | Зачистка `as never`, `@ts-expect-error`, `any`, `as unknown as T`, `as T`, `x!`, `empty/silent catch`, `prod-imports-test-code` в `packages/shared/src/**` и чистых узлах | ✅ **DONE** | `3f1313c0ff` (`32` файла; `as never` `1->0`, `@ts-ignore` `5->0`, `prod-imports-test` `3->0`, `any` `24->18`, `as T` `6977->6796`, `!` `1520->1492`, `empty-catch` `566->520`, `TOTAL DEBT 12717->12405`) |
 
 ---
 
