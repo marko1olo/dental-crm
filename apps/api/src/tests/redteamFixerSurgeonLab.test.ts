@@ -105,7 +105,6 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 					secureToken: "token-parent-order-001",
 					status: "completed",
 					priceKopecks: 2000000,
-					priceRub: 20000,
 				})
 				.onConflictDoNothing();
 		});
@@ -419,7 +418,6 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 		assert.ok(itemsAfter.length > 0);
 		for (const item of itemsAfter) {
 			assert.equal(Number(item.priceKopecks), 0, "lab_item priceKopecks must be 0 upon warranty remake");
-			assert.equal(Number(item.priceRub), 0, "lab_item priceRub must be 0 upon warranty remake");
 		}
 	});
 
@@ -488,9 +486,7 @@ describe("Red Team Fixer Surgeon: Dental Lab Warranty, RLS & Idempotency", { con
 				orderNumber: "ЗТЛ-ZERO-001",
 				secureToken: "token-zero-order-001",
 				status: "received",
-				priceRub: 15000,
 				priceKopecks: 1500000,
-				labCostRub: 0,
 				labCostKopecks: 0,
 			}).onConflictDoNothing();
 		});

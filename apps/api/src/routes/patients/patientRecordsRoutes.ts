@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { visitDiaries, visits } from "../../db/schema.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -23,10 +24,13 @@ export function registerPatientRecordsRoutes(app: FastifyInstance) {
 	 * Медицинские записи, протоколы приёмов и дневники медицинской карты приёма пациента
 	 * с соблюдением 152-ФЗ / 323-ФЗ ст. 13 (врачебная тайна).
 	 */
-	const getPatientRecordsHandler = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
+	const getPatientRecordsHandler = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -40,7 +44,9 @@ export function registerPatientRecordsRoutes(app: FastifyInstance) {
 		const patientId = params.patientId.trim();
 
 		try {
-			const patient = await getPatientByIdFromDb(orgId, patientId);
+			const patient = await withTenantReadCtx(orgId, (tx) =>
+				getPatientByIdFromDb(orgId, patientId, tx),
+			);
 			if (!patient) {
 				return sendPatientNotFound(reply);
 			}
@@ -71,7 +77,7 @@ export function registerPatientRecordsRoutes(app: FastifyInstance) {
 				action: "VIEW_PATIENT_MEDICAL_RECORDS",
 			});
 
-			const { patientVisits, patientDiaries } = await withTenantCtx(orgId, async (tx) => {
+			const { patientVisits, patientDiaries } = await withTenantReadCtx(orgId, async (tx) => {
 				const visitsRows = await tx
 					.select({
 						id: visits.id,
@@ -113,6 +119,16 @@ export function registerPatientRecordsRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.get("/api/patients/:patientId/records", getPatientRecordsHandler);
-	app.get("/api/patients/:patientId/emk", getPatientRecordsHandler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/records",
+		permission: "public",
+		handler: getPatientRecordsHandler,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/emk",
+		permission: "public",
+		handler: getPatientRecordsHandler,
+	});
 }

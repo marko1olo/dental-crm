@@ -9,6 +9,10 @@ import { signToken } from "../utils/cryptoHelper.js";
 
 describe("API 12-role Permission Matrix & Executive Access Guard", () => {
 	it("grants analytics.read to accountant and denies analytics.read for reception roles", () => {
+		assert.ok(ROLE_PERMISSIONS.accountant);
+		assert.ok(ROLE_PERMISSIONS.senior_admin);
+		assert.ok(ROLE_PERMISSIONS.administrator);
+		assert.ok(ROLE_PERMISSIONS.registrar);
 		assert.ok(ROLE_PERMISSIONS.accountant.includes("analytics.read"));
 		assert.ok(!ROLE_PERMISSIONS.senior_admin.includes("analytics.read"));
 		assert.ok(!ROLE_PERMISSIONS.administrator.includes("analytics.read"));

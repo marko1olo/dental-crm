@@ -131,6 +131,7 @@ export interface SyncPullResult {
 	appointments: unknown[];
 	toothStates: unknown[];
 	vectors: unknown[];
+	tombstones: unknown[];
 	invoices?: unknown[] | undefined;
 }
 

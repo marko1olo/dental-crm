@@ -311,18 +311,16 @@ describe("Wave 15 Core Contracts, Security Guards & Fiscal Integrity Regression 
 						patientId: PATIENT_A1_ID,
 						status: "issued",
 						totalAmountRub: 2500,
-						totalRub: 2500,
+						totalRub: "2500",
 						totalPriceKopecks: 250000n,
-						paidAmountRub: 0,
-						itemsJson: [],
 					});
 					await tx.insert(familyGroups).values({
 						id: FAMILY_A_ID,
 						organizationId: ORG_A_ID,
 						name: "Семья Тестовых",
 						headPatientId: PATIENT_A2_ID,
-						balance: 5000,
-						balanceKopecks: 500000n,
+						balance: "5000.00",
+						balanceKopecks: 500000,
 					});
 					const [mainBox] = await tx
 						.select()
@@ -363,10 +361,8 @@ describe("Wave 15 Core Contracts, Security Guards & Fiscal Integrity Regression 
 						patientId: PATIENT_B1_ID,
 						status: "issued",
 						totalAmountRub: 3000,
-						totalRub: 3000,
+						totalRub: "3000",
 						totalPriceKopecks: 300000n,
-						paidAmountRub: 0,
-						itemsJson: [],
 					});
 				});
 			} catch (err) {
@@ -494,6 +490,7 @@ describe("Wave 15 Core Contracts, Security Guards & Fiscal Integrity Regression 
 				organizationId: ORG_A_ID,
 				familyGroupId: FAMILY_A_ID,
 				patientId: PATIENT_A2_ID,
+				amountRub: 1500,
 				amountKopecks: 150000,
 				method: "cash",
 				clientMutationId: mutId,

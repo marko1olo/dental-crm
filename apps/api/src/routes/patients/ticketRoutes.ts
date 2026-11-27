@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { PatientTaskAssigneeNotFoundError } from "../../db/patientTaskTicketsQuery.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	PATIENT_ID_UUID_PATTERN,
 	requireClinicOrganizationId,
@@ -27,42 +29,53 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 	 * description, assignedToId, status). Таблица —
 	 * drizzle/0144_patient_task_tickets.sql.
 	 */
-	app.get("/api/patients/:patientId/tickets", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
-		const { patientId } = request.params as { patientId?: string };
-		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
-			return sendPatientRouteValidationError(reply);
-		}
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/tickets",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId.trim())) {
+				return sendPatientRouteValidationError(reply);
+			}
 
-		try {
-			// Карта чужой клиники и карта без поручений — разные ответы. Пустой список
-			// на несуществующей карте администратор прочитает как «дел по ней нет».
-			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
-			if (!patient) return sendPatientNotFound(reply);
+			try {
+				const { getPatientTaskTicketsFromDb } = await import(
+					"../../db/patientTaskTicketsQuery.js"
+				);
+				// Карта чужой клиники и карта без поручений — разные ответы. Пустой список
+				// на несуществующей карте администратор прочитает как «дел по ней нет».
+				const tickets = await withTenantReadCtx(orgId, async (tx) => {
+					const patient = await getPatientByIdFromDb(orgId, patientId.trim(), tx);
+					if (!patient) return null;
+					return getPatientTaskTicketsFromDb(orgId, patientId.trim(), tx);
+				});
+				if (!tickets) return sendPatientNotFound(reply);
 
-			const { getPatientTaskTicketsFromDb } = await import(
-				"../../db/patientTaskTicketsQuery.js"
-			);
-			return reply
-				.status(200)
-				.send(await getPatientTaskTicketsFromDb(orgId, patientId.trim()));
-		} catch (e) {
-			// Отказ базы НЕ выдаём за пустой список: экран умеет показать отказ отдельно
-			// от пустоты, и эта способность держится на коде ответа.
-			request.log.error(
-				{ err: e },
-				"[Patients] Ошибка чтения задач по пациенту",
-			);
-			return reply.code(500).send({
-				error: "PatientTaskTicketsUnavailable",
-				message:
-					"Не удалось прочитать задачи по этой карте. Не считайте, что их нет: повторите чтение и не планируйте день по этому списку.",
-			});
-		}
+				return reply.status(200).send(tickets);
+			} catch (e) {
+				// Отказ базы НЕ выдаём за пустой список: экран умеет показать отказ отдельно
+				// от пустоты, и эта способность держится на коде ответа.
+				request.log.error(
+					{ err: e },
+					"[Patients] Ошибка чтения задач по пациенту",
+				);
+				return reply.code(500).send({
+					error: "PatientTaskTicketsUnavailable",
+					message:
+						"Не удалось прочитать задачи по этой карте. Не считайте, что их нет: повторите чтение и не планируйте день по этому списку.",
+				});
+			}
+		},
 	});
 
-	app.post("/api/patients/:patientId/tickets", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/tickets",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 		const { patientId } = request.params as { patientId?: string };
@@ -115,23 +128,26 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 		const priority = body.priority ?? "normal";
 
 		try {
-			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
-			if (!patient) return sendPatientNotFound(reply);
-
 			const {
 				createPatientTaskTicketInDb,
 				PatientTaskAssigneeNotFoundError,
 			} = await import("../../db/patientTaskTicketsQuery.js");
-			const created = await createPatientTaskTicketInDb(
-				orgId,
-				patientId.trim(),
-				{
-					title,
-					description,
-					assignedToId,
-					priority,
-				},
-			);
+			const created = await withTenantWriteCtx(orgId, async (tx) => {
+				const patient = await getPatientByIdFromDb(orgId, patientId.trim(), tx);
+				if (!patient) return null;
+				return createPatientTaskTicketInDb(
+					orgId,
+					patientId.trim(),
+					{
+						title,
+						description,
+						assignedToId,
+						priority,
+					},
+					tx,
+				);
+			});
+			if (!created) return sendPatientNotFound(reply);
 			return reply.status(201).send(created);
 		} catch (e) {
 			if (e instanceof PatientTaskAssigneeNotFoundError) {
@@ -150,11 +166,14 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 					"Не удалось создать задачу. Она могла не сохраниться — обновите список перед повторным вводом.",
 			});
 		}
+		},
 	});
 
-	app.put(
-		"/api/patients/:patientId/tickets/:ticketId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/patients/:patientId/tickets/:ticketId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const { patientId, ticketId } = request.params as {
@@ -199,11 +218,14 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 				const { setPatientTaskTicketStatusInDb } = await import(
 					"../../db/patientTaskTicketsQuery.js"
 				);
-				const updated = await setPatientTaskTicketStatusInDb(
-					orgId,
-					patientId.trim(),
-					ticketId.trim(),
-					status,
+				const updated = await withTenantWriteCtx(orgId, (tx) =>
+					setPatientTaskTicketStatusInDb(
+						orgId,
+						patientId.trim(),
+						ticketId.trim(),
+						status,
+						tx,
+					),
 				);
 				// Записи нет — 404, а не тихий успех: экран переставляет галочку
 				// оптимистично и вернёт прежнее значение только по отказу.
@@ -227,11 +249,13 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 
-	app.delete(
-		"/api/patients/:patientId/tickets/:ticketId",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "DELETE",
+		path: "/api/patients/:patientId/tickets/:ticketId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const { patientId, ticketId } = request.params as {
@@ -251,10 +275,13 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 				const { deletePatientTaskTicketFromDb } = await import(
 					"../../db/patientTaskTicketsQuery.js"
 				);
-				const removed = await deletePatientTaskTicketFromDb(
-					orgId,
-					patientId.trim(),
-					ticketId.trim(),
+				const removed = await withTenantWriteCtx(orgId, (tx) =>
+					deletePatientTaskTicketFromDb(
+						orgId,
+						patientId.trim(),
+						ticketId.trim(),
+						tx,
+					),
 				);
 				// Экран по успеху убирает строку из списка. «Удалено» без удаления вернуло бы
 				// задачу при следующем открытии карты.
@@ -278,5 +305,5 @@ export function registerPatientTicketRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 }

@@ -15,6 +15,7 @@ import {
 	validatePackageIntegrity,
 } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
 	CommerceMlService,
@@ -334,7 +335,13 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		});
 	};
 
-	const handleGetExport = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleGetExport = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
 		if (!access) return;
 
@@ -349,7 +356,13 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		return executeExport(access.organizationId, reply, parsedQuery.data);
 	};
 
-	const handlePostExport = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handlePostExport = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
 		if (!access) return;
 
@@ -364,16 +377,42 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		return executeExport(access.organizationId, reply, parsedBody.data);
 	};
 
-	app.get("/api/v1/integrations/1c/commerceml/export", handleGetExport);
-	app.post("/api/v1/integrations/1c/commerceml/export", handlePostExport);
-	app.get("/api/commerceml/export", handleGetExport);
-	app.post("/api/commerceml/export", handlePostExport);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/integrations/1c/commerceml/export",
+		permission: "public",
+		handler: handleGetExport,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/v1/integrations/1c/commerceml/export",
+		permission: "public",
+		handler: handlePostExport,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/commerceml/export",
+		permission: "public",
+		handler: handleGetExport,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/commerceml/export",
+		permission: "public",
+		handler: handlePostExport,
+	});
 
 	// ═════════════════════════════════════════════════════════════════════════
 	// 2. CATALOG (import.xml) & OFFERS (offers.xml) ENDPOINTS
 	// ═════════════════════════════════════════════════════════════════════════
 
-	const handleGetCatalog = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleGetCatalog = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
 		if (!access) return;
 
@@ -404,7 +443,13 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 			.send(res.xml);
 	};
 
-	const handleGetOffers = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleGetOffers = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
 		if (!access) return;
 
@@ -434,16 +479,42 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 			.send(res.xml);
 	};
 
-	app.get("/api/v1/integrations/1c/commerceml/catalog", handleGetCatalog);
-	app.get("/api/commerceml/catalog", handleGetCatalog);
-	app.get("/api/v1/integrations/1c/commerceml/offers", handleGetOffers);
-	app.get("/api/commerceml/offers", handleGetOffers);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/integrations/1c/commerceml/catalog",
+		permission: "public",
+		handler: handleGetCatalog,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/commerceml/catalog",
+		permission: "public",
+		handler: handleGetCatalog,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/integrations/1c/commerceml/offers",
+		permission: "public",
+		handler: handleGetOffers,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/commerceml/offers",
+		permission: "public",
+		handler: handleGetOffers,
+	});
 
 	// ═════════════════════════════════════════════════════════════════════════
 	// 3. INBOUND ACID SYNC ENDPOINT (POST)
 	// ═════════════════════════════════════════════════════════════════════════
 
-	const handleSync = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleSync = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.sync");
 		if (!access) return;
 
@@ -536,14 +607,30 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		return reply.send(syncResult);
 	};
 
-	app.post("/api/v1/integrations/1c/commerceml/sync", handleSync);
-	app.post("/api/commerceml/sync", handleSync);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/v1/integrations/1c/commerceml/sync",
+		permission: "public",
+		handler: handleSync,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/commerceml/sync",
+		permission: "public",
+		handler: handleSync,
+	});
 
 	// ═════════════════════════════════════════════════════════════════════════
 	// 4. VALIDATION ENDPOINT
 	// ═════════════════════════════════════════════════════════════════════════
 
-	const handleValidate = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleValidate = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.validate");
 		if (!access) return;
 		const organizationId = access.organizationId;
@@ -577,17 +664,30 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		});
 	};
 
-	app.post("/api/v1/integrations/1c/commerceml/validate", handleValidate);
-	app.post("/api/commerceml/validate", handleValidate);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/v1/integrations/1c/commerceml/validate",
+		permission: "public",
+		handler: handleValidate,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/commerceml/validate",
+		permission: "public",
+		handler: handleValidate,
+	});
 
 	// ═════════════════════════════════════════════════════════════════════════
 	// 5. CHECK DOUBLE POSTING ENDPOINT
 	// ═════════════════════════════════════════════════════════════════════════
 
-	const handleCheckDoublePosting = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
+	const handleCheckDoublePosting = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
 		if (!access) return;
 
@@ -614,118 +714,140 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		return reply.send(check);
 	};
 
-	app.post(
-		"/api/v1/integrations/1c/commerceml/check-double-posting",
-		handleCheckDoublePosting,
-	);
-	app.post("/api/commerceml/check-double-posting", handleCheckDoublePosting);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/v1/integrations/1c/commerceml/check-double-posting",
+		permission: "public",
+		handler: handleCheckDoublePosting,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/commerceml/check-double-posting",
+		permission: "public",
+		handler: handleCheckDoublePosting,
+	});
 
 	// ═════════════════════════════════════════════════════════════════════════
 	// 6. STATUTORY DOMAIN INSPECTION LISTS
 	// ═════════════════════════════════════════════════════════════════════════
 
-	app.get("/api/v1/integrations/1c/commerceml/shifts", async (request, reply) => {
-		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
-		if (!access) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/integrations/1c/commerceml/shifts",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+			if (!access) return;
 
-		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
-		if (!parsedQuery.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса смен.",
-				details: parsedQuery.error.issues,
+			const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса смен.",
+					details: parsedQuery.error.issues,
+				});
+			}
+			const todayIso = new Date().toISOString().slice(0, 10);
+
+			const result = await CommerceMlService.buildCommerceMlPackage({
+				organizationId: access.organizationId,
+				startDateIso: parsedQuery.data.startDateIso || todayIso,
+				endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
+				includeRetailSales: true,
+				includeMedicalActs: false,
+				includeMaterials: false,
+				includePayroll: false,
 			});
-		}
-		const todayIso = new Date().toISOString().slice(0, 10);
 
-		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: access.organizationId,
-			startDateIso: parsedQuery.data.startDateIso || todayIso,
-			endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
-			includeRetailSales: true,
-			includeMedicalActs: false,
-			includeMaterials: false,
-			includePayroll: false,
-		});
-
-		return reply.send({
-			document: result.package.retailSalesDocument,
-			sha256: result.package.retailSalesDocument.sha256Hash,
-			accountsBreakdown: {
-				accountCashDesk: result.package.chartOfAccounts.accountCashDesk,
-				accountAcquiringTransit:
-					result.package.chartOfAccounts.accountAcquiringTransit,
-				accountBankCurrent: result.package.chartOfAccounts.accountBankCurrent,
-				accountAdvancesReceived:
-					result.package.chartOfAccounts.accountAdvancesReceived,
-			},
-		});
+			return reply.send({
+				document: result.package.retailSalesDocument,
+				sha256: result.package.retailSalesDocument.sha256Hash,
+				accountsBreakdown: {
+					accountCashDesk: result.package.chartOfAccounts.accountCashDesk,
+					accountAcquiringTransit:
+						result.package.chartOfAccounts.accountAcquiringTransit,
+					accountBankCurrent: result.package.chartOfAccounts.accountBankCurrent,
+					accountAdvancesReceived:
+						result.package.chartOfAccounts.accountAdvancesReceived,
+				},
+			});
+		},
 	});
 
-	app.get("/api/v1/integrations/1c/commerceml/acts", async (request, reply) => {
-		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
-		if (!access) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/integrations/1c/commerceml/acts",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+			if (!access) return;
 
-		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
-		if (!parsedQuery.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса медицинских актов.",
-				details: parsedQuery.error.issues,
+			const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса медицинских актов.",
+					details: parsedQuery.error.issues,
+				});
+			}
+			const todayIso = new Date().toISOString().slice(0, 10);
+
+			const result = await CommerceMlService.buildCommerceMlPackage({
+				organizationId: access.organizationId,
+				startDateIso: parsedQuery.data.startDateIso || todayIso,
+				endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
+				includeRetailSales: false,
+				includeMedicalActs: true,
+				includeMaterials: false,
+				includePayroll: false,
 			});
-		}
-		const todayIso = new Date().toISOString().slice(0, 10);
 
-		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: access.organizationId,
-			startDateIso: parsedQuery.data.startDateIso || todayIso,
-			endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
-			includeRetailSales: false,
-			includeMedicalActs: true,
-			includeMaterials: false,
-			includePayroll: false,
-		});
-
-		return reply.send({
-			medicalActs: result.package.medicalActs,
-			count: result.package.medicalActs.length,
-		});
+			return reply.send({
+				medicalActs: result.package.medicalActs,
+				count: result.package.medicalActs.length,
+			});
+		},
 	});
 
-	app.get("/api/v1/integrations/1c/commerceml/materials", async (request, reply) => {
-		const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
-		if (!access) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/v1/integrations/1c/commerceml/materials",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const access = await requireCommerceMlAccess(request, reply, "integrations.commerceml.export");
+			if (!access) return;
 
-		const parsedQuery = exportQuerySchema.safeParse(request.query || {});
-		if (!parsedQuery.success) {
-			return reply.code(400).send({
-				error: "ValidationError",
-				message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса списания материалов.",
-				details: parsedQuery.error.issues,
+			const parsedQuery = exportQuerySchema.safeParse(request.query || {});
+			if (!parsedQuery.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: parsedQuery.error.issues[0]?.message ?? "Некорректные параметры запроса списания материалов.",
+					details: parsedQuery.error.issues,
+				});
+			}
+			const todayIso = new Date().toISOString().slice(0, 10);
+
+			const result = await CommerceMlService.buildCommerceMlPackage({
+				organizationId: access.organizationId,
+				startDateIso: parsedQuery.data.startDateIso || todayIso,
+				endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
+				includeRetailSales: false,
+				includeMedicalActs: false,
+				includeMaterials: true,
+				includePayroll: false,
 			});
-		}
-		const todayIso = new Date().toISOString().slice(0, 10);
 
-		const result = await CommerceMlService.buildCommerceMlPackage({
-			organizationId: access.organizationId,
-			startDateIso: parsedQuery.data.startDateIso || todayIso,
-			endDateIso: parsedQuery.data.endDateIso || parsedQuery.data.startDateIso || todayIso,
-			includeRetailSales: false,
-			includeMedicalActs: false,
-			includeMaterials: true,
-			includePayroll: false,
-		});
-
-		return reply.send({
-			materialWriteoffDocument: result.package.materialWriteoffDocument,
-			sha256: result.package.materialWriteoffDocument.sha256Hash,
-			accounts: {
-				debitAccount: result.package.chartOfAccounts.accountProductionCost,
-				creditAccountMaterials: result.package.chartOfAccounts.accountMaterials,
-				creditAccountConsumables:
-					result.package.chartOfAccounts.accountConsumables,
-			},
-		});
+			return reply.send({
+				materialWriteoffDocument: result.package.materialWriteoffDocument,
+				sha256: result.package.materialWriteoffDocument.sha256Hash,
+				accounts: {
+					debitAccount: result.package.chartOfAccounts.accountProductionCost,
+					creditAccountMaterials: result.package.chartOfAccounts.accountMaterials,
+					creditAccountConsumables:
+						result.package.chartOfAccounts.accountConsumables,
+				},
+			});
+		},
 	});
 }
 

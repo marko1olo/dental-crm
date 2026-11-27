@@ -11,7 +11,8 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import {
 	cashBoxes,
@@ -50,46 +51,41 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 	 * 1. GET /api/cash/cash-box
 	 * Список 6 кассовых счетов клиники с балансами.
 	 */
-	app.get("/api/cash/cash-box", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(request, reply, "cash boxes read");
-		if (reply.sent) return reply;
-		if (!orgId) return reply;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/cash/cash-box",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(request, reply, "cash boxes read");
+			if (reply.sent) return reply;
+			if (!orgId) return reply;
 
-		const result = await withTenantCtx(orgId, async (tx) => {
-			// Гарантируем, что 6 кассовых счетов инициализированы
-			await ensureOrganizationCashBoxes(tx, orgId);
+			const result = await withTenantWriteCtx(orgId, async (tx) => {
+				// Гарантируем, что 6 кассовых счетов инициализированы
+				await ensureOrganizationCashBoxes(tx, orgId);
 
-			const boxes = await tx
-				.select()
-				.from(cashBoxes)
-				.where(eq(cashBoxes.organizationId, orgId))
-				.orderBy(cashBoxes.displayOrder);
+				const boxes = await tx
+					.select()
+					.from(cashBoxes)
+					.where(eq(cashBoxes.organizationId, orgId))
+					.orderBy(cashBoxes.displayOrder);
 
-			return boxes;
-		});
+				return boxes;
+			});
 
-		return reply.send({ data: result, total: result.length });
+			return reply.send({ data: result, total: result.length });
+		},
 	});
 
 	/**
 	 * 1b. PATCH /api/cash/cash-box/:id
 	 * Обновление параметров кассового аппарата (модель, заводской номер, филиал, активность) в PostgreSQL.
 	 */
-	app.patch(
-		"/api/cash/cash-box/:id",
-		async (
-			request: FastifyRequest<{
-				Params: { id: string };
-				Body: {
-					name?: string;
-					kkmModel?: string | null;
-					kkmSerialNumber?: string | null;
-					branchId?: string | null;
-					kkmActive?: boolean;
-				};
-			}>,
-			reply: FastifyReply,
-		) => {
+	defineStreamRoute(app, {
+		method: "PATCH",
+		path: "/api/cash/cash-box/:id",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			// Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
 			const orgId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
@@ -119,7 +115,7 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			const { id } = parsedParams.data;
 			const body = parsedBody.data;
 
-			const updated = await withTenantCtx(orgId, async (tx) => {
+			const updated = await withTenantWriteCtx(orgId, async (tx) => {
 				const setFields: {
 					updatedAt: Date;
 					name?: string;
@@ -151,16 +147,19 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			}
 			return reply.send({ data: updated });
 		},
-	);
+	});
 
 	/**
 	 * 2. GET /api/cash/expense-reasons & GET /api/cash/expense-reason
 	 * 12 регламентированных статей расхода клиники.
 	 */
-	const handleGetExpenseReasons = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
+	const handleGetExpenseReasons = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = await requireResolvedOrganizationId(
 			request,
 			reply,
@@ -169,7 +168,7 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
-		const reasons = await withTenantCtx(orgId, async (tx) => {
+		const reasons = await withTenantWriteCtx(orgId, async (tx) => {
 			await ensureOrganizationExpenseReasons(tx, orgId);
 
 			return await tx
@@ -182,8 +181,18 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		return reply.send({ data: reasons, total: reasons.length });
 	};
 
-	app.get("/api/cash/expense-reasons", handleGetExpenseReasons);
-	app.get("/api/cash/expense-reason", handleGetExpenseReasons);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/cash/expense-reasons",
+		permission: "public",
+		handler: handleGetExpenseReasons,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/cash/expense-reason",
+		permission: "public",
+		handler: handleGetExpenseReasons,
+	});
 
 	// 3. Регистрация модульных маршрутов ЗТЛ: оплата наряда и фиксация installed (Feature #36)
 	await registerCashLabPaymentRoutes(app);
@@ -198,9 +207,11 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 	 * 5. GET /api/cash/operation-list
 	 * Журнал кассовых ордеров и проводок клиники.
 	 */
-	app.get(
-		"/api/cash/operation-list",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/cash/operation-list",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -239,7 +250,7 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				}
 			}
 
-			const ops = await withTenantCtx(orgId, async (tx) => {
+			const ops = await withTenantReadCtx(orgId, async (tx) => {
 				const conditions = [eq(cashOperations.organizationId, orgId)];
 
 				if (filters.cashBoxId) {
@@ -265,16 +276,19 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 
 			return reply.send({ data: ops, total: ops.length });
 		},
-	);
+	});
 
 	/**
 	 * 6. POST /api/cashbox/transactions/:id/retry-fiscalize & POST /api/cash/transactions/:id/retry-fiscalize
 	 * Безопасная повторная фискализация чека (54-ФЗ) после восстановления связи/бумаги.
 	 */
-	const handleRetryFiscalize = async (
-		request: FastifyRequest<{ Params: { id: string } }>,
-		reply: FastifyReply,
-	) => {
+	const handleRetryFiscalize = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -284,27 +298,37 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		if (!orgId) return reply;
 
 		return FiscalResilienceService.handleRetryFiscalizeRoute(
-			request,
+			request as FastifyRequest<{ Params: { id: string } }>,
 			reply,
 			orgId,
 		);
 	};
 
-	app.post(
-		"/api/cashbox/transactions/:id/retry-fiscalize",
-		handleRetryFiscalize,
-	);
-	app.post("/api/cash/transactions/:id/retry-fiscalize", handleRetryFiscalize);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/cashbox/transactions/:id/retry-fiscalize",
+		permission: "public",
+		handler: handleRetryFiscalize,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/cash/transactions/:id/retry-fiscalize",
+		permission: "public",
+		handler: handleRetryFiscalize,
+	});
 
 	/**
 	 * 7. POST /api/cashbox/payments, POST /api/cash/payments, POST /api/cashbox/receipt, POST /api/cash/receipt
 	 * Канонический эндпоинт проведения оплаты через кассу: целочисленные копейки (amountKopecks: bigint),
 	 * проводка в кассовый журнал cashOperations, обновление баланса cashBoxes и кассовый чек.
 	 */
-	const handleCashboxPayment = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
+	const handleCashboxPayment = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -355,34 +379,30 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 		return reply.code(result.statusCode).send(result.body);
 	};
 
-	const cashboxPaymentRouteOptions = {
-		schema: {
-			description:
-				"Cashbox payment with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-				},
+	const cashboxPaymentRouteSchema = {
+		description:
+			"Cashbox payment with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
 			},
 		},
 	};
 
-	app.post("/api/cashbox/payments", cashboxPaymentRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashboxPayment(request, reply);
-	});
-	app.post("/api/cash/payments", cashboxPaymentRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashboxPayment(request, reply);
-	});
-	app.post("/api/cashbox/receipt", cashboxPaymentRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashboxPayment(request, reply);
-	});
-	app.post("/api/cash/receipt", cashboxPaymentRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashboxPayment(request, reply);
-	});
+	for (const path of [
+		"/api/cashbox/payments",
+		"/api/cash/payments",
+		"/api/cashbox/receipt",
+		"/api/cash/receipt",
+	]) {
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			schema: cashboxPaymentRouteSchema,
+			handler: handleCashboxPayment,
+		});
+	}
 }

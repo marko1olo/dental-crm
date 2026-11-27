@@ -10,12 +10,14 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
+import { clinicOperationalModeSchema } from "@dental/shared";
 import { z } from "zod";
 import {
 	requireClinicalMutationContext,
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
+import { updateClinicProfileInDb } from "../../db/settings/clinicProfileQueries.js";
 import {
 	auditEvents,
 	chairs,
@@ -28,12 +30,14 @@ import {
 	importPricelistStream,
 } from "../../services/import/streamingDataImporter.js";
 
+const hhmmRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const onboardingCompleteBodySchema = z.object({
 	profile: z.object({
 		clinicName: z.string().optional(),
 		phone: z.string().optional(),
 		timezone: z.string().optional(),
-		mode: z.string().optional(),
+		mode: clinicOperationalModeSchema.optional(),
 	}).strict().optional(),
 	chairs: z.array(
 		z.object({
@@ -44,12 +48,13 @@ const onboardingCompleteBodySchema = z.object({
 		}).strict(),
 	).optional(),
 	schedule: z.object({
-		workdayStart: z.string().optional(),
-		workdayEnd: z.string().optional(),
-		workingDays: z.array(z.number().int()).optional(),
+		workdayStart: z.string().regex(hhmmRegex, "Формат времени ЧЧ:ММ").optional(),
+		workdayEnd: z.string().regex(hhmmRegex, "Формат времени ЧЧ:ММ").optional(),
+		workingDays: z.array(z.number().int().min(0).max(6)).min(1).optional(),
 		defaultVisitMinutes: z.number().int().positive().optional(),
+		appointmentBufferMinutes: z.number().int().nonnegative().optional(),
 	}).strict().optional(),
-	preset: z.string().optional(),
+	preset: clinicOperationalModeSchema.optional(),
 }).strict();
 
 const onboardingImportBodySchema = z.object({
@@ -113,6 +118,9 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 			clinicName: clinic?.name || org?.name || "Стоматологический кабинет",
 			phone: clinic?.phone || "",
 			timezone: clinic?.timezone || "Europe/Moscow",
+			schedule: org?.clinicSchedule ?? null,
+			defaultVisitMinutes:
+				typeof flags.defaultVisitMinutes === "number" ? flags.defaultVisitMinutes : 30,
 			chairsCount,
 			servicesCount,
 		};
@@ -149,6 +157,7 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 				.select()
 				.from(organizations)
 				.where(eq(organizations.id, organizationId))
+				.for("update")
 				.limit(1);
 
 			const isSolo = mode === "solo_doctor" || mode === "one_chair";
@@ -177,6 +186,24 @@ export async function registerOnboardingRoutes(app: FastifyInstance): Promise<vo
 					updatedAt: now,
 				})
 				.where(eq(organizations.id, organizationId));
+
+			if (body.schedule) {
+				await updateClinicProfileInDb(
+					organizationId,
+					{
+						scheduleDefaults: {
+							workdayStart: body.schedule.workdayStart ?? "09:00",
+							workdayEnd: body.schedule.workdayEnd ?? "18:00",
+							workingDays: body.schedule.workingDays ?? [1, 2, 3, 4, 5],
+							appointmentBufferMinutes: body.schedule.appointmentBufferMinutes ?? 5,
+						},
+						...(body.schedule.defaultVisitMinutes !== undefined
+							? { defaultVisitMinutes: body.schedule.defaultVisitMinutes }
+							: {}),
+					},
+					tx,
+				);
+			}
 
 			let clinicId: string;
 			const [existingClinic] = await tx

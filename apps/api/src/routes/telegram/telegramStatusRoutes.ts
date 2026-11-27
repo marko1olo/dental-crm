@@ -1,5 +1,9 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import {
+	definePublicRoute,
+	defineStreamRoute,
+} from "../../core/routeFactories.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { telegramMultiTenantSupervisor } from "../../services/telegram/TelegramMultiTenantSupervisor.js";
 import type { PostOpSurveyInput, TelegramBotPresetId } from "@dental/shared";
@@ -54,6 +58,17 @@ const evaluatePostOpSurveyBodySchema = z
 	})
 	.strict();
 
+async function runControlPlanePreHandler(
+	options: {
+		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+	},
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<boolean> {
+	await options.preHandler(request, reply);
+	return !reply.sent;
+}
+
 export function registerTelegramStatusRoutes(
 	app: FastifyInstance,
 	telegramControlPlaneRouteOptions: {
@@ -63,29 +78,35 @@ export function registerTelegramStatusRoutes(
 	/**
 	 * Healthcheck эндпоинт для VPS хостинга, systemd, Caddy и Docker-compose мониторинга.
 	 */
-	app.get("/api/telegram/health", async () => {
-		const settings = getDenteTelegramBotSettings();
-		const runtimeResult = resolveTelegramRuntimeContext();
-		const isReady = runtimeResult.ok && settings.mode !== "disabled";
-		return {
-			status: isReady ? "healthy" : "degraded",
-			mode: settings.mode,
-			tokenConfigured: runtimeResult.ok ? runtimeResult.context.tokenConfigured : false,
-			webhookReady: runtimeResult.ok ? runtimeResult.context.webhookReady : false,
-			botUsername: runtimeResult.ok ? runtimeResult.context.botUsername : null,
-			timestamp: new Date().toISOString(),
-			service: "dente-telegram-bot-hosting",
-			version: "2.4.0",
-		};
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/telegram/health",
+		handler: async () => {
+			const settings = getDenteTelegramBotSettings();
+			const runtimeResult = resolveTelegramRuntimeContext();
+			const isReady = runtimeResult.ok && settings.mode !== "disabled";
+			return {
+				status: isReady ? "healthy" : "degraded",
+				mode: settings.mode,
+				tokenConfigured: runtimeResult.ok ? runtimeResult.context.tokenConfigured : false,
+				webhookReady: runtimeResult.ok ? runtimeResult.context.webhookReady : false,
+				botUsername: runtimeResult.ok ? runtimeResult.context.botUsername : null,
+				timestamp: new Date().toISOString(),
+				service: "dente-telegram-bot-hosting",
+				version: "2.4.0",
+			};
+		},
 	});
 
 	/**
 	 * Сводка High-Density Telegram Supervisor: мониторинг памяти, активных ботов, RPS и latency.
 	 */
-	app.get(
-		"/api/telegram/supervisor/status",
-		telegramControlPlaneRouteOptions,
-		async (request) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/supervisor/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const identity = getRequestIdentity(request);
 			const scopedOrgId =
 				identity.verified && identity.organizationId
@@ -101,16 +122,19 @@ export function registerTelegramStatusRoutes(
 					: telegramMultiTenantSupervisor.getSupervisorStatus(),
 			};
 		},
-	);
+	});
 
 	/**
 	 * Горячий перезапуск конкретного бота в супервизоре.
 	 */
-	app.post<{ Params: { botId: string } }>(
-		"/api/telegram/supervisor/bots/:botId/reload",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
-			const botId = request.params.botId?.trim();
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/supervisor/bots/:botId/reload",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
+			const reqParams = request.params as { botId?: string };
+			const botId = reqParams.botId?.trim();
 			if (!botId) {
 				return reply.code(400).send({
 					ok: false,
@@ -153,16 +177,19 @@ export function registerTelegramStatusRoutes(
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * Проверка здоровья конкретного бота и вебхука через Telegram Bot API.
 	 */
-	app.get<{ Params: { botId: string } }>(
-		"/api/telegram/supervisor/bots/:botId/health",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
-			const botId = request.params.botId?.trim();
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/supervisor/bots/:botId/health",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
+			const reqParams = request.params as { botId?: string };
+			const botId = reqParams.botId?.trim();
 			if (!botId) {
 				return reply.code(400).send({
 					ok: false,
@@ -198,15 +225,17 @@ export function registerTelegramStatusRoutes(
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * Проверка токена Telegram-бота через getMe.
 	 */
-	app.post(
-		"/api/telegram/bot/verify",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/bot/verify",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsed = verifyBotTokenBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.code(400).send({
@@ -219,15 +248,17 @@ export function registerTelegramStatusRoutes(
 			const result = await TelegramBotHostingService.verifyBotToken(parsed.data.token);
 			return reply.code(result.ok ? 200 : 400).send(result);
 		},
-	);
+	});
 
 	/**
 	 * Регистрация и настройка Webhook для бота через setWebhook.
 	 */
-	app.post(
-		"/api/telegram/bot/setup-webhook",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/bot/setup-webhook",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsed = setupWebhookBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.code(400).send({
@@ -244,35 +275,40 @@ export function registerTelegramStatusRoutes(
 			});
 			return reply.code(result.ok ? 200 : 502).send(result);
 		},
-	);
+	});
 
 	/**
 	 * Каталог 5 клинических пресетов ботов (DENTE Bot Archetypes).
 	 */
-	app.get(
-		"/api/telegram/presets",
-		telegramControlPlaneRouteOptions,
-		async () => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/presets",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			return {
 				ok: true,
 				presets: TelegramBotPresetsEngine.listPresets(),
 			};
 		},
-	);
+	});
 
 	/**
 	 * Получить метаданные и экраны конкретного пресета бота.
 	 */
-	app.get<{ Params: { presetId: string } }>(
-		"/api/telegram/presets/:presetId",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
-			const presetId = request.params.presetId as TelegramBotPresetId;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/presets/:presetId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
+			const reqParams = request.params as { presetId: string };
+			const presetId = reqParams.presetId as TelegramBotPresetId;
 			if (!(presetId in TELEGRAM_BOT_PRESETS)) {
 				return reply.code(404).send({
 					ok: false,
 					error: "PresetNotFound",
-					message: `Пресет с ID "${request.params.presetId}" не найден в каталоге.`,
+					message: `Пресет с ID "${reqParams.presetId}" не найден в каталоге.`,
 				});
 			}
 			const preset = TelegramBotPresetsEngine.getPreset(presetId);
@@ -281,16 +317,19 @@ export function registerTelegramStatusRoutes(
 				preset,
 			};
 		},
-	);
+	});
 
 	/**
 	 * Пошаговая инструкция онбординга @BotFather для главврача / администратора клиники.
 	 */
-	app.get<{ Querystring: { presetId?: string } }>(
-		"/api/telegram/onboarding-guide",
-		telegramControlPlaneRouteOptions,
-		async (request) => {
-			const presetId = (request.query?.presetId as TelegramBotPresetId) || "universal_clinic";
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/onboarding-guide",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
+			const reqQuery = request.query as { presetId?: string } | undefined;
+			const presetId = (reqQuery?.presetId as TelegramBotPresetId) || "universal_clinic";
 			const guideMarkdown = TelegramBotPresetsEngine.getBotFatherGuideMarkdown(presetId);
 			return {
 				ok: true,
@@ -298,7 +337,7 @@ export function registerTelegramStatusRoutes(
 				guideMarkdown,
 			};
 		},
-	);
+	});
 
 	/**
 	 * Автоматическое применение пресета к Telegram-боту клиники:
@@ -308,10 +347,12 @@ export function registerTelegramStatusRoutes(
 	 * 4. Устанавливает краткое описание (setMyShortDescription)
 	 * 5. Настраивает Webhook при наличии webhookUrl
 	 */
-	app.post(
-		"/api/telegram/bot/apply-preset",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/bot/apply-preset",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsed = applyPresetBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.code(400).send({
@@ -365,17 +406,19 @@ export function registerTelegramStatusRoutes(
 
 			return reply.code(result.ok ? 200 : 400).send(result);
 		},
-	);
+	});
 
 	/**
 	 * Клиническая оценка послеоперационного опроса (Day 1 / Day 3).
 	 * При выявлении критических симптомов (боль >= 4, температура >38°C, кровотечение)
 	 * формирует срочный алерт врачу.
 	 */
-	app.post(
-		"/api/telegram/surveys/evaluate-post-op",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/surveys/evaluate-post-op",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsed = evaluatePostOpSurveyBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.code(400).send({
@@ -404,12 +447,14 @@ export function registerTelegramStatusRoutes(
 				evaluation: result,
 			});
 		},
-	);
+	});
 
-	app.get(
-		"/api/telegram/status",
-		telegramControlPlaneRouteOptions,
-		async (request) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const identity = getRequestIdentity(request);
 			if (identity.organizationId) {
 				const loaded = await loadTelegramBotSettingsFromDatabase(
@@ -425,17 +470,20 @@ export function registerTelegramStatusRoutes(
 			}
 			return await buildStatus();
 		},
-	);
+	});
 
-	app.get<{ Params: { organizationId: string } }>(
-		"/api/telegram/status/:organizationId",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/status/:organizationId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
+			const reqParams = request.params as { organizationId: string };
 			const identity = getRequestIdentity(request);
 			if (
 				identity.verified &&
 				identity.organizationId &&
-				request.params.organizationId !== identity.organizationId
+				reqParams.organizationId !== identity.organizationId
 			) {
 				return reply.code(403).send({
 					error: "TelegramCrossTenantDenied",
@@ -443,13 +491,13 @@ export function registerTelegramStatusRoutes(
 				});
 			}
 			const loaded = await loadTelegramBotSettingsFromDatabase(
-				request.params.organizationId,
+				reqParams.organizationId,
 			);
 			if (loaded) {
 				applyLoadedTelegramBotSettings(loaded);
 			}
 			const runtimeResult = resolveTelegramRuntimeContext(
-				request.params.organizationId,
+				reqParams.organizationId,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -457,19 +505,22 @@ export function registerTelegramStatusRoutes(
 					message: runtimeResult.message,
 				});
 			}
-			return await buildStatus(request.params.organizationId);
+			return await buildStatus(reqParams.organizationId);
 		},
-	);
+	});
 
-	app.get<{ Params: { organizationId: string; botConfigId: string } }>(
-		"/api/telegram/status/:organizationId/:botConfigId",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/status/:organizationId/:botConfigId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
+			const reqParams = request.params as { organizationId: string; botConfigId: string };
 			const identity = getRequestIdentity(request);
 			if (
 				identity.verified &&
 				identity.organizationId &&
-				request.params.organizationId !== identity.organizationId
+				reqParams.organizationId !== identity.organizationId
 			) {
 				return reply.code(403).send({
 					error: "TelegramCrossTenantDenied",
@@ -477,14 +528,14 @@ export function registerTelegramStatusRoutes(
 				});
 			}
 			const loaded = await loadTelegramBotSettingsFromDatabase(
-				request.params.organizationId,
+				reqParams.organizationId,
 			);
 			if (loaded) {
 				applyLoadedTelegramBotSettings(loaded);
 			}
 			const runtimeResult = resolveTelegramRuntimeContext(
-				request.params.organizationId,
-				request.params.botConfigId,
+				reqParams.organizationId,
+				reqParams.botConfigId,
 			);
 			if (!runtimeResult.ok) {
 				return reply.code(runtimeResult.statusCode).send({
@@ -493,9 +544,9 @@ export function registerTelegramStatusRoutes(
 				});
 			}
 			return await buildStatus(
-				request.params.organizationId,
-				request.params.botConfigId,
+				reqParams.organizationId,
+				reqParams.botConfigId,
 			);
 		},
-	);
+	});
 }

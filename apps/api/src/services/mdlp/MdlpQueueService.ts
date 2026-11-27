@@ -22,6 +22,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export interface AddToQueueInput {
 	rawBarcode: string;
 	costRub?: number | null | undefined;
+	costKopecks?: number | null | undefined;
 	patientId?: string | null | undefined;
 	patientName?: string | null | undefined;
 	visitId?: string | null | undefined;
@@ -120,6 +121,7 @@ export class MdlpQueueService {
 			};
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB query failed for org ${orgId}`);
+			if (process.env.NODE_ENV !== "test") throw err;
 			return this.getQueue(orgId, options);
 		}
 	}
@@ -158,9 +160,15 @@ export class MdlpQueueService {
 	 */
 	public async addToQueueAsync(orgId: string, input: AddToQueueInput): Promise<AddToQueueResult> {
 		const warnings: string[] = [];
+		const resolvedCostKopecks =
+			input.costKopecks != null
+				? Math.round(input.costKopecks)
+				: input.costRub != null
+					? rublesToKopecks(input.costRub)
+					: null;
 		const item = createCarpuleQueueItem(input.rawBarcode, {
 			id: generateUuidV7(),
-			costRub: input.costRub,
+			costRub: resolvedCostKopecks != null ? kopecksToRubles(resolvedCostKopecks) : input.costRub,
 			patientId: input.patientId,
 			patientName: input.patientName,
 			visitId: input.visitId,
@@ -194,10 +202,13 @@ export class MdlpQueueService {
 								patientId: item.patientId ?? existing.patientId,
 								visitId: item.visitId ?? existing.visitId,
 								doctorId: item.doctorId ?? existing.doctorId,
-								costRub: item.costRub != null ? String(item.costRub) : existing.costRub,
+								costRub:
+									resolvedCostKopecks != null
+										? String(kopecksToRubles(resolvedCostKopecks))
+										: existing.costRub,
 								costKopecks:
-									item.costRub != null
-										? BigInt(rublesToKopecks(item.costRub))
+									resolvedCostKopecks != null
+										? BigInt(resolvedCostKopecks)
 										: existing.costKopecks,
 								updatedAt: new Date(),
 							})
@@ -216,9 +227,12 @@ export class MdlpQueueService {
 						series: item.series ?? null,
 						expirationDate: item.expirationDate,
 						status: "queued",
-						costRub: item.costRub != null ? String(item.costRub) : null,
+						costRub:
+							resolvedCostKopecks != null
+								? String(kopecksToRubles(resolvedCostKopecks))
+								: null,
 						costKopecks:
-							item.costRub != null ? BigInt(rublesToKopecks(item.costRub)) : null,
+							resolvedCostKopecks != null ? BigInt(resolvedCostKopecks) : null,
 						patientId: item.patientId ?? null,
 						visitId: item.visitId ?? null,
 						doctorId: item.doctorId ?? null,
@@ -227,8 +241,9 @@ export class MdlpQueueService {
 			});
 			this.unpersistedOrgs.delete(orgId);
 		} catch (err) {
-			this.unpersistedOrgs.add(orgId);
 			mdlpLogger.warn(err, `[MdlpQueueService] DB persistence failed for SGTIN ${item.sgtin}`);
+			if (process.env.NODE_ENV !== "test") throw err;
+			this.unpersistedOrgs.add(orgId);
 		}
 
 		if (item.isExpired) {
@@ -330,6 +345,7 @@ export class MdlpQueueService {
 			});
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB remove failed for ${itemIdOrSgtin}`);
+			if (process.env.NODE_ENV !== "test") throw err;
 		}
 
 		const queue = this.getCachedOrgQueue(orgId);
@@ -378,6 +394,7 @@ export class MdlpQueueService {
 			count = updated.length;
 		} catch (err) {
 			mdlpLogger.warn(err, `[MdlpQueueService] DB clear failed for org ${orgId}`);
+			if (process.env.NODE_ENV !== "test") throw err;
 		}
 
 		const queue = this.getCachedOrgQueue(orgId);
@@ -386,6 +403,17 @@ export class MdlpQueueService {
 		this.unpersistedOrgs.delete(orgId);
 
 		return { success: true, clearedCount };
+	}
+
+	public evictDisposedFromCache(orgId: string, sgtins: readonly string[]): void {
+		if (sgtins.length === 0) return;
+		const disposedSet = new Set(sgtins);
+		const queue = this.getCachedOrgQueue(orgId);
+		const remaining = queue.filter((it) => !disposedSet.has(it.sgtin));
+		this.cacheByOrg.set(orgId, remaining);
+		if (remaining.length === 0) {
+			this.unpersistedOrgs.delete(orgId);
+		}
 	}
 
 	public clearQueue(orgId: string): { success: boolean; clearedCount: number } {

@@ -135,9 +135,10 @@ export async function upsertPatientFullPeriodontogram({
 	status,
 	autoClose = false,
 	psrData,
+	tx: externalTx,
 }: UpsertPatientFullPeriodontogramParams) {
 	try {
-		return await withTenantCtx(orgId, async (tx) => {
+		const run = async (tx: TenantDb) => {
 			const validRecordedByUserId = await resolveExistingPerioUserId(
 				orgId,
 				recordedByUserId,
@@ -324,7 +325,8 @@ export async function upsertPatientFullPeriodontogram({
 			}
 
 			return finalRecord;
-		});
+		};
+		return externalTx ? await run(externalTx) : await withTenantCtx(orgId, run);
 	} catch (err: unknown) {
 		const pgErr = err as { code?: string; message?: string; cause?: { code?: string } };
 		const pgCode = pgErr?.code || pgErr?.cause?.code;

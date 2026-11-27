@@ -3,6 +3,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { buildLocalBridgeReadiness } from "./systemHealthHandlers.js";
 import {
 	buildVisitDictationPlan,
@@ -39,15 +40,21 @@ export async function buildLocalBridgeUsePlans() {
 }
 
 export function registerSystemConfigRoutes(app: FastifyInstance) {
-	app.get("/api/system/local-bridges/use-plans", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"local bridge use plans",
-			))
-		)
-			return;
-		return buildLocalBridgeUsePlans();
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/system/local-bridges/use-plans",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"local bridge use plans",
+				))
+			) {
+				return;
+			}
+			return buildLocalBridgeUsePlans();
+		},
 	});
 }

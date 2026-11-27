@@ -4,7 +4,8 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import {
 	getPatientByIdFromDb,
@@ -79,9 +80,11 @@ export function patientArchiveRowsBlockBooking(
 }
 
 export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
-	app.put(
-		"/api/patients/:patientId/administrative-profile",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/patients/:patientId/administrative-profile",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 
@@ -121,59 +124,62 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 			}
 
 			try {
-				const existingPatient = await getPatientByIdFromDb(
-					orgId,
-					params.patientId,
-				);
-				if (!existingPatient) return sendPatientNotFound(reply);
-				const existingProfile =
-					(existingPatient.administrativeProfile as Record<string, unknown>) ??
-					{};
-				const mergedProfile = { ...existingProfile, ...input };
+				const txResult = await withTenantWriteCtx(orgId, async (tx) => {
+					const existingPatient = await getPatientByIdFromDb(
+						orgId,
+						params.patientId as string,
+						tx,
+					);
+					if (!existingPatient) return { kind: "not_found" as const };
+					const existingProfile =
+						(existingPatient.administrativeProfile as Record<string, unknown>) ??
+						{};
+					const mergedProfile = { ...existingProfile, ...input };
 
-				if (hasIncompleteRepresentativeIdentity(mergedProfile)) {
+					if (hasIncompleteRepresentativeIdentity(mergedProfile)) {
+						return { kind: "incomplete_representative" as const };
+					}
+
+					const isAnonProfile =
+						mergedProfile.isAnonymous === true ||
+						Boolean(existingPatient.fullName?.startsWith("UUID_ANON")) ||
+						Boolean(existingPatient.fullName?.toLowerCase().includes("аноним"));
+					const policyProfile =
+						typeof mergedProfile.insurancePolicyNumber === "string"
+							? (mergedProfile.insurancePolicyNumber as string).trim()
+							: "";
+					if (isAnonProfile && policyProfile.length > 0) {
+						return { kind: "anon_policy" as const };
+					}
+
+					const patient = await updatePatientAdministrativeProfileInDb(
+						orgId,
+						params.patientId as string,
+						mergedProfile as typeof input,
+						tx,
+					);
+					if (!patient) return { kind: "not_found" as const };
+					return { kind: "ok" as const, patient };
+				});
+
+				if (txResult.kind === "not_found") return sendPatientNotFound(reply);
+				if (txResult.kind === "incomplete_representative") {
 					return reply.code(400).send({
 						error: "PatientValidationError",
 						message: patientRepresentativeValidationMessage,
 					});
 				}
-
-				const isAnonProfile =
-					mergedProfile.isAnonymous === true ||
-					Boolean(existingPatient.fullName?.startsWith("UUID_ANON")) ||
-					Boolean(existingPatient.fullName?.toLowerCase().includes("аноним"));
-				const policyProfile =
-					typeof mergedProfile.insurancePolicyNumber === "string"
-						? (mergedProfile.insurancePolicyNumber as string).trim()
-						: "";
-				if (isAnonProfile && policyProfile.length > 0) {
+				if (txResult.kind === "anon_policy") {
 					return reply.code(422).send({
 						error: "PatientValidationError",
 						message:
 							"Привязка полиса ОМС к анонимной карте не допускается. Для использования полиса ОМС требуется деанонимизация пациента с указанием паспортных данных и СНИЛС.",
 					});
 				}
-
-				/*
-				 * БЫЛО: mergedProfile считали только для hasIncompleteRepresentativeIdentity,
-				 * а в updatePatientAdministrativeProfileInDb уходил partial input.
-				 * DB-путь пишет administrative_profile JSONB целиком (= input), без merge
-				 * (patientsQuery.ts). Частичный PUT (loyaltyTier / snils) затирал
-				 * остальные ключи: orthodonticProgress, адреса, представителя.
-				 * In-memory путь мержит сам; Postgres — нет. После F5 tier и каппы
-				 * пропадали при HTTP 200.
-				 * СТАЛО: на диск уходит полный merge existing ∪ input.
-				 */
-				const patient = await updatePatientAdministrativeProfileInDb(
-					orgId,
-					params.patientId,
-					mergedProfile as typeof input,
-				);
-				if (!patient) return sendPatientNotFound(reply);
-				return patientSchema.parse(patient);
+				return patientSchema.parse(txResult.patient);
 			} catch (e: unknown) {
 				// См. комментарий выше: 404 после успешной записи вводил оператора в
-				// заблуждение и приводил к повторному вводу тех же данных.
+				// заблуждение и приводил к повторному вводом тех же данных.
 				request.log.error(
 					{ err: e },
 					"[Patients] Ошибка обновления профиля пациента",
@@ -185,52 +191,68 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
-
-	// COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
-	app.get("/api/patients/:patientId/archive-status", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
-		const { patientId } = request.params as { patientId?: string };
-		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
-			return sendPatientRouteValidationError(reply);
-		}
-
-		try {
-			// Карточка чужого или удалённого пациента раньше отвечала пустым списком,
-			// то есть «этот человек не заблокирован». Отсутствие пациента и отсутствие
-			// блокировки — разные ответы, и путать их нельзя.
-			const patient = await getPatientByIdFromDb(orgId, patientId);
-			if (!patient) return sendPatientNotFound(reply);
-
-			const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import(
-				"../../db/patientArchiveReasonsAndBlacklistsQuery.js"
-			);
-			const clinicRows = await getPatientArchiveReasonsAndBlacklistsFromDb(
-				orgId,
-				patientId,
-			);
-			return reply
-				.status(200)
-				.send(
-					selectPatientArchiveRows(clinicRows, patientId, patient.fullName),
-				);
-		} catch (e: unknown) {
-			// Пустой список вместо отказа читается виджетом как «пациент чист», и
-			// администратор запишет на приём того, кому запись запрещена.
-			request.log.error(
-				{ err: e },
-				"[Patients] Ошибка чтения архива и черного списка",
-			);
-			return reply.code(500).send({
-				error: "PatientArchiveStatusUnavailable",
-				message:
-					"Не удалось прочитать запрет записи по этой карте. Не считайте пациента разрешённым к записи: повторите чтение перед записью на приём.",
-			});
-		}
 	});
 
-	const handleArchiveStatus = async (request: FastifyRequest, reply: FastifyReply) => {
+	// COMPETITOR FEATURE #20: пациенты::архив_причин_и_черный_список
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/archive-status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+				return sendPatientRouteValidationError(reply);
+			}
+
+			try {
+				const { getPatientArchiveReasonsAndBlacklistsFromDb } = await import(
+					"../../db/patientArchiveReasonsAndBlacklistsQuery.js"
+				);
+				// Карточка чужого или удалённого пациента раньше отвечала пустым списком,
+				// то есть «этот человек не заблокирован». Отсутствие пациента и отсутствие
+				// блокировки — разные ответы, и путать их нельзя.
+				const outcome = await withTenantReadCtx(orgId, async (tx) => {
+					const patient = await getPatientByIdFromDb(orgId, patientId, tx);
+					if (!patient) return null;
+					const clinicRows = await getPatientArchiveReasonsAndBlacklistsFromDb(
+						orgId,
+						patientId,
+						tx,
+					);
+					return selectPatientArchiveRows(
+						clinicRows,
+						patientId,
+						patient.fullName,
+					);
+				});
+				if (!outcome) return sendPatientNotFound(reply);
+
+				return reply.status(200).send(outcome);
+			} catch (e: unknown) {
+				// Пустой список вместо отказа читается виджетом как «пациент чист», и
+				// администратор запишет на приём того, кому запись запрещена.
+				request.log.error(
+					{ err: e },
+					"[Patients] Ошибка чтения архива и черного списка",
+				);
+				return reply.code(500).send({
+					error: "PatientArchiveStatusUnavailable",
+					message:
+						"Не удалось прочитать запрет записи по этой карте. Не считайте пациента разрешённым к записи: повторите чтение перед записью на приём.",
+				});
+			}
+		},
+	});
+
+	const handleArchiveStatus = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 		const { patientId } = request.params as { patientId?: string };
@@ -259,7 +281,7 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 				setPatientArchiveStatusInDb,
 			} = await import("../../db/patientArchiveReasonsAndBlacklistsQuery.js");
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				await tx.execute(
 					sql`SELECT pg_advisory_xact_lock(hashtext(${`${orgId}:patient_archive_status:${patientId}`}))`,
 				);
@@ -334,10 +356,24 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.post("/api/patients/:patientId/archive-status", handleArchiveStatus);
-	app.put("/api/patients/:patientId/archive-status", handleArchiveStatus);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/archive-status",
+		permission: "public",
+		handler: handleArchiveStatus,
+	});
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/patients/:patientId/archive-status",
+		permission: "public",
+		handler: handleArchiveStatus,
+	});
 
-	app.post("/api/patients/:patientId/archive", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/archive",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -427,43 +463,52 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 						: "Не удалось архивировать пациента. Пожалуйста, попробуйте еще раз.",
 			});
 		}
+		},
 	});
 
 	/**
 	 * GET /api/patients/archive-reasons
 	 * Справочник нормативных причин списания в архив по 323-ФЗ.
 	 */
-	app.get("/api/patients/archive-reasons", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/archive-reasons",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const { PatientArchiveReasonService } = await import(
-			"../../services/patients/PatientArchiveReasonService.js"
-		);
-		const reasons = await PatientArchiveReasonService.listReasons(orgId);
-		return reply.send({ success: true, reasons });
+			const { PatientArchiveReasonService } = await import(
+				"../../services/patients/PatientArchiveReasonService.js"
+			);
+			const reasons = await PatientArchiveReasonService.listReasons(orgId);
+			return reply.send({ success: true, reasons });
+		},
 	});
 
-	const adminMutationOptions = {
-		schema: {
-			description: "Patient administrative mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					organizationid: { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
+	const adminMutationSchema = {
+		description: "Patient administrative mutation with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
 			},
 		},
-	} as const;
+	};
 
 	/**
 	 * POST /api/patients/:patientId/unarchive
 	 * Восстановление пациента из архива (разархивация).
 	 */
-	app.post("/api/patients/:patientId/unarchive", adminMutationOptions, async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/unarchive",
+		permission: "public",
+		schema: adminMutationSchema,
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -507,5 +552,6 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		);
 		await PatientArchiveReasonService.unarchivePatient(orgId, patientId);
 		return reply.send({ success: true });
+		},
 	});
 }

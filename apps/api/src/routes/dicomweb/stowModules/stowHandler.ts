@@ -59,10 +59,18 @@ export async function handleDicomwebStow(
 	await fs.mkdir(tempDir, { recursive: true });
 	const tempFilePath = path.join(tempDir, `stow_${tempId}.dcm`);
 
+	const cleanupFileBestEffort = async (targetPath: string, reason: string) => {
+		try {
+			await fs.unlink(targetPath);
+		} catch (unlinkErr: unknown) {
+			request.log.debug({ err: unlinkErr, targetPath, reason }, "Best-effort DICOM cleanup skipped");
+		}
+	};
+
 	try {
 		await streamDicomPayloadToDisk(request, tempFilePath);
 	} catch (err) {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "stream_failed");
 		return reply.code(400).send({ error: "InvalidDicomPayload", message: err instanceof Error ? err.message : "Ошибка при чтении потока DICOM." });
 	}
 
@@ -74,18 +82,18 @@ export async function handleDicomwebStow(
 		closeSync(fd);
 		headerBuf = headerBuf.subarray(0, bytesRead);
 	} catch {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "header_read_failed");
 		return reply.code(400).send({ error: "InvalidDicomPayload", message: "Не удалось прочитать заголовок временного файла снимка." });
 	}
 
 	if (headerBuf.length < 132) {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "short_dicom_buffer");
 		return reply.code(400).send({ error: "InvalidDicomPayload", message: "Тело запроса должно содержать валидный бинарный буфер DICOM (минимум 132 байта с DICM сигнатурой)." });
 	}
 
 	const parsed = parseDicomBufferForStow(headerBuf);
 	if (!parsed.studyUid || !parsed.seriesUid || !parsed.sopInstanceUid) {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "missing_uids");
 		return reply.code(422).send({ error: "UnprocessableDicomInstance", message: "Файл не содержит обязательных DICOM-тегов идентификации: StudyInstanceUID, SeriesInstanceUID или SOPInstanceUID." });
 	}
 
@@ -93,7 +101,7 @@ export async function handleDicomwebStow(
 	const safeSeriesUid = normalizeUid(parsed.seriesUid);
 	const safeSopUid = normalizeUid(parsed.sopInstanceUid);
 	if (!safeStudyUid || !safeSeriesUid || !safeSopUid) {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "invalid_uids");
 		return reply.code(422).send({
 			error: "UnprocessableDicomInstance",
 			message: "Идентификаторы DICOM (StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID) содержат недопустимые символы.",
@@ -106,7 +114,7 @@ export async function handleDicomwebStow(
 
 	const pathStudyUid = request.params?.studyUid ? normalizeUid(request.params.studyUid) : null;
 	if (pathStudyUid && pathStudyUid !== studyUid) {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "study_uid_mismatch");
 		return reply.code(409).send({ error: "StudyUidMismatch", message: `StudyInstanceUID в URL (${pathStudyUid}) не совпадает со значением в файле (${studyUid}).` });
 	}
 
@@ -155,7 +163,7 @@ export async function handleDicomwebStow(
 	});
 
 	if (existingInstance) {
-		await fs.unlink(tempFilePath).catch(() => {});
+		await cleanupFileBestEffort(tempFilePath, "duplicate_instance");
 		if (idempotencyKey) {
 			reply.header("x-idempotency-replayed", "true");
 		}
@@ -253,7 +261,7 @@ export async function handleDicomwebStow(
 			fileSizeOnDisk,
 		});
 	} catch (dbErr) {
-		await fs.unlink(permanentDiskPath).catch(() => {});
+		await cleanupFileBestEffort(permanentDiskPath, "db_persist_failed");
 		request.log.error(
 			{ err: dbErr, permanentDiskPath, studyUid: parsed.studyUid, sopInstanceUid: parsed.sopInstanceUid },
 			"Сбой сохранения метаданных DICOM STOW в БД, осиротевший файл удален с диска",

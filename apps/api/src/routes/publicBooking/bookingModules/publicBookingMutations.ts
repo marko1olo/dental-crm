@@ -241,6 +241,7 @@ export async function handleBookAppointment(
 		const [doctor] = await tenantTx
 			.select({
 				id: users.id,
+				fullName: users.fullName,
 				workingHours: users.workingHours,
 			})
 			.from(users)
@@ -260,7 +261,11 @@ export async function handleBookAppointment(
 
 		// Check Clinic & Doctor Working Hours Intersection
 		const [clinicRow] = await tenantTx
-			.select({ timezone: clinics.timezone })
+			.select({
+				name: clinics.name,
+				address: clinics.address,
+				timezone: clinics.timezone,
+			})
 			.from(clinics)
 			.where(eq(clinics.organizationId, organizationId))
 			.limit(1);
@@ -429,13 +434,29 @@ export async function handleBookAppointment(
 				});
 			}
 
+			const createdAppointment =
+				"appointment" in result ? result.appointment : undefined;
+			const referenceNumber = createdAppointment?.id
+				? `BK-${createdAppointment.id.slice(0, 8).toUpperCase()}`
+				: `BK-${Date.now().toString(36).toUpperCase()}`;
+
 			return {
 				success: true,
 				status: bookingStatus,
 				bookingStatus,
 				isPreliminary: !isConfirmed,
 				unconfirmed: !isConfirmed,
-				appointment: result.appointment,
+				referenceNumber,
+				booking: {
+					referenceNumber,
+					startsAt: createdAppointment?.startsAt ?? startDate.toISOString(),
+					endsAt: createdAppointment?.endsAt ?? endDate.toISOString(),
+					doctorName: doctor.fullName,
+					clinicName: clinicRow?.name ?? "Стоматологическая клиника",
+					clinicAddress: clinicRow?.address ?? null,
+					status: bookingStatus,
+					isPreliminary: !isConfirmed,
+				},
 			};
 		} catch (error) {
 			const err = error as { code?: string; message?: string };

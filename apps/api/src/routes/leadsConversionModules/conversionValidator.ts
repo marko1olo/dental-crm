@@ -4,10 +4,13 @@
  */
 
 import { z } from "zod";
+import { createApiLogger, safeLogError } from "../../observability/logger.js";
+
+const logger = createApiLogger("leadConversionValidator");
 
 export const convertLeadSchema = z.object({
-	appointmentStart: z.string().datetime().or(z.literal("")).optional().nullable(),
-	appointmentEnd: z.string().datetime().or(z.literal("")).optional().nullable(),
+	appointmentStart: z.string().datetime({ offset: true }).or(z.literal("")).optional().nullable(),
+	appointmentEnd: z.string().datetime({ offset: true }).or(z.literal("")).optional().nullable(),
 	chairId: z.string().optional().nullable(),
 	doctorId: z.string().optional().nullable(),
 	reason: z.string().optional().nullable(),
@@ -88,7 +91,8 @@ function parseUtmFromSource(source?: string | null): Partial<StructuredLeadAttri
 		if (utmContent) res.utmContent = utmContent;
 		if (utmTerm) res.utmTerm = utmTerm;
 		return res;
-	} catch {
+	} catch (err: unknown) {
+		logger.warn({ err: safeLogError(err), source }, "parseUtmFromSource failed");
 		return {};
 	}
 }

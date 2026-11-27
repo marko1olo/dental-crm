@@ -71,7 +71,7 @@ describe("Part 11 Streaming, RAM Bounds, Fetch Timeouts & Graceful Eviction", ()
 			log: {
 				debug: () => undefined,
 			},
-		} as Partial<FastifyRequest> as FastifyRequest;
+		} as unknown as FastifyRequest;
 
 		await assert.rejects(
 			() => streamDicomPayloadToDisk(fakeReq, tmpTarget, 100 * 1024 * 1024),
@@ -135,7 +135,7 @@ describe("Part 11 Streaming, RAM Bounds, Fetch Timeouts & Graceful Eviction", ()
 			await assert.rejects(
 				() =>
 					dispatchAtolSyncTask(
-						{ host: "127.0.0.1", port: 16732, timeoutMs: 40 },
+						{ host: "127.0.0.1", port: 16732, timeoutMs: 40, model: "atol_web_server" },
 						{ type: "status" },
 						"test",
 						40,

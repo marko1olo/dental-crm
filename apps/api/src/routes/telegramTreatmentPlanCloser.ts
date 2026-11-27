@@ -7,9 +7,10 @@
  * - POST /api/telegram/treatment-plans/:planId/send-followup
  */
 
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { resolveTelegramRuntimeContextWithDb } from "./telegram/telegramRuntimeResolver.js";
 import {
 	TelegramTreatmentPlanCloserService,
@@ -57,9 +58,11 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 	 * GET /api/telegram/treatment-plans/pending/:patientId
 	 * Возвращает актуальные неподтвержденные планы лечения для дожима и рассрочки.
 	 */
-	app.get(
-		"/api/telegram/treatment-plans/pending/:patientId",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/treatment-plans/pending/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -88,15 +91,17 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 				plans,
 			});
 		},
-	);
+	});
 
 	/**
 	 * POST /api/telegram/treatment-plans/:planId/installment-calc
 	 * Финансовый калькулятор рассрочки 0% (Т-Банк / Сбербанк) с расчетом платежа и вычета НДФЛ.
 	 */
-	app.post(
-		"/api/telegram/treatment-plans/:planId/installment-calc",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/treatment-plans/:planId/installment-calc",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -161,15 +166,17 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 				partsRub: option.partsRub,
 			});
 		},
-	);
+	});
 
 	/**
 	 * POST /api/telegram/treatment-plans/:planId/send-followup
 	 * Запуск отправки интерактивного follow-up сообщения пациенту в Telegram.
 	 */
-	app.post(
-		"/api/telegram/treatment-plans/:planId/send-followup",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/treatment-plans/:planId/send-followup",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const organizationId = await requireResolvedOrganizationId(
 				request,
 				reply,
@@ -233,5 +240,5 @@ export async function registerTelegramTreatmentPlanCloserRoutes(app: FastifyInst
 				message: "Сообщение follow-up успешно отправлено пациенту в Telegram.",
 			});
 		},
-	);
+	});
 }

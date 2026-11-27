@@ -132,13 +132,14 @@ export function registerLeadCrudRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор лида.",
 			});
 		}
+		const { id } = paramsParsed.data;
 		const parsed = patchLeadSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -179,13 +180,14 @@ export function registerLeadCrudRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор лида.",
 			});
 		}
+		const { id } = paramsParsed.data;
 		const parsed = leadSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -236,13 +238,14 @@ export function registerLeadCrudRoutes(app: FastifyInstance): void {
 			});
 		}
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор лида.",
 			});
 		}
+		const { id } = paramsParsed.data;
 
 		const lead = await withTenantCtx(organizationId, async (tx) => {
 			await tx

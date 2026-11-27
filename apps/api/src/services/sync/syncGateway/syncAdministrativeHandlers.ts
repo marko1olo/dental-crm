@@ -2,12 +2,14 @@ import crypto from "node:crypto";
 import {
 	type FieldConflictDetail,
 	type MutationVector,
+	type PatientAdministrativeProfile,
 	type SyncMutationEnvelope,
 	type SyncMutationStatus,
 	assertIntegerKopecks,
 	kopecksToNumericString,
 	kopecksToRubles,
 	parseKopecks,
+	updatePatientAdministrativeProfileSchema,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
@@ -463,7 +465,10 @@ export class SyncAdministrativeHandlers {
 			incomingStatus,
 			existingStatus,
 			clientUpdatedAt: mutation.updatedAt,
-			serverUpdatedAt: vectorRow?.updatedAt?.toISOString() || null,
+			serverUpdatedAt:
+				vectorRow?.updatedAt?.toISOString() ||
+				serverAppointment?.createdAt?.toISOString() ||
+				null,
 		});
 
 		const effectivePayload = {
@@ -481,7 +486,10 @@ export class SyncAdministrativeHandlers {
 			clientPatch: effectivePayload,
 			clientVector: mutation.mutationVector,
 			clientUpdatedAt: mutation.updatedAt,
-			serverUpdatedAt: vectorRow?.updatedAt?.toISOString() || null,
+			serverUpdatedAt:
+				vectorRow?.updatedAt?.toISOString() ||
+				serverAppointment?.createdAt?.toISOString() ||
+				null,
 			clientId,
 			authorUserId: authorUserId || mutation.authorUserId,
 		});
@@ -623,6 +631,152 @@ export class SyncAdministrativeHandlers {
 			mergedFields: mergeResult.changedFields,
 			conflicts: mergeResult.conflicts,
 			entity: ensureEntityRecord(updated || merged),
+		};
+	}
+
+	/**
+	 * Patient Administrative Profile Handler with schema validation & CRDT field-level merging.
+	 */
+	public static async handlePatientAdministrativeProfileMutation(
+		tx: TenantDb,
+		organizationId: string,
+		mutation: SyncMutationEnvelope,
+		clientId: string,
+		authorUserId?: string,
+	): Promise<EntityMutationHandlerResult> {
+		if (!isValidUuid(mutation.entityId)) {
+			throw new Error(
+				`Invalid patient UUID for patient_administrative_profile mutation: ${mutation.entityId}`,
+			);
+		}
+
+		const [serverPatient] = await tx
+			.select()
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.id, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		if (!serverPatient) {
+			throw new Error(
+				`Patient not found in organization for patient_administrative_profile mutation: ${mutation.entityId}`,
+			);
+		}
+
+		const rawSource =
+			mutation.payload.administrativeProfile &&
+			typeof mutation.payload.administrativeProfile === "object" &&
+			!Array.isArray(mutation.payload.administrativeProfile)
+				? (mutation.payload.administrativeProfile as Record<string, unknown>)
+				: mutation.payload;
+
+		const envelopeKeys = new Set([
+			"id",
+			"patientId",
+			"organizationId",
+			"updatedAt",
+			"createdAt",
+			"version",
+		]);
+		const sanitizedPatch: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(rawSource)) {
+			if (!envelopeKeys.has(k)) {
+				sanitizedPatch[k] = v;
+			}
+		}
+
+		const parsedProfile =
+			updatePatientAdministrativeProfileSchema.safeParse(sanitizedPatch);
+		if (!parsedProfile.success) {
+			throw new Error(
+				`Invalid patient_administrative_profile payload: ${parsedProfile.error.issues
+					.map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
+					.join("; ")}`,
+			);
+		}
+
+		const [vectorRow] = await tx
+			.select()
+			.from(syncEntityVectors)
+			.where(
+				and(
+					eq(syncEntityVectors.organizationId, organizationId),
+					eq(syncEntityVectors.entityKind, "patient_administrative_profile"),
+					eq(syncEntityVectors.entityId, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const serverVector = (vectorRow?.vectorJson as MutationVector) || {};
+
+		const mergeResult = performFieldLevelCrdtMerge({
+			entityKind: "patient_administrative_profile",
+			entityId: mutation.entityId,
+			serverEntity: toEntityRecord(serverPatient.administrativeProfile),
+			serverVector,
+			clientPatch: parsedProfile.data as Record<string, unknown>,
+			clientVector: mutation.mutationVector,
+			clientUpdatedAt: mutation.updatedAt,
+			serverUpdatedAt:
+				vectorRow?.updatedAt?.toISOString() ||
+				serverPatient.updatedAt?.toISOString() ||
+				null,
+			clientId,
+			authorUserId: authorUserId || mutation.authorUserId,
+		});
+
+		const nextProfileRaw: Record<string, unknown> = {
+			...mergeResult.mergedEntity,
+		};
+		for (const envKey of envelopeKeys) {
+			delete nextProfileRaw[envKey];
+		}
+		const nextProfile = nextProfileRaw as Partial<PatientAdministrativeProfile>;
+
+		const [updated] = await tx
+			.update(patients)
+			.set({
+				administrativeProfile: nextProfile,
+				updatedAt: new Date(),
+				version: (serverPatient.version ?? 0) + 1,
+			})
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.id, mutation.entityId),
+				),
+			)
+			.returning({
+				id: patients.id,
+				organizationId: patients.organizationId,
+				administrativeProfile: patients.administrativeProfile,
+				updatedAt: patients.updatedAt,
+			});
+
+		await SyncQueueManager.upsertEntityVector(
+			tx,
+			organizationId,
+			"patient_administrative_profile",
+			mutation.entityId,
+			mergeResult.updatedVector,
+			mutation.mutationId,
+		);
+
+		const status: SyncMutationStatus = mergeResult.hasConflicts
+			? "conflict_resolved"
+			: mergeResult.changedFields.length > 0
+				? "merged"
+				: "applied";
+
+		return {
+			status,
+			mergedFields: mergeResult.changedFields,
+			conflicts: mergeResult.conflicts,
+			entity: ensureEntityRecord(updated ?? { id: mutation.entityId, administrativeProfile: nextProfile }),
 		};
 	}
 }

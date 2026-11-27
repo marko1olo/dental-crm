@@ -199,6 +199,8 @@ describe("Wave 15 Platform Security, Plugins, RLS & Transports Regression Suite"
 					processing: 1,
 					deadLetter: 0,
 					failed: 0,
+					completed: 0,
+					cancelled: 0,
 				};
 				const prom = ServerHealthWatchdog.toPrometheusMetrics(metrics);
 				assert.ok(prom.includes('queue="bad\\"queue\\nline\\\\test"'));
@@ -217,7 +219,7 @@ describe("Wave 15 Platform Security, Plugins, RLS & Transports Regression Suite"
 				bucket.push(data);
 				cb?.();
 			},
-			close() {},
+			terminate() {},
 		});
 
 		const docWs = makeSocket(docSent);

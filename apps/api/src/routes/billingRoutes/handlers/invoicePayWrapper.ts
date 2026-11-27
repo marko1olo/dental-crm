@@ -3,7 +3,7 @@ import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { installmentContracts, patientInvoices, payments } from "../../../db/schema.js";
 import { handleCreatePayment } from "./paymentCreateHandler.js";
 
@@ -71,7 +71,7 @@ export async function invoicePayHandler(
 				: undefined;
 
 	if (!patientId || (amountRub === undefined && amountKopecks === undefined)) {
-		const resolved = await withTenantCtx(orgId, async (tx) => {
+		const resolved = await withTenantReadCtx(orgId, async (tx) => {
 			const [invRow] = await tx
 				.select({
 					id: patientInvoices.id,

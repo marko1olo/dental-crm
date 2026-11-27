@@ -100,14 +100,12 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 			mapInstallationRow(inst, (err) => request.log.warn({ err, installationId: inst.id }, "[patientImplantsRoute] Failed to parse legacy JSON notes")),
 		);
 
-		if (installations.length > 0) {
-			await auditMedicalAccessFromRequest(request, {
-				organizationId: orgId,
-				patientId,
-				action: "VIEW_IMPLANT_PASSPORT",
-				diagnosis: "Имплантологический паспорт",
-			});
-		}
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId,
+			action: "VIEW_IMPLANT_PASSPORT",
+			diagnosis: "Имплантологический паспорт",
+		});
 
 		return reply.send({ success: true, installations });
 	});
@@ -184,7 +182,7 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 			mapInstallationRow(inst, (err) => request.log.warn({ err, installationId: inst.id }, "[patientImplantsRoute] Failed to parse legacy JSON notes")),
 		);
 
-		if (effectivePatientId && installations.length > 0) {
+		if (effectivePatientId) {
 			await auditMedicalAccessFromRequest(request, {
 				organizationId: orgId,
 				patientId: effectivePatientId,

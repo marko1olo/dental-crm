@@ -2,7 +2,8 @@ import { and, desc, eq, like, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { isDemoShowcaseMode } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	attachments,
 	patientPhotoProtocols,
@@ -71,10 +72,13 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 	 * GET /api/patients/:patientId/photos
 	 * GET /api/patients/:patientId/photo-protocol
 	 */
-	const getPatientPhotosHandler = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
+	const getPatientPhotosHandler = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -99,7 +103,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const loaded = await withTenantCtx(orgId, async (tx) => {
+			const loaded = await withTenantReadCtx(orgId, async (tx) => {
 				const [patient] = await tx
 					.select({ id: patients.id, fullName: patients.fullName })
 					.from(patients)
@@ -225,10 +229,13 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 	 * POST /api/patients/:patientId/photos
 	 * POST /api/patients/:patientId/photo-protocol
 	 */
-	const postPatientPhotosHandler = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
+	const postPatientPhotosHandler = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -243,7 +250,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		// Проверка существования пациента (RLS-контекст клиники)
-		const patient = await withTenantCtx(orgId, async (tx) => {
+		const patient = await withTenantReadCtx(orgId, async (tx) => {
 			const [row] = await tx
 				.select({ id: patients.id })
 				.from(patients)
@@ -288,7 +295,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 
 		try {
 			const effectiveStage = stage || "before";
-			const txOutcome = await withTenantCtx(orgId, async (tx) => {
+			const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
 				if (visitId) {
 					const [visitRow] = await tx
 						.select({ id: visits.id })
@@ -375,51 +382,80 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.get("/api/patients/:patientId/photos", getPatientPhotosHandler);
-	app.get("/api/patients/:patientId/photo-protocol", getPatientPhotosHandler);
-	app.post("/api/patients/:patientId/photos", postPatientPhotosHandler);
-	app.post("/api/patients/:patientId/photo-protocol", postPatientPhotosHandler);
-
-	// Роуты для визита (зеркалирование)
-	app.get("/api/visits/:visitId/photo-protocol", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
-		const { visitId } = request.params as { visitId: string };
-
-		if (!visitId || !UUID_REGEX.test(visitId)) {
-			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
-		}
-
-		const loaded = await withTenantCtx(orgId, async (tx) => {
-			const [visit] = await tx
-				.select({ id: visits.id, patientId: visits.patientId })
-				.from(visits)
-				.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
-				.limit(1);
-			if (!visit) return null;
-
-			const [protocol] = await tx
-				.select()
-				.from(patientPhotoProtocols)
-				.where(
-					and(
-						eq(patientPhotoProtocols.visitId, visitId),
-						eq(patientPhotoProtocols.organizationId, orgId),
-					),
-				)
-				.orderBy(desc(patientPhotoProtocols.updatedAt))
-				.limit(1);
-			return { protocol: protocol || null };
-		});
-
-		if (!loaded) {
-			return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
-		}
-
-		return reply.send({ success: true, protocol: loaded.protocol });
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/photos",
+		permission: "public",
+		handler: getPatientPhotosHandler,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/photo-protocol",
+		permission: "public",
+		handler: getPatientPhotosHandler,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/photos",
+		permission: "public",
+		handler: postPatientPhotosHandler,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients/:patientId/photo-protocol",
+		permission: "public",
+		handler: postPatientPhotosHandler,
 	});
 
-	app.post("/api/visits/:visitId/photo-protocol", async (request, reply) => {
+	// Роуты для визита (зеркалирование)
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/visits/:visitId/photo-protocol",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
+			const { visitId } = request.params as { visitId: string };
+
+			if (!visitId || !UUID_REGEX.test(visitId)) {
+				return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
+			}
+
+			const loaded = await withTenantReadCtx(orgId, async (tx) => {
+				const [visit] = await tx
+					.select({ id: visits.id, patientId: visits.patientId })
+					.from(visits)
+					.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+					.limit(1);
+				if (!visit) return null;
+
+				const [protocol] = await tx
+					.select()
+					.from(patientPhotoProtocols)
+					.where(
+						and(
+							eq(patientPhotoProtocols.visitId, visitId),
+							eq(patientPhotoProtocols.organizationId, orgId),
+						),
+					)
+					.orderBy(desc(patientPhotoProtocols.updatedAt))
+					.limit(1);
+				return { protocol: protocol || null };
+			});
+
+			if (!loaded) {
+				return reply.code(404).send({ error: "VisitNotFound", message: "Приём не найден." });
+			}
+
+			return reply.send({ success: true, protocol: loaded.protocol });
+		},
+	});
+
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/visits/:visitId/photo-protocol",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 		const { visitId } = request.params as { visitId: string };
@@ -458,7 +494,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
 		const effectiveStage = stage || "during";
 
-		const txOutcome = await withTenantCtx(orgId, async (tx) => {
+		const txOutcome = await withTenantWriteCtx(orgId, async (tx) => {
 			const [visit] = await tx
 				.select({ id: visits.id, patientId: visits.patientId })
 				.from(visits)
@@ -522,5 +558,6 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		return reply.send({ success: true, protocol: txOutcome.protocol });
+		},
 	});
 }

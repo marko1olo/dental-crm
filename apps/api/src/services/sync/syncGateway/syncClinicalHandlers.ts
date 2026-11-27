@@ -1,15 +1,21 @@
-import type {
-	FieldConflictDetail,
-	MutationVector,
-	SyncMutationEnvelope,
-	SyncMutationStatus,
+import {
+	type FieldConflictDetail,
+	type MutationVector,
+	type SyncMutationEnvelope,
+	type SyncMutationStatus,
+	assertIntegerKopecks,
+	kopecksToRubles,
+	parseKopecks,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
 import {
+	clinicalTasks,
+	patients,
 	syncEntityVectors,
 	toothStateHistory,
 	toothStates,
+	treatmentItems,
 	visitDiaries,
 	visits,
 } from "../../../db/schema.js";
@@ -533,6 +539,546 @@ export class SyncClinicalHandlers {
 				patientId,
 				teeth: updatedTeethStates,
 			},
+		};
+	}
+
+	/**
+	 * Treatment Item Handler with strict tenant scoping, integer kopecks & CRDT merge.
+	 */
+	public static async handleTreatmentItemMutation(
+		tx: TenantDb,
+		organizationId: string,
+		mutation: SyncMutationEnvelope,
+		clientId: string,
+		authorUserId?: string,
+	): Promise<EntityMutationHandlerResult> {
+		if (!isValidUuid(mutation.entityId)) {
+			throw new Error(
+				`Invalid treatment_item UUID: ${mutation.entityId}`,
+			);
+		}
+
+		const [serverItem] = await tx
+			.select()
+			.from(treatmentItems)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					eq(treatmentItems.id, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const [vectorRow] = await tx
+			.select()
+			.from(syncEntityVectors)
+			.where(
+				and(
+					eq(syncEntityVectors.organizationId, organizationId),
+					eq(syncEntityVectors.entityKind, "treatment_item"),
+					eq(syncEntityVectors.entityId, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const serverVector = (vectorRow?.vectorJson as MutationVector) || {};
+
+		const mergeResult = performFieldLevelCrdtMerge({
+			entityKind: "treatment_item",
+			entityId: mutation.entityId,
+			serverEntity: toEntityRecord(serverItem),
+			serverVector,
+			clientPatch: mutation.payload,
+			clientVector: mutation.mutationVector,
+			clientUpdatedAt: mutation.updatedAt,
+			serverUpdatedAt: vectorRow?.updatedAt?.toISOString() || null,
+			clientId,
+			authorUserId: authorUserId || mutation.authorUserId,
+		});
+
+		const resolveKopecksValue = (
+			kopecksRaw: unknown,
+			rubRaw: unknown,
+			fallbackKopecks: bigint,
+		): bigint => {
+			if (kopecksRaw !== undefined && kopecksRaw !== null) {
+				const k = BigInt(String(kopecksRaw));
+				assertIntegerKopecks(k);
+				return k;
+			}
+			if (
+				typeof rubRaw === "number" ||
+				typeof rubRaw === "string"
+			) {
+				return BigInt(parseKopecks(rubRaw));
+			}
+			return fallbackKopecks;
+		};
+
+		const validItemStatuses = new Set([
+			"proposed",
+			"approved",
+			"in_progress",
+			"completed",
+			"cancelled",
+		]);
+		const normalizeItemStatus = (
+			raw: unknown,
+			fallback: "proposed" | "approved" | "in_progress" | "completed" | "cancelled",
+		) => {
+			const str = typeof raw === "string" ? raw : "";
+			return (
+				validItemStatuses.has(str) ? str : fallback
+			) as
+				| "proposed"
+				| "approved"
+				| "in_progress"
+				| "completed"
+				| "cancelled";
+		};
+
+		const merged = mergeResult.mergedEntity;
+
+		if (!serverItem) {
+			if (!isValidUuid(merged.patientId)) {
+				throw new Error(
+					`Invalid or missing patientId UUID for treatment_item mutation: ${String(merged.patientId)}`,
+				);
+			}
+			const patientId = String(merged.patientId);
+			const [tenantPatient] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.id, patientId),
+					),
+				)
+				.limit(1);
+			if (!tenantPatient) {
+				throw new Error(
+					`Patient ${patientId} not found in organization ${organizationId} for treatment_item`,
+				);
+			}
+
+			const title =
+				typeof merged.title === "string" && merged.title.trim().length > 0
+					? merged.title.trim()
+					: "";
+			if (!title) {
+				throw new Error("Treatment item title is required");
+			}
+
+			const unitPriceKopecks = resolveKopecksValue(
+				merged.unitPriceKopecks,
+				merged.unitPriceRub,
+				resolveKopecksValue(merged.priceKopecks, merged.priceRub, 0n),
+			);
+			const priceKopecks = resolveKopecksValue(
+				merged.priceKopecks,
+				merged.priceRub,
+				unitPriceKopecks,
+			);
+			const discountKopecks = resolveKopecksValue(
+				merged.discountKopecks,
+				merged.discountRub,
+				0n,
+			);
+
+			const [inserted] = await tx
+				.insert(treatmentItems)
+				.values({
+					id: mutation.entityId,
+					organizationId,
+					patientId,
+					visitId: isValidUuid(merged.visitId) ? String(merged.visitId) : null,
+					treatmentPlanId: isValidUuid(merged.treatmentPlanId)
+						? String(merged.treatmentPlanId)
+						: null,
+					treatmentPlanItemId: isValidUuid(merged.treatmentPlanItemId)
+						? String(merged.treatmentPlanItemId)
+						: null,
+					invoiceId: isValidUuid(merged.invoiceId) ? String(merged.invoiceId) : null,
+					serviceId: isValidUuid(merged.serviceId) ? String(merged.serviceId) : null,
+					toothCode: merged.toothCode ? String(merged.toothCode) : null,
+					title,
+					quantity: String(merged.quantity ?? "1"),
+					priceKopecks,
+					unitPriceKopecks,
+					discountKopecks,
+					priceRub: kopecksToRubles(priceKopecks),
+					unitPriceRub: kopecksToRubles(unitPriceKopecks),
+					discountRub: kopecksToRubles(discountKopecks),
+					status: normalizeItemStatus(merged.status, "proposed"),
+					plannedDoctorUserId: isValidUuid(merged.plannedDoctorUserId)
+						? String(merged.plannedDoctorUserId)
+						: null,
+					plannedChairId: isValidUuid(merged.plannedChairId)
+						? String(merged.plannedChairId)
+						: null,
+					notes: merged.notes ? String(merged.notes) : null,
+					isSynced: true,
+					version: 1,
+				})
+				.returning();
+
+			await SyncQueueManager.upsertEntityVector(
+				tx,
+				organizationId,
+				"treatment_item",
+				mutation.entityId,
+				mergeResult.updatedVector,
+				mutation.mutationId,
+			);
+
+			return {
+				status: "applied",
+				mergedFields: mergeResult.changedFields,
+				conflicts: [],
+				entity: ensureEntityRecord(inserted),
+			};
+		}
+
+		const updateData: Record<string, unknown> = {
+			isSynced: true,
+			version: (serverItem.version ?? 0) + 1,
+		};
+		if ("title" in merged && typeof merged.title === "string" && merged.title.trim()) {
+			updateData.title = merged.title.trim();
+		}
+		if ("toothCode" in merged) {
+			updateData.toothCode = merged.toothCode ? String(merged.toothCode) : null;
+		}
+		if ("quantity" in merged && merged.quantity !== undefined && merged.quantity !== null) {
+			updateData.quantity = String(merged.quantity);
+		}
+		if ("status" in merged) {
+			updateData.status = normalizeItemStatus(merged.status, serverItem.status);
+		}
+		if ("notes" in merged) {
+			updateData.notes = merged.notes ? String(merged.notes) : null;
+		}
+		if ("unitPriceKopecks" in merged || "unitPriceRub" in merged) {
+			const unitK = resolveKopecksValue(
+				merged.unitPriceKopecks,
+				merged.unitPriceRub,
+				serverItem.unitPriceKopecks,
+			);
+			updateData.unitPriceKopecks = unitK;
+			updateData.unitPriceRub = kopecksToRubles(unitK);
+		}
+		if ("priceKopecks" in merged || "priceRub" in merged) {
+			const priceK = resolveKopecksValue(
+				merged.priceKopecks,
+				merged.priceRub,
+				serverItem.priceKopecks,
+			);
+			updateData.priceKopecks = priceK;
+			updateData.priceRub = kopecksToRubles(priceK);
+		}
+		if ("discountKopecks" in merged || "discountRub" in merged) {
+			const discK = resolveKopecksValue(
+				merged.discountKopecks,
+				merged.discountRub,
+				serverItem.discountKopecks,
+			);
+			updateData.discountKopecks = discK;
+			updateData.discountRub = kopecksToRubles(discK);
+		}
+
+		const [updated] = await tx
+			.update(treatmentItems)
+			.set(updateData)
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					eq(treatmentItems.id, mutation.entityId),
+				),
+			)
+			.returning();
+
+		await SyncQueueManager.upsertEntityVector(
+			tx,
+			organizationId,
+			"treatment_item",
+			mutation.entityId,
+			mergeResult.updatedVector,
+			mutation.mutationId,
+		);
+
+		const status: SyncMutationStatus = mergeResult.hasConflicts
+			? "conflict_resolved"
+			: mergeResult.changedFields.length > 0
+				? "merged"
+				: "applied";
+
+		return {
+			status,
+			mergedFields: mergeResult.changedFields,
+			conflicts: mergeResult.conflicts,
+			entity: ensureEntityRecord(updated || merged),
+		};
+	}
+
+	/**
+	 * Clinical Task Handler with strict tenant scoping & CRDT merge.
+	 */
+	public static async handleClinicalTaskMutation(
+		tx: TenantDb,
+		organizationId: string,
+		mutation: SyncMutationEnvelope,
+		clientId: string,
+		authorUserId?: string,
+	): Promise<EntityMutationHandlerResult> {
+		if (!isValidUuid(mutation.entityId)) {
+			throw new Error(`Invalid clinical_task UUID: ${mutation.entityId}`);
+		}
+
+		const [serverTask] = await tx
+			.select({
+				id: clinicalTasks.id,
+				organizationId: clinicalTasks.organizationId,
+				patientId: clinicalTasks.patientId,
+				treatmentPlanId: clinicalTasks.treatmentPlanId,
+				assignedDoctorId: clinicalTasks.assignedDoctorId,
+				taskType: clinicalTasks.taskType,
+				status: clinicalTasks.status,
+				title: clinicalTasks.title,
+				description: clinicalTasks.description,
+				dueAt: clinicalTasks.dueAt,
+				createdAt: clinicalTasks.createdAt,
+			})
+			.from(clinicalTasks)
+			.where(
+				and(
+					eq(clinicalTasks.organizationId, organizationId),
+					eq(clinicalTasks.id, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const [vectorRow] = await tx
+			.select()
+			.from(syncEntityVectors)
+			.where(
+				and(
+					eq(syncEntityVectors.organizationId, organizationId),
+					eq(syncEntityVectors.entityKind, "clinical_task"),
+					eq(syncEntityVectors.entityId, mutation.entityId),
+				),
+			)
+			.limit(1);
+
+		const serverVector = (vectorRow?.vectorJson as MutationVector) || {};
+
+		const mergeResult = performFieldLevelCrdtMerge({
+			entityKind: "clinical_task",
+			entityId: mutation.entityId,
+			serverEntity: toEntityRecord(serverTask),
+			serverVector,
+			clientPatch: mutation.payload,
+			clientVector: mutation.mutationVector,
+			clientUpdatedAt: mutation.updatedAt,
+			serverUpdatedAt:
+				vectorRow?.updatedAt?.toISOString() ||
+				serverTask?.createdAt?.toISOString() ||
+				null,
+			clientId,
+			authorUserId: authorUserId || mutation.authorUserId,
+		});
+
+		const validTaskStatuses = new Set([
+			"pending",
+			"in_progress",
+			"completed",
+			"cancelled",
+		]);
+		const normalizeTaskStatus = (
+			raw: unknown,
+			fallback: "pending" | "in_progress" | "completed" | "cancelled",
+		) => {
+			const str = typeof raw === "string" ? raw : "";
+			return (
+				validTaskStatuses.has(str) ? str : fallback
+			) as "pending" | "in_progress" | "completed" | "cancelled";
+		};
+
+		const merged = mergeResult.mergedEntity;
+
+		if (!serverTask) {
+			if (!isValidUuid(merged.patientId)) {
+				throw new Error(
+					`Invalid or missing patientId UUID for clinical_task mutation: ${String(merged.patientId)}`,
+				);
+			}
+			const patientId = String(merged.patientId);
+			const [tenantPatient] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.id, patientId),
+					),
+				)
+				.limit(1);
+			if (!tenantPatient) {
+				throw new Error(
+					`Patient ${patientId} not found in organization ${organizationId} for clinical_task`,
+				);
+			}
+
+			const title =
+				typeof merged.title === "string" && merged.title.trim().length > 0
+					? merged.title.trim()
+					: "";
+			if (!title) {
+				throw new Error("Clinical task title is required");
+			}
+
+			const taskType =
+				typeof merged.taskType === "string" && merged.taskType.trim().length > 0
+					? merged.taskType.trim()
+					: "follow_up";
+
+			const treatmentPlanId = isValidUuid(merged.treatmentPlanId)
+				? String(merged.treatmentPlanId)
+				: null;
+			const assignedDoctorId = isValidUuid(merged.assignedDoctorId)
+				? String(merged.assignedDoctorId)
+				: null;
+			const normalizedStatus = normalizeTaskStatus(merged.status, "pending");
+			const description = merged.description ? String(merged.description) : null;
+			const dueAt = merged.dueAt ? new Date(String(merged.dueAt)) : null;
+
+			const insertedResult = await tx.execute(sql`
+				INSERT INTO "clinical_tasks" (
+					"id",
+					"organization_id",
+					"patient_id",
+					"treatment_plan_id",
+					"assigned_doctor_id",
+					"task_type",
+					"status",
+					"title",
+					"description",
+					"due_at"
+				) VALUES (
+					${mutation.entityId}::uuid,
+					${organizationId}::uuid,
+					${patientId}::uuid,
+					${treatmentPlanId}::uuid,
+					${assignedDoctorId}::uuid,
+					${taskType},
+					${normalizedStatus}::clinical_task_status,
+					${title},
+					${description},
+					${dueAt}
+				)
+				RETURNING
+					"id",
+					"organization_id" AS "organizationId",
+					"patient_id" AS "patientId",
+					"treatment_plan_id" AS "treatmentPlanId",
+					"assigned_doctor_id" AS "assignedDoctorId",
+					"task_type" AS "taskType",
+					"status",
+					"title",
+					"description",
+					"due_at" AS "dueAt",
+					"created_at" AS "createdAt"
+			`);
+			const inserted = insertedResult.rows[0];
+
+			await SyncQueueManager.upsertEntityVector(
+				tx,
+				organizationId,
+				"clinical_task",
+				mutation.entityId,
+				mergeResult.updatedVector,
+				mutation.mutationId,
+			);
+
+			return {
+				status: "applied",
+				mergedFields: mergeResult.changedFields,
+				conflicts: [],
+				entity: ensureEntityRecord(inserted),
+			};
+		}
+
+		const updateData: Record<string, unknown> = {};
+		if ("title" in merged && typeof merged.title === "string" && merged.title.trim()) {
+			updateData.title = merged.title.trim();
+		}
+		if ("taskType" in merged && typeof merged.taskType === "string" && merged.taskType.trim()) {
+			updateData.taskType = merged.taskType.trim();
+		}
+		if ("status" in merged) {
+			updateData.status = normalizeTaskStatus(merged.status, serverTask.status);
+		}
+		if ("description" in merged) {
+			updateData.description = merged.description ? String(merged.description) : null;
+		}
+		if ("assignedDoctorId" in merged) {
+			updateData.assignedDoctorId = isValidUuid(merged.assignedDoctorId)
+				? String(merged.assignedDoctorId)
+				: null;
+		}
+		if ("dueAt" in merged) {
+			updateData.dueAt = merged.dueAt ? new Date(String(merged.dueAt)) : null;
+		}
+
+		let updated = serverTask;
+		if (Object.keys(updateData).length > 0) {
+			const [row] = await tx
+				.update(clinicalTasks)
+				.set(updateData)
+				.where(
+					and(
+						eq(clinicalTasks.organizationId, organizationId),
+						eq(clinicalTasks.id, mutation.entityId),
+					),
+				)
+				.returning({
+					id: clinicalTasks.id,
+					organizationId: clinicalTasks.organizationId,
+					patientId: clinicalTasks.patientId,
+					treatmentPlanId: clinicalTasks.treatmentPlanId,
+					assignedDoctorId: clinicalTasks.assignedDoctorId,
+					taskType: clinicalTasks.taskType,
+					status: clinicalTasks.status,
+					title: clinicalTasks.title,
+					description: clinicalTasks.description,
+					dueAt: clinicalTasks.dueAt,
+					createdAt: clinicalTasks.createdAt,
+				});
+			if (row) {
+				updated = row;
+			}
+		}
+
+		await SyncQueueManager.upsertEntityVector(
+			tx,
+			organizationId,
+			"clinical_task",
+			mutation.entityId,
+			mergeResult.updatedVector,
+			mutation.mutationId,
+		);
+
+		const status: SyncMutationStatus = mergeResult.hasConflicts
+			? "conflict_resolved"
+			: mergeResult.changedFields.length > 0
+				? "merged"
+				: "applied";
+
+		return {
+			status,
+			mergedFields: mergeResult.changedFields,
+			conflicts: mergeResult.conflicts,
+			entity: ensureEntityRecord(updated || merged),
 		};
 	}
 }

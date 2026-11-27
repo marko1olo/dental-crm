@@ -8,6 +8,7 @@
 import { kopecksToNumericString, rublesToKopecks } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { isValidUuid } from "../../utils/httpIdempotency.js";
 import { cashRefundBodySchema } from "./cashboxSchemas.js";
 import { executeCashRefundTransaction } from "./refundModules/index.js";
@@ -160,24 +161,30 @@ export async function handleCashRefund(request: FastifyRequest, reply: FastifyRe
 }
 
 export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise<void> {
-	const cashRefundRouteOptions = {
-		schema: {
-			description:
-				"Cashbox refund with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-				},
+	const cashRefundRouteSchema = {
+		description:
+			"Cashbox refund with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
 			},
 		},
 	};
 
-	app.post("/api/cash/refund", cashRefundRouteOptions, async (request, reply) => {
-		return handleCashRefund(request, reply);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/cash/refund",
+		permission: "public",
+		schema: cashRefundRouteSchema,
+		handler: async ({ request, reply }) => handleCashRefund(request, reply),
 	});
-	app.post("/api/cashbox/refund", cashRefundRouteOptions, async (request, reply) => {
-		return handleCashRefund(request, reply);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/cashbox/refund",
+		permission: "public",
+		schema: cashRefundRouteSchema,
+		handler: async ({ request, reply }) => handleCashRefund(request, reply),
 	});
 }

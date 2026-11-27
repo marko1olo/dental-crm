@@ -5,7 +5,8 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import { radiologyAiFindings, radiologyAiReports } from "../../db/schema.js";
 
 const diagnocatAnalyticsQuerySchema = z
@@ -22,12 +23,13 @@ const diagnocatAnalyticsQuerySchema = z
 export async function fetchAiDiagnosticStats(
 	orgId: string,
 	startDate?: Date,
+	executor?: TenantDb,
 ): Promise<{
 	reportsCount: number;
 	findingsCount: number;
 	aiExaminedCount: number;
 }> {
-	return withTenantCtx(orgId, async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 		const [aiReportsRow] = await tx
 			.select({ count: sql<number>`count(*)::int` })
 			.from(radiologyAiReports)
@@ -57,14 +59,25 @@ export async function fetchAiDiagnosticStats(
 			findingsCount,
 			aiExaminedCount,
 		};
-	});
+	};
+
+	if (executor) {
+		return runQuery(executor);
+	}
+	return withTenantReadCtx(orgId, runQuery);
 }
 
 /** Алиас для обратной совместимости импортов */
 export const fetchDiagnocatStats = fetchAiDiagnosticStats;
 
 export async function registerDiagnocatAnalyticsRoutes(app: FastifyInstance) {
-	const handler = async (request: FastifyRequest<{ Querystring: { range?: string } }>, reply: FastifyReply) => {
+	const handler = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const readAllowed = await requireClinicalReadAccess(
 			request,
 			reply,
@@ -110,7 +123,9 @@ export async function registerDiagnocatAnalyticsRoutes(app: FastifyInstance) {
 				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 			}
 
-			const stats = await fetchAiDiagnosticStats(orgId, startDate);
+			const stats = await withTenantReadCtx(orgId, (tx) =>
+				fetchAiDiagnosticStats(orgId, startDate, tx),
+			);
 
 			return {
 				success: true,
@@ -126,8 +141,18 @@ export async function registerDiagnocatAnalyticsRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.get("/api/analytics/ai-diagnostics", handler);
-	app.get("/api/analytics/diagnocat", handler);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/analytics/ai-diagnostics",
+		permission: "public",
+		handler,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/analytics/diagnocat",
+		permission: "public",
+		handler,
+	});
 }
 
 export const registerDiagnocatRoutes = registerDiagnocatAnalyticsRoutes;

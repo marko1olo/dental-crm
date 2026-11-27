@@ -53,36 +53,34 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			organizationId === DEMO_SHOWCASE_ORG_ID &&
 			isDemoShowcaseMode()
 		) {
-			try {
-				const freshStageDate = new Date(Date.now() - 3 * 60_000);
-				leads = await withTenantCtx(organizationId, async (tx) =>
-					tx
-						.insert(crmLeads)
-						.values(
-							DEMO_SHOWCASE_SEED_LEADS.map((seed) => ({
-								organizationId,
-								name: seed.name,
-								phone: seed.phone,
-								source: seed.source,
-								status: seed.status,
-								expectedRevenue: seed.expectedRevenue,
-								expectedRevenueKopecks: seed.expectedRevenue
-									? BigInt(parseKopecks(seed.expectedRevenue))
-									: null,
-								notes: seed.notes,
-								clinicalTags: [...seed.clinicalTags],
-								priority: "normal" as const,
-								stageEnteredAt: freshStageDate,
-							})),
-						)
-						.returning(),
-				);
-			} catch (seedErr) {
-				req.log.warn(
-					{ err: seedErr, organizationId },
-					"[Leads] Demo showcase seed skipped (concurrent or failed)",
-				);
-			}
+			const freshStageDate = new Date(Date.now() - 3 * 60_000);
+			leads = DEMO_SHOWCASE_SEED_LEADS.map((seed, index) => ({
+				id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+				organizationId,
+				name: seed.name,
+				patientName: null,
+				patientId: null,
+				appointmentId: null,
+				phone: seed.phone,
+				source: seed.source,
+				status: seed.status,
+				expectedRevenue: seed.expectedRevenue ?? null,
+				expectedRevenueKopecks: seed.expectedRevenue
+					? BigInt(parseKopecks(seed.expectedRevenue))
+					: null,
+				notes: seed.notes ?? null,
+				dropReason: null,
+				assignedDoctorId: null,
+				priority: "normal" as const,
+				clinicalTags: [...seed.clinicalTags],
+				audioRecordUrl: null,
+				transcriptionSnippet: null,
+				metadata: null,
+				lastContactedAt: null,
+				stageEnteredAt: freshStageDate,
+				createdAt: freshStageDate,
+				updatedAt: freshStageDate,
+			}));
 		}
 
 		// Phone deduplication check against existing patients database (Mandates 8l, 8n)
@@ -363,13 +361,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			});
 		}
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор лида.",
 			});
 		}
+		const { id } = paramsParsed.data;
 		const parsed = patchLeadStageSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -404,13 +403,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 		);
 		if (!organizationId) return;
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор лида.",
 			});
 		}
+		const { id } = paramsParsed.data;
 		const history = await withTenantCtx(organizationId, (tx) =>
 			tx
 				.select()
@@ -443,13 +443,14 @@ export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise
 			});
 		}
 
-		const { id } = req.params as { id: string };
-		if (!isValidUuid(id)) {
+		const paramsParsed = z.object({ id: z.string().uuid() }).strict().safeParse(req.params ?? {});
+		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
 				message: "Некорректный идентификатор лида.",
 			});
 		}
+		const { id } = paramsParsed.data;
 		const statusParsed = patchLeadStatusSchema.safeParse(req.body);
 		if (!statusParsed.success) {
 			return reply.code(400).send({

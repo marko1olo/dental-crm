@@ -1,6 +1,6 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantWriteCtx } from "../../db/rls.js";
 import { patients } from "../../db/schema.js";
 import type { UpdateCuratorStagePayload } from "./curatorTypes.js";
 
@@ -13,7 +13,7 @@ export async function persistCuratorStageInDb(
 	orgId: string,
 	payload: UpdateCuratorStagePayload,
 ): Promise<CuratorStageResult> {
-	return await withTenantCtx(orgId, async (tx) => {
+	return await withTenantWriteCtx(orgId, async (tx) => {
 		const [patient] = await tx
 			.select({ id: patients.id, profile: patients.administrativeProfile })
 			.from(patients)

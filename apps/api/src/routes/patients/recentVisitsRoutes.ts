@@ -2,7 +2,8 @@ import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireClinicalReadContext } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	invoiceItems,
@@ -82,9 +83,11 @@ function extractRecommendations(
  * повторного приёма («Повторить как в прошлый раз»).
  */
 export function registerPatientRecentVisitsRoutes(app: FastifyInstance) {
-	app.get(
-		"/api/patients/:patientId/visits/recent-summary",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/visits/recent-summary",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(
 				request,
 				reply,
@@ -108,7 +111,7 @@ export function registerPatientRecentVisitsRoutes(app: FastifyInstance) {
 			}
 			const { patientId } = parsedParams.data;
 
-			const result = await withTenantCtx(orgId, async (tx) => {
+			const result = await withTenantReadCtx(orgId, async (tx) => {
 				const [patientRow] = await tx
 					.select({ id: patients.id })
 					.from(patients)
@@ -343,5 +346,5 @@ export function registerPatientRecentVisitsRoutes(app: FastifyInstance) {
 				visits: result.items,
 			});
 		},
-	);
+	});
 }

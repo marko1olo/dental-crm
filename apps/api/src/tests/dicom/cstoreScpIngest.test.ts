@@ -306,7 +306,7 @@ test("5. Полный сетевой протокол Upper Layer: C-ECHO SCP и
 
 		// Отправляем A-ASSOCIATE-RQ и ждем A-ASSOCIATE-AC
 		const associateAcPromise = new Promise<Buffer>((res) => {
-			client.once("data", (data) => res(data));
+			client.once("data", (data: Buffer | string) => res(Buffer.isBuffer(data) ? data : Buffer.from(data)));
 		});
 
 		client.write(assocRqPdu);
@@ -350,7 +350,7 @@ test("5. Полный сетевой протокол Upper Layer: C-ECHO SCP и
 		pdv.copy(echoPdu, 6);
 
 		const echoRspPromise = new Promise<Buffer>((res) => {
-			client.once("data", (data) => res(data));
+			client.once("data", (data: Buffer | string) => res(Buffer.isBuffer(data) ? data : Buffer.from(data)));
 		});
 
 		client.write(echoPdu);
@@ -366,7 +366,7 @@ test("5. Полный сетевой протокол Upper Layer: C-ECHO SCP и
 		releaseRq.writeUInt32BE(0, 2);
 
 		const releaseRpPromise = new Promise<Buffer>((res) => {
-			client.once("data", (data) => res(data));
+			client.once("data", (data: Buffer | string) => res(Buffer.isBuffer(data) ? data : Buffer.from(data)));
 		});
 
 		client.write(releaseRq);
@@ -444,20 +444,60 @@ test("8. Fastify маршруты управления DICOM SCP серверо�
 	await app.ready();
 
 	try {
-		// GET /api/radiology/dicom/server/status
-		const resStatus = await app.inject({
+		const { signToken } = await import("../../utils/cryptoHelper.js");
+		const { authTokenSecret } = await import("../../security/authSecret.js");
+		const doctorToken = signToken(
+			{ organizationId: TEST_ORG_ID, userId: "11111111-3333-4444-5555-666666666666", role: "doctor" },
+			authTokenSecret(),
+			600,
+		);
+
+		// GET /api/radiology/dicom/server/status without organization fails
+		const resMissingOrg = await app.inject({
 			method: "GET",
 			url: "/api/radiology/dicom/server/status",
 			headers: {
 				"x-dente-admin-secret": "test",
 			},
 		});
+		assert.ok(resMissingOrg.statusCode === 400 || resMissingOrg.statusCode === 401);
+
+		// GET /api/radiology/dicom/server/status with organization token
+		const resStatus = await app.inject({
+			method: "GET",
+			url: "/api/radiology/dicom/server/status",
+			headers: {
+				authorization: `Bearer ${doctorToken}`,
+				"x-organization-id": TEST_ORG_ID,
+			},
+		});
 
 		assert.strictEqual(resStatus.statusCode, 200);
 		const jsonStatus = resStatus.json();
 		assert.strictEqual(jsonStatus.success, true);
+		assert.strictEqual(jsonStatus.organizationId, TEST_ORG_ID);
 		assert.ok(jsonStatus.scpServer, "Должен возвращать блок scpServer");
 		assert.ok(jsonStatus.vatechBridge, "Должен возвращать блок vatechBridge");
+		if (jsonStatus.vatechBridge.watchedDirectory) {
+			assert.ok(!jsonStatus.vatechBridge.watchedDirectory.includes("\\"));
+			assert.ok(!jsonStatus.vatechBridge.watchedDirectory.includes("/"));
+		}
+
+		// POST /api/radiology/dicom/server/start denies non-admin role (reception)
+		const receptionToken = signToken(
+			{ organizationId: TEST_ORG_ID, userId: "22222222-3333-4444-5555-666666666666", role: "reception" },
+			authTokenSecret(),
+			600,
+		);
+		const resForbidden = await app.inject({
+			method: "POST",
+			url: "/api/radiology/dicom/server/start",
+			headers: {
+				authorization: `Bearer ${receptionToken}`,
+			},
+			payload: {},
+		});
+		assert.strictEqual(resForbidden.statusCode, 403);
 	} finally {
 		await app.close();
 	}

@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { withTenantReadCtx, type TenantDb } from "../../db/rls.js";
 import {
 	paymentSignedExactFlowKopecksSql,
 	paymentSignedLegacyFlowRubSql,
@@ -12,10 +12,9 @@ import type { CuratorStaffUser } from "./curatorTypes.js";
 export async function fetchCuratorAnalyticsPayload(
 	orgId: string,
 	options?: { queueLimit?: number; queueOffset?: number },
+	executor?: TenantDb,
 ) {
-	const { staffList, plans, directPlanPayments, installmentPlanPayments } = await withTenantCtx(
-		orgId,
-		async (tx) => {
+	const runQuery = async (tx: TenantDb) => {
 			const staffRows = await tx
 				.select({ id: users.id, fullName: users.fullName, role: users.role })
 				.from(users)
@@ -84,8 +83,10 @@ export async function fetchCuratorAnalyticsPayload(
 				directPlanPayments: directRows,
 				installmentPlanPayments: installmentRows,
 			};
-		},
-	);
+		};
+
+	const { staffList, plans, directPlanPayments, installmentPlanPayments } =
+		executor ? await runQuery(executor) : await withTenantReadCtx(orgId, runQuery);
 
 	const curatorUsers: CuratorStaffUser[] = staffList
 		.filter((u) => ["curator", "administrator", "manager", "admin", "owner"].includes(u.role))

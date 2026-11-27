@@ -64,7 +64,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 	}
 
 	try {
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const txResult = await withTenantCtx(orgId, async (tx) => {
 			const [order] = await tx
 				.select({
 					id: labOrders.id,
@@ -145,138 +145,123 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 				}
 			}
 
-			return { kind: "ok" as const, order, items, isDraft, realBatchNumber };
-		});
+			const primaryItem = items[0];
+			const baseDate = order.completedAt ?? order.createdAt;
+			const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
+			const formattedOrderNum = order.orderNumber && (order.orderNumber.startsWith("ЛАБ-") || order.orderNumber.startsWith("ЗТЛ-") || order.orderNumber.startsWith("ЛО-"))
+				? order.orderNumber
+				: (order.orderNumber ? `ЛО-${baseYear}-${order.orderNumber}` : `ЗТЛ-${baseYear}-${order.id.slice(0, 6).toUpperCase()}`);
+			const batchCode = realBatchNumber || formattedOrderNum;
+			const orgShortHash = orgId.replace(/-/g, "").slice(0, 6).toUpperCase();
+			const certificateNumber = `WP-${orgShortHash}-${formattedOrderNum}`;
 
-		if (result.kind === "not_found") {
-			return reply.code(404).send({
-				error: "LabOrderNotFound",
-				message: "Заказ-наряд лаборатории не найден.",
+			const restorationTypeRaw = primaryItem?.restorationType ?? "crown_monolithic";
+			const restorationType = LAB_WORK_TYPE_LABELS_RU[restorationTypeRaw as keyof typeof LAB_WORK_TYPE_LABELS_RU]
+				|| (restorationTypeRaw === "crown_monolithic" ? "Анатомическая коронка / мостовидный протез" : restorationTypeRaw);
+			const frameworkMaterial = primaryItem?.material || order.material || "Конструкционный стоматологический материал";
+			const shade = primaryItem?.shadeFinal || order.colorVita || "По прейскуранту";
+			const shadeStump = primaryItem?.shadeStump || null;
+			const generalTerms = calculateWarrantyTerms(frameworkMaterial, restorationType);
+
+			const itemsPayload = items.length > 0
+				? items.map((it) => {
+						const toothVal = it.toothFdi ? String(it.toothFdi) : (order.toothFdi || "—");
+						const matVal = it.material || frameworkMaterial;
+						const shadeVal = it.shadeFinal || shade;
+						const workType = it.restorationType
+							? (LAB_WORK_TYPE_LABELS_RU[it.restorationType as keyof typeof LAB_WORK_TYPE_LABELS_RU] || it.restorationType)
+							: restorationType;
+						const itTerms = calculateWarrantyTerms(matVal, workType);
+						return {
+							id: it.id || generateUuidV7(),
+							name: workType,
+							clinicalWorkTitle: workType,
+							category: "orthopedics",
+							tooth: toothVal,
+							toothNumber: toothVal,
+							material: matVal,
+							materialName: matVal,
+							color: shadeVal,
+							shade: shadeVal,
+							vitaShade: shadeVal,
+							shadeStump: it.shadeStump || shadeStump,
+							lot: batchCode,
+							lotNumber: batchCode,
+							batchCode: batchCode,
+							restorationType: workType,
+							laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+							warrantyMonths: itTerms.warrantyMonths,
+							serviceLifeMonths: itTerms.serviceLifeMonths,
+						};
+					})
+				: [
+						{
+							id: generateUuidV7(),
+							name: restorationType,
+							clinicalWorkTitle: restorationType,
+							category: "orthopedics",
+							tooth: order.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
+							toothNumber: order.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
+							material: frameworkMaterial,
+							materialName: frameworkMaterial,
+							color: shade,
+							shade: shade,
+							vitaShade: shade,
+							shadeStump,
+							lot: batchCode,
+							lotNumber: batchCode,
+							batchCode: batchCode,
+							restorationType,
+							laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+							warrantyMonths: generalTerms.warrantyMonths,
+							serviceLifeMonths: generalTerms.serviceLifeMonths,
+						},
+					];
+
+			const fixationDateIso = formatLocalDateToYmd(order.completedAt ?? order.createdAt);
+			const fixationDateObj = new Date(fixationDateIso);
+			const expirationDateObj = new Date(fixationDateObj.getTime());
+			expirationDateObj.setMonth(expirationDateObj.getMonth() + generalTerms.warrantyMonths);
+			const nextRecallDateObj = new Date(fixationDateObj.getTime() + 180 * 24 * 60 * 60 * 1000);
+
+			const integrityHashPayload = JSON.stringify({
+				organizationId: orgId,
+				patientId: order.patientId,
+				certificateNumber,
+				items: itemsPayload,
+				issuedAt: fixationDateIso,
+				expiresAt: expirationDateObj.toISOString().slice(0, 10),
+				batchCode,
 			});
-		}
+			const integritySha256 = createHash("sha256").update(integrityHashPayload).digest("hex");
 
-		const orderWithDetails = result.order;
-		const items = result.items;
-		const primaryItem = items[0];
-		const isDraft = result.isDraft;
+			const passport = generateProstheticWarrantyPassport({
+				orderNumber: formattedOrderNum,
+				batchCode,
+				patientFullName: order.patientName || "Пациент",
+				clinicName: order.orgName || "Стоматологическая клиника",
+				doctorFullName: order.doctorName || "Лечащий врач",
+				technicianLabName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+				toothFdi: order.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
+				restorationType,
+				frameworkMaterial,
+				shade,
+				shadeStump,
+				warrantyYears: generalTerms.warrantyYears,
+				warrantyMonths: generalTerms.warrantyMonths,
+				fixationDate: fixationDateIso,
+				isDraft,
+				...(isDraft ? { draftNotice: "[ЧЕРНОВИК: изделие находится на этапе производства/примерки]" } : {}),
+				certificateNumber,
+				integritySha256,
+			});
 
-		const baseDate = orderWithDetails.completedAt ?? orderWithDetails.createdAt;
-		const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
-		const formattedOrderNum = orderWithDetails.orderNumber && (orderWithDetails.orderNumber.startsWith("ЛАБ-") || orderWithDetails.orderNumber.startsWith("ЗТЛ-") || orderWithDetails.orderNumber.startsWith("ЛО-"))
-			? orderWithDetails.orderNumber
-			: (orderWithDetails.orderNumber ? `ЛО-${baseYear}-${orderWithDetails.orderNumber}` : `ЗТЛ-${baseYear}-${orderWithDetails.id.slice(0, 6).toUpperCase()}`);
-		const batchCode = result.realBatchNumber || formattedOrderNum;
-		const orgShortHash = orgId.replace(/-/g, "").slice(0, 6).toUpperCase();
-		const certificateNumber = `WP-${orgShortHash}-${formattedOrderNum}`;
-
-		const restorationTypeRaw = primaryItem?.restorationType ?? "crown_monolithic";
-		const restorationType = LAB_WORK_TYPE_LABELS_RU[restorationTypeRaw as keyof typeof LAB_WORK_TYPE_LABELS_RU]
-			|| (restorationTypeRaw === "crown_monolithic" ? "Анатомическая коронка / мостовидный протез" : restorationTypeRaw);
-		const frameworkMaterial = primaryItem?.material || orderWithDetails.material || "Конструкционный стоматологический материал";
-		const shade = primaryItem?.shadeFinal || orderWithDetails.colorVita || "По прейскуранту";
-		const shadeStump = primaryItem?.shadeStump || null;
-		const generalTerms = calculateWarrantyTerms(frameworkMaterial, restorationType);
-
-		const itemsPayload = items.length > 0
-			? items.map((it) => {
-					const toothVal = it.toothFdi ? String(it.toothFdi) : (orderWithDetails.toothFdi || "—");
-					const matVal = it.material || frameworkMaterial;
-					const shadeVal = it.shadeFinal || shade;
-					const workType = it.restorationType
-						? (LAB_WORK_TYPE_LABELS_RU[it.restorationType as keyof typeof LAB_WORK_TYPE_LABELS_RU] || it.restorationType)
-						: restorationType;
-					const itTerms = calculateWarrantyTerms(matVal, workType);
-					return {
-						id: it.id || generateUuidV7(),
-						name: workType,
-						clinicalWorkTitle: workType,
-						category: "orthopedics",
-						tooth: toothVal,
-						toothNumber: toothVal,
-						material: matVal,
-						materialName: matVal,
-						color: shadeVal,
-						shade: shadeVal,
-						vitaShade: shadeVal,
-						shadeStump: it.shadeStump || shadeStump,
-						lot: batchCode,
-						lotNumber: batchCode,
-						batchCode: batchCode,
-						restorationType: workType,
-						laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
-						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-						warrantyMonths: itTerms.warrantyMonths,
-						serviceLifeMonths: itTerms.serviceLifeMonths,
-					};
-				})
-			: [
-					{
-						id: generateUuidV7(),
-						name: restorationType,
-						clinicalWorkTitle: restorationType,
-						category: "orthopedics",
-						tooth: orderWithDetails.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
-						toothNumber: orderWithDetails.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
-						material: frameworkMaterial,
-						materialName: frameworkMaterial,
-						color: shade,
-						shade: shade,
-						vitaShade: shade,
-						shadeStump,
-						lot: batchCode,
-						lotNumber: batchCode,
-						batchCode: batchCode,
-						restorationType,
-						laboratoryName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
-						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
-						warrantyMonths: generalTerms.warrantyMonths,
-						serviceLifeMonths: generalTerms.serviceLifeMonths,
-					},
-				];
-
-		const fixationDateIso = formatLocalDateToYmd(orderWithDetails.completedAt ?? orderWithDetails.createdAt);
-		const fixationDateObj = new Date(fixationDateIso);
-		const expirationDateObj = new Date(fixationDateObj.getTime());
-		expirationDateObj.setMonth(expirationDateObj.getMonth() + generalTerms.warrantyMonths);
-		const nextRecallDateObj = new Date(fixationDateObj.getTime() + 180 * 24 * 60 * 60 * 1000);
-
-		const integrityHashPayload = JSON.stringify({
-			organizationId: orgId,
-			patientId: orderWithDetails.patientId,
-			certificateNumber,
-			items: itemsPayload,
-			issuedAt: fixationDateIso,
-			expiresAt: expirationDateObj.toISOString().slice(0, 10),
-			batchCode,
-		});
-		const integritySha256 = createHash("sha256").update(integrityHashPayload).digest("hex");
-
-		const passport = generateProstheticWarrantyPassport({
-			orderNumber: formattedOrderNum,
-			batchCode,
-			patientFullName: orderWithDetails.patientName || "Пациент",
-			clinicName: orderWithDetails.orgName || "Стоматологическая клиника",
-			doctorFullName: orderWithDetails.doctorName || "Лечащий врач",
-			technicianLabName: orderWithDetails.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
-			toothFdi: orderWithDetails.toothFdi || (primaryItem ? String(primaryItem.toothFdi) : "—"),
-			restorationType,
-			frameworkMaterial,
-			shade,
-			shadeStump,
-			warrantyYears: generalTerms.warrantyYears,
-			warrantyMonths: generalTerms.warrantyMonths,
-			fixationDate: fixationDateIso,
-			isDraft,
-			...(isDraft ? { draftNotice: "[ЧЕРНОВИК: изделие находится на этапе производства/примерки]" } : {}),
-			certificateNumber,
-			integritySha256,
-		});
-
-		// Гарантированная регистрация сертификата в warrantyCertificates при выдаче паспорта (Мандаты 8e, 8x)
-		let existingCertificateId: string | null = null;
-		if (orderWithDetails.patientId) {
-			const [existingCert] = await withTenantCtx(orgId, async (tx) => {
-				return tx
+			// Гарантированная регистрация сертификата в warrantyCertificates в рамках единой транзакции (Мандаты 8e, 8x)
+			let existingCertificateId: string | null = null;
+			if (order.patientId) {
+				const [existingCert] = await tx
 					.select({ id: warrantyCertificates.id })
 					.from(warrantyCertificates)
 					.where(
@@ -289,18 +274,17 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 						),
 					)
 					.limit(1);
-			});
-			const targetPatientId = orderWithDetails.patientId;
-			if (existingCert?.id) {
-				existingCertificateId = existingCert.id;
-			} else if (targetPatientId && (!isDraft || orderWithDetails.isLockedInstalled || orderWithDetails.completedAt)) {
-				const [registered] = await withTenantCtx(orgId, async (tx) => {
-					return tx
+
+				const targetPatientId = order.patientId;
+				if (existingCert?.id) {
+					existingCertificateId = existingCert.id;
+				} else if (targetPatientId && (!isDraft || order.isLockedInstalled || order.completedAt)) {
+					const [registered] = await tx
 						.insert(warrantyCertificates)
 						.values({
 							organizationId: orgId,
 							patientId: targetPatientId,
-							visitId: orderWithDetails.appointmentId || null,
+							visitId: order.appointmentId || null,
 							certificateNumber,
 							status: "active",
 							itemsJson: itemsPayload,
@@ -316,6 +300,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 						})
 						.onConflictDoUpdate({
 							target: warrantyCertificates.certificateNumber,
+							setWhere: eq(warrantyCertificates.organizationId, orgId),
 							set: {
 								status: "active",
 								itemsJson: itemsPayload,
@@ -328,27 +313,44 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 							},
 						})
 						.returning({ id: warrantyCertificates.id });
-				});
-				if (registered?.id) {
-					existingCertificateId = registered.id;
+					if (registered?.id) {
+						existingCertificateId = registered.id;
+					}
 				}
 			}
+
+			return {
+				kind: "ok" as const,
+				orderId: order.id,
+				toothFdi: order.toothFdi,
+				existingCertificateId,
+				certificateNumber,
+				passport,
+				integritySha256,
+			};
+		});
+
+		if (txResult.kind === "not_found") {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Заказ-наряд лаборатории не найден.",
+			});
 		}
 
 		await auditMedicalAccessFromRequest(request, {
 			organizationId: orgId,
 			action: "VIEW_WARRANTY_PASSPORT",
 			diagnosis: "Гарантийный паспорт ортопедической конструкции (СтАР / Минздрав РФ)",
-			metadata: { labOrderId: orderWithDetails.id, toothFdi: orderWithDetails.toothFdi },
+			metadata: { labOrderId: txResult.orderId, toothFdi: txResult.toothFdi },
 		});
 
 		return reply.send({
 			success: true,
-			hasCertificate: Boolean(existingCertificateId),
-			certificateNumber,
-			certificateId: existingCertificateId,
-			passport,
-			integritySha256,
+			hasCertificate: Boolean(txResult.existingCertificateId),
+			certificateNumber: txResult.certificateNumber,
+			certificateId: txResult.existingCertificateId,
+			passport: txResult.passport,
+			integritySha256: txResult.integritySha256,
 		});
 	} catch (err: unknown) {
 		request.log.error(

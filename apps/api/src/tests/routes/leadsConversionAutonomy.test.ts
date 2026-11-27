@@ -166,12 +166,12 @@ describe("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", 
 	});
 
 	it(
-		"Converting lead with fallback doctor ('default-doctor') and fallback chair ('default-chair') resolves active doctor and succeeds with 200 OK",
+		"[W16-BK-09] Rejects non-UUID doctorId/chairId with 400 and resolves active doctor/chair when omitted",
 		async () => {
 			const startIso = "2026-09-10T10:00:00.000Z";
 			const endIso = "2026-09-10T11:00:00.000Z";
 
-			const response = await app.inject({
+			const badDoctorRes = await app.inject({
 				method: "POST",
 				url: `/api/leads/${LEAD_1_ID}/convert`,
 				headers: {
@@ -184,6 +184,40 @@ describe("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", 
 					appointmentEnd: endIso,
 					doctorId: "default-doctor",
 					chairId: "default-chair",
+				},
+			});
+			assert.equal(badDoctorRes.statusCode, 400, badDoctorRes.body);
+			assert.equal(badDoctorRes.json().error, "DoctorIdInvalid");
+
+			const badChairRes = await app.inject({
+				method: "POST",
+				url: `/api/leads/${LEAD_1_ID}/convert`,
+				headers: {
+					"content-type": "application/json",
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+				},
+				payload: {
+					appointmentStart: startIso,
+					appointmentEnd: endIso,
+					doctorId: DOCTOR_USER_ID,
+					chairId: "default-chair",
+				},
+			});
+			assert.equal(badChairRes.statusCode, 400, badChairRes.body);
+			assert.equal(badChairRes.json().error, "ChairIdInvalid");
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/leads/${LEAD_1_ID}/convert`,
+				headers: {
+					"content-type": "application/json",
+					[CLINIC_TOKEN_HEADER]: clinicToken,
+					[STAFF_TOKEN_HEADER]: staffToken,
+				},
+				payload: {
+					appointmentStart: startIso,
+					appointmentEnd: endIso,
 				},
 			});
 

@@ -16,9 +16,19 @@ import {
 	createCompositeIdempotencyKey,
 	mergeFieldLevelCrdt,
 	parseIdempotencyKey,
+	type SyncPushRequest,
 	verifyPayloadHash,
 } from "@dental/shared";
 import { SyncGatewayService } from "../services/sync/syncGatewayService.js";
+import { and, eq } from "drizzle-orm";
+import { fixtureUuid, purgeFixtureOrganizations, withFixtureTenant } from "./support/fixtureOrganizations.js";
+import {
+	appointments,
+	clinicalTasks,
+	organizations,
+	patients,
+	treatmentItems,
+} from "../db/schema.js";
 
 describe("SyncGatewayService & 3-Tier Multi-Level Synchronization Engine", () => {
 	// ── 1. Hash & Idempotency Key Integrity Invariants ───────────────────────
@@ -465,6 +475,209 @@ describe("SyncGatewayService & 3-Tier Multi-Level Synchronization Engine", () =>
 		assert.strictEqual(res2?.status, "rejected");
 		assert.strictEqual(res3?.status, "conflict_resolved");
 		assert.ok(res2?.error?.includes("Invalid or missing patientId UUID"));
+	});
+
+	// ── 11. W16-HW-02: Real Persistence for treatment_item, clinical_task & administrativeProfile ──
+	test("11. W16-HW-02: Persists treatment_item, clinical_task, patient_administrative_profile and rejects unsupported entityKind", async () => {
+		const orgId = `dce70000-0000-4000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+		const patientId = `a1b2c3d4-1111-4000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+		const treatmentItemId = `b1b2c3d4-1111-4000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+		const clinicalTaskId = `c1b2c3d4-1111-4000-8000-${Date.now().toString().slice(-12).padStart(12, "0")}`;
+
+		await withFixtureTenant(orgId, async (tx) => {
+			await tx.insert(organizations).values({ id: orgId, name: "W16 HW02 Sync Org" }).onConflictDoNothing();
+			await tx.insert(patients).values({
+				id: patientId,
+				organizationId: orgId,
+				fullName: "Сидоров Алексей",
+			}).onConflictDoNothing();
+		});
+
+		try {
+			const pItem = {
+				patientId,
+				title: "Лечение кариеса 16",
+				toothCode: "16",
+				quantity: 1,
+				unitPriceKopecks: "550000",
+				priceKopecks: "550000",
+				status: "approved",
+			};
+			const pTask = {
+				patientId,
+				taskType: "recall",
+				title: "Контрольный снимок через 6 мес",
+				status: "pending",
+			};
+			const pAdminProfile = {
+				preferredAppointmentStart: "09:00",
+				preferredAppointmentEnd: "12:00",
+				leadSource: "website",
+			};
+
+			const nowIso = new Date().toISOString();
+			const batchRes = await SyncGatewayService.processPushBatch(orgId, {
+				syncBatchId: `batch-w16-hw02-${Date.now()}`,
+				clientId: "tablet-hw02",
+				sentAt: nowIso,
+				mutations: [
+					{
+						mutationId: `mut-ti-${Date.now()}`,
+						idempotencyKey: createCompositeIdempotencyKey(`mut-ti-${Date.now()}`, pItem),
+						payloadHash: computePayloadHash(pItem),
+						entityKind: "treatment_item",
+						entityId: treatmentItemId,
+						action: "create",
+						payload: pItem,
+						updatedAt: nowIso,
+					},
+					{
+						mutationId: `mut-ct-${Date.now()}`,
+						idempotencyKey: createCompositeIdempotencyKey(`mut-ct-${Date.now()}`, pTask),
+						payloadHash: computePayloadHash(pTask),
+						entityKind: "clinical_task",
+						entityId: clinicalTaskId,
+						action: "create",
+						payload: pTask,
+						updatedAt: nowIso,
+					},
+					{
+						mutationId: `mut-ap-${Date.now()}`,
+						idempotencyKey: createCompositeIdempotencyKey(`mut-ap-${Date.now()}`, pAdminProfile),
+						payloadHash: computePayloadHash(pAdminProfile),
+						entityKind: "patient_administrative_profile",
+						entityId: patientId,
+						action: "update",
+						payload: pAdminProfile,
+						updatedAt: nowIso,
+					},
+				],
+			});
+
+			assert.strictEqual(batchRes.rejectedCount, 0, JSON.stringify(batchRes.results));
+			assert.strictEqual(batchRes.appliedCount + batchRes.mergedCount, 3, JSON.stringify(batchRes.results));
+
+			// Unsupported entityKind must be cleanly rejected (never silently marked "applied")
+			const badPayload = { foo: "bar" };
+			const rawUnsupportedBatch = JSON.stringify({
+				syncBatchId: `batch-w16-hw02-bad-${Date.now()}`,
+				clientId: "tablet-hw02",
+				sentAt: nowIso,
+				mutations: [
+					{
+						mutationId: `mut-bad-${Date.now()}`,
+						idempotencyKey: createCompositeIdempotencyKey(`mut-bad-${Date.now()}`, badPayload),
+						payloadHash: computePayloadHash(badPayload),
+						entityKind: "unknown_future_entity",
+						entityId: treatmentItemId,
+						action: "create",
+						payload: badPayload,
+						updatedAt: nowIso,
+					},
+				],
+			});
+			const parsedUnsupportedBatch: SyncPushRequest = JSON.parse(rawUnsupportedBatch);
+			const badBatchRes = await SyncGatewayService.processPushBatch(orgId, parsedUnsupportedBatch);
+			assert.strictEqual(badBatchRes.rejectedCount, 1);
+			assert.strictEqual(badBatchRes.appliedCount, 0);
+			assert.strictEqual(badBatchRes.results[0]?.status, "rejected");
+
+			await withFixtureTenant(orgId, async (tx) => {
+				const [savedItem] = await tx
+					.select()
+					.from(treatmentItems)
+					.where(and(eq(treatmentItems.organizationId, orgId), eq(treatmentItems.id, treatmentItemId)));
+				assert.ok(savedItem, "treatment_item must persist in PostgreSQL");
+				assert.strictEqual(savedItem.priceKopecks, 550000n);
+				assert.strictEqual(savedItem.title, "Лечение кариеса 16");
+
+				const [savedTask] = await tx
+					.select({ id: clinicalTasks.id, title: clinicalTasks.title })
+					.from(clinicalTasks)
+					.where(and(eq(clinicalTasks.organizationId, orgId), eq(clinicalTasks.id, clinicalTaskId)));
+				assert.ok(savedTask, "clinical_task must persist in PostgreSQL");
+				assert.strictEqual(savedTask.title, "Контрольный снимок через 6 мес");
+
+				const [savedPatient] = await tx
+					.select()
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)));
+				assert.strictEqual(savedPatient?.administrativeProfile?.preferredAppointmentStart, "09:00");
+				assert.strictEqual(savedPatient?.administrativeProfile?.preferredAppointmentEnd, "12:00");
+			});
+		} finally {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.delete(treatmentItems).where(eq(treatmentItems.organizationId, orgId));
+				await tx.delete(clinicalTasks).where(eq(clinicalTasks.organizationId, orgId));
+				await tx.delete(patients).where(eq(patients.organizationId, orgId));
+			});
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
+
+	test("12. [W16-HW-07] appointment without sync vector falls back to createdAt for conflict resolution", async () => {
+		const orgId = fixtureUuid("w16-hw07-appt", 1);
+		const appointmentId = fixtureUuid("w16-hw07-appt", 2);
+		const serverCreatedAt = new Date("2026-06-01T12:00:00.000Z");
+		const staleClientUpdatedAt = "2026-06-01T10:00:00.000Z";
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "W16 HW07 Appointment Fallback Org",
+				});
+				await tx.insert(appointments).values({
+					id: appointmentId,
+					organizationId: orgId,
+					status: "completed",
+					startsAt: new Date("2026-06-01T09:00:00.000Z"),
+					endsAt: new Date("2026-06-01T09:30:00.000Z"),
+					createdAt: serverCreatedAt,
+				});
+			});
+
+			const stalePayload = { status: "cancelled" };
+			const mutId = `mut-appt-stale-${Date.now()}`;
+			const pushRes = await SyncGatewayService.processPushBatch(orgId, {
+				syncBatchId: `batch-w16-hw07-${Date.now()}`,
+				clientId: "tablet-hw07",
+				sentAt: new Date().toISOString(),
+				mutations: [
+					{
+						mutationId: mutId,
+						idempotencyKey: createCompositeIdempotencyKey(mutId, stalePayload),
+						payloadHash: computePayloadHash(stalePayload),
+						entityKind: "appointment",
+						entityId: appointmentId,
+						action: "update",
+						payload: stalePayload,
+						updatedAt: staleClientUpdatedAt,
+					},
+				],
+			});
+
+			assert.strictEqual(pushRes.rejectedCount, 0, JSON.stringify(pushRes.results));
+			assert.strictEqual(pushRes.results[0]?.status, "conflict_resolved", JSON.stringify(pushRes.results));
+			assert.ok(
+				(pushRes.results[0]?.conflictDetails?.length ?? 0) > 0,
+				"expected server createdAt fallback to surface conflict against stale client mutation",
+			);
+			assert.strictEqual(pushRes.results[0]?.conflictDetails?.[0]?.winner, "server");
+
+			await withFixtureTenant(orgId, async (tx) => {
+				const [savedAppt] = await tx
+					.select({ status: appointments.status })
+					.from(appointments)
+					.where(and(eq(appointments.organizationId, orgId), eq(appointments.id, appointmentId)));
+				assert.strictEqual(savedAppt?.status, "completed");
+			});
+		} finally {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.delete(appointments).where(eq(appointments.organizationId, orgId));
+			});
+			await purgeFixtureOrganizations([orgId]);
+		}
 	});
 });
 

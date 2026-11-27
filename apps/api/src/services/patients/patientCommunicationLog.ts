@@ -41,6 +41,7 @@
 
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { type TenantDb, withTenantReadCtx } from "../../db/rls.js";
 import { communicationEvents, patients, users } from "../../db/schema.js";
 
 type CommunicationEventRow = typeof communicationEvents.$inferSelect;
@@ -129,9 +130,10 @@ export function buildPatientCommunicationEntriesQuery(
 	organizationId: string,
 	patientId: string,
 	limit: number,
+	executor: TenantDb = db,
 ) {
 	return (
-		db
+		executor
 			.select({
 				id: communicationEvents.id,
 				channel: communicationEvents.channel,
@@ -169,8 +171,9 @@ export function buildPatientCommunicationEntriesQuery(
 export function buildPatientCommunicationTotalsQuery(
 	organizationId: string,
 	patientId: string,
+	executor: TenantDb = db,
 ) {
-	return db
+	return executor
 		.select({
 			// count(*) отдаёт bigint, драйвер вернул бы его строкой: '12' + 1 = '121'.
 			totalEvents: sql<number>`count(*)::int`.as("total_events"),
@@ -226,8 +229,9 @@ function toDate(value: unknown): Date | null {
 async function patientBelongsToOrganization(
 	organizationId: string,
 	patientId: string,
+	executor: TenantDb = db,
 ): Promise<boolean> {
-	const [row] = await db
+	const [row] = await executor
 		.select({ id: patients.id })
 		.from(patients)
 		.where(
@@ -265,13 +269,18 @@ export async function findPatientCommunicationLog(
 ): Promise<PatientCommunicationLog | null> {
 	const limit = parsePatientCommunicationLogLimit(options.limit);
 
-	if (!(await patientBelongsToOrganization(organizationId, patientId)))
-		return null;
+	const outcome = await withTenantReadCtx(organizationId, async (tx) => {
+		if (!(await patientBelongsToOrganization(organizationId, patientId, tx)))
+			return null;
 
-	const [rows, totals] = await Promise.all([
-		buildPatientCommunicationEntriesQuery(organizationId, patientId, limit),
-		buildPatientCommunicationTotalsQuery(organizationId, patientId),
-	]);
+		const [rows, totals] = await Promise.all([
+			buildPatientCommunicationEntriesQuery(organizationId, patientId, limit, tx),
+			buildPatientCommunicationTotalsQuery(organizationId, patientId, tx),
+		]);
+		return { rows, totals };
+	});
+	if (!outcome) return null;
+	const { rows, totals } = outcome;
 
 	const summary = totals[0];
 	const entries: PatientCommunicationEntry[] = rows.map((row) => ({

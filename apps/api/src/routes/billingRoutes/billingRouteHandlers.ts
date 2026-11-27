@@ -1,4 +1,5 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { handleCashRefund } from "../cashbox/cashboxRefundRoutes.js";
 import {
 	handleFiscalQueueList,
@@ -20,98 +21,106 @@ export {
 	handleGetBillingInvoices,
 };
 
-const billingPaymentMutationOptions = {
-	schema: {
-		description:
-			"Billing payment mutation endpoint with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
-		headers: {
-			type: "object",
-			properties: {
-				"idempotency-key": { type: "string" },
-				"x-idempotency-key": { type: "string" },
-			},
+const billingPaymentMutationSchema = {
+	description:
+		"Billing payment mutation endpoint with mandatory RFC 9562 Idempotency-Key and organizationId tenant isolation",
+	headers: {
+		type: "object",
+		properties: {
+			"idempotency-key": { type: "string" },
+			"x-idempotency-key": { type: "string" },
 		},
 	},
 };
 
 export async function registerBillingRoutes(app: FastifyInstance): Promise<void> {
-	app.get("/api/billing/payments", handleGetBillingPayments);
-	app.get("/api/payments", handleGetBillingPayments);
-	app.get("/api/billing/invoices", handleGetBillingInvoices);
-
-	app.post("/api/billing/payments", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleCreatePayment(request, reply);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/billing/payments",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetBillingPayments(request, reply),
 	});
-	app.post("/api/payments", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleCreatePayment(request, reply);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/payments",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetBillingPayments(request, reply),
 	});
-	app.post("/api/finance/payments", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleCreatePayment(request, reply);
-	});
-	app.post("/api/v1/billing/payments", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleCreatePayment(request, reply);
-	});
-	app.post("/api/v1/finance/payments", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleCreatePayment(request, reply);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/billing/invoices",
+		permission: "public",
+		handler: async ({ request, reply }) => handleGetBillingInvoices(request, reply),
 	});
 
-	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
+	for (const path of [
+		"/api/billing/payments",
+		"/api/payments",
+		"/api/finance/payments",
+		"/api/v1/billing/payments",
+		"/api/v1/finance/payments",
+	]) {
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			schema: billingPaymentMutationSchema,
+			handler: async ({ request, reply }) => handleCreatePayment(request, reply),
+		});
+	}
+
+	for (const path of [
 		"/api/billing/invoices/:id/payments",
-		billingPaymentMutationOptions,
-		async (request, reply) => {
-			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-			return invoicePayHandler(request, reply);
-		},
-	);
-	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/invoices/:id/pay",
-		billingPaymentMutationOptions,
-		async (request, reply) => {
-			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-			return invoicePayHandler(request, reply);
-		},
-	);
-	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/v1/invoices/:id/pay",
-		billingPaymentMutationOptions,
-		async (request, reply) => {
-			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-			return invoicePayHandler(request, reply);
-		},
-	);
-	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/invoices/:id/payments",
-		billingPaymentMutationOptions,
-		async (request, reply) => {
-			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-			return invoicePayHandler(request, reply);
-		},
-	);
-	app.post<{ Params: { id: string }; Body: Record<string, unknown> }>(
 		"/api/v1/billing/invoices/:id/payments",
-		billingPaymentMutationOptions,
-		async (request, reply) => {
-			// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-			return invoicePayHandler(request, reply);
-		},
-	);
+	]) {
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			schema: billingPaymentMutationSchema,
+			handler: async ({ request, reply }) =>
+				invoicePayHandler(
+					request as FastifyRequest<{
+						Params: { id: string };
+						Body: Record<string, unknown>;
+					}>,
+					reply,
+				),
+		});
+	}
 
-	app.post("/api/billing/refunds/partial", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleCashRefund(request, reply);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/billing/refunds/partial",
+		permission: "public",
+		schema: billingPaymentMutationSchema,
+		handler: async ({ request, reply }) => handleCashRefund(request, reply),
 	});
-	app.get("/api/billing/fiscal-queue/pending", handleFiscalQueueList);
-	app.post("/api/billing/fiscal-queue/:id/retry", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleFiscalQueueRetry(request, reply);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/billing/fiscal-queue/pending",
+		permission: "public",
+		handler: async ({ request, reply }) => handleFiscalQueueList(request, reply),
 	});
-	app.post("/api/billing/fiscal-queue/retry-all", billingPaymentMutationOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation under withTenantCtx db.transaction
-		return handleFiscalQueueRetryAll(request, reply);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/billing/fiscal-queue/:id/retry",
+		permission: "public",
+		schema: billingPaymentMutationSchema,
+		handler: async ({ request, reply }) =>
+			handleFiscalQueueRetry(
+				request as FastifyRequest<{ Params: { id: string } }>,
+				reply,
+			),
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/billing/fiscal-queue/retry-all",
+		permission: "public",
+		schema: billingPaymentMutationSchema,
+		handler: async ({ request, reply }) => handleFiscalQueueRetryAll(request, reply),
 	});
 }

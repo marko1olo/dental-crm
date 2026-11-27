@@ -2,7 +2,8 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import { clinics } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
@@ -52,7 +53,7 @@ async function resolveVerifiedClinicId(
 		return { ok: false };
 	}
 
-	const [ownedClinic] = await withTenantCtx(orgId, async (tx) =>
+	const [ownedClinic] = await withTenantReadCtx(orgId, async (tx) =>
 		tx
 			.select({ id: clinics.id })
 			.from(clinics)
@@ -72,110 +73,120 @@ async function resolveVerifiedClinicId(
 }
 
 export function registerTelegramAccountQrRoutes(app: FastifyInstance) {
-	app.post("/api/telegram/account/request-qr", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"telegram account request-qr",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/account/request-qr",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram account request-qr",
+			);
+			if (!orgId) return;
 
-		const parsed = requestQrBodySchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return reply.code(400).send({
-				ok: false,
-				error: "ValidationError",
-				message: "Некорректные параметры запроса QR-кода.",
+			const parsed = requestQrBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationError",
+					message: "Некорректные параметры запроса QR-кода.",
+				});
+			}
+
+			const resolvedClinic = await resolveVerifiedClinicId(
+				request,
+				reply,
+				orgId,
+				parsed.data.clinicId,
+			);
+			if (!resolvedClinic.ok) return;
+
+			const identity = getRequestIdentity(request);
+			const userId = identity.userId || null;
+
+			const qr = await TelegramAccountService.requestQr({
+				organizationId: orgId,
+				userId,
+				clinicId: resolvedClinic.clinicId,
 			});
-		}
 
-		const resolvedClinic = await resolveVerifiedClinicId(
-			request,
-			reply,
-			orgId,
-			parsed.data.clinicId,
-		);
-		if (!resolvedClinic.ok) return;
+			if (!qr.ok) {
+				const statusCode = qr.configured === false ? 501 : 400;
+				return reply.code(statusCode).send({
+					ok: false,
+					...(qr.configured === false ? { configured: false } : {}),
+					error: qr.errorCode || "QrRequestFailed",
+					message: qr.error || "Не удалось запросить QR-код авторизации Telegram.",
+				});
+			}
 
-		const identity = getRequestIdentity(request);
-		const userId = identity.userId || null;
-
-		const qr = await TelegramAccountService.requestQr({
-			organizationId: orgId,
-			userId,
-			clinicId: resolvedClinic.clinicId,
-		});
-
-		if (!qr.ok) {
-			const statusCode = qr.configured === false ? 501 : 400;
-			return reply.code(statusCode).send({
-				ok: false,
-				...(qr.configured === false ? { configured: false } : {}),
-				error: qr.errorCode || "QrRequestFailed",
-				message: qr.error || "Не удалось запросить QR-код авторизации Telegram.",
+			return reply.code(200).send({
+				ok: true,
+				token: qr.token,
+				qrPayload: qr.qrPayload,
+				qrSvg: qr.qrSvg,
+				expiresIn: qr.expiresIn,
 			});
-		}
-
-		return reply.code(200).send({
-			ok: true,
-			token: qr.token,
-			qrPayload: qr.qrPayload,
-			qrSvg: qr.qrSvg,
-			expiresIn: qr.expiresIn,
-		});
+		},
 	});
 
-	app.post("/api/telegram/account/confirm-qr", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"telegram account confirm-qr",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/account/confirm-qr",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram account confirm-qr",
+			);
+			if (!orgId) return;
 
-		const parsed = confirmQrBodySchema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				ok: false,
-				error: "ValidationError",
-				message: "Некорректный токен QR.",
+			const parsed = confirmQrBodySchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationError",
+					message: "Некорректный токен QR.",
+				});
+			}
+
+			const resolvedClinic = await resolveVerifiedClinicId(
+				request,
+				reply,
+				orgId,
+				parsed.data.clinicId,
+			);
+			if (!resolvedClinic.ok) return;
+
+			const identity = getRequestIdentity(request);
+			const userId = identity.userId || null;
+
+			const result = await TelegramAccountService.confirmQr({
+				organizationId: orgId,
+				token: parsed.data.token,
+				phone: parsed.data.phone ?? null,
+				userId,
+				clinicId: resolvedClinic.clinicId,
 			});
-		}
 
-		const resolvedClinic = await resolveVerifiedClinicId(
-			request,
-			reply,
-			orgId,
-			parsed.data.clinicId,
-		);
-		if (!resolvedClinic.ok) return;
+			if (!result.ok) {
+				const statusCode = result.configured === false ? 501 : 400;
+				return reply.code(statusCode).send({
+					ok: false,
+					...(result.configured === false ? { configured: false } : {}),
+					error: result.errorCode || "QrConfirmFailed",
+					message: result.error || "Не удалось подтвердить авторизацию по QR-коду.",
+				});
+			}
 
-		const identity = getRequestIdentity(request);
-		const userId = identity.userId || null;
-
-		const result = await TelegramAccountService.confirmQr({
-			organizationId: orgId,
-			token: parsed.data.token,
-			phone: parsed.data.phone ?? null,
-			userId,
-			clinicId: resolvedClinic.clinicId,
-		});
-
-		if (!result.ok) {
-			const statusCode = result.configured === false ? 501 : 400;
-			return reply.code(statusCode).send({
-				ok: false,
-				...(result.configured === false ? { configured: false } : {}),
-				error: result.errorCode || "QrConfirmFailed",
-				message: result.error || "Не удалось подтвердить авторизацию по QR-коду.",
+			return reply.code(200).send({
+				ok: true,
+				connected: true,
+				account: result.account,
+				message: "Авторизация по QR-коду успешно завершена.",
 			});
-		}
-
-		return reply.code(200).send({
-			ok: true,
-			connected: true,
-			account: result.account,
-			message: "Авторизация по QR-коду успешно завершена.",
-		});
+		},
 	});
 }

@@ -3,7 +3,6 @@ import fs from "node:fs/promises";
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import { requireOrganizationId } from "../../../security/identity.js";
@@ -41,10 +40,10 @@ export async function handleWadoRetrieveFrames(
 		return reply.code(400).send({ error: "InvalidFrameNumber", message: "Номер кадра должен быть положительным целым числом (1-indexed)." });
 	}
 
-	const resolution = await withTenantCtx(organizationId, async () => {
-		const orgKnown = await organizationExists(organizationId);
+	const resolution = await withTenantCtx(organizationId, async (tx) => {
+		const orgKnown = await organizationExists(organizationId, tx);
 		if (!orgKnown || !studyUid || !seriesUid || !instanceUid) return { orgKnown, filePath: null };
-		return { orgKnown: true, filePath: await resolveInstanceFilePath(organizationId, studyUid, seriesUid, instanceUid) };
+		return { orgKnown: true, filePath: await resolveInstanceFilePath(organizationId, studyUid, seriesUid, instanceUid, tx) };
 	});
 
 	if (!resolution.orgKnown) {

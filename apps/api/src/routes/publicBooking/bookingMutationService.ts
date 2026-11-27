@@ -129,7 +129,7 @@ export async function executeBookingTransaction(
 
 	if (patientId) {
 		const [p] = await tx
-			.select({ id: patients.id, status: patients.status })
+			.select({ id: patients.id, status: patients.status, phone: patients.phone })
 			.from(patients)
 			.where(
 				and(
@@ -138,7 +138,12 @@ export async function executeBookingTransaction(
 				),
 			)
 			.limit(1);
-		if (p) {
+		const existingDigits = p?.phone ? normalizePhoneDigits(p.phone) : "";
+		const incomingLast10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
+		const existingLast10 = existingDigits.length >= 10 ? existingDigits.slice(-10) : existingDigits;
+		const phoneMatches =
+			!incomingLast10 || !existingLast10 || incomingLast10 === existingLast10;
+		if (p && phoneMatches) {
 			patientStatus = p.status;
 		} else {
 			patientId = undefined;
@@ -415,13 +420,18 @@ export async function executeBookingTransaction(
 	if (overlapping.length > 0) {
 		const existing = overlapping[0];
 		// Double-click guard & idempotency check (Mandates 8e, 8n):
-		// If the existing appointment is for the same patient, same doctor and exact same startsAt timestamp:
+		// Match only when idempotencyKey matches (if present on existing) or same patient + doctor + exact timestamp
+		const existingIdempMatch =
+			!params.idempotencyKey ||
+			!existing?.comment?.includes("[idempotency:") ||
+			existing.comment.includes(`[idempotency:${params.idempotencyKey}]`);
 		if (
 			existing &&
 			patientId &&
 			existing.patientId === patientId &&
 			existing.doctorUserId === doctorId &&
-			new Date(existing.startsAt).getTime() === startDate.getTime()
+			new Date(existing.startsAt).getTime() === startDate.getTime() &&
+			existingIdempMatch
 		) {
 			return { conflict: false as const, appointment: existing, patientId };
 		}

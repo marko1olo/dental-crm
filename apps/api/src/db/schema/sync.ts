@@ -93,3 +93,37 @@ export const syncEntityVectors = pgTable(
 
 export type SyncEntityVector = typeof syncEntityVectors.$inferSelect;
 export type NewSyncEntityVector = typeof syncEntityVectors.$inferInsert;
+
+/**
+ * Deletion tombstones for offline catch-up sync (`pullChanges`).
+ * Ensures deleted/archived/voided entities propagate reliably to offline clients.
+ */
+export const syncTombstones = pgTable(
+	"sync_tombstones",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id, { onDelete: "cascade" }),
+		entityKind: text("entity_kind").$type<SyncMutationEntityKind>().notNull(),
+		entityId: text("entity_id").notNull(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		deletedByUserId: uuid("deleted_by_user_id"),
+		reason: text("reason"),
+	},
+	(t) => ({
+		orgEntityKindIdIdx: uniqueIndex(
+			"sync_tombstones_org_kind_entity_idx",
+		).on(t.organizationId, t.entityKind, t.entityId),
+		orgDeletedIdIdx: index("sync_tombstones_org_deleted_id_idx").on(
+			t.organizationId,
+			t.deletedAt,
+			t.id,
+		),
+	}),
+);
+
+export type SyncTombstone = typeof syncTombstones.$inferSelect;
+export type NewSyncTombstone = typeof syncTombstones.$inferInsert;

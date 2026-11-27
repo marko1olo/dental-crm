@@ -1,5 +1,8 @@
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { withTenantCtx } from "../../db/rls.js";
+import { warrantyCertificates } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import {
@@ -146,10 +149,15 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 			}
 		}
 
-		const warrantyCertificateId =
+		let warrantyCertificateId =
 			typeof body.warrantyCertificateId === "string" &&
 			PATIENT_ID_UUID_PATTERN.test(body.warrantyCertificateId.trim())
 				? body.warrantyCertificateId.trim()
+				: null;
+
+		const certificateNumber =
+			typeof body.certificateNumber === "string" && body.certificateNumber.trim()
+				? body.certificateNumber.trim()
 				: null;
 
 		const defectType =
@@ -161,6 +169,28 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 			const patient = await getPatientByIdFromDb(orgId, patientId.trim());
 			if (!patient) return sendPatientNotFound(reply);
 
+			let effectiveDetails = details;
+			if (!warrantyCertificateId && certificateNumber) {
+				const [matchedCert] = await withTenantCtx(orgId, (tx) =>
+					tx
+						.select({ id: warrantyCertificates.id })
+						.from(warrantyCertificates)
+						.where(
+							and(
+								eq(warrantyCertificates.organizationId, orgId),
+								eq(warrantyCertificates.patientId, patientId.trim()),
+								eq(warrantyCertificates.certificateNumber, certificateNumber),
+							),
+						)
+						.limit(1),
+				);
+				if (matchedCert?.id) {
+					warrantyCertificateId = matchedCert.id;
+				} else if (!effectiveDetails.includes(certificateNumber)) {
+					effectiveDetails = `${effectiveDetails} [Паспорт: ${certificateNumber}]`;
+				}
+			}
+
 			const { createPatientReclamationInDb } = await import(
 				"../../db/patientReclamationsQuery.js"
 			);
@@ -168,7 +198,7 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 				orgId,
 				patientId.trim(),
 				{
-					complicationDetails: details,
+					complicationDetails: effectiveDetails,
 					proposedAction,
 					doctorId,
 					toothNumber,

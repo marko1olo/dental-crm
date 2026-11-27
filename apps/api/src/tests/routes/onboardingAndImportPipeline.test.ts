@@ -143,4 +143,123 @@ describe("Onboarding & Streaming Data Importer Suite", () => {
 			assert.strictEqual(result.items[1]?.category, "therapy");
 		});
 	});
+
+	describe("4. [W16-BK-05] Onboarding Route Persists Schedule & Mode Atomically", () => {
+		it("persists schedule into organizations.clinicSchedule and returns it in GET /api/onboarding/status", async (t) => {
+			const { default: Fastify } = await import("fastify");
+			const { registerOnboardingRoutes } = await import("../../routes/onboarding/index.js");
+			const { organizations } = await import("../../db/schema.js");
+			const { eq } = await import("drizzle-orm");
+			const { signToken } = await import("../../utils/cryptoHelper.js");
+			const { authTokenSecret } = await import("../../security/authSecret.js");
+			const {
+				fixtureUuid,
+				isDatabaseUnavailable,
+				purgeFixtureOrganizations,
+				withFixtureTenant,
+			} = await import("../support/fixtureOrganizations.js");
+
+			const ONBOARD_ORG_ID = fixtureUuid("onboardingSchedulePersistence", 1);
+			const OWNER_ID = fixtureUuid("onboardingSchedulePersistence", 2);
+
+			try {
+				await purgeFixtureOrganizations([ONBOARD_ORG_ID]);
+				await withFixtureTenant(ONBOARD_ORG_ID, async (tx) => {
+					await tx
+						.insert(organizations)
+						.values({
+							id: ONBOARD_ORG_ID,
+							name: "Тестовая клиника онбординга",
+							clinicMode: "solo_doctor",
+						})
+						.onConflictDoUpdate({
+							target: organizations.id,
+							set: {
+								name: "Тестовая клиника онбординга",
+								clinicMode: "solo_doctor",
+								clinicSchedule: {},
+								workspaceFeatureFlags: {},
+							},
+						});
+				});
+			} catch (err) {
+				if (isDatabaseUnavailable(err)) return t.skip("Database not available");
+				throw err;
+			}
+
+			mock.restoreAll();
+			const app = Fastify();
+			await registerOnboardingRoutes(app);
+			await app.ready();
+
+			const clinicToken = signToken({ organizationId: ONBOARD_ORG_ID }, authTokenSecret(), 3600);
+			const staffToken = signToken(
+				{ organizationId: ONBOARD_ORG_ID, userId: OWNER_ID, role: "owner" },
+				authTokenSecret(),
+				3600,
+			);
+
+			try {
+				const completeRes = await app.inject({
+					method: "POST",
+					url: "/api/onboarding/complete",
+					headers: {
+						"x-dente-clinic-token": clinicToken,
+						"x-dente-staff-token": staffToken,
+					},
+					payload: {
+						profile: {
+							clinicName: "Клиника Графика",
+							phone: "+7 (999) 123-45-67",
+							timezone: "Europe/Moscow",
+							mode: "small_clinic",
+						},
+						schedule: {
+							workdayStart: "08:30",
+							workdayEnd: "21:00",
+							workingDays: [1, 2, 3, 4, 5, 6],
+							defaultVisitMinutes: 45,
+							appointmentBufferMinutes: 10,
+						},
+						preset: "small_clinic",
+					},
+				});
+
+				assert.strictEqual(completeRes.statusCode, 200, completeRes.body);
+
+				const statusRes = await app.inject({
+					method: "GET",
+					url: "/api/onboarding/status",
+					headers: {
+						"x-dente-clinic-token": clinicToken,
+						"x-dente-staff-token": staffToken,
+					},
+				});
+				assert.strictEqual(statusRes.statusCode, 200, statusRes.body);
+				const statusBody = statusRes.json() as {
+					completed: boolean;
+					mode: string;
+					schedule: {
+						workdayStart?: string;
+						workdayEnd?: string;
+						workingDays?: number[];
+						appointmentBufferMinutes?: number;
+					} | null;
+					defaultVisitMinutes: number;
+				};
+				assert.strictEqual(statusBody.completed, true);
+				assert.strictEqual(statusBody.mode, "small_clinic");
+				assert.strictEqual(statusBody.defaultVisitMinutes, 45);
+				assert.deepStrictEqual(statusBody.schedule, {
+					workdayStart: "08:30",
+					workdayEnd: "21:00",
+					workingDays: [1, 2, 3, 4, 5, 6],
+					appointmentBufferMinutes: 10,
+				});
+			} finally {
+				await app.close();
+				await purgeFixtureOrganizations([ONBOARD_ORG_ID]);
+			}
+		});
+	});
 });

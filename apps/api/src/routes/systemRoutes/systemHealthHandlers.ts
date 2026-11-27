@@ -6,6 +6,7 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	type LocalBridgeDefinition,
 	LocalBridgeUrlProtocolError,
@@ -388,15 +389,21 @@ export function readyBridge(
 }
 
 export function registerSystemHealthRoutes(app: FastifyInstance) {
-	app.get("/api/system/local-bridges/readiness", async (request, reply) => {
-		if (
-			!(await requireClinicalReadAccess(
-				request,
-				reply,
-				"local bridge readiness",
-			))
-		)
-			return;
-		return buildLocalBridgeReadiness();
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/system/local-bridges/readiness",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"local bridge readiness",
+				))
+			) {
+				return;
+			}
+			return buildLocalBridgeReadiness();
+		},
 	});
 }

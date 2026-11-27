@@ -1,9 +1,10 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 
 const disconnectAccountBodySchema = z
@@ -14,49 +15,59 @@ const disconnectAccountBodySchema = z
 	.strict();
 
 export function registerTelegramAccountSessionRoutes(app: FastifyInstance) {
-	app.get("/api/telegram/account/status", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"telegram account status",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/account/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram account status",
+			);
+			if (!orgId) return;
 
-		const phone = (request.query as Record<string, string | undefined>)?.phone;
-		const status = await TelegramAccountService.getAccountStatus({
-			organizationId: orgId,
-			phone: phone ?? null,
-		});
+			const phone = (request.query as Record<string, string | undefined>)?.phone;
+			const status = await TelegramAccountService.getAccountStatus({
+				organizationId: orgId,
+				phone: phone ?? null,
+			});
 
-		return reply.code(200).send(status);
+			return reply.code(200).send(status);
+		},
 	});
 
-	app.post("/api/telegram/account/disconnect", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"telegram account disconnect",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/account/disconnect",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"telegram account disconnect",
+			);
+			if (!orgId) return;
 
-		const parsed = disconnectAccountBodySchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return reply.code(400).send({
-				ok: false,
-				error: "ValidationError",
-				message: "Некорректные параметры отключения аккаунта Telegram.",
+			const parsed = disconnectAccountBodySchema.safeParse(request.body ?? {});
+			if (!parsed.success) {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationError",
+					message: "Некорректные параметры отключения аккаунта Telegram.",
+				});
+			}
+
+			await TelegramAccountService.disconnectAccount({
+				organizationId: orgId,
+				phone: parsed.data.phone ?? null,
 			});
-		}
 
-		await TelegramAccountService.disconnectAccount({
-			organizationId: orgId,
-			phone: parsed.data.phone ?? null,
-		});
-
-		return reply.code(200).send({
-			ok: true,
-			disconnected: true,
-			message: "Личный аккаунт Telegram успешно отключен.",
-		});
+			return reply.code(200).send({
+				ok: true,
+				disconnected: true,
+				message: "Личный аккаунт Telegram успешно отключен.",
+			});
+		},
 	});
 }

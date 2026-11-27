@@ -107,8 +107,15 @@ export class SyncAdministrativeHandlers {
 		if (!orgId) return;
 
 		const queryParsed = listDlqQuerySchema.safeParse(request.query);
-		const limit = queryParsed.success ? queryParsed.data.limit ?? 50 : 50;
-		const offset = queryParsed.success ? queryParsed.data.offset ?? 0 : 0;
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Invalid DLQ query parameters",
+				issues: queryParsed.error.issues,
+			});
+		}
+		const limit = queryParsed.data.limit ?? 50;
+		const offset = queryParsed.data.offset ?? 0;
 
 		const deadLetterJobs = await RouteSyncQueueManager.getDeadLetterSyncJobs({
 			organizationId: orgId,
@@ -215,10 +222,17 @@ export class SyncAdministrativeHandlers {
 		if (!orgId) return;
 
 		const queryParsed = vectorAuditQuerySchema.safeParse(request.query);
-		const limit = queryParsed.success ? queryParsed.data.limit ?? 50 : 50;
-		const offset = queryParsed.success ? queryParsed.data.offset ?? 0 : 0;
-		const entityKind = queryParsed.success ? queryParsed.data.entityKind : undefined;
-		const entityId = queryParsed.success ? queryParsed.data.entityId : undefined;
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Invalid vector audit query parameters",
+				issues: queryParsed.error.issues,
+			});
+		}
+		const limit = queryParsed.data.limit ?? 50;
+		const offset = queryParsed.data.offset ?? 0;
+		const entityKind = queryParsed.data.entityKind;
+		const entityId = queryParsed.data.entityId;
 
 		const vectors = await withTenantCtx(orgId, async (tx) => {
 			const conditions = [eq(syncEntityVectors.organizationId, orgId)];
@@ -271,9 +285,14 @@ export class SyncAdministrativeHandlers {
 		if (!orgId) return;
 
 		const parsed = recoverStaleSchema.safeParse(request.body ?? {});
-		const staleThresholdMs = parsed.success
-			? parsed.data.staleThresholdMs
-			: undefined;
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Invalid recover-stale payload",
+				issues: parsed.error.issues,
+			});
+		}
+		const staleThresholdMs = parsed.data.staleThresholdMs;
 
 		const result = await RouteSyncQueueManager.recoverStaleSyncTasks(
 			orgId,

@@ -401,6 +401,46 @@ export class BookingVerificationEngine {
 
 				const row = rows[0];
 				if (!row) {
+					const [anyRecentRow] = await tx
+						.select({
+							id: portalOtpCodes.id,
+							consumedAt: portalOtpCodes.consumedAt,
+							expiresAt: portalOtpCodes.expiresAt,
+							attemptCount: portalOtpCodes.attemptCount,
+						})
+						.from(portalOtpCodes)
+						.where(
+							and(
+								eq(portalOtpCodes.organizationId, targetOrgId),
+								or(
+									eq(portalOtpCodes.phone, cleanPhone),
+									eq(portalOtpCodes.phone, phoneSuffix),
+								),
+							),
+						)
+						.orderBy(desc(portalOtpCodes.createdAt))
+						.limit(1);
+
+					if (anyRecentRow) {
+						if (anyRecentRow.attemptCount >= OTP_MAX_ATTEMPTS) {
+							return {
+								valid: false,
+								error: "Превышено максимальное число попыток ввода кода. Запросите новый код.",
+							};
+						}
+						if (anyRecentRow.consumedAt) {
+							return {
+								valid: false,
+								error: "Код подтверждения уже использован. Запросите новый код.",
+							};
+						}
+						if (anyRecentRow.expiresAt <= now) {
+							return {
+								valid: false,
+								error: "Срок действия кода подтверждения истёк. Запросите новый код.",
+							};
+						}
+					}
 					return null;
 				}
 
@@ -415,7 +455,7 @@ export class BookingVerificationEngine {
 								isNull(portalOtpCodes.consumedAt),
 							),
 						);
-					this.otpChallenges.delete(cleanPhone);
+					this.otpChallenges.delete(this.getChallengeKey(cleanPhone, targetOrgId));
 					return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
 				}
 
@@ -444,7 +484,7 @@ export class BookingVerificationEngine {
 									isNull(portalOtpCodes.consumedAt),
 								),
 							);
-						this.otpChallenges.delete(cleanPhone);
+						this.otpChallenges.delete(this.getChallengeKey(cleanPhone, targetOrgId));
 						return { valid: false, error: "Превышено максимальное число попыток ввода кода. Запросите новый код." };
 					}
 					return { valid: false, error: `Неверный код подтверждения. Осталось попыток: ${remaining}` };
@@ -474,8 +514,26 @@ export class BookingVerificationEngine {
 				return dbResult;
 			}
 			return this.verifyPhoneOtp(phone, code, organizationId);
-		} catch {
-			return this.verifyPhoneOtp(phone, code, organizationId);
+		} catch (err: unknown) {
+			logger.error(
+				{
+					err: safeLogError(err),
+					organizationId: organizationId ?? "unknown",
+				},
+				"verifyPhoneOtpAsync DB failure",
+			);
+			const errMsg = err instanceof Error ? err.message : String(err);
+			const isDbUnavailable =
+				errMsg.includes("ECONNREFUSED") ||
+				errMsg.includes("ENOTFOUND") ||
+				errMsg.includes("57P01");
+			if (isDbUnavailable) {
+				return this.verifyPhoneOtp(phone, code, organizationId);
+			}
+			return {
+				valid: false,
+				error: "Не удалось проверить код подтверждения. Повторите попытку.",
+			};
 		}
 	}
 

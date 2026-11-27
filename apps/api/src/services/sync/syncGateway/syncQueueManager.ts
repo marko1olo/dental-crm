@@ -1,7 +1,7 @@
 import type { MutationVector, SyncMutationEnvelope, SyncMutationResult } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
-import { syncEntityVectors, syncIdempotencyRecords } from "../../../db/schema.js";
+import { syncEntityVectors, syncIdempotencyRecords, syncTombstones } from "../../../db/schema.js";
 import type { SyncQueueItem, SyncQueueStats } from "./types.js";
 
 /**
@@ -176,6 +176,49 @@ export class SyncQueueManager {
 				lastMutationId,
 			});
 		}
+	}
+
+	/**
+	 * Records or refreshes a deletion tombstone for offline catch-up sync (`pullChanges`).
+	 */
+	public static async recordEntityTombstone(params: {
+		tx: TenantDb;
+		organizationId: string;
+		entityKind: SyncMutationEnvelope["entityKind"];
+		entityId: string;
+		deletedByUserId?: string | null | undefined;
+		reason?: string | null | undefined;
+	}): Promise<{ id: string; deletedAt: Date }> {
+		const { tx, organizationId, entityKind, entityId, deletedByUserId, reason } = params;
+		const now = new Date();
+		const [row] = await tx
+			.insert(syncTombstones)
+			.values({
+				organizationId,
+				entityKind,
+				entityId,
+				deletedAt: now,
+				deletedByUserId: deletedByUserId ?? null,
+				reason: reason ?? null,
+			})
+			.onConflictDoUpdate({
+				target: [
+					syncTombstones.organizationId,
+					syncTombstones.entityKind,
+					syncTombstones.entityId,
+				],
+				set: {
+					deletedAt: now,
+					deletedByUserId: deletedByUserId ?? null,
+					reason: reason ?? null,
+				},
+			})
+			.returning({
+				id: syncTombstones.id,
+				deletedAt: syncTombstones.deletedAt,
+			});
+
+		return row ?? { id: "", deletedAt: now };
 	}
 
 	/**

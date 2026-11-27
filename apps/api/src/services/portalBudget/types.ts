@@ -121,6 +121,7 @@ export interface GenerateBudgetPortalTokenOptions {
 		readonly discountRub?: number | undefined;
 	}[] | undefined;
 	readonly totalPriceRub?: number | undefined;
+	readonly totalPriceKopecks?: number | bigint | undefined;
 	readonly discountRub?: number | undefined;
 	readonly validUntil?: string | null | undefined;
 	readonly customToken?: string | undefined;

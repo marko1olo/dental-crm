@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { db } from "../../db/client.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	appointments,
 	generatedDocuments,
@@ -39,9 +39,11 @@ export function registerPatientTimelineRoutes(app: FastifyInstance) {
 	 * связью по uuid и пятью настоящими писателями по пяти каналам. Подробности и
 	 * границы утверждения — в services/patients/patientCommunicationLog.ts.
 	 */
-	app.get(
-		"/api/patients/:patientId/communication-timelines",
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/communication-timelines",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 
@@ -93,91 +95,95 @@ export function registerPatientTimelineRoutes(app: FastifyInstance) {
 				});
 			}
 		},
-	);
+	});
 
 	/**
 	 * GET /api/patients/:patientId/portal
 	 * Предоставление актуальных данных личного кабинета пациента (профиль, визиты, планы, счета, документы, записи)
 	 * для интеграции с PWA/CRM и предпросмотра портала с соблюдением 152-ФЗ.
 	 */
-	app.get("/api/patients/:patientId/portal", async (request, reply) => {
-		const orgId = requireClinicOrganizationId(request, reply);
-		if (!orgId) return reply;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId/portal",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = requireClinicOrganizationId(request, reply);
+			if (!orgId) return reply;
 
-		const { patientId } = request.params as { patientId?: string };
-		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
-			return sendPatientRouteValidationError(reply);
-		}
-
-		return withTenantCtx(orgId, async () => {
-			const [patientRow] = await db
-				.select()
-				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-				.limit(1);
-
-			if (!patientRow) {
-				return reply.code(404).send({
-					error: "PatientNotFound",
-					message: patientNotFoundMessage,
-				});
+			const { patientId } = request.params as { patientId?: string };
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+				return sendPatientRouteValidationError(reply);
 			}
 
-			const visits = await db
-				.select()
-				.from(visitDiaries)
-				.where(and(eq(visitDiaries.patientId, patientId), eq(visitDiaries.organizationId, orgId)));
+			return withTenantReadCtx(orgId, async (tx) => {
+				const [patientRow] = await tx
+					.select()
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+					.limit(1);
 
-			const plans = await db
-				.select()
-				.from(treatmentPlans)
-				.where(and(eq(treatmentPlans.patientId, patientId), eq(treatmentPlans.organizationId, orgId)));
+				if (!patientRow) {
+					return reply.code(404).send({
+						error: "PatientNotFound",
+						message: patientNotFoundMessage,
+					});
+				}
 
-			const invoices = await db
-				.select()
-				.from(patientInvoices)
-				.where(and(eq(patientInvoices.patientId, patientId), eq(patientInvoices.organizationId, orgId)));
+				const visits = await tx
+					.select()
+					.from(visitDiaries)
+					.where(and(eq(visitDiaries.patientId, patientId), eq(visitDiaries.organizationId, orgId)));
 
-			const documents = await db
-				.select()
-				.from(generatedDocuments)
-				.where(
-					and(
-						eq(generatedDocuments.patientId, patientId),
-						eq(generatedDocuments.organizationId, orgId),
-						eq(generatedDocuments.status, "issued"),
-					),
-				);
+				const plans = await tx
+					.select()
+					.from(treatmentPlans)
+					.where(and(eq(treatmentPlans.patientId, patientId), eq(treatmentPlans.organizationId, orgId)));
 
-			const patientAppointments = await db
-				.select({
-					id: appointments.id,
-					doctorUserId: appointments.doctorUserId,
-					chairId: appointments.chairId,
-					startsAt: appointments.startsAt,
-					endsAt: appointments.endsAt,
-					status: appointments.status,
-					reason: appointments.reason,
-					comment: appointments.comment,
-				})
-				.from(appointments)
-				.where(and(eq(appointments.patientId, patientId), eq(appointments.organizationId, orgId)))
-				.orderBy(desc(appointments.startsAt));
+				const invoices = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.patientId, patientId), eq(patientInvoices.organizationId, orgId)));
 
-			const clinicDoctors = await db
-				.select({
-					id: users.id,
-					fullName: users.fullName,
-					specialties: users.specialties,
-				})
-				.from(users)
-				.where(
-					and(
-						eq(users.organizationId, orgId),
-						eq(users.role, "doctor"),
-						eq(users.isActive, true),
-					),
-				);
+				const documents = await tx
+					.select()
+					.from(generatedDocuments)
+					.where(
+						and(
+							eq(generatedDocuments.patientId, patientId),
+							eq(generatedDocuments.organizationId, orgId),
+							eq(generatedDocuments.status, "issued"),
+						),
+					);
+
+				const patientAppointments = await tx
+					.select({
+						id: appointments.id,
+						doctorUserId: appointments.doctorUserId,
+						chairId: appointments.chairId,
+						startsAt: appointments.startsAt,
+						endsAt: appointments.endsAt,
+						status: appointments.status,
+						reason: appointments.reason,
+						comment: appointments.comment,
+					})
+					.from(appointments)
+					.where(and(eq(appointments.patientId, patientId), eq(appointments.organizationId, orgId)))
+					.orderBy(desc(appointments.startsAt));
+
+				const clinicDoctors = await tx
+					.select({
+						id: users.id,
+						fullName: users.fullName,
+						specialties: users.specialties,
+					})
+					.from(users)
+					.where(
+						and(
+							eq(users.organizationId, orgId),
+							eq(users.role, "doctor"),
+							eq(users.isActive, true),
+						),
+					);
 
 			const doctorMap = new Map(clinicDoctors.map((d) => [d.id, d]));
 			const enrichedAppointments = patientAppointments.map((apt) => {
@@ -222,5 +228,6 @@ export function registerPatientTimelineRoutes(app: FastifyInstance) {
 				doctors: clinicDoctors,
 			});
 		});
+		},
 	});
 }

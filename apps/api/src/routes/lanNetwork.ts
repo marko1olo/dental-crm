@@ -12,7 +12,11 @@ import * as crypto from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
-import { withTenantCtx } from "../db/rls.js";
+import {
+	definePublicRoute,
+	defineStreamRoute,
+} from "../core/routeFactories.js";
+import { withTenantWriteCtx } from "../db/rls.js";
 import { users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { getRequestIdentity } from "../security/identity.js";
@@ -278,7 +282,13 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Returns verified physical LAN IPs (Ethernet / Wi-Fi), filtering out virtual adapters (WSL, Hyper-V, Docker).
 	 * Handing out pairing tokens requires an authenticated clinic session on the server PC.
 	 */
-	const handleLanInfo = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleLanInfo = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const metadata = getLanServerDiscoveryMetadata();
 		const rankedInterfaces = getRankedLanInterfaces();
 		const activeLanAddresses = getLocalLanAddresses();
@@ -330,15 +340,29 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		});
 	};
 
-	app.get("/api/network/lan-info", handleLanInfo);
-	app.get("/api/lan/status", handleLanInfo);
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/network/lan-info",
+		handler: handleLanInfo,
+	});
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/lan/status",
+		handler: handleLanInfo,
+	});
 
 	/**
 	 * POST /api/network/pair/generate & /api/lan/token
 	 * Generates customized pairing token for doctor or assistant role.
 	 * Requires authenticated clinic session. Validates targetIp against physical LAN interfaces.
 	 */
-	const handlePairGenerate = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handlePairGenerate = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const identity = getRequestIdentity(request);
 		if (!identity.verified || !identity.organizationId) {
 			return reply.code(401).send({
@@ -396,14 +420,28 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		});
 	};
 
-	app.post("/api/network/pair/generate", handlePairGenerate);
-	app.post("/api/lan/token", handlePairGenerate);
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/network/pair/generate",
+		permission: "public",
+		handler: handlePairGenerate,
+	});
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/lan/token",
+		permission: "public",
+		handler: handlePairGenerate,
+	});
 
 	/**
 	 * POST /api/network/pair/verify
 	 * Validates the scanned pairing token from iPad/tablet with single-use nonce guarantee and optional PIN check.
 	 */
-	app.post("/api/network/pair/verify", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/network/pair/verify",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const parseRes = verifyPairSchema.safeParse(request.body);
 		if (!parseRes.success) {
 			return reply.code(400).send({
@@ -502,7 +540,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		if (staffUserId) {
 			const targetStaffId = staffUserId;
 			const nextSessionId = crypto.randomUUID();
-			const userWithSession = await withTenantCtx(orgId, async (tx) => {
+			const userWithSession = await withTenantWriteCtx(orgId, async (tx) => {
 				const [user] = await tx
 					.select({ id: users.id, fullName: users.fullName, role: users.role })
 					.from(users)
@@ -562,93 +600,129 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			user: matchedUser,
 			pairedAt: new Date().toISOString(),
 		});
+	},
 	});
 
 	/**
 	 * GET /api/network/ping
 	 * Fast heartbeat endpoint to verify LAN latency and reachability from tablet.
 	 */
-	app.get("/api/network/ping", async (_request: FastifyRequest, reply: FastifyReply) => {
-		return reply.send({
-			ok: true,
-			service: "dental-crm-lan",
-			time: new Date().toISOString(),
-		});
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/network/ping",
+		handler: async ({ reply }) => {
+			return reply.send({
+				ok: true,
+				service: "dental-crm-lan",
+				time: new Date().toISOString(),
+			});
+		},
 	});
 
 	/**
 	 * GET /api/network/lan-mesh/handshake
 	 * Fast HTTP probe endpoint to confirm active DENTE LAN node.
 	 */
-	app.get("/api/network/lan-mesh/handshake", async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalReadContext(request, reply, "lan mesh handshake read");
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/network/lan-mesh/handshake",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(request, reply, "lan mesh handshake read");
+			if (!context) return;
 
-		const meshService = getLanMeshService();
-		const handshake = meshService.getTopology().createHandshakePayload();
-		return reply.send({
-			ok: true,
-			nodeId: handshake.nodeId,
-			clinicId: handshake.clinicId,
-			role: handshake.role,
-			appVersion: handshake.appVersion,
-			schemaVersion: handshake.schemaVersion,
-		});
+			const meshService = getLanMeshService();
+			const handshake = meshService.getTopology().createHandshakePayload();
+			return reply.send({
+				ok: true,
+				nodeId: handshake.nodeId,
+				clinicId: handshake.clinicId,
+				role: handshake.role,
+				appVersion: handshake.appVersion,
+				schemaVersion: handshake.schemaVersion,
+			});
+		},
 	});
 
 	/**
 	 * POST /api/network/lan-mesh/handshake
 	 * Negotiates version and schema compatibility with remote clinic node.
 	 */
-	app.post("/api/network/lan-mesh/handshake", { schema: { description: "LAN mesh handshake with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "lan mesh handshake");
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/network/lan-mesh/handshake",
+		permission: "public",
+		schema: {
+			description: "LAN mesh handshake with mandatory RFC 9562 Idempotency-Key",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(request, reply, "lan mesh handshake");
+			if (!context) return;
 
-		const parseRes = lanMeshHandshakePayloadSchema.safeParse(request.body);
-		if (!parseRes.success) {
-			return reply.code(400).send({
-				ok: false,
-				error: "InvalidHandshakePayload",
-				details: parseRes.error.format(),
+			const parseRes = lanMeshHandshakePayloadSchema.safeParse(request.body);
+			if (!parseRes.success) {
+				return reply.code(400).send({
+					ok: false,
+					error: "InvalidHandshakePayload",
+					details: parseRes.error.format(),
+				});
+			}
+
+			const meshService = getLanMeshService();
+			const result = meshService.handleIncomingHandshake(parseRes.data);
+
+			return reply.send({
+				ok: result.ok,
+				compatibility: result.compatibility,
+				handshake: result.handshake,
 			});
-		}
-
-		const meshService = getLanMeshService();
-		const result = meshService.handleIncomingHandshake(parseRes.data);
-
-		return reply.send({
-			ok: result.ok,
-			compatibility: result.compatibility,
-			handshake: result.handshake,
-		});
+		},
 	});
 
 	/**
 	 * GET /api/network/lan-mesh/status
 	 * Returns current topology status, known peers, Master election, and offline queue status badge.
 	 */
-	app.get("/api/network/lan-mesh/status", async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalReadContext(request, reply, "lan mesh status");
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/network/lan-mesh/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(request, reply, "lan mesh status");
+			if (!context) return;
 
-		const meshService = getLanMeshService();
-		const badge = meshService.getStatusBadge();
-		const topology = meshService.getTopology();
+			const meshService = getLanMeshService();
+			const badge = meshService.getStatusBadge();
+			const topology = meshService.getTopology();
 
-		return reply.send({
-			ok: true,
-			localNode: topology.createHandshakePayload(),
-			masterNode: topology.getMasterNode(),
-			peers: topology.getPeerSummaries(),
-			statusBadge: badge,
-		});
+			return reply.send({
+				ok: true,
+				localNode: topology.createHandshakePayload(),
+				masterNode: topology.getMasterNode(),
+				peers: topology.getPeerSummaries(),
+				statusBadge: badge,
+			});
+		},
 	});
 
 	/**
 	 * POST /api/network/lan-mesh/mutations
 	 * Accepts streaming mutations from satellite workstations to the Master and applies to PostgreSQL.
 	 */
-	app.post("/api/network/lan-mesh/mutations", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/network/lan-mesh/mutations",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan mesh mutations");
 		if (!context) return;
 
@@ -763,6 +837,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			rejectedCount,
 			appliedAt: new Date().toISOString(),
 		});
+	},
 	});
 
 	/**
@@ -770,7 +845,11 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * P2P bidirectional mesh exchange between LAN workstations/tablets without Internet.
 	 * Persists incoming mutations into PostgreSQL and returns updated vector clock + sync results.
 	 */
-	app.post("/api/sync/mesh/exchange", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/sync/mesh/exchange",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan mesh exchange");
 		if (!context) return;
 
@@ -888,13 +967,18 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 		};
 
 		return reply.code(200).send(responsePayload);
+	},
 	});
 
 	/**
 	 * POST /api/lan/p2p/dispatch
 	 * Peer-to-peer event dispatching between clinical workstations (chair status, CITO, invoice transfer).
 	 */
-	app.post("/api/lan/p2p/dispatch", async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/lan/p2p/dispatch",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const context = await requireClinicalMutationContext(request, reply, "lan p2p dispatch");
 		if (!context) return;
 
@@ -944,66 +1028,82 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			eventType: msg.eventType,
 			receivedAt: new Date().toISOString(),
 		});
+	},
 	});
 
 	/**
 	 * POST /api/network/lan-mesh/discover
 	 * Triggers immediate UDP broadcast beacon and active subnet HTTP probe.
 	 */
-	app.post("/api/network/lan-mesh/discover", async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(request, reply, "lan mesh discover");
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/network/lan-mesh/discover",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(request, reply, "lan mesh discover");
+			if (!context) return;
 
-		const meshService = getLanMeshService();
-		meshService.broadcastBeacon();
-		const [discovered, mdnsServers] = await Promise.all([
-			meshService.probeSubnetHttp(),
-			browseMdnsDenteServers(800),
-		]);
+			const meshService = getLanMeshService();
+			meshService.broadcastBeacon();
+			const [discovered, mdnsServers] = await Promise.all([
+				meshService.probeSubnetHttp(),
+				browseMdnsDenteServers(800),
+			]);
 
-		return reply.send({
-			ok: true,
-			discoveredEndpoints: discovered,
-			mdnsServers,
-			peers: meshService.getKnownPeers(),
-			statusBadge: meshService.getStatusBadge(),
-		});
+			return reply.send({
+				ok: true,
+				discoveredEndpoints: discovered,
+				mdnsServers,
+				peers: meshService.getKnownPeers(),
+				statusBadge: meshService.getStatusBadge(),
+			});
+		},
 	});
 
 	/**
 	 * GET /api/network/mesh/auto-join/status
 	 * Returns current 6-digit PIN, remaining expiration time, and QR pairing URI.
 	 */
-	app.get("/api/network/mesh/auto-join/status", async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalReadContext(request, reply, "lan mesh auto-join status");
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/network/mesh/auto-join/status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalReadContext(request, reply, "lan mesh auto-join status");
+			if (!context) return;
 
-		const autoJoin = getLanMeshAutoJoinServiceForOrg(context.organizationId);
-		const status = autoJoin.getPairingStatus();
-		return reply.send({
-			ok: true,
-			status,
-		});
+			const autoJoin = getLanMeshAutoJoinServiceForOrg(context.organizationId);
+			const status = autoJoin.getPairingStatus();
+			return reply.send({
+				ok: true,
+				status,
+			});
+		},
 	});
 
 	/**
 	 * POST /api/network/mesh/auto-join/rotate
 	 * Forces rotation of the 6-digit PIN (requires authenticated clinic mutation context).
 	 */
-	app.post("/api/network/mesh/auto-join/rotate", async (request: FastifyRequest, reply: FastifyReply) => {
-		const context = await requireClinicalMutationContext(
-			request,
-			reply,
-			"lan mesh auto-join rotate",
-		);
-		if (!context) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/network/mesh/auto-join/rotate",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const context = await requireClinicalMutationContext(
+				request,
+				reply,
+				"lan mesh auto-join rotate",
+			);
+			if (!context) return;
 
-		const autoJoin = getLanMeshAutoJoinServiceForOrg(context.organizationId);
-		const pinInfo = autoJoin.rotatePin(true);
-		return reply.send({
-			ok: true,
-			pinInfo,
-		});
+			const autoJoin = getLanMeshAutoJoinServiceForOrg(context.organizationId);
+			const pinInfo = autoJoin.rotatePin(true);
+			return reply.send({
+				ok: true,
+				pinInfo,
+			});
+		},
 	});
 
 	/**
@@ -1011,7 +1111,22 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 	 * Validates entered 6-digit PIN from doctor tablet or secondary computer,
 	 * verifies mutual authentication, and joins the local clinic mesh.
 	 */
-	app.post("/api/network/mesh/auto-join/verify", { schema: { description: "LAN mesh auto-join verify with mandatory RFC 9562 Idempotency-Key", headers: { type: "object", properties: { "idempotency-key": { type: "string" }, "x-idempotency-key": { type: "string" }, organizationid: { type: "string" }, "x-organization-id": { type: "string" } } } } }, async (request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "POST",
+		path: "/api/network/mesh/auto-join/verify",
+		schema: {
+			description: "LAN mesh auto-join verify with mandatory RFC 9562 Idempotency-Key",
+			headers: {
+				type: "object",
+				properties: {
+					"idempotency-key": { type: "string" },
+					"x-idempotency-key": { type: "string" },
+					organizationid: { type: "string" },
+					"x-organization-id": { type: "string" },
+				},
+			},
+		},
+		handler: async ({ request, reply }) => {
 		const clientIp = request.ip || "127.0.0.1";
 		const preCheckLimit = checkAutoJoinRouteRateLimit(clientIp);
 		if (preCheckLimit.locked) {
@@ -1189,6 +1304,7 @@ export async function registerLanNetworkRoutes(app: FastifyInstance): Promise<vo
 			clinicToken: joinResult.clinicToken,
 			join: joinResult,
 		});
+	},
 	});
 }
 

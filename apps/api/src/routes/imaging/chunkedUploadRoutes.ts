@@ -23,6 +23,7 @@ import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../
 import { createImagingStudyInDb } from "../../db/imagingQuery.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { patients, xrayScans } from "../../db/schema.js";
+import { BoundedTtlMap } from "../../lib/boundedTtlMap.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import {
 	InvalidMagicBytesError,
@@ -57,7 +58,26 @@ interface ChunkUploadSession {
 	uploadedChunks: number[];
 }
 
-const activeChunkSessions = new Map<string, ChunkUploadSession>();
+const activeChunkSessions = new BoundedTtlMap<string, ChunkUploadSession>({
+	maxEntries: 128,
+	ttlMs: 60 * 60 * 1000,
+});
+
+// HDD concurrency=1 serializer to avoid 5400 RPM head-seek thrashing across concurrent uploads
+let hddWriteQueue: Promise<void> = Promise.resolve();
+async function runHddWriteSerialized<T>(fn: () => Promise<T>): Promise<T> {
+	const previous = hddWriteQueue;
+	let release: () => void = () => {};
+	hddWriteQueue = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	await previous;
+	try {
+		return await fn();
+	} finally {
+		release();
+	}
+}
 
 function normalizeKind(raw: string | undefined): ImagingStudyKind {
 	const val = (raw || "").toLowerCase().trim();
@@ -348,21 +368,28 @@ export async function registerChunkedUploadRoutes(app: FastifyInstance): Promise
 				});
 
 				try {
-					await pipeline(chunkStream, inspector, createWriteStream(tempPartPath));
-					const actualSha = hasher.digest("hex").toLowerCase();
-					if (actualSha !== expectedShaRaw) {
-						await fs.unlink(tempPartPath).catch(() => {});
+					const actualSha = await runHddWriteSerialized(async () => {
+						await pipeline(chunkStream, inspector, createWriteStream(tempPartPath));
+						const sha = hasher.digest("hex").toLowerCase();
+						if (sha !== expectedShaRaw) {
+							await fs.unlink(tempPartPath).catch((unlinkErr) => {
+								request.log.warn({ err: unlinkErr, tempPartPath }, "Failed to cleanup mismatched temp chunk");
+							});
+							return null;
+						}
+						await fs.rename(tempPartPath, finalPartPath);
+						if (!session.uploadedChunks.includes(chunkIndex)) {
+							session.uploadedChunks.push(chunkIndex);
+							session.uploadedChunks.sort((a, b) => a - b);
+							await persistSessionMetadata(session);
+						}
+						return sha;
+					});
+					if (actualSha === null) {
 						return reply.status(422).send({
 							error: "ChunkSha256Mismatch",
 							message: "Контрольная сумма SHA-256 чанка не совпала. Повторите передачу фрагмента.",
 						});
-					}
-
-					await fs.rename(tempPartPath, finalPartPath);
-					if (!session.uploadedChunks.includes(chunkIndex)) {
-						session.uploadedChunks.push(chunkIndex);
-						session.uploadedChunks.sort((a, b) => a - b);
-						await persistSessionMetadata(session);
 					}
 
 					return reply.status(200).send({

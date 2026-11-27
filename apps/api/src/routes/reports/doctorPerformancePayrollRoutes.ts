@@ -28,6 +28,8 @@ export const doctorPayrollReportQuerySchema = periodQuerySchema.extend({
 	doctorId: z.string().optional(),
 	startDate: periodBoundarySchema.optional(),
 	endDate: periodBoundarySchema.optional(),
+	identSalaryModel: z.enum(["gross_before_discount", "net_proportional_discount", "net_doctor_bears_discount"]).optional(),
+	cashAdvancePolicy: z.enum(["clinic_first", "doctor_first", "proportional"]).optional(),
 }).strict();
 export type DoctorPayrollReportQuery = z.infer<typeof doctorPayrollReportQuerySchema>;
 
@@ -120,7 +122,10 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 			}
 		}
 
-		return await doctorPayrollReport(scope, filterDoctorId, request.log);
+		return await doctorPayrollReport(scope, filterDoctorId, request.log, undefined, {
+			identSalaryModel: parsed.data.identSalaryModel,
+			cashAdvancePolicy: parsed.data.cashAdvancePolicy,
+		});
 	});
 
 	/**

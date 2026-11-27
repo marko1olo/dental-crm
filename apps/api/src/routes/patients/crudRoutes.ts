@@ -3,9 +3,10 @@ import {
 	patientSchema,
 	updatePatientSchema,
 } from "@dental/shared";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { sql } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	createPatientInDb,
 	createPatientSafeInDb,
@@ -64,7 +65,11 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 	// Регистрация суб-маршрутов клинических записей медицинской карты приёма
 	registerPatientRecordsRoutes(app);
 
-	app.get("/api/patients", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -117,13 +122,19 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				: undefined;
 
 		try {
-			let dbPatients = await getPatientsFromDb(orgId, {
-				includeMerged:
-					query.includeMerged === true || query.includeMerged === "true",
-				search: searchRaw || undefined,
-				limit,
-				offset,
-			});
+			let dbPatients = await withTenantReadCtx(orgId, (tx) =>
+				getPatientsFromDb(
+					orgId,
+					{
+						includeMerged:
+							query.includeMerged === true || query.includeMerged === "true",
+						search: searchRaw || undefined,
+						limit,
+						offset,
+					},
+					tx,
+				),
+			);
 
 			if (searchRaw) {
 				dbPatients = filterPatientsBySearchQuery(dbPatients, searchRaw);
@@ -150,9 +161,14 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 					"Сервер клиники не смог прочитать список пациентов. Не считайте, что картотека пуста — повторите через минуту, а если повторится, сообщите администратору.",
 			});
 		}
+		},
 	});
 
-	app.get("/api/patients/:patientId", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/patients/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -166,7 +182,9 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 		const patientId = params.patientId.trim();
 
 		try {
-			const patient = await getPatientByIdFromDb(orgId, patientId);
+			const patient = await withTenantReadCtx(orgId, (tx) =>
+				getPatientByIdFromDb(orgId, patientId, tx),
+			);
 			if (!patient) {
 				return sendPatientNotFound(reply);
 			}
@@ -256,9 +274,14 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				message: "Не удалось загрузить данные карточки пациента.",
 			});
 		}
+		},
 	});
 
-	app.post("/api/patients", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/patients",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -327,7 +350,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 
 			if (isUniqueViolation) {
 				try {
-					const candidatePatients = await withTenantCtx(orgId, (tx) =>
+					const candidatePatients = await withTenantReadCtx(orgId, (tx) =>
 						queryPatientDuplicateCandidates(orgId, inputWithSnils, tx),
 					);
 					const duplicate = findPatientDuplicate(candidatePatients, inputWithSnils, undefined, {
@@ -352,9 +375,14 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 					"Сервер клиники не подтвердил запись — пациент мог не сохраниться. Найдите его в списке перед повторным созданием, иначе на одного человека появятся две карты.",
 			});
 		}
+		},
 	});
 
-	app.put("/api/patients/:patientId", async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/patients/:patientId",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
@@ -400,7 +428,7 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 				administrativeProfile: (input.administrativeProfile as Record<string, unknown> | undefined) ?? null,
 			};
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+			const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				const phoneDigits = (input.phone ?? "").replace(/\D/g, "");
 				const phoneKey = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : "";
 				const snilsDigits = String(inputWithSnils.snils ?? "").replace(/\D/g, "");
@@ -483,5 +511,6 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 					"Не удалось сохранить изменения. Данные могли быть записаны — обновите карточку перед повторным вводом.",
 			});
 		}
+		},
 	});
 }

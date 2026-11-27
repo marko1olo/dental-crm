@@ -22,8 +22,15 @@ import { resolveOrCreatePatientFromLead } from "./patientCreationBridge.js";
 export async function resolveDoctorAndChair(tx: TenantDb, orgId: string, payload: ConvertLeadPayload) {
 	let doctor: { id: string } | undefined;
 	const candDoc = payload.doctorId?.trim();
-	const hasExplicitDoctorUuid = Boolean(candDoc && z.string().uuid().safeParse(candDoc).success);
-	if (hasExplicitDoctorUuid && candDoc) {
+	if (candDoc && !z.string().uuid().safeParse(candDoc).success) {
+		return {
+			doctor: undefined,
+			invalidDoctorId: true as const,
+			resolvedChairId: null,
+			chairNotFound: false as const,
+		};
+	}
+	if (candDoc) {
 		const [found] = await tx
 			.select({ id: users.id })
 			.from(users)
@@ -55,8 +62,15 @@ export async function resolveDoctorAndChair(tx: TenantDb, orgId: string, payload
 
 	let resolvedChairId: string | null = null;
 	const candChair = payload.chairId?.trim();
-	const hasExplicitChairUuid = Boolean(candChair && z.string().uuid().safeParse(candChair).success);
-	if (hasExplicitChairUuid && candChair) {
+	if (candChair && !z.string().uuid().safeParse(candChair).success) {
+		return {
+			doctor,
+			invalidChairId: true as const,
+			resolvedChairId: null,
+			chairNotFound: false as const,
+		};
+	}
+	if (candChair) {
 		const [c2] = await tx
 			.select({ id: chairs.id })
 			.from(chairs)
@@ -112,6 +126,12 @@ export async function convertLeadToAppointment(params: {
 		}
 
 		const resolved = hasDates ? await resolveDoctorAndChair(tx, organizationId, payload) : undefined;
+		if (hasDates && resolved && "invalidDoctorId" in resolved) {
+			return { invalidDoctorId: true as const };
+		}
+		if (hasDates && resolved && "invalidChairId" in resolved) {
+			return { invalidChairId: true as const };
+		}
 		if (hasDates && !resolved?.doctor) return { doctorNotFound: true as const };
 		if (hasDates && resolved?.chairNotFound) return { chairNotFound: true as const };
 		const doctor = resolved?.doctor;
@@ -174,6 +194,8 @@ export async function convertLeadToAppointment(params: {
 
 	if ("notFound" in result) return reply.status(404).send({ error: "Lead not found" });
 	if ("alreadyConverted" in result) return reply.status(409).send({ error: "LeadAlreadyConverted", message: "Лид уже был сконвертирован другим администратором." });
+	if ("invalidDoctorId" in result) return reply.code(400).send({ error: "DoctorIdInvalid", message: "Некорректный идентификатор врача." });
+	if ("invalidChairId" in result) return reply.code(400).send({ error: "ChairIdInvalid", message: "Некорректный идентификатор кресла." });
 	if ("doctorNotFound" in result) return reply.code(400).send({ error: "DoctorNotFound" });
 	if ("chairNotFound" in result) return reply.code(400).send({ error: "ChairNotFound", message: "Указанный кабинет не найден в клинике." });
 

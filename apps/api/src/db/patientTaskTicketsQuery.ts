@@ -18,7 +18,7 @@
  */
 import { and, desc, eq } from "drizzle-orm";
 import type { ClinicalTaskStatus } from "@dental/shared";
-import { withTenantCtx } from "./rls.js";
+import { withTenantCtx, type TenantDb } from "./rls.js";
 import * as schema from "./schema.js";
 
 /** Ровно те состояния, которыми пользуются экран и бэкенд (SSOT: ClinicalTaskStatus). */
@@ -69,8 +69,9 @@ function toTicket(
 export async function getPatientTaskTicketsFromDb(
 	orgId: string,
 	patientId: string,
+	txDb?: TenantDb | undefined,
 ): Promise<PatientTaskTicket[]> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const rows = await tx
 			.select()
 			.from(schema.patientTaskTickets)
@@ -82,7 +83,8 @@ export async function getPatientTaskTicketsFromDb(
 			)
 			.orderBy(desc(schema.patientTaskTickets.createdAt));
 		return rows.map(toTicket);
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 
 export class PatientTaskAssigneeNotFoundError extends Error {
@@ -102,8 +104,9 @@ export async function createPatientTaskTicketInDb(
 		assignedToId: string | null;
 		priority: string;
 	},
+	txDb?: TenantDb | undefined,
 ): Promise<PatientTaskTicket> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
 		const [ownedPatient] = await tx
 			.select({ id: schema.patients.id })
@@ -161,7 +164,8 @@ export async function createPatientTaskTicketInDb(
 			);
 		}
 		return toTicket(row);
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 
 /**
@@ -178,8 +182,9 @@ export async function setPatientTaskTicketStatusInDb(
 	patientId: string,
 	ticketId: string,
 	status: PatientTaskTicketStatus,
+	txDb?: TenantDb | undefined,
 ): Promise<PatientTaskTicket | null> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const [row] = await tx
 			.update(schema.patientTaskTickets)
 			.set({ status, updatedAt: new Date() })
@@ -192,7 +197,8 @@ export async function setPatientTaskTicketStatusInDb(
 			)
 			.returning();
 		return row ? toTicket(row) : null;
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 
 /**
@@ -207,8 +213,9 @@ export async function deletePatientTaskTicketFromDb(
 	orgId: string,
 	patientId: string,
 	ticketId: string,
+	txDb?: TenantDb | undefined,
 ): Promise<boolean> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const rows = await tx
 			.delete(schema.patientTaskTickets)
 			.where(
@@ -220,7 +227,8 @@ export async function deletePatientTaskTicketFromDb(
 			)
 			.returning({ id: schema.patientTaskTickets.id });
 		return rows.length > 0;
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 
 /**
@@ -233,6 +241,7 @@ export async function getAllTaskTicketsFromDb(
 		status?: PatientTaskTicketStatus;
 		assignedToId?: string;
 	},
+	txDb?: TenantDb | undefined,
 ): Promise<PatientTaskTicket[]> {
 	const conditions = [eq(schema.patientTaskTickets.organizationId, orgId)];
 	if (filters?.patientId) {
@@ -246,25 +255,27 @@ export async function getAllTaskTicketsFromDb(
 			eq(schema.patientTaskTickets.assignedToId, filters.assignedToId),
 		);
 	}
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const rows = await tx
 			.select()
 			.from(schema.patientTaskTickets)
 			.where(and(...conditions))
 			.orderBy(desc(schema.patientTaskTickets.createdAt));
 		return rows.map(toTicket);
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 
 /**
- * Смена состояния поручения по ID (1 клик).
+ * Смена состояния поручения по ID.
  */
 export async function setTaskTicketStatusByIdInDb(
 	orgId: string,
 	ticketId: string,
 	status: PatientTaskTicketStatus,
+	txDb?: TenantDb | undefined,
 ): Promise<PatientTaskTicket | null> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const [row] = await tx
 			.update(schema.patientTaskTickets)
 			.set({ status, updatedAt: new Date() })
@@ -276,7 +287,8 @@ export async function setTaskTicketStatusByIdInDb(
 			)
 			.returning();
 		return row ? toTicket(row) : null;
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 
 /**
@@ -285,8 +297,9 @@ export async function setTaskTicketStatusByIdInDb(
 export async function deleteTaskTicketByIdInDb(
 	orgId: string,
 	ticketId: string,
+	txDb?: TenantDb | undefined,
 ): Promise<boolean> {
-	return await withTenantCtx(orgId, async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const rows = await tx
 			.delete(schema.patientTaskTickets)
 			.where(
@@ -297,6 +310,7 @@ export async function deleteTaskTicketByIdInDb(
 			)
 			.returning({ id: schema.patientTaskTickets.id });
 		return rows.length > 0;
-	});
+	};
+	return txDb ? await run(txDb) : await withTenantCtx(orgId, run);
 }
 

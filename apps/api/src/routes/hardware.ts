@@ -10,10 +10,15 @@
 
 import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
-import { withTenantCtx } from "../db/rls.js";
+import {
+	definePublicRoute,
+	defineStreamRoute,
+	defineTenantMutation,
+} from "../core/routeFactories.js";
+import { withTenantReadCtx } from "../db/rls.js";
 import { clinicHardwareDevices } from "../db/schema/hardware.js";
 import {
 	requireClinicalMutationContext,
@@ -176,6 +181,20 @@ function isBlockedSsrfIp(rawIp: string): boolean {
 	return false;
 }
 
+function isAllowedPrivateLanSubnet(rawSubnet: string): boolean {
+	const parts = rawSubnet.trim().split(".");
+	if (parts.length !== 3) return false;
+	const nums = parts.map((p) => (/^\d{1,3}$/.test(p) ? Number(p) : Number.NaN));
+	if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+	const a = nums[0] ?? -1;
+	const b = nums[1] ?? -1;
+	if (isBlockedSsrfIp(`${rawSubnet.trim()}.1`)) return false;
+	if (a === 10) return true;
+	if (a === 172 && b >= 16 && b <= 31) return true;
+	if (a === 192 && b === 168) return true;
+	return false;
+}
+
 function resolveRealHotFolderTarget(resolvedPath: string): string {
 	try {
 		return realpathSync(resolvedPath);
@@ -232,9 +251,11 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 	 * GET /api/hardware/devices
 	 * Discovers all connected clinic hardware: printers, scanners, and KKT devices.
 	 */
-	app.get(
-		"/api/hardware/devices",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/hardware/devices",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(request, reply, "get hardware devices");
 			if (!context) return;
 
@@ -249,7 +270,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			const query = parsedQuery.data;
 
 			if (query.scope === "configured") {
-				const devices = await withTenantCtx(context.organizationId, async (tx) =>
+				const devices = await withTenantReadCtx(context.organizationId, async (tx) =>
 					tx
 						.select()
 						.from(clinicHardwareDevices)
@@ -267,6 +288,14 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				? query.subnets.split(",").map((s) => s.trim()).filter(Boolean)
 				: undefined;
 
+			if (subnets && subnets.some((subnet) => !isAllowedPrivateLanSubnet(subnet))) {
+				return reply.status(400).send({
+					error: "SsrfBlocked",
+					message:
+						"Запрещено сканирование нечастных или loopback/metadata подсетей. Допустимы только RFC 1918 LAN префиксы (10.x.x, 172.16-31.x, 192.168.x).",
+				});
+			}
+
 			const ports = query.ports
 				? query.ports
 						.split(",")
@@ -275,6 +304,7 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				: undefined;
 
 			const result = await hardwareDiscoveryService.discoverDevices({
+				organizationId: context.organizationId,
 				probeNetworkTcp: query.probeNetwork,
 				includeOffline: query.includeOffline,
 				networkSubnets: subnets,
@@ -287,15 +317,17 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				...result,
 			});
 		},
-	);
+	});
 
 	/**
 	 * GET /api/hardware/devices/probe-tcp
 	 * Direct status inquiry for a network thermal printer by IP:Port.
 	 */
-	app.get(
-		"/api/hardware/devices/probe-tcp",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/hardware/devices/probe-tcp",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(request, reply, "hardware tcp probe");
 			if (!context) return;
 
@@ -329,15 +361,17 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				statusReport,
 			});
 		},
-	);
+	});
 
 	/**
 	 * POST /api/hardware/test-print
 	 * Sends test print pattern to selected device (TCP/IP or raw USB/spooler).
 	 */
-	app.post(
-		"/api/hardware/test-print",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/hardware/test-print",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const context = await requireClinicalMutationContext(request, reply, "hardware test print");
 			if (!context) return;
 
@@ -377,15 +411,16 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				result: printResult,
 			});
 		},
-	);
+	});
 
 	/**
 	 * GET /api/hardware/health
 	 * Hardware subsystem health and driver availability.
 	 */
-	app.get(
-		"/api/hardware/health",
-		async (_request: FastifyRequest, reply: FastifyReply) => {
+	definePublicRoute(app, {
+		method: "GET",
+		path: "/api/hardware/health",
+		handler: async ({ reply }) => {
 			return reply.status(200).send({
 				status: "ok",
 				timestamp: new Date().toISOString(),
@@ -400,16 +435,18 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				],
 			});
 		},
-	);
+	});
 
 	/**
 	 * GET /api/hardware/sensor-status
 	 * Honest detection and diagnostics for radiology RVG sensors & Hot Folder bridge.
 	 * Implements Defect [RAD-03] fix: No fake simulations in production.
 	 */
-	app.get(
-		"/api/hardware/sensor-status",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/hardware/sensor-status",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const context = await requireClinicalReadContext(request, reply, "hardware sensor status");
 			if (!context) return;
 
@@ -470,18 +507,22 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				timestamp: new Date().toISOString(),
 			});
 		},
-	);
+	});
 
 	/**
 	 * POST /api/hardware/devices
 	 * Persists a new hardware device configuration into PostgreSQL 18.
 	 */
-	app.post(
-		"/api/hardware/devices",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(request, reply, "create hardware device");
-			if (!context) return;
-
+	defineTenantMutation(app, {
+		method: "POST",
+		path: "/api/hardware/devices",
+		permission: "settings.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
 			const parsed = hardwareDeviceCreateSchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.status(400).send({
@@ -497,47 +538,49 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 					message: "Недопустимый путь к сетевой папке (Hot Folder).",
 				});
 			}
-			const inserted = await withTenantCtx(context.organizationId, async (tx) =>
-				tx
-					.insert(clinicHardwareDevices)
-					.values({
-						organizationId: context.organizationId,
-						presetId: body.presetId || "custom",
-						name: body.name || "Новое устройство",
-						vendor: body.vendor || "Универсальный",
-						category: body.category || "visiograph",
-						executablePath: body.executablePath || "",
-						hotFolderPath: body.hotFolderPath || "",
-						protocol: body.protocol || "hot_folder",
-						protocolTemplate: body.protocolTemplate || "",
-						supportedExtensions: body.supportedExtensions ?? [".dcm"],
-						isActive: body.isActive !== false,
-						autoAttachToVisit: body.autoAttachToVisit !== false,
-						status: body.status || "untested",
-						statusMessage: body.statusMessage || "Нажмите для проверки связи",
-						latencyMs: body.latencyMs ?? null,
-						lastCheckedAt: body.lastCheckedAt ? new Date(body.lastCheckedAt) : null,
-					})
-					.returning(),
-			);
+			const inserted = await tx
+				.insert(clinicHardwareDevices)
+				.values({
+					organizationId,
+					presetId: body.presetId || "custom",
+					name: body.name || "Новое устройство",
+					vendor: body.vendor || "Универсальный",
+					category: body.category || "visiograph",
+					executablePath: body.executablePath || "",
+					hotFolderPath: body.hotFolderPath || "",
+					protocol: body.protocol || "hot_folder",
+					protocolTemplate: body.protocolTemplate || "",
+					supportedExtensions: body.supportedExtensions ?? [".dcm"],
+					isActive: body.isActive !== false,
+					autoAttachToVisit: body.autoAttachToVisit !== false,
+					status: body.status || "untested",
+					statusMessage: body.statusMessage || "Нажмите для проверки связи",
+					latencyMs: body.latencyMs ?? null,
+					lastCheckedAt: body.lastCheckedAt ? new Date(body.lastCheckedAt) : null,
+				})
+				.returning();
 
 			return reply.status(201).send({
 				success: true,
 				device: inserted[0],
 			});
 		},
-	);
+	});
 
 	/**
 	 * PUT /api/hardware/devices/:id
 	 * Updates an existing hardware device in PostgreSQL 18.
 	 */
-	app.put(
-		"/api/hardware/devices/:id",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(request, reply, "update hardware device");
-			if (!context) return;
-
+	defineTenantMutation(app, {
+		method: "PUT",
+		path: "/api/hardware/devices/:id",
+		permission: "settings.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId, request, reply }) => {
 			const paramsParsed = z.object({ id: HARDWARE_DEVICE_ID_SCHEMA }).safeParse(request.params);
 			if (!paramsParsed.success) {
 				return reply.status(400).send({
@@ -582,18 +625,16 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				patch.lastCheckedAt = body.lastCheckedAt ? new Date(body.lastCheckedAt) : null;
 			}
 
-			const updated = await withTenantCtx(context.organizationId, async (tx) =>
-				tx
-					.update(clinicHardwareDevices)
-					.set(patch)
-					.where(
-						and(
-							eq(clinicHardwareDevices.id, id),
-							eq(clinicHardwareDevices.organizationId, context.organizationId),
-						),
-					)
-					.returning(),
-			);
+			const updated = await tx
+				.update(clinicHardwareDevices)
+				.set(patch)
+				.where(
+					and(
+						eq(clinicHardwareDevices.id, id),
+						eq(clinicHardwareDevices.organizationId, organizationId),
+					),
+				)
+				.returning();
 
 			if (!updated.length) {
 				return reply.status(404).send({ error: "DeviceNotFound", message: "Устройство не найдено" });
@@ -604,18 +645,22 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				device: updated[0],
 			});
 		},
-	);
+	});
 
 	/**
 	 * DELETE /api/hardware/devices/:id
 	 * Removes a hardware device from PostgreSQL 18.
 	 */
-	app.delete(
-		"/api/hardware/devices/:id",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(request, reply, "delete hardware device");
-			if (!context) return;
-
+	defineTenantMutation(app, {
+		method: "DELETE",
+		path: "/api/hardware/devices/:id",
+		permission: "settings.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "exempt_idempotent_put_or_delete",
+		handler: async ({ tx, organizationId, request, reply }) => {
 			const paramsParsed = z.object({ id: HARDWARE_DEVICE_ID_SCHEMA }).safeParse(request.params);
 			if (!paramsParsed.success) {
 				return reply.status(400).send({
@@ -625,17 +670,15 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 			}
 			const { id } = paramsParsed.data;
 
-			const deleted = await withTenantCtx(context.organizationId, async (tx) =>
-				tx
-					.delete(clinicHardwareDevices)
-					.where(
-						and(
-							eq(clinicHardwareDevices.id, id),
-							eq(clinicHardwareDevices.organizationId, context.organizationId),
-						),
-					)
-					.returning({ id: clinicHardwareDevices.id }),
-			);
+			const deleted = await tx
+				.delete(clinicHardwareDevices)
+				.where(
+					and(
+						eq(clinicHardwareDevices.id, id),
+						eq(clinicHardwareDevices.organizationId, organizationId),
+					),
+				)
+				.returning({ id: clinicHardwareDevices.id });
 
 			if (!deleted.length) {
 				return reply.status(404).send({ error: "DeviceNotFound", message: "Устройство не найдено" });
@@ -643,18 +686,22 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 
 			return reply.status(200).send({ success: true, deletedId: id });
 		},
-	);
+	});
 
 	/**
 	 * POST /api/hardware/devices/sync
 	 * Synchronizes full device configurations list with PostgreSQL 18 for the organization.
 	 */
-	app.post(
-		"/api/hardware/devices/sync",
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const context = await requireClinicalMutationContext(request, reply, "sync hardware devices");
-			if (!context) return;
-
+	defineTenantMutation(app, {
+		method: "POST",
+		path: "/api/hardware/devices/sync",
+		permission: "settings.write",
+		authOptions: {
+			allowClinicTokenWithoutStaff: true,
+			allowAdminSecretBypass: true,
+		},
+		idempotency: "optional_header",
+		handler: async ({ tx, organizationId, request, reply }) => {
 			const parsed = hardwareDevicesSyncBodySchema.safeParse(request.body ?? {});
 			if (!parsed.success) {
 				return reply.status(400).send({
@@ -673,46 +720,44 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				}
 			}
 
-			const updated = await withTenantCtx(context.organizationId, async (tx) => {
-				await tx
-					.delete(clinicHardwareDevices)
-					.where(eq(clinicHardwareDevices.organizationId, context.organizationId));
+			await tx
+				.delete(clinicHardwareDevices)
+				.where(eq(clinicHardwareDevices.organizationId, organizationId));
 
-				if (rawDevices.length > 0) {
-					const values = rawDevices.map((dev) => ({
-						organizationId: context.organizationId,
-						presetId: dev.presetId || "custom",
-						name: dev.name || "Устройство",
-						vendor: dev.vendor || "Универсальный",
-						category: dev.category || "visiograph",
-						executablePath: dev.executablePath || "",
-						hotFolderPath: dev.hotFolderPath || "",
-						protocol: dev.protocol || "hot_folder",
-						protocolTemplate: dev.protocolTemplate || "",
-						supportedExtensions: dev.supportedExtensions ?? [".dcm"],
-						isActive: dev.isActive !== false,
-						autoAttachToVisit: dev.autoAttachToVisit !== false,
-						status: dev.status || "untested",
-						statusMessage: dev.statusMessage || "Нажмите для проверки связи",
-						latencyMs: dev.latencyMs ?? null,
-						lastCheckedAt: dev.lastCheckedAt ? new Date(dev.lastCheckedAt) : null,
-					}));
-					await tx.insert(clinicHardwareDevices).values(values);
-				}
+			if (rawDevices.length > 0) {
+				const values = rawDevices.map((dev) => ({
+					organizationId,
+					presetId: dev.presetId || "custom",
+					name: dev.name || "Устройство",
+					vendor: dev.vendor || "Универсальный",
+					category: dev.category || "visiograph",
+					executablePath: dev.executablePath || "",
+					hotFolderPath: dev.hotFolderPath || "",
+					protocol: dev.protocol || "hot_folder",
+					protocolTemplate: dev.protocolTemplate || "",
+					supportedExtensions: dev.supportedExtensions ?? [".dcm"],
+					isActive: dev.isActive !== false,
+					autoAttachToVisit: dev.autoAttachToVisit !== false,
+					status: dev.status || "untested",
+					statusMessage: dev.statusMessage || "Нажмите для проверки связи",
+					latencyMs: dev.latencyMs ?? null,
+					lastCheckedAt: dev.lastCheckedAt ? new Date(dev.lastCheckedAt) : null,
+				}));
+				await tx.insert(clinicHardwareDevices).values(values);
+			}
 
-				return tx
-					.select()
-					.from(clinicHardwareDevices)
-					.where(eq(clinicHardwareDevices.organizationId, context.organizationId))
-					.orderBy(desc(clinicHardwareDevices.createdAt));
-			});
+			const updated = await tx
+				.select()
+				.from(clinicHardwareDevices)
+				.where(eq(clinicHardwareDevices.organizationId, organizationId))
+				.orderBy(desc(clinicHardwareDevices.createdAt));
 
 			return reply.status(200).send({
 				success: true,
 				devices: updated,
 			});
 		},
-	);
+	});
 }
 
 export default registerHardwareRoutes;

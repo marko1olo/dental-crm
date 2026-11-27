@@ -13,7 +13,7 @@ import { SyncEntityHandlers } from "./syncEntityHandlers.js";
 import { SyncQueueManager } from "./syncQueueManager.js";
 import { SyncSecurityEnforcer } from "./syncSecurityEnforcer.js";
 import { SyncStreamTransport } from "./syncStreamTransport.js";
-import type { SyncProcessOptions, SyncPullResult } from "./types.js";
+import type { SyncProcessOptions, SyncPullOptions, SyncPullResult } from "./types.js";
 
 export * from "./types.js";
 export * from "./constants.js";
@@ -241,7 +241,16 @@ export class SyncGatewayService {
 		let conflictDetails: FieldConflictDetail[] = [];
 		let currentServerEntity: Record<string, unknown> | undefined;
 
-		if (mutation.entityKind === "payment") {
+		if (mutation.action === "delete") {
+			const deleteResult = await SyncEntityHandlers.handleDeleteMutation(
+				tx,
+				organizationId,
+				mutation,
+				authorUserId || mutation.authorUserId,
+			);
+			mutationStatus = deleteResult.status;
+			currentServerEntity = deleteResult.entity;
+		} else if (mutation.entityKind === "payment") {
 			const paymentResult = await SyncEntityHandlers.handlePaymentMutation(
 				tx,
 				organizationId,
@@ -316,9 +325,49 @@ export class SyncGatewayService {
 			mergedFields = odontogramResult.mergedFields || [];
 			conflictDetails = odontogramResult.conflicts || [];
 			currentServerEntity = odontogramResult.entity;
+		} else if (mutation.entityKind === "treatment_item") {
+			const treatmentItemResult =
+				await SyncEntityHandlers.handleTreatmentItemMutation(
+					tx,
+					organizationId,
+					mutation,
+					clientId,
+					authorUserId,
+				);
+			mutationStatus = treatmentItemResult.status;
+			mergedFields = treatmentItemResult.mergedFields || [];
+			conflictDetails = treatmentItemResult.conflicts || [];
+			currentServerEntity = treatmentItemResult.entity;
+		} else if (mutation.entityKind === "clinical_task") {
+			const clinicalTaskResult =
+				await SyncEntityHandlers.handleClinicalTaskMutation(
+					tx,
+					organizationId,
+					mutation,
+					clientId,
+					authorUserId,
+				);
+			mutationStatus = clinicalTaskResult.status;
+			mergedFields = clinicalTaskResult.mergedFields || [];
+			conflictDetails = clinicalTaskResult.conflicts || [];
+			currentServerEntity = clinicalTaskResult.entity;
+		} else if (mutation.entityKind === "patient_administrative_profile") {
+			const adminProfileResult =
+				await SyncEntityHandlers.handlePatientAdministrativeProfileMutation(
+					tx,
+					organizationId,
+					mutation,
+					clientId,
+					authorUserId,
+				);
+			mutationStatus = adminProfileResult.status;
+			mergedFields = adminProfileResult.mergedFields || [];
+			conflictDetails = adminProfileResult.conflicts || [];
+			currentServerEntity = adminProfileResult.entity;
 		} else {
-			currentServerEntity = mutation.payload;
-			mutationStatus = "applied";
+			throw new Error(
+				`Unsupported sync entityKind: ${String(mutation.entityKind)}`,
+			);
 		}
 
 		// 4. Record idempotency log for exactly-once replay protection
@@ -348,12 +397,13 @@ export class SyncGatewayService {
 	}
 
 	/**
-	 * Pulls changed entities and vectors since a specified timestamp for offline client catch-up.
+	 * Pulls changed entities and vectors since a specified timestamp/cursor for offline client catch-up.
 	 */
 	public static async pullChanges(
 		organizationId: string,
 		sinceIso?: string,
+		options?: SyncPullOptions,
 	): Promise<SyncPullResult> {
-		return await SyncStreamTransport.pullChanges(organizationId, sinceIso);
+		return await SyncStreamTransport.pullChanges(organizationId, sinceIso, options);
 	}
 }

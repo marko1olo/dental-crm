@@ -15,7 +15,8 @@ import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { kopecksToNumericString, kopecksToRub, rublesToKopecks } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { defineStreamRoute } from "../../../core/routeFactories.js";
+import { withTenantWriteCtx } from "../../../db/rls.js";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -79,7 +80,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 		const { cashBoxId, amountRub, reasonText, operatorId } = parsed.data;
 
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			await tx.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_transfer:' || ${idempotencyKey}))`,
 			);
@@ -235,27 +236,35 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		return reply.send(response);
 	};
 
-	const cashTransferRouteOptions = {
-		schema: {
-			description:
-				"Cash transfer with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					organizationid: { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
+	const cashTransferRouteSchema = {
+		description:
+			"Cash transfer with mandatory RFC 9562 Idempotency-Key and organizationId isolation",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
 			},
 		},
 	};
 
-	app.post("/api/cash/cash-introduction", cashTransferRouteOptions, handleCashIntroduction);
-	app.post("/api/fiscal/cash-in", cashTransferRouteOptions, handleCashIntroduction);
-	app.post("/api/finance/cash-in", cashTransferRouteOptions, handleCashIntroduction);
-	app.post("/api/cashbox/operations/in", cashTransferRouteOptions, handleCashIntroduction);
-	app.post("/api/billing/cash/in", cashTransferRouteOptions, handleCashIntroduction);
+	for (const path of [
+		"/api/cash/cash-introduction",
+		"/api/fiscal/cash-in",
+		"/api/finance/cash-in",
+		"/api/cashbox/operations/in",
+		"/api/billing/cash/in",
+	]) {
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			schema: cashTransferRouteSchema,
+			handler: async ({ request, reply }) => handleCashIntroduction(request, reply),
+		});
+	}
 
 	/**
 	 * 2. POST /api/cash/cash-withdrawal & POST /api/fiscal/cash-out
@@ -299,7 +308,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 		const { cashBoxId, amountRub, reasonText, operatorId } = parsed.data;
 
-		const result = await withTenantCtx(orgId, async (tx) => {
+		const result = await withTenantWriteCtx(orgId, async (tx) => {
 			await tx.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cash_transfer:' || ${idempotencyKey}))`,
 			);
@@ -473,24 +482,19 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		return reply.send(response);
 	};
 
-	app.post("/api/cash/cash-withdrawal", cashTransferRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashWithdrawal(request, reply);
-	});
-	app.post("/api/fiscal/cash-out", cashTransferRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashWithdrawal(request, reply);
-	});
-	app.post("/api/finance/cash-out", cashTransferRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashWithdrawal(request, reply);
-	});
-	app.post("/api/cashbox/operations/out", cashTransferRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashWithdrawal(request, reply);
-	});
-	app.post("/api/billing/cash/out", cashTransferRouteOptions, async (request, reply) => {
-		// Mandatory Idempotency-Key & organizationId tenant isolation in withTenantCtx db.transaction
-		return handleCashWithdrawal(request, reply);
-	});
+	for (const path of [
+		"/api/cash/cash-withdrawal",
+		"/api/fiscal/cash-out",
+		"/api/finance/cash-out",
+		"/api/cashbox/operations/out",
+		"/api/billing/cash/out",
+	]) {
+		defineStreamRoute(app, {
+			method: "POST",
+			path,
+			permission: "public",
+			schema: cashTransferRouteSchema,
+			handler: async ({ request, reply }) => handleCashWithdrawal(request, reply),
+		});
+	}
 }

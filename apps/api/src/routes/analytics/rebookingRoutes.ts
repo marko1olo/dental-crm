@@ -6,7 +6,8 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../../accessGuard.js";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx, withTenantWriteCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
@@ -54,136 +55,141 @@ const rebookingQuerySchema = z
  * ====================================================================
  */
 export async function registerRebookingRoutes(app: FastifyInstance) {
-	app.get("/api/analytics/rebooking-conversion", async (request, reply) => {
-		const readAllowed = await requireClinicalReadAccess(
-			request,
-			reply,
-			"rebooking conversion analytics",
-		);
-		if (!readAllowed) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/analytics/rebooking-conversion",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const readAllowed = await requireClinicalReadAccess(
+				request,
+				reply,
+				"rebooking conversion analytics",
+			);
+			if (!readAllowed) return;
 
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"rebooking conversion analytics",
-		);
-		if (!orgId) return;
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"rebooking conversion analytics",
+			);
+			if (!orgId) return;
 
-		const queryParse = rebookingQuerySchema.safeParse(request.query ?? {});
-		if (!queryParse.success) {
-			return reply.code(400).send({
-				success: false,
-				error: "ValidationError",
-				message:
-					queryParse.error.issues.map((i) => i.message).join(", ") ||
-					"Некорректные параметры запроса конверсии повторной записи.",
-			});
-		}
-
-		try {
-			const {
-				range = "month",
-				startDate: qStartDate,
-				endDate: qEndDate,
-				period_start: qPeriodStart,
-				period_end: qPeriodEnd,
-				doctorId: qDoctorId,
-				doctor_id: qDoctorIdSnake,
-				specialty: qSpecialty,
-				isSoloDoctor: qIsSoloDoctor,
-			} = queryParse.data;
-
-			const targetDoctorId = qDoctorId || qDoctorIdSnake || undefined;
-			const targetSpecialty = qSpecialty?.trim() || undefined;
-
-			// Определение соло-режима (Мандат 8n: Solo Doctor & Small Clinic):
-			// 1) Явный флаг из query (?isSoloDoctor=true)
-			// 2) Режим клиники (solo_doctor | one_chair) из таблицы organizations
-			// 3) Количество кабинетов/кресел <= 1 в таблице chairs
-			let isSoloDoctor =
-				qIsSoloDoctor === true ||
-				qIsSoloDoctor === "true" ||
-				qIsSoloDoctor === "1";
-
-			const timeZone = await clinicTimeZone(orgId);
-			const now = new Date();
-			let startDate: Date | undefined;
-			let endDate: Date | undefined;
-
-			const rawStart = qStartDate || qPeriodStart;
-			if (rawStart) {
-				startDate =
-					resolvePeriodBoundary(rawStart, "from", timeZone) ??
-					new Date(rawStart);
-			}
-			const rawEnd = qEndDate || qPeriodEnd;
-			if (rawEnd) {
-				endDate =
-					resolvePeriodBoundary(rawEnd, "to", timeZone) ?? new Date(rawEnd);
+			const queryParse = rebookingQuerySchema.safeParse(request.query ?? {});
+			if (!queryParse.success) {
+				return reply.code(400).send({
+					success: false,
+					error: "ValidationError",
+					message:
+						queryParse.error.issues.map((i) => i.message).join(", ") ||
+						"Некорректные параметры запроса конверсии повторной записи.",
+				});
 			}
 
-			if (!startDate) {
-				let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
-				if (range === "today") mappedPeriod = "day";
-				else if (range === "week") mappedPeriod = "week";
-				else if (range === "month") mappedPeriod = "month";
-				else if (range === "quarter" || range === "last_3_months")
-					mappedPeriod = "quarter";
-				else if (range === "year" || range === "this_year")
-					mappedPeriod = "year";
+			try {
+				const {
+					range = "month",
+					startDate: qStartDate,
+					endDate: qEndDate,
+					period_start: qPeriodStart,
+					period_end: qPeriodEnd,
+					doctorId: qDoctorId,
+					doctor_id: qDoctorIdSnake,
+					specialty: qSpecialty,
+					isSoloDoctor: qIsSoloDoctor,
+				} = queryParse.data;
 
-				if (mappedPeriod) {
-					const periodRes = resolvePeriod({ period: mappedPeriod }, timeZone);
-					if (periodRes.ok) {
-						startDate = periodRes.from;
-						if (!endDate) {
-							endDate = range === "today" ? periodRes.to : now;
+				const targetDoctorId = qDoctorId || qDoctorIdSnake || undefined;
+				const targetSpecialty = qSpecialty?.trim() || undefined;
+
+				// Определение соло-режима (Мандат 8n: Solo Doctor & Small Clinic):
+				// 1) Явный флаг из query (?isSoloDoctor=true)
+				// 2) Режим клиники (solo_doctor | one_chair) из таблицы organizations
+				// 3) Количество кабинетов/кресел <= 1 в таблице chairs
+				let isSoloDoctor =
+					qIsSoloDoctor === true ||
+					qIsSoloDoctor === "true" ||
+					qIsSoloDoctor === "1";
+
+				let startDate: Date | undefined;
+				let endDate: Date | undefined;
+
+				const { storedRules, completedVisits, appointmentsPool, soloResolved } =
+					await withTenantReadCtx(orgId, async (tx) => {
+						const timeZone = await clinicTimeZone(orgId, tx);
+						const now = new Date();
+
+						const rawStart = qStartDate || qPeriodStart;
+						if (rawStart) {
+							startDate =
+								resolvePeriodBoundary(rawStart, "from", timeZone) ??
+								new Date(rawStart);
 						}
-					}
-				} else if (range === "last_month") {
-					const prevMonthDate = new Date(
-						now.getFullYear(),
-						now.getMonth() - 1,
-						15,
-					);
-					const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
-					startDate = prevMonth.from;
-					if (!endDate) {
-						endDate = prevMonth.to;
-					}
-				}
-			}
-			if (!endDate) {
-				endDate = now;
-			}
+						const rawEnd = qEndDate || qPeriodEnd;
+						if (rawEnd) {
+							endDate =
+								resolvePeriodBoundary(rawEnd, "to", timeZone) ?? new Date(rawEnd);
+						}
 
-			const { storedRules, completedVisits, appointmentsPool, soloResolved } =
-				await withTenantCtx(orgId, async (tx) => {
-					let soloFlag = isSoloDoctor;
-					if (!soloFlag) {
-						const [orgRecord] = await tx
-							.select({ clinicMode: organizations.clinicMode })
-							.from(organizations)
-							.where(eq(organizations.id, orgId))
-							.limit(1);
+						if (!startDate) {
+							let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
+							if (range === "today") mappedPeriod = "day";
+							else if (range === "week") mappedPeriod = "week";
+							else if (range === "month") mappedPeriod = "month";
+							else if (range === "quarter" || range === "last_3_months")
+								mappedPeriod = "quarter";
+							else if (range === "year" || range === "this_year")
+								mappedPeriod = "year";
 
-						if (
-							orgRecord?.clinicMode === "solo_doctor" ||
-							orgRecord?.clinicMode === "one_chair"
-						) {
-							soloFlag = true;
-						} else {
-							const chairsList = await tx
-								.select({ id: chairs.id })
-								.from(chairs)
-								.where(eq(chairs.organizationId, orgId))
-								.limit(2);
-
-							if (chairsList.length <= 1) {
-								soloFlag = true;
+							if (mappedPeriod) {
+								const periodRes = resolvePeriod({ period: mappedPeriod }, timeZone);
+								if (periodRes.ok) {
+									startDate = periodRes.from;
+									if (!endDate) {
+										endDate = range === "today" ? periodRes.to : now;
+									}
+								}
+							} else if (range === "last_month") {
+								const prevMonthDate = new Date(
+									now.getFullYear(),
+									now.getMonth() - 1,
+									15,
+								);
+								const prevMonth = currentMonthPeriod(prevMonthDate, timeZone);
+								startDate = prevMonth.from;
+								if (!endDate) {
+									endDate = prevMonth.to;
+								}
 							}
 						}
-					}
+						if (!endDate) {
+							endDate = now;
+						}
+
+						let soloFlag = isSoloDoctor;
+						if (!soloFlag) {
+							const [orgRecord] = await tx
+								.select({ clinicMode: organizations.clinicMode })
+								.from(organizations)
+								.where(eq(organizations.id, orgId))
+								.limit(1);
+
+							if (
+								orgRecord?.clinicMode === "solo_doctor" ||
+								orgRecord?.clinicMode === "one_chair"
+							) {
+								soloFlag = true;
+							} else {
+								const chairsList = await tx
+									.select({ id: chairs.id })
+									.from(chairs)
+									.where(eq(chairs.organizationId, orgId))
+									.limit(2);
+
+								if (chairsList.length <= 1) {
+									soloFlag = true;
+								}
+							}
+						}
 
 					// 1. Загружаем уже зафиксированные правила из таблицы rebooking_conversion_rules
 					const rulesRows = await tx
@@ -587,54 +593,59 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 					},
 				},
 			};
-		} catch (e) {
-			request.log.error({ err: e }, "Не удалось рассчитать конверсию повторной записи");
-			return reply.code(500).send({
-				success: false,
-				error: "RebookingConversionCalculationFailed",
-				message: "Не удалось рассчитать конверсию повторной записи. Повторите позже.",
-			});
-		}
+			} catch (e) {
+				request.log.error({ err: e }, "Не удалось рассчитать конверсию повторной записи");
+				return reply.code(500).send({
+					success: false,
+					error: "RebookingConversionCalculationFailed",
+					message: "Не удалось рассчитать конверсию повторной записи. Повторите позже.",
+				});
+			}
+		},
 	});
 
 	/**
 	 * POST /api/analytics/rebooking-conversion
 	 * Явная фиксация правила конверсии повторной записи в БД.
 	 */
-	app.post("/api/analytics/rebooking-conversion", async (request, reply) => {
-		const mutationAllowed = await requireClinicalMutationAccess(
-			request,
-			reply,
-			"rebooking conversion record",
-		);
-		if (!mutationAllowed) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/analytics/rebooking-conversion",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const mutationAllowed = await requireClinicalMutationAccess(
+				request,
+				reply,
+				"rebooking conversion record",
+			);
+			if (!mutationAllowed) return;
 
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"rebooking conversion record",
-		);
-		if (!orgId) return;
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"rebooking conversion record",
+			);
+			if (!orgId) return;
 
-		try {
-			const parseRes = rebookingConversionBodySchema.safeParse(request.body);
-			if (!parseRes.success) {
-				return reply.code(400).send({
-					success: false,
-					error: "InvalidRequestBody",
-					message: "Некорректное тело запроса с данными о повторной записи.",
-					details: parseRes.error.flatten(),
-				});
-			}
+			try {
+				const parseRes = rebookingConversionBodySchema.safeParse(request.body);
+				if (!parseRes.success) {
+					return reply.code(400).send({
+						success: false,
+						error: "InvalidRequestBody",
+						message: "Некорректное тело запроса с данными о повторной записи.",
+						details: parseRes.error.flatten(),
+					});
+				}
 
-			const body = parseRes.data;
+				const body = parseRes.data;
 
-			const patientName = body.patientName?.trim() || "Пациент";
-			const rebookedBy = body.rebookedBy?.trim() || "Сотрудник";
-			const appointmentDate =
-				body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
+				const patientName = body.patientName?.trim() || "Пациент";
+				const rebookedBy = body.rebookedBy?.trim() || "Сотрудник";
+				const appointmentDate =
+					body.appointmentDate?.trim() || new Date().toISOString().slice(0, 10);
 
-			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const txResult = await withTenantWriteCtx(orgId, async (tx) => {
 				let isSoloDoctor = body.isSoloDoctor;
 				if (isSoloDoctor === undefined) {
 					const [orgRecord] = await tx
@@ -715,13 +726,14 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 			});
 
 			return reply.code(txResult.code).send(txResult.body);
-		} catch (e) {
-			request.log.error({ err: e }, "Не удалось сохранить правило повторной записи");
-			return reply.code(500).send({
-				success: false,
-				error: "RebookingConversionSaveFailed",
-				message: "Не удалось сохранить правило повторной записи.",
-			});
-		}
+			} catch (e) {
+				request.log.error({ err: e }, "Не удалось сохранить правило повторной записи");
+				return reply.code(500).send({
+					success: false,
+					error: "RebookingConversionSaveFailed",
+					message: "Не удалось сохранить правило повторной записи.",
+				});
+			}
+		},
 	});
 }

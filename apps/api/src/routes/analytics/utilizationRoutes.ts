@@ -6,7 +6,8 @@ import {
 import { and, eq, gte, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { withTenantCtx, type TenantDb } from "../../db/rls.js";
+import { withTenantCtx, withTenantReadCtx, type TenantDb } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	appointments,
 	cashOperations,
@@ -169,7 +170,7 @@ export async function calculateChairUtilization(
 	if (executor) {
 		return runQuery(executor);
 	}
-	return withTenantCtx(orgId, runQuery);
+	return withTenantReadCtx(orgId, runQuery);
 }
 
 const utilizationQuerySchema = z.object({
@@ -223,7 +224,13 @@ function sumExpenseCategoryKopecks(
 }
 
 export async function registerUtilizationRoutes(app: FastifyInstance) {
-	const getUtilization = async (request: FastifyRequest, reply: FastifyReply) => {
+	const getUtilization = async ({
+		request,
+		reply,
+	}: {
+		request: FastifyRequest;
+		reply: FastifyReply;
+	}) => {
 		const orgId = await requireExecutiveAccess(request, reply);
 		if (!orgId) return;
 
@@ -260,7 +267,7 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 				startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
 			}
 
-			const data = await withTenantCtx(orgId, async (tx) => {
+			const data = await withTenantReadCtx(orgId, async (tx) => {
 				const chairData = await calculateChairUtilization(orgId, startDate, now, undefined, tx);
 				const doctorProfitability = await calculateDoctorProfitability(orgId, startDate, tx);
 
@@ -344,6 +351,16 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 		}
 	};
 
-	app.get("/api/analytics/chairs-utilization", getUtilization);
-	app.get("/api/analytics/utilization", getUtilization);
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/analytics/chairs-utilization",
+		permission: "public",
+		handler: getUtilization,
+	});
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/analytics/utilization",
+		permission: "public",
+		handler: getUtilization,
+	});
 }

@@ -1,4 +1,5 @@
-import { and, asc, eq, gte, inArray, or, sql } from "drizzle-orm";
+import { type SQL, and, asc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { type TenantDb, withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
@@ -6,12 +7,97 @@ import {
 	patients,
 	payments,
 	syncEntityVectors,
+	syncTombstones,
 	toothStates,
 	visitDiaries,
 	visits,
 } from "../../../db/schema.js";
 import { SYNC_STREAM_CHUNK_SIZE } from "./constants.js";
 import type { SyncNodeInfo, SyncPullOptions, SyncPullResult } from "./types.js";
+
+const CURSOR_PREFIX = "keyset:v1:";
+
+export interface StreamKeysetPoint {
+	ts: string;
+	id: string;
+}
+
+export interface CompositeSyncPullCursor {
+	sinceIso: string;
+	vectors?: StreamKeysetPoint | undefined;
+	patients?: StreamKeysetPoint | undefined;
+	visits?: StreamKeysetPoint | undefined;
+	visitDiaries?: StreamKeysetPoint | undefined;
+	payments?: StreamKeysetPoint | undefined;
+	appointments?: StreamKeysetPoint | undefined;
+	toothStates?: StreamKeysetPoint | undefined;
+	invoices?: StreamKeysetPoint | undefined;
+	tombstones?: StreamKeysetPoint | undefined;
+}
+
+export function encodeSyncPullCursor(cursor: CompositeSyncPullCursor): string {
+	return `${CURSOR_PREFIX}${Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url")}`;
+}
+
+export function decodeSyncPullCursor(
+	cursorOrIso?: string,
+	sinceIso?: string,
+): CompositeSyncPullCursor | null {
+	const raw = cursorOrIso || sinceIso;
+	if (!raw) return null;
+	if (raw.startsWith(CURSOR_PREFIX)) {
+		try {
+			const parsed = JSON.parse(
+				Buffer.from(raw.slice(CURSOR_PREFIX.length), "base64url").toString("utf8"),
+			) as CompositeSyncPullCursor;
+			if (parsed && typeof parsed === "object" && typeof parsed.sinceIso === "string") {
+				return parsed;
+			}
+		} catch {
+			return null;
+		}
+	}
+	const parsedDate = new Date(raw);
+	if (Number.isNaN(parsedDate.getTime())) return null;
+	return { sinceIso: parsedDate.toISOString() };
+}
+
+function buildTupleKeysetWhere(
+	tsColumn: AnyPgColumn,
+	idColumn: AnyPgColumn,
+	point: StreamKeysetPoint | undefined,
+	fallbackSince: Date,
+	isInitialSync: boolean,
+): SQL | undefined {
+	if (point) {
+		const cursorTs = new Date(point.ts);
+		if (!Number.isNaN(cursorTs.getTime())) {
+			return or(
+				gt(tsColumn, cursorTs),
+				and(eq(tsColumn, cursorTs), gt(idColumn, point.id)),
+			);
+		}
+	}
+	if (isInitialSync) {
+		return undefined;
+	}
+	return gte(tsColumn, fallbackSince);
+}
+
+function extractLastPoint(
+	rows: readonly Record<string, unknown>[],
+	tsField: string,
+	prev: StreamKeysetPoint | undefined,
+): StreamKeysetPoint | undefined {
+	if (rows.length === 0) return prev;
+	const last = rows[rows.length - 1];
+	if (!last || typeof last.id !== "string") return prev;
+	const rawTs = last[tsField];
+	if (!(rawTs instanceof Date) && typeof rawTs !== "string") return prev;
+	const dateObj = rawTs instanceof Date ? rawTs : new Date(rawTs);
+	if (Number.isNaN(dateObj.getTime())) return prev;
+	return { ts: dateObj.toISOString(), id: last.id };
+}
 
 const MAX_NODE_REGISTRY_ENTRIES = 1000;
 const NODE_REGISTRY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -149,8 +235,8 @@ export class SyncStreamTransport {
 		sinceIso?: string,
 		options?: SyncPullOptions,
 	): Promise<SyncPullResult> {
-		const effectiveSinceIso = options?.cursor || sinceIso;
-		const parsedSince = effectiveSinceIso ? new Date(effectiveSinceIso) : new Date(0);
+		const decodedCursor = decodeSyncPullCursor(options?.cursor, sinceIso);
+		const parsedSince = decodedCursor ? new Date(decodedCursor.sinceIso) : new Date(0);
 		const since = Number.isNaN(parsedSince.getTime()) ? new Date(0) : parsedSince;
 		const isInitialSync = since.getTime() === 0;
 		const requestedLimit = options?.limit ?? DEFAULT_SYNC_PULL_LIMIT;
@@ -158,17 +244,24 @@ export class SyncStreamTransport {
 		const queryLimit = limit + 1;
 
 		return await withTenantCtx(organizationId, async (tx: TenantDb) => {
-			// Query changed vectors first to capture historical entity mutations (e.g. past appointment cancellations)
+			const vectorsKeyset = buildTupleKeysetWhere(
+				syncEntityVectors.updatedAt,
+				syncEntityVectors.id,
+				decodedCursor?.vectors,
+				since,
+				isInitialSync,
+			);
+
+			// Query changed vectors first using deterministic tuple keyset (updated_at, id)
 			const rawVectors = await tx
 				.select()
 				.from(syncEntityVectors)
 				.where(
-					and(
-						eq(syncEntityVectors.organizationId, organizationId),
-						isInitialSync ? sql`TRUE` : gte(syncEntityVectors.updatedAt, since),
-					),
+					vectorsKeyset
+						? and(eq(syncEntityVectors.organizationId, organizationId), vectorsKeyset)
+						: eq(syncEntityVectors.organizationId, organizationId),
 				)
-				.orderBy(asc(syncEntityVectors.updatedAt), asc(syncEntityVectors.entityId))
+				.orderBy(asc(syncEntityVectors.updatedAt), asc(syncEntityVectors.id))
 				.limit(queryLimit);
 
 			const changedVectors = rawVectors.slice(0, limit);
@@ -179,38 +272,64 @@ export class SyncStreamTransport {
 				.filter((v) => v.entityKind === "patient_invoice")
 				.map((v) => v.entityId);
 
-			const appointmentCondition = isInitialSync
-				? eq(appointments.organizationId, organizationId)
-				: changedAppointmentIds.length > 0
-					? and(
-							eq(appointments.organizationId, organizationId),
-							or(
-								gte(appointments.startsAt, since),
-								inArray(appointments.id, changedAppointmentIds),
-							),
-						)
-					: and(
-							eq(appointments.organizationId, organizationId),
-							gte(appointments.startsAt, since),
-						);
+			const apptKeyset = buildTupleKeysetWhere(
+				appointments.startsAt,
+				appointments.id,
+				decodedCursor?.appointments,
+				since,
+				isInitialSync,
+			);
+			const appointmentCondition =
+				decodedCursor?.appointments && apptKeyset
+					? and(eq(appointments.organizationId, organizationId), apptKeyset)
+					: isInitialSync
+						? eq(appointments.organizationId, organizationId)
+						: changedAppointmentIds.length > 0
+							? and(
+									eq(appointments.organizationId, organizationId),
+									or(
+										gte(appointments.startsAt, since),
+										inArray(appointments.id, changedAppointmentIds),
+									),
+								)
+							: and(
+									eq(appointments.organizationId, organizationId),
+									gte(appointments.startsAt, since),
+								);
 
 			const invoiceTimeCondition = or(
 				gte(patientInvoices.createdAt, since),
 				gte(patientInvoices.paidAt, since),
 				gte(patientInvoices.issuedAt, since),
 			);
+			const invoiceKeyset = buildTupleKeysetWhere(
+				patientInvoices.createdAt,
+				patientInvoices.id,
+				decodedCursor?.invoices,
+				since,
+				isInitialSync,
+			);
+			const invoiceCondition =
+				decodedCursor?.invoices && invoiceKeyset
+					? and(eq(patientInvoices.organizationId, organizationId), invoiceKeyset)
+					: isInitialSync
+					? eq(patientInvoices.organizationId, organizationId)
+					: changedInvoiceIds.length > 0
+						? and(
+								eq(patientInvoices.organizationId, organizationId),
+								or(invoiceTimeCondition, inArray(patientInvoices.id, changedInvoiceIds)),
+							)
+						: and(
+								eq(patientInvoices.organizationId, organizationId),
+								invoiceTimeCondition,
+							);
 
-			const invoiceCondition = isInitialSync
-				? eq(patientInvoices.organizationId, organizationId)
-				: changedInvoiceIds.length > 0
-					? and(
-							eq(patientInvoices.organizationId, organizationId),
-							or(invoiceTimeCondition, inArray(patientInvoices.id, changedInvoiceIds)),
-						)
-					: and(
-							eq(patientInvoices.organizationId, organizationId),
-							invoiceTimeCondition,
-						);
+			const patientsKeyset = buildTupleKeysetWhere(patients.updatedAt, patients.id, decodedCursor?.patients, since, isInitialSync);
+			const visitsKeyset = buildTupleKeysetWhere(visits.updatedAt, visits.id, decodedCursor?.visits, since, isInitialSync);
+			const diariesKeyset = buildTupleKeysetWhere(visitDiaries.updatedAt, visitDiaries.id, decodedCursor?.visitDiaries, since, isInitialSync);
+			const paymentsKeyset = buildTupleKeysetWhere(payments.updatedAt, payments.id, decodedCursor?.payments, since, isInitialSync);
+			const toothKeyset = buildTupleKeysetWhere(toothStates.updatedAt, toothStates.id, decodedCursor?.toothStates, since, isInitialSync);
+			const tombstonesKeyset = buildTupleKeysetWhere(syncTombstones.deletedAt, syncTombstones.id, decodedCursor?.tombstones, since, isInitialSync);
 
 			const [
 				rawPatients,
@@ -220,15 +339,15 @@ export class SyncStreamTransport {
 				rawAppointments,
 				rawToothStates,
 				rawInvoices,
+				rawTombstones,
 			] = await Promise.all([
 				tx
 					.select()
 					.from(patients)
 					.where(
-						and(
-							eq(patients.organizationId, organizationId),
-							isInitialSync ? sql`TRUE` : gte(patients.updatedAt, since),
-						),
+						patientsKeyset
+							? and(eq(patients.organizationId, organizationId), patientsKeyset)
+							: eq(patients.organizationId, organizationId),
 					)
 					.orderBy(asc(patients.updatedAt), asc(patients.id))
 					.limit(queryLimit),
@@ -236,10 +355,9 @@ export class SyncStreamTransport {
 					.select()
 					.from(visits)
 					.where(
-						and(
-							eq(visits.organizationId, organizationId),
-							isInitialSync ? sql`TRUE` : gte(visits.updatedAt, since),
-						),
+						visitsKeyset
+							? and(eq(visits.organizationId, organizationId), visitsKeyset)
+							: eq(visits.organizationId, organizationId),
 					)
 					.orderBy(asc(visits.updatedAt), asc(visits.id))
 					.limit(queryLimit),
@@ -247,10 +365,9 @@ export class SyncStreamTransport {
 					.select()
 					.from(visitDiaries)
 					.where(
-						and(
-							eq(visitDiaries.organizationId, organizationId),
-							isInitialSync ? sql`TRUE` : gte(visitDiaries.updatedAt, since),
-						),
+						diariesKeyset
+							? and(eq(visitDiaries.organizationId, organizationId), diariesKeyset)
+							: eq(visitDiaries.organizationId, organizationId),
 					)
 					.orderBy(asc(visitDiaries.updatedAt), asc(visitDiaries.id))
 					.limit(queryLimit),
@@ -258,10 +375,9 @@ export class SyncStreamTransport {
 					.select()
 					.from(payments)
 					.where(
-						and(
-							eq(payments.organizationId, organizationId),
-							isInitialSync ? sql`TRUE` : gte(payments.updatedAt, since),
-						),
+						paymentsKeyset
+							? and(eq(payments.organizationId, organizationId), paymentsKeyset)
+							: eq(payments.organizationId, organizationId),
 					)
 					.orderBy(asc(payments.updatedAt), asc(payments.id))
 					.limit(queryLimit),
@@ -275,10 +391,9 @@ export class SyncStreamTransport {
 					.select()
 					.from(toothStates)
 					.where(
-						and(
-							eq(toothStates.organizationId, organizationId),
-							isInitialSync ? sql`TRUE` : gte(toothStates.updatedAt, since),
-						),
+						toothKeyset
+							? and(eq(toothStates.organizationId, organizationId), toothKeyset)
+							: eq(toothStates.organizationId, organizationId),
 					)
 					.orderBy(asc(toothStates.updatedAt), asc(toothStates.id))
 					.limit(queryLimit),
@@ -288,7 +403,17 @@ export class SyncStreamTransport {
 					.where(invoiceCondition)
 					.orderBy(asc(patientInvoices.createdAt), asc(patientInvoices.id))
 					.limit(queryLimit),
-			]);
+				tx
+					.select()
+					.from(syncTombstones)
+					.where(
+						tombstonesKeyset
+							? and(eq(syncTombstones.organizationId, organizationId), tombstonesKeyset)
+							: eq(syncTombstones.organizationId, organizationId),
+					)
+					.orderBy(asc(syncTombstones.deletedAt), asc(syncTombstones.id))
+					.limit(queryLimit),
+			] as const);
 
 			const changedPatients = rawPatients.slice(0, limit);
 			const changedVisits = rawVisits.slice(0, limit);
@@ -297,6 +422,7 @@ export class SyncStreamTransport {
 			const changedAppointments = rawAppointments.slice(0, limit);
 			const changedToothStates = rawToothStates.slice(0, limit);
 			const changedInvoices = rawInvoices.slice(0, limit);
+			const changedTombstones = rawTombstones.slice(0, limit);
 
 			const hasMore =
 				rawVectors.length > limit ||
@@ -306,13 +432,28 @@ export class SyncStreamTransport {
 				rawPayments.length > limit ||
 				rawAppointments.length > limit ||
 				rawToothStates.length > limit ||
-				rawInvoices.length > limit;
+				rawInvoices.length > limit ||
+				rawTombstones.length > limit;
 
 			const serverTime = new Date().toISOString();
+			const nextCursor = hasMore
+				? encodeSyncPullCursor({
+						sinceIso: since.toISOString(),
+						vectors: extractLastPoint(changedVectors, "updatedAt", decodedCursor?.vectors),
+						patients: extractLastPoint(changedPatients, "updatedAt", decodedCursor?.patients),
+						visits: extractLastPoint(changedVisits, "updatedAt", decodedCursor?.visits),
+						visitDiaries: extractLastPoint(changedDiaries, "updatedAt", decodedCursor?.visitDiaries),
+						payments: extractLastPoint(changedPayments, "updatedAt", decodedCursor?.payments),
+						appointments: extractLastPoint(changedAppointments, "startsAt", decodedCursor?.appointments),
+						toothStates: extractLastPoint(changedToothStates, "updatedAt", decodedCursor?.toothStates),
+						invoices: extractLastPoint(changedInvoices, "createdAt", decodedCursor?.invoices),
+						tombstones: extractLastPoint(changedTombstones, "deletedAt", decodedCursor?.tombstones),
+					})
+				: null;
 
 			return {
 				serverTime,
-				nextCursor: hasMore ? serverTime : null,
+				nextCursor,
 				hasMore,
 				limit,
 				patients: changedPatients,
@@ -322,6 +463,7 @@ export class SyncStreamTransport {
 				appointments: changedAppointments,
 				toothStates: changedToothStates,
 				vectors: changedVectors,
+				tombstones: changedTombstones,
 				invoices: changedInvoices,
 			};
 		});

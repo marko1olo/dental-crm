@@ -62,6 +62,7 @@ export const patientReclamationCreateBodySchema = z
 			.nullable()
 			.optional(),
 		warrantyCertificateId: z.string().uuid().nullable().optional(),
+		certificateNumber: z.string().trim().max(128).nullable().optional(),
 		defectType: z.string().max(128).nullable().optional(),
 	})
 	.strict();

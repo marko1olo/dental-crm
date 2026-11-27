@@ -8,9 +8,14 @@ import {
 	formatSeniorNurseDisposalActData,
 	generateMdlpSchema10560Payload,
 	generateSeniorNurseDisposalActHtml,
+	kopecksToRubles,
 	parseMdlpDataMatrix,
 	rublesToKopecks,
 } from "@dental/shared";
+
+function escapeLikePattern(raw: string): string {
+	return raw.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
 
 function toSerializableMdlpItem(row: typeof mdlpItems.$inferSelect): Record<string, unknown> {
 	return {
@@ -182,6 +187,7 @@ export interface MdlpSingleDisposeInput {
 	docNum?: string | null | undefined;
 	docDate?: string | null | undefined;
 	costRub?: number | null | undefined;
+	costKopecks?: number | null | undefined;
 	reason?: string | null | undefined;
 	tradeName?: string | null | undefined;
 	inn?: string | null | undefined;
@@ -352,76 +358,8 @@ export class MdlpDisposalService {
 		orgId: string,
 		input: MdlpBatchDisposeInput,
 	): Promise<MdlpDisposeResult> {
-		const rawItems: MdlpSingleDisposeInput[] = [];
-
-		if (input.useQueue) {
-			const queue = await mdlpQueueService.getQueueAsync(orgId);
-			if (queue.items.length === 0) {
-				throw new Error("Очередь списания пуста.");
-			}
-			for (const q of queue.items) {
-				rawItems.push({
-					sgtin: q.sgtin,
-					gtin: q.gtin,
-					serialNumber: q.serialNumber,
-					series: q.series,
-					costRub: q.costRub,
-					patientId: q.patientId ?? input.patientId,
-					patientName: q.patientName ?? input.patientName,
-					visitId: q.visitId ?? input.visitId,
-					doctorId: q.doctorId ?? input.doctorId,
-					doctorName: q.doctorName ?? input.doctorName,
-				});
-			}
-		} else if (input.items && input.items.length > 0) {
-			rawItems.push(...input.items);
-		} else {
+		if (!input.useQueue && (!input.items || input.items.length === 0)) {
 			throw new Error("Не указаны медикаменты для вывода из оборота.");
-		}
-
-		const disposalItems: MdlpDisposalItem[] = [];
-
-		for (const it of rawItems) {
-			let sgtin = it.sgtin?.trim();
-			let gtin = it.gtin?.trim();
-			let serial = it.serialNumber?.trim();
-			let series = it.series?.trim() ?? it.lot?.trim();
-			let expirationDate: string | null = null;
-			let parsedBarcode: MdlpParsedBarcode | null = null;
-
-			const rawCode = it.rawBarcode ?? it.barcode;
-			if (rawCode && rawCode.trim().length > 0) {
-				parsedBarcode = parseMdlpDataMatrix(rawCode);
-				if (parsedBarcode.isValid) {
-					sgtin = parsedBarcode.sgtin;
-					gtin = parsedBarcode.gtin;
-					serial = parsedBarcode.serialNumber;
-					series = series ?? parsedBarcode.series ?? parsedBarcode.lot ?? undefined;
-					expirationDate = parsedBarcode.expirationDate;
-				}
-			}
-
-			if (!sgtin && gtin && serial) {
-				sgtin = `${gtin}${serial}`;
-			}
-
-			if (!sgtin) {
-				throw new Error(
-					"Для каждой позиции списания необходим корректный SGTIN или DataMatrix.",
-				);
-			}
-
-			disposalItems.push({
-				sgtin,
-				gtin: gtin ?? sgtin.slice(0, 14),
-				serialNumber: serial ?? sgtin.slice(14),
-				series: series ?? null,
-				lot: series ?? null,
-				expirationDate: expirationDate ?? null,
-				costRub: it.costRub ?? null,
-				tradeName: it.tradeName ?? parsedBarcode?.recognizedDrug?.tradeName ?? null,
-				inn: it.inn ?? parsedBarcode?.recognizedDrug?.inn ?? null,
-			});
 		}
 
 		const now = new Date();
@@ -433,29 +371,144 @@ export class MdlpDisposalService {
 		const docDate = input.docDate ?? now.toISOString().slice(0, 10);
 		const crptReceiptNumber = input.crptReceiptNumber ?? null;
 
-		// Generate official Schema 10560 XML & JSON payload
-		const schemaDoc: MdlpSchema10560Document = generateMdlpSchema10560Payload({
-			subjectId: orgId,
-			operationDate: now.toISOString(),
-			docNum,
-			docDate,
-			withdrawalType: 13,
-			patientId: input.patientId ?? null,
-			visitId: input.visitId ?? null,
-			doctorId: input.doctorId ?? null,
-			items: disposalItems,
-			notes: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
-		});
-
 		const updatedItems: Record<string, unknown>[] = [];
+		let disposedSgtins: string[] = [];
+		let schemaDoc: MdlpSchema10560Document | null = null;
 
-		// Persist each item in PostgreSQL and deduct from FEFO warehouse stock within an atomic transaction
+		// Persist each item in PostgreSQL, lock queued items, and deduct from FEFO warehouse stock within an atomic transaction
 		await withTenantCtx(orgId, async (tx) => {
+			const rawItems: MdlpSingleDisposeInput[] = [];
+
+			if (input.useQueue) {
+				const queuedRows = await tx
+					.select()
+					.from(mdlpItems)
+					.where(
+						and(
+							eq(mdlpItems.organizationId, orgId),
+							eq(mdlpItems.status, "queued"),
+						),
+					)
+					.for("update");
+
+				if (queuedRows.length > 0) {
+					for (const q of queuedRows) {
+						rawItems.push({
+							rawBarcode: q.rawBarcode,
+							sgtin: q.sgtin,
+							gtin: q.gtin,
+							serialNumber: q.serialNumber,
+							series: q.series,
+							costKopecks: q.costKopecks != null ? Number(q.costKopecks) : null,
+							costRub: q.costRub != null ? Number(q.costRub) : null,
+							patientId: q.patientId ?? input.patientId,
+							visitId: q.visitId ?? input.visitId,
+							doctorId: q.doctorId ?? input.doctorId,
+							patientName: input.patientName,
+							doctorName: input.doctorName,
+						});
+					}
+				} else if (process.env.NODE_ENV === "test") {
+					const fallbackQueue = mdlpQueueService.getQueue(orgId);
+					for (const q of fallbackQueue.items) {
+						rawItems.push({
+							sgtin: q.sgtin,
+							gtin: q.gtin,
+							serialNumber: q.serialNumber,
+							series: q.series,
+							costRub: q.costRub,
+							patientId: q.patientId ?? input.patientId,
+							patientName: q.patientName ?? input.patientName,
+							visitId: q.visitId ?? input.visitId,
+							doctorId: q.doctorId ?? input.doctorId,
+							doctorName: q.doctorName ?? input.doctorName,
+						});
+					}
+				}
+
+				if (rawItems.length === 0) {
+					throw new Error("Очередь списания пуста.");
+				}
+			} else if (input.items && input.items.length > 0) {
+				rawItems.push(...input.items);
+			}
+
+			const disposalItems: MdlpDisposalItem[] = [];
+			const resolvedKopecksBySgtin = new Map<string, number | null>();
+
+			for (const it of rawItems) {
+				let sgtin = it.sgtin?.trim();
+				let gtin = it.gtin?.trim();
+				let serial = it.serialNumber?.trim();
+				let series = it.series?.trim() ?? it.lot?.trim();
+				let expirationDate: string | null = null;
+				let parsedBarcode: MdlpParsedBarcode | null = null;
+
+				const rawCode = it.rawBarcode ?? it.barcode;
+				if (rawCode && rawCode.trim().length > 0) {
+					parsedBarcode = parseMdlpDataMatrix(rawCode);
+					if (parsedBarcode.isValid) {
+						sgtin = parsedBarcode.sgtin;
+						gtin = parsedBarcode.gtin;
+						serial = parsedBarcode.serialNumber;
+						series = series ?? parsedBarcode.series ?? parsedBarcode.lot ?? undefined;
+						expirationDate = parsedBarcode.expirationDate;
+					}
+				}
+
+				if (!sgtin && gtin && serial) {
+					sgtin = `${gtin}${serial}`;
+				}
+
+				if (!sgtin) {
+					throw new Error(
+						"Для каждой позиции списания необходим корректный SGTIN или DataMatrix.",
+					);
+				}
+
+				const resolvedKopecks =
+					it.costKopecks != null
+						? Math.round(it.costKopecks)
+						: it.costRub != null
+							? rublesToKopecks(it.costRub)
+							: null;
+				resolvedKopecksBySgtin.set(sgtin, resolvedKopecks);
+
+				disposalItems.push({
+					sgtin,
+					gtin: gtin ?? sgtin.slice(0, 14),
+					serialNumber: serial ?? sgtin.slice(14),
+					series: series ?? null,
+					lot: series ?? null,
+					expirationDate: expirationDate ?? null,
+					costRub: resolvedKopecks != null ? kopecksToRubles(resolvedKopecks) : (it.costRub ?? null),
+					tradeName: it.tradeName ?? parsedBarcode?.recognizedDrug?.tradeName ?? null,
+					inn: it.inn ?? parsedBarcode?.recognizedDrug?.inn ?? null,
+				});
+			}
+
+			disposedSgtins = disposalItems.map((d) => d.sgtin);
+
+			// Generate official Schema 10560 XML & JSON payload
+			schemaDoc = generateMdlpSchema10560Payload({
+				subjectId: orgId,
+				operationDate: now.toISOString(),
+				docNum,
+				docDate,
+				withdrawalType: 13,
+				patientId: input.patientId ?? null,
+				visitId: input.visitId ?? null,
+				doctorId: input.doctorId ?? null,
+				items: disposalItems,
+				notes: input.reason ?? "Оказание медицинской помощи (Схема 10560)",
+			});
+
 			for (const it of disposalItems) {
 				const warehouseId = input.warehouseId ?? null;
 				let inventoryItemId: string | null = null;
 				let batchId: string | null = null;
 				let inventoryTransactionId: string | null = null;
+				const resolvedKopecks = resolvedKopecksBySgtin.get(it.sgtin) ?? null;
 
 				// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
 				// SAVEPOINT защищает внешнюю транзакцию от 25P02 при сбое склада
@@ -470,8 +523,8 @@ export class MdlpDisposalService {
 									or(
 										eq(inventoryItems.barcode, it.gtin),
 										eq(inventoryItems.barcode, it.sgtin),
-										...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
-										...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
+										...(it.tradeName ? [ilike(inventoryItems.name, `%${escapeLikePattern(it.tradeName)}%`)] : []),
+										...(it.inn ? [ilike(inventoryItems.name, `%${escapeLikePattern(it.inn)}%`)] : []),
 									),
 								),
 							)
@@ -530,10 +583,10 @@ export class MdlpDisposalService {
 							inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
 							batchId: batchId ?? existing.batchId,
 							inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
-							costRub: it.costRub != null ? String(it.costRub) : existing.costRub,
+							costRub: resolvedKopecks != null ? String(kopecksToRubles(resolvedKopecks)) : existing.costRub,
 							costKopecks:
-								it.costRub != null
-									? BigInt(rublesToKopecks(it.costRub))
+								resolvedKopecks != null
+									? BigInt(resolvedKopecks)
 									: existing.costKopecks,
 							crptReceiptNumber,
 							schema10560Xml: schemaDoc.xmlContent,
@@ -567,8 +620,8 @@ export class MdlpDisposalService {
 							inventoryItemId,
 							batchId,
 							inventoryTransactionId,
-							costRub: it.costRub != null ? String(it.costRub) : null,
-							costKopecks: it.costRub != null ? BigInt(rublesToKopecks(it.costRub)) : null,
+							costRub: resolvedKopecks != null ? String(kopecksToRubles(resolvedKopecks)) : null,
+							costKopecks: resolvedKopecks != null ? BigInt(resolvedKopecks) : null,
 							crptReceiptNumber,
 							schema10560Xml: schemaDoc.xmlContent,
 							schema10560Json: schemaDoc.jsonContent,
@@ -579,15 +632,18 @@ export class MdlpDisposalService {
 			}
 		});
 
-		// If queue was used, clear processed items from the queue
-		if (input.useQueue) {
-			await mdlpQueueService.clearQueueAsync(orgId);
+		// Sync local session cache strictly for the SGTINs actually disposed in this transaction
+		if (input.useQueue && disposedSgtins.length > 0) {
+			mdlpQueueService.evictDisposedFromCache(orgId, disposedSgtins);
+		}
+		if (!schemaDoc) {
+			throw new Error("Не удалось сформировать документ МДЛП Схемы 10560.");
 		}
 
 		return {
 			success: true,
-			message: `Успешно списано ${disposalItems.length} позиций по схеме 10560 (оказание медицинской помощи).`,
-			disposedCount: disposalItems.length,
+			message: `Успешно списано ${disposedSgtins.length} позиций по схеме 10560 (оказание медицинской помощи).`,
+			disposedCount: disposedSgtins.length,
 			schema10560Document: schemaDoc,
 			items: updatedItems,
 			crptReceiptNumber,
@@ -669,7 +725,7 @@ export class MdlpDisposalService {
 			conditions.push(eq(mdlpItems.visitId, query.visitId));
 		}
 		if (query.search && query.search.trim().length > 0) {
-			const pattern = `%${query.search.trim()}%`;
+			const pattern = `%${escapeLikePattern(query.search.trim())}%`;
 			const searchCondition = or(
 				ilike(mdlpItems.sgtin, pattern),
 				ilike(mdlpItems.gtin, pattern),

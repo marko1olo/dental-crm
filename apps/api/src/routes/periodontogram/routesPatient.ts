@@ -176,6 +176,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 					status: body.status === "closed" ? "closed" : "draft",
 					autoClose: Boolean(body.autoClose),
 					psrData: rawPsrData,
+					tx,
 				});
 				return { patientId: resolvedPatientId, result: upsertResult };
 			});

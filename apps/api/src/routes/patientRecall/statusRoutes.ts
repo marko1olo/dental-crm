@@ -8,9 +8,7 @@ import { roleHasPermission } from "../../security/permissions.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { recallCandidateBelongsTo } from "../../services/patients/recallCandidates.js";
 import { wsBroker } from "../../services/websocketBroker.js";
-import { badRequest, statusUpdateSchema } from "./types.js";
-
-const uuidSchema = z.string().uuid();
+import { badRequest, recallStatusParamsSchema, statusUpdateSchema } from "./types.js";
 
 export function registerStatusRoutes(app: FastifyInstance) {
 	const handleStatusUpdate = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -32,14 +30,15 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { patientId } = request.params as { patientId: string };
-		if (!patientId || !uuidSchema.safeParse(patientId).success) {
+		const parsedParams = recallStatusParamsSchema.safeParse(request.params ?? {});
+		if (!parsedParams.success) {
 			return badRequest(reply, "Некорректный идентификатор пациента.");
 		}
+		const { patientId } = parsedParams.data;
 
 		const parsed = statusUpdateSchema.safeParse(request.body);
 		if (!parsed.success) {
-			return badRequest(reply, "Укажите новый статус пациента.");
+			return badRequest(reply, "Укажите допустимый статус профосмотра пациента.");
 		}
 
 		const { status, channel, note } = parsed.data;
@@ -59,6 +58,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 				!(await recallCandidateBelongsTo(
 					context.organizationId,
 					patientId,
+					tx,
 				))
 			) {
 				return false;

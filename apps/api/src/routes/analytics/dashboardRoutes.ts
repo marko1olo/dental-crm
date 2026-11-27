@@ -2,7 +2,8 @@ import { and, eq, gte, inArray, lte, sql, type Column } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { withTenantCtx } from "../../db/rls.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
+import { withTenantReadCtx } from "../../db/rls.js";
 import {
 	isIncomePaymentRowSql,
 	paymentAbsKopecksSql,
@@ -43,40 +44,44 @@ const dashboardQuerySchema = z
 	.strict();
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
-	app.get("/api/analytics/dashboard", async (request, reply) => {
-		// БЫЛО: `const orgId = await requireClinicalReadAccess(...)` — этот guard
-		// возвращает Promise<boolean> (проверка секрета), а не идентификатор
-		// организации. При успешной проверке orgId === true, поэтому условие
-		// `typeof orgId !== "string"` срабатывало ВСЕГДА и обработчик выходил до
-		// первого запроса к базе: весь дашборд молча отдавал пустой ответ.
-		// Типизация это не ловит — сравнение typeof у boolean легально.
-		// Теперь два шага явно разделены: гейт по секрету и получение арендатора
-		// из подписанного токена.
-		const orgId = await requireExecutiveAccess(request, reply);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/analytics/dashboard",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			// БЫЛО: `const orgId = await requireClinicalReadAccess(...)` — этот guard
+			// возвращает Promise<boolean> (проверка секрета), а не идентификатор
+			// организации. При успешной проверке orgId === true, поэтому условие
+			// `typeof orgId !== "string"` срабатывало ВСЕГДА и обработчик выходил до
+			// первого запроса к базе: весь дашборд молча отдавал пустой ответ.
+			// Типизация это не ловит — сравнение typeof у boolean легально.
+			// Теперь два шага явно разделены: гейт по секрету и получение арендатора
+			// из подписанного токена.
+			const orgId = await requireExecutiveAccess(request, reply);
+			if (!orgId) return;
 
-		const queryParse = dashboardQuerySchema.safeParse(request.query ?? {});
-		if (!queryParse.success) {
-			return reply.code(400).send({
-				success: false,
-				error: "ValidationError",
-				message:
-					queryParse.error.issues.map((i) => i.message).join(", ") ||
-					"Некорректные параметры запроса дашборда аналитики",
-			});
-		}
+			const queryParse = dashboardQuerySchema.safeParse(request.query ?? {});
+			if (!queryParse.success) {
+				return reply.code(400).send({
+					success: false,
+					error: "ValidationError",
+					message:
+						queryParse.error.issues.map((i) => i.message).join(", ") ||
+						"Некорректные параметры запроса дашборда аналитики",
+				});
+			}
 
-		try {
-			const { range, branchId } = queryParse.data;
-			const now = new Date();
-			let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
-			if (range === "today") mappedPeriod = "day";
-			else if (range === "week") mappedPeriod = "week";
-			else if (range === "month") mappedPeriod = "month";
-			else if (range === "quarter" || range === "last_3_months") mappedPeriod = "quarter";
-			else if (range === "year" || range === "this_year") mappedPeriod = "year";
+			try {
+				const { range, branchId } = queryParse.data;
+				const now = new Date();
+				let mappedPeriod: "day" | "week" | "month" | "quarter" | "year" | undefined;
+				if (range === "today") mappedPeriod = "day";
+				else if (range === "week") mappedPeriod = "week";
+				else if (range === "month") mappedPeriod = "month";
+				else if (range === "quarter" || range === "last_3_months") mappedPeriod = "quarter";
+				else if (range === "year" || range === "this_year") mappedPeriod = "year";
 
-			const data = await withTenantCtx(orgId, async (tx) => {
+				const data = await withTenantReadCtx(orgId, async (tx) => {
 				const timeZone = await clinicTimeZone(orgId, tx);
 				let startDate: Date | undefined;
 
@@ -442,14 +447,15 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 			});
 
 			return { success: true, data };
-		} catch (e) {
-			request.log.error({ err: e }, "Не удалось построить аналитику");
-			return reply.code(503).send({
-				success: false,
-				error: "AnalyticsUnavailable",
-				message:
-					"Не удалось построить аналитику. Данные не потеряны, повторите позже.",
-			});
-		}
+			} catch (e) {
+				request.log.error({ err: e }, "Не удалось построить аналитику");
+				return reply.code(503).send({
+					success: false,
+					error: "AnalyticsUnavailable",
+					message:
+						"Не удалось построить аналитику. Данные не потеряны, повторите позже.",
+				});
+			}
+		},
 	});
 }

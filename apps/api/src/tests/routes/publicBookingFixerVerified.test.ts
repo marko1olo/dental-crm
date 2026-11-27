@@ -168,13 +168,20 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		assert.equal(body.success, true);
 		assert.equal(body.status, "preliminary");
 		assert.equal(body.isPreliminary, true);
-		assert.ok(body.appointment?.id);
+		assert.ok(body.referenceNumber);
+		assert.equal(body.appointment, undefined);
 
 		// Verify appointment in DB has status planned
 		const [createdAppt] = await db
 			.select()
 			.from(appointments)
-			.where(eq(appointments.id, body.appointment.id))
+			.where(
+				and(
+					eq(appointments.organizationId, ORG_ID),
+					eq(appointments.doctorUserId, DOCTOR_ID),
+					eq(appointments.startsAt, new Date(startsAt)),
+				),
+			)
 			.limit(1);
 
 		assert.equal(createdAppt?.status, "planned");
@@ -229,12 +236,20 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 		const body = JSON.parse(bookRes.body);
 		assert.equal(body.success, true);
 		assert.equal(body.status, "confirmed");
+		assert.ok(body.referenceNumber);
+		assert.equal(body.appointment, undefined);
 
 		// Verify appointment in DB has status confirmed
 		const [createdAppt] = await db
 			.select()
 			.from(appointments)
-			.where(eq(appointments.id, body.appointment.id))
+			.where(
+				and(
+					eq(appointments.organizationId, ORG_ID),
+					eq(appointments.doctorUserId, DOCTOR_ID),
+					eq(appointments.startsAt, new Date(startsAt)),
+				),
+			)
 			.limit(1);
 
 		assert.equal(createdAppt?.status, "confirmed");
@@ -552,5 +567,69 @@ describe("Domain 4: Public Booking Fixer Verified Suite (Mandates 8e, 8n, 8x, 8a
 			await settingsApp.close();
 			await purgeFixtureOrganizations([WORK_ORG_ID]);
 		}
+	});
+
+	it("6. [W16-BK-01] rejects patientId in public /book payload and returns minimal public DTO without internal UUIDs", async (t) => {
+		if (!databaseAvailable) return t.skip("Database not available");
+
+		const [foreignPatient] = await withFixtureTenant(ORG_ID, async (tx) => {
+			return tx
+				.insert(patients)
+				.values({
+					organizationId: ORG_ID,
+					fullName: "Сторонний Пациент 152-ФЗ",
+					phone: "+79001112233",
+					status: "active",
+				})
+				.returning({ id: patients.id });
+		});
+		assert.ok(foreignPatient);
+
+		const res = await app.inject({
+			method: "POST",
+			url: `/${ORG_ID}/book`,
+			payload: {
+				doctorId: DOCTOR_ID,
+				patientId: foreignPatient.id,
+				startsAt: "2029-06-15T12:00:00.000Z",
+				endsAt: "2029-06-15T12:30:00.000Z",
+				patientName: "Посторонний Клиент",
+				patientPhone: "+79009998877",
+			},
+		});
+		assert.equal(res.statusCode, 400, `Public /book must reject arbitrary patientId via .strict(), got ${res.statusCode}: ${res.body}`);
+
+		const waitlistIdor = await app.inject({
+			method: "POST",
+			url: `/${ORG_ID}/waitlist`,
+			payload: {
+				patientId: foreignPatient.id,
+				patientName: "Чужой Вход",
+				patientPhone: "+79009998877",
+			},
+		});
+		assert.equal(waitlistIdor.statusCode, 403, `Waitlist must reject mismatched patientId phone, got ${waitlistIdor.statusCode}: ${waitlistIdor.body}`);
+	});
+
+	it("7. [W16-BK-02] blocks OTP brute-force bypass after 3 failed DB attempts without falling back to in-memory cache", async (t) => {
+		if (!databaseAvailable) return t.skip("Database not available");
+
+		const targetPhone = "+7 (926) 777-88-99";
+		const issued = await requestPhoneVerification(targetPhone, "sms", "127.0.0.2", ORG_ID);
+		assert.equal(issued.allowed, true);
+		const validCode = issued.developerCode ?? getActiveCodeForTesting(targetPhone);
+		assert.ok(validCode);
+
+		const { verifyPhoneOtpAsync } = await import("../../routes/publicBooking/smsVerificationAndSpamGate.js");
+		const wrongCode = validCode === "000000" ? "111111" : "000000";
+
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			const res = await verifyPhoneOtpAsync(targetPhone, wrongCode, ORG_ID);
+			assert.equal(res.valid, false, `Attempt ${attempt} with wrong code must fail`);
+		}
+
+		// 4th attempt even with validCode MUST fail (exhausted in DB AND purged from in-memory map by challengeKey)
+		const bypassAttempt = await verifyPhoneOtpAsync(targetPhone, validCode, ORG_ID);
+		assert.equal(bypassAttempt.valid, false, "4th attempt after DB exhaustion must NOT bypass via in-memory map");
 	});
 });

@@ -2,9 +2,9 @@
  * Маршруты задач CRM (CRM Tasks & Tickets).
  *
  * Мандаты 8k, 8s, 8e, 8d:
- * - Снижение трения: быстрые 1-клик шаблоны стоматологических задач
- * - Автономия врача: 1-клик смена статуса без обязательного ввода комментариев
- * - Паритет со StomX (GET /api/tasks, POST /api/tasks, PUT /api/tasks/:id)
+ * - Снижение трения: быстрые шаблоны стоматологических задач
+ * - Автономия врача: быстрая смена статуса без обязательного ввода комментариев
+ * - Полный жизненный цикл задач (GET /api/tasks, POST /api/tasks, PUT /api/tasks/:id)
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
@@ -95,25 +95,43 @@ export const CANONICAL_DENTAL_TASK_PRESETS: readonly TaskPresetDto[] = [
 	},
 ];
 
-const createTaskBodySchema = z.object({
-	title: z.string().min(1, "Название задачи обязательно"),
-	description: z.string().nullable().optional(),
-	patientId: z.string().regex(UUID_REGEX, "patientId должен быть UUID"),
-	assignedToId: z
-		.string()
-		.regex(UUID_REGEX, "assignedToId должен быть UUID")
-		.nullable()
-		.optional(),
-	priority: z
-		.enum(["low", "normal", "high", "urgent"])
-		.optional()
-		.default("normal"),
-	taskType: z.string().optional(),
-});
+const createTaskBodySchema = z
+	.object({
+		title: z.string().min(1, "Название задачи обязательно"),
+		description: z.string().nullable().optional(),
+		patientId: z.string().regex(UUID_REGEX, "patientId должен быть UUID"),
+		assignedToId: z
+			.string()
+			.regex(UUID_REGEX, "assignedToId должен быть UUID")
+			.nullable()
+			.optional(),
+		priority: z
+			.enum(["low", "normal", "high", "urgent"])
+			.optional()
+			.default("normal"),
+		taskType: z.string().optional(),
+	})
+	.strict();
 
-const updateTaskStatusBodySchema = z.object({
-	status: clinicalTaskStatusSchema,
-});
+const updateTaskStatusBodySchema = z
+	.object({
+		status: clinicalTaskStatusSchema,
+	})
+	.strict();
+
+const getTasksQuerySchema = z
+	.object({
+		patientId: z.string().optional(),
+		status: z.string().optional(),
+		assignedToId: z.string().optional(),
+	})
+	.strict();
+
+const taskIdParamSchema = z
+	.object({
+		id: z.string().regex(UUID_REGEX),
+	})
+	.strict();
 
 export const taskIdempotencyMutationOptionsWithOrgIdContext = {
 	schema: {
@@ -137,12 +155,16 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 	/**
 	 * Получение канонических шаблонов стоматологических задач (Мандат 8k).
 	 */
-	app.get("/api/tasks/presets", async (_request, reply) => {
+	app.get("/api/tasks/presets", async (request, reply) => {
+		if (!(await requireClinicalReadAccess(request, reply, "tasks presets read")))
+			return;
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
 		return reply.code(200).send(CANONICAL_DENTAL_TASK_PRESETS);
 	});
 
 	/**
-	 * Получение списка задач CRM по организации (StomX паритет 370).
+	 * Получение списка задач CRM по организации.
 	 */
 	app.get("/api/tasks", async (request, reply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "tasks read")))
@@ -150,13 +172,14 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const query = (
-			request.query && typeof request.query === "object" ? request.query : {}
-		) as {
-			patientId?: string;
-			status?: string;
-			assignedToId?: string;
-		};
+		const queryParsed = getTasksQuerySchema.safeParse(request.query ?? {});
+		if (!queryParsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры фильтрации задач.",
+			});
+		}
+		const query = queryParsed.data;
 
 		const patientId =
 			query.patientId && UUID_REGEX.test(query.patientId)
@@ -179,8 +202,8 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			if (assignedToId) filters.assignedToId = assignedToId;
 			if (status) filters.status = status;
 
-			const tasks = await withTenantCtx(orgId, async () =>
-				getAllTaskTicketsFromDb(orgId, filters),
+			const tasks = await withTenantCtx(orgId, async (tx) =>
+				getAllTaskTicketsFromDb(orgId, filters, tx),
 			);
 			return reply.code(200).send(tasks);
 		} catch (error: unknown) {
@@ -193,7 +216,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 	});
 
 	/**
-	 * Создание задачи CRM (StomX паритет 371, 1 клик).
+	 * Создание задачи CRM.
 	 */
 	app.post("/api/tasks", taskIdempotencyMutationOptionsWithOrgIdContext, async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "tasks write")))
@@ -217,13 +240,18 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 			(currentUserId && UUID_REGEX.test(currentUserId) ? currentUserId : null);
 
 		try {
-			const task = await withTenantCtx(orgId, async () =>
-				createPatientTaskTicketInDb(orgId, body.patientId, {
-					title: body.title.trim(),
-					description: body.description?.trim() ?? null,
-					assignedToId: effectiveAssignedToId,
-					priority: body.priority,
-				}),
+			const task = await withTenantCtx(orgId, async (tx) =>
+				createPatientTaskTicketInDb(
+					orgId,
+					body.patientId,
+					{
+						title: body.title.trim(),
+						description: body.description?.trim() ?? null,
+						assignedToId: effectiveAssignedToId,
+						priority: body.priority,
+					},
+					tx,
+				),
 			);
 
 			return reply.code(201).send(task);
@@ -237,7 +265,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 	});
 
 	/**
-	 * Закрытие или смена статуса задачи (StomX паритет 372, 1 клик, Мандат 8e).
+	 * Закрытие или смена статуса задачи (Мандат 8e).
 	 */
 	const handleStatusUpdate = async (
 		request: FastifyRequest,
@@ -248,9 +276,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const paramsParsed = z
-			.object({ id: z.string().regex(UUID_REGEX) })
-			.safeParse(request.params ?? {});
+		const paramsParsed = taskIdParamSchema.safeParse(request.params ?? {});
 		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -268,11 +294,12 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		}
 
 		try {
-			const updated = await withTenantCtx(orgId, async () =>
+			const updated = await withTenantCtx(orgId, async (tx) =>
 				setTaskTicketStatusByIdInDb(
 					orgId,
 					id,
 					parsed.data.status,
+					tx,
 				),
 			);
 			if (!updated) {
@@ -305,9 +332,7 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const paramsParsed = z
-			.object({ id: z.string().regex(UUID_REGEX) })
-			.safeParse(request.params ?? {});
+		const paramsParsed = taskIdParamSchema.safeParse(request.params ?? {});
 		if (!paramsParsed.success) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -317,8 +342,8 @@ export async function registerTasksRoutes(app: FastifyInstance) {
 		const { id } = paramsParsed.data;
 
 		try {
-			const deleted = await withTenantCtx(orgId, async () =>
-				deleteTaskTicketByIdInDb(orgId, id),
+			const deleted = await withTenantCtx(orgId, async (tx) =>
+				deleteTaskTicketByIdInDb(orgId, id, tx),
 			);
 			if (!deleted) {
 				return reply.code(404).send({

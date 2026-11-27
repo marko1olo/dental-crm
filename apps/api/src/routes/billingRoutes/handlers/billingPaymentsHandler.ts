@@ -3,7 +3,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
 import { isValidUuid } from "../../../utils/httpIdempotency.js";
 
@@ -67,7 +67,7 @@ export async function handleGetBillingPayments(
 		conditions.push(sql`${payments.paidAt} >= ${dateThreshold}`);
 	}
 
-	const rows = await withTenantCtx(orgId, async (tx) =>
+	const rows = await withTenantReadCtx(orgId, async (tx) =>
 		tx
 			.select()
 			.from(payments)

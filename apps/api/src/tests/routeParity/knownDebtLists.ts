@@ -28,15 +28,13 @@ export const KNOWN_MISSING: readonly string[] = [
  *
  * Аудит расхождений:
  * - GET /api/settings/staff: в PayrollStandaloneLauncher.tsx зовётся GET, но на сервере сотрудники живут на /api/staff
- * - POST /api/clinical/tasks: в clinicalTasksState.ts зовётся POST на /api/clinical/tasks вместо /api/tasks
  */
 export const KNOWN_METHOD_MISMATCH: readonly string[] = [
 	"GET /api/settings/staff",
-	"POST /api/clinical/tasks",
 ];
 
 /**
  * Потолки списков долга. Любое увеличение требует явного пересмотра лимита.
  */
 export const MAX_KNOWN_MISSING = 1;
-export const MAX_KNOWN_METHOD_MISMATCH = 2;
+export const MAX_KNOWN_METHOD_MISMATCH = 1;

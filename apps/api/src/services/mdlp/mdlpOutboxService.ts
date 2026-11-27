@@ -206,21 +206,6 @@ export class MdlpOutboxService {
 						.where(eq(mdlpItems.id, q.id));
 				}
 			}
-
-			// Если в очереди не нашлось физических SGTIN, формируем технологическую запись
-			// для учета в журнале выбытия клиники
-			if (itemsForDisposal.length === 0) {
-				const effectiveDrugName = drugName || "Артикаин 4% с эпинефрином 1:100 000";
-				itemsForDisposal.push({
-					sgtin: `VIRTUAL-${visitId.slice(0, 8)}-${Date.now().toString(36).toUpperCase()}`,
-					gtin: "04600000000000",
-					serialNumber: `SN${visitId.slice(0, 8)}`,
-					tradeName: effectiveDrugName,
-					inn: "Артикаин + Эпинефрин",
-					series: "ТЕХКАРТА",
-					costRub: 145,
-				});
-			}
 		}
 
 		if (itemsForDisposal.length === 0) {

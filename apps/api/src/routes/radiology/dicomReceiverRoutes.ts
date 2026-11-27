@@ -3,6 +3,7 @@
  * и мостом мониторинга аппаратов Vatech (FMData/Files).
  */
 
+import path from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -10,6 +11,7 @@ import {
 	requireClinicalReadAccess,
 	requireNonDoctorAccess,
 } from "../../accessGuard.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { extractIdempotencyKey, isValidUuid } from "../../utils/httpIdempotency.js";
 import { getImagingOrganizationId } from "../imaging/imagingHelpers.js";
 import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
@@ -19,6 +21,60 @@ import {
 	vatechDirectBridgeService,
 } from "../../services/dicom/index.js";
 
+const DICOM_ADMIN_ROLES = new Set(["owner", "admin", "director", "superadmin"]);
+
+async function requireDicomServiceAdminAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	protectedArea: string,
+): Promise<boolean> {
+	if (!(await requireNonDoctorAccess(request, reply, protectedArea))) {
+		return false;
+	}
+	const identity = getRequestIdentity(request);
+	if (identity.verified && (!identity.role || !DICOM_ADMIN_ROLES.has(identity.role))) {
+		reply.code(403).send({
+			error: "AdminRoleRequired",
+			protectedArea,
+			message: "Управление DICOM SCP и Vatech Bridge доступно только администратору или владельцу клиники.",
+		});
+		return false;
+	}
+	return true;
+}
+
+function sanitizeScpStatsForTenant(
+	organizationId: string,
+	stats: ReturnType<typeof dicomCStoreScpServer.getStats>,
+) {
+	const isOwnTenant =
+		!stats.defaultOrganizationId || stats.defaultOrganizationId === organizationId;
+	return {
+		...stats,
+		defaultOrganizationId: isOwnTenant ? stats.defaultOrganizationId : null,
+	};
+}
+
+function sanitizeBridgeStatusForTenant(
+	organizationId: string,
+	status: ReturnType<typeof vatechDirectBridgeService.getStatus>,
+) {
+	const isOwnTenant =
+		!status.defaultOrganizationId || status.defaultOrganizationId === organizationId;
+	return {
+		...status,
+		defaultOrganizationId: isOwnTenant ? status.defaultOrganizationId : null,
+		watchedDirectory:
+			isOwnTenant && status.watchedDirectory
+				? path.basename(status.watchedDirectory)
+				: null,
+		lastDetectedFile:
+			isOwnTenant && status.lastDetectedFile
+				? path.basename(status.lastDetectedFile)
+				: null,
+	};
+}
+
 export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	/**
 	 * GET /api/radiology/dicom/server/status
@@ -26,12 +82,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 */
 	app.get("/api/radiology/dicom/server/status", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "radiology dicom status"))) return;
+		const organizationId = getImagingOrganizationId(request, reply);
+		if (!organizationId) return;
 
-		const scpStats = dicomCStoreScpServer.getStats();
-		const bridgeStats = vatechDirectBridgeService.getStatus();
+		const scpStats = sanitizeScpStatsForTenant(
+			organizationId,
+			dicomCStoreScpServer.getStats(),
+		);
+		const bridgeStats = sanitizeBridgeStatusForTenant(
+			organizationId,
+			vatechDirectBridgeService.getStatus(),
+		);
 
 		return reply.send({
 			success: true,
+			organizationId,
 			scpServer: scpStats,
 			vatechBridge: bridgeStats,
 		});
@@ -42,9 +107,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Запуск TCP-сервера DICOM C-STORE SCP.
 	 */
 	app.post("/api/radiology/dicom/server/start", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireNonDoctorAccess(request, reply, "start dicom scp server"))) return;
+		if (!(await requireDicomServiceAdminAccess(request, reply, "start dicom scp server"))) return;
 		const organizationId = getImagingOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		const currentStats = dicomCStoreScpServer.getStats();
+		if (
+			currentStats.isRunning &&
+			currentStats.defaultOrganizationId &&
+			currentStats.defaultOrganizationId !== organizationId
+		) {
+			return reply.code(409).send({
+				error: "TenantSingletonConflict",
+				message: "DICOM C-STORE SCP уже запущен в контексте другой организации.",
+			});
+		}
 
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
@@ -77,7 +154,7 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			return reply.send({
 				success: true,
 				message: `DICOM C-STORE SCP сервер успешно запущен на порту ${dicomCStoreScpServer.getPort()}.`,
-				status: dicomCStoreScpServer.getStats(),
+				status: sanitizeScpStatsForTenant(organizationId, dicomCStoreScpServer.getStats()),
 			});
 		} catch (err) {
 			request.log.error({ err }, "Failed to start DICOM SCP server");
@@ -93,9 +170,21 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Остановка TCP-сервера DICOM C-STORE SCP.
 	 */
 	app.post("/api/radiology/dicom/server/stop", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireNonDoctorAccess(request, reply, "stop dicom scp server"))) return;
+		if (!(await requireDicomServiceAdminAccess(request, reply, "stop dicom scp server"))) return;
 		const organizationId = getImagingOrganizationId(request, reply);
 		if (!organizationId) return;
+
+		const currentStats = dicomCStoreScpServer.getStats();
+		if (
+			currentStats.isRunning &&
+			currentStats.defaultOrganizationId &&
+			currentStats.defaultOrganizationId !== organizationId
+		) {
+			return reply.code(409).send({
+				error: "TenantSingletonConflict",
+				message: "Невозможно остановить DICOM SCP сервер другой организации.",
+			});
+		}
 
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
@@ -113,7 +202,7 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			return reply.send({
 				success: true,
 				message: "DICOM C-STORE SCP сервер остановлен.",
-				status: dicomCStoreScpServer.getStats(),
+				status: sanitizeScpStatsForTenant(organizationId, dicomCStoreScpServer.getStats()),
 			});
 		} catch (err) {
 			request.log.error({ err }, "Failed to stop DICOM SCP server");
@@ -194,10 +283,22 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Запуск фонового мониторинга локальной папки Vatech.
 	 */
 	app.post("/api/radiology/dicom/bridge/start", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireNonDoctorAccess(request, reply, "start vatech bridge"))) return;
+		if (!(await requireDicomServiceAdminAccess(request, reply, "start vatech bridge"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const currentBridge = vatechDirectBridgeService.getStatus();
+		if (
+			currentBridge.isWatching &&
+			currentBridge.defaultOrganizationId &&
+			currentBridge.defaultOrganizationId !== orgId
+		) {
+			return reply.code(409).send({
+				error: "TenantSingletonConflict",
+				message: "Мониторинг папки Vatech уже запущен в контексте другой организации.",
+			});
+		}
 
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
@@ -240,7 +341,7 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			return reply.send({
 				success: true,
 				message: "Мониторинг папки аппаратов Vatech запущен.",
-				status: vatechDirectBridgeService.getStatus(),
+				status: sanitizeBridgeStatusForTenant(orgId, vatechDirectBridgeService.getStatus()),
 			});
 		} catch (err) {
 			request.log.error({ err }, "Failed to start Vatech bridge");
@@ -256,10 +357,22 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 	 * Остановка мониторинга папки Vatech.
 	 */
 	app.post("/api/radiology/dicom/bridge/stop", async (request: FastifyRequest, reply: FastifyReply) => {
-		if (!(await requireNonDoctorAccess(request, reply, "stop vatech bridge"))) return;
+		if (!(await requireDicomServiceAdminAccess(request, reply, "stop vatech bridge"))) return;
 
 		const orgId = getImagingOrganizationId(request, reply);
 		if (!orgId) return;
+
+		const currentBridge = vatechDirectBridgeService.getStatus();
+		if (
+			currentBridge.isWatching &&
+			currentBridge.defaultOrganizationId &&
+			currentBridge.defaultOrganizationId !== orgId
+		) {
+			return reply.code(409).send({
+				error: "TenantSingletonConflict",
+				message: "Невозможно остановить мониторинг Vatech другой организации.",
+			});
+		}
 
 		const idempotencyKey = extractIdempotencyKey(request);
 		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
@@ -277,7 +390,7 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			return reply.send({
 				success: true,
 				message: "Мониторинг папки Vatech остановлен.",
-				status: vatechDirectBridgeService.getStatus(),
+				status: sanitizeBridgeStatusForTenant(orgId, vatechDirectBridgeService.getStatus()),
 			});
 		} catch (err) {
 			request.log.error({ err }, "Failed to stop Vatech bridge");
@@ -350,7 +463,7 @@ export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
 			success: true,
 			message: `Сканирование завершено: обнаружено ${scannedCount} файлов снимков.`,
 			scannedCount,
-			status: vatechDirectBridgeService.getStatus(),
+			status: sanitizeBridgeStatusForTenant(orgId, vatechDirectBridgeService.getStatus()),
 		});
 	});
 }

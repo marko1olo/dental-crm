@@ -1,59 +1,65 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { TelegramAccountService } from "../../services/telegram/TelegramAccountService.js";
 
 export function registerTelegramAccountVerify2faRoute(app: FastifyInstance) {
-	app.post("/api/telegram/account/verify-2fa", async (request: FastifyRequest, reply: FastifyReply) => {
-		const orgId = await requireResolvedOrganizationId(
-			request,
-			reply,
-			"telegram account verify-2fa",
-		);
-		if (!orgId) return;
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/account/verify-2fa",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			const orgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"telegram account verify-2fa",
+			);
+			if (!orgId) return;
 
-		const schema = z.object({
-			phone: z.string().trim().min(5, "Укажите номер телефона"),
-			password: z.string().trim().min(1, "Укажите пароль 2FA"),
-		}).strict();
+			const schema = z.object({
+				phone: z.string().trim().min(5, "Укажите номер телефона"),
+				password: z.string().trim().min(1, "Укажите пароль 2FA"),
+			}).strict();
 
-		const parsed = schema.safeParse(request.body);
-		if (!parsed.success) {
-			return reply.code(400).send({
-				ok: false,
-				error: "ValidationError",
-				message: parsed.error.issues[0]?.message || "Укажите пароль двухфакторной аутентификации.",
+			const parsed = schema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					ok: false,
+					error: "ValidationError",
+					message: parsed.error.issues[0]?.message || "Укажите пароль двухфакторной аутентификации.",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const userId = identity.verified ? identity.userId : null;
+			const clinicId = identity.verified ? identity.organizationId : null;
+
+			const result = await TelegramAccountService.verify2fa({
+				organizationId: orgId,
+				phone: parsed.data.phone,
+				password: parsed.data.password,
+				userId,
+				clinicId,
 			});
-		}
 
-		const identity = getRequestIdentity(request);
-		const userId = identity.verified ? identity.userId : null;
-		const clinicId = identity.verified ? identity.organizationId : null;
+			if (!result.ok) {
+				const statusCode = result.configured === false ? 501 : 400;
+				return reply.code(statusCode).send({
+					ok: false,
+					...(result.configured === false ? { configured: false } : {}),
+					error: result.errorCode || "2FaFailed",
+					message: result.error || "Неверный облачный пароль Telegram.",
+				});
+			}
 
-		const result = await TelegramAccountService.verify2fa({
-			organizationId: orgId,
-			phone: parsed.data.phone,
-			password: parsed.data.password,
-			userId,
-			clinicId,
-		});
-
-		if (!result.ok) {
-			const statusCode = result.configured === false ? 501 : 400;
-			return reply.code(statusCode).send({
-				ok: false,
-				...(result.configured === false ? { configured: false } : {}),
-				error: result.errorCode || "2FaFailed",
-				message: result.error || "Неверный облачный пароль Telegram.",
+			return reply.code(200).send({
+				ok: true,
+				connected: true,
+				account: result.account,
+				message: "Двухфакторная аутентификация пройдена. Аккаунт подключен.",
 			});
-		}
-
-		return reply.code(200).send({
-			ok: true,
-			connected: true,
-			account: result.account,
-			message: "Двухфакторная аутентификация пройдена. Аккаунт подключен.",
-		});
+		},
 	});
 }

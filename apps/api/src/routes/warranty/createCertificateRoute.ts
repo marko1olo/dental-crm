@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { eq } from "drizzle-orm";
 import { generateUuidV7 } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import { patientRecalls, warrantyCertificates } from "../../db/schema.js";
@@ -97,6 +98,7 @@ export function registerCreateCertificateRoute(app: FastifyInstance) {
 				})
 				.onConflictDoUpdate({
 					target: warrantyCertificates.certificateNumber,
+					setWhere: eq(warrantyCertificates.organizationId, context.organizationId),
 					set: {
 						status: data.status,
 						itemsJson: normalizedItems,

@@ -40,7 +40,8 @@ export function calculateOnlineBookingFunnel(params: {
 		booked,
 		onlineLeads.filter((l) => l.status !== "trash" && l.status !== "no_answer").length,
 	);
-	const views = Math.max(slotSelected, onlineLeads.length);
+	// Отдельных событий просмотров виджета нет — не синтезируем views из количества лидов
+	const views = 0;
 
 	// Извлекаем идентификаторы пациентов когорты онлайн-записи
 	const onlinePatientIds = new Set<string>();

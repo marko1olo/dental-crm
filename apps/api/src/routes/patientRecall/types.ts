@@ -41,9 +41,42 @@ export const listQuerySchema = z
 
 export const inviteSchema = recallInviteSchema;
 
+export const recallStatusParamsSchema = z
+	.object({
+		patientId: z.string().uuid("Некорректный идентификатор пациента."),
+	})
+	.strict();
+
+export const recallStatusEnum = z.enum([
+	"due_now",
+	"invited",
+	"contacted",
+	"scheduled",
+	"declined",
+	"completed",
+	"reached",
+	"confirmed",
+	"cancelled",
+	"no_answer",
+	"failed",
+	"pending",
+	"not_called",
+	"snoozed",
+	"needs_review",
+	"sent",
+]);
+
 export const statusUpdateSchema = z
 	.object({
-		status: z.string().min(1).max(50),
+		status: z
+			.string()
+			.trim()
+			.min(1)
+			.max(50)
+			.refine(
+				(val) => recallStatusEnum.safeParse(val.toLowerCase()).success,
+				"Недопустимый статус профосмотра пациента.",
+			),
 		channel: z.string().max(30).optional(),
 		note: z.string().max(1000).optional(),
 	})

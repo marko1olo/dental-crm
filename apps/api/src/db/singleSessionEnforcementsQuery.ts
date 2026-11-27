@@ -1,12 +1,17 @@
 import { eq } from "drizzle-orm";
-import { withTenantCtx } from "./rls.js";
+import { type TenantDb, withTenantReadCtx } from "./rls.js";
 import { singleSessionEnforcements } from "./schema.js";
 
-export async function getSingleSessionEnforcementsFromDb(orgId: string) {
-	return withTenantCtx(orgId, async (tx) =>
-		tx
+export async function getSingleSessionEnforcementsFromDb(
+	orgId: string,
+	tx?: TenantDb,
+) {
+	const run = (executor: TenantDb) =>
+		executor
 			.select()
 			.from(singleSessionEnforcements)
-			.where(eq(singleSessionEnforcements.organizationId, orgId)),
-	);
+			.where(eq(singleSessionEnforcements.organizationId, orgId));
+
+	if (tx) return run(tx);
+	return withTenantReadCtx(orgId, run);
 }

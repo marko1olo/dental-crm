@@ -12,7 +12,7 @@ import {
 import { recordAuditEventInDb } from "../../../db/auditQuery.js";
 import { findPaymentByClientMutationIdInDb } from "../../../db/billingQuery.js";
 import { narrowTaxDeductionCode } from "../../../db/billing/types.js";
-import { onTenantTxCommit, withTenantCtx } from "../../../db/rls.js";
+import { onTenantTxCommit, withTenantWriteCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
 import { processCashboxPayment } from "../../../routes/cashbox/cashboxPaymentProcessor.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -197,7 +197,7 @@ export async function handleCreatePayment(
 	const paymentInput = preflight.paymentInput;
 
 	try {
-		const txBundle = await withTenantCtx(orgId, async (tx) => {
+		const txBundle = await withTenantWriteCtx(orgId, async (tx) => {
 			const cashboxResult = await processCashboxPayment(
 				orgId,
 				buildCashboxPaymentPayload(paymentInput, effectiveMutationId),

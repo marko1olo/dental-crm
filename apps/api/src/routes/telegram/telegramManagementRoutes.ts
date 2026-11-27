@@ -12,6 +12,7 @@ import {
 import {
 	requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
+import { defineStreamRoute } from "../../core/routeFactories.js";
 import {
 	buildDenteTelegramChatLinkList,
 	revokeDenteTelegramChatLink,
@@ -89,6 +90,17 @@ function resolveAuthorizedTelegramQueryScope(
 	return queryObj;
 }
 
+async function runControlPlanePreHandler(
+	options: {
+		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+	},
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<boolean> {
+	await options.preHandler(request, reply);
+	return !reply.sent;
+}
+
 export function registerTelegramSettingsRoutes(
 	app: FastifyInstance,
 	telegramControlPlaneRouteOptions: {
@@ -96,24 +108,23 @@ export function registerTelegramSettingsRoutes(
 	},
 ) {
 	const telegramMutationSchema = {
-		schema: {
-			description: "Telegram settings mutation with mandatory RFC 9562 Idempotency-Key",
-			headers: {
-				type: "object",
-				properties: {
-					"idempotency-key": { type: "string" },
-					"x-idempotency-key": { type: "string" },
-					organizationid: { type: "string" },
-					"x-organization-id": { type: "string" },
-				},
+		description: "Telegram settings mutation with mandatory RFC 9562 Idempotency-Key",
+		headers: {
+			type: "object",
+			properties: {
+				"idempotency-key": { type: "string" },
+				"x-idempotency-key": { type: "string" },
+				organizationid: { type: "string" },
+				"x-organization-id": { type: "string" },
 			},
 		},
-	} as const;
-	const telegramMutationOptions = { ...telegramControlPlaneRouteOptions, ...telegramMutationSchema } as const;
-	app.get(
-		"/api/settings/telegram",
-		telegramControlPlaneRouteOptions,
-		async (request) => {
+	};
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/settings/telegram",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const identity = getRequestIdentity(request);
 			if (identity.organizationId) {
 				const loaded = await loadTelegramBotSettingsFromDatabase(
@@ -129,12 +140,15 @@ export function registerTelegramSettingsRoutes(
 			}
 			return await buildStatus();
 		},
-	);
+	});
 
-	app.put(
-		"/api/settings/telegram",
-		telegramMutationOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "PUT",
+		path: "/api/settings/telegram",
+		permission: "public",
+		schema: telegramMutationSchema,
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsedInput = parseTelegramRouteBody(
 				updateDenteTelegramBotSettingsSchema,
 				request.body,
@@ -184,18 +198,20 @@ export function registerTelegramSettingsRoutes(
 			}
 			return await buildStatus(savedOrgId);
 		},
-	);
+	});
 
-	app.get(
-		"/api/telegram/feature-plan",
-		telegramControlPlaneRouteOptions,
-		async (request) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/feature-plan",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const identity = getRequestIdentity(request);
 			return buildFeaturePlan(
 				getDenteTelegramBotSettings(identity.organizationId ?? null),
 			);
 		},
-	);
+	});
 }
 
 export function registerTelegramOutboxRoutes(
@@ -204,10 +220,12 @@ export function registerTelegramOutboxRoutes(
 		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 	},
 ) {
-	app.get<{ Querystring: Record<string, unknown> }>(
-		"/api/telegram/outbox",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/outbox",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
 			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
@@ -229,15 +247,14 @@ export function registerTelegramOutboxRoutes(
 				domainState,
 			);
 		},
-	);
+	});
 
-	app.post<{
-		Params: { itemId: string };
-		Querystring: Record<string, unknown>;
-	}>(
-		"/api/telegram/outbox/:itemId/send",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/outbox/:itemId/send",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsedInput = parseTelegramRouteBody(
 				denteTelegramOutboxSendRequestSchema,
 				request.body ?? {},
@@ -258,20 +275,23 @@ export function registerTelegramOutboxRoutes(
 				request,
 				runtimeResult.runtime.context.organizationId,
 			);
+			const { itemId } = request.params as { itemId: string };
 			const result = await executeTelegramOutboxSend(
-				request.params.itemId,
+				itemId,
 				parsedInput.value,
 				runtimeResult.runtime,
 				domainState,
 			);
 			return reply.code(result.statusCode).send(result.body);
 		},
-	);
+	});
 
-	app.post<{ Querystring: Record<string, unknown> }>(
-		"/api/telegram/outbox/send-due",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/outbox/send-due",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const input = parseTelegramOutboxSendDueInput(request.body ?? {});
 			if (!input)
 				return sendTelegramValidationError(
@@ -308,7 +328,7 @@ export function registerTelegramOutboxRoutes(
 				)
 				.send(response);
 		},
-	);
+	});
 }
 
 export function registerTelegramLinkRoutes(
@@ -317,10 +337,12 @@ export function registerTelegramLinkRoutes(
 		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 	},
 ) {
-	app.post(
-		"/api/telegram/link-codes",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/link-codes",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsedInput = parseTelegramRouteBody(
 				createDenteTelegramLinkCodeSchema,
 				request.body,
@@ -389,12 +411,14 @@ export function registerTelegramLinkRoutes(
 				});
 			}
 		},
-	);
+	});
 
-	app.get<{ Querystring: Record<string, unknown> }>(
-		"/api/telegram/link-codes",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/link-codes",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
 			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
@@ -414,12 +438,14 @@ export function registerTelegramLinkRoutes(
 				botConfigId: runtime.botConfigId,
 			});
 		},
-	);
+	});
 
-	app.get<{ Querystring: Record<string, unknown> }>(
-		"/api/telegram/chat-links",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/chat-links",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
 			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
@@ -439,15 +465,14 @@ export function registerTelegramLinkRoutes(
 				botConfigId: runtime.botConfigId,
 			});
 		},
-	);
+	});
 
-	app.post<{
-		Params: { linkId: string };
-		Querystring: Record<string, unknown>;
-	}>(
-		"/api/telegram/chat-links/:linkId/revoke",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/chat-links/:linkId/revoke",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
 			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
@@ -460,18 +485,19 @@ export function registerTelegramLinkRoutes(
 				});
 			}
 			const runtime = runtimeResult.runtime.context;
+			const { linkId } = request.params as { linkId: string };
 			const revoked = await revokeDenteTelegramChatLink(
 				{
 					organizationId: runtime.organizationId,
 					clinicId: runtime.clinicId,
 					botConfigId: runtime.botConfigId,
 				},
-				request.params.linkId,
+				linkId,
 			);
 			// Копия в памяти снимается второй и её результат ни на что не влияет: пока
 			// очередь отправки читает массив процесса, оставить там активную связку
 			// значило бы продолжать писать в отключённый чат.
-			revokeLegacyInMemoryTelegramChatLink(request.params.linkId, {
+			revokeLegacyInMemoryTelegramChatLink(linkId, {
 				organizationId: runtime.organizationId,
 				clinicId: runtime.clinicId,
 				botConfigId: runtime.botConfigId,
@@ -486,7 +512,7 @@ export function registerTelegramLinkRoutes(
 				toDenteTelegramChatLinkPublic(revoked),
 			);
 		},
-	);
+	});
 }
 
 export function registerTelegramPreviewRoutes(
@@ -495,10 +521,12 @@ export function registerTelegramPreviewRoutes(
 		preHandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 	},
 ) {
-	app.post<{ Querystring: Record<string, unknown> }>(
-		"/api/telegram/messages/preview",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/messages/preview",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const scopedQuery = resolveAuthorizedTelegramQueryScope(request, reply);
 			if (!scopedQuery) return;
 			const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(
@@ -530,7 +558,7 @@ export function registerTelegramPreviewRoutes(
 				});
 			}
 		},
-	);
+	});
 }
 
 export function registerTelegramBillingRoutes(
@@ -540,10 +568,12 @@ export function registerTelegramBillingRoutes(
 	},
 ) {
 	// 1. Каталог B2B SaaS-тарифов сервиса Telegram-ботов
-	app.get(
-		"/api/telegram/billing/plans",
-		telegramControlPlaneRouteOptions,
-		async () => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/billing/plans",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			return {
 				plans: Object.values(TELEGRAM_BOT_SAAS_TIERS),
 				tiers: TELEGRAM_BOT_SAAS_TIERS,
@@ -551,15 +581,18 @@ export function registerTelegramBillingRoutes(
 				currency: "RUB",
 			};
 		},
-	);
+	});
 
 	// 2. Статистика использования квоты сообщений текущей клиники
-	app.get<{ Querystring: { organizationId?: string } }>(
-		"/api/telegram/billing/usage",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/telegram/billing/usage",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const identity = getRequestIdentity(request);
-			const requestedOrgId = request.query?.organizationId?.trim();
+			const reqQuery = request.query as { organizationId?: string } | undefined;
+			const requestedOrgId = reqQuery?.organizationId?.trim();
 			if (
 				identity.verified &&
 				identity.organizationId &&
@@ -590,7 +623,7 @@ export function registerTelegramBillingRoutes(
 			const usage = TelegramBotBillingService.getBillingUsage(organizationId);
 			return usage;
 		},
-	);
+	});
 
 	const telegramBillingChangePlanSchema = z
 		.object({
@@ -605,10 +638,12 @@ export function registerTelegramBillingRoutes(
 		Object.prototype.hasOwnProperty.call(TELEGRAM_BOT_SAAS_TIERS, value);
 
 	// 3. Смена тарифного плана клиники
-	app.post(
-		"/api/telegram/billing/change-plan",
-		telegramControlPlaneRouteOptions,
-		async (request, reply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/telegram/billing/change-plan",
+		permission: "public",
+		handler: async ({ request, reply }) => {
+			if (!(await runControlPlanePreHandler(telegramControlPlaneRouteOptions, request, reply))) return;
 			const parsedBody = telegramBillingChangePlanSchema.safeParse(request.body);
 			if (!parsedBody.success) {
 				return reply.code(400).send({
@@ -666,5 +701,5 @@ export function registerTelegramBillingRoutes(
 				usage: updated,
 			});
 		},
-	);
+	});
 }

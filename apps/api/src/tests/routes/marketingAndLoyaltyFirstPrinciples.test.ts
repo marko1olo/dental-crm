@@ -155,7 +155,8 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 		assert.equal(res.statusCode, 200, `Ожидался статус 200, получено: ${res.body}`);
 		const body = res.json();
 		assert.equal(body.success, true);
-		assert.ok(body.appointment?.id);
+		assert.ok(body.referenceNumber);
+		assert.equal(body.appointment, undefined);
 
 		// Проверяем, что в crm_leads физически создана запись со статусом consult_booked
 		const leads = await db

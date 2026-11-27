@@ -209,10 +209,26 @@ export async function sendRawBytesToTcpPrinter(
 // 3. HARDWARE DISCOVERY SERVICE IMPLEMENTATION
 // ============================================================================
 
+function isPrivateLanSubnetPrefix(rawSubnet: string): boolean {
+	const parts = rawSubnet.trim().split(".");
+	if (parts.length !== 3) return false;
+	const nums = parts.map((p) => (/^\d{1,3}$/.test(p) ? Number(p) : Number.NaN));
+	if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+	const a = nums[0] ?? -1;
+	const b = nums[1] ?? -1;
+	if (a === 10) return true;
+	if (a === 172 && b >= 16 && b <= 31) return true;
+	if (a === 192 && b === 168) return true;
+	return false;
+}
+
 export class HardwareDiscoveryService {
-	private cachedResult: HardwareDiscoveryResult | null = null;
-	private lastProbeTimestamp = 0;
+	private readonly cachedResultsByTenant = new Map<
+		string,
+		{ result: HardwareDiscoveryResult; timestamp: number }
+	>();
 	private readonly cacheTtlMs = 5000; // 5 seconds cache to avoid WMI spam
+	private readonly maxCacheEntries = 64;
 
 	/**
 	 * Discovers all connected clinic hardware devices.
@@ -220,9 +236,11 @@ export class HardwareDiscoveryService {
 	public async discoverDevices(
 		options: HardwareDiscoveryOptions = {},
 	): Promise<HardwareDiscoveryResult> {
+		const tenantKey = options.organizationId?.trim() || "default";
 		const now = Date.now();
-		if (this.cachedResult && now - this.lastProbeTimestamp < this.cacheTtlMs && !options.probeNetworkTcp) {
-			return this.cachedResult;
+		const cached = this.cachedResultsByTenant.get(tenantKey);
+		if (cached && now - cached.timestamp < this.cacheTtlMs && !options.probeNetworkTcp) {
+			return cached.result;
 		}
 
 		const platform = os.platform();
@@ -265,8 +283,16 @@ export class HardwareDiscoveryService {
 			summary,
 		};
 
-		this.cachedResult = result;
-		this.lastProbeTimestamp = now;
+		if (this.cachedResultsByTenant.size >= this.maxCacheEntries) {
+			const oldestKey = this.cachedResultsByTenant.keys().next().value;
+			if (oldestKey) {
+				this.cachedResultsByTenant.delete(oldestKey);
+			}
+		}
+		this.cachedResultsByTenant.set(tenantKey, {
+			result,
+			timestamp: now,
+		});
 
 		return result;
 	}
@@ -360,9 +386,13 @@ export class HardwareDiscoveryService {
 	private async scanSubnetsForNetworkPrinters(
 		options: HardwareDiscoveryOptions,
 	): Promise<HardwareDeviceDescriptor[]> {
-		const subnets = options.networkSubnets && options.networkSubnets.length > 0
-			? options.networkSubnets
-			: this.detectLocalSubnets();
+		const candidateSubnets =
+			options.networkSubnets && options.networkSubnets.length > 0
+				? options.networkSubnets
+				: this.detectLocalSubnets();
+		const subnets = candidateSubnets.filter((subnet) =>
+			isPrivateLanSubnetPrefix(subnet),
+		);
 
 		const timeoutMs = options.timeoutMs ?? 350;
 		const results: HardwareDeviceDescriptor[] = [];
@@ -583,18 +613,27 @@ export class HardwareDiscoveryService {
 							targetSummary,
 							error: err instanceof Error ? err.message : String(err),
 						};
+					} finally {
+						try {
+							if (fs.existsSync(tempFile)) {
+								fs.unlinkSync(tempFile);
+							}
+						} catch {
+							// best-effort temp spool cleanup
+						}
 					}
 				}
 			}
 		}
 
 		return {
-			success: true,
-			bytesSent: buffer.length,
+			success: false,
+			bytesSent: 0,
 			timestamp,
-			message: `Тестовый образ успешно сформирован (${buffer.length} байт)`,
+			message: `Принтер или транспорт не подключён (${targetSummary}). Тестовый образ сформирован (${buffer.length} байт), но реальная печать не выполнена.`,
 			rawHexPreview: hexPreview,
 			targetSummary,
+			error: "HardwareTransportUnavailable",
 		};
 	}
 }

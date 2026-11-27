@@ -58,6 +58,14 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 				patientId: testPatientId,
 				carpulesCount: 2,
 				drugName: "Ультракаин Д-С форте 1:100 000",
+				mdlpItems: [
+					{
+						sgtin: "036647980000161A2B3C4D5E6F7",
+						gtin: "03664798000016",
+						serialNumber: "1A2B3C4D5E6F7",
+						tradeName: "Ультракаин Д-С форте 1:100 000",
+					},
+				],
 			});
 
 			assert.strictEqual(res.enqueued, true);
@@ -107,6 +115,14 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 				visitId: testVisitId,
 				clientMutationId,
 				carpulesCount: 1,
+				mdlpItems: [
+					{
+						sgtin: "036647980000161A2B3C4D5E6F8",
+						gtin: "03664798000016",
+						serialNumber: "1A2B3C4D5E6F8",
+						tradeName: "Ультракаин Д-С форте 1:100 000",
+					},
+				],
 			});
 			assert.strictEqual(res1.enqueued, true);
 			firstOutboxId = res1.outboxId;
@@ -122,6 +138,14 @@ describe("MDLP Transactional Outbox Engine (PostgreSQL 18 + SKIP LOCKED)", () =>
 				visitId: testVisitId,
 				clientMutationId,
 				carpulesCount: 1,
+				mdlpItems: [
+					{
+						sgtin: "036647980000161A2B3C4D5E6F8",
+						gtin: "03664798000016",
+						serialNumber: "1A2B3C4D5E6F8",
+						tradeName: "Ультракаин Д-С форте 1:100 000",
+					},
+				],
 			});
 			// Дубликат предотвращен
 			assert.strictEqual(res2.enqueued, true);

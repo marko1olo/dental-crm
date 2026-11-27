@@ -57,6 +57,7 @@ export function registerInviteRoutes(app: FastifyInstance) {
 				!(await recallCandidateBelongsTo(
 					context.organizationId,
 					patientId,
+					tx,
 				))
 			) {
 				return { kind: "not_found" as const };

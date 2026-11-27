@@ -54,7 +54,6 @@ export const russianPhoneRegex =
 export const bookingRequestSchema = z
 	.object({
 		organizationId: z.string().uuid("Некорректный ID клиники").optional(),
-		patientId: z.string().uuid("Некорректный ID пациента").optional(),
 		doctorId: z.string().uuid("Некорректный идентификатор врача"),
 		startsAt: z.string().datetime({ offset: true }),
 		endsAt: z.string().datetime({ offset: true }),
@@ -157,5 +156,19 @@ export const slotsParamSchema = z
 	.object({
 		organizationId: organizationIdSchema,
 		doctorId: optionalDoctorIdSchema,
+	})
+	.strict();
+
+export const defaultClinicQuerySchema = z
+	.object({
+		organizationId: organizationIdSchema.optional(),
+		allowDefault: z.enum(["1", "true", "0", "false"]).optional(),
+	})
+	.strict();
+
+export const doctorSlotParamsSchema = z
+	.object({
+		organizationId: organizationIdSchema,
+		doctorId: z.string().uuid("Некорректный идентификатор врача"),
 	})
 	.strict();

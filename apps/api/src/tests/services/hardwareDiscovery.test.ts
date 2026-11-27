@@ -250,7 +250,7 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			assert.equal(status.status, "online");
 		});
 
-		it("executes simulated/local test print and returns hex preview", async () => {
+		it("returns honest failure for offline/non-existent system spooler printer while building ESC/POS preview", async () => {
 			const testPrintResult = await service.sendTestPrint({
 				deviceType: "thermal_receipt",
 				interface: "system_spooler",
@@ -258,13 +258,14 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 				systemPrinterName: "Virtual Test Thermal Printer",
 			});
 
-			assert.equal(testPrintResult.success, true);
-			assert.ok(testPrintResult.bytesSent > 50);
+			assert.equal(testPrintResult.success, false);
+			assert.equal(testPrintResult.bytesSent, 0);
+			assert.equal(testPrintResult.error, "HardwareTransportUnavailable");
 			assert.ok(testPrintResult.rawHexPreview);
 			assert.ok(testPrintResult.rawHexPreview.includes("1B 40")); // ESC @
 		});
 
-		it("executes autoclave pouch label test print in TSPL emulation", async () => {
+		it("returns honest failure for unconfigured USB transport while generating TSPL preview", async () => {
 			const labelTestResult = await service.sendTestPrint({
 				deviceType: "label_printer",
 				interface: "usb",
@@ -272,8 +273,9 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 				testPatternType: "sanpin_label",
 			});
 
-			assert.equal(labelTestResult.success, true);
-			assert.ok(labelTestResult.bytesSent > 50);
+			assert.equal(labelTestResult.success, false);
+			assert.equal(labelTestResult.bytesSent, 0);
+			assert.equal(labelTestResult.error, "HardwareTransportUnavailable");
 			assert.ok(labelTestResult.rawHexPreview);
 		});
 	});
@@ -288,6 +290,9 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 		before((_, done) => {
 			// Create a lightweight mock TCP 9100 printer server responding with ESC/POS status bytes
 			testServer = net.createServer((socket) => {
+				socket.on("error", () => {
+					// Ignore ECONNRESET when client disconnects immediately after write
+				});
 				socket.on("data", () => {
 					// Respond with paper OK status byte (0x00)
 					socket.write(Buffer.from([0x00]));
@@ -314,6 +319,20 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			assert.equal(report.online, true);
 			assert.equal(report.paperPresent, true);
 			assert.equal(report.status, "online");
+		});
+
+		it("delivers ESC/POS bytes to live TCP 9100 printer socket via sendTestPrint", async () => {
+			const svc = new HardwareDiscoveryService();
+			const res = await svc.sendTestPrint({
+				deviceType: "thermal_receipt",
+				interface: "tcp_raw",
+				ipAddress: "127.0.0.1",
+				rawTcpPort: serverPort,
+				paperWidthMm: 80,
+			});
+			assert.equal(res.success, true);
+			assert.ok(res.bytesSent > 50);
+			assert.ok(res.rawHexPreview?.includes("1B 40"));
 		});
 
 		it("handles connection failure / timeout cleanly for unreachable IPs", async () => {
@@ -403,7 +422,7 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 			}
 		});
 
-		it("POST /api/hardware/test-print executes test print and returns hex preview", async () => {
+		it("POST /api/hardware/test-print returns 502 when offline spooler printer is missing", async () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/hardware/test-print",
@@ -412,15 +431,28 @@ describe("Clinic Hardware & Peripheral Discovery Layer", () => {
 					deviceType: "thermal_receipt",
 					interface: "system_spooler",
 					paperWidthMm: 58,
-					systemPrinterName: "Xprinter XP-58",
+					systemPrinterName: "NonExistent Xprinter XP-58",
 				},
 			});
 
-			assert.equal(response.statusCode, 200);
+			assert.equal(response.statusCode, 502);
 			const body = JSON.parse(response.payload);
-			assert.equal(body.success, true);
-			assert.ok(body.result.bytesSent > 50);
+			assert.equal(body.success, false);
+			assert.equal(body.result.bytesSent, 0);
 			assert.ok(body.result.rawHexPreview);
+		});
+
+		it("GET /api/hardware/devices blocks SSRF non-private subnets with 400", async () => {
+			const blockedSubnets = ["127.0.0", "169.254.169", "8.8.8"];
+			for (const subnet of blockedSubnets) {
+				const res = await app.inject({
+					method: "GET",
+					url: `/api/hardware/devices?probeNetwork=true&subnets=${encodeURIComponent(subnet)}`,
+					headers: clinicHeaders,
+				});
+				assert.equal(res.statusCode, 400);
+				assert.equal(JSON.parse(res.payload).error, "SsrfBlocked");
+			}
 		});
 
 		it("POST /api/hardware/test-print rejects invalid device payloads with 400", async () => {

@@ -61,6 +61,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 			const data = await fetchPatientLatestPeriodontogram(
 				context.organizationId,
 				visit.patientId,
+				tx,
 			);
 			return { visit, data };
 		});
@@ -199,6 +200,7 @@ export function registerVisitPerioRoutes(app: FastifyInstance) {
 				status: validData.status,
 				autoClose: validData.autoClose,
 				psrData: validData.psrData,
+				tx,
 			});
 
 			return { kind: "ok" as const, visit, savedSnapshot };

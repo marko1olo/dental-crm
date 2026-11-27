@@ -20,7 +20,7 @@
  * решение принимает человек, а не порог.
  */
 import { and, desc, eq, lt } from "drizzle-orm";
-import { withTenantCtx } from "./rls.js";
+import { withTenantReadCtx } from "./rls.js";
 import * as schema from "./schema.js";
 
 /** Ровно те три значения, которые понимает экран. */
@@ -73,7 +73,7 @@ export async function computePatientNoShowRisk(
 	 * Проверяем существование пациента в клинике под RLS-контекстом и берём только
 	 * ПРОШЕДШИЕ записи: запланированная на будущее ничего не говорит о том, придёт ли человек.
 	 */
-	const rows = await withTenantCtx(orgId, async (tx) => {
+	const rows = await withTenantReadCtx(orgId, async (tx) => {
 		const [patient] = await tx
 			.select({ id: schema.patients.id })
 			.from(schema.patients)

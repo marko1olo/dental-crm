@@ -208,6 +208,7 @@ export async function scopeForReport(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	area: string,
+	tx?: import("../../db/rls.js").TenantDb,
 ): Promise<ReportScopeContext | null> {
 	const context = await requireClinicalReadContext(request, reply, area);
 	if (!context) return null;
@@ -223,7 +224,7 @@ export async function scopeForReport(
 		return null;
 	}
 
-	const timeZone = await clinicTimeZone(context.organizationId);
+	const timeZone = await clinicTimeZone(context.organizationId, tx);
 	const period = resolvePeriod(parsed.data, timeZone);
 	if (!period.ok) {
 		badRequest(reply, period.message);
@@ -240,4 +241,56 @@ export async function scopeForReport(
 		},
 		query: parsed.data,
 	};
+}
+
+/**
+ * Выполняет расчёт отчёта внутри одной READ ONLY PG-транзакции (`withTenantReadCtx`)
+ * с единой проверкой прав доступа и разбором периода.
+ */
+export async function withTenantReportScope<T>(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	area: string,
+	run: (
+		resolved: ReportScopeContext,
+		tx: import("../../db/rls.js").TenantDb,
+	) => Promise<T>,
+): Promise<T | undefined> {
+	const context = await requireClinicalReadContext(request, reply, area);
+	if (!context) return undefined;
+	if (!enforcePermissionWhenStaffKnown(request, reply, "analytics.read"))
+		return undefined;
+
+	const parsed = periodQuerySchema.safeParse(request.query);
+	if (!parsed.success) {
+		badRequest(
+			reply,
+			"Проверьте параметры отчёта: даты, детализацию и пределы.",
+		);
+		return undefined;
+	}
+
+	const { withTenantReadCtx } = await import("../../db/rls.js");
+	return withTenantReadCtx(context.organizationId, async (tx) => {
+		const timeZone = await clinicTimeZone(context.organizationId, tx);
+		const period = resolvePeriod(parsed.data, timeZone);
+		if (!period.ok) {
+			badRequest(reply, period.message);
+			return undefined;
+		}
+
+		return run(
+			{
+				scope: {
+					organizationId: context.organizationId,
+					from: period.from,
+					to: period.to,
+					timeZone,
+					logger: request.log,
+				},
+				query: parsed.data,
+			},
+			tx,
+		);
+	});
 }

@@ -327,4 +327,31 @@ describe("Sync Gateway & TaskQueue ACID Resilience Suite", () => {
 		assert.equal(typeof recoverBody.recovered, "number");
 		assert.equal(typeof recoverBody.deadLettered, "number");
 	});
+
+	it("7. W16-HW-07: Sync administrative endpoints reject malformed query/body with HTTP 400 ValidationError", async () => {
+		const badDlqRes = await app.inject({
+			method: "GET",
+			url: "/api/sync/admin/dlq?limit=abc",
+			headers: { authorization: `Bearer ${tokenOrgA}` },
+		});
+		assert.equal(badDlqRes.statusCode, 400);
+		assert.equal(badDlqRes.json().error, "ValidationError");
+
+		const badVectorsRes = await app.inject({
+			method: "GET",
+			url: "/api/sync/admin/vectors?entityKind=unknown_kind",
+			headers: { authorization: `Bearer ${tokenOrgA}` },
+		});
+		assert.equal(badVectorsRes.statusCode, 400);
+		assert.equal(badVectorsRes.json().error, "ValidationError");
+
+		const badRecoverRes = await app.inject({
+			method: "POST",
+			url: "/api/sync/admin/recover-stale",
+			headers: { authorization: `Bearer ${tokenOrgA}` },
+			payload: { staleThresholdMs: 10 },
+		});
+		assert.equal(badRecoverRes.statusCode, 400);
+		assert.equal(badRecoverRes.json().error, "ValidationError");
+	});
 });

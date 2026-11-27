@@ -27,6 +27,7 @@ import {
 	requireSuperadmin,
 	resolveOrganizationId,
 } from "../accessGuard.js";
+import { defineStreamRoute } from "../core/routeFactories.js";
 import { BoundedTtlMap } from "../lib/boundedTtlMap.js";
 import { createApiLogger } from "../observability/logger.js";
 
@@ -436,9 +437,11 @@ export async function registerMobileOtaRoutes(
 	/**
 	 * GET /api/mobile/version.json — Манифест актуальной версии.
 	 */
-	app.get(
-		"/api/mobile/version.json",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mobile/version.json",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const parsedQuery = mobileOtaVersionQuerySchema.safeParse(
 				request.query ?? {},
 			);
@@ -486,14 +489,16 @@ export async function registerMobileOtaRoutes(
 
 			return responsePayload;
 		},
-	);
+	});
 
 	/**
 	 * GET /api/mobile/bundle.zip — Потоковая раздача упакованного бандла.
 	 */
-	app.get(
-		"/api/mobile/bundle.zip",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mobile/bundle.zip",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const requesterOrgId = await resolveOrganizationId(request);
 			const state = getTenantOtaState(requesterOrgId);
 			const bundle = await getOrCreateOtaBundleAsync(
@@ -534,14 +539,16 @@ export async function registerMobileOtaRoutes(
 				createZipStream(buildDynamicBundleEntries(state, bundle.version)),
 			);
 		},
-	);
+	});
 
 	/**
 	 * POST /api/mobile/publish — Публикация новой версии (для CI/CD и стендов).
 	 */
-	app.post(
-		"/api/mobile/publish",
-		async (request: FastifyRequest, reply: FastifyReply) => {
+	defineStreamRoute(app, {
+		method: "POST",
+		path: "/api/mobile/publish",
+		permission: "public",
+		handler: async ({ request, reply }) => {
 			const accessGranted = await requireSuperadmin(
 				request,
 				reply,
@@ -597,25 +604,30 @@ export async function registerMobileOtaRoutes(
 				publishedAt: state.config.publishedAt,
 			});
 		},
-	);
+	});
 
 	/**
 	 * GET /api/mobile/health — Проверка статуса OTA подсистемы.
 	 */
-	app.get("/api/mobile/health", async (request: FastifyRequest) => {
-		const requesterOrgId = await resolveOrganizationId(request);
-		const state = getTenantOtaState(requesterOrgId);
-		const bundle = await getOrCreateOtaBundleAsync(
-			state.config.version,
-			undefined,
-			requesterOrgId,
-		);
-		return {
-			status: "healthy",
-			otaVersion: state.config.version,
-			bundleSha256: bundle.sha256,
-			bundleSize: bundle.sizeBytes,
-			time: new Date().toISOString(),
-		};
+	defineStreamRoute(app, {
+		method: "GET",
+		path: "/api/mobile/health",
+		permission: "public",
+		handler: async ({ request }) => {
+			const requesterOrgId = await resolveOrganizationId(request);
+			const state = getTenantOtaState(requesterOrgId);
+			const bundle = await getOrCreateOtaBundleAsync(
+				state.config.version,
+				undefined,
+				requesterOrgId,
+			);
+			return {
+				status: "healthy",
+				otaVersion: state.config.version,
+				bundleSha256: bundle.sha256,
+				bundleSize: bundle.sizeBytes,
+				time: new Date().toISOString(),
+			};
+		},
 	});
 }

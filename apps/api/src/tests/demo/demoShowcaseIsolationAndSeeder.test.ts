@@ -174,7 +174,7 @@ test("Demo Showcase Seeder & Multi-tenant RLS Isolation Suite (Mandates 8c, 8f, 
 				);
 			assert.ok(labOrder, "Lab order 01a00000-0005-0000-0000-000000000001 must exist");
 			assert.equal(labOrder.status, "in_progress");
-			assert.equal(labOrder.priceRub, 14500);
+			assert.equal(Number(labOrder.priceKopecks), 1450000);
 
 			const items = await tx
 				.select()

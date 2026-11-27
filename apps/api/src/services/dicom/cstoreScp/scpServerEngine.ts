@@ -6,7 +6,7 @@
 
 import net from "node:net";
 import { eq, or } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withSuperuserBypass } from "../../../db/rls.js";
 import * as schema from "../../../db/schema.js";
 import {
 	COMMAND_C_ECHO_RQ,
@@ -390,18 +390,21 @@ export class DicomCStoreScpServer {
 			const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 			const isUuid = uuidRegex.test(targetAe);
 
-			const [matchedOrg] = await db
-				.select({ id: schema.organizations.id })
-				.from(schema.organizations)
-				.where(
-					isUuid
-						? eq(schema.organizations.id, targetAe)
-						: or(
-								eq(schema.organizations.loginId, targetAe.toLowerCase()),
-								eq(schema.organizations.name, targetAe),
-							),
-				)
-				.limit(1);
+			const matchedOrg = await withSuperuserBypass(async (tx) => {
+				const [org] = await tx
+					.select({ id: schema.organizations.id })
+					.from(schema.organizations)
+					.where(
+						isUuid
+							? eq(schema.organizations.id, targetAe)
+							: or(
+									eq(schema.organizations.loginId, targetAe.toLowerCase()),
+									eq(schema.organizations.name, targetAe),
+								),
+					)
+					.limit(1);
+				return org ?? null;
+			});
 
 			if (matchedOrg) {
 				return matchedOrg.id;

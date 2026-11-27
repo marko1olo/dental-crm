@@ -1,7 +1,7 @@
 import {
 	createCarpuleQueueItem,
-	formatKopecksToRubles,
 	getAllAnesthetics,
+	kopecksToRubles,
 	nonNegativeMoneyRubSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -148,17 +148,6 @@ const mdlpItemsQuerySchema = z
 
 // ─── Route Registration ─────────────────────────────────────────────────────
 
-function resolveMdlpCostRub(
-	costRub: number | null | undefined,
-	costKopecks: number | null | undefined,
-): number | null | undefined {
-	if (costRub !== undefined && costRub !== null) return costRub;
-	if (costKopecks !== undefined && costKopecks !== null) {
-		return Number(formatKopecksToRubles(costKopecks));
-	}
-	return costRub;
-}
-
 export async function registerMdlpRoutes(
 	app: FastifyInstance,
 	_opts?: Record<string, unknown>,
@@ -233,7 +222,8 @@ export async function registerMdlpRoutes(
 		try {
 			const disposePayload = {
 				...parsedBody.data,
-				costRub: resolveMdlpCostRub(parsedBody.data.costRub, parsedBody.data.costKopecks),
+				costRub: parsedBody.data.costRub ?? null,
+				costKopecks: parsedBody.data.costKopecks ?? null,
 			};
 			const result = await mdlpDisposalService.disposeSingle(orgId, disposePayload);
 			return reply.send({
@@ -280,7 +270,8 @@ export async function registerMdlpRoutes(
 				...parsedBody.data,
 				items: parsedBody.data.items?.map((item) => ({
 					...item,
-					costRub: resolveMdlpCostRub(item.costRub, item.costKopecks),
+					costRub: item.costRub ?? null,
+					costKopecks: item.costKopecks ?? null,
 				})),
 			};
 			const result = await mdlpDisposalService.disposeBatch(orgId, batchPayload);
@@ -338,7 +329,8 @@ export async function registerMdlpRoutes(
 
 		const result = await mdlpQueueService.addToQueueAsync(orgId, {
 			...parsedBody.data,
-			costRub: resolveMdlpCostRub(parsedBody.data.costRub, parsedBody.data.costKopecks),
+			costRub: parsedBody.data.costRub ?? null,
+			costKopecks: parsedBody.data.costKopecks ?? null,
 		});
 		return reply.send(result);
 	};
@@ -410,7 +402,12 @@ export async function registerMdlpRoutes(
 
 		const itemsMapped = parsedBody.data.items?.map((it) =>
 			createCarpuleQueueItem(it.rawBarcode || it.sgtin || "", {
-				costRub: resolveMdlpCostRub(it.costRub, it.costKopecks),
+				costRub:
+					it.costRub !== undefined && it.costRub !== null
+						? it.costRub
+						: it.costKopecks !== undefined && it.costKopecks !== null
+							? kopecksToRubles(it.costKopecks)
+							: null,
 				patientId: it.patientId ?? undefined,
 				patientName: it.patientName ?? undefined,
 				visitId: it.visitId ?? undefined,

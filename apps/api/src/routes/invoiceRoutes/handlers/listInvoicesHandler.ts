@@ -7,7 +7,7 @@ import {
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
-import { withTenantCtx } from "../../../db/rls.js";
+import { withTenantReadCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices, payments } from "../../../db/schema/billing.js";
 import { patients } from "../../../db/schema/patients.js";
 import { invoiceListQuerySchema } from "../types.js";
@@ -35,7 +35,7 @@ export async function handleListInvoices(request: FastifyRequest, reply: Fastify
 			: eq(patientInvoices.status, status)
 		: sql`TRUE`;
 
-	const { invoiceRows, rawItems, paidRows } = await withTenantCtx(orgId, async (tx) => {
+	const { invoiceRows, rawItems, paidRows } = await withTenantReadCtx(orgId, async (tx) => {
 		const invRows = await tx
 			.select({
 				id: patientInvoices.id,

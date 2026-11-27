@@ -5,6 +5,8 @@ import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
 import {
+	defaultClinicQuerySchema,
+	doctorSlotParamsSchema,
 	optionalDoctorIdSchema,
 	publicWaitlistSchema,
 	sendOtpSchema,
@@ -163,10 +165,17 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
 
-		const targetOrgId =
-			(request.query as { organizationId?: string } | undefined)?.organizationId;
+		const queryCheck = defaultClinicQuerySchema.safeParse(request.query ?? {});
+		if (!queryCheck.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректные параметры запроса клиники.",
+			});
+		}
 
-		if (targetOrgId && isValidUuid(targetOrgId)) {
+		const { organizationId: targetOrgId, allowDefault } = queryCheck.data;
+
+		if (targetOrgId) {
 			const [clinicRow] = await withSuperuserBypass(async (tx) => {
 				return tx
 					.select({
@@ -183,6 +192,23 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 			if (clinicRow) {
 				return reply.send(clinicRow);
+			}
+		} else if (allowDefault === "1" || allowDefault === "true") {
+			const clinicRows = await withSuperuserBypass(async (tx) => {
+				return tx
+					.select({
+						organizationId: organizations.id,
+						name: organizations.name,
+						address: clinics.address,
+						phone: clinics.phone,
+					})
+					.from(organizations)
+					.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
+					.limit(2);
+			});
+
+			if (clinicRows.length === 1 && clinicRows[0]) {
+				return reply.send(clinicRows[0]);
 			}
 		}
 
@@ -368,7 +394,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			let patientId: string | undefined;
 			if (body.patientId) {
 				const [ownedPatient] = await tx
-					.select({ id: patients.id })
+					.select({ id: patients.id, phone: patients.phone })
 					.from(patients)
 					.where(
 						and(
@@ -379,6 +405,12 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					.limit(1);
 				if (!ownedPatient) {
 					return { patientNotFound: true as const };
+				}
+				const ownedDigits = (ownedPatient.phone ?? "").replace(/\D/g, "");
+				const incomingLast10 = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
+				const ownedLast10 = ownedDigits.length >= 10 ? ownedDigits.slice(-10) : ownedDigits;
+				if (!incomingLast10 || !ownedLast10 || incomingLast10 !== ownedLast10) {
+					return { patientPhoneMismatch: true as const };
 				}
 				patientId = ownedPatient.id;
 			} else {
@@ -489,6 +521,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
+		if (waitlistResult && "patientPhoneMismatch" in waitlistResult) {
+			return reply.status(403).send({
+				error: "PatientPhoneMismatch",
+				message: "Недостаточно прав для привязки выбранного профиля пациента.",
+			});
+		}
+
 		if (waitlistResult?.isReplayed) {
 			reply.header("idempotency-replayed", "true");
 		}
@@ -513,14 +552,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const organizationId = (request.query as { organizationId?: string } | undefined)?.organizationId;
-		if (!organizationId || !isValidUuid(organizationId)) {
+		const queryCheck = slotsParamSchema.safeParse(request.query ?? {});
+		if (!queryCheck.success) {
 			return reply.status(404).send({
 				error: "ClinicNotFound",
 				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
 			});
 		}
-		return handleDoctorList(organizationId, reply);
+		return handleDoctorList(queryCheck.data.organizationId, reply);
 	});
 
 	// 1. Get doctors for an organization
@@ -530,7 +569,14 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			if (isRateLimited(request.ip ?? "unknown")) {
 				return reply.status(429).send({ error: "Слишком много запросов." });
 			}
-			return handleDoctorList(request.params.organizationId, reply);
+			const paramCheck = slotsParamSchema.safeParse(request.params);
+			if (!paramCheck.success) {
+				return reply.status(404).send({
+					error: "ClinicNotFound",
+					message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+				});
+			}
+			return handleDoctorList(paramCheck.data.organizationId, reply);
 		},
 	);
 
@@ -582,19 +628,20 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		if (isRateLimited(request.ip ?? "unknown")) {
 			return reply.status(429).send({ error: "Слишком много запросов." });
 		}
-		const { organizationId, doctorId } = request.params;
-		if (!isValidUuid(organizationId)) {
-			return reply.status(404).send({
-				error: "ClinicNotFound",
-				message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
-			});
-		}
-		if (!isValidUuid(doctorId)) {
+		const paramCheck = doctorSlotParamsSchema.safeParse(request.params);
+		if (!paramCheck.success) {
+			if (paramCheck.error.issues.some((i) => i.path.includes("organizationId"))) {
+				return reply.status(404).send({
+					error: "ClinicNotFound",
+					message: "Клиника не найдена. Пожалуйста, перейдите по ссылке с сайта вашей клиники.",
+				});
+			}
 			return reply.status(400).send({
 				error: "DoctorIdInvalid",
 				message: "Некорректный идентификатор врача.",
 			});
 		}
+		const { organizationId, doctorId } = paramCheck.data;
 		const rawQuery = (request.query ?? {}) as Record<string, unknown>;
 		if (!rawQuery.date || typeof rawQuery.date !== "string") {
 			return reply.status(400).send({
