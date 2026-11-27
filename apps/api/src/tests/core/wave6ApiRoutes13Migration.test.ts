@@ -72,11 +72,14 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 			await purgeFixtureOrganizations([ORG_A, ORG_B]);
 
 			await withFixtureTenant(ORG_A, async () => {
-				await db.insert(organizations).values({
-					id: ORG_A,
-					name: "Клиника Альфа (Wave 6 Тест)",
-					clinicMode: "solo_doctor",
-				});
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_A,
+						name: "Клиника Альфа (Wave 6 Тест)",
+						clinicMode: "solo_doctor",
+					})
+					.onConflictDoNothing();
 				await db.insert(clinics).values({
 					id: CLINIC_A,
 					organizationId: ORG_A,
@@ -112,11 +115,14 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 			});
 
 			await withFixtureTenant(ORG_B, async () => {
-				await db.insert(organizations).values({
-					id: ORG_B,
-					name: "Клиника Бета (Wave 6 Тест)",
-					clinicMode: "solo_doctor",
-				});
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_B,
+						name: "Клиника Бета (Wave 6 Тест)",
+						clinicMode: "solo_doctor",
+					})
+					.onConflictDoNothing();
 				await db.insert(clinics).values({
 					id: CLINIC_B,
 					organizationId: ORG_B,
@@ -262,15 +268,15 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 				readOnlyFlag: null,
 			};
 			const originalConnect = pool.connect.bind(pool);
-			let wrapped = false;
+			const wrappedClients = new WeakSet<object>();
 
 			const patchedConnect = (async (...args: unknown[]) => {
 				const client = await (originalConnect as (...a: unknown[]) => Promise<{
 					query: (...qArgs: unknown[]) => Promise<unknown>;
 					release: (...rArgs: unknown[]) => void;
 				}>)(...args);
-				if (wrapped) return client;
-				wrapped = true;
+				if (wrappedClients.has(client)) return client;
+				wrappedClients.add(client);
 
 				const origQuery = client.query.bind(client);
 				let inReadOnlyTx = false;
@@ -285,18 +291,26 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 								? String((first as { text: unknown }).text)
 								: "";
 
-					if (/SET TRANSACTION READ ONLY/i.test(sqlText)) {
+					if (/\b(?:begin|set\s+transaction)\b.*\bread\s+only\b/i.test(sqlText)) {
 						observed.sawReadOnly = true;
 						inReadOnlyTx = true;
-					} else if (/SET TRANSACTION READ WRITE/i.test(sqlText)) {
+					} else if (
+						/\b(?:begin|set\s+transaction)\b.*\bread\s+write\b/i.test(sqlText) ||
+						(/^\s*begin\b/i.test(sqlText) && !/\bread\s+only\b/i.test(sqlText))
+					) {
 						observed.sawReadWrite = true;
-					} else if (/^\s*COMMIT\s*$/i.test(sqlText) && inReadOnlyTx && !capturedEndState) {
-						capturedEndState = true;
-						const probe = (await origQuery(
-							"SELECT txid_current_if_assigned()::text AS txid, current_setting('transaction_read_only') AS ro",
-						)) as { rows: Array<{ txid: string | null; ro: string }> };
-						observed.txidAtReadOnlyEnd = probe.rows[0]?.txid ?? null;
-						observed.readOnlyFlag = probe.rows[0]?.ro ?? null;
+					} else if (/^\s*commit\s*$/i.test(sqlText) && inReadOnlyTx) {
+						inReadOnlyTx = false;
+						if (!capturedEndState) {
+							capturedEndState = true;
+							const probe = (await origQuery(
+								"SELECT txid_current_if_assigned()::text AS txid, current_setting('transaction_read_only') AS ro",
+							)) as { rows: Array<{ txid: string | null; ro: string }> };
+							observed.txidAtReadOnlyEnd = probe.rows[0]?.txid ?? null;
+							observed.readOnlyFlag = probe.rows[0]?.ro ?? null;
+						}
+					} else if (/^\s*rollback\s*$/i.test(sqlText)) {
+						inReadOnlyTx = false;
 					}
 					return origQuery(...qArgs);
 				}) as typeof client.query;
@@ -322,7 +336,8 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 			[STAFF_TOKEN_HEADER]: staffTokenB,
 		};
 
-		// A. GET /api/patients — READ ONLY + FORCE RLS isolation
+		// A. GET /api/patients — patient read runs READ ONLY + FORCE RLS isolation
+		// (auditMedicalAccessFromRequest opens a separate short TX only for audit_events INSERT)
 		const patientsTx = await observePoolQueries(async () => {
 			const resA = await app.inject({ method: "GET", url: "/api/patients", headers: headersA });
 			assert.equal(resA.statusCode, 200, resA.body);
@@ -337,9 +352,29 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 			assert.ok(!listB.some((p) => p.id === PATIENT_A), "ORG_B must NOT see PATIENT_A");
 		});
 		assert.equal(patientsTx.sawReadOnly, true, "GET /api/patients must use READ ONLY TX");
-		assert.equal(patientsTx.sawReadWrite, false, "GET /api/patients must NOT use READ WRITE TX for reads");
 		assert.equal(patientsTx.readOnlyFlag, "on");
 		assert.equal(patientsTx.txidAtReadOnlyEnd, null);
+
+		// A2. GET /api/patients/:patientId/tickets — pure READ ONLY + FORCE RLS isolation (404 cross-tenant)
+		const ticketsTx = await observePoolQueries(async () => {
+			const resA = await app.inject({
+				method: "GET",
+				url: `/api/patients/${PATIENT_A}/tickets`,
+				headers: headersA,
+			});
+			assert.equal(resA.statusCode, 200, resA.body);
+
+			const resCross = await app.inject({
+				method: "GET",
+				url: `/api/patients/${PATIENT_B}/tickets`,
+				headers: headersA,
+			});
+			assert.equal(resCross.statusCode, 404, "Cross-tenant tickets probe must return 404 under FORCE RLS");
+		});
+		assert.equal(ticketsTx.sawReadOnly, true, "GET /api/patients/:id/tickets must use READ ONLY TX");
+		assert.equal(ticketsTx.sawReadWrite, false, "GET /api/patients/:id/tickets must NOT use READ WRITE TX");
+		assert.equal(ticketsTx.readOnlyFlag, "on");
+		assert.equal(ticketsTx.txidAtReadOnlyEnd, null);
 
 		// B. GET /api/billing/payments — READ ONLY + FORCE RLS isolation
 		const paymentsTx = await observePoolQueries(async () => {

@@ -5,6 +5,10 @@ import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { withTenantReadCtx } from "../../../db/rls.js";
 import { payments } from "../../../db/schema.js";
+import {
+	getRequestIdentity,
+	verifyActiveStaffSession,
+} from "../../../security/identity.js";
 import { isValidUuid } from "../../../utils/httpIdempotency.js";
 
 const billingPaymentsQuerySchema = z
@@ -25,6 +29,18 @@ export async function handleGetBillingPayments(
 	);
 	if (reply.sent) return reply;
 	if (!orgId) return reply;
+
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.userId) {
+		const sessionOk = await verifyActiveStaffSession(
+			request,
+			reply,
+			orgId,
+			identity.userId,
+			identity.sessionId,
+		);
+		if (!sessionOk) return reply;
+	}
 
 	const parsedQuery = billingPaymentsQuerySchema.safeParse(request.query ?? {});
 	if (!parsedQuery.success) {
