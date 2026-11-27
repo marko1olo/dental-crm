@@ -27,7 +27,7 @@ export function ClinicalCatalogSearchAndModes({
 				stacked ? "items-stretch" : "sm:flex-row items-stretch sm:items-center"
 			} justify-between gap-2.5 shrink-0`}
 		>
-			<div className="dente-search-wrap w-full flex-1">
+			<div className={`dente-search-wrap ${stacked ? "w-full shrink-0" : "w-full sm:flex-1"}`}>
 				<Search size={15} className="dente-search-icon" />
 				<input
 					type="text"
