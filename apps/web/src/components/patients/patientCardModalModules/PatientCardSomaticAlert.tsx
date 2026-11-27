@@ -67,7 +67,7 @@ export const PatientCardSomaticAlert: React.FC<PatientCardSomaticAlertProps> = R
 				<button
 					type="button"
 					onClick={() => onOpenAnamnesis("anamnesis")}
-					className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer shrink-0 transition-opacity"
+					className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] dark:bg-white/5 hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--primary)] cursor-pointer shrink-0 transition-colors"
 				>
 					Открыть статус
 				</button>

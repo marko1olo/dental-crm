@@ -1,21 +1,34 @@
-import { BookOpen, X } from "lucide-react";
+import { ArrowLeft, BookOpen, X } from "lucide-react";
 
 export interface ClinicalCatalogModalHeaderProps {
 	activeTooth?: number | null;
 	onClose: () => void;
+	embedded?: boolean;
 }
 
 export function ClinicalCatalogModalHeader({
 	activeTooth,
 	onClose,
+	embedded = false,
 }: ClinicalCatalogModalHeaderProps) {
 	return (
 		<div className="flex items-start sm:items-center justify-between gap-2.5 px-4 py-3 border-b border-[var(--glass-border)] bg-[var(--paper-soft)] shrink-0">
 			<div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
-				<div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs shrink-0">
+				<div className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal-soft)] shadow-2xs shrink-0">
 					<BookOpen size={18} />
 				</div>
 				<div className="min-w-0 flex-1">
+					{embedded && (
+						<button
+							type="button"
+							onClick={onClose}
+							data-testid="btn-catalog-back-to-protocol"
+							className="md:hidden mb-2 h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] dark:bg-white/5 hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+						>
+							<ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+							<span>Назад к протоколу</span>
+						</button>
+					)}
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<h3 className="text-sm sm:text-base font-extrabold text-[var(--ink)] leading-tight">
 							Каталог клинических протоколов
@@ -38,7 +51,7 @@ export function ClinicalCatalogModalHeader({
 			<button
 				type="button"
 				onClick={onClose}
-				className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors cursor-pointer shrink-0"
+				className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] dark:bg-white/5 hover:bg-[var(--paper-soft)] flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors cursor-pointer shrink-0"
 				aria-label="Закрыть"
 				data-testid="btn-close-protocols-catalog-modal"
 			>

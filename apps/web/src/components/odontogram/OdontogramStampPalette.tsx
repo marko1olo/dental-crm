@@ -533,7 +533,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 										left: `${popoverPosition.left}px`,
 										width: `${popoverPosition.width}px`,
 									}}
-									className="z-40 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-2.5 space-y-2"
+									className="z-[150] rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xl p-2.5 space-y-2"
 								>
 									<div className="relative flex items-center">
 										<Search className="w-3.5 h-3.5 text-[var(--ink-muted)] absolute left-2.5 pointer-events-none" />

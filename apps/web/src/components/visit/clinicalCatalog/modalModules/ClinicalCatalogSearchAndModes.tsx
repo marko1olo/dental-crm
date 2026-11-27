@@ -50,33 +50,36 @@ export function ClinicalCatalogSearchAndModes({
 				)}
 			</div>
 
-			<div className="dente-segmented-bar shrink-0 self-start sm:self-auto">
+			<div className="dente-segmented-bar w-full shrink-0">
 				<button
 					type="button"
 					onClick={() => setViewMode("procedures")}
-					className={`dente-segmented-item ${viewMode === "procedures" ? "active" : ""}`}
+					className={`dente-segmented-item ${stacked ? "flex-1 justify-center !px-2 !text-xs" : ""} ${viewMode === "procedures" ? "active" : ""}`}
+					title={`Процедуры (${proceduresCount})`}
 					data-testid="btn-view-mode-procedures"
 				>
-					<Layers size={13} />
-					<span>Процедуры ({proceduresCount})</span>
+					<Layers size={13} className="shrink-0" />
+					<span>{stacked ? "Процедуры" : `Процедуры (${proceduresCount})`}</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => setViewMode("chunks")}
-					className={`dente-segmented-item ${viewMode === "chunks" ? "active" : ""}`}
+					className={`dente-segmented-item ${stacked ? "flex-1 justify-center !px-2 !text-xs" : ""} ${viewMode === "chunks" ? "active" : ""}`}
+					title={`Все блоки (${chunksCount})`}
 					data-testid="btn-view-mode-chunks"
 				>
-					<FileText size={13} />
-					<span>Все блоки ({chunksCount})</span>
+					<FileText size={13} className="shrink-0" />
+					<span>{stacked ? "Блоки" : `Все блоки (${chunksCount})`}</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => setViewMode("diagnoses")}
-					className={`dente-segmented-item ${viewMode === "diagnoses" ? "active" : ""}`}
+					className={`dente-segmented-item ${stacked ? "flex-1 justify-center !px-2 !text-xs" : ""} ${viewMode === "diagnoses" ? "active" : ""}`}
+					title={`МКБ-10 (${diagnosesCount})`}
 					data-testid="btn-view-mode-diagnoses"
 				>
-					<Activity size={13} />
-					<span>МКБ-10 ({diagnosesCount})</span>
+					<Activity size={13} className="shrink-0" />
+					<span>{stacked ? "МКБ-10" : `МКБ-10 (${diagnosesCount})`}</span>
 				</button>
 			</div>
 		</div>

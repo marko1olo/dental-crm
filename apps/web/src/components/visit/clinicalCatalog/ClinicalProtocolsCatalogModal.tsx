@@ -33,7 +33,7 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 
 		const panelBody = (
 			<>
-				<ClinicalCatalogModalHeader activeTooth={activeTooth} onClose={onClose} />
+				<ClinicalCatalogModalHeader activeTooth={activeTooth} onClose={onClose} embedded={embedded} />
 				<ClinicalCatalogSearchAndModes
 					searchQuery={state.searchQuery}
 					setSearchQuery={state.setSearchQuery}
@@ -98,17 +98,11 @@ export const ClinicalProtocolsCatalogModal: React.FC<ClinicalProtocolsCatalogMod
 		if (embedded) {
 			return (
 				<aside
-					className="shrink-0 w-full md:w-[380px] max-md:fixed max-md:inset-0 max-md:z-[120] max-md:bg-black/50 max-md:flex max-md:flex-col max-md:justify-end"
+					className="shrink-0 w-full md:w-[380px] flex-1 md:flex-none min-h-0 bg-[var(--paper-strong)] md:border-l border-[var(--line)] text-[var(--ink)] flex flex-col overflow-hidden [&_.dente-search-wrap]:w-full [&_.dente-segmented-bar]:w-full [&_.dente-segmented-item]:flex-1 [&_.dente-segmented-item]:justify-center [&_[data-testid='protocols-catalog-list']_.grid]:!grid-cols-1 [&_[data-testid='btn-close-protocols-catalog-modal']]:shrink-0"
 					aria-label="Каталог клинических протоколов"
 					data-testid="clinical-protocols-catalog-drawer"
-					onClick={(e) => {
-						if (e.target === e.currentTarget) onClose();
-					}}
 				>
-					<div className="bg-[var(--paper-strong)] border-l border-[var(--line)] text-[var(--ink)] w-full h-full flex flex-col overflow-hidden max-md:h-auto max-md:max-h-[88dvh] max-md:border-l-0 max-md:border-t max-md:rounded-t-[24px] max-md:shadow-2xl [&_.dente-search-wrap]:w-full [&_.dente-segmented-bar]:w-full [&_.dente-segmented-bar]:overflow-x-auto [&_.dente-segmented-item]:flex-1 [&_.dente-segmented-item]:justify-center [&_[data-testid='protocols-catalog-list']_.grid]:!grid-cols-1 [&_[data-testid='btn-close-protocols-catalog-modal']]:shrink-0">
-						<div className="md:hidden w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto my-2.5 shrink-0" aria-hidden="true" />
-						{panelBody}
-					</div>
+					{panelBody}
 				</aside>
 			);
 		}

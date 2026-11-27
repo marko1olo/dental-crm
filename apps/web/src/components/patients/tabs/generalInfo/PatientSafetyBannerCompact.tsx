@@ -32,7 +32,7 @@ export const PatientSafetyBannerCompact: React.FC<PatientSafetyBannerCompactProp
 							data-testid="btn-somatic-healthy-norm"
 							onClick={handleApplyNormAction}
 							disabled={disabled}
-							className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-medium bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-2xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98 shrink-0 select-none"
+							className="min-h-[44px] sm:min-h-[28px] h-7 px-2.5 text-xs rounded-lg font-medium border border-[var(--line)] bg-[var(--paper)] dark:bg-white/5 hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-2xs inline-flex items-center gap-1.5 cursor-pointer transition-colors active:scale-98 shrink-0 select-none"
 							title="Зафиксировать физиологическую норму: соматически здоров"
 						>
 							<ShieldCheck className="w-3.5 h-3.5 shrink-0" />

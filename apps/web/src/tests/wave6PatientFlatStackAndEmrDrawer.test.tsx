@@ -189,8 +189,10 @@ describe("Wave 6: PatientCardModal Flat Stack, EMR Drawer & cbctCanvasCapture (P
 		);
 		assert.ok(drawerHtml.includes('data-testid="clinical-protocols-catalog-drawer"'));
 		assert.ok(drawerHtml.includes("md:w-[380px]"));
-		assert.ok(drawerHtml.includes("max-md:rounded-t-[24px]"));
+		assert.ok(drawerHtml.includes('data-testid="btn-catalog-back-to-protocol"'));
+		assert.ok(!drawerHtml.includes("max-md:fixed"));
 		assert.ok(!drawerHtml.includes("md:w-[440px]"));
+		assert.ok(!drawerHtml.includes("primary-button"));
 	});
 
 	it("6. cbctCanvasCapture logs structured warnings on WebP/JPEG/DOM failures and falls back to PNG", () => {

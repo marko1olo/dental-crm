@@ -36,7 +36,7 @@ export function ClinicalChunksGrid({
 					>
 						<div className="space-y-1.5 min-w-0">
 							<div className="flex items-center gap-1.5 flex-wrap">
-								<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
+								<span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
 									{chunk.categoryName}
 								</span>
 								<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--glass-border)]">

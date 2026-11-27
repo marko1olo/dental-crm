@@ -256,7 +256,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					<div className="emr-studio-drag-handle sm:hidden" aria-hidden="true" />
 
 					{/* 1-строчная профессиональная шапка */}
-					<header className="emr-studio-header">
+					<header className={`emr-studio-header ${isProtocolGeneratorOpen ? "max-md:hidden" : ""}`}>
 						<div className="emr-studio-title-group">
 							{onBack && (
 								<button type="button" onClick={onBack} data-testid="btn-emr-back-to-card" className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-1.5 shrink-0 cursor-pointer">
@@ -357,7 +357,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					</header>
 
 					{/* Навигационные табы приёма */}
-					<nav className="emr-studio-nav" style={{ flexWrap: "nowrap", width: "100%", padding: "4px 16px", gap: "6px", overflowX: "auto" }}>
+					<nav className={`emr-studio-nav ${isProtocolGeneratorOpen ? "max-md:hidden" : ""}`} style={{ flexWrap: "nowrap", width: "100%", padding: "4px 16px", gap: "6px", overflowX: "auto" }}>
 						{RECORD_TABS.map((tab) => {
 							const Icon = tab.icon;
 							const isActive = activeTab === tab.id;
@@ -378,9 +378,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						})}
 					</nav>
 
-					{/* Тело активной вкладки + встроенный боковой каталог протоколов без размонтирования DOM */}
+					{/* Тело активной вкладки + встроенный боковой каталог протоколов без двойного дравера */}
 					<div className="flex flex-1 min-h-0 overflow-hidden relative">
-						<main className="emr-studio-body flex-1 min-w-0">
+						<main className={`emr-studio-body flex-1 min-w-0 ${isProtocolGeneratorOpen ? "max-md:hidden" : ""}`}>
 							{activeTab === "overview" && (
 								<div className="emr-studio-preview-container flex flex-col items-center">
 									<div
@@ -417,15 +417,17 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					</div>
 
 					{/* Мобильная нижняя плашка в Natural Thumb Zone (Apple HIG) */}
-					<footer className="emr-studio-bottom-bar sm:hidden">
-						<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary flex-1" onClick={handleApplyNorm} disabled={false} title="Физиологическая норма">
-							<Sparkles className="w-4 h-4 shrink-0" /><span>Норма</span>
-						</button>
-						<button type="button" className="dente-btn dente-btn-primary emr-studio-btn emr-studio-btn-primary flex-[2]" onClick={handleSaveForm} disabled={false} title="Сохранить и подписать карту приёма">
-							{isSaving ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
-							<span>{isSaving ? "Сохранение..." : "Подписать карту"}</span>
-						</button>
-					</footer>
+					{!isProtocolGeneratorOpen && (
+						<footer className="emr-studio-bottom-bar sm:hidden">
+							<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary flex-1" onClick={handleApplyNorm} disabled={false} title="Физиологическая норма">
+								<Sparkles className="w-4 h-4 shrink-0" /><span>Норма</span>
+							</button>
+							<button type="button" className="dente-btn dente-btn-primary emr-studio-btn emr-studio-btn-primary flex-[2]" onClick={handleSaveForm} disabled={false} title="Сохранить и подписать карту приёма">
+								{isSaving ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Check className="w-4 h-4 shrink-0" />}
+								<span>{isSaving ? "Сохранение..." : "Подписать карту"}</span>
+							</button>
+						</footer>
+					)}
 				</div>
 			</div>
 		);

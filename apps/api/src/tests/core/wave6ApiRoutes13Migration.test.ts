@@ -80,38 +80,56 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 						clinicMode: "solo_doctor",
 					})
 					.onConflictDoNothing();
-				await db.insert(clinics).values({
-					id: CLINIC_A,
-					organizationId: ORG_A,
-					name: "Филиал Альфа",
-					timezone: "Europe/Moscow",
-				});
-				await db.insert(users).values({
-					id: USER_A,
-					organizationId: ORG_A,
-					login: "wave6-owner-a",
-					fullName: "Владелец Клиники Альфа",
-					role: "owner",
-					passwordHash: "synthetic-hash-a",
-					currentSessionId: ACTIVE_SESSION_A,
-					isActive: true,
-				});
-				await db.insert(patients).values({
-					id: PATIENT_A,
-					organizationId: ORG_A,
-					fullName: "Альфов Изолированный Пациент",
-					phone: "+79990001101",
-				});
-				await db.insert(payments).values({
-					id: PAYMENT_A,
-					organizationId: ORG_A,
-					patientId: PATIENT_A,
-					amountRub: "1250.00",
-					amountKopecks: 125_000n,
-					method: "card",
-					status: "paid",
-					paidAt: new Date(),
-				});
+				await db
+					.insert(clinics)
+					.values({
+						id: CLINIC_A,
+						organizationId: ORG_A,
+						name: "Филиал Альфа",
+						timezone: "Europe/Moscow",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({
+						id: USER_A,
+						organizationId: ORG_A,
+						login: "wave6-owner-a",
+						fullName: "Владелец Клиники Альфа",
+						role: "owner",
+						passwordHash: "synthetic-hash-a",
+						currentSessionId: ACTIVE_SESSION_A,
+						isActive: true,
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: { currentSessionId: ACTIVE_SESSION_A, isActive: true },
+					});
+				await db
+					.insert(patients)
+					.values({
+						id: PATIENT_A,
+						organizationId: ORG_A,
+						fullName: "Альфов Изолированный Пациент",
+						phone: "+79990001101",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(payments)
+					.values({
+						id: PAYMENT_A,
+						organizationId: ORG_A,
+						patientId: PATIENT_A,
+						amountRub: "1250.00",
+						amountKopecks: 125_000n,
+						method: "card",
+						status: "paid",
+						paidAt: new Date(),
+					})
+					.onConflictDoUpdate({
+						target: payments.id,
+						set: { amountRub: "1250.00", amountKopecks: 125_000n, status: "paid" },
+					});
 			});
 
 			await withFixtureTenant(ORG_B, async () => {
@@ -123,38 +141,56 @@ describe("Wave 6-ApiRoutes-1.3: Live PG18 READ ONLY, FORCE RLS & Zero-Held-TX I/
 						clinicMode: "solo_doctor",
 					})
 					.onConflictDoNothing();
-				await db.insert(clinics).values({
-					id: CLINIC_B,
-					organizationId: ORG_B,
-					name: "Филиал Бета",
-					timezone: "Europe/Moscow",
-				});
-				await db.insert(users).values({
-					id: USER_B,
-					organizationId: ORG_B,
-					login: "wave6-owner-b",
-					fullName: "Владелец Клиники Бета",
-					role: "owner",
-					passwordHash: "synthetic-hash-b",
-					currentSessionId: ACTIVE_SESSION_B,
-					isActive: true,
-				});
-				await db.insert(patients).values({
-					id: PATIENT_B,
-					organizationId: ORG_B,
-					fullName: "Бетов Соседний Пациент",
-					phone: "+79990002202",
-				});
-				await db.insert(payments).values({
-					id: PAYMENT_B,
-					organizationId: ORG_B,
-					patientId: PATIENT_B,
-					amountRub: "987.00",
-					amountKopecks: 98_700n,
-					method: "cash",
-					status: "paid",
-					paidAt: new Date(),
-				});
+				await db
+					.insert(clinics)
+					.values({
+						id: CLINIC_B,
+						organizationId: ORG_B,
+						name: "Филиал Бета",
+						timezone: "Europe/Moscow",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({
+						id: USER_B,
+						organizationId: ORG_B,
+						login: "wave6-owner-b",
+						fullName: "Владелец Клиники Бета",
+						role: "owner",
+						passwordHash: "synthetic-hash-b",
+						currentSessionId: ACTIVE_SESSION_B,
+						isActive: true,
+					})
+					.onConflictDoUpdate({
+						target: users.id,
+						set: { currentSessionId: ACTIVE_SESSION_B, isActive: true },
+					});
+				await db
+					.insert(patients)
+					.values({
+						id: PATIENT_B,
+						organizationId: ORG_B,
+						fullName: "Бетов Соседний Пациент",
+						phone: "+79990002202",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(payments)
+					.values({
+						id: PAYMENT_B,
+						organizationId: ORG_B,
+						patientId: PATIENT_B,
+						amountRub: "987.00",
+						amountKopecks: 98_700n,
+						method: "cash",
+						status: "paid",
+						paidAt: new Date(),
+					})
+					.onConflictDoUpdate({
+						target: payments.id,
+						set: { amountRub: "987.00", amountKopecks: 98_700n, status: "paid" },
+					});
 			});
 		} catch (error) {
 			if (isDatabaseUnavailable(error)) {

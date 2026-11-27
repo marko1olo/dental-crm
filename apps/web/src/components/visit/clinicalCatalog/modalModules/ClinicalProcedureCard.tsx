@@ -25,7 +25,7 @@ export function ClinicalProcedureCard({
 		>
 			<div className="space-y-1.5">
 				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
+					<span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--teal-surface)] text-[var(--teal-dark)] border border-[var(--teal-soft)]">
 						{proc.categoryName}
 					</span>
 					{proc.matchedIcd10 && (
@@ -45,24 +45,24 @@ export function ClinicalProcedureCard({
 			<div className="flex items-center gap-1 flex-wrap pt-2 border-t border-[var(--glass-border)] text-xs">
 				<span className="text-[10px] font-bold text-[var(--muted)] mr-0.5">Этапы:</span>
 				{proc.complaints && (
-					<button type="button" onClick={() => onApplyChunk(proc.complaints!)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только жалобы">+ Жалобы</button>
+					<button type="button" onClick={() => proc.complaints && onApplyChunk(proc.complaints)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только жалобы">+ Жалобы</button>
 				)}
 				{proc.anamnesis && (
-					<button type="button" onClick={() => onApplyChunk(proc.anamnesis!)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только анамнез">+ Анамнез</button>
+					<button type="button" onClick={() => proc.anamnesis && onApplyChunk(proc.anamnesis)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только анамнез">+ Анамнез</button>
 				)}
 				{proc.objective && (
-					<button type="button" onClick={() => onApplyChunk(proc.objective!)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только объективный статус">+ Статус</button>
+					<button type="button" onClick={() => proc.objective && onApplyChunk(proc.objective)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только объективный статус">+ Статус</button>
 				)}
 				{proc.treatment && (
-					<button type="button" onClick={() => onApplyChunk(proc.treatment!)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только протокол лечения">+ Лечение</button>
+					<button type="button" onClick={() => proc.treatment && onApplyChunk(proc.treatment)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только протокол лечения">+ Лечение</button>
 				)}
 				{proc.recommendations && (
-					<button type="button" onClick={() => onApplyChunk(proc.recommendations!)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только рекомендации">+ Реком.</button>
+					<button type="button" onClick={() => proc.recommendations && onApplyChunk(proc.recommendations)} className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-[var(--glass-border)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] text-[var(--ink)] transition-colors cursor-pointer" title="Вставить только рекомендации">+ Рекомендации</button>
 				)}
 			</div>
 
 			<div className="flex items-center gap-1.5 pt-2 border-t border-[var(--glass-border)] mt-auto">
-				<button type="button" onClick={() => onApplyFull(proc)} className="primary-button flex-1" title="Вставка всех этапов" data-testid={`btn-apply-full-proc-${proc.id}`}>
+				<button type="button" onClick={() => onApplyFull(proc)} className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] dark:bg-white/5 hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 cursor-pointer flex-1 transition-colors" title="Вставка всех этапов" data-testid={`btn-apply-full-proc-${proc.id}`}>
 					<Zap size={13} className="shrink-0" />
 					<span>Применить</span>
 				</button>

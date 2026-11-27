@@ -50,10 +50,10 @@ export function ClinicalDiagnosesGrid({
 						<button
 							type="button"
 							onClick={() => onApplyDiagnosis(diag)}
-							className="primary-button shrink-0"
+							className="h-8 px-3 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] dark:bg-white/5 hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
 							title="Установить этот диагноз в карту приёма"
 						>
-							<Check size={13} />
+							<Check size={13} className="shrink-0" />
 							<span>Выбрать</span>
 						</button>
 					</div>

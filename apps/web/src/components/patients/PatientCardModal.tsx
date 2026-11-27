@@ -267,7 +267,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								ref={tabsScrollRef}
 								role="tablist"
 								aria-label="Разделы карты пациента"
-								className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto flex-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+								className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto flex-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth pr-4 [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)]"
 							>
 								{visibleTabs.map((tab) => {
 									const isActive = activeTab === tab.id;

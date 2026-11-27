@@ -7,7 +7,10 @@ import {
 } from "../../accessGuard.js";
 import { withTenantReadCtx } from "../../db/rls.js";
 import { organizations } from "../../db/schema/auth.js";
-import { getRequestIdentity } from "../../security/identity.js";
+import {
+	getRequestIdentity,
+	verifyActiveStaffSession,
+} from "../../security/identity.js";
 import {
 	roleHasPermissionWithOverrides,
 } from "../../security/permissions.js";
@@ -31,6 +34,18 @@ export async function requireExecutiveAccess(
 	const orgId = await requireResolvedOrganizationId(request, reply, "executive analytics");
 	if (!orgId) return null;
 
+	const identity = getRequestIdentity(request);
+	if (identity.verified && identity.userId) {
+		const sessionOk = await verifyActiveStaffSession(
+			request,
+			reply,
+			orgId,
+			identity.userId,
+			identity.sessionId,
+		);
+		if (!sessionOk) return null;
+	}
+
 	const providedSecret = request.headers["x-dente-admin-secret"];
 	const normalizedProvidedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
 	const adminSecret = configuredClinicalAccessSecret();
@@ -44,7 +59,6 @@ export async function requireExecutiveAccess(
 		return orgId;
 	}
 
-	const identity = getRequestIdentity(request);
 	if (identity.userId) {
 		const role = (identity.role ?? "").toLowerCase();
 		if (EXECUTIVE_ROLES.has(role)) {

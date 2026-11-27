@@ -118,3 +118,4 @@
 
 .emr-studio-body { flex: 1; overflow-y: auto; padding: 20px; background: var(--paper, #f8fafc); }
 :is([data-theme="dark"], .dark) .emr-studio-body { background: #090d16; }
+body:has(.emr-studio-backdrop) .copilot-trigger-btn { display: none !important; }
