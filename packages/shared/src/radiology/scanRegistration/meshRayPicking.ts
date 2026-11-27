@@ -65,13 +65,13 @@ export function pickMeshRay(
 	if (indices && indices.length >= 3) {
 		const triCount = Math.floor(indices.length / 3);
 		for (let t = 0; t < triCount; t++) {
-			const i0 = indices[3 * t]!;
-			const i1 = indices[3 * t + 1]!;
-			const i2 = indices[3 * t + 2]!;
+			const i0 = indices[3 * t] ?? 0;
+			const i1 = indices[3 * t + 1] ?? 0;
+			const i2 = indices[3 * t + 2] ?? 0;
 
-			const v0: Vec3 = [positions[3 * i0]!, positions[3 * i0 + 1]!, positions[3 * i0 + 2]!];
-			const v1: Vec3 = [positions[3 * i1]!, positions[3 * i1 + 1]!, positions[3 * i1 + 2]!];
-			const v2: Vec3 = [positions[3 * i2]!, positions[3 * i2 + 1]!, positions[3 * i2 + 2]!];
+			const v0: Vec3 = [positions[3 * i0] ?? 0, positions[3 * i0 + 1] ?? 0, positions[3 * i0 + 2] ?? 0];
+			const v1: Vec3 = [positions[3 * i1] ?? 0, positions[3 * i1 + 1] ?? 0, positions[3 * i1 + 2] ?? 0];
+			const v2: Vec3 = [positions[3 * i2] ?? 0, positions[3 * i2 + 1] ?? 0, positions[3 * i2 + 2] ?? 0];
 
 			const hitT = rayTriangleHit(orig, ndir, v0, v1, v2);
 			if (hitT !== null && hitT < bestT) {
@@ -83,9 +83,9 @@ export function pickMeshRay(
 		const triCount = Math.floor(positions.length / 9);
 		for (let t = 0; t < triCount; t++) {
 			const o = t * 9;
-			const v0: Vec3 = [positions[o]!, positions[o + 1]!, positions[o + 2]!];
-			const v1: Vec3 = [positions[o + 3]!, positions[o + 4]!, positions[o + 5]!];
-			const v2: Vec3 = [positions[o + 6]!, positions[o + 7]!, positions[o + 8]!];
+			const v0: Vec3 = [positions[o] ?? 0, positions[o + 1] ?? 0, positions[o + 2] ?? 0];
+			const v1: Vec3 = [positions[o + 3] ?? 0, positions[o + 4] ?? 0, positions[o + 5] ?? 0];
+			const v2: Vec3 = [positions[o + 6] ?? 0, positions[o + 7] ?? 0, positions[o + 8] ?? 0];
 
 			const hitT = rayTriangleHit(orig, ndir, v0, v1, v2);
 			if (hitT !== null && hitT < bestT) {

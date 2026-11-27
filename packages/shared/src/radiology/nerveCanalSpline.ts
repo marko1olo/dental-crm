@@ -115,14 +115,13 @@ export function interpolateNerveSpline3D(
 	samplesPerSegment = 50,
 ): Vec3[] {
 	const n = controlPoints.length;
-	if (n === 0) return [];
-	if (n === 1) return [[...controlPoints[0]!]];
-	if (n < 2) return controlPoints.map((p) => [...p]);
+	const first = controlPoints[0];
+	const last = controlPoints[n - 1];
+	if (n === 0 || !first || !last) return [];
+	if (n === 1) return [[...first]];
 
 	const samples = Math.max(1, samplesPerSegment);
 	const result: Vec3[] = [];
-	const first = controlPoints[0]!;
-	const last = controlPoints[n - 1]!;
 
 	for (let i = 0; i < n - 1; i++) {
 		const p0 = controlPoints[Math.max(0, i - 1)] ?? first;
@@ -148,8 +147,9 @@ export function totalArcLength3D(curve: readonly Vec3[]): number {
 	if (curve.length < 2) return 0;
 	let len = 0;
 	for (let i = 1; i < curve.length; i++) {
-		const pPrev = curve[i - 1]!;
-		const pCurr = curve[i]!;
+		const pPrev = curve[i - 1];
+		const pCurr = curve[i];
+		if (!pPrev || !pCurr) continue;
 		len += Math.hypot(
 			pCurr[0] - pPrev[0],
 			pCurr[1] - pPrev[1],
@@ -168,30 +168,32 @@ export function resampleNerveByArcLength3D(
 	curve: readonly Vec3[],
 	numSamples: number,
 ): Vec3[] {
-	if (numSamples <= 0) return [];
-	if (curve.length === 0) return [];
-	if (numSamples === 1) return [[...curve[0]!]];
+	const first = curve[0];
+	if (numSamples <= 0 || curve.length === 0 || !first) return [];
+	if (numSamples === 1) return [[...first]];
 	if (curve.length === 1) {
-		return Array.from({ length: numSamples }, () => [...curve[0]!]);
+		return Array.from({ length: numSamples }, () => [...first]);
 	}
 
 	const cumLen: number[] = [0];
 	for (let i = 1; i < curve.length; i++) {
-		const pPrev = curve[i - 1]!;
-		const pCurr = curve[i]!;
-		cumLen.push(
-			cumLen[i - 1]! +
-				Math.hypot(
-					pCurr[0] - pPrev[0],
-					pCurr[1] - pPrev[1],
-					pCurr[2] - pPrev[2],
-				),
-		);
+		const pPrev = curve[i - 1];
+		const pCurr = curve[i];
+		const prevLen = cumLen[i - 1] ?? 0;
+		const dist =
+			pPrev && pCurr
+				? Math.hypot(
+						pCurr[0] - pPrev[0],
+						pCurr[1] - pPrev[1],
+						pCurr[2] - pPrev[2],
+					)
+				: 0;
+		cumLen.push(prevLen + dist);
 	}
 
-	const total = cumLen[cumLen.length - 1]!;
+	const total = cumLen[cumLen.length - 1] ?? 0;
 	if (total <= 0) {
-		return Array.from({ length: numSamples }, () => [...curve[0]!]);
+		return Array.from({ length: numSamples }, () => [...first]);
 	}
 
 	const result: Vec3[] = [];
@@ -200,17 +202,17 @@ export function resampleNerveByArcLength3D(
 	for (let s = 0; s < numSamples; s++) {
 		const target = (s / (numSamples - 1)) * total;
 
-		while (seg < curve.length - 2 && cumLen[seg + 1]! < target) {
+		while (seg < curve.length - 2 && (cumLen[seg + 1] ?? 0) < target) {
 			seg++;
 		}
 
-		const segStart = cumLen[seg]!;
-		const segNext = cumLen[seg + 1]!;
+		const segStart = cumLen[seg] ?? 0;
+		const segNext = cumLen[seg + 1] ?? segStart;
 		const segLen = segNext - segStart;
 		const t = segLen > 0 ? (target - segStart) / segLen : 0;
 
-		const p0 = curve[seg]!;
-		const p1 = curve[seg + 1]!;
+		const p0 = curve[seg] ?? first;
+		const p1 = curve[seg + 1] ?? p0;
 
 		result.push([
 			p0[0] + t * (p1[0] - p0[0]),
@@ -232,25 +234,24 @@ export function computeCurveTangents3D(curve: readonly Vec3[]): Vec3[] {
 	if (curve.length === 0) return [];
 	if (curve.length === 1) return [[0, 0, 1]];
 
-	return curve.map((_, i, arr) => {
-		let tx: number;
-		let ty: number;
-		let tz: number;
-		const curr = arr[i]!;
+	return curve.map((curr, i, arr) => {
+		let tx = 0;
+		let ty = 0;
+		let tz = 0;
 
 		if (i === 0) {
-			const next = arr[1]!;
+			const next = arr[1] ?? curr;
 			tx = next[0] - curr[0];
 			ty = next[1] - curr[1];
 			tz = next[2] - curr[2];
 		} else if (i === arr.length - 1) {
-			const prev = arr[i - 1]!;
+			const prev = arr[i - 1] ?? curr;
 			tx = curr[0] - prev[0];
 			ty = curr[1] - prev[1];
 			tz = curr[2] - prev[2];
 		} else {
-			const prev = arr[i - 1]!;
-			const next = arr[i + 1]!;
+			const prev = arr[i - 1] ?? curr;
+			const next = arr[i + 1] ?? curr;
 			tx = next[0] - prev[0];
 			ty = next[1] - prev[1];
 			tz = next[2] - prev[2];
@@ -417,20 +418,21 @@ export function evaluateImplantToNerveCanalSafety(
 		};
 	}
 
+	const firstPt = nervePolyline[0] ?? [0, 0, 0];
 	let minCenterlineDist = Number.POSITIVE_INFINITY;
 	let bestImplantPoint: Vec3 = [...implantApex];
-	let bestNervePoint: Vec3 = [...nervePolyline[0]!];
+	let bestNervePoint: Vec3 = [...firstPt];
 
 	if (nervePolyline.length === 1) {
-		const pt = nervePolyline[0]!;
-		const res = closestPointOnSegment3D(pt, implantEntry, implantApex);
+		const res = closestPointOnSegment3D(firstPt, implantEntry, implantApex);
 		minCenterlineDist = res.distance;
 		bestImplantPoint = res.closestPoint;
-		bestNervePoint = [...pt];
+		bestNervePoint = [...firstPt];
 	} else {
 		for (let i = 0; i < nervePolyline.length - 1; i++) {
-			const n0 = nervePolyline[i]!;
-			const n1 = nervePolyline[i + 1]!;
+			const n0 = nervePolyline[i];
+			const n1 = nervePolyline[i + 1];
+			if (!n0 || !n1) continue;
 			const res = closestPointsSegmentToSegment3D(implantEntry, implantApex, n0, n1);
 			if (res.distance < minCenterlineDist) {
 				minCenterlineDist = res.distance;

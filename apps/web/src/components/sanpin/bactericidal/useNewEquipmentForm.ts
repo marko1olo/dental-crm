@@ -1,7 +1,12 @@
 import React, { useState } from "react";
-import { type BactericidalDeviceType, type CreateBactericidalEquipmentDto } from "@dental/shared";
+import {
+	generateUuidV7,
+	type BactericidalDeviceType,
+	type CreateBactericidalEquipmentDto,
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 
 export function useNewEquipmentForm({
 	onSuccess,
@@ -21,8 +26,6 @@ export function useNewEquipmentForm({
 		if (submitting) return;
 		try {
 			setSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const payload: CreateBactericidalEquipmentDto = {
 				roomName: newRoomName,
 				roomVolumeM3: Number(newRoomVolume),
@@ -33,11 +36,10 @@ export function useNewEquipmentForm({
 			};
 			const res = await fetch("/api/registers/bactericidal/equipments", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify(payload),
 			});
 			if (res.ok) {
@@ -48,6 +50,7 @@ export function useNewEquipmentForm({
 				showToast(err.message || "Ошибка при регистрации прибора", "error");
 			}
 		} catch (err) {
+			clientLogger.warn("useNewEquipmentForm failed", err);
 			showToast("Сетевая ошибка", "error");
 		} finally {
 			setSubmitting(false);

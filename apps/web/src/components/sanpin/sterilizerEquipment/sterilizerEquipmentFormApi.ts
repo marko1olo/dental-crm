@@ -1,20 +1,18 @@
-import type {
-	CreateSterilizerEquipmentDto,
-	SterilizerEquipment,
-	UpdateSterilizerEquipmentDto,
+import {
+	generateUuidV7,
+	type CreateSterilizerEquipmentDto,
+	type SterilizerEquipment,
+	type UpdateSterilizerEquipmentDto,
 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../../services/logging/clientLogger.js";
 import type { SterilizerFormData } from "./types.js";
 
-export function getSterilizerAuthHeaders() {
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	return {
+export function getSterilizerAuthHeaders(): Record<string, string> {
+	return denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-	};
+	});
 }
 
 export async function submitSterilizerData(
@@ -42,7 +40,7 @@ export async function submitSterilizerData(
 	try {
 		const headers = {
 			...getSterilizerAuthHeaders(),
-			"Idempotency-Key": crypto.randomUUID(),
+			"Idempotency-Key": generateUuidV7(),
 		};
 		const payload: CreateSterilizerEquipmentDto | UpdateSterilizerEquipmentDto = {
 			name: formData.name.trim(),
@@ -71,10 +69,17 @@ export async function submitSterilizerData(
 			showToast(`Данные аппарата «${formData.name}» успешно сохранены`, "success");
 			return true;
 		}
-		const err = await res.json().catch(() => ({}));
-		showToast(err.message || "Ошибка сохранения аппарата", "error");
+		let errorMessage = "Ошибка сохранения аппарата";
+		try {
+			const err = (await res.json()) as { message?: string };
+			if (err.message) errorMessage = err.message;
+		} catch (parseErr) {
+			clientLogger.debug("sterilizerEquipmentFormApi error parse failed", parseErr);
+		}
+		showToast(errorMessage, "error");
 		return false;
-	} catch {
+	} catch (err) {
+		clientLogger.warn("submitSterilizerData failed", err);
 		showToast("Сетевая ошибка сохранения", "error");
 		return false;
 	}
@@ -90,7 +95,7 @@ export async function submitSterilizerStatusChange(
 			method: "PUT",
 			headers: {
 				...getSterilizerAuthHeaders(),
-				"Idempotency-Key": crypto.randomUUID(),
+				"Idempotency-Key": generateUuidV7(),
 			},
 			body: JSON.stringify(body),
 		});
@@ -100,7 +105,8 @@ export async function submitSterilizerStatusChange(
 		}
 		showToast("Ошибка изменения статуса", "error");
 		return false;
-	} catch {
+	} catch (err) {
+		clientLogger.warn("submitSterilizerStatusChange failed", err);
 		showToast("Сетевая ошибка", "error");
 		return false;
 	}

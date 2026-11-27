@@ -1,9 +1,9 @@
 import React, { useRef, useState } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 
 export function useRetroactiveDayCycle({
 	availableSterilizers,
@@ -31,16 +31,12 @@ export function useRetroactiveDayCycle({
 				itemsDescription: "Дневной цикл автоклавирования: норма 134°C, 2.1 бар, экспозиция 5 мин, химические индикаторы 5 класса — норма",
 				packagingType: "kraft_self_adhesive",
 			};
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				}),
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {

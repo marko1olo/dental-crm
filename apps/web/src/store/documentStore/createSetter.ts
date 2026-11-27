@@ -9,6 +9,6 @@ export function createSetter<T = unknown>(
 ): SetterFn<T> {
 	return (val: Updater<T>) =>
 		set((state) => ({
-			[key]: resolveUpdater(val, (state as unknown as Record<string, unknown>)[key] as T),
+			[key]: resolveUpdater(val, Reflect.get(state, key) as T),
 		} as Partial<typeof state>));
 }

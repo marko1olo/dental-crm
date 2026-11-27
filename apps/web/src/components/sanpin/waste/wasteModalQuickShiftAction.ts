@@ -1,6 +1,6 @@
 import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
 import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -14,8 +14,6 @@ export async function executeModalQuickShiftWaste(
 	operatorName: string,
 	operatorPosition: string,
 ): Promise<MedicalWasteJournalRecord[]> {
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
 	const nowStr = new Date().toISOString().slice(0, 16);
 
 	const recClassA: MedicalWasteJournalRecord = {
@@ -82,12 +80,10 @@ export async function executeModalQuickShiftWaste(
 	try {
 		const res = await fetch("/api/registers/medical-waste/quick-shift-bundle", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": generateUuidV7(),
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+			}),
 			body: JSON.stringify({ departmentName }),
 		});
 		if (!res.ok) {

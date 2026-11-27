@@ -7,9 +7,9 @@ export function createP2PBroadcastChannel(
 	if (typeof BroadcastChannel === "undefined") return null;
 
 	try {
-		const bc = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
-		if (typeof (bc as unknown as { unref?: () => void })?.unref === "function") {
-			(bc as unknown as { unref: () => void }).unref();
+		const bc: BroadcastChannel & { unref?: () => void } = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+		if (typeof bc.unref === "function") {
+			bc.unref();
 		}
 		bc.onmessage = (event: MessageEvent) => {
 			onMessage(event.data);

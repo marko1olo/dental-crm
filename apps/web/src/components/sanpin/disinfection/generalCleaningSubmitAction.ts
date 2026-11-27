@@ -1,6 +1,6 @@
 import { generateUuidV7 } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
 import { clientLogger } from "../../../services/logging/clientLogger.js";
 import { showToast } from "../../GlobalToast.js";
 import type { DisinfectionJournalRecord, DisinfectionRoomType, DisinfectionApplicationMethod } from "./disinfectionTypes.js";
@@ -28,9 +28,6 @@ export interface SubmitCleaningParams {
 }
 
 export async function submitGeneralCleaningRecord(p: SubmitCleaningParams): Promise<DisinfectionJournalRecord> {
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-
 	const record: DisinfectionJournalRecord = {
 		id: `cln-${Date.now()}`,
 		logDate: p.logDate,
@@ -74,12 +71,10 @@ export async function submitGeneralCleaningRecord(p: SubmitCleaningParams): Prom
 	try {
 		const res = await fetch("/api/registers/cleaning", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": generateUuidV7(),
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+			}),
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) {

@@ -18,6 +18,10 @@ import {
 	evaluateInstallmentStatus,
 } from "./installmentsEngine.js";
 import { generateUuidV7, rublesToKopecks } from "@dental/shared";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../lib/denteRequestHeaders.js";
 import { clientLogger } from "../../services/logging/clientLogger.js";
 import { showToast } from "../GlobalToast.js";
 
@@ -137,7 +141,9 @@ export function usePatientInstallmentsApi(options: {
 		if (!patientId || !isUuid(patientId)) return null;
 		setIsLoading(true);
 		try {
-			const headers = getReadHeadersRef.current ? getReadHeadersRef.current() : {};
+			const headers = getReadHeadersRef.current
+				? getReadHeadersRef.current()
+				: denteClinicalReadHeaders();
 			const res = await fetch(`/api/installments?patientId=${patientId}`, {
 				headers,
 			});
@@ -206,7 +212,9 @@ export function usePatientInstallmentsApi(options: {
 			if (!isUuid(params.patientId)) return null;
 			setIsLoading(true);
 			try {
-				const existingMutationHeaders = getMutationHeadersRef.current ? getMutationHeadersRef.current() : {};
+				const existingMutationHeaders = getMutationHeadersRef.current
+					? getMutationHeadersRef.current()
+					: denteClinicalMutationHeaders();
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
@@ -228,7 +236,12 @@ export function usePatientInstallmentsApi(options: {
 					}),
 				});
 				if (!res.ok) {
-					const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+					let errJson: { message?: string; error?: string } | null = null;
+					try {
+						errJson = (await res.json()) as { message?: string; error?: string } | null;
+					} catch (parseErr) {
+						clientLogger.debug("[usePatientInstallmentsApi] Error JSON parse failed", parseErr, { module: "Billing" });
+					}
 					const errMsg = errJson?.message || errJson?.error || `Ошибка оформления рассрочки (HTTP ${res.status})`;
 					clientLogger.warn("[usePatientInstallmentsApi] Ошибка создания договора рассрочки", { status: res.status, errMsg }, { module: "Billing" });
 					showToast(errMsg, "error");
@@ -274,7 +287,9 @@ export function usePatientInstallmentsApi(options: {
 			const amountPaidKopecks = typeof options === "object" ? options?.amountPaidKopecks : undefined;
 			setIsLoading(true);
 			try {
-				const existingMutationHeaders = getMutationHeadersRef.current ? getMutationHeadersRef.current() : {};
+				const existingMutationHeaders = getMutationHeadersRef.current
+					? getMutationHeadersRef.current()
+					: denteClinicalMutationHeaders();
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
@@ -289,7 +304,12 @@ export function usePatientInstallmentsApi(options: {
 					body: JSON.stringify({ cashBoxId, amountPaidKopecks }),
 				});
 				if (!res.ok) {
-					const errorJson = (await res.json().catch(() => null)) as { message?: string } | null;
+					let errorJson: { message?: string } | null = null;
+					try {
+						errorJson = (await res.json()) as { message?: string } | null;
+					} catch (parseErr) {
+						clientLogger.debug("[usePatientInstallmentsApi] Pay error JSON parse failed", parseErr, { module: "Billing" });
+					}
 					throw new Error(errorJson?.message || `Ошибка оплаты транша рассрочки (HTTP ${res.status})`);
 				}
 				return true;

@@ -37,8 +37,9 @@ export class P2PWebSocketManager {
 						this.wsReconnectTimer = null;
 						this.reconnect(onOpen, onMessage);
 					}, 3000);
-					if (typeof (this.wsReconnectTimer as unknown as { unref?: () => void })?.unref === "function") {
-						(this.wsReconnectTimer as unknown as { unref: () => void }).unref();
+					const reconnectHandle: ReturnType<typeof setTimeout> & { unref?: () => void } = this.wsReconnectTimer;
+					if (typeof reconnectHandle.unref === "function") {
+						reconnectHandle.unref();
 					}
 				}
 			},

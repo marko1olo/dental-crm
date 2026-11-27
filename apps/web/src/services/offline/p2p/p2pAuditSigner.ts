@@ -17,7 +17,7 @@ export function buildStaffActionMessage(
 		senderName: meta.nodeName,
 		organizationId: meta.organizationId,
 		branchId: branchId || meta.defaultBranchId,
-		payload: action as unknown as Record<string, unknown>,
+		payload: Object.fromEntries(Object.entries(action)),
 	}) as LanP2PMessage<StaffActionAuditEntry>;
 }
 

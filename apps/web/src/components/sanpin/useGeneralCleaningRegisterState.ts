@@ -1,6 +1,6 @@
 import type { GeneralCleaningLog } from "@dental/shared";
 import { useEffect, useMemo, useState } from "react";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
+import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders.js";
 import { clientLogger } from "../../services/logging/clientLogger.js";
 import {
 	executeAutopilotMonthCleaning,
@@ -21,17 +21,14 @@ export function useGeneralCleaningRegisterState() {
 	const fetchLogs = async () => {
 		try {
 			setLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/registers/cleaning", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
 				setLogs(data);
+			} else {
+				clientLogger.warn("Failed to load cleaning logs", { status: res.status });
 			}
 		} catch (err) {
 			clientLogger.error("Failed to load cleaning logs", err);

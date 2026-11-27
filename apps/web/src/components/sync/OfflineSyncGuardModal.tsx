@@ -12,6 +12,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	Activity,
 	AlertCircle,
@@ -42,6 +43,7 @@ import {
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
+import { clientLogger } from "../../services/logging/clientLogger";
 import { useOfflineSync } from "../../hooks/useOfflineSync";
 import { OfflineMutationQueueViewer } from "./OfflineMutationQueueViewer";
 
@@ -77,7 +79,10 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			const storage = crdtSyncEngine.getStorage();
 			const items = await storage.getPendingOutbox();
 			setPendingItems(items);
-		} catch {
+		} catch (telemetryErr) {
+			clientLogger.debug("[OfflineSyncGuardModal] CRDT telemetry fallback to sync status", telemetryErr, {
+				module: "OfflineSync",
+			});
 			// fallback to synchronous status
 			setStatus(crdtSyncEngine.getStatus());
 		}
@@ -128,14 +133,25 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			});
 
 			const result = await crdtSyncEngine.forceSync(gatewayFn);
+			let drainOutboxErrMsg: string | null = null;
 			if (pendingMutationCount > 0) {
 				try {
-					await drainOfflineOutbox();
+					const drainRes = await drainOfflineOutbox();
+					if (
+						drainRes &&
+						(drainRes.failedCount > 0 ||
+							drainRes.rejectedCount > 0 ||
+							drainRes.errors.length > 0)
+					) {
+						drainOutboxErrMsg =
+							drainRes.errors[0]?.error ||
+							`Часть локальной очереди не синхронизирована (ошибок: ${drainRes.failedCount + drainRes.rejectedCount})`;
+					}
 				} catch (drainErr) {
-					showToast(
-						drainErr instanceof Error ? `Часть локальной очереди не синхронизирована: ${drainErr.message}` : "Часть локальной очереди не синхронизирована",
-						"warning",
-					);
+					drainOutboxErrMsg =
+						drainErr instanceof Error
+							? `Часть локальной очереди не синхронизирована: ${drainErr.message}`
+							: "Часть локальной очереди не синхронизирована";
 				}
 			}
 			await Promise.all([refreshTelemetry(), refreshPendingMutations()]);
@@ -144,7 +160,9 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 				result.pushedBatch.appliedCount +
 				result.pushedBatch.duplicateCount +
 				result.pushedBatch.mergedCount;
-			if (result.success) {
+			if (drainOutboxErrMsg) {
+				showToast(drainOutboxErrMsg, "warning");
+			} else if (result.success) {
 				showToast(
 					`Синхронизация завершена. Успешно отправлено пакетов: ${totalSynced}`,
 					"success",
@@ -191,9 +209,11 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 
 			const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
 			const url = URL.createObjectURL(blob);
+			const now = new Date();
+			const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 			const a = document.createElement("a");
 			a.href = url;
-			a.download = `dente-offline-vault-${new Date().toISOString().slice(0, 10)}.json`;
+			a.download = `dente-offline-vault-${localDate}.json`;
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
@@ -237,17 +257,17 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-x-clip max-w-[100vw]"
+			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm overflow-x-clip max-w-[100vw]"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Модальное окно статуса автономной синхронизации"
 			data-testid="offline-sync-guard-modal"
 		>
-			<div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-2xl shadow-2xl border border-[var(--line)] overflow-hidden">
+			<div className="relative w-full max-w-4xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col bg-[var(--paper)] text-[var(--ink)] rounded-t-[24px] sm:rounded-2xl shadow-2xl border border-[var(--line)] overflow-hidden">
 				{/* ── Modal Header ── */}
-				<div className="h-14 px-6 border-b border-[var(--line)] flex items-center justify-between shrink-0 bg-[var(--paper-soft)]/50">
+				<div className="min-h-14 py-2.5 sm:py-0 sm:h-14 px-4 sm:px-6 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0 bg-[var(--paper-soft)]/50">
 					<div className="flex items-center gap-3 min-w-0">
 						<div className="p-2 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] shrink-0">
 							<Radio className="w-4 h-4 animate-pulse" />
@@ -270,7 +290,7 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-9 w-9 rounded-lg inline-flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-9 sm:w-9 rounded-lg inline-flex items-center justify-center text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						aria-label="Закрыть окно"
 						data-testid="close-sync-modal-button"
 					>
@@ -279,8 +299,8 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 				</div>
 
 				{/* ── Status Banner ── */}
-				<div className="px-6 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3 shrink-0">
-					<div className="flex items-center gap-4 text-xs flex-wrap">
+				<div className="px-4 sm:px-6 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-3 shrink-0">
+					<div className="flex items-center gap-x-4 gap-y-2 text-xs flex-wrap">
 						<div className="flex items-center gap-1.5">
 							{status.isOnline ? (
 								<Wifi className="w-4 h-4 text-[var(--success)]" />
@@ -310,11 +330,11 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 						)}
 					</div>
 
-					<div className="flex items-center gap-2 shrink-0">
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={handleExportEmergencyBackup}
-							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 whitespace-nowrap bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
 							title="Экспорт локального слепка данных"
 						>
 							<Download className="w-4 h-4 shrink-0" />
@@ -325,7 +345,7 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 							type="button"
 							onClick={handleManualSync}
 							disabled={isSyncing}
-							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm transition-colors disabled:opacity-50"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-xl sm:rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 whitespace-nowrap bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm transition-colors disabled:opacity-50"
 							data-testid="force-sync-button"
 						>
 							<RefreshCw className={`w-4 h-4 shrink-0 ${isSyncing ? "animate-spin" : ""}`} />
@@ -335,30 +355,32 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 				</div>
 
 				{/* ── Navigation Tabs (Apple Segmented) ── */}
-				<div className="px-6 pt-4 shrink-0">
-					<div className="p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] inline-flex items-center gap-1">
+				<div className="px-4 sm:px-6 pt-3 sm:pt-4 shrink-0">
+					<div className="p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] grid grid-cols-3 sm:inline-flex items-center gap-1 w-full sm:w-auto">
 						<button
 							type="button"
 							onClick={() => setActiveTab("overview")}
-							className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+							className={`min-h-[36px] sm:min-h-0 sm:h-8 px-2 sm:px-3 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
 								activeTab === "overview"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 						>
-							Сводка хранилища
+							<span className="sm:hidden">Сводка</span>
+							<span className="hidden sm:inline">Сводка хранилища</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => setActiveTab("queue")}
-							className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5 ${
+							className={`min-h-[36px] sm:min-h-0 sm:h-8 px-2 sm:px-3 rounded-lg text-xs font-medium whitespace-nowrap transition-colors inline-flex items-center justify-center gap-1.5 ${
 								activeTab === "queue"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 						>
-							<span>Очередь отправки</span>
+							<span className="sm:hidden">Очередь</span>
+							<span className="hidden sm:inline">Очередь отправки</span>
 							{totalPendingUnified > 0 && (
 								<span className="h-5 px-1.5 text-xs font-medium rounded-full inline-flex items-center bg-[var(--warning-soft)] text-[var(--warning)] font-mono tabular-nums">
 									{totalPendingUnified}
@@ -369,19 +391,20 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTab("diagnostics")}
-							className={`h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+							className={`min-h-[36px] sm:min-h-0 sm:h-8 px-2 sm:px-3 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
 								activeTab === "diagnostics"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
 									: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 						>
-							Телеметрия узла
+							<span className="sm:hidden">Телеметрия</span>
+							<span className="hidden sm:inline">Телеметрия узла</span>
 						</button>
 					</div>
 				</div>
 
 				{/* ── Tab Content Area ── */}
-				<div className="flex-1 overflow-y-auto p-6 space-y-4">
+				<div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
 					{activeTab === "overview" && (
 						<div className="space-y-4">
 							{/* Metric Cards Grid */}
@@ -491,11 +514,11 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 				</div>
 
 				{/* ── Modal Footer ── */}
-				<div className="h-16 px-6 border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0">
+				<div className="min-h-16 px-4 sm:px-6 py-2.5 sm:py-0 sm:h-16 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[var(--line)] bg-[var(--paper-soft)]/50 flex items-center justify-end gap-3 shrink-0">
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
+						className="w-full sm:w-auto min-h-[44px] sm:min-h-0 sm:h-9 px-4 sm:px-3.5 rounded-xl sm:rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors"
 						data-testid="close-sync-modal-footer-button"
 					>
 						Закрыть
@@ -504,6 +527,10 @@ export const OfflineSyncGuardModal: React.FC<OfflineSyncGuardModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined"
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
 
 export default OfflineSyncGuardModal;

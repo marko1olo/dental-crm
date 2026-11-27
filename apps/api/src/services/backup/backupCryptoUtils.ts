@@ -79,8 +79,11 @@ export function pruneOldBackups(
 			const full = path.join(dir, name);
 			try {
 				if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
-			} catch {
-				// File may have been deleted concurrently.
+			} catch (unlinkErr) {
+				logger.debug(
+					{ err: safeLogError(unlinkErr), file: full },
+					"Файл бэкапа уже удалён параллельно",
+				);
 			}
 		}
 	} catch (error) {

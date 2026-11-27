@@ -220,10 +220,10 @@ export function fitAndSampleCatmullRomCanal(
 
 	// Expand control points with virtual endpoints for boundary clamping
 	const n = polylineMm.length;
-	const pStart = polylineMm[0]!;
-	const pSecond = polylineMm[1]!;
-	const pEnd = polylineMm[n - 1]!;
-	const pPenultimate = polylineMm[n - 2]!;
+	const pStart = polylineMm[0] ?? [0, 0, 0];
+	const pSecond = polylineMm[1] ?? pStart;
+	const pEnd = polylineMm[n - 1] ?? pStart;
+	const pPenultimate = polylineMm[n - 2] ?? pEnd;
 
 	// Extrapolate phantom control points: p_{-1} = 2*p_0 - p_1
 	const pMinus1: Vec3 = [
@@ -256,10 +256,10 @@ export function fitAndSampleCatmullRomCanal(
 	fineSamples.push({ segmentIdx: 0, t: 0, arcLen: 0 });
 
 	for (let i = 0; i < segmentCount; i++) {
-		const p0 = points[i]!;
-		const p1 = points[i + 1]!;
-		const p2 = points[i + 2]!;
-		const p3 = points[i + 3]!;
+		const p0 = points[i] ?? pMinus1;
+		const p1 = points[i + 1] ?? pStart;
+		const p2 = points[i + 2] ?? pEnd;
+		const p3 = points[i + 3] ?? pPlus1;
 
 		for (let s = 1; s <= SUBDIVISIONS_PER_SEGMENT; s++) {
 			const t = s / SUBDIVISIONS_PER_SEGMENT;
@@ -288,7 +288,7 @@ export function fitAndSampleCatmullRomCanal(
 			fineIdx++;
 		}
 
-		const s0 = fineSamples[fineIdx]!;
+		const s0 = fineSamples[fineIdx] ?? { segmentIdx: 0, t: 0, arcLen: 0 };
 		const s1 = fineSamples[fineIdx + 1] ?? s0;
 
 		const span = s1.arcLen - s0.arcLen;
@@ -296,10 +296,10 @@ export function fitAndSampleCatmullRomCanal(
 		const segIdx = s0.segmentIdx;
 		const t = s0.t + alpha * (s1.t - s0.t);
 
-		const p0 = points[segIdx]!;
-		const p1 = points[segIdx + 1]!;
-		const p2 = points[segIdx + 2]!;
-		const p3 = points[segIdx + 3]!;
+		const p0 = points[segIdx] ?? pMinus1;
+		const p1 = points[segIdx + 1] ?? pStart;
+		const p2 = points[segIdx + 2] ?? pEnd;
+		const p3 = points[segIdx + 3] ?? pPlus1;
 
 		const pos = catmullRomPoint3D(p0, p1, p2, p3, t);
 		const rPrime = catmullRomDerivative3D(p0, p1, p2, p3, t);
@@ -362,18 +362,31 @@ export function computeSchneiderCurvatureMetrics(
 	}
 
 	const n = sampledCenterline.length;
-	const pointA = sampledCenterline[0]!.positionMm;
-	const pointC = sampledCenterline[n - 1]!.positionMm;
+	const firstSample = sampledCenterline[0];
+	const lastSample = sampledCenterline[n - 1];
+	if (!firstSample || !lastSample) {
+		return {
+			schneiderAngleDeg: 0,
+			schneiderRiskTier: "low",
+			minRadiusOfCurvatureMm: 9999.0,
+			curvatureRadiusTier: "gentle",
+			pointOfInitialCurvatureMm: [0, 0, 0],
+			maxCurvatureLocationMm: 0,
+		};
+	}
+	const pointA = firstSample.positionMm;
+	const pointC = lastSample.positionMm;
 
 	// In Schneider's method:
 	// Point B is the point where the canal deviates from the straight coronal trajectory.
 	// We locate Point B by checking where the local curvature kappa exceeds 0.04 mm^-1
 	// or where the angle relative to the coronal tangent exceeds 3.0 degrees.
-	const coronalTangent = sampledCenterline[0]!.tangent;
+	const coronalTangent = firstSample.tangent;
 	let pointBFineIdx = Math.floor(n * 0.33); // Fallback: 1/3 of canal length
 
 	for (let i = 1; i < n - 1; i++) {
-		const sample = sampledCenterline[i]!;
+		const sample = sampledCenterline[i];
+		if (!sample) continue;
 		const dirToPt: Vec3 = [
 			sample.positionMm[0] - pointA[0],
 			sample.positionMm[1] - pointA[1],
@@ -391,7 +404,7 @@ export function computeSchneiderCurvatureMetrics(
 		}
 	}
 
-	const pointB = sampledCenterline[pointBFineIdx]!.positionMm;
+	const pointB = sampledCenterline[pointBFineIdx]?.positionMm ?? pointA;
 
 	// Schneider angle alpha: supplementary angle between Line AB and Line BC
 	// Vector AB: pointB - pointA
@@ -500,18 +513,20 @@ export function classifyVertucciTopology(
 	let midRootBranches = orificeCount;
 	if (canals.length >= 2) {
 		// Evaluate distance between first two canals at 50% length
-		const c1 = canals[0]!;
-		const c2 = canals[1]!;
-		const idx1 = Math.floor(c1.polylineMm.length * 0.5);
-		const idx2 = Math.floor(c2.polylineMm.length * 0.5);
-		const pt1 = c1.polylineMm[idx1] ?? [0, 0, 0];
-		const pt2 = c2.polylineMm[idx2] ?? [0, 0, 0];
-		const midDist = Math.hypot(pt1[0] - pt2[0], pt1[1] - pt2[1], pt1[2] - pt2[2]);
+		const c1 = canals[0];
+		const c2 = canals[1];
+		if (c1 && c2) {
+			const idx1 = Math.floor(c1.polylineMm.length * 0.5);
+			const idx2 = Math.floor(c2.polylineMm.length * 0.5);
+			const pt1 = c1.polylineMm[idx1] ?? [0, 0, 0];
+			const pt2 = c2.polylineMm[idx2] ?? [0, 0, 0];
+			const midDist = Math.hypot(pt1[0] - pt2[0], pt1[1] - pt2[1], pt1[2] - pt2[2]);
 
-		if (midDist < 0.6) {
-			midRootBranches = 1; // Merged at mid-root
-		} else {
-			midRootBranches = 2; // Separate at mid-root
+			if (midDist < 0.6) {
+				midRootBranches = 1; // Merged at mid-root
+			} else {
+				midRootBranches = 2; // Separate at mid-root
+			}
 		}
 	}
 

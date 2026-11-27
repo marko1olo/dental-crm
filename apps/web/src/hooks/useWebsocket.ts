@@ -91,8 +91,8 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 					useFallbackUrl.current = true;
 					try {
 						socket.close();
-					} catch {
-						// ignore — реконнект планирует onclose
+					} catch (closeErr) {
+						logger.debug("WebSocket fallback close failed", closeErr);
 					}
 				}
 			}, OPEN_FALLBACK_TIMEOUT_MS);
@@ -111,11 +111,12 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 			// Поэтому авторизация идёт первым кадром: до неё сервер держит
 			// соединение неподписанным и закрывает по таймауту.
 			const { clinicToken, staffToken } = readAuthPayload();
-			if (clinicToken || staffToken) {
+			const token = staffToken || clinicToken;
+			if (token) {
 				socket.send(
 					JSON.stringify({
 						type: "AUTH",
-						payload: { clinicToken, staffToken },
+						payload: { token, clinicToken, staffToken },
 					}),
 				);
 			}
@@ -135,8 +136,8 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 				// AUTH_OK — служебное подтверждение подписки, наверх не отдаём.
 				if (data?.type === "AUTH_OK") return;
 				setLastMessage(data);
-			} catch {
-				// Silently ignore non-JSON frames
+			} catch (parseErr) {
+				logger.debug("Ignoring non-JSON WebSocket frame", parseErr);
 			}
 		};
 
@@ -165,7 +166,7 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 			if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
 				const buf = new Uint32Array(1);
 				crypto.getRandomValues(buf);
-				randomFraction = buf[0]! / 0xffffffff;
+				randomFraction = (buf[0] ?? 0) / 0xffffffff;
 			}
 			const jitter = delay * 0.2 * (randomFraction - 0.5);
 			const effectiveDelay = Math.max(RECONNECT_BASE_MS, Math.round(delay + jitter));
@@ -196,8 +197,8 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 					if (ws.current?.readyState === WebSocket.OPEN) {
 						try {
 							ws.current.close();
-						} catch {
-							// ignore
+						} catch (closeErr) {
+							logger.debug("WebSocket watchdog close failed", closeErr);
 						}
 					}
 				}, 10_000);

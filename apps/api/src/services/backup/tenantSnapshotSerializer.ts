@@ -86,8 +86,11 @@ async function readMigrationHead(client: pg.Client): Promise<string> {
 		try {
 			await client.query("ROLLBACK TO SAVEPOINT sp_mig_head");
 			await client.query("RELEASE SAVEPOINT sp_mig_head");
-		} catch {
-			// транзакция уже откачена или соединение закрыто
+		} catch (rbErr) {
+			logger.debug(
+				{ err: safeLogError(rbErr) },
+				"Savepoint sp_mig_head уже откачен",
+			);
 		}
 		logger.warn(
 			{ err: safeLogError(err) },

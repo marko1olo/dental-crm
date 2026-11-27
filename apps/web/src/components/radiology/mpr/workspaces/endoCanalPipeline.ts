@@ -82,12 +82,15 @@ function buildCalibratedAnatomicalCanals(
 	const calcGeodesic = (pts: Vec3[]): number => {
 		let sum = 0;
 		for (let i = 1; i < pts.length; i++) {
-			const p0 = pts[i - 1]!;
-			const p1 = pts[i]!;
+			const p0 = pts[i - 1];
+			const p1 = pts[i];
+			if (!p0 || !p1) continue;
 			sum += Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]);
 		}
 		return sum;
 	};
+	const firstPt = (pts: Vec3[]): Vec3 => pts[0] ?? centroidWorld;
+	const lastPt = (pts: Vec3[]): Vec3 => pts[pts.length - 1] ?? centroidWorld;
 
 	if (isPrimaryUpperMolar) {
 		// 3 Canals for Primary Upper Molars (54, 55, 64, 65): MB (12.0 mm), DB (11.5 mm), P (12.5 mm)
@@ -117,8 +120,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-mb",
 				canalName: "MB (Медиально-щечный временный)",
-				orifice: { id: "o-mb", canalName: "MB", worldPositionMm: mbPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.82, hu: 150, estimatedDiameterMm: 0.5 },
-				apicalForamen: { id: "a-mb", canalName: "MB", worldPositionMm: mbPoly[mbPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.70, hu: 1050 },
+				orifice: { id: "o-mb", canalName: "MB", worldPositionMm: firstPt(mbPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.82, hu: 150, estimatedDiameterMm: 0.5 },
+				apicalForamen: { id: "a-mb", canalName: "MB", worldPositionMm: lastPt(mbPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.70, hu: 1050 },
 				polylineMm: mbPoly,
 				geodesicLengthMm: calcGeodesic(mbPoly),
 				meanHU: 200,
@@ -128,8 +131,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-db",
 				canalName: "DB (Дистально-щечный временный)",
-				orifice: { id: "o-db", canalName: "DB", worldPositionMm: dbPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.80, hu: 160, estimatedDiameterMm: 0.45 },
-				apicalForamen: { id: "a-db", canalName: "DB", worldPositionMm: dbPoly[dbPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.68, hu: 1080 },
+				orifice: { id: "o-db", canalName: "DB", worldPositionMm: firstPt(dbPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.80, hu: 160, estimatedDiameterMm: 0.45 },
+				apicalForamen: { id: "a-db", canalName: "DB", worldPositionMm: lastPt(dbPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.68, hu: 1080 },
 				polylineMm: dbPoly,
 				geodesicLengthMm: calcGeodesic(dbPoly),
 				meanHU: 210,
@@ -139,8 +142,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-p",
 				canalName: "P (Нёбный временный)",
-				orifice: { id: "o-p", canalName: "P", worldPositionMm: pPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.88, hu: 120, estimatedDiameterMm: 0.75 },
-				apicalForamen: { id: "a-p", canalName: "P", worldPositionMm: pPoly[pPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.75, hu: 1020 },
+				orifice: { id: "o-p", canalName: "P", worldPositionMm: firstPt(pPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.88, hu: 120, estimatedDiameterMm: 0.75 },
+				apicalForamen: { id: "a-p", canalName: "P", worldPositionMm: lastPt(pPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.75, hu: 1020 },
 				polylineMm: pPoly,
 				geodesicLengthMm: calcGeodesic(pPoly),
 				meanHU: 180,
@@ -171,8 +174,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-m",
 				canalName: "M (Медиальный временный)",
-				orifice: { id: "o-m", canalName: "M", worldPositionMm: mPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.84, hu: 140, estimatedDiameterMm: 0.6 },
-				apicalForamen: { id: "a-m", canalName: "M", worldPositionMm: mPoly[mPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.71, hu: 1060 },
+				orifice: { id: "o-m", canalName: "M", worldPositionMm: firstPt(mPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.84, hu: 140, estimatedDiameterMm: 0.6 },
+				apicalForamen: { id: "a-m", canalName: "M", worldPositionMm: lastPt(mPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.71, hu: 1060 },
 				polylineMm: mPoly,
 				geodesicLengthMm: calcGeodesic(mPoly),
 				meanHU: 190,
@@ -182,8 +185,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-d",
 				canalName: "D (Дистальный временный)",
-				orifice: { id: "o-d", canalName: "D", worldPositionMm: dPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.86, hu: 130, estimatedDiameterMm: 0.7 },
-				apicalForamen: { id: "a-d", canalName: "D", worldPositionMm: dPoly[dPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.74, hu: 1040 },
+				orifice: { id: "o-d", canalName: "D", worldPositionMm: firstPt(dPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.86, hu: 130, estimatedDiameterMm: 0.7 },
+				apicalForamen: { id: "a-d", canalName: "D", worldPositionMm: lastPt(dPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.74, hu: 1040 },
 				polylineMm: dPoly,
 				geodesicLengthMm: calcGeodesic(dPoly),
 				meanHU: 180,
@@ -232,7 +235,7 @@ function buildCalibratedAnatomicalCanals(
 				orifice: {
 					id: "o-mb1",
 					canalName: "MB1",
-					worldPositionMm: mb1Polyline[0]!,
+					worldPositionMm: firstPt(mb1Polyline),
 					voxelCoordinates: [0, 0, 0],
 					tubeness: 0.88,
 					hu: 150,
@@ -241,7 +244,7 @@ function buildCalibratedAnatomicalCanals(
 				apicalForamen: {
 					id: "a-mb1",
 					canalName: "MB1",
-					worldPositionMm: mb1Polyline[mb1Polyline.length - 1]!,
+					worldPositionMm: lastPt(mb1Polyline),
 					voxelCoordinates: [0, 0, 0],
 					tubeness: 0.72,
 					hu: 1150,
@@ -258,7 +261,7 @@ function buildCalibratedAnatomicalCanals(
 				orifice: {
 					id: "o-ml",
 					canalName: "ML",
-					worldPositionMm: mlPolyline[0]!,
+					worldPositionMm: firstPt(mlPolyline),
 					voxelCoordinates: [0, 0, 0],
 					tubeness: 0.85,
 					hu: 180,
@@ -267,7 +270,7 @@ function buildCalibratedAnatomicalCanals(
 				apicalForamen: {
 					id: "a-ml",
 					canalName: "ML",
-					worldPositionMm: mlPolyline[mlPolyline.length - 1]!,
+					worldPositionMm: lastPt(mlPolyline),
 					voxelCoordinates: [0, 0, 0],
 					tubeness: 0.68,
 					hu: 1120,
@@ -284,7 +287,7 @@ function buildCalibratedAnatomicalCanals(
 				orifice: {
 					id: "o-d",
 					canalName: "D",
-					worldPositionMm: dPolyline[0]!,
+					worldPositionMm: firstPt(dPolyline),
 					voxelCoordinates: [0, 0, 0],
 					tubeness: 0.92,
 					hu: 120,
@@ -293,7 +296,7 @@ function buildCalibratedAnatomicalCanals(
 				apicalForamen: {
 					id: "a-d",
 					canalName: "D",
-					worldPositionMm: dPolyline[dPolyline.length - 1]!,
+					worldPositionMm: lastPt(dPolyline),
 					voxelCoordinates: [0, 0, 0],
 					tubeness: 0.81,
 					hu: 1080,
@@ -352,8 +355,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-mb1",
 				canalName: "MB1 (Медиально-щечный)",
-				orifice: { id: "o-mb1", canalName: "MB1", worldPositionMm: mb1Poly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.87, hu: 140, estimatedDiameterMm: 0.60 },
-				apicalForamen: { id: "a-mb1", canalName: "MB1", worldPositionMm: mb1Poly[mb1Poly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.74, hu: 1100 },
+				orifice: { id: "o-mb1", canalName: "MB1", worldPositionMm: firstPt(mb1Poly), voxelCoordinates: [0, 0, 0], tubeness: 0.87, hu: 140, estimatedDiameterMm: 0.60 },
+				apicalForamen: { id: "a-mb1", canalName: "MB1", worldPositionMm: lastPt(mb1Poly), voxelCoordinates: [0, 0, 0], tubeness: 0.74, hu: 1100 },
 				polylineMm: mb1Poly,
 				geodesicLengthMm: calcGeodesic(mb1Poly),
 				meanHU: 210,
@@ -363,8 +366,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-mb2",
 				canalName: "MB2 (Скрытый медио-буккальный 2)",
-				orifice: { id: "o-mb2", canalName: "MB2", worldPositionMm: mb2Poly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.76, hu: 280, estimatedDiameterMm: 0.35 },
-				apicalForamen: { id: "a-mb2", canalName: "MB2", worldPositionMm: mb2Poly[mb2Poly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.65, hu: 1190 },
+				orifice: { id: "o-mb2", canalName: "MB2", worldPositionMm: firstPt(mb2Poly), voxelCoordinates: [0, 0, 0], tubeness: 0.76, hu: 280, estimatedDiameterMm: 0.35 },
+				apicalForamen: { id: "a-mb2", canalName: "MB2", worldPositionMm: lastPt(mb2Poly), voxelCoordinates: [0, 0, 0], tubeness: 0.65, hu: 1190 },
 				polylineMm: mb2Poly,
 				geodesicLengthMm: calcGeodesic(mb2Poly),
 				meanHU: 310,
@@ -374,8 +377,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-db",
 				canalName: "DB (Дистально-щечный)",
-				orifice: { id: "o-db", canalName: "DB", worldPositionMm: dbPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.84, hu: 160, estimatedDiameterMm: 0.55 },
-				apicalForamen: { id: "a-db", canalName: "DB", worldPositionMm: dbPoly[dbPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.70, hu: 1140 },
+				orifice: { id: "o-db", canalName: "DB", worldPositionMm: firstPt(dbPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.84, hu: 160, estimatedDiameterMm: 0.55 },
+				apicalForamen: { id: "a-db", canalName: "DB", worldPositionMm: lastPt(dbPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.70, hu: 1140 },
 				polylineMm: dbPoly,
 				geodesicLengthMm: calcGeodesic(dbPoly),
 				meanHU: 230,
@@ -385,8 +388,8 @@ function buildCalibratedAnatomicalCanals(
 			{
 				canalId: "c-p",
 				canalName: "P (Небный магистральный)",
-				orifice: { id: "o-p", canalName: "P", worldPositionMm: pPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.94, hu: 90, estimatedDiameterMm: 1.10 },
-				apicalForamen: { id: "a-p", canalName: "P", worldPositionMm: pPoly[pPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.85, hu: 1040 },
+				orifice: { id: "o-p", canalName: "P", worldPositionMm: firstPt(pPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.94, hu: 90, estimatedDiameterMm: 1.10 },
+				apicalForamen: { id: "a-p", canalName: "P", worldPositionMm: lastPt(pPoly), voxelCoordinates: [0, 0, 0], tubeness: 0.85, hu: 1040 },
 				polylineMm: pPoly,
 				geodesicLengthMm: calcGeodesic(pPoly),
 				meanHU: 160,
@@ -416,8 +419,8 @@ function buildCalibratedAnatomicalCanals(
 				: isPremolar
 					? "Главный щечный"
 					: "Центральный канал",
-			orifice: { id: "o-main", canalName: "Главный", worldPositionMm: singlePoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.91, hu: 130, estimatedDiameterMm: 0.80 },
-			apicalForamen: { id: "a-main", canalName: "Главный", worldPositionMm: singlePoly[singlePoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.78, hu: 1110 },
+			orifice: { id: "o-main", canalName: "Главный", worldPositionMm: firstPt(singlePoly), voxelCoordinates: [0, 0, 0], tubeness: 0.91, hu: 130, estimatedDiameterMm: 0.80 },
+			apicalForamen: { id: "a-main", canalName: "Главный", worldPositionMm: lastPt(singlePoly), voxelCoordinates: [0, 0, 0], tubeness: 0.78, hu: 1110 },
 			polylineMm: singlePoly,
 			geodesicLengthMm: calcGeodesic(singlePoly),
 			meanHU: 180,

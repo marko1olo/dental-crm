@@ -45,8 +45,9 @@ export function jacobiEigenSymmetric(input: number[][], n: number): JacobiEigenR
 		}
 		if (off < 1e-12) break;
 
-		const rowP = a[p]!;
-		const rowQ = a[q]!;
+		const rowP = a[p];
+		const rowQ = a[q];
+		if (!rowP || !rowQ) break;
 		const app = rowP[p] ?? 0;
 		const aqq = rowQ[q] ?? 0;
 		const apq = rowP[q] ?? 0;
@@ -56,7 +57,8 @@ export function jacobiEigenSymmetric(input: number[][], n: number): JacobiEigenR
 
 		// Apply Givens rotation: B = A * J (transform columns)
 		for (let i = 0; i < n; i++) {
-			const row = a[i]!;
+			const row = a[i];
+			if (!row) continue;
 			const aip = row[p] ?? 0;
 			const aiq = row[q] ?? 0;
 			row[p] = c * aip - s * aiq;
@@ -64,14 +66,15 @@ export function jacobiEigenSymmetric(input: number[][], n: number): JacobiEigenR
 		}
 		// Apply Givens rotation: A' = J^T * B (transform rows)
 		for (let i = 0; i < n; i++) {
-			const api = a[p]![i] ?? 0;
-			const aqi = a[q]![i] ?? 0;
-			a[p]![i] = c * api - s * aqi;
-			a[q]![i] = s * api + c * aqi;
+			const api = rowP[i] ?? 0;
+			const aqi = rowQ[i] ?? 0;
+			rowP[i] = c * api - s * aqi;
+			rowQ[i] = s * api + c * aqi;
 		}
 		// Accumulate eigenvectors: V' = V * J
 		for (let i = 0; i < n; i++) {
-			const vRow = v[i]!;
+			const vRow = v[i];
+			if (!vRow) continue;
 			const vip = vRow[p] ?? 0;
 			const viq = vRow[q] ?? 0;
 			vRow[p] = c * vip - s * viq;
@@ -120,21 +123,24 @@ export function kabschTransform(src: Vec3[], tgt: Vec3[]): number[] | null {
 	];
 
 	for (let i = 0; i < src.length; i++) {
-		const sp = src[i]!;
-		const tp = tgt[i]!;
+		const sp = src[i];
+		const tp = tgt[i];
+		if (!sp || !tp) continue;
 		const p: Vec3 = [sp[0] - cs[0], sp[1] - cs[1], sp[2] - cs[2]];
 		const q: Vec3 = [tp[0] - ct[0], tp[1] - ct[1], tp[2] - ct[2]];
 		for (let a = 0; a < 3; a++) {
-			const sa = S[a]!;
+			const sa = S[a];
+			if (!sa) continue;
+			const pa = p[a] ?? 0;
 			for (let b = 0; b < 3; b++) {
-				sa[b] = (sa[b] ?? 0) + p[a]! * q[b]!;
+				sa[b] = (sa[b] ?? 0) + pa * (q[b] ?? 0);
 			}
 		}
 	}
 
-	const row0 = S[0]!;
-	const row1 = S[1]!;
-	const row2 = S[2]!;
+	const row0 = S[0] ?? [0, 0, 0];
+	const row1 = S[1] ?? [0, 0, 0];
+	const row2 = S[2] ?? [0, 0, 0];
 
 	const Sxx = row0[0] ?? 0;
 	const Sxy = row0[1] ?? 0;
@@ -181,9 +187,9 @@ export function kabschTransform(src: Vec3[], tgt: Vec3[]): number[] | null {
 		[2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)],
 	];
 
-	const r0 = R[0]!;
-	const r1 = R[1]!;
-	const r2 = R[2]!;
+	const r0 = R[0] ?? [1, 0, 0];
+	const r1 = R[1] ?? [0, 1, 0];
+	const r2 = R[2] ?? [0, 0, 1];
 
 	// R * cs
 	const Rcs: Vec3 = [
@@ -222,8 +228,9 @@ export function kabschTransformWithRms(
 	if (!matrix) return null;
 	let sum = 0;
 	for (let i = 0; i < src.length; i++) {
-		const sp = src[i]!;
-		const tp = tgt[i]!;
+		const sp = src[i];
+		const tp = tgt[i];
+		if (!sp || !tp) continue;
 		const p = applyMat4(matrix, sp);
 		sum += (p[0] - tp[0]) ** 2 + (p[1] - tp[1]) ** 2 + (p[2] - tp[2]) ** 2;
 	}

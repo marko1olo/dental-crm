@@ -9,7 +9,11 @@ import {
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { subscribeCbctSyncEvents } from "../../radiology/mpr/cbctStudioSyncChannel";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
+import { generateUuidV7 } from "@dental/shared";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { imagingWriteTarget, realVisitFieldId } from "../visitIdentity";
 import type {
@@ -115,8 +119,10 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 						},
 					}),
 				);
-			} catch {
-				// ignore
+			} catch (err) {
+				clientLogger.debug("Failed to dispatch soap protocol attachment", err, {
+					module: "useVisitDiagnosticsTab",
+				});
 			}
 		}
 	};
@@ -171,13 +177,11 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 				null;
 
 			if (custom.detail.studyId && activeVisitId) {
-				const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-					? crypto.randomUUID()
-					: `bind-visit-${custom.detail.studyId}-${Date.now()}`;
+				const idempotencyKey = generateUuidV7();
 
 				void fetch(`/api/imaging/studies/${encodeURIComponent(custom.detail.studyId)}/bind-visit`, {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": idempotencyKey,
 					}),
@@ -210,8 +214,10 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 			if (t && Number(t)) {
 				try {
 					useVisitStore.getState().setActiveToothNumber(Number(t));
-				} catch {
-					// outside visit store context
+				} catch (err) {
+					clientLogger.debug("Outside visit store context when setting active tooth", err, {
+						module: "useVisitDiagnosticsTab",
+					});
 				}
 				setSelectedToothForPhoto(Number(t));
 			}
@@ -264,12 +270,19 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		const targetId = effectiveTargetPatientId ?? visitPatientId;
 		if (!targetId || isDemoPatientId(targetId) || isDemoShowcaseMode()) return;
 		let cancelled = false;
+		let activeController: AbortController | null = null;
 
 		const loadAllPatientScans = () => {
-			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`)
+			activeController?.abort();
+			const controller = new AbortController();
+			activeController = controller;
+			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`, {
+				headers: denteClinicalReadHeaders(),
+				signal: controller.signal,
+			})
 				.then((res) => (res.ok ? res.json() : []))
 				.then((studies) => {
-					if (cancelled) return;
+					if (cancelled || controller.signal.aborted) return;
 					const formatted: DiagnosticStudy[] = Array.isArray(studies)
 						? studies.map((st: {
 								id: string;
@@ -300,7 +313,11 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 						: [];
 					setLiveStudies(formatted);
 				})
-				.catch(() => {
+				.catch((err) => {
+					if (err instanceof DOMException && err.name === "AbortError") return;
+					clientLogger.debug("Failed to load patient scans", err, {
+						module: "useVisitDiagnosticsTab",
+					});
 					if (!cancelled) setLiveStudies([]);
 				});
 		};
@@ -316,6 +333,7 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 
 		return () => {
 			cancelled = true;
+			activeController?.abort();
 			window.removeEventListener("dente-tooth-scan-bound", handleScanBound);
 			window.removeEventListener("dente-rvg-scan-saved", handleScanBound);
 			window.removeEventListener("dente-xray-updated", handleScanBound);
@@ -340,8 +358,10 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 							},
 						}),
 					);
-				} catch {
-					// non-blocking fallback
+				} catch (err) {
+					clientLogger.debug("Failed to dispatch protocol text from CBCT sync", err, {
+						module: "useVisitDiagnosticsTab",
+					});
 				}
 			}
 		};

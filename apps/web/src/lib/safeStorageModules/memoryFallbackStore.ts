@@ -16,6 +16,12 @@ import {
 	storageState,
 } from "./types.js";
 
+function logStorageFallback(scope: string, err: unknown): void {
+	if (typeof console !== "undefined" && typeof console.warn === "function") {
+		console.warn(`[safeStorage:${scope}]`, err);
+	}
+}
+
 /**
  * Безопасное чтение cookie по имени (с защитой от SSR / запрета в приватном режиме).
  */
@@ -29,8 +35,8 @@ export function safeGetCookie(name: string): string | null {
 				return decodeURIComponent(cookie.slice(prefix.length));
 			}
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logStorageFallback("getCookie", err);
 	}
 	return null;
 }
@@ -45,7 +51,8 @@ export function safeSetCookie(name: string, value: string, days = 365): boolean 
 		const expires = new Date(Date.now() + days * 864e5).toUTCString();
 		document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; expires=${expires}; SameSite=Lax`;
 		return true;
-	} catch {
+	} catch (err) {
+		logStorageFallback("setCookie", err);
 		return false;
 	}
 }
@@ -58,28 +65,10 @@ export function safeDeleteCookie(name: string): boolean {
 	try {
 		document.cookie = `${encodeURIComponent(name)}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
 		return true;
-	} catch {
+	} catch (err) {
+		logStorageFallback("deleteCookie", err);
 		return false;
 	}
-}
-
-export function isIdbStorageFallbackAvailable(): boolean {
-	try {
-		if (typeof window !== "undefined" && window.indexedDB && typeof window.indexedDB.open === "function") {
-			return true;
-		}
-		if (
-			typeof globalThis !== "undefined" &&
-			"indexedDB" in globalThis &&
-			globalThis.indexedDB &&
-			typeof globalThis.indexedDB.open === "function"
-		) {
-			return true;
-		}
-	} catch {
-		// ignore
-	}
-	return false;
 }
 
 function getIdbFactory(): IDBFactory | null {
@@ -87,17 +76,18 @@ function getIdbFactory(): IDBFactory | null {
 		if (typeof window !== "undefined" && window.indexedDB) {
 			return window.indexedDB;
 		}
-	} catch {
-		// ignore
-	}
-	try {
 		if (typeof globalThis !== "undefined" && "indexedDB" in globalThis && globalThis.indexedDB) {
-			return globalThis.indexedDB ?? null;
+			return globalThis.indexedDB;
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logStorageFallback("getIdbFactory", err);
 	}
 	return null;
+}
+
+export function isIdbStorageFallbackAvailable(): boolean {
+	const factory = getIdbFactory();
+	return Boolean(factory && typeof factory.open === "function");
 }
 
 export function openIdbFallbackDb(): Promise<IDBDatabase | null> {
@@ -127,7 +117,8 @@ export function openIdbFallbackDb(): Promise<IDBDatabase | null> {
 				storageState.idbFallbackDbPromise = null;
 				resolve(null);
 			};
-		} catch {
+		} catch (err) {
+			logStorageFallback("openIdb", err);
 			storageState.idbFallbackDbPromise = null;
 			resolve(null);
 		}
@@ -136,143 +127,112 @@ export function openIdbFallbackDb(): Promise<IDBDatabase | null> {
 	return storageState.idbFallbackDbPromise;
 }
 
-export async function saveIdbStorageFallback(key: string, value: string): Promise<boolean> {
+async function runIdbStoreOp<T>(
+	scope: string,
+	mode: IDBTransactionMode,
+	fallbackValue: T,
+	buildRequest: (store: IDBObjectStore) => IDBRequest,
+	extractResult: (result: unknown) => T,
+): Promise<T> {
 	try {
 		const db = await openIdbFallbackDb();
-		if (!db) return false;
-		return await new Promise<boolean>((resolve) => {
+		if (!db) return fallbackValue;
+		return await new Promise<T>((resolve) => {
 			try {
-				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readwrite");
+				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, mode);
 				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
-				const req = store.put({ key, value, updatedAt: Date.now() });
-				req.onsuccess = () => resolve(true);
-				req.onerror = () => resolve(false);
-				tx.onabort = () => resolve(false);
-			} catch {
-				resolve(false);
+				const req = buildRequest(store);
+				req.onsuccess = () => resolve(extractResult(req.result));
+				req.onerror = () => resolve(fallbackValue);
+				tx.onabort = () => resolve(fallbackValue);
+			} catch (err) {
+				logStorageFallback(`${scope}:tx`, err);
+				resolve(fallbackValue);
 			}
 		});
-	} catch {
-		return false;
+	} catch (err) {
+		logStorageFallback(scope, err);
+		return fallbackValue;
 	}
+}
+
+export async function saveIdbStorageFallback(key: string, value: string): Promise<boolean> {
+	return runIdbStoreOp(
+		"saveIdb",
+		"readwrite",
+		false,
+		(store) => store.put({ key, value, updatedAt: Date.now() }),
+		() => true,
+	);
 }
 
 export async function getIdbStorageFallback(key: string): Promise<string | null> {
-	try {
-		const db = await openIdbFallbackDb();
-		if (!db) return null;
-		return await new Promise<string | null>((resolve) => {
-			try {
-				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readonly");
-				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
-				const req = store.get(key);
-				req.onsuccess = () => {
-					const record = req.result as { key: string; value: string } | undefined;
-					resolve(record ? record.value : null);
-				};
-				req.onerror = () => resolve(null);
-				tx.onabort = () => resolve(null);
-			} catch {
-				resolve(null);
-			}
-		});
-	} catch {
-		return null;
-	}
+	return runIdbStoreOp(
+		"getIdb",
+		"readonly",
+		null,
+		(store) => store.get(key),
+		(result) => {
+			const record = result as { key: string; value: string } | undefined;
+			return record ? record.value : null;
+		},
+	);
 }
 
 export async function removeIdbStorageFallback(key: string): Promise<boolean> {
-	try {
-		const db = await openIdbFallbackDb();
-		if (!db) return false;
-		return await new Promise<boolean>((resolve) => {
-			try {
-				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readwrite");
-				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
-				const req = store.delete(key);
-				req.onsuccess = () => resolve(true);
-				req.onerror = () => resolve(false);
-				tx.onabort = () => resolve(false);
-			} catch {
-				resolve(false);
-			}
-		});
-	} catch {
-		return false;
-	}
+	return runIdbStoreOp(
+		"removeIdb",
+		"readwrite",
+		false,
+		(store) => store.delete(key),
+		() => true,
+	);
 }
 
 export async function hydrateLocalStorageFromIdbFallback(): Promise<number> {
-	try {
-		const db = await openIdbFallbackDb();
-		if (!db) return 0;
-		return await new Promise<number>((resolve) => {
-			try {
-				const tx = db.transaction(IDB_FALLBACK_STORE_NAME, "readonly");
-				const store = tx.objectStore(IDB_FALLBACK_STORE_NAME);
-				const req = store.getAll();
-				req.onsuccess = () => {
-					const records = (req.result as Array<{ key: string; value: string }>) || [];
-					let count = 0;
-					for (const r of records) {
-						if (r && r.key) {
-							if (!storageState.inMemoryStorageCache.has(r.key)) {
-								storageState.inMemoryStorageCache.set(r.key, r.value);
-								count++;
-							}
-						}
-					}
-					resolve(count);
-				};
-				req.onerror = () => resolve(0);
-				tx.onabort = () => resolve(0);
-			} catch {
-				resolve(0);
+	return runIdbStoreOp(
+		"hydrateIdb",
+		"readonly",
+		0,
+		(store) => store.getAll(),
+		(result) => {
+			const records = (result as Array<{ key: string; value: string }>) || [];
+			let count = 0;
+			for (const r of records) {
+				if (r && r.key && !storageState.inMemoryStorageCache.has(r.key)) {
+					storageState.inMemoryStorageCache.set(r.key, r.value);
+					count++;
+				}
 			}
-		});
-	} catch {
-		return 0;
-	}
+			return count;
+		},
+	);
 }
 
 export function resetIdbFallbackConnection(): void {
 	storageState.idbFallbackDbPromise = null;
 }
 
-export function getUnderlyingLocalStorage(): Storage | null {
+function getSafeWebStorage(kind: "localStorage" | "sessionStorage"): Storage | null {
 	try {
-		if (typeof window !== "undefined" && window.localStorage) {
-			return window.localStorage;
+		if (typeof window !== "undefined" && window[kind]) {
+			return window[kind];
 		}
-	} catch {
-		// ignore
-	}
-	try {
-		if (typeof globalThis !== "undefined" && "localStorage" in globalThis && globalThis.localStorage) {
-			return globalThis.localStorage ?? null;
+		if (typeof globalThis !== "undefined" && kind in globalThis && globalThis[kind]) {
+			return globalThis[kind];
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logStorageFallback(kind, err);
 	}
 	return null;
 }
 
+export function getUnderlyingLocalStorage(): Storage | null {
+	return getSafeWebStorage("localStorage");
+}
+
 export function getUnderlyingSessionStorage(): Storage | null {
-	try {
-		if (typeof window !== "undefined" && window.sessionStorage) {
-			return window.sessionStorage;
-		}
-	} catch {
-		// ignore
-	}
-	try {
-		if (typeof globalThis !== "undefined" && "sessionStorage" in globalThis && globalThis.sessionStorage) {
-			return globalThis.sessionStorage ?? null;
-		}
-	} catch {
-		// ignore
-	}
-	return null;
+	return getSafeWebStorage("sessionStorage");
 }
 
 export function isImmediateDiskKey(key: string): boolean {

@@ -2,20 +2,17 @@
  * BACTERICIDAL SHIFT HELPERS (SanPiN 3.3686-21 / R 3.5.1904-04)
  */
 
-import type { BactericidalEquipment } from "@dental/shared";
+import { generateUuidV7, type BactericidalEquipment } from "@dental/shared";
 import { showToast } from "../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders";
 
 export { handlePrintBactericidalJournal } from "./bactericidal/bactericidalPrintHelper";
 
-function getAuthHeaders(): HeadersInit {
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	return {
+function getAuthHeaders(): Record<string, string> {
+	return denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-	};
+		"Idempotency-Key": generateUuidV7(),
+	});
 }
 
 export async function executeShiftAutopilot(

@@ -14,7 +14,7 @@ import type { RemdDocumentRecord } from "../egiszJournalData";
 import type { PackageZipExportOptions } from "./packageSenderTypes";
 
 function triggerBlobDownload(zipped: Uint8Array, filename: string): void {
-	const blob = new Blob([zipped as unknown as BlobPart], { type: "application/zip" });
+	const blob = new Blob([new Uint8Array(zipped)], { type: "application/zip" });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;

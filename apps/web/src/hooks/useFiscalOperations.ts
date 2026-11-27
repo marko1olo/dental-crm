@@ -70,7 +70,7 @@ export function useFiscalOperations() {
 
 	const queueOfflineReceipt = useCallback(
 		async (input: FiscalOperationInput, reason?: string): Promise<QueuedFiscalReceiptItem> => {
-			const p = input.payload as unknown as Record<string, unknown>;
+			const p: Record<string, unknown> = Object.fromEntries(Object.entries(input.payload));
 			const rawItems = Array.isArray(p.items) ? p.items : [];
 			const printPayload: FiscalReceiptPrintPayload = {
 				clinicName: typeof p.clinicName === "string" ? p.clinicName : "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",

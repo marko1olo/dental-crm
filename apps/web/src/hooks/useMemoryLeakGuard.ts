@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { logger } from "../utils/logger";
 import {
 	DEFAULT_DOM_CHUNK_STEP,
 	DEFAULT_DOM_PAGE_SIZE,
@@ -117,8 +118,8 @@ export function useMemoryLeakGuard(
 	const safeClearTimeout = useCallback((id: ReturnType<typeof setTimeout>) => {
 		try {
 			clearTimeout(id);
-		} catch {
-			// Ignore
+		} catch (err) {
+			logger.debug("[useMemoryLeakGuard] clearTimeout skipped:", err);
 		}
 		timeoutsRef.current.delete(id);
 	}, []);
@@ -126,7 +127,7 @@ export function useMemoryLeakGuard(
 	const safeSetTimeout = useCallback(
 		(callback: () => void, ms: number): ReturnType<typeof setTimeout> => {
 			if (!isMountedRef.current) {
-				const dummy = setTimeout(() => {}, 0);
+				const dummy = setTimeout(() => undefined, 0);
 				clearTimeout(dummy);
 				return dummy;
 			}
@@ -146,8 +147,8 @@ export function useMemoryLeakGuard(
 		(id: ReturnType<typeof setInterval>) => {
 			try {
 				clearInterval(id);
-			} catch {
-				// Ignore
+			} catch (err) {
+				logger.debug("[useMemoryLeakGuard] clearInterval skipped:", err);
 			}
 			intervalsRef.current.delete(id);
 		},
@@ -157,7 +158,7 @@ export function useMemoryLeakGuard(
 	const safeSetInterval = useCallback(
 		(callback: () => void, ms: number): ReturnType<typeof setInterval> => {
 			if (!isMountedRef.current) {
-				const dummy = setInterval(() => {}, 999999);
+				const dummy = setInterval(() => undefined, 999999);
 				clearInterval(dummy);
 				return dummy;
 			}
@@ -179,8 +180,8 @@ export function useMemoryLeakGuard(
 		if (typeof cancelAnimationFrame !== "undefined") {
 			try {
 				cancelAnimationFrame(id);
-			} catch {
-				// Ignore
+			} catch (err) {
+				logger.debug("[useMemoryLeakGuard] cancelAnimationFrame skipped:", err);
 			}
 		}
 		animationFramesRef.current.delete(id);
@@ -224,15 +225,16 @@ export function useMemoryLeakGuard(
 			try {
 				target.addEventListener(type, listener, listenerOptions);
 				listenersRef.current.add(tracked);
-			} catch {
-				return () => {};
+			} catch (err) {
+				logger.debug("[useMemoryLeakGuard] addEventListener skipped:", err);
+				return () => undefined;
 			}
 
 			const remove = () => {
 				try {
 					target.removeEventListener(type, listener, listenerOptions);
-				} catch {
-					// Ignore errors during removal
+				} catch (err) {
+					logger.debug("[useMemoryLeakGuard] removeEventListener skipped:", err);
 				}
 				listenersRef.current.delete(tracked);
 			};
@@ -292,7 +294,8 @@ export function useMemoryLeakGuard(
 				const url = URL.createObjectURL(blob);
 				objectUrlsRef.current.add(url);
 				return url;
-			} catch {
+			} catch (err) {
+				logger.debug("[useMemoryLeakGuard] createObjectURL failed:", err);
 				return "";
 			}
 		},
@@ -308,8 +311,8 @@ export function useMemoryLeakGuard(
 		) {
 			try {
 				URL.revokeObjectURL(url);
-			} catch {
-				// Ignore
+			} catch (err) {
+				logger.debug("[useMemoryLeakGuard] revokeObjectURL skipped:", err);
 			}
 		}
 		objectUrlsRef.current.delete(url);
@@ -323,89 +326,69 @@ export function useMemoryLeakGuard(
 	}, []);
 
 	const disposeAll = useCallback(() => {
+		const runSafeCleanup = (label: string, fn: () => void) => {
+			try {
+				fn();
+			} catch (err) {
+				logger.debug(`[useMemoryLeakGuard] Cleanup skipped (${label}):`, err);
+			}
+		};
+
 		// 1. Clear timers
 		for (const tid of timeoutsRef.current) {
-			try {
-				clearTimeout(tid);
-			} catch {
-				// Ignore
-			}
+			runSafeCleanup("clearTimeout", () => clearTimeout(tid));
 		}
 		timeoutsRef.current.clear();
 
 		for (const iid of intervalsRef.current) {
-			try {
-				clearInterval(iid);
-			} catch {
-				// Ignore
-			}
+			runSafeCleanup("clearInterval", () => clearInterval(iid));
 		}
 		intervalsRef.current.clear();
 
 		// 2. Clear animation frames
 		if (typeof cancelAnimationFrame !== "undefined") {
 			for (const rafId of animationFramesRef.current) {
-				try {
-					cancelAnimationFrame(rafId);
-				} catch {
-					// Ignore
-				}
+				runSafeCleanup("cancelAnimationFrame", () => cancelAnimationFrame(rafId));
 			}
 		}
 		animationFramesRef.current.clear();
 
 		// 3. Remove event listeners
 		for (const item of listenersRef.current) {
-			try {
-				item.target.removeEventListener(item.type, item.listener, item.options);
-			} catch {
-				// Ignore
-			}
+			runSafeCleanup("removeEventListener", () =>
+				item.target.removeEventListener(item.type, item.listener, item.options),
+			);
 		}
 		listenersRef.current.clear();
 
 		// 4. Abort all in-flight network requests and abort controllers
 		for (const controller of abortControllersRef.current) {
-			try {
+			runSafeCleanup("abortController", () => {
 				if (!controller.signal.aborted) {
 					controller.abort("Component unmounted (useMemoryLeakGuard)");
 				}
-			} catch {
-				// Ignore
-			}
+			});
 		}
 		abortControllersRef.current.clear();
 		lifecycleAbortControllerRef.current = null;
 
 		// 5. Disconnect observers
 		for (const observer of observersRef.current) {
-			try {
-				observer.disconnect();
-			} catch {
-				// Ignore
-			}
+			runSafeCleanup("observer.disconnect", () => observer.disconnect());
 		}
 		observersRef.current.clear();
 
 		// 6. Revoke all object URLs (prevent 2-3 GB RAM leaks on long 12h shifts)
 		if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
 			for (const url of objectUrlsRef.current) {
-				try {
-					URL.revokeObjectURL(url);
-				} catch {
-					// Ignore
-				}
+				runSafeCleanup("revokeObjectURL", () => URL.revokeObjectURL(url));
 			}
 		}
 		objectUrlsRef.current.clear();
 
 		// 7. Execute custom teardown disposers
 		for (const disposer of disposersRef.current) {
-			try {
-				disposer();
-			} catch {
-				// Ignore
-			}
+			runSafeCleanup("disposer", disposer);
 		}
 		disposersRef.current.clear();
 	}, []);

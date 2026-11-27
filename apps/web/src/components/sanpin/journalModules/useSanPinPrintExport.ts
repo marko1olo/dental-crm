@@ -6,6 +6,7 @@
  */
 
 import { showToast } from "../../GlobalToast";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { handleGenerateMonthlySterilizationLog } from "../AutoclavePrintHelpers";
 import type { ClinicAutoclaveDeviceLike } from "../autoclaveMonthlyJournalPrint.js";
 import type { SanPinCycleEntry } from "./sanpinJournalTypes";
@@ -19,7 +20,10 @@ export function useSanPinPrintExport(
 		try {
 			handleGenerateMonthlySterilizationLog(selectedAutoclave, devices);
 			showToast("Печатный журнал автоклавирования сформирован (А4)", "success");
-		} catch {
+		} catch (err) {
+			clientLogger.warn("[useSanPinPrintExport] Print journal generation failed", err, {
+				module: "SanPin",
+			});
 			showToast("Ошибка при формировании журнала автоклавирования", "error");
 		}
 	};
@@ -31,12 +35,20 @@ export function useSanPinPrintExport(
 		).join("\n");
 		const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
+		const now = new Date();
+		const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 		const link = document.createElement("a");
-		link.href = url;
-		link.setAttribute("download", `SanPiN_Sterilization_Journal_${new Date().toISOString().slice(0, 10)}.csv`);
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
+		try {
+			link.href = url;
+			link.setAttribute("download", `SanPiN_Sterilization_Journal_${localDate}.csv`);
+			document.body.appendChild(link);
+			link.click();
+		} finally {
+			if (link.parentNode) {
+				link.parentNode.removeChild(link);
+			}
+			URL.revokeObjectURL(url);
+		}
 		showToast("Журнал стерилизации экспортирован в CSV", "success");
 	};
 

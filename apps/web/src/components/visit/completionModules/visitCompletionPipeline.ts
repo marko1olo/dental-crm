@@ -14,7 +14,10 @@
  * НИКОГДА не блокируют врача и не прерывают завершение приёма (Soft Mode).
  */
 
-import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import { fetchWithHandling } from "../../../utils/networkUtils";
 import { useOfflineStore } from "../../../store/offlineStore";
@@ -138,11 +141,10 @@ export async function executeDraftAutosave(
 		const currentForm = storeSnap.visitNoteForm;
 		await fetchWithHandling(`/api/visits/${targetVisitId}/draft/autosave`, {
 			method: "PUT",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				"Idempotency-Key": generateUuidV7(),
-				...getDenteAuthHeaders(),
-			},
+			}),
 			body: JSON.stringify({
 				patientId: ctx.effectivePatientId,
 				selectedSpecialty: storeSnap.selectedSpecialty || "therapist",
@@ -244,7 +246,8 @@ export async function executeVisitCompletionEndpoint(
 				...(delta !== undefined ? { doctorEarningsDeltaKopecks: delta } : {}),
 				...(total !== undefined ? { doctorTodayTotalKopecks: total } : {}),
 			};
-		} catch {
+		} catch (parseErr) {
+			logger.debug("[visitCompletionPipeline] Не удалось распарсить дельту ЗП врача:", parseErr);
 			return undefined;
 		}
 	};
@@ -255,11 +258,10 @@ export async function executeVisitCompletionEndpoint(
 				`/api/v1/visits/${ctx.effectiveVisitId}/complete`,
 				{
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": completionIdempotencyKey,
-						...getDenteAuthHeaders(),
-					},
+					}),
 					body: JSON.stringify(payload),
 				},
 			);
@@ -271,11 +273,10 @@ export async function executeVisitCompletionEndpoint(
 					`/api/visits/${ctx.effectiveVisitId}/complete`,
 					{
 						method: "POST",
-						headers: {
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
 							"Idempotency-Key": completionIdempotencyKey,
-							...getDenteAuthHeaders(),
-						},
+						}),
 						body: JSON.stringify({
 							diary: ctx.effectiveDiary,
 							status: "completed",
@@ -326,9 +327,7 @@ export async function executeDiaryLockUponVisitCompletion(
 		// 1. Поиск дневника по visitId
 		const lookupRes = await fetchWithHandling(`/api/diaries/visit/${ctx.effectiveVisitId}`, {
 			method: "GET",
-			headers: {
-				...getDenteAuthHeaders(),
-			},
+			headers: denteClinicalReadHeaders(),
 		}).catch((err) => {
 			logger.warn("[visitCompletionPipeline] Failed to lookup diary for visit:", err);
 			return null;
@@ -346,11 +345,10 @@ export async function executeDiaryLockUponVisitCompletion(
 		if (!targetDiaryId && isUuid(ctx.effectivePatientId)) {
 			const createRes = await fetchWithHandling("/api/diaries", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...getDenteAuthHeaders(),
-				},
+				}),
 				body: JSON.stringify({
 					visitId: ctx.effectiveVisitId,
 					patientId: ctx.effectivePatientId,
@@ -384,11 +382,10 @@ export async function executeDiaryLockUponVisitCompletion(
 		if (targetDiaryId && !isAlreadyLocked) {
 			await fetchWithHandling(`/api/diaries/${targetDiaryId}/lock`, {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": generateUuidV7(),
-					...getDenteAuthHeaders(),
-				},
+				}),
 				body: JSON.stringify({}),
 			}).catch((lockErr) => {
 				logger.warn("[visitCompletionPipeline] Фоновая блокировка дневника ПЭП завершилась с предупреждением:", lockErr);
@@ -440,11 +437,15 @@ export async function executeTreatmentPlanItemCompletion(
 				`/api/patients/${ctx.effectivePatientId}/treatment-plans`,
 				{
 					method: "GET",
-					headers: {
-						...getDenteAuthHeaders(),
-					},
+					headers: denteClinicalReadHeaders(),
 				},
-			).catch(() => null);
+			).catch((plansErr) => {
+				logger.warn(
+					"[visitCompletionPipeline] Не удалось загрузить планы лечения пациента:",
+					plansErr,
+				);
+				return null;
+			});
 
 			interface TreatmentPlanRecord {
 				id: string;
@@ -491,31 +492,46 @@ export async function executeTreatmentPlanItemCompletion(
 			const planItemIds = (ctx.effectiveCompletedPlan || [])
 				.map((x) => String(x.id || x.itemId || ""))
 				.filter(Boolean);
+			const completeItemsKey = generateUuidV7();
+			const completeItemsEndpoint = `/api/patients/${ctx.effectivePatientId}/treatment-plans/${targetPlanId}/complete-items`;
+			const completeItemsPayload = {
+				visitId: isUuid(ctx.effectiveVisitId) ? ctx.effectiveVisitId : undefined,
+				phase: effectiveStage ? Number(effectiveStage) : undefined,
+				itemIds: planItemIds.length > 0 ? planItemIds : undefined,
+				renderedServices: ctx.result.items.map((it) => ({
+					code: it.code,
+					name: it.name,
+					toothNumber: it.toothNumber,
+				})),
+			};
 
 			await fetchWithHandling(
-				`/api/patients/${ctx.effectivePatientId}/treatment-plans/${targetPlanId}/complete-items`,
+				completeItemsEndpoint,
 				{
 					method: "POST",
-					headers: {
+					headers: denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
-						...getDenteAuthHeaders(),
-					},
-					body: JSON.stringify({
-						visitId: isUuid(ctx.effectiveVisitId) ? ctx.effectiveVisitId : undefined,
-						phase: effectiveStage ? Number(effectiveStage) : undefined,
-						itemIds: planItemIds.length > 0 ? planItemIds : undefined,
-						renderedServices: ctx.result.items.map((it) => ({
-							code: it.code,
-							name: it.name,
-							toothNumber: it.toothNumber,
-						})),
+						"Idempotency-Key": completeItemsKey,
 					}),
+					body: JSON.stringify(completeItemsPayload),
 				},
 			).catch((planErr) => {
 				logger.warn(
 					"[visitCompletionPipeline] Мягкое фоновое завершение позиций плана лечения:",
 					planErr,
 				);
+				const isPermanentClientError =
+					planErr instanceof Error && /^HTTP 4(?!08|29)/.test(planErr.message);
+				if (!isPermanentClientError) {
+					void useOfflineStore.getState().enqueue({
+						entityType: "treatment_item",
+						entityId: targetPlanId,
+						action: "update",
+						endpoint: completeItemsEndpoint,
+						idempotencyKey: completeItemsKey,
+						payload: completeItemsPayload,
+					});
+				}
 			});
 
 			if (typeof window !== "undefined") {
@@ -671,27 +687,43 @@ export async function executeOdontogramToothHistorySync(
 			}
 
 			for (const [targetState, group] of stateGroups.entries()) {
+				const toothBatchKey = generateUuidV7();
+				const toothBatchEndpoint = `/api/patients/${ctx.effectivePatientId}/tooth-states/batch`;
+				const toothBatchPayload = {
+					toothNumbers: group.teeth,
+					state: targetState,
+					visitId: ctx.effectiveVisitId,
+					reason:
+						group.reasons.join("; ") || "Завершение визита и оказание услуг",
+				};
+
 				await fetchWithHandling(
-					`/api/patients/${ctx.effectivePatientId}/tooth-states/batch`,
+					toothBatchEndpoint,
 					{
 						method: "POST",
-						headers: {
+						headers: denteClinicalMutationHeaders({
 							"Content-Type": "application/json",
-							...getDenteAuthHeaders(),
-						},
-						body: JSON.stringify({
-							toothNumbers: group.teeth,
-							state: targetState,
-							visitId: ctx.effectiveVisitId,
-							reason:
-								group.reasons.join("; ") || "Завершение визита и оказание услуг",
+							"Idempotency-Key": toothBatchKey,
 						}),
+						body: JSON.stringify(toothBatchPayload),
 					},
 				).catch((batchErr) => {
 					logger.warn(
 						"[visitCompletionPipeline] Мягкое фоновое обновление статуса зубов:",
 						batchErr,
 					);
+					const isPermanentClientError =
+						batchErr instanceof Error && /^HTTP 4(?!08|29)/.test(batchErr.message);
+					if (!isPermanentClientError) {
+						void useOfflineStore.getState().enqueue({
+							entityType: "odontogram_state",
+							entityId: ctx.effectivePatientId,
+							action: "update",
+							endpoint: toothBatchEndpoint,
+							idempotencyKey: toothBatchKey,
+							payload: toothBatchPayload,
+						});
+					}
 				});
 			}
 		}
@@ -727,7 +759,13 @@ export async function executeVisitPostCompletionPipeline(
 		);
 	});
 
-	const earnings = await completionPromise.catch(() => undefined);
+	const earnings = await completionPromise.catch((completionErr) => {
+		logger.warn(
+			"[visitCompletionPipeline] Завершение приёма завершилось с ошибкой при чтении результата:",
+			completionErr,
+		);
+		return undefined;
+	});
 	return {
 		...(earnings?.doctorEarningsDeltaKopecks !== undefined
 			? { doctorEarningsDeltaKopecks: earnings.doctorEarningsDeltaKopecks }

@@ -76,9 +76,12 @@ export function project3DWorldToVolumeScreen(
 	// rotMat[0] = Camera Right (Screen X)
 	// rotMat[1] = Camera Up (Screen Y, inverted)
 	// rotMat[2] = Camera Ray Direction (Depth)
-	const viewX = cx * rotMat[0]![0]! + cy * rotMat[0]![1]! + cz * rotMat[0]![2]!;
-	const viewY = cx * rotMat[1]![0]! + cy * rotMat[1]![1]! + cz * rotMat[1]![2]!;
-	const depth = cx * rotMat[2]![0]! + cy * rotMat[2]![1]! + cz * rotMat[2]![2]!;
+	const r0 = rotMat[0] ?? [1, 0, 0];
+	const r1 = rotMat[1] ?? [0, 1, 0];
+	const r2 = rotMat[2] ?? [0, 0, 1];
+	const viewX = cx * r0[0] + cy * r0[1] + cz * r0[2];
+	const viewY = cx * r1[0] + cy * r1[1] + cz * r1[2];
+	const depth = cx * r2[0] + cy * r2[1] + cz * r2[2];
 
 	const screenX = center.x + viewX * scale;
 	const screenY = center.y - viewY * scale;
@@ -148,7 +151,8 @@ export function drawVolume3DOverlay(
 		ctx.lineWidth = canalRadiusPx * 2.4;
 		ctx.beginPath();
 		for (let i = 0; i < projectedNerve.length; i++) {
-			const p = projectedNerve[i]!;
+			const p = projectedNerve[i];
+			if (!p) continue;
 			if (i === 0) ctx.moveTo(p.screenX, p.screenY);
 			else ctx.lineTo(p.screenX, p.screenY);
 		}
@@ -160,7 +164,8 @@ export function drawVolume3DOverlay(
 		ctx.lineWidth = canalRadiusPx * 2.0;
 		ctx.beginPath();
 		for (let i = 0; i < projectedNerve.length; i++) {
-			const p = projectedNerve[i]!;
+			const p = projectedNerve[i];
+			if (!p) continue;
 			if (i === 0) ctx.moveTo(p.screenX, p.screenY);
 			else ctx.lineTo(p.screenX, p.screenY);
 		}
@@ -171,7 +176,8 @@ export function drawVolume3DOverlay(
 		ctx.lineWidth = Math.max(1.0, canalRadiusPx * 0.6);
 		ctx.beginPath();
 		for (let i = 0; i < projectedNerve.length; i++) {
-			const p = projectedNerve[i]!;
+			const p = projectedNerve[i];
+			if (!p) continue;
 			if (i === 0) ctx.moveTo(p.screenX, p.screenY);
 			else ctx.lineTo(p.screenX, p.screenY);
 		}
@@ -189,7 +195,8 @@ export function drawVolume3DOverlay(
 		);
 
 		for (let i = 0; i < nervePoints.length; i++) {
-			const p = projectedSeeds[i]!;
+			const p = projectedSeeds[i];
+			if (!p) continue;
 			const isMental = i === 0;
 			const isMandibular =
 				nervePoints.length >= 2 && i === nervePoints.length - 1;
@@ -232,9 +239,11 @@ export function drawVolume3DOverlay(
 				let isCrowded = false;
 				for (let j = 0; j < projectedSeeds.length; j++) {
 					if (i !== j) {
+						const otherSeed = projectedSeeds[j];
+						if (!otherSeed) continue;
 						const dist = Math.hypot(
-							p.screenX - projectedSeeds[j]!.screenX,
-							p.screenY - projectedSeeds[j]!.screenY,
+							p.screenX - otherSeed.screenX,
+							p.screenY - otherSeed.screenY,
 						);
 						if (dist < 18) {
 							isCrowded = true;
@@ -297,7 +306,8 @@ export function drawVolume3DOverlay(
 	});
 
 	for (let impIdx = 0; impIdx < activeImplantsList.length; impIdx++) {
-		const imp = activeImplantsList[impIdx]!;
+		const imp = activeImplantsList[impIdx];
+		if (!imp) continue;
 		const pEntry = project3DWorldToVolumeScreen(imp.entry3D, volume, rotMat, scale, center);
 		const pApex = project3DWorldToVolumeScreen(imp.apex3D, volume, rotMat, scale, center);
 
@@ -390,12 +400,12 @@ export function drawVolume3DOverlay(
 		implant3DWorld && (!implant3DWorld.targetToothFdi || implant3DWorld.targetToothFdi >= 30) && implant3DWorld.entry3D.z <= -0.5
 			? implant3DWorld
 			: activeImplantsList[0];
-	if (primaryTargetImplant && nerveCurve.length >= 2) {
+	if (primaryTargetImplant && nerveCurve.length >= 2 && nerveCurve[0]) {
 		const isDangerous = Boolean(nerveAuditResult?.isDangerous);
 		const isWarning = Boolean(nerveAuditResult?.isWarning);
 		const statusStroke = isDangerous ? "#ef4444" : isWarning ? "#f59e0b" : "#10b981";
 
-		let closestNervePt: Point3D = nerveCurve[0]!;
+		let closestNervePt: Point3D = nerveCurve[0];
 		let minNerveDist = Infinity;
 
 		for (const np of nerveCurve) {

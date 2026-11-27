@@ -85,9 +85,13 @@ export class SyncNetworkWatcher {
 	}
 
 	public async isBatterySaver(): Promise<boolean> {
-		if (typeof navigator === "undefined" || typeof (navigator as unknown as { getBattery?: () => Promise<unknown> }).getBattery !== "function") return false;
+		if (typeof navigator === "undefined") return false;
+		const nav: Navigator & {
+			getBattery?: () => Promise<{ level?: number; charging?: boolean }>;
+		} = navigator;
+		if (typeof nav.getBattery !== "function") return false;
 		try {
-			const b = await (navigator as unknown as { getBattery: () => Promise<{ level?: number; charging?: boolean }> }).getBattery();
+			const b = await nav.getBattery();
 			return !b?.charging && (b?.level ?? 1.0) <= 0.15;
 		} catch (batteryErr) {
 			logger.debug("[OfflineSyncService] Battery inspection unavailable:", batteryErr);

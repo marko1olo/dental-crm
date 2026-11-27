@@ -1,28 +1,33 @@
-import type { CreateMedicalWasteLogDto } from "@dental/shared";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { generateUuidV7, type CreateMedicalWasteLogDto } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 
 export async function submitMedicalWasteEntry(payload: CreateMedicalWasteLogDto): Promise<boolean> {
 	try {
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
 		const res = await fetch("/api/registers/medical-waste", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify(payload),
 		});
 		if (res.ok) {
 			showToast("Запись движения отходов внесена в журнал", "success");
 			return true;
 		}
-		const err = await res.json().catch(() => ({}));
-		showToast(err.message || "Ошибка при сохранении", "error");
+		let errorMessage = "Ошибка при сохранении";
+		try {
+			const err = (await res.json()) as { message?: string };
+			if (err.message) errorMessage = err.message;
+		} catch (parseErr) {
+			clientLogger.debug("submitMedicalWasteEntry error parse failed", parseErr);
+		}
+		showToast(errorMessage, "error");
 		return false;
-	} catch {
+	} catch (err) {
+		clientLogger.warn("submitMedicalWasteEntry failed", err);
 		showToast("Сетевая ошибка при сохранении", "error");
 		return false;
 	}

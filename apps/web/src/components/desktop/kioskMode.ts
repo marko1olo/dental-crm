@@ -246,7 +246,8 @@ export class KioskManager {
 		});
 
 		if (typeof window !== "undefined") {
-			(window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ = true;
+			const kioskWin: Window & { __DENTE_KIOSK_ACTIVE__?: boolean } = window;
+			kioskWin.__DENTE_KIOSK_ACTIVE__ = true;
 		}
 
 		triggerHaptic("success");
@@ -344,7 +345,8 @@ export class KioskManager {
 		});
 
 		if (typeof window !== "undefined") {
-			(window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ = false;
+			const kioskWin: Window & { __DENTE_KIOSK_ACTIVE__?: boolean } = window;
+			kioskWin.__DENTE_KIOSK_ACTIVE__ = false;
 		}
 
 		triggerHaptic("light");
@@ -372,7 +374,8 @@ export class KioskManager {
 
 	public destroy(): void {
 		if (typeof window !== "undefined") {
-			(window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ = false;
+			const kioskWin: Window & { __DENTE_KIOSK_ACTIVE__?: boolean } = window;
+			kioskWin.__DENTE_KIOSK_ACTIVE__ = false;
 		}
 		this.detachEventListeners();
 		this.clearInactivityTimer();
@@ -397,10 +400,11 @@ export class KioskManager {
 		}
 
 		try {
-			const nav = navigator as unknown as { wakeLock: { request: (type: string) => Promise<unknown> } };
-			this.wakeLockSentinel = await nav.wakeLock.request("screen");
+			if (!navigator.wakeLock) return false;
+			this.wakeLockSentinel = await navigator.wakeLock.request("screen");
 			return true;
-		} catch {
+		} catch (err) {
+			clientLogger.debug("[KioskManager] Wake lock unavailable:", err);
 			this.wakeLockSentinel = null;
 			return false;
 		}
@@ -616,8 +620,11 @@ export function disableKioskMode(exitPin?: string): Promise<{
 }
 
 export function isKioskModeActive(): boolean {
-	if (typeof window !== "undefined" && (window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__ !== undefined) {
-		return Boolean((window as unknown as { __DENTE_KIOSK_ACTIVE__?: boolean }).__DENTE_KIOSK_ACTIVE__);
+	if (typeof window !== "undefined") {
+		const kioskWin: Window & { __DENTE_KIOSK_ACTIVE__?: boolean } = window;
+		if (kioskWin.__DENTE_KIOSK_ACTIVE__ !== undefined) {
+			return Boolean(kioskWin.__DENTE_KIOSK_ACTIVE__);
+		}
 	}
 	return getGlobalKioskManager().getState().isActive;
 }

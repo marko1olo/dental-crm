@@ -1,26 +1,27 @@
-import type { BactericidalEquipment } from "@dental/shared";
+import { generateUuidV7, type BactericidalEquipment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { provisionCanonicalBactericidalEquipment } from "./bactericidalPresets";
 
 export async function replaceLampsAction(equipmentId: string, onRefresh: () => Promise<void>) {
 	try {
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
 		const res = await fetch(`/api/registers/bactericidal/equipments/${equipmentId}`, {
 			method: "PUT",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify({ action: "replace_lamps" }),
 		});
 		if (res.ok) {
 			showToast("Замена ламп зафиксирована. Счетчик обнулен.", "success");
 			await onRefresh();
+		} else {
+			showToast("Ошибка при сбросе счетчика ламп", "error");
 		}
-	} catch {
+	} catch (err) {
+		clientLogger.warn("replaceLampsAction failed", err);
 		showToast("Ошибка при сбросе счетчика ламп", "error");
 	}
 }

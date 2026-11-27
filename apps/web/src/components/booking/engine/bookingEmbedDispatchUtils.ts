@@ -57,14 +57,14 @@ export interface BookingReceiptData {
 }
 
 interface TelegramUser {
-	id: number;
-	first_name: string;
+	id?: number | undefined;
+	first_name?: string | undefined;
 	username?: string | undefined;
 }
 
 interface TelegramWebApp {
-	ready?: () => void;
-	expand?: () => void;
+	ready?: (() => void) | undefined;
+	expand?: (() => void) | undefined;
 	initDataUnsafe?: {
 		user?: TelegramUser | undefined;
 	} | undefined;
@@ -86,7 +86,7 @@ export function detectTelegramWebApp(): {
 	if (typeof window === "undefined") {
 		return { isTelegram: false };
 	}
-	const win = window as unknown as WindowWithTelegram;
+	const win: WindowWithTelegram = window;
 	const tg = win.Telegram?.WebApp;
 	if (tg) {
 		tg.ready?.();
@@ -94,13 +94,14 @@ export function detectTelegramWebApp(): {
 		const user = tg.initDataUnsafe?.user;
 		return {
 			isTelegram: true,
-			user: user
-				? {
-						id: user.id,
-						firstName: user.first_name,
-						username: user.username,
-					}
-				: undefined,
+			user:
+				user && typeof user.id === "number" && typeof user.first_name === "string"
+					? {
+							id: user.id,
+							firstName: user.first_name,
+							username: user.username,
+						}
+					: undefined,
 		};
 	}
 	return { isTelegram: false };

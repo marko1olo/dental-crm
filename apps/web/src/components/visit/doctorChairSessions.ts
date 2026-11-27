@@ -3,6 +3,8 @@
 // Модуль вынесен из clinicalVisitWorkflow.ts в рамках антимонолитного правила (Мандат 8b)
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { logger } from "../../utils/logger";
+
 export type ChairSessionStatus =
 	| "active"
 	| "waiting_anesthesia"
@@ -388,8 +390,8 @@ export function saveChairsideVisitDraft(
 		try {
 			const key = getIsolatedVisitDraftStorageKey(visitId);
 			window.localStorage.setItem(key, JSON.stringify(payload));
-		} catch {
-			// Игнорируем ошибки квоты в приватном режиме Safari
+		} catch (err) {
+			logger.debug("[ChairSession] Failed to save chairside visit draft:", err);
 		}
 	}
 	return payload;
@@ -410,8 +412,8 @@ export function loadChairsideVisitDraft(visitId: string): ChairsideVisitDraftPay
 		if (parsed && typeof parsed === "object" && parsed.visitId) {
 			return parsed as ChairsideVisitDraftPayload;
 		}
-	} catch {
-		// Игнорируем ошибки синтаксиса
+	} catch (err) {
+		logger.debug("[ChairSession] Failed to parse chairside visit draft:", err);
 	}
 	return null;
 }
@@ -424,8 +426,8 @@ export function clearChairsideVisitDraft(visitId: string): void {
 	try {
 		const key = getIsolatedVisitDraftStorageKey(visitId);
 		window.localStorage.removeItem(key);
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.debug("[ChairSession] Failed to clear chairside visit draft:", err);
 	}
 }
 

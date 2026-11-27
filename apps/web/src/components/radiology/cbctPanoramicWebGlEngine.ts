@@ -168,6 +168,8 @@ export class WebGl2PanoramicEngine {
 		if (!this.program || !this.vao || !this.uniforms) {
 			if (!this.init()) return null;
 		}
+		const uniforms = this.uniforms;
+		if (!this.program || !this.vao || !uniforms) return null;
 		const defaultHeightMm = volume?.physicalSizeMm?.z ? Math.min(78.0, Math.max(55.0, volume.physicalSizeMm.z * 0.98)) : 74.0;
 		const {
 			heightMm = defaultHeightMm,
@@ -210,10 +212,13 @@ export class WebGl2PanoramicEngine {
 		let currNode = 0;
 		for (let col = 0; col < outW; col++) {
 			const targetDistMm = (col / denomW) * totalLengthMm;
-			while (currNode < nNodes - 2 && vectorField[currNode + 1]!.distanceAlongArchMm < targetDistMm) {
+			while (currNode < nNodes - 2) {
+				const nextNode = vectorField[currNode + 1];
+				if (!nextNode || nextNode.distanceAlongArchMm >= targetDistMm) break;
 				currNode++;
 			}
-			const n0 = vectorField[currNode]!;
+			const n0 = vectorField[currNode];
+			if (!n0) continue;
 			const n1 = vectorField[currNode + 1] || n0;
 			const d0 = n0.distanceAlongArchMm;
 			const d1 = n1.distanceAlongArchMm;
@@ -366,11 +371,11 @@ export class WebGl2PanoramicEngine {
 		// Bind textures
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_3D, this.volumeTexture);
-		gl.uniform1i(this.uniforms!.volume, 0);
+		gl.uniform1i(uniforms.volume, 0);
 
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D, this.splineTexture);
-		gl.uniform1i(this.uniforms!.archSplineTexture, 1);
+		gl.uniform1i(uniforms.archSplineTexture, 1);
 
 		// Set uniforms
 		const curUpload = this.uploadDim ?? {
@@ -379,9 +384,9 @@ export class WebGl2PanoramicEngine {
 			depth: volume.dimensions.depth,
 			factor: 1,
 		};
-		gl.uniform3f(this.uniforms!.volumeDim, curUpload.width, curUpload.height, curUpload.depth);
+		gl.uniform3f(uniforms.volumeDim, curUpload.width, curUpload.height, curUpload.depth);
 		gl.uniform3f(
-			this.uniforms!.originMm,
+			uniforms.originMm,
 			volume.originMm?.x ?? 0.0,
 			volume.originMm?.y ?? 0.0,
 			volume.originMm?.z ?? 0.0,
@@ -390,7 +395,7 @@ export class WebGl2PanoramicEngine {
 		const effSpY = Math.max(0.001, (volume.spacingMm?.y || 0.2) * curUpload.factor);
 		const effSpZ = Math.max(0.001, (volume.spacingMm?.z || 0.2) * curUpload.factor);
 		gl.uniform3f(
-			this.uniforms!.invSpacingMm,
+			uniforms.invSpacingMm,
 			1.0 / effSpX,
 			1.0 / effSpY,
 			1.0 / effSpZ,
@@ -398,63 +403,63 @@ export class WebGl2PanoramicEngine {
 
 		const zTopMm = centerZMm + heightMm / 2.0;
 		const zBottomMm = centerZMm - heightMm / 2.0;
-		gl.uniform1f(this.uniforms!.zTopMm, zTopMm);
-		gl.uniform1f(this.uniforms!.zBottomMm, zBottomMm);
-		gl.uniform1f(this.uniforms!.focalRadiusMm, focalRadiusMm);
-		gl.uniform1f(this.uniforms!.outWidth, outW);
-		gl.uniform1i(this.uniforms!.numSlabSamples, numSlab);
+		gl.uniform1f(uniforms.zTopMm, zTopMm);
+		gl.uniform1f(uniforms.zBottomMm, zBottomMm);
+		gl.uniform1f(uniforms.focalRadiusMm, focalRadiusMm);
+		gl.uniform1f(uniforms.outWidth, outW);
+		gl.uniform1i(uniforms.numSlabSamples, numSlab);
 
 		let modeInt = 0;
 		if (projectionMode === "ray_sum" || projectionMode === "raysum") modeInt = 1;
 		else if (projectionMode === "minip") modeInt = 2;
 		else if (projectionMode === "average") modeInt = 3;
-		gl.uniform1i(this.uniforms!.projectionMode, modeInt);
+		gl.uniform1i(uniforms.projectionMode, modeInt);
 
-		gl.uniform1i(this.uniforms!.flipY, 0); // readPixels alignment: row 0 is zTopMm
+		gl.uniform1i(uniforms.flipY, 0); // readPixels alignment: row 0 is zTopMm
 
 		const effectiveWW = windowWidth ?? (volume.defaultWindowWidth && volume.defaultWindowWidth >= 1000 ? volume.defaultWindowWidth : 4025);
 		const effectiveWL = windowLevel ?? (volume.defaultWindowLevel && volume.defaultWindowLevel >= -200 && volume.defaultWindowLevel <= 2500 ? volume.defaultWindowLevel : 525);
-		gl.uniform1f(this.uniforms!.windowWidth, effectiveWW);
-		gl.uniform1f(this.uniforms!.windowLevel, effectiveWL);
-		gl.uniform1i(this.uniforms!.invert, invert ? 1 : 0);
+		gl.uniform1f(uniforms.windowWidth, effectiveWW);
+		gl.uniform1f(uniforms.windowLevel, effectiveWL);
+		gl.uniform1i(uniforms.invert, invert ? 1 : 0);
 
 		gl.uniform1i(
-			this.uniforms!.trilinear,
+			uniforms.trilinear,
 			options.trilinear !== undefined ? (options.trilinear ? 1 : 0) : coarsePreview ? 0 : 1,
 		);
-		gl.uniform1i(this.uniforms!.useAnalyticalPoly, options.useAnalyticalPoly ? 1 : 0);
+		gl.uniform1i(uniforms.useAnalyticalPoly, options.useAnalyticalPoly ? 1 : 0);
 		const poly = options.archPolyCoeffs ?? [0.035, 0.0, -56.5, 0.0];
-		gl.uniform4f(this.uniforms!.archPolyCoeffs, poly[0], poly[1], poly[2], poly[3]);
+		gl.uniform4f(uniforms.archPolyCoeffs, poly[0], poly[1], poly[2], poly[3]);
 		const effAnteriorRatio = options.anteriorTroughRatio !== undefined
 			? Math.max(0.1, Math.min(1.0, options.anteriorTroughRatio))
 			: 0.65;
-		gl.uniform1f(this.uniforms!.anteriorTroughRatio, effAnteriorRatio);
+		gl.uniform1f(uniforms.anteriorTroughRatio, effAnteriorRatio);
 
 		const effSharpen = options.sharpenAmount ?? (options.sharpen ? 0.18 : 0.0);
-		if (this.uniforms!.sharpenAmount) {
-			gl.uniform1f(this.uniforms!.sharpenAmount, effSharpen);
+		if (uniforms.sharpenAmount) {
+			gl.uniform1f(uniforms.sharpenAmount, effSharpen);
 		}
 
 		const effGamma = options.gamma ?? 1.50;
-		if (this.uniforms!.gamma) {
-			gl.uniform1f(this.uniforms!.gamma, effGamma);
+		if (uniforms.gamma) {
+			gl.uniform1f(uniforms.gamma, effGamma);
 		}
 
 		const effUseSoftKnee = options.useSoftKnee !== undefined
 			? options.useSoftKnee
 			: (typeof options.softKnee === "object" ? Boolean(options.softKnee.enabled ?? false) : Boolean(options.softKnee));
-		if (this.uniforms!.useSoftKnee) {
-			gl.uniform1i(this.uniforms!.useSoftKnee, effUseSoftKnee ? 1 : 0);
+		if (uniforms.useSoftKnee) {
+			gl.uniform1i(uniforms.useSoftKnee, effUseSoftKnee ? 1 : 0);
 		}
 
 		const effCeiling = options.softKneeCeiling ?? (typeof options.softKnee === "object" && typeof options.softKnee?.peakEnamel === "number" ? options.softKnee.peakEnamel : 215.0);
-		if (this.uniforms!.softKneeCeiling) {
-			gl.uniform1f(this.uniforms!.softKneeCeiling, effCeiling);
+		if (uniforms.softKneeCeiling) {
+			gl.uniform1f(uniforms.softKneeCeiling, effCeiling);
 		}
 
 		const effAirCutoff = options.airCutoffHU ?? (typeof options.softKnee === "object" && typeof options.softKnee?.airCutoffHU === "number" ? options.softKnee.airCutoffHU : -500.0);
-		if (this.uniforms!.airCutoffHU) {
-			gl.uniform1f(this.uniforms!.airCutoffHU, effAirCutoff);
+		if (uniforms.airCutoffHU) {
+			gl.uniform1f(uniforms.airCutoffHU, effAirCutoff);
 		}
 
 		// Draw quad
@@ -538,7 +543,10 @@ export function getGlobalWebGl2PanoramicEngine(): WebGl2PanoramicEngine | null {
 			}
 		});
 		return globalWebGl2Engine;
-	} catch {
+	} catch (err) {
+		clientLogger.debug("[cbctPanoramicWebGlEngine] WebGL2 init unavailable", err, {
+			module: "cbctPanoramicWebGlEngine",
+		});
 		return null;
 	}
 }
@@ -556,7 +564,10 @@ export function reconstructPanoramicViewWebGl2(
 	if (!engine) return null;
 	try {
 		return engine.reconstruct(volume, archCurve, options);
-	} catch {
+	} catch (err) {
+		clientLogger.warn("[cbctPanoramicWebGlEngine] WebGL2 panoramic reconstruction fallback to CPU", err, {
+			module: "cbctPanoramicWebGlEngine",
+		});
 		return null;
 	}
 }

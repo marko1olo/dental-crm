@@ -140,12 +140,12 @@ export function generateImplantMesh(dims: ImplantDimensions, segments = 32): Imp
 	// Vertex normals accumulation
 	const normals = new Float32Array(totalVertices * 3);
 	for (let t = 0; t < totalTriangles; t++) {
-		const i0 = indices[t * 3]!;
-		const i1 = indices[t * 3 + 1]!;
-		const i2 = indices[t * 3 + 2]!;
-		const ax = positions[i0 * 3]!, ay = positions[i0 * 3 + 1]!, az = positions[i0 * 3 + 2]!;
-		const bx = positions[i1 * 3]!, by = positions[i1 * 3 + 1]!, bz = positions[i1 * 3 + 2]!;
-		const cx = positions[i2 * 3]!, cy = positions[i2 * 3 + 1]!, cz = positions[i2 * 3 + 2]!;
+		const i0 = indices[t * 3] ?? 0;
+		const i1 = indices[t * 3 + 1] ?? 0;
+		const i2 = indices[t * 3 + 2] ?? 0;
+		const ax = positions[i0 * 3] ?? 0, ay = positions[i0 * 3 + 1] ?? 0, az = positions[i0 * 3 + 2] ?? 0;
+		const bx = positions[i1 * 3] ?? 0, by = positions[i1 * 3 + 1] ?? 0, bz = positions[i1 * 3 + 2] ?? 0;
+		const cx = positions[i2 * 3] ?? 0, cy = positions[i2 * 3 + 1] ?? 0, cz = positions[i2 * 3 + 2] ?? 0;
 		const e1x = bx - ax, e1y = by - ay, e1z = bz - az;
 		const e2x = cx - ax, e2y = cy - ay, e2z = cz - az;
 		const nx = e1y * e2z - e1z * e2y;
@@ -157,7 +157,7 @@ export function generateImplantMesh(dims: ImplantDimensions, segments = 32): Imp
 	}
 
 	for (let v = 0; v < totalVertices; v++) {
-		const nx = normals[v * 3]!, ny = normals[v * 3 + 1]!, nz = normals[v * 3 + 2]!;
+		const nx = normals[v * 3] ?? 0, ny = normals[v * 3 + 1] ?? 0, nz = normals[v * 3 + 2] ?? 0;
 		const l = Math.hypot(nx, ny, nz);
 		if (l > 1e-8) {
 			normals[v * 3] = nx / l; normals[v * 3 + 1] = ny / l; normals[v * 3 + 2] = nz / l;
@@ -192,12 +192,12 @@ export function transformImplantMesh(mesh: ImplantMeshBuffers, placement: Implan
 	const p0 = placement.position;
 
 	for (let i = 0; i < vCount; i++) {
-		const lx = mesh.positions[i * 3]!, ly = mesh.positions[i * 3 + 1]!, lz = mesh.positions[i * 3 + 2]!;
+		const lx = mesh.positions[i * 3] ?? 0, ly = mesh.positions[i * 3 + 1] ?? 0, lz = mesh.positions[i * 3 + 2] ?? 0;
 		outPos[i * 3] = p0[0] + u[0] * lx + v[0] * ly + w[0] * lz;
 		outPos[i * 3 + 1] = p0[1] + u[1] * lx + v[1] * ly + w[1] * lz;
 		outPos[i * 3 + 2] = p0[2] + u[2] * lx + v[2] * ly + w[2] * lz;
 
-		const lnx = mesh.normals[i * 3]!, lny = mesh.normals[i * 3 + 1]!, lnz = mesh.normals[i * 3 + 2]!;
+		const lnx = mesh.normals[i * 3] ?? 0, lny = mesh.normals[i * 3 + 1] ?? 0, lnz = mesh.normals[i * 3 + 2] ?? 0;
 		outNorm[i * 3] = u[0] * lnx + v[0] * lny + w[0] * lnz;
 		outNorm[i * 3 + 1] = u[1] * lnx + v[1] * lny + w[1] * lnz;
 		outNorm[i * 3 + 2] = u[2] * lnx + v[2] * lny + w[2] * lnz;

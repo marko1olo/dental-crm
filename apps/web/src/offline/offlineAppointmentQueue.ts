@@ -11,7 +11,10 @@
  */
 
 import { type AppointmentStatus, generateUuidV7 } from "@dental/shared";
-import { SCHEDULES_CACHE_STORE_NAME } from "../services/offline/storage/constants.js";
+import {
+	resolveActiveOfflineOrgScope,
+	SCHEDULES_CACHE_STORE_NAME,
+} from "../services/offline/storage/constants.js";
 import { queueBatchedStorePut } from "../services/offline/storage/idbBatchBuffer.js";
 import {
 	enqueueOfflineMutation,
@@ -101,7 +104,7 @@ export async function enqueueOfflineAppointment(
 		scheduleDateCache.set(dateKey, updatedList);
 	}
 
-	const orgId = appointment.organizationId || "default_org";
+	const orgId = resolveActiveOfflineOrgScope(appointment.organizationId);
 	const mutationAction =
 		action === "CREATE_APPOINTMENT"
 			? "create"
@@ -162,7 +165,7 @@ export function cacheScheduleOffline(
 	setBoundedScheduleCache(normalizedDate, appointments);
 
 	const nowMs = Date.now();
-	const scheduleKey = `schedule_default_${normalizedDate}`;
+	const scheduleKey = `schedule_${resolveActiveOfflineOrgScope()}_${normalizedDate}`;
 	queueBatchedStorePut({
 		storeName: SCHEDULES_CACHE_STORE_NAME,
 		key: scheduleKey,

@@ -18,6 +18,7 @@ import {
 	deleteOfflineDraft,
 	listOfflineDrafts,
 } from "../services/offline/offlineStorage.js";
+import { resolveActiveOfflineOrgScope } from "../services/offline/storage/constants.js";
 import type { OfflineDraft } from "../services/offline/types.js";
 import { isLowSpecDevice } from "../utils/lowSpecHddOptimizer.js";
 import { logger } from "../utils/logger.js";
@@ -69,7 +70,7 @@ export function saveVisitDraftDebouncedOffline(
 
 	const timeout = debounceMs ?? getVisitDraftDebounceMs();
 	const entityId = draft.visitId ?? draft.patientId;
-	const orgId = draft.organizationId ?? "default_org";
+	const orgId = resolveActiveOfflineOrgScope(draft.organizationId);
 
 	return saveOfflineDraftDebounced<VisitDraftPayload>(
 		key,
@@ -91,7 +92,7 @@ export async function saveVisitDraftOffline(
 	memoryDraftCache.set(key, draft);
 
 	const entityId = draft.visitId ?? draft.patientId;
-	const orgId = draft.organizationId ?? "default_org";
+	const orgId = resolveActiveOfflineOrgScope(draft.organizationId);
 
 	return saveOfflineDraft<VisitDraftPayload>(
 		key,

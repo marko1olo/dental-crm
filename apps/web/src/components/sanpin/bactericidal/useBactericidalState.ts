@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { BactericidalEquipment, BactericidalLogEntry } from "@dental/shared";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { executePreShift30Min } from "../bactericidalShiftHelpers";
 import { closeEveningShiftAction, openMorningShiftAction } from "./bactericidalShiftActions";
@@ -21,12 +21,7 @@ export function useBactericidalState() {
 	const fetchAll = async () => {
 		try {
 			setLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const headers = {
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			};
+			const headers = denteClinicalReadHeaders();
 			const [equipRes, logRes] = await Promise.all([
 				fetch("/api/registers/bactericidal/equipments", { headers }),
 				fetch("/api/registers/bactericidal/logs", { headers }),
@@ -34,10 +29,14 @@ export function useBactericidalState() {
 			if (equipRes.ok) {
 				const equipData = (await equipRes.json()) as BactericidalEquipment[];
 				setEquipments(Array.isArray(equipData) ? equipData : []);
+			} else {
+				clientLogger.warn("Failed to load bactericidal equipments", { status: equipRes.status });
 			}
 			if (logRes.ok) {
 				const logData = (await logRes.json()) as BactericidalLogItem[];
 				setLogs(Array.isArray(logData) ? logData : []);
+			} else {
+				clientLogger.warn("Failed to load bactericidal logs", { status: logRes.status });
 			}
 		} catch (err) {
 			clientLogger.error("Failed to load bactericidal data", err);

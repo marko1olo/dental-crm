@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import { loadSavedClinicAutoclaves } from "../sanpinCatalogData";
 
@@ -11,16 +11,11 @@ export function useRetroactiveSterilizers() {
 
 	const fetchSterilizers = async () => {
 		try {
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/sanpin/sterilization/equipments", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-			}).catch(() => null);
+				headers: denteClinicalReadHeaders(),
+			});
 
-			if (res && res.ok) {
+			if (res.ok) {
 				const data: SterilizerEquipment[] = await res.json();
 				if (Array.isArray(data) && data.length > 0) {
 					const activeList = data.filter((d) => d.status === "active");

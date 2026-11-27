@@ -7,6 +7,7 @@ import {
 	LOCAL_STORAGE_PRICELIST_PREFIX,
 	ODONTOGRAM_CACHE_STORE_NAME,
 	PRICELIST_CACHE_STORE_NAME,
+	resolveActiveOfflineOrgScope,
 } from "./constants";
 import { queueBatchedStorePut } from "./idbBatchBuffer";
 import { withIdbTransactionRetry } from "./idbDatabase";
@@ -172,7 +173,7 @@ export async function cachePriceList804n(
 	organizationId?: string | undefined,
 	version = "1.0",
 ): Promise<CachedPriceList804n> {
-	const orgKey = organizationId || "default";
+	const orgKey = resolveActiveOfflineOrgScope(organizationId);
 	const catalogKey = `pricelist_804n_${orgKey}`;
 	const nowMs = Date.now();
 	const record: CachedPriceList804n = {
@@ -200,7 +201,7 @@ export async function cachePriceList804n(
 export async function getCachedPriceList804n(
 	organizationId?: string | undefined,
 ): Promise<CachedPriceList804n | null> {
-	const orgKey = organizationId || "default";
+	const orgKey = resolveActiveOfflineOrgScope(organizationId);
 	const catalogKey = `pricelist_804n_${orgKey}`;
 
 	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)

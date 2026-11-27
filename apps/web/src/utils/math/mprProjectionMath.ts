@@ -123,7 +123,12 @@ export function toTransferableScalarData(
 		return new Float32Array(src);
 	}
 	if (ArrayBuffer.isView(src)) {
-		return new Float32Array(src as unknown as ArrayLike<number>);
+		const view = new Uint8Array(src.buffer, src.byteOffset, src.byteLength);
+		const out = new Float32Array(src.length);
+		for (let i = 0; i < src.length; i++) {
+			out[i] = src[i] ?? (view[i] ?? 0);
+		}
+		return out;
 	}
 	const out = new Float32Array(src.length);
 	for (let i = 0; i < src.length; i++) out[i] = src[i] ?? 0;
@@ -142,8 +147,9 @@ export function interpolateSpline(
 	const result: Point2D[] = [];
 
 	for (let i = 0; i < points.length - 1; i++) {
-		const p0 = points[i]!;
-		const p1 = points[i + 1]!;
+		const p0 = points[i];
+		const p1 = points[i + 1];
+		if (!p0 || !p1) continue;
 
 		const dx = p1.x - p0.x;
 		const dy = p1.y - p0.y;
@@ -158,7 +164,8 @@ export function interpolateSpline(
 			});
 		}
 	}
-	result.push(points[points.length - 1]!);
+	const lastPt = points[points.length - 1];
+	if (lastPt) result.push(lastPt);
 
 	return result;
 }
@@ -169,8 +176,10 @@ export function interpolateSpline(
 export function calculateNormals(points: Point2D[]): Point2D[] {
 	const normals: Point2D[] = [];
 	for (let i = 0; i < points.length; i++) {
-		const prev = i === 0 ? points[i]! : points[i - 1]!;
-		const next = i === points.length - 1 ? points[i]! : points[i + 1]!;
+		const curr = points[i];
+		if (!curr) continue;
+		const prev = (i === 0 ? curr : points[i - 1]) ?? curr;
+		const next = (i === points.length - 1 ? curr : points[i + 1]) ?? curr;
 
 		const dx = next.x - prev.x;
 		const dy = next.y - prev.y;
@@ -338,7 +347,8 @@ export function generatePanoramicImage(
 		const tz = currentZ - oz;
 
 		for (let x = 0; x < width; x++) {
-			const point = splinePoints[x]!;
+			const point = splinePoints[x];
+			if (!point) continue;
 
 			if (thickness === 0) {
 				// Single Ray - pure register calculation without Float32Array allocations
@@ -358,7 +368,7 @@ export function generatePanoramicImage(
 				);
 			} else {
 				// Thick Slab Raycasting along the normal
-				const normal = normals[x]!;
+				const normal = normals[x] ?? { x: 0, y: 1 };
 				let accumulator = blendMode === "mip" ? -Infinity : 0;
 				const halfThickness = thickness / 2;
 
@@ -428,12 +438,16 @@ export function distancePointToLineSegment(p: vec3, v: vec3, w: vec3): number {
  * Calculates shortest distance from a point to a 3D spline (array of connected points).
  */
 export function distancePointToSpline(p: vec3, spline: vec3[]): number {
-	if (spline.length === 0) return Infinity;
-	if (spline.length === 1) return vec3.distance(p, spline[0]!);
+	const firstPoint = spline[0];
+	if (!firstPoint) return Infinity;
+	if (spline.length === 1) return vec3.distance(p, firstPoint);
 
 	let minDist = Infinity;
 	for (let i = 0; i < spline.length - 1; i++) {
-		const dist = distancePointToLineSegment(p, spline[i]!, spline[i + 1]!);
+		const segStart = spline[i];
+		const segEnd = spline[i + 1];
+		if (!segStart || !segEnd) continue;
+		const dist = distancePointToLineSegment(p, segStart, segEnd);
 		if (dist < minDist) minDist = dist;
 	}
 	return minDist;
@@ -576,18 +590,21 @@ export function generateCatmullRomSpline(
 	points: Point3D[],
 	samples: number = 200,
 ): Point3D[] {
-	if (points.length < 2) return points;
+	const firstPt = points[0];
+	const lastPt = points[points.length - 1];
+	if (points.length < 2 || !firstPt || !lastPt) return points;
 
 	const curve: Point3D[] = [];
-	const pList = [points[0]!, ...points, points[points.length - 1]!];
+	const pList: Point3D[] = [firstPt, ...points, lastPt];
 
 	for (let i = 1; i < pList.length - 2; i++) {
-		const p0 = pList[i - 1]!;
-		const p1 = pList[i]!;
-		const p2 = pList[i + 1]!;
-		const p3 = pList[i + 2]!;
+		const p0 = pList[i - 1];
+		const p1 = pList[i];
+		const p2 = pList[i + 1];
+		const p3 = pList[i + 2];
+		if (!p0 || !p1 || !p2 || !p3) continue;
 
-		const segmentSamples = Math.floor(samples / (points.length - 1));
+		const segmentSamples = Math.max(1, Math.floor(samples / (points.length - 1)));
 		for (let t = 0; t < 1.0; t += 1.0 / segmentSamples) {
 			const t2 = t * t;
 			const t3 = t2 * t;
@@ -617,7 +634,7 @@ export function generateCatmullRomSpline(
 		}
 	}
 
-	curve.push(points[points.length - 1]!);
+	curve.push(lastPt);
 	return curve;
 }
 
@@ -628,26 +645,30 @@ export function calculateCurveFrames(curve: Point3D[]): CurveFrame[] {
 	const up: Point3D = { x: 0, y: 0, z: -1 };
 
 	for (let i = 0; i < curve.length; i++) {
-		const p = curve[i]!;
+		const p = curve[i];
+		if (!p) continue;
 		let tangent: Point3D;
 
 		if (i === 0) {
-			const next = curve[i + 1]!;
+			const next = curve[i + 1];
+			if (!next) continue;
 			tangent = normalize({
 				x: next.x - p.x,
 				y: next.y - p.y,
 				z: next.z - p.z,
 			});
 		} else if (i === curve.length - 1) {
-			const prev = curve[i - 1]!;
+			const prev = curve[i - 1];
+			if (!prev) continue;
 			tangent = normalize({
 				x: p.x - prev.x,
 				y: p.y - prev.y,
 				z: p.z - prev.z,
 			});
 		} else {
-			const next = curve[i + 1]!;
-			const prev = curve[i - 1]!;
+			const next = curve[i + 1];
+			const prev = curve[i - 1];
+			if (!next || !prev) continue;
 			tangent = normalize({
 				x: next.x - prev.x,
 				y: next.y - prev.y,

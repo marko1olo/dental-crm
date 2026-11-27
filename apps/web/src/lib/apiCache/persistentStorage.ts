@@ -6,6 +6,7 @@
  */
 
 import type { CachedApiResponse } from "./types";
+import { logger } from "../../utils/logger";
 import { normalizeApiUrl } from "./cacheKeyAndTiming";
 import {
 	parseJsonNonBlocking,
@@ -51,7 +52,8 @@ export function openCatalogDb(): Promise<IDBDatabase | null> {
 				catalogDbPromise = null;
 				resolve(null);
 			};
-		} catch {
+		} catch (err) {
+			logger.debug("[CatalogCache] Failed to open IndexedDB:", err);
 			catalogDbPromise = null;
 			resolve(null);
 		}
@@ -99,8 +101,8 @@ export async function flushPendingCatalogWrites(): Promise<void> {
 			});
 			isFlushingCatalogBatch = false;
 			return;
-		} catch {
-			// fallback to localStorage
+		} catch (err) {
+			logger.debug("[CatalogCache] IDB batch flush failed, falling back to localStorage:", err);
 		}
 	}
 
@@ -111,8 +113,8 @@ export async function flushPendingCatalogWrites(): Promise<void> {
 			if (serialized.length < 80 * 1024) {
 				safeLocalStorageSetItem(LOCAL_STORAGE_CATALOG_PREFIX + key, serialized);
 			}
-		} catch {
-			// ignore
+		} catch (err) {
+			logger.debug(`[CatalogCache] localStorage fallback flush failed for ${key}:`, err);
 		}
 	}
 	isFlushingCatalogBatch = false;
@@ -172,8 +174,8 @@ export async function readCatalogFromPersistentStorage<T = unknown>(
 				req.onerror = () => resolve(null);
 			});
 			if (record) return record;
-		} catch {
-			// fallback к localStorage
+		} catch (err) {
+			logger.debug("[CatalogCache] IDB read failed, falling back to localStorage:", err);
 		}
 	}
 
@@ -187,47 +189,24 @@ export async function readCatalogFromPersistentStorage<T = unknown>(
 			}
 			safeLocalStorageRemoveItem(LOCAL_STORAGE_CATALOG_PREFIX + key);
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.debug("[CatalogCache] localStorage catalog fallback parse failed:", err);
 	}
 
 	// 3. Fallback к clinicalCacheStorage (catalog_804n, catalog_icd10, catalog_templates)
 	try {
+		let catalogKey: "catalog_804n" | "catalog_icd10" | "catalog_templates" | null = null;
 		if (key === "/api/clinical/804n" || key === "/api/clinical/nomenclature") {
-			const { getCachedStatutoryCatalog } = await import("../../services/storage/clinicalCacheStorage");
-			const idbData = await getCachedStatutoryCatalog<T>("catalog_804n");
-			if (idbData && Array.isArray(idbData) && idbData.length > 0) {
-				const entry: CachedApiResponse<T> = {
-					data: idbData,
-					status: 200,
-					statusText: "OK",
-					headers: { "content-type": "application/json; charset=utf-8" },
-					url: key,
-					timestamp: Date.now(),
-					ttlMs: 24 * 60 * 60 * 1000,
-				};
-				void saveCatalogToPersistentStorage(key, entry);
-				return entry;
-			}
+			catalogKey = "catalog_804n";
 		} else if (key === "/api/clinical/icd10" || key === "/api/icd10") {
-			const { getCachedStatutoryCatalog } = await import("../../services/storage/clinicalCacheStorage");
-			const idbData = await getCachedStatutoryCatalog<T>("catalog_icd10");
-			if (idbData && Array.isArray(idbData) && idbData.length > 0) {
-				const entry: CachedApiResponse<T> = {
-					data: idbData,
-					status: 200,
-					statusText: "OK",
-					headers: { "content-type": "application/json; charset=utf-8" },
-					url: key,
-					timestamp: Date.now(),
-					ttlMs: 24 * 60 * 60 * 1000,
-				};
-				void saveCatalogToPersistentStorage(key, entry);
-				return entry;
-			}
+			catalogKey = "catalog_icd10";
 		} else if (key === "/api/emr/templates" || key === "/api/templates") {
+			catalogKey = "catalog_templates";
+		}
+
+		if (catalogKey) {
 			const { getCachedStatutoryCatalog } = await import("../../services/storage/clinicalCacheStorage");
-			const idbData = await getCachedStatutoryCatalog<T>("catalog_templates");
+			const idbData = await getCachedStatutoryCatalog<T>(catalogKey);
 			if (idbData && Array.isArray(idbData) && idbData.length > 0) {
 				const entry: CachedApiResponse<T> = {
 					data: idbData,
@@ -242,8 +221,8 @@ export async function readCatalogFromPersistentStorage<T = unknown>(
 				return entry;
 			}
 		}
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.debug("[CatalogCache] clinicalCacheStorage fallback read failed:", err);
 	}
 
 	return null;
@@ -306,8 +285,8 @@ export async function deleteCatalogFromPersistentStorage(
 				};
 				req.onerror = () => resolve();
 			});
-		} catch {
-			// ignore
+		} catch (err) {
+			logger.debug("[CatalogCache] Failed to delete entries from IDB:", err);
 		}
 	}
 
@@ -337,8 +316,8 @@ export async function deleteCatalogFromPersistentStorage(
 					}
 				}
 			}
-		} catch {
-			// ignore
+		} catch (err) {
+			logger.debug("[CatalogCache] Failed to clear catalog keys from localStorage:", err);
 		}
 	}
 }

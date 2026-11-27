@@ -39,7 +39,7 @@ export function buildChairStatusMessage(
 		senderName: meta.nodeName,
 		organizationId: meta.organizationId,
 		branchId: params.branchId || meta.defaultBranchId,
-		payload: event as unknown as Record<string, unknown>,
+		payload: Object.fromEntries(Object.entries(event)),
 		...(params.vectorClock ? { vectorClock: params.vectorClock } : {}),
 	}) as LanP2PMessage<LanChairStatusEvent>;
 }

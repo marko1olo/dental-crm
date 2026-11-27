@@ -5,6 +5,7 @@
  * перехватом мутаций и сбором метрик производительности для слабого ПК.
  */
 
+import { logger } from "../../utils/logger";
 import {
 	createMemoryLruCache,
 	estimateObjectByteSize,
@@ -222,39 +223,29 @@ export function setCachedApiResponse<T = unknown>(
 
 	// Synchronize dedicated RAM L1 pointers and persistent mirror for statutory reference catalogs
 	if (Array.isArray(data) && data.length > 0) {
+		let target: { ramKey: "804n" | "icd10" | "templates"; storageKey: "catalog_804n" | "catalog_icd10" | "catalog_templates" } | null = null;
 		if (normalizedUrl === "/api/clinical/804n" || normalizedUrl === "/api/clinical/nomenclature") {
-			void import("../../services/storage/statutoryCatalogCache")
-				.then((m) => {
-					m.setStatutoryCatalogInRam("804n", data as unknown[]);
-				})
-				.catch(() => {});
-			void import("../../services/storage/clinicalCacheStorage")
-				.then((m) => {
-					void m.cacheStatutoryCatalog("catalog_804n", data).catch(() => {});
-				})
-				.catch(() => {});
+			target = { ramKey: "804n", storageKey: "catalog_804n" };
 		} else if (normalizedUrl === "/api/clinical/icd10" || normalizedUrl === "/api/icd10") {
-			void import("../../services/storage/statutoryCatalogCache")
-				.then((m) => {
-					m.setStatutoryCatalogInRam("icd10", data as unknown[]);
-				})
-				.catch(() => {});
-			void import("../../services/storage/clinicalCacheStorage")
-				.then((m) => {
-					void m.cacheStatutoryCatalog("catalog_icd10", data).catch(() => {});
-				})
-				.catch(() => {});
+			target = { ramKey: "icd10", storageKey: "catalog_icd10" };
 		} else if (normalizedUrl === "/api/emr/templates" || normalizedUrl === "/api/templates") {
+			target = { ramKey: "templates", storageKey: "catalog_templates" };
+		}
+
+		if (target) {
+			const { ramKey, storageKey } = target;
 			void import("../../services/storage/statutoryCatalogCache")
 				.then((m) => {
-					m.setStatutoryCatalogInRam("templates", data as unknown[]);
+					m.setStatutoryCatalogInRam(ramKey, data as unknown[]);
 				})
-				.catch(() => {});
+				.catch((err) => logger.debug(`[ApiCache] RAM mirror sync failed for ${ramKey}:`, err));
 			void import("../../services/storage/clinicalCacheStorage")
 				.then((m) => {
-					void m.cacheStatutoryCatalog("catalog_templates", data).catch(() => {});
+					void m.cacheStatutoryCatalog(storageKey, data).catch((err) =>
+						logger.debug(`[ApiCache] IDB mirror write failed for ${storageKey}:`, err),
+					);
 				})
-				.catch(() => {});
+				.catch((err) => logger.debug(`[ApiCache] IDB mirror import failed for ${storageKey}:`, err));
 		}
 	}
 }

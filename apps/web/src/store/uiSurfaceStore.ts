@@ -322,7 +322,8 @@ export const useUiSurfaceStore = create<UiSurfaceStore>((set, get) => ({
 
 // Глобальная шина событий для кросс-модульного управления поверхностями без прямых зависимостей
 if (typeof window !== "undefined") {
-	(window as unknown as { __useUiSurfaceStore?: typeof useUiSurfaceStore }).__useUiSurfaceStore = useUiSurfaceStore;
+	const surfaceWindow: Window & { __useUiSurfaceStore?: typeof useUiSurfaceStore } = window;
+	surfaceWindow.__useUiSurfaceStore = useUiSurfaceStore;
 	window.addEventListener("dente:close-all-surfaces", () => {
 		useUiSurfaceStore.getState().closeAllSurfaces();
 	});

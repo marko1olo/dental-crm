@@ -1,6 +1,6 @@
 import type { MedicalWasteLog } from "@dental/shared";
 import { useEffect, useMemo, useState } from "react";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import type { WasteSummaryStats } from "./MedicalWasteKpiGrid";
 import { executeQuickShiftWaste } from "./wasteQuickShiftAction";
@@ -17,17 +17,14 @@ export function useMedicalWasteTabState() {
 	const fetchLogs = async () => {
 		try {
 			setLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/registers/medical-waste", {
-				headers: {
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
 				setLogs(data);
+			} else {
+				clientLogger.warn("Failed to load waste logs", { status: res.status });
 			}
 		} catch (err) {
 			clientLogger.error("Failed to load waste logs", err);

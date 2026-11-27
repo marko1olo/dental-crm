@@ -10,6 +10,8 @@
  * - Zero Memory Leaks: Explicit ArrayBuffer eviction and lifecycle telemetry.
  */
 
+import { logger } from "../../utils/logger";
+
 export interface OpgModelMetadata {
 	id: string;
 	name: string;
@@ -111,7 +113,8 @@ export async function calculateSha256(buffer: ArrayBuffer): Promise<string> {
 	try {
 		const nodeCrypto = await import("node:crypto");
 		return nodeCrypto.createHash("sha256").update(Buffer.from(buffer)).digest("hex");
-	} catch {
+	} catch (err) {
+		logger.debug("[OpgModelStorage] SHA-256 node:crypto fallback unavailable:", err);
 		return "";
 	}
 }
@@ -173,7 +176,8 @@ export class OpgModelStorage {
 		try {
 			const nodeCrypto = await import("node:crypto");
 			return nodeCrypto.createHash("sha256").update(Buffer.from(buffer)).digest("hex");
-		} catch {
+		} catch (err) {
+			logger.debug("[OpgModelStorage] SHA-256 node:crypto fallback unavailable:", err);
 			return "";
 		}
 	}
@@ -182,7 +186,10 @@ export class OpgModelStorage {
 	 * Checks if model is already stored in CacheStorage or IndexedDB.
 	 */
 	public async isModelCached(modelId: string): Promise<boolean> {
-		const manifest = await this.getManifest().catch(() => null);
+		const manifest = await this.getManifest().catch((err) => {
+			logger.debug("[OpgModelStorage] Manifest unavailable during cache check:", err);
+			return null;
+		});
 		const modelMeta = manifest?.models[modelId];
 		const targetUrl = modelMeta?.localUrl || `/models/opg/${modelId}`;
 
@@ -192,8 +199,8 @@ export class OpgModelStorage {
 				const cache = await caches.open(CACHE_NAME);
 				const matched = await cache.match(targetUrl);
 				if (matched) return true;
-			} catch {
-				// CacheStorage might be disabled or restricted in private mode
+			} catch (err) {
+				logger.debug("[OpgModelStorage] CacheStorage unavailable during check:", err);
 			}
 		}
 
@@ -202,8 +209,8 @@ export class OpgModelStorage {
 			try {
 				const inIdb = await this.getFromIdb(modelId);
 				if (inIdb) return true;
-			} catch {
-				// IDB unavailable
+			} catch (err) {
+				logger.debug("[OpgModelStorage] IndexedDB unavailable during check:", err);
 			}
 		}
 
@@ -251,8 +258,8 @@ export class OpgModelStorage {
 						return buf;
 					}
 				}
-			} catch {
-				// Fall through
+			} catch (err) {
+				logger.debug("[OpgModelStorage] CacheStorage read fallback to IDB:", err);
 			}
 		}
 
@@ -270,8 +277,8 @@ export class OpgModelStorage {
 					});
 					return idbBuf;
 				}
-			} catch {
-				// Fall through
+			} catch (err) {
+				logger.debug("[OpgModelStorage] IndexedDB read fallback to local fetch:", err);
 			}
 		}
 
@@ -361,16 +368,16 @@ export class OpgModelStorage {
 						},
 					}),
 				);
-			} catch {
-				// Cache put failed
+			} catch (err) {
+				logger.debug("[OpgModelStorage] CacheStorage write failed:", err);
 			}
 		}
 
 		if (typeof indexedDB !== "undefined") {
 			try {
 				await this.putToIdb(modelId, arrayBuffer);
-			} catch {
-				// IDB put failed
+			} catch (err) {
+				logger.debug("[OpgModelStorage] IndexedDB write failed:", err);
 			}
 		}
 
@@ -440,7 +447,9 @@ export class OpgModelStorage {
 		if (typeof caches !== "undefined") {
 			try {
 				await caches.delete(CACHE_NAME);
-			} catch {}
+			} catch (err) {
+				logger.debug("[OpgModelStorage] Failed to clear CacheStorage:", err);
+			}
 		}
 		if (typeof indexedDB !== "undefined") {
 			try {
@@ -449,7 +458,9 @@ export class OpgModelStorage {
 					req.onsuccess = () => resolve(true);
 					req.onerror = () => resolve(false);
 				});
-			} catch {}
+			} catch (err) {
+				logger.debug("[OpgModelStorage] Failed to delete IndexedDB cache:", err);
+			}
 		}
 	}
 }

@@ -15,6 +15,7 @@ import {
 	generateUuidV7,
 	type StaffActionAuditEntry,
 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders.js";
 import {
 	LEGACY_OFFLINE_STAFF_AUDIT_KEY,
 	LOCAL_STORAGE_STAFF_EVENTS_KEY,
@@ -86,8 +87,8 @@ export function saveStaffEventsToStorage(events: StaffActionAuditEntry[]): void 
 		storage.setItem(LOCAL_STORAGE_STAFF_EVENTS_KEY, serialized);
 		// Зеркалируем в legacy-ключ для 100% совместимости
 		storage.setItem(LEGACY_OFFLINE_STAFF_AUDIT_KEY, serialized);
-	} catch {
-		// Игнорируем ошибку переполнения квоты localStorage
+	} catch (err) {
+		activeLoggerBridge?.warn("[StaffTelemetry] LocalStorage quota exceeded", err);
 	}
 	backupStaffEventsToIndexedDb(events);
 }
@@ -106,8 +107,8 @@ export function clearStaffEventsFromStorage(): void {
 		try {
 			storage.removeItem(LOCAL_STORAGE_STAFF_EVENTS_KEY);
 			storage.removeItem(LEGACY_OFFLINE_STAFF_AUDIT_KEY);
-		} catch {
-			// ignore
+		} catch (err) {
+			activeLoggerBridge?.warn("[StaffTelemetry] Failed to clear storage keys", err);
 		}
 	}
 }
@@ -135,13 +136,15 @@ export function backupStaffEventsToIndexedDb(events: StaffActionAuditEntry[]): v
 				}
 				tx.oncomplete = () => idb.close();
 				tx.onerror = () => idb.close();
-			} catch {
-				// non-blocking Doctor Autonomy
+			} catch (err) {
+				activeLoggerBridge?.warn("[StaffTelemetry] IDB write failed", err);
 			}
 		};
-		req.onerror = () => {};
-	} catch {
-		// non-blocking Doctor Autonomy
+		req.onerror = () => {
+			activeLoggerBridge?.warn("[StaffTelemetry] IDB open failed", req.error);
+		};
+	} catch (err) {
+		activeLoggerBridge?.warn("[StaffTelemetry] IDB backup setup failed", err);
 	}
 }
 
@@ -158,11 +161,11 @@ export async function sendTelemetryBatch(events: StaffActionAuditEntry[]): Promi
 		const correlationId = generateCorrelationId("staff_audit");
 		const response = await fetch("/api/audit/events/batch", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				[CORRELATION_ID_HEADER]: correlationId,
 				"Idempotency-Key": generateUuidV7(),
-			},
+			}),
 			credentials: "include",
 			body: JSON.stringify({ events }),
 		});
@@ -203,11 +206,11 @@ export function sendTelemetryBeaconFallback(events: StaffActionAuditEntry[]): bo
 			method: "POST",
 			keepalive: true,
 			credentials: "include",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 				[CORRELATION_ID_HEADER]: correlationId,
 				"Idempotency-Key": generateUuidV7(),
-			},
+			}),
 			body: payload,
 		}).catch((err) => {
 			activeLoggerBridge?.warn(
@@ -242,11 +245,11 @@ export function broadcastStaffActionToLan(entry: StaffActionAuditEntry): void {
 				.then(({ lanP2PDispatcher }) => {
 					void lanP2PDispatcher.broadcastStaffAction(entry);
 				})
-				.catch(() => {
-					// Non-blocking Doctor Autonomy
+				.catch((err) => {
+					activeLoggerBridge?.warn("[StaffTelemetry] LAN P2P broadcast failed", err);
 				});
 		}
-	} catch {
-		// Non-blocking Doctor Autonomy
+	} catch (err) {
+		activeLoggerBridge?.warn("[StaffTelemetry] LAN P2P dispatch failed", err);
 	}
 }

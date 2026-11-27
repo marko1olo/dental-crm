@@ -1,17 +1,16 @@
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { generateUuidV7 } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { showToast } from "../../GlobalToast";
 
 export async function executeQuickShiftWaste(onSuccess: () => Promise<void>) {
 	try {
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
 		const res = await fetch("/api/registers/medical-waste/quick-shift-bundle", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify({}),
 		});
 
@@ -22,10 +21,17 @@ export async function executeQuickShiftWaste(onSuccess: () => Promise<void>) {
 			);
 			await onSuccess();
 		} else {
-			const err = await res.json().catch(() => ({}));
-			showToast(err.message || "Ошибка при фиксации смены отходов", "error");
+			let errorMessage = "Ошибка при фиксации смены отходов";
+			try {
+				const err = (await res.json()) as { message?: string };
+				if (err.message) errorMessage = err.message;
+			} catch (parseErr) {
+				clientLogger.debug("executeQuickShiftWaste error parse failed", parseErr);
+			}
+			showToast(errorMessage, "error");
 		}
-	} catch {
+	} catch (err) {
+		clientLogger.warn("executeQuickShiftWaste failed", err);
 		showToast("Сетевая ошибка при фиксации отходов смены", "error");
 	}
 }

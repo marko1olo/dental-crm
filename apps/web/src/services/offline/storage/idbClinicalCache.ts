@@ -5,6 +5,7 @@ import {
 	LOCAL_STORAGE_PATIENTS_PREFIX,
 	LOCAL_STORAGE_SCHEDULES_PREFIX,
 	PATIENTS_CACHE_STORE_NAME,
+	resolveActiveOfflineOrgScope,
 	SCHEDULES_CACHE_STORE_NAME,
 } from "./constants";
 import { queueBatchedStorePut } from "./idbBatchBuffer";
@@ -201,7 +202,7 @@ export async function cacheActiveSchedule(params: {
 	appointments: Array<Record<string, unknown>>;
 	scheduleKey?: string | undefined;
 }): Promise<CachedActiveSchedule> {
-	const orgKey = params.organizationId || "default";
+	const orgKey = resolveActiveOfflineOrgScope(params.organizationId);
 	const scheduleKey = params.scheduleKey || `schedule_${orgKey}_${params.date}`;
 	const nowMs = Date.now();
 	const record: CachedActiveSchedule = {
@@ -230,7 +231,7 @@ export async function getCachedActiveSchedule(
 	date: string,
 	organizationId?: string | undefined,
 ): Promise<CachedActiveSchedule | null> {
-	const orgKey = organizationId || "default";
+	const orgKey = resolveActiveOfflineOrgScope(organizationId);
 	const scheduleKey = `schedule_${orgKey}_${date}`;
 
 	// 1. Fast L1 In-Memory RAM hit (0 ms, zero 5400 RPM HDD seek)

@@ -4,12 +4,18 @@
  * Сервис синхронизации зубной формулы с Fastify API и шиной событий (Мандаты 8e, 8b)
  */
 
+import { generateUuidV7 } from "@dental/shared";
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import {
 	generateSoapFromOdontogramFinding,
 	type OdontogramFindingInput,
 } from "../../../lib/clinicalProtocols";
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { enqueueOfflineMutation } from "../../../utils/offlineMutationQueue";
 import { useVisitStore } from "../../../store/visitStore";
 
 interface PatientToothStateDto {
@@ -25,7 +31,7 @@ export async function fetchPatientToothStates(
 	signal?: AbortSignal,
 ): Promise<ToothData[] | null> {
 	try {
-		const init: RequestInit = { headers: denteAdminSecretRequestHeaders() };
+		const init: RequestInit = { headers: denteClinicalReadHeaders() };
 		if (signal) init.signal = signal;
 		const res = await fetch(`/api/patients/${patientId}/tooth-states`, init);
 		if (!res.ok) return null;
@@ -38,7 +44,12 @@ export async function fetchPatientToothStates(
 			notes: s.notes || undefined,
 			updatedAt: s.updatedAt || undefined,
 		}));
-	} catch {
+	} catch (err) {
+		if (!(err instanceof DOMException && err.name === "AbortError")) {
+			clientLogger.debug("[formulaSyncService] Failed to fetch tooth states", err, {
+				module: "Odontogram",
+			});
+		}
 		return null;
 	}
 }
@@ -50,19 +61,54 @@ export async function savePatientToothStatesBatch(
 	nextSurfaces: readonly string[] | undefined,
 	nowIso: string,
 ): Promise<void> {
+	const idempotencyKey = generateUuidV7();
+	const endpoint = `/api/patients/${patientId}/tooth-states/batch`;
+	const payload = {
+		toothNumbers: targets,
+		state: nextState,
+		surfaces: nextSurfaces && nextSurfaces.length > 0 ? nextSurfaces : undefined,
+		updatedAt: nowIso,
+	};
 	try {
-		await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+		const res = await fetch(endpoint, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			body: JSON.stringify({
-				toothNumbers: targets,
-				state: nextState,
-				surfaces: nextSurfaces && nextSurfaces.length > 0 ? nextSurfaces : undefined,
-				updatedAt: nowIso,
+			headers: denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
 			}),
+			body: JSON.stringify(payload),
 		});
-	} catch {
-		// Non-blocking: local cache preserves state
+		if (!res.ok) {
+			if (res.status >= 500 || res.status === 429 || res.status === 408) {
+				await enqueueOfflineMutation({
+					entityType: "odontogram_state",
+					entityId: patientId,
+					action: "update",
+					endpoint,
+					idempotencyKey,
+					payload,
+				});
+			}
+			clientLogger.warn(
+				`[formulaSyncService] Tooth batch sync failed with HTTP ${res.status}`,
+				{ patientId, status: res.status },
+				{ module: "Odontogram" },
+			);
+		}
+	} catch (err) {
+		clientLogger.warn(
+			"[formulaSyncService] Network failure saving tooth states batch; enqueuing offline outbox",
+			err,
+			{ module: "Odontogram" },
+		);
+		await enqueueOfflineMutation({
+			entityType: "odontogram_state",
+			entityId: patientId,
+			action: "update",
+			endpoint,
+			idempotencyKey,
+			payload,
+		});
 	}
 }
 

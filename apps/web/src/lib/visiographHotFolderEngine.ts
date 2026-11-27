@@ -89,7 +89,24 @@ export class VisiographHotFolderEngine {
 	private pollTimer: ReturnType<typeof setInterval> | null = null;
 	private activeDirectoryHandle: FileSystemDirectoryHandle | null = null;
 	private seenFiles = new Set<string>();
+	private createdObjectUrls = new Set<string>();
 	private isDestroyed = false;
+
+	private trackObjectUrl(url: string): string {
+		if (url.startsWith("blob:")) {
+			this.createdObjectUrls.add(url);
+		}
+		return url;
+	}
+
+	private revokeAllObjectUrls(): void {
+		if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+			for (const url of this.createdObjectUrls) {
+				URL.revokeObjectURL(url);
+			}
+		}
+		this.createdObjectUrls.clear();
+	}
 
 	// Event listener references for safe unbinding
 	private handleSimulatedEventBound = (e: Event) => this.handleSimulatedEvent(e);
@@ -155,6 +172,7 @@ export class VisiographHotFolderEngine {
 	public clearQueue(): void {
 		this.scanQueue = [];
 		this.currentActiveScan = null;
+		this.revokeAllObjectUrls();
 		this.notifyListeners();
 	}
 
@@ -162,7 +180,11 @@ export class VisiographHotFolderEngine {
 		if (typeof window === "undefined") return;
 
 		const targetTooth = toothNumber || scan.detectedTooth || undefined;
-		const imageUrl = scan.thumbnailUrl || (scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(scan.file) : "");
+		const imageUrl =
+			scan.thumbnailUrl ||
+			(scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+				? this.trackObjectUrl(URL.createObjectURL(scan.file))
+				: "");
 		const scanName = targetTooth ? `Рентген RVG: зуб ${targetTooth} (${scan.brandName})` : `Рентген RVG (${scan.brandName})`;
 
 		// Native event intercepted in useVisitDiagnosticsTab.ts
@@ -185,7 +207,11 @@ export class VisiographHotFolderEngine {
 		if (typeof window === "undefined") return;
 
 		const targetTooth = toothNumber || scan.detectedTooth || undefined;
-		const imageUrl = scan.thumbnailUrl || (scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL(scan.file) : "");
+		const imageUrl =
+			scan.thumbnailUrl ||
+			(scan.file && typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+				? this.trackObjectUrl(URL.createObjectURL(scan.file))
+				: "");
 
 		// Direct event to launch DirectRvgCaptureModal with preloaded image
 		window.dispatchEvent(
@@ -279,11 +305,13 @@ export class VisiographHotFolderEngine {
 		try {
 			const captureRes = await readRadiologyFileForCapture(file);
 			thumbnailUrl = captureRes.imageUrl;
-		} catch {
+		} catch (captureErr) {
+			logger.debug("[VisiographHotFolderEngine] Capture preview fallback to objectURL", captureErr);
 			if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
 				try {
-					thumbnailUrl = URL.createObjectURL(file);
-				} catch {
+					thumbnailUrl = this.trackObjectUrl(URL.createObjectURL(file));
+				} catch (urlErr) {
+					logger.debug("[VisiographHotFolderEngine] createObjectURL fallback failed", urlErr);
 					thumbnailUrl = undefined;
 				}
 			}
@@ -389,8 +417,8 @@ export class VisiographHotFolderEngine {
 					}
 				}
 			}
-		} catch {
-			// Quiet fault tolerance: permission revoked or directory disconnected
+		} catch (watchErr) {
+			logger.debug("[VisiographHotFolderEngine] Hot-folder poll skipped (permission or directory unavailable)", watchErr);
 		}
 	}
 
@@ -413,8 +441,8 @@ export class VisiographHotFolderEngine {
 		for (const listener of this.listeners) {
 			try {
 				listener(this.currentActiveScan, count);
-			} catch {
-				// Prevent listener crash from breaking loop
+			} catch (listenerErr) {
+				logger.warn("[VisiographHotFolderEngine] Scan listener threw an error", listenerErr);
 			}
 		}
 	}
@@ -422,6 +450,7 @@ export class VisiographHotFolderEngine {
 	public destroy(): void {
 		this.isDestroyed = true;
 		this.stopDirectoryWatcher();
+		this.revokeAllObjectUrls();
 		if (this.debounceTimer) {
 			clearTimeout(this.debounceTimer);
 			this.debounceTimer = null;

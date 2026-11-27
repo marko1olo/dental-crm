@@ -15,7 +15,12 @@ export function computeElnCheckDigit(elevenDigits: string): number {
 	const target = clean.slice(0, 11);
 	let sum = 0;
 	for (let i = 0; i < 11; i++) {
-		sum += Number.parseInt(target[i]!, 10) * ELN_MOD11_WEIGHTS[i]!;
+		const digitChar = target[i];
+		const weight = ELN_MOD11_WEIGHTS[i];
+		if (!digitChar || weight === undefined) {
+			throw new Error(`Invalid ELN digit at position ${i}`);
+		}
+		sum += Number.parseInt(digitChar, 10) * weight;
 	}
 	const remainder = sum % 11;
 	return remainder === 10 ? 0 : remainder;
@@ -26,7 +31,9 @@ export function validateElnNumber(eln: string): boolean {
 	const clean = eln.replace(/\D/g, "");
 	if (clean.length !== 12) return false;
 	const elevenDigits = clean.slice(0, 11);
-	const checkDigit = Number.parseInt(clean[11]!, 10);
+	const checkChar = clean[11];
+	if (!checkChar) return false;
+	const checkDigit = Number.parseInt(checkChar, 10);
 	return computeElnCheckDigit(elevenDigits) === checkDigit;
 }
 

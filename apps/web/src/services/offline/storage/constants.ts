@@ -66,3 +66,52 @@ export const DENTE_CACHED_CLINIC_PROFILE_KEY = "dente_cached_clinic_profile";
 export const DENTE_CACHED_STAFF_LIST_KEY = "dente_cached_staff_list";
 export const DENTE_CACHED_ACTIVE_STAFF_USER_KEY = "dente_cached_active_staff_user";
 export const DENTE_OFFLINE_AUTONOMY_MODE_KEY = "dente_offline_autonomy_mode";
+export const UNSCOPED_OFFLINE_ORG_SCOPE = "unscoped_pending";
+
+function extractOrgIdFromStoredJson(raw: string | null): string | null {
+	if (!raw) return null;
+	const orgMatch = /"organizationId"\s*:\s*"([^"\\]{1,128})"/.exec(raw);
+	if (orgMatch?.[1]?.trim()) {
+		return orgMatch[1].trim();
+	}
+	return null;
+}
+
+/**
+ * Resolves the active clinic organization scope for offline outbox/cache entries.
+ * Never falls back to a shared "default_org" / "default" cross-tenant bucket.
+ */
+export function resolveActiveOfflineOrgScope(explicitOrgId?: string | null): string {
+	const explicit = typeof explicitOrgId === "string" ? explicitOrgId.trim() : "";
+	if (explicit) return explicit;
+
+	const storage =
+		typeof window !== "undefined" && window.localStorage
+			? window.localStorage
+			: typeof localStorage !== "undefined"
+				? localStorage
+				: null;
+	if (!storage) return UNSCOPED_OFFLINE_ORG_SCOPE;
+
+	const directKeys = [
+		"dente_organization_id",
+		"dente_active_organization_id",
+		"dental-crm:organization-id",
+	];
+	for (const key of directKeys) {
+		const val = storage.getItem(key)?.trim();
+		if (val) return val;
+	}
+
+	const jsonKeys = [
+		DENTE_CACHED_ACTIVE_STAFF_USER_KEY,
+		"dental-crm:active-user:v1",
+		DENTE_CACHED_CLINIC_PROFILE_KEY,
+	];
+	for (const key of jsonKeys) {
+		const orgId = extractOrgIdFromStoredJson(storage.getItem(key));
+		if (orgId) return orgId;
+	}
+
+	return UNSCOPED_OFFLINE_ORG_SCOPE;
+}

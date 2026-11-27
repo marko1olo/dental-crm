@@ -72,7 +72,7 @@ export function applyClahe16Bit(
 
 			for (let y = startY; y < endY; y++) {
 				for (let x = startX; x < endX; x++) {
-					const val = srcPixels[y * width + x]!;
+					const val = srcPixels[y * width + x] ?? 0;
 					const bin = Math.min(numBins - 1, val >> binShift);
 					hist[bin] = (hist[bin] ?? 0) + 1;
 				}
@@ -82,8 +82,9 @@ export function applyClahe16Bit(
 			const clipLimit = Math.max(1, Math.round((clipLimitRatio * tilePixelsCount) / numBins));
 			let excess = 0;
 			for (let b = 0; b < numBins; b++) {
-				if (hist[b]! > clipLimit) {
-					excess += hist[b]! - clipLimit;
+				const count = hist[b] ?? 0;
+				if (count > clipLimit) {
+					excess += count - clipLimit;
 					hist[b] = clipLimit;
 				}
 			}
@@ -98,9 +99,10 @@ export function applyClahe16Bit(
 			// Расчёт нормализованной CDF (0..1)
 			const cdf = new Float32Array(numBins);
 			let cumulative = 0;
+			const safeTilePixelsCount = Math.max(1, tilePixelsCount);
 			for (let b = 0; b < numBins; b++) {
-				cumulative += hist[b]!;
-				cdf[b] = cumulative / tilePixelsCount;
+				cumulative += hist[b] ?? 0;
+				cdf[b] = cumulative / safeTilePixelsCount;
 			}
 
 			cdfs[tr * gridCols + tc] = cdf;
@@ -120,13 +122,13 @@ export function applyClahe16Bit(
 			const c1 = Math.min(gridCols - 1, c0 + 1);
 			const fx = Math.max(0, Math.min(1, normX - c0));
 
-			const val = srcPixels[y * width + x]!;
+			const val = srcPixels[y * width + x] ?? 0;
 			const bin = Math.min(numBins - 1, val >> binShift);
 
-			const cdfTL = cdfs[r0 * gridCols + c0]![bin]!;
-			const cdfTR = cdfs[r0 * gridCols + c1]![bin]!;
-			const cdfBL = cdfs[r1 * gridCols + c0]![bin]!;
-			const cdfBR = cdfs[r1 * gridCols + c1]![bin]!;
+			const cdfTL = cdfs[r0 * gridCols + c0]?.[bin] ?? 0;
+			const cdfTR = cdfs[r0 * gridCols + c1]?.[bin] ?? 0;
+			const cdfBL = cdfs[r1 * gridCols + c0]?.[bin] ?? 0;
+			const cdfBR = cdfs[r1 * gridCols + c1]?.[bin] ?? 0;
 
 			// Билинейная интерполяция значений CDF
 			const top = cdfTL * (1 - fx) + cdfTR * fx;
@@ -182,7 +184,7 @@ export function fastGaussianBlur16Bit(
 			let acc = 0;
 			for (let k = -radius; k <= radius; k++) {
 				const sx = Math.min(width - 1, Math.max(0, x + k));
-				acc += src[rowOffset + sx]! * kernel[k + radius]!;
+				acc += (src[rowOffset + sx] ?? 0) * (kernel[k + radius] ?? 0);
 			}
 			temp[rowOffset + x] = acc;
 		}
@@ -194,7 +196,7 @@ export function fastGaussianBlur16Bit(
 			let acc = 0;
 			for (let k = -radius; k <= radius; k++) {
 				const sy = Math.min(height - 1, Math.max(0, y + k));
-				acc += temp[sy * width + x]! * kernel[k + radius]!;
+				acc += (temp[sy * width + x] ?? 0) * (kernel[k + radius] ?? 0);
 			}
 			dest[y * width + x] = Math.round(acc);
 		}
@@ -222,8 +224,8 @@ export function applyUnsharpMask16Bit(
 	const dest = new Uint16Array(width * height);
 
 	for (let i = 0; i < srcPixels.length; i++) {
-		const orig = srcPixels[i]!;
-		const blur = blurred[i]!;
+		const orig = srcPixels[i] ?? 0;
+		const blur = blurred[i] ?? 0;
 		const diff = orig - blur;
 
 		if (Math.abs(diff) >= threshold) {
@@ -248,7 +250,7 @@ export function applyInvertFilter16Bit(
 	const maxVal = (1 << bitDepth) - 1;
 	const dest = new Uint16Array(srcPixels.length);
 	for (let i = 0; i < srcPixels.length; i++) {
-		dest[i] = maxVal - srcPixels[i]!;
+		dest[i] = maxVal - (srcPixels[i] ?? 0);
 	}
 	return dest;
 }
@@ -272,13 +274,13 @@ export function applyMedianFilter3x3(
 				for (let dx = -1; dx <= 1; dx++) {
 					const sx = Math.min(width - 1, Math.max(0, x + dx));
 					const sy = Math.min(height - 1, Math.max(0, y + dy));
-					neighborhood[count++] = srcPixels[sy * width + sx]!;
+					neighborhood[count++] = srcPixels[sy * width + sx] ?? 0;
 				}
 			}
 
 			// Быстрая частичная сортировка 9 элементов для нахождения медианы (элемент index 4)
 			neighborhood.sort();
-			dest[y * width + x] = neighborhood[4]!;
+			dest[y * width + x] = neighborhood[4] ?? 0;
 		}
 	}
 
@@ -302,8 +304,8 @@ export function applyPeriodontalReliefFilter(
 	// Ядро Sobel/Emboss под 45 градусов для подчеркивания корней
 	for (let y = 1; y < height - 1; y++) {
 		for (let x = 1; x < width - 1; x++) {
-			const pTL = srcPixels[(y - 1) * width + (x - 1)]!;
-			const pBR = srcPixels[(y + 1) * width + (x + 1)]!;
+			const pTL = srcPixels[(y - 1) * width + (x - 1)] ?? 0;
+			const pBR = srcPixels[(y + 1) * width + (x + 1)] ?? 0;
 			const diff = pTL - pBR;
 			const relief = midVal + diff * 2;
 			dest[y * width + x] = Math.max(0, Math.min(maxVal, relief));
@@ -332,7 +334,7 @@ export function map16BitTo8BitGrayscale(
 	const maxVal = wl + ww / 2;
 
 	for (let i = 0; i < srcPixels.length; i++) {
-		const val = srcPixels[i]!;
+		const val = srcPixels[i] ?? 0;
 		let normalized: number;
 
 		if (val <= minVal) {
@@ -370,7 +372,7 @@ export function map16BitToRgbaClamped(
 	const grayscale = map16BitTo8BitGrayscale(srcPixels, options);
 
 	for (let i = 0; i < totalPixels; i++) {
-		const g = grayscale[i]!;
+		const g = grayscale[i] ?? 0;
 		const idx = i * 4;
 		rgba[idx] = g; // R
 		rgba[idx + 1] = g; // G

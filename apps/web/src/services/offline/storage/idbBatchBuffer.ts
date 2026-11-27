@@ -16,23 +16,30 @@ interface PendingStoreWrite {
 }
 
 const pendingBatchedStoreWrites = new Map<string, Map<IDBValidKey, PendingStoreWrite>>();
-let batchedStoreFlushTimer: ReturnType<typeof setTimeout> | number | null = null;
+let batchedStoreTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+let batchedStoreIdleHandle: number | null = null;
 let isFlushingBatchedStores = false;
+
+function cancelPendingBatchFlushTimer(): void {
+	if (batchedStoreIdleHandle !== null) {
+		if (typeof window !== "undefined" && typeof window.cancelIdleCallback === "function") {
+			try {
+				window.cancelIdleCallback(batchedStoreIdleHandle);
+			} catch (err) {
+				logger.debug("[idbBatchBuffer] cancelIdleCallback failed", err);
+			}
+		}
+		batchedStoreIdleHandle = null;
+	}
+	if (batchedStoreTimeoutTimer !== null) {
+		clearTimeout(batchedStoreTimeoutTimer);
+		batchedStoreTimeoutTimer = null;
+	}
+}
 
 export function resetBatchedStoreWrites(): void {
 	pendingBatchedStoreWrites.clear();
-	if (batchedStoreFlushTimer !== null) {
-		if (typeof window !== "undefined" && "cancelIdleCallback" in window && typeof batchedStoreFlushTimer === "number") {
-			try {
-				window.cancelIdleCallback(batchedStoreFlushTimer);
-			} catch {
-				clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
-			}
-		} else {
-			clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
-		}
-		batchedStoreFlushTimer = null;
-	}
+	cancelPendingBatchFlushTimer();
 }
 
 export function queueBatchedStorePut(params: {
@@ -49,20 +56,20 @@ export function queueBatchedStorePut(params: {
 	}
 	storeMap.set(params.key, params);
 
-	if (batchedStoreFlushTimer === null) {
+	if (batchedStoreIdleHandle === null && batchedStoreTimeoutTimer === null) {
 		const timing = getOptimizedTiming();
 		const delayMs = timing.batchFlushDelayMs;
 		const idleTimeout = Math.max(120, Math.min(2000, delayMs));
 
 		if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-			batchedStoreFlushTimer = window.requestIdleCallback(() => {
-				batchedStoreFlushTimer = null;
+			batchedStoreIdleHandle = window.requestIdleCallback(() => {
+				batchedStoreIdleHandle = null;
 				void flushBatchedStoreWrites();
 			}, { timeout: idleTimeout });
 		} else {
 			const fallbackTimeout = Math.max(80, Math.round(delayMs / 2));
-			batchedStoreFlushTimer = setTimeout(() => {
-				batchedStoreFlushTimer = null;
+			batchedStoreTimeoutTimer = setTimeout(() => {
+				batchedStoreTimeoutTimer = null;
 				void flushBatchedStoreWrites();
 			}, fallbackTimeout);
 		}
@@ -88,18 +95,7 @@ export function getPendingBatchedStoreWritesCount(): number {
 }
 
 export async function flushBatchedStoreWrites(): Promise<void> {
-	if (batchedStoreFlushTimer !== null) {
-		if (typeof window !== "undefined" && "cancelIdleCallback" in window && typeof batchedStoreFlushTimer === "number") {
-			try {
-				window.cancelIdleCallback(batchedStoreFlushTimer);
-			} catch {
-				clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
-			}
-		} else {
-			clearTimeout(batchedStoreFlushTimer as unknown as ReturnType<typeof setTimeout>);
-		}
-		batchedStoreFlushTimer = null;
-	}
+	cancelPendingBatchFlushTimer();
 	if (isFlushingBatchedStores || pendingBatchedStoreWrites.size === 0) return;
 	isFlushingBatchedStores = true;
 

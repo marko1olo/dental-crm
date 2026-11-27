@@ -1,4 +1,5 @@
 import type { StaffRole } from "@dental/shared";
+import { staffRoleLabels } from "../../../workspaceUiLabels";
 import type { CommunicationTask } from "./types";
 
 export const DEFAULT_COMMUNICATION_CHANNEL_LABELS: Record<CommunicationTask["channel"], string> = {
@@ -23,11 +24,7 @@ export const DEFAULT_COMMUNICATION_STATUS_LABELS: Record<CommunicationTask["stat
 	skipped: "Пропущено", needs_call: "Требует звонка",
 };
 
-export const DEFAULT_STAFF_ROLE_LABELS: Record<StaffRole, string> = {
-	doctor: "Врач", assistant: "Ассистент", administrator: "Администратор",
-	receptionist: "Администратор", owner: "Главврач", director: "Директор",
-	nurse: "Медсестра", accountant: "Бухгалтер",
-} as unknown as Record<StaffRole, string>;
+export const DEFAULT_STAFF_ROLE_LABELS: Record<StaffRole, string> = staffRoleLabels;
 
 export const COMMUNICATION_NOTE_INPUT_ID = "communication-closing-note";
 export const COMMUNICATION_NOTE_DESCRIPTION_ID = "communication-closing-note-guidance";

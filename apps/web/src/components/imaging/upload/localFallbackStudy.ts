@@ -3,6 +3,30 @@
  * Mandate 8b: строго <= 120 строк.
  */
 
+/**
+ * localFallbackStudy.ts — Формирование локального исследования при автономной работе
+ * Mandate 8b: строго <= 120 строк.
+ */
+
+const activeFallbackBlobUrls = new Set<string>();
+
+export function revokeLocalFallbackStudyUrl(url: string | null | undefined): void {
+	if (!url || !url.startsWith("blob:")) return;
+	if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+		URL.revokeObjectURL(url);
+	}
+	activeFallbackBlobUrls.delete(url);
+}
+
+export function revokeAllLocalFallbackStudyUrls(): void {
+	if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+		for (const url of activeFallbackBlobUrls) {
+			URL.revokeObjectURL(url);
+		}
+	}
+	activeFallbackBlobUrls.clear();
+}
+
 export function createLocalFallbackStudy(
 	file: File,
 	options: {
@@ -15,6 +39,7 @@ export function createLocalFallbackStudy(
 	},
 ) {
 	const localBlobUrl = URL.createObjectURL(file);
+	activeFallbackBlobUrls.add(localBlobUrl);
 	return {
 		id: `local_scan_${Date.now()}`,
 		patientId: options.patientId,

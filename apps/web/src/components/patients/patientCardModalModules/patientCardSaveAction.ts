@@ -1,3 +1,5 @@
+import { clientLogger } from "../../../services/logging/clientLogger";
+import { deleteOfflineDraft } from "../../../services/offline/storage/idbDraftOps";
 import { showToast } from "../../GlobalToast";
 import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
@@ -41,10 +43,14 @@ export async function savePatientCardModal({
 		setSaveState("saved");
 		showToast("Данные пациента сохранены", "success", 3000);
 		if (typeof window !== "undefined" && patientData.id) {
+			const draftKey = `dente_patient_card_draft_${patientData.id}`;
+			void deleteOfflineDraft(draftKey);
 			try {
-				localStorage.removeItem(`dente_patient_card_draft_${patientData.id}`);
-			} catch {
-				// ignore
+				localStorage.removeItem(draftKey);
+			} catch (storageErr) {
+				clientLogger.debug("[savePatientCardModal] Failed to remove local draft key", storageErr, {
+					module: "PatientCard",
+				});
 			}
 		}
 		onClose();

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as fflate from "fflate";
 import { showToast } from "../../GlobalToast";
+import { denteClinicalReadHeaders } from "../../../lib/denteRequestHeaders";
 import { logger } from "../../../utils/logger";
 import {
 	getDicomImageLoader,
@@ -86,11 +87,22 @@ export function useCtSelector(props: CtSelectorModalProps) {
 
 	// Initial load + AbortController + DICOM memory cleanup on cancel/unmount
 	const launchedInCrmRef = useRef(false);
+	const fallbackBlobUrlsRef = useRef<Set<string>>(new Set());
+
+	const revokeFallbackBlobUrls = useCallback(() => {
+		if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+			for (const url of fallbackBlobUrlsRef.current) {
+				URL.revokeObjectURL(url);
+			}
+		}
+		fallbackBlobUrlsRef.current.clear();
+	}, []);
 
 	useEffect(() => {
 		if (!isOpen) {
 			if (!launchedInCrmRef.current) {
 				purgeDicomImageLoader();
+				revokeFallbackBlobUrls();
 			}
 			return;
 		}
@@ -117,6 +129,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 		if (!propStudies && patientId) {
 			setIsLoadingStudies(true);
 			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`, {
+				headers: denteClinicalReadHeaders(),
 				signal: abortController.signal,
 			})
 				.then((res) => (res.ok ? res.json() : []))
@@ -147,15 +160,16 @@ export function useCtSelector(props: CtSelectorModalProps) {
 		return () => {
 			abortController.abort();
 		};
-	}, [isOpen, refreshDownloads, patientId, propStudies]);
+	}, [isOpen, refreshDownloads, patientId, propStudies, revokeFallbackBlobUrls]);
 
 	useEffect(() => {
 		return () => {
 			if (!launchedInCrmRef.current) {
 				purgeDicomImageLoader();
+				revokeFallbackBlobUrls();
 			}
 		};
-	}, []);
+	}, [revokeFallbackBlobUrls]);
 
 	// Close on Escape
 	useEffect(() => {
@@ -264,7 +278,11 @@ export function useCtSelector(props: CtSelectorModalProps) {
 
 					if (isDicomEntry(file.name, u8)) {
 						try {
-							const id = dicomLoader?.wadouri?.fileManager?.add(file) ?? URL.createObjectURL(file);
+							let id = dicomLoader?.wadouri?.fileManager?.add(file);
+							if (!id) {
+								id = URL.createObjectURL(file);
+								fallbackBlobUrlsRef.current.add(id);
+							}
 							imageIds.push(id);
 						} catch (err) {
 							logger.warn("[CtSelectorModal] Error adding DICOM file:", err);
@@ -364,7 +382,11 @@ export function useCtSelector(props: CtSelectorModalProps) {
 
 							if (isDicomEntry(filename, fileData)) {
 								const file = new File([fileData.buffer as ArrayBuffer], filename);
-								const id = dicomLoader?.wadouri?.fileManager?.add(file) ?? URL.createObjectURL(file);
+								let id = dicomLoader?.wadouri?.fileManager?.add(file);
+								if (!id) {
+									id = URL.createObjectURL(file);
+									fallbackBlobUrlsRef.current.add(id);
+								}
 								imageIds.push(id);
 							}
 							delete unzipped[filename]; // Zero-leak GC

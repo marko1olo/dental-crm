@@ -212,37 +212,51 @@ export function computeCanonicalToothPositions(
   midlineArcMm: number,
 ): Array<{ spec: WheelerToothSpec; expectedArcMm: number }> {
   const result: Array<{ spec: WheelerToothSpec; expectedArcMm: number }> = [];
+  if (specs.length < 16) return result;
 
   // Indices: 0..7 are Right quadrant (18..11 or 48..41), 8..15 are Left quadrant (21..28 or 31..38).
   // Centrals are index 7 (Right central) and index 8 (Left central).
-  const centralRight = specs[7]!;
-  const centralLeft = specs[8]!;
+  const centralRight = specs[7];
+  const centralLeft = specs[8];
+  if (!centralRight || !centralLeft) return result;
 
-  const rightCenters: number[] = new Array(8);
-  const leftCenters: number[] = new Array(8);
+  const rightCenters: number[] = new Array(8).fill(midlineArcMm);
+  const leftCenters: number[] = new Array(8).fill(midlineArcMm);
 
   // Right central center is (midline - width / 2)
   rightCenters[7] = midlineArcMm - centralRight.canonicalWidthMm / 2;
   for (let i = 6; i >= 0; i--) {
-    const prevSpec = specs[i + 1]!;
-    const currSpec = specs[i]!;
-    rightCenters[i] = rightCenters[i + 1]! - (prevSpec.canonicalWidthMm + currSpec.canonicalWidthMm) / 2;
+    const prevSpec = specs[i + 1];
+    const currSpec = specs[i];
+    const prevCenter = rightCenters[i + 1] ?? midlineArcMm;
+    if (!prevSpec || !currSpec) continue;
+    rightCenters[i] = prevCenter - (prevSpec.canonicalWidthMm + currSpec.canonicalWidthMm) / 2;
   }
 
   // Left central center is (midline + width / 2)
   leftCenters[0] = midlineArcMm + centralLeft.canonicalWidthMm / 2;
   for (let i = 1; i < 8; i++) {
-    const prevSpec = specs[i + 7]!;
-    const currSpec = specs[i + 8]!;
-    leftCenters[i] = leftCenters[i - 1]! + (prevSpec.canonicalWidthMm + currSpec.canonicalWidthMm) / 2;
+    const prevSpec = specs[i + 7];
+    const currSpec = specs[i + 8];
+    const prevCenter = leftCenters[i - 1] ?? midlineArcMm;
+    if (!prevSpec || !currSpec) continue;
+    leftCenters[i] = prevCenter + (prevSpec.canonicalWidthMm + currSpec.canonicalWidthMm) / 2;
   }
 
   // Assemble all 16 in order from patient right to patient left
   for (let i = 0; i < 8; i++) {
-    result.push({ spec: specs[i]!, expectedArcMm: rightCenters[i]! });
+    const spec = specs[i];
+    const expectedArcMm = rightCenters[i];
+    if (spec && expectedArcMm !== undefined) {
+      result.push({ spec, expectedArcMm });
+    }
   }
   for (let i = 0; i < 8; i++) {
-    result.push({ spec: specs[i + 8]!, expectedArcMm: leftCenters[i]! });
+    const spec = specs[i + 8];
+    const expectedArcMm = leftCenters[i];
+    if (spec && expectedArcMm !== undefined) {
+      result.push({ spec, expectedArcMm });
+    }
   }
 
   return result;
@@ -266,8 +280,9 @@ export function estimateArchMidline(
   let bestScore = Number.POSITIVE_INFINITY;
 
   for (let i = 0; i < clusters.length - 1; i++) {
-    const c1 = clusters[i]!;
-    const c2 = clusters[i + 1]!;
+    const c1 = clusters[i];
+    const c2 = clusters[i + 1];
+    if (!c1 || !c2) continue;
     const contactS = (c1.archArcLengthMm + c2.archArcLengthMm) / 2;
     const spacing = c2.archArcLengthMm - c1.archArcLengthMm;
 
@@ -325,52 +340,66 @@ export function alignClustersToFdiArch(
   // dp[i][j] = minimal cost to align first i clusters (0..M) with first j canonical teeth (0..N).
   // Cost matrix:
   const dp: number[][] = Array.from({ length: M + 1 }, () =>
-    new Array(N + 1).fill(Number.POSITIVE_INFINITY),
+    new Array<number>(N + 1).fill(Number.POSITIVE_INFINITY),
   );
   // Backtracking path records: { prevI, prevJ, action: "MATCH" | "SKIP_TOOTH" | "SKIP_CLUSTER" }
-  const back: Array<Array<{ prevI: number; prevJ: number; action: "MATCH" | "SKIP_TOOTH" | "SKIP_CLUSTER" } | null>> =
-    Array.from({ length: M + 1 }, () => new Array(N + 1).fill(null));
+  type BackMove = { prevI: number; prevJ: number; action: "MATCH" | "SKIP_TOOTH" | "SKIP_CLUSTER" };
+  const back: Array<Array<BackMove | null>> =
+    Array.from({ length: M + 1 }, () => new Array<BackMove | null>(N + 1).fill(null));
 
-  dp[0]![0] = 0;
+  const dpAt = (i: number, j: number): number => dp[i]?.[j] ?? Number.POSITIVE_INFINITY;
+  const setDp = (i: number, j: number, val: number): void => {
+    const row = dp[i];
+    if (row) row[j] = val;
+  };
+  const setBack = (i: number, j: number, move: BackMove): void => {
+    const row = back[i];
+    if (row) row[j] = move;
+  };
+
+  setDp(0, 0, 0);
 
   // Base case: skipping canonical teeth when 0 clusters are matched
   for (let j = 1; j <= N; j++) {
-    const toothExpected = canonicalMap[j - 1]!.expectedArcMm;
-    const isGap = isPositionCoveredByGap(toothExpected, gaps);
+    const mapEntry = canonicalMap[j - 1];
+    if (!mapEntry) continue;
+    const isGap = isPositionCoveredByGap(mapEntry.expectedArcMm, gaps);
     const skipCost = isGap ? options.gapSupportedMissingPenalty : options.unsupportedMissingPenalty;
-    dp[0]![j] = dp[0]![j - 1]! + skipCost;
-    back[0]![j] = { prevI: 0, prevJ: j - 1, action: "SKIP_TOOTH" };
+    setDp(0, j, dpAt(0, j - 1) + skipCost);
+    setBack(0, j, { prevI: 0, prevJ: j - 1, action: "SKIP_TOOTH" });
   }
 
   // Base case: skipping clusters when 0 canonical teeth are matched (spurious clusters)
   for (let i = 1; i <= M; i++) {
-    dp[i]![0] = dp[i - 1]![0]! + options.unmatchedClusterPenalty;
-    back[i]![0] = { prevI: i - 1, prevJ: 0, action: "SKIP_CLUSTER" };
+    setDp(i, 0, dpAt(i - 1, 0) + options.unmatchedClusterPenalty);
+    setBack(i, 0, { prevI: i - 1, prevJ: 0, action: "SKIP_CLUSTER" });
   }
 
   // Fill DP table
   for (let i = 1; i <= M; i++) {
-    const cluster = clusters[i - 1]!;
+    const cluster = clusters[i - 1];
+    if (!cluster) continue;
     const clusterS = cluster.archArcLengthMm;
     const clusterWidth = cluster.estimatedMesiodistalMm;
 
     for (let j = 1; j <= N; j++) {
-      const tooth = canonicalMap[j - 1]!;
+      const tooth = canonicalMap[j - 1];
+      if (!tooth) continue;
       const expectedS = tooth.expectedArcMm;
       const canonicalWidth = tooth.spec.canonicalWidthMm;
 
       // Option A: Skip tooth j (Tooth j is MISSING / Edentulous)
       const isGap = isPositionCoveredByGap(expectedS, gaps);
       const skipToothCost = isGap ? options.gapSupportedMissingPenalty : options.unsupportedMissingPenalty;
-      let minCost = dp[i]![j - 1]! + skipToothCost;
-      let bestMove: { prevI: number; prevJ: number; action: "MATCH" | "SKIP_TOOTH" | "SKIP_CLUSTER" } = {
+      let minCost = dpAt(i, j - 1) + skipToothCost;
+      let bestMove: BackMove = {
         prevI: i,
         prevJ: j - 1,
         action: "SKIP_TOOTH",
       };
 
       // Option B: Skip cluster i (Cluster is noise/osteophyte)
-      const skipClusterCost = dp[i - 1]![j]! + options.unmatchedClusterPenalty;
+      const skipClusterCost = dpAt(i - 1, j) + options.unmatchedClusterPenalty;
       if (skipClusterCost < minCost) {
         minCost = skipClusterCost;
         bestMove = { prevI: i - 1, prevJ: j, action: "SKIP_CLUSTER" };
@@ -388,14 +417,14 @@ export function alignClustersToFdiArch(
         matchCost = distError * 0.9;
       }
 
-      const totalMatchCost = dp[i - 1]![j - 1]! + matchCost;
+      const totalMatchCost = dpAt(i - 1, j - 1) + matchCost;
       if (totalMatchCost < minCost) {
         minCost = totalMatchCost;
         bestMove = { prevI: i - 1, prevJ: j - 1, action: "MATCH" };
       }
 
-      dp[i]![j] = minCost;
-      back[i]![j] = bestMove;
+      setDp(i, j, minCost);
+      setBack(i, j, bestMove);
     }
   }
 
@@ -405,7 +434,7 @@ export function alignClustersToFdiArch(
   const matchMap = new Map<number, number>(); // canonicalIndex (0..15) -> clusterIndex (0..M-1)
 
   while (currI > 0 || currJ > 0) {
-    const move = back[currI]![currJ]!;
+    const move = back[currI]?.[currJ] ?? null;
     if (!move) break;
 
     if (move.action === "MATCH") {
@@ -428,11 +457,14 @@ export function alignClustersToFdiArch(
   let sumScore = 0;
 
   for (let j = 0; j < N; j++) {
-    const { spec, expectedArcMm } = canonicalMap[j]!;
+    const mapEntry = canonicalMap[j];
+    if (!mapEntry) continue;
+    const { spec, expectedArcMm } = mapEntry;
     const matchedIdx = matchMap.get(j);
+    const matchedCluster = matchedIdx !== undefined ? clusters[matchedIdx] : undefined;
 
-    if (matchedIdx !== undefined) {
-      const cluster = clusters[matchedIdx]!;
+    if (matchedCluster) {
+      const cluster = matchedCluster;
       const deviation = Math.abs(cluster.archArcLengthMm - expectedArcMm);
       let status: FdiToothStatus = "PRESENT_NATURAL";
       let confidence = Math.max(0.6, 1.0 - deviation / 15.0);

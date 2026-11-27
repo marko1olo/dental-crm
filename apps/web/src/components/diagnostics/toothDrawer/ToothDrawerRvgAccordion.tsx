@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Scan } from "lucide-react";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail";
 import type { ToothData } from "../../odontogram/ToothChart";
@@ -40,6 +40,17 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 	const isExpanded = activeSection === "rvg_xray";
 	const rvgData = toothData?.clinicalData as ToothClinicalRvgData | undefined;
 	const scanImageUrl = typeof rvgData?.rvgScanUrl === "string" ? rvgData.rvgScanUrl : undefined;
+	const createdObjectUrlsRef = useRef<Set<string>>(new Set());
+
+	useEffect(() => {
+		const tracked = createdObjectUrlsRef.current;
+		return () => {
+			for (const blobUrl of tracked) {
+				URL.revokeObjectURL(blobUrl);
+			}
+			tracked.clear();
+		};
+	}, []);
 
 	return (
 		<section className="dente-accordion-item">
@@ -72,6 +83,7 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 						onInsertToProtocol={onInsertToProtocol}
 						onAttachScan={async (file) => {
 							const objectUrl = URL.createObjectURL(file);
+							createdObjectUrlsRef.current.add(objectUrl);
 							const currentClinical = toothData?.clinicalData ?? {};
 							// 1. Быстрый локальный предпросмотр (<50мс)
 							onUpdateTooth?.(toothNumber, {
@@ -116,6 +128,8 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 												const json = raw?.data ?? raw;
 												const persistentUrl = json?.fileUrl || (json?.id ? `/api/imaging/studies/${json.id}/file` : null);
 												if (persistentUrl) {
+													URL.revokeObjectURL(objectUrl);
+													createdObjectUrlsRef.current.delete(objectUrl);
 													onUpdateTooth?.(toothNumber, {
 														clinicalData: {
 															...currentClinical,

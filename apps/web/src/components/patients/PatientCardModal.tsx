@@ -22,6 +22,8 @@ import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { clientLogger } from "../../services/logging/clientLogger";
+import { deleteOfflineDraft } from "../../services/offline/storage/idbDraftOps";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { PerioStudioModal } from "../perio/PerioStudioModal";
@@ -110,16 +112,22 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 	const clearPersistedDraft = React.useCallback(() => {
 		const targetPatientId = patientData?.id || propPatientId || initialPatientId;
 		if (targetPatientId) {
+			const draftKey = `dente_patient_card_draft_${targetPatientId}`;
+			void deleteOfflineDraft(draftKey);
 			try {
-				localStorage.removeItem(`dente_patient_card_draft_${targetPatientId}`);
-			} catch {
-				// Offline fallback
+				localStorage.removeItem(draftKey);
+			} catch (err) {
+				clientLogger.debug("[PatientCardModal] Failed to clear localStorage draft", err, {
+					module: "PatientCard",
+				});
 			}
 		}
 		try {
 			usePatientStore.getState().resetDraft();
-		} catch {
-			// Ignore store error
+		} catch (err) {
+			clientLogger.debug("[PatientCardModal] Failed to reset patient store draft", err, {
+				module: "PatientCard",
+			});
 		}
 		resetLocalDraft();
 	}, [patientData?.id, propPatientId, initialPatientId, resetLocalDraft]);
@@ -148,8 +156,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 			if (!navigatingFlatRef.current) {
 				try {
 					usePatientStore.getState().resetDraft();
-				} catch {
-					// Ignore store error on teardown
+				} catch (err) {
+					clientLogger.debug("[PatientCardModal] Failed to reset patient store draft on unmount", err, {
+						module: "PatientCard",
+					});
 				}
 			}
 		};

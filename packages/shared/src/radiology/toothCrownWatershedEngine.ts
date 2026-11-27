@@ -196,14 +196,14 @@ function dt1D(f: Float32Array, n: number, dx: number, d2Out: Float32Array): void
   const dxSq = dx * dx;
 
   for (let q = 1; q < n; q++) {
-    const fq = f[q]!;
+    const fq = f[q] ?? 0;
     let s = 0;
     while (k >= 0) {
-      const vk = v[k]!;
-      const fvk = f[vk]!;
+      const vk = v[k] ?? 0;
+      const fvk = f[vk] ?? 0;
       // Intersection of parabola (q - s)^2 * dxSq + fq and (vk - s)^2 * dxSq + fvk
       s = ((fq - fvk) / dxSq + (q * q - vk * vk)) / (2 * (q - vk));
-      if (s <= z[k]!) {
+      if (s <= (z[k] ?? -1e20)) {
         k--;
       } else {
         break;
@@ -217,12 +217,12 @@ function dt1D(f: Float32Array, n: number, dx: number, d2Out: Float32Array): void
 
   k = 0;
   for (let q = 0; q < n; q++) {
-    while (z[k + 1]! < q) {
+    while ((z[k + 1] ?? 1e20) < q) {
       k++;
     }
-    const vk = v[k]!;
+    const vk = v[k] ?? 0;
     const distCoord = (q - vk) * dx;
-    d2Out[q] = distCoord * distCoord + f[vk]!;
+    d2Out[q] = distCoord * distCoord + (f[vk] ?? 0);
   }
 }
 
@@ -246,7 +246,7 @@ export function computeExact3DEDT(
 
   // Initialize: 0 at outside voxels, INF at inside voxels
   for (let i = 0; i < size; i++) {
-    d2[i] = mask[i]! > 0 ? INF : 0;
+    d2[i] = (mask[i] ?? 0) > 0 ? INF : 0;
   }
 
   // 1. Transform along X (for all y, z)
@@ -258,11 +258,11 @@ export function computeExact3DEDT(
     for (let y = 0; y < ny; y++) {
       const rowOffset = sliceOffset + y * nx;
       for (let x = 0; x < nx; x++) {
-        lineXIn[x] = d2[rowOffset + x]!;
+        lineXIn[x] = d2[rowOffset + x] ?? 0;
       }
       dt1D(lineXIn, nx, sx, lineXOut);
       for (let x = 0; x < nx; x++) {
-        d2[rowOffset + x] = lineXOut[x]!;
+        d2[rowOffset + x] = lineXOut[x] ?? 0;
       }
     }
   }
@@ -275,11 +275,11 @@ export function computeExact3DEDT(
     const sliceOffset = z * nx * ny;
     for (let x = 0; x < nx; x++) {
       for (let y = 0; y < ny; y++) {
-        lineYIn[y] = d2[sliceOffset + y * nx + x]!;
+        lineYIn[y] = d2[sliceOffset + y * nx + x] ?? 0;
       }
       dt1D(lineYIn, ny, sy, lineYOut);
       for (let y = 0; y < ny; y++) {
-        d2[sliceOffset + y * nx + x] = lineYOut[y]!;
+        d2[sliceOffset + y * nx + x] = lineYOut[y] ?? 0;
       }
     }
   }
@@ -291,11 +291,11 @@ export function computeExact3DEDT(
   for (let y = 0; y < ny; y++) {
     for (let x = 0; x < nx; x++) {
       for (let z = 0; z < nz; z++) {
-        lineZIn[z] = d2[z * nx * ny + y * nx + x]!;
+        lineZIn[z] = d2[z * nx * ny + y * nx + x] ?? 0;
       }
       dt1D(lineZIn, nz, sz, lineZOut);
       for (let z = 0; z < nz; z++) {
-        d2[z * nx * ny + y * nx + x] = lineZOut[z]!;
+        d2[z * nx * ny + y * nx + x] = lineZOut[z] ?? 0;
       }
     }
   }
@@ -303,7 +303,7 @@ export function computeExact3DEDT(
   // 4. Square root to get exact Euclidean distance in mm
   const edtMm = new Float32Array(size);
   for (let i = 0; i < size; i++) {
-    edtMm[i] = mask[i]! > 0 ? Math.sqrt(Math.max(0, d2[i]!)) : 0;
+    edtMm[i] = (mask[i] ?? 0) > 0 ? Math.sqrt(Math.max(0, d2[i] ?? 0)) : 0;
   }
 
   return edtMm;
@@ -345,7 +345,7 @@ export function detectHMaximaSeeds(
       const rowOffset = z * strideZ + y * strideY;
       for (let x = 1; x < nx - 1; x++) {
         const idx = rowOffset + x;
-        const val = edtMm[idx]!;
+        const val = edtMm[idx] ?? 0;
         if (val < 1.0) continue; // Ignore thin peripheral voxels (< 1 mm from boundary)
 
         let isMax = true;
@@ -354,7 +354,7 @@ export function detectHMaximaSeeds(
             for (let dx = -1; dx <= 1; dx++) {
               if (dx === 0 && dy === 0 && dz === 0) continue;
               const nIdx = idx + dz * strideZ + dy * strideY + dx;
-              if (edtMm[nIdx]! > val) {
+              if ((edtMm[nIdx] ?? 0) > val) {
                 isMax = false;
                 break;
               }
@@ -369,7 +369,7 @@ export function detectHMaximaSeeds(
             y,
             z,
             distanceMm: val,
-            hu: huData[idx]!,
+            hu: huData[idx] ?? AIR_HU,
           });
         }
       }
@@ -387,12 +387,14 @@ export function detectHMaximaSeeds(
 
   for (let i = 0; i < rawPeaks.length; i++) {
     if (suppressed[i]) continue;
-    const pA = rawPeaks[i]!;
+    const pA = rawPeaks[i];
+    if (!pA) continue;
     survivingPeaks.push(pA);
 
     for (let j = i + 1; j < rawPeaks.length; j++) {
       if (suppressed[j]) continue;
-      const pB = rawPeaks[j]!;
+      const pB = rawPeaks[j];
+      if (!pB) continue;
 
       // Euclidean 3D spatial distance between peaks in mm
       const dx = (pA.x - pB.x) * sx;
@@ -440,7 +442,8 @@ export function segmentCrownWatershed(
   const queue: number[] = [];
 
   for (let i = 0; i < seeds.length; i++) {
-    const s = seeds[i]!;
+    const s = seeds[i];
+    if (!s) continue;
     const label = i + 1;
     labels[s.index] = label;
     queue.push(s.index);
@@ -448,8 +451,9 @@ export function segmentCrownWatershed(
 
   let head = 0;
   while (head < queue.length) {
-    const currIdx = queue[head++]!;
-    const currLabel = labels[currIdx]!;
+    const currIdx = queue[head++];
+    if (currIdx === undefined) continue;
+    const currLabel = labels[currIdx] ?? 0;
 
     const cz = Math.floor(currIdx / strideZ);
     const rem = currIdx % strideZ;
@@ -471,7 +475,7 @@ export function segmentCrownWatershed(
         continue;
       }
       const nIdx = nzPos * strideZ + nyPos * strideY + nxPos;
-      if (mask[nIdx]! > 0 && labels[nIdx] === 0) {
+      if ((mask[nIdx] ?? 0) > 0 && labels[nIdx] === 0) {
         labels[nIdx] = currLabel;
         queue.push(nIdx);
       }
@@ -581,6 +585,8 @@ export function executeToothCrownWatershed(
   >();
 
   for (let i = 0; i < seeds.length; i++) {
+    const seed = seeds[i];
+    if (!seed) continue;
     const label = i + 1;
     clusterAccumulators.set(label, {
       voxels: 0,
@@ -593,7 +599,7 @@ export function executeToothCrownWatershed(
       maxX: -Infinity,
       maxY: -Infinity,
       maxZ: -Infinity,
-      peakDist: seeds[i]!.distanceMm,
+      peakDist: seed.distanceMm,
       peakHU: -Infinity,
       sumHU: 0,
       huValues: [],
@@ -608,12 +614,12 @@ export function executeToothCrownWatershed(
       const rowOffset = sliceOffset + j * nx;
       for (let i = 0; i < nx; i++) {
         const idx = rowOffset + i;
-        const l = labels[idx]!;
+        const l = labels[idx] ?? 0;
         if (l > 0) {
           const acc = clusterAccumulators.get(l);
           if (acc) {
             const wx = ox + i * sx;
-            const hu = huData[idx]!;
+            const hu = huData[idx] ?? AIR_HU;
             acc.voxels++;
             acc.sumX += wx;
             acc.sumY += wy;
@@ -713,26 +719,32 @@ export function executeToothCrownWatershed(
   const gaps: EdentulousGap[] = [];
   const minGapSpan = options.minGapSpanMm;
 
-  if (rawClusters.length > 0) {
+  const firstCluster = rawClusters[0];
+  const lastCluster = rawClusters[rawClusters.length - 1];
+  if (firstCluster && lastCluster) {
     // Check gap before first tooth (patient right molar gap)
-    const firstToothS = rawClusters[0]!.archArcLengthMm;
+    const firstToothS = firstCluster.archArcLengthMm;
     if (firstToothS >= minGapSpan + 6.0) {
       const centerS = firstToothS / 2;
-      const centerFrame = arch.frames[Math.round((centerS / arch.totalLengthMm) * (arch.frames.length - 1))]!;
-      gaps.push({
-        startArcMm: 0,
-        endArcMm: firstToothS,
-        spanLengthMm: firstToothS,
-        centerArcMm: centerS,
-        centerWorld: centerFrame.point,
-        integratedDensity: 0,
-      });
+      const frameIdx = Math.max(0, Math.min(arch.frames.length - 1, Math.round((centerS / arch.totalLengthMm) * (arch.frames.length - 1))));
+      const centerFrame = arch.frames[frameIdx];
+      if (centerFrame) {
+        gaps.push({
+          startArcMm: 0,
+          endArcMm: firstToothS,
+          spanLengthMm: firstToothS,
+          centerArcMm: centerS,
+          centerWorld: centerFrame.point,
+          integratedDensity: 0,
+        });
+      }
     }
 
     // Check gaps between adjacent tooth centroids
     for (let i = 0; i < rawClusters.length - 1; i++) {
-      const cCurr = rawClusters[i]!;
-      const cNext = rawClusters[i + 1]!;
+      const cCurr = rawClusters[i];
+      const cNext = rawClusters[i + 1];
+      if (!cCurr || !cNext) continue;
       const span = cNext.archArcLengthMm - cCurr.archArcLengthMm;
 
       // Normal inter-tooth centroid spacing is Wheeler width (e.g. 7 - 11 mm).
@@ -744,33 +756,39 @@ export function executeToothCrownWatershed(
 
         if (gapLen >= minGapSpan) {
           const centerS = (gapStart + gapEnd) / 2;
-          const centerFrame = arch.frames[Math.round((centerS / arch.totalLengthMm) * (arch.frames.length - 1))]!;
-          gaps.push({
-            startArcMm: gapStart,
-            endArcMm: gapEnd,
-            spanLengthMm: gapLen,
-            centerArcMm: centerS,
-            centerWorld: centerFrame.point,
-            integratedDensity: 0,
-          });
+          const frameIdx = Math.max(0, Math.min(arch.frames.length - 1, Math.round((centerS / arch.totalLengthMm) * (arch.frames.length - 1))));
+          const centerFrame = arch.frames[frameIdx];
+          if (centerFrame) {
+            gaps.push({
+              startArcMm: gapStart,
+              endArcMm: gapEnd,
+              spanLengthMm: gapLen,
+              centerArcMm: centerS,
+              centerWorld: centerFrame.point,
+              integratedDensity: 0,
+            });
+          }
         }
       }
     }
 
     // Check gap after last tooth (patient left molar gap)
-    const lastToothS = rawClusters[rawClusters.length - 1]!.archArcLengthMm;
+    const lastToothS = lastCluster.archArcLengthMm;
     const remainingArch = arch.totalLengthMm - lastToothS;
     if (remainingArch >= minGapSpan + 6.0) {
       const centerS = lastToothS + remainingArch / 2;
-      const centerFrame = arch.frames[Math.round((centerS / arch.totalLengthMm) * (arch.frames.length - 1))]!;
-      gaps.push({
-        startArcMm: lastToothS,
-        endArcMm: arch.totalLengthMm,
-        spanLengthMm: remainingArch,
-        centerArcMm: centerS,
-        centerWorld: centerFrame.point,
-        integratedDensity: 0,
-      });
+      const frameIdx = Math.max(0, Math.min(arch.frames.length - 1, Math.round((centerS / arch.totalLengthMm) * (arch.frames.length - 1))));
+      const centerFrame = arch.frames[frameIdx];
+      if (centerFrame) {
+        gaps.push({
+          startArcMm: lastToothS,
+          endArcMm: arch.totalLengthMm,
+          spanLengthMm: remainingArch,
+          centerArcMm: centerS,
+          centerWorld: centerFrame.point,
+          integratedDensity: 0,
+        });
+      }
     }
   }
 

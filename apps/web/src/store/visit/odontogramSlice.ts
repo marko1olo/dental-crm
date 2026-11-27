@@ -164,7 +164,8 @@ export function createOdontogramSlice(set: VisitStoreSet): OdontogramSlice {
 			set((state) => {
 				if (state.undoStack.length === 0) return state;
 				const nextUndo = [...state.undoStack];
-				const targetSnapshot = nextUndo.pop()!;
+				const targetSnapshot = nextUndo.pop();
+				if (!targetSnapshot) return state;
 				const currentSnapshot: VisitStateSnapshot = {
 					timestamp: Date.now(),
 					description: "Перед отменой",
@@ -210,7 +211,8 @@ export function createOdontogramSlice(set: VisitStoreSet): OdontogramSlice {
 			set((state) => {
 				if (state.redoStack.length === 0) return state;
 				const nextRedo = [...state.redoStack];
-				const targetSnapshot = nextRedo.pop()!;
+				const targetSnapshot = nextRedo.pop();
+				if (!targetSnapshot) return state;
 				const currentSnapshot: VisitStateSnapshot = {
 					timestamp: Date.now(),
 					description: "Перед повтором",

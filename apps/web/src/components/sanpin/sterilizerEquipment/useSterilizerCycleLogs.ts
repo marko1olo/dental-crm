@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import {
+	denteClinicalMutationHeaders,
+	denteClinicalReadHeaders,
+} from "../../../lib/denteRequestHeaders";
 import { clientLogger } from "../../../services/logging/clientLogger";
 import type { SterilizerCycleLogItem } from "./types.js";
 
@@ -19,16 +23,14 @@ interface RawSterilizationCycleItem {
 	readonly barcode?: string;
 }
 
-function getSterilizerHeaders(isJson = false, isMutation = false): HeadersInit {
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `sanpin-sterilizer-${Date.now()}`;
-	return {
+function getSterilizerHeaders(isJson = false, isMutation = false): Record<string, string> {
+	if (!isMutation) {
+		return denteClinicalReadHeaders(isJson ? { "Content-Type": "application/json" } : {});
+	}
+	return denteClinicalMutationHeaders({
 		...(isJson ? { "Content-Type": "application/json" } : {}),
-		...(isMutation ? { "Idempotency-Key": idempotencyKey } : {}),
-		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-	};
+		"Idempotency-Key": generateUuidV7(),
+	});
 }
 
 export function useSterilizerCycleLogs(equipmentId?: string | null, equipmentName?: string, onCycleLogged?: () => void) {
@@ -39,8 +41,8 @@ export function useSterilizerCycleLogs(equipmentId?: string | null, equipmentNam
 	const fetchCycles = async () => {
 		try {
 			setLoading(true);
-			const res = await fetch("/api/sanpin/sterilization", { headers: getSterilizerHeaders() }).catch(() => null);
-			if (res && res.ok) {
+			const res = await fetch("/api/sanpin/sterilization", { headers: getSterilizerHeaders() });
+			if (res.ok) {
 				const data = (await res.json()) as unknown;
 				if (Array.isArray(data)) {
 					const cycleItems = data.filter(

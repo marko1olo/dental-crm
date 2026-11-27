@@ -1,9 +1,13 @@
-import type {
-	LanAssistantCitoEvent,
-	LanChairStatusEvent,
-	LanInvoiceTransferEvent,
-	LanP2PMessage,
-	StaffActionAuditEntry,
+import {
+	type LanAssistantCitoEvent,
+	type LanChairStatusEvent,
+	type LanInvoiceTransferEvent,
+	type LanP2PMessage,
+	type StaffActionAuditEntry,
+	lanAssistantCitoEventSchema,
+	lanChairStatusEventSchema,
+	lanInvoiceTransferEventSchema,
+	staffActionAuditEntrySchema,
 } from "@dental/shared";
 import { logger } from "../../../utils/logger";
 import type {
@@ -27,30 +31,50 @@ export class P2PListenerRegistry {
 		}
 		switch (msg.eventType) {
 			case "chair_status_changed": {
-				const ev = msg.payload as unknown as LanChairStatusEvent;
+				const parsed = lanChairStatusEventSchema.safeParse(msg.payload);
+				if (!parsed.success) {
+					logger.warn("[LanP2PDispatcher] Invalid chair_status_changed payload:", parsed.error);
+					break;
+				}
+				const typedMsg: LanP2PMessage<LanChairStatusEvent> = { ...msg, payload: parsed.data };
 				for (const l of this.chair) {
-					try { l(ev, msg as LanP2PMessage<LanChairStatusEvent>); } catch (err) { logger.error("[LanP2PDispatcher] chair err:", err); }
+					try { l(parsed.data, typedMsg); } catch (err) { logger.error("[LanP2PDispatcher] chair err:", err); }
 				}
 				break;
 			}
 			case "assistant_call_cito": {
-				const ev = msg.payload as unknown as LanAssistantCitoEvent;
+				const parsed = lanAssistantCitoEventSchema.safeParse(msg.payload);
+				if (!parsed.success) {
+					logger.warn("[LanP2PDispatcher] Invalid assistant_call_cito payload:", parsed.error);
+					break;
+				}
+				const typedMsg: LanP2PMessage<LanAssistantCitoEvent> = { ...msg, payload: parsed.data };
 				for (const l of this.assistant) {
-					try { l(ev, msg as LanP2PMessage<LanAssistantCitoEvent>); } catch (err) { logger.error("[LanP2PDispatcher] cito err:", err); }
+					try { l(parsed.data, typedMsg); } catch (err) { logger.error("[LanP2PDispatcher] cito err:", err); }
 				}
 				break;
 			}
 			case "invoice_transferred_to_cashier": {
-				const ev = msg.payload as unknown as LanInvoiceTransferEvent;
+				const parsed = lanInvoiceTransferEventSchema.safeParse(msg.payload);
+				if (!parsed.success) {
+					logger.warn("[LanP2PDispatcher] Invalid invoice_transferred_to_cashier payload:", parsed.error);
+					break;
+				}
+				const typedMsg: LanP2PMessage<LanInvoiceTransferEvent> = { ...msg, payload: parsed.data };
 				for (const l of this.invoice) {
-					try { l(ev, msg as LanP2PMessage<LanInvoiceTransferEvent>); } catch (err) { logger.error("[LanP2PDispatcher] inv err:", err); }
+					try { l(parsed.data, typedMsg); } catch (err) { logger.error("[LanP2PDispatcher] inv err:", err); }
 				}
 				break;
 			}
 			case "staff_action_telemetry": {
-				const ev = msg.payload as unknown as StaffActionAuditEntry;
+				const parsed = staffActionAuditEntrySchema.safeParse(msg.payload);
+				if (!parsed.success) {
+					logger.warn("[LanP2PDispatcher] Invalid staff_action_telemetry payload:", parsed.error);
+					break;
+				}
+				const typedMsg: LanP2PMessage<StaffActionAuditEntry> = { ...msg, payload: parsed.data };
 				for (const l of this.staff) {
-					try { l(ev, msg as LanP2PMessage<StaffActionAuditEntry>); } catch (err) { logger.error("[LanP2PDispatcher] staff err:", err); }
+					try { l(parsed.data, typedMsg); } catch (err) { logger.error("[LanP2PDispatcher] staff err:", err); }
 				}
 				break;
 			}

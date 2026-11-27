@@ -1,8 +1,8 @@
-import type { BactericidalEquipment } from "@dental/shared";
+import { generateUuidV7, type BactericidalEquipment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
+import { clientLogger } from "../../../services/logging/clientLogger";
 import { executePreShift30Min, executeShiftAutopilot } from "../bactericidalShiftHelpers";
-import { provisionCanonicalBactericidalEquipment } from "./bactericidalPresets";
 
 export async function openMorningShiftAction({
 	equipments,
@@ -23,13 +23,10 @@ export async function openMorningShiftAction({
 	}
 
 	const targetId = currentEquips.length === 1 ? currentEquips[0]?.id : undefined;
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	const headers = {
+	const headers = denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-	};
+		"Idempotency-Key": generateUuidV7(),
+	});
 
 	try {
 		const res = await fetch("/api/registers/bactericidal/open-morning-shift", {
@@ -52,6 +49,7 @@ export async function openMorningShiftAction({
 			await executePreShift30Min(targetId, currentEquips, onRefresh);
 		}
 	} catch (err) {
+		clientLogger.warn("openMorningShiftAction failed", err);
 		showToast("Сетевая ошибка при открытии утренней смены", "error");
 	}
 }
@@ -75,13 +73,10 @@ export async function closeEveningShiftAction({
 	}
 
 	const targetId = currentEquips.length === 1 ? currentEquips[0]?.id : undefined;
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	const headers = {
+	const headers = denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-	};
+		"Idempotency-Key": generateUuidV7(),
+	});
 
 	try {
 		const res = await fetch("/api/registers/bactericidal/close-evening-shift", {
@@ -105,6 +100,7 @@ export async function closeEveningShiftAction({
 			await executeShiftAutopilot(6, currentEquips, onRefresh);
 		}
 	} catch (err) {
+		clientLogger.warn("closeEveningShiftAction failed", err);
 		showToast("Сетевая ошибка при закрытии вечерней смены", "error");
 	}
 }

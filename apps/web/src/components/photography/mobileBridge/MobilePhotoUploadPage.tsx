@@ -44,6 +44,19 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 
 	const [selectedSlotId, setSelectedSlotId] = useState<string>("portrait_smile");
 	const [uploadedSlots, setUploadedSlots] = useState<Record<string, { url: string; fileName: string }>>({});
+	const createdBlobUrlsRef = useRef<Set<string>>(new Set());
+
+	useEffect(() => {
+		const tracked = createdBlobUrlsRef.current;
+		return () => {
+			if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+				for (const blobUrl of tracked) {
+					URL.revokeObjectURL(blobUrl);
+				}
+			}
+			tracked.clear();
+		};
+	}, []);
 	const [isLoadingSession, setIsLoadingSession] = useState<boolean>(true);
 	const [isUploading, setIsUploading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
@@ -132,7 +145,10 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 			const compressed = await compressChairsidePhotoToBlobUrl(file, {
 				maxDimension: 1920,
 				quality: 0.85,
-			}).catch(() => null);
+			}).catch((compressErr) => {
+				logger.warn("[MobilePhotoUploadPage] Chairside compression fallback to original file", compressErr);
+				return null;
+			});
 
 			const uploadBlob = compressed ? compressed.blob : file;
 			const safeFilename = `${selectedSlotId}-${Date.now()}.webp`;
@@ -151,17 +167,50 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 			});
 
 			if (!uploadRes.ok) {
-				const errData = await uploadRes.json().catch(() => ({}));
+				if (compressed?.blobUrl && compressed.blobUrl.startsWith("blob:")) {
+					URL.revokeObjectURL(compressed.blobUrl);
+				}
+				let errData: { message?: string } = {};
+				try {
+					errData = (await uploadRes.json()) as { message?: string };
+				} catch (parseErr) {
+					logger.debug("[MobilePhotoUploadPage] Failed to parse upload error JSON", parseErr);
+				}
 				throw new Error(errData.message || "Ошибка отправки снимка на сервер.");
 			}
 
 			const uploadJson = await uploadRes.json();
-			const photoUrl = uploadJson.photo?.url || (compressed ? compressed.blobUrl : URL.createObjectURL(file));
+			const serverUrl = typeof uploadJson.photo?.url === "string" ? uploadJson.photo.url : "";
+			let photoUrl = serverUrl;
+			if (serverUrl) {
+				if (compressed?.blobUrl && compressed.blobUrl.startsWith("blob:")) {
+					URL.revokeObjectURL(compressed.blobUrl);
+				}
+			} else if (compressed?.blobUrl) {
+				photoUrl = compressed.blobUrl;
+				if (photoUrl.startsWith("blob:")) {
+					createdBlobUrlsRef.current.add(photoUrl);
+				}
+			} else {
+				photoUrl = URL.createObjectURL(file);
+				createdBlobUrlsRef.current.add(photoUrl);
+			}
 
-			setUploadedSlots((prev) => ({
-				...prev,
-				[selectedSlotId]: { url: photoUrl, fileName: safeFilename },
-			}));
+			setUploadedSlots((prev) => {
+				const previousSlotUrl = prev[selectedSlotId]?.url;
+				if (
+					previousSlotUrl &&
+					previousSlotUrl !== photoUrl &&
+					previousSlotUrl.startsWith("blob:")
+				) {
+					URL.revokeObjectURL(previousSlotUrl);
+					createdBlobUrlsRef.current.delete(previousSlotUrl);
+				}
+				return {
+					...prev,
+					[selectedSlotId]: { url: photoUrl, fileName: safeFilename },
+				};
+			});
 
 			const effectiveSlotsList = sessionData?.slots && sessionData.slots.length > 0 ? sessionData.slots : CHAIRSIDE_MOBILE_SLOTS;
 			showToast(`Снимок «${effectiveSlotsList.find((s) => s.id === selectedSlotId)?.shortLabelRu}» принят!`, "success", 2500);

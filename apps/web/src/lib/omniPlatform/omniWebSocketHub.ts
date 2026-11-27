@@ -59,15 +59,16 @@ export function createOmniWebSocket(
 			attempts = 0;
 			connected = true;
 
-			// Send authentication frame if tokens exist
+			// Send authentication frame if tokens exist (staffToken strictly preferred over clinicToken)
 			const clinicToken = typeof localStorage !== "undefined" ? localStorage.getItem("dente_clinic_token") : null;
 			const staffToken = typeof localStorage !== "undefined" ? localStorage.getItem("dente_staff_token") : null;
-			if (clinicToken || staffToken) {
+			const token = staffToken || clinicToken;
+			if (token) {
 				try {
 					socket?.send(
 						JSON.stringify({
 							type: "AUTH",
-							payload: { clinicToken, staffToken },
+							payload: { token, clinicToken, staffToken },
 						}),
 					);
 				} catch (err: unknown) {
@@ -94,7 +95,8 @@ export function createOmniWebSocket(
 				const parsed = JSON.parse(event.data);
 				if (parsed?.type === "AUTH_OK") return;
 				options.onMessage?.(parsed);
-			} catch {
+			} catch (parseErr) {
+				logger.debug("[OmniPlatformAdapter] Passing raw non-JSON WebSocket payload", parseErr);
 				options.onMessage?.(event.data);
 			}
 		};

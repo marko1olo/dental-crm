@@ -99,7 +99,7 @@ export class FastMinHeap {
 
 		while (i > 0) {
 			const parent = (i - 1) >> 1;
-			if (this.costs[i]! < this.costs[parent]!) {
+			if ((this.costs[i] ?? 0) < (this.costs[parent] ?? 0)) {
 				this.swap(i, parent);
 				i = parent;
 			} else {
@@ -110,11 +110,11 @@ export class FastMinHeap {
 
 	public pop(): number {
 		if (this.size === 0) return -1;
-		const top = this.indices[0]!;
+		const top = this.indices[0] ?? -1;
 		this.size--;
 		if (this.size > 0) {
-			this.indices[0] = this.indices[this.size]!;
-			this.costs[0] = this.costs[this.size]!;
+			this.indices[0] = this.indices[this.size] ?? 0;
+			this.costs[0] = this.costs[this.size] ?? 0;
 			this.downHeap(0);
 		}
 		return top;
@@ -127,8 +127,8 @@ export class FastMinHeap {
 			const left = (i << 1) + 1;
 			const right = left + 1;
 
-			if (left < this.size && this.costs[left]! < this.costs[best]!) best = left;
-			if (right < this.size && this.costs[right]! < this.costs[best]!) best = right;
+			if (left < this.size && (this.costs[left] ?? 0) < (this.costs[best] ?? 0)) best = left;
+			if (right < this.size && (this.costs[right] ?? 0) < (this.costs[best] ?? 0)) best = right;
 
 			if (best !== i) {
 				this.swap(i, best);
@@ -140,12 +140,12 @@ export class FastMinHeap {
 	}
 
 	private swap(a: number, b: number): void {
-		const idxA = this.indices[a]!;
-		this.indices[a] = this.indices[b]!;
+		const idxA = this.indices[a] ?? 0;
+		this.indices[a] = this.indices[b] ?? 0;
 		this.indices[b] = idxA;
 
-		const costA = this.costs[a]!;
-		this.costs[a] = this.costs[b]!;
+		const costA = this.costs[a] ?? 0;
+		this.costs[a] = this.costs[b] ?? 0;
 		this.costs[b] = costA;
 	}
 }
@@ -278,9 +278,12 @@ export function smoothCatmullRom3D(pts: readonly Point3D[], subdivisions = 6): P
 	const step = 1.0 / subdivisions;
 
 	for (let i = 0; i < pts.length - 1; i++) {
-		const p0 = i > 0 ? pts[i - 1]! : pts[i]!;
-		const p1 = pts[i]!, p2 = pts[i + 1]!;
-		const p3 = i < pts.length - 2 ? pts[i + 2]! : p2;
+		const pi = pts[i];
+		const p2 = pts[i + 1];
+		if (!pi || !p2) continue;
+		const p0 = (i > 0 ? pts[i - 1] : pi) ?? pi;
+		const p1 = pi;
+		const p3 = (i < pts.length - 2 ? pts[i + 2] : p2) ?? p2;
 
 		for (let t = 0; t < 1.0; t += step) {
 			const t2 = t * t, t3 = t2 * t;
@@ -289,8 +292,10 @@ export function smoothCatmullRom3D(pts: readonly Point3D[], subdivisions = 6): P
 			result.push(roundPt(cr(p0.x, p1.x, p2.x, p3.x), cr(p0.y, p1.y, p2.y, p3.y), cr(p0.z, p1.z, p2.z, p3.z)));
 		}
 	}
-	const last = pts[pts.length - 1]!;
-	result.push(roundPt(last.x, last.y, last.z));
+	const last = pts[pts.length - 1];
+	if (last) {
+		result.push(roundPt(last.x, last.y, last.z));
+	}
 	return result;
 }
 
@@ -360,21 +365,22 @@ export function traceMandibularCanal2Seeds(
 		iterations++;
 		if ((iterations & 2047) === 0 && performance.now() - startTime > 300) break;
 		const currRoiIdx = heap.pop();
-		if (currRoiIdx === endRoiIdx) break;
-		const currCost = dist[currRoiIdx]!;
+		if (currRoiIdx < 0 || currRoiIdx === endRoiIdx) break;
+		const currCost = dist[currRoiIdx] ?? Number.POSITIVE_INFINITY;
 		if (!Number.isFinite(currCost)) continue;
 
 		const currVoxel = toGlobalVoxel(currRoiIdx);
 		const currRx = currVoxel.x - minX, currRy = currVoxel.y - minY, currRz = currVoxel.z - minZ;
 
 		for (let i = 0; i < neighbors.length; i++) {
-			const n = neighbors[i]!;
+			const n = neighbors[i];
+			if (!n) continue;
 			const nRx = currRx + n.dx, nRy = currRy + n.dy, nRz = currRz + n.dz;
 			if (nRx < 0 || nRx >= roiWidth || nRy < 0 || nRy >= roiHeight || nRz < 0 || nRz >= roiDepth) continue;
 			const nRoiIdx = toRoiIdx(nRx, nRy, nRz);
 			let stepCost: number;
 			if (options?.precomputedCostField) {
-				stepCost = n.distMm * options.precomputedCostField[nRoiIdx]!;
+				stepCost = n.distMm * (options.precomputedCostField[nRoiIdx] ?? 1.0);
 			} else {
 				const nGx = nRx + minX, nGy = nRy + minY, nGz = nRz + minZ;
 				const hu = volumeHU[nGz * sliceStride + nGy * dims.width + nGx] ?? -1000;
@@ -383,7 +389,7 @@ export function traceMandibularCanal2Seeds(
 				stepCost = n.distMm * Math.fround(calculateVoxelHuPenalty(hu, minCanalHU, maxCanalHU) * (1.0 / velocity));
 			}
 			const newCost = currCost + stepCost;
-			if (newCost < dist[nRoiIdx]!) {
+			if (newCost < (dist[nRoiIdx] ?? Number.POSITIVE_INFINITY)) {
 				dist[nRoiIdx] = newCost;
 				prev[nRoiIdx] = currRoiIdx;
 				heap.push(nRoiIdx, newCost);
@@ -396,7 +402,7 @@ export function traceMandibularCanal2Seeds(
 	while (curr !== -1 && stepGuard < roiVolume) {
 		rawVoxelPath.push(toGlobalVoxel(curr));
 		if (curr === startRoiIdx) break;
-		curr = prev[curr]!;
+		curr = prev[curr] ?? -1;
 		stepGuard++;
 	}
 	if (rawVoxelPath.length < 2 || rawVoxelPath[rawVoxelPath.length - 1]?.x !== startVoxel.x) {
@@ -421,19 +427,25 @@ export function traceMandibularCanal2Seeds(
 	});
 	const controlPointsMm: Point3D[] = [];
 	const stride = Math.max(1, Math.floor(rawVoxelPath.length / 8));
-	for (let i = 0; i < rawVoxelPath.length; i += stride) controlPointsMm.push(toMm(rawVoxelPath[i]!));
-	const lastMm = toMm(rawVoxelPath[rawVoxelPath.length - 1]!);
-	const tail = controlPointsMm[controlPointsMm.length - 1];
-	if (!tail || tail.x !== lastMm.x || tail.y !== lastMm.y || tail.z !== lastMm.z) controlPointsMm.push(lastMm);
+	for (let i = 0; i < rawVoxelPath.length; i += stride) {
+		const voxelPt = rawVoxelPath[i];
+		if (voxelPt) controlPointsMm.push(toMm(voxelPt));
+	}
+	const lastRawVoxel = rawVoxelPath[rawVoxelPath.length - 1];
+	if (lastRawVoxel) {
+		const lastMm = toMm(lastRawVoxel);
+		const tail = controlPointsMm[controlPointsMm.length - 1];
+		if (!tail || tail.x !== lastMm.x || tail.y !== lastMm.y || tail.z !== lastMm.z) controlPointsMm.push(lastMm);
+	}
 
 	const physicalSpline = smoothCatmullRom3D(controlPointsMm, options?.subdivisionsPerSegment ?? 6);
 	let totalLengthMm = 0;
 	for (let i = 0; i < physicalSpline.length - 1; i++) {
-		totalLengthMm += Math.hypot(
-			physicalSpline[i + 1]!.x - physicalSpline[i]!.x,
-			physicalSpline[i + 1]!.y - physicalSpline[i]!.y,
-			physicalSpline[i + 1]!.z - physicalSpline[i]!.z,
-		);
+		const pA = physicalSpline[i];
+		const pB = physicalSpline[i + 1];
+		if (pA && pB) {
+			totalLengthMm += Math.hypot(pB.x - pA.x, pB.y - pA.y, pB.z - pA.z);
+		}
 	}
 	return {
 		voxelPath: rawVoxelPath,
@@ -480,11 +492,11 @@ export function traceMandibularNerveFastMarching(
 		const worldPhysicalSpline = smoothCatmullRom3D(worldControlPoints, options?.subdivisionsPerSegment ?? 6);
 		let totalLengthMm = 0;
 		for (let i = 0; i < worldPhysicalSpline.length - 1; i++) {
-			totalLengthMm += Math.hypot(
-				worldPhysicalSpline[i + 1]!.x - worldPhysicalSpline[i]!.x,
-				worldPhysicalSpline[i + 1]!.y - worldPhysicalSpline[i]!.y,
-				worldPhysicalSpline[i + 1]!.z - worldPhysicalSpline[i]!.z,
-			);
+			const pA = worldPhysicalSpline[i];
+			const pB = worldPhysicalSpline[i + 1];
+			if (pA && pB) {
+				totalLengthMm += Math.hypot(pB.x - pA.x, pB.y - pA.y, pB.z - pA.z);
+			}
 		}
 		return {
 			voxelPath: rawResult.voxelPath,
@@ -513,11 +525,11 @@ export function traceMandibularNerveFastMarching(
 	const physicalSpline = smoothCatmullRom3D(controlPoints, 6);
 	let totalLengthMm = 0;
 	for (let i = 0; i < physicalSpline.length - 1; i++) {
-		totalLengthMm += Math.hypot(
-			physicalSpline[i + 1]!.x - physicalSpline[i]!.x,
-			physicalSpline[i + 1]!.y - physicalSpline[i]!.y,
-			physicalSpline[i + 1]!.z - physicalSpline[i]!.z,
-		);
+		const pA = physicalSpline[i];
+		const pB = physicalSpline[i + 1];
+		if (pA && pB) {
+			totalLengthMm += Math.hypot(pB.x - pA.x, pB.y - pA.y, pB.z - pA.z);
+		}
 	}
 	return {
 		voxelPath: controlPoints.map((p) => worldMmToVoxel(p, volume)),

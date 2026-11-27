@@ -12,7 +12,10 @@
  */
 
 import { generateUuidV7, kopecksToRub } from "@dental/shared";
-import { CLINICAL_CACHE_STORE_NAME } from "../services/offline/storage/constants.js";
+import {
+	CLINICAL_CACHE_STORE_NAME,
+	resolveActiveOfflineOrgScope,
+} from "../services/offline/storage/constants.js";
 import { queueBatchedStorePut } from "../services/offline/storage/idbBatchBuffer.js";
 import {
 	enqueueOfflineMutation,
@@ -193,7 +196,7 @@ export async function enqueueOfflinePayment(
 		cashierName: input.cashierName,
 		doctorName: input.doctorName,
 		patientPhoneOrEmail: input.patientPhoneOrEmail,
-		organizationId: input.organizationId || "default_org",
+		organizationId: resolveActiveOfflineOrgScope(input.organizationId),
 		createdAt,
 		status: "queued",
 		fiscalStatus,

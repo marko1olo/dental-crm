@@ -367,7 +367,8 @@ export function recordLocalVaultSnapshot(
 		if (rawHistory) {
 			try {
 				snapshots = JSON.parse(rawHistory);
-			} catch {
+			} catch (parseErr) {
+				logger.debug("[OfflineBackup] Failed to parse rolling vault history, resetting list:", parseErr);
 				snapshots = [];
 			}
 		}
@@ -403,7 +404,8 @@ export function recordLocalVaultSnapshot(
 			if (rawHistory) {
 				try {
 					snapshots = JSON.parse(rawHistory);
-				} catch {
+				} catch (parseErr) {
+					logger.debug("[OfflineBackup] Failed to parse rolling vault metadata history:", parseErr);
 					snapshots = [];
 				}
 			}
@@ -413,8 +415,8 @@ export function recordLocalVaultSnapshot(
 			}
 			safeLocalStorageSetItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
 			notifyVaultChange(snapshots.length);
-		} catch {
-			// Ignore secondary metadata storage error
+		} catch (metaErr) {
+			logger.debug("[OfflineBackup] Secondary metadata storage skipped:", metaErr);
 		}
 	}
 }
@@ -430,7 +432,8 @@ export function listLocalVaultSnapshots(): LocalVaultSnapshotMeta[] {
 		if (!raw) return [];
 		const list = JSON.parse(raw) as Array<{ meta: LocalVaultSnapshotMeta }>;
 		return list.map((item) => item.meta);
-	} catch {
+	} catch (err) {
+		logger.debug("[OfflineBackup] Failed to list vault snapshots:", err);
 		return [];
 	}
 }
@@ -449,8 +452,8 @@ export function getLocalVaultSnapshotContent(snapshotId: string): string | null 
 					return found.content;
 				}
 			}
-		} catch {
-			// Fall through to in-memory/IDB fallback
+		} catch (err) {
+			logger.debug("[OfflineBackup] LocalStorage snapshot lookup failed:", err);
 		}
 	}
 
@@ -464,10 +467,10 @@ export function getLocalVaultSnapshotContent(snapshotId: string): string | null 
 					contentFromCache = cached.content;
 				}
 			})
-			.catch(() => {});
+			.catch((err) => logger.debug("[OfflineBackup] IDB snapshot fallback failed:", err));
 		if (contentFromCache) return contentFromCache;
-	} catch {
-		// ignore
+	} catch (err) {
+		logger.debug("[OfflineBackup] Snapshot cache read failed:", err);
 	}
 
 	return null;
@@ -477,7 +480,9 @@ export function getLocalVaultSnapshotContent(snapshotId: string): string | null 
  * Удаляет снимок из локального хранилища и IndexedDB
  */
 export function deleteLocalVaultSnapshot(snapshotId: string): boolean {
-	void deletePatientClinicalCache(`vault_snap_${snapshotId}`).catch(() => {});
+	void deletePatientClinicalCache(`vault_snap_${snapshotId}`).catch((err) =>
+		logger.debug("[OfflineBackup] IDB snapshot deletion failed:", err),
+	);
 
 	if (typeof window === "undefined") return false;
 
@@ -489,7 +494,8 @@ export function deleteLocalVaultSnapshot(snapshotId: string): boolean {
 		safeLocalStorageSetItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(list));
 		notifyVaultChange(list.length);
 		return true;
-	} catch {
+	} catch (err) {
+		logger.debug("[OfflineBackup] Failed to delete local vault snapshot:", err);
 		return false;
 	}
 }

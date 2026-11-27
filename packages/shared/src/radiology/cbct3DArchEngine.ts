@@ -198,15 +198,15 @@ export function resample3DByArcLength(
 
   const cumLen: number[] = [0];
   for (let i = 1; i < curve.length; i++) {
-    const pCurr = curve[i]!;
-    const pPrev = curve[i - 1]!;
-    const segDist = Math.hypot(pCurr[0] - pPrev[0], pCurr[1] - pPrev[1], pCurr[2] - pPrev[2]);
+    const pCurr = curve[i];
+    const pPrev = curve[i - 1];
+    const segDist = pCurr && pPrev ? Math.hypot(pCurr[0] - pPrev[0], pCurr[1] - pPrev[1], pCurr[2] - pPrev[2]) : 0;
     cumLen.push((cumLen[i - 1] ?? 0) + segDist);
   }
   const totalLength = cumLen[cumLen.length - 1] ?? 0;
+  const fallbackFirst = curve[0] ?? [0, 0, 0];
   if (totalLength <= 1e-9) {
-    const pt = curve[0]!;
-    return { points: Array(numSamples).fill(pt), cumLength: Array(numSamples).fill(0), totalLength: 0 };
+    return { points: Array(numSamples).fill(fallbackFirst), cumLength: Array(numSamples).fill(0), totalLength: 0 };
   }
 
   const points: Vec3[] = [];
@@ -222,8 +222,8 @@ export function resample3DByArcLength(
     const segNext = cumLen[seg + 1] ?? segStart;
     const segLen = segNext - segStart;
     const t = segLen > 0 ? (target - segStart) / segLen : 0;
-    const ptA = curve[seg]!;
-    const ptB = curve[seg + 1]!;
+    const ptA = curve[seg] ?? fallbackFirst;
+    const ptB = curve[seg + 1] ?? ptA;
 
     points.push([
       ptA[0] + t * (ptB[0] - ptA[0]),
@@ -251,17 +251,18 @@ export function detectOcclusalZProfile(
 ): OcclusalProfilePoint[] {
   const options = arch3DOptionsSchema.parse(opts ?? {});
   const numSamples = options.numSamples;
-  const windowHalfMm = options.windowHalfMm;
   const enamelThreshold = options.enamelThresholdHU;
 
   // Approximate arc length along XY
   const cumLen: number[] = [0];
   for (let i = 1; i < archXY.length; i++) {
-    const p1 = archXY[i]!;
-    const p0 = archXY[i - 1]!;
-    cumLen.push((cumLen[i - 1] ?? 0) + Math.hypot(p1[0] - p0[0], p1[1] - p0[1]));
+    const p1 = archXY[i];
+    const p0 = archXY[i - 1];
+    const dist = p1 && p0 ? Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) : 0;
+    cumLen.push((cumLen[i - 1] ?? 0) + dist);
   }
   const totalXY = cumLen[cumLen.length - 1] ?? 1;
+  const fallbackXY: Point2 = archXY[0] ?? [0, 0];
 
   const [ox, oy, oz] = vol.origin;
   const sz = 1 / vol.invSz;
@@ -289,7 +290,7 @@ export function detectOcclusalZProfile(
     const sStart = cumLen[seg] ?? 0;
     const sEnd = cumLen[seg + 1] ?? sStart;
     const t = sEnd > sStart ? (targetDist - sStart) / (sEnd - sStart) : 0;
-    const pA = archXY[seg]!;
+    const pA = archXY[seg] ?? fallbackXY;
     const pB = archXY[seg + 1] ?? pA;
     const wx = pA[0] + t * (pB[0] - pA[0]);
     const wy = pA[1] + t * (pB[1] - pA[1]);
@@ -342,16 +343,20 @@ export function detectOcclusalZProfile(
       let sum = 0;
       let count = 0;
       for (let k = -radius; k <= radius; k++) {
-        const idx = i + k;
-        if (idx >= 0 && idx < rawProfile.length) {
-          sum += rawProfile[idx]!.occlusalZMm;
+        const pt = rawProfile[i + k];
+        if (pt) {
+          sum += pt.occlusalZMm;
           count++;
         }
       }
-      smoothedZ.push(sum / count);
+      smoothedZ.push(count > 0 ? sum / count : (rawProfile[i]?.occlusalZMm ?? zMid));
     }
     for (let i = 0; i < rawProfile.length; i++) {
-      rawProfile[i]!.occlusalZMm = smoothedZ[i]!;
+      const pt = rawProfile[i];
+      const zVal = smoothedZ[i];
+      if (pt && zVal !== undefined) {
+        pt.occlusalZMm = zVal;
+      }
     }
   }
 
@@ -379,25 +384,29 @@ export function computeDarbouxFrames(
   // Compute total arc length and cumulative lengths
   const cumLen: number[] = [0];
   for (let i = 1; i < n; i++) {
-    cumLen.push(cumLen[i - 1]! + len3(sub3(curve3D[i]!, curve3D[i - 1]!)));
+    const curr = curve3D[i];
+    const prev = curve3D[i - 1];
+    const seg = curr && prev ? len3(sub3(curr, prev)) : 0;
+    cumLen.push((cumLen[i - 1] ?? 0) + seg);
   }
   const totalLength = cumLen[n - 1] ?? 1;
 
   const frames: DarbouxFrame[] = [];
 
   for (let i = 0; i < n; i++) {
-    const pt = curve3D[i]!;
-    const s = cumLen[i]!;
+    const pt = curve3D[i];
+    if (!pt) continue;
+    const s = cumLen[i] ?? 0;
     const u = totalLength > 0 ? s / totalLength : 0;
 
     // 1. Tangent: central difference or forward/backward at ends
     let tVec: Vec3;
     if (i === 0) {
-      tVec = sub3(curve3D[1]!, pt);
+      tVec = sub3(curve3D[1] ?? pt, pt);
     } else if (i === n - 1) {
-      tVec = sub3(pt, curve3D[n - 2]!);
+      tVec = sub3(pt, curve3D[n - 2] ?? pt);
     } else {
-      tVec = sub3(curve3D[i + 1]!, curve3D[i - 1]!);
+      tVec = sub3(curve3D[i + 1] ?? pt, curve3D[i - 1] ?? pt);
     }
     const tangent = normalize3(tVec);
 
@@ -432,8 +441,8 @@ export function computeDarbouxFrames(
     // 4. Curvature kappa(s): ||dP/ds x d^2P/ds^2|| / ||dP/ds||^3
     let curvature = 0;
     if (i > 0 && i < n - 1) {
-      const prev = curve3D[i - 1]!;
-      const next = curve3D[i + 1]!;
+      const prev = curve3D[i - 1] ?? pt;
+      const next = curve3D[i + 1] ?? pt;
       const d1 = scale3(sub3(next, prev), 0.5);
       const d2 = sub3(add3(next, prev), scale3(pt, 2));
       const crossD1D2 = cross3(d1, d2);
@@ -563,28 +572,48 @@ export function build3DArchFromControlPoints(
  * Finds the nearest Darboux frame on the 3D arch to a given 3D world position.
  */
 export function findNearestArchFrame(arch: Arch3DCurve, worldPos: Vec3): DarbouxFrame {
+  const defaultFrame: DarbouxFrame = {
+    s: 0,
+    u: 0,
+    point: [0, 0, 0],
+    tangent: [1, 0, 0],
+    normal: [0, -1, 0],
+    binormal: [0, 0, 1],
+    curvature: 0,
+  };
   let bestDistSq = Number.POSITIVE_INFINITY;
-  let bestIdx = 0;
+  let bestFrame = arch.frames[0] ?? defaultFrame;
 
   for (let i = 0; i < arch.frames.length; i++) {
-    const p = arch.frames[i]!.point;
+    const frame = arch.frames[i];
+    if (!frame) continue;
+    const p = frame.point;
     const dSq = (p[0] - worldPos[0]) ** 2 + (p[1] - worldPos[1]) ** 2 + (p[2] - worldPos[2]) ** 2;
     if (dSq < bestDistSq) {
       bestDistSq = dSq;
-      bestIdx = i;
+      bestFrame = frame;
     }
   }
 
-  return arch.frames[bestIdx]!;
+  return bestFrame;
 }
 
 /**
  * Retrieves the interpolated Darboux frame at normalized parameter u in [0, 1].
  */
 export function frameAtNormalized(arch: Arch3DCurve, u: number): DarbouxFrame {
+  const defaultFrame: DarbouxFrame = {
+    s: 0,
+    u: 0,
+    point: [0, 0, 0],
+    tangent: [1, 0, 0],
+    normal: [0, -1, 0],
+    binormal: [0, 0, 1],
+    curvature: 0,
+  };
   const clampedU = Math.max(0, Math.min(1, u));
-  const idx = Math.round(clampedU * (arch.frames.length - 1));
-  return arch.frames[idx]!;
+  const idx = Math.max(0, Math.round(clampedU * (arch.frames.length - 1)));
+  return arch.frames[idx] ?? arch.frames[0] ?? defaultFrame;
 }
 
 /**

@@ -1,8 +1,9 @@
 import {
+	generateUuidV7,
 	type BactericidalEquipment,
 	type CreateBactericidalEquipmentDto,
 } from "@dental/shared";
-import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
+import { denteClinicalMutationHeaders } from "../../../lib/denteRequestHeaders";
 
 export const CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET: CreateBactericidalEquipmentDto = {
 	roomName: "Кабинет терапевтической стоматологии №1",
@@ -22,14 +23,11 @@ export async function provisionCanonicalBactericidalEquipment(options?: {
 }): Promise<BactericidalEquipment | null> {
 	const fetchFn = options?.customFetch || (typeof fetch !== "undefined" ? fetch : undefined);
 	if (!fetchFn) return null;
-	const clinicToken = readDenteClinicToken();
-	const staffToken = readDenteStaffToken();
-	const headers: Record<string, string> = {
+	const headers = denteClinicalMutationHeaders({
 		"Content-Type": "application/json",
-		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+		"Idempotency-Key": generateUuidV7(),
 		...(options?.headers || {}),
-	};
+	});
 
 	const res = await fetchFn("/api/registers/bactericidal/equipments", {
 		method: "POST",

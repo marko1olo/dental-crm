@@ -22,8 +22,6 @@ import {
 } from "../services/offline";
 import { useOfflineStore } from "../store/offlineStore";
 import { useNetworkConnectivity } from "./useNetworkConnectivity";
-import { flushOfflineAppointmentsToServer } from "../offline/offlineAppointmentQueue";
-import { flushOfflinePaymentsToServer } from "../offline/offlinePaymentQueue";
 
 export interface UseOfflineSyncOptions extends SyncBatchDrainOptions {
 	autoSyncOnReconnect?: boolean | undefined;
@@ -192,19 +190,9 @@ export function useOfflineSync(options: UseOfflineSyncOptions = {}) {
 				};
 
 				// 1. Единый канонический шлюз синхронизации (Sync Gateway) для Outbox
+				// Доменные очереди (appointments, payments) пишутся в этот же unified outbox,
+				// поэтому повторные вызовы flushOffline* внутри syncNow вызывали 3x дренаж.
 				const result = await offlineSyncService.drainOutbox(mergedOptions);
-
-				// 2. Последовательный сброс остаточных доменных очередей без состояния гонки
-				try {
-					await flushOfflineAppointmentsToServer();
-				} catch {
-					// Изолированная обработка без срыва общего ответа
-				}
-				try {
-					await flushOfflinePaymentsToServer();
-				} catch {
-					// Изолированная обработка без срыва общего ответа
-				}
 
 				await refresh();
 				return result;

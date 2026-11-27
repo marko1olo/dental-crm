@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ImagingStudy } from "@dental/shared";
 import { showToast } from "../../../GlobalToast";
+import { denteClinicalReadHeaders } from "../../../../lib/denteRequestHeaders";
 import { routeOpenCbctPopout } from "../../../../utils/runtimeRouter";
 import { isDemoPatientId, isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { is3DScanUrl } from "../../../lab/LabAttachScanModal";
@@ -37,16 +38,24 @@ export function usePatientRadiologyLogic({
 
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName);
 
+	const abortControllerRef = useRef<AbortController | null>(null);
+
 	const loadPatientStudies = useCallback(async () => {
+		abortControllerRef.current?.abort();
 		if (!patientId) {
 			setStudies(isDemo ? DEMO_PATIENT_STUDIES : []);
 			setIsLoading(false);
 			return;
 		}
+		const controller = new AbortController();
+		abortControllerRef.current = controller;
 		setIsLoading(true);
 		setError(null);
 		try {
-			const res = await fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`);
+			const res = await fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`, {
+				headers: denteClinicalReadHeaders(),
+				signal: controller.signal,
+			});
 			if (res.ok) {
 				const data = await res.json();
 				if (Array.isArray(data) && data.length > 0) setStudies(data);
@@ -56,15 +65,25 @@ export function usePatientRadiologyLogic({
 				if (isDemo) setStudies(DEMO_PATIENT_STUDIES);
 				else setError("Не удалось загрузить снимки с сервера");
 			}
-		} catch {
+		} catch (err) {
+			if (err instanceof DOMException && err.name === "AbortError") {
+				return;
+			}
 			if (isDemo) setStudies(DEMO_PATIENT_STUDIES);
 			else setError("Ошибка сетевого соединения с архивом снимков");
 		} finally {
-			setIsLoading(false);
+			if (!controller.signal.aborted) {
+				setIsLoading(false);
+			}
 		}
 	}, [patientId, isDemo]);
 
-	useEffect(() => { loadPatientStudies(); }, [loadPatientStudies]);
+	useEffect(() => {
+		void loadPatientStudies();
+		return () => {
+			abortControllerRef.current?.abort();
+		};
+	}, [loadPatientStudies]);
 
 	const handleOpen3d = useCallback((study: ImagingStudy) => {
 		if (onOpenStudio) onOpenStudio(study);

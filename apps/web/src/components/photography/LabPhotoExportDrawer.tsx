@@ -4,6 +4,7 @@ import { PhotoProtocolPreset, PhotoSlotRecord } from './photoGridPresets';
 import { showToast } from '../GlobalToast';
 import { exportCollageAsPng, exportCollageAsPdf } from './photoProtocolEngine';
 import { VitaShadeSelector } from './VitaShadeSelector';
+import { clientLogger } from '../../services/logging/clientLogger';
 
 export interface LabPhotoExportDrawerProps {
 	preset: PhotoProtocolPreset;
@@ -47,11 +48,27 @@ export const LabPhotoExportDrawer: React.FC<LabPhotoExportDrawerProps> = ({
 	});
 
 	const handleExportPng = async () => {
+		let exportedUrl: string | null = null;
+		const link = document.createElement('a');
 		try {
-			await exportCollageAsPng(getCollagePayload());
+			exportedUrl = await exportCollageAsPng(getCollagePayload());
+			link.href = exportedUrl;
+			link.download = `dente-collage-${selectedShade}-${Date.now()}.png`;
+			document.body.appendChild(link);
+			link.click();
 			showToast('Коллаж успешно сохранен в PNG', 'success');
-		} catch {
+		} catch (err) {
+			clientLogger.warn('[LabPhotoExportDrawer] Failed to export collage PNG', err, {
+				module: 'Photography',
+			});
 			showToast('Ошибка экспорта коллажа', 'error');
+		} finally {
+			if (link.parentNode) {
+				link.parentNode.removeChild(link);
+			}
+			if (exportedUrl && exportedUrl.startsWith('blob:')) {
+				URL.revokeObjectURL(exportedUrl);
+			}
 		}
 	};
 

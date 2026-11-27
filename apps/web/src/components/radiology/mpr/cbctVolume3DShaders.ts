@@ -271,10 +271,13 @@ export function renderWebGl2VolumeRaymarching(
 
 	// Column-major 3x3 matrix for WebGL uniformMatrix3fv
 	// rotMat[0] = Col 0 (Right), rotMat[1] = Col 1 (Up), rotMat[2] = Col 2 (RayDir)
+	const r0 = rotMat[0] ?? [1, 0, 0];
+	const r1 = rotMat[1] ?? [0, 1, 0];
+	const r2 = rotMat[2] ?? [0, 0, 1];
 	const matColMajor = new Float32Array([
-		rotMat[0]![0]!, rotMat[0]![1]!, rotMat[0]![2]!,
-		rotMat[1]![0]!, rotMat[1]![1]!, rotMat[1]![2]!,
-		rotMat[2]![0]!, rotMat[2]![1]!, rotMat[2]![2]!,
+		r0[0], r0[1], r0[2],
+		r1[0], r1[1], r1[2],
+		r2[0], r2[1], r2[2],
 	]);
 	gl.uniformMatrix3fv(uniforms.rotMatrix, false, matColMajor);
 
@@ -293,13 +296,13 @@ export function renderWebGl2VolumeRaymarching(
 		preset.colorRgb[2] / 255.0,
 	);
 
-	const lightDir = [0.4, 0.6, 0.7];
-	const lightLen = Math.hypot(lightDir[0]!, lightDir[1]!, lightDir[2]!);
+	const lightDir: readonly [number, number, number] = [0.4, 0.6, 0.7];
+	const lightLen = Math.hypot(lightDir[0], lightDir[1], lightDir[2]) || 1;
 	gl.uniform3f(
 		uniforms.lightDir,
-		lightDir[0]! / lightLen,
-		lightDir[1]! / lightLen,
-		lightDir[2]! / lightLen,
+		lightDir[0] / lightLen,
+		lightDir[1] / lightLen,
+		lightDir[2] / lightLen,
 	);
 
 	gl.uniform3f(
@@ -340,7 +343,8 @@ export function renderWebGl2VolumeRaymarching(
 		const scaleZ = curDim.depth / Math.max(1, dim.depth);
 
 		for (let i = 0; i < count; i++) {
-			const imp = implants[i]!;
+			const imp = implants[i];
+			if (!imp) continue;
 			entryData[i * 3 + 0] = imp.entryVoxel[0] * scaleX;
 			entryData[i * 3 + 1] = imp.entryVoxel[1] * scaleY;
 			entryData[i * 3 + 2] = imp.entryVoxel[2] * scaleZ;
@@ -419,7 +423,8 @@ export function pickVolume3DObjectAtPixel(
 	try {
 		gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 		return decodeEz3dGBufferPixel(pixel);
-	} catch {
+	} catch (err) {
+		clientLogger.debug("[CbctVolume3D] G-buffer readPixels failed", err, { module: "CbctVolume3D" });
 		return null;
 	}
 }

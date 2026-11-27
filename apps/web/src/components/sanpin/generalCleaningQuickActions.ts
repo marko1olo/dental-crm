@@ -1,6 +1,19 @@
-import type { CreateGeneralCleaningLogDto } from "@dental/shared";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
+import { generateUuidV7, type CreateGeneralCleaningLogDto } from "@dental/shared";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { showToast } from "../GlobalToast.js";
+
+async function readJsonSafely(res: Response): Promise<{ count?: number; message?: string }> {
+	try {
+		const data: unknown = await res.json();
+		if (typeof data === "object" && data !== null) {
+			return data as { count?: number; message?: string };
+		}
+	} catch (err) {
+		clientLogger.debug("Failed to parse cleaning API JSON", err);
+	}
+	return {};
+}
 
 export async function executeAutopilotMonthCleaning(
 	onSuccess: () => Promise<void>,
@@ -8,26 +21,24 @@ export async function executeAutopilotMonthCleaning(
 ): Promise<void> {
 	try {
 		setLoading(true);
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
 		const res = await fetch("/api/registers/cleaning/autopilot-month", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify({}),
 		});
 		if (res.ok) {
-			const data = await res.json().catch(() => ({}));
+			const data = await readJsonSafely(res);
 			showToast(`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок, интервал 7 дней)`, "success");
 			await onSuccess();
 		} else {
-			const err = await res.json().catch(() => ({}));
+			const err = await readJsonSafely(res);
 			showToast(err.message || "Ошибка при генерации графика", "error");
 		}
 	} catch (err) {
+		clientLogger.warn("executeAutopilotMonthCleaning failed", err);
 		showToast("Сетевая ошибка при генерации графика", "error");
 	} finally {
 		setLoading(false);
@@ -40,8 +51,6 @@ export async function executeQuickRecordNormCleaning(
 ): Promise<void> {
 	try {
 		setSubmitting(true);
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
 		const payload: CreateGeneralCleaningLogDto = {
 			cleaningType: "general",
 			scheduledDate: new Date().toISOString().slice(0, 10),
@@ -61,11 +70,10 @@ export async function executeQuickRecordNormCleaning(
 
 		const res = await fetch("/api/registers/cleaning", {
 			method: "POST",
-			headers: {
+			headers: denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+				"Idempotency-Key": generateUuidV7(),
+			}),
 			body: JSON.stringify(payload),
 		});
 
@@ -73,10 +81,11 @@ export async function executeQuickRecordNormCleaning(
 			showToast("Уборка по норме успешно зафиксирована (Аламинол 5%, 60 мин, УФ 120 мин)", "success");
 			await onSuccess();
 		} else {
-			const err = await res.json().catch(() => ({}));
+			const err = await readJsonSafely(res);
 			showToast(err.message || "Ошибка при фиксации уборки", "error");
 		}
 	} catch (err) {
+		clientLogger.warn("executeQuickRecordNormCleaning failed", err);
 		showToast("Сетевая ошибка при фиксации уборки", "error");
 	} finally {
 		setSubmitting(false);
@@ -85,20 +94,20 @@ export async function executeQuickRecordNormCleaning(
 
 export async function verifyCleaningLogRecord(id: string, onSuccess: () => void): Promise<void> {
 	try {
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
 		const res = await fetch(`/api/registers/cleaning/${id}/verify`, {
 			method: "PUT",
-			headers: {
-				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-			},
+			headers: denteClinicalMutationHeaders({
+				"Idempotency-Key": generateUuidV7(),
+			}),
 		});
 		if (res.ok) {
 			showToast("Качество уборки заверено ответственным лицом", "success");
 			onSuccess();
+		} else {
+			showToast("Ошибка при подтверждении", "error");
 		}
 	} catch (err) {
+		clientLogger.warn("verifyCleaningLogRecord failed", err);
 		showToast("Ошибка при подтверждении", "error");
 	}
 }

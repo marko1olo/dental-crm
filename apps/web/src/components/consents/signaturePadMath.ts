@@ -106,8 +106,9 @@ export function smoothStrokeToBezierCurves(
 
 	const curves: BezierCurveSegment[] = [];
 	if (points.length === 2) {
-		const p0 = points[0]!;
-		const p1 = points[1]!;
+		const p0 = points[0];
+		const p1 = points[1];
+		if (!p0 || !p1) return curves;
 		curves.push({
 			startPoint: p0,
 			control1: p0,
@@ -117,9 +118,10 @@ export function smoothStrokeToBezierCurves(
 	}
 
 	for (let i = 1; i < points.length - 1; i++) {
-		const p0 = points[i - 1]!;
-		const p1 = points[i]!;
-		const p2 = points[i + 1]!;
+		const p0 = points[i - 1];
+		const p1 = points[i];
+		const p2 = points[i + 1];
+		if (!p0 || !p1 || !p2) continue;
 		const mid1 = computeMidpoint(p0, p1);
 		const mid2 = computeMidpoint(p1, p2);
 
@@ -139,11 +141,13 @@ export function simplifyStrokePoints(points: SignaturePoint[], epsilon = 1.0): S
 
 	let dmax = 0;
 	let index = 0;
-	const first = points[0]!;
-	const last = points[points.length - 1]!;
+	const first = points[0];
+	const last = points[points.length - 1];
+	if (!first || !last) return points;
 
 	for (let i = 1; i < points.length - 1; i++) {
-		const p = points[i]!;
+		const p = points[i];
+		if (!p) continue;
 		// Расстояние от точки p до отрезка (first -> last)
 		const d = Math.abs((last.y - first.y) * p.x - (last.x - first.x) * p.y + last.x * first.y - last.y * first.x) /
 			Math.sqrt(Math.pow(last.y - first.y, 2) + Math.pow(last.x - first.x, 2));
@@ -223,21 +227,27 @@ export function exportSignatureToSvg(
 		const strokeWidth = stroke.width || 2.5;
 
 		if (stroke.points.length === 1) {
-			const p = stroke.points[0]!;
+			const p = stroke.points[0];
+			if (!p) continue;
 			const r = (strokeWidth / 2).toFixed(1);
 			paths += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${strokeColor}"/>`;
 			continue;
 		}
 
-		let d = `M ${stroke.points[0]!.x.toFixed(1)} ${stroke.points[0]!.y.toFixed(1)}`;
+		const firstPt = stroke.points[0];
+		if (!firstPt) continue;
+		let d = `M ${firstPt.x.toFixed(1)} ${firstPt.y.toFixed(1)}`;
 		for (let i = 1; i < stroke.points.length - 1; i++) {
-			const current = stroke.points[i]!;
-			const next = stroke.points[i + 1]!;
+			const current = stroke.points[i];
+			const next = stroke.points[i + 1];
+			if (!current || !next) continue;
 			const mid = computeMidpoint(current, next);
 			d += ` Q ${current.x.toFixed(1)} ${current.y.toFixed(1)}, ${mid.x.toFixed(1)} ${mid.y.toFixed(1)}`;
 		}
-		const last = stroke.points[stroke.points.length - 1]!;
-		d += ` L ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
+		const last = stroke.points[stroke.points.length - 1];
+		if (last) {
+			d += ` L ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
+		}
 
 		paths += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`;
 	}

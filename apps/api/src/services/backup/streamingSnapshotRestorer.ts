@@ -510,7 +510,12 @@ export async function restoreNdjsonSnapshotStreamToPg(params: {
 		throw err;
 	} finally {
 		if (openedHandle?.cleanup) {
-			await openedHandle.cleanup().catch(() => {});
+			await openedHandle.cleanup().catch((cleanupErr) => {
+				logger.debug(
+					{ err: safeLogError(cleanupErr), expectedOrganizationId },
+					"Ошибка очистки потока при восстановлении DENTETB2",
+				);
+			});
 		}
 		deferredOut.destroy();
 		try {
@@ -618,7 +623,12 @@ export async function restoreTenantSnapshotStreaming(params: {
 				gunzip,
 				plainOut,
 			);
-			decryptPipelinePromise.catch(() => {});
+			decryptPipelinePromise.catch((pipeErr) => {
+				logger.debug(
+					{ err: safeLogError(pipeErr), expectedOrganizationId },
+					"Поток расшифровки DENTETB2 завершён с ошибкой",
+				);
+			});
 
 			return {
 				inputStream: plainOut,
@@ -626,7 +636,12 @@ export async function restoreTenantSnapshotStreaming(params: {
 				cleanup: async () => {
 					cipherReadStream.destroy();
 					plainOut.destroy();
-					await decryptPipelinePromise.catch(() => {});
+					await decryptPipelinePromise.catch((cleanupPipeErr) => {
+						logger.debug(
+							{ err: safeLogError(cleanupPipeErr), expectedOrganizationId },
+							"Очистка потока расшифровки DENTETB2",
+						);
+					});
 				},
 			};
 		},
@@ -677,7 +692,12 @@ async function restoreLegacyDenteTb1Archive(params: {
 	});
 	const plainOut = new PassThrough({ highWaterMark: 64 * 1024 });
 	const decryptPipelinePromise = pipeline(readStream, decipher, gunzip, plainOut);
-	decryptPipelinePromise.catch(() => {});
+	decryptPipelinePromise.catch((pipeErr) => {
+		logger.debug(
+			{ err: safeLogError(pipeErr), expectedOrganizationId },
+			"Поток расшифровки legacy DENTETB1 завершён с ошибкой",
+		);
+	});
 
 	const chunks: Buffer[] = [];
 	const MAX_LEGACY_V1_JSON_BYTES = 256 * 1024 * 1024;
@@ -698,7 +718,12 @@ async function restoreLegacyDenteTb1Archive(params: {
 	} finally {
 		readStream.destroy();
 		plainOut.destroy();
-		await decryptPipelinePromise.catch(() => {});
+		await decryptPipelinePromise.catch((cleanupPipeErr) => {
+			logger.debug(
+				{ err: safeLogError(cleanupPipeErr), expectedOrganizationId },
+				"Очистка потока расшифровки legacy DENTETB1",
+			);
+		});
 	}
 
 	const parsed = JSON.parse(Buffer.concat(chunks, totalBytes).toString("utf8")) as {

@@ -1,6 +1,7 @@
-import type { GeneralCleaningLog } from "@dental/shared";
+import { generateUuidV7, type GeneralCleaningLog } from "@dental/shared";
 import { useMemo, useState } from "react";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
+import { clientLogger } from "../../services/logging/clientLogger.js";
 import { showToast } from "../GlobalToast.js";
 
 export function useGeneralCleaningScheduleState(
@@ -39,27 +40,37 @@ export function useGeneralCleaningScheduleState(
 	const handleGenerateMonthlySchedule = async () => {
 		try {
 			setIsAutopilotLoading(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
 			const res = await fetch("/api/registers/cleaning/autopilot-month", {
 				method: "POST",
-				headers: {
+				headers: denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({ year: selectedYear, month: selectedMonth + 1 }),
 			});
 
 			if (res.ok) {
-				const data = await res.json().catch(() => ({}));
-				showToast(`График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по графику чистоты, шаг 7 дней)`, "success");
+				let count = 20;
+				try {
+					const data = (await res.json()) as { count?: number };
+					if (typeof data.count === "number" && data.count > 0) count = data.count;
+				} catch (parseErr) {
+					clientLogger.debug("cleaning autopilot-month response parse failed", parseErr);
+				}
+				showToast(`График генеральных уборок на месяц успешно заполнен (${count} уборок по графику чистоты, шаг 7 дней)`, "success");
 				onScheduleUpdated?.();
 			} else {
-				const err = await res.json().catch(() => ({}));
-				showToast(err.message || "Ошибка при генерации графика уборок", "error");
+				let message = "Ошибка при генерации графика уборок";
+				try {
+					const err = (await res.json()) as { message?: string };
+					if (err.message) message = err.message;
+				} catch (parseErr) {
+					clientLogger.debug("cleaning autopilot-month error parse failed", parseErr);
+				}
+				showToast(message, "error");
 			}
 		} catch (err) {
+			clientLogger.warn("handleGenerateMonthlySchedule failed", err);
 			showToast("Сетевая ошибка при генерации графика", "error");
 		} finally {
 			setIsAutopilotLoading(false);
